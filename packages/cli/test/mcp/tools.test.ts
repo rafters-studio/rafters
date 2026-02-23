@@ -6,8 +6,8 @@ import { RaftersToolHandler, SYSTEM_PREAMBLE, TOOL_DEFINITIONS } from '../../src
 import { fixtures, serializeNamespaceFile } from '../fixtures/tokens.js';
 
 describe('TOOL_DEFINITIONS', () => {
-  it('should define 4 design-focused tools', () => {
-    expect(TOOL_DEFINITIONS).toHaveLength(4);
+  it('should define 5 design-focused tools', () => {
+    expect(TOOL_DEFINITIONS).toHaveLength(5);
   });
 
   it('should have correct tool names', () => {
@@ -16,6 +16,7 @@ describe('TOOL_DEFINITIONS', () => {
     expect(names).toContain('rafters_pattern');
     expect(names).toContain('rafters_component');
     expect(names).toContain('rafters_token');
+    expect(names).toContain('rafters_cognitive_budget');
   });
 
   it('should have descriptions for all tools', () => {
@@ -371,6 +372,73 @@ describe('RaftersToolHandler', () => {
       expect(data.name).toBe('primary');
       expect(data.namespace).toBe('color');
       expect(data.semanticMeaning).toContain('Primary');
+    });
+  });
+
+  describe('rafters_cognitive_budget', () => {
+    it('should return composition review for valid components', async () => {
+      const result = await handler.handleToolCall('rafters_cognitive_budget', {
+        components: ['button', 'card', 'input'],
+      });
+
+      expect(result.isError).toBeFalsy();
+
+      const data = JSON.parse(result.content[0].text as string);
+      expect(data.budget).toBeDefined();
+      expect(data.budget.tier).toBe('page');
+      expect(data.budget.status).toBe('within-budget');
+      expect(data.budget.total).toBeGreaterThan(0);
+      expect(data.components).toBeDefined();
+      expect(data.components.length).toBeGreaterThan(0);
+      expect(data.attention).toBeDefined();
+      expect(data.trust).toBeDefined();
+      expect(data.patterns).toBeDefined();
+      expect(data.hotspots).toBeDefined();
+      expect(data.violations).toBeDefined();
+    });
+
+    it('should respect tier parameter', async () => {
+      const result = await handler.handleToolCall('rafters_cognitive_budget', {
+        components: ['button'],
+        tier: 'focused',
+      });
+
+      const data = JSON.parse(result.content[0].text as string);
+      expect(data.budget.tier).toBe('focused');
+      expect(data.budget.budget).toBe(15);
+    });
+
+    it('should return error for empty components', async () => {
+      const result = await handler.handleToolCall('rafters_cognitive_budget', {
+        components: [],
+      });
+
+      expect(result.isError).toBe(true);
+      const data = JSON.parse(result.content[0].text as string);
+      expect(data.error).toContain('No components');
+    });
+
+    it('should return error when all components are unknown', async () => {
+      const result = await handler.handleToolCall('rafters_cognitive_budget', {
+        components: ['completely-unknown-widget'],
+      });
+
+      expect(result.isError).toBe(true);
+      const data = JSON.parse(result.content[0].text as string);
+      expect(data.error).toContain('No recognized components');
+      expect(data.suggestion).toContain('rafters_vocabulary');
+    });
+
+    it('should handle mix of known and unknown components', async () => {
+      const result = await handler.handleToolCall('rafters_cognitive_budget', {
+        components: ['button', 'unknown-widget'],
+      });
+
+      expect(result.isError).toBeFalsy();
+      const data = JSON.parse(result.content[0].text as string);
+      // Only button is scored
+      expect(data.budget.total).toBe(3);
+      expect(data.attention.notes.some((n: string) => n.includes('Unknown'))).toBe(true);
     });
   });
 

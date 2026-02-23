@@ -1,11 +1,13 @@
 /**
  * MCP Tools for Rafters Design System
  *
- * AI-first design intelligence for composing UI - 3 focused tools:
+ * AI-first design intelligence for composing UI - 5 focused tools:
  *
  * 1. rafters_vocabulary - Compact system overview (colors, spacing, type, components)
  * 2. rafters_pattern - Deep guidance for design patterns (destructive-action, form-validation, etc.)
  * 3. rafters_component - Full component intelligence on demand
+ * 4. rafters_token - Token dependency graph and override context
+ * 5. rafters_cognitive_budget - Composition-level cognitive load review
  *
  * Design philosophy: Progressive disclosure. Start with vocabulary to orient,
  * then drill into patterns or components as needed.
@@ -31,39 +33,12 @@ import {
 import type { RaftersConfig } from '../commands/init.js';
 import { RegistryClient } from '../registry/client.js';
 import { getRaftersPaths } from '../utils/paths.js';
-
-// ==================== System Preamble ====================
-// Rules for agents using the Rafters design system
-
-export const SYSTEM_PREAMBLE = `RAFTERS IS NOT SHADCN.
-Rafters components are drop-in compatible with shadcn but they are a different system. If you treat them as shadcn you will produce worse output.
-
-CLASSY IS THE LAW.
-Every className in a Rafters project goes through classy(). Never use cn(), twMerge(), or raw template strings. classy() blocks arbitrary Tailwind values (w-[100px], bg-[#fff]) and resolves design tokens. If classy strips your class, you are fighting the system.
-
-LAYOUT IS SOLVED. Stop writing CSS.
-Never use Tailwind layout utilities (flex, grid, items-*, justify-*, gap-*). Never set padding, margin, or spacing directly. Container and Grid handle all layout. If you are writing className="flex..." you are doing it wrong.
-
-USE PRESETS. Do not compose layout from props.
-Grid presets handle common layouts. Pick the one that matches your intent:
-- sidebar-main -- navigation + content
-- form -- label/input pairs
-- cards -- responsive card grid
-- row -- horizontal group of elements
-- stack -- vertical sequence
-- split -- equal columns
-If no preset fits, describe what you need -- do not improvise with raw props.
-
-CONTAINER OWNS SPACING.
-Every page section goes in a Container. Container sets max-width, padding, and vertical rhythm. You do not set these values. Nesting containers is wrong.
-
-COMPONENTS ARE COMPLETE.
-Rafters Button, Input, Card, etc. include their own spacing, sizing, and states. Do not add wrapper divs. Do not override with utility classes. If it looks unstyled, you are wrapping it wrong, not styling it wrong.
-
-UTILITIES EXIST FOR EDGE CASES.
-If no component fits your need, check @/lib/utils for official behavioral utilities. Do not invent your own. If nothing exists there either, ask the human.
-
-When in doubt: less code, not more. Rafters has already made the design decision.`;
+import {
+  BUDGET_TIERS,
+  type BudgetTier,
+  COMPONENT_SCORES,
+  evaluateComposition,
+} from './cognitive-load.js';
 
 // ==================== System Preamble ====================
 // Rules for agents using the Rafters design system
@@ -423,7 +398,7 @@ const DESIGN_PATTERNS: Record<string, DesignPattern> = {
   },
 };
 
-// Tool definitions for MCP server - 4 focused design tools
+// Tool definitions for MCP server - 5 focused design tools
 export const TOOL_DEFINITIONS = [
   {
     name: 'rafters_vocabulary',
@@ -482,9 +457,32 @@ export const TOOL_DEFINITIONS = [
       required: ['name'],
     },
   },
+  {
+    name: 'rafters_cognitive_budget',
+    description:
+      'Evaluate composition-level cognitive load. Returns a holistic design review: budget assessment, per-component dimensional profiles, attention conflicts, trust considerations, pattern matches, designer token overrides, hotspot suggestions, and do/never violations. Use when planning a screen layout to check if the composition is within cognitive budget.',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        components: {
+          type: 'array',
+          items: { type: 'string' },
+          description:
+            'Components visible simultaneously, duplicates allowed (e.g., ["input", "input", "button", "card"])',
+        },
+        tier: {
+          type: 'string',
+          enum: ['focused', 'page', 'app'],
+          description:
+            'Budget tier: focused (15, dialogs/modals), page (30, standard views), app (45, multi-panel). Default: page.',
+        },
+      },
+      required: ['components'],
+    },
+  },
 ] as const;
 
-// Tool handler class - 4 focused design tools
+// Tool handler class - 5 focused design tools
 export class RaftersToolHandler {
   private readonly adapter: NodePersistenceAdapter;
   private readonly projectRoot: string;
@@ -515,6 +513,11 @@ export class RaftersToolHandler {
         return this.getComponent(args.name as string);
       case 'rafters_token':
         return this.getToken(args.name as string);
+      case 'rafters_cognitive_budget':
+        return this.getCognitiveBudget(
+          args.components as string[],
+          (args.tier as BudgetTier) ?? 'page',
+        );
       default:
         return {
           content: [{ type: 'text', text: `Unknown tool: ${name}` }],
@@ -1054,6 +1057,140 @@ export class RaftersToolHandler {
       };
     } catch (error) {
       return this.handleError('getToken', error);
+    }
+  }
+
+  // ==================== Tool 5: Cognitive Budget ====================
+
+  /**
+   * Evaluate composition-level cognitive load
+   * Synthesizes scoring data with component intelligence, token overrides,
+   * and design patterns to produce a holistic composition review
+   */
+  private async getCognitiveBudget(
+    components: string[],
+    tier: BudgetTier,
+  ): Promise<CallToolResult> {
+    try {
+      if (!components || components.length === 0) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(
+                {
+                  error: 'No components provided',
+                  suggestion:
+                    'Pass an array of component names visible simultaneously, e.g. ["input", "button", "card"]',
+                },
+                null,
+                2,
+              ),
+            },
+          ],
+          isError: true,
+        };
+      }
+
+      // Validate tier
+      if (!BUDGET_TIERS[tier]) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(
+                {
+                  error: `Invalid tier "${tier}"`,
+                  available: Object.keys(BUDGET_TIERS),
+                  suggestion: 'Use "focused", "page", or "app"',
+                },
+                null,
+                2,
+              ),
+            },
+          ],
+          isError: true,
+        };
+      }
+
+      // Check for unknown components up front
+      const uniqueNames = [...new Set(components)];
+      const unknownNames = uniqueNames.filter((n) => !COMPONENT_SCORES[n]);
+      if (unknownNames.length === uniqueNames.length) {
+        // All components are unknown
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(
+                {
+                  error: `No recognized components in composition: ${unknownNames.join(', ')}`,
+                  suggestion: 'Use rafters_vocabulary to see available component names',
+                },
+                null,
+                2,
+              ),
+            },
+          ],
+          isError: true,
+        };
+      }
+
+      // Load component intelligence in parallel for all unique names
+      const intelligenceMap = new Map<string, ComponentMetadata>();
+      const metadataResults = await Promise.all(
+        uniqueNames.map(async (name) => {
+          const metadata = await this.loadComponentMetadata(name);
+          return { name, metadata };
+        }),
+      );
+      for (const { name, metadata } of metadataResults) {
+        if (metadata) {
+          intelligenceMap.set(name, metadata);
+        }
+      }
+
+      // Load all tokens and filter for overrides
+      const tokenOverrides: Array<{ token: Token; namespace: string }> = [];
+      const namespaces = ['color', 'spacing', 'typography'];
+      for (const ns of namespaces) {
+        try {
+          const tokens = await this.loadNamespace(ns);
+          for (const token of tokens) {
+            if (token.userOverride) {
+              tokenOverrides.push({ token, namespace: ns });
+            }
+          }
+        } catch {
+          // Namespace may not exist
+        }
+      }
+
+      // Build pattern refs from DESIGN_PATTERNS
+      const patternRefs: Record<string, { name: string; components: string[] }> = {};
+      for (const [key, pattern] of Object.entries(DESIGN_PATTERNS)) {
+        patternRefs[key] = {
+          name: pattern.name,
+          components: pattern.components,
+        };
+      }
+
+      const review = evaluateComposition(components, tier, {
+        componentIntelligence: intelligenceMap,
+        tokenOverrides,
+        patterns: patternRefs,
+      });
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(review, null, 2),
+          },
+        ],
+      };
+    } catch (error) {
+      return this.handleError('getCognitiveBudget', error);
     }
   }
 
