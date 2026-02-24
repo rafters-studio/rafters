@@ -11,7 +11,10 @@ import { dirname, join } from 'node:path';
 import { RegistryClient } from '../registry/client.js';
 import type { RegistryItem } from '../registry/types.js';
 import { DEFAULT_EXPORTS } from '../utils/exports.js';
-import { installRegistryDependencies } from '../utils/install-registry-deps.js';
+import {
+  type InstallRegistryDepsResult,
+  installRegistryDependencies,
+} from '../utils/install-registry-deps.js';
 import { getRaftersPaths } from '../utils/paths.js';
 import { error, log, setAgentMode } from '../utils/ui.js';
 import type { RaftersConfig } from './init.js';
@@ -399,7 +402,22 @@ export async function add(components: string[], options: AddOptions): Promise<vo
   }
 
   // Collect, filter, and install dependencies
-  const depsResult = await installRegistryDependencies(allItems, cwd);
+  let depsResult: InstallRegistryDepsResult = {
+    installed: [],
+    skipped: [],
+    devInstalled: [],
+    failed: [],
+  };
+  try {
+    depsResult = await installRegistryDependencies(allItems, cwd);
+  } catch (err) {
+    log({
+      event: 'add:deps:install-failed',
+      message: `Failed to process dependencies: ${err instanceof Error ? err.message : String(err)}`,
+      dependencies: [],
+      suggestion: 'Check package.json and try installing dependencies manually.',
+    });
+  }
 
   if (depsResult.installed.length > 0 || depsResult.skipped.length > 0) {
     log({

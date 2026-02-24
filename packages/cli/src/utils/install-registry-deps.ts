@@ -24,8 +24,12 @@ export interface InstallRegistryDepsResult {
   installed: string[];
   /** Dependencies that were skipped (already installed or internal) */
   skipped: string[];
-  /** Dev dependencies that were installed */
+  // TODO: devDependencies installation not yet implemented.
+  // When registry items include devDependencies, pass them as the second
+  // argument to updateDependencies with the --save-dev flag.
   devInstalled: string[];
+  /** Dependencies that failed to install */
+  failed: string[];
 }
 
 /**
@@ -35,31 +39,36 @@ export interface InstallRegistryDepsResult {
  * e.g., "lodash" -> { name: "lodash", version: undefined }
  */
 export function parseDependency(dep: string): { name: string; version: string | undefined } {
+  const trimmed = dep.trim();
+  if (!trimmed) {
+    return { name: '', version: undefined };
+  }
+
   // Handle scoped packages: @scope/name@version
-  if (dep.startsWith('@')) {
-    const slashIndex = dep.indexOf('/');
+  if (trimmed.startsWith('@')) {
+    const slashIndex = trimmed.indexOf('/');
     if (slashIndex === -1) {
-      return { name: dep, version: undefined };
+      return { name: trimmed, version: undefined };
     }
-    const afterSlash = dep.slice(slashIndex + 1);
+    const afterSlash = trimmed.slice(slashIndex + 1);
     const atIndex = afterSlash.indexOf('@');
     if (atIndex === -1) {
-      return { name: dep, version: undefined };
+      return { name: trimmed, version: undefined };
     }
     return {
-      name: dep.slice(0, slashIndex + 1 + atIndex),
+      name: trimmed.slice(0, slashIndex + 1 + atIndex),
       version: afterSlash.slice(atIndex + 1),
     };
   }
 
   // Handle unscoped packages: name@version
-  const atIndex = dep.indexOf('@');
+  const atIndex = trimmed.indexOf('@');
   if (atIndex === -1) {
-    return { name: dep, version: undefined };
+    return { name: trimmed, version: undefined };
   }
   return {
-    name: dep.slice(0, atIndex),
-    version: dep.slice(atIndex + 1),
+    name: trimmed.slice(0, atIndex),
+    version: trimmed.slice(atIndex + 1),
   };
 }
 
@@ -71,28 +80,44 @@ function isInternalDep(dep: string): boolean {
   return name.startsWith('@rafters/');
 }
 
+interface ReadDepsResult {
+  packageJsonFound: boolean;
+  installed: Set<string>;
+}
+
 /**
  * Read the consumer's package.json and return the combined set of
- * dependency names (without versions).
+ * dependency names (without versions), along with whether package.json exists.
  */
-async function readInstalledDeps(targetDir: string): Promise<Set<string>> {
+async function readInstalledDeps(targetDir: string): Promise<ReadDepsResult> {
+  let raw: string;
+  try {
+    raw = await readFile(join(targetDir, 'package.json'), 'utf-8');
+  } catch (err) {
+    if (err instanceof Error && 'code' in err && (err as NodeJS.ErrnoException).code === 'ENOENT') {
+      return { packageJsonFound: false, installed: new Set() };
+    }
+    // Log non-ENOENT errors (permission, etc) but continue
+    return { packageJsonFound: false, installed: new Set() };
+  }
+
   const installed = new Set<string>();
   try {
-    const raw = await readFile(join(targetDir, 'package.json'), 'utf-8');
     const pkg = JSON.parse(raw) as Record<string, unknown>;
-
     for (const field of ['dependencies', 'devDependencies', 'peerDependencies']) {
-      const deps = pkg[field];
-      if (deps && typeof deps === 'object') {
-        for (const name of Object.keys(deps as Record<string, unknown>)) {
+      const section = pkg[field];
+      if (section && typeof section === 'object') {
+        for (const name of Object.keys(section as Record<string, unknown>)) {
           installed.add(name);
         }
       }
     }
   } catch {
-    // No package.json or unreadable -- caller handles the warning
+    // Malformed JSON -- treat as found but empty
+    return { packageJsonFound: true, installed: new Set() };
   }
-  return installed;
+
+  return { packageJsonFound: true, installed };
 }
 
 /**
@@ -108,7 +133,11 @@ export async function installRegistryDependencies(
   const result: InstallRegistryDepsResult = {
     installed: [],
     skipped: [],
+    // TODO: devDependencies installation not yet implemented.
+    // When registry items include devDependencies, pass them as the second
+    // argument to updateDependencies with the --save-dev flag.
     devInstalled: [],
+    failed: [],
   };
 
   // 1. Collect and deduplicate all deps from all files
@@ -141,27 +170,15 @@ export async function installRegistryDependencies(
   }
 
   // 3. Check consumer's package.json for already-installed deps
-  const installedInProject = await readInstalledDeps(targetDir);
+  const { packageJsonFound, installed: installedInProject } = await readInstalledDeps(targetDir);
   const toInstall: string[] = [];
 
-  if (installedInProject.size === 0 && externalDeps.length > 0) {
-    // Could not read package.json -- warn but still try to install
-    let hasPackageJson = false;
-    try {
-      await readFile(join(targetDir, 'package.json'), 'utf-8');
-      hasPackageJson = true;
-    } catch {
-      // No package.json
-    }
-
-    if (!hasPackageJson) {
-      log({
-        event: 'add:deps:no-package-json',
-        message: 'No package.json found. Run npm init or pnpm init first.',
-        targetDir,
-      });
-    }
-
+  if (!packageJsonFound) {
+    log({
+      event: 'add:deps:no-package-json',
+      message: 'No package.json found. Run npm init or pnpm init first.',
+      targetDir,
+    });
     // Still attempt install -- the package manager may create package.json
     toInstall.push(...externalDeps);
   } else {
@@ -185,7 +202,7 @@ export async function installRegistryDependencies(
       event: 'add:deps:dry-run',
       dependencies: toInstall,
     });
-    result.installed = toInstall;
+    // Do NOT set result.installed -- nothing was actually installed
     return result;
   }
 
@@ -197,6 +214,7 @@ export async function installRegistryDependencies(
     });
     result.installed = toInstall;
   } catch (err) {
+    result.failed = toInstall;
     const message = err instanceof Error ? err.message : String(err);
     log({
       event: 'add:deps:install-failed',

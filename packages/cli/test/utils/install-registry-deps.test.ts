@@ -52,6 +52,16 @@ describe('parseDependency', () => {
     const result = parseDependency('@rafters/shared');
     expect(result).toEqual({ name: '@rafters/shared', version: undefined });
   });
+
+  it('handles empty string input', () => {
+    const result = parseDependency('');
+    expect(result).toEqual({ name: '', version: undefined });
+  });
+
+  it('handles whitespace-only input', () => {
+    const result = parseDependency('   ');
+    expect(result).toEqual({ name: '', version: undefined });
+  });
 });
 
 describe('installRegistryDependencies', () => {
@@ -152,7 +162,8 @@ describe('installRegistryDependencies', () => {
     });
 
     expect(updateDependenciesMock).not.toHaveBeenCalled();
-    expect(result.installed).toContain('@radix-ui/react-dialog@2.1.0');
+    // Nothing was actually installed, so installed should be empty
+    expect(result.installed).toHaveLength(0);
   });
 
   it('handles install failure gracefully', async () => {
@@ -165,6 +176,8 @@ describe('installRegistryDependencies', () => {
 
     // Install was attempted but failed, so installed array should be empty
     expect(result.installed).toHaveLength(0);
+    // Failed deps should be populated
+    expect(result.failed).toContain('@radix-ui/react-dialog@2.1.0');
   });
 
   it('zero-dep items skip install entirely', async () => {
@@ -214,7 +227,10 @@ describe('installRegistryDependencies', () => {
   });
 
   it('warns when no package.json found', async () => {
-    readFileMock.mockRejectedValue(new Error('ENOENT'));
+    const enoent = Object.assign(new Error('ENOENT: no such file or directory'), {
+      code: 'ENOENT',
+    });
+    readFileMock.mockRejectedValue(enoent);
 
     const dialog = registryFixtures.dialogComponent();
 
