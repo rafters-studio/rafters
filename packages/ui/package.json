@@ -45,5 +45,8 @@
     "vitest": "catalog:",
     "vitest-axe": "catalog:",
     "zod": "catalog:"
+  },
+  "dependencies": {
+    "nanostores": "^1.1.0"
   }
 }
