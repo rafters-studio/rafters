@@ -25,8 +25,7 @@
 import * as React from 'react';
 import classy from '../../primitives/classy';
 import type { ColorPickerStateControls } from '../../primitives/color-picker';
-import { createColorPickerState } from '../../primitives/color-picker';
-import { inP3, inSrgb } from '../../primitives/oklch-gamut';
+import { createColorPickerState, getGamutTier } from '../../primitives/color-picker';
 import type { Direction, GamutTier, OklchColor } from '../../primitives/types';
 
 export interface ColorPickerProps
@@ -58,6 +57,10 @@ const GAMUT_LABELS: Record<GamutTier, string> = {
   fail: 'Out of gamut',
 };
 
+function colorChanged(a: OklchColor | undefined, b: OklchColor | undefined): boolean {
+  return a?.l !== b?.l || a?.c !== b?.c || a?.h !== b?.h;
+}
+
 export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
   (
     {
@@ -74,7 +77,6 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
     ref,
   ) => {
     const safeMaxChroma = Math.max(maxChroma, 1e-6);
-
     const areaCanvasRef = React.useRef<HTMLCanvasElement>(null);
     const areaContainerRef = React.useRef<HTMLDivElement>(null);
     const hueCanvasRef = React.useRef<HTMLCanvasElement>(null);
@@ -89,11 +91,9 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
     const callbacksRef = React.useRef({ onValueChange, onValueCommit });
     callbacksRef.current = { onValueChange, onValueCommit };
 
-    // Preserve color across primitive re-creates (disabled/dir/maxChroma changes)
     const lastColorRef = React.useRef(controlledValue ?? defaultValue);
     const [pickerState, setPickerState] = React.useState<ColorPickerStateControls | null>(null);
 
-    // Primitive lifecycle: create on mount, destroy on unmount or config change
     React.useEffect(() => {
       const ac = areaCanvasRef.current;
       const aCtr = areaContainerRef.current;
@@ -105,7 +105,6 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
       const at = areaThumbRef.current;
       const ht = hueThumbRef.current;
       const pv = previewRef.current;
-
       if (!ac || !aCtr || !hc || !hCtr || !lI || !cI || !hI || !at || !ht || !pv) return;
 
       const state = createColorPickerState({
@@ -125,7 +124,6 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
         onColorCommit: (c) => callbacksRef.current.onValueCommit?.(c),
       });
 
-      // ARIA: createInteractive sets role/tabindex; add semantic labels
       hCtr.setAttribute('aria-valuemin', '0');
       hCtr.setAttribute('aria-valuemax', '360');
       hCtr.setAttribute('aria-valuenow', String(Math.round(lastColorRef.current.h)));
@@ -140,16 +138,12 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
       };
     }, [disabled, dir, safeMaxChroma]);
 
-    // Subscribe to the primitive's reactive color atom
-    const subscribeToColor = React.useCallback(
-      (onStoreChange: () => void) => {
-        if (!pickerState) return () => {};
-        return pickerState.$color.subscribe(onStoreChange);
-      },
+    const subscribe = React.useCallback(
+      (cb: () => void) => (pickerState ? pickerState.$color.listen(cb) : () => {}),
       [pickerState],
     );
     const atomColor = React.useSyncExternalStore(
-      subscribeToColor,
+      subscribe,
       () => pickerState?.$color.get() ?? lastColorRef.current,
       () => lastColorRef.current,
     );
@@ -157,29 +151,17 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
     const isControlled = controlledValue !== undefined;
     const color = isControlled ? controlledValue : atomColor;
 
-    // Controlled value sync: push prop changes to the primitive (synchronous, not an effect)
     const prevControlledRef = React.useRef(controlledValue);
-    if (
-      isControlled &&
-      pickerState &&
-      (controlledValue.l !== prevControlledRef.current?.l ||
-        controlledValue.c !== prevControlledRef.current?.c ||
-        controlledValue.h !== prevControlledRef.current?.h)
-    ) {
-      pickerState.setColor(controlledValue);
+    if (isControlled && pickerState && colorChanged(controlledValue, prevControlledRef.current)) {
+      pickerState.pushColor(controlledValue);
     }
     prevControlledRef.current = controlledValue;
 
-    // ARIA: keep hue aria-valuenow in sync
     React.useEffect(() => {
       hueContainerRef.current?.setAttribute('aria-valuenow', String(Math.round(color.h)));
     }, [color.h]);
 
-    const gamutTier: GamutTier = inSrgb(color.l, color.c, color.h)
-      ? 'gold'
-      : inP3(color.l, color.c, color.h)
-        ? 'silver'
-        : 'fail';
+    const gamutTier = getGamutTier(color.l, color.c, color.h);
 
     return (
       // biome-ignore lint/a11y/useSemanticElements: fieldset adds unwanted default styling; role="group" on div is standard for composite widgets

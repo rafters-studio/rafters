@@ -102,9 +102,17 @@ export interface ColorPickerStateOptions {
 
 export interface ColorPickerStateControls {
   /** Reactive atom with current OKLCH color */
-  $color: { get(): OklchColor; subscribe(cb: (value: OklchColor) => void): () => void };
-  /** Set color programmatically */
+  $color: {
+    get(): OklchColor;
+    /** Subscribe and fire immediately with current value */
+    subscribe(cb: (value: OklchColor) => void): () => void;
+    /** Listen for future changes only (no immediate call) */
+    listen(cb: (value: OklchColor) => void): () => void;
+  };
+  /** Set color programmatically (fires onColorChange) */
   setColor: (color: OklchColor) => void;
+  /** Push color without firing callbacks (for controlled value sync) */
+  pushColor: (color: OklchColor) => void;
   /** Clean up all child primitives and subscriptions */
   destroy: CleanupFunction;
 }
@@ -120,7 +128,7 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
 
-function getGamutTier(l: number, c: number, h: number): GamutTier {
+export function getGamutTier(l: number, c: number, h: number): GamutTier {
   if (inSrgb(l, c, h)) return 'gold';
   if (inP3(l, c, h)) return 'silver';
   return 'fail';
@@ -260,34 +268,30 @@ export function createColorPickerState(options: ColorPickerStateOptions): ColorP
   });
   cleanups.push(unsubColor);
 
-  // Pointer commit: attach document-level listeners on pointerdown so
+  // Pointer commit: document-level listeners on pointerdown ensure
   // drag-release outside the container still fires onColorCommit.
-  const handleCommit = () => {
-    try {
-      onColorCommit?.($color.get());
-    } catch (err) {
-      queueMicrotask(() => {
-        throw err;
-      });
-    }
-    document.removeEventListener('mouseup', handleCommit);
-    document.removeEventListener('touchend', handleCommit);
+  const commitAndDetach = () => {
+    document.removeEventListener('mouseup', commitAndDetach);
+    document.removeEventListener('touchend', commitAndDetach);
+    onColorCommit?.($color.get());
   };
-  const handlePointerDown = () => {
-    document.addEventListener('mouseup', handleCommit);
-    document.addEventListener('touchend', handleCommit);
+  const attachCommit = () => {
+    if (disabled) return;
+    document.addEventListener('mouseup', commitAndDetach);
+    document.addEventListener('touchend', commitAndDetach);
   };
-  for (const container of [areaContainer, hueContainer]) {
-    container.addEventListener('mousedown', handlePointerDown);
-    container.addEventListener('touchstart', handlePointerDown);
+  const containers = [areaContainer, hueContainer];
+  for (const el of containers) {
+    el.addEventListener('mousedown', attachCommit);
+    el.addEventListener('touchstart', attachCommit);
   }
   cleanups.push(() => {
-    for (const container of [areaContainer, hueContainer]) {
-      container.removeEventListener('mousedown', handlePointerDown);
-      container.removeEventListener('touchstart', handlePointerDown);
+    for (const el of containers) {
+      el.removeEventListener('mousedown', attachCommit);
+      el.removeEventListener('touchstart', attachCommit);
     }
-    document.removeEventListener('mouseup', handleCommit);
-    document.removeEventListener('touchend', handleCommit);
+    document.removeEventListener('mouseup', commitAndDetach);
+    document.removeEventListener('touchend', commitAndDetach);
   });
 
   function setColor(color: OklchColor): void {
@@ -295,9 +299,14 @@ export function createColorPickerState(options: ColorPickerStateOptions): ColorP
     onColorChange?.(color);
   }
 
+  function pushColor(color: OklchColor): void {
+    $color.set(color);
+  }
+
   return {
     $color,
     setColor,
+    pushColor,
     destroy() {
       for (const cleanup of cleanups) cleanup();
     },
