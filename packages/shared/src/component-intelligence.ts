@@ -45,6 +45,18 @@ export type ComponentCategory =
   | 'utility';
 
 /**
+ * Structured dependency information extracted from JSDoc tags
+ */
+export interface JSDocDependencies {
+  /** Runtime dependencies from @dependencies tag */
+  runtime: string[];
+  /** Dev dependencies from @devDependencies tag */
+  dev: string[];
+  /** Internal workspace dependencies from @internal-dependencies tag */
+  internal: string[];
+}
+
+/**
  * Full component metadata including intelligence
  */
 export interface ComponentMetadata {
@@ -66,6 +78,8 @@ export interface ComponentMetadata {
   dependencies: string[];
   /** Primitive dependencies */
   primitives: string[];
+  /** Structured dependency information from JSDoc tags */
+  jsDocDependencies?: JSDocDependencies;
   /** Relative file path */
   filePath: string;
 }
@@ -278,6 +292,54 @@ export function extractPrimitiveDependencies(source: string): string[] {
   }
 
   return primitives;
+}
+
+/**
+ * Extract structured dependency information from JSDoc tags
+ *
+ * Parses three dependency tags from JSDoc comments:
+ * - @dependencies - runtime dependencies (e.g., nanostores@^0.11.0)
+ * - @devDependencies - dev dependencies
+ * - @internal-dependencies - internal workspace dependencies (e.g., @rafters/color-utils)
+ *
+ * Values are split on whitespace. Tags present but empty produce empty arrays.
+ * Missing tags also produce empty arrays.
+ */
+export function extractJSDocDependencies(source: string): JSDocDependencies {
+  const result: JSDocDependencies = { runtime: [], dev: [], internal: [] };
+  const blocks = parse(source);
+  if (blocks.length === 0) return result;
+
+  for (const block of blocks) {
+    for (const tag of block.tags) {
+      const tagName = tag.tag.toLowerCase();
+      const value = getTagValue(tag).trim();
+
+      switch (tagName) {
+        case 'dependencies': {
+          if (value) {
+            result.runtime = value.split(/\s+/).filter(Boolean);
+          }
+          break;
+        }
+        case 'devdependencies': {
+          if (value) {
+            result.dev = value.split(/\s+/).filter(Boolean);
+          }
+          break;
+        }
+        case 'internal-dependencies':
+        case 'internaldependencies': {
+          if (value) {
+            result.internal = value.split(/\s+/).filter(Boolean);
+          }
+          break;
+        }
+      }
+    }
+  }
+
+  return result;
 }
 
 /**

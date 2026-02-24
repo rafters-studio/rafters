@@ -22,6 +22,7 @@ import {
   type ColorValue,
   type ComponentMetadata,
   extractDependencies,
+  extractJSDocDependencies,
   extractPrimitiveDependencies,
   extractSizes,
   extractVariants,
@@ -745,6 +746,8 @@ export class RaftersToolHandler {
       const intelligence = parseJSDocIntelligence(source);
       const description = parseDescription(source);
 
+      const jsDocDeps = extractJSDocDependencies(source);
+
       const metadata: ComponentMetadata = {
         name,
         displayName: toDisplayName(name),
@@ -753,6 +756,7 @@ export class RaftersToolHandler {
         sizes: extractSizes(source),
         dependencies: extractDependencies(source),
         primitives: extractPrimitiveDependencies(source),
+        jsDocDependencies: jsDocDeps,
         filePath: `packages/ui/src/components/ui/${name}.tsx`,
       };
 
@@ -919,6 +923,18 @@ export class RaftersToolHandler {
 
       if (metadata.dependencies.length > 0) {
         formatted.dependencies = metadata.dependencies;
+      }
+
+      if (metadata.jsDocDependencies) {
+        const deps = metadata.jsDocDependencies;
+        const hasDeps = deps.runtime.length > 0 || deps.dev.length > 0 || deps.internal.length > 0;
+        if (hasDeps) {
+          formatted.jsDocDependencies = {
+            runtime: deps.runtime,
+            dev: deps.dev,
+            internal: deps.internal,
+          };
+        }
       }
 
       return {

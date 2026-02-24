@@ -6,6 +6,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   extractDependencies,
+  extractJSDocDependencies,
   extractPrimitiveDependencies,
   extractSizes,
   extractVariants,
@@ -314,6 +315,96 @@ import type { Props } from '../primitives/types';
     const primitives = extractPrimitiveDependencies(source);
     expect(primitives).toContain('dialog');
     expect(primitives).not.toContain('dialog.tsx');
+  });
+});
+
+describe('extractJSDocDependencies', () => {
+  it('returns empty arrays for source without JSDoc', () => {
+    const source = `export function Button() {}`;
+    const result = extractJSDocDependencies(source);
+    expect(result.runtime).toEqual([]);
+    expect(result.dev).toEqual([]);
+    expect(result.internal).toEqual([]);
+  });
+
+  it('returns empty arrays for JSDoc without dep tags', () => {
+    const source = `/**
+ * @cognitive-load 3/10
+ */
+export function Button() {}`;
+    const result = extractJSDocDependencies(source);
+    expect(result.runtime).toEqual([]);
+    expect(result.dev).toEqual([]);
+    expect(result.internal).toEqual([]);
+  });
+
+  it('parses @dependencies with a single runtime dep', () => {
+    const source = `/**
+ * @dependencies nanostores@^0.11.0
+ */
+export function Handler() {}`;
+    const result = extractJSDocDependencies(source);
+    expect(result.runtime).toEqual(['nanostores@^0.11.0']);
+  });
+
+  it('parses @dependencies with multiple runtime deps', () => {
+    const source = `/**
+ * @dependencies nanostores@^0.11.0 zustand@^4.0.0
+ */
+export function Handler() {}`;
+    const result = extractJSDocDependencies(source);
+    expect(result.runtime).toEqual(['nanostores@^0.11.0', 'zustand@^4.0.0']);
+  });
+
+  it('parses @devDependencies when empty (tag present, no value)', () => {
+    const source = `/**
+ * @devDependencies
+ */
+export function Handler() {}`;
+    const result = extractJSDocDependencies(source);
+    expect(result.dev).toEqual([]);
+  });
+
+  it('parses @devDependencies with values', () => {
+    const source = `/**
+ * @devDependencies vitest@^1.0.0 @testing-library/react@^14.0.0
+ */
+export function Handler() {}`;
+    const result = extractJSDocDependencies(source);
+    expect(result.dev).toEqual(['vitest@^1.0.0', '@testing-library/react@^14.0.0']);
+  });
+
+  it('parses @internal-dependencies', () => {
+    const source = `/**
+ * @internal-dependencies @rafters/color-utils
+ */
+export function Picker() {}`;
+    const result = extractJSDocDependencies(source);
+    expect(result.internal).toEqual(['@rafters/color-utils']);
+  });
+
+  it('parses all three tags together', () => {
+    const source = `/**
+ * Color picker composition primitive
+ *
+ * @dependencies nanostores@^0.11.0
+ * @devDependencies
+ * @internal-dependencies @rafters/color-utils
+ */
+export function Picker() {}`;
+    const result = extractJSDocDependencies(source);
+    expect(result.runtime).toEqual(['nanostores@^0.11.0']);
+    expect(result.dev).toEqual([]);
+    expect(result.internal).toEqual(['@rafters/color-utils']);
+  });
+
+  it('parses multiple internal dependencies', () => {
+    const source = `/**
+ * @internal-dependencies @rafters/color-utils @rafters/math-utils
+ */
+export function Complex() {}`;
+    const result = extractJSDocDependencies(source);
+    expect(result.internal).toEqual(['@rafters/color-utils', '@rafters/math-utils']);
   });
 });
 

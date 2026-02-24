@@ -257,6 +257,76 @@ describe('RaftersToolHandler', () => {
       expect(data.error).toContain('not found');
       expect(data.suggestion).toContain('rafters_vocabulary');
     });
+
+    it('should return jsDocDependencies with runtime deps from @dependencies', async () => {
+      const componentsDir = join(testDir, 'packages/ui/src/components/ui');
+      await mkdir(componentsDir, { recursive: true });
+      await writeFile(
+        join(componentsDir, 'test-comp.tsx'),
+        `/**
+ * Test component
+ * @cognitive-load 3/10
+ * @dependencies nanostores@^0.11.0
+ * @devDependencies
+ * @internal-dependencies @rafters/color-utils
+ */
+export function TestComp() { return null; }`,
+      );
+
+      const result = await handler.handleToolCall('rafters_component', {
+        name: 'test-comp',
+      });
+
+      expect(result.isError).toBeFalsy();
+      const data = JSON.parse(result.content[0].text as string);
+      expect(data.jsDocDependencies).toBeDefined();
+      expect(data.jsDocDependencies.runtime).toEqual(['nanostores@^0.11.0']);
+      expect(data.jsDocDependencies.dev).toEqual([]);
+      expect(data.jsDocDependencies.internal).toEqual(['@rafters/color-utils']);
+    });
+
+    it('should omit jsDocDependencies when no dep tags present', async () => {
+      const componentsDir = join(testDir, 'packages/ui/src/components/ui');
+      await mkdir(componentsDir, { recursive: true });
+      await writeFile(
+        join(componentsDir, 'plain-comp.tsx'),
+        `/**
+ * Plain component without dep tags
+ * @cognitive-load 2/10
+ */
+export function PlainComp() { return null; }`,
+      );
+
+      const result = await handler.handleToolCall('rafters_component', {
+        name: 'plain-comp',
+      });
+
+      expect(result.isError).toBeFalsy();
+      const data = JSON.parse(result.content[0].text as string);
+      expect(data.jsDocDependencies).toBeUndefined();
+    });
+
+    it('should parse multiple runtime dependencies', async () => {
+      const componentsDir = join(testDir, 'packages/ui/src/components/ui');
+      await mkdir(componentsDir, { recursive: true });
+      await writeFile(
+        join(componentsDir, 'multi-dep.tsx'),
+        `/**
+ * Multi-dep component
+ * @dependencies nanostores@^0.11.0 zustand@^4.0.0
+ */
+export function MultiDep() { return null; }`,
+      );
+
+      const result = await handler.handleToolCall('rafters_component', {
+        name: 'multi-dep',
+      });
+
+      expect(result.isError).toBeFalsy();
+      const data = JSON.parse(result.content[0].text as string);
+      expect(data.jsDocDependencies).toBeDefined();
+      expect(data.jsDocDependencies.runtime).toEqual(['nanostores@^0.11.0', 'zustand@^4.0.0']);
+    });
   });
 
   describe('rafters_token', () => {
