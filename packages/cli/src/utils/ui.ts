@@ -154,8 +154,9 @@ export function log(event: Record<string, unknown>): void {
       context.spinner?.succeed('Files written');
       const deps = event.dependencies as string[];
       const devDeps = event.devDependencies as string[];
+      const skippedDeps = (event.skipped as string[] | undefined) ?? [];
       if (deps.length > 0 || devDeps.length > 0) {
-        console.log('  Dependencies to install:');
+        console.log('  Dependencies installed:');
         for (const dep of deps) {
           console.log(`    ${dep}`);
         }
@@ -163,9 +164,35 @@ export function log(event: Record<string, unknown>): void {
           console.log(`    ${dep} (dev)`);
         }
       }
-      context.spinner = ora('Installing dependencies...').start();
+      if (skippedDeps.length > 0) {
+        console.log('  Dependencies skipped (already installed or internal):');
+        for (const dep of skippedDeps) {
+          console.log(`    ${dep}`);
+        }
+      }
       break;
     }
+
+    case 'add:deps:no-package-json':
+      console.warn(`  Warning: ${event.message}`);
+      break;
+
+    case 'add:deps:dry-run': {
+      const dryDeps = event.dependencies as string[];
+      console.log('  [dry-run] Would install:');
+      for (const dep of dryDeps) {
+        console.log(`    ${dep}`);
+      }
+      break;
+    }
+
+    case 'add:deps:install-failed':
+      context.spinner?.fail('Failed to install dependencies');
+      console.log(`  ${event.message}`);
+      if (event.suggestion) {
+        console.log(`  ${event.suggestion}`);
+      }
+      break;
 
     case 'add:complete':
       context.spinner?.succeed(

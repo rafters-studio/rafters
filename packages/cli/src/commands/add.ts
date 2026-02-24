@@ -11,9 +11,9 @@ import { dirname, join } from 'node:path';
 import { RegistryClient } from '../registry/client.js';
 import type { RegistryItem } from '../registry/types.js';
 import { DEFAULT_EXPORTS } from '../utils/exports.js';
+import { installRegistryDependencies } from '../utils/install-registry-deps.js';
 import { getRaftersPaths } from '../utils/paths.js';
 import { error, log, setAgentMode } from '../utils/ui.js';
-import { updateDependencies } from '../utils/update-dependencies.js';
 import type { RaftersConfig } from './init.js';
 
 export interface AddOptions {
@@ -398,26 +398,16 @@ export async function add(components: string[], options: AddOptions): Promise<vo
     }
   }
 
-  // Collect and install dependencies
-  const { dependencies, devDependencies } = collectDependencies(allItems);
+  // Collect, filter, and install dependencies
+  const depsResult = await installRegistryDependencies(allItems, cwd);
 
-  if (dependencies.length > 0 || devDependencies.length > 0) {
+  if (depsResult.installed.length > 0 || depsResult.skipped.length > 0) {
     log({
       event: 'add:dependencies',
-      dependencies,
-      devDependencies,
+      dependencies: depsResult.installed,
+      devDependencies: depsResult.devInstalled,
+      skipped: depsResult.skipped,
     });
-
-    try {
-      await updateDependencies(dependencies, devDependencies, { cwd });
-    } catch (err) {
-      log({
-        event: 'add:error',
-        message: 'Failed to install dependencies',
-        error: err instanceof Error ? err.message : String(err),
-      });
-      // Don't fail the whole command - files are already written
-    }
   }
 
   // Update config with installed items
