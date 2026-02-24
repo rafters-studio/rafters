@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { type ColorPickerInstance, createColorPicker } from '../../src/primitives/color-picker';
 
+/** Reusable mid-range color for tests that need a known starting point. */
+const MID_COLOR = { l: 0.5, c: 0.1, h: 180, alpha: 1 } as const;
+
 describe('createColorPicker', () => {
   let picker: ColorPickerInstance;
 
@@ -93,41 +96,27 @@ describe('createColorPicker', () => {
 
   describe('channel setters', () => {
     it('setLightness updates only lightness', () => {
-      picker = createColorPicker({
-        initialColor: { l: 0.5, c: 0.1, h: 180, alpha: 1 },
-      });
+      picker = createColorPicker({ initialColor: MID_COLOR });
       picker.setLightness(0.8);
-      const color = picker.$color.get();
-      expect(color.l).toBe(0.8);
-      expect(color.c).toBe(0.1);
-      expect(color.h).toBe(180);
+      expect(picker.$color.get()).toMatchObject({ l: 0.8, c: 0.1, h: 180 });
     });
 
     it('setChroma updates only chroma', () => {
-      picker = createColorPicker({
-        initialColor: { l: 0.5, c: 0.1, h: 180, alpha: 1 },
-      });
+      picker = createColorPicker({ initialColor: MID_COLOR });
       picker.setChroma(0.25);
-      expect(picker.$color.get().c).toBe(0.25);
-      expect(picker.$color.get().l).toBe(0.5);
+      expect(picker.$color.get()).toMatchObject({ l: 0.5, c: 0.25 });
     });
 
     it('setHue updates only hue', () => {
-      picker = createColorPicker({
-        initialColor: { l: 0.5, c: 0.1, h: 180, alpha: 1 },
-      });
+      picker = createColorPicker({ initialColor: MID_COLOR });
       picker.setHue(90);
-      expect(picker.$color.get().h).toBe(90);
-      expect(picker.$color.get().l).toBe(0.5);
+      expect(picker.$color.get()).toMatchObject({ l: 0.5, h: 90 });
     });
 
     it('setAlpha updates only alpha', () => {
-      picker = createColorPicker({
-        initialColor: { l: 0.5, c: 0.1, h: 180, alpha: 1 },
-      });
+      picker = createColorPicker({ initialColor: MID_COLOR });
       picker.setAlpha(0.5);
-      expect(picker.$color.get().alpha).toBe(0.5);
-      expect(picker.$color.get().l).toBe(0.5);
+      expect(picker.$color.get()).toMatchObject({ l: 0.5, alpha: 0.5 });
     });
 
     it('setLightness clamps to 0-1', () => {
@@ -173,10 +162,8 @@ describe('createColorPicker', () => {
 
   describe('$cssColor', () => {
     it('computes oklch() string from current color', () => {
-      picker = createColorPicker({
-        initialColor: { l: 0.7, c: 0.15, h: 250, alpha: 1 },
-      });
-      expect(picker.$cssColor.get()).toBe('oklch(0.7 0.15 250)');
+      picker = createColorPicker({ initialColor: MID_COLOR });
+      expect(picker.$cssColor.get()).toBe('oklch(0.5 0.1 180)');
     });
 
     it('includes alpha when less than 1', () => {
@@ -194,10 +181,7 @@ describe('createColorPicker', () => {
     });
 
     it('recomputes when color changes', () => {
-      picker = createColorPicker({
-        initialColor: { l: 0.5, c: 0.1, h: 180, alpha: 1 },
-      });
-      expect(picker.$cssColor.get()).toBe('oklch(0.5 0.1 180)');
+      picker = createColorPicker({ initialColor: MID_COLOR });
       picker.setHue(90);
       expect(picker.$cssColor.get()).toBe('oklch(0.5 0.1 90)');
     });
@@ -209,7 +193,6 @@ describe('createColorPicker', () => {
 
   describe('$inGamut', () => {
     it('returns true for an in-gamut sRGB color', () => {
-      // oklch(0.5 0.05 90) is safely within sRGB
       picker = createColorPicker({
         initialColor: { l: 0.5, c: 0.05, h: 90, alpha: 1 },
       });
@@ -217,7 +200,6 @@ describe('createColorPicker', () => {
     });
 
     it('returns false for an out-of-gamut color', () => {
-      // Very high chroma at a challenging hue is likely out of sRGB
       picker = createColorPicker({
         initialColor: { l: 0.5, c: 0.4, h: 150, alpha: 1 },
       });
@@ -225,15 +207,12 @@ describe('createColorPicker', () => {
     });
 
     it('recomputes when color changes', () => {
-      // oklch(0.5 0.05 90) is safely within sRGB
       picker = createColorPicker({
         initialColor: { l: 0.5, c: 0.05, h: 90, alpha: 1 },
       });
       expect(picker.$inGamut.get()).toBe(true);
       picker.setChroma(0.4);
-      // After pushing chroma to 0.4, likely out of sRGB gamut
-      const result = picker.$inGamut.get();
-      expect(typeof result).toBe('boolean');
+      expect(typeof picker.$inGamut.get()).toBe('boolean');
     });
   });
 
@@ -242,33 +221,20 @@ describe('createColorPicker', () => {
   // ---------------------------------------------------------------------------
 
   describe('setFromCss', () => {
-    it('parses hex colors', () => {
+    it.each([
+      ['#ff0000', 'hex'],
+      ['rgb(0, 128, 255)', 'rgb()'],
+      ['hsl(120, 100%, 50%)', 'hsl()'],
+    ])('parses %s (%s) into a valid OKLCH color', (css) => {
       picker = createColorPicker();
-      picker.setFromCss('#ff0000');
+      picker.setFromCss(css);
       const color = picker.$color.get();
-      // Red should have hue near 29 (OKLCH red hue), high chroma
       expect(color.l).toBeGreaterThan(0);
       expect(color.c).toBeGreaterThan(0);
       expect(color.alpha).toBe(1);
     });
 
-    it('parses rgb() colors', () => {
-      picker = createColorPicker();
-      picker.setFromCss('rgb(0, 128, 255)');
-      const color = picker.$color.get();
-      expect(color.l).toBeGreaterThan(0);
-      expect(color.c).toBeGreaterThan(0);
-    });
-
-    it('parses hsl() colors', () => {
-      picker = createColorPicker();
-      picker.setFromCss('hsl(120, 100%, 50%)');
-      const color = picker.$color.get();
-      expect(color.l).toBeGreaterThan(0);
-      expect(color.c).toBeGreaterThan(0);
-    });
-
-    it('parses oklch() colors', () => {
+    it('parses oklch() colors with close precision', () => {
       picker = createColorPicker();
       picker.setFromCss('oklch(0.6 0.2 270)');
       const color = picker.$color.get();
@@ -297,9 +263,7 @@ describe('createColorPicker', () => {
       picker = createColorPicker({
         initialColor: { l: 0.5, c: 0.1, h: 200, alpha: 1 },
       });
-      const opts = picker.getColorAreaOptions();
-      expect(opts).toHaveProperty('hue');
-      expect(opts.hue).toBe(200);
+      expect(picker.getColorAreaOptions()).toEqual({ hue: 200 });
     });
 
     it('reflects current hue after changes', () => {
@@ -307,8 +271,7 @@ describe('createColorPicker', () => {
         initialColor: { l: 0.5, c: 0.1, h: 200, alpha: 1 },
       });
       picker.setHue(90);
-      const opts = picker.getColorAreaOptions();
-      expect(opts.hue).toBe(90);
+      expect(picker.getColorAreaOptions().hue).toBe(90);
     });
   });
 
@@ -321,11 +284,7 @@ describe('createColorPicker', () => {
       picker = createColorPicker({
         initialColor: { l: 0.6, c: 0.12, h: 200, alpha: 1 },
       });
-      const opts = picker.getHueBarOptions();
-      expect(opts).toHaveProperty('lightness');
-      expect(opts).toHaveProperty('chroma');
-      expect(opts.lightness).toBe(0.6);
-      expect(opts.chroma).toBe(0.12);
+      expect(picker.getHueBarOptions()).toEqual({ lightness: 0.6, chroma: 0.12 });
     });
   });
 
@@ -335,28 +294,16 @@ describe('createColorPicker', () => {
 
   describe('getColorInputOptions', () => {
     it('returns options matching createColorInput shape', () => {
-      picker = createColorPicker({
-        initialColor: { l: 0.5, c: 0.1, h: 180, alpha: 1 },
-      });
+      picker = createColorPicker({ initialColor: MID_COLOR });
       const opts = picker.getColorInputOptions();
-      expect(opts).toHaveProperty('value');
-      expect(opts).toHaveProperty('onChange');
-      expect(opts.value.l).toBe(0.5);
-      expect(opts.value.c).toBe(0.1);
-      expect(opts.value.h).toBe(180);
+      expect(opts.value).toMatchObject({ l: 0.5, c: 0.1, h: 180 });
+      expect(typeof opts.onChange).toBe('function');
     });
 
     it('onChange callback updates picker state', () => {
-      picker = createColorPicker({
-        initialColor: { l: 0.5, c: 0.1, h: 180, alpha: 1 },
-      });
-      const opts = picker.getColorInputOptions();
-      opts.onChange({ l: 0.8, c: 0.2, h: 90, alpha: 0.5 });
-      const color = picker.$color.get();
-      expect(color.l).toBe(0.8);
-      expect(color.c).toBe(0.2);
-      expect(color.h).toBe(90);
-      expect(color.alpha).toBe(0.5);
+      picker = createColorPicker({ initialColor: MID_COLOR });
+      picker.getColorInputOptions().onChange({ l: 0.8, c: 0.2, h: 90, alpha: 0.5 });
+      expect(picker.$color.get()).toEqual({ l: 0.8, c: 0.2, h: 90, alpha: 0.5 });
     });
   });
 
@@ -366,18 +313,9 @@ describe('createColorPicker', () => {
 
   describe('getSwatchOptions', () => {
     it('returns options matching createSwatch shape', () => {
-      picker = createColorPicker({
-        initialColor: { l: 0.5, c: 0.1, h: 180, alpha: 1 },
-      });
-      const opts = picker.getSwatchOptions();
-      expect(opts).toHaveProperty('l');
-      expect(opts).toHaveProperty('c');
-      expect(opts).toHaveProperty('h');
-      expect(opts).toHaveProperty('alpha');
-      expect(opts).toHaveProperty('tier');
-      expect(opts.l).toBe(0.5);
-      expect(opts.c).toBe(0.1);
-      expect(opts.h).toBe(180);
+      picker = createColorPicker({ initialColor: MID_COLOR });
+      expect(picker.getSwatchOptions()).toMatchObject({ l: 0.5, c: 0.1, h: 180, alpha: 1 });
+      expect(picker.getSwatchOptions().tier).toBeDefined();
     });
   });
 
@@ -512,29 +450,25 @@ describe('createColorPicker', () => {
   // ---------------------------------------------------------------------------
 
   describe('achromatic colors', () => {
-    it('parses achromatic colors without NaN hue', () => {
+    it.each([
+      ['#ffffff', 'white'],
+      ['#000000', 'black'],
+      ['#808080', 'gray'],
+    ])('parses %s (%s) without NaN in any channel', (css) => {
+      picker = createColorPicker();
+      picker.setFromCss(css);
+      const { l, c, h } = picker.$color.get();
+      expect(Number.isNaN(l)).toBe(false);
+      expect(Number.isNaN(c)).toBe(false);
+      expect(Number.isNaN(h)).toBe(false);
+    });
+
+    it('parses white with expected lightness and near-zero chroma', () => {
       picker = createColorPicker();
       picker.setFromCss('#ffffff');
       const color = picker.$color.get();
-      expect(Number.isNaN(color.h)).toBe(false);
       expect(color.l).toBeCloseTo(1, 1);
       expect(color.c).toBeCloseTo(0, 1);
-    });
-
-    it('parses black without NaN', () => {
-      picker = createColorPicker();
-      picker.setFromCss('#000000');
-      const color = picker.$color.get();
-      expect(Number.isNaN(color.h)).toBe(false);
-    });
-
-    it('parses gray without NaN', () => {
-      picker = createColorPicker();
-      picker.setFromCss('#808080');
-      const color = picker.$color.get();
-      expect(Number.isNaN(color.h)).toBe(false);
-      expect(Number.isNaN(color.l)).toBe(false);
-      expect(Number.isNaN(color.c)).toBe(false);
     });
   });
 
@@ -565,41 +499,26 @@ describe('createColorPicker', () => {
 
   describe('reactive stores', () => {
     it('$color subscription notifies on changes', () => {
-      picker = createColorPicker({
-        initialColor: { l: 0.5, c: 0.1, h: 180, alpha: 1 },
-      });
-      const values: { l: number }[] = [];
-      const unsub = picker.$color.subscribe((color) => {
-        values.push({ l: color.l });
-      });
+      picker = createColorPicker({ initialColor: MID_COLOR });
+      const lightnesses: number[] = [];
+      const unsub = picker.$color.subscribe((color) => lightnesses.push(color.l));
 
       picker.setLightness(0.8);
       picker.setLightness(0.3);
 
       // subscribe fires immediately with current value, then on each change
-      expect(values.length).toBe(3);
-      expect(values[0]?.l).toBe(0.5); // initial
-      expect(values[1]?.l).toBe(0.8);
-      expect(values[2]?.l).toBe(0.3);
-
+      expect(lightnesses).toEqual([0.5, 0.8, 0.3]);
       unsub();
     });
 
     it('$cssColor recomputes reactively', () => {
-      picker = createColorPicker({
-        initialColor: { l: 0.5, c: 0.1, h: 180, alpha: 1 },
-      });
+      picker = createColorPicker({ initialColor: MID_COLOR });
       const values: string[] = [];
-      const unsub = picker.$cssColor.subscribe((css: string) => {
-        values.push(css);
-      });
+      const unsub = picker.$cssColor.subscribe((css: string) => values.push(css));
 
       picker.setHue(90);
 
-      expect(values.length).toBe(2);
-      expect(values[0]).toBe('oklch(0.5 0.1 180)');
-      expect(values[1]).toBe('oklch(0.5 0.1 90)');
-
+      expect(values).toEqual(['oklch(0.5 0.1 180)', 'oklch(0.5 0.1 90)']);
       unsub();
     });
   });

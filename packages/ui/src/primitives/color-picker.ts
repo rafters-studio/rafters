@@ -99,10 +99,12 @@ function parseCssColor(css: string): OklchColorAlpha {
     // hexToOKLCH uses colorjs.io's Color constructor which accepts
     // all CSS color syntaxes, not just hex
     const oklch = hexToOKLCH(css);
+    // clampChannel handles NaN for l/c/h (falls back to 0).
+    // Alpha needs explicit NaN guard because NaN should default to 1, not 0.
     return {
-      l: clampChannel('l', Number.isNaN(oklch.l) ? 0 : oklch.l),
-      c: clampChannel('c', Number.isNaN(oklch.c) ? 0 : oklch.c),
-      h: clampChannel('h', Number.isNaN(oklch.h) ? 0 : oklch.h),
+      l: clampChannel('l', oklch.l),
+      c: clampChannel('c', oklch.c),
+      h: clampChannel('h', oklch.h),
       alpha: clampChannel('alpha', Number.isNaN(oklch.alpha) ? 1 : (oklch.alpha ?? 1)),
     };
   } catch (error) {
@@ -277,9 +279,7 @@ export function createColorPicker(options?: ColorPickerOptions): ColorPickerInst
     return `oklch(${l} ${c} ${h})`;
   });
 
-  const $inGamut = computed($color, (color) => {
-    return inSrgb(color.l, color.c, color.h);
-  });
+  const $inGamut = computed($color, (color) => inSrgb(color.l, color.c, color.h));
 
   // -------------------------------------------------------------------------
   // Internal helpers
@@ -363,8 +363,7 @@ export function createColorPicker(options?: ColorPickerOptions): ColorPickerInst
   }
 
   function setFromCss(css: string): void {
-    const parsed = parseCssColor(css);
-    commitColor(parsed);
+    commitColor(parseCssColor(css));
   }
 
   // -------------------------------------------------------------------------
@@ -372,50 +371,30 @@ export function createColorPicker(options?: ColorPickerOptions): ColorPickerInst
   // -------------------------------------------------------------------------
 
   function getColorAreaOptions(): ColorAreaOptions {
-    const color = $color.get();
-    return { hue: color.h };
+    return { hue: $color.get().h };
   }
 
   function getHueBarOptions(): HueBarOptions {
-    const color = $color.get();
-    return { lightness: color.l, chroma: color.c };
+    const { l, c } = $color.get();
+    return { lightness: l, chroma: c };
   }
 
   function getColorInputOptions(): ColorInputOptions {
-    const color = $color.get();
     return {
-      value: color,
-      onChange: (updated: OklchColorAlpha) => {
-        commitColor({
-          l: clampChannel('l', updated.l),
-          c: clampChannel('c', updated.c),
-          h: clampChannel('h', updated.h),
-          alpha: clampChannel('alpha', updated.alpha ?? 1),
-        });
-      },
+      value: $color.get(),
+      onChange: setColor,
     };
   }
 
   function getSwatchOptions(): SwatchOptions {
-    const color = $color.get();
-    const tier = getGamutTier();
-    return {
-      l: color.l,
-      c: color.c,
-      h: color.h,
-      alpha: color.alpha ?? 1,
-      tier,
-    };
+    const { l, c, h, alpha = 1 } = $color.get();
+    return { l, c, h, alpha, tier: getGamutTier() };
   }
 
   function getGamutTier(): GamutTier {
-    const color = $color.get();
-    if (inSrgb(color.l, color.c, color.h)) {
-      return 'gold';
-    }
-    if (inP3(color.l, color.c, color.h)) {
-      return 'silver';
-    }
+    const { l, c, h } = $color.get();
+    if (inSrgb(l, c, h)) return 'gold';
+    if (inP3(l, c, h)) return 'silver';
     return 'fail';
   }
 
@@ -429,11 +408,10 @@ export function createColorPicker(options?: ColorPickerOptions): ColorPickerInst
     canvas: HTMLCanvasElement,
     overrides?: Partial<ColorAreaOptions>,
   ): CleanupFunction {
-    const opts = { ...getColorAreaOptions(), ...overrides };
-    const leafCleanup = createColorArea(canvas, opts);
+    const leafCleanup = createColorArea(canvas, { ...getColorAreaOptions(), ...overrides });
 
     const unsub = $color.subscribe((color) => {
-      updateColorArea(canvas, { ...opts, hue: color.h, ...overrides });
+      updateColorArea(canvas, { hue: color.h, ...overrides });
     });
     unsubscribers.push(unsub);
 
@@ -447,15 +425,10 @@ export function createColorPicker(options?: ColorPickerOptions): ColorPickerInst
     canvas: HTMLCanvasElement,
     overrides?: Partial<HueBarOptions>,
   ): CleanupFunction {
-    const opts = { ...getHueBarOptions(), ...overrides };
-    const leafCleanup = createHueBar(canvas, opts);
+    const leafCleanup = createHueBar(canvas, { ...getHueBarOptions(), ...overrides });
 
     const unsub = $color.subscribe((color) => {
-      updateHueBar(canvas, {
-        lightness: color.l,
-        chroma: color.c,
-        ...overrides,
-      });
+      updateHueBar(canvas, { lightness: color.l, chroma: color.c, ...overrides });
     });
     unsubscribers.push(unsub);
 
@@ -469,15 +442,10 @@ export function createColorPicker(options?: ColorPickerOptions): ColorPickerInst
     fields: ColorInputField[],
     overrides?: Partial<Pick<ColorInputOptions, 'precision' | 'onCommit'>>,
   ): CleanupFunction {
-    const inputOpts = getColorInputOptions();
-    const leafCleanup = createColorInput(fields, { ...inputOpts, ...overrides });
+    const leafCleanup = createColorInput(fields, { ...getColorInputOptions(), ...overrides });
 
     const unsub = $color.subscribe((color) => {
-      updateColorInput(fields, {
-        value: color,
-        onChange: inputOpts.onChange,
-        ...overrides,
-      });
+      updateColorInput(fields, { value: color, onChange: setColor, ...overrides });
     });
     unsubscribers.push(unsub);
 
@@ -491,19 +459,10 @@ export function createColorPicker(options?: ColorPickerOptions): ColorPickerInst
     element: HTMLElement,
     overrides?: Partial<SwatchOptions>,
   ): CleanupFunction {
-    const opts = { ...getSwatchOptions(), ...overrides };
-    const leafCleanup = createSwatch(element, opts);
+    const leafCleanup = createSwatch(element, { ...getSwatchOptions(), ...overrides });
 
-    const unsub = $color.subscribe((color) => {
-      const tier = getGamutTier();
-      updateSwatch(element, {
-        l: color.l,
-        c: color.c,
-        h: color.h,
-        alpha: color.alpha ?? 1,
-        tier,
-        ...overrides,
-      });
+    const unsub = $color.subscribe(() => {
+      updateSwatch(element, { ...getSwatchOptions(), ...overrides });
     });
     unsubscribers.push(unsub);
 
