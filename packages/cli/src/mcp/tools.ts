@@ -26,6 +26,7 @@ import {
   extractPrimitiveDependencies,
   extractSizes,
   extractVariants,
+  type JSDocDependencies,
   parseDescription,
   parseJSDocIntelligence,
   type Token,
@@ -746,7 +747,15 @@ export class RaftersToolHandler {
       const intelligence = parseJSDocIntelligence(source);
       const description = parseDescription(source);
 
-      const jsDocDeps = extractJSDocDependencies(source);
+      let jsDocDeps: JSDocDependencies = { runtime: [], dev: [], internal: [] };
+      try {
+        jsDocDeps = extractJSDocDependencies(source);
+      } catch {
+        // JSDoc parsing failure should not prevent component metadata from being returned
+      }
+
+      const hasJsDocDeps =
+        jsDocDeps.runtime.length > 0 || jsDocDeps.dev.length > 0 || jsDocDeps.internal.length > 0;
 
       const metadata: ComponentMetadata = {
         name,
@@ -756,7 +765,7 @@ export class RaftersToolHandler {
         sizes: extractSizes(source),
         dependencies: extractDependencies(source),
         primitives: extractPrimitiveDependencies(source),
-        jsDocDependencies: jsDocDeps,
+        ...(hasJsDocDeps ? { jsDocDependencies: jsDocDeps } : {}),
         filePath: `packages/ui/src/components/ui/${name}.tsx`,
       };
 

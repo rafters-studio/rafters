@@ -318,20 +318,20 @@ export function extractJSDocDependencies(source: string): JSDocDependencies {
       switch (tagName) {
         case 'dependencies': {
           if (value) {
-            result.runtime = value.split(/\s+/).filter(Boolean);
+            result.runtime.push(...value.split(/\s+/).filter(Boolean));
           }
           break;
         }
         case 'devdependencies': {
           if (value) {
-            result.dev = value.split(/\s+/).filter(Boolean);
+            result.dev.push(...value.split(/\s+/).filter(Boolean));
           }
           break;
         }
         case 'internal-dependencies':
         case 'internaldependencies': {
           if (value) {
-            result.internal = value.split(/\s+/).filter(Boolean);
+            result.internal.push(...value.split(/\s+/).filter(Boolean));
           }
           break;
         }
@@ -339,7 +339,11 @@ export function extractJSDocDependencies(source: string): JSDocDependencies {
     }
   }
 
-  return result;
+  return {
+    runtime: [...new Set(result.runtime)],
+    dev: [...new Set(result.dev)],
+    internal: [...new Set(result.internal)],
+  };
 }
 
 /**
