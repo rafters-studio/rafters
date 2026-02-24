@@ -319,23 +319,13 @@ import type { Props } from '../primitives/types';
 });
 
 describe('extractJSDocDependencies', () => {
-  it('returns empty arrays for source without JSDoc', () => {
-    const source = `export function Button() {}`;
-    const result = extractJSDocDependencies(source);
-    expect(result.runtime).toEqual([]);
-    expect(result.dev).toEqual([]);
-    expect(result.internal).toEqual([]);
-  });
+  const EMPTY_DEPS = { runtime: [], dev: [], internal: [] };
 
-  it('returns empty arrays for JSDoc without dep tags', () => {
-    const source = `/**
- * @cognitive-load 3/10
- */
-export function Button() {}`;
-    const result = extractJSDocDependencies(source);
-    expect(result.runtime).toEqual([]);
-    expect(result.dev).toEqual([]);
-    expect(result.internal).toEqual([]);
+  it.each([
+    ['source without JSDoc', `export function Button() {}`],
+    ['JSDoc without dep tags', `/**\n * @cognitive-load 3/10\n */\nexport function Button() {}`],
+  ])('returns empty arrays for %s', (_label, source) => {
+    expect(extractJSDocDependencies(source)).toEqual(EMPTY_DEPS);
   });
 
   it('parses @dependencies with a single runtime dep', () => {

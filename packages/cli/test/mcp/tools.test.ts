@@ -258,11 +258,16 @@ describe('RaftersToolHandler', () => {
       expect(data.suggestion).toContain('rafters_vocabulary');
     });
 
-    it('should return jsDocDependencies with runtime deps from @dependencies', async () => {
+    /** Write a .tsx file into the test components directory */
+    async function writeTestComponent(name: string, source: string): Promise<void> {
       const componentsDir = join(testDir, 'packages/ui/src/components/ui');
       await mkdir(componentsDir, { recursive: true });
-      await writeFile(
-        join(componentsDir, 'test-comp.tsx'),
+      await writeFile(join(componentsDir, `${name}.tsx`), source);
+    }
+
+    it('should return jsDocDependencies with runtime deps from @dependencies', async () => {
+      await writeTestComponent(
+        'test-comp',
         `/**
  * Test component
  * @cognitive-load 3/10
@@ -286,10 +291,8 @@ export function TestComp() { return null; }`,
     });
 
     it('should omit jsDocDependencies when no dep tags present', async () => {
-      const componentsDir = join(testDir, 'packages/ui/src/components/ui');
-      await mkdir(componentsDir, { recursive: true });
-      await writeFile(
-        join(componentsDir, 'plain-comp.tsx'),
+      await writeTestComponent(
+        'plain-comp',
         `/**
  * Plain component without dep tags
  * @cognitive-load 2/10
@@ -307,10 +310,8 @@ export function PlainComp() { return null; }`,
     });
 
     it('should parse multiple runtime dependencies', async () => {
-      const componentsDir = join(testDir, 'packages/ui/src/components/ui');
-      await mkdir(componentsDir, { recursive: true });
-      await writeFile(
-        join(componentsDir, 'multi-dep.tsx'),
+      await writeTestComponent(
+        'multi-dep',
         `/**
  * Multi-dep component
  * @dependencies nanostores@^0.11.0 zustand@^4.0.0

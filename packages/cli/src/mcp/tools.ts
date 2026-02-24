@@ -42,6 +42,13 @@ import {
   evaluateComposition,
 } from './cognitive-load.js';
 
+// ==================== Helpers ====================
+
+/** Check whether a JSDocDependencies object has any non-empty arrays */
+function hasAnyDeps(deps: JSDocDependencies): boolean {
+  return deps.runtime.length > 0 || deps.dev.length > 0 || deps.internal.length > 0;
+}
+
 // ==================== System Preamble ====================
 // Rules for agents using the Rafters design system
 
@@ -754,9 +761,6 @@ export class RaftersToolHandler {
         // JSDoc parsing failure should not prevent component metadata from being returned
       }
 
-      const hasJsDocDeps =
-        jsDocDeps.runtime.length > 0 || jsDocDeps.dev.length > 0 || jsDocDeps.internal.length > 0;
-
       const metadata: ComponentMetadata = {
         name,
         displayName: toDisplayName(name),
@@ -765,9 +769,12 @@ export class RaftersToolHandler {
         sizes: extractSizes(source),
         dependencies: extractDependencies(source),
         primitives: extractPrimitiveDependencies(source),
-        ...(hasJsDocDeps ? { jsDocDependencies: jsDocDeps } : {}),
         filePath: `packages/ui/src/components/ui/${name}.tsx`,
       };
+
+      if (hasAnyDeps(jsDocDeps)) {
+        metadata.jsDocDependencies = jsDocDeps;
+      }
 
       if (description) {
         metadata.description = description;
@@ -934,16 +941,8 @@ export class RaftersToolHandler {
         formatted.dependencies = metadata.dependencies;
       }
 
-      if (metadata.jsDocDependencies) {
-        const deps = metadata.jsDocDependencies;
-        const hasDeps = deps.runtime.length > 0 || deps.dev.length > 0 || deps.internal.length > 0;
-        if (hasDeps) {
-          formatted.jsDocDependencies = {
-            runtime: deps.runtime,
-            dev: deps.dev,
-            internal: deps.internal,
-          };
-        }
+      if (metadata.jsDocDependencies && hasAnyDeps(metadata.jsDocDependencies)) {
+        formatted.jsDocDependencies = metadata.jsDocDependencies;
       }
 
       return {

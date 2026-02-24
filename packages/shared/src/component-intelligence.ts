@@ -294,6 +294,14 @@ export function extractPrimitiveDependencies(source: string): string[] {
   return primitives;
 }
 
+/** Maps lowercase JSDoc tag names to their JSDocDependencies field */
+const DEP_TAG_MAP: Record<string, keyof JSDocDependencies> = {
+  dependencies: 'runtime',
+  devdependencies: 'dev',
+  'internal-dependencies': 'internal',
+  internaldependencies: 'internal',
+};
+
 /**
  * Extract structured dependency information from JSDoc tags
  *
@@ -312,29 +320,12 @@ export function extractJSDocDependencies(source: string): JSDocDependencies {
 
   for (const block of blocks) {
     for (const tag of block.tags) {
-      const tagName = tag.tag.toLowerCase();
-      const value = getTagValue(tag).trim();
+      const field = DEP_TAG_MAP[tag.tag.toLowerCase()];
+      if (!field) continue;
 
-      switch (tagName) {
-        case 'dependencies': {
-          if (value) {
-            result.runtime.push(...value.split(/\s+/).filter(Boolean));
-          }
-          break;
-        }
-        case 'devdependencies': {
-          if (value) {
-            result.dev.push(...value.split(/\s+/).filter(Boolean));
-          }
-          break;
-        }
-        case 'internal-dependencies':
-        case 'internaldependencies': {
-          if (value) {
-            result.internal.push(...value.split(/\s+/).filter(Boolean));
-          }
-          break;
-        }
+      const value = getTagValue(tag).trim();
+      if (value) {
+        result[field].push(...value.split(/\s+/).filter(Boolean));
       }
     }
   }
