@@ -176,6 +176,11 @@ pnpm update -r
 - Tailwind v4 integration with CSS variables
 - shadcn drop-in compatibility: Overlay components include Portal/Overlay internally
 
+#### Primitive Categories
+- **Leaf primitives**: Zero external dependencies, callback injection for state. Examples: block-canvas, keyboard-handler, focus-trap, escape-keydown, drag-drop, history, clipboard.
+- **Composition primitives**: Orchestrate multiple leaf primitives with shared reactive state via nanostores atoms. Examples: block-handler, color-picker. Registry type remains `registry:primitive`.
+- **Rule**: Only composition primitives may import nanostores. Leaf primitives must remain zero-dep.
+
 ### Environment Requirements
 - Node.js >= 24.12.0
 - pnpm >= 10.25.0
