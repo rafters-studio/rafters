@@ -1,16 +1,40 @@
 /**
- * Color Picker composition primitive
+ * Color picker composition primitive - reactive OKLCH color state for pickers
+ *
  * Owns OKLCH color state via nanostores atoms and wires five leaf primitives
  * (color-area, hue-bar, color-input, color-swatch, oklch-gamut) together
- * with zero glue code.
+ * with zero glue code. Framework-agnostic, SSR-safe. All mutations are
+ * synchronous.
  *
- * Composition primitives orchestrate multiple leaf primitives through shared
- * reactive state. Only composition primitives may import nanostores.
+ * @registry-name color-picker
+ * @registry-version 0.1.0
+ * @registry-status published
+ * @registry-path primitives/color-picker.ts
+ * @registry-type registry:primitive
  *
- * Framework-agnostic, SSR-safe. All mutations are synchronous.
+ * @cognitive-load 6/10 - OKLCH color model adds conceptual overhead; mitigated by channel-level setters and CSS parsing
+ * @attention-economics Single atom is the source of truth; five leaf primitives react to channel changes automatically
+ * @trust-building Clamped channels prevent invalid colors; gamut tier feedback (gold/silver/fail) sets clear expectations
+ * @accessibility OKLCH perceptual uniformity means lightness channel maps directly to WCAG contrast; gamut mapping snaps out-of-gamut colors to nearest safe value
+ * @semantic-meaning Picker = color owner; area/hue-bar = visual selectors; input = direct entry; swatch = preview
+ *
+ * @usage-patterns
+ * DO: Use `$color`, `$cssColor`, `$inGamut` atoms for reactive subscriptions
+ * DO: Use channel setters (`setHue`, `setLightness`, `setChroma`) for granular updates
+ * DO: Use `connectColorArea()` / `connectHueBar()` to wire leaf primitives with auto-cleanup
+ * DO: Call `destroy()` on cleanup to release all subscriptions
+ * DO: Enable `gamutMapping` option when sRGB output is required
+ * NEVER: Mutate the `$color` atom directly -- use the provided setters
+ * NEVER: Import nanostores in leaf primitives -- only composition primitives may depend on it
+ * NEVER: Assume all OKLCH values are in-gamut -- always check `$inGamut` or call `getGamutTier()`
+ *
+ * @dependencies nanostores
+ * @internal-dependencies @rafters/color-utils
  *
  * @example
  * ```typescript
+ * import { createColorPicker } from '@rafters/ui/primitives/color-picker';
+ *
  * const picker = createColorPicker({
  *   initialColor: { l: 0.7, c: 0.15, h: 250 },
  *   onChange: (color) => console.log(color),
