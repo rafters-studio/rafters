@@ -161,6 +161,38 @@ describe('createBlockHandler', () => {
       expect(parent?.children).toEqual(['child2']);
     });
 
+    it('cleans orphaned parentId when parent is removed but child survives', () => {
+      // Simulate inconsistent state: child has parentId but parent does not list it in children.
+      // This can occur when external data is loaded with partial relationships.
+      const handler = createBlockHandler({
+        initialBlocks: [
+          makeBlock('parent'),
+          makeBlock('child', { parentId: 'parent' }),
+          makeBlock('other'),
+        ],
+      });
+
+      // Remove the parent -- child survives because it is not in parent.children
+      handler.removeBlocks(new Set(['parent']));
+
+      const child = handler.$blocks.get().find((b) => b.id === 'child');
+      expect(child).toBeDefined();
+      expect(child?.parentId).toBeUndefined();
+    });
+
+    it('short-circuits when none of the IDs exist in current blocks', () => {
+      const onChange = vi.fn();
+      const handler = createBlockHandler({
+        initialBlocks: [makeBlock('a')],
+        onChange,
+      });
+
+      handler.removeBlocks(new Set(['nonexistent']));
+
+      // onChange should not fire since nothing was actually removed
+      expect(onChange).not.toHaveBeenCalled();
+    });
+
     it('clears selection for removed blocks', () => {
       const handler = createBlockHandler({
         initialBlocks: [makeBlock('a'), makeBlock('b'), makeBlock('c')],
@@ -266,9 +298,6 @@ describe('createBlockHandler', () => {
         onChange,
       });
 
-      // Reset the call count after initial subscription notification
-      onChange.mockClear();
-
       handler.reorderBlocks(1, 1);
 
       // Should not have been called since indices are equal
@@ -320,6 +349,26 @@ describe('createBlockHandler', () => {
 
       expect(() => handler.updateBlock('nonexistent', { content: 'x' })).toThrowError(
         "Block with id 'nonexistent' not found",
+      );
+    });
+
+    it('throws when attempting to update parentId via updateBlock', () => {
+      const handler = createBlockHandler({
+        initialBlocks: [makeBlock('a')],
+      });
+
+      expect(() => handler.updateBlock('a', { parentId: 'some-parent' })).toThrowError(
+        'Cannot update parentId or children via updateBlock. Use nestBlock() and unnestBlock() to modify block tree structure.',
+      );
+    });
+
+    it('throws when attempting to update children via updateBlock', () => {
+      const handler = createBlockHandler({
+        initialBlocks: [makeBlock('a')],
+      });
+
+      expect(() => handler.updateBlock('a', { children: ['b'] })).toThrowError(
+        'Cannot update parentId or children via updateBlock. Use nestBlock() and unnestBlock() to modify block tree structure.',
       );
     });
   });
@@ -454,8 +503,6 @@ describe('createBlockHandler', () => {
         initialBlocks: [makeBlock('a')],
         onChange,
       });
-
-      onChange.mockClear();
 
       handler.unnestBlock('a');
 
@@ -594,9 +641,6 @@ describe('createBlockHandler', () => {
       const onChange = vi.fn();
       const handler = createBlockHandler({ onChange });
 
-      // Clear the initial subscription call
-      onChange.mockClear();
-
       handler.addBlock(makeBlock('a'));
 
       expect(onChange).toHaveBeenCalledTimes(1);
@@ -609,7 +653,6 @@ describe('createBlockHandler', () => {
         initialBlocks: [makeBlock('a'), makeBlock('b')],
         onChange,
       });
-      onChange.mockClear();
 
       handler.removeBlocks(new Set(['a']));
 
@@ -622,7 +665,6 @@ describe('createBlockHandler', () => {
         initialBlocks: [makeBlock('a'), makeBlock('b')],
         onChange,
       });
-      onChange.mockClear();
 
       handler.moveBlock('a', 1);
 
@@ -635,7 +677,6 @@ describe('createBlockHandler', () => {
         initialBlocks: [makeBlock('a')],
         onChange,
       });
-      onChange.mockClear();
 
       handler.updateBlock('a', { content: 'updated' });
 
@@ -648,7 +689,6 @@ describe('createBlockHandler', () => {
         initialBlocks: [makeBlock('parent'), makeBlock('child')],
         onChange,
       });
-      onChange.mockClear();
 
       handler.nestBlock('child', 'parent');
 
@@ -664,7 +704,6 @@ describe('createBlockHandler', () => {
         ],
         onChange,
       });
-      onChange.mockClear();
 
       handler.unnestBlock('child');
 
@@ -677,7 +716,6 @@ describe('createBlockHandler', () => {
         initialBlocks: [makeBlock('a')],
         onChange,
       });
-      onChange.mockClear();
 
       handler.setSelection(new Set(['a']));
       handler.setFocus('a');
@@ -694,7 +732,6 @@ describe('createBlockHandler', () => {
     it('unsubscribes onChange listener', () => {
       const onChange = vi.fn();
       const handler = createBlockHandler({ onChange });
-      onChange.mockClear();
 
       handler.destroy();
 
@@ -792,7 +829,6 @@ describe('createBlockHandler', () => {
         initialBlocks: [makeBlock('a')],
         onChange,
       });
-      onChange.mockClear();
 
       // Both will clamp to 0
       handler.reorderBlocks(0, 0);

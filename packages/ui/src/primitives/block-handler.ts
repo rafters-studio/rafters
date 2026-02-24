@@ -69,9 +69,10 @@ export interface BlockHandlerOptions {
 }
 
 /**
- * Canvas callback shape -- matches `Omit<BlockCanvasOptions, 'container'>`
+ * Canvas callback shape -- the subset of BlockCanvasOptions that the handler provides.
+ * Excludes `container` (caller provides) and `onSlashCommand` (canvas-level concern).
  */
-export type CanvasCallbacks = Omit<BlockCanvasOptions, 'container'>;
+export type CanvasCallbacks = Omit<BlockCanvasOptions, 'container' | 'onSlashCommand'>;
 
 export interface BlockHandlerInstance {
   /** Reactive atom holding the ordered block list */
@@ -197,8 +198,14 @@ export function createBlockHandler(options?: BlockHandlerOptions): BlockHandlerI
 
   // -- onChange wiring -------------------------------------------------------
   if (onChange) {
-    const unsub = $blocks.subscribe((blocks) => {
-      onChange([...blocks]);
+    const unsub = $blocks.listen((blocks) => {
+      try {
+        onChange([...blocks]);
+      } catch (error) {
+        queueMicrotask(() => {
+          throw error;
+        });
+      }
     });
     unsubscribes.push(unsub);
   }
@@ -242,19 +249,28 @@ export function createBlockHandler(options?: BlockHandlerOptions): BlockHandlerI
       }
     }
 
-    // Remove children references from surviving parents
+    // Short-circuit when none of the IDs exist in the current blocks
+    const hasRemovals = [...toRemove].some((id) => map.has(id));
+    if (!hasRemovals) return;
+
+    // Remove children references from surviving parents and clean orphaned parentIds
     const next: Block[] = [];
     for (const block of current) {
       if (toRemove.has(block.id)) continue;
 
-      if (block.children?.some((childId) => toRemove.has(childId))) {
-        next.push({
-          ...block,
-          children: block.children.filter((childId) => !toRemove.has(childId)),
-        });
-      } else {
-        next.push(block);
+      const cleaned = { ...block };
+
+      // Clean orphaned parentId -- parent was removed but child survives
+      if (cleaned.parentId && toRemove.has(cleaned.parentId)) {
+        delete cleaned.parentId;
       }
+
+      // Clean removed children from the children array
+      if (cleaned.children?.some((childId) => toRemove.has(childId))) {
+        cleaned.children = cleaned.children.filter((childId) => !toRemove.has(childId));
+      }
+
+      next.push(cleaned);
     }
 
     // Clean up removed IDs from selection
@@ -290,8 +306,11 @@ export function createBlockHandler(options?: BlockHandlerOptions): BlockHandlerI
     }
 
     const next = [...current];
-    const [block] = next.splice(fromIndex, 1);
-    if (!block) return;
+    const spliced = next.splice(fromIndex, 1);
+    // fromIndex is validated above so splice always returns one element
+    const block = spliced[0];
+    if (!block)
+      throw new Error(`Unexpected: splice at validated index ${fromIndex} returned empty`);
 
     const clamped = clampIndex(toIndex, next.length);
     next.splice(clamped, 0, block);
@@ -309,8 +328,11 @@ export function createBlockHandler(options?: BlockHandlerOptions): BlockHandlerI
     if (clampedFrom === clampedTo) return;
 
     const next = [...current];
-    const [block] = next.splice(clampedFrom, 1);
-    if (!block) return;
+    const spliced = next.splice(clampedFrom, 1);
+    // clampedFrom is within bounds so splice always returns one element
+    const block = spliced[0];
+    if (!block)
+      throw new Error(`Unexpected: splice at clamped index ${clampedFrom} returned empty`);
 
     next.splice(clampedTo, 0, block);
 
@@ -318,6 +340,12 @@ export function createBlockHandler(options?: BlockHandlerOptions): BlockHandlerI
   }
 
   function updateBlock(id: string, updates: Partial<Block>): void {
+    if ('parentId' in updates || 'children' in updates) {
+      throw new Error(
+        'Cannot update parentId or children via updateBlock. Use nestBlock() and unnestBlock() to modify block tree structure.',
+      );
+    }
+
     const current = $blocks.get();
     const index = current.findIndex((b) => b.id === id);
 
@@ -426,7 +454,7 @@ export function createBlockHandler(options?: BlockHandlerOptions): BlockHandlerI
       // Clear child's parentId
       if (block.id === childId) {
         const { parentId: _removed, ...rest } = block;
-        return rest as Block;
+        return rest;
       }
 
       return block;
