@@ -172,7 +172,7 @@ export async function installRegistryDependencies(
   try {
     await updateDependencies(toInstall, [], {
       cwd: targetDir,
-      silent: options.silent,
+      silent: options.silent ?? false,
     });
     result.installed = toInstall;
   } catch (err) {
