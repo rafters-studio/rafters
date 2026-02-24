@@ -241,6 +241,9 @@ export function collectDependencies(items: RegistryItem[]): {
       for (const dep of file.dependencies) {
         deps.add(dep);
       }
+      for (const dep of file.devDependencies ?? []) {
+        devDeps.add(dep);
+      }
     }
   }
 

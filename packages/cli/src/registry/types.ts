@@ -15,6 +15,7 @@ export const RegistryFileSchema = z.object({
   path: z.string(),
   content: z.string(),
   dependencies: z.array(z.string()), // e.g., ["lodash@4.17.21"] - versioned
+  devDependencies: z.array(z.string()).default([]), // e.g., ["vitest"] - from @devDependencies JSDoc
 });
 
 export type RegistryFile = z.infer<typeof RegistryFileSchema>;

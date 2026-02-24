@@ -24,6 +24,7 @@ export interface RegistryFile {
   path: string;
   content: string;
   dependencies: string[]; // e.g., ["lodash@4.17.21"] - versioned
+  devDependencies: string[]; // e.g., ["vitest"] - from @devDependencies JSDoc
 }
 
 export interface RegistryItem {
@@ -187,6 +188,45 @@ function getTagValue(tag: Spec): string {
 }
 
 /**
+ * Extract dependencies and devDependencies from JSDoc tags in source content.
+ *
+ * Recognizes:
+ *   @dependencies pkg1 pkg2 - runtime deps for consumers
+ *   @devDependencies pkg1 pkg2 - dev-time deps for consumers
+ *   @internal-dependencies ... - completely excluded from registry output
+ *
+ * Filters out @rafters/* packages (internal workspace deps, not for consumers).
+ */
+export function extractDepsFromSource(content: string): {
+  dependencies: string[];
+  devDependencies: string[];
+} {
+  // Match only to end of line (not across lines). Use negative lookahead so
+  // @dependencies does not match @devDependencies.
+  const depsMatch = content.match(/@dependencies(?![\w-])[ \t]+(.+)/);
+  const devDepsMatch = content.match(/@devDependencies[ \t]+(.+)/);
+
+  const filterInternal = (dep: string): boolean => !dep.startsWith('@rafters/');
+
+  return {
+    dependencies: depsMatch
+      ? depsMatch[1]
+          .trim()
+          .split(/\s+/)
+          .filter((d) => d.length > 0)
+          .filter(filterInternal)
+      : [],
+    devDependencies: devDepsMatch
+      ? devDepsMatch[1]
+          .trim()
+          .split(/\s+/)
+          .filter((d) => d.length > 0)
+          .filter(filterInternal)
+      : [],
+  };
+}
+
+/**
  * Load a single component by name
  */
 export function loadComponent(name: string): RegistryItem | null {
@@ -199,11 +239,19 @@ export function loadComponent(name: string): RegistryItem | null {
     // Extract dependencies from imports
     const deps = extractDependencies(content);
 
+    // Extract JSDoc-declared dependencies
+    const jsDocDeps = extractDepsFromSource(content);
+
     // Extract primitive dependencies
     const primitiveDeps = extractPrimitiveDependencies(content);
 
     // Parse JSDoc for intelligence metadata
     const intelligence = parseJSDocFromSource(content);
+
+    // Merge import-extracted and JSDoc-declared deps, deduplicated
+    const allExternalDeps = [
+      ...new Set([...versionDeps(deps.external), ...jsDocDeps.dependencies]),
+    ];
 
     const result: RegistryItem = {
       name,
@@ -213,7 +261,8 @@ export function loadComponent(name: string): RegistryItem | null {
         {
           path: `components/ui/${name}.tsx`,
           content,
-          dependencies: versionDeps(deps.external),
+          dependencies: allExternalDeps,
+          devDependencies: jsDocDeps.devDependencies,
         },
       ],
     };
@@ -252,12 +301,20 @@ export function loadPrimitive(name: string): RegistryItem | null {
     // Extract dependencies from imports
     const deps = extractDependencies(content);
 
+    // Extract JSDoc-declared dependencies
+    const jsDocDeps = extractDepsFromSource(content);
+
     // Extract primitive dependencies (other primitives this one imports)
     // Pass isPrimitive=true so ./foo imports are treated as sibling primitives
     const primitiveDeps = extractPrimitiveDependencies(content, true);
 
     // Parse JSDoc for intelligence metadata
     const intelligence = parseJSDocFromSource(content);
+
+    // Merge import-extracted and JSDoc-declared deps, deduplicated
+    const allExternalDeps = [
+      ...new Set([...versionDeps(deps.external), ...jsDocDeps.dependencies]),
+    ];
 
     const result: RegistryItem = {
       name,
@@ -267,7 +324,8 @@ export function loadPrimitive(name: string): RegistryItem | null {
         {
           path: `lib/primitives/${name}${fileExt}`,
           content,
-          dependencies: versionDeps(deps.external),
+          dependencies: allExternalDeps,
+          devDependencies: jsDocDeps.devDependencies,
         },
       ],
     };
