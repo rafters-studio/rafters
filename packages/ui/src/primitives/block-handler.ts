@@ -124,7 +124,7 @@ export function createBlockHandler(options: BlockHandlerOptions): BlockHandlerCo
   });
 
   // Wire block canvas
-  const canvas = createBlockCanvas({
+  const canvasOptions: Parameters<typeof createBlockCanvas>[0] = {
     container,
     getBlocks: () => $blocks.get(),
     getSelectedIds: () => $state.get().selectedIds,
@@ -135,8 +135,11 @@ export function createBlockHandler(options: BlockHandlerOptions): BlockHandlerCo
     onFocusChange: (id) => {
       $state.set({ ...$state.get(), focusedId: id ?? undefined });
     },
-    onSlashCommand,
-  });
+  };
+  if (onSlashCommand) {
+    canvasOptions.onSlashCommand = onSlashCommand;
+  }
+  const canvas = createBlockCanvas(canvasOptions);
 
   // Wire clipboard
   const clipboard = createClipboard({ container });

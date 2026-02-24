@@ -101,6 +101,16 @@ export interface History<T> {
    * Reset history to initial state only
    */
   clear: () => void;
+
+  /**
+   * Whether undo is available
+   */
+  canUndo: () => boolean;
+
+  /**
+   * Whether redo is available
+   */
+  canRedo: () => boolean;
 }
 
 /**
@@ -307,6 +317,16 @@ export function createHistory<T>(options: HistoryOptions<T>): History<T> {
     batchStartState = null;
   };
 
+  /**
+   * Whether undo is available
+   */
+  const canUndo = (): boolean => past.length > 0;
+
+  /**
+   * Whether redo is available
+   */
+  const canRedo = (): boolean => future.length > 0;
+
   return {
     getState,
     push,
@@ -314,5 +334,7 @@ export function createHistory<T>(options: HistoryOptions<T>): History<T> {
     redo,
     batch,
     clear,
+    canUndo,
+    canRedo,
   };
 }
