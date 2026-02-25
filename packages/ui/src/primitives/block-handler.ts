@@ -87,6 +87,10 @@ export interface BlockHandlerControls {
     get(): BlockHandlerState;
     subscribe(cb: (value: BlockHandlerState) => void): () => void;
   };
+  /** Handle a click on a specific block (delegates to block-canvas) */
+  handleBlockClick: (blockId: string, options: { meta: boolean; shift: boolean }) => void;
+  /** Handle a click on the canvas background (clears selection) */
+  handleCanvasBackgroundClick: () => void;
   /** Select all blocks */
   selectAll: () => void;
   /** Clear selection */
@@ -182,6 +186,8 @@ export function createBlockHandler(options: BlockHandlerOptions): BlockHandlerCo
 
   return {
     $state,
+    handleBlockClick: canvas.handleBlockClick,
+    handleCanvasBackgroundClick: canvas.handleCanvasBackgroundClick,
     selectAll: canvas.selectAll,
     clearSelection: canvas.clearSelection,
     undo,
