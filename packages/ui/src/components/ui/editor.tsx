@@ -53,6 +53,7 @@ import type { AdjustedToolbarPosition } from '../../primitives/inline-toolbar';
 import { adjustToolbarPosition, getFormatButtons } from '../../primitives/inline-toolbar';
 import { getPortalContainer } from '../../primitives/portal';
 import type { CleanupFunction, Command, Direction, InlineMark } from '../../primitives/types';
+import { Container } from './container';
 
 // ============================================================================
 // Types
@@ -156,7 +157,7 @@ const INLINE_TOOLBAR_DIMENSIONS = { width: 320, height: 44 };
 
 function defaultRenderBlock(block: EditorBlock): React.ReactNode {
   const text = String(block.content ?? '');
-  return <div className="px-3 py-2 text-sm text-foreground">{text || '\u00A0'}</div>;
+  return <div className={classy('px-3 py-2 text-sm text-foreground')}>{text || '\u00A0'}</div>;
 }
 
 // ============================================================================
@@ -194,11 +195,11 @@ function EditorToolbarSection({ canUndo, canRedo, onUndo, onRedo }: ToolbarSecti
     <div
       role="toolbar"
       aria-label="Editor toolbar"
-      className="flex items-center gap-1 border-b border-border px-2 py-1"
+      className={classy('flex items-center gap-1 border-b border-border px-2 py-1')}
     >
       {Array.from(grouped.entries()).map(([group, btns], groupIdx) => (
         <React.Fragment key={group}>
-          {groupIdx > 0 && <hr className="mx-1 h-4 w-px border-0 bg-border" />}
+          {groupIdx > 0 && <hr className={classy('mx-1 h-4 w-px border-0 bg-border')} />}
           {btns.map((btn) => (
             <button
               key={btn.id}
@@ -239,7 +240,7 @@ function EditorSidebarSection({
   return (
     <nav
       aria-label="Block navigation"
-      className="flex w-48 shrink-0 flex-col gap-0.5 border-r border-border p-2"
+      className={classy('w-48 shrink-0 flex flex-col gap-0.5 border-r border-border p-2')}
     >
       {blocks.map((block, i) => (
         <button
@@ -315,7 +316,9 @@ function CommandPaletteOverlay({
 
   return createPortal(
     <div
-      className="fixed z-depth-popover w-72 rounded-lg border border-border bg-popover shadow-lg"
+      className={classy(
+        'fixed z-depth-popover w-72 rounded-lg border border-border bg-popover shadow-lg',
+      )}
       style={{
         left: `${position.x}px`,
         top: `${position.y}px`,
@@ -332,14 +335,16 @@ function CommandPaletteOverlay({
         aria-controls={listboxId}
         aria-activedescendant={activeOptionId}
         aria-label="Search commands"
-        className="w-full border-b border-border bg-transparent px-3 py-2 text-sm outline-none placeholder:text-muted-foreground"
+        className={classy(
+          'w-full border-b border-border bg-transparent px-3 py-2 text-sm outline-none placeholder:text-muted-foreground',
+        )}
         placeholder="Type a command..."
       />
       <div
         id={listboxId}
         role="listbox"
         aria-label="Commands"
-        className="max-h-48 overflow-y-auto p-1"
+        className={classy('max-h-48 overflow-y-auto p-1')}
       >
         {state.filteredCommands.map((cmd, i) => (
           // biome-ignore lint/a11y/useFocusableInteractive: focus managed via aria-activedescendant on combobox input
@@ -356,14 +361,16 @@ function CommandPaletteOverlay({
               'bg-accent text-accent-foreground': i === state.selectedIndex,
             })}
           >
-            <span className="font-medium">{cmd.label}</span>
+            <span className={classy('font-medium')}>{cmd.label}</span>
             {cmd.description && (
-              <span className="ml-2 text-muted-foreground">{cmd.description}</span>
+              <span className={classy('ml-2 text-muted-foreground')}>{cmd.description}</span>
             )}
           </div>
         ))}
         {state.filteredCommands.length === 0 && (
-          <div className="px-3 py-1.5 text-sm text-muted-foreground">No commands found</div>
+          <div className={classy('px-3 py-1.5 text-sm text-muted-foreground')}>
+            No commands found
+          </div>
         )}
       </div>
     </div>,
@@ -387,7 +394,9 @@ function InlineToolbarOverlay({ position, activeFormats, onFormat }: InlineToolb
     <div
       role="toolbar"
       aria-label="Text formatting"
-      className="fixed z-depth-popover flex items-center gap-0.5 rounded-lg border border-border bg-popover p-1 shadow-lg"
+      className={classy(
+        'fixed z-depth-popover flex items-center gap-0.5 rounded-lg border border-border bg-popover p-1 shadow-lg',
+      )}
       style={{
         left: `${position.x}px`,
         top: `${position.y}px`,
@@ -421,7 +430,7 @@ function InlineToolbarOverlay({ position, activeFormats, onFormat }: InlineToolb
 
 function DefaultEmptyState() {
   return (
-    <div className="flex items-center justify-center p-8 text-sm text-muted-foreground">
+    <div className={classy('flex items-center justify-center p-8 text-sm text-muted-foreground')}>
       No blocks yet. Start editing to add content.
     </div>
   );
@@ -781,8 +790,11 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
     }, []);
 
     return (
-      <section
+      <Container
         {...props}
+        as="section"
+        padding="0"
+        query={false}
         aria-label="Editor"
         aria-disabled={disabled || undefined}
         dir={dir}
@@ -800,7 +812,7 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
             onRedo={() => handlerRef.current?.redo()}
           />
         )}
-        <div className="flex flex-1">
+        <div className={classy('flex flex-1')}>
           {sidebar && (
             <EditorSidebarSection
               blocks={blocks}
@@ -821,7 +833,9 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
             }
             aria-label="Editor blocks"
             tabIndex={disabled ? -1 : 0}
-            className="flex flex-1 flex-col gap-0.5 p-2 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-ring"
+            className={classy(
+              'flex flex-1 flex-col gap-0.5 p-2 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-ring',
+            )}
             onClick={(e) => {
               // Only clear when clicking canvas background, not blocks
               if (e.target === e.currentTarget && !disabled) {
@@ -872,7 +886,7 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
             onFormat={handleFormat}
           />
         )}
-      </section>
+      </Container>
     );
   },
 );
