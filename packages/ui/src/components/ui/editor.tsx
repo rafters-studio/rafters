@@ -171,12 +171,14 @@ interface ToolbarSectionProps {
 }
 
 function EditorToolbarSection({ canUndo, canRedo, onUndo, onRedo }: ToolbarSectionProps) {
-  const toolbar = createEditorToolbar({
-    getHistory: () => ({ canUndo, canRedo }),
-    onUndo,
-    onRedo,
-  });
-  const buttons = toolbar.getButtons();
+  const buttons = React.useMemo(() => {
+    const toolbar = createEditorToolbar({
+      getHistory: () => ({ canUndo, canRedo }),
+      onUndo,
+      onRedo,
+    });
+    return toolbar.getButtons();
+  }, [canUndo, canRedo, onUndo, onRedo]);
 
   const grouped = new Map<ToolbarButtonGroup, ToolbarButton[]>();
   for (const btn of buttons) {
@@ -279,14 +281,14 @@ function CommandPaletteOverlay({
   onExecute,
   onClose,
 }: CommandPaletteOverlayProps) {
-  const portalContainer = getPortalContainer();
-  if (!portalContainer) return null;
-
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
     inputRef.current?.focus();
   }, []);
+
+  const portalContainer = getPortalContainer();
+  if (!portalContainer) return null;
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
     if (event.key === 'Escape') {
@@ -313,13 +315,10 @@ function CommandPaletteOverlay({
 
   return createPortal(
     <div
-      className="rounded-lg border border-border bg-popover shadow-lg"
+      className="fixed z-50 w-72 rounded-lg border border-border bg-popover shadow-lg"
       style={{
-        position: 'fixed',
         left: `${position.x}px`,
         top: `${position.y}px`,
-        width: '288px',
-        zIndex: 50,
       }}
     >
       <input
@@ -388,12 +387,10 @@ function InlineToolbarOverlay({ position, activeFormats, onFormat }: InlineToolb
     <div
       role="toolbar"
       aria-label="Text formatting"
-      className="flex items-center gap-0.5 rounded-lg border border-border bg-popover p-1 shadow-lg"
+      className="fixed z-50 flex items-center gap-0.5 rounded-lg border border-border bg-popover p-1 shadow-lg"
       style={{
-        position: 'fixed',
         left: `${position.x}px`,
         top: `${position.y}px`,
-        zIndex: 50,
       }}
     >
       {buttons.map((btn) => {
@@ -550,14 +547,14 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
       [updateBlocks],
     );
 
-    // ----- useSyncExternalStore for handler state -----
+    // ----- Handler state bridged via stable atom -----
+    // The handler is created in an effect (after mount), so useSyncExternalStore
+    // cannot subscribe to it directly (handlerRef is null at subscribe time).
+    // Instead, we use a stable atom created once and bridge updates in the effect.
+    const $handlerStateRef = React.useRef(atom<BlockHandlerState>({ ...INITIAL_HANDLER_STATE }));
     const handlerState = React.useSyncExternalStore(
-      (cb) => {
-        const h = handlerRef.current;
-        if (!h) return () => {};
-        return h.$state.subscribe(cb);
-      },
-      () => handlerRef.current?.$state.get() ?? INITIAL_HANDLER_STATE,
+      (cb) => $handlerStateRef.current.subscribe(cb),
+      () => $handlerStateRef.current.get(),
       () => INITIAL_HANDLER_STATE,
     );
 
@@ -598,9 +595,17 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
       }
       const handler = createBlockHandler(handlerOptions);
       handlerRef.current = handler;
+
+      // Bridge handler state into the stable atom so useSyncExternalStore picks it up
+      const unsubHandlerState = handler.$state.subscribe((s) => {
+        $handlerStateRef.current.set(s);
+      });
+      cleanups.push(unsubHandlerState);
+
       cleanups.push(() => {
         handler.destroy();
         handlerRef.current = null;
+        $handlerStateRef.current.set({ ...INITIAL_HANDLER_STATE });
       });
 
       // Command palette primitive
@@ -776,8 +781,9 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
     }, []);
 
     return (
-      <div
+      <section
         {...props}
+        aria-label="Editor"
         aria-disabled={disabled || undefined}
         dir={dir}
         className={classy(
@@ -866,7 +872,7 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
             onFormat={handleFormat}
           />
         )}
-      </div>
+      </section>
     );
   },
 );
