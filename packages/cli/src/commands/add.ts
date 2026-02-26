@@ -22,6 +22,8 @@ import type { RaftersConfig } from './init.js';
 export interface AddOptions {
   list?: boolean;
   overwrite?: boolean;
+  update?: boolean;
+  updateAll?: boolean;
   registryUrl?: string;
   agent?: boolean;
 }
@@ -63,6 +65,16 @@ async function loadConfig(cwd: string): Promise<RaftersConfig | null> {
 async function saveConfig(cwd: string, config: RaftersConfig): Promise<void> {
   const paths = getRaftersPaths(cwd);
   await writeFile(paths.config, JSON.stringify(config, null, 2));
+}
+
+/**
+ * Get all installed component and primitive names from config.
+ * Returns a combined, deduplicated list.
+ */
+export function getInstalledNames(config: RaftersConfig | null): string[] {
+  if (!config?.installed) return [];
+  const names = new Set([...config.installed.components, ...config.installed.primitives]);
+  return [...names].sort();
 }
 
 /**
@@ -291,9 +303,10 @@ export async function installComponent(
 /**
  * Add one or more components to the project
  */
-export async function add(components: string[], options: AddOptions): Promise<void> {
+export async function add(componentArgs: string[], options: AddOptions): Promise<void> {
   setAgentMode(options.agent ?? false);
 
+  let components = componentArgs;
   const client = new RegistryClient(options.registryUrl);
 
   // Handle --list option
@@ -324,6 +337,32 @@ export async function add(components: string[], options: AddOptions): Promise<vo
 
   // Load project config for path mappings
   const config = await loadConfig(cwd);
+
+  // --update is a clearer alias for --overwrite
+  if (options.update) {
+    options.overwrite = true;
+  }
+
+  // --update-all: re-fetch all installed components (takes precedence over --update)
+  if (options.updateAll) {
+    options.overwrite = true;
+
+    if (!config) {
+      error("No rafters config found. Run 'rafters init' first.");
+      process.exitCode = 1;
+      return;
+    }
+
+    const installedNames = getInstalledNames(config);
+    if (installedNames.length === 0) {
+      error("No installed components found. Use 'rafters add <component>' to install first.");
+      process.exitCode = 1;
+      return;
+    }
+
+    // Replace CLI args with installed list
+    components = installedNames;
+  }
 
   // Validate that at least one component is specified
   if (components.length === 0) {
@@ -463,11 +502,12 @@ export async function add(components: string[], options: AddOptions): Promise<vo
   if (skipped.length > 0 && installed.length === 0) {
     log({
       event: 'add:hint',
-      message: 'Some components were skipped. Use --overwrite to replace existing files.',
+      message:
+        'Some components were skipped. Use --update to re-fetch, or --update-all to refresh everything.',
       skipped,
     });
     // Fail if nothing was installed and components were skipped (already exist)
-    error('Component already exists. Use --overwrite to replace.');
+    error('Component already exists. Use --update to re-fetch from registry.');
     process.exitCode = 1;
   }
 }

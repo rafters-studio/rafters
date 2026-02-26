@@ -12,6 +12,7 @@ import { zocker } from 'zocker';
 import { z } from 'zod';
 import {
   collectDependencies,
+  getInstalledNames,
   isAlreadyInstalled,
   trackInstalled,
   transformFileContent,
@@ -386,5 +387,63 @@ describe('registry fixtures', () => {
     for (const fixture of fixtures) {
       expect(() => RegistryItemSchema.parse(fixture)).not.toThrow();
     }
+  });
+});
+
+describe('getInstalledNames', () => {
+  const baseConfig: RaftersConfig = {
+    framework: 'react-router',
+    componentsPath: 'components/ui',
+    primitivesPath: 'lib/primitives',
+    cssPath: null,
+    shadcn: false,
+    exports: { tailwind: true, typescript: true, dtcg: false, compiled: false },
+    installed: {
+      components: ['button', 'card'],
+      primitives: ['classy'],
+    },
+  };
+
+  it('returns combined components and primitives', () => {
+    const names = getInstalledNames(baseConfig);
+    expect(names).toContain('button');
+    expect(names).toContain('card');
+    expect(names).toContain('classy');
+    expect(names).toHaveLength(3);
+  });
+
+  it('returns sorted names', () => {
+    const names = getInstalledNames(baseConfig);
+    const sorted = [...names].sort();
+    expect(names).toEqual(sorted);
+  });
+
+  it('deduplicates names that appear in both lists', () => {
+    const config: RaftersConfig = {
+      ...baseConfig,
+      installed: {
+        components: ['classy'],
+        primitives: ['classy'],
+      },
+    };
+    const names = getInstalledNames(config);
+    expect(names).toEqual(['classy']);
+  });
+
+  it('returns empty array when config is null', () => {
+    expect(getInstalledNames(null)).toEqual([]);
+  });
+
+  it('returns empty array when installed field is missing', () => {
+    const config: RaftersConfig = { ...baseConfig, installed: undefined };
+    expect(getInstalledNames(config)).toEqual([]);
+  });
+
+  it('returns empty array when both lists are empty', () => {
+    const config: RaftersConfig = {
+      ...baseConfig,
+      installed: { components: [], primitives: [] },
+    };
+    expect(getInstalledNames(config)).toEqual([]);
   });
 });
