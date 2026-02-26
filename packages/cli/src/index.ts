@@ -33,6 +33,8 @@ program
   .argument('[components...]', 'Component names to add')
   .option('--list', 'List available components')
   .option('--overwrite', 'Overwrite existing component files')
+  .option('--update', 'Re-fetch named components from registry')
+  .option('--update-all', 'Re-fetch all installed components from registry')
   .option('--registry-url <url>', 'Custom registry URL')
   .option('--agent', 'Output JSON for machine consumption')
   .action(withErrorHandler(add));
