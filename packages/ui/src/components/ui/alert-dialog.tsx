@@ -232,7 +232,7 @@ export function AlertDialogOverlay({
 
   const overlayProps = {
     ...ariaProps,
-    className: classy('fixed inset-0 z-50 bg-foreground/80', className),
+    className: classy('fixed inset-0 z-depth-overlay bg-foreground/80', className),
     ...props,
   };
 
@@ -347,7 +347,7 @@ export function AlertDialogContent({
   }
 
   // Render using a centered container
-  const containerClass = classy('fixed inset-0 z-50 flex items-center justify-center p-4');
+  const containerClass = classy('fixed inset-0 z-depth-modal flex items-center justify-center p-4');
 
   // Default styles matching shadcn AlertDialogContent
   const innerClass = classy(

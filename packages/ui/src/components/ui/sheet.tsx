@@ -221,7 +221,7 @@ export function SheetOverlay({ asChild, forceMount, className, ...props }: Sheet
   const overlayProps = {
     ...ariaProps,
     className: classy(
-      'fixed inset-0 z-50 bg-foreground/80',
+      'fixed inset-0 z-depth-overlay bg-foreground/80',
       'data-[state=open]:animate-in data-[state=closed]:animate-out',
       'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
       className,
@@ -344,7 +344,7 @@ export function SheetContent({
   }
 
   const contentClassName = classy(
-    'fixed z-50 gap-4 bg-background p-6 shadow-lg transition ease-in-out',
+    'fixed z-depth-modal gap-4 bg-background p-6 shadow-lg transition ease-in-out',
     'data-[state=open]:animate-in data-[state=closed]:animate-out',
     'data-[state=open]:duration-500 data-[state=closed]:duration-300',
     sideVariants[side],

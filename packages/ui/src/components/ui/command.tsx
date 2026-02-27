@@ -211,7 +211,7 @@ export function CommandDialog({
       {/* Backdrop */}
       <button
         type="button"
-        className="fixed inset-0 z-50 bg-foreground/80 cursor-default"
+        className="fixed inset-0 z-depth-overlay bg-foreground/80 cursor-default"
         onClick={() => onOpenChange?.(false)}
         aria-label="Close command palette"
       />
@@ -219,7 +219,7 @@ export function CommandDialog({
       <div
         data-command-dialog=""
         className={classy(
-          'fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2',
+          'fixed left-1/2 top-1/2 z-depth-modal w-full max-w-lg -translate-x-1/2 -translate-y-1/2',
           'rounded-lg border bg-popover shadow-lg',
           className,
         )}

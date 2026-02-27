@@ -221,8 +221,14 @@ export const DEFAULT_DEPTH_DEFINITIONS: Record<string, DepthDef> = {
   },
   sticky: {
     value: 20,
-    meaning: 'Sticky elements - headers, navigation',
-    contexts: ['sticky-header', 'sticky-nav', 'floating-actions'],
+    meaning: 'Sticky elements - headers, toolbars',
+    contexts: ['sticky-header', 'sticky-toolbar', 'floating-actions'],
+    stackingContext: true,
+  },
+  navigation: {
+    value: 25,
+    meaning: 'Navigation panels - sidebars, slide-out nav',
+    contexts: ['sidebar', 'navigation-panel', 'slide-out-menu'],
     stackingContext: true,
   },
   fixed: {
@@ -247,6 +253,12 @@ export const DEFAULT_DEPTH_DEFINITIONS: Record<string, DepthDef> = {
     value: 60,
     meaning: 'Tooltips - highest common layer',
     contexts: ['tooltips', 'toast-notifications'],
+    stackingContext: true,
+  },
+  overlay: {
+    value: 70,
+    meaning: 'Overlay backdrops - screen-dimming layers behind modals',
+    contexts: ['modal-backdrop', 'drawer-backdrop', 'sheet-backdrop'],
     stackingContext: true,
   },
 };

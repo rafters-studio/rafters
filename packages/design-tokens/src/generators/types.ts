@@ -308,10 +308,12 @@ export const DEPTH_LEVELS = [
   'base',
   'dropdown',
   'sticky',
+  'navigation',
   'fixed',
   'modal',
   'popover',
   'tooltip',
+  'overlay',
 ] as const;
 
 export type DepthLevel = (typeof DEPTH_LEVELS)[number];

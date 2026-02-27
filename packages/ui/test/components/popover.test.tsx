@@ -598,7 +598,7 @@ describe('Popover - Custom Styling', () => {
 
     await waitFor(() => {
       const content = screen.getByTestId('content');
-      expect(content).toHaveClass('z-50', 'w-72', 'rounded-md', 'border');
+      expect(content).toHaveClass('z-depth-popover', 'w-72', 'rounded-md', 'border');
     });
   });
 });

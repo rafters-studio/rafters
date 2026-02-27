@@ -435,7 +435,7 @@ export function TooltipContent({
   }
 
   const contentClassName = classy(
-    'z-50 overflow-hidden rounded-md bg-foreground px-3 py-1.5 text-sm text-background shadow-md',
+    'z-depth-tooltip overflow-hidden rounded-md bg-foreground px-3 py-1.5 text-sm text-background shadow-md',
     'animate-in fade-in-0 zoom-in-95',
     className,
   );
