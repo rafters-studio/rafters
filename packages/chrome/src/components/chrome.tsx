@@ -91,7 +91,12 @@ const INITIAL_STATE: ChromeHandlerState = {
   collapsed: false,
 };
 
-/** Viewport width below which the chrome auto-collapses */
+/**
+ * Viewport width below which the chrome auto-collapses.
+ * Matches the Tailwind md breakpoint (768px) and the design-tokens
+ * breakpoint-md token (DEFAULT_BREAKPOINTS.md.minWidth).
+ * Panels auto-collapse below this width to preserve canvas space.
+ */
 const AUTO_COLLAPSE_WIDTH = 768;
 
 // =============================================================================
