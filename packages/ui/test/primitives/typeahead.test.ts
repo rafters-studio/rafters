@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createControlledTypeahead,
   createTypeahead,
+  fuzzyScore,
   highlightMatch,
 } from '../../src/primitives/typeahead';
 
@@ -461,5 +462,57 @@ describe('highlightMatch', () => {
     expect(cleanup).toBeInstanceOf(Function);
 
     globalThis.window = originalWindow;
+  });
+});
+
+describe('fuzzyScore', () => {
+  it('returns 1 for empty query', () => {
+    expect(fuzzyScore('', 'anything')).toBe(1);
+  });
+
+  it('returns 0 when query is longer than target', () => {
+    expect(fuzzyScore('longquery', 'short')).toBe(0);
+  });
+
+  it('returns 0 when query characters are not found in order', () => {
+    expect(fuzzyScore('zxy', 'abc')).toBe(0);
+  });
+
+  it('scores exact match at start higher than match in middle', () => {
+    const startScore = fuzzyScore('app', 'Apple');
+    const middleScore = fuzzyScore('app', 'Snapper');
+    expect(startScore).toBeGreaterThan(middleScore);
+  });
+
+  it('is case insensitive', () => {
+    expect(fuzzyScore('APP', 'apple')).toBe(fuzzyScore('app', 'Apple'));
+  });
+
+  it('awards consecutive character bonus', () => {
+    // "ab" in "abc" (consecutive) should score higher than "ab" in "axb" (non-consecutive)
+    const consecutive = fuzzyScore('ab', 'abc');
+    const nonConsecutive = fuzzyScore('ab', 'axb');
+    expect(consecutive).toBeGreaterThan(nonConsecutive);
+  });
+
+  it('awards start-of-word bonus', () => {
+    // "b" at start of word "bar" should score higher than "b" in middle of "abc"
+    const wordStart = fuzzyScore('b', 'foo bar');
+    const wordMiddle = fuzzyScore('b', 'abc');
+    expect(wordStart).toBeGreaterThan(wordMiddle);
+  });
+
+  it('handles hyphenated words', () => {
+    // "b" after hyphen should get start-of-word bonus
+    const score = fuzzyScore('b', 'foo-bar');
+    expect(score).toBeGreaterThan(0);
+  });
+
+  it('returns positive score for valid partial match', () => {
+    expect(fuzzyScore('btn', 'button')).toBeGreaterThan(0);
+  });
+
+  it('returns 0 when not all query characters found', () => {
+    expect(fuzzyScore('xyz', 'hello')).toBe(0);
   });
 });

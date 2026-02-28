@@ -21,6 +21,52 @@
 
 import type { CleanupFunction } from './types';
 
+/**
+ * Compute a fuzzy match score between a query and a target string.
+ *
+ * Scoring heuristics:
+ * - +2 for each consecutive matching character
+ * - +3 bonus for matching at the start of a word (after space, hyphen, or start of string)
+ * - +1 base point per matched character
+ *
+ * Case insensitive. Empty query matches everything (returns 1).
+ * Query longer than target returns 0.
+ *
+ * @param query - The search query
+ * @param target - The string to match against
+ * @returns A non-negative score; 0 means no match
+ */
+export function fuzzyScore(query: string, target: string): number {
+  if (query.length === 0) return 1;
+  if (query.length > target.length) return 0;
+
+  const q = query.toLowerCase();
+  const t = target.toLowerCase();
+
+  let score = 0;
+  let qi = 0;
+  let prevMatchIndex = -2; // -2 so first match is never "consecutive"
+
+  for (let ti = 0; ti < t.length && qi < q.length; ti++) {
+    if (t[ti] === q[qi]) {
+      score += 1; // base point
+      // consecutive bonus
+      if (ti === prevMatchIndex + 1) {
+        score += 2;
+      }
+      // start-of-word bonus
+      if (ti === 0 || t[ti - 1] === ' ' || t[ti - 1] === '-') {
+        score += 3;
+      }
+      prevMatchIndex = ti;
+      qi++;
+    }
+  }
+
+  // All query characters must be found
+  return qi === q.length ? score : 0;
+}
+
 export interface TypeaheadOptions {
   /**
    * Function to get searchable items
