@@ -133,15 +133,6 @@ function calculateInsertIndex(
   clientY: number,
   positions: ReadonlyArray<{ id: string; rect: DOMRect }>,
 ): number {
-  if (positions.length === 0) return 0;
-
-  // Above the first block
-  const firstBlock = positions[0];
-  if (firstBlock && clientY < firstBlock.rect.top + firstBlock.rect.height / 2) {
-    return 0;
-  }
-
-  // Check each block: if cursor is above the midpoint, insert before it
   for (let i = 0; i < positions.length; i++) {
     const block = positions[i];
     if (!block) continue;
@@ -151,7 +142,7 @@ function calculateInsertIndex(
     }
   }
 
-  // Below all blocks
+  // Below all blocks (or empty list)
   return positions.length;
 }
 
@@ -246,6 +237,18 @@ export function createCanvasDropZone(options: CanvasDropZoneOptions): CanvasDrop
   }
 
   // =========================================================================
+  // Shared Helpers
+  // =========================================================================
+
+  /** Reset drag state and notify callbacks that drag is no longer active */
+  function resetDragState(): void {
+    container.setAttribute('aria-dropeffect', 'none');
+    currentInsertIndex = null;
+    onInsertIndicatorChange?.(null, null);
+    onDragActiveChange?.(false);
+  }
+
+  // =========================================================================
   // Insertion Index Calculation (rAF-throttled)
   // =========================================================================
 
@@ -303,47 +306,23 @@ export function createCanvasDropZone(options: CanvasDropZoneOptions): CanvasDrop
 
     if (enterCount <= 0) {
       enterCount = 0;
-
-      // Clear ARIA
-      container.setAttribute('aria-dropeffect', 'none');
-
-      // Clear insertion indicator
-      currentInsertIndex = null;
-      onInsertIndicatorChange?.(null, null);
-      onDragActiveChange?.(false);
+      resetDragState();
     }
   }
 
   function handleDrop(event: DragEvent): void {
     event.preventDefault();
-
-    // Reset enter count
     enterCount = 0;
 
-    // Parse drag data
     const data = parseDragData(event.dataTransfer);
+    const accepted = accept(data);
+    const insertIndex = accepted ? calculateInsertIndex(event.clientY, cachedPositions) : 0;
 
-    // Check accept predicate
-    if (!accept(data)) {
-      // Rejected: clean up state
-      container.setAttribute('aria-dropeffect', 'none');
-      currentInsertIndex = null;
-      onInsertIndicatorChange?.(null, null);
-      onDragActiveChange?.(false);
-      return;
+    resetDragState();
+
+    if (accepted) {
+      onDrop?.(data, insertIndex);
     }
-
-    // Calculate final insertion index from drop position
-    const insertIndex = calculateInsertIndex(event.clientY, cachedPositions);
-
-    // Clean up state
-    container.setAttribute('aria-dropeffect', 'none');
-    currentInsertIndex = null;
-    onInsertIndicatorChange?.(null, null);
-    onDragActiveChange?.(false);
-
-    // Fire drop callback
-    onDrop?.(data, insertIndex);
   }
 
   // =========================================================================
