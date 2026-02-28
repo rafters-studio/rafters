@@ -320,16 +320,12 @@ function EditorSidebarSection({
 interface PaletteSidebarProps {
   config: EditorSidebarConfig;
   onActivate: (item: BlockPaletteItem) => void;
-  onDragStart: (item: BlockPaletteItem) => void;
-  onDragEnd: (item: BlockPaletteItem) => void;
   disabled: boolean;
 }
 
 function EditorPaletteSidebar({
   config,
   onActivate,
-  onDragStart,
-  onDragEnd,
   disabled,
 }: PaletteSidebarProps) {
   const containerRef = React.useRef<HTMLDivElement>(null);
@@ -347,8 +343,6 @@ function EditorPaletteSidebar({
       items: config.items,
       categories: config.categories,
       onActivate,
-      onDragStart,
-      onDragEnd,
       disabled,
     };
     if (searchRef.current) {
@@ -361,7 +355,7 @@ function EditorPaletteSidebar({
       palette.destroy();
       paletteControlsRef.current = null;
     };
-  }, [config.items, config.categories, onActivate, onDragStart, onDragEnd, disabled]);
+  }, [config.items, config.categories, onActivate, disabled]);
 
   React.useEffect(() => {
     paletteControlsRef.current?.setDisabled(disabled);
@@ -654,7 +648,6 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
     const callbacksRef = React.useRef({ onValueChange, onValueCommit });
     callbacksRef.current = { onValueChange, onValueCommit };
 
-    // Ref for isControlled to avoid stale closure in updateBlocks
     // ----- Handler + canvas refs -----
     const canvasRef = React.useRef<HTMLDivElement>(null);
     const handlerRef = React.useRef<BlockHandlerControls | null>(null);
@@ -913,7 +906,7 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
     }, [isControlled, controlledValue]);
 
     // ----- Imperative handle -----
-    const editorControlsRef = React.useRef<EditorControls | null>(null);
+    const controlsRef = React.useRef<EditorControls>(null!);
     const controls = React.useMemo<EditorControls>(
       () => ({
         addBlock,
@@ -928,7 +921,7 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
       }),
       [addBlock, removeBlocks, moveBlock, updateBlock],
     );
-    editorControlsRef.current = controls;
+    controlsRef.current = controls;
     React.useImperativeHandle(ref, () => controls, [controls]);
 
     // ----- Command palette handlers -----
@@ -956,8 +949,8 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
       const cmd = state.filteredCommands[state.selectedIndex];
       if (cmd && commandPaletteRef.current) {
         const slashCmd = commandPaletteRef.current.find((sc) => sc.id === cmd.id);
-        if (slashCmd && editorControlsRef.current) {
-          slashCmd.action(editorControlsRef.current);
+        if (slashCmd && controlsRef.current) {
+          slashCmd.action(controlsRef.current);
         }
       }
       palette.close();
@@ -1021,13 +1014,7 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
       [addBlock],
     );
 
-    const handlePaletteDragStart = React.useCallback((_item: BlockPaletteItem) => {
-      // Drag data is set by the block-palette primitive via dataTransfer
-    }, []);
 
-    const handlePaletteDragEnd = React.useCallback((_item: BlockPaletteItem) => {
-      // Cleanup after drag is handled by canvas-drop-zone
-    }, []);
 
     // Determine sidebar mode
     const sidebarConfig = typeof sidebar === 'object' && sidebar !== null ? sidebar : null;
@@ -1068,8 +1055,6 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
             <EditorPaletteSidebar
               config={sidebarConfig}
               onActivate={handlePaletteActivate}
-              onDragStart={handlePaletteDragStart}
-              onDragEnd={handlePaletteDragEnd}
               disabled={disabled}
             />
           )}
