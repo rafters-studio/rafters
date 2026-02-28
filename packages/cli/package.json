@@ -9,7 +9,10 @@
   },
   "exports": {
     ".": "./dist/index.js",
-    "./registry/types": "./src/registry/types.ts"
+    "./registry/types": {
+      "types": "./dist/registry/types.d.ts",
+      "import": "./dist/registry/types.js"
+    }
   },
   "files": [
     "dist",

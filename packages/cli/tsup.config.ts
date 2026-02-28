@@ -1,12 +1,24 @@
 import { defineConfig } from 'tsup';
 
-export default defineConfig({
-  entry: ['src/index.ts'],
-  format: ['esm'],
-  target: 'node22',
-  bundle: true,
-  noExternal: ['@rafters/design-tokens', '@rafters/shared'],
-  external: ['commander', '@modelcontextprotocol/sdk'],
-  outDir: 'dist',
-  clean: true,
-});
+export default defineConfig([
+  {
+    entry: ['src/index.ts'],
+    format: ['esm'],
+    target: 'node22',
+    bundle: true,
+    noExternal: ['@rafters/design-tokens', '@rafters/shared'],
+    external: ['commander', '@modelcontextprotocol/sdk'],
+    outDir: 'dist',
+    clean: true,
+  },
+  {
+    entry: ['src/registry/types.ts'],
+    format: ['esm'],
+    target: 'node22',
+    dts: true,
+    bundle: true,
+    external: ['zod'],
+    outDir: 'dist/registry',
+    clean: false,
+  },
+]);
