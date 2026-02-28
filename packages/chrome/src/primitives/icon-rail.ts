@@ -95,13 +95,6 @@ function getItemElements(container: HTMLElement): HTMLElement[] {
 }
 
 /**
- * Get the item element matching a given rail ID
- */
-function getItemById(container: HTMLElement, id: string): HTMLElement | null {
-  return container.querySelector<HTMLElement>(`[data-rail-item][data-rail-id="${id}"]`);
-}
-
-/**
  * Find the closest rail item element from an event target
  */
 function findItemFromTarget(
