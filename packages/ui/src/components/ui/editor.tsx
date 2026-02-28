@@ -59,6 +59,15 @@ import { Container } from './container';
 // Types
 // ============================================================================
 
+/**
+ * A single block in the Editor's content tree.
+ *
+ * Composites consume this type to render and interact with blocks.
+ * Import it from the package root:
+ * ```ts
+ * import type { EditorBlock } from '@rafters/ui';
+ * ```
+ */
 export interface EditorBlock {
   id: string;
   type: string;
@@ -118,16 +127,44 @@ export interface BlockRenderContext {
   isFocused: boolean;
 }
 
-/** Imperative handle exposed via ref */
+/**
+ * Imperative handle exposed via ref -- the block mutation API.
+ *
+ * EditorControls is the single owner of all block CRUD operations:
+ * addBlock, removeBlocks, moveBlock, and updateBlock. The block-handler
+ * primitive manages selection, focus, undo/redo, and clipboard but
+ * never initiates mutations. Composites and external consumers should
+ * acquire this handle via `React.useRef<EditorControls>()` and call
+ * these methods to modify the block tree.
+ *
+ * @see block-handler (`primitives/block-handler.ts`) for selection/focus/history state
+ *
+ * @example
+ * ```tsx
+ * const editorRef = React.useRef<EditorControls>(null);
+ * <Editor ref={editorRef} />
+ * // Later:
+ * editorRef.current?.addBlock({ id: crypto.randomUUID(), type: 'text', content: '' });
+ * ```
+ */
 export interface EditorControls {
+  /** Insert a block at the given index (or append if omitted) */
   addBlock: (block: EditorBlock, index?: number) => void;
+  /** Remove blocks by their IDs */
   removeBlocks: (ids: Set<string>) => void;
+  /** Move a block to a new position */
   moveBlock: (id: string, toIndex: number) => void;
+  /** Partially update a block's properties (id is preserved) */
   updateBlock: (id: string, updates: Partial<EditorBlock>) => void;
+  /** Undo the last mutation (delegated to block-handler history) */
   undo: () => void;
+  /** Redo the last undone mutation (delegated to block-handler history) */
   redo: () => void;
+  /** Select all blocks */
   selectAll: () => void;
+  /** Clear selection */
   clearSelection: () => void;
+  /** Move focus to the editor canvas */
   focus: () => void;
 }
 
