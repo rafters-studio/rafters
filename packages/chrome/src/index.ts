@@ -5,5 +5,10 @@
  * and full-bleed workspace area. Wraps Studio, Editor, and all Rafters apps.
  */
 
-export type { ChromeControls, ChromePanel, ChromeProps, ChromeRailItem } from './components/chrome.js';
+export type {
+  ChromeControls,
+  ChromePanel,
+  ChromeProps,
+  ChromeRailItem,
+} from './components/chrome.js';
 export { Chrome } from './components/chrome.js';

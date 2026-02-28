@@ -42,8 +42,9 @@ export interface ChromeControls {
 /**
  * Chrome shell placeholder -- full implementation in #834.
  */
-export const Chrome = React.forwardRef<ChromeControls, ChromeProps>(
-  function Chrome({ children, ...props }, _ref) {
-    return <div {...props}>{children}</div>;
-  },
-);
+export const Chrome = React.forwardRef<ChromeControls, ChromeProps>(function Chrome(
+  { children, ...props },
+  _ref,
+) {
+  return <div {...props}>{children}</div>;
+});
