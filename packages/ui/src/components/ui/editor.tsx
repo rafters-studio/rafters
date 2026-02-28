@@ -33,6 +33,9 @@ import * as React from 'react';
 import { createPortal } from 'react-dom';
 import type { BlockHandlerControls, BlockHandlerState } from '../../primitives/block-handler';
 import { createBlockHandler } from '../../primitives/block-handler';
+import type { BlockPaletteItem } from '../../primitives/block-palette';
+import { createBlockPalette } from '../../primitives/block-palette';
+import { createCanvasDropZone } from '../../primitives/canvas-drop-zone';
 import classy from '../../primitives/classy';
 import type {
   CommandPaletteController,
@@ -77,6 +80,18 @@ export interface EditorBlock {
   meta?: Record<string, unknown>;
 }
 
+/** Configuration for palette-mode sidebar */
+export interface EditorSidebarConfig {
+  /** Block palette items */
+  items: BlockPaletteItem[];
+  /** Category display order */
+  categories: string[];
+  /** Enable search input (default true) */
+  searchable?: boolean;
+  /** Custom item renderer for scaled previews */
+  renderItem?: (item: BlockPaletteItem) => React.ReactNode;
+}
+
 export interface SlashCommand {
   id: string;
   label: string;
@@ -98,8 +113,8 @@ export interface EditorProps
 
   /** Show top toolbar with undo/redo and formatting */
   toolbar?: boolean;
-  /** Show sidebar for block navigation/properties */
-  sidebar?: boolean;
+  /** Show sidebar for block navigation/properties, or pass config for palette mode */
+  sidebar?: boolean | EditorSidebarConfig;
   /** Enable slash command palette with these commands */
   commandPalette?: SlashCommand[];
   /** Show floating inline formatting toolbar on text selection */
@@ -299,6 +314,136 @@ function EditorSidebarSection({
         </button>
       ))}
     </nav>
+  );
+}
+
+interface PaletteSidebarProps {
+  config: EditorSidebarConfig;
+  onActivate: (item: BlockPaletteItem) => void;
+  onDragStart: (item: BlockPaletteItem) => void;
+  onDragEnd: (item: BlockPaletteItem) => void;
+  disabled: boolean;
+}
+
+function EditorPaletteSidebar({
+  config,
+  onActivate,
+  onDragStart,
+  onDragEnd,
+  disabled,
+}: PaletteSidebarProps) {
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const searchRef = React.useRef<HTMLInputElement>(null);
+  const paletteControlsRef = React.useRef<ReturnType<typeof createBlockPalette> | null>(null);
+  const [query, setQuery] = React.useState('');
+  const [, forceUpdate] = React.useState(0);
+
+  React.useEffect(() => {
+    const containerEl = containerRef.current;
+    if (!containerEl) return;
+
+    const paletteOptions: Parameters<typeof createBlockPalette>[0] = {
+      container: containerEl,
+      items: config.items,
+      categories: config.categories,
+      onActivate,
+      onDragStart,
+      onDragEnd,
+      disabled,
+    };
+    if (searchRef.current) {
+      paletteOptions.searchInput = searchRef.current;
+    }
+    const palette = createBlockPalette(paletteOptions);
+    paletteControlsRef.current = palette;
+
+    return () => {
+      palette.destroy();
+      paletteControlsRef.current = null;
+    };
+  }, [config.items, config.categories, onActivate, onDragStart, onDragEnd, disabled]);
+
+  React.useEffect(() => {
+    paletteControlsRef.current?.setDisabled(disabled);
+  }, [disabled]);
+
+  const handleSearchChange = React.useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    setQuery(value);
+    paletteControlsRef.current?.setSearchQuery(value);
+    forceUpdate((n) => n + 1);
+  }, []);
+
+  const grouped = paletteControlsRef.current?.getGroupedItems();
+  const renderItem = config.renderItem;
+  const searchable = config.searchable !== false;
+
+  return (
+    <aside
+      aria-label="Block palette"
+      className={classy('w-48 shrink-0 flex flex-col border-r border-border')}
+    >
+      {searchable && (
+        <div className={classy('border-b border-border p-2')}>
+          <input
+            ref={searchRef}
+            type="text"
+            value={query}
+            onChange={handleSearchChange}
+            placeholder="Search blocks..."
+            aria-label="Search blocks"
+            disabled={disabled}
+            className={classy(
+              'w-full rounded-md border border-border bg-transparent px-2 py-1 text-xs outline-none',
+              'placeholder:text-muted-foreground',
+              'focus-visible:ring-2 focus-visible:ring-primary-ring',
+              { 'opacity-50 cursor-not-allowed': disabled },
+            )}
+          />
+        </div>
+      )}
+      <div
+        ref={containerRef}
+        tabIndex={disabled ? -1 : 0}
+        className={classy('flex flex-1 flex-col gap-1 overflow-y-auto p-2')}
+      >
+        {grouped &&
+          Array.from(grouped.entries()).map(([category, categoryItems]) => (
+            <div key={category}>
+              <div
+                role="presentation"
+                className={classy(
+                  'px-2 py-1 text-xs font-medium text-muted-foreground uppercase tracking-wider',
+                )}
+              >
+                {category}
+              </div>
+              {categoryItems.map((item) => (
+                // biome-ignore lint/a11y/useFocusableInteractive: focus managed via aria-activedescendant on block-palette container
+                <div
+                  key={item.id}
+                  data-palette-item=""
+                  data-palette-id={item.id}
+                  draggable={!disabled}
+                  role="option"
+                  aria-selected="false"
+                  className={classy(
+                    'rounded-md px-2 py-1 text-xs cursor-pointer transition-colors',
+                    'hover:bg-accent hover:text-accent-foreground',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-ring',
+                    { 'opacity-50 cursor-not-allowed': disabled },
+                  )}
+                >
+                  {renderItem ? renderItem(item) : item.label}
+                </div>
+              ))}
+            </div>
+          ))}
+        {grouped && grouped.size === 0 && (
+          <div className={classy('px-2 py-1 text-xs text-muted-foreground')}>No blocks found</div>
+        )}
+      </div>
+    </aside>
   );
 }
 
@@ -735,10 +880,30 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
         cleanups.push(() => document.removeEventListener('selectionchange', handleSelectionChange));
       }
 
+      // Canvas drop zone for palette sidebar drag-to-insert
+      if (typeof sidebar === 'object' && sidebar !== null) {
+        const dropZone = createCanvasDropZone({
+          container: canvasEl,
+          accept: () => true,
+          onDrop: (data, insertIndex) => {
+            const item = data as BlockPaletteItem;
+            addBlock(
+              {
+                id: crypto.randomUUID(),
+                type: item.id,
+                content: '',
+              },
+              insertIndex,
+            );
+          },
+        });
+        cleanups.push(() => dropZone.destroy());
+      }
+
       return () => {
         for (const cleanup of cleanups) cleanup();
       };
-    }, [disabled, inlineToolbar, commandPaletteKey, updateBlocks]);
+    }, [disabled, inlineToolbar, commandPaletteKey, updateBlocks, sidebar, addBlock]);
 
     // ----- Sync controlled value into atom -----
     React.useEffect(() => {
@@ -844,6 +1009,29 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
       canvasRef.current?.focus();
     }, []);
 
+    // ----- Palette sidebar handlers -----
+    const handlePaletteActivate = React.useCallback(
+      (item: BlockPaletteItem) => {
+        addBlock({
+          id: crypto.randomUUID(),
+          type: item.id,
+          content: '',
+        });
+      },
+      [addBlock],
+    );
+
+    const handlePaletteDragStart = React.useCallback((_item: BlockPaletteItem) => {
+      // Drag data is set by the block-palette primitive via dataTransfer
+    }, []);
+
+    const handlePaletteDragEnd = React.useCallback((_item: BlockPaletteItem) => {
+      // Cleanup after drag is handled by canvas-drop-zone
+    }, []);
+
+    // Determine sidebar mode
+    const sidebarConfig = typeof sidebar === 'object' && sidebar !== null ? sidebar : null;
+
     return (
       <Container
         {...props}
@@ -868,12 +1056,21 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
           />
         )}
         <div className={classy('flex flex-1')}>
-          {sidebar && (
+          {sidebar === true && (
             <EditorSidebarSection
               blocks={blocks}
               selectedIds={handlerState.selectedIds}
               focusedId={handlerState.focusedId}
               onFocusBlock={handleSidebarFocusBlock}
+            />
+          )}
+          {sidebarConfig && (
+            <EditorPaletteSidebar
+              config={sidebarConfig}
+              onActivate={handlePaletteActivate}
+              onDragStart={handlePaletteDragStart}
+              onDragEnd={handlePaletteDragEnd}
+              disabled={disabled}
             />
           )}
           {/* biome-ignore lint/a11y/noStaticElementInteractions: keyboard handled by block-handler primitive on this container */}

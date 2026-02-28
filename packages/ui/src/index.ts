@@ -5,4 +5,4 @@
  * from the package root rather than deep paths.
  */
 
-export type { EditorBlock, EditorControls } from './components/ui/editor.js';
+export type { EditorBlock, EditorControls, EditorSidebarConfig } from './components/ui/editor.js';
