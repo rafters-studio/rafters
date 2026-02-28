@@ -14,6 +14,18 @@ export const CompositeCategorySchema = z.enum(['typography', 'layout', 'form', '
 
 export type CompositeCategory = z.infer<typeof CompositeCategorySchema>;
 
+/**
+ * Zod schema for EditorBlock without the `id` field.
+ * Provides runtime validation matching the EditorBlock interface shape.
+ */
+const EditorBlockWithoutIdSchema = z.object({
+  type: z.string().min(1),
+  content: z.unknown(),
+  children: z.array(z.string()).optional(),
+  parentId: z.string().optional(),
+  meta: z.record(z.unknown()).optional(),
+}) satisfies z.ZodType<Omit<EditorBlock, 'id'>>;
+
 /** Zod schema for composite manifest validation */
 export const CompositeManifestSchema = z.object({
   /** Unique composite ID (e.g., 'heading', 'paragraph') */
@@ -29,7 +41,7 @@ export const CompositeManifestSchema = z.object({
   /** Cognitive load score (1-10) */
   cognitiveLoad: z.number().int().min(1).max(10),
   /** Default block data when dragged onto canvas */
-  defaultBlock: z.custom<Omit<EditorBlock, 'id'>>(),
+  defaultBlock: EditorBlockWithoutIdSchema,
 });
 
 export type CompositeManifest = z.infer<typeof CompositeManifestSchema>;

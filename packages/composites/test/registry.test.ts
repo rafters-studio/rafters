@@ -161,4 +161,43 @@ describe('CompositeManifestSchema', () => {
     });
     expect(result.success).toBe(false);
   });
+
+  it('rejects defaultBlock with empty type', () => {
+    const result = CompositeManifestSchema.safeParse({
+      id: 'heading',
+      name: 'Heading',
+      category: 'typography',
+      description: 'A heading block',
+      keywords: [],
+      cognitiveLoad: 1,
+      defaultBlock: { type: '', content: '' },
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects defaultBlock missing type', () => {
+    const result = CompositeManifestSchema.safeParse({
+      id: 'heading',
+      name: 'Heading',
+      category: 'typography',
+      description: 'A heading block',
+      keywords: [],
+      cognitiveLoad: 1,
+      defaultBlock: { content: '' },
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects non-object defaultBlock', () => {
+    const result = CompositeManifestSchema.safeParse({
+      id: 'heading',
+      name: 'Heading',
+      category: 'typography',
+      description: 'A heading block',
+      keywords: [],
+      cognitiveLoad: 1,
+      defaultBlock: 'not an object',
+    });
+    expect(result.success).toBe(false);
+  });
 });
