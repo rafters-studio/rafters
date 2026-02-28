@@ -6,6 +6,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { parse, type Spec } from 'comment-parser';
+import type { RegistryItemType } from 'rafters/registry/types';
 
 // Intelligence metadata extracted from JSDoc comments
 export interface ComponentIntelligence {
@@ -29,7 +30,7 @@ export interface RegistryFile {
 
 export interface RegistryItem {
   name: string;
-  type: 'registry:ui' | 'registry:primitive';
+  type: RegistryItemType;
   description?: string;
   primitives: string[];
   files: RegistryFile[];

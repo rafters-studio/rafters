@@ -280,6 +280,9 @@ importers:
       comment-parser:
         specifier: ^1.4.1
         version: 1.4.1
+      rafters:
+        specifier: workspace:*
+        version: link:../../packages/cli
       react:
         specifier: 'catalog:'
         version: 19.2.0

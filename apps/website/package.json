@@ -22,6 +22,7 @@
     "@types/react-dom": "catalog:",
     "astro": "^5.16.5",
     "comment-parser": "^1.4.1",
+    "rafters": "workspace:*",
     "react": "catalog:",
     "react-dom": "catalog:",
     "tailwindcss": "^4.1.18"
