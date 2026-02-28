@@ -198,6 +198,13 @@ export const Chrome = React.forwardRef<ChromeControls, ChromeProps>(
     const railRef_ = React.useRef(rail);
     railRef_.current = rail;
 
+    // Stable boolean for settings presence -- avoids ReactNode reference
+    // identity in the useEffect dependency array (inline JSX creates a new
+    // reference every render, causing full handler teardown/recreation).
+    const hasSettings = settings != null;
+    const settingsRef = React.useRef(settings);
+    settingsRef.current = settings;
+
     // -----------------------------------------------------------------------
     // Handler lifecycle (DOM side effects)
     // -----------------------------------------------------------------------
@@ -257,7 +264,7 @@ export const Chrome = React.forwardRef<ChromeControls, ChromeProps>(
         handlerRef.current = null;
         $stateRef.current.set({ ...INITIAL_STATE });
       };
-    }, [railItemIds, railDisabledStates, disabled, defaultCollapsed, settings]);
+    }, [railItemIds, railDisabledStates, disabled, defaultCollapsed, hasSettings]);
 
     // -----------------------------------------------------------------------
     // F6 landmark navigation

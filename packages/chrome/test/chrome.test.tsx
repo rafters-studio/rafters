@@ -166,23 +166,22 @@ describe('Chrome panel interaction', () => {
     expect(screen.getByTestId('panel-content-0')).toBeInTheDocument();
   });
 
-  it('closes panel when clicking the same rail item again', async () => {
+  it('re-pinning an already open panel keeps it open', async () => {
     const { container } = renderChrome();
     const user = userEvent.setup();
 
     const button = findButton('Item 0');
 
-    // Open
+    // Open and pin via click
     await user.click(button);
     let panel = container.querySelector('[data-panel-id="item-0"]');
     expect(panel?.getAttribute('data-state')).toBe('open');
 
-    // Close (click same item again pins then toggles)
+    // Click the same item again -- onActivate always calls pinPanel,
+    // so the panel stays open (click-to-pin semantics).
     await user.click(button);
     panel = container.querySelector('[data-panel-id="item-0"]');
-    // The panel state should be closed after toggling
-    // Note: The chrome-handler's onActivate calls pinPanel, so clicking again
-    // on an already-pinned panel may re-open. We verify the handler is working.
+    expect(panel?.getAttribute('data-state')).toBe('open');
   });
 
   it('switches panels when clicking a different rail item', async () => {
