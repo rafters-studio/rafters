@@ -31,16 +31,17 @@ export function get(id: string): CompositeDefinition | undefined {
 }
 
 /**
+ * Get all registered composites.
+ */
+export function getAll(): CompositeDefinition[] {
+  return Array.from(composites.values());
+}
+
+/**
  * Get all composites in a given category, in registration order.
  */
 export function getByCategory(category: CompositeCategory): CompositeDefinition[] {
-  const results: CompositeDefinition[] = [];
-  for (const def of composites.values()) {
-    if (def.manifest.category === category) {
-      results.push(def);
-    }
-  }
-  return results;
+  return getAll().filter((def) => def.manifest.category === category);
 }
 
 /**
@@ -49,36 +50,18 @@ export function getByCategory(category: CompositeCategory): CompositeDefinition[
  */
 export function search(query: string): CompositeDefinition[] {
   if (query.length === 0) {
-    return Array.from(composites.values());
+    return getAll();
   }
 
-  const scored: Array<{ def: CompositeDefinition; score: number }> = [];
-
-  for (const def of composites.values()) {
-    const { name, keywords } = def.manifest;
-    // Score against name
-    let bestScore = fuzzyScore(query, name);
-    // Score against each keyword, keep best
-    for (const keyword of keywords) {
-      const keywordScore = fuzzyScore(query, keyword);
-      if (keywordScore > bestScore) {
-        bestScore = keywordScore;
-      }
-    }
-    if (bestScore > 0) {
-      scored.push({ def, score: bestScore });
-    }
-  }
-
-  scored.sort((a, b) => b.score - a.score);
-  return scored.map((s) => s.def);
-}
-
-/**
- * Get all registered composites.
- */
-export function getAll(): CompositeDefinition[] {
-  return Array.from(composites.values());
+  return getAll()
+    .map((def) => {
+      const { name, keywords } = def.manifest;
+      const score = Math.max(fuzzyScore(query, name), ...keywords.map((k) => fuzzyScore(query, k)));
+      return { def, score };
+    })
+    .filter((entry) => entry.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .map((entry) => entry.def);
 }
 
 /**
