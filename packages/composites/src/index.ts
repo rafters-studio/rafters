@@ -13,11 +13,13 @@ export type {
   CompositeDefinition,
   CompositeManifest,
 } from './manifest.js';
+// Manifest types and validation
 export {
   CompositeCategorySchema,
   CompositeManifestSchema,
 } from './manifest.js';
 
+// Registry
 export {
   clear as clearRegistry,
   get as getComposite,
@@ -26,3 +28,11 @@ export {
   register as registerComposite,
   search as searchComposites,
 } from './registry.js';
+
+// Typography composites
+export {
+  blockquoteComposite,
+  headingComposite,
+  listComposite,
+  paragraphComposite,
+} from './typography/index.js';
