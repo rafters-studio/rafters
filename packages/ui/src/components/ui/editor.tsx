@@ -323,11 +323,7 @@ interface PaletteSidebarProps {
   disabled: boolean;
 }
 
-function EditorPaletteSidebar({
-  config,
-  onActivate,
-  disabled,
-}: PaletteSidebarProps) {
+function EditorPaletteSidebar({ config, onActivate, disabled }: PaletteSidebarProps) {
   const containerRef = React.useRef<HTMLDivElement>(null);
   const searchRef = React.useRef<HTMLInputElement>(null);
   const paletteControlsRef = React.useRef<ReturnType<typeof createBlockPalette> | null>(null);
@@ -350,6 +346,11 @@ function EditorPaletteSidebar({
     }
     const palette = createBlockPalette(paletteOptions);
     paletteControlsRef.current = palette;
+
+    // Trigger a re-render so getGroupedItems() is available for the first paint.
+    // Without this, paletteControlsRef.current is null during the initial render
+    // and the palette items never appear.
+    forceUpdate((n) => n + 1);
 
     return () => {
       palette.destroy();
@@ -752,8 +753,24 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
       prevKeyRef.current = commandPaletteKey;
     }
 
+    // Stable identity for sidebar config prop -- avoids full effect teardown
+    // when consumers pass an inline object literal. Keyed by stringified
+    // item IDs + categories so the effect only re-runs on meaningful changes.
+    const sidebarRef = React.useRef(sidebar);
+    const sidebarKey = React.useMemo(() => {
+      if (typeof sidebar !== 'object' || sidebar === null) return String(sidebar);
+      const itemIds = sidebar.items.map((i) => i.id).join(',');
+      const cats = sidebar.categories.join(',');
+      return `${itemIds}|${cats}|${sidebar.searchable ?? true}`;
+    }, [sidebar]);
+    const prevSidebarKeyRef = React.useRef(sidebarKey);
+    if (sidebarKey !== prevSidebarKeyRef.current) {
+      sidebarRef.current = sidebar;
+      prevSidebarKeyRef.current = sidebarKey;
+    }
+
     // ----- Primitive lifecycle (DOM side effects) -----
-    // biome-ignore lint/correctness/useExhaustiveDependencies: commandPaletteKey triggers re-creation when commands change; actual data read from commandPaletteRef
+    // biome-ignore lint/correctness/useExhaustiveDependencies: commandPaletteKey and sidebarKey trigger re-creation when props change; actual data read from refs
     React.useEffect(() => {
       const canvasEl = canvasRef.current;
       if (!canvasEl || disabled) return;
@@ -874,12 +891,17 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
       }
 
       // Canvas drop zone for palette sidebar drag-to-insert
-      if (typeof sidebar === 'object' && sidebar !== null) {
+      if (sidebarRef.current && typeof sidebarRef.current === 'object') {
         const dropZone = createCanvasDropZone({
           container: canvasEl,
-          accept: () => true,
+          accept: (data) => {
+            // Accept objects that look like a BlockPaletteItem (have an id field)
+            return data !== null && typeof data === 'object' && 'id' in data;
+          },
           onDrop: (data, insertIndex) => {
+            // data may arrive as parsed JSON from either MIME type
             const item = data as BlockPaletteItem;
+            if (!item.id) return;
             addBlock(
               {
                 id: crypto.randomUUID(),
@@ -896,7 +918,7 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
       return () => {
         for (const cleanup of cleanups) cleanup();
       };
-    }, [disabled, inlineToolbar, commandPaletteKey, updateBlocks, sidebar, addBlock]);
+    }, [disabled, inlineToolbar, commandPaletteKey, updateBlocks, sidebarKey, addBlock]);
 
     // ----- Sync controlled value into atom -----
     React.useEffect(() => {
@@ -921,7 +943,11 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
       }),
       [addBlock, removeBlocks, moveBlock, updateBlock],
     );
-    controlsRef.current = controls;
+    // Sync controls into the ref inside an effect to avoid mutating a ref during render
+    // (React 19 purity requirement).
+    React.useEffect(() => {
+      controlsRef.current = controls;
+    }, [controls]);
     React.useImperativeHandle(ref, () => controls, [controls]);
 
     // ----- Command palette handlers -----
@@ -1013,8 +1039,6 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
       },
       [addBlock],
     );
-
-
 
     // Determine sidebar mode
     const sidebarConfig = typeof sidebar === 'object' && sidebar !== null ? sidebar : null;
