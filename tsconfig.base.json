@@ -48,7 +48,9 @@
       "@rafters/design-tokens": ["./packages/design-tokens/src/index.ts"],
       "@rafters/design-tokens/*": ["./packages/design-tokens/src/*"],
       "@rafters/chrome": ["./packages/chrome/src/index.ts"],
-      "@rafters/chrome/*": ["./packages/chrome/src/*"]
+      "@rafters/chrome/*": ["./packages/chrome/src/*"],
+      "@rafters/composites": ["./packages/composites/src/index.ts"],
+      "@rafters/composites/*": ["./packages/composites/src/*"]
     },
 
     "types": ["vitest/globals"]
