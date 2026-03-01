@@ -255,9 +255,7 @@ export const Container = React.forwardRef<HTMLElement, ContainerProps>(
     const isArticle = Element === 'article';
     const isEmpty = React.Children.count(children) === 0;
 
-    const resolvedGap = gap === true
-      ? (size && sizeGapScale[size]) || '6'
-      : gap || undefined;
+    const resolvedGap = gap === true ? (size && sizeGapScale[size]) || '6' : gap || undefined;
 
     const classes = classy(
       // Container queries - w-full prevents width collapse when container-type: inline-size

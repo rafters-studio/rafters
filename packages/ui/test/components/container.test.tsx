@@ -18,23 +18,43 @@ describe('Container', () => {
 
     describe('gap={true} derives from spacing scale position for size', () => {
       it('sm uses component-padding tier (spacing-3)', () => {
-        const { container } = render(<Container size="sm" gap>content</Container>);
+        const { container } = render(
+          <Container size="sm" gap>
+            content
+          </Container>,
+        );
         expect(getGapValue(container.firstElementChild!)).toBe('3');
       });
 
       it('xl uses section-padding tier (spacing-6)', () => {
-        const { container } = render(<Container size="xl" gap>content</Container>);
+        const { container } = render(
+          <Container size="xl" gap>
+            content
+          </Container>,
+        );
         expect(getGapValue(container.firstElementChild!)).toBe('6');
       });
 
       it('7xl uses upper section-padding tier (spacing-12)', () => {
-        const { container } = render(<Container size="7xl" gap>content</Container>);
+        const { container } = render(
+          <Container size="7xl" gap>
+            content
+          </Container>,
+        );
         expect(getGapValue(container.firstElementChild!)).toBe('12');
       });
 
       it('smaller sizes get smaller gaps than larger sizes', () => {
-        const { container: smC } = render(<Container size="sm" gap>sm</Container>);
-        const { container: xlC } = render(<Container size="7xl" gap>7xl</Container>);
+        const { container: smC } = render(
+          <Container size="sm" gap>
+            sm
+          </Container>,
+        );
+        const { container: xlC } = render(
+          <Container size="7xl" gap>
+            7xl
+          </Container>,
+        );
         expect(Number(getGapValue(smC.firstElementChild!))).toBeLessThan(
           Number(getGapValue(xlC.firstElementChild!)),
         );
@@ -46,25 +66,41 @@ describe('Container', () => {
       });
 
       it('full falls back to spacing-6', () => {
-        const { container } = render(<Container size="full" gap>content</Container>);
+        const { container } = render(
+          <Container size="full" gap>
+            content
+          </Container>,
+        );
         expect(getGapValue(container.firstElementChild!)).toBe('6');
       });
     });
 
     describe('explicit gap overrides size default', () => {
       it('gap="8" overrides sm default', () => {
-        const { container } = render(<Container size="sm" gap="8">content</Container>);
+        const { container } = render(
+          <Container size="sm" gap="8">
+            content
+          </Container>,
+        );
         expect(getGapValue(container.firstElementChild!)).toBe('8');
       });
 
       it('gap="0" applies gap-0 regardless of size', () => {
-        const { container } = render(<Container size="6xl" gap="0">content</Container>);
+        const { container } = render(
+          <Container size="6xl" gap="0">
+            content
+          </Container>,
+        );
         expect(getGapValue(container.firstElementChild!)).toBe('0');
       });
     });
 
     it('always applies flex flex-col with gap', () => {
-      const { container } = render(<Container size="lg" gap>content</Container>);
+      const { container } = render(
+        <Container size="lg" gap>
+          content
+        </Container>,
+      );
       const el = container.firstElementChild!;
       expect(el.className).toContain('flex');
       expect(el.className).toContain('flex-col');
