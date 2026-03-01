@@ -6,6 +6,17 @@
  * multiple leaf primitives. The block handler wires selection, focus, history,
  * and clipboard into a single coherent API for block-based editors.
  *
+ * IMPORTANT -- Block CRUD ownership:
+ * block-handler does NOT manage block creation, deletion, reordering, or content
+ * updates. It manages **selection state**, **focus**, **undo/redo history**, and
+ * **clipboard** only. All block mutations (addBlock, removeBlocks, moveBlock,
+ * updateBlock) are owned by the Editor component's imperative controls
+ * ({@link EditorControls} in `components/ui/editor.tsx`). block-handler receives
+ * block changes via the `$blocks` atom and `onBlocksChange` callback, but it
+ * never initiates mutations itself.
+ *
+ * @see {@link EditorControls} in `components/ui/editor.tsx` for the block mutation API
+ *
  * @registry-name block-handler
  * @registry-version 0.1.0
  * @registry-status published
@@ -28,6 +39,7 @@
  * DO: Call destroy() on cleanup to tear down all child primitives
  * NEVER: Import block-canvas or block-wrapper directly when block-handler is available
  * NEVER: Mutate the atom value directly -- use the provided action functions
+ * NEVER: Use block-handler for block CRUD -- use EditorControls (via Editor ref) instead
  *
  * @example
  * ```ts
