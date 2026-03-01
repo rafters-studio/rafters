@@ -456,9 +456,15 @@ export function createBlockPalette(options: BlockPaletteOptions): BlockPaletteCo
     }
     const item = resolveItem(event.target);
     if (item) {
+      // Set drag data so drop zones can identify the payload.
+      // canvas-drop-zone reads 'application/x-rafters-drag-data', so set both
+      // MIME types to ensure the JSON payload is available regardless of which
+      // drop zone receives the item.
       if (event.dataTransfer) {
         event.dataTransfer.effectAllowed = 'copyMove';
-        event.dataTransfer.setData('application/x-rafters-block', JSON.stringify(item));
+        const json = JSON.stringify(item);
+        event.dataTransfer.setData('application/x-rafters-block', json);
+        event.dataTransfer.setData('application/x-rafters-drag-data', json);
         event.dataTransfer.setData('text/plain', item.label);
       }
       onDragStart?.(item);
