@@ -10,7 +10,8 @@
     "./hooks/*": "./src/hooks/*.ts",
     "./dialog": "./src/components/ui/dialog.tsx",
     "./dialog.vue": "./src/components/ui/dialog.vue.ts",
-    "./skeleton": "./src/components/ui/skeleton.tsx"
+    "./skeleton": "./src/components/ui/skeleton.tsx",
+    "./lib/*": "./src/lib/*.ts"
   },
   "scripts": {
     "test": "vitest",
