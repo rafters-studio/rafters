@@ -383,6 +383,166 @@ describe('createControlledTypeahead', () => {
   });
 });
 
+describe('fuzzyScore', () => {
+  it('returns 1 for empty query (matches everything)', () => {
+    expect(fuzzyScore('', 'anything')).toBe(1);
+  });
+
+  it('returns 0 when query is longer than target', () => {
+    expect(fuzzyScore('abcdef', 'abc')).toBe(0);
+  });
+
+  it('returns 0 for no match', () => {
+    expect(fuzzyScore('xyz', 'hello')).toBe(0);
+  });
+
+  it('scores exact match highly', () => {
+    const score = fuzzyScore('hello', 'hello');
+    expect(score).toBeGreaterThan(0);
+  });
+
+  it('is case insensitive', () => {
+    expect(fuzzyScore('HEL', 'hello')).toBe(fuzzyScore('hel', 'hello'));
+  });
+
+  it('scores consecutive matches higher than non-consecutive', () => {
+    // "hd" against "heading" (h-e-a-d consecutive h,d non-consecutive)
+    // vs "hd" against "h___d" (non-consecutive)
+    const consecutive = fuzzyScore('he', 'heading');
+    const nonConsecutive = fuzzyScore('hg', 'heading');
+    expect(consecutive).toBeGreaterThan(nonConsecutive);
+  });
+
+  it('scores start-of-word matches higher', () => {
+    // "b" at start of "banana" vs "b" in middle of "cabbage"
+    const startMatch = fuzzyScore('b', 'banana');
+    const midMatch = fuzzyScore('b', 'cabbage');
+    expect(startMatch).toBeGreaterThan(midMatch);
+  });
+
+  it('requires characters to appear in order', () => {
+    expect(fuzzyScore('ba', 'abc')).toBe(0); // 'b' appears after 'a' in target
+  });
+
+  it('matches non-consecutive characters', () => {
+    // 'hd' should match 'heading' (h...d)
+    expect(fuzzyScore('hd', 'heading')).toBeGreaterThan(0);
+  });
+
+  it('scores word-boundary matches with hyphens', () => {
+    // 'bd' in 'block-drop' should get word-boundary bonus for both
+    const score = fuzzyScore('bd', 'block-drop');
+    expect(score).toBeGreaterThan(0);
+    // Both b and d are at word boundaries
+    const nonBoundary = fuzzyScore('lo', 'block-drop');
+    expect(score).toBeGreaterThan(nonBoundary);
+  });
+});
+
+describe('createTypeahead with fuzzy matchMode', () => {
+  let container: HTMLDivElement;
+  let items: HTMLDivElement[];
+
+  beforeEach(() => {
+    container = document.createElement('div');
+    items = [];
+
+    const labels = ['Heading', 'Paragraph', 'Blockquote', 'List', 'Code Block'];
+    for (const label of labels) {
+      const item = document.createElement('div');
+      item.textContent = label;
+      item.setAttribute('role', 'option');
+      container.appendChild(item);
+      items.push(item);
+    }
+
+    document.body.appendChild(container);
+  });
+
+  afterEach(() => {
+    container.remove();
+    vi.useRealTimers();
+  });
+
+  it('finds best fuzzy match', () => {
+    const onMatch = vi.fn();
+    const cleanup = createTypeahead(container, {
+      getItems: () => items,
+      onMatch,
+      matchMode: 'fuzzy',
+    });
+
+    // 'h' should match 'Heading' (start-of-word bonus)
+    container.dispatchEvent(new KeyboardEvent('keydown', { key: 'h', bubbles: true }));
+    expect(onMatch).toHaveBeenCalledWith(items[0], 0);
+
+    cleanup();
+  });
+
+  it('matches non-consecutive characters in fuzzy mode', () => {
+    const onMatch = vi.fn();
+    const cleanup = createTypeahead(container, {
+      getItems: () => items,
+      onMatch,
+      matchMode: 'fuzzy',
+    });
+
+    // 'cb' matches 'Code Block' (c...b non-consecutive)
+    container.dispatchEvent(new KeyboardEvent('keydown', { key: 'c', bubbles: true }));
+    container.dispatchEvent(new KeyboardEvent('keydown', { key: 'b', bubbles: true }));
+    expect(onMatch).toHaveBeenLastCalledWith(items[4], 4); // Code Block
+
+    cleanup();
+  });
+
+  it('returns no match when fuzzy has zero score', () => {
+    const onMatch = vi.fn();
+    const onNoMatch = vi.fn();
+    const cleanup = createTypeahead(container, {
+      getItems: () => items,
+      onMatch,
+      onNoMatch,
+      matchMode: 'fuzzy',
+    });
+
+    container.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', bubbles: true }));
+    expect(onMatch).not.toHaveBeenCalled();
+    expect(onNoMatch).toHaveBeenCalledWith('z');
+
+    cleanup();
+  });
+
+  it('preserves default prefix behavior when matchMode not set', () => {
+    const onMatch = vi.fn();
+    const cleanup = createTypeahead(container, {
+      getItems: () => items,
+      onMatch,
+    });
+
+    container.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', bubbles: true }));
+    expect(onMatch).toHaveBeenCalledWith(items[1], 1); // Paragraph
+
+    cleanup();
+  });
+
+  it('skips disabled items in fuzzy mode', () => {
+    items[0]?.setAttribute('disabled', '');
+
+    const onMatch = vi.fn();
+    const cleanup = createTypeahead(container, {
+      getItems: () => items,
+      onMatch,
+      matchMode: 'fuzzy',
+    });
+
+    // 'h' would match Heading but it's disabled
+    container.dispatchEvent(new KeyboardEvent('keydown', { key: 'h', bubbles: true }));
+    expect(onMatch).not.toHaveBeenCalledWith(items[0], 0);
+
+    cleanup();
+  });
+});
+
 describe('highlightMatch', () => {
   let element: HTMLDivElement;
 

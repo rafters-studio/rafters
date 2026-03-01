@@ -67,6 +67,14 @@ export function fuzzyScore(query: string, target: string): number {
   return qi === q.length ? score : 0;
 }
 
+/**
+ * Match mode for typeahead search.
+ * - 'prefix': Match from start of text (default, original behavior)
+ * - 'fuzzy': Characters must appear in order but not consecutively.
+ *   Consecutive matches and start-of-word matches score higher.
+ */
+export type TypeaheadMatchMode = 'prefix' | 'fuzzy';
+
 export interface TypeaheadOptions {
   /**
    * Function to get searchable items
@@ -97,7 +105,9 @@ export interface TypeaheadOptions {
   timeout?: number;
 
   /**
-   * Whether to match from start of text only
+   * Whether to match from start of text only.
+   * Only applies when matchMode is 'prefix' (default).
+   * Ignored when matchMode is 'fuzzy'.
    * @default true
    */
   matchFromStart?: boolean;
@@ -119,6 +129,15 @@ export interface TypeaheadOptions {
    * If provided, search starts from this index and wraps around
    */
   startIndex?: number;
+
+  /**
+   * Match mode for typeahead search.
+   * - 'prefix' (default): Matches from start or anywhere in text (controlled by matchFromStart)
+   * - 'fuzzy': Characters must appear in order but not consecutively.
+   *   Best match (highest score) wins. Used by block-palette for search.
+   * @default 'prefix'
+   */
+  matchMode?: TypeaheadMatchMode;
 }
 
 export interface TypeaheadState {
@@ -142,12 +161,12 @@ export interface TypeaheadState {
  * Default function to extract text from an element
  */
 function defaultGetItemText(item: HTMLElement): string {
-  // Try aria-label first
-  const ariaLabel = item.getAttribute('aria-label');
-  if (ariaLabel) return ariaLabel;
+  return item.getAttribute('aria-label') || item.textContent?.trim() || '';
+}
 
-  // Then textContent
-  return item.textContent?.trim() || '';
+/** Check if an element is disabled via attribute or aria-disabled */
+function isItemDisabled(item: HTMLElement): boolean {
+  return item.hasAttribute('disabled') || item.getAttribute('aria-disabled') === 'true';
 }
 
 /**
@@ -174,132 +193,16 @@ export function createTypeahead(
   container: HTMLElement,
   options: TypeaheadOptions,
 ): CleanupFunction {
-  // SSR guard
-  if (typeof window === 'undefined') {
+  if (typeof window === 'undefined' || options.enabled === false) {
     return () => {};
   }
 
-  const {
-    getItems,
-    getItemText = defaultGetItemText,
-    onMatch,
-    onNoMatch,
-    timeout = 1000,
-    matchFromStart = true,
-    caseSensitive = false,
-    enabled = true,
-    startIndex,
-  } = options;
-
-  if (!enabled) {
-    return () => {};
-  }
-
-  let searchString = '';
-  let timeoutId: ReturnType<typeof setTimeout> | null = null;
-
-  /**
-   * Reset search state
-   */
-  const reset = () => {
-    searchString = '';
-    if (timeoutId !== null) {
-      clearTimeout(timeoutId);
-      timeoutId = null;
-    }
-  };
-
-  /**
-   * Find matching item
-   */
-  const findMatch = (
-    items: HTMLElement[],
-    search: string,
-  ): { item: HTMLElement; index: number } | null => {
-    const normalizedSearch = caseSensitive ? search : search.toLowerCase();
-
-    // Determine starting index for search
-    const start = startIndex !== undefined ? startIndex : 0;
-
-    // Search from start index to end, then wrap to beginning
-    for (let i = 0; i < items.length; i++) {
-      const index = (start + i) % items.length;
-      const item = items[index];
-      if (!item) continue;
-
-      // Skip disabled items
-      if (item.hasAttribute('disabled') || item.getAttribute('aria-disabled') === 'true') {
-        continue;
-      }
-
-      const text = getItemText(item);
-      const normalizedText = caseSensitive ? text : text.toLowerCase();
-
-      const matches = matchFromStart
-        ? normalizedText.startsWith(normalizedSearch)
-        : normalizedText.includes(normalizedSearch);
-
-      if (matches) {
-        return { item, index };
-      }
-    }
-
-    return null;
-  };
-
-  /**
-   * Handle keydown event
-   */
-  const handleKeyDown = (event: KeyboardEvent) => {
-    // Ignore if modifier keys are pressed (except Shift)
-    if (event.ctrlKey || event.altKey || event.metaKey) {
-      return;
-    }
-
-    // Ignore special keys
-    const { key } = event;
-    if (key.length !== 1) {
-      return;
-    }
-
-    // Ignore space at start of search (usually means "activate")
-    if (key === ' ' && searchString === '') {
-      return;
-    }
-
-    // Clear previous timeout
-    if (timeoutId !== null) {
-      clearTimeout(timeoutId);
-    }
-
-    // Add character to search string
-    searchString += key;
-
-    // Get items
-    const items = Array.from(getItems());
-    if (items.length === 0) {
-      reset();
-      return;
-    }
-
-    // Find match
-    const match = findMatch(items, searchString);
-
-    if (match) {
-      onMatch?.(match.item, match.index);
-    } else {
-      onNoMatch?.(searchString);
-    }
-
-    // Set timeout to reset search
-    timeoutId = setTimeout(reset, timeout);
-  };
-
-  container.addEventListener('keydown', handleKeyDown);
+  const controlled = createControlledTypeahead(options);
+  container.addEventListener('keydown', controlled.handleKeyDown);
 
   return () => {
-    container.removeEventListener('keydown', handleKeyDown);
-    reset();
+    container.removeEventListener('keydown', controlled.handleKeyDown);
+    controlled.reset();
   };
 }
 
@@ -335,6 +238,7 @@ export function createControlledTypeahead(options: Omit<TypeaheadOptions, 'enabl
     matchFromStart = true,
     caseSensitive = false,
     startIndex,
+    matchMode = 'prefix',
   } = options;
 
   let searchString = '';
@@ -355,21 +259,36 @@ export function createControlledTypeahead(options: Omit<TypeaheadOptions, 'enabl
     items: HTMLElement[],
     search: string,
   ): { item: HTMLElement; index: number } | null => {
+    const start = startIndex ?? 0;
+
+    if (matchMode === 'fuzzy') {
+      let bestScore = 0;
+      let bestItem: HTMLElement | null = null;
+      let bestIndex = -1;
+
+      for (let i = 0; i < items.length; i++) {
+        const index = (start + i) % items.length;
+        const item = items[index];
+        if (!item || isItemDisabled(item)) continue;
+        const score = fuzzyScore(search, getItemText(item));
+        if (score > bestScore) {
+          bestScore = score;
+          bestItem = item;
+          bestIndex = index;
+        }
+      }
+
+      return bestItem ? { item: bestItem, index: bestIndex } : null;
+    }
+
     const normalizedSearch = caseSensitive ? search : search.toLowerCase();
-    const start = startIndex !== undefined ? startIndex : 0;
 
     for (let i = 0; i < items.length; i++) {
       const index = (start + i) % items.length;
       const item = items[index];
-      if (!item) continue;
+      if (!item || isItemDisabled(item)) continue;
 
-      if (item.hasAttribute('disabled') || item.getAttribute('aria-disabled') === 'true') {
-        continue;
-      }
-
-      const text = getItemText(item);
-      const normalizedText = caseSensitive ? text : text.toLowerCase();
-
+      const normalizedText = caseSensitive ? getItemText(item) : getItemText(item).toLowerCase();
       const matches = matchFromStart
         ? normalizedText.startsWith(normalizedSearch)
         : normalizedText.includes(normalizedSearch);
@@ -438,6 +357,9 @@ export function createControlledTypeahead(options: Omit<TypeaheadOptions, 'enabl
  * Highlight matching text in an element
  * Utility for visual feedback during typeahead
  *
+ * Note: Uses innerHTML for highlight rendering. Input is derived from
+ * the element's own textContent, not from external/untrusted sources.
+ *
  * @example
  * ```typescript
  * // In onMatch callback
@@ -467,10 +389,8 @@ export function highlightMatch(
     return () => {};
   }
 
-  // Store original HTML
   const originalHTML = element.innerHTML;
 
-  // Create highlighted HTML
   const before = text.slice(0, matchIndex);
   const match = text.slice(matchIndex, matchIndex + searchString.length);
   const after = text.slice(matchIndex + searchString.length);
