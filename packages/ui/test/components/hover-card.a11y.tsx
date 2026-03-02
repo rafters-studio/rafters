@@ -328,6 +328,78 @@ describe('HoverCard - Accessibility', () => {
     });
   });
 
+  it('closes on Escape key press', async () => {
+    vi.useFakeTimers();
+
+    const handleOpenChange = vi.fn();
+
+    render(
+      <HoverCard openDelay={0} closeDelay={0} onOpenChange={handleOpenChange}>
+        <HoverCardTrigger>Focusable trigger</HoverCardTrigger>
+        <HoverCardPortal>
+          <HoverCardContent>Dismissible content</HoverCardContent>
+        </HoverCardPortal>
+      </HoverCard>,
+    );
+
+    const trigger = screen.getByText('Focusable trigger');
+
+    // Focus to open
+    fireEvent.focus(trigger);
+
+    await act(async () => {
+      vi.advanceTimersByTime(10);
+    });
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+
+    // Press Escape to close
+    fireEvent.keyDown(document, { key: 'Escape' });
+
+    await act(async () => {
+      vi.advanceTimersByTime(10);
+    });
+
+    expect(handleOpenChange).toHaveBeenCalledWith(false);
+
+    vi.useRealTimers();
+  });
+
+  it('closes on Escape in uncontrolled mode', async () => {
+    vi.useFakeTimers();
+
+    render(
+      <HoverCard openDelay={0} closeDelay={0}>
+        <HoverCardTrigger>Trigger</HoverCardTrigger>
+        <HoverCardPortal>
+          <HoverCardContent>Content</HoverCardContent>
+        </HoverCardPortal>
+      </HoverCard>,
+    );
+
+    const trigger = screen.getByText('Trigger');
+
+    // Focus to open
+    fireEvent.focus(trigger);
+
+    await act(async () => {
+      vi.advanceTimersByTime(10);
+    });
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+
+    // Press Escape to close
+    fireEvent.keyDown(document, { key: 'Escape' });
+
+    await act(async () => {
+      vi.advanceTimersByTime(10);
+    });
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+    vi.useRealTimers();
+  });
+
   it('hover card content is semantically linked to trigger', async () => {
     render(
       <HoverCard open>
