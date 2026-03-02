@@ -407,9 +407,7 @@ describe('HoverCard - Accessibility', () => {
       <HoverCard openDelay={0} closeDelay={0}>
         <HoverCardTrigger>Trigger</HoverCardTrigger>
         <HoverCardPortal>
-          <HoverCardContent onEscapeKeyDown={(e) => e.preventDefault()}>
-            Content
-          </HoverCardContent>
+          <HoverCardContent onEscapeKeyDown={(e) => e.preventDefault()}>Content</HoverCardContent>
         </HoverCardPortal>
       </HoverCard>,
     );
