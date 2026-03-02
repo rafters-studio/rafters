@@ -1,5 +1,18 @@
 # rafters
 
+## 0.0.9
+
+### Patch Changes
+
+- Add system preamble to MCP tools with layout rules, spacing ownership, and Container/Grid guidance
+- Overhaul `rafters_vocabulary` to use config + registry for accurate component/token listings
+- Add `rafters_cognitive_budget` MCP tool for attention-budget-aware component selection
+- Add installed component tracking to `RaftersConfig` and `rafters add`
+- Wire `rafters add` to auto-install npm dependencies declared via `@dependencies` JSDoc tags
+- Add `--update` and `--update-all` flags to `rafters add` for updating previously installed components
+- Deduplicate `RegistryItemType` into shared `rafters/registry/types` import
+- Parse `@dependencies` and `@devDependencies` JSDoc tags in MCP component intelligence
+
 ## 0.0.8
 
 ### Patch Changes

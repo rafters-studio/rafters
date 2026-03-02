@@ -27,10 +27,12 @@ jobs:
         with:
           node-version: 24.12
           cache: pnpm
-          registry-url: https://registry.npmjs.org
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Clean .npmrc for OIDC
+        run: rm -f .npmrc
 
       - name: Create Release PR or Publish
         id: changesets
@@ -40,4 +42,3 @@ jobs:
           publish: pnpm release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_CONFIG_PROVENANCE: true
