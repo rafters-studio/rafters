@@ -5,7 +5,7 @@
 
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { axe } from 'vitest-axe';
 import {
   Drawer,
@@ -260,6 +260,31 @@ describe('Drawer - Accessibility', () => {
 
     await waitFor(() => {
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+  });
+
+  it('calls onOpenChange with false on Escape key press', async () => {
+    const user = userEvent.setup();
+    const handleOpenChange = vi.fn();
+
+    render(
+      <Drawer defaultOpen onOpenChange={handleOpenChange}>
+        <DrawerPortal>
+          <DrawerContent>
+            <DrawerTitle>Escape Callback Test</DrawerTitle>
+          </DrawerContent>
+        </DrawerPortal>
+      </Drawer>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+    });
+
+    await user.keyboard('{Escape}');
+
+    await waitFor(() => {
+      expect(handleOpenChange).toHaveBeenCalledWith(false);
     });
   });
 

@@ -400,6 +400,44 @@ describe('HoverCard - Accessibility', () => {
     vi.useRealTimers();
   });
 
+  it('does not close when onEscapeKeyDown calls preventDefault', async () => {
+    vi.useFakeTimers();
+
+    render(
+      <HoverCard openDelay={0} closeDelay={0}>
+        <HoverCardTrigger>Trigger</HoverCardTrigger>
+        <HoverCardPortal>
+          <HoverCardContent onEscapeKeyDown={(e) => e.preventDefault()}>
+            Content
+          </HoverCardContent>
+        </HoverCardPortal>
+      </HoverCard>,
+    );
+
+    const trigger = screen.getByText('Trigger');
+
+    // Focus to open
+    fireEvent.focus(trigger);
+
+    await act(async () => {
+      vi.advanceTimersByTime(10);
+    });
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+
+    // Press Escape - should be intercepted
+    fireEvent.keyDown(document, { key: 'Escape' });
+
+    await act(async () => {
+      vi.advanceTimersByTime(10);
+    });
+
+    // Should remain open because preventDefault was called
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+
+    vi.useRealTimers();
+  });
+
   it('hover card content is semantically linked to trigger', async () => {
     render(
       <HoverCard open>
