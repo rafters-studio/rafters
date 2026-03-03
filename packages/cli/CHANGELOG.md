@@ -1,5 +1,11 @@
 # rafters
 
+## 0.0.10
+
+### Patch Changes
+
+- a50a8ae: Fix framework detection for Astro projects: add config file fallback detection (astro.config.mjs, etc.) and refresh framework/paths on rebuild
+
 ## 0.0.9
 
 ### Patch Changes
