@@ -289,6 +289,7 @@ async function regenerateFromExisting(
   paths: ReturnType<typeof getRaftersPaths>,
   shadcn: ShadcnConfig | null,
   isAgentMode: boolean,
+  framework: Framework,
 ): Promise<void> {
   log({ event: 'init:regenerate', cwd });
 
@@ -299,6 +300,14 @@ async function regenerateFromExisting(
     existingConfig = JSON.parse(configContent) as RaftersConfig;
   } catch {
     // No config file, will use defaults
+  }
+
+  // Refresh framework and paths from fresh detection
+  if (framework !== 'unknown' && existingConfig) {
+    const frameworkPaths = COMPONENT_PATHS[framework] || COMPONENT_PATHS.unknown;
+    existingConfig.framework = framework;
+    existingConfig.componentsPath = frameworkPaths.components;
+    existingConfig.primitivesPath = frameworkPaths.primitives;
   }
 
   // Load all tokens from .rafters/tokens/
@@ -359,6 +368,7 @@ async function resetToDefaults(
   paths: ReturnType<typeof getRaftersPaths>,
   shadcn: ShadcnConfig | null,
   isAgentMode: boolean,
+  framework: Framework,
 ): Promise<void> {
   log({ event: 'init:reset', cwd });
 
@@ -369,6 +379,14 @@ async function resetToDefaults(
     existingConfig = JSON.parse(configContent) as RaftersConfig;
   } catch {
     // No config file, will use defaults
+  }
+
+  // Refresh framework and paths from fresh detection
+  if (framework !== 'unknown' && existingConfig) {
+    const frameworkPaths = COMPONENT_PATHS[framework] || COMPONENT_PATHS.unknown;
+    existingConfig.framework = framework;
+    existingConfig.componentsPath = frameworkPaths.components;
+    existingConfig.primitivesPath = frameworkPaths.primitives;
   }
 
   // Load existing tokens to check for userOverride backups
@@ -494,7 +512,7 @@ export async function init(options: InitOptions): Promise<void> {
 
   // --reset takes precedence over --rebuild
   if (raftersExists && options.reset) {
-    await resetToDefaults(cwd, paths, shadcn, isAgentMode);
+    await resetToDefaults(cwd, paths, shadcn, isAgentMode, framework as Framework);
     return;
   }
 
@@ -506,7 +524,7 @@ export async function init(options: InitOptions): Promise<void> {
 
   // If --rebuild and rafters exists, regenerate from existing config
   if (raftersExists && options.rebuild) {
-    await regenerateFromExisting(cwd, paths, shadcn, isAgentMode);
+    await regenerateFromExisting(cwd, paths, shadcn, isAgentMode, framework as Framework);
     return;
   }
 

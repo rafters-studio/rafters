@@ -4,6 +4,7 @@
  * Detects framework, Tailwind version, and shadcn configuration
  */
 
+import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
@@ -48,8 +49,18 @@ interface PackageJson {
   devDependencies?: Record<string, string>;
 }
 
+// Config files that indicate a specific framework, checked as a fallback
+// when package.json dependency detection returns 'unknown'.
+const CONFIG_FILE_FRAMEWORKS: Array<{ files: string[]; framework: Framework }> = [
+  { files: ['astro.config.mjs', 'astro.config.ts', 'astro.config.js'], framework: 'astro' },
+  { files: ['next.config.mjs', 'next.config.ts', 'next.config.js'], framework: 'next' },
+  { files: ['remix.config.js', 'remix.config.ts'], framework: 'remix' },
+  { files: ['vite.config.ts', 'vite.config.js', 'vite.config.mjs'], framework: 'vite' },
+];
+
 /**
- * Detect the framework used in the project by checking package.json dependencies
+ * Detect the framework used in the project by checking package.json dependencies,
+ * falling back to framework config files when dependencies are inconclusive.
  */
 export async function detectFramework(cwd: string): Promise<Framework> {
   try {
@@ -80,11 +91,25 @@ export async function detectFramework(cwd: string): Promise<Framework> {
     if (deps.vite) {
       return 'vite';
     }
-
-    return 'unknown';
   } catch {
-    return 'unknown';
+    // package.json missing or unreadable, fall through to config file check
   }
+
+  return detectFrameworkFromConfigFiles(cwd);
+}
+
+/**
+ * Fallback detection: check for framework-specific config files on disk.
+ */
+function detectFrameworkFromConfigFiles(cwd: string): Framework {
+  for (const { files, framework } of CONFIG_FILE_FRAMEWORKS) {
+    for (const file of files) {
+      if (existsSync(join(cwd, file))) {
+        return framework;
+      }
+    }
+  }
+  return 'unknown';
 }
 
 /**
