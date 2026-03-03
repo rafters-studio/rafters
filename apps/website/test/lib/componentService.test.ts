@@ -438,6 +438,28 @@ describe('componentService', () => {
       expect(result.devDependencies).toEqual([]);
     });
 
+    it('stops parsing at parenthetical descriptions', () => {
+      const source = `
+        /**
+         * @dependencies primitives/history (via consumer-provided getHistory callback)
+         */
+        export function handler() {}
+      `;
+      const result = extractDepsFromSource(source);
+      expect(result.dependencies).toEqual(['primitives/history']);
+    });
+
+    it('extracts multiple deps before parenthetical', () => {
+      const source = `
+        /**
+         * @dependencies nanostores @nanostores/react (required for React bindings)
+         */
+        export function handler() {}
+      `;
+      const result = extractDepsFromSource(source);
+      expect(result.dependencies).toEqual(['nanostores', '@nanostores/react']);
+    });
+
     it('does not match @dependencies in string literals', () => {
       const source = `
         const help = "@dependencies are managed externally";

@@ -232,7 +232,8 @@ export function extractDepsFromSource(content: string): {
 
       if (target) {
         for (const pkg of value.split(/\s+/)) {
-          if (pkg && !pkg.startsWith('@rafters/')) target.add(pkg);
+          if (!pkg || pkg.startsWith('(')) break;
+          if (!pkg.startsWith('@rafters/')) target.add(pkg);
         }
       }
     }

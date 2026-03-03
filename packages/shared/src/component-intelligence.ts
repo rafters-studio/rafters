@@ -325,7 +325,13 @@ export function extractJSDocDependencies(source: string): JSDocDependencies {
 
       const value = getTagValue(tag).trim();
       if (value) {
-        result[field].push(...value.split(/\s+/).filter(Boolean));
+        const tokens = value.split(/\s+/).filter(Boolean);
+        const validTokens: string[] = [];
+        for (const token of tokens) {
+          if (token.startsWith('(')) break;
+          validTokens.push(token);
+        }
+        result[field].push(...validTokens);
       }
     }
   }

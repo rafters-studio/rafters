@@ -388,6 +388,24 @@ export function Picker() {}`;
     expect(result.internal).toEqual(['@rafters/color-utils']);
   });
 
+  it('stops parsing at parenthetical descriptions', () => {
+    const source = `/**
+ * @dependencies primitives/history (via consumer-provided getHistory callback)
+ */
+export function Handler() {}`;
+    const result = extractJSDocDependencies(source);
+    expect(result.runtime).toEqual(['primitives/history']);
+  });
+
+  it('extracts multiple deps before parenthetical', () => {
+    const source = `/**
+ * @dependencies nanostores @nanostores/react (required for React bindings)
+ */
+export function Handler() {}`;
+    const result = extractJSDocDependencies(source);
+    expect(result.runtime).toEqual(['nanostores', '@nanostores/react']);
+  });
+
   it('parses multiple internal dependencies', () => {
     const source = `/**
  * @internal-dependencies @rafters/color-utils @rafters/math-utils
