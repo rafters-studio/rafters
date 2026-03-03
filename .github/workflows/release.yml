@@ -61,7 +61,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 24.12
-          registry-url: "https://registry.npmjs.org"
 
       - name: Install latest npm for OIDC
         run: npm install -g npm@latest
