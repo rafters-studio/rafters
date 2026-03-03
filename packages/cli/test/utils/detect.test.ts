@@ -94,9 +94,68 @@ describe('detectFramework', () => {
     expect(framework).toBe('unknown');
   });
 
-  it('should return unknown when package.json does not exist', async () => {
+  it('should return unknown when package.json does not exist and no config files', async () => {
     const framework = await detectFramework(testDir);
     expect(framework).toBe('unknown');
+  });
+
+  it('should detect Astro from config file when not in package.json deps', async () => {
+    await writeFile(
+      join(testDir, 'package.json'),
+      JSON.stringify({
+        dependencies: { react: '^19.0.0' },
+      }),
+    );
+    await writeFile(join(testDir, 'astro.config.mjs'), 'export default {};');
+
+    const framework = await detectFramework(testDir);
+    expect(framework).toBe('astro');
+  });
+
+  it('should detect Next.js from config file when not in package.json deps', async () => {
+    await writeFile(
+      join(testDir, 'package.json'),
+      JSON.stringify({
+        dependencies: { react: '^19.0.0' },
+      }),
+    );
+    await writeFile(join(testDir, 'next.config.mjs'), 'export default {};');
+
+    const framework = await detectFramework(testDir);
+    expect(framework).toBe('next');
+  });
+
+  it('should detect Vite from config file when not in package.json deps', async () => {
+    await writeFile(
+      join(testDir, 'package.json'),
+      JSON.stringify({
+        dependencies: { react: '^19.0.0' },
+      }),
+    );
+    await writeFile(join(testDir, 'vite.config.ts'), 'export default {};');
+
+    const framework = await detectFramework(testDir);
+    expect(framework).toBe('vite');
+  });
+
+  it('should detect Astro from config file when no package.json exists', async () => {
+    await writeFile(join(testDir, 'astro.config.ts'), 'export default {};');
+
+    const framework = await detectFramework(testDir);
+    expect(framework).toBe('astro');
+  });
+
+  it('should prefer package.json detection over config files', async () => {
+    await writeFile(
+      join(testDir, 'package.json'),
+      JSON.stringify({
+        dependencies: { astro: '^4.0.0' },
+      }),
+    );
+    await writeFile(join(testDir, 'next.config.mjs'), 'export default {};');
+
+    const framework = await detectFramework(testDir);
+    expect(framework).toBe('astro');
   });
 
   it('should prioritize Next.js over Vite when both are present', async () => {
