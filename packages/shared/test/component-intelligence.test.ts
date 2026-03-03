@@ -300,14 +300,14 @@ import { Popover } from '../primitives/popover';
     expect(primitives).toContain('popover');
   });
 
-  it('excludes types import from primitives', () => {
+  it('includes types import from primitives', () => {
     const source = `
 import { Dialog } from '../primitives/dialog';
 import type { Props } from '../primitives/types';
 `;
     const primitives = extractPrimitiveDependencies(source);
     expect(primitives).toContain('dialog');
-    expect(primitives).not.toContain('types');
+    expect(primitives).toContain('types');
   });
 
   it('strips file extension from primitive name', () => {

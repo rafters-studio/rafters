@@ -48,9 +48,9 @@ describe('componentService', () => {
       expect(names).toContain('portal');
     });
 
-    it('excludes types.ts', () => {
+    it('includes types.ts as a registry primitive', () => {
       const names = listPrimitiveNames();
-      expect(names).not.toContain('types');
+      expect(names).toContain('types');
     });
   });
 
@@ -90,6 +90,13 @@ describe('componentService', () => {
       const component = loadComponent('dialog');
       expect(component?.primitives).toBeDefined();
       expect(component?.primitives).toContain('slot');
+    });
+
+    it('captures sibling ./component imports as internal deps', () => {
+      // editor.tsx imports from ./container -- should be captured
+      const component = loadComponent('editor');
+      expect(component).not.toBeNull();
+      expect(component?.primitives).toContain('container');
     });
 
     it('returns null for non-existent component', () => {

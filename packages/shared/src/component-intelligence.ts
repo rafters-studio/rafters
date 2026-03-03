@@ -285,7 +285,7 @@ export function extractPrimitiveDependencies(source: string): string[] {
         .split('/')
         .pop()
         ?.replace(/\.(ts|tsx)$/, '');
-      if (primitiveName && !primitives.includes(primitiveName) && primitiveName !== 'types') {
+      if (primitiveName && !primitives.includes(primitiveName)) {
         primitives.push(primitiveName);
       }
     }
