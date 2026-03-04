@@ -2,7 +2,7 @@
   "$schema": "https://rafters.studio/schemas/namespace-tokens.json",
   "namespace": "shadow",
   "version": "1.0.0",
-  "generatedAt": "2026-01-13T00:23:34.236Z",
+  "generatedAt": "2026-03-04T02:18:21.557Z",
   "tokens": [
     {
       "name": "shadow-base-unit",
@@ -18,7 +18,7 @@
         "spacing-base"
       ],
       "description": "Shadows derive from spacing base (0.25rem) for visual consistency.",
-      "generatedAt": "2026-01-13T00:23:34.213Z",
+      "generatedAt": "2026-03-04T02:18:21.544Z",
       "containerQueryAware": false
     },
     {
@@ -36,7 +36,7 @@
       "progressionSystem": "minor-third",
       "dependsOn": [],
       "description": "Shadow none: No shadow - flat appearance. Y: 0×base, Blur: 0×base",
-      "generatedAt": "2026-01-13T00:23:34.213Z",
+      "generatedAt": "2026-03-04T02:18:21.544Z",
       "containerQueryAware": false,
       "usagePatterns": {
         "do": [
@@ -65,7 +65,7 @@
         "shadow-base-unit"
       ],
       "description": "Shadow xs: Extra small shadow - subtle depth hint. Y: 0.25×base, Blur: 0.5×base",
-      "generatedAt": "2026-01-13T00:23:34.213Z",
+      "generatedAt": "2026-03-04T02:18:21.544Z",
       "containerQueryAware": false,
       "usagePatterns": {
         "do": [
@@ -94,7 +94,7 @@
         "shadow-base-unit"
       ],
       "description": "Shadow sm: Small shadow - slight elevation. Y: 0.25×base, Blur: 1×base",
-      "generatedAt": "2026-01-13T00:23:34.213Z",
+      "generatedAt": "2026-03-04T02:18:21.544Z",
       "containerQueryAware": false,
       "usagePatterns": {
         "do": [
@@ -123,7 +123,7 @@
         "shadow-base-unit"
       ],
       "description": "Shadow DEFAULT: Default shadow - standard elevation. Y: 0.5×base, Blur: 1.5×base",
-      "generatedAt": "2026-01-13T00:23:34.213Z",
+      "generatedAt": "2026-03-04T02:18:21.544Z",
       "containerQueryAware": false,
       "usagePatterns": {
         "do": [
@@ -152,7 +152,7 @@
         "shadow-base-unit"
       ],
       "description": "Shadow md: Medium shadow - noticeable elevation. Y: 1×base, Blur: 2×base",
-      "generatedAt": "2026-01-13T00:23:34.213Z",
+      "generatedAt": "2026-03-04T02:18:21.544Z",
       "containerQueryAware": false,
       "usagePatterns": {
         "do": [
@@ -181,7 +181,7 @@
         "shadow-base-unit"
       ],
       "description": "Shadow lg: Large shadow - significant elevation. Y: 2×base, Blur: 4×base",
-      "generatedAt": "2026-01-13T00:23:34.213Z",
+      "generatedAt": "2026-03-04T02:18:21.544Z",
       "containerQueryAware": false,
       "usagePatterns": {
         "do": [
@@ -210,7 +210,7 @@
         "shadow-base-unit"
       ],
       "description": "Shadow xl: Extra large shadow - high elevation. Y: 5×base, Blur: 6×base",
-      "generatedAt": "2026-01-13T00:23:34.213Z",
+      "generatedAt": "2026-03-04T02:18:21.544Z",
       "containerQueryAware": false,
       "usagePatterns": {
         "do": [
@@ -239,7 +239,7 @@
         "shadow-base-unit"
       ],
       "description": "Shadow 2xl: Maximum shadow - highest elevation. Y: 6×base, Blur: 12×base",
-      "generatedAt": "2026-01-13T00:23:34.213Z",
+      "generatedAt": "2026-03-04T02:18:21.544Z",
       "containerQueryAware": false,
       "usagePatterns": {
         "do": [
@@ -253,7 +253,7 @@
     },
     {
       "name": "shadow-primary",
-      "value": "0 0.125rem 0.375rem -0.062rem color-mix(in oklch, var(--primary) 20%, transparent)",
+      "value": "0 0.125rem 0.375rem -0.062rem color-mix(in oklch, var(--primary) 12%, transparent)",
       "category": "shadow",
       "namespace": "shadow",
       "semanticMeaning": "Primary colored shadow for emphasis",
@@ -266,12 +266,12 @@
         "primary"
       ],
       "description": "Primary colored shadow for emphasis. Uses color-mix for proper OKLCH blending.",
-      "generatedAt": "2026-01-13T00:23:34.213Z",
+      "generatedAt": "2026-03-04T02:18:21.544Z",
       "containerQueryAware": false
     },
     {
       "name": "shadow-destructive",
-      "value": "0 0.125rem 0.375rem -0.062rem color-mix(in oklch, var(--destructive) 20%, transparent)",
+      "value": "0 0.125rem 0.375rem -0.062rem color-mix(in oklch, var(--destructive) 12%, transparent)",
       "category": "shadow",
       "namespace": "shadow",
       "semanticMeaning": "Destructive colored shadow for warnings",
@@ -284,7 +284,7 @@
         "destructive"
       ],
       "description": "Destructive colored shadow for warnings. Uses color-mix for proper OKLCH blending.",
-      "generatedAt": "2026-01-13T00:23:34.213Z",
+      "generatedAt": "2026-03-04T02:18:21.544Z",
       "containerQueryAware": false
     },
     {
@@ -294,7 +294,7 @@
       "namespace": "shadow",
       "semanticMeaning": "Metadata about the shadow progression system",
       "description": "Shadows use minor-third progression from spacing base.",
-      "generatedAt": "2026-01-13T00:23:34.213Z",
+      "generatedAt": "2026-03-04T02:18:21.544Z",
       "containerQueryAware": false
     }
   ]

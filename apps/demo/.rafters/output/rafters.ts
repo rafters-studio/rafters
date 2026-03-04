@@ -244,8 +244,10 @@ export const tokens = {
     'depth-base': '0',
     /** Dropdown menus and select options */
     'depth-dropdown': '10',
-    /** Sticky elements - headers, navigation */
+    /** Sticky elements - headers, toolbars */
     'depth-sticky': '20',
+    /** Navigation panels - sidebars, slide-out nav */
+    'depth-navigation': '25',
     /** Fixed elements - always visible */
     'depth-fixed': '30',
     /** Modal dialogs - blocking overlays */
@@ -254,12 +256,14 @@ export const tokens = {
     'depth-popover': '50',
     /** Tooltips - highest common layer */
     'depth-tooltip': '60',
+    /** Overlay backdrops - screen-dimming layers behind modals */
+    'depth-overlay': '70',
     /** Below base layer - backgrounds, decorative elements */
     'depth-below': '-1',
     /** Maximum layer - emergency overlay (e.g., dev tools) */
     'depth-max': '9999',
     /** Depth scale reference */
-    'depth-scale': '{"gap":10,"note":"Each level has 10-unit gaps for intermediate values","levels":{"base":0,"dropdown":10,"sticky":20,"fixed":30,"modal":40,"popover":50,"tooltip":60}}',
+    'depth-scale': '{"gap":10,"note":"Each level has 10-unit gaps for intermediate values","levels":{"base":0,"dropdown":10,"sticky":20,"navigation":25,"fixed":30,"modal":40,"popover":50,"tooltip":60,"overlay":70}}',
   },
   elevation: {
     /** Surface level - flat, in-flow elements */
@@ -397,17 +401,17 @@ export const tokens = {
     /** Slide out to right */
     'motion-keyframe-slide-out-to-right': 'from { transform: translateX(0); } to { transform: translateX(100%); }',
     /** Scale up while fading in */
-    'motion-keyframe-scale-in': 'from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; }',
+    'motion-keyframe-scale-in': 'from { transform: scale(0.96); opacity: 0; } to { transform: scale(1); opacity: 1; }',
     /** Scale down while fading out */
-    'motion-keyframe-scale-out': 'from { transform: scale(1); opacity: 1; } to { transform: scale(0.95); opacity: 0; }',
+    'motion-keyframe-scale-out': 'from { transform: scale(1); opacity: 1; } to { transform: scale(0.96); opacity: 0; }',
     /** Continuous rotation */
     'motion-keyframe-spin': 'from { transform: rotate(0deg); } to { transform: rotate(360deg); }',
     /** Expanding pulse that fades out */
-    'motion-keyframe-ping': '75%, 100% { transform: scale(2); opacity: 0; }',
+    'motion-keyframe-ping': '75%, 100% { transform: scale(1.7); opacity: 0; }',
     /** Gentle opacity pulse */
-    'motion-keyframe-pulse': '0%, 100% { opacity: 1; } 50% { opacity: 0.5; }',
+    'motion-keyframe-pulse': '0%, 100% { opacity: 1; } 50% { opacity: 0.48; }',
     /** Bouncing motion */
-    'motion-keyframe-bounce': '0%, 100% { transform: translateY(-25%); animation-timing-function: cubic-bezier(0.8, 0, 1, 1); } 50% { transform: translateY(0); animation-timing-function: cubic-bezier(0, 0, 0.2, 1); }',
+    'motion-keyframe-bounce': '0%, 100% { transform: translateY(-33%); animation-timing-function: cubic-bezier(0.8, 0, 1, 1); } 50% { transform: translateY(0); animation-timing-function: cubic-bezier(0, 0, 0.2, 1); }',
     /** Expand accordion content */
     'motion-keyframe-accordion-down': 'from { height: 0; } to { height: var(--radix-accordion-content-height); }',
     /** Collapse accordion content */
@@ -905,9 +909,9 @@ export const tokens = {
     /** Maximum shadow - highest elevation */
     'shadow-2xl': '0 1.5rem 3rem -0.5rem rgb(0 0 0 / 0.25)',
     /** Primary colored shadow for emphasis */
-    'shadow-primary': '0 0.125rem 0.375rem -0.062rem color-mix(in oklch, var(--primary) 20%, transparent)',
+    'shadow-primary': '0 0.125rem 0.375rem -0.062rem color-mix(in oklch, var(--primary) 12%, transparent)',
     /** Destructive colored shadow for warnings */
-    'shadow-destructive': '0 0.125rem 0.375rem -0.062rem color-mix(in oklch, var(--destructive) 20%, transparent)',
+    'shadow-destructive': '0 0.125rem 0.375rem -0.062rem color-mix(in oklch, var(--destructive) 12%, transparent)',
     /** Metadata about the shadow progression system */
     'shadow-progression': '{"ratio":"minor-third","ratioValue":1.2,"baseUnit":4,"note":"Shadow values derived from spacing progression for visual harmony"}',
   },
@@ -993,13 +997,13 @@ export const tokens = {
     /** Body text range for primary content */
     'font-size-base': '1rem',
     /** Small text for captions, labels, and secondary information */
-    'font-size-xs': '0.402rem',
+    'font-size-xs': '0.694rem',
     /** Line height for xs text size */
     'line-height-xs': '1.5',
     /** Letter spacing for xs text size */
     'letter-spacing-xs': '0.025em',
     /** Small text for captions, labels, and secondary information */
-    'font-size-sm': '0.335rem',
+    'font-size-sm': '0.833rem',
     /** Line height for sm text size */
     'line-height-sm': '1.5',
     /** Letter spacing for sm text size */
@@ -1087,7 +1091,7 @@ export const tokens = {
     /** Black weight */
     'font-weight-black': '900',
     /** Metadata about the typography progression system */
-    'typography-progression': '{"ratio":"minor-third","ratioValue":1.2,"baseFontSize":16,"scale":{"xs":6.43,"sm":5.36,"base":16,"lg":19.2,"xl":23.04,"2xl":27.65,"3xl":33.18,"4xl":39.81,"5xl":47.78,"6xl":57.33,"7xl":68.8,"8xl":82.56,"9xl":99.07}}',
+    'typography-progression': '{"ratio":"minor-third","ratioValue":1.2,"baseFontSize":16,"scale":{"xs":11.11,"sm":13.33,"base":16,"lg":19.2,"xl":23.04,"2xl":27.65,"3xl":33.18,"4xl":39.81,"5xl":47.78,"6xl":57.33,"7xl":68.8,"8xl":82.56,"9xl":99.07}}',
   },
 } as const;
 

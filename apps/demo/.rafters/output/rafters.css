@@ -127,11 +127,11 @@
   --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
   --font-size-base: 1rem;
   --font-size-base--line-height: 1.5;
-  --font-size-xs: 0.402rem;
+  --font-size-xs: 0.694rem;
   --font-size-xs--line-height: 1.5;
   --line-height-xs: 1.5;
   --letter-spacing-xs: 0.025em;
-  --font-size-sm: 0.335rem;
+  --font-size-sm: 0.833rem;
   --font-size-sm--line-height: 1.5;
   --line-height-sm: 1.5;
   --letter-spacing-sm: 0.015em;
@@ -186,7 +186,7 @@
   --font-weight-bold: 700;
   --font-weight-extrabold: 800;
   --font-weight-black: 900;
-  --typography-progression: {"ratio":"minor-third","ratioValue":1.2,"baseFontSize":16,"scale":{"xs":6.43,"sm":5.36,"base":16,"lg":19.2,"xl":23.04,"2xl":27.65,"3xl":33.18,"4xl":39.81,"5xl":47.78,"6xl":57.33,"7xl":68.8,"8xl":82.56,"9xl":99.07}};
+  --typography-progression: {"ratio":"minor-third","ratioValue":1.2,"baseFontSize":16,"scale":{"xs":11.11,"sm":13.33,"base":16,"lg":19.2,"xl":23.04,"2xl":27.65,"3xl":33.18,"4xl":39.81,"5xl":47.78,"6xl":57.33,"7xl":68.8,"8xl":82.56,"9xl":99.07}};
 
   --radius-radius-base: 0.375rem;
   --radius-radius-none: 0;
@@ -208,20 +208,22 @@
   --shadow-shadow-lg: 0 0.5rem 1rem -0.187rem rgb(0 0 0 / 0.1), 0 0.25rem 0.5rem -0.125rem rgb(0 0 0 / 0.1);
   --shadow-shadow-xl: 0 1.25rem 1.5rem -0.25rem rgb(0 0 0 / 0.1), 0 0.5rem 1rem -0.187rem rgb(0 0 0 / 0.1);
   --shadow-shadow-2xl: 0 1.5rem 3rem -0.5rem rgb(0 0 0 / 0.25);
-  --shadow-shadow-primary: 0 0.125rem 0.375rem -0.062rem color-mix(in oklch, var(--primary) 20%, transparent);
-  --shadow-shadow-destructive: 0 0.125rem 0.375rem -0.062rem color-mix(in oklch, var(--destructive) 20%, transparent);
+  --shadow-shadow-primary: 0 0.125rem 0.375rem -0.062rem color-mix(in oklch, var(--primary) 12%, transparent);
+  --shadow-shadow-destructive: 0 0.125rem 0.375rem -0.062rem color-mix(in oklch, var(--destructive) 12%, transparent);
   --shadow-shadow-progression: {"ratio":"minor-third","ratioValue":1.2,"baseUnit":4,"note":"Shadow values derived from spacing progression for visual harmony"};
 
   --depth-base: 0;
   --depth-dropdown: 10;
   --depth-sticky: 20;
+  --depth-navigation: 25;
   --depth-fixed: 30;
   --depth-modal: 40;
   --depth-popover: 50;
   --depth-tooltip: 60;
+  --depth-overlay: 70;
   --depth-below: -1;
   --depth-max: 9999;
-  --depth-scale: {"gap":10,"note":"Each level has 10-unit gaps for intermediate values","levels":{"base":0,"dropdown":10,"sticky":20,"fixed":30,"modal":40,"popover":50,"tooltip":60}};
+  --depth-scale: {"gap":10,"note":"Each level has 10-unit gaps for intermediate values","levels":{"base":0,"dropdown":10,"sticky":20,"navigation":25,"fixed":30,"modal":40,"popover":50,"tooltip":60,"overlay":70}};
 
   --motion-duration-base: 150ms;
   --motion-duration-instant: 0ms;
@@ -250,12 +252,12 @@
   --motion-keyframe-slide-out-to-bottom: from { transform: translateY(0); } to { transform: translateY(100%); };
   --motion-keyframe-slide-out-to-left: from { transform: translateX(0); } to { transform: translateX(-100%); };
   --motion-keyframe-slide-out-to-right: from { transform: translateX(0); } to { transform: translateX(100%); };
-  --motion-keyframe-scale-in: from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; };
-  --motion-keyframe-scale-out: from { transform: scale(1); opacity: 1; } to { transform: scale(0.95); opacity: 0; };
+  --motion-keyframe-scale-in: from { transform: scale(0.96); opacity: 0; } to { transform: scale(1); opacity: 1; };
+  --motion-keyframe-scale-out: from { transform: scale(1); opacity: 1; } to { transform: scale(0.96); opacity: 0; };
   --motion-keyframe-spin: from { transform: rotate(0deg); } to { transform: rotate(360deg); };
-  --motion-keyframe-ping: 75%, 100% { transform: scale(2); opacity: 0; };
-  --motion-keyframe-pulse: 0%, 100% { opacity: 1; } 50% { opacity: 0.5; };
-  --motion-keyframe-bounce: 0%, 100% { transform: translateY(-25%); animation-timing-function: cubic-bezier(0.8, 0, 1, 1); } 50% { transform: translateY(0); animation-timing-function: cubic-bezier(0, 0, 0.2, 1); };
+  --motion-keyframe-ping: 75%, 100% { transform: scale(1.7); opacity: 0; };
+  --motion-keyframe-pulse: 0%, 100% { opacity: 1; } 50% { opacity: 0.48; };
+  --motion-keyframe-bounce: 0%, 100% { transform: translateY(-33%); animation-timing-function: cubic-bezier(0.8, 0, 1, 1); } 50% { transform: translateY(0); animation-timing-function: cubic-bezier(0, 0, 0.2, 1); };
   --motion-keyframe-accordion-down: from { height: 0; } to { height: var(--radix-accordion-content-height); };
   --motion-keyframe-accordion-up: from { height: var(--radix-accordion-content-height); } to { height: 0; };
   --motion-keyframe-caret-blink: 0%, 70%, 100% { opacity: 1; } 20%, 50% { opacity: 0; };
@@ -1626,11 +1628,11 @@
 }
 
 @keyframes scale-in {
-  from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; }
+  from { transform: scale(0.96); opacity: 0; } to { transform: scale(1); opacity: 1; }
 }
 
 @keyframes scale-out {
-  from { transform: scale(1); opacity: 1; } to { transform: scale(0.95); opacity: 0; }
+  from { transform: scale(1); opacity: 1; } to { transform: scale(0.96); opacity: 0; }
 }
 
 @keyframes spin {
@@ -1638,15 +1640,15 @@
 }
 
 @keyframes ping {
-  75%, 100% { transform: scale(2); opacity: 0; }
+  75%, 100% { transform: scale(1.7); opacity: 0; }
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; } 50% { opacity: 0.5; }
+  0%, 100% { opacity: 1; } 50% { opacity: 0.48; }
 }
 
 @keyframes bounce {
-  0%, 100% { transform: translateY(-25%); animation-timing-function: cubic-bezier(0.8, 0, 1, 1); } 50% { transform: translateY(0); animation-timing-function: cubic-bezier(0, 0, 0.2, 1); }
+  0%, 100% { transform: translateY(-33%); animation-timing-function: cubic-bezier(0.8, 0, 1, 1); } 50% { transform: translateY(0); animation-timing-function: cubic-bezier(0, 0, 0.2, 1); }
 }
 
 @keyframes accordion-down {
@@ -1659,4 +1661,136 @@
 
 @keyframes caret-blink {
   0%, 70%, 100% { opacity: 1; } 20%, 50% { opacity: 0; }
+}
+
+@layer base {
+  article p {
+    @apply leading-relaxed mb-4;
+  }
+  article p:last-child {
+    @apply mb-0;
+  }
+  article h1 {
+    @apply text-4xl font-bold tracking-tight mb-4 mt-0 text-accent-foreground;
+  }
+  article h2 {
+    @apply text-3xl font-semibold tracking-tight mb-3 mt-8 text-accent-foreground;
+  }
+  article h2:first-child {
+    @apply mt-0;
+  }
+  article h3 {
+    @apply text-2xl font-semibold mb-2 mt-6 text-accent-foreground;
+  }
+  article h4 {
+    @apply text-xl font-semibold mb-2 mt-4 text-accent-foreground;
+  }
+  article h5 {
+    @apply text-lg font-semibold mb-2 mt-4 text-accent-foreground;
+  }
+  article h6 {
+    @apply text-base font-semibold mb-2 mt-4 text-accent-foreground;
+  }
+  article ul {
+    @apply list-disc pl-6 mb-4;
+  }
+  article ol {
+    @apply list-decimal pl-6 mb-4;
+  }
+  article li {
+    @apply mb-1;
+  }
+  article li > ul,
+  article li > ol {
+    @apply mt-1 mb-0;
+  }
+  article a {
+    @apply text-primary underline underline-offset-4;
+  }
+  article a:hover {
+    @apply text-primary/80;
+  }
+  article blockquote {
+    @apply border-l-4 border-muted pl-4 italic my-4;
+  }
+  article code {
+    @apply bg-muted px-1.5 py-0.5 rounded text-sm font-mono;
+  }
+  article pre {
+    @apply bg-muted p-4 rounded-lg overflow-x-auto my-4 text-sm font-mono;
+  }
+  article pre code {
+    @apply bg-transparent p-0 rounded-none text-[inherit];
+  }
+  article kbd {
+    @apply bg-muted border border-border rounded px-1.5 py-0.5 text-sm font-mono;
+  }
+  article hr {
+    @apply border-border my-8;
+  }
+  article img {
+    @apply rounded-lg my-4 max-w-full h-auto;
+  }
+  article video {
+    @apply rounded-lg my-4 max-w-full h-auto;
+  }
+  article table {
+    @apply w-full my-4 border-collapse;
+  }
+  article caption {
+    @apply mt-2 text-sm text-muted-foreground text-left;
+  }
+  article th {
+    @apply border border-border px-3 py-2 text-left font-semibold;
+  }
+  article td {
+    @apply border border-border px-3 py-2;
+  }
+  article figure {
+    @apply my-4;
+  }
+  article figcaption {
+    @apply mt-2 text-sm text-muted-foreground;
+  }
+  article dl {
+    @apply my-4;
+  }
+  article dt {
+    @apply font-semibold mt-2;
+  }
+  article dd {
+    @apply pl-4 mb-2;
+  }
+  article details {
+    @apply my-4;
+  }
+  article summary {
+    @apply cursor-pointer font-semibold;
+  }
+  article strong,
+  article b {
+    @apply font-semibold;
+  }
+  article mark {
+    @apply bg-accent text-accent-foreground px-1 rounded;
+  }
+  article small {
+    @apply text-sm;
+  }
+  article sub {
+    @apply text-xs align-sub;
+  }
+  article sup {
+    @apply text-xs align-super;
+  }
+  article abbr[title] {
+    @apply underline decoration-dotted underline-offset-4 cursor-help;
+  }
+  article s,
+  article del {
+    @apply line-through;
+  }
+  article ins {
+    @apply underline;
+  }
 }

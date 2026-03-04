@@ -1,0 +1,15 @@
+---
+/**
+ * Editor Playground - Dogfooding the Rafters Editor component
+ *
+ * Demonstrates progressive feature disclosure across four tabs:
+ * Minimal, Toolbar, Sidebar, and Full kitchen-sink configuration.
+ */
+
+import EditorPlayground from '../components/demos/EditorPlayground';
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Editor Playground" description="Rafters Editor - block-based content editing with progressive feature disclosure">
+  <EditorPlayground client:load />
+</BaseLayout>

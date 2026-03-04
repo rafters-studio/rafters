@@ -2,7 +2,7 @@
   "$schema": "https://rafters.studio/schemas/namespace-tokens.json",
   "namespace": "radius",
   "version": "1.0.0",
-  "generatedAt": "2026-01-13T00:23:34.235Z",
+  "generatedAt": "2026-03-04T02:18:21.557Z",
   "tokens": [
     {
       "name": "radius-base",
@@ -15,7 +15,7 @@
       ],
       "progressionSystem": "minor-third",
       "description": "Base radius (0.375rem / 6px). Scale uses minor-third progression (ratio 1.2).",
-      "generatedAt": "2026-01-13T00:23:34.213Z",
+      "generatedAt": "2026-03-04T02:18:21.544Z",
       "containerQueryAware": false,
       "usagePatterns": {
         "do": [
@@ -42,7 +42,7 @@
       "mathRelationship": "0",
       "dependsOn": [],
       "description": "Border radius none: 0 (0)",
-      "generatedAt": "2026-01-13T00:23:34.213Z",
+      "generatedAt": "2026-03-04T02:18:21.544Z",
       "containerQueryAware": false
     },
     {
@@ -64,7 +64,7 @@
         "radius-base"
       ],
       "description": "Border radius sm: 0.31rem (0.375 × 1.2^-1)",
-      "generatedAt": "2026-01-13T00:23:34.213Z",
+      "generatedAt": "2026-03-04T02:18:21.544Z",
       "containerQueryAware": false
     },
     {
@@ -86,7 +86,7 @@
         "radius-base"
       ],
       "description": "Border radius DEFAULT: 0.38rem (0.375rem (base))",
-      "generatedAt": "2026-01-13T00:23:34.213Z",
+      "generatedAt": "2026-03-04T02:18:21.544Z",
       "containerQueryAware": false
     },
     {
@@ -107,7 +107,7 @@
         "radius-base"
       ],
       "description": "Border radius md: 0.45rem (0.375 × 1.2^1)",
-      "generatedAt": "2026-01-13T00:23:34.213Z",
+      "generatedAt": "2026-03-04T02:18:21.544Z",
       "containerQueryAware": false
     },
     {
@@ -128,7 +128,7 @@
         "radius-base"
       ],
       "description": "Border radius lg: 0.54rem (0.375 × 1.2^2)",
-      "generatedAt": "2026-01-13T00:23:34.213Z",
+      "generatedAt": "2026-03-04T02:18:21.544Z",
       "containerQueryAware": false
     },
     {
@@ -148,7 +148,7 @@
         "radius-base"
       ],
       "description": "Border radius xl: 0.65rem (0.375 × 1.2^3)",
-      "generatedAt": "2026-01-13T00:23:34.213Z",
+      "generatedAt": "2026-03-04T02:18:21.544Z",
       "containerQueryAware": false
     },
     {
@@ -169,7 +169,7 @@
         "radius-base"
       ],
       "description": "Border radius 2xl: 0.78rem (0.375 × 1.2^4)",
-      "generatedAt": "2026-01-13T00:23:34.213Z",
+      "generatedAt": "2026-03-04T02:18:21.544Z",
       "containerQueryAware": false
     },
     {
@@ -189,7 +189,7 @@
         "radius-base"
       ],
       "description": "Border radius 3xl: 0.93rem (0.375 × 1.2^5)",
-      "generatedAt": "2026-01-13T00:23:34.213Z",
+      "generatedAt": "2026-03-04T02:18:21.544Z",
       "containerQueryAware": false
     },
     {
@@ -208,7 +208,7 @@
       "mathRelationship": "infinite (9999px)",
       "dependsOn": [],
       "description": "Border radius full: 9999px (infinite (9999px))",
-      "generatedAt": "2026-01-13T00:23:34.213Z",
+      "generatedAt": "2026-03-04T02:18:21.544Z",
       "containerQueryAware": false
     }
   ]

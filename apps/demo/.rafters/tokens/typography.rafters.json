@@ -2,7 +2,7 @@
   "$schema": "https://rafters.studio/schemas/namespace-tokens.json",
   "namespace": "typography",
   "version": "1.0.0",
-  "generatedAt": "2026-01-13T00:23:34.227Z",
+  "generatedAt": "2026-03-04T02:18:21.554Z",
   "tokens": [
     {
       "name": "font-sans",
@@ -17,7 +17,7 @@
         "forms"
       ],
       "description": "Sans-serif font family. Noto Sans Variable provides excellent language support and all weight variations.",
-      "generatedAt": "2026-01-13T00:23:34.212Z",
+      "generatedAt": "2026-03-04T02:18:21.543Z",
       "containerQueryAware": false,
       "localeAware": true,
       "usagePatterns": {
@@ -44,7 +44,7 @@
         "tabular-numbers"
       ],
       "description": "System monospace stack for code and technical content.",
-      "generatedAt": "2026-01-13T00:23:34.212Z",
+      "generatedAt": "2026-03-04T02:18:21.543Z",
       "containerQueryAware": false,
       "usagePatterns": {
         "do": [
@@ -76,12 +76,12 @@
         "font-size-base"
       ],
       "description": "Font size base = 16px (1rem). Line height: 1.5, letter spacing: 0",
-      "generatedAt": "2026-01-13T00:23:34.212Z",
+      "generatedAt": "2026-03-04T02:18:21.543Z",
       "containerQueryAware": true
     },
     {
       "name": "font-size-xs",
-      "value": "0.402rem",
+      "value": "0.694rem",
       "category": "typography",
       "namespace": "typography",
       "lineHeight": "1.5",
@@ -98,8 +98,8 @@
       "dependsOn": [
         "font-size-base"
       ],
-      "description": "Font size xs = 6.43px (0.402rem). Line height: 1.5, letter spacing: 0.025em",
-      "generatedAt": "2026-01-13T00:23:34.212Z",
+      "description": "Font size xs = 11.11px (0.694rem). Line height: 1.5, letter spacing: 0.025em",
+      "generatedAt": "2026-03-04T02:18:21.543Z",
       "containerQueryAware": true
     },
     {
@@ -112,7 +112,7 @@
         "font-size-xs"
       ],
       "description": "Line height 1.5 for xs text. Tighter for large text, looser for small.",
-      "generatedAt": "2026-01-13T00:23:34.212Z",
+      "generatedAt": "2026-03-04T02:18:21.543Z",
       "containerQueryAware": false
     },
     {
@@ -125,12 +125,12 @@
         "font-size-xs"
       ],
       "description": "Letter spacing 0.025em for xs text. Negative for large text improves readability.",
-      "generatedAt": "2026-01-13T00:23:34.212Z",
+      "generatedAt": "2026-03-04T02:18:21.543Z",
       "containerQueryAware": false
     },
     {
       "name": "font-size-sm",
-      "value": "0.335rem",
+      "value": "0.833rem",
       "category": "typography",
       "namespace": "typography",
       "lineHeight": "1.5",
@@ -147,8 +147,8 @@
       "dependsOn": [
         "font-size-base"
       ],
-      "description": "Font size sm = 5.36px (0.335rem). Line height: 1.5, letter spacing: 0.015em",
-      "generatedAt": "2026-01-13T00:23:34.212Z",
+      "description": "Font size sm = 13.33px (0.833rem). Line height: 1.5, letter spacing: 0.015em",
+      "generatedAt": "2026-03-04T02:18:21.543Z",
       "containerQueryAware": true
     },
     {
@@ -161,7 +161,7 @@
         "font-size-sm"
       ],
       "description": "Line height 1.5 for sm text. Tighter for large text, looser for small.",
-      "generatedAt": "2026-01-13T00:23:34.212Z",
+      "generatedAt": "2026-03-04T02:18:21.543Z",
       "containerQueryAware": false
     },
     {
@@ -174,7 +174,7 @@
         "font-size-sm"
       ],
       "description": "Letter spacing 0.015em for sm text. Negative for large text improves readability.",
-      "generatedAt": "2026-01-13T00:23:34.212Z",
+      "generatedAt": "2026-03-04T02:18:21.543Z",
       "containerQueryAware": false
     },
     {
@@ -187,7 +187,7 @@
         "font-size-base"
       ],
       "description": "Line height 1.5 for base text. Tighter for large text, looser for small.",
-      "generatedAt": "2026-01-13T00:23:34.212Z",
+      "generatedAt": "2026-03-04T02:18:21.543Z",
       "containerQueryAware": false
     },
     {
@@ -200,7 +200,7 @@
         "font-size-base"
       ],
       "description": "Letter spacing 0 for base text. Negative for large text improves readability.",
-      "generatedAt": "2026-01-13T00:23:34.212Z",
+      "generatedAt": "2026-03-04T02:18:21.543Z",
       "containerQueryAware": false
     },
     {
@@ -222,7 +222,7 @@
         "font-size-base"
       ],
       "description": "Font size lg = 19.2px (1.2rem). Line height: 1.5, letter spacing: -0.01em",
-      "generatedAt": "2026-01-13T00:23:34.212Z",
+      "generatedAt": "2026-03-04T02:18:21.543Z",
       "containerQueryAware": true
     },
     {
@@ -235,7 +235,7 @@
         "font-size-lg"
       ],
       "description": "Line height 1.5 for lg text. Tighter for large text, looser for small.",
-      "generatedAt": "2026-01-13T00:23:34.212Z",
+      "generatedAt": "2026-03-04T02:18:21.543Z",
       "containerQueryAware": false
     },
     {
@@ -248,7 +248,7 @@
         "font-size-lg"
       ],
       "description": "Letter spacing -0.01em for lg text. Negative for large text improves readability.",
-      "generatedAt": "2026-01-13T00:23:34.212Z",
+      "generatedAt": "2026-03-04T02:18:21.543Z",
       "containerQueryAware": false
     },
     {
@@ -270,7 +270,7 @@
         "font-size-base"
       ],
       "description": "Font size xl = 23.04px (1.44rem). Line height: 1.4, letter spacing: -0.015em",
-      "generatedAt": "2026-01-13T00:23:34.212Z",
+      "generatedAt": "2026-03-04T02:18:21.543Z",
       "containerQueryAware": true
     },
     {
@@ -283,7 +283,7 @@
         "font-size-xl"
       ],
       "description": "Line height 1.4 for xl text. Tighter for large text, looser for small.",
-      "generatedAt": "2026-01-13T00:23:34.212Z",
+      "generatedAt": "2026-03-04T02:18:21.543Z",
       "containerQueryAware": false
     },
     {
@@ -296,7 +296,7 @@
         "font-size-xl"
       ],
       "description": "Letter spacing -0.015em for xl text. Negative for large text improves readability.",
-      "generatedAt": "2026-01-13T00:23:34.212Z",
+      "generatedAt": "2026-03-04T02:18:21.543Z",
       "containerQueryAware": false
     },
     {
@@ -318,7 +318,7 @@
         "font-size-base"
       ],
       "description": "Font size 2xl = 27.65px (1.728rem). Line height: 1.35, letter spacing: -0.02em",
-      "generatedAt": "2026-01-13T00:23:34.212Z",
+      "generatedAt": "2026-03-04T02:18:21.543Z",
       "containerQueryAware": true
     },
     {
@@ -331,7 +331,7 @@
         "font-size-2xl"
       ],
       "description": "Line height 1.35 for 2xl text. Tighter for large text, looser for small.",
-      "generatedAt": "2026-01-13T00:23:34.212Z",
+      "generatedAt": "2026-03-04T02:18:21.543Z",
       "containerQueryAware": false
     },
     {
@@ -344,7 +344,7 @@
         "font-size-2xl"
       ],
       "description": "Letter spacing -0.02em for 2xl text. Negative for large text improves readability.",
-      "generatedAt": "2026-01-13T00:23:34.212Z",
+      "generatedAt": "2026-03-04T02:18:21.543Z",
       "containerQueryAware": false
     },
     {
@@ -366,7 +366,7 @@
         "font-size-base"
       ],
       "description": "Font size 3xl = 33.18px (2.074rem). Line height: 1.3, letter spacing: -0.025em",
-      "generatedAt": "2026-01-13T00:23:34.212Z",
+      "generatedAt": "2026-03-04T02:18:21.543Z",
       "containerQueryAware": true
     },
     {
@@ -379,7 +379,7 @@
         "font-size-3xl"
       ],
       "description": "Line height 1.3 for 3xl text. Tighter for large text, looser for small.",
-      "generatedAt": "2026-01-13T00:23:34.212Z",
+      "generatedAt": "2026-03-04T02:18:21.543Z",
       "containerQueryAware": false
     },
     {
@@ -392,7 +392,7 @@
         "font-size-3xl"
       ],
       "description": "Letter spacing -0.025em for 3xl text. Negative for large text improves readability.",
-      "generatedAt": "2026-01-13T00:23:34.212Z",
+      "generatedAt": "2026-03-04T02:18:21.543Z",
       "containerQueryAware": false
     },
     {
@@ -414,7 +414,7 @@
         "font-size-base"
       ],
       "description": "Font size 4xl = 39.81px (2.488rem). Line height: 1.25, letter spacing: -0.03em",
-      "generatedAt": "2026-01-13T00:23:34.212Z",
+      "generatedAt": "2026-03-04T02:18:21.543Z",
       "containerQueryAware": true
     },
     {
@@ -427,7 +427,7 @@
         "font-size-4xl"
       ],
       "description": "Line height 1.25 for 4xl text. Tighter for large text, looser for small.",
-      "generatedAt": "2026-01-13T00:23:34.212Z",
+      "generatedAt": "2026-03-04T02:18:21.543Z",
       "containerQueryAware": false
     },
     {
@@ -440,7 +440,7 @@
         "font-size-4xl"
       ],
       "description": "Letter spacing -0.03em for 4xl text. Negative for large text improves readability.",
-      "generatedAt": "2026-01-13T00:23:34.212Z",
+      "generatedAt": "2026-03-04T02:18:21.543Z",
       "containerQueryAware": false
     },
     {
@@ -462,7 +462,7 @@
         "font-size-base"
       ],
       "description": "Font size 5xl = 47.78px (2.986rem). Line height: 1.2, letter spacing: -0.035em",
-      "generatedAt": "2026-01-13T00:23:34.212Z",
+      "generatedAt": "2026-03-04T02:18:21.543Z",
       "containerQueryAware": true
     },
     {
@@ -475,7 +475,7 @@
         "font-size-5xl"
       ],
       "description": "Line height 1.2 for 5xl text. Tighter for large text, looser for small.",
-      "generatedAt": "2026-01-13T00:23:34.212Z",
+      "generatedAt": "2026-03-04T02:18:21.543Z",
       "containerQueryAware": false
     },
     {
@@ -488,7 +488,7 @@
         "font-size-5xl"
       ],
       "description": "Letter spacing -0.035em for 5xl text. Negative for large text improves readability.",
-      "generatedAt": "2026-01-13T00:23:34.212Z",
+      "generatedAt": "2026-03-04T02:18:21.543Z",
       "containerQueryAware": false
     },
     {
@@ -510,7 +510,7 @@
         "font-size-base"
       ],
       "description": "Font size 6xl = 57.33px (3.583rem). Line height: 1.15, letter spacing: -0.04em",
-      "generatedAt": "2026-01-13T00:23:34.212Z",
+      "generatedAt": "2026-03-04T02:18:21.543Z",
       "containerQueryAware": true
     },
     {
@@ -523,7 +523,7 @@
         "font-size-6xl"
       ],
       "description": "Line height 1.15 for 6xl text. Tighter for large text, looser for small.",
-      "generatedAt": "2026-01-13T00:23:34.212Z",
+      "generatedAt": "2026-03-04T02:18:21.543Z",
       "containerQueryAware": false
     },
     {
@@ -536,7 +536,7 @@
         "font-size-6xl"
       ],
       "description": "Letter spacing -0.04em for 6xl text. Negative for large text improves readability.",
-      "generatedAt": "2026-01-13T00:23:34.212Z",
+      "generatedAt": "2026-03-04T02:18:21.543Z",
       "containerQueryAware": false
     },
     {
@@ -558,7 +558,7 @@
         "font-size-base"
       ],
       "description": "Font size 7xl = 68.8px (4.3rem). Line height: 1.1, letter spacing: -0.045em",
-      "generatedAt": "2026-01-13T00:23:34.212Z",
+      "generatedAt": "2026-03-04T02:18:21.543Z",
       "containerQueryAware": true
     },
     {
@@ -571,7 +571,7 @@
         "font-size-7xl"
       ],
       "description": "Line height 1.1 for 7xl text. Tighter for large text, looser for small.",
-      "generatedAt": "2026-01-13T00:23:34.212Z",
+      "generatedAt": "2026-03-04T02:18:21.543Z",
       "containerQueryAware": false
     },
     {
@@ -584,7 +584,7 @@
         "font-size-7xl"
       ],
       "description": "Letter spacing -0.045em for 7xl text. Negative for large text improves readability.",
-      "generatedAt": "2026-01-13T00:23:34.212Z",
+      "generatedAt": "2026-03-04T02:18:21.543Z",
       "containerQueryAware": false
     },
     {
@@ -606,7 +606,7 @@
         "font-size-base"
       ],
       "description": "Font size 8xl = 82.56px (5.16rem). Line height: 1.1, letter spacing: -0.05em",
-      "generatedAt": "2026-01-13T00:23:34.212Z",
+      "generatedAt": "2026-03-04T02:18:21.543Z",
       "containerQueryAware": true
     },
     {
@@ -619,7 +619,7 @@
         "font-size-8xl"
       ],
       "description": "Line height 1.1 for 8xl text. Tighter for large text, looser for small.",
-      "generatedAt": "2026-01-13T00:23:34.212Z",
+      "generatedAt": "2026-03-04T02:18:21.543Z",
       "containerQueryAware": false
     },
     {
@@ -632,7 +632,7 @@
         "font-size-8xl"
       ],
       "description": "Letter spacing -0.05em for 8xl text. Negative for large text improves readability.",
-      "generatedAt": "2026-01-13T00:23:34.212Z",
+      "generatedAt": "2026-03-04T02:18:21.543Z",
       "containerQueryAware": false
     },
     {
@@ -654,7 +654,7 @@
         "font-size-base"
       ],
       "description": "Font size 9xl = 99.07px (6.192rem). Line height: 1.1, letter spacing: -0.05em",
-      "generatedAt": "2026-01-13T00:23:34.212Z",
+      "generatedAt": "2026-03-04T02:18:21.543Z",
       "containerQueryAware": true
     },
     {
@@ -667,7 +667,7 @@
         "font-size-9xl"
       ],
       "description": "Line height 1.1 for 9xl text. Tighter for large text, looser for small.",
-      "generatedAt": "2026-01-13T00:23:34.212Z",
+      "generatedAt": "2026-03-04T02:18:21.543Z",
       "containerQueryAware": false
     },
     {
@@ -680,7 +680,7 @@
         "font-size-9xl"
       ],
       "description": "Letter spacing -0.05em for 9xl text. Negative for large text improves readability.",
-      "generatedAt": "2026-01-13T00:23:34.212Z",
+      "generatedAt": "2026-03-04T02:18:21.543Z",
       "containerQueryAware": false
     },
     {
@@ -694,7 +694,7 @@
         "decorative"
       ],
       "description": "Font weight 100 (thin)",
-      "generatedAt": "2026-01-13T00:23:34.212Z",
+      "generatedAt": "2026-03-04T02:18:21.543Z",
       "containerQueryAware": false
     },
     {
@@ -707,7 +707,7 @@
         "large-display"
       ],
       "description": "Font weight 200 (extralight)",
-      "generatedAt": "2026-01-13T00:23:34.212Z",
+      "generatedAt": "2026-03-04T02:18:21.543Z",
       "containerQueryAware": false
     },
     {
@@ -721,7 +721,7 @@
         "display"
       ],
       "description": "Font weight 300 (light)",
-      "generatedAt": "2026-01-13T00:23:34.212Z",
+      "generatedAt": "2026-03-04T02:18:21.543Z",
       "containerQueryAware": false
     },
     {
@@ -735,7 +735,7 @@
         "default"
       ],
       "description": "Font weight 400 (normal)",
-      "generatedAt": "2026-01-13T00:23:34.212Z",
+      "generatedAt": "2026-03-04T02:18:21.543Z",
       "containerQueryAware": false
     },
     {
@@ -749,7 +749,7 @@
         "labels"
       ],
       "description": "Font weight 500 (medium)",
-      "generatedAt": "2026-01-13T00:23:34.212Z",
+      "generatedAt": "2026-03-04T02:18:21.543Z",
       "containerQueryAware": false
     },
     {
@@ -763,7 +763,7 @@
         "buttons"
       ],
       "description": "Font weight 600 (semibold)",
-      "generatedAt": "2026-01-13T00:23:34.212Z",
+      "generatedAt": "2026-03-04T02:18:21.543Z",
       "containerQueryAware": false
     },
     {
@@ -777,7 +777,7 @@
         "headings"
       ],
       "description": "Font weight 700 (bold)",
-      "generatedAt": "2026-01-13T00:23:34.212Z",
+      "generatedAt": "2026-03-04T02:18:21.543Z",
       "containerQueryAware": false
     },
     {
@@ -791,7 +791,7 @@
         "hero"
       ],
       "description": "Font weight 800 (extrabold)",
-      "generatedAt": "2026-01-13T00:23:34.212Z",
+      "generatedAt": "2026-03-04T02:18:21.543Z",
       "containerQueryAware": false
     },
     {
@@ -805,17 +805,17 @@
         "impact"
       ],
       "description": "Font weight 900 (black)",
-      "generatedAt": "2026-01-13T00:23:34.212Z",
+      "generatedAt": "2026-03-04T02:18:21.543Z",
       "containerQueryAware": false
     },
     {
       "name": "typography-progression",
-      "value": "{\"ratio\":\"minor-third\",\"ratioValue\":1.2,\"baseFontSize\":16,\"scale\":{\"xs\":6.43,\"sm\":5.36,\"base\":16,\"lg\":19.2,\"xl\":23.04,\"2xl\":27.65,\"3xl\":33.18,\"4xl\":39.81,\"5xl\":47.78,\"6xl\":57.33,\"7xl\":68.8,\"8xl\":82.56,\"9xl\":99.07}}",
+      "value": "{\"ratio\":\"minor-third\",\"ratioValue\":1.2,\"baseFontSize\":16,\"scale\":{\"xs\":11.11,\"sm\":13.33,\"base\":16,\"lg\":19.2,\"xl\":23.04,\"2xl\":27.65,\"3xl\":33.18,\"4xl\":39.81,\"5xl\":47.78,\"6xl\":57.33,\"7xl\":68.8,\"8xl\":82.56,\"9xl\":99.07}}",
       "category": "typography",
       "namespace": "typography",
       "semanticMeaning": "Metadata about the typography progression system",
       "description": "Typography uses minor-third progression (ratio 1.2) from base 16px.",
-      "generatedAt": "2026-01-13T00:23:34.212Z",
+      "generatedAt": "2026-03-04T02:18:21.543Z",
       "containerQueryAware": false
     }
   ]

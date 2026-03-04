@@ -1,0 +1,46 @@
+{
+  "framework": "astro",
+  "componentsPath": "src/components/ui",
+  "primitivesPath": "src/lib/primitives",
+  "cssPath": "src/styles/global.css",
+  "shadcn": false,
+  "exports": {
+    "tailwind": true,
+    "typescript": true,
+    "dtcg": false,
+    "compiled": false
+  },
+  "installed": {
+    "components": [
+      "badge",
+      "button",
+      "card",
+      "container",
+      "editor",
+      "grid",
+      "kbd",
+      "label",
+      "separator",
+      "switch",
+      "tabs",
+      "typography"
+    ],
+    "primitives": [
+      "block-canvas",
+      "block-handler",
+      "block-palette",
+      "canvas-drop-zone",
+      "classy",
+      "clipboard",
+      "command-palette",
+      "editor-toolbar",
+      "history",
+      "inline-formatter",
+      "inline-toolbar",
+      "keyboard-handler",
+      "portal",
+      "slot",
+      "typeahead"
+    ]
+  }
+}
