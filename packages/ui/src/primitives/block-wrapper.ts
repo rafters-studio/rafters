@@ -24,7 +24,7 @@
  * NEVER: Nest block wrappers
  * NEVER: Add wrapper-level keyboard handlers that conflict with canvas-level navigation
  *
- * @dependencies primitives/drag-drop
+ * @internal-dependencies primitives/drag-drop
  *
  * @example
  * ```ts

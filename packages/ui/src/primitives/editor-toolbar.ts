@@ -22,7 +22,7 @@
  * DO: Display shortcut labels from each button's shortcut field
  * NEVER: Hard-code modifier keys -- use modifierKey from the controls
  *
- * @dependencies primitives/history (via consumer-provided getHistory callback)
+ * @internal-dependencies primitives/history (via consumer-provided getHistory callback)
  *
  * @example
  * ```ts
