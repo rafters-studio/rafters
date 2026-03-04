@@ -31,6 +31,7 @@
 import { atom } from 'nanostores';
 import * as React from 'react';
 import { createPortal } from 'react-dom';
+import { Container } from '@/components/ui/container';
 import type { BlockHandlerControls, BlockHandlerState } from '@/lib/primitives/block-handler';
 import { createBlockHandler } from '@/lib/primitives/block-handler';
 import type { BlockPaletteItem } from '@/lib/primitives/block-palette';
@@ -56,7 +57,6 @@ import type { AdjustedToolbarPosition } from '@/lib/primitives/inline-toolbar';
 import { adjustToolbarPosition, getFormatButtons } from '@/lib/primitives/inline-toolbar';
 import { getPortalContainer } from '@/lib/primitives/portal';
 import type { CleanupFunction, Command, Direction, InlineMark } from '@/lib/primitives/types';
-import { Container } from '@/components/ui/container';
 
 // ============================================================================
 // Types

@@ -24,7 +24,12 @@
  * ```
  */
 
-import type { CleanupFunction, FormatDefinition, InlineContent, InlineMark } from '@/lib/primitives/types';
+import type {
+  CleanupFunction,
+  FormatDefinition,
+  InlineContent,
+  InlineMark,
+} from '@/lib/primitives/types';
 
 /**
  * Default format definitions for common inline marks
