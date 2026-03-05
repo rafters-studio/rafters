@@ -1,12 +1,11 @@
 /**
- * Composite manifest types and validation
+ * Composite file schemas and types
  *
- * A composite is a pre-built, drag-and-drop-ready block assembly.
- * Each composite declares its manifest, a Preview component (for palette),
- * and a Render component (for canvas).
+ * Validates `.composite.json` files - the JSON format for pre-built
+ * block assemblies. Each composite has a manifest, I/O rule references,
+ * and a flat array of blocks.
  */
 
-import type { EditorBlock } from '@rafters/ui';
 import { z } from 'zod';
 
 /** Categories for composite blocks */
@@ -14,17 +13,20 @@ export const CompositeCategorySchema = z.enum(['typography', 'layout', 'form', '
 
 export type CompositeCategory = z.infer<typeof CompositeCategorySchema>;
 
-/**
- * Zod schema for EditorBlock without the `id` field.
- * Provides runtime validation matching the EditorBlock interface shape.
- */
-/** Zod schema for AppliedRule - matches the AppliedRule type in @rafters/ui */
-const AppliedRuleSchema = z.union([
+/** Zod schema for AppliedRule - simple name string or parameterized rule with config */
+export const AppliedRuleSchema = z.union([
   z.string(),
-  z.object({ name: z.string(), config: z.record(z.string(), z.unknown()) }),
+  z.object({
+    name: z.string().min(1),
+    config: z.record(z.string(), z.unknown()),
+  }),
 ]);
 
-const EditorBlockWithoutIdSchema = z.object({
+export type AppliedRule = z.infer<typeof AppliedRuleSchema>;
+
+/** Zod schema for a single block in a composite */
+export const CompositeBlockSchema = z.object({
+  id: z.string().min(1),
   type: z.string().min(1),
   content: z.unknown().optional(),
   children: z.array(z.string()).optional(),
@@ -33,34 +35,26 @@ const EditorBlockWithoutIdSchema = z.object({
   rules: z.array(AppliedRuleSchema).optional(),
 });
 
-/** Zod schema for composite manifest validation */
+export type CompositeBlock = z.infer<typeof CompositeBlockSchema>;
+
+/** Zod schema for a composite's manifest metadata */
 export const CompositeManifestSchema = z.object({
-  /** Unique composite ID (e.g., 'heading', 'paragraph') */
-  id: z.string().min(1),
-  /** Human-readable name */
+  id: z.string().min(1).regex(/^[a-z0-9-]+$/),
   name: z.string().min(1),
-  /** Category for palette grouping */
   category: CompositeCategorySchema,
-  /** Short description */
   description: z.string(),
-  /** Search keywords for palette fuzzy matching */
   keywords: z.array(z.string()),
-  /** Cognitive load score (1-10) */
   cognitiveLoad: z.number().int().min(1).max(10),
-  /** Default block data when dragged onto canvas */
-  defaultBlock: EditorBlockWithoutIdSchema,
 });
 
 export type CompositeManifest = z.infer<typeof CompositeManifestSchema>;
 
-/** Runtime composite definition including React components */
-export interface CompositeDefinition {
-  manifest: CompositeManifest;
-  /** Preview component for palette display. Receives optional scale prop. */
-  Preview: React.ComponentType<{ scale?: number }>;
-  /** Render component for canvas display */
-  Render: React.ComponentType<{
-    block: EditorBlock;
-    context: { index: number; total: number; isSelected: boolean; isFocused: boolean };
-  }>;
-}
+/** Zod schema for a complete `.composite.json` file */
+export const CompositeFileSchema = z.object({
+  manifest: CompositeManifestSchema,
+  input: z.array(z.string()).default([]),
+  output: z.array(z.string()).default([]),
+  blocks: z.array(CompositeBlockSchema).min(1),
+});
+
+export type CompositeFile = z.infer<typeof CompositeFileSchema>;

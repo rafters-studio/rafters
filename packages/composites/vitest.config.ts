@@ -1,13 +1,10 @@
-import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
-  plugins: [react()],
   test: {
     globals: true,
-    environment: 'happy-dom',
     setupFiles: ['./vitest.setup.ts'],
-    include: ['src/**/*.test.{ts,tsx}', 'test/**/*.test.{ts,tsx}', 'test/**/*.a11y.{ts,tsx}'],
+    include: ['src/**/*.test.{ts,tsx}', 'test/**/*.test.{ts,tsx}'],
     exclude: ['test/**/*.spec.{ts,tsx}', 'test/**/*.e2e.{ts,tsx}'],
     coverage: {
       provider: 'v8',

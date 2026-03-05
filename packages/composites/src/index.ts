@@ -1,20 +1,23 @@
 /**
  * @rafters/composites - Pre-built drag-and-drop block assemblies
  *
- * Composites are registered with the composite registry and appear in
- * the Editor's block palette. Each composite provides:
- * - A manifest describing its identity and default block data
- * - A Preview component for palette display
- * - A Render component for canvas rendering
+ * Composites are JSON files (`.composite.json`) that define block
+ * arrangements with manifests and I/O rules. The registry manages
+ * lookup by ID, category, and fuzzy search.
  */
 
 export type {
+  AppliedRule,
+  CompositeBlock,
   CompositeCategory,
-  CompositeDefinition,
+  CompositeFile,
   CompositeManifest,
 } from './manifest.js';
 export {
+  AppliedRuleSchema,
+  CompositeBlockSchema,
   CompositeCategorySchema,
+  CompositeFileSchema,
   CompositeManifestSchema,
 } from './manifest.js';
 
@@ -26,10 +29,3 @@ export {
   register as registerComposite,
   search as searchComposites,
 } from './registry.js';
-
-export {
-  blockquoteComposite,
-  headingComposite,
-  listComposite,
-  paragraphComposite,
-} from './typography/index.js';
