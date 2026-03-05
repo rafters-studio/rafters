@@ -6,21 +6,21 @@
  * lookup by ID, category, and fuzzy search.
  */
 
-export { toBridgeItem, toBridgeItems } from './bridge.js';
+export { toBridgeItem, toBridgeItems } from './bridge';
 export type {
   AppliedRule,
   CompositeBlock,
   CompositeCategory,
   CompositeFile,
   CompositeManifest,
-} from './manifest.js';
+} from './manifest';
 export {
   AppliedRuleSchema,
   CompositeBlockSchema,
   CompositeCategorySchema,
   CompositeFileSchema,
   CompositeManifestSchema,
-} from './manifest.js';
+} from './manifest';
 export {
   clear as clearRegistry,
   get as getComposite,
@@ -28,4 +28,5 @@ export {
   getByCategory as getCompositesByCategory,
   register as registerComposite,
   search as searchComposites,
-} from './registry.js';
+} from './registry';
+export { toMdx } from './serializer';

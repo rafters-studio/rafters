@@ -6,7 +6,7 @@
  */
 
 import type { BlockPaletteItem } from '@rafters/ui/primitives/block-palette';
-import type { CompositeFile } from './manifest.js';
+import type { CompositeFile } from './manifest';
 
 /**
  * Convert a CompositeFile manifest into a BlockPaletteItem for the editor sidebar.

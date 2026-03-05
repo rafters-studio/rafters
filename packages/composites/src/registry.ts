@@ -6,7 +6,7 @@
  */
 
 import { fuzzyScore } from '@rafters/ui/primitives/typeahead';
-import type { CompositeCategory, CompositeFile } from './manifest.js';
+import type { CompositeCategory, CompositeFile } from './manifest';
 
 const composites = new Map<string, CompositeFile>();
 
