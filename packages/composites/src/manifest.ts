@@ -18,12 +18,19 @@ export type CompositeCategory = z.infer<typeof CompositeCategorySchema>;
  * Zod schema for EditorBlock without the `id` field.
  * Provides runtime validation matching the EditorBlock interface shape.
  */
+/** Zod schema for AppliedRule - matches the AppliedRule type in @rafters/ui */
+const AppliedRuleSchema = z.union([
+  z.string(),
+  z.object({ name: z.string(), config: z.record(z.string(), z.unknown()) }),
+]);
+
 const EditorBlockWithoutIdSchema = z.object({
   type: z.string().min(1),
-  content: z.unknown(),
+  content: z.unknown().optional(),
   children: z.array(z.string()).optional(),
   parentId: z.string().optional(),
   meta: z.record(z.string(), z.unknown()).optional(),
+  rules: z.array(AppliedRuleSchema).optional(),
 });
 
 /** Zod schema for composite manifest validation */

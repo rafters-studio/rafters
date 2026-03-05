@@ -65,9 +65,6 @@ import { Container } from './container';
 /**
  * A rule applied to a block. Simple rules are name strings.
  * Parameterized rules carry configuration.
- *
- * Canonical definition lives in `@rafters/composites`. Re-exported here
- * so editor consumers do not need a direct composites dependency.
  */
 export type AppliedRule = string | { name: string; config: Record<string, unknown> };
 
