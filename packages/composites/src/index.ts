@@ -6,6 +6,7 @@
  * lookup by ID, category, and fuzzy search.
  */
 
+export { toBridgeItem, toBridgeItems } from './bridge.js';
 export type {
   AppliedRule,
   CompositeBlock,
@@ -20,7 +21,6 @@ export {
   CompositeFileSchema,
   CompositeManifestSchema,
 } from './manifest.js';
-
 export {
   clear as clearRegistry,
   get as getComposite,
