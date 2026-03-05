@@ -7,6 +7,8 @@
  */
 
 export { toBridgeItem, toBridgeItems } from './bridge';
+export type { LoadResult } from './loader';
+export { loadComposites } from './loader';
 export type {
   AppliedRule,
   CompositeBlock,
