@@ -9,7 +9,6 @@
   "scripts": {
     "test": "vitest run",
     "test:unit": "vitest run",
-    "test:a11y": "vitest run .a11y.",
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
