@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { CompositeFileSchema, CompositeManifestSchema, CompositeBlockSchema, AppliedRuleSchema } from '../src/manifest';
+import {
+  AppliedRuleSchema,
+  CompositeBlockSchema,
+  CompositeFileSchema,
+  CompositeManifestSchema,
+} from '../src/manifest';
 
 const validManifest = {
   id: 'auth-dashboard',
@@ -112,7 +117,13 @@ describe('CompositeFileSchema', () => {
 
   it('defaults input and output to empty arrays', () => {
     const noIO = CompositeFileSchema.parse({
-      manifest: { ...validManifest, id: 'heading', name: 'Heading', category: 'typography', cognitiveLoad: 1 },
+      manifest: {
+        ...validManifest,
+        id: 'heading',
+        name: 'Heading',
+        category: 'typography',
+        cognitiveLoad: 1,
+      },
       blocks: [{ id: '1', type: 'heading', content: 'Hello' }],
     });
     expect(noIO.input).toEqual([]);
@@ -130,11 +141,22 @@ describe('CompositeFileSchema', () => {
 
   it('validates blocks with rules', () => {
     const withRules = CompositeFileSchema.parse({
-      manifest: { ...validManifest, id: 'email-form', name: 'Email Form', category: 'form', cognitiveLoad: 3 },
+      manifest: {
+        ...validManifest,
+        id: 'email-form',
+        name: 'Email Form',
+        category: 'form',
+        cognitiveLoad: 3,
+      },
       input: ['email'],
       output: ['credentials'],
       blocks: [
-        { id: '1', type: 'input', content: '', rules: ['email', { name: 'min-length', config: { min: 5 } }] },
+        {
+          id: '1',
+          type: 'input',
+          content: '',
+          rules: ['email', { name: 'min-length', config: { min: 5 } }],
+        },
       ],
     });
     expect(withRules.blocks[0].rules).toHaveLength(2);

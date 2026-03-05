@@ -72,7 +72,9 @@ describe('composite registry', () => {
 
   it('searches by keywords with fuzzy matching', () => {
     registerComposite(makeComposite({ id: 'heading', name: 'Heading', keywords: ['title', 'h1'] }));
-    registerComposite(makeComposite({ id: 'paragraph', name: 'Paragraph', keywords: ['text', 'body'] }));
+    registerComposite(
+      makeComposite({ id: 'paragraph', name: 'Paragraph', keywords: ['text', 'body'] }),
+    );
 
     const results = searchComposites('title');
     expect(results.length).toBeGreaterThanOrEqual(1);

@@ -39,7 +39,10 @@ export type CompositeBlock = z.infer<typeof CompositeBlockSchema>;
 
 /** Zod schema for a composite's manifest metadata */
 export const CompositeManifestSchema = z.object({
-  id: z.string().min(1).regex(/^[a-z0-9-]+$/),
+  id: z
+    .string()
+    .min(1)
+    .regex(/^[a-z0-9-]+$/),
   name: z.string().min(1),
   category: CompositeCategorySchema,
   description: z.string(),
