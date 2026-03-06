@@ -106,6 +106,37 @@ export class RegistryClient {
   }
 
   /**
+   * Fetch a composite by name
+   */
+  async fetchComposite(name: string): Promise<RegistryItem> {
+    const cacheKey = `composite:${name}`;
+    const cached = this.cache.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    const url = `${this.baseUrl}/registry/composites/${name}.json`;
+    const response = await fetch(url);
+
+    if (response.status === 404) {
+      throw new Error(`Composite "${name}" not found`);
+    }
+
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch composite "${name}": ${response.status} ${response.statusText}`,
+      );
+    }
+
+    const data: unknown = await response.json();
+    const item = RegistryItemSchema.parse(data);
+
+    this.cache.set(cacheKey, item);
+
+    return item;
+  }
+
+  /**
    * Fetch a registry item (component or primitive) by name
    * Tries component first, then primitive
    */
@@ -132,6 +163,14 @@ export class RegistryClient {
   async listComponents(): Promise<Array<{ name: string; description?: string }>> {
     const index = await this.fetchIndex();
     return index.components.map((name) => ({ name }));
+  }
+
+  /**
+   * List all available composites
+   */
+  async listComposites(): Promise<Array<{ name: string; description?: string }>> {
+    const index = await this.fetchIndex();
+    return index.composites.map((name) => ({ name }));
   }
 
   /**

@@ -42,6 +42,7 @@ export interface RegistryIndex {
   homepage: string;
   components: string[];
   primitives: string[];
+  composites: string[];
 }
 
 /**
@@ -56,6 +57,13 @@ function getComponentsPath(): string {
  */
 function getPrimitivesPath(): string {
   return join(process.cwd(), '../../packages/ui/src/primitives');
+}
+
+/**
+ * Get path to composites
+ */
+function getCompositesPath(): string {
+  return join(process.cwd(), '../../packages/ui/src/composites');
 }
 
 /**
@@ -76,6 +84,56 @@ export function listPrimitiveNames(): string[] {
   return readdirSync(primitivesDir)
     .filter((f) => f.endsWith('.ts') || f.endsWith('.tsx'))
     .map((f) => basename(f, f.endsWith('.tsx') ? '.tsx' : '.ts'));
+}
+
+/**
+ * List all available composite names
+ */
+export function listCompositeNames(): string[] {
+  const compositesDir = getCompositesPath();
+  try {
+    return readdirSync(compositesDir)
+      .filter((f) => f.endsWith('.composite.json'))
+      .map((f) => basename(f, '.composite.json'));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Load a single composite by name
+ */
+export function loadComposite(name: string): RegistryItem | null {
+  const filePath = join(getCompositesPath(), `${name}.composite.json`);
+
+  try {
+    const content = readFileSync(filePath, 'utf-8');
+
+    return {
+      name,
+      type: 'registry:composite',
+      primitives: [],
+      files: [
+        {
+          path: `composites/${name}.composite.json`,
+          content,
+          dependencies: [],
+          devDependencies: [],
+        },
+      ],
+    };
+  } catch (err) {
+    console.error(`Failed to load composite "${name}":`, err);
+    return null;
+  }
+}
+
+/**
+ * Load all composites
+ */
+export function loadAllComposites(): RegistryItem[] {
+  const names = listCompositeNames();
+  return names.map((name) => loadComposite(name)).filter((c): c is RegistryItem => c !== null);
 }
 
 /**
@@ -385,6 +443,7 @@ export function getRegistryIndex(): RegistryIndex {
     homepage: 'https://rafters.studio',
     components: listComponentNames(),
     primitives: listPrimitiveNames(),
+    composites: listCompositeNames(),
   };
 }
 
@@ -395,6 +454,7 @@ export function getRegistryMetadata() {
   return {
     components: loadAllComponents(),
     primitives: loadAllPrimitives(),
+    composites: loadAllComposites(),
   };
 }
 

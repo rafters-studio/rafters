@@ -68,14 +68,24 @@ async function saveConfig(cwd: string, config: RaftersConfig): Promise<void> {
 }
 
 /**
- * Get all installed component and primitive names from config.
+ * Get all installed component, primitive, and composite names from config.
  * Returns a combined, deduplicated list.
  */
 export function getInstalledNames(config: RaftersConfig | null): string[] {
   if (!config?.installed) return [];
-  const names = new Set([...config.installed.components, ...config.installed.primitives]);
+  const names = new Set([
+    ...config.installed.components,
+    ...config.installed.primitives,
+    ...(config.installed.composites ?? []),
+  ]);
   return [...names].sort();
 }
+
+/**
+ * Known folder names that can be used as the first argument to `rafters add`.
+ * When detected, the CLI routes fetches to the matching registry endpoint.
+ */
+const FOLDER_NAMES = new Set(['composites']);
 
 /**
  * Check if an item is already tracked in the installed list
@@ -84,6 +94,9 @@ export function isAlreadyInstalled(config: RaftersConfig | null, item: RegistryI
   if (!config?.installed) return false;
   if (item.type === 'registry:ui') {
     return config.installed.components.includes(item.name);
+  }
+  if (item.type === 'registry:composite') {
+    return (config.installed.composites ?? []).includes(item.name);
   }
   return config.installed.primitives.includes(item.name);
 }
@@ -94,12 +107,19 @@ export function isAlreadyInstalled(config: RaftersConfig | null, item: RegistryI
  */
 export function trackInstalled(config: RaftersConfig, items: RegistryItem[]): void {
   if (!config.installed) {
-    config.installed = { components: [], primitives: [] };
+    config.installed = { components: [], primitives: [], composites: [] };
+  }
+  if (!config.installed.composites) {
+    config.installed.composites = [];
   }
   for (const item of items) {
     if (item.type === 'registry:ui') {
       if (!config.installed.components.includes(item.name)) {
         config.installed.components.push(item.name);
+      }
+    } else if (item.type === 'registry:composite') {
+      if (!config.installed.composites.includes(item.name)) {
+        config.installed.composites.push(item.name);
       }
     } else {
       if (!config.installed.primitives.includes(item.name)) {
@@ -109,6 +129,7 @@ export function trackInstalled(config: RaftersConfig, items: RegistryItem[]): vo
   }
   config.installed.components.sort();
   config.installed.primitives.sort();
+  config.installed.composites.sort();
 }
 
 /**
@@ -126,6 +147,11 @@ function transformPath(registryPath: string, config: RaftersConfig | null): stri
   // Transform primitive paths
   if (registryPath.startsWith('lib/primitives/')) {
     return registryPath.replace('lib/primitives/', `${config.primitivesPath}/`);
+  }
+
+  // Transform composite paths
+  if (registryPath.startsWith('composites/')) {
+    return registryPath.replace('composites/', `${config.compositesPath}/`);
   }
 
   return registryPath;
@@ -309,17 +335,34 @@ export async function add(componentArgs: string[], options: AddOptions): Promise
   let components = componentArgs;
   const client = new RegistryClient(options.registryUrl);
 
+  // Detect folder name as first argument (e.g., `rafters add composites hero-banner`)
+  let folder: string | undefined;
+  const firstArg = components[0];
+  if (firstArg && FOLDER_NAMES.has(firstArg)) {
+    folder = firstArg;
+    components = components.slice(1);
+  }
+
   // Handle --list option
   if (options.list) {
     const availableComponents = await client.listComponents();
+    const availableComposites = await client.listComposites();
     if (options.agent) {
-      // Agent mode: output JSON
-      log({ event: 'add:list', components: availableComponents });
+      log({
+        event: 'add:list',
+        components: availableComponents,
+        composites: availableComposites,
+      });
     } else {
-      // Human mode: formatted output
       console.log('Available components:\n');
       for (const comp of availableComponents) {
         console.log(`  ${comp.name}  ${comp.description ?? ''}`);
+      }
+      if (availableComposites.length > 0) {
+        console.log('\nAvailable composites:\n');
+        for (const comp of availableComposites) {
+          console.log(`  ${comp.name}  ${comp.description ?? ''}`);
+        }
       }
     }
     return;
@@ -378,19 +421,28 @@ export async function add(componentArgs: string[], options: AddOptions): Promise
     overwrite: options.overwrite ?? false,
   });
 
-  // Resolve all components and their dependencies
+  // Resolve all items and their dependencies
   const allItems: RegistryItem[] = [];
   const seen = new Set<string>();
 
-  for (const componentName of components) {
+  for (const itemName of components) {
     try {
-      const items = await client.resolveDependencies(componentName, seen);
-      allItems.push(...items);
+      if (folder === 'composites') {
+        // Fetch directly from composites endpoint
+        if (!seen.has(itemName)) {
+          const item = await client.fetchComposite(itemName);
+          seen.add(itemName);
+          allItems.push(item);
+        }
+      } else {
+        const items = await client.resolveDependencies(itemName, seen);
+        allItems.push(...items);
+      }
     } catch (err) {
       if (err instanceof Error) {
         error(err.message);
       } else {
-        error(`Failed to fetch component "${componentName}"`);
+        error(`Failed to fetch "${itemName}"`);
       }
       process.exitCode = 1;
       return;
@@ -482,10 +534,11 @@ export async function add(componentArgs: string[], options: AddOptions): Promise
       framework: 'unknown' as RaftersConfig['framework'],
       componentsPath: 'components/ui',
       primitivesPath: 'lib/primitives',
+      compositesPath: 'composites',
       cssPath: null,
       shadcn: false,
       exports: DEFAULT_EXPORTS,
-      installed: { components: [], primitives: [] },
+      installed: { components: [], primitives: [], composites: [] },
     };
     trackInstalled(newConfig, installedItems);
     await saveConfig(cwd, newConfig);

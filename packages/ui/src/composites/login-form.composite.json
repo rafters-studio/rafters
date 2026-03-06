@@ -1,0 +1,39 @@
+{
+  "manifest": {
+    "id": "login-form",
+    "name": "Login Form",
+    "category": "form",
+    "description": "Email and password login with validation rules",
+    "keywords": ["login", "auth", "signin", "credentials"],
+    "cognitiveLoad": 5
+  },
+  "input": ["email", "password"],
+  "output": ["credentials"],
+  "blocks": [
+    {
+      "id": "login-heading",
+      "type": "heading",
+      "content": "Sign In",
+      "meta": { "level": 2 }
+    },
+    {
+      "id": "login-email",
+      "type": "input",
+      "content": "",
+      "meta": { "placeholder": "you@example.com", "inputType": "email" },
+      "rules": ["email", "required"]
+    },
+    {
+      "id": "login-password",
+      "type": "input",
+      "content": "",
+      "meta": { "placeholder": "Password", "inputType": "password" },
+      "rules": ["password", "required"]
+    },
+    {
+      "id": "login-submit",
+      "type": "button",
+      "content": "Sign In"
+    }
+  ]
+}

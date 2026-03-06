@@ -1,0 +1,30 @@
+{
+  "manifest": {
+    "id": "hero-banner",
+    "name": "Hero Banner",
+    "category": "layout",
+    "description": "Full-width hero section with heading, subheading, and call-to-action",
+    "keywords": ["hero", "banner", "landing", "cta"],
+    "cognitiveLoad": 3
+  },
+  "input": [],
+  "output": [],
+  "blocks": [
+    {
+      "id": "hero-heading",
+      "type": "heading",
+      "content": "Welcome to Your Application",
+      "meta": { "level": 1 }
+    },
+    {
+      "id": "hero-subheading",
+      "type": "text",
+      "content": "Build something extraordinary with a design system that understands intent."
+    },
+    {
+      "id": "hero-cta",
+      "type": "text",
+      "content": "Get started in minutes with a single command."
+    }
+  ]
+}

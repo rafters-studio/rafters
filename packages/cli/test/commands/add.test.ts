@@ -165,6 +165,7 @@ describe('isAlreadyInstalled', () => {
     framework: 'react-router',
     componentsPath: 'components/ui',
     primitivesPath: 'lib/primitives',
+    compositesPath: 'composites',
     cssPath: null,
     shadcn: false,
     exports: { tailwind: true, typescript: true, dtcg: false, compiled: false },
@@ -220,6 +221,7 @@ describe('trackInstalled', () => {
       framework: 'react-router',
       componentsPath: 'components/ui',
       primitivesPath: 'lib/primitives',
+      compositesPath: 'composites',
       cssPath: null,
       shadcn: false,
       exports: { tailwind: true, typescript: true, dtcg: false, compiled: false },
@@ -238,6 +240,7 @@ describe('trackInstalled', () => {
       framework: 'react-router',
       componentsPath: 'components/ui',
       primitivesPath: 'lib/primitives',
+      compositesPath: 'composites',
       cssPath: null,
       shadcn: false,
       exports: { tailwind: true, typescript: true, dtcg: false, compiled: false },
@@ -256,6 +259,7 @@ describe('trackInstalled', () => {
       framework: 'react-router',
       componentsPath: 'components/ui',
       primitivesPath: 'lib/primitives',
+      compositesPath: 'composites',
       cssPath: null,
       shadcn: false,
       exports: { tailwind: true, typescript: true, dtcg: false, compiled: false },
@@ -278,6 +282,7 @@ describe('trackInstalled', () => {
       framework: 'react-router',
       componentsPath: 'components/ui',
       primitivesPath: 'lib/primitives',
+      compositesPath: 'composites',
       cssPath: null,
       shadcn: false,
       exports: { tailwind: true, typescript: true, dtcg: false, compiled: false },
@@ -300,6 +305,7 @@ describe('trackInstalled', () => {
       framework: 'react-router',
       componentsPath: 'components/ui',
       primitivesPath: 'lib/primitives',
+      compositesPath: 'composites',
       cssPath: null,
       shadcn: false,
       exports: { tailwind: true, typescript: true, dtcg: false, compiled: false },
@@ -395,6 +401,7 @@ describe('getInstalledNames', () => {
     framework: 'react-router',
     componentsPath: 'components/ui',
     primitivesPath: 'lib/primitives',
+    compositesPath: 'composites',
     cssPath: null,
     shadcn: false,
     exports: { tailwind: true, typescript: true, dtcg: false, compiled: false },
@@ -442,8 +449,82 @@ describe('getInstalledNames', () => {
   it('returns empty array when both lists are empty', () => {
     const config: RaftersConfig = {
       ...baseConfig,
-      installed: { components: [], primitives: [] },
+      installed: { components: [], primitives: [], composites: [] },
     };
     expect(getInstalledNames(config)).toEqual([]);
+  });
+
+  it('includes composites in installed names', () => {
+    const config: RaftersConfig = {
+      ...baseConfig,
+      installed: {
+        components: ['button'],
+        primitives: ['classy'],
+        composites: ['hero-banner'],
+      },
+    };
+    expect(getInstalledNames(config)).toEqual(['button', 'classy', 'hero-banner']);
+  });
+});
+
+describe('composites support', () => {
+  const compositeConfig: RaftersConfig = {
+    framework: 'vite',
+    componentsPath: 'src/components/ui',
+    primitivesPath: 'src/lib/primitives',
+    compositesPath: 'src/composites',
+    cssPath: null,
+    shadcn: false,
+    exports: { tailwind: true, typescript: true, dtcg: false, compiled: false },
+    installed: {
+      components: [],
+      primitives: [],
+      composites: ['hero-banner'],
+    },
+  };
+
+  it('isAlreadyInstalled returns true for installed composite', () => {
+    const item: RegistryItem = {
+      name: 'hero-banner',
+      type: 'registry:composite',
+      primitives: [],
+      files: [],
+    };
+    expect(isAlreadyInstalled(compositeConfig, item)).toBe(true);
+  });
+
+  it('isAlreadyInstalled returns false for uninstalled composite', () => {
+    const item: RegistryItem = {
+      name: 'login-form',
+      type: 'registry:composite',
+      primitives: [],
+      files: [],
+    };
+    expect(isAlreadyInstalled(compositeConfig, item)).toBe(false);
+  });
+
+  it('trackInstalled adds composites to installed list', () => {
+    const config: RaftersConfig = {
+      ...compositeConfig,
+      installed: { components: [], primitives: [], composites: [] },
+    };
+    const items: RegistryItem[] = [
+      { name: 'login-form', type: 'registry:composite', primitives: [], files: [] },
+      { name: 'hero-banner', type: 'registry:composite', primitives: [], files: [] },
+    ];
+    trackInstalled(config, items);
+    expect(config.installed?.composites).toEqual(['hero-banner', 'login-form']);
+  });
+
+  it('trackInstalled deduplicates composites', () => {
+    const config: RaftersConfig = {
+      ...compositeConfig,
+      installed: { components: [], primitives: [], composites: ['hero-banner'] },
+    };
+    const items: RegistryItem[] = [
+      { name: 'hero-banner', type: 'registry:composite', primitives: [], files: [] },
+    ];
+    trackInstalled(config, items);
+    expect(config.installed?.composites).toEqual(['hero-banner']);
   });
 });

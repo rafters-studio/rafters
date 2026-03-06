@@ -1,0 +1,29 @@
+{
+  "manifest": {
+    "id": "feature-grid",
+    "name": "Feature Grid",
+    "category": "layout",
+    "description": "Three-column feature showcase with icons and descriptions",
+    "keywords": ["features", "grid", "showcase", "benefits"],
+    "cognitiveLoad": 2
+  },
+  "input": [],
+  "output": [],
+  "blocks": [
+    {
+      "id": "feature-1",
+      "type": "text",
+      "content": "Lightning Fast - Built for performance from the ground up"
+    },
+    {
+      "id": "feature-2",
+      "type": "text",
+      "content": "Type Safe - Full TypeScript coverage with strict mode"
+    },
+    {
+      "id": "feature-3",
+      "type": "text",
+      "content": "Accessible - WCAG 2.1 AA compliant out of the box"
+    }
+  ]
+}

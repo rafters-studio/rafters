@@ -52,6 +52,7 @@ export const RegistryIndexSchema = z.object({
   homepage: z.string(),
   components: z.array(z.string()),
   primitives: z.array(z.string()),
+  composites: z.array(z.string()).default([]),
 });
 
 export type RegistryIndex = z.infer<typeof RegistryIndexSchema>;

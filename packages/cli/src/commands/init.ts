@@ -62,13 +62,32 @@ const CSS_LOCATIONS: Record<Framework, string[]> = {
 };
 
 // Default component paths per framework
-const COMPONENT_PATHS: Record<Framework, { components: string; primitives: string }> = {
-  astro: { components: 'src/components/ui', primitives: 'src/lib/primitives' },
-  next: { components: 'components/ui', primitives: 'lib/primitives' },
-  vite: { components: 'src/components/ui', primitives: 'src/lib/primitives' },
-  remix: { components: 'app/components/ui', primitives: 'app/lib/primitives' },
-  'react-router': { components: 'app/components/ui', primitives: 'app/lib/primitives' },
-  unknown: { components: 'components/ui', primitives: 'lib/primitives' },
+const COMPONENT_PATHS: Record<
+  Framework,
+  { components: string; primitives: string; composites: string }
+> = {
+  astro: {
+    components: 'src/components/ui',
+    primitives: 'src/lib/primitives',
+    composites: 'src/composites',
+  },
+  next: { components: 'components/ui', primitives: 'lib/primitives', composites: 'composites' },
+  vite: {
+    components: 'src/components/ui',
+    primitives: 'src/lib/primitives',
+    composites: 'src/composites',
+  },
+  remix: {
+    components: 'app/components/ui',
+    primitives: 'app/lib/primitives',
+    composites: 'app/composites',
+  },
+  'react-router': {
+    components: 'app/components/ui',
+    primitives: 'app/lib/primitives',
+    composites: 'app/composites',
+  },
+  unknown: { components: 'components/ui', primitives: 'lib/primitives', composites: 'composites' },
 };
 
 /**
@@ -84,6 +103,8 @@ export interface RaftersConfig {
   componentsPath: string;
   /** Root directory for primitive components, e.g. `lib/primitives` */
   primitivesPath: string;
+  /** Root directory for composite JSON files, e.g. `src/composites` */
+  compositesPath: string;
   /** Entry CSS file for design tokens, or null if not detected */
   cssPath: string | null;
   /** Whether shadcn/ui was detected in the project */
@@ -94,6 +115,7 @@ export interface RaftersConfig {
   installed?: {
     components: string[];
     primitives: string[];
+    composites: string[];
   };
 }
 
@@ -308,6 +330,7 @@ async function regenerateFromExisting(
     existingConfig.framework = framework;
     existingConfig.componentsPath = frameworkPaths.components;
     existingConfig.primitivesPath = frameworkPaths.primitives;
+    existingConfig.compositesPath = frameworkPaths.composites;
   }
 
   // Load all tokens from .rafters/tokens/
@@ -387,6 +410,7 @@ async function resetToDefaults(
     existingConfig.framework = framework;
     existingConfig.componentsPath = frameworkPaths.components;
     existingConfig.primitivesPath = frameworkPaths.primitives;
+    existingConfig.compositesPath = frameworkPaths.composites;
   }
 
   // Load existing tokens to check for userOverride backups
@@ -661,12 +685,14 @@ export async function init(options: InitOptions): Promise<void> {
     framework: framework as Framework,
     componentsPath: frameworkPaths.components,
     primitivesPath: frameworkPaths.primitives,
+    compositesPath: frameworkPaths.composites,
     cssPath: detectedCssPath,
     shadcn: !!shadcn,
     exports,
     installed: {
       components: [],
       primitives: [],
+      composites: [],
     },
   };
   await writeFile(paths.config, JSON.stringify(config, null, 2));
