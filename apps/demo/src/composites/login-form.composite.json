@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "id": "login-form",
+    "name": "Login Form",
+    "category": "form",
+    "description": "Email and password login with validation",
+    "keywords": ["auth", "login", "credentials", "sign-in"],
+    "cognitiveLoad": 4
+  },
+  "input": ["email", "password"],
+  "output": ["credentials"],
+  "blocks": [
+    { "id": "title", "type": "heading", "content": "Sign In", "meta": { "level": 2 } },
+    { "id": "email", "type": "input", "content": "Email address", "meta": { "inputType": "email" }, "rules": ["email", "required"] },
+    { "id": "pass", "type": "input", "content": "Password", "meta": { "inputType": "password" }, "rules": ["password", "required"] },
+    { "id": "submit", "type": "button", "content": "Sign in to your account", "meta": { "variant": "primary" } }
+  ]
+}
