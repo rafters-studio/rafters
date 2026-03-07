@@ -101,8 +101,13 @@ const COMPOSITE_MAP = new Map(SAMPLE_COMPOSITES.map((c) => [c.manifest.id, c]));
 const resolveComposite = (id: string) => COMPOSITE_MAP.get(id) ?? null;
 
 // Stable references for CompositesDemo (avoids useMemo with constant deps)
-const LOGIN_FORM = SAMPLE_COMPOSITES[0] as CompositeFile;
-const PROFILE_CARD = SAMPLE_COMPOSITES[2] as CompositeFile;
+const LOGIN_FORM = SAMPLE_COMPOSITES[0];
+const PROFILE_CARD = SAMPLE_COMPOSITES[2];
+if (!LOGIN_FORM || !PROFILE_CARD) {
+  throw new Error(
+    'EditorPlayground: SAMPLE_COMPOSITES missing entries at indices 0 (login-form) and 2 (profile-card).',
+  );
+}
 
 /** Miniature block preview rendered in sidebar palette */
 function BlockPreview({ block }: { block: CompositeBlock }) {
@@ -628,13 +633,19 @@ function FullDemo() {
   useOutsideDeselect(containerRef, editorRef);
 
   const handleSaveAsComposite = React.useCallback(async (data: SaveCompositeData) => {
-    const composite = serializeToComposite(data.blocks, {
-      name: data.name,
-      category: data.category,
-      description: data.description,
-    });
-    registerComposite(composite);
-    setSavedComposite(JSON.stringify(composite, null, 2));
+    try {
+      const composite = serializeToComposite(data.blocks, {
+        name: data.name,
+        category: data.category,
+        description: data.description,
+      });
+      registerComposite(composite);
+      setSavedComposite(JSON.stringify(composite, null, 2));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to save composite.';
+      console.error('[EditorPlayground] Save as composite failed:', message);
+      setSavedComposite(`Error: ${message}`);
+    }
   }, []);
 
   return (
