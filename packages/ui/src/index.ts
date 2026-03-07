@@ -7,9 +7,11 @@
 
 export type {
   AppliedRule,
+  CompositeCategory,
   EditorBlock,
   EditorControls,
   EditorRulePaletteConfig,
   EditorSidebarConfig,
   RuleConfigField,
+  SaveCompositeData,
 } from './components/ui/editor.js';

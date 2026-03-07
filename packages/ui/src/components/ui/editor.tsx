@@ -148,6 +148,21 @@ export interface SlashCommand {
   action: (editor: EditorControls) => void;
 }
 
+// SYNC:composite-category - must match CompositeCategorySchema in @rafters/composites/src/manifest.ts
+export type CompositeCategory = 'typography' | 'layout' | 'form' | 'widget' | 'media';
+
+/** Metadata for saving the current canvas as a composite. */
+export interface SaveCompositeData {
+  /** Display name */
+  name: string;
+  /** Category */
+  category: CompositeCategory;
+  /** Description */
+  description: string;
+  /** Current canvas blocks */
+  blocks: EditorBlock[];
+}
+
 export interface EditorProps
   extends Omit<React.HTMLAttributes<HTMLDivElement>, 'defaultValue' | 'onChange'> {
   /** Initial blocks for uncontrolled mode */
@@ -176,6 +191,9 @@ export interface EditorProps
   renderBlock?: (block: EditorBlock, context: BlockRenderContext) => React.ReactNode;
   /** Custom empty state */
   emptyState?: React.ReactNode;
+
+  /** Callback to save current canvas as a composite. When set, adds a "Save as Composite" toolbar button. */
+  onSaveAsComposite?: (data: SaveCompositeData) => void | Promise<void>;
 
   /** Whether the editor is disabled */
   disabled?: boolean;
@@ -329,6 +347,152 @@ function EditorToolbarSection({ canUndo, canRedo, onUndo, onRedo }: ToolbarSecti
         </React.Fragment>
       ))}
     </div>
+  );
+}
+
+// SYNC:composite-category
+const COMPOSITE_CATEGORIES = [
+  'typography',
+  'layout',
+  'form',
+  'widget',
+  'media',
+] as const satisfies readonly CompositeCategory[];
+
+interface SaveCompositeDialogProps {
+  blocks: EditorBlock[];
+  onSave: (data: SaveCompositeData) => void;
+  onCancel: () => void;
+}
+
+function SaveCompositeDialog({ blocks, onSave, onCancel }: SaveCompositeDialogProps) {
+  const [name, setName] = React.useState('');
+  const [category, setCategory] = React.useState<CompositeCategory>('layout');
+  const [description, setDescription] = React.useState('');
+  const [error, setError] = React.useState('');
+  const nameInputRef = React.useRef<HTMLInputElement>(null);
+
+  React.useEffect(() => {
+    nameInputRef.current?.focus();
+  }, []);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmedName = name.trim();
+    if (!trimmedName) {
+      setError('Name is required');
+      return;
+    }
+    onSave({
+      name: trimmedName,
+      category,
+      description: description.trim(),
+      blocks,
+    });
+  };
+
+  const portalContainer = getPortalContainer();
+  if (!portalContainer) return null;
+
+  return createPortal(
+    <>
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: modal overlay dismiss is a standard pattern */}
+      <div
+        className={classy('fixed inset-0 z-50 bg-black/50')}
+        onClick={onCancel}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') onCancel();
+        }}
+        aria-hidden="true"
+      />
+      <div
+        role="dialog"
+        aria-label="Save as Composite"
+        aria-modal="true"
+        className={classy(
+          'fixed top-1/2 left-1/2 z-50 w-96 -translate-x-1/2 -translate-y-1/2',
+          'rounded-lg border border-border bg-background p-6 shadow-lg',
+        )}
+      >
+        <h2 className={classy('mb-4 text-lg font-semibold')}>Save as Composite</h2>
+        <form onSubmit={handleSubmit} className={classy('flex flex-col gap-3')}>
+          <label className={classy('flex flex-col gap-1 text-sm')}>
+            Name
+            <input
+              ref={nameInputRef}
+              type="text"
+              value={name}
+              onChange={(e) => {
+                setName(e.target.value);
+                setError('');
+              }}
+              className={classy(
+                'rounded-md border border-border bg-background px-3 py-1.5 text-sm',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-ring',
+              )}
+            />
+          </label>
+          <label className={classy('flex flex-col gap-1 text-sm')}>
+            Category
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value as CompositeCategory)}
+              className={classy(
+                'rounded-md border border-border bg-background px-3 py-1.5 text-sm',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-ring',
+              )}
+            >
+              {COMPOSITE_CATEGORIES.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className={classy('flex flex-col gap-1 text-sm')}>
+            Description
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={2}
+              className={classy(
+                'rounded-md border border-border bg-background px-3 py-1.5 text-sm resize-none',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-ring',
+              )}
+            />
+          </label>
+          {error && (
+            <p role="alert" className={classy('text-sm text-destructive')}>
+              {error}
+            </p>
+          )}
+          <div className={classy('flex justify-end gap-2 pt-2')}>
+            <button
+              type="button"
+              onClick={onCancel}
+              className={classy(
+                'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+                'hover:bg-accent hover:text-accent-foreground',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-ring',
+              )}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className={classy(
+                'rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-colors',
+                'hover:bg-primary/90',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-ring',
+              )}
+            >
+              Save
+            </button>
+          </div>
+        </form>
+      </div>
+    </>,
+    portalContainer,
   );
 }
 
@@ -1172,6 +1336,7 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
       blockContextMenu = false,
       renderBlock,
       emptyState,
+      onSaveAsComposite,
       disabled = false,
       dir,
       ...props
@@ -1193,6 +1358,9 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
     // ----- Handler + canvas refs -----
     const canvasRef = React.useRef<HTMLDivElement>(null);
     const handlerRef = React.useRef<BlockHandlerControls | null>(null);
+
+    // ----- Save composite dialog state -----
+    const [showSaveDialog, setShowSaveDialog] = React.useState(false);
 
     // ----- Inline toolbar state -----
     const [inlineToolbarPos, setInlineToolbarPos] = React.useState<AdjustedToolbarPosition | null>(
@@ -1819,6 +1987,18 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
       [addBlock],
     );
 
+    const handleSaveComposite = React.useCallback(
+      async (data: SaveCompositeData) => {
+        try {
+          await onSaveAsComposite?.(data);
+          setShowSaveDialog(false);
+        } catch {
+          // Keep dialog open so user knows the save failed
+        }
+      },
+      [onSaveAsComposite],
+    );
+
     // Determine sidebar mode
     const sidebarConfig = typeof sidebar === 'object' && sidebar !== null ? sidebar : null;
 
@@ -1838,12 +2018,30 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
         )}
       >
         {toolbar && (
-          <EditorToolbarSection
-            canUndo={handlerState.canUndo}
-            canRedo={handlerState.canRedo}
-            onUndo={() => handlerRef.current?.undo()}
-            onRedo={() => handlerRef.current?.redo()}
-          />
+          <div className={classy('flex items-center')}>
+            <EditorToolbarSection
+              canUndo={handlerState.canUndo}
+              canRedo={handlerState.canRedo}
+              onUndo={() => handlerRef.current?.undo()}
+              onRedo={() => handlerRef.current?.redo()}
+            />
+            {onSaveAsComposite && (
+              <button
+                type="button"
+                onClick={() => setShowSaveDialog(true)}
+                disabled={blocks.length === 0}
+                aria-label="Save as Composite"
+                className={classy(
+                  'ml-auto mr-2 rounded-md px-2 py-1 text-xs font-medium transition-colors',
+                  'hover:bg-accent hover:text-accent-foreground',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-ring',
+                  { 'opacity-50 cursor-not-allowed': blocks.length === 0 },
+                )}
+              >
+                Save as Composite
+              </button>
+            )}
+          </div>
         )}
         <div className={classy('flex flex-1')}>
           {sidebar === true && (
@@ -1987,6 +2185,13 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
                 ctxMenu.close();
               }
             }}
+          />
+        )}
+        {showSaveDialog && onSaveAsComposite && (
+          <SaveCompositeDialog
+            blocks={blocks}
+            onSave={handleSaveComposite}
+            onCancel={() => setShowSaveDialog(false)}
           />
         )}
       </Container>
