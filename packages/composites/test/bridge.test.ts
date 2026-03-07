@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { SerializableBlock } from '../src/bridge';
-import { instantiateBlocks, serializeToComposite, toBridgeItem, toBridgeItems, toKebabId } from '../src/bridge';
+import {
+  instantiateBlocks,
+  serializeToComposite,
+  toBridgeItem,
+  toBridgeItems,
+  toKebabId,
+} from '../src/bridge';
 import type { CompositeBlock, CompositeFile } from '../src/manifest';
 import { CompositeFileSchema } from '../src/manifest';
 
