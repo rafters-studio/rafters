@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { instantiateBlocks, toBridgeItem, toBridgeItems } from '../src/bridge';
+import type { SerializableBlock } from '../src/bridge';
+import { instantiateBlocks, serializeToComposite, toBridgeItem, toBridgeItems, toKebabId } from '../src/bridge';
 import type { CompositeBlock, CompositeFile } from '../src/manifest';
+import { CompositeFileSchema } from '../src/manifest';
 
 function makeComposite(overrides: Partial<CompositeFile['manifest']> = {}): CompositeFile {
   return {
@@ -234,5 +236,188 @@ describe('instantiateBlocks', () => {
 
   it('returns empty array for empty input', () => {
     expect(instantiateBlocks([])).toEqual([]);
+  });
+});
+
+describe('toKebabId', () => {
+  it('converts display name to kebab-case', () => {
+    expect(toKebabId('Login Form')).toBe('login-form');
+  });
+
+  it('handles special characters', () => {
+    expect(toKebabId('My Cool Widget!!')).toBe('my-cool-widget');
+  });
+
+  it('trims leading/trailing hyphens', () => {
+    expect(toKebabId('  --Hello--  ')).toBe('hello');
+  });
+
+  it('collapses multiple separators', () => {
+    expect(toKebabId('a   b   c')).toBe('a-b-c');
+  });
+
+  it('returns empty string for input with no alphanumeric characters', () => {
+    expect(toKebabId('!!!')).toBe('');
+    expect(toKebabId('---')).toBe('');
+  });
+});
+
+describe('serializeToComposite', () => {
+  const blocks: SerializableBlock[] = [
+    { id: 'h1', type: 'heading', content: 'Sign In', meta: { level: 2 } },
+    { id: 'email', type: 'input', content: '', rules: ['email', 'required'] },
+    { id: 'pw', type: 'input', content: '', rules: ['password', 'required'] },
+    { id: 'btn', type: 'button', content: 'Submit' },
+  ];
+
+  it('produces a valid CompositeFile that passes schema validation', () => {
+    const result = serializeToComposite(blocks, {
+      name: 'Login Form',
+      category: 'form',
+      description: 'Email and password login',
+    });
+    const parsed = CompositeFileSchema.safeParse(result);
+    expect(parsed.success).toBe(true);
+  });
+
+  it('derives kebab-case ID from name', () => {
+    const result = serializeToComposite(blocks, {
+      name: 'Login Form',
+      category: 'form',
+      description: 'test',
+    });
+    expect(result.manifest.id).toBe('login-form');
+  });
+
+  it('derives input rules from root blocks', () => {
+    const result = serializeToComposite(blocks, {
+      name: 'Test',
+      category: 'form',
+      description: 'test',
+    });
+    expect(result.input).toContain('email');
+    expect(result.input).toContain('password');
+    expect(result.input).toContain('required');
+  });
+
+  it('derives output rules from leaf blocks', () => {
+    const result = serializeToComposite(blocks, {
+      name: 'Test',
+      category: 'form',
+      description: 'test',
+    });
+    expect(result.output).toContain('email');
+    expect(result.output).toContain('password');
+  });
+
+  it('derives keywords from block types and rule names', () => {
+    const result = serializeToComposite(blocks, {
+      name: 'Test',
+      category: 'form',
+      description: 'test',
+    });
+    expect(result.manifest.keywords).toContain('heading');
+    expect(result.manifest.keywords).toContain('input');
+    expect(result.manifest.keywords).toContain('button');
+    expect(result.manifest.keywords).toContain('email');
+  });
+
+  it('uses block count for cognitiveLoad when not provided', () => {
+    const result = serializeToComposite(blocks, {
+      name: 'Test',
+      category: 'form',
+      description: 'test',
+    });
+    expect(result.manifest.cognitiveLoad).toBe(4);
+  });
+
+  it('uses explicit cognitiveLoad when provided', () => {
+    const result = serializeToComposite(blocks, {
+      name: 'Test',
+      category: 'form',
+      description: 'test',
+      cognitiveLoad: 7,
+    });
+    expect(result.manifest.cognitiveLoad).toBe(7);
+  });
+
+  it('omits undefined optional fields from serialized blocks', () => {
+    const result = serializeToComposite([{ id: 'a', type: 'text' }], {
+      name: 'Simple',
+      category: 'typography',
+      description: 'test',
+    });
+    expect(result.blocks[0]).toEqual({ id: 'a', type: 'text' });
+    expect('content' in result.blocks[0]).toBe(false);
+    expect('children' in result.blocks[0]).toBe(false);
+  });
+
+  it('preserves parent-child relationships', () => {
+    const nested: SerializableBlock[] = [
+      { id: 'grid', type: 'grid', children: ['a', 'b'] },
+      { id: 'a', type: 'input', parentId: 'grid' },
+      { id: 'b', type: 'input', parentId: 'grid' },
+    ];
+    const result = serializeToComposite(nested, {
+      name: 'Nested',
+      category: 'layout',
+      description: 'test',
+    });
+    expect(result.blocks[0].children).toEqual(['a', 'b']);
+    expect(result.blocks[1].parentId).toBe('grid');
+  });
+
+  it('throws for empty blocks array', () => {
+    expect(() =>
+      serializeToComposite([], { name: 'Empty', category: 'layout', description: 'test' }),
+    ).toThrow('zero blocks');
+  });
+
+  it('throws for name that produces no valid ID', () => {
+    expect(() =>
+      serializeToComposite([{ id: 'a', type: 'text' }], {
+        name: '!!!',
+        category: 'layout',
+        description: 'test',
+      }),
+    ).toThrow('alphanumeric');
+  });
+
+  it('clamps explicit cognitiveLoad to 1-10 range', () => {
+    const result = serializeToComposite([{ id: 'a', type: 'text' }], {
+      name: 'Test',
+      category: 'layout',
+      description: 'test',
+      cognitiveLoad: 50,
+    });
+    expect(result.manifest.cognitiveLoad).toBe(10);
+  });
+
+  it('caps cognitiveLoad at 10 for large block counts', () => {
+    const manyBlocks = Array.from({ length: 15 }, (_, i) => ({ id: `b${i}`, type: 'text' }));
+    const result = serializeToComposite(manyBlocks, {
+      name: 'Big',
+      category: 'layout',
+      description: 'test',
+    });
+    expect(result.manifest.cognitiveLoad).toBe(10);
+  });
+
+  it('handles object-style rules in I/O derivation', () => {
+    const blocksWithObjectRules: SerializableBlock[] = [
+      {
+        id: 'x',
+        type: 'input',
+        rules: [{ name: 'validate', config: { pattern: '.*' } }, 'required'],
+      },
+    ];
+    const result = serializeToComposite(blocksWithObjectRules, {
+      name: 'Object Rules',
+      category: 'form',
+      description: 'test',
+    });
+    expect(result.input).toContain('validate');
+    expect(result.input).toContain('required');
+    expect(result.manifest.keywords).toContain('validate');
   });
 });

@@ -6,8 +6,8 @@
  * lookup by ID, category, and fuzzy search.
  */
 
-export type { InstantiatedBlock, InstantiateOptions } from './bridge';
-export { instantiateBlocks, toBridgeItem, toBridgeItems } from './bridge';
+export type { InstantiatedBlock, InstantiateOptions, SaveCompositeMetadata, SerializableBlock } from './bridge';
+export { instantiateBlocks, serializeToComposite, toBridgeItem, toBridgeItems, toKebabId } from './bridge';
 export {
   credentials,
   email,
