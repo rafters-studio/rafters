@@ -222,6 +222,54 @@ describe('Editor', () => {
       expect(onChange).toHaveBeenCalledWith([{ id: 'new', type: 'text', content: 'New' }]);
     });
 
+    it('exposes addBlocks via ref for batch insert', () => {
+      const ref = { current: null as EditorControls | null };
+      const onChange = vi.fn();
+      render(<Editor defaultValue={[]} onValueChange={onChange} ref={ref} />);
+
+      ref.current?.addBlocks([
+        { id: 'a', type: 'heading', content: 'Title' },
+        { id: 'b', type: 'input', content: '' },
+        { id: 'c', type: 'button', content: 'Submit' },
+      ]);
+      expect(onChange).toHaveBeenCalledTimes(1);
+      expect(onChange).toHaveBeenCalledWith([
+        expect.objectContaining({ id: 'a', type: 'heading' }),
+        expect.objectContaining({ id: 'b', type: 'input' }),
+        expect.objectContaining({ id: 'c', type: 'button' }),
+      ]);
+    });
+
+    it('addBlocks inserts at specified index', () => {
+      const ref = { current: null as EditorControls | null };
+      const onChange = vi.fn();
+      render(<Editor defaultValue={BLOCKS} onValueChange={onChange} ref={ref} />);
+
+      ref.current?.addBlocks(
+        [
+          { id: 'x', type: 'divider', content: '' },
+          { id: 'y', type: 'divider', content: '' },
+        ],
+        1,
+      );
+      expect(onChange).toHaveBeenCalledWith([
+        expect.objectContaining({ id: '1' }),
+        expect.objectContaining({ id: 'x' }),
+        expect.objectContaining({ id: 'y' }),
+        expect.objectContaining({ id: '2' }),
+        expect.objectContaining({ id: '3' }),
+      ]);
+    });
+
+    it('addBlocks is a no-op for empty array', () => {
+      const ref = { current: null as EditorControls | null };
+      const onChange = vi.fn();
+      render(<Editor defaultValue={BLOCKS} onValueChange={onChange} ref={ref} />);
+
+      ref.current?.addBlocks([]);
+      expect(onChange).not.toHaveBeenCalled();
+    });
+
     it('exposes removeBlocks via ref', () => {
       const ref = { current: null as EditorControls | null };
       const onChange = vi.fn();

@@ -6,7 +6,8 @@
  * lookup by ID, category, and fuzzy search.
  */
 
-export { toBridgeItem, toBridgeItems } from './bridge';
+export type { InstantiatedBlock, InstantiateOptions } from './bridge';
+export { instantiateBlocks, toBridgeItem, toBridgeItems } from './bridge';
 export {
   credentials,
   email,
