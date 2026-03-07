@@ -23,11 +23,7 @@ export type RegistryFile = z.infer<typeof RegistryFileSchema>;
 /**
  * Item type in registry
  */
-export const RegistryItemTypeSchema = z.enum([
-  'registry:ui',
-  'registry:primitive',
-  'registry:composite',
-]);
+export const RegistryItemTypeSchema = z.enum(['ui', 'primitive', 'composite']);
 
 export type RegistryItemType = z.infer<typeof RegistryItemTypeSchema>;
 
@@ -40,6 +36,8 @@ export const RegistryItemSchema = z.object({
   description: z.string().optional(),
   primitives: z.array(z.string()),
   files: z.array(RegistryFileSchema),
+  rules: z.array(z.string()).default([]),
+  composites: z.array(z.string()).default([]),
 });
 
 export type RegistryItem = z.infer<typeof RegistryItemSchema>;
@@ -53,6 +51,7 @@ export const RegistryIndexSchema = z.object({
   components: z.array(z.string()),
   primitives: z.array(z.string()),
   composites: z.array(z.string()).default([]),
+  rules: z.array(z.string()).default([]),
 });
 
 export type RegistryIndex = z.infer<typeof RegistryIndexSchema>;

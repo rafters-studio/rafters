@@ -34,6 +34,8 @@ export interface RegistryItem {
   description?: string;
   primitives: string[];
   files: RegistryFile[];
+  rules?: string[];
+  composites?: string[];
   intelligence?: ComponentIntelligence;
 }
 
@@ -43,6 +45,7 @@ export interface RegistryIndex {
   components: string[];
   primitives: string[];
   composites: string[];
+  rules: string[];
 }
 
 /**
@@ -95,8 +98,11 @@ export function listCompositeNames(): string[] {
     return readdirSync(compositesDir)
       .filter((f) => f.endsWith('.composite.json'))
       .map((f) => basename(f, '.composite.json'));
-  } catch {
-    return [];
+  } catch (err: unknown) {
+    if (err instanceof Error && 'code' in err && (err as NodeJS.ErrnoException).code === 'ENOENT') {
+      return [];
+    }
+    throw err;
   }
 }
 
@@ -111,7 +117,7 @@ export function loadComposite(name: string): RegistryItem | null {
 
     return {
       name,
-      type: 'registry:composite',
+      type: 'composite',
       primitives: [],
       files: [
         {
@@ -122,9 +128,11 @@ export function loadComposite(name: string): RegistryItem | null {
         },
       ],
     };
-  } catch (err) {
-    console.error(`Failed to load composite "${name}":`, err);
-    return null;
+  } catch (err: unknown) {
+    if (err instanceof Error && 'code' in err && (err as NodeJS.ErrnoException).code === 'ENOENT') {
+      return null;
+    }
+    throw err;
   }
 }
 
@@ -346,7 +354,7 @@ export function loadComponent(name: string): RegistryItem | null {
 
     const result: RegistryItem = {
       name,
-      type: 'registry:ui',
+      type: 'ui',
       primitives: [...importDeps.internal, ...primitiveDeps],
       files: [
         {
@@ -395,7 +403,7 @@ export function loadPrimitive(name: string): RegistryItem | null {
 
     const result: RegistryItem = {
       name,
-      type: 'registry:primitive',
+      type: 'primitive',
       primitives: primitiveDeps,
       files: [
         {
@@ -444,6 +452,7 @@ export function getRegistryIndex(): RegistryIndex {
     components: listComponentNames(),
     primitives: listPrimitiveNames(),
     composites: listCompositeNames(),
+    rules: [],
   };
 }
 

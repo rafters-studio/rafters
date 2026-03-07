@@ -92,10 +92,10 @@ const FOLDER_NAMES = new Set(['composites']);
  */
 export function isAlreadyInstalled(config: RaftersConfig | null, item: RegistryItem): boolean {
   if (!config?.installed) return false;
-  if (item.type === 'registry:ui') {
+  if (item.type === 'ui') {
     return config.installed.components.includes(item.name);
   }
-  if (item.type === 'registry:composite') {
+  if (item.type === 'composite') {
     return (config.installed.composites ?? []).includes(item.name);
   }
   return config.installed.primitives.includes(item.name);
@@ -113,11 +113,11 @@ export function trackInstalled(config: RaftersConfig, items: RegistryItem[]): vo
     config.installed.composites = [];
   }
   for (const item of items) {
-    if (item.type === 'registry:ui') {
+    if (item.type === 'ui') {
       if (!config.installed.components.includes(item.name)) {
         config.installed.components.push(item.name);
       }
-    } else if (item.type === 'registry:composite') {
+    } else if (item.type === 'composite') {
       if (!config.installed.composites.includes(item.name)) {
         config.installed.composites.push(item.name);
       }

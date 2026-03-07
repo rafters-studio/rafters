@@ -113,7 +113,7 @@ describe('installRegistryDependencies', () => {
 
     const item = registryItemFactory.generate({
       name: 'test-component',
-      type: 'registry:ui',
+      type: 'ui',
       primitives: [],
       files: [
         registryFileFactory.generate({
@@ -179,7 +179,7 @@ describe('installRegistryDependencies', () => {
 
     const item = registryItemFactory.generate({
       name: 'multi-file',
-      type: 'registry:ui',
+      type: 'ui',
       primitives: [],
       files: [
         registryFileFactory.generate({
@@ -228,7 +228,7 @@ describe('installRegistryDependencies', () => {
 
     const item1 = registryItemFactory.generate({
       name: 'comp-a',
-      type: 'registry:ui',
+      type: 'ui',
       primitives: [],
       files: [
         registryFileFactory.generate({
@@ -241,7 +241,7 @@ describe('installRegistryDependencies', () => {
 
     const item2 = registryItemFactory.generate({
       name: 'comp-b',
-      type: 'registry:ui',
+      type: 'ui',
       primitives: [],
       files: [
         registryFileFactory.generate({

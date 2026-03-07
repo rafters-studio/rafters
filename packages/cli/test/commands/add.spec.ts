@@ -90,7 +90,7 @@ describe('rafters add - integration', () => {
       const button = await client.fetchComponent('button');
 
       expect(button.name).toBe('button');
-      expect(button.type).toBe('registry:ui');
+      expect(button.type).toBe('ui');
       expect(button.files.length).toBeGreaterThan(0);
       expect(button.files[0].path).toContain('button');
     });
@@ -100,7 +100,7 @@ describe('rafters add - integration', () => {
       const classy = await client.fetchPrimitive('classy');
 
       expect(classy.name).toBe('classy');
-      expect(classy.type).toBe('registry:primitive');
+      expect(classy.type).toBe('primitive');
       expect(classy.files.length).toBeGreaterThan(0);
     });
 
@@ -149,7 +149,7 @@ describe('rafters add - integration', () => {
       const button = await fetchComponent('button', DEV_REGISTRY_URL);
 
       expect(button.name).toBe('button');
-      expect(button.type).toBe('registry:ui');
+      expect(button.type).toBe('ui');
     });
   });
 
