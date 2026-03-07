@@ -1,0 +1,20 @@
+{
+	"manifest": {
+		"id": "list",
+		"name": "List",
+		"category": "typography",
+		"description": "Ordered or unordered list",
+		"keywords": ["ul", "ol", "bullet", "numbered"],
+		"cognitiveLoad": 2
+	},
+	"input": [],
+	"output": [],
+	"blocks": [
+		{
+			"id": "1",
+			"type": "list",
+			"content": ["Item 1", "Item 2"],
+			"meta": { "ordered": false }
+		}
+	]
+}
