@@ -1,19 +1,19 @@
 {
-	"manifest": {
-		"id": "blockquote",
-		"name": "Blockquote",
-		"category": "typography",
-		"description": "Quoted text block",
-		"keywords": ["quote", "citation", "pullquote"],
-		"cognitiveLoad": 1
-	},
-	"input": [],
-	"output": [],
-	"blocks": [
-		{
-			"id": "1",
-			"type": "blockquote",
-			"content": ""
-		}
-	]
+  "manifest": {
+    "id": "blockquote",
+    "name": "Blockquote",
+    "category": "typography",
+    "description": "Quoted text block",
+    "keywords": ["quote", "citation", "pullquote"],
+    "cognitiveLoad": 1
+  },
+  "input": [],
+  "output": [],
+  "blocks": [
+    {
+      "id": "1",
+      "type": "blockquote",
+      "content": ""
+    }
+  ]
 }

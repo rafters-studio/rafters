@@ -1,20 +1,20 @@
 {
-	"manifest": {
-		"id": "heading",
-		"name": "Heading",
-		"category": "typography",
-		"description": "Section heading with configurable level",
-		"keywords": ["title", "h1", "h2", "h3", "h4", "h5", "h6"],
-		"cognitiveLoad": 1
-	},
-	"input": [],
-	"output": [],
-	"blocks": [
-		{
-			"id": "1",
-			"type": "heading",
-			"content": "Heading",
-			"meta": { "level": 2 }
-		}
-	]
+  "manifest": {
+    "id": "heading",
+    "name": "Heading",
+    "category": "typography",
+    "description": "Section heading with configurable level",
+    "keywords": ["title", "h1", "h2", "h3", "h4", "h5", "h6"],
+    "cognitiveLoad": 1
+  },
+  "input": [],
+  "output": [],
+  "blocks": [
+    {
+      "id": "1",
+      "type": "heading",
+      "content": "Heading",
+      "meta": { "level": 2 }
+    }
+  ]
 }

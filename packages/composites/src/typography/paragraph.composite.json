@@ -1,19 +1,19 @@
 {
-	"manifest": {
-		"id": "paragraph",
-		"name": "Paragraph",
-		"category": "typography",
-		"description": "Body text paragraph",
-		"keywords": ["text", "body", "p"],
-		"cognitiveLoad": 1
-	},
-	"input": [],
-	"output": [],
-	"blocks": [
-		{
-			"id": "1",
-			"type": "text",
-			"content": ""
-		}
-	]
+  "manifest": {
+    "id": "paragraph",
+    "name": "Paragraph",
+    "category": "typography",
+    "description": "Body text paragraph",
+    "keywords": ["text", "body", "p"],
+    "cognitiveLoad": 1
+  },
+  "input": [],
+  "output": [],
+  "blocks": [
+    {
+      "id": "1",
+      "type": "text",
+      "content": ""
+    }
+  ]
 }
