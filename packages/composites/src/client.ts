@@ -5,7 +5,19 @@
  * Node.js fs APIs. Use this entry point in client-side code.
  */
 
-export { toBridgeItem, toBridgeItems } from './bridge';
+export type {
+  InstantiatedBlock,
+  InstantiateOptions,
+  SaveCompositeMetadata,
+  SerializableBlock,
+} from './bridge';
+export {
+  instantiateBlocks,
+  serializeToComposite,
+  toBridgeItem,
+  toBridgeItems,
+  toKebabId,
+} from './bridge';
 export {
   credentials,
   email,

@@ -32,6 +32,8 @@ import { atom } from 'nanostores';
 import * as React from 'react';
 import { createPortal } from 'react-dom';
 import { Container } from '@/components/ui/container';
+import type { BlockContextMenuControls } from '@/lib/primitives/block-context-menu';
+import { createBlockContextMenu } from '@/lib/primitives/block-context-menu';
 import type { BlockHandlerControls, BlockHandlerState } from '@/lib/primitives/block-handler';
 import { createBlockHandler } from '@/lib/primitives/block-handler';
 import type { BlockPaletteItem } from '@/lib/primitives/block-palette';
@@ -45,6 +47,8 @@ import type {
 import { createCommandPalette } from '@/lib/primitives/command-palette';
 import type { ToolbarButton, ToolbarButtonGroup } from '@/lib/primitives/editor-toolbar';
 import { createEditorToolbar } from '@/lib/primitives/editor-toolbar';
+import { onEscapeKeyDown } from '@/lib/primitives/escape-keydown';
+import { createFocusTrap } from '@/lib/primitives/focus-trap';
 import type { InlineFormatterController } from '@/lib/primitives/inline-formatter';
 import {
   BOLD,
@@ -56,11 +60,19 @@ import {
 import type { AdjustedToolbarPosition } from '@/lib/primitives/inline-toolbar';
 import { adjustToolbarPosition, getFormatButtons } from '@/lib/primitives/inline-toolbar';
 import { getPortalContainer } from '@/lib/primitives/portal';
+import type { RulePaletteItem } from '@/lib/primitives/rule-palette';
+import { createRulePalette } from '@/lib/primitives/rule-palette';
 import type { CleanupFunction, Command, Direction, InlineMark } from '@/lib/primitives/types';
 
 // ============================================================================
 // Types
 // ============================================================================
+
+/**
+ * A rule applied to a block. Simple rules are name strings.
+ * Parameterized rules carry configuration.
+ */
+export type AppliedRule = string | { name: string; config: Record<string, unknown> };
 
 /**
  * A single block in the Editor's content tree.
@@ -74,10 +86,11 @@ import type { CleanupFunction, Command, Direction, InlineMark } from '@/lib/prim
 export interface EditorBlock {
   id: string;
   type: string;
-  content: unknown;
+  content?: unknown;
   children?: string[];
   parentId?: string;
   meta?: Record<string, unknown>;
+  rules?: AppliedRule[];
 }
 
 /** Configuration for palette-mode sidebar */
@@ -94,12 +107,60 @@ export interface EditorSidebarConfig {
   onItemInsert?: (item: BlockPaletteItem, controls: EditorControls, insertIndex?: number) => void;
 }
 
+/** Configuration for rule-palette sidebar */
+export interface EditorRulePaletteConfig {
+  /** Rule palette items */
+  items: RulePaletteItem[];
+  /** Category display order */
+  categories: string[];
+  /** Enable search input (default true) */
+  searchable?: boolean;
+  /** Custom item renderer */
+  renderItem?: (item: RulePaletteItem) => React.ReactNode;
+  /**
+   * Config field definitions for parameterized rules.
+   * Key is the rule ID. Value is an array of field descriptors.
+   */
+  configFields?: Record<string, RuleConfigField[]>;
+  /** Called after a rule is applied to a block */
+  onRuleApplied?: (blockId: string, rule: AppliedRule, controls: EditorControls) => void;
+}
+
+/** A single field in a rule configuration dialog */
+export interface RuleConfigField {
+  /** Field key (used as the config property name) */
+  name: string;
+  /** Display label */
+  label: string;
+  /** Input type */
+  type: 'text' | 'number' | 'select';
+  /** Default value */
+  defaultValue?: string | number;
+  /** Options for select type */
+  options?: Array<{ value: string; label: string }>;
+}
+
 export interface SlashCommand {
   id: string;
   label: string;
   icon?: React.ReactNode;
   keywords?: string[];
   action: (editor: EditorControls) => void;
+}
+
+// SYNC:composite-category - must match CompositeCategorySchema in @rafters/composites/src/manifest.ts
+export type CompositeCategory = 'typography' | 'layout' | 'form' | 'widget' | 'media';
+
+/** Metadata for saving the current canvas as a composite. */
+export interface SaveCompositeData {
+  /** Display name */
+  name: string;
+  /** Category */
+  category: CompositeCategory;
+  /** Description */
+  description: string;
+  /** Current canvas blocks */
+  blocks: EditorBlock[];
 }
 
 export interface EditorProps
@@ -117,15 +178,22 @@ export interface EditorProps
   toolbar?: boolean;
   /** Show sidebar for block navigation/properties, or pass config for palette mode */
   sidebar?: boolean | EditorSidebarConfig;
+  /** Show rule palette alongside block palette. Requires sidebar to be an EditorSidebarConfig. */
+  rulePalette?: EditorRulePaletteConfig;
   /** Enable slash command palette with these commands */
   commandPalette?: SlashCommand[];
   /** Show floating inline formatting toolbar on text selection */
   inlineToolbar?: boolean;
+  /** Enable right-click context menu on blocks (rule management, settings, removal) */
+  blockContextMenu?: boolean;
 
   /** Custom block renderer -- receives block + context, returns JSX */
   renderBlock?: (block: EditorBlock, context: BlockRenderContext) => React.ReactNode;
   /** Custom empty state */
   emptyState?: React.ReactNode;
+
+  /** Callback to save current canvas as a composite. When set, adds a "Save as Composite" toolbar button. */
+  onSaveAsComposite?: (data: SaveCompositeData) => void | Promise<void>;
 
   /** Whether the editor is disabled */
   disabled?: boolean;
@@ -167,6 +235,8 @@ export interface BlockRenderContext {
 export interface EditorControls {
   /** Insert a block at the given index (or append if omitted) */
   addBlock: (block: EditorBlock, index?: number) => void;
+  /** Insert multiple blocks at the given index as a single history entry (or append if omitted) */
+  addBlocks: (blocks: EditorBlock[], index?: number) => void;
   /** Remove blocks by their IDs */
   removeBlocks: (ids: Set<string>) => void;
   /** Move a block to a new position */
@@ -280,6 +350,152 @@ function EditorToolbarSection({ canUndo, canRedo, onUndo, onRedo }: ToolbarSecti
   );
 }
 
+// SYNC:composite-category
+const COMPOSITE_CATEGORIES = [
+  'typography',
+  'layout',
+  'form',
+  'widget',
+  'media',
+] as const satisfies readonly CompositeCategory[];
+
+interface SaveCompositeDialogProps {
+  blocks: EditorBlock[];
+  onSave: (data: SaveCompositeData) => void;
+  onCancel: () => void;
+}
+
+function SaveCompositeDialog({ blocks, onSave, onCancel }: SaveCompositeDialogProps) {
+  const [name, setName] = React.useState('');
+  const [category, setCategory] = React.useState<CompositeCategory>('layout');
+  const [description, setDescription] = React.useState('');
+  const [error, setError] = React.useState('');
+  const nameInputRef = React.useRef<HTMLInputElement>(null);
+
+  React.useEffect(() => {
+    nameInputRef.current?.focus();
+  }, []);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmedName = name.trim();
+    if (!trimmedName) {
+      setError('Name is required');
+      return;
+    }
+    onSave({
+      name: trimmedName,
+      category,
+      description: description.trim(),
+      blocks,
+    });
+  };
+
+  const portalContainer = getPortalContainer();
+  if (!portalContainer) return null;
+
+  return createPortal(
+    <>
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: modal overlay dismiss is a standard pattern */}
+      <div
+        className={classy('fixed inset-0 z-50 bg-black/50')}
+        onClick={onCancel}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') onCancel();
+        }}
+        aria-hidden="true"
+      />
+      <div
+        role="dialog"
+        aria-label="Save as Composite"
+        aria-modal="true"
+        className={classy(
+          'fixed top-1/2 left-1/2 z-50 w-96 -translate-x-1/2 -translate-y-1/2',
+          'rounded-lg border border-border bg-background p-6 shadow-lg',
+        )}
+      >
+        <h2 className={classy('mb-4 text-lg font-semibold')}>Save as Composite</h2>
+        <form onSubmit={handleSubmit} className={classy('flex flex-col gap-3')}>
+          <label className={classy('flex flex-col gap-1 text-sm')}>
+            Name
+            <input
+              ref={nameInputRef}
+              type="text"
+              value={name}
+              onChange={(e) => {
+                setName(e.target.value);
+                setError('');
+              }}
+              className={classy(
+                'rounded-md border border-border bg-background px-3 py-1.5 text-sm',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-ring',
+              )}
+            />
+          </label>
+          <label className={classy('flex flex-col gap-1 text-sm')}>
+            Category
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value as CompositeCategory)}
+              className={classy(
+                'rounded-md border border-border bg-background px-3 py-1.5 text-sm',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-ring',
+              )}
+            >
+              {COMPOSITE_CATEGORIES.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className={classy('flex flex-col gap-1 text-sm')}>
+            Description
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={2}
+              className={classy(
+                'rounded-md border border-border bg-background px-3 py-1.5 text-sm resize-none',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-ring',
+              )}
+            />
+          </label>
+          {error && (
+            <p role="alert" className={classy('text-sm text-destructive')}>
+              {error}
+            </p>
+          )}
+          <div className={classy('flex justify-end gap-2 pt-2')}>
+            <button
+              type="button"
+              onClick={onCancel}
+              className={classy(
+                'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+                'hover:bg-accent hover:text-accent-foreground',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-ring',
+              )}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className={classy(
+                'rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-colors',
+                'hover:bg-primary/90',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-ring',
+              )}
+            >
+              Save
+            </button>
+          </div>
+        </form>
+      </div>
+    </>,
+    portalContainer,
+  );
+}
+
 interface SidebarSectionProps {
   blocks: EditorBlock[];
   selectedIds: Set<string>;
@@ -327,7 +543,7 @@ interface PaletteSidebarProps {
   disabled: boolean;
 }
 
-function EditorPaletteSidebar({ config, onActivate, disabled }: PaletteSidebarProps) {
+function BlockPaletteContent({ config, onActivate, disabled }: PaletteSidebarProps) {
   const containerRef = React.useRef<HTMLDivElement>(null);
   const searchRef = React.useRef<HTMLInputElement>(null);
   const paletteControlsRef = React.useRef<ReturnType<typeof createBlockPalette> | null>(null);
@@ -378,10 +594,7 @@ function EditorPaletteSidebar({ config, onActivate, disabled }: PaletteSidebarPr
   const searchable = config.searchable !== false;
 
   return (
-    <aside
-      aria-label="Block palette"
-      className={classy('w-48 shrink-0 flex flex-col border-r border-border')}
-    >
+    <div className={classy('flex flex-1 flex-col')}>
       {searchable && (
         <div className={classy('border-b border-border p-2')}>
           <input
@@ -442,7 +655,493 @@ function EditorPaletteSidebar({ config, onActivate, disabled }: PaletteSidebarPr
           <div className={classy('px-2 py-1 text-xs text-muted-foreground')}>No blocks found</div>
         )}
       </div>
+    </div>
+  );
+}
+
+function EditorPaletteSidebar(props: PaletteSidebarProps) {
+  return (
+    <aside
+      aria-label="Block palette"
+      className={classy('w-48 shrink-0 flex flex-col border-r border-border')}
+    >
+      <BlockPaletteContent {...props} />
     </aside>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Rule palette sidebar
+// ---------------------------------------------------------------------------
+
+interface RulePaletteSidebarProps {
+  config: EditorRulePaletteConfig;
+  onActivate: (item: RulePaletteItem) => void;
+  disabled: boolean;
+}
+
+function EditorRulePaletteSidebar({ config, onActivate, disabled }: RulePaletteSidebarProps) {
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const searchRef = React.useRef<HTMLInputElement>(null);
+  const paletteControlsRef = React.useRef<ReturnType<typeof createRulePalette> | null>(null);
+  const [query, setQuery] = React.useState('');
+  const [, forceUpdate] = React.useState(0);
+
+  React.useEffect(() => {
+    const containerEl = containerRef.current;
+    if (!containerEl) return;
+
+    const paletteOptions: Parameters<typeof createRulePalette>[0] = {
+      container: containerEl,
+      items: config.items,
+      categories: config.categories,
+      onActivate,
+      disabled,
+    };
+    if (searchRef.current) {
+      paletteOptions.searchInput = searchRef.current;
+    }
+    const palette = createRulePalette(paletteOptions);
+    paletteControlsRef.current = palette;
+    forceUpdate((n) => n + 1);
+
+    return () => {
+      palette.destroy();
+      paletteControlsRef.current = null;
+    };
+  }, [config.items, config.categories, onActivate, disabled]);
+
+  React.useEffect(() => {
+    paletteControlsRef.current?.setDisabled(disabled);
+  }, [disabled]);
+
+  const handleSearchChange = React.useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    setQuery(value);
+    paletteControlsRef.current?.setSearchQuery(value);
+    forceUpdate((n) => n + 1);
+  }, []);
+
+  const grouped = paletteControlsRef.current?.getGroupedItems();
+  const renderItem = config.renderItem;
+  const searchable = config.searchable !== false;
+
+  return (
+    <div className={classy('flex flex-1 flex-col')}>
+      {searchable && (
+        <div className={classy('border-b border-border p-2')}>
+          <input
+            ref={searchRef}
+            type="text"
+            value={query}
+            onChange={handleSearchChange}
+            placeholder="Search rules..."
+            aria-label="Search rules"
+            disabled={disabled}
+            className={classy(
+              'w-full rounded-md border border-border bg-transparent px-2 py-1 text-xs outline-none',
+              'placeholder:text-muted-foreground',
+              'focus-visible:ring-2 focus-visible:ring-primary-ring',
+              { 'opacity-50 cursor-not-allowed': disabled },
+            )}
+          />
+        </div>
+      )}
+      <div
+        ref={containerRef}
+        tabIndex={disabled ? -1 : 0}
+        className={classy('flex flex-1 flex-col gap-1 overflow-y-auto p-2')}
+      >
+        {grouped &&
+          Array.from(grouped.entries()).map(([category, categoryItems]) => (
+            <div key={category}>
+              <div
+                role="presentation"
+                className={classy(
+                  'px-2 py-1 text-xs font-medium text-muted-foreground uppercase tracking-wider',
+                )}
+              >
+                {category}
+              </div>
+              {categoryItems.map((item) => (
+                // biome-ignore lint/a11y/useFocusableInteractive: focus managed via aria-activedescendant on rule-palette container
+                <div
+                  key={item.id}
+                  data-rule-item=""
+                  data-rule-id={item.id}
+                  draggable={!disabled}
+                  role="option"
+                  aria-selected="false"
+                  className={classy(
+                    'rounded-md px-2 py-1 text-xs cursor-pointer transition-colors',
+                    'hover:bg-accent hover:text-accent-foreground',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-ring',
+                    { 'opacity-50 cursor-not-allowed': disabled },
+                  )}
+                >
+                  {renderItem ? renderItem(item) : item.label}
+                </div>
+              ))}
+            </div>
+          ))}
+        {grouped && grouped.size === 0 && (
+          <div className={classy('px-2 py-1 text-xs text-muted-foreground')}>No rules found</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Tabbed palette sidebar (block + rule)
+// ---------------------------------------------------------------------------
+
+type PaletteTab = 'blocks' | 'rules';
+
+interface TabbedPaletteSidebarProps {
+  blockConfig: EditorSidebarConfig;
+  ruleConfig: EditorRulePaletteConfig;
+  onBlockActivate: (item: BlockPaletteItem) => void;
+  onRuleActivate: (item: RulePaletteItem) => void;
+  disabled: boolean;
+}
+
+function EditorTabbedPaletteSidebar({
+  blockConfig,
+  ruleConfig,
+  onBlockActivate,
+  onRuleActivate,
+  disabled,
+}: TabbedPaletteSidebarProps) {
+  const [activeTab, setActiveTab] = React.useState<PaletteTab>('blocks');
+
+  return (
+    <aside
+      aria-label="Editor palettes"
+      className={classy('w-48 shrink-0 flex flex-col border-r border-border')}
+    >
+      <div
+        role="tablist"
+        aria-label="Palette tabs"
+        className={classy('flex border-b border-border')}
+      >
+        <button
+          type="button"
+          role="tab"
+          id="palette-tab-blocks"
+          aria-selected={activeTab === 'blocks'}
+          aria-controls="palette-panel-blocks"
+          onClick={() => setActiveTab('blocks')}
+          disabled={disabled}
+          className={classy(
+            'flex-1 px-2 py-1.5 text-xs font-medium transition-colors',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-ring',
+            {
+              'border-b-2 border-primary text-foreground': activeTab === 'blocks',
+              'text-muted-foreground hover:text-foreground': activeTab !== 'blocks',
+              'opacity-50 cursor-not-allowed': disabled,
+            },
+          )}
+        >
+          Blocks
+        </button>
+        <button
+          type="button"
+          role="tab"
+          id="palette-tab-rules"
+          aria-selected={activeTab === 'rules'}
+          aria-controls="palette-panel-rules"
+          onClick={() => setActiveTab('rules')}
+          disabled={disabled}
+          className={classy(
+            'flex-1 px-2 py-1.5 text-xs font-medium transition-colors',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-ring',
+            {
+              'border-b-2 border-primary text-foreground': activeTab === 'rules',
+              'text-muted-foreground hover:text-foreground': activeTab !== 'rules',
+              'opacity-50 cursor-not-allowed': disabled,
+            },
+          )}
+        >
+          Rules
+        </button>
+      </div>
+      <div
+        id="palette-panel-blocks"
+        role="tabpanel"
+        aria-labelledby="palette-tab-blocks"
+        hidden={activeTab !== 'blocks'}
+        className={classy('flex flex-1 flex-col', { hidden: activeTab !== 'blocks' })}
+      >
+        {activeTab === 'blocks' && (
+          <BlockPaletteContent
+            config={blockConfig}
+            onActivate={onBlockActivate}
+            disabled={disabled}
+          />
+        )}
+      </div>
+      <div
+        id="palette-panel-rules"
+        role="tabpanel"
+        aria-labelledby="palette-tab-rules"
+        hidden={activeTab !== 'rules'}
+        className={classy('flex flex-1 flex-col', { hidden: activeTab !== 'rules' })}
+      >
+        {activeTab === 'rules' && (
+          <EditorRulePaletteSidebar
+            config={ruleConfig}
+            onActivate={onRuleActivate}
+            disabled={disabled}
+          />
+        )}
+      </div>
+    </aside>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Rule config dialog
+// ---------------------------------------------------------------------------
+
+interface RuleConfigDialogProps {
+  rule: RulePaletteItem;
+  fields: RuleConfigField[];
+  anchorId: string;
+  onConfirm: (config: Record<string, unknown>) => void;
+  onCancel: () => void;
+}
+
+function RuleConfigDialog({ rule, fields, anchorId, onConfirm, onCancel }: RuleConfigDialogProps) {
+  const dialogRef = React.useRef<HTMLDivElement>(null);
+  const [values, setValues] = React.useState<Record<string, unknown>>(() => {
+    const initial: Record<string, unknown> = {};
+    for (const field of fields) {
+      initial[field.name] = field.defaultValue ?? '';
+    }
+    return initial;
+  });
+
+  React.useEffect(() => {
+    const dialogEl = dialogRef.current;
+    if (!dialogEl) return;
+
+    const cleanups: CleanupFunction[] = [];
+
+    // Position near the anchor block
+    const anchorEl = document.getElementById(anchorId);
+    if (anchorEl) {
+      const anchorRect = anchorEl.getBoundingClientRect();
+      dialogEl.style.position = 'fixed';
+      dialogEl.style.top = `${anchorRect.bottom + 8}px`;
+      dialogEl.style.left = `${anchorRect.left}px`;
+    }
+
+    // Focus trap
+    cleanups.push(createFocusTrap(dialogEl));
+
+    // Escape to cancel
+    cleanups.push(onEscapeKeyDown(() => onCancel()));
+
+    return () => {
+      for (const cleanup of cleanups) cleanup();
+    };
+  }, [anchorId, onCancel]);
+
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    onConfirm(values);
+  };
+
+  const portalContainer = getPortalContainer();
+  if (!portalContainer) return null;
+
+  return createPortal(
+    <div
+      ref={dialogRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Configure ${rule.label}`}
+      className={classy(
+        'fixed z-depth-popover w-64 rounded-lg border border-border bg-popover p-3 shadow-lg',
+      )}
+    >
+      <div className={classy('mb-2 text-xs font-medium text-foreground')}>{rule.label}</div>
+      <form onSubmit={handleSubmit}>
+        {fields.map((field) => (
+          <div key={field.name} className={classy('mb-2')}>
+            <label
+              htmlFor={`rule-config-${field.name}`}
+              className={classy('mb-1 block text-xs text-muted-foreground')}
+            >
+              {field.label}
+            </label>
+            {field.type === 'select' ? (
+              <select
+                id={`rule-config-${field.name}`}
+                value={String(values[field.name] ?? '')}
+                onChange={(e) => setValues((prev) => ({ ...prev, [field.name]: e.target.value }))}
+                className={classy(
+                  'w-full rounded-md border border-border bg-transparent px-2 py-1 text-xs outline-none',
+                  'focus-visible:ring-2 focus-visible:ring-primary-ring',
+                )}
+              >
+                {field.options?.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                id={`rule-config-${field.name}`}
+                type={field.type}
+                value={String(values[field.name] ?? '')}
+                onChange={(e) =>
+                  setValues((prev) => ({
+                    ...prev,
+                    [field.name]: field.type === 'number' ? Number(e.target.value) : e.target.value,
+                  }))
+                }
+                className={classy(
+                  'w-full rounded-md border border-border bg-transparent px-2 py-1 text-xs outline-none',
+                  'focus-visible:ring-2 focus-visible:ring-primary-ring',
+                )}
+              />
+            )}
+          </div>
+        ))}
+        <div className={classy('flex justify-end gap-1')}>
+          <button
+            type="button"
+            onClick={onCancel}
+            className={classy(
+              'rounded-md px-2 py-1 text-xs text-muted-foreground transition-colors',
+              'hover:bg-accent hover:text-accent-foreground',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-ring',
+            )}
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className={classy(
+              'rounded-md bg-primary px-2 py-1 text-xs text-primary-foreground transition-colors',
+              'hover:bg-primary/90',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-ring',
+            )}
+          >
+            Apply
+          </button>
+        </div>
+      </form>
+    </div>,
+    portalContainer,
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Block context menu overlay
+// ---------------------------------------------------------------------------
+
+interface ContextMenuOverlayState {
+  blockId: string;
+  position: { x: number; y: number };
+}
+
+interface ContextMenuOverlayProps {
+  state: ContextMenuOverlayState;
+  block: EditorBlock | undefined;
+  onAction: (actionId: string) => void;
+}
+
+function BlockContextMenuOverlay({ state, block, onAction }: ContextMenuOverlayProps) {
+  const menuRef = React.useRef<HTMLDivElement>(null);
+
+  const portalContainer = getPortalContainer();
+  if (!portalContainer || !block) return null;
+
+  const appliedRules = block.rules ?? [];
+  const hasRules = appliedRules.length > 0;
+
+  return createPortal(
+    <div
+      ref={menuRef}
+      role="menu"
+      aria-label="Block actions"
+      className={classy(
+        'fixed z-depth-popover w-52 rounded-lg border border-border bg-popover py-1 shadow-lg',
+      )}
+      style={{
+        left: `${state.position.x}px`,
+        top: `${state.position.y}px`,
+      }}
+    >
+      {hasRules && (
+        <>
+          <div
+            role="presentation"
+            className={classy(
+              'px-3 py-1 text-xs font-medium text-muted-foreground uppercase tracking-wider',
+            )}
+          >
+            Rules
+          </div>
+          {appliedRules.map((rule, i) => {
+            const ruleName = typeof rule === 'string' ? rule : rule.name;
+            const hasConfig = typeof rule === 'object';
+            return (
+              <React.Fragment key={`${ruleName}-${i}`}>
+                <div
+                  role="menuitem"
+                  tabIndex={-1}
+                  data-menu-item-id={`edit-rule:${ruleName}`}
+                  onPointerDown={() => onAction(`edit-rule:${ruleName}`)}
+                  className={classy(
+                    'flex items-center justify-between px-3 py-1.5 text-sm cursor-pointer',
+                    'hover:bg-accent hover:text-accent-foreground',
+                    'focus-visible:outline-none focus-visible:bg-accent',
+                  )}
+                >
+                  <span>{ruleName}</span>
+                  {hasConfig && (
+                    <span className={classy('text-xs text-muted-foreground')}>configured</span>
+                  )}
+                </div>
+                <div
+                  role="menuitem"
+                  tabIndex={-1}
+                  data-menu-item-id={`remove-rule:${ruleName}`}
+                  onPointerDown={() => onAction(`remove-rule:${ruleName}`)}
+                  className={classy(
+                    'px-3 py-1.5 pl-6 text-xs text-destructive cursor-pointer',
+                    'hover:bg-accent',
+                    'focus-visible:outline-none focus-visible:bg-accent',
+                  )}
+                >
+                  Remove rule
+                </div>
+              </React.Fragment>
+            );
+          })}
+          <hr className={classy('my-1 border-border')} />
+        </>
+      )}
+      <div
+        role="menuitem"
+        tabIndex={-1}
+        data-menu-item-id="remove-block"
+        onPointerDown={() => onAction('remove-block')}
+        className={classy(
+          'px-3 py-1.5 text-sm text-destructive cursor-pointer',
+          'hover:bg-accent',
+          'focus-visible:outline-none focus-visible:bg-accent',
+        )}
+      >
+        Remove block
+      </div>
+    </div>,
+    portalContainer,
   );
 }
 
@@ -631,10 +1330,13 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
       onValueCommit,
       toolbar = false,
       sidebar = false,
+      rulePalette,
       commandPalette,
       inlineToolbar = false,
+      blockContextMenu = false,
       renderBlock,
       emptyState,
+      onSaveAsComposite,
       disabled = false,
       dir,
       ...props
@@ -657,6 +1359,9 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
     const canvasRef = React.useRef<HTMLDivElement>(null);
     const handlerRef = React.useRef<BlockHandlerControls | null>(null);
 
+    // ----- Save composite dialog state -----
+    const [showSaveDialog, setShowSaveDialog] = React.useState(false);
+
     // ----- Inline toolbar state -----
     const [inlineToolbarPos, setInlineToolbarPos] = React.useState<AdjustedToolbarPosition | null>(
       null,
@@ -672,6 +1377,17 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
       y: 0,
     });
     const paletteRef = React.useRef<CommandPaletteController | null>(null);
+
+    // ----- Rule config dialog state -----
+    const [ruleDialogState, setRuleDialogState] = React.useState<{
+      rule: RulePaletteItem;
+      blockId: string;
+    } | null>(null);
+
+    // ----- Context menu state -----
+    const [blockContextMenuState, setContextMenuState] =
+      React.useState<ContextMenuOverlayState | null>(null);
+    const blockContextMenuRef = React.useRef<BlockContextMenuControls | null>(null);
 
     // ----- Stable block mutation function -----
     const updateBlocks = React.useCallback(
@@ -689,18 +1405,24 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
     );
 
     // ----- CRUD methods -----
-    const addBlock = React.useCallback(
-      (block: EditorBlock, index?: number) => {
+    const addBlocks = React.useCallback(
+      (newBlocks: EditorBlock[], index?: number) => {
+        if (newBlocks.length === 0) return;
         const current = blocksAtomRef.current.get();
         const next = [...current];
         if (index !== undefined && index >= 0 && index <= next.length) {
-          next.splice(index, 0, block);
+          next.splice(index, 0, ...newBlocks);
         } else {
-          next.push(block);
+          next.push(...newBlocks);
         }
         updateBlocks(next, true);
       },
       [updateBlocks],
+    );
+
+    const addBlock = React.useCallback(
+      (block: EditorBlock, index?: number) => addBlocks([block], index),
+      [addBlocks],
     );
 
     const removeBlocks = React.useCallback(
@@ -942,6 +1664,7 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
     const controls = React.useMemo<EditorControls>(
       () => ({
         addBlock,
+        addBlocks,
         removeBlocks,
         moveBlock,
         updateBlock,
@@ -952,7 +1675,7 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
         deselect: () => handlerRef.current?.handleCanvasBackgroundClick(),
         focus: () => canvasRef.current?.focus(),
       }),
-      [addBlock, removeBlocks, moveBlock, updateBlock],
+      [addBlock, addBlocks, removeBlocks, moveBlock, updateBlock],
     );
     // Sync controls into the ref inside an effect to avoid mutating a ref during render
     // (React 19 purity requirement).
@@ -1005,6 +1728,214 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
       setActiveFormats(formatterRef.current?.getActiveFormats() ?? []);
     }, []);
 
+    // ----- Rule application helpers -----
+    const applyRuleToBlock = React.useCallback(
+      (blockId: string, ruleItem: RulePaletteItem, config?: Record<string, unknown>) => {
+        const current = blocksAtomRef.current.get();
+        const block = current.find((b) => b.id === blockId);
+        if (!block) return;
+
+        const existingRules = block.rules ?? [];
+        // Prevent duplicate simple rules
+        const alreadyApplied = existingRules.some((r) =>
+          typeof r === 'string' ? r === ruleItem.id : r.name === ruleItem.id,
+        );
+        if (alreadyApplied && !config) return;
+
+        const rule: AppliedRule = config ? { name: ruleItem.id, config } : ruleItem.id;
+
+        // If parameterized and already exists, update config
+        if (alreadyApplied && config) {
+          const updatedRules = existingRules.map((r) =>
+            typeof r === 'object' && r.name === ruleItem.id ? rule : r,
+          );
+          updateBlock(blockId, { rules: updatedRules });
+        } else {
+          updateBlock(blockId, { rules: [...existingRules, rule] });
+        }
+
+        const rpConfig = typeof rulePalette === 'object' ? rulePalette : null;
+        if (rpConfig?.onRuleApplied && controlsRef.current) {
+          rpConfig.onRuleApplied(blockId, rule, controlsRef.current);
+        }
+      },
+      [updateBlock, rulePalette],
+    );
+
+    const handleRuleActivate = React.useCallback(
+      (item: RulePaletteItem) => {
+        // When activated from palette (click/Enter), apply to focused block
+        const focusedId = $handlerStateRef.current.get().focusedId;
+        if (!focusedId) return;
+
+        const rpConfig = typeof rulePalette === 'object' ? rulePalette : null;
+        const fields = rpConfig?.configFields?.[item.id];
+        if (item.requiresConfig && fields && fields.length > 0) {
+          setRuleDialogState({ rule: item, blockId: focusedId });
+        } else {
+          applyRuleToBlock(focusedId, item);
+        }
+      },
+      [applyRuleToBlock, rulePalette],
+    );
+
+    const handleRuleConfigConfirm = React.useCallback(
+      (config: Record<string, unknown>) => {
+        if (ruleDialogState) {
+          applyRuleToBlock(ruleDialogState.blockId, ruleDialogState.rule, config);
+          setRuleDialogState(null);
+        }
+      },
+      [ruleDialogState, applyRuleToBlock],
+    );
+
+    const handleRuleConfigCancel = React.useCallback(() => {
+      setRuleDialogState(null);
+    }, []);
+
+    // ----- Rule drop on blocks (drag from rule palette onto block elements) -----
+    React.useEffect(() => {
+      const canvasEl = canvasRef.current;
+      if (!canvasEl || disabled || !rulePalette) return;
+
+      const handleRuleDragOver = (event: DragEvent) => {
+        // Check if this is a rule drag (has the rule MIME type)
+        if (!event.dataTransfer?.types.includes('application/x-rafters-rule')) return;
+
+        // Find the closest block element
+        const target = event.target as HTMLElement;
+        const blockEl = target.closest('[data-block-id]') as HTMLElement | null;
+        if (!blockEl) return;
+
+        event.preventDefault();
+        if (event.dataTransfer) {
+          event.dataTransfer.dropEffect = 'copy';
+        }
+        blockEl.setAttribute('data-rule-drop-target', 'true');
+      };
+
+      const handleRuleDragLeave = (event: DragEvent) => {
+        const target = event.target as HTMLElement;
+        const blockEl = target.closest('[data-block-id]') as HTMLElement | null;
+        if (blockEl) {
+          blockEl.removeAttribute('data-rule-drop-target');
+        }
+      };
+
+      const handleRuleDrop = (event: DragEvent) => {
+        const target = event.target as HTMLElement;
+        const blockEl = target.closest('[data-block-id]') as HTMLElement | null;
+        if (!blockEl) return;
+
+        blockEl.removeAttribute('data-rule-drop-target');
+
+        const ruleJson = event.dataTransfer?.getData('application/x-rafters-rule');
+        if (!ruleJson) return;
+
+        event.preventDefault();
+
+        let ruleItem: RulePaletteItem;
+        try {
+          ruleItem = JSON.parse(ruleJson) as RulePaletteItem;
+        } catch {
+          return;
+        }
+
+        const blockId = blockEl.getAttribute('data-block-id');
+        if (!blockId) return;
+
+        // Check compatibility
+        if (ruleItem.compatibleBlockTypes && ruleItem.compatibleBlockTypes.length > 0) {
+          const block = blocksAtomRef.current.get().find((b) => b.id === blockId);
+          if (block && !ruleItem.compatibleBlockTypes.includes(block.type)) {
+            // Incompatible - no-op (block element briefly flashes via CSS)
+            blockEl.setAttribute('data-rule-rejected', 'true');
+            setTimeout(() => blockEl.removeAttribute('data-rule-rejected'), 600);
+            return;
+          }
+        }
+
+        // Parameterized rule: open config dialog
+        const rpConfig = typeof rulePalette === 'object' ? rulePalette : null;
+        const fields = rpConfig?.configFields?.[ruleItem.id];
+        if (ruleItem.requiresConfig && fields && fields.length > 0) {
+          setRuleDialogState({ rule: ruleItem, blockId });
+        } else {
+          applyRuleToBlock(blockId, ruleItem);
+        }
+      };
+
+      canvasEl.addEventListener('dragover', handleRuleDragOver);
+      canvasEl.addEventListener('dragleave', handleRuleDragLeave);
+      canvasEl.addEventListener('drop', handleRuleDrop);
+
+      return () => {
+        canvasEl.removeEventListener('dragover', handleRuleDragOver);
+        canvasEl.removeEventListener('dragleave', handleRuleDragLeave);
+        canvasEl.removeEventListener('drop', handleRuleDrop);
+      };
+    }, [disabled, rulePalette, applyRuleToBlock]);
+
+    // ----- Block context menu primitive -----
+    React.useEffect(() => {
+      const canvasEl = canvasRef.current;
+      if (!canvasEl || disabled || !blockContextMenu) return;
+
+      // Create an off-screen menu element for the primitive to manage
+      const menuEl = document.createElement('div');
+      document.body.appendChild(menuEl);
+
+      const ctxMenu = createBlockContextMenu({
+        container: canvasEl,
+        menu: menuEl,
+        onAction: (itemId, blockId) => {
+          if (itemId === 'remove-block') {
+            const current = blocksAtomRef.current.get();
+            const block = current.find((b) => b.id === blockId);
+            if (block) {
+              // Collect children to remove too
+              const idsToRemove = new Set<string>([blockId]);
+              if (block.children) {
+                for (const childId of block.children) idsToRemove.add(childId);
+              }
+              removeBlocks(idsToRemove);
+            }
+          } else if (itemId.startsWith('remove-rule:')) {
+            const ruleName = itemId.slice('remove-rule:'.length);
+            const current = blocksAtomRef.current.get();
+            const block = current.find((b) => b.id === blockId);
+            if (block?.rules) {
+              const updatedRules = block.rules.filter((r) =>
+                typeof r === 'string' ? r !== ruleName : r.name !== ruleName,
+              );
+              updateBlock(blockId, { rules: updatedRules });
+            }
+          } else if (itemId.startsWith('edit-rule:')) {
+            const ruleName = itemId.slice('edit-rule:'.length);
+            const ruleItem = rulePalette?.items.find((r) => r.id === ruleName);
+            if (ruleItem?.requiresConfig) {
+              setRuleDialogState({ rule: ruleItem, blockId });
+            }
+          }
+          setContextMenuState(null);
+        },
+        onOpen: (blockId, position) => {
+          setContextMenuState({ blockId, position });
+        },
+        onClose: () => {
+          setContextMenuState(null);
+        },
+      });
+      blockContextMenuRef.current = ctxMenu;
+
+      return () => {
+        ctxMenu.destroy();
+        menuEl.remove();
+        blockContextMenuRef.current = null;
+        setContextMenuState(null);
+      };
+    }, [disabled, blockContextMenu, removeBlocks, updateBlock, rulePalette]);
+
     // ----- Block click handler -----
     const handleBlockClick = React.useCallback(
       (blockId: string, event: React.MouseEvent) => {
@@ -1056,6 +1987,18 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
       [addBlock],
     );
 
+    const handleSaveComposite = React.useCallback(
+      async (data: SaveCompositeData) => {
+        try {
+          await onSaveAsComposite?.(data);
+          setShowSaveDialog(false);
+        } catch {
+          // Keep dialog open so user knows the save failed
+        }
+      },
+      [onSaveAsComposite],
+    );
+
     // Determine sidebar mode
     const sidebarConfig = typeof sidebar === 'object' && sidebar !== null ? sidebar : null;
 
@@ -1075,12 +2018,30 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
         )}
       >
         {toolbar && (
-          <EditorToolbarSection
-            canUndo={handlerState.canUndo}
-            canRedo={handlerState.canRedo}
-            onUndo={() => handlerRef.current?.undo()}
-            onRedo={() => handlerRef.current?.redo()}
-          />
+          <div className={classy('flex items-center')}>
+            <EditorToolbarSection
+              canUndo={handlerState.canUndo}
+              canRedo={handlerState.canRedo}
+              onUndo={() => handlerRef.current?.undo()}
+              onRedo={() => handlerRef.current?.redo()}
+            />
+            {onSaveAsComposite && (
+              <button
+                type="button"
+                onClick={() => setShowSaveDialog(true)}
+                disabled={blocks.length === 0}
+                aria-label="Save as Composite"
+                className={classy(
+                  'ml-auto mr-2 rounded-md px-2 py-1 text-xs font-medium transition-colors',
+                  'hover:bg-accent hover:text-accent-foreground',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-ring',
+                  { 'opacity-50 cursor-not-allowed': blocks.length === 0 },
+                )}
+              >
+                Save as Composite
+              </button>
+            )}
+          </div>
         )}
         <div className={classy('flex flex-1')}>
           {sidebar === true && (
@@ -1091,7 +2052,16 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
               onFocusBlock={handleSidebarFocusBlock}
             />
           )}
-          {sidebarConfig && (
+          {sidebarConfig && rulePalette && (
+            <EditorTabbedPaletteSidebar
+              blockConfig={sidebarConfig}
+              ruleConfig={rulePalette}
+              onBlockActivate={handlePaletteActivate}
+              onRuleActivate={handleRuleActivate}
+              disabled={disabled}
+            />
+          )}
+          {sidebarConfig && !rulePalette && (
             <EditorPaletteSidebar
               config={sidebarConfig}
               onActivate={handlePaletteActivate}
@@ -1161,6 +2131,67 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
             position={inlineToolbarPos}
             activeFormats={activeFormats}
             onFormat={handleFormat}
+          />
+        )}
+        {ruleDialogState &&
+          (() => {
+            const fields = rulePalette?.configFields?.[ruleDialogState.rule.id];
+            if (!fields) return null;
+            return (
+              <RuleConfigDialog
+                rule={ruleDialogState.rule}
+                fields={fields}
+                anchorId={`editor-block-${ruleDialogState.blockId}`}
+                onConfirm={handleRuleConfigConfirm}
+                onCancel={handleRuleConfigCancel}
+              />
+            );
+          })()}
+        {blockContextMenu && blockContextMenuState && (
+          <BlockContextMenuOverlay
+            state={blockContextMenuState}
+            block={blocks.find((b) => b.id === blockContextMenuState.blockId)}
+            onAction={(actionId) => {
+              const ctxMenu = blockContextMenuRef.current;
+              if (ctxMenu) {
+                // Find the menu element's matching item and trigger action
+                const blockId = blockContextMenuState.blockId;
+                if (actionId === 'remove-block') {
+                  const block = blocks.find((b) => b.id === blockId);
+                  if (block) {
+                    const idsToRemove = new Set<string>([blockId]);
+                    if (block.children) {
+                      for (const childId of block.children) idsToRemove.add(childId);
+                    }
+                    removeBlocks(idsToRemove);
+                  }
+                } else if (actionId.startsWith('remove-rule:')) {
+                  const ruleName = actionId.slice('remove-rule:'.length);
+                  const block = blocks.find((b) => b.id === blockId);
+                  if (block?.rules) {
+                    const updatedRules = block.rules.filter((r) =>
+                      typeof r === 'string' ? r !== ruleName : r.name !== ruleName,
+                    );
+                    updateBlock(blockId, { rules: updatedRules });
+                  }
+                } else if (actionId.startsWith('edit-rule:')) {
+                  const ruleName = actionId.slice('edit-rule:'.length);
+                  const ruleItem = rulePalette?.items.find((r) => r.id === ruleName);
+                  if (ruleItem?.requiresConfig) {
+                    setRuleDialogState({ rule: ruleItem, blockId });
+                  }
+                }
+                setContextMenuState(null);
+                ctxMenu.close();
+              }
+            }}
+          />
+        )}
+        {showSaveDialog && onSaveAsComposite && (
+          <SaveCompositeDialog
+            blocks={blocks}
+            onSave={handleSaveComposite}
+            onCancel={() => setShowSaveDialog(false)}
           />
         )}
       </Container>
