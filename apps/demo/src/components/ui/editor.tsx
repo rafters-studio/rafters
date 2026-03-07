@@ -90,6 +90,8 @@ export interface EditorSidebarConfig {
   searchable?: boolean;
   /** Custom item renderer for scaled previews */
   renderItem?: (item: BlockPaletteItem) => React.ReactNode;
+  /** Custom insert handler for palette activation (click or drop). Overrides default single-block insertion. */
+  onItemInsert?: (item: BlockPaletteItem, controls: EditorControls, insertIndex?: number) => void;
 }
 
 export interface SlashCommand {
@@ -904,14 +906,19 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
             // data may arrive as parsed JSON from either MIME type
             const item = data as BlockPaletteItem;
             if (!item.id) return;
-            addBlock(
-              {
-                id: crypto.randomUUID(),
-                type: item.id,
-                content: '',
-              },
-              insertIndex,
-            );
+            const cfg = typeof sidebarRef.current === 'object' ? sidebarRef.current : null;
+            if (cfg?.onItemInsert && controlsRef.current) {
+              cfg.onItemInsert(item, controlsRef.current, insertIndex);
+            } else {
+              addBlock(
+                {
+                  id: crypto.randomUUID(),
+                  type: item.id,
+                  content: '',
+                },
+                insertIndex,
+              );
+            }
           },
         });
         cleanups.push(() => dropZone.destroy());
@@ -1035,11 +1042,16 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
     // ----- Palette sidebar handlers -----
     const handlePaletteActivate = React.useCallback(
       (item: BlockPaletteItem) => {
-        addBlock({
-          id: crypto.randomUUID(),
-          type: item.id,
-          content: '',
-        });
+        const cfg = typeof sidebarRef.current === 'object' ? sidebarRef.current : null;
+        if (cfg?.onItemInsert && controlsRef.current) {
+          cfg.onItemInsert(item, controlsRef.current);
+        } else {
+          addBlock({
+            id: crypto.randomUUID(),
+            type: item.id,
+            content: '',
+          });
+        }
       },
       [addBlock],
     );

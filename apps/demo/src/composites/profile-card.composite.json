@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "id": "profile-card",
+    "name": "Profile Card",
+    "category": "widget",
+    "description": "User profile display after authentication",
+    "keywords": ["user", "profile", "avatar", "account"],
+    "cognitiveLoad": 3
+  },
+  "input": ["credentials"],
+  "output": [],
+  "blocks": [
+    { "id": "h", "type": "heading", "content": "Your Profile", "meta": { "level": 2 } },
+    { "id": "welcome", "type": "text", "content": "Welcome back! Here's your account overview." },
+    { "id": "sep", "type": "divider" },
+    { "id": "info", "type": "text", "content": "Email, settings, and preferences." }
+  ]
+}

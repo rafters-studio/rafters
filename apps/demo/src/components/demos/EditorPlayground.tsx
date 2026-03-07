@@ -1,3 +1,18 @@
+import {
+  type CompositeBlock,
+  type CompositeFile,
+  credentials,
+  email,
+  findCompatibleConsumers,
+  matchRules,
+  password,
+  registerComposite,
+  required,
+  searchComposites,
+  toBridgeItems,
+  toMdx,
+  url,
+} from '@rafters/composites/client';
 import * as React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,10 +26,13 @@ import {
   type EditorSidebarConfig,
   type SlashCommand,
 } from '@/components/ui/editor';
+import { Input } from '@/components/ui/input';
 import { Kbd } from '@/components/ui/kbd';
+import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Blockquote, H1, H2, Muted, P } from '@/components/ui/typography';
+import { Blockquote, H1, H2, H3, Muted, P } from '@/components/ui/typography';
+import type { BlockPaletteItem } from '@/lib/primitives/block-palette';
 import classy from '@/lib/primitives/classy';
 import type { InlineContent } from '@/lib/primitives/types';
 
@@ -55,18 +73,120 @@ const FULL_BLOCKS: EditorBlock[] = [
   { id: 'full-4', type: 'text', content: 'Type / to open the command palette.' },
 ];
 
-const PALETTE_ITEMS: EditorSidebarConfig['items'] = [
-  { id: 'text', label: 'Text Block', category: 'Basic', keywords: ['paragraph'] },
-  { id: 'heading', label: 'Heading', category: 'Basic', keywords: ['title', 'h1'] },
-  { id: 'quote', label: 'Quote', category: 'Basic', keywords: ['blockquote'] },
-  { id: 'image', label: 'Image', category: 'Media', keywords: ['picture', 'photo'] },
-  { id: 'divider', label: 'Divider', category: 'Media', keywords: ['separator', 'hr'] },
-];
+// Loaded from .composite.json files in src/composites/
+import ctaSectionJson from '@/composites/cta-section.composite.json';
+import featureGridJson from '@/composites/feature-grid.composite.json';
+import heroBannerJson from '@/composites/hero-banner.composite.json';
+import loginFormJson from '@/composites/login-form.composite.json';
+import profileCardJson from '@/composites/profile-card.composite.json';
+import testimonialJson from '@/composites/testimonial.composite.json';
+
+const SAMPLE_COMPOSITES: CompositeFile[] = [
+  loginFormJson,
+  heroBannerJson,
+  profileCardJson,
+  featureGridJson,
+  testimonialJson,
+  ctaSectionJson,
+] as CompositeFile[];
+
+// Sidebar palette items derived from composite JSON files via toBridgeItems()
+const COMPOSITE_PALETTE_ITEMS = toBridgeItems(SAMPLE_COMPOSITES);
+const COMPOSITE_CATEGORIES = [...new Set(SAMPLE_COMPOSITES.map((c) => c.manifest.category))];
+const COMPOSITE_MAP = new Map(SAMPLE_COMPOSITES.map((c) => [c.manifest.id, c]));
+
+/** Miniature block preview rendered in sidebar palette */
+function BlockPreview({ block }: { block: CompositeBlock }) {
+  const content = String(block.content ?? '');
+  if (block.type === 'heading') {
+    return <div className={classy('truncate font-semibold')}>{content}</div>;
+  }
+  if (block.type === 'divider') {
+    return <hr className={classy('my-0.5 border-border')} />;
+  }
+  if (block.type === 'blockquote') {
+    return (
+      <div
+        className={classy('truncate border-l-2 border-primary pl-1 text-muted-foreground italic')}
+      >
+        {content}
+      </div>
+    );
+  }
+  if (block.type === 'input') {
+    return (
+      <div className={classy('flex flex-col gap-0.5')}>
+        <Label className={classy('text-muted-foreground')}>{content}</Label>
+        <Input size="sm" placeholder={content} disabled className={classy('h-5 px-1 py-0')} />
+      </div>
+    );
+  }
+  if (block.type === 'button') {
+    return (
+      <Button size="sm" className={classy('h-5 w-full truncate')}>
+        {content}
+      </Button>
+    );
+  }
+  return <div className={classy('truncate text-muted-foreground')}>{content}</div>;
+}
+
+/** Rich visual preview for sidebar palette items showing actual composite blocks */
+function renderPaletteItem(item: BlockPaletteItem): React.ReactNode {
+  const composite = COMPOSITE_MAP.get(item.id);
+  if (!composite) return item.label;
+
+  // Skip container-only blocks (grid wrappers) and limit to 4 visible blocks
+  const visibleBlocks = composite.blocks.filter((b) => !b.children?.length).slice(0, 4);
+  const hasMore = composite.blocks.filter((b) => !b.children?.length).length > 4;
+
+  return (
+    <div className={classy('flex flex-col gap-1')}>
+      <span className={classy('font-medium')}>{composite.manifest.name}</span>
+      <div className={classy('flex flex-col gap-0.5 rounded border border-border bg-muted/30 p-1')}>
+        {visibleBlocks.map((block) => (
+          <BlockPreview key={block.id} block={block} />
+        ))}
+        {hasMore && <div className={classy('text-muted-foreground text-center')}>...</div>}
+      </div>
+    </div>
+  );
+}
+
+/** Insert all blocks from a composite when a palette item is activated or dropped */
+function handleCompositeInsert(
+  item: BlockPaletteItem,
+  controls: EditorControls,
+  insertIndex?: number,
+) {
+  const composite = COMPOSITE_MAP.get(item.id);
+  if (!composite) {
+    controls.addBlock({ id: crypto.randomUUID(), type: item.id, content: '' }, insertIndex);
+    return;
+  }
+  for (let i = 0; i < composite.blocks.length; i++) {
+    const block = composite.blocks[i];
+    if (!block) continue;
+    controls.addBlock(
+      {
+        id: crypto.randomUUID(),
+        type: block.type,
+        content: block.content ?? '',
+        children: block.children,
+        parentId: block.parentId,
+        meta: block.meta,
+      },
+      insertIndex !== undefined ? insertIndex + i : undefined,
+    );
+  }
+}
 
 const SIDEBAR_CONFIG: EditorSidebarConfig = {
-  items: PALETTE_ITEMS,
-  categories: ['Basic', 'Media'],
+  items: COMPOSITE_PALETTE_ITEMS,
+  categories: COMPOSITE_CATEGORIES,
   searchable: true,
+  renderItem: renderPaletteItem,
+  onItemInsert: handleCompositeInsert,
 };
 
 // ============================================================================
@@ -211,6 +331,28 @@ function EditableBlockRenderer({
     );
   }
 
+  if (block.type === 'input') {
+    const inputType = (block.meta as Record<string, unknown>)?.inputType as string | undefined;
+    return (
+      <div data-block-row="" className={classy('group flex items-start gap-1')}>
+        <DragHandle blockId={block.id} index={context.index} onMove={onMove} />
+        <div className={classy('flex flex-1 flex-col gap-1')}>
+          <Label className={classy('text-sm font-medium')}>{initialContent}</Label>
+          <Input type={inputType ?? 'text'} placeholder={initialContent} disabled />
+        </div>
+      </div>
+    );
+  }
+
+  if (block.type === 'button') {
+    return (
+      <div data-block-row="" className={classy('group flex items-start gap-1')}>
+        <DragHandle blockId={block.id} index={context.index} onMove={onMove} />
+        <Button className={classy('flex-1')}>{initialContent}</Button>
+      </div>
+    );
+  }
+
   return (
     <div data-block-row="" className={classy('group flex items-start gap-1')}>
       <DragHandle blockId={block.id} index={context.index} onMove={onMove} />
@@ -289,21 +431,53 @@ function makeSlashCommands(): SlashCommand[] {
 // Block state panel
 // ============================================================================
 
+/** Convert EditorBlocks to CompositeBlocks for the serializer */
+function toCompositeBlocks(blocks: EditorBlock[]): CompositeBlock[] {
+  return blocks.map((b) => ({
+    id: b.id,
+    type: b.type,
+    content: b.content,
+  }));
+}
+
 function BlockStatePanel({ blocks }: { blocks: EditorBlock[] }) {
-  const [open, setOpen] = React.useState(false);
+  const [view, setView] = React.useState<'hidden' | 'json' | 'mdx'>('hidden');
+  const mdxOutput = React.useMemo(() => toMdx(toCompositeBlocks(blocks)), [blocks]);
 
   return (
     <div className={classy('mt-4')}>
-      <Button variant="outline" size="sm" onClick={() => setOpen((prev) => !prev)}>
-        {open ? 'Hide' : 'Show'} Block State ({blocks.length} blocks)
-      </Button>
-      {open && (
+      <div className={classy('flex gap-2')}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setView((v) => (v === 'json' ? 'hidden' : 'json'))}
+        >
+          {view === 'json' ? 'Hide' : 'Show'} Block State ({blocks.length} blocks)
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setView((v) => (v === 'mdx' ? 'hidden' : 'mdx'))}
+        >
+          {view === 'mdx' ? 'Hide' : 'Show'} MDX Output
+        </Button>
+      </div>
+      {view === 'json' && (
         <pre
           className={classy(
             'mt-2 max-h-64 overflow-auto rounded-md bg-muted p-4 text-xs font-mono text-muted-foreground',
           )}
         >
           {JSON.stringify(blocks, null, 2)}
+        </pre>
+      )}
+      {view === 'mdx' && (
+        <pre
+          className={classy(
+            'mt-2 max-h-64 overflow-auto rounded-md bg-muted p-4 text-xs font-mono text-muted-foreground',
+          )}
+        >
+          {mdxOutput || '(empty)'}
         </pre>
       )}
     </div>
@@ -434,6 +608,260 @@ function FullDemo() {
 }
 
 // ============================================================================
+// Composites demo - registry, bridge, rules, validation
+// ============================================================================
+
+const RULE_VALIDATORS = {
+  email,
+  password,
+  required,
+  url,
+  credentials,
+} as const;
+
+function CompositesDemo() {
+  const [searchQuery, setSearchQuery] = React.useState('');
+  const [validationInput, setValidationInput] = React.useState('');
+  const [selectedRule, setSelectedRule] = React.useState<keyof typeof RULE_VALIDATORS>('email');
+
+  // Register composites on mount
+  React.useMemo(() => {
+    for (const composite of SAMPLE_COMPOSITES) {
+      registerComposite(composite);
+    }
+  }, []);
+
+  // Bridge: convert to palette items
+  const paletteItems = React.useMemo(() => toBridgeItems(SAMPLE_COMPOSITES), []);
+
+  // Registry search
+  const searchResults = React.useMemo(
+    () => (searchQuery.length > 0 ? searchComposites(searchQuery) : []),
+    [searchQuery],
+  );
+
+  // Rule matching: find what consumes login-form's output
+  const loginForm = SAMPLE_COMPOSITES[0];
+  const consumers = React.useMemo(
+    () => findCompatibleConsumers(loginForm, SAMPLE_COMPOSITES),
+    [loginForm],
+  );
+
+  // Rule match detail between login-form and profile-card
+  const profileCard = SAMPLE_COMPOSITES[2];
+  const ruleMatch = React.useMemo(
+    () => matchRules(loginForm, profileCard),
+    [loginForm, profileCard],
+  );
+
+  // Built-in rule validation
+  const validationResult = React.useMemo(() => {
+    const schema = RULE_VALIDATORS[selectedRule];
+    const result = schema.safeParse(
+      selectedRule === 'credentials'
+        ? (() => {
+            try {
+              return JSON.parse(validationInput);
+            } catch {
+              return validationInput;
+            }
+          })()
+        : validationInput,
+    );
+    return result;
+  }, [selectedRule, validationInput]);
+
+  // MDX from login-form blocks
+  const loginMdx = React.useMemo(() => toMdx(loginForm.blocks), [loginForm]);
+
+  return (
+    <div className={classy('space-y-8')}>
+      <P className={classy('text-sm text-muted-foreground')}>
+        Composites package in action: registry, bridge, rule matching, serialization, and built-in
+        validation rules.
+      </P>
+
+      {/* Bridge: palette items */}
+      <div>
+        <H3 className={classy('mb-3')}>Bridge: Palette Items</H3>
+        <P className={classy('mb-2 text-sm text-muted-foreground')}>
+          <Kbd>toBridgeItems()</Kbd> converts composite manifests into sidebar palette items.
+        </P>
+        <div className={classy('flex flex-wrap gap-2')}>
+          {paletteItems.map((item) => (
+            <Badge key={item.id} variant="secondary">
+              {item.label} ({item.category})
+            </Badge>
+          ))}
+        </div>
+      </div>
+
+      <Separator />
+
+      {/* Registry search */}
+      <div>
+        <H3 className={classy('mb-3')}>Registry: Fuzzy Search</H3>
+        <P className={classy('mb-2 text-sm text-muted-foreground')}>
+          Registered {SAMPLE_COMPOSITES.length} composites. Search by name or keyword.
+        </P>
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder='Try "login", "form", or "hero"'
+          className={classy(
+            'w-full max-w-sm rounded-md border border-input bg-background px-3 py-2 text-sm',
+          )}
+        />
+        {searchResults.length > 0 && (
+          <div className={classy('mt-2 flex flex-wrap gap-2')}>
+            {searchResults.map((c) => (
+              <Badge key={c.manifest.id} variant="outline">
+                {c.manifest.name}
+              </Badge>
+            ))}
+          </div>
+        )}
+        {searchQuery.length > 0 && searchResults.length === 0 && (
+          <Muted className={classy('mt-2')}>No results</Muted>
+        )}
+      </div>
+
+      <Separator />
+
+      {/* Rule matching */}
+      <div>
+        <H3 className={classy('mb-3')}>Rules: I/O Compatibility</H3>
+        <P className={classy('mb-2 text-sm text-muted-foreground')}>
+          <Kbd>matchRules()</Kbd> checks if one composite's output satisfies another's input.
+        </P>
+        <div className={classy('space-y-2')}>
+          <div className={classy('flex items-center gap-2')}>
+            <Badge>Login Form</Badge>
+            <span className={classy('text-sm text-muted-foreground')}>outputs:</span>
+            {loginForm.output.map((o) => (
+              <Badge key={o} variant="secondary">
+                {o}
+              </Badge>
+            ))}
+          </div>
+          <div className={classy('flex items-center gap-2')}>
+            <Badge>Profile Card</Badge>
+            <span className={classy('text-sm text-muted-foreground')}>needs:</span>
+            {profileCard.input.map((i) => (
+              <Badge key={i} variant="secondary">
+                {i}
+              </Badge>
+            ))}
+          </div>
+          <div className={classy('flex items-center gap-2')}>
+            <span className={classy('text-sm')}>Compatible:</span>
+            <Badge variant={ruleMatch.compatible ? 'default' : 'destructive'}>
+              {ruleMatch.compatible ? 'Yes' : 'No'}
+            </Badge>
+            <span className={classy('text-sm text-muted-foreground')}>
+              matched: [{ruleMatch.matched.join(', ')}]
+            </span>
+          </div>
+          <div className={classy('flex items-center gap-2')}>
+            <span className={classy('text-sm text-muted-foreground')}>
+              All consumers of Login Form output:
+            </span>
+            {consumers.map((c) => (
+              <Badge key={c.manifest.id} variant="outline">
+                {c.manifest.name}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <Separator />
+
+      {/* MDX serialization */}
+      <div>
+        <H3 className={classy('mb-3')}>Serializer: toMdx()</H3>
+        <P className={classy('mb-2 text-sm text-muted-foreground')}>
+          Login Form blocks serialized to MDX output.
+        </P>
+        <pre
+          className={classy(
+            'max-h-40 overflow-auto rounded-md bg-muted p-4 text-xs font-mono text-muted-foreground',
+          )}
+        >
+          {loginMdx}
+        </pre>
+      </div>
+
+      <Separator />
+
+      {/* Built-in rule validation */}
+      <div>
+        <H3 className={classy('mb-3')}>Built-in Rules: Validation</H3>
+        <P className={classy('mb-2 text-sm text-muted-foreground')}>
+          Zod schemas for common I/O rules. Test them live.
+        </P>
+        <div className={classy('flex flex-wrap gap-4')}>
+          <div>
+            <Label className={classy('mb-1 text-sm')}>Rule</Label>
+            <select
+              value={selectedRule}
+              onChange={(e) => {
+                setSelectedRule(e.target.value as keyof typeof RULE_VALIDATORS);
+                setValidationInput('');
+              }}
+              className={classy(
+                'block w-40 rounded-md border border-input bg-background px-3 py-2 text-sm',
+              )}
+            >
+              <option value="email">email</option>
+              <option value="password">password</option>
+              <option value="required">required</option>
+              <option value="url">url</option>
+              <option value="credentials">credentials</option>
+            </select>
+          </div>
+          <div className={classy('flex-1')}>
+            <Label className={classy('mb-1 text-sm')}>Input</Label>
+            <input
+              type="text"
+              value={validationInput}
+              onChange={(e) => setValidationInput(e.target.value)}
+              placeholder={
+                selectedRule === 'credentials'
+                  ? '{"email":"a@b.com","password":"12345678"}'
+                  : selectedRule === 'email'
+                    ? 'user@example.com'
+                    : selectedRule === 'url'
+                      ? 'https://example.com'
+                      : selectedRule === 'password'
+                        ? '8+ characters'
+                        : 'any non-empty string'
+              }
+              className={classy(
+                'block w-full rounded-md border border-input bg-background px-3 py-2 text-sm',
+              )}
+            />
+          </div>
+        </div>
+        {validationInput.length > 0 && (
+          <div className={classy('mt-2')}>
+            <Badge variant={validationResult.success ? 'default' : 'destructive'}>
+              {validationResult.success ? 'Valid' : 'Invalid'}
+            </Badge>
+            {!validationResult.success && (
+              <Muted className={classy('mt-1 text-xs')}>
+                {validationResult.error.issues[0]?.message}
+              </Muted>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
 // Main playground
 // ============================================================================
 
@@ -459,6 +887,7 @@ export default function EditorPlayground() {
           <TabsTrigger value="toolbar">Toolbar</TabsTrigger>
           <TabsTrigger value="sidebar">Sidebar</TabsTrigger>
           <TabsTrigger value="full">Full</TabsTrigger>
+          <TabsTrigger value="composites">Composites</TabsTrigger>
         </TabsList>
 
         <TabsContent value="minimal">
@@ -511,6 +940,20 @@ export default function EditorPlayground() {
             </CardHeader>
             <CardContent>
               <FullDemo />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="composites">
+          <Card className={classy('mt-4')}>
+            <CardHeader>
+              <CardTitle>Composites</CardTitle>
+              <CardDescription>
+                Registry, bridge, rule matching, MDX serialization, and built-in validation.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <CompositesDemo />
             </CardContent>
           </Card>
         </TabsContent>

@@ -1,0 +1,20 @@
+{
+  "manifest": {
+    "id": "testimonial",
+    "name": "Testimonial",
+    "category": "widget",
+    "description": "Quote block with attribution",
+    "keywords": ["quote", "testimonial", "review", "social-proof"],
+    "cognitiveLoad": 2
+  },
+  "input": [],
+  "output": [],
+  "blocks": [
+    {
+      "id": "quote",
+      "type": "blockquote",
+      "content": "Rafters changed how our AI agents build interfaces. No more guessing at design decisions."
+    },
+    { "id": "attr", "type": "text", "content": "- Design Lead, Acme Corp" }
+  ]
+}
