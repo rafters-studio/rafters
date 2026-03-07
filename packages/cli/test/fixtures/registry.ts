@@ -59,7 +59,7 @@ export const registryFixtures = {
   buttonComponent: () =>
     registryItemFactory.generate({
       name: 'button',
-      type: 'registry:ui',
+      type: 'ui',
       primitives: ['classy'],
       files: [
         registryFileFactory.generate({
@@ -78,7 +78,7 @@ export const Button = () => <button>Click me</button>;`,
   classyPrimitive: () =>
     registryItemFactory.generate({
       name: 'classy',
-      type: 'registry:primitive',
+      type: 'primitive',
       primitives: [],
       files: [
         registryFileFactory.generate({
@@ -96,7 +96,7 @@ export const Button = () => <button>Click me</button>;`,
   cardComponent: () =>
     registryItemFactory.generate({
       name: 'card',
-      type: 'registry:ui',
+      type: 'ui',
       primitives: [],
       files: [
         registryFileFactory.generate({
@@ -114,7 +114,7 @@ export const Button = () => <button>Click me</button>;`,
   dialogComponent: () =>
     registryItemFactory.generate({
       name: 'dialog',
-      type: 'registry:ui',
+      type: 'ui',
       primitives: ['classy'],
       files: [
         registryFileFactory.generate({

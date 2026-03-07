@@ -178,7 +178,7 @@ describe('isAlreadyInstalled', () => {
   it('returns true for installed component', () => {
     const item: RegistryItem = {
       name: 'button',
-      type: 'registry:ui',
+      type: 'ui',
       primitives: ['classy'],
       files: [],
     };
@@ -188,7 +188,7 @@ describe('isAlreadyInstalled', () => {
   it('returns true for installed primitive', () => {
     const item: RegistryItem = {
       name: 'classy',
-      type: 'registry:primitive',
+      type: 'primitive',
       primitives: [],
       files: [],
     };
@@ -196,12 +196,12 @@ describe('isAlreadyInstalled', () => {
   });
 
   it('returns false for uninstalled component', () => {
-    const item: RegistryItem = { name: 'dialog', type: 'registry:ui', primitives: [], files: [] };
+    const item: RegistryItem = { name: 'dialog', type: 'ui', primitives: [], files: [] };
     expect(isAlreadyInstalled(baseConfig, item)).toBe(false);
   });
 
   it('returns false when config is null', () => {
-    const item: RegistryItem = { name: 'button', type: 'registry:ui', primitives: [], files: [] };
+    const item: RegistryItem = { name: 'button', type: 'ui', primitives: [], files: [] };
     expect(isAlreadyInstalled(null, item)).toBe(false);
   });
 
@@ -210,7 +210,7 @@ describe('isAlreadyInstalled', () => {
       ...baseConfig,
       installed: undefined,
     };
-    const item: RegistryItem = { name: 'button', type: 'registry:ui', primitives: [], files: [] };
+    const item: RegistryItem = { name: 'button', type: 'ui', primitives: [], files: [] };
     expect(isAlreadyInstalled(configNoInstalled, item)).toBe(false);
   });
 });
@@ -334,7 +334,7 @@ describe('RegistryItemSchema validation', () => {
     expect(() =>
       RegistryItemSchema.parse({
         name: 'test',
-        type: 'registry:ui',
+        type: 'ui',
         primitives: [],
         files: [],
       }),
@@ -358,7 +358,7 @@ describe('registry fixtures', () => {
     const button = registryFixtures.buttonComponent();
 
     expect(button.name).toBe('button');
-    expect(button.type).toBe('registry:ui');
+    expect(button.type).toBe('ui');
     expect(button.files.length).toBeGreaterThan(0);
     expect(button.files[0].path).toBe('components/ui/button.tsx');
     expect(button.primitives).toContain('classy');
@@ -368,7 +368,7 @@ describe('registry fixtures', () => {
     const classy = registryFixtures.classyPrimitive();
 
     expect(classy.name).toBe('classy');
-    expect(classy.type).toBe('registry:primitive');
+    expect(classy.type).toBe('primitive');
     expect(classy.files.length).toBeGreaterThan(0);
     expect(classy.files[0].path).toBe('lib/primitives/classy.ts');
   });
@@ -486,7 +486,7 @@ describe('composites support', () => {
   it('isAlreadyInstalled returns true for installed composite', () => {
     const item: RegistryItem = {
       name: 'hero-banner',
-      type: 'registry:composite',
+      type: 'composite',
       primitives: [],
       files: [],
     };
@@ -496,7 +496,7 @@ describe('composites support', () => {
   it('isAlreadyInstalled returns false for uninstalled composite', () => {
     const item: RegistryItem = {
       name: 'login-form',
-      type: 'registry:composite',
+      type: 'composite',
       primitives: [],
       files: [],
     };
@@ -509,8 +509,8 @@ describe('composites support', () => {
       installed: { components: [], primitives: [], composites: [] },
     };
     const items: RegistryItem[] = [
-      { name: 'login-form', type: 'registry:composite', primitives: [], files: [] },
-      { name: 'hero-banner', type: 'registry:composite', primitives: [], files: [] },
+      { name: 'login-form', type: 'composite', primitives: [], files: [] },
+      { name: 'hero-banner', type: 'composite', primitives: [], files: [] },
     ];
     trackInstalled(config, items);
     expect(config.installed?.composites).toEqual(['hero-banner', 'login-form']);
@@ -522,7 +522,7 @@ describe('composites support', () => {
       installed: { components: [], primitives: [], composites: ['hero-banner'] },
     };
     const items: RegistryItem[] = [
-      { name: 'hero-banner', type: 'registry:composite', primitives: [], files: [] },
+      { name: 'hero-banner', type: 'composite', primitives: [], files: [] },
     ];
     trackInstalled(config, items);
     expect(config.installed?.composites).toEqual(['hero-banner']);

@@ -63,7 +63,7 @@ describe('componentService', () => {
 
     it('returns component with correct type', () => {
       const component = loadComponent('button');
-      expect(component?.type).toBe('registry:ui');
+      expect(component?.type).toBe('ui');
     });
 
     it('returns component with files array', () => {
@@ -114,7 +114,7 @@ describe('componentService', () => {
 
     it('returns primitive with correct type', () => {
       const primitive = loadPrimitive('slot');
-      expect(primitive?.type).toBe('registry:primitive');
+      expect(primitive?.type).toBe('primitive');
     });
 
     it('returns primitive with files array', () => {
@@ -141,7 +141,7 @@ describe('componentService', () => {
       const components = loadAllComponents();
       for (const component of components) {
         expect(component.name).toBeDefined();
-        expect(component.type).toBe('registry:ui');
+        expect(component.type).toBe('ui');
         expect(component.files).toBeDefined();
         expect(component.primitives).toBeDefined();
         expect(component.files[0].dependencies).toBeDefined();
@@ -160,7 +160,7 @@ describe('componentService', () => {
       const primitives = loadAllPrimitives();
       for (const primitive of primitives) {
         expect(primitive.name).toBeDefined();
-        expect(primitive.type).toBe('registry:primitive');
+        expect(primitive.type).toBe('primitive');
         expect(primitive.files).toBeDefined();
         expect(primitive.primitives).toBeDefined();
         expect(primitive.files[0].dependencies).toBeDefined();
