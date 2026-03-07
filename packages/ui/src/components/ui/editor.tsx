@@ -44,6 +44,8 @@ import type {
 import { createCommandPalette } from '../../primitives/command-palette';
 import type { ToolbarButton, ToolbarButtonGroup } from '../../primitives/editor-toolbar';
 import { createEditorToolbar } from '../../primitives/editor-toolbar';
+import { onEscapeKeyDown } from '../../primitives/escape-keydown';
+import { createFocusTrap } from '../../primitives/focus-trap';
 import type { InlineFormatterController } from '../../primitives/inline-formatter';
 import {
   BOLD,
@@ -55,6 +57,8 @@ import {
 import type { AdjustedToolbarPosition } from '../../primitives/inline-toolbar';
 import { adjustToolbarPosition, getFormatButtons } from '../../primitives/inline-toolbar';
 import { getPortalContainer } from '../../primitives/portal';
+import type { RulePaletteItem } from '../../primitives/rule-palette';
+import { createRulePalette } from '../../primitives/rule-palette';
 import type { CleanupFunction, Command, Direction, InlineMark } from '../../primitives/types';
 import { Container } from './container';
 
@@ -101,6 +105,39 @@ export interface EditorSidebarConfig {
   onItemInsert?: (item: BlockPaletteItem, controls: EditorControls, insertIndex?: number) => void;
 }
 
+/** Configuration for rule-palette sidebar */
+export interface EditorRulePaletteConfig {
+  /** Rule palette items */
+  items: RulePaletteItem[];
+  /** Category display order */
+  categories: string[];
+  /** Enable search input (default true) */
+  searchable?: boolean;
+  /** Custom item renderer */
+  renderItem?: (item: RulePaletteItem) => React.ReactNode;
+  /**
+   * Config field definitions for parameterized rules.
+   * Key is the rule ID. Value is an array of field descriptors.
+   */
+  configFields?: Record<string, RuleConfigField[]>;
+  /** Called after a rule is applied to a block */
+  onRuleApplied?: (blockId: string, rule: AppliedRule, controls: EditorControls) => void;
+}
+
+/** A single field in a rule configuration dialog */
+export interface RuleConfigField {
+  /** Field key (used as the config property name) */
+  name: string;
+  /** Display label */
+  label: string;
+  /** Input type */
+  type: 'text' | 'number' | 'select';
+  /** Default value */
+  defaultValue?: string | number;
+  /** Options for select type */
+  options?: Array<{ value: string; label: string }>;
+}
+
 export interface SlashCommand {
   id: string;
   label: string;
@@ -124,6 +161,8 @@ export interface EditorProps
   toolbar?: boolean;
   /** Show sidebar for block navigation/properties, or pass config for palette mode */
   sidebar?: boolean | EditorSidebarConfig;
+  /** Show rule palette alongside block palette. Requires sidebar to be an EditorSidebarConfig. */
+  rulePalette?: EditorRulePaletteConfig;
   /** Enable slash command palette with these commands */
   commandPalette?: SlashCommand[];
   /** Show floating inline formatting toolbar on text selection */
@@ -334,7 +373,7 @@ interface PaletteSidebarProps {
   disabled: boolean;
 }
 
-function EditorPaletteSidebar({ config, onActivate, disabled }: PaletteSidebarProps) {
+function BlockPaletteContent({ config, onActivate, disabled }: PaletteSidebarProps) {
   const containerRef = React.useRef<HTMLDivElement>(null);
   const searchRef = React.useRef<HTMLInputElement>(null);
   const paletteControlsRef = React.useRef<ReturnType<typeof createBlockPalette> | null>(null);
@@ -385,10 +424,7 @@ function EditorPaletteSidebar({ config, onActivate, disabled }: PaletteSidebarPr
   const searchable = config.searchable !== false;
 
   return (
-    <aside
-      aria-label="Block palette"
-      className={classy('w-48 shrink-0 flex flex-col border-r border-border')}
-    >
+    <div className={classy('flex flex-1 flex-col')}>
       {searchable && (
         <div className={classy('border-b border-border p-2')}>
           <input
@@ -449,7 +485,388 @@ function EditorPaletteSidebar({ config, onActivate, disabled }: PaletteSidebarPr
           <div className={classy('px-2 py-1 text-xs text-muted-foreground')}>No blocks found</div>
         )}
       </div>
+    </div>
+  );
+}
+
+function EditorPaletteSidebar(props: PaletteSidebarProps) {
+  return (
+    <aside
+      aria-label="Block palette"
+      className={classy('w-48 shrink-0 flex flex-col border-r border-border')}
+    >
+      <BlockPaletteContent {...props} />
     </aside>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Rule palette sidebar
+// ---------------------------------------------------------------------------
+
+interface RulePaletteSidebarProps {
+  config: EditorRulePaletteConfig;
+  onActivate: (item: RulePaletteItem) => void;
+  disabled: boolean;
+}
+
+function EditorRulePaletteSidebar({ config, onActivate, disabled }: RulePaletteSidebarProps) {
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const searchRef = React.useRef<HTMLInputElement>(null);
+  const paletteControlsRef = React.useRef<ReturnType<typeof createRulePalette> | null>(null);
+  const [query, setQuery] = React.useState('');
+  const [, forceUpdate] = React.useState(0);
+
+  React.useEffect(() => {
+    const containerEl = containerRef.current;
+    if (!containerEl) return;
+
+    const paletteOptions: Parameters<typeof createRulePalette>[0] = {
+      container: containerEl,
+      items: config.items,
+      categories: config.categories,
+      onActivate,
+      disabled,
+    };
+    if (searchRef.current) {
+      paletteOptions.searchInput = searchRef.current;
+    }
+    const palette = createRulePalette(paletteOptions);
+    paletteControlsRef.current = palette;
+    forceUpdate((n) => n + 1);
+
+    return () => {
+      palette.destroy();
+      paletteControlsRef.current = null;
+    };
+  }, [config.items, config.categories, onActivate, disabled]);
+
+  React.useEffect(() => {
+    paletteControlsRef.current?.setDisabled(disabled);
+  }, [disabled]);
+
+  const handleSearchChange = React.useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    setQuery(value);
+    paletteControlsRef.current?.setSearchQuery(value);
+    forceUpdate((n) => n + 1);
+  }, []);
+
+  const grouped = paletteControlsRef.current?.getGroupedItems();
+  const renderItem = config.renderItem;
+  const searchable = config.searchable !== false;
+
+  return (
+    <div className={classy('flex flex-1 flex-col')}>
+      {searchable && (
+        <div className={classy('border-b border-border p-2')}>
+          <input
+            ref={searchRef}
+            type="text"
+            value={query}
+            onChange={handleSearchChange}
+            placeholder="Search rules..."
+            aria-label="Search rules"
+            disabled={disabled}
+            className={classy(
+              'w-full rounded-md border border-border bg-transparent px-2 py-1 text-xs outline-none',
+              'placeholder:text-muted-foreground',
+              'focus-visible:ring-2 focus-visible:ring-primary-ring',
+              { 'opacity-50 cursor-not-allowed': disabled },
+            )}
+          />
+        </div>
+      )}
+      <div
+        ref={containerRef}
+        tabIndex={disabled ? -1 : 0}
+        className={classy('flex flex-1 flex-col gap-1 overflow-y-auto p-2')}
+      >
+        {grouped &&
+          Array.from(grouped.entries()).map(([category, categoryItems]) => (
+            <div key={category}>
+              <div
+                role="presentation"
+                className={classy(
+                  'px-2 py-1 text-xs font-medium text-muted-foreground uppercase tracking-wider',
+                )}
+              >
+                {category}
+              </div>
+              {categoryItems.map((item) => (
+                // biome-ignore lint/a11y/useFocusableInteractive: focus managed via aria-activedescendant on rule-palette container
+                <div
+                  key={item.id}
+                  data-rule-item=""
+                  data-rule-id={item.id}
+                  draggable={!disabled}
+                  role="option"
+                  aria-selected="false"
+                  className={classy(
+                    'rounded-md px-2 py-1 text-xs cursor-pointer transition-colors',
+                    'hover:bg-accent hover:text-accent-foreground',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-ring',
+                    { 'opacity-50 cursor-not-allowed': disabled },
+                  )}
+                >
+                  {renderItem ? renderItem(item) : item.label}
+                </div>
+              ))}
+            </div>
+          ))}
+        {grouped && grouped.size === 0 && (
+          <div className={classy('px-2 py-1 text-xs text-muted-foreground')}>No rules found</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Tabbed palette sidebar (block + rule)
+// ---------------------------------------------------------------------------
+
+type PaletteTab = 'blocks' | 'rules';
+
+interface TabbedPaletteSidebarProps {
+  blockConfig: EditorSidebarConfig;
+  ruleConfig: EditorRulePaletteConfig;
+  onBlockActivate: (item: BlockPaletteItem) => void;
+  onRuleActivate: (item: RulePaletteItem) => void;
+  disabled: boolean;
+}
+
+function EditorTabbedPaletteSidebar({
+  blockConfig,
+  ruleConfig,
+  onBlockActivate,
+  onRuleActivate,
+  disabled,
+}: TabbedPaletteSidebarProps) {
+  const [activeTab, setActiveTab] = React.useState<PaletteTab>('blocks');
+
+  return (
+    <aside
+      aria-label="Editor palettes"
+      className={classy('w-48 shrink-0 flex flex-col border-r border-border')}
+    >
+      <div
+        role="tablist"
+        aria-label="Palette tabs"
+        className={classy('flex border-b border-border')}
+      >
+        <button
+          type="button"
+          role="tab"
+          id="palette-tab-blocks"
+          aria-selected={activeTab === 'blocks'}
+          aria-controls="palette-panel-blocks"
+          onClick={() => setActiveTab('blocks')}
+          disabled={disabled}
+          className={classy(
+            'flex-1 px-2 py-1.5 text-xs font-medium transition-colors',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-ring',
+            {
+              'border-b-2 border-primary text-foreground': activeTab === 'blocks',
+              'text-muted-foreground hover:text-foreground': activeTab !== 'blocks',
+              'opacity-50 cursor-not-allowed': disabled,
+            },
+          )}
+        >
+          Blocks
+        </button>
+        <button
+          type="button"
+          role="tab"
+          id="palette-tab-rules"
+          aria-selected={activeTab === 'rules'}
+          aria-controls="palette-panel-rules"
+          onClick={() => setActiveTab('rules')}
+          disabled={disabled}
+          className={classy(
+            'flex-1 px-2 py-1.5 text-xs font-medium transition-colors',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-ring',
+            {
+              'border-b-2 border-primary text-foreground': activeTab === 'rules',
+              'text-muted-foreground hover:text-foreground': activeTab !== 'rules',
+              'opacity-50 cursor-not-allowed': disabled,
+            },
+          )}
+        >
+          Rules
+        </button>
+      </div>
+      <div
+        id="palette-panel-blocks"
+        role="tabpanel"
+        aria-labelledby="palette-tab-blocks"
+        hidden={activeTab !== 'blocks'}
+        className={classy('flex flex-1 flex-col', { hidden: activeTab !== 'blocks' })}
+      >
+        {activeTab === 'blocks' && (
+          <BlockPaletteContent
+            config={blockConfig}
+            onActivate={onBlockActivate}
+            disabled={disabled}
+          />
+        )}
+      </div>
+      <div
+        id="palette-panel-rules"
+        role="tabpanel"
+        aria-labelledby="palette-tab-rules"
+        hidden={activeTab !== 'rules'}
+        className={classy('flex flex-1 flex-col', { hidden: activeTab !== 'rules' })}
+      >
+        {activeTab === 'rules' && (
+          <EditorRulePaletteSidebar
+            config={ruleConfig}
+            onActivate={onRuleActivate}
+            disabled={disabled}
+          />
+        )}
+      </div>
+    </aside>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Rule config dialog
+// ---------------------------------------------------------------------------
+
+interface RuleConfigDialogProps {
+  rule: RulePaletteItem;
+  fields: RuleConfigField[];
+  anchorId: string;
+  onConfirm: (config: Record<string, unknown>) => void;
+  onCancel: () => void;
+}
+
+function RuleConfigDialog({ rule, fields, anchorId, onConfirm, onCancel }: RuleConfigDialogProps) {
+  const dialogRef = React.useRef<HTMLDivElement>(null);
+  const [values, setValues] = React.useState<Record<string, unknown>>(() => {
+    const initial: Record<string, unknown> = {};
+    for (const field of fields) {
+      initial[field.name] = field.defaultValue ?? '';
+    }
+    return initial;
+  });
+
+  React.useEffect(() => {
+    const dialogEl = dialogRef.current;
+    if (!dialogEl) return;
+
+    const cleanups: CleanupFunction[] = [];
+
+    // Position near the anchor block
+    const anchorEl = document.getElementById(anchorId);
+    if (anchorEl) {
+      const anchorRect = anchorEl.getBoundingClientRect();
+      dialogEl.style.position = 'fixed';
+      dialogEl.style.top = `${anchorRect.bottom + 8}px`;
+      dialogEl.style.left = `${anchorRect.left}px`;
+    }
+
+    // Focus trap
+    cleanups.push(createFocusTrap(dialogEl));
+
+    // Escape to cancel
+    cleanups.push(onEscapeKeyDown(() => onCancel()));
+
+    return () => {
+      for (const cleanup of cleanups) cleanup();
+    };
+  }, [anchorId, onCancel]);
+
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    onConfirm(values);
+  };
+
+  const portalContainer = getPortalContainer();
+  if (!portalContainer) return null;
+
+  return createPortal(
+    <div
+      ref={dialogRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Configure ${rule.label}`}
+      className={classy(
+        'fixed z-depth-popover w-64 rounded-lg border border-border bg-popover p-3 shadow-lg',
+      )}
+    >
+      <div className={classy('mb-2 text-xs font-medium text-foreground')}>{rule.label}</div>
+      <form onSubmit={handleSubmit}>
+        {fields.map((field) => (
+          <div key={field.name} className={classy('mb-2')}>
+            <label
+              htmlFor={`rule-config-${field.name}`}
+              className={classy('mb-1 block text-xs text-muted-foreground')}
+            >
+              {field.label}
+            </label>
+            {field.type === 'select' ? (
+              <select
+                id={`rule-config-${field.name}`}
+                value={String(values[field.name] ?? '')}
+                onChange={(e) => setValues((prev) => ({ ...prev, [field.name]: e.target.value }))}
+                className={classy(
+                  'w-full rounded-md border border-border bg-transparent px-2 py-1 text-xs outline-none',
+                  'focus-visible:ring-2 focus-visible:ring-primary-ring',
+                )}
+              >
+                {field.options?.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                id={`rule-config-${field.name}`}
+                type={field.type}
+                value={String(values[field.name] ?? '')}
+                onChange={(e) =>
+                  setValues((prev) => ({
+                    ...prev,
+                    [field.name]: field.type === 'number' ? Number(e.target.value) : e.target.value,
+                  }))
+                }
+                className={classy(
+                  'w-full rounded-md border border-border bg-transparent px-2 py-1 text-xs outline-none',
+                  'focus-visible:ring-2 focus-visible:ring-primary-ring',
+                )}
+              />
+            )}
+          </div>
+        ))}
+        <div className={classy('flex justify-end gap-1')}>
+          <button
+            type="button"
+            onClick={onCancel}
+            className={classy(
+              'rounded-md px-2 py-1 text-xs text-muted-foreground transition-colors',
+              'hover:bg-accent hover:text-accent-foreground',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-ring',
+            )}
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className={classy(
+              'rounded-md bg-primary px-2 py-1 text-xs text-primary-foreground transition-colors',
+              'hover:bg-primary/90',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-ring',
+            )}
+          >
+            Apply
+          </button>
+        </div>
+      </form>
+    </div>,
+    portalContainer,
   );
 }
 
@@ -638,6 +1055,7 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
       onValueCommit,
       toolbar = false,
       sidebar = false,
+      rulePalette,
       commandPalette,
       inlineToolbar = false,
       renderBlock,
@@ -679,6 +1097,12 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
       y: 0,
     });
     const paletteRef = React.useRef<CommandPaletteController | null>(null);
+
+    // ----- Rule config dialog state -----
+    const [ruleDialogState, setRuleDialogState] = React.useState<{
+      rule: RulePaletteItem;
+      blockId: string;
+    } | null>(null);
 
     // ----- Stable block mutation function -----
     const updateBlocks = React.useCallback(
@@ -1012,6 +1436,154 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
       setActiveFormats(formatterRef.current?.getActiveFormats() ?? []);
     }, []);
 
+    // ----- Rule application helpers -----
+    const applyRuleToBlock = React.useCallback(
+      (blockId: string, ruleItem: RulePaletteItem, config?: Record<string, unknown>) => {
+        const current = blocksAtomRef.current.get();
+        const block = current.find((b) => b.id === blockId);
+        if (!block) return;
+
+        const existingRules = block.rules ?? [];
+        // Prevent duplicate simple rules
+        const alreadyApplied = existingRules.some((r) =>
+          typeof r === 'string' ? r === ruleItem.id : r.name === ruleItem.id,
+        );
+        if (alreadyApplied && !config) return;
+
+        const rule: AppliedRule = config ? { name: ruleItem.id, config } : ruleItem.id;
+
+        // If parameterized and already exists, update config
+        if (alreadyApplied && config) {
+          const updatedRules = existingRules.map((r) =>
+            typeof r === 'object' && r.name === ruleItem.id ? rule : r,
+          );
+          updateBlock(blockId, { rules: updatedRules });
+        } else {
+          updateBlock(blockId, { rules: [...existingRules, rule] });
+        }
+
+        const rpConfig = typeof rulePalette === 'object' ? rulePalette : null;
+        if (rpConfig?.onRuleApplied && controlsRef.current) {
+          rpConfig.onRuleApplied(blockId, rule, controlsRef.current);
+        }
+      },
+      [updateBlock, rulePalette],
+    );
+
+    const handleRuleActivate = React.useCallback(
+      (item: RulePaletteItem) => {
+        // When activated from palette (click/Enter), apply to focused block
+        const focusedId = $handlerStateRef.current.get().focusedId;
+        if (!focusedId) return;
+
+        const rpConfig = typeof rulePalette === 'object' ? rulePalette : null;
+        const fields = rpConfig?.configFields?.[item.id];
+        if (item.requiresConfig && fields && fields.length > 0) {
+          setRuleDialogState({ rule: item, blockId: focusedId });
+        } else {
+          applyRuleToBlock(focusedId, item);
+        }
+      },
+      [applyRuleToBlock, rulePalette],
+    );
+
+    const handleRuleConfigConfirm = React.useCallback(
+      (config: Record<string, unknown>) => {
+        if (ruleDialogState) {
+          applyRuleToBlock(ruleDialogState.blockId, ruleDialogState.rule, config);
+          setRuleDialogState(null);
+        }
+      },
+      [ruleDialogState, applyRuleToBlock],
+    );
+
+    const handleRuleConfigCancel = React.useCallback(() => {
+      setRuleDialogState(null);
+    }, []);
+
+    // ----- Rule drop on blocks (drag from rule palette onto block elements) -----
+    React.useEffect(() => {
+      const canvasEl = canvasRef.current;
+      if (!canvasEl || disabled || !rulePalette) return;
+
+      const handleRuleDragOver = (event: DragEvent) => {
+        // Check if this is a rule drag (has the rule MIME type)
+        if (!event.dataTransfer?.types.includes('application/x-rafters-rule')) return;
+
+        // Find the closest block element
+        const target = event.target as HTMLElement;
+        const blockEl = target.closest('[data-block-id]') as HTMLElement | null;
+        if (!blockEl) return;
+
+        event.preventDefault();
+        if (event.dataTransfer) {
+          event.dataTransfer.dropEffect = 'copy';
+        }
+        blockEl.setAttribute('data-rule-drop-target', 'true');
+      };
+
+      const handleRuleDragLeave = (event: DragEvent) => {
+        const target = event.target as HTMLElement;
+        const blockEl = target.closest('[data-block-id]') as HTMLElement | null;
+        if (blockEl) {
+          blockEl.removeAttribute('data-rule-drop-target');
+        }
+      };
+
+      const handleRuleDrop = (event: DragEvent) => {
+        const target = event.target as HTMLElement;
+        const blockEl = target.closest('[data-block-id]') as HTMLElement | null;
+        if (!blockEl) return;
+
+        blockEl.removeAttribute('data-rule-drop-target');
+
+        const ruleJson = event.dataTransfer?.getData('application/x-rafters-rule');
+        if (!ruleJson) return;
+
+        event.preventDefault();
+
+        let ruleItem: RulePaletteItem;
+        try {
+          ruleItem = JSON.parse(ruleJson) as RulePaletteItem;
+        } catch {
+          return;
+        }
+
+        const blockId = blockEl.getAttribute('data-block-id');
+        if (!blockId) return;
+
+        // Check compatibility
+        if (ruleItem.compatibleBlockTypes && ruleItem.compatibleBlockTypes.length > 0) {
+          const block = blocksAtomRef.current.get().find((b) => b.id === blockId);
+          if (block && !ruleItem.compatibleBlockTypes.includes(block.type)) {
+            // Incompatible - no-op (block element briefly flashes via CSS)
+            blockEl.setAttribute('data-rule-rejected', 'true');
+            setTimeout(() => blockEl.removeAttribute('data-rule-rejected'), 600);
+            return;
+          }
+        }
+
+        // Parameterized rule: open config dialog
+        const rpConfig = typeof rulePalette === 'object' ? rulePalette : null;
+        const fields = rpConfig?.configFields?.[ruleItem.id];
+        if (ruleItem.requiresConfig && fields && fields.length > 0) {
+          setRuleDialogState({ rule: ruleItem, blockId });
+        } else {
+          applyRuleToBlock(blockId, ruleItem);
+        }
+      };
+
+      canvasEl.addEventListener('dragover', handleRuleDragOver);
+      canvasEl.addEventListener('dragleave', handleRuleDragLeave);
+      canvasEl.addEventListener('drop', handleRuleDrop);
+
+      return () => {
+        canvasEl.removeEventListener('dragover', handleRuleDragOver);
+        canvasEl.removeEventListener('dragleave', handleRuleDragLeave);
+        canvasEl.removeEventListener('drop', handleRuleDrop);
+      };
+    }, [disabled, rulePalette, applyRuleToBlock]);
+
     // ----- Block click handler -----
     const handleBlockClick = React.useCallback(
       (blockId: string, event: React.MouseEvent) => {
@@ -1098,7 +1670,16 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
               onFocusBlock={handleSidebarFocusBlock}
             />
           )}
-          {sidebarConfig && (
+          {sidebarConfig && rulePalette && (
+            <EditorTabbedPaletteSidebar
+              blockConfig={sidebarConfig}
+              ruleConfig={rulePalette}
+              onBlockActivate={handlePaletteActivate}
+              onRuleActivate={handleRuleActivate}
+              disabled={disabled}
+            />
+          )}
+          {sidebarConfig && !rulePalette && (
             <EditorPaletteSidebar
               config={sidebarConfig}
               onActivate={handlePaletteActivate}
@@ -1170,6 +1751,20 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
             onFormat={handleFormat}
           />
         )}
+        {ruleDialogState &&
+          (() => {
+            const fields = rulePalette?.configFields?.[ruleDialogState.rule.id];
+            if (!fields) return null;
+            return (
+              <RuleConfigDialog
+                rule={ruleDialogState.rule}
+                fields={fields}
+                anchorId={`editor-block-${ruleDialogState.blockId}`}
+                onConfirm={handleRuleConfigConfirm}
+                onCancel={handleRuleConfigCancel}
+              />
+            );
+          })()}
       </Container>
     );
   },

@@ -9,5 +9,7 @@ export type {
   AppliedRule,
   EditorBlock,
   EditorControls,
+  EditorRulePaletteConfig,
   EditorSidebarConfig,
+  RuleConfigField,
 } from './components/ui/editor.js';
