@@ -77,8 +77,8 @@ describe('CompositeManifestSchema', () => {
     expect(result.success).toBe(false);
   });
 
-  it('rejects invalid category', () => {
-    const result = CompositeManifestSchema.safeParse({ ...validManifest, category: 'invalid' });
+  it('rejects empty category', () => {
+    const result = CompositeManifestSchema.safeParse({ ...validManifest, category: '' });
     expect(result.success).toBe(false);
   });
 

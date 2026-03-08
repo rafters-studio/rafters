@@ -28,7 +28,7 @@
  * ```
  */
 
-import { fuzzyScore } from './typeahead';
+import { fuzzyScore } from '@/lib/primitives/typeahead';
 
 // =============================================================================
 // Types

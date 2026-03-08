@@ -378,6 +378,7 @@ describe('Editor', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Save as Composite' }));
 
       fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Login Form' } });
+      fireEvent.change(screen.getByRole('combobox'), { target: { value: 'form' } });
       fireEvent.change(screen.getByLabelText('Description'), {
         target: { value: 'A login form' },
       });
@@ -386,7 +387,7 @@ describe('Editor', () => {
       expect(onSave).toHaveBeenCalledTimes(1);
       const data = onSave.mock.calls[0][0];
       expect(data.name).toBe('Login Form');
-      expect(data.category).toBe('layout');
+      expect(data.category).toBe('form');
       expect(data.description).toBe('A login form');
       expect(data.blocks).toHaveLength(2);
     });
@@ -396,6 +397,14 @@ describe('Editor', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Save as Composite' }));
       fireEvent.click(screen.getByRole('button', { name: 'Save' }));
       expect(screen.getByRole('alert')).toHaveTextContent('Name is required');
+    });
+
+    it('shows validation error for empty category', () => {
+      render(<Editor defaultValue={BLOCKS} toolbar onSaveAsComposite={vi.fn()} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Save as Composite' }));
+      fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'My Composite' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+      expect(screen.getByRole('alert')).toHaveTextContent('Category is required');
     });
 
     it('closes dialog on cancel', () => {

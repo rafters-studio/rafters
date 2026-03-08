@@ -3,7 +3,7 @@
  * Client-only, returns cleanup function
  */
 
-import type { CleanupFunction, EscapeKeyHandler } from './types';
+import type { CleanupFunction, EscapeKeyHandler } from '@/lib/primitives/types';
 
 /**
  * Listen for Escape key and call handler

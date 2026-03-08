@@ -8,8 +8,8 @@
 
 import { z } from 'zod';
 
-/** Categories for composite blocks */
-export const CompositeCategorySchema = z.enum(['typography', 'layout', 'form', 'widget', 'media']);
+/** Category for composite blocks (free-form -- users define their own) */
+export const CompositeCategorySchema = z.string().min(1);
 
 export type CompositeCategory = z.infer<typeof CompositeCategorySchema>;
 

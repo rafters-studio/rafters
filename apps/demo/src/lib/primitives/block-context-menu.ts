@@ -14,9 +14,9 @@
  * @registry-type primitive
  */
 
-import { onEscapeKeyDown } from './escape-keydown';
-import { createFocusTrap } from './focus-trap';
-import type { CleanupFunction } from './types';
+import { onEscapeKeyDown } from '@/lib/primitives/escape-keydown';
+import { createFocusTrap } from '@/lib/primitives/focus-trap';
+import type { CleanupFunction } from '@/lib/primitives/types';
 
 // =============================================================================
 // Types

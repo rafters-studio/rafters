@@ -4,7 +4,7 @@
  * SSR-safe: checks for window existence
  */
 
-import type { CleanupFunction } from './types';
+import type { CleanupFunction } from '@/lib/primitives/types';
 
 const FOCUSABLE_SELECTOR = [
   'a[href]',

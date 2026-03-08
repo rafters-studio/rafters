@@ -148,15 +148,12 @@ export interface SlashCommand {
   action: (editor: EditorControls) => void;
 }
 
-// SYNC:composite-category - must match CompositeCategorySchema in packages/composites/src/manifest.ts
-export type CompositeCategory = 'typography' | 'layout' | 'form' | 'widget' | 'media';
-
 /** Metadata for saving the current canvas as a composite. */
 export interface SaveCompositeData {
   /** Display name */
   name: string;
-  /** Category */
-  category: CompositeCategory;
+  /** Category (free-form -- existing categories are suggested in the dialog) */
+  category: string;
   /** Description */
   description: string;
   /** Current canvas blocks */
@@ -350,26 +347,24 @@ function EditorToolbarSection({ canUndo, canRedo, onUndo, onRedo }: ToolbarSecti
   );
 }
 
-// SYNC:composite-category
-const COMPOSITE_CATEGORIES = [
-  'typography',
-  'layout',
-  'form',
-  'widget',
-  'media',
-] as const satisfies readonly CompositeCategory[];
-
 interface SaveCompositeDialogProps {
   blocks: EditorBlock[];
+  existingCategories: string[];
   onSave: (data: SaveCompositeData) => void;
   onCancel: () => void;
 }
 
-function SaveCompositeDialog({ blocks, onSave, onCancel }: SaveCompositeDialogProps) {
+function SaveCompositeDialog({
+  blocks,
+  existingCategories,
+  onSave,
+  onCancel,
+}: SaveCompositeDialogProps) {
   const [name, setName] = React.useState('');
-  const [category, setCategory] = React.useState<CompositeCategory>('layout');
+  const [category, setCategory] = React.useState(existingCategories[0] ?? '');
   const [description, setDescription] = React.useState('');
   const [error, setError] = React.useState('');
+  const [showSuggestions, setShowSuggestions] = React.useState(false);
   const nameInputRef = React.useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
@@ -379,13 +374,18 @@ function SaveCompositeDialog({ blocks, onSave, onCancel }: SaveCompositeDialogPr
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const trimmedName = name.trim();
+    const trimmedCategory = category.trim();
     if (!trimmedName) {
       setError('Name is required');
       return;
     }
+    if (!trimmedCategory) {
+      setError('Category is required');
+      return;
+    }
     onSave({
       name: trimmedName,
-      category,
+      category: trimmedCategory,
       description: description.trim(),
       blocks,
     });
@@ -434,20 +434,61 @@ function SaveCompositeDialog({ blocks, onSave, onCancel }: SaveCompositeDialogPr
           </label>
           <label className={classy('flex flex-col gap-1 text-sm')}>
             Category
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value as CompositeCategory)}
-              className={classy(
-                'rounded-md border border-border bg-background px-3 py-1.5 text-sm',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-ring',
+            <div className={classy('relative')}>
+              <input
+                type="text"
+                value={category}
+                onChange={(e) => {
+                  setCategory(e.target.value);
+                  setShowSuggestions(true);
+                  setError('');
+                }}
+                onFocus={() => setShowSuggestions(true)}
+                onBlur={() => {
+                  // Delay to allow click on suggestion
+                  setTimeout(() => setShowSuggestions(false), 150);
+                }}
+                placeholder="e.g. form, layout, widget"
+                role="combobox"
+                aria-expanded={showSuggestions && existingCategories.length > 0}
+                aria-autocomplete="list"
+                aria-controls="category-suggestions"
+                className={classy(
+                  'w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-ring',
+                )}
+              />
+              {showSuggestions && existingCategories.length > 0 && (
+                <div
+                  id="category-suggestions"
+                  role="listbox"
+                  className={classy(
+                    'absolute top-full left-0 z-10 mt-1 w-full rounded-md border border-border bg-background py-1 shadow-md',
+                  )}
+                >
+                  {existingCategories
+                    .filter((c) => c.toLowerCase().includes(category.toLowerCase()))
+                    .map((cat) => (
+                      <button
+                        key={cat}
+                        type="button"
+                        role="option"
+                        aria-selected={cat === category}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          setCategory(cat);
+                          setShowSuggestions(false);
+                        }}
+                        className={classy(
+                          'w-full px-3 py-1 text-left text-sm hover:bg-accent hover:text-accent-foreground',
+                        )}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                </div>
               )}
-            >
-              {COMPOSITE_CATEGORIES.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat.charAt(0).toUpperCase() + cat.slice(1)}
-                </option>
-              ))}
-            </select>
+            </div>
           </label>
           <label className={classy('flex flex-col gap-1 text-sm')}>
             Description
@@ -2190,6 +2231,11 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
         {showSaveDialog && onSaveAsComposite && (
           <SaveCompositeDialog
             blocks={blocks}
+            existingCategories={
+              typeof sidebarRef.current === 'object' && sidebarRef.current
+                ? sidebarRef.current.categories
+                : []
+            }
             onSave={handleSaveComposite}
             onCancel={() => setShowSaveDialog(false)}
           />

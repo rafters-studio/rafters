@@ -7,7 +7,6 @@
 
 export type {
   AppliedRule,
-  CompositeCategory,
   EditorBlock,
   EditorControls,
   EditorRulePaletteConfig,
