@@ -523,6 +523,7 @@ export function ResizableHandle({
       aria-disabled={disabled}
       tabIndex={disabled ? -1 : 0}
       data-panel-resize-handle=""
+      data-handle-index={handleIndex}
       data-direction={direction}
       data-disabled={disabled}
       data-dragging={isDragging}

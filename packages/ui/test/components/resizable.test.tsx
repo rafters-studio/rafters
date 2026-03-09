@@ -402,3 +402,50 @@ describe('Resizable - Data Attributes', () => {
     expect(screen.getByTestId('handle')).toHaveAttribute('data-panel-resize-handle');
   });
 });
+
+describe('Resizable - Handle Index Mapping', () => {
+  it('should assign index 0 to a single handle in 2-panel layout', () => {
+    render(
+      <ResizablePanelGroup>
+        <ResizablePanel>Panel 1</ResizablePanel>
+        <ResizableHandle data-testid="handle" />
+        <ResizablePanel>Panel 2</ResizablePanel>
+      </ResizablePanelGroup>,
+    );
+
+    expect(screen.getByTestId('handle')).toHaveAttribute('data-handle-index', '0');
+  });
+
+  it('should assign correct indices to handles in 3-panel layout', () => {
+    render(
+      <ResizablePanelGroup>
+        <ResizablePanel>Panel 1</ResizablePanel>
+        <ResizableHandle data-testid="handle-0" />
+        <ResizablePanel>Panel 2</ResizablePanel>
+        <ResizableHandle data-testid="handle-1" />
+        <ResizablePanel>Panel 3</ResizablePanel>
+      </ResizablePanelGroup>,
+    );
+
+    expect(screen.getByTestId('handle-0')).toHaveAttribute('data-handle-index', '0');
+    expect(screen.getByTestId('handle-1')).toHaveAttribute('data-handle-index', '1');
+  });
+
+  it('should assign correct indices to handles in 4-panel layout', () => {
+    render(
+      <ResizablePanelGroup>
+        <ResizablePanel>Panel 1</ResizablePanel>
+        <ResizableHandle data-testid="handle-0" />
+        <ResizablePanel>Panel 2</ResizablePanel>
+        <ResizableHandle data-testid="handle-1" />
+        <ResizablePanel>Panel 3</ResizablePanel>
+        <ResizableHandle data-testid="handle-2" />
+        <ResizablePanel>Panel 4</ResizablePanel>
+      </ResizablePanelGroup>,
+    );
+
+    expect(screen.getByTestId('handle-0')).toHaveAttribute('data-handle-index', '0');
+    expect(screen.getByTestId('handle-1')).toHaveAttribute('data-handle-index', '1');
+    expect(screen.getByTestId('handle-2')).toHaveAttribute('data-handle-index', '2');
+  });
+});
