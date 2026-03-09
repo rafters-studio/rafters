@@ -242,8 +242,6 @@ export interface SheetContentProps extends React.HTMLAttributes<HTMLDivElement> 
   side?: 'top' | 'right' | 'bottom' | 'left';
   asChild?: boolean;
   forceMount?: boolean;
-  onOpenAutoFocus?: (event: Event) => void;
-  onCloseAutoFocus?: (event: Event) => void;
   onEscapeKeyDown?: (event: KeyboardEvent) => void;
   onPointerDownOutside?: (event: PointerEvent | TouchEvent) => void;
   onInteractOutside?: (event: Event) => void;
@@ -266,8 +264,6 @@ export function SheetContent({
   side = 'right',
   asChild,
   forceMount,
-  onOpenAutoFocus: _onOpenAutoFocus,
-  onCloseAutoFocus: _onCloseAutoFocus,
   onEscapeKeyDown: onEscapeKeyDownProp,
   onPointerDownOutside: onPointerDownOutsideProp,
   onInteractOutside,

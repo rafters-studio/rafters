@@ -583,7 +583,6 @@ export interface SidebarMenuButtonProps extends React.ButtonHTMLAttributes<HTMLB
   isActive?: boolean;
   variant?: 'default' | 'outline';
   size?: 'default' | 'sm' | 'lg';
-  tooltip?: string | React.ComponentProps<'div'>;
 }
 
 export function SidebarMenuButton({
@@ -591,7 +590,6 @@ export function SidebarMenuButton({
   isActive = false,
   variant = 'default',
   size = 'default',
-  tooltip: _tooltip,
   className,
   children,
   ...props

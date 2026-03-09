@@ -369,7 +369,6 @@ export interface SelectContentProps extends React.HTMLAttributes<HTMLDivElement>
   align?: Align;
   sideOffset?: number;
   alignOffset?: number;
-  position?: 'item-aligned' | 'popper';
   asChild?: boolean;
 }
 
@@ -380,7 +379,6 @@ export function SelectContent({
   align = 'start',
   sideOffset = 4,
   alignOffset = 0,
-  position: _position = 'popper',
   style,
   asChild,
   ...props
