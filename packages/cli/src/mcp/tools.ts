@@ -15,7 +15,7 @@
 
 import { existsSync } from 'node:fs';
 import { readdir, readFile } from 'node:fs/promises';
-import { basename, join } from 'node:path';
+import { basename, join, relative } from 'node:path';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { NodePersistenceAdapter } from '@rafters/design-tokens';
 import {
@@ -660,6 +660,23 @@ export class RaftersToolHandler {
   }
 
   /**
+   * Load and cache the project's Rafters config from .rafters/config.rafters.json.
+   * Returns null when no config exists or when it cannot be parsed.
+   */
+  private async loadConfig(): Promise<RaftersConfig | null> {
+    try {
+      const paths = getRaftersPaths(this.projectRoot);
+      if (!existsSync(paths.config)) {
+        return null;
+      }
+      const content = await readFile(paths.config, 'utf-8');
+      return JSON.parse(content) as RaftersConfig;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
    * Extract compact component vocabulary
    */
   private async getComponentVocabulary(): Promise<{
@@ -669,10 +686,8 @@ export class RaftersToolHandler {
     // Read installed components from config
     let installed: string[] = [];
     try {
-      const paths = getRaftersPaths(this.projectRoot);
-      if (existsSync(paths.config)) {
-        const content = await readFile(paths.config, 'utf-8');
-        const config = JSON.parse(content) as RaftersConfig;
+      const config = await this.loadConfig();
+      if (config) {
         installed = config.installed?.components ?? [];
       }
     } catch {
@@ -735,18 +750,24 @@ export class RaftersToolHandler {
   // ==================== Tool 3: Component ====================
 
   /**
-   * Get path to UI components directory
+   * Get path to UI components directory.
+   * Reads componentsPath from .rafters/config.rafters.json when available,
+   * falls back to the monorepo layout for local development.
    */
-  private getComponentsPath(): string {
-    const monorepoPath = join(this.projectRoot, 'packages/ui/src/components/ui');
-    return monorepoPath;
+  private async getComponentsPath(): Promise<string> {
+    const config = await this.loadConfig();
+    if (config?.componentsPath) {
+      return join(this.projectRoot, config.componentsPath);
+    }
+    // Fallback: monorepo development layout
+    return join(this.projectRoot, 'packages/ui/src/components/ui');
   }
 
   /**
    * Load component metadata from source file
    */
   private async loadComponentMetadata(name: string): Promise<ComponentMetadata | null> {
-    const componentsPath = this.getComponentsPath();
+    const componentsPath = await this.getComponentsPath();
     const filePath = join(componentsPath, `${name}.tsx`);
 
     try {
@@ -769,7 +790,7 @@ export class RaftersToolHandler {
         sizes: extractSizes(source),
         dependencies: extractDependencies(source),
         primitives: extractPrimitiveDependencies(source),
-        filePath: `packages/ui/src/components/ui/${name}.tsx`,
+        filePath: relative(this.projectRoot, join(componentsPath, `${name}.tsx`)),
       };
 
       if (hasAnyDeps(jsDocDeps)) {
@@ -869,7 +890,7 @@ export class RaftersToolHandler {
 
       if (!metadata) {
         // Try to provide helpful suggestions
-        const componentsPath = this.getComponentsPath();
+        const componentsPath = await this.getComponentsPath();
         let available: string[] = [];
         try {
           const files = await readdir(componentsPath);

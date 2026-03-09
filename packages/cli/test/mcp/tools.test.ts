@@ -331,6 +331,97 @@ export function MultiDep() { return null; }`,
       expect(data.jsDocDependencies).toBeDefined();
       expect(data.jsDocDependencies.runtime).toEqual(['nanostores@^0.11.0', 'zustand@^4.0.0']);
     });
+
+    it('should read components from config-specified path', async () => {
+      // Write config with a consumer-style componentsPath
+      await writeFile(
+        join(testDir, '.rafters', 'config.rafters.json'),
+        JSON.stringify({
+          framework: 'vite',
+          componentsPath: 'src/components/ui',
+          primitivesPath: 'src/lib/primitives',
+          compositesPath: 'src/composites',
+          cssPath: null,
+          shadcn: false,
+          exports: { tailwind: true, typescript: true, dtcg: false, compiled: false },
+        }),
+      );
+
+      // Write component at the config-specified path (NOT the monorepo fallback)
+      const consumerDir = join(testDir, 'src/components/ui');
+      await mkdir(consumerDir, { recursive: true });
+      await writeFile(
+        join(consumerDir, 'my-button.tsx'),
+        `/**
+ * A custom button
+ * @cognitive-load 2/10
+ */
+export function MyButton() { return null; }`,
+      );
+
+      const result = await handler.handleToolCall('rafters_component', {
+        name: 'my-button',
+      });
+
+      expect(result.isError).toBeFalsy();
+      const data = JSON.parse(result.content[0].text as string);
+      expect(data.name).toBe('my-button');
+      expect(data.displayName).toBe('My Button');
+    });
+
+    it('should fall back to monorepo path when no config exists', async () => {
+      // No config file written -- should use packages/ui/src/components/ui
+      const monorepoDir = join(testDir, 'packages/ui/src/components/ui');
+      await mkdir(monorepoDir, { recursive: true });
+      await writeFile(
+        join(monorepoDir, 'fallback-comp.tsx'),
+        `/**
+ * Fallback component
+ * @cognitive-load 1/10
+ */
+export function FallbackComp() { return null; }`,
+      );
+
+      const result = await handler.handleToolCall('rafters_component', {
+        name: 'fallback-comp',
+      });
+
+      expect(result.isError).toBeFalsy();
+      const data = JSON.parse(result.content[0].text as string);
+      expect(data.name).toBe('fallback-comp');
+    });
+
+    it('should not find component at monorepo path when config specifies different path', async () => {
+      // Write config pointing to src/components/ui
+      await writeFile(
+        join(testDir, '.rafters', 'config.rafters.json'),
+        JSON.stringify({
+          framework: 'vite',
+          componentsPath: 'src/components/ui',
+          primitivesPath: 'src/lib/primitives',
+          compositesPath: 'src/composites',
+          cssPath: null,
+          shadcn: false,
+          exports: { tailwind: true, typescript: true, dtcg: false, compiled: false },
+        }),
+      );
+
+      // Write component ONLY at the monorepo path (wrong location for consumer)
+      const monorepoDir = join(testDir, 'packages/ui/src/components/ui');
+      await mkdir(monorepoDir, { recursive: true });
+      await writeFile(
+        join(monorepoDir, 'wrong-place.tsx'),
+        `/** @cognitive-load 1/10 */
+export function WrongPlace() { return null; }`,
+      );
+
+      const result = await handler.handleToolCall('rafters_component', {
+        name: 'wrong-place',
+      });
+
+      // Should NOT find it because config says to look in src/components/ui
+      expect(result.isError).toBe(true);
+    });
   });
 
   describe('rafters_token', () => {
