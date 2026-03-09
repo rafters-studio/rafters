@@ -174,6 +174,125 @@ describe('toDTCG', () => {
     });
   });
 
+  describe('designer intent extensions', () => {
+    it('should include userOverride in extensions', () => {
+      const tokens: Token[] = [
+        {
+          name: 'color-primary',
+          value: 'oklch(0.6 0.2 260)',
+          category: 'color',
+          namespace: 'color',
+          userOverride: {
+            previousValue: 'oklch(0.5 0.15 260)',
+            reason: 'Brand refresh Q1',
+            context: 'Marketing campaign',
+          },
+        },
+      ];
+
+      const result = toDTCG(tokens, { applyTypesToGroup: false });
+      const token = (result.color as Record<string, unknown>).primary as Record<string, unknown>;
+      const rafters = (token.$extensions as Record<string, unknown>).rafters as Record<
+        string,
+        unknown
+      >;
+
+      expect(rafters.userOverride).toEqual({
+        previousValue: 'oklch(0.5 0.15 260)',
+        reason: 'Brand refresh Q1',
+        context: 'Marketing campaign',
+      });
+    });
+
+    it('should include computedValue as converted value', () => {
+      const tokens: Token[] = [
+        {
+          name: 'spacing-8',
+          value: '2rem',
+          category: 'spacing',
+          namespace: 'spacing',
+          computedValue: '32px',
+        },
+      ];
+
+      const result = toDTCG(tokens);
+      const token = (result.spacing as Record<string, unknown>)['8'] as Record<string, unknown>;
+      const rafters = (token.$extensions as Record<string, unknown>).rafters as Record<
+        string,
+        unknown
+      >;
+
+      expect(rafters.computedValue).toBe('32px');
+    });
+
+    it('should include generationRule string', () => {
+      const tokens: Token[] = [
+        {
+          name: 'spacing-8',
+          value: '2rem',
+          category: 'spacing',
+          namespace: 'spacing',
+          generationRule: 'calc({spacing-base}*8)',
+        },
+      ];
+
+      const result = toDTCG(tokens);
+      const token = (result.spacing as Record<string, unknown>)['8'] as Record<string, unknown>;
+      const rafters = (token.$extensions as Record<string, unknown>).rafters as Record<
+        string,
+        unknown
+      >;
+
+      expect(rafters.generationRule).toBe('calc({spacing-base}*8)');
+    });
+  });
+
+  describe('relationship extensions', () => {
+    it('should include pairedWith and conflictsWith arrays', () => {
+      const tokens: Token[] = [
+        {
+          name: 'color-primary',
+          value: 'blue',
+          category: 'color',
+          namespace: 'color',
+          pairedWith: ['color-on-primary'],
+          conflictsWith: ['color-secondary'],
+        },
+      ];
+
+      const result = toDTCG(tokens, { applyTypesToGroup: false });
+      const token = (result.color as Record<string, unknown>).primary as Record<string, unknown>;
+      const rafters = (token.$extensions as Record<string, unknown>).rafters as Record<
+        string,
+        unknown
+      >;
+
+      expect(rafters.pairedWith).toEqual(['color-on-primary']);
+      expect(rafters.conflictsWith).toEqual(['color-secondary']);
+    });
+
+    it('should not include empty relationship arrays', () => {
+      const tokens: Token[] = [
+        {
+          name: 'color-primary',
+          value: 'blue',
+          category: 'color',
+          namespace: 'color',
+          pairedWith: [],
+          conflictsWith: [],
+          applicableComponents: [],
+          requiredForComponents: [],
+        },
+      ];
+
+      const result = toDTCG(tokens, { applyTypesToGroup: false });
+      const token = (result.color as Record<string, unknown>).primary as Record<string, unknown>;
+
+      // No extensions at all since everything is empty
+      expect(token.$extensions).toBeUndefined();
+    });
+  });
+
   describe('type inheritance', () => {
     it('should apply $type to groups when all children share same type', () => {
       const tokens: Token[] = [

@@ -162,6 +162,31 @@ function buildExtensions(token: Token): Record<string, unknown> {
     extensions.customPropertyOnly = token.customPropertyOnly;
   }
 
+  // Designer intent (the "why" layer)
+  if (token.userOverride) {
+    extensions.userOverride = token.userOverride;
+  }
+  if (token.computedValue !== undefined) {
+    extensions.computedValue = convertValue({ ...token, value: token.computedValue } as Token);
+  }
+  if (token.generationRule) {
+    extensions.generationRule = token.generationRule;
+  }
+
+  // Design system relationships
+  if (token.pairedWith && token.pairedWith.length > 0) {
+    extensions.pairedWith = token.pairedWith;
+  }
+  if (token.conflictsWith && token.conflictsWith.length > 0) {
+    extensions.conflictsWith = token.conflictsWith;
+  }
+  if (token.applicableComponents && token.applicableComponents.length > 0) {
+    extensions.applicableComponents = token.applicableComponents;
+  }
+  if (token.requiredForComponents && token.requiredForComponents.length > 0) {
+    extensions.requiredForComponents = token.requiredForComponents;
+  }
+
   // Only include extensions if there's data
   return Object.keys(extensions).length > 0 ? { rafters: extensions } : {};
 }
