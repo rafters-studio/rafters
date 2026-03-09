@@ -13,6 +13,7 @@ import {
   parseDescription,
   parseJSDocIntelligence,
   toDisplayName,
+  validateComponentIntelligence,
 } from '../src/component-intelligence.js';
 
 describe('parseJSDocIntelligence', () => {
@@ -167,6 +168,323 @@ export function Component() {}`;
     expect(result?.attentionEconomics).toBe('Moderate');
     expect(result?.trustBuilding).toBe('Standard');
     expect(result?.semanticMeaning).toBe('Action');
+  });
+});
+
+// ==================== Real-world component JSDoc blocks ====================
+
+describe('parseJSDocIntelligence - real-world components', () => {
+  it('parses verbatim button.tsx JSDoc', () => {
+    const source = `/**
+ * Interactive button component for user actions
+ *
+ * @cognitive-load 3/10 - Simple action trigger with clear visual hierarchy
+ * @attention-economics Size hierarchy: sm=tertiary actions, default=secondary interactions, lg=primary calls-to-action. Primary variant commands highest attention - use sparingly (maximum 1 per section)
+ * @trust-building Destructive actions require confirmation patterns. Loading states prevent double-submission. Visual feedback reinforces user actions.
+ * @accessibility WCAG AAA compliant with 44px minimum touch targets, high contrast ratios, and screen reader optimization
+ * @semantic-meaning Variant mapping: default=main actions, secondary=supporting actions, destructive=irreversible actions with safety patterns
+ *
+ * @usage-patterns
+ * DO: Primary: Main user goal, maximum 1 per section
+ * DO: Secondary: Alternative paths, supporting actions
+ * DO: Destructive: Permanent actions, requires confirmation patterns
+ * NEVER: Multiple primary buttons competing for attention
+ */
+export function Button() {}`;
+
+    const result = parseJSDocIntelligence(source);
+    expect(result).toBeDefined();
+    expect(result?.cognitiveLoad).toBe(3);
+    expect(result?.attentionEconomics).toContain('Size hierarchy');
+    expect(result?.trustBuilding).toContain('Destructive actions require confirmation');
+    expect(result?.accessibility).toContain('WCAG AAA');
+    expect(result?.semanticMeaning).toContain('Variant mapping');
+    expect(result?.usagePatterns?.dos).toHaveLength(3);
+    expect(result?.usagePatterns?.dos).toContain('Primary: Main user goal, maximum 1 per section');
+    expect(result?.usagePatterns?.dos).toContain(
+      'Secondary: Alternative paths, supporting actions',
+    );
+    expect(result?.usagePatterns?.dos).toContain(
+      'Destructive: Permanent actions, requires confirmation patterns',
+    );
+    expect(result?.usagePatterns?.nevers).toHaveLength(1);
+    expect(result?.usagePatterns?.nevers).toContain(
+      'Multiple primary buttons competing for attention',
+    );
+  });
+
+  it('parses verbatim dialog.tsx JSDoc', () => {
+    const source = `/**
+ * Modal dialog component with focus management and escape patterns
+ *
+ * @cognitive-load 6/10 - Interrupts user flow, requires decision making
+ * @attention-economics Attention capture: modal=full attention, drawer=partial attention, popover=contextual attention
+ * @trust-building Clear close mechanisms, confirmation for destructive actions, non-blocking for informational content
+ * @accessibility Focus trapping, escape key handling, backdrop dismissal, screen reader announcements
+ * @semantic-meaning Usage patterns: modal=blocking workflow, drawer=supplementary, alert=urgent information
+ *
+ * @usage-patterns
+ * DO: Low trust - Quick confirmations, save draft (size=sm, minimal friction)
+ * DO: Medium trust - Publish content, moderate consequences (clear context)
+ * DO: High trust - Payments, significant impact (detailed explanation)
+ * DO: Critical trust - Account deletion, permanent loss (progressive confirmation)
+ * NEVER: Routine actions, non-essential interruptions
+ */
+export function Dialog() {}`;
+
+    const result = parseJSDocIntelligence(source);
+    expect(result).toBeDefined();
+    expect(result?.cognitiveLoad).toBe(6);
+    expect(result?.usagePatterns?.dos).toHaveLength(4);
+    expect(result?.usagePatterns?.dos?.[0]).toContain('Low trust');
+    expect(result?.usagePatterns?.dos?.[3]).toContain('Critical trust');
+    expect(result?.usagePatterns?.nevers).toHaveLength(1);
+    expect(result?.usagePatterns?.nevers).toContain('Routine actions, non-essential interruptions');
+  });
+
+  it('parses verbatim table.tsx JSDoc with many DO/NEVER lines', () => {
+    const source = `/**
+ * Table component for displaying structured data in rows and columns
+ *
+ * @cognitive-load 3/10 - Familiar grid pattern; visual scanning is natural
+ * @attention-economics Low attention cost: structured data is easy to scan
+ * @trust-building Clear headers, consistent alignment, visible row separation
+ * @accessibility Semantic table elements, proper scope attributes, keyboard navigable
+ * @semantic-meaning Data presentation: lists, comparisons, structured information
+ *
+ * @usage-patterns
+ * DO: Use for structured, comparable data
+ * DO: Provide clear column headers
+ * DO: Use consistent alignment (left for text, right for numbers)
+ * DO: Support sorting and filtering for large datasets
+ * DO: Consider sticky headers for long tables
+ * NEVER: Use for layout purposes (use CSS Grid instead)
+ * NEVER: Nest tables within tables
+ * NEVER: Hide header row
+ */
+export function Table() {}`;
+
+    const result = parseJSDocIntelligence(source);
+    expect(result).toBeDefined();
+    expect(result?.cognitiveLoad).toBe(3);
+    expect(result?.usagePatterns?.dos).toHaveLength(5);
+    expect(result?.usagePatterns?.nevers).toHaveLength(3);
+    expect(result?.usagePatterns?.nevers).toContain(
+      'Use for layout purposes (use CSS Grid instead)',
+    );
+    expect(result?.usagePatterns?.nevers).toContain('Nest tables within tables');
+    expect(result?.usagePatterns?.nevers).toContain('Hide header row');
+  });
+});
+
+// ==================== Edge cases ====================
+
+describe('parseJSDocIntelligence - edge cases', () => {
+  it('handles empty @usage-patterns block (no DO: or NEVER: lines)', () => {
+    const source = `/**
+ * @usage-patterns
+ */
+export function Widget() {}`;
+    const result = parseJSDocIntelligence(source);
+    // Tag is present so usagePatterns is created, but with empty arrays
+    expect(result).toBeDefined();
+    expect(result?.usagePatterns?.dos).toEqual([]);
+    expect(result?.usagePatterns?.nevers).toEqual([]);
+  });
+
+  it('handles DO: with no text after it', () => {
+    const source = `/**
+ * @usage-patterns
+ * DO:
+ * NEVER: Do not use without context
+ */
+export function Widget() {}`;
+    const result = parseJSDocIntelligence(source);
+    // DO: with no text should not produce an empty string entry
+    expect(result?.usagePatterns?.dos).toEqual([]);
+    expect(result?.usagePatterns?.nevers).toEqual(['Do not use without context']);
+  });
+
+  it('handles NEVER: with colons in the text', () => {
+    const source = `/**
+ * @usage-patterns
+ * DO: Use size mapping: sm=compact, lg=spacious
+ * NEVER: Ignore the pattern: always provide context
+ */
+export function Widget() {}`;
+    const result = parseJSDocIntelligence(source);
+    expect(result?.usagePatterns?.dos).toContain('Use size mapping: sm=compact, lg=spacious');
+    expect(result?.usagePatterns?.nevers).toContain('Ignore the pattern: always provide context');
+  });
+
+  it('handles mixed format: both @do tags and DO: under @usage-patterns', () => {
+    const source = `/**
+ * @usage-patterns
+ * DO: Use for primary actions
+ * NEVER: Stack multiple instances
+ * @do Also use for secondary actions
+ * @never Also never use alone
+ */
+export function Widget() {}`;
+    const result = parseJSDocIntelligence(source);
+    // Both formats should merge into the same arrays
+    expect(result?.usagePatterns?.dos).toContain('Use for primary actions');
+    expect(result?.usagePatterns?.dos).toContain('Also use for secondary actions');
+    expect(result?.usagePatterns?.nevers).toContain('Stack multiple instances');
+    expect(result?.usagePatterns?.nevers).toContain('Also never use alone');
+  });
+
+  it('parses all 6 intelligence tags correctly in one block', () => {
+    const source = `/**
+ * Complete component
+ *
+ * @cognitive-load 7/10 - High complexity requiring careful attention
+ * @attention-economics Demands significant user focus
+ * @trust-building Progressive disclosure builds confidence
+ * @accessibility Full keyboard navigation, ARIA live regions
+ * @semantic-meaning Complex workflow orchestration
+ *
+ * @usage-patterns
+ * DO: Break complex flows into steps
+ * NEVER: Present all options simultaneously
+ */
+export function CompleteComponent() {}`;
+
+    const result = parseJSDocIntelligence(source);
+    expect(result).toBeDefined();
+    expect(result?.cognitiveLoad).toBe(7);
+    expect(result?.attentionEconomics).toBe('Demands significant user focus');
+    expect(result?.trustBuilding).toBe('Progressive disclosure builds confidence');
+    expect(result?.accessibility).toBe('Full keyboard navigation, ARIA live regions');
+    expect(result?.semanticMeaning).toBe('Complex workflow orchestration');
+    expect(result?.usagePatterns?.dos).toEqual(['Break complex flows into steps']);
+    expect(result?.usagePatterns?.nevers).toEqual(['Present all options simultaneously']);
+  });
+
+  it('handles cognitive load at boundary values (0 and 10)', () => {
+    const source0 = `/**\n * @cognitive-load 0/10\n */\nexport function A() {}`;
+    const source10 = `/**\n * @cognitive-load 10/10\n */\nexport function B() {}`;
+    expect(parseJSDocIntelligence(source0)?.cognitiveLoad).toBe(0);
+    expect(parseJSDocIntelligence(source10)?.cognitiveLoad).toBe(10);
+  });
+
+  it('handles negative cognitive load', () => {
+    const source = `/**\n * @cognitive-load -1\n */\nexport function A() {}`;
+    expect(parseJSDocIntelligence(source)?.cognitiveLoad).toBeUndefined();
+  });
+
+  it('handles multiple DO: on a single line (inline format)', () => {
+    const source = `/**
+ * @usage-patterns DO: First pattern DO: Second pattern NEVER: Bad pattern
+ */
+export function Widget() {}`;
+    const result = parseJSDocIntelligence(source);
+    expect(result?.usagePatterns?.dos).toContain('First pattern');
+    expect(result?.usagePatterns?.dos).toContain('Second pattern');
+    expect(result?.usagePatterns?.nevers).toContain('Bad pattern');
+  });
+
+  it('handles parentheses inside NEVER: text', () => {
+    const source = `/**
+ * @usage-patterns
+ * NEVER: Use for layout purposes (use CSS Grid instead)
+ */
+export function Widget() {}`;
+    const result = parseJSDocIntelligence(source);
+    expect(result?.usagePatterns?.nevers).toContain(
+      'Use for layout purposes (use CSS Grid instead)',
+    );
+  });
+});
+
+// ==================== Validation ====================
+
+describe('validateComponentIntelligence', () => {
+  it('returns missing warning when intelligence is undefined', () => {
+    const warnings = validateComponentIntelligence('Button', undefined);
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]?.level).toBe('missing');
+    expect(warnings[0]?.message).toContain('Button');
+    expect(warnings[0]?.message).toContain('No intelligence metadata found');
+  });
+
+  it('returns no warnings for complete intelligence', () => {
+    const warnings = validateComponentIntelligence('Button', {
+      cognitiveLoad: 3,
+      attentionEconomics: 'Low cost',
+      accessibility: 'WCAG AAA',
+      trustBuilding: 'Standard patterns',
+      semanticMeaning: 'Action trigger',
+      usagePatterns: {
+        dos: ['Use for primary actions'],
+        nevers: ['Use without context'],
+      },
+    });
+    expect(warnings).toEqual([]);
+  });
+
+  it('warns about each missing tag individually', () => {
+    const warnings = validateComponentIntelligence('Skeleton', {
+      cognitiveLoad: 1,
+      // missing all other 5 tags
+    });
+    expect(warnings).toHaveLength(5);
+    const messages = warnings.map((w) => w.message);
+    expect(messages.some((m) => m.includes('@attentionEconomics'))).toBe(true);
+    expect(messages.some((m) => m.includes('@accessibility'))).toBe(true);
+    expect(messages.some((m) => m.includes('@trustBuilding'))).toBe(true);
+    expect(messages.some((m) => m.includes('@semanticMeaning'))).toBe(true);
+    expect(messages.some((m) => m.includes('@usagePatterns'))).toBe(true);
+  });
+
+  it('warns when usagePatterns exists but has zero DO: and NEVER: lines', () => {
+    const warnings = validateComponentIntelligence('Widget', {
+      cognitiveLoad: 3,
+      attentionEconomics: 'Low',
+      accessibility: 'Good',
+      trustBuilding: 'Standard',
+      semanticMeaning: 'Widget',
+      usagePatterns: { dos: [], nevers: [] },
+    });
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]?.level).toBe('empty');
+    expect(warnings[0]?.message).toContain('zero DO: or NEVER:');
+  });
+
+  it('does not warn about usagePatterns when it has at least one DO:', () => {
+    const warnings = validateComponentIntelligence('Button', {
+      cognitiveLoad: 3,
+      attentionEconomics: 'Low',
+      accessibility: 'Good',
+      trustBuilding: 'Standard',
+      semanticMeaning: 'Action',
+      usagePatterns: { dos: ['Use for actions'], nevers: [] },
+    });
+    expect(warnings).toEqual([]);
+  });
+
+  it('does not warn about usagePatterns when it has at least one NEVER:', () => {
+    const warnings = validateComponentIntelligence('Badge', {
+      cognitiveLoad: 2,
+      attentionEconomics: 'Minimal',
+      accessibility: 'Readable',
+      trustBuilding: 'N/A',
+      semanticMeaning: 'Status',
+      usagePatterns: { dos: [], nevers: ['Use for interactive elements'] },
+    });
+    expect(warnings).toEqual([]);
+  });
+
+  it('returns both missing and empty warnings when applicable', () => {
+    const warnings = validateComponentIntelligence('Broken', {
+      cognitiveLoad: 5,
+      usagePatterns: { dos: [], nevers: [] },
+      // missing 4 tags + empty usagePatterns
+    });
+    const missingWarnings = warnings.filter((w) => w.level === 'missing');
+    const emptyWarnings = warnings.filter((w) => w.level === 'empty');
+    expect(missingWarnings.length).toBe(4);
+    expect(emptyWarnings.length).toBe(1);
   });
 });
 

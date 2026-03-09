@@ -4,6 +4,43 @@
  *
  * Intelligence metadata captures design decisions and cognitive load information
  * embedded in component source files via JSDoc tags.
+ *
+ * ---- Canonical JSDoc Intelligence Format ----
+ *
+ * All Rafters components use 6 intelligence tags in their JSDoc block.
+ * The canonical format for usage patterns is DO:/NEVER: lines under @usage-patterns.
+ *
+ * Example (from button.tsx):
+ *
+ *   /**
+ *    * Interactive button component for user actions
+ *    *
+ *    * @cognitive-load 3/10 - Simple action trigger with clear visual hierarchy
+ *    * @attention-economics Size hierarchy: sm=tertiary, default=secondary, lg=primary
+ *    * @trust-building Destructive actions require confirmation patterns
+ *    * @accessibility WCAG AAA compliant with 44px minimum touch targets
+ *    * @semantic-meaning Variant mapping: default=main, destructive=irreversible
+ *    *
+ *    * @usage-patterns
+ *    * DO: Primary: Main user goal, maximum 1 per section
+ *    * DO: Secondary: Alternative paths, supporting actions
+ *    * NEVER: Multiple primary buttons competing for attention
+ *    * /
+ *
+ * Parsing paths:
+ *   1. Canonical: DO:/NEVER: lines within the @usage-patterns tag value
+ *   2. Legacy: Separate @do and @never tags (still supported)
+ *
+ * Both paths populate the same usagePatterns.dos[] and usagePatterns.nevers[] arrays.
+ * If both formats appear in the same block, results are merged (no deduplication).
+ *
+ * Required intelligence tags (all 6 should be present on every component):
+ *   - @cognitive-load (number/10 format, e.g. "3/10 - Description")
+ *   - @attention-economics (free text)
+ *   - @trust-building (free text)
+ *   - @accessibility (free text)
+ *   - @semantic-meaning (free text)
+ *   - @usage-patterns (with DO:/NEVER: lines)
  */
 
 import { parse, type Spec } from 'comment-parser';
@@ -351,4 +388,74 @@ export function toDisplayName(name: string): string {
     .split('-')
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
+}
+
+// ==================== Validation ====================
+
+/** The 6 required intelligence tags for a complete component */
+const REQUIRED_TAGS = [
+  'cognitiveLoad',
+  'attentionEconomics',
+  'accessibility',
+  'trustBuilding',
+  'semanticMeaning',
+  'usagePatterns',
+] as const;
+
+/**
+ * A warning produced when component intelligence metadata is incomplete or suspect
+ */
+export interface IntelligenceWarning {
+  /** Warning severity: "missing" for absent data, "empty" for present but hollow data */
+  level: 'missing' | 'empty';
+  /** Human-readable warning message */
+  message: string;
+}
+
+/**
+ * Validate component intelligence metadata for completeness.
+ *
+ * Detects two classes of problems:
+ *   1. Missing required intelligence tags (all 6 should be present)
+ *   2. usagePatterns present but with zero DO: or NEVER: lines extracted
+ *      (suggests a parsing failure or malformed JSDoc)
+ *
+ * Returns an empty array when the intelligence is complete and well-formed.
+ */
+export function validateComponentIntelligence(
+  componentName: string,
+  intelligence: JSDocIntelligence | undefined,
+): IntelligenceWarning[] {
+  const warnings: IntelligenceWarning[] = [];
+
+  if (!intelligence) {
+    warnings.push({
+      level: 'missing',
+      message: `${componentName}: No intelligence metadata found. All 6 tags are required.`,
+    });
+    return warnings;
+  }
+
+  for (const tag of REQUIRED_TAGS) {
+    const value = intelligence[tag];
+    if (value === undefined || value === null) {
+      warnings.push({
+        level: 'missing',
+        message: `${componentName}: Missing required intelligence tag "@${tag}".`,
+      });
+    }
+  }
+
+  // Check for hollow usagePatterns (tag present but no DO:/NEVER: extracted)
+  if (intelligence.usagePatterns) {
+    const { dos, nevers } = intelligence.usagePatterns;
+    if (dos.length === 0 && nevers.length === 0) {
+      warnings.push({
+        level: 'empty',
+        message: `${componentName}: @usage-patterns present but zero DO: or NEVER: lines extracted. Check JSDoc format.`,
+      });
+    }
+  }
+
+  return warnings;
 }
