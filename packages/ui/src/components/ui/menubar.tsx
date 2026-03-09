@@ -45,6 +45,7 @@ import { onEscapeKeyDown } from '../../primitives/escape-keydown';
 import { onPointerDownOutside } from '../../primitives/outside-click';
 import { getPortalContainer } from '../../primitives/portal';
 import { createRovingFocus } from '../../primitives/roving-focus';
+import { mergeProps } from '../../primitives/slot';
 import { createTypeahead } from '../../primitives/typeahead';
 import type { Align, Side } from '../../primitives/types';
 
@@ -351,15 +352,21 @@ export const MenubarTrigger = React.forwardRef<HTMLButtonElement, MenubarTrigger
     };
 
     if (asChild && React.isValidElement(props.children)) {
-      return React.cloneElement(props.children, {
-        ref: composedRef,
-        role: 'menuitem',
-        tabIndex: -1,
-        ...ariaProps,
-        onClick: handleClick,
-        onPointerEnter: handlePointerEnter,
-        onKeyDown: handleKeyDown,
-      } as Partial<unknown>);
+      const child = props.children as React.ReactElement<Record<string, unknown>>;
+      const childProps = (child.props ?? {}) as Record<string, unknown>;
+      const merged = mergeProps(
+        {
+          ref: composedRef,
+          role: 'menuitem',
+          tabIndex: -1,
+          ...ariaProps,
+          onClick: handleClick,
+          onPointerEnter: handlePointerEnter,
+          onKeyDown: handleKeyDown,
+        } as Partial<unknown>,
+        childProps,
+      );
+      return React.cloneElement(child, merged as Partial<Record<string, unknown>>);
     }
 
     return (
@@ -691,7 +698,14 @@ export const MenubarContent = React.forwardRef<HTMLDivElement, MenubarContentPro
     if (asChild && React.isValidElement(props.children)) {
       content = (
         <MenubarContentContext.Provider value={contentContextValue}>
-          {React.cloneElement(props.children, contentProps as Partial<unknown>)}
+          {(() => {
+            const ch = props.children as React.ReactElement<Record<string, unknown>>;
+            const cp = (ch.props ?? {}) as Record<string, unknown>;
+            return React.cloneElement(
+              ch,
+              mergeProps(contentProps, cp) as Partial<Record<string, unknown>>,
+            );
+          })()}
         </MenubarContentContext.Provider>
       );
     } else {

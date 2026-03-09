@@ -46,6 +46,7 @@ import { createPortal } from 'react-dom';
 import classy from '../../primitives/classy';
 import { Float, useFloatContext } from '../../primitives/float';
 import { getPortalContainer } from '../../primitives/portal';
+import { mergeProps } from '../../primitives/slot';
 import type { Align, Side } from '../../primitives/types';
 
 // Context to track if we're inside a portal (to avoid double-wrapping)
@@ -94,11 +95,17 @@ export function PopoverTrigger({ asChild, onClick, ...props }: PopoverTriggerPro
   };
 
   if (asChild && React.isValidElement(props.children)) {
-    return React.cloneElement(props.children, {
-      ref: anchorRef,
-      ...ariaProps,
-      onClick: handleClick,
-    } as Partial<unknown>);
+    const child = props.children as React.ReactElement<Record<string, unknown>>;
+    const childProps = (child.props ?? {}) as Record<string, unknown>;
+    const merged = mergeProps(
+      {
+        ref: anchorRef,
+        ...ariaProps,
+        onClick: handleClick,
+      } as Partial<unknown>,
+      childProps,
+    );
+    return React.cloneElement(child, merged as Partial<Record<string, unknown>>);
   }
 
   return (
@@ -122,9 +129,15 @@ export function PopoverAnchor({ asChild, ...props }: PopoverAnchorProps) {
   const { anchorRef } = useFloatContext();
 
   if (asChild && React.isValidElement(props.children)) {
-    return React.cloneElement(props.children, {
-      ref: anchorRef,
-    } as Partial<unknown>);
+    const child = props.children as React.ReactElement<Record<string, unknown>>;
+    const childProps = (child.props ?? {}) as Record<string, unknown>;
+    const merged = mergeProps(
+      {
+        ref: anchorRef,
+      } as Partial<unknown>,
+      childProps,
+    );
+    return React.cloneElement(child, merged as Partial<Record<string, unknown>>);
   }
 
   return <div ref={anchorRef as React.RefObject<HTMLDivElement>} {...props} />;
@@ -267,9 +280,15 @@ export function PopoverClose({ asChild, onClick, ...props }: PopoverCloseProps) 
   };
 
   if (asChild && React.isValidElement(props.children)) {
-    return React.cloneElement(props.children, {
-      onClick: handleClick,
-    } as Partial<unknown>);
+    const child = props.children as React.ReactElement<Record<string, unknown>>;
+    const childProps = (child.props ?? {}) as Record<string, unknown>;
+    const merged = mergeProps(
+      {
+        onClick: handleClick,
+      } as Partial<unknown>,
+      childProps,
+    );
+    return React.cloneElement(child, merged as Partial<Record<string, unknown>>);
   }
 
   return <button type="button" onClick={handleClick} {...props} />;

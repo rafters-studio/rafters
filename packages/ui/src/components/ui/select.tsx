@@ -50,6 +50,7 @@ import { onEscapeKeyDown } from '../../primitives/escape-keydown';
 import { onPointerDownOutside } from '../../primitives/outside-click';
 import { getPortalContainer } from '../../primitives/portal';
 import { createRovingFocus } from '../../primitives/roving-focus';
+import { mergeProps } from '../../primitives/slot';
 import { createTypeahead } from '../../primitives/typeahead';
 import type { Align, Side } from '../../primitives/types';
 
@@ -299,13 +300,19 @@ export function SelectTrigger({
   );
 
   if (asChild && React.isValidElement(children)) {
-    return React.cloneElement(children, {
-      ref: triggerRef,
-      ...ariaProps,
-      disabled,
-      onClick: handleClick,
-      onKeyDown: handleKeyDown,
-    } as Partial<unknown>);
+    const child = children as React.ReactElement<Record<string, unknown>>;
+    const childProps = (child.props ?? {}) as Record<string, unknown>;
+    const merged = mergeProps(
+      {
+        ref: triggerRef,
+        ...ariaProps,
+        disabled,
+        onClick: handleClick,
+        onKeyDown: handleKeyDown,
+      } as Partial<unknown>,
+      childProps,
+    );
+    return React.cloneElement(child, merged as Partial<Record<string, unknown>>);
   }
 
   return (
@@ -351,10 +358,16 @@ export function SelectValue({
   const spanClassName = classy(isPlaceholder ? 'text-muted-foreground' : '', className);
 
   if (asChild && React.isValidElement(children)) {
-    return React.cloneElement(children, {
-      className: spanClassName,
-      ...props,
-    } as Partial<unknown>);
+    const child = children as React.ReactElement<Record<string, unknown>>;
+    const childProps = (child.props ?? {}) as Record<string, unknown>;
+    const merged = mergeProps(
+      {
+        className: spanClassName,
+        ...props,
+      } as Partial<unknown>,
+      childProps,
+    );
+    return React.cloneElement(child, merged as Partial<Record<string, unknown>>);
   }
 
   return (
@@ -638,7 +651,14 @@ export function SelectContent({
 
   const content =
     asChild && React.isValidElement(children) ? (
-      React.cloneElement(children, contentProps as Partial<unknown>)
+      (() => {
+        const ch = children as React.ReactElement<Record<string, unknown>>;
+        const cp = (ch.props ?? {}) as Record<string, unknown>;
+        return React.cloneElement(
+          ch,
+          mergeProps(contentProps, cp) as Partial<Record<string, unknown>>,
+        );
+      })()
     ) : (
       <div {...contentProps}>
         <div className="p-1">{children}</div>
@@ -663,10 +683,16 @@ export function SelectViewport({ className, children, asChild, ...props }: Selec
   const viewportClassName = classy('p-1', className);
 
   if (asChild && React.isValidElement(children)) {
-    return React.cloneElement(children, {
-      className: viewportClassName,
-      ...props,
-    } as Partial<unknown>);
+    const child = children as React.ReactElement<Record<string, unknown>>;
+    const childProps = (child.props ?? {}) as Record<string, unknown>;
+    const merged = mergeProps(
+      {
+        className: viewportClassName,
+        ...props,
+      } as Partial<unknown>,
+      childProps,
+    );
+    return React.cloneElement(child, merged as Partial<Record<string, unknown>>);
   }
 
   return (
@@ -686,11 +712,17 @@ export function SelectGroup({ className, children, asChild, ...props }: SelectGr
   const groupClassName = classy('', className);
 
   if (asChild && React.isValidElement(children)) {
-    return React.cloneElement(children, {
-      className: groupClassName,
-      role: 'group',
-      ...props,
-    } as Partial<unknown>);
+    const child = children as React.ReactElement<Record<string, unknown>>;
+    const childProps = (child.props ?? {}) as Record<string, unknown>;
+    const merged = mergeProps(
+      {
+        className: groupClassName,
+        role: 'group',
+        ...props,
+      } as Partial<unknown>,
+      childProps,
+    );
+    return React.cloneElement(child, merged as Partial<Record<string, unknown>>);
   }
 
   return (
@@ -711,10 +743,16 @@ export function SelectLabel({ className, children, asChild, ...props }: SelectLa
   const labelClassName = classy('py-1.5 pl-8 pr-2 text-sm font-semibold', className);
 
   if (asChild && React.isValidElement(children)) {
-    return React.cloneElement(children, {
-      className: labelClassName,
-      ...props,
-    } as Partial<unknown>);
+    const child = children as React.ReactElement<Record<string, unknown>>;
+    const childProps = (child.props ?? {}) as Record<string, unknown>;
+    const merged = mergeProps(
+      {
+        className: labelClassName,
+        ...props,
+      } as Partial<unknown>,
+      childProps,
+    );
+    return React.cloneElement(child, merged as Partial<Record<string, unknown>>);
   }
 
   return (
@@ -816,7 +854,10 @@ export function SelectItem({
   };
 
   if (asChild && React.isValidElement(children)) {
-    return React.cloneElement(children, itemProps as Partial<unknown>);
+    const child = children as React.ReactElement<Record<string, unknown>>;
+    const childProps = (child.props ?? {}) as Record<string, unknown>;
+    const merged = mergeProps(itemProps as Partial<unknown>, childProps);
+    return React.cloneElement(child, merged as Partial<Record<string, unknown>>);
   }
 
   return (
@@ -854,11 +895,17 @@ export function SelectSeparator({ className, asChild, ...props }: SelectSeparato
   const separatorClassName = classy('-mx-1 my-1 h-px bg-muted', className);
 
   if (asChild && React.isValidElement(props.children)) {
-    return React.cloneElement(props.children, {
-      className: separatorClassName,
-      'aria-hidden': true,
-      ...props,
-    } as Partial<unknown>);
+    const child = props.children as React.ReactElement<Record<string, unknown>>;
+    const childProps = (child.props ?? {}) as Record<string, unknown>;
+    const merged = mergeProps(
+      {
+        className: separatorClassName,
+        'aria-hidden': true,
+        ...props,
+      } as Partial<unknown>,
+      childProps,
+    );
+    return React.cloneElement(child, merged as Partial<Record<string, unknown>>);
   }
 
   return <div aria-hidden="true" className={separatorClassName} {...props} />;
@@ -878,10 +925,16 @@ export function SelectIcon({ className, children, asChild, ...props }: SelectIco
   const iconClassName = classy('ml-auto h-4 w-4 shrink-0 opacity-50', className);
 
   if (asChild && React.isValidElement(children)) {
-    return React.cloneElement(children, {
-      className: iconClassName,
-      ...props,
-    } as Partial<unknown>);
+    const child = children as React.ReactElement<Record<string, unknown>>;
+    const childProps = (child.props ?? {}) as Record<string, unknown>;
+    const merged = mergeProps(
+      {
+        className: iconClassName,
+        ...props,
+      } as Partial<unknown>,
+      childProps,
+    );
+    return React.cloneElement(child, merged as Partial<Record<string, unknown>>);
   }
 
   return (
@@ -925,11 +978,17 @@ export function SelectScrollUpButton({
   const buttonClassName = classy('flex cursor-default items-center justify-center py-1', className);
 
   if (asChild && React.isValidElement(children)) {
-    return React.cloneElement(children, {
-      className: buttonClassName,
-      'aria-hidden': true,
-      ...props,
-    } as Partial<unknown>);
+    const child = children as React.ReactElement<Record<string, unknown>>;
+    const childProps = (child.props ?? {}) as Record<string, unknown>;
+    const merged = mergeProps(
+      {
+        className: buttonClassName,
+        'aria-hidden': true,
+        ...props,
+      } as Partial<unknown>,
+      childProps,
+    );
+    return React.cloneElement(child, merged as Partial<Record<string, unknown>>);
   }
 
   return (
@@ -974,11 +1033,17 @@ export function SelectScrollDownButton({
   const buttonClassName = classy('flex cursor-default items-center justify-center py-1', className);
 
   if (asChild && React.isValidElement(children)) {
-    return React.cloneElement(children, {
-      className: buttonClassName,
-      'aria-hidden': true,
-      ...props,
-    } as Partial<unknown>);
+    const child = children as React.ReactElement<Record<string, unknown>>;
+    const childProps = (child.props ?? {}) as Record<string, unknown>;
+    const merged = mergeProps(
+      {
+        className: buttonClassName,
+        'aria-hidden': true,
+        ...props,
+      } as Partial<unknown>,
+      childProps,
+    );
+    return React.cloneElement(child, merged as Partial<Record<string, unknown>>);
   }
 
   return (

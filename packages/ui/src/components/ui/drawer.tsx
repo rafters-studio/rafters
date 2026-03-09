@@ -267,7 +267,10 @@ export function DrawerOverlay({
   };
 
   if (asChild && React.isValidElement(props.children)) {
-    return React.cloneElement(props.children, overlayProps as Partial<unknown>);
+    const child = props.children as React.ReactElement<Record<string, unknown>>;
+    const childProps = (child.props ?? {}) as Record<string, unknown>;
+    const merged = mergeProps(overlayProps as Partial<unknown>, childProps);
+    return React.cloneElement(child, merged as Partial<Record<string, unknown>>);
   }
 
   return <div {...overlayProps} />;
@@ -579,7 +582,10 @@ export function DrawerContent({
   // The core content to render
   const renderContent = () => {
     if (asChild && React.isValidElement(children)) {
-      return React.cloneElement(children, contentProps as Partial<unknown>);
+      const child = children as React.ReactElement<Record<string, unknown>>;
+      const childProps = (child.props ?? {}) as Record<string, unknown>;
+      const merged = mergeProps(contentProps as Partial<unknown>, childProps);
+      return React.cloneElement(child, merged as Partial<Record<string, unknown>>);
     }
 
     return (
@@ -652,7 +658,10 @@ export function DrawerTitle({ asChild, className, ...props }: DrawerTitleProps):
   };
 
   if (asChild && React.isValidElement(props.children)) {
-    return React.cloneElement(props.children, titleProps as Partial<unknown>);
+    const child = props.children as React.ReactElement<Record<string, unknown>>;
+    const childProps = (child.props ?? {}) as Record<string, unknown>;
+    const merged = mergeProps(titleProps as Partial<unknown>, childProps);
+    return React.cloneElement(child, merged as Partial<Record<string, unknown>>);
   }
 
   return <h2 {...titleProps} />;
@@ -678,7 +687,10 @@ export function DrawerDescription({
   };
 
   if (asChild && React.isValidElement(props.children)) {
-    return React.cloneElement(props.children, descriptionProps as Partial<unknown>);
+    const child = props.children as React.ReactElement<Record<string, unknown>>;
+    const childProps = (child.props ?? {}) as Record<string, unknown>;
+    const merged = mergeProps(descriptionProps as Partial<unknown>, childProps);
+    return React.cloneElement(child, merged as Partial<Record<string, unknown>>);
   }
 
   return <p {...descriptionProps} />;

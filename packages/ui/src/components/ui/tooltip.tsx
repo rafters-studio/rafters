@@ -34,6 +34,7 @@ import { createPortal } from 'react-dom';
 import classy from '../../primitives/classy';
 import { type CollisionOptions, computePosition } from '../../primitives/collision-detector';
 import { getPortalContainer } from '../../primitives/portal';
+import { mergeProps } from '../../primitives/slot';
 
 // ==================== Global state for skip delay ====================
 
@@ -310,10 +311,16 @@ export function TooltipTrigger({ asChild, children, ...props }: TooltipTriggerPr
   };
 
   if (asChild && React.isValidElement(children)) {
-    return React.cloneElement(children, {
-      ...triggerProps,
-      ref: internalRef,
-    } as Partial<unknown>);
+    const child = children as React.ReactElement<Record<string, unknown>>;
+    const childProps = (child.props ?? {}) as Record<string, unknown>;
+    const merged = mergeProps(
+      {
+        ...triggerProps,
+        ref: internalRef,
+      } as Partial<unknown>,
+      childProps,
+    );
+    return React.cloneElement(child, merged as Partial<Record<string, unknown>>);
   }
 
   return (
@@ -464,7 +471,10 @@ export function TooltipContent({
   let content: React.ReactNode;
 
   if (asChild && React.isValidElement(children)) {
-    content = React.cloneElement(children, contentProps as Partial<unknown>);
+    const child = children as React.ReactElement<Record<string, unknown>>;
+    const childProps = (child.props ?? {}) as Record<string, unknown>;
+    const merged = mergeProps(contentProps as Partial<unknown>, childProps);
+    content = React.cloneElement(child, merged as Partial<Record<string, unknown>>);
   } else {
     content = <div {...contentProps}>{children}</div>;
   }

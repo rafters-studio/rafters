@@ -38,6 +38,7 @@ import { onEscapeKeyDown } from '../../primitives/escape-keydown';
 import { onPointerDownOutside } from '../../primitives/outside-click';
 import { getPortalContainer } from '../../primitives/portal';
 import { createRovingFocus } from '../../primitives/roving-focus';
+import { mergeProps } from '../../primitives/slot';
 import { createTypeahead } from '../../primitives/typeahead';
 import type { Align, Side } from '../../primitives/types';
 
@@ -189,11 +190,17 @@ export const DropdownMenuTrigger = React.forwardRef<HTMLButtonElement, DropdownM
     };
 
     if (asChild && React.isValidElement(props.children)) {
-      return React.cloneElement(props.children, {
-        ref: composedRef,
-        ...ariaProps,
-        onClick: handleClick,
-      } as Partial<unknown>);
+      const child = props.children as React.ReactElement<Record<string, unknown>>;
+      const childProps = (child.props ?? {}) as Record<string, unknown>;
+      const merged = mergeProps(
+        {
+          ref: composedRef,
+          ...ariaProps,
+          onClick: handleClick,
+        } as Partial<unknown>,
+        childProps,
+      );
+      return React.cloneElement(child, merged as Partial<Record<string, unknown>>);
     }
 
     return (
@@ -458,7 +465,14 @@ export const DropdownMenuContent = React.forwardRef<HTMLDivElement, DropdownMenu
     if (asChild && React.isValidElement(props.children)) {
       content = (
         <DropdownMenuContentContext.Provider value={contentContextValue}>
-          {React.cloneElement(props.children, contentProps as Partial<unknown>)}
+          {(() => {
+            const ch = props.children as React.ReactElement<Record<string, unknown>>;
+            const cp = (ch.props ?? {}) as Record<string, unknown>;
+            return React.cloneElement(
+              ch,
+              mergeProps(contentProps, cp) as Partial<Record<string, unknown>>,
+            );
+          })()}
         </DropdownMenuContentContext.Provider>
       );
     } else {
