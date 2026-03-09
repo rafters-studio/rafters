@@ -58,6 +58,7 @@ import { onEscapeKeyDown } from '../../primitives/escape-keydown';
 import { createFocusTrap, preventBodyScroll } from '../../primitives/focus-trap';
 import { onPointerDownOutside } from '../../primitives/outside-click';
 import { getPortalContainer } from '../../primitives/portal';
+import { mergeProps } from '../../primitives/slot';
 
 // Context for sharing sheet state
 interface SheetContextValue {
@@ -158,10 +159,16 @@ export function SheetTrigger({ asChild, onClick, ...props }: SheetTriggerProps) 
   };
 
   if (asChild && React.isValidElement(props.children)) {
-    return React.cloneElement(props.children, {
-      ...ariaProps,
-      onClick: handleClick,
-    } as Partial<unknown>);
+    const child = props.children as React.ReactElement<Record<string, unknown>>;
+    const childProps = (child.props ?? {}) as Record<string, unknown>;
+    const merged = mergeProps(
+      {
+        ...ariaProps,
+        onClick: handleClick,
+      } as Partial<unknown>,
+      childProps,
+    );
+    return React.cloneElement(child, merged as Partial<Record<string, unknown>>);
   }
 
   return <button type="button" onClick={handleClick} {...ariaProps} {...props} />;
@@ -230,7 +237,10 @@ export function SheetOverlay({ asChild, forceMount, className, ...props }: Sheet
   };
 
   if (asChild && React.isValidElement(props.children)) {
-    return React.cloneElement(props.children, overlayProps as Partial<unknown>);
+    const child = props.children as React.ReactElement<Record<string, unknown>>;
+    const childProps = (child.props ?? {}) as Record<string, unknown>;
+    const merged = mergeProps(overlayProps as Partial<unknown>, childProps);
+    return React.cloneElement(child, merged as Partial<Record<string, unknown>>);
   }
 
   return <div {...overlayProps} />;
@@ -385,7 +395,10 @@ export function SheetContent({
   // The core content to render
   const renderContent = () => {
     if (asChild && React.isValidElement(children)) {
-      return React.cloneElement(children, contentProps as Partial<unknown>);
+      const child = children as React.ReactElement<Record<string, unknown>>;
+      const childProps = (child.props ?? {}) as Record<string, unknown>;
+      const merged = mergeProps(contentProps as Partial<unknown>, childProps);
+      return React.cloneElement(child, merged as Partial<Record<string, unknown>>);
     }
 
     return (
@@ -461,7 +474,10 @@ export function SheetTitle({ asChild, className, ...props }: SheetTitleProps) {
   };
 
   if (asChild && React.isValidElement(props.children)) {
-    return React.cloneElement(props.children, titleProps as Partial<unknown>);
+    const child = props.children as React.ReactElement<Record<string, unknown>>;
+    const childProps = (child.props ?? {}) as Record<string, unknown>;
+    const merged = mergeProps(titleProps as Partial<unknown>, childProps);
+    return React.cloneElement(child, merged as Partial<Record<string, unknown>>);
   }
 
   return <h2 {...titleProps} />;
@@ -483,7 +499,10 @@ export function SheetDescription({ asChild, className, ...props }: SheetDescript
   };
 
   if (asChild && React.isValidElement(props.children)) {
-    return React.cloneElement(props.children, descriptionProps as Partial<unknown>);
+    const child = props.children as React.ReactElement<Record<string, unknown>>;
+    const childProps = (child.props ?? {}) as Record<string, unknown>;
+    const merged = mergeProps(descriptionProps as Partial<unknown>, childProps);
+    return React.cloneElement(child, merged as Partial<Record<string, unknown>>);
   }
 
   return <p {...descriptionProps} />;
@@ -504,9 +523,15 @@ export function SheetClose({ asChild, onClick, ...props }: SheetCloseProps) {
   };
 
   if (asChild && React.isValidElement(props.children)) {
-    return React.cloneElement(props.children, {
-      onClick: handleClick,
-    } as Partial<unknown>);
+    const child = props.children as React.ReactElement<Record<string, unknown>>;
+    const childProps = (child.props ?? {}) as Record<string, unknown>;
+    const merged = mergeProps(
+      {
+        onClick: handleClick,
+      } as Partial<unknown>,
+      childProps,
+    );
+    return React.cloneElement(child, merged as Partial<Record<string, unknown>>);
   }
 
   return <button type="button" onClick={handleClick} {...props} />;

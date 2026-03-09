@@ -23,6 +23,7 @@
  */
 import * as React from 'react';
 import classy from '../../primitives/classy';
+import { mergeProps } from '../../primitives/slot';
 
 export interface ToggleProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   /** Visual variant per docs/COMPONENT_STYLING_REFERENCE.md */
@@ -133,7 +134,10 @@ export function Toggle({
   };
 
   if (asChild && React.isValidElement(props.children)) {
-    return React.cloneElement(props.children, buttonProps as Partial<unknown>);
+    const child = props.children as React.ReactElement<Record<string, unknown>>;
+    const childProps = (child.props ?? {}) as Record<string, unknown>;
+    const merged = mergeProps(buttonProps as Partial<unknown>, childProps);
+    return React.cloneElement(child, merged as Partial<Record<string, unknown>>);
   }
 
   return (

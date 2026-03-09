@@ -41,6 +41,7 @@ import classy from '../../primitives/classy';
 import { type CollisionOptions, computePosition } from '../../primitives/collision-detector';
 import { onEscapeKeyDown } from '../../primitives/escape-keydown';
 import { getPortalContainer } from '../../primitives/portal';
+import { mergeProps } from '../../primitives/slot';
 import type { Align, Side } from '../../primitives/types';
 
 // ==================== Global state for skip delay ====================
@@ -326,10 +327,16 @@ export function HoverCardTrigger({
   };
 
   if (asChild && React.isValidElement(children)) {
-    return React.cloneElement(children, {
-      ...triggerProps,
-      ref: internalRef,
-    } as Partial<unknown>);
+    const child = children as React.ReactElement<Record<string, unknown>>;
+    const childProps = (child.props ?? {}) as Record<string, unknown>;
+    const merged = mergeProps(
+      {
+        ...triggerProps,
+        ref: internalRef,
+      } as Partial<unknown>,
+      childProps,
+    );
+    return React.cloneElement(child, merged as Partial<Record<string, unknown>>);
   }
 
   return <a {...triggerProps}>{children}</a>;
@@ -582,7 +589,10 @@ export function HoverCardContent({
   let content: React.ReactElement;
 
   if (asChild && React.isValidElement(children)) {
-    content = React.cloneElement(children, contentProps as Partial<unknown>);
+    const child = children as React.ReactElement<Record<string, unknown>>;
+    const childProps = (child.props ?? {}) as Record<string, unknown>;
+    const merged = mergeProps(contentProps as Partial<unknown>, childProps);
+    content = React.cloneElement(child, merged as Partial<Record<string, unknown>>);
   } else {
     content = <div {...contentProps}>{children}</div>;
   }

@@ -228,7 +228,10 @@ export function DialogOverlay({ asChild, forceMount, className, ...props }: Dial
   };
 
   if (asChild && React.isValidElement(props.children)) {
-    return React.cloneElement(props.children, overlayProps as Partial<unknown>);
+    const child = props.children as React.ReactElement<Record<string, unknown>>;
+    const childProps = (child.props ?? {}) as Record<string, unknown>;
+    const merged = mergeProps(overlayProps as Partial<unknown>, childProps);
+    return React.cloneElement(child, merged as Partial<Record<string, unknown>>);
   }
 
   return <div {...overlayProps} />;
@@ -382,7 +385,10 @@ export function DialogContent({
   const renderContent = () => {
     // If asChild, clone the child with inner props
     if (asChild && React.isValidElement(children)) {
-      const child = React.cloneElement(children, innerProps as Partial<unknown>);
+      const innerChild = children as React.ReactElement<Record<string, unknown>>;
+      const innerChildProps = (innerChild.props ?? {}) as Record<string, unknown>;
+      const innerMerged = mergeProps(innerProps as Partial<unknown>, innerChildProps);
+      const child = React.cloneElement(innerChild, innerMerged as Partial<Record<string, unknown>>);
       return (
         <div className={containerClass}>
           {child}
@@ -466,7 +472,10 @@ export function DialogTitle({ asChild, className, ...props }: DialogTitleProps) 
   };
 
   if (asChild && React.isValidElement(props.children)) {
-    return React.cloneElement(props.children, titleProps as Partial<unknown>);
+    const child = props.children as React.ReactElement<Record<string, unknown>>;
+    const childProps = (child.props ?? {}) as Record<string, unknown>;
+    const merged = mergeProps(titleProps as Partial<unknown>, childProps);
+    return React.cloneElement(child, merged as Partial<Record<string, unknown>>);
   }
 
   return <h2 {...titleProps} />;
@@ -488,7 +497,10 @@ export function DialogDescription({ asChild, className, ...props }: DialogDescri
   };
 
   if (asChild && React.isValidElement(props.children)) {
-    return React.cloneElement(props.children, descriptionProps as Partial<unknown>);
+    const child = props.children as React.ReactElement<Record<string, unknown>>;
+    const childProps = (child.props ?? {}) as Record<string, unknown>;
+    const merged = mergeProps(descriptionProps as Partial<unknown>, childProps);
+    return React.cloneElement(child, merged as Partial<Record<string, unknown>>);
   }
 
   return <p {...descriptionProps} />;

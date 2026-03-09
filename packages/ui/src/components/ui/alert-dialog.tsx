@@ -56,6 +56,7 @@ import classy from '../../primitives/classy';
 import { onEscapeKeyDown } from '../../primitives/escape-keydown';
 import { createFocusTrap, preventBodyScroll } from '../../primitives/focus-trap';
 import { getPortalContainer } from '../../primitives/portal';
+import { mergeProps } from '../../primitives/slot';
 
 // Context for sharing alert dialog state
 interface AlertDialogContextValue {
@@ -162,10 +163,16 @@ export function AlertDialogTrigger({ asChild, onClick, ...props }: AlertDialogTr
   };
 
   if (asChild && React.isValidElement(props.children)) {
-    return React.cloneElement(props.children, {
-      ...ariaProps,
-      onClick: handleClick,
-    } as Partial<unknown>);
+    const child = props.children as React.ReactElement<Record<string, unknown>>;
+    const childProps = (child.props ?? {}) as Record<string, unknown>;
+    const merged = mergeProps(
+      {
+        ...ariaProps,
+        onClick: handleClick,
+      } as Partial<unknown>,
+      childProps,
+    );
+    return React.cloneElement(child, merged as Partial<Record<string, unknown>>);
   }
 
   return <button type="button" onClick={handleClick} {...ariaProps} {...props} />;
@@ -237,7 +244,10 @@ export function AlertDialogOverlay({
   };
 
   if (asChild && React.isValidElement(props.children)) {
-    return React.cloneElement(props.children, overlayProps as Partial<unknown>);
+    const child = props.children as React.ReactElement<Record<string, unknown>>;
+    const childProps = (child.props ?? {}) as Record<string, unknown>;
+    const merged = mergeProps(overlayProps as Partial<unknown>, childProps);
+    return React.cloneElement(child, merged as Partial<Record<string, unknown>>);
   }
 
   return <div {...overlayProps} />;
@@ -367,7 +377,10 @@ export function AlertDialogContent({
   const renderContent = () => {
     // If asChild, clone the child with inner props
     if (asChild && React.isValidElement(children)) {
-      const child = React.cloneElement(children, innerProps as Partial<unknown>);
+      const innerChild = children as React.ReactElement<Record<string, unknown>>;
+      const innerChildProps = (innerChild.props ?? {}) as Record<string, unknown>;
+      const innerMerged = mergeProps(innerProps as Partial<unknown>, innerChildProps);
+      const child = React.cloneElement(innerChild, innerMerged as Partial<Record<string, unknown>>);
       return <div className={containerClass}>{child}</div>;
     }
 
@@ -443,7 +456,10 @@ export function AlertDialogTitle({ asChild, className, ...props }: AlertDialogTi
   };
 
   if (asChild && React.isValidElement(props.children)) {
-    return React.cloneElement(props.children, titleProps as Partial<unknown>);
+    const child = props.children as React.ReactElement<Record<string, unknown>>;
+    const childProps = (child.props ?? {}) as Record<string, unknown>;
+    const merged = mergeProps(titleProps as Partial<unknown>, childProps);
+    return React.cloneElement(child, merged as Partial<Record<string, unknown>>);
   }
 
   return <h2 {...titleProps} />;
@@ -469,7 +485,10 @@ export function AlertDialogDescription({
   };
 
   if (asChild && React.isValidElement(props.children)) {
-    return React.cloneElement(props.children, descriptionProps as Partial<unknown>);
+    const child = props.children as React.ReactElement<Record<string, unknown>>;
+    const childProps = (child.props ?? {}) as Record<string, unknown>;
+    const merged = mergeProps(descriptionProps as Partial<unknown>, childProps);
+    return React.cloneElement(child, merged as Partial<Record<string, unknown>>);
   }
 
   return <p {...descriptionProps} />;
@@ -500,10 +519,16 @@ export function AlertDialogAction({
   );
 
   if (asChild && React.isValidElement(props.children)) {
-    return React.cloneElement(props.children, {
-      onClick: handleClick,
-      className: buttonClass,
-    } as Partial<unknown>);
+    const child = props.children as React.ReactElement<Record<string, unknown>>;
+    const childProps = (child.props ?? {}) as Record<string, unknown>;
+    const merged = mergeProps(
+      {
+        onClick: handleClick,
+        className: buttonClass,
+      } as Partial<unknown>,
+      childProps,
+    );
+    return React.cloneElement(child, merged as Partial<Record<string, unknown>>);
   }
 
   return <button type="button" onClick={handleClick} className={buttonClass} {...props} />;
@@ -534,11 +559,17 @@ export function AlertDialogCancel({
   );
 
   if (asChild && React.isValidElement(props.children)) {
-    return React.cloneElement(props.children, {
-      ref: cancelRef,
-      onClick: handleClick,
-      className: buttonClass,
-    } as Partial<unknown>);
+    const child = props.children as React.ReactElement<Record<string, unknown>>;
+    const childProps = (child.props ?? {}) as Record<string, unknown>;
+    const merged = mergeProps(
+      {
+        ref: cancelRef,
+        onClick: handleClick,
+        className: buttonClass,
+      } as Partial<unknown>,
+      childProps,
+    );
+    return React.cloneElement(child, merged as Partial<Record<string, unknown>>);
   }
 
   return (

@@ -27,6 +27,7 @@
 
 import * as React from 'react';
 import classy from '../../primitives/classy';
+import { mergeProps } from '../../primitives/slot';
 
 // Context for sharing collapsible state
 interface CollapsibleContextValue {
@@ -163,7 +164,10 @@ export function CollapsibleTrigger({
   };
 
   if (asChild && React.isValidElement(children)) {
-    return React.cloneElement(children, triggerProps as Partial<unknown>);
+    const child = children as React.ReactElement<Record<string, unknown>>;
+    const childProps = (child.props ?? {}) as Record<string, unknown>;
+    const merged = mergeProps(triggerProps as Partial<unknown>, childProps);
+    return React.cloneElement(child, merged as Partial<Record<string, unknown>>);
   }
 
   return (
@@ -216,7 +220,10 @@ export function CollapsibleContent({
   };
 
   if (asChild && React.isValidElement(children)) {
-    return React.cloneElement(children, contentProps as Partial<unknown>);
+    const child = children as React.ReactElement<Record<string, unknown>>;
+    const childProps = (child.props ?? {}) as Record<string, unknown>;
+    const merged = mergeProps(contentProps as Partial<unknown>, childProps);
+    return React.cloneElement(child, merged as Partial<Record<string, unknown>>);
   }
 
   return <div {...contentProps}>{children}</div>;
