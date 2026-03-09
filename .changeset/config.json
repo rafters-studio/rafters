@@ -8,6 +8,7 @@
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
   "ignore": [
+    "rafters",
     "@rafters/chrome",
     "@rafters/color-utils",
     "@rafters/composites",
