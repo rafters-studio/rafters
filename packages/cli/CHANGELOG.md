@@ -1,5 +1,12 @@
 # rafters
 
+## 0.0.12
+
+### Patch Changes
+
+- 929242e: Fix @dependencies JSDoc tag parser to stop at parenthetical descriptions instead of treating them as package names
+- 26c68ff: Fix transitive dependency resolution: sibling component imports now auto-installed, types.ts included as registry primitive
+
 ## 0.0.11
 
 ### Patch Changes
