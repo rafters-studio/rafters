@@ -804,6 +804,31 @@ export function SidebarSeparator({ className, ...props }: SidebarSeparatorProps)
   );
 }
 
+// ==================== Display Names ====================
+
+SidebarProvider.displayName = 'SidebarProvider';
+Sidebar.displayName = 'Sidebar';
+SidebarTrigger.displayName = 'SidebarTrigger';
+SidebarRail.displayName = 'SidebarRail';
+SidebarInset.displayName = 'SidebarInset';
+SidebarHeader.displayName = 'SidebarHeader';
+SidebarFooter.displayName = 'SidebarFooter';
+SidebarContent.displayName = 'SidebarContent';
+SidebarGroup.displayName = 'SidebarGroup';
+SidebarGroupLabel.displayName = 'SidebarGroupLabel';
+SidebarGroupAction.displayName = 'SidebarGroupAction';
+SidebarGroupContent.displayName = 'SidebarGroupContent';
+SidebarMenu.displayName = 'SidebarMenu';
+SidebarMenuItem.displayName = 'SidebarMenuItem';
+SidebarMenuButton.displayName = 'SidebarMenuButton';
+SidebarMenuAction.displayName = 'SidebarMenuAction';
+SidebarMenuBadge.displayName = 'SidebarMenuBadge';
+SidebarMenuSkeleton.displayName = 'SidebarMenuSkeleton';
+SidebarMenuSub.displayName = 'SidebarMenuSub';
+SidebarMenuSubItem.displayName = 'SidebarMenuSubItem';
+SidebarMenuSubButton.displayName = 'SidebarMenuSubButton';
+SidebarSeparator.displayName = 'SidebarSeparator';
+
 // ==================== Namespaced Export ====================
 
 Sidebar.Provider = SidebarProvider;

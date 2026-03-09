@@ -512,6 +512,19 @@ export function SheetClose({ asChild, onClick, ...props }: SheetCloseProps) {
   return <button type="button" onClick={handleClick} {...props} />;
 }
 
+// ==================== Display Names ====================
+
+Sheet.displayName = 'Sheet';
+SheetTrigger.displayName = 'SheetTrigger';
+SheetPortal.displayName = 'SheetPortal';
+SheetOverlay.displayName = 'SheetOverlay';
+SheetContent.displayName = 'SheetContent';
+SheetHeader.displayName = 'SheetHeader';
+SheetFooter.displayName = 'SheetFooter';
+SheetTitle.displayName = 'SheetTitle';
+SheetDescription.displayName = 'SheetDescription';
+SheetClose.displayName = 'SheetClose';
+
 // ==================== Namespaced Export (shadcn style) ====================
 
 Sheet.Trigger = SheetTrigger;

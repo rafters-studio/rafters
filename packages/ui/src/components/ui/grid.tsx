@@ -290,6 +290,11 @@ function GridItem({ priority, colSpan, rowSpan, className, children, ...props }:
   );
 }
 
+// ==================== Display Names ====================
+
+GridRoot.displayName = 'Grid';
+GridItem.displayName = 'GridItem';
+
 // ==================== Compound Export ====================
 
 export const Grid = Object.assign(GridRoot, {

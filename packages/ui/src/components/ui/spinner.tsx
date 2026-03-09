@@ -18,12 +18,12 @@
  * ```tsx
  * // Button loading state
  * <Button disabled>
- *   <Spinner size="sm" className="mr-2" />
+ *   <Spinner size="sm" />
  *   Saving...
  * </Button>
  * ```
  */
-import type * as React from 'react';
+import * as React from 'react';
 import classy from '../../primitives/classy';
 
 export interface SpinnerProps extends React.HTMLAttributes<HTMLOutputElement> {
@@ -61,24 +61,23 @@ const sizeClasses: Record<string, string> = {
   lg: 'h-8 w-8 border-3',
 };
 
-export function Spinner({
-  className,
-  size = 'default',
-  variant = 'default',
-  ...props
-}: SpinnerProps) {
-  const baseClasses = 'inline-block rounded-full animate-spin motion-reduce:animate-none';
+export const Spinner = React.forwardRef<HTMLOutputElement, SpinnerProps>(
+  ({ className, size = 'default', variant = 'default', ...props }, ref) => {
+    const baseClasses = 'inline-block rounded-full animate-spin motion-reduce:animate-none';
 
-  const classes = classy(
-    baseClasses,
-    sizeClasses[size] ?? sizeClasses.default,
-    variantClasses[variant] ?? variantClasses.default,
-    className,
-  );
+    const classes = classy(
+      baseClasses,
+      sizeClasses[size] ?? sizeClasses.default,
+      variantClasses[variant] ?? variantClasses.default,
+      className,
+    );
 
-  return (
-    <output aria-label="Loading" className={classes} {...props}>
-      <span className="sr-only">Loading</span>
-    </output>
-  );
-}
+    return (
+      <output ref={ref} aria-label="Loading" className={classes} {...props}>
+        <span className="sr-only">Loading</span>
+      </output>
+    );
+  },
+);
+
+Spinner.displayName = 'Spinner';

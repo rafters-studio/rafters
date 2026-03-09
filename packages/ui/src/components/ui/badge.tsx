@@ -23,7 +23,7 @@
  * <Badge variant="warning">Pending Review</Badge>
  * ```
  */
-import type * as React from 'react';
+import * as React from 'react';
 import classy from '../../primitives/classy';
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
@@ -67,16 +67,20 @@ const sizeClasses: Record<string, string> = {
   lg: 'px-3 py-1 text-sm',
 };
 
-export function Badge({ className, variant = 'default', size = 'default', ...props }: BadgeProps) {
-  const baseClasses =
-    'inline-flex items-center justify-center rounded-full font-semibold transition-colors';
+export const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
+  ({ className, variant = 'default', size = 'default', ...props }, ref) => {
+    const baseClasses =
+      'inline-flex items-center justify-center rounded-full font-semibold transition-colors';
 
-  const classes = classy(
-    baseClasses,
-    variantClasses[variant] ?? variantClasses.default,
-    sizeClasses[size] ?? sizeClasses.default,
-    className,
-  );
+    const classes = classy(
+      baseClasses,
+      variantClasses[variant] ?? variantClasses.default,
+      sizeClasses[size] ?? sizeClasses.default,
+      className,
+    );
 
-  return <span className={classes} {...props} />;
-}
+    return <span ref={ref} className={classes} {...props} />;
+  },
+);
+
+Badge.displayName = 'Badge';

@@ -552,6 +552,20 @@ export function AlertDialogCancel({
   );
 }
 
+// ==================== Display Names ====================
+
+AlertDialog.displayName = 'AlertDialog';
+AlertDialogTrigger.displayName = 'AlertDialogTrigger';
+AlertDialogPortal.displayName = 'AlertDialogPortal';
+AlertDialogOverlay.displayName = 'AlertDialogOverlay';
+AlertDialogContent.displayName = 'AlertDialogContent';
+AlertDialogHeader.displayName = 'AlertDialogHeader';
+AlertDialogFooter.displayName = 'AlertDialogFooter';
+AlertDialogTitle.displayName = 'AlertDialogTitle';
+AlertDialogDescription.displayName = 'AlertDialogDescription';
+AlertDialogAction.displayName = 'AlertDialogAction';
+AlertDialogCancel.displayName = 'AlertDialogCancel';
+
 // ==================== Namespaced Export (shadcn style) ====================
 
 AlertDialog.Trigger = AlertDialogTrigger;

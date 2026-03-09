@@ -547,6 +547,18 @@ export function CommandShortcut({ className, ...props }: CommandShortcutProps): 
   );
 }
 
+// ==================== Display Names ====================
+
+Command.displayName = 'Command';
+CommandDialog.displayName = 'CommandDialog';
+CommandInput.displayName = 'CommandInput';
+CommandList.displayName = 'CommandList';
+CommandEmpty.displayName = 'CommandEmpty';
+CommandGroup.displayName = 'CommandGroup';
+CommandItem.displayName = 'CommandItem';
+CommandSeparator.displayName = 'CommandSeparator';
+CommandShortcut.displayName = 'CommandShortcut';
+
 // ==================== Namespaced Export ====================
 
 Command.Dialog = CommandDialog;

@@ -281,6 +281,15 @@ export function PopoverClose({ asChild, onClick, ...props }: PopoverCloseProps) 
   return <button type="button" onClick={handleClick} {...props} />;
 }
 
+// ==================== Display Names ====================
+
+Popover.displayName = 'Popover';
+PopoverTrigger.displayName = 'PopoverTrigger';
+PopoverAnchor.displayName = 'PopoverAnchor';
+PopoverPortal.displayName = 'PopoverPortal';
+PopoverContent.displayName = 'PopoverContent';
+PopoverClose.displayName = 'PopoverClose';
+
 // ==================== Namespaced Export (shadcn style) ====================
 
 Popover.Trigger = PopoverTrigger;

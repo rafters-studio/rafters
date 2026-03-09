@@ -1252,6 +1252,11 @@ MenubarSubContent.displayName = 'MenubarSubContent';
 
 // ==================== Namespaced Export (shadcn style) ====================
 
+MenubarMenu.displayName = 'MenubarMenu';
+MenubarPortal.displayName = 'MenubarPortal';
+MenubarShortcut.displayName = 'MenubarShortcut';
+MenubarSub.displayName = 'MenubarSub';
+
 export const Menubar = Object.assign(MenubarRoot, {
   Menu: MenubarMenu,
   Trigger: MenubarTrigger,

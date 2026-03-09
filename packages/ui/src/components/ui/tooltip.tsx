@@ -477,6 +477,14 @@ export function TooltipContent({
   return content;
 }
 
+// ==================== Display Names ====================
+
+TooltipProvider.displayName = 'TooltipProvider';
+Tooltip.displayName = 'Tooltip';
+TooltipTrigger.displayName = 'TooltipTrigger';
+TooltipPortal.displayName = 'TooltipPortal';
+TooltipContent.displayName = 'TooltipContent';
+
 // ==================== Namespaced Export (shadcn style) ====================
 
 Tooltip.Provider = TooltipProvider;

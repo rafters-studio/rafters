@@ -305,6 +305,13 @@ export function InputOTPSeparator({
   );
 }
 
+// ==================== Display Names ====================
+
+InputOTP.displayName = 'InputOTP';
+InputOTPGroup.displayName = 'InputOTPGroup';
+InputOTPSlot.displayName = 'InputOTPSlot';
+InputOTPSeparator.displayName = 'InputOTPSeparator';
+
 // ==================== Namespaced Export ====================
 
 InputOTP.Group = InputOTPGroup;

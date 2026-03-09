@@ -1137,5 +1137,10 @@ ContextMenu.Sub = ContextMenuSub;
 ContextMenu.SubTrigger = ContextMenuSubTrigger;
 ContextMenu.SubContent = ContextMenuSubContent;
 
+ContextMenu.displayName = 'ContextMenu';
+ContextMenuPortal.displayName = 'ContextMenuPortal';
+ContextMenuShortcut.displayName = 'ContextMenuShortcut';
+ContextMenuSub.displayName = 'ContextMenuSub';
+
 // Re-export root as ContextMenuRoot alias for shadcn compatibility
 export { ContextMenu as ContextMenuRoot };

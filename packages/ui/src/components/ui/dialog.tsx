@@ -521,6 +521,19 @@ export function DialogClose({ asChild, onClick, children, ...props }: DialogClos
   );
 }
 
+// ==================== Display Names ====================
+
+Dialog.displayName = 'Dialog';
+DialogTrigger.displayName = 'DialogTrigger';
+DialogPortal.displayName = 'DialogPortal';
+DialogOverlay.displayName = 'DialogOverlay';
+DialogContent.displayName = 'DialogContent';
+DialogHeader.displayName = 'DialogHeader';
+DialogFooter.displayName = 'DialogFooter';
+DialogTitle.displayName = 'DialogTitle';
+DialogDescription.displayName = 'DialogDescription';
+DialogClose.displayName = 'DialogClose';
+
 // ==================== Namespaced Export (shadcn style) ====================
 
 Dialog.Trigger = DialogTrigger;

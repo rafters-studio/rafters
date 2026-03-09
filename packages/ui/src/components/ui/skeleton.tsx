@@ -23,7 +23,7 @@
  * <Skeleton className="h-12 w-12 rounded-full" />
  * ```
  */
-import type * as React from 'react';
+import * as React from 'react';
 import classy from '../../primitives/classy';
 
 export interface SkeletonProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -53,15 +53,20 @@ const variantClasses: Record<string, string> = {
   accent: 'bg-accent-subtle',
 };
 
-export function Skeleton({ className, variant = 'default', ...props }: SkeletonProps) {
-  return (
-    <div
-      className={classy(
-        'rounded-md animate-pulse motion-reduce:animate-none',
-        variantClasses[variant] ?? variantClasses.default,
-        className,
-      )}
-      {...props}
-    />
-  );
-}
+export const Skeleton = React.forwardRef<HTMLDivElement, SkeletonProps>(
+  ({ className, variant = 'default', ...props }, ref) => {
+    return (
+      <div
+        ref={ref}
+        className={classy(
+          'rounded-md animate-pulse motion-reduce:animate-none',
+          variantClasses[variant] ?? variantClasses.default,
+          className,
+        )}
+        {...props}
+      />
+    );
+  },
+);
+
+Skeleton.displayName = 'Skeleton';

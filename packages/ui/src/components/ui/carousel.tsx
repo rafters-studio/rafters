@@ -412,6 +412,15 @@ export function useCarousel() {
   };
 }
 
+// ==================== Display Names ====================
+
+Carousel.displayName = 'Carousel';
+CarouselContent.displayName = 'CarouselContent';
+CarouselItem.displayName = 'CarouselItem';
+CarouselPrevious.displayName = 'CarouselPrevious';
+CarouselNext.displayName = 'CarouselNext';
+CarouselIndicators.displayName = 'CarouselIndicators';
+
 // ==================== Namespaced Export ====================
 
 Carousel.Content = CarouselContent;

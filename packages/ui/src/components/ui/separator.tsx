@@ -23,7 +23,7 @@
  * <Separator orientation="vertical" className="h-4" />
  * ```
  */
-import type * as React from 'react';
+import * as React from 'react';
 import classy from '../../primitives/classy';
 
 export interface SeparatorProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -33,24 +33,24 @@ export interface SeparatorProps extends React.HTMLAttributes<HTMLDivElement> {
   decorative?: boolean;
 }
 
-export function Separator({
-  className,
-  orientation = 'horizontal',
-  decorative = true,
-  ...props
-}: SeparatorProps) {
-  const orientationClasses = {
-    horizontal: 'h-px w-full',
-    vertical: 'h-full w-px',
-  };
+export const Separator = React.forwardRef<HTMLDivElement, SeparatorProps>(
+  ({ className, orientation = 'horizontal', decorative = true, ...props }, ref) => {
+    const orientationClasses = {
+      horizontal: 'h-px w-full',
+      vertical: 'h-full w-px',
+    };
 
-  return (
-    // biome-ignore lint/a11y/useAriaPropsSupportedByRole: aria-orientation is valid when role="separator"
-    <div
-      role={decorative ? 'none' : 'separator'}
-      aria-orientation={!decorative ? orientation : undefined}
-      className={classy('shrink-0 bg-border', orientationClasses[orientation], className)}
-      {...props}
-    />
-  );
-}
+    return (
+      // biome-ignore lint/a11y/useAriaPropsSupportedByRole: aria-orientation is valid when role="separator"
+      <div
+        ref={ref}
+        role={decorative ? 'none' : 'separator'}
+        aria-orientation={!decorative ? orientation : undefined}
+        className={classy('shrink-0 bg-border', orientationClasses[orientation], className)}
+        {...props}
+      />
+    );
+  },
+);
+
+Separator.displayName = 'Separator';

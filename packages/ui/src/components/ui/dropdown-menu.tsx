@@ -1045,5 +1045,10 @@ DropdownMenu.Sub = DropdownMenuSub;
 DropdownMenu.SubTrigger = DropdownMenuSubTrigger;
 DropdownMenu.SubContent = DropdownMenuSubContent;
 
+DropdownMenu.displayName = 'DropdownMenu';
+DropdownMenuPortal.displayName = 'DropdownMenuPortal';
+DropdownMenuShortcut.displayName = 'DropdownMenuShortcut';
+DropdownMenuSub.displayName = 'DropdownMenuSub';
+
 // Re-export root as DropdownMenuRoot alias for shadcn compatibility
 export { DropdownMenu as DropdownMenuRoot };

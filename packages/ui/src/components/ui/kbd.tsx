@@ -10,7 +10,7 @@
  * @usage-patterns
  * DO: Use in tooltips to show keyboard shortcuts
  * DO: Use in menus alongside action items
- * DO: Use platform-appropriate modifier keys (⌘ for Mac, Ctrl for Windows)
+ * DO: Use platform-appropriate modifier keys (Cmd for Mac, Ctrl for Windows)
  * DO: Combine multiple Kbd elements for key combinations
  * NEVER: Use for non-keyboard content, use without context
  *
@@ -20,20 +20,18 @@
  * <Kbd>Enter</Kbd>
  *
  * // Key combination
- * <span className="flex gap-1">
- *   <Kbd>⌘</Kbd>
- *   <Kbd>S</Kbd>
- * </span>
+ * <Kbd>Cmd</Kbd> + <Kbd>S</Kbd>
  * ```
  */
-import type * as React from 'react';
+import * as React from 'react';
 import classy from '../../primitives/classy';
 
 export interface KbdProps extends React.HTMLAttributes<HTMLElement> {}
 
-export function Kbd({ className, ...props }: KbdProps) {
+export const Kbd = React.forwardRef<HTMLElement, KbdProps>(({ className, ...props }, ref) => {
   return (
     <kbd
+      ref={ref}
       className={classy(
         'inline-flex items-center justify-center rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-xs font-medium text-muted-foreground shadow-sm',
         className,
@@ -41,4 +39,6 @@ export function Kbd({ className, ...props }: KbdProps) {
       {...props}
     />
   );
-}
+});
+
+Kbd.displayName = 'Kbd';

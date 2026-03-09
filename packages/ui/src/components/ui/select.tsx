@@ -1021,5 +1021,21 @@ Select.Icon = SelectIcon;
 Select.ScrollUpButton = SelectScrollUpButton;
 Select.ScrollDownButton = SelectScrollDownButton;
 
+// ==================== Display Names ====================
+
+Select.displayName = 'Select';
+SelectTrigger.displayName = 'SelectTrigger';
+SelectValue.displayName = 'SelectValue';
+SelectPortal.displayName = 'SelectPortal';
+SelectContent.displayName = 'SelectContent';
+SelectViewport.displayName = 'SelectViewport';
+SelectGroup.displayName = 'SelectGroup';
+SelectLabel.displayName = 'SelectLabel';
+SelectItem.displayName = 'SelectItem';
+SelectSeparator.displayName = 'SelectSeparator';
+SelectIcon.displayName = 'SelectIcon';
+SelectScrollUpButton.displayName = 'SelectScrollUpButton';
+SelectScrollDownButton.displayName = 'SelectScrollDownButton';
+
 // Re-export root alias
 export { Select as SelectRoot };
