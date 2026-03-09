@@ -7,18 +7,6 @@
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": [
-    "rafters",
-    "@rafters/chrome",
-    "@rafters/color-utils",
-    "@rafters/composites",
-    "@rafters/design-tokens",
-    "@rafters/math-utils",
-    "@rafters/shared",
-    "@rafters/studio",
-    "@rafters/ui",
-    "rafters-api",
-    "rafters-website",
-    "demo"
-  ]
+  "privatePackages": false,
+  "ignore": []
 }
