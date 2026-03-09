@@ -31,8 +31,11 @@ export interface TypeScriptExportOptions {
 function tokenValueToTS(token: Token): string {
   const { value } = token;
 
-  // String values
+  // String values - JSON object/array strings are emitted as raw literals
   if (typeof value === 'string') {
+    if (value.startsWith('{') || value.startsWith('[')) {
+      return value;
+    }
     return escapeStringValue(value);
   }
 

@@ -258,6 +258,58 @@ describe('tokensToTailwind', () => {
     expect(themeMatch?.[1]).toContain('--animate-fade-in:');
   });
 
+  it('should exclude tokens with JSON object string values from CSS output', () => {
+    const tokens: Token[] = [
+      { name: 'normal-token', value: '16px', category: 'spacing', namespace: 'spacing' },
+      {
+        name: 'json-object-token',
+        value: '{"key": "value", "nested": {"a": 1}}',
+        category: 'other',
+        namespace: 'other',
+      },
+    ];
+
+    const css = tokensToTailwind(tokens);
+
+    expect(css).toContain('--spacing-normal-token: 16px;');
+    expect(css).not.toContain('json-object-token');
+    expect(css).not.toContain('"key"');
+  });
+
+  it('should exclude tokens with JSON array string values from CSS output', () => {
+    const tokens: Token[] = [
+      { name: 'normal-token', value: '1rem', category: 'spacing', namespace: 'spacing' },
+      {
+        name: 'json-array-token',
+        value: '[{"l": 0.5, "c": 0.1, "h": 240}]',
+        category: 'other',
+        namespace: 'other',
+      },
+    ];
+
+    const css = tokensToTailwind(tokens);
+
+    expect(css).toContain('--spacing-normal-token: 1rem;');
+    expect(css).not.toContain('json-array-token');
+  });
+
+  it('should still include normal string tokens in CSS output', () => {
+    const tokens: Token[] = [
+      { name: 'size-base', value: '16px', category: 'typography', namespace: 'typography' },
+      {
+        name: 'shadow-sm',
+        value: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+        category: 'shadow',
+        namespace: 'shadow',
+      },
+    ];
+
+    const css = tokensToTailwind(tokens);
+
+    expect(css).toContain('--size-base: 16px;');
+    expect(css).toContain('--shadow-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);');
+  });
+
   it('should place @keyframes outside @theme block', () => {
     const tokens: Token[] = [
       {

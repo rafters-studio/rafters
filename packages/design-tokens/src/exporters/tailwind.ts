@@ -97,13 +97,17 @@ function getSemanticMappingsFromTokens(
 }
 
 /**
- * Convert a token value to CSS string
+ * Convert a token value to CSS string.
+ * Returns null for values that cannot be represented as CSS (e.g. JSON objects/arrays).
  */
-function tokenValueToCSS(token: Token): string {
+function tokenValueToCSS(token: Token): string | null {
   const { value } = token;
 
-  // String values pass through
+  // String values pass through, but skip JSON object/array strings
   if (typeof value === 'string') {
+    if (value.startsWith('{') || value.startsWith('[')) {
+      return null;
+    }
     return value;
   }
 
@@ -279,6 +283,7 @@ function generateThemeBlock(groups: GroupedTokens): string {
   if (groups.color.length > 0) {
     for (const token of groups.color) {
       const value = tokenValueToCSS(token);
+      if (value === null) continue;
       lines.push(`  --color-${token.name}: ${value};`);
     }
     lines.push('');
@@ -288,6 +293,7 @@ function generateThemeBlock(groups: GroupedTokens): string {
   if (groups.spacing.length > 0) {
     for (const token of groups.spacing) {
       const value = tokenValueToCSS(token);
+      if (value === null) continue;
       lines.push(`  --spacing-${token.name}: ${value};`);
     }
     lines.push('');
@@ -297,6 +303,7 @@ function generateThemeBlock(groups: GroupedTokens): string {
   if (groups.typography.length > 0) {
     for (const token of groups.typography) {
       const value = tokenValueToCSS(token);
+      if (value === null) continue;
       lines.push(`  --${token.name}: ${value};`);
       if (token.lineHeight) {
         lines.push(`  --${token.name}--line-height: ${token.lineHeight};`);
@@ -309,6 +316,7 @@ function generateThemeBlock(groups: GroupedTokens): string {
   if (groups.radius.length > 0) {
     for (const token of groups.radius) {
       const value = tokenValueToCSS(token);
+      if (value === null) continue;
       lines.push(`  --radius-${token.name}: ${value};`);
     }
     lines.push('');
@@ -318,6 +326,7 @@ function generateThemeBlock(groups: GroupedTokens): string {
   if (groups.shadow.length > 0) {
     for (const token of groups.shadow) {
       const value = tokenValueToCSS(token);
+      if (value === null) continue;
       lines.push(`  --shadow-${token.name}: ${value};`);
     }
     lines.push('');
@@ -327,6 +336,7 @@ function generateThemeBlock(groups: GroupedTokens): string {
   if (groups.depth.length > 0) {
     for (const token of groups.depth) {
       const value = tokenValueToCSS(token);
+      if (value === null) continue;
       lines.push(`  --${token.name}: ${value};`);
     }
     lines.push('');
@@ -336,6 +346,7 @@ function generateThemeBlock(groups: GroupedTokens): string {
   if (groups.motion.length > 0) {
     for (const token of groups.motion) {
       const value = tokenValueToCSS(token);
+      if (value === null) continue;
       lines.push(`  --${token.name}: ${value};`);
     }
     lines.push('');
@@ -345,6 +356,7 @@ function generateThemeBlock(groups: GroupedTokens): string {
   if (groups.breakpoint.length > 0) {
     for (const token of groups.breakpoint) {
       const value = tokenValueToCSS(token);
+      if (value === null) continue;
       lines.push(`  --${token.name}: ${value};`);
     }
     lines.push('');
@@ -354,6 +366,7 @@ function generateThemeBlock(groups: GroupedTokens): string {
   if (groups.elevation.length > 0) {
     for (const token of groups.elevation) {
       const value = tokenValueToCSS(token);
+      if (value === null) continue;
       lines.push(`  --${token.name}: ${value};`);
     }
     lines.push('');
@@ -363,6 +376,7 @@ function generateThemeBlock(groups: GroupedTokens): string {
   if (groups.focus.length > 0) {
     for (const token of groups.focus) {
       const value = tokenValueToCSS(token);
+      if (value === null) continue;
       lines.push(`  --${token.name}: ${value};`);
     }
     lines.push('');
@@ -372,6 +386,7 @@ function generateThemeBlock(groups: GroupedTokens): string {
   if (groups.other.length > 0) {
     for (const token of groups.other) {
       const value = tokenValueToCSS(token);
+      if (value === null) continue;
       lines.push(`  --${token.name}: ${value};`);
     }
     lines.push('');
@@ -749,6 +764,7 @@ function generateVarsRootBlock(groups: GroupedTokens): string {
   if (groups.color.length > 0) {
     for (const token of groups.color) {
       const value = tokenValueToCSS(token);
+      if (value === null) continue;
       lines.push(`  --rafters-color-${token.name}: ${value};`);
     }
     lines.push('');
@@ -758,6 +774,7 @@ function generateVarsRootBlock(groups: GroupedTokens): string {
   if (groups.spacing.length > 0) {
     for (const token of groups.spacing) {
       const value = tokenValueToCSS(token);
+      if (value === null) continue;
       lines.push(`  --rafters-spacing-${token.name}: ${value};`);
     }
     lines.push('');
@@ -767,6 +784,7 @@ function generateVarsRootBlock(groups: GroupedTokens): string {
   if (groups.typography.length > 0) {
     for (const token of groups.typography) {
       const value = tokenValueToCSS(token);
+      if (value === null) continue;
       lines.push(`  --rafters-${token.name}: ${value};`);
       if (token.lineHeight) {
         lines.push(`  --rafters-${token.name}--line-height: ${token.lineHeight};`);
@@ -779,6 +797,7 @@ function generateVarsRootBlock(groups: GroupedTokens): string {
   if (groups.radius.length > 0) {
     for (const token of groups.radius) {
       const value = tokenValueToCSS(token);
+      if (value === null) continue;
       lines.push(`  --rafters-radius-${token.name}: ${value};`);
     }
     lines.push('');
@@ -788,6 +807,7 @@ function generateVarsRootBlock(groups: GroupedTokens): string {
   if (groups.shadow.length > 0) {
     for (const token of groups.shadow) {
       const value = tokenValueToCSS(token);
+      if (value === null) continue;
       lines.push(`  --rafters-shadow-${token.name}: ${value};`);
     }
     lines.push('');
@@ -797,6 +817,7 @@ function generateVarsRootBlock(groups: GroupedTokens): string {
   if (groups.depth.length > 0) {
     for (const token of groups.depth) {
       const value = tokenValueToCSS(token);
+      if (value === null) continue;
       lines.push(`  --rafters-${token.name}: ${value};`);
     }
     lines.push('');
@@ -806,6 +827,7 @@ function generateVarsRootBlock(groups: GroupedTokens): string {
   if (groups.motion.length > 0) {
     for (const token of groups.motion) {
       const value = tokenValueToCSS(token);
+      if (value === null) continue;
       lines.push(`  --rafters-${token.name}: ${value};`);
     }
     lines.push('');
@@ -815,6 +837,7 @@ function generateVarsRootBlock(groups: GroupedTokens): string {
   if (groups.breakpoint.length > 0) {
     for (const token of groups.breakpoint) {
       const value = tokenValueToCSS(token);
+      if (value === null) continue;
       lines.push(`  --rafters-${token.name}: ${value};`);
     }
     lines.push('');
@@ -824,6 +847,7 @@ function generateVarsRootBlock(groups: GroupedTokens): string {
   if (groups.elevation.length > 0) {
     for (const token of groups.elevation) {
       const value = tokenValueToCSS(token);
+      if (value === null) continue;
       lines.push(`  --rafters-${token.name}: ${value};`);
     }
     lines.push('');
@@ -833,6 +857,7 @@ function generateVarsRootBlock(groups: GroupedTokens): string {
   if (groups.focus.length > 0) {
     for (const token of groups.focus) {
       const value = tokenValueToCSS(token);
+      if (value === null) continue;
       lines.push(`  --rafters-${token.name}: ${value};`);
     }
     lines.push('');
@@ -842,6 +867,7 @@ function generateVarsRootBlock(groups: GroupedTokens): string {
   if (groups.other.length > 0) {
     for (const token of groups.other) {
       const value = tokenValueToCSS(token);
+      if (value === null) continue;
       lines.push(`  --rafters-${token.name}: ${value};`);
     }
     lines.push('');

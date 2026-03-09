@@ -160,6 +160,40 @@ describe('tokensToTypeScript', () => {
     expect(ts).toContain("'tertiary': 'red'");
   });
 
+  it('should export JSON object string values as raw object literals', () => {
+    const tokens: Token[] = [
+      {
+        name: 'scale-data',
+        value: '{"l": 0.5, "c": 0.1, "h": 240}',
+        category: 'color',
+        namespace: 'color',
+      },
+    ];
+
+    const ts = tokensToTypeScript(tokens);
+
+    // Should be unquoted - a raw JS object literal, not a string
+    expect(ts).toContain("'scale-data': {\"l\": 0.5, \"c\": 0.1, \"h\": 240}");
+    // Should NOT be wrapped in quotes
+    expect(ts).not.toContain("'{\"l\"");
+  });
+
+  it('should export JSON array string values as raw array literals', () => {
+    const tokens: Token[] = [
+      {
+        name: 'color-scale',
+        value: '[{"l": 0.5, "c": 0.1, "h": 240}]',
+        category: 'color',
+        namespace: 'color',
+      },
+    ];
+
+    const ts = tokensToTypeScript(tokens);
+
+    // Should be unquoted - a raw JS array literal
+    expect(ts).toContain("'color-scale': [{\"l\": 0.5, \"c\": 0.1, \"h\": 240}]");
+  });
+
   it('should handle tokens with special characters in names', () => {
     const tokens: Token[] = [
       { name: 'color-ocean-blue-500', value: 'blue', category: 'color', namespace: 'color' },
