@@ -80,7 +80,62 @@ Rafters Button, Input, Card, etc. include their own spacing, sizing, and states.
 UTILITIES EXIST FOR EDGE CASES.
 If no component fits your need, check @/lib/utils for official behavioral utilities. Do not invent your own. If nothing exists there either, ask the human.
 
+COLORS ARE TAILWIND CLASSES.
+Write border-l-primary, bg-success, text-info-foreground. Do not create color constants, mapping objects, or reference palette names (silver-true-sky-500, neutral-400, etc). The designer already decided what each token looks like. Palette families are internal -- never use them in consumer code.
+
+SYSTEM COLOR TOKENS (use these as Tailwind class fragments):
+- primary / primary-foreground -- Main brand, CTA buttons, links
+- secondary / secondary-foreground -- Less prominent actions
+- accent / accent-foreground -- Hover highlights, emphasis
+- muted / muted-foreground -- Subdued backgrounds, disabled text
+- destructive / destructive-foreground -- Delete, remove, errors
+- success / success-foreground -- Confirmations, positive feedback
+- warning / warning-foreground -- Caution, important notices
+- info / info-foreground -- Tips, help, neutral information
+- chart-1 through chart-5 -- Categorical distinction (guaranteed harmonious)
+- card / card-foreground -- Card surfaces
+- popover / popover-foreground -- Overlay surfaces
+- border, input, ring -- Structural tokens
+
+For categorical color coding (e.g. field types), use border-l-{token} on a container with bg-card. Example Tailwind classes: "border-l-4 border-l-primary", "border-l-4 border-l-info", "border-l-4 border-l-success".
+
 When in doubt: less code, not more. Rafters has already made the design decision.`;
+
+// ==================== Consumer Quickstart ====================
+// Onboarding guidance that prevents common consumer mistakes
+
+export const CONSUMER_QUICKSTART = {
+  rule1:
+    'Components are pre-styled. Import and render. Do not add className for visual styling -- only for layout context (e.g. border-l-4 for accent). Input knows its focus ring. Label knows its weight. You arrange, you do not style.',
+  rule2:
+    'Colors are Tailwind classes. Write border-l-primary, bg-success, text-info-foreground. Do not create color constants, mapping objects, or reference palette internals.',
+  rule3:
+    'Layout uses Container and Grid presets (sidebar-main, form, cards, row, stack, split). Do not write flex, grid, gap-* directly.',
+  antiPatterns: [
+    'Do NOT reference palette families (silver-true-sky-500, neutral-400). Those are internal.',
+    'Do NOT add className to Input/Label/Select for styling. They handle their own styles.',
+    'Do NOT create wrapper components that add styling to Rafters components.',
+    'Do NOT define focus states, hover states, or error states. Components include these.',
+    'Do NOT create color mapping objects. The Tailwind class name IS the mapping.',
+  ],
+  colorTokens: {
+    semantic: [
+      'primary -- Main brand, CTA buttons, links',
+      'secondary -- Less prominent actions',
+      'accent -- Hover highlights, emphasis',
+      'muted -- Subdued backgrounds, disabled text',
+      'destructive -- Delete, remove, errors',
+      'success -- Confirmations, positive feedback',
+      'warning -- Caution, important notices',
+      'info -- Tips, help, neutral information',
+    ],
+    categorical:
+      'chart-1 through chart-5 -- For data viz and categorical distinction (guaranteed harmonious)',
+    structural: 'card, popover, border, input, ring -- Surface and boundary tokens',
+    usage:
+      'Use as Tailwind class fragments: bg-primary, text-info-foreground, border-l-success. Each token has a -foreground variant for text on that background.',
+  },
+};
 
 // ==================== Design Patterns ====================
 // Composable patterns for common UI scenarios
@@ -412,7 +467,7 @@ export const TOOL_DEFINITIONS = [
   {
     name: 'rafters_vocabulary',
     description:
-      'Get compact design system vocabulary: color palette names, spacing scale, type scale, and component list with cognitive loads. Use this first to understand what you can compose with.',
+      'Get design system vocabulary with consumer quickstart guide. Returns: system rules, onboarding guidance (what to do and what NOT to do), semantic color tokens, spacing scale, type scale, layout presets, and component list. ALWAYS call this first before building with Rafters.',
     inputSchema: {
       type: 'object' as const,
       properties: {},
@@ -539,7 +594,7 @@ export class RaftersToolHandler {
 
   /**
    * Get compact design system vocabulary
-   * Returns: color palettes, spacing scale, type scale, component list with loads
+   * Returns: system rules, consumer quickstart, color tokens, spacing, type scale, components
    */
   private async getVocabulary(): Promise<CallToolResult> {
     try {
@@ -552,6 +607,7 @@ export class RaftersToolHandler {
 
       const vocabulary = {
         system: SYSTEM_PREAMBLE,
+        quickstart: CONSUMER_QUICKSTART,
         components,
         colors,
         spacing,
@@ -573,24 +629,59 @@ export class RaftersToolHandler {
   }
 
   /**
-   * Extract compact color vocabulary
+   * Extract compact color vocabulary.
+   * Always includes the known semantic token list so consumers get guidance
+   * even when dynamic token loading fails or returns empty.
    */
   private async getColorVocabulary(): Promise<{
     semantic: string[];
     palettes: Array<{ name: string; positions: string[] }>;
+    usage: string;
   }> {
+    // These semantic tokens are always available in a Rafters project.
+    // They are generated by the token system and exposed as CSS custom properties.
+    const knownSemantic = [
+      'primary',
+      'primary-foreground',
+      'secondary',
+      'secondary-foreground',
+      'accent',
+      'accent-foreground',
+      'muted',
+      'muted-foreground',
+      'destructive',
+      'destructive-foreground',
+      'success',
+      'success-foreground',
+      'warning',
+      'warning-foreground',
+      'info',
+      'info-foreground',
+      'card',
+      'card-foreground',
+      'popover',
+      'popover-foreground',
+      'background',
+      'foreground',
+      'border',
+      'input',
+      'ring',
+      'chart-1',
+      'chart-2',
+      'chart-3',
+      'chart-4',
+      'chart-5',
+    ];
+
     try {
       const tokens = await this.loadNamespace('color');
-      const semantic: string[] = [];
+      const dynamicSemantic: string[] = [];
       const palettes = new Map<string, Set<string>>();
 
       for (const token of tokens) {
-        // Semantic colors (simple references)
         if (typeof token.value === 'object' && 'family' in (token.value as object)) {
-          semantic.push(token.name);
-        }
-        // Color families (full ColorValue objects with scales)
-        else if (typeof token.value === 'object' && 'scale' in (token.value as object)) {
+          dynamicSemantic.push(token.name);
+        } else if (typeof token.value === 'object' && 'scale' in (token.value as object)) {
           const colorValue = token.value as ColorValue;
           palettes.set(
             colorValue.name,
@@ -599,22 +690,36 @@ export class RaftersToolHandler {
         }
       }
 
+      // Merge dynamic with known, deduplicating
+      const allSemantic = [...new Set([...knownSemantic, ...dynamicSemantic])];
+
       return {
-        semantic,
+        semantic: allSemantic,
         palettes: [...palettes.entries()].map(([name, positions]) => ({
           name,
           positions: [...positions],
         })),
+        usage:
+          'Use as Tailwind classes: bg-primary, text-info-foreground, border-l-success. Palette families are internal -- never reference them in consumer code.',
       };
     } catch {
-      return { semantic: [], palettes: [] };
+      return {
+        semantic: knownSemantic,
+        palettes: [],
+        usage:
+          'Use as Tailwind classes: bg-primary, text-info-foreground, border-l-success. Palette families are internal -- never reference them in consumer code.',
+      };
     }
   }
 
   /**
-   * Extract compact spacing vocabulary
+   * Extract compact spacing vocabulary.
+   * Includes static scale names so consumers always get guidance.
    */
-  private async getSpacingVocabulary(): Promise<{ scale: Record<string, string> }> {
+  private async getSpacingVocabulary(): Promise<{
+    scale: Record<string, string>;
+    usage: string;
+  }> {
     try {
       const tokens = await this.loadNamespace('spacing');
       const scale: Record<string, string> = {};
@@ -625,18 +730,40 @@ export class RaftersToolHandler {
         }
       }
 
-      return { scale };
+      if (Object.keys(scale).length > 0) {
+        return {
+          scale,
+          usage: 'Container and Grid handle spacing. Do not use gap-*, p-*, m-* directly.',
+        };
+      }
     } catch {
-      return { scale: {} };
+      // Fall through to static fallback
     }
+
+    return {
+      scale: {
+        'spacing-0': '0rem',
+        'spacing-1': '0.25rem',
+        'spacing-2': '0.5rem',
+        'spacing-3': '0.75rem',
+        'spacing-4': '1rem',
+        'spacing-6': '1.5rem',
+        'spacing-8': '2rem',
+        'spacing-12': '3rem',
+        'spacing-16': '4rem',
+      },
+      usage: 'Container and Grid handle spacing. Do not use gap-*, p-*, m-* directly.',
+    };
   }
 
   /**
-   * Extract compact typography vocabulary
+   * Extract compact typography vocabulary.
+   * Includes static fallbacks so consumers always get guidance.
    */
   private async getTypographyVocabulary(): Promise<{
     sizes: Record<string, string>;
     weights: string[];
+    usage: string;
   }> {
     try {
       const tokens = await this.loadNamespace('typography');
@@ -653,10 +780,33 @@ export class RaftersToolHandler {
         }
       }
 
-      return { sizes, weights: [...weights] };
+      if (Object.keys(sizes).length > 0) {
+        return {
+          sizes,
+          weights: [...weights],
+          usage:
+            'Typography components (H1-H4, P, Label) handle sizing. Do not set font sizes directly.',
+        };
+      }
     } catch {
-      return { sizes: {}, weights: [] };
+      // Fall through to static fallback
     }
+
+    return {
+      sizes: {
+        'font-size-xs': '0.75rem',
+        'font-size-sm': '0.875rem',
+        'font-size-base': '1rem',
+        'font-size-lg': '1.125rem',
+        'font-size-xl': '1.25rem',
+        'font-size-2xl': '1.5rem',
+        'font-size-3xl': '1.875rem',
+        'font-size-4xl': '2.25rem',
+      },
+      weights: ['normal', 'medium', 'semibold', 'bold'],
+      usage:
+        'Typography components (H1-H4, P, Label) handle sizing. Do not set font sizes directly.',
+    };
   }
 
   /**

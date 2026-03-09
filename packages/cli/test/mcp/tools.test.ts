@@ -2,7 +2,12 @@ import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { RaftersToolHandler, SYSTEM_PREAMBLE, TOOL_DEFINITIONS } from '../../src/mcp/tools.js';
+import {
+  CONSUMER_QUICKSTART,
+  RaftersToolHandler,
+  SYSTEM_PREAMBLE,
+  TOOL_DEFINITIONS,
+} from '../../src/mcp/tools.js';
 import { fixtures, serializeNamespaceFile } from '../fixtures/tokens.js';
 
 describe('TOOL_DEFINITIONS', () => {
@@ -41,6 +46,45 @@ describe('SYSTEM_PREAMBLE', () => {
     expect(SYSTEM_PREAMBLE).toContain('LAYOUT IS SOLVED');
     expect(SYSTEM_PREAMBLE).toContain('CONTAINER OWNS SPACING');
     expect(SYSTEM_PREAMBLE).toContain('COMPONENTS ARE COMPLETE');
+  });
+
+  it('should contain color token guidance', () => {
+    expect(SYSTEM_PREAMBLE).toContain('COLORS ARE TAILWIND CLASSES');
+    expect(SYSTEM_PREAMBLE).toContain('SYSTEM COLOR TOKENS');
+    expect(SYSTEM_PREAMBLE).toContain('primary / primary-foreground');
+    expect(SYSTEM_PREAMBLE).toContain('chart-1 through chart-5');
+    expect(SYSTEM_PREAMBLE).toContain('Palette families are internal');
+  });
+});
+
+describe('CONSUMER_QUICKSTART', () => {
+  it('should contain onboarding rules', () => {
+    expect(CONSUMER_QUICKSTART.rule1).toContain('pre-styled');
+    expect(CONSUMER_QUICKSTART.rule2).toContain('Tailwind classes');
+    expect(CONSUMER_QUICKSTART.rule3).toContain('Container and Grid');
+  });
+
+  it('should list anti-patterns', () => {
+    expect(CONSUMER_QUICKSTART.antiPatterns.length).toBeGreaterThanOrEqual(4);
+    const joined = CONSUMER_QUICKSTART.antiPatterns.join(' ');
+    expect(joined).toContain('palette families');
+    expect(joined).toContain('className');
+    expect(joined).toContain('color mapping');
+  });
+
+  it('should include semantic color tokens', () => {
+    const semanticJoined = CONSUMER_QUICKSTART.colorTokens.semantic.join(' ');
+    expect(semanticJoined).toContain('primary');
+    expect(semanticJoined).toContain('destructive');
+    expect(semanticJoined).toContain('success');
+    expect(semanticJoined).toContain('warning');
+    expect(semanticJoined).toContain('info');
+  });
+
+  it('should include categorical and structural tokens', () => {
+    expect(CONSUMER_QUICKSTART.colorTokens.categorical).toContain('chart-1');
+    expect(CONSUMER_QUICKSTART.colorTokens.structural).toContain('card');
+    expect(CONSUMER_QUICKSTART.colorTokens.structural).toContain('border');
   });
 });
 
@@ -132,6 +176,47 @@ describe('RaftersToolHandler', () => {
       // Available should not contain installed components
       expect(data.components.available).not.toContain('button');
       expect(data.components.available).not.toContain('card');
+    });
+
+    it('should include quickstart in vocabulary response', async () => {
+      const result = await handler.handleToolCall('rafters_vocabulary', {});
+      const data = JSON.parse(result.content[0].text as string);
+
+      expect(data.quickstart).toBeDefined();
+      expect(data.quickstart.rule1).toContain('pre-styled');
+      expect(data.quickstart.antiPatterns).toBeDefined();
+      expect(data.quickstart.colorTokens).toBeDefined();
+    });
+
+    it('should always include semantic color tokens even without token files', async () => {
+      const result = await handler.handleToolCall('rafters_vocabulary', {});
+      const data = JSON.parse(result.content[0].text as string);
+
+      expect(data.colors.semantic).toContain('primary');
+      expect(data.colors.semantic).toContain('destructive');
+      expect(data.colors.semantic).toContain('success');
+      expect(data.colors.semantic).toContain('warning');
+      expect(data.colors.semantic).toContain('info');
+      expect(data.colors.semantic).toContain('chart-1');
+      expect(data.colors.semantic).toContain('chart-5');
+      expect(data.colors.usage).toContain('Tailwind');
+    });
+
+    it('should include spacing fallback when no token files exist', async () => {
+      const result = await handler.handleToolCall('rafters_vocabulary', {});
+      const data = JSON.parse(result.content[0].text as string);
+
+      expect(Object.keys(data.spacing.scale).length).toBeGreaterThan(0);
+      expect(data.spacing.usage).toContain('Container');
+    });
+
+    it('should include typography fallback when no token files exist', async () => {
+      const result = await handler.handleToolCall('rafters_vocabulary', {});
+      const data = JSON.parse(result.content[0].text as string);
+
+      expect(Object.keys(data.typography.sizes).length).toBeGreaterThan(0);
+      expect(data.typography.weights.length).toBeGreaterThan(0);
+      expect(data.typography.usage).toContain('Typography components');
     });
 
     it('should return color vocabulary when tokens exist', async () => {
