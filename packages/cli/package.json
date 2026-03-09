@@ -48,6 +48,11 @@
     "vitest": "catalog:",
     "zocker": "catalog:"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ezmode-games/rafters.git",
+    "directory": "packages/cli"
+  },
   "publishConfig": {
     "access": "public"
   }
