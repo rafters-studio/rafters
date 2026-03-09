@@ -396,7 +396,6 @@ function SaveCompositeDialog({
 
   return createPortal(
     <>
-      {/* biome-ignore lint/a11y/noStaticElementInteractions: modal overlay dismiss is a standard pattern */}
       <div
         className={classy('fixed inset-0 z-50 bg-black/50')}
         onClick={onCancel}
