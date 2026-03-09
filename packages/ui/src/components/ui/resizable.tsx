@@ -59,6 +59,9 @@ interface ResizableContextValue {
   collapsePanel: (id: string) => void;
   expandPanel: (id: string) => void;
   getPanelSize: (id: string) => number;
+  registerHandle: (id: string) => void;
+  unregisterHandle: (id: string) => void;
+  getHandleIndex: (id: string) => number;
 }
 
 const ResizableContext = React.createContext<ResizableContextValue | null>(null);
@@ -88,6 +91,7 @@ export function ResizablePanelGroup({
   ...props
 }: ResizablePanelGroupProps) {
   const [panels, setPanels] = React.useState<PanelData[]>([]);
+  const [handleIds, setHandleIds] = React.useState<string[]>([]);
 
   // Load saved sizes from localStorage
   React.useEffect(() => {
@@ -245,6 +249,25 @@ export function ResizablePanelGroup({
     [onLayout, saveSizes],
   );
 
+  const registerHandle = React.useCallback((id: string) => {
+    setHandleIds((prev) => {
+      if (prev.includes(id)) return prev;
+      return [...prev, id];
+    });
+  }, []);
+
+  const unregisterHandle = React.useCallback((id: string) => {
+    setHandleIds((prev) => prev.filter((h) => h !== id));
+  }, []);
+
+  const getHandleIndex = React.useCallback(
+    (id: string) => {
+      const index = handleIds.indexOf(id);
+      return index === -1 ? 0 : index;
+    },
+    [handleIds],
+  );
+
   const getPanelSize = React.useCallback(
     (id: string) => {
       const panel = panels.find((p) => p.id === id);
@@ -263,6 +286,9 @@ export function ResizablePanelGroup({
       collapsePanel,
       expandPanel,
       getPanelSize,
+      registerHandle,
+      unregisterHandle,
+      getHandleIndex,
     }),
     [
       direction,
@@ -273,6 +299,9 @@ export function ResizablePanelGroup({
       collapsePanel,
       expandPanel,
       getPanelSize,
+      registerHandle,
+      unregisterHandle,
+      getHandleIndex,
     ],
   );
 
@@ -402,15 +431,19 @@ export function ResizableHandle({
   className,
   ...props
 }: ResizableHandleProps) {
-  const { direction, resizePanels, panels } = useResizableContext();
+  const { direction, resizePanels, panels, registerHandle, unregisterHandle, getHandleIndex } =
+    useResizableContext();
   const [isDragging, setIsDragging] = React.useState(false);
   const handleRef = React.useRef<HTMLDivElement>(null);
+  const handleId = React.useId();
 
-  // Determine which handle this is based on position in panels
-  const handleIndex = React.useMemo(() => {
-    // This is a simplified approach - in real implementation would need sibling tracking
-    return panels.length > 0 ? panels.length - 1 : 0;
-  }, [panels.length]);
+  // Register this handle on mount to get a stable positional index
+  React.useEffect(() => {
+    registerHandle(handleId);
+    return () => unregisterHandle(handleId);
+  }, [handleId, registerHandle, unregisterHandle]);
+
+  const handleIndex = getHandleIndex(handleId);
 
   // Mouse drag handlers
   const handleMouseDown = React.useCallback(
@@ -490,6 +523,7 @@ export function ResizableHandle({
       aria-disabled={disabled}
       tabIndex={disabled ? -1 : 0}
       data-panel-resize-handle=""
+      data-handle-index={handleIndex}
       data-direction={direction}
       data-disabled={disabled}
       data-dragging={isDragging}
