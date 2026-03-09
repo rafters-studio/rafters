@@ -166,14 +166,11 @@ export function PopoverPortal({ children, container, forceMount }: PopoverPortal
 // ==================== PopoverContent ====================
 
 export interface PopoverContentProps extends React.HTMLAttributes<HTMLDivElement> {
-  asChild?: boolean;
   forceMount?: boolean;
   side?: Side;
   align?: Align;
   sideOffset?: number;
   alignOffset?: number;
-  onOpenAutoFocus?: (event: Event) => void;
-  onCloseAutoFocus?: (event: Event) => void;
   onEscapeKeyDown?: (event: KeyboardEvent) => void;
   onPointerDownOutside?: (event: PointerEvent | TouchEvent) => void;
   onInteractOutside?: (event: Event) => void;
@@ -182,14 +179,11 @@ export interface PopoverContentProps extends React.HTMLAttributes<HTMLDivElement
 }
 
 export function PopoverContent({
-  asChild: _asChild,
   forceMount,
   side = 'bottom',
   align = 'center',
   sideOffset = 4,
   alignOffset = 0,
-  onOpenAutoFocus: _onOpenAutoFocus,
-  onCloseAutoFocus: _onCloseAutoFocus,
   onEscapeKeyDown,
   onPointerDownOutside,
   onInteractOutside,

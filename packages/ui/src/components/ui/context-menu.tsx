@@ -233,7 +233,6 @@ export interface ContextMenuContentProps extends React.HTMLAttributes<HTMLDivEle
   forceMount?: boolean;
   onEscapeKeyDown?: (event: KeyboardEvent) => void;
   onPointerDownOutside?: (event: PointerEvent | TouchEvent) => void;
-  onCloseAutoFocus?: (event: Event) => void;
   loop?: boolean;
   alignOffset?: number;
   avoidCollisions?: boolean;
@@ -246,7 +245,6 @@ export const ContextMenuContent = React.forwardRef<HTMLDivElement, ContextMenuCo
       forceMount,
       onEscapeKeyDown: onEscapeKeyDownProp,
       onPointerDownOutside: onPointerDownOutsideProp,
-      onCloseAutoFocus,
       loop = true,
       alignOffset = 0,
       avoidCollisions = true,

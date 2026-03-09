@@ -239,8 +239,6 @@ export function DialogOverlay({ asChild, forceMount, className, ...props }: Dial
 export interface DialogContentProps extends React.HTMLAttributes<HTMLDivElement> {
   asChild?: boolean;
   forceMount?: boolean;
-  onOpenAutoFocus?: (event: Event) => void;
-  onCloseAutoFocus?: (event: Event) => void;
   onEscapeKeyDown?: (event: KeyboardEvent) => void;
   onPointerDownOutside?: (event: PointerEvent | TouchEvent) => void;
   onInteractOutside?: (event: Event) => void;
@@ -255,8 +253,6 @@ export interface DialogContentProps extends React.HTMLAttributes<HTMLDivElement>
 export function DialogContent({
   asChild,
   forceMount,
-  onOpenAutoFocus: _onOpenAutoFocus,
-  onCloseAutoFocus: _onCloseAutoFocus,
   onEscapeKeyDown: onEscapeKeyDownProp,
   onPointerDownOutside: onPointerDownOutsideProp,
   onInteractOutside,
