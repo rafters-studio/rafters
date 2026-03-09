@@ -556,7 +556,7 @@ export function extractSiblingImports(content: string): string[] {
 
   for (const match of matches) {
     const pkg = match[1];
-    if (pkg && pkg.startsWith('./') && !pkg.slice(2).includes('/')) {
+    if (pkg?.startsWith('./') && !pkg.slice(2).includes('/')) {
       const name = basename(pkg).replace(/\.(tsx?|jsx?)$/, '');
       if (name && !siblings.includes(name)) {
         siblings.push(name);
