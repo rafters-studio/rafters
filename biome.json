@@ -21,7 +21,8 @@
       "!**/*.vue",
       "!**/worker-configuration.d.ts",
       "!apps/demo/src/styles/global.css",
-      "!**/.rafters"
+      "!**/.rafters",
+      "!.claude/worktrees"
     ]
   },
   "assist": { "actions": { "source": { "organizeImports": "on" } } },

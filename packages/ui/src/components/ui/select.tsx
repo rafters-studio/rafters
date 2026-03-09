@@ -68,6 +68,8 @@ interface SelectContextValue {
   name: string | undefined;
   highlightedValue: string | undefined;
   onHighlightChange: (value: string | undefined) => void;
+  registerLabel: (value: string, label: string) => void;
+  getLabel: (value: string) => string | undefined;
 }
 
 const SelectContext = React.createContext<SelectContextValue | null>(null);
@@ -118,6 +120,26 @@ export function Select({
   // Highlighted item for keyboard navigation
   const [highlightedValue, setHighlightedValue] = React.useState<string | undefined>(undefined);
 
+  // Label registry: maps item values to their display labels.
+  // Uses state so SelectValue re-renders when labels are first registered.
+  const [labelMap, setLabelMap] = React.useState<Map<string, string>>(() => new Map());
+
+  const registerLabel = React.useCallback((itemValue: string, label: string) => {
+    setLabelMap((prev) => {
+      if (prev.get(itemValue) === label) return prev;
+      const next = new Map(prev);
+      next.set(itemValue, label);
+      return next;
+    });
+  }, []);
+
+  const getLabel = React.useCallback(
+    (itemValue: string): string | undefined => {
+      return labelMap.get(itemValue);
+    },
+    [labelMap],
+  );
+
   const handleValueChange = React.useCallback(
     (newValue: string) => {
       if (!isValueControlled) {
@@ -166,6 +188,8 @@ export function Select({
       name,
       highlightedValue,
       onHighlightChange: setHighlightedValue,
+      registerLabel,
+      getLabel,
     }),
     [
       open,
@@ -177,6 +201,8 @@ export function Select({
       triggerId,
       name,
       highlightedValue,
+      registerLabel,
+      getLabel,
     ],
   );
 
@@ -313,12 +339,14 @@ export function SelectValue({
   children,
   ...props
 }: SelectValueProps) {
-  const { value } = useSelectContext();
+  const { value, getLabel } = useSelectContext();
 
-  // Find the selected item's label from context or children
-  // For simplicity, we display value or placeholder
-  const displayValue = value || placeholder;
-  const isPlaceholder = !value;
+  // Look up the human-readable label registered by the selected SelectItem.
+  // Falls back to the raw value if no label has been registered yet.
+  const hasValue = value !== undefined && value !== '';
+  const label = hasValue ? getLabel(value) : undefined;
+  const displayValue = label ?? (hasValue ? value : placeholder);
+  const isPlaceholder = !hasValue;
 
   const spanClassName = classy(isPlaceholder ? 'text-muted-foreground' : '', className);
 
@@ -568,7 +596,14 @@ export function SelectContent({
   };
 
   if (!open) {
-    return null;
+    // Render children in a hidden container so SelectItem effects run
+    // and register labels. This lets SelectValue show the correct label
+    // text on initial render before the dropdown has been opened.
+    return (
+      <div hidden aria-hidden="true" style={{ display: 'none' }}>
+        {children}
+      </div>
+    );
   }
 
   const contentStyle: React.CSSProperties = {
@@ -707,11 +742,30 @@ export function SelectItem({
   asChild,
   ...props
 }: SelectItemProps) {
-  const { value, onValueChange, onOpenChange, triggerRef, highlightedValue, onHighlightChange } =
-    useSelectContext();
+  const {
+    value,
+    onValueChange,
+    onOpenChange,
+    triggerRef,
+    highlightedValue,
+    onHighlightChange,
+    registerLabel,
+  } = useSelectContext();
 
   const isSelected = value === itemValue;
   const isHighlighted = highlightedValue === itemValue;
+
+  // Register the label text so SelectValue can display it instead of the raw value.
+  const labelTextRef = React.useRef<HTMLSpanElement>(null);
+
+  React.useEffect(() => {
+    if (labelTextRef.current) {
+      const text = labelTextRef.current.textContent?.trim();
+      if (text) {
+        registerLabel(itemValue, text);
+      }
+    }
+  });
 
   const handleClick = (event: React.MouseEvent<HTMLDivElement>) => {
     props.onClick?.(event);
@@ -787,7 +841,7 @@ export function SelectItem({
           </svg>
         )}
       </span>
-      {children}
+      <span ref={labelTextRef}>{children}</span>
     </div>
   );
 }
