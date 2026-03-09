@@ -50,10 +50,8 @@ describe('SYSTEM_PREAMBLE', () => {
 
   it('should contain color token guidance', () => {
     expect(SYSTEM_PREAMBLE).toContain('COLORS ARE TAILWIND CLASSES');
-    expect(SYSTEM_PREAMBLE).toContain('SYSTEM COLOR TOKENS');
-    expect(SYSTEM_PREAMBLE).toContain('primary / primary-foreground');
-    expect(SYSTEM_PREAMBLE).toContain('chart-1 through chart-5');
     expect(SYSTEM_PREAMBLE).toContain('Palette families are internal');
+    expect(SYSTEM_PREAMBLE).toContain('quickstart.colorTokens');
   });
 });
 
@@ -200,6 +198,37 @@ describe('RaftersToolHandler', () => {
       expect(data.colors.semantic).toContain('chart-1');
       expect(data.colors.semantic).toContain('chart-5');
       expect(data.colors.usage).toContain('Tailwind');
+    });
+
+    it('should merge dynamic tokens with static known tokens', async () => {
+      await writeFile(
+        join(testDir, '.rafters', 'tokens', 'color.rafters.json'),
+        serializeNamespaceFile('color', [fixtures.primaryToken()]),
+      );
+
+      const result = await handler.handleToolCall('rafters_vocabulary', {});
+      const data = JSON.parse(result.content[0].text as string);
+
+      // Dynamic token present
+      expect(data.colors.semantic).toContain('primary');
+      // Static tokens also present alongside dynamic
+      expect(data.colors.semantic).toContain('chart-1');
+      expect(data.colors.semantic).toContain('success');
+      expect(data.colors.semantic).toContain('destructive');
+      // No duplicates
+      const primaryCount = data.colors.semantic.filter((s: string) => s === 'primary').length;
+      expect(primaryCount).toBe(1);
+    });
+
+    it('should include all semantic token variants from design-tokens defaults', async () => {
+      const result = await handler.handleToolCall('rafters_vocabulary', {});
+      const data = JSON.parse(result.content[0].text as string);
+
+      // Should include extended variants (hover, active, subtle, etc.)
+      expect(data.colors.semantic).toContain('primary-hover');
+      expect(data.colors.semantic).toContain('primary-subtle');
+      expect(data.colors.semantic).toContain('destructive-foreground');
+      expect(data.colors.semantic).toContain('success-border');
     });
 
     it('should include spacing fallback when no token files exist', async () => {
