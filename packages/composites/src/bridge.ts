@@ -129,16 +129,18 @@ function expandBlocks(
         continue;
       }
       // Composite not found -- fall through to create a placeholder
+      const placeholderId = idMap.get(block.id) ?? block.id;
       result.push({
-        id: idMap.get(block.id)!,
+        id: placeholderId,
         type: 'text',
         content: `Unknown composite: ${compositeId}`,
       });
       continue;
     }
 
+    const newId = idMap.get(block.id) ?? block.id;
     const instantiated: InstantiatedBlock = {
-      id: idMap.get(block.id)!,
+      id: newId,
       type: block.type,
     };
 
