@@ -15,6 +15,7 @@
     "@astrojs/cloudflare": "^12.6.12",
     "@astrojs/mdx": "^4.3.13",
     "@astrojs/react": "^4.4.2",
+    "@rafters/color-utils": "workspace:*",
     "@rafters/composites": "workspace:*",
     "@rafters/design-tokens": "workspace:*",
     "@rafters/ui": "workspace:*",

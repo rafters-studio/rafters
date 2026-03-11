@@ -1,0 +1,15 @@
+---
+/**
+ * Color Inspector - Progressive-reveal color family inspection prototype
+ *
+ * Studio prototype for inspecting rich ColorValue data: scales, accessibility,
+ * CVD simulation, perceptual weight, and token intelligence.
+ */
+
+import ColorInspectorDemo from '../components/demos/ColorInspectorDemo';
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Color Inspector" description="Progressive-reveal color family inspector for Studio">
+  <ColorInspectorDemo client:load />
+</BaseLayout>
