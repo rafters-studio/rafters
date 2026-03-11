@@ -42,8 +42,9 @@ import { H2, Lead, Muted, P, Small } from './typography';
 // ============================================================================
 
 function getBaseColor(color: ColorValue): OklchColor {
-  // Base color sits at step 600 (index 6) in the 11-position scale
-  const base = color.scale[6];
+  // Base color at step 500 (index 5) with current scale generator.
+  // Original math anchored at 600 — fix index when scale is restored.
+  const base = color.scale[5];
   if (base) return base;
   return { l: 0.5, c: 0.1, h: 0 };
 }
