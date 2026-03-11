@@ -2,11 +2,14 @@ import type { ColorValue } from '@rafters/shared';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import {
+  ColorCharacter,
   ColorFamily,
   ColorInspector,
   ColorScale,
+  ColorStory,
   ColorWeight,
   ContrastMatrix,
+  ContrastPreview,
   CVDSimulation,
   TokenIntelligence,
 } from '../../src/components/ui/color-inspector';
@@ -93,6 +96,11 @@ function makeColorValue(name: string, token?: string): ColorValue {
       distanceWeight: 0.45,
       temperature: 'warm' as const,
       atmosphericRole: 'midground' as const,
+    },
+    analysis: {
+      temperature: 'cool' as const,
+      isLight: false,
+      name,
     },
     intelligence: {
       reasoning: 'Derived from primary brand color',
@@ -250,6 +258,151 @@ describe('TokenIntelligence', () => {
     );
     expect(container.querySelector('[data-user-override]')).not.toBeNull();
     expect(container.textContent).toContain('Brand refresh');
+  });
+});
+
+// ============================================================================
+// ColorStory tests
+// ============================================================================
+
+describe('ColorStory', () => {
+  const intelligence = {
+    reasoning: 'Balanced mid-tone lightness and moderate saturation',
+    emotionalImpact: 'Tranquility and growth',
+    culturalContext: 'Green symbolizes nature and prosperity',
+    accessibilityNotes: 'Passes WCAG AA for normal text on white',
+    usageGuidance: 'Suitable for backgrounds and accents',
+  };
+
+  it('renders reasoning as lead paragraph', () => {
+    const { container } = render(<ColorStory intelligence={intelligence} />);
+    expect(container.querySelector('[data-story-reasoning]')).not.toBeNull();
+    expect(container.textContent).toContain('Balanced mid-tone');
+  });
+
+  it('renders all intelligence sections', () => {
+    const { container } = render(<ColorStory intelligence={intelligence} />);
+    expect(container.querySelector('[data-story-emotion]')).not.toBeNull();
+    expect(container.querySelector('[data-story-culture]')).not.toBeNull();
+    expect(container.querySelector('[data-story-accessibility]')).not.toBeNull();
+    expect(container.querySelector('[data-story-usage]')).not.toBeNull();
+  });
+
+  it('renders confidence meter when metadata present', () => {
+    const withMeta = {
+      ...intelligence,
+      metadata: {
+        predictionId: 'test-123',
+        confidence: 0.95,
+        uncertaintyBounds: { lower: 0.85, upper: 1, confidenceInterval: 0.95 },
+        qualityScore: 0.83,
+        method: 'bootstrap' as const,
+      },
+    };
+    render(<ColorStory intelligence={withMeta} />);
+    expect(screen.getByLabelText('Confidence')).toBeDefined();
+    expect(screen.getByText('95% confidence')).toBeDefined();
+  });
+
+  it('omits confidence when no metadata', () => {
+    const { container } = render(<ColorStory intelligence={intelligence} />);
+    expect(container.querySelector('[data-story-confidence]')).toBeNull();
+  });
+
+  it('renders balancing guidance when present', () => {
+    const withBalancing = { ...intelligence, balancingGuidance: 'Pair with lighter elements' };
+    const { container } = render(<ColorStory intelligence={withBalancing} />);
+    expect(container.querySelector('[data-story-balancing]')).not.toBeNull();
+    expect(container.textContent).toContain('Pair with lighter elements');
+  });
+});
+
+// ============================================================================
+// ColorCharacter tests
+// ============================================================================
+
+describe('ColorCharacter', () => {
+  it('renders temperature and lightness tags', () => {
+    const { container } = render(
+      <ColorCharacter analysis={{ temperature: 'cool', isLight: false, name: 'ocean-blue' }} />,
+    );
+    expect(container.querySelector('[data-tag="temperature"]')?.textContent).toBe('cool');
+    expect(container.querySelector('[data-tag="lightness"]')?.textContent).toBe('dark');
+  });
+
+  it('renders warm temperature with warm styling', () => {
+    const { container } = render(
+      <ColorCharacter analysis={{ temperature: 'warm', isLight: true, name: 'sunset' }} />,
+    );
+    const tag = container.querySelector('[data-tag="temperature"]') as HTMLElement;
+    expect(tag.textContent).toBe('warm');
+    expect(tag.className).toContain('text-orange');
+  });
+
+  it('renders atmospheric role when provided', () => {
+    const { container } = render(
+      <ColorCharacter
+        analysis={{ temperature: 'cool', isLight: false, name: 'test' }}
+        atmosphericWeight={{
+          distanceWeight: 0.2,
+          temperature: 'cool',
+          atmosphericRole: 'background',
+        }}
+      />,
+    );
+    expect(container.querySelector('[data-tag="role"]')?.textContent).toBe('background');
+  });
+
+  it('renders density when perceptual weight provided', () => {
+    const { container } = render(
+      <ColorCharacter
+        analysis={{ temperature: 'neutral', isLight: true, name: 'test' }}
+        perceptualWeight={{ weight: 0.8, density: 'heavy', balancingRecommendation: 'Test' }}
+      />,
+    );
+    expect(container.querySelector('[data-tag="density"]')?.textContent).toBe('heavy');
+  });
+
+  it('sets data attributes on container', () => {
+    const { container } = render(
+      <ColorCharacter analysis={{ temperature: 'cool', isLight: true, name: 'test' }} />,
+    );
+    const el = container.firstChild as HTMLElement;
+    expect(el.getAttribute('data-temperature')).toBe('cool');
+    expect(el.getAttribute('data-light')).toBe('true');
+  });
+});
+
+// ============================================================================
+// ContrastPreview tests
+// ============================================================================
+
+describe('ContrastPreview', () => {
+  it('renders list of contrast samples', () => {
+    render(<ContrastPreview scale={makeScale()} />);
+    const items = screen.getAllByRole('listitem');
+    expect(items.length).toBeGreaterThan(0);
+  });
+
+  it('shows pangram text in each sample', () => {
+    render(<ContrastPreview scale={makeScale()} />);
+    const items = screen.getAllByRole('listitem');
+    const first = items[0] as HTMLElement;
+    expect(first.textContent).toContain('The quick brown fox');
+  });
+
+  it('has inline styles for background and text color', () => {
+    const { container } = render(<ContrastPreview scale={makeScale()} />);
+    const items = container.querySelectorAll('[data-bg]');
+    expect(items.length).toBeGreaterThan(0);
+    const first = items[0] as HTMLElement;
+    expect(first.getAttribute('data-bg')).toBeDefined();
+    expect(first.getAttribute('data-fg')).toBeDefined();
+  });
+
+  it('shows scale position labels', () => {
+    const { container } = render(<ContrastPreview scale={makeScale()} />);
+    expect(container.textContent).toContain('50/');
   });
 });
 

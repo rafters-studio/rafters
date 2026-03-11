@@ -1,30 +1,22 @@
-import { buildColorValue } from '@rafters/color-utils';
+import type { ColorValue } from '@rafters/shared';
 import {
   ColorInspector,
   ColorScale,
+  ColorStory,
   ContrastMatrix,
+  ContrastPreview,
   TokenIntelligence,
 } from '@rafters/ui/components/ui/color-inspector';
 import { Container } from '@rafters/ui/components/ui/container';
+import fixtureData from '../../fixtures/indigo-color-system.json';
 
 // ---------------------------------------------------------------------------
-// Build real ColorValue objects from OKLCH base colors using pure math
+// Load real color system fixture (Tailwind indigo-500 -> full Rafters harmony)
+// All 11 families with intelligence from the API
 // ---------------------------------------------------------------------------
 
-const primary = buildColorValue({ l: 0.53, c: 0.15, h: 240 }, { token: 'primary', value: '500' });
-const secondary = buildColorValue(
-  { l: 0.55, c: 0.16, h: 15 },
-  { token: 'secondary', value: '500' },
-);
-const accent = buildColorValue({ l: 0.6, c: 0.14, h: 145 }, { token: 'accent', value: '500' });
-const neutral = buildColorValue({ l: 0.5, c: 0.015, h: 240 }, { token: 'neutral', value: '500' });
-const destructive = buildColorValue(
-  { l: 0.5, c: 0.2, h: 25 },
-  { token: 'destructive', value: '500' },
-);
-const success = buildColorValue({ l: 0.6, c: 0.18, h: 155 }, { token: 'success', value: '500' });
-
-const colors = [primary, secondary, accent, neutral, destructive, success];
+const colors = fixtureData.colors as ColorValue[];
+const primary = colors[0] as ColorValue;
 
 // ---------------------------------------------------------------------------
 // Default demo: full ColorInspector with all families
@@ -54,6 +46,22 @@ export function ColorInspectorVariants() {
             ContrastMatrix (primary)
           </h3>
           <ContrastMatrix accessibility={primary.accessibility} scaleName={primary.name} />
+        </section>
+      ) : null}
+
+      <section>
+        <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+          ContrastPreview (primary)
+        </h3>
+        <ContrastPreview scale={primary.scale} />
+      </section>
+
+      {primary.intelligence ? (
+        <section>
+          <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+            ColorStory (primary)
+          </h3>
+          <ColorStory intelligence={primary.intelligence} />
         </section>
       ) : null}
 

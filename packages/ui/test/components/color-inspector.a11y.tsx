@@ -3,11 +3,14 @@ import { render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { axe } from 'vitest-axe';
 import {
+  ColorCharacter,
   ColorFamily,
   ColorInspector,
   ColorScale,
+  ColorStory,
   ColorWeight,
   ContrastMatrix,
+  ContrastPreview,
   CVDSimulation,
   TokenIntelligence,
 } from '../../src/components/ui/color-inspector';
@@ -179,6 +182,57 @@ describe('TokenIntelligence - Accessibility', () => {
         }}
       />,
     );
+    const results = await axe(container);
+    expect(results).toHaveNoViolations();
+  });
+});
+
+describe('ColorStory - Accessibility', () => {
+  it('has no axe violations with all sections', async () => {
+    const { container } = render(
+      <ColorStory
+        intelligence={{
+          reasoning: 'Balanced mid-tone lightness',
+          emotionalImpact: 'Tranquility and growth',
+          culturalContext: 'Green symbolizes nature',
+          accessibilityNotes: 'Passes WCAG AA',
+          usageGuidance: 'Suitable for backgrounds',
+          metadata: {
+            predictionId: 'test-123',
+            confidence: 0.95,
+            uncertaintyBounds: { lower: 0.85, upper: 1, confidenceInterval: 0.95 },
+            qualityScore: 0.83,
+            method: 'bootstrap',
+          },
+        }}
+      />,
+    );
+    const results = await axe(container);
+    expect(results).toHaveNoViolations();
+  });
+});
+
+describe('ColorCharacter - Accessibility', () => {
+  it('has no axe violations with all tags', async () => {
+    const { container } = render(
+      <ColorCharacter
+        analysis={{ temperature: 'cool', isLight: false, name: 'ocean-blue' }}
+        atmosphericWeight={{
+          distanceWeight: 0.2,
+          temperature: 'cool',
+          atmosphericRole: 'background',
+        }}
+        perceptualWeight={{ weight: 0.45, density: 'medium', balancingRecommendation: 'Balanced' }}
+      />,
+    );
+    const results = await axe(container);
+    expect(results).toHaveNoViolations();
+  });
+});
+
+describe('ContrastPreview - Accessibility', () => {
+  it('has no axe violations', async () => {
+    const { container } = render(<ContrastPreview scale={SCALE} />);
     const results = await axe(container);
     expect(results).toHaveNoViolations();
   });

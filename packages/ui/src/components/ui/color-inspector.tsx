@@ -14,7 +14,13 @@
  * NEVER: Display more than one selected family at a time
  */
 
-import type { ColorValue } from '@rafters/shared';
+import type {
+  AtmosphericWeight,
+  ColorAnalysis,
+  ColorIntelligence,
+  ColorValue,
+  PerceptualWeight,
+} from '@rafters/shared';
 import * as React from 'react';
 import classy from '../../primitives/classy';
 import type { ScalePosition } from '../../primitives/color-scale';
@@ -337,6 +343,249 @@ function TokenIntelligence({
 TokenIntelligence.displayName = 'TokenIntelligence';
 
 // ============================================================================
+// ColorStory -- intelligence prose from the API
+// ============================================================================
+
+export interface ColorStoryProps {
+  intelligence: ColorIntelligence;
+  className?: string;
+}
+
+function ColorStory({ intelligence, className }: ColorStoryProps) {
+  return (
+    <div className={classy('flex flex-col gap-4', className)} data-color-story="">
+      <p data-story-reasoning="" className={classy('text-sm leading-relaxed text-foreground')}>
+        {intelligence.reasoning}
+      </p>
+
+      <dl className={classy('grid grid-cols-1 gap-3 text-xs')}>
+        <div data-story-emotion="">
+          <dt className={classy('font-medium text-muted-foreground')}>Emotional impact</dt>
+          <dd className={classy('mt-0.5 leading-relaxed text-foreground')}>
+            {intelligence.emotionalImpact}
+          </dd>
+        </div>
+
+        <div data-story-culture="">
+          <dt className={classy('font-medium text-muted-foreground')}>Cultural context</dt>
+          <dd className={classy('mt-0.5 leading-relaxed text-foreground')}>
+            {intelligence.culturalContext}
+          </dd>
+        </div>
+
+        <div data-story-accessibility="">
+          <dt className={classy('font-medium text-muted-foreground')}>Accessibility</dt>
+          <dd className={classy('mt-0.5 leading-relaxed text-foreground')}>
+            {intelligence.accessibilityNotes}
+          </dd>
+        </div>
+
+        <div data-story-usage="">
+          <dt className={classy('font-medium text-muted-foreground')}>Usage guidance</dt>
+          <dd className={classy('mt-0.5 leading-relaxed text-foreground')}>
+            {intelligence.usageGuidance}
+          </dd>
+        </div>
+
+        {intelligence.balancingGuidance ? (
+          <div data-story-balancing="">
+            <dt className={classy('font-medium text-muted-foreground')}>Balancing</dt>
+            <dd className={classy('mt-0.5 leading-relaxed text-foreground')}>
+              {intelligence.balancingGuidance}
+            </dd>
+          </div>
+        ) : null}
+      </dl>
+
+      {intelligence.metadata ? (
+        <div
+          data-story-confidence=""
+          className={classy('flex items-center gap-2 text-xs text-muted-foreground/60 font-mono')}
+        >
+          <meter
+            className={classy('h-1.5 w-12 overflow-hidden rounded-full bg-muted')}
+            aria-label="Confidence"
+            value={intelligence.metadata.confidence}
+            min={0}
+            max={1}
+          >
+            {Math.round(intelligence.metadata.confidence * 100)}%
+          </meter>
+          <span>{Math.round(intelligence.metadata.confidence * 100)}% confidence</span>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+ColorStory.displayName = 'ColorStory';
+
+// ============================================================================
+// ColorCharacter -- analysis summary: temperature, role, character
+// ============================================================================
+
+export interface ColorCharacterProps {
+  analysis: ColorAnalysis;
+  atmosphericWeight?: AtmosphericWeight;
+  perceptualWeight?: PerceptualWeight;
+  className?: string;
+}
+
+function ColorCharacter({
+  analysis,
+  atmosphericWeight,
+  perceptualWeight,
+  className,
+}: ColorCharacterProps) {
+  return (
+    <div
+      className={classy('flex flex-wrap gap-2', className)}
+      data-color-character=""
+      data-temperature={analysis.temperature}
+      data-light={analysis.isLight}
+    >
+      <span
+        className={classy(
+          'inline-flex items-center rounded-full border border-border px-2 py-0.5 text-xs',
+          analysis.temperature === 'warm' && 'text-orange-400',
+          analysis.temperature === 'cool' && 'text-sky-400',
+          analysis.temperature === 'neutral' && 'text-muted-foreground',
+        )}
+        data-tag="temperature"
+      >
+        {analysis.temperature}
+      </span>
+
+      <span
+        className={classy(
+          'inline-flex items-center rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground',
+        )}
+        data-tag="lightness"
+      >
+        {analysis.isLight ? 'light' : 'dark'}
+      </span>
+
+      {atmosphericWeight ? (
+        <span
+          className={classy(
+            'inline-flex items-center rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground',
+          )}
+          data-tag="role"
+        >
+          {atmosphericWeight.atmosphericRole}
+        </span>
+      ) : null}
+
+      {perceptualWeight ? (
+        <span
+          className={classy(
+            'inline-flex items-center rounded-full border border-border px-2 py-0.5 text-xs',
+            perceptualWeight.density === 'heavy' && 'text-foreground font-medium',
+            perceptualWeight.density === 'light' && 'text-muted-foreground/60',
+            perceptualWeight.density === 'medium' && 'text-muted-foreground',
+          )}
+          data-tag="density"
+        >
+          {perceptualWeight.density}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+ColorCharacter.displayName = 'ColorCharacter';
+
+// ============================================================================
+// ContrastPreview -- real text on real backgrounds
+// ============================================================================
+
+export interface ContrastPreviewProps {
+  scale: OklchColor[];
+  className?: string;
+}
+
+function ContrastPreview({ scale, className }: ContrastPreviewProps) {
+  // Show meaningful text pairings from the scale
+  // Light backgrounds (50, 100, 200) with dark text (700, 800, 900)
+  // Dark backgrounds (800, 900, 950) with light text (50, 100, 200)
+  const pairs: { bg: OklchColor; fg: OklchColor; bgLabel: string; fgLabel: string }[] = [];
+
+  const lightBgs = [
+    { idx: 0, label: '50' },
+    { idx: 1, label: '100' },
+    { idx: 2, label: '200' },
+  ];
+  const darkFgs = [
+    { idx: 7, label: '700' },
+    { idx: 8, label: '800' },
+    { idx: 9, label: '900' },
+  ];
+  const darkBgs = [
+    { idx: 8, label: '800' },
+    { idx: 9, label: '900' },
+    { idx: 10, label: '950' },
+  ];
+  const lightFgs = [
+    { idx: 0, label: '50' },
+    { idx: 1, label: '100' },
+    { idx: 2, label: '200' },
+  ];
+
+  // Best light-on-dark and dark-on-light pairs
+  for (const bg of lightBgs) {
+    for (const fg of darkFgs) {
+      const bgColor = scale[bg.idx];
+      const fgColor = scale[fg.idx];
+      if (bgColor && fgColor) {
+        pairs.push({ bg: bgColor, fg: fgColor, bgLabel: bg.label, fgLabel: fg.label });
+      }
+    }
+  }
+  for (const bg of darkBgs) {
+    for (const fg of lightFgs) {
+      const bgColor = scale[bg.idx];
+      const fgColor = scale[fg.idx];
+      if (bgColor && fgColor) {
+        pairs.push({ bg: bgColor, fg: fgColor, bgLabel: bg.label, fgLabel: fg.label });
+      }
+    }
+  }
+
+  // Show top 6 pairs (3 light bg, 3 dark bg)
+  const shown = [...pairs.slice(0, 3), ...pairs.slice(9, 12)];
+
+  return (
+    <ul
+      className={classy('grid grid-cols-2 gap-2 list-none p-0 m-0', className)}
+      data-contrast-preview=""
+      aria-label="Contrast preview samples"
+    >
+      {shown.map((pair) => (
+        <li
+          key={`${pair.bgLabel}-${pair.fgLabel}`}
+          className={classy('rounded-md px-3 py-2')}
+          style={{ backgroundColor: toOklchCss(pair.bg), color: toOklchCss(pair.fg) }}
+          data-bg={pair.bgLabel}
+          data-fg={pair.fgLabel}
+        >
+          <span className={classy('text-sm leading-snug')}>
+            The quick brown fox jumps over the lazy dog
+          </span>
+          <span
+            className={classy('block font-mono text-muted-foreground/60 mt-0.5')}
+            style={{ fontSize: '9px', color: 'inherit', opacity: 0.5 }}
+          >
+            {pair.bgLabel}/{pair.fgLabel}
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+ContrastPreview.displayName = 'ContrastPreview';
+
+// ============================================================================
 // ColorChip -- sidebar item
 // ============================================================================
 
@@ -387,8 +636,6 @@ function ColorChip({ color, selected, onSelect }: ColorChipProps) {
 // ColorDetail -- right panel content
 // ============================================================================
 
-const SECTION_NAMES = ['Accessibility', 'Color Vision', 'Weight', 'Intelligence'] as const;
-
 interface ColorDetailProps {
   color: ColorValue;
   onClose: () => void;
@@ -398,7 +645,6 @@ function ColorDetail({ color, onClose }: ColorDetailProps) {
   const baseColor = getBaseColor(color);
   const hasAccessibility = !!color.accessibility;
   const hasCvd = !!color.accessibility?.cvd;
-  const hasWeight = !!(color.perceptualWeight && color.atmosphericWeight);
   const hasIntelligence = !!color.intelligence;
 
   React.useEffect(() => {
@@ -408,6 +654,11 @@ function ColorDetail({ color, onClose }: ColorDetailProps) {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
+
+  const sectionTriggerClass = classy(
+    'w-full text-left font-medium uppercase tracking-widest text-muted-foreground',
+    'hover:text-foreground transition-colors cursor-pointer',
+  );
 
   return (
     <div className={classy('flex flex-col gap-6')}>
@@ -432,6 +683,15 @@ function ColorDetail({ color, onClose }: ColorDetailProps) {
         </span>
       </div>
 
+      {/* Character tags */}
+      {color.analysis ? (
+        <ColorCharacter
+          analysis={color.analysis}
+          {...(color.atmosphericWeight ? { atmosphericWeight: color.atmosphericWeight } : {})}
+          {...(color.perceptualWeight ? { perceptualWeight: color.perceptualWeight } : {})}
+        />
+      ) : null}
+
       {/* Scale */}
       <div>
         <h3
@@ -443,18 +703,34 @@ function ColorDetail({ color, onClose }: ColorDetailProps) {
         <ColorScale scale={color.scale} name={color.name} />
       </div>
 
-      {/* Sections grid */}
+      {/* Story -- the intelligence prose */}
+      {hasIntelligence && color.intelligence ? (
+        <Collapsible defaultOpen>
+          <CollapsibleTrigger className={sectionTriggerClass} style={{ fontSize: '10px' }}>
+            Story
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <ColorStory intelligence={color.intelligence} className={classy('mt-3')} />
+          </CollapsibleContent>
+        </Collapsible>
+      ) : null}
+
+      {/* Contrast preview */}
+      <Collapsible defaultOpen>
+        <CollapsibleTrigger className={sectionTriggerClass} style={{ fontSize: '10px' }}>
+          Contrast
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <ContrastPreview scale={color.scale} className={classy('mt-3')} />
+        </CollapsibleContent>
+      </Collapsible>
+
+      {/* Sections grid for remaining atoms */}
       <div className={classy('grid grid-cols-1 gap-4 xl:grid-cols-2')}>
         {hasAccessibility && color.accessibility ? (
           <Collapsible defaultOpen>
-            <CollapsibleTrigger
-              className={classy(
-                'w-full text-left font-medium uppercase tracking-widest text-muted-foreground',
-                'hover:text-foreground transition-colors cursor-pointer',
-              )}
-              style={{ fontSize: '10px' }}
-            >
-              {SECTION_NAMES[0]}
+            <CollapsibleTrigger className={sectionTriggerClass} style={{ fontSize: '10px' }}>
+              Accessibility
             </CollapsibleTrigger>
             <CollapsibleContent>
               <ContrastMatrix
@@ -474,14 +750,8 @@ function ColorDetail({ color, onClose }: ColorDetailProps) {
 
         {hasCvd && color.accessibility?.cvd ? (
           <Collapsible defaultOpen>
-            <CollapsibleTrigger
-              className={classy(
-                'w-full text-left font-medium uppercase tracking-widest text-muted-foreground',
-                'hover:text-foreground transition-colors cursor-pointer',
-              )}
-              style={{ fontSize: '10px' }}
-            >
-              {SECTION_NAMES[1]}
+            <CollapsibleTrigger className={sectionTriggerClass} style={{ fontSize: '10px' }}>
+              Color Vision
             </CollapsibleTrigger>
             <CollapsibleContent>
               <CVDSimulation
@@ -496,49 +766,15 @@ function ColorDetail({ color, onClose }: ColorDetailProps) {
           </Collapsible>
         ) : null}
 
-        {hasWeight && color.perceptualWeight && color.atmosphericWeight ? (
+        {color.perceptualWeight && color.atmosphericWeight ? (
           <Collapsible defaultOpen>
-            <CollapsibleTrigger
-              className={classy(
-                'w-full text-left font-medium uppercase tracking-widest text-muted-foreground',
-                'hover:text-foreground transition-colors cursor-pointer',
-              )}
-              style={{ fontSize: '10px' }}
-            >
-              {SECTION_NAMES[2]}
+            <CollapsibleTrigger className={sectionTriggerClass} style={{ fontSize: '10px' }}>
+              Weight
             </CollapsibleTrigger>
             <CollapsibleContent>
               <ColorWeight
                 perceptualWeight={color.perceptualWeight}
                 atmosphericWeight={color.atmosphericWeight}
-                className={classy('mt-3')}
-              />
-            </CollapsibleContent>
-          </Collapsible>
-        ) : null}
-
-        {hasIntelligence && color.intelligence ? (
-          <Collapsible defaultOpen>
-            <CollapsibleTrigger
-              className={classy(
-                'w-full text-left font-medium uppercase tracking-widest text-muted-foreground',
-                'hover:text-foreground transition-colors cursor-pointer',
-              )}
-              style={{ fontSize: '10px' }}
-            >
-              {SECTION_NAMES[3]}
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <TokenIntelligence
-                {...(color.intelligence.usageGuidance
-                  ? { usageContext: [color.intelligence.usageGuidance] }
-                  : {})}
-                {...(color.intelligence.accessibilityNotes
-                  ? { consequence: color.intelligence.accessibilityNotes }
-                  : {})}
-                {...(color.intelligence.reasoning
-                  ? { generationRule: color.intelligence.reasoning }
-                  : {})}
                 className={classy('mt-3')}
               />
             </CollapsibleContent>
@@ -695,6 +931,9 @@ export {
   CVDSimulation,
   ColorWeight,
   TokenIntelligence,
+  ColorStory,
+  ColorCharacter,
+  ContrastPreview,
   ColorFamily,
   ColorInspector,
 };

@@ -1,0 +1,5774 @@
+{
+  "source": {
+    "color": "Tailwind indigo-500",
+    "oklch": {
+      "l": 0.457,
+      "c": 0.24,
+      "h": 277,
+      "alpha": 1
+    },
+    "generatedAt": "2026-03-11T04:28:12.145Z"
+  },
+  "colors": [
+    {
+      "name": "mid-bold-violet",
+      "scale": [
+        {
+          "l": 0.98,
+          "c": 0.036,
+          "h": 277,
+          "alpha": 1
+        },
+        {
+          "l": 0.95,
+          "c": 0.036,
+          "h": 277,
+          "alpha": 1
+        },
+        {
+          "l": 0.9,
+          "c": 0.06,
+          "h": 277,
+          "alpha": 1
+        },
+        {
+          "l": 0.8,
+          "c": 0.168,
+          "h": 277,
+          "alpha": 1
+        },
+        {
+          "l": 0.7,
+          "c": 0.168,
+          "h": 277,
+          "alpha": 1
+        },
+        {
+          "l": 0.457,
+          "c": 0.24,
+          "h": 277,
+          "alpha": 1
+        },
+        {
+          "l": 0.4,
+          "c": 0.24,
+          "h": 277,
+          "alpha": 1
+        },
+        {
+          "l": 0.25,
+          "c": 0.216,
+          "h": 277,
+          "alpha": 1
+        },
+        {
+          "l": 0.15,
+          "c": 0.216,
+          "h": 277,
+          "alpha": 1
+        },
+        {
+          "l": 0.08,
+          "c": 0.192,
+          "h": 277,
+          "alpha": 1
+        },
+        {
+          "l": 0.04,
+          "c": 0.192,
+          "h": 277,
+          "alpha": 1
+        }
+      ],
+      "tokenId": "color-0.457-0.240-277",
+      "token": "primary",
+      "value": "500",
+      "harmonies": {
+        "complementary": {
+          "l": 0.7,
+          "c": 0.288,
+          "h": 97,
+          "alpha": 1
+        },
+        "triadic": [
+          {
+            "l": 0.357,
+            "c": 0.204,
+            "h": 37,
+            "alpha": 1
+          },
+          {
+            "l": 0.557,
+            "c": 0.204,
+            "h": 157,
+            "alpha": 1
+          }
+        ],
+        "analogous": [
+          {
+            "l": 0.507,
+            "c": 0.216,
+            "h": 307,
+            "alpha": 1
+          },
+          {
+            "l": 0.407,
+            "c": 0.216,
+            "h": 247,
+            "alpha": 1
+          }
+        ],
+        "tetradic": [
+          {
+            "l": 0.457,
+            "c": 0.192,
+            "h": 7,
+            "alpha": 1
+          },
+          {
+            "l": 0.7,
+            "c": 0.288,
+            "h": 97,
+            "alpha": 1
+          },
+          {
+            "l": 0.457,
+            "c": 0.192,
+            "h": 187,
+            "alpha": 1
+          }
+        ],
+        "monochromatic": [
+          {
+            "l": 0.98,
+            "c": 0.036,
+            "h": 277,
+            "alpha": 1
+          },
+          {
+            "l": 0.95,
+            "c": 0.036,
+            "h": 277,
+            "alpha": 1
+          },
+          {
+            "l": 0.9,
+            "c": 0.06,
+            "h": 277,
+            "alpha": 1
+          },
+          {
+            "l": 0.8,
+            "c": 0.168,
+            "h": 277,
+            "alpha": 1
+          },
+          {
+            "l": 0.7,
+            "c": 0.168,
+            "h": 277,
+            "alpha": 1
+          }
+        ]
+      },
+      "accessibility": {
+        "wcagAA": {
+          "normal": [
+            [0, 5],
+            [0, 6],
+            [0, 7],
+            [0, 8],
+            [0, 9],
+            [0, 10],
+            [1, 5],
+            [1, 6],
+            [1, 7],
+            [1, 8],
+            [1, 9],
+            [1, 10],
+            [2, 5],
+            [2, 6],
+            [2, 7],
+            [2, 8],
+            [2, 9],
+            [2, 10],
+            [3, 6],
+            [3, 7],
+            [3, 8],
+            [3, 9],
+            [3, 10],
+            [4, 7],
+            [4, 8],
+            [4, 9],
+            [4, 10],
+            [5, 0],
+            [5, 1],
+            [5, 2],
+            [6, 0],
+            [6, 1],
+            [6, 2],
+            [6, 3],
+            [7, 0],
+            [7, 1],
+            [7, 2],
+            [7, 3],
+            [7, 4],
+            [8, 0],
+            [8, 1],
+            [8, 2],
+            [8, 3],
+            [8, 4],
+            [9, 0],
+            [9, 1],
+            [9, 2],
+            [9, 3],
+            [9, 4],
+            [10, 0],
+            [10, 1],
+            [10, 2],
+            [10, 3],
+            [10, 4]
+          ],
+          "large": [
+            [0, 5],
+            [0, 6],
+            [0, 7],
+            [0, 8],
+            [0, 9],
+            [0, 10],
+            [1, 5],
+            [1, 6],
+            [1, 7],
+            [1, 8],
+            [1, 9],
+            [1, 10],
+            [2, 5],
+            [2, 6],
+            [2, 7],
+            [2, 8],
+            [2, 9],
+            [2, 10],
+            [3, 5],
+            [3, 6],
+            [3, 7],
+            [3, 8],
+            [3, 9],
+            [3, 10],
+            [4, 6],
+            [4, 7],
+            [4, 8],
+            [4, 9],
+            [4, 10],
+            [5, 0],
+            [5, 1],
+            [5, 2],
+            [5, 3],
+            [6, 0],
+            [6, 1],
+            [6, 2],
+            [6, 3],
+            [6, 4],
+            [7, 0],
+            [7, 1],
+            [7, 2],
+            [7, 3],
+            [7, 4],
+            [8, 0],
+            [8, 1],
+            [8, 2],
+            [8, 3],
+            [8, 4],
+            [9, 0],
+            [9, 1],
+            [9, 2],
+            [9, 3],
+            [9, 4],
+            [10, 0],
+            [10, 1],
+            [10, 2],
+            [10, 3],
+            [10, 4]
+          ]
+        },
+        "wcagAAA": {
+          "normal": [
+            [0, 5],
+            [0, 6],
+            [0, 7],
+            [0, 8],
+            [0, 9],
+            [0, 10],
+            [1, 6],
+            [1, 7],
+            [1, 8],
+            [1, 9],
+            [1, 10],
+            [2, 6],
+            [2, 7],
+            [2, 8],
+            [2, 9],
+            [2, 10],
+            [3, 7],
+            [3, 8],
+            [3, 9],
+            [3, 10],
+            [4, 8],
+            [4, 9],
+            [4, 10],
+            [5, 0],
+            [6, 0],
+            [6, 1],
+            [6, 2],
+            [7, 0],
+            [7, 1],
+            [7, 2],
+            [7, 3],
+            [8, 0],
+            [8, 1],
+            [8, 2],
+            [8, 3],
+            [8, 4],
+            [9, 0],
+            [9, 1],
+            [9, 2],
+            [9, 3],
+            [9, 4],
+            [10, 0],
+            [10, 1],
+            [10, 2],
+            [10, 3],
+            [10, 4]
+          ],
+          "large": [
+            [0, 5],
+            [0, 6],
+            [0, 7],
+            [0, 8],
+            [0, 9],
+            [0, 10],
+            [1, 5],
+            [1, 6],
+            [1, 7],
+            [1, 8],
+            [1, 9],
+            [1, 10],
+            [2, 5],
+            [2, 6],
+            [2, 7],
+            [2, 8],
+            [2, 9],
+            [2, 10],
+            [3, 6],
+            [3, 7],
+            [3, 8],
+            [3, 9],
+            [3, 10],
+            [4, 7],
+            [4, 8],
+            [4, 9],
+            [4, 10],
+            [5, 0],
+            [5, 1],
+            [5, 2],
+            [6, 0],
+            [6, 1],
+            [6, 2],
+            [6, 3],
+            [7, 0],
+            [7, 1],
+            [7, 2],
+            [7, 3],
+            [7, 4],
+            [8, 0],
+            [8, 1],
+            [8, 2],
+            [8, 3],
+            [8, 4],
+            [9, 0],
+            [9, 1],
+            [9, 2],
+            [9, 3],
+            [9, 4],
+            [10, 0],
+            [10, 1],
+            [10, 2],
+            [10, 3],
+            [10, 4]
+          ]
+        },
+        "onWhite": {
+          "wcagAA": true,
+          "wcagAAA": true,
+          "contrastRatio": 8.066908489130759,
+          "aa": [5, 6, 7, 8, 9, 10],
+          "aaa": [5, 6, 7, 8, 9, 10]
+        },
+        "onBlack": {
+          "wcagAA": false,
+          "wcagAAA": false,
+          "contrastRatio": 2.6032277455849537,
+          "aa": [0, 1, 2, 3, 4],
+          "aaa": [0, 1, 2, 3, 4]
+        },
+        "apca": {
+          "onWhite": 86.6647524123049,
+          "onBlack": -15.422122502084557,
+          "minFontSize": 16
+        }
+      },
+      "analysis": {
+        "temperature": "cool",
+        "isLight": false,
+        "name": "mid-bold-violet"
+      },
+      "atmosphericWeight": {
+        "distanceWeight": 0.5771999999999999,
+        "temperature": "neutral",
+        "atmosphericRole": "midground"
+      },
+      "perceptualWeight": {
+        "weight": 0.5847,
+        "density": "medium",
+        "balancingRecommendation": "Balanced weight"
+      },
+      "semanticSuggestions": {
+        "danger": [
+          {
+            "l": 0.557,
+            "c": 0.25,
+            "h": 15,
+            "alpha": 1
+          },
+          {
+            "l": 0.607,
+            "c": 0.22,
+            "h": 25,
+            "alpha": 1
+          },
+          {
+            "l": 0.507,
+            "c": 0.23,
+            "h": 5,
+            "alpha": 1
+          }
+        ],
+        "success": [
+          {
+            "l": 0.607,
+            "c": 0.2,
+            "h": 135,
+            "alpha": 1
+          },
+          {
+            "l": 0.557,
+            "c": 0.22,
+            "h": 145,
+            "alpha": 1
+          },
+          {
+            "l": 0.657,
+            "c": 0.24,
+            "h": 125,
+            "alpha": 1
+          }
+        ],
+        "warning": [
+          {
+            "l": 0.7,
+            "c": 0.2,
+            "h": 45,
+            "alpha": 1
+          },
+          {
+            "l": 0.75,
+            "c": 0.18,
+            "h": 55,
+            "alpha": 1
+          },
+          {
+            "l": 0.72,
+            "c": 0.19,
+            "h": 35,
+            "alpha": 1
+          }
+        ],
+        "info": [
+          {
+            "l": 0.6,
+            "c": 0.2,
+            "h": 220,
+            "alpha": 1
+          },
+          {
+            "l": 0.55,
+            "c": 0.22,
+            "h": 230,
+            "alpha": 1
+          },
+          {
+            "l": 0.5,
+            "c": 0.25,
+            "h": 240,
+            "alpha": 1
+          }
+        ]
+      },
+      "intelligence": {
+        "reasoning": "The OKLCH combination of L=0.457, C=0.24, H=277 works well due to its balanced position in the color space. The mid-tone lightness provides a stable foundation, while the saturated chroma adds vibrancy without overwhelming the senses. The hue of 277deg, which falls within the blue-violet range, adds a sense of creativity and luxury. This specific combination creates a unique visual identity that is both engaging and sophisticated.",
+        "emotionalImpact": "This color combination elicits a sense of imaginative luxury and creativity. The blue-violet hue at 277deg has a calming effect while also stimulating the imagination. The saturated chroma of 0.24 adds an emotional intensity, making this color suitable for designs that require a sense of drama or high-end quality. The mid-tone lightness ensures that the color is not overpowering, allowing for a balanced emotional response.",
+        "culturalContext": "Cross-culturally, blue-violet hues are often associated with luxury, creativity, and wisdom. In Western cultures, this specific hue may evoke feelings of grandeur and sophistication, while in some Asian cultures, it may symbolize spiritual growth and enlightenment. The saturated chroma and mid-tone lightness of this color combination make it versatile for use in various cultural contexts, from high-end branding to artistic expressions.",
+        "accessibilityNotes": "According to WCAG guidelines, a lightness value of 0.457 is considered mid-tone and may require careful consideration for contrast. For text, a contrast ratio of at least 4.5:1 is recommended for normal text or 3:1 for larger text (18pt or 14pt bold). For this color, it's recommended to pair it with a background that provides sufficient contrast, such as a light or dark neutral color. Specifically, a background with a lightness value of 0.95 or 0.05 would provide a contrast ratio of 4.9:1 or 5.1:1, respectively.",
+        "usageGuidance": "This OKLCH color combination is suitable for UI use cases that require a sense of luxury, creativity, or sophistication. Some possible use cases include:\n  - Branding and logos: Use as a primary or secondary color to convey high-end quality or artistic expression.\n  - Accents and highlights: Use to draw attention to specific elements, such as buttons, icons, or calls-to-action.\n  - Backgrounds and textures: Use as a background or texture to add depth and visual interest to a design.\n  - However, due to its saturated chroma, it's recommended to use this color judiciously and balance it with neutral colors to avoid overwhelming the senses.",
+        "metadata": {
+          "predictionId": "019b4a37-4a53-7992-a456-b5c60c38ed1d",
+          "confidence": 0.95,
+          "uncertaintyBounds": {
+            "lower": 0.85,
+            "upper": 1,
+            "confidenceInterval": 0.95
+          },
+          "qualityScore": 0.8500000000000001,
+          "method": "bootstrap"
+        }
+      }
+    },
+    {
+      "name": "balanced-honest-honey",
+      "scale": [
+        {
+          "l": 0.98,
+          "c": 0.029,
+          "h": 67,
+          "alpha": 1
+        },
+        {
+          "l": 0.95,
+          "c": 0.029,
+          "h": 67,
+          "alpha": 1
+        },
+        {
+          "l": 0.9,
+          "c": 0.048,
+          "h": 67,
+          "alpha": 1
+        },
+        {
+          "l": 0.8,
+          "c": 0.134,
+          "h": 67,
+          "alpha": 1
+        },
+        {
+          "l": 0.7,
+          "c": 0.134,
+          "h": 67,
+          "alpha": 1
+        },
+        {
+          "l": 0.557,
+          "c": 0.192,
+          "h": 67,
+          "alpha": 1
+        },
+        {
+          "l": 0.4,
+          "c": 0.192,
+          "h": 67,
+          "alpha": 1
+        },
+        {
+          "l": 0.25,
+          "c": 0.173,
+          "h": 67,
+          "alpha": 1
+        },
+        {
+          "l": 0.15,
+          "c": 0.173,
+          "h": 67,
+          "alpha": 1
+        },
+        {
+          "l": 0.08,
+          "c": 0.154,
+          "h": 67,
+          "alpha": 1
+        },
+        {
+          "l": 0.04,
+          "c": 0.154,
+          "h": 67,
+          "alpha": 1
+        }
+      ],
+      "tokenId": "color-0.557-0.192-67",
+      "token": "secondary",
+      "value": "500",
+      "harmonies": {
+        "complementary": {
+          "l": 0.3,
+          "c": 0.23,
+          "h": 247,
+          "alpha": 1
+        },
+        "triadic": [
+          {
+            "l": 0.457,
+            "c": 0.163,
+            "h": 187,
+            "alpha": 1
+          },
+          {
+            "l": 0.657,
+            "c": 0.163,
+            "h": 307,
+            "alpha": 1
+          }
+        ],
+        "analogous": [
+          {
+            "l": 0.607,
+            "c": 0.173,
+            "h": 97,
+            "alpha": 1
+          },
+          {
+            "l": 0.507,
+            "c": 0.173,
+            "h": 37,
+            "alpha": 1
+          }
+        ],
+        "tetradic": [
+          {
+            "l": 0.557,
+            "c": 0.154,
+            "h": 157,
+            "alpha": 1
+          },
+          {
+            "l": 0.3,
+            "c": 0.23,
+            "h": 247,
+            "alpha": 1
+          },
+          {
+            "l": 0.557,
+            "c": 0.154,
+            "h": 337,
+            "alpha": 1
+          }
+        ],
+        "monochromatic": [
+          {
+            "l": 0.98,
+            "c": 0.029,
+            "h": 67,
+            "alpha": 1
+          },
+          {
+            "l": 0.95,
+            "c": 0.029,
+            "h": 67,
+            "alpha": 1
+          },
+          {
+            "l": 0.9,
+            "c": 0.048,
+            "h": 67,
+            "alpha": 1
+          },
+          {
+            "l": 0.8,
+            "c": 0.134,
+            "h": 67,
+            "alpha": 1
+          },
+          {
+            "l": 0.7,
+            "c": 0.134,
+            "h": 67,
+            "alpha": 1
+          }
+        ]
+      },
+      "accessibility": {
+        "wcagAA": {
+          "normal": [
+            [0, 5],
+            [0, 6],
+            [0, 7],
+            [0, 8],
+            [0, 9],
+            [0, 10],
+            [1, 6],
+            [1, 7],
+            [1, 8],
+            [1, 9],
+            [1, 10],
+            [2, 6],
+            [2, 7],
+            [2, 8],
+            [2, 9],
+            [2, 10],
+            [3, 6],
+            [3, 7],
+            [3, 8],
+            [3, 9],
+            [3, 10],
+            [4, 7],
+            [4, 8],
+            [4, 9],
+            [4, 10],
+            [5, 0],
+            [6, 0],
+            [6, 1],
+            [6, 2],
+            [6, 3],
+            [7, 0],
+            [7, 1],
+            [7, 2],
+            [7, 3],
+            [7, 4],
+            [8, 0],
+            [8, 1],
+            [8, 2],
+            [8, 3],
+            [8, 4],
+            [9, 0],
+            [9, 1],
+            [9, 2],
+            [9, 3],
+            [9, 4],
+            [10, 0],
+            [10, 1],
+            [10, 2],
+            [10, 3],
+            [10, 4]
+          ],
+          "large": [
+            [0, 5],
+            [0, 6],
+            [0, 7],
+            [0, 8],
+            [0, 9],
+            [0, 10],
+            [1, 5],
+            [1, 6],
+            [1, 7],
+            [1, 8],
+            [1, 9],
+            [1, 10],
+            [2, 5],
+            [2, 6],
+            [2, 7],
+            [2, 8],
+            [2, 9],
+            [2, 10],
+            [3, 6],
+            [3, 7],
+            [3, 8],
+            [3, 9],
+            [3, 10],
+            [4, 6],
+            [4, 7],
+            [4, 8],
+            [4, 9],
+            [4, 10],
+            [5, 0],
+            [5, 1],
+            [5, 2],
+            [5, 7],
+            [5, 8],
+            [5, 9],
+            [5, 10],
+            [6, 0],
+            [6, 1],
+            [6, 2],
+            [6, 3],
+            [6, 4],
+            [7, 0],
+            [7, 1],
+            [7, 2],
+            [7, 3],
+            [7, 4],
+            [7, 5],
+            [8, 0],
+            [8, 1],
+            [8, 2],
+            [8, 3],
+            [8, 4],
+            [8, 5],
+            [9, 0],
+            [9, 1],
+            [9, 2],
+            [9, 3],
+            [9, 4],
+            [9, 5],
+            [10, 0],
+            [10, 1],
+            [10, 2],
+            [10, 3],
+            [10, 4],
+            [10, 5]
+          ]
+        },
+        "wcagAAA": {
+          "normal": [
+            [0, 6],
+            [0, 7],
+            [0, 8],
+            [0, 9],
+            [0, 10],
+            [1, 6],
+            [1, 7],
+            [1, 8],
+            [1, 9],
+            [1, 10],
+            [2, 6],
+            [2, 7],
+            [2, 8],
+            [2, 9],
+            [2, 10],
+            [3, 7],
+            [3, 8],
+            [3, 9],
+            [3, 10],
+            [4, 8],
+            [4, 9],
+            [4, 10],
+            [6, 0],
+            [6, 1],
+            [6, 2],
+            [7, 0],
+            [7, 1],
+            [7, 2],
+            [7, 3],
+            [8, 0],
+            [8, 1],
+            [8, 2],
+            [8, 3],
+            [8, 4],
+            [9, 0],
+            [9, 1],
+            [9, 2],
+            [9, 3],
+            [9, 4],
+            [10, 0],
+            [10, 1],
+            [10, 2],
+            [10, 3],
+            [10, 4]
+          ],
+          "large": [
+            [0, 5],
+            [0, 6],
+            [0, 7],
+            [0, 8],
+            [0, 9],
+            [0, 10],
+            [1, 6],
+            [1, 7],
+            [1, 8],
+            [1, 9],
+            [1, 10],
+            [2, 6],
+            [2, 7],
+            [2, 8],
+            [2, 9],
+            [2, 10],
+            [3, 6],
+            [3, 7],
+            [3, 8],
+            [3, 9],
+            [3, 10],
+            [4, 7],
+            [4, 8],
+            [4, 9],
+            [4, 10],
+            [5, 0],
+            [6, 0],
+            [6, 1],
+            [6, 2],
+            [6, 3],
+            [7, 0],
+            [7, 1],
+            [7, 2],
+            [7, 3],
+            [7, 4],
+            [8, 0],
+            [8, 1],
+            [8, 2],
+            [8, 3],
+            [8, 4],
+            [9, 0],
+            [9, 1],
+            [9, 2],
+            [9, 3],
+            [9, 4],
+            [10, 0],
+            [10, 1],
+            [10, 2],
+            [10, 3],
+            [10, 4]
+          ]
+        },
+        "onWhite": {
+          "wcagAA": true,
+          "wcagAAA": false,
+          "contrastRatio": 4.926780710963485,
+          "aa": [5, 6, 7, 8, 9, 10],
+          "aaa": [6, 7, 8, 9, 10]
+        },
+        "onBlack": {
+          "wcagAA": false,
+          "wcagAAA": false,
+          "contrastRatio": 4.262418246720223,
+          "aa": [0, 1, 2, 3, 4],
+          "aaa": [0, 1, 2, 3, 4]
+        },
+        "apca": {
+          "onWhite": 73.16073401825889,
+          "onBlack": -28.531199144216824,
+          "minFontSize": 16
+        }
+      },
+      "analysis": {
+        "temperature": "warm",
+        "isLight": false,
+        "name": "balanced-honest-honey"
+      },
+      "atmosphericWeight": {
+        "distanceWeight": 0.46520000000000006,
+        "temperature": "neutral",
+        "atmosphericRole": "midground"
+      },
+      "perceptualWeight": {
+        "weight": 0.5512,
+        "density": "medium",
+        "balancingRecommendation": "Balanced weight"
+      },
+      "semanticSuggestions": {
+        "danger": [
+          {
+            "l": 0.657,
+            "c": 0.23,
+            "h": 15,
+            "alpha": 1
+          },
+          {
+            "l": 0.707,
+            "c": 0.211,
+            "h": 25,
+            "alpha": 1
+          },
+          {
+            "l": 0.607,
+            "c": 0.221,
+            "h": 5,
+            "alpha": 1
+          }
+        ],
+        "success": [
+          {
+            "l": 0.707,
+            "c": 0.173,
+            "h": 135,
+            "alpha": 1
+          },
+          {
+            "l": 0.657,
+            "c": 0.192,
+            "h": 145,
+            "alpha": 1
+          },
+          {
+            "l": 0.757,
+            "c": 0.211,
+            "h": 125,
+            "alpha": 1
+          }
+        ],
+        "warning": [
+          {
+            "l": 0.707,
+            "c": 0.182,
+            "h": 45,
+            "alpha": 1
+          },
+          {
+            "l": 0.757,
+            "c": 0.173,
+            "h": 55,
+            "alpha": 1
+          },
+          {
+            "l": 0.727,
+            "c": 0.177,
+            "h": 35,
+            "alpha": 1
+          }
+        ],
+        "info": [
+          {
+            "l": 0.657,
+            "c": 0.173,
+            "h": 220,
+            "alpha": 1
+          },
+          {
+            "l": 0.607,
+            "c": 0.192,
+            "h": 230,
+            "alpha": 1
+          },
+          {
+            "l": 0.557,
+            "c": 0.211,
+            "h": 240,
+            "alpha": 1
+          }
+        ]
+      },
+      "intelligence": {
+        "reasoning": "The OKLCH combination (0.769, 0.188, 70) works well due to its balanced lightness and moderate chroma, which creates a visually appealing and harmonious effect. Specifically, the lightness value of 0.769 provides a light background that doesn't overpower, while the chroma of 0.188 adds a touch of saturation without being overwhelming. The hue of 70 degrees, situated in the yellow-green spectrum, contributes to a sense of freshness and balance.",
+        "emotionalImpact": "This color combination elicits a sense of calmness and serenity, likely due to its proximity to the green-yellow axis, which is often associated with nature and growth. The moderate chroma and light lightness also contribute to a feeling of approachability and friendliness. The unique position of this color in OKLCH space, with a relatively high lightness and moderate chroma, creates a sense of optimism and hopefulness.",
+        "culturalContext": "The hue of 70 degrees, being close to yellow-green, has cross-cultural associations with themes of nature, harmony, and balance. In many Western cultures, this hue is linked to feelings of growth, renewal, and positivity. In some Asian cultures, yellow-green hues are associated with good fortune and prosperity. However, it's essential to consider specific cultural contexts and nuances when using this color combination in international designs.",
+        "accessibilityNotes": "With a lightness value of 0.769, this color has a relatively high luminance. According to WCAG 2.1 guidelines, for a light background like this, it's essential to ensure sufficient contrast with foreground elements. A minimum contrast ratio of 4.5:1 is recommended for normal text and 7:1 for larger text (18pt or 14pt bold). When using this color, consider pairing it with darker or more saturated foreground colors to meet these contrast requirements.",
+        "usageGuidance": "Given its moderate chroma of 0.188 and light lightness of 0.769, this color is suitable for UI use cases where a subtle yet engaging visual presence is desired. Some potential applications include:\n      - Backgrounds for non-critical information or secondary content\n      - Highlighting specific sections or features without overwhelming the user\n      - Creating a calming and approachable atmosphere in wellness, educational, or environmental applications\n      - Supporting brand identities that value freshness, growth, and approachability",
+        "metadata": {
+          "predictionId": "019b4a36-cd1b-7142-b38b-3d1838d7bff4",
+          "confidence": 0.95,
+          "uncertaintyBounds": {
+            "lower": 0.85,
+            "upper": 1,
+            "confidenceInterval": 0.95
+          },
+          "qualityScore": 0.8300000000000001,
+          "method": "bootstrap"
+        }
+      }
+    },
+    {
+      "name": "dim-bold-copper",
+      "scale": [
+        {
+          "l": 0.98,
+          "c": 0.031,
+          "h": 37,
+          "alpha": 1
+        },
+        {
+          "l": 0.95,
+          "c": 0.031,
+          "h": 37,
+          "alpha": 1
+        },
+        {
+          "l": 0.9,
+          "c": 0.051,
+          "h": 37,
+          "alpha": 1
+        },
+        {
+          "l": 0.8,
+          "c": 0.143,
+          "h": 37,
+          "alpha": 1
+        },
+        {
+          "l": 0.7,
+          "c": 0.143,
+          "h": 37,
+          "alpha": 1
+        },
+        {
+          "l": 0.357,
+          "c": 0.204,
+          "h": 37,
+          "alpha": 1
+        },
+        {
+          "l": 0.4,
+          "c": 0.204,
+          "h": 37,
+          "alpha": 1
+        },
+        {
+          "l": 0.25,
+          "c": 0.184,
+          "h": 37,
+          "alpha": 1
+        },
+        {
+          "l": 0.15,
+          "c": 0.184,
+          "h": 37,
+          "alpha": 1
+        },
+        {
+          "l": 0.08,
+          "c": 0.163,
+          "h": 37,
+          "alpha": 1
+        },
+        {
+          "l": 0.04,
+          "c": 0.163,
+          "h": 37,
+          "alpha": 1
+        }
+      ],
+      "tokenId": "color-0.357-0.204-37",
+      "token": "tertiary",
+      "value": "500",
+      "harmonies": {
+        "complementary": {
+          "l": 0.7,
+          "c": 0.245,
+          "h": 217,
+          "alpha": 1
+        },
+        "triadic": [
+          {
+            "l": 0.3,
+            "c": 0.173,
+            "h": 157,
+            "alpha": 1
+          },
+          {
+            "l": 0.457,
+            "c": 0.173,
+            "h": 277,
+            "alpha": 1
+          }
+        ],
+        "analogous": [
+          {
+            "l": 0.407,
+            "c": 0.184,
+            "h": 67,
+            "alpha": 1
+          },
+          {
+            "l": 0.307,
+            "c": 0.184,
+            "h": 7,
+            "alpha": 1
+          }
+        ],
+        "tetradic": [
+          {
+            "l": 0.357,
+            "c": 0.163,
+            "h": 127,
+            "alpha": 1
+          },
+          {
+            "l": 0.7,
+            "c": 0.245,
+            "h": 217,
+            "alpha": 1
+          },
+          {
+            "l": 0.357,
+            "c": 0.163,
+            "h": 307,
+            "alpha": 1
+          }
+        ],
+        "monochromatic": [
+          {
+            "l": 0.98,
+            "c": 0.031,
+            "h": 37,
+            "alpha": 1
+          },
+          {
+            "l": 0.95,
+            "c": 0.031,
+            "h": 37,
+            "alpha": 1
+          },
+          {
+            "l": 0.9,
+            "c": 0.051,
+            "h": 37,
+            "alpha": 1
+          },
+          {
+            "l": 0.8,
+            "c": 0.143,
+            "h": 37,
+            "alpha": 1
+          },
+          {
+            "l": 0.7,
+            "c": 0.143,
+            "h": 37,
+            "alpha": 1
+          }
+        ]
+      },
+      "accessibility": {
+        "wcagAA": {
+          "normal": [
+            [0, 5],
+            [0, 6],
+            [0, 7],
+            [0, 8],
+            [0, 9],
+            [0, 10],
+            [1, 5],
+            [1, 6],
+            [1, 7],
+            [1, 8],
+            [1, 9],
+            [1, 10],
+            [2, 5],
+            [2, 6],
+            [2, 7],
+            [2, 8],
+            [2, 9],
+            [2, 10],
+            [3, 5],
+            [3, 6],
+            [3, 7],
+            [3, 8],
+            [3, 9],
+            [3, 10],
+            [4, 7],
+            [4, 8],
+            [4, 9],
+            [4, 10],
+            [5, 0],
+            [5, 1],
+            [5, 2],
+            [5, 3],
+            [6, 0],
+            [6, 1],
+            [6, 2],
+            [6, 3],
+            [7, 0],
+            [7, 1],
+            [7, 2],
+            [7, 3],
+            [7, 4],
+            [8, 0],
+            [8, 1],
+            [8, 2],
+            [8, 3],
+            [8, 4],
+            [9, 0],
+            [9, 1],
+            [9, 2],
+            [9, 3],
+            [9, 4],
+            [10, 0],
+            [10, 1],
+            [10, 2],
+            [10, 3],
+            [10, 4]
+          ],
+          "large": [
+            [0, 5],
+            [0, 6],
+            [0, 7],
+            [0, 8],
+            [0, 9],
+            [0, 10],
+            [1, 5],
+            [1, 6],
+            [1, 7],
+            [1, 8],
+            [1, 9],
+            [1, 10],
+            [2, 5],
+            [2, 6],
+            [2, 7],
+            [2, 8],
+            [2, 9],
+            [2, 10],
+            [3, 5],
+            [3, 6],
+            [3, 7],
+            [3, 8],
+            [3, 9],
+            [3, 10],
+            [4, 5],
+            [4, 6],
+            [4, 7],
+            [4, 8],
+            [4, 9],
+            [4, 10],
+            [5, 0],
+            [5, 1],
+            [5, 2],
+            [5, 3],
+            [5, 4],
+            [6, 0],
+            [6, 1],
+            [6, 2],
+            [6, 3],
+            [6, 4],
+            [7, 0],
+            [7, 1],
+            [7, 2],
+            [7, 3],
+            [7, 4],
+            [8, 0],
+            [8, 1],
+            [8, 2],
+            [8, 3],
+            [8, 4],
+            [9, 0],
+            [9, 1],
+            [9, 2],
+            [9, 3],
+            [9, 4],
+            [10, 0],
+            [10, 1],
+            [10, 2],
+            [10, 3],
+            [10, 4]
+          ]
+        },
+        "wcagAAA": {
+          "normal": [
+            [0, 5],
+            [0, 6],
+            [0, 7],
+            [0, 8],
+            [0, 9],
+            [0, 10],
+            [1, 5],
+            [1, 6],
+            [1, 7],
+            [1, 8],
+            [1, 9],
+            [1, 10],
+            [2, 5],
+            [2, 6],
+            [2, 7],
+            [2, 8],
+            [2, 9],
+            [2, 10],
+            [3, 7],
+            [3, 8],
+            [3, 9],
+            [3, 10],
+            [4, 9],
+            [4, 10],
+            [5, 0],
+            [5, 1],
+            [5, 2],
+            [6, 0],
+            [6, 1],
+            [6, 2],
+            [7, 0],
+            [7, 1],
+            [7, 2],
+            [7, 3],
+            [8, 0],
+            [8, 1],
+            [8, 2],
+            [8, 3],
+            [9, 0],
+            [9, 1],
+            [9, 2],
+            [9, 3],
+            [9, 4],
+            [10, 0],
+            [10, 1],
+            [10, 2],
+            [10, 3],
+            [10, 4]
+          ],
+          "large": [
+            [0, 5],
+            [0, 6],
+            [0, 7],
+            [0, 8],
+            [0, 9],
+            [0, 10],
+            [1, 5],
+            [1, 6],
+            [1, 7],
+            [1, 8],
+            [1, 9],
+            [1, 10],
+            [2, 5],
+            [2, 6],
+            [2, 7],
+            [2, 8],
+            [2, 9],
+            [2, 10],
+            [3, 5],
+            [3, 6],
+            [3, 7],
+            [3, 8],
+            [3, 9],
+            [3, 10],
+            [4, 7],
+            [4, 8],
+            [4, 9],
+            [4, 10],
+            [5, 0],
+            [5, 1],
+            [5, 2],
+            [5, 3],
+            [6, 0],
+            [6, 1],
+            [6, 2],
+            [6, 3],
+            [7, 0],
+            [7, 1],
+            [7, 2],
+            [7, 3],
+            [7, 4],
+            [8, 0],
+            [8, 1],
+            [8, 2],
+            [8, 3],
+            [8, 4],
+            [9, 0],
+            [9, 1],
+            [9, 2],
+            [9, 3],
+            [9, 4],
+            [10, 0],
+            [10, 1],
+            [10, 2],
+            [10, 3],
+            [10, 4]
+          ]
+        },
+        "onWhite": {
+          "wcagAA": true,
+          "wcagAAA": true,
+          "contrastRatio": 11.261395033476546,
+          "aa": [5, 6, 7, 8, 9, 10],
+          "aaa": [5, 6, 7, 8, 9, 10]
+        },
+        "onBlack": {
+          "wcagAA": false,
+          "wcagAAA": false,
+          "contrastRatio": 1.864777848354815,
+          "aa": [0, 1, 2, 3, 4],
+          "aaa": [0, 1, 2, 3, 4]
+        },
+        "apca": {
+          "onWhite": 91.2878575601734,
+          "onBlack": -11.064286491949996,
+          "minFontSize": 16
+        }
+      },
+      "analysis": {
+        "temperature": "warm",
+        "isLight": false,
+        "name": "dim-bold-copper"
+      },
+      "atmosphericWeight": {
+        "distanceWeight": 0.8632,
+        "temperature": "warm",
+        "atmosphericRole": "foreground"
+      },
+      "perceptualWeight": {
+        "weight": 0.6952,
+        "density": "medium",
+        "balancingRecommendation": "Balanced weight"
+      },
+      "semanticSuggestions": {
+        "danger": [
+          {
+            "l": 0.55,
+            "c": 0.245,
+            "h": 15,
+            "alpha": 1
+          },
+          {
+            "l": 0.6,
+            "c": 0.22,
+            "h": 25,
+            "alpha": 1
+          },
+          {
+            "l": 0.5,
+            "c": 0.23,
+            "h": 5,
+            "alpha": 1
+          }
+        ],
+        "success": [
+          {
+            "l": 0.6,
+            "c": 0.184,
+            "h": 135,
+            "alpha": 1
+          },
+          {
+            "l": 0.55,
+            "c": 0.204,
+            "h": 145,
+            "alpha": 1
+          },
+          {
+            "l": 0.65,
+            "c": 0.224,
+            "h": 125,
+            "alpha": 1
+          }
+        ],
+        "warning": [
+          {
+            "l": 0.7,
+            "c": 0.194,
+            "h": 45,
+            "alpha": 1
+          },
+          {
+            "l": 0.75,
+            "c": 0.18,
+            "h": 55,
+            "alpha": 1
+          },
+          {
+            "l": 0.72,
+            "c": 0.188,
+            "h": 35,
+            "alpha": 1
+          }
+        ],
+        "info": [
+          {
+            "l": 0.6,
+            "c": 0.184,
+            "h": 220,
+            "alpha": 1
+          },
+          {
+            "l": 0.55,
+            "c": 0.204,
+            "h": 230,
+            "alpha": 1
+          },
+          {
+            "l": 0.5,
+            "c": 0.224,
+            "h": 240,
+            "alpha": 1
+          }
+        ]
+      },
+      "intelligence": {
+        "reasoning": "The OKLCH combination of L=0.7, C=0.2, H=30 works well due to its balanced mix of lightness, chroma, and hue. The mid-tone lightness (0.7) provides a neutral background for the slightly saturated (C=0.2) and warm hue (H=30). This balance creates a visually appealing and harmonious color that is easy on the eyes.",
+        "emotionalImpact": "This color combination elicits a sense of warmth and comfort, evoking feelings of coziness and relaxation. The moderate chroma (0.2) and mid-tone lightness (0.7) create a soothing atmosphere, while the hue (30) adds a subtle sense of energy and playfulness. The overall effect is calming and inviting, making it suitable for designs that aim to create a sense of tranquility.",
+        "culturalContext": "The hue of 30 degrees is often associated with the color orange or golden hues, which can have different meanings across cultures. In Western cultures, orange is often linked to warmth, creativity, and playfulness, while in Asian cultures, it may symbolize good fortune and prosperity. The moderate chroma and mid-tone lightness of this color combination help to neutralize any strong cultural connotations, making it a relatively safe choice for global audiences.",
+        "accessibilityNotes": "With a lightness of 0.7, this color has a moderate level of brightness. According to WCAG guidelines, for normal text (AA), the contrast ratio should be at least 4.5:1. For larger text (18pt or 14pt bold), the contrast ratio should be at least 3:1. When using this color as a background, ensure that the text color has sufficient contrast to meet these guidelines. For example, a text color with a lightness of 0.95 or higher would provide a sufficient contrast ratio.",
+        "usageGuidance": "Given its moderate chroma (0.2) and mid-tone lightness (0.7), this color is suitable for use as a background or accent color in UI design. It can be used to add warmth and visual interest to a design without overwhelming the user. Consider using this color for:\n    * Backgrounds for cards or panels\n    * Accent colors for buttons or icons\n    * Hover or active states for interactive elements\n    * Design elements that require a subtle pop of color, such as dividers or highlights",
+        "metadata": {
+          "predictionId": "019b3ec6-7d28-7339-b160-710bfe29462f",
+          "confidence": 0.95,
+          "uncertaintyBounds": {
+            "lower": 0.85,
+            "upper": 1,
+            "confidenceInterval": 0.95
+          },
+          "qualityScore": 0.8300000000000001,
+          "method": "bootstrap"
+        }
+      }
+    },
+    {
+      "name": "pale-striking-citrine",
+      "scale": [
+        {
+          "l": 0.98,
+          "c": 0.043,
+          "h": 97,
+          "alpha": 1
+        },
+        {
+          "l": 0.95,
+          "c": 0.043,
+          "h": 97,
+          "alpha": 1
+        },
+        {
+          "l": 0.9,
+          "c": 0.072,
+          "h": 97,
+          "alpha": 1
+        },
+        {
+          "l": 0.8,
+          "c": 0.202,
+          "h": 97,
+          "alpha": 1
+        },
+        {
+          "l": 0.7,
+          "c": 0.202,
+          "h": 97,
+          "alpha": 1
+        },
+        {
+          "l": 0.7,
+          "c": 0.202,
+          "h": 97,
+          "alpha": 1
+        },
+        {
+          "l": 0.4,
+          "c": 0.288,
+          "h": 97,
+          "alpha": 1
+        },
+        {
+          "l": 0.25,
+          "c": 0.259,
+          "h": 97,
+          "alpha": 1
+        },
+        {
+          "l": 0.15,
+          "c": 0.259,
+          "h": 97,
+          "alpha": 1
+        },
+        {
+          "l": 0.08,
+          "c": 0.23,
+          "h": 97,
+          "alpha": 1
+        },
+        {
+          "l": 0.04,
+          "c": 0.23,
+          "h": 97,
+          "alpha": 1
+        }
+      ],
+      "tokenId": "color-0.700-0.288-97",
+      "token": "accent",
+      "value": "500",
+      "harmonies": {
+        "complementary": {
+          "l": 0.3,
+          "c": 0.3,
+          "h": 277,
+          "alpha": 1
+        },
+        "triadic": [
+          {
+            "l": 0.6,
+            "c": 0.245,
+            "h": 217,
+            "alpha": 1
+          },
+          {
+            "l": 0.7,
+            "c": 0.245,
+            "h": 337,
+            "alpha": 1
+          }
+        ],
+        "analogous": [
+          {
+            "l": 0.75,
+            "c": 0.259,
+            "h": 127,
+            "alpha": 1
+          },
+          {
+            "l": 0.65,
+            "c": 0.259,
+            "h": 67,
+            "alpha": 1
+          }
+        ],
+        "tetradic": [
+          {
+            "l": 0.7,
+            "c": 0.23,
+            "h": 187,
+            "alpha": 1
+          },
+          {
+            "l": 0.3,
+            "c": 0.3,
+            "h": 277,
+            "alpha": 1
+          },
+          {
+            "l": 0.7,
+            "c": 0.23,
+            "h": 7,
+            "alpha": 1
+          }
+        ],
+        "monochromatic": [
+          {
+            "l": 0.98,
+            "c": 0.043,
+            "h": 97,
+            "alpha": 1
+          },
+          {
+            "l": 0.95,
+            "c": 0.043,
+            "h": 97,
+            "alpha": 1
+          },
+          {
+            "l": 0.9,
+            "c": 0.072,
+            "h": 97,
+            "alpha": 1
+          },
+          {
+            "l": 0.8,
+            "c": 0.202,
+            "h": 97,
+            "alpha": 1
+          },
+          {
+            "l": 0.7,
+            "c": 0.202,
+            "h": 97,
+            "alpha": 1
+          }
+        ]
+      },
+      "accessibility": {
+        "wcagAA": {
+          "normal": [
+            [0, 6],
+            [0, 7],
+            [0, 8],
+            [0, 9],
+            [0, 10],
+            [1, 6],
+            [1, 7],
+            [1, 8],
+            [1, 9],
+            [1, 10],
+            [2, 6],
+            [2, 7],
+            [2, 8],
+            [2, 9],
+            [2, 10],
+            [3, 6],
+            [3, 7],
+            [3, 8],
+            [3, 9],
+            [3, 10],
+            [4, 7],
+            [4, 8],
+            [4, 9],
+            [4, 10],
+            [5, 7],
+            [5, 8],
+            [5, 9],
+            [5, 10],
+            [6, 0],
+            [6, 1],
+            [6, 2],
+            [6, 3],
+            [7, 0],
+            [7, 1],
+            [7, 2],
+            [7, 3],
+            [7, 4],
+            [7, 5],
+            [8, 0],
+            [8, 1],
+            [8, 2],
+            [8, 3],
+            [8, 4],
+            [8, 5],
+            [9, 0],
+            [9, 1],
+            [9, 2],
+            [9, 3],
+            [9, 4],
+            [9, 5],
+            [10, 0],
+            [10, 1],
+            [10, 2],
+            [10, 3],
+            [10, 4],
+            [10, 5]
+          ],
+          "large": [
+            [0, 6],
+            [0, 7],
+            [0, 8],
+            [0, 9],
+            [0, 10],
+            [1, 6],
+            [1, 7],
+            [1, 8],
+            [1, 9],
+            [1, 10],
+            [2, 6],
+            [2, 7],
+            [2, 8],
+            [2, 9],
+            [2, 10],
+            [3, 6],
+            [3, 7],
+            [3, 8],
+            [3, 9],
+            [3, 10],
+            [4, 6],
+            [4, 7],
+            [4, 8],
+            [4, 9],
+            [4, 10],
+            [5, 6],
+            [5, 7],
+            [5, 8],
+            [5, 9],
+            [5, 10],
+            [6, 0],
+            [6, 1],
+            [6, 2],
+            [6, 3],
+            [6, 4],
+            [6, 5],
+            [7, 0],
+            [7, 1],
+            [7, 2],
+            [7, 3],
+            [7, 4],
+            [7, 5],
+            [8, 0],
+            [8, 1],
+            [8, 2],
+            [8, 3],
+            [8, 4],
+            [8, 5],
+            [9, 0],
+            [9, 1],
+            [9, 2],
+            [9, 3],
+            [9, 4],
+            [9, 5],
+            [10, 0],
+            [10, 1],
+            [10, 2],
+            [10, 3],
+            [10, 4],
+            [10, 5]
+          ]
+        },
+        "wcagAAA": {
+          "normal": [
+            [0, 6],
+            [0, 7],
+            [0, 8],
+            [0, 9],
+            [0, 10],
+            [1, 6],
+            [1, 7],
+            [1, 8],
+            [1, 9],
+            [1, 10],
+            [2, 6],
+            [2, 7],
+            [2, 8],
+            [2, 9],
+            [2, 10],
+            [3, 7],
+            [3, 8],
+            [3, 9],
+            [3, 10],
+            [4, 8],
+            [4, 9],
+            [4, 10],
+            [5, 8],
+            [5, 9],
+            [5, 10],
+            [6, 0],
+            [6, 1],
+            [6, 2],
+            [7, 0],
+            [7, 1],
+            [7, 2],
+            [7, 3],
+            [8, 0],
+            [8, 1],
+            [8, 2],
+            [8, 3],
+            [8, 4],
+            [8, 5],
+            [9, 0],
+            [9, 1],
+            [9, 2],
+            [9, 3],
+            [9, 4],
+            [9, 5],
+            [10, 0],
+            [10, 1],
+            [10, 2],
+            [10, 3],
+            [10, 4],
+            [10, 5]
+          ],
+          "large": [
+            [0, 6],
+            [0, 7],
+            [0, 8],
+            [0, 9],
+            [0, 10],
+            [1, 6],
+            [1, 7],
+            [1, 8],
+            [1, 9],
+            [1, 10],
+            [2, 6],
+            [2, 7],
+            [2, 8],
+            [2, 9],
+            [2, 10],
+            [3, 6],
+            [3, 7],
+            [3, 8],
+            [3, 9],
+            [3, 10],
+            [4, 7],
+            [4, 8],
+            [4, 9],
+            [4, 10],
+            [5, 7],
+            [5, 8],
+            [5, 9],
+            [5, 10],
+            [6, 0],
+            [6, 1],
+            [6, 2],
+            [6, 3],
+            [7, 0],
+            [7, 1],
+            [7, 2],
+            [7, 3],
+            [7, 4],
+            [7, 5],
+            [8, 0],
+            [8, 1],
+            [8, 2],
+            [8, 3],
+            [8, 4],
+            [8, 5],
+            [9, 0],
+            [9, 1],
+            [9, 2],
+            [9, 3],
+            [9, 4],
+            [9, 5],
+            [10, 0],
+            [10, 1],
+            [10, 2],
+            [10, 3],
+            [10, 4],
+            [10, 5]
+          ]
+        },
+        "onWhite": {
+          "wcagAA": false,
+          "wcagAAA": false,
+          "contrastRatio": 2.638314013482395,
+          "aa": [6, 7, 8, 9, 10],
+          "aaa": [6, 7, 8, 9, 10]
+        },
+        "onBlack": {
+          "wcagAA": true,
+          "wcagAAA": true,
+          "contrastRatio": 7.95962872223895,
+          "aa": [0, 1, 2, 3, 4, 5],
+          "aaa": [0, 1, 2, 3, 4, 5]
+        },
+        "apca": {
+          "onWhite": 50.81545673944434,
+          "onBlack": -51.09826378386487,
+          "minFontSize": 24
+        }
+      },
+      "analysis": {
+        "temperature": "warm",
+        "isLight": true,
+        "name": "pale-striking-citrine"
+      },
+      "atmosphericWeight": {
+        "distanceWeight": 0.5519999999999999,
+        "temperature": "neutral",
+        "atmosphericRole": "midground"
+      },
+      "perceptualWeight": {
+        "weight": 0.5559999999999999,
+        "density": "medium",
+        "balancingRecommendation": "Balanced weight"
+      },
+      "semanticSuggestions": {
+        "danger": [
+          {
+            "l": 0.7,
+            "c": 0.25,
+            "h": 15,
+            "alpha": 1
+          },
+          {
+            "l": 0.75,
+            "c": 0.22,
+            "h": 25,
+            "alpha": 1
+          },
+          {
+            "l": 0.65,
+            "c": 0.23,
+            "h": 5,
+            "alpha": 1
+          }
+        ],
+        "success": [
+          {
+            "l": 0.75,
+            "c": 0.2,
+            "h": 135,
+            "alpha": 1
+          },
+          {
+            "l": 0.7,
+            "c": 0.22,
+            "h": 145,
+            "alpha": 1
+          },
+          {
+            "l": 0.8,
+            "c": 0.24,
+            "h": 125,
+            "alpha": 1
+          }
+        ],
+        "warning": [
+          {
+            "l": 0.8,
+            "c": 0.2,
+            "h": 45,
+            "alpha": 1
+          },
+          {
+            "l": 0.85,
+            "c": 0.18,
+            "h": 55,
+            "alpha": 1
+          },
+          {
+            "l": 0.82,
+            "c": 0.19,
+            "h": 35,
+            "alpha": 1
+          }
+        ],
+        "info": [
+          {
+            "l": 0.75,
+            "c": 0.2,
+            "h": 220,
+            "alpha": 1
+          },
+          {
+            "l": 0.7,
+            "c": 0.22,
+            "h": 230,
+            "alpha": 1
+          },
+          {
+            "l": 0.65,
+            "c": 0.25,
+            "h": 240,
+            "alpha": 1
+          }
+        ]
+      },
+      "intelligence": {
+        "reasoning": "The OKLCH combination of L=0.2, C=0.2, H=90 works well because it strikes a balance between darkness, saturation, and a unique hue. The low lightness value (L=0.2) creates a sense of depth, while the moderate chroma (C=0.2) adds a touch of vibrancy without overpowering the senses. The hue of 90 degrees, situated in the green-yellow spectrum, brings a sense of freshness and growth. This combination is effective for designs that require a muted yet distinctive aesthetic.",
+        "emotionalImpact": "This color combination evokes a sense of balance and harmony. The dark lightness (L=0.2) grounds the viewer, while the saturated chroma (C=0.2) injects a sense of energy. The 90-degree hue, nestled in the green-yellow spectrum, is associated with feelings of renewal and optimism. The overall effect is calming, yet stimulating, making it suitable for designs that aim to soothe and engage the audience.",
+        "culturalContext": "The hue of 90 degrees, reminiscent of green-yellow, carries different meanings across cultures. In Western societies, it may symbolize growth, harmony, and nature. In Asian cultures, particularly in China, green is associated with good fortune and prosperity. However, in some African cultures, darker, more muted tones like this one may signify spirituality or mourning. It's essential to consider these nuances when designing for diverse audiences.",
+        "accessibilityNotes": "With a lightness value of 0.2, this color has low visibility and may not meet WCAG contrast guidelines for normal text or interactive elements. According to WCAG 2.1, the contrast ratio for normal text should be at least 4.5:1, and for larger text (18pt or 14pt bold), it should be at least 3:1. To ensure accessibility, use this color as a background or accent, and pair it with high-contrast text or elements. For example, use a light-colored text (L > 0.5) on top of this dark background.",
+        "usageGuidance": "Given its low lightness and moderate chroma, this color is suitable for UI use cases that require a subtle, yet distinctive accent. Some possible applications include: (1) Backgrounds for dark-themed interfaces, such as gaming or entertainment platforms; (2) Accent colors for highlighting specific elements, like calls-to-action or notifications; (3) Design elements for eco-friendly or outdoor-related brands, leveraging the green-yellow hue to convey a sense of nature and growth. Avoid using this color as a primary text or icon color due to its low lightness and potential accessibility issues.",
+        "metadata": {
+          "predictionId": "019b3ebb-6e77-73ab-866f-1edb67ec0666",
+          "confidence": 0.95,
+          "uncertaintyBounds": {
+            "lower": 0.85,
+            "upper": 1,
+            "confidenceInterval": 0.95
+          },
+          "qualityScore": 0.81,
+          "method": "bootstrap"
+        }
+      }
+    },
+    {
+      "name": "balanced-bold-fuchsia",
+      "scale": [
+        {
+          "l": 0.98,
+          "c": 0.032,
+          "h": 307,
+          "alpha": 1
+        },
+        {
+          "l": 0.95,
+          "c": 0.032,
+          "h": 307,
+          "alpha": 1
+        },
+        {
+          "l": 0.9,
+          "c": 0.054,
+          "h": 307,
+          "alpha": 1
+        },
+        {
+          "l": 0.8,
+          "c": 0.151,
+          "h": 307,
+          "alpha": 1
+        },
+        {
+          "l": 0.7,
+          "c": 0.151,
+          "h": 307,
+          "alpha": 1
+        },
+        {
+          "l": 0.507,
+          "c": 0.216,
+          "h": 307,
+          "alpha": 1
+        },
+        {
+          "l": 0.4,
+          "c": 0.216,
+          "h": 307,
+          "alpha": 1
+        },
+        {
+          "l": 0.25,
+          "c": 0.194,
+          "h": 307,
+          "alpha": 1
+        },
+        {
+          "l": 0.15,
+          "c": 0.194,
+          "h": 307,
+          "alpha": 1
+        },
+        {
+          "l": 0.08,
+          "c": 0.173,
+          "h": 307,
+          "alpha": 1
+        },
+        {
+          "l": 0.04,
+          "c": 0.173,
+          "h": 307,
+          "alpha": 1
+        }
+      ],
+      "tokenId": "color-0.507-0.216-307",
+      "token": "highlight",
+      "value": "500",
+      "harmonies": {
+        "complementary": {
+          "l": 0.3,
+          "c": 0.259,
+          "h": 127,
+          "alpha": 1
+        },
+        "triadic": [
+          {
+            "l": 0.407,
+            "c": 0.184,
+            "h": 67,
+            "alpha": 1
+          },
+          {
+            "l": 0.607,
+            "c": 0.184,
+            "h": 187,
+            "alpha": 1
+          }
+        ],
+        "analogous": [
+          {
+            "l": 0.557,
+            "c": 0.194,
+            "h": 337,
+            "alpha": 1
+          },
+          {
+            "l": 0.457,
+            "c": 0.194,
+            "h": 277,
+            "alpha": 1
+          }
+        ],
+        "tetradic": [
+          {
+            "l": 0.507,
+            "c": 0.173,
+            "h": 37,
+            "alpha": 1
+          },
+          {
+            "l": 0.3,
+            "c": 0.259,
+            "h": 127,
+            "alpha": 1
+          },
+          {
+            "l": 0.507,
+            "c": 0.173,
+            "h": 217,
+            "alpha": 1
+          }
+        ],
+        "monochromatic": [
+          {
+            "l": 0.98,
+            "c": 0.032,
+            "h": 307,
+            "alpha": 1
+          },
+          {
+            "l": 0.95,
+            "c": 0.032,
+            "h": 307,
+            "alpha": 1
+          },
+          {
+            "l": 0.9,
+            "c": 0.054,
+            "h": 307,
+            "alpha": 1
+          },
+          {
+            "l": 0.8,
+            "c": 0.151,
+            "h": 307,
+            "alpha": 1
+          },
+          {
+            "l": 0.7,
+            "c": 0.151,
+            "h": 307,
+            "alpha": 1
+          }
+        ]
+      },
+      "accessibility": {
+        "wcagAA": {
+          "normal": [
+            [0, 5],
+            [0, 6],
+            [0, 7],
+            [0, 8],
+            [0, 9],
+            [0, 10],
+            [1, 5],
+            [1, 6],
+            [1, 7],
+            [1, 8],
+            [1, 9],
+            [1, 10],
+            [2, 5],
+            [2, 6],
+            [2, 7],
+            [2, 8],
+            [2, 9],
+            [2, 10],
+            [3, 6],
+            [3, 7],
+            [3, 8],
+            [3, 9],
+            [3, 10],
+            [4, 7],
+            [4, 8],
+            [4, 9],
+            [4, 10],
+            [5, 0],
+            [5, 1],
+            [5, 2],
+            [6, 0],
+            [6, 1],
+            [6, 2],
+            [6, 3],
+            [7, 0],
+            [7, 1],
+            [7, 2],
+            [7, 3],
+            [7, 4],
+            [8, 0],
+            [8, 1],
+            [8, 2],
+            [8, 3],
+            [8, 4],
+            [9, 0],
+            [9, 1],
+            [9, 2],
+            [9, 3],
+            [9, 4],
+            [10, 0],
+            [10, 1],
+            [10, 2],
+            [10, 3],
+            [10, 4]
+          ],
+          "large": [
+            [0, 5],
+            [0, 6],
+            [0, 7],
+            [0, 8],
+            [0, 9],
+            [0, 10],
+            [1, 5],
+            [1, 6],
+            [1, 7],
+            [1, 8],
+            [1, 9],
+            [1, 10],
+            [2, 5],
+            [2, 6],
+            [2, 7],
+            [2, 8],
+            [2, 9],
+            [2, 10],
+            [3, 5],
+            [3, 6],
+            [3, 7],
+            [3, 8],
+            [3, 9],
+            [3, 10],
+            [4, 6],
+            [4, 7],
+            [4, 8],
+            [4, 9],
+            [4, 10],
+            [5, 0],
+            [5, 1],
+            [5, 2],
+            [5, 3],
+            [5, 8],
+            [5, 9],
+            [5, 10],
+            [6, 0],
+            [6, 1],
+            [6, 2],
+            [6, 3],
+            [6, 4],
+            [7, 0],
+            [7, 1],
+            [7, 2],
+            [7, 3],
+            [7, 4],
+            [8, 0],
+            [8, 1],
+            [8, 2],
+            [8, 3],
+            [8, 4],
+            [8, 5],
+            [9, 0],
+            [9, 1],
+            [9, 2],
+            [9, 3],
+            [9, 4],
+            [9, 5],
+            [10, 0],
+            [10, 1],
+            [10, 2],
+            [10, 3],
+            [10, 4],
+            [10, 5]
+          ]
+        },
+        "wcagAAA": {
+          "normal": [
+            [0, 6],
+            [0, 7],
+            [0, 8],
+            [0, 9],
+            [0, 10],
+            [1, 6],
+            [1, 7],
+            [1, 8],
+            [1, 9],
+            [1, 10],
+            [2, 6],
+            [2, 7],
+            [2, 8],
+            [2, 9],
+            [2, 10],
+            [3, 7],
+            [3, 8],
+            [3, 9],
+            [3, 10],
+            [4, 8],
+            [4, 9],
+            [4, 10],
+            [6, 0],
+            [6, 1],
+            [6, 2],
+            [7, 0],
+            [7, 1],
+            [7, 2],
+            [7, 3],
+            [8, 0],
+            [8, 1],
+            [8, 2],
+            [8, 3],
+            [8, 4],
+            [9, 0],
+            [9, 1],
+            [9, 2],
+            [9, 3],
+            [9, 4],
+            [10, 0],
+            [10, 1],
+            [10, 2],
+            [10, 3],
+            [10, 4]
+          ],
+          "large": [
+            [0, 5],
+            [0, 6],
+            [0, 7],
+            [0, 8],
+            [0, 9],
+            [0, 10],
+            [1, 5],
+            [1, 6],
+            [1, 7],
+            [1, 8],
+            [1, 9],
+            [1, 10],
+            [2, 5],
+            [2, 6],
+            [2, 7],
+            [2, 8],
+            [2, 9],
+            [2, 10],
+            [3, 6],
+            [3, 7],
+            [3, 8],
+            [3, 9],
+            [3, 10],
+            [4, 7],
+            [4, 8],
+            [4, 9],
+            [4, 10],
+            [5, 0],
+            [5, 1],
+            [5, 2],
+            [6, 0],
+            [6, 1],
+            [6, 2],
+            [6, 3],
+            [7, 0],
+            [7, 1],
+            [7, 2],
+            [7, 3],
+            [7, 4],
+            [8, 0],
+            [8, 1],
+            [8, 2],
+            [8, 3],
+            [8, 4],
+            [9, 0],
+            [9, 1],
+            [9, 2],
+            [9, 3],
+            [9, 4],
+            [10, 0],
+            [10, 1],
+            [10, 2],
+            [10, 3],
+            [10, 4]
+          ]
+        },
+        "onWhite": {
+          "wcagAA": true,
+          "wcagAAA": false,
+          "contrastRatio": 6.548791184471294,
+          "aa": [5, 6, 7, 8, 9, 10],
+          "aaa": [6, 7, 8, 9, 10]
+        },
+        "onBlack": {
+          "wcagAA": false,
+          "wcagAAA": false,
+          "contrastRatio": 3.2066986728475744,
+          "aa": [0, 1, 2, 3, 4],
+          "aaa": [0, 1, 2, 3, 4]
+        },
+        "apca": {
+          "onWhite": 81.40233851867411,
+          "onBlack": -20.470477088041395,
+          "minFontSize": 16
+        }
+      },
+      "analysis": {
+        "temperature": "warm",
+        "isLight": false,
+        "name": "balanced-bold-fuchsia"
+      },
+      "atmosphericWeight": {
+        "distanceWeight": 0.8211999999999999,
+        "temperature": "warm",
+        "atmosphericRole": "foreground"
+      },
+      "perceptualWeight": {
+        "weight": 0.5742,
+        "density": "medium",
+        "balancingRecommendation": "Balanced weight"
+      },
+      "semanticSuggestions": {
+        "danger": [
+          {
+            "l": 0.607,
+            "c": 0.25,
+            "h": 15,
+            "alpha": 1
+          },
+          {
+            "l": 0.657,
+            "c": 0.22,
+            "h": 25,
+            "alpha": 1
+          },
+          {
+            "l": 0.557,
+            "c": 0.23,
+            "h": 5,
+            "alpha": 1
+          }
+        ],
+        "success": [
+          {
+            "l": 0.657,
+            "c": 0.194,
+            "h": 135,
+            "alpha": 1
+          },
+          {
+            "l": 0.607,
+            "c": 0.216,
+            "h": 145,
+            "alpha": 1
+          },
+          {
+            "l": 0.707,
+            "c": 0.238,
+            "h": 125,
+            "alpha": 1
+          }
+        ],
+        "warning": [
+          {
+            "l": 0.7,
+            "c": 0.2,
+            "h": 45,
+            "alpha": 1
+          },
+          {
+            "l": 0.75,
+            "c": 0.18,
+            "h": 55,
+            "alpha": 1
+          },
+          {
+            "l": 0.72,
+            "c": 0.19,
+            "h": 35,
+            "alpha": 1
+          }
+        ],
+        "info": [
+          {
+            "l": 0.607,
+            "c": 0.194,
+            "h": 220,
+            "alpha": 1
+          },
+          {
+            "l": 0.557,
+            "c": 0.216,
+            "h": 230,
+            "alpha": 1
+          },
+          {
+            "l": 0.507,
+            "c": 0.238,
+            "h": 240,
+            "alpha": 1
+          }
+        ]
+      },
+      "intelligence": {
+        "reasoning": "The OKLCH combination of L=0.7, C=0.2, H=315 works well due to its balanced positioning. The mid-tone lightness (L=0.7) provides a comfortable background for visual elements, while the moderate chroma (C=0.2) adds a touch of saturation without overwhelming the senses. The hue (H=315) falls within the purple-pink spectrum, which is often associated with creativity and luxury. This specific combination creates a soothing and sophisticated visual effect.",
+        "emotionalImpact": "This color combination elicits a sense of calmness and refinement. The moderate chroma and mid-tone lightness create a stable emotional foundation, while the purple-pink hue (H=315) adds a hint of playfulness and creativity. The overall effect is a sense of balanced luxury, suitable for high-end brands or applications requiring a sophisticated aesthetic.",
+        "culturalContext": "The hue of 315 degrees, situated between purple and pink, carries different meanings across cultures. In Western societies, it may evoke associations with luxury, creativity, and wisdom. In some Asian cultures, purple is a symbol of prosperity and good fortune. However, it's essential to consider the specific cultural context in which this color will be used to ensure the intended message is conveyed.",
+        "accessibilityNotes": "With a lightness value of L=0.7, this color has a moderate level of brightness. According to WCAG guidelines, for normal text (AA), the contrast ratio should be at least 4.5:1. For larger text or headings (AA18), the contrast ratio should be at least 3:1. When using this color as a background, ensure that the foreground text or elements have sufficient contrast to meet these standards. Recommended contrast ratios can be achieved with a range of darker or more saturated colors.",
+        "usageGuidance": "Given its moderate chroma (C=0.2) and mid-tone lightness (L=0.7), this color is versatile for UI use cases. It can serve as a background or accent color, providing a subtle pop of color without overwhelming the user. Suitable applications include:\n      - Background for content sections or cards\n      - Accent color for buttons, icons, or highlights\n      - Design element for headers or sections dividers\n      - Brand identity color for luxury, creative, or tech-related products/services",
+        "metadata": {
+          "predictionId": "019b3ed5-d307-71d8-a531-65f7fdb71de4",
+          "confidence": 0.95,
+          "uncertaintyBounds": {
+            "lower": 0.85,
+            "upper": 1,
+            "confidenceInterval": 0.95
+          },
+          "qualityScore": 0.8300000000000001,
+          "method": "bootstrap"
+        }
+      }
+    },
+    {
+      "name": "faint-soft-amethyst",
+      "scale": [
+        {
+          "l": 0.98,
+          "c": 0.01,
+          "h": 292,
+          "alpha": 1
+        },
+        {
+          "l": 0.95,
+          "c": 0.01,
+          "h": 292,
+          "alpha": 1
+        },
+        {
+          "l": 0.9,
+          "c": 0.01,
+          "h": 292,
+          "alpha": 1
+        },
+        {
+          "l": 0.8,
+          "c": 0.025,
+          "h": 292,
+          "alpha": 1
+        },
+        {
+          "l": 0.7,
+          "c": 0.025,
+          "h": 292,
+          "alpha": 1
+        },
+        {
+          "l": 0.85,
+          "c": 0.01,
+          "h": 292,
+          "alpha": 1
+        },
+        {
+          "l": 0.4,
+          "c": 0.036,
+          "h": 292,
+          "alpha": 1
+        },
+        {
+          "l": 0.25,
+          "c": 0.032,
+          "h": 292,
+          "alpha": 1
+        },
+        {
+          "l": 0.15,
+          "c": 0.032,
+          "h": 292,
+          "alpha": 1
+        },
+        {
+          "l": 0.08,
+          "c": 0.029,
+          "h": 292,
+          "alpha": 1
+        },
+        {
+          "l": 0.04,
+          "c": 0.029,
+          "h": 292,
+          "alpha": 1
+        }
+      ],
+      "tokenId": "color-0.850-0.036-292",
+      "token": "surface",
+      "value": "500",
+      "harmonies": {
+        "complementary": {
+          "l": 0.3,
+          "c": 0.043,
+          "h": 112,
+          "alpha": 1
+        },
+        "triadic": [
+          {
+            "l": 0.7,
+            "c": 0.031,
+            "h": 52,
+            "alpha": 1
+          },
+          {
+            "l": 0.7,
+            "c": 0.031,
+            "h": 172,
+            "alpha": 1
+          }
+        ],
+        "analogous": [
+          {
+            "l": 0.8,
+            "c": 0.032,
+            "h": 322,
+            "alpha": 1
+          },
+          {
+            "l": 0.8,
+            "c": 0.032,
+            "h": 262,
+            "alpha": 1
+          }
+        ],
+        "tetradic": [
+          {
+            "l": 0.8,
+            "c": 0.029,
+            "h": 22,
+            "alpha": 1
+          },
+          {
+            "l": 0.3,
+            "c": 0.043,
+            "h": 112,
+            "alpha": 1
+          },
+          {
+            "l": 0.8,
+            "c": 0.029,
+            "h": 202,
+            "alpha": 1
+          }
+        ],
+        "monochromatic": [
+          {
+            "l": 0.98,
+            "c": 0.01,
+            "h": 292,
+            "alpha": 1
+          },
+          {
+            "l": 0.95,
+            "c": 0.01,
+            "h": 292,
+            "alpha": 1
+          },
+          {
+            "l": 0.9,
+            "c": 0.01,
+            "h": 292,
+            "alpha": 1
+          },
+          {
+            "l": 0.8,
+            "c": 0.025,
+            "h": 292,
+            "alpha": 1
+          },
+          {
+            "l": 0.7,
+            "c": 0.025,
+            "h": 292,
+            "alpha": 1
+          }
+        ]
+      },
+      "accessibility": {
+        "wcagAA": {
+          "normal": [
+            [0, 6],
+            [0, 7],
+            [0, 8],
+            [0, 9],
+            [0, 10],
+            [1, 6],
+            [1, 7],
+            [1, 8],
+            [1, 9],
+            [1, 10],
+            [2, 6],
+            [2, 7],
+            [2, 8],
+            [2, 9],
+            [2, 10],
+            [3, 6],
+            [3, 7],
+            [3, 8],
+            [3, 9],
+            [3, 10],
+            [4, 7],
+            [4, 8],
+            [4, 9],
+            [4, 10],
+            [5, 6],
+            [5, 7],
+            [5, 8],
+            [5, 9],
+            [5, 10],
+            [6, 0],
+            [6, 1],
+            [6, 2],
+            [6, 3],
+            [6, 5],
+            [7, 0],
+            [7, 1],
+            [7, 2],
+            [7, 3],
+            [7, 4],
+            [7, 5],
+            [8, 0],
+            [8, 1],
+            [8, 2],
+            [8, 3],
+            [8, 4],
+            [8, 5],
+            [9, 0],
+            [9, 1],
+            [9, 2],
+            [9, 3],
+            [9, 4],
+            [9, 5],
+            [10, 0],
+            [10, 1],
+            [10, 2],
+            [10, 3],
+            [10, 4],
+            [10, 5]
+          ],
+          "large": [
+            [0, 6],
+            [0, 7],
+            [0, 8],
+            [0, 9],
+            [0, 10],
+            [1, 6],
+            [1, 7],
+            [1, 8],
+            [1, 9],
+            [1, 10],
+            [2, 6],
+            [2, 7],
+            [2, 8],
+            [2, 9],
+            [2, 10],
+            [3, 6],
+            [3, 7],
+            [3, 8],
+            [3, 9],
+            [3, 10],
+            [4, 6],
+            [4, 7],
+            [4, 8],
+            [4, 9],
+            [4, 10],
+            [5, 6],
+            [5, 7],
+            [5, 8],
+            [5, 9],
+            [5, 10],
+            [6, 0],
+            [6, 1],
+            [6, 2],
+            [6, 3],
+            [6, 4],
+            [6, 5],
+            [7, 0],
+            [7, 1],
+            [7, 2],
+            [7, 3],
+            [7, 4],
+            [7, 5],
+            [8, 0],
+            [8, 1],
+            [8, 2],
+            [8, 3],
+            [8, 4],
+            [8, 5],
+            [9, 0],
+            [9, 1],
+            [9, 2],
+            [9, 3],
+            [9, 4],
+            [9, 5],
+            [10, 0],
+            [10, 1],
+            [10, 2],
+            [10, 3],
+            [10, 4],
+            [10, 5]
+          ]
+        },
+        "wcagAAA": {
+          "normal": [
+            [0, 6],
+            [0, 7],
+            [0, 8],
+            [0, 9],
+            [0, 10],
+            [1, 6],
+            [1, 7],
+            [1, 8],
+            [1, 9],
+            [1, 10],
+            [2, 7],
+            [2, 8],
+            [2, 9],
+            [2, 10],
+            [3, 7],
+            [3, 8],
+            [3, 9],
+            [3, 10],
+            [4, 8],
+            [4, 9],
+            [4, 10],
+            [5, 7],
+            [5, 8],
+            [5, 9],
+            [5, 10],
+            [6, 0],
+            [6, 1],
+            [7, 0],
+            [7, 1],
+            [7, 2],
+            [7, 3],
+            [7, 5],
+            [8, 0],
+            [8, 1],
+            [8, 2],
+            [8, 3],
+            [8, 4],
+            [8, 5],
+            [9, 0],
+            [9, 1],
+            [9, 2],
+            [9, 3],
+            [9, 4],
+            [9, 5],
+            [10, 0],
+            [10, 1],
+            [10, 2],
+            [10, 3],
+            [10, 4],
+            [10, 5]
+          ],
+          "large": [
+            [0, 6],
+            [0, 7],
+            [0, 8],
+            [0, 9],
+            [0, 10],
+            [1, 6],
+            [1, 7],
+            [1, 8],
+            [1, 9],
+            [1, 10],
+            [2, 6],
+            [2, 7],
+            [2, 8],
+            [2, 9],
+            [2, 10],
+            [3, 6],
+            [3, 7],
+            [3, 8],
+            [3, 9],
+            [3, 10],
+            [4, 7],
+            [4, 8],
+            [4, 9],
+            [4, 10],
+            [5, 6],
+            [5, 7],
+            [5, 8],
+            [5, 9],
+            [5, 10],
+            [6, 0],
+            [6, 1],
+            [6, 2],
+            [6, 3],
+            [6, 5],
+            [7, 0],
+            [7, 1],
+            [7, 2],
+            [7, 3],
+            [7, 4],
+            [7, 5],
+            [8, 0],
+            [8, 1],
+            [8, 2],
+            [8, 3],
+            [8, 4],
+            [8, 5],
+            [9, 0],
+            [9, 1],
+            [9, 2],
+            [9, 3],
+            [9, 4],
+            [9, 5],
+            [10, 0],
+            [10, 1],
+            [10, 2],
+            [10, 3],
+            [10, 4],
+            [10, 5]
+          ]
+        },
+        "onWhite": {
+          "wcagAA": false,
+          "wcagAAA": false,
+          "contrastRatio": 1.5929433184222466,
+          "aa": [6, 7, 8, 9, 10],
+          "aaa": [6, 7, 8, 9, 10]
+        },
+        "onBlack": {
+          "wcagAA": true,
+          "wcagAAA": true,
+          "contrastRatio": 13.183143277690345,
+          "aa": [0, 1, 2, 3, 4, 5],
+          "aaa": [0, 1, 2, 3, 4, 5]
+        },
+        "apca": {
+          "onWhite": 26.83350837388796,
+          "onBlack": -76.15854377029923,
+          "minFontSize": 32
+        }
+      },
+      "analysis": {
+        "temperature": "neutral",
+        "isLight": true,
+        "name": "faint-soft-amethyst"
+      },
+      "atmosphericWeight": {
+        "distanceWeight": 0.114,
+        "temperature": "neutral",
+        "atmosphericRole": "background"
+      },
+      "perceptualWeight": {
+        "weight": 0.227,
+        "density": "light",
+        "balancingRecommendation": "Balanced weight"
+      },
+      "semanticSuggestions": {
+        "danger": [
+          {
+            "l": 0.7,
+            "c": 0.043,
+            "h": 15,
+            "alpha": 1
+          },
+          {
+            "l": 0.75,
+            "c": 0.04,
+            "h": 25,
+            "alpha": 1
+          },
+          {
+            "l": 0.65,
+            "c": 0.041,
+            "h": 5,
+            "alpha": 1
+          }
+        ],
+        "success": [
+          {
+            "l": 0.75,
+            "c": 0.032,
+            "h": 135,
+            "alpha": 1
+          },
+          {
+            "l": 0.7,
+            "c": 0.036,
+            "h": 145,
+            "alpha": 1
+          },
+          {
+            "l": 0.8,
+            "c": 0.04,
+            "h": 125,
+            "alpha": 1
+          }
+        ],
+        "warning": [
+          {
+            "l": 0.8,
+            "c": 0.034,
+            "h": 45,
+            "alpha": 1
+          },
+          {
+            "l": 0.85,
+            "c": 0.032,
+            "h": 55,
+            "alpha": 1
+          },
+          {
+            "l": 0.82,
+            "c": 0.033,
+            "h": 35,
+            "alpha": 1
+          }
+        ],
+        "info": [
+          {
+            "l": 0.75,
+            "c": 0.032,
+            "h": 220,
+            "alpha": 1
+          },
+          {
+            "l": 0.7,
+            "c": 0.036,
+            "h": 230,
+            "alpha": 1
+          },
+          {
+            "l": 0.65,
+            "c": 0.04,
+            "h": 240,
+            "alpha": 1
+          }
+        ]
+      },
+      "intelligence": {
+        "reasoning": "This OKLCH combination works because of its exceptionally light and neutral tone, with a slight lean towards purple hue. The lightness value of 0.931 places it very close to white, while the chroma of 0.027 ensures it remains nearly achromatic, with the hue of 286 degrees adding a subtle, cool undertone. This balance results in a clean and calming visual effect.",
+        "emotionalImpact": "The psychological response to this color is one of serenity and spaciousness. The high lightness and low chroma evoke a sense of minimalism and clarity, which can help reduce visual fatigue. The slight purple undertone (H=286) adds a touch of sophistication and creativity, making this color suitable for designs that require a clean yet inspiring aesthetic.",
+        "culturalContext": "Cross-culturally, this specific hue/chroma/lightness combination is likely to be perceived as modern and unobtrusive. The near-neutrality and lightness might be associated with technological or medical fields, where cleanliness and precision are valued. The subtle purple hue could also suggest luxury or creativity in contexts where such undertones are culturally significant.",
+        "accessibilityNotes": "With a lightness of 0.931, this color meets the WCAG criteria for normal text or as a background for visual content due to its high luminance. For contrast, when used as a background, it's recommended to pair it with text or elements that have a significantly lower lightness to ensure readability. For text, consider using a darker color with a contrast ratio of at least 4.5:1 for normal text or 3:1 for larger text (18pt or 14pt bold).",
+        "usageGuidance": "Given its chroma of 0.027 and lightness of 0.931, this color is best used as a background or for subtle highlighting where a clean, non-distracting appearance is desired. It's particularly suitable for UI elements like backgrounds, modals, or tooltips where the content should be the focus. For text or icons, consider using this color in contexts where a very subtle, sophisticated accent is needed, ensuring sufficient contrast with other design elements.",
+        "metadata": {
+          "predictionId": "019b4d94-260b-797d-a81b-e35eb6cd6525",
+          "confidence": 0.95,
+          "uncertaintyBounds": {
+            "lower": 0.85,
+            "upper": 1,
+            "confidenceInterval": 0.95
+          },
+          "qualityScore": 0.8300000000000001,
+          "method": "bootstrap"
+        }
+      }
+    },
+    {
+      "name": "balanced-ghost-pear",
+      "scale": [
+        {
+          "l": 0.98,
+          "c": 0.01,
+          "h": 91,
+          "alpha": 1
+        },
+        {
+          "l": 0.95,
+          "c": 0.01,
+          "h": 91,
+          "alpha": 1
+        },
+        {
+          "l": 0.9,
+          "c": 0.01,
+          "h": 91,
+          "alpha": 1
+        },
+        {
+          "l": 0.8,
+          "c": 0.014,
+          "h": 91,
+          "alpha": 1
+        },
+        {
+          "l": 0.7,
+          "c": 0.014,
+          "h": 91,
+          "alpha": 1
+        },
+        {
+          "l": 0.5,
+          "c": 0.02,
+          "h": 91,
+          "alpha": 1
+        },
+        {
+          "l": 0.4,
+          "c": 0.02,
+          "h": 91,
+          "alpha": 1
+        },
+        {
+          "l": 0.25,
+          "c": 0.018,
+          "h": 91,
+          "alpha": 1
+        },
+        {
+          "l": 0.15,
+          "c": 0.018,
+          "h": 91,
+          "alpha": 1
+        },
+        {
+          "l": 0.08,
+          "c": 0.016,
+          "h": 91,
+          "alpha": 1
+        },
+        {
+          "l": 0.04,
+          "c": 0.016,
+          "h": 91,
+          "alpha": 1
+        }
+      ],
+      "tokenId": "color-0.500-0.020-91",
+      "token": "neutral",
+      "value": "500",
+      "harmonies": {
+        "complementary": {
+          "l": 0.7,
+          "c": 0.024,
+          "h": 271,
+          "alpha": 1
+        },
+        "triadic": [
+          {
+            "l": 0.4,
+            "c": 0.017,
+            "h": 211,
+            "alpha": 1
+          },
+          {
+            "l": 0.6,
+            "c": 0.017,
+            "h": 331,
+            "alpha": 1
+          }
+        ],
+        "analogous": [
+          {
+            "l": 0.55,
+            "c": 0.018,
+            "h": 121,
+            "alpha": 1
+          },
+          {
+            "l": 0.45,
+            "c": 0.018,
+            "h": 61,
+            "alpha": 1
+          }
+        ],
+        "tetradic": [
+          {
+            "l": 0.5,
+            "c": 0.016,
+            "h": 181,
+            "alpha": 1
+          },
+          {
+            "l": 0.7,
+            "c": 0.024,
+            "h": 271,
+            "alpha": 1
+          },
+          {
+            "l": 0.5,
+            "c": 0.016,
+            "h": 1,
+            "alpha": 1
+          }
+        ],
+        "monochromatic": [
+          {
+            "l": 0.98,
+            "c": 0.01,
+            "h": 91,
+            "alpha": 1
+          },
+          {
+            "l": 0.95,
+            "c": 0.01,
+            "h": 91,
+            "alpha": 1
+          },
+          {
+            "l": 0.9,
+            "c": 0.01,
+            "h": 91,
+            "alpha": 1
+          },
+          {
+            "l": 0.8,
+            "c": 0.014,
+            "h": 91,
+            "alpha": 1
+          },
+          {
+            "l": 0.7,
+            "c": 0.014,
+            "h": 91,
+            "alpha": 1
+          }
+        ]
+      },
+      "accessibility": {
+        "wcagAA": {
+          "normal": [
+            [0, 5],
+            [0, 6],
+            [0, 7],
+            [0, 8],
+            [0, 9],
+            [0, 10],
+            [1, 5],
+            [1, 6],
+            [1, 7],
+            [1, 8],
+            [1, 9],
+            [1, 10],
+            [2, 6],
+            [2, 7],
+            [2, 8],
+            [2, 9],
+            [2, 10],
+            [3, 6],
+            [3, 7],
+            [3, 8],
+            [3, 9],
+            [3, 10],
+            [4, 7],
+            [4, 8],
+            [4, 9],
+            [4, 10],
+            [5, 0],
+            [5, 1],
+            [6, 0],
+            [6, 1],
+            [6, 2],
+            [6, 3],
+            [7, 0],
+            [7, 1],
+            [7, 2],
+            [7, 3],
+            [7, 4],
+            [8, 0],
+            [8, 1],
+            [8, 2],
+            [8, 3],
+            [8, 4],
+            [9, 0],
+            [9, 1],
+            [9, 2],
+            [9, 3],
+            [9, 4],
+            [10, 0],
+            [10, 1],
+            [10, 2],
+            [10, 3],
+            [10, 4]
+          ],
+          "large": [
+            [0, 5],
+            [0, 6],
+            [0, 7],
+            [0, 8],
+            [0, 9],
+            [0, 10],
+            [1, 5],
+            [1, 6],
+            [1, 7],
+            [1, 8],
+            [1, 9],
+            [1, 10],
+            [2, 5],
+            [2, 6],
+            [2, 7],
+            [2, 8],
+            [2, 9],
+            [2, 10],
+            [3, 5],
+            [3, 6],
+            [3, 7],
+            [3, 8],
+            [3, 9],
+            [3, 10],
+            [4, 6],
+            [4, 7],
+            [4, 8],
+            [4, 9],
+            [4, 10],
+            [5, 0],
+            [5, 1],
+            [5, 2],
+            [5, 3],
+            [5, 8],
+            [5, 9],
+            [5, 10],
+            [6, 0],
+            [6, 1],
+            [6, 2],
+            [6, 3],
+            [6, 4],
+            [7, 0],
+            [7, 1],
+            [7, 2],
+            [7, 3],
+            [7, 4],
+            [8, 0],
+            [8, 1],
+            [8, 2],
+            [8, 3],
+            [8, 4],
+            [8, 5],
+            [9, 0],
+            [9, 1],
+            [9, 2],
+            [9, 3],
+            [9, 4],
+            [9, 5],
+            [10, 0],
+            [10, 1],
+            [10, 2],
+            [10, 3],
+            [10, 4],
+            [10, 5]
+          ]
+        },
+        "wcagAAA": {
+          "normal": [
+            [0, 6],
+            [0, 7],
+            [0, 8],
+            [0, 9],
+            [0, 10],
+            [1, 6],
+            [1, 7],
+            [1, 8],
+            [1, 9],
+            [1, 10],
+            [2, 7],
+            [2, 8],
+            [2, 9],
+            [2, 10],
+            [3, 7],
+            [3, 8],
+            [3, 9],
+            [3, 10],
+            [4, 8],
+            [4, 9],
+            [4, 10],
+            [6, 0],
+            [6, 1],
+            [7, 0],
+            [7, 1],
+            [7, 2],
+            [7, 3],
+            [8, 0],
+            [8, 1],
+            [8, 2],
+            [8, 3],
+            [8, 4],
+            [9, 0],
+            [9, 1],
+            [9, 2],
+            [9, 3],
+            [9, 4],
+            [10, 0],
+            [10, 1],
+            [10, 2],
+            [10, 3],
+            [10, 4]
+          ],
+          "large": [
+            [0, 5],
+            [0, 6],
+            [0, 7],
+            [0, 8],
+            [0, 9],
+            [0, 10],
+            [1, 5],
+            [1, 6],
+            [1, 7],
+            [1, 8],
+            [1, 9],
+            [1, 10],
+            [2, 6],
+            [2, 7],
+            [2, 8],
+            [2, 9],
+            [2, 10],
+            [3, 6],
+            [3, 7],
+            [3, 8],
+            [3, 9],
+            [3, 10],
+            [4, 7],
+            [4, 8],
+            [4, 9],
+            [4, 10],
+            [5, 0],
+            [5, 1],
+            [6, 0],
+            [6, 1],
+            [6, 2],
+            [6, 3],
+            [7, 0],
+            [7, 1],
+            [7, 2],
+            [7, 3],
+            [7, 4],
+            [8, 0],
+            [8, 1],
+            [8, 2],
+            [8, 3],
+            [8, 4],
+            [9, 0],
+            [9, 1],
+            [9, 2],
+            [9, 3],
+            [9, 4],
+            [10, 0],
+            [10, 1],
+            [10, 2],
+            [10, 3],
+            [10, 4]
+          ]
+        },
+        "onWhite": {
+          "wcagAA": true,
+          "wcagAAA": false,
+          "contrastRatio": 5.994649410059118,
+          "aa": [5, 6, 7, 8, 9, 10],
+          "aaa": [6, 7, 8, 9, 10]
+        },
+        "onBlack": {
+          "wcagAA": false,
+          "wcagAAA": false,
+          "contrastRatio": 3.5031239633066202,
+          "aa": [0, 1, 2, 3, 4],
+          "aaa": [0, 1, 2, 3, 4]
+        },
+        "apca": {
+          "onWhite": 79.98603268778878,
+          "onBlack": -21.843172595316716,
+          "minFontSize": 16
+        }
+      },
+      "analysis": {
+        "temperature": "neutral",
+        "isLight": false,
+        "name": "balanced-ghost-pear"
+      },
+      "atmosphericWeight": {
+        "distanceWeight": 0.23,
+        "temperature": "neutral",
+        "atmosphericRole": "background"
+      },
+      "perceptualWeight": {
+        "weight": 0.32333333333333336,
+        "density": "medium",
+        "balancingRecommendation": "Balanced weight"
+      },
+      "semanticSuggestions": {
+        "danger": [
+          {
+            "l": 0.6,
+            "c": 0.024,
+            "h": 15,
+            "alpha": 1
+          },
+          {
+            "l": 0.65,
+            "c": 0.022,
+            "h": 25,
+            "alpha": 1
+          },
+          {
+            "l": 0.55,
+            "c": 0.023,
+            "h": 5,
+            "alpha": 1
+          }
+        ],
+        "success": [
+          {
+            "l": 0.65,
+            "c": 0.018,
+            "h": 135,
+            "alpha": 1
+          },
+          {
+            "l": 0.6,
+            "c": 0.02,
+            "h": 145,
+            "alpha": 1
+          },
+          {
+            "l": 0.7,
+            "c": 0.022,
+            "h": 125,
+            "alpha": 1
+          }
+        ],
+        "warning": [
+          {
+            "l": 0.7,
+            "c": 0.019,
+            "h": 45,
+            "alpha": 1
+          },
+          {
+            "l": 0.75,
+            "c": 0.018,
+            "h": 55,
+            "alpha": 1
+          },
+          {
+            "l": 0.72,
+            "c": 0.018,
+            "h": 35,
+            "alpha": 1
+          }
+        ],
+        "info": [
+          {
+            "l": 0.6,
+            "c": 0.018,
+            "h": 220,
+            "alpha": 1
+          },
+          {
+            "l": 0.55,
+            "c": 0.02,
+            "h": 230,
+            "alpha": 1
+          },
+          {
+            "l": 0.5,
+            "c": 0.022,
+            "h": 240,
+            "alpha": 1
+          }
+        ]
+      },
+      "intelligence": {
+        "reasoning": "This OKLCH combination works because it strikes a balance between lightness and neutrality. With L=0.7, the color is mid-toned, not too bright nor too dark. The chroma C=0 indicates a completely neutral or gray color, which provides a stable background for other elements. The hue H=30, which falls in the reddish-brown spectrum, is subtly introduced without adding any strong emotional connotations due to its neutral chroma. This makes it versatile for various design applications.",
+        "emotionalImpact": "The psychological response to this color is one of stability and neutrality. The mid-tone lightness (L=0.7) provides a sense of balance, while the zero chroma (C=0) eliminates any emotional biases associated with saturated colors. The hue of 30 degrees, being close to the red-brown axis but without any chroma, does not evoke strong passion or excitement typically associated with reds. Instead, it offers a muted, earthy feel that can be perceived as warm and inviting, yet subdued.",
+        "culturalContext": "Cross-culturally, this specific hue/chroma/lightness combination may be associated with earthy, natural elements due to its proximity to brown on the color wheel but in a highly muted form. The neutrality (C=0) makes it less likely to have strong cultural associations compared to more saturated colors. However, the lightness level and the specific hue angle might still resonate differently across cultures, with some possibly linking it to soil or land (given the 30-degree hue), symbolizing fertility or stability.",
+        "accessibilityNotes": "For accessibility, with a lightness (L) of 0.7, this color has moderate brightness. According to WCAG 2.1 guidelines, for normal text (16px or 1em), a contrast ratio of at least 4.5:1 is recommended for AA compliance. Given that this color is quite neutral and mid-toned, when used as a background, it will require careful selection of text color to meet contrast requirements. For UI elements and text, ensure that the contrast ratio is met by choosing text colors that have sufficient lightness difference from this background.",
+        "usageGuidance": "Given its neutral chroma (C=0) and mid-tone lightness (L=0.7), this color is ideal for use as a background or secondary element in UI design. It can provide a clean slate for content without overpowering it. Use it for:\n  - Backgrounds for content sections\n  - Borders or dividers to add subtle definition without overwhelming the UI\n  - Fills for non-interactive elements that need to convey stability or neutrality\n  - Text or icon colors in dark mode interfaces, given its relatively light background\n  Ensure text and interactive elements have sufficient contrast against this color for accessibility.",
+        "metadata": {
+          "predictionId": "019b3ec4-1b91-7def-a9de-7e1ff117c03c",
+          "confidence": 0.95,
+          "uncertaintyBounds": {
+            "lower": 0.85,
+            "upper": 1,
+            "confidenceInterval": 0.95
+          },
+          "qualityScore": 0.8300000000000001,
+          "method": "bootstrap"
+        }
+      }
+    },
+    {
+      "name": "balanced-striking-vivid-red",
+      "scale": [
+        {
+          "l": 0.98,
+          "c": 0.038,
+          "h": 15,
+          "alpha": 1
+        },
+        {
+          "l": 0.95,
+          "c": 0.038,
+          "h": 15,
+          "alpha": 1
+        },
+        {
+          "l": 0.9,
+          "c": 0.063,
+          "h": 15,
+          "alpha": 1
+        },
+        {
+          "l": 0.8,
+          "c": 0.175,
+          "h": 15,
+          "alpha": 1
+        },
+        {
+          "l": 0.7,
+          "c": 0.175,
+          "h": 15,
+          "alpha": 1
+        },
+        {
+          "l": 0.557,
+          "c": 0.25,
+          "h": 15,
+          "alpha": 1
+        },
+        {
+          "l": 0.4,
+          "c": 0.25,
+          "h": 15,
+          "alpha": 1
+        },
+        {
+          "l": 0.25,
+          "c": 0.225,
+          "h": 15,
+          "alpha": 1
+        },
+        {
+          "l": 0.15,
+          "c": 0.225,
+          "h": 15,
+          "alpha": 1
+        },
+        {
+          "l": 0.08,
+          "c": 0.2,
+          "h": 15,
+          "alpha": 1
+        },
+        {
+          "l": 0.04,
+          "c": 0.2,
+          "h": 15,
+          "alpha": 1
+        }
+      ],
+      "tokenId": "color-0.557-0.250-15",
+      "token": "destructive",
+      "value": "500",
+      "harmonies": {
+        "complementary": {
+          "l": 0.3,
+          "c": 0.3,
+          "h": 195,
+          "alpha": 1
+        },
+        "triadic": [
+          {
+            "l": 0.457,
+            "c": 0.213,
+            "h": 135,
+            "alpha": 1
+          },
+          {
+            "l": 0.657,
+            "c": 0.213,
+            "h": 255,
+            "alpha": 1
+          }
+        ],
+        "analogous": [
+          {
+            "l": 0.607,
+            "c": 0.225,
+            "h": 45,
+            "alpha": 1
+          },
+          {
+            "l": 0.507,
+            "c": 0.225,
+            "h": 345,
+            "alpha": 1
+          }
+        ],
+        "tetradic": [
+          {
+            "l": 0.557,
+            "c": 0.2,
+            "h": 105,
+            "alpha": 1
+          },
+          {
+            "l": 0.3,
+            "c": 0.3,
+            "h": 195,
+            "alpha": 1
+          },
+          {
+            "l": 0.557,
+            "c": 0.2,
+            "h": 285,
+            "alpha": 1
+          }
+        ],
+        "monochromatic": [
+          {
+            "l": 0.98,
+            "c": 0.038,
+            "h": 15,
+            "alpha": 1
+          },
+          {
+            "l": 0.95,
+            "c": 0.038,
+            "h": 15,
+            "alpha": 1
+          },
+          {
+            "l": 0.9,
+            "c": 0.063,
+            "h": 15,
+            "alpha": 1
+          },
+          {
+            "l": 0.8,
+            "c": 0.175,
+            "h": 15,
+            "alpha": 1
+          },
+          {
+            "l": 0.7,
+            "c": 0.175,
+            "h": 15,
+            "alpha": 1
+          }
+        ]
+      },
+      "accessibility": {
+        "wcagAA": {
+          "normal": [
+            [0, 5],
+            [0, 6],
+            [0, 7],
+            [0, 8],
+            [0, 9],
+            [0, 10],
+            [1, 6],
+            [1, 7],
+            [1, 8],
+            [1, 9],
+            [1, 10],
+            [2, 6],
+            [2, 7],
+            [2, 8],
+            [2, 9],
+            [2, 10],
+            [3, 7],
+            [3, 8],
+            [3, 9],
+            [3, 10],
+            [4, 7],
+            [4, 8],
+            [4, 9],
+            [4, 10],
+            [5, 0],
+            [6, 0],
+            [6, 1],
+            [6, 2],
+            [7, 0],
+            [7, 1],
+            [7, 2],
+            [7, 3],
+            [7, 4],
+            [8, 0],
+            [8, 1],
+            [8, 2],
+            [8, 3],
+            [8, 4],
+            [9, 0],
+            [9, 1],
+            [9, 2],
+            [9, 3],
+            [9, 4],
+            [10, 0],
+            [10, 1],
+            [10, 2],
+            [10, 3],
+            [10, 4]
+          ],
+          "large": [
+            [0, 5],
+            [0, 6],
+            [0, 7],
+            [0, 8],
+            [0, 9],
+            [0, 10],
+            [1, 5],
+            [1, 6],
+            [1, 7],
+            [1, 8],
+            [1, 9],
+            [1, 10],
+            [2, 5],
+            [2, 6],
+            [2, 7],
+            [2, 8],
+            [2, 9],
+            [2, 10],
+            [3, 6],
+            [3, 7],
+            [3, 8],
+            [3, 9],
+            [3, 10],
+            [4, 6],
+            [4, 7],
+            [4, 8],
+            [4, 9],
+            [4, 10],
+            [5, 0],
+            [5, 1],
+            [5, 2],
+            [5, 8],
+            [5, 9],
+            [5, 10],
+            [6, 0],
+            [6, 1],
+            [6, 2],
+            [6, 3],
+            [6, 4],
+            [7, 0],
+            [7, 1],
+            [7, 2],
+            [7, 3],
+            [7, 4],
+            [8, 0],
+            [8, 1],
+            [8, 2],
+            [8, 3],
+            [8, 4],
+            [8, 5],
+            [9, 0],
+            [9, 1],
+            [9, 2],
+            [9, 3],
+            [9, 4],
+            [9, 5],
+            [10, 0],
+            [10, 1],
+            [10, 2],
+            [10, 3],
+            [10, 4],
+            [10, 5]
+          ]
+        },
+        "wcagAAA": {
+          "normal": [
+            [0, 6],
+            [0, 7],
+            [0, 8],
+            [0, 9],
+            [0, 10],
+            [1, 6],
+            [1, 7],
+            [1, 8],
+            [1, 9],
+            [1, 10],
+            [2, 7],
+            [2, 8],
+            [2, 9],
+            [2, 10],
+            [3, 7],
+            [3, 8],
+            [3, 9],
+            [3, 10],
+            [4, 9],
+            [4, 10],
+            [6, 0],
+            [6, 1],
+            [7, 0],
+            [7, 1],
+            [7, 2],
+            [7, 3],
+            [8, 0],
+            [8, 1],
+            [8, 2],
+            [8, 3],
+            [9, 0],
+            [9, 1],
+            [9, 2],
+            [9, 3],
+            [9, 4],
+            [10, 0],
+            [10, 1],
+            [10, 2],
+            [10, 3],
+            [10, 4]
+          ],
+          "large": [
+            [0, 5],
+            [0, 6],
+            [0, 7],
+            [0, 8],
+            [0, 9],
+            [0, 10],
+            [1, 6],
+            [1, 7],
+            [1, 8],
+            [1, 9],
+            [1, 10],
+            [2, 6],
+            [2, 7],
+            [2, 8],
+            [2, 9],
+            [2, 10],
+            [3, 7],
+            [3, 8],
+            [3, 9],
+            [3, 10],
+            [4, 7],
+            [4, 8],
+            [4, 9],
+            [4, 10],
+            [5, 0],
+            [6, 0],
+            [6, 1],
+            [6, 2],
+            [7, 0],
+            [7, 1],
+            [7, 2],
+            [7, 3],
+            [7, 4],
+            [8, 0],
+            [8, 1],
+            [8, 2],
+            [8, 3],
+            [8, 4],
+            [9, 0],
+            [9, 1],
+            [9, 2],
+            [9, 3],
+            [9, 4],
+            [10, 0],
+            [10, 1],
+            [10, 2],
+            [10, 3],
+            [10, 4]
+          ]
+        },
+        "onWhite": {
+          "wcagAA": true,
+          "wcagAAA": false,
+          "contrastRatio": 5.1823171778330455,
+          "aa": [5, 6, 7, 8, 9, 10],
+          "aaa": [6, 7, 8, 9, 10]
+        },
+        "onBlack": {
+          "wcagAA": false,
+          "wcagAAA": false,
+          "contrastRatio": 4.0522413583301775,
+          "aa": [0, 1, 2, 3, 4],
+          "aaa": [0, 1, 2, 3, 4]
+        },
+        "apca": {
+          "onWhite": 71.44032218867508,
+          "onBlack": -30.23446620038584,
+          "minFontSize": 16
+        }
+      },
+      "analysis": {
+        "temperature": "warm",
+        "isLight": false,
+        "name": "balanced-striking-vivid-red"
+      },
+      "atmosphericWeight": {
+        "distanceWeight": 0.8522,
+        "temperature": "warm",
+        "atmosphericRole": "foreground"
+      },
+      "perceptualWeight": {
+        "weight": 0.6938666666666666,
+        "density": "medium",
+        "balancingRecommendation": "Balanced weight"
+      },
+      "semanticSuggestions": {
+        "danger": [
+          {
+            "l": 0.657,
+            "c": 0.25,
+            "h": 15,
+            "alpha": 1
+          },
+          {
+            "l": 0.707,
+            "c": 0.22,
+            "h": 25,
+            "alpha": 1
+          },
+          {
+            "l": 0.607,
+            "c": 0.23,
+            "h": 5,
+            "alpha": 1
+          }
+        ],
+        "success": [
+          {
+            "l": 0.707,
+            "c": 0.2,
+            "h": 135,
+            "alpha": 1
+          },
+          {
+            "l": 0.657,
+            "c": 0.22,
+            "h": 145,
+            "alpha": 1
+          },
+          {
+            "l": 0.757,
+            "c": 0.24,
+            "h": 125,
+            "alpha": 1
+          }
+        ],
+        "warning": [
+          {
+            "l": 0.707,
+            "c": 0.2,
+            "h": 45,
+            "alpha": 1
+          },
+          {
+            "l": 0.757,
+            "c": 0.18,
+            "h": 55,
+            "alpha": 1
+          },
+          {
+            "l": 0.727,
+            "c": 0.19,
+            "h": 35,
+            "alpha": 1
+          }
+        ],
+        "info": [
+          {
+            "l": 0.657,
+            "c": 0.2,
+            "h": 220,
+            "alpha": 1
+          },
+          {
+            "l": 0.607,
+            "c": 0.22,
+            "h": 230,
+            "alpha": 1
+          },
+          {
+            "l": 0.557,
+            "c": 0.25,
+            "h": 240,
+            "alpha": 1
+          }
+        ]
+      },
+      "intelligence": {
+        "reasoning": "The OKLCH combination of L=0.5, C=0.3, H=0 works well due to its balanced position in the color space. The mid-tone lightness (L=0.5) provides a neutral background for the saturated chroma (C=0.3) to pop, while the hue (H=0) grounds the color in a sense of stability and calmness. Specifically, the zero hue angle corresponds to a pure red color, which is often associated with importance, energy, and passion.",
+        "emotionalImpact": "This color combination elicits a sense of dynamic stability. The mid-tone lightness helps to mitigate the potentially overwhelming effect of the saturated chroma, creating a sense of balance. The pure red hue (H=0) stimulates feelings of excitement, passion, and energy, while also conveying a sense of professionalism and importance. The overall effect is a color that grabs attention without being overwhelming.",
+        "culturalContext": "The pure red hue has different meanings across cultures. In Western societies, red is often associated with love, passion, and energy, while in Asian cultures, it symbolizes good luck and prosperity. In some African cultures, red represents spirituality and the ancestors. The mid-tone lightness and saturated chroma help to amplify these cultural associations, making the color more noticeable and memorable.",
+        "accessibilityNotes": "With a lightness of 0.5, this color may pose accessibility challenges for users with visual impairments. According to WCAG guidelines, the contrast ratio between this color and common background colors (e.g., white or black) may not be sufficient. To ensure accessibility, it's recommended to use this color with a high-contrast background, such as black (L=0) or white (L=1), or to adjust the lightness to meet the contrast ratio requirements (e.g., at least 4.5:1 for normal text or 3:1 for larger text).",
+        "usageGuidance": "Given its saturated chroma and mid-tone lightness, this color is suitable for use cases where attention-grabbing and importance need to be conveyed, such as: (1) Calls-to-action (CTAs) or buttons, (2) Highlighting key information or promotions, (3) Branding or logo design, and (4) Notification badges or alerts. However, due to potential accessibility concerns, it's essential to test the color in different contexts and ensure sufficient contrast with background colors.",
+        "metadata": {
+          "predictionId": "019b3ec1-9121-7247-8f4d-31f6899dd5eb",
+          "confidence": 0.95,
+          "uncertaintyBounds": {
+            "lower": 0.85,
+            "upper": 1,
+            "confidenceInterval": 0.95
+          },
+          "qualityScore": 0.8300000000000001,
+          "method": "bootstrap"
+        }
+      }
+    },
+    {
+      "name": "luminous-bold-bright-seafoam",
+      "scale": [
+        {
+          "l": 0.98,
+          "c": 0.03,
+          "h": 135,
+          "alpha": 1
+        },
+        {
+          "l": 0.95,
+          "c": 0.03,
+          "h": 135,
+          "alpha": 1
+        },
+        {
+          "l": 0.9,
+          "c": 0.05,
+          "h": 135,
+          "alpha": 1
+        },
+        {
+          "l": 0.8,
+          "c": 0.14,
+          "h": 135,
+          "alpha": 1
+        },
+        {
+          "l": 0.7,
+          "c": 0.14,
+          "h": 135,
+          "alpha": 1
+        },
+        {
+          "l": 0.607,
+          "c": 0.14,
+          "h": 135,
+          "alpha": 1
+        },
+        {
+          "l": 0.4,
+          "c": 0.2,
+          "h": 135,
+          "alpha": 1
+        },
+        {
+          "l": 0.25,
+          "c": 0.18,
+          "h": 135,
+          "alpha": 1
+        },
+        {
+          "l": 0.15,
+          "c": 0.18,
+          "h": 135,
+          "alpha": 1
+        },
+        {
+          "l": 0.08,
+          "c": 0.16,
+          "h": 135,
+          "alpha": 1
+        },
+        {
+          "l": 0.04,
+          "c": 0.16,
+          "h": 135,
+          "alpha": 1
+        }
+      ],
+      "tokenId": "color-0.607-0.200-135",
+      "token": "success",
+      "value": "500",
+      "harmonies": {
+        "complementary": {
+          "l": 0.3,
+          "c": 0.24,
+          "h": 315,
+          "alpha": 1
+        },
+        "triadic": [
+          {
+            "l": 0.507,
+            "c": 0.17,
+            "h": 255,
+            "alpha": 1
+          },
+          {
+            "l": 0.7,
+            "c": 0.17,
+            "h": 15,
+            "alpha": 1
+          }
+        ],
+        "analogous": [
+          {
+            "l": 0.657,
+            "c": 0.18,
+            "h": 165,
+            "alpha": 1
+          },
+          {
+            "l": 0.557,
+            "c": 0.18,
+            "h": 105,
+            "alpha": 1
+          }
+        ],
+        "tetradic": [
+          {
+            "l": 0.607,
+            "c": 0.16,
+            "h": 225,
+            "alpha": 1
+          },
+          {
+            "l": 0.3,
+            "c": 0.24,
+            "h": 315,
+            "alpha": 1
+          },
+          {
+            "l": 0.607,
+            "c": 0.16,
+            "h": 45,
+            "alpha": 1
+          }
+        ],
+        "monochromatic": [
+          {
+            "l": 0.98,
+            "c": 0.03,
+            "h": 135,
+            "alpha": 1
+          },
+          {
+            "l": 0.95,
+            "c": 0.03,
+            "h": 135,
+            "alpha": 1
+          },
+          {
+            "l": 0.9,
+            "c": 0.05,
+            "h": 135,
+            "alpha": 1
+          },
+          {
+            "l": 0.8,
+            "c": 0.14,
+            "h": 135,
+            "alpha": 1
+          },
+          {
+            "l": 0.7,
+            "c": 0.14,
+            "h": 135,
+            "alpha": 1
+          }
+        ]
+      },
+      "accessibility": {
+        "wcagAA": {
+          "normal": [
+            [0, 6],
+            [0, 7],
+            [0, 8],
+            [0, 9],
+            [0, 10],
+            [1, 6],
+            [1, 7],
+            [1, 8],
+            [1, 9],
+            [1, 10],
+            [2, 6],
+            [2, 7],
+            [2, 8],
+            [2, 9],
+            [2, 10],
+            [3, 6],
+            [3, 7],
+            [3, 8],
+            [3, 9],
+            [3, 10],
+            [4, 7],
+            [4, 8],
+            [4, 9],
+            [4, 10],
+            [5, 8],
+            [5, 9],
+            [5, 10],
+            [6, 0],
+            [6, 1],
+            [6, 2],
+            [6, 3],
+            [7, 0],
+            [7, 1],
+            [7, 2],
+            [7, 3],
+            [7, 4],
+            [8, 0],
+            [8, 1],
+            [8, 2],
+            [8, 3],
+            [8, 4],
+            [8, 5],
+            [9, 0],
+            [9, 1],
+            [9, 2],
+            [9, 3],
+            [9, 4],
+            [9, 5],
+            [10, 0],
+            [10, 1],
+            [10, 2],
+            [10, 3],
+            [10, 4],
+            [10, 5]
+          ],
+          "large": [
+            [0, 5],
+            [0, 6],
+            [0, 7],
+            [0, 8],
+            [0, 9],
+            [0, 10],
+            [1, 5],
+            [1, 6],
+            [1, 7],
+            [1, 8],
+            [1, 9],
+            [1, 10],
+            [2, 6],
+            [2, 7],
+            [2, 8],
+            [2, 9],
+            [2, 10],
+            [3, 6],
+            [3, 7],
+            [3, 8],
+            [3, 9],
+            [3, 10],
+            [4, 6],
+            [4, 7],
+            [4, 8],
+            [4, 9],
+            [4, 10],
+            [5, 0],
+            [5, 1],
+            [5, 7],
+            [5, 8],
+            [5, 9],
+            [5, 10],
+            [6, 0],
+            [6, 1],
+            [6, 2],
+            [6, 3],
+            [6, 4],
+            [7, 0],
+            [7, 1],
+            [7, 2],
+            [7, 3],
+            [7, 4],
+            [7, 5],
+            [8, 0],
+            [8, 1],
+            [8, 2],
+            [8, 3],
+            [8, 4],
+            [8, 5],
+            [9, 0],
+            [9, 1],
+            [9, 2],
+            [9, 3],
+            [9, 4],
+            [9, 5],
+            [10, 0],
+            [10, 1],
+            [10, 2],
+            [10, 3],
+            [10, 4],
+            [10, 5]
+          ]
+        },
+        "wcagAAA": {
+          "normal": [
+            [0, 6],
+            [0, 7],
+            [0, 8],
+            [0, 9],
+            [0, 10],
+            [1, 6],
+            [1, 7],
+            [1, 8],
+            [1, 9],
+            [1, 10],
+            [2, 7],
+            [2, 8],
+            [2, 9],
+            [2, 10],
+            [3, 7],
+            [3, 8],
+            [3, 9],
+            [3, 10],
+            [4, 8],
+            [4, 9],
+            [4, 10],
+            [6, 0],
+            [6, 1],
+            [7, 0],
+            [7, 1],
+            [7, 2],
+            [7, 3],
+            [8, 0],
+            [8, 1],
+            [8, 2],
+            [8, 3],
+            [8, 4],
+            [9, 0],
+            [9, 1],
+            [9, 2],
+            [9, 3],
+            [9, 4],
+            [10, 0],
+            [10, 1],
+            [10, 2],
+            [10, 3],
+            [10, 4]
+          ],
+          "large": [
+            [0, 6],
+            [0, 7],
+            [0, 8],
+            [0, 9],
+            [0, 10],
+            [1, 6],
+            [1, 7],
+            [1, 8],
+            [1, 9],
+            [1, 10],
+            [2, 6],
+            [2, 7],
+            [2, 8],
+            [2, 9],
+            [2, 10],
+            [3, 6],
+            [3, 7],
+            [3, 8],
+            [3, 9],
+            [3, 10],
+            [4, 7],
+            [4, 8],
+            [4, 9],
+            [4, 10],
+            [5, 8],
+            [5, 9],
+            [5, 10],
+            [6, 0],
+            [6, 1],
+            [6, 2],
+            [6, 3],
+            [7, 0],
+            [7, 1],
+            [7, 2],
+            [7, 3],
+            [7, 4],
+            [8, 0],
+            [8, 1],
+            [8, 2],
+            [8, 3],
+            [8, 4],
+            [8, 5],
+            [9, 0],
+            [9, 1],
+            [9, 2],
+            [9, 3],
+            [9, 4],
+            [9, 5],
+            [10, 0],
+            [10, 1],
+            [10, 2],
+            [10, 3],
+            [10, 4],
+            [10, 5]
+          ]
+        },
+        "onWhite": {
+          "wcagAA": false,
+          "wcagAAA": false,
+          "contrastRatio": 3.5868261655801486,
+          "aa": [6, 7, 8, 9, 10],
+          "aaa": [6, 7, 8, 9, 10]
+        },
+        "onBlack": {
+          "wcagAA": true,
+          "wcagAAA": false,
+          "contrastRatio": 5.854758226512313,
+          "aa": [0, 1, 2, 3, 4, 5],
+          "aaa": [0, 1, 2, 3, 4]
+        },
+        "apca": {
+          "onWhite": 62.92702016736561,
+          "onBlack": -38.75356515877531,
+          "minFontSize": 16
+        }
+      },
+      "analysis": {
+        "temperature": "cool",
+        "isLight": true,
+        "name": "luminous-bold-bright-seafoam"
+      },
+      "atmosphericWeight": {
+        "distanceWeight": 0.45720000000000005,
+        "temperature": "neutral",
+        "atmosphericRole": "midground"
+      },
+      "perceptualWeight": {
+        "weight": 0.46553333333333335,
+        "density": "medium",
+        "balancingRecommendation": "Balanced weight"
+      },
+      "semanticSuggestions": {
+        "danger": [
+          {
+            "l": 0.7,
+            "c": 0.24,
+            "h": 15,
+            "alpha": 1
+          },
+          {
+            "l": 0.75,
+            "c": 0.22,
+            "h": 25,
+            "alpha": 1
+          },
+          {
+            "l": 0.65,
+            "c": 0.23,
+            "h": 5,
+            "alpha": 1
+          }
+        ],
+        "success": [
+          {
+            "l": 0.75,
+            "c": 0.18,
+            "h": 135,
+            "alpha": 1
+          },
+          {
+            "l": 0.7,
+            "c": 0.2,
+            "h": 145,
+            "alpha": 1
+          },
+          {
+            "l": 0.8,
+            "c": 0.22,
+            "h": 125,
+            "alpha": 1
+          }
+        ],
+        "warning": [
+          {
+            "l": 0.757,
+            "c": 0.19,
+            "h": 45,
+            "alpha": 1
+          },
+          {
+            "l": 0.807,
+            "c": 0.18,
+            "h": 55,
+            "alpha": 1
+          },
+          {
+            "l": 0.777,
+            "c": 0.184,
+            "h": 35,
+            "alpha": 1
+          }
+        ],
+        "info": [
+          {
+            "l": 0.707,
+            "c": 0.18,
+            "h": 220,
+            "alpha": 1
+          },
+          {
+            "l": 0.657,
+            "c": 0.2,
+            "h": 230,
+            "alpha": 1
+          },
+          {
+            "l": 0.607,
+            "c": 0.22,
+            "h": 240,
+            "alpha": 1
+          }
+        ]
+      },
+      "intelligence": {
+        "reasoning": "This OKLCH combination works because it strikes a balance between contrast and visual interest. With a mid-tone lightness (L=0.4), this color is neither too bright nor too dark, making it versatile for various design applications. The moderate chroma (C=0.2) adds a touch of saturation without overwhelming the senses. The hue (H=225) falls within the blue-violet range, which is often associated with creativity and wisdom. The specific combination of L=0.4, C=0.2, and H=225 creates a unique visual identity that is both engaging and harmonious.",
+        "emotionalImpact": "This color elicits a sense of balance and stability, while also inspiring creativity and imagination. The blue-violet hue (H=225) has a calming effect, while the moderate chroma (C=0.2) adds a hint of excitement. The mid-tone lightness (L=0.4) prevents the color from feeling too overwhelming, allowing it to recede into the background when needed. Overall, this color combination can evoke feelings of trust, wisdom, and artistic expression.",
+        "culturalContext": "Cross-culturally, blue-violet hues are often associated with luxury, creativity, and wisdom. In Western cultures, this color range is commonly linked to artistry, imagination, and innovation. In some Asian cultures, blue-violet hues are associated with spiritual growth and enlightenment. However, it's essential to consider the specific cultural context and audience when using this color combination in design.",
+        "accessibilityNotes": "With a lightness value of 0.4, this color may pose accessibility challenges for users with visual impairments. According to WCAG guidelines, the contrast ratio between this color and common background colors (e.g., white or black) may not be sufficient. To ensure accessibility, it's recommended to use this color in combination with a high-contrast background or text color. A contrast ratio of at least 4.5:1 is recommended for normal text and 3:1 for larger text (18pt or 14pt bold).",
+        "usageGuidance": "Given its moderate chroma (C=0.2) and mid-tone lightness (L=0.4), this color is suitable for various UI applications, such as:\n    - Accents: Use this color as a secondary accent to add visual interest and create a unique visual identity.\n    - Backgrounds: This color can work as a background for content, especially when paired with high-contrast text colors.\n    - Icons: The moderate chroma and blue-violet hue make this color suitable for iconography, particularly for creative or artistic applications.\n    - Avoid using this color as a primary call-to-action (CTA) button, as it may not provide sufficient contrast with common background colors.",
+        "metadata": {
+          "predictionId": "019b3ed5-951b-7b45-9dea-90587a07edba",
+          "confidence": 0.95,
+          "uncertaintyBounds": {
+            "lower": 0.85,
+            "upper": 1,
+            "confidenceInterval": 0.95
+          },
+          "qualityScore": 0.8300000000000001,
+          "method": "bootstrap"
+        }
+      }
+    },
+    {
+      "name": "pale-bold-amber",
+      "scale": [
+        {
+          "l": 0.98,
+          "c": 0.03,
+          "h": 45,
+          "alpha": 1
+        },
+        {
+          "l": 0.95,
+          "c": 0.03,
+          "h": 45,
+          "alpha": 1
+        },
+        {
+          "l": 0.9,
+          "c": 0.05,
+          "h": 45,
+          "alpha": 1
+        },
+        {
+          "l": 0.8,
+          "c": 0.14,
+          "h": 45,
+          "alpha": 1
+        },
+        {
+          "l": 0.7,
+          "c": 0.14,
+          "h": 45,
+          "alpha": 1
+        },
+        {
+          "l": 0.7,
+          "c": 0.14,
+          "h": 45,
+          "alpha": 1
+        },
+        {
+          "l": 0.4,
+          "c": 0.2,
+          "h": 45,
+          "alpha": 1
+        },
+        {
+          "l": 0.25,
+          "c": 0.18,
+          "h": 45,
+          "alpha": 1
+        },
+        {
+          "l": 0.15,
+          "c": 0.18,
+          "h": 45,
+          "alpha": 1
+        },
+        {
+          "l": 0.08,
+          "c": 0.16,
+          "h": 45,
+          "alpha": 1
+        },
+        {
+          "l": 0.04,
+          "c": 0.16,
+          "h": 45,
+          "alpha": 1
+        }
+      ],
+      "tokenId": "color-0.700-0.200-45",
+      "token": "warning",
+      "value": "500",
+      "harmonies": {
+        "complementary": {
+          "l": 0.3,
+          "c": 0.24,
+          "h": 225,
+          "alpha": 1
+        },
+        "triadic": [
+          {
+            "l": 0.6,
+            "c": 0.17,
+            "h": 165,
+            "alpha": 1
+          },
+          {
+            "l": 0.7,
+            "c": 0.17,
+            "h": 285,
+            "alpha": 1
+          }
+        ],
+        "analogous": [
+          {
+            "l": 0.75,
+            "c": 0.18,
+            "h": 75,
+            "alpha": 1
+          },
+          {
+            "l": 0.65,
+            "c": 0.18,
+            "h": 15,
+            "alpha": 1
+          }
+        ],
+        "tetradic": [
+          {
+            "l": 0.7,
+            "c": 0.16,
+            "h": 135,
+            "alpha": 1
+          },
+          {
+            "l": 0.3,
+            "c": 0.24,
+            "h": 225,
+            "alpha": 1
+          },
+          {
+            "l": 0.7,
+            "c": 0.16,
+            "h": 315,
+            "alpha": 1
+          }
+        ],
+        "monochromatic": [
+          {
+            "l": 0.98,
+            "c": 0.03,
+            "h": 45,
+            "alpha": 1
+          },
+          {
+            "l": 0.95,
+            "c": 0.03,
+            "h": 45,
+            "alpha": 1
+          },
+          {
+            "l": 0.9,
+            "c": 0.05,
+            "h": 45,
+            "alpha": 1
+          },
+          {
+            "l": 0.8,
+            "c": 0.14,
+            "h": 45,
+            "alpha": 1
+          },
+          {
+            "l": 0.7,
+            "c": 0.14,
+            "h": 45,
+            "alpha": 1
+          }
+        ]
+      },
+      "accessibility": {
+        "wcagAA": {
+          "normal": [
+            [0, 6],
+            [0, 7],
+            [0, 8],
+            [0, 9],
+            [0, 10],
+            [1, 6],
+            [1, 7],
+            [1, 8],
+            [1, 9],
+            [1, 10],
+            [2, 6],
+            [2, 7],
+            [2, 8],
+            [2, 9],
+            [2, 10],
+            [3, 6],
+            [3, 7],
+            [3, 8],
+            [3, 9],
+            [3, 10],
+            [4, 7],
+            [4, 8],
+            [4, 9],
+            [4, 10],
+            [5, 7],
+            [5, 8],
+            [5, 9],
+            [5, 10],
+            [6, 0],
+            [6, 1],
+            [6, 2],
+            [6, 3],
+            [7, 0],
+            [7, 1],
+            [7, 2],
+            [7, 3],
+            [7, 4],
+            [7, 5],
+            [8, 0],
+            [8, 1],
+            [8, 2],
+            [8, 3],
+            [8, 4],
+            [8, 5],
+            [9, 0],
+            [9, 1],
+            [9, 2],
+            [9, 3],
+            [9, 4],
+            [9, 5],
+            [10, 0],
+            [10, 1],
+            [10, 2],
+            [10, 3],
+            [10, 4],
+            [10, 5]
+          ],
+          "large": [
+            [0, 6],
+            [0, 7],
+            [0, 8],
+            [0, 9],
+            [0, 10],
+            [1, 6],
+            [1, 7],
+            [1, 8],
+            [1, 9],
+            [1, 10],
+            [2, 6],
+            [2, 7],
+            [2, 8],
+            [2, 9],
+            [2, 10],
+            [3, 6],
+            [3, 7],
+            [3, 8],
+            [3, 9],
+            [3, 10],
+            [4, 6],
+            [4, 7],
+            [4, 8],
+            [4, 9],
+            [4, 10],
+            [5, 6],
+            [5, 7],
+            [5, 8],
+            [5, 9],
+            [5, 10],
+            [6, 0],
+            [6, 1],
+            [6, 2],
+            [6, 3],
+            [6, 4],
+            [6, 5],
+            [7, 0],
+            [7, 1],
+            [7, 2],
+            [7, 3],
+            [7, 4],
+            [7, 5],
+            [8, 0],
+            [8, 1],
+            [8, 2],
+            [8, 3],
+            [8, 4],
+            [8, 5],
+            [9, 0],
+            [9, 1],
+            [9, 2],
+            [9, 3],
+            [9, 4],
+            [9, 5],
+            [10, 0],
+            [10, 1],
+            [10, 2],
+            [10, 3],
+            [10, 4],
+            [10, 5]
+          ]
+        },
+        "wcagAAA": {
+          "normal": [
+            [0, 6],
+            [0, 7],
+            [0, 8],
+            [0, 9],
+            [0, 10],
+            [1, 6],
+            [1, 7],
+            [1, 8],
+            [1, 9],
+            [1, 10],
+            [2, 6],
+            [2, 7],
+            [2, 8],
+            [2, 9],
+            [2, 10],
+            [3, 7],
+            [3, 8],
+            [3, 9],
+            [3, 10],
+            [4, 8],
+            [4, 9],
+            [4, 10],
+            [5, 8],
+            [5, 9],
+            [5, 10],
+            [6, 0],
+            [6, 1],
+            [6, 2],
+            [7, 0],
+            [7, 1],
+            [7, 2],
+            [7, 3],
+            [8, 0],
+            [8, 1],
+            [8, 2],
+            [8, 3],
+            [8, 4],
+            [8, 5],
+            [9, 0],
+            [9, 1],
+            [9, 2],
+            [9, 3],
+            [9, 4],
+            [9, 5],
+            [10, 0],
+            [10, 1],
+            [10, 2],
+            [10, 3],
+            [10, 4],
+            [10, 5]
+          ],
+          "large": [
+            [0, 6],
+            [0, 7],
+            [0, 8],
+            [0, 9],
+            [0, 10],
+            [1, 6],
+            [1, 7],
+            [1, 8],
+            [1, 9],
+            [1, 10],
+            [2, 6],
+            [2, 7],
+            [2, 8],
+            [2, 9],
+            [2, 10],
+            [3, 6],
+            [3, 7],
+            [3, 8],
+            [3, 9],
+            [3, 10],
+            [4, 7],
+            [4, 8],
+            [4, 9],
+            [4, 10],
+            [5, 7],
+            [5, 8],
+            [5, 9],
+            [5, 10],
+            [6, 0],
+            [6, 1],
+            [6, 2],
+            [6, 3],
+            [7, 0],
+            [7, 1],
+            [7, 2],
+            [7, 3],
+            [7, 4],
+            [7, 5],
+            [8, 0],
+            [8, 1],
+            [8, 2],
+            [8, 3],
+            [8, 4],
+            [8, 5],
+            [9, 0],
+            [9, 1],
+            [9, 2],
+            [9, 3],
+            [9, 4],
+            [9, 5],
+            [10, 0],
+            [10, 1],
+            [10, 2],
+            [10, 3],
+            [10, 4],
+            [10, 5]
+          ]
+        },
+        "onWhite": {
+          "wcagAA": false,
+          "wcagAAA": false,
+          "contrastRatio": 2.879344893433459,
+          "aa": [6, 7, 8, 9, 10],
+          "aaa": [6, 7, 8, 9, 10]
+        },
+        "onBlack": {
+          "wcagAA": true,
+          "wcagAAA": true,
+          "contrastRatio": 7.293325661643353,
+          "aa": [0, 1, 2, 3, 4, 5],
+          "aaa": [0, 1, 2, 3, 4, 5]
+        },
+        "apca": {
+          "onWhite": 54.07016689898981,
+          "onBlack": -47.7575439969784,
+          "minFontSize": 24
+        }
+      },
+      "analysis": {
+        "temperature": "warm",
+        "isLight": true,
+        "name": "pale-bold-amber"
+      },
+      "atmosphericWeight": {
+        "distanceWeight": 0.7200000000000001,
+        "temperature": "warm",
+        "atmosphericRole": "foreground"
+      },
+      "perceptualWeight": {
+        "weight": 0.5533333333333335,
+        "density": "medium",
+        "balancingRecommendation": "Balanced weight"
+      },
+      "semanticSuggestions": {
+        "danger": [
+          {
+            "l": 0.7,
+            "c": 0.24,
+            "h": 15,
+            "alpha": 1
+          },
+          {
+            "l": 0.75,
+            "c": 0.22,
+            "h": 25,
+            "alpha": 1
+          },
+          {
+            "l": 0.65,
+            "c": 0.23,
+            "h": 5,
+            "alpha": 1
+          }
+        ],
+        "success": [
+          {
+            "l": 0.75,
+            "c": 0.18,
+            "h": 135,
+            "alpha": 1
+          },
+          {
+            "l": 0.7,
+            "c": 0.2,
+            "h": 145,
+            "alpha": 1
+          },
+          {
+            "l": 0.8,
+            "c": 0.22,
+            "h": 125,
+            "alpha": 1
+          }
+        ],
+        "warning": [
+          {
+            "l": 0.8,
+            "c": 0.19,
+            "h": 45,
+            "alpha": 1
+          },
+          {
+            "l": 0.85,
+            "c": 0.18,
+            "h": 55,
+            "alpha": 1
+          },
+          {
+            "l": 0.82,
+            "c": 0.184,
+            "h": 35,
+            "alpha": 1
+          }
+        ],
+        "info": [
+          {
+            "l": 0.75,
+            "c": 0.18,
+            "h": 220,
+            "alpha": 1
+          },
+          {
+            "l": 0.7,
+            "c": 0.2,
+            "h": 230,
+            "alpha": 1
+          },
+          {
+            "l": 0.65,
+            "c": 0.22,
+            "h": 240,
+            "alpha": 1
+          }
+        ]
+      },
+      "intelligence": {
+        "reasoning": "The OKLCH combination of L=0.7, C=0.2, H=45 works well due to its balanced mid-tone lightness and moderate saturation. The hue of 45 degrees falls within the yellow-orange spectrum, which is often associated with warmth and energy. The relatively low chroma of 0.2 ensures that the color doesn't overpower, while the mid-tone lightness provides sufficient visibility without being overwhelming.",
+        "emotionalImpact": "This color elicits a sense of gentle warmth and subtle excitement. The yellow-orange hue can stimulate feelings of optimism and enthusiasm, while the moderate saturation and mid-tone lightness prevent it from being too overwhelming or aggressive. The overall effect is calming yet engaging, making it suitable for designs that aim to comfort and invite interaction.",
+        "culturalContext": "Cross-culturally, the yellow-orange hue can have varying interpretations. In Western cultures, it may symbolize warmth, creativity, and playfulness. In some Asian cultures, yellow is associated with royalty and prosperity. However, the moderate saturation and specific lightness of this OKLCH color help to neutralize extreme cultural connotations, making it more universally approachable.",
+        "accessibilityNotes": "With a lightness of L=0.7, this color has a moderate level of brightness. According to WCAG guidelines, for text or important graphical elements, a contrast ratio of at least 4.5:1 with black or 7:1 with white is recommended for normal text. For this color, pairing it with black (L=0) would yield a contrast ratio of approximately 4.3:1, which is slightly below the threshold for normal text but may work for larger text or less critical content. It's essential to ensure sufficient contrast when using this color for critical UI elements.",
+        "usageGuidance": "Given its moderate chroma of 0.2 and mid-tone lightness of 0.7, this color is versatile for UI design. It can be used as a background or accent color where a subtle yet engaging presence is desired. For example, it could serve as a hover effect for buttons, a subtle highlight for selected items, or a gentle background for forms and cards. When used for text, ensure adequate contrast with the background, possibly by adjusting the text color to black or a darker shade.",
+        "metadata": {
+          "predictionId": "019b3ed5-d10a-781d-b872-51b3cdab0a2e",
+          "confidence": 0.95,
+          "uncertaintyBounds": {
+            "lower": 0.85,
+            "upper": 1,
+            "confidenceInterval": 0.95
+          },
+          "qualityScore": 0.8300000000000001,
+          "method": "bootstrap"
+        }
+      }
+    },
+    {
+      "name": "luminous-bold-living-bay",
+      "scale": [
+        {
+          "l": 0.98,
+          "c": 0.03,
+          "h": 220,
+          "alpha": 1
+        },
+        {
+          "l": 0.95,
+          "c": 0.03,
+          "h": 220,
+          "alpha": 1
+        },
+        {
+          "l": 0.9,
+          "c": 0.05,
+          "h": 220,
+          "alpha": 1
+        },
+        {
+          "l": 0.8,
+          "c": 0.14,
+          "h": 220,
+          "alpha": 1
+        },
+        {
+          "l": 0.7,
+          "c": 0.14,
+          "h": 220,
+          "alpha": 1
+        },
+        {
+          "l": 0.6,
+          "c": 0.2,
+          "h": 220,
+          "alpha": 1
+        },
+        {
+          "l": 0.4,
+          "c": 0.2,
+          "h": 220,
+          "alpha": 1
+        },
+        {
+          "l": 0.25,
+          "c": 0.18,
+          "h": 220,
+          "alpha": 1
+        },
+        {
+          "l": 0.15,
+          "c": 0.18,
+          "h": 220,
+          "alpha": 1
+        },
+        {
+          "l": 0.08,
+          "c": 0.16,
+          "h": 220,
+          "alpha": 1
+        },
+        {
+          "l": 0.04,
+          "c": 0.16,
+          "h": 220,
+          "alpha": 1
+        }
+      ],
+      "tokenId": "color-0.600-0.200-220",
+      "token": "info",
+      "value": "500",
+      "harmonies": {
+        "complementary": {
+          "l": 0.3,
+          "c": 0.24,
+          "h": 40,
+          "alpha": 1
+        },
+        "triadic": [
+          {
+            "l": 0.5,
+            "c": 0.17,
+            "h": 340,
+            "alpha": 1
+          },
+          {
+            "l": 0.7,
+            "c": 0.17,
+            "h": 100,
+            "alpha": 1
+          }
+        ],
+        "analogous": [
+          {
+            "l": 0.65,
+            "c": 0.18,
+            "h": 250,
+            "alpha": 1
+          },
+          {
+            "l": 0.55,
+            "c": 0.18,
+            "h": 190,
+            "alpha": 1
+          }
+        ],
+        "tetradic": [
+          {
+            "l": 0.6,
+            "c": 0.16,
+            "h": 310,
+            "alpha": 1
+          },
+          {
+            "l": 0.3,
+            "c": 0.24,
+            "h": 40,
+            "alpha": 1
+          },
+          {
+            "l": 0.6,
+            "c": 0.16,
+            "h": 130,
+            "alpha": 1
+          }
+        ],
+        "monochromatic": [
+          {
+            "l": 0.98,
+            "c": 0.03,
+            "h": 220,
+            "alpha": 1
+          },
+          {
+            "l": 0.95,
+            "c": 0.03,
+            "h": 220,
+            "alpha": 1
+          },
+          {
+            "l": 0.9,
+            "c": 0.05,
+            "h": 220,
+            "alpha": 1
+          },
+          {
+            "l": 0.8,
+            "c": 0.14,
+            "h": 220,
+            "alpha": 1
+          },
+          {
+            "l": 0.7,
+            "c": 0.14,
+            "h": 220,
+            "alpha": 1
+          }
+        ]
+      },
+      "accessibility": {
+        "wcagAA": {
+          "normal": [
+            [0, 6],
+            [0, 7],
+            [0, 8],
+            [0, 9],
+            [0, 10],
+            [1, 6],
+            [1, 7],
+            [1, 8],
+            [1, 9],
+            [1, 10],
+            [2, 6],
+            [2, 7],
+            [2, 8],
+            [2, 9],
+            [2, 10],
+            [3, 7],
+            [3, 8],
+            [3, 9],
+            [3, 10],
+            [4, 7],
+            [4, 8],
+            [4, 9],
+            [4, 10],
+            [5, 8],
+            [5, 9],
+            [5, 10],
+            [6, 0],
+            [6, 1],
+            [6, 2],
+            [7, 0],
+            [7, 1],
+            [7, 2],
+            [7, 3],
+            [7, 4],
+            [8, 0],
+            [8, 1],
+            [8, 2],
+            [8, 3],
+            [8, 4],
+            [8, 5],
+            [9, 0],
+            [9, 1],
+            [9, 2],
+            [9, 3],
+            [9, 4],
+            [9, 5],
+            [10, 0],
+            [10, 1],
+            [10, 2],
+            [10, 3],
+            [10, 4],
+            [10, 5]
+          ],
+          "large": [
+            [0, 5],
+            [0, 6],
+            [0, 7],
+            [0, 8],
+            [0, 9],
+            [0, 10],
+            [1, 6],
+            [1, 7],
+            [1, 8],
+            [1, 9],
+            [1, 10],
+            [2, 6],
+            [2, 7],
+            [2, 8],
+            [2, 9],
+            [2, 10],
+            [3, 6],
+            [3, 7],
+            [3, 8],
+            [3, 9],
+            [3, 10],
+            [4, 6],
+            [4, 7],
+            [4, 8],
+            [4, 9],
+            [4, 10],
+            [5, 0],
+            [5, 7],
+            [5, 8],
+            [5, 9],
+            [5, 10],
+            [6, 0],
+            [6, 1],
+            [6, 2],
+            [6, 3],
+            [6, 4],
+            [7, 0],
+            [7, 1],
+            [7, 2],
+            [7, 3],
+            [7, 4],
+            [7, 5],
+            [8, 0],
+            [8, 1],
+            [8, 2],
+            [8, 3],
+            [8, 4],
+            [8, 5],
+            [9, 0],
+            [9, 1],
+            [9, 2],
+            [9, 3],
+            [9, 4],
+            [9, 5],
+            [10, 0],
+            [10, 1],
+            [10, 2],
+            [10, 3],
+            [10, 4],
+            [10, 5]
+          ]
+        },
+        "wcagAAA": {
+          "normal": [
+            [0, 6],
+            [0, 7],
+            [0, 8],
+            [0, 9],
+            [0, 10],
+            [1, 7],
+            [1, 8],
+            [1, 9],
+            [1, 10],
+            [2, 7],
+            [2, 8],
+            [2, 9],
+            [2, 10],
+            [3, 7],
+            [3, 8],
+            [3, 9],
+            [3, 10],
+            [4, 8],
+            [4, 9],
+            [4, 10],
+            [6, 0],
+            [7, 0],
+            [7, 1],
+            [7, 2],
+            [7, 3],
+            [8, 0],
+            [8, 1],
+            [8, 2],
+            [8, 3],
+            [8, 4],
+            [9, 0],
+            [9, 1],
+            [9, 2],
+            [9, 3],
+            [9, 4],
+            [10, 0],
+            [10, 1],
+            [10, 2],
+            [10, 3],
+            [10, 4]
+          ],
+          "large": [
+            [0, 6],
+            [0, 7],
+            [0, 8],
+            [0, 9],
+            [0, 10],
+            [1, 6],
+            [1, 7],
+            [1, 8],
+            [1, 9],
+            [1, 10],
+            [2, 6],
+            [2, 7],
+            [2, 8],
+            [2, 9],
+            [2, 10],
+            [3, 7],
+            [3, 8],
+            [3, 9],
+            [3, 10],
+            [4, 7],
+            [4, 8],
+            [4, 9],
+            [4, 10],
+            [5, 8],
+            [5, 9],
+            [5, 10],
+            [6, 0],
+            [6, 1],
+            [6, 2],
+            [7, 0],
+            [7, 1],
+            [7, 2],
+            [7, 3],
+            [7, 4],
+            [8, 0],
+            [8, 1],
+            [8, 2],
+            [8, 3],
+            [8, 4],
+            [8, 5],
+            [9, 0],
+            [9, 1],
+            [9, 2],
+            [9, 3],
+            [9, 4],
+            [9, 5],
+            [10, 0],
+            [10, 1],
+            [10, 2],
+            [10, 3],
+            [10, 4],
+            [10, 5]
+          ]
+        },
+        "onWhite": {
+          "wcagAA": false,
+          "wcagAAA": false,
+          "contrastRatio": 3.428489195209708,
+          "aa": [6, 7, 8, 9, 10],
+          "aaa": [6, 7, 8, 9, 10]
+        },
+        "onBlack": {
+          "wcagAA": true,
+          "wcagAAA": false,
+          "contrastRatio": 6.125146909997918,
+          "aa": [0, 1, 2, 3, 4, 5],
+          "aaa": [0, 1, 2, 3, 4]
+        },
+        "apca": {
+          "onWhite": 60.28601847561612,
+          "onBlack": -41.424414381724404,
+          "minFontSize": 16
+        }
+      },
+      "analysis": {
+        "temperature": "cool",
+        "isLight": true,
+        "name": "luminous-bold-living-bay"
+      },
+      "atmosphericWeight": {
+        "distanceWeight": 0.26000000000000006,
+        "temperature": "cool",
+        "atmosphericRole": "background"
+      },
+      "perceptualWeight": {
+        "weight": 0.44333333333333336,
+        "density": "medium",
+        "balancingRecommendation": "Balanced weight"
+      },
+      "semanticSuggestions": {
+        "danger": [
+          {
+            "l": 0.7,
+            "c": 0.24,
+            "h": 15,
+            "alpha": 1
+          },
+          {
+            "l": 0.75,
+            "c": 0.22,
+            "h": 25,
+            "alpha": 1
+          },
+          {
+            "l": 0.65,
+            "c": 0.23,
+            "h": 5,
+            "alpha": 1
+          }
+        ],
+        "success": [
+          {
+            "l": 0.75,
+            "c": 0.18,
+            "h": 135,
+            "alpha": 1
+          },
+          {
+            "l": 0.7,
+            "c": 0.2,
+            "h": 145,
+            "alpha": 1
+          },
+          {
+            "l": 0.8,
+            "c": 0.22,
+            "h": 125,
+            "alpha": 1
+          }
+        ],
+        "warning": [
+          {
+            "l": 0.75,
+            "c": 0.19,
+            "h": 45,
+            "alpha": 1
+          },
+          {
+            "l": 0.8,
+            "c": 0.18,
+            "h": 55,
+            "alpha": 1
+          },
+          {
+            "l": 0.77,
+            "c": 0.184,
+            "h": 35,
+            "alpha": 1
+          }
+        ],
+        "info": [
+          {
+            "l": 0.7,
+            "c": 0.18,
+            "h": 220,
+            "alpha": 1
+          },
+          {
+            "l": 0.65,
+            "c": 0.2,
+            "h": 230,
+            "alpha": 1
+          },
+          {
+            "l": 0.6,
+            "c": 0.22,
+            "h": 240,
+            "alpha": 1
+          }
+        ]
+      },
+      "intelligence": {
+        "reasoning": "The OKLCH combination of L=0.6, C=0.2, H=225 works well due to its balanced attributes. The mid-tone lightness (L=0.6) provides a stable foundation, while the moderate chroma (C=0.2) adds a touch of vibrancy without overwhelming the senses. The hue (H=225) falls within the blue-purple spectrum, which often evokes feelings of creativity and wisdom. This specific combination creates a soothing yet engaging visual experience.",
+        "emotionalImpact": "This color, with its unique position in OKLCH space (L=0.6, C=0.2, H=225), elicits a sense of calmness and serenity. The moderate chroma and mid-tone lightness contribute to a balanced emotional response, while the blue-purple hue adds a hint of luxury and creativity. The overall effect is a sense of trustworthiness and sophistication, making it suitable for applications where a professional yet approachable tone is desired.",
+        "culturalContext": "Cross-culturally, the hue of 225 degrees is often associated with luxury, creativity, and wisdom in Western societies. In some Asian cultures, blue-purple shades can symbolize good fortune and prosperity. However, the moderate chroma and mid-tone lightness of this specific OKLCH combination help to neutralize any potentially conflicting cultural associations, making it a relatively safe choice for global audiences.",
+        "accessibilityNotes": "With a lightness value of 0.6, this color has a moderate level of brightness. According to WCAG guidelines, for normal text (AA), the contrast ratio should be at least 4.5:1 for large text (18pt or 14pt bold). For this color, it's recommended to pair it with a background that provides sufficient contrast. A darker background (e.g., L=0.3) or a lighter background (e.g., L=0.9) would be suitable to meet WCAG AA standards. For AAA, the contrast ratio should be at least 7:1.",
+        "usageGuidance": "Given its moderate chroma (C=0.2) and mid-tone lightness (L=0.6), this color is versatile and can be used in various UI elements. It's suitable for:\n      - Buttons and CTAs: provides a clear and engaging visual cue without overwhelming users.\n      - Headers and titles: adds a touch of sophistication and creativity to text content.\n      - Icons and graphics: can be used as an accent color to add visual interest without dominating the UI.\n      - Backgrounds: can be used as a subtle background color for sections or panels to add depth and visual interest.",
+        "metadata": {
+          "predictionId": "019b3ed5-c51c-7fb4-8648-eb61bb08af3b",
+          "confidence": 0.95,
+          "uncertaintyBounds": {
+            "lower": 0.85,
+            "upper": 1,
+            "confidenceInterval": 0.95
+          },
+          "qualityScore": 0.8300000000000001,
+          "method": "bootstrap"
+        }
+      }
+    }
+  ]
+}
