@@ -77,7 +77,17 @@ function ColorScale({
     return cleanup;
   }, [scale, name, tiers, onSwatchFocus, onSwatchClick]);
 
-  return <div ref={containerRef} className={classy('flex', className)} />;
+  return (
+    <div
+      ref={containerRef}
+      className={classy(
+        'flex gap-0.5 [&_[role=option]]:h-6 [&_[role=option]]:flex-1 [&_[role=option]]:cursor-pointer',
+        '[&_[role=option]:first-child]:rounded-l-sm [&_[role=option]:last-child]:rounded-r-sm',
+        '[&_[role=option]:focus-visible]:ring-2 [&_[role=option]:focus-visible]:ring-primary-ring [&_[role=option]:focus-visible]:outline-none [&_[role=option]:focus-visible]:z-10',
+        className,
+      )}
+    />
+  );
 }
 
 ColorScale.displayName = 'ColorScale';
@@ -109,7 +119,24 @@ function ContrastMatrix({ accessibility, scaleName, className }: ContrastMatrixP
     return cleanup;
   }, [accessibility, scaleName]);
 
-  return <div ref={containerRef} className={classy(className)} />;
+  return (
+    <div
+      ref={containerRef}
+      className={classy(
+        'text-xs',
+        '[&_[role=grid]]:grid [&_[role=grid]]:gap-px',
+        '[&_[role=row]]:flex [&_[role=row]]:gap-px',
+        '[&_[role=gridcell]]:h-4 [&_[role=gridcell]]:w-4 [&_[role=gridcell]]:rounded-xs',
+        '[&_[data-wcag-level=aaa]]:bg-emerald-500/40 [&_[data-wcag-level=aa]]:bg-amber-500/40 [&_[data-wcag-level=fail]]:bg-muted/20',
+        '[&_[role=gridcell]:focus-visible]:ring-1 [&_[role=gridcell]:focus-visible]:ring-primary-ring [&_[role=gridcell]:focus-visible]:outline-none',
+        '[&_[role=columnheader]]:h-4 [&_[role=columnheader]]:w-4 [&_[role=columnheader]]:text-center [&_[role=columnheader]]:text-muted-foreground [&_[role=columnheader]]:text-[9px] [&_[role=columnheader]]:leading-4',
+        '[&_[role=rowheader]]:h-4 [&_[role=rowheader]]:w-4 [&_[role=rowheader]]:text-center [&_[role=rowheader]]:text-muted-foreground [&_[role=rowheader]]:text-[9px] [&_[role=rowheader]]:leading-4',
+        '[&_[data-contrast-summary]]:mt-2 [&_[data-contrast-summary]]:text-muted-foreground',
+        '[&_[data-apca]]:text-muted-foreground',
+        className,
+      )}
+    />
+  );
 }
 
 ContrastMatrix.displayName = 'ContrastMatrix';
@@ -165,7 +192,21 @@ function CVDSimulation({
     return cleanup;
   }, [scale, name, cvd, baseColor, showOriginal]);
 
-  return <div ref={containerRef} className={classy(className)} />;
+  return (
+    <div
+      ref={containerRef}
+      className={classy(
+        'flex flex-col gap-1',
+        '[&_[data-cvd-type]]:flex [&_[data-cvd-type]]:gap-0.5',
+        '[&_[data-swatch]]:h-5 [&_[data-swatch]]:flex-1',
+        '[&_[data-cvd-type]:first-child_[data-swatch]:first-child]:rounded-tl-sm',
+        '[&_[data-cvd-type]:first-child_[data-swatch]:last-child]:rounded-tr-sm',
+        '[&_[data-cvd-type]:last-child_[data-swatch]:first-child]:rounded-bl-sm',
+        '[&_[data-cvd-type]:last-child_[data-swatch]:last-child]:rounded-br-sm',
+        className,
+      )}
+    />
+  );
 }
 
 CVDSimulation.displayName = 'CVDSimulation';
@@ -205,7 +246,16 @@ function ColorWeight({ perceptualWeight, atmosphericWeight, className }: ColorWe
     return cleanup;
   }, [perceptualWeight, atmosphericWeight]);
 
-  return <div ref={containerRef} className={classy(className)} />;
+  return (
+    <div
+      ref={containerRef}
+      className={classy(
+        'flex flex-col gap-1 text-xs text-muted-foreground',
+        '[&_[role=note]]:mt-1 [&_[role=note]]:text-foreground [&_[role=note]]:text-xs',
+        className,
+      )}
+    />
+  );
 }
 
 ColorWeight.displayName = 'ColorWeight';
