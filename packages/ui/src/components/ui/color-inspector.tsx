@@ -1,21 +1,17 @@
 /**
- * Color Inspector -- progressive-reveal color family inspection components
+ * Color Inspector -- left-rail chip selector with right-panel detail view
  *
- * Renders color families with three disclosure states: resting (paint chip),
- * hover (scale ribbon), selected (full inspector with collapsible sections).
+ * Layout: vertical chip rail on the left, selected color's full data on the right.
+ * Chips show swatch + name + token. On click, the right panel fills with
+ * scale, accessibility, CVD, weight, intelligence.
  *
- * @cognitive-load 4/10 - Progressive reveal keeps resting state minimal
- * @attention-economics Resting: 3 facts (name, swatch, token). Hover: scale ribbon. Selected: full data sections.
- * @trust-building Animated transitions maintain object permanence; user controls disclosure depth
- * @accessibility aria-selected on active family, listbox/grid roles on data sections, keyboard navigation
- * @semantic-meaning Color intelligence: scale, accessibility, CVD simulation, weight, token intelligence
+ * @cognitive-load 4/10 - Chip rail is scannable; detail appears on demand
+ * @accessibility Keyboard nav in chip list, aria-current on selected, collapsible sections
  *
  * @usage-patterns
  * DO: Use ColorInspector to display multiple color families with single-selection
- * DO: Use ColorFamily for individual color family display with progressive reveal
  * DO: Use section components (ColorScale, ContrastMatrix, etc.) standalone when needed
- * NEVER: Bypass the progressive reveal by forcing all sections open simultaneously
- * NEVER: Display more than one selected family at a time in ColorInspector
+ * NEVER: Display more than one selected family at a time
  */
 
 import type { ColorValue } from '@rafters/shared';
@@ -31,27 +27,32 @@ import type { GamutTier, OklchColor } from '../../primitives/types';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './collapsible';
 
 // ============================================================================
+// Shared helpers
+// ============================================================================
+
+function getBaseColor(color: ColorValue): OklchColor {
+  const base = color.scale[5];
+  if (base) return base;
+  return { l: 0.5, c: 0.1, h: 0 };
+}
+
+function toOklchCss(c: OklchColor): string {
+  return `oklch(${c.l} ${c.c} ${c.h})`;
+}
+
+// ============================================================================
 // ColorScale
 // ============================================================================
 
 export interface ColorScaleProps {
-  /** Array of 11 OKLCH values mapping to scale positions 50-950 */
   scale: OklchColor[];
-  /** Color family name for ARIA labels */
   name: string;
-  /** Optional gamut tier for each swatch */
   tiers?: GamutTier[];
-  /** Called when a swatch receives focus via keyboard navigation */
   onSwatchFocus?: (position: ScalePosition, index: number) => void;
-  /** Called when a swatch is clicked */
   onSwatchClick?: (position: ScalePosition, index: number) => void;
   className?: string;
 }
 
-/**
- * Thin React shell wrapping the color-scale leaf primitive.
- * Renders an OKLCH color scale as a navigable swatch strip with listbox semantics.
- */
 function ColorScale({
   scale,
   name,
@@ -65,24 +66,22 @@ function ColorScale({
   React.useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-
-    const cleanup = createColorScale(el, {
+    return createColorScale(el, {
       scale,
       name,
       ...(tiers ? { tiers } : {}),
       ...(onSwatchFocus ? { onSwatchFocus } : {}),
       ...(onSwatchClick ? { onSwatchClick } : {}),
     });
-
-    return cleanup;
   }, [scale, name, tiers, onSwatchFocus, onSwatchClick]);
 
   return (
     <div
       ref={containerRef}
       className={classy(
-        'flex gap-0.5 [&_[role=option]]:h-6 [&_[role=option]]:flex-1 [&_[role=option]]:cursor-pointer',
-        '[&_[role=option]:first-child]:rounded-l-sm [&_[role=option]:last-child]:rounded-r-sm',
+        'flex gap-0.5',
+        '[&_[role=option]]:h-8 [&_[role=option]]:flex-1 [&_[role=option]]:cursor-pointer',
+        '[&_[role=option]:first-child]:rounded-l [&_[role=option]:last-child]:rounded-r',
         '[&_[role=option]:focus-visible]:ring-2 [&_[role=option]:focus-visible]:ring-primary-ring [&_[role=option]:focus-visible]:outline-none [&_[role=option]:focus-visible]:z-10',
         className,
       )}
@@ -97,42 +96,34 @@ ColorScale.displayName = 'ColorScale';
 // ============================================================================
 
 export interface ContrastMatrixProps {
-  /** Accessibility data from ColorValue */
   accessibility: ContrastMatrixOptions['accessibility'];
-  /** Color family name */
   scaleName: string;
   className?: string;
 }
 
-/**
- * Thin React shell wrapping the contrast-matrix leaf primitive.
- * Renders a WCAG contrast pairing grid with keyboard navigation.
- */
 function ContrastMatrix({ accessibility, scaleName, className }: ContrastMatrixProps) {
   const containerRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-
-    const cleanup = createContrastMatrix(el, { accessibility, scaleName });
-    return cleanup;
+    return createContrastMatrix(el, { accessibility, scaleName });
   }, [accessibility, scaleName]);
 
   return (
     <div
       ref={containerRef}
       className={classy(
-        'text-xs',
+        'text-xs font-mono',
         '[&_[role=grid]]:grid [&_[role=grid]]:gap-px',
         '[&_[role=row]]:flex [&_[role=row]]:gap-px',
-        '[&_[role=gridcell]]:h-4 [&_[role=gridcell]]:w-4 [&_[role=gridcell]]:rounded-xs',
-        '[&_[data-wcag-level=aaa]]:bg-emerald-500/40 [&_[data-wcag-level=aa]]:bg-amber-500/40 [&_[data-wcag-level=fail]]:bg-muted/20',
+        '[&_[role=gridcell]]:h-5 [&_[role=gridcell]]:w-5 [&_[role=gridcell]]:rounded-xs',
+        '[&_[data-wcag-level=aaa]]:bg-emerald-500/30 [&_[data-wcag-level=aa]]:bg-amber-500/30 [&_[data-wcag-level=fail]]:bg-muted/10',
         '[&_[role=gridcell]:focus-visible]:ring-1 [&_[role=gridcell]:focus-visible]:ring-primary-ring [&_[role=gridcell]:focus-visible]:outline-none',
-        '[&_[role=columnheader]]:h-4 [&_[role=columnheader]]:w-4 [&_[role=columnheader]]:text-center [&_[role=columnheader]]:text-muted-foreground [&_[role=columnheader]]:text-[9px] [&_[role=columnheader]]:leading-4',
-        '[&_[role=rowheader]]:h-4 [&_[role=rowheader]]:w-4 [&_[role=rowheader]]:text-center [&_[role=rowheader]]:text-muted-foreground [&_[role=rowheader]]:text-[9px] [&_[role=rowheader]]:leading-4',
-        '[&_[data-contrast-summary]]:mt-2 [&_[data-contrast-summary]]:text-muted-foreground',
-        '[&_[data-apca]]:text-muted-foreground',
+        '[&_[role=columnheader]]:h-5 [&_[role=columnheader]]:w-5 [&_[role=columnheader]]:text-center [&_[role=columnheader]]:text-muted-foreground/60 [&_[role=columnheader]]:leading-5',
+        '[&_[role=rowheader]]:h-5 [&_[role=rowheader]]:w-5 [&_[role=rowheader]]:text-center [&_[role=rowheader]]:text-muted-foreground/60 [&_[role=rowheader]]:leading-5',
+        '[&_[data-contrast-summary]]:mt-3 [&_[data-contrast-summary]]:text-xs [&_[data-contrast-summary]]:text-muted-foreground',
+        '[&_[data-apca]]:text-xs [&_[data-apca]]:text-muted-foreground [&_[data-apca]]:mt-1',
         className,
       )}
     />
@@ -146,27 +137,14 @@ ContrastMatrix.displayName = 'ContrastMatrix';
 // ============================================================================
 
 export interface CVDSimulationProps {
-  /** Array of 11 OKLCH values mapping to scale positions 50-950 */
   scale: OklchColor[];
-  /** Color family name */
   name: string;
-  /** CVD simulation data for each deficiency type */
-  cvd: {
-    deuteranopia: OklchColor;
-    protanopia: OklchColor;
-    tritanopia: OklchColor;
-  };
-  /** The original base color for computing hue/chroma shifts */
+  cvd: { deuteranopia: OklchColor; protanopia: OklchColor; tritanopia: OklchColor };
   baseColor: OklchColor;
-  /** Whether to show the original scale alongside for comparison */
   showOriginal?: boolean;
   className?: string;
 }
 
-/**
- * Thin React shell wrapping the cvd-simulation leaf primitive.
- * Renders parallel scale strips for each color vision deficiency.
- */
 function CVDSimulation({
   scale,
   name,
@@ -180,29 +158,24 @@ function CVDSimulation({
   React.useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-
-    const cleanup = createCvdSimulation(el, {
+    return createCvdSimulation(el, {
       scale,
       name,
       cvd,
       baseColor,
       ...(showOriginal !== undefined ? { showOriginal } : {}),
     });
-
-    return cleanup;
   }, [scale, name, cvd, baseColor, showOriginal]);
 
   return (
     <div
       ref={containerRef}
       className={classy(
-        'flex flex-col gap-1',
+        'flex flex-col gap-0.5',
         '[&_[data-cvd-type]]:flex [&_[data-cvd-type]]:gap-0.5',
-        '[&_[data-swatch]]:h-5 [&_[data-swatch]]:flex-1',
-        '[&_[data-cvd-type]:first-child_[data-swatch]:first-child]:rounded-tl-sm',
-        '[&_[data-cvd-type]:first-child_[data-swatch]:last-child]:rounded-tr-sm',
-        '[&_[data-cvd-type]:last-child_[data-swatch]:first-child]:rounded-bl-sm',
-        '[&_[data-cvd-type]:last-child_[data-swatch]:last-child]:rounded-br-sm',
+        '[&_[data-swatch]]:h-6 [&_[data-swatch]]:flex-1',
+        '[&_[data-cvd-type]:first-child_[data-swatch]:first-child]:rounded-tl [&_[data-cvd-type]:first-child_[data-swatch]:last-child]:rounded-tr',
+        '[&_[data-cvd-type]:last-child_[data-swatch]:first-child]:rounded-bl [&_[data-cvd-type]:last-child_[data-swatch]:last-child]:rounded-br',
         className,
       )}
     />
@@ -216,13 +189,11 @@ CVDSimulation.displayName = 'CVDSimulation';
 // ============================================================================
 
 export interface ColorWeightProps {
-  /** Perceptual weight data */
   perceptualWeight: {
     weight: number;
     density: 'light' | 'medium' | 'heavy';
     balancingRecommendation: string;
   };
-  /** Atmospheric weight data */
   atmosphericWeight: {
     distanceWeight: number;
     temperature: 'warm' | 'neutral' | 'cool';
@@ -231,27 +202,21 @@ export interface ColorWeightProps {
   className?: string;
 }
 
-/**
- * Thin React shell wrapping the color-weight leaf primitive.
- * Displays perceptual weight, atmospheric weight, and balancing recommendation.
- */
 function ColorWeight({ perceptualWeight, atmosphericWeight, className }: ColorWeightProps) {
   const containerRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-
-    const cleanup = createColorWeight(el, { perceptualWeight, atmosphericWeight });
-    return cleanup;
+    return createColorWeight(el, { perceptualWeight, atmosphericWeight });
   }, [perceptualWeight, atmosphericWeight]);
 
   return (
     <div
       ref={containerRef}
       className={classy(
-        'flex flex-col gap-1 text-xs text-muted-foreground',
-        '[&_[role=note]]:mt-1 [&_[role=note]]:text-foreground [&_[role=note]]:text-xs',
+        'flex flex-col gap-1 text-xs text-muted-foreground font-mono',
+        '[&_[role=note]]:mt-2 [&_[role=note]]:text-foreground [&_[role=note]]:text-xs [&_[role=note]]:font-sans',
         className,
       )}
     />
@@ -265,27 +230,16 @@ ColorWeight.displayName = 'ColorWeight';
 // ============================================================================
 
 export interface TokenIntelligenceProps {
-  /** Do/never usage patterns */
   usagePatterns?: { dos: string[]; nevers: string[] };
-  /** Usage context descriptions */
   usageContext?: string[];
-  /** Trust level for the token */
   trustLevel?: string;
-  /** Consequence description */
   consequence?: string;
-  /** Token dependencies */
   dependsOn?: string[];
-  /** Generation rule description */
   generationRule?: string;
-  /** Override history */
   userOverride?: { previousValue: string; reason: string; context?: string };
   className?: string;
 }
 
-/**
- * Pure React component for displaying token intelligence data.
- * No primitive wrapper needed -- this is structured text rendering.
- */
 function TokenIntelligence({
   usagePatterns,
   usageContext,
@@ -308,13 +262,13 @@ function TokenIntelligence({
   if (!hasContent) return null;
 
   return (
-    <div className={classy('flex flex-col gap-3 text-sm', className)} data-token-intelligence="">
+    <div className={classy('flex flex-col gap-3 text-xs', className)} data-token-intelligence="">
       {usagePatterns ? (
         <div data-usage-patterns="">
           {usagePatterns.dos.length > 0 ? (
             <div data-patterns-do="">
-              <span className={classy('font-medium text-success-foreground')}>Do:</span>
-              <ul className={classy('ml-4 list-disc')}>
+              <span className={classy('font-medium text-emerald-400')}>Do:</span>
+              <ul className={classy('ml-4 mt-1 list-disc text-muted-foreground')}>
                 {usagePatterns.dos.map((d) => (
                   <li key={d}>{d}</li>
                 ))}
@@ -322,9 +276,9 @@ function TokenIntelligence({
             </div>
           ) : null}
           {usagePatterns.nevers.length > 0 ? (
-            <div data-patterns-never="">
-              <span className={classy('font-medium text-destructive-foreground')}>Never:</span>
-              <ul className={classy('ml-4 list-disc')}>
+            <div data-patterns-never="" className={classy('mt-2')}>
+              <span className={classy('font-medium text-red-400')}>Never:</span>
+              <ul className={classy('ml-4 mt-1 list-disc text-muted-foreground')}>
                 {usagePatterns.nevers.map((n) => (
                   <li key={n}>{n}</li>
                 ))}
@@ -336,8 +290,8 @@ function TokenIntelligence({
 
       {usageContext && usageContext.length > 0 ? (
         <div data-usage-context="">
-          <span className={classy('font-medium')}>Context:</span>
-          <ul className={classy('ml-4 list-disc')}>
+          <span className={classy('font-medium text-muted-foreground')}>Context:</span>
+          <ul className={classy('ml-4 mt-1 list-disc text-muted-foreground')}>
             {usageContext.map((c) => (
               <li key={c}>{c}</li>
             ))}
@@ -346,31 +300,31 @@ function TokenIntelligence({
       ) : null}
 
       {trustLevel ? (
-        <div data-trust-level="">
+        <div data-trust-level="" className={classy('font-mono text-muted-foreground')}>
           <span className={classy('font-medium')}>Trust:</span> {trustLevel}
         </div>
       ) : null}
 
       {consequence ? (
-        <div data-consequence="">
+        <div data-consequence="" className={classy('text-muted-foreground')}>
           <span className={classy('font-medium')}>Consequence:</span> {consequence}
         </div>
       ) : null}
 
       {dependsOn && dependsOn.length > 0 ? (
-        <div data-depends-on="">
+        <div data-depends-on="" className={classy('font-mono text-muted-foreground')}>
           <span className={classy('font-medium')}>Depends on:</span> {dependsOn.join(', ')}
         </div>
       ) : null}
 
       {generationRule ? (
-        <div data-generation-rule="">
+        <div data-generation-rule="" className={classy('text-muted-foreground')}>
           <span className={classy('font-medium')}>Rule:</span> {generationRule}
         </div>
       ) : null}
 
       {userOverride ? (
-        <div data-user-override="">
+        <div data-user-override="" className={classy('text-muted-foreground')}>
           <span className={classy('font-medium')}>Override:</span> {userOverride.previousValue}{' '}
           changed because: {userOverride.reason}
           {userOverride.context ? ` (${userOverride.context})` : null}
@@ -383,49 +337,230 @@ function TokenIntelligence({
 TokenIntelligence.displayName = 'TokenIntelligence';
 
 // ============================================================================
-// ColorFamily
+// ColorChip -- sidebar item
 // ============================================================================
 
-type DisclosureState = 'resting' | 'hover' | 'selected';
+interface ColorChipProps {
+  color: ColorValue;
+  selected: boolean;
+  onSelect: () => void;
+}
+
+function ColorChip({ color, selected, onSelect }: ColorChipProps) {
+  const baseColor = getBaseColor(color);
+  const swatchStyle = React.useMemo(
+    () => ({ backgroundColor: toOklchCss(baseColor) }),
+    [baseColor],
+  );
+
+  return (
+    <button
+      type="button"
+      className={classy(
+        'flex w-full items-center gap-3 px-3 py-2 text-left outline-none',
+        'cursor-pointer select-none transition-colors duration-100',
+        'hover:bg-muted/50',
+        'focus-visible:ring-2 focus-visible:ring-primary-ring focus-visible:ring-inset',
+        selected && 'bg-muted/30',
+      )}
+      onClick={onSelect}
+      aria-current={selected || undefined}
+    >
+      <div
+        className={classy('h-6 w-6 shrink-0 rounded-sm')}
+        style={swatchStyle}
+        aria-hidden="true"
+      />
+      <div className={classy('flex min-w-0 flex-col')}>
+        <span className={classy('truncate text-xs font-medium')}>{color.name}</span>
+        {color.token ? (
+          <span className={classy('truncate text-muted-foreground')} style={{ fontSize: '10px' }}>
+            {color.token}
+          </span>
+        ) : null}
+      </div>
+    </button>
+  );
+}
+
+// ============================================================================
+// ColorDetail -- right panel content
+// ============================================================================
+
+const SECTION_NAMES = ['Accessibility', 'Color Vision', 'Weight', 'Intelligence'] as const;
+
+interface ColorDetailProps {
+  color: ColorValue;
+  onClose: () => void;
+}
+
+function ColorDetail({ color, onClose }: ColorDetailProps) {
+  const baseColor = getBaseColor(color);
+  const hasAccessibility = !!color.accessibility;
+  const hasCvd = !!color.accessibility?.cvd;
+  const hasWeight = !!(color.perceptualWeight && color.atmosphericWeight);
+  const hasIntelligence = !!color.intelligence;
+
+  React.useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose();
+    }
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
+  return (
+    <div className={classy('flex flex-col gap-6')}>
+      {/* Header */}
+      <div className={classy('flex items-center gap-4')}>
+        <div
+          className={classy('h-10 w-10 shrink-0 rounded')}
+          style={{ backgroundColor: toOklchCss(baseColor) }}
+          aria-hidden="true"
+        />
+        <div>
+          <h2 className={classy('text-sm font-medium')}>{color.name}</h2>
+          {color.token ? (
+            <span className={classy('text-xs text-muted-foreground')}>{color.token}</span>
+          ) : null}
+        </div>
+        <span
+          className={classy('ml-auto font-mono text-muted-foreground/60')}
+          style={{ fontSize: '10px' }}
+        >
+          L {baseColor.l.toFixed(2)} C {baseColor.c.toFixed(3)} H {baseColor.h.toFixed(0)}
+        </span>
+      </div>
+
+      {/* Scale */}
+      <div>
+        <h3
+          className={classy('mb-2 font-medium uppercase tracking-widest text-muted-foreground')}
+          style={{ fontSize: '10px' }}
+        >
+          Scale
+        </h3>
+        <ColorScale scale={color.scale} name={color.name} />
+      </div>
+
+      {/* Sections grid */}
+      <div className={classy('grid grid-cols-1 gap-4 xl:grid-cols-2')}>
+        {hasAccessibility && color.accessibility ? (
+          <Collapsible defaultOpen>
+            <CollapsibleTrigger
+              className={classy(
+                'w-full text-left font-medium uppercase tracking-widest text-muted-foreground',
+                'hover:text-foreground transition-colors cursor-pointer',
+              )}
+              style={{ fontSize: '10px' }}
+            >
+              {SECTION_NAMES[0]}
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <ContrastMatrix
+                accessibility={{
+                  onWhite: color.accessibility.onWhite,
+                  onBlack: color.accessibility.onBlack,
+                  ...(color.accessibility.wcagAA ? { wcagAA: color.accessibility.wcagAA } : {}),
+                  ...(color.accessibility.wcagAAA ? { wcagAAA: color.accessibility.wcagAAA } : {}),
+                  ...(color.accessibility.apca ? { apca: color.accessibility.apca } : {}),
+                }}
+                scaleName={color.name}
+                className={classy('mt-3')}
+              />
+            </CollapsibleContent>
+          </Collapsible>
+        ) : null}
+
+        {hasCvd && color.accessibility?.cvd ? (
+          <Collapsible defaultOpen>
+            <CollapsibleTrigger
+              className={classy(
+                'w-full text-left font-medium uppercase tracking-widest text-muted-foreground',
+                'hover:text-foreground transition-colors cursor-pointer',
+              )}
+              style={{ fontSize: '10px' }}
+            >
+              {SECTION_NAMES[1]}
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CVDSimulation
+                scale={color.scale}
+                name={color.name}
+                cvd={color.accessibility.cvd}
+                baseColor={baseColor}
+                showOriginal
+                className={classy('mt-3')}
+              />
+            </CollapsibleContent>
+          </Collapsible>
+        ) : null}
+
+        {hasWeight && color.perceptualWeight && color.atmosphericWeight ? (
+          <Collapsible defaultOpen>
+            <CollapsibleTrigger
+              className={classy(
+                'w-full text-left font-medium uppercase tracking-widest text-muted-foreground',
+                'hover:text-foreground transition-colors cursor-pointer',
+              )}
+              style={{ fontSize: '10px' }}
+            >
+              {SECTION_NAMES[2]}
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <ColorWeight
+                perceptualWeight={color.perceptualWeight}
+                atmosphericWeight={color.atmosphericWeight}
+                className={classy('mt-3')}
+              />
+            </CollapsibleContent>
+          </Collapsible>
+        ) : null}
+
+        {hasIntelligence && color.intelligence ? (
+          <Collapsible defaultOpen>
+            <CollapsibleTrigger
+              className={classy(
+                'w-full text-left font-medium uppercase tracking-widest text-muted-foreground',
+                'hover:text-foreground transition-colors cursor-pointer',
+              )}
+              style={{ fontSize: '10px' }}
+            >
+              {SECTION_NAMES[3]}
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <TokenIntelligence
+                {...(color.intelligence.usageGuidance
+                  ? { usageContext: [color.intelligence.usageGuidance] }
+                  : {})}
+                {...(color.intelligence.accessibilityNotes
+                  ? { consequence: color.intelligence.accessibilityNotes }
+                  : {})}
+                {...(color.intelligence.reasoning
+                  ? { generationRule: color.intelligence.reasoning }
+                  : {})}
+                className={classy('mt-3')}
+              />
+            </CollapsibleContent>
+          </Collapsible>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// ColorFamily -- kept for backwards compat / standalone use
+// ============================================================================
 
 export interface ColorFamilyProps {
-  /** The color value to display */
   color: ColorValue;
-  /** Whether this family is currently selected */
   selected?: boolean;
-  /** Called when this family is selected */
   onSelect?: () => void;
-  /** Called when this family is deselected */
   onDeselect?: () => void;
   className?: string;
 }
 
-/**
- * Resolves the base OKLCH swatch color from a ColorValue.
- * Uses scale position 5 (the 500 step) as the representative color.
- */
-function getBaseColor(color: ColorValue): OklchColor {
-  const base = color.scale[5];
-  if (base) return base;
-  return { l: 0.5, c: 0.1, h: 0 };
-}
-
-/**
- * Formats an OKLCH color as a CSS oklch() string for inline styles.
- */
-function toOklchCss(c: OklchColor): string {
-  return `oklch(${c.l} ${c.c} ${c.h})`;
-}
-
-/** Section names for the selected state */
-const SECTION_NAMES = ['Accessibility', 'Color Vision', 'Weight', 'Intelligence'] as const;
-
-/**
- * Progressive-reveal color family component.
- * Resting: paint chip (swatch + name + token).
- * Hover: scale ribbon animates in.
- * Selected: full scale + collapsible sections for each data category.
- */
 function ColorFamily({
   color,
   selected = false,
@@ -434,10 +569,8 @@ function ColorFamily({
   className,
 }: ColorFamilyProps) {
   const [hovered, setHovered] = React.useState(false);
-
-  const state: DisclosureState = selected ? 'selected' : hovered ? 'hover' : 'resting';
+  const state = selected ? 'selected' : hovered ? 'hover' : 'resting';
   const showScale = state === 'hover' || state === 'selected';
-  const showSections = state === 'selected';
 
   const baseColor = getBaseColor(color);
   const swatchStyle = React.useMemo(
@@ -445,64 +578,34 @@ function ColorFamily({
     [baseColor],
   );
 
-  function handlePointerEnter() {
-    if (!selected) setHovered(true);
-  }
-
-  function handlePointerLeave() {
-    setHovered(false);
-  }
-
-  function handleClick() {
-    if (selected) {
-      onDeselect?.();
-    } else {
-      onSelect?.();
-    }
-  }
-
-  function handleKeyDown(event: React.KeyboardEvent) {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      if (selected) {
-        onDeselect?.();
-      } else {
-        onSelect?.();
-      }
-    } else if (event.key === 'Escape' && selected) {
-      event.preventDefault();
-      onDeselect?.();
-    }
-  }
-
-  const hasAccessibility = !!color.accessibility;
-  const hasCvd = !!color.accessibility?.cvd;
-  const hasWeight = !!(color.perceptualWeight && color.atmosphericWeight);
-  const hasIntelligence = !!color.intelligence;
-
   return (
     <article
       data-color-state={state}
       {...(selected ? { 'aria-current': true } : {})}
       aria-label={`${color.name}${color.token ? ` (${color.token})` : ''}`}
       className={classy(
-        'flex flex-col rounded-lg border border-border p-3 outline-none',
-        'transition-all duration-200',
+        'flex flex-col rounded-lg border border-border p-3 outline-none transition-all duration-200',
         className,
       )}
-      onPointerEnter={handlePointerEnter}
-      onPointerLeave={handlePointerLeave}
+      onPointerEnter={() => !selected && setHovered(true)}
+      onPointerLeave={() => setHovered(false)}
     >
-      {/* Paint chip: clickable header */}
       <button
         type="button"
         className={classy(
-          'flex w-full items-center gap-3 text-left',
-          'cursor-pointer select-none outline-none',
+          'flex w-full items-center gap-3 text-left cursor-pointer select-none outline-none',
           'focus-visible:ring-2 focus-visible:ring-primary-ring focus-visible:rounded-sm',
         )}
-        onClick={handleClick}
-        onKeyDown={handleKeyDown}
+        onClick={() => (selected ? onDeselect?.() : onSelect?.())}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            selected ? onDeselect?.() : onSelect?.();
+          } else if (e.key === 'Escape' && selected) {
+            e.preventDefault();
+            onDeselect?.();
+          }
+        }}
         aria-expanded={selected}
         aria-label={`${selected ? 'Collapse' : 'Expand'} ${color.name} color family`}
       >
@@ -518,8 +621,6 @@ function ColorFamily({
           ) : null}
         </div>
       </button>
-
-      {/* Scale ribbon: visible on hover and selected */}
       <div
         className={classy(
           'overflow-hidden transition-all duration-200',
@@ -528,113 +629,6 @@ function ColorFamily({
       >
         <ColorScale scale={color.scale} name={color.name} />
       </div>
-
-      {/* Data sections: visible when selected */}
-      {showSections ? (
-        <div className={classy('mt-3 flex flex-col gap-2')}>
-          {/* Accessibility section */}
-          {hasAccessibility && color.accessibility ? (
-            <div
-              className={classy('transition-opacity duration-150')}
-              style={{ transitionDelay: '0ms' }}
-            >
-              <Collapsible>
-                <CollapsibleTrigger className={classy('w-full text-left text-sm font-medium')}>
-                  {SECTION_NAMES[0]}
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <ContrastMatrix
-                    accessibility={{
-                      onWhite: color.accessibility.onWhite,
-                      onBlack: color.accessibility.onBlack,
-                      ...(color.accessibility.wcagAA ? { wcagAA: color.accessibility.wcagAA } : {}),
-                      ...(color.accessibility.wcagAAA
-                        ? { wcagAAA: color.accessibility.wcagAAA }
-                        : {}),
-                      ...(color.accessibility.apca ? { apca: color.accessibility.apca } : {}),
-                    }}
-                    scaleName={color.name}
-                    className={classy('mt-2')}
-                  />
-                </CollapsibleContent>
-              </Collapsible>
-            </div>
-          ) : null}
-
-          {/* Color Vision section */}
-          {hasCvd && color.accessibility?.cvd ? (
-            <div
-              className={classy('transition-opacity duration-150')}
-              style={{ transitionDelay: '50ms' }}
-            >
-              <Collapsible>
-                <CollapsibleTrigger className={classy('w-full text-left text-sm font-medium')}>
-                  {SECTION_NAMES[1]}
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <CVDSimulation
-                    scale={color.scale}
-                    name={color.name}
-                    cvd={color.accessibility.cvd}
-                    baseColor={baseColor}
-                    showOriginal
-                    className={classy('mt-2')}
-                  />
-                </CollapsibleContent>
-              </Collapsible>
-            </div>
-          ) : null}
-
-          {/* Weight section */}
-          {hasWeight && color.perceptualWeight && color.atmosphericWeight ? (
-            <div
-              className={classy('transition-opacity duration-150')}
-              style={{ transitionDelay: '100ms' }}
-            >
-              <Collapsible>
-                <CollapsibleTrigger className={classy('w-full text-left text-sm font-medium')}>
-                  {SECTION_NAMES[2]}
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <ColorWeight
-                    perceptualWeight={color.perceptualWeight}
-                    atmosphericWeight={color.atmosphericWeight}
-                    className={classy('mt-2')}
-                  />
-                </CollapsibleContent>
-              </Collapsible>
-            </div>
-          ) : null}
-
-          {/* Intelligence section */}
-          {hasIntelligence && color.intelligence ? (
-            <div
-              className={classy('transition-opacity duration-150')}
-              style={{ transitionDelay: '150ms' }}
-            >
-              <Collapsible>
-                <CollapsibleTrigger className={classy('w-full text-left text-sm font-medium')}>
-                  {SECTION_NAMES[3]}
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <TokenIntelligence
-                    {...(color.intelligence.usageGuidance
-                      ? { usageContext: [color.intelligence.usageGuidance] }
-                      : {})}
-                    {...(color.intelligence.accessibilityNotes
-                      ? { consequence: color.intelligence.accessibilityNotes }
-                      : {})}
-                    {...(color.intelligence.reasoning
-                      ? { generationRule: color.intelligence.reasoning }
-                      : {})}
-                    className={classy('mt-2')}
-                  />
-                </CollapsibleContent>
-              </Collapsible>
-            </div>
-          ) : null}
-        </div>
-      ) : null}
     </article>
   );
 }
@@ -642,33 +636,49 @@ function ColorFamily({
 ColorFamily.displayName = 'ColorFamily';
 
 // ============================================================================
-// ColorInspector
+// ColorInspector -- main layout: left rail + right detail
 // ============================================================================
 
 export interface ColorInspectorProps {
-  /** Array of ColorValue objects to display */
   colors: ColorValue[];
   className?: string;
 }
 
-/**
- * Top-level orchestrator for color family inspection.
- * Renders multiple ColorFamily instances with single-selection (only one expanded at a time).
- */
 function ColorInspector({ colors, className }: ColorInspectorProps) {
   const [selectedIndex, setSelectedIndex] = React.useState<number | null>(null);
+  const selectedColor = selectedIndex !== null ? colors[selectedIndex] : undefined;
 
   return (
-    <section aria-label="Color families" className={classy('flex flex-wrap gap-4', className)}>
-      {colors.map((color, index) => (
-        <ColorFamily
-          key={color.tokenId ?? color.name}
-          color={color}
-          selected={selectedIndex === index}
-          onSelect={() => setSelectedIndex(index)}
-          onDeselect={() => setSelectedIndex(null)}
-        />
-      ))}
+    <section aria-label="Color families" className={classy('flex min-h-0 gap-0', className)}>
+      {/* Left rail: chip list */}
+      <nav
+        className={classy('flex w-48 shrink-0 flex-col border-r border-border', 'overflow-y-auto')}
+        aria-label="Color family list"
+      >
+        {colors.map((color, index) => (
+          <ColorChip
+            key={color.tokenId ?? color.name}
+            color={color}
+            selected={selectedIndex === index}
+            onSelect={() => setSelectedIndex(selectedIndex === index ? null : index)}
+          />
+        ))}
+      </nav>
+
+      {/* Right panel: detail view */}
+      <div className={classy('flex-1 overflow-y-auto p-6')}>
+        {selectedColor ? (
+          <ColorDetail color={selectedColor} onClose={() => setSelectedIndex(null)} />
+        ) : (
+          <div
+            className={classy(
+              'flex h-full items-center justify-center text-xs text-muted-foreground/40',
+            )}
+          >
+            Select a color to inspect
+          </div>
+        )}
+      </div>
     </section>
   );
 }

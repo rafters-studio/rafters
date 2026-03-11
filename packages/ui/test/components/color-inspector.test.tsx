@@ -327,7 +327,7 @@ describe('ColorFamily', () => {
 // ============================================================================
 
 describe('ColorInspector', () => {
-  it('renders one ColorFamily per color', () => {
+  it('renders chip for each color in left rail', () => {
     const colors = [
       makeColorValue('ocean-blue', 'primary'),
       makeColorValue('sunset-red', 'destructive'),
@@ -345,24 +345,35 @@ describe('ColorInspector', () => {
       makeColorValue('ocean-blue', 'primary'),
       makeColorValue('sunset-red', 'destructive'),
     ];
-    const { container } = render(<ColorInspector colors={colors} />);
+    render(<ColorInspector colors={colors} />);
 
-    const families = container.querySelectorAll('[data-color-state]');
-    const first = families[0] as HTMLElement;
-    const second = families[1] as HTMLElement;
     const buttons = screen.getAllByRole('button');
     const firstBtn = buttons[0] as HTMLElement;
     const secondBtn = buttons[1] as HTMLElement;
 
     // Select first
     fireEvent.click(firstBtn);
-    expect(first.getAttribute('data-color-state')).toBe('selected');
-    expect(second.getAttribute('data-color-state')).toBe('resting');
+    expect(firstBtn.getAttribute('aria-current')).toBe('true');
+    expect(secondBtn.getAttribute('aria-current')).toBeNull();
 
     // Select second -- first should deselect
     fireEvent.click(secondBtn);
-    expect(first.getAttribute('data-color-state')).toBe('resting');
-    expect(second.getAttribute('data-color-state')).toBe('selected');
+    expect(firstBtn.getAttribute('aria-current')).toBeNull();
+    expect(secondBtn.getAttribute('aria-current')).toBe('true');
+  });
+
+  it('shows detail panel when color selected', () => {
+    const colors = [makeColorValue('ocean-blue', 'primary')];
+    render(<ColorInspector colors={colors} />);
+
+    // Initially shows placeholder
+    expect(screen.getByText('Select a color to inspect')).toBeDefined();
+
+    // Click the chip
+    fireEvent.click(screen.getByRole('button'));
+
+    // Detail panel should show the color name as heading
+    expect(screen.getAllByText('ocean-blue').length).toBeGreaterThan(1);
   });
 
   it('renders with region role', () => {
