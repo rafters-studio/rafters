@@ -178,7 +178,9 @@ describe('cvd-simulation primitive', () => {
   it('sets container role="group" with aria-label', () => {
     cleanup = createCvdSimulation(container, makeOptions());
     expect(container.getAttribute('role')).toBe('group');
-    expect(container.getAttribute('aria-label')).toBe('ocean-blue color vision deficiency simulation');
+    expect(container.getAttribute('aria-label')).toBe(
+      'ocean-blue color vision deficiency simulation',
+    );
   });
 
   it('cleanup removes all strip elements', () => {

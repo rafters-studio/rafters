@@ -137,8 +137,6 @@ export function createContrastMatrix(
   }
 
   const { accessibility, scaleName } = options;
-  const prevRole = container.getAttribute('role');
-  const prevAriaLabel = container.getAttribute('aria-label');
   const createdElements: HTMLElement[] = [];
 
   const aaSet = accessibility.wcagAA
@@ -148,8 +146,16 @@ export function createContrastMatrix(
     ? buildPairSet(accessibility.wcagAAA.normal)
     : new Set<string>();
 
-  container.setAttribute('role', 'grid');
-  container.setAttribute('aria-label', `${scaleName} contrast pairing matrix`);
+  const prevRole = container.getAttribute('role');
+  const prevAriaLabel = container.getAttribute('aria-label');
+  container.setAttribute('role', 'group');
+  container.setAttribute('aria-label', `${scaleName} contrast data`);
+
+  const gridEl = document.createElement('div');
+  gridEl.setAttribute('role', 'grid');
+  gridEl.setAttribute('aria-label', `${scaleName} contrast pairing matrix`);
+  createdElements.push(gridEl);
+  container.appendChild(gridEl);
 
   let focusRow = 0;
   let focusCol = 0;
@@ -157,11 +163,9 @@ export function createContrastMatrix(
 
   const headerRow = document.createElement('div');
   headerRow.setAttribute('role', 'row');
-  createdElements.push(headerRow);
 
   const cornerCell = document.createElement('div');
-  cornerCell.setAttribute('role', 'columnheader');
-  cornerCell.textContent = '';
+  cornerCell.setAttribute('role', 'presentation');
   headerRow.appendChild(cornerCell);
 
   for (const pos of SCALE_KEYS) {
@@ -170,7 +174,7 @@ export function createContrastMatrix(
     header.textContent = pos;
     headerRow.appendChild(header);
   }
-  container.appendChild(headerRow);
+  gridEl.appendChild(headerRow);
 
   for (let i = 0; i < SCALE_KEYS.length; i++) {
     const rowPos = SCALE_KEYS[i];
@@ -206,7 +210,7 @@ export function createContrastMatrix(
     }
 
     cellElements.push(rowCells);
-    container.appendChild(row);
+    gridEl.appendChild(row);
   }
 
   const onWhiteSummary = document.createElement('div');
@@ -281,10 +285,10 @@ export function createContrastMatrix(
     moveFocus(newRow, newCol);
   }
 
-  container.addEventListener('keydown', handleKeydown);
+  gridEl.addEventListener('keydown', handleKeydown);
 
   return () => {
-    container.removeEventListener('keydown', handleKeydown);
+    gridEl.removeEventListener('keydown', handleKeydown);
     for (const el of createdElements) {
       el.remove();
     }

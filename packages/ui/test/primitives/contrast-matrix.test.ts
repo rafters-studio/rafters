@@ -50,13 +50,16 @@ describe('contrast-matrix primitive', () => {
     container.remove();
   });
 
-  it('sets container role="grid" with aria-label', () => {
+  it('sets container role="group" with nested grid', () => {
     cleanup = createContrastMatrix(container, {
       accessibility: makeAccessibility(),
       scaleName: 'ocean-blue',
     });
-    expect(container.getAttribute('role')).toBe('grid');
+    expect(container.getAttribute('role')).toBe('group');
     expect(container.getAttribute('aria-label')).toContain('ocean-blue');
+    const grid = container.querySelector('[role="grid"]');
+    expect(grid).not.toBeNull();
+    expect(grid?.getAttribute('aria-label')).toContain('ocean-blue');
   });
 
   it('creates row and cell elements', () => {
