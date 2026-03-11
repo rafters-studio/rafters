@@ -23,19 +23,19 @@ import type {
   PerceptualWeight,
 } from '@rafters/shared';
 import * as React from 'react';
-import classy from '../../primitives/classy';
-import type { ScalePosition } from '../../primitives/color-scale';
-import { createColorScale } from '../../primitives/color-scale';
-import { createColorWeight } from '../../primitives/color-weight';
-import type { ContrastMatrixOptions } from '../../primitives/contrast-matrix';
-import { createContrastMatrix } from '../../primitives/contrast-matrix';
-import { createCvdSimulation } from '../../primitives/cvd-simulation';
-import { inP3, inSrgb } from '../../primitives/oklch-gamut';
-import type { GamutTier, OklchColor } from '../../primitives/types';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './collapsible';
-import { Container } from './container';
-import { Grid } from './grid';
-import { H2, Lead, Muted, P, Small } from './typography';
+import classy from '@/lib/primitives/classy';
+import type { ScalePosition } from '@/lib/primitives/color-scale';
+import { createColorScale } from '@/lib/primitives/color-scale';
+import { createColorWeight } from '@/lib/primitives/color-weight';
+import type { ContrastMatrixOptions } from '@/lib/primitives/contrast-matrix';
+import { createContrastMatrix } from '@/lib/primitives/contrast-matrix';
+import { createCvdSimulation } from '@/lib/primitives/cvd-simulation';
+import { inP3, inSrgb } from '@/lib/primitives/oklch-gamut';
+import type { GamutTier, OklchColor } from '@/lib/primitives/types';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Container } from '@/components/ui/container';
+import { Grid } from '@/components/ui/grid';
+import { H2, Lead, Muted, P, Small } from '@/components/ui/typography';
 
 // ============================================================================
 // Shared helpers

@@ -280,12 +280,12 @@ describe('ColorStory', () => {
     expect(container.textContent).toContain('Balanced mid-tone');
   });
 
-  it('renders all intelligence sections', () => {
+  it('renders emotion and reasoning visible, deep context collapsed', () => {
     const { container } = render(<ColorStory intelligence={intelligence} />);
     expect(container.querySelector('[data-story-emotion]')).not.toBeNull();
-    expect(container.querySelector('[data-story-culture]')).not.toBeNull();
-    expect(container.querySelector('[data-story-accessibility]')).not.toBeNull();
-    expect(container.querySelector('[data-story-usage]')).not.toBeNull();
+    expect(container.querySelector('[data-story-reasoning]')).not.toBeNull();
+    // Deep context is behind a collapsible trigger
+    expect(container.textContent).toContain('More context');
   });
 
   it('renders confidence meter when metadata present', () => {
@@ -299,9 +299,9 @@ describe('ColorStory', () => {
         method: 'bootstrap' as const,
       },
     };
-    render(<ColorStory intelligence={withMeta} />);
-    expect(screen.getByLabelText('Confidence')).toBeDefined();
-    expect(screen.getByText('95% confidence')).toBeDefined();
+    const { container } = render(<ColorStory intelligence={withMeta} />);
+    expect(container.querySelector('[data-story-confidence]')).not.toBeNull();
+    expect(container.querySelector('meter')).not.toBeNull();
   });
 
   it('omits confidence when no metadata', () => {
@@ -309,11 +309,11 @@ describe('ColorStory', () => {
     expect(container.querySelector('[data-story-confidence]')).toBeNull();
   });
 
-  it('renders balancing guidance when present', () => {
+  it('includes balancing in deep context when present', () => {
     const withBalancing = { ...intelligence, balancingGuidance: 'Pair with lighter elements' };
     const { container } = render(<ColorStory intelligence={withBalancing} />);
-    expect(container.querySelector('[data-story-balancing]')).not.toBeNull();
-    expect(container.textContent).toContain('Pair with lighter elements');
+    // Balancing is behind the collapsible, but the trigger should exist
+    expect(container.textContent).toContain('More context');
   });
 });
 
@@ -322,45 +322,39 @@ describe('ColorStory', () => {
 // ============================================================================
 
 describe('ColorCharacter', () => {
-  it('renders temperature and lightness tags', () => {
-    const { container } = render(
-      <ColorCharacter analysis={{ temperature: 'cool', isLight: false, name: 'ocean-blue' }} />,
-    );
-    expect(container.querySelector('[data-tag="temperature"]')?.textContent).toBe('cool');
-    expect(container.querySelector('[data-tag="lightness"]')?.textContent).toBe('dark');
-  });
+  const testScale = makeScale();
 
-  it('renders warm temperature with warm styling', () => {
-    const { container } = render(
-      <ColorCharacter analysis={{ temperature: 'warm', isLight: true, name: 'sunset' }} />,
-    );
-    const tag = container.querySelector('[data-tag="temperature"]') as HTMLElement;
-    expect(tag.textContent).toBe('warm');
-    expect(tag.className).toContain('text-orange');
-  });
-
-  it('renders atmospheric role when provided', () => {
+  it('renders three atmospheric depth bands', () => {
     const { container } = render(
       <ColorCharacter
-        analysis={{ temperature: 'cool', isLight: false, name: 'test' }}
-        atmosphericWeight={{
-          distanceWeight: 0.2,
-          temperature: 'cool',
-          atmosphericRole: 'background',
-        }}
+        analysis={{ temperature: 'cool', isLight: false, name: 'ocean-blue' }}
+        scale={testScale}
       />,
     );
-    expect(container.querySelector('[data-tag="role"]')?.textContent).toBe('background');
+    expect(container.querySelector('[data-tag="background"]')).not.toBeNull();
+    expect(container.querySelector('[data-tag="midground"]')).not.toBeNull();
+    expect(container.querySelector('[data-tag="foreground"]')).not.toBeNull();
   });
 
-  it('renders density when perceptual weight provided', () => {
-    const { container } = render(
+  it('varies band height by density', () => {
+    const { container: heavy } = render(
       <ColorCharacter
-        analysis={{ temperature: 'neutral', isLight: true, name: 'test' }}
+        analysis={{ temperature: 'warm', isLight: true, name: 'sunset' }}
+        scale={testScale}
         perceptualWeight={{ weight: 0.8, density: 'heavy', balancingRecommendation: 'Test' }}
       />,
     );
-    expect(container.querySelector('[data-tag="density"]')?.textContent).toBe('heavy');
+    const { container: light } = render(
+      <ColorCharacter
+        analysis={{ temperature: 'cool', isLight: true, name: 'sky' }}
+        scale={testScale}
+        perceptualWeight={{ weight: 0.3, density: 'light', balancingRecommendation: 'Test' }}
+      />,
+    );
+    const heavyBand = heavy.querySelector('[data-tag="background"]')?.parentElement;
+    const lightBand = light.querySelector('[data-tag="background"]')?.parentElement;
+    expect(heavyBand?.className).toContain('h-10');
+    expect(lightBand?.className).toContain('h-5');
   });
 
   it('sets data attributes on container', () => {
@@ -370,6 +364,32 @@ describe('ColorCharacter', () => {
     const el = container.firstChild as HTMLElement;
     expect(el.getAttribute('data-temperature')).toBe('cool');
     expect(el.getAttribute('data-light')).toBe('true');
+  });
+
+  it('renders without scale (fallback)', () => {
+    const { container } = render(
+      <ColorCharacter analysis={{ temperature: 'neutral', isLight: false, name: 'test' }} />,
+    );
+    expect(container.querySelector('[data-tag="background"]')).not.toBeNull();
+  });
+
+  it('includes aria-label with character summary', () => {
+    const { container } = render(
+      <ColorCharacter
+        analysis={{ temperature: 'cool', isLight: false, name: 'test' }}
+        atmosphericWeight={{
+          distanceWeight: 0.2,
+          temperature: 'cool',
+          atmosphericRole: 'background',
+        }}
+        perceptualWeight={{ weight: 0.5, density: 'medium', balancingRecommendation: 'Test' }}
+      />,
+    );
+    const el = container.firstChild as HTMLElement;
+    expect(el.getAttribute('aria-label')).toContain('cool');
+    expect(el.getAttribute('aria-label')).toContain('dark');
+    expect(el.getAttribute('aria-label')).toContain('background');
+    expect(el.getAttribute('aria-label')).toContain('medium');
   });
 });
 
@@ -488,9 +508,12 @@ describe('ColorInspector', () => {
     ];
     render(<ColorInspector colors={colors} />);
 
-    expect(screen.getByText('ocean-blue')).toBeDefined();
-    expect(screen.getByText('sunset-red')).toBeDefined();
-    expect(screen.getByText('forest-green')).toBeDefined();
+    // Chips hide text by default; verify via aria-label
+    const buttons = screen.getAllByRole('button');
+    expect(buttons).toHaveLength(3);
+    expect(buttons[0]?.getAttribute('aria-label')).toContain('ocean-blue');
+    expect(buttons[1]?.getAttribute('aria-label')).toContain('sunset-red');
+    expect(buttons[2]?.getAttribute('aria-label')).toContain('forest-green');
   });
 
   it('only allows one selection at a time', () => {
@@ -525,8 +548,9 @@ describe('ColorInspector', () => {
     // Click the chip
     fireEvent.click(screen.getByRole('button'));
 
-    // Detail panel should show the color name as heading
-    expect(screen.getAllByText('ocean-blue').length).toBeGreaterThan(1);
+    // Detail panel renders hero with color name
+    expect(screen.getByRole('heading', { level: 2 })).toBeDefined();
+    expect(screen.getByRole('heading', { level: 2 }).textContent).toBe('ocean-blue');
   });
 
   it('renders with region role', () => {

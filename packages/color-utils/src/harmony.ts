@@ -6,6 +6,7 @@
 import type { OKLCH } from '@rafters/shared';
 import { calculateWCAGContrast } from './accessibility';
 import { roundOKLCH } from './conversion';
+import { toNearestGamut } from './gamut';
 import { generateSurfaceColor } from './manipulation';
 
 /**
@@ -200,14 +201,17 @@ export function generateRaftersHarmony(baseColor: OKLCH): {
     throw new Error('Neutral color not generated in harmony');
   }
 
+  // Gamut-clamp all roles to sRGB so downstream badges/scales stay valid.
+  const clamp = (c: OKLCH): OKLCH => toNearestGamut(roundOKLCH(c)).color;
+
   return {
-    primary: roundOKLCH(primary),
-    secondary: roundOKLCH(secondary),
-    tertiary: roundOKLCH(tertiary),
-    accent: roundOKLCH(accent),
-    highlight: roundOKLCH(highlight),
-    surface: roundOKLCH(surface),
-    neutral: roundOKLCH(neutral),
+    primary: clamp(primary),
+    secondary: clamp(secondary),
+    tertiary: clamp(tertiary),
+    accent: clamp(accent),
+    highlight: clamp(highlight),
+    surface: clamp(surface),
+    neutral: clamp(neutral),
   };
 }
 
@@ -321,11 +325,15 @@ export function generateSemanticColorSuggestions(baseColor: OKLCH): {
     }),
   ];
 
+  // Gamut-clamp every suggestion to sRGB so badges report gold, not fail.
+  // The raw hue+chroma combos above often exceed sRGB at their lightness.
+  const clamp = (c: OKLCH): OKLCH => toNearestGamut(c).color;
+
   return {
-    danger,
-    success,
-    warning,
-    info,
+    danger: danger.map(clamp),
+    success: success.map(clamp),
+    warning: warning.map(clamp),
+    info: info.map(clamp),
   };
 }
 
