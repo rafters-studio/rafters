@@ -122,6 +122,11 @@ export function createCvdSimulation(
   const { scale, name, cvd, baseColor, showOriginal } = options;
   const strips: HTMLElement[] = [];
 
+  const prevRole = container.getAttribute('role');
+  const prevAriaLabel = container.getAttribute('aria-label');
+  container.setAttribute('role', 'group');
+  container.setAttribute('aria-label', `${name} color vision deficiency simulation`);
+
   if (showOriginal) {
     const strip = createStrip(container, 'original', `${name} original color scale`, scale);
     strips.push(strip);
@@ -140,6 +145,16 @@ export function createCvdSimulation(
   return () => {
     for (const strip of strips) {
       strip.remove();
+    }
+    if (prevRole === null) {
+      container.removeAttribute('role');
+    } else {
+      container.setAttribute('role', prevRole);
+    }
+    if (prevAriaLabel === null) {
+      container.removeAttribute('aria-label');
+    } else {
+      container.setAttribute('aria-label', prevAriaLabel);
     }
   };
 }

@@ -175,6 +175,12 @@ describe('cvd-simulation primitive', () => {
     }
   });
 
+  it('sets container role="group" with aria-label', () => {
+    cleanup = createCvdSimulation(container, makeOptions());
+    expect(container.getAttribute('role')).toBe('group');
+    expect(container.getAttribute('aria-label')).toBe('ocean-blue color vision deficiency simulation');
+  });
+
   it('cleanup removes all strip elements', () => {
     cleanup = createCvdSimulation(container, makeOptions());
     cleanup();
@@ -183,10 +189,13 @@ describe('cvd-simulation primitive', () => {
   });
 
   it('cleanup restores container attributes', () => {
-    container.setAttribute('data-custom', 'preserve-me');
+    container.setAttribute('role', 'region');
+    container.setAttribute('aria-label', 'original-label');
     cleanup = createCvdSimulation(container, makeOptions());
+    expect(container.getAttribute('role')).toBe('group');
     cleanup();
-    expect(container.getAttribute('data-custom')).toBe('preserve-me');
+    expect(container.getAttribute('role')).toBe('region');
+    expect(container.getAttribute('aria-label')).toBe('original-label');
     expect(container.children).toHaveLength(0);
   });
 
