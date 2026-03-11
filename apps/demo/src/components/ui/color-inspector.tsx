@@ -23,6 +23,10 @@ import type {
   PerceptualWeight,
 } from '@rafters/shared';
 import * as React from 'react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Container } from '@/components/ui/container';
+import { Grid } from '@/components/ui/grid';
+import { H2, Lead, Muted, P, Small } from '@/components/ui/typography';
 import classy from '@/lib/primitives/classy';
 import type { ScalePosition } from '@/lib/primitives/color-scale';
 import { createColorScale } from '@/lib/primitives/color-scale';
@@ -32,10 +36,6 @@ import { createContrastMatrix } from '@/lib/primitives/contrast-matrix';
 import { createCvdSimulation } from '@/lib/primitives/cvd-simulation';
 import { inP3, inSrgb } from '@/lib/primitives/oklch-gamut';
 import type { GamutTier, OklchColor } from '@/lib/primitives/types';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Container } from '@/components/ui/container';
-import { Grid } from '@/components/ui/grid';
-import { H2, Lead, Muted, P, Small } from '@/components/ui/typography';
 
 // ============================================================================
 // Shared helpers
@@ -498,6 +498,7 @@ function ColorCharacter({
 
   return (
     <div
+      role="img"
       className={classy('flex flex-col', className)}
       data-color-character=""
       data-temperature={analysis.temperature}

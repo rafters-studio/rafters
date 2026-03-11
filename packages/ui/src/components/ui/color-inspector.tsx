@@ -498,6 +498,7 @@ function ColorCharacter({
 
   return (
     <div
+      role="img"
       className={classy('flex flex-col', className)}
       data-color-character=""
       data-temperature={analysis.temperature}
