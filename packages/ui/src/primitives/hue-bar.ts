@@ -79,8 +79,8 @@ function renderVivid(
     let cnt = 0;
     for (let k = i - blur; k <= i + blur; k++) {
       const ki = ((k % steps) + steps) % steps;
-      sumL += rawL[ki] as number;
-      sumC += rawC[ki] as number;
+      sumL += rawL[ki] ?? 0;
+      sumC += rawC[ki] ?? 0;
       cnt++;
     }
     sL[i] = sumL / cnt;
@@ -89,7 +89,7 @@ function renderVivid(
 
   for (let i = 0; i < steps; i++) {
     const hue = hueFromBarPos(i / maxIndex);
-    ctx.fillStyle = `oklch(${sL[i]} ${sC[i]} ${hue})`;
+    ctx.fillStyle = `oklch(${sL[i] ?? 0} ${sC[i] ?? 0} ${hue})`;
     if (isHorizontal) {
       ctx.fillRect(i, 0, 1, cssHeight);
     } else {
