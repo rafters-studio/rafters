@@ -26,6 +26,7 @@ import * as React from 'react';
 import classy from '../../primitives/classy';
 import type { ColorPickerStateControls } from '../../primitives/color-picker';
 import { createColorPickerState, getGamutTier } from '../../primitives/color-picker';
+import { barPosFromHue } from '../../primitives/oklch-gamut';
 import type { Direction, GamutTier, OklchColor } from '../../primitives/types';
 
 export interface ColorPickerProps
@@ -204,7 +205,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
             ref={hueThumbRef}
             aria-hidden="true"
             className="pointer-events-none absolute top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow-md"
-            style={{ left: `${(color.h / 360) * 100}%` }}
+            style={{ left: `${barPosFromHue(color.h) * 100}%` }}
           />
         </div>
 
