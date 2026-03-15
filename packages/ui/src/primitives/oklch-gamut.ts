@@ -53,3 +53,51 @@ export function inP3(l: number, c: number, h: number): boolean {
     inRange(-0.026073181 * _L - 0.703486028 * _M + 1.729559209 * _S)
   );
 }
+
+/**
+ * Binary-search for the maximum chroma at a given lightness and hue
+ * that remains within the sRGB or P3 gamut.
+ * Returns 0 when no chroma is displayable (e.g. L=0 or L=1).
+ */
+export function findMaxChroma(l: number, h: number, ceiling = 0.4, steps = 16): number {
+  let lo = 0;
+  let hi = ceiling;
+  for (let i = 0; i < steps; i++) {
+    const mid = (lo + hi) / 2;
+    if (inSrgb(l, mid, h) || inP3(l, mid, h)) {
+      lo = mid;
+    } else {
+      hi = mid;
+    }
+  }
+  return lo;
+}
+
+// -- Perceptual hue warp --
+// Sine warp gives reds/oranges (H~0-60) more bar space,
+// compresses cyans (H~180). Derivative at t=0 is 0.1 (10x density).
+const HUE_WARP_A = 0.9;
+const TWO_PI = 2 * Math.PI;
+
+/**
+ * Convert a normalized bar position (0-1) to a hue angle (0-360).
+ * Uses sine warp: g(t) = t - a * sin(2*pi*t) / (2*pi)
+ */
+export function hueFromBarPos(t: number): number {
+  return (t - (HUE_WARP_A * Math.sin(TWO_PI * t)) / TWO_PI) * 360;
+}
+
+/**
+ * Convert a hue angle (0-360) to a normalized bar position (0-1).
+ * Newton's method inverse of hueFromBarPos, 10 iterations.
+ */
+export function barPosFromHue(h: number): number {
+  const target = h / 360;
+  let t = target;
+  for (let i = 0; i < 10; i++) {
+    const g = t - (HUE_WARP_A * Math.sin(TWO_PI * t)) / TWO_PI;
+    const gp = 1 - HUE_WARP_A * Math.cos(TWO_PI * t);
+    t = t - (g - target) / gp;
+  }
+  return Math.max(0, Math.min(1, t));
+}
