@@ -8,7 +8,7 @@
  * the primitive handles rendering and ARIA attributes.
  */
 
-import { inP3, inSrgb } from './oklch-gamut';
+import { findMaxChroma } from './oklch-gamut';
 import type { CleanupFunction } from './types';
 
 export interface ColorAreaOptions {
@@ -39,28 +39,53 @@ function renderArea(canvas: HTMLCanvasElement, options: ColorAreaOptions): void 
   const { hue } = options;
   const maxChroma = options.maxChroma ?? 0.4;
   const dpr = options.dpr ?? window.devicePixelRatio;
-  const width = Math.round(canvas.clientWidth * dpr);
-  const height = Math.round(canvas.clientHeight * dpr);
+  const cssWidth = canvas.clientWidth;
+  const cssHeight = canvas.clientHeight;
+  const width = Math.round(cssWidth * dpr);
+  const height = Math.round(cssHeight * dpr);
 
   canvas.width = width;
   canvas.height = height;
 
-  const maxX = width > 1 ? width - 1 : 1;
-  const maxY = height > 1 ? height - 1 : 1;
+  // Render at CSS-pixel resolution for ~4x perf on retina displays
+  const scaleX = cssWidth > 0 ? width / cssWidth : 1;
+  const scaleY = cssHeight > 0 ? height / cssHeight : 1;
+  ctx.setTransform(scaleX, 0, 0, scaleY, 0, 0);
 
-  for (let x = 0; x < width; x++) {
-    for (let y = 0; y < height; y++) {
-      const l = x / maxX; // 0 (black) at left, 1 (white) at right
-      const c = (1 - y / maxY) * maxChroma; // maxChroma at top, 0 (gray) at bottom
+  const maxX = cssWidth > 1 ? cssWidth - 1 : 1;
+  const maxY = cssHeight > 1 ? cssHeight - 1 : 1;
 
-      if (inSrgb(l, c, hue) || inP3(l, c, hue)) {
+  // Precompute gamut boundary per lightness column
+  const maxCPerCol = new Float32Array(cssWidth);
+  for (let x = 0; x < cssWidth; x++) {
+    const l = x / maxX;
+    maxCPerCol[x] = findMaxChroma(l, hue, maxChroma);
+  }
+
+  const FADE = 16;
+
+  for (let x = 0; x < cssWidth; x++) {
+    const l = x / maxX;
+    if (l < 0.01 || l > 0.99) continue;
+
+    const mc = maxCPerCol[x] as number;
+
+    for (let y = 0; y < cssHeight; y++) {
+      const c = (1 - y / maxY) * maxChroma;
+
+      if (c <= mc) {
+        const distC = mc - c;
+        const distPx = (distC / maxChroma) * cssHeight;
+        const tC = distPx >= FADE ? 1 : distPx / FADE;
+        ctx.globalAlpha = tC * tC; // quadratic falloff
         ctx.fillStyle = `oklch(${l} ${c} ${hue})`;
-      } else {
-        ctx.fillStyle = '#000';
+        ctx.fillRect(x, y, 1, 1);
       }
-      ctx.fillRect(x, y, 1, 1);
     }
   }
+
+  ctx.globalAlpha = 1;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
 }
 
 /**
