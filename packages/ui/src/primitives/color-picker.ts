@@ -55,7 +55,7 @@ import { createColorInput, updateColorInput } from './color-input';
 import { createSwatch, updateSwatch } from './color-swatch';
 import { createHueBar, updateHueBar } from './hue-bar';
 import { createInteractive } from './interactive';
-import { inP3, inSrgb } from './oklch-gamut';
+import { hueFromBarPos, inP3, inSrgb } from './oklch-gamut';
 import type {
   CleanupFunction,
   Direction,
@@ -200,7 +200,7 @@ export function createColorPickerState(options: ColorPickerStateOptions): ColorP
       ...dirOption,
       onMove: (point: NormalizedPoint) => {
         const cur = $color.get();
-        const newColor = { ...cur, h: point.left * 360 };
+        const newColor = { ...cur, h: hueFromBarPos(point.left) };
         $color.set(newColor);
         onColorChange?.(newColor);
       },
@@ -218,7 +218,9 @@ export function createColorPickerState(options: ColorPickerStateOptions): ColorP
   cleanups.push(createColorArea(areaCanvas, { hue: initialColor.h, maxChroma: safeMaxChroma }));
 
   // Hue bar canvas
-  cleanups.push(createHueBar(hueCanvas, { lightness: initialColor.l, chroma: initialColor.c }));
+  cleanups.push(
+    createHueBar(hueCanvas, { lightness: initialColor.l, chroma: initialColor.c, vivid: true }),
+  );
 
   // Color inputs
   const fields: ColorInputField[] = [
@@ -255,7 +257,7 @@ export function createColorPickerState(options: ColorPickerStateOptions): ColorP
   // Subscribe to color changes and propagate to leaf primitives
   const unsubColor = $color.subscribe((color) => {
     updateColorArea(areaCanvas, { hue: color.h, maxChroma: safeMaxChroma });
-    updateHueBar(hueCanvas, { lightness: color.l, chroma: color.c });
+    updateHueBar(hueCanvas, { lightness: color.l, chroma: color.c, vivid: true });
     updateColorInput(fields, {
       value: { l: color.l, c: color.c, h: color.h },
       onChange: () => {},
