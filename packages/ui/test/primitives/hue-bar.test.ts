@@ -59,6 +59,18 @@ describe('createHueBar', () => {
     expect(typeof cleanup).toBe('function');
     cleanup();
   });
+
+  it('accepts vivid option', () => {
+    const cleanup = createHueBar(canvas, { lightness: 0.7, chroma: 0.15, vivid: true });
+    expect(typeof cleanup).toBe('function');
+    cleanup();
+  });
+
+  it('sets aria-label in vivid mode', () => {
+    const cleanup = createHueBar(canvas, { lightness: 0.7, chroma: 0.15, vivid: true });
+    expect(canvas.getAttribute('aria-label')).toBe('Hue spectrum');
+    cleanup();
+  });
 });
 
 describe('updateHueBar', () => {
@@ -77,6 +89,13 @@ describe('updateHueBar', () => {
     createHueBar(canvas, { lightness: 0.7, chroma: 0.15 });
     updateHueBar(canvas, { lightness: 0.5, chroma: 0.1 });
     expect(canvas.getAttribute('aria-label')).toBe('Hue spectrum');
+  });
+
+  it('supports updating to vivid mode', () => {
+    createHueBar(canvas, { lightness: 0.7, chroma: 0.15 });
+    expect(() => {
+      updateHueBar(canvas, { lightness: 0.7, chroma: 0.15, vivid: true });
+    }).not.toThrow();
   });
 });
 

@@ -8,7 +8,7 @@
  * the primitive handles rendering and ARIA attributes.
  */
 
-import { inP3, inSrgb } from './oklch-gamut';
+import { findMaxChroma, hueFromBarPos, inP3, inSrgb } from './oklch-gamut';
 import type { CleanupFunction } from './types';
 
 export interface HueBarOptions {
@@ -26,6 +26,76 @@ export interface HueBarOptions {
 
   /** Device pixel ratio override (default: window.devicePixelRatio) */
   dpr?: number;
+
+  /**
+   * When true, render each hue at its peak-chroma lightness
+   * with perceptual sine warp and box blur smoothing.
+   * Ignores `lightness` and `chroma` options.
+   * @default false
+   */
+  vivid?: boolean;
+}
+
+/** Maximum chroma ceiling for peak-chroma probing */
+const MAX_C = 0.4;
+
+/**
+ * Render vivid peak-chroma hue bar with perceptual warp and box blur smoothing.
+ * Each column is painted at the lightness that maximizes displayable chroma.
+ */
+function renderVivid(
+  ctx: CanvasRenderingContext2D,
+  steps: number,
+  maxIndex: number,
+  isHorizontal: boolean,
+  cssWidth: number,
+  cssHeight: number,
+): void {
+  const rawL = new Float32Array(steps);
+  const rawC = new Float32Array(steps);
+
+  for (let i = 0; i < steps; i++) {
+    const hue = hueFromBarPos(i / maxIndex);
+    let bestL = 0.5;
+    let bestC = 0;
+    for (let probe = 0.2; probe <= 0.85; probe += 0.01) {
+      const probeC = findMaxChroma(probe, hue, MAX_C);
+      if (probeC > bestC) {
+        bestC = probeC;
+        bestL = probe;
+      }
+    }
+    rawL[i] = bestL;
+    rawC[i] = bestC;
+  }
+
+  const blur = Math.max(3, Math.round(steps / 80));
+  const sL = new Float32Array(steps);
+  const sC = new Float32Array(steps);
+
+  for (let i = 0; i < steps; i++) {
+    let sumL = 0;
+    let sumC = 0;
+    let cnt = 0;
+    for (let k = i - blur; k <= i + blur; k++) {
+      const ki = ((k % steps) + steps) % steps;
+      sumL += rawL[ki] as number;
+      sumC += rawC[ki] as number;
+      cnt++;
+    }
+    sL[i] = sumL / cnt;
+    sC[i] = sumC / cnt;
+  }
+
+  for (let i = 0; i < steps; i++) {
+    const hue = hueFromBarPos(i / maxIndex);
+    ctx.fillStyle = `oklch(${sL[i]} ${sC[i]} ${hue})`;
+    if (isHorizontal) {
+      ctx.fillRect(i, 0, 1, cssHeight);
+    } else {
+      ctx.fillRect(0, i, cssWidth, 1);
+    }
+  }
 }
 
 /**
@@ -60,6 +130,11 @@ function renderHueBar(canvas: HTMLCanvasElement, options: HueBarOptions): void {
   const isHorizontal = orientation === 'horizontal';
   const steps = isHorizontal ? cssWidth : cssHeight;
   const maxIndex = steps > 1 ? steps - 1 : 1;
+
+  if (options.vivid) {
+    renderVivid(ctx, steps, maxIndex, isHorizontal, cssWidth, cssHeight);
+    return;
+  }
 
   for (let i = 0; i < steps; i++) {
     const h = (i / maxIndex) * 360;
