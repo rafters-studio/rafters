@@ -66,9 +66,9 @@ function renderArea(canvas: HTMLCanvasElement, options: ColorAreaOptions): void 
 
   for (let x = 0; x < cssWidth; x++) {
     const l = x / maxX;
-    if (l < 0.01 || l > 0.99) continue;
+    if (l < 0.001 || l > 0.999) continue;
 
-    const mc = maxCPerCol[x] as number;
+    const mc = maxCPerCol[x] ?? 0;
 
     for (let y = 0; y < cssHeight; y++) {
       const c = (1 - y / maxY) * maxChroma;
