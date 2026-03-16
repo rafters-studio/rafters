@@ -5,7 +5,7 @@
  * behavior when adding components via `rafters add`.
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   registryFileFactory,
   registryFixtures,
