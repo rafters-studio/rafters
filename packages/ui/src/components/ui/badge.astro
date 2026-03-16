@@ -1,0 +1,43 @@
+---
+/**
+ * Status badge component with multi-sensory communication patterns (Astro)
+ *
+ * Zero client JavaScript. Server-rendered markup with Tailwind tokens.
+ *
+ * @cognitive-load 2/10
+ * @accessibility Multi-sensory: Color + Icon + Text + Pattern
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { badgeBaseClasses, badgeSizeClasses, badgeVariantClasses } from './badge.classes';
+
+interface Props extends HTMLAttributes<'span'> {
+  variant?:
+    | 'default'
+    | 'primary'
+    | 'secondary'
+    | 'destructive'
+    | 'success'
+    | 'warning'
+    | 'info'
+    | 'muted'
+    | 'accent'
+    | 'outline'
+    | 'ghost'
+    | 'link';
+  size?: 'sm' | 'default' | 'lg';
+}
+
+const { variant = 'default', size = 'default', class: className, ...attrs } = Astro.props;
+
+const cls = classy(
+  badgeBaseClasses,
+  badgeVariantClasses[variant] ?? badgeVariantClasses.default,
+  badgeSizeClasses[size] ?? badgeSizeClasses.default,
+  className,
+);
+---
+
+<span class={cls} {...attrs}>
+  <slot />
+</span>

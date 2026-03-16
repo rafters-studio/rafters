@@ -1,0 +1,33 @@
+---
+/**
+ * Visual separator component for dividing content sections (Astro)
+ *
+ * Zero client JavaScript. Server-rendered markup with Tailwind tokens.
+ *
+ * @cognitive-load 0/10
+ * @accessibility role="separator" or role="none" for decorative
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+
+interface Props extends HTMLAttributes<'div'> {
+  orientation?: 'horizontal' | 'vertical';
+  decorative?: boolean;
+}
+
+const { orientation = 'horizontal', decorative = true, class: className, ...attrs } = Astro.props;
+
+const orientationClasses: Record<string, string> = {
+  horizontal: 'h-px w-full',
+  vertical: 'h-full w-px',
+};
+
+const cls = classy('shrink-0 bg-border', orientationClasses[orientation], className);
+---
+
+<div
+  role={decorative ? 'none' : 'separator'}
+  aria-orientation={!decorative ? orientation : undefined}
+  class={cls}
+  {...attrs}
+/>

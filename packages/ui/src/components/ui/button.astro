@@ -1,0 +1,64 @@
+---
+/**
+ * Interactive button component for user actions (Astro)
+ *
+ * Zero client JavaScript. Server-rendered markup with Tailwind tokens.
+ * Same variants, sizes, and accessibility as the React counterpart.
+ *
+ * @cognitive-load 3/10
+ * @accessibility WCAG AAA compliant with 44px minimum touch targets
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { buttonBaseClasses, buttonSizeClasses, buttonVariantClasses } from './button.classes';
+
+interface Props extends HTMLAttributes<'button'> {
+  variant?:
+    | 'default'
+    | 'primary'
+    | 'secondary'
+    | 'destructive'
+    | 'success'
+    | 'warning'
+    | 'info'
+    | 'muted'
+    | 'accent'
+    | 'outline'
+    | 'ghost'
+    | 'link';
+  size?: 'default' | 'xs' | 'sm' | 'lg' | 'icon' | 'icon-xs' | 'icon-sm' | 'icon-lg';
+  loading?: boolean;
+}
+
+const {
+  variant = 'default',
+  size = 'default',
+  disabled,
+  loading,
+  type = 'button',
+  class: className,
+  ...attrs
+} = Astro.props;
+
+const isDisabled = disabled || loading;
+const disabledCls = isDisabled ? 'opacity-50 pointer-events-none' : '';
+
+const cls = classy(
+  buttonBaseClasses,
+  buttonVariantClasses[variant] ?? buttonVariantClasses.default,
+  buttonSizeClasses[size] ?? buttonSizeClasses.default,
+  disabledCls,
+  className,
+);
+---
+
+<button
+  type={type}
+  class={cls}
+  disabled={isDisabled}
+  aria-disabled={isDisabled ? 'true' : undefined}
+  aria-busy={loading ? 'true' : undefined}
+  {...attrs}
+>
+  {loading ? <span aria-hidden="true">Loading...</span> : <slot />}
+</button>

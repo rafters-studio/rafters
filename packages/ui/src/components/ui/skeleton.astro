@@ -1,0 +1,36 @@
+---
+/**
+ * Skeleton loading placeholder component (Astro)
+ *
+ * Zero client JavaScript. CSS-only animation with reduced motion support.
+ *
+ * @cognitive-load 1/10
+ * @accessibility motion-reduce respects prefers-reduced-motion, aria-hidden decorative
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { skeletonBaseClasses, skeletonVariantClasses } from './skeleton.classes';
+
+interface Props extends HTMLAttributes<'div'> {
+  variant?:
+    | 'default'
+    | 'primary'
+    | 'secondary'
+    | 'destructive'
+    | 'success'
+    | 'warning'
+    | 'info'
+    | 'muted'
+    | 'accent';
+}
+
+const { variant = 'default', class: className, ...attrs } = Astro.props;
+
+const cls = classy(
+  skeletonBaseClasses,
+  skeletonVariantClasses[variant] ?? skeletonVariantClasses.default,
+  className,
+);
+---
+
+<div class={cls} {...attrs} />

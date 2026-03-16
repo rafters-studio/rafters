@@ -1,0 +1,13 @@
+---
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+
+interface Props extends HTMLAttributes<'div'> {}
+
+const { class: className, ...attrs } = Astro.props;
+const cls = classy('flex items-center p-6 pt-0', className);
+---
+
+<div class={cls} {...attrs}>
+  <slot />
+</div>

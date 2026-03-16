@@ -1,0 +1,17 @@
+---
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+
+type HeadingLevel = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
+
+interface Props extends HTMLAttributes<'h3'> {
+  as?: HeadingLevel;
+}
+
+const { as: Tag = 'h3', class: className, ...attrs } = Astro.props;
+const cls = classy('text-2xl font-semibold leading-none tracking-tight', className);
+---
+
+<Tag class={cls} {...attrs}>
+  <slot />
+</Tag>

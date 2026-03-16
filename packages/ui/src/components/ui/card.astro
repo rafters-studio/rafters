@@ -1,0 +1,41 @@
+---
+/**
+ * Flexible container component for grouping related content (Astro)
+ *
+ * Zero client JavaScript. Server-rendered markup with Tailwind tokens.
+ * Sub-components: card-header.astro, card-title.astro, card-description.astro,
+ * card-content.astro, card-footer.astro, card-action.astro
+ *
+ * @cognitive-load 2/10
+ * @accessibility Proper heading structure, landmark roles
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+
+type CardElement = 'div' | 'article' | 'section' | 'aside';
+
+interface Props extends HTMLAttributes<'div'> {
+  as?: CardElement;
+  interactive?: boolean;
+  size?: 'default' | 'sm';
+}
+
+const { as: Tag = 'div', interactive, size = 'default', class: className, ...attrs } = Astro.props;
+
+const base = 'bg-card text-card-foreground border border-card-border rounded-lg shadow-sm';
+const sizeStyles = size === 'sm' ? 'group/card-sm' : '';
+
+const interactiveStyles = interactive
+  ? 'hover:bg-card-hover hover:shadow-md transition-shadow duration-normal motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
+  : '';
+
+const cls = classy(base, sizeStyles, interactiveStyles, className);
+---
+
+<Tag
+  class={cls}
+  tabindex={interactive ? 0 : undefined}
+  {...attrs}
+>
+  <slot />
+</Tag>

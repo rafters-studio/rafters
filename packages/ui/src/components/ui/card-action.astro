@@ -1,0 +1,13 @@
+---
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+
+interface Props extends HTMLAttributes<'div'> {}
+
+const { class: className, ...attrs } = Astro.props;
+const cls = classy('col-start-2 row-span-2 row-start-1 self-start justify-self-end', className);
+---
+
+<div data-slot="card-action" class={cls} {...attrs}>
+  <slot />
+</div>
