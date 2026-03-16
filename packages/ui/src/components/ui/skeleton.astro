@@ -9,39 +9,26 @@
  */
 import type { HTMLAttributes } from 'astro/types';
 import classy from '../../primitives/classy';
-
-export type SkeletonVariant =
-  | 'default'
-  | 'primary'
-  | 'secondary'
-  | 'destructive'
-  | 'success'
-  | 'warning'
-  | 'info'
-  | 'muted'
-  | 'accent';
+import { skeletonBaseClasses, skeletonVariantClasses } from './skeleton.classes';
 
 interface Props extends HTMLAttributes<'div'> {
-  variant?: SkeletonVariant;
+  variant?:
+    | 'default'
+    | 'primary'
+    | 'secondary'
+    | 'destructive'
+    | 'success'
+    | 'warning'
+    | 'info'
+    | 'muted'
+    | 'accent';
 }
 
 const { variant = 'default', class: className, ...attrs } = Astro.props;
 
-const variantClasses: Record<string, string> = {
-  default: 'bg-muted',
-  primary: 'bg-primary-subtle',
-  secondary: 'bg-secondary-subtle',
-  destructive: 'bg-destructive-subtle',
-  success: 'bg-success-subtle',
-  warning: 'bg-warning-subtle',
-  info: 'bg-info-subtle',
-  muted: 'bg-muted',
-  accent: 'bg-accent-subtle',
-};
-
 const cls = classy(
-  'rounded-md animate-pulse motion-reduce:animate-none',
-  variantClasses[variant] ?? variantClasses.default,
+  skeletonBaseClasses,
+  skeletonVariantClasses[variant] ?? skeletonVariantClasses.default,
   className,
 );
 ---
