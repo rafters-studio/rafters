@@ -28,7 +28,7 @@
     "react-dom": "catalog:"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4.1.18",
+    "@tailwindcss/vite": "0.0.0-insiders.d24b112",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
@@ -36,14 +36,14 @@
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "@vitejs/plugin-react": "catalog:",
-    "@vitest/coverage-v8": "^3.2.2",
+    "@vitest/coverage-v8": "catalog:",
     "jsdom": "^26.1.0",
     "msw": "^2.10.0",
     "tailwindcss": "^4.1.18",
     "tsx": "^4.21.0",
     "typescript": "catalog:",
-    "vite": "^6.2.0",
-    "vitest": "^3.2.2",
+    "vite": "^8.0.0",
+    "vitest": "catalog:",
     "zocker": "catalog:"
   }
 }

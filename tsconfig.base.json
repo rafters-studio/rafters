@@ -53,7 +53,7 @@
       "@rafters/composites/*": ["./packages/composites/src/*"]
     },
 
-    "types": ["vitest/globals"]
+    "types": ["node", "vitest/globals"]
   },
   "exclude": ["node_modules", ".turbo", "coverage"]
 }

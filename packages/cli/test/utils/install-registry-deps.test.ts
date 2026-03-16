@@ -5,7 +5,7 @@
  * behavior when adding components via `rafters add`.
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   registryFileFactory,
   registryFixtures,
@@ -53,6 +53,7 @@ describe('installRegistryDependencies', () => {
   let updateDependenciesMock: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
+    vi.resetModules();
     vi.clearAllMocks();
 
     const fsMod = await import('node:fs/promises');
@@ -60,13 +61,10 @@ describe('installRegistryDependencies', () => {
 
     const updateMod = await import('../../src/utils/update-dependencies.js');
     updateDependenciesMock = vi.mocked(updateMod.updateDependencies);
+    updateDependenciesMock.mockResolvedValue(undefined);
 
     const mod = await import('../../src/utils/install-registry-deps.js');
     installRegistryDependencies = mod.installRegistryDependencies;
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
   });
 
   function mockPackageJson(deps: Record<string, string> = {}): void {
