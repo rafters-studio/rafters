@@ -378,10 +378,23 @@ async function regenerateFromExisting(
   // Generate outputs
   const outputs = await generateOutputs(cwd, paths, registry, exports, shadcn);
 
-  // Update config with new export settings
+  // Update config with new export settings (create if missing)
   if (existingConfig) {
     existingConfig.exports = exports;
     await writeFile(paths.config, JSON.stringify(existingConfig, null, 2));
+  } else {
+    const frameworkPaths = COMPONENT_PATHS[framework] || COMPONENT_PATHS.unknown;
+    const newConfig: RaftersConfig = {
+      framework,
+      componentsPath: frameworkPaths.components,
+      primitivesPath: frameworkPaths.primitives,
+      compositesPath: frameworkPaths.composites,
+      cssPath: null,
+      shadcn: !!shadcn,
+      exports,
+      installed: { components: [], primitives: [], composites: [] },
+    };
+    await writeFile(paths.config, JSON.stringify(newConfig, null, 2));
   }
 
   log({
@@ -494,10 +507,23 @@ async function resetToDefaults(
   // Generate outputs
   const outputs = await generateOutputs(cwd, paths, registry, exports, shadcn);
 
-  // Update config with new export settings
+  // Update config with new export settings (create if missing)
   if (existingConfig) {
     existingConfig.exports = exports;
     await writeFile(paths.config, JSON.stringify(existingConfig, null, 2));
+  } else {
+    const frameworkPaths = COMPONENT_PATHS[framework] || COMPONENT_PATHS.unknown;
+    const newConfig: RaftersConfig = {
+      framework,
+      componentsPath: frameworkPaths.components,
+      primitivesPath: frameworkPaths.primitives,
+      compositesPath: frameworkPaths.composites,
+      cssPath: null,
+      shadcn: !!shadcn,
+      exports,
+      installed: { components: [], primitives: [], composites: [] },
+    };
+    await writeFile(paths.config, JSON.stringify(newConfig, null, 2));
   }
 
   log({
