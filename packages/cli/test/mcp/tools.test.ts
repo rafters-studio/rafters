@@ -86,6 +86,25 @@ describe('CONSUMER_QUICKSTART', () => {
   });
 });
 
+describe('RaftersToolHandler with null project root', () => {
+  const nullHandler = new RaftersToolHandler(null);
+
+  it('should return error for project-dependent tools', async () => {
+    for (const tool of ['rafters_vocabulary', 'rafters_component', 'rafters_token', 'rafters_cognitive_budget']) {
+      const result = await nullHandler.handleToolCall(tool, { name: 'button', components: ['button'], tier: 'page' });
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('No .rafters/ config found');
+    }
+  });
+
+  it('should allow rafters_pattern without a project root', async () => {
+    const result = await nullHandler.handleToolCall('rafters_pattern', { pattern: 'destructive-action' });
+    expect(result.isError).toBeFalsy();
+    const data = JSON.parse(result.content[0].text as string);
+    expect(data.name).toBe('Destructive Action');
+  });
+});
+
 describe('RaftersToolHandler', () => {
   const testDir = join(tmpdir(), 'rafters-test-mcp-tools');
   let handler: RaftersToolHandler;
