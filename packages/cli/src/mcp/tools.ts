@@ -537,7 +537,7 @@ export const TOOL_DEFINITIONS = [
 ] as const;
 
 const NO_PROJECT_ERROR =
-  'No .rafters/ config found. Run `pnpx rafters init` in your project first. ' +
+  'No .rafters/ config found. Run `pnpm dlx rafters init` in your project first. ' +
   'If the MCP server was launched from a different directory, pass --project-root <path>.';
 
 // Tools that work without a project root (static data only)
@@ -788,7 +788,11 @@ export class RaftersToolHandler {
       return null;
     }
     const content = await readFile(paths.config, 'utf-8');
-    this.cachedConfig = JSON.parse(content) as RaftersConfig;
+    try {
+      this.cachedConfig = JSON.parse(content) as RaftersConfig;
+    } catch {
+      throw new Error(`Malformed JSON in ${paths.config}. Check the file for syntax errors.`);
+    }
     return this.cachedConfig;
   }
 

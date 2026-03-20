@@ -93,7 +93,7 @@ describe('RaftersToolHandler with null project root', () => {
     for (const tool of ['rafters_vocabulary', 'rafters_component', 'rafters_token', 'rafters_cognitive_budget']) {
       const result = await nullHandler.handleToolCall(tool, { name: 'button', components: ['button'], tier: 'page' });
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('No .rafters/ config found');
+      expect(result.content[0].text).toContain('pnpm dlx rafters init');
     }
   });
 
