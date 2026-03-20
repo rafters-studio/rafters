@@ -2,7 +2,7 @@
 
 # Rafters: Design Intelligence Protocol for AI Agents
 
-**Your designer encodes taste. We turn it into data structures. AI agents build interfaces that don't suck.**
+**Your designer encodes their taste. We turn it into data structures. AI agents build interfaces that don't suck.**
 
 ## The Real Problem: AI Agents Guess at Design
 
