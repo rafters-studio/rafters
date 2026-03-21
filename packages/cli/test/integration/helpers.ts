@@ -5,7 +5,7 @@
  * and creating pre-initialized project fixtures.
  */
 
-import { type ChildProcess, spawn } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -15,6 +15,8 @@ import { createFixture, type FixtureType } from '../fixtures/projects.js';
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const CLI_BIN = join(__dirname, '../../dist/index.js');
 
+const EXEC_TIMEOUT_MS = 25_000;
+
 interface CommandResult {
   exitCode: number;
   stdout: string;
@@ -22,7 +24,8 @@ interface CommandResult {
 }
 
 /**
- * Execute rafters CLI command and wait for completion
+ * Execute rafters CLI command and wait for completion.
+ * Kills the process after EXEC_TIMEOUT_MS to prevent orphaned processes.
  */
 export async function execCli(cwd: string, args: string[]): Promise<CommandResult> {
   return new Promise((resolve) => {
@@ -34,6 +37,15 @@ export async function execCli(cwd: string, args: string[]): Promise<CommandResul
     let stdout = '';
     let stderr = '';
 
+    const killTimer = setTimeout(() => {
+      child.kill('SIGTERM');
+      resolve({
+        exitCode: 1,
+        stdout,
+        stderr: stderr + `\nProcess killed after ${EXEC_TIMEOUT_MS}ms timeout`,
+      });
+    }, EXEC_TIMEOUT_MS);
+
     child.stdout.on('data', (data: Buffer) => {
       stdout += data.toString();
     });
@@ -43,34 +55,15 @@ export async function execCli(cwd: string, args: string[]): Promise<CommandResul
     });
 
     child.on('close', (code) => {
+      clearTimeout(killTimer);
       resolve({ exitCode: code ?? 1, stdout, stderr });
     });
 
     child.on('error', (err) => {
+      clearTimeout(killTimer);
       resolve({ exitCode: 1, stdout, stderr: stderr + err.message });
     });
   });
-}
-
-/**
- * Start CLI as a background process (for MCP server)
- */
-export function spawnCli(
-  cwd: string,
-  args: string[],
-): { process: ChildProcess; kill: () => void } {
-  const child = spawn('node', [CLI_BIN, ...args], {
-    cwd,
-    env: { ...process.env, NODE_ENV: 'test' },
-    stdio: ['pipe', 'pipe', 'pipe'],
-  });
-
-  return {
-    process: child,
-    kill: () => {
-      child.kill('SIGTERM');
-    },
-  };
 }
 
 /**
@@ -129,54 +122,4 @@ export async function writeFixtureFile(
   const fullPath = join(fixturePath, relativePath);
   await mkdir(join(fullPath, '..'), { recursive: true });
   await writeFile(fullPath, content);
-}
-
-/**
- * Send a JSON-RPC message to an MCP server process via stdin
- * and read the response from stdout.
- */
-export function sendJsonRpc(
-  child: ChildProcess,
-  method: string,
-  params: Record<string, unknown> = {},
-  id: number = 1,
-): Promise<Record<string, unknown>> {
-  return new Promise((resolve, reject) => {
-    const message = JSON.stringify({ jsonrpc: '2.0', id, method, params });
-    const header = `Content-Length: ${Buffer.byteLength(message)}\r\n\r\n`;
-
-    let buffer = '';
-    const timeout = setTimeout(() => {
-      reject(new Error(`JSON-RPC timeout for method: ${method}`));
-    }, 10000);
-
-    const onData = (data: Buffer): void => {
-      buffer += data.toString();
-
-      // Parse LSP-style content-length header
-      const headerEnd = buffer.indexOf('\r\n\r\n');
-      if (headerEnd === -1) return;
-
-      const headerPart = buffer.slice(0, headerEnd);
-      const contentLengthMatch = headerPart.match(/Content-Length:\s*(\d+)/i);
-      if (!contentLengthMatch) return;
-
-      const contentLength = Number.parseInt(contentLengthMatch[1], 10);
-      const bodyStart = headerEnd + 4;
-      const body = buffer.slice(bodyStart);
-
-      if (Buffer.byteLength(body) >= contentLength) {
-        clearTimeout(timeout);
-        child.stdout?.off('data', onData);
-        try {
-          resolve(JSON.parse(body.slice(0, contentLength)));
-        } catch (err) {
-          reject(new Error(`Failed to parse JSON-RPC response: ${body.slice(0, contentLength)}`));
-        }
-      }
-    };
-
-    child.stdout?.on('data', onData);
-    child.stdin?.write(header + message);
-  });
 }

@@ -5,12 +5,12 @@
  * from nested subdirectories.
  */
 
-import { mkdir } from 'node:fs/promises';
+import { mkdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { cleanupFixture } from '../fixtures/projects.js';
+import { cleanupFixture, createFixture } from '../fixtures/projects.js';
 import { discoverProjectRoot } from '../../src/utils/discover.js';
-import { createInitializedFixture, writeFixtureFile } from './helpers.js';
+import { createInitializedFixture } from './helpers.js';
 
 let fixturePath = '';
 
@@ -32,7 +32,6 @@ describe('discoverProjectRoot', () => {
   it('finds project root from a nested subdirectory', async () => {
     fixturePath = await createInitializedFixture();
 
-    // Create nested directory structure
     const nestedDir = join(fixturePath, 'src', 'components', 'ui');
     await mkdir(nestedDir, { recursive: true });
 
@@ -51,32 +50,25 @@ describe('discoverProjectRoot', () => {
   }, 30000);
 
   it('returns null when no project root exists', async () => {
-    const { tmpdir } = await import('node:os');
-    const { randomBytes } = await import('node:crypto');
-    const nonProjectDir = join(tmpdir(), `no-rafters-${randomBytes(4).toString('hex')}`);
-    await mkdir(nonProjectDir, { recursive: true });
+    // Use a fixture without .rafters (not initialized)
+    fixturePath = await createFixture('empty-project');
 
-    const result = discoverProjectRoot(nonProjectDir);
+    const result = discoverProjectRoot(fixturePath);
     expect(result).toBeNull();
-
-    // Cleanup
-    const { rm } = await import('node:fs/promises');
-    await rm(nonProjectDir, { recursive: true, force: true });
   });
 
   it('does not traverse into sibling directories', async () => {
     fixturePath = await createInitializedFixture();
 
-    // Create a sibling directory without .rafters
-    const { tmpdir } = await import('node:os');
-    const { randomBytes } = await import('node:crypto');
-    const siblingDir = join(tmpdir(), `sibling-${randomBytes(4).toString('hex')}`);
+    // Create a subdirectory that does NOT have .rafters above it
+    // by checking from a sibling of the fixture within the same parent
+    const siblingDir = join(fixturePath, '..', 'no-rafters-sibling');
     await mkdir(siblingDir, { recursive: true });
 
     const result = discoverProjectRoot(siblingDir);
+    // Should not find the fixture's .rafters since it is a sibling, not an ancestor
     expect(result).toBeNull();
 
-    const { rm } = await import('node:fs/promises');
     await rm(siblingDir, { recursive: true, force: true });
   });
 });

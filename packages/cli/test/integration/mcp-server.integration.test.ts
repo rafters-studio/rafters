@@ -53,32 +53,7 @@ describe('MCP tools against initialized project', () => {
     expect(data.components.available.length).toBeGreaterThan(0);
   }, 30000);
 
-  it('rafters_token returns details for CLI-generated tokens', async () => {
-    fixturePath = await createInitializedFixture('vite-no-shadcn');
-    const handler = new RaftersToolHandler(fixturePath);
-
-    // First get vocabulary to see what tokens exist
-    const vocabResult = await handler.handleToolCall('rafters_vocabulary', {});
-    const vocabData = JSON.parse(vocabResult.content[0].text as string);
-
-    // Find a color token that exists in the generated system
-    const availableColors = vocabData.colors.semantic as string[];
-    expect(availableColors.length).toBeGreaterThan(0);
-
-    // Use spacing token which is always present from init
-    const result = await handler.handleToolCall('rafters_token', {
-      name: 'spacing-1',
-    });
-
-    expect(result.isError).toBeFalsy();
-    const data = JSON.parse(result.content[0].text as string);
-
-    expect(data.name).toBe('spacing-1');
-    expect(data.namespace).toBe('spacing');
-    expect(data.value).toBe('0.25rem');
-  }, 30000);
-
-  it('rafters_token returns spacing token details', async () => {
+  it('rafters_token returns spacing token details from CLI-initialized project', async () => {
     fixturePath = await createInitializedFixture('vite-no-shadcn');
     const handler = new RaftersToolHandler(fixturePath);
 
