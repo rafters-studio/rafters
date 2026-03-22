@@ -390,9 +390,14 @@ export function loadComponent(name: string): RegistryItem | null {
         devDependencies: analysis.devDependencies,
       });
 
-      // Merge primitive/internal deps from all variants
+      // Merge primitive/internal deps from all variants.
+      // Filter out shared auxiliary files (e.g. button.classes) -- they are bundled
+      // with the component's files, not standalone primitives.
+      const realPrimitives = analysis.importDeps.internal.filter(
+        (dep) => !SHARED_SUFFIXES.some((suffix) => dep === name + suffix.replace(/\.ts$/, '')),
+      );
       primitivesAll = [
-        ...new Set([...primitivesAll, ...analysis.importDeps.internal, ...analysis.primitiveDeps]),
+        ...new Set([...primitivesAll, ...realPrimitives, ...analysis.primitiveDeps]),
       ];
       internalAll = [...new Set([...internalAll, ...analysis.importDeps.internal])];
 
