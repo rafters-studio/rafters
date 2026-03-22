@@ -16,7 +16,7 @@
     "test:e2e": "pnpm -r test:e2e",
     "test:a11y": "pnpm -r test:a11y",
     "test:quick": "pnpm test:unit && pnpm test:a11y",
-    "test:all": "pnpm preflight && pnpm test:e2e",
+    "test:all": "pnpm preflight && pnpm -r test:integration && pnpm test:e2e",
     "test:watch": "pnpm -r test:unit --watch",
     "typecheck": "pnpm -r typecheck",
     "lint": "biome check",
