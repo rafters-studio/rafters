@@ -1,5 +1,41 @@
 # rafters
 
+## 0.0.17
+
+### Patch Changes
+
+- Fix shared auxiliary files (.classes.ts, .types.ts, .constants.ts) incorrectly listed as primitive dependencies in registry responses
+- Add CLI integration test suite: 39 tests covering init workflows, config persistence, MCP tools, and project root discovery
+- Separate integration tests from unit tests in CI (integration tests run after build)
+
+## 0.0.16
+
+### Patch Changes
+
+- Fix config exports not persisting on rebuild/reset when config file is missing
+
+## 0.0.15
+
+### Patch Changes
+
+- Framework-aware file routing for `rafters add` -- selects .tsx, .astro, .vue, or .svelte files based on detected framework
+
+## 0.0.14
+
+### Patch Changes
+
+- MCP server discovers project root by walking up from cwd to find .rafters/config.rafters.json instead of assuming process.cwd() is the project root
+- Add --project-root flag for explicit override
+- Replace silent catch blocks in MCP tool handler with clear error messages
+- Cache config loading (one read per handler lifetime)
+
+## 0.0.13
+
+### Patch Changes
+
+- Fix component target detection for Astro projects with React integration
+- Add componentTarget field to RaftersConfig
+
 ## 0.0.12
 
 ### Patch Changes
