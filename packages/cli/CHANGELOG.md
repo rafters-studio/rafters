@@ -1,5 +1,11 @@
 # rafters
 
+## 0.0.19
+
+### Patch Changes
+
+- Fix repository URL for npm provenance verification (ezmode-games -> rafters-studio)
+
 ## 0.0.18
 
 ### Patch Changes
