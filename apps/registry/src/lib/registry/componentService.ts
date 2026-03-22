@@ -81,6 +81,14 @@ const COMPONENT_EXTENSIONS = ['.tsx', '.astro', '.vue', '.svelte'];
  */
 const SHARED_SUFFIXES = ['.classes.ts', '.types.ts', '.constants.ts'];
 
+/** Regex matching import statements -- shared across extraction functions */
+const IMPORT_REGEX =
+  /import\s+(?:type\s+)?(?:(?:\{[^}]*\}|\*\s+as\s+\w+|\w+)\s+from\s+)?['"]([^'"]+)['"]/g;
+
+/** Same pattern but excludes "import type" to avoid treating type-only imports as deps */
+const VALUE_IMPORT_REGEX =
+  /import\s+(?:(?:\{[^}]*\}|\*\s+as\s+\w+|\w+)\s+from\s+)?['"]([^'"]+)['"]/g;
+
 /**
  * List all available component names.
  * Deduplicates across extensions so a component with both .tsx and .astro appears once.
@@ -373,7 +381,6 @@ export function loadComponent(name: string): RegistryItem | null {
   const componentsDir = getComponentsPath();
   const files: RegistryFile[] = [];
   let primitivesAll: string[] = [];
-  let internalAll: string[] = [];
   let intelligence: ReturnType<typeof parseJSDocFromSource> | undefined;
 
   // Load framework-specific variants
@@ -399,7 +406,6 @@ export function loadComponent(name: string): RegistryItem | null {
       primitivesAll = [
         ...new Set([...primitivesAll, ...realPrimitives, ...analysis.primitiveDeps]),
       ];
-      internalAll = [...new Set([...internalAll, ...analysis.importDeps.internal])];
 
       // Use intelligence from first variant that has it (typically .tsx)
       if (!intelligence && analysis.intelligence) {
@@ -446,24 +452,30 @@ export function loadComponent(name: string): RegistryItem | null {
 }
 
 /**
+ * Try reading a file with .ts extension first, then .tsx.
+ * Returns content and extension, or null if neither exists.
+ */
+function tryReadTs(dir: string, name: string): { content: string; ext: string } | null {
+  for (const ext of ['.ts', '.tsx']) {
+    try {
+      return { content: readFileSync(join(dir, `${name}${ext}`), 'utf-8'), ext };
+    } catch {
+      // Try next extension
+    }
+  }
+  return null;
+}
+
+/**
  * Load a single primitive by name
  */
 export function loadPrimitive(name: string): RegistryItem | null {
   const primitivesDir = getPrimitivesPath();
-
-  // Try .ts first, then .tsx (for primitives like float that use JSX)
-  let filePath = join(primitivesDir, `${name}.ts`);
-  let fileExt = '.ts';
+  const loaded = tryReadTs(primitivesDir, name);
+  if (!loaded) return null;
 
   try {
-    readFileSync(filePath, 'utf-8');
-  } catch {
-    filePath = join(primitivesDir, `${name}.tsx`);
-    fileExt = '.tsx';
-  }
-
-  try {
-    const content = readFileSync(filePath, 'utf-8');
+    const { content, ext: fileExt } = loaded;
     const { allExternalDeps, devDependencies, primitiveDeps, intelligence } = analyzeSource(
       content,
       true,
@@ -479,34 +491,19 @@ export function loadPrimitive(name: string): RegistryItem | null {
     ];
 
     // Detect sibling shared files (e.g., ./types) and include them.
-    // extractPrimitiveDependencies already detects sibling imports -- reuse it
-    // to find shared files that are NOT standalone primitives (like types.ts).
     const siblingImports = extractSiblingImports(content);
     for (const sibling of siblingImports) {
-      // Skip siblings that are standalone primitives (they get installed separately)
       if (primitiveDeps.includes(sibling)) continue;
 
-      // Try to load the shared file (.ts then .tsx)
-      let siblingPath = join(primitivesDir, `${sibling}.ts`);
-      let siblingExt = '.ts';
-      try {
-        readFileSync(siblingPath, 'utf-8');
-      } catch {
-        siblingPath = join(primitivesDir, `${sibling}.tsx`);
-        siblingExt = '.tsx';
-      }
-
-      try {
-        const siblingContent = readFileSync(siblingPath, 'utf-8');
-        const siblingAnalysis = analyzeSource(siblingContent, true);
+      const siblingLoaded = tryReadTs(primitivesDir, sibling);
+      if (siblingLoaded) {
+        const siblingAnalysis = analyzeSource(siblingLoaded.content, true);
         files.push({
-          path: `lib/primitives/${sibling}${siblingExt}`,
-          content: siblingContent,
+          path: `lib/primitives/${sibling}${siblingLoaded.ext}`,
+          content: siblingLoaded.content,
           dependencies: siblingAnalysis.allExternalDeps,
           devDependencies: siblingAnalysis.devDependencies,
         });
-      } catch {
-        // Shared file not found -- skip silently
       }
     }
 
@@ -559,17 +556,6 @@ export function getRegistryIndex(): RegistryIndex {
 }
 
 /**
- * Get registry metadata with full component data
- */
-export function getRegistryMetadata() {
-  return {
-    components: loadAllComponents(),
-    primitives: loadAllPrimitives(),
-    composites: loadAllComposites(),
-  };
-}
-
-/**
  * Extract dependencies from component source
  */
 function extractDependencies(content: string): {
@@ -579,10 +565,7 @@ function extractDependencies(content: string): {
   const external: string[] = [];
   const internal: string[] = [];
 
-  // Match import statements
-  const importRegex =
-    /import\s+(?:type\s+)?(?:(?:\{[^}]*\}|\*\s+as\s+\w+|\w+)\s+from\s+)?['"]([^'"]+)['"]/g;
-  const matches = content.matchAll(importRegex);
+  const matches = content.matchAll(IMPORT_REGEX);
 
   for (const match of matches) {
     const pkg = match[1];
@@ -619,13 +602,11 @@ function extractDependencies(content: string): {
  */
 export function extractSiblingImports(content: string): string[] {
   const siblings: string[] = [];
-  const importRegex =
-    /import\s+(?:type\s+)?(?:(?:\{[^}]*\}|\*\s+as\s+\w+|\w+)\s+from\s+)?['"]([^'"]+)['"]/g;
-  const matches = content.matchAll(importRegex);
+  const matches = content.matchAll(IMPORT_REGEX);
 
   for (const match of matches) {
     const pkg = match[1];
-    if (pkg?.startsWith('./') && !pkg.slice(2).includes('/')) {
+    if (pkg.startsWith('./') && !pkg.slice(2).includes('/')) {
       const name = basename(pkg).replace(/\.(tsx?|jsx?)$/, '');
       if (name && !siblings.includes(name)) {
         siblings.push(name);
@@ -644,11 +625,9 @@ export function extractSiblingImports(content: string): string[] {
 function extractPrimitiveDependencies(content: string, isPrimitive = false): string[] {
   const primitives: string[] = [];
 
-  // Match imports from primitives directory.
-  // Intentionally omits "import type" to avoid treating type-only shared files
-  // (like types.ts) as standalone primitive dependencies.
-  const importRegex = /import\s+(?:(?:\{[^}]*\}|\*\s+as\s+\w+|\w+)\s+from\s+)?['"]([^'"]+)['"]/g;
-  const matches = content.matchAll(importRegex);
+  // Uses VALUE_IMPORT_REGEX (excludes "import type") to avoid treating
+  // type-only shared files (like types.ts) as standalone primitive dependencies.
+  const matches = content.matchAll(VALUE_IMPORT_REGEX);
 
   for (const match of matches) {
     const pkg = match[1];
