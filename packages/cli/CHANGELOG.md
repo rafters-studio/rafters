@@ -1,5 +1,11 @@
 # rafters
 
+## 0.0.18
+
+### Patch Changes
+
+- Re-release with OIDC trust policy updated for rafters-studio org
+
 ## 0.0.17
 
 ### Patch Changes
