@@ -191,7 +191,12 @@ const FRAMEWORK_VERSIONS: Record<string, string> = {
 /**
  * Dependencies to exclude (internal/build-time only)
  */
-const EXCLUDED_DEPS = new Set(['react/jsx-runtime', '@types/react', '@types/react-dom']);
+const EXCLUDED_DEPS = new Set([
+  'react/jsx-runtime',
+  '@types/react',
+  '@types/react-dom',
+  'astro/types',
+]);
 
 /**
  * Prefixes to exclude (internal packages)

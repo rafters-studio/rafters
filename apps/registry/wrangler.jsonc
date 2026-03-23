@@ -1,0 +1,22 @@
+/**
+ * For more details on how to configure Wrangler, refer to:
+ * https://developers.cloudflare.com/workers/wrangler/configuration/
+ */
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "rafters-registry",
+  "compatibility_date": "2025-12-13",
+  "assets": {
+    "directory": "dist"
+  },
+  "observability": {
+    "enabled": true,
+  },
+  "placement": { "mode": "smart" },
+  "routes": [
+    {
+      "pattern": "rafters.studio/registry/*",
+      "zone_id": "142da5fc1cd70bb8bb80be9926f83750",
+    },
+  ],
+}
