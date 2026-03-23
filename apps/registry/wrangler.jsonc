@@ -10,13 +10,13 @@
     "directory": "dist"
   },
   "observability": {
-    "enabled": true,
+    "enabled": true
   },
   "placement": { "mode": "smart" },
   "routes": [
     {
       "pattern": "rafters.studio/registry/*",
-      "zone_id": "142da5fc1cd70bb8bb80be9926f83750",
-    },
-  ],
+      "zone_id": "142da5fc1cd70bb8bb80be9926f83750"
+    }
+  ]
 }
