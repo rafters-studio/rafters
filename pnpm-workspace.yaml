@@ -1,6 +1,7 @@
 packages:
   - apps/*
   - packages/*
+  - '!packages/registry-data'
 
 catalog:
   '@axe-core/playwright': ^4.11.0
