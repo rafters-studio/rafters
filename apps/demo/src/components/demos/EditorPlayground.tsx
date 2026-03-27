@@ -28,7 +28,8 @@ import {
   type SlashCommand,
 } from '@/components/ui/editor';
 import { Input } from '@/components/ui/input';
-import { Kbd } from '@/components/ui/kbd';
+import { Kbd, Kbd } from '@/components/ui/kbd';
+import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Blockquote, H1, H2, H3, Muted, P } from '@/components/ui/typography';
 import type { BlockPaletteItem } from '@/lib/primitives/block-palette';
@@ -452,11 +453,6 @@ function toCompositeBlocks(blocks: EditorBlock[]): CompositeBlock[] {
     content: b.content,
   }));
 }
-
-// ============================================================================
-// ============================================================================
-// Serialization
-// ============================================================================
 
 // ============================================================================
 // Serialization
