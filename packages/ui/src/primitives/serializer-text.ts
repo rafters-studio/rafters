@@ -146,7 +146,7 @@ function serializeText(blocks: SerializerBlock[]): string {
     }
   }
 
-  return parts.join('\n\n') + '\n';
+  return `${parts.join('\n\n')}\n`;
 }
 
 export function createTextSerializer(): EditorSerializer {

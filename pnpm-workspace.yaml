@@ -19,7 +19,7 @@ catalog:
   '@vitest/ui': ^4.1.0
   comment-parser: ^1.4.1
   happy-dom: ^20.0.10
-  hono: ^4.10.4
+  hono: 4.11.0
   lefthook: ^1.10.0
   lit: ^3.3.1
   msw: ^2.11.6

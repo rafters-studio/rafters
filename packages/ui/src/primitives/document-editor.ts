@@ -390,7 +390,7 @@ export function createDocumentEditor(options: DocumentEditorOptions): DocumentEd
 
       // Deserialize: try HTML first, fall back to plain text
       let pastedBlocks: BaseBlock[];
-      if (data.html && data.html.trim()) {
+      if (data.html?.trim()) {
         pastedBlocks = htmlSerializer.deserialize(data.html).blocks;
       } else if (data.text) {
         pastedBlocks = textSerializer.deserialize(data.text).blocks;

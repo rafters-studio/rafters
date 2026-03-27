@@ -435,7 +435,8 @@ function generateLightnessProgression(baseLightness: number): Record<string, num
     const t = (stepsFromBase / totalLighterSteps) ** 0.8;
     const calculatedL = baseLightness + (MAX_LIGHT - baseLightness) * t;
 
-    lightness[positions[i]!.toString()] = Math.min(MAX_LIGHT, calculatedL);
+    const pos = positions[i];
+    if (pos !== undefined) lightness[pos.toString()] = Math.min(MAX_LIGHT, calculatedL);
   }
 
   // Base color at 600
@@ -450,7 +451,8 @@ function generateLightnessProgression(baseLightness: number): Record<string, num
     const darkenAmount = (baseLightness - MIN_DARK) * t;
     const calculatedL = Math.max(MIN_DARK, baseLightness - darkenAmount);
 
-    lightness[positions[i]!.toString()] = calculatedL;
+    const pos = positions[i];
+    if (pos !== undefined) lightness[pos.toString()] = calculatedL;
   }
 
   return lightness;

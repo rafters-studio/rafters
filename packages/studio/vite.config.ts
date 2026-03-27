@@ -12,21 +12,15 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),
-      // Alias for project's CSS output - enables HMR for rafters.vars.css
       '@rafters-output': resolve(projectPath, '.rafters', 'output'),
     },
+    // Resolve .js imports to .ts files (workspace packages use .js extensions in TS source)
+    extensions: ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json'],
   },
-  // Handle workspace packages that export TypeScript directly
   optimizeDeps: {
-    include: [
-      '@rafters/color-utils',
-      '@rafters/design-tokens',
-      '@rafters/shared',
-      '@rafters/math-utils',
-    ],
+    include: ['@rafters/color-utils', '@rafters/design-tokens', '@rafters/shared'],
   },
   ssr: {
-    // Don't externalize workspace packages - bundle them
     noExternal: [
       '@rafters/color-utils',
       '@rafters/design-tokens',

@@ -2,7 +2,7 @@
   "$schema": "https://rafters.studio/schemas/namespace-tokens.json",
   "namespace": "spacing",
   "version": "1.0.0",
-  "generatedAt": "2026-03-04T02:18:21.553Z",
+  "generatedAt": "2026-03-27T22:16:20.138Z",
   "tokens": [
     {
       "name": "spacing-base",
@@ -14,10 +14,6 @@
         "base-unit",
         "calculation-reference"
       ],
-      "progressionSystem": "minor-third",
-      "description": "Base spacing unit (0.25rem / 4px at 16px root). Multiply by scale values for actual spacing.",
-      "generatedAt": "2026-03-04T02:18:21.543Z",
-      "containerQueryAware": true,
       "usagePatterns": {
         "do": [
           "Reference in calculations for consistent spacing",
@@ -27,7 +23,11 @@
           "Use directly in components without scaling",
           "Override without understanding the ripple effects"
         ]
-      }
+      },
+      "progressionSystem": "minor-third",
+      "containerQueryAware": true,
+      "description": "Base spacing unit (0.25rem / 4px at 16px root). Multiply by scale values for actual spacing.",
+      "generatedAt": "2026-03-04T02:18:21.543Z"
     },
     {
       "name": "spacing-0",
@@ -39,16 +39,16 @@
         "reset",
         "collapse"
       ],
-      "scalePosition": 0,
-      "progressionSystem": "minor-third",
-      "mathRelationship": "4 * 0",
       "dependsOn": [
         "spacing-base"
       ],
       "generationRule": "calc({spacing-base} * 0)",
+      "progressionSystem": "minor-third",
+      "scalePosition": 0,
+      "mathRelationship": "4 * 0",
+      "containerQueryAware": true,
       "description": "Spacing at scale 0 = 0rem (4px × 0)",
-      "generatedAt": "2026-03-04T02:18:21.543Z",
-      "containerQueryAware": true
+      "generatedAt": "2026-03-04T02:18:21.543Z"
     },
     {
       "name": "spacing-0.5",
@@ -61,16 +61,16 @@
         "icon-gaps",
         "tight-layouts"
       ],
-      "scalePosition": 1,
-      "progressionSystem": "minor-third",
-      "mathRelationship": "4 * 0.5",
       "dependsOn": [
         "spacing-base"
       ],
       "generationRule": "calc({spacing-base} * 0.5)",
+      "progressionSystem": "minor-third",
+      "scalePosition": 1,
+      "mathRelationship": "4 * 0.5",
+      "containerQueryAware": true,
       "description": "Spacing at scale 0.5 = 0.125rem (4px × 0.5)",
-      "generatedAt": "2026-03-04T02:18:21.543Z",
-      "containerQueryAware": true
+      "generatedAt": "2026-03-04T02:18:21.543Z"
     },
     {
       "name": "spacing-1",
@@ -83,16 +83,16 @@
         "icon-gaps",
         "tight-layouts"
       ],
-      "scalePosition": 2,
-      "progressionSystem": "minor-third",
-      "mathRelationship": "4 * 1",
       "dependsOn": [
         "spacing-base"
       ],
       "generationRule": "calc({spacing-base} * 1)",
+      "progressionSystem": "minor-third",
+      "scalePosition": 2,
+      "mathRelationship": "4 * 1",
+      "containerQueryAware": true,
       "description": "Spacing at scale 1 = 0.25rem (4px × 1)",
-      "generatedAt": "2026-03-04T02:18:21.543Z",
-      "containerQueryAware": true
+      "generatedAt": "2026-03-04T02:18:21.543Z"
     },
     {
       "name": "spacing-1.5",
@@ -105,16 +105,16 @@
         "related-elements",
         "form-fields"
       ],
-      "scalePosition": 3,
-      "progressionSystem": "minor-third",
-      "mathRelationship": "4 * 1.5",
       "dependsOn": [
         "spacing-base"
       ],
       "generationRule": "calc({spacing-base} * 1.5)",
+      "progressionSystem": "minor-third",
+      "scalePosition": 3,
+      "mathRelationship": "4 * 1.5",
+      "containerQueryAware": true,
       "description": "Spacing at scale 1.5 = 0.375rem (4px × 1.5)",
-      "generatedAt": "2026-03-04T02:18:21.543Z",
-      "containerQueryAware": true
+      "generatedAt": "2026-03-04T02:18:21.543Z"
     },
     {
       "name": "spacing-2",
@@ -127,16 +127,16 @@
         "related-elements",
         "form-fields"
       ],
-      "scalePosition": 4,
-      "progressionSystem": "minor-third",
-      "mathRelationship": "4 * 2",
       "dependsOn": [
         "spacing-base"
       ],
       "generationRule": "calc({spacing-base} * 2)",
+      "progressionSystem": "minor-third",
+      "scalePosition": 4,
+      "mathRelationship": "4 * 2",
+      "containerQueryAware": true,
       "description": "Spacing at scale 2 = 0.5rem (4px × 2)",
-      "generatedAt": "2026-03-04T02:18:21.543Z",
-      "containerQueryAware": true
+      "generatedAt": "2026-03-04T02:18:21.543Z"
     },
     {
       "name": "spacing-2.5",
@@ -149,16 +149,16 @@
         "related-elements",
         "form-fields"
       ],
-      "scalePosition": 5,
-      "progressionSystem": "minor-third",
-      "mathRelationship": "4 * 2.5",
       "dependsOn": [
         "spacing-base"
       ],
       "generationRule": "calc({spacing-base} * 2.5)",
+      "progressionSystem": "minor-third",
+      "scalePosition": 5,
+      "mathRelationship": "4 * 2.5",
+      "containerQueryAware": true,
       "description": "Spacing at scale 2.5 = 0.625rem (4px × 2.5)",
-      "generatedAt": "2026-03-04T02:18:21.543Z",
-      "containerQueryAware": true
+      "generatedAt": "2026-03-04T02:18:21.543Z"
     },
     {
       "name": "spacing-3",
@@ -171,16 +171,16 @@
         "related-elements",
         "form-fields"
       ],
-      "scalePosition": 6,
-      "progressionSystem": "minor-third",
-      "mathRelationship": "4 * 3",
       "dependsOn": [
         "spacing-base"
       ],
       "generationRule": "calc({spacing-base} * 3)",
+      "progressionSystem": "minor-third",
+      "scalePosition": 6,
+      "mathRelationship": "4 * 3",
+      "containerQueryAware": true,
       "description": "Spacing at scale 3 = 0.75rem (4px × 3)",
-      "generatedAt": "2026-03-04T02:18:21.543Z",
-      "containerQueryAware": true
+      "generatedAt": "2026-03-04T02:18:21.543Z"
     },
     {
       "name": "spacing-3.5",
@@ -193,20 +193,20 @@
         "related-elements",
         "form-fields"
       ],
-      "scalePosition": 7,
-      "progressionSystem": "minor-third",
-      "mathRelationship": "4 * 3.5",
       "dependsOn": [
         "spacing-base"
       ],
       "generationRule": "calc({spacing-base} * 3.5)",
+      "progressionSystem": "minor-third",
+      "scalePosition": 7,
+      "mathRelationship": "4 * 3.5",
+      "containerQueryAware": true,
       "description": "Spacing at scale 3.5 = 0.875rem (4px × 3.5)",
-      "generatedAt": "2026-03-04T02:18:21.543Z",
-      "containerQueryAware": true
+      "generatedAt": "2026-03-04T02:18:21.543Z"
     },
     {
       "name": "spacing-4",
-      "value": "1rem",
+      "value": "2rem",
       "category": "spacing",
       "namespace": "spacing",
       "semanticMeaning": "Small spacing for component internals and related elements",
@@ -215,16 +215,21 @@
         "related-elements",
         "form-fields"
       ],
-      "scalePosition": 8,
-      "progressionSystem": "minor-third",
-      "mathRelationship": "4 * 4",
+      "userOverride": {
+        "previousValue": "1rem",
+        "reason": "Huttspawn test"
+      },
+      "computedValue": "calc(0.25rem * 4)",
       "dependsOn": [
         "spacing-base"
       ],
       "generationRule": "calc({spacing-base} * 4)",
+      "progressionSystem": "minor-third",
+      "scalePosition": 8,
+      "mathRelationship": "4 * 4",
+      "containerQueryAware": true,
       "description": "Spacing at scale 4 = 1rem (4px × 4)",
-      "generatedAt": "2026-03-04T02:18:21.543Z",
-      "containerQueryAware": true
+      "generatedAt": "2026-03-04T02:18:21.543Z"
     },
     {
       "name": "spacing-5",
@@ -237,16 +242,16 @@
         "card-padding",
         "list-gaps"
       ],
-      "scalePosition": 9,
-      "progressionSystem": "minor-third",
-      "mathRelationship": "4 * 5",
       "dependsOn": [
         "spacing-base"
       ],
       "generationRule": "calc({spacing-base} * 5)",
+      "progressionSystem": "minor-third",
+      "scalePosition": 9,
+      "mathRelationship": "4 * 5",
+      "containerQueryAware": true,
       "description": "Spacing at scale 5 = 1.25rem (4px × 5)",
-      "generatedAt": "2026-03-04T02:18:21.543Z",
-      "containerQueryAware": true
+      "generatedAt": "2026-03-04T02:18:21.543Z"
     },
     {
       "name": "spacing-6",
@@ -259,16 +264,16 @@
         "card-padding",
         "list-gaps"
       ],
-      "scalePosition": 10,
-      "progressionSystem": "minor-third",
-      "mathRelationship": "4 * 6",
       "dependsOn": [
         "spacing-base"
       ],
       "generationRule": "calc({spacing-base} * 6)",
+      "progressionSystem": "minor-third",
+      "scalePosition": 10,
+      "mathRelationship": "4 * 6",
+      "containerQueryAware": true,
       "description": "Spacing at scale 6 = 1.5rem (4px × 6)",
-      "generatedAt": "2026-03-04T02:18:21.543Z",
-      "containerQueryAware": true
+      "generatedAt": "2026-03-04T02:18:21.543Z"
     },
     {
       "name": "spacing-7",
@@ -281,16 +286,16 @@
         "card-padding",
         "list-gaps"
       ],
-      "scalePosition": 11,
-      "progressionSystem": "minor-third",
-      "mathRelationship": "4 * 7",
       "dependsOn": [
         "spacing-base"
       ],
       "generationRule": "calc({spacing-base} * 7)",
+      "progressionSystem": "minor-third",
+      "scalePosition": 11,
+      "mathRelationship": "4 * 7",
+      "containerQueryAware": true,
       "description": "Spacing at scale 7 = 1.75rem (4px × 7)",
-      "generatedAt": "2026-03-04T02:18:21.543Z",
-      "containerQueryAware": true
+      "generatedAt": "2026-03-04T02:18:21.543Z"
     },
     {
       "name": "spacing-8",
@@ -303,16 +308,16 @@
         "card-padding",
         "list-gaps"
       ],
-      "scalePosition": 12,
-      "progressionSystem": "minor-third",
-      "mathRelationship": "4 * 8",
       "dependsOn": [
         "spacing-base"
       ],
       "generationRule": "calc({spacing-base} * 8)",
+      "progressionSystem": "minor-third",
+      "scalePosition": 12,
+      "mathRelationship": "4 * 8",
+      "containerQueryAware": true,
       "description": "Spacing at scale 8 = 2rem (4px × 8)",
-      "generatedAt": "2026-03-04T02:18:21.543Z",
-      "containerQueryAware": true
+      "generatedAt": "2026-03-04T02:18:21.543Z"
     },
     {
       "name": "spacing-9",
@@ -325,16 +330,16 @@
         "card-padding",
         "list-gaps"
       ],
-      "scalePosition": 13,
-      "progressionSystem": "minor-third",
-      "mathRelationship": "4 * 9",
       "dependsOn": [
         "spacing-base"
       ],
       "generationRule": "calc({spacing-base} * 9)",
+      "progressionSystem": "minor-third",
+      "scalePosition": 13,
+      "mathRelationship": "4 * 9",
+      "containerQueryAware": true,
       "description": "Spacing at scale 9 = 2.25rem (4px × 9)",
-      "generatedAt": "2026-03-04T02:18:21.543Z",
-      "containerQueryAware": true
+      "generatedAt": "2026-03-04T02:18:21.543Z"
     },
     {
       "name": "spacing-10",
@@ -347,16 +352,16 @@
         "card-padding",
         "list-gaps"
       ],
-      "scalePosition": 14,
-      "progressionSystem": "minor-third",
-      "mathRelationship": "4 * 10",
       "dependsOn": [
         "spacing-base"
       ],
       "generationRule": "calc({spacing-base} * 10)",
+      "progressionSystem": "minor-third",
+      "scalePosition": 14,
+      "mathRelationship": "4 * 10",
+      "containerQueryAware": true,
       "description": "Spacing at scale 10 = 2.5rem (4px × 10)",
-      "generatedAt": "2026-03-04T02:18:21.543Z",
-      "containerQueryAware": true
+      "generatedAt": "2026-03-04T02:18:21.543Z"
     },
     {
       "name": "spacing-11",
@@ -369,16 +374,16 @@
         "card-padding",
         "list-gaps"
       ],
-      "scalePosition": 15,
-      "progressionSystem": "minor-third",
-      "mathRelationship": "4 * 11",
       "dependsOn": [
         "spacing-base"
       ],
       "generationRule": "calc({spacing-base} * 11)",
+      "progressionSystem": "minor-third",
+      "scalePosition": 15,
+      "mathRelationship": "4 * 11",
+      "containerQueryAware": true,
       "description": "Spacing at scale 11 = 2.75rem (4px × 11)",
-      "generatedAt": "2026-03-04T02:18:21.543Z",
-      "containerQueryAware": true
+      "generatedAt": "2026-03-04T02:18:21.543Z"
     },
     {
       "name": "spacing-12",
@@ -391,16 +396,16 @@
         "card-padding",
         "list-gaps"
       ],
-      "scalePosition": 16,
-      "progressionSystem": "minor-third",
-      "mathRelationship": "4 * 12",
       "dependsOn": [
         "spacing-base"
       ],
       "generationRule": "calc({spacing-base} * 12)",
+      "progressionSystem": "minor-third",
+      "scalePosition": 16,
+      "mathRelationship": "4 * 12",
+      "containerQueryAware": true,
       "description": "Spacing at scale 12 = 3rem (4px × 12)",
-      "generatedAt": "2026-03-04T02:18:21.543Z",
-      "containerQueryAware": true
+      "generatedAt": "2026-03-04T02:18:21.543Z"
     },
     {
       "name": "spacing-14",
@@ -413,16 +418,16 @@
         "section-margins",
         "page-padding"
       ],
-      "scalePosition": 17,
-      "progressionSystem": "minor-third",
-      "mathRelationship": "4 * 14",
       "dependsOn": [
         "spacing-base"
       ],
       "generationRule": "calc({spacing-base} * 14)",
+      "progressionSystem": "minor-third",
+      "scalePosition": 17,
+      "mathRelationship": "4 * 14",
+      "containerQueryAware": true,
       "description": "Spacing at scale 14 = 3.5rem (4px × 14)",
-      "generatedAt": "2026-03-04T02:18:21.543Z",
-      "containerQueryAware": true
+      "generatedAt": "2026-03-04T02:18:21.543Z"
     },
     {
       "name": "spacing-16",
@@ -435,16 +440,16 @@
         "section-margins",
         "page-padding"
       ],
-      "scalePosition": 18,
-      "progressionSystem": "minor-third",
-      "mathRelationship": "4 * 16",
       "dependsOn": [
         "spacing-base"
       ],
       "generationRule": "calc({spacing-base} * 16)",
+      "progressionSystem": "minor-third",
+      "scalePosition": 18,
+      "mathRelationship": "4 * 16",
+      "containerQueryAware": true,
       "description": "Spacing at scale 16 = 4rem (4px × 16)",
-      "generatedAt": "2026-03-04T02:18:21.543Z",
-      "containerQueryAware": true
+      "generatedAt": "2026-03-04T02:18:21.543Z"
     },
     {
       "name": "spacing-20",
@@ -457,16 +462,16 @@
         "section-margins",
         "page-padding"
       ],
-      "scalePosition": 19,
-      "progressionSystem": "minor-third",
-      "mathRelationship": "4 * 20",
       "dependsOn": [
         "spacing-base"
       ],
       "generationRule": "calc({spacing-base} * 20)",
+      "progressionSystem": "minor-third",
+      "scalePosition": 19,
+      "mathRelationship": "4 * 20",
+      "containerQueryAware": true,
       "description": "Spacing at scale 20 = 5rem (4px × 20)",
-      "generatedAt": "2026-03-04T02:18:21.543Z",
-      "containerQueryAware": true
+      "generatedAt": "2026-03-04T02:18:21.543Z"
     },
     {
       "name": "spacing-24",
@@ -479,16 +484,16 @@
         "section-margins",
         "page-padding"
       ],
-      "scalePosition": 20,
-      "progressionSystem": "minor-third",
-      "mathRelationship": "4 * 24",
       "dependsOn": [
         "spacing-base"
       ],
       "generationRule": "calc({spacing-base} * 24)",
+      "progressionSystem": "minor-third",
+      "scalePosition": 20,
+      "mathRelationship": "4 * 24",
+      "containerQueryAware": true,
       "description": "Spacing at scale 24 = 6rem (4px × 24)",
-      "generatedAt": "2026-03-04T02:18:21.543Z",
-      "containerQueryAware": true
+      "generatedAt": "2026-03-04T02:18:21.543Z"
     },
     {
       "name": "spacing-28",
@@ -501,16 +506,16 @@
         "section-margins",
         "page-padding"
       ],
-      "scalePosition": 21,
-      "progressionSystem": "minor-third",
-      "mathRelationship": "4 * 28",
       "dependsOn": [
         "spacing-base"
       ],
       "generationRule": "calc({spacing-base} * 28)",
+      "progressionSystem": "minor-third",
+      "scalePosition": 21,
+      "mathRelationship": "4 * 28",
+      "containerQueryAware": true,
       "description": "Spacing at scale 28 = 7rem (4px × 28)",
-      "generatedAt": "2026-03-04T02:18:21.543Z",
-      "containerQueryAware": true
+      "generatedAt": "2026-03-04T02:18:21.543Z"
     },
     {
       "name": "spacing-32",
@@ -523,16 +528,16 @@
         "section-margins",
         "page-padding"
       ],
-      "scalePosition": 22,
-      "progressionSystem": "minor-third",
-      "mathRelationship": "4 * 32",
       "dependsOn": [
         "spacing-base"
       ],
       "generationRule": "calc({spacing-base} * 32)",
+      "progressionSystem": "minor-third",
+      "scalePosition": 22,
+      "mathRelationship": "4 * 32",
+      "containerQueryAware": true,
       "description": "Spacing at scale 32 = 8rem (4px × 32)",
-      "generatedAt": "2026-03-04T02:18:21.543Z",
-      "containerQueryAware": true
+      "generatedAt": "2026-03-04T02:18:21.543Z"
     },
     {
       "name": "spacing-36",
@@ -545,16 +550,16 @@
         "page-margins",
         "major-sections"
       ],
-      "scalePosition": 23,
-      "progressionSystem": "minor-third",
-      "mathRelationship": "4 * 36",
       "dependsOn": [
         "spacing-base"
       ],
       "generationRule": "calc({spacing-base} * 36)",
+      "progressionSystem": "minor-third",
+      "scalePosition": 23,
+      "mathRelationship": "4 * 36",
+      "containerQueryAware": true,
       "description": "Spacing at scale 36 = 9rem (4px × 36)",
-      "generatedAt": "2026-03-04T02:18:21.543Z",
-      "containerQueryAware": true
+      "generatedAt": "2026-03-04T02:18:21.543Z"
     },
     {
       "name": "spacing-40",
@@ -567,16 +572,16 @@
         "page-margins",
         "major-sections"
       ],
-      "scalePosition": 24,
-      "progressionSystem": "minor-third",
-      "mathRelationship": "4 * 40",
       "dependsOn": [
         "spacing-base"
       ],
       "generationRule": "calc({spacing-base} * 40)",
+      "progressionSystem": "minor-third",
+      "scalePosition": 24,
+      "mathRelationship": "4 * 40",
+      "containerQueryAware": true,
       "description": "Spacing at scale 40 = 10rem (4px × 40)",
-      "generatedAt": "2026-03-04T02:18:21.543Z",
-      "containerQueryAware": true
+      "generatedAt": "2026-03-04T02:18:21.543Z"
     },
     {
       "name": "spacing-44",
@@ -589,16 +594,16 @@
         "page-margins",
         "major-sections"
       ],
-      "scalePosition": 25,
-      "progressionSystem": "minor-third",
-      "mathRelationship": "4 * 44",
       "dependsOn": [
         "spacing-base"
       ],
       "generationRule": "calc({spacing-base} * 44)",
+      "progressionSystem": "minor-third",
+      "scalePosition": 25,
+      "mathRelationship": "4 * 44",
+      "containerQueryAware": true,
       "description": "Spacing at scale 44 = 11rem (4px × 44)",
-      "generatedAt": "2026-03-04T02:18:21.543Z",
-      "containerQueryAware": true
+      "generatedAt": "2026-03-04T02:18:21.543Z"
     },
     {
       "name": "spacing-48",
@@ -611,16 +616,16 @@
         "page-margins",
         "major-sections"
       ],
-      "scalePosition": 26,
-      "progressionSystem": "minor-third",
-      "mathRelationship": "4 * 48",
       "dependsOn": [
         "spacing-base"
       ],
       "generationRule": "calc({spacing-base} * 48)",
+      "progressionSystem": "minor-third",
+      "scalePosition": 26,
+      "mathRelationship": "4 * 48",
+      "containerQueryAware": true,
       "description": "Spacing at scale 48 = 12rem (4px × 48)",
-      "generatedAt": "2026-03-04T02:18:21.543Z",
-      "containerQueryAware": true
+      "generatedAt": "2026-03-04T02:18:21.543Z"
     },
     {
       "name": "spacing-52",
@@ -633,16 +638,16 @@
         "page-margins",
         "major-sections"
       ],
-      "scalePosition": 27,
-      "progressionSystem": "minor-third",
-      "mathRelationship": "4 * 52",
       "dependsOn": [
         "spacing-base"
       ],
       "generationRule": "calc({spacing-base} * 52)",
+      "progressionSystem": "minor-third",
+      "scalePosition": 27,
+      "mathRelationship": "4 * 52",
+      "containerQueryAware": true,
       "description": "Spacing at scale 52 = 13rem (4px × 52)",
-      "generatedAt": "2026-03-04T02:18:21.543Z",
-      "containerQueryAware": true
+      "generatedAt": "2026-03-04T02:18:21.543Z"
     },
     {
       "name": "spacing-56",
@@ -655,16 +660,16 @@
         "page-margins",
         "major-sections"
       ],
-      "scalePosition": 28,
-      "progressionSystem": "minor-third",
-      "mathRelationship": "4 * 56",
       "dependsOn": [
         "spacing-base"
       ],
       "generationRule": "calc({spacing-base} * 56)",
+      "progressionSystem": "minor-third",
+      "scalePosition": 28,
+      "mathRelationship": "4 * 56",
+      "containerQueryAware": true,
       "description": "Spacing at scale 56 = 14rem (4px × 56)",
-      "generatedAt": "2026-03-04T02:18:21.543Z",
-      "containerQueryAware": true
+      "generatedAt": "2026-03-04T02:18:21.543Z"
     },
     {
       "name": "spacing-60",
@@ -677,16 +682,16 @@
         "page-margins",
         "major-sections"
       ],
-      "scalePosition": 29,
-      "progressionSystem": "minor-third",
-      "mathRelationship": "4 * 60",
       "dependsOn": [
         "spacing-base"
       ],
       "generationRule": "calc({spacing-base} * 60)",
+      "progressionSystem": "minor-third",
+      "scalePosition": 29,
+      "mathRelationship": "4 * 60",
+      "containerQueryAware": true,
       "description": "Spacing at scale 60 = 15rem (4px × 60)",
-      "generatedAt": "2026-03-04T02:18:21.543Z",
-      "containerQueryAware": true
+      "generatedAt": "2026-03-04T02:18:21.543Z"
     },
     {
       "name": "spacing-64",
@@ -699,16 +704,16 @@
         "page-margins",
         "major-sections"
       ],
-      "scalePosition": 30,
-      "progressionSystem": "minor-third",
-      "mathRelationship": "4 * 64",
       "dependsOn": [
         "spacing-base"
       ],
       "generationRule": "calc({spacing-base} * 64)",
+      "progressionSystem": "minor-third",
+      "scalePosition": 30,
+      "mathRelationship": "4 * 64",
+      "containerQueryAware": true,
       "description": "Spacing at scale 64 = 16rem (4px × 64)",
-      "generatedAt": "2026-03-04T02:18:21.543Z",
-      "containerQueryAware": true
+      "generatedAt": "2026-03-04T02:18:21.543Z"
     },
     {
       "name": "spacing-72",
@@ -721,16 +726,16 @@
         "page-margins",
         "major-sections"
       ],
-      "scalePosition": 31,
-      "progressionSystem": "minor-third",
-      "mathRelationship": "4 * 72",
       "dependsOn": [
         "spacing-base"
       ],
       "generationRule": "calc({spacing-base} * 72)",
+      "progressionSystem": "minor-third",
+      "scalePosition": 31,
+      "mathRelationship": "4 * 72",
+      "containerQueryAware": true,
       "description": "Spacing at scale 72 = 18rem (4px × 72)",
-      "generatedAt": "2026-03-04T02:18:21.543Z",
-      "containerQueryAware": true
+      "generatedAt": "2026-03-04T02:18:21.543Z"
     },
     {
       "name": "spacing-80",
@@ -743,16 +748,16 @@
         "page-margins",
         "major-sections"
       ],
-      "scalePosition": 32,
-      "progressionSystem": "minor-third",
-      "mathRelationship": "4 * 80",
       "dependsOn": [
         "spacing-base"
       ],
       "generationRule": "calc({spacing-base} * 80)",
+      "progressionSystem": "minor-third",
+      "scalePosition": 32,
+      "mathRelationship": "4 * 80",
+      "containerQueryAware": true,
       "description": "Spacing at scale 80 = 20rem (4px × 80)",
-      "generatedAt": "2026-03-04T02:18:21.543Z",
-      "containerQueryAware": true
+      "generatedAt": "2026-03-04T02:18:21.543Z"
     },
     {
       "name": "spacing-96",
@@ -765,16 +770,16 @@
         "page-margins",
         "major-sections"
       ],
-      "scalePosition": 33,
-      "progressionSystem": "minor-third",
-      "mathRelationship": "4 * 96",
       "dependsOn": [
         "spacing-base"
       ],
       "generationRule": "calc({spacing-base} * 96)",
+      "progressionSystem": "minor-third",
+      "scalePosition": 33,
+      "mathRelationship": "4 * 96",
+      "containerQueryAware": true,
       "description": "Spacing at scale 96 = 24rem (4px × 96)",
-      "generatedAt": "2026-03-04T02:18:21.543Z",
-      "containerQueryAware": true
+      "generatedAt": "2026-03-04T02:18:21.543Z"
     },
     {
       "name": "spacing-progression",
@@ -782,9 +787,6 @@
       "category": "spacing",
       "namespace": "spacing",
       "semanticMeaning": "Metadata about the spacing progression system",
-      "description": "Spacing uses minor-third progression (ratio 1.2) from base 0.25rem. Sample values: 0, 4, 5, 6, 7...",
-      "generatedAt": "2026-03-04T02:18:21.543Z",
-      "containerQueryAware": false,
       "usagePatterns": {
         "do": [
           "Reference when adding custom spacing values",
@@ -793,7 +795,10 @@
         "never": [
           "Use raw values in production CSS"
         ]
-      }
+      },
+      "containerQueryAware": false,
+      "description": "Spacing uses minor-third progression (ratio 1.2) from base 0.25rem. Sample values: 0, 4, 5, 6, 7...",
+      "generatedAt": "2026-03-04T02:18:21.543Z"
     }
   ]
 }
