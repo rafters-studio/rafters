@@ -2166,6 +2166,7 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
             />
           )}
           {/* Document surface: single contentEditable, blocks as semantic HTML */}
+          {/* biome-ignore lint/a11y/useSemanticElements: contentEditable div is the correct pattern for block editors */}
           <div
             ref={canvasRef}
             role="textbox"

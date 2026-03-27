@@ -1,0 +1,21 @@
+{
+  "name": "@rafters/registry-data",
+  "version": "0.0.19",
+  "description": "Pre-built registry JSON for the Rafters design system",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    "./registry/*": "./registry/*"
+  },
+  "files": [
+    "registry"
+  ],
+  "scripts": {
+    "build": "node scripts/build.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rafters-studio/rafters.git",
+    "directory": "packages/registry-data"
+  }
+}

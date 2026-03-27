@@ -28,8 +28,7 @@ import {
 } from '@/components/ui/editor';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import { Blockquote, H1, H2, H3, Muted, P } from '@/components/ui/typography';
+import { H1, H3, Muted, P } from '@/components/ui/typography';
 import type { BlockPaletteItem } from '@/lib/primitives/block-palette';
 import classy from '@/lib/primitives/classy';
 
