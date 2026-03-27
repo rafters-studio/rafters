@@ -1,0 +1,69 @@
+---
+/**
+ * Semantic container component for layout structure and content boundaries (Astro)
+ *
+ * Zero client JavaScript. Server-rendered markup with Tailwind tokens.
+ * Same variants, sizes, and accessibility as the React counterpart.
+ *
+ * @cognitive-load 0/10
+ * @accessibility Semantic HTML elements with proper landmark roles
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import {
+  type ContainerBackground,
+  containerArticleTypography,
+  containerBackgroundClasses,
+  containerGapClasses,
+  containerPaddingClasses,
+  containerSizeClasses,
+  containerSizeGapScale,
+} from './container.classes';
+
+interface Props extends HTMLAttributes<'div'> {
+  as?: 'div' | 'main' | 'section' | 'article' | 'aside';
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | '6xl' | '7xl' | 'full';
+  padding?: '0' | '1' | '2' | '3' | '4' | '5' | '6' | '8' | '10' | '12' | '16' | '20' | '24';
+  gap?: boolean | '0' | '1' | '2' | '3' | '4' | '5' | '6' | '8' | '10' | '12' | '16' | '20' | '24';
+  query?: boolean;
+  queryName?: string;
+  background?: ContainerBackground;
+}
+
+const {
+  as: Element = 'div',
+  size,
+  padding,
+  gap,
+  query = true,
+  queryName,
+  background,
+  class: className,
+  ...attrs
+} = Astro.props;
+
+const isArticle = Element === 'article';
+
+const resolvedGap = gap === true
+  ? (size && containerSizeGapScale[size]) || '6'
+  : typeof gap === 'string' ? gap : undefined;
+
+const classes = classy(
+  query && '@container w-full',
+  size && containerSizeClasses[size],
+  size && size !== 'full' && 'mx-auto',
+  padding && containerPaddingClasses[padding],
+  resolvedGap && containerGapClasses[resolvedGap],
+  background && containerBackgroundClasses[background],
+  isArticle && containerArticleTypography,
+  className,
+);
+
+const containerStyle = queryName ? `container-name: ${queryName}` : undefined;
+---
+
+{Element === 'div' && <div class={classes} style={containerStyle} {...attrs}><slot /></div>}
+{Element === 'main' && <main class={classes} style={containerStyle} {...attrs}><slot /></main>}
+{Element === 'section' && <section class={classes} style={containerStyle} {...attrs}><slot /></section>}
+{Element === 'article' && <article class={classes} style={containerStyle} {...attrs}><slot /></article>}
+{Element === 'aside' && <aside class={classes} style={containerStyle} {...attrs}><slot /></aside>}

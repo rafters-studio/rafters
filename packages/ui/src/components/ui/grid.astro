@@ -1,0 +1,58 @@
+---
+/**
+ * Intelligent layout grid (Astro) - Zero client JavaScript.
+ *
+ * Same presets (linear, golden, bento), gap, columns as the React version.
+ * No React Context needed -- preset drives CSS classes directly.
+ *
+ * @cognitive-load 4/10
+ * @accessibility Optional ARIA grid role for interactive layouts
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import {
+  type BentoPattern,
+  type GridPreset,
+  gridBentoPatterns,
+  gridColumnClasses,
+  gridGapClasses,
+  gridGoldenClasses,
+} from './grid.classes';
+
+interface Props extends HTMLAttributes<'div'> {
+  preset?: GridPreset;
+  pattern?: BentoPattern;
+  columns?: 1 | 2 | 3 | 4 | 5 | 6 | 'auto';
+  gap?: '0' | '1' | '2' | '3' | '4' | '5' | '6' | '8' | '10' | '12';
+  role?: 'presentation' | 'grid';
+}
+
+const {
+  preset = 'linear',
+  pattern,
+  columns = 'auto',
+  gap = '4',
+  role = 'presentation',
+  class: className,
+  ...attrs
+} = Astro.props;
+
+const classes = classy(
+  'grid',
+  gap && gridGapClasses[gap],
+  preset === 'linear' && gridColumnClasses[columns],
+  preset === 'golden' && gridGoldenClasses,
+  preset === 'bento' && pattern && gridBentoPatterns[pattern],
+  preset === 'linear' && columns === 'auto' && 'sm:grid-cols-2 lg:grid-cols-3',
+  className,
+);
+---
+
+<div
+  role={role === 'grid' ? 'grid' : undefined}
+  class={classes}
+  data-preset={preset}
+  {...attrs}
+>
+  <slot />
+</div>

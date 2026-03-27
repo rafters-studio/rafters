@@ -33,11 +33,19 @@
  */
 import * as React from 'react';
 import classy from '../../primitives/classy';
+import {
+  type BentoPattern,
+  type GridPreset,
+  gridBentoPatterns,
+  gridColSpanClasses,
+  gridColumnClasses,
+  gridGapClasses,
+  gridGoldenClasses,
+  gridRowSpanClasses,
+} from './grid.classes';
 
 // ==================== Types ====================
 
-type BentoPattern = 'editorial' | 'dashboard' | 'feature' | 'portfolio';
-type GridPreset = 'linear' | 'golden' | 'bento';
 type ContentPriority = 'primary' | 'secondary' | 'tertiary';
 
 // ==================== Context ====================
@@ -129,43 +137,10 @@ export interface GridProps extends React.HTMLAttributes<HTMLDivElement> {
   onConfigChange?: ((config: GridConfig) => void) | undefined;
 }
 
-const gapClasses: Record<string, string> = {
-  '0': 'gap-0',
-  '1': 'gap-1',
-  '2': 'gap-2',
-  '3': 'gap-3',
-  '4': 'gap-4',
-  '5': 'gap-5',
-  '6': 'gap-6',
-  '8': 'gap-8',
-  '10': 'gap-10',
-  '12': 'gap-12',
-};
-
-const columnClasses: Record<string | number, string> = {
-  1: 'grid-cols-1',
-  2: 'grid-cols-2',
-  3: 'grid-cols-3',
-  4: 'grid-cols-4',
-  5: 'grid-cols-5',
-  6: 'grid-cols-6',
-  auto: 'grid-cols-1 @sm:grid-cols-2 @lg:grid-cols-3 @xl:grid-cols-4',
-};
-
-// Bento pattern grid definitions
-const bentoPatterns: Record<BentoPattern, string> = {
-  // Hero (2x2) + 2 side items
-  editorial: 'grid-cols-3 grid-rows-2 [&>*:first-child]:col-span-2 [&>*:first-child]:row-span-2',
-  // Primary metric large + supporting smaller
-  dashboard: 'grid-cols-4 grid-rows-2 [&>*:first-child]:col-span-2 [&>*:first-child]:row-span-2',
-  // Feature left + benefits right
-  feature: 'grid-cols-2 [&>*:first-child]:row-span-2',
-  // Featured large + gallery grid
-  portfolio: 'grid-cols-3 grid-rows-3 [&>*:first-child]:col-span-2 [&>*:first-child]:row-span-2',
-};
-
-// Golden ratio: approximately 1.618:1, we use 2:1 for grid simplicity
-const goldenClasses = 'grid-cols-3 [&>*:first-child]:col-span-2';
+const gapClasses = gridGapClasses;
+const columnClasses = gridColumnClasses;
+const bentoPatterns = gridBentoPatterns;
+const goldenClasses = gridGoldenClasses;
 
 function GridRoot({
   preset = 'linear',
@@ -240,18 +215,8 @@ export interface GridItemProps extends React.HTMLAttributes<HTMLDivElement> {
   rowSpan?: 1 | 2 | 3;
 }
 
-const colSpanClasses: Record<number, string> = {
-  1: 'col-span-1',
-  2: 'col-span-2',
-  3: 'col-span-3',
-  4: 'col-span-4',
-};
-
-const rowSpanClasses: Record<number, string> = {
-  1: 'row-span-1',
-  2: 'row-span-2',
-  3: 'row-span-3',
-};
+const colSpanClasses = gridColSpanClasses;
+const rowSpanClasses = gridRowSpanClasses;
 
 /**
  * Drop zone placeholder for empty grid items in edit mode

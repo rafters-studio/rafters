@@ -1,0 +1,25 @@
+---
+/**
+ * Grid Item (Astro) - Zero client JavaScript.
+ * Child of Grid with optional col/row span overrides.
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { gridColSpanClasses, gridRowSpanClasses } from './grid.classes';
+
+interface Props extends HTMLAttributes<'div'> {
+  priority?: 'primary' | 'secondary' | 'tertiary';
+  colSpan?: 1 | 2 | 3 | 4;
+  rowSpan?: 1 | 2 | 3;
+}
+
+const { priority, colSpan, rowSpan, class: className, ...attrs } = Astro.props;
+
+const classes = classy(
+  colSpan && gridColSpanClasses[colSpan],
+  rowSpan && gridRowSpanClasses[rowSpan],
+  className,
+);
+---
+
+<div class={classes || undefined} data-priority={priority} {...attrs}><slot /></div>

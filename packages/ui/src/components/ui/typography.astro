@@ -1,0 +1,40 @@
+---
+/**
+ * Typography components (Astro) - Zero client JavaScript.
+ *
+ * Import individual components:
+ *   import H1 from '@/components/ui/typography/h1.astro'
+ *
+ * Or use this file directly with the `as` prop:
+ *   import Typography from '@/components/ui/typography.astro'
+ *   <Typography as="h1">Title</Typography>
+ *
+ * @cognitive-load 1/10
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { typographyClasses } from './typography.classes';
+
+type TypographyElement = 'h1' | 'h2' | 'h3' | 'h4' | 'p' | 'blockquote' | 'code' | 'span';
+type TypographyVariant = 'h1' | 'h2' | 'h3' | 'h4' | 'p' | 'lead' | 'large' | 'small' | 'muted' | 'code' | 'blockquote';
+
+interface Props extends HTMLAttributes<'div'> {
+  as?: TypographyElement;
+  variant?: TypographyVariant;
+}
+
+const { as: Element = 'p', variant, class: className, ...attrs } = Astro.props;
+
+const resolvedVariant = variant ?? (Element === 'span' ? 'p' : Element as TypographyVariant);
+const variantClass = typographyClasses[resolvedVariant] ?? typographyClasses.p;
+const classes = classy(variantClass, className);
+---
+
+{Element === 'h1' && <h1 class={classes} {...attrs}><slot /></h1>}
+{Element === 'h2' && <h2 class={classes} {...attrs}><slot /></h2>}
+{Element === 'h3' && <h3 class={classes} {...attrs}><slot /></h3>}
+{Element === 'h4' && <h4 class={classes} {...attrs}><slot /></h4>}
+{Element === 'p' && <p class={classes} {...attrs}><slot /></p>}
+{Element === 'blockquote' && <blockquote class={classes} {...attrs}><slot /></blockquote>}
+{Element === 'code' && <code class={classes} {...attrs}><slot /></code>}
+{Element === 'span' && <span class={classes} {...attrs}><slot /></span>}
