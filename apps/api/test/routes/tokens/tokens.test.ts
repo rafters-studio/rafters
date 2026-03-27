@@ -1,8 +1,6 @@
 import { SELF } from 'cloudflare:test';
-import { TokenSchema } from '@rafters/shared';
 import { buildColorSystem } from '@rafters/design-tokens';
-import { zopiped } from 'zocker';
-import { describe, expect, it, beforeAll } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { initializeRegistry } from '../../../src/routes/tokens/tokens.handlers';
 
 // =============================================================================
@@ -23,7 +21,7 @@ describe('GET /tokens/system', () => {
     const res = await SELF.fetch('http://localhost/tokens/system');
     expect(res.status).toBe(200);
 
-    const json = await res.json() as Record<string, unknown>;
+    const json = (await res.json()) as Record<string, unknown>;
     expect(json.namespaces).toBeInstanceOf(Array);
     expect((json.namespaces as string[]).length).toBeGreaterThanOrEqual(11);
     expect(json.tokenCount).toBeGreaterThanOrEqual(500);
@@ -31,7 +29,7 @@ describe('GET /tokens/system', () => {
 
   it('includes all expected namespaces', async () => {
     const res = await SELF.fetch('http://localhost/tokens/system');
-    const json = await res.json() as Record<string, unknown>;
+    const json = (await res.json()) as Record<string, unknown>;
     const namespaces = json.namespaces as string[];
 
     expect(namespaces).toContain('color');
@@ -49,7 +47,7 @@ describe('GET /tokens', () => {
     const res = await SELF.fetch('http://localhost/tokens');
     expect(res.status).toBe(200);
 
-    const json = await res.json() as Record<string, unknown>;
+    const json = (await res.json()) as Record<string, unknown>;
     expect(json.tokenCount).toBeGreaterThanOrEqual(500);
     expect(json.namespaces).toBeInstanceOf(Array);
 
@@ -61,12 +59,15 @@ describe('GET /tokens', () => {
 
   it('color namespace has tokens with ColorValue objects', async () => {
     const res = await SELF.fetch('http://localhost/tokens');
-    const json = await res.json() as Record<string, unknown>;
+    const json = (await res.json()) as Record<string, unknown>;
     const tokens = json.tokens as Record<string, Array<Record<string, unknown>>>;
     const colorTokens = tokens.color ?? [];
 
     const familyToken = colorTokens.find(
-      (t) => typeof t.value === 'object' && t.value !== null && 'scale' in (t.value as Record<string, unknown>),
+      (t) =>
+        typeof t.value === 'object' &&
+        t.value !== null &&
+        'scale' in (t.value as Record<string, unknown>),
     );
     expect(familyToken).toBeTruthy();
 
@@ -81,7 +82,7 @@ describe('GET /tokens/:namespace', () => {
     const res = await SELF.fetch('http://localhost/tokens/spacing');
     expect(res.status).toBe(200);
 
-    const json = await res.json() as Record<string, unknown>;
+    const json = (await res.json()) as Record<string, unknown>;
     expect(json.namespace).toBe('spacing');
     expect(json.count).toBeGreaterThan(30);
     expect((json.tokens as unknown[]).length).toBe(json.count);
@@ -94,7 +95,7 @@ describe('GET /tokens/:namespace', () => {
 
   it('spacing tokens have mathematical progression', async () => {
     const res = await SELF.fetch('http://localhost/tokens/spacing');
-    const json = await res.json() as Record<string, unknown>;
+    const json = (await res.json()) as Record<string, unknown>;
     const tokens = json.tokens as Array<Record<string, unknown>>;
 
     const spacing1 = tokens.find((t) => t.name === 'spacing-1');
@@ -112,7 +113,7 @@ describe('GET /tokens/:namespace/:name', () => {
     const res = await SELF.fetch('http://localhost/tokens/semantic/primary');
     expect(res.status).toBe(200);
 
-    const json = await res.json() as Record<string, unknown>;
+    const json = (await res.json()) as Record<string, unknown>;
     expect(json.token).toBeTruthy();
     expect(json.dependsOn).toBeInstanceOf(Array);
     expect(json.dependents).toBeInstanceOf(Array);
@@ -146,7 +147,7 @@ describe('PUT /tokens/:namespace/:name', () => {
     });
     expect(res.status).toBe(200);
 
-    const json = await res.json() as Record<string, unknown>;
+    const json = (await res.json()) as Record<string, unknown>;
     const token = json.token as Record<string, unknown>;
     expect(token.value).toBe('0.5rem');
     expect(json.affected).toBeInstanceOf(Array);
@@ -195,14 +196,14 @@ describe('PUT /tokens/:namespace/:name', () => {
   it('cascades changes to dependent tokens', async () => {
     // First, check what depends on a color family token
     const detailRes = await SELF.fetch('http://localhost/tokens/semantic/primary');
-    const detail = await detailRes.json() as Record<string, unknown>;
+    const detail = (await detailRes.json()) as Record<string, unknown>;
     const dependsOn = detail.dependsOn as string[];
 
     // If primary depends on a color family, updating that family should affect primary
     if (dependsOn.length > 0) {
       const parentName = dependsOn[0];
       const parentRes = await SELF.fetch('http://localhost/tokens');
-      const allTokens = await parentRes.json() as Record<string, unknown>;
+      const allTokens = (await parentRes.json()) as Record<string, unknown>;
       const tokenMap = allTokens.tokens as Record<string, Array<Record<string, unknown>>>;
 
       // Find the parent token's namespace
@@ -217,7 +218,7 @@ describe('PUT /tokens/:namespace/:name', () => {
               reason: 'Testing cascade propagation',
             }),
           });
-          const setJson = await setRes.json() as Record<string, unknown>;
+          const setJson = (await setRes.json()) as Record<string, unknown>;
           const affected = setJson.affected as string[];
           // The cascade should have affected at least the parent itself
           expect(affected.length).toBeGreaterThanOrEqual(0);
@@ -242,7 +243,7 @@ describe('PUT /tokens (batch)', () => {
     });
     expect(res.status).toBe(200);
 
-    const json = await res.json() as Record<string, unknown>;
+    const json = (await res.json()) as Record<string, unknown>;
     expect(json.updated).toBe(2);
   });
 
@@ -251,9 +252,7 @@ describe('PUT /tokens (batch)', () => {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        updates: [
-          { namespace: 'spacing', name: 'nonexistent', value: '1rem', reason: 'test' },
-        ],
+        updates: [{ namespace: 'spacing', name: 'nonexistent', value: '1rem', reason: 'test' }],
       }),
     });
     expect(res.status).toBe(400);
@@ -278,7 +277,7 @@ describe('DELETE /tokens/:namespace/:name/override', () => {
     });
     expect(res.status).toBe(200);
 
-    const json = await res.json() as Record<string, unknown>;
+    const json = (await res.json()) as Record<string, unknown>;
     const token = json.token as Record<string, unknown>;
     // Value should not be 999rem anymore
     expect(token.value).not.toBe('999rem');
@@ -301,7 +300,7 @@ describe('POST /tokens/:namespace/reset', () => {
   it('regenerates a namespace', async () => {
     // Get current spacing count
     const beforeRes = await SELF.fetch('http://localhost/tokens/spacing');
-    const before = await beforeRes.json() as Record<string, unknown>;
+    const before = (await beforeRes.json()) as Record<string, unknown>;
     const beforeCount = before.count as number;
 
     // Reset spacing
@@ -312,7 +311,7 @@ describe('POST /tokens/:namespace/reset', () => {
     });
     expect(res.status).toBe(200);
 
-    const json = await res.json() as Record<string, unknown>;
+    const json = (await res.json()) as Record<string, unknown>;
     expect(json.namespace).toBe('spacing');
     expect(json.tokenCount).toBe(beforeCount);
   });
@@ -327,7 +326,7 @@ describe('POST /tokens/:namespace/reset', () => {
     });
     expect(res.status).toBe(200);
 
-    const json = await res.json() as Record<string, unknown>;
+    const json = (await res.json()) as Record<string, unknown>;
     expect(json.tokenCount).toBeGreaterThan(0);
   });
 
@@ -344,7 +343,7 @@ describe('POST /tokens/:namespace/reset', () => {
 
     // Verify override exists
     const beforeRes = await SELF.fetch('http://localhost/tokens/spacing/spacing-1');
-    const before = await beforeRes.json() as Record<string, unknown>;
+    const before = (await beforeRes.json()) as Record<string, unknown>;
     expect((before.token as Record<string, unknown>).userOverride).toBeTruthy();
 
     // Reset spacing
@@ -356,7 +355,7 @@ describe('POST /tokens/:namespace/reset', () => {
 
     // Override should be gone
     const afterRes = await SELF.fetch('http://localhost/tokens/spacing/spacing-1');
-    const after = await afterRes.json() as Record<string, unknown>;
+    const after = (await afterRes.json()) as Record<string, unknown>;
     expect((after.token as Record<string, unknown>).userOverride).toBeUndefined();
   });
 
@@ -387,7 +386,7 @@ describe('why-gate', () => {
     });
 
     const res = await SELF.fetch('http://localhost/tokens/spacing/spacing-6');
-    const json = await res.json() as Record<string, unknown>;
+    const json = (await res.json()) as Record<string, unknown>;
     const token = json.token as Record<string, unknown>;
     const override = token.userOverride as Record<string, unknown>;
 
@@ -407,7 +406,7 @@ describe('why-gate', () => {
     });
 
     const res = await SELF.fetch('http://localhost/tokens/spacing/spacing-7');
-    const json = await res.json() as Record<string, unknown>;
+    const json = (await res.json()) as Record<string, unknown>;
     const token = json.token as Record<string, unknown>;
     const override = token.userOverride as Record<string, unknown>;
 
