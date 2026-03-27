@@ -1,6 +1,6 @@
 {
   "name": "rafters",
-  "version": "0.0.23",
+  "version": "0.0.24",
   "description": "CLI for Rafters design system - scaffold tokens and add components",
   "license": "MIT",
   "type": "module",
@@ -35,12 +35,14 @@
     "@modelcontextprotocol/sdk": "^1.25.1",
     "commander": "^13.0.0",
     "execa": "^9.6.1",
-    "ora": "^9.0.0"
+    "ora": "^9.0.0",
+    "vite": "^8.0.0"
   },
   "devDependencies": {
     "@playwright/test": "catalog:",
     "@rafters/design-tokens": "workspace:*",
     "@rafters/shared": "workspace:*",
+    "@rafters/studio": "workspace:*",
     "@types/node": "catalog:",
     "playwright-bdd": "catalog:",
     "tsup": "^8.0.0",

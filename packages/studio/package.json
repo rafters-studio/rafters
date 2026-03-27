@@ -4,6 +4,10 @@
   "private": true,
   "description": "Visual token editor for Rafters design system",
   "type": "module",
+  "exports": {
+    ".": "./src/api/index.ts",
+    "./api/vite-plugin": "./src/api/vite-plugin.ts"
+  },
   "scripts": {
     "dev": "vite",
     "dev:standalone": "RAFTERS_PROJECT_PATH=$PWD NODE_OPTIONS='--import tsx/esm' vite",

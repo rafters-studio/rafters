@@ -44,7 +44,7 @@ const ColorBuildOptionsSchema = z.object({
   token: z.string().optional(),
   value: z.string().optional(),
   use: z.string().optional(),
-  states: z.record(z.string()).optional(),
+  states: z.record(z.string(), z.string()).optional(),
 });
 
 const projectPath = process.env.RAFTERS_PROJECT_PATH || process.cwd();
@@ -270,7 +270,17 @@ export async function handleBuildColor(
 
   // Build the ColorValue using color-utils
   try {
-    const colorValue = buildColorValue(oklch, options ?? {});
+    // Strip undefined values to satisfy exactOptionalPropertyTypes
+    const cleanOptions: Record<string, unknown> = {};
+    if (options) {
+      for (const [k, v] of Object.entries(options)) {
+        if (v !== undefined) cleanOptions[k] = v;
+      }
+    }
+    const colorValue = buildColorValue(
+      oklch,
+      cleanOptions as Parameters<typeof buildColorValue>[1],
+    );
 
     // Validate output against schema
     const outputResult = ColorValueSchema.safeParse(colorValue);
@@ -332,7 +342,7 @@ export async function handlePostToken(
   // Merge patch with existing token
   const mergedToken = {
     ...existingToken,
-    ...patchResult.data,
+    ...(patchResult.data as Record<string, unknown>),
   };
 
   // Validate merged token against full schema
@@ -578,7 +588,7 @@ export function studioApiPlugin(): Plugin {
         if (tokenMatch) {
           let name: string;
           try {
-            name = decodeURIComponent(tokenMatch[1]);
+            name = decodeURIComponent(tokenMatch[1] ?? '');
           } catch {
             res.statusCode = 400;
             res.setHeader('Content-Type', 'application/json');

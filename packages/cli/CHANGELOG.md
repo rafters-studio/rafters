@@ -1,5 +1,14 @@
 # rafters
 
+## 0.0.24
+
+### Patch Changes
+
+- `rafters studio` now works for all consumers: Vite dev server with HMR token API, bundled via tsup
+- Studio plugin from @rafters/studio bundled into CLI dist (source-only, like @rafters/shared)
+- Vite is a runtime dependency (external, not bundled) for proper native binding resolution
+- No more path resolution hacks -- uses programmatic `createServer()` API
+
 ## 0.0.23
 
 ### Patch Changes
