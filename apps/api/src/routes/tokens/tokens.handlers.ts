@@ -30,11 +30,6 @@ export function initializeRegistry(tokens: Token[]): void {
   registry = new TokenRegistry(tokens);
 }
 
-/** Get the raw registry for direct access (used by reset). */
-export function getRawRegistry(): TokenRegistry {
-  return getRegistry();
-}
-
 // =============================================================================
 // Getters
 // =============================================================================
