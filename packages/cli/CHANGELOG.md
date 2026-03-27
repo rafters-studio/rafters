@@ -1,5 +1,16 @@
 # rafters
 
+## 0.0.20
+
+### Minor Changes
+
+- Add token registry API endpoints: getters, setters with why-gate enforcement, namespace reset
+- GET /tokens, /tokens/:namespace, /tokens/:namespace/:name for reading the full 536-token system
+- PUT /tokens/:namespace/:name with mandatory reason (why-gate) for every override, cascades through dependency graph
+- POST /tokens/:namespace/reset to regenerate a namespace with new config (e.g., switch spacing progression)
+- DELETE /tokens/:namespace/:name/override to clear overrides and restore computed values
+- 25 API tests against a real token registry
+
 ## 0.0.19
 
 ### Patch Changes
