@@ -357,14 +357,47 @@ function DocumentBlock({ block }: { block: EditorBlock }) {
 // Private sub-components
 // ============================================================================
 
+interface BlockTypeOption {
+  value: string;
+  label: string;
+  meta?: Record<string, unknown>;
+}
+
+const BLOCK_TYPE_OPTIONS: BlockTypeOption[] = [
+  { value: 'text', label: 'Paragraph' },
+  { value: 'heading-1', label: 'Heading 1', meta: { level: 1 } },
+  { value: 'heading-2', label: 'Heading 2', meta: { level: 2 } },
+  { value: 'heading-3', label: 'Heading 3', meta: { level: 3 } },
+  { value: 'heading-4', label: 'Heading 4', meta: { level: 4 } },
+  { value: 'quote', label: 'Blockquote' },
+  { value: 'code', label: 'Code Block' },
+];
+
+function blockToTypeValue(block: EditorBlock | undefined): string {
+  if (!block) return 'text';
+  if (block.type === 'heading') return `heading-${(block.meta?.level as number) ?? 1}`;
+  return block.type;
+}
+
 interface ToolbarSectionProps {
   canUndo: boolean;
   canRedo: boolean;
   onUndo: () => void;
   onRedo: () => void;
+  focusedBlock?: EditorBlock | undefined;
+  onChangeBlockType?:
+    | ((blockId: string, type: string, meta?: Record<string, unknown>) => void)
+    | undefined;
 }
 
-function EditorToolbarSection({ canUndo, canRedo, onUndo, onRedo }: ToolbarSectionProps) {
+function EditorToolbarSection({
+  canUndo,
+  canRedo,
+  onUndo,
+  onRedo,
+  focusedBlock,
+  onChangeBlockType,
+}: ToolbarSectionProps) {
   const buttons = React.useMemo(() => {
     const toolbar = createEditorToolbar({
       getHistory: () => ({ canUndo, canRedo }),
@@ -390,6 +423,31 @@ function EditorToolbarSection({ canUndo, canRedo, onUndo, onRedo }: ToolbarSecti
       aria-label="Editor toolbar"
       className={classy('flex items-center gap-1 border-b border-border px-2 py-1')}
     >
+      {focusedBlock && onChangeBlockType && (
+        <>
+          <select
+            value={blockToTypeValue(focusedBlock)}
+            onChange={(e) => {
+              const option = BLOCK_TYPE_OPTIONS.find((o) => o.value === e.target.value);
+              if (!option) return;
+              const type = option.value.startsWith('heading') ? 'heading' : option.value;
+              onChangeBlockType(focusedBlock.id, type, option.meta);
+            }}
+            aria-label="Block type"
+            className={classy(
+              'rounded-md border border-input bg-background px-2 py-1 text-xs font-medium',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-ring',
+            )}
+          >
+            {BLOCK_TYPE_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+          <hr className={classy('mx-1 h-4 w-px border-0 bg-border')} />
+        </>
+      )}
       {Array.from(grouped.entries()).map(([group, btns], groupIdx) => (
         <React.Fragment key={group}>
           {groupIdx > 0 && <hr className={classy('mx-1 h-4 w-px border-0 bg-border')} />}
@@ -1472,6 +1530,7 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
 
     // ----- Save composite dialog state -----
     const [showSaveDialog, setShowSaveDialog] = React.useState(false);
+    const [focusedBlockId, setFocusedBlockId] = React.useState<string | null>(null);
 
     // ----- Inline toolbar state -----
     const [inlineToolbarPos, setInlineToolbarPos] = React.useState<AdjustedToolbarPosition | null>(
@@ -1671,6 +1730,22 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
         docEditor.destroy();
         docEditorRef.current = null;
       });
+
+      // Track focused block for toolbar block type dropdown
+      const trackFocusedBlock = () => {
+        const sel = window.getSelection();
+        if (!sel || !canvasEl.contains(sel.anchorNode)) {
+          setFocusedBlockId(null);
+          return;
+        }
+        const blockEl =
+          sel.anchorNode instanceof HTMLElement
+            ? sel.anchorNode.closest('[data-block-id]')
+            : sel.anchorNode?.parentElement?.closest('[data-block-id]');
+        setFocusedBlockId(blockEl?.getAttribute('data-block-id') ?? null);
+      };
+      document.addEventListener('selectionchange', trackFocusedBlock);
+      cleanups.push(() => document.removeEventListener('selectionchange', trackFocusedBlock));
 
       // Command palette primitive
       if (hasCommandPalette) {
@@ -2084,6 +2159,34 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
       [addBlock],
     );
 
+    const handleChangeBlockType = React.useCallback(
+      (blockId: string, newType: string, meta?: Record<string, unknown>) => {
+        const current = blocksAtomRef.current.get();
+        const next = current.map((b) => {
+          if (b.id !== blockId) return b;
+          const updated: EditorBlock = { ...b, type: newType };
+          if (meta) {
+            updated.meta = { ...b.meta, ...meta };
+          } else if (newType === 'text' && b.meta) {
+            const { level: _, ...rest } = b.meta as Record<string, unknown> & { level?: number };
+            if (Object.keys(rest).length > 0) {
+              updated.meta = rest;
+            } else {
+              delete (updated as unknown as Record<string, unknown>).meta;
+            }
+          }
+          if (newType === 'code' && Array.isArray(b.content)) {
+            updated.content = b.content.map((s) => s.text).join('');
+          }
+          return updated;
+        });
+        updateBlocks(next);
+      },
+      [updateBlocks],
+    );
+
+    const focusedBlock = focusedBlockId ? blocks.find((b) => b.id === focusedBlockId) : undefined;
+
     const handleSaveComposite = React.useCallback(
       async (data: SaveCompositeData) => {
         try {
@@ -2121,6 +2224,8 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
               canRedo={handlerState.canRedo}
               onUndo={() => handlerRef.current?.undo()}
               onRedo={() => handlerRef.current?.redo()}
+              focusedBlock={focusedBlock}
+              onChangeBlockType={handleChangeBlockType}
             />
             {onSaveAsComposite && (
               <button
