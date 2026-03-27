@@ -1,5 +1,13 @@
 # rafters
 
+## 0.0.21
+
+### Patch Changes
+
+- Fix `rafters studio` command: start the API server instead of looking for nonexistent @rafters/studio package
+- Add nodejs_compat flag to API wrangler config for design-tokens node:fs support
+- Initialize token registry with full 535-token default system on first API access
+
 ## 0.0.20
 
 ### Minor Changes
@@ -9,6 +17,8 @@
 - PUT /tokens/:namespace/:name with mandatory reason (why-gate) for every override, cascades through dependency graph
 - POST /tokens/:namespace/reset to regenerate a namespace with new config (e.g., switch spacing progression)
 - DELETE /tokens/:namespace/:name/override to clear overrides and restore computed values
+- Add Astro-native components: Container, Grid, Typography, Kbd, Label, Input (zero client JavaScript)
+- Extract shared .classes.ts files for React/Astro visual parity
 - 25 API tests against a real token registry
 
 ## 0.0.19
