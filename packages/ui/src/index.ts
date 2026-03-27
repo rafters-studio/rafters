@@ -25,4 +25,8 @@ export {
   createJsonSerializer,
   jsonSerializer,
 } from './primitives/serializer.js';
+export {
+  createMdxSerializer,
+  mdxSerializer,
+} from './primitives/serializer-mdx.js';
 export type { BaseBlock } from './primitives/types.js';

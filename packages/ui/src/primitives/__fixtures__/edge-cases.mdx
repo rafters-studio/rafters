@@ -1,0 +1,121 @@
+---
+title: Edge Cases
+emoji: "\u2728"
+empty_string: ""
+zero: 0
+negative: -42
+float: 3.14
+null_value:
+quoted: "value: with colons"
+array_inline: [one, two, three]
+---
+
+import {A} from "a"
+import * as B from "b"
+import {c as d} from "e"
+import "side-effect"
+
+export const meta = { author: "test" }
+
+## Inline Formatting Stress Test
+
+This has **bold**, *italic*, `code`, ~~strikethrough~~, and [a link](https://example.com) all in one paragraph. Plus **bold with *italic* inside** and a `code span with spaces`.
+
+## JSX Patterns
+
+<SelfClosing />
+
+<Empty></Empty>
+
+<WithProps title="hello" count={42} active flag />
+
+<WithSpread {...props} extra="value" />
+
+<WithExpressionProps
+  data={[1, 2, 3]}
+  render={(item) => <span>{item}</span>}
+  callback={() => {
+    const x = { a: 1 };
+    return x.a;
+  }}
+/>
+
+<Nested>
+
+Markdown **inside** a component.
+
+<Inner>
+
+Deeply nested with a [link](https://example.com).
+
+</Inner>
+
+</Nested>
+
+<>Fragment content</>
+
+## Expression Patterns
+
+Block expression: {1 + 1}
+
+Inline: the answer is {42} today.
+
+{/* MDX comment */}
+
+## Lists
+
+Unordered:
+
+- First item with **bold**
+- Second item with `code`
+- Third item with [link](https://example.com)
+
+Ordered:
+
+1. Step one
+2. Step two
+3. Step three
+
+## Unicode Content
+
+Rafters supports international content: Entwurf, diseno, and more.
+
+## Empty Sections
+
+## Consecutive Headings
+
+### Level Three
+
+#### Level Four
+
+---
+
+## Image
+
+![A descriptive alt text with special chars: quotes "and" apostrophes](https://example.com/image.png)
+
+## Code Blocks
+
+```js
+// JavaScript
+const x = { nested: { braces: true } };
+export default x;
+```
+
+```
+No language specified
+```
+
+```python
+# Python
+def hello():
+    return "world"
+```
+
+## Blockquote
+
+> Simple quote
+
+> Multi-line quote
+> that continues on the next line
+> with **formatting** inside

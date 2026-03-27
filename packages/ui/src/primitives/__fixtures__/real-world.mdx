@@ -1,0 +1,72 @@
+---
+title: Building Design Intelligence
+author: Sean Silvius
+date: 2026-03-26
+tags: [design, engineering, AI]
+draft: false
+order: 1
+---
+
+import {Card, Badge} from './components'
+import Chart from './Chart'
+
+# Building Design Intelligence
+
+AI agents don't have taste. They guess at colors, spacing, hierarchy. **Rafters** encodes a designer's judgment into queryable data so AI doesn't guess -- it reads decisions.
+
+## The Three Layers
+
+The architecture is built on three layers:
+
+1. **What** (Components) -- `packages/ui` with JSDoc intelligence metadata
+2. **Where** (Tokens) -- `packages/design-tokens` with dependency graph
+3. **Why** (Decisions) -- Do/never patterns, cognitive load scores
+
+<Card title="Key Insight">
+
+The AI learns *what* to do, **because of how** it works, and ~~sometimes~~ **why** it matters.
+
+- Every component has [cognitive load ratings](https://example.com/docs)
+- Tokens form a `dependency graph` with 240+ relationships
+- Decisions are encoded, not documented
+
+> The decisions are already made by the designer. The AI just reads them.
+
+</Card>
+
+### Code Example
+
+```typescript
+const token = registry.get('color-primary-500');
+const scale = token.derivedFrom('color-primary');
+const contrast = token.contrastWith('color-surface');
+```
+
+---
+
+## Performance Data
+
+<Chart
+  data={[
+    { month: "Jan", value: 42 },
+    { month: "Feb", value: 58 },
+    { month: "Mar", value: 91 },
+  ]}
+  options={{
+    responsive: true,
+    plugins: {
+      legend: { position: 'top' },
+      title: { display: true, text: 'Adoption Rate' },
+    },
+  }}
+/>
+
+The data shows **significant** growth across {3} categories.
+
+## Status
+
+<Badge variant="success">Production Ready</Badge> <Badge variant="warning">Beta APIs</Badge>
+
+For more information, see the [documentation](https://rafters.dev) or reach out on [GitHub](https://github.com/rafters-studio/rafters).
+
+![Architecture Diagram](https://example.com/architecture.png)
