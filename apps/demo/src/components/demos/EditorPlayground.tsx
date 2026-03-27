@@ -28,7 +28,6 @@ import {
   type SlashCommand,
 } from '@/components/ui/editor';
 import { Input } from '@/components/ui/input';
-import { Kbd } from '@/components/ui/kbd';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Blockquote, H1, H2, H3, Muted, P } from '@/components/ui/typography';
@@ -444,15 +443,6 @@ function makeSlashCommands(): SlashCommand[] {
 // ============================================================================
 // Block state panel
 // ============================================================================
-
-/** Convert EditorBlocks to CompositeBlocks for the serializer */
-function toCompositeBlocks(blocks: EditorBlock[]): CompositeBlock[] {
-  return blocks.map((b) => ({
-    id: b.id,
-    type: b.type,
-    content: b.content,
-  }));
-}
 
 // ============================================================================
 // Serialization
