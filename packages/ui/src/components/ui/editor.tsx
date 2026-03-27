@@ -2168,6 +2168,8 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
           {/* Document surface: single contentEditable, blocks as semantic HTML */}
           <div
             ref={canvasRef}
+            role="textbox"
+            aria-multiline="true"
             aria-label="Document editor"
             tabIndex={disabled ? -1 : 0}
             suppressContentEditableWarning
