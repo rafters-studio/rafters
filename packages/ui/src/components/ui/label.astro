@@ -8,7 +8,16 @@ import classy from '../../primitives/classy';
 import { labelBaseClasses, labelVariantClasses } from './label.classes';
 
 interface Props extends HTMLAttributes<'label'> {
-  variant?: 'default' | 'primary' | 'secondary' | 'destructive' | 'success' | 'warning' | 'info' | 'muted' | 'accent';
+  variant?:
+    | 'default'
+    | 'primary'
+    | 'secondary'
+    | 'destructive'
+    | 'success'
+    | 'warning'
+    | 'info'
+    | 'muted'
+    | 'accent';
 }
 
 const { variant = 'default', class: className, ...attrs } = Astro.props;

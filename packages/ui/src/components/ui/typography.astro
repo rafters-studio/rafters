@@ -16,7 +16,18 @@ import classy from '../../primitives/classy';
 import { typographyClasses } from './typography.classes';
 
 type TypographyElement = 'h1' | 'h2' | 'h3' | 'h4' | 'p' | 'blockquote' | 'code' | 'span';
-type TypographyVariant = 'h1' | 'h2' | 'h3' | 'h4' | 'p' | 'lead' | 'large' | 'small' | 'muted' | 'code' | 'blockquote';
+type TypographyVariant =
+  | 'h1'
+  | 'h2'
+  | 'h3'
+  | 'h4'
+  | 'p'
+  | 'lead'
+  | 'large'
+  | 'small'
+  | 'muted'
+  | 'code'
+  | 'blockquote';
 
 interface Props extends HTMLAttributes<'div'> {
   as?: TypographyElement;
@@ -25,7 +36,7 @@ interface Props extends HTMLAttributes<'div'> {
 
 const { as: Element = 'p', variant, class: className, ...attrs } = Astro.props;
 
-const resolvedVariant = variant ?? (Element === 'span' ? 'p' : Element as TypographyVariant);
+const resolvedVariant = variant ?? (Element === 'span' ? 'p' : (Element as TypographyVariant));
 const variantClass = typographyClasses[resolvedVariant] ?? typographyClasses.p;
 const classes = classy(variantClass, className);
 ---

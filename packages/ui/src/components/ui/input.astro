@@ -8,7 +8,16 @@ import classy from '../../primitives/classy';
 import { inputBaseClasses, inputSizeClasses, inputVariantClasses } from './input.classes';
 
 interface Props extends Omit<HTMLAttributes<'input'>, 'size'> {
-  variant?: 'default' | 'primary' | 'secondary' | 'destructive' | 'success' | 'warning' | 'info' | 'muted' | 'accent';
+  variant?:
+    | 'default'
+    | 'primary'
+    | 'secondary'
+    | 'destructive'
+    | 'success'
+    | 'warning'
+    | 'info'
+    | 'muted'
+    | 'accent';
   size?: 'sm' | 'default' | 'lg';
 }
 

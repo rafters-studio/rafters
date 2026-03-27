@@ -44,9 +44,12 @@ const {
 
 const isArticle = Element === 'article';
 
-const resolvedGap = gap === true
-  ? (size && containerSizeGapScale[size]) || '6'
-  : typeof gap === 'string' ? gap : undefined;
+const resolvedGap =
+  gap === true
+    ? (size && containerSizeGapScale[size]) || '6'
+    : typeof gap === 'string'
+      ? gap
+      : undefined;
 
 const classes = classy(
   query && '@container w-full',
