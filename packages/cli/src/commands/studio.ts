@@ -1,8 +1,9 @@
 /**
  * rafters studio
  *
- * Opens Studio UI for visual token editing.
- * Spawns Vite dev server from @rafters/studio package.
+ * Starts the Rafters Studio API server for design system services.
+ * The API serves token registry endpoints (getters, setters, reset)
+ * that the studio UI and other tools consume.
  */
 
 import { existsSync } from 'node:fs';
@@ -17,31 +18,27 @@ export async function studio(): Promise<void> {
   const cwd = process.cwd();
   const paths = getRaftersPaths(cwd);
 
-  // Check if .rafters/ exists
   if (!existsSync(paths.root)) {
     console.error('No .rafters/ directory found. Run "rafters init" first.');
     process.exit(1);
   }
 
-  // Find studio package - in dev it's at ../../../studio (packages/studio), in prod it's in node_modules
-  const devStudioPath = join(__dirname, '..', '..', '..', 'studio');
-  const prodStudioPath = join(__dirname, '..', 'node_modules', '@rafters', 'studio');
+  // Find the API app -- in dev monorepo it's at apps/api
+  // From dist/ -> cli/ -> packages/ -> monorepo root -> apps/api
+  const devApiPath = join(__dirname, '..', '..', '..', 'apps', 'api');
 
-  const studioPath = existsSync(devStudioPath) ? devStudioPath : prodStudioPath;
-
-  if (!existsSync(studioPath)) {
-    console.error('Studio package not found. Please reinstall @rafters/cli.');
+  if (!existsSync(devApiPath)) {
+    console.error('Studio API not found. Run from the rafters monorepo.');
     process.exit(1);
   }
 
-  console.log('Starting Rafters Studio...');
+  console.log('Starting Rafters Studio API...');
   console.log(`Project: ${cwd}`);
   console.log(`Tokens: ${paths.tokens}`);
   console.log('');
 
-  // Spawn Vite dev server with project context
   const subprocess = execa('pnpm', ['dev'], {
-    cwd: studioPath,
+    cwd: devApiPath,
     stdio: 'inherit',
     env: {
       ...process.env,
@@ -50,7 +47,6 @@ export async function studio(): Promise<void> {
     },
   });
 
-  // Handle graceful shutdown
   process.on('SIGINT', () => {
     subprocess.kill('SIGINT');
   });
