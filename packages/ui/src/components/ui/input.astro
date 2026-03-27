@@ -1,0 +1,39 @@
+---
+/**
+ * Input (Astro) - Zero client JavaScript.
+ * @cognitive-load 2/10
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { inputBaseClasses, inputSizeClasses, inputVariantClasses } from './input.classes';
+
+interface Props extends Omit<HTMLAttributes<'input'>, 'size'> {
+  variant?: 'default' | 'primary' | 'secondary' | 'destructive' | 'success' | 'warning' | 'info' | 'muted' | 'accent';
+  size?: 'sm' | 'default' | 'lg';
+}
+
+const {
+  type = 'text',
+  variant = 'default',
+  size = 'default',
+  disabled,
+  class: className,
+  ...attrs
+} = Astro.props;
+
+const cls = classy(
+  inputBaseClasses,
+  inputVariantClasses[variant] ?? inputVariantClasses.default,
+  inputSizeClasses[size] ?? inputSizeClasses.default,
+  className,
+);
+---
+
+<input
+  type={type}
+  class={cls}
+  disabled={disabled}
+  aria-disabled={disabled ? 'true' : undefined}
+  aria-invalid={variant === 'destructive' ? 'true' : undefined}
+  {...attrs}
+/>

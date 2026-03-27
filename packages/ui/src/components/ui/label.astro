@@ -1,0 +1,17 @@
+---
+/**
+ * Label (Astro) - Zero client JavaScript.
+ * @cognitive-load 1/10
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { labelBaseClasses, labelVariantClasses } from './label.classes';
+
+interface Props extends HTMLAttributes<'label'> {
+  variant?: 'default' | 'primary' | 'secondary' | 'destructive' | 'success' | 'warning' | 'info' | 'muted' | 'accent';
+}
+
+const { variant = 'default', class: className, ...attrs } = Astro.props;
+---
+
+<label class={classy(labelBaseClasses, labelVariantClasses[variant], className)} {...attrs}><slot /></label>

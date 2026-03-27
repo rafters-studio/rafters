@@ -1,0 +1,16 @@
+---
+/**
+ * Keyboard key indicator (Astro)
+ * Zero client JavaScript.
+ * @cognitive-load 1/10
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { kbdBaseClasses } from './kbd.classes';
+
+interface Props extends HTMLAttributes<'kbd'> {}
+
+const { class: className, ...attrs } = Astro.props;
+---
+
+<kbd class={classy(kbdBaseClasses, className)} {...attrs}><slot /></kbd>
