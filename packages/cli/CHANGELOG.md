@@ -1,10 +1,19 @@
 # rafters
 
+## 0.0.22
+
+### Patch Changes
+
+- Embed token API server directly in the CLI -- `rafters studio` now works in any project with `.rafters/`, no monorepo or Cloudflare required
+- Loads existing tokens from `.rafters/tokens/` on startup, persists changes back automatically
+- Falls back to generating 535 default tokens if no token files exist
+- Standalone Hono server on port 8787, no wrangler dependency
+
 ## 0.0.21
 
 ### Patch Changes
 
-- Fix `rafters studio` command: start the API server instead of looking for nonexistent @rafters/studio package
+- Fix `rafters studio` command path resolution for monorepo development
 - Add nodejs_compat flag to API wrangler config for design-tokens node:fs support
 - Initialize token registry with full 535-token default system on first API access
 
