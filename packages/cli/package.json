@@ -1,6 +1,6 @@
 {
   "name": "rafters",
-  "version": "0.0.22",
+  "version": "0.0.23",
   "description": "CLI for Rafters design system - scaffold tokens and add components",
   "license": "MIT",
   "type": "module",
@@ -31,12 +31,10 @@
   },
   "dependencies": {
     "@antfu/ni": "^28.1.0",
-    "@hono/node-server": "^1.19.11",
     "@inquirer/prompts": "^8.2.0",
     "@modelcontextprotocol/sdk": "^1.25.1",
     "commander": "^13.0.0",
     "execa": "^9.6.1",
-    "hono": "catalog:",
     "ora": "^9.0.0"
   },
   "devDependencies": {

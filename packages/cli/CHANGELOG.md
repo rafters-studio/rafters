@@ -1,11 +1,19 @@
 # rafters
 
+## 0.0.23
+
+### Patch Changes
+
+- Remove stale hono and @hono/node-server from runtime dependencies (leaked from earlier embedded server approach)
+- Studio command now uses the Vite-powered @rafters/studio package with HMR
+
 ## 0.0.22
 
 ### Patch Changes
 
-- Embed token API server directly in the CLI -- `rafters studio` now works in any project with `.rafters/`, no monorepo or Cloudflare required
-- Loads existing tokens from `.rafters/tokens/` on startup, persists changes back automatically
+- Studio command uses Vite dev server with HMR for instant token updates
+- Fix workspace TS module resolution via tsx/esm
+- Fix pre-existing biome lint errors across color-utils, serializer-text, document-editor
 - Falls back to generating 535 default tokens if no token files exist
 - Standalone Hono server on port 8787, no wrangler dependency
 
