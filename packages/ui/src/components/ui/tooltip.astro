@@ -1,0 +1,87 @@
+---
+/**
+ * CSS-only tooltip component (Astro)
+ *
+ * Zero client JavaScript. Shows on :hover and :focus-visible using CSS.
+ * Positions above the trigger by default using CSS transform.
+ * No portal needed (unlike the React version).
+ *
+ * @cognitive-load 2/10
+ * @accessibility aria-describedby linking trigger to content, keyboard accessible via focus-visible
+ *
+ * @example
+ * ```astro
+ * <Tooltip id="help-tip" content="Helpful tooltip text">
+ *   <button>Hover me</button>
+ * </Tooltip>
+ * ```
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { tooltipContentClasses, tooltipTriggerClasses } from './tooltip.classes';
+
+interface Props extends HTMLAttributes<'span'> {
+  /** Unique id for linking trigger and content */
+  id: string;
+  /** Tooltip text content */
+  content: string;
+  /** Visual side placement */
+  side?: 'top' | 'bottom';
+}
+
+const { id, content, side = 'top', class: className, ...attrs } = Astro.props;
+
+const contentId = `${id}-tooltip`;
+
+const isTop = side === 'top';
+---
+
+<span
+  class={classy('tooltip-wrapper', tooltipTriggerClasses, className)}
+  {...attrs}
+>
+  <span aria-describedby={contentId}>
+    <slot />
+  </span>
+  <span
+    id={contentId}
+    role="tooltip"
+    class={classy(
+      'tooltip-content',
+      tooltipContentClasses,
+      isTop ? 'tooltip-top' : 'tooltip-bottom',
+    )}
+  >
+    {content}
+  </span>
+</span>
+
+<style>
+  .tooltip-wrapper {
+    position: relative;
+  }
+
+  .tooltip-content {
+    position: absolute;
+    left: 50%;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 150ms ease-in-out;
+    white-space: nowrap;
+  }
+
+  .tooltip-top {
+    bottom: 100%;
+    transform: translateX(-50%) translateY(-0.25rem);
+  }
+
+  .tooltip-bottom {
+    top: 100%;
+    transform: translateX(-50%) translateY(0.25rem);
+  }
+
+  .tooltip-wrapper:hover .tooltip-content,
+  .tooltip-wrapper:focus-within .tooltip-content {
+    opacity: 1;
+  }
+</style>

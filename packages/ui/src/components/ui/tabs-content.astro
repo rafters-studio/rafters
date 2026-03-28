@@ -1,0 +1,41 @@
+---
+/**
+ * Tab content panel (Astro)
+ *
+ * Shown or hidden based on the associated radio input state.
+ * Initially visible only when its tab trigger has defaultChecked.
+ *
+ * @cognitive-load 1/10
+ * @accessibility role=tabpanel, aria-labelledby, focusable
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { tabsContentClasses } from './tabs.classes';
+
+interface Props extends HTMLAttributes<'div'> {
+  /** The tabs group id (must match the parent Tabs id) */
+  tabsId: string;
+  /** Value identifying which tab controls this panel */
+  value: string;
+  /** Whether this panel is initially visible */
+  defaultActive?: boolean;
+}
+
+const { tabsId, value, defaultActive = false, class: className, ...attrs } = Astro.props;
+
+const panelId = `${tabsId}-panel-${value}`;
+const tabId = `${tabsId}-tab-${value}`;
+---
+
+<div
+  role="tabpanel"
+  id={panelId}
+  aria-labelledby={tabId}
+  tabindex="0"
+  hidden={!defaultActive}
+  data-state={defaultActive ? 'active' : 'inactive'}
+  class={classy(tabsContentClasses, className)}
+  {...attrs}
+>
+  <slot />
+</div>

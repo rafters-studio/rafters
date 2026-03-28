@@ -1,0 +1,123 @@
+---
+/**
+ * Individual tab trigger using a hidden radio input with a label (Astro)
+ *
+ * CSS-only tab switching: the hidden radio input controls which panel is visible.
+ * The label acts as the clickable tab trigger.
+ *
+ * @cognitive-load 2/10
+ * @accessibility role=tab, aria-selected, aria-controls, tabIndex managed via checked state
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import {
+  tabsTriggerActiveClasses,
+  tabsTriggerBaseClasses,
+  tabsTriggerInactiveClasses,
+} from './tabs.classes';
+
+interface Props extends Omit<HTMLAttributes<'label'>, 'for'> {
+  /** The tabs group id (must match the parent Tabs id) */
+  tabsId: string;
+  /** Value identifying this tab */
+  value: string;
+  /** Whether this tab is the default selected tab */
+  defaultChecked?: boolean;
+  /** Whether this tab is disabled */
+  disabled?: boolean;
+}
+
+const {
+  tabsId,
+  value,
+  defaultChecked = false,
+  disabled = false,
+  class: className,
+  ...attrs
+} = Astro.props;
+
+const radioId = `${tabsId}-radio-${value}`;
+const radioName = `${tabsId}-tabs`;
+const panelId = `${tabsId}-panel-${value}`;
+const tabId = `${tabsId}-tab-${value}`;
+---
+
+<input
+  type="radio"
+  id={radioId}
+  name={radioName}
+  value={value}
+  checked={defaultChecked}
+  disabled={disabled}
+  class="sr-only peer"
+  aria-hidden="true"
+  tabindex="-1"
+/>
+<label
+  id={tabId}
+  for={radioId}
+  role="tab"
+  aria-selected={defaultChecked ? 'true' : 'false'}
+  aria-controls={panelId}
+  tabindex={defaultChecked ? 0 : -1}
+  data-state={defaultChecked ? 'active' : 'inactive'}
+  data-tabs-value={value}
+  class={classy(
+    tabsTriggerBaseClasses,
+    defaultChecked ? tabsTriggerActiveClasses : tabsTriggerInactiveClasses,
+    disabled && 'pointer-events-none opacity-50',
+    className,
+  )}
+  {...attrs}
+>
+  <slot />
+</label>
+
+<style>
+  input:checked + label {
+    --tw-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --tw-shadow-colored: 0 1px 2px 0 var(--tw-shadow-color);
+    box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+  }
+
+  input:checked + label[data-state] {
+    color: var(--color-foreground);
+    background-color: var(--color-background);
+  }
+
+  input:not(:checked) + label[data-state] {
+    color: var(--color-muted-foreground);
+    background-color: transparent;
+    box-shadow: none;
+  }
+</style>
+
+<script is:inline>
+  document.querySelectorAll('input[type="radio"][class*="sr-only"]').forEach(function (radio) {
+    if (radio.dataset.tabsBound) return;
+    radio.dataset.tabsBound = 'true';
+    radio.addEventListener('change', function () {
+      if (!radio.checked) return;
+      var name = radio.getAttribute('name');
+      var group = document.querySelectorAll('input[name="' + name + '"]');
+      group.forEach(function (r) {
+        var label = r.nextElementSibling;
+        if (!label || label.getAttribute('role') !== 'tab') return;
+        var isChecked = r === radio;
+        label.setAttribute('aria-selected', isChecked ? 'true' : 'false');
+        label.setAttribute('data-state', isChecked ? 'active' : 'inactive');
+        label.setAttribute('tabindex', isChecked ? '0' : '-1');
+      });
+      var tabsId = radio.id.replace(/-radio-[^-]*$/, '');
+      var value = radio.value;
+      var panelId = tabsId + '-panel-' + value;
+      var root = document.querySelector('[data-tabs-root="' + tabsId + '"]');
+      if (!root) return;
+      root.querySelectorAll('[role="tabpanel"]').forEach(function (panel) {
+        var isTarget = panel.id === panelId;
+        panel.hidden = !isTarget;
+        panel.setAttribute('data-state', isTarget ? 'active' : 'inactive');
+      });
+    });
+  });
+</script>

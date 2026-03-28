@@ -1,0 +1,53 @@
+---
+/**
+ * Tab list container with keyboard navigation (Astro)
+ *
+ * Provides arrow key navigation via a small inline script.
+ * The script runs once per tab list and handles ArrowLeft, ArrowRight, Home, End.
+ *
+ * @cognitive-load 2/10
+ * @accessibility role=tablist with roving tabindex via arrow keys
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { tabsListClasses } from './tabs.classes';
+
+interface Props extends HTMLAttributes<'div'> {}
+
+const { class: className, ...attrs } = Astro.props;
+---
+
+<div
+  role="tablist"
+  class={classy(tabsListClasses, className)}
+  {...attrs}
+>
+  <slot />
+</div>
+
+<script is:inline>
+  document.querySelectorAll('[role="tablist"]').forEach(function (list) {
+    if (list.dataset.tabsKeyboard) return;
+    list.dataset.tabsKeyboard = 'true';
+    list.addEventListener('keydown', function (event) {
+      var tabs = Array.from(list.querySelectorAll('[role="tab"]:not([disabled])'));
+      var current = tabs.indexOf(document.activeElement);
+      if (current === -1) return;
+      var next = null;
+      if (event.key === 'ArrowLeft') {
+        next = current > 0 ? current - 1 : tabs.length - 1;
+      } else if (event.key === 'ArrowRight') {
+        next = current < tabs.length - 1 ? current + 1 : 0;
+      } else if (event.key === 'Home') {
+        next = 0;
+      } else if (event.key === 'End') {
+        next = tabs.length - 1;
+      }
+      if (next !== null) {
+        event.preventDefault();
+        tabs[next].focus();
+        tabs[next].click();
+      }
+    });
+  });
+</script>
