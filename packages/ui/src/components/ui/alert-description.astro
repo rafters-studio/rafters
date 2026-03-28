@@ -1,0 +1,18 @@
+---
+/**
+ * Alert description sub-component (Astro)
+ *
+ * @cognitive-load 0/10
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { alertDescriptionClasses } from './alert.classes';
+
+interface Props extends HTMLAttributes<'div'> {}
+
+const { class: className, ...attrs } = Astro.props;
+
+const classes = classy(alertDescriptionClasses, className);
+---
+
+<div class={classes} {...attrs}><slot /></div>

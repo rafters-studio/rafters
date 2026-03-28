@@ -1,0 +1,79 @@
+---
+/**
+ * Generic list item component for menus, lists, and selection interfaces (Astro)
+ *
+ * Zero client JavaScript. Server-rendered with proper ARIA attributes.
+ * Interactive behavior (click, keyboard) must be added via client-side scripts if needed.
+ *
+ * @cognitive-load 3/10
+ * @accessibility Proper aria-selected for selection, aria-disabled for disabled state
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import {
+  itemBaseClasses,
+  itemContentClasses,
+  itemDescriptionClasses,
+  itemFocusClasses,
+  itemIconClasses,
+  itemLabelClasses,
+  itemMotionClasses,
+  itemSizeClasses,
+} from './item.classes';
+
+interface Props extends HTMLAttributes<'div'> {
+  selected?: boolean;
+  disabled?: boolean;
+  size?: 'default' | 'sm' | 'lg';
+  description?: string;
+}
+
+const {
+  selected = false,
+  disabled = false,
+  size = 'default',
+  description,
+  class: className,
+  ...attrs
+} = Astro.props;
+
+const stateStyles = disabled
+  ? 'opacity-50 pointer-events-none text-muted-foreground'
+  : selected
+    ? 'bg-accent text-accent-foreground'
+    : 'text-foreground hover:bg-accent hover:text-accent-foreground';
+
+const classes = classy(
+  itemBaseClasses,
+  itemSizeClasses[size] ?? itemSizeClasses.default,
+  stateStyles,
+  itemFocusClasses,
+  itemMotionClasses,
+  className,
+);
+
+const hasIcon = Astro.slots.has('icon');
+---
+
+<div
+  role="option"
+  tabindex={disabled ? undefined : 0}
+  aria-selected={selected}
+  aria-disabled={disabled || undefined}
+  data-selected={selected ? '' : undefined}
+  data-disabled={disabled ? '' : undefined}
+  class={classes}
+  {...attrs}
+>
+  {hasIcon && (
+    <span class={itemIconClasses} aria-hidden="true">
+      <slot name="icon" />
+    </span>
+  )}
+  <span class={itemContentClasses}>
+    <span class={itemLabelClasses}><slot /></span>
+    {description && (
+      <span class={itemDescriptionClasses}>{description}</span>
+    )}
+  </span>
+</div>

@@ -1,0 +1,79 @@
+---
+/**
+ * Progress indicator for task completion status (Astro)
+ *
+ * Zero client JavaScript. Server-rendered progress bar.
+ * For indeterminate state, omit the `value` prop.
+ *
+ * @cognitive-load 4/10
+ * @accessibility Screen reader announcements via native progress element
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import {
+  progressContainerClasses,
+  progressIndicatorBaseClasses,
+  progressSizeClasses,
+  progressVariantClasses,
+} from './progress.classes';
+
+interface Props extends HTMLAttributes<'div'> {
+  value?: number;
+  max?: number;
+  variant?:
+    | 'default'
+    | 'primary'
+    | 'secondary'
+    | 'destructive'
+    | 'success'
+    | 'warning'
+    | 'info'
+    | 'accent';
+  size?: 'sm' | 'default' | 'lg';
+}
+
+const {
+  value,
+  max = 100,
+  variant = 'default',
+  size = 'default',
+  class: className,
+  ...attrs
+} = Astro.props;
+
+const isIndeterminate = value === undefined;
+const clampedValue = isIndeterminate ? 0 : Math.min(Math.max(value, 0), max);
+const percentage = (clampedValue / max) * 100;
+const valueLabel = isIndeterminate ? undefined : `${Math.round(percentage)}%`;
+
+const containerCls = classy(
+  progressContainerClasses,
+  progressSizeClasses[size] ?? progressSizeClasses.default,
+  className,
+);
+
+const indicatorCls = classy(
+  progressIndicatorBaseClasses,
+  progressVariantClasses[variant] ?? progressVariantClasses.default,
+  isIndeterminate && 'animate-progress-indeterminate motion-reduce:animate-none',
+);
+---
+
+<div class={containerCls} aria-busy={isIndeterminate ? 'true' : undefined} {...attrs}>
+  <progress
+    class="sr-only"
+    value={isIndeterminate ? undefined : clampedValue}
+    max={max}
+    aria-valuenow={isIndeterminate ? undefined : clampedValue}
+    aria-valuemin={0}
+    aria-valuemax={max}
+    aria-valuetext={valueLabel}
+  >
+    {valueLabel}
+  </progress>
+  <div
+    class={indicatorCls}
+    style={isIndeterminate ? undefined : `width: ${percentage}%`}
+    aria-hidden="true"
+  />
+</div>

@@ -35,6 +35,7 @@ import classy from '../../primitives/classy';
 import { type CollisionOptions, computePosition } from '../../primitives/collision-detector';
 import { getPortalContainer } from '../../primitives/portal';
 import { mergeProps } from '../../primitives/slot';
+import { tooltipContentClasses } from './tooltip.classes';
 
 // ==================== Global state for skip delay ====================
 
@@ -442,7 +443,7 @@ export function TooltipContent({
   }
 
   const contentClassName = classy(
-    'z-depth-tooltip overflow-hidden rounded-md bg-foreground px-3 py-1.5 text-sm text-background shadow-md',
+    tooltipContentClasses,
     'animate-in fade-in-0 zoom-in-95',
     className,
   );

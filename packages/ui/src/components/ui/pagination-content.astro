@@ -1,0 +1,11 @@
+---
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { paginationContentClasses } from './pagination.classes';
+
+interface Props extends HTMLAttributes<'ul'> {}
+
+const { class: className, ...attrs } = Astro.props;
+---
+
+<ul class={classy(paginationContentClasses, className)} {...attrs}><slot /></ul>

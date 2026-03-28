@@ -1,0 +1,60 @@
+---
+/**
+ * Responsive image component with figure/figcaption semantics (Astro)
+ *
+ * Zero client JavaScript. Server-rendered responsive image.
+ * Editor-only props (editable, onChange, onUpload) are not included.
+ *
+ * @cognitive-load 2/10
+ * @accessibility Alt text required; figure/figcaption for proper semantics
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+
+type ImageSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'full';
+type ImageAlignment = 'left' | 'center' | 'right';
+
+const sizeClasses: Record<ImageSize, string> = {
+  xs: 'max-w-xs',
+  sm: 'max-w-sm',
+  md: 'max-w-md',
+  lg: 'max-w-lg',
+  xl: 'max-w-xl',
+  '2xl': 'max-w-2xl',
+  full: 'w-full',
+};
+
+const alignmentClasses: Record<ImageAlignment, string> = {
+  left: 'mr-auto',
+  center: 'mx-auto',
+  right: 'ml-auto',
+};
+
+interface Props extends Omit<HTMLAttributes<'figure'>, 'src' | 'alt'> {
+  src: string;
+  alt: string;
+  size?: ImageSize;
+  alignment?: ImageAlignment;
+  caption?: string;
+}
+
+const { src, alt, size, alignment = 'center', caption, class: className, ...attrs } = Astro.props;
+
+const classes = classy(
+  'relative',
+  size && sizeClasses[size],
+  alignmentClasses[alignment],
+  className,
+);
+---
+
+<figure class={classes} {...attrs}>
+  <div class="relative overflow-hidden rounded-lg">
+    <img src={src} alt={alt} class="block w-full h-auto" loading="lazy" />
+  </div>
+  {caption && (
+    <figcaption class="mt-2 text-center text-sm text-muted-foreground">
+      {caption}
+    </figcaption>
+  )}
+</figure>

@@ -1,0 +1,11 @@
+---
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { tableBodyClasses } from './table.classes';
+
+interface Props extends HTMLAttributes<'tbody'> {}
+
+const { class: className, ...attrs } = Astro.props;
+---
+
+<tbody data-table-body="" class={classy(tableBodyClasses, className)} {...attrs}><slot /></tbody>

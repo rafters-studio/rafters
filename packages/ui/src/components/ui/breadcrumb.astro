@@ -1,0 +1,22 @@
+---
+/**
+ * Hierarchical navigation component for wayfinding (Astro)
+ *
+ * Zero client JavaScript. Server-rendered breadcrumb navigation.
+ * Use BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage,
+ * and BreadcrumbSeparator sub-components as children.
+ *
+ * @cognitive-load 2/10
+ * @accessibility Complete ARIA support with aria-label="Breadcrumb"
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+
+interface Props extends HTMLAttributes<'nav'> {}
+
+const { class: className, ...attrs } = Astro.props;
+---
+
+<nav aria-label="Breadcrumb" class={classy(className)} {...attrs}>
+  <slot />
+</nav>

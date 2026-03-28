@@ -1,0 +1,11 @@
+---
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { breadcrumbItemClasses } from './breadcrumb.classes';
+
+interface Props extends HTMLAttributes<'li'> {}
+
+const { class: className, ...attrs } = Astro.props;
+---
+
+<li class={classy(breadcrumbItemClasses, className)} {...attrs}><slot /></li>

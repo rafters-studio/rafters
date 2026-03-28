@@ -1,0 +1,43 @@
+---
+/**
+ * Status message component for important user feedback (Astro)
+ *
+ * Zero client JavaScript. Server-rendered markup with Tailwind tokens.
+ * Same variants and accessibility as the React counterpart.
+ *
+ * Uses named slots for sub-components:
+ * - default slot: Alert content (icons, title, description)
+ * - Use AlertTitle.astro and AlertDescription.astro as children
+ *
+ * @cognitive-load 3/10
+ * @accessibility role="alert" for screen readers; never color-only
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { alertBaseClasses, alertVariantClasses } from './alert.classes';
+
+interface Props extends HTMLAttributes<'div'> {
+  variant?:
+    | 'default'
+    | 'primary'
+    | 'secondary'
+    | 'destructive'
+    | 'success'
+    | 'warning'
+    | 'info'
+    | 'muted'
+    | 'accent';
+}
+
+const { variant = 'default', class: className, ...attrs } = Astro.props;
+
+const classes = classy(
+  alertBaseClasses,
+  alertVariantClasses[variant] ?? alertVariantClasses.default,
+  className,
+);
+---
+
+<div role="alert" class={classes} {...attrs}>
+  <slot />
+</div>

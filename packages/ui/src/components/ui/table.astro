@@ -1,0 +1,24 @@
+---
+/**
+ * Table component for displaying structured data (Astro)
+ *
+ * Zero client JavaScript. Server-rendered semantic table markup.
+ * Use TableHeader, TableBody, TableRow, TableHead, TableCell sub-components.
+ *
+ * @cognitive-load 3/10
+ * @accessibility Semantic table elements with proper scope attributes
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { tableRootClasses, tableWrapperClasses } from './table.classes';
+
+interface Props extends HTMLAttributes<'table'> {}
+
+const { class: className, ...attrs } = Astro.props;
+---
+
+<div class={tableWrapperClasses}>
+  <table data-table="" class={classy(tableRootClasses, className)} {...attrs}>
+    <slot />
+  </table>
+</div>

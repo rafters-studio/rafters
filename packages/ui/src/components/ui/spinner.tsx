@@ -25,6 +25,7 @@
  */
 import * as React from 'react';
 import classy from '../../primitives/classy';
+import { spinnerBaseClasses, spinnerSizeClasses, spinnerVariantClasses } from './spinner.classes';
 
 export interface SpinnerProps extends React.HTMLAttributes<HTMLOutputElement> {
   /** Size variant */
@@ -42,33 +43,12 @@ export interface SpinnerProps extends React.HTMLAttributes<HTMLOutputElement> {
     | 'muted';
 }
 
-// Variant classes for spinner color
-const variantClasses: Record<string, string> = {
-  default: 'border-primary border-r-transparent',
-  primary: 'border-primary border-r-transparent',
-  secondary: 'border-secondary border-r-transparent',
-  destructive: 'border-destructive border-r-transparent',
-  success: 'border-success border-r-transparent',
-  warning: 'border-warning border-r-transparent',
-  info: 'border-info border-r-transparent',
-  accent: 'border-accent border-r-transparent',
-  muted: 'border-muted-foreground border-r-transparent',
-};
-
-const sizeClasses: Record<string, string> = {
-  sm: 'h-4 w-4 border-2',
-  default: 'h-6 w-6 border-2',
-  lg: 'h-8 w-8 border-3',
-};
-
 export const Spinner = React.forwardRef<HTMLOutputElement, SpinnerProps>(
   ({ className, size = 'default', variant = 'default', ...props }, ref) => {
-    const baseClasses = 'inline-block rounded-full animate-spin motion-reduce:animate-none';
-
     const classes = classy(
-      baseClasses,
-      sizeClasses[size] ?? sizeClasses.default,
-      variantClasses[variant] ?? variantClasses.default,
+      spinnerBaseClasses,
+      spinnerSizeClasses[size] ?? spinnerSizeClasses.default,
+      spinnerVariantClasses[variant] ?? spinnerVariantClasses.default,
       className,
     );
 

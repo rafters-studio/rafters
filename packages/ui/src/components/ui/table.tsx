@@ -38,19 +38,25 @@
 
 import * as React from 'react';
 import classy from '../../primitives/classy';
+import {
+  tableBodyClasses,
+  tableCaptionClasses,
+  tableCellClasses,
+  tableFooterClasses,
+  tableHeadClasses,
+  tableHeaderClasses,
+  tableRootClasses,
+  tableRowClasses,
+  tableWrapperClasses,
+} from './table.classes';
 
 // ==================== Table (Root) ====================
 
 export interface TableProps extends React.TableHTMLAttributes<HTMLTableElement> {}
 
 const TableRoot = React.forwardRef<HTMLTableElement, TableProps>(({ className, ...props }, ref) => (
-  <div className="relative w-full overflow-auto">
-    <table
-      ref={ref}
-      data-table=""
-      className={classy('w-full caption-bottom text-sm', className)}
-      {...props}
-    />
+  <div className={tableWrapperClasses}>
+    <table ref={ref} data-table="" className={classy(tableRootClasses, className)} {...props} />
   </div>
 ));
 
@@ -65,7 +71,7 @@ export const TableHeader = React.forwardRef<HTMLTableSectionElement, TableHeader
     <thead
       ref={ref}
       data-table-header=""
-      className={classy('[&_tr]:border-b', className)}
+      className={classy(tableHeaderClasses, className)}
       {...props}
     />
   ),
@@ -82,7 +88,7 @@ export const TableBody = React.forwardRef<HTMLTableSectionElement, TableBodyProp
     <tbody
       ref={ref}
       data-table-body=""
-      className={classy('[&_tr:last-child]:border-0', className)}
+      className={classy(tableBodyClasses, className)}
       {...props}
     />
   ),
@@ -99,7 +105,7 @@ export const TableFooter = React.forwardRef<HTMLTableSectionElement, TableFooter
     <tfoot
       ref={ref}
       data-table-footer=""
-      className={classy('border-t bg-muted/50 font-medium [&>tr]:last:border-b-0', className)}
+      className={classy(tableFooterClasses, className)}
       {...props}
     />
   ),
@@ -113,17 +119,7 @@ export interface TableRowProps extends React.HTMLAttributes<HTMLTableRowElement>
 
 export const TableRow = React.forwardRef<HTMLTableRowElement, TableRowProps>(
   ({ className, ...props }, ref) => (
-    <tr
-      ref={ref}
-      data-table-row=""
-      className={classy(
-        'border-b transition-colors',
-        'hover:bg-muted/50',
-        'data-[state=selected]:bg-muted',
-        className,
-      )}
-      {...props}
-    />
+    <tr ref={ref} data-table-row="" className={classy(tableRowClasses, className)} {...props} />
   ),
 );
 
@@ -135,17 +131,7 @@ export interface TableHeadProps extends React.ThHTMLAttributes<HTMLTableCellElem
 
 export const TableHead = React.forwardRef<HTMLTableCellElement, TableHeadProps>(
   ({ className, ...props }, ref) => (
-    <th
-      ref={ref}
-      data-table-head=""
-      className={classy(
-        'h-10 px-2 text-left align-middle font-medium text-muted-foreground',
-        '[&:has([role=checkbox])]:pr-0',
-        '[&>[role=checkbox]]:translate-y-0.5',
-        className,
-      )}
-      {...props}
-    />
+    <th ref={ref} data-table-head="" className={classy(tableHeadClasses, className)} {...props} />
   ),
 );
 
@@ -157,17 +143,7 @@ export interface TableCellProps extends React.TdHTMLAttributes<HTMLTableCellElem
 
 export const TableCell = React.forwardRef<HTMLTableCellElement, TableCellProps>(
   ({ className, ...props }, ref) => (
-    <td
-      ref={ref}
-      data-table-cell=""
-      className={classy(
-        'p-2 align-middle',
-        '[&:has([role=checkbox])]:pr-0',
-        '[&>[role=checkbox]]:translate-y-0.5',
-        className,
-      )}
-      {...props}
-    />
+    <td ref={ref} data-table-cell="" className={classy(tableCellClasses, className)} {...props} />
   ),
 );
 
@@ -182,7 +158,7 @@ export const TableCaption = React.forwardRef<HTMLTableCaptionElement, TableCapti
     <caption
       ref={ref}
       data-table-caption=""
-      className={classy('mt-4 text-sm text-muted-foreground', className)}
+      className={classy(tableCaptionClasses, className)}
       {...props}
     />
   ),

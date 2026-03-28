@@ -34,6 +34,12 @@
  */
 import * as React from 'react';
 import classy from '../../primitives/classy';
+import {
+  progressContainerClasses,
+  progressIndicatorBaseClasses,
+  progressSizeClasses,
+  progressVariantClasses,
+} from './progress.classes';
 
 export interface ProgressProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Current progress value (0 to max). Undefined = indeterminate state. */
@@ -55,24 +61,6 @@ export interface ProgressProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Size variant */
   size?: 'sm' | 'default' | 'lg';
 }
-
-// Variant classes for the indicator
-const variantClasses: Record<string, string> = {
-  default: 'bg-primary',
-  primary: 'bg-primary',
-  secondary: 'bg-secondary',
-  destructive: 'bg-destructive',
-  success: 'bg-success',
-  warning: 'bg-warning',
-  info: 'bg-info',
-  accent: 'bg-accent',
-};
-
-const sizeClasses: Record<string, string> = {
-  sm: 'h-1',
-  default: 'h-2',
-  lg: 'h-3',
-};
 
 function defaultValueLabel(value: number, max: number): string {
   return `${Math.round((value / max) * 100)}%`;
@@ -104,17 +92,13 @@ export const Progress = React.forwardRef<HTMLDivElement, ProgressProps>(
         ? getValueLabel(clampedValue, max)
         : defaultValueLabel(clampedValue, max);
 
-    const s = sizeClasses[size] ?? sizeClasses.default;
-    const v = variantClasses[variant] ?? variantClasses.default;
+    const s = progressSizeClasses[size] ?? progressSizeClasses.default;
+    const v = progressVariantClasses[variant] ?? progressVariantClasses.default;
 
-    const containerClasses = classy(
-      'relative w-full overflow-hidden rounded-full bg-muted',
-      s,
-      className,
-    );
+    const containerClasses = classy(progressContainerClasses, s, className);
 
     const indicatorClasses = classy(
-      'h-full transition-all duration-normal motion-reduce:transition-none',
+      progressIndicatorBaseClasses,
       v,
       isIndeterminate && 'animate-progress-indeterminate motion-reduce:animate-none',
     );

@@ -1,0 +1,31 @@
+---
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import {
+  paginationLinkBaseClasses,
+  paginationLinkInactiveClasses,
+  paginationLinkSizeClasses,
+} from './pagination.classes';
+
+interface Props extends HTMLAttributes<'a'> {
+  href: string;
+  label?: string;
+}
+
+const { href, label = 'Previous', class: className, ...attrs } = Astro.props;
+
+const classes = classy(
+  paginationLinkBaseClasses,
+  paginationLinkSizeClasses.default,
+  paginationLinkInactiveClasses,
+  'gap-1 pl-2.5',
+  className,
+);
+---
+
+<a href={href} aria-label="Go to previous page" class={classes} {...attrs}>
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4" aria-hidden="true">
+    <path d="m15 18-6-6 6-6" />
+  </svg>
+  <span>{label}</span>
+</a>

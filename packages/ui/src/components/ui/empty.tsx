@@ -62,6 +62,13 @@
  */
 import * as React from 'react';
 import classy from '../../primitives/classy';
+import {
+  emptyActionClasses,
+  emptyBaseClasses,
+  emptyDescriptionClasses,
+  emptyIconClasses,
+  emptyTitleClasses,
+} from './empty.classes';
 
 export interface EmptyProps extends React.HTMLAttributes<HTMLDivElement> {}
 
@@ -76,11 +83,7 @@ export interface EmptyActionProps extends React.HTMLAttributes<HTMLDivElement> {
 export const Empty = React.forwardRef<HTMLDivElement, EmptyProps>(
   ({ className, children, ...props }, ref) => {
     return (
-      <div
-        ref={ref}
-        className={classy('flex flex-col items-center justify-center py-12 text-center', className)}
-        {...props}
-      >
+      <div ref={ref} className={classy(emptyBaseClasses, className)} {...props}>
         {children}
       </div>
     );
@@ -91,11 +94,7 @@ Empty.displayName = 'Empty';
 export const EmptyIcon = React.forwardRef<HTMLDivElement, EmptyIconProps>(
   ({ className, children, ...props }, ref) => {
     return (
-      <div
-        ref={ref}
-        className={classy('mb-4 text-muted-foreground [&>svg]:h-12 [&>svg]:w-12', className)}
-        {...props}
-      >
+      <div ref={ref} className={classy(emptyIconClasses, className)} {...props}>
         {children}
       </div>
     );
@@ -106,11 +105,7 @@ EmptyIcon.displayName = 'EmptyIcon';
 export const EmptyTitle = React.forwardRef<HTMLHeadingElement, EmptyTitleProps>(
   ({ className, children, ...props }, ref) => {
     return (
-      <h3
-        ref={ref}
-        className={classy('mb-2 text-lg font-semibold text-foreground', className)}
-        {...props}
-      >
+      <h3 ref={ref} className={classy(emptyTitleClasses, className)} {...props}>
         {children}
       </h3>
     );
@@ -121,11 +116,7 @@ EmptyTitle.displayName = 'EmptyTitle';
 export const EmptyDescription = React.forwardRef<HTMLParagraphElement, EmptyDescriptionProps>(
   ({ className, children, ...props }, ref) => {
     return (
-      <p
-        ref={ref}
-        className={classy('mb-4 max-w-sm text-sm text-muted-foreground', className)}
-        {...props}
-      >
+      <p ref={ref} className={classy(emptyDescriptionClasses, className)} {...props}>
         {children}
       </p>
     );
@@ -136,7 +127,7 @@ EmptyDescription.displayName = 'EmptyDescription';
 export const EmptyAction = React.forwardRef<HTMLDivElement, EmptyActionProps>(
   ({ className, children, ...props }, ref) => {
     return (
-      <div ref={ref} className={classy('mt-2', className)} {...props}>
+      <div ref={ref} className={classy(emptyActionClasses, className)} {...props}>
         {children}
       </div>
     );

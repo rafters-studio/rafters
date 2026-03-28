@@ -1,0 +1,11 @@
+---
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { breadcrumbPageClasses } from './breadcrumb.classes';
+
+interface Props extends HTMLAttributes<'span'> {}
+
+const { class: className, ...attrs } = Astro.props;
+---
+
+<span role="link" aria-disabled="true" aria-current="page" class={classy(breadcrumbPageClasses, className)} {...attrs}><slot /></span>

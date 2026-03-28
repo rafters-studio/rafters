@@ -61,6 +61,14 @@
 import * as React from 'react';
 import classy from '../../primitives/classy';
 import { mergeProps } from '../../primitives/slot';
+import {
+  breadcrumbEllipsisClasses,
+  breadcrumbItemClasses,
+  breadcrumbLinkClasses,
+  breadcrumbListClasses,
+  breadcrumbPageClasses,
+  breadcrumbSeparatorClasses,
+} from './breadcrumb.classes';
 
 export interface BreadcrumbProps extends React.ComponentPropsWithoutRef<'nav'> {}
 
@@ -75,14 +83,7 @@ export interface BreadcrumbListProps extends React.ComponentPropsWithoutRef<'ol'
 
 export const BreadcrumbList = React.forwardRef<HTMLOListElement, BreadcrumbListProps>(
   ({ className, ...props }, ref) => (
-    <ol
-      ref={ref}
-      className={classy(
-        'flex flex-wrap items-center gap-1.5 break-words text-sm text-muted-foreground sm:gap-2.5',
-        className,
-      )}
-      {...props}
-    />
+    <ol ref={ref} className={classy(breadcrumbListClasses, className)} {...props} />
   ),
 );
 BreadcrumbList.displayName = 'BreadcrumbList';
@@ -91,7 +92,7 @@ export interface BreadcrumbItemProps extends React.ComponentPropsWithoutRef<'li'
 
 export const BreadcrumbItem = React.forwardRef<HTMLLIElement, BreadcrumbItemProps>(
   ({ className, ...props }, ref) => (
-    <li ref={ref} className={classy('inline-flex items-center gap-1.5', className)} {...props} />
+    <li ref={ref} className={classy(breadcrumbItemClasses, className)} {...props} />
   ),
 );
 BreadcrumbItem.displayName = 'BreadcrumbItem';
@@ -102,7 +103,7 @@ export interface BreadcrumbLinkProps extends React.ComponentPropsWithoutRef<'a'>
 
 export const BreadcrumbLink = React.forwardRef<HTMLAnchorElement, BreadcrumbLinkProps>(
   ({ asChild, className, children, ...props }, ref) => {
-    const cls = classy('transition-colors hover:text-foreground', className);
+    const cls = classy(breadcrumbLinkClasses, className);
 
     if (asChild && React.isValidElement(children)) {
       const child = children as React.ReactElement<
@@ -145,7 +146,7 @@ export const BreadcrumbPage = React.forwardRef<HTMLSpanElement, BreadcrumbPagePr
       role="link"
       aria-disabled="true"
       aria-current="page"
-      className={classy('font-normal text-foreground', className)}
+      className={classy(breadcrumbPageClasses, className)}
       {...props}
     />
   ),
@@ -160,7 +161,7 @@ export const BreadcrumbSeparator = React.forwardRef<HTMLLIElement, BreadcrumbSep
       ref={ref}
       role="presentation"
       aria-hidden="true"
-      className={classy('[&>svg]:size-3.5', className)}
+      className={classy(breadcrumbSeparatorClasses, className)}
       {...props}
     >
       {children ?? <ChevronRight />}
@@ -177,7 +178,7 @@ export const BreadcrumbEllipsis = React.forwardRef<HTMLSpanElement, BreadcrumbEl
       ref={ref}
       role="presentation"
       aria-hidden="true"
-      className={classy('flex h-9 w-9 items-center justify-center', className)}
+      className={classy(breadcrumbEllipsisClasses, className)}
       {...props}
     >
       <MoreHorizontal className="h-4 w-4" />

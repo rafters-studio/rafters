@@ -1,0 +1,48 @@
+---
+/**
+ * User representation component with image and fallback support (Astro)
+ *
+ * Zero client JavaScript. Server-rendered with CSS-only fallback logic.
+ * The image uses CSS object-fit; if it fails to load, the fallback slot shows
+ * via the :not(:has(img[src])) or noscript pattern.
+ *
+ * For SSR, the caller decides whether to render the image or fallback.
+ * Pass `src` for the image, or omit it to show only the fallback slot.
+ *
+ * @cognitive-load 2/10
+ * @accessibility Alt text required for images; decorative avatars use aria-hidden
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import {
+  avatarBaseClasses,
+  avatarFallbackClasses,
+  avatarImageClasses,
+  avatarSizeClasses,
+} from './avatar.classes';
+
+interface Props extends HTMLAttributes<'span'> {
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+  src?: string;
+  alt?: string;
+  fallback?: string;
+}
+
+const { size = 'md', src, alt = '', fallback, class: className, ...attrs } = Astro.props;
+
+const rootClasses = classy(
+  avatarBaseClasses,
+  avatarSizeClasses[size] ?? avatarSizeClasses.md,
+  className,
+);
+---
+
+<span class={rootClasses} {...attrs}>
+  {src ? (
+    <img src={src} alt={alt} class={avatarImageClasses} />
+  ) : (
+    <span class={avatarFallbackClasses}>
+      {fallback ? fallback : <slot />}
+    </span>
+  )}
+</span>

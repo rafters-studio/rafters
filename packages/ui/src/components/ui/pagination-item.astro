@@ -1,0 +1,10 @@
+---
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+
+interface Props extends HTMLAttributes<'li'> {}
+
+const { class: className, ...attrs } = Astro.props;
+---
+
+<li class={classy(className)} {...attrs}><slot /></li>

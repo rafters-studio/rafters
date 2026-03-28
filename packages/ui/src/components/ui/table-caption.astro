@@ -1,0 +1,11 @@
+---
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { tableCaptionClasses } from './table.classes';
+
+interface Props extends HTMLAttributes<'caption'> {}
+
+const { class: className, ...attrs } = Astro.props;
+---
+
+<caption data-table-caption="" class={classy(tableCaptionClasses, className)} {...attrs}><slot /></caption>

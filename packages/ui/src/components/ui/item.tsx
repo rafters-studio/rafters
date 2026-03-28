@@ -48,6 +48,16 @@
  */
 import * as React from 'react';
 import classy from '../../primitives/classy';
+import {
+  itemBaseClasses,
+  itemContentClasses,
+  itemDescriptionClasses,
+  itemFocusClasses,
+  itemIconClasses,
+  itemLabelClasses,
+  itemMotionClasses,
+  itemSizeClasses,
+} from './item.classes';
 
 export interface ItemProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Icon element displayed before the item content */
@@ -61,12 +71,6 @@ export interface ItemProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Visual size variant */
   size?: 'default' | 'sm' | 'lg';
 }
-
-const sizeClasses: Record<string, string> = {
-  default: 'px-3 py-2 text-sm',
-  sm: 'px-2 py-1.5 text-xs',
-  lg: 'px-4 py-3 text-base',
-};
 
 export const Item = React.forwardRef<HTMLDivElement, ItemProps>(
   (
@@ -84,8 +88,6 @@ export const Item = React.forwardRef<HTMLDivElement, ItemProps>(
     },
     ref,
   ) => {
-    const base = 'flex items-center gap-3 rounded-md cursor-default select-none outline-none';
-
     // State styles following design token patterns
     const stateStyles = disabled
       ? 'opacity-50 pointer-events-none text-muted-foreground'
@@ -94,11 +96,8 @@ export const Item = React.forwardRef<HTMLDivElement, ItemProps>(
         : 'text-foreground hover:bg-accent hover:text-accent-foreground';
 
     // Focus styles for keyboard navigation
-    const focusStyles =
-      'focus-visible:bg-accent focus-visible:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1';
 
     // Motion with reduced motion support
-    const motionStyles = 'transition-colors duration-fast motion-reduce:transition-none';
 
     const handleClick = (event: React.MouseEvent<HTMLDivElement>) => {
       if (disabled) {
@@ -126,11 +125,11 @@ export const Item = React.forwardRef<HTMLDivElement, ItemProps>(
     };
 
     const cls = classy(
-      base,
-      sizeClasses[size] ?? sizeClasses.default,
+      itemBaseClasses,
+      itemSizeClasses[size] ?? itemSizeClasses.default,
       stateStyles,
-      focusStyles,
-      motionStyles,
+      itemFocusClasses,
+      itemMotionClasses,
       className,
     );
 
@@ -149,15 +148,13 @@ export const Item = React.forwardRef<HTMLDivElement, ItemProps>(
         {...props}
       >
         {icon && (
-          <span className="shrink-0 text-current" aria-hidden="true">
+          <span className={itemIconClasses} aria-hidden="true">
             {icon}
           </span>
         )}
-        <span className="flex min-w-0 flex-1 flex-col">
-          <span className="truncate">{children}</span>
-          {description && (
-            <span className="truncate text-muted-foreground text-xs mt-0.5">{description}</span>
-          )}
+        <span className={itemContentClasses}>
+          <span className={itemLabelClasses}>{children}</span>
+          {description && <span className={itemDescriptionClasses}>{description}</span>}
         </span>
       </div>
     );

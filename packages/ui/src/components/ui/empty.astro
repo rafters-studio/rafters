@@ -1,0 +1,22 @@
+---
+/**
+ * Empty state display for when there is no content to show (Astro)
+ *
+ * Zero client JavaScript. Server-rendered empty state messaging.
+ * Use EmptyIcon, EmptyTitle, EmptyDescription, EmptyAction sub-components as children.
+ *
+ * @cognitive-load 2/10
+ * @accessibility Clear heading hierarchy; actionable elements are keyboard accessible
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { emptyBaseClasses } from './empty.classes';
+
+interface Props extends HTMLAttributes<'div'> {}
+
+const { class: className, ...attrs } = Astro.props;
+---
+
+<div class={classy(emptyBaseClasses, className)} {...attrs}>
+  <slot />
+</div>

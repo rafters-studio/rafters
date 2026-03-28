@@ -1,0 +1,43 @@
+---
+/**
+ * CSS-only tabbed interface component (Astro)
+ *
+ * Zero client JavaScript for tab switching. Uses hidden radio inputs with
+ * CSS :checked selectors. A small inline script handles arrow key navigation.
+ *
+ * @cognitive-load 4/10
+ * @accessibility role=tablist, role=tab, role=tabpanel, aria-selected, arrow key navigation
+ *
+ * @example
+ * ```astro
+ * <Tabs id="demo" defaultValue="overview">
+ *   <TabsList>
+ *     <TabsTrigger tabsId="demo" value="overview">Overview</TabsTrigger>
+ *     <TabsTrigger tabsId="demo" value="details">Details</TabsTrigger>
+ *   </TabsList>
+ *   <TabsContent tabsId="demo" value="overview">Overview content</TabsContent>
+ *   <TabsContent tabsId="demo" value="details">Details content</TabsContent>
+ * </Tabs>
+ * ```
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+
+interface Props extends HTMLAttributes<'div'> {
+  /** Unique identifier for this tab group, used to link radios, labels, and panels */
+  id: string;
+  /** Which tab value is selected by default */
+  defaultValue: string;
+}
+
+const { id, defaultValue, class: className, ...attrs } = Astro.props;
+---
+
+<div
+  class={classy(className)}
+  data-tabs-root={id}
+  data-tabs-default={defaultValue}
+  {...attrs}
+>
+  <slot />
+</div>

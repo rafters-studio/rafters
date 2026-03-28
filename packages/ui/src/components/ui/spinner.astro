@@ -1,0 +1,40 @@
+---
+/**
+ * Spinning loading indicator for active operations (Astro)
+ *
+ * Zero client JavaScript. CSS animation only.
+ *
+ * @cognitive-load 2/10
+ * @accessibility aria-label for screen readers, motion-reduce respects preferences
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { spinnerBaseClasses, spinnerSizeClasses, spinnerVariantClasses } from './spinner.classes';
+
+interface Props extends HTMLAttributes<'output'> {
+  size?: 'sm' | 'default' | 'lg';
+  variant?:
+    | 'default'
+    | 'primary'
+    | 'secondary'
+    | 'destructive'
+    | 'success'
+    | 'warning'
+    | 'info'
+    | 'accent'
+    | 'muted';
+}
+
+const { size = 'default', variant = 'default', class: className, ...attrs } = Astro.props;
+
+const classes = classy(
+  spinnerBaseClasses,
+  spinnerSizeClasses[size] ?? spinnerSizeClasses.default,
+  spinnerVariantClasses[variant] ?? spinnerVariantClasses.default,
+  className,
+);
+---
+
+<output aria-label="Loading" class={classes} {...attrs}>
+  <span class="sr-only">Loading</span>
+</output>

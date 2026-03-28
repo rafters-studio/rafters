@@ -58,6 +58,15 @@
 import * as React from 'react';
 import classy from '../../primitives/classy';
 import { mergeProps } from '../../primitives/slot';
+import {
+  paginationContentClasses,
+  paginationEllipsisClasses,
+  paginationLinkActiveClasses,
+  paginationLinkBaseClasses,
+  paginationLinkInactiveClasses,
+  paginationLinkSizeClasses,
+  paginationNavClasses,
+} from './pagination.classes';
 
 export interface PaginationProps extends React.ComponentPropsWithoutRef<'nav'> {}
 
@@ -66,7 +75,7 @@ export const Pagination = React.forwardRef<HTMLElement, PaginationProps>(
     <nav
       ref={ref}
       aria-label="Pagination"
-      className={classy('mx-auto flex w-full justify-center', className)}
+      className={classy(paginationNavClasses, className)}
       {...props}
     />
   ),
@@ -77,7 +86,7 @@ export interface PaginationContentProps extends React.ComponentPropsWithoutRef<'
 
 export const PaginationContent = React.forwardRef<HTMLUListElement, PaginationContentProps>(
   ({ className, ...props }, ref) => (
-    <ul ref={ref} className={classy('flex flex-row items-center gap-1', className)} {...props} />
+    <ul ref={ref} className={classy(paginationContentClasses, className)} {...props} />
   ),
 );
 PaginationContent.displayName = 'PaginationContent';
@@ -102,26 +111,15 @@ export interface PaginationLinkProps {
   children?: React.ReactNode;
 }
 
-const sizeClasses: Record<string, string> = {
-  default: 'h-10 min-w-10 px-4 py-2',
-  sm: 'h-9 min-w-9 px-3',
-  lg: 'h-11 min-w-11 px-8',
-  icon: 'h-10 w-10',
-};
-
 export const PaginationLink = React.forwardRef<PaginationLinkElement, PaginationLinkProps>(
   (
     { isActive, disabled, size = 'icon', asChild, href, onClick, className, children, ...props },
     ref,
   ) => {
     const baseClasses = classy(
-      'inline-flex items-center justify-center rounded-md text-sm font-medium',
-      'transition-colors duration-normal motion-reduce:transition-none',
-      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-      sizeClasses[size] ?? sizeClasses.icon,
-      isActive
-        ? 'bg-primary text-primary-foreground hover:bg-primary-hover'
-        : 'bg-transparent text-foreground hover:bg-accent hover:text-accent-foreground',
+      paginationLinkBaseClasses,
+      paginationLinkSizeClasses[size] ?? paginationLinkSizeClasses.icon,
+      isActive ? paginationLinkActiveClasses : paginationLinkInactiveClasses,
       disabled && 'pointer-events-none opacity-50',
       className,
     );
@@ -233,7 +231,7 @@ export const PaginationEllipsis = React.forwardRef<HTMLSpanElement, PaginationEl
     <span
       ref={ref}
       aria-hidden="true"
-      className={classy('flex h-9 w-9 items-center justify-center', className)}
+      className={classy(paginationEllipsisClasses, className)}
       {...props}
     >
       <MoreHorizontal className="h-4 w-4" />

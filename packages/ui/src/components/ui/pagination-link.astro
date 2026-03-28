@@ -1,0 +1,27 @@
+---
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import {
+  paginationLinkActiveClasses,
+  paginationLinkBaseClasses,
+  paginationLinkInactiveClasses,
+  paginationLinkSizeClasses,
+} from './pagination.classes';
+
+interface Props extends HTMLAttributes<'a'> {
+  href: string;
+  isActive?: boolean;
+  size?: 'default' | 'sm' | 'lg' | 'icon';
+}
+
+const { href, isActive = false, size = 'icon', class: className, ...attrs } = Astro.props;
+
+const classes = classy(
+  paginationLinkBaseClasses,
+  paginationLinkSizeClasses[size] ?? paginationLinkSizeClasses.icon,
+  isActive ? paginationLinkActiveClasses : paginationLinkInactiveClasses,
+  className,
+);
+---
+
+<a href={href} class={classes} aria-current={isActive ? 'page' : undefined} {...attrs}><slot /></a>

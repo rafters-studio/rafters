@@ -62,29 +62,21 @@ export interface AlertProps extends React.HTMLAttributes<HTMLDivElement> {
     | 'accent';
 }
 
-// Variant classes per docs/COMPONENT_STYLING_REFERENCE.md - using -subtle for alert backgrounds
-const variantClasses: Record<string, string> = {
-  default: 'bg-primary-subtle text-primary-foreground border-primary-border',
-  primary: 'bg-primary-subtle text-primary-foreground border-primary-border',
-  secondary: 'bg-secondary-subtle text-secondary-foreground border-secondary-border',
-  destructive: 'bg-destructive-subtle text-destructive-foreground border-destructive-border',
-  success: 'bg-success-subtle text-success-foreground border-success-border',
-  warning: 'bg-warning-subtle text-warning-foreground border-warning-border',
-  info: 'bg-info-subtle text-info-foreground border-info-border',
-  muted: 'bg-muted text-muted-foreground border-border',
-  accent: 'bg-accent-subtle text-accent-foreground border-accent-border',
-};
+import {
+  alertActionClasses,
+  alertBaseClasses,
+  alertDescriptionClasses,
+  alertTitleClasses,
+  alertVariantClasses,
+} from './alert.classes';
 
 export const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
   ({ className, variant = 'default', ...props }, ref) => {
-    const base =
-      'relative w-full rounded-lg border p-4 [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg+div]:-translate-y-0.5 [&:has(svg)]:pl-11';
-
     return (
       <div
         ref={ref}
         role="alert"
-        className={classy(base, variantClasses[variant] ?? '', className)}
+        className={classy(alertBaseClasses, alertVariantClasses[variant] ?? '', className)}
         {...props}
       />
     );
@@ -97,11 +89,7 @@ export const AlertTitle = React.forwardRef<
   HTMLHeadingElement,
   React.HTMLAttributes<HTMLHeadingElement>
 >(({ className, ...props }, ref) => (
-  <h5
-    ref={ref}
-    className={classy('mb-1 font-medium leading-none tracking-tight', className)}
-    {...props}
-  />
+  <h5 ref={ref} className={classy(alertTitleClasses, className)} {...props} />
 ));
 
 AlertTitle.displayName = 'AlertTitle';
@@ -110,7 +98,7 @@ export const AlertDescription = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
-  <div ref={ref} className={classy('text-sm [&_p]:leading-relaxed', className)} {...props} />
+  <div ref={ref} className={classy(alertDescriptionClasses, className)} {...props} />
 ));
 
 AlertDescription.displayName = 'AlertDescription';
@@ -122,7 +110,7 @@ export const AlertAction = React.forwardRef<HTMLDivElement, AlertActionProps>(
     <div
       ref={ref}
       data-slot="alert-action"
-      className={classy('ml-auto shrink-0', className)}
+      className={classy(alertActionClasses, className)}
       {...props}
     />
   ),

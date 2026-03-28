@@ -1,0 +1,11 @@
+---
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { emptyTitleClasses } from './empty.classes';
+
+interface Props extends HTMLAttributes<'h3'> {}
+
+const { class: className, ...attrs } = Astro.props;
+---
+
+<h3 class={classy(emptyTitleClasses, className)} {...attrs}><slot /></h3>

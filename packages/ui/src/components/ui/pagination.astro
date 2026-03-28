@@ -1,0 +1,23 @@
+---
+/**
+ * Navigation component for paginated content (Astro)
+ *
+ * Zero client JavaScript. Server-rendered pagination navigation.
+ * Use PaginationContent, PaginationItem, PaginationLink, PaginationPrevious,
+ * PaginationNext, and PaginationEllipsis sub-components as children.
+ *
+ * @cognitive-load 4/10
+ * @accessibility Complete ARIA support with nav landmark and aria-label
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { paginationNavClasses } from './pagination.classes';
+
+interface Props extends HTMLAttributes<'nav'> {}
+
+const { class: className, ...attrs } = Astro.props;
+---
+
+<nav aria-label="Pagination" class={classy(paginationNavClasses, className)} {...attrs}>
+  <slot />
+</nav>
