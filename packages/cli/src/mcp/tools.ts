@@ -1849,10 +1849,12 @@ export class RaftersToolHandler {
   }
 
   /**
-   * Detect if a string value is a CSS color
+   * Detect if a string value is a CSS color (not a size, calc, or var reference)
    */
   private static isColorValue(value: string): boolean {
     const v = value.trim().toLowerCase();
+    if (/^\d/.test(v) || v.startsWith('var(') || v.startsWith('calc(')) return false;
+    if (/\d+(rem|px|em|%|vw|vh|dvh|svh|ch|ex)$/.test(v)) return false;
     return (
       v.startsWith('#') ||
       v.startsWith('rgb') ||
@@ -1860,32 +1862,19 @@ export class RaftersToolHandler {
       v.startsWith('oklch') ||
       v.startsWith('oklab') ||
       v.startsWith('lch') ||
-      v.startsWith('lab')
+      v.startsWith('lab') ||
+      v.startsWith('color(') ||
+      v.startsWith('hwb')
     );
   }
 
   /**
-   * Parse any CSS color string to OKLCH
+   * Parse any CSS color to OKLCH. hexToOKLCH uses colorjs.io internally
+   * which accepts all CSS color formats, not just hex.
    */
   private static parseToOKLCH(value: string): OKLCH | null {
     try {
-      const v = value.trim();
-      if (v.startsWith('#')) {
-        return hexToOKLCH(v);
-      }
-      // oklch(L C H) -- parse directly
-      const oklchMatch = v.match(/oklch\(\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)/);
-      if (oklchMatch) {
-        return {
-          l: Number.parseFloat(oklchMatch[1] ?? '0'),
-          c: Number.parseFloat(oklchMatch[2] ?? '0'),
-          h: Number.parseFloat(oklchMatch[3] ?? '0'),
-          alpha: 1,
-        };
-      }
-      // For rgb/hsl/other formats, use hexToOKLCH with colorjs.io passthrough
-      // hexToOKLCH internally uses `new Color(value)` which handles all CSS formats
-      return hexToOKLCH(v);
+      return hexToOKLCH(value.trim());
     } catch {
       return null;
     }
