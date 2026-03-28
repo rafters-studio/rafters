@@ -18,6 +18,7 @@ import { existsSync } from 'node:fs';
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import { basename, join, relative } from 'node:path';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+import { buildColorValue, hexToOKLCH } from '@rafters/color-utils';
 import {
   DEFAULT_FONT_WEIGHTS,
   DEFAULT_SEMANTIC_COLOR_MAPPINGS,
@@ -39,6 +40,7 @@ import {
   extractSizes,
   extractVariants,
   type JSDocDependencies,
+  type OKLCH,
   parseDescription,
   parseJSDocIntelligence,
   type Token,
@@ -100,10 +102,13 @@ When onboarding an existing project, do NOT skip the learning step.
 1. Call rafters_vocabulary and explore token shapes first. Understand namespaces, dependency graph, the two primitives.
 2. Call rafters_onboard analyze to see what existing design decisions are in the CSS.
 3. Do NOT automatically map colors. Ask the designer about each ambiguous decision.
-4. Every token mutation needs a reason that captures design INTENT, not just origin.
+4. CHALLENGE SEMANTIC ASSIGNMENTS. Do not accept "this is primary" without asking why. "What makes this the primary identity color? Where is it used? What role does it play?" The designer must justify every family assignment.
+5. Every token mutation needs a reason that captures design INTENT, not just origin.
    Bad: "imported from globals.css"
    Good: "Brand blue from --brand-primary, primary identity color used on nav and CTAs per designer"
-5. Call rafters_onboard map to execute the migration once the designer confirms.
+6. The 11 semantic families (primary, secondary, tertiary, accent, neutral, success, warning, destructive, info, highlight, muted) MUST all be mapped. Extra colors are custom families in the color namespace.
+7. If analyze detects color scale patterns (e.g., --color-blaze-50 through --color-blaze-950), map the family using its base color. Do NOT create 11 individual tokens.
+8. Call rafters_onboard map to execute the migration once the designer confirms. Colors are automatically enriched with full OKLCH scales, harmonies, accessibility data, and API intelligence.
 
 When in doubt: less code, not more. Rafters has already made the design decision.`;
 
@@ -1715,14 +1720,57 @@ export class RaftersToolHandler {
         existingTokenCount = tokens.length;
       }
 
+      // Detect color scale patterns (e.g., --color-blaze-50 through --color-blaze-950)
+      const detectedFamilies: Array<{
+        family: string;
+        positions: string[];
+        baseValue: string;
+        source: string;
+      }> = [];
+
+      const allProps = cssFindings.flatMap((f) => f.customProperties);
+      const familyMap = new Map<string, Array<{ position: string; value: string }>>();
+
+      for (const prop of allProps) {
+        // Match patterns like --color-blaze-500, --brand-primary-200
+        const scaleMatch = prop.name.match(
+          /^--(color-)?(.+?)-(50|100|200|300|400|500|600|700|800|900|950)$/,
+        );
+        if (scaleMatch?.[2] && scaleMatch[3]) {
+          const family = scaleMatch[2];
+          if (!familyMap.has(family)) familyMap.set(family, []);
+          familyMap.get(family)?.push({ position: scaleMatch[3], value: prop.value });
+        }
+      }
+
+      for (const [family, positions] of familyMap) {
+        if (positions.length >= 3) {
+          const base =
+            positions.find((p) => p.position === '500') ??
+            positions.find((p) => p.position === '600') ??
+            positions[0];
+          if (base) {
+            detectedFamilies.push({
+              family,
+              positions: positions.map((p) => p.position),
+              baseValue: base.value,
+              source: `--color-${family}-*`,
+            });
+          }
+        }
+      }
+
       const result = {
         framework,
         cssFiles: cssFindings,
+        colorFamilies: detectedFamilies.length > 0 ? detectedFamilies : undefined,
         shadcn,
         designDependencies: designDeps,
         existingTokenCount,
         guidance:
-          'Review the custom properties above. Map each to a rafters token using rafters_onboard with action: "map". For ambiguous decisions, ask the designer.',
+          detectedFamilies.length > 0
+            ? `Found ${detectedFamilies.length} color scale pattern(s): ${detectedFamilies.map((f) => f.family).join(', ')}. Map each family using its base color (position 500/600), not individual scale positions. buildColorValue() will regenerate the full 11-step scale.`
+            : 'Review the custom properties above. Map each to a rafters token using rafters_onboard with action: "map". For ambiguous decisions, ask the designer.',
       };
 
       return {
@@ -1801,7 +1849,84 @@ export class RaftersToolHandler {
   }
 
   /**
-   * Execute a mapping plan -- calls writeToken for each mapping
+   * Detect if a string value is a CSS color
+   */
+  private static isColorValue(value: string): boolean {
+    const v = value.trim().toLowerCase();
+    return (
+      v.startsWith('#') ||
+      v.startsWith('rgb') ||
+      v.startsWith('hsl') ||
+      v.startsWith('oklch') ||
+      v.startsWith('oklab') ||
+      v.startsWith('lch') ||
+      v.startsWith('lab')
+    );
+  }
+
+  /**
+   * Parse any CSS color string to OKLCH
+   */
+  private static parseToOKLCH(value: string): OKLCH | null {
+    try {
+      const v = value.trim();
+      if (v.startsWith('#')) {
+        return hexToOKLCH(v);
+      }
+      // oklch(L C H) -- parse directly
+      const oklchMatch = v.match(/oklch\(\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)/);
+      if (oklchMatch) {
+        return {
+          l: Number.parseFloat(oklchMatch[1] ?? '0'),
+          c: Number.parseFloat(oklchMatch[2] ?? '0'),
+          h: Number.parseFloat(oklchMatch[3] ?? '0'),
+          alpha: 1,
+        };
+      }
+      // For rgb/hsl/other formats, use hexToOKLCH with colorjs.io passthrough
+      // hexToOKLCH internally uses `new Color(value)` which handles all CSS formats
+      return hexToOKLCH(v);
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Fire api.rafters.studio enrichment for a color (non-blocking)
+   */
+  private static fireEnrichment(oklch: OKLCH): Promise<unknown> {
+    const l = oklch.l.toFixed(3);
+    const c = oklch.c.toFixed(3);
+    const h = Math.round(oklch.h);
+    return fetch(`https://api.rafters.studio/color/${l}-${c}-${h}?sync=true`)
+      .then((r) => (r.ok ? r.json() : null))
+      .catch(() => null);
+  }
+
+  /**
+   * Build enriched ColorValue: local math + API intelligence
+   */
+  private static async buildEnrichedColor(oklch: OKLCH, tokenName: string): Promise<ColorValue> {
+    // Fire API before local math (same pattern as studio vite-plugin)
+    const enrichmentPromise = RaftersToolHandler.fireEnrichment(oklch);
+
+    // Local math (~1ms)
+    const colorValue = buildColorValue(oklch, { token: tokenName });
+
+    // Merge API intelligence when it arrives
+    const enrichment = await enrichmentPromise;
+    if (enrichment && typeof enrichment === 'object' && 'color' in enrichment) {
+      const apiColor = (enrichment as { color: { intelligence?: unknown } }).color;
+      if (apiColor?.intelligence) {
+        (colorValue as Record<string, unknown>).intelligence = apiColor.intelligence;
+      }
+    }
+
+    return colorValue;
+  }
+
+  /**
+   * Execute a mapping plan -- enriches colors, writes tokens
    */
   private async mapTokens(
     mappings: Array<Record<string, string>> | undefined,
@@ -1836,6 +1961,7 @@ export class RaftersToolHandler {
         target: string;
         action: string;
         ok: boolean;
+        enriched?: boolean;
         error?: string;
       }> = [];
 
@@ -1853,6 +1979,18 @@ export class RaftersToolHandler {
           continue;
         }
 
+        // Enrich color values into full ColorValue objects
+        let tokenValue: Token['value'] = value;
+        let enriched = false;
+
+        if (RaftersToolHandler.isColorValue(value)) {
+          const oklch = RaftersToolHandler.parseToOKLCH(value);
+          if (oklch) {
+            tokenValue = await RaftersToolHandler.buildEnrichedColor(oklch, target);
+            enriched = true;
+          }
+        }
+
         const exists = registry.has(target);
 
         if (exists) {
@@ -1865,18 +2003,18 @@ export class RaftersToolHandler {
                 typeof previousValue === 'string' ? previousValue : JSON.stringify(previousValue),
               reason: `Onboarded from ${source}: ${reason}`,
             };
-            await registry.set(target, value);
-            results.push({ source, target, action: 'set', ok: true });
+            await registry.set(target, tokenValue);
+            results.push({ source, target, action: 'set', ok: true, enriched });
           }
         } else {
           // Create new token
-          const ns = namespace ?? 'color';
+          const ns = namespace ?? (enriched ? 'color' : 'custom');
           const cat = category ?? ns;
           const newToken: Token = {
             name: target,
             namespace: ns,
             category: cat,
-            value,
+            value: tokenValue,
             containerQueryAware: true,
             userOverride: {
               previousValue: '',
@@ -1884,7 +2022,7 @@ export class RaftersToolHandler {
             },
           };
           registry.add(newToken);
-          results.push({ source, target, action: 'create', ok: true });
+          results.push({ source, target, action: 'create', ok: true, enriched });
         }
       }
 
@@ -1894,6 +2032,7 @@ export class RaftersToolHandler {
 
       const setCount = results.filter((r) => r.action === 'set' && r.ok).length;
       const createCount = results.filter((r) => r.action === 'create' && r.ok).length;
+      const enrichedCount = results.filter((r) => r.enriched).length;
       const failCount = results.filter((r) => !r.ok).length;
 
       return {
@@ -1903,7 +2042,12 @@ export class RaftersToolHandler {
             text: JSON.stringify(
               {
                 ok: true,
-                summary: { set: setCount, created: createCount, failed: failCount },
+                summary: {
+                  set: setCount,
+                  created: createCount,
+                  enriched: enrichedCount,
+                  failed: failCount,
+                },
                 results,
               },
               null,

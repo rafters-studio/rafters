@@ -40,6 +40,7 @@
   },
   "devDependencies": {
     "@playwright/test": "catalog:",
+    "@rafters/color-utils": "workspace:*",
     "@rafters/design-tokens": "workspace:*",
     "@rafters/shared": "workspace:*",
     "@rafters/studio": "workspace:*",
