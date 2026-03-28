@@ -6,7 +6,12 @@ export default defineConfig([
     format: ['esm'],
     target: 'node22',
     bundle: true,
-    noExternal: ['@rafters/design-tokens', '@rafters/shared', '@rafters/studio'],
+    noExternal: [
+      '@rafters/color-utils',
+      '@rafters/design-tokens',
+      '@rafters/shared',
+      '@rafters/studio',
+    ],
     external: ['commander', '@modelcontextprotocol/sdk', 'vite'],
     outDir: 'dist',
     clean: true,
