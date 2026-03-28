@@ -1,6 +1,6 @@
 {
   "name": "rafters",
-  "version": "0.0.24",
+  "version": "0.0.25",
   "description": "CLI for Rafters design system - scaffold tokens and add components",
   "license": "MIT",
   "type": "module",
