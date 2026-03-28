@@ -1,5 +1,15 @@
 # rafters
 
+## 0.0.28
+
+### Minor Changes
+
+- MCP write access: `rafters_token` tool now supports set, create, and reset actions with mandatory why-gate reasoning
+- `rafters_onboard` MCP tool: analyze existing CSS for design decisions, map them to tokens with the designer in the loop
+- Init stripped to scaffold-only: no more automatic shadcn color mapping, detects existing design decisions and directs to MCP onboarding
+- System preamble updated with intentional onboarding guidance
+- 22 Astro components: Alert, Avatar, Breadcrumb, Empty, Image, Item, Pagination, Progress, Spinner, Table, Tabs, Tooltip (with shared .classes.ts for React/Astro parity)
+
 ## 0.0.27
 
 ### Minor Changes
