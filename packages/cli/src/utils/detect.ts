@@ -16,28 +16,6 @@ export interface ShadcnConfig {
   };
 }
 
-export interface ShadcnColors {
-  background?: string;
-  foreground?: string;
-  card?: string;
-  cardForeground?: string;
-  popover?: string;
-  popoverForeground?: string;
-  primary?: string;
-  primaryForeground?: string;
-  secondary?: string;
-  secondaryForeground?: string;
-  muted?: string;
-  mutedForeground?: string;
-  accent?: string;
-  accentForeground?: string;
-  destructive?: string;
-  destructiveForeground?: string;
-  border?: string;
-  input?: string;
-  ring?: string;
-}
-
 export interface ProjectDetection {
   framework: Framework;
   shadcn: ShadcnConfig | null;
@@ -155,58 +133,6 @@ export async function detectShadcn(cwd: string): Promise<ShadcnConfig | null> {
     return JSON.parse(content) as ShadcnConfig;
   } catch {
     return null;
-  }
-}
-
-/**
- * Parse CSS variables from a CSS file into light/dark color objects
- */
-export function parseCssVariables(css: string): { light: ShadcnColors; dark: ShadcnColors } {
-  const light: ShadcnColors = {};
-  const dark: ShadcnColors = {};
-
-  const rootMatch = css.match(/:root\s*\{([^}]+)\}/);
-  if (rootMatch?.[1]) {
-    parseVariablesIntoColors(rootMatch[1], light);
-  }
-
-  const darkMatch = css.match(/\.dark\s*\{([^}]+)\}/);
-  if (darkMatch?.[1]) {
-    parseVariablesIntoColors(darkMatch[1], dark);
-  }
-
-  return { light, dark };
-}
-
-function parseVariablesIntoColors(block: string, colors: ShadcnColors): void {
-  const varMap: Record<string, keyof ShadcnColors> = {
-    '--background': 'background',
-    '--foreground': 'foreground',
-    '--card': 'card',
-    '--card-foreground': 'cardForeground',
-    '--popover': 'popover',
-    '--popover-foreground': 'popoverForeground',
-    '--primary': 'primary',
-    '--primary-foreground': 'primaryForeground',
-    '--secondary': 'secondary',
-    '--secondary-foreground': 'secondaryForeground',
-    '--muted': 'muted',
-    '--muted-foreground': 'mutedForeground',
-    '--accent': 'accent',
-    '--accent-foreground': 'accentForeground',
-    '--destructive': 'destructive',
-    '--destructive-foreground': 'destructiveForeground',
-    '--border': 'border',
-    '--input': 'input',
-    '--ring': 'ring',
-  };
-
-  for (const [cssVar, colorKey] of Object.entries(varMap)) {
-    const regex = new RegExp(`${cssVar}:\\s*([^;]+);`);
-    const match = block.match(regex);
-    if (match?.[1]) {
-      colors[colorKey] = match[1].trim();
-    }
   }
 }
 
