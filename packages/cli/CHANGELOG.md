@@ -1,5 +1,11 @@
 # rafters
 
+## 0.0.26
+
+### Patch Changes
+
+- Fix GET /api/ info route: was only in apps/api (Hono), now in the Vite studio plugin where rafters studio actually runs
+
 ## 0.0.25
 
 ### Minor Changes
