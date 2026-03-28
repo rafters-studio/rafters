@@ -562,6 +562,33 @@ export function studioApiPlugin(): Plugin {
           return;
         }
 
+        // /api/ or /api - GET structured API info
+        if ((pathname === '/api/' || pathname === '/api') && req.method === 'GET') {
+          res.setHeader('Content-Type', 'application/json');
+          res.end(
+            JSON.stringify({
+              name: 'Rafters Studio API',
+              initialized,
+              tokenCount: registry.list().length,
+              rules: {
+                whyGate: 'Every POST to /api/tokens/:name requires userOverride.reason.',
+                gets: 'Returns full Token with all intelligence metadata.',
+                sets: 'Value + reason in. API fills the Token shape. CSS updates via HMR.',
+                colors: 'POST /api/color/build with OKLCH to get a ColorValue.',
+              },
+              endpoints: {
+                'GET /api/tokens': 'All tokens (optional ?namespace= filter)',
+                'GET /api/tokens/:name': 'One token with full data',
+                'POST /api/tokens/:name': 'Update token (namespace-validated patch)',
+                'POST /api/tokens': 'Batch update tokens',
+                'POST /api/color/build': 'OKLCH -> full ColorValue',
+                'POST /api/shutdown': 'Gracefully stop the studio',
+              },
+            }),
+          );
+          return;
+        }
+
         // /api/shutdown - POST to gracefully stop the studio
         if (pathname === '/api/shutdown' && req.method === 'POST') {
           res.setHeader('Content-Type', 'application/json');
