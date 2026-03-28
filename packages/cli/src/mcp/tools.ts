@@ -582,7 +582,7 @@ export const TOOL_DEFINITIONS = [
   {
     name: 'rafters_onboard',
     description:
-      'Analyze an existing project for design decisions (CSS custom properties, @theme blocks, shadcn colors) and map them into Rafters tokens. Use "analyze" to surface raw findings. Use "map" to execute token writes from a mapping plan. The agent interprets the findings, asks the designer about ambiguous decisions, then maps with intent.',
+      'Analyze an existing project for design decisions and map them into Rafters tokens. Use "analyze" to surface raw findings. Use "map" to execute -- but map REQUIRES the designer to confirm every mapping first. The tool will reject unconfirmed mappings and instruct you to ask the designer. This is an intentional system, not an automatic one.',
     inputSchema: {
       type: 'object' as const,
       properties: {
@@ -590,7 +590,12 @@ export const TOOL_DEFINITIONS = [
           type: 'string',
           enum: ['analyze', 'map'],
           description:
-            'analyze: scan project CSS and return structured findings. map: execute a mapping plan (array of source->target->reason).',
+            'analyze: scan project CSS and return structured findings. map: execute confirmed mappings. First call without confirmed returns instructions to ask the designer. Second call with confirmed: true executes.',
+        },
+        confirmed: {
+          type: 'boolean',
+          description:
+            'Set to true ONLY after the designer has reviewed and approved every mapping. The reasons must come from the designer, not from you.',
         },
         mappings: {
           type: 'array',
@@ -611,7 +616,8 @@ export const TOOL_DEFINITIONS = [
               },
               reason: {
                 type: 'string',
-                description: 'Why this mapping makes sense (design intent)',
+                description:
+                  'The designer explains why this mapping makes sense. This must come from the human, not from you. Ask them.',
               },
               namespace: {
                 type: 'string',
@@ -1613,8 +1619,31 @@ export class RaftersToolHandler {
     switch (action) {
       case 'analyze':
         return this.analyzeProject();
-      case 'map':
+      case 'map': {
+        const confirmed = args.confirmed as boolean | undefined;
+        if (!confirmed) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify({
+                  error: 'Human confirmation required.',
+                  action:
+                    'STOP. Do not call this tool again until the designer has reviewed and approved every mapping.',
+                  instructions: [
+                    'Show each proposed mapping to the designer: source -> target, value, and your proposed reason.',
+                    'Ask the designer: "Is this the right semantic role? Why did you choose this color for this purpose?"',
+                    'The designer must provide or approve the reason. Do not write reasons yourself.',
+                    'Once the designer has confirmed all mappings, call rafters_onboard map again with confirmed: true.',
+                  ],
+                }),
+              },
+            ],
+            isError: true,
+          };
+        }
         return this.mapTokens(args.mappings as Array<Record<string, string>> | undefined);
+      }
       default:
         return {
           content: [

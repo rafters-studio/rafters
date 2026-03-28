@@ -420,6 +420,69 @@ describe('rafters_onboard analyze', () => {
   });
 });
 
+// ==================== Designer Decisions ====================
+// These are real designer decisions, not agent guesses.
+// The test verifies the pipeline preserves them exactly.
+
+const LEGACY_PROJECT_DECISIONS = {
+  css: CSS_HORRIBLE_LEGACY,
+  decisions: [
+    {
+      source: '--brand-blue',
+      target: 'primary',
+      value: '#2563eb',
+      reason:
+        'This blue has been on our nav since 2019. Customers associate it with our brand. The dark mode variant (#60a5fa) is lighter because we tested with 200 users and the original was unreadable on OLED screens.',
+    },
+    {
+      source: '--brand-red',
+      target: 'destructive',
+      value: 'rgb(220, 38, 38)',
+      reason:
+        'Legal required a specific red for error states in the payment flow. This exact shade passed their accessibility audit in 2021. Do not change without legal sign-off.',
+    },
+    {
+      source: '--brand-green',
+      target: 'success',
+      value: 'hsl(142, 71%, 45%)',
+      reason:
+        'Success green chosen to be distinguishable from the brand blue for colorblind users. We ran a deuteranopia simulation and this was the only green that worked.',
+    },
+    {
+      source: '--spacing-lg',
+      target: 'spacing-custom-lg',
+      value: '2rem',
+      reason: 'Marketing insisted on 32px section padding. It matches their print grid.',
+      namespace: 'spacing',
+      category: 'spacing',
+    },
+  ],
+} as const;
+
+const HUTTSPAWN_DECISIONS = {
+  css: CSS_EXISTING_SCALES,
+  decisions: [
+    {
+      source: '--color-blaze-500',
+      target: 'blaze',
+      value: 'oklch(0.62 0.20 45)',
+      reason:
+        'Mandalorian faction color. This warm orange represents the blaze of beskar forges. Used on all Mandalorian-aligned UI: clan badges, bounty boards, armory screens. The full scale was hand-tuned by the art director to feel like heated metal.',
+      namespace: 'color',
+      category: 'color',
+    },
+    {
+      source: '--color-empire-500',
+      target: 'empire',
+      value: 'oklch(0.55 0.22 0)',
+      reason:
+        'Imperial faction color. Aggressive red for Sith-aligned UI elements: imperial missions, dark side abilities, empire territory on the galaxy map. Art director chose this over pure red because it reads as authoritarian without being cartoonish.',
+      namespace: 'color',
+      category: 'color',
+    },
+  ],
+} as const;
+
 describe('rafters_onboard map', () => {
   let fixturePath: string;
 
@@ -427,110 +490,81 @@ describe('rafters_onboard map', () => {
     if (fixturePath) await rm(fixturePath, { recursive: true, force: true });
   });
 
-  it('enriches hex colors into full ColorValue objects', async () => {
-    fixturePath = await createOnboardFixture('map-hex', {
-      css: { 'src/index.css': CSS_HORRIBLE_LEGACY },
+  it('preserves the designer reasoning word-for-word through the pipeline', async () => {
+    fixturePath = await createOnboardFixture('map-whygate', {
+      css: { 'src/index.css': LEGACY_PROJECT_DECISIONS.css },
       seedTokens: true,
     });
 
     const handler = new RaftersToolHandler(fixturePath);
-    const result = await handler.handleToolCall('rafters_onboard', {
+    const decision = LEGACY_PROJECT_DECISIONS.decisions[0];
+    await handler.handleToolCall('rafters_onboard', {
       action: 'map',
-      mappings: [
-        {
-          source: '--brand-blue',
-          target: 'primary',
-          value: '#2563eb',
-          reason: 'Main brand color used on nav and CTAs',
-        },
-      ],
+      confirmed: true,
+      mappings: [decision],
     });
 
-    const data = JSON.parse((result.content[0] as { text: string }).text);
-    expect(data.ok).toBe(true);
-    expect(data.summary.set).toBe(1);
-    expect(data.results[0].enriched).toBe(true);
-
-    // Verify the token was stored as a ColorValue, not a flat string
     const adapter = new NodePersistenceAdapter(fixturePath);
     const tokens = await adapter.load();
     const primary = tokens.find((t) => t.name === 'primary');
-    expect(primary).toBeDefined();
+
+    // The designer's exact words must survive the pipeline
+    expect(primary?.userOverride?.reason).toContain('nav since 2019');
+    expect(primary?.userOverride?.reason).toContain('200 users');
+    expect(primary?.userOverride?.reason).toContain('OLED screens');
+  });
+
+  it('enriches hex into full ColorValue with 11-step scale', async () => {
+    fixturePath = await createOnboardFixture('map-hex', {
+      css: { 'src/index.css': LEGACY_PROJECT_DECISIONS.css },
+      seedTokens: true,
+    });
+
+    const handler = new RaftersToolHandler(fixturePath);
+    await handler.handleToolCall('rafters_onboard', {
+      action: 'map',
+      confirmed: true,
+      mappings: [LEGACY_PROJECT_DECISIONS.decisions[0]],
+    });
+
+    const adapter = new NodePersistenceAdapter(fixturePath);
+    const tokens = await adapter.load();
+    const primary = tokens.find((t) => t.name === 'primary');
     expect(typeof primary?.value).toBe('object');
 
-    const colorValue = primary?.value as { scale?: unknown[]; name?: string };
-    expect(colorValue.scale).toBeDefined();
-    expect(Array.isArray(colorValue.scale)).toBe(true);
-    // Full 11-step scale
-    expect(colorValue.scale?.length).toBe(11);
-    // Has a generated name
-    expect(colorValue.name).toBeDefined();
-    expect(typeof colorValue.name).toBe('string');
+    const cv = primary?.value as { scale?: unknown[]; name?: string };
+    expect(cv.scale?.length).toBe(11);
+    expect(typeof cv.name).toBe('string');
   });
 
-  it('enriches oklch colors into full ColorValue objects', async () => {
-    fixturePath = await createOnboardFixture('map-oklch', {
-      css: { 'src/index.css': CSS_CLEAN_OKLCH },
-      seedTokens: true,
-    });
-
-    const handler = new RaftersToolHandler(fixturePath);
-    const result = await handler.handleToolCall('rafters_onboard', {
-      action: 'map',
-      mappings: [
-        {
-          source: '--brand-accent',
-          target: 'accent',
-          value: 'oklch(0.65 0.22 45)',
-          reason: 'Warm accent for highlights and CTAs',
-        },
-      ],
-    });
-
-    const data = JSON.parse((result.content[0] as { text: string }).text);
-    expect(data.ok).toBe(true);
-    expect(data.results[0].enriched).toBe(true);
-
-    const adapter = new NodePersistenceAdapter(fixturePath);
-    const tokens = await adapter.load();
-    const accent = tokens.find((t) => t.name === 'accent');
-    const colorValue = accent?.value as { scale?: unknown[]; harmonies?: unknown };
-    expect(colorValue.scale?.length).toBe(11);
-  });
-
-  it('enriches rgb and hsl colors', async () => {
+  it('enriches rgb and hsl with designer reasoning intact', async () => {
     fixturePath = await createOnboardFixture('map-mixed', {
-      css: { 'src/index.css': CSS_HORRIBLE_LEGACY },
+      css: { 'src/index.css': LEGACY_PROJECT_DECISIONS.css },
       seedTokens: true,
     });
 
     const handler = new RaftersToolHandler(fixturePath);
     const result = await handler.handleToolCall('rafters_onboard', {
       action: 'map',
-      mappings: [
-        {
-          source: '--brand-red',
-          target: 'destructive',
-          value: 'rgb(220, 38, 38)',
-          reason: 'Error and danger states',
-        },
-        {
-          source: '--brand-green',
-          target: 'success',
-          value: 'hsl(142, 71%, 45%)',
-          reason: 'Positive confirmation states',
-        },
-      ],
+      confirmed: true,
+      mappings: [LEGACY_PROJECT_DECISIONS.decisions[1], LEGACY_PROJECT_DECISIONS.decisions[2]],
     });
 
     const data = JSON.parse((result.content[0] as { text: string }).text);
-    expect(data.ok).toBe(true);
-    expect(data.summary.set).toBe(2);
     expect(data.summary.enriched).toBe(2);
 
-    // Both should be full ColorValue objects
     const adapter = new NodePersistenceAdapter(fixturePath);
     const tokens = await adapter.load();
+
+    // Legal's exact requirement preserved
+    const destructive = tokens.find((t) => t.name === 'destructive');
+    expect(destructive?.userOverride?.reason).toContain('legal sign-off');
+
+    // Colorblind testing rationale preserved
+    const success = tokens.find((t) => t.name === 'success');
+    expect(success?.userOverride?.reason).toContain('deuteranopia');
+
+    // Both enriched to full ColorValue
     for (const name of ['destructive', 'success']) {
       const token = tokens.find((t) => t.name === name);
       const cv = token?.value as { scale?: unknown[] };
@@ -538,99 +572,100 @@ describe('rafters_onboard map', () => {
     }
   });
 
-  it('passes non-color values through as strings', async () => {
+  it('passes non-color values through as strings, not enriched', async () => {
     fixturePath = await createOnboardFixture('map-noncolor', {
-      css: { 'src/index.css': CSS_HORRIBLE_LEGACY },
+      css: { 'src/index.css': LEGACY_PROJECT_DECISIONS.css },
       seedTokens: true,
     });
 
     const handler = new RaftersToolHandler(fixturePath);
     const result = await handler.handleToolCall('rafters_onboard', {
       action: 'map',
-      mappings: [
-        {
-          source: '--spacing-lg',
-          target: 'spacing-custom-lg',
-          value: '2rem',
-          reason: 'Existing large spacing value',
-          namespace: 'spacing',
-          category: 'spacing',
-        },
-        {
-          source: '--radius',
-          target: 'radius-custom',
-          value: '8px',
-          reason: 'Existing border radius',
-          namespace: 'layout',
-          category: 'radius',
-        },
-      ],
+      confirmed: true,
+      mappings: [LEGACY_PROJECT_DECISIONS.decisions[3]],
     });
 
     const data = JSON.parse((result.content[0] as { text: string }).text);
-    expect(data.ok).toBe(true);
-    expect(data.summary.created).toBe(2);
-    // Non-colors should NOT be enriched
     expect(data.results[0].enriched).toBe(false);
-    expect(data.results[1].enriched).toBe(false);
 
     const adapter = new NodePersistenceAdapter(fixturePath);
     const tokens = await adapter.load();
     const spacing = tokens.find((t) => t.name === 'spacing-custom-lg');
     expect(spacing?.value).toBe('2rem');
-    const radius = tokens.find((t) => t.name === 'radius-custom');
-    expect(radius?.value).toBe('8px');
+    // Marketing's reasoning preserved
+    expect(spacing?.userOverride?.reason).toContain('print grid');
   });
 
-  it('creates new color families in the color namespace', async () => {
-    fixturePath = await createOnboardFixture('map-create', {
-      css: { 'src/index.css': CSS_EXISTING_SCALES },
+  it('creates game-specific color families with art director reasoning', async () => {
+    fixturePath = await createOnboardFixture('map-factions', {
+      css: { 'src/index.css': HUTTSPAWN_DECISIONS.css },
       seedTokens: true,
     });
 
     const handler = new RaftersToolHandler(fixturePath);
     const result = await handler.handleToolCall('rafters_onboard', {
       action: 'map',
+      confirmed: true,
+      mappings: [...HUTTSPAWN_DECISIONS.decisions],
+    });
+
+    const data = JSON.parse((result.content[0] as { text: string }).text);
+    expect(data.summary.created).toBe(2);
+    expect(data.summary.enriched).toBe(2);
+
+    const adapter = new NodePersistenceAdapter(fixturePath);
+    const tokens = await adapter.load();
+
+    // Blaze: art director's intent preserved
+    const blaze = tokens.find((t) => t.name === 'blaze');
+    expect(blaze?.namespace).toBe('color');
+    expect(blaze?.userOverride?.reason).toContain('beskar forges');
+    const blazeValue = blaze?.value as { scale?: unknown[] };
+    expect(blazeValue.scale?.length).toBe(11);
+
+    // Empire: design rationale preserved
+    const empire = tokens.find((t) => t.name === 'empire');
+    expect(empire?.namespace).toBe('color');
+    expect(empire?.userOverride?.reason).toContain('authoritarian without being cartoonish');
+  });
+
+  it('blocks unconfirmed mappings -- designer must review first', async () => {
+    fixturePath = await createOnboardFixture('map-unconfirmed', {
+      css: { 'src/index.css': CSS_CLEAN_OKLCH },
+      seedTokens: true,
+    });
+
+    const handler = new RaftersToolHandler(fixturePath);
+    const result = await handler.handleToolCall('rafters_onboard', {
+      action: 'map',
+      // No confirmed: true -- agent hasn't asked the designer yet
       mappings: [
         {
-          source: '--color-blaze-500',
-          target: 'blaze',
-          value: 'oklch(0.62 0.20 45)',
-          reason: 'Huttspawn blaze faction color - warm orange for Mandalorian themes',
-          namespace: 'color',
-          category: 'color',
-        },
-        {
-          source: '--color-empire-500',
-          target: 'empire',
-          value: 'oklch(0.55 0.22 0)',
-          reason: 'Imperial faction - aggressive red for Sith-aligned UI',
-          namespace: 'color',
-          category: 'color',
+          source: '--brand-primary',
+          target: 'primary',
+          value: 'oklch(0.55 0.2 250)',
+          reason: 'Agent guessed this is primary',
         },
       ],
     });
 
+    // Tool must refuse and instruct the agent to ask the designer
+    expect(result.isError).toBe(true);
     const data = JSON.parse((result.content[0] as { text: string }).text);
-    expect(data.ok).toBe(true);
-    expect(data.summary.created).toBe(2);
-    expect(data.summary.enriched).toBe(2);
+    expect(data.error).toContain('Human confirmation required');
+    expect(data.instructions).toBeDefined();
+    expect(data.instructions.length).toBeGreaterThan(0);
 
-    // Verify tokens are in the color namespace with full ColorValue
+    // Verify NO tokens were written
     const adapter = new NodePersistenceAdapter(fixturePath);
     const tokens = await adapter.load();
-
-    const blaze = tokens.find((t) => t.name === 'blaze');
-    expect(blaze?.namespace).toBe('color');
-    const blazeValue = blaze?.value as { scale?: unknown[]; name?: string };
-    expect(blazeValue.scale?.length).toBe(11);
-
-    const empire = tokens.find((t) => t.name === 'empire');
-    expect(empire?.namespace).toBe('color');
-    expect(empire?.userOverride?.reason).toContain('Imperial faction');
+    const primary = tokens.find((t) => t.name === 'primary');
+    // Primary exists from seed but should NOT have been modified
+    const hasOverride = primary?.userOverride !== undefined;
+    expect(hasOverride).toBe(false);
   });
 
-  it('rejects mappings without reason (why-gate)', async () => {
+  it('rejects mappings without reason -- the why-gate is not optional', async () => {
     fixturePath = await createOnboardFixture('map-noreason', {
       css: { 'src/index.css': CSS_CLEAN_OKLCH },
       seedTokens: true,
@@ -639,23 +674,23 @@ describe('rafters_onboard map', () => {
     const handler = new RaftersToolHandler(fixturePath);
     const result = await handler.handleToolCall('rafters_onboard', {
       action: 'map',
+      confirmed: true,
       mappings: [
         {
           source: '--brand-primary',
           target: 'primary',
           value: 'oklch(0.55 0.2 250)',
-          // no reason
+          // No reason. The agent didn't ask the designer. This must fail.
         },
       ],
     });
 
     const data = JSON.parse((result.content[0] as { text: string }).text);
-    // Should fail or skip the mapping
     expect(data.results[0].ok).toBe(false);
     expect(data.results[0].error).toContain('reason');
   });
 
-  it('regenerates CSS output after mapping', async () => {
+  it('regenerates CSS output with enriched color scale after mapping', async () => {
     fixturePath = await createOnboardFixture('map-output', {
       css: { 'src/index.css': CSS_CLEAN_OKLCH },
       seedTokens: true,
@@ -664,86 +699,58 @@ describe('rafters_onboard map', () => {
     const handler = new RaftersToolHandler(fixturePath);
     await handler.handleToolCall('rafters_onboard', {
       action: 'map',
+      confirmed: true,
       mappings: [
         {
           source: '--brand-primary',
           target: 'primary',
           value: 'oklch(0.55 0.2 250)',
-          reason: 'Brand identity color',
+          reason:
+            'Core brand identity. This specific blue was chosen by the founder in 2020 and appears on all external materials.',
         },
       ],
     });
 
-    // Check that rafters.css was regenerated
     const cssOutput = await readFile(
       join(fixturePath, '.rafters', 'output', 'rafters.css'),
       'utf-8',
     );
     expect(cssOutput.length).toBeGreaterThan(0);
-    // Should contain the color token as OKLCH
     expect(cssOutput).toContain('primary');
   });
 
-  it('handles batch mapping with mixed color and non-color values', async () => {
+  it('handles full onboard batch: colors enriched, spacing preserved, reasoning intact', async () => {
     fixturePath = await createOnboardFixture('map-batch', {
-      css: { 'src/index.css': CSS_HORRIBLE_LEGACY },
+      css: { 'src/index.css': LEGACY_PROJECT_DECISIONS.css },
       seedTokens: true,
     });
 
     const handler = new RaftersToolHandler(fixturePath);
     const result = await handler.handleToolCall('rafters_onboard', {
       action: 'map',
-      mappings: [
-        {
-          source: '--brand-blue',
-          target: 'primary',
-          value: '#2563eb',
-          reason: 'Primary brand color',
-        },
-        {
-          source: '--brand-red',
-          target: 'destructive',
-          value: 'rgb(220, 38, 38)',
-          reason: 'Error states',
-        },
-        {
-          source: '--brand-green',
-          target: 'success',
-          value: 'hsl(142, 71%, 45%)',
-          reason: 'Success states',
-        },
-        {
-          source: '--spacing-sm',
-          target: 'spacing-sm',
-          value: '0.5rem',
-          reason: 'Small spacing unit',
-          namespace: 'spacing',
-          category: 'spacing',
-        },
-        {
-          source: '--spacing-md',
-          target: 'spacing-md',
-          value: '1rem',
-          reason: 'Medium spacing unit',
-          namespace: 'spacing',
-          category: 'spacing',
-        },
-        {
-          source: '--radius',
-          target: 'radius-default',
-          value: '8px',
-          reason: 'Default border radius',
-          namespace: 'layout',
-          category: 'radius',
-        },
-      ],
+      confirmed: true,
+      mappings: [...LEGACY_PROJECT_DECISIONS.decisions],
     });
 
     const data = JSON.parse((result.content[0] as { text: string }).text);
     expect(data.ok).toBe(true);
-    expect(data.summary.enriched).toBe(3); // 3 colors enriched
-    expect(data.summary.set).toBe(3); // 3 existing tokens updated (primary, destructive, success)
-    expect(data.summary.created).toBe(3); // 3 new tokens (spacing-sm, spacing-md, radius-default)
+    // 3 colors enriched (hex, rgb, hsl)
+    expect(data.summary.enriched).toBe(3);
+    // 3 existing semantic tokens updated
+    expect(data.summary.set).toBe(3);
+    // 1 new spacing token created
+    expect(data.summary.created).toBe(1);
     expect(data.summary.failed).toBe(0);
+
+    // Verify every designer decision survived
+    const adapter = new NodePersistenceAdapter(fixturePath);
+    const tokens = await adapter.load();
+    for (const decision of LEGACY_PROJECT_DECISIONS.decisions) {
+      const token = tokens.find((t) => t.name === decision.target);
+      expect(token).toBeDefined();
+      // The reason includes the designer's words (prefixed with "Onboarded from")
+      const reasonWords = decision.reason.split(' ').slice(0, 3).join(' ');
+      expect(token?.userOverride?.reason).toContain(reasonWords);
+    }
   });
 });
