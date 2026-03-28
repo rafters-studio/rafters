@@ -11,8 +11,8 @@ import {
 import { fixtures, serializeNamespaceFile } from '../fixtures/tokens.js';
 
 describe('TOOL_DEFINITIONS', () => {
-  it('should define 5 design-focused tools', () => {
-    expect(TOOL_DEFINITIONS).toHaveLength(5);
+  it('should define 6 design-focused tools', () => {
+    expect(TOOL_DEFINITIONS).toHaveLength(6);
   });
 
   it('should have correct tool names', () => {

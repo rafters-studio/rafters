@@ -1,13 +1,14 @@
 /**
  * MCP Tools for Rafters Design System
  *
- * AI-first design intelligence for composing UI - 5 focused tools:
+ * AI-first design intelligence for composing UI - 6 focused tools:
  *
  * 1. rafters_vocabulary - Compact system overview (colors, spacing, type, components)
  * 2. rafters_pattern - Deep guidance for design patterns (destructive-action, form-validation, etc.)
  * 3. rafters_component - Full component intelligence on demand
- * 4. rafters_token - Token dependency graph and override context
+ * 4. rafters_token - Read/write tokens with why-gate, dependency cascade, output regeneration
  * 5. rafters_cognitive_budget - Composition-level cognitive load review
+ * 6. rafters_onboard - Analyze existing CSS and map design decisions into tokens
  *
  * Design philosophy: Progressive disclosure. Start with vocabulary to orient,
  * then drill into patterns or components as needed.
@@ -93,6 +94,16 @@ If no component fits your need, check @/lib/utils for official behavioral utilit
 
 COLORS ARE TAILWIND CLASSES.
 Write border-l-primary, bg-success, text-info-foreground. Do not create color constants, mapping objects, or reference palette names. Palette families are internal. See quickstart.colorTokens for the full list of semantic tokens and usage examples.
+
+ONBOARDING IS INTENTIONAL.
+When onboarding an existing project, do NOT skip the learning step.
+1. Call rafters_vocabulary and explore token shapes first. Understand namespaces, dependency graph, the two primitives.
+2. Call rafters_onboard analyze to see what existing design decisions are in the CSS.
+3. Do NOT automatically map colors. Ask the designer about each ambiguous decision.
+4. Every token mutation needs a reason that captures design INTENT, not just origin.
+   Bad: "imported from globals.css"
+   Good: "Brand blue from --brand-primary, primary identity color used on nav and CTAs per designer"
+5. Call rafters_onboard map to execute the migration once the designer confirms.
 
 When in doubt: less code, not more. Rafters has already made the design decision.`;
 
@@ -563,6 +574,57 @@ export const TOOL_DEFINITIONS = [
       required: ['components'],
     },
   },
+  {
+    name: 'rafters_onboard',
+    description:
+      'Analyze an existing project for design decisions (CSS custom properties, @theme blocks, shadcn colors) and map them into Rafters tokens. Use "analyze" to surface raw findings. Use "map" to execute token writes from a mapping plan. The agent interprets the findings, asks the designer about ambiguous decisions, then maps with intent.',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        action: {
+          type: 'string',
+          enum: ['analyze', 'map'],
+          description:
+            'analyze: scan project CSS and return structured findings. map: execute a mapping plan (array of source->target->reason).',
+        },
+        mappings: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              source: {
+                type: 'string',
+                description: 'Original CSS variable name (e.g., "--brand-blue")',
+              },
+              target: {
+                type: 'string',
+                description: 'Rafters token name to set or create (e.g., "primary")',
+              },
+              value: {
+                type: 'string',
+                description: 'The value to set (from the original CSS)',
+              },
+              reason: {
+                type: 'string',
+                description: 'Why this mapping makes sense (design intent)',
+              },
+              namespace: {
+                type: 'string',
+                description: 'Namespace for new tokens (required if token does not exist)',
+              },
+              category: {
+                type: 'string',
+                description: 'Category for new tokens (required if token does not exist)',
+              },
+            },
+            required: ['source', 'target', 'value', 'reason'],
+          },
+          description: 'Array of mappings to execute (required for map action)',
+        },
+      },
+      required: ['action'],
+    },
+  },
 ] as const;
 
 const NO_PROJECT_ERROR =
@@ -572,7 +634,7 @@ const NO_PROJECT_ERROR =
 // Tools that work without a project root (static data only)
 const PROJECT_INDEPENDENT_TOOLS = new Set(['rafters_pattern']);
 
-// Tool handler class - 5 focused design tools
+// Tool handler class - 6 focused design tools
 export class RaftersToolHandler {
   private readonly adapter: NodePersistenceAdapter | null;
   private readonly projectRoot: string | null;
@@ -617,6 +679,8 @@ export class RaftersToolHandler {
           args.components as string[],
           (args.tier as BudgetTier) ?? 'page',
         );
+      case 'rafters_onboard':
+        return this.onboard(args);
       default:
         return {
           content: [{ type: 'text', text: `Unknown tool: ${name}` }],
@@ -1510,6 +1574,346 @@ export class RaftersToolHandler {
     if (exports.dtcg) {
       const json = toDTCG(registry.list());
       await writeFile(join(paths.output, 'rafters.json'), JSON.stringify(json, null, 2));
+    }
+  }
+
+  // ==================== Tool 6: Onboard ====================
+
+  /**
+   * CSS file locations by framework (mirrors init.ts CSS_LOCATIONS)
+   */
+  private static readonly CSS_LOCATIONS: Record<string, string[]> = {
+    astro: ['src/styles/global.css', 'src/styles/globals.css', 'src/global.css'],
+    next: ['src/app/globals.css', 'app/globals.css', 'styles/globals.css'],
+    vite: ['src/index.css', 'src/main.css', 'src/styles.css', 'src/app.css'],
+    remix: ['app/styles/global.css', 'app/globals.css', 'app/root.css'],
+    'react-router': ['app/app.css', 'app/root.css', 'app/styles.css', 'app/globals.css'],
+    unknown: [
+      'src/styles/global.css',
+      'src/styles/globals.css',
+      'src/index.css',
+      'src/main.css',
+      'src/app.css',
+      'styles/globals.css',
+      'app/globals.css',
+    ],
+  };
+
+  /**
+   * Handle rafters_onboard tool calls
+   */
+  private async onboard(args: Record<string, unknown>): Promise<CallToolResult> {
+    const action = args.action as string;
+
+    switch (action) {
+      case 'analyze':
+        return this.analyzeProject();
+      case 'map':
+        return this.mapTokens(args.mappings as Array<Record<string, string>> | undefined);
+      default:
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify({ error: `Unknown action: ${action}. Use analyze or map.` }),
+            },
+          ],
+          isError: true,
+        };
+    }
+  }
+
+  /**
+   * Scan the project for existing design decisions.
+   * Returns raw findings -- the agent interprets, not the tool.
+   */
+  private async analyzeProject(): Promise<CallToolResult> {
+    if (!this.projectRoot) {
+      return { content: [{ type: 'text', text: NO_PROJECT_ERROR }], isError: true };
+    }
+
+    try {
+      const config = await this.loadConfig();
+      const framework = config?.framework ?? 'unknown';
+
+      // Find all CSS files
+      const cssFindings: Array<{
+        path: string;
+        customProperties: Array<{ name: string; value: string; context: string }>;
+        themeBlocks: string[];
+        imports: string[];
+      }> = [];
+
+      // Check framework-specific locations + config cssPath
+      const locations = new Set<string>();
+      const frameworkLocations =
+        RaftersToolHandler.CSS_LOCATIONS[framework] ??
+        RaftersToolHandler.CSS_LOCATIONS.unknown ??
+        [];
+      for (const loc of frameworkLocations) locations.add(loc);
+      if (config?.cssPath) locations.add(config.cssPath);
+
+      for (const cssPath of locations) {
+        const fullPath = join(this.projectRoot, cssPath);
+        if (!existsSync(fullPath)) continue;
+
+        try {
+          const content = await readFile(fullPath, 'utf-8');
+          const finding = this.parseCssFindings(cssPath, content);
+          if (
+            finding.customProperties.length > 0 ||
+            finding.themeBlocks.length > 0 ||
+            finding.imports.length > 0
+          ) {
+            cssFindings.push(finding);
+          }
+        } catch {
+          // Unreadable CSS file, skip
+        }
+      }
+
+      // Check for shadcn
+      let shadcn: { detected: boolean; cssPath?: string } = { detected: false };
+      try {
+        const componentsJson = await readFile(join(this.projectRoot, 'components.json'), 'utf-8');
+        const parsed = JSON.parse(componentsJson) as { tailwind?: { css?: string } };
+        const cssPath = parsed.tailwind?.css;
+        shadcn = cssPath ? { detected: true, cssPath } : { detected: true };
+      } catch {
+        // No shadcn
+      }
+
+      // Check for design-related packages
+      let designDeps: string[] = [];
+      try {
+        const pkgContent = await readFile(join(this.projectRoot, 'package.json'), 'utf-8');
+        const pkg = JSON.parse(pkgContent) as {
+          dependencies?: Record<string, string>;
+          devDependencies?: Record<string, string>;
+        };
+        const allDeps = { ...pkg.dependencies, ...pkg.devDependencies };
+        const designPatterns = [
+          '@radix-ui',
+          'class-variance-authority',
+          'tailwind-merge',
+          'clsx',
+          '@headlessui',
+          'lucide-react',
+          '@heroicons',
+        ];
+        designDeps = Object.keys(allDeps).filter((dep) =>
+          designPatterns.some((p) => dep.startsWith(p)),
+        );
+      } catch {
+        // No package.json
+      }
+
+      // Count existing rafters tokens
+      let existingTokenCount = 0;
+      if (this.adapter) {
+        const tokens = await this.adapter.load();
+        existingTokenCount = tokens.length;
+      }
+
+      const result = {
+        framework,
+        cssFiles: cssFindings,
+        shadcn,
+        designDependencies: designDeps,
+        existingTokenCount,
+        guidance:
+          'Review the custom properties above. Map each to a rafters token using rafters_onboard with action: "map". For ambiguous decisions, ask the designer.',
+      };
+
+      return {
+        content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+      };
+    } catch (error) {
+      return this.handleError('analyzeProject', error);
+    }
+  }
+
+  /**
+   * Parse CSS content into structured findings
+   */
+  private parseCssFindings(
+    path: string,
+    content: string,
+  ): {
+    path: string;
+    customProperties: Array<{ name: string; value: string; context: string }>;
+    themeBlocks: string[];
+    imports: string[];
+  } {
+    const customProperties: Array<{ name: string; value: string; context: string }> = [];
+    const themeBlocks: string[] = [];
+    const imports: string[] = [];
+
+    // Extract imports
+    const importMatches = content.matchAll(/@import\s+['"]([^'"]+)['"]/g);
+    for (const match of importMatches) {
+      if (match[1]) imports.push(match[1]);
+    }
+
+    // Extract @theme blocks
+    const themeMatches = content.matchAll(/@theme\s*\{([^}]+)\}/g);
+    for (const match of themeMatches) {
+      if (match[0]) themeBlocks.push(match[0].trim());
+    }
+
+    // Extract custom properties from :root
+    const rootMatch = content.match(/:root\s*\{([^}]+)\}/);
+    if (rootMatch?.[1]) {
+      this.extractCustomProperties(rootMatch[1], ':root', customProperties);
+    }
+
+    // Extract from .dark
+    const darkMatch = content.match(/\.dark\s*\{([^}]+)\}/);
+    if (darkMatch?.[1]) {
+      this.extractCustomProperties(darkMatch[1], '.dark', customProperties);
+    }
+
+    // Extract from prefers-color-scheme
+    const prefersMatch = content.match(
+      /@media\s*\(prefers-color-scheme:\s*dark\)\s*\{[^{]*\{([^}]+)\}/,
+    );
+    if (prefersMatch?.[1]) {
+      this.extractCustomProperties(prefersMatch[1], 'prefers-color-scheme: dark', customProperties);
+    }
+
+    return { path, customProperties, themeBlocks, imports };
+  }
+
+  /**
+   * Extract CSS custom properties from a block
+   */
+  private extractCustomProperties(
+    block: string,
+    context: string,
+    out: Array<{ name: string; value: string; context: string }>,
+  ): void {
+    const propMatches = block.matchAll(/(--[\w-]+)\s*:\s*([^;]+);/g);
+    for (const match of propMatches) {
+      if (match[1] && match[2]) {
+        out.push({ name: match[1], value: match[2].trim(), context });
+      }
+    }
+  }
+
+  /**
+   * Execute a mapping plan -- calls writeToken for each mapping
+   */
+  private async mapTokens(
+    mappings: Array<Record<string, string>> | undefined,
+  ): Promise<CallToolResult> {
+    if (!mappings || mappings.length === 0) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify({
+              error: 'mappings array is required for map action',
+              hint: 'Run analyze first, then provide mappings with source, target, value, and reason',
+            }),
+          },
+        ],
+        isError: true,
+      };
+    }
+
+    if (!this.adapter || !this.projectRoot) {
+      return { content: [{ type: 'text', text: NO_PROJECT_ERROR }], isError: true };
+    }
+
+    try {
+      // Load registry once for all mappings
+      const allTokens = await this.adapter.load();
+      const registry = new TokenRegistry(allTokens);
+      registry.setAdapter(this.adapter);
+
+      const results: Array<{
+        source: string;
+        target: string;
+        action: string;
+        ok: boolean;
+        error?: string;
+      }> = [];
+
+      for (const mapping of mappings) {
+        const { source, target, value, reason, namespace, category } = mapping;
+
+        if (!source || !target || !value || !reason) {
+          results.push({
+            source: source ?? '?',
+            target: target ?? '?',
+            action: 'skipped',
+            ok: false,
+            error: 'Missing required fields: source, target, value, reason',
+          });
+          continue;
+        }
+
+        const exists = registry.has(target);
+
+        if (exists) {
+          // Update existing token
+          const existing = registry.get(target);
+          if (existing) {
+            const previousValue = existing.value;
+            existing.userOverride = {
+              previousValue:
+                typeof previousValue === 'string' ? previousValue : JSON.stringify(previousValue),
+              reason: `Onboarded from ${source}: ${reason}`,
+            };
+            await registry.set(target, value);
+            results.push({ source, target, action: 'set', ok: true });
+          }
+        } else {
+          // Create new token
+          const ns = namespace ?? 'color';
+          const cat = category ?? ns;
+          const newToken: Token = {
+            name: target,
+            namespace: ns,
+            category: cat,
+            value,
+            containerQueryAware: true,
+            userOverride: {
+              previousValue: '',
+              reason: `Onboarded from ${source}: ${reason}`,
+            },
+          };
+          registry.add(newToken);
+          results.push({ source, target, action: 'create', ok: true });
+        }
+      }
+
+      // Persist and regenerate once after all mappings
+      await this.adapter.save(registry.list());
+      await this.regenerateOutputs(registry);
+
+      const setCount = results.filter((r) => r.action === 'set' && r.ok).length;
+      const createCount = results.filter((r) => r.action === 'create' && r.ok).length;
+      const failCount = results.filter((r) => !r.ok).length;
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(
+              {
+                ok: true,
+                summary: { set: setCount, created: createCount, failed: failCount },
+                results,
+              },
+              null,
+              2,
+            ),
+          },
+        ],
+      };
+    } catch (error) {
+      return this.handleError('mapTokens', error);
     }
   }
 
