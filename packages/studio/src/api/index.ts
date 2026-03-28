@@ -77,6 +77,20 @@ export function setToken(options: SetTokenOptions): Promise<UpdateResult> {
 /**
  * Listen for CSS updates (for UI feedback).
  */
+/**
+ * Listen for color intelligence enrichment (arrives async after local math).
+ * The intelligence section fills in live as the API responds.
+ */
+export function onColorEnriched(
+  callback: (data: { name: string; intelligence: unknown }) => void,
+): () => void {
+  if (!isHmrAvailable()) return () => {};
+  // biome-ignore lint/style/noNonNullAssertion: checked by isHmrAvailable
+  const hot = import.meta.hot!;
+  hot.on('rafters:color-enriched', callback);
+  return () => hot.off('rafters:color-enriched', callback);
+}
+
 export function onCssUpdated(callback: () => void): () => void {
   if (!isHmrAvailable()) {
     if (import.meta.env?.DEV) {

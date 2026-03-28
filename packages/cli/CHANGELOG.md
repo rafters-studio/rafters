@@ -1,5 +1,13 @@
 # rafters
 
+## 0.0.27
+
+### Minor Changes
+
+- POST /api/tokens/:name creates arbitrary color families when token does not exist (201 response)
+- Async color enrichment via WebSocket: fires api.rafters.studio fetch before local math, intelligence fills in live via `rafters:color-enriched` event
+- Client-side `onColorEnriched()` listener in @rafters/studio for async intelligence data
+
 ## 0.0.26
 
 ### Patch Changes

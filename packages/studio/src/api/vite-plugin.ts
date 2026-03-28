@@ -307,14 +307,6 @@ export async function handlePostToken(
   name: string,
   registry: TokenRegistry,
 ): Promise<void> {
-  // Token must exist for update
-  const existingToken = registry.get(name);
-  if (!existingToken) {
-    res.statusCode = 404;
-    res.end(JSON.stringify({ ok: false, error: `Token "${name}" not found` }));
-    return;
-  }
-
   // Parse request body
   let body: unknown;
   try {
@@ -326,7 +318,63 @@ export async function handlePostToken(
     return;
   }
 
-  // Validate patch data against namespace-specific schema
+  const existingToken = registry.get(name);
+
+  // CREATE: token does not exist
+  if (!existingToken) {
+    const createSchema = z.object({
+      namespace: z.string().min(1),
+      category: z.string().min(1),
+      value: z.union([z.string(), ColorValueSchema, ColorReferenceSchema]),
+      userOverride: z.object({
+        previousValue: z.union([z.string(), ColorValueSchema, ColorReferenceSchema]),
+        reason: z.string().min(1, 'Reason is required. Every token needs a why.'),
+        context: z.string().optional(),
+      }),
+      description: z.string().optional(),
+    });
+
+    const createResult = createSchema.safeParse(body);
+    if (!createResult.success) {
+      res.statusCode = 400;
+      const issues = createResult.error.issues;
+      const message = issues[0]
+        ? `${issues[0].path.join('.') || 'body'}: ${issues[0].message}`
+        : createResult.error.message;
+      res.end(JSON.stringify({ ok: false, error: message }));
+      return;
+    }
+
+    const newToken = {
+      name,
+      namespace: createResult.data.namespace,
+      category: createResult.data.category,
+      value: createResult.data.value,
+      userOverride: createResult.data.userOverride,
+      containerQueryAware: true,
+      description: createResult.data.description,
+    };
+
+    const tokenResult = TokenSchema.safeParse(newToken);
+    if (!tokenResult.success) {
+      res.statusCode = 400;
+      res.end(JSON.stringify({ ok: false, error: tokenResult.error.message }));
+      return;
+    }
+
+    try {
+      registry.add(tokenResult.data);
+      const response = TokenResponseSchema.parse({ ok: true, token: registry.get(name) });
+      res.statusCode = 201;
+      res.end(JSON.stringify(response));
+    } catch (error) {
+      res.statusCode = 500;
+      res.end(JSON.stringify({ ok: false, error: String(error) }));
+    }
+    return;
+  }
+
+  // UPDATE: token exists -- validate patch against namespace-specific schema
   const namespaceSchema = getNamespacePatchSchema(existingToken.namespace);
   const patchResult = namespaceSchema.safeParse(body);
   if (!patchResult.success) {
@@ -519,7 +567,6 @@ export function studioApiPlugin(): Plugin {
 
       // Listen for token updates from client
       server.ws.on('rafters:set-token', async (rawData: unknown, client) => {
-        // Validate incoming message
         const parsed = SetTokenMessageSchema.safeParse(rawData);
         if (!parsed.success) {
           client.send('rafters:token-updated', {
@@ -532,12 +579,34 @@ export function studioApiPlugin(): Plugin {
         const data = parsed.data;
         const shouldPersist = data.persist !== false;
 
+        // Detect color tokens for async enrichment
+        const existingToken = registry.get(data.name);
+        const isColorFamily =
+          existingToken?.namespace === 'color' &&
+          typeof data.value === 'object' &&
+          data.value !== null &&
+          'scale' in data.value;
+
+        // Fire API enrichment before local math (non-blocking)
+        let enrichmentPromise: Promise<unknown> | null = null;
+        if (isColorFamily) {
+          const colorValue = data.value as { scale?: Array<{ l: number; c: number; h: number }> };
+          const base = colorValue.scale?.[5]; // scale position 500 is the base
+          if (base) {
+            const l = base.l.toFixed(3);
+            const c = base.c.toFixed(3);
+            const h = Math.round(base.h);
+            enrichmentPromise = fetch(`https://api.rafters.studio/color/${l}-${c}-${h}?sync=true`)
+              .then((r) => (r.ok ? r.json() : null))
+              .catch(() => null);
+          }
+        }
+
         try {
+          // Local update (instant feedback)
           if (shouldPersist) {
-            // Full save: update + cascade + persist (callback handles CSS)
             await registry.set(data.name, data.value);
           } else {
-            // Instant feedback: update in-memory only (callback handles CSS)
             registry.updateToken(data.name, data.value);
           }
           client.send('rafters:token-updated', {
@@ -545,6 +614,28 @@ export function studioApiPlugin(): Plugin {
             name: data.name,
             persisted: shouldPersist,
           });
+
+          // Merge enrichment when it arrives
+          if (enrichmentPromise) {
+            const enrichment = await enrichmentPromise;
+            if (enrichment && typeof enrichment === 'object' && 'color' in enrichment) {
+              const apiColor = (enrichment as { color: { intelligence?: unknown } }).color;
+              if (apiColor?.intelligence) {
+                const current = registry.get(data.name);
+                if (current && typeof current.value === 'object' && current.value !== null) {
+                  const enrichedValue = {
+                    ...(current.value as Record<string, unknown>),
+                    intelligence: apiColor.intelligence,
+                  } as typeof current.value;
+                  await registry.set(data.name, enrichedValue);
+                  client.send('rafters:color-enriched', {
+                    name: data.name,
+                    intelligence: apiColor.intelligence,
+                  });
+                }
+              }
+            }
+          }
         } catch (error) {
           console.log(`[rafters] Token update failed for "${data.name}": ${error}`);
           client.send('rafters:token-updated', { ok: false, error: String(error) });
