@@ -1,5 +1,16 @@
 # rafters
 
+## 0.0.25
+
+### Minor Changes
+
+- Correct token API contract: getters return full Token data, setters take value + reason and return { ok: true }
+- GET / returns structured API info: system metadata, rules, and endpoint docs
+- RAFTERS_VERSION constant in @rafters/shared -- single source of truth for versioning
+- POST /api/shutdown for graceful studio server stop
+- POST /color/build endpoint: OKLCH in, full ColorValue out via buildColorValue()
+- Removed batch set endpoint (unnecessary for studio use)
+
 ## 0.0.24
 
 ### Patch Changes
