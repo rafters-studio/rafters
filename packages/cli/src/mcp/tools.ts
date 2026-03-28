@@ -14,7 +14,7 @@
  */
 
 import { existsSync } from 'node:fs';
-import { readdir, readFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import { basename, join, relative } from 'node:path';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import {
@@ -23,8 +23,13 @@ import {
   DEFAULT_SPACING_MULTIPLIERS,
   DEFAULT_TYPOGRAPHY_SCALE,
   NodePersistenceAdapter,
+  registryToTailwind,
+  registryToTypeScript,
+  TokenRegistry,
+  toDTCG,
 } from '@rafters/design-tokens';
 import {
+  COMPUTED,
   type ColorValue,
   type ComponentMetadata,
   extractDependencies,
@@ -498,7 +503,7 @@ export const TOOL_DEFINITIONS = [
   {
     name: 'rafters_token',
     description:
-      'Get full intelligence for a design token: current value, derivation rule, dependencies, dependents (cascade impact), and human override context. Shows what the system computes vs what a designer chose and why. Use when you need to understand token relationships or respect designer decisions.',
+      'Read or write a design token. Read: returns full intelligence (value, derivation, dependencies, cascade impact, override context). Write: set/create/reset tokens with mandatory reason (why-gate). Every write cascades through the dependency graph, persists to disk, and regenerates CSS/TS/DTCG outputs.',
     inputSchema: {
       type: 'object' as const,
       properties: {
@@ -506,6 +511,30 @@ export const TOOL_DEFINITIONS = [
           type: 'string',
           description:
             'Token name (e.g., "spacing-6", "primary-500", "spacing-base"). Use rafters_vocabulary to see available tokens.',
+        },
+        action: {
+          type: 'string',
+          enum: ['get', 'set', 'create', 'reset'],
+          description:
+            'Action to perform. get (default): read token intelligence. set: update existing token value. create: add a new token. reset: clear override, restore computed value.',
+        },
+        value: {
+          type: 'string',
+          description: 'New token value (required for set and create actions).',
+        },
+        reason: {
+          type: 'string',
+          description:
+            'Why this change is being made (required for set, create, and reset). Every mutation needs a reason that captures design INTENT.',
+        },
+        namespace: {
+          type: 'string',
+          description:
+            'Token namespace (required for create). E.g., "color", "spacing", "typography".',
+        },
+        category: {
+          type: 'string',
+          description: 'Token category (required for create). E.g., "color", "spacing", "font".',
         },
       },
       required: ['name'],
@@ -578,8 +607,11 @@ export class RaftersToolHandler {
         return this.getPattern(args.pattern as string);
       case 'rafters_component':
         return this.getComponent(args.name as string);
-      case 'rafters_token':
-        return this.getToken(args.name as string);
+      case 'rafters_token': {
+        const action = (args.action as string) ?? 'get';
+        if (action === 'get') return this.getToken(args.name as string);
+        return this.writeToken(action, args);
+      }
       case 'rafters_cognitive_budget':
         return this.getCognitiveBudget(
           args.components as string[],
@@ -1219,6 +1251,265 @@ export class RaftersToolHandler {
       };
     } catch (error) {
       return this.handleError('getToken', error);
+    }
+  }
+
+  // ==================== Token Write Operations ====================
+
+  /**
+   * Handle set, create, and reset actions for rafters_token.
+   * Loads the full registry, mutates, cascades, persists, and regenerates outputs.
+   */
+  private async writeToken(action: string, args: Record<string, unknown>): Promise<CallToolResult> {
+    const name = args.name as string;
+    const reason = args.reason as string | undefined;
+    const value = args.value as string | undefined;
+
+    // Why-gate: every mutation needs a reason
+    if (!reason) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify({
+              error: 'Reason is required for every token mutation.',
+              hint: 'Every change needs a WHY that captures design intent, not just origin.',
+              bad: 'imported from globals.css',
+              good: 'Brand blue from --brand-primary, primary identity color per designer',
+            }),
+          },
+        ],
+        isError: true,
+      };
+    }
+
+    if (!this.adapter || !this.projectRoot) {
+      return { content: [{ type: 'text', text: NO_PROJECT_ERROR }], isError: true };
+    }
+
+    try {
+      // Load full registry
+      const allTokens = await this.adapter.load();
+      const registry = new TokenRegistry(allTokens);
+      registry.setAdapter(this.adapter);
+
+      switch (action) {
+        case 'set': {
+          if (!value) {
+            return {
+              content: [{ type: 'text', text: '{"error": "value is required for set action"}' }],
+              isError: true,
+            };
+          }
+          const existing = registry.get(name);
+          if (!existing) {
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify({
+                    error: `Token "${name}" not found. Use action: "create" for new tokens.`,
+                  }),
+                },
+              ],
+              isError: true,
+            };
+          }
+
+          // Set with userOverride tracking
+          const previousValue = existing.value;
+          existing.userOverride = {
+            previousValue:
+              typeof previousValue === 'string' ? previousValue : JSON.stringify(previousValue),
+            reason,
+          };
+          await registry.set(name, value);
+
+          const affected = this.getAffectedTokens(registry, name);
+          await this.regenerateOutputs(registry);
+
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify({
+                  ok: true,
+                  action: 'set',
+                  name,
+                  reason,
+                  cascaded: affected,
+                }),
+              },
+            ],
+          };
+        }
+
+        case 'create': {
+          const namespace = args.namespace as string | undefined;
+          const category = args.category as string | undefined;
+
+          if (!value) {
+            return {
+              content: [{ type: 'text', text: '{"error": "value is required for create action"}' }],
+              isError: true,
+            };
+          }
+          if (!namespace) {
+            return {
+              content: [
+                { type: 'text', text: '{"error": "namespace is required for create action"}' },
+              ],
+              isError: true,
+            };
+          }
+          if (!category) {
+            return {
+              content: [
+                { type: 'text', text: '{"error": "category is required for create action"}' },
+              ],
+              isError: true,
+            };
+          }
+          if (registry.has(name)) {
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify({
+                    error: `Token "${name}" already exists. Use action: "set" to update.`,
+                  }),
+                },
+              ],
+              isError: true,
+            };
+          }
+
+          const newToken: Token = {
+            name,
+            namespace,
+            category,
+            value,
+            containerQueryAware: true,
+            userOverride: {
+              previousValue: '',
+              reason,
+            },
+          };
+
+          registry.add(newToken);
+          await this.adapter.save(registry.list());
+          await this.regenerateOutputs(registry);
+
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify({
+                  ok: true,
+                  action: 'create',
+                  name,
+                  namespace,
+                  reason,
+                }),
+              },
+            ],
+          };
+        }
+
+        case 'reset': {
+          const existing = registry.get(name);
+          if (!existing) {
+            return {
+              content: [
+                { type: 'text', text: JSON.stringify({ error: `Token "${name}" not found.` }) },
+              ],
+              isError: true,
+            };
+          }
+
+          await registry.set(name, COMPUTED);
+
+          const affected = this.getAffectedTokens(registry, name);
+          await this.regenerateOutputs(registry);
+
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify({
+                  ok: true,
+                  action: 'reset',
+                  name,
+                  reason,
+                  cascaded: affected,
+                }),
+              },
+            ],
+          };
+        }
+
+        default:
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify({
+                  error: `Unknown action: ${action}. Use get, set, create, or reset.`,
+                }),
+              },
+            ],
+            isError: true,
+          };
+      }
+    } catch (error) {
+      return this.handleError('writeToken', error);
+    }
+  }
+
+  /**
+   * Get list of tokens that would be affected by changing the given token
+   */
+  private getAffectedTokens(registry: TokenRegistry, tokenName: string): string[] {
+    const affected: string[] = [];
+    for (const token of registry.list()) {
+      if (token.dependsOn?.includes(tokenName)) {
+        affected.push(token.name);
+      }
+    }
+    return affected;
+  }
+
+  /**
+   * Regenerate output files (CSS, TS, DTCG) from registry state
+   */
+  private async regenerateOutputs(registry: TokenRegistry): Promise<void> {
+    if (!this.projectRoot) return;
+
+    const paths = getRaftersPaths(this.projectRoot);
+    const config = await this.loadConfig();
+    const exports = config?.exports ?? {
+      tailwind: true,
+      typescript: true,
+      dtcg: false,
+      compiled: false,
+    };
+    const shadcn = config?.shadcn ?? false;
+
+    await mkdir(paths.output, { recursive: true });
+
+    if (exports.tailwind) {
+      const css = registryToTailwind(registry, { includeImport: !shadcn });
+      await writeFile(join(paths.output, 'rafters.css'), css);
+    }
+
+    if (exports.typescript) {
+      const ts = registryToTypeScript(registry, { includeJSDoc: true });
+      await writeFile(join(paths.output, 'rafters.ts'), ts);
+    }
+
+    if (exports.dtcg) {
+      const json = toDTCG(registry.list());
+      await writeFile(join(paths.output, 'rafters.json'), JSON.stringify(json, null, 2));
     }
   }
 

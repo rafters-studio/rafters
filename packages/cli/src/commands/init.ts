@@ -26,8 +26,6 @@ import {
   frameworkToTarget,
   hasAstroReact,
   isTailwindV3,
-  parseCssVariables,
-  type ShadcnColors,
   type ShadcnConfig,
 } from '../utils/detect.js';
 import {
@@ -584,28 +582,6 @@ export async function init(options: InitOptions): Promise<void> {
   }
 
   // Fresh initialization
-  let existingColors: { light: ShadcnColors; dark: ShadcnColors } | null = null;
-
-  if (shadcn?.tailwind?.css) {
-    const cssPath = join(cwd, shadcn.tailwind.css);
-    try {
-      const cssContent = await readFile(cssPath, 'utf-8');
-      existingColors = parseCssVariables(cssContent);
-      const backupPath = await backupCss(cssPath);
-
-      log({
-        event: 'init:shadcn_detected',
-        cssPath: shadcn.tailwind.css,
-        backupPath,
-        colorsFound: {
-          light: Object.keys(existingColors.light).length,
-          dark: Object.keys(existingColors.dark).length,
-        },
-      });
-    } catch (err) {
-      log({ event: 'init:shadcn_css_error', error: String(err) });
-    }
-  }
 
   // Prompt for export formats (use defaults in agent mode or non-interactive)
   let exports: ExportConfig;
@@ -631,43 +607,6 @@ export async function init(options: InitOptions): Promise<void> {
   });
 
   const { registry } = result;
-
-  // If we have existing shadcn colors, update the registry
-  if (existingColors) {
-    const tokenMap: Record<string, keyof ShadcnColors> = {
-      background: 'background',
-      foreground: 'foreground',
-      card: 'card',
-      'card-foreground': 'cardForeground',
-      popover: 'popover',
-      'popover-foreground': 'popoverForeground',
-      primary: 'primary',
-      'primary-foreground': 'primaryForeground',
-      secondary: 'secondary',
-      'secondary-foreground': 'secondaryForeground',
-      muted: 'muted',
-      'muted-foreground': 'mutedForeground',
-      accent: 'accent',
-      'accent-foreground': 'accentForeground',
-      destructive: 'destructive',
-      'destructive-foreground': 'destructiveForeground',
-      border: 'border',
-      input: 'input',
-      ring: 'ring',
-    };
-
-    for (const [tokenName, colorKey] of Object.entries(tokenMap)) {
-      const colorValue = existingColors.light[colorKey];
-      if (colorValue && registry.has(tokenName)) {
-        registry.updateToken(tokenName, colorValue);
-      }
-    }
-
-    log({
-      event: 'init:colors_imported',
-      count: Object.keys(existingColors.light).length,
-    });
-  }
 
   log({
     event: 'init:generated',
@@ -751,9 +690,48 @@ export async function init(options: InitOptions): Promise<void> {
   };
   await writeFile(paths.config, JSON.stringify(config, null, 2));
 
+  // Check if the project has existing design decisions that should be onboarded intentionally
+  const existingCssPath = detectedCssPath ?? (shadcn?.tailwind?.css || null);
+  if (existingCssPath) {
+    try {
+      const cssContent = await readFile(join(cwd, existingCssPath), 'utf-8');
+      if (hasExistingDesignDecisions(cssContent)) {
+        log({
+          event: 'init:existing_design_detected',
+          cssPath: existingCssPath,
+          action: 'run rafters_onboard analyze to begin migration',
+        });
+      }
+    } catch {
+      // CSS file unreadable, skip detection
+    }
+  }
+
   log({
     event: 'init:complete',
     outputs: [...outputs, 'config.rafters.json'],
     path: paths.output,
   });
+}
+
+/**
+ * Check if CSS content contains design decisions beyond boilerplate.
+ * Does NOT interpret the content -- just detects that something is there.
+ */
+function hasExistingDesignDecisions(css: string): boolean {
+  // Strip comments
+  const stripped = css.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*/g, '');
+
+  // Strip imports and tailwind directives
+  const withoutBoilerplate = stripped
+    .replace(/@import\s+['"][^'"]+['"];?/g, '')
+    .replace(/@tailwind\s+\w+;?/g, '')
+    .trim();
+
+  if (withoutBoilerplate.length === 0) return false;
+
+  const hasCustomProperties = /--[\w-]+\s*:/.test(stripped);
+  const hasThemeBlock = /@theme\s*\{/.test(stripped);
+
+  return hasCustomProperties || hasThemeBlock;
 }

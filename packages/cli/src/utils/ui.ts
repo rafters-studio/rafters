@@ -52,15 +52,6 @@ export function log(event: Record<string, unknown>): void {
       context.spinner = ora('Generating tokens...').start();
       break;
 
-    case 'init:shadcn_detected': {
-      context.spinner?.info('Found existing shadcn colors');
-      console.log(`  Backed up: ${event.backupPath}`);
-      const colors = event.colorsFound as { light: number; dark: number };
-      console.log(`  Colors: ${colors.light} light, ${colors.dark} dark`);
-      context.spinner = ora('Generating tokens...').start();
-      break;
-    }
-
     case 'init:generated':
       context.spinner?.succeed(`Generated ${event.tokenCount} tokens`);
       context.spinner = ora('Saving registry...').start();
@@ -91,8 +82,16 @@ export function log(event: Record<string, unknown>): void {
       context.spinner = ora('Generating outputs...').start();
       break;
 
-    case 'init:colors_imported':
-      console.log(`  Imported ${event.count} existing colors`);
+    case 'init:existing_design_detected':
+      context.spinner?.info('Existing design system detected');
+      console.log(`  Found design decisions in ${event.cssPath}`);
+      console.log('');
+      console.log('  Your existing CSS has design decisions that should be');
+      console.log('  migrated intentionally, not automatically.');
+      console.log('');
+      console.log('  Ask your AI agent: "Onboard my existing design system to Rafters"');
+      console.log('');
+      context.spinner = ora('Finishing up...').start();
       break;
 
     case 'init:prompting_exports':

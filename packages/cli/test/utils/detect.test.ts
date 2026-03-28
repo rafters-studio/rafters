@@ -8,7 +8,6 @@ import {
   detectShadcn,
   detectTailwindVersion,
   isTailwindV3,
-  parseCssVariables,
 } from '../../src/utils/detect.js';
 
 describe('detectFramework', () => {
@@ -280,103 +279,6 @@ describe('detectShadcn', () => {
   it('should return null when components.json does not exist', async () => {
     const result = await detectShadcn(testDir);
     expect(result).toBeNull();
-  });
-});
-
-describe('parseCssVariables', () => {
-  it('should parse light mode variables from :root', () => {
-    const css = `
-:root {
-  --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
-  --primary: 222.2 47.4% 11.2%;
-  --primary-foreground: 210 40% 98%;
-}
-`;
-
-    const { light, dark } = parseCssVariables(css);
-
-    expect(light.background).toBe('0 0% 100%');
-    expect(light.foreground).toBe('222.2 84% 4.9%');
-    expect(light.primary).toBe('222.2 47.4% 11.2%');
-    expect(light.primaryForeground).toBe('210 40% 98%');
-    expect(dark).toEqual({});
-  });
-
-  it('should parse dark mode variables from .dark', () => {
-    const css = `
-:root {
-  --background: 0 0% 100%;
-}
-
-.dark {
-  --background: 222.2 84% 4.9%;
-  --foreground: 210 40% 98%;
-}
-`;
-
-    const { light, dark } = parseCssVariables(css);
-
-    expect(light.background).toBe('0 0% 100%');
-    expect(dark.background).toBe('222.2 84% 4.9%');
-    expect(dark.foreground).toBe('210 40% 98%');
-  });
-
-  it('should parse all shadcn color variables', () => {
-    const css = `
-:root {
-  --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
-  --card: 0 0% 100%;
-  --card-foreground: 222.2 84% 4.9%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 222.2 84% 4.9%;
-  --primary: 222.2 47.4% 11.2%;
-  --primary-foreground: 210 40% 98%;
-  --secondary: 210 40% 96.1%;
-  --secondary-foreground: 222.2 47.4% 11.2%;
-  --muted: 210 40% 96.1%;
-  --muted-foreground: 215.4 16.3% 46.9%;
-  --accent: 210 40% 96.1%;
-  --accent-foreground: 222.2 47.4% 11.2%;
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 210 40% 98%;
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
-  --ring: 222.2 84% 4.9%;
-}
-`;
-
-    const { light } = parseCssVariables(css);
-
-    expect(light.background).toBeDefined();
-    expect(light.foreground).toBeDefined();
-    expect(light.card).toBeDefined();
-    expect(light.cardForeground).toBeDefined();
-    expect(light.popover).toBeDefined();
-    expect(light.popoverForeground).toBeDefined();
-    expect(light.primary).toBeDefined();
-    expect(light.primaryForeground).toBeDefined();
-    expect(light.secondary).toBeDefined();
-    expect(light.secondaryForeground).toBeDefined();
-    expect(light.muted).toBeDefined();
-    expect(light.mutedForeground).toBeDefined();
-    expect(light.accent).toBeDefined();
-    expect(light.accentForeground).toBeDefined();
-    expect(light.destructive).toBeDefined();
-    expect(light.destructiveForeground).toBeDefined();
-    expect(light.border).toBeDefined();
-    expect(light.input).toBeDefined();
-    expect(light.ring).toBeDefined();
-  });
-
-  it('should return empty objects for CSS without variables', () => {
-    const css = `body { margin: 0; }`;
-
-    const { light, dark } = parseCssVariables(css);
-
-    expect(light).toEqual({});
-    expect(dark).toEqual({});
   });
 });
 
