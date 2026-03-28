@@ -562,6 +562,15 @@ export function studioApiPlugin(): Plugin {
           return;
         }
 
+        // /api/shutdown - POST to gracefully stop the studio
+        if (pathname === '/api/shutdown' && req.method === 'POST') {
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ ok: true, message: 'Shutting down' }));
+          console.log('[rafters] Studio shutting down...');
+          setTimeout(() => server.close(), 100);
+          return;
+        }
+
         // /api/color/build - POST to build ColorValue from OKLCH
         if (pathname === '/api/color/build') {
           res.setHeader('Content-Type', 'application/json');

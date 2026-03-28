@@ -55,6 +55,7 @@ const router = createRouter().openapi(
           'DELETE /tokens/:namespace/:name/override': 'Clear override, restore computed',
           'POST /color/build': 'OKLCH -> full ColorValue',
           'POST /tokens/:namespace/reset': 'Regenerate namespace from generators',
+          'POST /api/shutdown': 'Gracefully stop the studio server',
         },
       },
       HttpStatusCodes.OK,
