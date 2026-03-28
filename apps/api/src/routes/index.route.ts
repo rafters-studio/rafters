@@ -1,5 +1,6 @@
 import { createRoute, z } from '@hono/zod-openapi';
 import { getAvailableNamespaces } from '@rafters/design-tokens';
+import { RAFTERS_VERSION } from '@rafters/shared';
 import * as HttpStatusCodes from 'stoker/http-status-codes';
 import { jsonContent } from 'stoker/openapi/helpers';
 
@@ -34,7 +35,7 @@ const router = createRouter().openapi(
     return c.json(
       {
         name: 'Rafters Studio API',
-        version: '0.0.24',
+        version: RAFTERS_VERSION,
         system: {
           namespaces: getAvailableNamespaces(),
           tokenCount: 536,

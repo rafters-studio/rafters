@@ -2,12 +2,16 @@ import { SELF } from 'cloudflare:test';
 import { describe, expect, it } from 'vitest';
 
 describe('Index Route', () => {
-  it('GET / returns API info', async () => {
+  it('GET / returns structured API info', async () => {
     const res = await SELF.fetch('http://localhost/');
 
     expect(res.status).toBe(200);
-    const json = await res.json();
-    expect(json).toEqual({ message: 'Rafters API' });
+    const json = (await res.json()) as Record<string, unknown>;
+    expect(json.name).toBe('Rafters Studio API');
+    expect(json.version).toBeTruthy();
+    expect(json.system).toBeTruthy();
+    expect(json.rules).toBeTruthy();
+    expect(json.endpoints).toBeTruthy();
   });
 
   it('GET /docs returns OpenAPI spec', async () => {
