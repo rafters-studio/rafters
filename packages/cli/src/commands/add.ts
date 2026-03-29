@@ -538,10 +538,12 @@ export async function add(componentArgs: string[], options: AddOptions): Promise
     }
   }
 
-  // Install all resolved items
+  // Install all resolved items, tracking framework-filtered versions for dep collection
   const installed: string[] = [];
   const skipped: string[] = [];
   const installedItems: RegistryItem[] = [];
+  const filteredItems: RegistryItem[] = [];
+  const target = getComponentTarget(config);
 
   for (const item of allItems) {
     // Skip items already tracked in config (unless --overwrite)
@@ -561,6 +563,16 @@ export async function add(componentArgs: string[], options: AddOptions): Promise
       if (result.installed) {
         installed.push(item.name);
         installedItems.push(item);
+
+        // Create a filtered copy with only the framework-selected files
+        // so dependency collection doesn't pull in deps from other frameworks
+        if (item.type === 'ui') {
+          const selection = selectFilesForFramework(item.files, target);
+          filteredItems.push({ ...item, files: selection.files });
+        } else {
+          filteredItems.push(item);
+        }
+
         log({
           event: 'add:installed',
           component: item.name,
@@ -584,7 +596,7 @@ export async function add(componentArgs: string[], options: AddOptions): Promise
     }
   }
 
-  // Collect, filter, and install dependencies (safety-net: never fails the whole command)
+  // Collect, filter, and install dependencies from framework-filtered files only
   const emptyDeps: InstallRegistryDepsResult = {
     installed: [],
     skipped: [],
@@ -593,7 +605,7 @@ export async function add(componentArgs: string[], options: AddOptions): Promise
   };
   let depsResult = emptyDeps;
   try {
-    depsResult = await installRegistryDependencies(allItems, cwd);
+    depsResult = await installRegistryDependencies(filteredItems, cwd);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     log({
