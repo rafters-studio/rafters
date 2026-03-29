@@ -1,8 +1,19 @@
 # rafters
 
-## Unreleased
+## 0.0.34
+
+### Minor Changes
+
+- Motion system applied to all components: duration tokens, easing curves, motion-reduce on everything
+- Hover, active, disabled states applied per component spec
+- Size variants added to component spec (28 components get sm/md/lg)
+- Design system docs: MOTION, COLOR, SPACING, TYPOGRAPHY, DEPTH, RADIUS, SHADOW rewritten with intent
+- 20 internal research docs archived to vault
+
+### Patch Changes
 
 - Fix compiled CSS export hang: 30s timeout on @tailwindcss/cli execFileSync
+- docs-site excluded from biome linting
 
 ## 0.0.33
 
