@@ -55,7 +55,7 @@ describe('tokensToTailwind', () => {
 
     const css = tokensToTailwind(tokens);
 
-    expect(css).toContain('--spacing-spacing-4: 1rem;');
+    expect(css).toContain('--spacing-4: 1rem;');
   });
 
   it('should export typography tokens with line-height companions', () => {
@@ -107,8 +107,8 @@ describe('tokensToTailwind', () => {
 
     const css = tokensToTailwind(tokens);
 
-    expect(css).toContain('--radius-radius-sm: 0.25rem;');
-    expect(css).toContain('--radius-radius-md: 0.375rem;');
+    expect(css).toContain('--radius-sm: 0.25rem;');
+    expect(css).toContain('--radius-md: 0.375rem;');
   });
 
   it('should export shadow tokens with --shadow- prefix', () => {
@@ -123,7 +123,7 @@ describe('tokensToTailwind', () => {
 
     const css = tokensToTailwind(tokens);
 
-    expect(css).toContain('--shadow-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);');
+    expect(css).toContain('--shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);');
   });
 
   it('should export depth tokens', () => {
@@ -312,7 +312,7 @@ describe('tokensToTailwind', () => {
     const css = tokensToTailwind(tokens);
 
     expect(css).toContain('--size-base: 16px;');
-    expect(css).toContain('--shadow-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);');
+    expect(css).toContain('--shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);');
   });
 
   it('should place @keyframes outside @theme block', () => {
@@ -367,7 +367,7 @@ describe('registryToCompiled', () => {
     // Should have the actual CSS custom properties in :root
     expect(css).toContain(':root');
     expect(css).toContain('--color-neutral-500');
-    expect(css).toContain('--spacing-spacing-4');
+    expect(css).toContain('--spacing-4');
   });
 
   it('should minify output by default', async () => {

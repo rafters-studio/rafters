@@ -297,12 +297,14 @@ function generateThemeBlock(groups: GroupedTokens): string {
     lines.push('');
   }
 
-  // Spacing tokens
+  // Spacing tokens -- Tailwind v4 reads --spacing-* for p-*, m-*, gap-*
   if (groups.spacing.length > 0) {
     for (const token of groups.spacing) {
       const value = tokenValueToCSS(token);
       if (value === null) continue;
-      lines.push(`  --spacing-${token.name}: ${value};`);
+      // Strip "spacing-" prefix: token "spacing-4" becomes "--spacing-4"
+      const key = token.name.replace(/^spacing-/, '');
+      lines.push(`  --spacing-${key}: ${value};`);
     }
     lines.push('');
   }
@@ -320,22 +322,26 @@ function generateThemeBlock(groups: GroupedTokens): string {
     lines.push('');
   }
 
-  // Radius tokens
+  // Radius tokens -- Tailwind v4 reads --radius-* for rounded-*
   if (groups.radius.length > 0) {
     for (const token of groups.radius) {
       const value = tokenValueToCSS(token);
       if (value === null) continue;
-      lines.push(`  --radius-${token.name}: ${value};`);
+      // Strip "radius-" prefix: token "radius-md" becomes "--radius-md"
+      const key = token.name.replace(/^radius-/, '');
+      lines.push(`  --radius-${key}: ${value};`);
     }
     lines.push('');
   }
 
-  // Shadow tokens
+  // Shadow tokens -- Tailwind v4 reads --shadow-* for shadow-*
   if (groups.shadow.length > 0) {
     for (const token of groups.shadow) {
       const value = tokenValueToCSS(token);
       if (value === null) continue;
-      lines.push(`  --shadow-${token.name}: ${value};`);
+      // Strip "shadow-" prefix: token "shadow-md" becomes "--shadow-md"
+      const key = token.name.replace(/^shadow-/, '');
+      lines.push(`  --shadow-${key}: ${value};`);
     }
     lines.push('');
   }
@@ -664,10 +670,11 @@ function generateThemeBlockWithVarRefs(groups: GroupedTokens): string {
     lines.push('');
   }
 
-  // Spacing tokens
+  // Spacing tokens -- strip namespace prefix for Tailwind v4
   if (groups.spacing.length > 0) {
     for (const token of groups.spacing) {
-      lines.push(`  --spacing-${token.name}: var(--rafters-spacing-${token.name});`);
+      const key = token.name.replace(/^spacing-/, '');
+      lines.push(`  --spacing-${key}: var(--rafters-${token.name});`);
     }
     lines.push('');
   }
@@ -683,18 +690,20 @@ function generateThemeBlockWithVarRefs(groups: GroupedTokens): string {
     lines.push('');
   }
 
-  // Radius tokens
+  // Radius tokens -- strip namespace prefix for Tailwind v4
   if (groups.radius.length > 0) {
     for (const token of groups.radius) {
-      lines.push(`  --radius-${token.name}: var(--rafters-radius-${token.name});`);
+      const key = token.name.replace(/^radius-/, '');
+      lines.push(`  --radius-${key}: var(--rafters-${token.name});`);
     }
     lines.push('');
   }
 
-  // Shadow tokens
+  // Shadow tokens -- strip namespace prefix for Tailwind v4
   if (groups.shadow.length > 0) {
     for (const token of groups.shadow) {
-      lines.push(`  --shadow-${token.name}: var(--rafters-shadow-${token.name});`);
+      const key = token.name.replace(/^shadow-/, '');
+      lines.push(`  --shadow-${key}: var(--rafters-${token.name});`);
     }
     lines.push('');
   }
