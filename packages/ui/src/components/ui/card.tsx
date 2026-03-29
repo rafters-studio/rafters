@@ -50,6 +50,18 @@
 import * as React from 'react';
 import { useCallback, useRef } from 'react';
 import classy from '../../primitives/classy';
+import {
+  cardActionClasses,
+  cardBaseClasses,
+  cardContentClasses,
+  cardDescriptionClasses,
+  cardEditableClasses,
+  cardEditableFocusClasses,
+  cardFooterClasses,
+  cardHeaderClasses,
+  cardInteractiveClasses,
+  cardTitleClasses,
+} from './card.classes';
 
 // ============================================================================
 // Card Context (R-202)
@@ -113,21 +125,11 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
     },
     ref,
   ) => {
-    const base = 'bg-card text-card-foreground border border-card-border rounded-lg shadow-sm';
-
-    // Size variants (shadcn v4 compatibility)
     const sizeStyles = size === 'sm' ? 'group/card-sm' : '';
+    const interactiveStyles = interactive ? cardInteractiveClasses : '';
+    const editableStyles = editable ? cardEditableClasses : '';
 
-    const interactiveStyles = interactive
-      ? 'hover:bg-card-hover hover:shadow-md transition-shadow duration-normal motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
-      : '';
-
-    // Editable mode styling (R-202)
-    const editableStyles = editable
-      ? 'outline-2 outline-dashed outline-muted-foreground/30 outline-offset-2'
-      : '';
-
-    const cls = classy(base, sizeStyles, interactiveStyles, editableStyles, className);
+    const cls = classy(cardBaseClasses, sizeStyles, interactiveStyles, editableStyles, className);
 
     const contextValue: CardContextValue = {
       editable,
@@ -157,7 +159,7 @@ export interface CardHeaderProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 export const CardHeader = React.forwardRef<HTMLDivElement, CardHeaderProps>(
   ({ className, ...props }, ref) => {
-    const cls = classy('flex flex-col gap-1.5 p-6', className);
+    const cls = classy(cardHeaderClasses, className);
     return <div ref={ref} data-slot="card-header" className={cls} {...props} />;
   },
 );
@@ -211,11 +213,7 @@ export const CardTitle = React.forwardRef<HTMLHeadingElement, CardTitleProps>(
       }
     };
 
-    const cls = classy(
-      'text-2xl font-semibold leading-none tracking-tight',
-      context?.editable && 'outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded',
-      className,
-    );
+    const cls = classy(cardTitleClasses, context?.editable && cardEditableFocusClasses, className);
 
     const editableProps = context?.editable
       ? {
@@ -286,8 +284,8 @@ export const CardDescription = React.forwardRef<HTMLParagraphElement, CardDescri
     };
 
     const cls = classy(
-      'text-sm text-muted-foreground',
-      context?.editable && 'outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded',
+      cardDescriptionClasses,
+      context?.editable && cardEditableFocusClasses,
       className,
     );
 
@@ -317,7 +315,7 @@ export interface CardActionProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 export const CardAction = React.forwardRef<HTMLDivElement, CardActionProps>(
   ({ className, ...props }, ref) => {
-    const cls = classy('col-start-2 row-span-2 row-start-1 self-start justify-self-end', className);
+    const cls = classy(cardActionClasses, className);
     return <div ref={ref} data-slot="card-action" className={cls} {...props} />;
   },
 );
@@ -328,7 +326,7 @@ export interface CardContentProps extends React.HTMLAttributes<HTMLDivElement> {
 
 export const CardContent = React.forwardRef<HTMLDivElement, CardContentProps>(
   ({ className, ...props }, ref) => {
-    const cls = classy('p-6 pt-0', className);
+    const cls = classy(cardContentClasses, className);
     return <div ref={ref} className={cls} {...props} />;
   },
 );
@@ -339,7 +337,7 @@ export interface CardFooterProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 export const CardFooter = React.forwardRef<HTMLDivElement, CardFooterProps>(
   ({ className, ...props }, ref) => {
-    const cls = classy('flex items-center p-6 pt-0', className);
+    const cls = classy(cardFooterClasses, className);
     return <div ref={ref} className={cls} {...props} />;
   },
 );

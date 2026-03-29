@@ -25,6 +25,7 @@
  */
 import * as React from 'react';
 import classy from '../../primitives/classy';
+import { badgeBaseClasses, badgeSizeClasses, badgeVariantClasses } from './badge.classes';
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   /** Visual variant per docs/COMPONENT_STYLING_REFERENCE.md */
@@ -45,37 +46,12 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   size?: 'sm' | 'default' | 'lg';
 }
 
-// Variant classes per docs/COMPONENT_STYLING_REFERENCE.md
-const variantClasses: Record<string, string> = {
-  default: 'bg-primary text-primary-foreground',
-  primary: 'bg-primary text-primary-foreground',
-  secondary: 'bg-secondary text-secondary-foreground',
-  destructive: 'bg-destructive text-destructive-foreground',
-  success: 'bg-success text-success-foreground',
-  warning: 'bg-warning text-warning-foreground',
-  info: 'bg-info text-info-foreground',
-  muted: 'bg-muted text-muted-foreground',
-  accent: 'bg-accent text-accent-foreground',
-  outline: 'bg-transparent border border-input text-foreground',
-  ghost: 'hover:bg-muted hover:text-muted-foreground',
-  link: 'text-primary underline-offset-4 hover:underline',
-};
-
-const sizeClasses: Record<string, string> = {
-  sm: 'px-2 py-0.5 text-xs',
-  default: 'px-2.5 py-0.5 text-xs',
-  lg: 'px-3 py-1 text-sm',
-};
-
 export const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
   ({ className, variant = 'default', size = 'default', ...props }, ref) => {
-    const baseClasses =
-      'inline-flex items-center justify-center rounded-full font-semibold transition-colors';
-
     const classes = classy(
-      baseClasses,
-      variantClasses[variant] ?? variantClasses.default,
-      sizeClasses[size] ?? sizeClasses.default,
+      badgeBaseClasses,
+      badgeVariantClasses[variant] ?? badgeVariantClasses.default,
+      badgeSizeClasses[size] ?? badgeSizeClasses.default,
       className,
     );
 
