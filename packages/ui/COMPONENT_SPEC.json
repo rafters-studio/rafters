@@ -1,0 +1,1813 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "version": "1.0.0",
+  "target": "WCAG AAA + Section 508",
+  "description": "Complete specification for every Rafters component. This is the design target, not the current state. Every entry defines what MUST be provided for the component to be considered complete.",
+  "designRules": {
+    "noLinkVariant": "Link as a button variant is bad UX. No component ships a link variant. Use an anchor element styled independently.",
+    "noSizeScale": "Components are designed for real interfaces. Default size only. Designers override with a reason, not a scale.",
+    "motionReduce": "motion-reduce:transition-none on EVERY component with transitions. No exceptions.",
+    "tokenBased": "Every component uses semantic color tokens, spacing tokens, radius tokens, typography tokens, shadow tokens as applicable.",
+    "interactiveStates": "Every interactive component has: hover, focus-visible, active, disabled states with token-based styling.",
+    "formStates": "Every form control has: aria-invalid, aria-required, aria-disabled, error state styling.",
+    "toggleStates": "Every toggle has: aria-checked or aria-pressed with state styling.",
+    "disclosureStates": "Every disclosure has: aria-expanded with state styling.",
+    "minimumContrast": "7:1 for normal text, 4.5:1 for large text, 3:1 for UI components. WCAG AAA.",
+    "minimumTouchTarget": "44x44px for all interactive elements. Section 508.",
+    "depthModel": "Overlays get z-depth tokens. Base-level components get height/shadows, not elevation."
+  },
+  "components": [
+    {
+      "name": "button",
+      "category": "interactive",
+      "variants": [
+        "default",
+        "primary",
+        "secondary",
+        "destructive",
+        "success",
+        "warning",
+        "info",
+        "accent",
+        "muted",
+        "outline",
+        "ghost"
+      ],
+      "sizes": ["default"],
+      "tokens": {
+        "color": true,
+        "spacing": true,
+        "radius": true,
+        "typography": true,
+        "shadow": false,
+        "depth": false,
+        "motion": ["hover", "focus", "active"]
+      },
+      "states": {
+        "hover": { "required": true, "tokenBased": true },
+        "focusVisible": { "required": true, "ring": true, "offset": true },
+        "active": { "required": true, "feedback": "press" },
+        "disabled": { "required": true, "opacity": true, "cursorNotAllowed": true },
+        "loading": { "required": true, "ariaBusy": true }
+      },
+      "aria": {
+        "ariaDisabled": true,
+        "ariaBusy": true
+      },
+      "section508": {
+        "minTouchTarget": "44px",
+        "colorContrast": "7:1",
+        "focusIndicator": "visible ring 2px offset 2px",
+        "keyboardNavigable": true,
+        "screenReaderLabel": "native button semantics",
+        "motionReduce": true,
+        "textResizable": true,
+        "noColorOnly": "icon + text variants available"
+      },
+      "height": false,
+      "shadow": false
+    },
+    {
+      "name": "toggle",
+      "category": "interactive",
+      "variants": ["default", "outline"],
+      "sizes": ["default"],
+      "tokens": {
+        "color": true,
+        "spacing": true,
+        "radius": true,
+        "typography": true,
+        "shadow": false,
+        "depth": false,
+        "motion": ["hover", "focus", "active", "pressed"]
+      },
+      "states": {
+        "hover": { "required": true, "tokenBased": true },
+        "focusVisible": { "required": true, "ring": true, "offset": true },
+        "active": { "required": true, "feedback": "press" },
+        "pressed": { "required": true, "tokenBased": true, "ariaPressed": true },
+        "disabled": { "required": true, "opacity": true, "cursorNotAllowed": true }
+      },
+      "aria": {
+        "ariaPressed": true,
+        "ariaDisabled": true
+      },
+      "section508": {
+        "minTouchTarget": "44px",
+        "colorContrast": "7:1",
+        "focusIndicator": "visible ring 2px offset 2px",
+        "keyboardNavigable": true,
+        "screenReaderLabel": "aria-pressed communicates toggle state",
+        "motionReduce": true,
+        "textResizable": true,
+        "noColorOnly": "visual + aria state indicator"
+      },
+      "height": false,
+      "shadow": false
+    },
+    {
+      "name": "toggle-group",
+      "category": "interactive",
+      "variants": ["default", "outline"],
+      "sizes": ["default"],
+      "tokens": {
+        "color": true,
+        "spacing": true,
+        "radius": true,
+        "typography": true,
+        "shadow": false,
+        "depth": false,
+        "motion": ["hover", "focus", "active", "pressed"]
+      },
+      "states": {
+        "hover": { "required": true, "tokenBased": true },
+        "focusVisible": { "required": true, "ring": true, "offset": true },
+        "active": { "required": true, "feedback": "press" },
+        "pressed": { "required": true, "tokenBased": true, "ariaPressed": true },
+        "disabled": { "required": true, "opacity": true, "cursorNotAllowed": true }
+      },
+      "aria": {
+        "ariaPressed": true,
+        "ariaDisabled": true,
+        "role": "group"
+      },
+      "section508": {
+        "minTouchTarget": "44px per item",
+        "colorContrast": "7:1",
+        "focusIndicator": "visible ring 2px offset 2px on each item",
+        "keyboardNavigable": true,
+        "screenReaderLabel": "group role with aria-label, roving tabindex",
+        "motionReduce": true,
+        "textResizable": true,
+        "noColorOnly": "visual + aria state indicator per item"
+      },
+      "height": false,
+      "shadow": false
+    },
+    {
+      "name": "input",
+      "category": "form",
+      "variants": ["default"],
+      "sizes": ["default"],
+      "tokens": {
+        "color": true,
+        "spacing": true,
+        "radius": true,
+        "typography": true,
+        "shadow": false,
+        "depth": false,
+        "motion": ["focus"]
+      },
+      "states": {
+        "hover": { "required": true, "tokenBased": true, "borderChange": true },
+        "focusVisible": { "required": true, "ring": true, "offset": true },
+        "disabled": { "required": true, "opacity": true, "cursorNotAllowed": true },
+        "error": { "required": true, "tokenBased": true, "borderColor": "destructive" },
+        "readOnly": { "required": true, "cursorDefault": true }
+      },
+      "aria": {
+        "ariaInvalid": true,
+        "ariaRequired": true,
+        "ariaDisabled": true,
+        "ariaDescribedby": true,
+        "ariaErrormessage": true
+      },
+      "section508": {
+        "minTouchTarget": "44px height",
+        "colorContrast": "7:1",
+        "focusIndicator": "visible ring 2px offset 2px",
+        "keyboardNavigable": true,
+        "screenReaderLabel": "associated label element via htmlFor or aria-labelledby",
+        "motionReduce": true,
+        "textResizable": true,
+        "noColorOnly": "error icon + error text, not just red border",
+        "errorAnnouncement": "aria-errormessage with aria-live region"
+      },
+      "height": false,
+      "shadow": false
+    },
+    {
+      "name": "textarea",
+      "category": "form",
+      "variants": ["default"],
+      "sizes": ["default"],
+      "tokens": {
+        "color": true,
+        "spacing": true,
+        "radius": true,
+        "typography": true,
+        "shadow": false,
+        "depth": false,
+        "motion": ["focus"]
+      },
+      "states": {
+        "hover": { "required": true, "tokenBased": true, "borderChange": true },
+        "focusVisible": { "required": true, "ring": true, "offset": true },
+        "disabled": { "required": true, "opacity": true, "cursorNotAllowed": true },
+        "error": { "required": true, "tokenBased": true, "borderColor": "destructive" },
+        "readOnly": { "required": true, "cursorDefault": true }
+      },
+      "aria": {
+        "ariaInvalid": true,
+        "ariaRequired": true,
+        "ariaDisabled": true,
+        "ariaDescribedby": true,
+        "ariaErrormessage": true
+      },
+      "section508": {
+        "minTouchTarget": "44px minimum height",
+        "colorContrast": "7:1",
+        "focusIndicator": "visible ring 2px offset 2px",
+        "keyboardNavigable": true,
+        "screenReaderLabel": "associated label element via htmlFor or aria-labelledby",
+        "motionReduce": true,
+        "textResizable": true,
+        "noColorOnly": "error icon + error text, not just red border",
+        "errorAnnouncement": "aria-errormessage with aria-live region",
+        "resizeHandle": "visible and keyboard accessible"
+      },
+      "height": false,
+      "shadow": false
+    },
+    {
+      "name": "checkbox",
+      "category": "form",
+      "variants": ["default"],
+      "sizes": ["default"],
+      "tokens": {
+        "color": true,
+        "spacing": true,
+        "radius": true,
+        "typography": false,
+        "shadow": false,
+        "depth": false,
+        "motion": ["checked", "focus"]
+      },
+      "states": {
+        "hover": { "required": true, "tokenBased": true },
+        "focusVisible": { "required": true, "ring": true, "offset": true },
+        "checked": { "required": true, "tokenBased": true, "ariaChecked": true },
+        "indeterminate": { "required": true, "ariaChecked": "mixed" },
+        "disabled": { "required": true, "opacity": true, "cursorNotAllowed": true },
+        "error": { "required": true, "tokenBased": true, "borderColor": "destructive" }
+      },
+      "aria": {
+        "ariaChecked": true,
+        "ariaInvalid": true,
+        "ariaRequired": true,
+        "ariaDisabled": true,
+        "ariaDescribedby": true
+      },
+      "section508": {
+        "minTouchTarget": "44px (checkbox + label combined)",
+        "colorContrast": "7:1",
+        "focusIndicator": "visible ring 2px offset 2px",
+        "keyboardNavigable": true,
+        "screenReaderLabel": "associated label, state announced on change",
+        "motionReduce": true,
+        "textResizable": true,
+        "noColorOnly": "checkmark icon visible in checked state"
+      },
+      "height": false,
+      "shadow": false
+    },
+    {
+      "name": "switch",
+      "category": "form",
+      "variants": ["default"],
+      "sizes": ["default"],
+      "tokens": {
+        "color": true,
+        "spacing": true,
+        "radius": true,
+        "typography": false,
+        "shadow": true,
+        "depth": false,
+        "motion": ["checked", "focus", "hover"]
+      },
+      "states": {
+        "hover": { "required": true, "tokenBased": true },
+        "focusVisible": { "required": true, "ring": true, "offset": true },
+        "checked": { "required": true, "tokenBased": true, "ariaChecked": true },
+        "disabled": { "required": true, "opacity": true, "cursorNotAllowed": true },
+        "error": { "required": true, "tokenBased": true, "borderColor": "destructive" }
+      },
+      "aria": {
+        "role": "switch",
+        "ariaChecked": true,
+        "ariaInvalid": true,
+        "ariaRequired": true,
+        "ariaDisabled": true,
+        "ariaDescribedby": true
+      },
+      "section508": {
+        "minTouchTarget": "44px (switch + label combined)",
+        "colorContrast": "7:1",
+        "focusIndicator": "visible ring 2px offset 2px",
+        "keyboardNavigable": true,
+        "screenReaderLabel": "switch role with associated label, state announced on toggle",
+        "motionReduce": true,
+        "textResizable": true,
+        "noColorOnly": "position + color change, aria-checked announces state"
+      },
+      "height": false,
+      "shadow": true
+    },
+    {
+      "name": "radio-group",
+      "category": "form",
+      "variants": ["default"],
+      "sizes": ["default"],
+      "tokens": {
+        "color": true,
+        "spacing": true,
+        "radius": true,
+        "typography": false,
+        "shadow": false,
+        "depth": false,
+        "motion": ["checked", "focus"]
+      },
+      "states": {
+        "hover": { "required": true, "tokenBased": true },
+        "focusVisible": { "required": true, "ring": true, "offset": true },
+        "checked": { "required": true, "tokenBased": true, "ariaChecked": true },
+        "disabled": { "required": true, "opacity": true, "cursorNotAllowed": true },
+        "error": { "required": true, "tokenBased": true, "borderColor": "destructive" }
+      },
+      "aria": {
+        "role": "radiogroup",
+        "ariaChecked": true,
+        "ariaInvalid": true,
+        "ariaRequired": true,
+        "ariaDisabled": true,
+        "ariaDescribedby": true,
+        "ariaErrormessage": true
+      },
+      "section508": {
+        "minTouchTarget": "44px per radio item (radio + label combined)",
+        "colorContrast": "7:1",
+        "focusIndicator": "visible ring 2px offset 2px on each radio",
+        "keyboardNavigable": true,
+        "screenReaderLabel": "radiogroup role with aria-label, arrow keys for navigation",
+        "motionReduce": true,
+        "textResizable": true,
+        "noColorOnly": "filled dot indicator in checked state"
+      },
+      "height": false,
+      "shadow": false
+    },
+    {
+      "name": "select",
+      "category": "form",
+      "variants": ["default"],
+      "sizes": ["default"],
+      "tokens": {
+        "color": true,
+        "spacing": true,
+        "radius": true,
+        "typography": true,
+        "shadow": true,
+        "depth": true,
+        "motion": ["focus", "open"]
+      },
+      "states": {
+        "hover": { "required": true, "tokenBased": true, "borderChange": true },
+        "focusVisible": { "required": true, "ring": true, "offset": true },
+        "open": { "required": true, "ariaExpanded": true },
+        "disabled": { "required": true, "opacity": true, "cursorNotAllowed": true },
+        "error": { "required": true, "tokenBased": true, "borderColor": "destructive" }
+      },
+      "aria": {
+        "ariaExpanded": true,
+        "ariaInvalid": true,
+        "ariaRequired": true,
+        "ariaDisabled": true,
+        "ariaDescribedby": true,
+        "ariaErrormessage": true,
+        "ariaActivedescendant": true
+      },
+      "section508": {
+        "minTouchTarget": "44px trigger height",
+        "colorContrast": "7:1",
+        "focusIndicator": "visible ring 2px offset 2px on trigger and active option",
+        "keyboardNavigable": true,
+        "screenReaderLabel": "associated label, selected value announced, options navigable with arrows",
+        "motionReduce": true,
+        "textResizable": true,
+        "noColorOnly": "checkmark icon on selected option",
+        "errorAnnouncement": "aria-errormessage with aria-live region"
+      },
+      "height": false,
+      "shadow": true
+    },
+    {
+      "name": "slider",
+      "category": "form",
+      "variants": ["default"],
+      "sizes": ["default"],
+      "tokens": {
+        "color": true,
+        "spacing": true,
+        "radius": true,
+        "typography": false,
+        "shadow": false,
+        "depth": false,
+        "motion": ["hover", "focus", "drag"]
+      },
+      "states": {
+        "hover": { "required": true, "tokenBased": true, "thumbScale": true },
+        "focusVisible": { "required": true, "ring": true, "offset": true },
+        "active": { "required": true, "feedback": "drag" },
+        "disabled": { "required": true, "opacity": true, "cursorNotAllowed": true }
+      },
+      "aria": {
+        "role": "slider",
+        "ariaValuemin": true,
+        "ariaValuemax": true,
+        "ariaValuenow": true,
+        "ariaValuetext": true,
+        "ariaDisabled": true,
+        "ariaOrientation": true
+      },
+      "section508": {
+        "minTouchTarget": "44px thumb size",
+        "colorContrast": "3:1 for track and thumb",
+        "focusIndicator": "visible ring 2px offset 2px on thumb",
+        "keyboardNavigable": true,
+        "screenReaderLabel": "aria-valuetext for human-readable value, arrow keys for adjustment",
+        "motionReduce": true,
+        "textResizable": false,
+        "noColorOnly": "thumb position indicates value visually"
+      },
+      "height": false,
+      "shadow": false
+    },
+    {
+      "name": "label",
+      "category": "form",
+      "variants": ["default"],
+      "sizes": ["default"],
+      "tokens": {
+        "color": true,
+        "spacing": true,
+        "radius": false,
+        "typography": true,
+        "shadow": false,
+        "depth": false,
+        "motion": []
+      },
+      "states": {
+        "disabled": { "required": true, "opacity": true, "cursorNotAllowed": true },
+        "error": { "required": true, "tokenBased": true, "color": "destructive" }
+      },
+      "aria": {
+        "htmlFor": true
+      },
+      "section508": {
+        "minTouchTarget": "n/a (non-interactive, but clickable area activates associated control)",
+        "colorContrast": "7:1",
+        "focusIndicator": "n/a",
+        "keyboardNavigable": false,
+        "screenReaderLabel": "native label semantics with htmlFor association",
+        "motionReduce": false,
+        "textResizable": true,
+        "noColorOnly": "required indicator is text asterisk, not just color"
+      },
+      "height": false,
+      "shadow": false
+    },
+    {
+      "name": "badge",
+      "category": "display",
+      "variants": [
+        "default",
+        "primary",
+        "secondary",
+        "destructive",
+        "success",
+        "warning",
+        "info",
+        "accent",
+        "muted",
+        "outline"
+      ],
+      "sizes": ["default"],
+      "tokens": {
+        "color": true,
+        "spacing": true,
+        "radius": true,
+        "typography": true,
+        "shadow": false,
+        "depth": false,
+        "motion": []
+      },
+      "states": {},
+      "aria": {
+        "role": "status (when dynamic)"
+      },
+      "section508": {
+        "minTouchTarget": "n/a (non-interactive)",
+        "colorContrast": "7:1",
+        "focusIndicator": "n/a",
+        "keyboardNavigable": false,
+        "screenReaderLabel": "role=status when content changes dynamically",
+        "motionReduce": false,
+        "textResizable": true,
+        "noColorOnly": "text content conveys meaning, not just color"
+      },
+      "height": false,
+      "shadow": false
+    },
+    {
+      "name": "alert",
+      "category": "display",
+      "variants": ["default", "destructive", "success", "warning", "info"],
+      "sizes": ["default"],
+      "tokens": {
+        "color": true,
+        "spacing": true,
+        "radius": true,
+        "typography": true,
+        "shadow": false,
+        "depth": false,
+        "motion": []
+      },
+      "states": {},
+      "aria": {
+        "role": "alert",
+        "ariaLive": "assertive (for errors) or polite (for info)"
+      },
+      "section508": {
+        "minTouchTarget": "n/a (non-interactive, dismiss button if present must be 44px)",
+        "colorContrast": "7:1",
+        "focusIndicator": "n/a (unless dismissible, then ring on dismiss button)",
+        "keyboardNavigable": false,
+        "screenReaderLabel": "role=alert for urgent messages, aria-live for dynamic insertion",
+        "motionReduce": true,
+        "textResizable": true,
+        "noColorOnly": "icon + text convey severity, not just color"
+      },
+      "height": false,
+      "shadow": false
+    },
+    {
+      "name": "card",
+      "category": "display",
+      "variants": ["default", "outline", "ghost"],
+      "sizes": ["default"],
+      "tokens": {
+        "color": true,
+        "spacing": true,
+        "radius": true,
+        "typography": true,
+        "shadow": true,
+        "depth": false,
+        "motion": []
+      },
+      "states": {
+        "hover": {
+          "required": false,
+          "tokenBased": true,
+          "note": "only when card is interactive/clickable"
+        },
+        "focusVisible": {
+          "required": false,
+          "ring": true,
+          "offset": true,
+          "note": "only when card is interactive/clickable"
+        }
+      },
+      "aria": {
+        "role": "article or region when semantic grouping needed"
+      },
+      "section508": {
+        "minTouchTarget": "n/a (unless clickable, then entire card surface)",
+        "colorContrast": "7:1",
+        "focusIndicator": "visible ring when interactive",
+        "keyboardNavigable": false,
+        "screenReaderLabel": "heading within card provides accessible name",
+        "motionReduce": true,
+        "textResizable": true,
+        "noColorOnly": "structure provides meaning"
+      },
+      "height": true,
+      "shadow": true
+    },
+    {
+      "name": "skeleton",
+      "category": "display",
+      "variants": ["default"],
+      "sizes": ["default"],
+      "tokens": {
+        "color": true,
+        "spacing": false,
+        "radius": true,
+        "typography": false,
+        "shadow": false,
+        "depth": false,
+        "motion": ["pulse"]
+      },
+      "states": {},
+      "aria": {
+        "ariaHidden": true,
+        "ariaBusy": "true on parent container",
+        "ariaLabel": "Loading content"
+      },
+      "section508": {
+        "minTouchTarget": "n/a",
+        "colorContrast": "3:1 for skeleton against background",
+        "focusIndicator": "n/a",
+        "keyboardNavigable": false,
+        "screenReaderLabel": "aria-busy=true on container, aria-hidden on skeleton elements",
+        "motionReduce": true,
+        "textResizable": false,
+        "noColorOnly": "animation indicates loading state"
+      },
+      "height": false,
+      "shadow": false
+    },
+    {
+      "name": "progress",
+      "category": "display",
+      "variants": ["default"],
+      "sizes": ["default"],
+      "tokens": {
+        "color": true,
+        "spacing": true,
+        "radius": true,
+        "typography": false,
+        "shadow": false,
+        "depth": false,
+        "motion": ["value-change"]
+      },
+      "states": {
+        "indeterminate": { "required": true, "animation": "continuous" }
+      },
+      "aria": {
+        "role": "progressbar",
+        "ariaValuemin": true,
+        "ariaValuemax": true,
+        "ariaValuenow": true,
+        "ariaValuetext": true,
+        "ariaLabel": true
+      },
+      "section508": {
+        "minTouchTarget": "n/a (non-interactive)",
+        "colorContrast": "3:1 for bar against track",
+        "focusIndicator": "n/a",
+        "keyboardNavigable": false,
+        "screenReaderLabel": "progressbar role with aria-valuetext for percentage",
+        "motionReduce": true,
+        "textResizable": false,
+        "noColorOnly": "bar width indicates progress, aria-valuetext provides number"
+      },
+      "height": false,
+      "shadow": false
+    },
+    {
+      "name": "spinner",
+      "category": "display",
+      "variants": ["default"],
+      "sizes": ["default"],
+      "tokens": {
+        "color": true,
+        "spacing": false,
+        "radius": false,
+        "typography": false,
+        "shadow": false,
+        "depth": false,
+        "motion": ["spin"]
+      },
+      "states": {},
+      "aria": {
+        "role": "status",
+        "ariaLabel": "Loading",
+        "ariaLive": "polite"
+      },
+      "section508": {
+        "minTouchTarget": "n/a (non-interactive)",
+        "colorContrast": "3:1 for spinner against background",
+        "focusIndicator": "n/a",
+        "keyboardNavigable": false,
+        "screenReaderLabel": "role=status with aria-label for screen reader announcement",
+        "motionReduce": true,
+        "textResizable": false,
+        "noColorOnly": "aria-label provides loading context to assistive tech"
+      },
+      "height": false,
+      "shadow": false
+    },
+    {
+      "name": "avatar",
+      "category": "display",
+      "variants": ["default"],
+      "sizes": ["default"],
+      "tokens": {
+        "color": true,
+        "spacing": true,
+        "radius": true,
+        "typography": true,
+        "shadow": false,
+        "depth": false,
+        "motion": []
+      },
+      "states": {},
+      "aria": {
+        "role": "img",
+        "ariaLabel": true
+      },
+      "section508": {
+        "minTouchTarget": "n/a (non-interactive)",
+        "colorContrast": "7:1 for fallback initials text",
+        "focusIndicator": "n/a",
+        "keyboardNavigable": false,
+        "screenReaderLabel": "role=img with aria-label describing the person, alt text on image",
+        "motionReduce": false,
+        "textResizable": false,
+        "noColorOnly": "fallback initials when image fails"
+      },
+      "height": false,
+      "shadow": false
+    },
+    {
+      "name": "empty",
+      "category": "display",
+      "variants": ["default"],
+      "sizes": ["default"],
+      "tokens": {
+        "color": true,
+        "spacing": true,
+        "radius": false,
+        "typography": true,
+        "shadow": false,
+        "depth": false,
+        "motion": []
+      },
+      "states": {},
+      "aria": {
+        "role": "status",
+        "ariaLabel": true
+      },
+      "section508": {
+        "minTouchTarget": "44px on CTA button if present",
+        "colorContrast": "7:1",
+        "focusIndicator": "ring on CTA button if present",
+        "keyboardNavigable": false,
+        "screenReaderLabel": "status role communicates empty state, descriptive text",
+        "motionReduce": false,
+        "textResizable": true,
+        "noColorOnly": "illustration + text convey empty state"
+      },
+      "height": false,
+      "shadow": false
+    },
+    {
+      "name": "image",
+      "category": "display",
+      "variants": ["default"],
+      "sizes": ["default"],
+      "tokens": {
+        "color": false,
+        "spacing": true,
+        "radius": true,
+        "typography": false,
+        "shadow": true,
+        "depth": false,
+        "motion": ["loading"]
+      },
+      "states": {
+        "loading": { "required": true, "skeleton": true },
+        "error": { "required": true, "fallback": true }
+      },
+      "aria": {
+        "alt": true,
+        "role": "img (when decorative: role=presentation)"
+      },
+      "section508": {
+        "minTouchTarget": "n/a (non-interactive)",
+        "colorContrast": "n/a",
+        "focusIndicator": "n/a",
+        "keyboardNavigable": false,
+        "screenReaderLabel": "meaningful alt text required, role=presentation for decorative images",
+        "motionReduce": true,
+        "textResizable": false,
+        "noColorOnly": "alt text describes image content"
+      },
+      "height": false,
+      "shadow": true
+    },
+    {
+      "name": "kbd",
+      "category": "display",
+      "variants": ["default"],
+      "sizes": ["default"],
+      "tokens": {
+        "color": true,
+        "spacing": true,
+        "radius": true,
+        "typography": true,
+        "shadow": true,
+        "depth": false,
+        "motion": []
+      },
+      "states": {},
+      "aria": {},
+      "section508": {
+        "minTouchTarget": "n/a (non-interactive)",
+        "colorContrast": "7:1",
+        "focusIndicator": "n/a",
+        "keyboardNavigable": false,
+        "screenReaderLabel": "native kbd element semantics",
+        "motionReduce": false,
+        "textResizable": true,
+        "noColorOnly": "border + shadow provides visual distinction beyond color"
+      },
+      "height": true,
+      "shadow": true
+    },
+    {
+      "name": "separator",
+      "category": "display",
+      "variants": ["default"],
+      "sizes": ["default"],
+      "tokens": {
+        "color": true,
+        "spacing": true,
+        "radius": false,
+        "typography": false,
+        "shadow": false,
+        "depth": false,
+        "motion": []
+      },
+      "states": {},
+      "aria": {
+        "role": "separator",
+        "ariaOrientation": true
+      },
+      "section508": {
+        "minTouchTarget": "n/a",
+        "colorContrast": "3:1 for line against background",
+        "focusIndicator": "n/a",
+        "keyboardNavigable": false,
+        "screenReaderLabel": "role=separator with orientation",
+        "motionReduce": false,
+        "textResizable": false,
+        "noColorOnly": "visible line, not just spacing"
+      },
+      "height": false,
+      "shadow": false
+    },
+    {
+      "name": "typography",
+      "category": "display",
+      "variants": [
+        "h1",
+        "h2",
+        "h3",
+        "h4",
+        "p",
+        "lead",
+        "large",
+        "small",
+        "muted",
+        "code",
+        "blockquote"
+      ],
+      "sizes": ["default"],
+      "tokens": {
+        "color": true,
+        "spacing": true,
+        "radius": false,
+        "typography": true,
+        "shadow": false,
+        "depth": false,
+        "motion": []
+      },
+      "states": {},
+      "aria": {},
+      "section508": {
+        "minTouchTarget": "n/a",
+        "colorContrast": "7:1 for body text, 4.5:1 for large text",
+        "focusIndicator": "n/a",
+        "keyboardNavigable": false,
+        "screenReaderLabel": "semantic HTML elements (h1-h4, p, blockquote, code)",
+        "motionReduce": false,
+        "textResizable": true,
+        "noColorOnly": "semantic elements convey hierarchy"
+      },
+      "height": false,
+      "shadow": false
+    },
+    {
+      "name": "dialog",
+      "category": "overlay",
+      "variants": ["default"],
+      "sizes": ["default"],
+      "tokens": {
+        "color": true,
+        "spacing": true,
+        "radius": true,
+        "typography": true,
+        "shadow": true,
+        "depth": true,
+        "motion": ["open", "close"]
+      },
+      "states": {
+        "open": { "required": true, "ariaModal": true }
+      },
+      "aria": {
+        "role": "dialog",
+        "ariaModal": true,
+        "ariaLabelledby": true,
+        "ariaDescribedby": true
+      },
+      "section508": {
+        "minTouchTarget": "44px on close button and all internal controls",
+        "colorContrast": "7:1",
+        "focusIndicator": "visible ring on close button and all interactive elements",
+        "keyboardNavigable": true,
+        "screenReaderLabel": "dialog role with aria-labelledby pointing to title",
+        "motionReduce": true,
+        "textResizable": true,
+        "noColorOnly": "overlay + structure indicates modal context",
+        "focusTrap": true,
+        "escapeClose": true,
+        "returnFocus": "focus returns to trigger on close"
+      },
+      "height": false,
+      "shadow": true,
+      "depth": true
+    },
+    {
+      "name": "alert-dialog",
+      "category": "overlay",
+      "variants": ["default"],
+      "sizes": ["default"],
+      "tokens": {
+        "color": true,
+        "spacing": true,
+        "radius": true,
+        "typography": true,
+        "shadow": true,
+        "depth": true,
+        "motion": ["open", "close"]
+      },
+      "states": {
+        "open": { "required": true, "ariaModal": true }
+      },
+      "aria": {
+        "role": "alertdialog",
+        "ariaModal": true,
+        "ariaLabelledby": true,
+        "ariaDescribedby": true
+      },
+      "section508": {
+        "minTouchTarget": "44px on all action buttons",
+        "colorContrast": "7:1",
+        "focusIndicator": "visible ring on all interactive elements",
+        "keyboardNavigable": true,
+        "screenReaderLabel": "alertdialog role with aria-labelledby pointing to title",
+        "motionReduce": true,
+        "textResizable": true,
+        "noColorOnly": "text content describes the alert, not just color",
+        "focusTrap": true,
+        "escapeClose": false,
+        "returnFocus": "focus returns to trigger on close",
+        "initialFocus": "focus moves to least destructive action"
+      },
+      "height": false,
+      "shadow": true,
+      "depth": true
+    },
+    {
+      "name": "sheet",
+      "category": "overlay",
+      "variants": ["default"],
+      "sizes": ["default"],
+      "tokens": {
+        "color": true,
+        "spacing": true,
+        "radius": true,
+        "typography": true,
+        "shadow": true,
+        "depth": true,
+        "motion": ["slide-in", "slide-out"]
+      },
+      "states": {
+        "open": { "required": true, "ariaModal": true }
+      },
+      "aria": {
+        "role": "dialog",
+        "ariaModal": true,
+        "ariaLabelledby": true,
+        "ariaDescribedby": true
+      },
+      "section508": {
+        "minTouchTarget": "44px on close button and all internal controls",
+        "colorContrast": "7:1",
+        "focusIndicator": "visible ring on close button and all interactive elements",
+        "keyboardNavigable": true,
+        "screenReaderLabel": "dialog role with aria-labelledby pointing to title",
+        "motionReduce": true,
+        "textResizable": true,
+        "noColorOnly": "overlay + structure indicates panel context",
+        "focusTrap": true,
+        "escapeClose": true,
+        "returnFocus": "focus returns to trigger on close"
+      },
+      "height": false,
+      "shadow": true,
+      "depth": true
+    },
+    {
+      "name": "popover",
+      "category": "overlay",
+      "variants": ["default"],
+      "sizes": ["default"],
+      "tokens": {
+        "color": true,
+        "spacing": true,
+        "radius": true,
+        "typography": true,
+        "shadow": true,
+        "depth": true,
+        "motion": ["open", "close"]
+      },
+      "states": {
+        "open": { "required": true, "ariaExpanded": true }
+      },
+      "aria": {
+        "ariaExpanded": true,
+        "ariaHaspopup": true,
+        "ariaControls": true
+      },
+      "section508": {
+        "minTouchTarget": "44px on trigger",
+        "colorContrast": "7:1",
+        "focusIndicator": "visible ring on trigger and all internal interactive elements",
+        "keyboardNavigable": true,
+        "screenReaderLabel": "aria-expanded on trigger, aria-haspopup indicates popup presence",
+        "motionReduce": true,
+        "textResizable": true,
+        "noColorOnly": "popover structure provides context",
+        "escapeClose": true,
+        "returnFocus": "focus returns to trigger on close"
+      },
+      "height": false,
+      "shadow": true,
+      "depth": true
+    },
+    {
+      "name": "hover-card",
+      "category": "overlay",
+      "variants": ["default"],
+      "sizes": ["default"],
+      "tokens": {
+        "color": true,
+        "spacing": true,
+        "radius": true,
+        "typography": true,
+        "shadow": true,
+        "depth": true,
+        "motion": ["open", "close"]
+      },
+      "states": {
+        "open": { "required": true }
+      },
+      "aria": {
+        "ariaExpanded": true
+      },
+      "section508": {
+        "minTouchTarget": "44px on trigger",
+        "colorContrast": "7:1",
+        "focusIndicator": "visible ring on trigger",
+        "keyboardNavigable": true,
+        "screenReaderLabel": "content must be accessible without hover (keyboard or touch alternative)",
+        "motionReduce": true,
+        "textResizable": true,
+        "noColorOnly": "text content in card",
+        "openDelay": "300ms minimum to prevent accidental activation",
+        "touchAlternative": "content accessible via focus or tap on touch devices"
+      },
+      "height": false,
+      "shadow": true,
+      "depth": true
+    },
+    {
+      "name": "tooltip",
+      "category": "overlay",
+      "variants": ["default"],
+      "sizes": ["default"],
+      "tokens": {
+        "color": true,
+        "spacing": true,
+        "radius": true,
+        "typography": true,
+        "shadow": true,
+        "depth": true,
+        "motion": ["open", "close"]
+      },
+      "states": {
+        "open": { "required": true }
+      },
+      "aria": {
+        "role": "tooltip",
+        "ariaDescribedby": true
+      },
+      "section508": {
+        "minTouchTarget": "44px on trigger",
+        "colorContrast": "7:1",
+        "focusIndicator": "visible ring on trigger",
+        "keyboardNavigable": true,
+        "screenReaderLabel": "tooltip role with aria-describedby linking trigger to tooltip content",
+        "motionReduce": true,
+        "textResizable": true,
+        "noColorOnly": "text content only, no interactive elements inside tooltip",
+        "escapeClose": true,
+        "persistOnHover": "tooltip stays open when hovered (WCAG 1.4.13)"
+      },
+      "height": false,
+      "shadow": true,
+      "depth": true
+    },
+    {
+      "name": "command",
+      "category": "overlay",
+      "variants": ["default"],
+      "sizes": ["default"],
+      "tokens": {
+        "color": true,
+        "spacing": true,
+        "radius": true,
+        "typography": true,
+        "shadow": true,
+        "depth": true,
+        "motion": ["open", "close"]
+      },
+      "states": {
+        "open": { "required": true, "ariaModal": true },
+        "empty": { "required": true, "emptyState": true }
+      },
+      "aria": {
+        "role": "dialog",
+        "ariaModal": true,
+        "ariaLabel": "Command palette",
+        "comboboxRole": true,
+        "ariaExpanded": true,
+        "ariaActivedescendant": true
+      },
+      "section508": {
+        "minTouchTarget": "44px on each command item",
+        "colorContrast": "7:1",
+        "focusIndicator": "visible highlight on active item, ring on input",
+        "keyboardNavigable": true,
+        "screenReaderLabel": "combobox role with listbox, active descendant management",
+        "motionReduce": true,
+        "textResizable": true,
+        "noColorOnly": "highlight + text on active item",
+        "focusTrap": true,
+        "escapeClose": true,
+        "returnFocus": "focus returns to trigger on close",
+        "typeAhead": "filter items as user types"
+      },
+      "height": false,
+      "shadow": true,
+      "depth": true
+    },
+    {
+      "name": "dropdown-menu",
+      "category": "overlay",
+      "variants": ["default"],
+      "sizes": ["default"],
+      "tokens": {
+        "color": true,
+        "spacing": true,
+        "radius": true,
+        "typography": true,
+        "shadow": true,
+        "depth": true,
+        "motion": ["open", "close"]
+      },
+      "states": {
+        "open": { "required": true, "ariaExpanded": true },
+        "itemFocused": { "required": true, "tokenBased": true },
+        "itemDisabled": { "required": true, "opacity": true }
+      },
+      "aria": {
+        "role": "menu",
+        "ariaExpanded": true,
+        "ariaHaspopup": "menu",
+        "menuitemRole": true,
+        "menuitemcheckboxRole": true,
+        "menuitemradioRole": true,
+        "ariaActivedescendant": true,
+        "ariaDisabled": true,
+        "ariaChecked": true
+      },
+      "section508": {
+        "minTouchTarget": "44px per menu item",
+        "colorContrast": "7:1",
+        "focusIndicator": "visible highlight on focused item",
+        "keyboardNavigable": true,
+        "screenReaderLabel": "menu role with menuitem children, arrow key navigation",
+        "motionReduce": true,
+        "textResizable": true,
+        "noColorOnly": "highlight + icon indicators for checked items",
+        "escapeClose": true,
+        "returnFocus": "focus returns to trigger on close",
+        "subMenuNavigation": "right arrow opens submenu, left arrow closes"
+      },
+      "height": false,
+      "shadow": true,
+      "depth": true
+    },
+    {
+      "name": "context-menu",
+      "category": "overlay",
+      "variants": ["default"],
+      "sizes": ["default"],
+      "tokens": {
+        "color": true,
+        "spacing": true,
+        "radius": true,
+        "typography": true,
+        "shadow": true,
+        "depth": true,
+        "motion": ["open", "close"]
+      },
+      "states": {
+        "open": { "required": true },
+        "itemFocused": { "required": true, "tokenBased": true },
+        "itemDisabled": { "required": true, "opacity": true }
+      },
+      "aria": {
+        "role": "menu",
+        "menuitemRole": true,
+        "menuitemcheckboxRole": true,
+        "menuitemradioRole": true,
+        "ariaActivedescendant": true,
+        "ariaDisabled": true,
+        "ariaChecked": true
+      },
+      "section508": {
+        "minTouchTarget": "44px per menu item",
+        "colorContrast": "7:1",
+        "focusIndicator": "visible highlight on focused item",
+        "keyboardNavigable": true,
+        "screenReaderLabel": "menu role with menuitem children, arrow key navigation",
+        "motionReduce": true,
+        "textResizable": true,
+        "noColorOnly": "highlight + icon indicators for checked items",
+        "escapeClose": true,
+        "keyboardAlternative": "Shift+F10 or application key triggers context menu",
+        "subMenuNavigation": "right arrow opens submenu, left arrow closes"
+      },
+      "height": false,
+      "shadow": true,
+      "depth": true
+    },
+    {
+      "name": "menubar",
+      "category": "overlay",
+      "variants": ["default"],
+      "sizes": ["default"],
+      "tokens": {
+        "color": true,
+        "spacing": true,
+        "radius": true,
+        "typography": true,
+        "shadow": true,
+        "depth": true,
+        "motion": ["open", "close"]
+      },
+      "states": {
+        "open": { "required": true, "ariaExpanded": true },
+        "itemFocused": { "required": true, "tokenBased": true },
+        "itemDisabled": { "required": true, "opacity": true }
+      },
+      "aria": {
+        "role": "menubar",
+        "menuitemRole": true,
+        "ariaExpanded": true,
+        "ariaHaspopup": "menu",
+        "ariaActivedescendant": true,
+        "ariaDisabled": true,
+        "ariaChecked": true
+      },
+      "section508": {
+        "minTouchTarget": "44px per menubar item",
+        "colorContrast": "7:1",
+        "focusIndicator": "visible highlight on focused item",
+        "keyboardNavigable": true,
+        "screenReaderLabel": "menubar role, left/right arrows navigate top-level, up/down opens submenus",
+        "motionReduce": true,
+        "textResizable": true,
+        "noColorOnly": "highlight + icon indicators",
+        "escapeClose": true,
+        "roamingTabindex": true
+      },
+      "height": false,
+      "shadow": true,
+      "depth": true
+    },
+    {
+      "name": "navigation-menu",
+      "category": "overlay",
+      "variants": ["default"],
+      "sizes": ["default"],
+      "tokens": {
+        "color": true,
+        "spacing": true,
+        "radius": true,
+        "typography": true,
+        "shadow": true,
+        "depth": true,
+        "motion": ["open", "close", "indicator"]
+      },
+      "states": {
+        "open": { "required": true, "ariaExpanded": true },
+        "active": { "required": true, "ariaCurrent": "page" },
+        "itemFocused": { "required": true, "tokenBased": true }
+      },
+      "aria": {
+        "role": "navigation",
+        "ariaLabel": true,
+        "ariaExpanded": true,
+        "ariaCurrent": "page",
+        "ariaHaspopup": true
+      },
+      "section508": {
+        "minTouchTarget": "44px per navigation item",
+        "colorContrast": "7:1",
+        "focusIndicator": "visible ring on each navigation item",
+        "keyboardNavigable": true,
+        "screenReaderLabel": "nav element with aria-label, aria-current=page on active link",
+        "motionReduce": true,
+        "textResizable": true,
+        "noColorOnly": "active indicator is visual underline/border + aria-current",
+        "escapeClose": true,
+        "skipLink": "skip-to-content link available"
+      },
+      "height": false,
+      "shadow": true,
+      "depth": true
+    },
+    {
+      "name": "container",
+      "category": "layout",
+      "variants": ["default"],
+      "sizes": ["default"],
+      "tokens": {
+        "color": false,
+        "spacing": true,
+        "radius": false,
+        "typography": false,
+        "shadow": false,
+        "depth": false,
+        "motion": []
+      },
+      "states": {},
+      "aria": {},
+      "section508": {
+        "minTouchTarget": "n/a",
+        "colorContrast": "n/a",
+        "focusIndicator": "n/a",
+        "keyboardNavigable": false,
+        "screenReaderLabel": "semantic HTML (main, section, article) as appropriate",
+        "motionReduce": false,
+        "textResizable": true,
+        "noColorOnly": "n/a"
+      },
+      "height": false,
+      "shadow": false
+    },
+    {
+      "name": "grid",
+      "category": "layout",
+      "variants": ["default"],
+      "sizes": ["default"],
+      "tokens": {
+        "color": false,
+        "spacing": true,
+        "radius": false,
+        "typography": false,
+        "shadow": false,
+        "depth": false,
+        "motion": []
+      },
+      "states": {},
+      "aria": {},
+      "section508": {
+        "minTouchTarget": "n/a",
+        "colorContrast": "n/a",
+        "focusIndicator": "n/a",
+        "keyboardNavigable": false,
+        "screenReaderLabel": "n/a (presentational layout)",
+        "motionReduce": false,
+        "textResizable": true,
+        "noColorOnly": "n/a"
+      },
+      "height": false,
+      "shadow": false
+    },
+    {
+      "name": "accordion",
+      "category": "layout",
+      "variants": ["default"],
+      "sizes": ["default"],
+      "tokens": {
+        "color": true,
+        "spacing": true,
+        "radius": true,
+        "typography": true,
+        "shadow": false,
+        "depth": false,
+        "motion": ["expand", "collapse"]
+      },
+      "states": {
+        "hover": { "required": true, "tokenBased": true, "onTrigger": true },
+        "focusVisible": { "required": true, "ring": true, "offset": true, "onTrigger": true },
+        "expanded": { "required": true, "ariaExpanded": true },
+        "disabled": { "required": true, "opacity": true, "cursorNotAllowed": true }
+      },
+      "aria": {
+        "ariaExpanded": true,
+        "ariaControls": true,
+        "ariaDisabled": true,
+        "headingLevel": "h3 default, configurable"
+      },
+      "section508": {
+        "minTouchTarget": "44px on each trigger",
+        "colorContrast": "7:1",
+        "focusIndicator": "visible ring 2px offset 2px on trigger",
+        "keyboardNavigable": true,
+        "screenReaderLabel": "heading + button pattern, aria-expanded announces state",
+        "motionReduce": true,
+        "textResizable": true,
+        "noColorOnly": "chevron rotation + aria-expanded indicates state"
+      },
+      "height": false,
+      "shadow": false
+    },
+    {
+      "name": "collapsible",
+      "category": "layout",
+      "variants": ["default"],
+      "sizes": ["default"],
+      "tokens": {
+        "color": true,
+        "spacing": true,
+        "radius": true,
+        "typography": true,
+        "shadow": false,
+        "depth": false,
+        "motion": ["expand", "collapse"]
+      },
+      "states": {
+        "hover": { "required": true, "tokenBased": true, "onTrigger": true },
+        "focusVisible": { "required": true, "ring": true, "offset": true, "onTrigger": true },
+        "expanded": { "required": true, "ariaExpanded": true },
+        "disabled": { "required": true, "opacity": true, "cursorNotAllowed": true }
+      },
+      "aria": {
+        "ariaExpanded": true,
+        "ariaControls": true,
+        "ariaDisabled": true
+      },
+      "section508": {
+        "minTouchTarget": "44px on trigger",
+        "colorContrast": "7:1",
+        "focusIndicator": "visible ring 2px offset 2px on trigger",
+        "keyboardNavigable": true,
+        "screenReaderLabel": "button with aria-expanded, aria-controls linking to content",
+        "motionReduce": true,
+        "textResizable": true,
+        "noColorOnly": "icon rotation + aria-expanded indicates state"
+      },
+      "height": false,
+      "shadow": false
+    },
+    {
+      "name": "tabs",
+      "category": "layout",
+      "variants": ["default"],
+      "sizes": ["default"],
+      "tokens": {
+        "color": true,
+        "spacing": true,
+        "radius": true,
+        "typography": true,
+        "shadow": false,
+        "depth": false,
+        "motion": ["active-indicator"]
+      },
+      "states": {
+        "hover": { "required": true, "tokenBased": true, "onTab": true },
+        "focusVisible": { "required": true, "ring": true, "offset": true, "onTab": true },
+        "active": { "required": true, "tokenBased": true, "ariaSelected": true },
+        "disabled": { "required": true, "opacity": true, "cursorNotAllowed": true }
+      },
+      "aria": {
+        "role": "tablist",
+        "tabRole": true,
+        "tabpanelRole": true,
+        "ariaSelected": true,
+        "ariaControls": true,
+        "ariaLabelledby": true,
+        "ariaDisabled": true,
+        "ariaOrientation": true
+      },
+      "section508": {
+        "minTouchTarget": "44px per tab",
+        "colorContrast": "7:1",
+        "focusIndicator": "visible ring 2px offset 2px on each tab",
+        "keyboardNavigable": true,
+        "screenReaderLabel": "tablist role with tab/tabpanel pairs, arrow key navigation, roving tabindex",
+        "motionReduce": true,
+        "textResizable": true,
+        "noColorOnly": "active indicator (underline/background) + aria-selected"
+      },
+      "height": false,
+      "shadow": false
+    },
+    {
+      "name": "sidebar",
+      "category": "layout",
+      "variants": ["default"],
+      "sizes": ["default"],
+      "tokens": {
+        "color": true,
+        "spacing": true,
+        "radius": true,
+        "typography": true,
+        "shadow": true,
+        "depth": false,
+        "motion": ["collapse", "expand"]
+      },
+      "states": {
+        "collapsed": { "required": true, "ariaExpanded": false },
+        "expanded": { "required": true, "ariaExpanded": true },
+        "hover": { "required": true, "tokenBased": true, "onItems": true },
+        "focusVisible": { "required": true, "ring": true, "offset": true, "onItems": true },
+        "active": { "required": true, "ariaCurrent": "page", "onItems": true }
+      },
+      "aria": {
+        "role": "navigation",
+        "ariaLabel": true,
+        "ariaExpanded": true,
+        "ariaCurrent": "page"
+      },
+      "section508": {
+        "minTouchTarget": "44px per sidebar item",
+        "colorContrast": "7:1",
+        "focusIndicator": "visible ring on each interactive item",
+        "keyboardNavigable": true,
+        "screenReaderLabel": "nav element with aria-label, aria-current on active item",
+        "motionReduce": true,
+        "textResizable": true,
+        "noColorOnly": "active item has background + aria-current, collapsed state has icon tooltips",
+        "resizeHandle": "keyboard accessible resize"
+      },
+      "height": false,
+      "shadow": true
+    },
+    {
+      "name": "scroll-area",
+      "category": "layout",
+      "variants": ["default"],
+      "sizes": ["default"],
+      "tokens": {
+        "color": true,
+        "spacing": false,
+        "radius": true,
+        "typography": false,
+        "shadow": false,
+        "depth": false,
+        "motion": ["scroll-indicator"]
+      },
+      "states": {
+        "scrolling": { "required": true, "scrollbarVisible": true },
+        "overflow": { "required": true, "fadeIndicator": true }
+      },
+      "aria": {
+        "role": "region",
+        "ariaLabel": true,
+        "tabindex": 0
+      },
+      "section508": {
+        "minTouchTarget": "n/a (scrollbar is system-managed or custom with 44px min width)",
+        "colorContrast": "3:1 for scrollbar against background",
+        "focusIndicator": "visible ring on scrollable region when focused",
+        "keyboardNavigable": true,
+        "screenReaderLabel": "region role with aria-label, keyboard scrollable with arrow keys",
+        "motionReduce": true,
+        "textResizable": true,
+        "noColorOnly": "scroll indicator shadow/fade shows overflow"
+      },
+      "height": false,
+      "shadow": false
+    },
+    {
+      "name": "resizable",
+      "category": "layout",
+      "variants": ["default"],
+      "sizes": ["default"],
+      "tokens": {
+        "color": true,
+        "spacing": true,
+        "radius": false,
+        "typography": false,
+        "shadow": false,
+        "depth": false,
+        "motion": ["resize"]
+      },
+      "states": {
+        "hover": { "required": true, "tokenBased": true, "onHandle": true },
+        "focusVisible": { "required": true, "ring": true, "onHandle": true },
+        "dragging": { "required": true, "cursor": "col-resize or row-resize" }
+      },
+      "aria": {
+        "role": "separator",
+        "ariaOrientation": true,
+        "ariaValuemin": true,
+        "ariaValuemax": true,
+        "ariaValuenow": true
+      },
+      "section508": {
+        "minTouchTarget": "44px handle width on touch devices",
+        "colorContrast": "3:1 for handle against background",
+        "focusIndicator": "visible ring on handle",
+        "keyboardNavigable": true,
+        "screenReaderLabel": "separator role with value properties, arrow keys resize",
+        "motionReduce": true,
+        "textResizable": false,
+        "noColorOnly": "handle is visually distinct with grip indicator"
+      },
+      "height": false,
+      "shadow": false
+    },
+    {
+      "name": "breadcrumb",
+      "category": "layout",
+      "variants": ["default"],
+      "sizes": ["default"],
+      "tokens": {
+        "color": true,
+        "spacing": true,
+        "radius": false,
+        "typography": true,
+        "shadow": false,
+        "depth": false,
+        "motion": []
+      },
+      "states": {
+        "hover": { "required": true, "tokenBased": true, "onLinks": true },
+        "focusVisible": { "required": true, "ring": true, "offset": true, "onLinks": true },
+        "current": { "required": true, "ariaCurrent": "page" }
+      },
+      "aria": {
+        "role": "navigation",
+        "ariaLabel": "Breadcrumb",
+        "ariaCurrent": "page",
+        "olElement": true
+      },
+      "section508": {
+        "minTouchTarget": "44px per breadcrumb link",
+        "colorContrast": "7:1",
+        "focusIndicator": "visible ring 2px offset 2px on each link",
+        "keyboardNavigable": true,
+        "screenReaderLabel": "nav with aria-label=Breadcrumb, ol/li structure, aria-current=page on last item",
+        "motionReduce": false,
+        "textResizable": true,
+        "noColorOnly": "separator characters between items, aria-current on current page"
+      },
+      "height": false,
+      "shadow": false
+    },
+    {
+      "name": "pagination",
+      "category": "layout",
+      "variants": ["default"],
+      "sizes": ["default"],
+      "tokens": {
+        "color": true,
+        "spacing": true,
+        "radius": true,
+        "typography": true,
+        "shadow": false,
+        "depth": false,
+        "motion": ["hover", "focus"]
+      },
+      "states": {
+        "hover": { "required": true, "tokenBased": true, "onItems": true },
+        "focusVisible": { "required": true, "ring": true, "offset": true, "onItems": true },
+        "active": { "required": true, "tokenBased": true, "ariaCurrent": "page" },
+        "disabled": {
+          "required": true,
+          "opacity": true,
+          "cursorNotAllowed": true,
+          "onPrevNext": true
+        }
+      },
+      "aria": {
+        "role": "navigation",
+        "ariaLabel": "Pagination",
+        "ariaCurrent": "page",
+        "ariaDisabled": true
+      },
+      "section508": {
+        "minTouchTarget": "44px per page button",
+        "colorContrast": "7:1",
+        "focusIndicator": "visible ring 2px offset 2px on each button",
+        "keyboardNavigable": true,
+        "screenReaderLabel": "nav with aria-label=Pagination, aria-current=page on active page",
+        "motionReduce": true,
+        "textResizable": true,
+        "noColorOnly": "active page has distinct background + aria-current, disabled has opacity + aria-disabled"
+      },
+      "height": false,
+      "shadow": false
+    },
+    {
+      "name": "item",
+      "category": "layout",
+      "variants": ["default"],
+      "sizes": ["default"],
+      "tokens": {
+        "color": true,
+        "spacing": true,
+        "radius": true,
+        "typography": true,
+        "shadow": false,
+        "depth": false,
+        "motion": ["hover"]
+      },
+      "states": {
+        "hover": { "required": true, "tokenBased": true },
+        "focusVisible": { "required": true, "ring": true, "offset": true },
+        "active": { "required": true, "tokenBased": true },
+        "selected": { "required": false, "ariaSelected": true },
+        "disabled": { "required": true, "opacity": true, "cursorNotAllowed": true }
+      },
+      "aria": {
+        "ariaSelected": true,
+        "ariaDisabled": true
+      },
+      "section508": {
+        "minTouchTarget": "44px",
+        "colorContrast": "7:1",
+        "focusIndicator": "visible ring 2px offset 2px",
+        "keyboardNavigable": true,
+        "screenReaderLabel": "descriptive text content, aria-selected when in selectable list",
+        "motionReduce": true,
+        "textResizable": true,
+        "noColorOnly": "background highlight + text for active/selected state"
+      },
+      "height": false,
+      "shadow": false
+    },
+    {
+      "name": "table",
+      "category": "layout",
+      "variants": ["default"],
+      "sizes": ["default"],
+      "tokens": {
+        "color": true,
+        "spacing": true,
+        "radius": true,
+        "typography": true,
+        "shadow": false,
+        "depth": false,
+        "motion": ["hover"]
+      },
+      "states": {
+        "hover": { "required": true, "tokenBased": true, "onRows": true },
+        "focusVisible": { "required": true, "ring": true, "onCells": true },
+        "selected": { "required": false, "ariaSelected": true, "onRows": true },
+        "sorted": { "required": false, "ariaSort": true, "onHeaders": true }
+      },
+      "aria": {
+        "role": "table (native)",
+        "ariaLabel": true,
+        "ariaSort": true,
+        "ariaSelected": true,
+        "ariaDescribedby": true,
+        "ariaRowcount": true,
+        "ariaColcount": true
+      },
+      "section508": {
+        "minTouchTarget": "44px on sortable headers and interactive cells",
+        "colorContrast": "7:1",
+        "focusIndicator": "visible ring on focusable cells and headers",
+        "keyboardNavigable": true,
+        "screenReaderLabel": "native table element with caption or aria-label, th scope for headers",
+        "motionReduce": true,
+        "textResizable": true,
+        "noColorOnly": "sort direction arrows on sortable headers, stripe pattern optional but not sole indicator",
+        "scrollable": "table wraps in scroll-area with keyboard access when content overflows"
+      },
+      "height": false,
+      "shadow": false
+    }
+  ]
+}
