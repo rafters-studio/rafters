@@ -5,7 +5,7 @@
   "description": "Complete specification for every Rafters component. This is the design target, not the current state. Every entry defines what MUST be provided for the component to be considered complete.",
   "designRules": {
     "noLinkVariant": "Link as a button variant is bad UX. No component ships a link variant. Use an anchor element styled independently.",
-    "noSizeScale": "Components are designed for real interfaces. Default size only. Designers override with a reason, not a scale.",
+    "sizeVariants": "Components have explicit size variants (sm, md, lg) as intentional choices with token-based values. Default is md. sm is desktop-only density. lg is touch/primary. Heights derive from spacing token progression, not hardcoded pixels. Checkbox and radio stay fixed at md -- too risky to shrink. Cards have no sizes -- that is a layout concern. Overlay sizes control width, not height.",
     "motionReduce": "motion-reduce:transition-none on EVERY component with transitions. No exceptions.",
     "tokenBased": "Every component uses semantic color tokens, spacing tokens, radius tokens, typography tokens, shadow tokens as applicable.",
     "interactiveStates": "Every interactive component has: hover, focus-visible, active, disabled states with token-based styling.",
@@ -33,7 +33,7 @@
         "outline",
         "ghost"
       ],
-      "sizes": ["default"],
+      "sizes": ["sm", "md", "lg"],
       "tokens": {
         "color": true,
         "spacing": true,
@@ -188,7 +188,7 @@
       "name": "toggle",
       "category": "interactive",
       "variants": ["default", "outline"],
-      "sizes": ["default"],
+      "sizes": ["sm", "md", "lg"],
       "tokens": {
         "color": true,
         "spacing": true,
@@ -304,7 +304,7 @@
       "name": "toggle-group",
       "category": "interactive",
       "variants": ["default", "outline"],
-      "sizes": ["default"],
+      "sizes": ["sm", "md", "lg"],
       "tokens": {
         "color": true,
         "spacing": true,
@@ -421,7 +421,7 @@
       "name": "input",
       "category": "form",
       "variants": ["default"],
-      "sizes": ["default"],
+      "sizes": ["sm", "md", "lg"],
       "tokens": {
         "color": true,
         "spacing": true,
@@ -527,7 +527,7 @@
       "name": "textarea",
       "category": "form",
       "variants": ["default"],
-      "sizes": ["default"],
+      "sizes": ["sm", "md", "lg"],
       "tokens": {
         "color": true,
         "spacing": true,
@@ -634,7 +634,7 @@
       "name": "checkbox",
       "category": "form",
       "variants": ["default"],
-      "sizes": ["default"],
+      "sizes": ["md"],
       "tokens": {
         "color": true,
         "spacing": true,
@@ -755,7 +755,7 @@
       "name": "switch",
       "category": "form",
       "variants": ["default"],
-      "sizes": ["default"],
+      "sizes": ["sm", "md", "lg"],
       "tokens": {
         "color": true,
         "spacing": true,
@@ -867,7 +867,7 @@
       "name": "radio-group",
       "category": "form",
       "variants": ["default"],
-      "sizes": ["default"],
+      "sizes": ["md"],
       "tokens": {
         "color": true,
         "spacing": true,
@@ -978,7 +978,7 @@
       "name": "select",
       "category": "form",
       "variants": ["default"],
-      "sizes": ["default"],
+      "sizes": ["sm", "md", "lg"],
       "tokens": {
         "color": true,
         "spacing": true,
@@ -1097,7 +1097,7 @@
       "name": "slider",
       "category": "form",
       "variants": ["default"],
-      "sizes": ["default"],
+      "sizes": ["sm", "md", "lg"],
       "tokens": {
         "color": true,
         "spacing": true,
@@ -1205,7 +1205,7 @@
       "name": "label",
       "category": "form",
       "variants": ["default"],
-      "sizes": ["default"],
+      "sizes": ["sm", "md", "lg"],
       "tokens": {
         "color": true,
         "spacing": true,
@@ -1273,7 +1273,7 @@
         "muted",
         "outline"
       ],
-      "sizes": ["default"],
+      "sizes": ["sm", "md", "lg"],
       "tokens": {
         "color": true,
         "spacing": true,
@@ -1553,7 +1553,7 @@
       "name": "progress",
       "category": "display",
       "variants": ["default"],
-      "sizes": ["default"],
+      "sizes": ["sm", "md", "lg"],
       "tokens": {
         "color": true,
         "spacing": true,
@@ -1615,7 +1615,7 @@
       "name": "spinner",
       "category": "display",
       "variants": ["default"],
-      "sizes": ["default"],
+      "sizes": ["sm", "md", "lg"],
       "tokens": {
         "color": true,
         "spacing": false,
@@ -1662,7 +1662,7 @@
       "name": "avatar",
       "category": "display",
       "variants": ["default"],
-      "sizes": ["default"],
+      "sizes": ["xs", "sm", "md", "lg", "xl"],
       "tokens": {
         "color": true,
         "spacing": true,
@@ -1802,7 +1802,7 @@
       "name": "kbd",
       "category": "display",
       "variants": ["default"],
-      "sizes": ["default"],
+      "sizes": ["sm", "md", "lg"],
       "tokens": {
         "color": true,
         "spacing": true,
@@ -1957,7 +1957,7 @@
       "name": "dialog",
       "category": "overlay",
       "variants": ["default"],
-      "sizes": ["default"],
+      "sizes": ["sm", "md", "lg", "full"],
       "tokens": {
         "color": true,
         "spacing": true,
@@ -2031,7 +2031,7 @@
       "name": "alert-dialog",
       "category": "overlay",
       "variants": ["default"],
-      "sizes": ["default"],
+      "sizes": ["sm", "md", "lg"],
       "tokens": {
         "color": true,
         "spacing": true,
@@ -2106,7 +2106,7 @@
       "name": "sheet",
       "category": "overlay",
       "variants": ["default"],
-      "sizes": ["default"],
+      "sizes": ["sm", "md", "lg", "full"],
       "tokens": {
         "color": true,
         "spacing": true,
@@ -2393,7 +2393,7 @@
       "name": "command",
       "category": "overlay",
       "variants": ["default"],
-      "sizes": ["default"],
+      "sizes": ["sm", "md", "lg"],
       "tokens": {
         "color": true,
         "spacing": true,
@@ -2480,7 +2480,7 @@
       "name": "dropdown-menu",
       "category": "overlay",
       "variants": ["default"],
-      "sizes": ["default"],
+      "sizes": ["sm", "md", "lg"],
       "tokens": {
         "color": true,
         "spacing": true,
@@ -2576,7 +2576,7 @@
       "name": "context-menu",
       "category": "overlay",
       "variants": ["default"],
-      "sizes": ["default"],
+      "sizes": ["sm", "md", "lg"],
       "tokens": {
         "color": true,
         "spacing": true,
@@ -2669,7 +2669,7 @@
       "name": "menubar",
       "category": "overlay",
       "variants": ["default"],
-      "sizes": ["default"],
+      "sizes": ["sm", "md", "lg"],
       "tokens": {
         "color": true,
         "spacing": true,
@@ -2763,7 +2763,7 @@
       "name": "navigation-menu",
       "category": "overlay",
       "variants": ["default"],
-      "sizes": ["default"],
+      "sizes": ["sm", "md", "lg"],
       "tokens": {
         "color": true,
         "spacing": true,
@@ -2923,7 +2923,7 @@
       "name": "accordion",
       "category": "layout",
       "variants": ["default"],
-      "sizes": ["default"],
+      "sizes": ["sm", "md", "lg"],
       "tokens": {
         "color": true,
         "spacing": true,
@@ -3029,7 +3029,7 @@
       "name": "collapsible",
       "category": "layout",
       "variants": ["default"],
-      "sizes": ["default"],
+      "sizes": ["sm", "md", "lg"],
       "tokens": {
         "color": true,
         "spacing": true,
@@ -3133,7 +3133,7 @@
       "name": "tabs",
       "category": "layout",
       "variants": ["default"],
-      "sizes": ["default"],
+      "sizes": ["sm", "md", "lg"],
       "tokens": {
         "color": true,
         "spacing": true,
@@ -3521,7 +3521,7 @@
       "name": "breadcrumb",
       "category": "layout",
       "variants": ["default"],
-      "sizes": ["default"],
+      "sizes": ["sm", "md", "lg"],
       "tokens": {
         "color": true,
         "spacing": true,
@@ -3607,7 +3607,7 @@
       "name": "pagination",
       "category": "layout",
       "variants": ["default"],
-      "sizes": ["default"],
+      "sizes": ["sm", "md", "lg"],
       "tokens": {
         "color": true,
         "spacing": true,
@@ -3820,7 +3820,7 @@
       "name": "table",
       "category": "layout",
       "variants": ["default"],
-      "sizes": ["default"],
+      "sizes": ["sm", "md", "lg"],
       "tokens": {
         "color": true,
         "spacing": true,
