@@ -1135,7 +1135,7 @@ export async function registryToCompiled(
     if (minify) {
       args.push('--minify');
     }
-    execFileSync('node', args, { stdio: 'pipe' });
+    execFileSync('node', args, { stdio: 'pipe', timeout: 30_000 });
 
     // Read and return compiled output
     return readFileSync(tempOutput, 'utf-8');
