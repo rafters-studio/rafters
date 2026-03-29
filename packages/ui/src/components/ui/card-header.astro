@@ -1,11 +1,12 @@
 ---
 import type { HTMLAttributes } from 'astro/types';
 import classy from '../../primitives/classy';
+import { cardHeaderClasses } from './card.classes';
 
 interface Props extends HTMLAttributes<'div'> {}
 
 const { class: className, ...attrs } = Astro.props;
-const cls = classy('flex flex-col gap-1.5 p-6', className);
+const cls = classy(cardHeaderClasses, className);
 ---
 
 <div data-slot="card-header" class={cls} {...attrs}>

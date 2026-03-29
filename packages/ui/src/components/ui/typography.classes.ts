@@ -4,7 +4,7 @@
  */
 
 export const typographyClasses = {
-  h1: 'scroll-m-20 text-4xl font-bold tracking-tight lg:text-5xl text-foreground',
+  h1: 'scroll-m-20 text-4xl font-bold tracking-tight @lg:text-5xl text-foreground',
   h2: 'scroll-m-20 text-3xl font-semibold tracking-tight text-foreground',
   h3: 'scroll-m-20 text-2xl font-semibold tracking-tight text-foreground',
   h4: 'scroll-m-20 text-xl font-semibold tracking-tight text-foreground',

@@ -37,7 +37,7 @@ describe('H1', () => {
     expect(h1).toHaveClass('font-bold');
     expect(h1).toHaveClass('tracking-tight');
     expect(h1).toHaveClass('scroll-m-20');
-    expect(h1).toHaveClass('lg:text-5xl');
+    expect(h1).toHaveClass('@lg:text-5xl');
     expect(h1).toHaveClass('text-foreground');
   });
 

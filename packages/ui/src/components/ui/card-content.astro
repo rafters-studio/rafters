@@ -1,11 +1,12 @@
 ---
 import type { HTMLAttributes } from 'astro/types';
 import classy from '../../primitives/classy';
+import { cardContentClasses } from './card.classes';
 
 interface Props extends HTMLAttributes<'div'> {}
 
 const { class: className, ...attrs } = Astro.props;
-const cls = classy('p-6 pt-0', className);
+const cls = classy(cardContentClasses, className);
 ---
 
 <div class={cls} {...attrs}>

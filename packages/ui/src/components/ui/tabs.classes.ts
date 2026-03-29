@@ -16,7 +16,9 @@ export const tabsTriggerActiveClasses = 'bg-background text-foreground shadow-sm
 
 export const tabsTriggerInactiveClasses = 'text-muted-foreground';
 
+export const tabsRootClasses = 'flex flex-col gap-2';
+
 export const tabsContentClasses = [
-  'mt-2 ring-offset-background',
+  'ring-offset-background',
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
 ].join(' ');

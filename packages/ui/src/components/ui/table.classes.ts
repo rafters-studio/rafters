@@ -22,4 +22,4 @@ export const tableHeadClasses =
 export const tableCellClasses =
   'p-2 align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-0.5';
 
-export const tableCaptionClasses = 'mt-4 text-sm text-muted-foreground';
+export const tableCaptionClasses = 'text-sm text-muted-foreground';

@@ -50,10 +50,10 @@ const classes = classy(
 
 <figure class={classes} {...attrs}>
   <div class="relative overflow-hidden rounded-lg">
-    <img src={src} alt={alt} class="block w-full h-auto" loading="lazy" />
+    <img src={src} alt={alt} class={classy("block w-full h-auto")} loading="lazy" />
   </div>
   {caption && (
-    <figcaption class="mt-2 text-center text-sm text-muted-foreground">
+    <figcaption class={classy("mt-2 text-center text-sm text-muted-foreground")}>
       {caption}
     </figcaption>
   )}

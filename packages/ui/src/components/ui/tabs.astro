@@ -22,6 +22,7 @@
  */
 import type { HTMLAttributes } from 'astro/types';
 import classy from '../../primitives/classy';
+import { tabsRootClasses } from './tabs.classes';
 
 interface Props extends HTMLAttributes<'div'> {
   /** Unique identifier for this tab group, used to link radios, labels, and panels */
@@ -34,7 +35,7 @@ const { id, defaultValue, class: className, ...attrs } = Astro.props;
 ---
 
 <div
-  class={classy(className)}
+  class={classy(tabsRootClasses, className)}
   data-tabs-root={id}
   data-tabs-default={defaultValue}
   {...attrs}

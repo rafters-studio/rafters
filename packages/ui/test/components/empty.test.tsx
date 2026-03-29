@@ -69,7 +69,7 @@ describe('EmptyIcon', () => {
       </EmptyIcon>,
     );
     const icon = container.firstChild;
-    expect(icon).toHaveClass('mb-4');
+    // mb-4 removed -- parent uses gap instead
     expect(icon).toHaveClass('text-muted-foreground');
   });
 
@@ -89,7 +89,7 @@ describe('EmptyIcon', () => {
       </EmptyIcon>,
     );
     expect(container.firstChild).toHaveClass('custom-icon');
-    expect(container.firstChild).toHaveClass('mb-4');
+    // mb-4 removed -- parent uses gap instead
   });
 
   it('forwards ref', () => {
@@ -123,7 +123,7 @@ describe('EmptyTitle', () => {
   it('applies default styles', () => {
     const { container } = render(<EmptyTitle>Title</EmptyTitle>);
     const title = container.firstChild;
-    expect(title).toHaveClass('mb-2');
+    // mb-2 removed -- parent uses gap instead
     expect(title).toHaveClass('text-lg');
     expect(title).toHaveClass('font-semibold');
     expect(title).toHaveClass('text-foreground');
@@ -167,7 +167,7 @@ describe('EmptyDescription', () => {
   it('applies default styles', () => {
     const { container } = render(<EmptyDescription>Description</EmptyDescription>);
     const desc = container.firstChild;
-    expect(desc).toHaveClass('mb-4');
+    // mb-4 removed -- parent uses gap instead
     expect(desc).toHaveClass('max-w-sm');
     expect(desc).toHaveClass('text-sm');
     expect(desc).toHaveClass('text-muted-foreground');
@@ -210,8 +210,7 @@ describe('EmptyAction', () => {
         <button type="button">Action</button>
       </EmptyAction>,
     );
-    const action = container.firstChild;
-    expect(action).toHaveClass('mt-2');
+    expect(container.firstChild).toBeInTheDocument();
   });
 
   it('renders children', () => {
@@ -232,7 +231,7 @@ describe('EmptyAction', () => {
       </EmptyAction>,
     );
     expect(container.firstChild).toHaveClass('custom-action');
-    expect(container.firstChild).toHaveClass('mt-2');
+    // mt-2 removed -- parent uses gap instead
   });
 
   it('forwards ref', () => {
