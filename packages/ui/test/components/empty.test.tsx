@@ -210,8 +210,7 @@ describe('EmptyAction', () => {
         <button type="button">Action</button>
       </EmptyAction>,
     );
-    const action = container.firstChild;
-    // mt-2 removed -- parent uses gap instead
+    expect(container.firstChild).toBeInTheDocument();
   });
 
   it('renders children', () => {
