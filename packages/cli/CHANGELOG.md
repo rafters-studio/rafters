@@ -1,5 +1,17 @@
 # rafters
 
+## 0.0.29
+
+### Minor Changes
+
+- Human confirmation gate on `rafters_onboard map`: tool refuses without `confirmed: true`, instructs agent to ask the designer first
+- Color enrichment pipeline: hex/rgb/hsl/oklch parsed via colorjs.io, enriched through `buildColorValue()` + api.rafters.studio intelligence
+- Scale pattern detection in analyze: detects existing 11-step color families (e.g., --color-blaze-50 through --color-blaze-950)
+- Family checklist in analyze: shows all 11 semantic families with status (default/designer/unmapped) and coverage fraction
+- `rafters_onboard status` action: completeness tracking for onboarding progress
+- @theme block properties now extracted into customProperties (previously only captured as raw strings)
+- 20 onboard integration tests with real designer decision fixtures (legal requirements, colorblind testing, art director intent)
+
 ## 0.0.28
 
 ### Minor Changes
