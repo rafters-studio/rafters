@@ -588,9 +588,9 @@ export const TOOL_DEFINITIONS = [
       properties: {
         action: {
           type: 'string',
-          enum: ['analyze', 'map'],
+          enum: ['analyze', 'map', 'status'],
           description:
-            'analyze: scan project CSS and return structured findings. map: execute confirmed mappings. First call without confirmed returns instructions to ask the designer. Second call with confirmed: true executes.',
+            'analyze: scan CSS and return findings + family checklist. status: show which of the 11 families have designer decisions vs defaults. map: execute confirmed mappings (requires confirmed: true after designer review).',
         },
         confirmed: {
           type: 'boolean',
@@ -1611,6 +1611,24 @@ export class RaftersToolHandler {
   };
 
   /**
+   * The 11 semantic color families every design system needs.
+   * Defaults are not wrong. Unexamined defaults are wrong.
+   */
+  private static readonly SEMANTIC_FAMILIES = [
+    'primary',
+    'secondary',
+    'tertiary',
+    'accent',
+    'neutral',
+    'success',
+    'warning',
+    'destructive',
+    'info',
+    'highlight',
+    'muted',
+  ] as const;
+
+  /**
    * Handle rafters_onboard tool calls
    */
   private async onboard(args: Record<string, unknown>): Promise<CallToolResult> {
@@ -1619,6 +1637,8 @@ export class RaftersToolHandler {
     switch (action) {
       case 'analyze':
         return this.analyzeProject();
+      case 'status':
+        return this.getOnboardStatus();
       case 'map': {
         const confirmed = args.confirmed as boolean | undefined;
         if (!confirmed) {
@@ -1742,11 +1762,27 @@ export class RaftersToolHandler {
         // No package.json
       }
 
-      // Count existing rafters tokens
+      // Count existing tokens and check family status
       let existingTokenCount = 0;
+      const familyStatus: Record<
+        string,
+        { status: 'default' | 'designer' | 'unmapped'; reason?: string }
+      > = {};
+
       if (this.adapter) {
         const tokens = await this.adapter.load();
         existingTokenCount = tokens.length;
+
+        for (const family of RaftersToolHandler.SEMANTIC_FAMILIES) {
+          const token = tokens.find((t) => t.name === family);
+          if (!token) {
+            familyStatus[family] = { status: 'unmapped' };
+          } else if (token.userOverride?.reason) {
+            familyStatus[family] = { status: 'designer', reason: token.userOverride.reason };
+          } else {
+            familyStatus[family] = { status: 'default' };
+          }
+        }
       }
 
       // Detect color scale patterns (e.g., --color-blaze-50 through --color-blaze-950)
@@ -1789,10 +1825,17 @@ export class RaftersToolHandler {
         }
       }
 
+      const designerCount = Object.values(familyStatus).filter(
+        (s) => s.status === 'designer',
+      ).length;
+      const totalFamilies = RaftersToolHandler.SEMANTIC_FAMILIES.length;
+
       const result = {
         framework,
         cssFiles: cssFindings,
         colorFamilies: detectedFamilies.length > 0 ? detectedFamilies : undefined,
+        familyStatus,
+        familyCoverage: `${designerCount}/${totalFamilies} semantic families have designer decisions`,
         shadcn,
         designDependencies: designDeps,
         existingTokenCount,
@@ -1807,6 +1850,77 @@ export class RaftersToolHandler {
       };
     } catch (error) {
       return this.handleError('analyzeProject', error);
+    }
+  }
+
+  /**
+   * Check onboarding completeness -- which families have designer decisions
+   */
+  private async getOnboardStatus(): Promise<CallToolResult> {
+    if (!this.adapter || !this.projectRoot) {
+      return { content: [{ type: 'text', text: NO_PROJECT_ERROR }], isError: true };
+    }
+
+    try {
+      const tokens = await this.adapter.load();
+      const mapped: string[] = [];
+      const defaultsRemaining: string[] = [];
+      const unmapped: string[] = [];
+
+      for (const family of RaftersToolHandler.SEMANTIC_FAMILIES) {
+        const token = tokens.find((t) => t.name === family);
+        if (!token) {
+          unmapped.push(family);
+        } else if (token.userOverride?.reason) {
+          mapped.push(family);
+        } else {
+          defaultsRemaining.push(family);
+        }
+      }
+
+      // Find custom color families (non-semantic, in color namespace, with designer reason)
+      const semanticSet = new Set<string>(RaftersToolHandler.SEMANTIC_FAMILIES);
+      const customFamilies = tokens
+        .filter(
+          (t) =>
+            t.namespace === 'color' &&
+            !semanticSet.has(t.name) &&
+            t.userOverride?.reason &&
+            !t.name.includes('-'),
+        )
+        .map((t) => t.name);
+
+      const complete = defaultsRemaining.length === 0 && unmapped.length === 0;
+      const coverage = `${mapped.length}/${RaftersToolHandler.SEMANTIC_FAMILIES.length}`;
+
+      let guidance: string;
+      if (complete) {
+        guidance = 'All semantic families have designer decisions. Onboarding is complete.';
+      } else if (defaultsRemaining.length > 0) {
+        guidance = `${defaultsRemaining.length} families still use generated defaults: ${defaultsRemaining.join(', ')}. Ask the designer: do these defaults work, or should we choose specific colors? If the defaults are intentional, confirm them with a reason.`;
+      } else {
+        guidance = `${unmapped.length} families are unmapped: ${unmapped.join(', ')}. These need designer decisions.`;
+      }
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(
+              {
+                complete,
+                coverage,
+                families: { mapped, defaultsRemaining, unmapped, customFamilies },
+                guidance,
+              },
+              null,
+              2,
+            ),
+          },
+        ],
+      };
+    } catch (error) {
+      return this.handleError('getOnboardStatus', error);
     }
   }
 

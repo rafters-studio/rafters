@@ -418,6 +418,146 @@ describe('rafters_onboard analyze', () => {
     // Default color system has 535 tokens
     expect(data.existingTokenCount).toBeGreaterThanOrEqual(500);
   });
+
+  it('includes family checklist showing all 11 families as defaults after init', async () => {
+    fixturePath = await createOnboardFixture('family-checklist', {
+      css: { 'src/index.css': CSS_CLEAN_OKLCH },
+      seedTokens: true,
+    });
+
+    const handler = new RaftersToolHandler(fixturePath);
+    const result = await handler.handleToolCall('rafters_onboard', { action: 'analyze' });
+    const data = JSON.parse((result.content[0] as { text: string }).text);
+
+    // All 11 families should be present in the checklist
+    expect(data.familyStatus).toBeDefined();
+    const families = Object.keys(data.familyStatus);
+    expect(families).toContain('primary');
+    expect(families).toContain('secondary');
+    expect(families).toContain('destructive');
+    expect(families).toContain('accent');
+    expect(families).toContain('neutral');
+    expect(families).toContain('success');
+    expect(families).toContain('warning');
+    expect(families).toContain('info');
+    expect(families).toContain('highlight');
+    expect(families).toContain('muted');
+    expect(families).toContain('tertiary');
+
+    // Most should be defaults, tertiary may be unmapped (not in default generators)
+    for (const family of families) {
+      const status = data.familyStatus[family].status;
+      expect(status === 'default' || status === 'unmapped').toBe(true);
+    }
+
+    // Coverage should be 0/11 (no designer decisions yet)
+    expect(data.familyCoverage).toBe('0/11 semantic families have designer decisions');
+  });
+});
+
+describe('rafters_onboard status', () => {
+  let fixturePath: string;
+
+  afterEach(async () => {
+    if (fixturePath) await rm(fixturePath, { recursive: true, force: true });
+  });
+
+  it('shows all defaults after fresh init', async () => {
+    fixturePath = await createOnboardFixture('status-fresh', {
+      css: { 'src/index.css': CSS_CLEAN_OKLCH },
+      seedTokens: true,
+    });
+
+    const handler = new RaftersToolHandler(fixturePath);
+    const result = await handler.handleToolCall('rafters_onboard', { action: 'status' });
+    const data = JSON.parse((result.content[0] as { text: string }).text);
+
+    expect(data.complete).toBe(false);
+    expect(data.coverage).toBe('0/11');
+    expect(data.families.mapped).toHaveLength(0);
+    // 10 defaults + 1 unmapped (tertiary not in default generators)
+    const totalUnaddressed = data.families.defaultsRemaining.length + data.families.unmapped.length;
+    expect(totalUnaddressed).toBe(11);
+  });
+
+  it('tracks progress after designer maps some families', async () => {
+    fixturePath = await createOnboardFixture('status-partial', {
+      css: { 'src/index.css': CSS_HORRIBLE_LEGACY },
+      seedTokens: true,
+    });
+
+    const handler = new RaftersToolHandler(fixturePath);
+
+    // Designer maps 3 families
+    await handler.handleToolCall('rafters_onboard', {
+      action: 'map',
+      confirmed: true,
+      mappings: [
+        {
+          source: '--brand-blue',
+          target: 'primary',
+          value: '#2563eb',
+          reason: 'This blue has been on our nav since 2019',
+        },
+        {
+          source: '--brand-red',
+          target: 'destructive',
+          value: 'rgb(220, 38, 38)',
+          reason: 'Legal required this exact red for error states',
+        },
+        {
+          source: '--brand-green',
+          target: 'success',
+          value: 'hsl(142, 71%, 45%)',
+          reason: 'Chosen for deuteranopia distinguishability',
+        },
+      ],
+    });
+
+    // Check status
+    const result = await handler.handleToolCall('rafters_onboard', { action: 'status' });
+    const data = JSON.parse((result.content[0] as { text: string }).text);
+
+    expect(data.complete).toBe(false);
+    expect(data.coverage).toBe('3/11');
+    expect(data.families.mapped).toContain('primary');
+    expect(data.families.mapped).toContain('destructive');
+    expect(data.families.mapped).toContain('success');
+    // 8 remaining = defaults + unmapped
+    const remaining = data.families.defaultsRemaining.length + data.families.unmapped.length;
+    expect(remaining).toBe(8);
+    expect(data.families.defaultsRemaining).not.toContain('primary');
+  });
+
+  it('includes custom families created during onboarding', async () => {
+    fixturePath = await createOnboardFixture('status-custom', {
+      css: { 'src/index.css': CSS_EXISTING_SCALES },
+      seedTokens: true,
+    });
+
+    const handler = new RaftersToolHandler(fixturePath);
+
+    // Create custom faction families
+    await handler.handleToolCall('rafters_onboard', {
+      action: 'map',
+      confirmed: true,
+      mappings: [
+        {
+          source: '--color-blaze-500',
+          target: 'blaze',
+          value: 'oklch(0.62 0.20 45)',
+          reason: 'Mandalorian faction color',
+          namespace: 'color',
+          category: 'color',
+        },
+      ],
+    });
+
+    const result = await handler.handleToolCall('rafters_onboard', { action: 'status' });
+    const data = JSON.parse((result.content[0] as { text: string }).text);
+
+    expect(data.families.customFamilies).toContain('blaze');
+  });
 });
 
 // ==================== Designer Decisions ====================
