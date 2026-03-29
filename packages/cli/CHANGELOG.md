@@ -1,5 +1,12 @@
 # rafters
 
+## 0.0.35
+
+### Patch Changes
+
+- Fix init --rebuild hang: spinner was hiding @tailwindcss/cli install prompt
+- Revert: rebuild re-prompts for export formats (intentional behavior)
+
 ## 0.0.34
 
 ### Minor Changes
