@@ -1,5 +1,13 @@
 # rafters
 
+## 0.0.30
+
+### Patch Changes
+
+- Fix achromatic color crash: grays (#9D9D9D, #808080, black, white) no longer produce NaN hue in OKLCH conversion
+- Fix Astro projects installing react from .tsx variant dependencies during `rafters add`
+- 11 new color-utils conversion tests (gray handling, rgb/hsl/oklch parsing)
+
 ## 0.0.29
 
 ### Minor Changes
