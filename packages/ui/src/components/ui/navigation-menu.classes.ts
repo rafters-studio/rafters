@@ -19,7 +19,7 @@ export const navigationMenuContentClasses = 'left-0 top-0 w-full';
 export const navigationMenuContentActiveClasses = 'animate-in fade-in-0 zoom-in-95';
 
 export const navigationMenuLinkClasses =
-  'block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors duration-150 motion-reduce:transition-none hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
+  'block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors duration-150 motion-reduce:transition-none hover:bg-accent hover:text-accent-foreground active:bg-muted active:text-foreground focus-visible:bg-accent focus-visible:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
 
 export const navigationMenuViewportClasses =
   'mt-1.5 h-min w-full overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-lg origin-top-center';

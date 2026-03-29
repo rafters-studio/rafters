@@ -3,7 +3,7 @@
  */
 
 export const selectTriggerBaseClasses =
-  'flex w-full items-center justify-between gap-2 rounded-md border border-input bg-background px-3 text-sm ring-offset-background';
+  'flex w-full items-center justify-between gap-2 rounded-md border border-input bg-background px-3 text-sm shadow-sm ring-offset-background hover:border-input-hover';
 
 export const selectTriggerPlaceholderClasses = 'placeholder:text-muted-foreground';
 

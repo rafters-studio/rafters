@@ -6,4 +6,4 @@
 export const tooltipTriggerClasses = 'inline-flex';
 
 export const tooltipContentClasses =
-  'z-50 overflow-hidden rounded-md bg-foreground px-3 py-1.5 text-sm text-background shadow-md transition-opacity duration-150 motion-reduce:transition-none';
+  'z-50 overflow-hidden rounded-md bg-foreground px-3 py-1.5 text-sm text-background shadow-lg transition-opacity duration-150 motion-reduce:transition-none';

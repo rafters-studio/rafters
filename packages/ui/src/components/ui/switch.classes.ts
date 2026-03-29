@@ -14,10 +14,12 @@ export const switchTrackFocusClasses =
 
 export const switchTrackDisabledClasses = 'disabled:cursor-not-allowed disabled:opacity-50';
 
+export const switchTrackHoverClasses = 'hover:bg-input-hover';
+
 export const switchTrackUncheckedClasses = 'bg-input';
 
 export const switchThumbBaseClasses =
-  'pointer-events-none block rounded-full bg-background shadow-lg ring-0';
+  'pointer-events-none block rounded-full bg-background shadow-sm ring-0';
 
 export const switchThumbTransitionClasses =
   'transition-transform duration-200 motion-reduce:transition-none';

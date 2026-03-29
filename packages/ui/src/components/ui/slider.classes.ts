@@ -2,7 +2,9 @@
  * Shared class definitions for Slider component
  */
 
-export const sliderContainerBaseClasses = 'relative flex touch-none select-none items-center';
+export const sliderContainerBaseClasses =
+  'relative flex touch-none select-none items-center ' +
+  'data-[disabled]:opacity-50 data-[disabled]:pointer-events-none';
 
 export const sliderTrackBaseClasses = 'relative grow overflow-hidden rounded-full bg-muted';
 
@@ -11,7 +13,9 @@ export const sliderRangeBaseClasses = 'absolute';
 export const sliderThumbBaseClasses = 'absolute block rounded-full border-2 bg-background';
 
 export const sliderThumbInteractionClasses =
-  'ring-offset-background transition-colors duration-150 motion-reduce:transition-none ' +
+  'ring-offset-background transition-all duration-150 motion-reduce:transition-none ' +
+  'hover:scale-110 ' +
+  'active:scale-105 ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2';
 
 export const sliderVariantClasses: Record<string, { range: string; thumb: string; ring: string }> =

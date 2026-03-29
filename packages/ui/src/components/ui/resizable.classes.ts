@@ -12,6 +12,7 @@ export const resizablePanelClasses = 'relative';
 export const resizableHandleClasses =
   'relative flex items-center justify-center bg-border ' +
   'after:absolute after:inset-y-0 after:left-1/2 after:-translate-x-1/2 ' +
+  'hover:bg-muted ' +
   'transition-shadow duration-100 motion-reduce:transition-none ' +
   'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-1';
 

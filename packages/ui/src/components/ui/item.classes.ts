@@ -4,7 +4,9 @@
  */
 
 export const itemBaseClasses =
-  'flex items-center gap-3 rounded-md cursor-default select-none outline-none';
+  'flex items-center gap-3 rounded-md cursor-default select-none outline-none ' +
+  'data-[active=true]:bg-accent data-[active=true]:text-accent-foreground ' +
+  'aria-selected:bg-accent aria-selected:text-accent-foreground';
 
 export const itemSizeClasses: Record<string, string> = {
   default: 'px-3 py-2 text-sm',
@@ -14,6 +16,10 @@ export const itemSizeClasses: Record<string, string> = {
 
 export const itemFocusClasses =
   'focus-visible:bg-accent focus-visible:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1';
+
+export const itemDisabledClasses =
+  'data-[disabled]:opacity-50 data-[disabled]:pointer-events-none ' +
+  'aria-disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:cursor-not-allowed';
 
 export const itemMotionClasses = 'transition-colors duration-150 motion-reduce:transition-none';
 

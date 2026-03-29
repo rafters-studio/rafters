@@ -6,6 +6,7 @@ export const textareaBaseClasses =
   'flex w-full rounded-md border bg-background ' +
   'ring-offset-background ' +
   'placeholder:text-muted-foreground ' +
+  'hover:border-input-hover ' +
   'focus-visible:outline-none focus-visible:ring-offset-2 ' +
   'transition-shadow duration-100 motion-reduce:transition-none ' +
   'disabled:cursor-not-allowed disabled:opacity-50';
