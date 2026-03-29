@@ -1,5 +1,9 @@
 # rafters
 
+## Unreleased
+
+- Fix compiled CSS export hang: 30s timeout on @tailwindcss/cli execFileSync
+
 ## 0.0.33
 
 ### Minor Changes
