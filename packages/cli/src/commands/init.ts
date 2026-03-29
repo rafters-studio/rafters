@@ -359,20 +359,17 @@ async function regenerateFromExisting(
   // Create registry
   const registry = new TokenRegistry(allTokens);
 
-  // Use existing config exports on rebuild, only prompt on fresh init or reset
+  // Prompt for exports (or use existing config in agent mode / non-interactive)
   let exports: ExportConfig;
-  if (existingConfig?.exports) {
-    exports = existingConfig.exports;
-    log({ event: 'init:exports_default', exports });
-  } else if (isAgentMode) {
-    exports = DEFAULT_EXPORTS;
+  if (isAgentMode) {
+    exports = existingConfig?.exports ?? DEFAULT_EXPORTS;
     log({ event: 'init:exports_default', exports });
   } else {
     // Stop spinner before prompting (if interactive)
     if (isInteractive()) {
       log({ event: 'init:prompting_exports' });
     }
-    exports = await promptExportFormats();
+    exports = await promptExportFormats(existingConfig?.exports);
     log({ event: 'init:exports_selected', exports });
   }
 
