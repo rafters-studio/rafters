@@ -1,5 +1,20 @@
 # rafters
 
+## 0.0.33
+
+### Minor Changes
+
+- All 44 components use shared `.classes.ts` files -- single source of truth for styling across React and Astro variants
+- Tailwind utilities (`p-4`, `rounded-md`, `shadow-md`) now read from rafters token system via `@theme` -- change a base token, every component updates
+- Component spec (COMPONENT_SPEC.json): complete visual specification for 46 components with color mappings, state tokens, motion specs, shadow specs, radius specs. WCAG AAA + Section 508 target.
+- Component audit (COMPONENT_AUDIT.json): current state matrix documenting every gap
+
+### Patch Changes
+
+- Astro component fixes: focus-visible on breadcrumb-link, motion tokens on tooltip, viewport-to-CQ on breadcrumb/typography, classy on image internals, margin-to-gap on empty sub-components
+- Editor a11y test updated for post-rewrite structure
+- Studio vite-plugin test updated for create endpoint behavior
+
 ## 0.0.32
 
 ### Minor Changes
