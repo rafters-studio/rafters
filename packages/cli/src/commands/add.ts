@@ -245,44 +245,52 @@ export function transformFileContent(
   const componentsPath = config?.componentsPath ?? 'components/ui';
   const primitivesPath = config?.primitivesPath ?? 'lib/primitives';
 
+  // Strip source root prefix (src/, app/) for @/ alias imports.
+  // Config paths are filesystem paths (src/components/ui) but @/ alias
+  // already maps to the source root, so @/src/... doubles the prefix.
+  const stripSourceRoot = (p: string): string => p.replace(/^(src|app)\//, '');
+
+  // All @/ alias paths use stripSourceRoot to avoid double-prefixing
+  const aliasComponents = stripSourceRoot(componentsPath);
+  const aliasPrimitives = stripSourceRoot(primitivesPath);
+
   // Transform imports from ../../primitives/ to configured primitives path
   transformed = transformed.replace(
     /from\s+['"]\.\.\/\.\.\/primitives\/([^'"]+)['"]/g,
-    `from '@/${primitivesPath}/$1'`,
+    `from '@/${aliasPrimitives}/$1'`,
   );
 
   // Transform imports from ../primitives/ to configured primitives path
   transformed = transformed.replace(
     /from\s+['"]\.\.\/primitives\/([^'"]+)['"]/g,
-    `from '@/${primitivesPath}/$1'`,
+    `from '@/${aliasPrimitives}/$1'`,
   );
 
   // Transform relative sibling imports (./foo) based on file type:
   // - component files -> componentsPath (siblings are other components)
   // - primitive files -> primitivesPath (siblings are other primitives)
-  const siblingPath = fileType === 'primitive' ? primitivesPath : componentsPath;
-  transformed = transformed.replace(/from\s+['"]\.\/([^'"]+)['"]/g, `from '@/${siblingPath}/$1'`);
+  const aliasSibling = fileType === 'primitive' ? aliasPrimitives : aliasComponents;
+  transformed = transformed.replace(/from\s+['"]\.\/([^'"]+)['"]/g, `from '@/${aliasSibling}/$1'`);
 
   // Transform parent lib imports - derive lib path as parent directory of primitivesPath
-  const libPath = dirname(primitivesPath);
+  const aliasLib = stripSourceRoot(dirname(primitivesPath));
   transformed = transformed.replace(
     /from\s+['"]\.\.\/lib\/([^'"]+)['"]/g,
-    `from '@/${libPath}/$1'`,
+    `from '@/${aliasLib}/$1'`,
   );
 
   // Transform parent hooks imports - derive hooks path from components path structure
-  // e.g., 'components/ui' -> 'hooks', 'app/components/ui' -> 'app/hooks'
-  const componentsMatch = componentsPath.match(/^(.*)components\/ui$/);
-  const hooksPath = componentsMatch ? `${componentsMatch[1]}hooks`.replace(/^\//, '') : 'hooks';
+  const componentsMatch = aliasComponents.match(/^(.*)components\/ui$/);
+  const aliasHooks = componentsMatch ? `${componentsMatch[1]}hooks`.replace(/^\//, '') : 'hooks';
   transformed = transformed.replace(
     /from\s+['"]\.\.\/hooks\/([^'"]+)['"]/g,
-    `from '@/${hooksPath}/$1'`,
+    `from '@/${aliasHooks}/$1'`,
   );
 
   // Transform other parent imports as UI components (excluding lib/ and hooks/ already handled)
   transformed = transformed.replace(
     /from\s+['"]\.\.\/(?!lib\/|hooks\/)([^'"]+)['"]/g,
-    `from '@/${componentsPath}/$1'`,
+    `from '@/${aliasComponents}/$1'`,
   );
 
   return transformed;

@@ -71,7 +71,7 @@ describe('transformFileContent', () => {
     };
     const input = `import type { BlockType } from './types';`;
     const result = transformFileContent(input, config, 'primitive');
-    expect(result).toBe(`import type { BlockType } from '@/src/lib/primitives/types';`);
+    expect(result).toBe(`import type { BlockType } from '@/lib/primitives/types';`);
   });
 
   it('transforms ../ component imports to @/components/ui/', () => {
