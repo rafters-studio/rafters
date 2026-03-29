@@ -52,3 +52,81 @@ describe('classy - bracket blocking', () => {
     expect(out).toBe('a w-[10px]');
   });
 });
+
+describe('classy - layout utility detection', () => {
+  it('warns on layout utilities in consumer code but keeps them', () => {
+    const spy = vi.fn();
+    const c = createClassy({ warn: spy });
+    const out = c('flex', 'gap-4', 'bg-primary');
+    // Consumer: warns but allows
+    expect(out).toBe('flex gap-4 bg-primary');
+    expect(spy).toHaveBeenCalledTimes(2);
+    expect(spy.mock.calls[0][0]).toContain('layout utility');
+    expect(spy.mock.calls[1][0]).toContain('layout utility');
+  });
+
+  it('strips layout utilities in component context', () => {
+    const spy = vi.fn();
+    const c = createClassy({ component: true, warn: spy });
+    const out = c('flex', 'gap-4', 'bg-primary');
+    // Component: strips layout, keeps color
+    expect(out).toBe('bg-primary');
+    expect(spy).toHaveBeenCalledTimes(2);
+    expect(spy.mock.calls[0][0]).toContain('stripped');
+  });
+
+  it('detects all layout utility patterns', () => {
+    const spy = vi.fn();
+    const c = createClassy({ component: true, warn: spy });
+    const out = c(
+      'flex',
+      'flex-col',
+      'inline-flex',
+      'grid',
+      'grid-cols-3',
+      'gap-4',
+      'space-x-2',
+      'p-4',
+      'px-6',
+      'py-2',
+      'm-4',
+      'mx-auto',
+      'my-8',
+      'items-center',
+      'justify-between',
+      'self-start',
+      'bg-primary',
+      'text-sm',
+      'border',
+    );
+    // Only non-layout classes survive
+    expect(out).toBe('bg-primary text-sm border');
+  });
+
+  it('handles modifiers on layout utilities', () => {
+    const spy = vi.fn();
+    const c = createClassy({ component: true, warn: spy });
+    const out = c('hover:flex', 'md:gap-4', 'bg-primary');
+    // Modifiers on layout utilities are still layout
+    expect(out).toBe('bg-primary');
+  });
+
+  it('allows semantic color classes on components', () => {
+    const spy = vi.fn();
+    const c = createClassy({ component: true, warn: spy });
+    const out = c('bg-primary', 'text-destructive', 'border-success');
+    expect(out).toBe('bg-primary text-destructive border-success');
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('default classy warns but does not strip', () => {
+    const spy = vi.fn();
+    // Temporarily redirect warn to spy
+    const c = createClassy({ warn: spy });
+    const out = c('flex', 'p-4', 'bg-card');
+    expect(out).toContain('flex');
+    expect(out).toContain('p-4');
+    expect(out).toContain('bg-card');
+    expect(spy).toHaveBeenCalled();
+  });
+});
