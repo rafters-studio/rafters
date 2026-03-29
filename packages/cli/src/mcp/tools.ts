@@ -1573,7 +1573,8 @@ export class RaftersToolHandler {
     await mkdir(paths.output, { recursive: true });
 
     if (exports.tailwind) {
-      const css = registryToTailwind(registry, { includeImport: !shadcn });
+      const darkMode = config?.darkMode ?? 'class';
+      const css = registryToTailwind(registry, { includeImport: !shadcn, darkMode });
       await writeFile(join(paths.output, 'rafters.css'), css);
     }
 

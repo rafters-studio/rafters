@@ -32,15 +32,20 @@ describe('tokensToTailwind', () => {
     expect(css).toContain('--background: var(--rafters-background);');
   });
 
-  it('should include dark mode via @media prefers-color-scheme', () => {
+  it('should include class-based dark mode with @custom-variant', () => {
     const tokens: Token[] = [
       { name: 'neutral-500', value: 'oklch(0.55 0 0)', category: 'color', namespace: 'color' },
     ];
 
     const css = tokensToTailwind(tokens);
 
-    expect(css).toContain('@media (prefers-color-scheme: dark) {');
+    // Tailwind v4 custom variant for class-based dark mode
+    expect(css).toContain('@custom-variant dark');
+    // .dark class block for manual toggle
+    expect(css).toContain('.dark {');
     expect(css).toContain('--background: var(--rafters-dark-background);');
+    // No media query -- consumers control dark mode via class, not OS preference
+    expect(css).not.toContain('@media (prefers-color-scheme: dark)');
   });
 
   it('should export spacing tokens with --spacing- prefix', () => {

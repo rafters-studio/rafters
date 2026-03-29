@@ -114,6 +114,8 @@ export interface RaftersConfig {
   shadcn: boolean;
   /** Export format selections */
   exports: ExportConfig;
+  /** Dark mode strategy: 'class' (default, .dark class toggle) or 'media' (OS preference) */
+  darkMode?: 'class' | 'media';
   /** Items installed via `rafters add` */
   installed?: {
     components: string[];
@@ -271,12 +273,13 @@ async function generateOutputs(
   registry: TokenRegistry,
   exports: ExportConfig,
   shadcn: ShadcnConfig | null,
+  darkMode: 'class' | 'media' = 'class',
 ): Promise<string[]> {
   const outputs: string[] = [];
 
   // Tailwind CSS (with @import "tailwindcss")
   if (exports.tailwind) {
-    const tailwindCss = registryToTailwind(registry, { includeImport: !shadcn });
+    const tailwindCss = registryToTailwind(registry, { includeImport: !shadcn, darkMode });
     await writeFile(join(paths.output, 'rafters.css'), tailwindCss);
     outputs.push('rafters.css');
   }

@@ -4,7 +4,7 @@
  * Converts TokenRegistry contents to Tailwind v4 CSS format with:
  * - @theme block for raw color scales
  * - :root --rafters-* namespace tokens (light/dark mode)
- * - Semantic variables that switch via prefers-color-scheme
+ * - Semantic variables that switch via .dark class (Tailwind v4 @custom-variant)
  * - @theme inline bridge pattern
  *
  * Reads semantic color mappings from DEFAULT_SEMANTIC_COLOR_MAPPINGS (single source of truth).
@@ -25,6 +25,8 @@ export interface TailwindExportOptions {
   includeComments?: boolean;
   /** Include @import "tailwindcss" at top */
   includeImport?: boolean;
+  /** Dark mode strategy: 'class' (.dark class toggle) or 'media' (OS preference). Default: 'class' */
+  darkMode?: 'class' | 'media';
 }
 
 /**
@@ -220,10 +222,10 @@ function generateThemeInlineBlock(semanticTokens: Token[]): string {
 }
 
 /**
- * Generate :root block with --rafters-* namespace and dark mode via media query
+ * Generate :root block with --rafters-* namespace and dark mode via .dark class
  * Reads semantic mappings from actual tokens in the registry.
  */
-function generateRootBlock(semanticTokens: Token[]): string {
+function generateRootBlock(semanticTokens: Token[], darkMode: 'class' | 'media' = 'class'): string {
   const semanticMappings = getSemanticMappingsFromTokens(semanticTokens);
   const lines: string[] = [];
   lines.push(':root {');
@@ -250,20 +252,26 @@ function generateRootBlock(semanticTokens: Token[]): string {
   lines.push('}');
   lines.push('');
 
-  // Dark mode via prefers-color-scheme media query
-  lines.push('@media (prefers-color-scheme: dark) {');
-  lines.push('  :root {');
-  for (const name of Object.keys(semanticMappings)) {
-    lines.push(`    --${name}: var(--rafters-dark-${name});`);
-  }
-  lines.push('  }');
-  lines.push('}');
-  lines.push('');
+  if (darkMode === 'class') {
+    // Tailwind v4 custom variant for class-based dark mode
+    lines.push('@custom-variant dark (&:where(.dark, .dark *));');
+    lines.push('');
 
-  // Dark mode via .dark class (for manual toggle support)
-  lines.push('.dark {');
+    // Dark mode via .dark class
+    lines.push('.dark {');
+  } else {
+    // Dark mode via OS preference
+    lines.push('@media (prefers-color-scheme: dark) {');
+    lines.push('  :root {');
+  }
+
   for (const name of Object.keys(semanticMappings)) {
-    lines.push(`  --${name}: var(--rafters-dark-${name});`);
+    const indent = darkMode === 'media' ? '    ' : '  ';
+    lines.push(`${indent}--${name}: var(--rafters-dark-${name});`);
+  }
+
+  if (darkMode === 'media') {
+    lines.push('  }');
   }
   lines.push('}');
   lines.push('');
@@ -595,7 +603,7 @@ export function tokensToTailwind(tokens: Token[], options: TailwindExportOptions
   sections.push('');
 
   // :root block with --rafters-* namespace and dark mode
-  const rootBlock = generateRootBlock(groups.semantic);
+  const rootBlock = generateRootBlock(groups.semantic, options.darkMode ?? 'class');
   sections.push(rootBlock);
   sections.push('');
 
