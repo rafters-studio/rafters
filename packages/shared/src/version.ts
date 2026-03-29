@@ -3,4 +3,4 @@
  * Used by the CLI package.json, the API root endpoint, and anywhere
  * else that needs to report the current version.
  */
-export const RAFTERS_VERSION = '0.0.32';
+export const RAFTERS_VERSION = '0.0.33';
