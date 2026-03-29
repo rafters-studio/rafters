@@ -44,11 +44,28 @@
         "motion": ["hover", "focus", "active"]
       },
       "states": {
-        "hover": { "required": true, "tokenBased": true },
-        "focusVisible": { "required": true, "ring": true, "offset": true },
-        "active": { "required": true, "feedback": "press" },
-        "disabled": { "required": true, "opacity": true, "cursorNotAllowed": true },
-        "loading": { "required": true, "ariaBusy": true }
+        "hover": {
+          "required": true,
+          "tokenBased": true
+        },
+        "focusVisible": {
+          "required": true,
+          "ring": true,
+          "offset": true
+        },
+        "active": {
+          "required": true,
+          "feedback": "press"
+        },
+        "disabled": {
+          "required": true,
+          "opacity": true,
+          "cursorNotAllowed": true
+        },
+        "loading": {
+          "required": true,
+          "ariaBusy": true
+        }
       },
       "aria": {
         "ariaDisabled": true,
@@ -65,7 +82,107 @@
         "noColorOnly": "icon + text variants available"
       },
       "height": false,
-      "shadow": false
+      "shadow": false,
+      "colorMapping": {
+        "default": {
+          "bg": "primary",
+          "text": "primary-foreground",
+          "border": "primary-border"
+        },
+        "primary": {
+          "bg": "primary",
+          "text": "primary-foreground",
+          "border": "primary-border"
+        },
+        "secondary": {
+          "bg": "secondary",
+          "text": "secondary-foreground",
+          "border": "secondary-border"
+        },
+        "destructive": {
+          "bg": "destructive",
+          "text": "destructive-foreground",
+          "border": "destructive-border"
+        },
+        "success": {
+          "bg": "success",
+          "text": "success-foreground",
+          "border": "success-border"
+        },
+        "warning": {
+          "bg": "warning",
+          "text": "warning-foreground",
+          "border": "warning-border"
+        },
+        "info": {
+          "bg": "info",
+          "text": "info-foreground",
+          "border": "info-border"
+        },
+        "accent": {
+          "bg": "accent",
+          "text": "accent-foreground",
+          "border": "accent-border"
+        },
+        "muted": {
+          "bg": "muted",
+          "text": "muted-foreground",
+          "border": "muted-border"
+        },
+        "outline": {
+          "bg": "transparent",
+          "text": "foreground",
+          "border": "border"
+        },
+        "ghost": {
+          "bg": "transparent",
+          "text": "foreground",
+          "hoverBg": "muted"
+        }
+      },
+      "stateTokens": {
+        "hover": {
+          "bg": "{variant}-hover",
+          "text": "{variant}-hover-foreground"
+        },
+        "focusVisible": {
+          "ring": "ring",
+          "ringOffset": "background",
+          "ringWidth": "2px",
+          "ringOffsetWidth": "2px"
+        },
+        "active": {
+          "bg": "{variant}-active",
+          "text": "{variant}-active-foreground"
+        },
+        "disabled": {
+          "opacity": "0.5",
+          "cursor": "not-allowed"
+        },
+        "loading": {
+          "opacity": "0.7",
+          "cursor": "wait"
+        }
+      },
+      "motionSpec": {
+        "hover": {
+          "property": "colors",
+          "duration": "duration-fast",
+          "easing": "ease-out"
+        },
+        "focus": {
+          "property": "ring",
+          "duration": "duration-fast",
+          "easing": "ease-out"
+        },
+        "active": {
+          "property": "transform",
+          "duration": "duration-fast",
+          "easing": "ease-in"
+        },
+        "motionReduce": true
+      },
+      "radiusSpec": "radius-md"
     },
     {
       "name": "toggle",
@@ -82,11 +199,29 @@
         "motion": ["hover", "focus", "active", "pressed"]
       },
       "states": {
-        "hover": { "required": true, "tokenBased": true },
-        "focusVisible": { "required": true, "ring": true, "offset": true },
-        "active": { "required": true, "feedback": "press" },
-        "pressed": { "required": true, "tokenBased": true, "ariaPressed": true },
-        "disabled": { "required": true, "opacity": true, "cursorNotAllowed": true }
+        "hover": {
+          "required": true,
+          "tokenBased": true
+        },
+        "focusVisible": {
+          "required": true,
+          "ring": true,
+          "offset": true
+        },
+        "active": {
+          "required": true,
+          "feedback": "press"
+        },
+        "pressed": {
+          "required": true,
+          "tokenBased": true,
+          "ariaPressed": true
+        },
+        "disabled": {
+          "required": true,
+          "opacity": true,
+          "cursorNotAllowed": true
+        }
       },
       "aria": {
         "ariaPressed": true,
@@ -103,7 +238,67 @@
         "noColorOnly": "visual + aria state indicator"
       },
       "height": false,
-      "shadow": false
+      "shadow": false,
+      "colorMapping": {
+        "default": {
+          "bg": "primary",
+          "text": "primary-foreground",
+          "border": "primary-border"
+        },
+        "outline": {
+          "bg": "transparent",
+          "text": "foreground",
+          "border": "border"
+        }
+      },
+      "stateTokens": {
+        "hover": {
+          "bg": "{variant}-hover",
+          "text": "{variant}-hover-foreground"
+        },
+        "focusVisible": {
+          "ring": "ring",
+          "ringOffset": "background",
+          "ringWidth": "2px",
+          "ringOffsetWidth": "2px"
+        },
+        "active": {
+          "bg": "{variant}-active",
+          "text": "{variant}-active-foreground"
+        },
+        "disabled": {
+          "opacity": "0.5",
+          "cursor": "not-allowed"
+        },
+        "pressed": {
+          "bg": "accent",
+          "text": "accent-foreground"
+        }
+      },
+      "motionSpec": {
+        "hover": {
+          "property": "colors",
+          "duration": "duration-fast",
+          "easing": "ease-out"
+        },
+        "focus": {
+          "property": "ring",
+          "duration": "duration-fast",
+          "easing": "ease-out"
+        },
+        "active": {
+          "property": "transform",
+          "duration": "duration-fast",
+          "easing": "ease-in"
+        },
+        "pressed": {
+          "property": "colors",
+          "duration": "duration-fast",
+          "easing": "ease-out"
+        },
+        "motionReduce": true
+      },
+      "radiusSpec": "radius-md"
     },
     {
       "name": "toggle-group",
@@ -120,11 +315,29 @@
         "motion": ["hover", "focus", "active", "pressed"]
       },
       "states": {
-        "hover": { "required": true, "tokenBased": true },
-        "focusVisible": { "required": true, "ring": true, "offset": true },
-        "active": { "required": true, "feedback": "press" },
-        "pressed": { "required": true, "tokenBased": true, "ariaPressed": true },
-        "disabled": { "required": true, "opacity": true, "cursorNotAllowed": true }
+        "hover": {
+          "required": true,
+          "tokenBased": true
+        },
+        "focusVisible": {
+          "required": true,
+          "ring": true,
+          "offset": true
+        },
+        "active": {
+          "required": true,
+          "feedback": "press"
+        },
+        "pressed": {
+          "required": true,
+          "tokenBased": true,
+          "ariaPressed": true
+        },
+        "disabled": {
+          "required": true,
+          "opacity": true,
+          "cursorNotAllowed": true
+        }
       },
       "aria": {
         "ariaPressed": true,
@@ -142,7 +355,67 @@
         "noColorOnly": "visual + aria state indicator per item"
       },
       "height": false,
-      "shadow": false
+      "shadow": false,
+      "colorMapping": {
+        "default": {
+          "bg": "primary",
+          "text": "primary-foreground",
+          "border": "primary-border"
+        },
+        "outline": {
+          "bg": "transparent",
+          "text": "foreground",
+          "border": "border"
+        }
+      },
+      "stateTokens": {
+        "hover": {
+          "bg": "{variant}-hover",
+          "text": "{variant}-hover-foreground"
+        },
+        "focusVisible": {
+          "ring": "ring",
+          "ringOffset": "background",
+          "ringWidth": "2px",
+          "ringOffsetWidth": "2px"
+        },
+        "active": {
+          "bg": "{variant}-active",
+          "text": "{variant}-active-foreground"
+        },
+        "disabled": {
+          "opacity": "0.5",
+          "cursor": "not-allowed"
+        },
+        "pressed": {
+          "bg": "accent",
+          "text": "accent-foreground"
+        }
+      },
+      "motionSpec": {
+        "hover": {
+          "property": "colors",
+          "duration": "duration-fast",
+          "easing": "ease-out"
+        },
+        "focus": {
+          "property": "ring",
+          "duration": "duration-fast",
+          "easing": "ease-out"
+        },
+        "active": {
+          "property": "transform",
+          "duration": "duration-fast",
+          "easing": "ease-in"
+        },
+        "pressed": {
+          "property": "colors",
+          "duration": "duration-fast",
+          "easing": "ease-out"
+        },
+        "motionReduce": true
+      },
+      "radiusSpec": "radius-md"
     },
     {
       "name": "input",
@@ -159,11 +432,30 @@
         "motion": ["focus"]
       },
       "states": {
-        "hover": { "required": true, "tokenBased": true, "borderChange": true },
-        "focusVisible": { "required": true, "ring": true, "offset": true },
-        "disabled": { "required": true, "opacity": true, "cursorNotAllowed": true },
-        "error": { "required": true, "tokenBased": true, "borderColor": "destructive" },
-        "readOnly": { "required": true, "cursorDefault": true }
+        "hover": {
+          "required": true,
+          "tokenBased": true,
+          "borderChange": true
+        },
+        "focusVisible": {
+          "required": true,
+          "ring": true,
+          "offset": true
+        },
+        "disabled": {
+          "required": true,
+          "opacity": true,
+          "cursorNotAllowed": true
+        },
+        "error": {
+          "required": true,
+          "tokenBased": true,
+          "borderColor": "destructive"
+        },
+        "readOnly": {
+          "required": true,
+          "cursorDefault": true
+        }
       },
       "aria": {
         "ariaInvalid": true,
@@ -184,7 +476,52 @@
         "errorAnnouncement": "aria-errormessage with aria-live region"
       },
       "height": false,
-      "shadow": false
+      "shadow": false,
+      "colorMapping": {
+        "default": {
+          "bg": "background",
+          "text": "foreground",
+          "border": "input",
+          "placeholder": "muted-foreground"
+        }
+      },
+      "stateTokens": {
+        "hover": {
+          "border": "input-hover"
+        },
+        "focusVisible": {
+          "ring": "ring",
+          "ringOffset": "background",
+          "ringWidth": "2px",
+          "ringOffsetWidth": "2px"
+        },
+        "disabled": {
+          "opacity": "0.5",
+          "cursor": "not-allowed"
+        },
+        "error": {
+          "border": "destructive",
+          "ring": "destructive"
+        },
+        "readOnly": {
+          "bg": "muted",
+          "cursor": "default"
+        }
+      },
+      "motionSpec": {
+        "hover": {
+          "property": "colors",
+          "duration": "duration-fast",
+          "easing": "ease-out"
+        },
+        "focus": {
+          "property": "ring",
+          "duration": "duration-fast",
+          "easing": "ease-out"
+        },
+        "motionReduce": true
+      },
+      "radiusSpec": "radius-md"
     },
     {
       "name": "textarea",
@@ -201,11 +538,30 @@
         "motion": ["focus"]
       },
       "states": {
-        "hover": { "required": true, "tokenBased": true, "borderChange": true },
-        "focusVisible": { "required": true, "ring": true, "offset": true },
-        "disabled": { "required": true, "opacity": true, "cursorNotAllowed": true },
-        "error": { "required": true, "tokenBased": true, "borderColor": "destructive" },
-        "readOnly": { "required": true, "cursorDefault": true }
+        "hover": {
+          "required": true,
+          "tokenBased": true,
+          "borderChange": true
+        },
+        "focusVisible": {
+          "required": true,
+          "ring": true,
+          "offset": true
+        },
+        "disabled": {
+          "required": true,
+          "opacity": true,
+          "cursorNotAllowed": true
+        },
+        "error": {
+          "required": true,
+          "tokenBased": true,
+          "borderColor": "destructive"
+        },
+        "readOnly": {
+          "required": true,
+          "cursorDefault": true
+        }
       },
       "aria": {
         "ariaInvalid": true,
@@ -227,7 +583,52 @@
         "resizeHandle": "visible and keyboard accessible"
       },
       "height": false,
-      "shadow": false
+      "shadow": false,
+      "colorMapping": {
+        "default": {
+          "bg": "background",
+          "text": "foreground",
+          "border": "input",
+          "placeholder": "muted-foreground"
+        }
+      },
+      "stateTokens": {
+        "hover": {
+          "border": "input-hover"
+        },
+        "focusVisible": {
+          "ring": "ring",
+          "ringOffset": "background",
+          "ringWidth": "2px",
+          "ringOffsetWidth": "2px"
+        },
+        "disabled": {
+          "opacity": "0.5",
+          "cursor": "not-allowed"
+        },
+        "error": {
+          "border": "destructive",
+          "ring": "destructive"
+        },
+        "readOnly": {
+          "bg": "muted",
+          "cursor": "default"
+        }
+      },
+      "motionSpec": {
+        "hover": {
+          "property": "colors",
+          "duration": "duration-fast",
+          "easing": "ease-out"
+        },
+        "focus": {
+          "property": "ring",
+          "duration": "duration-fast",
+          "easing": "ease-out"
+        },
+        "motionReduce": true
+      },
+      "radiusSpec": "radius-md"
     },
     {
       "name": "checkbox",
@@ -244,12 +645,34 @@
         "motion": ["checked", "focus"]
       },
       "states": {
-        "hover": { "required": true, "tokenBased": true },
-        "focusVisible": { "required": true, "ring": true, "offset": true },
-        "checked": { "required": true, "tokenBased": true, "ariaChecked": true },
-        "indeterminate": { "required": true, "ariaChecked": "mixed" },
-        "disabled": { "required": true, "opacity": true, "cursorNotAllowed": true },
-        "error": { "required": true, "tokenBased": true, "borderColor": "destructive" }
+        "hover": {
+          "required": true,
+          "tokenBased": true
+        },
+        "focusVisible": {
+          "required": true,
+          "ring": true,
+          "offset": true
+        },
+        "checked": {
+          "required": true,
+          "tokenBased": true,
+          "ariaChecked": true
+        },
+        "indeterminate": {
+          "required": true,
+          "ariaChecked": "mixed"
+        },
+        "disabled": {
+          "required": true,
+          "opacity": true,
+          "cursorNotAllowed": true
+        },
+        "error": {
+          "required": true,
+          "tokenBased": true,
+          "borderColor": "destructive"
+        }
       },
       "aria": {
         "ariaChecked": true,
@@ -269,7 +692,64 @@
         "noColorOnly": "checkmark icon visible in checked state"
       },
       "height": false,
-      "shadow": false
+      "shadow": false,
+      "colorMapping": {
+        "default": {
+          "bg": "background",
+          "text": "primary-foreground",
+          "border": "input",
+          "checkedBg": "primary",
+          "checkedBorder": "primary"
+        }
+      },
+      "stateTokens": {
+        "hover": {
+          "border": "input-hover"
+        },
+        "focusVisible": {
+          "ring": "ring",
+          "ringOffset": "background",
+          "ringWidth": "2px",
+          "ringOffsetWidth": "2px"
+        },
+        "disabled": {
+          "opacity": "0.5",
+          "cursor": "not-allowed"
+        },
+        "error": {
+          "border": "destructive",
+          "ring": "destructive"
+        },
+        "checked": {
+          "bg": "primary",
+          "text": "primary-foreground",
+          "border": "primary"
+        },
+        "indeterminate": {
+          "bg": "primary",
+          "text": "primary-foreground",
+          "border": "primary"
+        }
+      },
+      "motionSpec": {
+        "hover": {
+          "property": "colors",
+          "duration": "duration-fast",
+          "easing": "ease-out"
+        },
+        "focus": {
+          "property": "ring",
+          "duration": "duration-fast",
+          "easing": "ease-out"
+        },
+        "checked": {
+          "property": "colors, transform",
+          "duration": "duration-fast",
+          "easing": "ease-out"
+        },
+        "motionReduce": true
+      },
+      "radiusSpec": "radius-sm"
     },
     {
       "name": "switch",
@@ -286,11 +766,30 @@
         "motion": ["checked", "focus", "hover"]
       },
       "states": {
-        "hover": { "required": true, "tokenBased": true },
-        "focusVisible": { "required": true, "ring": true, "offset": true },
-        "checked": { "required": true, "tokenBased": true, "ariaChecked": true },
-        "disabled": { "required": true, "opacity": true, "cursorNotAllowed": true },
-        "error": { "required": true, "tokenBased": true, "borderColor": "destructive" }
+        "hover": {
+          "required": true,
+          "tokenBased": true
+        },
+        "focusVisible": {
+          "required": true,
+          "ring": true,
+          "offset": true
+        },
+        "checked": {
+          "required": true,
+          "tokenBased": true,
+          "ariaChecked": true
+        },
+        "disabled": {
+          "required": true,
+          "opacity": true,
+          "cursorNotAllowed": true
+        },
+        "error": {
+          "required": true,
+          "tokenBased": true,
+          "borderColor": "destructive"
+        }
       },
       "aria": {
         "role": "switch",
@@ -311,7 +810,58 @@
         "noColorOnly": "position + color change, aria-checked announces state"
       },
       "height": false,
-      "shadow": true
+      "shadow": true,
+      "colorMapping": {
+        "default": {
+          "trackBg": "input",
+          "trackCheckedBg": "primary",
+          "thumbBg": "background"
+        }
+      },
+      "stateTokens": {
+        "hover": {
+          "trackBg": "input-hover"
+        },
+        "focusVisible": {
+          "ring": "ring",
+          "ringOffset": "background",
+          "ringWidth": "2px",
+          "ringOffsetWidth": "2px"
+        },
+        "disabled": {
+          "opacity": "0.5",
+          "cursor": "not-allowed"
+        },
+        "error": {
+          "border": "destructive",
+          "ring": "destructive"
+        },
+        "checked": {
+          "trackBg": "primary"
+        }
+      },
+      "motionSpec": {
+        "hover": {
+          "property": "colors",
+          "duration": "duration-fast",
+          "easing": "ease-out"
+        },
+        "focus": {
+          "property": "ring",
+          "duration": "duration-fast",
+          "easing": "ease-out"
+        },
+        "checked": {
+          "property": "colors, transform",
+          "duration": "duration-fast",
+          "easing": "ease-out"
+        },
+        "motionReduce": true
+      },
+      "shadowSpec": {
+        "thumb": "shadow-sm"
+      },
+      "radiusSpec": "radius-full"
     },
     {
       "name": "radio-group",
@@ -328,11 +878,30 @@
         "motion": ["checked", "focus"]
       },
       "states": {
-        "hover": { "required": true, "tokenBased": true },
-        "focusVisible": { "required": true, "ring": true, "offset": true },
-        "checked": { "required": true, "tokenBased": true, "ariaChecked": true },
-        "disabled": { "required": true, "opacity": true, "cursorNotAllowed": true },
-        "error": { "required": true, "tokenBased": true, "borderColor": "destructive" }
+        "hover": {
+          "required": true,
+          "tokenBased": true
+        },
+        "focusVisible": {
+          "required": true,
+          "ring": true,
+          "offset": true
+        },
+        "checked": {
+          "required": true,
+          "tokenBased": true,
+          "ariaChecked": true
+        },
+        "disabled": {
+          "required": true,
+          "opacity": true,
+          "cursorNotAllowed": true
+        },
+        "error": {
+          "required": true,
+          "tokenBased": true,
+          "borderColor": "destructive"
+        }
       },
       "aria": {
         "role": "radiogroup",
@@ -354,7 +923,56 @@
         "noColorOnly": "filled dot indicator in checked state"
       },
       "height": false,
-      "shadow": false
+      "shadow": false,
+      "colorMapping": {
+        "default": {
+          "bg": "background",
+          "text": "primary",
+          "border": "input",
+          "checkedIndicator": "primary"
+        }
+      },
+      "stateTokens": {
+        "hover": {
+          "border": "input-hover"
+        },
+        "focusVisible": {
+          "ring": "ring",
+          "ringOffset": "background",
+          "ringWidth": "2px",
+          "ringOffsetWidth": "2px"
+        },
+        "disabled": {
+          "opacity": "0.5",
+          "cursor": "not-allowed"
+        },
+        "error": {
+          "border": "destructive",
+          "ring": "destructive"
+        },
+        "checked": {
+          "indicatorBg": "primary"
+        }
+      },
+      "motionSpec": {
+        "hover": {
+          "property": "colors",
+          "duration": "duration-fast",
+          "easing": "ease-out"
+        },
+        "focus": {
+          "property": "ring",
+          "duration": "duration-fast",
+          "easing": "ease-out"
+        },
+        "checked": {
+          "property": "colors, transform",
+          "duration": "duration-fast",
+          "easing": "ease-out"
+        },
+        "motionReduce": true
+      },
+      "radiusSpec": "radius-full"
     },
     {
       "name": "select",
@@ -371,11 +989,30 @@
         "motion": ["focus", "open"]
       },
       "states": {
-        "hover": { "required": true, "tokenBased": true, "borderChange": true },
-        "focusVisible": { "required": true, "ring": true, "offset": true },
-        "open": { "required": true, "ariaExpanded": true },
-        "disabled": { "required": true, "opacity": true, "cursorNotAllowed": true },
-        "error": { "required": true, "tokenBased": true, "borderColor": "destructive" }
+        "hover": {
+          "required": true,
+          "tokenBased": true,
+          "borderChange": true
+        },
+        "focusVisible": {
+          "required": true,
+          "ring": true,
+          "offset": true
+        },
+        "open": {
+          "required": true,
+          "ariaExpanded": true
+        },
+        "disabled": {
+          "required": true,
+          "opacity": true,
+          "cursorNotAllowed": true
+        },
+        "error": {
+          "required": true,
+          "tokenBased": true,
+          "borderColor": "destructive"
+        }
       },
       "aria": {
         "ariaExpanded": true,
@@ -398,7 +1035,63 @@
         "errorAnnouncement": "aria-errormessage with aria-live region"
       },
       "height": false,
-      "shadow": true
+      "shadow": true,
+      "colorMapping": {
+        "default": {
+          "triggerBg": "background",
+          "triggerText": "foreground",
+          "triggerBorder": "input",
+          "contentBg": "popover",
+          "contentText": "popover-foreground",
+          "itemHoverBg": "accent",
+          "itemHoverText": "accent-foreground"
+        }
+      },
+      "stateTokens": {
+        "hover": {
+          "border": "input-hover"
+        },
+        "focusVisible": {
+          "ring": "ring",
+          "ringOffset": "background",
+          "ringWidth": "2px",
+          "ringOffsetWidth": "2px"
+        },
+        "disabled": {
+          "opacity": "0.5",
+          "cursor": "not-allowed"
+        },
+        "error": {
+          "border": "destructive",
+          "ring": "destructive"
+        },
+        "open": {
+          "ariaExpanded": "true"
+        }
+      },
+      "motionSpec": {
+        "hover": {
+          "property": "colors",
+          "duration": "duration-fast",
+          "easing": "ease-out"
+        },
+        "focus": {
+          "property": "ring",
+          "duration": "duration-fast",
+          "easing": "ease-out"
+        },
+        "open": {
+          "property": "all",
+          "duration": "duration-normal",
+          "easing": "ease-out"
+        },
+        "motionReduce": true
+      },
+      "shadowSpec": {
+        "trigger": "shadow-sm",
+        "content": "shadow-md"
+      },
+      "radiusSpec": "radius-md"
     },
     {
       "name": "slider",
@@ -415,10 +1108,25 @@
         "motion": ["hover", "focus", "drag"]
       },
       "states": {
-        "hover": { "required": true, "tokenBased": true, "thumbScale": true },
-        "focusVisible": { "required": true, "ring": true, "offset": true },
-        "active": { "required": true, "feedback": "drag" },
-        "disabled": { "required": true, "opacity": true, "cursorNotAllowed": true }
+        "hover": {
+          "required": true,
+          "tokenBased": true,
+          "thumbScale": true
+        },
+        "focusVisible": {
+          "required": true,
+          "ring": true,
+          "offset": true
+        },
+        "active": {
+          "required": true,
+          "feedback": "drag"
+        },
+        "disabled": {
+          "required": true,
+          "opacity": true,
+          "cursorNotAllowed": true
+        }
       },
       "aria": {
         "role": "slider",
@@ -440,7 +1148,58 @@
         "noColorOnly": "thumb position indicates value visually"
       },
       "height": false,
-      "shadow": false
+      "shadow": false,
+      "colorMapping": {
+        "default": {
+          "trackBg": "muted",
+          "rangeBg": "primary",
+          "thumbBg": "background",
+          "thumbBorder": "primary"
+        }
+      },
+      "stateTokens": {
+        "hover": {
+          "thumbScale": "1.1"
+        },
+        "focusVisible": {
+          "ring": "ring",
+          "ringOffset": "background",
+          "ringWidth": "2px",
+          "ringOffsetWidth": "2px"
+        },
+        "active": {
+          "bg": "muted",
+          "text": "foreground"
+        },
+        "disabled": {
+          "opacity": "0.5",
+          "cursor": "not-allowed"
+        }
+      },
+      "motionSpec": {
+        "hover": {
+          "property": "colors",
+          "duration": "duration-fast",
+          "easing": "ease-out"
+        },
+        "focus": {
+          "property": "ring",
+          "duration": "duration-fast",
+          "easing": "ease-out"
+        },
+        "active": {
+          "property": "transform",
+          "duration": "duration-fast",
+          "easing": "ease-in"
+        },
+        "drag": {
+          "property": "transform",
+          "duration": "duration-fast",
+          "easing": "ease-out"
+        },
+        "motionReduce": true
+      },
+      "radiusSpec": "radius-full"
     },
     {
       "name": "label",
@@ -457,8 +1216,16 @@
         "motion": []
       },
       "states": {
-        "disabled": { "required": true, "opacity": true, "cursorNotAllowed": true },
-        "error": { "required": true, "tokenBased": true, "color": "destructive" }
+        "disabled": {
+          "required": true,
+          "opacity": true,
+          "cursorNotAllowed": true
+        },
+        "error": {
+          "required": true,
+          "tokenBased": true,
+          "color": "destructive"
+        }
       },
       "aria": {
         "htmlFor": true
@@ -474,7 +1241,22 @@
         "noColorOnly": "required indicator is text asterisk, not just color"
       },
       "height": false,
-      "shadow": false
+      "shadow": false,
+      "colorMapping": {
+        "default": {
+          "text": "foreground"
+        }
+      },
+      "stateTokens": {
+        "disabled": {
+          "opacity": "0.5",
+          "cursor": "not-allowed"
+        },
+        "error": {
+          "border": "destructive",
+          "ring": "destructive"
+        }
+      }
     },
     {
       "name": "badge",
@@ -516,7 +1298,60 @@
         "noColorOnly": "text content conveys meaning, not just color"
       },
       "height": false,
-      "shadow": false
+      "shadow": false,
+      "colorMapping": {
+        "default": {
+          "bg": "primary",
+          "text": "primary-foreground",
+          "border": "primary-border"
+        },
+        "primary": {
+          "bg": "primary",
+          "text": "primary-foreground",
+          "border": "primary-border"
+        },
+        "secondary": {
+          "bg": "secondary",
+          "text": "secondary-foreground",
+          "border": "secondary-border"
+        },
+        "destructive": {
+          "bg": "destructive",
+          "text": "destructive-foreground",
+          "border": "destructive-border"
+        },
+        "success": {
+          "bg": "success",
+          "text": "success-foreground",
+          "border": "success-border"
+        },
+        "warning": {
+          "bg": "warning",
+          "text": "warning-foreground",
+          "border": "warning-border"
+        },
+        "info": {
+          "bg": "info",
+          "text": "info-foreground",
+          "border": "info-border"
+        },
+        "accent": {
+          "bg": "accent",
+          "text": "accent-foreground",
+          "border": "accent-border"
+        },
+        "muted": {
+          "bg": "muted",
+          "text": "muted-foreground",
+          "border": "muted-border"
+        },
+        "outline": {
+          "bg": "transparent",
+          "text": "foreground",
+          "border": "border"
+        }
+      },
+      "radiusSpec": "radius-full"
     },
     {
       "name": "alert",
@@ -548,7 +1383,35 @@
         "noColorOnly": "icon + text convey severity, not just color"
       },
       "height": false,
-      "shadow": false
+      "shadow": false,
+      "colorMapping": {
+        "default": {
+          "bg": "primary",
+          "text": "primary-foreground",
+          "border": "primary-border"
+        },
+        "destructive": {
+          "bg": "destructive",
+          "text": "destructive-foreground",
+          "border": "destructive-border"
+        },
+        "success": {
+          "bg": "success",
+          "text": "success-foreground",
+          "border": "success-border"
+        },
+        "warning": {
+          "bg": "warning",
+          "text": "warning-foreground",
+          "border": "warning-border"
+        },
+        "info": {
+          "bg": "info",
+          "text": "info-foreground",
+          "border": "info-border"
+        }
+      },
+      "radiusSpec": "radius-md"
     },
     {
       "name": "card",
@@ -591,7 +1454,52 @@
         "noColorOnly": "structure provides meaning"
       },
       "height": true,
-      "shadow": true
+      "shadow": true,
+      "colorMapping": {
+        "default": {
+          "bg": "card",
+          "text": "card-foreground",
+          "border": "border"
+        },
+        "outline": {
+          "bg": "transparent",
+          "text": "card-foreground",
+          "border": "border"
+        },
+        "ghost": {
+          "bg": "transparent",
+          "text": "card-foreground"
+        }
+      },
+      "stateTokens": {
+        "hover": {
+          "bg": "muted"
+        },
+        "focusVisible": {
+          "ring": "ring",
+          "ringOffset": "background",
+          "ringWidth": "2px",
+          "ringOffsetWidth": "2px"
+        }
+      },
+      "motionSpec": {
+        "hover": {
+          "property": "colors",
+          "duration": "duration-fast",
+          "easing": "ease-out"
+        },
+        "focus": {
+          "property": "ring",
+          "duration": "duration-fast",
+          "easing": "ease-out"
+        },
+        "motionReduce": true
+      },
+      "shadowSpec": {
+        "default": "shadow-sm",
+        "hover": "shadow-md"
+      },
+      "radiusSpec": "radius-lg"
     },
     {
       "name": "skeleton",
@@ -624,7 +1532,22 @@
         "noColorOnly": "animation indicates loading state"
       },
       "height": false,
-      "shadow": false
+      "shadow": false,
+      "colorMapping": {
+        "default": {
+          "bg": "muted"
+        }
+      },
+      "motionSpec": {
+        "pulse": {
+          "property": "opacity",
+          "duration": "duration-slow",
+          "easing": "ease-in-out",
+          "iterationCount": "infinite"
+        },
+        "motionReduce": true
+      },
+      "radiusSpec": "radius-md"
     },
     {
       "name": "progress",
@@ -641,7 +1564,10 @@
         "motion": ["value-change"]
       },
       "states": {
-        "indeterminate": { "required": true, "animation": "continuous" }
+        "indeterminate": {
+          "required": true,
+          "animation": "continuous"
+        }
       },
       "aria": {
         "role": "progressbar",
@@ -662,7 +1588,28 @@
         "noColorOnly": "bar width indicates progress, aria-valuetext provides number"
       },
       "height": false,
-      "shadow": false
+      "shadow": false,
+      "colorMapping": {
+        "default": {
+          "trackBg": "muted",
+          "barBg": "primary"
+        }
+      },
+      "stateTokens": {
+        "indeterminate": {
+          "barBg": "primary",
+          "animation": "indeterminate-progress"
+        }
+      },
+      "motionSpec": {
+        "valueChange": {
+          "property": "width",
+          "duration": "duration-normal",
+          "easing": "ease-out"
+        },
+        "motionReduce": true
+      },
+      "radiusSpec": "radius-full"
     },
     {
       "name": "spinner",
@@ -695,7 +1642,21 @@
         "noColorOnly": "aria-label provides loading context to assistive tech"
       },
       "height": false,
-      "shadow": false
+      "shadow": false,
+      "colorMapping": {
+        "default": {
+          "color": "primary"
+        }
+      },
+      "motionSpec": {
+        "spin": {
+          "property": "transform",
+          "duration": "duration-slow",
+          "easing": "linear",
+          "iterationCount": "infinite"
+        },
+        "motionReduce": true
+      }
     },
     {
       "name": "avatar",
@@ -727,7 +1688,14 @@
         "noColorOnly": "fallback initials when image fails"
       },
       "height": false,
-      "shadow": false
+      "shadow": false,
+      "colorMapping": {
+        "default": {
+          "fallbackBg": "muted",
+          "fallbackText": "muted-foreground"
+        }
+      },
+      "radiusSpec": "radius-full"
     },
     {
       "name": "empty",
@@ -759,7 +1727,13 @@
         "noColorOnly": "illustration + text convey empty state"
       },
       "height": false,
-      "shadow": false
+      "shadow": false,
+      "colorMapping": {
+        "default": {
+          "text": "muted-foreground",
+          "iconColor": "muted-foreground"
+        }
+      }
     },
     {
       "name": "image",
@@ -776,8 +1750,14 @@
         "motion": ["loading"]
       },
       "states": {
-        "loading": { "required": true, "skeleton": true },
-        "error": { "required": true, "fallback": true }
+        "loading": {
+          "required": true,
+          "skeleton": true
+        },
+        "error": {
+          "required": true,
+          "fallback": true
+        }
       },
       "aria": {
         "alt": true,
@@ -794,7 +1774,29 @@
         "noColorOnly": "alt text describes image content"
       },
       "height": false,
-      "shadow": true
+      "shadow": true,
+      "stateTokens": {
+        "error": {
+          "border": "destructive",
+          "ring": "destructive"
+        },
+        "loading": {
+          "opacity": "0.7",
+          "cursor": "wait"
+        }
+      },
+      "motionSpec": {
+        "loading": {
+          "property": "opacity",
+          "duration": "duration-normal",
+          "easing": "ease-out"
+        },
+        "motionReduce": true
+      },
+      "shadowSpec": {
+        "default": "shadow-sm"
+      },
+      "radiusSpec": "radius-md"
     },
     {
       "name": "kbd",
@@ -823,7 +1825,18 @@
         "noColorOnly": "border + shadow provides visual distinction beyond color"
       },
       "height": true,
-      "shadow": true
+      "shadow": true,
+      "colorMapping": {
+        "default": {
+          "bg": "muted",
+          "text": "muted-foreground",
+          "border": "border"
+        }
+      },
+      "shadowSpec": {
+        "default": "shadow-sm"
+      },
+      "radiusSpec": "radius-sm"
     },
     {
       "name": "separator",
@@ -855,7 +1868,12 @@
         "noColorOnly": "visible line, not just spacing"
       },
       "height": false,
-      "shadow": false
+      "shadow": false,
+      "colorMapping": {
+        "default": {
+          "bg": "border"
+        }
+      }
     },
     {
       "name": "typography",
@@ -896,7 +1914,44 @@
         "noColorOnly": "semantic elements convey hierarchy"
       },
       "height": false,
-      "shadow": false
+      "shadow": false,
+      "colorMapping": {
+        "h1": {
+          "text": "foreground"
+        },
+        "h2": {
+          "text": "foreground"
+        },
+        "h3": {
+          "text": "foreground"
+        },
+        "h4": {
+          "text": "foreground"
+        },
+        "p": {
+          "text": "foreground"
+        },
+        "lead": {
+          "text": "muted-foreground"
+        },
+        "large": {
+          "text": "foreground"
+        },
+        "small": {
+          "text": "muted-foreground"
+        },
+        "muted": {
+          "text": "muted-foreground"
+        },
+        "code": {
+          "bg": "muted",
+          "text": "foreground"
+        },
+        "blockquote": {
+          "text": "foreground",
+          "border": "border"
+        }
+      }
     },
     {
       "name": "dialog",
@@ -913,7 +1968,10 @@
         "motion": ["open", "close"]
       },
       "states": {
-        "open": { "required": true, "ariaModal": true }
+        "open": {
+          "required": true,
+          "ariaModal": true
+        }
       },
       "aria": {
         "role": "dialog",
@@ -936,7 +1994,38 @@
       },
       "height": false,
       "shadow": true,
-      "depth": true
+      "depth": true,
+      "colorMapping": {
+        "default": {
+          "overlayBg": "overlay",
+          "contentBg": "background",
+          "contentText": "foreground",
+          "titleText": "foreground",
+          "descriptionText": "muted-foreground"
+        }
+      },
+      "stateTokens": {
+        "open": {
+          "ariaExpanded": "true"
+        }
+      },
+      "motionSpec": {
+        "open": {
+          "property": "all",
+          "duration": "duration-normal",
+          "easing": "ease-out"
+        },
+        "close": {
+          "property": "all",
+          "duration": "duration-fast",
+          "easing": "ease-in"
+        },
+        "motionReduce": true
+      },
+      "shadowSpec": {
+        "default": "shadow-lg"
+      },
+      "radiusSpec": "radius-lg"
     },
     {
       "name": "alert-dialog",
@@ -953,7 +2042,10 @@
         "motion": ["open", "close"]
       },
       "states": {
-        "open": { "required": true, "ariaModal": true }
+        "open": {
+          "required": true,
+          "ariaModal": true
+        }
       },
       "aria": {
         "role": "alertdialog",
@@ -977,7 +2069,38 @@
       },
       "height": false,
       "shadow": true,
-      "depth": true
+      "depth": true,
+      "colorMapping": {
+        "default": {
+          "overlayBg": "overlay",
+          "contentBg": "background",
+          "contentText": "foreground",
+          "titleText": "foreground",
+          "descriptionText": "muted-foreground"
+        }
+      },
+      "stateTokens": {
+        "open": {
+          "ariaExpanded": "true"
+        }
+      },
+      "motionSpec": {
+        "open": {
+          "property": "all",
+          "duration": "duration-normal",
+          "easing": "ease-out"
+        },
+        "close": {
+          "property": "all",
+          "duration": "duration-fast",
+          "easing": "ease-in"
+        },
+        "motionReduce": true
+      },
+      "shadowSpec": {
+        "default": "shadow-lg"
+      },
+      "radiusSpec": "radius-lg"
     },
     {
       "name": "sheet",
@@ -994,7 +2117,10 @@
         "motion": ["slide-in", "slide-out"]
       },
       "states": {
-        "open": { "required": true, "ariaModal": true }
+        "open": {
+          "required": true,
+          "ariaModal": true
+        }
       },
       "aria": {
         "role": "dialog",
@@ -1017,7 +2143,47 @@
       },
       "height": false,
       "shadow": true,
-      "depth": true
+      "depth": true,
+      "colorMapping": {
+        "default": {
+          "overlayBg": "overlay",
+          "contentBg": "background",
+          "contentText": "foreground",
+          "border": "border"
+        }
+      },
+      "stateTokens": {
+        "open": {
+          "ariaExpanded": "true"
+        }
+      },
+      "motionSpec": {
+        "open": {
+          "property": "all",
+          "duration": "duration-normal",
+          "easing": "ease-out"
+        },
+        "close": {
+          "property": "all",
+          "duration": "duration-fast",
+          "easing": "ease-in"
+        },
+        "slideIn": {
+          "property": "transform, opacity",
+          "duration": "duration-normal",
+          "easing": "ease-out"
+        },
+        "slideOut": {
+          "property": "transform, opacity",
+          "duration": "duration-fast",
+          "easing": "ease-in"
+        },
+        "motionReduce": true
+      },
+      "shadowSpec": {
+        "default": "shadow-lg"
+      },
+      "radiusSpec": "radius-lg"
     },
     {
       "name": "popover",
@@ -1034,7 +2200,10 @@
         "motion": ["open", "close"]
       },
       "states": {
-        "open": { "required": true, "ariaExpanded": true }
+        "open": {
+          "required": true,
+          "ariaExpanded": true
+        }
       },
       "aria": {
         "ariaExpanded": true,
@@ -1055,7 +2224,36 @@
       },
       "height": false,
       "shadow": true,
-      "depth": true
+      "depth": true,
+      "colorMapping": {
+        "default": {
+          "bg": "popover",
+          "text": "popover-foreground",
+          "border": "border"
+        }
+      },
+      "stateTokens": {
+        "open": {
+          "ariaExpanded": "true"
+        }
+      },
+      "motionSpec": {
+        "open": {
+          "property": "all",
+          "duration": "duration-normal",
+          "easing": "ease-out"
+        },
+        "close": {
+          "property": "all",
+          "duration": "duration-fast",
+          "easing": "ease-in"
+        },
+        "motionReduce": true
+      },
+      "shadowSpec": {
+        "default": "shadow-lg"
+      },
+      "radiusSpec": "radius-md"
     },
     {
       "name": "hover-card",
@@ -1072,7 +2270,9 @@
         "motion": ["open", "close"]
       },
       "states": {
-        "open": { "required": true }
+        "open": {
+          "required": true
+        }
       },
       "aria": {
         "ariaExpanded": true
@@ -1091,7 +2291,36 @@
       },
       "height": false,
       "shadow": true,
-      "depth": true
+      "depth": true,
+      "colorMapping": {
+        "default": {
+          "bg": "popover",
+          "text": "popover-foreground",
+          "border": "border"
+        }
+      },
+      "stateTokens": {
+        "open": {
+          "ariaExpanded": "true"
+        }
+      },
+      "motionSpec": {
+        "open": {
+          "property": "all",
+          "duration": "duration-normal",
+          "easing": "ease-out"
+        },
+        "close": {
+          "property": "all",
+          "duration": "duration-fast",
+          "easing": "ease-in"
+        },
+        "motionReduce": true
+      },
+      "shadowSpec": {
+        "default": "shadow-lg"
+      },
+      "radiusSpec": "radius-md"
     },
     {
       "name": "tooltip",
@@ -1108,7 +2337,9 @@
         "motion": ["open", "close"]
       },
       "states": {
-        "open": { "required": true }
+        "open": {
+          "required": true
+        }
       },
       "aria": {
         "role": "tooltip",
@@ -1128,7 +2359,35 @@
       },
       "height": false,
       "shadow": true,
-      "depth": true
+      "depth": true,
+      "colorMapping": {
+        "default": {
+          "bg": "primary",
+          "text": "primary-foreground"
+        }
+      },
+      "stateTokens": {
+        "open": {
+          "ariaExpanded": "true"
+        }
+      },
+      "motionSpec": {
+        "open": {
+          "property": "all",
+          "duration": "duration-normal",
+          "easing": "ease-out"
+        },
+        "close": {
+          "property": "all",
+          "duration": "duration-fast",
+          "easing": "ease-in"
+        },
+        "motionReduce": true
+      },
+      "shadowSpec": {
+        "default": "shadow-lg"
+      },
+      "radiusSpec": "radius-md"
     },
     {
       "name": "command",
@@ -1145,8 +2404,14 @@
         "motion": ["open", "close"]
       },
       "states": {
-        "open": { "required": true, "ariaModal": true },
-        "empty": { "required": true, "emptyState": true }
+        "open": {
+          "required": true,
+          "ariaModal": true
+        },
+        "empty": {
+          "required": true,
+          "emptyState": true
+        }
       },
       "aria": {
         "role": "dialog",
@@ -1172,7 +2437,44 @@
       },
       "height": false,
       "shadow": true,
-      "depth": true
+      "depth": true,
+      "colorMapping": {
+        "default": {
+          "bg": "popover",
+          "text": "popover-foreground",
+          "inputBg": "transparent",
+          "inputText": "foreground",
+          "itemHoverBg": "accent",
+          "itemHoverText": "accent-foreground",
+          "separatorBg": "border",
+          "emptyText": "muted-foreground"
+        }
+      },
+      "stateTokens": {
+        "open": {
+          "ariaExpanded": "true"
+        },
+        "empty": {
+          "text": "muted-foreground"
+        }
+      },
+      "motionSpec": {
+        "open": {
+          "property": "all",
+          "duration": "duration-normal",
+          "easing": "ease-out"
+        },
+        "close": {
+          "property": "all",
+          "duration": "duration-fast",
+          "easing": "ease-in"
+        },
+        "motionReduce": true
+      },
+      "shadowSpec": {
+        "default": "shadow-lg"
+      },
+      "radiusSpec": "radius-lg"
     },
     {
       "name": "dropdown-menu",
@@ -1189,9 +2491,18 @@
         "motion": ["open", "close"]
       },
       "states": {
-        "open": { "required": true, "ariaExpanded": true },
-        "itemFocused": { "required": true, "tokenBased": true },
-        "itemDisabled": { "required": true, "opacity": true }
+        "open": {
+          "required": true,
+          "ariaExpanded": true
+        },
+        "itemFocused": {
+          "required": true,
+          "tokenBased": true
+        },
+        "itemDisabled": {
+          "required": true,
+          "opacity": true
+        }
       },
       "aria": {
         "role": "menu",
@@ -1219,7 +2530,47 @@
       },
       "height": false,
       "shadow": true,
-      "depth": true
+      "depth": true,
+      "colorMapping": {
+        "default": {
+          "bg": "popover",
+          "text": "popover-foreground",
+          "itemHoverBg": "accent",
+          "itemHoverText": "accent-foreground",
+          "separatorBg": "border",
+          "disabledText": "muted-foreground"
+        }
+      },
+      "stateTokens": {
+        "open": {
+          "ariaExpanded": "true"
+        },
+        "itemFocused": {
+          "bg": "accent",
+          "text": "accent-foreground"
+        },
+        "itemDisabled": {
+          "opacity": "0.5",
+          "cursor": "not-allowed"
+        }
+      },
+      "motionSpec": {
+        "open": {
+          "property": "all",
+          "duration": "duration-normal",
+          "easing": "ease-out"
+        },
+        "close": {
+          "property": "all",
+          "duration": "duration-fast",
+          "easing": "ease-in"
+        },
+        "motionReduce": true
+      },
+      "shadowSpec": {
+        "default": "shadow-lg"
+      },
+      "radiusSpec": "radius-md"
     },
     {
       "name": "context-menu",
@@ -1236,9 +2587,17 @@
         "motion": ["open", "close"]
       },
       "states": {
-        "open": { "required": true },
-        "itemFocused": { "required": true, "tokenBased": true },
-        "itemDisabled": { "required": true, "opacity": true }
+        "open": {
+          "required": true
+        },
+        "itemFocused": {
+          "required": true,
+          "tokenBased": true
+        },
+        "itemDisabled": {
+          "required": true,
+          "opacity": true
+        }
       },
       "aria": {
         "role": "menu",
@@ -1264,7 +2623,47 @@
       },
       "height": false,
       "shadow": true,
-      "depth": true
+      "depth": true,
+      "colorMapping": {
+        "default": {
+          "bg": "popover",
+          "text": "popover-foreground",
+          "itemHoverBg": "accent",
+          "itemHoverText": "accent-foreground",
+          "separatorBg": "border",
+          "disabledText": "muted-foreground"
+        }
+      },
+      "stateTokens": {
+        "open": {
+          "ariaExpanded": "true"
+        },
+        "itemFocused": {
+          "bg": "accent",
+          "text": "accent-foreground"
+        },
+        "itemDisabled": {
+          "opacity": "0.5",
+          "cursor": "not-allowed"
+        }
+      },
+      "motionSpec": {
+        "open": {
+          "property": "all",
+          "duration": "duration-normal",
+          "easing": "ease-out"
+        },
+        "close": {
+          "property": "all",
+          "duration": "duration-fast",
+          "easing": "ease-in"
+        },
+        "motionReduce": true
+      },
+      "shadowSpec": {
+        "default": "shadow-lg"
+      },
+      "radiusSpec": "radius-md"
     },
     {
       "name": "menubar",
@@ -1281,9 +2680,18 @@
         "motion": ["open", "close"]
       },
       "states": {
-        "open": { "required": true, "ariaExpanded": true },
-        "itemFocused": { "required": true, "tokenBased": true },
-        "itemDisabled": { "required": true, "opacity": true }
+        "open": {
+          "required": true,
+          "ariaExpanded": true
+        },
+        "itemFocused": {
+          "required": true,
+          "tokenBased": true
+        },
+        "itemDisabled": {
+          "required": true,
+          "opacity": true
+        }
       },
       "aria": {
         "role": "menubar",
@@ -1308,7 +2716,48 @@
       },
       "height": false,
       "shadow": true,
-      "depth": true
+      "depth": true,
+      "colorMapping": {
+        "default": {
+          "bg": "background",
+          "text": "foreground",
+          "itemHoverBg": "accent",
+          "itemHoverText": "accent-foreground",
+          "dropdownBg": "popover",
+          "dropdownText": "popover-foreground",
+          "separatorBg": "border"
+        }
+      },
+      "stateTokens": {
+        "open": {
+          "ariaExpanded": "true"
+        },
+        "itemFocused": {
+          "bg": "accent",
+          "text": "accent-foreground"
+        },
+        "itemDisabled": {
+          "opacity": "0.5",
+          "cursor": "not-allowed"
+        }
+      },
+      "motionSpec": {
+        "open": {
+          "property": "all",
+          "duration": "duration-normal",
+          "easing": "ease-out"
+        },
+        "close": {
+          "property": "all",
+          "duration": "duration-fast",
+          "easing": "ease-in"
+        },
+        "motionReduce": true
+      },
+      "shadowSpec": {
+        "default": "shadow-lg"
+      },
+      "radiusSpec": "radius-md"
     },
     {
       "name": "navigation-menu",
@@ -1325,9 +2774,18 @@
         "motion": ["open", "close", "indicator"]
       },
       "states": {
-        "open": { "required": true, "ariaExpanded": true },
-        "active": { "required": true, "ariaCurrent": "page" },
-        "itemFocused": { "required": true, "tokenBased": true }
+        "open": {
+          "required": true,
+          "ariaExpanded": true
+        },
+        "active": {
+          "required": true,
+          "ariaCurrent": "page"
+        },
+        "itemFocused": {
+          "required": true,
+          "tokenBased": true
+        }
       },
       "aria": {
         "role": "navigation",
@@ -1350,7 +2808,58 @@
       },
       "height": false,
       "shadow": true,
-      "depth": true
+      "depth": true,
+      "colorMapping": {
+        "default": {
+          "bg": "background",
+          "text": "foreground",
+          "triggerHoverBg": "accent",
+          "triggerHoverText": "accent-foreground",
+          "contentBg": "popover",
+          "contentText": "popover-foreground",
+          "indicatorBg": "primary"
+        }
+      },
+      "stateTokens": {
+        "active": {
+          "bg": "muted",
+          "text": "foreground"
+        },
+        "open": {
+          "ariaExpanded": "true"
+        },
+        "itemFocused": {
+          "bg": "accent",
+          "text": "accent-foreground"
+        }
+      },
+      "motionSpec": {
+        "active": {
+          "property": "transform",
+          "duration": "duration-fast",
+          "easing": "ease-in"
+        },
+        "open": {
+          "property": "all",
+          "duration": "duration-normal",
+          "easing": "ease-out"
+        },
+        "close": {
+          "property": "all",
+          "duration": "duration-fast",
+          "easing": "ease-in"
+        },
+        "indicator": {
+          "property": "transform, width",
+          "duration": "duration-fast",
+          "easing": "ease-out"
+        },
+        "motionReduce": true
+      },
+      "shadowSpec": {
+        "default": "shadow-lg"
+      },
+      "radiusSpec": "radius-md"
     },
     {
       "name": "container",
@@ -1425,10 +2934,26 @@
         "motion": ["expand", "collapse"]
       },
       "states": {
-        "hover": { "required": true, "tokenBased": true, "onTrigger": true },
-        "focusVisible": { "required": true, "ring": true, "offset": true, "onTrigger": true },
-        "expanded": { "required": true, "ariaExpanded": true },
-        "disabled": { "required": true, "opacity": true, "cursorNotAllowed": true }
+        "hover": {
+          "required": true,
+          "tokenBased": true,
+          "onTrigger": true
+        },
+        "focusVisible": {
+          "required": true,
+          "ring": true,
+          "offset": true,
+          "onTrigger": true
+        },
+        "expanded": {
+          "required": true,
+          "ariaExpanded": true
+        },
+        "disabled": {
+          "required": true,
+          "opacity": true,
+          "cursorNotAllowed": true
+        }
       },
       "aria": {
         "ariaExpanded": true,
@@ -1447,7 +2972,58 @@
         "noColorOnly": "chevron rotation + aria-expanded indicates state"
       },
       "height": false,
-      "shadow": false
+      "shadow": false,
+      "colorMapping": {
+        "default": {
+          "bg": "background",
+          "text": "foreground",
+          "triggerHoverText": "foreground",
+          "border": "border",
+          "contentText": "foreground"
+        }
+      },
+      "stateTokens": {
+        "hover": {
+          "bg": "muted"
+        },
+        "focusVisible": {
+          "ring": "ring",
+          "ringOffset": "background",
+          "ringWidth": "2px",
+          "ringOffsetWidth": "2px"
+        },
+        "disabled": {
+          "opacity": "0.5",
+          "cursor": "not-allowed"
+        },
+        "expanded": {
+          "ariaExpanded": "true"
+        }
+      },
+      "motionSpec": {
+        "hover": {
+          "property": "colors",
+          "duration": "duration-fast",
+          "easing": "ease-out"
+        },
+        "focus": {
+          "property": "ring",
+          "duration": "duration-fast",
+          "easing": "ease-out"
+        },
+        "expand": {
+          "property": "height, opacity",
+          "duration": "duration-normal",
+          "easing": "ease-out"
+        },
+        "collapse": {
+          "property": "height, opacity",
+          "duration": "duration-fast",
+          "easing": "ease-in"
+        },
+        "motionReduce": true
+      },
+      "radiusSpec": "radius-md"
     },
     {
       "name": "collapsible",
@@ -1464,10 +3040,26 @@
         "motion": ["expand", "collapse"]
       },
       "states": {
-        "hover": { "required": true, "tokenBased": true, "onTrigger": true },
-        "focusVisible": { "required": true, "ring": true, "offset": true, "onTrigger": true },
-        "expanded": { "required": true, "ariaExpanded": true },
-        "disabled": { "required": true, "opacity": true, "cursorNotAllowed": true }
+        "hover": {
+          "required": true,
+          "tokenBased": true,
+          "onTrigger": true
+        },
+        "focusVisible": {
+          "required": true,
+          "ring": true,
+          "offset": true,
+          "onTrigger": true
+        },
+        "expanded": {
+          "required": true,
+          "ariaExpanded": true
+        },
+        "disabled": {
+          "required": true,
+          "opacity": true,
+          "cursorNotAllowed": true
+        }
       },
       "aria": {
         "ariaExpanded": true,
@@ -1485,7 +3077,57 @@
         "noColorOnly": "icon rotation + aria-expanded indicates state"
       },
       "height": false,
-      "shadow": false
+      "shadow": false,
+      "colorMapping": {
+        "default": {
+          "bg": "background",
+          "text": "foreground",
+          "triggerHoverBg": "muted",
+          "border": "border"
+        }
+      },
+      "stateTokens": {
+        "hover": {
+          "bg": "muted"
+        },
+        "focusVisible": {
+          "ring": "ring",
+          "ringOffset": "background",
+          "ringWidth": "2px",
+          "ringOffsetWidth": "2px"
+        },
+        "disabled": {
+          "opacity": "0.5",
+          "cursor": "not-allowed"
+        },
+        "expanded": {
+          "ariaExpanded": "true"
+        }
+      },
+      "motionSpec": {
+        "hover": {
+          "property": "colors",
+          "duration": "duration-fast",
+          "easing": "ease-out"
+        },
+        "focus": {
+          "property": "ring",
+          "duration": "duration-fast",
+          "easing": "ease-out"
+        },
+        "expand": {
+          "property": "height, opacity",
+          "duration": "duration-normal",
+          "easing": "ease-out"
+        },
+        "collapse": {
+          "property": "height, opacity",
+          "duration": "duration-fast",
+          "easing": "ease-in"
+        },
+        "motionReduce": true
+      },
+      "radiusSpec": "radius-md"
     },
     {
       "name": "tabs",
@@ -1502,10 +3144,27 @@
         "motion": ["active-indicator"]
       },
       "states": {
-        "hover": { "required": true, "tokenBased": true, "onTab": true },
-        "focusVisible": { "required": true, "ring": true, "offset": true, "onTab": true },
-        "active": { "required": true, "tokenBased": true, "ariaSelected": true },
-        "disabled": { "required": true, "opacity": true, "cursorNotAllowed": true }
+        "hover": {
+          "required": true,
+          "tokenBased": true,
+          "onTab": true
+        },
+        "focusVisible": {
+          "required": true,
+          "ring": true,
+          "offset": true,
+          "onTab": true
+        },
+        "active": {
+          "required": true,
+          "tokenBased": true,
+          "ariaSelected": true
+        },
+        "disabled": {
+          "required": true,
+          "opacity": true,
+          "cursorNotAllowed": true
+        }
       },
       "aria": {
         "role": "tablist",
@@ -1528,7 +3187,58 @@
         "noColorOnly": "active indicator (underline/background) + aria-selected"
       },
       "height": false,
-      "shadow": false
+      "shadow": false,
+      "colorMapping": {
+        "default": {
+          "listBg": "muted",
+          "triggerText": "muted-foreground",
+          "triggerActiveBg": "background",
+          "triggerActiveText": "foreground"
+        }
+      },
+      "stateTokens": {
+        "hover": {
+          "bg": "muted"
+        },
+        "focusVisible": {
+          "ring": "ring",
+          "ringOffset": "background",
+          "ringWidth": "2px",
+          "ringOffsetWidth": "2px"
+        },
+        "active": {
+          "bg": "muted",
+          "text": "foreground"
+        },
+        "disabled": {
+          "opacity": "0.5",
+          "cursor": "not-allowed"
+        }
+      },
+      "motionSpec": {
+        "hover": {
+          "property": "colors",
+          "duration": "duration-fast",
+          "easing": "ease-out"
+        },
+        "focus": {
+          "property": "ring",
+          "duration": "duration-fast",
+          "easing": "ease-out"
+        },
+        "active": {
+          "property": "transform",
+          "duration": "duration-fast",
+          "easing": "ease-in"
+        },
+        "activeIndicator": {
+          "property": "transform, width",
+          "duration": "duration-fast",
+          "easing": "ease-out"
+        },
+        "motionReduce": true
+      },
+      "radiusSpec": "radius-md"
     },
     {
       "name": "sidebar",
@@ -1545,11 +3255,30 @@
         "motion": ["collapse", "expand"]
       },
       "states": {
-        "collapsed": { "required": true, "ariaExpanded": false },
-        "expanded": { "required": true, "ariaExpanded": true },
-        "hover": { "required": true, "tokenBased": true, "onItems": true },
-        "focusVisible": { "required": true, "ring": true, "offset": true, "onItems": true },
-        "active": { "required": true, "ariaCurrent": "page", "onItems": true }
+        "collapsed": {
+          "required": true,
+          "ariaExpanded": false
+        },
+        "expanded": {
+          "required": true,
+          "ariaExpanded": true
+        },
+        "hover": {
+          "required": true,
+          "tokenBased": true,
+          "onItems": true
+        },
+        "focusVisible": {
+          "required": true,
+          "ring": true,
+          "offset": true,
+          "onItems": true
+        },
+        "active": {
+          "required": true,
+          "ariaCurrent": "page",
+          "onItems": true
+        }
       },
       "aria": {
         "role": "navigation",
@@ -1569,7 +3298,71 @@
         "resizeHandle": "keyboard accessible resize"
       },
       "height": false,
-      "shadow": true
+      "shadow": true,
+      "colorMapping": {
+        "default": {
+          "bg": "sidebar",
+          "text": "sidebar-foreground",
+          "itemHoverBg": "sidebar-accent",
+          "itemHoverText": "sidebar-accent-foreground",
+          "itemActiveBg": "sidebar-primary",
+          "itemActiveText": "sidebar-primary-foreground",
+          "border": "sidebar-border"
+        }
+      },
+      "stateTokens": {
+        "hover": {
+          "bg": "muted"
+        },
+        "focusVisible": {
+          "ring": "ring",
+          "ringOffset": "background",
+          "ringWidth": "2px",
+          "ringOffsetWidth": "2px"
+        },
+        "active": {
+          "bg": "muted",
+          "text": "foreground"
+        },
+        "expanded": {
+          "ariaExpanded": "true"
+        },
+        "collapsed": {
+          "ariaExpanded": "false"
+        }
+      },
+      "motionSpec": {
+        "hover": {
+          "property": "colors",
+          "duration": "duration-fast",
+          "easing": "ease-out"
+        },
+        "focus": {
+          "property": "ring",
+          "duration": "duration-fast",
+          "easing": "ease-out"
+        },
+        "active": {
+          "property": "transform",
+          "duration": "duration-fast",
+          "easing": "ease-in"
+        },
+        "expand": {
+          "property": "height, opacity",
+          "duration": "duration-normal",
+          "easing": "ease-out"
+        },
+        "collapse": {
+          "property": "height, opacity",
+          "duration": "duration-fast",
+          "easing": "ease-in"
+        },
+        "motionReduce": true
+      },
+      "shadowSpec": {
+        "default": "shadow-sm"
+      },
+      "radiusSpec": "radius-md"
     },
     {
       "name": "scroll-area",
@@ -1586,8 +3379,14 @@
         "motion": ["scroll-indicator"]
       },
       "states": {
-        "scrolling": { "required": true, "scrollbarVisible": true },
-        "overflow": { "required": true, "fadeIndicator": true }
+        "scrolling": {
+          "required": true,
+          "scrollbarVisible": true
+        },
+        "overflow": {
+          "required": true,
+          "fadeIndicator": true
+        }
       },
       "aria": {
         "role": "region",
@@ -1605,7 +3404,30 @@
         "noColorOnly": "scroll indicator shadow/fade shows overflow"
       },
       "height": false,
-      "shadow": false
+      "shadow": false,
+      "colorMapping": {
+        "default": {
+          "scrollbarBg": "muted",
+          "scrollbarThumb": "muted-foreground"
+        }
+      },
+      "stateTokens": {
+        "scrolling": {
+          "scrollbarOpacity": "1"
+        },
+        "overflow": {
+          "fadeGradient": "muted"
+        }
+      },
+      "motionSpec": {
+        "scrollIndicator": {
+          "property": "opacity",
+          "duration": "duration-fast",
+          "easing": "ease-out"
+        },
+        "motionReduce": true
+      },
+      "radiusSpec": "radius-full"
     },
     {
       "name": "resizable",
@@ -1622,9 +3444,20 @@
         "motion": ["resize"]
       },
       "states": {
-        "hover": { "required": true, "tokenBased": true, "onHandle": true },
-        "focusVisible": { "required": true, "ring": true, "onHandle": true },
-        "dragging": { "required": true, "cursor": "col-resize or row-resize" }
+        "hover": {
+          "required": true,
+          "tokenBased": true,
+          "onHandle": true
+        },
+        "focusVisible": {
+          "required": true,
+          "ring": true,
+          "onHandle": true
+        },
+        "dragging": {
+          "required": true,
+          "cursor": "col-resize or row-resize"
+        }
       },
       "aria": {
         "role": "separator",
@@ -1644,7 +3477,45 @@
         "noColorOnly": "handle is visually distinct with grip indicator"
       },
       "height": false,
-      "shadow": false
+      "shadow": false,
+      "colorMapping": {
+        "default": {
+          "handleBg": "border",
+          "handleHoverBg": "muted-foreground"
+        }
+      },
+      "stateTokens": {
+        "hover": {
+          "bg": "muted"
+        },
+        "focusVisible": {
+          "ring": "ring",
+          "ringOffset": "background",
+          "ringWidth": "2px",
+          "ringOffsetWidth": "2px"
+        },
+        "dragging": {
+          "cursor": "col-resize"
+        }
+      },
+      "motionSpec": {
+        "hover": {
+          "property": "colors",
+          "duration": "duration-fast",
+          "easing": "ease-out"
+        },
+        "focus": {
+          "property": "ring",
+          "duration": "duration-fast",
+          "easing": "ease-out"
+        },
+        "resize": {
+          "property": "flex-basis",
+          "duration": "duration-fast",
+          "easing": "ease-out"
+        },
+        "motionReduce": true
+      }
     },
     {
       "name": "breadcrumb",
@@ -1661,9 +3532,21 @@
         "motion": []
       },
       "states": {
-        "hover": { "required": true, "tokenBased": true, "onLinks": true },
-        "focusVisible": { "required": true, "ring": true, "offset": true, "onLinks": true },
-        "current": { "required": true, "ariaCurrent": "page" }
+        "hover": {
+          "required": true,
+          "tokenBased": true,
+          "onLinks": true
+        },
+        "focusVisible": {
+          "required": true,
+          "ring": true,
+          "offset": true,
+          "onLinks": true
+        },
+        "current": {
+          "required": true,
+          "ariaCurrent": "page"
+        }
       },
       "aria": {
         "role": "navigation",
@@ -1682,7 +3565,43 @@
         "noColorOnly": "separator characters between items, aria-current on current page"
       },
       "height": false,
-      "shadow": false
+      "shadow": false,
+      "colorMapping": {
+        "default": {
+          "linkText": "muted-foreground",
+          "linkHoverText": "foreground",
+          "currentText": "foreground",
+          "separatorText": "muted-foreground"
+        }
+      },
+      "stateTokens": {
+        "hover": {
+          "bg": "muted"
+        },
+        "focusVisible": {
+          "ring": "ring",
+          "ringOffset": "background",
+          "ringWidth": "2px",
+          "ringOffsetWidth": "2px"
+        },
+        "current": {
+          "text": "foreground",
+          "ariaCurrent": "page"
+        }
+      },
+      "motionSpec": {
+        "hover": {
+          "property": "colors",
+          "duration": "duration-fast",
+          "easing": "ease-out"
+        },
+        "focus": {
+          "property": "ring",
+          "duration": "duration-fast",
+          "easing": "ease-out"
+        },
+        "motionReduce": true
+      }
     },
     {
       "name": "pagination",
@@ -1699,9 +3618,22 @@
         "motion": ["hover", "focus"]
       },
       "states": {
-        "hover": { "required": true, "tokenBased": true, "onItems": true },
-        "focusVisible": { "required": true, "ring": true, "offset": true, "onItems": true },
-        "active": { "required": true, "tokenBased": true, "ariaCurrent": "page" },
+        "hover": {
+          "required": true,
+          "tokenBased": true,
+          "onItems": true
+        },
+        "focusVisible": {
+          "required": true,
+          "ring": true,
+          "offset": true,
+          "onItems": true
+        },
+        "active": {
+          "required": true,
+          "tokenBased": true,
+          "ariaCurrent": "page"
+        },
         "disabled": {
           "required": true,
           "opacity": true,
@@ -1726,7 +3658,56 @@
         "noColorOnly": "active page has distinct background + aria-current, disabled has opacity + aria-disabled"
       },
       "height": false,
-      "shadow": false
+      "shadow": false,
+      "colorMapping": {
+        "default": {
+          "itemBg": "transparent",
+          "itemText": "foreground",
+          "itemHoverBg": "accent",
+          "itemHoverText": "accent-foreground",
+          "activeBg": "primary",
+          "activeText": "primary-foreground",
+          "disabledText": "muted-foreground"
+        }
+      },
+      "stateTokens": {
+        "hover": {
+          "bg": "muted"
+        },
+        "focusVisible": {
+          "ring": "ring",
+          "ringOffset": "background",
+          "ringWidth": "2px",
+          "ringOffsetWidth": "2px"
+        },
+        "active": {
+          "bg": "muted",
+          "text": "foreground"
+        },
+        "disabled": {
+          "opacity": "0.5",
+          "cursor": "not-allowed"
+        }
+      },
+      "motionSpec": {
+        "hover": {
+          "property": "colors",
+          "duration": "duration-fast",
+          "easing": "ease-out"
+        },
+        "focus": {
+          "property": "ring",
+          "duration": "duration-fast",
+          "easing": "ease-out"
+        },
+        "active": {
+          "property": "transform",
+          "duration": "duration-fast",
+          "easing": "ease-in"
+        },
+        "motionReduce": true
+      },
+      "radiusSpec": "radius-md"
     },
     {
       "name": "item",
@@ -1743,11 +3724,28 @@
         "motion": ["hover"]
       },
       "states": {
-        "hover": { "required": true, "tokenBased": true },
-        "focusVisible": { "required": true, "ring": true, "offset": true },
-        "active": { "required": true, "tokenBased": true },
-        "selected": { "required": false, "ariaSelected": true },
-        "disabled": { "required": true, "opacity": true, "cursorNotAllowed": true }
+        "hover": {
+          "required": true,
+          "tokenBased": true
+        },
+        "focusVisible": {
+          "required": true,
+          "ring": true,
+          "offset": true
+        },
+        "active": {
+          "required": true,
+          "tokenBased": true
+        },
+        "selected": {
+          "required": false,
+          "ariaSelected": true
+        },
+        "disabled": {
+          "required": true,
+          "opacity": true,
+          "cursorNotAllowed": true
+        }
       },
       "aria": {
         "ariaSelected": true,
@@ -1764,7 +3762,59 @@
         "noColorOnly": "background highlight + text for active/selected state"
       },
       "height": false,
-      "shadow": false
+      "shadow": false,
+      "colorMapping": {
+        "default": {
+          "bg": "transparent",
+          "text": "foreground",
+          "hoverBg": "accent",
+          "hoverText": "accent-foreground",
+          "activeBg": "primary",
+          "activeText": "primary-foreground"
+        }
+      },
+      "stateTokens": {
+        "hover": {
+          "bg": "muted"
+        },
+        "focusVisible": {
+          "ring": "ring",
+          "ringOffset": "background",
+          "ringWidth": "2px",
+          "ringOffsetWidth": "2px"
+        },
+        "active": {
+          "bg": "muted",
+          "text": "foreground"
+        },
+        "disabled": {
+          "opacity": "0.5",
+          "cursor": "not-allowed"
+        },
+        "selected": {
+          "bg": "accent",
+          "text": "accent-foreground"
+        }
+      },
+      "motionSpec": {
+        "hover": {
+          "property": "colors",
+          "duration": "duration-fast",
+          "easing": "ease-out"
+        },
+        "focus": {
+          "property": "ring",
+          "duration": "duration-fast",
+          "easing": "ease-out"
+        },
+        "active": {
+          "property": "transform",
+          "duration": "duration-fast",
+          "easing": "ease-in"
+        },
+        "motionReduce": true
+      },
+      "radiusSpec": "radius-md"
     },
     {
       "name": "table",
@@ -1781,10 +3831,26 @@
         "motion": ["hover"]
       },
       "states": {
-        "hover": { "required": true, "tokenBased": true, "onRows": true },
-        "focusVisible": { "required": true, "ring": true, "onCells": true },
-        "selected": { "required": false, "ariaSelected": true, "onRows": true },
-        "sorted": { "required": false, "ariaSort": true, "onHeaders": true }
+        "hover": {
+          "required": true,
+          "tokenBased": true,
+          "onRows": true
+        },
+        "focusVisible": {
+          "required": true,
+          "ring": true,
+          "onCells": true
+        },
+        "selected": {
+          "required": false,
+          "ariaSelected": true,
+          "onRows": true
+        },
+        "sorted": {
+          "required": false,
+          "ariaSort": true,
+          "onHeaders": true
+        }
       },
       "aria": {
         "role": "table (native)",
@@ -1807,7 +3873,51 @@
         "scrollable": "table wraps in scroll-area with keyboard access when content overflows"
       },
       "height": false,
-      "shadow": false
+      "shadow": false,
+      "colorMapping": {
+        "default": {
+          "bg": "background",
+          "text": "foreground",
+          "headerBg": "muted",
+          "headerText": "muted-foreground",
+          "rowHoverBg": "muted",
+          "border": "border",
+          "selectedRowBg": "accent"
+        }
+      },
+      "stateTokens": {
+        "hover": {
+          "bg": "muted"
+        },
+        "focusVisible": {
+          "ring": "ring",
+          "ringOffset": "background",
+          "ringWidth": "2px",
+          "ringOffsetWidth": "2px"
+        },
+        "selected": {
+          "bg": "accent",
+          "text": "accent-foreground"
+        },
+        "sorted": {
+          "headerBg": "muted",
+          "ariaSort": "ascending"
+        }
+      },
+      "motionSpec": {
+        "hover": {
+          "property": "colors",
+          "duration": "duration-fast",
+          "easing": "ease-out"
+        },
+        "focus": {
+          "property": "ring",
+          "duration": "duration-fast",
+          "easing": "ease-out"
+        },
+        "motionReduce": true
+      },
+      "radiusSpec": "radius-md"
     }
   ]
 }
