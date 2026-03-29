@@ -6,7 +6,8 @@ export const switchTrackBaseClasses = 'peer inline-flex shrink-0 cursor-pointer 
 
 export const switchTrackShapeClasses = 'rounded-full border-2 border-transparent';
 
-export const switchTrackTransitionClasses = 'transition-colors';
+export const switchTrackTransitionClasses =
+  'transition-colors duration-200 motion-reduce:transition-none';
 
 export const switchTrackFocusClasses =
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background';
@@ -18,7 +19,8 @@ export const switchTrackUncheckedClasses = 'bg-input';
 export const switchThumbBaseClasses =
   'pointer-events-none block rounded-full bg-background shadow-lg ring-0';
 
-export const switchThumbTransitionClasses = 'transition-transform';
+export const switchThumbTransitionClasses =
+  'transition-transform duration-200 motion-reduce:transition-none';
 
 export const switchThumbUncheckedClasses = 'translate-x-0';
 

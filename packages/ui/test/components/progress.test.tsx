@@ -166,7 +166,7 @@ describe('Progress', () => {
     it('indicator has correct base classes', () => {
       const { container } = render(<Progress value={50} />);
       const indicator = container.querySelector('[aria-hidden="true"]');
-      expect(indicator).toHaveClass('h-full', 'bg-primary', 'transition-all', 'duration-normal');
+      expect(indicator).toHaveClass('h-full', 'bg-primary', 'transition-all', 'duration-300');
     });
 
     it('has motion-reduce transition override', () => {

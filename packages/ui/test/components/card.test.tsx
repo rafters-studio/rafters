@@ -65,7 +65,7 @@ describe('Card', () => {
     expect(card).toHaveClass('hover:bg-card-hover');
     expect(card).toHaveClass('hover:shadow-md');
     expect(card).toHaveClass('transition-shadow');
-    expect(card).toHaveClass('duration-normal');
+    expect(card).toHaveClass('duration-150');
     expect(card).toHaveClass('motion-reduce:transition-none');
     expect(card).toHaveClass('focus-visible:outline-none');
     expect(card).toHaveClass('focus-visible:ring-2');

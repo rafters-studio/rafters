@@ -21,7 +21,8 @@ export const scrollAreaOrientationClasses: Record<string, string> = {
   both: 'overflow-auto',
 };
 
-export const scrollBarBaseClasses = 'flex touch-none select-none transition-colors';
+export const scrollBarBaseClasses =
+  'flex touch-none select-none transition-colors duration-150 motion-reduce:transition-none';
 
 export const scrollBarOrientationClasses: Record<string, string> = {
   vertical: 'h-full w-2.5 border-l border-l-transparent p-px',

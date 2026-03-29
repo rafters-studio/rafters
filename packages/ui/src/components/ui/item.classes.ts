@@ -15,7 +15,7 @@ export const itemSizeClasses: Record<string, string> = {
 export const itemFocusClasses =
   'focus-visible:bg-accent focus-visible:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1';
 
-export const itemMotionClasses = 'transition-colors duration-fast motion-reduce:transition-none';
+export const itemMotionClasses = 'transition-colors duration-150 motion-reduce:transition-none';
 
 export const itemIconClasses = 'shrink-0 text-current';
 

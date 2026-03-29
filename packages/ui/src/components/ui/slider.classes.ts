@@ -11,7 +11,7 @@ export const sliderRangeBaseClasses = 'absolute';
 export const sliderThumbBaseClasses = 'absolute block rounded-full border-2 bg-background';
 
 export const sliderThumbInteractionClasses =
-  'ring-offset-background transition-colors ' +
+  'ring-offset-background transition-colors duration-150 motion-reduce:transition-none ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2';
 
 export const sliderVariantClasses: Record<string, { range: string; thumb: string; ring: string }> =

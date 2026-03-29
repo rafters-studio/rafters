@@ -6,5 +6,5 @@
  */
 
 export const collapsibleContentClasses =
-  'overflow-hidden transition-all ' +
+  'overflow-hidden transition-all duration-300 motion-reduce:transition-none ' +
   'data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down';

@@ -70,4 +70,4 @@ export const buttonSizeClasses: Record<string, string> = {
 export const buttonBaseClasses =
   'inline-flex items-center justify-center gap-2 rounded-md font-medium cursor-pointer ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ' +
-  'transition-colors';
+  'transition-colors duration-150 motion-reduce:transition-none';

@@ -5,7 +5,7 @@
 export const dialogOverlayClasses = 'fixed inset-0 z-depth-overlay bg-foreground/80';
 
 export const dialogCloseButtonClasses =
-  'absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground';
+  'absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity duration-150 motion-reduce:transition-none hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground';
 
 export const dialogCloseIconClasses = 'h-4 w-4';
 

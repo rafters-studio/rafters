@@ -9,7 +9,7 @@ export const cardBaseClasses =
   'bg-card text-card-foreground border border-card-border rounded-lg shadow-sm';
 
 export const cardInteractiveClasses =
-  'hover:bg-card-hover hover:shadow-md transition-shadow duration-normal motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
+  'hover:bg-card-hover hover:shadow-md transition-shadow duration-150 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
 
 export const cardEditableClasses =
   'outline-2 outline-dashed outline-muted-foreground/30 outline-offset-2';

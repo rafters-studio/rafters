@@ -14,7 +14,7 @@ export const tableBodyClasses = '[&_tr:last-child]:border-0';
 export const tableFooterClasses = 'border-t bg-muted/50 font-medium [&>tr]:last:border-b-0';
 
 export const tableRowClasses =
-  'border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted';
+  'border-b transition-colors duration-150 motion-reduce:transition-none hover:bg-muted/50 data-[state=selected]:bg-muted';
 
 export const tableHeadClasses =
   'h-10 px-2 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-0.5';

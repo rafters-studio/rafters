@@ -356,12 +356,35 @@ function generateThemeBlock(groups: GroupedTokens): string {
     lines.push('');
   }
 
-  // Motion tokens
+  // Motion tokens (raw values for non-duration/easing)
   if (groups.motion.length > 0) {
     for (const token of groups.motion) {
+      // Duration and easing tokens get special Tailwind-native names below
+      if (token.name.startsWith('motion-duration-') && token.name !== 'motion-duration-base')
+        continue;
+      if (token.name.startsWith('motion-easing-')) continue;
       const value = tokenValueToCSS(token);
       if (value === null) continue;
       lines.push(`  --${token.name}: ${value};`);
+    }
+    lines.push('');
+  }
+
+  // Motion duration tokens -- Tailwind reads --duration-* (no transition-duration utility, but available as var())
+  if (groups.motion.length > 0) {
+    for (const token of groups.motion) {
+      if (token.name.startsWith('motion-duration-') && token.name !== 'motion-duration-base') {
+        const key = token.name.replace('motion-duration-', '');
+        const value = tokenValueToCSS(token);
+        if (value === null) continue;
+        lines.push(`  --duration-${key}: ${value};`);
+      }
+      if (token.name.startsWith('motion-easing-')) {
+        const key = token.name.replace('motion-easing-', '');
+        const value = tokenValueToCSS(token);
+        if (value === null) continue;
+        lines.push(`  --ease-${key}: ${value};`);
+      }
     }
     lines.push('');
   }
@@ -716,10 +739,28 @@ function generateThemeBlockWithVarRefs(groups: GroupedTokens): string {
     lines.push('');
   }
 
-  // Motion tokens
+  // Motion tokens (raw values for non-duration/easing)
   if (groups.motion.length > 0) {
     for (const token of groups.motion) {
+      if (token.name.startsWith('motion-duration-') && token.name !== 'motion-duration-base')
+        continue;
+      if (token.name.startsWith('motion-easing-')) continue;
       lines.push(`  --${token.name}: var(--rafters-${token.name});`);
+    }
+    lines.push('');
+  }
+
+  // Motion duration/easing tokens with Tailwind-native names
+  if (groups.motion.length > 0) {
+    for (const token of groups.motion) {
+      if (token.name.startsWith('motion-duration-') && token.name !== 'motion-duration-base') {
+        const key = token.name.replace('motion-duration-', '');
+        lines.push(`  --duration-${key}: var(--rafters-${token.name});`);
+      }
+      if (token.name.startsWith('motion-easing-')) {
+        const key = token.name.replace('motion-easing-', '');
+        lines.push(`  --ease-${key}: var(--rafters-${token.name});`);
+      }
     }
     lines.push('');
   }
@@ -840,12 +881,32 @@ function generateVarsRootBlock(groups: GroupedTokens): string {
     lines.push('');
   }
 
-  // Motion tokens
+  // Motion tokens (raw values for non-duration/easing)
   if (groups.motion.length > 0) {
     for (const token of groups.motion) {
+      if (token.name.startsWith('motion-duration-') && token.name !== 'motion-duration-base')
+        continue;
+      if (token.name.startsWith('motion-easing-')) continue;
       const value = tokenValueToCSS(token);
       if (value === null) continue;
       lines.push(`  --rafters-${token.name}: ${value};`);
+    }
+    lines.push('');
+  }
+
+  // Motion duration/easing tokens with rafters namespace
+  if (groups.motion.length > 0) {
+    for (const token of groups.motion) {
+      if (token.name.startsWith('motion-duration-') && token.name !== 'motion-duration-base') {
+        const value = tokenValueToCSS(token);
+        if (value === null) continue;
+        lines.push(`  --rafters-${token.name}: ${value};`);
+      }
+      if (token.name.startsWith('motion-easing-')) {
+        const value = tokenValueToCSS(token);
+        if (value === null) continue;
+        lines.push(`  --rafters-${token.name}: ${value};`);
+      }
     }
     lines.push('');
   }

@@ -7,6 +7,7 @@ export const textareaBaseClasses =
   'ring-offset-background ' +
   'placeholder:text-muted-foreground ' +
   'focus-visible:outline-none focus-visible:ring-offset-2 ' +
+  'transition-shadow duration-100 motion-reduce:transition-none ' +
   'disabled:cursor-not-allowed disabled:opacity-50';
 
 export const textareaVariantClasses: Record<string, string> = {

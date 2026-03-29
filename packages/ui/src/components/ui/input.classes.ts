@@ -8,6 +8,7 @@ export const inputBaseClasses =
   'file:border-0 file:bg-transparent file:text-sm file:font-medium ' +
   'placeholder:text-muted-foreground ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ' +
+  'transition-shadow duration-100 motion-reduce:transition-none ' +
   'disabled:cursor-not-allowed disabled:opacity-50';
 
 export const inputVariantClasses: Record<string, string> = {

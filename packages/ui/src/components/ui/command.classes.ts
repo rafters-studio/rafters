@@ -29,7 +29,7 @@ export const commandGroupClasses = 'overflow-hidden p-1 text-foreground';
 export const commandGroupHeadingClasses = 'px-2 py-1.5 text-xs font-medium text-muted-foreground';
 
 export const commandItemClasses =
-  'relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[selected]:bg-accent data-[selected]:text-accent-foreground';
+  'relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors duration-100 motion-reduce:transition-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[selected]:bg-accent data-[selected]:text-accent-foreground';
 
 export const commandSeparatorClasses = '-mx-1 h-px bg-border';
 

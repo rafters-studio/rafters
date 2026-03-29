@@ -8,7 +8,7 @@ export const selectTriggerBaseClasses =
 export const selectTriggerPlaceholderClasses = 'placeholder:text-muted-foreground';
 
 export const selectTriggerFocusClasses =
-  'focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2';
+  'transition-shadow duration-100 motion-reduce:transition-none focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2';
 
 export const selectTriggerDisabledClasses = 'disabled:cursor-not-allowed disabled:opacity-50';
 

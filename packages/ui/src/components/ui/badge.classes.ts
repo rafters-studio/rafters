@@ -27,4 +27,4 @@ export const badgeSizeClasses: Record<string, string> = {
 };
 
 export const badgeBaseClasses =
-  'inline-flex items-center justify-center rounded-full font-semibold transition-colors';
+  'inline-flex items-center justify-center rounded-full font-semibold transition-colors duration-150 motion-reduce:transition-none';

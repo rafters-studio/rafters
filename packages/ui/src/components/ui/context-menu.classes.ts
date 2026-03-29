@@ -14,10 +14,10 @@ export const contextMenuSubContentAnimationClasses =
 export const contextMenuLabelClasses = 'px-2 py-1.5 text-sm font-semibold';
 
 export const contextMenuItemClasses =
-  'relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50';
+  'relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors duration-100 motion-reduce:transition-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50';
 
 export const contextMenuCheckboxItemClasses =
-  'relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50';
+  'relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none transition-colors duration-100 motion-reduce:transition-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50';
 
 export const contextMenuCheckboxIndicatorClasses =
   'absolute left-2 flex h-3.5 w-3.5 items-center justify-center';
@@ -25,7 +25,7 @@ export const contextMenuCheckboxIndicatorClasses =
 export const contextMenuCheckIconClasses = 'h-4 w-4';
 
 export const contextMenuRadioItemClasses =
-  'relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50';
+  'relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none transition-colors duration-100 motion-reduce:transition-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50';
 
 export const contextMenuRadioIndicatorClasses =
   'absolute left-2 flex h-3.5 w-3.5 items-center justify-center';
@@ -37,6 +37,6 @@ export const contextMenuSeparatorClasses = '-mx-1 my-1 h-px border-0 bg-muted';
 export const contextMenuShortcutClasses = 'ml-auto text-xs tracking-widest opacity-60';
 
 export const contextMenuSubTriggerClasses =
-  'relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[state=open]:bg-accent data-[disabled]:pointer-events-none data-[disabled]:opacity-50';
+  'relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors duration-100 motion-reduce:transition-none focus:bg-accent focus:text-accent-foreground data-[state=open]:bg-accent data-[disabled]:pointer-events-none data-[disabled]:opacity-50';
 
 export const contextMenuSubTriggerIconClasses = 'ml-auto h-4 w-4';

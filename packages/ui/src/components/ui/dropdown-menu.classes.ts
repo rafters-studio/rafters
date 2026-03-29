@@ -11,16 +11,16 @@ export const dropdownMenuContentAnimationClasses =
 export const dropdownMenuLabelClasses = 'px-2 py-1.5 text-sm font-semibold';
 
 export const dropdownMenuItemClasses =
-  'relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50';
+  'relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors duration-100 motion-reduce:transition-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50';
 
 export const dropdownMenuCheckboxItemClasses =
-  'relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50';
+  'relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none transition-colors duration-100 motion-reduce:transition-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50';
 
 export const dropdownMenuCheckboxIndicatorClasses =
   'absolute left-2 flex h-3.5 w-3.5 items-center justify-center';
 
 export const dropdownMenuRadioItemClasses =
-  'relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50';
+  'relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none transition-colors duration-100 motion-reduce:transition-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50';
 
 export const dropdownMenuRadioIndicatorClasses =
   'absolute left-2 flex h-3.5 w-3.5 items-center justify-center';
@@ -32,7 +32,7 @@ export const dropdownMenuSeparatorClasses = '-mx-1 my-1 h-px border-0 bg-muted';
 export const dropdownMenuShortcutClasses = 'ml-auto text-xs tracking-widest opacity-60';
 
 export const dropdownMenuSubTriggerClasses =
-  'relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[state=open]:bg-accent data-[disabled]:pointer-events-none data-[disabled]:opacity-50';
+  'relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors duration-100 motion-reduce:transition-none focus:bg-accent focus:text-accent-foreground data-[state=open]:bg-accent data-[disabled]:pointer-events-none data-[disabled]:opacity-50';
 
 export const dropdownMenuSubTriggerIconClasses = 'ml-auto h-4 w-4';
 
