@@ -531,6 +531,98 @@ async function resetToDefaults(
   });
 }
 
+/**
+ * Write the rafters-frontend skill to .claude/skills/ in the consumer project.
+ * Every agent session in this project will read it automatically.
+ */
+async function writeRaftersSkill(cwd: string): Promise<void> {
+  const skillDir = join(cwd, '.claude', 'skills', 'rafters-frontend');
+  await mkdir(skillDir, { recursive: true });
+
+  const skill = `---
+name: rafters-frontend
+description: Use when building frontend UI in a Rafters project -- enforces Container, Grid, typography components, and design token usage.
+---
+
+## Layout Is Solved
+
+Container and Grid handle ALL layout. You do not write layout code.
+
+\`\`\`tsx
+// WRONG
+<div className={classy("flex gap-4 p-6")}>
+
+// RIGHT
+<Container>
+  <Grid preset="sidebar-main">
+    <aside>Sidebar</aside>
+    <main>Content</main>
+  </Grid>
+</Container>
+\`\`\`
+
+**Never use:** flex, grid, gap-*, p-*, m-*, items-*, justify-*
+
+### Grid Presets
+
+| Preset | Use for |
+|---|---|
+| sidebar-main | Navigation + content |
+| form | Label/input pairs |
+| cards | Responsive card grid |
+| row | Horizontal group |
+| stack | Vertical sequence |
+| split | Equal columns |
+
+## Typography -- Components, Not Utilities
+
+| Instead of | Use |
+|---|---|
+| \`<p className="text-sm text-muted-foreground">\` | \`<Muted>\` |
+| \`<p>\` | \`<P>\` |
+| \`<h1 className="text-4xl font-bold">\` | \`<H1>\` |
+| \`<h2>\` | \`<H2>\` |
+| \`<h3>\` | \`<H3>\` |
+| \`<span className="text-xs">\` | \`<Small>\` |
+| \`<span className="text-lg font-semibold">\` | \`<Large>\` |
+
+## Color -- Tokens, Not Values
+
+Use semantic tokens as Tailwind classes: \`bg-primary\`, \`text-destructive\`, \`border-success\`.
+Never use hex, HSL, or palette internals.
+
+## A Correct Page
+
+\`\`\`tsx
+import { Container, Grid } from "@rafters/ui"
+import { H1, Lead } from "@rafters/ui/components/ui/typography"
+import { Card } from "@rafters/ui/components/ui/card"
+import { Button } from "@rafters/ui/components/ui/button"
+
+export default function Page() {
+  return (
+    <Container>
+      <H1>Title</H1>
+      <Lead>Description.</Lead>
+      <Grid preset="cards">
+        <Card>...</Card>
+        <Card>...</Card>
+      </Grid>
+      <Grid preset="row">
+        <Button variant="secondary">Cancel</Button>
+        <Button>Save</Button>
+      </Grid>
+    </Container>
+  )
+}
+\`\`\`
+
+No flex. No gap. No padding. No text utilities.
+`;
+
+  await writeFile(join(skillDir, 'SKILL.md'), skill);
+}
+
 export async function init(options: InitOptions): Promise<void> {
   setAgentMode(options.agent ?? false);
   const isAgentMode = options.agent ?? false;
@@ -689,6 +781,9 @@ export async function init(options: InitOptions): Promise<void> {
     },
   };
   await writeFile(paths.config, JSON.stringify(config, null, 2));
+
+  // Write Claude Code skill so agents follow rafters rules
+  await writeRaftersSkill(cwd);
 
   // Check if the project has existing design decisions that should be onboarded intentionally
   const existingCssPath = detectedCssPath ?? (shadcn?.tailwind?.css || null);
