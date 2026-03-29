@@ -301,6 +301,7 @@ async function generateOutputs(
   // Compiled CSS (processed by Tailwind, no @import)
   if (exports.compiled) {
     if (!isTailwindCliInstalled()) {
+      log({ event: 'init:prompting_exports' }); // stop spinner before prompt
       await ensureTailwindCli(cwd);
     }
     log({ event: 'init:compiling_css' });
