@@ -27,6 +27,14 @@
 
 import * as React from 'react';
 import classy from '../../primitives/classy';
+import {
+  accordionContentClasses,
+  accordionContentInnerClasses,
+  accordionItemClasses,
+  accordionTriggerClasses,
+  accordionTriggerHeadingClasses,
+  accordionTriggerIconClasses,
+} from './accordion.classes';
 
 // ==================== Context ====================
 
@@ -240,7 +248,7 @@ export function AccordionItem({
       <div
         data-state={isOpen ? 'open' : 'closed'}
         data-disabled={disabled ? '' : undefined}
-        className={classy('border-b', className)}
+        className={classy(accordionItemClasses, className)}
         {...props}
       >
         {children}
@@ -273,7 +281,7 @@ export function AccordionTrigger({
   }, [disabled, onItemToggle, value]);
 
   return (
-    <h3 className="flex">
+    <h3 className={accordionTriggerHeadingClasses}>
       <button
         type="button"
         id={triggerId}
@@ -282,13 +290,7 @@ export function AccordionTrigger({
         data-state={isOpen ? 'open' : 'closed'}
         data-accordion-trigger
         disabled={disabled}
-        className={classy(
-          'flex flex-1 items-center justify-between py-4 font-medium transition-all',
-          'hover:underline',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-          'disabled:pointer-events-none disabled:opacity-50',
-          className,
-        )}
+        className={classy(accordionTriggerClasses, className)}
         onClick={handleClick}
         {...props}
       >
@@ -304,10 +306,7 @@ export function AccordionTrigger({
           strokeLinecap="round"
           strokeLinejoin="round"
           aria-hidden="true"
-          className={classy(
-            'h-4 w-4 shrink-0 transition-transform duration-200',
-            'data-[state=open]:rotate-180',
-          )}
+          className={classy(accordionTriggerIconClasses)}
           data-state={isOpen ? 'open' : 'closed'}
         >
           <polyline points="6 9 12 15 18 9" />
@@ -347,15 +346,10 @@ export function AccordionContent({
       aria-labelledby={triggerId}
       data-state={isOpen ? 'open' : 'closed'}
       hidden={!isOpen}
-      className={classy(
-        'overflow-hidden text-sm transition-all',
-        'data-[state=closed]:animate-accordion-up',
-        'data-[state=open]:animate-accordion-down',
-        className,
-      )}
+      className={classy(accordionContentClasses, className)}
       {...props}
     >
-      <div className="pb-4 pt-0">{children}</div>
+      <div className={accordionContentInnerClasses}>{children}</div>
     </div>
   );
 }

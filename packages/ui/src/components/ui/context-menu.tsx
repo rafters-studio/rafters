@@ -39,6 +39,23 @@ import { getPortalContainer } from '../../primitives/portal';
 import { createRovingFocus } from '../../primitives/roving-focus';
 import { mergeProps } from '../../primitives/slot';
 import { createTypeahead } from '../../primitives/typeahead';
+import {
+  contextMenuCheckboxIndicatorClasses,
+  contextMenuCheckboxItemClasses,
+  contextMenuCheckIconClasses,
+  contextMenuContentAnimationClasses,
+  contextMenuContentClasses,
+  contextMenuItemClasses,
+  contextMenuLabelClasses,
+  contextMenuRadioDotClasses,
+  contextMenuRadioIndicatorClasses,
+  contextMenuRadioItemClasses,
+  contextMenuSeparatorClasses,
+  contextMenuShortcutClasses,
+  contextMenuSubContentAnimationClasses,
+  contextMenuSubTriggerClasses,
+  contextMenuSubTriggerIconClasses,
+} from './context-menu.classes';
 
 // ==================== Types ====================
 
@@ -407,13 +424,7 @@ export const ContextMenuContent = React.forwardRef<HTMLDivElement, ContextMenuCo
       role: 'menu',
       'aria-orientation': 'vertical' as const,
       'data-state': open ? 'open' : 'closed',
-      className: classy(
-        'z-depth-dropdown min-w-32 overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md',
-        'data-[state=open]:animate-in data-[state=closed]:animate-out',
-        'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
-        'data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
-        className,
-      ),
+      className: classy(contextMenuContentClasses, contextMenuContentAnimationClasses, className),
       style: contentStyle,
       ...props,
     };
@@ -475,7 +486,7 @@ export const ContextMenuLabel = React.forwardRef<HTMLDivElement, ContextMenuLabe
     return (
       <div
         ref={ref}
-        className={classy('px-2 py-1.5 text-sm font-semibold', inset && 'pl-8', className)}
+        className={classy(contextMenuLabelClasses, inset && 'pl-8', className)}
         {...props}
       />
     );
@@ -528,13 +539,7 @@ export const ContextMenuItem = React.forwardRef<HTMLDivElement, ContextMenuItemP
         tabIndex={disabled ? undefined : -1}
         aria-disabled={disabled || undefined}
         data-disabled={disabled ? '' : undefined}
-        className={classy(
-          'relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none',
-          'transition-colors focus:bg-accent focus:text-accent-foreground',
-          'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
-          inset && 'pl-8',
-          className,
-        )}
+        className={classy(contextMenuItemClasses, inset && 'pl-8', className)}
         onClick={handleClick}
         onKeyDown={handleKeyDown}
         {...props}
@@ -609,20 +614,15 @@ export const ContextMenuCheckboxItem = React.forwardRef<
         aria-disabled={disabled || undefined}
         data-disabled={disabled ? '' : undefined}
         data-state={checked ? 'checked' : 'unchecked'}
-        className={classy(
-          'relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none',
-          'transition-colors focus:bg-accent focus:text-accent-foreground',
-          'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
-          className,
-        )}
+        className={classy(contextMenuCheckboxItemClasses, className)}
         onClick={handleClick}
         onKeyDown={handleKeyDown}
         {...props}
       >
-        <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+        <span className={contextMenuCheckboxIndicatorClasses}>
           {checked && (
             <svg
-              className="h-4 w-4"
+              className={contextMenuCheckIconClasses}
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -726,18 +726,13 @@ export const ContextMenuRadioItem = React.forwardRef<HTMLDivElement, ContextMenu
         aria-disabled={disabled || undefined}
         data-disabled={disabled ? '' : undefined}
         data-state={checked ? 'checked' : 'unchecked'}
-        className={classy(
-          'relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none',
-          'transition-colors focus:bg-accent focus:text-accent-foreground',
-          'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
-          className,
-        )}
+        className={classy(contextMenuRadioItemClasses, className)}
         onClick={handleClick}
         onKeyDown={handleKeyDown}
         {...props}
       >
-        <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
-          {checked && <span className="h-2 w-2 rounded-full bg-current" aria-hidden="true" />}
+        <span className={contextMenuRadioIndicatorClasses}>
+          {checked && <span className={contextMenuRadioDotClasses} aria-hidden="true" />}
         </span>
         {children}
       </div>
@@ -753,9 +748,7 @@ export interface ContextMenuSeparatorProps extends React.HTMLAttributes<HTMLHREl
 
 export const ContextMenuSeparator = React.forwardRef<HTMLHRElement, ContextMenuSeparatorProps>(
   ({ className, ...props }, ref) => {
-    return (
-      <hr ref={ref} className={classy('-mx-1 my-1 h-px border-0 bg-muted', className)} {...props} />
-    );
+    return <hr ref={ref} className={classy(contextMenuSeparatorClasses, className)} {...props} />;
   },
 );
 
@@ -766,9 +759,7 @@ ContextMenuSeparator.displayName = 'ContextMenuSeparator';
 export interface ContextMenuShortcutProps extends React.HTMLAttributes<HTMLSpanElement> {}
 
 export function ContextMenuShortcut({ className, ...props }: ContextMenuShortcutProps) {
-  return (
-    <span className={classy('ml-auto text-xs tracking-widest opacity-60', className)} {...props} />
-  );
+  return <span className={classy(contextMenuShortcutClasses, className)} {...props} />;
 }
 
 // ==================== ContextMenuSub ====================
@@ -906,14 +897,7 @@ export const ContextMenuSubTrigger = React.forwardRef<HTMLDivElement, ContextMen
         aria-disabled={disabled || undefined}
         data-disabled={disabled ? '' : undefined}
         data-state={open ? 'open' : 'closed'}
-        className={classy(
-          'relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none',
-          'transition-colors focus:bg-accent focus:text-accent-foreground',
-          'data-[state=open]:bg-accent',
-          'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
-          inset && 'pl-8',
-          className,
-        )}
+        className={classy(contextMenuSubTriggerClasses, inset && 'pl-8', className)}
         onPointerEnter={handlePointerEnter}
         onPointerLeave={handlePointerLeave}
         onKeyDown={handleKeyDown}
@@ -921,7 +905,7 @@ export const ContextMenuSubTrigger = React.forwardRef<HTMLDivElement, ContextMen
       >
         {children}
         <svg
-          className="ml-auto h-4 w-4"
+          className={contextMenuSubTriggerIconClasses}
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -1113,10 +1097,8 @@ export const ContextMenuSubContent = React.forwardRef<HTMLDivElement, ContextMen
           aria-orientation="vertical"
           data-state={open ? 'open' : 'closed'}
           className={classy(
-            'z-depth-dropdown min-w-32 overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md',
-            'data-[state=open]:animate-in data-[state=closed]:animate-out',
-            'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
-            'data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
+            contextMenuContentClasses,
+            contextMenuSubContentAnimationClasses,
             className,
           )}
           style={contentStyle}

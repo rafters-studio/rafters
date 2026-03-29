@@ -32,6 +32,12 @@
 import * as React from 'react';
 import classy from '../../primitives/classy';
 import { createRovingFocus } from '../../primitives/roving-focus';
+import {
+  radioGroupHorizontalClasses,
+  radioGroupItemBaseClasses,
+  radioGroupItemIndicatorClasses,
+  radioGroupVerticalClasses,
+} from './radio-group.classes';
 
 // ==================== Types ====================
 
@@ -148,7 +154,8 @@ export const RadioGroup = React.forwardRef<HTMLDivElement, RadioGroupProps>(
       [value, handleValueChange, disabled, orientation, name],
     );
 
-    const baseClasses = orientation === 'horizontal' ? 'flex gap-2' : 'grid gap-2';
+    const baseClasses =
+      orientation === 'horizontal' ? radioGroupHorizontalClasses : radioGroupVerticalClasses;
 
     return (
       <RadioGroupContext.Provider value={contextValue}>
@@ -202,15 +209,6 @@ export const RadioGroupItem = React.forwardRef<HTMLButtonElement, RadioGroupItem
     );
 
     // Base styles
-    const baseClasses =
-      'inline-flex items-center justify-center ' +
-      'aspect-square h-4 w-4 ' +
-      'rounded-full ' +
-      'border border-primary ' +
-      'text-primary ' +
-      'transition-colors ' +
-      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ' +
-      'disabled:cursor-not-allowed disabled:opacity-50';
 
     return (
       // biome-ignore lint/a11y/useSemanticElements: Custom radio with visual styling not possible with native input
@@ -222,12 +220,12 @@ export const RadioGroupItem = React.forwardRef<HTMLButtonElement, RadioGroupItem
         data-state={isChecked ? 'checked' : 'unchecked'}
         disabled={isDisabled}
         name={name}
-        className={classy(baseClasses, className)}
+        className={classy(radioGroupItemBaseClasses, className)}
         onClick={handleClick}
         onKeyDown={handleKeyDown}
         {...props}
       >
-        {isChecked && <span className="block h-2 w-2 rounded-full bg-current" aria-hidden="true" />}
+        {isChecked && <span className={radioGroupItemIndicatorClasses} aria-hidden="true" />}
         {children}
       </button>
     );

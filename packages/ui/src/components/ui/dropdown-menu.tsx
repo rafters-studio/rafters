@@ -41,6 +41,22 @@ import { createRovingFocus } from '../../primitives/roving-focus';
 import { mergeProps } from '../../primitives/slot';
 import { createTypeahead } from '../../primitives/typeahead';
 import type { Align, Side } from '../../primitives/types';
+import {
+  dropdownMenuCheckboxIndicatorClasses,
+  dropdownMenuCheckboxItemClasses,
+  dropdownMenuCheckIconClasses,
+  dropdownMenuContentAnimationClasses,
+  dropdownMenuContentClasses,
+  dropdownMenuItemClasses,
+  dropdownMenuLabelClasses,
+  dropdownMenuRadioDotClasses,
+  dropdownMenuRadioIndicatorClasses,
+  dropdownMenuRadioItemClasses,
+  dropdownMenuSeparatorClasses,
+  dropdownMenuShortcutClasses,
+  dropdownMenuSubTriggerClasses,
+  dropdownMenuSubTriggerIconClasses,
+} from './dropdown-menu.classes';
 
 // ==================== Types ====================
 
@@ -447,15 +463,7 @@ export const DropdownMenuContent = React.forwardRef<HTMLDivElement, DropdownMenu
       'data-state': open ? 'open' : 'closed',
       'data-side': position.side,
       'data-align': position.align,
-      className: classy(
-        'z-depth-dropdown min-w-32 overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md',
-        'data-[state=open]:animate-in data-[state=closed]:animate-out',
-        'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
-        'data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
-        'data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2',
-        'data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
-        className,
-      ),
+      className: classy(dropdownMenuContentClasses, dropdownMenuContentAnimationClasses, className),
       style: contentStyle,
       ...props,
     };
@@ -518,7 +526,7 @@ export const DropdownMenuLabel = React.forwardRef<HTMLDivElement, DropdownMenuLa
     return (
       <div
         ref={ref}
-        className={classy('px-2 py-1.5 text-sm font-semibold', inset && 'pl-8', className)}
+        className={classy(dropdownMenuLabelClasses, inset && 'pl-8', className)}
         {...props}
       />
     );
@@ -571,13 +579,7 @@ export const DropdownMenuItem = React.forwardRef<HTMLDivElement, DropdownMenuIte
         tabIndex={disabled ? undefined : -1}
         aria-disabled={disabled || undefined}
         data-disabled={disabled ? '' : undefined}
-        className={classy(
-          'relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none',
-          'transition-colors focus:bg-accent focus:text-accent-foreground',
-          'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
-          inset && 'pl-8',
-          className,
-        )}
+        className={classy(dropdownMenuItemClasses, inset && 'pl-8', className)}
         onClick={handleClick}
         onKeyDown={handleKeyDown}
         {...props}
@@ -652,20 +654,15 @@ export const DropdownMenuCheckboxItem = React.forwardRef<
         aria-disabled={disabled || undefined}
         data-disabled={disabled ? '' : undefined}
         data-state={checked ? 'checked' : 'unchecked'}
-        className={classy(
-          'relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none',
-          'transition-colors focus:bg-accent focus:text-accent-foreground',
-          'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
-          className,
-        )}
+        className={classy(dropdownMenuCheckboxItemClasses, className)}
         onClick={handleClick}
         onKeyDown={handleKeyDown}
         {...props}
       >
-        <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+        <span className={dropdownMenuCheckboxIndicatorClasses}>
           {checked && (
             <svg
-              className="h-4 w-4"
+              className={dropdownMenuCheckIconClasses}
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -769,18 +766,13 @@ export const DropdownMenuRadioItem = React.forwardRef<HTMLDivElement, DropdownMe
         aria-disabled={disabled || undefined}
         data-disabled={disabled ? '' : undefined}
         data-state={checked ? 'checked' : 'unchecked'}
-        className={classy(
-          'relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none',
-          'transition-colors focus:bg-accent focus:text-accent-foreground',
-          'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
-          className,
-        )}
+        className={classy(dropdownMenuRadioItemClasses, className)}
         onClick={handleClick}
         onKeyDown={handleKeyDown}
         {...props}
       >
-        <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
-          {checked && <span className="h-2 w-2 rounded-full bg-current" aria-hidden="true" />}
+        <span className={dropdownMenuRadioIndicatorClasses}>
+          {checked && <span className={dropdownMenuRadioDotClasses} aria-hidden="true" />}
         </span>
         {children}
       </div>
@@ -796,9 +788,7 @@ export interface DropdownMenuSeparatorProps extends React.HTMLAttributes<HTMLHRE
 
 export const DropdownMenuSeparator = React.forwardRef<HTMLHRElement, DropdownMenuSeparatorProps>(
   ({ className, ...props }, ref) => {
-    return (
-      <hr ref={ref} className={classy('-mx-1 my-1 h-px border-0 bg-muted', className)} {...props} />
-    );
+    return <hr ref={ref} className={classy(dropdownMenuSeparatorClasses, className)} {...props} />;
   },
 );
 
@@ -809,9 +799,7 @@ DropdownMenuSeparator.displayName = 'DropdownMenuSeparator';
 export interface DropdownMenuShortcutProps extends React.HTMLAttributes<HTMLSpanElement> {}
 
 export function DropdownMenuShortcut({ className, ...props }: DropdownMenuShortcutProps) {
-  return (
-    <span className={classy('ml-auto text-xs tracking-widest opacity-60', className)} {...props} />
-  );
+  return <span className={classy(dropdownMenuShortcutClasses, className)} {...props} />;
 }
 
 // ==================== DropdownMenuSub ====================
@@ -952,14 +940,7 @@ export const DropdownMenuSubTrigger = React.forwardRef<HTMLDivElement, DropdownM
         aria-disabled={disabled || undefined}
         data-disabled={disabled ? '' : undefined}
         data-state={open ? 'open' : 'closed'}
-        className={classy(
-          'relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none',
-          'transition-colors focus:bg-accent focus:text-accent-foreground',
-          'data-[state=open]:bg-accent',
-          'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
-          inset && 'pl-8',
-          className,
-        )}
+        className={classy(dropdownMenuSubTriggerClasses, inset && 'pl-8', className)}
         onPointerEnter={handlePointerEnter}
         onPointerLeave={handlePointerLeave}
         onKeyDown={handleKeyDown}
@@ -967,7 +948,7 @@ export const DropdownMenuSubTrigger = React.forwardRef<HTMLDivElement, DropdownM
       >
         {children}
         <svg
-          className="ml-auto h-4 w-4"
+          className={dropdownMenuSubTriggerIconClasses}
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"

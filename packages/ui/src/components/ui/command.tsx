@@ -34,6 +34,22 @@
 
 import * as React from 'react';
 import classy from '../../primitives/classy';
+import {
+  commandDialogBackdropClasses,
+  commandDialogClasses,
+  commandDialogCommandClasses,
+  commandEmptyClasses,
+  commandGroupClasses,
+  commandGroupHeadingClasses,
+  commandInputClasses,
+  commandInputSearchIconClasses,
+  commandInputWrapperClasses,
+  commandItemClasses,
+  commandListClasses,
+  commandRootClasses,
+  commandSeparatorClasses,
+  commandShortcutClasses,
+} from './command.classes';
 
 // ==================== Context ====================
 
@@ -162,14 +178,7 @@ export function Command({
 
   return (
     <CommandContext.Provider value={contextValue}>
-      <div
-        data-command=""
-        className={classy(
-          'flex h-full w-full flex-col overflow-hidden rounded-md bg-popover text-popover-foreground',
-          className,
-        )}
-        {...props}
-      >
+      <div data-command="" className={classy(commandRootClasses, className)} {...props}>
         {children}
       </div>
     </CommandContext.Provider>
@@ -211,21 +220,13 @@ export function CommandDialog({
       {/* Backdrop */}
       <button
         type="button"
-        className="fixed inset-0 z-depth-overlay bg-foreground/80 cursor-default"
+        className={commandDialogBackdropClasses}
         onClick={() => onOpenChange?.(false)}
         aria-label="Close command palette"
       />
       {/* Dialog */}
-      <div
-        data-command-dialog=""
-        className={classy(
-          'fixed left-1/2 top-1/2 z-depth-modal w-full max-w-lg -translate-x-1/2 -translate-y-1/2',
-          'rounded-lg border bg-popover shadow-lg',
-          className,
-        )}
-        {...props}
-      >
-        <Command className="[&_[data-command-input-wrapper]]:border-b">{children}</Command>
+      <div data-command-dialog="" className={classy(commandDialogClasses, className)} {...props}>
+        <Command className={commandDialogCommandClasses}>{children}</Command>
       </div>
     </>
   );
@@ -289,7 +290,7 @@ export function CommandInput({
     activeIndex >= 0 && items[activeIndex] ? getItemId(items[activeIndex]) : undefined;
 
   return (
-    <div data-command-input-wrapper="" className="flex items-center border-b px-3">
+    <div data-command-input-wrapper="" className={commandInputWrapperClasses}>
       <svg
         xmlns="http://www.w3.org/2000/svg"
         width="16"
@@ -300,7 +301,7 @@ export function CommandInput({
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
-        className="mr-2 shrink-0 opacity-50"
+        className={commandInputSearchIconClasses}
         aria-hidden="true"
       >
         <circle cx="11" cy="11" r="8" />
@@ -322,12 +323,7 @@ export function CommandInput({
         onChange={(e) => onValueChange(e.target.value)}
         onKeyDown={handleKeyDown}
         data-command-input=""
-        className={classy(
-          'flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none',
-          'placeholder:text-muted-foreground',
-          'disabled:cursor-not-allowed disabled:opacity-50',
-          className,
-        )}
+        className={classy(commandInputClasses, className)}
         {...props}
       />
     </div>
@@ -350,7 +346,7 @@ export function CommandList({
       id={listId}
       role="listbox"
       data-command-list=""
-      className={classy('max-h-80 overflow-y-auto overflow-x-hidden', className)}
+      className={classy(commandListClasses, className)}
       {...props}
     >
       {children}
@@ -380,7 +376,7 @@ export function CommandEmpty({
   if (visibleItems.length > 0 || !value) return null;
 
   return (
-    <div data-command-empty="" className={classy('py-6 text-center text-sm', className)} {...props}>
+    <div data-command-empty="" className={classy(commandEmptyClasses, className)} {...props}>
       {children}
     </div>
   );
@@ -406,15 +402,11 @@ export function CommandGroup({
       role="group"
       aria-labelledby={heading ? headingId : undefined}
       data-command-group=""
-      className={classy('overflow-hidden p-1 text-foreground', className)}
+      className={classy(commandGroupClasses, className)}
       {...props}
     >
       {heading && (
-        <div
-          id={headingId}
-          data-command-group-heading=""
-          className="px-2 py-1.5 text-xs font-medium text-muted-foreground"
-        >
+        <div id={headingId} data-command-group-heading="" className={commandGroupHeadingClasses}>
           {heading}
         </div>
       )}
@@ -503,12 +495,7 @@ export function CommandItem({
       data-disabled={disabled || undefined}
       onClick={handleClick}
       onMouseEnter={handleMouseEnter}
-      className={classy(
-        'relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none',
-        'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
-        'data-[selected]:bg-accent data-[selected]:text-accent-foreground',
-        className,
-      )}
+      className={classy(commandItemClasses, className)}
       {...props}
     >
       {children}
@@ -527,7 +514,7 @@ export function CommandSeparator({
   return (
     <div
       data-command-separator=""
-      className={classy('-mx-1 h-px bg-border', className)}
+      className={classy(commandSeparatorClasses, className)}
       {...props}
     />
   );
@@ -541,7 +528,7 @@ export function CommandShortcut({ className, ...props }: CommandShortcutProps): 
   return (
     <span
       data-command-shortcut=""
-      className={classy('ml-auto text-xs tracking-widest text-muted-foreground', className)}
+      className={classy(commandShortcutClasses, className)}
       {...props}
     />
   );

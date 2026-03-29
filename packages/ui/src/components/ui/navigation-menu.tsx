@@ -42,6 +42,20 @@ import classy from '../../primitives/classy';
 import { onEscapeKeyDown } from '../../primitives/escape-keydown';
 import { onPointerDownOutside } from '../../primitives/outside-click';
 import { mergeProps } from '../../primitives/slot';
+import {
+  navigationMenuContentActiveClasses,
+  navigationMenuContentClasses,
+  navigationMenuIndicatorActiveClasses,
+  navigationMenuIndicatorArrowClasses,
+  navigationMenuIndicatorClasses,
+  navigationMenuLinkClasses,
+  navigationMenuListClasses,
+  navigationMenuRootClasses,
+  navigationMenuTriggerChevronClasses,
+  navigationMenuTriggerClasses,
+  navigationMenuViewportActiveClasses,
+  navigationMenuViewportClasses,
+} from './navigation-menu.classes';
 
 // ==================== Types ====================
 
@@ -191,10 +205,7 @@ export function NavigationMenu({
       <nav
         aria-label="Main navigation"
         data-orientation={orientation}
-        className={classy(
-          'relative z-10 flex max-w-max flex-1 items-center justify-center',
-          className,
-        )}
+        className={classy(navigationMenuRootClasses, className)}
         {...props}
       >
         {children}
@@ -217,10 +228,7 @@ export const NavigationMenuList = React.forwardRef<HTMLUListElement, NavigationM
       <ul
         ref={ref}
         data-orientation={orientation}
-        className={classy(
-          'group flex flex-1 list-none items-center justify-center gap-1',
-          className,
-        )}
+        className={classy(navigationMenuListClasses, className)}
         {...props}
       />
     );
@@ -383,15 +391,7 @@ export const NavigationMenuTrigger = React.forwardRef<
       aria-controls={contentId}
       aria-haspopup="menu"
       data-state={isActive ? 'open' : 'closed'}
-      className={classy(
-        'group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2',
-        'text-sm font-medium transition-colors',
-        'hover:bg-accent hover:text-accent-foreground',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-        'disabled:pointer-events-none disabled:opacity-50',
-        isActive && 'bg-accent-subtle',
-        className,
-      )}
+      className={classy(navigationMenuTriggerClasses, isActive && 'bg-accent-subtle', className)}
       onPointerEnter={handlePointerEnter}
       onPointerLeave={handlePointerLeave}
       onClick={handleClick}
@@ -400,7 +400,7 @@ export const NavigationMenuTrigger = React.forwardRef<
     >
       {children}
       <ChevronDown
-        className={classy('ml-1 h-3 w-3 transition-transform duration-200')}
+        className={classy(navigationMenuTriggerChevronClasses)}
         style={{ transform: isActive ? 'rotate(180deg)' : undefined }}
         aria-hidden="true"
       />
@@ -481,8 +481,8 @@ export const NavigationMenuContent = React.forwardRef<HTMLDivElement, Navigation
         aria-labelledby={triggerId}
         data-state={isActive ? 'open' : 'closed'}
         className={classy(
-          'left-0 top-0 w-full',
-          isActive && 'animate-in fade-in-0 zoom-in-95',
+          navigationMenuContentClasses,
+          isActive && navigationMenuContentActiveClasses,
           className,
         )}
         style={{ position: 'absolute' }}
@@ -516,14 +516,7 @@ export const NavigationMenuLink = React.forwardRef<HTMLAnchorElement, Navigation
       context?.onValueChange('');
     }, [context]);
 
-    const cls = classy(
-      'block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors',
-      'hover:bg-accent hover:text-accent-foreground',
-      'focus-visible:bg-accent focus-visible:text-accent-foreground',
-      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-      active && 'bg-accent-subtle',
-      className,
-    );
+    const cls = classy(navigationMenuLinkClasses, active && 'bg-accent-subtle', className);
 
     if (asChild && React.isValidElement(children)) {
       const child = children as React.ReactElement<
@@ -616,9 +609,8 @@ export const NavigationMenuViewport = React.forwardRef<HTMLDivElement, Navigatio
           ref={composedRef}
           data-state={isOpen ? 'open' : 'closed'}
           className={classy(
-            'mt-1.5 h-min w-full overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-lg',
-            'origin-top-center',
-            isOpen && 'animate-in fade-in-0 zoom-in-95',
+            navigationMenuViewportClasses,
+            isOpen && navigationMenuViewportActiveClasses,
             className,
           )}
           style={{
@@ -695,9 +687,8 @@ export const NavigationMenuIndicator = React.forwardRef<
       ref={ref}
       data-state={isVisible ? 'visible' : 'hidden'}
       className={classy(
-        'bottom-0 z-10 flex h-2.5 items-end justify-center overflow-hidden',
-        'transition-transform duration-200',
-        isVisible && 'animate-in fade-in',
+        navigationMenuIndicatorClasses,
+        isVisible && navigationMenuIndicatorActiveClasses,
         className,
       )}
       style={{
@@ -708,10 +699,7 @@ export const NavigationMenuIndicator = React.forwardRef<
       aria-hidden="true"
       {...props}
     >
-      <div
-        className="top-full h-2 w-2 rotate-45 rounded-tl-sm bg-border shadow-md"
-        style={{ position: 'relative' }}
-      />
+      <div className={navigationMenuIndicatorArrowClasses} style={{ position: 'relative' }} />
     </div>
   );
 });

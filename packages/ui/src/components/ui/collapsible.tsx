@@ -28,6 +28,7 @@
 import * as React from 'react';
 import classy from '../../primitives/classy';
 import { mergeProps } from '../../primitives/slot';
+import { collapsibleContentClasses } from './collapsible.classes';
 
 // Context for sharing collapsible state
 interface CollapsibleContextValue {
@@ -209,13 +210,7 @@ export function CollapsibleContent({
     'data-state': open ? 'open' : 'closed',
     'data-disabled': disabled ? '' : undefined,
     hidden: !open,
-    className: classy(
-      // Base transition styles for height animation
-      'overflow-hidden transition-all',
-      // Animation states
-      'data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down',
-      className,
-    ),
+    className: classy(collapsibleContentClasses, className),
     ...props,
   };
 

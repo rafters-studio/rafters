@@ -57,6 +57,17 @@ import { onEscapeKeyDown } from '../../primitives/escape-keydown';
 import { createFocusTrap, preventBodyScroll } from '../../primitives/focus-trap';
 import { getPortalContainer } from '../../primitives/portal';
 import { mergeProps } from '../../primitives/slot';
+import {
+  alertDialogActionClasses,
+  alertDialogCancelClasses,
+  alertDialogContainerClasses,
+  alertDialogContentClasses,
+  alertDialogDescriptionClasses,
+  alertDialogFooterClasses,
+  alertDialogHeaderClasses,
+  alertDialogOverlayClasses,
+  alertDialogTitleClasses,
+} from './alert-dialog.classes';
 
 // Context for sharing alert dialog state
 interface AlertDialogContextValue {
@@ -239,7 +250,7 @@ export function AlertDialogOverlay({
 
   const overlayProps = {
     ...ariaProps,
-    className: classy('fixed inset-0 z-depth-overlay bg-foreground/80', className),
+    className: classy(alertDialogOverlayClasses, className),
     ...props,
   };
 
@@ -357,13 +368,10 @@ export function AlertDialogContent({
   }
 
   // Render using a centered container
-  const containerClass = classy('fixed inset-0 z-depth-modal flex items-center justify-center p-4');
+  const containerClass = classy(alertDialogContainerClasses);
 
   // Default styles matching shadcn AlertDialogContent
-  const innerClass = classy(
-    'relative grid w-full max-w-lg gap-4 border bg-background p-6 shadow-lg sm:rounded-lg',
-    className,
-  );
+  const innerClass = classy(alertDialogContentClasses, className);
 
   const innerProps = {
     ref: contentRef,
@@ -419,12 +427,7 @@ export function AlertDialogContent({
 export interface AlertDialogHeaderProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 export function AlertDialogHeader({ className, ...props }: AlertDialogHeaderProps) {
-  return (
-    <div
-      className={classy('flex flex-col space-y-2 text-center sm:text-left', className)}
-      {...props}
-    />
-  );
+  return <div className={classy(alertDialogHeaderClasses, className)} {...props} />;
 }
 
 // ==================== AlertDialogFooter ====================
@@ -432,12 +435,7 @@ export function AlertDialogHeader({ className, ...props }: AlertDialogHeaderProp
 export interface AlertDialogFooterProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 export function AlertDialogFooter({ className, ...props }: AlertDialogFooterProps) {
-  return (
-    <div
-      className={classy('flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2', className)}
-      {...props}
-    />
-  );
+  return <div className={classy(alertDialogFooterClasses, className)} {...props} />;
 }
 
 // ==================== AlertDialogTitle ====================
@@ -451,7 +449,7 @@ export function AlertDialogTitle({ asChild, className, ...props }: AlertDialogTi
 
   const titleProps = {
     id: titleId,
-    className: classy('text-lg font-semibold', className),
+    className: classy(alertDialogTitleClasses, className),
     ...props,
   };
 
@@ -480,7 +478,7 @@ export function AlertDialogDescription({
 
   const descriptionProps = {
     id: descriptionId,
-    className: classy('text-sm text-muted-foreground', className),
+    className: classy(alertDialogDescriptionClasses, className),
     ...props,
   };
 
@@ -513,10 +511,7 @@ export function AlertDialogAction({
     onOpenChange(false);
   };
 
-  const buttonClass = classy(
-    'inline-flex h-10 items-center justify-center rounded-md bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground ring-offset-background transition-colors hover:bg-destructive/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
-    className,
-  );
+  const buttonClass = classy(alertDialogActionClasses, className);
 
   if (asChild && React.isValidElement(props.children)) {
     const child = props.children as React.ReactElement<Record<string, unknown>>;
@@ -553,10 +548,7 @@ export function AlertDialogCancel({
     onOpenChange(false);
   };
 
-  const buttonClass = classy(
-    'mt-2 inline-flex h-10 items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 sm:mt-0',
-    className,
-  );
+  const buttonClass = classy(alertDialogCancelClasses, className);
 
   if (asChild && React.isValidElement(props.children)) {
     const child = props.children as React.ReactElement<Record<string, unknown>>;

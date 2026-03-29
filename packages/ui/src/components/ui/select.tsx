@@ -53,6 +53,31 @@ import { createRovingFocus } from '../../primitives/roving-focus';
 import { mergeProps } from '../../primitives/slot';
 import { createTypeahead } from '../../primitives/typeahead';
 import type { Align, Side } from '../../primitives/types';
+import {
+  selectChevronClasses,
+  selectContentAnimateClasses,
+  selectContentBaseClasses,
+  selectContentFadeClasses,
+  selectContentPaddingClasses,
+  selectContentSlideClasses,
+  selectContentZoomClasses,
+  selectIconClasses,
+  selectItemBaseClasses,
+  selectItemDisabledClasses,
+  selectItemFocusClasses,
+  selectItemIndicatorClasses,
+  selectLabelClasses,
+  selectScrollButtonClasses,
+  selectScrollIconClasses,
+  selectSeparatorClasses,
+  selectTriggerBaseClasses,
+  selectTriggerDisabledClasses,
+  selectTriggerFocusClasses,
+  selectTriggerLineClampClasses,
+  selectTriggerPlaceholderClasses,
+  selectValuePlaceholderClasses,
+  selectViewportClasses,
+} from './select.classes';
 
 // ==================== Context ====================
 
@@ -259,11 +284,11 @@ export function SelectTrigger({
   };
 
   const buttonClassName = classy(
-    'flex w-full items-center justify-between gap-2 rounded-md border border-input bg-background px-3 text-sm ring-offset-background',
-    'placeholder:text-muted-foreground',
-    'focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
-    'disabled:cursor-not-allowed disabled:opacity-50',
-    '[&>span]:line-clamp-1',
+    selectTriggerBaseClasses,
+    selectTriggerPlaceholderClasses,
+    selectTriggerFocusClasses,
+    selectTriggerDisabledClasses,
+    selectTriggerLineClampClasses,
     size === 'default' && 'h-9 py-2',
     size === 'sm' && 'h-8 py-1.5',
     className,
@@ -293,7 +318,7 @@ export function SelectTrigger({
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className="size-4 shrink-0 opacity-50"
+      className={selectChevronClasses}
     >
       <path d="m6 9 6 6 6-6" />
     </svg>
@@ -355,7 +380,7 @@ export function SelectValue({
   const displayValue = label ?? (hasValue ? value : placeholder);
   const isPlaceholder = !hasValue;
 
-  const spanClassName = classy(isPlaceholder ? 'text-muted-foreground' : '', className);
+  const spanClassName = classy(isPlaceholder ? selectValuePlaceholderClasses : '', className);
 
   if (asChild && React.isValidElement(children)) {
     const child = children as React.ReactElement<Record<string, unknown>>;
@@ -627,12 +652,11 @@ export function SelectContent({
   };
 
   const contentClassName = classy(
-    'z-depth-dropdown max-h-96 min-w-32 overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md',
-    'data-[state=open]:animate-in data-[state=closed]:animate-out',
-    'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
-    'data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
-    'data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2',
-    'data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
+    selectContentBaseClasses,
+    selectContentAnimateClasses,
+    selectContentFadeClasses,
+    selectContentZoomClasses,
+    selectContentSlideClasses,
     className,
   );
 
@@ -661,7 +685,7 @@ export function SelectContent({
       })()
     ) : (
       <div {...contentProps}>
-        <div className="p-1">{children}</div>
+        <div className={selectContentPaddingClasses}>{children}</div>
       </div>
     );
 
@@ -680,7 +704,7 @@ export interface SelectViewportProps extends React.HTMLAttributes<HTMLDivElement
 }
 
 export function SelectViewport({ className, children, asChild, ...props }: SelectViewportProps) {
-  const viewportClassName = classy('p-1', className);
+  const viewportClassName = classy(selectViewportClasses, className);
 
   if (asChild && React.isValidElement(children)) {
     const child = children as React.ReactElement<Record<string, unknown>>;
@@ -709,7 +733,7 @@ export interface SelectGroupProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 export function SelectGroup({ className, children, asChild, ...props }: SelectGroupProps) {
-  const groupClassName = classy('', className);
+  const groupClassName = classy(className);
 
   if (asChild && React.isValidElement(children)) {
     const child = children as React.ReactElement<Record<string, unknown>>;
@@ -740,7 +764,7 @@ export interface SelectLabelProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 export function SelectLabel({ className, children, asChild, ...props }: SelectLabelProps) {
-  const labelClassName = classy('py-1.5 pl-8 pr-2 text-sm font-semibold', className);
+  const labelClassName = classy(selectLabelClasses, className);
 
   if (asChild && React.isValidElement(children)) {
     const child = children as React.ReactElement<Record<string, unknown>>;
@@ -831,9 +855,9 @@ export function SelectItem({
   };
 
   const itemClassName = classy(
-    'relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none',
-    'focus:bg-accent focus:text-accent-foreground',
-    'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+    selectItemBaseClasses,
+    selectItemFocusClasses,
+    selectItemDisabledClasses,
     className,
   );
 
@@ -862,7 +886,7 @@ export function SelectItem({
 
   return (
     <div {...itemProps}>
-      <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+      <span className={selectItemIndicatorClasses}>
         {isSelected && (
           <svg
             aria-hidden="true"
@@ -892,7 +916,7 @@ export interface SelectSeparatorProps extends React.HTMLAttributes<HTMLDivElemen
 }
 
 export function SelectSeparator({ className, asChild, ...props }: SelectSeparatorProps) {
-  const separatorClassName = classy('-mx-1 my-1 h-px bg-muted', className);
+  const separatorClassName = classy(selectSeparatorClasses, className);
 
   if (asChild && React.isValidElement(props.children)) {
     const child = props.children as React.ReactElement<Record<string, unknown>>;
@@ -922,7 +946,7 @@ export interface SelectIconProps extends React.HTMLAttributes<HTMLSpanElement> {
  * This component is kept for backwards compatibility.
  */
 export function SelectIcon({ className, children, asChild, ...props }: SelectIconProps) {
-  const iconClassName = classy('ml-auto h-4 w-4 shrink-0 opacity-50', className);
+  const iconClassName = classy(selectIconClasses, className);
 
   if (asChild && React.isValidElement(children)) {
     const child = children as React.ReactElement<Record<string, unknown>>;
@@ -975,7 +999,7 @@ export function SelectScrollUpButton({
   asChild,
   ...props
 }: SelectScrollUpButtonProps) {
-  const buttonClassName = classy('flex cursor-default items-center justify-center py-1', className);
+  const buttonClassName = classy(selectScrollButtonClasses, className);
 
   if (asChild && React.isValidElement(children)) {
     const child = children as React.ReactElement<Record<string, unknown>>;
@@ -1005,7 +1029,7 @@ export function SelectScrollUpButton({
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className="size-4"
+          className={selectScrollIconClasses}
         >
           <path d="m18 15-6-6-6 6" />
         </svg>
@@ -1030,7 +1054,7 @@ export function SelectScrollDownButton({
   asChild,
   ...props
 }: SelectScrollDownButtonProps) {
-  const buttonClassName = classy('flex cursor-default items-center justify-center py-1', className);
+  const buttonClassName = classy(selectScrollButtonClasses, className);
 
   if (asChild && React.isValidElement(children)) {
     const child = children as React.ReactElement<Record<string, unknown>>;
@@ -1060,7 +1084,7 @@ export function SelectScrollDownButton({
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className="size-4"
+          className={selectScrollIconClasses}
         >
           <path d="m6 9 6 6 6-6" />
         </svg>

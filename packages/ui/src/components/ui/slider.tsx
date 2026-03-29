@@ -25,6 +25,15 @@
  */
 import * as React from 'react';
 import classy from '../../primitives/classy';
+import {
+  sliderContainerBaseClasses,
+  sliderRangeBaseClasses,
+  sliderSizeClasses,
+  sliderThumbBaseClasses,
+  sliderThumbInteractionClasses,
+  sliderTrackBaseClasses,
+  sliderVariantClasses,
+} from './slider.classes';
 
 export interface SliderProps
   extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onChange' | 'defaultValue'> {
@@ -58,47 +67,9 @@ export interface SliderProps
   size?: 'sm' | 'default' | 'lg';
 }
 
-// Variant classes for the range indicator and thumb
-const variantClasses: Record<string, { range: string; thumb: string; ring: string }> = {
-  default: {
-    range: 'bg-primary',
-    thumb: 'border-primary',
-    ring: 'focus-visible:ring-primary-ring',
-  },
-  primary: {
-    range: 'bg-primary',
-    thumb: 'border-primary',
-    ring: 'focus-visible:ring-primary-ring',
-  },
-  secondary: {
-    range: 'bg-secondary',
-    thumb: 'border-secondary',
-    ring: 'focus-visible:ring-secondary-ring',
-  },
-  destructive: {
-    range: 'bg-destructive',
-    thumb: 'border-destructive',
-    ring: 'focus-visible:ring-destructive-ring',
-  },
-  success: {
-    range: 'bg-success',
-    thumb: 'border-success',
-    ring: 'focus-visible:ring-success-ring',
-  },
-  warning: {
-    range: 'bg-warning',
-    thumb: 'border-warning',
-    ring: 'focus-visible:ring-warning-ring',
-  },
-  info: { range: 'bg-info', thumb: 'border-info', ring: 'focus-visible:ring-info-ring' },
-  accent: { range: 'bg-accent', thumb: 'border-accent', ring: 'focus-visible:ring-accent-ring' },
-};
-
-const sliderSizeClasses: Record<string, { track: string; thumb: string }> = {
-  sm: { track: 'h-1', thumb: 'h-4 w-4' },
-  default: { track: 'h-2', thumb: 'h-5 w-5' },
-  lg: { track: 'h-3', thumb: 'h-6 w-6' },
-};
+// Re-export variant and size classes from shared file
+const variantClasses = sliderVariantClasses;
+const sizeClassMap = sliderSizeClasses;
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
@@ -328,10 +299,10 @@ export const Slider = React.forwardRef<HTMLDivElement, SliderProps>(
 
     // Get variant and size classes with explicit defaults
     const v = variantClasses[variant] ?? variantClasses.default;
-    const s = sliderSizeClasses[size] ?? { track: 'h-2', thumb: 'h-5 w-5' };
+    const s = sizeClassMap[size] ?? { track: 'h-2', thumb: 'h-5 w-5' };
 
     const containerClasses = classy(
-      'relative flex touch-none select-none items-center',
+      sliderContainerBaseClasses,
       {
         'w-full': isHorizontal,
         'h-full flex-col': !isHorizontal,
@@ -340,14 +311,10 @@ export const Slider = React.forwardRef<HTMLDivElement, SliderProps>(
       className,
     );
 
-    const trackClasses = classy(
-      'relative grow overflow-hidden rounded-full bg-muted',
-      isHorizontal && s.track,
-      {
-        'w-full': isHorizontal,
-        'h-full w-2': !isHorizontal,
-      },
-    );
+    const trackClasses = classy(sliderTrackBaseClasses, isHorizontal && s.track, {
+      'w-full': isHorizontal,
+      'h-full w-2': !isHorizontal,
+    });
 
     const rangeStyle: React.CSSProperties = isHorizontal
       ? {
@@ -371,7 +338,7 @@ export const Slider = React.forwardRef<HTMLDivElement, SliderProps>(
         <div ref={trackRef} className={trackClasses} onPointerDown={handleTrackClick}>
           {/* Range indicator */}
           <div
-            className={classy('absolute', v?.range)}
+            className={classy(sliderRangeBaseClasses, v?.range)}
             style={{
               ...rangeStyle,
               ...(isHorizontal ? { top: 0, bottom: 0 } : { left: 0, right: 0 }),
@@ -408,11 +375,10 @@ export const Slider = React.forwardRef<HTMLDivElement, SliderProps>(
               aria-labelledby={ariaLabelledby}
               aria-describedby={ariaDescribedby}
               className={classy(
-                'absolute block rounded-full border-2 bg-background',
+                sliderThumbBaseClasses,
                 s?.thumb,
                 v?.thumb,
-                'ring-offset-background transition-colors',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+                sliderThumbInteractionClasses,
                 v?.ring,
                 {
                   'cursor-grab': !disabled,

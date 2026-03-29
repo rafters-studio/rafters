@@ -24,6 +24,19 @@
  */
 import * as React from 'react';
 import classy from '../../primitives/classy';
+import {
+  switchSizeClasses,
+  switchThumbBaseClasses,
+  switchThumbTransitionClasses,
+  switchThumbUncheckedClasses,
+  switchTrackBaseClasses,
+  switchTrackDisabledClasses,
+  switchTrackFocusClasses,
+  switchTrackShapeClasses,
+  switchTrackTransitionClasses,
+  switchTrackUncheckedClasses,
+  switchVariantClasses,
+} from './switch.classes';
 
 export interface SwitchProps
   extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'onChange'> {
@@ -47,23 +60,9 @@ export interface SwitchProps
   size?: 'sm' | 'default' | 'lg';
 }
 
-// Variant classes for checked state
-const variantClasses: Record<string, { checked: string; ring: string }> = {
-  default: { checked: 'bg-primary', ring: 'focus-visible:ring-primary-ring' },
-  primary: { checked: 'bg-primary', ring: 'focus-visible:ring-primary-ring' },
-  secondary: { checked: 'bg-secondary', ring: 'focus-visible:ring-secondary-ring' },
-  destructive: { checked: 'bg-destructive', ring: 'focus-visible:ring-destructive-ring' },
-  success: { checked: 'bg-success', ring: 'focus-visible:ring-success-ring' },
-  warning: { checked: 'bg-warning', ring: 'focus-visible:ring-warning-ring' },
-  info: { checked: 'bg-info', ring: 'focus-visible:ring-info-ring' },
-  accent: { checked: 'bg-accent', ring: 'focus-visible:ring-accent-ring' },
-};
-
-const sizeClasses: Record<string, { track: string; thumb: string; translate: string }> = {
-  sm: { track: 'h-5 w-9', thumb: 'h-4 w-4', translate: 'translate-x-4' },
-  default: { track: 'h-6 w-11', thumb: 'h-5 w-5', translate: 'translate-x-5' },
-  lg: { track: 'h-7 w-14', thumb: 'h-6 w-6', translate: 'translate-x-7' },
-};
+// Re-export variant and size classes from shared file
+const variantClasses = switchVariantClasses;
+const sizeClasses = switchSizeClasses;
 
 export const Switch = React.forwardRef<HTMLButtonElement, SwitchProps>(
   (
@@ -125,23 +124,23 @@ export const Switch = React.forwardRef<HTMLButtonElement, SwitchProps>(
 
     // Track (background) styles per docs/COMPONENT_STYLING_REFERENCE.md
     const trackClasses = classy(
-      'peer inline-flex shrink-0 cursor-pointer items-center',
+      switchTrackBaseClasses,
       s?.track,
-      'rounded-full border-2 border-transparent',
-      'transition-colors',
-      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+      switchTrackShapeClasses,
+      switchTrackTransitionClasses,
+      switchTrackFocusClasses,
       v?.ring,
-      'disabled:cursor-not-allowed disabled:opacity-50',
-      checked ? v?.checked : 'bg-input',
+      switchTrackDisabledClasses,
+      checked ? v?.checked : switchTrackUncheckedClasses,
       className,
     );
 
     // Thumb (movable indicator) styles
     const thumbClasses = classy(
-      'pointer-events-none block rounded-full bg-background shadow-lg ring-0',
+      switchThumbBaseClasses,
       s?.thumb,
-      'transition-transform',
-      checked ? s?.translate : 'translate-x-0',
+      switchThumbTransitionClasses,
+      checked ? s?.translate : switchThumbUncheckedClasses,
     );
 
     return (

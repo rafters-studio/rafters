@@ -33,6 +33,19 @@
 
 import * as React from 'react';
 import classy from '../../primitives/classy';
+import {
+  resizableHandleClasses,
+  resizableHandleDisabledClasses,
+  resizableHandleDraggingClasses,
+  resizableHandleGripClasses,
+  resizableHandleGripHorizontalClasses,
+  resizableHandleGripIconClasses,
+  resizableHandleGripVerticalClasses,
+  resizableHandleHorizontalClasses,
+  resizableHandleVerticalClasses,
+  resizablePanelClasses,
+  resizablePanelGroupClasses,
+} from './resizable.classes';
 
 // ==================== Types ====================
 
@@ -311,7 +324,7 @@ export function ResizablePanelGroup({
         data-panel-group=""
         data-direction={direction}
         className={classy(
-          'flex h-full w-full',
+          resizablePanelGroupClasses,
           direction === 'horizontal' ? 'flex-row' : 'flex-col',
           className,
         )}
@@ -409,7 +422,7 @@ export function ResizablePanel({
       data-panel=""
       data-panel-id={id}
       data-collapsed={collapsed}
-      className={classy('relative', className)}
+      className={classy(resizablePanelClasses, className)}
       style={style}
       {...props}
     >
@@ -528,14 +541,12 @@ export function ResizableHandle({
       data-disabled={disabled}
       data-dragging={isDragging}
       className={classy(
-        'relative flex items-center justify-center bg-border',
-        'after:absolute after:inset-y-0 after:left-1/2 after:-translate-x-1/2',
+        resizableHandleClasses,
         direction === 'horizontal'
-          ? 'w-px cursor-col-resize after:w-1'
-          : 'h-px cursor-row-resize after:h-1',
-        'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-1',
-        disabled && 'cursor-not-allowed opacity-50',
-        isDragging && 'bg-primary',
+          ? resizableHandleHorizontalClasses
+          : resizableHandleVerticalClasses,
+        disabled && resizableHandleDisabledClasses,
+        isDragging && resizableHandleDraggingClasses,
         className,
       )}
       onMouseDown={handleMouseDown}
@@ -545,8 +556,10 @@ export function ResizableHandle({
       {withHandle && (
         <div
           className={classy(
-            'z-10 flex items-center justify-center rounded-sm border bg-border',
-            direction === 'horizontal' ? 'h-4 w-3' : 'h-3 w-4',
+            resizableHandleGripClasses,
+            direction === 'horizontal'
+              ? resizableHandleGripHorizontalClasses
+              : resizableHandleGripVerticalClasses,
           )}
         >
           <svg
@@ -557,7 +570,10 @@ export function ResizableHandle({
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className={classy('size-2.5', direction === 'horizontal' ? 'rotate-90' : '')}
+            className={classy(
+              resizableHandleGripIconClasses,
+              direction === 'horizontal' ? 'rotate-90' : '',
+            )}
             aria-hidden="true"
           >
             <title>Drag handle</title>

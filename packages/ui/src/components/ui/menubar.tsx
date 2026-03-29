@@ -48,6 +48,24 @@ import { createRovingFocus } from '../../primitives/roving-focus';
 import { mergeProps } from '../../primitives/slot';
 import { createTypeahead } from '../../primitives/typeahead';
 import type { Align, Side } from '../../primitives/types';
+import {
+  menubarCheckboxIndicatorClasses,
+  menubarCheckboxItemClasses,
+  menubarCheckIconClasses,
+  menubarContentAnimationClasses,
+  menubarContentClasses,
+  menubarItemClasses,
+  menubarLabelClasses,
+  menubarRadioDotClasses,
+  menubarRadioIndicatorClasses,
+  menubarRadioItemClasses,
+  menubarRootClasses,
+  menubarSeparatorClasses,
+  menubarShortcutClasses,
+  menubarSubTriggerClasses,
+  menubarSubTriggerIconClasses,
+  menubarTriggerClasses,
+} from './menubar.classes';
 
 // ==================== Types ====================
 
@@ -225,10 +243,7 @@ const MenubarRoot = React.forwardRef<HTMLDivElement, MenubarProps>(
         <div
           ref={menubarRef}
           role="menubar"
-          className={classy(
-            'flex h-9 items-center gap-1 rounded-md border bg-background p-1',
-            className,
-          )}
+          className={classy(menubarRootClasses, className)}
           onKeyDown={handleKeyDown}
           {...props}
         >
@@ -375,12 +390,7 @@ export const MenubarTrigger = React.forwardRef<HTMLButtonElement, MenubarTrigger
         type="button"
         role="menuitem"
         tabIndex={-1}
-        className={classy(
-          'flex cursor-default select-none items-center rounded-sm px-3 py-1 text-sm font-medium outline-none',
-          'focus:bg-accent focus:text-accent-foreground',
-          'data-[state=open]:bg-accent data-[state=open]:text-accent-foreground',
-          className,
-        )}
+        className={classy(menubarTriggerClasses, className)}
         onClick={handleClick}
         onPointerEnter={handlePointerEnter}
         onKeyDown={handleKeyDown}
@@ -679,15 +689,7 @@ export const MenubarContent = React.forwardRef<HTMLDivElement, MenubarContentPro
       'data-state': open ? 'open' : 'closed',
       'data-side': position.side,
       'data-align': position.align,
-      className: classy(
-        'z-depth-dropdown min-w-48 overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md',
-        'data-[state=open]:animate-in data-[state=closed]:animate-out',
-        'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
-        'data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
-        'data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2',
-        'data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
-        className,
-      ),
+      className: classy(menubarContentClasses, menubarContentAnimationClasses, className),
       style: contentStyle,
       onKeyDown: handleKeyDown,
       ...props,
@@ -750,7 +752,7 @@ export const MenubarLabel = React.forwardRef<HTMLDivElement, MenubarLabelProps>(
     return (
       <div
         ref={ref}
-        className={classy('px-2 py-1.5 text-sm font-semibold', inset && 'pl-8', className)}
+        className={classy(menubarLabelClasses, inset && 'pl-8', className)}
         {...props}
       />
     );
@@ -802,13 +804,7 @@ export const MenubarItem = React.forwardRef<HTMLDivElement, MenubarItemProps>(
         tabIndex={disabled ? undefined : -1}
         aria-disabled={disabled || undefined}
         data-disabled={disabled ? '' : undefined}
-        className={classy(
-          'relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none',
-          'transition-colors focus:bg-accent focus:text-accent-foreground',
-          'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
-          inset && 'pl-8',
-          className,
-        )}
+        className={classy(menubarItemClasses, inset && 'pl-8', className)}
         onClick={handleClick}
         onKeyDown={handleKeyDown}
         {...props}
@@ -880,20 +876,15 @@ export const MenubarCheckboxItem = React.forwardRef<HTMLDivElement, MenubarCheck
         aria-disabled={disabled || undefined}
         data-disabled={disabled ? '' : undefined}
         data-state={checked ? 'checked' : 'unchecked'}
-        className={classy(
-          'relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none',
-          'transition-colors focus:bg-accent focus:text-accent-foreground',
-          'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
-          className,
-        )}
+        className={classy(menubarCheckboxItemClasses, className)}
         onClick={handleClick}
         onKeyDown={handleKeyDown}
         {...props}
       >
-        <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+        <span className={menubarCheckboxIndicatorClasses}>
           {checked && (
             <svg
-              className="h-4 w-4"
+              className={menubarCheckIconClasses}
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -997,18 +988,13 @@ export const MenubarRadioItem = React.forwardRef<HTMLDivElement, MenubarRadioIte
         aria-disabled={disabled || undefined}
         data-disabled={disabled ? '' : undefined}
         data-state={checked ? 'checked' : 'unchecked'}
-        className={classy(
-          'relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none',
-          'transition-colors focus:bg-accent focus:text-accent-foreground',
-          'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
-          className,
-        )}
+        className={classy(menubarRadioItemClasses, className)}
         onClick={handleClick}
         onKeyDown={handleKeyDown}
         {...props}
       >
-        <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
-          {checked && <span className="h-2 w-2 rounded-full bg-current" aria-hidden="true" />}
+        <span className={menubarRadioIndicatorClasses}>
+          {checked && <span className={menubarRadioDotClasses} aria-hidden="true" />}
         </span>
         {children}
       </div>
@@ -1024,9 +1010,7 @@ export interface MenubarSeparatorProps extends React.HTMLAttributes<HTMLHRElemen
 
 export const MenubarSeparator = React.forwardRef<HTMLHRElement, MenubarSeparatorProps>(
   ({ className, ...props }, ref) => {
-    return (
-      <hr ref={ref} className={classy('-mx-1 my-1 h-px border-0 bg-muted', className)} {...props} />
-    );
+    return <hr ref={ref} className={classy(menubarSeparatorClasses, className)} {...props} />;
   },
 );
 
@@ -1037,9 +1021,7 @@ MenubarSeparator.displayName = 'MenubarSeparator';
 export interface MenubarShortcutProps extends React.HTMLAttributes<HTMLSpanElement> {}
 
 export function MenubarShortcut({ className, ...props }: MenubarShortcutProps) {
-  return (
-    <span className={classy('ml-auto text-xs tracking-widest opacity-60', className)} {...props} />
-  );
+  return <span className={classy(menubarShortcutClasses, className)} {...props} />;
 }
 
 // ==================== MenubarSub ====================
@@ -1175,14 +1157,7 @@ export const MenubarSubTrigger = React.forwardRef<HTMLDivElement, MenubarSubTrig
         aria-disabled={disabled || undefined}
         data-disabled={disabled ? '' : undefined}
         data-state={open ? 'open' : 'closed'}
-        className={classy(
-          'relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none',
-          'transition-colors focus:bg-accent focus:text-accent-foreground',
-          'data-[state=open]:bg-accent',
-          'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
-          inset && 'pl-8',
-          className,
-        )}
+        className={classy(menubarSubTriggerClasses, inset && 'pl-8', className)}
         onPointerEnter={handlePointerEnter}
         onPointerLeave={handlePointerLeave}
         onKeyDown={handleKeyDown}
@@ -1190,7 +1165,7 @@ export const MenubarSubTrigger = React.forwardRef<HTMLDivElement, MenubarSubTrig
       >
         {children}
         <svg
-          className="ml-auto h-4 w-4"
+          className={menubarSubTriggerIconClasses}
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"

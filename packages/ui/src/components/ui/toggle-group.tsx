@@ -33,6 +33,16 @@
 import * as React from 'react';
 import classy from '../../primitives/classy';
 import { createRovingFocus } from '../../primitives/roving-focus';
+import {
+  toggleGroupClasses,
+  toggleGroupDefaultVariantClasses,
+  toggleGroupItemBaseClasses,
+  toggleGroupItemDefaultClasses,
+  toggleGroupItemDefaultPressedClasses,
+  toggleGroupItemOutlineClasses,
+  toggleGroupItemOutlinePressedClasses,
+  toggleGroupItemSizeClasses,
+} from './toggle-group.classes';
 
 // ==================== Context ====================
 
@@ -156,8 +166,8 @@ export function ToggleGroup({
 
   // Group styling
   const groupClasses = classy(
-    'inline-flex items-center justify-center gap-1 rounded-lg',
-    variant === 'default' && 'bg-muted p-1',
+    toggleGroupClasses,
+    variant === 'default' && toggleGroupDefaultVariantClasses,
     className,
   );
 
@@ -187,12 +197,6 @@ export interface ToggleGroupItemProps extends React.HTMLAttributes<HTMLButtonEle
   /** Whether this item is disabled */
   disabled?: boolean;
 }
-
-const sizeClasses: Record<string, string> = {
-  default: 'h-9 px-3',
-  sm: 'h-8 px-2',
-  lg: 'h-10 px-4',
-};
 
 export function ToggleGroupItem({
   value,
@@ -235,25 +239,18 @@ export function ToggleGroupItem({
   const getVariantClasses = () => {
     if (variant === 'outline') {
       return classy(
-        'border border-input bg-transparent',
-        isPressed && 'bg-accent text-accent-foreground',
+        toggleGroupItemOutlineClasses,
+        isPressed && toggleGroupItemOutlinePressedClasses,
       );
     }
     // default variant
-    return classy('bg-transparent', isPressed && 'bg-background text-foreground shadow-sm');
+    return classy(toggleGroupItemDefaultClasses, isPressed && toggleGroupItemDefaultPressedClasses);
   };
 
   const itemClasses = classy(
-    // Base styles
-    'inline-flex items-center justify-center',
-    'rounded-md',
-    'text-sm font-medium',
-    'transition-colors',
-    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-    'disabled:pointer-events-none disabled:opacity-50',
-    'hover:bg-muted hover:text-muted-foreground',
+    toggleGroupItemBaseClasses,
     // Size
-    sizeClasses[size] ?? sizeClasses.default,
+    toggleGroupItemSizeClasses[size] ?? toggleGroupItemSizeClasses.default,
     // Variant
     getVariantClasses(),
     className,

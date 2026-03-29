@@ -58,6 +58,17 @@ import { createFocusTrap, preventBodyScroll } from '../../primitives/focus-trap'
 import { onPointerDownOutside } from '../../primitives/outside-click';
 import { getPortalContainer } from '../../primitives/portal';
 import { mergeProps } from '../../primitives/slot';
+import {
+  dialogCloseButtonClasses,
+  dialogCloseIconClasses,
+  dialogContainerClasses,
+  dialogContentClasses,
+  dialogDescriptionClasses,
+  dialogFooterClasses,
+  dialogHeaderClasses,
+  dialogOverlayClasses,
+  dialogTitleClasses,
+} from './dialog.classes';
 
 // Context for sharing dialog state
 interface DialogContextValue {
@@ -223,7 +234,7 @@ export function DialogOverlay({ asChild, forceMount, className, ...props }: Dial
 
   const overlayProps = {
     ...ariaProps,
-    className: classy('fixed inset-0 z-depth-overlay bg-foreground/80', className),
+    className: classy(dialogOverlayClasses, className),
     ...props,
   };
 
@@ -338,7 +349,7 @@ export function DialogContent({
     <button
       type="button"
       onClick={() => onOpenChange(false)}
-      className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground"
+      className={dialogCloseButtonClasses}
       aria-label="Close"
     >
       <svg
@@ -351,7 +362,7 @@ export function DialogContent({
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
-        className="h-4 w-4"
+        className={dialogCloseIconClasses}
         aria-hidden="true"
       >
         <path d="M18 6 6 18" />
@@ -362,12 +373,9 @@ export function DialogContent({
   ) : null;
 
   // Render using a centered container
-  const containerClass = classy('fixed inset-0 z-depth-modal flex items-center justify-center p-4');
+  const containerClass = classy(dialogContainerClasses);
 
-  const innerClass = classy(
-    'relative w-full max-w-lg rounded-lg border border-card-border bg-card p-6 text-card-foreground shadow-lg',
-    className,
-  );
+  const innerClass = classy(dialogContentClasses, className);
 
   const innerProps = {
     ref: contentRef,
@@ -431,12 +439,7 @@ export function DialogContent({
 export interface DialogHeaderProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 export function DialogHeader({ className, ...props }: DialogHeaderProps) {
-  return (
-    <div
-      className={classy('flex flex-col space-y-1.5 text-center sm:text-left', className)}
-      {...props}
-    />
-  );
+  return <div className={classy(dialogHeaderClasses, className)} {...props} />;
 }
 
 // ==================== Dialog.Footer ====================
@@ -444,12 +447,7 @@ export function DialogHeader({ className, ...props }: DialogHeaderProps) {
 export interface DialogFooterProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 export function DialogFooter({ className, ...props }: DialogFooterProps) {
-  return (
-    <div
-      className={classy('flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2', className)}
-      {...props}
-    />
-  );
+  return <div className={classy(dialogFooterClasses, className)} {...props} />;
 }
 
 // ==================== Dialog.Title ====================
@@ -463,7 +461,7 @@ export function DialogTitle({ asChild, className, ...props }: DialogTitleProps) 
 
   const titleProps = {
     id: titleId,
-    className: classy('text-lg font-semibold leading-none tracking-tight', className),
+    className: classy(dialogTitleClasses, className),
     ...props,
   };
 
@@ -488,7 +486,7 @@ export function DialogDescription({ asChild, className, ...props }: DialogDescri
 
   const descriptionProps = {
     id: descriptionId,
-    className: classy('text-sm text-muted-foreground', className),
+    className: classy(dialogDescriptionClasses, className),
     ...props,
   };
 

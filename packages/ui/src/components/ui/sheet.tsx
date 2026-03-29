@@ -59,6 +59,16 @@ import { createFocusTrap, preventBodyScroll } from '../../primitives/focus-trap'
 import { onPointerDownOutside } from '../../primitives/outside-click';
 import { getPortalContainer } from '../../primitives/portal';
 import { mergeProps } from '../../primitives/slot';
+import {
+  sheetCloseButtonClasses,
+  sheetCloseIconClasses,
+  sheetContentClasses,
+  sheetDescriptionClasses,
+  sheetFooterClasses,
+  sheetHeaderClasses,
+  sheetOverlayClasses,
+  sheetTitleClasses,
+} from './sheet.classes';
 
 // Context for sharing sheet state
 interface SheetContextValue {
@@ -227,12 +237,7 @@ export function SheetOverlay({ asChild, forceMount, className, ...props }: Sheet
 
   const overlayProps = {
     ...ariaProps,
-    className: classy(
-      'fixed inset-0 z-depth-overlay bg-foreground/80',
-      'data-[state=open]:animate-in data-[state=closed]:animate-out',
-      'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
-      className,
-    ),
+    className: classy(sheetOverlayClasses, className),
     ...props,
   };
 
@@ -349,17 +354,11 @@ export function SheetContent({
     return null;
   }
 
-  const contentClassName = classy(
-    'fixed z-depth-modal gap-4 bg-background p-6 shadow-lg transition ease-in-out',
-    'data-[state=open]:animate-in data-[state=closed]:animate-out',
-    'data-[state=open]:duration-500 data-[state=closed]:duration-300',
-    sideVariants[side],
-    className,
-  );
+  const contentClassName = classy(sheetContentClasses, sideVariants[side], className);
 
   // Close button component (X icon)
   const closeButton = shouldShowCloseButton ? (
-    <SheetClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
+    <SheetClose className={sheetCloseButtonClasses}>
       <svg
         aria-hidden="true"
         xmlns="http://www.w3.org/2000/svg"
@@ -371,7 +370,7 @@ export function SheetContent({
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
-        className="h-4 w-4"
+        className={sheetCloseIconClasses}
       >
         <path d="M18 6 6 18" />
         <path d="m6 6 12 12" />
@@ -433,12 +432,7 @@ export function SheetContent({
 export interface SheetHeaderProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 export function SheetHeader({ className, ...props }: SheetHeaderProps) {
-  return (
-    <div
-      className={classy('flex flex-col space-y-2 text-center sm:text-left', className)}
-      {...props}
-    />
-  );
+  return <div className={classy(sheetHeaderClasses, className)} {...props} />;
 }
 
 // ==================== Sheet.Footer ====================
@@ -446,12 +440,7 @@ export function SheetHeader({ className, ...props }: SheetHeaderProps) {
 export interface SheetFooterProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 export function SheetFooter({ className, ...props }: SheetFooterProps) {
-  return (
-    <div
-      className={classy('flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2', className)}
-      {...props}
-    />
-  );
+  return <div className={classy(sheetFooterClasses, className)} {...props} />;
 }
 
 // ==================== Sheet.Title ====================
@@ -465,7 +454,7 @@ export function SheetTitle({ asChild, className, ...props }: SheetTitleProps) {
 
   const titleProps = {
     id: titleId,
-    className: classy('text-lg font-semibold text-foreground', className),
+    className: classy(sheetTitleClasses, className),
     ...props,
   };
 
@@ -490,7 +479,7 @@ export function SheetDescription({ asChild, className, ...props }: SheetDescript
 
   const descriptionProps = {
     id: descriptionId,
-    className: classy('text-sm text-muted-foreground', className),
+    className: classy(sheetDescriptionClasses, className),
     ...props,
   };
 

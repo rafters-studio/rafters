@@ -39,6 +39,14 @@
  */
 import * as React from 'react';
 import classy from '../../primitives/classy';
+import {
+  scrollAreaBaseClasses,
+  scrollAreaOrientationClasses,
+  scrollAreaScrollbarBaseClasses,
+  scrollBarBaseClasses,
+  scrollBarOrientationClasses,
+  scrollBarThumbClasses,
+} from './scroll-area.classes';
 
 export interface ScrollAreaProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Scroll direction: vertical, horizontal, or both */
@@ -50,35 +58,15 @@ export interface ScrollBarProps extends React.HTMLAttributes<HTMLDivElement> {
   orientation?: 'vertical' | 'horizontal';
 }
 
-// Scrollbar styling classes using webkit pseudo-elements
-const scrollbarBase = [
-  // Scrollbar width/height
-  '[&::-webkit-scrollbar]:w-2.5',
-  '[&::-webkit-scrollbar]:h-2.5',
-  // Track styling
-  '[&::-webkit-scrollbar-track]:bg-transparent',
-  // Thumb styling
-  '[&::-webkit-scrollbar-thumb]:rounded-full',
-  '[&::-webkit-scrollbar-thumb]:bg-border',
-  // Corner (where scrollbars meet)
-  '[&::-webkit-scrollbar-corner]:bg-transparent',
-].join(' ');
-
-const orientationStyles = {
-  vertical: 'overflow-y-auto overflow-x-hidden',
-  horizontal: 'overflow-x-auto overflow-y-hidden',
-  both: 'overflow-auto',
-};
-
 export const ScrollArea = React.forwardRef<HTMLDivElement, ScrollAreaProps>(
   ({ className, orientation = 'vertical', children, ...props }, ref) => {
     return (
       <div
         ref={ref}
         className={classy(
-          'h-full w-full rounded-sm @md:rounded-md @lg:rounded-lg',
-          scrollbarBase,
-          orientationStyles[orientation],
+          scrollAreaBaseClasses,
+          scrollAreaScrollbarBaseClasses,
+          scrollAreaOrientationClasses[orientation],
           className,
         )}
         {...props}
@@ -99,22 +87,17 @@ ScrollArea.displayName = 'ScrollArea';
  */
 export const ScrollBar = React.forwardRef<HTMLDivElement, ScrollBarProps>(
   ({ className, orientation = 'vertical', ...props }, ref) => {
-    const orientationClasses = {
-      vertical: 'h-full w-2.5 border-l border-l-transparent p-px',
-      horizontal: 'h-2.5 w-full flex-col border-t border-t-transparent p-px',
-    };
-
     return (
       <div
         ref={ref}
         className={classy(
-          'flex touch-none select-none transition-colors',
-          orientationClasses[orientation],
+          scrollBarBaseClasses,
+          scrollBarOrientationClasses[orientation],
           className,
         )}
         {...props}
       >
-        <div className="flex-1 rounded-full bg-border" />
+        <div className={scrollBarThumbClasses} />
       </div>
     );
   },
