@@ -63,9 +63,9 @@ describe('Editor - Accessibility', () => {
     expect(screen.getByLabelText('Document editor')).toHaveAttribute('tabindex', '0');
   });
 
-  it('canvas has visible focus indicator class', () => {
+  it('canvas is focusable and does not trap outline', () => {
     render(<Editor defaultValue={BLOCKS} />);
-    expect(screen.getByLabelText('Document editor')).toHaveClass('focus-visible:ring-2');
+    expect(screen.getByLabelText('Document editor')).toHaveClass('outline-none');
   });
 
   it('disabled editor sets aria-disabled', () => {

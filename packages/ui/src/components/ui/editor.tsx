@@ -24,6 +24,9 @@ import {
   type DocumentEditorControls,
 } from '../../primitives/document-editor';
 import type { BaseBlock, CleanupFunction, Direction, InlineContent } from '../../primitives/types';
+import { Button } from './button';
+import { Container } from './container';
+import { Separator } from './separator';
 
 // =============================================================================
 // Types
@@ -187,9 +190,11 @@ function DocumentBlock({ block }: { block: EditorBlock }) {
 
 function DefaultEmptyState() {
   return (
-    <p className={classy('text-muted-foreground py-8 text-center text-sm')}>
-      No blocks yet. Start typing.
-    </p>
+    <Container as="div" padding="8">
+      <p className={classy('text-muted-foreground text-center text-sm')}>
+        No blocks yet. Start typing.
+      </p>
+    </Container>
   );
 }
 
@@ -239,65 +244,44 @@ function EditorToolbar({
   onChangeBlockType,
 }: ToolbarProps) {
   return (
-    <div
-      role="toolbar"
-      aria-label="Editor toolbar"
-      className={classy('flex items-center gap-1 border-b border-border px-2 py-1')}
-    >
-      {focusedBlock && onChangeBlockType && (
-        <>
-          <select
-            value={blockToTypeValue(focusedBlock)}
-            onChange={(e) => {
-              const option = BLOCK_TYPE_OPTIONS.find((o) => o.value === e.target.value);
-              if (!option) return;
-              const type = option.value.startsWith('heading') ? 'heading' : option.value;
-              onChangeBlockType(focusedBlock.id, type, option.meta);
-            }}
-            aria-label="Block type"
-            className={classy(
-              'rounded-md border border-input bg-background px-2 py-1 text-xs font-medium',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-ring',
-            )}
-          >
-            {BLOCK_TYPE_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-          <hr className={classy('mx-1 h-4 w-px border-0 bg-border')} />
-        </>
-      )}
-      <button
-        type="button"
-        onClick={onUndo}
-        disabled={!canUndo}
-        aria-label="Undo"
-        className={classy(
-          'rounded-md px-2 py-1 text-xs font-medium transition-colors',
-          'hover:bg-accent hover:text-accent-foreground',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-ring',
-          { 'opacity-50 cursor-not-allowed': !canUndo },
-        )}
+    <Container as="div" padding="1" className="border-b border-border">
+      <div
+        role="toolbar"
+        aria-label="Editor toolbar"
+        className={classy('inline-flex items-center')}
       >
-        Undo
-      </button>
-      <button
-        type="button"
-        onClick={onRedo}
-        disabled={!canRedo}
-        aria-label="Redo"
-        className={classy(
-          'rounded-md px-2 py-1 text-xs font-medium transition-colors',
-          'hover:bg-accent hover:text-accent-foreground',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-ring',
-          { 'opacity-50 cursor-not-allowed': !canRedo },
+        {focusedBlock && onChangeBlockType && (
+          <>
+            <select
+              value={blockToTypeValue(focusedBlock)}
+              onChange={(e) => {
+                const option = BLOCK_TYPE_OPTIONS.find((o) => o.value === e.target.value);
+                if (!option) return;
+                const type = option.value.startsWith('heading') ? 'heading' : option.value;
+                onChangeBlockType(focusedBlock.id, type, option.meta);
+              }}
+              aria-label="Block type"
+              className={classy(
+                'rounded-md border border-input bg-background px-2 py-1 text-xs font-medium',
+              )}
+            >
+              {BLOCK_TYPE_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+            <Separator orientation="vertical" className="mx-1 h-4" />
+          </>
         )}
-      >
-        Redo
-      </button>
-    </div>
+        <Button variant="ghost" size="xs" onClick={onUndo} disabled={!canUndo} aria-label="Undo">
+          Undo
+        </Button>
+        <Button variant="ghost" size="xs" onClick={onRedo} disabled={!canRedo} aria-label="Redo">
+          Redo
+        </Button>
+      </div>
+    </Container>
   );
 }
 
@@ -480,16 +464,15 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
 
     // -- Render --
     return (
-      <section
+      <Container
+        as="section"
+        gap="0"
+        query={false}
         {...props}
         aria-label="Editor"
         aria-disabled={disabled || undefined}
         dir={dir}
-        className={classy(
-          'flex flex-col rounded-lg border border-border bg-background',
-          { 'opacity-50 pointer-events-none': disabled },
-          className,
-        )}
+        className={classy({ 'opacity-50 pointer-events-none': disabled }, className)}
       >
         {toolbar && (
           <EditorToolbar
@@ -501,26 +484,23 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
             onChangeBlockType={handleChangeBlockType}
           />
         )}
-        {/* biome-ignore lint/a11y/useSemanticElements: contentEditable div is the correct pattern for block editors */}
-        <div
+        <Container
+          as="div"
+          padding="4"
           ref={canvasRef}
           role="textbox"
           aria-multiline="true"
           aria-label="Document editor"
           tabIndex={disabled ? -1 : 0}
           suppressContentEditableWarning
-          className={classy(
-            'flex-1 p-4 outline-none',
-            'prose prose-sm max-w-none',
-            'focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-ring',
-          )}
+          className={classy('outline-none h-full')}
         >
           {blocks.length === 0 && (emptyState ?? <DefaultEmptyState />)}
           {blocks.map((block) => (
             <DocumentBlock key={block.id} block={block} />
           ))}
-        </div>
-      </section>
+        </Container>
+      </Container>
     );
   },
 );
