@@ -1,8 +1,14 @@
 # rafters
 
-## Unreleased
+## 0.0.32
+
+### Minor Changes
 
 - `rafters init` writes `.claude/skills/rafters-frontend/SKILL.md` to consumer project -- agents see Container, Grid, and typography examples every session
+- Configurable dark mode: `darkMode: 'class'` (default, `.dark` class toggle) or `'media'` (OS preference) in config.rafters.json
+
+### Patch Changes
+
 - `classy` detects layout utilities (`flex`, `gap-*`, `p-*`, `m-*`): strips on components, warns on consumer code
 - Fix `@/` import paths doubling `src/` prefix in Astro/Vite projects
 
