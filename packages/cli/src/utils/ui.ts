@@ -74,12 +74,12 @@ export function log(event: Record<string, unknown>): void {
       break;
 
     case 'init:regenerate':
+      context.spinner?.stop();
       context.spinner = ora('Regenerating from existing config...').start();
       break;
 
     case 'init:loaded':
       context.spinner?.succeed(`Loaded ${event.tokenCount} tokens`);
-      context.spinner = ora('Generating outputs...').start();
       break;
 
     case 'init:existing_design_detected':
@@ -118,12 +118,15 @@ export function log(event: Record<string, unknown>): void {
 
     case 'init:complete': {
       context.spinner?.succeed('Done!');
+      context.spinner = null;
       console.log(`\n  Output: ${event.path}`);
       const outputs = event.outputs as string[];
       for (const file of outputs) {
         console.log(`    - ${file}`);
       }
       console.log('');
+      // Release stdin so process can exit after inquirer prompts
+      if (process.stdin.unref) process.stdin.unref();
       break;
     }
 
