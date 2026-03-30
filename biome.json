@@ -23,7 +23,8 @@
       "!apps/demo/src/styles/global.css",
       "!**/.rafters",
       "!.claude/worktrees",
-      "!docs-site"
+      "!docs-site",
+      "!docs/templates"
     ]
   },
   "assist": { "actions": { "source": { "organizeImports": "on" } } },

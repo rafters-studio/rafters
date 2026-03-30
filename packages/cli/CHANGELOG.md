@@ -1,5 +1,11 @@
 # rafters
 
+## 0.0.36
+
+### Patch Changes
+
+- Fix init --rebuild spinner bugs: orphaned spinner on rebuild path, spinner not nulled on complete, stdin not released after inquirer prompts
+
 ## 0.0.35
 
 ### Patch Changes
