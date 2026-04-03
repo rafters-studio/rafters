@@ -1,5 +1,11 @@
 # rafters
 
+## 0.0.37
+
+### Patch Changes
+
+- fix(mcp): resolve component files by framework target instead of hardcoding .tsx (#1146). MCP tools now find .astro, .vue, and .svelte components using componentTarget from config. Also reads .classes.ts companions for variant/size data. Fixes rafters_component returning null in all non-React consumer projects.
+
 ## 0.0.36
 
 ### Patch Changes
