@@ -152,6 +152,11 @@ export function frameworkToTarget(framework: Framework): ComponentTarget {
 }
 
 /**
+ * All supported component file extensions, derived from ComponentTarget values.
+ */
+export const COMPONENT_EXTENSIONS = ['.tsx', '.astro', '.vue', '.svelte'] as const;
+
+/**
  * Map a component target to its preferred file extension.
  */
 export function targetToExtension(target: ComponentTarget): string {
@@ -162,6 +167,17 @@ export function targetToExtension(target: ComponentTarget): string {
     svelte: '.svelte',
   };
   return map[target];
+}
+
+/**
+ * Resolve the component target from a config, falling back to framework detection.
+ */
+export function resolveComponentTarget(
+  config: { componentTarget?: ComponentTarget; framework?: Framework } | null,
+): ComponentTarget {
+  if (config?.componentTarget) return config.componentTarget;
+  if (config?.framework) return frameworkToTarget(config.framework);
+  return 'react';
 }
 
 /**

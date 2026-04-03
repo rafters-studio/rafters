@@ -48,6 +48,11 @@ import {
 } from '@rafters/shared';
 import type { RaftersConfig } from '../commands/init.js';
 import { registryClient } from '../registry/client.js';
+import {
+  COMPONENT_EXTENSIONS,
+  resolveComponentTarget,
+  targetToExtension,
+} from '../utils/detect.js';
 import { getRaftersPaths } from '../utils/paths.js';
 import {
   BUDGET_TIERS,
@@ -984,12 +989,34 @@ export class RaftersToolHandler {
   }
 
   /**
-   * Load component metadata from source file
+   * Find the actual component file on disk for a given name.
+   * Checks the config's componentTarget extension first, then falls back
+   * to all known extensions so Astro projects with React islands also work.
+   */
+  private async resolveComponentFile(componentsPath: string, name: string): Promise<string | null> {
+    const config = await this.loadConfig();
+    const preferredExt = targetToExtension(resolveComponentTarget(config));
+    const preferred = join(componentsPath, `${name}${preferredExt}`);
+    if (existsSync(preferred)) return preferred;
+
+    for (const ext of COMPONENT_EXTENSIONS) {
+      if (ext === preferredExt) continue;
+      const candidate = join(componentsPath, `${name}${ext}`);
+      if (existsSync(candidate)) return candidate;
+    }
+    return null;
+  }
+
+  /**
+   * Load component metadata from source file.
+   * Resolves the actual file extension from the config's componentTarget
+   * and merges variant/size data from .classes.ts companions when present.
    */
   private async loadComponentMetadata(name: string): Promise<ComponentMetadata | null> {
     const componentsPath = await this.getComponentsPath();
     if (!componentsPath) return null;
-    const filePath = join(componentsPath, `${name}.tsx`);
+    const filePath = await this.resolveComponentFile(componentsPath, name);
+    if (!filePath) return null;
 
     try {
       const source = await readFile(filePath, 'utf-8');
@@ -1003,16 +1030,32 @@ export class RaftersToolHandler {
         // JSDoc parsing failure should not prevent component metadata from being returned
       }
 
+      let variants = extractVariants(source);
+      let sizes = extractSizes(source);
+
+      // Merge variant/size data from .classes.ts companion when present
+      try {
+        const classesSource = await readFile(join(componentsPath, `${name}.classes.ts`), 'utf-8');
+        if (!variants || variants.length === 0) {
+          variants = extractVariants(classesSource);
+        }
+        if (!sizes || sizes.length === 0) {
+          sizes = extractSizes(classesSource);
+        }
+      } catch {
+        // No .classes.ts companion or read failure -- non-fatal
+      }
+
       const metadata: ComponentMetadata = {
         name,
         displayName: toDisplayName(name),
         category: this.inferCategory(name),
-        variants: extractVariants(source),
-        sizes: extractSizes(source),
+        variants,
+        sizes,
         dependencies: extractDependencies(source),
         primitives: extractPrimitiveDependencies(source),
         // projectRoot is guaranteed non-null here: handleToolCall guards it
-        filePath: relative(this.projectRoot as string, join(componentsPath, `${name}.tsx`)),
+        filePath: relative(this.projectRoot as string, filePath),
       };
 
       if (hasAnyDeps(jsDocDeps)) {
@@ -1118,8 +1161,14 @@ export class RaftersToolHandler {
           try {
             const files = await readdir(componentsPath);
             available = files
-              .filter((f) => f.endsWith('.tsx'))
-              .map((f) => basename(f, '.tsx'))
+              .filter(
+                (f) =>
+                  COMPONENT_EXTENSIONS.some((ext) => f.endsWith(ext)) && !f.includes('.classes.'),
+              )
+              .map((f) => {
+                const ext = COMPONENT_EXTENSIONS.find((e) => f.endsWith(e));
+                return ext ? basename(f, ext) : basename(f);
+              })
               .filter((n) => n.includes(name) || name.includes(n))
               .slice(0, 5);
           } catch {

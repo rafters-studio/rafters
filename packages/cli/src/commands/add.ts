@@ -10,7 +10,11 @@ import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { RegistryClient } from '../registry/client.js';
 import type { RegistryFile, RegistryItem } from '../registry/types.js';
-import { type ComponentTarget, frameworkToTarget, targetToExtension } from '../utils/detect.js';
+import {
+  type ComponentTarget,
+  resolveComponentTarget,
+  targetToExtension,
+} from '../utils/detect.js';
 import { DEFAULT_EXPORTS } from '../utils/exports.js';
 import {
   type InstallRegistryDepsResult,
@@ -86,9 +90,7 @@ export function getInstalledNames(config: RaftersConfig | null): string[] {
  * Resolve the component target from config, falling back to framework detection.
  */
 function getComponentTarget(config: RaftersConfig | null): ComponentTarget {
-  if (config?.componentTarget) return config.componentTarget;
-  if (config?.framework) return frameworkToTarget(config.framework);
-  return 'react';
+  return resolveComponentTarget(config);
 }
 
 /**
