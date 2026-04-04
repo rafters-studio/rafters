@@ -558,6 +558,11 @@ export const TOOL_DEFINITIONS = [
           type: 'string',
           description: 'Token category (required for create). E.g., "color", "spacing", "font".',
         },
+        dark: {
+          type: 'string',
+          description:
+            'Dark mode color reference as "family-position" (e.g., "neutral-950"). For semantic tokens, sets dependsOn[1] so the CSS dark mode layer uses this reference instead of the light value.',
+        },
       },
       required: ['name'],
     },
@@ -1392,6 +1397,21 @@ export class RaftersToolHandler {
 
   // ==================== Token Write Operations ====================
 
+  private static readonly VALID_SCALE_POSITIONS = /^(50|100|200|300|400|500|600|700|800|900|950)$/;
+
+  /**
+   * Parse "family-position" string (e.g., "neutral-950") into { family, position }.
+   * Returns null if the string is not a valid color reference.
+   */
+  static parseColorRef(ref: string): { family: string; position: string } | null {
+    const lastDash = ref.lastIndexOf('-');
+    if (lastDash <= 0) return null;
+    const position = ref.slice(lastDash + 1);
+    const family = ref.slice(0, lastDash);
+    if (!RaftersToolHandler.VALID_SCALE_POSITIONS.test(position)) return null;
+    return { family, position };
+  }
+
   /**
    * Handle set, create, and reset actions for rafters_token.
    * Loads the full registry, mutates, cascades, persists, and regenerates outputs.
@@ -1400,6 +1420,7 @@ export class RaftersToolHandler {
     const name = args.name as string;
     const reason = args.reason as string | undefined;
     const value = args.value as string | undefined;
+    const dark = args.dark as string | undefined;
 
     // Why-gate: every mutation needs a reason
     if (!reason) {
@@ -1452,17 +1473,78 @@ export class RaftersToolHandler {
             };
           }
 
-          // Set with userOverride tracking
+          // Validate dark parameter before any mutation
+          if (dark) {
+            if (existing.namespace !== 'semantic') {
+              return {
+                content: [
+                  {
+                    type: 'text',
+                    text: JSON.stringify({
+                      error: `The "dark" parameter only applies to semantic color tokens. Token "${name}" is in the "${existing.namespace}" namespace.`,
+                    }),
+                  },
+                ],
+                isError: true,
+              };
+            }
+            if (!RaftersToolHandler.parseColorRef(dark)) {
+              return {
+                content: [
+                  {
+                    type: 'text',
+                    text: JSON.stringify({
+                      error: `Invalid dark reference "${dark}". Use format "family-position" (e.g., "neutral-950"). Valid positions: 50, 100-900 by 100, 950.`,
+                    }),
+                  },
+                ],
+                isError: true,
+              };
+            }
+          }
+
+          // Set with userOverride tracking — use setToken() to persist full token including userOverride
           const previousValue = existing.value;
           existing.userOverride = {
             previousValue:
               typeof previousValue === 'string' ? previousValue : JSON.stringify(previousValue),
             reason,
           };
-          await registry.set(name, value);
+
+          // Semantic tokens need ColorReference objects, not plain strings
+          // (the CSS exporter skips string values for semantic tokens)
+          const parsed =
+            existing.namespace === 'semantic' && typeof value === 'string'
+              ? RaftersToolHandler.parseColorRef(value)
+              : null;
+
+          if (existing.namespace === 'semantic' && typeof value === 'string' && !parsed) {
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify({
+                    error: `Semantic token "${name}" requires a color reference in "family-position" format (e.g., "neutral-50"), not "${value}". Use rafters_vocabulary to find available color families.`,
+                  }),
+                },
+              ],
+              isError: true,
+            };
+          }
+
+          if (parsed) {
+            existing.value = parsed;
+            const lightRefStr = `${parsed.family}-${parsed.position}`;
+            const darkRef = dark ?? existing.dependsOn?.[1] ?? lightRefStr;
+            existing.dependsOn = [lightRefStr, darkRef];
+          } else {
+            existing.value = value;
+          }
+
+          await registry.setToken(existing);
 
           const affected = this.getAffectedTokens(registry, name);
-          await this.regenerateOutputs(registry);
+          const outputFiles = await this.regenerateOutputs(registry);
 
           return {
             content: [
@@ -1473,7 +1555,13 @@ export class RaftersToolHandler {
                   action: 'set',
                   name,
                   reason,
+                  persisted: {
+                    value: existing.value,
+                    dependsOn: existing.dependsOn,
+                    namespace: existing.namespace,
+                  },
                   cascaded: affected,
+                  outputFiles,
                 }),
               },
             ],
@@ -1534,7 +1622,7 @@ export class RaftersToolHandler {
 
           registry.add(newToken);
           await this.adapter.save(registry.list());
-          await this.regenerateOutputs(registry);
+          const outputFiles = await this.regenerateOutputs(registry);
 
           return {
             content: [
@@ -1546,6 +1634,12 @@ export class RaftersToolHandler {
                   name,
                   namespace,
                   reason,
+                  persisted: {
+                    value: newToken.value,
+                    dependsOn: newToken.dependsOn,
+                    namespace: newToken.namespace,
+                  },
+                  outputFiles,
                 }),
               },
             ],
@@ -1565,8 +1659,9 @@ export class RaftersToolHandler {
 
           await registry.set(name, COMPUTED);
 
+          const resolved = registry.get(name);
           const affected = this.getAffectedTokens(registry, name);
-          await this.regenerateOutputs(registry);
+          const outputFiles = await this.regenerateOutputs(registry);
 
           return {
             content: [
@@ -1577,7 +1672,13 @@ export class RaftersToolHandler {
                   action: 'reset',
                   name,
                   reason,
+                  persisted: {
+                    value: resolved?.value,
+                    dependsOn: resolved?.dependsOn,
+                    namespace: resolved?.namespace,
+                  },
                   cascaded: affected,
+                  outputFiles,
                 }),
               },
             ],
@@ -1616,10 +1717,11 @@ export class RaftersToolHandler {
   }
 
   /**
-   * Regenerate output files (CSS, TS, DTCG) from registry state
+   * Regenerate output files (CSS, TS, DTCG) from registry state.
+   * Returns list of files written so callers can report what changed.
    */
-  private async regenerateOutputs(registry: TokenRegistry): Promise<void> {
-    if (!this.projectRoot) return;
+  private async regenerateOutputs(registry: TokenRegistry): Promise<string[]> {
+    if (!this.projectRoot) return [];
 
     const paths = getRaftersPaths(this.projectRoot);
     const config = await this.loadConfig();
@@ -1630,24 +1732,33 @@ export class RaftersToolHandler {
       compiled: false,
     };
     const shadcn = config?.shadcn ?? false;
+    const written: string[] = [];
 
     await mkdir(paths.output, { recursive: true });
 
     if (exports.tailwind) {
       const darkMode = config?.darkMode ?? 'class';
       const css = registryToTailwind(registry, { includeImport: !shadcn, darkMode });
-      await writeFile(join(paths.output, 'rafters.css'), css);
+      const cssPath = join(paths.output, 'rafters.css');
+      await writeFile(cssPath, css);
+      written.push(relative(this.projectRoot, cssPath));
     }
 
     if (exports.typescript) {
       const ts = registryToTypeScript(registry, { includeJSDoc: true });
-      await writeFile(join(paths.output, 'rafters.ts'), ts);
+      const tsPath = join(paths.output, 'rafters.ts');
+      await writeFile(tsPath, ts);
+      written.push(relative(this.projectRoot, tsPath));
     }
 
     if (exports.dtcg) {
       const json = toDTCG(registry.list());
-      await writeFile(join(paths.output, 'rafters.json'), JSON.stringify(json, null, 2));
+      const jsonPath = join(paths.output, 'rafters.json');
+      await writeFile(jsonPath, JSON.stringify(json, null, 2));
+      written.push(relative(this.projectRoot, jsonPath));
     }
+
+    return written;
   }
 
   // ==================== Tool 6: Onboard ====================
@@ -2176,17 +2287,10 @@ export class RaftersToolHandler {
         ok: boolean;
         enriched?: boolean;
         error?: string;
+        persisted?: { value: unknown; dependsOn?: string[] };
       }> = [];
 
-      // Parse "family-position" strings (e.g., "neutral-950") into components
-      const parseRef = (ref: string): { family: string; position: string } | null => {
-        const lastDash = ref.lastIndexOf('-');
-        if (lastDash <= 0) return null;
-        const position = ref.slice(lastDash + 1);
-        const family = ref.slice(0, lastDash);
-        if (!/^(50|100|200|300|400|500|600|700|800|900|950)$/.test(position)) return null;
-        return { family, position };
-      };
+      const parseRef = RaftersToolHandler.parseColorRef;
 
       for (const mapping of mappings) {
         const { source, target, value, reason, namespace, category } = mapping;
@@ -2311,30 +2415,23 @@ export class RaftersToolHandler {
             reason: `Remapped from ${source}: ${reason}`,
           };
 
-          // Set value to the light ColorReference
+          // Set value AND dependsOn atomically via setToken so both persist
           const newColorRef = { family: newLight.family, position: newLight.position };
-          await registry.set(target, newColorRef);
-
-          // Update dependsOn with light[0] and dark[1] refs
-          const updated = registry.get(target);
-          if (updated) {
-            updated.dependsOn = [lightTokenName, darkTokenName];
-          } else {
-            results.push({
-              source,
-              target,
-              action: 'skipped',
-              ok: false,
-              error: `Token "${target}" was set but could not be retrieved from registry to update dependencies.`,
-            });
-            continue;
-          }
+          await registry.setToken({
+            ...existing,
+            value: newColorRef,
+            dependsOn: [lightTokenName, darkTokenName],
+          });
 
           results.push({
             source,
             target,
             action: 'remap',
             ok: true,
+            persisted: {
+              value: newColorRef,
+              dependsOn: [lightTokenName, darkTokenName],
+            },
           });
           continue;
         }
@@ -2409,7 +2506,7 @@ export class RaftersToolHandler {
 
       // Persist and regenerate once after all mappings
       await this.adapter.save(registry.list());
-      await this.regenerateOutputs(registry);
+      const outputFiles = await this.regenerateOutputs(registry);
 
       const setCount = results.filter((r) => r.action === 'set' && r.ok).length;
       const createCount = results.filter((r) => r.action === 'create' && r.ok).length;
@@ -2432,6 +2529,7 @@ export class RaftersToolHandler {
                   failed: failCount,
                 },
                 results,
+                outputFiles,
               },
               null,
               2,

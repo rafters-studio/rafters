@@ -1,5 +1,13 @@
 # rafters
 
+## 0.0.39
+
+### Patch Changes
+
+- fix(mcp): dark mode semantic tokens now persist correctly after onboard map. The map handler was mutating dependsOn in memory after registry.set() had already persisted, so dark mode CSS output still referenced neutral defaults. Now uses registry.setToken() to atomically persist value and dependsOn together.
+- fix(mcp): rafters_token set on semantic tokens now parses "family-position" strings into ColorReference objects. Previously, setting a semantic token stored a plain string which the CSS exporter skipped, falling back to DEFAULT_SEMANTIC_COLOR_MAPPINGS. Now auto-parses and updates both value and dependsOn for correct dark mode output.
+- fix(mcp): validate dark param and reject invalid semantic token values. The dark parameter is now validated through parseColorRef (rejects garbage like "purple"), rejected for non-semantic tokens (was corrupting dependsOn on spacing/font tokens), and unparseable string values for semantic tokens return an actionable error instead of silently succeeding.
+
 ## 0.0.38
 
 ### Minor Changes
@@ -10,6 +18,9 @@
 
 ### Patch Changes
 
+- fix(mcp): rafters_token set now persists userOverride metadata to disk. Previously, set modified the local token object but called registry.set() which only persisted the value, discarding userOverride. Now uses registry.setToken() to persist the full token object including override tracking. Fixes #1111.
+- fix(mcp): semantic remapping in onboard map now persists dependsOn atomically with value. Previously, registry.set() persisted value then dependsOn was set after persist, so dark mode references were lost on reload. Fixes dark mode CSS still outputting neutral defaults after onboard map with dark fields.
+- feat(mcp): rafters_token set now accepts a "dark" parameter for semantic tokens. Sets dependsOn[1] so the CSS dark mode layer uses the specified color reference instead of falling back to the light value.
 - fix(tailwind): filter decomposed shadow parts from Tailwind utility generation. Shadow offset-x/y, blur, spread, color tokens are emitted as --rafters-* custom properties only, not as --shadow-* Tailwind utilities.
 - fix(tailwind): skip breakpoint tokens with media query values (e.g., prefers-reduced-motion conditions) that would generate invalid Tailwind CSS.
 - fix(mcp): onboard analyze now detects .dark/prefers-color-scheme CSS and guides agents to remap semantic surface tokens after mapping color families.

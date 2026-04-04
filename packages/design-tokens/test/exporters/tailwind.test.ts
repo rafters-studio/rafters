@@ -335,6 +335,62 @@ describe('tokensToTailwind', () => {
   });
 });
 
+describe('dark mode semantic token remapping', () => {
+  it('should use dependsOn[1] for dark mode semantic tokens instead of defaults', () => {
+    const tokens: Token[] = [
+      { name: 'neutral-500', value: 'oklch(0.55 0 0)', category: 'color', namespace: 'color' },
+      {
+        name: 'background',
+        value: { family: 'neutral', position: '50' },
+        category: 'color',
+        namespace: 'semantic',
+        dependsOn: ['neutral-50', 'silver-true-sky-950'],
+      },
+    ];
+
+    const css = tokensToTailwind(tokens);
+
+    // Should use the remapped dark reference from dependsOn[1], not the default neutral-950
+    expect(css).toContain('--rafters-dark-background: var(--color-silver-true-sky-950);');
+    expect(css).not.toContain('--rafters-dark-background: var(--color-neutral-950);');
+  });
+
+  it('should use light value as dark fallback when dependsOn[1] is missing', () => {
+    const tokens: Token[] = [
+      { name: 'neutral-500', value: 'oklch(0.55 0 0)', category: 'color', namespace: 'color' },
+      {
+        name: 'background',
+        value: { family: 'custom', position: '50' },
+        category: 'color',
+        namespace: 'semantic',
+        dependsOn: ['custom-50'],
+      },
+    ];
+
+    const css = tokensToTailwind(tokens);
+
+    // With only dependsOn[0], dark should fall back to light ref
+    expect(css).toContain('--rafters-dark-background: var(--color-custom-50);');
+  });
+
+  it('should fall back to DEFAULT_SEMANTIC_COLOR_MAPPINGS for string-valued semantic tokens', () => {
+    const tokens: Token[] = [
+      { name: 'neutral-500', value: 'oklch(0.55 0 0)', category: 'color', namespace: 'color' },
+      {
+        name: 'background',
+        value: 'some-string-value',
+        category: 'color',
+        namespace: 'semantic',
+      },
+    ];
+
+    const css = tokensToTailwind(tokens);
+
+    // String values are skipped by the exporter, should fall back to defaults
+    expect(css).toContain('--rafters-dark-background: var(--color-neutral-950);');
+  });
+});
+
 describe('registryToTailwind', () => {
   it('should convert registry to Tailwind CSS', () => {
     const registry = new TokenRegistry([
