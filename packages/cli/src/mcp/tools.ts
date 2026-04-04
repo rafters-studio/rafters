@@ -1397,6 +1397,21 @@ export class RaftersToolHandler {
 
   // ==================== Token Write Operations ====================
 
+  private static readonly VALID_SCALE_POSITIONS = /^(50|100|200|300|400|500|600|700|800|900|950)$/;
+
+  /**
+   * Parse "family-position" string (e.g., "neutral-950") into { family, position }.
+   * Returns null if the string is not a valid color reference.
+   */
+  static parseColorRef(ref: string): { family: string; position: string } | null {
+    const lastDash = ref.lastIndexOf('-');
+    if (lastDash <= 0) return null;
+    const position = ref.slice(lastDash + 1);
+    const family = ref.slice(0, lastDash);
+    if (!RaftersToolHandler.VALID_SCALE_POSITIONS.test(position)) return null;
+    return { family, position };
+  }
+
   /**
    * Handle set, create, and reset actions for rafters_token.
    * Loads the full registry, mutates, cascades, persists, and regenerates outputs.
@@ -1466,34 +1481,23 @@ export class RaftersToolHandler {
             reason,
           };
 
-          // For semantic tokens, parse "family-position" strings into ColorReference
-          // so the CSS exporter can read the value (it skips plain strings)
-          if (existing.namespace === 'semantic' && typeof value === 'string') {
-            const lastDash = value.lastIndexOf('-');
-            const position = lastDash > 0 ? value.slice(lastDash + 1) : '';
-            const family = lastDash > 0 ? value.slice(0, lastDash) : '';
-            if (/^(50|100|200|300|400|500|600|700|800|900|950)$/.test(position)) {
-              existing.value = { family, position };
-              // Update dependsOn to match the new light reference
-              const lightRefStr = `${family}-${position}`;
-              const currentDark = dark ?? existing.dependsOn?.[1] ?? lightRefStr;
-              existing.dependsOn = [lightRefStr, currentDark];
-            } else {
-              existing.value = value;
-            }
+          // Semantic tokens need ColorReference objects, not plain strings
+          // (the CSS exporter skips string values for semantic tokens)
+          const parsed =
+            existing.namespace === 'semantic' && typeof value === 'string'
+              ? RaftersToolHandler.parseColorRef(value)
+              : null;
+
+          if (parsed) {
+            existing.value = parsed;
+            const lightRefStr = `${parsed.family}-${parsed.position}`;
+            const darkRef = dark ?? existing.dependsOn?.[1] ?? lightRefStr;
+            existing.dependsOn = [lightRefStr, darkRef];
           } else {
             existing.value = value;
-          }
-
-          // If dark parameter provided, update dependsOn for dark mode CSS generation
-          if (dark) {
-            const lightRef =
-              typeof existing.value === 'object' &&
-              existing.value !== null &&
-              'family' in existing.value
-                ? `${(existing.value as { family: string; position: string }).family}-${(existing.value as { family: string; position: string }).position}`
-                : (existing.dependsOn?.[0] ?? name);
-            existing.dependsOn = [lightRef, dark];
+            if (dark) {
+              existing.dependsOn = [existing.dependsOn?.[0] ?? name, dark];
+            }
           }
 
           await registry.setToken(existing);
@@ -2215,15 +2219,7 @@ export class RaftersToolHandler {
         error?: string;
       }> = [];
 
-      // Parse "family-position" strings (e.g., "neutral-950") into components
-      const parseRef = (ref: string): { family: string; position: string } | null => {
-        const lastDash = ref.lastIndexOf('-');
-        if (lastDash <= 0) return null;
-        const position = ref.slice(lastDash + 1);
-        const family = ref.slice(0, lastDash);
-        if (!/^(50|100|200|300|400|500|600|700|800|900|950)$/.test(position)) return null;
-        return { family, position };
-      };
+      const parseRef = RaftersToolHandler.parseColorRef;
 
       for (const mapping of mappings) {
         const { source, target, value, reason, namespace, category } = mapping;
