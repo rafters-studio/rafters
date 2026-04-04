@@ -1473,6 +1473,36 @@ export class RaftersToolHandler {
             };
           }
 
+          // Validate dark parameter before any mutation
+          if (dark) {
+            if (existing.namespace !== 'semantic') {
+              return {
+                content: [
+                  {
+                    type: 'text',
+                    text: JSON.stringify({
+                      error: `The "dark" parameter only applies to semantic color tokens. Token "${name}" is in the "${existing.namespace}" namespace.`,
+                    }),
+                  },
+                ],
+                isError: true,
+              };
+            }
+            if (!RaftersToolHandler.parseColorRef(dark)) {
+              return {
+                content: [
+                  {
+                    type: 'text',
+                    text: JSON.stringify({
+                      error: `Invalid dark reference "${dark}". Use format "family-position" (e.g., "neutral-950"). Valid positions: 50, 100-900 by 100, 950.`,
+                    }),
+                  },
+                ],
+                isError: true,
+              };
+            }
+          }
+
           // Set with userOverride tracking — use setToken() to persist full token including userOverride
           const previousValue = existing.value;
           existing.userOverride = {
@@ -1488,6 +1518,20 @@ export class RaftersToolHandler {
               ? RaftersToolHandler.parseColorRef(value)
               : null;
 
+          if (existing.namespace === 'semantic' && typeof value === 'string' && !parsed) {
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify({
+                    error: `Semantic token "${name}" requires a color reference in "family-position" format (e.g., "neutral-50"), not "${value}". Use rafters_vocabulary to find available color families.`,
+                  }),
+                },
+              ],
+              isError: true,
+            };
+          }
+
           if (parsed) {
             existing.value = parsed;
             const lightRefStr = `${parsed.family}-${parsed.position}`;
@@ -1495,9 +1539,6 @@ export class RaftersToolHandler {
             existing.dependsOn = [lightRefStr, darkRef];
           } else {
             existing.value = value;
-            if (dark) {
-              existing.dependsOn = [existing.dependsOn?.[0] ?? name, dark];
-            }
           }
 
           await registry.setToken(existing);
