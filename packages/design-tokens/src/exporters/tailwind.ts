@@ -310,13 +310,15 @@ function generateThemeBlock(groups: GroupedTokens): string {
   }
 
   // Spacing tokens -- Tailwind v4 reads --spacing-* for p-*, m-*, gap-*
+  // Token values reference var(--rafters-spacing-base) for the :root layer,
+  // but @theme needs var(--spacing-base) since that's the @theme variable name
   if (groups.spacing.length > 0) {
     for (const token of groups.spacing) {
       const value = tokenValueToCSS(token);
       if (value === null) continue;
-      // Strip "spacing-" prefix: token "spacing-4" becomes "--spacing-4"
       const key = token.name.replace(/^spacing-/, '');
-      lines.push(`  --spacing-${key}: ${value};`);
+      const themeValue = value.replaceAll('var(--rafters-spacing-base)', 'var(--spacing-base)');
+      lines.push(`  --spacing-${key}: ${themeValue};`);
     }
     lines.push('');
   }
