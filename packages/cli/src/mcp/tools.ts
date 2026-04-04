@@ -1831,7 +1831,7 @@ export class RaftersToolHandler {
    * Find an accessible foreground position against a given background position.
    * Tries AAA first (7:1), falls back to AA (4.5:1), keeps default if both pass.
    */
-  private findAccessibleFgPosition(
+  private static findAccessibleFgPosition(
     bgPosition: string,
     defaultFgPosition: string,
     aaaPairs: number[][],
@@ -1890,9 +1890,8 @@ export class RaftersToolHandler {
     const aaPairs = colorValue?.accessibility?.wcagAA?.normal ?? [];
 
     for (const [name, mapping] of Object.entries(DEFAULT_SEMANTIC_COLOR_MAPPINGS)) {
-      // Only cascade tokens that belong to this family
-      // For "primary": cascade primary, primary-foreground, primary-hover, etc.
-      // For "neutral": cascade background, foreground, card, card-foreground, etc.
+      // For non-neutral: match exact name or "family-*" prefix
+      // For neutral: match all tokens whose defaults reference the neutral family
       const belongsToFamily =
         familyName === 'neutral'
           ? mapping.light.family === 'neutral' && mapping.dark.family === 'neutral'
@@ -1920,13 +1919,13 @@ export class RaftersToolHandler {
         const bgName = name.replace(/-foreground$/, '');
         const bgMapping = DEFAULT_SEMANTIC_COLOR_MAPPINGS[bgName];
         if (bgMapping) {
-          lightPos = this.findAccessibleFgPosition(
+          lightPos = RaftersToolHandler.findAccessibleFgPosition(
             bgMapping.light.position,
             lightPos,
             aaaPairs,
             aaPairs,
           );
-          darkPos = this.findAccessibleFgPosition(
+          darkPos = RaftersToolHandler.findAccessibleFgPosition(
             bgMapping.dark.position,
             darkPos,
             aaaPairs,
@@ -2452,6 +2451,7 @@ export class RaftersToolHandler {
       }> = [];
 
       const parseRef = RaftersToolHandler.parseColorRef;
+      const allCascadeTokens: Token[] = [];
 
       for (const mapping of mappings) {
         const { source, target, value, reason, namespace, category } = mapping;
@@ -2664,25 +2664,23 @@ export class RaftersToolHandler {
           results.push({ source, target, action: 'create', ok: true, enriched });
         }
 
-        // Cascade to semantic surface tokens if this is a semantic family
+        // Collect cascade tokens for semantic families (batched after loop)
         if (RaftersToolHandler.SEMANTIC_FAMILY_SET.has(target) && enriched) {
-          // The color family name is the enriched token's name (e.g., "silver-true-glacier")
           const colorToken = registry.get(target);
           const colorFamilyName =
             colorToken?.value && typeof colorToken.value === 'object' && 'name' in colorToken.value
               ? (colorToken.value as ColorValue).name
               : target;
 
-          const cascadeTokens = this.cascadeSemanticFamily(
-            registry,
-            target,
-            colorFamilyName,
-            results,
+          allCascadeTokens.push(
+            ...this.cascadeSemanticFamily(registry, target, colorFamilyName, results),
           );
-          if (cascadeTokens.length > 0) {
-            await registry.setTokens(cascadeTokens);
-          }
         }
+      }
+
+      // Batch cascade update -- single persist for all semantic surface tokens
+      if (allCascadeTokens.length > 0) {
+        await registry.setTokens(allCascadeTokens);
       }
 
       // Persist and regenerate once after all mappings
