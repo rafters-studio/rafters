@@ -558,6 +558,11 @@ export const TOOL_DEFINITIONS = [
           type: 'string',
           description: 'Token category (required for create). E.g., "color", "spacing", "font".',
         },
+        dark: {
+          type: 'string',
+          description:
+            'Dark mode color reference as "family-position" (e.g., "neutral-950"). For semantic tokens, sets dependsOn[1] so the CSS dark mode layer uses this reference instead of the light value.',
+        },
       },
       required: ['name'],
     },
@@ -1400,6 +1405,7 @@ export class RaftersToolHandler {
     const name = args.name as string;
     const reason = args.reason as string | undefined;
     const value = args.value as string | undefined;
+    const dark = args.dark as string | undefined;
 
     // Why-gate: every mutation needs a reason
     if (!reason) {
@@ -1459,7 +1465,37 @@ export class RaftersToolHandler {
               typeof previousValue === 'string' ? previousValue : JSON.stringify(previousValue),
             reason,
           };
-          existing.value = value;
+
+          // For semantic tokens, parse "family-position" strings into ColorReference
+          // so the CSS exporter can read the value (it skips plain strings)
+          if (existing.namespace === 'semantic' && typeof value === 'string') {
+            const lastDash = value.lastIndexOf('-');
+            const position = lastDash > 0 ? value.slice(lastDash + 1) : '';
+            const family = lastDash > 0 ? value.slice(0, lastDash) : '';
+            if (/^(50|100|200|300|400|500|600|700|800|900|950)$/.test(position)) {
+              existing.value = { family, position };
+              // Update dependsOn to match the new light reference
+              const lightRefStr = `${family}-${position}`;
+              const currentDark = dark ?? existing.dependsOn?.[1] ?? lightRefStr;
+              existing.dependsOn = [lightRefStr, currentDark];
+            } else {
+              existing.value = value;
+            }
+          } else {
+            existing.value = value;
+          }
+
+          // If dark parameter provided, update dependsOn for dark mode CSS generation
+          if (dark) {
+            const lightRef =
+              typeof existing.value === 'object' &&
+              existing.value !== null &&
+              'family' in existing.value
+                ? `${(existing.value as { family: string; position: string }).family}-${(existing.value as { family: string; position: string }).position}`
+                : (existing.dependsOn?.[0] ?? name);
+            existing.dependsOn = [lightRef, dark];
+          }
+
           await registry.setToken(existing);
 
           const affected = this.getAffectedTokens(registry, name);
