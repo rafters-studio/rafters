@@ -1,5 +1,11 @@
 # rafters
 
+## 0.0.40
+
+### Minor Changes
+
+- feat(mcp): semantic cascade on onboard map. When a color is mapped to a semantic family (primary, secondary, destructive, etc.), all surface tokens for that family (foreground, hover, active, border, ring, focus) are automatically remapped to the new color. Positions are verified against precomputed WCAG AAA accessibility pairs (falls back to AA). Human overrides on surface tokens are preserved. Neutral cascade updates background, foreground, card, popover, and surface tokens. One map call now cascades to 10+ surface tokens automatically instead of requiring manual light/dark remapping for each.
+
 ## 0.0.39
 
 ### Patch Changes
