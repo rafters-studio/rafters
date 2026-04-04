@@ -1,5 +1,11 @@
 # rafters
 
+## 0.0.41
+
+### Patch Changes
+
+- fix(tailwind): spacing scale variables in @theme block now reference var(--spacing-base) instead of var(--rafters-spacing-base). The @theme block defines --spacing-base but the token values referenced --rafters-spacing-base (the :root namespace), causing all gap-*, p-*, m-* utilities to resolve to empty values. Tailwind generated the CSS rules but they computed to zero because the variable chain was broken.
+
 ## 0.0.40
 
 ### Minor Changes
