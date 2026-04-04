@@ -36,11 +36,13 @@ import classy from '../../primitives/classy';
 import {
   type BentoPattern,
   type GridPreset,
+  gridAutoSpacingClasses,
   gridBentoPatterns,
   gridColSpanClasses,
   gridColumnClasses,
   gridGapClasses,
   gridGoldenClasses,
+  gridPaddingClasses,
   gridRowSpanClasses,
 } from './grid.classes';
 
@@ -69,6 +71,7 @@ function useGridContext() {
 export interface GridConfig {
   columns?: 1 | 2 | 3 | 4 | 5 | 6 | 'auto';
   gap?: '0' | '1' | '2' | '3' | '4' | '5' | '6' | '8' | '10' | '12';
+  padding?: '0' | '1' | '2' | '3' | '4' | '5' | '6' | '8' | '10' | '12';
   preset?: GridPreset;
 }
 
@@ -99,9 +102,16 @@ export interface GridProps extends React.HTMLAttributes<HTMLDivElement> {
   columns?: 1 | 2 | 3 | 4 | 5 | 6 | 'auto';
 
   /**
-   * Gap between items using Tailwind spacing
+   * Gap between items. Omit for auto-scaling via container queries.
+   * Explicit value overrides auto-scaling.
    */
   gap?: '0' | '1' | '2' | '3' | '4' | '5' | '6' | '8' | '10' | '12';
+
+  /**
+   * Padding inset from edges. Omit for auto-scaling via container queries.
+   * Explicit value overrides auto-scaling.
+   */
+  padding?: '0' | '1' | '2' | '3' | '4' | '5' | '6' | '8' | '10' | '12';
 
   /**
    * Accessibility role
@@ -137,7 +147,6 @@ export interface GridProps extends React.HTMLAttributes<HTMLDivElement> {
   onConfigChange?: ((config: GridConfig) => void) | undefined;
 }
 
-const gapClasses = gridGapClasses;
 const columnClasses = gridColumnClasses;
 const bentoPatterns = gridBentoPatterns;
 const goldenClasses = gridGoldenClasses;
@@ -146,7 +155,8 @@ function GridRoot({
   preset = 'linear',
   pattern,
   columns = 'auto',
-  gap = '4',
+  gap,
+  padding,
   role = 'presentation',
   editable,
   showColumnDropZones,
@@ -157,11 +167,18 @@ function GridRoot({
 }: GridProps) {
   // TODO: Implement grid config UI that calls _onConfigChange
   void _onConfigChange;
+
+  // Auto-scaling: when neither gap nor padding is explicitly set,
+  // use container-query-responsive spacing as the default
+  const useAutoSpacing = gap === undefined && padding === undefined;
+
   const classes = classy(
     'grid',
 
-    // Gap
-    gap && gapClasses[gap],
+    // Spacing: auto-scale by default, explicit values override
+    useAutoSpacing && gridAutoSpacingClasses,
+    !useAutoSpacing && gap !== undefined && gridGapClasses[gap],
+    !useAutoSpacing && padding !== undefined && gridPaddingClasses[padding],
 
     // Preset-specific layouts
     preset === 'linear' && columnClasses[columns],

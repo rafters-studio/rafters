@@ -19,6 +19,27 @@ export const gridGapClasses: Record<string, string> = {
   '12': 'gap-12',
 };
 
+/**
+ * Auto-scaling gap and padding via container queries.
+ * Grid's default behavior: spacing scales with the container size.
+ * Explicit gap/padding props override this.
+ */
+export const gridAutoSpacingClasses =
+  'gap-3 p-3 @md:gap-4 @md:p-4 @lg:gap-6 @lg:p-6 @xl:gap-8 @xl:p-8';
+
+export const gridPaddingClasses: Record<string, string> = {
+  '0': 'p-0',
+  '1': 'p-1',
+  '2': 'p-2',
+  '3': 'p-3',
+  '4': 'p-4',
+  '5': 'p-5',
+  '6': 'p-6',
+  '8': 'p-8',
+  '10': 'p-10',
+  '12': 'p-12',
+};
+
 export const gridColumnClasses: Record<string | number, string> = {
   1: 'grid-cols-1',
   2: 'grid-cols-2',

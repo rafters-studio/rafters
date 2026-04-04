@@ -13,10 +13,12 @@ import classy from '../../primitives/classy';
 import {
   type BentoPattern,
   type GridPreset,
+  gridAutoSpacingClasses,
   gridBentoPatterns,
   gridColumnClasses,
   gridGapClasses,
   gridGoldenClasses,
+  gridPaddingClasses,
 } from './grid.classes';
 
 interface Props extends HTMLAttributes<'div'> {
@@ -24,6 +26,7 @@ interface Props extends HTMLAttributes<'div'> {
   pattern?: BentoPattern;
   columns?: 1 | 2 | 3 | 4 | 5 | 6 | 'auto';
   gap?: '0' | '1' | '2' | '3' | '4' | '5' | '6' | '8' | '10' | '12';
+  padding?: '0' | '1' | '2' | '3' | '4' | '5' | '6' | '8' | '10' | '12';
   role?: 'presentation' | 'grid';
 }
 
@@ -31,15 +34,20 @@ const {
   preset = 'linear',
   pattern,
   columns = 'auto',
-  gap = '4',
+  gap,
+  padding,
   role = 'presentation',
   class: className,
   ...attrs
 } = Astro.props;
 
+const useAutoSpacing = gap === undefined && padding === undefined;
+
 const classes = classy(
   'grid',
-  gap && gridGapClasses[gap],
+  useAutoSpacing && gridAutoSpacingClasses,
+  !useAutoSpacing && gap !== undefined && gridGapClasses[gap],
+  !useAutoSpacing && padding !== undefined && gridPaddingClasses[padding],
   preset === 'linear' && gridColumnClasses[columns],
   preset === 'golden' && gridGoldenClasses,
   preset === 'bento' && pattern && gridBentoPatterns[pattern],
