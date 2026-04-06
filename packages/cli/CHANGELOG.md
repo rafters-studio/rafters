@@ -6,6 +6,7 @@
 
 - fix(cli): create palette position tokens when map enriches a color. When onboard map maps a color family to a semantic role, palette position tokens (e.g., primary-500, primary-600) are now created automatically so downstream scale references resolve correctly.
 - fix(registry): sub-components like typography-h1 now bundle parent shared files (typography.classes.ts) correctly. Previously the registry only looked for same-named shared files, breaking `rafters add typography-h1`.
+- feat(registry): `rafters add typography` now bundles all Astro sub-components (H1-H6, P, Code, etc.) in a single install. Sub-components that import the parent's shared .classes.ts file are automatically detected and included. Standalone components like alert-dialog (which have their own .classes.ts) remain independent.
 
 ## 0.0.43
 

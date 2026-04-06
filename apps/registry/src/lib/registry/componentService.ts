@@ -426,19 +426,85 @@ export function loadComponent(name: string): RegistryItem | null {
     return null;
   }
 
-  // Load shared auxiliary files
+  // Load shared auxiliary files for this component and any imported siblings.
+  // Resolves from actual imports so typography-h1 picks up typography.classes.ts
+  // via its `import ... from './typography.classes'` statement.
+  const loadedPaths = new Set(files.map((f) => f.path));
+
+  // Collect sibling imports from all loaded files
+  const siblingImports = new Set<string>();
+  for (const file of files) {
+    for (const sibling of extractSiblingImports(file.content)) {
+      siblingImports.add(sibling);
+    }
+  }
+
+  // Try loading shared files by name (e.g., button -> button.classes.ts)
   for (const suffix of SHARED_SUFFIXES) {
     const sharedPath = join(componentsDir, `${name}${suffix}`);
+    const sharedFilePath = `components/ui/${name}${suffix}`;
+    if (loadedPaths.has(sharedFilePath)) continue;
     try {
       const content = readFileSync(sharedPath, 'utf-8');
-      files.push({
-        path: `components/ui/${name}${suffix}`,
-        content,
-        dependencies: [],
-        devDependencies: [],
-      });
+      files.push({ path: sharedFilePath, content, dependencies: [], devDependencies: [] });
+      loadedPaths.add(sharedFilePath);
     } catch {
-      // No shared file with this suffix -- skip
+      // No shared file -- skip
+    }
+  }
+
+  // Resolve sibling imports that are shared files (e.g., ./typography.classes -> typography.classes.ts)
+  for (const sibling of siblingImports) {
+    // Check if the sibling IS a shared file (name contains a dot matching a known suffix)
+    for (const suffix of SHARED_SUFFIXES) {
+      const suffixBase = suffix.replace(/\.ts$/, ''); // .classes.ts -> .classes
+      if (sibling.endsWith(suffixBase)) {
+        const filePath = `components/ui/${sibling}.ts`;
+        if (loadedPaths.has(filePath)) continue;
+        try {
+          const content = readFileSync(join(componentsDir, `${sibling}.ts`), 'utf-8');
+          files.push({ path: filePath, content, dependencies: [], devDependencies: [] });
+          loadedPaths.add(filePath);
+        } catch {
+          // Not found -- skip
+        }
+      }
+    }
+  }
+
+  // Bundle sub-components that import this component's shared files.
+  // e.g., typography-h1.astro imports ./typography.classes -> bundled with typography.
+  // But alert-dialog.tsx (has its own .classes.ts) is NOT bundled with alert.
+  const allDirFiles = readdirSync(componentsDir);
+  const subPrefix = `${name}-`;
+  for (const f of allDirFiles) {
+    const matchedExt = COMPONENT_EXTENSIONS.find((ext) => f.endsWith(ext));
+    if (!matchedExt || !f.startsWith(subPrefix)) continue;
+    if (loadedPaths.has(`components/ui/${f}`)) continue;
+
+    // Only bundle if the sub-component imports this component's shared file
+    const subPath = join(componentsDir, f);
+    try {
+      const content = readFileSync(subPath, 'utf-8');
+      const subSiblings = extractSiblingImports(content);
+      const importsParentShared = subSiblings.some((s) =>
+        SHARED_SUFFIXES.some((suffix) => s === `${name}${suffix.replace(/\.ts$/, '')}`),
+      );
+      if (!importsParentShared) continue;
+
+      const analysis = analyzeSource(content, false);
+
+      files.push({
+        path: `components/ui/${f}`,
+        content,
+        dependencies: analysis.allExternalDeps,
+        devDependencies: analysis.devDependencies,
+      });
+      loadedPaths.add(`components/ui/${f}`);
+
+      primitivesAll = [...new Set([...primitivesAll, ...analysis.primitiveDeps])];
+    } catch {
+      // Sub-component file read error -- skip
     }
   }
 
