@@ -94,6 +94,13 @@ if echo "$CONTENT" | grep -qE '<div className="[^"]*">\s*<(Button|Input|Card|Sel
   VIOLATIONS+="COMPONENTS ARE COMPLETE: Found wrapper div around a Rafters component. Components include their own spacing/sizing.\n"
 fi
 
+# TOKEN PROPS, NOT CLASSES - Rafters components use token props for overrides
+# class/className on a Rafters component bypasses the design intelligence layer
+RAFTERS_COMPONENTS='H1|H2|H3|H4|H5|H6|Typography|Button|Card|CardHeader|CardTitle|CardDescription|CardContent|CardFooter|CardAction|Container|Grid|GridItem|Badge|Input|Label|Separator|Alert|AlertTitle|AlertDescription|Empty|EmptyIcon|EmptyTitle|EmptyDescription|EmptyAction|Breadcrumb|Tabs|TabsList|TabsTrigger|TabsContent|Table|Pagination|Spinner|Skeleton|Avatar|Image|Kbd|Tooltip|Progress|Field'
+if echo "$CONTENT" | grep -qE "<(${RAFTERS_COMPONENTS})\b[^>]*(class=|className=)"; then
+  VIOLATIONS+="TOKEN PROPS, NOT CLASSES: Do not pass class/className to Rafters components. Use token props (size, weight, color, variant, etc.) for overrides. The component owns its classes.\n"
+fi
+
 if [ -z "$VIOLATIONS" ]; then
   exit 0
 fi
