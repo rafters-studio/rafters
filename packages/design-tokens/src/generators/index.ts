@@ -53,6 +53,7 @@ import { generateSpacingTokens } from './spacing.js';
 import type { BaseSystemConfig, ResolvedSystemConfig } from './types.js';
 import { DEFAULT_SYSTEM_CONFIG, resolveConfig } from './types.js';
 import { generateTypographyTokens } from './typography.js';
+import { generateTypographyCompositeTokens } from './typography-composite.js';
 
 export { generateBreakpointTokens } from './breakpoint.js';
 // Export all generators individually
@@ -70,6 +71,7 @@ export { generateSpacingTokens } from './spacing.js';
 // Export types
 export * from './types.js';
 export { generateTypographyTokens } from './typography.js';
+export { generateTypographyCompositeTokens } from './typography-composite.js';
 
 /**
  * Generator configuration - defines name and how to call each generator
@@ -121,6 +123,12 @@ function createGeneratorDefs(colorPaletteBases?: Record<string, ColorPaletteBase
 
     // Semantic tokens (depend on color)
     { name: 'semantic', generate: (config) => generateSemanticTokens(config) },
+
+    // Typography composites (depend on typography)
+    {
+      name: 'typography-composite',
+      generate: (config) => generateTypographyCompositeTokens(config),
+    },
 
     // Derived tokens (depend on spacing/foundation)
     {
@@ -364,6 +372,10 @@ export function getGeneratorInfo(): Array<{ name: string; description: string }>
     { name: 'motion', description: 'Duration, easing, and delay tokens for animations' },
     { name: 'elevation', description: 'Elevation levels pairing depth with shadows' },
     { name: 'focus', description: 'Focus ring tokens for WCAG 2.2 compliance' },
+    {
+      name: 'typography-composite',
+      description: 'Composite typography roles mapping semantic roles to font properties',
+    },
   ];
 }
 
