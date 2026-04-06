@@ -15,7 +15,9 @@ import {
 } from '@rafters/shared';
 import { TokenDependencyGraph } from './dependencies';
 import { GenerationRuleExecutor, GenerationRuleParser } from './generation-rules';
+import { DEFAULT_TYPOGRAPHY_COMPOSITE_MAPPINGS } from './generators/defaults.js';
 import type { PersistenceAdapter } from './persistence/types';
+import { validateTypographyOverride } from './validators/typography-a11y.js';
 
 // Event types (inline to replace deleted types/events.js)
 export type TokenChangeEvent =
@@ -791,6 +793,18 @@ export class TokenRegistry {
         `Typography override for "${parsed.element}" references unknown role "${parsed.role}". ` +
           'Role must be an existing typography-composite token.',
       );
+    }
+
+    // Validate accessibility constraints if base mapping is available
+    const baseMapping = DEFAULT_TYPOGRAPHY_COMPOSITE_MAPPINGS[parsed.role];
+    if (baseMapping) {
+      const violations = validateTypographyOverride(parsed, baseMapping);
+      const errors = violations.filter((v) => v.severity === 'error');
+      if (errors.length > 0) {
+        throw new Error(
+          `Typography override for "${parsed.element}" violates accessibility: ${errors.map((e) => e.message).join('; ')}`,
+        );
+      }
     }
 
     this.typographyOverrides.set(parsed.element, parsed);
