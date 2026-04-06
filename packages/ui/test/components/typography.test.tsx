@@ -186,7 +186,7 @@ describe('H5', () => {
     const h5 = container.firstChild;
     expect(h5).toHaveClass('text-lg');
     expect(h5).toHaveClass('font-bold');
-    expect(h5).toHaveClass('text-muted-foreground');
+    expect(h5).toHaveClass('text-muted');
   });
 });
 
@@ -382,9 +382,9 @@ describe('TypographyTokenProps', () => {
     expect(container.firstChild).toHaveClass('font-light');
   });
 
-  it('H1 applies color override with -foreground suffix', () => {
+  it('H1 applies color override as direct text class', () => {
     const { container } = render(<H1 color="muted">Title</H1>);
-    expect(container.firstChild).toHaveClass('text-muted-foreground');
+    expect(container.firstChild).toHaveClass('text-muted');
   });
 
   it('H1 applies color override for direct foreground values', () => {
@@ -420,7 +420,7 @@ describe('TypographyTokenProps', () => {
     );
     const p = container.firstChild;
     expect(p).toHaveClass('text-xl');
-    expect(p).toHaveClass('text-muted-foreground');
+    expect(p).toHaveClass('text-muted');
     expect(p).toHaveClass('leading-loose');
   });
 

@@ -16,10 +16,32 @@ interface Props extends HTMLAttributes<'h2'> {
   line?: string;
   tracking?: string;
   family?: string;
+  align?: string;
+  transform?: string;
 }
 
-const { size, weight, color, line, tracking, family, class: className, ...attrs } = Astro.props;
-const overrides = tokenPropsToClasses({ size, weight, color, line, tracking, family });
+const {
+  size,
+  weight,
+  color,
+  line,
+  tracking,
+  family,
+  align,
+  transform,
+  class: className,
+  ...attrs
+} = Astro.props;
+const overrides = tokenPropsToClasses({
+  size,
+  weight,
+  color,
+  line,
+  tracking,
+  family,
+  align,
+  transform,
+});
 const classes = classy(typographyClasses.h2, overrides, className);
 ---
 

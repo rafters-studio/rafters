@@ -17,6 +17,8 @@ interface Props extends HTMLAttributes<'abbr'> {
   line?: string;
   tracking?: string;
   family?: string;
+  align?: string;
+  transform?: string;
 }
 
 const {
@@ -27,10 +29,21 @@ const {
   line,
   tracking,
   family,
+  align,
+  transform,
   class: className,
   ...attrs
 } = Astro.props;
-const overrides = tokenPropsToClasses({ size, weight, color, line, tracking, family });
+const overrides = tokenPropsToClasses({
+  size,
+  weight,
+  color,
+  line,
+  tracking,
+  family,
+  align,
+  transform,
+});
 const classes = classy(typographyClasses.abbr, overrides, className);
 ---
 

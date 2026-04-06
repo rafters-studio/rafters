@@ -35,35 +35,28 @@ export interface TypographyTokenProps {
   line?: string | undefined;
   tracking?: string | undefined;
   family?: string | undefined;
-}
-
-/**
- * Resolve a color prop to a text utility class.
- * Auto-suffixes with -foreground when the value is a semantic family name
- * (muted, accent, primary, etc.) since text colors use foreground variants.
- * Values already ending in "foreground" pass through unchanged.
- */
-function resolveColorClass(color: string): string {
-  if (color.endsWith('foreground')) return `text-${color}`;
-  return `text-${color}-foreground`;
+  align?: string | undefined;
+  transform?: string | undefined;
 }
 
 /**
  * Build Tailwind utility classes from token props.
  * Returns a string of override classes or empty string if no overrides.
  *
- * Color values auto-resolve to foreground variants:
- *   color="muted"             -> text-muted-foreground
- *   color="foreground"        -> text-foreground
+ * Color values pass through directly as text-{value}:
+ *   color="accent"            -> text-accent
  *   color="accent-foreground" -> text-accent-foreground
+ *   color="muted-foreground"  -> text-muted-foreground
  */
 export function tokenPropsToClasses(props: TypographyTokenProps): string {
   const classes: string[] = [];
   if (props.size) classes.push(`text-${props.size}`);
   if (props.weight) classes.push(`font-${props.weight}`);
-  if (props.color) classes.push(resolveColorClass(props.color));
+  if (props.color) classes.push(`text-${props.color}`);
   if (props.line) classes.push(`leading-${props.line}`);
   if (props.tracking) classes.push(`tracking-${props.tracking}`);
   if (props.family) classes.push(`font-${props.family}`);
+  if (props.align) classes.push(`text-${props.align}`);
+  if (props.transform) classes.push(props.transform);
   return classes.join(' ');
 }

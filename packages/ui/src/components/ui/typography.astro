@@ -57,6 +57,8 @@ interface Props extends HTMLAttributes<'div'> {
   line?: string;
   tracking?: string;
   family?: string;
+  align?: string;
+  transform?: string;
 }
 
 const {
@@ -68,6 +70,8 @@ const {
   line,
   tracking,
   family,
+  align,
+  transform,
   class: className,
   ...attrs
 } = Astro.props;
@@ -80,7 +84,16 @@ const resolvedVariant =
       ? 'h4'
       : (Element as TypographyVariant));
 const variantClass = typographyClasses[resolvedVariant] ?? typographyClasses.p;
-const overrides = tokenPropsToClasses({ size, weight, color, line, tracking, family });
+const overrides = tokenPropsToClasses({
+  size,
+  weight,
+  color,
+  line,
+  tracking,
+  family,
+  align,
+  transform,
+});
 const classes = classy(variantClass, overrides, className);
 ---
 
