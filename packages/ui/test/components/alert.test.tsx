@@ -81,9 +81,8 @@ describe('AlertTitle', () => {
   it('applies styling classes', () => {
     render(<AlertTitle>Title</AlertTitle>);
     const title = screen.getByRole('heading');
-    expect(title.className).toContain('font-medium');
+    expect(title.className).toContain('text-title-small');
     expect(title.className).toContain('leading-none');
-    expect(title.className).toContain('tracking-tight');
   });
 
   it('forwards ref correctly', () => {
@@ -96,7 +95,7 @@ describe('AlertTitle', () => {
     render(<AlertTitle className="custom-title">Title</AlertTitle>);
     const title = screen.getByRole('heading');
     expect(title.className).toContain('custom-title');
-    expect(title.className).toContain('font-medium');
+    expect(title.className).toContain('text-title-small');
   });
 });
 
@@ -109,7 +108,7 @@ describe('AlertDescription', () => {
   it('applies styling classes', () => {
     render(<AlertDescription data-testid="desc">Description</AlertDescription>);
     const desc = screen.getByTestId('desc');
-    expect(desc.className).toContain('text-sm');
+    expect(desc.className).toContain('text-body-small');
   });
 
   it('forwards ref correctly', () => {
@@ -126,7 +125,7 @@ describe('AlertDescription', () => {
     );
     const desc = screen.getByTestId('desc');
     expect(desc.className).toContain('custom-desc');
-    expect(desc.className).toContain('text-sm');
+    expect(desc.className).toContain('text-body-small');
   });
 });
 

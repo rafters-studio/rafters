@@ -16,9 +16,9 @@ export const cardEditableClasses =
 
 export const cardHeaderClasses = 'flex flex-col gap-1.5 p-6';
 
-export const cardTitleClasses = 'text-2xl font-semibold leading-none tracking-tight';
+export const cardTitleClasses = 'text-title-medium leading-none';
 
-export const cardDescriptionClasses = 'text-sm text-muted-foreground';
+export const cardDescriptionClasses = 'text-body-small text-muted-foreground';
 
 export const cardActionClasses = 'col-start-2 row-span-2 row-start-1 self-start justify-self-end';
 

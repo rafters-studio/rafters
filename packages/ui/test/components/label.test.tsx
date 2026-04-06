@@ -16,8 +16,7 @@ describe('Label', () => {
   it('applies base typography classes', () => {
     const { container } = render(<Label>Username</Label>);
     const label = container.firstChild;
-    expect(label).toHaveClass('text-sm');
-    expect(label).toHaveClass('font-medium');
+    expect(label).toHaveClass('text-label-medium');
     expect(label).toHaveClass('leading-none');
   });
 
@@ -31,7 +30,7 @@ describe('Label', () => {
   it('merges custom className', () => {
     const { container } = render(<Label className="custom-class">Test</Label>);
     expect(container.firstChild).toHaveClass('custom-class');
-    expect(container.firstChild).toHaveClass('text-sm');
+    expect(container.firstChild).toHaveClass('text-label-medium');
   });
 
   it('passes through HTML attributes', () => {

@@ -97,7 +97,7 @@ describe('BreadcrumbList', () => {
     expect(list).toHaveClass('flex');
     expect(list).toHaveClass('flex-wrap');
     expect(list).toHaveClass('items-center');
-    expect(list).toHaveClass('text-sm');
+    expect(list).toHaveClass('text-label-medium');
     expect(list).toHaveClass('text-muted-foreground');
   });
 
@@ -360,7 +360,6 @@ describe('BreadcrumbPage', () => {
       </Breadcrumb>,
     );
     const page = screen.getByTestId('page');
-    expect(page).toHaveClass('font-normal');
     expect(page).toHaveClass('text-foreground');
   });
 

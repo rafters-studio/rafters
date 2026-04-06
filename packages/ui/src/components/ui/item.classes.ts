@@ -9,9 +9,9 @@ export const itemBaseClasses =
   'aria-selected:bg-accent aria-selected:text-accent-foreground';
 
 export const itemSizeClasses: Record<string, string> = {
-  default: 'px-3 py-2 text-sm',
-  sm: 'px-2 py-1.5 text-xs',
-  lg: 'px-4 py-3 text-base',
+  default: 'px-3 py-2 text-body-small',
+  sm: 'px-2 py-1.5 text-label-small',
+  lg: 'px-4 py-3 text-body-medium',
 };
 
 export const itemFocusClasses =
@@ -29,4 +29,4 @@ export const itemContentClasses = 'flex min-w-0 flex-1 flex-col';
 
 export const itemLabelClasses = 'truncate';
 
-export const itemDescriptionClasses = 'truncate text-muted-foreground text-xs mt-0.5';
+export const itemDescriptionClasses = 'truncate text-muted-foreground text-label-small mt-0.5';

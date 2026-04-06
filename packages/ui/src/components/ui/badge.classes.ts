@@ -21,10 +21,10 @@ export const badgeVariantClasses: Record<string, string> = {
 };
 
 export const badgeSizeClasses: Record<string, string> = {
-  sm: 'px-2 py-0.5 text-xs',
-  default: 'px-2.5 py-0.5 text-xs',
-  lg: 'px-3 py-1 text-sm',
+  sm: 'px-2 py-0.5 text-label-small',
+  default: 'px-2.5 py-0.5 text-label-small',
+  lg: 'px-3 py-1 text-label-medium',
 };
 
 export const badgeBaseClasses =
-  'inline-flex items-center justify-center rounded-full font-semibold transition-colors duration-150 motion-reduce:transition-none';
+  'inline-flex items-center justify-center rounded-full transition-colors duration-150 motion-reduce:transition-none';

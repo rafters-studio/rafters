@@ -33,11 +33,9 @@ describe('H1', () => {
   it('applies correct styles', () => {
     const { container } = render(<H1>Heading</H1>);
     const h1 = container.firstChild;
-    expect(h1).toHaveClass('text-4xl');
-    expect(h1).toHaveClass('font-bold');
-    expect(h1).toHaveClass('tracking-tight');
+    expect(h1).toHaveClass('text-display-medium');
     expect(h1).toHaveClass('scroll-m-20');
-    expect(h1).toHaveClass('@lg:text-5xl');
+    expect(h1).toHaveClass('@lg:text-display-large');
     expect(h1).toHaveClass('text-foreground');
   });
 
@@ -54,7 +52,7 @@ describe('H1', () => {
   it('merges custom className', () => {
     const { container } = render(<H1 className="custom-class">Heading</H1>);
     expect(container.firstChild).toHaveClass('custom-class');
-    expect(container.firstChild).toHaveClass('text-4xl');
+    expect(container.firstChild).toHaveClass('text-display-medium');
   });
 
   it('forwards ref', () => {
@@ -83,9 +81,7 @@ describe('H2', () => {
   it('applies correct styles', () => {
     const { container } = render(<H2>Heading</H2>);
     const h2 = container.firstChild;
-    expect(h2).toHaveClass('text-3xl');
-    expect(h2).toHaveClass('font-semibold');
-    expect(h2).toHaveClass('tracking-tight');
+    expect(h2).toHaveClass('text-title-large');
     expect(h2).toHaveClass('scroll-m-20');
     expect(h2).toHaveClass('text-foreground');
   });
@@ -103,7 +99,7 @@ describe('H2', () => {
   it('merges custom className', () => {
     const { container } = render(<H2 className="custom-class">Heading</H2>);
     expect(container.firstChild).toHaveClass('custom-class');
-    expect(container.firstChild).toHaveClass('text-3xl');
+    expect(container.firstChild).toHaveClass('text-title-large');
   });
 
   it('forwards ref', () => {
@@ -123,9 +119,7 @@ describe('H3', () => {
   it('applies correct styles', () => {
     const { container } = render(<H3>Heading</H3>);
     const h3 = container.firstChild;
-    expect(h3).toHaveClass('text-2xl');
-    expect(h3).toHaveClass('font-semibold');
-    expect(h3).toHaveClass('tracking-tight');
+    expect(h3).toHaveClass('text-title-medium');
     expect(h3).toHaveClass('scroll-m-20');
     expect(h3).toHaveClass('text-foreground');
   });
@@ -143,7 +137,7 @@ describe('H3', () => {
   it('merges custom className', () => {
     const { container } = render(<H3 className="custom-class">Heading</H3>);
     expect(container.firstChild).toHaveClass('custom-class');
-    expect(container.firstChild).toHaveClass('text-2xl');
+    expect(container.firstChild).toHaveClass('text-title-medium');
   });
 
   it('forwards ref', () => {
@@ -163,9 +157,7 @@ describe('H4', () => {
   it('applies correct styles', () => {
     const { container } = render(<H4>Heading</H4>);
     const h4 = container.firstChild;
-    expect(h4).toHaveClass('text-xl');
-    expect(h4).toHaveClass('font-semibold');
-    expect(h4).toHaveClass('tracking-tight');
+    expect(h4).toHaveClass('text-title-small');
     expect(h4).toHaveClass('scroll-m-20');
     expect(h4).toHaveClass('text-foreground');
   });
@@ -183,7 +175,7 @@ describe('H4', () => {
   it('merges custom className', () => {
     const { container } = render(<H4 className="custom-class">Heading</H4>);
     expect(container.firstChild).toHaveClass('custom-class');
-    expect(container.firstChild).toHaveClass('text-xl');
+    expect(container.firstChild).toHaveClass('text-title-small');
   });
 
   it('forwards ref', () => {
@@ -240,7 +232,7 @@ describe('Lead', () => {
   it('applies correct styles', () => {
     const { container } = render(<Lead>Lead</Lead>);
     const lead = container.firstChild;
-    expect(lead).toHaveClass('text-xl');
+    expect(lead).toHaveClass('text-body-large');
     expect(lead).toHaveClass('text-muted-foreground');
   });
 
@@ -257,7 +249,7 @@ describe('Lead', () => {
   it('merges custom className', () => {
     const { container } = render(<Lead className="custom-class">Lead</Lead>);
     expect(container.firstChild).toHaveClass('custom-class');
-    expect(container.firstChild).toHaveClass('text-xl');
+    expect(container.firstChild).toHaveClass('text-body-large');
   });
 
   it('forwards ref', () => {
@@ -277,8 +269,7 @@ describe('Large', () => {
   it('applies correct styles', () => {
     const { container } = render(<Large>Large</Large>);
     const large = container.firstChild;
-    expect(large).toHaveClass('text-lg');
-    expect(large).toHaveClass('font-semibold');
+    expect(large).toHaveClass('text-title-medium');
     expect(large).toHaveClass('text-foreground');
   });
 
@@ -295,7 +286,7 @@ describe('Large', () => {
   it('merges custom className', () => {
     const { container } = render(<Large className="custom-class">Large</Large>);
     expect(container.firstChild).toHaveClass('custom-class');
-    expect(container.firstChild).toHaveClass('text-lg');
+    expect(container.firstChild).toHaveClass('text-title-medium');
   });
 
   it('forwards ref', () => {
@@ -315,8 +306,7 @@ describe('Small', () => {
   it('applies correct styles', () => {
     const { container } = render(<Small>Small</Small>);
     const small = container.firstChild;
-    expect(small).toHaveClass('text-sm');
-    expect(small).toHaveClass('font-medium');
+    expect(small).toHaveClass('text-label-medium');
     expect(small).toHaveClass('leading-none');
     expect(small).toHaveClass('text-foreground');
   });
@@ -334,7 +324,7 @@ describe('Small', () => {
   it('merges custom className', () => {
     const { container } = render(<Small className="custom-class">Small</Small>);
     expect(container.firstChild).toHaveClass('custom-class');
-    expect(container.firstChild).toHaveClass('text-sm');
+    expect(container.firstChild).toHaveClass('text-label-medium');
   });
 
   it('forwards ref', () => {
@@ -354,7 +344,7 @@ describe('Muted', () => {
   it('applies correct styles', () => {
     const { container } = render(<Muted>Muted</Muted>);
     const muted = container.firstChild;
-    expect(muted).toHaveClass('text-sm');
+    expect(muted).toHaveClass('text-body-small');
     expect(muted).toHaveClass('text-muted-foreground');
   });
 
@@ -371,7 +361,7 @@ describe('Muted', () => {
   it('merges custom className', () => {
     const { container } = render(<Muted className="custom-class">Muted</Muted>);
     expect(container.firstChild).toHaveClass('custom-class');
-    expect(container.firstChild).toHaveClass('text-sm');
+    expect(container.firstChild).toHaveClass('text-body-small');
   });
 
   it('forwards ref', () => {
@@ -395,8 +385,7 @@ describe('Code', () => {
     expect(code).toHaveClass('bg-muted');
     expect(code).toHaveClass('px-1');
     expect(code).toHaveClass('py-0.5');
-    expect(code).toHaveClass('font-mono');
-    expect(code).toHaveClass('text-sm');
+    expect(code).toHaveClass('text-code-small');
     expect(code).toHaveClass('text-foreground');
   });
 
@@ -413,7 +402,7 @@ describe('Code', () => {
   it('merges custom className', () => {
     const { container } = render(<Code className="custom-class">code</Code>);
     expect(container.firstChild).toHaveClass('custom-class');
-    expect(container.firstChild).toHaveClass('font-mono');
+    expect(container.firstChild).toHaveClass('text-code-small');
   });
 
   it('forwards ref', () => {
@@ -480,12 +469,12 @@ describe('typographyClasses', () => {
   });
 
   it('h1 class includes expected values', () => {
-    expect(typographyClasses.h1).toContain('text-4xl');
-    expect(typographyClasses.h1).toContain('font-bold');
+    expect(typographyClasses.h1).toContain('text-display-medium');
+    expect(typographyClasses.h1).toContain('scroll-m-20');
   });
 
   it('code class includes font-mono', () => {
-    expect(typographyClasses.code).toContain('font-mono');
+    expect(typographyClasses.code).toContain('text-code-small');
   });
 });
 
@@ -1469,7 +1458,7 @@ describe('CodeBlock', () => {
     it('applies codeblock classes', () => {
       render(<CodeBlock data-testid="code">code</CodeBlock>);
       const pre = screen.getByTestId('code');
-      expect(pre.className).toContain('font-mono');
+      expect(pre.className).toContain('text-code-small');
       expect(pre.className).toContain('bg-muted');
       expect(pre.className).toContain('rounded-lg');
     });

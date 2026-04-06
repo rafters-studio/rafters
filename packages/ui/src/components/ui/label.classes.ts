@@ -3,7 +3,7 @@
  */
 
 export const labelBaseClasses =
-  'text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70';
+  'text-label-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70';
 
 export const labelVariantClasses: Record<string, string> = {
   default: 'text-foreground',

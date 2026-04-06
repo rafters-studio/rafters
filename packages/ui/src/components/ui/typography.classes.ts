@@ -4,22 +4,22 @@
  */
 
 export const typographyClasses = {
-  h1: 'scroll-m-20 text-4xl font-bold tracking-tight @lg:text-5xl text-foreground',
-  h2: 'scroll-m-20 text-3xl font-semibold tracking-tight text-foreground',
-  h3: 'scroll-m-20 text-2xl font-semibold tracking-tight text-foreground',
-  h4: 'scroll-m-20 text-xl font-semibold tracking-tight text-foreground',
-  p: 'leading-7 text-foreground',
-  lead: 'text-xl text-muted-foreground',
-  large: 'text-lg font-semibold text-foreground',
-  small: 'text-sm font-medium leading-none text-foreground',
-  muted: 'text-sm text-muted-foreground',
-  code: 'rounded bg-muted px-1 py-0.5 font-mono text-sm text-foreground',
+  h1: 'scroll-m-20 text-display-medium @lg:text-display-large text-foreground',
+  h2: 'scroll-m-20 text-title-large text-foreground',
+  h3: 'scroll-m-20 text-title-medium text-foreground',
+  h4: 'scroll-m-20 text-title-small text-foreground',
+  p: 'text-body-medium leading-7 text-foreground',
+  lead: 'text-body-large text-muted-foreground',
+  large: 'text-title-medium text-foreground',
+  small: 'text-label-medium leading-none text-foreground',
+  muted: 'text-body-small text-muted-foreground',
+  code: 'rounded bg-muted px-1 py-0.5 text-code-small text-foreground',
   blockquote: 'mt-6 border-l-2 border-border pl-6 italic text-foreground',
   ul: 'my-6 ml-6 list-disc [&>li]:mt-2 text-foreground',
   ol: 'my-6 ml-6 list-decimal [&>li]:mt-2 text-foreground',
   li: 'leading-7',
   codeblock:
-    'relative rounded-lg bg-muted p-4 font-mono text-sm overflow-x-auto text-foreground [&_code]:bg-transparent [&_code]:p-0',
+    'relative rounded-lg bg-muted p-4 text-code-small overflow-x-auto text-foreground [&_code]:bg-transparent [&_code]:p-0',
   mark: 'bg-accent text-accent-foreground px-1 rounded',
   abbr: 'cursor-help underline decoration-dotted underline-offset-4',
 } as const;

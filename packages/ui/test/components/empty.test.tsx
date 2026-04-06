@@ -124,8 +124,7 @@ describe('EmptyTitle', () => {
     const { container } = render(<EmptyTitle>Title</EmptyTitle>);
     const title = container.firstChild;
     // mb-2 removed -- parent uses gap instead
-    expect(title).toHaveClass('text-lg');
-    expect(title).toHaveClass('font-semibold');
+    expect(title).toHaveClass('text-title-medium');
     expect(title).toHaveClass('text-foreground');
   });
 
@@ -137,7 +136,7 @@ describe('EmptyTitle', () => {
   it('merges custom className', () => {
     const { container } = render(<EmptyTitle className="custom-title">Title</EmptyTitle>);
     expect(container.firstChild).toHaveClass('custom-title');
-    expect(container.firstChild).toHaveClass('text-lg');
+    expect(container.firstChild).toHaveClass('text-title-medium');
   });
 
   it('forwards ref', () => {
@@ -169,7 +168,7 @@ describe('EmptyDescription', () => {
     const desc = container.firstChild;
     // mb-4 removed -- parent uses gap instead
     expect(desc).toHaveClass('max-w-sm');
-    expect(desc).toHaveClass('text-sm');
+    expect(desc).toHaveClass('text-body-small');
     expect(desc).toHaveClass('text-muted-foreground');
   });
 
@@ -183,7 +182,7 @@ describe('EmptyDescription', () => {
       <EmptyDescription className="custom-desc">Description</EmptyDescription>,
     );
     expect(container.firstChild).toHaveClass('custom-desc');
-    expect(container.firstChild).toHaveClass('text-sm');
+    expect(container.firstChild).toHaveClass('text-body-small');
   });
 
   it('forwards ref', () => {

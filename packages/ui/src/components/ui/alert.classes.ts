@@ -18,8 +18,8 @@ export const alertVariantClasses: Record<string, string> = {
   accent: 'bg-accent-subtle text-accent-foreground border-accent-border',
 };
 
-export const alertTitleClasses = 'mb-1 font-medium leading-none tracking-tight';
+export const alertTitleClasses = 'mb-1 text-title-small leading-none';
 
-export const alertDescriptionClasses = 'text-sm [&_p]:leading-relaxed';
+export const alertDescriptionClasses = 'text-body-small [&_p]:leading-relaxed';
 
 export const alertActionClasses = 'ml-auto shrink-0';
