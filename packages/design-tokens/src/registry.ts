@@ -6,10 +6,18 @@
  * Automatically enriches color tokens with intelligence from Color Intelligence API
  */
 
-import { COMPUTED, type ComputedSymbol, type Token } from '@rafters/shared';
+import {
+  COMPUTED,
+  type ComputedSymbol,
+  type Token,
+  type TypographyElementOverride,
+  TypographyElementOverrideSchema,
+} from '@rafters/shared';
 import { TokenDependencyGraph } from './dependencies';
 import { GenerationRuleExecutor, GenerationRuleParser } from './generation-rules';
+import { DEFAULT_TYPOGRAPHY_COMPOSITE_MAPPINGS } from './generators/defaults.js';
 import type { PersistenceAdapter } from './persistence/types';
+import { validateTypographyOverride } from './validators/typography-a11y.js';
 
 // Event types (inline to replace deleted types/events.js)
 export type TokenChangeEvent =
@@ -55,6 +63,7 @@ export class TokenRegistry {
   private changeCallback?: RegistryChangeCallback;
   private adapter?: PersistenceAdapter;
   private dirtyNamespaces = new Set<string>();
+  private typographyOverrides: Map<string, TypographyElementOverride> = new Map();
 
   constructor(initialTokens?: Token[]) {
     if (initialTokens) {
@@ -759,6 +768,60 @@ export class TokenRegistry {
    */
   parseRuleDependencies(rule: string): string[] {
     return this.dependencyGraph.parseRuleDependencies(rule);
+  }
+
+  // ===========================================================================
+  // Typography Element Overrides
+  // ===========================================================================
+
+  /**
+   * Add a typography element override with why-gate enforcement.
+   * Stores an override for a specific HTML element that diverges from its
+   * assigned typography role.
+   *
+   * @throws If why field is empty (why-gate enforcement)
+   * @throws If role references a non-existent typography composite token
+   */
+  addTypographyOverride(override: TypographyElementOverride): void {
+    // Validate with Zod schema (enforces non-empty why)
+    const parsed = TypographyElementOverrideSchema.parse(override);
+
+    // Validate that the role exists as a typography-composite token
+    const roleToken = this.get(parsed.role);
+    if (!roleToken || roleToken.namespace !== 'typography-composite') {
+      throw new Error(
+        `Typography override for "${parsed.element}" references unknown role "${parsed.role}". ` +
+          'Role must be an existing typography-composite token.',
+      );
+    }
+
+    // Validate accessibility constraints if base mapping is available
+    const baseMapping = DEFAULT_TYPOGRAPHY_COMPOSITE_MAPPINGS[parsed.role];
+    if (baseMapping) {
+      const violations = validateTypographyOverride(parsed, baseMapping);
+      const errors = violations.filter((v) => v.severity === 'error');
+      if (errors.length > 0) {
+        throw new Error(
+          `Typography override for "${parsed.element}" violates accessibility: ${errors.map((e) => e.message).join('; ')}`,
+        );
+      }
+    }
+
+    this.typographyOverrides.set(parsed.element, parsed);
+  }
+
+  /**
+   * Get all typography element overrides.
+   */
+  getTypographyOverrides(): TypographyElementOverride[] {
+    return Array.from(this.typographyOverrides.values());
+  }
+
+  /**
+   * Remove a typography element override.
+   */
+  removeTypographyOverride(element: string): boolean {
+    return this.typographyOverrides.delete(element);
   }
 
   /**

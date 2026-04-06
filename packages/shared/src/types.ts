@@ -560,6 +560,35 @@ export const SemanticTokenSchema = TokenSchema;
 export type SemanticToken = Token;
 
 /**
+ * Typography Element Override Schema
+ * Stores per-element typography overrides with why-gate provenance.
+ * When a designer overrides a specific element's typography (e.g. H3 uses
+ * title-medium but needs font-thin font-sans), this captures the override.
+ */
+export const TypographyElementOverrideSchema = z.object({
+  /** CSS element selector, e.g. 'h3' */
+  element: z.string().min(1),
+  /** Base role this element uses, e.g. 'title-medium' */
+  role: z.string().min(1),
+  /** Only the properties that differ from the role */
+  overrides: z.object({
+    fontFamily: z.string().optional(),
+    fontWeight: z.string().optional(),
+    fontSize: z.string().optional(),
+    lineHeight: z.string().optional(),
+    letterSpacing: z.string().optional(),
+  }),
+  /** Why-gate: reason for the override (required, non-empty) */
+  why: z.string().min(1, 'Why-gate required: provide a reason for this override'),
+  /** Who made the override */
+  who: z.string().min(1),
+  /** When the override was made (ISO timestamp) */
+  when: z.string(),
+});
+
+export type TypographyElementOverride = z.infer<typeof TypographyElementOverrideSchema>;
+
+/**
  * Namespace File Schema
  * File format for .rafters/tokens/{namespace}.rafters.json files
  */

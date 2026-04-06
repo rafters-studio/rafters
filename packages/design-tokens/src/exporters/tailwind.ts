@@ -13,7 +13,7 @@
  * @see https://ui.shadcn.com/docs/theming
  */
 
-import type { ColorReference, ColorValue, Token } from '@rafters/shared';
+import type { ColorReference, ColorValue, Token, TypographyElementOverride } from '@rafters/shared';
 import { DEFAULT_SEMANTIC_COLOR_MAPPINGS } from '../generators/defaults.js';
 import type { TokenRegistry } from '../registry.js';
 
@@ -56,6 +56,7 @@ interface GroupedTokens {
   breakpoint: Token[];
   elevation: Token[];
   focus: Token[];
+  'typography-composite': Token[];
   other: Token[];
 }
 
@@ -168,6 +169,7 @@ function groupTokens(tokens: Token[]): GroupedTokens {
     breakpoint: [],
     elevation: [],
     focus: [],
+    'typography-composite': [],
     other: [],
   };
 
@@ -205,6 +207,9 @@ function groupTokens(tokens: Token[]): GroupedTokens {
         break;
       case 'focus':
         groups.focus.push(token);
+        break;
+      case 'typography-composite':
+        groups['typography-composite'].push(token);
         break;
       default:
         groups.other.push(token);
@@ -611,6 +616,134 @@ function generateAnimationTokens(motionTokens: Token[]): string {
 }
 
 /**
+ * Generate @utility classes from composite typography tokens.
+ *
+ * Each composite produces a @utility block using CSS properties with var() references.
+ * var() is correct HERE because this is the exporter layer -- the boundary between
+ * tokens and CSS. Components reference `text-display-medium` and never see var().
+ */
+function generateTypographyCompositeUtilities(compositeTokens: Token[]): string {
+  if (compositeTokens.length === 0) {
+    return '';
+  }
+
+  const lines: string[] = [];
+
+  const mappings = compositeTokens
+    .map((t) => {
+      try {
+        const parsed = JSON.parse(t.value as string) as {
+          fontFamily: string;
+          fontSize: string;
+          fontWeight: string;
+          lineHeight: string;
+          letterSpacing: string;
+          responsive?: Record<string, { fontSize?: string }>;
+        };
+        return { name: t.name, ...parsed };
+      } catch {
+        return null;
+      }
+    })
+    .filter((m): m is NonNullable<typeof m> => m !== null);
+
+  for (const mapping of mappings) {
+    lines.push(`@utility text-${mapping.name} {`);
+    lines.push(`  font-family: var(--font-${mapping.fontFamily});`);
+    lines.push(`  font-size: var(--font-size-${mapping.fontSize});`);
+    lines.push(`  font-weight: var(--font-weight-${mapping.fontWeight});`);
+    lines.push(`  line-height: var(--line-height-${mapping.lineHeight});`);
+
+    // Letter spacing -- named Tailwind values get hardcoded, scale keys use token vars
+    const namedTrackingValues: Record<string, string> = {
+      tighter: '-0.05em',
+      tight: '-0.025em',
+      normal: '0em',
+      wide: '0.025em',
+      wider: '0.05em',
+      widest: '0.1em',
+    };
+    if (mapping.letterSpacing in namedTrackingValues) {
+      lines.push(`  letter-spacing: ${namedTrackingValues[mapping.letterSpacing]};`);
+    } else {
+      lines.push(`  letter-spacing: var(--letter-spacing-${mapping.letterSpacing});`);
+    }
+
+    // CQ-responsive overrides
+    if (mapping.responsive) {
+      for (const [breakpoint, overrides] of Object.entries(mapping.responsive)) {
+        if (overrides.fontSize) {
+          const bpWidth = breakpoint === 'sm' ? '480px' : breakpoint === 'md' ? '640px' : '1024px';
+          lines.push(`  @container (min-width: ${bpWidth}) {`);
+          lines.push(`    font-size: var(--font-size-${overrides.fontSize});`);
+          lines.push(`    line-height: var(--line-height-${overrides.fontSize});`);
+          lines.push('  }');
+        }
+      }
+    }
+
+    lines.push('}');
+  }
+
+  return lines.join('\n');
+}
+
+/**
+ * Map a typography override property to a Tailwind utility class.
+ */
+function overridePropertyToUtility(property: string, value: string): string {
+  switch (property) {
+    case 'fontFamily':
+      return `font-${value}`;
+    case 'fontWeight':
+      return `font-${value}`;
+    case 'fontSize':
+      return `text-${value}`;
+    case 'lineHeight':
+      return `leading-${value}`;
+    case 'letterSpacing':
+      return `tracking-${value}`;
+    default:
+      return '';
+  }
+}
+
+/**
+ * Generate element-level typography override CSS from registry overrides.
+ * Each override produces a CSS rule with @apply using the base role utility
+ * plus the overridden Tailwind utilities.
+ */
+function generateTypographyOverrideCSS(overrides: TypographyElementOverride[]): string {
+  if (overrides.length === 0) {
+    return '';
+  }
+
+  const lines: string[] = [];
+  lines.push('/* -- Typography Element Overrides -- */');
+
+  for (const override of overrides) {
+    const overrideUtilities: string[] = [];
+    for (const [prop, val] of Object.entries(override.overrides)) {
+      if (val) {
+        const utility = overridePropertyToUtility(prop, val);
+        if (utility) {
+          overrideUtilities.push(utility);
+        }
+      }
+    }
+
+    if (overrideUtilities.length > 0) {
+      lines.push(`/* ${override.element}: diverges from ${override.role} (${override.why}) */`);
+      lines.push(`${override.element} {`);
+      lines.push(`  @apply text-${override.role} ${overrideUtilities.join(' ')};`);
+      lines.push('}');
+    }
+  }
+
+  return lines.join('\n');
+}
+
+/**
  * Export tokens to Tailwind v4 CSS format
  *
  * @param tokens - Array of tokens to export
@@ -629,7 +762,11 @@ function generateAnimationTokens(motionTokens: Token[]): string {
  * fs.writeFileSync('theme.css', css);
  * ```
  */
-export function tokensToTailwind(tokens: Token[], options: TailwindExportOptions = {}): string {
+export function tokensToTailwind(
+  tokens: Token[],
+  options: TailwindExportOptions = {},
+  typographyOverrides: TypographyElementOverride[] = [],
+): string {
   const { includeImport = true } = options;
 
   if (tokens.length === 0) {
@@ -666,6 +803,20 @@ export function tokensToTailwind(tokens: Token[], options: TailwindExportOptions
     sections.push(keyframes);
   }
 
+  // Typography composite @utility classes
+  const typographyUtilities = generateTypographyCompositeUtilities(groups['typography-composite']);
+  if (typographyUtilities) {
+    sections.push('');
+    sections.push(typographyUtilities);
+  }
+
+  // Typography element overrides (if any)
+  const overrideCSS = generateTypographyOverrideCSS(typographyOverrides);
+  if (overrideCSS) {
+    sections.push('');
+    sections.push(overrideCSS);
+  }
+
   // Article type system - @layer base with @apply compositions
   sections.push('');
   sections.push(generateArticleBaseLayer());
@@ -698,7 +849,8 @@ export function registryToTailwind(
   options?: TailwindExportOptions,
 ): string {
   const tokens = registry.list();
-  return tokensToTailwind(tokens, options);
+  const typographyOverrides = registry.getTypographyOverrides();
+  return tokensToTailwind(tokens, options, typographyOverrides);
 }
 
 /**
