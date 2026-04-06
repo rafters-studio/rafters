@@ -1012,7 +1012,7 @@ function generateVarsRootBlock(groups: GroupedTokens): string {
     for (const token of groups.spacing) {
       const value = tokenValueToCSS(token);
       if (value === null) continue;
-      lines.push(`  --rafters-spacing-${token.name}: ${value};`);
+      lines.push(`  --rafters-${token.name}: ${value};`);
     }
     lines.push('');
   }
@@ -1035,7 +1035,7 @@ function generateVarsRootBlock(groups: GroupedTokens): string {
     for (const token of groups.radius) {
       const value = tokenValueToCSS(token);
       if (value === null) continue;
-      lines.push(`  --rafters-radius-${token.name}: ${value};`);
+      lines.push(`  --rafters-${token.name}: ${value};`);
     }
     lines.push('');
   }
