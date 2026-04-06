@@ -1,0 +1,30 @@
+---
+/**
+ * P - Body paragraph (Astro). Zero client JavaScript.
+ * Standard paragraph text with proper line height.
+ *
+ * Token props allow variant styling without changing the element:
+ *   <P size="xl" color="muted">Lead paragraph</P>
+ *   <P size="sm" color="muted">Fine print</P>
+ *
+ * @cognitive-load 1/10
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { tokenPropsToClasses, typographyClasses } from './typography.classes';
+
+interface Props extends HTMLAttributes<'p'> {
+  size?: string;
+  weight?: string;
+  color?: string;
+  line?: string;
+  tracking?: string;
+  family?: string;
+}
+
+const { size, weight, color, line, tracking, family, class: className, ...attrs } = Astro.props;
+const overrides = tokenPropsToClasses({ size, weight, color, line, tracking, family });
+const classes = classy(typographyClasses.p, overrides, className);
+---
+
+<p class={classes} {...attrs}><slot /></p>

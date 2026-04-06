@@ -1,0 +1,37 @@
+---
+/**
+ * Abbr - Abbreviation with tooltip (Astro). Zero client JavaScript.
+ * For acronyms or technical terms that need explanation.
+ *
+ * @cognitive-load 1/10
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { tokenPropsToClasses, typographyClasses } from './typography.classes';
+
+interface Props extends HTMLAttributes<'abbr'> {
+  title: string;
+  size?: string;
+  weight?: string;
+  color?: string;
+  line?: string;
+  tracking?: string;
+  family?: string;
+}
+
+const {
+  title,
+  size,
+  weight,
+  color,
+  line,
+  tracking,
+  family,
+  class: className,
+  ...attrs
+} = Astro.props;
+const overrides = tokenPropsToClasses({ size, weight, color, line, tracking, family });
+const classes = classy(typographyClasses.abbr, overrides, className);
+---
+
+<abbr class={classes} title={title} {...attrs}><slot /></abbr>

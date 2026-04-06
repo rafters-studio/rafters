@@ -23,3 +23,37 @@ export const typographyClasses = {
   mark: 'bg-accent text-accent-foreground px-1 rounded',
   abbr: 'cursor-help underline decoration-dotted underline-offset-4',
 } as const;
+
+/**
+ * Token-level typography props for surgical override of any dimension.
+ * Shared between React (.tsx) and Astro (.astro) tag components.
+ */
+export interface TypographyTokenProps {
+  size?: string | undefined;
+  weight?: string | undefined;
+  color?: string | undefined;
+  line?: string | undefined;
+  tracking?: string | undefined;
+  family?: string | undefined;
+}
+
+/**
+ * Build Tailwind utility classes from token props.
+ * Returns a string of override classes or empty string if no overrides.
+ */
+export function tokenPropsToClasses(props: TypographyTokenProps): string {
+  const classes: string[] = [];
+  if (props.size) classes.push(`text-${props.size}`);
+  if (props.weight) classes.push(`font-${props.weight}`);
+  if (props.color) {
+    if (props.color === 'foreground' || props.color.endsWith('-foreground')) {
+      classes.push(`text-${props.color}`);
+    } else {
+      classes.push(`text-${props.color}-foreground`);
+    }
+  }
+  if (props.line) classes.push(`leading-${props.line}`);
+  if (props.tracking) classes.push(`tracking-${props.tracking}`);
+  if (props.family) classes.push(`font-${props.family}`);
+  return classes.join(' ');
+}

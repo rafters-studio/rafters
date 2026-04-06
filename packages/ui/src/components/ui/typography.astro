@@ -1,21 +1,39 @@
 ---
 /**
- * Typography components (Astro) - Zero client JavaScript.
+ * Typography (Astro) - Generic component with `as` prop.
+ * Zero client JavaScript.
  *
- * Import individual components:
- *   import H1 from '@/components/ui/typography/h1.astro'
+ * Prefer individual tag components for direct semantic imports:
+ *   import H1 from '@/components/ui/typography-h1.astro'
+ *   import P from '@/components/ui/typography-p.astro'
+ *   import Code from '@/components/ui/typography-code.astro'
  *
- * Or use this file directly with the `as` prop:
+ * Or use this file with the `as` prop for dynamic element selection:
  *   import Typography from '@/components/ui/typography.astro'
- *   <Typography as="h1">Title</Typography>
+ *   <Typography as="h1" size="3xl" weight="black">Title</Typography>
+ *
+ * Token props override individual typography dimensions:
+ *   size, weight, color, line, tracking, family
  *
  * @cognitive-load 1/10
  */
 import type { HTMLAttributes } from 'astro/types';
 import classy from '../../primitives/classy';
-import { typographyClasses } from './typography.classes';
+import { tokenPropsToClasses, typographyClasses } from './typography.classes';
 
-type TypographyElement = 'h1' | 'h2' | 'h3' | 'h4' | 'p' | 'blockquote' | 'code' | 'span';
+type TypographyElement =
+  | 'h1'
+  | 'h2'
+  | 'h3'
+  | 'h4'
+  | 'h5'
+  | 'h6'
+  | 'p'
+  | 'blockquote'
+  | 'code'
+  | 'small'
+  | 'span'
+  | 'mark';
 type TypographyVariant =
   | 'h1'
   | 'h2'
@@ -27,25 +45,54 @@ type TypographyVariant =
   | 'small'
   | 'muted'
   | 'code'
-  | 'blockquote';
+  | 'blockquote'
+  | 'mark';
 
 interface Props extends HTMLAttributes<'div'> {
   as?: TypographyElement;
   variant?: TypographyVariant;
+  size?: string;
+  weight?: string;
+  color?: string;
+  line?: string;
+  tracking?: string;
+  family?: string;
 }
 
-const { as: Element = 'p', variant, class: className, ...attrs } = Astro.props;
+const {
+  as: Element = 'p',
+  variant,
+  size,
+  weight,
+  color,
+  line,
+  tracking,
+  family,
+  class: className,
+  ...attrs
+} = Astro.props;
 
-const resolvedVariant = variant ?? (Element === 'span' ? 'p' : (Element as TypographyVariant));
+const resolvedVariant =
+  variant ??
+  (Element === 'span'
+    ? 'p'
+    : Element === 'h5' || Element === 'h6'
+      ? 'h4'
+      : (Element as TypographyVariant));
 const variantClass = typographyClasses[resolvedVariant] ?? typographyClasses.p;
-const classes = classy(variantClass, className);
+const overrides = tokenPropsToClasses({ size, weight, color, line, tracking, family });
+const classes = classy(variantClass, overrides, className);
 ---
 
 {Element === 'h1' && <h1 class={classes} {...attrs}><slot /></h1>}
 {Element === 'h2' && <h2 class={classes} {...attrs}><slot /></h2>}
 {Element === 'h3' && <h3 class={classes} {...attrs}><slot /></h3>}
 {Element === 'h4' && <h4 class={classes} {...attrs}><slot /></h4>}
+{Element === 'h5' && <h5 class={classes} {...attrs}><slot /></h5>}
+{Element === 'h6' && <h6 class={classes} {...attrs}><slot /></h6>}
 {Element === 'p' && <p class={classes} {...attrs}><slot /></p>}
 {Element === 'blockquote' && <blockquote class={classes} {...attrs}><slot /></blockquote>}
 {Element === 'code' && <code class={classes} {...attrs}><slot /></code>}
+{Element === 'small' && <small class={classes} {...attrs}><slot /></small>}
 {Element === 'span' && <span class={classes} {...attrs}><slot /></span>}
+{Element === 'mark' && <mark class={classes} {...attrs}><slot /></mark>}

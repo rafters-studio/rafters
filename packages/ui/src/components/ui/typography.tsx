@@ -74,55 +74,13 @@ export interface EditableTypographyProps {
 // Typography Classes
 // ============================================================================
 
-import { typographyClasses } from './typography.classes';
+import {
+  type TypographyTokenProps,
+  tokenPropsToClasses,
+  typographyClasses,
+} from './typography.classes';
 
-/**
- * Token-level typography props for surgical override of any dimension.
- * All props reference token scale positions. The component applies role
- * defaults, then explicit props override individual dimensions.
- *
- * size="xl" -> text-xl (reads --font-size-xl from @theme)
- * weight="thin" -> font-thin (reads --font-weight-thin from @theme)
- * color="muted" -> text-muted-foreground
- * line="relaxed" -> leading-relaxed
- * tracking="wide" -> tracking-wide
- * family="code" -> font-code (reads --font-code from @theme)
- */
-export interface TypographyTokenProps {
-  /** Font size scale position override. Maps to text-{value} utility. */
-  size?: string | undefined;
-  /** Font weight override. Maps to font-{value} utility. */
-  weight?: string | undefined;
-  /** Text color override. Maps to text-{value} for semantic colors, text-{value}-foreground for named colors. */
-  color?: string | undefined;
-  /** Line height override. Maps to leading-{value} utility. */
-  line?: string | undefined;
-  /** Letter spacing override. Maps to tracking-{value} utility. */
-  tracking?: string | undefined;
-  /** Font family role override. Maps to font-{value} utility. */
-  family?: string | undefined;
-}
-
-/**
- * Build Tailwind utility classes from token props.
- * Returns a string of override classes or empty string if no overrides.
- */
-function tokenPropsToClasses(props: TypographyTokenProps): string {
-  const classes: string[] = [];
-  if (props.size) classes.push(`text-${props.size}`);
-  if (props.weight) classes.push(`font-${props.weight}`);
-  if (props.color) {
-    if (props.color === 'foreground' || props.color.endsWith('-foreground')) {
-      classes.push(`text-${props.color}`);
-    } else {
-      classes.push(`text-${props.color}-foreground`);
-    }
-  }
-  if (props.line) classes.push(`leading-${props.line}`);
-  if (props.tracking) classes.push(`tracking-${props.tracking}`);
-  if (props.family) classes.push(`font-${props.family}`);
-  return classes.join(' ');
-}
+export type { TypographyTokenProps };
 
 export interface TypographyProps extends React.HTMLAttributes<HTMLElement>, TypographyTokenProps {}
 

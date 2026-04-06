@@ -1,0 +1,26 @@
+---
+/**
+ * Small - Smaller text (Astro). Zero client JavaScript.
+ * For fine print, captions, or supporting text.
+ *
+ * @cognitive-load 1/10
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { tokenPropsToClasses, typographyClasses } from './typography.classes';
+
+interface Props extends HTMLAttributes<'small'> {
+  size?: string;
+  weight?: string;
+  color?: string;
+  line?: string;
+  tracking?: string;
+  family?: string;
+}
+
+const { size, weight, color, line, tracking, family, class: className, ...attrs } = Astro.props;
+const overrides = tokenPropsToClasses({ size, weight, color, line, tracking, family });
+const classes = classy(typographyClasses.small, overrides, className);
+---
+
+<small class={classes} {...attrs}><slot /></small>

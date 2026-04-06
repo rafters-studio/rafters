@@ -1,0 +1,26 @@
+---
+/**
+ * Code - Inline code (Astro). Zero client JavaScript.
+ * Monospace text for code snippets, commands, or technical terms.
+ *
+ * @cognitive-load 1/10
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { tokenPropsToClasses, typographyClasses } from './typography.classes';
+
+interface Props extends HTMLAttributes<'code'> {
+  size?: string;
+  weight?: string;
+  color?: string;
+  line?: string;
+  tracking?: string;
+  family?: string;
+}
+
+const { size, weight, color, line, tracking, family, class: className, ...attrs } = Astro.props;
+const overrides = tokenPropsToClasses({ size, weight, color, line, tracking, family });
+const classes = classy(typographyClasses.code, overrides, className);
+---
+
+<code class={classes} {...attrs}><slot /></code>

@@ -1,0 +1,26 @@
+---
+/**
+ * H2 - Section heading (Astro). Zero client JavaScript.
+ * Use for major sections within the page.
+ *
+ * @cognitive-load 1/10
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { tokenPropsToClasses, typographyClasses } from './typography.classes';
+
+interface Props extends HTMLAttributes<'h2'> {
+  size?: string;
+  weight?: string;
+  color?: string;
+  line?: string;
+  tracking?: string;
+  family?: string;
+}
+
+const { size, weight, color, line, tracking, family, class: className, ...attrs } = Astro.props;
+const overrides = tokenPropsToClasses({ size, weight, color, line, tracking, family });
+const classes = classy(typographyClasses.h2, overrides, className);
+---
+
+<h2 class={classes} {...attrs}><slot /></h2>

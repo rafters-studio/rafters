@@ -1,0 +1,23 @@
+---
+/**
+ * CodeBlock - Block-level code (Astro). Zero client JavaScript.
+ * For multi-line code samples with optional line numbers.
+ *
+ * @cognitive-load 2/10
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { typographyClasses } from './typography.classes';
+
+interface Props extends HTMLAttributes<'pre'> {
+  language?: string;
+  showLineNumbers?: boolean;
+}
+
+const { language, showLineNumbers = false, class: className, ...attrs } = Astro.props;
+const classes = classy(typographyClasses.codeblock, className);
+---
+
+<pre class={classes} data-language={language} {...attrs}>
+  <code><slot /></code>
+</pre>
