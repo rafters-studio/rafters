@@ -84,6 +84,23 @@ export function generateTypographyTokens(
     },
   });
 
+  tokens.push({
+    name: 'font-serif',
+    value: 'Georgia, "Times New Roman", Times, serif',
+    category: 'typography',
+    namespace: 'typography',
+    semanticMeaning: 'Serif font family for editorial and long-form content',
+    usageContext: ['editorial', 'long-form', 'articles', 'blockquotes'],
+    description:
+      'Serif font family. System serif stack by default. Override in global.css @theme with your imported serif font.',
+    generatedAt: timestamp,
+    containerQueryAware: false,
+    usagePatterns: {
+      do: ['Override in global.css @theme to match imported serif font'],
+      never: ['Use without importing an actual serif font for production'],
+    },
+  });
+
   // Font-family role tokens -- semantic assignments that designers can override
   tokens.push({
     name: 'font-heading',
