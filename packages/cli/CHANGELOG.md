@@ -1,5 +1,18 @@
 # rafters
 
+## 0.0.44
+
+### Patch Changes
+
+- fix(cli): create palette position tokens when map enriches a color. When onboard map maps a color family to a semantic role, palette position tokens (e.g., primary-500, primary-600) are now created automatically so downstream scale references resolve correctly.
+- fix(registry): sub-components like typography-h1 now bundle parent shared files (typography.classes.ts) correctly. Previously the registry only looked for same-named shared files, breaking `rafters add typography-h1`.
+
+## 0.0.43
+
+### Minor Changes
+
+- feat(ui): Astro typography tag components. Individual .astro files for each HTML element (H1-H6, P, Code, Blockquote, Codeblock, Small, Mark, Abbr) with zero client JavaScript. Each uses shared tokenPropsToClasses from typography.classes.ts. Token-level props (size, weight, color, line, tracking, family) for surgical overrides. Installable via `rafters add typography-h1`, `rafters add typography-p`, etc.
+
 ## 0.0.42
 
 ### Minor Changes

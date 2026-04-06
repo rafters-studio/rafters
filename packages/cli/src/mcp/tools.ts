@@ -18,7 +18,7 @@ import { existsSync } from 'node:fs';
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import { basename, join, relative } from 'node:path';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
-import { buildColorValue, hexToOKLCH } from '@rafters/color-utils';
+import { buildColorValue, hexToOKLCH, oklchToCSS } from '@rafters/color-utils';
 import {
   DEFAULT_FONT_WEIGHTS,
   DEFAULT_SEMANTIC_COLOR_MAPPINGS,
@@ -2622,6 +2622,46 @@ export class RaftersToolHandler {
           if (oklch) {
             tokenValue = await RaftersToolHandler.buildEnrichedColor(oklch, target);
             enriched = true;
+          }
+        }
+
+        // Create individual palette position tokens from the enriched ColorValue scale.
+        // Without these, the CSS exporter cannot resolve references like "primary-900".
+        const SCALE_POSITIONS = [
+          '50',
+          '100',
+          '200',
+          '300',
+          '400',
+          '500',
+          '600',
+          '700',
+          '800',
+          '900',
+          '950',
+        ] as const;
+        if (enriched && tokenValue && typeof tokenValue === 'object' && 'scale' in tokenValue) {
+          const cv = tokenValue as ColorValue;
+          for (let i = 0; i < cv.scale.length && i < SCALE_POSITIONS.length; i++) {
+            const pos = SCALE_POSITIONS[i];
+            const oklchValue = cv.scale[i];
+            if (!oklchValue) continue;
+            const posName = `${target}-${pos}`;
+            const cssValue = oklchToCSS(oklchValue);
+            const posToken: Token = {
+              name: posName,
+              value: cssValue,
+              category: 'color',
+              namespace: 'color',
+              scalePosition: i,
+              description: `${target} color at ${pos} position`,
+              containerQueryAware: true,
+            };
+            if (registry.has(posName)) {
+              await registry.set(posName, cssValue);
+            } else {
+              registry.add(posToken);
+            }
           }
         }
 
