@@ -84,6 +84,60 @@ export function generateTypographyTokens(
     },
   });
 
+  // Font-family role tokens -- semantic assignments that designers can override
+  tokens.push({
+    name: 'font-heading',
+    value: `var(--font-sans)`,
+    category: 'typography',
+    namespace: 'typography',
+    semanticMeaning: 'Font family for headings and display text',
+    usageContext: ['headings', 'display-text', 'titles'],
+    dependsOn: ['font-sans'],
+    description:
+      'Heading font family. Defaults to sans-serif. Override to change all headings to serif or another family.',
+    generatedAt: timestamp,
+    containerQueryAware: false,
+    usagePatterns: {
+      do: ['Override to set all headings to a different typeface'],
+      never: ['Reference directly in components -- use typography role utilities instead'],
+    },
+  });
+
+  tokens.push({
+    name: 'font-body',
+    value: `var(--font-sans)`,
+    category: 'typography',
+    namespace: 'typography',
+    semanticMeaning: 'Font family for body text and UI elements',
+    usageContext: ['body-text', 'labels', 'descriptions', 'ui-elements'],
+    dependsOn: ['font-sans'],
+    description:
+      'Body font family. Defaults to sans-serif. Override to change all body and UI text.',
+    generatedAt: timestamp,
+    containerQueryAware: false,
+    usagePatterns: {
+      do: ['Override to set all body text to a different typeface'],
+      never: ['Reference directly in components -- use typography role utilities instead'],
+    },
+  });
+
+  tokens.push({
+    name: 'font-code',
+    value: `var(--font-mono)`,
+    category: 'typography',
+    namespace: 'typography',
+    semanticMeaning: 'Font family for code, keyboard shortcuts, and technical content',
+    usageContext: ['code-blocks', 'inline-code', 'kbd', 'shortcuts'],
+    dependsOn: ['font-mono'],
+    description: 'Code font family. Defaults to monospace. Override for a custom code typeface.',
+    generatedAt: timestamp,
+    containerQueryAware: false,
+    usagePatterns: {
+      do: ['Override to set all code content to a custom monospace font'],
+      never: ['Reference directly in components -- use typography role utilities instead'],
+    },
+  });
+
   // Base font size token - use rem (1rem = 16px)
   const baseFontSizeRem = baseFontSize / 16;
 
