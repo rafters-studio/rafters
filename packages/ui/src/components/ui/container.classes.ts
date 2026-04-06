@@ -93,11 +93,12 @@ export const containerArticleTypography = [
   'max-w-prose',
 ].join(' ');
 
-export type ContainerBackground = 'none' | 'muted' | 'accent' | 'card';
+export type ContainerBackground = 'none' | 'muted' | 'accent' | 'card' | 'primary';
 
 export const containerBackgroundClasses: Record<ContainerBackground, string> = {
   none: '',
   muted: 'bg-muted',
   accent: 'bg-accent',
   card: 'bg-card',
+  primary: 'bg-primary text-primary-foreground',
 };
