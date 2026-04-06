@@ -1,0 +1,17 @@
+{
+  "description": "Rafters design intelligence hooks: enforce layout, classy, design tokens, and MCP tool usage",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/pre-edit.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

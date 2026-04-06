@@ -1,0 +1,24 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "rafters",
+  "version": "1.0.0",
+  "description": "Design intelligence enforcement for Rafters projects",
+  "owner": {
+    "name": "Sean Silvius",
+    "email": "sean@silvius.me"
+  },
+  "plugins": [
+    {
+      "name": "rafters",
+      "description": "Design intelligence enforcement for Rafters projects. Prevents guessing at design decisions by enforcing MCP tool usage, Container/Grid layout, classy(), and design token compliance.",
+      "version": "0.1.0",
+      "author": {
+        "name": "Sean Silvius",
+        "email": "sean@silvius.me"
+      },
+      "source": "./plugin",
+      "category": "design-systems",
+      "homepage": "https://github.com/rafters-studio/rafters"
+    }
+  ]
+}
