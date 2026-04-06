@@ -361,3 +361,34 @@ export type EasingCurve = (typeof EASING_CURVES)[number];
 export const BREAKPOINT_SCALE = ['sm', 'md', 'lg', 'xl', '2xl'] as const;
 
 export type BreakpointScale = (typeof BREAKPOINT_SCALE)[number];
+
+/**
+ * Typography composite roles -- shared semantic roles consumed by multiple components.
+ * Each role maps to a composite token bundling family, size, weight, line-height, tracking.
+ */
+export const TYPOGRAPHY_ROLES = [
+  'display-large',
+  'display-medium',
+  'title-large',
+  'title-medium',
+  'title-small',
+  'body-large',
+  'body-medium',
+  'body-small',
+  'label-large',
+  'label-medium',
+  'label-small',
+  'code-large',
+  'code-small',
+  'shortcut',
+] as const;
+
+export type TypographyRole = (typeof TYPOGRAPHY_ROLES)[number];
+
+/**
+ * Font-family role tokens -- semantic font family assignments.
+ * Designer changes "all headings use serif" by overriding font-heading.
+ */
+export const FONT_FAMILY_ROLES = ['heading', 'body', 'code'] as const;
+
+export type FontFamilyRole = (typeof FONT_FAMILY_ROLES)[number];

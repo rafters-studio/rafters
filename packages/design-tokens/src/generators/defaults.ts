@@ -772,6 +772,279 @@ export const DEFAULT_LINE_HEIGHTS: Record<string, number> = {
 };
 
 // =============================================================================
+// TYPOGRAPHY COMPOSITE MAPPINGS
+// =============================================================================
+
+/**
+ * Typography composite mapping definition.
+ * Maps a semantic typography role to its properties -- family, size, weight, line-height, tracking.
+ * The exporter generates @utility classes from these composites.
+ */
+export interface TypographyCompositeMapping {
+  /** Font-family role reference: 'heading' | 'body' | 'code' */
+  fontFamily: 'heading' | 'body' | 'code';
+  /** Font size scale key, e.g. '4xl', 'sm', 'base' */
+  fontSize: string;
+  /** Font weight key, e.g. 'bold', 'semibold', 'thin' */
+  fontWeight: string;
+  /** Line height scale key, e.g. '4xl', 'sm', 'base' -- or named value like 'relaxed' */
+  lineHeight: string;
+  /** Letter spacing scale key, e.g. '4xl', 'sm', 'base' -- or named value like 'widest' */
+  letterSpacing: string;
+  /** Optional CQ-responsive size overrides */
+  responsive?: {
+    sm?: { fontSize?: string };
+    md?: { fontSize?: string };
+    lg?: { fontSize?: string };
+  };
+  /** Semantic meaning for MCP intelligence */
+  meaning: string;
+  /** Usage contexts */
+  contexts: string[];
+  /** Do patterns */
+  do: string[];
+  /** Never patterns */
+  never: string[];
+  /** Trust level */
+  trustLevel?: 'low' | 'medium' | 'high' | 'critical';
+  /** Consequence of misuse */
+  consequence?: 'reversible' | 'significant' | 'permanent' | 'destructive';
+}
+
+/**
+ * Component consumers for each typography role.
+ * Used for applicableComponents metadata on generated tokens.
+ */
+export const TYPOGRAPHY_ROLE_CONSUMERS: Record<string, string[]> = {
+  'display-large': ['hero'],
+  'display-medium': ['h1'],
+  'title-large': ['h2'],
+  'title-medium': [
+    'h3',
+    'card-title',
+    'dialog-title',
+    'sheet-title',
+    'drawer-title',
+    'empty-title',
+    'alert-dialog-title',
+  ],
+  'title-small': ['h4', 'alert-title', 'accordion-trigger'],
+  'body-large': ['lead'],
+  'body-medium': ['p', 'list-item', 'blockquote', 'accordion-content'],
+  'body-small': [
+    'card-description',
+    'dialog-description',
+    'sheet-description',
+    'alert-description',
+    'field-description',
+    'tooltip',
+    'menu-item',
+    'table-cell',
+    'input',
+    'select',
+    'textarea',
+  ],
+  'label-large': ['button', 'tab-trigger', 'nav-trigger', 'toggle', 'pagination-link'],
+  'label-medium': ['label', 'breadcrumb', 'button-sm', 'sidebar-item'],
+  'label-small': ['badge', 'sidebar-label', 'caption', 'command-group-heading'],
+  'code-large': ['code-block'],
+  'code-small': ['code-inline', 'kbd'],
+  shortcut: ['keyboard-shortcut'],
+};
+
+/**
+ * Default typography composite mappings.
+ * Single source of truth for all typography role definitions.
+ * The exporter reads these to generate @utility classes.
+ */
+export const DEFAULT_TYPOGRAPHY_COMPOSITE_MAPPINGS: Record<string, TypographyCompositeMapping> = {
+  'display-large': {
+    fontFamily: 'heading',
+    fontSize: '5xl',
+    fontWeight: 'bold',
+    lineHeight: '5xl',
+    letterSpacing: '5xl',
+    responsive: { lg: { fontSize: '6xl' } },
+    meaning: 'Largest display text for hero sections and landing pages',
+    contexts: ['hero-heading', 'landing-page'],
+    do: ['Use sparingly for maximum visual impact', 'Pair with ample whitespace'],
+    never: ['Use more than once per page', 'Use in constrained containers like cards'],
+    trustLevel: 'high',
+    consequence: 'reversible',
+  },
+  'display-medium': {
+    fontFamily: 'heading',
+    fontSize: '4xl',
+    fontWeight: 'bold',
+    lineHeight: '4xl',
+    letterSpacing: '4xl',
+    responsive: { lg: { fontSize: '5xl' } },
+    meaning: 'Primary page heading -- one per page',
+    contexts: ['page-title', 'h1'],
+    do: ['Use once per page for the main title', 'Place at the top of the content area'],
+    never: ['Use multiple times on a single page', 'Use inside cards or dialogs'],
+    trustLevel: 'high',
+    consequence: 'reversible',
+  },
+  'title-large': {
+    fontFamily: 'heading',
+    fontSize: '3xl',
+    fontWeight: 'semibold',
+    lineHeight: '3xl',
+    letterSpacing: '3xl',
+    meaning: 'Major section heading',
+    contexts: ['section-title', 'h2'],
+    do: ['Use to divide major content sections', 'Maintain heading hierarchy (h1 > h2 > h3)'],
+    never: ['Skip heading levels (h1 then h3)', 'Use for decorative emphasis'],
+    trustLevel: 'medium',
+    consequence: 'reversible',
+  },
+  'title-medium': {
+    fontFamily: 'heading',
+    fontSize: 'lg',
+    fontWeight: 'semibold',
+    lineHeight: 'lg',
+    letterSpacing: 'lg',
+    meaning: 'Component and subsection title -- shared by card, dialog, sheet, drawer, empty state',
+    contexts: ['h3', 'card-title', 'dialog-title', 'sheet-title', 'drawer-title', 'empty-title'],
+    do: ['Use for component-level headings', 'Use consistently across all overlay and card titles'],
+    never: ['Mix with other title sizes in the same component', 'Override without why-gate'],
+    trustLevel: 'medium',
+    consequence: 'reversible',
+  },
+  'title-small': {
+    fontFamily: 'heading',
+    fontSize: 'base',
+    fontWeight: 'semibold',
+    lineHeight: 'base',
+    letterSpacing: 'base',
+    meaning: 'Minor heading and alert title',
+    contexts: ['h4', 'alert-title', 'accordion-trigger'],
+    do: ['Use for subsections within a card or panel', 'Use for alert and accordion headings'],
+    never: ['Use as the primary heading on a page'],
+    trustLevel: 'medium',
+    consequence: 'reversible',
+  },
+  'body-large': {
+    fontFamily: 'body',
+    fontSize: 'xl',
+    fontWeight: 'normal',
+    lineHeight: 'xl',
+    letterSpacing: 'xl',
+    meaning: 'Lead paragraph and introductory text',
+    contexts: ['lead', 'introduction', 'hero-body'],
+    do: ['Use for the first paragraph of a section', 'Use for hero body copy'],
+    never: ['Use for all body text', 'Use in compact UI like sidebars'],
+    trustLevel: 'low',
+    consequence: 'reversible',
+  },
+  'body-medium': {
+    fontFamily: 'body',
+    fontSize: 'base',
+    fontWeight: 'normal',
+    lineHeight: 'base',
+    letterSpacing: 'base',
+    meaning: 'Default body text for paragraphs and content',
+    contexts: ['paragraph', 'body-text', 'list-item', 'blockquote', 'accordion-content'],
+    do: ['Use for all standard body content', 'Ensure sufficient contrast against background'],
+    never: ['Use for labels or UI chrome', 'Set below 1rem'],
+    trustLevel: 'low',
+    consequence: 'reversible',
+  },
+  'body-small': {
+    fontFamily: 'body',
+    fontSize: 'sm',
+    fontWeight: 'normal',
+    lineHeight: 'sm',
+    letterSpacing: 'sm',
+    meaning: 'Secondary text -- descriptions, tooltips, menu items, table cells',
+    contexts: ['description', 'tooltip', 'menu-item', 'table-cell', 'input-text', 'helper-text'],
+    do: ['Use for supplementary information', 'Use for compact UI elements like menus and tables'],
+    never: ['Use for primary content that users must read', 'Set below 0.875rem for body text'],
+    trustLevel: 'low',
+    consequence: 'reversible',
+  },
+  'label-large': {
+    fontFamily: 'body',
+    fontSize: 'base',
+    fontWeight: 'medium',
+    lineHeight: 'base',
+    letterSpacing: 'base',
+    meaning: 'Interactive element text -- buttons, tabs, nav triggers, toggles',
+    contexts: ['button', 'tab-trigger', 'nav-trigger', 'toggle', 'pagination'],
+    do: ['Use for primary interactive controls', 'Ensure touch target meets 24px minimum'],
+    never: ['Use for passive content', 'Mix with body text styling'],
+    trustLevel: 'medium',
+    consequence: 'reversible',
+  },
+  'label-medium': {
+    fontFamily: 'body',
+    fontSize: 'sm',
+    fontWeight: 'medium',
+    lineHeight: 'sm',
+    letterSpacing: 'sm',
+    meaning: 'Form labels, breadcrumbs, small buttons, sidebar items',
+    contexts: ['label', 'breadcrumb', 'small-button', 'sidebar-item'],
+    do: ['Use for form field labels', 'Use for secondary navigation'],
+    never: ['Use for headings', 'Use for primary call-to-action buttons'],
+    trustLevel: 'low',
+    consequence: 'reversible',
+  },
+  'label-small': {
+    fontFamily: 'body',
+    fontSize: 'xs',
+    fontWeight: 'medium',
+    lineHeight: 'xs',
+    letterSpacing: 'xs',
+    meaning: 'Smallest label text -- badges, sidebar labels, captions',
+    contexts: ['badge', 'sidebar-label', 'caption', 'command-group-heading'],
+    do: ['Use only for tertiary UI information', 'Ensure adequate contrast at small size'],
+    never: ['Use for content users must read to complete a task', 'Set below 0.75rem'],
+    trustLevel: 'low',
+    consequence: 'reversible',
+  },
+  'code-large': {
+    fontFamily: 'code',
+    fontSize: 'base',
+    fontWeight: 'normal',
+    lineHeight: 'base',
+    letterSpacing: 'base',
+    meaning: 'Code blocks and pre-formatted text',
+    contexts: ['code-block', 'pre', 'terminal-output'],
+    do: ['Use for multi-line code content', 'Pair with syntax highlighting'],
+    never: ['Use for inline code snippets', 'Use for non-code content'],
+    trustLevel: 'low',
+    consequence: 'reversible',
+  },
+  'code-small': {
+    fontFamily: 'code',
+    fontSize: 'sm',
+    fontWeight: 'normal',
+    lineHeight: 'sm',
+    letterSpacing: 'sm',
+    meaning: 'Inline code and keyboard key indicators',
+    contexts: ['code-inline', 'kbd', 'technical-term'],
+    do: ['Use for code references within prose', 'Use for keyboard shortcut labels'],
+    never: ['Use for multi-line code blocks', 'Use for body text'],
+    trustLevel: 'low',
+    consequence: 'reversible',
+  },
+  shortcut: {
+    fontFamily: 'code',
+    fontSize: 'xs',
+    fontWeight: 'normal',
+    lineHeight: 'xs',
+    letterSpacing: 'widest',
+    meaning: 'Keyboard shortcut indicators in menus',
+    contexts: ['keyboard-shortcut', 'command-shortcut', 'menu-shortcut'],
+    do: ['Use for keyboard shortcut text in menus and command palettes'],
+    never: ['Use for regular text content', 'Use outside of menu/command contexts'],
+    trustLevel: 'low',
+    consequence: 'reversible',
+  },
+};
+
+// =============================================================================
 // SEMANTIC COLOR MAPPINGS
 // =============================================================================
 
