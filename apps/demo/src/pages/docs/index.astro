@@ -6,7 +6,7 @@
  * - Container: main landmark with size constraint
  * - Grid: linear preset for equal-priority cards
  * - Card: interactive cards for doc links
- * - Typography: H1, H2, Lead, Muted for hierarchy
+ * - Typography: H1, H2, P for hierarchy
  * - Badge: section indicators
  * - Separator: visual division
  */
@@ -17,7 +17,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from '@rafters/ui/compon
 import { Container } from '@rafters/ui/components/ui/container';
 import { Grid } from '@rafters/ui/components/ui/grid';
 import { Separator } from '@rafters/ui/components/ui/separator';
-import { H1, H2, Lead, Muted } from '@rafters/ui/components/ui/typography';
+import { H1, H2, P } from '@rafters/ui/components/ui/typography';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 
 const allDocs = await getCollection('docs', ({ data }) => !data.draft);
@@ -83,21 +83,21 @@ const sectionsWithDocs = sectionOrder.filter((key) => sections[key].docs.length 
   <Container as="main" size="5xl" padding="6">
     {/* Header */}
     <header class="pb-8">
-      <Muted class="mb-2">Design Intelligence Protocol</Muted>
+      <P size="sm" color="muted" class="mb-2">Design Intelligence Protocol</P>
       <H1 class="mb-4">Documentation</H1>
-      <Lead class="max-w-2xl mb-6">
+      <P size="xl" class="max-w-2xl mb-6">
         Learn how Rafters encodes designer judgment into queryable data for AI agents.
-      </Lead>
+      </P>
       
       {/* Stats */}
       <div class="flex gap-6">
         <div class="flex items-center gap-2">
           <span class="text-2xl font-semibold text-primary">{totalDocs}</span>
-          <Muted>articles</Muted>
+          <P size="sm" color="muted">articles</P>
         </div>
         <div class="flex items-center gap-2">
           <span class="text-2xl font-semibold text-primary">{sectionsWithDocs.length}</span>
-          <Muted>sections</Muted>
+          <P size="sm" color="muted">sections</P>
         </div>
       </div>
     </header>
@@ -120,7 +120,7 @@ const sectionsWithDocs = sectionOrder.filter((key) => sections[key].docs.length 
                     {section.docs.length}
                   </Badge>
                 </div>
-                <Muted>{section.description}</Muted>
+                <P size="sm" color="muted">{section.description}</P>
               </div>
             </div>
             
@@ -158,7 +158,7 @@ const sectionsWithDocs = sectionOrder.filter((key) => sections[key].docs.length 
           </svg>
           Component Gallery
         </a>
-        <Muted>Rafters Design Intelligence Protocol</Muted>
+        <P size="sm" color="muted">Rafters Design Intelligence Protocol</P>
       </div>
     </footer>
   </Container>

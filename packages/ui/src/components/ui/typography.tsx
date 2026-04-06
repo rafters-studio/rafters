@@ -5,13 +5,13 @@
  * @attention-economics Hierarchy guides reading: H1=page title (one per page), H2=sections, H3=subsections, body text flows naturally
  * @trust-building Consistent typography builds readability and professionalism
  * @accessibility Proper heading hierarchy for screen readers; sufficient contrast ratios
- * @semantic-meaning Element mapping: H1-H4=document structure, P=body content, Lead=introductions, Muted=secondary info, Code=technical content
+ * @semantic-meaning Element mapping: H1-H6=document structure, P=body content (with token overrides for lead/muted variants), Code=technical content
  *
  * @usage-patterns
  * DO: Use H1 once per page for main title
  * DO: Follow heading hierarchy (H1 -> H2 -> H3, never skip)
- * DO: Use Lead for introductory paragraphs
- * DO: Use Muted for supplementary information
+ * DO: Use P with size/color token props for variant styling (e.g., lead, muted)
+ * DO: Use token props to override individual typography dimensions
  * NEVER: Skip heading levels (H1 -> H3)
  * NEVER: Use headings for styling only (use CSS instead)
  * NEVER: Use multiple H1s on a single page
@@ -20,14 +20,14 @@
  * ```tsx
  * // Page structure
  * <H1>Page Title</H1>
- * <Lead>This is an introduction to the page content.</Lead>
+ * <P size="xl" color="muted">This is an introduction to the page content.</P>
  *
  * <H2>Section Title</H2>
  * <P>Body paragraph with standard styling.</P>
  *
  * <H3>Subsection</H3>
  * <P>More content here.</P>
- * <Muted>Last updated: Jan 2025</Muted>
+ * <P size="sm" color="muted">Last updated: Jan 2025</P>
  *
  * // Code example
  * <P>Use the <Code>useState</Code> hook for local state.</P>
@@ -76,10 +76,55 @@ export interface EditableTypographyProps {
 
 import { typographyClasses } from './typography.classes';
 
-export interface TypographyProps extends React.HTMLAttributes<HTMLElement> {
-  /** Override the default HTML element */
-  as?: React.ElementType;
+/**
+ * Token-level typography props for surgical override of any dimension.
+ * All props reference token scale positions. The component applies role
+ * defaults, then explicit props override individual dimensions.
+ *
+ * size="xl" -> text-xl (reads --font-size-xl from @theme)
+ * weight="thin" -> font-thin (reads --font-weight-thin from @theme)
+ * color="muted" -> text-muted-foreground
+ * line="relaxed" -> leading-relaxed
+ * tracking="wide" -> tracking-wide
+ * family="code" -> font-code (reads --font-code from @theme)
+ */
+export interface TypographyTokenProps {
+  /** Font size scale position override. Maps to text-{value} utility. */
+  size?: string | undefined;
+  /** Font weight override. Maps to font-{value} utility. */
+  weight?: string | undefined;
+  /** Text color override. Maps to text-{value} for semantic colors, text-{value}-foreground for named colors. */
+  color?: string | undefined;
+  /** Line height override. Maps to leading-{value} utility. */
+  line?: string | undefined;
+  /** Letter spacing override. Maps to tracking-{value} utility. */
+  tracking?: string | undefined;
+  /** Font family role override. Maps to font-{value} utility. */
+  family?: string | undefined;
 }
+
+/**
+ * Build Tailwind utility classes from token props.
+ * Returns a string of override classes or empty string if no overrides.
+ */
+function tokenPropsToClasses(props: TypographyTokenProps): string {
+  const classes: string[] = [];
+  if (props.size) classes.push(`text-${props.size}`);
+  if (props.weight) classes.push(`font-${props.weight}`);
+  if (props.color) {
+    if (props.color === 'foreground' || props.color.endsWith('-foreground')) {
+      classes.push(`text-${props.color}`);
+    } else {
+      classes.push(`text-${props.color}-foreground`);
+    }
+  }
+  if (props.line) classes.push(`leading-${props.line}`);
+  if (props.tracking) classes.push(`tracking-${props.tracking}`);
+  if (props.family) classes.push(`font-${props.family}`);
+  return classes.join(' ');
+}
+
+export interface TypographyProps extends React.HTMLAttributes<HTMLElement>, TypographyTokenProps {}
 
 /**
  * Extended props for editable heading components (R-200a)
@@ -934,8 +979,13 @@ function useEditableQuote({
 export const H1 = React.forwardRef<HTMLHeadingElement, EditableHeadingProps>(
   (
     {
-      as,
       className,
+      size,
+      weight,
+      color,
+      line,
+      tracking,
+      family,
       editable,
       onChange,
       onFocus,
@@ -960,9 +1010,8 @@ export const H1 = React.forwardRef<HTMLHeadingElement, EditableHeadingProps>(
       onBackspaceAtStart,
     });
 
-    const Component = as ?? 'h1';
+    const overrides = tokenPropsToClasses({ size, weight, color, line, tracking, family });
 
-    // Combine refs
     const combinedRef = (element: HTMLHeadingElement | null) => {
       (elementRef as React.MutableRefObject<HTMLElement | null>).current = element;
       if (typeof ref === 'function') {
@@ -973,12 +1022,12 @@ export const H1 = React.forwardRef<HTMLHeadingElement, EditableHeadingProps>(
     };
 
     return (
-      <Component
+      <h1
         ref={combinedRef}
         className={classy(
           typographyClasses.h1,
+          overrides,
           editable && 'outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded',
-          // Placeholder styling should be applied via CSS using [data-placeholder]:empty:before
           className,
         )}
         data-editable={editable || undefined}
@@ -986,7 +1035,7 @@ export const H1 = React.forwardRef<HTMLHeadingElement, EditableHeadingProps>(
         {...props}
       >
         {children}
-      </Component>
+      </h1>
     );
   },
 );
@@ -1001,8 +1050,13 @@ H1.displayName = 'H1';
 export const H2 = React.forwardRef<HTMLHeadingElement, EditableHeadingProps>(
   (
     {
-      as,
       className,
+      size,
+      weight,
+      color,
+      line,
+      tracking,
+      family,
       editable,
       onChange,
       onFocus,
@@ -1027,7 +1081,7 @@ export const H2 = React.forwardRef<HTMLHeadingElement, EditableHeadingProps>(
       onBackspaceAtStart,
     });
 
-    const Component = as ?? 'h2';
+    const overrides = tokenPropsToClasses({ size, weight, color, line, tracking, family });
 
     const combinedRef = (element: HTMLHeadingElement | null) => {
       (elementRef as React.MutableRefObject<HTMLElement | null>).current = element;
@@ -1039,12 +1093,12 @@ export const H2 = React.forwardRef<HTMLHeadingElement, EditableHeadingProps>(
     };
 
     return (
-      <Component
+      <h2
         ref={combinedRef}
         className={classy(
           typographyClasses.h2,
+          overrides,
           editable && 'outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded',
-          // Placeholder styling should be applied via CSS using [data-placeholder]:empty:before
           className,
         )}
         data-editable={editable || undefined}
@@ -1052,7 +1106,7 @@ export const H2 = React.forwardRef<HTMLHeadingElement, EditableHeadingProps>(
         {...props}
       >
         {children}
-      </Component>
+      </h2>
     );
   },
 );
@@ -1067,8 +1121,13 @@ H2.displayName = 'H2';
 export const H3 = React.forwardRef<HTMLHeadingElement, EditableHeadingProps>(
   (
     {
-      as,
       className,
+      size,
+      weight,
+      color,
+      line,
+      tracking,
+      family,
       editable,
       onChange,
       onFocus,
@@ -1093,7 +1152,7 @@ export const H3 = React.forwardRef<HTMLHeadingElement, EditableHeadingProps>(
       onBackspaceAtStart,
     });
 
-    const Component = as ?? 'h3';
+    const overrides = tokenPropsToClasses({ size, weight, color, line, tracking, family });
 
     const combinedRef = (element: HTMLHeadingElement | null) => {
       (elementRef as React.MutableRefObject<HTMLElement | null>).current = element;
@@ -1105,12 +1164,12 @@ export const H3 = React.forwardRef<HTMLHeadingElement, EditableHeadingProps>(
     };
 
     return (
-      <Component
+      <h3
         ref={combinedRef}
         className={classy(
           typographyClasses.h3,
+          overrides,
           editable && 'outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded',
-          // Placeholder styling should be applied via CSS using [data-placeholder]:empty:before
           className,
         )}
         data-editable={editable || undefined}
@@ -1118,7 +1177,7 @@ export const H3 = React.forwardRef<HTMLHeadingElement, EditableHeadingProps>(
         {...props}
       >
         {children}
-      </Component>
+      </h3>
     );
   },
 );
@@ -1133,8 +1192,13 @@ H3.displayName = 'H3';
 export const H4 = React.forwardRef<HTMLHeadingElement, EditableHeadingProps>(
   (
     {
-      as,
       className,
+      size,
+      weight,
+      color,
+      line,
+      tracking,
+      family,
       editable,
       onChange,
       onFocus,
@@ -1159,7 +1223,7 @@ export const H4 = React.forwardRef<HTMLHeadingElement, EditableHeadingProps>(
       onBackspaceAtStart,
     });
 
-    const Component = as ?? 'h4';
+    const overrides = tokenPropsToClasses({ size, weight, color, line, tracking, family });
 
     const combinedRef = (element: HTMLHeadingElement | null) => {
       (elementRef as React.MutableRefObject<HTMLElement | null>).current = element;
@@ -1171,12 +1235,12 @@ export const H4 = React.forwardRef<HTMLHeadingElement, EditableHeadingProps>(
     };
 
     return (
-      <Component
+      <h4
         ref={combinedRef}
         className={classy(
           typographyClasses.h4,
+          overrides,
           editable && 'outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded',
-          // Placeholder styling should be applied via CSS using [data-placeholder]:empty:before
           className,
         )}
         data-editable={editable || undefined}
@@ -1184,11 +1248,47 @@ export const H4 = React.forwardRef<HTMLHeadingElement, EditableHeadingProps>(
         {...props}
       >
         {children}
-      </Component>
+      </h4>
     );
   },
 );
 H4.displayName = 'H4';
+
+/**
+ * H5 - Minor heading
+ * Use for fine-grained subsections. Shares visual treatment with H4.
+ */
+export const H5 = React.forwardRef<HTMLHeadingElement, TypographyProps>(
+  ({ className, size, weight, color, line, tracking, family, ...props }, ref) => {
+    const overrides = tokenPropsToClasses({ size, weight, color, line, tracking, family });
+    return (
+      <h5
+        ref={ref as React.Ref<HTMLHeadingElement>}
+        className={classy(typographyClasses.h4, overrides, className)}
+        {...props}
+      />
+    );
+  },
+);
+H5.displayName = 'H5';
+
+/**
+ * H6 - Lowest-level heading
+ * Use for the finest subsections. Shares visual treatment with H4.
+ */
+export const H6 = React.forwardRef<HTMLHeadingElement, TypographyProps>(
+  ({ className, size, weight, color, line, tracking, family, ...props }, ref) => {
+    const overrides = tokenPropsToClasses({ size, weight, color, line, tracking, family });
+    return (
+      <h6
+        ref={ref as React.Ref<HTMLHeadingElement>}
+        className={classy(typographyClasses.h4, overrides, className)}
+        {...props}
+      />
+    );
+  },
+);
+H6.displayName = 'H6';
 
 /**
  * P - Body paragraph
@@ -1222,8 +1322,13 @@ H4.displayName = 'H4';
 export const P = React.forwardRef<HTMLParagraphElement, EditableParagraphProps>(
   (
     {
-      as,
       className,
+      size,
+      weight,
+      color,
+      line,
+      tracking,
+      family,
       editable,
       onChange,
       onFocus,
@@ -1252,7 +1357,7 @@ export const P = React.forwardRef<HTMLParagraphElement, EditableParagraphProps>(
       onSlashCommand,
     });
 
-    const Component = as ?? 'p';
+    const overrides = tokenPropsToClasses({ size, weight, color, line, tracking, family });
 
     // Combine refs
     const combinedRef = (element: HTMLParagraphElement | null) => {
@@ -1265,10 +1370,11 @@ export const P = React.forwardRef<HTMLParagraphElement, EditableParagraphProps>(
     };
 
     return (
-      <Component
+      <p
         ref={combinedRef}
         className={classy(
           typographyClasses.p,
+          overrides,
           editable && 'outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded',
           className,
         )}
@@ -1277,59 +1383,23 @@ export const P = React.forwardRef<HTMLParagraphElement, EditableParagraphProps>(
         {...props}
       >
         {children}
-      </Component>
+      </p>
     );
   },
 );
 P.displayName = 'P';
 
 /**
- * Lead - Introductory paragraph
- * Larger, muted text for page or section introductions
- */
-export const Lead = React.forwardRef<HTMLParagraphElement, TypographyProps>(
-  ({ as, className, ...props }, ref) => {
-    const Component = as ?? 'p';
-    return (
-      <Component
-        ref={ref as React.Ref<HTMLParagraphElement>}
-        className={classy(typographyClasses.lead, className)}
-        {...props}
-      />
-    );
-  },
-);
-Lead.displayName = 'Lead';
-
-/**
- * Large - Emphasized text
- * Larger, semibold text for emphasis
- */
-export const Large = React.forwardRef<HTMLDivElement, TypographyProps>(
-  ({ as, className, ...props }, ref) => {
-    const Component = as ?? 'div';
-    return (
-      <Component
-        ref={ref as React.Ref<HTMLDivElement>}
-        className={classy(typographyClasses.large, className)}
-        {...props}
-      />
-    );
-  },
-);
-Large.displayName = 'Large';
-
-/**
  * Small - Smaller text
  * For fine print, captions, or supporting text
  */
 export const Small = React.forwardRef<HTMLElement, TypographyProps>(
-  ({ as, className, ...props }, ref) => {
-    const Component = as ?? 'small';
+  ({ className, size, weight, color, line, tracking, family, ...props }, ref) => {
+    const overrides = tokenPropsToClasses({ size, weight, color, line, tracking, family });
     return (
-      <Component
+      <small
         ref={ref as React.Ref<HTMLElement>}
-        className={classy(typographyClasses.small, className)}
+        className={classy(typographyClasses.small, overrides, className)}
         {...props}
       />
     );
@@ -1338,34 +1408,16 @@ export const Small = React.forwardRef<HTMLElement, TypographyProps>(
 Small.displayName = 'Small';
 
 /**
- * Muted - Secondary text
- * De-emphasized text for metadata or supplementary info
- */
-export const Muted = React.forwardRef<HTMLParagraphElement, TypographyProps>(
-  ({ as, className, ...props }, ref) => {
-    const Component = as ?? 'p';
-    return (
-      <Component
-        ref={ref as React.Ref<HTMLParagraphElement>}
-        className={classy(typographyClasses.muted, className)}
-        {...props}
-      />
-    );
-  },
-);
-Muted.displayName = 'Muted';
-
-/**
  * Code - Inline code
  * Monospace text for code snippets, commands, or technical terms
  */
 export const Code = React.forwardRef<HTMLElement, TypographyProps>(
-  ({ as, className, ...props }, ref) => {
-    const Component = as ?? 'code';
+  ({ className, size, weight, color, line, tracking, family, ...props }, ref) => {
+    const overrides = tokenPropsToClasses({ size, weight, color, line, tracking, family });
     return (
-      <Component
+      <code
         ref={ref as React.Ref<HTMLElement>}
-        className={classy(typographyClasses.code, className)}
+        className={classy(typographyClasses.code, overrides, className)}
         {...props}
       />
     );
@@ -1401,8 +1453,13 @@ Code.displayName = 'Code';
 export const Blockquote = React.forwardRef<HTMLQuoteElement, EditableQuoteProps>(
   (
     {
-      as,
       className,
+      size,
+      weight,
+      color,
+      line,
+      tracking,
+      family,
       editable,
       onChange,
       onFocus,
@@ -1431,6 +1488,8 @@ export const Blockquote = React.forwardRef<HTMLQuoteElement, EditableQuoteProps>
       onSelectionChange,
     });
 
+    const overrides = tokenPropsToClasses({ size, weight, color, line, tracking, family });
+
     const citationRef = useRef<HTMLElement>(null);
 
     const handleCitationInput = useCallback(() => {
@@ -1438,8 +1497,6 @@ export const Blockquote = React.forwardRef<HTMLQuoteElement, EditableQuoteProps>
       const text = citationRef.current.textContent ?? '';
       onCitationChange(text);
     }, [onCitationChange]);
-
-    const Component = as ?? 'blockquote';
 
     // Combine refs
     const combinedRef = (element: HTMLQuoteElement | null) => {
@@ -1452,10 +1509,11 @@ export const Blockquote = React.forwardRef<HTMLQuoteElement, EditableQuoteProps>
     };
 
     return (
-      <Component
+      <blockquote
         ref={combinedRef}
         className={classy(
           typographyClasses.blockquote,
+          overrides,
           editable && 'outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded',
           className,
         )}
@@ -1479,7 +1537,7 @@ export const Blockquote = React.forwardRef<HTMLQuoteElement, EditableQuoteProps>
             {citation}
           </cite>
         )}
-      </Component>
+      </blockquote>
     );
   },
 );
@@ -1958,12 +2016,12 @@ CodeBlock.displayName = 'CodeBlock';
  * ```
  */
 export const Mark = React.forwardRef<HTMLElement, TypographyProps>(
-  ({ as, className, ...props }, ref) => {
-    const Component = as ?? 'mark';
+  ({ className, size, weight, color, line, tracking, family, ...props }, ref) => {
+    const overrides = tokenPropsToClasses({ size, weight, color, line, tracking, family });
     return (
-      <Component
+      <mark
         ref={ref as React.Ref<HTMLElement>}
-        className={classy(typographyClasses.mark, className)}
+        className={classy(typographyClasses.mark, overrides, className)}
         {...props}
       />
     );
@@ -1981,12 +2039,12 @@ Mark.displayName = 'Mark';
  * ```
  */
 export const Abbr = React.forwardRef<HTMLElement, TypographyProps & { title: string }>(
-  ({ as, className, title, ...props }, ref) => {
-    const Component = as ?? 'abbr';
+  ({ className, size, weight, color, line, tracking, family, title, ...props }, ref) => {
+    const overrides = tokenPropsToClasses({ size, weight, color, line, tracking, family });
     return (
-      <Component
+      <abbr
         ref={ref as React.Ref<HTMLElement>}
-        className={classy(typographyClasses.abbr, className)}
+        className={classy(typographyClasses.abbr, overrides, className)}
         title={title}
         {...props}
       />

@@ -8,7 +8,7 @@
 export const toggleBaseClasses =
   'inline-flex items-center justify-center ' +
   'rounded-md ' +
-  'text-sm font-medium ' +
+  'text-label-large ' +
   'transition-all duration-200 motion-reduce:transition-none ' +
   'active:scale-[0.98] ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ' +

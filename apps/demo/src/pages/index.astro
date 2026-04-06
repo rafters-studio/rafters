@@ -8,7 +8,7 @@
  * - Container: main landmark with size constraint
  * - Grid: linear preset for equal-priority cards, golden for hero
  * - Card: interactive cards for doc links
- * - Typography: H1, H2, Lead, Muted for hierarchy
+ * - Typography: H1, H2, P for hierarchy
  * - Badge: section indicators
  * - Separator: visual division
  */
@@ -25,7 +25,7 @@ import {
 import { Container } from '@rafters/ui/components/ui/container';
 import { Grid } from '@rafters/ui/components/ui/grid';
 import { Separator } from '@rafters/ui/components/ui/separator';
-import { H1, H2, H3, Lead, Muted, P } from '@rafters/ui/components/ui/typography';
+import { H1, H2, H3, P } from '@rafters/ui/components/ui/typography';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { loadAllComponents } from '../lib/component-registry';
 
@@ -67,23 +67,23 @@ const totalComponents = components.length;
         AI agents don't have taste.<br/>
         <span class="text-muted-foreground">Rafters gives them yours.</span>
       </H1>
-      <Lead class="max-w-2xl mb-8">
+      <P size="xl" class="max-w-2xl mb-8">
         Encode your design judgment into queryable data. AI reads decisions that have already been made instead of guessing at colors, spacing, and hierarchy.
-      </Lead>
+      </P>
       
       {/* Quick stats */}
       <div class="flex gap-8">
         <div>
           <span class="text-3xl font-semibold text-primary">{totalDocs}</span>
-          <Muted class="ml-2">docs</Muted>
+          <P size="sm" color="muted" class="ml-2">docs</P>
         </div>
         <div>
           <span class="text-3xl font-semibold text-primary">{totalComponents}</span>
-          <Muted class="ml-2">components</Muted>
+          <P size="sm" color="muted" class="ml-2">components</P>
         </div>
         <div>
           <span class="text-3xl font-semibold text-primary">4</span>
-          <Muted class="ml-2">MCP tools</Muted>
+          <P size="sm" color="muted" class="ml-2">MCP tools</P>
         </div>
       </div>
     </header>
@@ -93,7 +93,7 @@ const totalComponents = components.length;
     {/* Foundation Systems */}
     <section class="mb-16">
       <H2 class="mb-2">Foundation</H2>
-      <Muted class="mb-8">Mathematical systems that generate consistent, accessible design</Muted>
+      <P size="sm" color="muted" class="mb-8">Mathematical systems that generate consistent, accessible design</P>
       
       <Grid preset="linear" columns={2} gap="6">
         <Card as="article">
@@ -106,7 +106,7 @@ const totalComponents = components.length;
           </CardHeader>
           <CardContent class="space-y-4">
             <div>
-              <Muted class="text-xs mb-2 block">11-position scale (50-950)</Muted>
+              <P size="sm" color="muted" class="text-xs mb-2 block">11-position scale (50-950)</P>
               <div class="flex gap-0.5">
                 <div class="w-6 h-6 rounded-sm" style="background: oklch(0.98 0.02 240);" title="50 - L:0.98"></div>
                 <div class="w-6 h-6 rounded-sm" style="background: oklch(0.95 0.03 240);" title="100 - L:0.95"></div>
@@ -148,7 +148,7 @@ const totalComponents = components.length;
           </CardHeader>
           <CardContent class="space-y-4">
             <div>
-              <Muted class="text-xs mb-2 block">Minor third (1.2) progression</Muted>
+              <P size="sm" color="muted" class="text-xs mb-2 block">Minor third (1.2) progression</P>
               <div class="flex items-end gap-1">
                 <div class="w-4 bg-muted-foreground/40 rounded-sm" style="height: 8px;" title="base / 1.2"></div>
                 <div class="w-4 bg-muted-foreground/50 rounded-sm" style="height: 10px;" title="base"></div>
@@ -182,7 +182,7 @@ const totalComponents = components.length;
     <section class="mb-16">
       <div class="flex items-baseline gap-4 mb-8">
         <H3>Color API</H3>
-        <Muted>Real-time color intelligence via REST</Muted>
+        <P size="sm" color="muted">Real-time color intelligence via REST</P>
       </div>
 
       <Grid preset="linear" columns={2} gap="6">
@@ -249,7 +249,7 @@ const totalComponents = components.length;
     {/* Three Layers */}
     <section class="mb-16">
       <H2 class="mb-2">Three Layers</H2>
-      <Muted class="mb-8">What, where, and why of design decisions</Muted>
+      <P size="sm" color="muted" class="mb-8">What, where, and why of design decisions</P>
       
       <Grid preset="linear" columns={3} gap="6">
         <Card as="article">
@@ -304,7 +304,7 @@ const totalComponents = components.length;
     {/* MCP Tools */}
     <section class="mb-16">
       <H2 class="mb-2">MCP Tools</H2>
-      <Muted class="mb-8">How AI agents query design intelligence</Muted>
+      <P size="sm" color="muted" class="mb-8">How AI agents query design intelligence</P>
 
       <Grid preset="linear" columns={2} gap="6">
         <Card>
@@ -378,7 +378,7 @@ const totalComponents = components.length;
       <div class="flex items-center justify-between mb-8">
         <div>
           <H2 class="mb-2">Documentation</H2>
-          <Muted>Learn the protocol</Muted>
+          <P size="sm" color="muted">Learn the protocol</P>
         </div>
         <a href="/docs" class="text-sm text-primary hover:underline">
           View all docs
@@ -418,7 +418,7 @@ const totalComponents = components.length;
             Documentation
           </a>
         </div>
-        <Muted>Rafters Design Intelligence Protocol</Muted>
+        <P size="sm" color="muted">Rafters Design Intelligence Protocol</P>
       </div>
     </footer>
   </Container>

@@ -58,9 +58,9 @@ export const buttonVariantClasses: Record<string, string> = {
 
 export const buttonSizeClasses: Record<string, string> = {
   default: 'h-10 px-4 py-2',
-  xs: 'h-6 px-2 text-xs',
-  sm: 'h-8 px-3 text-xs',
-  lg: 'h-12 px-6 text-base',
+  xs: 'h-6 px-2 text-label-small',
+  sm: 'h-8 px-3 text-label-small',
+  lg: 'h-12 px-6 text-label-large',
   icon: 'h-10 w-10',
   'icon-xs': 'h-6 w-6',
   'icon-sm': 'h-8 w-8',
@@ -68,7 +68,7 @@ export const buttonSizeClasses: Record<string, string> = {
 };
 
 export const buttonBaseClasses =
-  'inline-flex items-center justify-center gap-2 rounded-md font-medium cursor-pointer ' +
+  'inline-flex items-center justify-center gap-2 rounded-md text-label-large cursor-pointer ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ' +
   'transition-colors duration-150 motion-reduce:transition-none ' +
   'disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none';

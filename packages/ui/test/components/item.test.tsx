@@ -61,12 +61,14 @@ describe('Item', () => {
       </div>,
     );
 
-    expect(screen.getByText('Small').parentElement?.parentElement?.className).toContain('text-xs');
+    expect(screen.getByText('Small').parentElement?.parentElement?.className).toContain(
+      'text-label-small',
+    );
     expect(screen.getByText('Default').parentElement?.parentElement?.className).toContain(
-      'text-sm',
+      'text-body-small',
     );
     expect(screen.getByText('Large').parentElement?.parentElement?.className).toContain(
-      'text-base',
+      'text-body-medium',
     );
   });
 

@@ -3,7 +3,7 @@
  */
 
 export const selectTriggerBaseClasses =
-  'flex w-full items-center justify-between gap-2 rounded-md border border-input bg-background px-3 text-sm shadow-sm ring-offset-background hover:border-input-hover';
+  'flex w-full items-center justify-between gap-2 rounded-md border border-input bg-background px-3 text-body-small shadow-sm ring-offset-background hover:border-input-hover';
 
 export const selectTriggerPlaceholderClasses = 'placeholder:text-muted-foreground';
 
@@ -37,10 +37,10 @@ export const selectContentPaddingClasses = 'p-1';
 
 export const selectViewportClasses = 'p-1';
 
-export const selectLabelClasses = 'py-1.5 pl-8 pr-2 text-sm font-semibold';
+export const selectLabelClasses = 'py-1.5 pl-8 pr-2 text-label-medium';
 
 export const selectItemBaseClasses =
-  'relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none';
+  'relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-body-small outline-none';
 
 export const selectItemFocusClasses = 'focus:bg-accent focus:text-accent-foreground';
 

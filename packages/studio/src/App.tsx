@@ -14,7 +14,7 @@ import { Input } from '@rafters/ui/components/ui/input';
 import { Separator } from '@rafters/ui/components/ui/separator';
 import { Tabs } from '@rafters/ui/components/ui/tabs';
 import { Tooltip } from '@rafters/ui/components/ui/tooltip';
-import { Muted, Small } from '@rafters/ui/components/ui/typography';
+import { P, Small } from '@rafters/ui/components/ui/typography';
 import { useState } from 'react';
 
 const NAMESPACES = [
@@ -78,7 +78,9 @@ export default function App() {
 
           <Separator className="my-2" />
 
-          <Muted>{NAMESPACES.length} ns</Muted>
+          <P size="sm" color="muted">
+            {NAMESPACES.length} ns
+          </P>
         </Container>
 
         <Container as="section" className="col-span-11 row-span-11" padding="4">
@@ -98,7 +100,9 @@ export default function App() {
                       <CardDescription>Base primary color</CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <Muted>oklch(0.6 0.15 250)</Muted>
+                      <P size="sm" color="muted">
+                        oklch(0.6 0.15 250)
+                      </P>
                     </CardContent>
                   </Card>
                 </Dialog.Trigger>
@@ -124,11 +128,15 @@ export default function App() {
             </Tabs.Content>
 
             <Tabs.Content value="preview">
-              <Muted>Live preview of {currentNamespace?.label} changes</Muted>
+              <P size="sm" color="muted">
+                Live preview of {currentNamespace?.label} changes
+              </P>
             </Tabs.Content>
 
             <Tabs.Content value="code">
-              <Muted>Generated CSS/Tailwind for {currentNamespace?.label}</Muted>
+              <P size="sm" color="muted">
+                Generated CSS/Tailwind for {currentNamespace?.label}
+              </P>
             </Tabs.Content>
           </Tabs>
         </Container>

@@ -7,8 +7,8 @@ export const emptyBaseClasses = 'flex flex-col items-center justify-center gap-4
 
 export const emptyIconClasses = 'text-muted-foreground [&>svg]:h-12 [&>svg]:w-12';
 
-export const emptyTitleClasses = 'text-lg font-semibold text-foreground';
+export const emptyTitleClasses = 'text-title-medium text-foreground';
 
-export const emptyDescriptionClasses = 'max-w-sm text-sm text-muted-foreground';
+export const emptyDescriptionClasses = 'max-w-sm text-body-small text-muted-foreground';
 
 export const emptyActionClasses = '';

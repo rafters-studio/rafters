@@ -1,5 +1,11 @@
 # rafters
 
+## 0.0.42
+
+### Minor Changes
+
+- feat(ui): typography tag components with token-level props. Individual HTML element components (H1-H6, P, Code, Blockquote, Small, Mark, Abbr) replace the unified Typography component. Each renders its own HTML element with designer-controlled defaults from typography composite roles. Token-level props (size, weight, color, line, tracking, family) allow surgical override of any dimension while staying within the token system. Removed Lead, Large, Muted as separate components -- they are now P with explicit props. Also includes the typography role migration: 27 component .classes.ts files now use semantic role utilities (text-title-medium, text-body-small, etc.) instead of hardcoded Tailwind classes.
+
 ## 0.0.41
 
 ### Patch Changes

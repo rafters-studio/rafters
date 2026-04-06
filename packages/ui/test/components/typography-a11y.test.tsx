@@ -10,11 +10,10 @@ import {
   H2,
   H3,
   H4,
-  Large,
-  Lead,
+  H5,
+  H6,
   List,
   Mark,
-  Muted,
   P,
   Small,
 } from '../../src/components/ui/typography';
@@ -26,8 +25,12 @@ describe('H1 - Accessibility', () => {
     expect(results).toHaveNoViolations();
   });
 
-  it('has no violations with custom as prop', async () => {
-    const { container } = render(<H1 as="div">Styled as Heading</H1>);
+  it('has no violations with token overrides', async () => {
+    const { container } = render(
+      <H1 size="3xl" weight="light">
+        Styled Heading
+      </H1>,
+    );
     const results = await axe(container);
     expect(results).toHaveNoViolations();
   });
@@ -75,17 +78,17 @@ describe('P - Accessibility', () => {
   });
 });
 
-describe('Lead - Accessibility', () => {
+describe('H5 - Accessibility', () => {
   it('has no accessibility violations', async () => {
-    const { container } = render(<Lead>Introduction to the page content.</Lead>);
+    const { container } = render(<H5>Minor Heading</H5>);
     const results = await axe(container);
     expect(results).toHaveNoViolations();
   });
 });
 
-describe('Large - Accessibility', () => {
+describe('H6 - Accessibility', () => {
   it('has no accessibility violations', async () => {
-    const { container } = render(<Large>Emphasized text</Large>);
+    const { container } = render(<H6>Lowest Heading</H6>);
     const results = await axe(container);
     expect(results).toHaveNoViolations();
   });
@@ -99,9 +102,13 @@ describe('Small - Accessibility', () => {
   });
 });
 
-describe('Muted - Accessibility', () => {
+describe('P with muted token - Accessibility', () => {
   it('has no accessibility violations', async () => {
-    const { container } = render(<Muted>Secondary information</Muted>);
+    const { container } = render(
+      <P size="sm" color="muted">
+        Secondary information
+      </P>,
+    );
     const results = await axe(container);
     expect(results).toHaveNoViolations();
   });
@@ -153,7 +160,9 @@ describe('Typography - Heading hierarchy', () => {
     const { container } = render(
       <article>
         <H1>Page Title</H1>
-        <Lead>Introduction paragraph.</Lead>
+        <P size="xl" color="muted">
+          Introduction paragraph.
+        </P>
         <H2>Section 1</H2>
         <P>Content for section 1.</P>
         <H3>Subsection 1.1</H3>
@@ -188,8 +197,12 @@ describe('Typography - Complete page structure', () => {
         <article>
           <header>
             <H1>Article Title</H1>
-            <Lead>This is an introduction to the article content.</Lead>
-            <Muted>Published: January 2025</Muted>
+            <P size="xl" color="muted">
+              This is an introduction to the article content.
+            </P>
+            <P size="sm" color="muted">
+              Published: January 2025
+            </P>
           </header>
 
           <section>
@@ -207,13 +220,17 @@ describe('Typography - Complete page structure', () => {
 
           <section>
             <H2>Second Section</H2>
-            <Large>An emphasized statement</Large>
+            <P size="lg" weight="semibold">
+              An emphasized statement
+            </P>
             <P>Regular paragraph following the emphasis.</P>
             <Small>A note in smaller text.</Small>
           </section>
 
           <footer>
-            <Muted>Last updated: January 2025</Muted>
+            <P size="sm" color="muted">
+              Last updated: January 2025
+            </P>
           </footer>
         </article>
       </main>,

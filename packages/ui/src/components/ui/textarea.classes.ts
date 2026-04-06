@@ -24,7 +24,7 @@ export const textareaVariantClasses: Record<string, string> = {
 };
 
 export const textareaSizeClasses: Record<string, string> = {
-  sm: 'min-h-16 px-2 py-1 text-xs',
-  default: 'min-h-20 px-3 py-2 text-sm',
-  lg: 'min-h-28 px-4 py-3 text-base',
+  sm: 'min-h-16 px-2 py-1 text-label-small',
+  default: 'min-h-20 px-3 py-2 text-body-small',
+  lg: 'min-h-28 px-4 py-3 text-body-medium',
 };

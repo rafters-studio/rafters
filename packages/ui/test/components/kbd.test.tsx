@@ -25,9 +25,7 @@ describe('Kbd', () => {
     expect(kbd).toHaveClass('bg-muted');
     expect(kbd).toHaveClass('px-1.5');
     expect(kbd).toHaveClass('py-0.5');
-    expect(kbd).toHaveClass('font-mono');
-    expect(kbd).toHaveClass('text-xs');
-    expect(kbd).toHaveClass('font-medium');
+    expect(kbd).toHaveClass('text-code-small');
     expect(kbd).toHaveClass('text-muted-foreground');
     expect(kbd).toHaveClass('shadow-sm');
   });

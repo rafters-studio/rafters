@@ -582,13 +582,13 @@ Container and Grid handle ALL layout. You do not write layout code.
 
 | Instead of | Use |
 |---|---|
-| \`<p className="text-sm text-muted-foreground">\` | \`<Muted>\` |
+| \`<p className="text-sm text-muted-foreground">\` | \`<P size="sm" color="muted">\` |
 | \`<p>\` | \`<P>\` |
 | \`<h1 className="text-4xl font-bold">\` | \`<H1>\` |
 | \`<h2>\` | \`<H2>\` |
 | \`<h3>\` | \`<H3>\` |
 | \`<span className="text-xs">\` | \`<Small>\` |
-| \`<span className="text-lg font-semibold">\` | \`<Large>\` |
+| \`<span className="text-lg font-semibold">\` | \`<P size="lg" weight="semibold">\` |
 
 ## Color -- Tokens, Not Values
 
@@ -599,7 +599,7 @@ Never use hex, HSL, or palette internals.
 
 \`\`\`tsx
 import { Container, Grid } from "@rafters/ui"
-import { H1, Lead } from "@rafters/ui/components/ui/typography"
+import { H1, P } from "@rafters/ui/components/ui/typography"
 import { Card } from "@rafters/ui/components/ui/card"
 import { Button } from "@rafters/ui/components/ui/button"
 
@@ -607,7 +607,7 @@ export default function Page() {
   return (
     <Container>
       <H1>Title</H1>
-      <Lead>Description.</Lead>
+      <P size="xl" color="muted">Description.</P>
       <Grid preset="cards">
         <Card>...</Card>
         <Card>...</Card>

@@ -28,7 +28,7 @@ import {
 } from '@/components/ui/editor';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { H1, H3, Muted, P } from '@/components/ui/typography';
+import { H1, H3, P } from '@/components/ui/typography';
 import type { BlockPaletteItem } from '@/lib/primitives/block-palette';
 import classy from '@/lib/primitives/classy';
 
@@ -463,7 +463,9 @@ export default function EditorPlayground() {
               Component Gallery
             </a>
           </div>
-          <Muted>Rafters Design Intelligence Protocol</Muted>
+          <P size="sm" color="muted">
+            Rafters Design Intelligence Protocol
+          </P>
         </div>
       </footer>
     </Container>

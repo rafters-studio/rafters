@@ -17,6 +17,6 @@ export const sheetHeaderClasses = 'flex flex-col space-y-2 text-center sm:text-l
 
 export const sheetFooterClasses = 'flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2';
 
-export const sheetTitleClasses = 'text-lg font-semibold text-foreground';
+export const sheetTitleClasses = 'text-title-medium text-foreground';
 
-export const sheetDescriptionClasses = 'text-sm text-muted-foreground';
+export const sheetDescriptionClasses = 'text-body-small text-muted-foreground';

@@ -79,7 +79,7 @@ export const sidebarContentClasses =
 export const sidebarGroupClasses = 'relative flex w-full min-w-0 flex-col p-2';
 
 export const sidebarGroupLabelClasses =
-  'flex h-8 shrink-0 items-center rounded-md px-2 text-xs font-medium text-sidebar-foreground/70 outline-none ' +
+  'flex h-8 shrink-0 items-center rounded-md px-2 text-label-small text-sidebar-foreground/70 outline-none ' +
   'ring-sidebar-ring transition-all duration-200 ease-linear motion-reduce:transition-none focus-visible:ring-2 ' +
   'group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0';
 
@@ -96,7 +96,7 @@ export const sidebarMenuClasses = 'flex w-full min-w-0 flex-col gap-1';
 export const sidebarMenuItemClasses = 'group/menu-item relative';
 
 export const sidebarMenuButtonClasses =
-  'peer/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-none ' +
+  'peer/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-label-medium outline-none ' +
   'ring-sidebar-ring transition-all duration-150 motion-reduce:transition-none hover:bg-sidebar-accent hover:text-sidebar-accent-foreground ' +
   'focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 ' +
   'group-has-data-[sidebar=menu-action]/menu-item:pr-8 ' +
@@ -105,9 +105,9 @@ export const sidebarMenuButtonClasses =
   'group-data-[collapsible=icon]:size-8 group-data-[collapsible=icon]:p-2 ' +
   'group-data-[collapsible=icon]:group-has-data-[sidebar=menu-action]/menu-item:pr-2';
 
-export const sidebarMenuButtonSmClasses = 'text-xs';
+export const sidebarMenuButtonSmClasses = 'text-label-small';
 
-export const sidebarMenuButtonLgClasses = 'text-sm group-data-[collapsible=icon]:p-0';
+export const sidebarMenuButtonLgClasses = 'text-label-medium group-data-[collapsible=icon]:p-0';
 
 export const sidebarMenuButtonOutlineClasses =
   'bg-background shadow-sm hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:shadow-none';
@@ -124,7 +124,7 @@ export const sidebarMenuActionShowOnHoverClasses =
 
 export const sidebarMenuBadgeClasses =
   'pointer-events-none absolute right-1 flex h-5 min-w-5 select-none items-center justify-center ' +
-  'rounded-md px-1 text-xs font-medium tabular-nums text-sidebar-foreground ' +
+  'rounded-md px-1 text-label-small tabular-nums text-sidebar-foreground ' +
   'peer-hover/menu-button:text-sidebar-accent-foreground peer-data-[active=true]/menu-button:text-sidebar-accent-foreground ' +
   'group-data-[collapsible=icon]:hidden';
 
@@ -147,8 +147,8 @@ export const sidebarMenuSubButtonClasses =
   'aria-disabled:pointer-events-none aria-disabled:opacity-50 ' +
   'data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground';
 
-export const sidebarMenuSubButtonSmClasses = 'text-xs';
+export const sidebarMenuSubButtonSmClasses = 'text-label-small';
 
-export const sidebarMenuSubButtonMdClasses = 'text-sm';
+export const sidebarMenuSubButtonMdClasses = 'text-label-medium';
 
 export const sidebarSeparatorClasses = 'mx-2 h-px w-auto bg-sidebar-border';

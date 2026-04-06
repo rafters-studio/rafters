@@ -26,7 +26,7 @@ import * as React from 'react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Container } from '@/components/ui/container';
 import { Grid } from '@/components/ui/grid';
-import { H2, Lead, Muted, P, Small } from '@/components/ui/typography';
+import { H2, P, Small } from '@/components/ui/typography';
 import classy from '@/lib/primitives/classy';
 import type { ScalePosition } from '@/lib/primitives/color-scale';
 import { createColorScale } from '@/lib/primitives/color-scale';
@@ -739,13 +739,15 @@ function ColorDetail({ color, onClose }: ColorDetailProps) {
         data-color-hero=""
       >
         {emotionSentence ? (
-          <Lead
+          <P
+            size="xl"
+            color="muted"
             className={classy('font-light')}
             style={{ color: 'inherit', opacity: 0.85 }}
             data-hero-emotion=""
           >
             {emotionSentence}.
-          </Lead>
+          </P>
         ) : null}
         <div className={classy('flex items-baseline gap-3 mt-4')}>
           <H2 className={classy('text-base')} style={{ color: 'inherit' }}>
@@ -754,9 +756,14 @@ function ColorDetail({ color, onClose }: ColorDetailProps) {
           {color.token ? (
             <Small style={{ color: 'inherit', opacity: 0.5 }}>{color.token}</Small>
           ) : null}
-          <Muted className={classy('ml-auto')} style={{ color: 'inherit', opacity: 0.3 }}>
+          <P
+            size="sm"
+            color="muted"
+            className={classy('ml-auto')}
+            style={{ color: 'inherit', opacity: 0.3 }}
+          >
             {baseColor.l.toFixed(2)} / {baseColor.c.toFixed(3)} / {baseColor.h.toFixed(0)}
-          </Muted>
+          </P>
         </div>
 
         {/* At-a-glance badges: WCAG, APCA, gamut */}
@@ -842,14 +849,24 @@ function ColorDetail({ color, onClose }: ColorDetailProps) {
               <>
                 <P>{intelligence.reasoning}</P>
                 {intelligence.culturalContext ? (
-                  <Muted>{intelligence.culturalContext}</Muted>
+                  <P size="sm" color="muted">
+                    {intelligence.culturalContext}
+                  </P>
                 ) : null}
-                {intelligence.usageGuidance ? <Muted>{intelligence.usageGuidance}</Muted> : null}
+                {intelligence.usageGuidance ? (
+                  <P size="sm" color="muted">
+                    {intelligence.usageGuidance}
+                  </P>
+                ) : null}
                 {intelligence.accessibilityNotes ? (
-                  <Muted>{intelligence.accessibilityNotes}</Muted>
+                  <P size="sm" color="muted">
+                    {intelligence.accessibilityNotes}
+                  </P>
                 ) : null}
                 {intelligence.balancingGuidance ? (
-                  <Muted>{intelligence.balancingGuidance}</Muted>
+                  <P size="sm" color="muted">
+                    {intelligence.balancingGuidance}
+                  </P>
                 ) : null}
               </>
             ) : null}
@@ -992,9 +1009,9 @@ function ColorInspector({ colors, className }: ColorInspectorProps) {
         {selectedColor ? (
           <ColorDetail color={selectedColor} onClose={() => setSelectedIndex(null)} />
         ) : (
-          <Muted className={classy('flex items-center justify-center py-24')}>
+          <P size="sm" color="muted" className={classy('flex items-center justify-center py-24')}>
             Select a color to inspect
-          </Muted>
+          </P>
         )}
       </Container>
     </Container>

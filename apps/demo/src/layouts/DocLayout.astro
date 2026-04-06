@@ -4,7 +4,7 @@
  *
  * Uses Rafters components for semantic structure:
  * - Container: main landmark, article for readable content
- * - Typography: H1, Lead for clear hierarchy
+ * - Typography: H1, P for clear hierarchy
  * - Separator: visual division
  * - Badge: section indicator
  */
@@ -12,7 +12,7 @@
 import { Badge } from '@rafters/ui/components/ui/badge';
 import { Container } from '@rafters/ui/components/ui/container';
 import { Separator } from '@rafters/ui/components/ui/separator';
-import { H1, Lead, Muted } from '@rafters/ui/components/ui/typography';
+import { H1, P } from '@rafters/ui/components/ui/typography';
 import BaseLayout from './BaseLayout.astro';
 
 interface Props {
@@ -43,7 +43,7 @@ const sectionVariants: Record<string, 'default' | 'secondary' | 'muted' | 'accen
         </Badge>
       )}
       <H1 class="mb-4">{title}</H1>
-      <Lead class="max-w-2xl">{description}</Lead>
+      <P size="xl" class="max-w-2xl">{description}</P>
     </header>
 
     <Separator class="mb-8" />
