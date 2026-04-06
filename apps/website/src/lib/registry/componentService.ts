@@ -393,8 +393,14 @@ export function loadComponent(name: string): RegistryItem | null {
       // Merge primitive/internal deps from all variants.
       // Filter out shared auxiliary files (e.g. button.classes) -- they are bundled
       // with the component's files, not standalone primitives.
+      // Also filter parent shared files (typography-h1 imports typography.classes).
+      const parentBase = name.includes('-') ? name.split('-')[0] : null;
       const realPrimitives = analysis.importDeps.internal.filter(
-        (dep) => !SHARED_SUFFIXES.some((suffix) => dep === name + suffix.replace(/\.ts$/, '')),
+        (dep) =>
+          !SHARED_SUFFIXES.some((suffix) => {
+            const stripped = suffix.replace(/\.ts$/, '');
+            return dep === name + stripped || (parentBase && dep === parentBase + stripped);
+          }),
       );
       primitivesAll = [
         ...new Set([...primitivesAll, ...realPrimitives, ...analysis.primitiveDeps]),
@@ -415,19 +421,31 @@ export function loadComponent(name: string): RegistryItem | null {
     return null;
   }
 
-  // Load shared auxiliary files
-  for (const suffix of SHARED_SUFFIXES) {
-    const sharedPath = join(componentsDir, `${name}${suffix}`);
-    try {
-      const content = readFileSync(sharedPath, 'utf-8');
-      files.push({
-        path: `components/ui/${name}${suffix}`,
-        content,
-        dependencies: [],
-        devDependencies: [],
-      });
-    } catch {
-      // No shared file with this suffix -- skip
+  // Load shared auxiliary files.
+  // Check both exact name (button.classes.ts) and parent base name
+  // (typography-h1 -> typography.classes.ts) for sub-components that
+  // share a classes file with the parent component.
+  const baseName = name.includes('-') ? name.split('-')[0] : null;
+  const sharedNameCandidates = baseName ? [name, baseName] : [name];
+  const loadedSharedPaths = new Set<string>();
+
+  for (const candidate of sharedNameCandidates) {
+    for (const suffix of SHARED_SUFFIXES) {
+      const sharedPath = join(componentsDir, `${candidate}${suffix}`);
+      const registryPath = `components/ui/${candidate}${suffix}`;
+      if (loadedSharedPaths.has(registryPath)) continue;
+      try {
+        const content = readFileSync(sharedPath, 'utf-8');
+        files.push({
+          path: registryPath,
+          content,
+          dependencies: [],
+          devDependencies: [],
+        });
+        loadedSharedPaths.add(registryPath);
+      } catch {
+        // No shared file with this suffix -- skip
+      }
     }
   }
 
