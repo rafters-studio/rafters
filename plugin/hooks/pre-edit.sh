@@ -31,14 +31,14 @@ if [ -n "$REGISTRY_VIOLATION" ]; then
   exit 0
 fi
 
-# Only enforce remaining rules on TS/TSX files in enforced paths
+# Only enforce remaining rules on TS/TSX/Astro files in enforced paths
 case "$FILE_PATH" in
-  *.tsx|*.ts) ;;
+  *.tsx|*.ts|*.astro) ;;
   *) exit 0 ;;
 esac
 
 case "$FILE_PATH" in
-  *packages/ui/*|*apps/*|*packages/cli/src/mcp/*) ;;
+  *packages/ui/*|*apps/*|*packages/cli/src/mcp/*|*sites/*|*src/pages/*|*src/components/*|*src/layouts/*) ;;
   *) exit 0 ;;
 esac
 
@@ -68,21 +68,21 @@ if echo "$CONTENT" | grep -qE '\btwMerge\('; then
   VIOLATIONS+="CLASSY IS THE LAW: Found twMerge(). Use classy() instead.\n"
 fi
 
-# No arbitrary Tailwind values
-if echo "$CONTENT" | grep -qE '(className|classy).*\w-\[[0-9]+px\]'; then
+# No arbitrary Tailwind values (className for React, class for Astro)
+if echo "$CONTENT" | grep -qE '(className|class|classy).*\w-\[[0-9]+px\]'; then
   VIOLATIONS+="NO ARBITRARY VALUES: Found arbitrary pixel value. Use design tokens.\n"
 fi
-if echo "$CONTENT" | grep -qE '(className|classy).*(bg|text|border)-\[#'; then
+if echo "$CONTENT" | grep -qE '(className|class|classy).*(bg|text|border)-\[#'; then
   VIOLATIONS+="NO ARBITRARY VALUES: Found arbitrary color. Use semantic tokens (bg-primary, text-foreground, etc).\n"
 fi
 
 # LAYOUT IS SOLVED - Container and Grid handle layout
-if echo "$CONTENT" | grep -qE 'className="[^"]*\b(flex|grid|items-|justify-|gap-)[^"]*"'; then
+if echo "$CONTENT" | grep -qE '(className|class)="[^"]*\b(flex|grid|items-|justify-|gap-)[^"]*"'; then
   VIOLATIONS+="LAYOUT IS SOLVED: Found raw layout utility. Use Container/Grid components.\n"
 fi
 
 # CONTAINER OWNS SPACING
-if echo "$CONTENT" | grep -qE 'className="[^"]*\b(p-[0-9]|px-[0-9]|py-[0-9]|m-[0-9]|mx-[0-9]|my-[0-9]|mt-|mb-|ml-|mr-|pt-|pb-|pl-|pr-)[^"]*"'; then
+if echo "$CONTENT" | grep -qE '(className|class)="[^"]*\b(p-[0-9]|px-[0-9]|py-[0-9]|m-[0-9]|mx-[0-9]|my-[0-9]|mt-|mb-|ml-|mr-|pt-|pb-|pl-|pr-)[^"]*"'; then
   VIOLATIONS+="CONTAINER OWNS SPACING: Found direct spacing in className. Container handles spacing.\n"
 fi
 
@@ -99,15 +99,20 @@ fi
 # TOKEN PROPS, NOT CLASSES - Rafters components use token props for overrides
 # class/className on a Rafters component bypasses the design intelligence layer
 RAFTERS_COMPONENTS='H1|H2|H3|H4|H5|H6|Typography|Button|Card|CardHeader|CardTitle|CardDescription|CardContent|CardFooter|CardAction|Container|Grid|GridItem|Badge|Input|Label|Separator|Alert|AlertTitle|AlertDescription|Empty|EmptyIcon|EmptyTitle|EmptyDescription|EmptyAction|Breadcrumb|Tabs|TabsList|TabsTrigger|TabsContent|Table|Pagination|Spinner|Skeleton|Avatar|Image|Kbd|Tooltip|Progress|Field'
-if echo "$CONTENT" | grep -qE "<(${RAFTERS_COMPONENTS})\b[^>]*(class=|className=)"; then
+if echo "$CONTENT" | grep -qE "<(${RAFTERS_COMPONENTS})\b[^>]*\b(class=|className=)"; then
   VIOLATIONS+="TOKEN PROPS, NOT CLASSES: Do not pass class/className to Rafters components. Use token props (size, weight, color, variant, etc.) for overrides. The component owns its classes.\n"
+fi
+
+# RAW HTML ELEMENTS -- use Rafters typography components
+if echo "$CONTENT" | grep -qE '<(h[1-6]|p|span)\b[^>]*(class=|className=)'; then
+  VIOLATIONS+="USE TYPOGRAPHY COMPONENTS: Found raw <h1>/<p>/<span> with classes. Use H1, H2, P, Small, Code typography components with token props instead.\n"
 fi
 
 if [ -z "$VIOLATIONS" ]; then
   exit 0
 fi
 
-REASON=$(printf "$VIOLATIONS" | head -5)
+REASON=$(printf '%s' "$VIOLATIONS" | head -5)
 jq -n --arg reason "$REASON" '{
   "hookSpecificOutput": {
     "hookEventName": "PreToolUse",
