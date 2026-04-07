@@ -69,6 +69,7 @@ interface NavigationMenuContextValue {
   viewportRef: React.RefObject<HTMLDivElement | null>;
   triggerRefs: React.MutableRefObject<Map<string, HTMLButtonElement | null>>;
   contentRefs: React.MutableRefObject<Map<string, HTMLDivElement | null>>;
+  closeTimerRef: React.MutableRefObject<ReturnType<typeof setTimeout> | undefined>;
 }
 
 interface NavigationMenuItemContextValue {
@@ -146,6 +147,7 @@ export function NavigationMenu({
   const viewportRef = React.useRef<HTMLDivElement | null>(null);
   const triggerRefs = React.useRef<Map<string, HTMLButtonElement | null>>(new Map());
   const contentRefs = React.useRef<Map<string, HTMLDivElement | null>>(new Map());
+  const closeTimerRef = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   // Close on escape
   React.useEffect(() => {
@@ -196,6 +198,7 @@ export function NavigationMenu({
       viewportRef,
       triggerRefs,
       contentRefs,
+      closeTimerRef,
     }),
     [value, handleValueChange, baseId, orientation, delayDuration, skipDelayDuration],
   );
@@ -288,9 +291,8 @@ export const NavigationMenuTrigger = React.forwardRef<
   const context = useNavigationMenuContext();
   const itemContext = useNavigationMenuItemContext();
   const openTimerRef = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const closeTimerRef = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-  const { value, onValueChange, baseId, delayDuration, triggerRefs } = context;
+  const { value, onValueChange, baseId, delayDuration, triggerRefs, closeTimerRef } = context;
   const { value: itemValue, isActive } = itemContext;
 
   // Compose refs
@@ -307,11 +309,10 @@ export const NavigationMenuTrigger = React.forwardRef<
     [ref, itemContext.triggerRef, triggerRefs, itemValue],
   );
 
-  // Clear timers on unmount
+  // Clear open timer on unmount (close timer is shared via context)
   React.useEffect(() => {
     return () => {
       if (openTimerRef.current) clearTimeout(openTimerRef.current);
-      if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
     };
   }, []);
 
@@ -421,9 +422,8 @@ export const NavigationMenuContent = React.forwardRef<HTMLDivElement, Navigation
   ({ forceMount, className, onPointerEnter, onPointerLeave, children, ...props }, ref) => {
     const context = useNavigationMenuContext();
     const itemContext = useNavigationMenuItemContext();
-    const closeTimerRef = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-    const { onValueChange, baseId, delayDuration, contentRefs } = context;
+    const { onValueChange, baseId, delayDuration, contentRefs, closeTimerRef } = context;
     const { value: itemValue, isActive } = itemContext;
 
     // Compose refs
@@ -439,13 +439,6 @@ export const NavigationMenuContent = React.forwardRef<HTMLDivElement, Navigation
       },
       [ref, itemContext.contentRef, contentRefs, itemValue],
     );
-
-    // Clear timers on unmount
-    React.useEffect(() => {
-      return () => {
-        if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
-      };
-    }, []);
 
     const handlePointerEnter = (event: React.PointerEvent<HTMLDivElement>) => {
       onPointerEnter?.(event);
@@ -469,23 +462,27 @@ export const NavigationMenuContent = React.forwardRef<HTMLDivElement, Navigation
 
     const shouldRender = forceMount || isActive;
 
-    if (!shouldRender) {
-      return null;
-    }
-
     return (
       // biome-ignore lint/a11y/useAriaPropsSupportedByRole: aria-labelledby is appropriate for navigation menu content that is labeled by its trigger
       <div
         ref={composedRef}
         id={contentId}
         aria-labelledby={triggerId}
+        aria-hidden={!shouldRender}
         data-state={isActive ? 'open' : 'closed'}
         className={classy(
           navigationMenuContentClasses,
           isActive && navigationMenuContentActiveClasses,
           className,
         )}
-        style={{ position: 'absolute' }}
+        style={{
+          position: 'absolute',
+          ...(!shouldRender && {
+            visibility: 'hidden' as const,
+            height: 0,
+            overflow: 'hidden' as const,
+          }),
+        }}
         onPointerEnter={handlePointerEnter}
         onPointerLeave={handlePointerLeave}
         {...props}
@@ -566,9 +563,10 @@ export interface NavigationMenuViewportProps extends React.HTMLAttributes<HTMLDi
 }
 
 export const NavigationMenuViewport = React.forwardRef<HTMLDivElement, NavigationMenuViewportProps>(
-  ({ forceMount, className, ...props }, ref) => {
+  ({ forceMount, className, onPointerEnter, onPointerLeave, ...props }, ref) => {
     const context = useNavigationMenuContext();
-    const { value, viewportRef, contentRefs } = context;
+    const { value, viewportRef, contentRefs, closeTimerRef, onValueChange, delayDuration } =
+      context;
 
     // Compose refs
     const composedRef = React.useCallback(
@@ -599,15 +597,36 @@ export const NavigationMenuViewport = React.forwardRef<HTMLDivElement, Navigatio
       }
     }, [activeContent]);
 
-    if (!shouldRender) {
-      return null;
-    }
+    const handleViewportPointerEnter = (event: React.PointerEvent<HTMLDivElement>) => {
+      onPointerEnter?.(event);
+      if (closeTimerRef.current) {
+        clearTimeout(closeTimerRef.current);
+        closeTimerRef.current = undefined;
+      }
+    };
+
+    const handleViewportPointerLeave = (event: React.PointerEvent<HTMLDivElement>) => {
+      onPointerLeave?.(event);
+      closeTimerRef.current = setTimeout(() => {
+        onValueChange('');
+      }, delayDuration);
+    };
+
+    const hiddenStyle = !shouldRender
+      ? { visibility: 'hidden' as const, height: 0, overflow: 'hidden' as const }
+      : {};
 
     return (
-      <div className="left-0 top-full flex justify-center" style={{ position: 'absolute' }}>
+      <div
+        className="left-0 top-full"
+        style={{ position: 'absolute', ...hiddenStyle }}
+        onPointerEnter={handleViewportPointerEnter}
+        onPointerLeave={handleViewportPointerLeave}
+      >
         <div
           ref={composedRef}
           data-state={isOpen ? 'open' : 'closed'}
+          aria-hidden={!shouldRender}
           className={classy(
             navigationMenuViewportClasses,
             isOpen && navigationMenuViewportActiveClasses,

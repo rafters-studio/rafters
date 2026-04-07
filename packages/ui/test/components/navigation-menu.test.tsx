@@ -37,7 +37,7 @@ describe('NavigationMenu - SSR Safety', () => {
     expect(html).toContain('Products');
   });
 
-  it('should not render content when closed on server', () => {
+  it('should hide content when closed on server', () => {
     const html = renderToString(
       <NavigationMenu>
         <NavigationMenuList>
@@ -51,7 +51,8 @@ describe('NavigationMenu - SSR Safety', () => {
       </NavigationMenu>,
     );
 
-    expect(html).not.toContain('Server Content');
+    expect(html).toContain('aria-hidden="true"');
+    expect(html).toContain('visibility:hidden');
   });
 });
 
@@ -134,11 +135,11 @@ describe('NavigationMenu - Basic Interactions', () => {
       </NavigationMenu>,
     );
 
-    expect(screen.queryByText('Widget')).not.toBeInTheDocument();
+    expect(screen.getByText('Widget')).not.toBeVisible();
 
     fireEvent.click(screen.getByText('Products'));
 
-    expect(screen.getByText('Widget')).toBeInTheDocument();
+    expect(screen.getByText('Widget')).toBeVisible();
   });
 
   it('should close on trigger click when open', async () => {
@@ -155,11 +156,11 @@ describe('NavigationMenu - Basic Interactions', () => {
       </NavigationMenu>,
     );
 
-    expect(screen.getByText('Widget')).toBeInTheDocument();
+    expect(screen.getByText('Widget')).toBeVisible();
 
     fireEvent.click(screen.getByText('Products'));
 
-    expect(screen.queryByText('Widget')).not.toBeInTheDocument();
+    expect(screen.getByText('Widget')).not.toBeVisible();
   });
 
   it('should open on hover after delay', async () => {
@@ -176,19 +177,19 @@ describe('NavigationMenu - Basic Interactions', () => {
       </NavigationMenu>,
     );
 
-    expect(screen.queryByText('Widget')).not.toBeInTheDocument();
+    expect(screen.getByText('Widget')).not.toBeVisible();
 
     fireEvent.pointerEnter(screen.getByText('Products'));
 
     // Not immediately visible
-    expect(screen.queryByText('Widget')).not.toBeInTheDocument();
+    expect(screen.getByText('Widget')).not.toBeVisible();
 
     // Advance timer past delay
     act(() => {
       vi.advanceTimersByTime(250);
     });
 
-    expect(screen.getByText('Widget')).toBeInTheDocument();
+    expect(screen.getByText('Widget')).toBeVisible();
   });
 
   it('should close on Escape key', async () => {
@@ -205,11 +206,11 @@ describe('NavigationMenu - Basic Interactions', () => {
       </NavigationMenu>,
     );
 
-    expect(screen.getByText('Widget')).toBeInTheDocument();
+    expect(screen.getByText('Widget')).toBeVisible();
 
     fireEvent.keyDown(document, { key: 'Escape' });
 
-    expect(screen.queryByText('Widget')).not.toBeInTheDocument();
+    expect(screen.getByText('Widget')).not.toBeVisible();
   });
 
   it('should switch between items immediately when open', async () => {
@@ -232,14 +233,14 @@ describe('NavigationMenu - Basic Interactions', () => {
       </NavigationMenu>,
     );
 
-    expect(screen.getByText('Products Content')).toBeInTheDocument();
-    expect(screen.queryByText('Services Content')).not.toBeInTheDocument();
+    expect(screen.getByText('Products Content')).toBeVisible();
+    expect(screen.getByText('Services Content')).not.toBeVisible();
 
     // Hover over services trigger - should switch immediately since menu is open
     fireEvent.pointerEnter(screen.getByText('Services'));
 
-    expect(screen.queryByText('Products Content')).not.toBeInTheDocument();
-    expect(screen.getByText('Services Content')).toBeInTheDocument();
+    expect(screen.getByText('Products Content')).not.toBeVisible();
+    expect(screen.getByText('Services Content')).toBeVisible();
   });
 });
 
@@ -276,16 +277,16 @@ describe('NavigationMenu - Controlled Mode', () => {
 
     render(<ControlledNav />);
 
-    expect(screen.queryByText('Widget')).not.toBeInTheDocument();
+    expect(screen.getByText('Widget')).not.toBeVisible();
 
     fireEvent.click(screen.getByText('Products'));
 
-    expect(screen.getByText('Widget')).toBeInTheDocument();
+    expect(screen.getByText('Widget')).toBeVisible();
     expect(onValueChange).toHaveBeenCalledWith('products');
 
     fireEvent.click(screen.getByText('Products'));
 
-    expect(screen.queryByText('Widget')).not.toBeInTheDocument();
+    expect(screen.getByText('Widget')).not.toBeVisible();
     expect(onValueChange).toHaveBeenCalledWith('');
   });
 });
@@ -375,14 +376,14 @@ describe('NavigationMenu - Keyboard Navigation', () => {
       </NavigationMenu>,
     );
 
-    expect(screen.getByText('Widget')).toBeInTheDocument();
+    expect(screen.getByText('Widget')).toBeVisible();
 
     const trigger = screen.getByText('Products');
     trigger.focus();
 
     fireEvent.keyDown(trigger, { key: 'Enter' });
 
-    expect(screen.queryByText('Widget')).not.toBeInTheDocument();
+    expect(screen.getByText('Widget')).not.toBeVisible();
   });
 });
 
@@ -671,7 +672,7 @@ describe('NavigationMenu - Viewport', () => {
     expect(screen.getByTestId('viewport')).toBeInTheDocument();
   });
 
-  it('should not render viewport when closed', () => {
+  it('should hide viewport when closed', () => {
     render(
       <NavigationMenu>
         <NavigationMenuList>
@@ -686,7 +687,9 @@ describe('NavigationMenu - Viewport', () => {
       </NavigationMenu>,
     );
 
-    expect(screen.queryByTestId('viewport')).not.toBeInTheDocument();
+    const viewport = screen.getByTestId('viewport');
+    expect(viewport).toBeInTheDocument();
+    expect(viewport).toHaveAttribute('aria-hidden', 'true');
   });
 
   it('should render viewport with forceMount', () => {
@@ -794,13 +797,13 @@ describe('NavigationMenu - Multiple Items', () => {
       </NavigationMenu>,
     );
 
-    expect(screen.getByText('Products Content')).toBeInTheDocument();
-    expect(screen.queryByText('Services Content')).not.toBeInTheDocument();
+    expect(screen.getByText('Products Content')).toBeVisible();
+    expect(screen.getByText('Services Content')).not.toBeVisible();
 
     fireEvent.click(screen.getByRole('button', { name: /Services/i }));
 
-    expect(screen.queryByText('Products Content')).not.toBeInTheDocument();
-    expect(screen.getByText('Services Content')).toBeInTheDocument();
+    expect(screen.getByText('Products Content')).not.toBeVisible();
+    expect(screen.getByText('Services Content')).toBeVisible();
   });
 
   it('should allow simple links without content', () => {
@@ -922,12 +925,12 @@ describe('NavigationMenu - Focus Management', () => {
     trigger.focus();
     fireEvent.click(trigger);
 
-    expect(screen.getByText('Widget')).toBeInTheDocument();
+    expect(screen.getByText('Widget')).toBeVisible();
 
     fireEvent.keyDown(document, { key: 'Escape' });
 
     await waitFor(() => {
-      expect(screen.queryByText('Widget')).not.toBeInTheDocument();
+      expect(screen.getByText('Widget')).not.toBeVisible();
       expect(trigger).toHaveFocus();
     });
   });
