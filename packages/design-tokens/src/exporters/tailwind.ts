@@ -57,6 +57,7 @@ interface GroupedTokens {
   elevation: Token[];
   focus: Token[];
   'typography-composite': Token[];
+  fill: Token[];
   other: Token[];
 }
 
@@ -170,6 +171,7 @@ function groupTokens(tokens: Token[]): GroupedTokens {
     elevation: [],
     focus: [],
     'typography-composite': [],
+    fill: [],
     other: [],
   };
 
@@ -210,6 +212,9 @@ function groupTokens(tokens: Token[]): GroupedTokens {
         break;
       case 'typography-composite':
         groups['typography-composite'].push(token);
+        break;
+      case 'fill':
+        groups.fill.push(token);
         break;
       default:
         groups.other.push(token);
@@ -449,6 +454,15 @@ function generateThemeBlock(groups: GroupedTokens): string {
     for (const token of groups.focus) {
       const value = tokenValueToCSS(token);
       if (value === null) continue;
+      lines.push(`  --${token.name}: ${value};`);
+    }
+    lines.push('');
+  }
+
+  // Fill tokens (composite metadata stored as JSON for runtime resolution)
+  if (groups.fill.length > 0) {
+    for (const token of groups.fill) {
+      const value = typeof token.value === 'string' ? token.value : JSON.stringify(token.value);
       lines.push(`  --${token.name}: ${value};`);
     }
     lines.push('');
@@ -974,6 +988,14 @@ function generateThemeBlockWithVarRefs(groups: GroupedTokens): string {
     lines.push('');
   }
 
+  // Fill tokens
+  if (groups.fill.length > 0) {
+    for (const token of groups.fill) {
+      lines.push(`  --${token.name}: var(--rafters-${token.name});`);
+    }
+    lines.push('');
+  }
+
   // Other tokens
   if (groups.other.length > 0) {
     for (const token of groups.other) {
@@ -1122,6 +1144,15 @@ function generateVarsRootBlock(groups: GroupedTokens): string {
     for (const token of groups.focus) {
       const value = tokenValueToCSS(token);
       if (value === null) continue;
+      lines.push(`  --rafters-${token.name}: ${value};`);
+    }
+    lines.push('');
+  }
+
+  // Fill tokens
+  if (groups.fill.length > 0) {
+    for (const token of groups.fill) {
+      const value = typeof token.value === 'string' ? token.value : JSON.stringify(token.value);
       lines.push(`  --rafters-${token.name}: ${value};`);
     }
     lines.push('');

@@ -34,6 +34,7 @@ import {
   DEFAULT_DURATION_DEFINITIONS,
   DEFAULT_EASING_DEFINITIONS,
   DEFAULT_ELEVATION_DEFINITIONS,
+  DEFAULT_FILL_DEFINITIONS,
   DEFAULT_FOCUS_CONFIGS,
   DEFAULT_FONT_WEIGHTS,
   DEFAULT_RADIUS_DEFINITIONS,
@@ -44,6 +45,7 @@ import {
 } from './defaults.js';
 import { generateDepthTokens } from './depth.js';
 import { generateElevationTokens } from './elevation.js';
+import { generateFillTokens } from './fill.js';
 import { generateFocusTokens } from './focus.js';
 import { generateMotionTokens } from './motion.js';
 import { generateRadiusTokens } from './radius.js';
@@ -62,6 +64,7 @@ export { buildColorScaleFromBase, generateColorTokens } from './color.js';
 export * from './defaults.js';
 export { generateDepthTokens } from './depth.js';
 export { generateElevationTokens } from './elevation.js';
+export { generateFillTokens } from './fill.js';
 export { generateFocusTokens } from './focus.js';
 export { generateMotionTokens } from './motion.js';
 export { generateRadiusTokens } from './radius.js';
@@ -152,6 +155,12 @@ function createGeneratorDefs(colorPaletteBases?: Record<string, ColorPaletteBase
           DEFAULT_EASING_DEFINITIONS,
           DEFAULT_DELAY_DEFINITIONS,
         ),
+    },
+
+    // Fill tokens (depend on color/semantic)
+    {
+      name: 'fill',
+      generate: (_config) => generateFillTokens(_config, DEFAULT_FILL_DEFINITIONS),
     },
 
     // Composite tokens (depend on multiple)
@@ -370,6 +379,11 @@ export function getGeneratorInfo(): Array<{ name: string; description: string }>
     { name: 'shadow', description: 'Shadow scale derived from spacing progression' },
     { name: 'depth', description: 'Z-index scale for stacking context management' },
     { name: 'motion', description: 'Duration, easing, and delay tokens for animations' },
+    {
+      name: 'fill',
+      description:
+        'Composite fill tokens (color + opacity + blur + gradients) with dual-context resolution',
+    },
     { name: 'elevation', description: 'Elevation levels pairing depth with shadows' },
     { name: 'focus', description: 'Focus ring tokens for WCAG 2.2 compliance' },
     {
