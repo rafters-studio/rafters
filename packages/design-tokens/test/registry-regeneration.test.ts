@@ -46,18 +46,17 @@ describe('Registry Regeneration', () => {
       expect(destructiveRef.position).toBe('600');
     });
 
-    it('dependsOn arrays include both light and dark mode color references', () => {
+    it('dependsOn arrays include family token and dark mode position', () => {
       const result = generateBaseSystem();
       const semanticTokens = result.allTokens.filter((t) => t.namespace === 'semantic');
 
-      // Check destructive has both light (600) and dark (500) dependencies
+      // dependsOn[0] = family token, dependsOn[1] = dark mode position token
       const destructive = semanticTokens.find((t) => t.name === 'destructive');
-      expect(destructive?.dependsOn).toContain('silver-bold-fire-truck-600');
+      expect(destructive?.dependsOn).toContain('silver-bold-fire-truck');
       expect(destructive?.dependsOn).toContain('silver-bold-fire-truck-500');
 
-      // Check info has both light (600) and dark (500) dependencies
       const info = semanticTokens.find((t) => t.name === 'info');
-      expect(info?.dependsOn).toContain('silver-true-sky-600');
+      expect(info?.dependsOn).toContain('silver-true-sky');
       expect(info?.dependsOn).toContain('silver-true-sky-500');
     });
   });
@@ -179,8 +178,8 @@ describe('Registry Regeneration', () => {
 
       registry.addDependencies(dependencies);
 
-      // Check that destructive-related tokens depend on fire-truck color
-      const dependents = registry.getDependents('silver-bold-fire-truck-600');
+      // Check that destructive-related tokens depend on fire-truck color family
+      const dependents = registry.getDependents('silver-bold-fire-truck');
       expect(dependents.length).toBeGreaterThan(0);
       expect(dependents).toContain('destructive');
     });

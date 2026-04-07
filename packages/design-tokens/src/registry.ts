@@ -8,6 +8,8 @@
 
 import {
   COMPUTED,
+  type ColorReference,
+  type ColorValue,
   type ComputedSymbol,
   type Token,
   type TypographyElementOverride,
@@ -17,6 +19,7 @@ import { TokenDependencyGraph } from './dependencies';
 import { GenerationRuleExecutor, GenerationRuleParser } from './generation-rules';
 import { DEFAULT_TYPOGRAPHY_COMPOSITE_MAPPINGS } from './generators/defaults.js';
 import type { PersistenceAdapter } from './persistence/types';
+import { findDarkCounterpartIndex, INDEX_TO_POSITION, POSITION_TO_INDEX } from './scale-positions';
 import { validateTypographyOverride } from './validators/typography-a11y.js';
 
 // Event types (inline to replace deleted types/events.js)
@@ -579,12 +582,28 @@ export class TokenRegistry {
       // Mark namespace dirty since we're changing this token
       this.markDirty(existingToken.namespace);
 
+      // For ColorReference results, also update dependsOn for dark mode.
+      // dependsOn[0] = light position token, dependsOn[1] = dark position token.
+      // The Tailwind exporter reads dependsOn[1] for dark mode CSS variables.
+      let updatedDependsOn = existingToken.dependsOn;
+      if (
+        typeof newComputedValue === 'object' &&
+        'family' in newComputedValue &&
+        'position' in newComputedValue
+      ) {
+        const lightTokenName = `${newComputedValue.family}-${newComputedValue.position}`;
+        // Find dark counterpart via invert logic on the same family
+        const darkTokenName = this.findDarkCounterpart(newComputedValue, existingToken.dependsOn);
+        updatedDependsOn = [lightTokenName, darkTokenName];
+      }
+
       if (existingToken.userOverride) {
         // Token has human override - update computedValue but preserve value
         // Agent intelligence: can see what system would produce vs what human chose
         this.tokens.set(tokenName, {
           ...existingToken,
           computedValue: newComputedValue,
+          dependsOn: updatedDependsOn,
           // value stays as-is (the human's choice)
         });
       } else {
@@ -593,11 +612,35 @@ export class TokenRegistry {
           ...existingToken,
           value: newComputedValue,
           computedValue: newComputedValue,
+          dependsOn: updatedDependsOn,
         });
       }
     } catch (error) {
       throw new Error(`Failed to regenerate token ${tokenName}: ${error}`);
     }
+  }
+
+  /**
+   * Find the dark mode counterpart for a light mode ColorReference.
+   * Uses the WCAG accessibility matrix from the color family's ColorValue.
+   * Falls back to mathematical inversion if no WCAG data available.
+   */
+  private findDarkCounterpart(lightRef: ColorReference, existingDependsOn?: string[]): string {
+    const lightIdx = POSITION_TO_INDEX[lightRef.position];
+    if (lightIdx === undefined) {
+      return existingDependsOn?.[1] ?? `${lightRef.family}-${lightRef.position}`;
+    }
+
+    const familyToken = this.tokens.get(lightRef.family);
+    const colorValue = familyToken?.value as ColorValue | undefined;
+    if (!colorValue) {
+      const fallbackIdx = Math.max(0, Math.min(10, 10 - lightIdx));
+      return `${lightRef.family}-${INDEX_TO_POSITION[fallbackIdx] ?? '500'}`;
+    }
+
+    const darkIdx = findDarkCounterpartIndex(lightIdx, colorValue);
+    const darkPos = INDEX_TO_POSITION[darkIdx] ?? '500';
+    return `${lightRef.family}-${darkPos}`;
   }
 
   /**

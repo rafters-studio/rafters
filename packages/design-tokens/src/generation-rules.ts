@@ -5,9 +5,19 @@
  * Supports calc, scale, scale-position, state, contrast, and invert rule types.
  */
 
-import type { ColorValue, OKLCH } from '@rafters/shared';
+import type { ColorReference, ColorValue, OKLCH } from '@rafters/shared';
+import contrastPlugin from './plugins/contrast';
+import invertPlugin from './plugins/invert';
 import scalePlugin from './plugins/scale';
+import statePlugin from './plugins/state';
 import type { TokenRegistry } from './registry';
+import {
+  SCALE_POSITION_MAP,
+  SCALE_POSITION_MAP_REVERSE,
+  VALID_SCALE_POSITIONS,
+} from './scale-positions';
+
+export type RuleResult = string | ColorReference;
 
 export interface ParsedRule {
   type: string;
@@ -20,26 +30,6 @@ export interface ParsedRule {
   ratio?: number | undefined;
   scalePosition?: number | undefined;
 }
-
-/**
- * Maps Tailwind-style scale positions to array indices.
- * Standard 11-position scale: 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950
- */
-const SCALE_POSITION_MAP: Record<number, number> = {
-  50: 0,
-  100: 1,
-  200: 2,
-  300: 3,
-  400: 4,
-  500: 5,
-  600: 6,
-  700: 7,
-  800: 8,
-  900: 9,
-  950: 10,
-};
-
-const VALID_SCALE_POSITIONS = Object.keys(SCALE_POSITION_MAP).map(Number);
 
 export class GenerationRuleParser {
   /**
@@ -243,9 +233,11 @@ export class GenerationRuleExecutor {
   constructor(private registry: TokenRegistry) {}
 
   /**
-   * Execute a parsed rule and return the computed value
+   * Execute a parsed rule and return the computed value.
+   * Returns a string for CSS-value rules (calc, scale, scale-position)
+   * or a ColorReference for semantic rules (state, contrast, invert).
    */
-  execute(rule: ParsedRule, tokenName: string): string {
+  execute(rule: ParsedRule, tokenName: string): RuleResult {
     switch (rule.type) {
       case 'calc':
         return this.executeCalcRule(rule);
@@ -254,11 +246,11 @@ export class GenerationRuleExecutor {
       case 'scale-position':
         return this.executeScalePositionRule(rule, tokenName);
       case 'state':
-        return this.executeStateRule(rule);
+        return this.executeStateRule(rule, tokenName);
       case 'contrast':
-        return this.executeContrastRule(rule);
+        return this.executeContrastRule(rule, tokenName);
       case 'invert':
-        return this.executeInvertRule(rule);
+        return this.executeInvertRule(rule, tokenName);
       default:
         throw new Error(`Unknown rule type: ${rule.type}`);
     }
@@ -314,17 +306,41 @@ export class GenerationRuleExecutor {
   }
 
   /**
-   * Execute a scale-position rule to extract a value from a ColorValue's scale array.
-   * Delegates to the scale plugin for lazy reference, then resolves to CSS.
+   * Execute a scale-position rule.
+   *
+   * For position tokens (e.g., primary-600): extracts from ColorValue scale, returns CSS string.
+   * For semantic tokens (e.g., background): returns a ColorReference to family + position.
+   *
+   * Detection: if the token's current value is a ColorReference, return a ColorReference.
+   * Otherwise, resolve to CSS string via the scale plugin.
    */
-  private executeScalePositionRule(_rule: ParsedRule, tokenName: string): string {
-    // Get the token's dependencies
+  private executeScalePositionRule(rule: ParsedRule, tokenName: string): RuleResult {
+    const existingToken = this.registry.get(tokenName);
+    const existingValue = existingToken?.value;
+
+    // Semantic token path: value is a ColorReference, return a ColorReference
+    if (existingValue && typeof existingValue === 'object' && 'family' in existingValue) {
+      const dependencies = this.registry.getDependencies(tokenName);
+      const familyName = dependencies[0];
+      if (!familyName) {
+        throw new Error(`No family dependency for semantic scale rule on token: ${tokenName}`);
+      }
+
+      const position =
+        rule.scalePosition !== undefined
+          ? SCALE_POSITION_MAP_REVERSE[rule.scalePosition]
+          : (existingValue as ColorReference).position;
+
+      if (!position) {
+        throw new Error(`Cannot resolve scale position for token: ${tokenName}`);
+      }
+
+      return { family: familyName, position: String(position) } as ColorReference;
+    }
+
+    // Position token path: resolve to CSS string
     const dependencies = this.registry.getDependencies(tokenName);
-
-    // Use the scale plugin to get the reference
     const reference = scalePlugin(this.registry, tokenName, dependencies);
-
-    // Resolve the reference to a CSS value
     return this.resolveColorReference(reference);
   }
 
@@ -383,62 +399,21 @@ export class GenerationRuleExecutor {
     return `oklch(${l} ${c} ${h})`;
   }
 
-  private executeStateRule(rule: ParsedRule): string {
-    if (!rule.baseToken) {
-      throw new Error('State rule missing base token');
-    }
-
-    const baseToken = this.registry.get(rule.baseToken);
-    if (!baseToken) {
-      throw new Error(`Base token not found: ${rule.baseToken}`);
-    }
-
-    const baseValue = String(baseToken.value);
-    const stateType = rule.stateType || 'hover';
-
-    // Simple state transformation - could be enhanced based on state type
-    switch (stateType) {
-      case 'hover':
-        return `${baseValue}:hover`;
-      case 'focus':
-        return `${baseValue}:focus`;
-      case 'active':
-        return `${baseValue}:active`;
-      default:
-        return `${baseValue}:${stateType}`;
-    }
+  private executeStateRule(_rule: ParsedRule, tokenName: string): ColorReference {
+    const dependencies = this.registry.getDependencies(tokenName);
+    const ref = statePlugin(this.registry, tokenName, dependencies);
+    return { family: ref.family, position: String(ref.position) };
   }
 
-  private executeContrastRule(rule: ParsedRule): string {
-    if (!rule.baseToken) {
-      throw new Error('Contrast rule missing base token');
-    }
-
-    const baseToken = this.registry.get(rule.baseToken);
-    if (!baseToken) {
-      throw new Error(`Base token not found: ${rule.baseToken}`);
-    }
-
-    const baseValue = String(baseToken.value);
-    const contrast = rule.contrast || 'high';
-
-    // Simple contrast transformation - could be enhanced with actual color contrast calculations
-    return `contrast(${baseValue}, ${contrast})`;
+  private executeContrastRule(_rule: ParsedRule, tokenName: string): ColorReference {
+    const dependencies = this.registry.getDependencies(tokenName);
+    const ref = contrastPlugin(this.registry, tokenName, dependencies);
+    return { family: ref.family, position: String(ref.position) };
   }
 
-  private executeInvertRule(rule: ParsedRule): string {
-    if (!rule.baseToken) {
-      throw new Error('Invert rule missing base token');
-    }
-
-    const baseToken = this.registry.get(rule.baseToken);
-    if (!baseToken) {
-      throw new Error(`Base token not found: ${rule.baseToken}`);
-    }
-
-    const baseValue = String(baseToken.value);
-
-    // Simple invert transformation - could be enhanced with actual color inversion
-    return `invert(${baseValue})`;
+  private executeInvertRule(_rule: ParsedRule, tokenName: string): ColorReference {
+    const dependencies = this.registry.getDependencies(tokenName);
+    const ref = invertPlugin(this.registry, tokenName, dependencies);
+    return { family: ref.family, position: String(ref.position) };
   }
 }
