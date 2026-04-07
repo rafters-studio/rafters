@@ -2,7 +2,7 @@
   "$schema": "https://rafters.studio/schemas/namespace-tokens.json",
   "namespace": "focus",
   "version": "1.0.0",
-  "generatedAt": "2026-03-04T02:18:21.559Z",
+  "generatedAt": "2026-04-07T19:26:12.304Z",
   "tokens": [
     {
       "name": "focus-ring-width",
@@ -17,7 +17,7 @@
       "accessibilityLevel": "AA",
       "focusRingWidth": "0.125rem",
       "description": "Focus ring width 0.125rem. WCAG 2.2 requires minimum 2px for visibility.",
-      "generatedAt": "2026-03-04T02:18:21.545Z",
+      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false,
       "usagePatterns": {
         "do": [
@@ -44,7 +44,7 @@
       ],
       "focusRingColor": "var(--ring)",
       "description": "Focus ring color. Uses semantic ring token for theme consistency.",
-      "generatedAt": "2026-03-04T02:18:21.545Z",
+      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false,
       "highContrastMode": "Highlight"
     },
@@ -70,7 +70,7 @@
       ],
       "accessibilityLevel": "AA",
       "description": "Default focus ring - suitable for most interactive elements. Width: 0.125rem, Offset: 0.125rem.",
-      "generatedAt": "2026-03-04T02:18:21.545Z",
+      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false,
       "highContrastMode": "Highlight",
       "usagePatterns": {
@@ -97,7 +97,7 @@
         "ring"
       ],
       "description": "CSS outline value: 0.125rem solid var(--ring). Use with outline-offset: 0.125rem.",
-      "generatedAt": "2026-03-04T02:18:21.545Z",
+      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false
     },
     {
@@ -108,7 +108,7 @@
       "semanticMeaning": "Focus ring offset for default style",
       "focusRingOffset": "0.125rem",
       "description": "Focus offset 0.125rem for default focus style.",
-      "generatedAt": "2026-03-04T02:18:21.545Z",
+      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false
     },
     {
@@ -132,7 +132,7 @@
       ],
       "accessibilityLevel": "AA",
       "description": "Inset focus ring - for elements where external ring would be cut off. Width: 0.125rem, Offset: -0.125rem.",
-      "generatedAt": "2026-03-04T02:18:21.545Z",
+      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false,
       "highContrastMode": "Highlight",
       "usagePatterns": {
@@ -159,7 +159,7 @@
         "ring"
       ],
       "description": "CSS outline value: 0.125rem solid var(--ring). Use with outline-offset: -0.125rem.",
-      "generatedAt": "2026-03-04T02:18:21.545Z",
+      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false
     },
     {
@@ -170,7 +170,7 @@
       "semanticMeaning": "Focus ring offset for inset style",
       "focusRingOffset": "-0.125rem",
       "description": "Focus offset -0.125rem for inset focus style.",
-      "generatedAt": "2026-03-04T02:18:21.545Z",
+      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false
     },
     {
@@ -194,7 +194,7 @@
       ],
       "accessibilityLevel": "AA",
       "description": "Thick focus ring - for high-visibility needs. Width: 0.188rem, Offset: 0.125rem.",
-      "generatedAt": "2026-03-04T02:18:21.545Z",
+      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false,
       "highContrastMode": "Highlight",
       "usagePatterns": {
@@ -221,7 +221,7 @@
         "ring"
       ],
       "description": "CSS outline value: 0.188rem solid var(--ring). Use with outline-offset: 0.125rem.",
-      "generatedAt": "2026-03-04T02:18:21.545Z",
+      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false
     },
     {
@@ -232,7 +232,7 @@
       "semanticMeaning": "Focus ring offset for thick style",
       "focusRingOffset": "0.125rem",
       "description": "Focus offset 0.125rem for thick focus style.",
-      "generatedAt": "2026-03-04T02:18:21.545Z",
+      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false
     },
     {
@@ -255,7 +255,7 @@
         "focus-ring-width"
       ],
       "description": "Subtle focus ring - for dense UIs with many focusable elements. Width: 0.063rem, Offset: 0.125rem.",
-      "generatedAt": "2026-03-04T02:18:21.545Z",
+      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false,
       "highContrastMode": "Highlight",
       "usagePatterns": {
@@ -282,7 +282,7 @@
         "ring"
       ],
       "description": "CSS outline value: 0.063rem solid var(--ring). Use with outline-offset: 0.125rem.",
-      "generatedAt": "2026-03-04T02:18:21.545Z",
+      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false
     },
     {
@@ -293,7 +293,7 @@
       "semanticMeaning": "Focus ring offset for subtle style",
       "focusRingOffset": "0.125rem",
       "description": "Focus offset 0.125rem for subtle focus style.",
-      "generatedAt": "2026-03-04T02:18:21.545Z",
+      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false
     },
     {
@@ -315,7 +315,7 @@
         "ring"
       ],
       "description": "Focus indicator for containers using :focus-within pseudo-class.",
-      "generatedAt": "2026-03-04T02:18:21.545Z",
+      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false,
       "usagePatterns": {
         "do": [
@@ -343,7 +343,7 @@
       "focusRingStyle": "solid",
       "highContrastMode": "Highlight",
       "description": "High contrast focus ring using system Highlight color.",
-      "generatedAt": "2026-03-04T02:18:21.545Z",
+      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false,
       "usagePatterns": {
         "do": [
