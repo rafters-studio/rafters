@@ -2,7 +2,7 @@
   "$schema": "https://rafters.studio/schemas/namespace-tokens.json",
   "namespace": "elevation",
   "version": "1.0.0",
-  "generatedAt": "2026-03-04T02:18:21.558Z",
+  "generatedAt": "2026-04-07T19:26:12.304Z",
   "tokens": [
     {
       "name": "elevation-surface",
@@ -23,7 +23,7 @@
         "shadow-none"
       ],
       "description": "Default level for content that doesn't need elevation. Combines depth-base with shadow-none.",
-      "generatedAt": "2026-03-04T02:18:21.544Z",
+      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false,
       "usagePatterns": {
         "do": [
@@ -46,7 +46,7 @@
         "depth-base"
       ],
       "description": "Z-index for surface elevation level.",
-      "generatedAt": "2026-03-04T02:18:21.544Z",
+      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false
     },
     {
@@ -59,7 +59,7 @@
         "shadow-none"
       ],
       "description": "Shadow for surface elevation level.",
-      "generatedAt": "2026-03-04T02:18:21.544Z",
+      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false
     },
     {
@@ -81,7 +81,7 @@
         "shadow-sm"
       ],
       "description": "Cards and containers that need subtle visual separation. Combines depth-base with shadow-sm.",
-      "generatedAt": "2026-03-04T02:18:21.544Z",
+      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false,
       "usagePatterns": {
         "do": [
@@ -104,7 +104,7 @@
         "depth-base"
       ],
       "description": "Z-index for raised elevation level.",
-      "generatedAt": "2026-03-04T02:18:21.544Z",
+      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false
     },
     {
@@ -117,7 +117,7 @@
         "shadow-sm"
       ],
       "description": "Shadow for raised elevation level.",
-      "generatedAt": "2026-03-04T02:18:21.544Z",
+      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false
     },
     {
@@ -140,7 +140,7 @@
         "shadow"
       ],
       "description": "Elements that appear over content but aren't blocking. Combines depth-dropdown with shadow.",
-      "generatedAt": "2026-03-04T02:18:21.544Z",
+      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false,
       "usagePatterns": {
         "do": [
@@ -163,7 +163,7 @@
         "depth-dropdown"
       ],
       "description": "Z-index for overlay elevation level.",
-      "generatedAt": "2026-03-04T02:18:21.544Z",
+      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false
     },
     {
@@ -176,7 +176,7 @@
         "shadow"
       ],
       "description": "Shadow for overlay elevation level.",
-      "generatedAt": "2026-03-04T02:18:21.544Z",
+      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false
     },
     {
@@ -198,7 +198,7 @@
         "shadow-md"
       ],
       "description": "Elements that stick to viewport edges during scroll. Combines depth-sticky with shadow-md.",
-      "generatedAt": "2026-03-04T02:18:21.544Z",
+      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false,
       "usagePatterns": {
         "do": [
@@ -221,7 +221,7 @@
         "depth-sticky"
       ],
       "description": "Z-index for sticky elevation level.",
-      "generatedAt": "2026-03-04T02:18:21.544Z",
+      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false
     },
     {
@@ -234,7 +234,7 @@
         "shadow-md"
       ],
       "description": "Shadow for sticky elevation level.",
-      "generatedAt": "2026-03-04T02:18:21.544Z",
+      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false
     },
     {
@@ -257,7 +257,7 @@
         "shadow-lg"
       ],
       "description": "Elements that block interaction with content below. Combines depth-modal with shadow-lg.",
-      "generatedAt": "2026-03-04T02:18:21.544Z",
+      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false,
       "usagePatterns": {
         "do": [
@@ -280,7 +280,7 @@
         "depth-modal"
       ],
       "description": "Z-index for modal elevation level.",
-      "generatedAt": "2026-03-04T02:18:21.544Z",
+      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false
     },
     {
@@ -293,7 +293,7 @@
         "shadow-lg"
       ],
       "description": "Shadow for modal elevation level.",
-      "generatedAt": "2026-03-04T02:18:21.544Z",
+      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false
     },
     {
@@ -315,7 +315,7 @@
         "shadow-xl"
       ],
       "description": "Elements that can appear above modals (rare). Combines depth-popover with shadow-xl.",
-      "generatedAt": "2026-03-04T02:18:21.544Z",
+      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false,
       "usagePatterns": {
         "do": [
@@ -338,7 +338,7 @@
         "depth-popover"
       ],
       "description": "Z-index for popover elevation level.",
-      "generatedAt": "2026-03-04T02:18:21.544Z",
+      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false
     },
     {
@@ -351,7 +351,7 @@
         "shadow-xl"
       ],
       "description": "Shadow for popover elevation level.",
-      "generatedAt": "2026-03-04T02:18:21.544Z",
+      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false
     },
     {
@@ -373,7 +373,7 @@
         "shadow-lg"
       ],
       "description": "Transient information that appears above everything. Combines depth-tooltip with shadow-lg.",
-      "generatedAt": "2026-03-04T02:18:21.544Z",
+      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false,
       "usagePatterns": {
         "do": [
@@ -396,7 +396,7 @@
         "depth-tooltip"
       ],
       "description": "Z-index for tooltip elevation level.",
-      "generatedAt": "2026-03-04T02:18:21.544Z",
+      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false
     },
     {
@@ -409,7 +409,7 @@
         "shadow-lg"
       ],
       "description": "Shadow for tooltip elevation level.",
-      "generatedAt": "2026-03-04T02:18:21.544Z",
+      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false
     },
     {
@@ -419,7 +419,7 @@
       "namespace": "elevation",
       "semanticMeaning": "Elevation scale reference",
       "description": "Complete elevation scale showing depth/shadow pairings.",
-      "generatedAt": "2026-03-04T02:18:21.544Z",
+      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false
     }
   ]

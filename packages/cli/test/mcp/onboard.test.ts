@@ -669,10 +669,24 @@ describe('rafters_onboard map', () => {
 
     const adapter = new NodePersistenceAdapter(fixturePath);
     const tokens = await adapter.load();
+
+    // The semantic token "primary" now holds a ColorReference to the perceptual family name
     const primary = tokens.find((t) => t.name === 'primary');
     expect(typeof primary?.value).toBe('object');
+    const ref = primary?.value as { family?: string; position?: string };
+    expect(ref.family).toBeDefined();
+    expect(ref.position).toBeDefined();
 
-    const cv = primary?.value as { scale?: unknown[]; name?: string };
+    // The ColorValue with the 11-step scale is under the perceptual family name
+    const familyToken = tokens.find(
+      (t) =>
+        t.namespace === 'color' &&
+        typeof t.value === 'object' &&
+        'scale' in (t.value as Record<string, unknown>) &&
+        t.name === ref.family,
+    );
+    expect(familyToken).toBeDefined();
+    const cv = familyToken?.value as { scale?: unknown[]; name?: string };
     expect(cv.scale?.length).toBe(11);
     expect(typeof cv.name).toBe('string');
   });
@@ -704,10 +718,15 @@ describe('rafters_onboard map', () => {
     const success = tokens.find((t) => t.name === 'success');
     expect(success?.userOverride?.reason).toContain('deuteranopia');
 
-    // Both enriched to full ColorValue
+    // Both semantic tokens now hold ColorReferences to their perceptual family names
+    // The ColorValues with 11-step scales are under the perceptual names
     for (const name of ['destructive', 'success']) {
       const token = tokens.find((t) => t.name === name);
-      const cv = token?.value as { scale?: unknown[] };
+      const ref = token?.value as { family?: string };
+      expect(ref.family).toBeDefined();
+      const familyToken = tokens.find((t) => t.name === ref.family);
+      expect(familyToken).toBeDefined();
+      const cv = familyToken?.value as { scale?: unknown[] };
       expect(cv.scale?.length).toBe(11);
     }
   });

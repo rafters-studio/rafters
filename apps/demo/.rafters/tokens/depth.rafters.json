@@ -2,7 +2,7 @@
   "$schema": "https://rafters.studio/schemas/namespace-tokens.json",
   "namespace": "depth",
   "version": "1.0.0",
-  "generatedAt": "2026-03-04T02:18:21.557Z",
+  "generatedAt": "2026-04-07T19:26:12.303Z",
   "tokens": [
     {
       "name": "depth-base",
@@ -16,7 +16,7 @@
       ],
       "scalePosition": 0,
       "description": "Z-index 0 for base layer. In document flow.",
-      "generatedAt": "2026-03-04T02:18:21.544Z",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
       "containerQueryAware": false,
       "usagePatterns": {
         "do": [
@@ -43,7 +43,7 @@
       ],
       "scalePosition": 1,
       "description": "Z-index 10 for dropdown layer. Creates new stacking context.",
-      "generatedAt": "2026-03-04T02:18:21.544Z",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
       "containerQueryAware": false,
       "usagePatterns": {
         "do": [
@@ -70,7 +70,7 @@
       ],
       "scalePosition": 2,
       "description": "Z-index 20 for sticky layer. Creates new stacking context.",
-      "generatedAt": "2026-03-04T02:18:21.544Z",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
       "containerQueryAware": false,
       "usagePatterns": {
         "do": [
@@ -97,7 +97,7 @@
       ],
       "scalePosition": 3,
       "description": "Z-index 25 for navigation layer. Creates new stacking context.",
-      "generatedAt": "2026-03-04T02:18:21.544Z",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
       "containerQueryAware": false,
       "usagePatterns": {
         "do": [
@@ -124,7 +124,7 @@
       ],
       "scalePosition": 4,
       "description": "Z-index 30 for fixed layer. Creates new stacking context.",
-      "generatedAt": "2026-03-04T02:18:21.544Z",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
       "containerQueryAware": false,
       "usagePatterns": {
         "do": [
@@ -151,7 +151,7 @@
       ],
       "scalePosition": 5,
       "description": "Z-index 40 for modal layer. Creates new stacking context.",
-      "generatedAt": "2026-03-04T02:18:21.544Z",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
       "containerQueryAware": false,
       "usagePatterns": {
         "do": [
@@ -178,7 +178,7 @@
       ],
       "scalePosition": 6,
       "description": "Z-index 50 for popover layer. Creates new stacking context.",
-      "generatedAt": "2026-03-04T02:18:21.544Z",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
       "containerQueryAware": false,
       "usagePatterns": {
         "do": [
@@ -204,7 +204,7 @@
       ],
       "scalePosition": 7,
       "description": "Z-index 60 for tooltip layer. Creates new stacking context.",
-      "generatedAt": "2026-03-04T02:18:21.544Z",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
       "containerQueryAware": false,
       "usagePatterns": {
         "do": [
@@ -231,7 +231,7 @@
       ],
       "scalePosition": 8,
       "description": "Z-index 70 for overlay layer. Creates new stacking context.",
-      "generatedAt": "2026-03-04T02:18:21.544Z",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
       "containerQueryAware": false,
       "usagePatterns": {
         "do": [
@@ -256,7 +256,7 @@
         "behind-content"
       ],
       "description": "Z-index -1 for elements that should appear behind base content.",
-      "generatedAt": "2026-03-04T02:18:21.544Z",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
       "containerQueryAware": false,
       "usagePatterns": {
         "do": [
@@ -280,7 +280,7 @@
         "emergency-ui"
       ],
       "description": "Maximum z-index 9999 for special cases only.",
-      "generatedAt": "2026-03-04T02:18:21.544Z",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
       "containerQueryAware": false,
       "usagePatterns": {
         "do": [
@@ -301,7 +301,7 @@
       "namespace": "depth",
       "semanticMeaning": "Depth scale reference",
       "description": "Reference for z-index scale structure. 10-unit gaps allow intermediate values.",
-      "generatedAt": "2026-03-04T02:18:21.544Z",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
       "containerQueryAware": false
     }
   ]

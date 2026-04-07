@@ -2,7 +2,7 @@
   "$schema": "https://rafters.studio/schemas/namespace-tokens.json",
   "namespace": "shadow",
   "version": "1.0.0",
-  "generatedAt": "2026-03-04T02:18:21.557Z",
+  "generatedAt": "2026-04-07T19:26:12.302Z",
   "tokens": [
     {
       "name": "shadow-base-unit",
@@ -18,7 +18,7 @@
         "spacing-base"
       ],
       "description": "Shadows derive from spacing base (0.25rem) for visual consistency.",
-      "generatedAt": "2026-03-04T02:18:21.544Z",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
       "containerQueryAware": false
     },
     {
@@ -35,8 +35,8 @@
       "scalePosition": 0,
       "progressionSystem": "minor-third",
       "dependsOn": [],
-      "description": "Shadow none: No shadow - flat appearance. Y: 0×base, Blur: 0×base",
-      "generatedAt": "2026-03-04T02:18:21.544Z",
+      "description": "Shadow none: No shadow - flat appearance",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
       "containerQueryAware": false,
       "usagePatterns": {
         "do": [
@@ -49,8 +49,93 @@
       }
     },
     {
+      "name": "shadow-xs-offset-x",
+      "value": "0rem",
+      "category": "shadow",
+      "namespace": "shadow",
+      "semanticMeaning": "offset-x component of xs shadow",
+      "usageContext": [
+        "designer-override"
+      ],
+      "scalePosition": 1,
+      "dependsOn": [
+        "shadow-base-unit"
+      ],
+      "description": "Shadow xs offset-x: 0rem. Override to customize this shadow layer.",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
+      "containerQueryAware": false
+    },
+    {
+      "name": "shadow-xs-offset-y",
+      "value": "0.063rem",
+      "category": "shadow",
+      "namespace": "shadow",
+      "semanticMeaning": "offset-y component of xs shadow",
+      "usageContext": [
+        "designer-override"
+      ],
+      "scalePosition": 1,
+      "dependsOn": [
+        "shadow-base-unit"
+      ],
+      "description": "Shadow xs offset-y: 0.063rem. Override to customize this shadow layer.",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
+      "containerQueryAware": false
+    },
+    {
+      "name": "shadow-xs-blur",
+      "value": "0.125rem",
+      "category": "shadow",
+      "namespace": "shadow",
+      "semanticMeaning": "blur component of xs shadow",
+      "usageContext": [
+        "designer-override"
+      ],
+      "scalePosition": 1,
+      "dependsOn": [
+        "shadow-base-unit"
+      ],
+      "description": "Shadow xs blur: 0.125rem. Override to customize this shadow layer.",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
+      "containerQueryAware": false
+    },
+    {
+      "name": "shadow-xs-spread",
+      "value": "0rem",
+      "category": "shadow",
+      "namespace": "shadow",
+      "semanticMeaning": "spread component of xs shadow",
+      "usageContext": [
+        "designer-override"
+      ],
+      "scalePosition": 1,
+      "dependsOn": [
+        "shadow-base-unit"
+      ],
+      "description": "Shadow xs spread: 0rem. Override to customize this shadow layer.",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
+      "containerQueryAware": false
+    },
+    {
+      "name": "shadow-xs-color",
+      "value": "rgb(0 0 0 / 0.05)",
+      "category": "shadow",
+      "namespace": "shadow",
+      "semanticMeaning": "color component of xs shadow",
+      "usageContext": [
+        "designer-override"
+      ],
+      "scalePosition": 1,
+      "dependsOn": [
+        "shadow-base-unit"
+      ],
+      "description": "Shadow xs color: rgb(0 0 0 / 0.05). Override to customize this shadow layer.",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
+      "containerQueryAware": false
+    },
+    {
       "name": "shadow-xs",
-      "value": "0 0.063rem 0.125rem 0rem rgb(0 0 0 / 0.05)",
+      "value": "var(--rafters-shadow-xs-offset-x) var(--rafters-shadow-xs-offset-y) var(--rafters-shadow-xs-blur) var(--rafters-shadow-xs-spread) var(--rafters-shadow-xs-color)",
       "category": "shadow",
       "namespace": "shadow",
       "semanticMeaning": "Extra small shadow - subtle depth hint",
@@ -62,10 +147,14 @@
       "scalePosition": 1,
       "progressionSystem": "minor-third",
       "dependsOn": [
-        "shadow-base-unit"
+        "shadow-xs-offset-x",
+        "shadow-xs-offset-y",
+        "shadow-xs-blur",
+        "shadow-xs-spread",
+        "shadow-xs-color"
       ],
-      "description": "Shadow xs: Extra small shadow - subtle depth hint. Y: 0.25×base, Blur: 0.5×base",
-      "generatedAt": "2026-03-04T02:18:21.544Z",
+      "description": "Shadow xs: Extra small shadow - subtle depth hint. Composed from var() refs to shadow-xs-* tokens.",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
       "containerQueryAware": false,
       "usagePatterns": {
         "do": [
@@ -78,8 +167,93 @@
       }
     },
     {
+      "name": "shadow-sm-offset-x",
+      "value": "0rem",
+      "category": "shadow",
+      "namespace": "shadow",
+      "semanticMeaning": "offset-x component of sm shadow",
+      "usageContext": [
+        "designer-override"
+      ],
+      "scalePosition": 2,
+      "dependsOn": [
+        "shadow-base-unit"
+      ],
+      "description": "Shadow sm offset-x: 0rem. Override to customize this shadow layer.",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
+      "containerQueryAware": false
+    },
+    {
+      "name": "shadow-sm-offset-y",
+      "value": "0.063rem",
+      "category": "shadow",
+      "namespace": "shadow",
+      "semanticMeaning": "offset-y component of sm shadow",
+      "usageContext": [
+        "designer-override"
+      ],
+      "scalePosition": 2,
+      "dependsOn": [
+        "shadow-base-unit"
+      ],
+      "description": "Shadow sm offset-y: 0.063rem. Override to customize this shadow layer.",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
+      "containerQueryAware": false
+    },
+    {
+      "name": "shadow-sm-blur",
+      "value": "0.25rem",
+      "category": "shadow",
+      "namespace": "shadow",
+      "semanticMeaning": "blur component of sm shadow",
+      "usageContext": [
+        "designer-override"
+      ],
+      "scalePosition": 2,
+      "dependsOn": [
+        "shadow-base-unit"
+      ],
+      "description": "Shadow sm blur: 0.25rem. Override to customize this shadow layer.",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
+      "containerQueryAware": false
+    },
+    {
+      "name": "shadow-sm-spread",
+      "value": "0rem",
+      "category": "shadow",
+      "namespace": "shadow",
+      "semanticMeaning": "spread component of sm shadow",
+      "usageContext": [
+        "designer-override"
+      ],
+      "scalePosition": 2,
+      "dependsOn": [
+        "shadow-base-unit"
+      ],
+      "description": "Shadow sm spread: 0rem. Override to customize this shadow layer.",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
+      "containerQueryAware": false
+    },
+    {
+      "name": "shadow-sm-color",
+      "value": "rgb(0 0 0 / 0.06)",
+      "category": "shadow",
+      "namespace": "shadow",
+      "semanticMeaning": "color component of sm shadow",
+      "usageContext": [
+        "designer-override"
+      ],
+      "scalePosition": 2,
+      "dependsOn": [
+        "shadow-base-unit"
+      ],
+      "description": "Shadow sm color: rgb(0 0 0 / 0.06). Override to customize this shadow layer.",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
+      "containerQueryAware": false
+    },
+    {
       "name": "shadow-sm",
-      "value": "0 0.063rem 0.25rem 0rem rgb(0 0 0 / 0.06), 0 0.063rem 0.125rem 0rem rgb(0 0 0 / 0.1)",
+      "value": "var(--rafters-shadow-sm-offset-x) var(--rafters-shadow-sm-offset-y) var(--rafters-shadow-sm-blur) var(--rafters-shadow-sm-spread) var(--rafters-shadow-sm-color), 0 0.063rem 0.125rem 0rem rgb(0 0 0 / 0.1)",
       "category": "shadow",
       "namespace": "shadow",
       "semanticMeaning": "Small shadow - slight elevation",
@@ -91,10 +265,14 @@
       "scalePosition": 2,
       "progressionSystem": "minor-third",
       "dependsOn": [
-        "shadow-base-unit"
+        "shadow-sm-offset-x",
+        "shadow-sm-offset-y",
+        "shadow-sm-blur",
+        "shadow-sm-spread",
+        "shadow-sm-color"
       ],
-      "description": "Shadow sm: Small shadow - slight elevation. Y: 0.25×base, Blur: 1×base",
-      "generatedAt": "2026-03-04T02:18:21.544Z",
+      "description": "Shadow sm: Small shadow - slight elevation. Composed from var() refs to shadow-sm-* tokens.",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
       "containerQueryAware": false,
       "usagePatterns": {
         "do": [
@@ -107,8 +285,93 @@
       }
     },
     {
+      "name": "shadow-offset-x",
+      "value": "0rem",
+      "category": "shadow",
+      "namespace": "shadow",
+      "semanticMeaning": "offset-x component of DEFAULT shadow",
+      "usageContext": [
+        "designer-override"
+      ],
+      "scalePosition": 3,
+      "dependsOn": [
+        "shadow-base-unit"
+      ],
+      "description": "Shadow DEFAULT offset-x: 0rem. Override to customize this shadow layer.",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
+      "containerQueryAware": false
+    },
+    {
+      "name": "shadow-offset-y",
+      "value": "0.125rem",
+      "category": "shadow",
+      "namespace": "shadow",
+      "semanticMeaning": "offset-y component of DEFAULT shadow",
+      "usageContext": [
+        "designer-override"
+      ],
+      "scalePosition": 3,
+      "dependsOn": [
+        "shadow-base-unit"
+      ],
+      "description": "Shadow DEFAULT offset-y: 0.125rem. Override to customize this shadow layer.",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
+      "containerQueryAware": false
+    },
+    {
+      "name": "shadow-blur",
+      "value": "0.375rem",
+      "category": "shadow",
+      "namespace": "shadow",
+      "semanticMeaning": "blur component of DEFAULT shadow",
+      "usageContext": [
+        "designer-override"
+      ],
+      "scalePosition": 3,
+      "dependsOn": [
+        "shadow-base-unit"
+      ],
+      "description": "Shadow DEFAULT blur: 0.375rem. Override to customize this shadow layer.",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
+      "containerQueryAware": false
+    },
+    {
+      "name": "shadow-spread",
+      "value": "-0.062rem",
+      "category": "shadow",
+      "namespace": "shadow",
+      "semanticMeaning": "spread component of DEFAULT shadow",
+      "usageContext": [
+        "designer-override"
+      ],
+      "scalePosition": 3,
+      "dependsOn": [
+        "shadow-base-unit"
+      ],
+      "description": "Shadow DEFAULT spread: -0.062rem. Override to customize this shadow layer.",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
+      "containerQueryAware": false
+    },
+    {
+      "name": "shadow-color",
+      "value": "rgb(0 0 0 / 0.1)",
+      "category": "shadow",
+      "namespace": "shadow",
+      "semanticMeaning": "color component of DEFAULT shadow",
+      "usageContext": [
+        "designer-override"
+      ],
+      "scalePosition": 3,
+      "dependsOn": [
+        "shadow-base-unit"
+      ],
+      "description": "Shadow DEFAULT color: rgb(0 0 0 / 0.1). Override to customize this shadow layer.",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
+      "containerQueryAware": false
+    },
+    {
       "name": "shadow",
-      "value": "0 0.125rem 0.375rem -0.062rem rgb(0 0 0 / 0.1), 0 0.063rem 0.125rem 0rem rgb(0 0 0 / 0.1)",
+      "value": "var(--rafters-shadow-offset-x) var(--rafters-shadow-offset-y) var(--rafters-shadow-blur) var(--rafters-shadow-spread) var(--rafters-shadow-color), 0 0.063rem 0.125rem 0rem rgb(0 0 0 / 0.1)",
       "category": "shadow",
       "namespace": "shadow",
       "semanticMeaning": "Default shadow - standard elevation",
@@ -120,10 +383,14 @@
       "scalePosition": 3,
       "progressionSystem": "minor-third",
       "dependsOn": [
-        "shadow-base-unit"
+        "shadow-offset-x",
+        "shadow-offset-y",
+        "shadow-blur",
+        "shadow-spread",
+        "shadow-color"
       ],
-      "description": "Shadow DEFAULT: Default shadow - standard elevation. Y: 0.5×base, Blur: 1.5×base",
-      "generatedAt": "2026-03-04T02:18:21.544Z",
+      "description": "Shadow DEFAULT: Default shadow - standard elevation. Composed from var() refs to shadow-* tokens.",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
       "containerQueryAware": false,
       "usagePatterns": {
         "do": [
@@ -136,8 +403,93 @@
       }
     },
     {
+      "name": "shadow-md-offset-x",
+      "value": "0rem",
+      "category": "shadow",
+      "namespace": "shadow",
+      "semanticMeaning": "offset-x component of md shadow",
+      "usageContext": [
+        "designer-override"
+      ],
+      "scalePosition": 4,
+      "dependsOn": [
+        "shadow-base-unit"
+      ],
+      "description": "Shadow md offset-x: 0rem. Override to customize this shadow layer.",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
+      "containerQueryAware": false
+    },
+    {
+      "name": "shadow-md-offset-y",
+      "value": "0.25rem",
+      "category": "shadow",
+      "namespace": "shadow",
+      "semanticMeaning": "offset-y component of md shadow",
+      "usageContext": [
+        "designer-override"
+      ],
+      "scalePosition": 4,
+      "dependsOn": [
+        "shadow-base-unit"
+      ],
+      "description": "Shadow md offset-y: 0.25rem. Override to customize this shadow layer.",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
+      "containerQueryAware": false
+    },
+    {
+      "name": "shadow-md-blur",
+      "value": "0.5rem",
+      "category": "shadow",
+      "namespace": "shadow",
+      "semanticMeaning": "blur component of md shadow",
+      "usageContext": [
+        "designer-override"
+      ],
+      "scalePosition": 4,
+      "dependsOn": [
+        "shadow-base-unit"
+      ],
+      "description": "Shadow md blur: 0.5rem. Override to customize this shadow layer.",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
+      "containerQueryAware": false
+    },
+    {
+      "name": "shadow-md-spread",
+      "value": "-0.125rem",
+      "category": "shadow",
+      "namespace": "shadow",
+      "semanticMeaning": "spread component of md shadow",
+      "usageContext": [
+        "designer-override"
+      ],
+      "scalePosition": 4,
+      "dependsOn": [
+        "shadow-base-unit"
+      ],
+      "description": "Shadow md spread: -0.125rem. Override to customize this shadow layer.",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
+      "containerQueryAware": false
+    },
+    {
+      "name": "shadow-md-color",
+      "value": "rgb(0 0 0 / 0.1)",
+      "category": "shadow",
+      "namespace": "shadow",
+      "semanticMeaning": "color component of md shadow",
+      "usageContext": [
+        "designer-override"
+      ],
+      "scalePosition": 4,
+      "dependsOn": [
+        "shadow-base-unit"
+      ],
+      "description": "Shadow md color: rgb(0 0 0 / 0.1). Override to customize this shadow layer.",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
+      "containerQueryAware": false
+    },
+    {
       "name": "shadow-md",
-      "value": "0 0.25rem 0.5rem -0.125rem rgb(0 0 0 / 0.1), 0 0.125rem 0.25rem -0.062rem rgb(0 0 0 / 0.1)",
+      "value": "var(--rafters-shadow-md-offset-x) var(--rafters-shadow-md-offset-y) var(--rafters-shadow-md-blur) var(--rafters-shadow-md-spread) var(--rafters-shadow-md-color), 0 0.125rem 0.25rem -0.062rem rgb(0 0 0 / 0.1)",
       "category": "shadow",
       "namespace": "shadow",
       "semanticMeaning": "Medium shadow - noticeable elevation",
@@ -149,10 +501,14 @@
       "scalePosition": 4,
       "progressionSystem": "minor-third",
       "dependsOn": [
-        "shadow-base-unit"
+        "shadow-md-offset-x",
+        "shadow-md-offset-y",
+        "shadow-md-blur",
+        "shadow-md-spread",
+        "shadow-md-color"
       ],
-      "description": "Shadow md: Medium shadow - noticeable elevation. Y: 1×base, Blur: 2×base",
-      "generatedAt": "2026-03-04T02:18:21.544Z",
+      "description": "Shadow md: Medium shadow - noticeable elevation. Composed from var() refs to shadow-md-* tokens.",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
       "containerQueryAware": false,
       "usagePatterns": {
         "do": [
@@ -165,8 +521,93 @@
       }
     },
     {
+      "name": "shadow-lg-offset-x",
+      "value": "0rem",
+      "category": "shadow",
+      "namespace": "shadow",
+      "semanticMeaning": "offset-x component of lg shadow",
+      "usageContext": [
+        "designer-override"
+      ],
+      "scalePosition": 5,
+      "dependsOn": [
+        "shadow-base-unit"
+      ],
+      "description": "Shadow lg offset-x: 0rem. Override to customize this shadow layer.",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
+      "containerQueryAware": false
+    },
+    {
+      "name": "shadow-lg-offset-y",
+      "value": "0.5rem",
+      "category": "shadow",
+      "namespace": "shadow",
+      "semanticMeaning": "offset-y component of lg shadow",
+      "usageContext": [
+        "designer-override"
+      ],
+      "scalePosition": 5,
+      "dependsOn": [
+        "shadow-base-unit"
+      ],
+      "description": "Shadow lg offset-y: 0.5rem. Override to customize this shadow layer.",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
+      "containerQueryAware": false
+    },
+    {
+      "name": "shadow-lg-blur",
+      "value": "1rem",
+      "category": "shadow",
+      "namespace": "shadow",
+      "semanticMeaning": "blur component of lg shadow",
+      "usageContext": [
+        "designer-override"
+      ],
+      "scalePosition": 5,
+      "dependsOn": [
+        "shadow-base-unit"
+      ],
+      "description": "Shadow lg blur: 1rem. Override to customize this shadow layer.",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
+      "containerQueryAware": false
+    },
+    {
+      "name": "shadow-lg-spread",
+      "value": "-0.187rem",
+      "category": "shadow",
+      "namespace": "shadow",
+      "semanticMeaning": "spread component of lg shadow",
+      "usageContext": [
+        "designer-override"
+      ],
+      "scalePosition": 5,
+      "dependsOn": [
+        "shadow-base-unit"
+      ],
+      "description": "Shadow lg spread: -0.187rem. Override to customize this shadow layer.",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
+      "containerQueryAware": false
+    },
+    {
+      "name": "shadow-lg-color",
+      "value": "rgb(0 0 0 / 0.1)",
+      "category": "shadow",
+      "namespace": "shadow",
+      "semanticMeaning": "color component of lg shadow",
+      "usageContext": [
+        "designer-override"
+      ],
+      "scalePosition": 5,
+      "dependsOn": [
+        "shadow-base-unit"
+      ],
+      "description": "Shadow lg color: rgb(0 0 0 / 0.1). Override to customize this shadow layer.",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
+      "containerQueryAware": false
+    },
+    {
       "name": "shadow-lg",
-      "value": "0 0.5rem 1rem -0.187rem rgb(0 0 0 / 0.1), 0 0.25rem 0.5rem -0.125rem rgb(0 0 0 / 0.1)",
+      "value": "var(--rafters-shadow-lg-offset-x) var(--rafters-shadow-lg-offset-y) var(--rafters-shadow-lg-blur) var(--rafters-shadow-lg-spread) var(--rafters-shadow-lg-color), 0 0.25rem 0.5rem -0.125rem rgb(0 0 0 / 0.1)",
       "category": "shadow",
       "namespace": "shadow",
       "semanticMeaning": "Large shadow - significant elevation",
@@ -178,10 +619,14 @@
       "scalePosition": 5,
       "progressionSystem": "minor-third",
       "dependsOn": [
-        "shadow-base-unit"
+        "shadow-lg-offset-x",
+        "shadow-lg-offset-y",
+        "shadow-lg-blur",
+        "shadow-lg-spread",
+        "shadow-lg-color"
       ],
-      "description": "Shadow lg: Large shadow - significant elevation. Y: 2×base, Blur: 4×base",
-      "generatedAt": "2026-03-04T02:18:21.544Z",
+      "description": "Shadow lg: Large shadow - significant elevation. Composed from var() refs to shadow-lg-* tokens.",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
       "containerQueryAware": false,
       "usagePatterns": {
         "do": [
@@ -194,8 +639,93 @@
       }
     },
     {
+      "name": "shadow-xl-offset-x",
+      "value": "0rem",
+      "category": "shadow",
+      "namespace": "shadow",
+      "semanticMeaning": "offset-x component of xl shadow",
+      "usageContext": [
+        "designer-override"
+      ],
+      "scalePosition": 6,
+      "dependsOn": [
+        "shadow-base-unit"
+      ],
+      "description": "Shadow xl offset-x: 0rem. Override to customize this shadow layer.",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
+      "containerQueryAware": false
+    },
+    {
+      "name": "shadow-xl-offset-y",
+      "value": "1.25rem",
+      "category": "shadow",
+      "namespace": "shadow",
+      "semanticMeaning": "offset-y component of xl shadow",
+      "usageContext": [
+        "designer-override"
+      ],
+      "scalePosition": 6,
+      "dependsOn": [
+        "shadow-base-unit"
+      ],
+      "description": "Shadow xl offset-y: 1.25rem. Override to customize this shadow layer.",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
+      "containerQueryAware": false
+    },
+    {
+      "name": "shadow-xl-blur",
+      "value": "1.5rem",
+      "category": "shadow",
+      "namespace": "shadow",
+      "semanticMeaning": "blur component of xl shadow",
+      "usageContext": [
+        "designer-override"
+      ],
+      "scalePosition": 6,
+      "dependsOn": [
+        "shadow-base-unit"
+      ],
+      "description": "Shadow xl blur: 1.5rem. Override to customize this shadow layer.",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
+      "containerQueryAware": false
+    },
+    {
+      "name": "shadow-xl-spread",
+      "value": "-0.25rem",
+      "category": "shadow",
+      "namespace": "shadow",
+      "semanticMeaning": "spread component of xl shadow",
+      "usageContext": [
+        "designer-override"
+      ],
+      "scalePosition": 6,
+      "dependsOn": [
+        "shadow-base-unit"
+      ],
+      "description": "Shadow xl spread: -0.25rem. Override to customize this shadow layer.",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
+      "containerQueryAware": false
+    },
+    {
+      "name": "shadow-xl-color",
+      "value": "rgb(0 0 0 / 0.1)",
+      "category": "shadow",
+      "namespace": "shadow",
+      "semanticMeaning": "color component of xl shadow",
+      "usageContext": [
+        "designer-override"
+      ],
+      "scalePosition": 6,
+      "dependsOn": [
+        "shadow-base-unit"
+      ],
+      "description": "Shadow xl color: rgb(0 0 0 / 0.1). Override to customize this shadow layer.",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
+      "containerQueryAware": false
+    },
+    {
       "name": "shadow-xl",
-      "value": "0 1.25rem 1.5rem -0.25rem rgb(0 0 0 / 0.1), 0 0.5rem 1rem -0.187rem rgb(0 0 0 / 0.1)",
+      "value": "var(--rafters-shadow-xl-offset-x) var(--rafters-shadow-xl-offset-y) var(--rafters-shadow-xl-blur) var(--rafters-shadow-xl-spread) var(--rafters-shadow-xl-color), 0 0.5rem 1rem -0.187rem rgb(0 0 0 / 0.1)",
       "category": "shadow",
       "namespace": "shadow",
       "semanticMeaning": "Extra large shadow - high elevation",
@@ -207,10 +737,14 @@
       "scalePosition": 6,
       "progressionSystem": "minor-third",
       "dependsOn": [
-        "shadow-base-unit"
+        "shadow-xl-offset-x",
+        "shadow-xl-offset-y",
+        "shadow-xl-blur",
+        "shadow-xl-spread",
+        "shadow-xl-color"
       ],
-      "description": "Shadow xl: Extra large shadow - high elevation. Y: 5×base, Blur: 6×base",
-      "generatedAt": "2026-03-04T02:18:21.544Z",
+      "description": "Shadow xl: Extra large shadow - high elevation. Composed from var() refs to shadow-xl-* tokens.",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
       "containerQueryAware": false,
       "usagePatterns": {
         "do": [
@@ -223,8 +757,93 @@
       }
     },
     {
+      "name": "shadow-2xl-offset-x",
+      "value": "0rem",
+      "category": "shadow",
+      "namespace": "shadow",
+      "semanticMeaning": "offset-x component of 2xl shadow",
+      "usageContext": [
+        "designer-override"
+      ],
+      "scalePosition": 7,
+      "dependsOn": [
+        "shadow-base-unit"
+      ],
+      "description": "Shadow 2xl offset-x: 0rem. Override to customize this shadow layer.",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
+      "containerQueryAware": false
+    },
+    {
+      "name": "shadow-2xl-offset-y",
+      "value": "1.5rem",
+      "category": "shadow",
+      "namespace": "shadow",
+      "semanticMeaning": "offset-y component of 2xl shadow",
+      "usageContext": [
+        "designer-override"
+      ],
+      "scalePosition": 7,
+      "dependsOn": [
+        "shadow-base-unit"
+      ],
+      "description": "Shadow 2xl offset-y: 1.5rem. Override to customize this shadow layer.",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
+      "containerQueryAware": false
+    },
+    {
+      "name": "shadow-2xl-blur",
+      "value": "3rem",
+      "category": "shadow",
+      "namespace": "shadow",
+      "semanticMeaning": "blur component of 2xl shadow",
+      "usageContext": [
+        "designer-override"
+      ],
+      "scalePosition": 7,
+      "dependsOn": [
+        "shadow-base-unit"
+      ],
+      "description": "Shadow 2xl blur: 3rem. Override to customize this shadow layer.",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
+      "containerQueryAware": false
+    },
+    {
+      "name": "shadow-2xl-spread",
+      "value": "-0.5rem",
+      "category": "shadow",
+      "namespace": "shadow",
+      "semanticMeaning": "spread component of 2xl shadow",
+      "usageContext": [
+        "designer-override"
+      ],
+      "scalePosition": 7,
+      "dependsOn": [
+        "shadow-base-unit"
+      ],
+      "description": "Shadow 2xl spread: -0.5rem. Override to customize this shadow layer.",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
+      "containerQueryAware": false
+    },
+    {
+      "name": "shadow-2xl-color",
+      "value": "rgb(0 0 0 / 0.25)",
+      "category": "shadow",
+      "namespace": "shadow",
+      "semanticMeaning": "color component of 2xl shadow",
+      "usageContext": [
+        "designer-override"
+      ],
+      "scalePosition": 7,
+      "dependsOn": [
+        "shadow-base-unit"
+      ],
+      "description": "Shadow 2xl color: rgb(0 0 0 / 0.25). Override to customize this shadow layer.",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
+      "containerQueryAware": false
+    },
+    {
       "name": "shadow-2xl",
-      "value": "0 1.5rem 3rem -0.5rem rgb(0 0 0 / 0.25)",
+      "value": "var(--rafters-shadow-2xl-offset-x) var(--rafters-shadow-2xl-offset-y) var(--rafters-shadow-2xl-blur) var(--rafters-shadow-2xl-spread) var(--rafters-shadow-2xl-color)",
       "category": "shadow",
       "namespace": "shadow",
       "semanticMeaning": "Maximum shadow - highest elevation",
@@ -236,10 +855,14 @@
       "scalePosition": 7,
       "progressionSystem": "minor-third",
       "dependsOn": [
-        "shadow-base-unit"
+        "shadow-2xl-offset-x",
+        "shadow-2xl-offset-y",
+        "shadow-2xl-blur",
+        "shadow-2xl-spread",
+        "shadow-2xl-color"
       ],
-      "description": "Shadow 2xl: Maximum shadow - highest elevation. Y: 6×base, Blur: 12×base",
-      "generatedAt": "2026-03-04T02:18:21.544Z",
+      "description": "Shadow 2xl: Maximum shadow - highest elevation. Composed from var() refs to shadow-2xl-* tokens.",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
       "containerQueryAware": false,
       "usagePatterns": {
         "do": [
@@ -253,7 +876,7 @@
     },
     {
       "name": "shadow-primary",
-      "value": "0 0.125rem 0.375rem -0.062rem color-mix(in oklch, var(--primary) 12%, transparent)",
+      "value": "var(--rafters-shadow-offset-x) var(--rafters-shadow-offset-y) var(--rafters-shadow-blur) var(--rafters-shadow-spread) color-mix(in oklch, var(--primary) 12%, transparent)",
       "category": "shadow",
       "namespace": "shadow",
       "semanticMeaning": "Primary colored shadow for emphasis",
@@ -262,16 +885,19 @@
         "emphasis"
       ],
       "dependsOn": [
-        "shadow",
+        "shadow-offset-x",
+        "shadow-offset-y",
+        "shadow-blur",
+        "shadow-spread",
         "primary"
       ],
-      "description": "Primary colored shadow for emphasis. Uses color-mix for proper OKLCH blending.",
-      "generatedAt": "2026-03-04T02:18:21.544Z",
+      "description": "Primary colored shadow for emphasis. Reuses DEFAULT shadow geometry, swaps color via color-mix.",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
       "containerQueryAware": false
     },
     {
       "name": "shadow-destructive",
-      "value": "0 0.125rem 0.375rem -0.062rem color-mix(in oklch, var(--destructive) 12%, transparent)",
+      "value": "var(--rafters-shadow-offset-x) var(--rafters-shadow-offset-y) var(--rafters-shadow-blur) var(--rafters-shadow-spread) color-mix(in oklch, var(--destructive) 12%, transparent)",
       "category": "shadow",
       "namespace": "shadow",
       "semanticMeaning": "Destructive colored shadow for warnings",
@@ -280,11 +906,14 @@
         "emphasis"
       ],
       "dependsOn": [
-        "shadow",
+        "shadow-offset-x",
+        "shadow-offset-y",
+        "shadow-blur",
+        "shadow-spread",
         "destructive"
       ],
-      "description": "Destructive colored shadow for warnings. Uses color-mix for proper OKLCH blending.",
-      "generatedAt": "2026-03-04T02:18:21.544Z",
+      "description": "Destructive colored shadow for warnings. Reuses DEFAULT shadow geometry, swaps color via color-mix.",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
       "containerQueryAware": false
     },
     {
@@ -294,7 +923,7 @@
       "namespace": "shadow",
       "semanticMeaning": "Metadata about the shadow progression system",
       "description": "Shadows use minor-third progression from spacing base.",
-      "generatedAt": "2026-03-04T02:18:21.544Z",
+      "generatedAt": "2026-04-07T19:26:12.279Z",
       "containerQueryAware": false
     }
   ]
