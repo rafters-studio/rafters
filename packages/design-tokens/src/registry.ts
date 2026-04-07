@@ -582,19 +582,17 @@ export class TokenRegistry {
       // Mark namespace dirty since we're changing this token
       this.markDirty(existingToken.namespace);
 
-      // For ColorReference results, also update dependsOn for dark mode.
-      // dependsOn[0] = light position token, dependsOn[1] = dark position token.
-      // The Tailwind exporter reads dependsOn[1] for dark mode CSS variables.
+      // For ColorReference results, update dependsOn for dark mode.
+      // dependsOn[0] = family token (plugins need ColorValue for WCAG data)
+      // dependsOn[1] = dark mode position token (Tailwind exporter reads this)
       let updatedDependsOn = existingToken.dependsOn;
       if (
         typeof newComputedValue === 'object' &&
         'family' in newComputedValue &&
         'position' in newComputedValue
       ) {
-        const lightTokenName = `${newComputedValue.family}-${newComputedValue.position}`;
-        // Find dark counterpart via invert logic on the same family
         const darkTokenName = this.findDarkCounterpart(newComputedValue, existingToken.dependsOn);
-        updatedDependsOn = [lightTokenName, darkTokenName];
+        updatedDependsOn = [newComputedValue.family, darkTokenName];
       }
 
       if (existingToken.userOverride) {
