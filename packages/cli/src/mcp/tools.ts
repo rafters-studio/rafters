@@ -2614,112 +2614,156 @@ export class RaftersToolHandler {
         }
 
         // Enrich color values into full ColorValue objects
-        let tokenValue: Token['value'] = value;
+        let colorValue: ColorValue | null = null;
         let enriched = false;
 
         if (RaftersToolHandler.isColorValue(value)) {
           const oklch = RaftersToolHandler.parseToOKLCH(value);
           if (oklch) {
-            tokenValue = await RaftersToolHandler.buildEnrichedColor(oklch, target);
+            colorValue = await RaftersToolHandler.buildEnrichedColor(oklch, target);
             enriched = true;
           }
         }
 
-        // Create individual palette position tokens from the enriched ColorValue scale.
-        // Without these, the CSS exporter cannot resolve references like "primary-900".
-        const SCALE_POSITIONS = [
-          '50',
-          '100',
-          '200',
-          '300',
-          '400',
-          '500',
-          '600',
-          '700',
-          '800',
-          '900',
-          '950',
-        ] as const;
-        if (enriched && tokenValue && typeof tokenValue === 'object' && 'scale' in tokenValue) {
-          const cv = tokenValue as ColorValue;
-          for (let i = 0; i < cv.scale.length && i < SCALE_POSITIONS.length; i++) {
-            const pos = SCALE_POSITIONS[i];
-            const oklchValue = cv.scale[i];
-            if (!oklchValue) continue;
-            const posName = `${target}-${pos}`;
-            const cssValue = oklchToCSS(oklchValue);
-            const posToken: Token = {
-              name: posName,
-              value: cssValue,
+        if (enriched && colorValue) {
+          const isSemantic = RaftersToolHandler.SEMANTIC_FAMILY_SET.has(target);
+
+          // For semantic targets (primary, accent, etc.), store the ColorValue under
+          // its perceptual name to avoid overwriting the semantic token. For custom
+          // families (blaze, empire, etc.), store directly under the target name.
+          const familyName = isSemantic ? colorValue.name : target;
+
+          // Store the ColorValue as a color family token
+          if (registry.has(familyName)) {
+            const existingFamily = registry.get(familyName);
+            if (existingFamily && existingFamily.namespace === 'semantic') {
+              // This is the semantic token -- don't overwrite it with the ColorValue.
+              // Add the family under the perceptual name instead.
+              registry.add({
+                name: familyName,
+                value: colorValue,
+                category: 'color',
+                namespace: 'color',
+                semanticMeaning: `Color family for ${target}`,
+                description: `Enriched color family "${familyName}" mapped to semantic role "${target}"`,
+                containerQueryAware: true,
+              });
+            } else {
+              await registry.set(familyName, colorValue);
+            }
+          } else {
+            registry.add({
+              name: familyName,
+              value: colorValue,
               category: 'color',
               namespace: 'color',
-              scalePosition: i,
-              description: `${target} color at ${pos} position`,
+              semanticMeaning: `Color family for ${target}`,
+              description: `Enriched color family "${familyName}" mapped to semantic role "${target}"`,
               containerQueryAware: true,
-            };
+              userOverride: isSemantic
+                ? undefined
+                : {
+                    previousValue: '',
+                    reason: `Onboarded from ${source}: ${reason}`,
+                  },
+            });
+          }
+
+          // Create individual palette position tokens from the enriched ColorValue scale
+          const SCALE_POSITIONS = [
+            '50',
+            '100',
+            '200',
+            '300',
+            '400',
+            '500',
+            '600',
+            '700',
+            '800',
+            '900',
+            '950',
+          ] as const;
+          for (let i = 0; i < colorValue.scale.length && i < SCALE_POSITIONS.length; i++) {
+            const pos = SCALE_POSITIONS[i];
+            const oklchValue = colorValue.scale[i];
+            if (!oklchValue) continue;
+            const posName = `${familyName}-${pos}`;
+            const cssValue = oklchToCSS(oklchValue);
             if (registry.has(posName)) {
               await registry.set(posName, cssValue);
             } else {
-              registry.add(posToken);
+              registry.add({
+                name: posName,
+                value: cssValue,
+                category: 'color',
+                namespace: 'color',
+                scalePosition: i,
+                description: `${familyName} color at ${pos} position`,
+                containerQueryAware: true,
+              });
             }
           }
-        }
 
-        const exists = registry.has(target);
-
-        if (exists) {
-          // Update existing token
-          const existing = registry.get(target);
-          if (existing) {
-            const previousValue = existing.value;
-            existing.userOverride = {
-              previousValue:
-                typeof previousValue === 'string' ? previousValue : JSON.stringify(previousValue),
-              reason: `Onboarded from ${source}: ${reason}`,
-            };
-            await registry.set(target, tokenValue);
+          if (isSemantic) {
+            // Update the semantic token to point at the new family
+            const existing = registry.get(target);
+            if (existing) {
+              const previousValue = existing.value;
+              existing.userOverride = {
+                previousValue:
+                  typeof previousValue === 'string' ? previousValue : JSON.stringify(previousValue),
+                reason: `Onboarded from ${source}: ${reason}`,
+              };
+              const defaultMapping = DEFAULT_SEMANTIC_COLOR_MAPPINGS[target];
+              const lightPos = defaultMapping?.light.position ?? '900';
+              await registry.setToken({
+                ...existing,
+                value: { family: familyName, position: lightPos },
+                dependsOn: [familyName, `${familyName}-${defaultMapping?.dark.position ?? '50'}`],
+              });
+            }
             results.push({ source, target, action: 'set', ok: true, enriched });
+
+            // Cascade to all semantic tokens in this family
+            allCascadeTokens.push(
+              ...this.cascadeSemanticFamily(registry, target, familyName, results),
+            );
           } else {
-            results.push({
-              source,
-              target,
-              action: 'skipped',
-              ok: false,
-              error: `Token "${target}" exists in registry index but could not be retrieved.`,
-            });
+            // Custom family -- the target name IS the family name, stored directly
+            results.push({ source, target, action: 'create', ok: true, enriched });
           }
         } else {
-          // Create new token
-          const ns = namespace ?? (enriched ? 'color' : 'custom');
-          const cat = category ?? ns;
-          const newToken: Token = {
-            name: target,
-            namespace: ns,
-            category: cat,
-            value: tokenValue,
-            containerQueryAware: true,
-            userOverride: {
-              previousValue: '',
-              reason: `Onboarded from ${source}: ${reason}`,
-            },
-          };
-          registry.add(newToken);
-          results.push({ source, target, action: 'create', ok: true, enriched });
-        }
+          // Non-enriched value (plain string) -- store directly
+          const tokenValue = value;
+          const exists = registry.has(target);
 
-        // Collect cascade tokens for semantic families (batched after loop)
-        if (RaftersToolHandler.SEMANTIC_FAMILY_SET.has(target)) {
-          if (!enriched) {
-            results.push({
-              source,
-              target,
-              action: 'skipped',
-              ok: false,
-              error: `Cascade skipped for "${target}": value was not enriched. Provide a CSS color value so the color family can be created with accessibility data.`,
-            });
+          if (exists) {
+            const existing = registry.get(target);
+            if (existing) {
+              const previousValue = existing.value;
+              existing.userOverride = {
+                previousValue:
+                  typeof previousValue === 'string' ? previousValue : JSON.stringify(previousValue),
+                reason: `Onboarded from ${source}: ${reason}`,
+              };
+              await registry.set(target, tokenValue);
+              results.push({ source, target, action: 'set', ok: true, enriched });
+            }
           } else {
-            // Use target as registry key, not ColorValue.name (which is a perceptual name)
-            allCascadeTokens.push(...this.cascadeSemanticFamily(registry, target, target, results));
+            const ns = namespace ?? 'custom';
+            const cat = category ?? ns;
+            registry.add({
+              name: target,
+              namespace: ns,
+              category: cat,
+              value: tokenValue,
+              containerQueryAware: true,
+              userOverride: {
+                previousValue: '',
+                reason: `Onboarded from ${source}: ${reason}`,
+              },
+            });
+            results.push({ source, target, action: 'create', ok: true, enriched });
           }
         }
       }
