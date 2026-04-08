@@ -1,5 +1,12 @@
 # rafters
 
+## 0.0.47
+
+### Minor Changes
+
+- feat(tokens): fill token namespace -- composite visual recipes (color + opacity + backdrop-blur + gradients) as designer-configurable tokens. Fills resolve differently based on context: surface components get background classes, typography gets text color or gradient text via bg-clip-text. Seven default fills: surface, panel, overlay, glass, primary, muted, hero. Use `fill="surface"` on Container/Card or `color="hero"` on Typography for gradient text.
+- feat(tokens): fill token CSS export -- fill tokens appear in generated CSS as custom properties with JSON metadata for runtime resolution by the fill-resolver primitive.
+
 ## 0.0.46
 
 ### Patch Changes

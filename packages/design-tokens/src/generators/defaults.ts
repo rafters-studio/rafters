@@ -380,6 +380,97 @@ export const DEFAULT_SHADOW_DEFINITIONS: Record<string, ShadowDef> = {
 };
 
 // =============================================================================
+// FILL DEFAULTS
+// =============================================================================
+
+/**
+ * Fill definition -- composite visual recipe for surfaces and text.
+ * Resolves differently based on context:
+ * - Surface context: applies as background (+ foreground text color)
+ * - Text context: applies as text color (with bg-clip-text for gradients)
+ */
+export interface FillDef {
+  /** Semantic color reference (e.g., "primary", "neutral-900") */
+  color?: string;
+  /** Opacity 0-1, default 1 */
+  opacity?: number;
+  /** Auto-resolved text color for surface context, or explicit override */
+  foreground?: string;
+  /** Tailwind blur size for backdrop-filter */
+  backdropBlur?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
+  /** Gradient definition */
+  gradient?: {
+    direction: string;
+    stops: Array<{
+      color: string;
+      position?: string;
+      opacity?: number;
+    }>;
+  };
+  /** Human-readable purpose */
+  meaning: string;
+  /** Where this fill is used */
+  contexts: string[];
+}
+
+/**
+ * Default fill definitions.
+ * Each fill encodes a visual recipe that components consume via fill="name".
+ */
+export const DEFAULT_FILL_DEFINITIONS: Record<string, FillDef> = {
+  surface: {
+    color: 'neutral-900',
+    foreground: 'neutral-100',
+    meaning: 'Primary content surface',
+    contexts: ['surface'],
+  },
+  panel: {
+    color: 'neutral-800',
+    opacity: 0.95,
+    foreground: 'neutral-100',
+    meaning: 'Elevated panel',
+    contexts: ['surface'],
+  },
+  overlay: {
+    color: 'neutral-950',
+    opacity: 0.8,
+    backdropBlur: 'sm',
+    foreground: 'neutral-50',
+    meaning: 'Modal backdrop',
+    contexts: ['surface'],
+  },
+  glass: {
+    color: 'neutral-900',
+    opacity: 0.6,
+    backdropBlur: 'md',
+    foreground: 'neutral-100',
+    meaning: 'Glass morphism',
+    contexts: ['surface'],
+  },
+  primary: {
+    color: 'primary',
+    foreground: 'primary-foreground',
+    meaning: 'Primary brand surface',
+    contexts: ['surface', 'text'],
+  },
+  muted: {
+    color: 'muted',
+    foreground: 'muted-foreground',
+    meaning: 'Subdued surface for secondary content',
+    contexts: ['surface'],
+  },
+  hero: {
+    gradient: {
+      direction: 'to-b',
+      stops: [{ color: 'primary' }, { color: 'primary', opacity: 0 }],
+    },
+    foreground: 'primary-foreground',
+    meaning: 'Hero fade gradient',
+    contexts: ['surface', 'text'],
+  },
+};
+
+// =============================================================================
 // ELEVATION DEFAULTS
 // =============================================================================
 
