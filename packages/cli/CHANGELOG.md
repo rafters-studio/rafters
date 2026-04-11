@@ -1,5 +1,13 @@
 # rafters
 
+## 0.0.48
+
+### Patch Changes
+
+- fix(mcp): `rafters_token set` on a semantic family slot (primary, accent, destructive, etc.) now cascades to all derivatives (-foreground, -hover, -active, -border, -ring, -focus, -subtle) in one call. Previously the cascade only fired from `rafters_onboard map`, so `set` would write the single token and exit, leaving derivatives pointing at the previous family. The cascade machinery from #1152/#1205/#1206 was already correct downstream — only the trigger was missing. Closes #1211.
+- fix(mcp): `dependsOn[0]` on semantic family tokens is now correctly preserved as the bare family name (e.g. `"dim-honest-plum"`) on `set` instead of being overwritten with a family-position string (e.g. `"dim-honest-plum-900"`). Restores the convention enforced everywhere else after #1205's review fix.
+- The `set` response now includes a `familyCascade` array listing the names of derivatives cascaded (empty for non-family targets), so callers can verify the cascade fired.
+
 ## 0.0.47
 
 ### Minor Changes

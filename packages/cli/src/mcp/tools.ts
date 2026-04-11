@@ -1534,14 +1534,52 @@ export class RaftersToolHandler {
 
           if (parsed) {
             existing.value = parsed;
-            const lightRefStr = `${parsed.family}-${parsed.position}`;
-            const darkRef = dark ?? existing.dependsOn?.[1] ?? lightRefStr;
-            existing.dependsOn = [lightRefStr, darkRef];
+            // dependsOn[0] must be the family name, not a family-position string.
+            // Plugins (state, contrast, invert) and cascadeSemanticFamily all read
+            // dependsOn[0] expecting just the family so they can resolve the
+            // ColorValue and its WCAG/state intelligence data.
+            const darkRef =
+              dark ?? existing.dependsOn?.[1] ?? `${parsed.family}-${parsed.position}`;
+            existing.dependsOn = [parsed.family, darkRef];
           } else {
             existing.value = value;
           }
 
           await registry.setToken(existing);
+
+          // Family-level cascade: re-target all derivatives when a semantic family
+          // slot (primary, accent, destructive, etc.) is repointed to a new family.
+          // Without this, set on `accent` would write only the single token while
+          // accent-foreground/hover/active/border/ring/focus/subtle stayed pointed
+          // at the previous family.
+          const familyCascade: string[] = [];
+          if (
+            parsed &&
+            existing.namespace === 'semantic' &&
+            RaftersToolHandler.SEMANTIC_FAMILY_SET.has(name)
+          ) {
+            const cascadeResults: Array<{
+              source: string;
+              target: string;
+              action: string;
+              ok: boolean;
+              enriched?: boolean;
+              error?: string;
+              persisted?: { value: unknown; dependsOn?: string[] };
+            }> = [];
+            const cascadeTokens = this.cascadeSemanticFamily(
+              registry,
+              name,
+              parsed.family,
+              cascadeResults,
+            );
+            if (cascadeTokens.length > 0) {
+              await registry.setTokens(cascadeTokens);
+              for (const token of cascadeTokens) {
+                familyCascade.push(token.name);
+              }
+            }
+          }
 
           const affected = this.getAffectedTokens(registry, name);
           const outputFiles = await this.regenerateOutputs(registry);
@@ -1561,6 +1599,7 @@ export class RaftersToolHandler {
                     namespace: existing.namespace,
                   },
                   cascaded: affected,
+                  familyCascade,
                   outputFiles,
                 }),
               },
