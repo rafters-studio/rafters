@@ -11,6 +11,7 @@
  */
 import type { HTMLAttributes } from 'astro/types';
 import classy from '../../primitives/classy';
+import { resolveFillName } from '../../primitives/fill-resolver';
 import {
   type CardBackground,
   cardBackgroundClasses,
@@ -24,7 +25,13 @@ interface Props extends HTMLAttributes<'div'> {
   as?: CardElement;
   interactive?: boolean;
   size?: 'default' | 'sm';
+  /** @deprecated Prefer the `fill` prop. */
   background?: CardBackground;
+  /**
+   * Fill token name resolved through the fill registry in surface context.
+   * Overrides the default `bg-card` surface when set.
+   */
+  fill?: string;
 }
 
 const {
@@ -32,17 +39,21 @@ const {
   interactive,
   size = 'default',
   background,
+  fill,
   class: className,
   ...attrs
 } = Astro.props;
 
 const sizeStyles = size === 'sm' ? 'group/card-sm' : '';
-const bgStyles = background ? cardBackgroundClasses[background] : '';
+const fillClasses = fill ? resolveFillName(fill, 'surface') : '';
+// fill wins over legacy background
+const bgStyles = !fill && background ? cardBackgroundClasses[background] : '';
 const cls = classy(
   cardBaseClasses,
   sizeStyles,
   interactive ? cardInteractiveClasses : '',
   bgStyles,
+  fillClasses,
   className,
 );
 ---
@@ -50,6 +61,7 @@ const cls = classy(
 <Tag
   class={cls}
   tabindex={interactive ? 0 : undefined}
+  data-fill={fill || undefined}
   {...attrs}
 >
   <slot />

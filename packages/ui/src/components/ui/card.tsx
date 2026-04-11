@@ -50,6 +50,7 @@
 import * as React from 'react';
 import { useCallback, useRef } from 'react';
 import classy from '../../primitives/classy';
+import { resolveFillName } from '../../primitives/fill-resolver';
 import {
   cardActionClasses,
   cardBaseClasses,
@@ -89,6 +90,14 @@ export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Size variant for compact cards */
   size?: 'default' | 'sm';
 
+  /**
+   * Fill token name resolved through the fill registry in surface context.
+   * Examples: "surface", "panel", "overlay", "glass", "primary", "muted", "hero".
+   * Unknown names fall back to `bg-{name}` so custom tokens still work.
+   * When set, overrides the default `bg-card` surface.
+   */
+  fill?: string | undefined;
+
   // ============================================================================
   // Editable Props (R-202)
   // ============================================================================
@@ -116,6 +125,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
       as: Component = 'div',
       interactive,
       size = 'default',
+      fill,
       editable,
       onTitleChange,
       onDescriptionChange,
@@ -128,8 +138,16 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
     const sizeStyles = size === 'sm' ? 'group/card-sm' : '';
     const interactiveStyles = interactive ? cardInteractiveClasses : '';
     const editableStyles = editable ? cardEditableClasses : '';
+    const fillClasses = fill ? resolveFillName(fill, 'surface') : '';
 
-    const cls = classy(cardBaseClasses, sizeStyles, interactiveStyles, editableStyles, className);
+    const cls = classy(
+      cardBaseClasses,
+      sizeStyles,
+      interactiveStyles,
+      editableStyles,
+      fillClasses,
+      className,
+    );
 
     const contextValue: CardContextValue = {
       editable,
@@ -144,6 +162,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
           className={cls}
           tabIndex={interactive ? 0 : undefined}
           data-editable={editable || undefined}
+          data-fill={fill || undefined}
           {...props}
         >
           {children}

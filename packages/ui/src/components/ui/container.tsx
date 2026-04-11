@@ -29,6 +29,7 @@
  */
 import * as React from 'react';
 import classy from '../../primitives/classy';
+import { resolveFillName } from '../../primitives/fill-resolver';
 import {
   type ContainerBackground,
   containerArticleTypography,
@@ -92,10 +93,20 @@ export interface ContainerProps extends React.HTMLAttributes<HTMLElement> {
   editable?: boolean | undefined;
 
   /**
-   * Background color preset
-   * Allowed presets: 'none', 'muted', 'accent', 'card'
+   * Background color preset (legacy enum)
+   * Allowed presets: 'none', 'muted', 'accent', 'card', 'primary'
+   * @deprecated Prefer the `fill` prop, which resolves through the fill
+   * token registry and supports opacity, backdrop blur, and gradients.
    */
   background?: ContainerBackground | undefined;
+
+  /**
+   * Fill token name resolved through the fill registry in surface context.
+   * Examples: "surface", "panel", "overlay", "glass", "primary", "muted", "hero".
+   * Unknown names fall back to `bg-{name}` so custom tokens still work.
+   * Takes precedence over `background` when both are set.
+   */
+  fill?: string | undefined;
 
   /**
    * Show drop zone indicator for child blocks
@@ -146,6 +157,7 @@ export const Container = React.forwardRef<HTMLElement, ContainerProps>(
       queryName,
       editable,
       background,
+      fill,
       showDropZone,
       onBackgroundChange: _onBackgroundChange,
       className,
@@ -162,6 +174,10 @@ export const Container = React.forwardRef<HTMLElement, ContainerProps>(
     const isEmpty = React.Children.count(children) === 0;
 
     const resolvedGap = gap === true ? (size && sizeGapScale[size]) || '6' : gap || undefined;
+
+    // Fill wins over background when both are set -- fill is the endorsed
+    // path and should replace the legacy enum without breaking existing markup.
+    const fillClasses = fill ? resolveFillName(fill, 'surface') : '';
 
     const classes = classy(
       // Container queries - w-full prevents width collapse when container-type: inline-size
@@ -180,8 +196,11 @@ export const Container = React.forwardRef<HTMLElement, ContainerProps>(
       // Vertical flow with gap
       resolvedGap && gapClasses[resolvedGap],
 
-      // Background (R-202)
-      background && backgroundClasses[background],
+      // Fill token (surface context) takes precedence over legacy background
+      fillClasses,
+
+      // Background (R-202) -- legacy prop, ignored when fill is set
+      !fill && background && backgroundClasses[background],
 
       // Article gets typography
       isArticle && articleTypography,
@@ -210,6 +229,7 @@ export const Container = React.forwardRef<HTMLElement, ContainerProps>(
         style: Object.keys(containerStyle).length > 0 ? containerStyle : undefined,
         'data-editable': editable || undefined,
         'data-background': background || undefined,
+        'data-fill': fill || undefined,
         ...props,
       },
       content,

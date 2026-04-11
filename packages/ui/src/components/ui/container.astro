@@ -10,6 +10,7 @@
  */
 import type { HTMLAttributes } from 'astro/types';
 import classy from '../../primitives/classy';
+import { resolveFillName } from '../../primitives/fill-resolver';
 import {
   type ContainerBackground,
   containerArticleTypography,
@@ -28,7 +29,13 @@ interface Props extends HTMLAttributes<'div'> {
   gap?: boolean | '0' | '1' | '2' | '3' | '4' | '5' | '6' | '8' | '10' | '12' | '16' | '20' | '24';
   query?: boolean;
   queryName?: string;
+  /** @deprecated Prefer the `fill` prop. */
   background?: ContainerBackground;
+  /**
+   * Fill token name resolved through the fill registry in surface context.
+   * Takes precedence over `background` when both are set.
+   */
+  fill?: string;
 }
 
 const {
@@ -39,6 +46,7 @@ const {
   query = true,
   queryName,
   background,
+  fill,
   class: className,
   ...attrs
 } = Astro.props;
@@ -52,22 +60,26 @@ const resolvedGap =
       ? gap
       : undefined;
 
+const fillClasses = fill ? resolveFillName(fill, 'surface') : '';
+
 const classes = classy(
   query && '@container w-full',
   size && containerSizeClasses[size],
   size && size !== 'full' && 'mx-auto',
   padding ? containerPaddingClasses[padding] : size && size !== 'full' && containerAutoEdgePadding,
   resolvedGap && containerGapClasses[resolvedGap],
-  background && containerBackgroundClasses[background],
+  fillClasses,
+  !fill && background && containerBackgroundClasses[background],
   isArticle && containerArticleTypography,
   className,
 );
 
 const containerStyle = queryName ? `container-name: ${queryName}` : undefined;
+const dataFill = fill || undefined;
 ---
 
-{Element === 'div' && <div class={classes} style={containerStyle} {...attrs}><slot /></div>}
-{Element === 'main' && <main class={classes} style={containerStyle} {...attrs}><slot /></main>}
-{Element === 'section' && <section class={classes} style={containerStyle} {...attrs}><slot /></section>}
-{Element === 'article' && <article class={classes} style={containerStyle} {...attrs}><slot /></article>}
-{Element === 'aside' && <aside class={classes} style={containerStyle} {...attrs}><slot /></aside>}
+{Element === 'div' && <div class={classes} style={containerStyle} data-fill={dataFill} {...attrs}><slot /></div>}
+{Element === 'main' && <main class={classes} style={containerStyle} data-fill={dataFill} {...attrs}><slot /></main>}
+{Element === 'section' && <section class={classes} style={containerStyle} data-fill={dataFill} {...attrs}><slot /></section>}
+{Element === 'article' && <article class={classes} style={containerStyle} data-fill={dataFill} {...attrs}><slot /></article>}
+{Element === 'aside' && <aside class={classes} style={containerStyle} data-fill={dataFill} {...attrs}><slot /></aside>}

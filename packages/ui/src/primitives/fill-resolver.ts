@@ -7,11 +7,18 @@
  * Two contexts:
  * - "surface": resolves to background classes (bg-*, backdrop-blur-*, text-*)
  * - "text": resolves to text color classes (text-*, or bg-clip-text for gradients)
+ *
+ * Two entry points:
+ * - resolveFillClasses(metadata, context): metadata-driven -- caller supplies shape
+ * - resolveFillName(name, context): name-driven -- looks up the built-in or
+ *   app-registered fill registry and resolves in one step. Unknown names fall
+ *   back to direct class application (bg-{name} / text-{name}) so consumers do
+ *   not crash on token drift.
  */
 
 export type FillContext = 'surface' | 'text';
 
-interface FillMetadata {
+export interface FillMetadata {
   color?: string;
   opacity?: number;
   foreground?: string;
@@ -124,4 +131,78 @@ function resolveGradientFill(fill: FillMetadata, context: FillContext): string {
   }
 
   return parts.join(' ');
+}
+
+/**
+ * Built-in fill registry.
+ *
+ * Mirrors the default fill definitions shipped by @rafters/design-tokens so
+ * components resolve common names without needing the token package at
+ * runtime (ui is copied into consumer projects via the registry and must stay
+ * zero-dep). Apps can override or extend via `registerFill`.
+ */
+const fillRegistry: Record<string, FillMetadata> = {
+  surface: { color: 'neutral-900', foreground: 'neutral-100' },
+  panel: { color: 'neutral-800', opacity: 0.95, foreground: 'neutral-100' },
+  overlay: {
+    color: 'neutral-950',
+    opacity: 0.8,
+    backdropBlur: 'sm',
+    foreground: 'neutral-50',
+  },
+  glass: {
+    color: 'neutral-900',
+    opacity: 0.6,
+    backdropBlur: 'md',
+    foreground: 'neutral-100',
+  },
+  primary: { color: 'primary', foreground: 'primary-foreground' },
+  muted: { color: 'muted', foreground: 'muted-foreground' },
+  hero: {
+    gradient: {
+      direction: 'to-b',
+      stops: [{ color: 'primary' }, { color: 'primary', opacity: 0 }],
+    },
+    foreground: 'primary-foreground',
+  },
+};
+
+/**
+ * Register or override a fill definition at runtime.
+ *
+ * Apps whose design systems define custom fills can call this once at startup
+ * (or inject via their root layout) to make those fills resolvable by name
+ * from any component using the fill prop.
+ */
+export function registerFill(name: string, metadata: FillMetadata): void {
+  fillRegistry[name] = metadata;
+}
+
+/**
+ * Look up fill metadata by name. Returns undefined for unknown names.
+ */
+export function getFillMetadata(name: string): FillMetadata | undefined {
+  return fillRegistry[name];
+}
+
+/**
+ * Resolve a fill token name into CSS classes for a given context.
+ *
+ * Known names resolve through the registry. Unknown names fall back to
+ * direct class application so consumers do not crash on token drift:
+ *   surface context -> `bg-{name}`
+ *   text context    -> `text-{name}`
+ *
+ * Empty/undefined input returns an empty string.
+ */
+export function resolveFillName(name: string | undefined, context: FillContext): string {
+  if (!name) return '';
+
+  const metadata = fillRegistry[name];
+  if (metadata) {
+    return resolveFillClasses(metadata, context);
+  }
+
+  // Unknown name: fall back to direct Tailwind class application.
+  return context === 'surface' ? `bg-${name}` : `text-${name}`;
 }

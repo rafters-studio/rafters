@@ -3,6 +3,8 @@
  * Used by both typography.tsx (React) and typography .astro files (Astro)
  */
 
+import { getFillMetadata, resolveFillClasses } from '../../primitives/fill-resolver';
+
 export const typographyClasses = {
   h1: 'scroll-m-20 text-4xl font-bold tracking-tight @lg:text-5xl text-foreground',
   h2: 'scroll-m-20 text-3xl font-semibold tracking-tight text-foreground',
@@ -43,16 +45,27 @@ export interface TypographyTokenProps {
  * Build Tailwind utility classes from token props.
  * Returns a string of override classes or empty string if no overrides.
  *
- * Color values pass through directly as text-{value}:
- *   color="accent"            -> text-accent
- *   color="accent-foreground" -> text-accent-foreground
- *   color="muted-foreground"  -> text-muted-foreground
+ * Color resolution (in order):
+ *   1. If the value names a registered fill token, resolve in text context.
+ *      Solid fills -> text-{color} (+ opacity). Gradients -> bg-clip-text.
+ *      e.g. color="hero" -> "bg-gradient-to-r from-primary to-primary/0 bg-clip-text text-transparent"
+ *   2. Otherwise pass through as text-{value}:
+ *      color="accent"            -> text-accent
+ *      color="accent-foreground" -> text-accent-foreground
+ *      color="muted-foreground"  -> text-muted-foreground
  */
 export function tokenPropsToClasses(props: TypographyTokenProps): string {
   const classes: string[] = [];
   if (props.size) classes.push(`text-${props.size}`);
   if (props.weight) classes.push(`font-${props.weight}`);
-  if (props.color) classes.push(`text-${props.color}`);
+  if (props.color) {
+    const fillMeta = getFillMetadata(props.color);
+    if (fillMeta) {
+      classes.push(resolveFillClasses(fillMeta, 'text'));
+    } else {
+      classes.push(`text-${props.color}`);
+    }
+  }
   if (props.line) classes.push(`leading-${props.line}`);
   if (props.tracking) classes.push(`tracking-${props.tracking}`);
   if (props.family) classes.push(`font-${props.family}`);
