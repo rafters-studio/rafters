@@ -3,7 +3,7 @@
  *
  * Three independent word banks map to OKLCH dimensions:
  * - Luminosity (L): brightness-based words describing light levels
- * - Intensity (C): emotions/feelings describing saturation
+ * - Intensity (C): chroma-descriptive words describing saturation level
  * - Material (H): objects/places/nature describing hue
  *
  * Each bank is organized by bucket index. Temperature and perceptual
@@ -33,37 +33,39 @@ export const LUMINOSITY_WORDS: readonly string[] = [
 /**
  * Intensity words by chroma bucket, split by perceptual density
  * Each density level has words for 8 chroma buckets (0-0.37+)
+ *
+ * Words describe saturation/chroma level, not personality.
  */
 export const INTENSITY_WORDS: Record<'light' | 'medium' | 'heavy', readonly string[]> = {
   light: [
-    'whisper', // 0.00-0.03: achromatic
-    'soft', // 0.03-0.06
-    'gentle', // 0.06-0.10
-    'mild', // 0.10-0.15
+    'dust', // 0.00-0.03: achromatic
+    'wash', // 0.03-0.06
+    'soft', // 0.06-0.10
+    'clean', // 0.10-0.15
     'clear', // 0.15-0.20
-    'bright', // 0.20-0.25
+    'pure', // 0.20-0.25
     'vivid', // 0.25-0.30
-    'radiant', // 0.30+
+    'bright', // 0.30+
   ],
   medium: [
-    'ghost', // 0.00-0.03
-    'quiet', // 0.03-0.06
-    'calm', // 0.06-0.10
+    'ash', // 0.00-0.03
+    'faded', // 0.03-0.06
+    'quiet', // 0.06-0.10
     'true', // 0.10-0.15
-    'honest', // 0.15-0.20
+    'solid', // 0.15-0.20
     'bold', // 0.20-0.25
-    'striking', // 0.25-0.30
-    'electric', // 0.30+
+    'sharp', // 0.25-0.30
+    'neon', // 0.30+
   ],
   heavy: [
-    'haze', // 0.00-0.03
+    'smoke', // 0.00-0.03
     'muted', // 0.03-0.06
-    'deep', // 0.06-0.10
+    'worn', // 0.06-0.10
     'rich', // 0.10-0.15
     'strong', // 0.15-0.20
-    'fierce', // 0.20-0.25
-    'intense', // 0.25-0.30
-    'blazing', // 0.30+
+    'dense', // 0.20-0.25 ("deep" excluded: already in LUMINOSITY_WORDS)
+    'full', // 0.25-0.30
+    'hot', // 0.30+
   ],
 } as const;
 

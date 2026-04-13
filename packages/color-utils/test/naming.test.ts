@@ -122,6 +122,38 @@ describe('Word banks', () => {
       expect(materialSet.size).toBe(MATERIAL_WORDS[temp].length);
     }
   });
+
+  const allIntensityWords = [
+    ...INTENSITY_WORDS.light,
+    ...INTENSITY_WORDS.medium,
+    ...INTENSITY_WORDS.heavy,
+  ];
+
+  it('all 24 intensity words are unique across all density levels', () => {
+    const uniqueWords = new Set(allIntensityWords);
+    expect(uniqueWords.size).toBe(allIntensityWords.length);
+  });
+
+  it('intensity words do not contain banned personality adjectives', () => {
+    const bannedWords = [
+      'honest',
+      'fierce',
+      'calm',
+      'radiant',
+      'ghost',
+      'whisper',
+      'gentle',
+      'mild',
+      'striking',
+      'electric',
+      'haze',
+      'intense',
+      'blazing',
+    ];
+    for (const banned of bannedWords) {
+      expect(allIntensityWords).not.toContain(banned);
+    }
+  });
 });
 
 describe('generateColorName', () => {
