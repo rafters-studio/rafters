@@ -280,6 +280,7 @@ export const ColorHarmoniesSchema = z.object({
   triadic: z.array(OKLCHSchema),
   analogous: z.array(OKLCHSchema),
   tetradic: z.array(OKLCHSchema),
+  splitComplementary: z.array(OKLCHSchema),
   monochromatic: z.array(OKLCHSchema),
 });
 

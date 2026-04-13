@@ -94,6 +94,7 @@ describe('buildColorValue', () => {
       expect(result.harmonies).toHaveProperty('triadic');
       expect(result.harmonies).toHaveProperty('analogous');
       expect(result.harmonies).toHaveProperty('tetradic');
+      expect(result.harmonies).toHaveProperty('splitComplementary');
       expect(result.harmonies).toHaveProperty('monochromatic');
     });
 
@@ -106,29 +107,34 @@ describe('buildColorValue', () => {
       expect(complementaryHue).toBeLessThan(90);
     });
 
-    it('triadic has 2 colors', () => {
+    it('triadic has 3 colors', () => {
       const result = buildColorValue(blue);
 
-      expect(result.harmonies?.triadic).toHaveLength(2);
+      expect(result.harmonies?.triadic).toHaveLength(3);
     });
 
-    it('analogous has 2 colors', () => {
+    it('analogous has 6 colors', () => {
       const result = buildColorValue(blue);
 
-      expect(result.harmonies?.analogous).toHaveLength(2);
+      expect(result.harmonies?.analogous).toHaveLength(6);
     });
 
-    it('tetradic has 3 colors', () => {
+    it('tetradic has 4 colors', () => {
       const result = buildColorValue(blue);
 
-      expect(result.harmonies?.tetradic).toHaveLength(3);
+      expect(result.harmonies?.tetradic).toHaveLength(4);
     });
 
-    it('monochromatic is first 5 scale positions', () => {
+    it('splitComplementary has 3 colors', () => {
       const result = buildColorValue(blue);
 
-      expect(result.harmonies?.monochromatic).toHaveLength(5);
-      expect(result.harmonies?.monochromatic).toEqual(result.scale.slice(0, 5));
+      expect(result.harmonies?.splitComplementary).toHaveLength(3);
+    });
+
+    it('monochromatic has 6 colors', () => {
+      const result = buildColorValue(blue);
+
+      expect(result.harmonies?.monochromatic).toHaveLength(6);
     });
   });
 

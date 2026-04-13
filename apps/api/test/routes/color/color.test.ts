@@ -103,10 +103,11 @@ describe('Color Routes', () => {
 
         expect(json.color.harmonies).toBeDefined();
         expect(json.color.harmonies.complementary).toBeDefined();
-        expect(json.color.harmonies.triadic).toHaveLength(2);
-        expect(json.color.harmonies.analogous).toHaveLength(2);
-        expect(json.color.harmonies.tetradic).toHaveLength(3);
-        expect(json.color.harmonies.monochromatic).toHaveLength(5);
+        expect(json.color.harmonies.triadic).toHaveLength(3);
+        expect(json.color.harmonies.analogous).toHaveLength(6);
+        expect(json.color.harmonies.tetradic).toHaveLength(4);
+        expect(json.color.harmonies.splitComplementary).toHaveLength(3);
+        expect(json.color.harmonies.monochromatic).toHaveLength(6);
       });
 
       it('includes accessibility metadata', async () => {

@@ -1,217 +1,88 @@
 /**
- * Advanced harmony generation for design systems
- * Inspired by Leonardo's color theory approach
+ * Harmony generation for design systems using pure OKLCH hue rotation.
+ *
+ * Rule: harmonies are PURE HUE ROTATIONS. L and C are never mutated.
+ * Only H changes. Every output goes through toNearestGamut() then roundOKLCH().
  */
 
-import type { OKLCH } from '@rafters/shared';
+import type { ColorHarmonies, OKLCH } from '@rafters/shared';
 import { calculateWCAGContrast } from './accessibility';
 import { roundOKLCH } from './conversion';
 import { toNearestGamut } from './gamut';
-import { generateSurfaceColor } from './manipulation';
+import { adjustHue } from './manipulation';
 
-/**
- * Generate optimal gray color for a given palette
- * Uses perceptual averaging of the palette's chromatic content
- */
-function generateOptimalGray(paletteColors: OKLCH[]): OKLCH {
-  // Calculate average chroma and hue, weighted by lightness
-  let totalChroma = 0;
-  let totalHueX = 0;
-  let totalHueY = 0;
-  let totalWeight = 0;
-
-  for (const color of paletteColors) {
-    // Weight by lightness to favor mid-tone colors
-    const weight = 1 - Math.abs(color.l - 0.5) * 2;
-
-    totalChroma += color.c * weight;
-    totalHueX += Math.cos((color.h * Math.PI) / 180) * color.c * weight;
-    totalHueY += Math.sin((color.h * Math.PI) / 180) * color.c * weight;
-    totalWeight += weight;
-  }
-
-  const avgChroma = totalWeight > 0 ? totalChroma / totalWeight : 0;
-  const avgHue = Math.atan2(totalHueY, totalHueX) * (180 / Math.PI);
-  const normalizedHue = ((avgHue % 360) + 360) % 360;
-
-  // Generate a low-chroma gray with subtle color bias
-  return roundOKLCH({
-    l: 0.5, // Neutral mid-gray lightness
-    c: Math.min(0.02, avgChroma * 0.1), // Very low chroma with palette influence
-    h: normalizedHue,
-    alpha: 1,
-  });
+/** Clamp an OKLCH to sRGB gamut and round. */
+function clampColor(color: OKLCH): OKLCH {
+  return roundOKLCH(toNearestGamut(color).color);
 }
 
 /**
- * Generate a Rafters harmony plus optimal gray
- * Based on advanced color theory and perceptual optimization
+ * Generate pure OKLCH harmony arrays from a base color.
+ *
+ * Counts (per the spec):
+ * - complementary: 1 color (+180)
+ * - triadic: 3 colors (base, +120, +240)
+ * - analogous: 6 colors (-45, -30, -15, +15, +30, +45)
+ * - tetradic: 4 colors (base, +90, +180, +270)
+ * - splitComplementary: 3 colors (base, +150, +210)
+ * - monochromatic: 6 colors (same hue, L steps at 0.15/0.30/0.45/0.60/0.75/0.90,
+ *     chroma reduced at extremes)
+ *
+ * L and C are preserved exactly from the base color in all hue-rotation harmonies.
  */
-export function generateHarmony(baseColor: OKLCH): {
-  base: OKLCH;
-  complementary: OKLCH;
-  analogous1: OKLCH; // +30° neighbor
-  analogous2: OKLCH; // -30° neighbor
-  triadic1: OKLCH; // +120°
-  triadic2: OKLCH; // +240°
-  tetradic1: OKLCH; // +90°
-  tetradic2: OKLCH; // +180° (same as complementary)
-  tetradic3: OKLCH; // +270°
-  splitComplementary1: OKLCH; // +150°
-  splitComplementary2: OKLCH; // +210°
-  neutral?: OKLCH; // Optional calculated gray
-} {
-  const base = baseColor;
+export function generateHarmony(baseColor: OKLCH): ColorHarmonies {
+  const base = clampColor(baseColor);
 
-  // Traditional color theory relationships
-  const complementary: OKLCH = {
-    ...baseColor,
-    h: (baseColor.h + 180) % 360,
-    l: baseColor.l > 0.5 ? 0.3 : 0.7, // Ensure contrast
-    c: Math.min(0.3, baseColor.c * 1.2), // Boost chroma slightly
-  };
+  // complementary: 1 color at +180
+  const complementary = clampColor(adjustHue(baseColor, 180));
 
-  const analogous1: OKLCH = {
-    ...baseColor,
-    h: (baseColor.h + 30) % 360,
-    l: Math.max(0.2, Math.min(0.8, baseColor.l + 0.05)),
-    c: baseColor.c * 0.9,
-  };
-
-  const analogous2: OKLCH = {
-    ...baseColor,
-    h: (baseColor.h - 30 + 360) % 360,
-    l: Math.max(0.2, Math.min(0.8, baseColor.l - 0.05)),
-    c: baseColor.c * 0.9,
-  };
-
-  const triadic1: OKLCH = {
-    ...baseColor,
-    h: (baseColor.h + 120) % 360,
-    l: Math.max(0.3, Math.min(0.7, baseColor.l - 0.1)),
-    c: baseColor.c * 0.85,
-  };
-
-  const triadic2: OKLCH = {
-    ...baseColor,
-    h: (baseColor.h + 240) % 360,
-    l: Math.max(0.3, Math.min(0.7, baseColor.l + 0.1)),
-    c: baseColor.c * 0.85,
-  };
-
-  const tetradic1: OKLCH = {
-    ...baseColor,
-    h: (baseColor.h + 90) % 360,
-    l: Math.max(0.2, Math.min(0.8, baseColor.l)),
-    c: baseColor.c * 0.8,
-  };
-
-  const tetradic2 = complementary; // +180° is the same as complementary
-
-  const tetradic3: OKLCH = {
-    ...baseColor,
-    h: (baseColor.h + 270) % 360,
-    l: Math.max(0.2, Math.min(0.8, baseColor.l)),
-    c: baseColor.c * 0.8,
-  };
-
-  const splitComplementary1: OKLCH = {
-    ...baseColor,
-    h: (baseColor.h + 150) % 360,
-    l: Math.max(0.2, Math.min(0.8, baseColor.l + 0.1)),
-    c: baseColor.c * 0.8,
-  };
-
-  const splitComplementary2: OKLCH = {
-    ...baseColor,
-    h: (baseColor.h + 210) % 360,
-    l: Math.max(0.2, Math.min(0.8, baseColor.l - 0.1)),
-    c: baseColor.c * 0.8,
-  };
-
-  // Generate optimal neutral gray from all harmonies
-  const allColors = [
+  // triadic: base, +120, +240
+  const triadic: OKLCH[] = [
     base,
-    complementary,
-    analogous1,
-    analogous2,
-    triadic1,
-    triadic2,
-    tetradic1,
-    tetradic3,
-    splitComplementary1,
-    splitComplementary2,
+    clampColor(adjustHue(baseColor, 120)),
+    clampColor(adjustHue(baseColor, 240)),
   ];
-  const neutral = generateOptimalGray(allColors);
+
+  // analogous: -45, -30, -15, +15, +30, +45
+  const analogous: OKLCH[] = [
+    clampColor(adjustHue(baseColor, -45)),
+    clampColor(adjustHue(baseColor, -30)),
+    clampColor(adjustHue(baseColor, -15)),
+    clampColor(adjustHue(baseColor, 15)),
+    clampColor(adjustHue(baseColor, 30)),
+    clampColor(adjustHue(baseColor, 45)),
+  ];
+
+  // tetradic: base, +90, +180, +270
+  const tetradic: OKLCH[] = [
+    base,
+    clampColor(adjustHue(baseColor, 90)),
+    clampColor(adjustHue(baseColor, 180)),
+    clampColor(adjustHue(baseColor, 270)),
+  ];
+
+  // splitComplementary: base, +150, +210
+  const splitComplementary: OKLCH[] = [
+    base,
+    clampColor(adjustHue(baseColor, 150)),
+    clampColor(adjustHue(baseColor, 210)),
+  ];
+
+  // monochromatic: 6 steps at fixed L values, same H, chroma reduced at extremes
+  const MONO_LIGHTNESS = [0.15, 0.3, 0.45, 0.6, 0.75, 0.9] as const;
+  const monochromatic: OKLCH[] = MONO_LIGHTNESS.map((l) => {
+    // Reduce chroma at extreme ends to avoid gamut clipping artifacts
+    const c = l <= 0.15 || l >= 0.9 ? baseColor.c * 0.5 : baseColor.c;
+    return clampColor({ ...baseColor, l, c });
+  });
 
   return {
-    base: roundOKLCH(base),
-    complementary: roundOKLCH(complementary),
-    analogous1: roundOKLCH(analogous1),
-    analogous2: roundOKLCH(analogous2),
-    triadic1: roundOKLCH(triadic1),
-    triadic2: roundOKLCH(triadic2),
-    tetradic1: roundOKLCH(tetradic1),
-    tetradic2: roundOKLCH(tetradic2),
-    tetradic3: roundOKLCH(tetradic3),
-    splitComplementary1: roundOKLCH(splitComplementary1),
-    splitComplementary2: roundOKLCH(splitComplementary2),
-    neutral: roundOKLCH(neutral),
-  };
-}
-
-/**
- * Generate Rafters semantic harmony by mapping traditional color theory to design system roles
- * Uses Leonardo theory to intelligently assign traditional harmonies to UI semantics
- */
-export function generateRaftersHarmony(baseColor: OKLCH): {
-  primary: OKLCH;
-  secondary: OKLCH;
-  tertiary: OKLCH;
-  accent: OKLCH;
-  highlight: OKLCH;
-  surface: OKLCH;
-  neutral: OKLCH;
-} {
-  // Get traditional color theory harmonies
-  const harmony = generateHarmony(baseColor);
-
-  // Map traditional harmonies to Rafters semantic roles using Leonardo theory
-  // Primary = the base color (user's choice)
-  const primary = harmony.base;
-
-  // Secondary = split-complementary for sophisticated contrast without clash
-  const secondary = harmony.splitComplementary1;
-
-  // Tertiary = triadic for visual interest while maintaining harmony
-  const tertiary = harmony.triadic1;
-
-  // Accent = complementary for maximum contrast and attention
-  const accent = harmony.complementary;
-
-  // Highlight = analogous for subtle emphasis and cohesion
-  const highlight = harmony.analogous1;
-
-  // Surface = desaturated version of base for backgrounds
-  const surface = generateSurfaceColor(harmony.base);
-
-  // Neutral = calculated optimal gray
-  const neutral = harmony.neutral; // Generated by generateHarmony
-  if (!neutral) {
-    throw new Error('Neutral color not generated in harmony');
-  }
-
-  // Gamut-clamp all roles to sRGB so downstream badges/scales stay valid.
-  const clamp = (c: OKLCH): OKLCH => toNearestGamut(roundOKLCH(c)).color;
-
-  return {
-    primary: clamp(primary),
-    secondary: clamp(secondary),
-    tertiary: clamp(tertiary),
-    accent: clamp(accent),
-    highlight: clamp(highlight),
-    surface: clamp(surface),
-    neutral: clamp(neutral),
+    complementary,
+    triadic,
+    analogous,
+    tetradic,
+    splitComplementary,
+    monochromatic,
   };
 }
 
@@ -225,7 +96,7 @@ export function generateSemanticColorSuggestions(baseColor: OKLCH): {
   warning: OKLCH[];
   info: OKLCH[];
 } {
-  // Danger colors - Red region (0-30° and 330-360°) - Keep them vibrant, not dark
+  // Danger colors - Red region (0-30 and 330-360) - Keep them vibrant, not dark
   const danger: OKLCH[] = [
     // Bright red
     roundOKLCH({
@@ -250,7 +121,7 @@ export function generateSemanticColorSuggestions(baseColor: OKLCH): {
     }),
   ];
 
-  // Success colors - Green region (120-150°) - Make them brighter and more optimistic
+  // Success colors - Green region (120-150) - Make them brighter and more optimistic
   const success: OKLCH[] = [
     // Fresh green
     roundOKLCH({
@@ -275,7 +146,7 @@ export function generateSemanticColorSuggestions(baseColor: OKLCH): {
     }),
   ];
 
-  // Warning colors - Orange/Yellow region (30-70°) - Keep these bright
+  // Warning colors - Orange/Yellow region (30-70) - Keep these bright
   const warning: OKLCH[] = [
     // Orange
     roundOKLCH({
@@ -300,7 +171,7 @@ export function generateSemanticColorSuggestions(baseColor: OKLCH): {
     }),
   ];
 
-  // Info colors - Blue region (200-240°) - Make them more vibrant, less muddy
+  // Info colors - Blue region (200-240) - Make them more vibrant, less muddy
   const info: OKLCH[] = [
     // Sky blue
     roundOKLCH({
@@ -326,7 +197,6 @@ export function generateSemanticColorSuggestions(baseColor: OKLCH): {
   ];
 
   // Gamut-clamp every suggestion to sRGB so badges report gold, not fail.
-  // The raw hue+chroma combos above often exceed sRGB at their lightness.
   const clamp = (c: OKLCH): OKLCH => toNearestGamut(c).color;
 
   return {
@@ -351,11 +221,9 @@ function generateColorCombinations(colorScale: Record<string, OKLCH>) {
     usage: 'primary' | 'secondary' | 'subtle';
   }[] = [];
 
-  // Define usage patterns based on lightness contrast
-  const lightBackgrounds = ['50', '100', '200']; // Light tints for backgrounds
-  const darkForegrounds = ['700', '800', '900']; // Dark tints for text
+  const lightBackgrounds = ['50', '100', '200'];
+  const darkForegrounds = ['700', '800', '900'];
 
-  // Primary combinations: Light backgrounds with dark foregrounds
   for (const bgTint of lightBackgrounds) {
     for (const fgTint of darkForegrounds) {
       if (colorScale[bgTint] && colorScale[fgTint]) {
@@ -376,7 +244,6 @@ function generateColorCombinations(colorScale: Record<string, OKLCH>) {
     }
   }
 
-  // Sort by contrast ratio (highest first) and return top combinations
   return combinations.sort((a, b) => b.contrastRatio - a.contrastRatio).slice(0, 6);
 }
 
@@ -391,7 +258,6 @@ function validateScaleGeneration(baseColor: OKLCH): {
 } {
   const l = baseColor.l;
 
-  // Too light - won't generate useful darker shades
   if (l > 0.85) {
     return {
       isValid: false,
@@ -400,7 +266,6 @@ function validateScaleGeneration(baseColor: OKLCH): {
     };
   }
 
-  // Too dark - won't generate useful lighter tints
   if (l < 0.15) {
     return {
       isValid: false,
@@ -427,7 +292,6 @@ function generateLightnessProgression(baseLightness: number): Record<string, num
 
   const lightness: Record<string, number> = {};
 
-  // Lighter colors (50-500): power curve for natural spacing
   for (let i = 0; i < baseIndex; i++) {
     const stepsFromBase = baseIndex - i;
     const totalLighterSteps = baseIndex;
@@ -439,10 +303,8 @@ function generateLightnessProgression(baseLightness: number): Record<string, num
     if (pos !== undefined) lightness[pos.toString()] = Math.min(MAX_LIGHT, calculatedL);
   }
 
-  // Base color at 600
   lightness['600'] = baseLightness;
 
-  // Darker colors (700-950): linear progression
   for (let i = baseIndex + 1; i < positions.length; i++) {
     const stepsFromBase = i - baseIndex;
     const totalDarkerSteps = positions.length - 1 - baseIndex;
@@ -517,15 +379,11 @@ export function generateSemanticColorSystem(baseColor: OKLCH) {
     info: { colors: suggestions.info, scale: {} },
   };
 
-  // For each semantic type, generate a scale from the first suggestion and analyze combinations
   for (const [semanticType, colors] of Object.entries(suggestions)) {
     if (colors.length > 0 && colors[0]) {
-      const baseSemanticColor = colors[0]; // Use first suggestion
+      const baseSemanticColor = colors[0];
 
-      // Generate OKLCH scale
       const colorScale = generateOKLCHScale(baseSemanticColor);
-
-      // Analyze combinations
       const combinations = generateColorCombinations(colorScale);
 
       semanticSystem[semanticType as keyof typeof semanticSystem].scale = colorScale;
@@ -545,27 +403,23 @@ export function calculateAtmosphericWeight(color: OKLCH): {
   temperature: 'warm' | 'neutral' | 'cool';
   atmosphericRole: 'background' | 'midground' | 'foreground';
 } {
-  // warm colors advance, cool colors recede
   const hue = color.h;
-  const warmHues = (hue >= 0 && hue <= 60) || (hue >= 300 && hue <= 360); // Red-Yellow range
-  const coolHues = hue >= 180 && hue <= 270; // Blue-Cyan range
+  const warmHues = (hue >= 0 && hue <= 60) || (hue >= 300 && hue <= 360);
+  const coolHues = hue >= 180 && hue <= 270;
 
-  // Higher lightness and lower chroma = more atmospheric (distant)
-  const lightnessWeight = color.l; // 0-1, higher = more distant
+  const lightnessWeight = color.l;
 
-  // Calculate distance weight (0 = far/background, 1 = near/foreground)
   let distanceWeight = 0;
 
   if (warmHues) {
-    distanceWeight += 0.3; // Warm colors advance
+    distanceWeight += 0.3;
   } else if (coolHues) {
-    distanceWeight -= 0.2; // Cool colors recede
+    distanceWeight -= 0.2;
   }
 
-  distanceWeight += (1 - lightnessWeight) * 0.4; // Darker = closer
-  distanceWeight += color.c * 1.5; // Higher chroma = closer
+  distanceWeight += (1 - lightnessWeight) * 0.4;
+  distanceWeight += color.c * 1.5;
 
-  // Clamp between 0-1
   distanceWeight = Math.max(0, Math.min(1, distanceWeight));
 
   const temperature = warmHues ? 'warm' : coolHues ? 'cool' : 'neutral';
@@ -590,7 +444,6 @@ function calculateSimultaneousContrast(
   contrastRatio: number;
   harmonicTension: number; // 0-1, aesthetic tension level
 } {
-  // Average the adjacent colors to understand the context
   let avgLightness = 0;
   let avgChroma = 0;
   let avgHueX = 0;
@@ -609,33 +462,22 @@ function calculateSimultaneousContrast(
   const avgHue = Math.atan2(avgHueY, avgHueX) * (180 / Math.PI);
   const normalizedAvgHue = ((avgHue % 360) + 360) % 360;
 
-  // colors shift away from their context
-  // If surrounded by light colors, make this darker and more chromatic
-  // If surrounded by dark colors, make this lighter
-
   let enhancedLightness = baseColor.l;
   let enhancedChroma = baseColor.c;
   let enhancedHue = baseColor.h;
 
-  // Lightness contrast enhancement
   if (avgLightness > 0.6) {
-    // Surrounded by light colors - make this darker
     enhancedLightness = Math.max(0.1, baseColor.l - 0.2);
   } else if (avgLightness < 0.4) {
-    // Surrounded by dark colors - make this lighter
     enhancedLightness = Math.min(0.9, baseColor.l + 0.2);
   }
 
-  // Chroma contrast enhancement
   if (avgChroma < 0.1) {
-    // Surrounded by gray colors - increase chroma
     enhancedChroma = Math.min(0.3, baseColor.c * 1.5);
   }
 
-  // Hue contrast - slight shift away from average context hue
   const hueDifference = Math.abs(baseColor.h - normalizedAvgHue);
   if (hueDifference < 30) {
-    // Too close to context - shift slightly
     enhancedHue = (baseColor.h + 15) % 360;
   }
 
@@ -646,7 +488,6 @@ function calculateSimultaneousContrast(
     alpha: baseColor.alpha,
   });
 
-  // Calculate harmonic tension (aesthetic interest)
   const harmonicTension = Math.min(
     1,
     (Math.abs(enhancedLightness - avgLightness) +
@@ -676,16 +517,9 @@ export function calculatePerceptualWeight(color: OKLCH): {
   density: 'light' | 'medium' | 'heavy';
   balancingRecommendation: string;
 } {
-  // Factors that increase perceptual weight:
-  // 1. Lower lightness (darker colors feel heavier)
-  // 2. Higher chroma (saturated colors demand attention)
-  // 3. Warm hues (red/orange feel heavier than blue/green)
-  // 4. Certain hues have inherent weight (red > orange > yellow > green > blue > purple)
-
   const hue = color.h;
-  let hueWeight = 0.5; // Default neutral weight
+  let hueWeight = 0.5;
 
-  // Hue weight based on Leonardo's observations
   if (hue >= 345 || hue <= 15)
     hueWeight = 0.9; // Red - heaviest
   else if (hue <= 45)
@@ -702,9 +536,8 @@ export function calculatePerceptualWeight(color: OKLCH): {
     hueWeight = 0.35; // Blue-Purple
   else hueWeight = 0.5; // Purple-Red
 
-  // Combine factors
-  const lightnessWeight = 1 - color.l; // Invert: darker = heavier
-  const chromaWeight = Math.min(1, color.c / 0.3); // Normalize chroma
+  const lightnessWeight = 1 - color.l;
+  const chromaWeight = Math.min(1, color.c / 0.3);
 
   const weight = lightnessWeight * 0.4 + chromaWeight * 0.35 + hueWeight * 0.25;
 
@@ -718,8 +551,6 @@ export function calculatePerceptualWeight(color: OKLCH): {
     density = 'heavy';
   }
 
-  // Mark for AI to generate contextual balancing recommendations
-  // AI will have access to the weight value and density to generate intelligent guidance
   const balancingRecommendation = 'Balanced weight';
 
   return {
@@ -754,7 +585,6 @@ export function generateSemanticColors(
     info: { colors: [], contextualRecommendations: [] },
   };
 
-  // Create context from base color and other semantics for simultaneous contrast
   const allSemanticColors = Object.values(semanticSuggestions).flat();
   const contextColors = [baseColor, ...allSemanticColors.slice(0, 3)];
 
@@ -763,7 +593,6 @@ export function generateSemanticColors(
       const atmosphericWeight = calculateAtmosphericWeight(color);
       const perceptualWeight = calculatePerceptualWeight(color);
 
-      // Apply simultaneous contrast enhancement
       const contrastAnalysis = calculateSimultaneousContrast(color, contextColors);
 
       return {
@@ -775,10 +604,8 @@ export function generateSemanticColors(
       };
     });
 
-    // Generate contextual recommendations based on Leonardo's principles
     const recommendations: string[] = [];
 
-    // Atmospheric perspective recommendations
     const backgroundColors = enhancedColors.filter(
       (c) => c.atmosphericWeight.atmosphericRole === 'background',
     );
@@ -793,7 +620,6 @@ export function generateSemanticColors(
       recommendations.push(`Use ${semanticType} foregrounds for prominent, advancing elements`);
     }
 
-    // Perceptual weight recommendations
     const heavyColors = enhancedColors.filter((c) => c.perceptualWeight.density === 'heavy');
     const lightColors = enhancedColors.filter((c) => c.perceptualWeight.density === 'light');
 
@@ -808,7 +634,6 @@ export function generateSemanticColors(
       );
     }
 
-    // Temperature-based recommendations
     const warmColors = enhancedColors.filter((c) => c.atmosphericWeight.temperature === 'warm');
     const coolColors = enhancedColors.filter((c) => c.atmosphericWeight.temperature === 'cool');
 

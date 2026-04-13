@@ -454,13 +454,9 @@ export type BuildDefaultsResult = BuildColorSystemResult;
  * const result = buildColorSystem();
  *
  * // Generate with custom colors (Studio color picker)
- * import { generateRaftersHarmony } from '@rafters/color-utils';
- * const harmony = generateRaftersHarmony(userPickedColor);
- * const colorPaletteBases = Object.fromEntries(
- *   Object.entries(harmony).map(([name, oklch]) =>
- *     [name, { hue: oklch.h, chroma: oklch.c, description: name }]
- *   )
- * );
+ * import { generateHarmony } from '@rafters/color-utils';
+ * const harmony = generateHarmony(userPickedColor);
+ * // Map harmony arrays to color palette bases as needed
  * const result = buildColorSystem({ config: { colorPaletteBases } });
  *
  * // Generate with exports

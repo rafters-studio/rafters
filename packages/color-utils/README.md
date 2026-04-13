@@ -74,8 +74,7 @@ isLightColor(o); // true/false
 ```
 
 ### Harmony & Scales (`harmony.ts`)
-- `generateHarmony(base: OKLCH)` — Traditional harmonies (complementary, triadic, tetradic, etc.).
-- `generateRaftersHarmony(base: OKLCH)` — Semantic mapping to Rafters roles (primary, accent, surface, neutral).
+- `generateHarmony(base: OKLCH)` — Pure OKLCH hue rotations: complementary, triadic (3), analogous (6), tetradic (4), splitComplementary (3), monochromatic (6).
 - `generateSemanticColorSuggestions(base: OKLCH)` — Suggested semantic palettes (danger, success, warning, info).
 - `generateOKLCHScale(base: OKLCH)` — Create an accessible 50–950 OKLCH scale optimized for contrast.
 - `calculateAtmosphericWeight(color: OKLCH)` — Perceptual “distance”/role (background ↔ foreground).
@@ -87,7 +86,6 @@ Example:
 ```ts
 const harmony = generateHarmony(o);
 const scale = generateOKLCHScale(o);
-const rafters = generateRaftersHarmony(o);
 ```
 
 ### Manipulation (`manipulation.ts`)
