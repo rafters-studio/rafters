@@ -40,7 +40,6 @@ export {
   calculatePerceptualWeight,
   generateHarmony,
   generateOKLCHScale,
-  generateRaftersHarmony,
   generateSemanticColorSuggestions,
   generateSemanticColorSystem,
   generateSemanticColors,

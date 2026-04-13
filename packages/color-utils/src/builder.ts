@@ -144,13 +144,14 @@ export function buildColorValue(oklch: OKLCH, options: BuildColorValueOptions = 
     ...(options.use && { use: options.use }),
     ...(options.states && { states: options.states }),
 
-    // Harmonies - map to schema format
+    // Harmonies - pure hue rotation arrays
     harmonies: {
       complementary: harmony.complementary,
-      triadic: [harmony.triadic1, harmony.triadic2],
-      analogous: [harmony.analogous1, harmony.analogous2],
-      tetradic: [harmony.tetradic1, harmony.tetradic2, harmony.tetradic3],
-      monochromatic: scale.slice(0, 5), // First 5 scale positions
+      triadic: harmony.triadic,
+      analogous: harmony.analogous,
+      tetradic: harmony.tetradic,
+      splitComplementary: harmony.splitComplementary,
+      monochromatic: harmony.monochromatic,
     },
 
     // Accessibility

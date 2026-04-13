@@ -1,8 +1,8 @@
 /**
  * Generate a complete color system fixture from a single Tailwind color.
  *
- * Picks Tailwind indigo-500 in OKLCH, generates Rafters harmony to get all
- * semantic families, builds ColorValues for each, fetches intelligence from
+ * Picks Tailwind indigo-500 in OKLCH, generates semantic color suggestions to get
+ * additional families, builds ColorValues for each, fetches intelligence from
  * the API, and writes the fixture to packages/shared/test/fixtures/.
  *
  * Usage: pnpm tsx scripts/generate-color-fixture.ts
@@ -10,11 +10,7 @@
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import {
-  buildColorValue,
-  generateRaftersHarmony,
-  generateSemanticColorSuggestions,
-} from '@rafters/color-utils';
+import { buildColorValue, generateSemanticColorSuggestions } from '@rafters/color-utils';
 import type { ColorValue, OKLCH } from '@rafters/shared';
 
 // Tailwind indigo-500 in OKLCH
@@ -48,28 +44,14 @@ function buildColorWithToken(oklch: OKLCH, token: string, value: string = '500')
 async function main() {
   console.log('Starting from Tailwind indigo-500:', INDIGO_500);
 
-  // Step 1: Generate Rafters harmony (7 semantic families)
-  const harmony = generateRaftersHarmony(INDIGO_500);
-  console.log('\nRafters harmony roles:');
-  for (const [role, color] of Object.entries(harmony)) {
-    console.log(`  ${role}: L=${color.l} C=${color.c} H=${color.h}`);
-  }
-
-  // Step 2: Generate semantic suggestions (danger, success, warning, info)
+  // Step 1: Generate semantic suggestions (danger, success, warning, info)
   const suggestions = generateSemanticColorSuggestions(INDIGO_500);
 
-  // Step 3: Build ColorValues for each family
+  // Step 2: Build ColorValues for the base plus semantic families
   const families: Record<string, { oklch: OKLCH; token: string }> = {
-    primary: { oklch: harmony.primary, token: 'primary' },
-    secondary: { oklch: harmony.secondary, token: 'secondary' },
-    tertiary: { oklch: harmony.tertiary, token: 'tertiary' },
-    accent: { oklch: harmony.accent, token: 'accent' },
-    highlight: { oklch: harmony.highlight, token: 'highlight' },
-    surface: { oklch: harmony.surface, token: 'surface' },
-    neutral: { oklch: harmony.neutral, token: 'neutral' },
+    primary: { oklch: INDIGO_500, token: 'primary' },
   };
 
-  // Add semantic suggestion colors (pick first from each)
   const dangerColor = suggestions.danger[0];
   const successColor = suggestions.success[0];
   const warningColor = suggestions.warning[0];
@@ -82,14 +64,13 @@ async function main() {
 
   console.log(`\nBuilding ${Object.keys(families).length} color families...`);
 
-  // Step 4: Build ColorValues and fetch intelligence
+  // Step 3: Build ColorValues and fetch intelligence
   const colorValues: ColorValue[] = [];
 
   for (const [role, { oklch, token }] of Object.entries(families)) {
     console.log(`\n[${role}]`);
     const cv = buildColorWithToken(oklch, token);
 
-    // Fetch intelligence from API
     const intelligence = await fetchIntelligence(oklch);
     if (intelligence) {
       (cv as Record<string, unknown>).intelligence = intelligence;
@@ -99,7 +80,7 @@ async function main() {
     colorValues.push(cv);
   }
 
-  // Step 5: Write fixture
+  // Step 4: Write fixture
   const fixtureDir = resolve(import.meta.dirname, '../packages/shared/test/fixtures');
   mkdirSync(fixtureDir, { recursive: true });
 
