@@ -20,6 +20,14 @@ export { calculateColorDistance, getColorTemperature, isLightColor } from './ana
 // Builder
 export { type BuildColorValueOptions, buildColorValue } from './builder.js';
 
+// Color Wheel
+export {
+  type ColorWheelOptions,
+  colorWheel,
+  type HarmonyType,
+  type SemanticColorSystem,
+} from './color-wheel.js';
+
 // Conversion
 export { hexToOKLCH, oklchToCSS, oklchToHex, roundOKLCH } from './conversion.js';
 
