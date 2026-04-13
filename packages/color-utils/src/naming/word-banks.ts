@@ -38,7 +38,7 @@ export const LUMINOSITY_WORDS: readonly string[] = [
  */
 export const INTENSITY_WORDS: Record<'light' | 'medium' | 'heavy', readonly string[]> = {
   light: [
-    'dust', // 0.00-0.03: achromatic
+    'dust', // 0.00-0.03: near-achromatic (achromatic threshold is 0.02, not 0.03)
     'wash', // 0.03-0.06
     'soft', // 0.06-0.10
     'clean', // 0.10-0.15

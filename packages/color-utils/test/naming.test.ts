@@ -154,6 +154,14 @@ describe('Word banks', () => {
       expect(allIntensityWords).not.toContain(banned);
     }
   });
+
+  it('no intensity word collides with a luminosity word', () => {
+    // Collisions produce duplicate words in generated names (e.g., "deep-deep-cobalt")
+    const luminositySet = new Set(LUMINOSITY_WORDS);
+    for (const word of allIntensityWords) {
+      expect(luminositySet.has(word)).toBe(false);
+    }
+  });
 });
 
 describe('generateColorName', () => {
