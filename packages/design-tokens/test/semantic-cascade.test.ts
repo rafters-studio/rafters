@@ -2,14 +2,15 @@
  * Tests for the semantic token cascade system:
  * - scale-positions shared utilities (findBestWcagPair, findDarkCounterpartIndex)
  * - deriveGenerationRule pattern matching
- * - Tagged RuleResult (CssResult / RefResult) from execute()
- * - regenerateToken updating dependsOn on cascade
+ * - applyComputed updating dependsOn on cascade
  * - Repeated cascade stability
+ *
+ * GenerationRuleExecutor was removed in #1243.
+ * Plugin execution tests are in plugins.test.ts.
  */
 
 import type { ColorReference, ColorValue, Token } from '@rafters/shared';
 import { describe, expect, it } from 'vitest';
-import { GenerationRuleExecutor, GenerationRuleParser } from '../src/generation-rules';
 import { generateBaseSystem } from '../src/generators';
 import { generateSemanticTokens } from '../src/generators/semantic';
 import type { ResolvedSystemConfig } from '../src/generators/types';
@@ -193,80 +194,7 @@ describe('deriveGenerationRule', () => {
   });
 });
 
-describe('Tagged RuleResult from execute()', () => {
-  it('scale-position returns CssResult for position tokens', () => {
-    const registry = new TokenRegistry();
-    const parser = new GenerationRuleParser();
-    const executor = new GenerationRuleExecutor(registry);
-
-    // Set up a family token with a ColorValue and a position token depending on it
-    const cv = makeColorValueWithPairs([[0, 10]], [[0, 6]]);
-    registry.add({ name: 'test-family', value: cv, category: 'color', namespace: 'color' });
-    registry.add({
-      name: 'test-family-500',
-      value: 'placeholder',
-      category: 'color',
-      namespace: 'color',
-      dependsOn: ['test-family'],
-      generationRule: 'scale:500',
-    });
-    registry.addDependency('test-family-500', ['test-family'], 'scale:500');
-
-    const parsed = parser.parse('scale:500');
-    const res = executor.execute(parsed, 'test-family-500');
-    expect(res.kind).toBe('css');
-    if (res.kind === 'css') {
-      expect(res.value).toMatch(/^oklch\(/);
-    }
-  });
-
-  it('scale-position returns RefResult for semantic tokens', () => {
-    const result = generateBaseSystem();
-    const registry = new TokenRegistry(result.allTokens);
-    const parser = new GenerationRuleParser();
-    const executor = new GenerationRuleExecutor(registry);
-
-    const parsed = parser.parse('scale:900');
-    const res = executor.execute(parsed, 'primary');
-    expect(res.kind).toBe('ref');
-    if (res.kind === 'ref') {
-      expect(res.ref.family).toBe('neutral');
-      expect(res.ref.position).toBe('900');
-    }
-  });
-
-  it('contrast:auto returns RefResult', () => {
-    const result = generateBaseSystem();
-    const registry = new TokenRegistry(result.allTokens);
-    const parser = new GenerationRuleParser();
-    const executor = new GenerationRuleExecutor(registry);
-
-    const parsed = parser.parse('contrast:auto');
-    const res = executor.execute(parsed, 'primary-foreground');
-    expect(res.kind).toBe('ref');
-    if (res.kind === 'ref') {
-      expect(res.ref.family).toBeDefined();
-      expect(res.ref.position).toBeDefined();
-    }
-  });
-
-  it('state:hover returns RefResult', () => {
-    const result = generateBaseSystem();
-    const registry = new TokenRegistry(result.allTokens);
-    const parser = new GenerationRuleParser();
-    const executor = new GenerationRuleExecutor(registry);
-
-    const parsed = parser.parse('state:hover');
-    const res = executor.execute(parsed, 'primary-hover');
-    expect(res.kind).toBe('ref');
-    if (res.kind === 'ref') {
-      expect(res.ref.family).toBeDefined();
-      expect(res.ref.position).toBeDefined();
-    }
-  });
-});
-
-describe('regenerateToken cascade behavior', () => {
+describe('applyComputed cascade behavior', () => {
   it('updates dependsOn when semantic token cascades', async () => {
     const result = generateBaseSystem();
     const registry = new TokenRegistry(result.allTokens);

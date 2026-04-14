@@ -1,44 +1,36 @@
 /**
- * Scale Rule Plugin
+ * Scale-Position Plugin
  *
  * Extracts a color from a specific position in a ColorValue's scale array.
- * Example: scale:600 -> extracts position 6 from the scale (600/100 = index 6)
+ * For position tokens (e.g., primary-600): returns a ColorReference.
+ * The resolveColorReference step in applyComputed converts it to a CSS string.
  */
 
-import type { TokenRegistry } from '../registry';
+import { ColorReferenceSchema, ColorValueSchema } from '@rafters/shared';
+import { z } from 'zod';
+import { definePlugin } from '../plugins';
+import { INDEX_TO_POSITION } from '../scale-positions';
 
-export default function scale(
-  registry: TokenRegistry,
-  tokenName: string,
-  dependencies: string[],
-): { family: string; position: string } {
-  // Extract scale position from token name
-  // Assumes token name like "primary-600" or similar pattern
-  const match = tokenName.match(/(\d+)$/);
-  if (!match) {
-    throw new Error(`Cannot extract scale position from token name: ${tokenName}`);
-  }
+const ScalePositionInputSchema = z.object({
+  familyColorValue: ColorValueSchema,
+  familyName: z.string(),
+  scalePosition: z.number().int().min(0).max(10),
+});
 
-  const position = match[1];
+type ScalePositionInput = z.infer<typeof ScalePositionInputSchema>;
 
-  // Get the base family from dependencies
-  if (dependencies.length === 0) {
-    throw new Error(`No dependencies found for scale rule on token: ${tokenName}`);
-  }
-
-  const familyTokenName = dependencies[0];
-  if (!familyTokenName) {
-    throw new Error(`No dependency token name for scale rule on token: ${tokenName}`);
-  }
-  const familyToken = registry.get(familyTokenName);
-
-  if (!familyToken || typeof familyToken.value !== 'object') {
-    throw new Error(`ColorValue family token ${familyTokenName} not found for scale rule`);
-  }
-
-  // Return reference to family and position
-  return {
-    family: familyTokenName,
-    position: position ?? '500',
-  };
-}
+export default definePlugin({
+  id: 'scale-position',
+  input: ScalePositionInputSchema,
+  output: ColorReferenceSchema,
+  transform(input: ScalePositionInput) {
+    const position = INDEX_TO_POSITION[input.scalePosition];
+    if (position === undefined) {
+      throw new Error(`Invalid scale position index: ${input.scalePosition}`);
+    }
+    return {
+      family: input.familyName,
+      position,
+    };
+  },
+});

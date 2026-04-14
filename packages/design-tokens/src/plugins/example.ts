@@ -1,20 +1,29 @@
 /**
- * Example Rule Plugin
+ * Example Plugin
  *
- * Shows the plugin pattern - simple function with full registry access
+ * Reference implementation showing the Plugin<I, O> pattern.
+ * Accepts a token name and returns an example string.
+ *
+ * Copy this file to start a new plugin:
+ *   1. Define input/output Zod schemas
+ *   2. Write a pure transform function (no registry access)
+ *   3. Export default definePlugin({ id, input, output, transform })
  */
 
-import type { TokenRegistry } from '../registry';
+import { z } from 'zod';
+import { definePlugin } from '../plugins';
 
-export default function example(
-  registry: TokenRegistry,
-  tokenName: string,
-  dependencies: string[],
-): string {
-  // Full registry access - can read any token, check dependencies, etc.
-  for (const dep of dependencies) {
-    registry.get(dep);
-  }
+const ExampleInputSchema = z.object({
+  tokenName: z.string(),
+});
 
-  return `example-result-for-${tokenName}`;
-}
+type ExampleInput = z.infer<typeof ExampleInputSchema>;
+
+export default definePlugin({
+  id: 'example',
+  input: ExampleInputSchema,
+  output: z.string(),
+  transform(input: ExampleInput): string {
+    return `example-result-for-${input.tokenName}`;
+  },
+});

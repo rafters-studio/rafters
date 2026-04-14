@@ -1,5 +1,11 @@
 # rafters
 
+## Unreleased
+
+### Patch Changes
+
+- refactor(plugins): schema-first plugin protocol replaces the class-based `GenerationRuleExecutor`. Each plugin is now a `Plugin<I,O>` with a Zod input schema, a Zod output schema, and a pure `transform` function -- no registry access, no name regex, no implicit side effects. `resolveInput` is the single registry-aware layer that builds the typed input struct from token state; `regenerate` calls it per-node; `cascade` does the topological walk and collects all failures into one aggregate error (`cause.code === 'cascade-aggregate'`). `GenerationRuleExecutor`, `rule-engine.ts`, and `validators/typography-a11y.ts` are deleted. All six built-in plugins (scale, state, contrast, invert, calc, example) are rewritten as `definePlugin` default exports. Closes #1232, #1243.
+
 ## 0.0.49
 
 ### Patch Changes

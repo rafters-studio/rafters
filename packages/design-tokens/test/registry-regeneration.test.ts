@@ -125,7 +125,9 @@ describe('Registry Regeneration', () => {
       await registry.set('spacing-base', '0.5rem');
 
       const updated = registry.get('spacing-4');
-      expect(updated?.value).toBe('calc(0.5rem*4)');
+      // The calc plugin evaluates the expression to a numeric result with unit.
+      // 0.5 * 4 = 2, unit = rem -> "2rem"
+      expect(updated?.value).toBe('2rem');
     });
 
     it('spacing tokens regenerate when base changes', async () => {
@@ -301,7 +303,8 @@ describe('Registry Regeneration', () => {
       // After: no override, value regenerated from rule
       const after = registry.get('spacing-4');
       expect(after?.userOverride).toBeUndefined();
-      expect(after?.value).toBe('calc(0.25rem*4)'); // Regenerated from rule
+      // The calc plugin evaluates: 0.25 * 4 = 1, unit = rem -> "1rem"
+      expect(after?.value).toBe('1rem');
     });
 
     it('clearOverride is no-op when no override exists', async () => {

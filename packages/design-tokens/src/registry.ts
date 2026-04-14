@@ -16,11 +16,10 @@ import {
   TypographyElementOverrideSchema,
 } from '@rafters/shared';
 import { TokenDependencyGraph } from './dependencies';
-import { GenerationRuleExecutor, GenerationRuleParser } from './generation-rules';
-import { DEFAULT_TYPOGRAPHY_COMPOSITE_MAPPINGS } from './generators/defaults.js';
+import { resolveColorReference } from './oklch-to-css';
 import type { PersistenceAdapter } from './persistence/types';
+import { cascade, regenerate } from './plugins';
 import { findDarkCounterpartIndex, INDEX_TO_POSITION, POSITION_TO_INDEX } from './scale-positions';
-import { validateTypographyOverride } from './validators/typography-a11y.js';
 
 // Event types (inline to replace deleted types/events.js)
 export type TokenChangeEvent =
@@ -61,8 +60,6 @@ export type RegistryChangeCallback = (event: TokenChangeEvent) => void | Promise
 export class TokenRegistry {
   private tokens: Map<string, Token> = new Map();
   public dependencyGraph: TokenDependencyGraph = new TokenDependencyGraph();
-  private ruleParser = new GenerationRuleParser();
-  private ruleExecutor = new GenerationRuleExecutor(this);
   private changeCallback?: RegistryChangeCallback;
   private adapter?: PersistenceAdapter;
   private dirtyNamespaces = new Set<string>();
@@ -244,7 +241,7 @@ export class TokenRegistry {
       // Derived token: remove override and regenerate from rule
       const { userOverride: _, ...tokenWithoutOverride } = existingToken;
       this.tokens.set(tokenName, tokenWithoutOverride as Token);
-      await this.regenerateToken(tokenName);
+      await regenerate(this, tokenName);
     } else {
       // Root token: restore previousValue
       const { previousValue } = existingToken.userOverride;
@@ -486,6 +483,25 @@ export class TokenRegistry {
   }
 
   /**
+   * Get the generation rule string for a token (if any).
+   * Used by plugins.regenerate to fetch the rule without exposing the graph.
+   */
+  getGenerationRule(tokenName: string): string | undefined {
+    return this.dependencyGraph.getGenerationRule(tokenName);
+  }
+
+  /**
+   * Return the dependents of changedTokenName in topological order.
+   * Used by plugins.cascade to walk the graph without skipping levels.
+   */
+  topologicalDependents(changedTokenName: string): string[] {
+    const dependents = this.dependencyGraph.getDependents(changedTokenName);
+    if (dependents.length === 0) return [];
+    const sortedAll = this.dependencyGraph.topologicalSort();
+    return sortedAll.filter((name) => dependents.includes(name));
+  }
+
+  /**
    * Add dependency relationship with generation rule
    */
   addDependency(tokenName: string, dependsOn: string[], rule: string): void {
@@ -522,102 +538,90 @@ export class TokenRegistry {
 
   /**
    * Regenerate all dependent tokens when a dependency changes.
-   * Respects userOverride - tokens with human overrides are NOT regenerated,
-   * but their computedValue IS updated so agents can see the difference.
+   * Thin wrapper over cascade() from plugins.ts.
+   * Aggregate cascade errors propagate up through set/setToken/setTokens.
    */
   private async regenerateDependents(changedTokenName: string): Promise<void> {
-    // Get all tokens that depend on the changed token
     const dependents = this.dependencyGraph.getDependents(changedTokenName);
-
-    if (dependents.length === 0) {
-      return; // No dependents to update
-    }
-
-    // Sort in topological order to handle cascading dependencies
-    const sortedDependents = this.dependencyGraph.topologicalSort();
-
-    // Filter to only the dependents we need to update
-    const dependentsToUpdate = sortedDependents.filter((tokenName) =>
-      dependents.includes(tokenName),
-    );
-
-    for (const dependentName of dependentsToUpdate) {
-      try {
-        await this.regenerateToken(dependentName);
-      } catch (error) {
-        console.warn(`Failed to regenerate token ${dependentName}:`, error);
-        // Continue with other tokens even if one fails
-      }
-    }
+    if (dependents.length === 0) return;
+    await cascade(this, changedTokenName);
   }
 
   /**
-   * Regenerate a single token using its generation rule.
+   * Apply a computed value to a token without re-entering cascade.
+   * Called by plugins.regenerate inside the cascade loop.
    *
    * If the token has a userOverride:
-   * - Updates computedValue (what the rule produces)
-   * - Does NOT change value (respects human decision)
-   * - Agent can see: "computed would be X, but human set Y because Z"
+   * - Sets computedValue only (preserves the human's value decision)
    *
    * If no override:
-   * - Updates value directly
+   * - Sets value + computedValue
+   *
+   * For ColorReference outputs, also updates dependsOn[0]/[1] so the
+   * Tailwind exporter can resolve dark mode counterparts.
+   *
+   * Fires the change event. Does NOT recurse into cascade.
    */
-  private async regenerateToken(tokenName: string): Promise<void> {
-    // Get the generation rule for this token
-    const rule = this.dependencyGraph.getGenerationRule(tokenName);
-    if (!rule) {
-      return; // No rule to execute
-    }
-
+  async applyComputed(tokenName: string, newValue: string | ColorReference): Promise<void> {
     const existingToken = this.tokens.get(tokenName);
-    if (!existingToken) {
-      return;
+    if (!existingToken) return;
+
+    this.markDirty(existingToken.namespace);
+
+    let resolvedValue: string | ColorReference = newValue;
+    let updatedDependsOn = existingToken.dependsOn;
+
+    if (typeof resolvedValue === 'object' && 'family' in resolvedValue) {
+      const ref = resolvedValue as ColorReference;
+      const existingIsRef =
+        typeof existingToken.value === 'object' &&
+        existingToken.value !== null &&
+        'family' in existingToken.value;
+
+      if (existingIsRef) {
+        // Semantic token path: update dependsOn[0]=family, dependsOn[1]=dark counterpart.
+        // findDarkCounterpart requires WCAG data from the family ColorValue.
+        const darkTokenName = this.findDarkCounterpart(ref, existingToken.dependsOn);
+        updatedDependsOn = [ref.family, darkTokenName];
+        // Keep resolvedValue as ColorReference (semantic tokens store refs)
+      } else {
+        // Position token path: stored value is a CSS string.
+        // Resolve the ColorReference to a CSS oklch() string immediately.
+        // Do NOT update dependsOn (position tokens only depend on their family).
+        try {
+          resolvedValue = resolveColorReference(ref, (name) => this.tokens.get(name));
+        } catch {
+          // Resolution failed (e.g., family not in registry) -- keep the ColorReference
+          // so the value is not silently lost. It will be resolved on the next export.
+        }
+      }
     }
 
-    try {
-      // Parse and execute the rule
-      const parsedRule = this.ruleParser.parse(rule);
-      const ruleResult = this.ruleExecutor.execute(parsedRule, tokenName);
+    const oldValue = existingToken.value;
 
-      // Mark namespace dirty since we're changing this token
-      this.markDirty(existingToken.namespace);
+    if (existingToken.userOverride) {
+      this.tokens.set(tokenName, {
+        ...existingToken,
+        computedValue: resolvedValue,
+        dependsOn: updatedDependsOn,
+      });
+    } else {
+      this.tokens.set(tokenName, {
+        ...existingToken,
+        value: resolvedValue,
+        computedValue: resolvedValue,
+        dependsOn: updatedDependsOn,
+      });
+    }
 
-      // Extract the token value and update dependsOn for RefResults
-      let updatedDependsOn = existingToken.dependsOn;
-      let newValue: string | ColorReference;
-
-      switch (ruleResult.kind) {
-        case 'ref': {
-          newValue = ruleResult.ref;
-          // dependsOn[0] = family token (plugins need ColorValue for WCAG data)
-          // dependsOn[1] = dark mode position token (Tailwind exporter reads this)
-          const darkTokenName = this.findDarkCounterpart(ruleResult.ref, existingToken.dependsOn);
-          updatedDependsOn = [ruleResult.ref.family, darkTokenName];
-          break;
-        }
-        case 'css':
-          newValue = ruleResult.value;
-          break;
-      }
-
-      if (existingToken.userOverride) {
-        // Token has human override - update computedValue but preserve value
-        // Agent intelligence: can see what system would produce vs what human chose
-        this.tokens.set(tokenName, {
-          ...existingToken,
-          computedValue: newValue,
-          dependsOn: updatedDependsOn,
-        });
-      } else {
-        this.tokens.set(tokenName, {
-          ...existingToken,
-          value: newValue,
-          computedValue: newValue,
-          dependsOn: updatedDependsOn,
-        });
-      }
-    } catch (error) {
-      throw new Error(`Failed to regenerate token ${tokenName}: ${error}`, { cause: error });
+    if (this.changeCallback) {
+      this.changeCallback({
+        type: 'token-changed',
+        tokenName,
+        oldValue,
+        newValue: resolvedValue,
+        timestamp: Date.now(),
+      });
     }
   }
 
@@ -842,17 +846,8 @@ export class TokenRegistry {
       );
     }
 
-    // Validate accessibility constraints if base mapping is available
-    const baseMapping = DEFAULT_TYPOGRAPHY_COMPOSITE_MAPPINGS[parsed.role];
-    if (baseMapping) {
-      const violations = validateTypographyOverride(parsed, baseMapping);
-      const errors = violations.filter((v) => v.severity === 'error');
-      if (errors.length > 0) {
-        throw new Error(
-          `Typography override for "${parsed.element}" violates accessibility: ${errors.map((e) => e.message).join('; ')}`,
-        );
-      }
-    }
+    // Typography accessibility validation is deferred to #1246 (typography package).
+    // The why-gate (non-empty reason) and role-token-exists checks above are sufficient for now.
 
     this.typographyOverrides.set(parsed.element, parsed);
   }

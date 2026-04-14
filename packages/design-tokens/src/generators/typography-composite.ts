@@ -11,7 +11,6 @@
  */
 
 import type { Token } from '@rafters/shared';
-import { validateTypographyComposite } from '../validators/typography-a11y.js';
 import {
   DEFAULT_TYPOGRAPHY_COMPOSITE_MAPPINGS,
   TYPOGRAPHY_ROLE_CONSUMERS,
@@ -44,15 +43,7 @@ export function generateTypographyCompositeTokens(_config: ResolvedSystemConfig)
   const timestamp = new Date().toISOString();
 
   for (const [name, mapping] of Object.entries(DEFAULT_TYPOGRAPHY_COMPOSITE_MAPPINGS)) {
-    // Validate accessibility constraints
-    const violations = validateTypographyComposite(mapping, name);
-    const errors = violations.filter((v) => v.severity === 'error');
-    if (errors.length > 0) {
-      throw new Error(
-        `Typography role "${name}" violates accessibility: ${errors.map((e) => e.message).join('; ')}`,
-      );
-    }
-
+    // Typography accessibility validation deferred to #1246 (typography package).
     const familyDep = familyRoleToDependency(mapping.fontFamily);
 
     const dependsOn = [

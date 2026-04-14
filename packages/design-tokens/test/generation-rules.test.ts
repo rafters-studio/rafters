@@ -1,13 +1,14 @@
 /**
  * Generation Rules Tests
  *
- * Tests for the GenerationRuleParser and GenerationRuleExecutor.
- * Covers scale-position extraction for ColorValue tokens.
+ * Tests for the GenerationRuleParser only.
+ * The GenerationRuleExecutor was removed in #1243. Plugin execution tests
+ * are now in plugins.test.ts.
  */
 
 import type { ColorValue, OKLCH } from '@rafters/shared';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { GenerationRuleExecutor, GenerationRuleParser } from '../src/generation-rules';
+import { GenerationRuleParser } from '../src/generation-rules';
 import { TokenRegistry } from '../src/registry';
 
 function makeOKLCH(l: number, c: number, h: number): OKLCH {
@@ -15,7 +16,6 @@ function makeOKLCH(l: number, c: number, h: number): OKLCH {
 }
 
 function makeColorValue(name: string, baseH: number): ColorValue {
-  // Create a standard 11-position scale
   const positions = [0.98, 0.95, 0.9, 0.8, 0.7, 0.55, 0.4, 0.25, 0.15, 0.08, 0.04];
   return {
     name,
@@ -110,122 +110,6 @@ describe('GenerationRuleParser', () => {
   });
 });
 
-describe('GenerationRuleExecutor', () => {
-  let registry: TokenRegistry;
-  let parser: GenerationRuleParser;
-  let executor: GenerationRuleExecutor;
-
-  beforeEach(() => {
-    registry = new TokenRegistry();
-    parser = new GenerationRuleParser();
-    executor = new GenerationRuleExecutor(registry);
-  });
-
-  describe('scale-position execution', () => {
-    it('extracts color from ColorValue scale at position 500', () => {
-      const colorValue = makeColorValue('test-blue', 240);
-
-      registry.add({
-        name: 'color-family-primary',
-        value: colorValue,
-        category: 'color',
-        namespace: 'color',
-      });
-
-      registry.add({
-        name: 'primary-500',
-        value: 'placeholder',
-        category: 'color',
-        namespace: 'color',
-        dependsOn: ['color-family-primary'],
-        generationRule: 'scale:500',
-      });
-
-      registry.addDependency('primary-500', ['color-family-primary'], 'scale:500');
-
-      const parsedRule = parser.parse('scale:500');
-      const result = executor.execute(parsedRule, 'primary-500');
-
-      expect(result).toEqual({ kind: 'css', value: oklchToCSS(colorValue.scale[5]) });
-    });
-
-    it('extracts color at different scale positions', () => {
-      const colorValue = makeColorValue('test-green', 120);
-
-      registry.add({
-        name: 'color-family-accent',
-        value: colorValue,
-        category: 'color',
-        namespace: 'color',
-      });
-
-      const positions = [
-        { name: 'accent-50', rule: 'scale:50', index: 0 },
-        { name: 'accent-200', rule: 'scale:200', index: 2 },
-        { name: 'accent-950', rule: 'scale:950', index: 10 },
-      ];
-
-      for (const { name, rule, index } of positions) {
-        registry.add({
-          name,
-          value: 'placeholder',
-          category: 'color',
-          namespace: 'color',
-          dependsOn: ['color-family-accent'],
-          generationRule: rule,
-        });
-
-        registry.addDependency(name, ['color-family-accent'], rule);
-
-        const parsedRule = parser.parse(rule);
-        const result = executor.execute(parsedRule, name);
-
-        expect(result).toEqual({ kind: 'css', value: oklchToCSS(colorValue.scale[index]) });
-      }
-    });
-
-    it('throws error when token has no dependencies', () => {
-      registry.add({
-        name: 'orphan-500',
-        value: 'placeholder',
-        category: 'color',
-        namespace: 'color',
-        generationRule: 'scale:500',
-      });
-
-      const parsedRule = parser.parse('scale:500');
-
-      expect(() => executor.execute(parsedRule, 'orphan-500')).toThrow(
-        'No dependencies found for scale rule on token',
-      );
-    });
-
-    it('throws error when base token is not a ColorValue', () => {
-      registry.add({
-        name: 'not-a-color',
-        value: '16px',
-        category: 'spacing',
-        namespace: 'spacing',
-      });
-
-      registry.add({
-        name: 'test-500',
-        value: 'placeholder',
-        category: 'color',
-        namespace: 'color',
-        dependsOn: ['not-a-color'],
-        generationRule: 'scale:500',
-      });
-
-      registry.addDependency('test-500', ['not-a-color'], 'scale:500');
-
-      const parsedRule = parser.parse('scale:500');
-
-      expect(() => executor.execute(parsedRule, 'test-500')).toThrow('not found for scale rule');
-    });
-  });
-});
-
 describe('TokenRegistry regeneration with scale-position', () => {
   let registry: TokenRegistry;
 
@@ -245,7 +129,7 @@ describe('TokenRegistry regeneration with scale-position', () => {
 
     registry.add({
       name: 'primary-500',
-      value: oklchToCSS(initialColor.scale[5]),
+      value: oklchToCSS(initialColor.scale[5] ?? makeOKLCH(0.55, 0.15, 240)),
       category: 'color',
       namespace: 'color',
       dependsOn: ['color-family-primary'],
@@ -254,8 +138,9 @@ describe('TokenRegistry regeneration with scale-position', () => {
 
     registry.addDependency('primary-500', ['color-family-primary'], 'scale:500');
 
-    // Verify initial state
-    expect(registry.get('primary-500')?.value).toBe(oklchToCSS(initialColor.scale[5]));
+    expect(registry.get('primary-500')?.value).toBe(
+      oklchToCSS(initialColor.scale[5] ?? makeOKLCH(0.55, 0.15, 240)),
+    );
 
     // Update to new color
     const newColor = makeColorValue('test-green', 120);
@@ -263,7 +148,7 @@ describe('TokenRegistry regeneration with scale-position', () => {
 
     // Verify regeneration
     const updated = registry.get('primary-500');
-    expect(updated?.value).toBe(oklchToCSS(newColor.scale[5]));
+    expect(updated?.value).toBe(oklchToCSS(newColor.scale[5] ?? makeOKLCH(0.55, 0.15, 120)));
   });
 
   it('regenerates all scale positions when parent updates', async () => {
@@ -289,12 +174,11 @@ describe('TokenRegistry regeneration with scale-position', () => {
       namespace: 'color',
     });
 
-    // Add all scale tokens
     for (let i = 0; i < scalePositions.length; i++) {
       const pos = scalePositions[i];
       registry.add({
         name: `primary-${pos}`,
-        value: oklchToCSS(initialColor.scale[i]),
+        value: oklchToCSS(initialColor.scale[i] ?? makeOKLCH(0.5, 0.15, 280)),
         category: 'color',
         namespace: 'color',
         dependsOn: ['color-family-primary'],
@@ -304,15 +188,13 @@ describe('TokenRegistry regeneration with scale-position', () => {
       registry.addDependency(`primary-${pos}`, ['color-family-primary'], `scale:${pos}`);
     }
 
-    // Update to new color
     const newColor = makeColorValue('test-orange', 30);
     await registry.set('color-family-primary', newColor);
 
-    // Verify all positions were regenerated
     for (let i = 0; i < scalePositions.length; i++) {
       const pos = scalePositions[i];
       const token = registry.get(`primary-${pos}`);
-      expect(token?.value).toBe(oklchToCSS(newColor.scale[i]));
+      expect(token?.value).toBe(oklchToCSS(newColor.scale[i] ?? makeOKLCH(0.5, 0.15, 30)));
     }
   });
 });
