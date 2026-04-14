@@ -33,6 +33,16 @@ import {
   VALID_SCALE_POSITIONS,
 } from './scale-positions';
 
+/** Type guard: true when `v` is a ColorValue (has a non-empty `scale` array). */
+function isColorValue(v: unknown): v is ColorValue {
+  return (
+    v !== null &&
+    typeof v === 'object' &&
+    'scale' in v &&
+    Array.isArray((v as { scale: unknown }).scale)
+  );
+}
+
 export type CssResult = { readonly kind: 'css'; readonly value: string };
 export type RefResult = { readonly kind: 'ref'; readonly ref: ColorReference };
 export type RuleResult = CssResult | RefResult;
@@ -374,12 +384,7 @@ export class GenerationRuleExecutor {
     // Shape 3: Family token -- value is a ColorValue (has a `scale` array).
     // The scale-position rule was designed for position tokens, not family tokens.
     // Applying it would overwrite the ColorValue with a CSS string -- wrong shape.
-    if (
-      existingValue &&
-      typeof existingValue === 'object' &&
-      'scale' in existingValue &&
-      Array.isArray((existingValue as { scale: unknown }).scale)
-    ) {
+    if (isColorValue(existingValue)) {
       throw new Error(
         `Rule 'scale-position' does not apply to token '${tokenName}': ` +
           `token value is a ColorValue (family token shape), not a position token or semantic reference. ` +
@@ -390,10 +395,7 @@ export class GenerationRuleExecutor {
 
     // Shape 2: Position token -- value is a CSS string or placeholder.
     // Resolve typed inputs (validates dependency[0] is a ColorValue), then call the plugin.
-    const { familyName, familyColorValue } = this.resolveColorValueInputs(
-      'scale-position',
-      tokenName,
-    );
+    const { familyName, familyColorValue } = this.resolvePluginInputs('scale-position', tokenName);
 
     if (rule.scalePosition === undefined) {
       throw new Error(`Scale-position rule on "${tokenName}" has no scalePosition`);
@@ -408,7 +410,9 @@ export class GenerationRuleExecutor {
   }
 
   /**
-   * Resolve familyName and familyColorValue from the token's dependencies.
+   * Resolve familyName, familyColorValue, and basePosition from the token's registry state.
+   *
+   * Single registry pass: reads getDependencies once, then fetches the family token.
    *
    * "Rule does not apply" detection:
    *   If dependency[0] is missing, or the token it names has no value, or its value
@@ -419,11 +423,17 @@ export class GenerationRuleExecutor {
    *   This catches the #1223 silent-throw case where a scale/state/contrast/invert rule
    *   is wired to a family-level ColorValue token (e.g. token named "accent" with no numeric
    *   suffix), which previously caused plugins to fail inside their own regex logic.
+   *
+   * basePosition lookup order:
+   *   1. Token's current value if it is a ColorReference (has `position` field)
+   *   2. Second dependency (dependencies[1]) if it encodes a position token name
+   *      with a numeric suffix (e.g., "primary-600" -> index 6)
+   *   3. Default: 5 (midpoint, position 500)
    */
-  private resolveColorValueInputs(
+  private resolvePluginInputs(
     ruleType: string,
     tokenName: string,
-  ): { familyName: string; familyColorValue: ColorValue } {
+  ): { familyName: string; familyColorValue: ColorValue; basePosition: number } {
     const dependencies = this.registry.getDependencies(tokenName);
 
     if (dependencies.length === 0) {
@@ -444,12 +454,7 @@ export class GenerationRuleExecutor {
     }
 
     const value = familyToken.value;
-    if (
-      !value ||
-      typeof value !== 'object' ||
-      !('scale' in value) ||
-      !Array.isArray((value as { scale: unknown }).scale)
-    ) {
+    if (!isColorValue(value)) {
       const shape =
         value === null
           ? 'null'
@@ -462,32 +467,24 @@ export class GenerationRuleExecutor {
       );
     }
 
-    return { familyName, familyColorValue: value as ColorValue };
+    const basePosition = this.resolveBasePositionFromDeps(tokenName, dependencies);
+
+    return { familyName, familyColorValue: value, basePosition };
   }
 
   /**
-   * Resolve basePosition (scale array index 0-10) from the token's existing value
-   * or its dependency chain. Used by state, contrast, and invert executors.
-   *
-   * Lookup order:
-   *   1. Token's current value if it is a ColorReference (has `position` field)
-   *   2. Second dependency (dependencies[1]) if it encodes a position token name
-   *      with a numeric suffix (e.g., "primary-600" -> index 6)
-   *   3. Default: 5 (midpoint, position 500)
+   * Derive basePosition (scale array index 0-10) from already-resolved registry state.
+   * Called by resolvePluginInputs with the dependencies list already in hand.
    */
-  private resolveBasePosition(tokenName: string): number {
-    const existingToken = this.registry.get(tokenName);
-    const existingValue = existingToken?.value;
+  private resolveBasePositionFromDeps(tokenName: string, dependencies: string[]): number {
+    const existingValue = this.registry.get(tokenName)?.value;
 
-    // Try the token's current ColorReference
     if (existingValue && typeof existingValue === 'object' && 'position' in existingValue) {
       const pos = (existingValue as ColorReference).position;
       const idx = POSITION_TO_INDEX[String(pos)];
       if (idx !== undefined) return idx;
     }
 
-    // Try the second dependency token (dark mode counterpart encodes light position)
-    const dependencies = this.registry.getDependencies(tokenName);
     const depOne = dependencies[1];
     if (depOne) {
       const posMatch = depOne.match(/-(\d+)$/);
@@ -497,7 +494,6 @@ export class GenerationRuleExecutor {
       }
     }
 
-    // Default: midpoint
     return 5;
   }
 
@@ -557,7 +553,10 @@ export class GenerationRuleExecutor {
   }
 
   private executeStateRule(rule: ParsedRule, tokenName: string): RefResult {
-    const { familyName, familyColorValue } = this.resolveColorValueInputs('state', tokenName);
+    const { familyName, familyColorValue, basePosition } = this.resolvePluginInputs(
+      'state',
+      tokenName,
+    );
 
     const stateType = rule.stateType;
     const validStates = ['hover', 'active', 'focus', 'disabled'] as const;
@@ -566,8 +565,6 @@ export class GenerationRuleExecutor {
         `State rule on "${tokenName}" has invalid or missing stateType: ${stateType}`,
       );
     }
-
-    const basePosition = this.resolveBasePosition(tokenName);
 
     const ref = statePlugin({
       familyColorValue,
@@ -579,17 +576,19 @@ export class GenerationRuleExecutor {
   }
 
   private executeContrastRule(_rule: ParsedRule, tokenName: string): RefResult {
-    const { familyName, familyColorValue } = this.resolveColorValueInputs('contrast', tokenName);
-    const basePosition = this.resolveBasePosition(tokenName);
-
+    const { familyName, familyColorValue, basePosition } = this.resolvePluginInputs(
+      'contrast',
+      tokenName,
+    );
     const ref = contrastPlugin({ familyColorValue, familyName, basePosition });
     return refResult(ref.family, ref.position);
   }
 
   private executeInvertRule(_rule: ParsedRule, tokenName: string): RefResult {
-    const { familyName, familyColorValue } = this.resolveColorValueInputs('invert', tokenName);
-    const basePosition = this.resolveBasePosition(tokenName);
-
+    const { familyName, familyColorValue, basePosition } = this.resolvePluginInputs(
+      'invert',
+      tokenName,
+    );
     const ref = invertPlugin({ familyColorValue, familyName, basePosition });
     return refResult(ref.family, ref.position);
   }
