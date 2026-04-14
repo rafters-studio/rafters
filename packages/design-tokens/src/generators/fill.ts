@@ -107,6 +107,7 @@ export function generateFillTokens(
       generatedAt: timestamp,
       containerQueryAware: true,
       scalePosition: fillNames.indexOf(name),
+      userOverride: null,
       usagePatterns: {
         do: [
           `Use fill="${name}" on surface components (Container, Card) for ${def.meaning.toLowerCase()}`,

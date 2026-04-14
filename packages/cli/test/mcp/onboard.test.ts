@@ -820,7 +820,7 @@ describe('rafters_onboard map', () => {
     const tokens = await adapter.load();
     const primary = tokens.find((t) => t.name === 'primary');
     // Primary exists from seed but should NOT have been modified
-    const hasOverride = primary?.userOverride !== undefined;
+    const hasOverride = primary?.userOverride !== null;
     expect(hasOverride).toBe(false);
   });
 

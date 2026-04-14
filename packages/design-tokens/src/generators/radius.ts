@@ -59,6 +59,7 @@ export function generateRadiusTokens(
     description: `Base radius (${baseRadiusRem}rem / ${baseRadius}px). Scale uses ${progressionRatio} progression (ratio ${progression.ratio}).`,
     generatedAt: timestamp,
     containerQueryAware: false,
+    userOverride: null,
     usagePatterns: {
       do: ['Reference as the calculation base'],
       never: ['Change without understanding scale impact'],
@@ -78,6 +79,7 @@ export function generateRadiusTokens(
       description: `${CORNER_NAMES[corner]} radius. Defaults to radius-base. Set to 0 for a sharp corner on every component.`,
       generatedAt: timestamp,
       containerQueryAware: false,
+      userOverride: null,
     });
   }
 
@@ -123,6 +125,7 @@ export function generateRadiusTokens(
       description: `Border radius ${scale}: ${value} (${mathRelationship})`,
       generatedAt: timestamp,
       containerQueryAware: false,
+      userOverride: null,
     });
 
     // Per-corner tokens at this scale position (skip none, full, and DEFAULT)
@@ -148,6 +151,7 @@ export function generateRadiusTokens(
           description: `${CORNER_NAMES[corner]} radius ${scale}: derives from radius-${corner} base`,
           generatedAt: timestamp,
           containerQueryAware: false,
+          userOverride: null,
         });
       }
     }

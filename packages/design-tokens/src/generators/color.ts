@@ -106,6 +106,7 @@ export function generateColorTokens(
         description: `${name} color at ${position} position (OKLCH L=${oklch.l})`,
         generatedAt: timestamp,
         containerQueryAware: true,
+        userOverride: null,
       });
     }
 
@@ -122,6 +123,7 @@ export function generateColorTokens(
         `${name} color family - all shades from light to dark for this color palette.`,
       generatedAt: timestamp,
       containerQueryAware: true,
+      userOverride: null,
       usagePatterns: {
         do: [
           'Use 50-200 for light mode backgrounds',

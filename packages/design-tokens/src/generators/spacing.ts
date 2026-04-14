@@ -49,6 +49,7 @@ export function generateSpacingTokens(
     description: `Base spacing unit (${baseRem}rem / ${baseSpacingUnit}px at 16px root). Multiply by scale values for actual spacing.`,
     generatedAt: timestamp,
     containerQueryAware: true,
+    userOverride: null,
     usagePatterns: {
       do: [
         'Reference in calculations for consistent spacing',
@@ -115,6 +116,7 @@ export function generateSpacingTokens(
       description: `Spacing at scale ${scale} = ${remValue}rem (${baseSpacingUnit}px × ${multiplier})`,
       generatedAt: timestamp,
       containerQueryAware: true,
+      userOverride: null,
     });
   }
 
@@ -136,6 +138,7 @@ export function generateSpacingTokens(
       .join(', ')}...`,
     generatedAt: timestamp,
     containerQueryAware: false,
+    userOverride: null,
     usagePatterns: {
       do: [
         'Reference when adding custom spacing values',

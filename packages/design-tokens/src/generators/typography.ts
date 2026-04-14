@@ -62,6 +62,7 @@ export function generateTypographyTokens(
     generatedAt: timestamp,
     containerQueryAware: false,
     localeAware: true,
+    userOverride: null,
     usagePatterns: {
       do: ['Use for all UI text', 'Rely on variable font for weight variations'],
       never: ['Mix with other sans-serif fonts', 'Use fixed font files when variable is available'],
@@ -78,6 +79,7 @@ export function generateTypographyTokens(
     description: 'System monospace stack for code and technical content.',
     generatedAt: timestamp,
     containerQueryAware: false,
+    userOverride: null,
     usagePatterns: {
       do: ['Use for all code content', 'Use for tabular number displays'],
       never: ['Use for body text', 'Use for UI elements'],
@@ -95,6 +97,7 @@ export function generateTypographyTokens(
       'Serif font family. System serif stack by default. Override in global.css @theme with your imported serif font.',
     generatedAt: timestamp,
     containerQueryAware: false,
+    userOverride: null,
     usagePatterns: {
       do: ['Override in global.css @theme to match imported serif font'],
       never: ['Use without importing an actual serif font for production'],
@@ -114,6 +117,7 @@ export function generateTypographyTokens(
       'Heading font family. Defaults to sans-serif. Override to change all headings to serif or another family.',
     generatedAt: timestamp,
     containerQueryAware: false,
+    userOverride: null,
     usagePatterns: {
       do: ['Override to set all headings to a different typeface'],
       never: ['Reference directly in components -- use typography role utilities instead'],
@@ -132,6 +136,7 @@ export function generateTypographyTokens(
       'Body font family. Defaults to sans-serif. Override to change all body and UI text.',
     generatedAt: timestamp,
     containerQueryAware: false,
+    userOverride: null,
     usagePatterns: {
       do: ['Override to set all body text to a different typeface'],
       never: ['Reference directly in components -- use typography role utilities instead'],
@@ -149,6 +154,7 @@ export function generateTypographyTokens(
     description: 'Code font family. Defaults to monospace. Override for a custom code typeface.',
     generatedAt: timestamp,
     containerQueryAware: false,
+    userOverride: null,
     usagePatterns: {
       do: ['Override to set all code content to a custom monospace font'],
       never: ['Reference directly in components -- use typography role utilities instead'],
@@ -169,6 +175,7 @@ export function generateTypographyTokens(
     description: `Base font size (${baseFontSizeRem}rem). Typography scale uses ${progressionRatio} ratio (${ratioValue}).`,
     generatedAt: timestamp,
     containerQueryAware: true,
+    userOverride: null,
     usagePatterns: {
       do: ['Reference as the root calculation base'],
       never: ['Change without understanding full scale impact'],
@@ -218,6 +225,7 @@ export function generateTypographyTokens(
       description: `Font size ${scale} = ${roundedSize}px (${remSize}rem). Line height: ${lineHeight}, letter spacing: ${letterSpacing}`,
       generatedAt: timestamp,
       containerQueryAware: true,
+      userOverride: null,
     });
 
     // Also create line-height tokens
@@ -231,6 +239,7 @@ export function generateTypographyTokens(
       description: `Line height ${lineHeight} for ${scale} text. Tighter for large text, looser for small.`,
       generatedAt: timestamp,
       containerQueryAware: false,
+      userOverride: null,
     });
 
     // And letter-spacing tokens
@@ -244,6 +253,7 @@ export function generateTypographyTokens(
       description: `Letter spacing ${letterSpacing} for ${scale} text. Negative for large text improves readability.`,
       generatedAt: timestamp,
       containerQueryAware: false,
+      userOverride: null,
     });
   }
 
@@ -259,6 +269,7 @@ export function generateTypographyTokens(
       description: `Font weight ${def.value} (${name})`,
       generatedAt: timestamp,
       containerQueryAware: false,
+      userOverride: null,
     });
   }
 
@@ -279,6 +290,7 @@ export function generateTypographyTokens(
     description: `Typography uses ${progressionRatio} progression (ratio ${ratioValue}) from base ${baseFontSize}px.`,
     generatedAt: timestamp,
     containerQueryAware: false,
+    userOverride: null,
   });
 
   return {

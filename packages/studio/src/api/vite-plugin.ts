@@ -58,15 +58,18 @@ const SetTokenMessageSchema = z.object({
 });
 
 // Schema for POST /api/tokens/:name - partial token update
-// Derived from TokenSchema: value required, patchable fields optional
+// Derived from TokenSchema: value required, patchable fields optional.
+// userOverride is nullable on Token (required, null = baseline) but optional in
+// patch payloads -- a PATCH that omits userOverride leaves the existing value intact.
 export const TokenPatchSchema = TokenSchema.pick({
   value: true,
   trustLevel: true,
   elevationLevel: true,
   motionIntent: true,
   accessibilityLevel: true,
-  userOverride: true,
   description: true,
+}).extend({
+  userOverride: TokenSchema.shape.userOverride.optional(),
 });
 
 // ============================================================================

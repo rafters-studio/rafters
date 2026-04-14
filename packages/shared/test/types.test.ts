@@ -242,6 +242,7 @@ describe('Token Schema', () => {
       mathRelationship: 'golden * 16',
       dependsOn: ['spacing-base'],
       generationRule: 'calc({spacing-base} * golden)',
+      userOverride: null,
     };
 
     expect(() => TokenSchema.parse(token)).not.toThrow();
@@ -256,6 +257,7 @@ describe('Token Schema', () => {
       },
       category: 'color',
       namespace: 'core',
+      userOverride: null,
     };
 
     expect(() => TokenSchema.parse(token)).not.toThrow();
@@ -273,6 +275,7 @@ describe('Token Schema', () => {
       cognitiveLoad: 3,
       accessibilityLevel: 'AA',
       consequence: 'reversible',
+      userOverride: null,
     };
 
     expect(() => TokenSchema.parse(token)).not.toThrow();
@@ -287,6 +290,7 @@ describe('Token Schema', () => {
       dependsOn: ['color-primary'],
       generationRule: 'state:hover',
       interactionType: 'hover',
+      userOverride: null,
     };
 
     expect(() => TokenSchema.parse(token)).not.toThrow();
@@ -308,6 +312,7 @@ describe('Token Schema', () => {
       category: 'color',
       namespace: 'core',
       cognitiveLoad: 5,
+      userOverride: null,
     };
 
     expect(() => TokenSchema.parse(validToken)).not.toThrow();
@@ -318,6 +323,7 @@ describe('Token Schema', () => {
       category: 'color',
       namespace: 'core',
       cognitiveLoad: 15, // > 10
+      userOverride: null,
     };
 
     expect(() => TokenSchema.parse(invalidToken)).toThrow();
@@ -333,6 +339,7 @@ describe('Token Schema', () => {
         category: 'color',
         namespace: 'core',
         trustLevel: level,
+        userOverride: null,
       };
 
       expect(() => TokenSchema.parse(token)).not.toThrow();
@@ -344,8 +351,57 @@ describe('Token Schema', () => {
       category: 'color',
       namespace: 'core',
       trustLevel: 'extreme', // Invalid
+      userOverride: null,
     };
 
     expect(() => TokenSchema.parse(invalidToken)).toThrow();
+  });
+
+  it('rejects token with userOverride omitted entirely', () => {
+    // userOverride is required (nullable, not optional).
+    // Omitting it entirely must fail Zod validation.
+    const tokenWithoutUserOverride = {
+      name: 'spacing-base',
+      value: '1rem',
+      category: 'spacing',
+      namespace: 'spacing',
+    };
+
+    expect(() => TokenSchema.parse(tokenWithoutUserOverride)).toThrow();
+  });
+
+  it('accepts token with userOverride: null (generated baseline)', () => {
+    const generatedToken = {
+      name: 'spacing-base',
+      value: '1rem',
+      category: 'spacing',
+      namespace: 'spacing',
+      userOverride: null,
+    };
+
+    expect(() => TokenSchema.parse(generatedToken)).not.toThrow();
+    const parsed = TokenSchema.parse(generatedToken);
+    expect(parsed.userOverride).toBeNull();
+  });
+
+  it('accepts token with populated userOverride (designer override)', () => {
+    const overriddenToken = {
+      name: 'spacing-base',
+      value: '1.25rem',
+      category: 'spacing',
+      namespace: 'spacing',
+      userOverride: {
+        previousValue: '1rem',
+        reason: 'Increased base unit for improved touch target density on mobile',
+        context: 'Q2 mobile accessibility audit',
+      },
+    };
+
+    expect(() => TokenSchema.parse(overriddenToken)).not.toThrow();
+    const parsed = TokenSchema.parse(overriddenToken);
+    expect(parsed.userOverride).not.toBeNull();
+    expect(parsed.userOverride?.reason).toBe(
+      'Increased base unit for improved touch target density on mobile',
+    );
   });
 });

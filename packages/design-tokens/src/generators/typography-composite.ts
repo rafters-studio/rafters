@@ -89,6 +89,7 @@ export function generateTypographyCompositeTokens(_config: ResolvedSystemConfig)
       generateUtilityClass: true,
       description: `Typography composite: font-${mapping.fontFamily} text-${mapping.fontSize} font-${mapping.fontWeight}. ${mapping.meaning}`,
       generatedAt: timestamp,
+      userOverride: null,
       usagePatterns: {
         do: mapping.do,
         never: mapping.never,

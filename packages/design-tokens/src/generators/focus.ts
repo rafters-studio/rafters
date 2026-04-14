@@ -46,6 +46,7 @@ export function generateFocusTokens(
     description: `Focus ring width ${focusRingWidthRem}. WCAG 2.2 requires minimum 2px for visibility.`,
     generatedAt: timestamp,
     containerQueryAware: false,
+    userOverride: null,
     usagePatterns: {
       do: ['Use for all focus-visible states', 'Ensure 3:1 contrast against adjacent colors'],
       never: ['Reduce below 2px', 'Remove focus rings without alternative indicator'],
@@ -66,6 +67,7 @@ export function generateFocusTokens(
     generatedAt: timestamp,
     containerQueryAware: false,
     highContrastMode: 'Highlight',
+    userOverride: null,
   });
 
   // Generate focus ring configuration tokens
@@ -95,6 +97,7 @@ export function generateFocusTokens(
       generatedAt: timestamp,
       containerQueryAware: false,
       highContrastMode: 'Highlight',
+      userOverride: null,
       usagePatterns: {
         do:
           name === 'default'
@@ -125,6 +128,7 @@ export function generateFocusTokens(
       description: `CSS outline value: ${outlineValue}. Use with outline-offset: ${offsetRem}.`,
       generatedAt: timestamp,
       containerQueryAware: false,
+      userOverride: null,
     });
 
     tokens.push({
@@ -137,6 +141,7 @@ export function generateFocusTokens(
       description: `Focus offset ${offsetRem} for ${name} focus style.`,
       generatedAt: timestamp,
       containerQueryAware: false,
+      userOverride: null,
     });
   }
 
@@ -161,6 +166,7 @@ export function generateFocusTokens(
     description: 'Focus indicator for containers using :focus-within pseudo-class.',
     generatedAt: timestamp,
     containerQueryAware: false,
+    userOverride: null,
     usagePatterns: {
       do: ['Use on containers with focusable children', 'Combine with child focus styles'],
       never: ['Use as replacement for child focus indicators', 'Apply to non-container elements'],
@@ -190,6 +196,7 @@ export function generateFocusTokens(
     description: 'High contrast focus ring using system Highlight color.',
     generatedAt: timestamp,
     containerQueryAware: false,
+    userOverride: null,
     usagePatterns: {
       do: ['Apply in @media (forced-colors: active)', 'Use system color keywords'],
       never: ['Override in forced-colors mode', 'Use custom colors in high contrast'],

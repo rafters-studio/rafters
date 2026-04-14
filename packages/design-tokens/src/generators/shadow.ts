@@ -96,6 +96,7 @@ export function generateShadowTokens(
     description: `Shadows derive from spacing base (${baseSpacingRem}rem) for visual consistency.`,
     generatedAt: timestamp,
     containerQueryAware: false,
+    userOverride: null,
   });
 
   // Generate tokens for each shadow level
@@ -120,6 +121,7 @@ export function generateShadowTokens(
         description: `Shadow ${scale}: ${def.meaning}`,
         generatedAt: timestamp,
         containerQueryAware: false,
+        userOverride: null,
         usagePatterns: {
           do: ['Use for flat elements', 'Use for disabled states'],
           never: ['Use on interactive elements that need depth feedback'],
@@ -148,6 +150,7 @@ export function generateShadowTokens(
         description: `Shadow ${scale} ${part}: ${parts[part]}. Override to customize this shadow layer.`,
         generatedAt: timestamp,
         containerQueryAware: false,
+        userOverride: null,
       });
     }
 
@@ -171,6 +174,7 @@ export function generateShadowTokens(
       description: `Shadow ${scale}: ${def.meaning}. Composed from var() refs to ${scaleName}-* tokens.`,
       generatedAt: timestamp,
       containerQueryAware: false,
+      userOverride: null,
       usagePatterns: {
         do:
           scaleIndex <= 2
@@ -222,6 +226,7 @@ export function generateShadowTokens(
         description: `${desc}. Reuses DEFAULT shadow geometry, swaps color via color-mix.`,
         generatedAt: timestamp,
         containerQueryAware: false,
+        userOverride: null,
       });
     }
   }
@@ -241,6 +246,7 @@ export function generateShadowTokens(
     description: `Shadows use ${progressionRatio} progression from spacing base.`,
     generatedAt: timestamp,
     containerQueryAware: false,
+    userOverride: null,
   });
 
   return {

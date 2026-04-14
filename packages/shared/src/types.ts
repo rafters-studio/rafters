@@ -457,7 +457,10 @@ export const TokenSchema = z.object({
     })
     .optional(),
 
-  // Human override tracking - enables undo and agent intelligence
+  // Human override tracking - enables undo and agent intelligence.
+  // Required on every token. Null = generated baseline (no designer override).
+  // Populated = designer has explicitly changed this value with documented intent.
+  // Null IS the signal that no override exists -- do not auto-fill with synthetic strings.
   userOverride: z
     .object({
       // Value before override (for undo)
@@ -467,7 +470,7 @@ export const TokenSchema = z.object({
       // Additional context (e.g. "Q1 marketing campaign", "accessibility audit")
       context: z.string().optional(),
     })
-    .optional(),
+    .nullable(),
 
   // Computed value from generation rule (before any override)
   // Stored so agents can see what the system WOULD produce vs what human chose

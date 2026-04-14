@@ -49,6 +49,7 @@ export function generateMotionTokens(
     generatedAt: timestamp,
     containerQueryAware: false,
     reducedMotionAware: true,
+    userOverride: null,
     usagePatterns: {
       do: ['Reference as the calculation base'],
       never: ['Change without understanding full motion scale impact'],
@@ -93,6 +94,7 @@ export function generateMotionTokens(
       generatedAt: timestamp,
       containerQueryAware: false,
       reducedMotionAware: true,
+      userOverride: null,
       usagePatterns: {
         do:
           scale === 'instant'
@@ -125,6 +127,7 @@ export function generateMotionTokens(
       generatedAt: timestamp,
       containerQueryAware: false,
       reducedMotionAware: true,
+      userOverride: null,
       usagePatterns: {
         do:
           curve === 'linear'
@@ -180,6 +183,7 @@ export function generateMotionTokens(
       generatedAt: timestamp,
       containerQueryAware: false,
       reducedMotionAware: true,
+      userOverride: null,
     });
   }
 
@@ -331,6 +335,7 @@ export function generateMotionTokens(
       generatedAt: timestamp,
       containerQueryAware: false,
       reducedMotionAware: true,
+      userOverride: null,
     });
   }
 
@@ -556,6 +561,7 @@ export function generateMotionTokens(
       generatedAt: timestamp,
       containerQueryAware: false,
       reducedMotionAware: true,
+      userOverride: null,
     });
   }
 
@@ -625,6 +631,7 @@ export function generateMotionTokens(
       generatedAt: timestamp,
       containerQueryAware: false,
       reducedMotionAware: true,
+      userOverride: null,
     });
   }
 
@@ -643,6 +650,7 @@ export function generateMotionTokens(
     description: `Motion uses ${progressionRatio} progression from ${baseTransitionDuration}ms base.`,
     generatedAt: timestamp,
     containerQueryAware: false,
+    userOverride: null,
   });
 
   return {

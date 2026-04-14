@@ -42,6 +42,7 @@ export function generateBreakpointTokens(
       containerQueryAware: false, // Viewport breakpoints are not CQ-based
       description: `Viewport breakpoint at ${def.minWidth}px. Targets: ${def.devices.join(', ')}.`,
       generatedAt: timestamp,
+      userOverride: null,
       usagePatterns: {
         do: ['Use for page-level layout changes', 'Combine with container queries for components'],
         never: [
@@ -63,6 +64,7 @@ export function generateBreakpointTokens(
       containerQueryAware: false,
       description: `Media query: @media (min-width: ${def.minWidth}px)`,
       generatedAt: timestamp,
+      userOverride: null,
     });
   }
 
@@ -81,6 +83,7 @@ export function generateBreakpointTokens(
       viewportAware: false,
       description: `Container query size @${name} = ${def.width}rem (${pxValue}px). ${def.meaning}.`,
       generatedAt: timestamp,
+      userOverride: null,
       usagePatterns: {
         do: [
           `Use @${name}: variant for component responsiveness`,
@@ -111,6 +114,7 @@ export function generateBreakpointTokens(
       containerQueryAware: false,
       description: `Max-width ${def.minWidth - 1}px (just before ${scale} breakpoint).`,
       generatedAt: timestamp,
+      userOverride: null,
     });
   }
 
@@ -127,6 +131,7 @@ export function generateBreakpointTokens(
     containerQueryAware: false,
     description: 'Media query for users preferring reduced motion.',
     generatedAt: timestamp,
+    userOverride: null,
     usagePatterns: {
       do: ['Use to disable or reduce animations', 'Provide alternative non-motion feedback'],
       never: ['Ignore reduced motion preference', 'Remove all visual feedback'],
@@ -144,6 +149,7 @@ export function generateBreakpointTokens(
     containerQueryAware: false,
     description: 'Media query for users preferring dark color scheme.',
     generatedAt: timestamp,
+    userOverride: null,
   });
 
   // High contrast breakpoint
@@ -158,6 +164,7 @@ export function generateBreakpointTokens(
     containerQueryAware: false,
     description: 'Media query for users preferring increased contrast.',
     generatedAt: timestamp,
+    userOverride: null,
   });
 
   // Forced colors (Windows High Contrast Mode)
@@ -172,6 +179,7 @@ export function generateBreakpointTokens(
     containerQueryAware: false,
     description: 'Media query for Windows High Contrast Mode.',
     generatedAt: timestamp,
+    userOverride: null,
     usagePatterns: {
       do: ['Use system color keywords', 'Ensure visible focus indicators'],
       never: ['Override with custom colors', 'Hide important visual information'],
@@ -194,6 +202,7 @@ export function generateBreakpointTokens(
     description: 'Complete breakpoint scale for viewport (px) and container queries (rem).',
     generatedAt: timestamp,
     containerQueryAware: true,
+    userOverride: null,
   });
 
   return {

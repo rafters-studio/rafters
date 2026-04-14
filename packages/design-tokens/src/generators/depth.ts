@@ -39,6 +39,7 @@ export function generateDepthTokens(
       description: `Z-index ${def.value} for ${level} layer. ${def.stackingContext ? 'Creates new stacking context.' : 'In document flow.'}`,
       generatedAt: timestamp,
       containerQueryAware: false,
+      userOverride: null,
       usagePatterns: {
         do:
           level === 'base'
@@ -64,6 +65,7 @@ export function generateDepthTokens(
     description: 'Z-index -1 for elements that should appear behind base content.',
     generatedAt: timestamp,
     containerQueryAware: false,
+    userOverride: null,
     usagePatterns: {
       do: ['Use for decorative backgrounds', 'Use for pseudo-element layers'],
       never: ['Use for interactive elements', 'Rely on for critical content'],
@@ -80,6 +82,7 @@ export function generateDepthTokens(
     description: 'Maximum z-index 9999 for special cases only.',
     generatedAt: timestamp,
     containerQueryAware: false,
+    userOverride: null,
     usagePatterns: {
       do: ['Use only for dev/debug tools', 'Document why this is needed'],
       never: [
@@ -104,6 +107,7 @@ export function generateDepthTokens(
     description: 'Reference for z-index scale structure. 10-unit gaps allow intermediate values.',
     generatedAt: timestamp,
     containerQueryAware: false,
+    userOverride: null,
   });
 
   return {

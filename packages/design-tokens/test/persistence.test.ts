@@ -24,6 +24,7 @@ describe('NodePersistenceAdapter', () => {
         value: '1rem',
         category: 'spacing',
         namespace: 'spacing',
+        userOverride: null,
       },
     ];
 
@@ -46,6 +47,7 @@ describe('NodePersistenceAdapter', () => {
         value: '1',
         category: 'test',
         namespace: 'test',
+        userOverride: null,
       },
     ];
 
@@ -62,7 +64,7 @@ describe('NodePersistenceAdapter', () => {
 
   it('should include schema and version in saved files', async () => {
     const tokens: Token[] = [
-      { name: 'color-1', value: '#fff', category: 'color', namespace: 'color' },
+      { name: 'color-1', value: '#fff', category: 'color', namespace: 'color', userOverride: null },
     ];
     await adapter.save(tokens);
 
@@ -84,8 +86,14 @@ describe('NodePersistenceAdapter', () => {
 
   it('should group tokens by namespace into separate files', async () => {
     const tokens: Token[] = [
-      { name: 'color-1', value: '#fff', category: 'color', namespace: 'color' },
-      { name: 'spacing-1', value: '1rem', category: 'spacing', namespace: 'spacing' },
+      { name: 'color-1', value: '#fff', category: 'color', namespace: 'color', userOverride: null },
+      {
+        name: 'spacing-1',
+        value: '1rem',
+        category: 'spacing',
+        namespace: 'spacing',
+        userOverride: null,
+      },
     ];
 
     await adapter.save(tokens);
@@ -111,9 +119,15 @@ describe('NodePersistenceAdapter', () => {
 
   it('should load tokens from multiple namespace files', async () => {
     const tokens: Token[] = [
-      { name: 'color-1', value: '#fff', category: 'color', namespace: 'color' },
-      { name: 'color-2', value: '#000', category: 'color', namespace: 'color' },
-      { name: 'spacing-1', value: '1rem', category: 'spacing', namespace: 'spacing' },
+      { name: 'color-1', value: '#fff', category: 'color', namespace: 'color', userOverride: null },
+      { name: 'color-2', value: '#000', category: 'color', namespace: 'color', userOverride: null },
+      {
+        name: 'spacing-1',
+        value: '1rem',
+        category: 'spacing',
+        namespace: 'spacing',
+        userOverride: null,
+      },
     ];
 
     await adapter.save(tokens);
@@ -124,8 +138,12 @@ describe('NodePersistenceAdapter', () => {
   });
 
   it('should overwrite existing namespace on save', async () => {
-    const tokens1: Token[] = [{ name: 'old', value: '1', category: 'test', namespace: 'test' }];
-    const tokens2: Token[] = [{ name: 'new', value: '2', category: 'test', namespace: 'test' }];
+    const tokens1: Token[] = [
+      { name: 'old', value: '1', category: 'test', namespace: 'test', userOverride: null },
+    ];
+    const tokens2: Token[] = [
+      { name: 'new', value: '2', category: 'test', namespace: 'test', userOverride: null },
+    ];
 
     await adapter.save(tokens1);
     await adapter.save(tokens2);
@@ -138,9 +156,27 @@ describe('NodePersistenceAdapter', () => {
 
   it('should handle multiple tokens in same namespace', async () => {
     const tokens: Token[] = [
-      { name: 'spacing-1', value: '0.25rem', category: 'spacing', namespace: 'spacing' },
-      { name: 'spacing-2', value: '0.5rem', category: 'spacing', namespace: 'spacing' },
-      { name: 'spacing-4', value: '1rem', category: 'spacing', namespace: 'spacing' },
+      {
+        name: 'spacing-1',
+        value: '0.25rem',
+        category: 'spacing',
+        namespace: 'spacing',
+        userOverride: null,
+      },
+      {
+        name: 'spacing-2',
+        value: '0.5rem',
+        category: 'spacing',
+        namespace: 'spacing',
+        userOverride: null,
+      },
+      {
+        name: 'spacing-4',
+        value: '1rem',
+        category: 'spacing',
+        namespace: 'spacing',
+        userOverride: null,
+      },
     ];
 
     await adapter.save(tokens);

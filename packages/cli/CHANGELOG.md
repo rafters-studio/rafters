@@ -1,5 +1,11 @@
 # rafters
 
+## 0.0.49
+
+### Patch Changes
+
+- fix(schema): `TokenSchema.userOverride` is now required + nullable instead of optional. `null` is the explicit signal that no designer override exists (generated baseline); a populated object signals a documented designer override. Every generator emits `userOverride: null` explicitly -- the field can no longer be accidentally omitted. Patch schemas (`TokenPatchSchema`) keep `userOverride` optional so PATCH payloads do not have to include it. The `onboard.test.ts` sentinel updated from `!== undefined` to `!== null` to match the new contract. Closes #1227.
+
 ## 0.0.48
 
 ### Patch Changes

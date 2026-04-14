@@ -112,6 +112,7 @@ export function generateSemanticTokens(_config: ResolvedSystemConfig): Generator
       description: `${mapping.meaning}. Light: ${lightRef.family}-${lightRef.position}, Dark: ${darkRef.family}-${darkRef.position}.`,
       generatedAt: timestamp,
       containerQueryAware: true,
+      userOverride: null,
       usagePatterns: {
         do: mapping.do,
         never: mapping.never,

@@ -47,6 +47,7 @@ export function generateElevationTokens(
       description: `${def.useCase}. Combines ${def.depth} with ${def.shadow}.`,
       generatedAt: timestamp,
       containerQueryAware: false,
+      userOverride: null,
       usagePatterns: {
         do: [
           `Use for ${def.contexts.slice(0, 2).join(', ')}`,
@@ -70,6 +71,7 @@ export function generateElevationTokens(
       description: `Z-index for ${level} elevation level.`,
       generatedAt: timestamp,
       containerQueryAware: false,
+      userOverride: null,
     });
 
     tokens.push({
@@ -82,6 +84,7 @@ export function generateElevationTokens(
       description: `Shadow for ${level} elevation level.`,
       generatedAt: timestamp,
       containerQueryAware: false,
+      userOverride: null,
     });
   }
 
@@ -100,6 +103,7 @@ export function generateElevationTokens(
     description: 'Complete elevation scale showing depth/shadow pairings.',
     generatedAt: timestamp,
     containerQueryAware: false,
+    userOverride: null,
   });
 
   return {
