@@ -50,6 +50,44 @@ export type TokenChangeEvent =
 
 export type RegistryChangeCallback = (event: TokenChangeEvent) => void | Promise<void>;
 
+/**
+ * Options for cascade behavior during token updates.
+ * By default, any failure during dependent regeneration throws an aggregate error
+ * so architectural bugs are never silently swallowed.
+ */
+export interface CascadeOptions {
+  /**
+   * When true, errors from individual dependent regenerations are collected
+   * and reported after the loop completes, but execution continues for all
+   * remaining dependents. The collected errors are logged to console.warn
+   * but no error is thrown.
+   *
+   * Default: false (loud fail -- an aggregate error is thrown).
+   */
+  continueOnCascadeErrors?: boolean;
+}
+
+/**
+ * Thrown when one or more dependent tokens fail to regenerate during cascade.
+ * Contains the individual errors so callers can inspect each failure.
+ *
+ * Only thrown when continueOnCascadeErrors is false (the default).
+ */
+export class CascadeAggregateError extends Error {
+  readonly errors: Array<{ dependentName: string; error: unknown }>;
+
+  constructor(errors: Array<{ dependentName: string; error: unknown }>) {
+    const summary = errors.map((e) => `"${e.dependentName}"`).join(', ');
+    super(
+      `Cascade failed for ${errors.length} dependent token(s): ${summary}. ` +
+        'Fix the underlying plugin or generation rule, or opt in to graceful degrade ' +
+        'by passing { continueOnCascadeErrors: true } to set() / setToken() / setTokens().',
+    );
+    this.name = 'CascadeAggregateError';
+    this.errors = errors;
+  }
+}
+
 // Helper function to convert token values to CSS (simple inline implementation)
 
 // Generate a unique token ID for colors based on OKLCH values
@@ -319,7 +357,11 @@ export class TokenRegistry {
     }
   }
 
-  async set(tokenName: string, value: Token['value'] | ComputedSymbol): Promise<void> {
+  async set(
+    tokenName: string,
+    value: Token['value'] | ComputedSymbol,
+    options: CascadeOptions = {},
+  ): Promise<void> {
     const token = this.tokens.get(tokenName);
     if (token) this.markDirty(token.namespace);
 
@@ -341,7 +383,7 @@ export class TokenRegistry {
       }
 
       // Regenerate dependents
-      await this.regenerateDependents(tokenName);
+      await this.regenerateDependents(tokenName, options);
       await this.persist();
       return;
     }
@@ -350,7 +392,7 @@ export class TokenRegistry {
     this.updateToken(tokenName, value);
 
     // Regenerate all dependent tokens
-    await this.regenerateDependents(tokenName);
+    await this.regenerateDependents(tokenName, options);
 
     // Persist dirty namespaces
     await this.persist();
@@ -361,7 +403,7 @@ export class TokenRegistry {
    * Use this when you need to update metadata fields like trustLevel, description, etc.
    * Handles cascade + persist like set().
    */
-  async setToken(token: Token): Promise<void> {
+  async setToken(token: Token, options: CascadeOptions = {}): Promise<void> {
     const existingToken = this.tokens.get(token.name);
     if (!existingToken) {
       throw new Error(`Token "${token.name}" does not exist. Use add() for new tokens.`);
@@ -389,7 +431,7 @@ export class TokenRegistry {
 
     // Regenerate dependents only if value changed
     if (valueChanged) {
-      await this.regenerateDependents(token.name);
+      await this.regenerateDependents(token.name, options);
     }
 
     // Persist dirty namespaces
@@ -401,7 +443,7 @@ export class TokenRegistry {
    * More efficient than calling setToken() multiple times.
    * All tokens must already exist in the registry.
    */
-  async setTokens(tokens: Token[]): Promise<void> {
+  async setTokens(tokens: Token[], options: CascadeOptions = {}): Promise<void> {
     const tokensToRegenerate: string[] = [];
 
     for (const token of tokens) {
@@ -438,7 +480,7 @@ export class TokenRegistry {
 
     // Regenerate dependents for all changed tokens
     for (const tokenName of tokensToRegenerate) {
-      await this.regenerateDependents(tokenName);
+      await this.regenerateDependents(tokenName, options);
     }
 
     // Single persist at the end
@@ -524,8 +566,15 @@ export class TokenRegistry {
    * Regenerate all dependent tokens when a dependency changes.
    * Respects userOverride - tokens with human overrides are NOT regenerated,
    * but their computedValue IS updated so agents can see the difference.
+   *
+   * By default, any regeneration failure throws a CascadeAggregateError so
+   * architectural bugs surface loudly. Pass { continueOnCascadeErrors: true }
+   * to opt in to graceful degrade (errors are collected and warned, not thrown).
    */
-  private async regenerateDependents(changedTokenName: string): Promise<void> {
+  private async regenerateDependents(
+    changedTokenName: string,
+    options: CascadeOptions = {},
+  ): Promise<void> {
     // Get all tokens that depend on the changed token
     const dependents = this.dependencyGraph.getDependents(changedTokenName);
 
@@ -541,14 +590,30 @@ export class TokenRegistry {
       dependents.includes(tokenName),
     );
 
+    const cascadeErrors: Array<{ dependentName: string; error: unknown }> = [];
+
     for (const dependentName of dependentsToUpdate) {
       try {
         await this.regenerateToken(dependentName);
       } catch (error) {
-        console.warn(`Failed to regenerate token ${dependentName}:`, error);
-        // Continue with other tokens even if one fails
+        cascadeErrors.push({ dependentName, error });
       }
     }
+
+    if (cascadeErrors.length === 0) {
+      return;
+    }
+
+    if (options.continueOnCascadeErrors === true) {
+      // Opt-in graceful degrade: warn but do not throw
+      for (const { dependentName, error } of cascadeErrors) {
+        console.warn(`[TokenRegistry] Cascade error for "${dependentName}":`, error);
+      }
+      return;
+    }
+
+    // Default: loud fail -- surface every failure as a structured aggregate error
+    throw new CascadeAggregateError(cascadeErrors);
   }
 
   /**

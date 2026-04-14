@@ -1,5 +1,11 @@
 # rafters
 
+## 0.0.49
+
+### Patch Changes
+
+- fix(registry): `regenerateDependents` now throws a `CascadeAggregateError` by default when any dependent token fails to regenerate. Previously, each failure was silently swallowed with `console.warn`, masking architectural bugs in the cascade pipeline. The error collects all per-dependent failures so callers see every broken link in one throw. Callers that need graceful degrade may opt in via `registry.set(name, value, { continueOnCascadeErrors: true })` -- errors are then warned and collected without throwing. The option is also threaded through `setToken()` and `setTokens()`. Closes #1237.
+
 ## 0.0.48
 
 ### Patch Changes
