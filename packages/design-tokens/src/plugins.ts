@@ -18,11 +18,12 @@ import {
   type ColorValue,
   ColorValueSchema,
   OKLCHSchema,
+  POSITION_TO_INDEX,
+  SCALE_POSITION_MAP,
 } from '@rafters/shared';
 import { z } from 'zod';
 import { GenerationRuleParser } from './generation-rules';
 import type { TokenRegistry } from './registry';
-import { POSITION_TO_INDEX, SCALE_POSITION_MAP } from './scale-positions';
 
 function hasPosition(v: unknown): v is { family?: string; position: string | number } {
   return typeof v === 'object' && v !== null && 'position' in v;
@@ -286,39 +287,6 @@ export function resolveInput(
       };
     }
 
-    case 'invert': {
-      if (!familyTokenName) {
-        throw new Error(`No family dependency for invert rule on token: ${tokenName}`);
-      }
-      const familyToken = registry.get(familyTokenName);
-      if (!familyToken) {
-        throw new Error(`Family token not found: ${familyTokenName}`);
-      }
-
-      // Extract light index from dependency[1] (dark position token) or token name
-      let basePosition = 5;
-      const darkDepName = dependencies[1];
-      if (darkDepName) {
-        const posMatch = darkDepName.match(/-(\d+)$/);
-        if (posMatch?.[1]) {
-          const idx = POSITION_TO_INDEX[posMatch[1]];
-          if (idx !== undefined) basePosition = idx;
-        }
-      } else {
-        const nameMatch = tokenName.match(/-(\d+)$/);
-        if (nameMatch?.[1]) {
-          const idx = POSITION_TO_INDEX[nameMatch[1]];
-          if (idx !== undefined) basePosition = idx;
-        }
-      }
-
-      return {
-        familyColorValue: familyToken.value,
-        familyName: familyTokenName,
-        basePosition,
-      };
-    }
-
     case 'calc': {
       if (!parsedRule.expression) {
         throw new Error('Calc rule missing expression');
@@ -483,22 +451,14 @@ async function ensureBuiltinsRegistered(): Promise<void> {
   if (builtinsRegistered) return;
   builtinsRegistered = true;
 
-  const [scale, state, contrast, invert, calc, example] = await Promise.all([
-    import('./plugins/scale.js'),
-    import('./plugins/state.js'),
-    import('./plugins/contrast.js'),
-    import('./plugins/invert.js'),
+  // Only register non-color plugins. Color plugins (scale, state, contrast)
+  // are registered by consumers via colorPlugins from @rafters/color-utils.
+  const [calc, example] = await Promise.all([
     import('./plugins/calc.js'),
     import('./plugins/example.js'),
   ]);
 
   // Only register if not already registered (external callers may pre-register)
-  if (!pluginMap.has('scale-position'))
-    pluginMap.set('scale-position', scale.default as Plugin<unknown, unknown>);
-  if (!pluginMap.has('state')) pluginMap.set('state', state.default as Plugin<unknown, unknown>);
-  if (!pluginMap.has('contrast'))
-    pluginMap.set('contrast', contrast.default as Plugin<unknown, unknown>);
-  if (!pluginMap.has('invert')) pluginMap.set('invert', invert.default as Plugin<unknown, unknown>);
   if (!pluginMap.has('calc')) pluginMap.set('calc', calc.default as Plugin<unknown, unknown>);
   if (!pluginMap.has('example'))
     pluginMap.set('example', example.default as Plugin<unknown, unknown>);

@@ -5,7 +5,8 @@
   "description": "OKLCH color manipulation utilities for Rafters design system",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./plugins": "./src/plugins/index.ts"
   },
   "files": [
     "src"

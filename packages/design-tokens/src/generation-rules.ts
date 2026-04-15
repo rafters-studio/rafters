@@ -4,10 +4,10 @@
  * Parses token generation rule strings into structured ParsedRule objects.
  * Pure string -> struct, no registry access, no side effects.
  *
- * Supports calc, scale, scale-position, state, contrast, and invert rule types.
+ * Supports calc, scale, scale-position, state, and contrast rule types.
  */
 
-import { SCALE_POSITION_MAP, VALID_SCALE_POSITIONS } from './scale-positions';
+import { SCALE_POSITION_MAP, VALID_SCALE_POSITIONS } from '@rafters/shared';
 
 export interface ParsedRule {
   type: string;
@@ -42,11 +42,6 @@ export class GenerationRuleParser {
       return this.parseColonRule(type.trim(), value.trim());
     }
 
-    // Parse single-word rules: invert
-    if (trimmed === 'invert') {
-      return { type: 'invert' };
-    }
-
     // Parse function-style rules (legacy support)
     if (trimmed.startsWith('scale(')) {
       return this.parseScaleRule(trimmed);
@@ -57,10 +52,6 @@ export class GenerationRuleParser {
     if (trimmed.startsWith('contrast(')) {
       return this.parseContrastRule(trimmed);
     }
-    if (trimmed.startsWith('invert(')) {
-      return this.parseInvertRule(trimmed);
-    }
-
     throw new Error(`Unknown rule type: ${rule}`);
   }
 
@@ -203,18 +194,6 @@ export class GenerationRuleParser {
       type: 'contrast',
       baseToken: match[1].trim(),
       contrast: contrastLevel as 'high' | 'medium' | 'low',
-    };
-  }
-
-  private parseInvertRule(rule: string): ParsedRule {
-    const match = rule.match(/^invert\(([^)]+)\)$/);
-    if (!match || !match[1]) {
-      throw new Error(`Invalid invert rule: ${rule}`);
-    }
-
-    return {
-      type: 'invert',
-      baseToken: match[1].trim(),
     };
   }
 }

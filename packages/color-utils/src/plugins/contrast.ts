@@ -9,10 +9,9 @@
  * and passed as neutralFamilyName + neutralColorValue in the input struct.
  */
 
-import { ColorReferenceSchema, ColorValueSchema } from '@rafters/shared';
+import { definePlugin } from '@rafters/design-tokens';
+import { ColorReferenceSchema, ColorValueSchema, INDEX_TO_POSITION } from '@rafters/shared';
 import { z } from 'zod';
-import { definePlugin } from '../plugins';
-import { INDEX_TO_POSITION } from '../scale-positions';
 
 const ContrastInputSchema = z.object({
   familyColorValue: ColorValueSchema,

@@ -11,12 +11,7 @@ export * from './generation-rules.js';
 export * from './generators/index.js';
 export * from './persistence/index.js';
 export { default as calcPlugin } from './plugins/calc.js';
-export { default as contrastPlugin } from './plugins/contrast.js';
 export { default as examplePlugin } from './plugins/example.js';
-export { default as invertPlugin } from './plugins/invert.js';
-// Per-plugin default exports (underlying shape changed; export paths preserved)
-export { default as scalePlugin } from './plugins/scale.js';
-export { default as statePlugin } from './plugins/state.js';
 export type { Plugin } from './plugins.js';
 // Plugin protocol
 export {

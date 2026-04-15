@@ -9,7 +9,6 @@
 import {
   COMPUTED,
   type ColorReference,
-  type ColorValue,
   type ComputedSymbol,
   type Token,
   type TypographyElementOverride,
@@ -19,7 +18,6 @@ import { TokenDependencyGraph } from './dependencies';
 import { resolveColorReference } from './oklch-to-css';
 import type { PersistenceAdapter } from './persistence/types';
 import { cascade, regenerate } from './plugins';
-import { findDarkCounterpartIndex, INDEX_TO_POSITION, POSITION_TO_INDEX } from './scale-positions';
 
 // Event types (inline to replace deleted types/events.js)
 export type TokenChangeEvent =
@@ -571,10 +569,11 @@ export class TokenRegistry {
         'family' in existingToken.value;
 
       if (existingIsRef) {
-        // Semantic token path: update dependsOn[0]=family, dependsOn[1]=dark counterpart.
-        // findDarkCounterpart requires WCAG data from the family ColorValue.
-        const darkTokenName = this.findDarkCounterpart(ref, existingToken.dependsOn);
-        updatedDependsOn = [ref.family, darkTokenName];
+        // Semantic token path: preserve dependsOn[1] (dark ref) from the generator.
+        // The dark reference is a design decision, not a computed value.
+        // Only update dependsOn[0] (family) when the light ref family changes.
+        const existingDarkRef = existingToken.dependsOn?.[1];
+        updatedDependsOn = existingDarkRef ? [ref.family, existingDarkRef] : [ref.family];
         // Keep resolvedValue as ColorReference (semantic tokens store refs)
       } else {
         // Position token path: stored value is a CSS string.
@@ -621,32 +620,6 @@ export class TokenRegistry {
         timestamp: Date.now(),
       });
     }
-  }
-
-  /**
-   * Find the dark mode counterpart for a light mode ColorReference.
-   * Uses the WCAG accessibility matrix from the color family's ColorValue.
-   * Falls back to mathematical inversion if no WCAG data available.
-   */
-  private findDarkCounterpart(lightRef: ColorReference, _existingDependsOn?: string[]): string {
-    const lightIdx = POSITION_TO_INDEX[lightRef.position];
-    if (lightIdx === undefined) {
-      throw new Error(
-        `Invalid position "${lightRef.position}" in ColorReference for family "${lightRef.family}". ` +
-          `Expected one of: ${Object.keys(POSITION_TO_INDEX).join(', ')}`,
-      );
-    }
-
-    const familyToken = this.tokens.get(lightRef.family);
-    if (!familyToken || typeof familyToken.value !== 'object' || !('scale' in familyToken.value)) {
-      const fallbackIdx = Math.max(0, Math.min(10, 10 - lightIdx));
-      return `${lightRef.family}-${INDEX_TO_POSITION[fallbackIdx] ?? '500'}`;
-    }
-
-    const colorValue = familyToken.value as ColorValue;
-    const darkIdx = findDarkCounterpartIndex(lightIdx, colorValue);
-    const darkPos = INDEX_TO_POSITION[darkIdx] ?? '500';
-    return `${lightRef.family}-${darkPos}`;
   }
 
   /**

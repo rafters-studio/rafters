@@ -3,8 +3,12 @@
  * caller passes a token lookup function.
  */
 
-import type { ColorReference, ColorValue, OKLCH } from '@rafters/shared';
-import { SCALE_POSITION_MAP } from './scale-positions';
+import {
+  type ColorReference,
+  type ColorValue,
+  type OKLCH,
+  SCALE_POSITION_MAP,
+} from '@rafters/shared';
 
 /**
  * Convert an OKLCH color to CSS string format.
