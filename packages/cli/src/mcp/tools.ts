@@ -24,271 +24,6 @@ import {
 import { registryClient } from '../registry/client.js';
 import { getRaftersPaths } from '../utils/paths.js';
 
-// ==================== Design Patterns ====================
-
-interface DesignPattern {
-  name: string;
-  intent: string;
-  components: string[];
-  tokens: { colors: string[]; spacing: string[]; typography?: string[] };
-  cognitiveLoad: number;
-  accessibility: string;
-  trustPattern?: string;
-  guidance: { do: string[]; never: string[] };
-  example?: string;
-}
-
-const DESIGN_PATTERNS: Record<string, DesignPattern> = {
-  'destructive-action': {
-    name: 'Destructive Action',
-    intent: 'Permanent or hard-to-reverse operations requiring user confirmation',
-    components: ['alert-dialog', 'button'],
-    tokens: { colors: ['destructive', 'destructive-foreground'], spacing: ['4', '6'] },
-    cognitiveLoad: 7,
-    accessibility:
-      'Requires clear focus management, escape to cancel, explicit confirmation button',
-    trustPattern:
-      'Two-step confirmation. Never auto-focus the destructive button. Cancel should be prominent.',
-    guidance: {
-      do: [
-        'Use AlertDialog for irreversible actions',
-        'Describe what will be deleted/changed',
-        'Provide clear cancel path',
-        'Use destructive variant only for the confirm button',
-      ],
-      never: [
-        'Auto-focus destructive button',
-        'Use for reversible actions',
-        'Hide the cancel option',
-        'Use vague language like "Continue"',
-      ],
-    },
-  },
-  'form-validation': {
-    name: 'Form Validation',
-    intent: 'Inline validation feedback that helps without blocking',
-    components: ['field', 'input', 'label', 'button'],
-    tokens: {
-      colors: ['destructive', 'muted', 'muted-foreground'],
-      spacing: ['2', '4'],
-      typography: ['sm', 'base'],
-    },
-    cognitiveLoad: 4,
-    accessibility:
-      'Error messages must be associated with inputs via aria-describedby. Use aria-invalid on errored inputs.',
-    guidance: {
-      do: [
-        'Show validation on blur or submit, not while typing',
-        'Associate error text with input via aria-describedby',
-        'Use Field component for consistent error handling',
-        'Provide actionable error messages',
-      ],
-      never: [
-        'Validate while user is still typing',
-        'Use red color alone to indicate errors',
-        'Block form submission without explanation',
-        'Use generic error messages',
-      ],
-    },
-  },
-  'empty-state': {
-    name: 'Empty State',
-    intent: 'Guide users when no content exists, provide clear next action',
-    components: ['empty', 'button', 'typography'],
-    tokens: {
-      colors: ['muted', 'muted-foreground', 'primary'],
-      spacing: ['6', '8', '12'],
-      typography: ['lg', 'base'],
-    },
-    cognitiveLoad: 2,
-    accessibility: 'Empty states should be announced to screen readers with appropriate context',
-    guidance: {
-      do: [
-        'Provide a clear call-to-action',
-        'Explain why the state is empty',
-        'Use muted tones for illustrations',
-        'Keep the message concise',
-      ],
-      never: [
-        'Leave users without guidance',
-        'Use alarming language',
-        'Hide the empty state',
-        'Show multiple competing CTAs',
-      ],
-    },
-  },
-  'loading-state': {
-    name: 'Loading State',
-    intent: 'Indicate progress without causing anxiety or impatience',
-    components: ['spinner', 'skeleton', 'progress'],
-    tokens: { colors: ['muted', 'primary'], spacing: ['4', '8'] },
-    cognitiveLoad: 1,
-    accessibility:
-      'Use aria-busy on containers, aria-live for status updates. Spinner needs aria-label.',
-    guidance: {
-      do: [
-        'Use Skeleton for known content structure',
-        'Use Spinner for unknown duration operations',
-        'Use Progress when duration is known',
-        'Match skeleton shapes to expected content',
-      ],
-      never: [
-        'Block interaction without feedback',
-        'Use spinning animations that cause vestibular issues',
-        'Show loading for < 200ms operations',
-        'Use multiple spinners in view',
-      ],
-    },
-  },
-  'navigation-hierarchy': {
-    name: 'Navigation Hierarchy',
-    intent: 'Help users understand where they are and where they can go',
-    components: ['breadcrumb', 'tabs', 'navigation-menu', 'sidebar'],
-    tokens: {
-      colors: ['muted-foreground', 'foreground', 'primary'],
-      spacing: ['2', '4', '6'],
-      typography: ['sm', 'base'],
-    },
-    cognitiveLoad: 3,
-    accessibility:
-      'Use nav landmark, aria-current for active items, keyboard navigation between items',
-    guidance: {
-      do: [
-        'Use Breadcrumb for deep hierarchies',
-        'Use Tabs for peer-level navigation',
-        'Highlight current location clearly',
-        'Keep navigation consistent across pages',
-      ],
-      never: [
-        'Mix navigation paradigms',
-        'Hide primary navigation',
-        'Use more than 3 levels in breadcrumbs',
-        'Auto-collapse navigation on desktop',
-      ],
-    },
-  },
-  'data-table': {
-    name: 'Data Table',
-    intent: 'Present structured data with sorting, filtering, and actions',
-    components: ['table', 'button', 'dropdown-menu', 'checkbox', 'pagination'],
-    tokens: {
-      colors: ['muted', 'border', 'foreground'],
-      spacing: ['2', '4', '6'],
-      typography: ['sm', 'base'],
-    },
-    cognitiveLoad: 6,
-    accessibility: 'Use proper table semantics, scope headers, caption for context',
-    guidance: {
-      do: [
-        'Use semantic table elements',
-        'Provide column headers with scope',
-        'Support keyboard navigation',
-        'Paginate large datasets',
-      ],
-      never: [
-        'Use divs for tabular data',
-        'Hide important columns on mobile',
-        'Auto-load infinite data without user action',
-        'Use tables for layout',
-      ],
-    },
-  },
-  'modal-dialog': {
-    name: 'Modal Dialog',
-    intent: 'Focus user attention on a single task or decision',
-    components: ['dialog', 'button'],
-    tokens: { colors: ['background', 'foreground', 'border'], spacing: ['4', '6', '8'] },
-    cognitiveLoad: 5,
-    accessibility:
-      'Trap focus inside dialog, return focus on close, ESC to dismiss, aria-modal=true',
-    trustPattern: 'Users should always be able to dismiss without consequence',
-    guidance: {
-      do: [
-        'Focus first interactive element on open',
-        'Provide clear close mechanism',
-        'Keep content focused on one task',
-        'Return focus to trigger on close',
-      ],
-      never: [
-        'Stack multiple dialogs',
-        'Use for non-blocking information',
-        'Prevent dismissal without explicit save',
-        'Auto-open dialogs on page load',
-      ],
-    },
-  },
-  'tooltip-guidance': {
-    name: 'Tooltip Guidance',
-    intent: 'Provide contextual help without cluttering the interface',
-    components: ['tooltip', 'button'],
-    tokens: { colors: ['popover', 'popover-foreground'], spacing: ['2'], typography: ['sm'] },
-    cognitiveLoad: 1,
-    accessibility: 'Tooltip content must be accessible to keyboard users via focus',
-    guidance: {
-      do: [
-        'Keep tooltip text concise (1-2 sentences)',
-        'Trigger on hover AND focus',
-        'Use for supplementary information only',
-        'Position to avoid obscuring content',
-      ],
-      never: [
-        'Put essential information in tooltips only',
-        'Use for error messages',
-        'Require click to open',
-        'Include interactive elements inside',
-      ],
-    },
-  },
-  'card-layout': {
-    name: 'Card Layout',
-    intent: 'Group related content in scannable, contained units',
-    components: ['card', 'button', 'badge', 'avatar'],
-    tokens: { colors: ['card', 'card-foreground', 'border'], spacing: ['4', '6'] },
-    cognitiveLoad: 2,
-    accessibility: 'If card is clickable, entire card should be the click target with clear focus',
-    guidance: {
-      do: [
-        'Use consistent card sizes in grids',
-        'Prioritize content hierarchy within cards',
-        'Provide clear visual boundaries',
-        'Use CardHeader/CardContent for structure',
-      ],
-      never: [
-        'Nest cards within cards',
-        'Overload cards with actions',
-        'Mix card sizes arbitrarily',
-        'Use cards for single pieces of content',
-      ],
-    },
-  },
-  'dropdown-actions': {
-    name: 'Dropdown Actions',
-    intent: 'Provide secondary actions without cluttering the primary interface',
-    components: ['dropdown-menu', 'button'],
-    tokens: {
-      colors: ['popover', 'popover-foreground', 'accent'],
-      spacing: ['2', '4'],
-      typography: ['sm'],
-    },
-    cognitiveLoad: 4,
-    accessibility: 'Arrow key navigation between items, type-ahead, ESC to close',
-    guidance: {
-      do: [
-        'Group related actions with separators',
-        'Use icons consistently (all or none)',
-        'Show keyboard shortcuts',
-        'Place destructive actions at bottom with separator',
-      ],
-      never: [
-        'Nest dropdowns more than 1 level',
-        'Put primary actions in dropdowns',
-        'Use dropdowns with fewer than 3 items',
-        'Auto-close on any click',
-      ],
-    },
-  },
-};
-
 // ==================== Tool Definitions ====================
 
 export const TOOL_DEFINITIONS = [
@@ -332,16 +67,20 @@ export const TOOL_DEFINITIONS = [
   {
     name: 'rafters_pattern',
     description:
-      'Get design pattern guidance with do/never rules. Patterns: destructive-action, form-validation, empty-state, loading-state, navigation-hierarchy, data-table, modal-dialog, tooltip-guidance, card-layout, dropdown-actions',
+      'Get design pattern guidance by querying composites. Search by what the pattern solves (e.g., "authentication", "data entry", "navigation") to get do/never rules, cognitive load, and designer intent.',
     inputSchema: {
       type: 'object' as const,
       properties: {
-        pattern: {
+        solves: {
           type: 'string',
-          description: 'Pattern name',
+          description: 'What problem the pattern solves (searches composite solves field)',
+        },
+        query: {
+          type: 'string',
+          description: 'Fuzzy search across composite names, keywords, and descriptions',
         },
       },
-      required: ['pattern'],
+      required: [],
     },
   },
   {
@@ -378,7 +117,7 @@ export class RaftersToolHandler {
       case 'rafters_rule':
         return this.handleRule(args);
       case 'rafters_pattern':
-        return this.handlePattern(args.pattern as string);
+        return this.handlePattern(args as { solves?: string; query?: string });
       case 'rafters_component':
         return this.handleComponent(args.name as string);
       default:
@@ -521,24 +260,61 @@ export class RaftersToolHandler {
     return { content: [{ type: 'text', text: JSON.stringify({ rules }, null, 2) }] };
   }
 
-  private async handlePattern(patternName: string): Promise<CallToolResult> {
-    const pattern = DESIGN_PATTERNS[patternName];
+  private async handlePattern(args: { solves?: string; query?: string }): Promise<CallToolResult> {
+    await this.ensureCompositesLoaded();
 
-    if (!pattern) {
+    const { solves, query } = args;
+    let composites: CompositeFile[];
+
+    if (solves) {
+      // Search composites by what they solve
+      const all = getAllComposites();
+      const solvesLower = solves.toLowerCase();
+      composites = all.filter(
+        (c) =>
+          c.manifest.solves?.toLowerCase().includes(solvesLower) ||
+          c.manifest.appliesWhen?.some((a) => a.toLowerCase().includes(solvesLower)),
+      );
+    } else if (query) {
+      composites = searchComposites(query);
+    } else {
+      // Return all composites that have usagePatterns (do/never)
+      composites = getAllComposites().filter((c) => c.manifest.usagePatterns);
+    }
+
+    if (composites.length === 0) {
+      const all = getAllComposites();
+      const available = all
+        .filter((c) => c.manifest.solves || c.manifest.usagePatterns)
+        .map((c) => ({
+          id: c.manifest.id,
+          solves: c.manifest.solves,
+        }));
+
       return {
         content: [
           {
             type: 'text',
             text: JSON.stringify({
-              error: `Pattern "${patternName}" not found`,
-              available: Object.keys(DESIGN_PATTERNS),
+              error: 'No patterns found matching query',
+              available,
             }),
           },
         ],
       };
     }
 
-    return { content: [{ type: 'text', text: JSON.stringify(pattern, null, 2) }] };
+    // Return pattern-focused view of composites
+    const patterns = composites.map((c) => ({
+      id: c.manifest.id,
+      name: c.manifest.name,
+      solves: c.manifest.solves,
+      appliesWhen: c.manifest.appliesWhen,
+      cognitiveLoad: c.manifest.cognitiveLoad,
+      usagePatterns: c.manifest.usagePatterns,
+    }));
+
+    return { content: [{ type: 'text', text: JSON.stringify({ patterns }, null, 2) }] };
   }
 
   private async handleComponent(componentName: string): Promise<CallToolResult> {
