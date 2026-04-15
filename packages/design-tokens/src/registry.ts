@@ -565,12 +565,10 @@ export class TokenRegistry {
 
     if (typeof resolvedValue === 'object' && 'family' in resolvedValue) {
       const ref = resolvedValue as ColorReference;
-      const existingIsRef =
-        typeof existingToken.value === 'object' &&
-        existingToken.value !== null &&
-        'family' in existingToken.value;
+      // Semantic tokens store ColorReferences; position tokens store CSS strings.
+      const isSemanticToken = existingToken.namespace === 'semantic';
 
-      if (existingIsRef) {
+      if (isSemanticToken) {
         // Semantic token path: update dependsOn[0]=family, dependsOn[1]=dark counterpart.
         // findDarkCounterpart requires WCAG data from the family ColorValue.
         const darkTokenName = this.findDarkCounterpart(ref, existingToken.dependsOn);
