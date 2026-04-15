@@ -68,25 +68,47 @@ pnpm dlx rafters studio
 
 Four tools give AI agents complete design system access:
 
-### `rafters_vocabulary`
+### `rafters_composite`
 
-System overview. Colors, spacing, typography, components, cognitive loads, and available patterns. Call this first to orient.
+Query composites by ID, search term, or category. Returns designer intent (solves, appliesWhen, do/never), I/O rules for chaining, and block structure.
+
+```json
+{ "id": "heading" }           // Get specific composite
+{ "query": "form" }           // Fuzzy search
+{ "category": "typography" }  // Filter by category
+```
 
 ### `rafters_pattern`
 
-Deep guidance for specific UI scenarios. Returns which components to use, which tokens to apply, accessibility requirements, and do/never rules.
+Design pattern guidance by querying composites. Search by what the pattern solves or use fuzzy search.
 
-**Available patterns:** `destructive-action`, `form-validation`, `empty-state`, `loading-state`, `navigation-hierarchy`, `data-table`, `modal-dialog`, `tooltip-guidance`, `card-layout`, `dropdown-actions`
+```json
+{ "solves": "hierarchy" }      // Find patterns for document hierarchy
+{ "solves": "authentication" } // Find patterns for auth flows
+{ "query": "form" }            // Fuzzy search across composites
+```
+
+Returns composites with usagePatterns (do/never rules), cognitive load, and designer intent.
+
+### `rafters_rule`
+
+Query validation rules or create new ones. Rules are named validation patterns that composites can apply.
+
+```json
+{}                    // List all rules
+{ "name": "email" }   // Get specific rule
+{ "query": "pass" }   // Search rules
+```
+
+**Built-in rules:** `required`, `email`, `password`, `url`, `credentials`
 
 ### `rafters_component`
 
 Full intelligence for a specific component. Cognitive load rating, attention economics, accessibility requirements, trust-building patterns, variants, sizes, and primitives.
 
-### `rafters_token`
-
-Token dependency graph, derivation rules, and human override context. Returns how a token is computed, what it depends on, and whether a designer manually overrode it (with their reasoning).
-
-**Derivation rules:** `calc()`, `state:hover`, `scale:600`, `contrast:auto`, `invert`
+```json
+{ "name": "button" }
+```
 
 ## How It Works
 
