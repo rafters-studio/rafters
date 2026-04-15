@@ -98,8 +98,11 @@ async function loadPluginsFromDir(dir: string): Promise<void> {
   let files: string[];
   try {
     files = await fs.readdir(dir);
-  } catch {
-    return;
+  } catch (err) {
+    // Missing plugin directory is a supported no-op. Anything else
+    // (permissions, not-a-directory, I/O) must surface.
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return;
+    throw err;
   }
 
   for (const file of files) {
@@ -461,19 +464,6 @@ export async function cascade(registry: TokenRegistry, changedTokenName: string)
     });
   }
 }
-
-// ---------------------------------------------------------------------------
-// Re-export input schema shapes used by plugins
-// (so plugins can import from plugins.ts instead of @rafters/shared directly
-//  for the compound input shapes that involve registry-context fields)
-// ---------------------------------------------------------------------------
-
-export const ColorFamilyInputBaseSchema = z.object({
-  familyColorValue: ColorValueSchema,
-  familyName: z.string(),
-});
-
-export type ColorFamilyInputBase = z.infer<typeof ColorFamilyInputBaseSchema>;
 
 export { ColorValueSchema, OKLCHSchema };
 

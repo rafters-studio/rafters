@@ -20,7 +20,6 @@ export { default as statePlugin } from './plugins/state.js';
 export type { Plugin } from './plugins.js';
 // Plugin protocol
 export {
-  ColorFamilyInputBaseSchema,
   ColorValueSchema,
   cascade,
   clearPlugins,

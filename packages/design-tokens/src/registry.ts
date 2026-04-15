@@ -580,11 +580,17 @@ export class TokenRegistry {
         // Position token path: stored value is a CSS string.
         // Resolve the ColorReference to a CSS oklch() string immediately.
         // Do NOT update dependsOn (position tokens only depend on their family).
+        //
+        // During bulk load the family can be absent; that's expected and the
+        // ColorReference is kept so a later export resolves it. Any other
+        // resolver failure (malformed scale, invalid position) is a real bug
+        // and must propagate rather than silently leave a ColorReference where
+        // a CSS string was promised.
         try {
           resolvedValue = resolveColorReference(ref, (name) => this.tokens.get(name));
-        } catch {
-          // Resolution failed (e.g., family not in registry) -- keep the ColorReference
-          // so the value is not silently lost. It will be resolved on the next export.
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          if (!message.startsWith('Family token not found')) throw err;
         }
       }
     }
