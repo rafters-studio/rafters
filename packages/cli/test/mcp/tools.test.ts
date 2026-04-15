@@ -2,12 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { RaftersToolHandler, TOOL_DEFINITIONS } from '../../src/mcp/tools.js';
 
 describe('TOOL_DEFINITIONS', () => {
-  it('should define 4 tools', () => {
-    expect(TOOL_DEFINITIONS).toHaveLength(4);
+  it('should define 5 tools', () => {
+    expect(TOOL_DEFINITIONS).toHaveLength(5);
   });
 
   it('should have correct tool names', () => {
     const names = TOOL_DEFINITIONS.map((t) => t.name);
+    expect(names).toContain('rafters_vocabulary');
     expect(names).toContain('rafters_composite');
     expect(names).toContain('rafters_rule');
     expect(names).toContain('rafters_pattern');
@@ -30,6 +31,75 @@ describe('TOOL_DEFINITIONS', () => {
 });
 
 describe('RaftersToolHandler', () => {
+  describe('rafters_vocabulary', () => {
+    it('should return compact index with no params', async () => {
+      const handler = new RaftersToolHandler(null);
+      const result = await handler.handleToolCall('rafters_vocabulary', {});
+
+      expect(result.content).toHaveLength(1);
+      const data = JSON.parse(result.content[0].text as string);
+      expect(data.index).toBeDefined();
+      expect(data.index.colors).toContain('primary');
+      expect(data.index.spacing).toContain('4');
+      expect(data.suggestedQueries).toBeDefined();
+    });
+
+    it('should filter by category color', async () => {
+      const handler = new RaftersToolHandler(null);
+      const result = await handler.handleToolCall('rafters_vocabulary', {
+        category: 'color',
+      });
+
+      const data = JSON.parse(result.content[0].text as string);
+      expect(data.category).toBe('color');
+      expect(data.families).toContain('primary');
+      expect(data.families).toContain('destructive');
+    });
+
+    it('should filter by category spacing', async () => {
+      const handler = new RaftersToolHandler(null);
+      const result = await handler.handleToolCall('rafters_vocabulary', {
+        category: 'spacing',
+      });
+
+      const data = JSON.parse(result.content[0].text as string);
+      expect(data.category).toBe('spacing');
+      expect(data.scale).toContain('4');
+    });
+
+    it('should filter by intent', async () => {
+      const handler = new RaftersToolHandler(null);
+      const result = await handler.handleToolCall('rafters_vocabulary', {
+        intent: 'warnings',
+      });
+
+      const data = JSON.parse(result.content[0].text as string);
+      expect(data.families).toContain('warning');
+    });
+
+    it('should filter by family', async () => {
+      const handler = new RaftersToolHandler(null);
+      const result = await handler.handleToolCall('rafters_vocabulary', {
+        family: 'destructive',
+      });
+
+      const data = JSON.parse(result.content[0].text as string);
+      expect(data.family).toBe('destructive');
+      expect(data.tokens.scale).toContain('destructive-500');
+    });
+
+    it('should return error for unknown family', async () => {
+      const handler = new RaftersToolHandler(null);
+      const result = await handler.handleToolCall('rafters_vocabulary', {
+        family: 'nonexistent',
+      });
+
+      const data = JSON.parse(result.content[0].text as string);
+      expect(data.error).toBeDefined();
+      expect(data.available).toContain('primary');
+    });
+  });
+
   describe('rafters_pattern', () => {
     it('should return patterns from composites with usagePatterns', async () => {
       const handler = new RaftersToolHandler(null);

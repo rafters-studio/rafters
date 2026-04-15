@@ -1,12 +1,13 @@
 /**
  * MCP Tools for Rafters Design System
  *
- * 4 focused tools for agent composition:
+ * 5 focused tools for agent composition:
  *
- * 1. rafters_composite - Query composites with designer intent
- * 2. rafters_rule - Query or create validation rules
- * 3. rafters_pattern - Design pattern guidance (do/never)
- * 4. rafters_component - Component intelligence
+ * 1. rafters_vocabulary - Query design system vocabulary with filters
+ * 2. rafters_composite - Query composites with designer intent
+ * 3. rafters_rule - Query or create validation rules
+ * 4. rafters_pattern - Design pattern guidance (do/never)
+ * 5. rafters_component - Component intelligence
  */
 
 import { readdir } from 'node:fs/promises';
@@ -27,6 +28,31 @@ import { getRaftersPaths } from '../utils/paths.js';
 // ==================== Tool Definitions ====================
 
 export const TOOL_DEFINITIONS = [
+  {
+    name: 'rafters_vocabulary',
+    description:
+      'Query design system vocabulary: colors, spacing, typography, components. Use filters to narrow results. Empty call returns compact index with suggested queries.',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        category: {
+          type: 'string',
+          enum: ['color', 'spacing', 'typography', 'component'],
+          description: 'Filter by token category',
+        },
+        intent: {
+          type: 'string',
+          description:
+            'Semantic search: "warnings", "text colors", "error states", "primary actions"',
+        },
+        family: {
+          type: 'string',
+          description: 'Color family filter: "primary", "destructive", "success", "warning", etc.',
+        },
+      },
+      required: [],
+    },
+  },
   {
     name: 'rafters_composite',
     description:
@@ -112,6 +138,10 @@ export class RaftersToolHandler {
 
   async handleToolCall(name: string, args: Record<string, unknown>): Promise<CallToolResult> {
     switch (name) {
+      case 'rafters_vocabulary':
+        return this.handleVocabulary(
+          args as { category?: string; intent?: string; family?: string },
+        );
       case 'rafters_composite':
         return this.handleComposite(args);
       case 'rafters_rule':
@@ -172,6 +202,318 @@ export class RaftersToolHandler {
     }
 
     this.compositesLoaded = true;
+  }
+
+  private async handleVocabulary(args: {
+    category?: string;
+    intent?: string;
+    family?: string;
+  }): Promise<CallToolResult> {
+    const { category, intent, family } = args;
+
+    // Color families available in the system
+    const colorFamilies = [
+      'primary',
+      'secondary',
+      'tertiary',
+      'accent',
+      'destructive',
+      'success',
+      'warning',
+      'info',
+      'muted',
+      'highlight',
+      'neutral',
+    ];
+
+    // Spacing scale
+    const spacingScale = ['0', '1', '2', '3', '4', '5', '6', '8', '10', '12', '16', '20', '24'];
+
+    // Typography scale
+    const typographyScale = ['xs', 'sm', 'base', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl'];
+
+    // Components available
+    const components = [
+      'accordion',
+      'alert',
+      'alert-dialog',
+      'avatar',
+      'badge',
+      'button',
+      'card',
+      'checkbox',
+      'collapsible',
+      'command',
+      'context-menu',
+      'dialog',
+      'dropdown-menu',
+      'form',
+      'hover-card',
+      'input',
+      'label',
+      'menubar',
+      'navigation-menu',
+      'popover',
+      'progress',
+      'radio-group',
+      'scroll-area',
+      'select',
+      'separator',
+      'sheet',
+      'skeleton',
+      'slider',
+      'switch',
+      'table',
+      'tabs',
+      'textarea',
+      'toast',
+      'toggle',
+      'toggle-group',
+      'tooltip',
+    ];
+
+    // Intent mappings for semantic search
+    const intentMappings: Record<string, { families?: string[]; description: string }> = {
+      warnings: { families: ['warning'], description: 'Attention-requiring states' },
+      errors: { families: ['destructive'], description: 'Error and failure states' },
+      success: { families: ['success'], description: 'Success and completion states' },
+      info: { families: ['info'], description: 'Informational messages' },
+      'text colors': { families: ['neutral', 'primary'], description: 'Text and typography' },
+      'primary actions': { families: ['primary', 'accent'], description: 'Call-to-action buttons' },
+      'destructive actions': { families: ['destructive'], description: 'Dangerous operations' },
+      danger: { families: ['destructive'], description: 'Dangerous or destructive states' },
+      muted: { families: ['muted'], description: 'De-emphasized content' },
+      highlight: { families: ['highlight'], description: 'Emphasized content' },
+    };
+
+    // No params: return compact index with suggested queries
+    if (!category && !intent && !family) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(
+              {
+                index: {
+                  colors: colorFamilies,
+                  spacing: spacingScale,
+                  typography: typographyScale,
+                  components: components.slice(0, 10),
+                  componentCount: components.length,
+                },
+                suggestedQueries: [
+                  { intent: 'warnings', description: 'Get warning/alert colors' },
+                  { intent: 'text colors', description: 'Get text and typography colors' },
+                  { intent: 'primary actions', description: 'Get CTA button colors' },
+                  { family: 'destructive', description: 'Get destructive/error colors' },
+                  { category: 'spacing', description: 'Get spacing scale' },
+                  { category: 'component', description: 'List all components' },
+                ],
+              },
+              null,
+              2,
+            ),
+          },
+        ],
+      };
+    }
+
+    // Category filter
+    if (category) {
+      switch (category) {
+        case 'color':
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(
+                  {
+                    category: 'color',
+                    families: colorFamilies,
+                    scales: [
+                      '50',
+                      '100',
+                      '200',
+                      '300',
+                      '400',
+                      '500',
+                      '600',
+                      '700',
+                      '800',
+                      '900',
+                      '950',
+                    ],
+                    semanticRoles: ['foreground', 'background', 'border'],
+                    usage: 'Use family-scale format: primary-500, destructive-foreground',
+                  },
+                  null,
+                  2,
+                ),
+              },
+            ],
+          };
+        case 'spacing':
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(
+                  {
+                    category: 'spacing',
+                    scale: spacingScale,
+                    usage: 'Use Tailwind utilities: p-4, m-2, gap-6',
+                  },
+                  null,
+                  2,
+                ),
+              },
+            ],
+          };
+        case 'typography':
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(
+                  {
+                    category: 'typography',
+                    sizes: typographyScale,
+                    weights: ['normal', 'medium', 'semibold', 'bold'],
+                    families: ['sans', 'serif', 'mono'],
+                    usage: 'Use Tailwind utilities: text-lg, font-semibold',
+                  },
+                  null,
+                  2,
+                ),
+              },
+            ],
+          };
+        case 'component':
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify({ category: 'component', components }, null, 2),
+              },
+            ],
+          };
+        default:
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify({
+                  error: `Unknown category: ${category}`,
+                  available: ['color', 'spacing', 'typography', 'component'],
+                }),
+              },
+            ],
+          };
+      }
+    }
+
+    // Intent filter - semantic search
+    if (intent) {
+      const intentLower = intent.toLowerCase();
+      const matched = Object.entries(intentMappings).find(
+        ([key]) => intentLower.includes(key) || key.includes(intentLower),
+      );
+
+      if (matched) {
+        const [matchedIntent, info] = matched;
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(
+                {
+                  intent: matchedIntent,
+                  description: info.description,
+                  families: info.families,
+                  tokens: info.families?.flatMap((f) => [
+                    `${f}-500`,
+                    `${f}-foreground`,
+                    `${f}-background`,
+                  ]),
+                },
+                null,
+                2,
+              ),
+            },
+          ],
+        };
+      }
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify({
+              error: `No tokens found for intent: ${intent}`,
+              suggestedIntents: Object.keys(intentMappings),
+            }),
+          },
+        ],
+      };
+    }
+
+    // Family filter
+    if (family) {
+      const familyLower = family.toLowerCase();
+      if (colorFamilies.includes(familyLower)) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(
+                {
+                  family: familyLower,
+                  tokens: {
+                    scale: [
+                      `${familyLower}-50`,
+                      `${familyLower}-100`,
+                      `${familyLower}-200`,
+                      `${familyLower}-300`,
+                      `${familyLower}-400`,
+                      `${familyLower}-500`,
+                      `${familyLower}-600`,
+                      `${familyLower}-700`,
+                      `${familyLower}-800`,
+                      `${familyLower}-900`,
+                      `${familyLower}-950`,
+                    ],
+                    semantic: [
+                      `${familyLower}-foreground`,
+                      `${familyLower}-background`,
+                      `${familyLower}-border`,
+                    ],
+                  },
+                  usage: `Use with Tailwind: bg-${familyLower}-500, text-${familyLower}-foreground`,
+                },
+                null,
+                2,
+              ),
+            },
+          ],
+        };
+      }
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify({
+              error: `Unknown color family: ${family}`,
+              available: colorFamilies,
+            }),
+          },
+        ],
+      };
+    }
+
+    return {
+      content: [{ type: 'text', text: JSON.stringify({ error: 'No valid filter provided' }) }],
+    };
   }
 
   private async handleComposite(args: Record<string, unknown>): Promise<CallToolResult> {

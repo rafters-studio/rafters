@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Minor Changes
+
+- feat(mcp): add `rafters_vocabulary` tool for filtered design system queries. Supports `category` ("color", "spacing", "typography", "component"), `intent` ("warnings", "text colors", "primary actions"), and `family` ("primary", "destructive", etc.) filters. Empty call returns compact index with suggested queries instead of dumping everything. Addresses agent feedback that vocabulary was a firehose. Closes #1250.
+
 ### Patch Changes
 
 - fix(mcp): `rafters_pattern` no longer returns hardcoded patterns. Now queries composites by their `solves` and `appliesWhen` fields. Patterns are design intelligence captured in composite manifests, not static data in the MCP server. Search by what the pattern solves (e.g., "hierarchy", "authentication") or use `query` for fuzzy search. Closes #1280.

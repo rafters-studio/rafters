@@ -66,7 +66,24 @@ pnpm dlx rafters studio
 
 ## MCP Tools
 
-Four tools give AI agents complete design system access:
+Five tools give AI agents complete design system access:
+
+### `rafters_vocabulary`
+
+Query design system vocabulary with filters. Empty call returns compact index with suggested queries.
+
+```json
+{}                           // Get compact index + suggested queries
+{ "category": "color" }      // Get color families and scales
+{ "category": "spacing" }    // Get spacing scale
+{ "intent": "warnings" }     // Semantic search: warning colors
+{ "intent": "text colors" }  // Semantic search: text colors
+{ "family": "destructive" }  // Get all tokens in destructive family
+```
+
+**Categories:** `color`, `spacing`, `typography`, `component`
+
+**Intents:** `warnings`, `errors`, `success`, `info`, `text colors`, `primary actions`, `destructive actions`, `muted`, `highlight`
 
 ### `rafters_composite`
 
