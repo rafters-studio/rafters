@@ -4,6 +4,7 @@
 
 ### Minor Changes
 
+- feat(onboard): Tailwind v4 importer detects `@theme` blocks and extracts all design token namespaces (color, spacing, typography, radius, shadow, motion, opacity). Maps Tailwind `--ease-*` and `--duration-*` to rafters `motion-ease-*` and `motion-duration-*` namespace. Skips viewport-only tokens (breakpoint, container). Priority 90 (highest) since `@theme` is unambiguous. Closes #1259.
 - feat(onboard): orchestrator coordinates the import pipeline. `onboard()` detects the best importer (shadcn or generic-css), checks confidence thresholds, and runs the import. `previewOnboard()` returns all compatible importers sorted by confidence for analysis without importing. New MCP tool `rafters_onboard` exposes this to agents: `action: "analyze"` previews what would be imported, `action: "import"` runs the import. Forceimporter option allows bypassing auto-detection. Closes #1270.
 
 ### Patch Changes

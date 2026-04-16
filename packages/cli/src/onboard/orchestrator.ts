@@ -15,12 +15,14 @@ import {
   registerImporter,
 } from './importers/index.js';
 import { shadcnImporter } from './importers/shadcn.js';
+import { tailwindV4Importer } from './importers/tailwind-v4.js';
 
 // Register built-in importers on module load
 let importersRegistered = false;
 
 function ensureImportersRegistered(): void {
   if (importersRegistered) return;
+  registerImporter(tailwindV4Importer);
   registerImporter(shadcnImporter);
   registerImporter(genericCSSImporter);
   importersRegistered = true;
