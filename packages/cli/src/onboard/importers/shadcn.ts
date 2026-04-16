@@ -284,8 +284,35 @@ export const shadcnImporter: Importer = {
           skipped: 0,
         };
       }
-      const content = await readFile(sourcePath, 'utf-8');
-      parsed = parseCSSFile(content);
+
+      let content: string;
+      try {
+        content = await readFile(sourcePath, 'utf-8');
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        return {
+          tokens: [],
+          warnings: [{ level: 'error', message: `Failed to read CSS file: ${message}` }],
+          source: 'shadcn',
+          variablesProcessed: 0,
+          tokensCreated: 0,
+          skipped: 0,
+        };
+      }
+
+      try {
+        parsed = parseCSSFile(content);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        return {
+          tokens: [],
+          warnings: [{ level: 'error', message: `Failed to parse CSS: ${message}` }],
+          source: 'shadcn',
+          variablesProcessed: 0,
+          tokensCreated: 0,
+          skipped: 0,
+        };
+      }
     }
 
     for (const variable of parsed.variables) {
