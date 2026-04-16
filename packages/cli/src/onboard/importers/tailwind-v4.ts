@@ -28,36 +28,35 @@ const TAILWIND_CSS_PATHS = [
 ];
 
 /**
- * Tailwind v4 namespace -> Rafters category/namespace mapping
+ * Tailwind v4 namespace -> Rafters category mapping.
+ * Category and namespace are always identical in Tailwind v4 tokens.
  */
-interface NamespaceMapping {
-  category: string;
-  namespace: string;
-}
-
-const NAMESPACE_MAP: Record<string, NamespaceMapping> = {
-  color: { category: 'color', namespace: 'color' },
-  spacing: { category: 'spacing', namespace: 'spacing' },
-  font: { category: 'typography', namespace: 'typography' },
-  text: { category: 'typography', namespace: 'typography' },
-  leading: { category: 'typography', namespace: 'typography' },
-  tracking: { category: 'typography', namespace: 'typography' },
-  'font-weight': { category: 'typography', namespace: 'typography' },
-  radius: { category: 'radius', namespace: 'radius' },
-  shadow: { category: 'shadow', namespace: 'shadow' },
-  'inset-shadow': { category: 'shadow', namespace: 'shadow' },
-  ease: { category: 'motion', namespace: 'motion' },
-  duration: { category: 'motion', namespace: 'motion' },
-  animate: { category: 'motion', namespace: 'motion' },
-  opacity: { category: 'opacity', namespace: 'opacity' },
-  blur: { category: 'effect', namespace: 'effect' },
+const NAMESPACE_MAP: Record<string, string> = {
+  color: 'color',
+  spacing: 'spacing',
+  font: 'typography',
+  text: 'typography',
+  leading: 'typography',
+  tracking: 'typography',
+  'font-weight': 'typography',
+  radius: 'radius',
+  shadow: 'shadow',
+  'inset-shadow': 'shadow',
+  ease: 'motion',
+  duration: 'motion',
+  animate: 'motion',
+  opacity: 'opacity',
+  blur: 'effect',
 };
 
-// Namespaces to skip -- these are layout/viewport concerns, not design tokens
-const SKIP_NAMESPACES = new Set(['breakpoint', 'container', 'perspective']);
+// Sorted longest-first so "font-weight" matches before "font"
+const SORTED_NAMESPACES = Object.keys(NAMESPACE_MAP).sort((a, b) => b.length - a.length);
 
 /**
  * Extract the Tailwind namespace from a variable name.
+ * Returns null for unmapped namespaces (breakpoint, container, perspective)
+ * which are layout/viewport concerns, not design tokens.
+ *
  * --color-primary-500 -> "color"
  * --spacing-4 -> "spacing"
  * --font-sans -> "font"
@@ -65,18 +64,9 @@ const SKIP_NAMESPACES = new Set(['breakpoint', 'container', 'perspective']);
 function extractNamespace(varName: string): string | null {
   const name = varName.replace(/^--/, '');
 
-  // Try longest match first (font-weight before font)
-  const candidates = Object.keys(NAMESPACE_MAP).sort((a, b) => b.length - a.length);
-  for (const ns of candidates) {
+  for (const ns of SORTED_NAMESPACES) {
     if (name.startsWith(`${ns}-`)) {
       return ns;
-    }
-  }
-
-  // Check skip list
-  for (const skip of SKIP_NAMESPACES) {
-    if (name.startsWith(`${skip}-`)) {
-      return null;
     }
   }
 
@@ -88,10 +78,11 @@ function extractNamespace(varName: string): string | null {
  *
  * Tailwind v4 uses flat namespaced names:
  *   --color-primary-500  -> primary-500
- *   --spacing-4          -> spacing-4
- *   --font-sans          -> font-sans
+ *   --spacing-4          -> 4
+ *   --font-sans          -> sans
  *   --ease-in-out        -> motion-ease-in-out (motion namespace remapped)
  *   --duration-150       -> motion-duration-150 (motion namespace remapped)
+ *   --inset-shadow-sm    -> inset-sm (prefixed to avoid collision with --shadow-sm)
  */
 function buildTokenName(varName: string, twNamespace: string): string {
   const withoutPrefix = varName.replace(/^--/, '');
@@ -104,30 +95,46 @@ function buildTokenName(varName: string, twNamespace: string): string {
   if (twNamespace === 'duration') {
     return `motion-duration-${afterNamespace}`;
   }
+  // Inset shadows get prefixed to avoid collision with shadow tokens
+  if (twNamespace === 'inset-shadow') {
+    return `inset-${afterNamespace}`;
+  }
 
   return afterNamespace || withoutPrefix;
 }
 
 /**
+ * Build an ImportResult with a single error warning and zero counters
+ */
+function errorResult(message: string, file?: string): ImportResult {
+  const warning: ImportWarning = file
+    ? { level: 'error', message, source: { file } }
+    : { level: 'error', message };
+  return {
+    tokens: [],
+    warnings: [warning],
+    source: 'tailwind-v4',
+    variablesProcessed: 0,
+    tokensCreated: 0,
+    skipped: 0,
+  };
+}
+
+/**
  * Convert a Tailwind v4 CSS variable to a Rafters token
  */
-function variableToToken(variable: CSSVariable): {
-  token: Token;
-  warning?: ImportWarning;
-} | null {
+function variableToToken(variable: CSSVariable): Token | null {
   const twNamespace = extractNamespace(variable.name);
   if (!twNamespace) return null;
 
-  const mapping = NAMESPACE_MAP[twNamespace];
-  if (!mapping) return null;
+  const category = NAMESPACE_MAP[twNamespace];
+  if (!category) return null;
 
-  const tokenName = buildTokenName(variable.name, twNamespace);
-
-  const token: Token = {
-    name: tokenName,
+  return {
+    name: buildTokenName(variable.name, twNamespace),
     value: variable.value,
-    category: mapping.category,
-    namespace: mapping.namespace,
+    category,
+    namespace: category,
     userOverride: null,
     semanticMeaning: `Imported from Tailwind v4 ${variable.name}`,
     usageContext:
@@ -136,8 +143,6 @@ function variableToToken(variable: CSSVariable): {
         : ['light mode', 'default'],
     containerQueryAware: true,
   };
-
-  return { token };
 }
 
 export const tailwindV4Importer: Importer = {
@@ -184,6 +189,10 @@ export const tailwindV4Importer: Importer = {
         ) {
           continue;
         }
+        // CSS parse errors skip the file instead of aborting the scan
+        if (err instanceof Error && err.message.includes('parse')) {
+          continue;
+        }
         throw err;
       }
     }
@@ -204,14 +213,7 @@ export const tailwindV4Importer: Importer = {
     } else {
       const sourcePath = detection.sourcePaths[0];
       if (!sourcePath) {
-        return {
-          tokens: [],
-          warnings: [{ level: 'error', message: 'No source path found' }],
-          source: 'tailwind-v4',
-          variablesProcessed: 0,
-          tokensCreated: 0,
-          skipped: 0,
-        };
+        return errorResult('No source path found');
       }
 
       let content: string;
@@ -219,28 +221,14 @@ export const tailwindV4Importer: Importer = {
         content = await readFile(sourcePath, 'utf-8');
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        return {
-          tokens: [],
-          warnings: [{ level: 'error', message: `Failed to read CSS file: ${message}` }],
-          source: 'tailwind-v4',
-          variablesProcessed: 0,
-          tokensCreated: 0,
-          skipped: 0,
-        };
+        return errorResult(`Failed to read CSS file: ${message}`, sourcePath);
       }
 
       try {
         parsed = parseCSSFile(content);
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        return {
-          tokens: [],
-          warnings: [{ level: 'error', message: `Failed to parse CSS: ${message}` }],
-          source: 'tailwind-v4',
-          variablesProcessed: 0,
-          tokensCreated: 0,
-          skipped: 0,
-        };
+        return errorResult(`Failed to parse CSS: ${message}`, sourcePath);
       }
     }
 
@@ -249,24 +237,25 @@ export const tailwindV4Importer: Importer = {
     for (const variable of parsed.variables) {
       variablesProcessed++;
 
-      const result = variableToToken(variable);
-      if (!result) {
+      const token = variableToToken(variable);
+      if (!token) {
         skipped++;
         continue;
       }
 
       // Key by namespace+name to avoid cross-namespace collisions (shadow-sm vs radius-sm)
-      const dedupeKey = `${result.token.namespace}:${result.token.name}`;
+      const dedupeKey = `${token.namespace}:${token.name}`;
       if (seenKeys.has(dedupeKey)) {
+        warnings.push({
+          level: 'info',
+          message: `Duplicate token ${dedupeKey} from ${variable.name}, keeping first occurrence`,
+        });
         skipped++;
         continue;
       }
       seenKeys.add(dedupeKey);
 
-      tokens.push(result.token);
-      if (result.warning) {
-        warnings.push(result.warning);
-      }
+      tokens.push(token);
     }
 
     return {

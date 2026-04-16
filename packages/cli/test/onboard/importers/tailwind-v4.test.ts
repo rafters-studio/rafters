@@ -41,6 +41,9 @@ const TAILWIND_V4_CSS = `@import "tailwindcss";
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
 
+  --inset-shadow-sm: inset 0 1px 1px 0 rgb(0 0 0 / 0.05);
+  --inset-shadow-md: inset 0 2px 4px 0 rgb(0 0 0 / 0.05);
+
   --ease-in: cubic-bezier(0.4, 0, 1, 1);
   --ease-out: cubic-bezier(0, 0, 0.2, 1);
   --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
@@ -202,6 +205,28 @@ describe('Tailwind v4 Importer', () => {
       const dur150 = motionTokens.find((t) => t.name === 'motion-duration-150');
       expect(dur150).toBeDefined();
       expect(dur150?.value).toBe('150ms');
+    });
+
+    it('maps inset-shadow without colliding with shadow', async () => {
+      const srcDir = join(testDir, 'src');
+      await mkdir(srcDir, { recursive: true });
+      await writeFile(join(srcDir, 'index.css'), TAILWIND_V4_CSS);
+
+      const detection = await tailwindV4Importer.detect(testDir);
+      const result = await tailwindV4Importer.import(testDir, detection);
+
+      const shadowTokens = result.tokens.filter((t) => t.namespace === 'shadow');
+
+      // --shadow-sm -> sm, --inset-shadow-sm -> inset-sm (no collision)
+      const shadowSm = shadowTokens.find((t) => t.name === 'sm');
+      expect(shadowSm).toBeDefined();
+
+      const insetSm = shadowTokens.find((t) => t.name === 'inset-sm');
+      expect(insetSm).toBeDefined();
+      expect(insetSm?.value).toContain('inset');
+
+      // Both shadow and inset-shadow are present, not deduplicated
+      expect(shadowTokens.length).toBe(4); // sm, md, inset-sm, inset-md
     });
 
     it('skips breakpoint and container namespaces', async () => {
