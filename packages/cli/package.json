@@ -35,6 +35,7 @@
     "@modelcontextprotocol/sdk": "^1.25.1",
     "@rafters/composites": "workspace:*",
     "commander": "^13.0.0",
+    "css-tree": "^3.2.1",
     "execa": "^9.6.1",
     "ora": "^9.0.0",
     "vite": "^8.0.0"
@@ -45,6 +46,7 @@
     "@rafters/design-tokens": "workspace:*",
     "@rafters/shared": "workspace:*",
     "@rafters/studio": "workspace:*",
+    "@types/css-tree": "^2.3.11",
     "@types/node": "catalog:",
     "playwright-bdd": "catalog:",
     "tsup": "^8.0.0",
