@@ -245,8 +245,16 @@ export const shadcnImporter: Importer = {
           detection.context = { parsed };
           return detection;
         }
-      } catch {
-        // File doesn't exist, try next
+      } catch (err) {
+        // Only skip for "file not found" errors - propagate unexpected errors
+        if (
+          err instanceof Error &&
+          'code' in err &&
+          (err.code === 'ENOENT' || err.code === 'ENOTDIR')
+        ) {
+          continue;
+        }
+        throw err;
       }
     }
 

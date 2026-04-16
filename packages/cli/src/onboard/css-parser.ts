@@ -67,10 +67,16 @@ export function parseCSSFile(content: string): ParsedCSS {
   let hasThemeBlock = false;
   let hasDarkMode = false;
 
-  const ast = csstree.parse(content, {
-    positions: true,
-    parseCustomProperty: true,
-  });
+  let ast: csstree.CssNode;
+  try {
+    ast = csstree.parse(content, {
+      positions: true,
+      parseCustomProperty: true,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    throw new Error(`Failed to parse CSS: ${message}`);
+  }
 
   // Track current context during walk
   let currentMediaQuery: string | undefined;

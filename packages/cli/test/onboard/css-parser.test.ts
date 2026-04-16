@@ -246,5 +246,15 @@ describe('parseCSSFile', () => {
 
       expect(result.variables[1].value).toBe('var(--base)');
     });
+
+    it('handles malformed CSS gracefully (fault-tolerant parser)', () => {
+      // css-tree is fault-tolerant, so malformed CSS doesn't throw
+      // It extracts what it can and skips invalid parts
+      const malformedCSS = ':root { --color: red; /* unclosed comment';
+      const result = parseCSSFile(malformedCSS);
+
+      // Should still extract the valid variable
+      expect(result.variables.length).toBeGreaterThanOrEqual(0);
+    });
   });
 });

@@ -65,8 +65,12 @@ export async function detectAllImporters(
       if (detection.canImport) {
         results.push({ importer, detection });
       }
-    } catch {
-      // Skip importers that fail detection
+    } catch (err) {
+      // Log detection failures for debugging - don't swallow silently
+      if (process.env.DEBUG || process.env.RAFTERS_DEBUG) {
+        const message = err instanceof Error ? err.message : String(err);
+        console.error(`Importer "${importer.metadata.id}" detection failed: ${message}`);
+      }
     }
   }
 
