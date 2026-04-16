@@ -9,6 +9,7 @@ export interface RaftersPaths {
   config: string;
   tokens: string;
   output: string;
+  importPending: string;
 }
 
 /**
@@ -21,6 +22,7 @@ export function getRaftersPaths(projectRoot: string = process.cwd()): RaftersPat
     config: join(root, 'config.rafters.json'),
     tokens: join(root, 'tokens'),
     output: join(root, 'output'),
+    importPending: join(root, 'import-pending.json'),
   };
 }
 

@@ -218,6 +218,67 @@ export function log(event: Record<string, unknown>): void {
       context.spinner?.fail(event.message as string);
       break;
 
+    // Import events
+    case 'import:scanning':
+      context.spinner = ora('Scanning for design tokens...').start();
+      break;
+
+    case 'import:no_source_detected':
+      context.spinner?.fail('No design tokens detected');
+      console.log(`  ${event.message}`);
+      if (event.suggestion) {
+        console.log(`  ${event.suggestion}`);
+      }
+      break;
+
+    case 'import:no_rafters_dir':
+      console.error(`${event.message}`);
+      break;
+
+    case 'import:pending_exists':
+      context.spinner?.stop();
+      console.log(`  ${event.message}`);
+      console.log(`  Existing file: ${event.path}`);
+      break;
+
+    case 'import:failed': {
+      context.spinner?.fail(`Import failed (source: ${event.source ?? 'unknown'})`);
+      const warnings = (event.warnings as Array<{ level: string; message: string }>) ?? [];
+      for (const w of warnings) {
+        console.log(`  [${w.level}] ${w.message}`);
+      }
+      break;
+    }
+
+    case 'import:complete': {
+      const conf = Math.round((event.confidence as number) * 100);
+      context.spinner?.succeed(
+        `Imported ${event.tokensCreated} tokens from ${event.source} (${conf}% confidence)`,
+      );
+      if ((event.skipped as number) > 0) {
+        console.log(`  Skipped: ${event.skipped}`);
+      }
+      console.log(`  Written: ${event.path}`);
+      console.log('');
+      console.log(`  ${event.nextStep}`);
+      console.log('');
+      break;
+    }
+
+    case 'import:existing_detected':
+      context.spinner?.info('Existing design tokens detected');
+      console.log(
+        `  Source: ${event.source} (${Math.round((event.confidence as number) * 100)}% confidence)`,
+      );
+      console.log(`  Found in: ${event.sourcePaths}`);
+      console.log('');
+      break;
+
+    case 'import:declined':
+      console.log('  Skipped import. You can run `rafters import` later.');
+      console.log('');
+      break;
+
     default:
       // Fallback for unknown events
       if (context.spinner) {

@@ -1,13 +1,15 @@
 /**
  * MCP Tools for Rafters Design System
  *
- * 5 focused tools for agent composition:
+ * 4 focused tools for agent ASSEMBLY (not design):
  *
  * 1. rafters_composite - Query composites with designer intent
  * 2. rafters_rule - Query or create validation rules
  * 3. rafters_pattern - Design pattern guidance (do/never)
  * 4. rafters_component - Component intelligence
- * 5. rafters_onboard - Import design tokens from CSS files
+ *
+ * Agents assemble from pre-made decisions. Token design lives in Studio.
+ * Token import lives in `rafters init` / `rafters import`, not MCP.
  */
 
 import { readdir } from 'node:fs/promises';
@@ -22,7 +24,6 @@ import {
   registerComposite,
   searchComposites,
 } from '@rafters/composites';
-import { onboard, previewOnboard } from '../onboard/orchestrator.js';
 import { registryClient } from '../registry/client.js';
 import { getRaftersPaths } from '../utils/paths.js';
 
@@ -100,31 +101,6 @@ export const TOOL_DEFINITIONS = [
       required: ['name'],
     },
   },
-  {
-    name: 'rafters_onboard',
-    description:
-      'Import design tokens from existing CSS files (shadcn, generic CSS custom properties). Detects source format, converts to Rafters tokens, and returns them for review.',
-    inputSchema: {
-      type: 'object' as const,
-      properties: {
-        action: {
-          type: 'string',
-          enum: ['analyze', 'import'],
-          description:
-            'analyze: preview what would be imported. import: run the import and return tokens.',
-        },
-        path: {
-          type: 'string',
-          description: 'Project path to analyze/import from. Defaults to current directory.',
-        },
-        importer: {
-          type: 'string',
-          description: 'Force a specific importer (shadcn, generic-css). Auto-detects if omitted.',
-        },
-      },
-      required: ['action'],
-    },
-  },
 ] as const;
 
 // ==================== Tool Handler ====================
@@ -147,8 +123,6 @@ export class RaftersToolHandler {
         return this.handlePattern(args as { solves?: string; query?: string });
       case 'rafters_component':
         return this.handleComponent(args.name as string);
-      case 'rafters_onboard':
-        return this.handleOnboard(args as { action: string; path?: string; importer?: string });
       default:
         return {
           content: [{ type: 'text', text: JSON.stringify({ error: `Unknown tool: ${name}` }) }],
@@ -375,127 +349,6 @@ export class RaftersToolHandler {
           {
             type: 'text',
             text: JSON.stringify({ error: message }),
-          },
-        ],
-      };
-    }
-  }
-
-  private async handleOnboard(args: {
-    action: string;
-    path?: string;
-    importer?: string;
-  }): Promise<CallToolResult> {
-    const { action, path, importer } = args;
-    const projectPath = path ?? this.projectRoot ?? process.cwd();
-
-    try {
-      if (action === 'analyze') {
-        // Preview what would be imported
-        const results = await previewOnboard(projectPath);
-
-        if (results.length === 0) {
-          return {
-            content: [
-              {
-                type: 'text',
-                text: JSON.stringify({
-                  status: 'no_source_detected',
-                  message: 'No compatible design token source found',
-                  suggestion:
-                    'Ensure project has CSS files with custom properties (shadcn globals.css or variables.css)',
-                }),
-              },
-            ],
-          };
-        }
-
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(
-                {
-                  status: 'ready',
-                  detectedSources: results,
-                  recommendation: results[0],
-                  nextStep: `Call rafters_onboard with action: "import" to import ${results[0]?.importer} tokens`,
-                },
-                null,
-                2,
-              ),
-            },
-          ],
-        };
-      }
-
-      if (action === 'import') {
-        // Run the import
-        const result = await onboard(projectPath, importer ? { forceImporter: importer } : {});
-
-        if (!result.success) {
-          return {
-            content: [
-              {
-                type: 'text',
-                text: JSON.stringify({
-                  status: 'failed',
-                  source: result.source,
-                  warnings: result.warnings,
-                }),
-              },
-            ],
-          };
-        }
-
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(
-                {
-                  status: 'success',
-                  source: result.source,
-                  confidence: result.confidence,
-                  sourcePaths: result.sourcePaths,
-                  stats: result.stats,
-                  tokens: result.tokens,
-                  warnings: result.warnings.length > 0 ? result.warnings : undefined,
-                },
-                null,
-                2,
-              ),
-            },
-          ],
-        };
-      }
-
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify({
-              error: `Unknown action: ${action}`,
-              validActions: ['analyze', 'import'],
-            }),
-          },
-        ],
-      };
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unknown error';
-      // Log full error for debugging
-      if (process.env.DEBUG || process.env.RAFTERS_DEBUG) {
-        console.error(`[rafters_onboard] ${action} failed for ${projectPath}:`, err);
-      }
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify({
-              error: message,
-              action,
-              path: projectPath,
-            }),
           },
         ],
       };

@@ -4,8 +4,13 @@
 
 ### Minor Changes
 
+- feat(onboard): `rafters init` now detects existing design tokens (Tailwind v4 `@theme`, shadcn, generic CSS custom properties) and prompts the user to import them. On confirmation, writes `.rafters/import-pending.json` for review. New `rafters import` command runs the same flow standalone with `--force` and `--importer` options. Import flow moved out of MCP -- agents assemble from pre-made decisions, onboarding is a designer/developer operation. Closes #1271.
 - feat(onboard): Tailwind v4 importer detects `@theme` blocks and extracts all design token namespaces (color, spacing, typography, radius, shadow, motion, opacity). Maps Tailwind `--ease-*` and `--duration-*` to rafters `motion-ease-*` and `motion-duration-*` namespace. Skips viewport-only tokens (breakpoint, container). Priority 90 (highest) since `@theme` is unambiguous. Closes #1259.
-- feat(onboard): orchestrator coordinates the import pipeline. `onboard()` detects the best importer (shadcn or generic-css), checks confidence thresholds, and runs the import. `previewOnboard()` returns all compatible importers sorted by confidence for analysis without importing. New MCP tool `rafters_onboard` exposes this to agents: `action: "analyze"` previews what would be imported, `action: "import"` runs the import. Forceimporter option allows bypassing auto-detection. Closes #1270.
+- feat(onboard): orchestrator coordinates the import pipeline. `onboard()` detects the best importer (shadcn or generic-css), checks confidence thresholds, and runs the import. `previewOnboard()` returns all compatible importers sorted by confidence for analysis without importing. Closes #1270.
+
+### Breaking Changes
+
+- refactor(mcp): removed `rafters_onboard` MCP tool. Token import moved to `rafters init` / `rafters import` CLI commands. MCP now has 4 focused tools (composite, rule, pattern, component) for agent assembly.
 
 ### Patch Changes
 

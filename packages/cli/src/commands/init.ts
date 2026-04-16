@@ -20,6 +20,8 @@ import {
   TokenRegistry,
   toDTCG,
 } from '@rafters/design-tokens';
+import { onboard, previewOnboard } from '../onboard/orchestrator.js';
+import { toImportPending, writeImportPending } from '../onboard/writer.js';
 import {
   type ComponentTarget,
   detectProject,
@@ -789,22 +791,8 @@ export async function init(options: InitOptions): Promise<void> {
   // Write Claude Code skill so agents follow rafters rules
   await writeRaftersSkill(cwd);
 
-  // Check if the project has existing design decisions that should be onboarded intentionally
-  const existingCssPath = detectedCssPath ?? (shadcn?.tailwind?.css || null);
-  if (existingCssPath) {
-    try {
-      const cssContent = await readFile(join(cwd, existingCssPath), 'utf-8');
-      if (hasExistingDesignDecisions(cssContent)) {
-        log({
-          event: 'init:existing_design_detected',
-          cssPath: existingCssPath,
-          action: 'run rafters_onboard analyze to begin migration',
-        });
-      }
-    } catch {
-      // CSS file unreadable, skip detection
-    }
-  }
+  // Check if the project has existing design decisions that can be onboarded
+  await maybeOnboardExisting(cwd, paths.importPending);
 
   log({
     event: 'init:complete',
@@ -814,23 +802,68 @@ export async function init(options: InitOptions): Promise<void> {
 }
 
 /**
- * Check if CSS content contains design decisions beyond boilerplate.
- * Does NOT interpret the content -- just detects that something is there.
+ * Detect existing design tokens via the onboard pipeline. When interactive,
+ * prompt the user to import. On confirmation, run the orchestrator and write
+ * `.rafters/import-pending.json` for review. On decline or agent mode, log
+ * the detection so the user knows `rafters import` is available.
+ *
+ * Skips entirely if import-pending.json already exists -- the user has an
+ * in-progress review and init should not clobber it.
  */
-function hasExistingDesignDecisions(css: string): boolean {
-  // Strip comments
-  const stripped = css.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*/g, '');
+async function maybeOnboardExisting(cwd: string, importPendingPath: string): Promise<void> {
+  if (existsSync(importPendingPath)) {
+    return;
+  }
 
-  // Strip imports and tailwind directives
-  const withoutBoilerplate = stripped
-    .replace(/@import\s+['"][^'"]+['"];?/g, '')
-    .replace(/@tailwind\s+\w+;?/g, '')
-    .trim();
+  const preview = await previewOnboard(cwd);
+  if (preview.length === 0) {
+    return;
+  }
 
-  if (withoutBoilerplate.length === 0) return false;
+  const best = preview[0];
+  if (!best) return;
 
-  const hasCustomProperties = /--[\w-]+\s*:/.test(stripped);
-  const hasThemeBlock = /@theme\s*\{/.test(stripped);
+  log({
+    event: 'import:existing_detected',
+    source: best.importer,
+    confidence: best.confidence,
+    sourcePaths: best.sourcePaths.map((p) => relative(cwd, p)).join(', '),
+  });
 
-  return hasCustomProperties || hasThemeBlock;
+  // Agent/non-interactive: surface the detection but don't auto-import
+  if (isAgentMode() || !isInteractive()) {
+    return;
+  }
+
+  const shouldImport = await confirm({
+    message: 'Import these tokens into rafters?',
+    default: true,
+  });
+
+  if (!shouldImport) {
+    log({ event: 'import:declined' });
+    return;
+  }
+
+  log({ event: 'import:scanning' });
+  const result = await onboard(cwd);
+
+  if (!result.success) {
+    log({ event: 'import:failed', source: result.source, warnings: result.warnings });
+    return;
+  }
+
+  const doc = toImportPending(result, cwd);
+  await writeImportPending(importPendingPath, doc);
+
+  log({
+    event: 'import:complete',
+    path: relative(cwd, importPendingPath),
+    source: result.source,
+    confidence: result.confidence,
+    tokensCreated: result.stats.tokensCreated,
+    skipped: result.stats.skipped,
+    nextStep:
+      'Review and accept tokens in .rafters/import-pending.json, then run `rafters init --rebuild`',
+  });
 }

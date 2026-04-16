@@ -7,6 +7,7 @@
 
 import { Command } from 'commander';
 import { add } from './commands/add.js';
+import { importCommand } from './commands/import.js';
 import { init } from './commands/init.js';
 import { mcp } from './commands/mcp.js';
 import { studio } from './commands/studio.js';
@@ -26,6 +27,14 @@ program
   .option('--reset', 'Re-run generators fresh, replacing persisted tokens')
   .option('--agent', 'Output JSON for machine consumption')
   .action(withErrorHandler(init));
+
+program
+  .command('import')
+  .description('Import existing design tokens (Tailwind v4, shadcn, generic CSS)')
+  .option('--force', 'Overwrite existing .rafters/import-pending.json')
+  .option('--importer <id>', 'Force a specific importer (tailwind-v4, shadcn, generic-css)')
+  .option('--agent', 'Output JSON for machine consumption')
+  .action(withErrorHandler(importCommand));
 
 program
   .command('add')

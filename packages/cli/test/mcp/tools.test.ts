@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { RaftersToolHandler, TOOL_DEFINITIONS } from '../../src/mcp/tools.js';
 
 describe('TOOL_DEFINITIONS', () => {
-  it('should define 5 tools', () => {
-    expect(TOOL_DEFINITIONS).toHaveLength(5);
+  it('should define 4 tools', () => {
+    expect(TOOL_DEFINITIONS).toHaveLength(4);
   });
 
   it('should have correct tool names', () => {
@@ -12,7 +12,11 @@ describe('TOOL_DEFINITIONS', () => {
     expect(names).toContain('rafters_rule');
     expect(names).toContain('rafters_pattern');
     expect(names).toContain('rafters_component');
-    expect(names).toContain('rafters_onboard');
+  });
+
+  it('should not include rafters_onboard (moved to rafters init / rafters import)', () => {
+    const names = TOOL_DEFINITIONS.map((t) => t.name);
+    expect(names).not.toContain('rafters_onboard');
   });
 
   it('should have descriptions for all tools', () => {
@@ -95,36 +99,6 @@ describe('RaftersToolHandler', () => {
       const data = JSON.parse(result.content[0].text as string);
       expect(data.composites).toBeDefined();
       expect(Array.isArray(data.composites)).toBe(true);
-    });
-  });
-
-  describe('rafters_onboard', () => {
-    it('should return no_source_detected for analyze on empty directory', async () => {
-      const { mkdtemp, rm } = await import('node:fs/promises');
-      const { join } = await import('node:path');
-      const testDir = await mkdtemp(join(process.cwd(), '.test-mcp-onboard-'));
-      try {
-        const handler = new RaftersToolHandler(null);
-        const result = await handler.handleToolCall('rafters_onboard', {
-          action: 'analyze',
-          path: testDir,
-        });
-
-        const data = JSON.parse(result.content[0].text as string);
-        expect(data.status).toBe('no_source_detected');
-      } finally {
-        await rm(testDir, { recursive: true, force: true });
-      }
-    });
-
-    it('should return error for unknown action', async () => {
-      const handler = new RaftersToolHandler(null);
-      const result = await handler.handleToolCall('rafters_onboard', {
-        action: 'unknown',
-      });
-
-      const data = JSON.parse(result.content[0].text as string);
-      expect(data.error).toContain('Unknown action');
     });
   });
 
