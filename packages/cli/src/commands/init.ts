@@ -791,8 +791,18 @@ export async function init(options: InitOptions): Promise<void> {
   // Write Claude Code skill so agents follow rafters rules
   await writeRaftersSkill(cwd);
 
-  // Check if the project has existing design decisions that can be onboarded
-  await maybeOnboardExisting(cwd, paths.importPending);
+  // Check if the project has existing design decisions that can be onboarded.
+  // Failures here are non-fatal -- init's primary job already succeeded.
+  try {
+    await maybeOnboardExisting(cwd, paths.importPending);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    log({
+      event: 'init:onboard_skipped_after_error',
+      message,
+      suggestion: 'Init completed. Run `rafters import` to retry onboarding.',
+    });
+  }
 
   log({
     event: 'init:complete',
@@ -823,6 +833,18 @@ async function maybeOnboardExisting(cwd: string, importPendingPath: string): Pro
   const best = preview[0];
   if (!best) return;
 
+  // Agent/non-interactive: surface the detection but don't auto-import
+  if (isAgentMode() || !isInteractive()) {
+    log({
+      event: 'import:existing_detected',
+      source: best.importer,
+      confidence: best.confidence,
+      sourcePaths: best.sourcePaths.map((p) => relative(cwd, p)).join(', '),
+      nextStep: 'Run `rafters import` to convert these tokens into pending review.',
+    });
+    return;
+  }
+
   log({
     event: 'import:existing_detected',
     source: best.importer,
@@ -830,15 +852,17 @@ async function maybeOnboardExisting(cwd: string, importPendingPath: string): Pro
     sourcePaths: best.sourcePaths.map((p) => relative(cwd, p)).join(', '),
   });
 
-  // Agent/non-interactive: surface the detection but don't auto-import
-  if (isAgentMode() || !isInteractive()) {
+  // Ctrl-C / Esc at the prompt throws ExitPromptError -- treat as decline
+  let shouldImport: boolean;
+  try {
+    shouldImport = await confirm({
+      message: 'Import these tokens into rafters?',
+      default: true,
+    });
+  } catch {
+    log({ event: 'import:declined' });
     return;
   }
-
-  const shouldImport = await confirm({
-    message: 'Import these tokens into rafters?',
-    default: true,
-  });
 
   if (!shouldImport) {
     log({ event: 'import:declined' });

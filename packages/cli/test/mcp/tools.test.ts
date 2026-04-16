@@ -109,6 +109,17 @@ describe('RaftersToolHandler', () => {
 
       const data = JSON.parse(result.content[0].text as string);
       expect(data.error).toContain('Unknown tool');
+      expect(data.suggestion).toContain('Available tools');
+    });
+
+    it('should point rafters_onboard callers to the CLI', async () => {
+      const handler = new RaftersToolHandler(null);
+      const result = await handler.handleToolCall('rafters_onboard', {});
+
+      const data = JSON.parse(result.content[0].text as string);
+      expect(data.error).toContain('Unknown tool');
+      expect(data.suggestion).toContain('rafters init');
+      expect(data.suggestion).toContain('rafters import');
     });
   });
 });

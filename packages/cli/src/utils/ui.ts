@@ -237,8 +237,12 @@ export function log(event: Record<string, unknown>): void {
 
     case 'import:pending_exists':
       context.spinner?.stop();
-      console.log(`  ${event.message}`);
+      console.error(`${event.message}`);
       console.log(`  Existing file: ${event.path}`);
+      break;
+
+    case 'import:pending_backed_up':
+      console.log(`  Previous import-pending backed up: ${event.backup}`);
       break;
 
     case 'import:failed': {

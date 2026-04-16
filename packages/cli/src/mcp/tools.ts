@@ -123,10 +123,17 @@ export class RaftersToolHandler {
         return this.handlePattern(args as { solves?: string; query?: string });
       case 'rafters_component':
         return this.handleComponent(args.name as string);
-      default:
+      default: {
+        const suggestion =
+          name === 'rafters_onboard'
+            ? 'rafters_onboard was removed. Token import is now a CLI operation: run `rafters init` (auto-detects and prompts) or `rafters import` (standalone).'
+            : 'Available tools: rafters_composite, rafters_rule, rafters_pattern, rafters_component.';
         return {
-          content: [{ type: 'text', text: JSON.stringify({ error: `Unknown tool: ${name}` }) }],
+          content: [
+            { type: 'text', text: JSON.stringify({ error: `Unknown tool: ${name}`, suggestion }) },
+          ],
         };
+      }
     }
   }
 

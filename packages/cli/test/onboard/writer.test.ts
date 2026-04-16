@@ -105,6 +105,16 @@ describe('toImportPending', () => {
     };
     expect(() => toImportPending(failed, projectRoot)).toThrow(/failed onboard/);
   });
+
+  it('fails loudly when a token.value is not a string', () => {
+    // ColorValue or ColorReference shaped value -- no source string to render
+    const colorRef: Token = {
+      ...token,
+      value: { token: 'primary-500' } as unknown as Token['value'],
+    };
+    const result: OnboardResult = { ...successfulResult, tokens: [colorRef] };
+    expect(() => toImportPending(result, projectRoot)).toThrow(/not a source string/);
+  });
 });
 
 describe('writeImportPending', () => {

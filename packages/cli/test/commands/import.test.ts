@@ -82,6 +82,24 @@ describe('rafters import command', () => {
     expect(parsed.version).toBe('1.0');
   });
 
+  it('backs up existing pending file when --force is passed', async () => {
+    const { readdir } = await import('node:fs/promises');
+    const src = join(testDir, 'src');
+    await mkdir(src, { recursive: true });
+    await writeFile(join(src, 'index.css'), TAILWIND_CSS);
+    await writeFile(join(testDir, '.rafters', 'import-pending.json'), '{"version":"0.0"}');
+
+    await importCommand({ agent: true, force: true });
+
+    const raftersDir = join(testDir, '.rafters');
+    const entries = await readdir(raftersDir);
+    const backups = entries.filter((f) => f.startsWith('import-pending.json.backup-'));
+    expect(backups.length).toBe(1);
+
+    const backupRaw = await readFile(join(raftersDir, backups[0] as string), 'utf-8');
+    expect(JSON.parse(backupRaw).version).toBe('0.0');
+  });
+
   it('respects --importer to force a specific importer', async () => {
     const src = join(testDir, 'src');
     await mkdir(src, { recursive: true });

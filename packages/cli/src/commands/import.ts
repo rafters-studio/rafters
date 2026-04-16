@@ -12,6 +12,7 @@
  */
 
 import { existsSync } from 'node:fs';
+import { rename } from 'node:fs/promises';
 import { relative } from 'node:path';
 import { onboard, previewOnboard } from '../onboard/orchestrator.js';
 import { toImportPending, writeImportPending } from '../onboard/writer.js';
@@ -41,14 +42,25 @@ export async function importCommand(options: ImportOptions): Promise<void> {
     return;
   }
 
-  if (existsSync(paths.importPending) && !options.force) {
+  if (existsSync(paths.importPending)) {
+    if (!options.force) {
+      log({
+        event: 'import:pending_exists',
+        path: relative(cwd, paths.importPending),
+        message:
+          'An import-pending.json already exists. Use --force to overwrite (previous file will be backed up).',
+      });
+      process.exitCode = 1;
+      return;
+    }
+
+    // --force: back up the existing file so in-progress review work isn't lost
+    const backupPath = `${paths.importPending}.backup-${Date.now()}.json`;
+    await rename(paths.importPending, backupPath);
     log({
-      event: 'import:pending_exists',
-      path: relative(cwd, paths.importPending),
-      message: 'An import-pending.json already exists. Use --force to overwrite.',
+      event: 'import:pending_backed_up',
+      backup: relative(cwd, backupPath),
     });
-    process.exitCode = 1;
-    return;
   }
 
   log({ event: 'import:scanning' });

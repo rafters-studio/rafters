@@ -5,7 +5,7 @@
  * and writes it to .rafters/import-pending.json for user review.
  */
 
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, rename, writeFile } from 'node:fs/promises';
 import { dirname, relative } from 'node:path';
 import { type ImportPending, ImportPendingSchema, type PendingToken } from '@rafters/shared';
 import type { OnboardResult } from './orchestrator.js';
@@ -34,18 +34,31 @@ export function toImportPending(
     relative(projectRoot, p),
   );
 
-  const tokens: PendingToken[] = result.tokens.map((token) => ({
-    original: {
-      // Reverse the `Imported from X --var-name` convention to recover the source var
-      name: extractSourceVarName(token.semanticMeaning) ?? token.name,
-      value: typeof token.value === 'string' ? token.value : JSON.stringify(token.value),
-      source: primarySource ?? '',
-    },
-    proposed: token,
-    decision: 'pending' as const,
-    confidence: result.confidence,
-    rationale: token.semanticMeaning,
-  }));
+  const tokens: PendingToken[] = result.tokens.map((token) => {
+    // The `original.value` field must carry the source CSS as written.
+    // A non-string Token.value (ColorValue / ColorReference) means the importer
+    // produced an already-resolved object with no source string to show the user.
+    // Fail loudly: importers must be updated to carry the original source string.
+    if (typeof token.value !== 'string') {
+      throw new Error(
+        `Cannot build ImportPending for "${token.name}": token.value is a ${typeof token.value === 'object' ? 'structured object' : typeof token.value}, not a source string. ` +
+          'Importers must produce string values for tokens that map back to source CSS.',
+      );
+    }
+
+    return {
+      original: {
+        // Reverse the `Imported from X --var-name` convention to recover the source var
+        name: extractSourceVarName(token.semanticMeaning) ?? token.name,
+        value: token.value,
+        source: primarySource ?? '',
+      },
+      proposed: token,
+      decision: 'pending' as const,
+      confidence: result.confidence,
+      rationale: token.semanticMeaning,
+    };
+  });
 
   const warnings = result.warnings
     .filter((w) => w.level !== 'error' || result.tokens.length > 0)
@@ -78,10 +91,13 @@ function extractSourceVarName(semanticMeaning: string | undefined): string | nul
 }
 
 /**
- * Write an ImportPending document to disk.
- * Creates parent directories as needed.
+ * Write an ImportPending document to disk atomically.
+ * Creates parent directories as needed. Writes to a temp file and renames
+ * so that a concurrent reader never sees a partially-written file.
  */
 export async function writeImportPending(path: string, doc: ImportPending): Promise<void> {
   await mkdir(dirname(path), { recursive: true });
-  await writeFile(path, `${JSON.stringify(doc, null, 2)}\n`, 'utf-8');
+  const tmp = `${path}.tmp-${process.pid}`;
+  await writeFile(tmp, `${JSON.stringify(doc, null, 2)}\n`, 'utf-8');
+  await rename(tmp, path);
 }
