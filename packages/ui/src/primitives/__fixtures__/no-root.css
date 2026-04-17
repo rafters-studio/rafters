@@ -1,0 +1,21 @@
+/* No :root block, only utility class rules. */
+
+.bg-primary {
+  background-color: oklch(0.208 0.042 266);
+}
+
+.text-foreground {
+  color: oklch(0.141 0 0);
+}
+
+.p-4 {
+  padding: 1rem;
+}
+
+.flex {
+  display: flex;
+}
+
+.items-center {
+  align-items: center;
+}

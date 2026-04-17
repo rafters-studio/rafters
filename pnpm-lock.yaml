@@ -338,7 +338,7 @@ importers:
         version: 8.2.0(@types/node@24.10.0)
       '@modelcontextprotocol/sdk':
         specifier: ^1.25.1
-        version: 1.25.1(hono@4.11.0)(zod@4.3.6)
+        version: 1.25.1(hono@4.11.0)(zod@4.1.12)
       commander:
         specifier: ^13.0.0
         version: 13.1.0
@@ -396,7 +396,7 @@ importers:
         version: 4.1.0(@types/node@24.10.0)(@vitest/ui@4.1.0)(happy-dom@20.0.10)(jsdom@26.1.0)(msw@2.11.6(@types/node@24.10.0)(typescript@5.9.3))(vite@8.0.0(@types/node@24.10.0)(esbuild@0.27.0)(jiti@2.6.1)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2))
       zocker:
         specifier: 'catalog:'
-        version: 3.0.0(zod@4.3.6)
+        version: 3.0.0(zod@4.1.12)
 
   packages/color-utils:
     dependencies:
@@ -612,10 +612,13 @@ importers:
         version: 4.1.0(@types/node@24.10.0)(@vitest/ui@4.1.0)(happy-dom@20.0.10)(jsdom@26.1.0)(msw@2.11.6(@types/node@24.10.0)(typescript@5.9.3))(vite@8.0.0(@types/node@24.10.0)(esbuild@0.27.3)(jiti@2.6.1)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2))
       zocker:
         specifier: 'catalog:'
-        version: 3.0.0(zod@4.3.6)
+        version: 3.0.0(zod@4.1.12)
 
   packages/ui:
     dependencies:
+      css-tree:
+        specifier: ^3.2.1
+        version: 3.2.1
       mdast-util-from-markdown:
         specifier: ^2.0.3
         version: 2.0.3
@@ -650,6 +653,12 @@ importers:
       '@testing-library/user-event':
         specifier: 'catalog:'
         version: 14.6.1(@testing-library/dom@10.4.1)
+      '@types/css-tree':
+        specifier: ^2.3.11
+        version: 2.3.11
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.10.0
       '@types/react':
         specifier: 'catalog:'
         version: 19.2.2
@@ -3594,10 +3603,6 @@ packages:
     resolution: {integrity: sha512-OA0mILzGc1kCOCSJerOeqDxDQ4HOh+G8NbOJFOTgOCzpw7fCBubk0fEyxp8AgOL/jvLgYA/uV0cMbe43ElF1JA==}
     engines: {node: ^10 || ^12.20.0 || ^14.13.0 || >=15.0.0, npm: '>=7.0.0'}
 
-  css-tree@3.1.0:
-    resolution: {integrity: sha512-0eW44TGN5SQXU1mWSkKwFstI/22X2bG1nYzZTYMAWjylYURhse752YgbE4Cx46AC+bAvI+/dYTPRk1LqSUnu6w==}
-    engines: {node: ^10 || ^12.20.0 || ^14.13.0 || >=15.0.0}
-
   css-tree@3.2.1:
     resolution: {integrity: sha512-X7sjQzceUhu1u7Y/ylrRZFU2FS6LRiFVp6rKLPg23y3x3c3DOKAwuXGDp+PAGjh6CSnCjYeAul8pcT8bAl+lSA==}
     engines: {node: ^10 || ^12.20.0 || ^14.13.0 || >=15.0.0}
@@ -4755,9 +4760,6 @@ packages:
 
   mdn-data@2.0.28:
     resolution: {integrity: sha512-aylIc7Z9y4yzHYAJNuESG3hfhC+0Ibp/MAMiaOZgNv4pmEdFyfZhhhny4MNiAfWdBQ1RQ2mfDWmM1x8SvGyp8g==}
-
-  mdn-data@2.12.2:
-    resolution: {integrity: sha512-IEn+pegP1aManZuckezWCO+XZQDplx1366JoVhTpMpBB1sPey/SbveZQUosKiKiGYjg1wH4pMlNgXbCiYgihQA==}
 
   mdn-data@2.27.1:
     resolution: {integrity: sha512-9Yubnt3e8A0OKwxYSXyhLymGW4sCufcLG6VdiDdUGVkPhpqLxlvP5vl1983gQjJl3tqbrM731mjaZaP68AgosQ==}
@@ -7898,7 +7900,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@modelcontextprotocol/sdk@1.25.1(hono@4.11.0)(zod@4.3.6)':
+  '@modelcontextprotocol/sdk@1.25.1(hono@4.11.0)(zod@4.1.12)':
     dependencies:
       '@hono/node-server': 1.19.11(hono@4.11.0)
       ajv: 8.17.1
@@ -7914,8 +7916,8 @@ snapshots:
       json-schema-typed: 8.0.2
       pkce-challenge: 5.0.1
       raw-body: 3.0.2
-      zod: 4.3.6
-      zod-to-json-schema: 3.25.0(zod@4.3.6)
+      zod: 4.1.12
+      zod-to-json-schema: 3.25.0(zod@4.1.12)
     transitivePeerDependencies:
       - hono
       - supports-color
@@ -9235,11 +9237,6 @@ snapshots:
   css-tree@2.2.1:
     dependencies:
       mdn-data: 2.0.28
-      source-map-js: 1.2.1
-
-  css-tree@3.1.0:
-    dependencies:
-      mdn-data: 2.12.2
       source-map-js: 1.2.1
 
   css-tree@3.2.1:
@@ -10626,8 +10623,6 @@ snapshots:
 
   mdn-data@2.0.28: {}
 
-  mdn-data@2.12.2: {}
-
   mdn-data@2.27.1: {}
 
   media-typer@1.1.0: {}
@@ -11921,7 +11916,7 @@ snapshots:
     dependencies:
       commander: 11.1.0
       css-select: 5.2.2
-      css-tree: 3.1.0
+      css-tree: 3.2.1
       css-what: 6.2.2
       csso: 5.0.5
       picocolors: 1.1.1
@@ -12123,13 +12118,13 @@ snapshots:
 
   unifont@0.6.0:
     dependencies:
-      css-tree: 3.1.0
+      css-tree: 3.2.1
       ofetch: 1.5.1
       ohash: 2.0.11
 
   unifont@0.7.4:
     dependencies:
-      css-tree: 3.1.0
+      css-tree: 3.2.1
       ofetch: 1.5.1
       ohash: 2.0.11
 
@@ -12655,19 +12650,13 @@ snapshots:
       randexp: 0.5.3
       zod: 4.1.12
 
-  zocker@3.0.0(zod@4.3.6):
-    dependencies:
-      '@faker-js/faker': 10.1.0
-      randexp: 0.5.3
-      zod: 4.3.6
-
   zod-to-json-schema@3.25.0(zod@3.25.76):
     dependencies:
       zod: 3.25.76
 
-  zod-to-json-schema@3.25.0(zod@4.3.6):
+  zod-to-json-schema@3.25.0(zod@4.1.12):
     dependencies:
-      zod: 4.3.6
+      zod: 4.1.12
 
   zod-to-ts@1.2.0(typescript@5.9.3)(zod@3.25.76):
     dependencies:

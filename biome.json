@@ -24,7 +24,8 @@
       "!**/.rafters",
       "!.claude/worktrees",
       "!docs-site",
-      "!docs/templates"
+      "!docs/templates",
+      "!**/__fixtures__/**/*.css"
     ]
   },
   "assist": { "actions": { "source": { "organizeImports": "on" } } },
