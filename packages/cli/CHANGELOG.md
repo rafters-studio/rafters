@@ -1,5 +1,11 @@
 # rafters
 
+## 0.0.50
+
+### Patch Changes
+
+- fix(ui): `classy` no longer warns on every layout utility. It had no runtime way to distinguish Rafters-internal class maps (Container, Grid, Card internals) from user slop -- both arrive as strings -- so SSR builds flooded logs with hundreds of false positives from `cardHeaderClasses`, `cardContentClasses`, etc. File-aware enforcement belongs in the pre-edit hook and a future build-time source scanner, not in classy. Removes `LAYOUT_UTILITY_PATTERNS`, `isLayoutUtility`, the consumer-mode warning, the dead component-mode strip path, and `ClassyOptions.component`. Keeps arbitrary-value blocking (unambiguous) and token resolution.
+
 ## 0.0.49
 
 ### Minor Changes
