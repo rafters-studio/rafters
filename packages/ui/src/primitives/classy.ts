@@ -34,8 +34,6 @@ export interface ClassyOptions {
   tokenMap?: TokenMap;
   /** Allow arbitrary values like w-[10px] (default: false) */
   allowArbitrary?: boolean;
-  /** Component context: strip layout utilities (default: false, warn instead) */
-  component?: boolean;
   /** Custom warning handler */
   warn?: (msg: string) => void;
   /** Custom class normalization */
@@ -166,49 +164,6 @@ function defaultWarn(msg: string) {
   }
 }
 
-/**
- * Layout utilities that Container and Grid handle.
- * Components should never receive these. Consumer code gets a warning.
- */
-const LAYOUT_UTILITY_PATTERNS = [
-  /^flex$/,
-  /^flex-(col|row|wrap|nowrap|1|auto|initial|none)$/,
-  /^inline-flex$/,
-  /^grid$/,
-  /^grid-cols-/,
-  /^grid-rows-/,
-  /^col-span-/,
-  /^row-span-/,
-  /^gap-/,
-  /^space-(x|y)-/,
-  /^p-/,
-  /^px-/,
-  /^py-/,
-  /^pt-/,
-  /^pr-/,
-  /^pb-/,
-  /^pl-/,
-  /^m-/,
-  /^mx-/,
-  /^my-/,
-  /^mt-/,
-  /^mr-/,
-  /^mb-/,
-  /^ml-/,
-  /^items-/,
-  /^justify-/,
-  /^self-/,
-  /^place-/,
-  /^content-/,
-];
-
-/**
- * Check if a utility (without modifiers) is a layout utility
- */
-function isLayoutUtility(utility: string): boolean {
-  return LAYOUT_UTILITY_PATTERNS.some((pattern) => pattern.test(utility));
-}
-
 function flatten(inputs: ClassInput[], out: unknown[] = []): unknown[] {
   for (const i of inputs) {
     if (i == null || i === false) continue;
@@ -228,31 +183,16 @@ function flatten(inputs: ClassInput[], out: unknown[] = []): unknown[] {
 export function createClassy(options?: ClassyOptions) {
   const tokenMap = options?.tokenMap;
   const allowArbitrary = options?.allowArbitrary ?? false;
-  const isComponent = options?.component ?? false;
   const warn = options?.warn ?? defaultWarn;
   const normalize = options?.normalize ?? ((s: string) => s);
 
   /**
-   * Process a single class string, checking for arbitrary values and layout utilities
+   * Process a single class string, checking for arbitrary values
    */
   function processClass(cls: string, seen: Set<string>, out: string[]): void {
     if (!allowArbitrary && hasArbitraryValue(cls)) {
       warn(`classy: arbitrary value '${cls}' skipped`);
       return;
-    }
-
-    // Check for layout utilities that Container and Grid handle
-    const parsed = parseTailwindClass(cls);
-    if (parsed.isValid && isLayoutUtility(parsed.utility)) {
-      if (isComponent) {
-        // Components: strip layout utilities silently -- they handle their own layout
-        warn(`classy: layout utility '${cls}' stripped from component. Use Container and Grid.`);
-        return;
-      }
-      // Consumer code: warn but allow
-      warn(
-        `classy: layout utility '${cls}' detected. Container and Grid handle layout in Rafters.`,
-      );
     }
 
     const norm = normalize(cls);
