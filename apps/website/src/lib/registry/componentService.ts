@@ -72,14 +72,16 @@ function getCompositesPath(): string {
 /**
  * Component file extensions to discover.
  * The .tsx file is the primary; others are framework-specific variants.
+ * .element.ts is the Web Component target, parallel to .tsx/.astro/.vue/.svelte.
  */
-const COMPONENT_EXTENSIONS = ['.tsx', '.astro', '.vue', '.svelte'];
+const COMPONENT_EXTENSIONS = ['.tsx', '.astro', '.vue', '.svelte', '.element.ts'];
 
 /**
  * Shared auxiliary file suffixes bundled with components.
- * These provide class maps, types, or constants shared across framework variants.
+ * These provide class maps, types, constants, or shadow-DOM styles shared
+ * across framework variants.
  */
-const SHARED_SUFFIXES = ['.classes.ts', '.types.ts', '.constants.ts'];
+const SHARED_SUFFIXES = ['.classes.ts', '.types.ts', '.constants.ts', '.styles.ts'];
 
 /**
  * List all available component names.
