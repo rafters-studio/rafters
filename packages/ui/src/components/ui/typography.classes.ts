@@ -122,6 +122,8 @@ const DIM_TO_UTIL: Record<keyof TypographyTokenProps, (v: string) => string> = {
   },
 };
 
+const DIM_KEYS = Object.keys(DIM_TO_UTIL) as (keyof TypographyTokenProps)[];
+
 function emitDim(dim: keyof TypographyTokenProps, value: string, prefix = ''): string {
   const util = DIM_TO_UTIL[dim](value);
   if (!prefix) return util;
@@ -131,12 +133,13 @@ function emitDim(dim: keyof TypographyTokenProps, value: string, prefix = ''): s
     .join(' ');
 }
 
-function pickDefined<T extends object>(obj: T): Partial<T> {
-  const out: Partial<T> = {};
-  for (const key of Object.keys(obj) as (keyof T)[]) {
-    if (obj[key] != null) out[key] = obj[key];
+function emitProps(props: TypographyTokenProps, prefix = ''): string {
+  const classes: string[] = [];
+  for (const key of DIM_KEYS) {
+    const value = props[key];
+    if (value != null) classes.push(emitDim(key, value, prefix));
   }
-  return out;
+  return classes.join(' ');
 }
 
 export function resolveTypography(
@@ -144,49 +147,39 @@ export function resolveTypography(
   overrides: TypographyTokenProps = {},
 ): string {
   const defaults = VARIANTS[variant];
-  const dims: TypographyTokenProps = { ...defaults, ...pickDefined(overrides) };
-  delete (dims as VariantDefaults).layout;
-  delete (dims as VariantDefaults).cq;
+  const merged: TypographyTokenProps = {};
+  for (const key of DIM_KEYS) merged[key] = overrides[key] ?? defaults[key];
 
-  const classes: string[] = [];
-  if (defaults.layout) classes.push(defaults.layout);
-
-  for (const key of Object.keys(DIM_TO_UTIL) as (keyof TypographyTokenProps)[]) {
-    const value = dims[key];
-    if (value != null) classes.push(emitDim(key, value));
-  }
+  const parts: string[] = [];
+  if (defaults.layout) parts.push(defaults.layout);
+  parts.push(emitProps(merged));
 
   // CQ defaults survive only where the prop didn't override the same dimension.
   if (defaults.cq) {
-    for (const [breakpoint, cqOverrides] of Object.entries(defaults.cq)) {
-      for (const key of Object.keys(cqOverrides) as (keyof CqOverrides)[]) {
-        if (overrides[key] != null) continue;
-        const value = cqOverrides[key];
-        if (value != null) classes.push(emitDim(key, value, `@${breakpoint}:`));
+    for (const [breakpoint, cqDefaults] of Object.entries(defaults.cq)) {
+      const surviving: TypographyTokenProps = {};
+      for (const key of Object.keys(cqDefaults) as (keyof CqOverrides)[]) {
+        if (overrides[key] == null) surviving[key] = cqDefaults[key];
       }
+      parts.push(emitProps(surviving, `@${breakpoint}:`));
     }
   }
 
-  return classes.join(' ');
+  return parts.filter(Boolean).join(' ');
 }
 
 /**
- * Back-compat flat string map. Computed from the dimensional defaults.
- * Prefer `resolveTypography(variant, props)` when overrides are in play.
+ * Emit token-prop classes without any variant defaults. Exposed for tests that
+ * exercise the prop-to-utility emit path in isolation (see typography-fill.test).
+ */
+export function tokenPropsToClasses(props: TypographyTokenProps): string {
+  return emitProps(props);
+}
+
+/**
+ * Flat-string map of variant defaults with no overrides. Kept for consumers
+ * that need the baseline class string (e.g. List's li, CodeBlock wrapper).
  */
 export const typographyClasses = Object.fromEntries(
   (Object.keys(VARIANTS) as TypographyVariant[]).map((v) => [v, resolveTypography(v)]),
 ) as Record<TypographyVariant, string>;
-
-/**
- * @deprecated Use `resolveTypography(variant, props)` so overrides replace
- * defaults instead of appending. Kept so existing consumers don't break.
- */
-export function tokenPropsToClasses(props: TypographyTokenProps): string {
-  const classes: string[] = [];
-  for (const key of Object.keys(DIM_TO_UTIL) as (keyof TypographyTokenProps)[]) {
-    const value = props[key];
-    if (value != null) classes.push(emitDim(key, value));
-  }
-  return classes.join(' ');
-}
