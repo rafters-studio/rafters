@@ -16,6 +16,7 @@ test-results
 *.astro/
 .rafters/
 !apps/demo/.rafters/
+.scratch/
 .playwright-mcp/
 *.tsbuildinfo
 # Rust

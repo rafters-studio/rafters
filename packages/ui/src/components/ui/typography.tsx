@@ -75,8 +75,8 @@ export interface EditableTypographyProps {
 // ============================================================================
 
 import {
+  resolveTypography,
   type TypographyTokenProps,
-  tokenPropsToClasses,
   typographyClasses,
 } from './typography.classes';
 
@@ -944,6 +944,8 @@ export const H1 = React.forwardRef<HTMLHeadingElement, EditableHeadingProps>(
       line,
       tracking,
       family,
+      align,
+      transform,
       editable,
       onChange,
       onFocus,
@@ -968,8 +970,6 @@ export const H1 = React.forwardRef<HTMLHeadingElement, EditableHeadingProps>(
       onBackspaceAtStart,
     });
 
-    const overrides = tokenPropsToClasses({ size, weight, color, line, tracking, family });
-
     const combinedRef = (element: HTMLHeadingElement | null) => {
       (elementRef as React.MutableRefObject<HTMLElement | null>).current = element;
       if (typeof ref === 'function') {
@@ -983,8 +983,16 @@ export const H1 = React.forwardRef<HTMLHeadingElement, EditableHeadingProps>(
       <h1
         ref={combinedRef}
         className={classy(
-          typographyClasses.h1,
-          overrides,
+          resolveTypography('h1', {
+            size,
+            weight,
+            color,
+            line,
+            tracking,
+            family,
+            align,
+            transform,
+          }),
           editable && 'outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded',
           className,
         )}
@@ -1015,6 +1023,8 @@ export const H2 = React.forwardRef<HTMLHeadingElement, EditableHeadingProps>(
       line,
       tracking,
       family,
+      align,
+      transform,
       editable,
       onChange,
       onFocus,
@@ -1039,8 +1049,6 @@ export const H2 = React.forwardRef<HTMLHeadingElement, EditableHeadingProps>(
       onBackspaceAtStart,
     });
 
-    const overrides = tokenPropsToClasses({ size, weight, color, line, tracking, family });
-
     const combinedRef = (element: HTMLHeadingElement | null) => {
       (elementRef as React.MutableRefObject<HTMLElement | null>).current = element;
       if (typeof ref === 'function') {
@@ -1054,8 +1062,16 @@ export const H2 = React.forwardRef<HTMLHeadingElement, EditableHeadingProps>(
       <h2
         ref={combinedRef}
         className={classy(
-          typographyClasses.h2,
-          overrides,
+          resolveTypography('h2', {
+            size,
+            weight,
+            color,
+            line,
+            tracking,
+            family,
+            align,
+            transform,
+          }),
           editable && 'outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded',
           className,
         )}
@@ -1086,6 +1102,8 @@ export const H3 = React.forwardRef<HTMLHeadingElement, EditableHeadingProps>(
       line,
       tracking,
       family,
+      align,
+      transform,
       editable,
       onChange,
       onFocus,
@@ -1110,8 +1128,6 @@ export const H3 = React.forwardRef<HTMLHeadingElement, EditableHeadingProps>(
       onBackspaceAtStart,
     });
 
-    const overrides = tokenPropsToClasses({ size, weight, color, line, tracking, family });
-
     const combinedRef = (element: HTMLHeadingElement | null) => {
       (elementRef as React.MutableRefObject<HTMLElement | null>).current = element;
       if (typeof ref === 'function') {
@@ -1125,8 +1141,16 @@ export const H3 = React.forwardRef<HTMLHeadingElement, EditableHeadingProps>(
       <h3
         ref={combinedRef}
         className={classy(
-          typographyClasses.h3,
-          overrides,
+          resolveTypography('h3', {
+            size,
+            weight,
+            color,
+            line,
+            tracking,
+            family,
+            align,
+            transform,
+          }),
           editable && 'outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded',
           className,
         )}
@@ -1157,6 +1181,8 @@ export const H4 = React.forwardRef<HTMLHeadingElement, EditableHeadingProps>(
       line,
       tracking,
       family,
+      align,
+      transform,
       editable,
       onChange,
       onFocus,
@@ -1181,8 +1207,6 @@ export const H4 = React.forwardRef<HTMLHeadingElement, EditableHeadingProps>(
       onBackspaceAtStart,
     });
 
-    const overrides = tokenPropsToClasses({ size, weight, color, line, tracking, family });
-
     const combinedRef = (element: HTMLHeadingElement | null) => {
       (elementRef as React.MutableRefObject<HTMLElement | null>).current = element;
       if (typeof ref === 'function') {
@@ -1196,8 +1220,16 @@ export const H4 = React.forwardRef<HTMLHeadingElement, EditableHeadingProps>(
       <h4
         ref={combinedRef}
         className={classy(
-          typographyClasses.h4,
-          overrides,
+          resolveTypography('h4', {
+            size,
+            weight,
+            color,
+            line,
+            tracking,
+            family,
+            align,
+            transform,
+          }),
           editable && 'outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded',
           className,
         )}
@@ -1217,12 +1249,23 @@ H4.displayName = 'H4';
  * Use for fine-grained subsections. Shares visual treatment with H4.
  */
 export const H5 = React.forwardRef<HTMLHeadingElement, TypographyProps>(
-  ({ className, size, weight, color, line, tracking, family, ...props }, ref) => {
-    const overrides = tokenPropsToClasses({ size, weight, color, line, tracking, family });
+  ({ className, size, weight, color, line, tracking, family, align, transform, ...props }, ref) => {
     return (
       <h5
         ref={ref as React.Ref<HTMLHeadingElement>}
-        className={classy(typographyClasses.h4, overrides, className)}
+        className={classy(
+          resolveTypography('h4', {
+            size,
+            weight,
+            color,
+            line,
+            tracking,
+            family,
+            align,
+            transform,
+          }),
+          className,
+        )}
         {...props}
       />
     );
@@ -1235,12 +1278,23 @@ H5.displayName = 'H5';
  * Use for the finest subsections. Shares visual treatment with H4.
  */
 export const H6 = React.forwardRef<HTMLHeadingElement, TypographyProps>(
-  ({ className, size, weight, color, line, tracking, family, ...props }, ref) => {
-    const overrides = tokenPropsToClasses({ size, weight, color, line, tracking, family });
+  ({ className, size, weight, color, line, tracking, family, align, transform, ...props }, ref) => {
     return (
       <h6
         ref={ref as React.Ref<HTMLHeadingElement>}
-        className={classy(typographyClasses.h4, overrides, className)}
+        className={classy(
+          resolveTypography('h4', {
+            size,
+            weight,
+            color,
+            line,
+            tracking,
+            family,
+            align,
+            transform,
+          }),
+          className,
+        )}
         {...props}
       />
     );
@@ -1287,6 +1341,8 @@ export const P = React.forwardRef<HTMLParagraphElement, EditableParagraphProps>(
       line,
       tracking,
       family,
+      align,
+      transform,
       editable,
       onChange,
       onFocus,
@@ -1315,9 +1371,6 @@ export const P = React.forwardRef<HTMLParagraphElement, EditableParagraphProps>(
       onSlashCommand,
     });
 
-    const overrides = tokenPropsToClasses({ size, weight, color, line, tracking, family });
-
-    // Combine refs
     const combinedRef = (element: HTMLParagraphElement | null) => {
       (elementRef as React.MutableRefObject<HTMLElement | null>).current = element;
       if (typeof ref === 'function') {
@@ -1331,8 +1384,7 @@ export const P = React.forwardRef<HTMLParagraphElement, EditableParagraphProps>(
       <p
         ref={combinedRef}
         className={classy(
-          typographyClasses.p,
-          overrides,
+          resolveTypography('p', { size, weight, color, line, tracking, family, align, transform }),
           editable && 'outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded',
           className,
         )}
@@ -1352,12 +1404,23 @@ P.displayName = 'P';
  * For fine print, captions, or supporting text
  */
 export const Small = React.forwardRef<HTMLElement, TypographyProps>(
-  ({ className, size, weight, color, line, tracking, family, ...props }, ref) => {
-    const overrides = tokenPropsToClasses({ size, weight, color, line, tracking, family });
+  ({ className, size, weight, color, line, tracking, family, align, transform, ...props }, ref) => {
     return (
       <small
         ref={ref as React.Ref<HTMLElement>}
-        className={classy(typographyClasses.small, overrides, className)}
+        className={classy(
+          resolveTypography('small', {
+            size,
+            weight,
+            color,
+            line,
+            tracking,
+            family,
+            align,
+            transform,
+          }),
+          className,
+        )}
         {...props}
       />
     );
@@ -1370,12 +1433,23 @@ Small.displayName = 'Small';
  * Monospace text for code snippets, commands, or technical terms
  */
 export const Code = React.forwardRef<HTMLElement, TypographyProps>(
-  ({ className, size, weight, color, line, tracking, family, ...props }, ref) => {
-    const overrides = tokenPropsToClasses({ size, weight, color, line, tracking, family });
+  ({ className, size, weight, color, line, tracking, family, align, transform, ...props }, ref) => {
     return (
       <code
         ref={ref as React.Ref<HTMLElement>}
-        className={classy(typographyClasses.code, overrides, className)}
+        className={classy(
+          resolveTypography('code', {
+            size,
+            weight,
+            color,
+            line,
+            tracking,
+            family,
+            align,
+            transform,
+          }),
+          className,
+        )}
         {...props}
       />
     );
@@ -1418,6 +1492,8 @@ export const Blockquote = React.forwardRef<HTMLQuoteElement, EditableQuoteProps>
       line,
       tracking,
       family,
+      align,
+      transform,
       editable,
       onChange,
       onFocus,
@@ -1446,8 +1522,6 @@ export const Blockquote = React.forwardRef<HTMLQuoteElement, EditableQuoteProps>
       onSelectionChange,
     });
 
-    const overrides = tokenPropsToClasses({ size, weight, color, line, tracking, family });
-
     const citationRef = useRef<HTMLElement>(null);
 
     const handleCitationInput = useCallback(() => {
@@ -1470,8 +1544,16 @@ export const Blockquote = React.forwardRef<HTMLQuoteElement, EditableQuoteProps>
       <blockquote
         ref={combinedRef}
         className={classy(
-          typographyClasses.blockquote,
-          overrides,
+          resolveTypography('blockquote', {
+            size,
+            weight,
+            color,
+            line,
+            tracking,
+            family,
+            align,
+            transform,
+          }),
           editable && 'outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded',
           className,
         )}
@@ -1974,12 +2056,23 @@ CodeBlock.displayName = 'CodeBlock';
  * ```
  */
 export const Mark = React.forwardRef<HTMLElement, TypographyProps>(
-  ({ className, size, weight, color, line, tracking, family, ...props }, ref) => {
-    const overrides = tokenPropsToClasses({ size, weight, color, line, tracking, family });
+  ({ className, size, weight, color, line, tracking, family, align, transform, ...props }, ref) => {
     return (
       <mark
         ref={ref as React.Ref<HTMLElement>}
-        className={classy(typographyClasses.mark, overrides, className)}
+        className={classy(
+          resolveTypography('mark', {
+            size,
+            weight,
+            color,
+            line,
+            tracking,
+            family,
+            align,
+            transform,
+          }),
+          className,
+        )}
         {...props}
       />
     );
@@ -1997,12 +2090,26 @@ Mark.displayName = 'Mark';
  * ```
  */
 export const Abbr = React.forwardRef<HTMLElement, TypographyProps & { title: string }>(
-  ({ className, size, weight, color, line, tracking, family, title, ...props }, ref) => {
-    const overrides = tokenPropsToClasses({ size, weight, color, line, tracking, family });
+  (
+    { className, size, weight, color, line, tracking, family, align, transform, title, ...props },
+    ref,
+  ) => {
     return (
       <abbr
         ref={ref as React.Ref<HTMLElement>}
-        className={classy(typographyClasses.abbr, overrides, className)}
+        className={classy(
+          resolveTypography('abbr', {
+            size,
+            weight,
+            color,
+            line,
+            tracking,
+            family,
+            align,
+            transform,
+          }),
+          className,
+        )}
         title={title}
         {...props}
       />

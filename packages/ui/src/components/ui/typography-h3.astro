@@ -6,7 +6,7 @@
  */
 import type { HTMLAttributes } from 'astro/types';
 import classy from '../../primitives/classy';
-import { tokenPropsToClasses, typographyClasses } from './typography.classes';
+import { resolveTypography } from './typography.classes';
 
 interface Props extends HTMLAttributes<'h3'> {
   size?: string;
@@ -31,17 +31,10 @@ const {
   class: className,
   ...attrs
 } = Astro.props;
-const overrides = tokenPropsToClasses({
-  size,
-  weight,
-  color,
-  line,
-  tracking,
-  family,
-  align,
-  transform,
-});
-const classes = classy(typographyClasses.h3, overrides, className);
+const classes = classy(
+  resolveTypography('h3', { size, weight, color, line, tracking, family, align, transform }),
+  className,
+);
 ---
 
 <h3 class={classes} {...attrs}><slot /></h3>

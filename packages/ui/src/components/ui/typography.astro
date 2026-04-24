@@ -19,7 +19,7 @@
  */
 import type { HTMLAttributes } from 'astro/types';
 import classy from '../../primitives/classy';
-import { tokenPropsToClasses, typographyClasses } from './typography.classes';
+import { resolveTypography } from './typography.classes';
 
 type TypographyElement =
   | 'h1'
@@ -83,18 +83,19 @@ const resolvedVariant =
     : Element === 'h5' || Element === 'h6'
       ? 'h4'
       : (Element as TypographyVariant));
-const variantClass = typographyClasses[resolvedVariant] ?? typographyClasses.p;
-const overrides = tokenPropsToClasses({
-  size,
-  weight,
-  color,
-  line,
-  tracking,
-  family,
-  align,
-  transform,
-});
-const classes = classy(variantClass, overrides, className);
+const classes = classy(
+  resolveTypography(resolvedVariant, {
+    size,
+    weight,
+    color,
+    line,
+    tracking,
+    family,
+    align,
+    transform,
+  }),
+  className,
+);
 ---
 
 {Element === 'h1' && <h1 class={classes} {...attrs}><slot /></h1>}

@@ -439,21 +439,49 @@ describe('TypographyTokenProps', () => {
     expect(container.firstChild).toHaveClass('font-bold');
   });
 
-  it('Mark applies token overrides', () => {
+  it('Mark color override replaces the default color class', () => {
     const { container } = render(<Mark color="accent">highlighted</Mark>);
-    expect(container.firstChild).toHaveClass('text-accent-foreground');
+    const el = container.firstChild as HTMLElement;
+    expect(el).toHaveClass('text-accent');
+    expect(el).not.toHaveClass('text-accent-foreground');
+    expect(el).toHaveClass('bg-accent');
+    expect(el).toHaveClass('rounded');
   });
 
-  it('token overrides appear after base classes and before className', () => {
+  it('size override replaces the default size and drops matching CQ variants', () => {
     const { container } = render(
       <H1 size="xl" className="extra">
         Title
       </H1>,
     );
     const el = container.firstChild as HTMLElement;
-    expect(el).toHaveClass('text-4xl');
     expect(el).toHaveClass('text-xl');
+    expect(el).not.toHaveClass('text-4xl');
+    expect(el).not.toHaveClass('@lg:text-5xl');
+    expect(el).toHaveClass('scroll-m-20');
+    expect(el).toHaveClass('font-bold');
     expect(el).toHaveClass('extra');
+  });
+
+  it('color override replaces text-foreground default on headings', () => {
+    const { container } = render(<H1 color="accent">Title</H1>);
+    const el = container.firstChild as HTMLElement;
+    expect(el).toHaveClass('text-accent');
+    expect(el).not.toHaveClass('text-foreground');
+  });
+
+  it('weight override replaces font-bold default on H1', () => {
+    const { container } = render(<H1 weight="light">Title</H1>);
+    const el = container.firstChild as HTMLElement;
+    expect(el).toHaveClass('font-light');
+    expect(el).not.toHaveClass('font-bold');
+  });
+
+  it('CQ variant survives when the matching dimension is not overridden', () => {
+    const { container } = render(<H1 color="accent">Title</H1>);
+    const el = container.firstChild as HTMLElement;
+    expect(el).toHaveClass('@lg:text-5xl');
+    expect(el).toHaveClass('text-4xl');
   });
 });
 
