@@ -1,5 +1,11 @@
 # rafters
 
+## Unreleased
+
+### Minor Changes
+
+- feat(config): multi-folder paths for components, primitives, composites, rules (#1420). Each path field in `.rafters/config.rafters.json` now accepts either the existing single string or an array of entries, so a project can read assets from external folders (e.g. `@shingle/shared`) on top of its own. Entries are plain strings or `{ path, root: true }` objects; the install root for `rafters add` is the entry tagged `{ root: true }`, otherwise the first entry whose realpath resolves inside cwd, otherwise the framework default at cwd. Local always wins on collision -- the install root is always first in the read set so first-write-wins semantics in loaders produce local-wins reads. New `rulesPath` field added with the same semantics. New helpers `resolveRoot` and `resolveReadSet` in `utils/paths.ts`. MCP composite loader now iterates the resolved read set instead of a hardcoded `.rafters/composites` path, so shared composite packages are queryable through `rafters_composite`.
+
 ## 0.0.53
 
 ### Minor Changes

@@ -20,7 +20,7 @@ import {
   type InstallRegistryDepsResult,
   installRegistryDependencies,
 } from '../utils/install-registry-deps.js';
-import { getRaftersPaths } from '../utils/paths.js';
+import { getRaftersPaths, type PathField, resolveRoot } from '../utils/paths.js';
 import { error, log, setAgentMode } from '../utils/ui.js';
 import type { RaftersConfig } from './init.js';
 
@@ -170,53 +170,53 @@ export function isAlreadyInstalled(config: RaftersConfig | null, item: RegistryI
  */
 export function trackInstalled(config: RaftersConfig, items: RegistryItem[]): void {
   if (!config.installed) {
-    config.installed = { components: [], primitives: [], composites: [] };
+    config.installed = { components: [], primitives: [], composites: [], rules: [] };
   }
-  if (!config.installed.composites) {
-    config.installed.composites = [];
-  }
+  const installed = config.installed;
+  if (!installed.composites) installed.composites = [];
+  if (!installed.rules) installed.rules = [];
   for (const item of items) {
-    if (item.type === 'ui') {
-      if (!config.installed.components.includes(item.name)) {
-        config.installed.components.push(item.name);
-      }
-    } else if (item.type === 'composite') {
-      if (!config.installed.composites.includes(item.name)) {
-        config.installed.composites.push(item.name);
-      }
-    } else {
-      if (!config.installed.primitives.includes(item.name)) {
-        config.installed.primitives.push(item.name);
-      }
-    }
+    const bucket =
+      item.type === 'ui'
+        ? installed.components
+        : item.type === 'composite'
+          ? installed.composites
+          : installed.primitives;
+    if (!bucket.includes(item.name)) bucket.push(item.name);
   }
-  config.installed.components.sort();
-  config.installed.primitives.sort();
-  config.installed.composites.sort();
+  installed.components.sort();
+  installed.primitives.sort();
+  installed.composites.sort();
+  installed.rules.sort();
+}
+
+/**
+ * Resolve the install root for a config path field. Path fields accept a
+ * single string or an array of entries; this returns the relative folder
+ * `rafters add` should write into. See {@link resolveRoot} for precedence.
+ */
+function rootFor(field: PathField | undefined, cwd: string, fallback: string): string {
+  return field === undefined ? fallback : resolveRoot(field, cwd, fallback);
 }
 
 /**
  * Transform registry path to project path based on config
  * e.g., "components/ui/button.tsx" -> "app/components/ui/button.tsx"
  */
-function transformPath(registryPath: string, config: RaftersConfig | null): string {
+function transformPath(registryPath: string, config: RaftersConfig | null, cwd: string): string {
   if (!config) return registryPath;
 
-  // Transform component paths
-  if (registryPath.startsWith('components/ui/')) {
-    return registryPath.replace('components/ui/', `${config.componentsPath}/`);
+  const replacements: Array<[string, PathField, string]> = [
+    ['components/ui/', config.componentsPath, 'components/ui'],
+    ['lib/primitives/', config.primitivesPath, 'lib/primitives'],
+    ['composites/', config.compositesPath, 'composites'],
+    ['rules/', config.rulesPath, 'rules'],
+  ];
+  for (const [prefix, field, fallback] of replacements) {
+    if (registryPath.startsWith(prefix)) {
+      return registryPath.replace(prefix, `${rootFor(field, cwd, fallback)}/`);
+    }
   }
-
-  // Transform primitive paths
-  if (registryPath.startsWith('lib/primitives/')) {
-    return registryPath.replace('lib/primitives/', `${config.primitivesPath}/`);
-  }
-
-  // Transform composite paths
-  if (registryPath.startsWith('composites/')) {
-    return registryPath.replace('composites/', `${config.compositesPath}/`);
-  }
-
   return registryPath;
 }
 
@@ -240,12 +240,13 @@ export function transformFileContent(
   content: string,
   config: RaftersConfig | null,
   fileType: 'component' | 'primitive' = 'component',
+  cwd: string = process.cwd(),
 ): string {
   let transformed = content;
 
   // Get paths from config or use defaults
-  const componentsPath = config?.componentsPath ?? 'components/ui';
-  const primitivesPath = config?.primitivesPath ?? 'lib/primitives';
+  const componentsPath = rootFor(config?.componentsPath, cwd, 'components/ui');
+  const primitivesPath = rootFor(config?.primitivesPath, cwd, 'lib/primitives');
 
   // Strip source root prefix (src/, app/) for @/ alias imports.
   // Config paths are filesystem paths (src/components/ui) but @/ alias
@@ -329,7 +330,7 @@ async function installItem(
 
   for (const file of filesToInstall) {
     // Transform the path based on project config
-    const projectPath = transformPath(file.path, config);
+    const projectPath = transformPath(file.path, config, cwd);
     const targetPath = join(cwd, projectPath);
 
     // Check if file exists and handle overwrite
@@ -351,7 +352,7 @@ async function installItem(
 
     // Transform and write the file
     const fileType = item.type === 'primitive' ? 'primitive' : 'component';
-    const transformedContent = transformFileContent(file.content, config, fileType);
+    const transformedContent = transformFileContent(file.content, config, fileType, cwd);
     await writeFile(targetPath, transformedContent, 'utf-8');
 
     installedFiles.push(projectPath);
@@ -646,10 +647,11 @@ export async function add(componentArgs: string[], options: AddOptions): Promise
       componentsPath: 'components/ui',
       primitivesPath: 'lib/primitives',
       compositesPath: 'composites',
+      rulesPath: 'rules',
       cssPath: null,
       shadcn: false,
       exports: DEFAULT_EXPORTS,
-      installed: { components: [], primitives: [], composites: [] },
+      installed: { components: [], primitives: [], composites: [], rules: [] },
     };
     trackInstalled(newConfig, installedItems);
     await saveConfig(cwd, newConfig);

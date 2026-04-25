@@ -12,7 +12,7 @@
  * Token import lives in `rafters init` / `rafters import`, not MCP.
  */
 
-import { readdir } from 'node:fs/promises';
+import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import {
@@ -24,8 +24,9 @@ import {
   registerComposite,
   searchComposites,
 } from '@rafters/composites';
+import type { RaftersConfig } from '../commands/init.js';
 import { registryClient } from '../registry/client.js';
-import { getRaftersPaths } from '../utils/paths.js';
+import { getRaftersPaths, resolveReadSet } from '../utils/paths.js';
 import { resolveWorkspace, type Workspace } from '../utils/workspaces.js';
 
 const WORKSPACE_PARAM = {
@@ -258,10 +259,32 @@ export class RaftersToolHandler {
     }
 
     if (workspace && !this.compositesLoadedFor.has(workspace.root)) {
-      const paths = getRaftersPaths(workspace.root);
-      await this.loadCompositesFromDir(join(paths.root, 'composites'));
+      for (const dir of await this.compositeReadRoots(workspace.root)) {
+        await this.loadCompositesFromDir(dir);
+      }
       this.compositesLoadedFor.add(workspace.root);
     }
+  }
+
+  /**
+   * Resolve the set of folders to scan for composite manifests in a workspace.
+   * Reads `.rafters/config.rafters.json` and applies the workspace's
+   * `compositesPath` (which may be a string or an array of entries to support
+   * shared packages like `@shingle/shared`). Falls back to `.rafters/composites`
+   * when no config or compositesPath is set.
+   */
+  private async compositeReadRoots(workspaceRoot: string): Promise<string[]> {
+    const paths = getRaftersPaths(workspaceRoot);
+    let config: RaftersConfig | null = null;
+    try {
+      config = JSON.parse(await readFile(paths.config, 'utf-8')) as RaftersConfig;
+    } catch {
+      // No config -- fall through to default
+    }
+    if (!config?.compositesPath) {
+      return [join(paths.root, 'composites')];
+    }
+    return resolveReadSet(config.compositesPath, workspaceRoot);
   }
 
   private async handleComposite(args: Record<string, unknown>): Promise<CallToolResult> {

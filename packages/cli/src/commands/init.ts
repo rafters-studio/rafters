@@ -39,7 +39,7 @@ import {
   FUTURE_EXPORTS,
   selectionsToConfig,
 } from '../utils/exports.js';
-import { getRaftersPaths } from '../utils/paths.js';
+import { getRaftersPaths, type PathField } from '../utils/paths.js';
 import { isAgentMode, log, setAgentMode } from '../utils/ui.js';
 import { updateDependencies } from '../utils/update-dependencies.js';
 
@@ -83,42 +83,58 @@ const CSS_LOCATIONS: Record<Framework, string[]> = {
 };
 
 // Default component paths per framework
-const COMPONENT_PATHS: Record<
+export const COMPONENT_PATHS: Record<
   Framework,
-  { components: string; primitives: string; composites: string }
+  { components: string; primitives: string; composites: string; rules: string }
 > = {
   astro: {
     components: 'src/components/ui',
     primitives: 'src/lib/primitives',
     composites: 'src/composites',
+    rules: 'src/rules',
   },
-  next: { components: 'components/ui', primitives: 'lib/primitives', composites: 'composites' },
+  next: {
+    components: 'components/ui',
+    primitives: 'lib/primitives',
+    composites: 'composites',
+    rules: 'rules',
+  },
   vite: {
     components: 'src/components/ui',
     primitives: 'src/lib/primitives',
     composites: 'src/composites',
+    rules: 'src/rules',
   },
   remix: {
     components: 'app/components/ui',
     primitives: 'app/lib/primitives',
     composites: 'app/composites',
+    rules: 'app/rules',
   },
   'react-router': {
     components: 'app/components/ui',
     primitives: 'app/lib/primitives',
     composites: 'app/composites',
+    rules: 'app/rules',
   },
   wc: {
     components: 'src/components/ui',
     primitives: 'src/lib/primitives',
     composites: 'src/composites',
+    rules: 'src/rules',
   },
   vanilla: {
     components: 'src/components/ui',
     primitives: 'src/lib/primitives',
     composites: 'src/composites',
+    rules: 'src/rules',
   },
-  unknown: { components: 'components/ui', primitives: 'lib/primitives', composites: 'composites' },
+  unknown: {
+    components: 'components/ui',
+    primitives: 'lib/primitives',
+    composites: 'composites',
+    rules: 'rules',
+  },
 };
 
 /**
@@ -136,34 +152,29 @@ const FRAMEWORK_PROMPT_LABELS: Record<Exclude<Framework, 'unknown'>, string> = {
 
 /**
  * Configuration persisted in `.rafters/config.rafters.json`.
- * Used by the CLI to resolve framework-specific defaults and perform
- * path transformations when generating or updating files.
- * All paths are relative to the project root.
+ *
+ * Path fields accept either a single string (status quo) or an array of
+ * entries to support multi-folder layouts (e.g. project + `@shingle/shared`).
+ * When multiple entries are provided, the install root is the entry tagged
+ * `{ root: true }`, otherwise the first entry whose realpath resolves inside
+ * cwd. Local entries always win on collision.
  */
 export interface RaftersConfig {
-  /** Detected or selected application framework */
   framework: Framework;
-  /** Which file variant to install: react (.tsx), astro (.astro), vue (.vue), svelte (.svelte) */
   componentTarget?: ComponentTarget;
-  /** Root directory for UI components, e.g. `components/ui` or `app/components/ui` */
-  componentsPath: string;
-  /** Root directory for primitive components, e.g. `lib/primitives` */
-  primitivesPath: string;
-  /** Root directory for composite JSON files, e.g. `src/composites` */
-  compositesPath: string;
-  /** Entry CSS file for design tokens, or null if not detected */
+  componentsPath: PathField;
+  primitivesPath: PathField;
+  compositesPath: PathField;
+  rulesPath: PathField;
   cssPath: string | null;
-  /** Whether shadcn/ui was detected in the project */
   shadcn: boolean;
-  /** Export format selections */
   exports: ExportConfig;
-  /** Dark mode strategy: 'class' (default, .dark class toggle) or 'media' (OS preference) */
   darkMode?: 'class' | 'media';
-  /** Items installed via `rafters add` */
   installed?: {
     components: string[];
     primitives: string[];
     composites: string[];
+    rules: string[];
   };
 }
 
@@ -416,6 +427,7 @@ async function regenerateFromExisting(
     existingConfig.componentsPath = frameworkPaths.components;
     existingConfig.primitivesPath = frameworkPaths.primitives;
     existingConfig.compositesPath = frameworkPaths.composites;
+    existingConfig.rulesPath = frameworkPaths.rules;
   }
 
   // Load all tokens from .rafters/tokens/
@@ -469,10 +481,11 @@ async function regenerateFromExisting(
       componentsPath: frameworkPaths.components,
       primitivesPath: frameworkPaths.primitives,
       compositesPath: frameworkPaths.composites,
+      rulesPath: frameworkPaths.rules,
       cssPath: null,
       shadcn: !!shadcn,
       exports,
-      installed: { components: [], primitives: [], composites: [] },
+      installed: { components: [], primitives: [], composites: [], rules: [] },
     };
     await writeFile(paths.config, JSON.stringify(newConfig, null, 2));
   }
@@ -509,6 +522,7 @@ async function resetToDefaults(
     existingConfig.componentsPath = frameworkPaths.components;
     existingConfig.primitivesPath = frameworkPaths.primitives;
     existingConfig.compositesPath = frameworkPaths.composites;
+    existingConfig.rulesPath = frameworkPaths.rules;
   }
 
   // Load existing tokens to check for userOverride backups
@@ -598,10 +612,11 @@ async function resetToDefaults(
       componentsPath: frameworkPaths.components,
       primitivesPath: frameworkPaths.primitives,
       compositesPath: frameworkPaths.composites,
+      rulesPath: frameworkPaths.rules,
       cssPath: null,
       shadcn: !!shadcn,
       exports,
-      installed: { components: [], primitives: [], composites: [] },
+      installed: { components: [], primitives: [], composites: [], rules: [] },
     };
     await writeFile(paths.config, JSON.stringify(newConfig, null, 2));
   }
@@ -869,6 +884,7 @@ export async function init(options: InitOptions): Promise<void> {
     componentsPath: frameworkPaths.components,
     primitivesPath: frameworkPaths.primitives,
     compositesPath: frameworkPaths.composites,
+    rulesPath: frameworkPaths.rules,
     cssPath: detectedCssPath,
     shadcn: !!shadcn,
     exports,
@@ -876,6 +892,7 @@ export async function init(options: InitOptions): Promise<void> {
       components: [],
       primitives: [],
       composites: [],
+      rules: [],
     },
   };
   await writeFile(paths.config, JSON.stringify(config, null, 2));

@@ -47,6 +47,7 @@ describe('rafters init - fresh initialization', () => {
       components: [],
       primitives: [],
       composites: [],
+      rules: [],
     });
   }, 30000);
 
