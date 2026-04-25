@@ -151,6 +151,23 @@ export interface RaftersConfig {
   primitivesPath: string;
   /** Root directory for composite JSON files, e.g. `src/composites` */
   compositesPath: string;
+  /**
+   * Additional directories the composite loader gobs alongside `compositesPath`.
+   * Lets a site pick up shared composite manifests from elsewhere in the
+   * repo (e.g. a `packages/shared/src/composites` directory shared across
+   * sites). Paths are relative to the project root.
+   */
+  compositeSources?: string[];
+  /**
+   * Additional directories considered a source of components alongside
+   * `componentsPath`. Reserved for future component loaders.
+   */
+  componentSources?: string[];
+  /**
+   * Additional directories considered a source of rules. Reserved for the
+   * future rule loader.
+   */
+  ruleSources?: string[];
   /** Entry CSS file for design tokens, or null if not detected */
   cssPath: string | null;
   /** Whether shadcn/ui was detected in the project */

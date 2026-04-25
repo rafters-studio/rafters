@@ -24,6 +24,7 @@ import {
   registerComposite,
   searchComposites,
 } from '@rafters/composites';
+import type { RaftersConfig } from '../commands/init.js';
 import { registryClient } from '../registry/client.js';
 import { getRaftersPaths } from '../utils/paths.js';
 import { resolveWorkspace, type Workspace } from '../utils/workspaces.js';
@@ -260,7 +261,29 @@ export class RaftersToolHandler {
     if (workspace && !this.compositesLoadedFor.has(workspace.root)) {
       const paths = getRaftersPaths(workspace.root);
       await this.loadCompositesFromDir(join(paths.root, 'composites'));
+
+      // Gob composites from any extra source dirs the site declared in
+      // .rafters/config.rafters.json. Lets a workspace point at a shared
+      // composites directory (e.g. packages/shared/src/composites) without
+      // duplicating manifests into the site's own composites/.
+      const config = await this.readConfig(workspace.root);
+      const sources = config?.compositeSources ?? [];
+      for (const relativeDir of sources) {
+        await this.loadCompositesFromDir(join(workspace.root, relativeDir));
+      }
+
       this.compositesLoadedFor.add(workspace.root);
+    }
+  }
+
+  private async readConfig(workspaceRoot: string): Promise<RaftersConfig | null> {
+    const paths = getRaftersPaths(workspaceRoot);
+    try {
+      const { readFile } = await import('node:fs/promises');
+      const raw = await readFile(paths.config, 'utf-8');
+      return JSON.parse(raw) as RaftersConfig;
+    } catch {
+      return null;
     }
   }
 
