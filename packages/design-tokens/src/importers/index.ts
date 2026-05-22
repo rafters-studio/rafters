@@ -10,6 +10,11 @@
 
 export { classifyDeclarations } from './classify.js';
 export { colorsFromClassification } from './colors.js';
+export {
+  type DetectedFamily,
+  type FamilyGroupingResult,
+  groupIntoFamilies,
+} from './families.js';
 export { senseShadcnCss } from './sense.js';
 export { extractShadcnRoot } from './shadcn.js';
 export {
@@ -21,3 +26,4 @@ export {
   type RaftersImportNamespace,
   type SensedSummary,
 } from './shapes.js';
+export { extractThemeBlocks } from './theme.js';

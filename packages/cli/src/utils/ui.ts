@@ -152,6 +152,25 @@ export function log(event: Record<string, unknown>): void {
       break;
     }
 
+    case 'init:import_palettes_applied': {
+      const palettesDefined = event.palettesDefined as string[];
+      const assignments = event.assignments as Array<{
+        role: string;
+        family: string;
+        position: string;
+      }>;
+      const cssPath = event.cssPath as string;
+      console.log(`  Defined ${palettesDefined.length} palette(s) from ${cssPath}:`);
+      console.log(`    ${palettesDefined.join(', ')}`);
+      if (assignments.length > 0) {
+        console.log(`  Role assignments (${assignments.length}):`);
+        for (const a of assignments) {
+          console.log(`    ${a.role} -> ${a.family}@${a.position}`);
+        }
+      }
+      break;
+    }
+
     case 'init:complete': {
       context.spinner?.succeed('Done!');
       context.spinner = null;

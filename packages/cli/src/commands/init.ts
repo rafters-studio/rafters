@@ -18,7 +18,9 @@ import {
   colorsFromClassification,
   contrastPlugin,
   extractShadcnRoot,
+  extractThemeBlocks,
   generateBaseSystem,
+  groupIntoFamilies,
   invertPlugin,
   loadRegistryFromDir,
   registryToCompiled,
@@ -841,6 +843,136 @@ export async function init(options: InitOptions): Promise<void> {
             cssPath: detectedCssPath,
             ...(skipped.length > 0 ? { skipped } : {}),
           });
+        }
+      }
+
+      // Multi-palette flow runs independently of the `:root` flow. A
+      // Tailwind-v4 project may declare its brand palettes in `@theme {}`
+      // with no `:root` declarations at all (or only a `--radius`), in
+      // which case `senseShadcnCss` returns 0 and the block above is
+      // skipped. The `@theme` flow still needs to run for those projects.
+      {
+        // Extract @theme blocks, detect ramps, walk the 11
+        // SemanticColorSystem roles asking the designer which detected
+        // family fills each role and at which scale position. The designer
+        // owns these assignments -- the importer collects taste, does not
+        // infer it from the source's existing var() mappings.
+        const themeDecls = extractThemeBlocks(sourceCss);
+        if (themeDecls.length > 0) {
+          const { families } = groupIntoFamilies(themeDecls);
+          if (families.length > 0) {
+            // Define every detected palette in the registry. Each family
+            // gets 11 per-position primitive tokens + 1 family token with
+            // the scale + WCAG ladder. Names are preserved verbatim from
+            // source (`empire`, not `imported-empire`).
+            for (const family of families) {
+              const positions = SCALE_POSITIONS.filter((p) => family.scale[p] !== undefined);
+              for (const pos of positions) {
+                const oklch = family.scale[pos];
+                if (!oklch) continue;
+                registry.define({
+                  name: `${family.name}-${pos}`,
+                  namespace: 'color',
+                  category: 'color',
+                  value: oklchToCSS(oklch),
+                  userOverride: null,
+                });
+              }
+              const scaleArray = positions
+                .map((p) => family.scale[p])
+                .filter((v): v is NonNullable<typeof v> => v !== undefined);
+              const familyValue = bakeAccessibility({
+                name: family.name,
+                scale: scaleArray,
+              }) as ColorValue;
+              registry.define({
+                name: family.name,
+                namespace: 'color',
+                category: 'color',
+                value: familyValue,
+                userOverride: null,
+              });
+            }
+
+            // Walk the 11 canonical SemanticColorSystem roles. Per role:
+            // (1) which family from the detected list, (2) which position
+            // in that family. Families stay in the list across roles --
+            // the designer can pick the same palette for multiple roles at
+            // different positions (their call, per the 2026-05-22 decision).
+            // Roles from `SemanticColorSystem` in `@rafters/color-utils`.
+            // Filter to those that exist as SEMANTIC-namespace tokens in
+            // the current registry. `neutral` exists too, but as a color
+            // family (a ColorValue with a scale) -- setting it via this
+            // path would replace the family with a ColorReference and
+            // break every default semantic that derives from it.
+            // `tertiary` ships only in some configurations.
+            const ALL_ROLES = [
+              'primary',
+              'secondary',
+              'tertiary',
+              'accent',
+              'highlight',
+              'neutral',
+              'muted',
+              'success',
+              'warning',
+              'destructive',
+              'info',
+            ];
+            const ROLES = ALL_ROLES.filter((r) => {
+              const tok = registry.get(r);
+              return tok !== undefined && tok.namespace === 'semantic';
+            });
+            const assignments: Array<{
+              role: string;
+              family: string;
+              position: string;
+            }> = [];
+            for (const [i, role] of ROLES.entries()) {
+              let familyChoice: string | null;
+              if (isAgentMode) {
+                familyChoice = families[i]?.name ?? null;
+              } else {
+                familyChoice = await select<string | null>({
+                  message: `Which palette is "${role}"?`,
+                  choices: [
+                    ...families.map((f) => ({ name: f.name, value: f.name })),
+                    { name: '(skip -- keep rafters default)', value: null },
+                  ],
+                });
+              }
+              if (familyChoice === null) continue;
+              const family = families.find((f) => f.name === familyChoice);
+              if (!family) continue;
+              const availablePositions = SCALE_POSITIONS.filter(
+                (p) => family.scale[p] !== undefined,
+              );
+              const position = isAgentMode
+                ? '500'
+                : await select({
+                    message: `Which position in "${familyChoice}" for "${role}"?`,
+                    choices: availablePositions.map((p) => ({ name: p, value: p })),
+                    default: '500',
+                  });
+              registry.set(
+                role,
+                { family: familyChoice, position },
+                {
+                  reason: `assigned ${familyChoice}@${position} as ${role} during import from ${detectedCssPath}`,
+                },
+              );
+              assignments.push({ role, family: familyChoice, position });
+            }
+
+            saveRegistryToDir(paths.tokens, registry);
+            await generateOutputs(cwd, paths, registry, exports, shadcn);
+            log({
+              event: 'init:import_palettes_applied',
+              cssPath: detectedCssPath,
+              palettesDefined: families.map((f) => f.name),
+              assignments,
+            });
+          }
         }
       }
     } catch (err) {
