@@ -28,6 +28,7 @@ import {
   registryToTypeScript,
   saveRegistryToDir,
   scalePlugin,
+  seedFamiliesFromDeclarations,
   senseShadcnCss,
   statePlugin,
   TokenRegistry,
@@ -859,7 +860,17 @@ export async function init(options: InitOptions): Promise<void> {
         // infer it from the source's existing var() mappings.
         const themeDecls = extractThemeBlocks(sourceCss);
         if (themeDecls.length > 0) {
-          const { families } = groupIntoFamilies(themeDecls);
+          const { families: rampFamilies, leftover: themeLeftover } = groupIntoFamilies(themeDecls);
+          // Promote single-color `@theme` declarations (anything that did
+          // not form a ramp) into seed families. Each seed gets a full
+          // 11-position scale generated around it via color-utils;
+          // the source value is preserved at its declared position
+          // (default 500). Skips names that already exist as ramp families.
+          const seedFamilies = seedFamiliesFromDeclarations(
+            themeLeftover,
+            new Set(rampFamilies.map((f) => f.name)),
+          );
+          const families = [...rampFamilies, ...seedFamilies];
           if (families.length > 0) {
             // Define every detected palette in the registry. Each family
             // gets 11 per-position primitive tokens + 1 family token with

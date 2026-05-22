@@ -11,7 +11,7 @@
  * becomes family `empire` in the registry. No `imported-` prefix.
  */
 
-import { tryParseColor } from '@rafters/color-utils';
+import { generateOKLCHScale, tryParseColor } from '@rafters/color-utils';
 import type { OKLCH } from '@rafters/shared';
 import type { CssDeclaration } from './shapes.js';
 
@@ -93,4 +93,50 @@ export function groupIntoFamilies(declarations: readonly CssDeclaration[]): Fami
 
   const leftover = declarations.filter((d) => !claimedKeys.has(d.name));
   return { families, leftover };
+}
+
+/**
+ * Promote color-valued declarations that did not form a ramp into seed
+ * families. Each seed gets a full 11-position scale via color-utils'
+ * `generateOKLCHScale`; the source value is preserved verbatim at its
+ * declared position (defaulting to 500 when the source name has no
+ * position suffix). The rest of the scale is derived around the seed.
+ *
+ * Skips declarations whose family base name collides with an existing
+ * ramp-detected family, so passing the ramp families' names in
+ * `existingFamilyNames` lets the caller layer this on top of
+ * `groupIntoFamilies` without duplicate definitions.
+ *
+ * Designers preserve their own family names: source `--color-brand`
+ * becomes family `brand`, `--color-brand-700` also becomes `brand` (with
+ * the seed positioned at 700 instead of 500).
+ */
+export function seedFamiliesFromDeclarations(
+  declarations: readonly CssDeclaration[],
+  existingFamilyNames: ReadonlySet<string> = new Set(),
+): readonly DetectedFamily[] {
+  const byBaseName = new Map<string, { seed: OKLCH; position: string }>();
+  for (const decl of declarations) {
+    const oklch = tryParseColor(decl.value);
+    if (oklch === null) continue;
+    const match = decl.name.match(POSITION_SUFFIX);
+    const rawBase = (match ? match[1] : decl.name) ?? decl.name;
+    const baseName = rawBase.replace(COLOR_PREFIX, '');
+    if (!baseName || existingFamilyNames.has(baseName)) continue;
+    const position = match ? (match[2] ?? '500') : '500';
+    // Last declaration wins (CSS cascade semantics).
+    byBaseName.set(baseName, { seed: oklch, position });
+  }
+
+  const out: DetectedFamily[] = [];
+  for (const [name, { seed, position }] of byBaseName) {
+    const scale = generateOKLCHScale(seed);
+    // Preserve the source value at the declared position. The rest of the
+    // scale is derived; this introduces a slight curve discontinuity at
+    // `position` but keeps the designer's exact OKLCH addressable via
+    // `family@position`.
+    scale[position] = seed;
+    out.push({ name, scale });
+  }
+  return out;
 }

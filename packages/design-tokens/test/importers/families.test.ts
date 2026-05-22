@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { groupIntoFamilies } from '../../src/importers/families.js';
+import { groupIntoFamilies, seedFamiliesFromDeclarations } from '../../src/importers/families.js';
 
 function ramp(name: string, hexBase: string) {
   const positions = ['50', '100', '200', '300', '400', '500', '600', '700', '800', '900', '950'];
@@ -88,5 +88,80 @@ describe('groupIntoFamilies', () => {
     ]);
     expect(result.families).toHaveLength(0);
     expect(result.leftover.map((d) => d.name)).toEqual(['primary', 'radius']);
+  });
+});
+
+describe('seedFamiliesFromDeclarations', () => {
+  it('promotes a bare color declaration to a family with seed at position 500', () => {
+    const seeds = seedFamiliesFromDeclarations([{ name: 'color-brand', value: '#FF5500' }]);
+    expect(seeds).toHaveLength(1);
+    expect(seeds[0]?.name).toBe('brand');
+    // The seed value is preserved at position 500; the rest of the scale
+    // is derived around it. All 11 positions are present after generation.
+    expect(Object.keys(seeds[0]?.scale ?? {}).sort((a, b) => Number(a) - Number(b))).toEqual([
+      '50',
+      '100',
+      '200',
+      '300',
+      '400',
+      '500',
+      '600',
+      '700',
+      '800',
+      '900',
+      '950',
+    ]);
+  });
+
+  it('honors a position suffix in the source name', () => {
+    const seeds = seedFamiliesFromDeclarations([{ name: 'color-brand-700', value: '#7C0E12' }]);
+    expect(seeds).toHaveLength(1);
+    expect(seeds[0]?.name).toBe('brand');
+    // Position 700 carries the source OKLCH (parsed from #7C0E12). Other
+    // positions are derived.
+    const pos700 = seeds[0]?.scale['700'];
+    expect(pos700).toBeDefined();
+    expect(pos700?.l).toBeGreaterThan(0);
+    expect(pos700?.l).toBeLessThan(0.5); // dark red
+  });
+
+  it('skips declarations whose family name collides with an existing ramp', () => {
+    const seeds = seedFamiliesFromDeclarations(
+      [{ name: 'color-empire', value: '#000000' }],
+      new Set(['empire']),
+    );
+    expect(seeds).toHaveLength(0);
+  });
+
+  it('skips non-color values', () => {
+    const seeds = seedFamiliesFromDeclarations([
+      { name: 'spacing-base', value: '0.25rem' },
+      { name: 'font-sans', value: '"Inter", sans-serif' },
+    ]);
+    expect(seeds).toHaveLength(0);
+  });
+
+  it('handles multiple distinct seed names', () => {
+    const seeds = seedFamiliesFromDeclarations([
+      { name: 'color-brand', value: '#FF5500' },
+      { name: 'color-accent', value: '#3574B0' },
+      { name: 'color-warn', value: '#FAA21C' },
+    ]);
+    expect(seeds.map((f) => f.name)).toEqual(['brand', 'accent', 'warn']);
+  });
+
+  it('last declaration wins when the same base name appears multiple times', () => {
+    const seeds = seedFamiliesFromDeclarations([
+      { name: 'color-brand-500', value: '#FF0000' },
+      { name: 'color-brand-500', value: '#00FF00' },
+    ]);
+    expect(seeds).toHaveLength(1);
+    // The second declaration's value (green) wins, parsed and placed at 500.
+    const pos500 = seeds[0]?.scale['500'];
+    expect(pos500).toBeDefined();
+  });
+
+  it('returns empty for empty input', () => {
+    expect(seedFamiliesFromDeclarations([])).toEqual([]);
   });
 });

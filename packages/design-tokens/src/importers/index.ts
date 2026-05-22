@@ -14,6 +14,7 @@ export {
   type DetectedFamily,
   type FamilyGroupingResult,
   groupIntoFamilies,
+  seedFamiliesFromDeclarations,
 } from './families.js';
 export { senseShadcnCss } from './sense.js';
 export { extractShadcnRoot } from './shadcn.js';
