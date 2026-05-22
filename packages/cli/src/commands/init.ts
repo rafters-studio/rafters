@@ -726,12 +726,10 @@ export async function init(options: InitOptions): Promise<void> {
         });
 
         const classification = classifyDeclarations(extractShadcnRoot(sourceCss));
-        const semanticColors = colorsFromClassification(classification).filter(
-          (c) => c.namespace === 'semantic',
-        );
+        const importableColors = colorsFromClassification(classification);
 
         const toImport: ColorDeclaration[] = [];
-        for (const color of semanticColors) {
+        for (const color of importableColors) {
           const accept = isAgentMode
             ? true
             : await confirm({
@@ -754,9 +752,9 @@ export async function init(options: InitOptions): Promise<void> {
             );
 
             // Per-position primitive tokens. The Tailwind exporter renders
-            // `--color-<family>-<position>: oklch(...)` from these; the
-            // semantic's ColorReference resolves to them via `var()`.
-            // Without these, `var(--color-imported-primary-600)` is a
+            // `--color-<family>-<position>: oklch(...)` from these; a
+            // ColorReference into the family resolves to them via `var()`.
+            // Without these, `var(--color-imported-<name>-600)` would be a
             // dangling reference in the output CSS.
             for (const position of SCALE_POSITIONS) {
               const oklch = scaleByPos[position];
@@ -781,12 +779,18 @@ export async function init(options: InitOptions): Promise<void> {
               userOverride: null,
             });
 
-            // The seed lightness lands at position 600 -- see
+            // Only shadcn-canonical names (the `semantic` namespace) get an
+            // automatic semantic-set. Non-canonical color primitives (e.g.
+            // `--brand-empire`) are imported as families and left for the
+            // designer to assign to a semantic later (via `rafters set` or
+            // Studio). The seed lightness lands at position 600 -- see
             // `generateLightnessProgression` in `@rafters/color-utils`
             // (`baseIndex = 6`). Pointing the semantic at family@600
             // preserves the user's exact OKLCH; pointing at 500 would
             // render a lighter shade than what they wrote.
-            registry.set(color.name, { family: familyName, position: '600' }, { reason });
+            if (color.namespace === 'semantic') {
+              registry.set(color.name, { family: familyName, position: '600' }, { reason });
+            }
           }
 
           // Persist the imports and re-emit outputs so the on-disk state
