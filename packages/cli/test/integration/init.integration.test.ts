@@ -287,10 +287,10 @@ describe('rafters init - source CSS sensing', () => {
 
     const applied = events.find((e) => e.event === 'init:import_applied');
     expect(applied).toBeDefined();
-    // primary + background + destructive (semantics) + tw-ring-color
-    // (color-namespace primitive, classifier can't tell Tailwind internals
-    // from user brand colors -- the prompt is where the user filters).
-    expect(applied?.count).toBe(4);
+    // 3 semantics (primary, background, destructive) + 1 color-namespace
+    // primitive (tw-ring-color) + 1 radius (direct set on the rafters
+    // `radius` token).
+    expect(applied?.count).toBe(5);
     expect(applied?.cssPath).toBe('src/app/globals.css');
 
     // (1) Imported family + per-position primitive tokens land on disk.
@@ -345,6 +345,63 @@ describe('rafters init - source CSS sensing', () => {
     // re-derived to use the imported family's most-contrasting position
     // (50 here, the lightest), not the pre-import neutral default.
     expect(css).toMatch(/--rafters-primary-foreground:\s*var\(--color-imported-primary-\d+\)/);
+
+    // (7) Direct-set on the `radius` token persisted the user's value
+    // verbatim. Source: `--radius: 0.5rem`.
+    const radiusTokensRaw = await readFixtureFile(
+      fixturePath,
+      '.rafters/tokens/radius.rafters.json',
+    );
+    const radiusTokens = JSON.parse(radiusTokensRaw) as {
+      tokens: Array<{ name: string; value: unknown; userOverride: unknown }>;
+    };
+    const radius = radiusTokens.tokens.find((t) => t.name === 'radius');
+    expect(radius?.value).toBe('0.5rem');
+    expect(radius?.userOverride).toMatchObject({
+      reason: expect.stringContaining('imported from --radius'),
+    });
+  }, 30000);
+
+  it('imports typography declarations via direct registry.set on matching tokens', async () => {
+    fixturePath = await createFixture('nextjs-shadcn-v4');
+    await writeFile(
+      join(fixturePath, 'src/app/globals.css'),
+      `:root {
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+  --font-display-bold: "Custom Display", serif;
+}
+@import "tailwindcss";
+`,
+    );
+
+    const result = await execCli(fixturePath, ['init', '--agent']);
+    expect(result.exitCode).toBe(0);
+
+    const events = result.stdout
+      .split('\n')
+      .filter((l) => l.startsWith('{'))
+      .map((l) => JSON.parse(l) as Record<string, unknown>);
+
+    const applied = events.find((e) => e.event === 'init:import_applied');
+    expect(applied).toBeDefined();
+    // font-sans + font-mono match rafters tokens; font-display-bold does
+    // not (rafters doesn't ship that name) and lands in the `skipped` list.
+    expect(applied?.count).toBe(2);
+    expect(applied?.skipped).toEqual(['font-display-bold']);
+
+    // The matching tokens carry the imported values verbatim.
+    const tokensRaw = await readFixtureFile(fixturePath, '.rafters/tokens/typography.rafters.json');
+    const tokens = JSON.parse(tokensRaw) as {
+      tokens: Array<{ name: string; value: unknown; userOverride: unknown }>;
+    };
+    const fontSans = tokens.tokens.find((t) => t.name === 'font-sans');
+    const fontMono = tokens.tokens.find((t) => t.name === 'font-mono');
+    expect(fontSans?.value).toBe('"Inter", system-ui, sans-serif');
+    expect(fontMono?.value).toBe('"JetBrains Mono", monospace');
+    expect(fontSans?.userOverride).toMatchObject({
+      reason: expect.stringContaining('imported from --font-sans'),
+    });
   }, 30000);
 
   it('imports non-shadcn-semantic colors as primitive families without reseating semantics', async () => {
@@ -370,10 +427,11 @@ describe('rafters init - source CSS sensing', () => {
 
     // Apply fires for color-namespace primitives the same as for shadcn
     // semantics -- the only difference is that primitives skip the
-    // semantic-set step.
+    // semantic-set step. The radius declaration is direct-set on the
+    // existing rafters `radius` token.
     const applied = events.find((e) => e.event === 'init:import_applied');
     expect(applied).toBeDefined();
-    expect(applied?.count).toBe(2); // brand-empire, brand-republic
+    expect(applied?.count).toBe(3); // brand-empire, brand-republic, radius
 
     // (1) Per-position + family tokens land on disk for both brand colors.
     const colorTokensRaw = await readFixtureFile(fixturePath, '.rafters/tokens/color.rafters.json');
