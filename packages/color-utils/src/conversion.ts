@@ -29,12 +29,16 @@ export function hexToOKLCH(hex: string): OKLCH {
     const color = new Color(hex);
     const oklch = color.to('oklch');
 
+    // colorjs.io returns boxed `Number` objects (not primitives) for some
+    // input formats (oklch() literals notably). Schemas downstream check
+    // `typeof === 'number'` and reject boxed Numbers. Coerce to primitives
+    // here so every consumer sees plain numbers.
     return {
-      l: oklch.coords[0] ?? 0,
-      c: oklch.coords[1] ?? 0,
+      l: Number(oklch.coords[0] ?? 0),
+      c: Number(oklch.coords[1] ?? 0),
       // Achromatic colors (grays) get NaN hue from colorjs.io, not undefined
-      h: Number.isNaN(oklch.coords[2]) ? 0 : (oklch.coords[2] ?? 0),
-      alpha: oklch.alpha ?? 1,
+      h: Number.isNaN(oklch.coords[2]) ? 0 : Number(oklch.coords[2] ?? 0),
+      alpha: Number(oklch.alpha ?? 1),
     };
   } catch (_error) {
     throw new Error(`Invalid hex color: ${hex}`);

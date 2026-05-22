@@ -11,12 +11,14 @@ import { copyFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { join, relative } from 'node:path';
 import { checkbox, confirm, select } from '@inquirer/prompts';
-import { generateOKLCHScale, oklchToCSS, SCALE_POSITIONS } from '@rafters/color-utils';
+import { oklchToCSS, SCALE_POSITIONS } from '@rafters/color-utils';
 import {
   type ColorDeclaration,
   classifyDeclarations,
   colorsFromClassification,
+  colorValueFromFamily,
   contrastPlugin,
+  type DetectedFamily,
   extractShadcnRoot,
   extractThemeBlocks,
   generateBaseSystem,
@@ -28,12 +30,12 @@ import {
   registryToTypeScript,
   saveRegistryToDir,
   scalePlugin,
+  seedFamiliesFromDeclarations,
   senseShadcnCss,
   statePlugin,
   TokenRegistry,
   toDTCG,
 } from '@rafters/design-tokens';
-import type { ColorValue } from '@rafters/shared';
 
 const REGISTRY_PLUGINS = [scalePlugin, contrastPlugin, statePlugin, invertPlugin];
 
@@ -59,7 +61,6 @@ import {
 import { getRaftersPaths, type PathField } from '../utils/paths.js';
 import { isAgentMode, log, setAgentMode } from '../utils/ui.js';
 import { updateDependencies } from '../utils/update-dependencies.js';
-import { bakeAccessibility } from './set.js';
 
 interface InitOptions {
   rebuild?: boolean;
@@ -764,21 +765,26 @@ export async function init(options: InitOptions): Promise<void> {
           for (const color of toImportColors) {
             const familyName = `imported-${color.name}`;
             const reason = `imported from --${color.name} in ${detectedCssPath}`;
-            // `generateOKLCHScale` keys results by position name; the
-            // ColorValue schema wants a positional `OKLCH[]`. Map through
-            // `SCALE_POSITIONS` to get canonical order.
-            const scaleByPos = generateOKLCHScale(color.oklch);
-            const scale = SCALE_POSITIONS.map((pos) => scaleByPos[pos]).filter(
-              (v): v is NonNullable<typeof v> => v !== undefined,
-            );
+            // Build a complete `ColorValue` via the canonical
+            // `colorValueFromFamily` helper, which calls `buildColorValue`
+            // from color-utils -- the single source of truth for ColorValue
+            // construction with all computed properties (scale, harmonies,
+            // accessibility AA/AAA pairs + onWhite/onBlack + APCA, color
+            // analysis, atmospheric / perceptual weights, semantic
+            // suggestions, generated color name, tokenId).
+            const colorValue = colorValueFromFamily({
+              name: familyName,
+              seed: color.oklch,
+              sourcePositions: { '500': color.oklch },
+            });
 
             // Per-position primitive tokens. The Tailwind exporter renders
             // `--color-<family>-<position>: oklch(...)` from these; a
             // ColorReference into the family resolves to them via `var()`.
             // Without these, `var(--color-imported-<name>-600)` would be a
             // dangling reference in the output CSS.
-            for (const position of SCALE_POSITIONS) {
-              const oklch = scaleByPos[position];
+            for (const [i, position] of SCALE_POSITIONS.entries()) {
+              const oklch = colorValue.scale[i];
               if (!oklch) continue;
               registry.define({
                 name: `${familyName}-${position}`,
@@ -789,14 +795,13 @@ export async function init(options: InitOptions): Promise<void> {
               });
             }
 
-            // Family token carries the scale + WCAG ladder so the state
-            // and contrast plugins can walk it at cascade time.
-            const familyValue = bakeAccessibility({ name: familyName, scale }) as ColorValue;
+            // Family token carries the complete rich data the system
+            // records: harmonies, weights, semantic suggestions, all of it.
             registry.define({
               name: familyName,
               namespace: 'color',
               category: 'color',
-              value: familyValue,
+              value: colorValue,
               userOverride: null,
             });
 
@@ -859,37 +864,46 @@ export async function init(options: InitOptions): Promise<void> {
         // infer it from the source's existing var() mappings.
         const themeDecls = extractThemeBlocks(sourceCss);
         if (themeDecls.length > 0) {
-          const { families } = groupIntoFamilies(themeDecls);
+          const { families: rampFamilies, leftover: themeLeftover } = groupIntoFamilies(themeDecls);
+          // Promote single-color `@theme` declarations (anything that did
+          // not form a ramp) into seed families. Same shape as ramps:
+          // `seed` + `sourcePositions`. The seed gets the full
+          // `buildColorValue` treatment at apply time so single colors
+          // carry the same rich data as ramps.
+          const seedFamilies = seedFamiliesFromDeclarations(
+            themeLeftover,
+            new Set(rampFamilies.map((f) => f.name)),
+          );
+          const families: readonly DetectedFamily[] = [...rampFamilies, ...seedFamilies];
           if (families.length > 0) {
-            // Define every detected palette in the registry. Each family
-            // gets 11 per-position primitive tokens + 1 family token with
-            // the scale + WCAG ladder. Names are preserved verbatim from
-            // source (`empire`, not `imported-empire`).
+            // Define every detected palette in the registry via
+            // `colorValueFromFamily`, which calls `buildColorValue` from
+            // color-utils -- the canonical builder -- and overrides the
+            // generated scale with any positions the designer authored
+            // verbatim. Designers preserve their own family names:
+            // `--color-empire-500` -> family `empire` (no `imported-`
+            // prefix). Each family also gets 11 per-position primitive
+            // tokens so the Tailwind exporter can resolve
+            // `var(--color-empire-NN0)` references.
             for (const family of families) {
-              const positions = SCALE_POSITIONS.filter((p) => family.scale[p] !== undefined);
-              for (const pos of positions) {
-                const oklch = family.scale[pos];
+              const colorValue = colorValueFromFamily(family);
+
+              for (const [i, position] of SCALE_POSITIONS.entries()) {
+                const oklch = colorValue.scale[i];
                 if (!oklch) continue;
                 registry.define({
-                  name: `${family.name}-${pos}`,
+                  name: `${family.name}-${position}`,
                   namespace: 'color',
                   category: 'color',
                   value: oklchToCSS(oklch),
                   userOverride: null,
                 });
               }
-              const scaleArray = positions
-                .map((p) => family.scale[p])
-                .filter((v): v is NonNullable<typeof v> => v !== undefined);
-              const familyValue = bakeAccessibility({
-                name: family.name,
-                scale: scaleArray,
-              }) as ColorValue;
               registry.define({
                 name: family.name,
                 namespace: 'color',
                 category: 'color',
-                value: familyValue,
+                value: colorValue,
                 userOverride: null,
               });
             }
@@ -944,9 +958,10 @@ export async function init(options: InitOptions): Promise<void> {
               if (familyChoice === null) continue;
               const family = families.find((f) => f.name === familyChoice);
               if (!family) continue;
-              const availablePositions = SCALE_POSITIONS.filter(
-                (p) => family.scale[p] !== undefined,
-              );
+              // All 11 positions are available now -- buildColorValue
+              // derives any positions the designer did not author, so
+              // every family is full-scale at apply time.
+              const availablePositions = SCALE_POSITIONS;
               const position = isAgentMode
                 ? '500'
                 : await select({
