@@ -287,7 +287,10 @@ describe('rafters init - source CSS sensing', () => {
 
     const applied = events.find((e) => e.event === 'init:import_applied');
     expect(applied).toBeDefined();
-    expect(applied?.count).toBe(3); // primary, background, destructive
+    // primary + background + destructive (semantics) + tw-ring-color
+    // (color-namespace primitive, classifier can't tell Tailwind internals
+    // from user brand colors -- the prompt is where the user filters).
+    expect(applied?.count).toBe(4);
     expect(applied?.cssPath).toBe('src/app/globals.css');
 
     // (1) Imported family + per-position primitive tokens land on disk.
@@ -303,6 +306,7 @@ describe('rafters init - source CSS sensing', () => {
     expect(tokensByName.has('imported-primary-950')).toBe(true);
     expect(tokensByName.has('imported-background')).toBe(true);
     expect(tokensByName.has('imported-destructive')).toBe(true);
+    expect(tokensByName.has('imported-tw-ring-color')).toBe(true);
 
     // (2) The seed OKLCH is preserved at position 600 (where
     // generateLightnessProgression's baseIndex=6 lands the seed lightness).
@@ -343,7 +347,7 @@ describe('rafters init - source CSS sensing', () => {
     expect(css).toMatch(/--rafters-primary-foreground:\s*var\(--color-imported-primary-\d+\)/);
   }, 30000);
 
-  it('does not apply when the source CSS has no shadcn-semantic colors', async () => {
+  it('imports non-shadcn-semantic colors as primitive families without reseating semantics', async () => {
     fixturePath = await createFixture('nextjs-shadcn-v4');
     await writeFile(
       join(fixturePath, 'src/app/globals.css'),
@@ -364,18 +368,48 @@ describe('rafters init - source CSS sensing', () => {
       .filter((l) => l.startsWith('{'))
       .map((l) => JSON.parse(l) as Record<string, unknown>);
 
-    // Sensing fires (the colors and radius are classified) but apply does
-    // not -- the prompt loop only walks `semantic` namespace declarations,
-    // and these are all `color` namespace or `radius`.
-    const sensed = events.find((e) => e.event === 'init:import_sensed');
-    expect(sensed).toBeDefined();
+    // Apply fires for color-namespace primitives the same as for shadcn
+    // semantics -- the only difference is that primitives skip the
+    // semantic-set step.
     const applied = events.find((e) => e.event === 'init:import_applied');
-    expect(applied).toBeUndefined();
+    expect(applied).toBeDefined();
+    expect(applied?.count).toBe(2); // brand-empire, brand-republic
 
-    // No imported-* tokens land on disk.
+    // (1) Per-position + family tokens land on disk for both brand colors.
     const colorTokensRaw = await readFixtureFile(fixturePath, '.rafters/tokens/color.rafters.json');
-    const colorTokens = JSON.parse(colorTokensRaw) as { tokens: Array<{ name: string }> };
-    expect(colorTokens.tokens.some((t) => t.name.startsWith('imported-'))).toBe(false);
+    const colorTokens = JSON.parse(colorTokensRaw) as {
+      tokens: Array<{ name: string; value: unknown }>;
+    };
+    const tokensByName = new Map(colorTokens.tokens.map((t) => [t.name, t]));
+    expect(tokensByName.has('imported-brand-empire')).toBe(true);
+    expect(tokensByName.has('imported-brand-empire-600')).toBe(true);
+    expect(tokensByName.has('imported-brand-republic')).toBe(true);
+    expect(tokensByName.has('imported-brand-republic-600')).toBe(true);
+
+    // (2) Seed OKLCH preserved at position 600 for both.
+    expect(tokensByName.get('imported-brand-empire-600')?.value).toBe('oklch(0.4 0.2 240)');
+    expect(tokensByName.get('imported-brand-republic-600')?.value).toBe('oklch(0.5 0.2 200)');
+
+    // (3) No rafters semantic was reseated -- `primary`, `background`, etc.
+    // stay at their Phase A defaults. Designer assigns these brand colors
+    // to semantics later (via `rafters set` or Studio).
+    const semanticTokensRaw = await readFixtureFile(
+      fixturePath,
+      '.rafters/tokens/semantic.rafters.json',
+    );
+    const semanticTokens = JSON.parse(semanticTokensRaw) as {
+      tokens: Array<{ name: string; value: unknown; userOverride: unknown }>;
+    };
+    const primary = semanticTokens.tokens.find((t) => t.name === 'primary');
+    expect(primary?.userOverride).toBeNull();
+    expect(primary?.value).not.toMatchObject({ family: expect.stringContaining('imported-') });
+
+    // (4) The primitives are reachable from CSS output even without a
+    // semantic referencing them -- the Tailwind exporter emits every color
+    // token's per-position declarations.
+    const css = await readFixtureFile(fixturePath, '.rafters/output/rafters.css');
+    expect(css).toContain('--color-imported-brand-empire-600: oklch(0.4 0.2 240)');
+    expect(css).toContain('--color-imported-brand-republic-600: oklch(0.5 0.2 200)');
   }, 30000);
 
   it('skips sensing when source CSS has no :root declarations', async () => {
