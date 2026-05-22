@@ -140,8 +140,15 @@ export function log(event: Record<string, unknown>): void {
     case 'init:import_applied': {
       const count = event.count as number;
       const cssPath = event.cssPath as string;
+      const skipped = (event.skipped as string[] | undefined) ?? [];
       const plural = count === 1 ? '' : 's';
-      console.log(`  Imported ${count} color${plural} from ${cssPath}`);
+      console.log(`  Imported ${count} token${plural} from ${cssPath}`);
+      if (skipped.length > 0) {
+        const sk = skipped.length === 1 ? '' : 's';
+        console.log(
+          `    ${skipped.length} skipped (no matching token${sk}): ${skipped.join(', ')}`,
+        );
+      }
       break;
     }
 

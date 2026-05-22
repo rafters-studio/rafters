@@ -726,21 +726,40 @@ export async function init(options: InitOptions): Promise<void> {
         });
 
         const classification = classifyDeclarations(extractShadcnRoot(sourceCss));
-        const importableColors = colorsFromClassification(classification);
+        const colorDecls = colorsFromClassification(classification);
+        const nonColorDecls = [
+          ...classification.byNamespace.typography,
+          ...classification.byNamespace.spacing,
+          ...classification.byNamespace.radius,
+          ...classification.byNamespace.shadow,
+        ];
 
-        const toImport: ColorDeclaration[] = [];
-        for (const color of importableColors) {
+        const toImportColors: ColorDeclaration[] = [];
+        for (const color of colorDecls) {
           const accept = isAgentMode
             ? true
             : await confirm({
                 message: `Import --${color.name}: ${color.value}?`,
                 default: true,
               });
-          if (accept) toImport.push(color);
+          if (accept) toImportColors.push(color);
         }
 
-        if (toImport.length > 0) {
-          for (const color of toImport) {
+        const toImportNonColors: typeof nonColorDecls = [];
+        for (const decl of nonColorDecls) {
+          const accept = isAgentMode
+            ? true
+            : await confirm({
+                message: `Import --${decl.name}: ${decl.value}?`,
+                default: true,
+              });
+          if (accept) toImportNonColors.push(decl);
+        }
+
+        if (toImportColors.length + toImportNonColors.length > 0) {
+          // Color + semantic: family-create + per-position + (when semantic)
+          // reseat the rafters semantic at family@600.
+          for (const color of toImportColors) {
             const familyName = `imported-${color.name}`;
             const reason = `imported from --${color.name} in ${detectedCssPath}`;
             // `generateOKLCHScale` keys results by position name; the
@@ -793,6 +812,23 @@ export async function init(options: InitOptions): Promise<void> {
             }
           }
 
+          // Typography / spacing / radius / shadow: direct `registry.set` if
+          // the source name matches a rafters token. Source names that
+          // don't match (e.g. `--font-display-bold` when rafters only ships
+          // `font-sans`, `font-mono`, etc.) are skipped -- the designer
+          // would need to `rafters set` an arbitrary new name, which goes
+          // through `define` not `set`, and that's a different shape we
+          // can wire later if real consumers ask for it.
+          const skipped: string[] = [];
+          for (const decl of toImportNonColors) {
+            const reason = `imported from --${decl.name} in ${detectedCssPath}`;
+            if (registry.has(decl.name)) {
+              registry.set(decl.name, decl.value, { reason });
+            } else {
+              skipped.push(decl.name);
+            }
+          }
+
           // Persist the imports and re-emit outputs so the on-disk state
           // reflects the apply step. Phase A's earlier save + generate
           // produced the defaults; this pass overwrites with the imported
@@ -801,8 +837,9 @@ export async function init(options: InitOptions): Promise<void> {
           await generateOutputs(cwd, paths, registry, exports, shadcn);
           log({
             event: 'init:import_applied',
-            count: toImport.length,
+            count: toImportColors.length + toImportNonColors.length - skipped.length,
             cssPath: detectedCssPath,
+            ...(skipped.length > 0 ? { skipped } : {}),
           });
         }
       }
