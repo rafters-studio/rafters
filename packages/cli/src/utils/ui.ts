@@ -137,6 +137,14 @@ export function log(event: Record<string, unknown>): void {
       break;
     }
 
+    case 'init:import_applied': {
+      const count = event.count as number;
+      const cssPath = event.cssPath as string;
+      const plural = count === 1 ? '' : 's';
+      console.log(`  Imported ${count} color${plural} from ${cssPath}`);
+      break;
+    }
+
     case 'init:complete': {
       context.spinner?.succeed('Done!');
       context.spinner = null;

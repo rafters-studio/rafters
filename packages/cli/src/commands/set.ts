@@ -100,7 +100,7 @@ const WCAG_AAA_NORMAL = 7;
  * No-op for string values and ColorReference values (those don't carry a
  * scale to derive accessibility from).
  */
-function bakeAccessibility(value: TokenValue): TokenValue {
+export function bakeAccessibility(value: TokenValue): TokenValue {
   if (typeof value !== 'object' || value === null) return value;
   if (!('scale' in value) || !Array.isArray(value.scale)) return value;
   const colorValue = value as ColorValue;
