@@ -17,6 +17,7 @@ import {
   classifyDeclarations,
   colorsFromClassification,
   contrastPlugin,
+  detectFonts,
   extractShadcnRoot,
   extractThemeBlocks,
   generateBaseSystem,
@@ -963,6 +964,82 @@ export async function init(options: InitOptions): Promise<void> {
               assignments,
             });
           }
+        }
+      }
+    }
+
+    // Typography font role-walk. Independent of the color flows above and
+    // of `summary.totalDeclarations > 0` -- a project can declare fonts
+    // entirely through `@import url(google fonts)` or `@font-face` without
+    // any `:root` custom properties. Three prompts (heading, body, code);
+    // each answer reseats BOTH the role token and its inherited base
+    // family (heading -> font-sans, body -> font-sans, code -> font-mono).
+    // Last write wins on shared base families if heading and body pick
+    // different fonts -- explicit trade-off for the 3-prompt UX, designer
+    // can `rafters set` individually if they want heading != body.
+    if (sourceCss !== null) {
+      const detectedFonts = detectFonts(sourceCss);
+      if (detectedFonts.length > 0) {
+        const FONT_ROLES = [
+          { role: 'heading', base: 'font-sans' },
+          { role: 'body', base: 'font-sans' },
+          { role: 'code', base: 'font-mono' },
+        ] as const;
+        const fontAssignments: Array<{ role: string; family: string }> = [];
+        for (const [i, { role, base }] of FONT_ROLES.entries()) {
+          let choice: string | null;
+          if (isAgentMode) {
+            // Agent mode: route by font name. Mono-named families fill the
+            // code role; the rest are eligible for heading/body in source
+            // order. A project loading only one sans family gets it for
+            // both heading AND body (idempotent on the shared base family).
+            // No detected mono falls back to the first non-mono, then to
+            // detectedFonts[i] as last resort -- the role walk should not
+            // silently skip when something IS available to assign.
+            const monoFonts = detectedFonts.filter((f) => /mono/i.test(f.name));
+            const sansFonts = detectedFonts.filter((f) => !/mono/i.test(f.name));
+            if (role === 'code') {
+              choice = monoFonts[0]?.name ?? sansFonts[0]?.name ?? detectedFonts[i]?.name ?? null;
+            } else {
+              choice = sansFonts[0]?.name ?? detectedFonts[i]?.name ?? null;
+            }
+          } else {
+            choice = await select<string | null>({
+              message: `Which font is "${role}"?`,
+              choices: [
+                ...detectedFonts.map((f) => ({ name: f.name, value: f.name })),
+                { name: '(skip -- keep rafters default)', value: null },
+              ],
+            });
+          }
+          if (choice === null) continue;
+          const font = detectedFonts.find((f) => f.name === choice);
+          if (font === undefined) continue;
+          const roleToken = `font-${role}`;
+          const reason = `assigned ${font.name} as ${role} during import from ${detectedCssPath}`;
+          if (registry.has(roleToken)) {
+            registry.set(roleToken, font.stack, { reason });
+          }
+          // Don't clobber the base family's userOverride reason when an
+          // earlier `:root --font-sans` direct-set already wrote the same
+          // value. Preserves "imported from --font-sans" provenance.
+          if (registry.has(base)) {
+            const current = registry.get(base);
+            if (current?.value !== font.stack) {
+              registry.set(base, font.stack, { reason });
+            }
+          }
+          fontAssignments.push({ role, family: font.name });
+        }
+        if (fontAssignments.length > 0) {
+          saveRegistryToDir(paths.tokens, registry);
+          await generateOutputs(cwd, paths, registry, exports, shadcn);
+          log({
+            event: 'init:import_fonts_applied',
+            cssPath: detectedCssPath,
+            fontsDetected: detectedFonts.map((f) => f.name),
+            assignments: fontAssignments,
+          });
         }
       }
     }

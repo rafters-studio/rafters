@@ -12,6 +12,7 @@ export {
 export { classifyDeclarations } from './importers/classify.js';
 export { importColorFamily } from './importers/color.js';
 export { colorsFromClassification } from './importers/colors.js';
+export { type DetectedFont, detectFonts } from './importers/fonts.js';
 export { senseShadcnCss } from './importers/sense.js';
 export { extractShadcnRoot } from './importers/shadcn.js';
 export {
