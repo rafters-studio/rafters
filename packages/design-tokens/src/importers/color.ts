@@ -32,6 +32,11 @@ export function importColorFamily(name: string, seedPosition: string, seed: OKLC
     throw new Error(`importColorFamily: unknown scale position "${seedPosition}"`);
   }
   const built = buildColorValue(seed, { token: name });
+  if (built.scale.length !== SCALE_POSITIONS.length) {
+    throw new Error(
+      `importColorFamily: buildColorValue returned ${built.scale.length} positions, expected ${SCALE_POSITIONS.length}`,
+    );
+  }
   // Pin the seed back into the position the designer authored it at.
   // buildColorValue derives every position from one anchor; without this
   // override, the value the designer typed would land at whatever index

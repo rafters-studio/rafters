@@ -716,8 +716,15 @@ export async function init(options: InitOptions): Promise<void> {
   // blast-radius of remapping an existing one (e.g. neutral) where every
   // dependent semantic would re-color.
   if (detectedCssPath) {
+    let sourceCss: string | null = null;
     try {
-      const sourceCss = await readFile(join(cwd, detectedCssPath), 'utf-8');
+      sourceCss = await readFile(join(cwd, detectedCssPath), 'utf-8');
+    } catch (err) {
+      // File vanishing between detection and now is a legitimate soft skip.
+      // Other failures (permission, IO) propagate so the user sees them.
+      if (!(err instanceof Error && 'code' in err && err.code === 'ENOENT')) throw err;
+    }
+    if (sourceCss !== null) {
       const summary = senseShadcnCss(sourceCss);
       if (summary.totalDeclarations > 0) {
         log({
@@ -842,6 +849,12 @@ export async function init(options: InitOptions): Promise<void> {
             { seed: OKLCH; seedPosition: (typeof SCALE_POSITIONS)[number] }
           >();
           for (const decl of themeDecls) {
+            // Tailwind v4 namespaces color tokens with `color-`. Gate on the
+            // prefix so a `--font-display: red` (named CSS color, parses as
+            // OKLCH) does not mint a font-display color family. Other
+            // namespaces (--font-*, --spacing-*, --radius-*, --shadow-*)
+            // have dedicated import paths and should not leak in here.
+            if (!decl.name.startsWith('color-')) continue;
             const oklch = tryParseColor(decl.value);
             if (oklch === null) continue;
             const m = decl.name.match(POSITION_SUFFIX);
@@ -952,10 +965,6 @@ export async function init(options: InitOptions): Promise<void> {
           }
         }
       }
-    } catch (err) {
-      // File vanishing between detection and now is a legitimate soft skip.
-      // Other failures (permission, IO) propagate so the user sees them.
-      if (!(err instanceof Error && 'code' in err && err.code === 'ENOENT')) throw err;
     }
   }
 

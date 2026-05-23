@@ -58,6 +58,20 @@ describe('hexToOKLCH', () => {
     expect(result.h).toBeCloseTo(250, 0);
   });
 
+  it('returns primitive numbers for oklch() literal input (not boxed Number)', () => {
+    // Regression for boxed-Number leak: colorjs.io returns Number objects
+    // for some input formats (oklch literals among them). Downstream Zod
+    // schemas reject `typeof === 'object'` even when `toBeCloseTo` passes
+    // (the matcher coerces, hiding the divergence). Asserting `typeof`
+    // catches a future refactor that drops the Number() coercion in
+    // conversion.ts.
+    const result = hexToOKLCH('oklch(0.5 0.2 30)');
+    expect(typeof result.l).toBe('number');
+    expect(typeof result.c).toBe('number');
+    expect(typeof result.h).toBe('number');
+    expect(typeof result.alpha).toBe('number');
+  });
+
   it('throws on invalid input', () => {
     expect(() => hexToOKLCH('not-a-color')).toThrow();
   });
