@@ -986,18 +986,17 @@ export async function init(options: InitOptions): Promise<void> {
           { role: 'code', base: 'font-mono' },
         ] as const;
         const fontAssignments: Array<{ role: string; family: string }> = [];
+        // Agent mode route: mono-named families fill the code role; the rest
+        // are eligible for heading/body in source order. A project loading
+        // only one sans family gets it for both heading AND body (idempotent
+        // on the shared base family). No detected mono falls back to the
+        // first non-mono, then to positional detection as last resort -- the
+        // role walk should not silently skip when something IS available.
+        const monoFonts = detectedFonts.filter((f) => /mono/i.test(f.name));
+        const sansFonts = detectedFonts.filter((f) => !/mono/i.test(f.name));
         for (const [i, { role, base }] of FONT_ROLES.entries()) {
           let choice: string | null;
           if (isAgentMode) {
-            // Agent mode: route by font name. Mono-named families fill the
-            // code role; the rest are eligible for heading/body in source
-            // order. A project loading only one sans family gets it for
-            // both heading AND body (idempotent on the shared base family).
-            // No detected mono falls back to the first non-mono, then to
-            // detectedFonts[i] as last resort -- the role walk should not
-            // silently skip when something IS available to assign.
-            const monoFonts = detectedFonts.filter((f) => /mono/i.test(f.name));
-            const sansFonts = detectedFonts.filter((f) => !/mono/i.test(f.name));
             if (role === 'code') {
               choice = monoFonts[0]?.name ?? sansFonts[0]?.name ?? detectedFonts[i]?.name ?? null;
             } else {
