@@ -11,7 +11,7 @@ import { copyFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { join, relative } from 'node:path';
 import { checkbox, confirm, select } from '@inquirer/prompts';
-import { generateOKLCHScale, oklchToCSS, SCALE_POSITIONS } from '@rafters/color-utils';
+import { SCALE_POSITIONS, tryParseColor } from '@rafters/color-utils';
 import {
   type ColorDeclaration,
   classifyDeclarations,
@@ -20,7 +20,7 @@ import {
   extractShadcnRoot,
   extractThemeBlocks,
   generateBaseSystem,
-  groupIntoFamilies,
+  importColorFamily,
   invertPlugin,
   loadRegistryFromDir,
   registryToCompiled,
@@ -33,7 +33,7 @@ import {
   TokenRegistry,
   toDTCG,
 } from '@rafters/design-tokens';
-import type { ColorValue } from '@rafters/shared';
+import type { OKLCH } from '@rafters/shared';
 
 const REGISTRY_PLUGINS = [scalePlugin, contrastPlugin, statePlugin, invertPlugin];
 
@@ -59,7 +59,6 @@ import {
 import { getRaftersPaths, type PathField } from '../utils/paths.js';
 import { isAgentMode, log, setAgentMode } from '../utils/ui.js';
 import { updateDependencies } from '../utils/update-dependencies.js';
-import { bakeAccessibility } from './set.js';
 
 interface InitOptions {
   rebuild?: boolean;
@@ -760,57 +759,22 @@ export async function init(options: InitOptions): Promise<void> {
 
         if (toImportColors.length + toImportNonColors.length > 0) {
           // Color + semantic: family-create + per-position + (when semantic)
-          // reseat the rafters semantic at family@600.
+          // reseat the rafters semantic at family@500.
           for (const color of toImportColors) {
             const familyName = `imported-${color.name}`;
             const reason = `imported from --${color.name} in ${detectedCssPath}`;
-            // `generateOKLCHScale` keys results by position name; the
-            // ColorValue schema wants a positional `OKLCH[]`. Map through
-            // `SCALE_POSITIONS` to get canonical order.
-            const scaleByPos = generateOKLCHScale(color.oklch);
-            const scale = SCALE_POSITIONS.map((pos) => scaleByPos[pos]).filter(
-              (v): v is NonNullable<typeof v> => v !== undefined,
-            );
-
-            // Per-position primitive tokens. The Tailwind exporter renders
-            // `--color-<family>-<position>: oklch(...)` from these; a
-            // ColorReference into the family resolves to them via `var()`.
-            // Without these, `var(--color-imported-<name>-600)` would be a
-            // dangling reference in the output CSS.
-            for (const position of SCALE_POSITIONS) {
-              const oklch = scaleByPos[position];
-              if (!oklch) continue;
-              registry.define({
-                name: `${familyName}-${position}`,
-                namespace: 'color',
-                category: 'color',
-                value: oklchToCSS(oklch),
-                userOverride: null,
-              });
+            // `importColorFamily` returns the family token + 11 per-position
+            // primitives, all built via `buildColorValue` from color-utils.
+            for (const t of importColorFamily(familyName, color.oklch)) {
+              registry.define(t);
             }
-
-            // Family token carries the scale + WCAG ladder so the state
-            // and contrast plugins can walk it at cascade time.
-            const familyValue = bakeAccessibility({ name: familyName, scale }) as ColorValue;
-            registry.define({
-              name: familyName,
-              namespace: 'color',
-              category: 'color',
-              value: familyValue,
-              userOverride: null,
-            });
-
             // Only shadcn-canonical names (the `semantic` namespace) get an
             // automatic semantic-set. Non-canonical color primitives (e.g.
             // `--brand-empire`) are imported as families and left for the
-            // designer to assign to a semantic later (via `rafters set` or
-            // Studio). The seed lightness lands at position 600 -- see
-            // `generateLightnessProgression` in `@rafters/color-utils`
-            // (`baseIndex = 6`). Pointing the semantic at family@600
-            // preserves the user's exact OKLCH; pointing at 500 would
-            // render a lighter shade than what they wrote.
+            // designer to assign to a semantic later via `rafters set` or
+            // Studio. Family@500 is the canonical "main" color anchor.
             if (color.namespace === 'semantic') {
-              registry.set(color.name, { family: familyName, position: '600' }, { reason });
+              registry.set(color.name, { family: familyName, position: '500' }, { reason });
             }
           }
 
@@ -859,39 +823,35 @@ export async function init(options: InitOptions): Promise<void> {
         // infer it from the source's existing var() mappings.
         const themeDecls = extractThemeBlocks(sourceCss);
         if (themeDecls.length > 0) {
-          const { families } = groupIntoFamilies(themeDecls);
+          // Detect family seeds: group color-valued declarations by base
+          // name (Tailwind v4 source conventionally prefixes with `color-`;
+          // strip it). Prefer the `-500` value as the seed when a ramp
+          // declares one; otherwise the first parseable color for the base
+          // name wins. `buildColorValue` derives the full scale around the
+          // seed -- the source's other declared positions are discarded.
+          const POSITION_SUFFIX = new RegExp(`^(.+)-(${SCALE_POSITIONS.join('|')})$`);
+          const familySeeds = new Map<string, OKLCH>();
+          for (const decl of themeDecls) {
+            const oklch = tryParseColor(decl.value);
+            if (oklch === null) continue;
+            const m = decl.name.match(POSITION_SUFFIX);
+            const baseName = ((m ? m[1] : decl.name) ?? decl.name).replace(/^color-/, '');
+            if (!baseName) continue;
+            if (m?.[2] === '500' || !familySeeds.has(baseName)) {
+              familySeeds.set(baseName, oklch);
+            }
+          }
+          const families = Array.from(familySeeds, ([name, seed]) => ({ name, seed }));
           if (families.length > 0) {
-            // Define every detected palette in the registry. Each family
-            // gets 11 per-position primitive tokens + 1 family token with
-            // the scale + WCAG ladder. Names are preserved verbatim from
-            // source (`empire`, not `imported-empire`).
+            // Define every detected palette via `importColorFamily` --
+            // returns the family Token + 11 per-position primitive Tokens,
+            // all built via `buildColorValue` (the canonical color-utils
+            // builder). Designers preserve their own family names:
+            // `--color-empire-500` -> family `empire`.
             for (const family of families) {
-              const positions = SCALE_POSITIONS.filter((p) => family.scale[p] !== undefined);
-              for (const pos of positions) {
-                const oklch = family.scale[pos];
-                if (!oklch) continue;
-                registry.define({
-                  name: `${family.name}-${pos}`,
-                  namespace: 'color',
-                  category: 'color',
-                  value: oklchToCSS(oklch),
-                  userOverride: null,
-                });
+              for (const t of importColorFamily(family.name, family.seed)) {
+                registry.define(t);
               }
-              const scaleArray = positions
-                .map((p) => family.scale[p])
-                .filter((v): v is NonNullable<typeof v> => v !== undefined);
-              const familyValue = bakeAccessibility({
-                name: family.name,
-                scale: scaleArray,
-              }) as ColorValue;
-              registry.define({
-                name: family.name,
-                namespace: 'color',
-                category: 'color',
-                value: familyValue,
-                userOverride: null,
-              });
             }
 
             // Walk the 11 canonical SemanticColorSystem roles. Per role:
@@ -944,9 +904,10 @@ export async function init(options: InitOptions): Promise<void> {
               if (familyChoice === null) continue;
               const family = families.find((f) => f.name === familyChoice);
               if (!family) continue;
-              const availablePositions = SCALE_POSITIONS.filter(
-                (p) => family.scale[p] !== undefined,
-              );
+              // All 11 positions are available now -- buildColorValue
+              // derives any positions the designer did not author, so
+              // every family is full-scale at apply time.
+              const availablePositions = SCALE_POSITIONS;
               const position = isAgentMode
                 ? '500'
                 : await select({

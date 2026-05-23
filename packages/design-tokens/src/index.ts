@@ -9,7 +9,21 @@ export {
   UnknownPluginError,
   UserOverrideSchema,
 } from './graph.js';
-export * from './importers/index.js';
+export { classifyDeclarations } from './importers/classify.js';
+export { importColorFamily } from './importers/color.js';
+export { colorsFromClassification } from './importers/colors.js';
+export { senseShadcnCss } from './importers/sense.js';
+export { extractShadcnRoot } from './importers/shadcn.js';
+export {
+  type ClassificationResult,
+  type ClassifiedDeclaration,
+  type ColorDeclaration,
+  type CssDeclaration,
+  RAFTERS_IMPORT_NAMESPACES,
+  type RaftersImportNamespace,
+  type SensedSummary,
+} from './importers/shapes.js';
+export { extractThemeBlocks } from './importers/theme.js';
 export {
   findTokenFile,
   loadRegistryFromDir,

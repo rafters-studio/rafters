@@ -308,14 +308,26 @@ describe('rafters init - source CSS sensing', () => {
     expect(tokensByName.has('imported-destructive')).toBe(true);
     expect(tokensByName.has('imported-tw-ring-color')).toBe(true);
 
-    // (2) The seed OKLCH is preserved at position 600 (where
-    // generateLightnessProgression's baseIndex=6 lands the seed lightness).
-    // Source was --primary: oklch(0.5 0.2 30); position 600 should match.
-    const primaryAt600 = tokensByName.get('imported-primary-600');
-    expect(primaryAt600?.value).toBe('oklch(0.5 0.2 30)');
+    // (2) The seed OKLCH is preserved verbatim at position 500 -- the
+    // canonical "main" anchor of a family. `colorValueFromFamily` honors
+    // the source position via `sourcePositions: {'500': seed}`. Source
+    // was --primary: oklch(0.5 0.2 30).
+    const primaryAt500 = tokensByName.get('imported-primary-500');
+    expect(primaryAt500?.value).toBe('oklch(0.5 0.2 30)');
 
-    // (3) The semantic primary is reseated to a ColorReference pointing at
-    // the imported family@600 -- not an opaque OKLCH literal (that would
+    // (3) The imported family carries the full rich data that
+    // `buildColorValue` produces -- harmonies, semantic suggestions,
+    // tokenId, full WCAG ladder + APCA. Verifies we are not hand-stitching
+    // ColorValues anymore.
+    const primaryFamily = tokensByName.get('imported-primary');
+    const primaryValue = primaryFamily?.value as Record<string, unknown> | undefined;
+    expect(primaryValue?.harmonies).toBeDefined();
+    expect(primaryValue?.tokenId).toMatch(/^color-/);
+    expect(primaryValue?.semanticSuggestions).toBeDefined();
+    expect(primaryValue?.atmosphericWeight).toBeDefined();
+
+    // (4) The semantic primary is reseated to a ColorReference pointing at
+    // the imported family@500 -- not an opaque OKLCH literal (that would
     // hit the documented "ColorValue where exporter expects ColorReference"
     // failure mode from recall 019d6189).
     const semanticTokensRaw = await readFixtureFile(
@@ -326,20 +338,20 @@ describe('rafters init - source CSS sensing', () => {
       tokens: Array<{ name: string; value: unknown; userOverride: unknown }>;
     };
     const primary = semanticTokens.tokens.find((t) => t.name === 'primary');
-    expect(primary?.value).toEqual({ family: 'imported-primary', position: '600' });
+    expect(primary?.value).toEqual({ family: 'imported-primary', position: '500' });
 
-    // (4) The userOverride diary entry captures intent so future cascades
+    // (5) The userOverride diary entry captures intent so future cascades
     // can read why primary deviates from defaults.
     expect(primary?.userOverride).toMatchObject({
       reason: expect.stringContaining('imported from --primary'),
     });
 
-    // (5) Tailwind output resolves end-to-end: `--rafters-primary` points
-    // at the imported family's 600 position, and that position is declared
+    // (6) Tailwind output resolves end-to-end: `--rafters-primary` points
+    // at the imported family's 500 position, and that position is declared
     // (not a dangling reference).
     const css = await readFixtureFile(fixturePath, '.rafters/output/rafters.css');
-    expect(css).toContain('--rafters-primary: var(--color-imported-primary-600)');
-    expect(css).toContain('--color-imported-primary-600: oklch(0.5 0.2 30)');
+    expect(css).toContain('--rafters-primary: var(--color-imported-primary-500)');
+    expect(css).toContain('--color-imported-primary-500: oklch(0.5 0.2 30)');
 
     // (6) The cascade fired through the imported family: primary-foreground
     // re-derived to use the imported family's most-contrasting position
