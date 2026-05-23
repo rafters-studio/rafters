@@ -763,16 +763,20 @@ export async function init(options: InitOptions): Promise<void> {
           for (const color of toImportColors) {
             const familyName = `imported-${color.name}`;
             const reason = `imported from --${color.name} in ${detectedCssPath}`;
-            // `importColorFamily` returns the family token + 11 per-position
-            // primitives, all built via `buildColorValue` from color-utils.
-            for (const t of importColorFamily(familyName, color.oklch)) {
+            // `:root` declarations (`--primary: <color>`) carry no position
+            // -- the designer said "primary is this color," not "primary's
+            // scale-700 is this color." Seed the new one-off family at 500
+            // and reseat the semantic there. 500 here is an internal
+            // convention for the imported-<name> family, not an assumption
+            // about what the designer wanted.
+            for (const t of importColorFamily(familyName, '500', color.oklch)) {
               registry.define(t);
             }
             // Only shadcn-canonical names (the `semantic` namespace) get an
             // automatic semantic-set. Non-canonical color primitives (e.g.
             // `--brand-empire`) are imported as families and left for the
             // designer to assign to a semantic later via `rafters set` or
-            // Studio. Family@500 is the canonical "main" color anchor.
+            // Studio.
             if (color.namespace === 'semantic') {
               registry.set(color.name, { family: familyName, position: '500' }, { reason });
             }
@@ -825,23 +829,33 @@ export async function init(options: InitOptions): Promise<void> {
         if (themeDecls.length > 0) {
           // Detect family seeds: group color-valued declarations by base
           // name (Tailwind v4 source conventionally prefixes with `color-`;
-          // strip it). Prefer the `-500` value as the seed when a ramp
-          // declares one; otherwise the first parseable color for the base
-          // name wins. `buildColorValue` derives the full scale around the
-          // seed -- the source's other declared positions are discarded.
+          // strip it). Track the position the designer authored at: prefer
+          // -500 if they wrote it (the canonical anchor when present);
+          // otherwise carry whatever position they actually wrote so the
+          // seed lands at the right index in the derived scale. Bare
+          // single-color decls (`--color-empire`) default to position 500.
+          // `buildColorValue` derives the rest of the scale around that
+          // anchor; the source's other declared positions are discarded.
           const POSITION_SUFFIX = new RegExp(`^(.+)-(${SCALE_POSITIONS.join('|')})$`);
-          const familySeeds = new Map<string, OKLCH>();
+          const familySeeds = new Map<
+            string,
+            { seed: OKLCH; seedPosition: (typeof SCALE_POSITIONS)[number] }
+          >();
           for (const decl of themeDecls) {
             const oklch = tryParseColor(decl.value);
             if (oklch === null) continue;
             const m = decl.name.match(POSITION_SUFFIX);
             const baseName = ((m ? m[1] : decl.name) ?? decl.name).replace(/^color-/, '');
             if (!baseName) continue;
-            if (m?.[2] === '500' || !familySeeds.has(baseName)) {
-              familySeeds.set(baseName, oklch);
+            // m[2] is one of SCALE_POSITIONS by construction (regex
+            // alternation), so the cast is sound when the match exists.
+            const seedPosition = (m?.[2] ?? '500') as (typeof SCALE_POSITIONS)[number];
+            const existing = familySeeds.get(baseName);
+            if (!existing || seedPosition === '500') {
+              familySeeds.set(baseName, { seed: oklch, seedPosition });
             }
           }
-          const families = Array.from(familySeeds, ([name, seed]) => ({ name, seed }));
+          const families = Array.from(familySeeds, ([name, info]) => ({ name, ...info }));
           if (families.length > 0) {
             // Define every detected palette via `importColorFamily` --
             // returns the family Token + 11 per-position primitive Tokens,
@@ -849,7 +863,7 @@ export async function init(options: InitOptions): Promise<void> {
             // builder). Designers preserve their own family names:
             // `--color-empire-500` -> family `empire`.
             for (const family of families) {
-              for (const t of importColorFamily(family.name, family.seed)) {
+              for (const t of importColorFamily(family.name, family.seedPosition, family.seed)) {
                 registry.define(t);
               }
             }
@@ -904,16 +918,18 @@ export async function init(options: InitOptions): Promise<void> {
               if (familyChoice === null) continue;
               const family = families.find((f) => f.name === familyChoice);
               if (!family) continue;
-              // All 11 positions are available now -- buildColorValue
-              // derives any positions the designer did not author, so
-              // every family is full-scale at apply time.
-              const availablePositions = SCALE_POSITIONS;
+              // Every family is full-scale (buildColorValue derives the
+              // positions the designer did not author), so the role can
+              // bind to any of the 11. Default to the position the family
+              // was seeded at -- that IS the designer's anchor. Hardcoding
+              // 500 would override their declared position when they
+              // authored elsewhere on the scale.
               const position = isAgentMode
-                ? '500'
+                ? family.seedPosition
                 : await select({
                     message: `Which position in "${familyChoice}" for "${role}"?`,
-                    choices: availablePositions.map((p) => ({ name: p, value: p })),
-                    default: '500',
+                    choices: SCALE_POSITIONS.map((p) => ({ name: p, value: p })),
+                    default: family.seedPosition,
                   });
               registry.set(
                 role,
