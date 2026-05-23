@@ -485,8 +485,9 @@ describe('rafters init - source CSS sensing', () => {
   it('runs the typography font role-walk over detected font families in agent mode', async () => {
     fixturePath = await createFixture('nextjs-shadcn-v4');
     // Source mixes detection paths: Google Fonts @import (Inter, JetBrains
-    // Mono) AND a local @font-face (MyDisplay). No :root --font-* decls --
-    // the role walk should still run.
+    // Mono) AND a local @font-face (MyDisplay). No --font-* decls -- the
+    // role walk should still run and synthesise tokens for fonts that
+    // don't slot into a canonical role.
     await writeFile(
       join(fixturePath, 'src/app/globals.css'),
       `@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=JetBrains+Mono:wght@400");
@@ -509,14 +510,17 @@ describe('rafters init - source CSS sensing', () => {
     const applied = events.find((e) => e.event === 'init:import_fonts_applied');
     expect(applied).toBeDefined();
     expect(applied?.fontsDetected).toEqual(['Inter', 'JetBrains Mono', 'MyDisplay']);
-    // Agent mode: sans-named fonts fill heading + body; mono-named fills code.
+    // No canonical --font-{sans,mono,serif} declared -- agent mode falls
+    // back to mono-name heuristic for code, source order for heading/body.
     expect(applied?.assignments).toEqual([
       { role: 'heading', family: 'Inter' },
       { role: 'body', family: 'Inter' },
       { role: 'code', family: 'JetBrains Mono' },
     ]);
+    // All three detected fonts also land as standalone typography tokens
+    // (none had `declaredAs`, so they all get synthesised names).
+    expect(applied?.definedFonts).toEqual(['font-inter', 'font-jetbrains-mono', 'font-mydisplay']);
 
-    // Role tokens AND base families both carry the assigned stacks.
     const tokensRaw = await readFixtureFile(fixturePath, '.rafters/tokens/typography.rafters.json');
     const tokens = JSON.parse(tokensRaw) as {
       tokens: Array<{ name: string; value: unknown; userOverride: unknown }>;
@@ -527,9 +531,57 @@ describe('rafters init - source CSS sensing', () => {
     expect(byName.get('font-code')?.value).toBe('"JetBrains Mono"');
     expect(byName.get('font-sans')?.value).toBe('Inter');
     expect(byName.get('font-mono')?.value).toBe('"JetBrains Mono"');
+    expect(byName.get('font-mydisplay')?.value).toBe('MyDisplay');
     expect(byName.get('font-heading')?.userOverride).toMatchObject({
       reason: expect.stringContaining('assigned Inter as heading'),
     });
+  }, 30000);
+
+  it('preserves a non-canonical --font-* declaration as its own typography token', async () => {
+    fixturePath = await createFixture('nextjs-shadcn-v4');
+    // huttspawn-shaped: --font-sans for the primary, --font-aurabesh for a
+    // custom decorative font that has no canonical role slot. The
+    // decorative font should survive as `font-aurabesh` (using the source
+    // declaration name) so consumers can `var(--rafters-font-aurabesh)`.
+    await writeFile(
+      join(fixturePath, 'src/app/globals.css'),
+      `@theme {
+  --font-sans: "Inter", sans-serif;
+  --font-aurabesh: "Aurabesh", sans-serif;
+}
+@font-face {
+  font-family: "Aurabesh";
+  src: url("/fonts/aurabesh.ttf") format("truetype");
+}
+@import "tailwindcss";
+`,
+    );
+
+    const result = await execCli(fixturePath, ['init', '--agent']);
+    expect(result.exitCode).toBe(0);
+
+    const events = result.stdout
+      .split('\n')
+      .filter((l) => l.startsWith('{'))
+      .map((l) => JSON.parse(l) as Record<string, unknown>);
+
+    const applied = events.find((e) => e.event === 'init:import_fonts_applied');
+    expect(applied).toBeDefined();
+    // Inter is `declaredAs: sans` and slots into heading/body. Aurabesh has
+    // no canonical role, so it doesn't appear in `assignments` -- but it
+    // DOES appear in `definedFonts` as its own typography token.
+    expect(applied?.assignments).toEqual([
+      { role: 'heading', family: 'Inter' },
+      { role: 'body', family: 'Inter' },
+    ]);
+    expect(applied?.definedFonts).toEqual(['font-aurabesh']);
+
+    const tokensRaw = await readFixtureFile(fixturePath, '.rafters/tokens/typography.rafters.json');
+    const tokens = JSON.parse(tokensRaw) as {
+      tokens: Array<{ name: string; value: unknown }>;
+    };
+    const aurabesh = tokens.tokens.find((t) => t.name === 'font-aurabesh');
+    expect(aurabesh?.value).toBe('"Aurabesh", sans-serif');
   }, 30000);
 
   it('skips sensing when source CSS has no :root declarations', async () => {

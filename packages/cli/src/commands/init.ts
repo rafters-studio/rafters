@@ -153,6 +153,18 @@ function isInteractive(): boolean {
 }
 
 /**
+ * Slug a font family name into a CSS-identifier-safe token suffix.
+ * `Aurabesh` -> `aurabesh`. `JetBrains Mono` -> `jetbrains-mono`.
+ * `Source Sans 3` -> `source-sans-3`.
+ */
+function slugifyFontName(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+/**
  * Resolve the framework to use, in priority order:
  *   1. explicit `--framework` flag (validated against SELECTABLE_FRAMEWORKS)
  *   2. auto-detection
@@ -980,6 +992,35 @@ export async function init(options: InitOptions): Promise<void> {
     if (sourceCss !== null) {
       const detectedFonts = detectFonts(sourceCss);
       if (detectedFonts.length > 0) {
+        // Define a token for every detected font that isn't already a
+        // canonical base family (sans/mono/serif handled separately by the
+        // role walk and the `:root` direct-set flow). A local `@font-face`
+        // for Aurabesh, a `--font-aurabesh` declaration, or an `@import`
+        // for a custom Google Font ALL land as rafters typography tokens
+        // here -- otherwise the family would be loaded into the page
+        // (still in source CSS) but invisible to the rafters token system
+        // and unusable via `var(--rafters-font-*)` or `font-*` Tailwind
+        // utilities driven by rafters output.
+        const definedFonts: string[] = [];
+        for (const font of detectedFonts) {
+          if (font.declaredAs !== undefined) continue;
+          const tokenName = font.sourceDeclName ?? `font-${slugifyFontName(font.name)}`;
+          if (registry.has(tokenName)) continue;
+          registry.define({
+            name: tokenName,
+            namespace: 'typography',
+            category: 'typography',
+            value: font.stack,
+            description: `Imported from ${detectedCssPath}. ${
+              font.sourceDeclName
+                ? `Declared as --${font.sourceDeclName}.`
+                : 'Loaded via @font-face or @import.'
+            }`,
+            userOverride: null,
+            containerQueryAware: false,
+          });
+          definedFonts.push(tokenName);
+        }
         const FONT_ROLES = [
           { role: 'heading', base: 'font-sans' },
           { role: 'body', base: 'font-sans' },
@@ -1032,7 +1073,7 @@ export async function init(options: InitOptions): Promise<void> {
           }
           fontAssignments.push({ role, family: font.name });
         }
-        if (fontAssignments.length > 0) {
+        if (fontAssignments.length > 0 || definedFonts.length > 0) {
           saveRegistryToDir(paths.tokens, registry);
           await generateOutputs(cwd, paths, registry, exports, shadcn);
           log({
@@ -1040,6 +1081,7 @@ export async function init(options: InitOptions): Promise<void> {
             cssPath: detectedCssPath,
             fontsDetected: detectedFonts.map((f) => f.name),
             assignments: fontAssignments,
+            ...(definedFonts.length > 0 ? { definedFonts } : {}),
           });
         }
       }

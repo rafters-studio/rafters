@@ -43,6 +43,7 @@ describe('detectFonts', () => {
         name: 'Inter Variable',
         stack: '"Inter Variable", system-ui, sans-serif',
         declaredAs: 'sans',
+        sourceDeclName: 'font-sans',
       },
     ]);
   });
@@ -50,7 +51,23 @@ describe('detectFonts', () => {
   it('extracts from --font-* declarations in @theme blocks', () => {
     const css = `@theme { --font-mono: "JetBrains Mono", monospace; }`;
     expect(detectFonts(css)).toEqual([
-      { name: 'JetBrains Mono', stack: '"JetBrains Mono", monospace', declaredAs: 'mono' },
+      {
+        name: 'JetBrains Mono',
+        stack: '"JetBrains Mono", monospace',
+        declaredAs: 'mono',
+        sourceDeclName: 'font-mono',
+      },
+    ]);
+  });
+
+  it('carries sourceDeclName for non-canonical --font-* declarations', () => {
+    const css = `@theme { --font-aurabesh: "Aurabesh", sans-serif; }`;
+    expect(detectFonts(css)).toEqual([
+      {
+        name: 'Aurabesh',
+        stack: '"Aurabesh", sans-serif',
+        sourceDeclName: 'font-aurabesh',
+      },
     ]);
   });
 

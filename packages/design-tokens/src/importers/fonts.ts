@@ -77,6 +77,15 @@ export interface DetectedFont {
    * extracted earlier.
    */
   readonly declaredAs?: 'sans' | 'mono' | 'serif';
+  /**
+   * Source declaration name (without the leading `--`) when this family
+   * appeared in a `--font-*` declaration. Preserves the designer's chosen
+   * token name on re-emit. Example: `--font-aurabesh: "Aurabesh"` yields
+   * `sourceDeclName: 'font-aurabesh'`. Absent for `@font-face`-only or
+   * `@import`-only families -- the importer slugs the family name to
+   * synthesise a token name in that case.
+   */
+  readonly sourceDeclName?: string;
 }
 
 /**
@@ -90,6 +99,7 @@ export function detectFonts(css: string): readonly DetectedFont[] {
     name: string | null,
     stack: string,
     declaredAs?: 'sans' | 'mono' | 'serif',
+    sourceDeclName?: string,
   ): void => {
     if (name === null) return;
     const canonical = normalizeFamilyName(name);
@@ -97,16 +107,23 @@ export function detectFonts(css: string): readonly DetectedFont[] {
     const key = canonical.toLowerCase();
     const existing = found.get(key);
     if (existing === undefined) {
-      found.set(key, { name: canonical, stack, ...(declaredAs && { declaredAs }) });
+      found.set(key, {
+        name: canonical,
+        stack,
+        ...(declaredAs && { declaredAs }),
+        ...(sourceDeclName && { sourceDeclName }),
+      });
       return;
     }
-    // Merge: prefer the fuller stack and the first canonical role declaration.
+    // Merge: prefer the fuller stack and the first canonical signals.
     const mergedStack = stack.length > existing.stack.length ? stack : existing.stack;
     const mergedRole = existing.declaredAs ?? declaredAs;
+    const mergedDeclName = existing.sourceDeclName ?? sourceDeclName;
     found.set(key, {
       name: existing.name,
       stack: mergedStack,
       ...(mergedRole && { declaredAs: mergedRole }),
+      ...(mergedDeclName && { sourceDeclName: mergedDeclName }),
     });
   };
 
@@ -124,7 +141,7 @@ export function detectFonts(css: string): readonly DetectedFont[] {
     if (!decl.name.startsWith('font-')) continue;
     const first = firstFamilyFromStack(decl.value);
     const declaredAs = CANONICAL_FONT_DECLS[decl.name];
-    accept(first, decl.value.trim(), declaredAs);
+    accept(first, decl.value.trim(), declaredAs, decl.name);
   }
 
   return Array.from(found.values());
