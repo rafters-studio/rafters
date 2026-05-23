@@ -39,14 +39,18 @@ describe('detectFonts', () => {
   it('extracts the first family from --font-* declarations in :root', () => {
     const css = `:root { --font-sans: "Inter Variable", system-ui, sans-serif; }`;
     expect(detectFonts(css)).toEqual([
-      { name: 'Inter Variable', stack: '"Inter Variable", system-ui, sans-serif' },
+      {
+        name: 'Inter Variable',
+        stack: '"Inter Variable", system-ui, sans-serif',
+        declaredAs: 'sans',
+      },
     ]);
   });
 
   it('extracts from --font-* declarations in @theme blocks', () => {
     const css = `@theme { --font-mono: "JetBrains Mono", monospace; }`;
     expect(detectFonts(css)).toEqual([
-      { name: 'JetBrains Mono', stack: '"JetBrains Mono", monospace' },
+      { name: 'JetBrains Mono', stack: '"JetBrains Mono", monospace', declaredAs: 'mono' },
     ]);
   });
 
@@ -89,5 +93,32 @@ describe('detectFonts', () => {
   it('preserves spaces in Google Fonts family names', () => {
     const css = `@import url("https://fonts.googleapis.com/css2?family=Source+Sans+3");`;
     expect(detectFonts(css)).toEqual([{ name: 'Source Sans 3', stack: '"Source Sans 3"' }]);
+  });
+
+  it('marks families declared via canonical --font-sans/mono/serif with declaredAs', () => {
+    const css = `
+      @theme {
+        --font-sans: "Inter", sans-serif;
+        --font-mono: "JetBrains Mono", monospace;
+        --font-aurabesh: "Aurabesh", sans-serif;
+      }
+    `;
+    const result = detectFonts(css);
+    const byName = new Map(result.map((f) => [f.name, f]));
+    expect(byName.get('Inter')?.declaredAs).toBe('sans');
+    expect(byName.get('JetBrains Mono')?.declaredAs).toBe('mono');
+    // --font-aurabesh is not canonical; the family carries no declaredAs.
+    expect(byName.get('Aurabesh')?.declaredAs).toBeUndefined();
+  });
+
+  it('preserves declaredAs from first canonical source when same family appears elsewhere', () => {
+    // Inter shows up both as a canonical --font-sans AND via @font-face.
+    // The role signal from --font-sans should survive.
+    const css = `
+      @font-face { font-family: "Inter"; src: url("/x.woff2"); }
+      :root { --font-sans: "Inter", sans-serif; }
+    `;
+    const inter = detectFonts(css).find((f) => f.name === 'Inter');
+    expect(inter?.declaredAs).toBe('sans');
   });
 });

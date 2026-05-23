@@ -986,21 +986,23 @@ export async function init(options: InitOptions): Promise<void> {
           { role: 'code', base: 'font-mono' },
         ] as const;
         const fontAssignments: Array<{ role: string; family: string }> = [];
-        // Agent mode route: mono-named families fill the code role; the rest
-        // are eligible for heading/body in source order. A project loading
-        // only one sans family gets it for both heading AND body (idempotent
-        // on the shared base family). No detected mono falls back to the
-        // first non-mono, then to positional detection as last resort -- the
-        // role walk should not silently skip when something IS available.
+        // Agent mode: prefer the family the source explicitly declared via
+        // `--font-sans` / `--font-mono` (carried on `DetectedFont.declaredAs`).
+        // Falls back to a mono-name heuristic for code, source order for
+        // heading/body. If no signal exists for a role we skip -- assigning
+        // the first arbitrary `@font-face` family to heading is worse than
+        // leaving the rafters default in place.
         const monoFonts = detectedFonts.filter((f) => /mono/i.test(f.name));
         const sansFonts = detectedFonts.filter((f) => !/mono/i.test(f.name));
-        for (const [i, { role, base }] of FONT_ROLES.entries()) {
+        const declaredSans = detectedFonts.find((f) => f.declaredAs === 'sans');
+        const declaredMono = detectedFonts.find((f) => f.declaredAs === 'mono');
+        for (const { role, base } of FONT_ROLES) {
           let choice: string | null;
           if (isAgentMode) {
             if (role === 'code') {
-              choice = monoFonts[0]?.name ?? sansFonts[0]?.name ?? detectedFonts[i]?.name ?? null;
+              choice = declaredMono?.name ?? monoFonts[0]?.name ?? null;
             } else {
-              choice = sansFonts[0]?.name ?? detectedFonts[i]?.name ?? null;
+              choice = declaredSans?.name ?? sansFonts[0]?.name ?? null;
             }
           } else {
             choice = await select<string | null>({

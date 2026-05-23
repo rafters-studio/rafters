@@ -50,11 +50,33 @@ const GENERIC_KEYWORDS: ReadonlySet<string> = new Set([
   'revert-layer',
 ]);
 
+/**
+ * Map from canonical `--font-*` declaration names to the role they signal.
+ * Used by `detectFonts` to mark detected families with `declaredAs` so the
+ * importer's agent-mode role-walk knows which family the designer intended
+ * for sans / mono / serif.
+ */
+const CANONICAL_FONT_DECLS: Readonly<Record<string, 'sans' | 'mono' | 'serif'>> = {
+  'font-sans': 'sans',
+  'font-mono': 'mono',
+  'font-serif': 'serif',
+};
+
 export interface DetectedFont {
   /** Canonical family name, unquoted, single-spaced. e.g. `Inter`, `JetBrains Mono`. */
   readonly name: string;
   /** CSS value to set on the family token: full source stack if available, else the quoted bare name. */
   readonly stack: string;
+  /**
+   * Set when the source declared this family via the canonical
+   * `--font-sans` / `--font-mono` / `--font-serif` name (in `:root` or
+   * `@theme`). Agent-mode role assignment prefers a family with a matching
+   * `declaredAs` over the first-detected fallback -- a designer's
+   * `--font-sans: "Inter"` is a stronger "Inter is my sans" signal than
+   * an `@font-face` for an arbitrary display font that happened to be
+   * extracted earlier.
+   */
+  readonly declaredAs?: 'sans' | 'mono' | 'serif';
 }
 
 /**
@@ -64,18 +86,28 @@ export interface DetectedFont {
 export function detectFonts(css: string): readonly DetectedFont[] {
   const found = new Map<string, DetectedFont>();
 
-  const accept = (name: string | null, stack: string): void => {
+  const accept = (
+    name: string | null,
+    stack: string,
+    declaredAs?: 'sans' | 'mono' | 'serif',
+  ): void => {
     if (name === null) return;
     const canonical = normalizeFamilyName(name);
     if (canonical === '' || GENERIC_KEYWORDS.has(canonical.toLowerCase())) return;
     const key = canonical.toLowerCase();
     const existing = found.get(key);
     if (existing === undefined) {
-      found.set(key, { name: canonical, stack });
-    } else if (stack.length > existing.stack.length) {
-      // A later source declared a fuller stack for the same family -- prefer it.
-      found.set(key, { name: existing.name, stack });
+      found.set(key, { name: canonical, stack, ...(declaredAs && { declaredAs }) });
+      return;
     }
+    // Merge: prefer the fuller stack and the first canonical role declaration.
+    const mergedStack = stack.length > existing.stack.length ? stack : existing.stack;
+    const mergedRole = existing.declaredAs ?? declaredAs;
+    found.set(key, {
+      name: existing.name,
+      stack: mergedStack,
+      ...(mergedRole && { declaredAs: mergedRole }),
+    });
   };
 
   for (const family of extractGoogleFontFamilies(css)) {
@@ -91,7 +123,8 @@ export function detectFonts(css: string): readonly DetectedFont[] {
   for (const decl of [...rootDecls, ...themeDecls]) {
     if (!decl.name.startsWith('font-')) continue;
     const first = firstFamilyFromStack(decl.value);
-    accept(first, decl.value.trim());
+    const declaredAs = CANONICAL_FONT_DECLS[decl.name];
+    accept(first, decl.value.trim(), declaredAs);
   }
 
   return Array.from(found.values());
