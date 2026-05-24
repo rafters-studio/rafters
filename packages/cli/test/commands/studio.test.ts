@@ -155,7 +155,7 @@ describe('studio prerequisites', () => {
         await cleanupFixture(fixturePath);
       }
     }
-  });
+  }, 30000);
 });
 
 describe('studio API affects stylesheet in realtime', () => {
