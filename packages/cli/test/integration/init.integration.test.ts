@@ -540,6 +540,39 @@ describe('rafters init - source CSS sensing', () => {
     expect(typo.tokens.find((t) => t.name === 'font-size-base')?.value).toBe('1rem');
   }, 30000);
 
+  it('imports --radius from source as baseRadiusOverride pre-generation', async () => {
+    fixturePath = await createFixture('nextjs-shadcn-v4');
+    // shadcn convention: --radius singular as the canonical anchor.
+    await writeFile(
+      join(fixturePath, 'src/app/globals.css'),
+      `:root { --radius: 0.625rem; }
+@import "tailwindcss";
+`,
+    );
+
+    const result = await execCli(fixturePath, ['init', '--agent']);
+    expect(result.exitCode).toBe(0);
+
+    const events = result.stdout
+      .split('\n')
+      .filter((l) => l.startsWith('{'))
+      .map((l) => JSON.parse(l) as Record<string, unknown>);
+
+    const applied = events.find((e) => e.event === 'init:import_radius_applied');
+    expect(applied).toBeDefined();
+    expect(applied?.baseRadius).toBe(10);
+
+    // radius-base lands at the detected value (0.625rem = 10px).
+    const radiusRaw = await readFixtureFile(fixturePath, '.rafters/tokens/radius.rafters.json');
+    const radius = JSON.parse(radiusRaw) as { tokens: Array<{ name: string; value: unknown }> };
+    const radiusBase = radius.tokens.find((t) => t.name === 'radius-base');
+    expect(radiusBase?.value).toBe('0.625rem');
+
+    // Per-corner tokens cascade via var() ref to the (now reseated) base.
+    const radiusTl = radius.tokens.find((t) => t.name === 'radius-tl');
+    expect(radiusTl?.value).toBe('var(--rafters-radius-base)');
+  }, 30000);
+
   it('skips spacing-base detection when source declares no --spacing-base', async () => {
     fixturePath = await createFixture('nextjs-shadcn-v4');
     // Default fixture globals.css has no --spacing-base; rafters defaults

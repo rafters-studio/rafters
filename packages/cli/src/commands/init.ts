@@ -20,6 +20,7 @@ import {
   contrastPlugin,
   type DetectedFont,
   detectFonts,
+  detectRadiusBase,
   detectSpacingBase,
   extractShadcnRoot,
   extractThemeBlocks,
@@ -670,13 +671,22 @@ export async function init(options: InitOptions): Promise<void> {
   if (sourceCssPathForBase !== null) {
     try {
       const cssForBase = await readFile(join(cwd, sourceCssPathForBase), 'utf-8');
-      const base = detectSpacingBase(cssForBase);
-      if (base !== null) {
-        baseConfig.baseSpacingUnit = base;
+      const spacing = detectSpacingBase(cssForBase);
+      if (spacing !== null) {
+        baseConfig.baseSpacingUnit = spacing;
         log({
           event: 'init:import_spacing_applied',
           cssPath: sourceCssPathForBase,
-          baseSpacingUnit: base,
+          baseSpacingUnit: spacing,
+        });
+      }
+      const radius = detectRadiusBase(cssForBase);
+      if (radius !== null) {
+        baseConfig.baseRadiusOverride = radius;
+        log({
+          event: 'init:import_radius_applied',
+          cssPath: sourceCssPathForBase,
+          baseRadius: radius,
         });
       }
     } catch (err) {
