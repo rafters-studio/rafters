@@ -13,12 +13,14 @@ import { join, relative } from 'node:path';
 import { checkbox, confirm, select } from '@inquirer/prompts';
 import { SCALE_POSITIONS, tryParseColor } from '@rafters/color-utils';
 import {
+  type BaseSystemConfig,
   type ColorDeclaration,
   classifyDeclarations,
   colorsFromClassification,
   contrastPlugin,
   type DetectedFont,
   detectFonts,
+  detectSpacingBase,
   extractShadcnRoot,
   extractThemeBlocks,
   generateBaseSystem,
@@ -649,10 +651,43 @@ export async function init(options: InitOptions): Promise<void> {
     log({ event: 'init:exports_selected', exports });
   }
 
-  // Phase A: install-time generation produces pure defaults. The import
-  // step (sense + prompt + apply against the user's source CSS) runs
-  // later in this same init invocation -- there is no separate command.
-  const system = generateBaseSystem({});
+  // Phase A: install-time generation. Spacing-base detection runs FIRST
+  // -- the cascade flows from baseSpacingUnit through five namespaces
+  // (resolveConfig in generators/types.ts derives baseFontSize,
+  // baseRadius, focusRingWidth, baseTransitionDuration from it), so the
+  // base has to land in the config BEFORE generation. Post-generation
+  // `registry.set('spacing-base', ...)` only cascades through spacing
+  // tokens via CSS `calc()`; shadow/typography/radius/focus/motion
+  // bake values numerically at generation time and would not update.
+  // See legion reflection 019e57d8 for the full invariant.
+  const baseConfig: Partial<BaseSystemConfig> = {};
+  const sourceCssPathForBase =
+    !shadcn && exports.tailwind
+      ? framework === detectedFramework
+        ? project.cssPath
+        : findCssPath(cwd, framework)
+      : (shadcn?.tailwind?.css ?? null);
+  if (sourceCssPathForBase !== null) {
+    try {
+      const cssForBase = await readFile(join(cwd, sourceCssPathForBase), 'utf-8');
+      const base = detectSpacingBase(cssForBase);
+      if (base !== null) {
+        baseConfig.baseSpacingUnit = base;
+        log({
+          event: 'init:import_spacing_applied',
+          cssPath: sourceCssPathForBase,
+          baseSpacingUnit: base,
+        });
+      }
+    } catch (err) {
+      // ENOENT is a soft skip -- the later sensing pass will surface the
+      // missing-file state via its own log. Any other read failure
+      // propagates so the user sees it.
+      if (!(err instanceof Error && 'code' in err && err.code === 'ENOENT')) throw err;
+    }
+  }
+
+  const system = generateBaseSystem(baseConfig);
   const registry = new TokenRegistry(system.allTokens, REGISTRY_PLUGINS);
 
   log({
