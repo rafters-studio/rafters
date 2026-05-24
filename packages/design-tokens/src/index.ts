@@ -24,6 +24,7 @@ export {
   type RaftersImportNamespace,
   type SensedSummary,
 } from './importers/shapes.js';
+export { detectSpacingBase } from './importers/spacing.js';
 export { extractThemeBlocks } from './importers/theme.js';
 export {
   findTokenFile,

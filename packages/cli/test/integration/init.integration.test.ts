@@ -482,6 +482,84 @@ describe('rafters init - source CSS sensing', () => {
     expect(css).toContain('--color-imported-brand-republic-600: oklch(0.5 0.2 200)');
   }, 30000);
 
+  it('imports --spacing-base from source as the system baseSpacingUnit pre-generation', async () => {
+    fixturePath = await createFixture('nextjs-shadcn-v4');
+    // Source declares 8px base (twice rafters default of 4px). The
+    // generated system should derive everything from this -- spacing
+    // tokens cascade via CSS calc, shadow/typography/radius bake their
+    // numerics from baseSpacingUnit=8 at generation time.
+    await writeFile(
+      join(fixturePath, 'src/app/globals.css'),
+      `:root { --spacing-base: 0.5rem; }
+@import "tailwindcss";
+`,
+    );
+
+    const result = await execCli(fixturePath, ['init', '--agent']);
+    expect(result.exitCode).toBe(0);
+
+    const events = result.stdout
+      .split('\n')
+      .filter((l) => l.startsWith('{'))
+      .map((l) => JSON.parse(l) as Record<string, unknown>);
+
+    const applied = events.find((e) => e.event === 'init:import_spacing_applied');
+    expect(applied).toBeDefined();
+    expect(applied?.baseSpacingUnit).toBe(8);
+
+    // spacing-base lands at the detected value (0.5rem = 8px).
+    const spacingRaw = await readFixtureFile(fixturePath, '.rafters/tokens/spacing.rafters.json');
+    const spacing = JSON.parse(spacingRaw) as {
+      tokens: Array<{ name: string; value: unknown }>;
+    };
+    const spacingBase = spacing.tokens.find((t) => t.name === 'spacing-base');
+    expect(spacingBase?.value).toBe('0.5rem');
+
+    // Derived per-position values still cascade via CSS calc -- their
+    // emitted value is calc(var(--rafters-spacing-base) * N), not the
+    // baked numeric. The cascade is preserved.
+    const spacing4 = spacing.tokens.find((t) => t.name === 'spacing-4');
+    expect(spacing4?.value).toBe('calc(var(--rafters-spacing-base) * 4)');
+
+    // Shadow tokens bake from baseSpacingUnit at generation -- they don't
+    // have an *Override on the default config, so the new base flows
+    // through. shadow-base-unit = 8/16 = 0.5rem.
+    const shadowRaw = await readFixtureFile(fixturePath, '.rafters/tokens/shadow.rafters.json');
+    const shadow = JSON.parse(shadowRaw) as { tokens: Array<{ name: string; value: unknown }> };
+    const shadowBaseUnit = shadow.tokens.find((t) => t.name === 'shadow-base-unit');
+    expect(shadowBaseUnit?.value).toBe('0.5rem');
+
+    // The other *Override-pinned namespaces (typography font-size,
+    // radius, focus, motion duration) stay at their explicit defaults.
+    // DEFAULT_SYSTEM_CONFIG pins baseFontSizeOverride: 16 etc., so
+    // baseSpacingUnit doesn't cascade to them through resolveConfig.
+    // This is the rafters-default trade-off; PURE_MATH_CONFIG would
+    // let everything cascade.
+    const typoRaw = await readFixtureFile(fixturePath, '.rafters/tokens/typography.rafters.json');
+    const typo = JSON.parse(typoRaw) as { tokens: Array<{ name: string; value: unknown }> };
+    expect(typo.tokens.find((t) => t.name === 'font-size-base')?.value).toBe('1rem');
+  }, 30000);
+
+  it('skips spacing-base detection when source declares no --spacing-base', async () => {
+    fixturePath = await createFixture('nextjs-shadcn-v4');
+    // Default fixture globals.css has no --spacing-base; rafters defaults
+    // (baseSpacingUnit=4) should land.
+    const result = await execCli(fixturePath, ['init', '--agent']);
+    expect(result.exitCode).toBe(0);
+
+    const events = result.stdout
+      .split('\n')
+      .filter((l) => l.startsWith('{'))
+      .map((l) => JSON.parse(l) as Record<string, unknown>);
+
+    expect(events.find((e) => e.event === 'init:import_spacing_applied')).toBeUndefined();
+
+    const spacingRaw = await readFixtureFile(fixturePath, '.rafters/tokens/spacing.rafters.json');
+    const spacing = JSON.parse(spacingRaw) as { tokens: Array<{ name: string; value: unknown }> };
+    const spacingBase = spacing.tokens.find((t) => t.name === 'spacing-base');
+    expect(spacingBase?.value).toBe('0.25rem'); // 4px default
+  }, 30000);
+
   it('runs the typography font role-walk over detected font families in agent mode', async () => {
     fixturePath = await createFixture('nextjs-shadcn-v4');
     // Source mixes detection paths: Google Fonts @import (Inter, JetBrains
