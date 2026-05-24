@@ -42,7 +42,6 @@ describe('detectFonts', () => {
       {
         name: 'Inter Variable',
         stack: '"Inter Variable", system-ui, sans-serif',
-        declaredAs: 'sans',
         sourceDeclName: 'font-sans',
       },
     ]);
@@ -54,7 +53,6 @@ describe('detectFonts', () => {
       {
         name: 'JetBrains Mono',
         stack: '"JetBrains Mono", monospace',
-        declaredAs: 'mono',
         sourceDeclName: 'font-mono',
       },
     ]);
@@ -112,30 +110,15 @@ describe('detectFonts', () => {
     expect(detectFonts(css)).toEqual([{ name: 'Source Sans 3', stack: '"Source Sans 3"' }]);
   });
 
-  it('marks families declared via canonical --font-sans/mono/serif with declaredAs', () => {
-    const css = `
-      @theme {
-        --font-sans: "Inter", sans-serif;
-        --font-mono: "JetBrains Mono", monospace;
-        --font-aurabesh: "Aurabesh", sans-serif;
-      }
-    `;
-    const result = detectFonts(css);
-    const byName = new Map(result.map((f) => [f.name, f]));
-    expect(byName.get('Inter')?.declaredAs).toBe('sans');
-    expect(byName.get('JetBrains Mono')?.declaredAs).toBe('mono');
-    // --font-aurabesh is not canonical; the family carries no declaredAs.
-    expect(byName.get('Aurabesh')?.declaredAs).toBeUndefined();
-  });
-
-  it('preserves declaredAs from first canonical source when same family appears elsewhere', () => {
-    // Inter shows up both as a canonical --font-sans AND via @font-face.
-    // The role signal from --font-sans should survive.
+  it('preserves sourceDeclName from the first --font-* declaration when same family appears elsewhere', () => {
+    // Inter shows up both via @font-face AND via :root --font-sans. The
+    // declaration name signal from --font-sans should survive (the caller
+    // matches it against the registry's base-family list).
     const css = `
       @font-face { font-family: "Inter"; src: url("/x.woff2"); }
       :root { --font-sans: "Inter", sans-serif; }
     `;
     const inter = detectFonts(css).find((f) => f.name === 'Inter');
-    expect(inter?.declaredAs).toBe('sans');
+    expect(inter?.sourceDeclName).toBe('font-sans');
   });
 });

@@ -511,11 +511,12 @@ describe('rafters init - source CSS sensing', () => {
     expect(applied).toBeDefined();
     expect(applied?.fontsDetected).toEqual(['Inter', 'JetBrains Mono', 'MyDisplay']);
     // No canonical --font-{sans,mono,serif} declared -- agent mode falls
-    // back to mono-name heuristic for code, source order for heading/body.
+    // back to mono-name heuristic for code (font-code -> font-mono base),
+    // source order for heading/body.
     expect(applied?.assignments).toEqual([
-      { role: 'heading', family: 'Inter' },
-      { role: 'body', family: 'Inter' },
-      { role: 'code', family: 'JetBrains Mono' },
+      { role: 'font-heading', family: 'Inter' },
+      { role: 'font-body', family: 'Inter' },
+      { role: 'font-code', family: 'JetBrains Mono' },
     ]);
     // All three detected fonts also land as standalone typography tokens
     // (none had `declaredAs`, so they all get synthesised names).
@@ -533,7 +534,7 @@ describe('rafters init - source CSS sensing', () => {
     expect(byName.get('font-mono')?.value).toBe('"JetBrains Mono"');
     expect(byName.get('font-mydisplay')?.value).toBe('MyDisplay');
     expect(byName.get('font-heading')?.userOverride).toMatchObject({
-      reason: expect.stringContaining('assigned Inter as heading'),
+      reason: expect.stringContaining('assigned Inter as font-heading'),
     });
   }, 30000);
 
@@ -567,12 +568,13 @@ describe('rafters init - source CSS sensing', () => {
 
     const applied = events.find((e) => e.event === 'init:import_fonts_applied');
     expect(applied).toBeDefined();
-    // Inter is `declaredAs: sans` and slots into heading/body. Aurabesh has
-    // no canonical role, so it doesn't appear in `assignments` -- but it
-    // DOES appear in `definedFonts` as its own typography token.
+    // Inter is declared via --font-sans and slots into roles that depend
+    // on font-sans (heading + body). Aurabesh has no canonical-base
+    // declaration, so it doesn't appear in `assignments` -- but it DOES
+    // appear in `definedFonts` as its own typography token.
     expect(applied?.assignments).toEqual([
-      { role: 'heading', family: 'Inter' },
-      { role: 'body', family: 'Inter' },
+      { role: 'font-heading', family: 'Inter' },
+      { role: 'font-body', family: 'Inter' },
     ]);
     expect(applied?.definedFonts).toEqual(['font-aurabesh']);
 

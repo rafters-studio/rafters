@@ -17,6 +17,7 @@ import {
   classifyDeclarations,
   colorsFromClassification,
   contrastPlugin,
+  type DetectedFont,
   detectFonts,
   extractShadcnRoot,
   extractThemeBlocks,
@@ -162,6 +163,21 @@ function slugifyFontName(name: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
+}
+
+/**
+ * Heuristic: does a token's value look like a font stack (literal family
+ * name + optional fallbacks) rather than a length / weight number /
+ * `var()` ref? Used to pick out the base-family typography tokens from
+ * the broader typography namespace (sizes, weights, line-heights).
+ */
+function isFontStackValue(value: unknown): boolean {
+  if (typeof value !== 'string') return false;
+  if (value.startsWith('var(')) return false;
+  if (/[,'"]/.test(value)) return true;
+  return /\b(sans-serif|serif|monospace|cursive|fantasy|system-ui|ui-(?:sans-serif|serif|monospace|rounded))\b/.test(
+    value,
+  );
 }
 
 /**
@@ -992,8 +1008,30 @@ export async function init(options: InitOptions): Promise<void> {
     if (sourceCss !== null) {
       const detectedFonts = detectFonts(sourceCss);
       if (detectedFonts.length > 0) {
+        // Derive the role/base mapping from the registry's typography
+        // graph instead of hardcoding it here. Base families are typography
+        // tokens whose value is a literal font stack (no `dependsOn`);
+        // role tokens are typography tokens with `dependsOn` pointing at
+        // a base family and a `value` of `var(--<base>)`. This is exactly
+        // how the typography generator emits them, so the dynamic
+        // discovery survives any future expansion of the role taxonomy
+        // (e.g. `font-display` joining `font-heading`/`font-body`/`font-code`).
+        const typographyTokens = registry.list({ namespace: 'typography' });
+        const baseFamilyNames = new Set(
+          typographyTokens
+            .filter((t) => (!t.dependsOn || t.dependsOn.length === 0) && isFontStackValue(t.value))
+            .map((t) => t.name),
+        );
+        const fontRoles: Array<{ role: string; base: string }> = [];
+        for (const tok of typographyTokens) {
+          const base = tok.dependsOn?.[0];
+          if (base === undefined || !baseFamilyNames.has(base)) continue;
+          if (typeof tok.value !== 'string' || !tok.value.includes(`var(--${base})`)) continue;
+          fontRoles.push({ role: tok.name, base });
+        }
+
         // Define a token for every detected font that isn't already a
-        // canonical base family (sans/mono/serif handled separately by the
+        // canonical base family or role token (those are handled by the
         // role walk and the `:root` direct-set flow). A local `@font-face`
         // for Aurabesh, a `--font-aurabesh` declaration, or an `@import`
         // for a custom Google Font ALL land as rafters typography tokens
@@ -1001,9 +1039,11 @@ export async function init(options: InitOptions): Promise<void> {
         // (still in source CSS) but invisible to the rafters token system
         // and unusable via `var(--rafters-font-*)` or `font-*` Tailwind
         // utilities driven by rafters output.
+        const roleTokenNames = new Set(fontRoles.map((r) => r.role));
+        const canonicalTokenNames = new Set([...baseFamilyNames, ...roleTokenNames]);
         const definedFonts: string[] = [];
         for (const font of detectedFonts) {
-          if (font.declaredAs !== undefined) continue;
+          if (font.sourceDeclName && canonicalTokenNames.has(font.sourceDeclName)) continue;
           const tokenName = font.sourceDeclName ?? `font-${slugifyFontName(font.name)}`;
           if (registry.has(tokenName)) continue;
           registry.define({
@@ -1021,33 +1061,39 @@ export async function init(options: InitOptions): Promise<void> {
           });
           definedFonts.push(tokenName);
         }
-        const FONT_ROLES = [
-          { role: 'heading', base: 'font-sans' },
-          { role: 'body', base: 'font-sans' },
-          { role: 'code', base: 'font-mono' },
-        ] as const;
+
+        // Agent mode: prefer the family the source explicitly declared
+        // via the role's BASE name (a `--font-sans: "Inter"` decl makes
+        // Inter the heading and body candidate because both roles depend
+        // on `font-sans`). Falls back to a mono-name heuristic for code,
+        // source order for the rest. If no signal exists we skip the
+        // role -- a custom `@font-face` is not auto-assigned to heading
+        // just because it was detected.
         const fontAssignments: Array<{ role: string; family: string }> = [];
-        // Agent mode: prefer the family the source explicitly declared via
-        // `--font-sans` / `--font-mono` (carried on `DetectedFont.declaredAs`).
-        // Falls back to a mono-name heuristic for code, source order for
-        // heading/body. If no signal exists for a role we skip -- assigning
-        // the first arbitrary `@font-face` family to heading is worse than
-        // leaving the rafters default in place.
-        const monoFonts = detectedFonts.filter((f) => /mono/i.test(f.name));
-        const sansFonts = detectedFonts.filter((f) => !/mono/i.test(f.name));
-        const declaredSans = detectedFonts.find((f) => f.declaredAs === 'sans');
-        const declaredMono = detectedFonts.find((f) => f.declaredAs === 'mono');
-        for (const { role, base } of FONT_ROLES) {
+        const declaredByBase = new Map<string, DetectedFont>();
+        for (const font of detectedFonts) {
+          if (font.sourceDeclName && baseFamilyNames.has(font.sourceDeclName)) {
+            if (!declaredByBase.has(font.sourceDeclName)) {
+              declaredByBase.set(font.sourceDeclName, font);
+            }
+          }
+        }
+        for (const { role, base } of fontRoles) {
           let choice: string | null;
           if (isAgentMode) {
-            if (role === 'code') {
-              choice = declaredMono?.name ?? monoFonts[0]?.name ?? null;
+            const declared = declaredByBase.get(base);
+            if (declared !== undefined) {
+              choice = declared.name;
+            } else if (/mono/.test(base)) {
+              choice = detectedFonts.find((f) => /mono/i.test(f.name))?.name ?? null;
             } else {
-              choice = declaredSans?.name ?? sansFonts[0]?.name ?? null;
+              const sansLike = detectedFonts.find((f) => !/mono/i.test(f.name));
+              choice = sansLike?.name ?? null;
             }
           } else {
+            const prompt = role.replace(/^font-/, '');
             choice = await select<string | null>({
-              message: `Which font is "${role}"?`,
+              message: `Which font is "${prompt}"?`,
               choices: [
                 ...detectedFonts.map((f) => ({ name: f.name, value: f.name })),
                 { name: '(skip -- keep rafters default)', value: null },
@@ -1057,10 +1103,9 @@ export async function init(options: InitOptions): Promise<void> {
           if (choice === null) continue;
           const font = detectedFonts.find((f) => f.name === choice);
           if (font === undefined) continue;
-          const roleToken = `font-${role}`;
           const reason = `assigned ${font.name} as ${role} during import from ${detectedCssPath}`;
-          if (registry.has(roleToken)) {
-            registry.set(roleToken, font.stack, { reason });
+          if (registry.has(role)) {
+            registry.set(role, font.stack, { reason });
           }
           // Don't clobber the base family's userOverride reason when an
           // earlier `:root --font-sans` direct-set already wrote the same
