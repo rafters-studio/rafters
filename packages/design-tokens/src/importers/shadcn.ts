@@ -11,14 +11,13 @@ import * as csstree from 'css-tree';
 import type { CssDeclaration } from './shapes.js';
 
 /**
- * Read every `--name: value` declaration inside top-level `:root { ... }`
- * rules. Returns one entry per declaration in source order; duplicates are
- * preserved -- consumers decide cascade winners.
- *
- * Strict selector match (`:root` exactly). Compound selectors like
- * `:root, html` or `:root.foo` are intentionally not matched in this first
- * cut. Malformed CSS is parsed permissively by css-tree; unrecognized nodes
- * are skipped rather than thrown on.
+ * Read every `--name: value` declaration inside any rule whose selector list
+ * contains `:root`. Compound selectors like `:root, :host` (Tailwind v4 emits
+ * this so tokens reach both the document and web-component shadow roots) and
+ * nested-under-`@layer` blocks both qualify. Selectors with class/pseudo
+ * suffixes (`:root.dark`) are not matched -- those are scoped overrides, not
+ * the base layer. Malformed CSS is parsed permissively by css-tree;
+ * unrecognized nodes are skipped rather than thrown on.
  */
 export function extractShadcnRoot(css: string): readonly CssDeclaration[] {
   const ast = csstree.parse(css);
@@ -26,7 +25,11 @@ export function extractShadcnRoot(css: string): readonly CssDeclaration[] {
   csstree.walk(ast, {
     visit: 'Rule',
     enter(rule) {
-      if (csstree.generate(rule.prelude).trim() !== ':root') return;
+      const selectors = csstree
+        .generate(rule.prelude)
+        .split(',')
+        .map((s) => s.trim());
+      if (!selectors.includes(':root')) return;
       csstree.walk(rule.block, {
         visit: 'Declaration',
         enter(decl) {

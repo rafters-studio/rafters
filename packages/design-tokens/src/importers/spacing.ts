@@ -51,11 +51,14 @@ const LENGTH = /^(-?\d+(?:\.\d+)?)\s*(rem|px|em)$/;
  * collision (later declarations override earlier ones in CSS cascade).
  */
 export function detectSpacingBase(css: string): number | null {
+  // Read `--spacing` (Tailwind v4 canonical) AND `--spacing-base` (rafters
+  // internal naming). Last declaration in source order wins -- matches CSS
+  // cascade semantics.
   const rootDecls = extractShadcnRoot(css);
   const themeDecls = extractThemeBlocks(css);
   let last: string | null = null;
   for (const decl of [...rootDecls, ...themeDecls]) {
-    if (decl.name === 'spacing-base') last = decl.value.trim();
+    if (decl.name === 'spacing' || decl.name === 'spacing-base') last = decl.value.trim();
   }
   if (last === null) return null;
   const match = last.match(LENGTH);

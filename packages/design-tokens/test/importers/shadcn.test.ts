@@ -52,12 +52,20 @@ describe('extractShadcnRoot', () => {
     expect(extractShadcnRoot('')).toEqual([]);
   });
 
-  it('does not match compound selectors involving :root', () => {
+  it('matches selector lists that contain :root (e.g. `:root, :host`) but not scoped variants like `:root.dark`', () => {
     const css = `
       :root.dark { --primary: oklch(0.5 0.2 30); }
       :root, html { --background: oklch(1 0 0); }
+      :root, :host { --accent: oklch(0.7 0.1 100); }
     `;
-    expect(extractShadcnRoot(css)).toEqual([]);
+    // `:root.dark` is a scoped override and stays rejected (we ignore .dark
+    // anyway). `:root, html` and `:root, :host` both match because one
+    // segment of the selector list is exactly `:root` -- this is the
+    // Tailwind v4 pattern that makes tokens reach web-component shadow roots.
+    expect(extractShadcnRoot(css)).toEqual([
+      { name: 'background', value: 'oklch(1 0 0)' },
+      { name: 'accent', value: 'oklch(0.7 0.1 100)' },
+    ]);
   });
 
   it('handles HSL, hex, and named color values uniformly as raw strings', () => {

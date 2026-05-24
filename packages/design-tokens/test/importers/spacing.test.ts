@@ -45,4 +45,28 @@ describe('detectSpacingBase', () => {
   it('handles malformed CSS without throwing', () => {
     expect(() => detectSpacingBase('not valid css {{')).not.toThrow();
   });
+
+  it('reads --spacing (Tailwind v4 canonical name)', () => {
+    expect(detectSpacingBase(':root { --spacing: 0.25rem; }')).toBe(4);
+  });
+
+  it('reads --spacing from compound :root, :host inside @layer (real Tailwind v4 shape)', () => {
+    const css = `
+      @layer theme {
+        :root, :host {
+          --color-red-50: oklch(97.1% 0.013 17.38);
+          --spacing: 0.25rem;
+        }
+      }
+    `;
+    expect(detectSpacingBase(css)).toBe(4);
+  });
+
+  it('prefers the last declaration when both --spacing and --spacing-base appear', () => {
+    const css = `
+      :root { --spacing: 0.25rem; }
+      @theme { --spacing-base: 0.5rem; }
+    `;
+    expect(detectSpacingBase(css)).toBe(8);
+  });
 });
