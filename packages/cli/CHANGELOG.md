@@ -1,5 +1,17 @@
 # rafters
 
+## 0.0.56
+
+### Bug Fixes
+
+- fix(init): when `components.json` `tailwind.css` points at a missing file (common after a project migrates frameworks without updating the shadcn config -- e.g. a generated `src/app/globals.css` Next.js path persists after the project becomes Astro at `src/styles/global.css`), `init` falls back to the framework's canonical CSS location instead of silently skipping the entire import flow. New `init:shadcn_css_missing` event surfaces the bad config path + the fallback chosen so the gap is visible in agent-mode output.
+- fix(importers): `detectFonts` no longer treats `var(--name)` references as font family names. Tailwind v4 `@theme inline` declares the family slot as `--font-sans: var(--font-geist-sans)` -- indirection-only mappings. Previously the detector returned the literal `var(...)` text as a "family," which would mint a token whose stack reads `var(--font-geist-sans)` and never matches a real loaded font. The real family name should arrive via `@font-face` or a non-indirection declaration.
+
+### Docs
+
+- Refreshed README to match the 0.0.55+ init flow (pre-generation base detection, color :root + @theme multi-palette + role-walk, font role-walk, custom font tokens, motion-protected). Removed stale token/component counts. Added `set` command documentation. Updated MCP tool descriptions to the actual 4-tool surface (composite/pattern/rule/component). Added explicit list of supported frameworks (Next.js, Vite, Remix, React Router, Astro, Web Components, vanilla).
+- Added `homepage: https://rafters.studio` to package.json -- npm previously showed the bare repo URL.
+
 ## 0.0.55
 
 ### Breaking Changes
