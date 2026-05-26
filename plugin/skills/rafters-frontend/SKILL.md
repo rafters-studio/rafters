@@ -1,111 +1,105 @@
 ---
 name: rafters-frontend
-description: Use when building frontend UI in a Rafters project -- enforces Container, Grid, typography components, and design token usage.
-version: 1.0.0
+description: Use when building frontend UI in a Rafters project -- enforces the assembly model (composites first, components second, native HTML inside Container article-mode) and prohibits any agent-side design choice.
+version: 2.0.0
 user-invocable: true
 allowed-tools: Read, Edit, Write, Glob, Grep, Bash, Agent
 ---
 
-## Layout Is Solved
+## Core Rule
 
-Container and Grid handle ALL layout. You do not write layout code.
+**The system makes design choices. The agent assembles.**
+
+This is the entire reason Rafters exists. Color, spacing, size, weight, radius, shadow, hierarchy, layout rhythm -- all owned by the system. The agent's job is to pick the right pre-made piece for the content and intent. Not to author visual decisions.
+
+## Assembly Order
+
+1. **`rafters_pattern`** -- start here. Search by what the page or section SOLVES (e.g. `solves: "authentication"`, `solves: "data entry"`, `solves: "navigation"`). Returns composites with designer intent + do/never + block structure.
+2. **`rafters_composite`** -- get a specific composite by ID, category, or fuzzy query. The composite's blocks carry their own `variant`, `size`, layout meta -- render them verbatim.
+3. **`rafters_component`** -- only when no composite covers the case. Returns component intelligence with do/never and the JSDoc guidance for variant/size choice in that exact situation.
+4. **`rafters_rule`** -- validation rules for forms (required, email, password, credentials, etc.).
+
+If a question has a composite answer, the answer is the composite. Do not reach for `rafters_component` to assemble a custom version of something a composite already covers.
+
+## Content Goes Inside `Container as="article">`
+
+Native HTML, no classes, no Typography imports:
 
 ```tsx
-// WRONG
-<div className={classy("flex gap-4 p-6")}>
-
-// RIGHT
-<Container>
-  <Grid preset="sidebar-main">
-    <aside>Sidebar</aside>
-    <main>Content</main>
-  </Grid>
+<Container as="article">
+  <h1>Page Title</h1>
+  <p>Body paragraph.</p>
+  <blockquote>A pull quote.</blockquote>
+  <ul>
+    <li>List item</li>
+  </ul>
+  <p>Inline <code>code</code> in prose.</p>
 </Container>
 ```
 
-**Never use:** flex, grid, gap-*, p-*, m-*, items-*, justify-*
+The container's typography composite system styles every native element correctly via the token system. You do not need to import `H1`, `P`, `Small`, `Code` -- those exist for narrow edge cases outside content regions. Inside an article container, native HTML is the right path.
 
-### Grid Presets
+**Never:**
+- `<h1 className="text-4xl font-bold">` -- the class is the bug; bare `<h1>` is correct
+- `<P size="sm" color="muted">` -- depromoted; write `<p>` inside an article container instead
+- `<H1>` imports for content
 
-| Preset | Use for |
+## Layout: Container + Grid
+
+```tsx
+<Container as="main">
+  <Container as="section">
+    <h2>Section title</h2>
+    <Grid preset="cards">
+      <Card>...</Card>
+      <Card>...</Card>
+      <Card>...</Card>
+    </Grid>
+  </Container>
+</Container>
+```
+
+Container owns max-width, padding, and gap. Grid owns column structure and column gap. No flex utilities, no grid utilities, no gap/p/m utilities. The components handle it.
+
+| Grid preset | Use for |
 |---|---|
-| sidebar-main | Navigation + content |
+| linear | Equal-priority columns |
+| golden | Hierarchical (2:1 ratio) |
+| bento | Asymmetric showcase |
+| cards | Responsive card flow |
+| sidebar | Sidebar + main |
 | form | Label/input pairs |
-| cards | Responsive card grid |
 | row | Horizontal group |
 | stack | Vertical sequence |
 | split | Equal columns |
 
-## Typography -- Components, Not Utilities
+## Components: Affordances
 
-| Instead of | Use |
-|---|---|
-| `<p className="text-sm text-muted-foreground">` | `<P size="sm" color="muted">` |
-| `<p>` | `<P>` |
-| `<h1 className="text-4xl font-bold">` | `<H1>` |
-| `<h2>` | `<H2>` |
-| `<h3>` | `<H3>` |
-| `<span className="text-xs">` | `<Small>` |
-| `<span className="text-lg font-semibold">` | `<P size="lg" weight="semibold">` |
+`Card`, `Button`, `Alert`, `Empty`, `Badge`, `Input`, `Field`, `Tabs`, `Tooltip`, `Dialog`, etc. -- these are the affordances composites assemble from. Use them WHEN there is no composite. When a composite exists, the composite's block list tells you which components to render and which `variant` / `size` to pass.
 
-### Astro Typography
+When falling through to `rafters_component`:
+- The component's JSDoc + `usagePatterns` tell you when each variant is correct
+- `variant` is a SEMANTIC choice driven by the JSDoc -- not an aesthetic preference (no choosing "ghost vs link" because you like it; the JSDoc tells you which fits the situation)
+- Wrong: "Let's make this Button look subtle, so `variant=ghost`"
+- Right: "This is the secondary action in a card footer; the Button JSDoc says secondary actions in card footers use `variant=secondary`"
 
-For .astro files, use the individual tag components:
+## Hard Rules -- Never
 
-```astro
----
-import H1 from '@/components/ui/typography-h1.astro'
-import P from '@/components/ui/typography-p.astro'
-import Code from '@/components/ui/typography-code.astro'
----
+- **No utility classes for visual properties.** No `bg-*`, `text-*`, `border-*`, `font-*`, `rounded-*`, `shadow-*`, `w-*`, `h-*`, `p-*`, `m-*`, `gap-*`, `flex`, `grid`, `items-*`, `justify-*`. None.
+- **No `var(--rafters-*)` in any file.** The exporter wires the CSS variables; the consumer NEVER references them directly.
+- **No `cn()` / `twMerge()`.** Use `classy()` if you need conditional classes (rare; usually means you are reaching for something a component should own).
+- **No `class=` / `className=` on Rafters components.** Use the component's token props (`variant`, `size`, etc.) -- AS DICTATED by the composite manifest or the component's JSDoc, not as a free choice.
+- **No wrapper `<div>` around Rafters components.** Components include their own spacing and sizing.
+- **No editing files in `lib/primitives/` or `components/ui/*.classes.ts`.** These are installed by `rafters add`. Fix consuming code or file an upstream bug.
+- **No arbitrary values.** No `text-[14px]`, no `bg-[#hex]`, no `w-[300px]`.
+- **No raw `<h1>` / `<p>` / `<span>` with classes.** Either you are inside `<Container as="article">` (where bare native HTML is correct) or you are using a component.
 
-<H1>Page Title</H1>
-<P size="xl" color="muted">Lead paragraph.</P>
-<P>Use the <Code>useState</Code> hook.</P>
-```
+## What the Agent Actually Decides
 
-All Astro typography components support token props: size, weight, color, line, tracking, family.
+- Information architecture: what content goes on a page, in what order
+- Composite selection: which pre-made pattern fits this content and intent
+- Component selection (fallback): which affordance when no composite exists
+- Interaction flow: routing, state transitions, data wiring
+- Content: the actual words and data the user reads
 
-## Color -- Tokens, Not Values
-
-Use semantic tokens as Tailwind classes: `bg-primary`, `text-destructive`, `border-success`.
-Never use hex, HSL, OKLCH, or palette internals directly. Never use `var(--rafters-...)` in components.
-
-## MCP Tools -- Ask, Don't Guess
-
-Before making design decisions, query the Rafters MCP tools:
-
-| Question | Tool |
-|---|---|
-| What colors/spacing/components exist? | `rafters_vocabulary` |
-| How should I implement this pattern? | `rafters_pattern` |
-| Full intelligence for a component? | `rafters_component` |
-| Token derivation and overrides? | `rafters_token` |
-
-## A Correct Page
-
-```tsx
-import { Container, Grid } from "@rafters/ui"
-import { H1, P } from "@rafters/ui/components/ui/typography"
-import { Card } from "@rafters/ui/components/ui/card"
-import { Button } from "@rafters/ui/components/ui/button"
-
-export default function Page() {
-  return (
-    <Container>
-      <H1>Title</H1>
-      <P size="xl">Description.</P>
-      <Grid preset="cards">
-        <Card>...</Card>
-        <Card>...</Card>
-      </Grid>
-      <Grid preset="row">
-        <Button variant="secondary">Cancel</Button>
-        <Button>Save</Button>
-      </Grid>
-    </Container>
-  )
-}
-```
-
-No flex. No gap. No padding. No text utilities. No var().
+Everything else -- size, color, spacing, weight, radius, shadow, hierarchy, layout rhythm, variant aesthetics -- the system owns.

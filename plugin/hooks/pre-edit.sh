@@ -76,19 +76,49 @@ if echo "$CONTENT" | grep -qE '(className|class|classy).*(bg|text|border)-\[#'; 
   VIOLATIONS+="NO ARBITRARY VALUES: Found arbitrary color. Use semantic tokens (bg-primary, text-foreground, etc).\n"
 fi
 
+# Class-bearing contexts: `class=` / `className=` attributes (string OR JSX
+# expression), `classy(...)` calls, and template literals assigned to a
+# class-bearing destination. Catching strings in any of these contexts
+# without overfitting on a specific attribute syntax.
+
 # LAYOUT IS SOLVED - Container and Grid handle layout
-if echo "$CONTENT" | grep -qE '(className|class)="[^"]*\b(flex|grid|items-|justify-|gap-)[^"]*"'; then
-  VIOLATIONS+="LAYOUT IS SOLVED: Found raw layout utility. Use Container/Grid components.\n"
+if echo "$CONTENT" | grep -qE '\b(flex|grid|items-|justify-|gap-[0-9])\b' | grep -qvE '^\s*//|^\s*\*'; then
+  if echo "$CONTENT" | grep -qE '(className|class)=|classy\(' && echo "$CONTENT" | grep -qE '\b(flex|grid|items-(start|center|end|baseline|stretch)|justify-(start|center|end|between|around|evenly)|gap-[0-9])\b'; then
+    VIOLATIONS+="LAYOUT IS SOLVED: Found raw layout utility (flex/grid/items-/justify-/gap-). Use Container/Grid components.\n"
+  fi
 fi
 
 # CONTAINER OWNS SPACING
-if echo "$CONTENT" | grep -qE '(className|class)="[^"]*\b(p-[0-9]|px-[0-9]|py-[0-9]|m-[0-9]|mx-[0-9]|my-[0-9]|mt-|mb-|ml-|mr-|pt-|pb-|pl-|pr-)[^"]*"'; then
-  VIOLATIONS+="CONTAINER OWNS SPACING: Found direct spacing in className. Container handles spacing.\n"
+if echo "$CONTENT" | grep -qE '(className|class)=|classy\(' && echo "$CONTENT" | grep -qE '\b(p-[0-9]|px-[0-9]|py-[0-9]|m-[0-9]|mx-[0-9]|my-[0-9]|mt-[0-9]|mb-[0-9]|ml-[0-9]|mr-[0-9]|pt-[0-9]|pb-[0-9]|pl-[0-9]|pr-[0-9])\b'; then
+  VIOLATIONS+="CONTAINER OWNS SPACING: Found direct spacing utility in a class-bearing context. Container handles spacing.\n"
+fi
+
+# THE SYSTEM OWNS SEMANTIC COLOR
+# bg-primary / text-destructive / border-success means the agent is
+# picking a visual hierarchy choice. That belongs to the composite
+# (block.meta.variant) or component (variant prop, dictated by JSDoc),
+# never to consumer-side className. Catches both className="..." and
+# classy("...") forms.
+if echo "$CONTENT" | grep -qE '(className|class)=|classy\(' && echo "$CONTENT" | grep -qE '\b(bg|text|border)-(primary|secondary|tertiary|accent|highlight|destructive|success|warning|info|muted|foreground|background|card|popover|sidebar|chart-[0-9]|ring|input)\b'; then
+  VIOLATIONS+="THE SYSTEM OWNS VISUAL VALUES: Found semantic color utility (bg-primary / text-destructive / etc.) in a class-bearing context. The composite manifest (block.meta.variant) or component (variant prop per JSDoc) owns variant choice -- never consumer className/classy(). Query rafters_pattern / rafters_composite / rafters_component.\n"
+fi
+
+# THE SYSTEM OWNS TYPOGRAPHY SIZE + WEIGHT
+# Inside <Container as="article">, bare native HTML is correctly styled
+# by the composite system. text-* / font-weight-* in any class-bearing
+# context means the agent is reaching past the system.
+if echo "$CONTENT" | grep -qE '(className|class)=|classy\(' && echo "$CONTENT" | grep -qE '\b(text-(xs|sm|base|lg|xl|[0-9]+xl)|font-(thin|light|normal|medium|semibold|bold|extrabold|black))\b'; then
+  VIOLATIONS+="THE SYSTEM OWNS TYPOGRAPHY: Found text-* size or font-weight-* utility. Wrap content in <Container as=\"article\"> and use bare native HTML, or render the composite the manifest specifies.\n"
+fi
+
+# THE SYSTEM OWNS RADIUS / SHADOW / SIZING
+if echo "$CONTENT" | grep -qE '(className|class)=|classy\(' && echo "$CONTENT" | grep -qE '\b(rounded-|shadow-|w-[0-9]|h-[0-9]|max-w-|min-w-|max-h-|min-h-)'; then
+  VIOLATIONS+="THE SYSTEM OWNS RADIUS / SHADOW / SIZING: Found rounded-/shadow-/w-/h-/max-/min- utility. These are component-owned design choices.\n"
 fi
 
 # NEVER var() IN COMPONENTS - exporter handles var()
 if echo "$CONTENT" | grep -qE 'var\(--rafters' ; then
-  VIOLATIONS+="NEVER var() IN COMPONENTS: Found var(--rafters-...). Use Tailwind utilities. The exporter handles var().\n"
+  VIOLATIONS+="NEVER var() IN COMPONENTS: Found var(--rafters-...). The exporter wires the CSS variables; consumers never reference them directly.\n"
 fi
 
 # COMPONENTS ARE COMPLETE - no wrapper divs
