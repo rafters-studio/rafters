@@ -94,6 +94,46 @@ When falling through to `rafters_component`:
 - **No arbitrary values.** No `text-[14px]`, no `bg-[#hex]`, no `w-[300px]`.
 - **No raw `<h1>` / `<p>` / `<span>` with classes.** Either you are inside `<Container as="article">` (where bare native HTML is correct) or you are using a component.
 
+## Authoring Custom Components
+
+When rafters doesn't ship the affordance you need, custom components live in `src/components/` (NOT `src/components/ui/` -- that subtree is rafters-installed and read-only). Inside `src/components/`, the rules relax: you DO author class strings, DO call `classy()` for conditional merging, DO reference semantic tokens via Tailwind utilities (`bg-primary`, `text-foreground`, etc.). That is how a custom component hooks into the rafters token system.
+
+```tsx
+// src/components/FeatureTile.tsx -- authoring
+import { classy } from '@rafters/ui/classy';
+import type { ReactNode } from 'react';
+
+interface FeatureTileProps {
+  variant?: 'default' | 'highlighted';
+  children: ReactNode;
+}
+
+/**
+ * Compact feature card for marketing layouts.
+ * @cognitive-load 2/10
+ * @accessibility AAA
+ */
+export function FeatureTile({ variant = 'default', children }: FeatureTileProps) {
+  return (
+    <div
+      className={classy(
+        'rounded-lg p-6',
+        variant === 'highlighted' ? 'bg-primary text-primary-foreground' : 'bg-card text-foreground',
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+```
+
+**Authoring still bans:**
+- `var(--rafters-*)` -- use the Tailwind utility, never the raw CSS variable
+- Arbitrary values -- `bg-[#hex]`, `text-[14px]`, `w-[300px]` all forbidden
+- `cn()` / `twMerge()` -- `classy()` only
+
+**A scaffolding MCP tool (`rafters_scaffold_component`) is planned** -- see issue #1548 -- that will generate this boilerplate, check similarity against existing components first to prevent duplication, and tag the output so the plugin can identify scaffolded files. Until that lands, follow the conventions above.
+
 ## What the Agent Actually Decides
 
 - Information architecture: what content goes on a page, in what order

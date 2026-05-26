@@ -38,13 +38,35 @@ case "$FILE_PATH" in
 esac
 
 case "$FILE_PATH" in
-  *packages/ui/*|*apps/*|*packages/cli/src/mcp/*|*sites/*|*src/pages/*|*src/components/*|*src/layouts/*) ;;
+  *packages/ui/*|*apps/*|*packages/cli/src/mcp/*|*sites/*|*src/pages/*|*src/app/*|*src/routes/*|*src/components/*|*src/layouts/*) ;;
   *) exit 0 ;;
 esac
 
 # Skip test files
 case "$FILE_PATH" in
   *.test.*|*.spec.*|*.a11y.*|*.e2e.*) exit 0 ;;
+esac
+
+# CONTEXT: authoring vs assembly.
+#
+# Custom component authoring lives in `src/components/` (excluding the
+# rafters-owned `components/ui/` subtree, which is read-only and already
+# guarded above). When authoring, consumers DO need to write class
+# strings, DO use classy() for conditional merging, and DO reference
+# semantic tokens via Tailwind utilities (bg-primary etc.) -- that is
+# how custom components hook into the rafters token system.
+#
+# Assembly (pages, layouts, app code, routes) is the opposite: zero
+# class authoring, pure composition of pre-made composites and
+# components. The visual-utility deny rules below apply there.
+#
+# Hard rules (no var(--rafters-), no arbitrary values, no cn()/twMerge,
+# no className on rafters components, no wrapper divs, no raw <h1>/<p>
+# with classes) apply in BOTH contexts and are checked unconditionally.
+IS_AUTHORING=0
+case "$FILE_PATH" in
+  */src/components/ui/*) ;;  # rafters-installed, already gated above
+  */src/components/*) IS_AUTHORING=1 ;;
 esac
 
 # Get the content being written
@@ -81,39 +103,38 @@ fi
 # class-bearing destination. Catching strings in any of these contexts
 # without overfitting on a specific attribute syntax.
 
-# LAYOUT IS SOLVED - Container and Grid handle layout
-if echo "$CONTENT" | grep -qE '\b(flex|grid|items-|justify-|gap-[0-9])\b' | grep -qvE '^\s*//|^\s*\*'; then
+# Visual-utility rules apply only in ASSEMBLY context. Authoring custom
+# components in src/components/ needs to reference these utilities --
+# that's how a custom component hooks into the rafters token system.
+if [ "$IS_AUTHORING" != "1" ]; then
+  # LAYOUT IS SOLVED - Container and Grid handle layout
   if echo "$CONTENT" | grep -qE '(className|class)=|classy\(' && echo "$CONTENT" | grep -qE '\b(flex|grid|items-(start|center|end|baseline|stretch)|justify-(start|center|end|between|around|evenly)|gap-[0-9])\b'; then
     VIOLATIONS+="LAYOUT IS SOLVED: Found raw layout utility (flex/grid/items-/justify-/gap-). Use Container/Grid components.\n"
   fi
-fi
 
-# CONTAINER OWNS SPACING
-if echo "$CONTENT" | grep -qE '(className|class)=|classy\(' && echo "$CONTENT" | grep -qE '\b(p-[0-9]|px-[0-9]|py-[0-9]|m-[0-9]|mx-[0-9]|my-[0-9]|mt-[0-9]|mb-[0-9]|ml-[0-9]|mr-[0-9]|pt-[0-9]|pb-[0-9]|pl-[0-9]|pr-[0-9])\b'; then
-  VIOLATIONS+="CONTAINER OWNS SPACING: Found direct spacing utility in a class-bearing context. Container handles spacing.\n"
-fi
+  # CONTAINER OWNS SPACING
+  if echo "$CONTENT" | grep -qE '(className|class)=|classy\(' && echo "$CONTENT" | grep -qE '\b(p-[0-9]|px-[0-9]|py-[0-9]|m-[0-9]|mx-[0-9]|my-[0-9]|mt-[0-9]|mb-[0-9]|ml-[0-9]|mr-[0-9]|pt-[0-9]|pb-[0-9]|pl-[0-9]|pr-[0-9])\b'; then
+    VIOLATIONS+="CONTAINER OWNS SPACING: Found direct spacing utility in a class-bearing context. Container handles spacing.\n"
+  fi
 
-# THE SYSTEM OWNS SEMANTIC COLOR
-# bg-primary / text-destructive / border-success means the agent is
-# picking a visual hierarchy choice. That belongs to the composite
-# (block.meta.variant) or component (variant prop, dictated by JSDoc),
-# never to consumer-side className. Catches both className="..." and
-# classy("...") forms.
-if echo "$CONTENT" | grep -qE '(className|class)=|classy\(' && echo "$CONTENT" | grep -qE '\b(bg|text|border)-(primary|secondary|tertiary|accent|highlight|destructive|success|warning|info|muted|foreground|background|card|popover|sidebar|chart-[0-9]|ring|input)\b'; then
-  VIOLATIONS+="THE SYSTEM OWNS VISUAL VALUES: Found semantic color utility (bg-primary / text-destructive / etc.) in a class-bearing context. The composite manifest (block.meta.variant) or component (variant prop per JSDoc) owns variant choice -- never consumer className/classy(). Query rafters_pattern / rafters_composite / rafters_component.\n"
-fi
+  # THE SYSTEM OWNS SEMANTIC COLOR
+  # In assembly: bg-primary / text-destructive / border-success means the
+  # agent is picking a visual hierarchy choice. That belongs to the
+  # composite (block.meta.variant) or component (variant prop, dictated
+  # by JSDoc), never to consumer-side className.
+  if echo "$CONTENT" | grep -qE '(className|class)=|classy\(' && echo "$CONTENT" | grep -qE '\b(bg|text|border)-(primary|secondary|tertiary|accent|highlight|destructive|success|warning|info|muted|foreground|background|card|popover|sidebar|chart-[0-9]|ring|input)\b'; then
+    VIOLATIONS+="THE SYSTEM OWNS VISUAL VALUES: Found semantic color utility (bg-primary / text-destructive / etc.) in a class-bearing context. The composite manifest (block.meta.variant) or component (variant prop per JSDoc) owns variant choice -- never consumer className/classy(). Query rafters_pattern / rafters_composite / rafters_component. (If you are authoring a custom component, put it in src/components/ where these utilities are allowed.)\n"
+  fi
 
-# THE SYSTEM OWNS TYPOGRAPHY SIZE + WEIGHT
-# Inside <Container as="article">, bare native HTML is correctly styled
-# by the composite system. text-* / font-weight-* in any class-bearing
-# context means the agent is reaching past the system.
-if echo "$CONTENT" | grep -qE '(className|class)=|classy\(' && echo "$CONTENT" | grep -qE '\b(text-(xs|sm|base|lg|xl|[0-9]+xl)|font-(thin|light|normal|medium|semibold|bold|extrabold|black))\b'; then
-  VIOLATIONS+="THE SYSTEM OWNS TYPOGRAPHY: Found text-* size or font-weight-* utility. Wrap content in <Container as=\"article\"> and use bare native HTML, or render the composite the manifest specifies.\n"
-fi
+  # THE SYSTEM OWNS TYPOGRAPHY SIZE + WEIGHT
+  if echo "$CONTENT" | grep -qE '(className|class)=|classy\(' && echo "$CONTENT" | grep -qE '\b(text-(xs|sm|base|lg|xl|[0-9]+xl)|font-(thin|light|normal|medium|semibold|bold|extrabold|black))\b'; then
+    VIOLATIONS+="THE SYSTEM OWNS TYPOGRAPHY: Found text-* size or font-weight-* utility. Wrap content in <Container as=\"article\"> and use bare native HTML, or render the composite the manifest specifies.\n"
+  fi
 
-# THE SYSTEM OWNS RADIUS / SHADOW / SIZING
-if echo "$CONTENT" | grep -qE '(className|class)=|classy\(' && echo "$CONTENT" | grep -qE '\b(rounded-|shadow-|w-[0-9]|h-[0-9]|max-w-|min-w-|max-h-|min-h-)'; then
-  VIOLATIONS+="THE SYSTEM OWNS RADIUS / SHADOW / SIZING: Found rounded-/shadow-/w-/h-/max-/min- utility. These are component-owned design choices.\n"
+  # THE SYSTEM OWNS RADIUS / SHADOW / SIZING
+  if echo "$CONTENT" | grep -qE '(className|class)=|classy\(' && echo "$CONTENT" | grep -qE '\b(rounded-|shadow-|w-[0-9]|h-[0-9]|max-w-|min-w-|max-h-|min-h-)'; then
+    VIOLATIONS+="THE SYSTEM OWNS RADIUS / SHADOW / SIZING: Found rounded-/shadow-/w-/h-/max-/min- utility. These are component-owned design choices.\n"
+  fi
 fi
 
 # NEVER var() IN COMPONENTS - exporter handles var()
