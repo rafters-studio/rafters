@@ -1,11 +1,11 @@
 import { SELF } from 'cloudflare:test';
-import { buildColorSystem } from '@rafters/design-tokens-v1';
+import { generateBaseSystem } from '@rafters/design-tokens';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { initializeRegistry } from '../../../src/routes/tokens/tokens.handlers';
 
 beforeAll(() => {
-  const result = buildColorSystem();
-  initializeRegistry(result.system.allTokens);
+  const system = generateBaseSystem();
+  initializeRegistry(system.allTokens);
 });
 
 // =============================================================================

@@ -136,7 +136,7 @@ function resolveGradientFill(fill: FillMetadata, context: FillContext): string {
 /**
  * Built-in fill registry.
  *
- * Mirrors the default fill definitions shipped by @rafters/design-tokens-v1 so
+ * Mirrors the default fill definitions shipped by @rafters/design-tokens so
  * components resolve common names without needing the token package at
  * runtime (ui is copied into consumer projects via the registry and must stay
  * zero-dep). Apps can override or extend via `registerFill`.

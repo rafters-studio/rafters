@@ -16,7 +16,7 @@
   "dependencies": {
     "@hono/zod-openapi": "1.1.5",
     "@rafters/color-utils": "workspace:^",
-    "@rafters/design-tokens-v1": "workspace:^",
+    "@rafters/design-tokens": "workspace:^",
     "@scalar/hono-api-reference": "^0.9.28",
     "hono": "catalog:",
     "stoker": "catalog:",

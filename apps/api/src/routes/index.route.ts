@@ -1,5 +1,5 @@
 import { createRoute, z } from '@hono/zod-openapi';
-import { getAvailableNamespaces } from '@rafters/design-tokens-v1';
+import { getAvailableNamespaces } from '@rafters/design-tokens';
 import { RAFTERS_VERSION } from '@rafters/shared';
 import * as HttpStatusCodes from 'stoker/http-status-codes';
 import { jsonContent } from 'stoker/openapi/helpers';
