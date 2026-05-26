@@ -1,5 +1,15 @@
 # rafters
 
+## 0.0.57
+
+### Bug Fixes
+
+- fix(importers): revert the 0.0.56 var() rejection in `firstFamilyFromStack`. The "fix" broke Tailwind v4 `@theme inline` indirection cascades. When a source declares `--font-display: var(--font-arvo-bold)` (indirection-only mapping; the real family is injected at runtime by next/font or astro-font into the referenced variable), the importer should preserve the var() reference as the token value so the cascade resolves at render: `--rafters-font-display: var(--font-arvo-bold)` -> consumer `font-display` utility -> `var(--rafters-font-display)` -> `var(--font-arvo-bold)` -> runtime-injected family. 0.0.56 severed that chain by rejecting var() values as "fake fonts," leaving the indirection family slots unrepresented in the registry. 0.0.57 restores the 0.0.55 behavior: var() values pass through as detected font values. The role-walk identifies canonical slots via `sourceDeclName` (the `--font-*` key), not via the value, so var() values don't become aesthetic guesses about which font fills which role.
+
+### Docs
+
+- README expanded to surface what the package actually ships: 60+ React components, 71 Astro components, 32 Web Component element classes (triple-target parity); 62 primitives; the composite manifest system as a first-class layer (designer-authored JSON with solves / appliesWhen / do/never / cognitive load / I/O contracts / typed block tree). Architecture section restructured to show all four layers (tokens, primitives, components, composites) instead of the old three-layer summary.
+
 ## 0.0.56
 
 ### Bug Fixes
