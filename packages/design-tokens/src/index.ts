@@ -9,11 +9,16 @@ export {
   UnknownPluginError,
   UserOverrideSchema,
 } from './graph.js';
+export {
+  detectFocusRingWidth,
+  detectFontSizeBase,
+  detectRadiusBase,
+  detectSpacingBase,
+} from './importers/bases.js';
 export { classifyDeclarations } from './importers/classify.js';
 export { importColorFamily } from './importers/color.js';
 export { colorsFromClassification } from './importers/colors.js';
 export { type DetectedFont, detectFonts } from './importers/fonts.js';
-export { detectRadiusBase } from './importers/radius.js';
 export { senseShadcnCss } from './importers/sense.js';
 export { extractShadcnRoot } from './importers/shadcn.js';
 export {
@@ -25,7 +30,6 @@ export {
   type RaftersImportNamespace,
   type SensedSummary,
 } from './importers/shapes.js';
-export { detectSpacingBase } from './importers/spacing.js';
 export { extractThemeBlocks } from './importers/theme.js';
 export {
   findTokenFile,

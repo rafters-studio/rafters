@@ -189,7 +189,13 @@ export function generateTypographyTokens(
     const size = fontSizes[scale];
     if (!scaleDef || size === undefined) continue;
     const roundedSize = Math.round(size * 100) / 100;
-    const remSize = Math.round((size / baseFontSize) * 1000) / 1000;
+    // rem is rooted to the document root font size (typically 16px), NOT to
+    // baseFontSize. Dividing by baseFontSize produced "scale factor of base"
+    // values that coincided with absolute rem only when baseFontSize === 16
+    // (the default). With any `baseFontSizeOverride`, every per-scale value
+    // shifted -- font-size-base in particular ended up duplicated at 1rem
+    // and overwrote the canonical emission above. Always divide by 16.
+    const remSize = Math.round((size / 16) * 1000) / 1000;
     const scaleIndex = TYPOGRAPHY_SCALE.indexOf(scale);
     const lineHeight = String(scaleDef.lineHeight);
     const letterSpacing = scaleDef.letterSpacing;

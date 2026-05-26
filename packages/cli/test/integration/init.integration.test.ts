@@ -573,6 +573,57 @@ describe('rafters init - source CSS sensing', () => {
     expect(radiusTl?.value).toBe('var(--rafters-radius-base)');
   }, 30000);
 
+  it('imports font-size + focus-ring bases pre-generation; motion is intentionally left alone', async () => {
+    fixturePath = await createFixture('nextjs-shadcn-v4');
+    // Source declares font-size + focus-ring bases that should land, AND a
+    // motion duration that should NOT (motion is research-backed in rafters
+    // and we don't let arbitrary source declarations overwrite the curated
+    // defaults -- designers reseat via `rafters set` if they actually mean it).
+    await writeFile(
+      join(fixturePath, 'src/app/globals.css'),
+      `:root {
+  --text-base: 1.125rem;
+  --ring-width: 0.25rem;
+  --duration-base: 5000ms;
+}
+@import "tailwindcss";
+`,
+    );
+
+    const result = await execCli(fixturePath, ['init', '--agent']);
+    expect(result.exitCode).toBe(0);
+
+    const events = result.stdout
+      .split('\n')
+      .filter((l) => l.startsWith('{'))
+      .map((l) => JSON.parse(l) as Record<string, unknown>);
+
+    expect(events.find((e) => e.event === 'init:import_font_size_applied')).toMatchObject({
+      baseFontSize: 18,
+    });
+    expect(events.find((e) => e.event === 'init:import_focus_ring_applied')).toMatchObject({
+      focusRingWidth: 4,
+    });
+    expect(events.find((e) => e.event === 'init:import_motion_duration_applied')).toBeUndefined();
+
+    // Typography font-size-base lands at imported value (18px = 1.125rem).
+    const typoRaw = await readFixtureFile(fixturePath, '.rafters/tokens/typography.rafters.json');
+    const typo = JSON.parse(typoRaw) as { tokens: Array<{ name: string; value: unknown }> };
+    expect(typo.tokens.find((t) => t.name === 'font-size-base')?.value).toBe('1.125rem');
+
+    // Focus ring width threaded through the focus generator.
+    const focusRaw = await readFixtureFile(fixturePath, '.rafters/tokens/focus.rafters.json');
+    const focus = JSON.parse(focusRaw) as { tokens: Array<{ name: string; value: unknown }> };
+    expect(focus.tokens.find((t) => t.name === 'focus-ring-width')?.value).toBe('0.25rem');
+
+    // Motion stays at rafters' curated default (150ms), NOT the absurd 5s
+    // the source declared. The detector deliberately doesn't exist for
+    // motion -- the comment in importers/bases.ts explains why.
+    const motionRaw = await readFixtureFile(fixturePath, '.rafters/tokens/motion.rafters.json');
+    const motion = JSON.parse(motionRaw) as { tokens: Array<{ name: string; value: unknown }> };
+    expect(motion.tokens.find((t) => t.name === 'motion-duration-base')?.value).toBe('150ms');
+  }, 30000);
+
   it('skips spacing-base detection when source declares no --spacing-base', async () => {
     fixturePath = await createFixture('nextjs-shadcn-v4');
     // Default fixture globals.css has no --spacing-base; rafters defaults
