@@ -159,6 +159,44 @@ function isInteractive(): boolean {
 }
 
 /**
+ * Pick the source CSS path init should read for sense/import.
+ *
+ *   1. shadcn's components.json `tailwind.css` IF the file exists on disk.
+ *   2. The framework's canonical CSS location (`findCssPath` or
+ *      `project.cssPath`).
+ *
+ * The shadcn config commonly lags after a project changes framework (e.g.
+ * a generated `src/app/globals.css` Next.js path persists after the
+ * project becomes Astro at `src/styles/global.css`). Trusting that path
+ * silently meant init read ENOENT and skipped the whole import flow with
+ * no diagnostic. Now: when the configured path is missing, emit
+ * `init:shadcn_css_missing` and fall back to the framework's canonical
+ * location.
+ */
+function resolveSourceCssPath(
+  cwd: string,
+  framework: Framework,
+  detectedFramework: Framework,
+  projectCssPath: string | null,
+  shadcnCssPath: string | null | undefined,
+  emit: typeof log,
+): string | null {
+  if (shadcnCssPath) {
+    if (existsSync(join(cwd, shadcnCssPath))) return shadcnCssPath;
+    const fallback = framework === detectedFramework ? projectCssPath : findCssPath(cwd, framework);
+    emit({
+      event: 'init:shadcn_css_missing',
+      configuredPath: shadcnCssPath,
+      fallbackPath: fallback,
+      message:
+        'components.json points at a CSS file that does not exist. Falling back to the framework canonical location.',
+    });
+    return fallback;
+  }
+  return framework === detectedFramework ? projectCssPath : findCssPath(cwd, framework);
+}
+
+/**
  * Slug a font family name into a CSS-identifier-safe token suffix.
  * `Aurabesh` -> `aurabesh`. `JetBrains Mono` -> `jetbrains-mono`.
  * `Source Sans 3` -> `source-sans-3`.
@@ -664,12 +702,22 @@ export async function init(options: InitOptions): Promise<void> {
   // bake values numerically at generation time and would not update.
   // See legion reflection 019e57d8 for the full invariant.
   const baseConfig: Partial<BaseSystemConfig> = {};
-  const sourceCssPathForBase =
-    !shadcn && exports.tailwind
-      ? framework === detectedFramework
-        ? project.cssPath
-        : findCssPath(cwd, framework)
-      : (shadcn?.tailwind?.css ?? null);
+  // Source CSS resolution priority for both pre-generation base detection
+  // AND the later sense/apply flow:
+  //   1. shadcn's components.json `tailwind.css` IF the file actually exists
+  //   2. framework's canonical CSS location (findCssPath)
+  // shadcn configs often carry a stale Next.js path (`src/app/globals.css`)
+  // after a project migrates to Astro / Vite. Silently trusting the
+  // configured path means init reads ENOENT and skips the whole import
+  // flow without surfacing what went wrong.
+  const sourceCssPathForBase = resolveSourceCssPath(
+    cwd,
+    framework,
+    detectedFramework,
+    project.cssPath,
+    shadcn?.tailwind?.css,
+    log,
+  );
   if (sourceCssPathForBase !== null) {
     try {
       const cssForBase = await readFile(join(cwd, sourceCssPathForBase), 'utf-8');
@@ -752,9 +800,19 @@ export async function init(options: InitOptions): Promise<void> {
   // `project.cssPath` is computed against the auto-detected framework; if the
   // resolved framework differs, re-walk under the new framework.
   let detectedCssPath: string | null = null;
+  // Same resolution helper as pre-generation. When shadcn's components.json
+  // points at a missing file (common after a project migrates frameworks
+  // without updating the config) we fall back to the framework's canonical
+  // CSS location and warn loudly.
+  detectedCssPath = resolveSourceCssPath(
+    cwd,
+    framework,
+    detectedFramework,
+    project.cssPath,
+    shadcn?.tailwind?.css,
+    log,
+  );
   if (!shadcn && exports.tailwind) {
-    detectedCssPath =
-      framework === detectedFramework ? project.cssPath : findCssPath(cwd, framework);
     if (detectedCssPath) {
       await updateMainCss(cwd, detectedCssPath, '.rafters/output/rafters.css');
     } else {
@@ -764,8 +822,6 @@ export async function init(options: InitOptions): Promise<void> {
         searchedLocations: FRAMEWORK_SPECS[framework].cssLocations,
       });
     }
-  } else if (shadcn?.tailwind?.css) {
-    detectedCssPath = shadcn.tailwind.css;
   }
 
   // Determine component target (which file variant to install)

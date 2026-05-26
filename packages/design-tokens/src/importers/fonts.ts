@@ -183,12 +183,21 @@ function extractFontFaceFamilies(css: string): string[] {
   return out;
 }
 
-/** Pull the first non-generic family out of a font stack value. */
+/**
+ * Pull the first non-generic family out of a font stack value. Rejects
+ * `var(--name)` references -- Tailwind v4 `@theme inline` blocks declare
+ * `--font-sans: var(--font-geist-sans)` as indirection-only mappings;
+ * the actual family name (`Geist Sans`) lives elsewhere or is supplied
+ * by a `@font-face` declaration. Returning the literal `var(...)` text
+ * as a "family" would mint a token whose stack reads `var(--font-geist-sans)`
+ * and never matches a real loaded font.
+ */
 function firstFamilyFromStack(value: string): string | null {
   const parts = value.split(',');
   for (const raw of parts) {
     const stripped = stripQuotes(raw.trim());
     if (stripped === '' || GENERIC_KEYWORDS.has(stripped.toLowerCase())) continue;
+    if (stripped.startsWith('var(') || stripped.includes('var(--')) continue;
     return stripped;
   }
   return null;
