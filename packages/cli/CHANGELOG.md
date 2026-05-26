@@ -1,5 +1,11 @@
 # rafters
 
+## 0.0.58
+
+### Bug Fixes
+
+- fix(mcp): `rafters_component` restores the design intelligence surface that worked for months and silently regressed. The registry generator HAS been extracting per-component `intelligence` (cognitiveLoad, attentionEconomics, trustBuilding, accessibility, semanticMeaning, usagePatterns.dos/nevers) from JSDoc on every component source -- the data is in every registry JSON. The consumer side broke in two places: `RegistryItemSchema` didn't declare the `intelligence` field so zod silently stripped it on parse, AND the MCP handler didn't return it even when present. Fixed both. Also added `composites` + `files` to the handler's output (they were on the schema but missing from the response). The description now reflects what's actually returned.
+
 ## 0.0.57
 
 ### Bug Fixes
