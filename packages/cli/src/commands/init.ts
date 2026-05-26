@@ -22,7 +22,6 @@ import {
   detectFocusRingWidth,
   detectFontSizeBase,
   detectFonts,
-  detectMotionDurationBase,
   detectRadiusBase,
   detectSpacingBase,
   extractShadcnRoot,
@@ -703,12 +702,11 @@ export async function init(options: InitOptions): Promise<void> {
           event: 'init:import_focus_ring_applied',
           eventKey: 'focusRingWidth',
         },
-        {
-          detect: detectMotionDurationBase,
-          field: 'baseTransitionDurationOverride',
-          event: 'init:import_motion_duration_applied',
-          eventKey: 'baseTransitionDuration',
-        },
+        // Motion duration is intentionally not imported -- rafters' motion
+        // system is research-backed and most projects' `--duration-base`
+        // values are unresearched defaults. See importers/bases.ts for the
+        // policy note; designers can `rafters set motion-duration-base ...`
+        // after init to override explicitly.
       ] as const;
       for (const slot of baseSlots) {
         const value = slot.detect(cssForBase);

@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import {
   detectFocusRingWidth,
   detectFontSizeBase,
-  detectMotionDurationBase,
   detectRadiusBase,
   detectSpacingBase,
 } from '../../src/importers/bases.js';
@@ -98,41 +97,16 @@ describe('detectFocusRingWidth', () => {
   });
 });
 
-describe('detectMotionDurationBase', () => {
-  it('reads --duration-base in ms', () => {
-    expect(detectMotionDurationBase(':root { --duration-base: 150ms; }')).toBe(150);
-  });
-
-  it('reads --motion-duration-base (rafters internal) and converts seconds', () => {
-    expect(detectMotionDurationBase(':root { --motion-duration-base: 0.2s; }')).toBe(200);
-  });
-
-  it('ignores per-named --duration-{guide,engage,emphasize,...}', () => {
-    expect(
-      detectMotionDurationBase(':root { --duration-guide: 46ms; --duration-engage: 121ms; }'),
-    ).toBeNull();
-  });
-
-  it('returns null when not declared', () => {
-    expect(detectMotionDurationBase(':root { --primary: #000; }')).toBeNull();
-  });
-});
-
 describe('shared behavior across all base detectors', () => {
   it('handles malformed CSS without throwing', () => {
     expect(() => detectSpacingBase('not valid css {{')).not.toThrow();
     expect(() => detectRadiusBase('not valid css {{')).not.toThrow();
     expect(() => detectFontSizeBase('not valid css {{')).not.toThrow();
     expect(() => detectFocusRingWidth('not valid css {{')).not.toThrow();
-    expect(() => detectMotionDurationBase('not valid css {{')).not.toThrow();
   });
 
   it('returns null for unsupported length units (%, vw, etc.)', () => {
     expect(detectSpacingBase(':root { --spacing: 50%; }')).toBeNull();
     expect(detectRadiusBase(':root { --radius: 10vw; }')).toBeNull();
-  });
-
-  it('returns null for unsupported duration units (no fps, no minutes)', () => {
-    expect(detectMotionDurationBase(':root { --duration-base: 1min; }')).toBeNull();
   });
 });

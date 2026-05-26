@@ -29,7 +29,6 @@ import type { CssDeclaration } from './shapes.js';
 import { extractThemeBlocks } from './theme.js';
 
 const LENGTH = /^(-?\d+(?:\.\d+)?)\s*(rem|px|em)$/;
-const DURATION = /^(-?\d+(?:\.\d+)?)\s*(ms|s)$/;
 
 /**
  * Pull the last declaration whose name is in `names` from the combined
@@ -63,15 +62,6 @@ function parseLength(raw: string): number | null {
   return match[2] === 'px' ? value : value * 16;
 }
 
-/** Parse a duration value to milliseconds. `s` is multiplied by 1000. */
-function parseDuration(raw: string): number | null {
-  const match = raw.match(DURATION);
-  if (match === null) return null;
-  const value = Number(match[1]);
-  if (!Number.isFinite(value)) return null;
-  return match[2] === 'ms' ? value : value * 1000;
-}
-
 /** Spacing base in pixels. `--spacing` (v4) or `--spacing-base` (rafters). */
 export const detectSpacingBase = (css: string): number | null =>
   detectBase(css, ['spacing', 'spacing-base'], parseLength);
@@ -88,6 +78,11 @@ export const detectFontSizeBase = (css: string): number | null =>
 export const detectFocusRingWidth = (css: string): number | null =>
   detectBase(css, ['ring-width', 'focus-ring-width'], parseLength);
 
-/** Motion transition duration in milliseconds. `--duration-base` or `--motion-duration-base`. */
-export const detectMotionDurationBase = (css: string): number | null =>
-  detectBase(css, ['duration-base', 'motion-duration-base'], parseDuration);
+// NOTE: motion duration is intentionally NOT detected from source. Rafters'
+// motion system is research-backed (perceptual response curves, cognitive
+// thresholds, reduced-motion accommodations). Most projects pick duration
+// values without that research and a stray `--duration-base: 5000ms` in
+// source would silently overwrite the curated rafters defaults. If a
+// designer explicitly wants to reseat motion timing, they can
+// `rafters set motion-duration-base ...` after init -- the override fires
+// with a recorded reason and stays auditable.

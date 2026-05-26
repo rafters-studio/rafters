@@ -12,7 +12,6 @@ export {
 export {
   detectFocusRingWidth,
   detectFontSizeBase,
-  detectMotionDurationBase,
   detectRadiusBase,
   detectSpacingBase,
 } from './importers/bases.js';
