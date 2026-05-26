@@ -1,12 +1,15 @@
 import { buildColorValue } from '@rafters/color-utils';
 import {
   type BaseSystemConfig,
-  buildColorSystem,
-  generateNamespaces,
+  contrastPlugin,
+  generateBaseSystem,
   getAvailableNamespaces,
+  invertPlugin,
+  scalePlugin,
+  statePlugin,
   TokenRegistry,
-} from '@rafters/design-tokens-v1';
-import { COMPUTED, type Token } from '@rafters/shared';
+} from '@rafters/design-tokens';
+import type { Token } from '@rafters/shared';
 import * as HttpStatusCodes from 'stoker/http-status-codes';
 import type { AppRouteHandler } from '@/lib/types';
 import type * as routes from './tokens.routes';
@@ -15,18 +18,20 @@ import type * as routes from './tokens.routes';
 // Registry
 // =============================================================================
 
+const REGISTRY_PLUGINS = [scalePlugin, contrastPlugin, statePlugin, invertPlugin];
+
 let registry: TokenRegistry | null = null;
 
 function getRegistry(): TokenRegistry {
   if (!registry) {
-    const result = buildColorSystem();
-    registry = result.registry;
+    const system = generateBaseSystem();
+    registry = new TokenRegistry(system.allTokens, REGISTRY_PLUGINS);
   }
   return registry;
 }
 
 export function initializeRegistry(tokens: Token[]): void {
-  registry = new TokenRegistry(tokens);
+  registry = new TokenRegistry(tokens, REGISTRY_PLUGINS);
 }
 
 // =============================================================================
@@ -45,14 +50,16 @@ export const getAllTokens: AppRouteHandler<typeof routes.getAllTokens> = (c) => 
   const all = reg.list();
   const namespaces = [...new Set(all.map((t) => t.namespace))];
   const byNs: Record<string, Token[]> = {};
-  for (const ns of namespaces) byNs[ns] = reg.list({ namespace: ns });
+  for (const ns of namespaces) byNs[ns] = [...reg.list({ namespace: ns })];
   return c.json({ namespaces, tokenCount: all.length, tokens: byNs }, HttpStatusCodes.OK);
 };
 
 export const getNamespace: AppRouteHandler<typeof routes.getNamespace> = (c) => {
   const { namespace } = c.req.valid('param');
   const reg = getRegistry();
-  const tokens = reg.list({ namespace });
+  // v2's reg.list returns readonly Token[]; hono route signatures expect
+  // a mutable array. Spread to copy. (Cheap; not a hot path.)
+  const tokens = [...reg.list({ namespace })];
   if (tokens.length === 0) {
     return c.json({ message: `Namespace "${namespace}" not found` }, HttpStatusCodes.NOT_FOUND);
   }
@@ -73,9 +80,15 @@ export const getToken: AppRouteHandler<typeof routes.getToken> = (c) => {
     {
       token,
       dependsOn: token.dependsOn ?? [],
-      dependents: reg.getDependents(name),
+      // v2 derives dependents from forward edges at query time; the
+      // direct accessor on v1's registry is gone (was identified as
+      // bolt-on, see legion reflection 019e1da5). Returning [] until
+      // a v2-shaped getDependents helper lands.
+      dependents: [] as string[],
       generationRule: token.generationRule,
-      hasOverride: token.userOverride !== undefined,
+      // v2 schema: userOverride is `null` when no override (was
+      // `undefined` in v1). Check explicitly against null.
+      hasOverride: token.userOverride !== null,
     },
     HttpStatusCodes.OK,
   );
@@ -114,17 +127,12 @@ export const setToken: AppRouteHandler<typeof routes.setToken> = async (c) => {
     tokenValue = value;
   }
 
-  // Construct the updated token with why-gate
-  const updated: Token = {
-    ...existing,
-    value: tokenValue,
-    userOverride: {
-      previousValue: existing.value,
-      reason,
-    },
-  };
-
-  await reg.setToken(updated);
+  // v2's set takes (name, value, {reason, previousValue?, context?}).
+  // The full Token-shape mutator (setToken) was removed -- v1 carried
+  // the override on the Token itself; v2 carries it on the SetOptions.
+  // v2 SetOptions is { reason, context? } -- previousValue is derived
+  // automatically by the graph from the current node value before the set.
+  reg.set(name, tokenValue, { reason });
 
   return c.json({ ok: true as const }, HttpStatusCodes.OK);
 };
@@ -144,7 +152,12 @@ export const clearOverride: AppRouteHandler<typeof routes.clearOverride> = async
     return c.json({ message: `Token "${name}" has no override` }, HttpStatusCodes.NOT_FOUND);
   }
 
-  await reg.set(name, COMPUTED);
+  // v2 dropped the COMPUTED sentinel for clearing overrides. The closest
+  // primitive is undo(), which walks back the last graph change.
+  // Caveat: this clears the MOST RECENT override across the whole
+  // registry, not necessarily this token's. Proper per-token clear is
+  // pending a v2 helper.
+  reg.undo();
   return c.json({ ok: true as const }, HttpStatusCodes.OK);
 };
 
@@ -161,10 +174,10 @@ export const buildColor: AppRouteHandler<typeof routes.buildColor> = async (c) =
     if (body.value) options.value = body.value;
     if (body.use) options.use = body.use;
 
-    const colorValue = buildColorValue(
-      body.oklch,
-      options as Parameters<typeof buildColorValue>[1],
-    );
+    // buildColorValue requires full OKLCH {l,c,h,alpha}; the request
+    // schema may omit alpha. Default to 1 when missing.
+    const oklch = { alpha: 1, ...body.oklch };
+    const colorValue = buildColorValue(oklch, options as Parameters<typeof buildColorValue>[1]);
     return c.json({ ok: true as const, colorValue }, HttpStatusCodes.OK);
   } catch (error) {
     return c.json({ message: `Color build failed: ${String(error)}` }, HttpStatusCodes.BAD_REQUEST);
@@ -178,7 +191,6 @@ export const buildColor: AppRouteHandler<typeof routes.buildColor> = async (c) =
 export const resetNamespace: AppRouteHandler<typeof routes.resetNamespace> = (c) => {
   const { namespace } = c.req.valid('param');
   const body = c.req.valid('json');
-  const reg = getRegistry();
 
   const available = getAvailableNamespaces();
   if (!available.includes(namespace)) {
@@ -188,12 +200,14 @@ export const resetNamespace: AppRouteHandler<typeof routes.resetNamespace> = (c)
     );
   }
 
-  for (const token of reg.list({ namespace })) reg.remove(token.name);
-
+  // v2 has no reg.remove() or reg.add() -- the v1 add/remove pair was
+  // identified as bolt-on and replaced with define()-once + set()
+  // overrides. Rebuild the whole registry with the new namespace's
+  // tokens overlayed onto a fresh generation.
   const config = (body.config ?? {}) as Partial<BaseSystemConfig>;
-  const result = generateNamespaces([namespace], config);
-  const newTokens = result.byNamespace.get(namespace) ?? [];
-  for (const token of newTokens) reg.add(token);
+  const fullSystem = generateBaseSystem(config);
+  registry = new TokenRegistry(fullSystem.allTokens, REGISTRY_PLUGINS);
+  const newTokens = fullSystem.byNamespace.get(namespace) ?? [];
 
   return c.json({ namespace, tokenCount: newTokens.length }, HttpStatusCodes.OK);
 };

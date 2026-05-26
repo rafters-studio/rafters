@@ -24,7 +24,6 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@rafters/design-tokens-v1": "workspace:*",
     "@types/css-tree": "^2.3.11",
     "@types/node": "catalog:",
     "typescript": "catalog:",

@@ -1,8 +1,0 @@
-{
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "noEmit": true
-  },
-  "include": ["src/**/*", "../color-utils/src/**/*.d.ts"],
-  "exclude": ["node_modules", "**/*.test.ts"]
-}

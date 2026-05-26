@@ -45,8 +45,6 @@
       "@rafters/color-utils/*": ["./packages/color-utils/src/*"],
       "@rafters/math-utils": ["./packages/math-utils/src/index.ts"],
       "@rafters/math-utils/*": ["./packages/math-utils/src/*"],
-      "@rafters/design-tokens-v1": ["./packages/design-tokens-v1/src/index.ts"],
-      "@rafters/design-tokens-v1/*": ["./packages/design-tokens-v1/src/*"],
       "@rafters/chrome": ["./packages/chrome/src/index.ts"],
       "@rafters/chrome/*": ["./packages/chrome/src/*"],
       "@rafters/composites": ["./packages/composites/src/index.ts"],
