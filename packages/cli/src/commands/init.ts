@@ -19,7 +19,10 @@ import {
   colorsFromClassification,
   contrastPlugin,
   type DetectedFont,
+  detectFocusRingWidth,
+  detectFontSizeBase,
   detectFonts,
+  detectMotionDurationBase,
   detectRadiusBase,
   detectSpacingBase,
   extractShadcnRoot,
@@ -671,23 +674,47 @@ export async function init(options: InitOptions): Promise<void> {
   if (sourceCssPathForBase !== null) {
     try {
       const cssForBase = await readFile(join(cwd, sourceCssPathForBase), 'utf-8');
-      const spacing = detectSpacingBase(cssForBase);
-      if (spacing !== null) {
-        baseConfig.baseSpacingUnit = spacing;
-        log({
+      // Per-detector wiring: each detector returns a number or null; if a
+      // value is found, it lands on the matching BaseSystemConfig override
+      // and fires its own `init:import_*_applied` event for telemetry.
+      // detectors map to BaseSystemConfig field + event payload key.
+      const baseSlots = [
+        {
+          detect: detectSpacingBase,
+          field: 'baseSpacingUnit',
           event: 'init:import_spacing_applied',
-          cssPath: sourceCssPathForBase,
-          baseSpacingUnit: spacing,
-        });
-      }
-      const radius = detectRadiusBase(cssForBase);
-      if (radius !== null) {
-        baseConfig.baseRadiusOverride = radius;
-        log({
+          eventKey: 'baseSpacingUnit',
+        },
+        {
+          detect: detectRadiusBase,
+          field: 'baseRadiusOverride',
           event: 'init:import_radius_applied',
-          cssPath: sourceCssPathForBase,
-          baseRadius: radius,
-        });
+          eventKey: 'baseRadius',
+        },
+        {
+          detect: detectFontSizeBase,
+          field: 'baseFontSizeOverride',
+          event: 'init:import_font_size_applied',
+          eventKey: 'baseFontSize',
+        },
+        {
+          detect: detectFocusRingWidth,
+          field: 'focusRingWidthOverride',
+          event: 'init:import_focus_ring_applied',
+          eventKey: 'focusRingWidth',
+        },
+        {
+          detect: detectMotionDurationBase,
+          field: 'baseTransitionDurationOverride',
+          event: 'init:import_motion_duration_applied',
+          eventKey: 'baseTransitionDuration',
+        },
+      ] as const;
+      for (const slot of baseSlots) {
+        const value = slot.detect(cssForBase);
+        if (value === null) continue;
+        baseConfig[slot.field] = value;
+        log({ event: slot.event, cssPath: sourceCssPathForBase, [slot.eventKey]: value });
       }
     } catch (err) {
       // ENOENT is a soft skip -- the later sensing pass will surface the
