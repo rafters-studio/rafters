@@ -464,6 +464,15 @@ export class RaftersToolHandler {
                 description: item.description,
                 primitives: item.primitives,
                 rules: item.rules,
+                composites: item.composites,
+                files: item.files,
+                // The intelligence field carries the WHY of the component:
+                // cognitive load, accessibility, do/never, semantic meaning.
+                // Extracted from JSDoc by the registry generator and present
+                // on every component JSON. Previously stripped by the schema
+                // (not declared) and not referenced by the handler -- the
+                // tool's whole reason for existing went missing somewhere.
+                intelligence: item.intelligence,
               },
               null,
               2,

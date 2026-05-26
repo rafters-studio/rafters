@@ -28,6 +28,31 @@ export const RegistryItemTypeSchema = z.enum(['ui', 'primitive', 'composite']);
 export type RegistryItemType = z.infer<typeof RegistryItemTypeSchema>;
 
 /**
+ * Design intelligence carried per-component. The registry generator
+ * extracts these from JSDoc tags on the component source (see
+ * `@cognitive-load`, `@attention-economics`, `@trust-building`,
+ * `@accessibility`, `@semantic-meaning`, `@usage-patterns` in e.g.
+ * packages/ui/src/components/ui/button.tsx). Surfacing this is the
+ * whole point of rafters -- agents read the encoded judgment instead
+ * of guessing at the design surface.
+ */
+export const RegistryItemIntelligenceSchema = z.object({
+  cognitiveLoad: z.number().optional(),
+  attentionEconomics: z.string().optional(),
+  trustBuilding: z.string().optional(),
+  accessibility: z.string().optional(),
+  semanticMeaning: z.string().optional(),
+  usagePatterns: z
+    .object({
+      dos: z.array(z.string()).default([]),
+      nevers: z.array(z.string()).default([]),
+    })
+    .optional(),
+});
+
+export type RegistryItemIntelligence = z.infer<typeof RegistryItemIntelligenceSchema>;
+
+/**
  * A component or primitive in the registry
  */
 export const RegistryItemSchema = z.object({
@@ -38,6 +63,7 @@ export const RegistryItemSchema = z.object({
   files: z.array(RegistryFileSchema),
   rules: z.array(z.string()).default([]),
   composites: z.array(z.string()).default([]),
+  intelligence: RegistryItemIntelligenceSchema.optional(),
 });
 
 export type RegistryItem = z.infer<typeof RegistryItemSchema>;
