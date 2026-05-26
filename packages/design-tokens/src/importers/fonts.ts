@@ -184,20 +184,27 @@ function extractFontFaceFamilies(css: string): string[] {
 }
 
 /**
- * Pull the first non-generic family out of a font stack value. Rejects
- * `var(--name)` references -- Tailwind v4 `@theme inline` blocks declare
- * `--font-sans: var(--font-geist-sans)` as indirection-only mappings;
- * the actual family name (`Geist Sans`) lives elsewhere or is supplied
- * by a `@font-face` declaration. Returning the literal `var(...)` text
- * as a "family" would mint a token whose stack reads `var(--font-geist-sans)`
- * and never matches a real loaded font.
+ * Pull the first non-generic family out of a font stack value.
+ *
+ * `var(--name)` references ARE returned as the "family" -- Tailwind v4
+ * `@theme inline` blocks declare every family slot as indirection
+ * (`--font-display: var(--font-arvo-bold)`), and the runtime font
+ * integration (next/font, astro-font) injects the real family name into
+ * the referenced variable elsewhere. Preserving the var() lets the
+ * cascade resolve at render time:
+ *   .rafters/output/rafters.css emits `--rafters-font-display: var(--font-arvo-bold)`
+ *   consumer Tailwind utility `font-display` -> `var(--rafters-font-display)`
+ *   -> `var(--font-arvo-bold)` -> the runtime-injected family
+ *
+ * The role-walk uses `sourceDeclName` (the `--font-*` key) to identify
+ * canonical slots, NOT this "name" -- so a var() value here doesn't
+ * become a guess about which font fills which role.
  */
 function firstFamilyFromStack(value: string): string | null {
   const parts = value.split(',');
   for (const raw of parts) {
     const stripped = stripQuotes(raw.trim());
     if (stripped === '' || GENERIC_KEYWORDS.has(stripped.toLowerCase())) continue;
-    if (stripped.startsWith('var(') || stripped.includes('var(--')) continue;
     return stripped;
   }
   return null;

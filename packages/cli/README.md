@@ -4,6 +4,10 @@ Design Intelligence CLI. Encodes a designer's judgment into queryable data so AI
 
 → [rafters.studio](https://rafters.studio)
 
+**60+ components across React, Astro, and Web Components.** Triple-target parity from one design system — the same Button, Card, Dialog, Combobox, Editor, etc. as a React component, an Astro component, AND a Web Component element class. Component code is installed into your project via `rafters add` (shadcn-style copy), not imported as a dependency, so you own and can fork what ships.
+
+**Composite manifests sit above components.** A composite is a designer-authored JSON manifest that bundles components into reusable patterns (login-form, copy-button, heading, paragraph) with designer intent baked in: `solves`, `appliesWhen`, do/never rules, cognitive load rating, I/O contracts, and a typed block tree. Agents query the composite registry via MCP and assemble pre-made decisions instead of inventing new ones.
+
 ## Quick Start
 
 ```bash
@@ -130,13 +134,12 @@ Full intelligence for a specific component: cognitive load, accessibility level,
 
 ## Architecture
 
-Three layers:
+Four layers, stacked:
 
-- **What (Components)** — React components with embedded intelligence metadata
-- **Where (Tokens)** — token dependency graph with human override tracking
-- **Why (Decisions)** — composite manifests, do/never patterns, cognitive load scores, trust-building patterns
-
-The token system uses OKLCH color space, modular scales based on musical ratios, and a dependency engine that derives related values from primitive bases. Override a base — `spacing-base`, `radius-base`, `font-size-base` — and dependents recompute. Override a leaf (`primary` color, `spacing-4`) and the override anchors the subtree against future upstream changes.
+- **Tokens** — primitive design values (color OKLCH, spacing scale, radius, typography, motion, focus, shadow, depth, elevation, breakpoints). 13 namespaces; dependency graph with human override tracking. Override a base (`spacing-base`, `radius-base`, `font-size-base`) and dependents recompute. Override a leaf and the override anchors the subtree.
+- **Primitives** — 62 framework-agnostic building blocks (clipboard, focus-trap, portal, roving-focus, selection, serializer, slot, token-sheet, typeahead, etc.). Headless behaviors components compose against.
+- **Components** — 60+ React + 71 Astro + 32 Web Component element classes. Triple-target parity. Each component carries embedded intelligence metadata: cognitive load rating, accessibility level, do/never, variant semantics, attention economics. Installed into your project via `rafters add` — you own the code.
+- **Composites** — designer-authored JSON manifests that bundle components into reusable patterns (login-form, copy-button, heading, paragraph, etc.). Each manifest carries `solves`, `appliesWhen`, `usagePatterns` (do/never), `cognitiveLoad`, I/O contracts, and a typed block tree. The composite owns the variant/size decisions — agents render blocks verbatim instead of choosing aesthetics.
 
 When a designer overrides a computed value, the system records the reason. Agents read the why before they read the what.
 
