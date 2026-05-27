@@ -165,6 +165,31 @@ export function isAlreadyInstalled(config: RaftersConfig | null, item: RegistryI
 }
 
 /**
+ * Verify an item the config claims is installed actually has at least one
+ * expected file on disk. Guards against config-disk drift (config tracks the
+ * item but a previous install failed mid-way, files were deleted, or a branch
+ * checkout removed them). When the config lies, callers should treat the item
+ * as not installed and re-run the install.
+ */
+export function isInstalledOnDisk(
+  config: RaftersConfig | null,
+  item: RegistryItem,
+  cwd: string,
+): boolean {
+  if (!isAlreadyInstalled(config, item)) return false;
+
+  const filesToCheck =
+    item.type === 'ui'
+      ? selectFilesForFramework(item.files, getComponentTarget(config)).files
+      : item.files;
+
+  for (const file of filesToCheck) {
+    if (fileExists(cwd, transformPath(file.path, config, cwd))) return true;
+  }
+  return false;
+}
+
+/**
  * Update the installed list in config with newly installed items.
  * Deduplicates and sorts alphabetically.
  */
@@ -557,15 +582,25 @@ export async function add(componentArgs: string[], options: AddOptions): Promise
   const target = getComponentTarget(config);
 
   for (const item of allItems) {
-    // Skip items already tracked in config (unless --overwrite)
+    // Skip items already tracked in config AND present on disk (unless --overwrite).
+    // If config tracks the item but the files are missing, fall through and re-install
+    // -- this recovers from partial installs, manual file deletes, or branch checkouts
+    // that left the config and disk out of sync.
     if (!options.overwrite && isAlreadyInstalled(config, item)) {
+      if (isInstalledOnDisk(config, item, cwd)) {
+        log({
+          event: 'add:skip',
+          component: item.name,
+          reason: 'already installed',
+        });
+        skipped.push(item.name);
+        continue;
+      }
       log({
-        event: 'add:skip',
+        event: 'add:warning',
         component: item.name,
-        reason: 'already installed',
+        message: 'Config tracks this as installed but no files found on disk -- reinstalling.',
       });
-      skipped.push(item.name);
-      continue;
     }
 
     try {
@@ -616,7 +651,7 @@ export async function add(componentArgs: string[], options: AddOptions): Promise
   };
   let depsResult = emptyDeps;
   try {
-    depsResult = await installRegistryDependencies(filteredItems, cwd);
+    depsResult = await installRegistryDependencies(filteredItems, cwd, { target });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     log({

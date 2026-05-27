@@ -9,6 +9,7 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { RegistryItem } from '../registry/types.js';
+import type { ComponentTarget } from './detect.js';
 import { log } from './ui.js';
 import { updateDependencies } from './update-dependencies.js';
 
@@ -17,7 +18,21 @@ export interface InstallRegistryDepsOptions {
   silent?: boolean;
   /** Log what would be installed without actually installing */
   dryRun?: boolean;
+  /**
+   * Project's component target. When non-React, React-family runtime packages
+   * (react, react-dom, @types/react, @types/react-dom) are dropped from the
+   * install list. Type-only imports in shared `.ts` primitives erase at
+   * compile time and don't require react at runtime.
+   */
+  target?: ComponentTarget;
 }
+
+/**
+ * Runtime packages that exist solely to support React-target components.
+ * Type-only imports from these packages erase at compile time, so non-React
+ * targets (astro, vue, wc, vanilla) don't need them installed.
+ */
+const REACT_RUNTIME_PACKAGES = new Set(['react', 'react-dom', '@types/react', '@types/react-dom']);
 
 export interface InstallRegistryDepsResult {
   /** Dependencies that were installed */
@@ -117,10 +132,17 @@ export async function installRegistryDependencies(
     return result;
   }
 
-  // 2. Partition into internal (@rafters/*) and external deps
+  // 2. Partition into internal (@rafters/*) and external deps.
+  // Also drop React-family runtime packages when the target isn't React --
+  // those imports are type-only in shared primitives and aren't needed at
+  // runtime on astro/vue/wc/vanilla projects.
   const externalDeps: string[] = [];
+  const dropForTarget = options.target && options.target !== 'react';
   for (const dep of allDeps) {
-    if (parseDependency(dep).name.startsWith('@rafters/')) {
+    const { name } = parseDependency(dep);
+    if (name.startsWith('@rafters/')) {
+      result.skipped.push(dep);
+    } else if (dropForTarget && REACT_RUNTIME_PACKAGES.has(name)) {
       result.skipped.push(dep);
     } else {
       externalDeps.push(dep);
