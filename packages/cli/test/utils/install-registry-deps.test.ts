@@ -256,4 +256,58 @@ describe('installRegistryDependencies', () => {
     expect(reactCount).toBe(1);
     expect(result.installed).toHaveLength(3);
   });
+
+  it('drops React-family runtime deps when target is not React', async () => {
+    mockPackageJson();
+
+    const item = registryItemFactory.generate({
+      name: 'slot',
+      type: 'primitive',
+      primitives: [],
+      files: [
+        registryFileFactory.generate({
+          path: 'lib/primitives/slot.ts',
+          content: 'export const slot = () => null;',
+          dependencies: ['react@19.2.0', '@types/react@19.2.0', 'lodash@4.17.21'],
+        }),
+      ],
+    });
+
+    const result = await installRegistryDependencies([item], '/fake/project', {
+      target: 'astro',
+    });
+
+    expect(result.installed).toEqual(['lodash@4.17.21']);
+    expect(result.skipped).toContain('react@19.2.0');
+    expect(result.skipped).toContain('@types/react@19.2.0');
+    expect(updateDependenciesMock).toHaveBeenCalledWith(
+      ['lodash@4.17.21'],
+      [],
+      expect.objectContaining({ cwd: '/fake/project' }),
+    );
+  });
+
+  it('keeps React-family deps when target is React', async () => {
+    mockPackageJson();
+
+    const item = registryItemFactory.generate({
+      name: 'slot',
+      type: 'primitive',
+      primitives: [],
+      files: [
+        registryFileFactory.generate({
+          path: 'lib/primitives/slot.ts',
+          content: 'export const slot = () => null;',
+          dependencies: ['react@19.2.0', 'lodash@4.17.21'],
+        }),
+      ],
+    });
+
+    const result = await installRegistryDependencies([item], '/fake/project', {
+      target: 'react',
+    });
+
+    expect(result.installed).toContain('react@19.2.0');
+    expect(result.installed).toContain('lodash@4.17.21');
+  });
 });
