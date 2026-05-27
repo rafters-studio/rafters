@@ -7,7 +7,7 @@
  * Community Group) JSON. Style Dictionary is intentionally not ported.
  */
 
-export { type ToDTCGOptions, toDTCG, toDTCGByNamespace } from './dtcg.js';
+export { type ToDTCGOptions, toDTCG } from './dtcg.js';
 export {
   type CompiledCssOptions,
   registryToCompiled,

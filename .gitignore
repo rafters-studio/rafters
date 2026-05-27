@@ -17,6 +17,7 @@ test-results
 .rafters/
 !apps/demo/.rafters/
 .scratch/
+.claude/worktrees/
 .playwright-mcp/
 *.tsbuildinfo
 # Rust
