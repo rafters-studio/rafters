@@ -1,5 +1,14 @@
 # rafters
 
+## 0.0.59
+
+### Bug Fixes
+
+- fix(cli): three `rafters add` bugs surfaced by shingle's multi-site install.
+  - Config-disk drift: the command no longer skips an item the config says is installed when the file is actually missing on disk (from a partial install, manual delete, or branch checkout). It detects the drift, logs a warning, and reinstalls.
+  - Skip-message accuracy: the "already installed" skip only fires when files are actually present; drift cases get their own warning so consumers can tell the difference.
+  - React-family deps no longer install on non-React targets. Shared `.ts` primitives use `import type * as React`, which erases at compile time; astro/vue/wc/vanilla projects don't need react/react-dom/@types/react/@types/react-dom at runtime. `installRegistryDependencies` accepts a `target` option and filters them out when target !== 'react'. Closes #1556.
+
 ## 0.0.58
 
 ### Bug Fixes
