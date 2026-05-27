@@ -393,39 +393,3 @@ export function toDTCG(tokens: Token[], options: ToDTCGOptions = {}): DTCGFile {
 
   return result as DTCGFile;
 }
-
-/**
- * Convert Token[] to DTCG format, organized by namespace
- *
- * Creates separate DTCG objects for each namespace, useful for
- * generating multiple token files.
- *
- * @param tokensByNamespace - Map of namespace to Token[]
- * @param options - Conversion options
- * @returns Map of namespace to DTCG-formatted object
- *
- * @example
- * ```typescript
- * import { generateBaseSystem, toDTCGByNamespace } from '@rafters/design-tokens';
- *
- * const result = generateBaseSystem();
- * const dtcgFiles = toDTCGByNamespace(result.byNamespace);
- *
- * // Write each namespace to separate file
- * for (const [namespace, dtcg] of dtcgFiles) {
- *   fs.writeFileSync(`tokens/${namespace}.json`, JSON.stringify(dtcg, null, 2));
- * }
- * ```
- */
-export function toDTCGByNamespace(
-  tokensByNamespace: Map<string, Token[]>,
-  options: ToDTCGOptions = {},
-): Map<string, DTCGFile> {
-  const result = new Map<string, DTCGFile>();
-
-  for (const [namespace, tokens] of tokensByNamespace) {
-    result.set(namespace, toDTCG(tokens, options));
-  }
-
-  return result;
-}
