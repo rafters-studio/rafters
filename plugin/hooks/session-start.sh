@@ -1,21 +1,17 @@
 #!/bin/bash
 # Rafters SessionStart hook: inject design tool requirements
+LIB="$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+if ! source "$LIB" || ! declare -F find_rafters_root >/dev/null; then
+  echo "rafters session-start hook: cannot load $LIB -- context injection skipped" >&2
+  exit 1
+fi
+
 INPUT=$(cat)
 CWD=$(echo "$INPUT" | jq -r '.cwd // empty')
 
-if [ -z "$CWD" ]; then
-  exit 0
-fi
-
-# Check if this is a site/frontend project (has .astro files or src/pages/)
-HAS_FRONTEND=""
-if [ -d "$CWD/src/pages" ] || [ -d "$CWD/src/components" ] || ls "$CWD"/*.astro >/dev/null 2>&1; then
-  HAS_FRONTEND="true"
-fi
-
-if [ -z "$HAS_FRONTEND" ]; then
-  exit 0
-fi
+# Only inject in projects that actually use rafters. Walk up from CWD for
+# the .rafters/config.rafters.json marker; exit silently if not found.
+find_rafters_root "$CWD" >/dev/null || exit 0
 
 jq -n --arg ctx "[Rafters] You are working in a Rafters-powered frontend project. MANDATORY rules:
 

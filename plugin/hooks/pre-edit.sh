@@ -3,9 +3,22 @@
 # Enforces: classy (not cn/twMerge), no arbitrary Tailwind, Container/Grid layout,
 # no raw spacing, no wrapper divs, no var() in components
 
+LIB="$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+if ! source "$LIB" || ! declare -F find_rafters_root >/dev/null; then
+  echo "rafters pre-edit hook: cannot load $LIB -- enforcement skipped" >&2
+  exit 1
+fi
+
 INPUT=$(cat)
 FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')
 TOOL_NAME=$(echo "$INPUT" | jq -r '.tool_name // empty')
+
+# Only enforce in projects that actually use rafters. If the edited file
+# isn't inside a rafters project, exit silently so non-rafters sites aren't
+# blocked. (Empty FILE_PATH falls through to the registry checks below.)
+if [ -n "$FILE_PATH" ] && ! find_rafters_root "$(dirname "$FILE_PATH")" >/dev/null; then
+  exit 0
+fi
 
 # REGISTRY FILES ARE READ-ONLY
 # Files installed by `rafters add` must never be edited in consumer sites.
