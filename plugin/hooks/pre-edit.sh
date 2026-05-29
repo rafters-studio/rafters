@@ -3,7 +3,11 @@
 # Enforces: classy (not cn/twMerge), no arbitrary Tailwind, Container/Grid layout,
 # no raw spacing, no wrapper divs, no var() in components
 
-source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+LIB="$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+if ! source "$LIB" || ! declare -F find_rafters_root >/dev/null; then
+  echo "rafters pre-edit hook: cannot load $LIB -- enforcement skipped" >&2
+  exit 1
+fi
 
 INPUT=$(cat)
 FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')

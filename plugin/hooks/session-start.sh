@@ -1,6 +1,10 @@
 #!/bin/bash
 # Rafters SessionStart hook: inject design tool requirements
-source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+LIB="$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+if ! source "$LIB" || ! declare -F find_rafters_root >/dev/null; then
+  echo "rafters session-start hook: cannot load $LIB -- context injection skipped" >&2
+  exit 1
+fi
 
 INPUT=$(cat)
 CWD=$(echo "$INPUT" | jq -r '.cwd // empty')
