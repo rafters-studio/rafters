@@ -3,31 +3,17 @@
 # Enforces: classy (not cn/twMerge), no arbitrary Tailwind, Container/Grid layout,
 # no raw spacing, no wrapper divs, no var() in components
 
+source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+
 INPUT=$(cat)
 FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')
 TOOL_NAME=$(echo "$INPUT" | jq -r '.tool_name // empty')
 
-# Only enforce in projects that actually use rafters. Walk up from the
-# file's directory looking for .rafters/config.rafters.json (the marker
-# the CLI's discoverProjectRoot uses). If absent, this isn't a rafters
-# project -- exit silently so non-rafters sites aren't blocked.
-if [ -n "$FILE_PATH" ]; then
-  dir=$(dirname "$FILE_PATH")
-  found=""
-  while [ -n "$dir" ] && [ "$dir" != "/" ]; do
-    if [ -f "$dir/.rafters/config.rafters.json" ]; then
-      found="1"
-      break
-    fi
-    parent=$(dirname "$dir")
-    if [ "$parent" = "$dir" ]; then
-      break
-    fi
-    dir="$parent"
-  done
-  if [ -z "$found" ]; then
-    exit 0
-  fi
+# Only enforce in projects that actually use rafters. If the edited file
+# isn't inside a rafters project, exit silently so non-rafters sites aren't
+# blocked. (Empty FILE_PATH falls through to the registry checks below.)
+if [ -n "$FILE_PATH" ] && ! find_rafters_root "$(dirname "$FILE_PATH")" >/dev/null; then
+  exit 0
 fi
 
 # REGISTRY FILES ARE READ-ONLY

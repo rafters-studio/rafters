@@ -1,29 +1,13 @@
 #!/bin/bash
 # Rafters SessionStart hook: inject design tool requirements
+source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+
 INPUT=$(cat)
 CWD=$(echo "$INPUT" | jq -r '.cwd // empty')
 
-if [ -z "$CWD" ]; then
-  exit 0
-fi
-
-# Only enforce in projects that actually use rafters. The marker is
-# .rafters/config.rafters.json, matching the CLI's discoverProjectRoot.
-# Walk up from CWD looking for it; exit silently if not found.
-dir="$CWD"
-while [ -n "$dir" ] && [ "$dir" != "/" ]; do
-  if [ -f "$dir/.rafters/config.rafters.json" ]; then
-    break
-  fi
-  parent=$(dirname "$dir")
-  if [ "$parent" = "$dir" ]; then
-    exit 0
-  fi
-  dir="$parent"
-done
-if [ ! -f "$dir/.rafters/config.rafters.json" ]; then
-  exit 0
-fi
+# Only inject in projects that actually use rafters. Walk up from CWD for
+# the .rafters/config.rafters.json marker; exit silently if not found.
+find_rafters_root "$CWD" >/dev/null || exit 0
 
 jq -n --arg ctx "[Rafters] You are working in a Rafters-powered frontend project. MANDATORY rules:
 
