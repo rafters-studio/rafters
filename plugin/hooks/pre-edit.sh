@@ -7,6 +7,29 @@ INPUT=$(cat)
 FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')
 TOOL_NAME=$(echo "$INPUT" | jq -r '.tool_name // empty')
 
+# Only enforce in projects that actually use rafters. Walk up from the
+# file's directory looking for .rafters/config.rafters.json (the marker
+# the CLI's discoverProjectRoot uses). If absent, this isn't a rafters
+# project -- exit silently so non-rafters sites aren't blocked.
+if [ -n "$FILE_PATH" ]; then
+  dir=$(dirname "$FILE_PATH")
+  found=""
+  while [ -n "$dir" ] && [ "$dir" != "/" ]; do
+    if [ -f "$dir/.rafters/config.rafters.json" ]; then
+      found="1"
+      break
+    fi
+    parent=$(dirname "$dir")
+    if [ "$parent" = "$dir" ]; then
+      break
+    fi
+    dir="$parent"
+  done
+  if [ -z "$found" ]; then
+    exit 0
+  fi
+fi
+
 # REGISTRY FILES ARE READ-ONLY
 # Files installed by `rafters add` must never be edited in consumer sites.
 # Fix your consuming code, or file a bug upstream on rafters.

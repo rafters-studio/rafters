@@ -7,13 +7,21 @@ if [ -z "$CWD" ]; then
   exit 0
 fi
 
-# Check if this is a site/frontend project (has .astro files or src/pages/)
-HAS_FRONTEND=""
-if [ -d "$CWD/src/pages" ] || [ -d "$CWD/src/components" ] || ls "$CWD"/*.astro >/dev/null 2>&1; then
-  HAS_FRONTEND="true"
-fi
-
-if [ -z "$HAS_FRONTEND" ]; then
+# Only enforce in projects that actually use rafters. The marker is
+# .rafters/config.rafters.json, matching the CLI's discoverProjectRoot.
+# Walk up from CWD looking for it; exit silently if not found.
+dir="$CWD"
+while [ -n "$dir" ] && [ "$dir" != "/" ]; do
+  if [ -f "$dir/.rafters/config.rafters.json" ]; then
+    break
+  fi
+  parent=$(dirname "$dir")
+  if [ "$parent" = "$dir" ]; then
+    exit 0
+  fi
+  dir="$parent"
+done
+if [ ! -f "$dir/.rafters/config.rafters.json" ]; then
   exit 0
 fi
 
