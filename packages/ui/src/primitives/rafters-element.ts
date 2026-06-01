@@ -32,6 +32,22 @@
  */
 let sharedTokenSheet: CSSStyleSheet | null = null;
 
+/**
+ * Shared constructable stylesheet for the compiled utility classes
+ * (the design system's Tailwind output). Created once, adopted by every
+ * RaftersElement instance, so inner shadow markup can carry the SAME
+ * utility class strings the React/Astro targets use instead of a
+ * per-component hand-written CSS map.
+ *
+ * Token *values* reach the shadow root by custom-property inheritance from
+ * the host `:root`; utility *rules* do not inherit, so the rule set must be
+ * physically present in each root. This shared sheet is that presence --
+ * parsed once, referenced by all roots.
+ *
+ * Set via RaftersElement.setUtilityCSS() at app initialization.
+ */
+let sharedUtilitySheet: CSSStyleSheet | null = null;
+
 export class RaftersElement extends HTMLElement {
   /**
    * Component-specific CSS. Override in subclasses.
@@ -57,6 +73,21 @@ export class RaftersElement extends HTMLElement {
     sharedTokenSheet.replaceSync(css);
   }
 
+  /**
+   * Set the shared utility stylesheet that all components adopt.
+   * Call once at app initialization with the design system's compiled
+   * Tailwind output. Without it, components that style via utility classes
+   * render unstyled (the class strings are present but no rules match).
+   *
+   * ```typescript
+   * RaftersElement.setUtilityCSS(compiledRaftersCss);
+   * ```
+   */
+  static setUtilityCSS(css: string): void {
+    sharedUtilitySheet = new CSSStyleSheet();
+    sharedUtilitySheet.replaceSync(css);
+  }
+
   private _componentSheet: CSSStyleSheet | null = null;
 
   constructor() {
@@ -69,6 +100,10 @@ export class RaftersElement extends HTMLElement {
 
     if (sharedTokenSheet) {
       sheets.push(sharedTokenSheet);
+    }
+
+    if (sharedUtilitySheet) {
+      sheets.push(sharedUtilitySheet);
     }
 
     const ctor = this.constructor as typeof RaftersElement;
