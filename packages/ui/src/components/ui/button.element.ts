@@ -1,9 +1,16 @@
 /**
  * <rafters-button> -- Web Component button primitive.
  *
- * Mirrors the semantics of button.tsx (variant, size, disabled, type) using
- * shadow-DOM-scoped CSS composed via classy-wc. Auto-registers on import and
- * is idempotent against double-define.
+ * Mirrors the semantics of button.tsx (variant, size, disabled, type). The
+ * inner <button> carries the SAME utility class strings the React and Astro
+ * targets use -- imported from button.classes.ts -- rather than a parallel
+ * hand-written CSS map. Visual presentation comes from the shared compiled
+ * utility stylesheet adopted by RaftersElement (see setUtilityCSS) plus the
+ * token custom properties inherited from the host :root.
+ *
+ * The only shadow-scoped CSS this component owns is the structural :host
+ * display shim, which has no React/Astro equivalent because there the
+ * <button> IS the outer box; here the host wraps it.
  *
  * Attributes:
  *  - variant: 'default' | 'primary' | 'secondary' | 'destructive' | 'success'
@@ -14,16 +21,36 @@
  *  - disabled: boolean (presence-based)
  *  - type:    'button' | 'submit' | 'reset'  (default 'button')
  *
- * The inner <button> is plain shadow-DOM markup -- NO Tailwind classes.
- * Styling comes exclusively from buttonStylesheet(...) adopted as the
- * per-instance stylesheet.
- *
  * Click events bubble naturally from the inner <button> to the host.
  * Default type MUST be 'button' to prevent accidental form submission.
  */
 
 import { RaftersElement } from '../../primitives/rafters-element';
-import { type ButtonSize, type ButtonVariant, buttonStylesheet } from './button.styles';
+import { buttonBaseClasses, buttonSizeClasses, buttonVariantClasses } from './button.classes';
+
+export type ButtonVariant =
+  | 'default'
+  | 'primary'
+  | 'secondary'
+  | 'destructive'
+  | 'success'
+  | 'warning'
+  | 'info'
+  | 'muted'
+  | 'accent'
+  | 'outline'
+  | 'ghost'
+  | 'link';
+
+export type ButtonSize =
+  | 'default'
+  | 'xs'
+  | 'sm'
+  | 'lg'
+  | 'icon'
+  | 'icon-xs'
+  | 'icon-sm'
+  | 'icon-lg';
 
 export type ButtonType = 'button' | 'submit' | 'reset';
 
@@ -78,60 +105,39 @@ function parseType(value: string | null): ButtonType {
   return 'button';
 }
 
+/**
+ * Compose the inner button's class string from the shared class maps.
+ * Exported so tests (and any future tooling) can assert the WC renders the
+ * exact same composition the Astro target does -- the parity guarantee.
+ */
+export function composeButtonClasses(variant: ButtonVariant, size: ButtonSize): string {
+  return `${buttonBaseClasses} ${buttonVariantClasses[variant]} ${buttonSizeClasses[size]}`;
+}
+
 export class RaftersButton extends RaftersElement {
   static observedAttributes: ReadonlyArray<string> = OBSERVED_ATTRIBUTES;
 
-  /** Per-instance stylesheet rebuilt on every attribute change. */
-  private _instanceSheet: CSSStyleSheet | null = null;
-
-  override connectedCallback(): void {
-    if (!this.shadowRoot) return;
-    this._instanceSheet = new CSSStyleSheet();
-    this._instanceSheet.replaceSync(this.composeCss());
-    this.shadowRoot.adoptedStyleSheets = [this._instanceSheet];
-    this.update();
-  }
-
-  override attributeChangedCallback(
-    _name: string,
-    oldValue: string | null,
-    newValue: string | null,
-  ): void {
-    if (oldValue === newValue) return;
-    if (this._instanceSheet) {
-      this._instanceSheet.replaceSync(this.composeCss());
-    }
-    this.update();
-  }
-
-  override disconnectedCallback(): void {
-    this._instanceSheet = null;
-  }
-
   /**
-   * Build the CSS string for the current attribute values.
+   * The only component-owned CSS: the structural host-display shim. Custom
+   * elements default to `display: inline`; the inner button needs the host
+   * to behave as the outer inline-flex box the React/Astro element is.
    */
-  private composeCss(): string {
-    return buttonStylesheet({
-      variant: parseVariant(this.getAttribute('variant')),
-      size: parseSize(this.getAttribute('size')),
-      disabled: this.hasAttribute('disabled'),
-    });
-  }
+  static override styles = ':host { display: inline-flex; }';
 
   /**
    * Render the inner semantic <button> with a single default <slot>.
-   * DOM APIs only -- never innerHTML. The inner button carries NO classes
-   * other than `.button` so visual state comes exclusively from the
-   * per-instance stylesheet.
+   * DOM APIs only -- never innerHTML. The inner button carries the shared
+   * utility classes; presentation resolves from the adopted utility sheet.
    */
   override render(): Node {
     const inner = document.createElement('button');
-    inner.className = 'button';
+    inner.className = composeButtonClasses(
+      parseVariant(this.getAttribute('variant')),
+      parseSize(this.getAttribute('size')),
+    );
     inner.setAttribute('type', parseType(this.getAttribute('type')));
     inner.disabled = this.hasAttribute('disabled');
-    const slot = document.createElement('slot');
-    inner.appendChild(slot);
+    inner.appendChild(document.createElement('slot'));
     return inner;
   }
 }

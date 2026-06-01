@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import './button.element';
-import { RaftersButton } from './button.element';
+import { buttonBaseClasses, buttonSizeClasses, buttonVariantClasses } from './button.classes';
+import { composeButtonClasses, RaftersButton } from './button.element';
 
 afterEach(() => {
   while (document.body.firstChild) {
@@ -13,17 +14,6 @@ function mount(attrs: Record<string, string> = {}): HTMLElement {
   for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
   document.body.appendChild(el);
   return el;
-}
-
-function collectCss(el: HTMLElement): string {
-  const sheets = el.shadowRoot?.adoptedStyleSheets ?? [];
-  return sheets
-    .map((s) =>
-      Array.from(s.cssRules)
-        .map((r) => r.cssText)
-        .join('\n'),
-    )
-    .join('\n');
 }
 
 describe('rafters-button', () => {
@@ -40,12 +30,6 @@ describe('rafters-button', () => {
     const inner = el.shadowRoot?.querySelector('button');
     expect(inner).toBeTruthy();
     expect(inner?.getAttribute('type')).toBe('button');
-  });
-
-  it('inner <button> carries only the .button class (no Tailwind)', () => {
-    const el = mount();
-    const inner = el.shadowRoot?.querySelector('button');
-    expect(inner?.className).toBe('button');
   });
 
   it('reflects disabled to the inner button', () => {
@@ -104,29 +88,37 @@ describe('rafters-button', () => {
     expect(slot).toBeTruthy();
   });
 
-  it('updates stylesheet when variant attribute changes', () => {
+  // --- Class-string parity: the WC must apply the exact same utility classes
+  // --- the Astro target consumes from button.classes.ts. This drift guard
+  // --- replaces the old per-instance-CSS assertions.
+
+  it('inner button applies base + default variant + default size classes', () => {
+    const el = mount();
+    const inner = el.shadowRoot?.querySelector('button');
+    expect(inner?.className).toBe(composeButtonClasses('default', 'default'));
+    expect(inner?.className).toContain(buttonBaseClasses);
+    expect(inner?.className).toContain(buttonVariantClasses.default);
+    expect(inner?.className).toContain(buttonSizeClasses.default);
+  });
+
+  it('applies the variant class string when variant attribute changes', () => {
     const el = mount();
     el.setAttribute('variant', 'destructive');
-    const css = collectCss(el);
-    expect(css).toContain('var(--color-destructive)');
+    const inner = el.shadowRoot?.querySelector('button');
+    expect(inner?.className).toContain(buttonVariantClasses.destructive);
   });
 
-  it('updates stylesheet when size attribute changes', () => {
+  it('applies the size class string when size attribute changes', () => {
     const el = mount();
     el.setAttribute('size', 'lg');
-    const css = collectCss(el);
-    expect(css).toContain('height: 3rem');
+    const inner = el.shadowRoot?.querySelector('button');
+    expect(inner?.className).toContain(buttonSizeClasses.lg);
   });
 
-  it('updates stylesheet when disabled is toggled', () => {
-    const el = mount();
-    expect(collectCss(el)).not.toMatch(/\.button\s*\{[^}]*opacity:\s*0\.5/);
-    el.setAttribute('disabled', '');
-    expect(collectCss(el)).toMatch(/opacity:\s*0\.5/);
-    el.removeAttribute('disabled');
-    const after = collectCss(el);
-    // :disabled rule still emits disabled styles, but the base rule should not.
-    expect(after).toMatch(/\.button:disabled\s*\{[^}]*opacity:\s*0\.5/);
+  it('composeButtonClasses matches the Astro composition order (base, variant, size)', () => {
+    expect(composeButtonClasses('secondary', 'sm')).toBe(
+      `${buttonBaseClasses} ${buttonVariantClasses.secondary} ${buttonSizeClasses.sm}`,
+    );
   });
 
   it('rebuilds inner button type when type attribute changes', () => {
@@ -148,20 +140,15 @@ describe('rafters-button', () => {
     expect(customElements.get('rafters-button')).toBe(RaftersButton);
   });
 
-  it('shadow root adopts the per-instance stylesheet', () => {
+  it('adopts at least the host-display shim stylesheet', () => {
     const el = mount();
     const sheets = el.shadowRoot?.adoptedStyleSheets ?? [];
-    expect(sheets.length).toBeGreaterThanOrEqual(1);
+    const css = sheets.flatMap((s) => Array.from(s.cssRules).map((r) => r.cssText)).join('\n');
+    expect(css).toContain(':host');
+    expect(css).toContain('inline-flex');
   });
 
-  it('stylesheet uses only --motion-duration / --motion-ease tokens', () => {
-    const el = mount();
-    const css = collectCss(el);
-    expect(css).not.toMatch(/var\(--duration-/);
-    expect(css).not.toMatch(/var\(--ease-/);
-  });
-
-  it('source contains no direct var() literals in either .ts file', async () => {
+  it('source contains no direct var() literals', async () => {
     const fs = await import('node:fs/promises');
     const path = await import('node:path');
     const elementSource = await fs.readFile(path.resolve(__dirname, 'button.element.ts'), 'utf-8');
