@@ -129,8 +129,12 @@ const MARKDOWN_SHORTCUTS: MarkdownShortcut[] = [
 export function domBlockContent(element: HTMLElement): string | InlineContent[] {
   const segments = serializeElement(element);
   if (segments.length === 0) return '';
-  const only = segments.length === 1 ? segments[0] : undefined;
-  if (only && only.marks === undefined && only.href === undefined) return only.text;
+  // When no segment carries a mark, collapse to a plain string -- including the
+  // multi-text-node case, since contenteditable editing routinely leaves a
+  // block fragmented into several adjacent (unmarked) text nodes.
+  if (segments.every((s) => s.marks === undefined && s.href === undefined)) {
+    return segments.map((s) => s.text).join('');
+  }
   return segments;
 }
 

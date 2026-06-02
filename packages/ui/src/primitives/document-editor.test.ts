@@ -31,4 +31,14 @@ describe('domBlockContent', () => {
   it('returns an empty string for an empty element', () => {
     expect(domBlockContent(blockEl(''))).toBe('');
   });
+
+  it('joins fragmented (multi-text-node) unformatted text into one string', () => {
+    // contenteditable editing leaves blocks split into several adjacent text
+    // nodes; an unmarked block must still reconcile to a plain string.
+    const el = document.createElement('p');
+    el.setAttribute('data-block-id', 'b1');
+    el.appendChild(document.createTextNode('Hello'));
+    el.appendChild(document.createTextNode(' world'));
+    expect(domBlockContent(el)).toBe('Hello world');
+  });
 });
