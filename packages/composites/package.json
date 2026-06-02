@@ -14,9 +14,6 @@
   "peerDependencies": {
     "zod": "catalog:"
   },
-  "dependencies": {
-    "@rafters/ui": "workspace:*"
-  },
   "devDependencies": {
     "@rafters/shared": "workspace:*",
     "@types/node": "catalog:",

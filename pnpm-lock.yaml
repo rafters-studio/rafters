@@ -433,10 +433,6 @@ importers:
         version: 3.0.0(zod@4.1.12)
 
   packages/composites:
-    dependencies:
-      '@rafters/ui':
-        specifier: workspace:*
-        version: link:../ui
     devDependencies:
       '@rafters/shared':
         specifier: workspace:*

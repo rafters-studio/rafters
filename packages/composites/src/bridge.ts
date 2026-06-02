@@ -7,7 +7,6 @@
  * into CompositeFile format.
  */
 
-import type { BlockPaletteItem } from '@rafters/ui/primitives/block-palette';
 import type {
   AppliedRule,
   CompositeBlock,
@@ -15,6 +14,17 @@ import type {
   CompositeFile,
   UsagePatterns,
 } from './manifest';
+
+/**
+ * Editor sidebar palette item. Defined locally (structurally identical to the
+ * UI primitive's BlockPaletteItem) so @rafters/composites depends only on zod.
+ */
+export interface BlockPaletteItem {
+  id: string;
+  label: string;
+  category: string;
+  keywords?: string[];
+}
 
 /** A block ready for insertion into the editor canvas (same shape as CompositeBlock). */
 export type InstantiatedBlock = CompositeBlock;

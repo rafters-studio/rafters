@@ -5,8 +5,36 @@
  * O(1) lookup by ID, category grouping, and fuzzy search.
  */
 
-import { fuzzyScore } from '@rafters/ui/primitives/typeahead';
 import type { CompositeCategory, CompositeFile } from './manifest';
+
+/**
+ * Subsequence fuzzy score: +1 per matched char, +2 for a consecutive match,
+ * +3 for a start-of-word match; 0 unless every query char is found. Inlined
+ * from the typeahead primitive so @rafters/composites depends only on zod.
+ */
+function fuzzyScore(query: string, target: string): number {
+  if (query.length === 0) return 1;
+  if (query.length > target.length) return 0;
+
+  const q = query.toLowerCase();
+  const t = target.toLowerCase();
+
+  let score = 0;
+  let qi = 0;
+  let prevMatchIndex = -2; // -2 so the first match is never "consecutive"
+
+  for (let ti = 0; ti < t.length && qi < q.length; ti++) {
+    if (t[ti] === q[qi]) {
+      score += 1;
+      if (ti === prevMatchIndex + 1) score += 2;
+      if (ti === 0 || t[ti - 1] === ' ' || t[ti - 1] === '-') score += 3;
+      prevMatchIndex = ti;
+      qi++;
+    }
+  }
+
+  return qi === q.length ? score : 0;
+}
 
 const composites = new Map<string, CompositeFile>();
 
