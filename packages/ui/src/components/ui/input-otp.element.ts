@@ -3,8 +3,11 @@
  * and verification-code segmented input.
  *
  * Mirrors the semantics of input-otp.tsx (segmented display, paste, auto-
- * advance, keyboard navigation) using shadow-DOM-scoped CSS composed via
- * classy-wc. Auto-registers on import and is idempotent against double-define.
+ * advance, keyboard navigation). The inner segments carry the SAME utility
+ * class strings the React/Astro targets use, imported from input-otp.classes.ts;
+ * presentation resolves from the shared compiled utility sheet adopted by
+ * RaftersElement (setUtilityCSS). Auto-registers on import and is idempotent
+ * against double-define.
  *
  * Form-associated: participates in <form> submission, validation, reset,
  * disabled propagation, and state restoration via ElementInternals. The

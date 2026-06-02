@@ -2,9 +2,11 @@
  * <rafters-textarea> -- Form-associated Web Component for multi-line text.
  *
  * Mirrors the semantics of textarea.tsx (variant, size, resize, native
- * textarea attributes) using shadow-DOM-scoped CSS composed via
- * classy-wc. Auto-registers on import and is idempotent against
- * double-define.
+ * textarea attributes). The inner textarea carries the SAME utility class
+ * strings the React/Astro targets use, imported from textarea.classes.ts;
+ * presentation resolves from the shared compiled utility sheet adopted by
+ * RaftersElement (setUtilityCSS). Auto-registers on import and is idempotent
+ * against double-define.
  *
  * Form-associated: participates in <form> submission, validation,
  * reset, disabled propagation, and state restoration via
@@ -114,14 +116,14 @@ function parseResize(value: string | null): TextareaResize {
 }
 
 function parseVariant(value: string | null): TextareaVariant {
-  if (value && value in textareaVariantClasses) {
+  if (value && Object.hasOwn(textareaVariantClasses, value)) {
     return value as TextareaVariant;
   }
   return 'default';
 }
 
 function parseSize(value: string | null): TextareaSize {
-  if (value && value in textareaSizeClasses) {
+  if (value && Object.hasOwn(textareaSizeClasses, value)) {
     return value as TextareaSize;
   }
   return 'default';

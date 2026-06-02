@@ -76,14 +76,14 @@ function parseType(value: string | null): InputType {
 }
 
 function parseVariant(value: string | null): InputVariant {
-  if (value && value in inputVariantClasses) {
+  if (value && Object.hasOwn(inputVariantClasses, value)) {
     return value as InputVariant;
   }
   return 'default';
 }
 
 function parseSize(value: string | null): InputSize {
-  if (value && value in inputSizeClasses) {
+  if (value && Object.hasOwn(inputSizeClasses, value)) {
     return value as InputSize;
   }
   return 'default';

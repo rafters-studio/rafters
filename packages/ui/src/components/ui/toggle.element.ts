@@ -56,14 +56,14 @@ const OBSERVED_ATTRIBUTES: ReadonlyArray<string> = [
 ] as const;
 
 function parseVariant(value: string | null): ToggleVariant {
-  if (value && value in toggleVariantClasses) {
+  if (value && Object.hasOwn(toggleVariantClasses, value)) {
     return value as ToggleVariant;
   }
   return 'default';
 }
 
 function parseSize(value: string | null): ToggleSize {
-  if (value && value in toggleSizeClasses) {
+  if (value && Object.hasOwn(toggleSizeClasses, value)) {
     return value as ToggleSize;
   }
   return 'default';
