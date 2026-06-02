@@ -15,6 +15,7 @@
  */
 
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { textareaSizeClasses, textareaVariantClasses } from './textarea.classes';
 
 interface PolyfilledInternals {
   _value: string;
@@ -177,13 +178,14 @@ describe('rafters-textarea', () => {
     expect(el.shadowRoot?.mode).toBe('open');
   });
 
-  it('renders an inner <textarea class="textarea"> in the shadow root', async () => {
+  it('renders an inner textarea carrying the composed utility classes', async () => {
     const RaftersTextarea = await loadElement();
+    const { composeTextareaClasses } = await import('./textarea.element');
     const el = document.createElement('rafters-textarea') as InstanceType<typeof RaftersTextarea>;
     document.body.append(el);
     const inner = el.shadowRoot?.querySelector('textarea');
     expect(inner).toBeTruthy();
-    expect(inner?.classList.contains('textarea')).toBe(true);
+    expect(inner?.className).toBe(composeTextareaClasses('default', 'default'));
   });
 
   it('exposes ElementInternals-backed validity surface', async () => {
@@ -342,61 +344,34 @@ describe('rafters-textarea', () => {
     expect(() => document.body.append(el)).not.toThrow();
   });
 
-  it('rebuilds the per-instance stylesheet when variant changes', async () => {
+  it('recomposes the inner class string when variant changes', async () => {
     const RaftersTextarea = await loadElement();
     const el = document.createElement('rafters-textarea') as InstanceType<typeof RaftersTextarea>;
     document.body.append(el);
-    const collect = (): string => {
-      const sheets = el.shadowRoot?.adoptedStyleSheets ?? [];
-      return sheets
-        .map((s) =>
-          Array.from(s.cssRules)
-            .map((r) => r.cssText)
-            .join('\n'),
-        )
-        .join('\n');
-    };
-    expect(collect()).toContain('var(--color-primary)');
+    const innerClass = (): string => el.shadowRoot?.querySelector('textarea')?.className ?? '';
+    expect(innerClass()).toContain(textareaVariantClasses.default);
     el.setAttribute('variant', 'destructive');
-    expect(collect()).toContain('var(--color-destructive)');
+    expect(innerClass()).toContain(textareaVariantClasses.destructive);
   });
 
-  it('rebuilds the per-instance stylesheet when size changes', async () => {
+  it('recomposes the inner class string when size changes', async () => {
     const RaftersTextarea = await loadElement();
     const el = document.createElement('rafters-textarea') as InstanceType<typeof RaftersTextarea>;
     document.body.append(el);
-    const collect = (): string => {
-      const sheets = el.shadowRoot?.adoptedStyleSheets ?? [];
-      return sheets
-        .map((s) =>
-          Array.from(s.cssRules)
-            .map((r) => r.cssText)
-            .join('\n'),
-        )
-        .join('\n');
-    };
-    expect(collect()).toContain('min-height: 5rem');
+    const innerClass = (): string => el.shadowRoot?.querySelector('textarea')?.className ?? '';
+    expect(innerClass()).toContain(textareaSizeClasses.default);
     el.setAttribute('size', 'lg');
-    expect(collect()).toContain('min-height: 7rem');
+    expect(innerClass()).toContain(textareaSizeClasses.lg);
   });
 
-  it('rebuilds the per-instance stylesheet when resize changes', async () => {
+  it('applies the resize attribute as an inline CSS resize property', async () => {
     const RaftersTextarea = await loadElement();
     const el = document.createElement('rafters-textarea') as InstanceType<typeof RaftersTextarea>;
     document.body.append(el);
-    const collect = (): string => {
-      const sheets = el.shadowRoot?.adoptedStyleSheets ?? [];
-      return sheets
-        .map((s) =>
-          Array.from(s.cssRules)
-            .map((r) => r.cssText)
-            .join('\n'),
-        )
-        .join('\n');
-    };
-    expect(collect()).toContain('resize: none');
+    const inner = el.shadowRoot?.querySelector('textarea');
+    expect(inner?.style.resize).toBe('none');
     el.setAttribute('resize', 'vertical');
-    expect(collect()).toContain('resize: vertical');
+    expect(inner?.style.resize).toBe('vertical');
   });
 
   it('submits with name=value inside a <form>', async () => {

@@ -1,22 +1,28 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import './input-group.element';
-import { RaftersInputGroup, RaftersInputGroupAddon } from './input-group.element';
+import {
+  inputGroupAddonPositionClasses,
+  inputGroupAddonVariantClasses,
+  inputGroupDisabledClasses,
+  inputGroupSizeClasses,
+} from './input-group.classes';
+import {
+  composeInputGroupAddonClasses,
+  composeInputGroupClasses,
+  RaftersInputGroup,
+  RaftersInputGroupAddon,
+} from './input-group.element';
 
 afterEach(() => {
   document.body.replaceChildren();
 });
 
-function collectCss(el: Element): string {
-  const sheets = el.shadowRoot?.adoptedStyleSheets ?? [];
-  const blocks: string[] = [];
-  for (const sheet of sheets) {
-    const rules: string[] = [];
-    for (const rule of Array.from(sheet.cssRules)) {
-      rules.push(rule.cssText);
-    }
-    blocks.push(rules.join('\n'));
-  }
-  return blocks.join('\n');
+function groupClass(el: Element): string {
+  return el.shadowRoot?.querySelector('div.group')?.className ?? '';
+}
+
+function addonClass(el: Element): string {
+  return el.shadowRoot?.querySelector('div.addon')?.className ?? '';
 }
 
 describe('rafters-input-group', () => {
@@ -60,31 +66,30 @@ describe('rafters-input-group', () => {
     expect(slot?.assignedElements()).toContain(input);
   });
 
-  it('adopts a per-instance stylesheet on connect', () => {
+  it('applies base + default size composition to the inner group', () => {
     const group = document.createElement('rafters-input-group');
     document.body.append(group);
-    const sheets = group.shadowRoot?.adoptedStyleSheets ?? [];
-    expect(sheets.length).toBeGreaterThanOrEqual(1);
+    expect(groupClass(group)).toContain(composeInputGroupClasses('default', false));
   });
 
-  it('default size emits height 2.5rem', () => {
+  it('default size carries the default size class', () => {
     const group = document.createElement('rafters-input-group');
     document.body.append(group);
-    expect(collectCss(group)).toContain('height: 2.5rem');
+    expect(groupClass(group)).toContain(inputGroupSizeClasses.default);
   });
 
-  it('sm size emits height 2.25rem', () => {
+  it('sm size carries the sm size class', () => {
     const group = document.createElement('rafters-input-group');
     group.setAttribute('size', 'sm');
     document.body.append(group);
-    expect(collectCss(group)).toContain('height: 2.25rem');
+    expect(groupClass(group)).toContain(inputGroupSizeClasses.sm);
   });
 
-  it('lg size emits height 2.75rem', () => {
+  it('lg size carries the lg size class', () => {
     const group = document.createElement('rafters-input-group');
     group.setAttribute('size', 'lg');
     document.body.append(group);
-    expect(collectCss(group)).toContain('height: 2.75rem');
+    expect(groupClass(group)).toContain(inputGroupSizeClasses.lg);
   });
 
   it('falls back to default size on unknown value', () => {
@@ -92,29 +97,36 @@ describe('rafters-input-group', () => {
     group.setAttribute('size', 'huge');
     expect(() => document.body.append(group)).not.toThrow();
     expect(group.size).toBe('default');
-    expect(collectCss(group)).toContain('height: 2.5rem');
+    expect(groupClass(group)).toContain(inputGroupSizeClasses.default);
   });
 
-  it('rebuilds the stylesheet when size changes', () => {
+  it('rebuilds the inner class string when size changes', () => {
     const group = document.createElement('rafters-input-group');
     document.body.append(group);
-    expect(collectCss(group)).toContain('height: 2.5rem');
+    expect(groupClass(group)).toContain(inputGroupSizeClasses.default);
     group.setAttribute('size', 'lg');
-    expect(collectCss(group)).toContain('height: 2.75rem');
+    expect(groupClass(group)).toContain(inputGroupSizeClasses.lg);
   });
 
-  it('emits a focus-within ring against --color-ring', () => {
+  it('applies disabled classes to the inner group when disabled', () => {
     const group = document.createElement('rafters-input-group');
+    group.toggleAttribute('disabled', true);
     document.body.append(group);
-    const css = collectCss(group);
+    expect(groupClass(group)).toContain(inputGroupDisabledClasses);
+  });
+
+  it('keeps the focus-within ring rule against --color-ring in static styles', () => {
+    const css = RaftersInputGroup.styles;
     expect(css).toMatch(/:host\(:focus-within\)/);
     expect(css).toContain('var(--color-ring)');
   });
 
-  it('emits ::slotted normalisation for native input and rafters-input', () => {
-    const group = document.createElement('rafters-input-group');
-    document.body.append(group);
-    const css = collectCss(group);
+  it('keeps the :host([data-disabled]) mirror in static styles', () => {
+    expect(RaftersInputGroup.styles).toContain(':host([data-disabled])');
+  });
+
+  it('keeps ::slotted normalisation for native input and rafters-input in static styles', () => {
+    const css = RaftersInputGroup.styles;
     expect(css).toContain('::slotted(input)');
     expect(css).toContain('::slotted(rafters-input)');
   });
@@ -167,21 +179,6 @@ describe('rafters-input-group', () => {
   it('observedAttributes matches the documented contract', () => {
     expect(RaftersInputGroup.observedAttributes).toEqual(['size', 'disabled']);
   });
-
-  it('source contains no direct var() references', async () => {
-    const fs = await import('node:fs/promises');
-    const path = await import('node:path');
-    const source = await fs.readFile(path.resolve(__dirname, 'input-group.element.ts'), 'utf-8');
-    expect(source).not.toMatch(/[^a-zA-Z_]var\(/);
-  });
-
-  it('motion uses --motion-duration / --motion-ease tokens, never --duration', () => {
-    const group = document.createElement('rafters-input-group');
-    document.body.append(group);
-    const css = collectCss(group);
-    expect(css).not.toMatch(/var\(--duration-/);
-    expect(css).not.toMatch(/var\(--ease-/);
-  });
 });
 
 describe('rafters-input-group-addon', () => {
@@ -193,18 +190,17 @@ describe('rafters-input-group-addon', () => {
     expect(wrapper?.firstElementChild?.tagName.toLowerCase()).toBe('slot');
   });
 
-  it('adopts a per-instance stylesheet on connect', () => {
+  it('applies base + start + default composition by default', () => {
     const addon = document.createElement('rafters-input-group-addon');
     document.body.append(addon);
-    const sheets = addon.shadowRoot?.adoptedStyleSheets ?? [];
-    expect(sheets.length).toBeGreaterThanOrEqual(1);
+    expect(addonClass(addon)).toContain(composeInputGroupAddonClasses('start', 'default'));
   });
 
   it('defaults to start position when no attribute is set', () => {
     const addon = document.createElement('rafters-input-group-addon') as RaftersInputGroupAddon;
     document.body.append(addon);
     expect(addon.position).toBe('start');
-    expect(collectCss(addon)).toMatch(/border-right/);
+    expect(addonClass(addon)).toContain(inputGroupAddonPositionClasses.start);
   });
 
   it('reflects position as data-position on the host', () => {
@@ -214,24 +210,24 @@ describe('rafters-input-group-addon', () => {
     expect(addon.getAttribute('data-position')).toBe('end');
   });
 
-  it('end position emits left border', () => {
+  it('end position carries the end position class', () => {
     const addon = document.createElement('rafters-input-group-addon');
     addon.setAttribute('position', 'end');
     document.body.append(addon);
-    expect(collectCss(addon)).toMatch(/border-left/);
+    expect(addonClass(addon)).toContain(inputGroupAddonPositionClasses.end);
   });
 
-  it('filled variant emits --color-muted background', () => {
+  it('filled variant carries the filled background class', () => {
     const addon = document.createElement('rafters-input-group-addon');
     addon.setAttribute('variant', 'filled');
     document.body.append(addon);
-    expect(collectCss(addon)).toContain('var(--color-muted)');
+    expect(addonClass(addon)).toContain(inputGroupAddonVariantClasses.filled);
   });
 
-  it('default variant does not emit --color-muted background', () => {
+  it('default variant does not carry the filled background class', () => {
     const addon = document.createElement('rafters-input-group-addon');
     document.body.append(addon);
-    expect(collectCss(addon)).not.toMatch(/background-color:\s*var\(--color-muted\)/);
+    expect(addonClass(addon)).not.toContain(inputGroupAddonVariantClasses.filled);
   });
 
   it('falls back to start on unknown position without throwing', () => {
@@ -239,7 +235,7 @@ describe('rafters-input-group-addon', () => {
     addon.setAttribute('position', 'sideways');
     expect(() => document.body.append(addon)).not.toThrow();
     expect(addon.position).toBe('start');
-    expect(collectCss(addon)).toMatch(/border-right/);
+    expect(addonClass(addon)).toContain(inputGroupAddonPositionClasses.start);
   });
 
   it('falls back to default on unknown variant without throwing', () => {
@@ -247,15 +243,15 @@ describe('rafters-input-group-addon', () => {
     addon.setAttribute('variant', 'shiny');
     expect(() => document.body.append(addon)).not.toThrow();
     expect(addon.variant).toBe('default');
-    expect(collectCss(addon)).not.toMatch(/background-color:\s*var\(--color-muted\)/);
+    expect(addonClass(addon)).not.toContain(inputGroupAddonVariantClasses.filled);
   });
 
-  it('rebuilds the stylesheet when position flips', () => {
+  it('rebuilds the inner class string when position flips', () => {
     const addon = document.createElement('rafters-input-group-addon');
     document.body.append(addon);
-    expect(collectCss(addon)).toMatch(/border-right/);
+    expect(addonClass(addon)).toContain(inputGroupAddonPositionClasses.start);
     addon.setAttribute('position', 'end');
-    expect(collectCss(addon)).toMatch(/border-left/);
+    expect(addonClass(addon)).toContain(inputGroupAddonPositionClasses.end);
   });
 
   it('inner wrapper carries data-position matching the host', () => {

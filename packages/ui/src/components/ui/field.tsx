@@ -41,6 +41,13 @@
  */
 import * as React from 'react';
 import classy from '../../primitives/classy';
+import {
+  fieldContainerClasses,
+  fieldDescriptionClasses,
+  fieldErrorClasses,
+  fieldLabelDisabledClasses,
+  fieldRequiredMarkerClasses,
+} from './field.classes';
 import { Label } from './label';
 
 export interface FieldProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -105,16 +112,14 @@ export const Field = React.forwardRef<HTMLDivElement, FieldProps>(
       });
     });
 
-    const baseClasses = 'flex flex-col gap-2';
-
-    const cls = classy(baseClasses, className);
+    const cls = classy(fieldContainerClasses, className);
 
     return (
       <div ref={ref} className={cls} {...props}>
-        <Label htmlFor={inputId} className={disabled ? 'opacity-50' : undefined}>
+        <Label htmlFor={inputId} className={disabled ? fieldLabelDisabledClasses : undefined}>
           {label}
           {required && (
-            <span className="text-destructive ml-1" aria-hidden="true">
+            <span className={fieldRequiredMarkerClasses} aria-hidden="true">
               *
             </span>
           )}
@@ -123,13 +128,13 @@ export const Field = React.forwardRef<HTMLDivElement, FieldProps>(
         {enhancedChildren}
 
         {description && !error && (
-          <p id={descriptionId} className="text-sm text-muted-foreground">
+          <p id={descriptionId} className={fieldDescriptionClasses}>
             {description}
           </p>
         )}
 
         {error && (
-          <p id={errorId} className="text-sm text-destructive" role="alert">
+          <p id={errorId} className={fieldErrorClasses} role="alert">
             {error}
           </p>
         )}

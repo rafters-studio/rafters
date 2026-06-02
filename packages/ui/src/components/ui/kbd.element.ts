@@ -2,50 +2,46 @@
  * <rafters-kbd> -- Web Component keyboard key indicator primitive.
  *
  * Framework-target for the Kbd component, parallel to kbd.tsx (React)
- * and kbd.astro (Astro). Consumes kbdStylesheet() from kbd.styles.ts
- * to guarantee visual parity across framework targets.
+ * and kbd.astro (Astro). The inner kbd carries the SAME utility class
+ * strings the React/Astro targets use -- imported from kbd.classes.ts --
+ * rather than a parallel hand-written CSS map. Presentation resolves from the
+ * shared compiled utility sheet adopted by RaftersElement (setUtilityCSS) plus
+ * the token custom properties inherited from the host :root.
  *
- * Shadow DOM structure:
- *   <kbd class="kbd"><slot></slot></kbd>
+ * The only shadow-scoped CSS this component owns is the structural :host
+ * display shim.
+ *
+ * Shadow DOM structure: an inner kbd carrying the base kbd utility classes,
+ * wrapping a default slot.
  *
  * No attributes -- the React target has no variants or sizes either.
  *
  * @cognitive-load 1/10 Simple visual indicator, no interaction required.
- * @accessibility Semantic <kbd> element preserved in the shadow root.
+ * @accessibility Semantic kbd element preserved in the shadow root.
  */
 
 import { RaftersElement } from '../../primitives/rafters-element';
-import { kbdStylesheet } from './kbd.styles';
+import { kbdBaseClasses } from './kbd.classes';
+
+/**
+ * Compose the inner kbd's class string from the shared class map. Exported so
+ * tests assert the WC renders the exact same composition the Astro target does
+ * -- the parity guarantee. Kbd has no variants or sizes, so this returns the
+ * base classes alone.
+ */
+export function composeKbdClasses(): string {
+  return kbdBaseClasses;
+}
 
 export class RaftersKbd extends RaftersElement {
+  static override styles = ':host { display: inline-flex; }';
+
   static readonly observedAttributes: ReadonlyArray<string> = [];
 
-  /** Per-instance stylesheet owned by this element. */
-  private _instanceSheet: CSSStyleSheet | null = null;
-
-  override connectedCallback(): void {
-    if (!this.shadowRoot) return;
-    this._instanceSheet = new CSSStyleSheet();
-    this._instanceSheet.replaceSync(kbdStylesheet());
-    this.shadowRoot.adoptedStyleSheets = [this._instanceSheet];
-    this.update();
-  }
-
-  override disconnectedCallback(): void {
-    this._instanceSheet = null;
-  }
-
-  /**
-   * Render a single semantic <kbd> with a default <slot>.
-   * DOM APIs only -- never innerHTML. The inner kbd carries only the
-   * `.kbd` class so visual state comes exclusively from the per-instance
-   * stylesheet.
-   */
   override render(): Node {
     const inner = document.createElement('kbd');
-    inner.className = 'kbd';
-    const slot = document.createElement('slot');
-    inner.appendChild(slot);
+    inner.className = composeKbdClasses();
+    inner.appendChild(document.createElement('slot'));
     return inner;
   }
 }

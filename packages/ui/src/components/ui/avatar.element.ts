@@ -1,85 +1,66 @@
 /**
- * <rafters-avatar> -- Web Component avatar primitive.
+ * <rafters-avatar> Web Component
  *
- * Mirrors the outer container semantics of avatar.tsx (React) and
- * avatar.astro (Astro) using shadow-DOM-scoped CSS composed via classy-wc.
- * Auto-registers on import and is idempotent against double-define.
+ * Framework-target for the Avatar component, parallel to avatar.tsx (React)
+ * and avatar.astro (Astro). The inner span carries the SAME utility class
+ * strings the React/Astro targets use -- imported from avatar.classes.ts --
+ * rather than a parallel hand-written CSS map. Presentation resolves from the
+ * shared compiled utility sheet adopted by RaftersElement (setUtilityCSS) plus
+ * the token custom properties inherited from the host :root.
  *
- * This issue scopes to the OUTER <rafters-avatar> only. The inner
- * <rafters-avatar-image> and <rafters-avatar-fallback> subcomponents require
- * image-load status coordination and are deferred to a follow-up.
+ * This issue scopes to the OUTER <rafters-avatar> only. The inner image and
+ * fallback subcomponents require image-load status coordination and are
+ * deferred to a follow-up.
+ *
+ * The only shadow-scoped CSS this component owns is the structural :host
+ * display shim.
+ *
+ * Shadow DOM structure: an inner span carrying the composed avatar utility
+ * classes, wrapping a default slot.
  *
  * Attributes:
- *  - size: 'xs' | 'sm' | 'md' | 'lg' | 'xl'  (default 'md')
+ *   size  xs | sm | md | lg | xl  (default 'md')
  *
- * The inner <span> is plain shadow-DOM markup -- NO Tailwind classes.
- * Styling comes exclusively from avatarStylesheet(...) adopted as the
- * per-instance stylesheet. Unknown size values fall back to 'md' silently
- * and NEVER throw.
+ * Unknown attribute values fall back to 'md' silently and NEVER throw.
  *
  * @cognitive-load 2/10
  * @accessibility Semantic generic span; slotted content remains in the light tree.
  */
 
 import { RaftersElement } from '../../primitives/rafters-element';
-import { type AvatarSize, avatarStylesheet, isAvatarSize } from './avatar.styles';
+import { avatarBaseClasses, avatarSizeClasses } from './avatar.classes';
+
+export type AvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+
+const AVATAR_SIZES: ReadonlyArray<AvatarSize> = ['xs', 'sm', 'md', 'lg', 'xl'];
 
 const OBSERVED_ATTRIBUTES: ReadonlyArray<string> = ['size'] as const;
 
 function parseSize(value: string | null): AvatarSize {
-  return isAvatarSize(value) ? value : 'md';
+  if (value && (AVATAR_SIZES as ReadonlyArray<string>).includes(value)) {
+    return value as AvatarSize;
+  }
+  return 'md';
+}
+
+/**
+ * Compose the inner span's class string from the shared class maps.
+ * Exported so tests assert the WC renders the exact same composition the
+ * Astro target does -- the parity guarantee.
+ */
+export function composeAvatarClasses(size: AvatarSize): string {
+  return `${avatarBaseClasses} ${avatarSizeClasses[size]}`;
 }
 
 export class RaftersAvatar extends RaftersElement {
-  static observedAttributes: ReadonlyArray<string> = OBSERVED_ATTRIBUTES;
+  static override styles = ':host { display: inline-flex; }';
 
-  /** Per-instance stylesheet rebuilt on every attribute change. */
-  private _instanceSheet: CSSStyleSheet | null = null;
+  static readonly observedAttributes: ReadonlyArray<string> = OBSERVED_ATTRIBUTES;
 
-  override connectedCallback(): void {
-    if (!this.shadowRoot) return;
-    this._instanceSheet = new CSSStyleSheet();
-    this._instanceSheet.replaceSync(this.composeCss());
-    this.shadowRoot.adoptedStyleSheets = [this._instanceSheet];
-    this.update();
-  }
-
-  override attributeChangedCallback(
-    _name: string,
-    oldValue: string | null,
-    newValue: string | null,
-  ): void {
-    if (oldValue === newValue) return;
-    if (this._instanceSheet) {
-      this._instanceSheet.replaceSync(this.composeCss());
-    }
-    this.update();
-  }
-
-  override disconnectedCallback(): void {
-    this._instanceSheet = null;
-  }
-
-  /**
-   * Build the CSS string for the current attribute values.
-   */
-  private composeCss(): string {
-    return avatarStylesheet({
-      size: parseSize(this.getAttribute('size')),
-    });
-  }
-
-  /**
-   * Render a single <span class="avatar"> containing a default <slot>.
-   * DOM APIs only -- never innerHTML. The inner span carries NO classes
-   * other than `.avatar` so visual state comes exclusively from the
-   * per-instance stylesheet.
-   */
   override render(): Node {
     const inner = document.createElement('span');
-    inner.className = 'avatar';
-    const slot = document.createElement('slot');
-    inner.appendChild(slot);
+    inner.className = composeAvatarClasses(parseSize(this.getAttribute('size')));
+    inner.appendChild(document.createElement('slot'));
     return inner;
   }
 }

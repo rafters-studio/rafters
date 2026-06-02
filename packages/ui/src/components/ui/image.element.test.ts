@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import './image.element';
-import { RaftersImage } from './image.element';
+import { imageAlignmentClasses, imageSizeClasses } from './image.classes';
+import { composeImageClasses, RaftersImage } from './image.element';
 
 afterEach(() => {
   while (document.body.firstChild) {
@@ -15,17 +16,8 @@ function mount(attrs: Record<string, string> = {}): HTMLElement {
   return el;
 }
 
-function adoptedCssText(el: Element): string {
-  const sheets = el.shadowRoot?.adoptedStyleSheets ?? [];
-  const blocks: string[] = [];
-  for (const sheet of sheets) {
-    const rules: string[] = [];
-    for (const rule of Array.from(sheet.cssRules)) {
-      rules.push(rule.cssText);
-    }
-    blocks.push(rules.join('\n'));
-  }
-  return blocks.join('\n');
+function figureClass(el: Element): string {
+  return el.shadowRoot?.querySelector('figure')?.className ?? '';
 }
 
 const SAMPLE_SRC = 'https://example.com/photo.jpg';
@@ -42,9 +34,9 @@ describe('<rafters-image>', () => {
     expect(customElements.get('rafters-image')).toBe(RaftersImage);
   });
 
-  it('renders a figure.image with an img child when src is set', () => {
+  it('renders a figure with an img child when src is set', () => {
     const el = mount({ src: SAMPLE_SRC, alt: 'A sunset' });
-    const figure = el.shadowRoot?.querySelector('figure.image');
+    const figure = el.shadowRoot?.querySelector('figure');
     expect(figure).not.toBeNull();
     const img = figure?.querySelector('img');
     expect(img).not.toBeNull();
@@ -54,7 +46,7 @@ describe('<rafters-image>', () => {
 
   it('renders an empty figure when src attribute is absent', () => {
     const el = mount();
-    const figure = el.shadowRoot?.querySelector('figure.image');
+    const figure = el.shadowRoot?.querySelector('figure');
     expect(figure).not.toBeNull();
     expect(figure?.querySelector('img')).toBeNull();
   });
@@ -69,43 +61,39 @@ describe('<rafters-image>', () => {
     expect(img?.getAttribute('alt')).toBe('');
   });
 
+  it('applies base + default full size + center alignment classes', () => {
+    const el = mount({ src: SAMPLE_SRC });
+    expect(figureClass(el)).toBe(composeImageClasses('full', 'center'));
+  });
+
   it('falls back to full size and center alignment for unknown values', () => {
     const el = mount({ src: SAMPLE_SRC, size: 'gigantic', alignment: 'diagonal' });
-    const css = adoptedCssText(el);
-    // full -> max-width: 100%
-    expect(css).toContain('max-width: 100%');
-    // center -> margin-left: auto; margin-right: auto (jsdom serialises to
-    // the `margin` shorthand "0px auto").
-    expect(css).toMatch(/margin:\s*0px\s+auto/);
+    const css = figureClass(el);
+    expect(css).toContain(imageSizeClasses.full);
+    expect(css).toContain(imageAlignmentClasses.center);
   });
 
   it('applies the requested size when valid', () => {
     const el = mount({ src: SAMPLE_SRC, size: 'md' });
-    expect(adoptedCssText(el)).toContain('max-width: 28rem');
+    expect(figureClass(el)).toContain(imageSizeClasses.md);
   });
 
   it('applies the requested alignment when valid', () => {
     const el = mount({ src: SAMPLE_SRC, alignment: 'left' });
-    const css = adoptedCssText(el);
-    // left -> margin-left: 0; margin-right: auto (jsdom shorthand
-    // "0px auto 0px 0px": top right bottom left).
-    expect(css).toMatch(/margin:\s*0px\s+auto\s+0px\s+0px/);
+    expect(figureClass(el)).toContain(imageAlignmentClasses.left);
   });
 
-  it('reflects size changes on the adopted stylesheet', () => {
+  it('reflects size changes on the inner class string', () => {
     const el = mount({ src: SAMPLE_SRC });
-    expect(adoptedCssText(el)).toContain('max-width: 100%');
+    expect(figureClass(el)).toContain(imageSizeClasses.full);
     el.setAttribute('size', 'lg');
-    expect(adoptedCssText(el)).toContain('max-width: 32rem');
+    expect(figureClass(el)).toContain(imageSizeClasses.lg);
   });
 
-  it('reflects alignment changes on the adopted stylesheet', () => {
+  it('reflects alignment changes on the inner class string', () => {
     const el = mount({ src: SAMPLE_SRC });
     el.setAttribute('alignment', 'right');
-    const css = adoptedCssText(el);
-    // right -> margin-left: auto; margin-right: 0 (jsdom shorthand
-    // "0px 0px 0px auto": top right bottom left).
-    expect(css).toMatch(/margin:\s*0px\s+0px\s+0px\s+auto/);
+    expect(figureClass(el)).toContain(imageAlignmentClasses.right);
   });
 
   it('reflects alt attribute changes to the img element', () => {
@@ -124,40 +112,29 @@ describe('<rafters-image>', () => {
 
   it('reflects caption attribute changes to the figcaption textContent', () => {
     const el = mount({ src: SAMPLE_SRC });
-    // No caption yet, no figcaption in DOM.
     expect(el.shadowRoot?.querySelector('figcaption')).toBeNull();
 
-    // Setting caption inserts the figcaption with matching textContent.
     el.setAttribute('caption', 'Photo by John');
     const first = el.shadowRoot?.querySelector('figcaption');
     expect(first).not.toBeNull();
     expect(first?.textContent).toBe('Photo by John');
 
-    // Updating caption updates the same node's textContent.
     el.setAttribute('caption', 'Updated');
     const second = el.shadowRoot?.querySelector('figcaption');
     expect(second?.textContent).toBe('Updated');
 
-    // Removing caption drops the figcaption from the DOM.
     el.removeAttribute('caption');
     expect(el.shadowRoot?.querySelector('figcaption')).toBeNull();
   });
 
   it('renders an initial figcaption when caption attribute is set at mount', () => {
     const el = mount({ src: SAMPLE_SRC, caption: 'Initial caption' });
-    const figcaption = el.shadowRoot?.querySelector('figcaption.image-caption');
+    const figcaption = el.shadowRoot?.querySelector('figcaption');
     expect(figcaption?.textContent).toBe('Initial caption');
   });
 
   it('observedAttributes matches the documented contract', () => {
     expect(RaftersImage.observedAttributes).toEqual(['src', 'alt', 'size', 'alignment', 'caption']);
-  });
-
-  it('uses only --motion-duration / --motion-ease tokens (never bare --duration/--ease)', () => {
-    const el = mount({ src: SAMPLE_SRC });
-    const css = adoptedCssText(el);
-    expect(css).not.toMatch(/var\(--duration-/);
-    expect(css).not.toMatch(/var\(--ease-/);
   });
 
   it('source contains no direct var() references', async () => {

@@ -1,9 +1,15 @@
 /**
  * <rafters-toggle> -- Form-associated Web Component for press-toggle buttons.
  *
- * Mirrors the semantics of toggle.tsx (variant, size, pressed state) using
- * shadow-DOM-scoped CSS composed via classy-wc. Auto-registers on import and
- * is idempotent against double-define.
+ * Mirrors the semantics of toggle.tsx (variant, size, pressed state). The inner
+ * <button> carries the SAME utility class strings the React/Astro targets use --
+ * imported from toggle.classes.ts -- rather than a parallel hand-written CSS
+ * map. Pressed/hover/disabled presentation resolves from those utility classes
+ * (data-[state=on]:*, hover:*, disabled:*) against the shared compiled utility
+ * sheet adopted by RaftersElement (setUtilityCSS) plus inherited token props.
+ *
+ * The only shadow-scoped CSS this component owns is the structural :host
+ * display shim.
  *
  * Form-associated: participates in <form> submission, reset, disabled
  * propagation, and state restoration via ElementInternals. When pressed,
@@ -21,19 +27,24 @@
  *  - Click on the inner <button> flips `pressed` (unless disabled).
  *  - Space/Enter keys are handled by the native button (click synthesis).
  *  - After a state change, dispatches `change` at the host (bubbles/composed).
- *
- * No raw CSS custom-property literals here -- all token references live in
- * toggle.styles.ts and resolve through tokenVar().
  */
 
 import { RaftersElement } from '../../primitives/rafters-element';
-import {
-  type ToggleSize,
-  type ToggleVariant,
-  toggleSizeStyles,
-  toggleStylesheet,
-  toggleVariantStyles,
-} from './toggle.styles';
+import { toggleBaseClasses, toggleSizeClasses, toggleVariantClasses } from './toggle.classes';
+
+export type ToggleVariant =
+  | 'default'
+  | 'primary'
+  | 'secondary'
+  | 'destructive'
+  | 'success'
+  | 'warning'
+  | 'info'
+  | 'accent'
+  | 'outline'
+  | 'ghost';
+
+export type ToggleSize = 'sm' | 'default' | 'lg';
 
 const OBSERVED_ATTRIBUTES: ReadonlyArray<string> = [
   'pressed',
@@ -45,17 +56,26 @@ const OBSERVED_ATTRIBUTES: ReadonlyArray<string> = [
 ] as const;
 
 function parseVariant(value: string | null): ToggleVariant {
-  if (value && value in toggleVariantStyles) {
+  if (value && value in toggleVariantClasses) {
     return value as ToggleVariant;
   }
   return 'default';
 }
 
 function parseSize(value: string | null): ToggleSize {
-  if (value && value in toggleSizeStyles) {
+  if (value && value in toggleSizeClasses) {
     return value as ToggleSize;
   }
   return 'default';
+}
+
+/**
+ * Compose the inner button's class string from the shared class maps.
+ * Exported so tests assert the WC renders the exact same composition the
+ * Astro/React targets do -- the parity guarantee.
+ */
+export function composeToggleClasses(variant: ToggleVariant, size: ToggleSize): string {
+  return `${toggleBaseClasses} ${toggleVariantClasses[variant]} ${toggleSizeClasses[size]}`;
 }
 
 interface ElementInternalsHost {
@@ -73,8 +93,14 @@ export class RaftersToggle extends RaftersElement {
   static formAssociated = true;
   static observedAttributes: ReadonlyArray<string> = OBSERVED_ATTRIBUTES;
 
+  /**
+   * The only component-owned CSS: the structural host-display shim. The inner
+   * button's variant/size/pressed/hover/disabled presentation is carried by
+   * the shared utility classes, not by per-instance shadow CSS.
+   */
+  static override styles = ':host { display: inline-flex; }';
+
   private _internals: ElementInternals;
-  private _instanceSheet: CSSStyleSheet | null = null;
   private _inner: HTMLButtonElement | null = null;
   private _onClick: (event: Event) => void;
   private _initialPressed: boolean;
@@ -107,12 +133,6 @@ export class RaftersToggle extends RaftersElement {
     // before the first connection.
     this._initialPressed = this.hasAttribute('pressed');
 
-    this._instanceSheet = new CSSStyleSheet();
-    this._instanceSheet.replaceSync(this.composeCss());
-
-    const existing = this.shadowRoot.adoptedStyleSheets;
-    this.shadowRoot.adoptedStyleSheets = [...existing, this._instanceSheet];
-
     this.syncFormValue();
   }
 
@@ -123,11 +143,8 @@ export class RaftersToggle extends RaftersElement {
   ): void {
     if (oldValue === newValue) return;
 
-    if (
-      (name === 'variant' || name === 'size' || name === 'pressed' || name === 'disabled') &&
-      this._instanceSheet
-    ) {
-      this._instanceSheet.replaceSync(this.composeCss());
+    if (name === 'variant' || name === 'size') {
+      this.applyClasses();
     }
 
     this.mirrorStateToInner();
@@ -139,7 +156,6 @@ export class RaftersToggle extends RaftersElement {
 
   override disconnectedCallback(): void {
     this.detachInnerListeners();
-    this._instanceSheet = null;
     this._inner = null;
   }
 
@@ -150,7 +166,10 @@ export class RaftersToggle extends RaftersElement {
   override render(): Node {
     this.detachInnerListeners();
     const inner = document.createElement('button');
-    inner.className = 'toggle';
+    inner.className = composeToggleClasses(
+      parseVariant(this.getAttribute('variant')),
+      parseSize(this.getAttribute('size')),
+    );
     inner.setAttribute('type', 'button');
     this._inner = inner;
 
@@ -167,13 +186,13 @@ export class RaftersToggle extends RaftersElement {
     this._inner.removeEventListener('click', this._onClick);
   }
 
-  private composeCss(): string {
-    return toggleStylesheet({
-      variant: parseVariant(this.getAttribute('variant')),
-      size: parseSize(this.getAttribute('size')),
-      pressed: this.hasAttribute('pressed'),
-      disabled: this.hasAttribute('disabled'),
-    });
+  private applyClasses(): void {
+    const inner = this.getInnerButton();
+    if (!inner) return;
+    inner.className = composeToggleClasses(
+      parseVariant(this.getAttribute('variant')),
+      parseSize(this.getAttribute('size')),
+    );
   }
 
   // ==========================================================================

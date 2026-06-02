@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import './item.element';
-import { RaftersItem } from './item.element';
+import { itemDescriptionClasses, itemIconClasses, itemSizeClasses } from './item.classes';
+import { composeItemClasses, RaftersItem } from './item.element';
 
 afterEach(() => {
   while (document.body.firstChild) {
@@ -15,17 +16,12 @@ function mount(attrs: Record<string, string> = {}): HTMLElement {
   return el;
 }
 
-function adoptedCssText(el: Element): string {
-  const sheets = el.shadowRoot?.adoptedStyleSheets ?? [];
-  const blocks: string[] = [];
-  for (const sheet of sheets) {
-    const rules: string[] = [];
-    for (const rule of Array.from(sheet.cssRules)) {
-      rules.push(rule.cssText);
-    }
-    blocks.push(rules.join('\n'));
-  }
-  return blocks.join('\n');
+function innerDiv(el: Element): HTMLElement | null {
+  return el.shadowRoot?.querySelector('div[role="option"]') ?? null;
+}
+
+function innerClass(el: Element): string {
+  return innerDiv(el)?.className ?? '';
 }
 
 describe('<rafters-item>', () => {
@@ -39,9 +35,9 @@ describe('<rafters-item>', () => {
     expect(customElements.get('rafters-item')).toBe(RaftersItem);
   });
 
-  it('renders a div.item[role=option] with icon + default + description slots', () => {
+  it('renders a div[role=option] with icon + default + description slots', () => {
     const el = mount();
-    const inner = el.shadowRoot?.querySelector('div.item');
+    const inner = innerDiv(el);
     expect(inner).not.toBeNull();
     expect(inner?.getAttribute('role')).toBe('option');
     const slots = Array.from(el.shadowRoot?.querySelectorAll('slot') ?? []);
@@ -51,15 +47,37 @@ describe('<rafters-item>', () => {
     expect(slotNames).toContain(null);
   });
 
+  it('applies base + default size + default state composition', () => {
+    const el = mount();
+    expect(innerClass(el)).toBe(composeItemClasses('default', false, false));
+  });
+
   it('falls back to default size for unknown values', () => {
     const el = mount({ size: 'huge' });
-    expect(adoptedCssText(el)).toContain('font-size-body-small');
+    expect(innerClass(el)).toContain(itemSizeClasses.default);
+  });
+
+  it('reflects size attribute changes to the inner class string', () => {
+    const el = mount();
+    el.setAttribute('size', 'lg');
+    expect(innerClass(el)).toContain(itemSizeClasses.lg);
+    el.setAttribute('size', 'sm');
+    expect(innerClass(el)).toContain(itemSizeClasses.sm);
+  });
+
+  it('applies icon and description part classes to the wrapper spans', () => {
+    const el = mount();
+    const iconWrap = el.shadowRoot?.querySelector('span[aria-hidden="true"]');
+    expect(iconWrap?.className).toBe(itemIconClasses);
+    const descSlot = el.shadowRoot?.querySelector('slot[name="description"]');
+    const descWrap = descSlot?.parentElement;
+    expect(descWrap?.className).toBe(itemDescriptionClasses);
   });
 
   it('reflects selected attribute to aria-selected and data-selected on inner div', () => {
     const el = mount();
     el.setAttribute('selected', '');
-    const inner = el.shadowRoot?.querySelector('div.item');
+    const inner = innerDiv(el);
     expect(inner?.getAttribute('aria-selected')).toBe('true');
     expect(inner?.hasAttribute('data-selected')).toBe(true);
   });
@@ -67,10 +85,10 @@ describe('<rafters-item>', () => {
   it('reflects disabled attribute to aria-disabled, data-disabled, and tabIndex -1', () => {
     const el = mount();
     el.setAttribute('disabled', '');
-    const inner = el.shadowRoot?.querySelector('div.item');
+    const inner = innerDiv(el);
     expect(inner?.getAttribute('aria-disabled')).toBe('true');
     expect(inner?.hasAttribute('data-disabled')).toBe(true);
-    expect((inner as HTMLElement | null)?.tabIndex).toBe(-1);
+    expect(inner?.tabIndex).toBe(-1);
   });
 
   it('source contains no direct var() references', async () => {
@@ -86,53 +104,37 @@ describe('<rafters-item>', () => {
 
   it('sets aria-selected="false" and tabIndex=0 by default', () => {
     const el = mount();
-    const inner = el.shadowRoot?.querySelector('div.item');
+    const inner = innerDiv(el);
     expect(inner?.getAttribute('aria-selected')).toBe('false');
-    expect((inner as HTMLElement | null)?.tabIndex).toBe(0);
+    expect(inner?.tabIndex).toBe(0);
     expect(inner?.hasAttribute('aria-disabled')).toBe(false);
     expect(inner?.hasAttribute('data-selected')).toBe(false);
     expect(inner?.hasAttribute('data-disabled')).toBe(false);
   });
 
-  it('re-resolves adopted stylesheet when size attribute changes', () => {
-    const el = mount();
-    el.setAttribute('size', 'lg');
-    expect(adoptedCssText(el)).toContain('font-size-body-medium');
-    el.setAttribute('size', 'sm');
-    expect(adoptedCssText(el)).toContain('font-size-label-small');
-  });
-
   it('removes data-selected when selected attribute is removed', () => {
     const el = mount({ selected: '' });
-    let inner = el.shadowRoot?.querySelector('div.item');
+    let inner = innerDiv(el);
     expect(inner?.hasAttribute('data-selected')).toBe(true);
     el.removeAttribute('selected');
-    inner = el.shadowRoot?.querySelector('div.item');
+    inner = innerDiv(el);
     expect(inner?.hasAttribute('data-selected')).toBe(false);
     expect(inner?.getAttribute('aria-selected')).toBe('false');
   });
 
   it('removes data-disabled and restores tabIndex=0 when disabled is removed', () => {
     const el = mount({ disabled: '' });
-    let inner = el.shadowRoot?.querySelector('div.item');
-    expect((inner as HTMLElement | null)?.tabIndex).toBe(-1);
+    let inner = innerDiv(el);
+    expect(inner?.tabIndex).toBe(-1);
     el.removeAttribute('disabled');
-    inner = el.shadowRoot?.querySelector('div.item');
-    expect((inner as HTMLElement | null)?.tabIndex).toBe(0);
+    inner = innerDiv(el);
+    expect(inner?.tabIndex).toBe(0);
     expect(inner?.hasAttribute('aria-disabled')).toBe(false);
     expect(inner?.hasAttribute('data-disabled')).toBe(false);
   });
 
-  it('shadow root adopts the per-instance stylesheet', () => {
-    const el = mount();
-    const sheets = el.shadowRoot?.adoptedStyleSheets ?? [];
-    expect(sheets.length).toBeGreaterThanOrEqual(1);
-  });
-
-  it('stylesheet uses only --motion-duration / --motion-ease tokens', () => {
-    const el = mount();
-    const css = adoptedCssText(el);
-    expect(css).not.toMatch(/var\(--duration-/);
-    expect(css).not.toMatch(/var\(--ease-/);
+  it('keeps the structural :host display shim in component styles', () => {
+    expect(RaftersItem.styles).toContain(':host');
+    expect(RaftersItem.styles).toContain('display: block');
   });
 });

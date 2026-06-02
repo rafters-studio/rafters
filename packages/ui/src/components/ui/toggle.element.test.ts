@@ -15,6 +15,8 @@
  */
 
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { toggleSizeClasses, toggleVariantClasses } from './toggle.classes';
+import { composeToggleClasses } from './toggle.element';
 
 interface PolyfilledInternals {
   _value: string | null;
@@ -165,17 +167,6 @@ async function loadElement(): Promise<typeof import('./toggle.element').RaftersT
   return mod.RaftersToggle;
 }
 
-function collectCss(el: HTMLElement): string {
-  const sheets = el.shadowRoot?.adoptedStyleSheets ?? [];
-  return sheets
-    .map((s) =>
-      Array.from(s.cssRules)
-        .map((r) => r.cssText)
-        .join('\n'),
-    )
-    .join('\n');
-}
-
 describe('rafters-toggle', () => {
   it('registers the custom element', async () => {
     const RaftersToggle = await loadElement();
@@ -206,13 +197,13 @@ describe('rafters-toggle', () => {
     ]);
   });
 
-  it('mounts an inner <button class="toggle"> with type=button', async () => {
+  it('mounts an inner button carrying the composed utility classes with type=button', async () => {
     const RaftersToggle = await loadElement();
     const el = document.createElement('rafters-toggle') as InstanceType<typeof RaftersToggle>;
     document.body.append(el);
     const inner = el.shadowRoot?.querySelector('button');
     expect(inner).toBeTruthy();
-    expect(inner?.className).toBe('toggle');
+    expect(inner?.className).toBe(composeToggleClasses('default', 'default'));
     expect(inner?.getAttribute('type')).toBe('button');
   });
 
@@ -423,22 +414,24 @@ describe('rafters-toggle', () => {
     expect(el.value).toBe('on');
   });
 
-  it('rebuilds the per-instance stylesheet when variant changes', async () => {
+  it('updates the inner class string when variant changes', async () => {
     const RaftersToggle = await loadElement();
     const el = document.createElement('rafters-toggle') as InstanceType<typeof RaftersToggle>;
     document.body.append(el);
-    expect(collectCss(el)).toContain('var(--color-primary)');
+    const inner = el.shadowRoot?.querySelector('button');
+    expect(inner?.className).toContain(toggleVariantClasses.default);
     el.setAttribute('variant', 'destructive');
-    expect(collectCss(el)).toContain('var(--color-destructive)');
+    expect(inner?.className).toContain(toggleVariantClasses.destructive);
   });
 
-  it('rebuilds the per-instance stylesheet when size changes', async () => {
+  it('updates the inner class string when size changes', async () => {
     const RaftersToggle = await loadElement();
     const el = document.createElement('rafters-toggle') as InstanceType<typeof RaftersToggle>;
     document.body.append(el);
-    expect(collectCss(el)).toContain('height: 2.5rem');
+    const inner = el.shadowRoot?.querySelector('button');
+    expect(inner?.className).toContain(toggleSizeClasses.default);
     el.setAttribute('size', 'lg');
-    expect(collectCss(el)).toContain('height: 2.75rem');
+    expect(inner?.className).toContain(toggleSizeClasses.lg);
   });
 
   it('exposes ElementInternals-backed validity surface', async () => {
@@ -462,7 +455,7 @@ describe('rafters-toggle', () => {
     expect(el.validity.customError).toBe(false);
   });
 
-  it('shadow root adopts the per-instance stylesheet', async () => {
+  it('shadow root adopts the component stylesheet', async () => {
     const RaftersToggle = await loadElement();
     const el = document.createElement('rafters-toggle') as InstanceType<typeof RaftersToggle>;
     document.body.append(el);
@@ -470,22 +463,17 @@ describe('rafters-toggle', () => {
     expect(sheets.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('stylesheet uses only --motion-duration / --motion-ease tokens', async () => {
+  it('keeps only the structural :host shim as component-owned CSS', async () => {
     const RaftersToggle = await loadElement();
-    const el = document.createElement('rafters-toggle') as InstanceType<typeof RaftersToggle>;
-    document.body.append(el);
-    const css = collectCss(el);
-    expect(css).not.toMatch(/var\(--duration-/);
-    expect(css).not.toMatch(/var\(--ease-/);
+    expect(RaftersToggle.styles).toContain(':host');
+    expect(RaftersToggle.styles).toContain('inline-flex');
   });
 
-  it('source contains no direct var() literals in either .ts file', async () => {
+  it('source contains no direct var() literals in the element file', async () => {
     const fs = await import('node:fs/promises');
     const path = await import('node:path');
     const elementSource = await fs.readFile(path.resolve(__dirname, 'toggle.element.ts'), 'utf-8');
     expect(elementSource).not.toMatch(/[^a-zA-Z_]var\(/);
-    const stylesSource = await fs.readFile(path.resolve(__dirname, 'toggle.styles.ts'), 'utf-8');
-    expect(stylesSource).not.toMatch(/[^a-zA-Z_]var\(/);
   });
 
   // happy-dom 20 does not propagate fieldset.disabled to form-associated

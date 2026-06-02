@@ -14,6 +14,8 @@
  */
 
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { switchSizeClasses, switchVariantClasses } from './switch.classes';
+import { composeSwitchThumbClasses, composeSwitchTrackClasses } from './switch.element';
 
 // ============================================================================
 // Polyfill scaffolding
@@ -232,10 +234,28 @@ describe('rafters-switch', () => {
     expect(button).toBeTruthy();
     expect(button?.getAttribute('type')).toBe('button');
     expect(button?.getAttribute('role')).toBe('switch');
-    expect(button?.classList.contains('track')).toBe(true);
-    const thumb = button?.querySelector('.thumb');
+    expect(button?.className).toBe(composeSwitchTrackClasses('default', 'default', false));
+    const thumb = button?.querySelector('span');
     expect(thumb).toBeTruthy();
+    expect(thumb?.className).toBe(composeSwitchThumbClasses('default', false));
     expect(thumb?.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('keeps only the structural :host shim as component-owned CSS', async () => {
+    const RaftersSwitch = await loadElement();
+    expect(RaftersSwitch.styles).toContain(':host');
+    expect(RaftersSwitch.styles).toContain('inline-flex');
+  });
+
+  it('swaps track between unchecked and variant-checked class strings on toggle', async () => {
+    const RaftersSwitch = await loadElement();
+    const el = document.createElement('rafters-switch') as InstanceType<typeof RaftersSwitch>;
+    document.body.append(el);
+    const button = el.shadowRoot?.querySelector('button');
+    expect(button?.className).toBe(composeSwitchTrackClasses('default', 'default', false));
+    el.checked = true;
+    expect(button?.className).toBe(composeSwitchTrackClasses('default', 'default', true));
+    expect(button?.className).toContain(switchVariantClasses.default.checked);
   });
 
   it('reflects checked state via aria-checked and data-state', async () => {
@@ -425,42 +445,27 @@ describe('rafters-switch', () => {
     expect(el.getAttribute('size')).toBe('lg');
   });
 
-  it('rebuilds the per-instance stylesheet when variant changes', async () => {
+  it('updates the track class string when variant changes', async () => {
     const RaftersSwitch = await loadElement();
     const el = document.createElement('rafters-switch') as InstanceType<typeof RaftersSwitch>;
     document.body.append(el);
-    const collect = (): string => {
-      const sheets = el.shadowRoot?.adoptedStyleSheets ?? [];
-      return sheets
-        .map((s) =>
-          Array.from(s.cssRules)
-            .map((r) => r.cssText)
-            .join('\n'),
-        )
-        .join('\n');
-    };
-    expect(collect()).toContain('var(--color-primary-ring)');
+    const button = el.shadowRoot?.querySelector('button');
+    expect(button?.className).toContain(switchVariantClasses.default.ring);
     el.setAttribute('variant', 'destructive');
-    expect(collect()).toContain('var(--color-destructive-ring)');
+    expect(button?.className).toContain(switchVariantClasses.destructive.ring);
   });
 
-  it('rebuilds the per-instance stylesheet when size changes', async () => {
+  it('updates the track and thumb class strings when size changes', async () => {
     const RaftersSwitch = await loadElement();
     const el = document.createElement('rafters-switch') as InstanceType<typeof RaftersSwitch>;
     document.body.append(el);
-    const collect = (): string => {
-      const sheets = el.shadowRoot?.adoptedStyleSheets ?? [];
-      return sheets
-        .map((s) =>
-          Array.from(s.cssRules)
-            .map((r) => r.cssText)
-            .join('\n'),
-        )
-        .join('\n');
-    };
-    expect(collect()).toContain('width: 2.75rem');
+    const button = el.shadowRoot?.querySelector('button');
+    const thumb = button?.querySelector('span');
+    expect(button?.className).toContain(switchSizeClasses.default.track);
+    expect(thumb?.className).toContain(switchSizeClasses.default.thumb);
     el.setAttribute('size', 'lg');
-    expect(collect()).toContain('width: 3.5rem');
+    expect(button?.className).toContain(switchSizeClasses.lg.track);
+    expect(thumb?.className).toContain(switchSizeClasses.lg.thumb);
   });
 
   it('dispatches a composed, bubbling change event on toggle', async () => {

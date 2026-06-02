@@ -14,6 +14,7 @@
  */
 
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { inputSizeClasses, inputVariantClasses } from './input.classes';
 
 interface PolyfilledInternals {
   _value: string;
@@ -178,13 +179,14 @@ describe('rafters-input', () => {
     expect(el.validity).toBeDefined();
   });
 
-  it('mounts an inner <input class="input"> in the shadow root', async () => {
+  it('mounts an inner input carrying the composed utility classes in the shadow root', async () => {
     const RaftersInput = await loadElement();
+    const { composeInputClasses } = await import('./input.element');
     const el = document.createElement('rafters-input') as InstanceType<typeof RaftersInput>;
     document.body.append(el);
     const inner = el.shadowRoot?.querySelector('input');
     expect(inner).toBeTruthy();
-    expect(inner?.classList.contains('input')).toBe(true);
+    expect(inner?.className).toBe(composeInputClasses('default', 'default'));
   });
 
   it('mirrors host attributes onto the inner <input>', async () => {
@@ -308,42 +310,24 @@ describe('rafters-input', () => {
     expect(() => document.body.append(el)).not.toThrow();
   });
 
-  it('rebuilds the per-instance stylesheet when variant changes', async () => {
+  it('recomposes the inner class string when variant changes', async () => {
     const RaftersInput = await loadElement();
     const el = document.createElement('rafters-input') as InstanceType<typeof RaftersInput>;
     document.body.append(el);
-    const collect = (): string => {
-      const sheets = el.shadowRoot?.adoptedStyleSheets ?? [];
-      return sheets
-        .map((s) =>
-          Array.from(s.cssRules)
-            .map((r) => r.cssText)
-            .join('\n'),
-        )
-        .join('\n');
-    };
-    expect(collect()).toContain('var(--color-primary-ring)');
+    const innerClass = (): string => el.shadowRoot?.querySelector('input')?.className ?? '';
+    expect(innerClass()).toContain(inputVariantClasses.default);
     el.setAttribute('variant', 'destructive');
-    expect(collect()).toContain('var(--color-destructive-ring)');
+    expect(innerClass()).toContain(inputVariantClasses.destructive);
   });
 
-  it('rebuilds the per-instance stylesheet when size changes', async () => {
+  it('recomposes the inner class string when size changes', async () => {
     const RaftersInput = await loadElement();
     const el = document.createElement('rafters-input') as InstanceType<typeof RaftersInput>;
     document.body.append(el);
-    const collect = (): string => {
-      const sheets = el.shadowRoot?.adoptedStyleSheets ?? [];
-      return sheets
-        .map((s) =>
-          Array.from(s.cssRules)
-            .map((r) => r.cssText)
-            .join('\n'),
-        )
-        .join('\n');
-    };
-    expect(collect()).toContain('height: 2.5rem');
+    const innerClass = (): string => el.shadowRoot?.querySelector('input')?.className ?? '';
+    expect(innerClass()).toContain(inputSizeClasses.default);
     el.setAttribute('size', 'lg');
-    expect(collect()).toContain('height: 3rem');
+    expect(innerClass()).toContain(inputSizeClasses.lg);
   });
 
   it('submits with name=value inside a <form>', async () => {

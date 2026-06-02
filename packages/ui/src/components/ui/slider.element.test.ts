@@ -15,6 +15,7 @@
  */
 
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { sliderSizeClasses, sliderVariantClasses } from './slider.classes';
 
 interface PolyfilledInternals {
   _value: string;
@@ -552,42 +553,26 @@ describe('rafters-slider', () => {
     expect(el.getAttribute('value')).toBe('30');
   });
 
-  it('rebuilds the per-instance stylesheet when variant changes', async () => {
+  it('re-composes the thumb ring class when variant changes', async () => {
     const RaftersSlider = await loadElement();
     const el = document.createElement('rafters-slider') as InstanceType<typeof RaftersSlider>;
     document.body.append(el);
-    const collect = (): string => {
-      const sheets = el.shadowRoot?.adoptedStyleSheets ?? [];
-      return sheets
-        .map((s) =>
-          Array.from(s.cssRules)
-            .map((r) => r.cssText)
-            .join('\n'),
-        )
-        .join('\n');
-    };
-    expect(collect()).toContain('var(--color-primary-ring)');
+    const thumbClass = (): string =>
+      el.shadowRoot?.querySelector<HTMLElement>('[role="slider"]')?.className ?? '';
+    expect(thumbClass()).toContain(sliderVariantClasses.default.ring);
     el.setAttribute('variant', 'destructive');
-    expect(collect()).toContain('var(--color-destructive-ring)');
+    expect(thumbClass()).toContain(sliderVariantClasses.destructive.ring);
   });
 
-  it('rebuilds the per-instance stylesheet when size changes', async () => {
+  it('re-composes the track size class when size changes', async () => {
     const RaftersSlider = await loadElement();
     const el = document.createElement('rafters-slider') as InstanceType<typeof RaftersSlider>;
     document.body.append(el);
-    const collect = (): string => {
-      const sheets = el.shadowRoot?.adoptedStyleSheets ?? [];
-      return sheets
-        .map((s) =>
-          Array.from(s.cssRules)
-            .map((r) => r.cssText)
-            .join('\n'),
-        )
-        .join('\n');
-    };
-    expect(collect()).toContain('height: 0.5rem');
+    const trackClass = (): string =>
+      el.shadowRoot?.querySelector<HTMLElement>('.track')?.className ?? '';
+    expect(trackClass()).toContain(sliderSizeClasses.default.track);
     el.setAttribute('size', 'lg');
-    expect(collect()).toContain('height: 0.75rem');
+    expect(trackClass()).toContain(sliderSizeClasses.lg.track);
   });
 
   it('adopts at least one stylesheet into the shadow root', async () => {

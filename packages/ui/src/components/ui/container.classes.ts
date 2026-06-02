@@ -63,6 +63,26 @@ export const containerSizeGapScale: Record<string, string> = {
 };
 
 /**
+ * Container-query activation utilities. Turns the element into a query
+ * container; w-full prevents width collapse in flex/grid contexts under
+ * Tailwind v4. Always applied by the React/Astro targets when query is on.
+ */
+export const containerQueryClasses = '@container w-full';
+
+/**
+ * Horizontal centering for sized (non-full) containers.
+ */
+export const containerCenterClasses = 'mx-auto';
+
+/**
+ * Editable-mode affordance: dashed outline in muted-foreground at 30% with a
+ * small offset and rounded corner. Mirrors the inline editable composition in
+ * container.tsx.
+ */
+export const containerEditableClasses =
+  'outline-2 outline-dashed outline-muted-foreground/30 outline-offset-2 rounded';
+
+/**
  * CQ-responsive horizontal padding applied automatically when size is set.
  * Prevents content from bleeding to viewport edges without requiring an explicit padding prop.
  * Explicit padding prop overrides this.

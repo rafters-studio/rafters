@@ -7,11 +7,23 @@
  * The Twitter-widget flow, editable URL input, drag/drop file upload,
  * and alignment toolbar are React-only concerns and are NOT in this file.
  *
+ * Each inner node carries the SAME utility class strings the React target
+ * uses -- imported from embed.classes.ts -- rather than a parallel
+ * hand-written CSS map. Presentation resolves from the shared compiled utility
+ * sheet adopted by RaftersElement (setUtilityCSS) plus the token custom
+ * properties inherited from the host :root.
+ *
+ * The aspect-ratio is the one piece that is data-driven rather than a fixed
+ * utility class; it is applied as an inline style on the .embed wrapper, which
+ * is exactly what embed.tsx does (className for the container chrome plus a
+ * `style={{ aspectRatio }}`). The only shadow-scoped CSS this component owns is
+ * the structural :host display shim.
+ *
  * Shadow DOM structure (URL present, domain allowed, provider detected):
- *   <div class="embed"><iframe ... /></div>
+ *   <div><iframe ... /></div>     (wrapper carries embedContainerClasses)
  *
  * Shadow DOM structure (URL missing or domain disallowed):
- *   <div class="embed-fallback">...</div>
+ *   <div>...</div>                (wrapper carries embedFallbackClasses)
  *
  * Attributes:
  *   url           URL of the content to embed. Required.
@@ -26,30 +38,35 @@
  *   - Auto-registers on import, idempotent via customElements.get guard.
  *   - When `url` is absent, renders a fallback div and NEVER throws.
  *   - When `isAllowedEmbedDomain(url)` returns false, renders a fallback
- *     div with an <a> link to the original URL. NEVER renders an iframe
- *     to an unallowed domain.
+ *     div with an link to the original URL. NEVER renders an iframe to an
+ *     unallowed domain.
  *   - Twitter-provider URLs fall through to the fallback case because
  *     the widget-based flow is out of scope.
  *   - DOM APIs only (document.createElement + setAttribute + appendChild);
  *     NEVER innerHTML.
- *   - Per-instance CSSStyleSheet pattern: connectedCallback creates one
- *     sheet, replaceSync(embedStylesheet(...)), adoptedStyleSheets = [sheet].
- *     On attribute change, re-render the inner DOM AND replaceSync the
- *     same sheet when `aspect-ratio` changed.
- *   - NEVER a raw CSS custom-property function literal in this file;
- *     token references live in embed.styles.ts.
- *   - Motion tokens use --motion-duration-* / --motion-ease-* only.
  *
  * @cognitive-load 3/10
- * @accessibility iframe carries a `title` attribute; fallback exposes an
- *   <a> link to the original URL for recovery.
+ * @accessibility iframe carries a `title` attribute; fallback exposes a
+ *   link to the original URL for recovery.
  */
 
 import { RaftersElement } from '../../primitives/rafters-element';
-import { type AspectRatioKey, embedStylesheet } from './embed.styles';
-import { detectEmbedProvider, type EmbedProvider, isAllowedEmbedDomain } from './embed-utils';
+import {
+  type AspectRatio,
+  embedContainerClasses,
+  embedFallbackClasses,
+  embedFallbackLinkClasses,
+  embedFallbackMessageClasses,
+  embedIframeClasses,
+} from './embed.classes';
+import {
+  detectEmbedProvider,
+  type EmbedProvider,
+  getAspectRatioValue,
+  isAllowedEmbedDomain,
+} from './embed-utils';
 
-const ALLOWED_ASPECT_RATIOS: ReadonlyArray<AspectRatioKey> = ['16:9', '4:3', '1:1', '9:16'];
+const ALLOWED_ASPECT_RATIOS: ReadonlyArray<AspectRatio> = ['16:9', '4:3', '1:1', '9:16'];
 
 const ALLOWED_PROVIDERS: ReadonlyArray<EmbedProvider> = ['youtube', 'vimeo', 'twitch', 'generic'];
 
@@ -69,9 +86,9 @@ const FALLBACK_MESSAGE_MISSING_URL = 'No URL provided';
 const FALLBACK_MESSAGE_DISALLOWED_DOMAIN = 'This URL is not from a supported embed provider';
 const FALLBACK_LINK_TEXT = 'Open in new tab';
 
-function parseAspectRatio(value: string | null): AspectRatioKey {
+function parseAspectRatio(value: string | null): AspectRatio {
   if (value && (ALLOWED_ASPECT_RATIOS as ReadonlyArray<string>).includes(value)) {
-    return value as AspectRatioKey;
+    return value as AspectRatio;
   }
   return '16:9';
 }
@@ -86,47 +103,26 @@ function parseProviderOverride(value: string | null): EmbedProvider | null {
 export class RaftersEmbed extends RaftersElement {
   static readonly observedAttributes: ReadonlyArray<string> = OBSERVED_ATTRIBUTES;
 
-  /** Per-instance stylesheet rebuilt when aspect-ratio changes. */
-  private _instanceSheet: CSSStyleSheet | null = null;
-
-  override connectedCallback(): void {
-    if (!this.shadowRoot) return;
-    this._instanceSheet = new CSSStyleSheet();
-    this._instanceSheet.replaceSync(this.composeCss());
-    this.shadowRoot.adoptedStyleSheets = [this._instanceSheet];
-    this.update();
-  }
+  /**
+   * The only component-owned CSS: the structural host-display shim. The embed
+   * fills the host width as a block, matching the React target's container.
+   */
+  static override styles = ':host { display: block; width: 100%; }';
 
   override attributeChangedCallback(
-    name: string,
+    _name: string,
     oldValue: string | null,
     newValue: string | null,
   ): void {
     if (oldValue === newValue) return;
-    if (name === 'aspect-ratio' && this._instanceSheet) {
-      this._instanceSheet.replaceSync(this.composeCss());
-    }
     this.update();
-  }
-
-  override disconnectedCallback(): void {
-    this._instanceSheet = null;
-  }
-
-  /**
-   * Build the CSS string for the current aspect-ratio attribute.
-   */
-  private composeCss(): string {
-    return embedStylesheet({
-      aspectRatio: parseAspectRatio(this.getAttribute('aspect-ratio')),
-    });
   }
 
   /**
    * Render the inner DOM for the current attribute state. DOM APIs only
-   * -- never innerHTML. Returns a `.embed` wrapper with an `<iframe>` when
-   * the URL is present, on an allowed domain, and resolves to a supported
-   * non-Twitter provider; otherwise returns a `.embed-fallback` wrapper.
+   * -- never innerHTML. Returns a wrapper carrying embedContainerClasses with
+   * an `<iframe>` when the URL is present, on an allowed domain, and resolves
+   * to a supported non-Twitter provider; otherwise returns a fallback wrapper.
    */
   override render(): Node {
     const url = this.getAttribute('url');
@@ -157,13 +153,19 @@ export class RaftersEmbed extends RaftersElement {
   }
 
   /**
-   * Create the iframe branch of the render tree.
+   * Create the iframe branch of the render tree. The wrapper carries the shared
+   * container utility classes plus an inline aspect-ratio, exactly mirroring the
+   * React target's className + style split.
    */
   private renderIframe(src: string, title: string): Node {
     const wrapper = document.createElement('div');
-    wrapper.className = 'embed';
+    wrapper.className = embedContainerClasses;
+    wrapper.style.aspectRatio = getAspectRatioValue(
+      parseAspectRatio(this.getAttribute('aspect-ratio')),
+    );
 
     const iframe = document.createElement('iframe');
+    iframe.className = embedIframeClasses;
     iframe.setAttribute('src', src);
     iframe.setAttribute('title', title);
     iframe.setAttribute('allow', IFRAME_ALLOW);
@@ -177,20 +179,20 @@ export class RaftersEmbed extends RaftersElement {
 
   /**
    * Create the fallback branch of the render tree. When `includeLink` is
-   * true, append an <a> pointing at `url` so consumers can recover.
+   * true, append a link pointing at `url` so consumers can recover.
    */
   private renderFallback(url: string, message: string, includeLink: boolean): Node {
     const wrapper = document.createElement('div');
-    wrapper.className = 'embed-fallback';
+    wrapper.className = embedFallbackClasses;
 
     const messageEl = document.createElement('p');
-    messageEl.className = 'embed-fallback__message';
+    messageEl.className = embedFallbackMessageClasses;
     messageEl.textContent = message;
     wrapper.appendChild(messageEl);
 
     if (includeLink && url) {
       const link = document.createElement('a');
-      link.className = 'embed-fallback__link';
+      link.className = embedFallbackLinkClasses;
       link.setAttribute('href', url);
       link.setAttribute('target', '_blank');
       link.setAttribute('rel', 'noopener noreferrer');

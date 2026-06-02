@@ -27,16 +27,69 @@
  *  - rafters-otp-complete: bubbles+composed CustomEvent with detail.value
  *    set to the completed string; dispatched when value reaches maxLength
  *
- * No raw CSS custom-property literals here -- all token references live in
- * input-otp.styles.ts and resolve through tokenVar().
+ * Each inner node carries the SAME utility class strings the React/Astro
+ * targets use -- imported from input-otp.classes.ts -- rather than a parallel
+ * hand-written CSS map. The container, group, slots (with their active /
+ * filled / disabled state classes), caret, and hidden input all resolve from
+ * the shared compiled utility sheet adopted by RaftersElement (setUtilityCSS)
+ * plus the token custom properties inherited from the host :root.
+ *
+ * The only shadow-scoped CSS this component owns is the structural :host
+ * display shim. The blinking caret animation rides the animate-pulse utility,
+ * and per-slot active / filled / disabled presentation rides utility classes
+ * recomposed on the slot's className -- so no per-instance stylesheet, state
+ * selectors, or keyframes are needed here.
  */
 
 import { RaftersElement } from '../../primitives/rafters-element';
-import { inputOtpStylesheet } from './input-otp.styles';
+import {
+  inputOtpCaretBarClasses,
+  inputOtpCaretContainerClasses,
+  inputOtpContainerClasses,
+  inputOtpGroupClasses,
+  inputOtpHiddenInputClasses,
+  inputOtpSlotActiveClasses,
+  inputOtpSlotBaseClasses,
+  inputOtpSlotDisabledClasses,
+  inputOtpSlotFilledClasses,
+} from './input-otp.classes';
 
 // ============================================================================
 // Constants & helpers
 // ============================================================================
+
+const DISABLED_CONTAINER_CLASS = 'opacity-50';
+
+/**
+ * Compose the container's class string. Mirrors input-otp.tsx: the flex
+ * container classes plus the disabled opacity dim. Exported for parity
+ * assertions.
+ */
+export function composeInputOtpContainerClasses(disabled: boolean): string {
+  return disabled
+    ? `${inputOtpContainerClasses} ${DISABLED_CONTAINER_CLASS}`
+    : inputOtpContainerClasses;
+}
+
+/**
+ * Compose a slot's class string for a given state. Mirrors input-otp.tsx:
+ * base slot classes plus active ring, filled foreground, and disabled
+ * dimming. Exported so tests assert parity with the React/Astro targets.
+ */
+export function composeInputOtpSlotClasses(state: {
+  active: boolean;
+  filled: boolean;
+  disabled: boolean;
+}): string {
+  return [
+    inputOtpSlotBaseClasses,
+    state.active ? inputOtpSlotActiveClasses : '',
+    state.filled ? inputOtpSlotFilledClasses : '',
+    state.disabled ? inputOtpSlotDisabledClasses : '',
+  ]
+    .filter((part) => part.length > 0)
+    .join(' ');
+}
 
 const DEFAULT_MAX_LENGTH = 6;
 const DEFAULT_PATTERN_SOURCE = '^[0-9]$';
@@ -83,8 +136,15 @@ export class RaftersInputOtp extends RaftersElement {
   static formAssociated = true;
   static observedAttributes: ReadonlyArray<string> = OBSERVED_ATTRIBUTES;
 
+  /**
+   * The only component-owned CSS: the structural host-display shim. Every
+   * other surface (container layout, group, slot box + active/filled/disabled
+   * states, caret blink via animate-pulse, hidden-input visually-hidden) rides
+   * a utility class on the relevant inner node.
+   */
+  static override styles = ':host { display: inline-flex; }';
+
   private _internals: ElementInternals;
-  private _instanceSheet: CSSStyleSheet | null = null;
   private _container: HTMLDivElement | null = null;
   private _hiddenInput: HTMLInputElement | null = null;
   private _slotEls: HTMLDivElement[] = [];
@@ -114,12 +174,6 @@ export class RaftersInputOtp extends RaftersElement {
   override connectedCallback(): void {
     super.connectedCallback();
     if (!this.shadowRoot) return;
-
-    this._instanceSheet = new CSSStyleSheet();
-    this._instanceSheet.replaceSync(this.composeCss());
-
-    const existing = this.shadowRoot.adoptedStyleSheets;
-    this.shadowRoot.adoptedStyleSheets = [...existing, this._instanceSheet];
 
     // Initial value sync: hidden input may have just been created in render().
     const initial = this.getAttribute('value') ?? '';
@@ -160,9 +214,10 @@ export class RaftersInputOtp extends RaftersElement {
       return;
     }
 
-    if (name === 'disabled' && this._instanceSheet) {
-      this._instanceSheet.replaceSync(this.composeCss());
+    if (name === 'disabled') {
+      this.applyContainerClasses();
       this.updateDisabledFlag();
+      this.refreshSlotState();
       if (this._hiddenInput) {
         this._hiddenInput.disabled = this.hasAttribute('disabled');
       }
@@ -193,7 +248,6 @@ export class RaftersInputOtp extends RaftersElement {
 
   override disconnectedCallback(): void {
     this.detachListeners();
-    this._instanceSheet = null;
     this._container = null;
     this._hiddenInput = null;
     this._slotEls = [];
@@ -207,11 +261,11 @@ export class RaftersInputOtp extends RaftersElement {
     this.detachListeners();
 
     const container = document.createElement('div');
-    container.className = 'container';
+    container.className = composeInputOtpContainerClasses(this.hasAttribute('disabled'));
     container.setAttribute('data-input-otp-container', '');
 
     const hidden = document.createElement('input');
-    hidden.className = 'hidden-input';
+    hidden.className = inputOtpHiddenInputClasses;
     hidden.type = 'text';
     hidden.setAttribute('inputmode', 'numeric');
     hidden.setAttribute('autocomplete', 'one-time-code');
@@ -225,22 +279,24 @@ export class RaftersInputOtp extends RaftersElement {
     container.append(hidden);
 
     const group = document.createElement('div');
-    group.className = 'group';
+    group.className = inputOtpGroupClasses;
     group.setAttribute('data-input-otp-group', '');
 
+    const disabled = this.hasAttribute('disabled');
     const slotCount = this.maxLength;
     const slots: HTMLDivElement[] = [];
     for (let i = 0; i < slotCount; i++) {
       const slot = document.createElement('div');
-      slot.className = 'slot';
+      slot.className = composeInputOtpSlotClasses({ active: false, filled: false, disabled });
       slot.setAttribute('data-input-otp-slot', '');
       slot.setAttribute('data-index', String(i));
 
       const caret = document.createElement('div');
-      caret.className = 'caret';
+      caret.className = inputOtpCaretContainerClasses;
+      caret.setAttribute('data-input-otp-caret', '');
       caret.setAttribute('aria-hidden', 'true');
       const caretBar = document.createElement('div');
-      caretBar.className = 'caret-bar';
+      caretBar.className = inputOtpCaretBarClasses;
       caret.append(caretBar);
       slot.append(caret);
 
@@ -273,8 +329,10 @@ export class RaftersInputOtp extends RaftersElement {
     }
   }
 
-  private composeCss(): string {
-    return inputOtpStylesheet({ disabled: this.hasAttribute('disabled') });
+  private applyContainerClasses(): void {
+    if (this._container) {
+      this._container.className = composeInputOtpContainerClasses(this.hasAttribute('disabled'));
+    }
   }
 
   // ==========================================================================
@@ -301,6 +359,7 @@ export class RaftersInputOtp extends RaftersElement {
     const value = this.value;
     const max = this.maxLength;
     const active = Math.min(this._activeIndex, max - 1);
+    const disabled = this.hasAttribute('disabled');
 
     for (let i = 0; i < this._slotEls.length; i++) {
       const slot = this._slotEls[i];
@@ -311,7 +370,7 @@ export class RaftersInputOtp extends RaftersElement {
 
       // Char text node: replace whatever text the slot currently holds
       // without disturbing the caret child.
-      const caret = slot.querySelector<HTMLElement>('.caret');
+      const caret = slot.querySelector<HTMLElement>('[data-input-otp-caret]');
       // Remove any prior text nodes (keep only the caret element).
       const toRemove: ChildNode[] = [];
       for (const node of Array.from(slot.childNodes)) {
@@ -324,6 +383,10 @@ export class RaftersInputOtp extends RaftersElement {
         slot.insertBefore(document.createTextNode(char), caret);
       }
 
+      // Recompose the slot's utility classes for its current state. The
+      // data-active / data-filled attributes are kept for parity with the
+      // React/Astro DOM contract (and for consumers querying by them).
+      slot.className = composeInputOtpSlotClasses({ active: isActive, filled: isFilled, disabled });
       if (isActive) {
         slot.setAttribute('data-active', '');
       } else {

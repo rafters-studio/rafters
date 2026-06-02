@@ -31,6 +31,7 @@
 import * as React from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import classy from '../../primitives/classy';
+import { embedContainerClasses, embedFallbackClasses, embedIframeClasses } from './embed.classes';
 import {
   detectEmbedProvider,
   type EmbedProvider,
@@ -60,7 +61,7 @@ export interface EmbedProps extends Omit<React.HTMLAttributes<HTMLDivElement>, '
  */
 function EmbedFallback({ url, message }: { url: string; message: string }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/50 p-8 text-center">
+    <div className={embedFallbackClasses}>
       <svg
         className="mb-3 h-12 w-12 text-muted-foreground"
         fill="none"
@@ -286,7 +287,7 @@ export const Embed = React.forwardRef<HTMLDivElement, EmbedProps>(
     return (
       <div
         ref={ref}
-        className={classy('relative overflow-hidden rounded-lg bg-muted', className)}
+        className={classy(embedContainerClasses, className)}
         style={{ aspectRatio: getAspectRatioValue(aspectRatio) }}
         {...props}
       >
@@ -294,7 +295,7 @@ export const Embed = React.forwardRef<HTMLDivElement, EmbedProps>(
         <iframe
           src={embedUrl}
           title={iframeTitle}
-          className="absolute inset-0 h-full w-full border-0"
+          className={embedIframeClasses}
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
           allowFullScreen
           loading="lazy"

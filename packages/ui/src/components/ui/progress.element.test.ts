@@ -1,6 +1,15 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import './progress.element';
-import { RaftersProgress } from './progress.element';
+import {
+  progressIndeterminateClasses,
+  progressSizeClasses,
+  progressVariantClasses,
+} from './progress.classes';
+import {
+  composeProgressIndicatorClasses,
+  composeProgressTrackClasses,
+  RaftersProgress,
+} from './progress.element';
 
 afterEach(() => {
   while (document.body.firstChild) {
@@ -15,17 +24,20 @@ function mount(attrs: Record<string, string> = {}): HTMLElement {
   return el;
 }
 
-function adoptedCssText(el: Element): string {
-  const sheets = el.shadowRoot?.adoptedStyleSheets ?? [];
-  const blocks: string[] = [];
-  for (const sheet of sheets) {
-    const rules: string[] = [];
-    for (const rule of Array.from(sheet.cssRules)) {
-      rules.push(rule.cssText);
-    }
-    blocks.push(rules.join('\n'));
-  }
-  return blocks.join('\n');
+function track(el: Element): HTMLDivElement | null {
+  return (el.shadowRoot?.firstElementChild as HTMLDivElement | null) ?? null;
+}
+
+function indicator(el: Element): HTMLDivElement | null {
+  return (track(el)?.firstElementChild as HTMLDivElement | null) ?? null;
+}
+
+function trackClass(el: Element): string {
+  return track(el)?.className ?? '';
+}
+
+function indicatorClass(el: Element): string {
+  return indicator(el)?.className ?? '';
 }
 
 describe('<rafters-progress>', () => {
@@ -39,46 +51,53 @@ describe('<rafters-progress>', () => {
     expect(customElements.get('rafters-progress')).toBe(RaftersProgress);
   });
 
-  it('renders a div.progress > div.progress-indicator structure', () => {
+  it('renders a track div wrapping an indicator div', () => {
     const el = mount();
-    const track = el.shadowRoot?.querySelector('div.progress');
-    expect(track).not.toBeNull();
-    expect(track?.getAttribute('role')).toBe('progressbar');
-    const indicator = track?.querySelector('div.progress-indicator');
-    expect(indicator).not.toBeNull();
+    const t = track(el);
+    expect(t).not.toBeNull();
+    expect(t?.getAttribute('role')).toBe('progressbar');
+    const i = indicator(el);
+    expect(i).not.toBeNull();
+  });
+
+  it('applies base + default variant + default size classes on the inner nodes', () => {
+    const el = mount();
+    expect(trackClass(el)).toBe(composeProgressTrackClasses('default'));
+    // Default state is indeterminate, so the indicator carries the animation utility.
+    expect(indicatorClass(el)).toBe(composeProgressIndicatorClasses('default', true));
   });
 
   it('falls back to default variant/size for unknown values', () => {
     const el = mount({ variant: 'nonsense', size: 'gigantic' });
-    const css = adoptedCssText(el);
-    // default variant = color-primary, default size = 0.5rem track height
-    expect(css).toContain('color-primary');
-    expect(css).toMatch(/height:\s*0\.5rem/);
+    expect(trackClass(el)).toContain(progressSizeClasses.default);
+    expect(indicatorClass(el)).toContain(progressVariantClasses.default);
   });
 
   it('reflects value changes to indicator inline width and aria-valuenow', () => {
     const el = mount();
     el.setAttribute('value', '33');
-    const indicator = el.shadowRoot?.querySelector('div.progress-indicator');
-    const track = el.shadowRoot?.querySelector('div.progress');
-    expect((indicator as HTMLElement | null)?.style.width).toBe('33%');
-    expect(track?.getAttribute('aria-valuenow')).toBe('33');
-    expect(track?.getAttribute('aria-valuetext')).toBe('33%');
+    const i = indicator(el);
+    const t = track(el);
+    expect(i?.style.width).toBe('33%');
+    expect(t?.getAttribute('aria-valuenow')).toBe('33');
+    expect(t?.getAttribute('aria-valuetext')).toBe('33%');
     expect(el.hasAttribute('aria-busy')).toBe(false);
   });
 
   it('falls back to indeterminate when value is absent or non-numeric', () => {
     const el = mount();
     expect(el.getAttribute('aria-busy')).toBe('true');
-    const indicator = el.shadowRoot?.querySelector('div.progress-indicator');
-    expect((indicator as HTMLElement | null)?.style.width).toBe('');
-    expect(indicator?.hasAttribute('data-indeterminate')).toBe(true);
+    const i = indicator(el);
+    expect(i?.style.width).toBe('');
+    expect(i?.hasAttribute('data-indeterminate')).toBe(true);
+    expect(indicatorClass(el)).toContain(progressIndeterminateClasses);
 
     const el2 = mount({ value: 'not-a-number' });
     expect(el2.getAttribute('aria-busy')).toBe('true');
-    const indicator2 = el2.shadowRoot?.querySelector('div.progress-indicator');
-    expect((indicator2 as HTMLElement | null)?.style.width).toBe('');
-    expect(indicator2?.hasAttribute('data-indeterminate')).toBe(true);
+    const i2 = indicator(el2);
+    expect(i2?.style.width).toBe('');
+    expect(i2?.hasAttribute('data-indeterminate')).toBe(true);
+    expect(indicatorClass(el2)).toContain(progressIndeterminateClasses);
   });
 
   it('source contains no direct var() references', async () => {
@@ -94,52 +113,45 @@ describe('<rafters-progress>', () => {
 
   it('emits aria-valuemin=0 and aria-valuemax=max on the track', () => {
     const el = mount({ max: '250', value: '50' });
-    const track = el.shadowRoot?.querySelector('div.progress');
-    expect(track?.getAttribute('aria-valuemin')).toBe('0');
-    expect(track?.getAttribute('aria-valuemax')).toBe('250');
-    expect(track?.getAttribute('aria-valuenow')).toBe('50');
+    const t = track(el);
+    expect(t?.getAttribute('aria-valuemin')).toBe('0');
+    expect(t?.getAttribute('aria-valuemax')).toBe('250');
+    expect(t?.getAttribute('aria-valuenow')).toBe('50');
   });
 
   it('clamps value to [0, max]', () => {
     const el = mount({ value: '200', max: '100' });
-    const indicator = el.shadowRoot?.querySelector('div.progress-indicator');
-    const track = el.shadowRoot?.querySelector('div.progress');
-    expect((indicator as HTMLElement | null)?.style.width).toBe('100%');
-    expect(track?.getAttribute('aria-valuenow')).toBe('100');
+    expect(indicator(el)?.style.width).toBe('100%');
+    expect(track(el)?.getAttribute('aria-valuenow')).toBe('100');
 
     const el2 = mount({ value: '-50' });
-    const indicator2 = el2.shadowRoot?.querySelector('div.progress-indicator');
-    const track2 = el2.shadowRoot?.querySelector('div.progress');
-    expect((indicator2 as HTMLElement | null)?.style.width).toBe('0%');
-    expect(track2?.getAttribute('aria-valuenow')).toBe('0');
+    expect(indicator(el2)?.style.width).toBe('0%');
+    expect(track(el2)?.getAttribute('aria-valuenow')).toBe('0');
   });
 
   it('falls back to max=100 when max is non-numeric or non-positive', () => {
     const el = mount({ max: 'abc', value: '50' });
-    const track = el.shadowRoot?.querySelector('div.progress');
-    expect(track?.getAttribute('aria-valuemax')).toBe('100');
+    expect(track(el)?.getAttribute('aria-valuemax')).toBe('100');
 
     const el2 = mount({ max: '0', value: '50' });
-    const track2 = el2.shadowRoot?.querySelector('div.progress');
-    expect(track2?.getAttribute('aria-valuemax')).toBe('100');
+    expect(track(el2)?.getAttribute('aria-valuemax')).toBe('100');
 
     const el3 = mount({ max: '-10', value: '50' });
-    const track3 = el3.shadowRoot?.querySelector('div.progress');
-    expect(track3?.getAttribute('aria-valuemax')).toBe('100');
+    expect(track(el3)?.getAttribute('aria-valuemax')).toBe('100');
   });
 
-  it('reflects variant attribute changes to the adopted stylesheet', () => {
-    const el = mount();
+  it('reflects variant attribute changes to the indicator class string', () => {
+    const el = mount({ value: '50' });
     el.setAttribute('variant', 'destructive');
-    expect(adoptedCssText(el)).toContain('color-destructive');
+    expect(indicatorClass(el)).toContain(progressVariantClasses.destructive);
   });
 
-  it('reflects size attribute changes to the adopted stylesheet', () => {
+  it('reflects size attribute changes to the track class string', () => {
     const el = mount();
     el.setAttribute('size', 'lg');
-    expect(adoptedCssText(el)).toMatch(/height:\s*0\.75rem/);
+    expect(trackClass(el)).toContain(progressSizeClasses.lg);
     el.setAttribute('size', 'sm');
-    expect(adoptedCssText(el)).toMatch(/height:\s*0\.25rem/);
+    expect(trackClass(el)).toContain(progressSizeClasses.sm);
   });
 
   it('removes aria-busy and data-indeterminate when value becomes numeric', () => {
@@ -147,9 +159,10 @@ describe('<rafters-progress>', () => {
     expect(el.getAttribute('aria-busy')).toBe('true');
     el.setAttribute('value', '42');
     expect(el.hasAttribute('aria-busy')).toBe(false);
-    const indicator = el.shadowRoot?.querySelector('div.progress-indicator');
-    expect(indicator?.hasAttribute('data-indeterminate')).toBe(false);
-    expect((indicator as HTMLElement | null)?.style.width).toBe('42%');
+    const i = indicator(el);
+    expect(i?.hasAttribute('data-indeterminate')).toBe(false);
+    expect(i?.style.width).toBe('42%');
+    expect(indicatorClass(el)).not.toContain(progressIndeterminateClasses);
   });
 
   it('re-enters indeterminate when value is removed', () => {
@@ -157,21 +170,15 @@ describe('<rafters-progress>', () => {
     expect(el.hasAttribute('aria-busy')).toBe(false);
     el.removeAttribute('value');
     expect(el.getAttribute('aria-busy')).toBe('true');
-    const indicator = el.shadowRoot?.querySelector('div.progress-indicator');
-    expect(indicator?.hasAttribute('data-indeterminate')).toBe(true);
-    expect((indicator as HTMLElement | null)?.style.width).toBe('');
+    const i = indicator(el);
+    expect(i?.hasAttribute('data-indeterminate')).toBe(true);
+    expect(i?.style.width).toBe('');
+    expect(indicatorClass(el)).toContain(progressIndeterminateClasses);
   });
 
-  it('shadow root adopts the per-instance stylesheet', () => {
-    const el = mount();
-    const sheets = el.shadowRoot?.adoptedStyleSheets ?? [];
-    expect(sheets.length).toBeGreaterThanOrEqual(1);
-  });
-
-  it('stylesheet uses only --motion-duration / --motion-ease tokens', () => {
-    const el = mount();
-    const css = adoptedCssText(el);
-    expect(css).not.toMatch(/var\(--duration-/);
-    expect(css).not.toMatch(/var\(--ease-/);
+  it('inner nodes carry the shared utility class strings, not a hand-written map', () => {
+    const el = mount({ value: '60', variant: 'success', size: 'lg' });
+    expect(trackClass(el)).toBe(composeProgressTrackClasses('lg'));
+    expect(indicatorClass(el)).toBe(composeProgressIndicatorClasses('success', false));
   });
 });

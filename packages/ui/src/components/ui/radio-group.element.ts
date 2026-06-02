@@ -30,16 +30,59 @@
  * non-disabled items with roving tabindex; Home/End jump to the
  * first/last non-disabled item; Space/Enter select the focused item.
  *
- * No raw CSS custom-property literals here -- all token references
- * live in radio-group.styles.ts and resolve through tokenVar().
+ * Each inner node carries the SAME utility class strings the React/Astro
+ * targets use -- imported from radio-group.classes.ts -- rather than a
+ * parallel hand-written CSS map. The group container carries the
+ * orientation layout classes; the item button carries the base radio
+ * classes (border, hover, focus ring, disabled dimming) and the indicator
+ * span carries the dot classes. Presentation resolves from the shared
+ * compiled utility sheet adopted by RaftersElement (setUtilityCSS) plus the
+ * token custom properties inherited from the host :root.
+ *
+ * The only shadow-scoped CSS these components own is the structural :host
+ * display shim. The checked indicator dot is rendered only when checked
+ * (mirroring radio-group.tsx), so no display-toggle CSS is required.
  */
 
 import { RaftersElement } from '../../primitives/rafters-element';
 import {
-  type RadioOrientation,
-  radioGroupStylesheet,
-  radioItemStylesheet,
-} from './radio-group.styles';
+  radioGroupHorizontalClasses,
+  radioGroupItemBaseClasses,
+  radioGroupItemIndicatorClasses,
+  radioGroupVerticalClasses,
+} from './radio-group.classes';
+
+// ============================================================================
+// Public Types
+// ============================================================================
+
+export type RadioOrientation = 'horizontal' | 'vertical';
+
+/**
+ * Compose the group container's class string. Mirrors radio-group.tsx:
+ * the horizontal or vertical layout classes keyed by orientation. Exported
+ * so tests assert parity with the React/Astro targets.
+ */
+export function composeRadioGroupClasses(orientation: RadioOrientation): string {
+  return orientation === 'horizontal' ? radioGroupHorizontalClasses : radioGroupVerticalClasses;
+}
+
+/**
+ * Compose the inner radio button's class string. Mirrors radio-group.tsx:
+ * the shared base radio classes (border, hover, focus-visible ring,
+ * disabled dimming). Exported for parity assertions.
+ */
+export function composeRadioItemClasses(): string {
+  return radioGroupItemBaseClasses;
+}
+
+/**
+ * Compose the indicator dot's class string. Mirrors radio-group.tsx's
+ * checked indicator span.
+ */
+export function composeRadioIndicatorClasses(): string {
+  return radioGroupItemIndicatorClasses;
+}
 
 // ============================================================================
 // Sanitization helpers
@@ -81,8 +124,14 @@ export class RaftersRadioGroup extends RaftersElement {
   static formAssociated = true;
   static observedAttributes: ReadonlyArray<string> = GROUP_OBSERVED_ATTRIBUTES;
 
+  /**
+   * The only component-owned CSS: the structural host-display shim. The
+   * inner container div carries the orientation layout (flex/grid + gap)
+   * via utility classes.
+   */
+  static override styles = ':host { display: block; }';
+
   private _internals: ElementInternals;
-  private _instanceSheet: CSSStyleSheet | null = null;
   private _onItemClick: (event: Event) => void;
   private _onKeyDown: (event: KeyboardEvent) => void;
   private _onFocusIn: (event: FocusEvent) => void;
@@ -107,12 +156,6 @@ export class RaftersRadioGroup extends RaftersElement {
     super.connectedCallback();
     if (!this.shadowRoot) return;
 
-    this._instanceSheet = new CSSStyleSheet();
-    this._instanceSheet.replaceSync(this.composeCss());
-
-    const existing = this.shadowRoot.adoptedStyleSheets;
-    this.shadowRoot.adoptedStyleSheets = [...existing, this._instanceSheet];
-
     this.setAttribute('role', 'radiogroup');
     this.setAttribute('aria-orientation', parseOrientation(this.getAttribute('orientation')));
 
@@ -131,8 +174,8 @@ export class RaftersRadioGroup extends RaftersElement {
   ): void {
     if (oldValue === newValue) return;
 
-    if (name === 'orientation' && this._instanceSheet) {
-      this._instanceSheet.replaceSync(this.composeCss());
+    if (name === 'orientation') {
+      this.applyContainerClasses();
       this.setAttribute('aria-orientation', parseOrientation(newValue));
     }
 
@@ -154,7 +197,6 @@ export class RaftersRadioGroup extends RaftersElement {
     this.removeEventListener('click', this._onItemClick);
     this.removeEventListener('keydown', this._onKeyDown);
     this.removeEventListener('focusin', this._onFocusIn);
-    this._instanceSheet = null;
   }
 
   // ==========================================================================
@@ -163,16 +205,21 @@ export class RaftersRadioGroup extends RaftersElement {
 
   override render(): Node {
     const container = document.createElement('div');
-    container.className = 'group';
+    container.className = composeRadioGroupClasses(
+      parseOrientation(this.getAttribute('orientation')),
+    );
     const slot = document.createElement('slot');
     container.appendChild(slot);
     return container;
   }
 
-  private composeCss(): string {
-    return radioGroupStylesheet({
-      orientation: parseOrientation(this.getAttribute('orientation')),
-    });
+  private applyContainerClasses(): void {
+    const container = this.shadowRoot?.querySelector('div');
+    if (container) {
+      container.className = composeRadioGroupClasses(
+        parseOrientation(this.getAttribute('orientation')),
+      );
+    }
   }
 
   // ==========================================================================
@@ -537,7 +584,13 @@ export class RaftersRadioGroup extends RaftersElement {
 export class RaftersRadioItem extends RaftersElement {
   static observedAttributes: ReadonlyArray<string> = ITEM_OBSERVED_ATTRIBUTES;
 
-  private _instanceSheet: CSSStyleSheet | null = null;
+  /**
+   * The only component-owned CSS: the structural host-display shim. The
+   * inner button carries the base radio classes (border, hover, focus
+   * ring, disabled dimming) and the indicator dot carries its own classes.
+   */
+  static override styles = ':host { display: inline-flex; }';
+
   private _button: HTMLButtonElement | null = null;
 
   // ==========================================================================
@@ -547,12 +600,6 @@ export class RaftersRadioItem extends RaftersElement {
   override connectedCallback(): void {
     super.connectedCallback();
     if (!this.shadowRoot) return;
-
-    this._instanceSheet = new CSSStyleSheet();
-    this._instanceSheet.replaceSync(this.composeCss());
-
-    const existing = this.shadowRoot.adoptedStyleSheets;
-    this.shadowRoot.adoptedStyleSheets = [...existing, this._instanceSheet];
 
     this.setAttribute('role', 'radio');
     if (!this.hasAttribute('tabindex')) {
@@ -568,15 +615,16 @@ export class RaftersRadioItem extends RaftersElement {
   ): void {
     if (oldValue === newValue) return;
 
-    if ((name === 'checked' || name === 'disabled') && this._instanceSheet) {
-      this._instanceSheet.replaceSync(this.composeCss());
+    if (name === 'checked') {
+      // The indicator dot is rendered only when checked (React parity), so
+      // toggling checked must add or remove it.
+      this.renderIndicator();
     }
 
     this.mirrorStateToButton();
   }
 
   override disconnectedCallback(): void {
-    this._instanceSheet = null;
     this._button = null;
   }
 
@@ -596,24 +644,30 @@ export class RaftersRadioItem extends RaftersElement {
     // disabled on a11y scans for this reason (see a11y tests).
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = 'radio';
+    button.className = composeRadioItemClasses();
     button.setAttribute('aria-hidden', 'true');
     button.setAttribute('tabindex', '-1');
     button.setAttribute('role', 'presentation');
-    const indicator = document.createElement('span');
-    indicator.className = 'indicator';
-    indicator.setAttribute('aria-hidden', 'true');
-    button.appendChild(indicator);
     this._button = button;
+    this.renderIndicator();
     this.mirrorStateToButton();
     return button;
   }
 
-  private composeCss(): string {
-    return radioItemStylesheet({
-      checked: this.hasAttribute('checked'),
-      disabled: this.hasAttribute('disabled'),
-    });
+  /**
+   * Populate or clear the indicator dot based on the current `checked`
+   * state, mirroring radio-group.tsx which renders the span only when
+   * checked. Uses createElement; never innerHTML.
+   */
+  private renderIndicator(): void {
+    const button = this.getInnerButton();
+    if (!button) return;
+    button.replaceChildren();
+    if (!this.hasAttribute('checked')) return;
+    const indicator = document.createElement('span');
+    indicator.className = composeRadioIndicatorClasses();
+    indicator.setAttribute('aria-hidden', 'true');
+    button.appendChild(indicator);
   }
 
   private mirrorStateToButton(): void {

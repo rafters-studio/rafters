@@ -10,21 +10,36 @@
  *   - aria-required when required
  *   - disabled propagated to the control
  *
+ * Each inner node carries the SAME utility class strings the React target
+ * uses -- imported from field.classes.ts (and label.classes.ts for the label,
+ * exactly as field.tsx composes via the Label component) -- rather than a
+ * parallel hand-written CSS map. Presentation resolves from the shared compiled
+ * utility sheet adopted by RaftersElement (setUtilityCSS) plus the token custom
+ * properties inherited from the host :root.
+ *
+ * The only shadow-scoped CSS this component owns is the structural :host
+ * display shim.
+ *
  * Attributes (all observed):
  *  - label: string -- label text (empty when missing)
  *  - description: string -- helper text shown when no error
  *  - error: string -- error text; replaces description
- *  - required: boolean -- presence toggles the `*` marker and aria-required
+ *  - required: boolean -- presence toggles the marker and aria-required
  *  - disabled: boolean -- presence dims label and propagates to control
  *  - id: string -- stable field id; generated from crypto.randomUUID when absent
  *
  * Respects author-provided id / aria-describedby on the slotted control.
- * All styling comes from fieldStylesheet(...) via an adopted per-instance
- * CSSStyleSheet. No raw CSS custom-property literals; tokenVar() for every token.
  */
 
 import { RaftersElement } from '../../primitives/rafters-element';
-import { fieldStylesheet } from './field.styles';
+import {
+  fieldContainerClasses,
+  fieldDescriptionClasses,
+  fieldErrorClasses,
+  fieldLabelDisabledClasses,
+  fieldRequiredMarkerClasses,
+} from './field.classes';
+import { labelBaseClasses, labelVariantClasses } from './label.classes';
 
 const OBSERVED_ATTRIBUTES: ReadonlyArray<string> = [
   'label',
@@ -42,11 +57,29 @@ function generateFieldId(): string {
   return `field-${Math.random().toString(36).slice(2, 10)}`;
 }
 
+/**
+ * Compose the label node's class string. Mirrors field.tsx, which renders the
+ * shared Label component (labelBaseClasses + default variant) plus the disabled
+ * dimming utility. Exported for parity assertions in the test.
+ */
+export function composeFieldLabelClasses(disabled: boolean): string {
+  return [
+    labelBaseClasses,
+    labelVariantClasses.default ?? '',
+    disabled ? fieldLabelDisabledClasses : '',
+  ]
+    .filter((part) => part.length > 0)
+    .join(' ');
+}
+
 export class RaftersField extends RaftersElement {
   static observedAttributes: ReadonlyArray<string> = OBSERVED_ATTRIBUTES;
 
-  /** Per-instance stylesheet rebuilt on every disabled/error change. */
-  private _instanceSheet: CSSStyleSheet | null = null;
+  /**
+   * The only component-owned CSS: the structural host-display shim. The field
+   * stacks its parts as a block.
+   */
+  static override styles = ':host { display: block; }';
 
   /** Stable field id generated once per element lifetime. */
   private _fieldId: string | null = null;
@@ -116,11 +149,7 @@ export class RaftersField extends RaftersElement {
     // changes are silent no-ops per spec.
     void this.fieldId;
 
-    this._instanceSheet = new CSSStyleSheet();
-    this._instanceSheet.replaceSync(this.composeCss());
-    this.shadowRoot.adoptedStyleSheets = [this._instanceSheet];
-
-    this.update();
+    super.connectedCallback();
     this.attachSlotListener();
     this.wireSlottedControl();
   }
@@ -135,33 +164,22 @@ export class RaftersField extends RaftersElement {
     // `id` is intentionally immutable after first connect.
     if (name === 'id') return;
 
-    if (this._instanceSheet) {
-      this._instanceSheet.replaceSync(this.composeCss());
-    }
-
     this.update();
     this.wireSlottedControl();
   }
 
   override disconnectedCallback(): void {
     this.detachSlotListener();
-    this._instanceSheet = null;
+    super.disconnectedCallback();
   }
 
   // ==========================================================================
   // Rendering
   // ==========================================================================
 
-  private composeCss(): string {
-    return fieldStylesheet({
-      disabled: this.hasAttribute('disabled'),
-      error: this.hasAttribute('error'),
-    });
-  }
-
   override render(): Node {
     const container = document.createElement('div');
-    container.className = 'container';
+    container.className = fieldContainerClasses;
 
     const fieldId = this.fieldId;
     const labelText = this.label;
@@ -172,13 +190,13 @@ export class RaftersField extends RaftersElement {
     const isRequired = this.required;
 
     const labelEl = document.createElement('label');
-    labelEl.className = 'label';
+    labelEl.className = composeFieldLabelClasses(this.disabled);
     labelEl.setAttribute('for', fieldId);
     labelEl.textContent = labelText;
 
     if (isRequired) {
       const marker = document.createElement('span');
-      marker.className = 'required';
+      marker.className = fieldRequiredMarkerClasses;
       marker.setAttribute('aria-hidden', 'true');
       marker.textContent = '*';
       labelEl.appendChild(marker);
@@ -191,14 +209,14 @@ export class RaftersField extends RaftersElement {
 
     if (hasError) {
       const errorEl = document.createElement('p');
-      errorEl.className = 'error';
+      errorEl.className = fieldErrorClasses;
       errorEl.id = `${fieldId}-error`;
       errorEl.setAttribute('role', 'alert');
       errorEl.textContent = errorText;
       container.appendChild(errorEl);
     } else if (hasDescription) {
       const descEl = document.createElement('p');
-      descEl.className = 'description';
+      descEl.className = fieldDescriptionClasses;
       descEl.id = `${fieldId}-description`;
       descEl.textContent = descriptionText;
       container.appendChild(descEl);

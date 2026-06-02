@@ -37,6 +37,14 @@
 
 import * as React from 'react';
 import classy from '../../primitives/classy';
+import {
+  inputOtpCaretBarClasses,
+  inputOtpCaretContainerClasses,
+  inputOtpContainerClasses,
+  inputOtpGroupClasses,
+  inputOtpHiddenInputClasses,
+  inputOtpSlotActiveClasses,
+} from './input-otp.classes';
 
 // ==================== Context ====================
 
@@ -184,7 +192,7 @@ export function InputOTP({
       <div
         data-input-otp-container=""
         onClick={handleContainerClick}
-        className={classy('flex items-center gap-2', disabled && 'opacity-50', className)}
+        className={classy(inputOtpContainerClasses, disabled && 'opacity-50', className)}
         {...props}
       >
         {/* Hidden input for actual value */}
@@ -200,7 +208,7 @@ export function InputOTP({
           disabled={disabled}
           maxLength={maxLength}
           aria-label={`Enter ${maxLength} digit code`}
-          className="sr-only"
+          className={inputOtpHiddenInputClasses}
           data-input-otp=""
         />
         {children}
@@ -219,7 +227,7 @@ export function InputOTPGroup({
   ...props
 }: InputOTPGroupProps): React.JSX.Element {
   return (
-    <div data-input-otp-group="" className={classy('flex items-center', className)} {...props}>
+    <div data-input-otp-group="" className={classy(inputOtpGroupClasses, className)} {...props}>
       {children}
     </div>
   );
@@ -258,7 +266,7 @@ export function InputOTPSlot({ index, className, ...props }: InputOTPSlotProps):
         'relative flex h-9 w-9 items-center justify-center',
         'border-y border-r border-input text-sm shadow-sm transition-all',
         'first:rounded-l-md first:border-l last:rounded-r-md',
-        isActive && 'z-10 ring-1 ring-ring',
+        isActive && inputOtpSlotActiveClasses,
         disabled && 'cursor-not-allowed',
         className,
       )}
@@ -266,8 +274,8 @@ export function InputOTPSlot({ index, className, ...props }: InputOTPSlotProps):
     >
       {char}
       {hasFakeCaret && (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <div className="h-4 w-px animate-pulse bg-foreground" />
+        <div className={inputOtpCaretContainerClasses}>
+          <div className={inputOtpCaretBarClasses} />
         </div>
       )}
     </div>

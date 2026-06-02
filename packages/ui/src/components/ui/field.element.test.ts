@@ -1,6 +1,12 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import './field.element';
-import { RaftersField } from './field.element';
+import {
+  fieldDescriptionClasses,
+  fieldErrorClasses,
+  fieldLabelDisabledClasses,
+  fieldRequiredMarkerClasses,
+} from './field.classes';
+import { composeFieldLabelClasses, RaftersField } from './field.element';
 
 afterEach(() => {
   document.body.replaceChildren();
@@ -13,15 +19,22 @@ function mount(attrs: Record<string, string> = {}): RaftersField {
   return el;
 }
 
-function collectCss(el: Element): string {
-  const sheets = el.shadowRoot?.adoptedStyleSheets ?? [];
-  return sheets
-    .map((s) =>
-      Array.from(s.cssRules)
-        .map((r) => r.cssText)
-        .join('\n'),
-    )
-    .join('\n');
+function requiredMarker(el: Element): Element | null {
+  return (
+    el.shadowRoot?.querySelector(`span.${fieldRequiredMarkerClasses.split(' ').join('.')}`) ?? null
+  );
+}
+
+function descriptionNode(el: Element): HTMLElement | null {
+  const ps = Array.from(el.shadowRoot?.querySelectorAll('p') ?? []);
+  return (
+    (ps.find((p) => p.className === fieldDescriptionClasses) as HTMLElement | undefined) ?? null
+  );
+}
+
+function errorNode(el: Element): HTMLElement | null {
+  const ps = Array.from(el.shadowRoot?.querySelectorAll('p') ?? []);
+  return (ps.find((p) => p.className === fieldErrorClasses) as HTMLElement | undefined) ?? null;
 }
 
 describe('rafters-field', () => {
@@ -57,14 +70,14 @@ describe('rafters-field', () => {
     el.setAttribute('label', 'Email');
     el.toggleAttribute('required', true);
     document.body.append(el);
-    const marker = el.shadowRoot?.querySelector('.required');
+    const marker = requiredMarker(el);
     expect(marker).not.toBeNull();
     expect(marker?.getAttribute('aria-hidden')).toBe('true');
   });
 
   it('omits required marker when required attribute absent', () => {
     const el = mount({ label: 'Email' });
-    expect(el.shadowRoot?.querySelector('.required')).toBeNull();
+    expect(requiredMarker(el)).toBeNull();
   });
 
   it('connects label[for] to slotted control id', () => {
@@ -86,7 +99,7 @@ describe('rafters-field', () => {
     el.append(input);
     document.body.append(el);
     const described = input.getAttribute('aria-describedby') ?? '';
-    const descriptionId = el.shadowRoot?.querySelector('.description')?.id;
+    const descriptionId = descriptionNode(el)?.id;
     expect(descriptionId).toBeDefined();
     expect(described).toContain(descriptionId ?? '');
   });
@@ -98,9 +111,9 @@ describe('rafters-field', () => {
     const input = document.createElement('input');
     el.append(input);
     document.body.append(el);
-    const errorNode = el.shadowRoot?.querySelector('.error');
-    expect(errorNode?.getAttribute('role')).toBe('alert');
-    expect(errorNode?.textContent).toContain('Email is required');
+    const node = errorNode(el);
+    expect(node?.getAttribute('role')).toBe('alert');
+    expect(node?.textContent).toContain('Email is required');
     expect(input.getAttribute('aria-invalid')).toBe('true');
   });
 
@@ -110,8 +123,8 @@ describe('rafters-field', () => {
       description: 'We never share your email',
       error: 'Email is required',
     });
-    expect(el.shadowRoot?.querySelector('.description')).toBeNull();
-    expect(el.shadowRoot?.querySelector('.error')).not.toBeNull();
+    expect(descriptionNode(el)).toBeNull();
+    expect(errorNode(el)).not.toBeNull();
   });
 
   it('propagates disabled to slotted control', () => {
@@ -217,24 +230,20 @@ describe('rafters-field', () => {
     expect(input.id.startsWith('field-')).toBe(true);
   });
 
-  it('adopts a per-instance stylesheet in the shadow root', () => {
+  it('adopts the static host stylesheet in the shadow root', () => {
     const el = mount({ label: 'Email' });
     const sheets = el.shadowRoot?.adoptedStyleSheets ?? [];
     expect(sheets.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('stylesheet uses only --motion-duration / --motion-ease tokens', () => {
+  it('label carries the shared label utility classes and toggles disabled dimming', () => {
     const el = mount({ label: 'Email' });
-    const css = collectCss(el);
-    expect(css).not.toMatch(/var\(--duration-/);
-    expect(css).not.toMatch(/var\(--ease-/);
-  });
-
-  it('updates stylesheet when disabled is toggled', () => {
-    const el = mount({ label: 'Email' });
-    expect(collectCss(el)).not.toMatch(/\.label\s*\{[^}]*opacity:\s*0\.5/);
+    const label = el.shadowRoot?.querySelector('label');
+    expect(label?.className).toBe(composeFieldLabelClasses(false));
+    expect(label?.className).not.toContain(fieldLabelDisabledClasses);
     el.setAttribute('disabled', '');
-    expect(collectCss(el)).toMatch(/opacity:\s*0\.5/);
+    expect(el.shadowRoot?.querySelector('label')?.className).toBe(composeFieldLabelClasses(true));
+    expect(el.shadowRoot?.querySelector('label')?.className).toContain(fieldLabelDisabledClasses);
   });
 
   it('re-wires accessibility attributes when the slotted control changes', () => {
@@ -280,7 +289,7 @@ describe('rafters-field', () => {
     expect(el.fieldId).toBe(first);
   });
 
-  it('source contains no direct var() literals in either .ts file', async () => {
+  it('source contains no direct var() literals in the element file', async () => {
     const fs = await import('node:fs/promises');
     const path = await import('node:path');
     const elementSource = await fs.readFile(path.resolve(__dirname, 'field.element.ts'), 'utf-8');

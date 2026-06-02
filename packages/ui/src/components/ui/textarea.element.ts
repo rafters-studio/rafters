@@ -23,22 +23,45 @@
  *    fall back to 'none'); maps to CSS `resize` on the inner textarea
  *  - variant: TextareaVariant (default 'default')
  *  - size: TextareaSize (default 'default')
- *  - aria-invalid: reflected; drives the invalid ring in styles
+ *  - aria-invalid: reflected to the inner textarea
  *
- * No raw CSS custom-property literals here -- all token references
- * live in textarea.styles.ts and resolve through tokenVar().
+ * The inner <textarea> carries the SAME utility class strings the React/Astro
+ * targets use -- imported from textarea.classes.ts -- rather than a parallel
+ * hand-written CSS map. Variant border, focus ring, size, hover, placeholder,
+ * disabled dimming, and the reduced-motion guard all ride utility classes
+ * resolved against the shared compiled utility sheet adopted by RaftersElement
+ * (setUtilityCSS) plus inherited token props.
+ *
+ * The only shadow-scoped CSS this component owns is the structural :host
+ * display shim. The resize behavior is applied directly as an inline CSS
+ * `resize` property on the inner textarea, independent of any class.
  */
 
 import { RaftersElement } from '../../primitives/rafters-element';
 import {
-  type TextareaResize,
-  type TextareaSize,
-  type TextareaVariant,
-  textareaResizeStyles,
-  textareaSizeStyles,
-  textareaStylesheet,
-  textareaVariantStyles,
-} from './textarea.styles';
+  textareaBaseClasses,
+  textareaSizeClasses,
+  textareaVariantClasses,
+} from './textarea.classes';
+
+// ============================================================================
+// Public Types
+// ============================================================================
+
+export type TextareaVariant =
+  | 'default'
+  | 'primary'
+  | 'secondary'
+  | 'destructive'
+  | 'success'
+  | 'warning'
+  | 'info'
+  | 'muted'
+  | 'accent';
+
+export type TextareaSize = 'sm' | 'default' | 'lg';
+
+export type TextareaResize = 'none' | 'vertical' | 'horizontal' | 'both';
 
 // ============================================================================
 // Sanitization helpers
@@ -47,6 +70,18 @@ import {
 type WrapValue = 'soft' | 'hard' | 'off';
 
 const WRAP_VALUES: ReadonlyArray<WrapValue> = ['soft', 'hard', 'off'];
+
+const RESIZE_VALUES: ReadonlyArray<TextareaResize> = ['none', 'vertical', 'horizontal', 'both'];
+
+/**
+ * Compose the inner textarea's class string from the shared class maps.
+ * Mirrors textarea.tsx: base + variant + size. Exported so tests assert the
+ * WC renders the exact same composition the React/Astro targets do -- the
+ * parity guarantee.
+ */
+export function composeTextareaClasses(variant: TextareaVariant, size: TextareaSize): string {
+  return `${textareaBaseClasses} ${textareaVariantClasses[variant] ?? textareaVariantClasses.default} ${textareaSizeClasses[size] ?? textareaSizeClasses.default}`;
+}
 
 const OBSERVED_ATTRIBUTES: ReadonlyArray<string> = [
   'placeholder',
@@ -72,21 +107,21 @@ function parseWrap(value: string | null): WrapValue {
 }
 
 function parseResize(value: string | null): TextareaResize {
-  if (value && value in textareaResizeStyles) {
+  if (value && (RESIZE_VALUES as ReadonlyArray<string>).includes(value)) {
     return value as TextareaResize;
   }
   return 'none';
 }
 
 function parseVariant(value: string | null): TextareaVariant {
-  if (value && value in textareaVariantStyles) {
+  if (value && value in textareaVariantClasses) {
     return value as TextareaVariant;
   }
   return 'default';
 }
 
 function parseSize(value: string | null): TextareaSize {
-  if (value && value in textareaSizeStyles) {
+  if (value && value in textareaSizeClasses) {
     return value as TextareaSize;
   }
   return 'default';
@@ -118,8 +153,14 @@ export class RaftersTextarea extends RaftersElement {
   static formAssociated = true;
   static observedAttributes: ReadonlyArray<string> = OBSERVED_ATTRIBUTES;
 
+  /**
+   * The only component-owned CSS: the structural host-display shim. Every
+   * other surface (variant border, focus ring, size, hover, placeholder,
+   * disabled, reduced motion) rides a utility class on the inner textarea.
+   */
+  static override styles = ':host { display: block; }';
+
   private _internals: ElementInternals;
-  private _instanceSheet: CSSStyleSheet | null = null;
   private _inner: HTMLTextAreaElement | null = null;
   private _onInput: (event: Event) => void;
   private _onChange: (event: Event) => void;
@@ -142,13 +183,6 @@ export class RaftersTextarea extends RaftersElement {
   override connectedCallback(): void {
     super.connectedCallback();
     if (!this.shadowRoot) return;
-
-    this._instanceSheet = new CSSStyleSheet();
-    this._instanceSheet.replaceSync(this.composeCss());
-
-    const existing = this.shadowRoot.adoptedStyleSheets;
-    this.shadowRoot.adoptedStyleSheets = [...existing, this._instanceSheet];
-
     this.syncFormValue();
   }
 
@@ -159,15 +193,8 @@ export class RaftersTextarea extends RaftersElement {
   ): void {
     if (oldValue === newValue) return;
 
-    if (
-      (name === 'variant' ||
-        name === 'size' ||
-        name === 'resize' ||
-        name === 'disabled' ||
-        name === 'aria-invalid') &&
-      this._instanceSheet
-    ) {
-      this._instanceSheet.replaceSync(this.composeCss());
+    if (name === 'variant' || name === 'size') {
+      this.applyInnerClasses();
     }
 
     this.mirrorAttributesToInner();
@@ -179,7 +206,6 @@ export class RaftersTextarea extends RaftersElement {
 
   override disconnectedCallback(): void {
     this.detachInnerListeners();
-    this._instanceSheet = null;
     this._inner = null;
   }
 
@@ -190,7 +216,7 @@ export class RaftersTextarea extends RaftersElement {
   override render(): Node {
     this.detachInnerListeners();
     const inner = document.createElement('textarea');
-    inner.className = 'textarea';
+    inner.className = this.composeClasses();
     this._inner = inner;
     this.mirrorAttributesToInner();
     inner.addEventListener('input', this._onInput);
@@ -204,14 +230,16 @@ export class RaftersTextarea extends RaftersElement {
     this._inner.removeEventListener('change', this._onChange);
   }
 
-  private composeCss(): string {
-    return textareaStylesheet({
-      variant: parseVariant(this.getAttribute('variant')),
-      size: parseSize(this.getAttribute('size')),
-      resize: parseResize(this.getAttribute('resize')),
-      invalid: this.getAttribute('aria-invalid') === 'true',
-      disabled: this.hasAttribute('disabled'),
-    });
+  private composeClasses(): string {
+    return composeTextareaClasses(
+      parseVariant(this.getAttribute('variant')),
+      parseSize(this.getAttribute('size')),
+    );
+  }
+
+  private applyInnerClasses(): void {
+    const inner = this.getInnerTextarea();
+    if (inner) inner.className = this.composeClasses();
   }
 
   // ==========================================================================

@@ -1,9 +1,18 @@
 /**
  * <rafters-input> -- Form-associated Web Component for text input.
  *
- * Mirrors the semantics of input.tsx (variant, size, native input attributes)
- * using shadow-DOM-scoped CSS composed via classy-wc. Auto-registers on
- * import and is idempotent against double-define.
+ * Mirrors the semantics of input.tsx (variant, size, native input attributes).
+ * The inner <input> carries the SAME utility class strings the React/Astro
+ * targets use -- imported from input.classes.ts -- rather than a parallel
+ * hand-written CSS map. Presentation resolves from the shared compiled utility
+ * sheet adopted by RaftersElement (setUtilityCSS) plus the token custom
+ * properties inherited from the host :root. Auto-registers on import and is
+ * idempotent against double-define.
+ *
+ * The only shadow-scoped CSS this component owns is the structural :host
+ * display shim. All variant, size, hover, focus-visible, disabled, placeholder,
+ * and reduced-motion presentation lives in the utility class strings, so no
+ * per-instance stylesheet is required any more.
  *
  * Form-associated: participates in <form> submission, validation, reset,
  * disabled propagation, and state restoration via ElementInternals.
@@ -18,21 +27,25 @@
  *  - name: string (form field name)
  *  - variant: InputVariant (default 'default')
  *  - size: InputSize (default 'default')
- *
- * No raw CSS custom-property literals here -- all token references live in
- * input.styles.ts and resolve through tokenVar().
  */
 
 import { RaftersElement } from '../../primitives/rafters-element';
-import {
-  type InputSize,
-  type InputVariant,
-  inputSizeStyles,
-  inputStylesheet,
-  inputVariantStyles,
-} from './input.styles';
+import { inputBaseClasses, inputSizeClasses, inputVariantClasses } from './input.classes';
 
 export type InputType = 'text' | 'email' | 'password' | 'number' | 'tel' | 'url' | 'search';
+
+export type InputVariant =
+  | 'default'
+  | 'primary'
+  | 'secondary'
+  | 'destructive'
+  | 'success'
+  | 'warning'
+  | 'info'
+  | 'muted'
+  | 'accent';
+
+export type InputSize = 'sm' | 'default' | 'lg';
 
 const ALLOWED_TYPES: ReadonlyArray<InputType> = [
   'text',
@@ -63,17 +76,26 @@ function parseType(value: string | null): InputType {
 }
 
 function parseVariant(value: string | null): InputVariant {
-  if (value && value in inputVariantStyles) {
+  if (value && value in inputVariantClasses) {
     return value as InputVariant;
   }
   return 'default';
 }
 
 function parseSize(value: string | null): InputSize {
-  if (value && value in inputSizeStyles) {
+  if (value && value in inputSizeClasses) {
     return value as InputSize;
   }
   return 'default';
+}
+
+/**
+ * Compose the inner input's class string from the shared class maps.
+ * Exported so tests assert the WC renders the exact same composition the
+ * React/Astro targets do -- the parity guarantee.
+ */
+export function composeInputClasses(variant: InputVariant, size: InputSize): string {
+  return `${inputBaseClasses} ${inputVariantClasses[variant]} ${inputSizeClasses[size]}`;
 }
 
 interface ElementInternalsHost {
@@ -84,8 +106,13 @@ export class RaftersInput extends RaftersElement {
   static formAssociated = true;
   static observedAttributes: ReadonlyArray<string> = OBSERVED_ATTRIBUTES;
 
+  /**
+   * The only component-owned CSS: the structural host-display shim. The input
+   * fills the host width as a block.
+   */
+  static override styles = ':host { display: block; }';
+
   private _internals: ElementInternals;
-  private _instanceSheet: CSSStyleSheet | null = null;
   private _inner: HTMLInputElement | null = null;
   private _onInput: (event: Event) => void;
   private _onChange: (event: Event) => void;
@@ -108,15 +135,6 @@ export class RaftersInput extends RaftersElement {
   override connectedCallback(): void {
     super.connectedCallback();
     if (!this.shadowRoot) return;
-
-    this._instanceSheet = new CSSStyleSheet();
-    this._instanceSheet.replaceSync(this.composeCss());
-
-    // Append our per-instance sheet on top of whatever the base set
-    // (typically just the shared token sheet plus any static styles).
-    const existing = this.shadowRoot.adoptedStyleSheets;
-    this.shadowRoot.adoptedStyleSheets = [...existing, this._instanceSheet];
-
     this.syncFormValue();
   }
 
@@ -127,8 +145,8 @@ export class RaftersInput extends RaftersElement {
   ): void {
     if (oldValue === newValue) return;
 
-    if ((name === 'variant' || name === 'size') && this._instanceSheet) {
-      this._instanceSheet.replaceSync(this.composeCss());
+    if (name === 'variant' || name === 'size') {
+      this.applyInnerClasses();
     }
 
     this.mirrorAttributesToInner();
@@ -140,8 +158,8 @@ export class RaftersInput extends RaftersElement {
 
   override disconnectedCallback(): void {
     this.detachInnerListeners();
-    this._instanceSheet = null;
     this._inner = null;
+    super.disconnectedCallback();
   }
 
   // ==========================================================================
@@ -151,7 +169,7 @@ export class RaftersInput extends RaftersElement {
   override render(): Node {
     this.detachInnerListeners();
     const inner = document.createElement('input');
-    inner.className = 'input';
+    inner.className = this.composeClasses();
     this._inner = inner;
     this.mirrorAttributesToInner();
     inner.addEventListener('input', this._onInput);
@@ -165,11 +183,16 @@ export class RaftersInput extends RaftersElement {
     this._inner.removeEventListener('change', this._onChange);
   }
 
-  private composeCss(): string {
-    return inputStylesheet({
-      variant: parseVariant(this.getAttribute('variant')),
-      size: parseSize(this.getAttribute('size')),
-    });
+  private composeClasses(): string {
+    return composeInputClasses(
+      parseVariant(this.getAttribute('variant')),
+      parseSize(this.getAttribute('size')),
+    );
+  }
+
+  private applyInnerClasses(): void {
+    const inner = this.getInnerInput();
+    if (inner) inner.className = this.composeClasses();
   }
 
   // ==========================================================================

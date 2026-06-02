@@ -16,6 +16,12 @@
  */
 
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import {
+  radioGroupHorizontalClasses,
+  radioGroupItemBaseClasses,
+  radioGroupItemIndicatorClasses,
+  radioGroupVerticalClasses,
+} from './radio-group.classes';
 
 interface PolyfilledInternals {
   _value: string | null;
@@ -257,23 +263,37 @@ describe('rafters-radio-group', () => {
     expect(item.shadowRoot?.mode).toBe('open');
   });
 
-  it('renders a <div class="group"> with a slot in the group shadow root', async () => {
+  it('renders a container div carrying the orientation utility classes with a slot', async () => {
     const { Group } = await loadElements();
     const group = document.createElement('rafters-radio-group') as InstanceType<typeof Group>;
     document.body.append(group);
-    const container = group.shadowRoot?.querySelector('div.group');
+    const container = group.shadowRoot?.querySelector('div');
     expect(container).toBeTruthy();
+    expect(container?.className).toBe(radioGroupVerticalClasses);
     expect(container?.querySelector('slot')).toBeTruthy();
   });
 
-  it('renders a <button class="radio"> with an indicator span in the item shadow root', async () => {
+  it('renders an inner button carrying the base radio utility classes', async () => {
     const { Item } = await loadElements();
     const item = document.createElement('rafters-radio-item') as InstanceType<typeof Item>;
     document.body.append(item);
-    const button = item.shadowRoot?.querySelector('button.radio');
+    const button = item.shadowRoot?.querySelector('button');
     expect(button).toBeTruthy();
-    expect(button?.querySelector('span.indicator')).toBeTruthy();
-    expect(button?.querySelector('span.indicator')?.getAttribute('aria-hidden')).toBe('true');
+    expect(button?.className).toBe(radioGroupItemBaseClasses);
+  });
+
+  it('renders the indicator span only when checked, carrying the indicator classes', async () => {
+    const { Item } = await loadElements();
+    const item = document.createElement('rafters-radio-item') as InstanceType<typeof Item>;
+    document.body.append(item);
+    const button = item.shadowRoot?.querySelector('button');
+    // Unchecked: no indicator dot (mirrors radio-group.tsx).
+    expect(button?.querySelector('span')).toBeNull();
+    item.toggleAttribute('checked', true);
+    const indicator = button?.querySelector('span');
+    expect(indicator).toBeTruthy();
+    expect(indicator?.className).toBe(radioGroupItemIndicatorClasses);
+    expect(indicator?.getAttribute('aria-hidden')).toBe('true');
   });
 
   it('sets role="radiogroup" and aria-orientation on connect', async () => {
@@ -627,42 +647,27 @@ describe('rafters-radio-group', () => {
     expect(group.getAttribute('aria-orientation')).toBe('horizontal');
   });
 
-  it('rebuilds the per-instance stylesheet when orientation changes', async () => {
+  it('recomposes the container class string when orientation changes', async () => {
     const { Group } = await loadElements();
     const group = document.createElement('rafters-radio-group') as InstanceType<typeof Group>;
     document.body.append(group);
-    const collect = (): string => {
-      const sheets = group.shadowRoot?.adoptedStyleSheets ?? [];
-      return sheets
-        .map((s) =>
-          Array.from(s.cssRules)
-            .map((r) => r.cssText)
-            .join('\n'),
-        )
-        .join('\n');
-    };
-    expect(collect()).toMatch(/display:\s*grid/);
+    const containerClass = (): string => group.shadowRoot?.querySelector('div')?.className ?? '';
+    expect(containerClass()).toBe(radioGroupVerticalClasses);
     group.setAttribute('orientation', 'horizontal');
-    expect(collect()).toMatch(/display:\s*flex/);
+    expect(containerClass()).toBe(radioGroupHorizontalClasses);
   });
 
-  it('rebuilds the item stylesheet when checked toggles', async () => {
+  it('adds and removes the indicator dot as checked toggles', async () => {
     const { Item } = await loadElements();
     const item = document.createElement('rafters-radio-item') as InstanceType<typeof Item>;
     document.body.append(item);
-    const collect = (): string => {
-      const sheets = item.shadowRoot?.adoptedStyleSheets ?? [];
-      return sheets
-        .map((s) =>
-          Array.from(s.cssRules)
-            .map((r) => r.cssText)
-            .join('\n'),
-        )
-        .join('\n');
-    };
-    expect(collect()).toMatch(/\.indicator[^{]*\{[^}]*display:\s*none/);
+    const indicator = (): Element | null | undefined =>
+      item.shadowRoot?.querySelector('button')?.querySelector('span');
+    expect(indicator()).toBeNull();
     item.toggleAttribute('checked', true);
-    expect(collect()).toMatch(/\.indicator[^{]*\{[^}]*display:\s*block/);
+    expect(indicator()).toBeTruthy();
+    item.toggleAttribute('checked', false);
+    expect(indicator()).toBeNull();
   });
 
   it('property setters reflect to attributes', async () => {
