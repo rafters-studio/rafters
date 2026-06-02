@@ -1,34 +1,42 @@
 /**
  * <rafters-separator> -- Web Component separator primitive.
  *
- * Mirrors the semantics of separator.tsx (orientation, decorative) using
- * shadow-DOM-scoped CSS composed via classy-wc. Auto-registers on import
- * and is idempotent against double-define.
+ * Framework-target for the Separator component, parallel to separator.tsx
+ * (React) and separator.astro (Astro). The inner div carries the SAME utility
+ * class strings the React/Astro targets use -- imported from
+ * separator.classes.ts -- rather than a parallel hand-written CSS map.
+ * Presentation resolves from the shared compiled utility sheet adopted by
+ * RaftersElement (setUtilityCSS) plus the token custom properties inherited
+ * from the host :root.
+ *
+ * The only shadow-scoped CSS this component owns is the structural :host
+ * display shim.
  *
  * Attributes:
  *  - orientation: 'horizontal' | 'vertical'  (default 'horizontal')
  *  - decorative:  presence-based. ABSENT = decorative (matches React's
  *                 default of true). PRESENT and not exactly "false" =
- *                 non-decorative. `<rafters-separator decorative="false">`
- *                 turns non-decorative OFF (i.e. remains decorative).
+ *                 non-decorative. A decorative="false" value turns
+ *                 non-decorative OFF (i.e. remains decorative).
  *
- * Shadow DOM structure:
- *   <div class="separator orientation-{orientation}" role=... aria-orientation=...>
+ * Shadow DOM structure: an inner div carrying the composed separator utility
+ * classes, with role and aria-orientation per the decorative contract.
  *
  * Accessibility:
  *  - Decorative: role="none" on the inner div, no aria-orientation.
  *  - Non-decorative: role="separator" on the inner div, aria-orientation
  *    mirrors the current orientation.
  *
- * Rendering:
- *  - No <slot>; separator has no slotted content.
- *  - DOM APIs only; never innerHTML.
+ * Rendering: no slot; separator has no slotted content. DOM APIs only;
+ * never innerHTML.
  *
  * @cognitive-load 0/10
  */
 
 import { RaftersElement } from '../../primitives/rafters-element';
-import { type SeparatorOrientation, separatorStylesheet } from './separator.styles';
+import { separatorBaseClasses, separatorOrientationClasses } from './separator.classes';
+
+export type SeparatorOrientation = 'horizontal' | 'vertical';
 
 const ALLOWED_ORIENTATIONS: ReadonlyArray<SeparatorOrientation> = ['horizontal', 'vertical'];
 
@@ -41,64 +49,39 @@ function parseOrientation(value: string | null): SeparatorOrientation {
   return 'horizontal';
 }
 
+/**
+ * Compose the inner div's class string from the shared class maps.
+ * Exported so tests assert the WC renders the exact same composition the
+ * Astro target does -- the parity guarantee.
+ */
+export function composeSeparatorClasses(orientation: SeparatorOrientation): string {
+  return `${separatorBaseClasses} ${separatorOrientationClasses[orientation]}`;
+}
+
 export class RaftersSeparator extends RaftersElement {
+  static override styles = ':host { display: block; }';
+
   static readonly observedAttributes: ReadonlyArray<string> = OBSERVED_ATTRIBUTES;
 
-  /** Per-instance stylesheet mutated in place on every attribute change. */
-  private _instanceSheet: CSSStyleSheet | null = null;
-
-  override connectedCallback(): void {
-    if (!this.shadowRoot) return;
-    this._instanceSheet = new CSSStyleSheet();
-    this._instanceSheet.replaceSync(this.composeCss());
-    this.shadowRoot.adoptedStyleSheets = [this._instanceSheet];
-    this.update();
-  }
-
-  override attributeChangedCallback(
-    _name: string,
-    oldValue: string | null,
-    newValue: string | null,
-  ): void {
-    if (oldValue === newValue) return;
-    if (this._instanceSheet) {
-      this._instanceSheet.replaceSync(this.composeCss());
-    }
-    this.update();
-  }
-
-  override disconnectedCallback(): void {
-    this._instanceSheet = null;
-  }
-
   /**
-   * Whether the separator should expose a non-decorative `role="separator"`
-   * with `aria-orientation`. Presence-based: absent = decorative, present
-   * and not the literal string "false" = non-decorative.
+   * Whether the separator should expose a non-decorative role="separator"
+   * with aria-orientation. Presence-based: absent = decorative, present and
+   * not the literal string "false" = non-decorative.
    */
   private isNonDecorative(): boolean {
     return this.hasAttribute('decorative') && this.getAttribute('decorative') !== 'false';
   }
 
   /**
-   * Build the CSS string for the current attribute values.
-   */
-  private composeCss(): string {
-    return separatorStylesheet({
-      orientation: parseOrientation(this.getAttribute('orientation')),
-    });
-  }
-
-  /**
-   * Render the inner `<div.separator>` with orientation-specific class and
-   * ARIA attributes. DOM APIs only -- never innerHTML.
+   * Render the inner separator div with the composed utility classes and ARIA
+   * attributes. DOM APIs only -- never innerHTML.
    */
   override render(): Node {
     const orientation = parseOrientation(this.getAttribute('orientation'));
     const nonDecorative = this.isNonDecorative();
 
     const inner = document.createElement('div');
-    inner.className = `separator orientation-${orientation}`;
+    inner.className = composeSeparatorClasses(orientation);
 
     if (nonDecorative) {
       inner.setAttribute('role', 'separator');

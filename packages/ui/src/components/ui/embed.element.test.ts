@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import './embed.element';
+import { embedContainerClasses, embedFallbackClasses } from './embed.classes';
 import { RaftersEmbed } from './embed.element';
 
 afterEach(() => {
@@ -15,17 +16,16 @@ function mount(attrs: Record<string, string> = {}): HTMLElement {
   return el;
 }
 
-function adoptedCssText(el: Element): string {
-  const sheets = el.shadowRoot?.adoptedStyleSheets ?? [];
-  const blocks: string[] = [];
-  for (const sheet of sheets) {
-    const rules: string[] = [];
-    for (const rule of Array.from(sheet.cssRules)) {
-      rules.push(rule.cssText);
-    }
-    blocks.push(rules.join('\n'));
-  }
-  return blocks.join('\n');
+function fallback(el: Element): HTMLElement | null {
+  const wrapper = el.shadowRoot?.firstElementChild as HTMLElement | null;
+  if (wrapper && wrapper.className === embedFallbackClasses) return wrapper;
+  return null;
+}
+
+function container(el: Element): HTMLElement | null {
+  const wrapper = el.shadowRoot?.firstElementChild as HTMLElement | null;
+  if (wrapper && wrapper.className === embedContainerClasses) return wrapper;
+  return null;
 }
 
 const YOUTUBE_URL = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
@@ -47,8 +47,7 @@ describe('<rafters-embed>', () => {
     const el = mount();
     const iframe = el.shadowRoot?.querySelector('iframe');
     expect(iframe).toBeNull();
-    const fallback = el.shadowRoot?.querySelector('.embed-fallback');
-    expect(fallback).not.toBeNull();
+    expect(fallback(el)).not.toBeNull();
   });
 
   it('renders an iframe with correct src/allow/allowfullscreen/loading/referrerpolicy when url is a valid YouTube URL', () => {
@@ -69,6 +68,11 @@ describe('<rafters-embed>', () => {
     expect(iframe?.getAttribute('title')).toBe('youtube embed');
   });
 
+  it('iframe wrapper carries the shared container utility classes', () => {
+    const el = mount({ url: YOUTUBE_URL });
+    expect(container(el)).not.toBeNull();
+  });
+
   it('uses a provided title attribute on the iframe', () => {
     const el = mount({ url: YOUTUBE_URL, title: 'Rick roll' });
     const iframe = el.shadowRoot?.querySelector('iframe');
@@ -79,9 +83,9 @@ describe('<rafters-embed>', () => {
     const el = mount({ url: DISALLOWED_URL });
     const iframe = el.shadowRoot?.querySelector('iframe');
     expect(iframe).toBeNull();
-    const fallback = el.shadowRoot?.querySelector('.embed-fallback');
-    expect(fallback).not.toBeNull();
-    const link = fallback?.querySelector('a');
+    const wrapper = fallback(el);
+    expect(wrapper).not.toBeNull();
+    const link = wrapper?.querySelector('a');
     expect(link?.getAttribute('href')).toBe(DISALLOWED_URL);
     expect(link?.getAttribute('target')).toBe('_blank');
     expect(link?.getAttribute('rel')).toBe('noopener noreferrer');
@@ -89,13 +93,12 @@ describe('<rafters-embed>', () => {
 
   it('falls back to 16:9 aspect ratio for unknown values', () => {
     const el = mount({ url: YOUTUBE_URL, 'aspect-ratio': 'wide' });
-    const css = adoptedCssText(el);
-    expect(css).toContain('aspect-ratio: 16 / 9');
+    expect(container(el)?.style.aspectRatio).toBe('16 / 9');
   });
 
   it('applies the requested aspect-ratio when valid', () => {
     const el = mount({ url: YOUTUBE_URL, 'aspect-ratio': '4:3' });
-    expect(adoptedCssText(el)).toContain('aspect-ratio: 4 / 3');
+    expect(container(el)?.style.aspectRatio).toBe('4 / 3');
   });
 
   it('reflects url changes by re-rendering the inner DOM', () => {
@@ -108,11 +111,11 @@ describe('<rafters-embed>', () => {
     expect(second?.getAttribute('src')).toContain('9bZkp7q19f0');
   });
 
-  it('reflects aspect-ratio changes on the adopted stylesheet', () => {
+  it('reflects aspect-ratio changes on the iframe wrapper inline style', () => {
     const el = mount({ url: YOUTUBE_URL });
-    expect(adoptedCssText(el)).toContain('aspect-ratio: 16 / 9');
+    expect(container(el)?.style.aspectRatio).toBe('16 / 9');
     el.setAttribute('aspect-ratio', '9:16');
-    expect(adoptedCssText(el)).toContain('aspect-ratio: 9 / 16');
+    expect(container(el)?.style.aspectRatio).toBe('9 / 16');
   });
 
   it('observedAttributes matches the documented contract', () => {
@@ -122,7 +125,7 @@ describe('<rafters-embed>', () => {
   it('never renders an iframe for a Twitter URL (widget out of scope)', () => {
     const el = mount({ url: 'https://twitter.com/jack/status/20' });
     expect(el.shadowRoot?.querySelector('iframe')).toBeNull();
-    expect(el.shadowRoot?.querySelector('.embed-fallback')).not.toBeNull();
+    expect(fallback(el)).not.toBeNull();
   });
 
   it('source contains no direct var() references', async () => {

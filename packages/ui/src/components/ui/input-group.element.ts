@@ -2,9 +2,21 @@
  * <rafters-input-group> and <rafters-input-group-addon> -- layout-composition
  * Web Components for composing inputs with icon/text affixes.
  *
- * Mirrors the semantics of input-group.tsx (size, disabled) using
- * shadow-DOM-scoped CSS composed via classy-wc. Auto-registers on import and
- * is idempotent against double-define.
+ * Mirrors the semantics of input-group.tsx (size, disabled). The inner
+ * wrappers carry the SAME utility class strings the React/Astro targets use
+ * -- imported from input-group.classes.ts -- rather than a parallel
+ * hand-written CSS map. Presentation resolves from the shared compiled
+ * utility sheet adopted by RaftersElement (setUtilityCSS) plus the token
+ * custom properties inherited from the host :root.
+ *
+ * The shadow-scoped CSS this component owns is the irreducible set that no
+ * utility class on the inner wrapper can express, because it crosses the
+ * shadow boundary: the `:host` display shims, the `:host(:focus-within)`
+ * ring (slotted focus lives in light DOM, not a real `.group` descendant),
+ * the `:host([data-disabled])` mirror, and the `::slotted(...)` input
+ * normalisation.
+ *
+ * Auto-registers on import and is idempotent against double-define.
  *
  * InputGroup is NOT form-associated -- the slotted input owns form
  * participation. The group contributes visual chrome and a focus-within ring
@@ -19,9 +31,6 @@
  *   variant   'default' | 'filled'     (default 'default')
  *
  * Unknown attribute values silently fall back to the documented defaults.
- *
- * No raw CSS custom-property literals here -- all token references live in
- * input-group.styles.ts and resolve through tokenVar().
  */
 
 import { RaftersElement } from '../../primitives/rafters-element';
@@ -29,9 +38,19 @@ import {
   type InputGroupAddonPosition,
   type InputGroupAddonVariant,
   type InputGroupSize,
-  inputGroupAddonStylesheet,
-  inputGroupStylesheet,
-} from './input-group.styles';
+  inputGroupAddonBaseClasses,
+  inputGroupAddonPositionClasses,
+  inputGroupAddonVariantClasses,
+  inputGroupBaseClasses,
+  inputGroupDisabledClasses,
+  inputGroupSizeClasses,
+} from './input-group.classes';
+
+export type {
+  InputGroupAddonPosition,
+  InputGroupAddonVariant,
+  InputGroupSize,
+} from './input-group.classes';
 
 // ============================================================================
 // Allowed value sets & parsers
@@ -71,6 +90,36 @@ function parseVariant(value: string | null): InputGroupAddonVariant {
   return 'default';
 }
 
+/**
+ * Compose the inner group wrapper's class string from the shared class maps.
+ * Exported so tests assert the WC renders the exact same composition the
+ * React/Astro targets do -- the parity guarantee.
+ */
+export function composeInputGroupClasses(size: InputGroupSize, disabled: boolean): string {
+  return [
+    inputGroupBaseClasses,
+    inputGroupSizeClasses[size] ?? inputGroupSizeClasses.default,
+    disabled ? inputGroupDisabledClasses : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+}
+
+/**
+ * Compose the inner addon wrapper's class string from the shared class maps.
+ * Exported for the same parity guarantee.
+ */
+export function composeInputGroupAddonClasses(
+  position: InputGroupAddonPosition,
+  variant: InputGroupAddonVariant,
+): string {
+  return [
+    inputGroupAddonBaseClasses,
+    inputGroupAddonPositionClasses[position] ?? inputGroupAddonPositionClasses.start,
+    inputGroupAddonVariantClasses[variant] ?? inputGroupAddonVariantClasses.default,
+  ].join(' ');
+}
+
 // ============================================================================
 // <rafters-input-group>
 // ============================================================================
@@ -94,8 +143,46 @@ function isDisableable(node: Node): node is DisableableElement {
 export class RaftersInputGroup extends RaftersElement {
   static observedAttributes: ReadonlyArray<string> = INPUT_GROUP_OBSERVED_ATTRIBUTES;
 
-  /** Per-instance stylesheet rebuilt on every attribute change. */
-  private _instanceSheet: CSSStyleSheet | null = null;
+  /**
+   * Irreducible shadow CSS that crosses the shadow boundary and therefore
+   * cannot be carried by a utility class on the inner `.group` wrapper:
+   *
+   *  - `:host` display shim
+   *  - `:host(:focus-within) .group` ring (slotted focus is light-DOM, so the
+   *    inner wrapper's own `focus-within:` utility never fires for it)
+   *  - `:host([data-disabled]) .group` host-driven disabled mirror
+   *  - `::slotted(input), ::slotted(rafters-input)` and `::slotted([disabled])`
+   *    normalisation of the projected control
+   */
+  static override styles = `:host {
+  display: block;
+}
+
+:host(:focus-within) .group {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-background), 0 0 0 4px var(--color-ring);
+}
+
+:host([data-disabled]) .group {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+::slotted(input), ::slotted(rafters-input) {
+  flex: 1;
+  height: 100%;
+  width: 100%;
+  background-color: transparent;
+  border: none;
+  outline: none;
+  padding-left: var(--spacing-3);
+  padding-right: var(--spacing-3);
+  border-radius: inherit;
+}
+
+::slotted([disabled]) {
+  cursor: not-allowed;
+}`;
 
   /** Stable inner wrapper so attribute changes do not rebuild the tree. */
   private _groupRoot: HTMLDivElement | null = null;
@@ -113,11 +200,7 @@ export class RaftersInputGroup extends RaftersElement {
   // --------------------------------------------------------------------------
 
   override connectedCallback(): void {
-    if (!this.shadowRoot) return;
-    this._instanceSheet = new CSSStyleSheet();
-    this._instanceSheet.replaceSync(this.composeCss());
-    this.shadowRoot.adoptedStyleSheets = [this._instanceSheet];
-    this.update();
+    super.connectedCallback();
     this.syncDisabled();
     this.attachSlotListener();
   }
@@ -128,17 +211,15 @@ export class RaftersInputGroup extends RaftersElement {
     newValue: string | null,
   ): void {
     if (oldValue === newValue) return;
-    if (this._instanceSheet) {
-      this._instanceSheet.replaceSync(this.composeCss());
-    }
+    this.applyGroupClasses();
     if (name === 'disabled') {
       this.syncDisabled();
     }
   }
 
   override disconnectedCallback(): void {
+    super.disconnectedCallback();
     this.detachSlotListener();
-    this._instanceSheet = null;
     this._groupRoot = null;
   }
 
@@ -149,23 +230,25 @@ export class RaftersInputGroup extends RaftersElement {
   override render(): Node {
     if (!this._groupRoot) {
       const wrapper = document.createElement('div');
-      wrapper.className = 'group';
+      wrapper.classList.add('group');
       const slot = document.createElement('slot');
       wrapper.appendChild(slot);
       this._groupRoot = wrapper;
     }
+    this.applyGroupClasses();
     return this._groupRoot;
   }
 
-  // --------------------------------------------------------------------------
-  // Stylesheet composition
-  // --------------------------------------------------------------------------
-
-  private composeCss(): string {
-    return inputGroupStylesheet({
-      size: parseSize(this.getAttribute('size')),
-      disabled: this.hasAttribute('disabled'),
-    });
+  /**
+   * Apply the composed utility classes onto the inner wrapper while keeping
+   * the structural `group` marker the irreducible static rules target.
+   */
+  private applyGroupClasses(): void {
+    if (!this._groupRoot) return;
+    this._groupRoot.className = `group ${composeInputGroupClasses(
+      parseSize(this.getAttribute('size')),
+      this.hasAttribute('disabled'),
+    )}`;
   }
 
   // --------------------------------------------------------------------------
@@ -241,8 +324,8 @@ export class RaftersInputGroup extends RaftersElement {
 export class RaftersInputGroupAddon extends RaftersElement {
   static observedAttributes: ReadonlyArray<string> = INPUT_GROUP_ADDON_OBSERVED_ATTRIBUTES;
 
-  /** Per-instance stylesheet rebuilt on every attribute change. */
-  private _instanceSheet: CSSStyleSheet | null = null;
+  /** The only component-owned CSS: the structural host-display shim. */
+  static override styles = ':host { display: flex; }';
 
   /** Stable inner wrapper so attribute changes do not rebuild the tree. */
   private _addonRoot: HTMLDivElement | null = null;
@@ -252,11 +335,7 @@ export class RaftersInputGroupAddon extends RaftersElement {
   // --------------------------------------------------------------------------
 
   override connectedCallback(): void {
-    if (!this.shadowRoot) return;
-    this._instanceSheet = new CSSStyleSheet();
-    this._instanceSheet.replaceSync(this.composeCss());
-    this.shadowRoot.adoptedStyleSheets = [this._instanceSheet];
-    this.update();
+    super.connectedCallback();
     this.syncPositionAttr();
   }
 
@@ -266,9 +345,7 @@ export class RaftersInputGroupAddon extends RaftersElement {
     newValue: string | null,
   ): void {
     if (oldValue === newValue) return;
-    if (this._instanceSheet) {
-      this._instanceSheet.replaceSync(this.composeCss());
-    }
+    this.applyAddonClasses();
     if (name === 'position') {
       this.syncPositionAttr();
       this.updateInnerPositionAttr();
@@ -276,7 +353,7 @@ export class RaftersInputGroupAddon extends RaftersElement {
   }
 
   override disconnectedCallback(): void {
-    this._instanceSheet = null;
+    super.disconnectedCallback();
     this._addonRoot = null;
   }
 
@@ -287,24 +364,26 @@ export class RaftersInputGroupAddon extends RaftersElement {
   override render(): Node {
     if (!this._addonRoot) {
       const wrapper = document.createElement('div');
-      wrapper.className = 'addon';
+      wrapper.classList.add('addon');
       wrapper.setAttribute('data-position', parsePosition(this.getAttribute('position')));
       const slot = document.createElement('slot');
       wrapper.appendChild(slot);
       this._addonRoot = wrapper;
     }
+    this.applyAddonClasses();
     return this._addonRoot;
   }
 
-  // --------------------------------------------------------------------------
-  // Stylesheet composition
-  // --------------------------------------------------------------------------
-
-  private composeCss(): string {
-    return inputGroupAddonStylesheet({
-      position: parsePosition(this.getAttribute('position')),
-      variant: parseVariant(this.getAttribute('variant')),
-    });
+  /**
+   * Apply the composed utility classes onto the inner wrapper while keeping
+   * the structural `addon` marker stable for queries and assertions.
+   */
+  private applyAddonClasses(): void {
+    if (!this._addonRoot) return;
+    this._addonRoot.className = `addon ${composeInputGroupAddonClasses(
+      parsePosition(this.getAttribute('position')),
+      parseVariant(this.getAttribute('variant')),
+    )}`;
   }
 
   private syncPositionAttr(): void {

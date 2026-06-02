@@ -1,25 +1,41 @@
 /**
- * <rafters-alert> -- Web Component alert primitive.
+ * <rafters-alert> Web Component
  *
- * Mirrors the semantics of alert.tsx (variant) using shadow-DOM-scoped CSS
- * composed via classy-wc. Auto-registers on import and is idempotent
- * against double-define.
+ * Framework-target for the Alert component, parallel to alert.tsx (React)
+ * and alert.astro (Astro). The inner div carries the SAME utility class
+ * strings the React/Astro targets use -- imported from alert.classes.ts --
+ * rather than a parallel hand-written CSS map. Presentation resolves from the
+ * shared compiled utility sheet adopted by RaftersElement (setUtilityCSS) plus
+ * the token custom properties inherited from the host :root.
+ *
+ * The only shadow-scoped CSS this component owns is the structural :host
+ * display shim.
+ *
+ * Shadow DOM structure: an inner div with role=alert carrying the composed
+ * alert utility classes, wrapping a default slot.
  *
  * Attributes:
- *  - variant: 'default' | 'primary' | 'secondary' | 'destructive' | 'success'
- *             | 'warning' | 'info' | 'muted' | 'accent'  (default 'default')
+ *   variant  default | primary | secondary | destructive | success | warning
+ *            | info | muted | accent
  *
- * The inner <div class="alert" role="alert"> is plain shadow-DOM markup --
- * NO Tailwind classes. Styling comes exclusively from alertStylesheet(...)
- * adopted as the per-instance stylesheet.
- *
- * Unknown variant values fall back to 'default' silently and NEVER throw.
+ * Unknown attribute values fall back to 'default' silently and NEVER throw.
  * Subcomponents (title/description/action) are out of scope -- consumers
  * compose with plain slotted elements.
  */
 
 import { RaftersElement } from '../../primitives/rafters-element';
-import { type AlertVariant, alertStylesheet } from './alert.styles';
+import { alertBaseClasses, alertVariantClasses } from './alert.classes';
+
+export type AlertVariant =
+  | 'default'
+  | 'primary'
+  | 'secondary'
+  | 'destructive'
+  | 'success'
+  | 'warning'
+  | 'info'
+  | 'muted'
+  | 'accent';
 
 const ALLOWED_VARIANTS: ReadonlyArray<AlertVariant> = [
   'default',
@@ -42,55 +58,25 @@ function parseVariant(value: string | null): AlertVariant {
   return 'default';
 }
 
+/**
+ * Compose the inner div's class string from the shared class maps.
+ * Exported so tests assert the WC renders the exact same composition the
+ * Astro target does -- the parity guarantee.
+ */
+export function composeAlertClasses(variant: AlertVariant): string {
+  return `${alertBaseClasses} ${alertVariantClasses[variant]}`;
+}
+
 export class RaftersAlert extends RaftersElement {
+  static override styles = ':host { display: block; }';
+
   static readonly observedAttributes: ReadonlyArray<string> = OBSERVED_ATTRIBUTES;
 
-  /** Per-instance stylesheet rebuilt on every attribute change. */
-  private _instanceSheet: CSSStyleSheet | null = null;
-
-  override connectedCallback(): void {
-    if (!this.shadowRoot) return;
-    this._instanceSheet = new CSSStyleSheet();
-    this._instanceSheet.replaceSync(this.composeCss());
-    this.shadowRoot.adoptedStyleSheets = [this._instanceSheet];
-    this.update();
-  }
-
-  override attributeChangedCallback(
-    _name: string,
-    oldValue: string | null,
-    newValue: string | null,
-  ): void {
-    if (oldValue === newValue) return;
-    if (this._instanceSheet) {
-      this._instanceSheet.replaceSync(this.composeCss());
-    }
-    this.update();
-  }
-
-  override disconnectedCallback(): void {
-    this._instanceSheet = null;
-  }
-
-  /**
-   * Build the CSS string for the current attribute values.
-   */
-  private composeCss(): string {
-    return alertStylesheet({
-      variant: parseVariant(this.getAttribute('variant')),
-    });
-  }
-
-  /**
-   * Render the semantic <div class="alert" role="alert"> with a single
-   * default <slot>. DOM APIs only -- never innerHTML.
-   */
   override render(): Node {
     const wrapper = document.createElement('div');
-    wrapper.className = 'alert';
+    wrapper.className = composeAlertClasses(parseVariant(this.getAttribute('variant')));
     wrapper.setAttribute('role', 'alert');
-    const slot = document.createElement('slot');
-    wrapper.appendChild(slot);
+    wrapper.appendChild(document.createElement('slot'));
     return wrapper;
   }
 }

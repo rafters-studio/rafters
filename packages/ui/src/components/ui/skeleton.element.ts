@@ -1,31 +1,45 @@
 /**
  * <rafters-skeleton> -- Web Component skeleton loader.
  *
- * Mirrors the semantics of skeleton.tsx (variant) using shadow-DOM-scoped
- * CSS composed via classy-wc. Auto-registers on import and is idempotent
- * against double-define.
+ * Framework-target for the Skeleton component, parallel to skeleton.tsx
+ * (React) and skeleton.astro (Astro). The inner div carries the SAME utility
+ * class strings the React/Astro targets use -- imported from
+ * skeleton.classes.ts -- rather than a parallel hand-written CSS map.
+ * Presentation resolves from the shared compiled utility sheet adopted by
+ * RaftersElement (setUtilityCSS) plus the token custom properties inherited
+ * from the host :root. The pulse animation and its reduced-motion opt-out are
+ * expressed as the animate-pulse / motion-reduce:animate-none utilities.
+ *
+ * The only shadow-scoped CSS this component owns is the structural :host
+ * display shim.
+ *
+ * Shadow DOM structure: an inner div carrying the composed skeleton utility
+ * classes, marked aria-hidden. No slot -- skeleton is purely decorative.
  *
  * Attributes:
  *  - variant: 'default' | 'primary' | 'secondary' | 'destructive' | 'success'
  *             | 'warning' | 'info' | 'muted' | 'accent' (default 'default')
  *
- * Shadow DOM structure:
- *   <div class="skeleton" aria-hidden="true">
- *
- * No slot -- skeleton is purely decorative with no slotted content.
- * Unknown variant values fall back to 'default' silently. This matches the
- * React target's runtime behaviour of `skeletonVariantClasses[variant] ?? default`.
- *
- * DOM APIs only -- never innerHTML. Styling comes exclusively from
- * skeletonStylesheet(...) adopted as the per-instance stylesheet.
+ * Unknown variant values fall back to 'default' silently.
  *
  * @cognitive-load 1/10
- * @accessibility aria-hidden decorative placeholder.
- *                Animation respects prefers-reduced-motion.
+ * @accessibility aria-hidden decorative placeholder; animation respects
+ *                prefers-reduced-motion via the motion-reduce utility.
  */
 
 import { RaftersElement } from '../../primitives/rafters-element';
-import { type SkeletonVariant, skeletonStylesheet } from './skeleton.styles';
+import { skeletonBaseClasses, skeletonVariantClasses } from './skeleton.classes';
+
+export type SkeletonVariant =
+  | 'default'
+  | 'primary'
+  | 'secondary'
+  | 'destructive'
+  | 'success'
+  | 'warning'
+  | 'info'
+  | 'muted'
+  | 'accent';
 
 const ALLOWED_VARIANTS: ReadonlyArray<SkeletonVariant> = [
   'default',
@@ -48,44 +62,19 @@ function parseVariant(value: string | null): SkeletonVariant {
   return 'default';
 }
 
+/**
+ * Compose the inner div's class string from the shared class maps.
+ * Exported so tests assert the WC renders the exact same composition the
+ * Astro target does -- the parity guarantee.
+ */
+export function composeSkeletonClasses(variant: SkeletonVariant): string {
+  return `${skeletonBaseClasses} ${skeletonVariantClasses[variant]}`;
+}
+
 export class RaftersSkeleton extends RaftersElement {
+  static override styles = ':host { display: block; }';
+
   static readonly observedAttributes: ReadonlyArray<string> = OBSERVED_ATTRIBUTES;
-
-  /** Per-instance stylesheet rebuilt on variant changes. */
-  private _instanceSheet: CSSStyleSheet | null = null;
-
-  override connectedCallback(): void {
-    if (!this.shadowRoot) return;
-    this._instanceSheet = new CSSStyleSheet();
-    this._instanceSheet.replaceSync(this.composeCss());
-    this.shadowRoot.adoptedStyleSheets = [this._instanceSheet];
-    this.update();
-  }
-
-  override attributeChangedCallback(
-    name: string,
-    oldValue: string | null,
-    newValue: string | null,
-  ): void {
-    if (oldValue === newValue) return;
-    if (name === 'variant' && this._instanceSheet) {
-      this._instanceSheet.replaceSync(this.composeCss());
-    }
-    this.update();
-  }
-
-  override disconnectedCallback(): void {
-    this._instanceSheet = null;
-  }
-
-  /**
-   * Build the CSS string for the current variant attribute.
-   */
-  private composeCss(): string {
-    return skeletonStylesheet({
-      variant: parseVariant(this.getAttribute('variant')),
-    });
-  }
 
   /**
    * Render a single decorative div with aria-hidden. No slot -- skeleton
@@ -93,7 +82,7 @@ export class RaftersSkeleton extends RaftersElement {
    */
   override render(): Node {
     const inner = document.createElement('div');
-    inner.className = 'skeleton';
+    inner.className = composeSkeletonClasses(parseVariant(this.getAttribute('variant')));
     inner.setAttribute('aria-hidden', 'true');
     return inner;
   }

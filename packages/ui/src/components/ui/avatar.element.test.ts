@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import './avatar.element';
-import { RaftersAvatar } from './avatar.element';
+import { avatarSizeClasses } from './avatar.classes';
+import { composeAvatarClasses, RaftersAvatar } from './avatar.element';
 
 afterEach(() => {
   while (document.body.firstChild) {
@@ -15,15 +16,8 @@ function mount(attrs: Record<string, string> = {}): HTMLElement {
   return el;
 }
 
-function collectCss(el: HTMLElement): string {
-  const sheets = el.shadowRoot?.adoptedStyleSheets ?? [];
-  return sheets
-    .map((s) =>
-      Array.from(s.cssRules)
-        .map((r) => r.cssText)
-        .join('\n'),
-    )
-    .join('\n');
+function innerClass(el: Element): string {
+  return el.shadowRoot?.querySelector('span')?.className ?? '';
 }
 
 describe('<rafters-avatar>', () => {
@@ -37,23 +31,28 @@ describe('<rafters-avatar>', () => {
     expect(customElements.get('rafters-avatar')).toBe(RaftersAvatar);
   });
 
-  it('renders a single span.avatar containing a slot', () => {
+  it('renders a single span containing a slot', () => {
     const el = mount();
-    const span = el.shadowRoot?.querySelector('span.avatar');
+    const span = el.shadowRoot?.querySelector('span');
     expect(span).not.toBeNull();
     expect(span?.children.length).toBe(1);
     expect(span?.firstElementChild?.tagName.toLowerCase()).toBe('slot');
   });
 
-  it('falls back to default size md for unknown values', () => {
-    const el = mount({ size: 'mega' });
-    expect(collectCss(el)).toContain('spacing-10');
+  it('applies base + default size md classes', () => {
+    const el = mount();
+    expect(innerClass(el)).toBe(composeAvatarClasses('md'));
   });
 
-  it('reflects size attribute changes to the adopted stylesheet', () => {
+  it('falls back to default size md for unknown values', () => {
+    const el = mount({ size: 'mega' });
+    expect(innerClass(el)).toContain(avatarSizeClasses.md);
+  });
+
+  it('reflects size attribute changes to the inner class string', () => {
     const el = mount();
     el.setAttribute('size', 'xl');
-    expect(collectCss(el)).toContain('spacing-16');
+    expect(innerClass(el)).toContain(avatarSizeClasses.xl);
   });
 
   it('source contains no direct var() references', async () => {

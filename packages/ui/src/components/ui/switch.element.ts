@@ -2,8 +2,16 @@
  * <rafters-switch> -- Form-associated Web Component for binary toggle state.
  *
  * Mirrors the semantics of switch.tsx (variant, size, checked, disabled,
- * required) using shadow-DOM-scoped CSS composed via classy-wc. Auto-
- * registers on import and is idempotent against double-define.
+ * required). The inner track <button> and thumb <span> carry the SAME utility
+ * class strings the React/Astro targets use -- imported from switch.classes.ts
+ * -- rather than a parallel hand-written CSS map. Track color, thumb
+ * translation, focus ring, and disabled presentation resolve from those
+ * utility classes against the shared compiled utility sheet adopted by
+ * RaftersElement (setUtilityCSS) plus inherited token props. Auto-registers on
+ * import and is idempotent against double-define.
+ *
+ * The only shadow-scoped CSS this component owns is the structural :host
+ * display shim.
  *
  * Form-associated: participates in <form> submission, validation, reset,
  * disabled propagation, and state restoration via ElementInternals.
@@ -18,19 +26,34 @@
  *  - value: string (submitted value when checked; defaults to "on")
  *  - variant: SwitchVariant (default 'default')
  *  - size: SwitchSize (default 'default')
- *
- * No raw CSS custom-property literals here -- all token references live in
- * switch.styles.ts and resolve through tokenVar().
  */
 
 import { RaftersElement } from '../../primitives/rafters-element';
 import {
-  type SwitchSize,
-  type SwitchVariant,
-  switchSizeStyles,
-  switchStylesheet,
-  switchVariantChecked,
-} from './switch.styles';
+  switchSizeClasses,
+  switchThumbBaseClasses,
+  switchThumbTransitionClasses,
+  switchThumbUncheckedClasses,
+  switchTrackBaseClasses,
+  switchTrackDisabledClasses,
+  switchTrackFocusClasses,
+  switchTrackShapeClasses,
+  switchTrackTransitionClasses,
+  switchTrackUncheckedClasses,
+  switchVariantClasses,
+} from './switch.classes';
+
+export type SwitchVariant =
+  | 'default'
+  | 'primary'
+  | 'secondary'
+  | 'destructive'
+  | 'success'
+  | 'warning'
+  | 'info'
+  | 'accent';
+
+export type SwitchSize = 'sm' | 'default' | 'lg';
 
 // ============================================================================
 // Sanitization helpers
@@ -47,17 +70,60 @@ const OBSERVED_ATTRIBUTES: ReadonlyArray<string> = [
 ] as const;
 
 function parseVariant(value: string | null): SwitchVariant {
-  if (value && value in switchVariantChecked) {
+  if (value && value in switchVariantClasses) {
     return value as SwitchVariant;
   }
   return 'default';
 }
 
 function parseSize(value: string | null): SwitchSize {
-  if (value && value in switchSizeStyles) {
+  if (value && value in switchSizeClasses) {
     return value as SwitchSize;
   }
   return 'default';
+}
+
+/**
+ * Compose the track button's class string from the shared class maps.
+ * Mirrors switch.tsx: base + size.track + shape + transition + focus +
+ * variant.ring + disabled + (checked ? variant.checked : unchecked).
+ * Exported so tests assert parity with the React/Astro targets.
+ */
+export function composeSwitchTrackClasses(
+  variant: SwitchVariant,
+  size: SwitchSize,
+  checked: boolean,
+): string {
+  const v = switchVariantClasses[variant] ??
+    switchVariantClasses.default ?? { ring: '', checked: '' };
+  const s = switchSizeClasses[size] ??
+    switchSizeClasses.default ?? { track: '', thumb: '', translate: '' };
+  return [
+    switchTrackBaseClasses,
+    s.track,
+    switchTrackShapeClasses,
+    switchTrackTransitionClasses,
+    switchTrackFocusClasses,
+    v.ring,
+    switchTrackDisabledClasses,
+    checked ? v.checked : switchTrackUncheckedClasses,
+  ].join(' ');
+}
+
+/**
+ * Compose the thumb span's class string from the shared class maps.
+ * Mirrors switch.tsx: base + size.thumb + transition +
+ * (checked ? size.translate : unchecked).
+ */
+export function composeSwitchThumbClasses(size: SwitchSize, checked: boolean): string {
+  const s = switchSizeClasses[size] ??
+    switchSizeClasses.default ?? { track: '', thumb: '', translate: '' };
+  return [
+    switchThumbBaseClasses,
+    s.thumb,
+    switchThumbTransitionClasses,
+    checked ? s.translate : switchThumbUncheckedClasses,
+  ].join(' ');
 }
 
 // ============================================================================
@@ -79,9 +145,15 @@ export class RaftersSwitch extends RaftersElement {
   static formAssociated = true;
   static observedAttributes: ReadonlyArray<string> = OBSERVED_ATTRIBUTES;
 
+  /**
+   * The only component-owned CSS: the structural host-display shim. The track
+   * and thumb presentation is carried by the shared utility classes.
+   */
+  static override styles = ':host { display: inline-flex; }';
+
   private _internals: ElementInternals;
-  private _instanceSheet: CSSStyleSheet | null = null;
   private _button: HTMLButtonElement | null = null;
+  private _thumb: HTMLSpanElement | null = null;
   private _initialChecked: boolean;
   private _onClick: (event: MouseEvent) => void;
   private _onKeyDown: (event: KeyboardEvent) => void;
@@ -111,12 +183,6 @@ export class RaftersSwitch extends RaftersElement {
     // constructed before the attribute was set.
     this._initialChecked = this.hasAttribute('checked');
 
-    this._instanceSheet = new CSSStyleSheet();
-    this._instanceSheet.replaceSync(this.composeCss());
-
-    const existing = this.shadowRoot.adoptedStyleSheets;
-    this.shadowRoot.adoptedStyleSheets = [...existing, this._instanceSheet];
-
     this.syncButtonState();
     this.syncFormValue();
   }
@@ -128,11 +194,8 @@ export class RaftersSwitch extends RaftersElement {
   ): void {
     if (oldValue === newValue) return;
 
-    if (
-      (name === 'variant' || name === 'size' || name === 'checked' || name === 'disabled') &&
-      this._instanceSheet
-    ) {
-      this._instanceSheet.replaceSync(this.composeCss());
+    if (name === 'variant' || name === 'size' || name === 'checked') {
+      this.applyClasses();
     }
 
     if (name === 'checked' || name === 'disabled') {
@@ -146,8 +209,8 @@ export class RaftersSwitch extends RaftersElement {
 
   override disconnectedCallback(): void {
     this.detachButtonListeners();
-    this._instanceSheet = null;
     this._button = null;
+    this._thumb = null;
   }
 
   // ==========================================================================
@@ -156,15 +219,20 @@ export class RaftersSwitch extends RaftersElement {
 
   override render(): Node {
     this.detachButtonListeners();
+    const variant = parseVariant(this.getAttribute('variant'));
+    const size = parseSize(this.getAttribute('size'));
+    const checked = this.hasAttribute('checked');
+
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = 'track';
+    button.className = composeSwitchTrackClasses(variant, size, checked);
     button.setAttribute('role', 'switch');
     const thumb = document.createElement('span');
-    thumb.className = 'thumb';
+    thumb.className = composeSwitchThumbClasses(size, checked);
     thumb.setAttribute('aria-hidden', 'true');
     button.append(thumb);
     this._button = button;
+    this._thumb = thumb;
 
     button.addEventListener('click', this._onClick);
     button.addEventListener('keydown', this._onKeyDown);
@@ -182,13 +250,17 @@ export class RaftersSwitch extends RaftersElement {
     this._button.removeEventListener('keydown', this._onKeyDown);
   }
 
-  private composeCss(): string {
-    return switchStylesheet({
-      variant: parseVariant(this.getAttribute('variant')),
-      size: parseSize(this.getAttribute('size')),
-      checked: this.hasAttribute('checked'),
-      disabled: this.hasAttribute('disabled'),
-    });
+  private applyClasses(): void {
+    const button = this.getButton();
+    if (!button) return;
+    const variant = parseVariant(this.getAttribute('variant'));
+    const size = parseSize(this.getAttribute('size'));
+    const checked = this.hasAttribute('checked');
+    button.className = composeSwitchTrackClasses(variant, size, checked);
+    const thumb = this.getThumb();
+    if (thumb) {
+      thumb.className = composeSwitchThumbClasses(size, checked);
+    }
   }
 
   // ==========================================================================
@@ -200,6 +272,16 @@ export class RaftersSwitch extends RaftersElement {
     const found = this.shadowRoot?.querySelector('button') ?? null;
     if (found instanceof HTMLButtonElement) {
       this._button = found;
+      return found;
+    }
+    return null;
+  }
+
+  private getThumb(): HTMLSpanElement | null {
+    if (this._thumb) return this._thumb;
+    const found = this.shadowRoot?.querySelector('span') ?? null;
+    if (found instanceof HTMLSpanElement) {
+      this._thumb = found;
       return found;
     }
     return null;

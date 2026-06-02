@@ -2,9 +2,24 @@
  * <rafters-checkbox> -- Form-associated Web Component for binary selection.
  *
  * Mirrors the semantics of checkbox.tsx (variant, size, checked, disabled,
- * required, name, value) using shadow-DOM-scoped CSS composed via
- * classy-wc. Auto-registers on import and is idempotent against
- * double-define.
+ * required, name, value). The inner button carries the SAME utility class
+ * strings the React/Astro targets use -- imported from checkbox.classes.ts --
+ * so presentation resolves from the shared compiled utility sheet adopted by
+ * RaftersElement (setUtilityCSS) plus the token custom properties inherited
+ * from the host :root.
+ *
+ * State styling is carried by Tailwind state-variant classes in
+ * checkbox.classes.ts, not shadow-scoped selectors: the checked fill/foreground
+ * pair rides `data-[state=checked]:` (the button mirrors data-state), the
+ * disabled dimming rides `disabled:` (the button reflects the disabled
+ * property), the focus ring rides `focus-visible:`, and the reduced-motion
+ * guard rides `motion-reduce:`. Because every state is expressed as a class on
+ * the inner button, no per-instance stylesheet and no state-selector CSS is
+ * needed in this file.
+ *
+ * The only irreducible shadow-scoped CSS is the `:host` inline-flex layout shim
+ * (custom elements default to inline display), kept in `static styles`. It
+ * carries no design token.
  *
  * Form-associated: participates in <form> submission, validation, reset,
  * disabled propagation, and state restoration via ElementInternals.
@@ -17,19 +32,30 @@
  *  - value: string (form value when checked; defaults to 'on')
  *  - variant: CheckboxVariant (default 'default')
  *  - size: CheckboxSize (default 'default')
- *
- * No raw CSS custom-property literals here -- all token references live
- * in checkbox.styles.ts and resolve through tokenVar().
  */
 
 import { RaftersElement } from '../../primitives/rafters-element';
 import {
-  type CheckboxSize,
-  type CheckboxVariant,
-  checkboxSizeStyles,
-  checkboxStylesheet,
-  checkboxVariantStyles,
-} from './checkbox.styles';
+  checkboxBaseClasses,
+  checkboxSizeClasses,
+  checkboxVariantClasses,
+} from './checkbox.classes';
+
+// ============================================================================
+// Public Types
+// ============================================================================
+
+export type CheckboxVariant =
+  | 'default'
+  | 'primary'
+  | 'secondary'
+  | 'destructive'
+  | 'success'
+  | 'warning'
+  | 'info'
+  | 'accent';
+
+export type CheckboxSize = 'sm' | 'default' | 'lg';
 
 // ============================================================================
 // Sanitization helpers
@@ -48,17 +74,43 @@ const OBSERVED_ATTRIBUTES: ReadonlyArray<string> = [
 const VALUE_MISSING_MESSAGE = 'Please check this box.';
 
 function parseVariant(value: string | null): CheckboxVariant {
-  if (value && value in checkboxVariantStyles) {
+  if (value && value in checkboxVariantClasses) {
     return value as CheckboxVariant;
   }
   return 'default';
 }
 
 function parseSize(value: string | null): CheckboxSize {
-  if (value && value in checkboxSizeStyles) {
+  if (value && value in checkboxSizeClasses) {
     return value as CheckboxSize;
   }
   return 'default';
+}
+
+/**
+ * Compose the inner button's class string from the shared class maps.
+ * Exported so tests assert the WC renders the exact same composition the
+ * React/Astro targets do -- the parity guarantee. The literal `checkbox` hook
+ * class is kept first for role/structure queries. The checked fill, ring, and
+ * disabled dimming are Tailwind state-variant classes that resolve once the
+ * button mirrors data-state / the disabled property.
+ */
+export function composeCheckboxClasses(variant: CheckboxVariant, size: CheckboxSize): string {
+  const v = checkboxVariantClasses[variant] ??
+    checkboxVariantClasses.default ?? { border: '', checked: '', ring: '' };
+  const box = (checkboxSizeClasses[size] ?? checkboxSizeClasses.default ?? { box: '', icon: '' })
+    .box;
+  return `checkbox ${checkboxBaseClasses} ${v.border} ${v.checked} ${v.ring} ${box}`;
+}
+
+/**
+ * Compose the inner checkmark SVG's class string. The `icon` hook class plus
+ * the per-size icon sizing utilities from the shared class map.
+ */
+export function composeCheckboxIconClasses(size: CheckboxSize): string {
+  const icon = (checkboxSizeClasses[size] ?? checkboxSizeClasses.default ?? { box: '', icon: '' })
+    .icon;
+  return `icon ${icon}`;
 }
 
 // ============================================================================
@@ -80,8 +132,14 @@ export class RaftersCheckbox extends RaftersElement {
   static formAssociated = true;
   static observedAttributes: ReadonlyArray<string> = OBSERVED_ATTRIBUTES;
 
+  /**
+   * Irreducible shadow-scoped CSS: the host inline-flex layout shim. Every
+   * other surface (base, variant, size, checked, disabled, focus ring,
+   * reduced motion) rides a utility class on the inner button.
+   */
+  static override styles = ':host { display: inline-flex; }';
+
   private _internals: ElementInternals;
-  private _instanceSheet: CSSStyleSheet | null = null;
   private _button: HTMLButtonElement | null = null;
   private _onHostClick: (event: MouseEvent) => void;
   private _onHostKeyDown: (event: KeyboardEvent) => void;
@@ -105,12 +163,6 @@ export class RaftersCheckbox extends RaftersElement {
     super.connectedCallback();
     if (!this.shadowRoot) return;
 
-    this._instanceSheet = new CSSStyleSheet();
-    this._instanceSheet.replaceSync(this.composeCss());
-
-    const existing = this.shadowRoot.adoptedStyleSheets;
-    this.shadowRoot.adoptedStyleSheets = [...existing, this._instanceSheet];
-
     this.addEventListener('click', this._onHostClick);
     this.addEventListener('keydown', this._onHostKeyDown);
 
@@ -124,11 +176,10 @@ export class RaftersCheckbox extends RaftersElement {
   ): void {
     if (oldValue === newValue) return;
 
-    if (
-      (name === 'variant' || name === 'size' || name === 'checked' || name === 'disabled') &&
-      this._instanceSheet
-    ) {
-      this._instanceSheet.replaceSync(this.composeCss());
+    if (name === 'variant' || name === 'size') {
+      // Re-render so the inner button's composed class string reflects the new
+      // variant/size; the icon class string follows too.
+      this.update();
     }
 
     this.mirrorAttributesToButton();
@@ -141,7 +192,6 @@ export class RaftersCheckbox extends RaftersElement {
   override disconnectedCallback(): void {
     this.removeEventListener('click', this._onHostClick);
     this.removeEventListener('keydown', this._onHostKeyDown);
-    this._instanceSheet = null;
     this._button = null;
   }
 
@@ -152,7 +202,10 @@ export class RaftersCheckbox extends RaftersElement {
   override render(): Node {
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = 'checkbox';
+    button.className = composeCheckboxClasses(
+      parseVariant(this.getAttribute('variant')),
+      parseSize(this.getAttribute('size')),
+    );
     button.setAttribute('role', 'checkbox');
     this._button = button;
     this.mirrorAttributesToButton();
@@ -173,7 +226,7 @@ export class RaftersCheckbox extends RaftersElement {
 
     const SVG_NS = 'http://www.w3.org/2000/svg';
     const svg = document.createElementNS(SVG_NS, 'svg');
-    svg.setAttribute('class', 'icon');
+    svg.setAttribute('class', composeCheckboxIconClasses(parseSize(this.getAttribute('size'))));
     svg.setAttribute('fill', 'none');
     svg.setAttribute('viewBox', '0 0 24 24');
     svg.setAttribute('stroke', 'currentColor');
@@ -187,15 +240,6 @@ export class RaftersCheckbox extends RaftersElement {
 
     svg.appendChild(path);
     button.appendChild(svg);
-  }
-
-  private composeCss(): string {
-    return checkboxStylesheet({
-      variant: parseVariant(this.getAttribute('variant')),
-      size: parseSize(this.getAttribute('size')),
-      checked: this.hasAttribute('checked'),
-      disabled: this.hasAttribute('disabled'),
-    });
   }
 
   // ==========================================================================

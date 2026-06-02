@@ -2,9 +2,19 @@
  * <rafters-slider> -- Form-associated Web Component for range value selection.
  *
  * Mirrors the semantics of slider.tsx (variant, size, orientation,
- * single-thumb and multi-thumb range) using shadow-DOM-scoped CSS composed
- * via classy-wc. Auto-registers on import and is idempotent against
- * double-define.
+ * single-thumb and multi-thumb range). The inner container/track/range/thumb
+ * nodes carry the SAME utility class strings the React/Astro targets use --
+ * imported from slider.classes.ts -- rather than a parallel hand-written CSS
+ * map. Presentation resolves from the shared compiled utility sheet adopted
+ * by RaftersElement (setUtilityCSS) plus the token custom properties
+ * inherited from the host :root. Per-thumb and range positions are computed
+ * at runtime and applied as inline geometry (left/right/top/bottom/transform),
+ * exactly as the React target does.
+ *
+ * The only shadow-scoped CSS this component owns is the structural :host
+ * display shim; every visual rule is carried by a utility class string.
+ *
+ * Auto-registers on import and is idempotent against double-define.
  *
  * Form-associated: participates in <form> submission, validation, reset,
  * disabled propagation, and state restoration via ElementInternals. The
@@ -37,20 +47,36 @@
  *  - Track pointerdown: moves the closest thumb to the pointer position
  *  - Thumb pointerdown: starts drag (setPointerCapture); pointermove
  *    updates the thumb value; pointerup releases.
- *
- * No raw CSS custom-property literals here -- all token references live in
- * slider.styles.ts and resolve through tokenVar().
  */
 
 import { RaftersElement } from '../../primitives/rafters-element';
 import {
-  type SliderOrientation,
-  type SliderSize,
-  type SliderVariant,
-  sliderSizeStyles,
-  sliderStylesheet,
-  sliderVariantStyles,
-} from './slider.styles';
+  sliderContainerBaseClasses,
+  sliderRangeBaseClasses,
+  sliderSizeClasses,
+  sliderThumbBaseClasses,
+  sliderThumbInteractionClasses,
+  sliderTrackBaseClasses,
+  sliderVariantClasses,
+} from './slider.classes';
+
+// ============================================================================
+// Public Types
+// ============================================================================
+
+export type SliderVariant =
+  | 'default'
+  | 'primary'
+  | 'secondary'
+  | 'destructive'
+  | 'success'
+  | 'warning'
+  | 'info'
+  | 'accent';
+
+export type SliderSize = 'sm' | 'default' | 'lg';
+
+export type SliderOrientation = 'horizontal' | 'vertical';
 
 // ============================================================================
 // Sanitization helpers
@@ -87,14 +113,14 @@ function parseOrientation(value: string | null): SliderOrientation {
 }
 
 function parseVariant(value: string | null): SliderVariant {
-  if (value && value in sliderVariantStyles) {
+  if (value && value in sliderVariantClasses) {
     return value as SliderVariant;
   }
   return 'default';
 }
 
 function parseSize(value: string | null): SliderSize {
-  if (value && value in sliderSizeStyles) {
+  if (value && value in sliderSizeClasses) {
     return value as SliderSize;
   }
   return 'default';
@@ -130,6 +156,79 @@ function percentFromValue(value: number, min: number, max: number): number {
 }
 
 // ============================================================================
+// Class composition (parity with slider.tsx)
+// ============================================================================
+
+const DEFAULT_VARIANT_CLASSES = sliderVariantClasses.default ?? { range: '', thumb: '', ring: '' };
+const DEFAULT_SIZE_CLASSES = sliderSizeClasses.default ?? { track: '', thumb: '' };
+
+/**
+ * Compose the container's class string. Mirrors the React composition:
+ * base + orientation fill + disabled dimming.
+ */
+export function composeSliderContainerClasses(
+  orientation: SliderOrientation,
+  disabled: boolean,
+): string {
+  const isHorizontal = orientation === 'horizontal';
+  return [
+    sliderContainerBaseClasses,
+    isHorizontal ? 'w-full' : 'h-full flex-col',
+    disabled ? 'opacity-50 pointer-events-none' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+}
+
+/**
+ * Compose the track's class string. Horizontal tracks take the size-specific
+ * height and stretch full-width; vertical tracks take a fixed width.
+ */
+export function composeSliderTrackClasses(
+  orientation: SliderOrientation,
+  size: SliderSize,
+): string {
+  const isHorizontal = orientation === 'horizontal';
+  const sizeClasses = sliderSizeClasses[size] ?? DEFAULT_SIZE_CLASSES;
+  return [
+    sliderTrackBaseClasses,
+    isHorizontal ? sizeClasses.track : '',
+    isHorizontal ? 'w-full' : 'h-full w-2',
+  ]
+    .filter(Boolean)
+    .join(' ');
+}
+
+/**
+ * Compose the range fill's class string: base + variant fill colour.
+ */
+export function composeSliderRangeClasses(variant: SliderVariant): string {
+  const variantClasses = sliderVariantClasses[variant] ?? DEFAULT_VARIANT_CLASSES;
+  return `${sliderRangeBaseClasses} ${variantClasses.range}`;
+}
+
+/**
+ * Compose a thumb's class string: base + size + variant border + interaction
+ * + variant focus ring + cursor affordance.
+ */
+export function composeSliderThumbClasses(
+  variant: SliderVariant,
+  size: SliderSize,
+  disabled: boolean,
+): string {
+  const variantClasses = sliderVariantClasses[variant] ?? DEFAULT_VARIANT_CLASSES;
+  const sizeClasses = sliderSizeClasses[size] ?? DEFAULT_SIZE_CLASSES;
+  return [
+    sliderThumbBaseClasses,
+    sizeClasses.thumb,
+    variantClasses.thumb,
+    sliderThumbInteractionClasses,
+    variantClasses.ring,
+    disabled ? 'cursor-not-allowed' : 'cursor-grab',
+  ].join(' ');
+}
+
+// ============================================================================
 // ElementInternals feature detection
 // ============================================================================
 
@@ -148,8 +247,10 @@ export class RaftersSlider extends RaftersElement {
   static formAssociated = true;
   static observedAttributes: ReadonlyArray<string> = OBSERVED_ATTRIBUTES;
 
+  /** The only component-owned CSS: the structural host-display shim. */
+  static override styles = ':host { display: block; }';
+
   private _internals: ElementInternals;
-  private _instanceSheet: CSSStyleSheet | null = null;
   private _container: HTMLDivElement | null = null;
   private _track: HTMLDivElement | null = null;
   private _range: HTMLDivElement | null = null;
@@ -184,13 +285,6 @@ export class RaftersSlider extends RaftersElement {
   override connectedCallback(): void {
     super.connectedCallback();
     if (!this.shadowRoot) return;
-
-    this._instanceSheet = new CSSStyleSheet();
-    this._instanceSheet.replaceSync(this.composeCss());
-
-    const existing = this.shadowRoot.adoptedStyleSheets;
-    this.shadowRoot.adoptedStyleSheets = [...existing, this._instanceSheet];
-
     this.syncFormValue();
   }
 
@@ -201,11 +295,8 @@ export class RaftersSlider extends RaftersElement {
   ): void {
     if (oldValue === newValue) return;
 
-    if (
-      (name === 'variant' || name === 'size' || name === 'orientation' || name === 'disabled') &&
-      this._instanceSheet
-    ) {
-      this._instanceSheet.replaceSync(this.composeCss());
+    if (name === 'variant' || name === 'size' || name === 'orientation') {
+      this.applyPartClasses();
     }
 
     if (name === 'value' || name === 'min' || name === 'max' || name === 'step') {
@@ -213,12 +304,14 @@ export class RaftersSlider extends RaftersElement {
       this.renderThumbs();
       this.updatePositions();
       this.updateThumbAria();
+      this.applyPartClasses();
       this.syncFormValue();
       return;
     }
 
     if (name === 'disabled') {
       this.updateDisabledState();
+      this.applyPartClasses();
       return;
     }
 
@@ -234,9 +327,9 @@ export class RaftersSlider extends RaftersElement {
   }
 
   override disconnectedCallback(): void {
+    super.disconnectedCallback();
     this.detachTrackListeners();
     this.detachThumbListeners();
-    this._instanceSheet = null;
     this._container = null;
     this._track = null;
     this._range = null;
@@ -251,18 +344,23 @@ export class RaftersSlider extends RaftersElement {
     this.detachTrackListeners();
     this.detachThumbListeners();
 
+    const orientation = parseOrientation(this.getAttribute('orientation'));
+    const variant = parseVariant(this.getAttribute('variant'));
+    const size = parseSize(this.getAttribute('size'));
+    const disabled = this.hasAttribute('disabled');
+
     const container = document.createElement('div');
-    container.className = 'container';
-    container.setAttribute('data-orientation', parseOrientation(this.getAttribute('orientation')));
-    if (this.hasAttribute('disabled')) {
+    container.className = `container ${composeSliderContainerClasses(orientation, disabled)}`;
+    container.setAttribute('data-orientation', orientation);
+    if (disabled) {
       container.setAttribute('data-disabled', '');
     }
 
     const track = document.createElement('div');
-    track.className = 'track';
+    track.className = `track ${composeSliderTrackClasses(orientation, size)}`;
 
     const range = document.createElement('div');
-    range.className = 'range';
+    range.className = `range ${composeSliderRangeClasses(variant)}`;
     track.appendChild(range);
 
     container.appendChild(track);
@@ -281,6 +379,32 @@ export class RaftersSlider extends RaftersElement {
     return container;
   }
 
+  /**
+   * Re-apply the composed utility class strings to the persistent structural
+   * nodes without rebuilding the tree. Called on variant/size/orientation/
+   * disabled changes so the inner markup tracks the current attributes while
+   * keeping the structural `container`/`track`/`range`/`thumb` markers stable.
+   */
+  private applyPartClasses(): void {
+    const orientation = parseOrientation(this.getAttribute('orientation'));
+    const variant = parseVariant(this.getAttribute('variant'));
+    const size = parseSize(this.getAttribute('size'));
+    const disabled = this.hasAttribute('disabled');
+
+    if (this._container) {
+      this._container.className = `container ${composeSliderContainerClasses(orientation, disabled)}`;
+    }
+    if (this._track) {
+      this._track.className = `track ${composeSliderTrackClasses(orientation, size)}`;
+    }
+    if (this._range) {
+      this._range.className = `range ${composeSliderRangeClasses(variant)}`;
+    }
+    for (const thumb of this._thumbs) {
+      thumb.className = `thumb ${composeSliderThumbClasses(variant, size, disabled)}`;
+    }
+  }
+
   private renderThumbs(): void {
     if (!this._container) return;
     this.detachThumbListeners();
@@ -297,9 +421,12 @@ export class RaftersSlider extends RaftersElement {
       this._values = [0];
     }
     const disabled = this.hasAttribute('disabled');
+    const variant = parseVariant(this.getAttribute('variant'));
+    const size = parseSize(this.getAttribute('size'));
+    const thumbClasses = composeSliderThumbClasses(variant, size, disabled);
     for (let i = 0; i < count; i++) {
       const thumb = document.createElement('span');
-      thumb.className = 'thumb';
+      thumb.className = `thumb ${thumbClasses}`;
       thumb.setAttribute('role', 'slider');
       thumb.setAttribute('tabindex', disabled ? '-1' : '0');
       thumb.dataset.index = String(i);
@@ -324,15 +451,6 @@ export class RaftersSlider extends RaftersElement {
       thumb.removeEventListener('pointerup', this._onThumbPointerUp);
       thumb.removeEventListener('keydown', this._onThumbKeyDown);
     }
-  }
-
-  private composeCss(): string {
-    return sliderStylesheet({
-      variant: parseVariant(this.getAttribute('variant')),
-      size: parseSize(this.getAttribute('size')),
-      orientation: parseOrientation(this.getAttribute('orientation')),
-      disabled: this.hasAttribute('disabled'),
-    });
   }
 
   // ==========================================================================
@@ -684,6 +802,7 @@ export class RaftersSlider extends RaftersElement {
   formDisabledCallback(disabled: boolean): void {
     this.toggleAttribute('disabled', disabled);
     this.updateDisabledState();
+    this.applyPartClasses();
   }
 
   formStateRestoreCallback(

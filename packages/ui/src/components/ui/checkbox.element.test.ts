@@ -16,6 +16,7 @@
  */
 
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { checkboxSizeClasses, checkboxVariantClasses } from './checkbox.classes';
 
 interface PolyfilledInternals {
   _value: string | null;
@@ -294,7 +295,7 @@ describe('rafters-checkbox', () => {
     const svg = el.shadowRoot?.querySelector('button svg');
     expect(svg).toBeTruthy();
     expect(svg?.getAttribute('aria-hidden')).toBe('true');
-    expect(svg?.getAttribute('class')).toBe('icon');
+    expect(svg?.classList.contains('icon')).toBe(true);
     expect(svg?.querySelector('path')?.getAttribute('d')).toBe('M5 13l4 4L19 7');
     el.removeAttribute('checked');
     expect(el.shadowRoot?.querySelector('button svg')).toBeNull();
@@ -447,94 +448,70 @@ describe('rafters-checkbox', () => {
     expect(el.getAttribute('size')).toBe('lg');
   });
 
-  it('rebuilds the per-instance stylesheet when variant changes', async () => {
+  it('recomposes the inner button classes when variant changes', async () => {
     const RaftersCheckbox = await loadElement();
     const el = document.createElement('rafters-checkbox') as InstanceType<typeof RaftersCheckbox>;
     document.body.append(el);
-    const collect = (): string => {
-      const sheets = el.shadowRoot?.adoptedStyleSheets ?? [];
-      return sheets
-        .map((s) =>
-          Array.from(s.cssRules)
-            .map((r) => r.cssText)
-            .join('\n'),
-        )
-        .join('\n');
-    };
-    expect(collect()).toContain('var(--color-primary-ring)');
+    const innerClass = (): string => el.shadowRoot?.querySelector('button')?.className ?? '';
+    expect(innerClass()).toContain(checkboxVariantClasses.default.ring);
     el.setAttribute('variant', 'destructive');
-    expect(collect()).toContain('var(--color-destructive-ring)');
+    expect(innerClass()).toContain(checkboxVariantClasses.destructive.ring);
+    expect(innerClass()).toContain(checkboxVariantClasses.destructive.border);
   });
 
-  it('rebuilds the per-instance stylesheet when size changes', async () => {
+  it('recomposes the inner button classes when size changes', async () => {
     const RaftersCheckbox = await loadElement();
     const el = document.createElement('rafters-checkbox') as InstanceType<typeof RaftersCheckbox>;
     document.body.append(el);
-    const collect = (): string => {
-      const sheets = el.shadowRoot?.adoptedStyleSheets ?? [];
-      return sheets
-        .map((s) =>
-          Array.from(s.cssRules)
-            .map((r) => r.cssText)
-            .join('\n'),
-        )
-        .join('\n');
-    };
-    expect(collect()).toContain('height: 1rem');
+    const innerClass = (): string => el.shadowRoot?.querySelector('button')?.className ?? '';
+    expect(innerClass()).toContain(checkboxSizeClasses.default.box);
     el.setAttribute('size', 'lg');
-    expect(collect()).toContain('height: 1.25rem');
+    expect(innerClass()).toContain(checkboxSizeClasses.lg.box);
   });
 
-  it('rebuilds the per-instance stylesheet when checked changes', async () => {
+  it('carries the checked-state variant classes on the inner button', async () => {
     const RaftersCheckbox = await loadElement();
     const el = document.createElement('rafters-checkbox') as InstanceType<typeof RaftersCheckbox>;
     document.body.append(el);
-    const collect = (): string => {
-      const sheets = el.shadowRoot?.adoptedStyleSheets ?? [];
-      return sheets
-        .map((s) =>
-          Array.from(s.cssRules)
-            .map((r) => r.cssText)
-            .join('\n'),
-        )
-        .join('\n');
-    };
-    // Unchecked state -- checked rule still present in the sheet for
-    // attribute-driven transitions but the rendered markup is empty.
-    expect(collect()).toContain('data-state="checked"');
+    // The data-[state=checked]: variant classes are always present; they
+    // resolve from the shared utility sheet once the button mirrors the
+    // data-state attribute.
+    const inner = el.shadowRoot?.querySelector('button');
+    expect(inner?.className).toContain(checkboxVariantClasses.default.checked);
+    expect(inner?.getAttribute('data-state')).toBe('unchecked');
     el.setAttribute('checked', '');
-    // Still present; the composed stylesheet pre-fills the variant
-    // colours on both the attribute selector and (when checked) the
-    // base .checkbox rule.
-    expect(collect()).toContain('data-state="checked"');
+    expect(inner?.getAttribute('data-state')).toBe('checked');
+    // Class string is stable across the state flip; only data-state changes.
+    expect(inner?.className).toContain(checkboxVariantClasses.default.checked);
   });
 
-  it('rebuilds the per-instance stylesheet when disabled changes', async () => {
+  it('reflects the disabled state onto the inner button for the disabled: variant', async () => {
     const RaftersCheckbox = await loadElement();
     const el = document.createElement('rafters-checkbox') as InstanceType<typeof RaftersCheckbox>;
     document.body.append(el);
-    const collect = (): string => {
-      const sheets = el.shadowRoot?.adoptedStyleSheets ?? [];
-      return sheets
-        .map((s) =>
-          Array.from(s.cssRules)
-            .map((r) => r.cssText)
-            .join('\n'),
-        )
-        .join('\n');
-    };
-    expect(collect()).toContain('.checkbox:disabled');
+    const inner = el.shadowRoot?.querySelector('button');
+    // The disabled:opacity-50 / disabled:pointer-events-none utilities live in
+    // the base class string and resolve once the button reflects disabled.
+    expect(inner?.className).toContain('disabled:opacity-50');
+    expect(inner?.disabled).toBe(false);
     el.setAttribute('disabled', '');
-    // The base rule now carries the disabled declarations inline too.
-    expect(collect()).toContain('opacity: 0.5');
+    expect(inner?.disabled).toBe(true);
   });
 
-  it('stylesheet is adopted into the shadow root', async () => {
+  it('keeps the irreducible host inline-flex rule in the adopted sheet', async () => {
     const RaftersCheckbox = await loadElement();
     const el = document.createElement('rafters-checkbox') as InstanceType<typeof RaftersCheckbox>;
     document.body.append(el);
     const sheets = el.shadowRoot?.adoptedStyleSheets ?? [];
     expect(sheets.length).toBeGreaterThanOrEqual(1);
+    const css = sheets
+      .map((s) =>
+        Array.from(s.cssRules)
+          .map((r) => r.cssText)
+          .join('\n'),
+      )
+      .join('\n');
+    expect(css).toMatch(/:host\s*{[^}]*display:\s*inline-flex/);
   });
 
   it('setCustomValidity propagates to the validity state', async () => {

@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import './kbd.element';
-import { RaftersKbd } from './kbd.element';
+import { kbdBaseClasses } from './kbd.classes';
+import { composeKbdClasses, RaftersKbd } from './kbd.element';
 
 afterEach(() => {
   while (document.body.firstChild) {
@@ -14,15 +15,8 @@ function mount(): HTMLElement {
   return el;
 }
 
-function collectCss(el: HTMLElement): string {
-  const sheets = el.shadowRoot?.adoptedStyleSheets ?? [];
-  return sheets
-    .map((s) =>
-      Array.from(s.cssRules)
-        .map((r) => r.cssText)
-        .join('\n'),
-    )
-    .join('\n');
+function innerClass(el: Element): string {
+  return el.shadowRoot?.querySelector('kbd')?.className ?? '';
 }
 
 describe('<rafters-kbd>', () => {
@@ -36,21 +30,19 @@ describe('<rafters-kbd>', () => {
     expect(customElements.get('rafters-kbd')).toBe(RaftersKbd);
   });
 
-  it('renders a single kbd.kbd containing a slot', () => {
+  it('renders a single kbd containing a slot', () => {
     const el = mount();
-    const inner = el.shadowRoot?.querySelector('kbd.kbd');
+    const inner = el.shadowRoot?.querySelector('kbd');
     expect(inner).not.toBeNull();
     expect(inner?.tagName.toLowerCase()).toBe('kbd');
     expect(inner?.children.length).toBe(1);
     expect(inner?.firstElementChild?.tagName.toLowerCase()).toBe('slot');
   });
 
-  it('adopts the kbd stylesheet on connect', () => {
+  it('applies the base kbd classes to the inner element', () => {
     const el = mount();
-    const sheets = el.shadowRoot?.adoptedStyleSheets ?? [];
-    expect(sheets.length).toBeGreaterThanOrEqual(1);
-    const css = collectCss(el);
-    expect(css).toMatch(/\.kbd\s*\{/);
+    expect(innerClass(el)).toBe(composeKbdClasses());
+    expect(innerClass(el)).toBe(kbdBaseClasses);
   });
 
   it('observedAttributes is empty', () => {

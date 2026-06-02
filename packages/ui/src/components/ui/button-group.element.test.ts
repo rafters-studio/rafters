@@ -69,7 +69,7 @@ describe('rafters-button-group', () => {
     expect(inner?.querySelector('slot')).not.toBeNull();
   });
 
-  it('inner wrapper carries no classes (styling comes from per-instance stylesheet)', () => {
+  it('inner wrapper carries no classes (styling comes from static styles)', () => {
     const el = mount();
     const inner = el.shadowRoot?.firstElementChild;
     expect(inner?.className).toBe('');
@@ -107,25 +107,33 @@ describe('rafters-button-group', () => {
     expect(el.getAttribute('data-orientation')).toBe('vertical');
   });
 
-  it('updates stylesheet when orientation changes to vertical', () => {
+  it('reflects data-orientation=vertical when orientation changes to vertical', () => {
     const el = mount();
     el.setAttribute('orientation', 'vertical');
-    const sheets = el.shadowRoot?.adoptedStyleSheets ?? [];
-    const css = Array.from(sheets.at(-1)?.cssRules ?? [])
-      .map((r) => r.cssText)
-      .join('\n');
-    expect(css).toMatch(/flex-direction:\s*column/);
+    expect(el.getAttribute('data-orientation')).toBe('vertical');
   });
 
-  it('updates stylesheet when orientation changes back to horizontal', () => {
+  it('reflects data-orientation=horizontal when orientation changes back', () => {
     const el = mount({ orientation: 'vertical' });
     el.setAttribute('orientation', 'horizontal');
-    const css = collectCss(el);
-    expect(css).toMatch(/flex-direction:\s*row/);
-    expect(css).not.toMatch(/flex-direction:\s*column/);
+    expect(el.getAttribute('data-orientation')).toBe('horizontal');
   });
 
-  it('adopts a single per-instance stylesheet', () => {
+  it('keeps the irreducible orientation-keyed host and slotted rules in the adopted sheet', () => {
+    const el = mount();
+    const css = collectCss(el);
+    // Both orientation branches and the connected-border/focus-stacking
+    // ::slotted rules live verbatim in the static styles, keyed by the
+    // reflected data-orientation host attribute.
+    expect(css).toMatch(/flex-direction:\s*row/);
+    expect(css).toMatch(/flex-direction:\s*column/);
+    expect(css).toMatch(/::slotted\(\*:first-child\)/);
+    expect(css).toMatch(/::slotted\(\*:not\(:first-child\)\)/);
+    expect(css).toMatch(/::slotted\(\*:focus-visible\)/);
+    expect(css).toMatch(/z-index:\s*10/);
+  });
+
+  it('adopts at least one stylesheet carrying the component styles', () => {
     const el = mount();
     const sheets = el.shadowRoot?.adoptedStyleSheets ?? [];
     expect(sheets.length).toBeGreaterThanOrEqual(1);

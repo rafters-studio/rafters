@@ -14,6 +14,13 @@
  */
 
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import {
+  toggleGroupClasses,
+  toggleGroupDefaultVariantClasses,
+  toggleGroupItemBaseClasses,
+  toggleGroupItemDefaultPressedClasses,
+} from './toggle-group.classes';
+import { composeToggleGroupClasses, composeToggleGroupItemClasses } from './toggle-group.element';
 
 // ============================================================================
 // Polyfill scaffolding
@@ -257,7 +264,7 @@ describe('rafters-toggle-group registration', () => {
   });
 });
 
-describe('rafters-toggle-group DOM + stylesheet', () => {
+describe('rafters-toggle-group DOM + classes', () => {
   it('applies role="group" and data-orientation to the host', async () => {
     await loadElements();
     const group = buildGroup();
@@ -273,58 +280,44 @@ describe('rafters-toggle-group DOM + stylesheet', () => {
     expect(group.getAttribute('data-orientation')).toBe('vertical');
   });
 
-  it('renders a .group wrapper with a default <slot>', async () => {
+  it('renders a group wrapper carrying the composed group classes with a default <slot>', async () => {
     await loadElements();
     const group = buildGroup();
     document.body.append(group);
-    const wrapper = group.shadowRoot?.querySelector('.group');
+    const wrapper = group.shadowRoot?.querySelector('div');
     expect(wrapper).toBeTruthy();
+    expect(wrapper?.className).toBe(composeToggleGroupClasses('default'));
     expect(wrapper?.querySelector('slot')).toBeTruthy();
   });
 
-  it('adopts a per-instance CSSStyleSheet on the shadow root', async () => {
-    await loadElements();
-    const group = buildGroup();
-    document.body.append(group);
-    const sheets = group.shadowRoot?.adoptedStyleSheets ?? [];
-    const text = sheets
-      .map((sheet) =>
-        Array.from(sheet.cssRules)
-          .map((rule) => rule.cssText)
-          .join('\n'),
-      )
-      .join('\n');
-    expect(text).toContain('var(--radius-lg)');
+  it('keeps only the structural :host / orientation shim as component-owned CSS', async () => {
+    const { RaftersToggleGroup } = await loadElements();
+    expect(RaftersToggleGroup.styles).toContain(':host');
+    expect(RaftersToggleGroup.styles).toContain('inline-flex');
+    expect(RaftersToggleGroup.styles).toContain('[data-orientation="vertical"]');
+    expect(RaftersToggleGroup.styles).toContain('flex-direction: column');
   });
 
-  it('rebuilds the stylesheet when variant changes', async () => {
+  it('default variant wrapper carries the muted-chrome classes; outline drops them', async () => {
     await loadElements();
     const group = buildGroup({ variant: 'default' });
     document.body.append(group);
-    const collect = (): string => {
-      const sheets = group.shadowRoot?.adoptedStyleSheets ?? [];
-      return sheets
-        .map((sheet) =>
-          Array.from(sheet.cssRules)
-            .map((rule) => rule.cssText)
-            .join('\n'),
-        )
-        .join('\n');
-    };
-    expect(collect()).toContain('var(--color-muted)');
+    const wrapper = group.shadowRoot?.querySelector('div');
+    expect(wrapper?.className).toContain(toggleGroupDefaultVariantClasses);
     group.setAttribute('variant', 'outline');
-    expect(collect()).not.toContain('var(--color-muted)');
+    expect(wrapper?.className).not.toContain(toggleGroupDefaultVariantClasses);
+    expect(wrapper?.className).toBe(toggleGroupClasses);
   });
 });
 
-describe('rafters-toggle-group-item DOM + stylesheet', () => {
-  it('renders a <button class="item"> in the shadow root', async () => {
+describe('rafters-toggle-group-item DOM + classes', () => {
+  it('renders an inner button carrying the composed item classes', async () => {
     await loadElements();
     const item = buildItem({ value: 'a' });
     document.body.append(item);
     const button = innerButton(item);
     expect(button).toBeTruthy();
-    expect(button?.classList.contains('item')).toBe(true);
+    expect(button?.className).toBe(composeToggleGroupItemClasses('default', 'default', false));
     expect(button?.getAttribute('type')).toBe('button');
   });
 
@@ -340,6 +333,16 @@ describe('rafters-toggle-group-item DOM + stylesheet', () => {
     expect(button?.getAttribute('data-state')).toBe('on');
   });
 
+  it('layers the pressed class string when pressed', async () => {
+    await loadElements();
+    const item = buildItem({ value: 'a' });
+    document.body.append(item);
+    const button = innerButton(item);
+    expect(button?.className).not.toContain(toggleGroupItemDefaultPressedClasses);
+    item.setAttribute('pressed', '');
+    expect(button?.className).toContain(toggleGroupItemDefaultPressedClasses);
+  });
+
   it('disables the inner button when host is disabled', async () => {
     await loadElements();
     const item = buildItem({ value: 'a', disabled: '' });
@@ -347,21 +350,17 @@ describe('rafters-toggle-group-item DOM + stylesheet', () => {
     expect(innerButton(item)?.disabled).toBe(true);
   });
 
-  it('adopts a per-instance stylesheet with font-size token', async () => {
+  it('keeps only the structural :host shim as component-owned CSS', async () => {
+    const { RaftersToggleGroupItem } = await loadElements();
+    expect(RaftersToggleGroupItem.styles).toContain(':host');
+    expect(RaftersToggleGroupItem.styles).toContain('inline-flex');
+  });
+
+  it('item base utility classes are present on the inner button', async () => {
     await loadElements();
     const item = buildItem({ value: 'a' });
     document.body.append(item);
-    const sheets = item.shadowRoot?.adoptedStyleSheets ?? [];
-    const text = sheets
-      .map((sheet) =>
-        Array.from(sheet.cssRules)
-          .map((rule) => rule.cssText)
-          .join('\n'),
-      )
-      .join('\n');
-    expect(text).toContain('var(--font-size-label-large)');
-    expect(text).toContain('var(--motion-duration-base)');
-    expect(text).toContain('var(--motion-ease-standard)');
+    expect(innerButton(item)?.className).toContain(toggleGroupItemBaseClasses);
   });
 });
 

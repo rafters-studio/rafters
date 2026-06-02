@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
+import { aspectRatioBaseClasses } from './aspect-ratio.classes';
 import './aspect-ratio.element';
-import { RaftersAspectRatio } from './aspect-ratio.element';
+import { composeAspectRatioClasses, RaftersAspectRatio } from './aspect-ratio.element';
 
 afterEach(() => {
   while (document.body.firstChild) {
@@ -13,6 +14,10 @@ function mount(attrs: Record<string, string> = {}): HTMLElement {
   for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
   document.body.appendChild(el);
   return el;
+}
+
+function innerClass(el: Element): string {
+  return el.shadowRoot?.querySelector('div.aspect-ratio')?.className ?? '';
 }
 
 function adoptedCssText(el: Element): string {
@@ -49,6 +54,20 @@ describe('<rafters-aspect-ratio>', () => {
     expect(inner).not.toBeNull();
     expect(inner?.children.length).toBe(1);
     expect(inner?.firstElementChild?.tagName.toLowerCase()).toBe('slot');
+  });
+
+  it('carries the shared utility classes on the inner wrapper', () => {
+    const el = mount();
+    expect(innerClass(el)).toBe(composeAspectRatioClasses());
+    expect(innerClass(el)).toContain(aspectRatioBaseClasses);
+  });
+
+  it('keeps the irreducible host and slotted-fill rules in the adopted sheet', () => {
+    const el = mount();
+    const css = adoptedCssText(el);
+    expect(css).toMatch(/:host\s*{[^}]*display:\s*block/);
+    expect(css).toMatch(/::slotted\(\*\)/);
+    expect(css).toMatch(/object-fit:\s*cover/);
   });
 
   it('falls back to ratio 1 for missing, non-numeric, or non-positive values', () => {

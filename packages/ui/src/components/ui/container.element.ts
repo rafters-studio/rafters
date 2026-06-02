@@ -1,46 +1,128 @@
 /**
  * <rafters-container> -- Web Component layout primitive.
  *
- * Mirrors the semantics of container.tsx (size, padding, gap, background,
- * article typography, editable) using shadow-DOM-scoped CSS composed via
- * classy-wc. Auto-registers on import and is idempotent against double-define.
+ * Mirrors the semantics of container.tsx / container.astro (size, padding,
+ * gap, background, article typography, editable). The inner semantic element
+ * carries the SAME utility class strings the React and Astro targets use --
+ * imported from container.classes.ts -- rather than a parallel hand-written
+ * CSS map. Visual presentation comes from the shared compiled utility
+ * stylesheet adopted by RaftersElement (see setUtilityCSS) plus the token
+ * custom properties inherited from the host :root.
+ *
+ * Container queries are carried on the inner element via the query-container
+ * utility (containerQueryClasses), exactly as in the React/Astro targets, so
+ * the responsive auto edge padding and any descendant queries resolve against
+ * the same query container the other targets use. The inner element also
+ * carries the full-bleed sizing utility, so the host needs no sizing CSS.
+ *
+ * The only shadow-scoped CSS this component owns is the structural :host
+ * display shim: custom elements default to inline display, but the inner
+ * semantic element is the outer block-level box the React/Astro element is.
  *
  * Attributes:
  *  - as: 'div' | 'main' | 'section' | 'article' | 'aside' (default 'div')
  *  - size: 'sm'..'7xl' | 'full'
  *  - padding: '0' | '1' | ... | '24'
  *  - gap: same as padding scale, OR bare/empty -> derive from size
- *  - background: 'none' | 'muted' | 'accent' | 'card' | 'primary' | 'secondary'
+ *  - background: 'none' | 'muted' | 'accent' | 'card' | 'primary'
  *  - editable: boolean (presence-based)
- *
- * No raw CSS custom-property literals here -- all token references live in
- * container.styles.ts and resolve through tokenVar().
- * Container queries are always-on via :host { container-type: inline-size }.
  */
-
 import { RaftersElement } from '../../primitives/rafters-element';
 import {
   type ContainerBackground,
-  type ContainerSize,
-  type ContainerSpacing,
-  containerStylesheet,
-  isContainerBackground,
-  isContainerSize,
-  isContainerSpacing,
-} from './container.styles';
+  containerArticleTypography,
+  containerAutoEdgePadding,
+  containerBackgroundClasses,
+  containerCenterClasses,
+  containerEditableClasses,
+  containerGapClasses,
+  containerPaddingClasses,
+  containerQueryClasses,
+  containerSizeClasses,
+  containerSizeGapScale,
+} from './container.classes';
 
 export type ContainerAs = 'div' | 'main' | 'section' | 'article' | 'aside';
 
+export type ContainerSize =
+  | 'sm'
+  | 'md'
+  | 'lg'
+  | 'xl'
+  | '2xl'
+  | '3xl'
+  | '4xl'
+  | '5xl'
+  | '6xl'
+  | '7xl'
+  | 'full';
+
+export type ContainerSpacing =
+  | '0'
+  | '1'
+  | '2'
+  | '3'
+  | '4'
+  | '5'
+  | '6'
+  | '8'
+  | '10'
+  | '12'
+  | '16'
+  | '20'
+  | '24';
+
 const ALLOWED_AS: ReadonlyArray<ContainerAs> = ['div', 'main', 'section', 'article', 'aside'];
 
-const OBSERVED_ATTRIBUTES: ReadonlyArray<string> = [
-  'as',
-  'size',
-  'padding',
-  'gap',
-  'background',
-  'editable',
-] as const;
+const SIZES: ReadonlyArray<ContainerSize> = [
+  'sm',
+  'md',
+  'lg',
+  'xl',
+  '2xl',
+  '3xl',
+  '4xl',
+  '5xl',
+  '6xl',
+  '7xl',
+  'full',
+];
+
+const SPACING: ReadonlyArray<ContainerSpacing> = [
+  '0',
+  '1',
+  '2',
+  '3',
+  '4',
+  '5',
+  '6',
+  '8',
+  '10',
+  '12',
+  '16',
+  '20',
+  '24',
+];
+
+const BACKGROUNDS: ReadonlyArray<ContainerBackground> = [
+  'none',
+  'muted',
+  'accent',
+  'card',
+  'primary',
+];
+
+function isContainerSize(value: string | null): value is ContainerSize {
+  return value !== null && (SIZES as ReadonlyArray<string>).includes(value);
+}
+
+function isContainerSpacing(value: string | null): value is ContainerSpacing {
+  return value !== null && (SPACING as ReadonlyArray<string>).includes(value);
+}
+
+function isContainerBackground(value: string | null): value is ContainerBackground {
+  return value !== null && (BACKGROUNDS as ReadonlyArray<string>).includes(value);
+}
 
 function parseAs(value: string | null): ContainerAs {
   if (value && (ALLOWED_AS as ReadonlyArray<string>).includes(value)) {
@@ -62,91 +144,105 @@ function parseBackground(value: string | null): ContainerBackground | undefined 
   return value === 'none' ? undefined : value;
 }
 
-/**
- * Parse the gap attribute.
- *  - Missing attribute (null): no gap.
- *  - Bare attribute (empty string): true -> derive from size.
- *  - Spacing scale value: that value.
- *  - Unknown string: undefined (silent fallback to no gap).
- */
 function parseGap(value: string | null): ContainerSpacing | true | undefined {
   if (value === null) return undefined;
   if (value === '') return true;
   return isContainerSpacing(value) ? value : undefined;
 }
 
+export interface ContainerClassOptions {
+  size?: ContainerSize | undefined;
+  padding?: ContainerSpacing | undefined;
+  gap?: ContainerSpacing | true | undefined;
+  background?: ContainerBackground | undefined;
+  article?: boolean | undefined;
+  editable?: boolean | undefined;
+}
+
+/**
+ * Resolve the bare-gap default for the given size, walking the spacing scale.
+ * Falls back to '6' when no size set or size is 'full'.
+ */
+function resolveDerivedGap(size: ContainerSize | undefined): ContainerSpacing {
+  if (size && size !== 'full') {
+    return containerSizeGapScale[size] as ContainerSpacing;
+  }
+  return '6';
+}
+
+export function composeContainerClasses(options: ContainerClassOptions): string {
+  const { size, padding, gap, background, article, editable } = options;
+  const parts: string[] = [];
+  parts.push(containerQueryClasses);
+  if (size) parts.push(containerSizeClasses[size] as string);
+  if (size && size !== 'full') parts.push(containerCenterClasses);
+  if (padding) {
+    parts.push(containerPaddingClasses[padding] as string);
+  } else if (size && size !== 'full') {
+    parts.push(containerAutoEdgePadding);
+  }
+  let resolvedGap: ContainerSpacing | null = null;
+  if (gap === true) {
+    resolvedGap = resolveDerivedGap(size);
+  } else if (typeof gap === 'string' && SPACING.includes(gap)) {
+    resolvedGap = gap;
+  }
+  if (resolvedGap !== null) {
+    parts.push(containerGapClasses[resolvedGap] as string);
+  }
+  if (background && background !== 'none') {
+    parts.push(containerBackgroundClasses[background as ContainerBackground]);
+  }
+  if (article) parts.push(containerArticleTypography);
+  if (editable) parts.push(containerEditableClasses);
+  return parts.filter(Boolean).join(' ');
+}
+const OBSERVED_ATTRIBUTES: ReadonlyArray<string> = [
+  'as',
+  'size',
+  'padding',
+  'gap',
+  'background',
+  'editable',
+] as const;
+
 export class RaftersContainer extends RaftersElement {
   static observedAttributes: ReadonlyArray<string> = OBSERVED_ATTRIBUTES;
 
-  /** Per-instance stylesheet rebuilt on every attribute change. */
-  private _instanceSheet: CSSStyleSheet | null = null;
-
-  override connectedCallback(): void {
-    if (!this.shadowRoot) return;
-    this._instanceSheet = new CSSStyleSheet();
-    this._instanceSheet.replaceSync(this.composeCss());
-    this.shadowRoot.adoptedStyleSheets = [this._instanceSheet];
-    this.update();
-  }
-
-  override attributeChangedCallback(
-    _name: string,
-    oldValue: string | null,
-    newValue: string | null,
-  ): void {
-    if (oldValue === newValue) return;
-    if (this._instanceSheet) {
-      this._instanceSheet.replaceSync(this.composeCss());
-    }
-    this.update();
-  }
-
-  override disconnectedCallback(): void {
-    this._instanceSheet = null;
-  }
+  /**
+   * The only component-owned CSS: the structural host-display shim. The inner
+   * semantic element is the outer block-level box; the host presents as a
+   * block so the inner element fills the available inline space.
+   */
+  static override styles = ':host { display: block; }';
 
   /**
-   * Resolve the semantic element tag from the `as` attribute, falling back
-   * to `div` for anything outside the allow-list.
+   * Resolve the semantic element tag from the `as` attribute, falling back to
+   * `div` for anything outside the allow-list.
    */
   getAs(): ContainerAs {
     return parseAs(this.getAttribute('as'));
   }
 
   /**
-   * Build the CSS string for the current attribute values.
-   */
-  private composeCss(): string {
-    const size = parseSize(this.getAttribute('size'));
-    const padding = parsePadding(this.getAttribute('padding'));
-    const gap = parseGap(this.getAttribute('gap'));
-    const background = parseBackground(this.getAttribute('background'));
-    const article = this.getAs() === 'article';
-    const editable = this.hasAttribute('editable');
-
-    return containerStylesheet({
-      size,
-      padding,
-      gap,
-      background,
-      article,
-      editable,
-    });
-  }
-
-  /**
    * Render the inner semantic element with a single default <slot>.
-   * DOM APIs only -- never innerHTML.
+   * DOM APIs only -- never innerHTML. The inner element carries the shared
+   * utility classes; presentation resolves from the adopted utility sheet.
    */
   override render(): Node {
     const inner = document.createElement(this.getAs());
-    inner.className = 'container';
-    const slot = document.createElement('slot');
-    inner.appendChild(slot);
+    inner.className = composeContainerClasses({
+      size: parseSize(this.getAttribute('size')),
+      padding: parsePadding(this.getAttribute('padding')),
+      gap: parseGap(this.getAttribute('gap')),
+      background: parseBackground(this.getAttribute('background')),
+      article: this.getAs() === 'article',
+      editable: this.hasAttribute('editable'),
+    });
+    inner.appendChild(document.createElement('slot'));
     return inner;
   }
 }
-
 if (!customElements.get('rafters-container')) {
   customElements.define('rafters-container', RaftersContainer);
 }

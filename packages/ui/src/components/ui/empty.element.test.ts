@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { RaftersEmpty } from './empty.element';
+import { emptyBaseClasses } from './empty.classes';
+import { composeEmptyClasses, RaftersEmpty } from './empty.element';
 
 afterEach(() => {
   while (document.body.firstChild) {
@@ -44,30 +45,21 @@ describe('<rafters-empty>', () => {
     expect(Array.from(RaftersEmpty.observedAttributes)).toEqual([]);
   });
 
-  it('adopts the empty stylesheet on connect', () => {
+  it('carries the shared empty utility classes on the inner container', () => {
+    const el = document.createElement('rafters-empty');
+    document.body.appendChild(el);
+    const root = el.shadowRoot?.querySelector('div.empty');
+    expect(root?.className).toBe(composeEmptyClasses());
+    expect(root?.className).toContain(emptyBaseClasses);
+  });
+
+  it('keeps the irreducible host block rule in the adopted sheet', () => {
     const el = document.createElement('rafters-empty');
     document.body.appendChild(el);
     const sheets = el.shadowRoot?.adoptedStyleSheets ?? [];
     expect(sheets.length).toBeGreaterThanOrEqual(1);
     const css = adoptedCssText(el);
-    expect(css).toContain('.empty');
-  });
-
-  it('adopted stylesheet resolves token references via var()', () => {
-    const el = document.createElement('rafters-empty');
-    document.body.appendChild(el);
-    const css = adoptedCssText(el);
-    // Base container uses spacing tokens for gap and padding.
-    expect(css).toContain('var(--spacing-4)');
-    expect(css).toContain('var(--spacing-12)');
-  });
-
-  it('stylesheet uses only --motion-duration / --motion-ease tokens', () => {
-    const el = document.createElement('rafters-empty');
-    document.body.appendChild(el);
-    const css = adoptedCssText(el);
-    expect(css).not.toMatch(/var\(--duration-/);
-    expect(css).not.toMatch(/var\(--ease-/);
+    expect(css).toMatch(/:host\s*{[^}]*display:\s*block/);
   });
 
   it('clears the instance stylesheet on disconnect', () => {

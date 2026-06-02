@@ -2,58 +2,54 @@
  * <rafters-breadcrumb> -- Web Component wayfinding container.
  *
  * Framework-target for the Breadcrumb outer <nav> wrapper, parallel to
- * breadcrumb.tsx (React) and breadcrumb.astro (Astro). Scope is limited
- * to the outer container; the list/item/link/page/separator/ellipsis
- * children are deferred to a follow-up issue -- consumers compose plain
- * semantic children into the default slot for now.
+ * breadcrumb.tsx (React) and breadcrumb.astro (Astro). Scope is limited to the
+ * outer container; the list/item/link/page/separator/ellipsis children are
+ * deferred -- consumers compose plain semantic children into the default slot.
  *
- * Shadow DOM structure:
- *   <nav class="breadcrumb" aria-label="Breadcrumb"><slot></slot></nav>
+ * Matching the framework targets, the outer nav carries NO utility classes of
+ * its own. The descendant visual rhythm (list, item, link, page, separator,
+ * ellipsis) is carried by the shared utility class strings in
+ * breadcrumb.classes.ts on the consumer-supplied children, resolved from the
+ * shared compiled utility sheet adopted by RaftersElement (setUtilityCSS) plus
+ * the token custom properties inherited from the host :root. Those children are
+ * slotted light-DOM content, so shadow-scoped descendant rules never applied to
+ * them -- the parallel hand-written CSS map is therefore dropped.
+ *
+ * The only irreducible shadow-scoped CSS is the `:host` block-layout shim,
+ * which lives in `static styles`. It carries no token reference.
+ *
+ * Shadow DOM structure: a single semantic nav with aria-label, wrapping a
+ * default slot.
  *
  * Attributes: none. No attribute-driven variants on the outer nav.
  *
- * Auto-registers on import and is idempotent against double-define.
- * Styling comes exclusively from breadcrumbStylesheet() adopted as the
- * per-instance stylesheet. No raw custom-property literals live in this
- * file; every token reference resolves through tokenVar() inside
- * breadcrumb.styles.ts. No innerHTML is used either. The per-instance
- * CSSStyleSheet pattern avoids the static styles mutation bug from PR #1308.
+ * Auto-registers on import and is idempotent against double-define. No
+ * innerHTML is used.
  *
  * @cognitive-load 2/10
- * @accessibility aria-label="Breadcrumb" on the nav element; slotted
- *                children retain their own semantic roles in the light tree.
+ * @accessibility aria-label="Breadcrumb" on the nav element; slotted children
+ *                retain their own semantic roles in the light tree.
  */
 
 import { RaftersElement } from '../../primitives/rafters-element';
-import { breadcrumbStylesheet } from './breadcrumb.styles';
 
 export class RaftersBreadcrumb extends RaftersElement {
   static readonly observedAttributes: ReadonlyArray<string> = [];
 
-  /** Per-instance stylesheet created on connect. */
-  private _instanceSheet: CSSStyleSheet | null = null;
-
-  override connectedCallback(): void {
-    if (!this.shadowRoot) return;
-    this._instanceSheet = new CSSStyleSheet();
-    this._instanceSheet.replaceSync(breadcrumbStylesheet());
-    this.shadowRoot.adoptedStyleSheets = [this._instanceSheet];
-    this.update();
-  }
-
-  override disconnectedCallback(): void {
-    this._instanceSheet = null;
-  }
+  /**
+   * Irreducible shadow-scoped CSS: the host block-layout shim. Custom elements
+   * default to inline display; the nav needs the host to behave as a block.
+   */
+  static override styles = ':host { display: block; }';
 
   /**
    * Render the semantic <nav aria-label="Breadcrumb"> wrapper with a single
-   * default <slot>. DOM APIs only -- never innerHTML. The outer nav carries
-   * only the `.breadcrumb` class so visual state comes exclusively from the
-   * per-instance stylesheet.
+   * default <slot>. DOM APIs only -- never innerHTML. The nav carries no
+   * utility classes, matching the React/Astro targets; descendant rhythm comes
+   * from breadcrumb.classes.ts on the slotted children.
    */
   override render(): Node {
     const nav = document.createElement('nav');
-    nav.className = 'breadcrumb';
     nav.setAttribute('aria-label', 'Breadcrumb');
     const slot = document.createElement('slot');
     nav.appendChild(slot);

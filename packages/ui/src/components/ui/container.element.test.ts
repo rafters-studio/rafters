@@ -1,6 +1,17 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import './container.element';
-import { RaftersContainer } from './container.element';
+import {
+  containerArticleTypography,
+  containerAutoEdgePadding,
+  containerBackgroundClasses,
+  containerCenterClasses,
+  containerEditableClasses,
+  containerGapClasses,
+  containerPaddingClasses,
+  containerQueryClasses,
+  containerSizeClasses,
+} from './container.classes';
+import { composeContainerClasses, RaftersContainer } from './container.element';
 
 afterEach(() => {
   while (document.body.firstChild) {
@@ -15,15 +26,8 @@ function mount(tag: string, attrs: Record<string, string> = {}): HTMLElement {
   return el;
 }
 
-function collectCss(el: HTMLElement): string {
-  const sheets = el.shadowRoot?.adoptedStyleSheets ?? [];
-  return sheets
-    .map((s) =>
-      Array.from(s.cssRules)
-        .map((r) => r.cssText)
-        .join('\n'),
-    )
-    .join('\n');
+function innerClass(el: HTMLElement): string {
+  return el.shadowRoot?.firstElementChild?.className ?? '';
 }
 
 describe('rafters-container', () => {
@@ -67,110 +71,127 @@ describe('rafters-container', () => {
     expect(el.shadowRoot?.querySelector('slot')).toBeTruthy();
   });
 
-  it('inner element carries the .container class', () => {
+  it('owns only the :host display shim as scoped CSS', () => {
+    expect(RaftersContainer.styles).toBe(':host { display: block; }');
+  });
+
+  it('inner element always carries the query-container utilities', () => {
     const el = mount('rafters-container');
-    const inner = el.shadowRoot?.firstElementChild;
-    expect(inner?.classList.contains('container')).toBe(true);
+    expect(innerClass(el)).toContain(containerQueryClasses);
   });
 
-  it('sets host to inline-size container with width 100 percent', () => {
-    const css = collectCss(mount('rafters-container'));
-    expect(css).toMatch(/:host\s*\{[^}]*display:\s*block/);
-    expect(css).toMatch(/:host\s*\{[^}]*container-type:\s*inline-size/);
-    expect(css).toMatch(/:host\s*\{[^}]*width:\s*100%/);
+  it('applies the size utility for sized variants and centers them', () => {
+    const el = mount('rafters-container', { size: '6xl' });
+    expect(innerClass(el)).toContain(containerSizeClasses['6xl']);
+    expect(innerClass(el)).toContain(containerCenterClasses);
   });
 
-  it('applies size max-width via token var', () => {
-    const css = collectCss(mount('rafters-container', { size: '6xl' }));
-    expect(css).toContain('var(--size-container-6xl)');
-    expect(css).toMatch(/margin-inline:\s*auto/);
+  it('full size carries the full-width utility and is not centered', () => {
+    const el = mount('rafters-container', { size: 'full' });
+    expect(innerClass(el)).toContain(containerSizeClasses.full);
+    expect(innerClass(el).split(/\s+/)).not.toContain(containerCenterClasses);
   });
 
-  it('full size yields width 100 percent with no max-width', () => {
-    const css = collectCss(mount('rafters-container', { size: 'full' }));
-    expect(css).not.toContain('var(--size-container-full)');
-    expect(css).toMatch(/width:\s*100%/);
+  it('applies explicit padding from the spacing scale', () => {
+    expect(innerClass(mount('rafters-container', { padding: '6' }))).toContain(
+      containerPaddingClasses['6'],
+    );
   });
 
-  it('applies padding from spacing scale', () => {
-    expect(collectCss(mount('rafters-container', { padding: '6' }))).toContain('var(--spacing-6)');
+  it('applies responsive auto edge padding for sized containers without explicit padding', () => {
+    const el = mount('rafters-container', { size: '4xl' });
+    expect(innerClass(el)).toContain(containerAutoEdgePadding);
   });
 
-  it('applies gap as flex-column with token spacing', () => {
-    const css = collectCss(mount('rafters-container', { gap: '8' }));
-    expect(css).toContain('var(--spacing-8)');
-    expect(css).toMatch(/display:\s*flex/);
-    expect(css).toMatch(/flex-direction:\s*column/);
+  it('explicit padding overrides the auto edge padding', () => {
+    const el = mount('rafters-container', { size: '4xl', padding: '8' });
+    expect(innerClass(el)).toContain(containerPaddingClasses['8']);
+    expect(innerClass(el)).not.toContain(containerAutoEdgePadding);
+  });
+
+  it('applies the gap flow utilities for explicit gap', () => {
+    const el = mount('rafters-container', { gap: '8' });
+    expect(innerClass(el)).toContain(containerGapClasses['8']);
   });
 
   it('derives gap from size when gap attribute is bare', () => {
-    const css = collectCss(mount('rafters-container', { size: '3xl', gap: '' }));
-    expect(css).toContain('var(--spacing-8)');
+    // 3xl -> 8 per the size-gap scale.
+    const el = mount('rafters-container', { size: '3xl', gap: '' });
+    expect(innerClass(el)).toContain(containerGapClasses['8']);
   });
 
   it('derives default gap of 6 when bare gap and no size', () => {
-    const css = collectCss(mount('rafters-container', { gap: '' }));
-    expect(css).toContain('var(--spacing-6)');
+    const el = mount('rafters-container', { gap: '' });
+    expect(innerClass(el)).toContain(containerGapClasses['6']);
   });
 
-  it('applies background tokens for known names', () => {
-    const css = collectCss(mount('rafters-container', { background: 'muted' }));
-    expect(css).toContain('var(--color-muted)');
-    expect(css).toContain('var(--color-muted-foreground)');
+  it('applies background utilities for known names', () => {
+    const el = mount('rafters-container', { background: 'muted' });
+    expect(innerClass(el)).toContain(containerBackgroundClasses.muted);
   });
 
-  it('unknown background falls back to none', () => {
-    const css = collectCss(mount('rafters-container', { background: 'rainbow' }));
-    expect(css).not.toMatch(/background-color:\s*var\(--color-/);
+  it('unknown background falls back to none (no background utility)', () => {
+    const el = mount('rafters-container', { background: 'rainbow' });
+    expect(innerClass(el)).not.toContain(containerBackgroundClasses.muted);
+    expect(innerClass(el)).not.toContain(containerBackgroundClasses.accent);
   });
 
-  it('explicit none background emits no background-color rule', () => {
-    const css = collectCss(mount('rafters-container', { background: 'none' }));
-    expect(css).not.toMatch(/background-color:\s*var\(--color-/);
+  it('explicit none background emits no background utility', () => {
+    const el = mount('rafters-container', { background: 'none' });
+    expect(innerClass(el)).not.toContain(containerBackgroundClasses.muted);
   });
 
-  it('article applies typography to descendant selectors via tokens only', () => {
-    const css = collectCss(mount('rafters-container', { as: 'article' }));
-    expect(css).toMatch(/p\s*\{/);
-    expect(css).toMatch(/h1\s*\{/);
-    expect(css).toMatch(/blockquote\s*\{/);
-    expect(css).not.toMatch(/#[0-9a-f]{3,8}/i);
-    expect(css).not.toMatch(/rgb\(/);
+  it('article applies the typography utilities', () => {
+    const el = mount('rafters-container', { as: 'article' });
+    expect(innerClass(el)).toContain(containerArticleTypography);
   });
 
-  it('editable applies dashed outline in muted-foreground at 30 percent', () => {
-    const css = collectCss(mount('rafters-container', { editable: '' }));
-    expect(css).toMatch(/outline-style:\s*dashed/);
-    expect(css).toContain('color-mix(in oklch, var(--color-muted-foreground) 30%, transparent)');
+  it('editable applies the dashed outline utilities', () => {
+    const el = mount('rafters-container', { editable: '' });
+    expect(innerClass(el)).toContain(containerEditableClasses);
   });
 
-  it('rebuilds stylesheet when observed attributes change', () => {
+  it('recomposes the inner class string when observed attributes change', () => {
     const el = mount('rafters-container', { size: 'sm' });
-    expect(collectCss(el)).toContain('var(--size-container-sm)');
+    expect(innerClass(el)).toContain(containerSizeClasses.sm);
     el.setAttribute('size', '4xl');
-    expect(collectCss(el)).toContain('var(--size-container-4xl)');
+    expect(innerClass(el)).toContain(containerSizeClasses['4xl']);
   });
 
-  it('rebuilds when as changes (article toggles typography)', () => {
+  it('recomposes when as changes (article toggles typography)', () => {
     const el = mount('rafters-container');
-    expect(collectCss(el)).not.toMatch(/blockquote\s*\{/);
+    expect(innerClass(el)).not.toContain(containerArticleTypography);
     el.setAttribute('as', 'article');
-    expect(collectCss(el)).toMatch(/blockquote\s*\{/);
+    expect(innerClass(el)).toContain(containerArticleTypography);
   });
 
-  it('rebuilds when editable is toggled', () => {
+  it('recomposes when editable is toggled', () => {
     const el = mount('rafters-container');
-    expect(collectCss(el)).not.toMatch(/outline-style:\s*dashed/);
+    expect(innerClass(el)).not.toContain(containerEditableClasses);
     el.setAttribute('editable', '');
-    expect(collectCss(el)).toMatch(/outline-style:\s*dashed/);
+    expect(innerClass(el)).toContain(containerEditableClasses);
     el.removeAttribute('editable');
-    expect(collectCss(el)).not.toMatch(/outline-style:\s*dashed/);
+    expect(innerClass(el)).not.toContain(containerEditableClasses);
   });
 
-  it('motion uses --motion-duration tokens, never --duration', () => {
-    const css = collectCss(mount('rafters-container'));
-    expect(css).not.toMatch(/var\(--duration-/);
-    expect(css).not.toMatch(/var\(--ease-/);
+  it('renders the same composition the helper produces (parity guarantee)', () => {
+    const el = mount('rafters-container', {
+      as: 'main',
+      size: '4xl',
+      padding: '6',
+      gap: '8',
+      background: 'muted',
+    });
+    expect(innerClass(el)).toBe(
+      composeContainerClasses({
+        size: '4xl',
+        padding: '6',
+        gap: '8',
+        background: 'muted',
+        article: false,
+        editable: false,
+      }),
+    );
   });
 
   it('importing the module twice does not throw', async () => {

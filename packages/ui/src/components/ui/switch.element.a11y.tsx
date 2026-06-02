@@ -206,7 +206,7 @@ describe('rafters-switch -- accessibility', () => {
   it('thumb is aria-hidden so assistive tech does not announce it', () => {
     const { container } = render(<RaftersSwitchJSX id="notify" name="notify" />);
     const host = container.querySelector('rafters-switch');
-    const thumb = host?.shadowRoot?.querySelector('.thumb');
+    const thumb = host?.shadowRoot?.querySelector('button > span');
     expect(thumb?.getAttribute('aria-hidden')).toBe('true');
   });
 });

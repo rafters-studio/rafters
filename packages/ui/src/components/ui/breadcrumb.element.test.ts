@@ -1,4 +1,12 @@
 import { afterEach, describe, expect, it } from 'vitest';
+import {
+  breadcrumbEllipsisClasses,
+  breadcrumbItemClasses,
+  breadcrumbLinkClasses,
+  breadcrumbListClasses,
+  breadcrumbPageClasses,
+  breadcrumbSeparatorClasses,
+} from './breadcrumb.classes';
 import './breadcrumb.element';
 import { RaftersBreadcrumb } from './breadcrumb.element';
 
@@ -38,9 +46,9 @@ describe('<rafters-breadcrumb>', () => {
     expect(customElements.get('rafters-breadcrumb')).toBe(RaftersBreadcrumb);
   });
 
-  it('renders a single nav.breadcrumb[aria-label="Breadcrumb"] containing a slot', () => {
+  it('renders a single nav[aria-label="Breadcrumb"] containing a slot', () => {
     const el = mount();
-    const navs = el.shadowRoot?.querySelectorAll('nav.breadcrumb') ?? [];
+    const navs = el.shadowRoot?.querySelectorAll('nav') ?? [];
     expect(navs.length).toBe(1);
     const nav = navs[0];
     expect(nav?.getAttribute('aria-label')).toBe('Breadcrumb');
@@ -52,25 +60,22 @@ describe('<rafters-breadcrumb>', () => {
     expect(RaftersBreadcrumb.observedAttributes).toEqual([]);
   });
 
-  it('adopts the breadcrumb stylesheet on connect', () => {
+  it('keeps the irreducible host block rule in the adopted sheet', () => {
     const el = mount();
-    const sheets = el.shadowRoot?.adoptedStyleSheets ?? [];
-    expect(sheets.length).toBeGreaterThanOrEqual(1);
     const css = adoptedCssText(el);
-    expect(css).toMatch(/\.breadcrumb\b/);
-    expect(css).toMatch(/\.breadcrumb-list\b/);
-    expect(css).toMatch(/\.breadcrumb-item\b/);
-    expect(css).toMatch(/\.breadcrumb-link\b/);
-    expect(css).toMatch(/\.breadcrumb-page\b/);
-    expect(css).toMatch(/\.breadcrumb-separator\b/);
-    expect(css).toMatch(/\.breadcrumb-ellipsis\b/);
+    expect(css).toMatch(/:host\s*{[^}]*display:\s*block/);
   });
 
-  it('stylesheet uses only --motion-duration / --motion-ease tokens', () => {
-    const el = mount();
-    const css = adoptedCssText(el);
-    expect(css).not.toMatch(/var\(--duration-/);
-    expect(css).not.toMatch(/var\(--ease-/);
+  it('exposes the shared descendant utility class strings for slotted children', () => {
+    // The outer nav carries no classes; the list/item/link/page/separator/
+    // ellipsis rhythm comes from these shared utility strings on the consumer's
+    // slotted children, parallel to the React/Astro targets.
+    expect(breadcrumbListClasses).toContain('text-muted-foreground');
+    expect(breadcrumbItemClasses).toContain('inline-flex');
+    expect(breadcrumbLinkClasses).toContain('hover:text-foreground');
+    expect(breadcrumbPageClasses).toContain('text-foreground');
+    expect(breadcrumbSeparatorClasses).toContain('size-3.5');
+    expect(breadcrumbEllipsisClasses).toContain('items-center');
   });
 
   it('source contains no direct var() references', async () => {

@@ -205,7 +205,7 @@ describe('rafters-input-otp -- accessibility', () => {
   it('caret elements are decorative (aria-hidden=true)', () => {
     const { container } = render(<RaftersInputOtpJSX maxlength="3" name="code" />);
     const host = container.querySelector('rafters-input-otp');
-    const carets = host?.shadowRoot?.querySelectorAll('.caret') ?? [];
+    const carets = host?.shadowRoot?.querySelectorAll('[data-input-otp-caret]') ?? [];
     expect(carets.length).toBeGreaterThan(0);
     for (const c of Array.from(carets)) {
       expect(c.getAttribute('aria-hidden')).toBe('true');

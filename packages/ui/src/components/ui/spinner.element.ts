@@ -1,40 +1,50 @@
 /**
  * <rafters-spinner> -- Web Component loading spinner.
  *
- * Mirrors the semantics of spinner.tsx (size, variant) using shadow-DOM-scoped
- * CSS composed via classy-wc. Auto-registers on import and is idempotent
- * against double-define.
+ * Framework-target for the Spinner component, parallel to spinner.tsx (React)
+ * and spinner.astro (Astro). The inner output carries the SAME utility class
+ * strings the React/Astro targets use -- imported from spinner.classes.ts --
+ * rather than a parallel hand-written CSS map. Presentation resolves from the
+ * shared compiled utility sheet adopted by RaftersElement (setUtilityCSS) plus
+ * the token custom properties inherited from the host :root. The spin
+ * animation and its reduced-motion opt-out are expressed as the animate-spin /
+ * motion-reduce:animate-none utilities, and the visually-hidden label uses the
+ * shared sr-only utility.
+ *
+ * The only shadow-scoped CSS this component owns is the structural :host
+ * display shim.
+ *
+ * Shadow DOM structure: an inner output carrying the composed spinner utility
+ * classes, wrapping an sr-only span with the redundant "Loading" text.
  *
  * Attributes:
  *  - size:    'sm' | 'default' | 'lg'  (default 'default')
  *  - variant: 'default' | 'primary' | 'secondary' | 'destructive' | 'success'
  *             | 'warning' | 'info' | 'accent' | 'muted'  (default 'default')
  *
- * Shadow DOM structure:
- *   <output class="spinner" aria-label="Loading">
- *     <span class="sr-only">Loading</span>
- *   </output>
- *
- * Unknown attribute values fall back to 'default' silently. This matches the
- * React target's runtime behaviour of
- * `spinnerVariantClasses[variant] ?? default`.
- *
- * DOM APIs only -- never innerHTML. Styling comes exclusively from
- * spinnerStylesheet(...) adopted as the per-instance stylesheet. The
- * `.sr-only` helper is defined inside the component stylesheet because the
- * shadow DOM has no access to the global Tailwind utility.
- *
- * The spin animation respects prefers-reduced-motion via an `@media` block
- * emitted by spinnerStylesheet().
+ * Unknown attribute values fall back to 'default' silently.
  *
  * @cognitive-load 2/10
- * @accessibility role=status implied by <output>, aria-label announces
+ * @accessibility role=status implied by output, aria-label announces
  *                "Loading" to assistive tech; sr-only text carries the same
  *                phrase for screen readers that favour text content.
  */
 
 import { RaftersElement } from '../../primitives/rafters-element';
-import { type SpinnerSize, type SpinnerVariant, spinnerStylesheet } from './spinner.styles';
+import { spinnerBaseClasses, spinnerSizeClasses, spinnerVariantClasses } from './spinner.classes';
+
+export type SpinnerSize = 'sm' | 'default' | 'lg';
+
+export type SpinnerVariant =
+  | 'default'
+  | 'primary'
+  | 'secondary'
+  | 'destructive'
+  | 'success'
+  | 'warning'
+  | 'info'
+  | 'accent'
+  | 'muted';
 
 const ALLOWED_SIZES: ReadonlyArray<SpinnerSize> = ['sm', 'default', 'lg'];
 
@@ -66,54 +76,31 @@ function parseVariant(value: string | null): SpinnerVariant {
   return 'default';
 }
 
+/**
+ * Compose the inner output's class string from the shared class maps.
+ * Exported so tests assert the WC renders the exact same composition the
+ * Astro target does -- the parity guarantee.
+ */
+export function composeSpinnerClasses(size: SpinnerSize, variant: SpinnerVariant): string {
+  return `${spinnerBaseClasses} ${spinnerVariantClasses[variant]} ${spinnerSizeClasses[size]}`;
+}
+
 export class RaftersSpinner extends RaftersElement {
+  static override styles = ':host { display: inline-block; }';
+
   static readonly observedAttributes: ReadonlyArray<string> = OBSERVED_ATTRIBUTES;
 
-  /** Per-instance stylesheet rebuilt on size/variant changes. */
-  private _instanceSheet: CSSStyleSheet | null = null;
-
-  override connectedCallback(): void {
-    if (!this.shadowRoot) return;
-    this._instanceSheet = new CSSStyleSheet();
-    this._instanceSheet.replaceSync(this.composeCss());
-    this.shadowRoot.adoptedStyleSheets = [this._instanceSheet];
-    this.update();
-  }
-
-  override attributeChangedCallback(
-    name: string,
-    oldValue: string | null,
-    newValue: string | null,
-  ): void {
-    if (oldValue === newValue) return;
-    if ((name === 'size' || name === 'variant') && this._instanceSheet) {
-      this._instanceSheet.replaceSync(this.composeCss());
-    }
-    this.update();
-  }
-
-  override disconnectedCallback(): void {
-    this._instanceSheet = null;
-  }
-
   /**
-   * Build the CSS string for the current size/variant attributes.
-   */
-  private composeCss(): string {
-    return spinnerStylesheet({
-      size: parseSize(this.getAttribute('size')),
-      variant: parseVariant(this.getAttribute('variant')),
-    });
-  }
-
-  /**
-   * Render an <output class="spinner" aria-label="Loading"> containing a
-   * .sr-only span for redundant screen-reader text. DOM APIs only -- never
-   * innerHTML.
+   * Render an output with aria-label="Loading" carrying the composed spinner
+   * utility classes, wrapping an sr-only span for redundant screen-reader
+   * text. DOM APIs only -- never innerHTML.
    */
   override render(): Node {
     const output = document.createElement('output');
-    output.className = 'spinner';
+    output.className = composeSpinnerClasses(
+      parseSize(this.getAttribute('size')),
+      parseVariant(this.getAttribute('variant')),
+    );
     output.setAttribute('aria-label', 'Loading');
     const srText = document.createElement('span');
     srText.className = 'sr-only';

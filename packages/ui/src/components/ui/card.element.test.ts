@@ -1,20 +1,20 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import './card.element';
-import { RaftersCard } from './card.element';
+import {
+  cardActionClasses,
+  cardContentClasses,
+  cardFooterClasses,
+  cardHeaderClasses,
+  cardInteractiveClasses,
+} from './card.classes';
+import { composeCardClasses, RaftersCard } from './card.element';
 
 afterEach(() => {
   while (document.body.firstChild) document.body.removeChild(document.body.firstChild);
 });
 
-function adoptedCss(el: HTMLElement): string {
-  const sheets = el.shadowRoot?.adoptedStyleSheets ?? [];
-  return sheets
-    .map((s) =>
-      Array.from(s.cssRules)
-        .map((r) => r.cssText)
-        .join('\n'),
-    )
-    .join('\n');
+function root(el: HTMLElement): HTMLElement | null {
+  return el.shadowRoot?.firstElementChild as HTMLElement | null;
 }
 
 describe('rafters-card', () => {
@@ -26,11 +26,10 @@ describe('rafters-card', () => {
     await expect(import('./card.element')).resolves.toBeDefined();
   });
 
-  it('renders a .card wrapper with default slot and four named slots', () => {
+  it('renders a root wrapper with default slot and four named slots', () => {
     const el = document.createElement('rafters-card');
     document.body.appendChild(el);
-    const root = el.shadowRoot?.querySelector('.card');
-    expect(root).not.toBeNull();
+    expect(root(el)).not.toBeNull();
     const slotNames = Array.from(el.shadowRoot?.querySelectorAll('slot') ?? []).map((s) =>
       s.getAttribute('name'),
     );
@@ -39,61 +38,60 @@ describe('rafters-card', () => {
     );
   });
 
-  it('renders sub-part wrappers with the expected class names', () => {
+  it('renders sub-part wrappers carrying the shared utility class strings', () => {
     const el = document.createElement('rafters-card');
     document.body.appendChild(el);
-    expect(el.shadowRoot?.querySelector('.card-header')).not.toBeNull();
-    expect(el.shadowRoot?.querySelector('.card-content')).not.toBeNull();
-    expect(el.shadowRoot?.querySelector('.card-footer')).not.toBeNull();
-    expect(el.shadowRoot?.querySelector('.card-action')).not.toBeNull();
+    const parts = Array.from(el.shadowRoot?.querySelectorAll('div') ?? []).map((d) => d.className);
+    expect(parts).toContain(cardHeaderClasses);
+    expect(parts).toContain(cardContentClasses);
+    expect(parts).toContain(cardFooterClasses);
+    expect(parts).toContain(cardActionClasses);
   });
 
   it('falls back to "card" background for unknown values', () => {
     const el = document.createElement('rafters-card');
     el.setAttribute('background', 'not-a-real-value');
     document.body.appendChild(el);
-    expect(adoptedCss(el)).toContain('.card');
+    expect(root(el)?.className).toBe(composeCardClasses('card', false));
   });
 
   it('accepts each CardBackground value without throwing', () => {
-    for (const bg of ['none', 'muted', 'accent', 'card', 'primary', 'secondary']) {
+    for (const bg of ['none', 'muted', 'accent', 'card', 'primary', 'secondary'] as const) {
       const el = document.createElement('rafters-card');
       el.setAttribute('background', bg);
       document.body.appendChild(el);
-      expect(el.shadowRoot?.querySelector('.card')).not.toBeNull();
+      expect(root(el)?.className).toBe(composeCardClasses(bg, false));
       document.body.removeChild(el);
     }
   });
 
-  it('re-resolves adopted stylesheet when background attribute changes', () => {
+  it('re-composes the root class string when background attribute changes', () => {
     const el = document.createElement('rafters-card');
     el.setAttribute('background', 'card');
     document.body.appendChild(el);
     el.setAttribute('background', 'muted');
-    expect(adoptedCss(el)).toContain('color-muted');
+    expect(root(el)?.className).toBe(composeCardClasses('muted', false));
   });
 
-  it('emits hover and focus-visible rules in the adopted sheet only when interactive', () => {
+  it('adds the interactive utility classes only when interactive', () => {
     const plain = document.createElement('rafters-card');
     document.body.appendChild(plain);
-    expect(adoptedCss(plain)).not.toContain(':hover');
+    expect(root(plain)?.className).not.toContain(cardInteractiveClasses);
 
     const interactive = document.createElement('rafters-card');
     interactive.setAttribute('interactive', '');
     document.body.appendChild(interactive);
-    const css = adoptedCss(interactive);
-    expect(css).toContain(':hover');
-    expect(css).toContain(':focus-visible');
+    expect(root(interactive)?.className).toContain(cardInteractiveClasses);
   });
 
-  it('adopted sheet picks up interactive toggles after connect', () => {
+  it('root class string picks up interactive toggles after connect', () => {
     const el = document.createElement('rafters-card');
     document.body.appendChild(el);
-    expect(adoptedCss(el)).not.toContain(':hover');
+    expect(root(el)?.className).not.toContain(cardInteractiveClasses);
     el.setAttribute('interactive', '');
-    expect(adoptedCss(el)).toContain(':hover');
+    expect(root(el)?.className).toContain(cardInteractiveClasses);
     el.removeAttribute('interactive');
-    expect(adoptedCss(el)).not.toContain(':hover');
+    expect(root(el)?.className).not.toContain(cardInteractiveClasses);
   });
 
   it('sets tabindex="0" and role="button" when interactive is added', () => {
@@ -175,5 +173,12 @@ describe('rafters-card', () => {
     el.dispatchEvent(new KeyboardEvent('keydown', { key: 'a' }));
     el.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab' }));
     expect(fired).toBe(0);
+  });
+
+  it('source contains no direct var() references', async () => {
+    const fs = await import('node:fs/promises');
+    const path = await import('node:path');
+    const source = await fs.readFile(path.resolve(__dirname, 'card.element.ts'), 'utf-8');
+    expect(source).not.toMatch(/var\(/);
   });
 });

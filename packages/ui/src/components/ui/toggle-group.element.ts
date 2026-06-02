@@ -2,9 +2,17 @@
  * <rafters-toggle-group> and <rafters-toggle-group-item> --
  * Form-associated Web Component pair for grouped toggle selections.
  *
- * Mirrors the semantics of toggle-group.tsx (type, variant, size, pressed)
- * using shadow-DOM-scoped CSS composed via classy-wc. Auto-registers on
- * import and is idempotent against double-define.
+ * Mirrors the semantics of toggle-group.tsx (type, variant, size, pressed).
+ * The group div and each item button carry the SAME utility class strings the
+ * React/Astro targets use -- imported from toggle-group.classes.ts -- rather
+ * than a parallel hand-written CSS map. Variant/size/pressed/hover/disabled
+ * presentation resolves from those utility classes against the shared compiled
+ * utility sheet adopted by RaftersElement (setUtilityCSS) plus inherited token
+ * props. Auto-registers on import and is idempotent against double-define.
+ *
+ * The only shadow-scoped CSS this pair owns is structural: the group's :host
+ * display + vertical-orientation flex-direction shim, and each item's :host
+ * display shim. Everything else is carried by utility classes.
  *
  * The group (`<rafters-toggle-group>`) owns form submission via
  * ElementInternals. Individual items (`<rafters-toggle-group-item>`) are
@@ -30,27 +38,31 @@
  *  - ArrowRight/ArrowDown moves focus to the next enabled item (loops).
  *  - ArrowLeft/ArrowUp moves to the previous enabled item (loops).
  *  - Space/Enter toggles the focused item (via native button click synthesis).
- *
- * No raw CSS custom-property literals here -- all token references live in
- * toggle-group.styles.ts and resolve through tokenVar().
  */
 
 import { RaftersElement } from '../../primitives/rafters-element';
 import {
-  type ToggleGroupOrientation,
-  type ToggleGroupSize,
-  type ToggleGroupVariant,
-  toggleGroupItemSizeStyles,
-  toggleGroupItemStylesheet,
-  toggleGroupItemVariantStyles,
-  toggleGroupStylesheet,
-} from './toggle-group.styles';
+  toggleGroupClasses,
+  toggleGroupDefaultVariantClasses,
+  toggleGroupItemBaseClasses,
+  toggleGroupItemDefaultClasses,
+  toggleGroupItemDefaultPressedClasses,
+  toggleGroupItemOutlineClasses,
+  toggleGroupItemOutlinePressedClasses,
+  toggleGroupItemSizeClasses,
+} from './toggle-group.classes';
 
 // ============================================================================
 // Public types
 // ============================================================================
 
 export type ToggleGroupType = 'single' | 'multiple';
+
+export type ToggleGroupVariant = 'default' | 'outline';
+
+export type ToggleGroupSize = 'sm' | 'default' | 'lg';
+
+export type ToggleGroupOrientation = 'horizontal' | 'vertical';
 
 // ============================================================================
 // Sanitization helpers
@@ -74,14 +86,11 @@ function parseType(value: string | null): ToggleGroupType {
 }
 
 function parseVariant(value: string | null): ToggleGroupVariant {
-  if (value && value in toggleGroupItemVariantStyles) {
-    return value as ToggleGroupVariant;
-  }
-  return 'default';
+  return value === 'outline' ? 'outline' : 'default';
 }
 
 function parseSize(value: string | null): ToggleGroupSize {
-  if (value && value in toggleGroupItemSizeStyles) {
+  if (value && value in toggleGroupItemSizeClasses) {
     return value as ToggleGroupSize;
   }
   return 'default';
@@ -99,6 +108,35 @@ function splitCsv(value: string): string[] {
     .filter((entry) => entry.length > 0);
 }
 
+/**
+ * Compose the group div's class string from the shared class maps.
+ * Mirrors toggle-group.tsx: base group classes plus the default-variant
+ * chrome when the default variant is active.
+ */
+export function composeToggleGroupClasses(variant: ToggleGroupVariant): string {
+  if (variant === 'default') {
+    return `${toggleGroupClasses} ${toggleGroupDefaultVariantClasses}`;
+  }
+  return toggleGroupClasses;
+}
+
+/**
+ * Compose an item button's class string from the shared class maps.
+ * Mirrors toggle-group.tsx: base + size + variant-specific classes, with the
+ * pressed variant of those classes layered on when `pressed` is true.
+ */
+export function composeToggleGroupItemClasses(
+  variant: ToggleGroupVariant,
+  size: ToggleGroupSize,
+  pressed: boolean,
+): string {
+  const variantClasses =
+    variant === 'outline'
+      ? `${toggleGroupItemOutlineClasses}${pressed ? ` ${toggleGroupItemOutlinePressedClasses}` : ''}`
+      : `${toggleGroupItemDefaultClasses}${pressed ? ` ${toggleGroupItemDefaultPressedClasses}` : ''}`;
+  return `${toggleGroupItemBaseClasses} ${toggleGroupItemSizeClasses[size]} ${variantClasses}`;
+}
+
 interface ElementInternalsHost {
   attachInternals?: () => ElementInternals;
 }
@@ -114,8 +152,17 @@ export class RaftersToggleGroup extends RaftersElement {
   static formAssociated = true;
   static observedAttributes: ReadonlyArray<string> = GROUP_OBSERVED_ATTRIBUTES;
 
+  /**
+   * Structural-only component CSS. The group's box presentation is carried by
+   * utility classes; the only irreducible rule is the vertical-orientation
+   * flex-direction, which no utility class on the host expresses.
+   */
+  static override styles =
+    ':host { display: inline-flex; }\n' +
+    ':host([data-orientation="vertical"]) { flex-direction: column; }\n' +
+    ':host([data-orientation="vertical"]) .group { flex-direction: column; }';
+
   private _internals: ElementInternals;
-  private _instanceSheet: CSSStyleSheet | null = null;
   private _initialValue: string;
   private _onItemClick: (event: Event) => void;
   private _onKeyDown: (event: KeyboardEvent) => void;
@@ -142,12 +189,6 @@ export class RaftersToggleGroup extends RaftersElement {
 
     this._initialValue = this.getAttribute('value') ?? '';
 
-    this._instanceSheet = new CSSStyleSheet();
-    this._instanceSheet.replaceSync(this.composeCss());
-
-    const existing = this.shadowRoot.adoptedStyleSheets;
-    this.shadowRoot.adoptedStyleSheets = [...existing, this._instanceSheet];
-
     this.applyHostAttributes();
     this.attachListeners();
     this.syncItems();
@@ -161,8 +202,8 @@ export class RaftersToggleGroup extends RaftersElement {
   ): void {
     if (oldValue === newValue) return;
 
-    if ((name === 'variant' || name === 'orientation') && this._instanceSheet) {
-      this._instanceSheet.replaceSync(this.composeCss());
+    if (name === 'variant') {
+      this.applyGroupClasses();
     }
 
     if (name === 'orientation') {
@@ -183,15 +224,14 @@ export class RaftersToggleGroup extends RaftersElement {
     }
 
     if (name === 'variant' || name === 'size') {
-      // Propagate inherited attributes to child items so their per-instance
-      // stylesheets refresh.
+      // Propagate inherited attributes to child items so their class strings
+      // refresh.
       this.syncItemsStyle();
     }
   }
 
   override disconnectedCallback(): void {
     this.detachListeners();
-    this._instanceSheet = null;
   }
 
   // ==========================================================================
@@ -201,7 +241,7 @@ export class RaftersToggleGroup extends RaftersElement {
   override render(): Node {
     this.detachListeners();
     const group = document.createElement('div');
-    group.className = 'group';
+    group.className = composeToggleGroupClasses(parseVariant(this.getAttribute('variant')));
     const slot = document.createElement('slot');
     group.appendChild(slot);
     this.applyHostAttributes();
@@ -214,11 +254,10 @@ export class RaftersToggleGroup extends RaftersElement {
     this.setAttribute('data-orientation', orientation);
   }
 
-  private composeCss(): string {
-    return toggleGroupStylesheet({
-      variant: parseVariant(this.getAttribute('variant')),
-      orientation: parseOrientation(this.getAttribute('orientation')),
-    });
+  private applyGroupClasses(): void {
+    const group = this.shadowRoot?.querySelector('div');
+    if (!group) return;
+    group.className = composeToggleGroupClasses(parseVariant(this.getAttribute('variant')));
   }
 
   // ==========================================================================
@@ -352,9 +391,9 @@ export class RaftersToggleGroup extends RaftersElement {
   }
 
   private syncItemsStyle(): void {
-    // Child items observe group variant/size at connect time; when the
+    // Child items inherit group variant/size at connect time; when the
     // group's variant/size changes after connect, notify each item so it
-    // can rebuild its stylesheet.
+    // can rebuild its class string.
     for (const item of this.getAllItems()) {
       if (item instanceof RaftersToggleGroupItem) {
         item.refreshFromGroup();
@@ -580,23 +619,24 @@ export class RaftersToggleGroup extends RaftersElement {
 /**
  * Web Component backing `<rafters-toggle-group-item>`. Not form-associated
  * on its own -- the parent group owns submission. Items render an inner
- * <button type="button"> carrying role + aria-pressed + data-state.
+ * <button type="button"> carrying role + aria-pressed + data-state plus the
+ * shared item utility classes.
  */
 export class RaftersToggleGroupItem extends RaftersElement {
   static observedAttributes: ReadonlyArray<string> = ITEM_OBSERVED_ATTRIBUTES;
 
-  private _instanceSheet: CSSStyleSheet | null = null;
+  /**
+   * The only component-owned CSS: the structural host-display shim. The inner
+   * button's variant/size/pressed/hover/disabled presentation is carried by
+   * the shared utility classes.
+   */
+  static override styles = ':host { display: inline-flex; }';
+
   private _button: HTMLButtonElement | null = null;
 
   override connectedCallback(): void {
     super.connectedCallback();
     if (!this.shadowRoot) return;
-
-    this._instanceSheet = new CSSStyleSheet();
-    this._instanceSheet.replaceSync(this.composeCss());
-
-    const existing = this.shadowRoot.adoptedStyleSheets;
-    this.shadowRoot.adoptedStyleSheets = [...existing, this._instanceSheet];
 
     this.applyHostAttributes();
     this.mirrorStateToInner();
@@ -609,21 +649,20 @@ export class RaftersToggleGroupItem extends RaftersElement {
   ): void {
     if (oldValue === newValue) return;
 
-    if ((name === 'pressed' || name === 'disabled') && this._instanceSheet) {
-      this._instanceSheet.replaceSync(this.composeCss());
+    if (name === 'pressed') {
+      this.applyClasses();
     }
 
     this.mirrorStateToInner();
   }
 
   override disconnectedCallback(): void {
-    this._instanceSheet = null;
     this._button = null;
   }
 
   override render(): Node {
     const inner = document.createElement('button');
-    inner.className = 'item';
+    inner.className = this.composeClasses();
     inner.setAttribute('type', 'button');
     inner.setAttribute('data-roving-item', '');
     const slot = document.createElement('slot');
@@ -639,7 +678,7 @@ export class RaftersToggleGroupItem extends RaftersElement {
     }
   }
 
-  private composeCss(): string {
+  private composeClasses(): string {
     const group = this.closestGroup();
     const variant = group
       ? parseVariant(group.getAttribute('variant'))
@@ -647,12 +686,13 @@ export class RaftersToggleGroupItem extends RaftersElement {
     const size = group
       ? parseSize(group.getAttribute('size'))
       : parseSize(this.getAttribute('size'));
-    return toggleGroupItemStylesheet({
-      variant,
-      size,
-      pressed: this.hasAttribute('pressed'),
-      disabled: this.isEffectivelyDisabled(),
-    });
+    return composeToggleGroupItemClasses(variant, size, this.hasAttribute('pressed'));
+  }
+
+  private applyClasses(): void {
+    const inner = this.getInnerButton();
+    if (!inner) return;
+    inner.className = this.composeClasses();
   }
 
   private mirrorStateToInner(): void {
@@ -694,12 +734,10 @@ export class RaftersToggleGroupItem extends RaftersElement {
 
   /**
    * Called by the parent group when its own variant/size/disabled changes.
-   * Rebuilds the per-instance stylesheet using the latest inherited values.
+   * Rebuilds the item's class string using the latest inherited values.
    */
   refreshFromGroup(): void {
-    if (this._instanceSheet) {
-      this._instanceSheet.replaceSync(this.composeCss());
-    }
+    this.applyClasses();
     this.mirrorStateToInner();
   }
 

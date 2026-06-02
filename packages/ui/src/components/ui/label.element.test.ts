@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import './label.element';
-import { RaftersLabel } from './label.element';
+import { labelVariantClasses } from './label.classes';
+import { composeLabelClasses, RaftersLabel } from './label.element';
 
 afterEach(() => {
   while (document.body.firstChild) {
@@ -8,17 +9,8 @@ afterEach(() => {
   }
 });
 
-function adoptedCssText(el: Element): string {
-  const sheets = el.shadowRoot?.adoptedStyleSheets ?? [];
-  const blocks: string[] = [];
-  for (const sheet of sheets) {
-    const rules: string[] = [];
-    for (const rule of Array.from(sheet.cssRules)) {
-      rules.push(rule.cssText);
-    }
-    blocks.push(rules.join('\n'));
-  }
-  return blocks.join('\n');
+function innerClass(el: Element): string {
+  return el.shadowRoot?.querySelector('label')?.className ?? '';
 }
 
 describe('<rafters-label>', () => {
@@ -32,45 +24,48 @@ describe('<rafters-label>', () => {
     expect(customElements.get('rafters-label')).toBe(RaftersLabel);
   });
 
-  it('renders a single label.label containing a slot', () => {
+  it('renders a single label containing a slot', () => {
     const el = document.createElement('rafters-label');
     document.body.appendChild(el);
-    const inner = el.shadowRoot?.querySelector('label.label');
+    const inner = el.shadowRoot?.querySelector('label');
     expect(inner).not.toBeNull();
     expect(inner?.tagName.toLowerCase()).toBe('label');
     expect(inner?.children.length).toBe(1);
     expect(inner?.firstElementChild?.tagName.toLowerCase()).toBe('slot');
   });
 
+  it('applies base + default variant classes', () => {
+    const el = document.createElement('rafters-label');
+    document.body.appendChild(el);
+    expect(innerClass(el)).toBe(composeLabelClasses('default'));
+  });
+
   it('falls back to default variant for unknown values', () => {
     const el = document.createElement('rafters-label');
     el.setAttribute('variant', 'nonsense');
     document.body.appendChild(el);
-    const defaultEl = document.createElement('rafters-label');
-    document.body.appendChild(defaultEl);
-    expect(adoptedCssText(el)).toBe(adoptedCssText(defaultEl));
-    expect(adoptedCssText(el)).toContain('color-foreground');
+    expect(innerClass(el)).toContain(labelVariantClasses.default);
   });
 
-  it('reflects variant attribute changes to the adopted stylesheet', () => {
+  it('reflects variant attribute changes to the inner class string', () => {
     const el = document.createElement('rafters-label');
     document.body.appendChild(el);
     el.setAttribute('variant', 'destructive');
-    expect(adoptedCssText(el)).toContain('color-destructive');
+    expect(innerClass(el)).toContain(labelVariantClasses.destructive);
   });
 
   it('forwards the for attribute to the inner label element', () => {
     const el = document.createElement('rafters-label');
     el.setAttribute('for', 'email');
     document.body.appendChild(el);
-    const inner = el.shadowRoot?.querySelector('label.label');
+    const inner = el.shadowRoot?.querySelector('label');
     expect(inner?.getAttribute('for')).toBe('email');
   });
 
   it('updates the inner for attribute when the host attribute changes', () => {
     const el = document.createElement('rafters-label');
     document.body.appendChild(el);
-    const inner = el.shadowRoot?.querySelector('label.label');
+    const inner = el.shadowRoot?.querySelector('label');
     expect(inner?.getAttribute('for')).toBeNull();
     el.setAttribute('for', 'email');
     expect(inner?.getAttribute('for')).toBe('email');

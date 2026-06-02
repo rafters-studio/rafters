@@ -15,6 +15,11 @@
  */
 
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import {
+  inputOtpHiddenInputClasses,
+  inputOtpSlotActiveClasses,
+  inputOtpSlotFilledClasses,
+} from './input-otp.classes';
 
 interface PolyfilledInternals {
   _value: string;
@@ -175,7 +180,7 @@ describe('rafters-input-otp', () => {
     const RaftersInputOtp = await loadElement();
     const el = document.createElement('rafters-input-otp') as InstanceType<typeof RaftersInputOtp>;
     document.body.append(el);
-    expect(el.shadowRoot?.querySelectorAll('.slot').length).toBe(6);
+    expect(el.shadowRoot?.querySelectorAll('[data-input-otp-slot]').length).toBe(6);
   });
 
   it('renders a custom maxLength count of slots', async () => {
@@ -183,7 +188,7 @@ describe('rafters-input-otp', () => {
     const el = document.createElement('rafters-input-otp') as InstanceType<typeof RaftersInputOtp>;
     el.setAttribute('maxlength', '4');
     document.body.append(el);
-    expect(el.shadowRoot?.querySelectorAll('.slot').length).toBe(4);
+    expect(el.shadowRoot?.querySelectorAll('[data-input-otp-slot]').length).toBe(4);
   });
 
   it('mounts a hidden input with the documented attributes', async () => {
@@ -192,7 +197,7 @@ describe('rafters-input-otp', () => {
     document.body.append(el);
     const inner = el.shadowRoot?.querySelector('input');
     expect(inner).toBeTruthy();
-    expect(inner?.classList.contains('hidden-input')).toBe(true);
+    expect(inner?.className).toBe(inputOtpHiddenInputClasses);
     expect(inner?.type).toBe('text');
     expect(inner?.getAttribute('inputmode')).toBe('numeric');
     expect(inner?.getAttribute('autocomplete')).toBe('one-time-code');
@@ -354,12 +359,16 @@ describe('rafters-input-otp', () => {
       inner.value = '12';
       inner.dispatchEvent(new Event('input', { bubbles: true }));
     }
-    const slots = el.shadowRoot?.querySelectorAll('.slot') ?? [];
+    const slots = el.shadowRoot?.querySelectorAll('[data-input-otp-slot]') ?? [];
     expect(slots[0]?.hasAttribute('data-filled')).toBe(true);
     expect(slots[1]?.hasAttribute('data-filled')).toBe(true);
     expect(slots[2]?.hasAttribute('data-filled')).toBe(false);
     expect(slots[2]?.hasAttribute('data-active')).toBe(true);
     expect(slots[3]?.hasAttribute('data-active')).toBe(false);
+    // Filled and active slots carry the matching utility classes (parity
+    // with the React/Astro targets).
+    expect(slots[0]?.className).toContain(inputOtpSlotFilledClasses);
+    expect(slots[2]?.className).toContain(inputOtpSlotActiveClasses);
   });
 
   it('renders the typed character text inside each filled slot', async () => {
@@ -372,7 +381,7 @@ describe('rafters-input-otp', () => {
       inner.value = '12';
       inner.dispatchEvent(new Event('input', { bubbles: true }));
     }
-    const slots = el.shadowRoot?.querySelectorAll<HTMLDivElement>('.slot') ?? [];
+    const slots = el.shadowRoot?.querySelectorAll<HTMLDivElement>('[data-input-otp-slot]') ?? [];
     expect(slots[0]?.textContent?.trim()).toBe('1');
     expect(slots[1]?.textContent?.trim()).toBe('2');
     expect(slots[2]?.textContent?.trim()).toBe('');
@@ -389,7 +398,7 @@ describe('rafters-input-otp', () => {
       inner.dispatchEvent(new Event('input', { bubbles: true }));
       inner.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
     }
-    const slots = el.shadowRoot?.querySelectorAll('.slot') ?? [];
+    const slots = el.shadowRoot?.querySelectorAll('[data-input-otp-slot]') ?? [];
     expect(slots[1]?.hasAttribute('data-active')).toBe(true);
   });
 
@@ -405,7 +414,7 @@ describe('rafters-input-otp', () => {
       inner.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
       inner.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
     }
-    const slots = el.shadowRoot?.querySelectorAll('.slot') ?? [];
+    const slots = el.shadowRoot?.querySelectorAll('[data-input-otp-slot]') ?? [];
     expect(slots[2]?.hasAttribute('data-active')).toBe(true);
   });
 
@@ -439,7 +448,7 @@ describe('rafters-input-otp', () => {
     const RaftersInputOtp = await loadElement();
     const el = document.createElement('rafters-input-otp') as InstanceType<typeof RaftersInputOtp>;
     document.body.append(el);
-    const container = el.shadowRoot?.querySelector<HTMLDivElement>('.container');
+    const container = el.shadowRoot?.querySelector<HTMLDivElement>('[data-input-otp-container]');
     const inner = el.shadowRoot?.querySelector<HTMLInputElement>('input');
     expect(container).toBeTruthy();
     expect(inner).toBeTruthy();
@@ -454,7 +463,7 @@ describe('rafters-input-otp', () => {
     const el = document.createElement('rafters-input-otp') as InstanceType<typeof RaftersInputOtp>;
     el.setAttribute('disabled', '');
     document.body.append(el);
-    const container = el.shadowRoot?.querySelector<HTMLDivElement>('.container');
+    const container = el.shadowRoot?.querySelector<HTMLDivElement>('[data-input-otp-container]');
     container?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     expect(el.shadowRoot?.activeElement).toBeNull();
   });
@@ -524,10 +533,14 @@ describe('rafters-input-otp', () => {
     document.body.append(el);
     el.formDisabledCallback(true);
     expect(el.shadowRoot?.querySelector('input')?.disabled).toBe(true);
-    expect(el.shadowRoot?.querySelector('.container')?.hasAttribute('data-disabled')).toBe(true);
+    expect(
+      el.shadowRoot?.querySelector('[data-input-otp-container]')?.hasAttribute('data-disabled'),
+    ).toBe(true);
     el.formDisabledCallback(false);
     expect(el.shadowRoot?.querySelector('input')?.disabled).toBe(false);
-    expect(el.shadowRoot?.querySelector('.container')?.hasAttribute('data-disabled')).toBe(false);
+    expect(
+      el.shadowRoot?.querySelector('[data-input-otp-container]')?.hasAttribute('data-disabled'),
+    ).toBe(false);
   });
 
   it('formStateRestoreCallback assigns a string state to value', async () => {
@@ -552,24 +565,29 @@ describe('rafters-input-otp', () => {
     el.setAttribute('pattern', '(((');
     expect(() => document.body.append(el)).not.toThrow();
     expect(el.maxLength).toBe(6);
-    expect(el.shadowRoot?.querySelectorAll('.slot').length).toBe(6);
+    expect(el.shadowRoot?.querySelectorAll('[data-input-otp-slot]').length).toBe(6);
   });
 
-  it('exposes a per-instance stylesheet via shadowRoot.adoptedStyleSheets', async () => {
+  it('adopts the host-display shim stylesheet into the shadow root', async () => {
     const RaftersInputOtp = await loadElement();
     const el = document.createElement('rafters-input-otp') as InstanceType<typeof RaftersInputOtp>;
     document.body.append(el);
     const sheets = el.shadowRoot?.adoptedStyleSheets ?? [];
     expect(sheets.length).toBeGreaterThanOrEqual(1);
-    const css = sheets
-      .map((s) =>
-        Array.from(s.cssRules)
-          .map((r) => r.cssText)
-          .join('\n'),
-      )
-      .join('\n');
-    expect(css).toContain('var(--motion-duration-fast)');
-    expect(css).toContain('@keyframes otp-blink');
+  });
+
+  it('slots carry the shared base utility classes (parity with React/Astro)', async () => {
+    const RaftersInputOtp = await loadElement();
+    const { composeInputOtpSlotClasses } = await import('./input-otp.element');
+    const el = document.createElement('rafters-input-otp') as InstanceType<typeof RaftersInputOtp>;
+    el.setAttribute('maxlength', '4');
+    document.body.append(el);
+    // The first slot is active on mount; a later empty slot is in the plain
+    // base state, so it equals the unstyled composition.
+    const slots = el.shadowRoot?.querySelectorAll('[data-input-otp-slot]') ?? [];
+    expect(slots[3]?.className).toBe(
+      composeInputOtpSlotClasses({ active: false, filled: false, disabled: false }),
+    );
   });
 
   it('setCustomValidity surfaces a customError', async () => {

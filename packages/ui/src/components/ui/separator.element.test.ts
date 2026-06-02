@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import './separator.element';
-import { RaftersSeparator } from './separator.element';
+import { separatorOrientationClasses } from './separator.classes';
+import { composeSeparatorClasses, RaftersSeparator } from './separator.element';
 
 afterEach(() => {
   while (document.body.firstChild) {
@@ -15,17 +16,8 @@ function mount(attrs: Record<string, string> = {}): HTMLElement {
   return el;
 }
 
-function adoptedCssText(el: Element): string {
-  const sheets = el.shadowRoot?.adoptedStyleSheets ?? [];
-  const blocks: string[] = [];
-  for (const sheet of sheets) {
-    const rules: string[] = [];
-    for (const rule of Array.from(sheet.cssRules)) {
-      rules.push(rule.cssText);
-    }
-    blocks.push(rules.join('\n'));
-  }
-  return blocks.join('\n');
+function innerClass(el: Element): string {
+  return el.shadowRoot?.querySelector('div')?.className ?? '';
 }
 
 describe('<rafters-separator>', () => {
@@ -39,74 +31,54 @@ describe('<rafters-separator>', () => {
     expect(customElements.get('rafters-separator')).toBe(RaftersSeparator);
   });
 
-  it('renders a single div.separator with role="none" by default (decorative)', () => {
+  it('renders a single div with role="none" by default (decorative)', () => {
     const el = mount();
-    const inner = el.shadowRoot?.querySelector('div.separator');
+    const inner = el.shadowRoot?.querySelector('div');
     expect(inner).not.toBeNull();
     expect(inner?.getAttribute('role')).toBe('none');
     expect(inner?.hasAttribute('aria-orientation')).toBe(false);
-    expect(inner?.classList.contains('orientation-horizontal')).toBe(true);
+    expect(innerClass(el)).toBe(composeSeparatorClasses('horizontal'));
     // Separator has no slotted content.
     expect(el.shadowRoot?.querySelector('slot')).toBeNull();
   });
 
   it('falls back to horizontal orientation for unknown values', () => {
     const el = mount({ orientation: 'diagonal' });
-    const inner = el.shadowRoot?.querySelector('div.separator');
-    expect(inner?.classList.contains('orientation-horizontal')).toBe(true);
-    const css = adoptedCssText(el);
-    expect(css).toMatch(/height:\s*1px/);
-    expect(css).toMatch(/width:\s*100%/);
+    expect(innerClass(el)).toContain(separatorOrientationClasses.horizontal);
   });
 
-  it('reflects orientation changes to class and adopted stylesheet', () => {
+  it('reflects orientation changes to the inner class string', () => {
     const el = mount();
     el.setAttribute('orientation', 'vertical');
-    const inner = el.shadowRoot?.querySelector('div.separator');
-    expect(inner?.classList.contains('orientation-vertical')).toBe(true);
-    expect(inner?.classList.contains('orientation-horizontal')).toBe(false);
-    const css = adoptedCssText(el);
-    expect(css).toMatch(/height:\s*100%/);
-    expect(css).toMatch(/width:\s*1px/);
+    const css = innerClass(el);
+    expect(css).toContain(separatorOrientationClasses.vertical);
+    expect(css).not.toContain(separatorOrientationClasses.horizontal);
   });
 
   it('reflects decorative="false" by setting role="separator" and aria-orientation', () => {
     const el = mount();
     el.setAttribute('decorative', 'false');
-    // `decorative="false"` keeps the separator decorative (aria-hidden from AT).
-    const innerAfterFalse = el.shadowRoot?.querySelector('div.separator');
+    // decorative="false" keeps the separator decorative (aria-hidden from AT).
+    const innerAfterFalse = el.shadowRoot?.querySelector('div');
     expect(innerAfterFalse?.getAttribute('role')).toBe('none');
     expect(innerAfterFalse?.hasAttribute('aria-orientation')).toBe(false);
 
     // Setting decorative to any non-"false" value (including empty string)
     // opts into the non-decorative role/aria-orientation pair.
     el.setAttribute('decorative', '');
-    const innerAfterPresent = el.shadowRoot?.querySelector('div.separator');
+    const innerAfterPresent = el.shadowRoot?.querySelector('div');
     expect(innerAfterPresent?.getAttribute('role')).toBe('separator');
     expect(innerAfterPresent?.getAttribute('aria-orientation')).toBe('horizontal');
 
     // aria-orientation mirrors the current orientation.
     el.setAttribute('orientation', 'vertical');
-    const innerVertical = el.shadowRoot?.querySelector('div.separator');
+    const innerVertical = el.shadowRoot?.querySelector('div');
     expect(innerVertical?.getAttribute('role')).toBe('separator');
     expect(innerVertical?.getAttribute('aria-orientation')).toBe('vertical');
   });
 
   it('observedAttributes matches the documented contract', () => {
     expect(RaftersSeparator.observedAttributes).toEqual(['orientation', 'decorative']);
-  });
-
-  it('shadow root adopts the per-instance stylesheet', () => {
-    const el = mount();
-    const sheets = el.shadowRoot?.adoptedStyleSheets ?? [];
-    expect(sheets.length).toBe(1);
-  });
-
-  it('stylesheet uses only --motion-duration / --motion-ease tokens', () => {
-    const el = mount();
-    const css = adoptedCssText(el);
-    expect(css).not.toMatch(/var\(--duration-/);
-    expect(css).not.toMatch(/var\(--ease-/);
   });
 
   it('source contains no direct var() references', async () => {

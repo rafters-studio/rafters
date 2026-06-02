@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import './skeleton.element';
-import { RaftersSkeleton } from './skeleton.element';
+import { skeletonBaseClasses, skeletonVariantClasses } from './skeleton.classes';
+import { composeSkeletonClasses, RaftersSkeleton } from './skeleton.element';
 
 afterEach(() => {
   while (document.body.firstChild) {
@@ -15,17 +16,8 @@ function mount(attrs: Record<string, string> = {}): HTMLElement {
   return el;
 }
 
-function adoptedCssText(el: Element): string {
-  const sheets = el.shadowRoot?.adoptedStyleSheets ?? [];
-  const blocks: string[] = [];
-  for (const sheet of sheets) {
-    const rules: string[] = [];
-    for (const rule of Array.from(sheet.cssRules)) {
-      rules.push(rule.cssText);
-    }
-    blocks.push(rules.join('\n'));
-  }
-  return blocks.join('\n');
+function innerClass(el: Element): string {
+  return el.shadowRoot?.querySelector('div')?.className ?? '';
 }
 
 describe('<rafters-skeleton>', () => {
@@ -39,35 +31,48 @@ describe('<rafters-skeleton>', () => {
     expect(customElements.get('rafters-skeleton')).toBe(RaftersSkeleton);
   });
 
-  it('renders a single div.skeleton[aria-hidden=true] with no slot', () => {
+  it('renders a single div[aria-hidden=true] with no slot', () => {
     const el = mount();
     const root = el.shadowRoot;
     expect(root).not.toBeNull();
-    const div = root?.querySelector('div.skeleton');
+    const div = root?.querySelector('div');
     expect(div).not.toBeNull();
     expect(div?.getAttribute('aria-hidden')).toBe('true');
-    // No slot element anywhere in the shadow tree
     expect(root?.querySelector('slot')).toBeNull();
-    // Single child on the shadow root
     expect(root?.childNodes.length).toBe(1);
-    // The skeleton div itself has no children
     expect(div?.children.length).toBe(0);
+  });
+
+  it('applies base + default variant classes', () => {
+    const el = mount();
+    expect(innerClass(el)).toBe(composeSkeletonClasses('default'));
   });
 
   it('falls back to default variant for unknown values', () => {
     const el = mount({ variant: 'nonsense' });
-    // Default variant background is color-muted
-    const css = adoptedCssText(el);
-    expect(css).toContain('color-muted');
-    expect(css).not.toContain('color-primary-subtle');
-    expect(css).not.toContain('color-destructive-subtle');
+    const css = innerClass(el);
+    expect(css).toContain(skeletonVariantClasses.default);
+    expect(css).not.toContain(skeletonVariantClasses.primary);
+    expect(css).not.toContain(skeletonVariantClasses.destructive);
   });
 
-  it('reflects variant attribute changes to the adopted stylesheet', () => {
+  it('reflects variant attribute changes to the inner class string', () => {
     const el = mount();
     el.setAttribute('variant', 'destructive');
-    const css = adoptedCssText(el);
-    expect(css).toContain('color-destructive-subtle');
+    expect(innerClass(el)).toContain(skeletonVariantClasses.destructive);
+  });
+
+  it('carries the pulse animation utilities including the reduced-motion opt-out', () => {
+    const el = mount();
+    const css = innerClass(el);
+    expect(css).toContain('animate-pulse');
+    expect(css).toContain('motion-reduce:animate-none');
+    expect(css).toContain(skeletonBaseClasses);
+  });
+
+  it('reflects primary variant to the primary-subtle background class', () => {
+    const el = mount({ variant: 'primary' });
+    expect(innerClass(el)).toContain(skeletonVariantClasses.primary);
   });
 
   it('source contains no direct var() references', async () => {
@@ -79,31 +84,5 @@ describe('<rafters-skeleton>', () => {
 
   it('observedAttributes matches the documented contract', () => {
     expect(RaftersSkeleton.observedAttributes).toEqual(['variant']);
-  });
-
-  it('shadow root adopts the per-instance stylesheet', () => {
-    const el = mount();
-    const sheets = el.shadowRoot?.adoptedStyleSheets ?? [];
-    expect(sheets.length).toBeGreaterThanOrEqual(1);
-  });
-
-  it('stylesheet uses only --motion-duration / --motion-ease tokens', () => {
-    const el = mount();
-    const css = adoptedCssText(el);
-    expect(css).not.toMatch(/var\(--duration-/);
-    expect(css).not.toMatch(/var\(--ease-/);
-  });
-
-  it('stylesheet includes a prefers-reduced-motion rule that disables animation', () => {
-    const el = mount();
-    const css = adoptedCssText(el);
-    expect(css).toMatch(/prefers-reduced-motion:\s*reduce/);
-    expect(css).toMatch(/animation:\s*none/);
-  });
-
-  it('reflects primary variant to the primary-subtle background', () => {
-    const el = mount({ variant: 'primary' });
-    const css = adoptedCssText(el);
-    expect(css).toContain('color-primary-subtle');
   });
 });

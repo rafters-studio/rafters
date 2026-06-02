@@ -1,9 +1,18 @@
 /**
  * <rafters-progress> -- Web Component progress primitive.
  *
- * Mirrors the semantics of progress.tsx (value, max, variant, size) using
- * shadow-DOM-scoped CSS composed via classy-wc. Auto-registers on import and
- * is idempotent against double-define.
+ * Mirrors the semantics of progress.tsx (value, max, variant, size). The
+ * inner track and indicator carry the SAME utility class strings the React
+ * and Astro targets use -- imported from progress.classes.ts -- rather than a
+ * parallel hand-written CSS map. Visual presentation comes from the shared
+ * compiled utility stylesheet adopted by RaftersElement (see setUtilityCSS)
+ * plus the token custom properties inherited from the host :root.
+ *
+ * The only shadow-scoped CSS this component owns is the structural :host
+ * display shim. The indeterminate slide animation rides on the shared
+ * progress-indeterminate animation utility (its keyframes live in the
+ * compiled utility sheet, exactly as in the React/Astro targets), so no
+ * per-instance keyframes machinery is needed here.
  *
  * Attributes:
  *  - value:   number in [0, max] (default: absent = indeterminate)
@@ -12,18 +21,15 @@
  *             | 'success' | 'warning' | 'info' | 'accent' (default 'default')
  *  - size:    'sm' | 'default' | 'lg' (default 'default')
  *
- * Shadow DOM structure:
- *   <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax=max
- *        [aria-valuenow=clampedValue] [aria-valuetext="N%"]>
- *     <div class="progress-indicator" style="width: N%">
- *   </div>
+ * Shadow DOM structure: a track div carrying role progressbar and the
+ * aria-value attributes wraps an indicator div whose width is set inline when
+ * determinate.
  *
- * When indeterminate the host gets `aria-busy="true"`, the indicator
- * carries a `data-indeterminate` attribute (used by the stylesheet to
- * apply the slide animation), and no inline width is set.
+ * When indeterminate the host gets aria-busy true, the indicator carries a
+ * data-indeterminate attribute plus the indeterminate animation utility, and
+ * no inline width is set.
  *
- * DOM APIs only -- never innerHTML. Styling comes exclusively from
- * progressStylesheet(...) adopted as the per-instance stylesheet.
+ * DOM APIs only -- never innerHTML.
  *
  * @cognitive-load 4/10
  * @accessibility role="progressbar" with aria-valuemin/max/now/text.
@@ -31,7 +37,25 @@
  */
 
 import { RaftersElement } from '../../primitives/rafters-element';
-import { type ProgressSize, type ProgressVariant, progressStylesheet } from './progress.styles';
+import {
+  progressContainerClasses,
+  progressIndeterminateClasses,
+  progressIndicatorBaseClasses,
+  progressSizeClasses,
+  progressVariantClasses,
+} from './progress.classes';
+
+export type ProgressVariant =
+  | 'default'
+  | 'primary'
+  | 'secondary'
+  | 'destructive'
+  | 'success'
+  | 'warning'
+  | 'info'
+  | 'accent';
+
+export type ProgressSize = 'sm' | 'default' | 'lg';
 
 const ALLOWED_VARIANTS: ReadonlyArray<ProgressVariant> = [
   'default',
@@ -82,57 +106,51 @@ function parseValue(raw: string | null, max: number): ParsedValue {
   return { indeterminate: false, clamped };
 }
 
+/**
+ * Compose the track's class string from the shared class maps.
+ * Exported so tests assert the WC renders the exact same composition the
+ * Astro/React targets do -- the parity guarantee.
+ */
+export function composeProgressTrackClasses(size: ProgressSize): string {
+  return `${progressContainerClasses} ${progressSizeClasses[size]}`;
+}
+
+/**
+ * Compose the indicator's class string from the shared class maps. When
+ * indeterminate the indicator also carries the animation utility, mirroring
+ * the React/Astro indicator composition.
+ */
+export function composeProgressIndicatorClasses(
+  variant: ProgressVariant,
+  indeterminate: boolean,
+): string {
+  const base = `${progressIndicatorBaseClasses} ${progressVariantClasses[variant]}`;
+  return indeterminate ? `${base} ${progressIndeterminateClasses}` : base;
+}
+
 export class RaftersProgress extends RaftersElement {
   static readonly observedAttributes: ReadonlyArray<string> = OBSERVED_ATTRIBUTES;
 
-  /** Per-instance stylesheet rebuilt on variant/size changes. */
-  private _instanceSheet: CSSStyleSheet | null = null;
-
-  override connectedCallback(): void {
-    if (!this.shadowRoot) return;
-    this._instanceSheet = new CSSStyleSheet();
-    this._instanceSheet.replaceSync(this.composeCss());
-    this.shadowRoot.adoptedStyleSheets = [this._instanceSheet];
-    this.update();
-  }
-
-  override attributeChangedCallback(
-    name: string,
-    oldValue: string | null,
-    newValue: string | null,
-  ): void {
-    if (oldValue === newValue) return;
-    if ((name === 'variant' || name === 'size') && this._instanceSheet) {
-      this._instanceSheet.replaceSync(this.composeCss());
-    }
-    this.update();
-  }
-
-  override disconnectedCallback(): void {
-    this._instanceSheet = null;
-  }
-
   /**
-   * Build the CSS string for the current variant/size attributes.
+   * The only component-owned CSS: the structural host-display shim. Custom
+   * elements default to inline display; the progress track needs the host to
+   * behave as the block-level box the React/Astro element is.
    */
-  private composeCss(): string {
-    return progressStylesheet({
-      variant: parseVariant(this.getAttribute('variant')),
-      size: parseSize(this.getAttribute('size')),
-    });
-  }
+  static override styles = ':host { display: block; }';
 
   /**
-   * Render the track + indicator. DOM APIs only -- never innerHTML.
+   * Render the track and indicator. DOM APIs only -- never innerHTML.
    *
-   * Host ARIA attributes are written on `this` so they surface on the
-   * custom element itself (light DOM side). The inner track carries the
-   * role="progressbar" and aria-value* attributes so assistive tech that
-   * pierces through to the shadow DOM still finds a compliant node.
+   * Host ARIA state is written on the element itself so it surfaces on the
+   * light DOM side. The inner track carries role progressbar and the
+   * aria-value attributes so assistive tech that pierces through to the
+   * shadow DOM still finds a compliant node.
    */
   override render(): Node {
     const max = parseMax(this.getAttribute('max'));
     const { indeterminate, clamped } = parseValue(this.getAttribute('value'), max);
+    const variant = parseVariant(this.getAttribute('variant'));
+    const size = parseSize(this.getAttribute('size'));
 
     // Host-level ARIA state for screen readers that read the light tree.
     if (indeterminate) {
@@ -142,7 +160,7 @@ export class RaftersProgress extends RaftersElement {
     }
 
     const track = document.createElement('div');
-    track.className = 'progress';
+    track.className = composeProgressTrackClasses(size);
     track.setAttribute('role', 'progressbar');
     track.setAttribute('aria-valuemin', '0');
     track.setAttribute('aria-valuemax', String(max));
@@ -154,7 +172,7 @@ export class RaftersProgress extends RaftersElement {
     }
 
     const indicator = document.createElement('div');
-    indicator.className = 'progress-indicator';
+    indicator.className = composeProgressIndicatorClasses(variant, indeterminate);
     if (indeterminate) {
       indicator.setAttribute('data-indeterminate', '');
     } else {

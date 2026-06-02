@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { RaftersBadge } from './badge.element';
+import { badgeSizeClasses, badgeVariantClasses } from './badge.classes';
+import { composeBadgeClasses, RaftersBadge } from './badge.element';
 
 afterEach(() => {
   while (document.body.firstChild) {
@@ -7,17 +8,8 @@ afterEach(() => {
   }
 });
 
-function adoptedCssText(el: Element): string {
-  const sheets = el.shadowRoot?.adoptedStyleSheets ?? [];
-  const blocks: string[] = [];
-  for (const sheet of sheets) {
-    const rules: string[] = [];
-    for (const rule of Array.from(sheet.cssRules)) {
-      rules.push(rule.cssText);
-    }
-    blocks.push(rules.join('\n'));
-  }
-  return blocks.join('\n');
+function innerClass(el: Element): string {
+  return el.shadowRoot?.querySelector('span')?.className ?? '';
 }
 
 describe('<rafters-badge>', () => {
@@ -31,41 +23,47 @@ describe('<rafters-badge>', () => {
     expect(customElements.get('rafters-badge')).toBe(RaftersBadge);
   });
 
-  it('renders a single span.badge containing a slot', () => {
+  it('renders a single span containing a slot', () => {
     const el = document.createElement('rafters-badge');
     document.body.appendChild(el);
-    const span = el.shadowRoot?.querySelector('span.badge');
+    const span = el.shadowRoot?.querySelector('span');
     expect(span).not.toBeNull();
     expect(span?.children.length).toBe(1);
     expect(span?.firstElementChild?.tagName.toLowerCase()).toBe('slot');
+  });
+
+  it('applies base + default variant + default size classes', () => {
+    const el = document.createElement('rafters-badge');
+    document.body.appendChild(el);
+    expect(innerClass(el)).toBe(composeBadgeClasses('default', 'default'));
   });
 
   it('falls back to default variant for unknown values', () => {
     const el = document.createElement('rafters-badge');
     el.setAttribute('variant', 'nonsense');
     document.body.appendChild(el);
-    expect(adoptedCssText(el)).toContain('color-primary');
+    expect(innerClass(el)).toContain(badgeVariantClasses.default);
   });
 
   it('falls back to default size for unknown values', () => {
     const el = document.createElement('rafters-badge');
     el.setAttribute('size', 'gigantic');
     document.body.appendChild(el);
-    expect(adoptedCssText(el)).toContain('font-size-label-small');
+    expect(innerClass(el)).toContain(badgeSizeClasses.default);
   });
 
-  it('reflects variant attribute changes to the adopted stylesheet', () => {
+  it('reflects variant attribute changes to the inner class string', () => {
     const el = document.createElement('rafters-badge');
     document.body.appendChild(el);
     el.setAttribute('variant', 'destructive');
-    expect(adoptedCssText(el)).toContain('color-destructive');
+    expect(innerClass(el)).toContain(badgeVariantClasses.destructive);
   });
 
-  it('reflects size attribute changes to the adopted stylesheet', () => {
+  it('reflects size attribute changes to the inner class string', () => {
     const el = document.createElement('rafters-badge');
     document.body.appendChild(el);
     el.setAttribute('size', 'lg');
-    expect(adoptedCssText(el)).toContain('font-size-label-medium');
+    expect(innerClass(el)).toContain(badgeSizeClasses.lg);
   });
 
   it('source contains no direct var() references', async () => {

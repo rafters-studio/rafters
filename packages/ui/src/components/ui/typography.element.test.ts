@@ -1,24 +1,26 @@
 /**
  * Tests for <rafters-typography> Web Component.
  *
- * Uses happy-dom (vitest default for this workspace). Shadow DOM and
- * adoptedStyleSheets are both supported.
- *
  * Assertions check rendered semantic tag per variant, fallback behavior,
- * idempotent registration, and that TypographyTokenProps attributes inject
- * token references into the shadow stylesheet (values need not resolve --
- * resolver work is tracked separately).
+ * idempotent registration, and that TypographyTokenProps attributes compose
+ * the matching utility classes onto the inner element -- parity with the
+ * React/Astro targets via resolveTypography.
  */
 
 import { afterEach, describe, expect, it } from 'vitest';
 import './typography.element';
-import { RaftersTypography } from './typography.element';
+import { resolveTypography } from './typography.classes';
+import { composeTypographyClasses, RaftersTypography } from './typography.element';
 
 afterEach(() => {
   while (document.body.firstChild) {
     document.body.removeChild(document.body.firstChild);
   }
 });
+
+function innerEl(el: Element): Element | null {
+  return el.shadowRoot?.firstElementChild ?? null;
+}
 
 describe('rafters-typography', () => {
   it('registers as rafters-typography', () => {
@@ -203,104 +205,55 @@ describe('rafters-typography', () => {
     }
   });
 
-  it('size attribute injects font-size override into shadow stylesheet', () => {
+  it('default p variant composes the shared p class string onto the inner element', () => {
+    const el = document.createElement('rafters-typography');
+    document.body.appendChild(el);
+    expect(innerEl(el)?.className).toBe(composeTypographyClasses('p'));
+  });
+
+  it('size attribute composes the font-size override class onto the inner element', () => {
     const el = document.createElement('rafters-typography');
     el.setAttribute('size', 'xl');
     document.body.appendChild(el);
-    const sheets = el.shadowRoot?.adoptedStyleSheets ?? [];
-    const allCss = sheets
-      .map((s) =>
-        Array.from(s.cssRules)
-          .map((r) => r.cssText)
-          .join('\n'),
-      )
-      .join('\n');
-    expect(allCss).toContain('var(--font-size-xl)');
+    expect(innerEl(el)?.className).toContain('text-xl');
+    expect(innerEl(el)?.className).toBe(composeTypographyClasses('p', { size: 'xl' }));
   });
 
-  it('color attribute injects color override into shadow stylesheet', () => {
+  it('color attribute composes the color override class onto the inner element', () => {
     const el = document.createElement('rafters-typography');
     el.setAttribute('color', 'muted-foreground');
     document.body.appendChild(el);
-    const sheets = el.shadowRoot?.adoptedStyleSheets ?? [];
-    const allCss = sheets
-      .map((s) =>
-        Array.from(s.cssRules)
-          .map((r) => r.cssText)
-          .join('\n'),
-      )
-      .join('\n');
-    expect(allCss).toContain('var(--color-muted-foreground)');
+    const expected = resolveTypography('p', { color: 'muted-foreground' });
+    expect(innerEl(el)?.className).toBe(expected);
   });
 
-  it('h1 variant emits display-large composite token references', () => {
+  it('h1 variant composes the h1 default class string onto the inner element', () => {
     const el = document.createElement('rafters-typography');
     el.setAttribute('variant', 'h1');
     document.body.appendChild(el);
-    const sheets = el.shadowRoot?.adoptedStyleSheets ?? [];
-    const allCss = sheets
-      .map((s) =>
-        Array.from(s.cssRules)
-          .map((r) => r.cssText)
-          .join('\n'),
-      )
-      .join('\n');
-    expect(allCss).toContain('var(--font-display-large-size)');
+    expect(innerEl(el)?.className).toBe(composeTypographyClasses('h1'));
   });
 
-  it('align attribute emits a literal text-align value into the shadow stylesheet', () => {
+  it('align attribute composes the text-align utility onto the inner element', () => {
     const el = document.createElement('rafters-typography');
     el.setAttribute('align', 'center');
     document.body.appendChild(el);
-    const sheets = el.shadowRoot?.adoptedStyleSheets ?? [];
-    const allCss = sheets
-      .map((s) =>
-        Array.from(s.cssRules)
-          .map((r) => r.cssText)
-          .join('\n'),
-      )
-      .join('\n');
-    expect(allCss).toContain('text-align: center');
+    expect(innerEl(el)?.className).toContain('text-center');
   });
 
-  it('transform attribute emits a literal text-transform value into the shadow stylesheet', () => {
+  it('transform attribute composes the literal transform utility onto the inner element', () => {
     const el = document.createElement('rafters-typography');
     el.setAttribute('transform', 'uppercase');
     document.body.appendChild(el);
-    const sheets = el.shadowRoot?.adoptedStyleSheets ?? [];
-    const allCss = sheets
-      .map((s) =>
-        Array.from(s.cssRules)
-          .map((r) => r.cssText)
-          .join('\n'),
-      )
-      .join('\n');
-    expect(allCss).toContain('text-transform: uppercase');
+    expect(innerEl(el)?.className).toContain('uppercase');
   });
 
-  it('changing a TypographyTokenProps attribute updates the shadow stylesheet', () => {
+  it('changing a TypographyTokenProps attribute updates the inner class string', () => {
     const el = document.createElement('rafters-typography');
     document.body.appendChild(el);
-
-    let sheets = el.shadowRoot?.adoptedStyleSheets ?? [];
-    let allCss = sheets
-      .map((s) =>
-        Array.from(s.cssRules)
-          .map((r) => r.cssText)
-          .join('\n'),
-      )
-      .join('\n');
-    expect(allCss).not.toContain('var(--font-weight-bold)');
+    expect(innerEl(el)?.className).not.toContain('font-bold');
 
     el.setAttribute('weight', 'bold');
-    sheets = el.shadowRoot?.adoptedStyleSheets ?? [];
-    allCss = sheets
-      .map((s) =>
-        Array.from(s.cssRules)
-          .map((r) => r.cssText)
-          .join('\n'),
-      )
-      .join('\n');
-    expect(allCss).toContain('var(--font-weight-bold)');
+    expect(innerEl(el)?.className).toContain('font-bold');
   });
 });

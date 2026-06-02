@@ -8,6 +8,13 @@ export const progressContainerClasses = 'relative w-full overflow-hidden rounded
 export const progressIndicatorBaseClasses =
   'h-full transition-all duration-300 motion-reduce:transition-none';
 
+/**
+ * Animation utilities applied to the indicator when the progress value is
+ * indeterminate. Mirrors the inline composition in progress.tsx / progress.astro.
+ */
+export const progressIndeterminateClasses =
+  'animate-progress-indeterminate motion-reduce:animate-none';
+
 export const progressVariantClasses: Record<string, string> = {
   default: 'bg-primary',
   primary: 'bg-primary',

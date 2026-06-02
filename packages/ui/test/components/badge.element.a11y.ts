@@ -23,7 +23,7 @@ describe('<rafters-badge> a11y', () => {
     const el = document.createElement('rafters-badge');
     el.textContent = 'Active';
     document.body.appendChild(el);
-    const span = el.shadowRoot?.querySelector('span.badge');
+    const span = el.shadowRoot?.querySelector('span');
     expect(span).not.toBeNull();
     expect(span?.getAttribute('role')).toBeNull();
     expect(el.getAttribute('role')).toBeNull();

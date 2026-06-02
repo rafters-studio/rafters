@@ -3,57 +3,61 @@
  *
  * Framework-target for the Image component, parallel to image.tsx (React).
  * Scope is intentionally REDUCED relative to the React target: the WC
- * covers the static display path only -- a `<figure>` with `<img>` and
- * an optional `<figcaption>`. The editable mode (upload, drag-drop, paste,
+ * covers the static display path only -- a figure with an img and an
+ * optional figcaption. The editable mode (upload, drag-drop, paste,
  * alignment toolbar, loading/error overlays, contentEditable caption) is a
  * React-only concern and is NOT in this file.
  *
- * Shadow DOM structure (src present):
- *   <figure class="image"><img src alt /></figure>
+ * The inner figure/img/caption carry the SAME utility class strings the
+ * React/Astro targets use -- imported from image.classes.ts -- rather than a
+ * parallel hand-written CSS map. Presentation resolves from the shared
+ * compiled utility sheet adopted by RaftersElement (setUtilityCSS) plus the
+ * token custom properties inherited from the host :root.
  *
- * Shadow DOM structure (src present, caption present):
- *   <figure class="image">
- *     <img src alt />
- *     <figcaption class="image-caption">{caption}</figcaption>
- *   </figure>
+ * The only shadow-scoped CSS this component owns is the structural :host
+ * shim (block layout, full width).
  *
- * Shadow DOM structure (src absent):
- *   <figure class="image"></figure>
+ * Shadow DOM structure (src present): a figure carrying the composed image
+ * utility classes wrapping an img. With a caption, a figcaption follows.
+ * Without src, an empty figure.
  *
  * Attributes:
- *   src        Image URL. When absent, render an empty `<figure>` (no
- *              `<img>`) and NEVER throw.
- *   alt        Alt text forwarded to the inner `<img>`. Defaults to ""
- *              when absent, matching the HTML spec for decorative images.
+ *   src        Image URL. When absent, render an empty figure (no img) and
+ *              NEVER throw.
+ *   alt        Alt text forwarded to the inner img. Defaults to "" when
+ *              absent, matching the HTML spec for decorative images.
  *   size       xs | sm | md | lg | xl | 2xl | full. Unknown or missing
  *              values fall back to 'full' silently.
  *   alignment  left | center | right. Unknown or missing values fall
  *              back to 'center' silently.
- *   caption    Optional text below the image. When present, render a
- *              `<figcaption>` with the text assigned via `textContent`.
- *              Never `innerHTML`.
+ *   caption    Optional text below the image, assigned via textContent.
+ *              Never innerHTML.
  *
  * Behaviour:
  *   - Auto-registers on import, idempotent via customElements.get guard.
- *   - Per-instance CSSStyleSheet pattern: connectedCallback creates one
- *     sheet, replaceSync(imageStylesheet(...)), adoptedStyleSheets = [sheet].
- *     On `size` / `alignment` change, replaceSync the SAME sheet.
- *   - On `src` / `alt` / `caption` change, update the inner DOM
- *     (img.src, img.alt, figcaption.textContent) WITHOUT rebuilding the
- *     whole subtree.
+ *   - On size / alignment change, recompute the figure class string in place.
+ *   - On src / alt / caption change, update the inner DOM (img.src, img.alt,
+ *     figcaption.textContent) WITHOUT rebuilding the whole subtree.
  *   - DOM APIs only (document.createElement + setAttribute + appendChild);
  *     NEVER innerHTML.
- *   - NEVER raw CSS custom-property literal in this file; token references
- *     live in image.styles.ts.
- *   - Motion tokens use --motion-duration-* / --motion-ease-* only.
  *
  * @cognitive-load 2/10
- * @accessibility `<img>` always carries an `alt` attribute; defaults to ""
+ * @accessibility The img always carries an alt attribute; defaults to ""
  *   when absent to match the HTML spec for decorative images.
  */
 
 import { RaftersElement } from '../../primitives/rafters-element';
-import { type ImageAlignment, type ImageSize, imageStylesheet } from './image.styles';
+import {
+  imageAlignmentClasses,
+  imageBaseClasses,
+  imageCaptionClasses,
+  imageImgClasses,
+  imageSizeClasses,
+} from './image.classes';
+
+export type ImageSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'full';
+
+export type ImageAlignment = 'left' | 'center' | 'right';
 
 const ALLOWED_SIZES: ReadonlyArray<ImageSize> = ['xs', 'sm', 'md', 'lg', 'xl', '2xl', 'full'];
 
@@ -81,28 +85,28 @@ function parseAlignment(value: string | null): ImageAlignment {
   return 'center';
 }
 
+/**
+ * Compose the outer figure's class string from the shared class maps.
+ * Exported so tests assert the WC renders the exact same composition the
+ * Astro target does -- the parity guarantee.
+ */
+export function composeImageClasses(size: ImageSize, alignment: ImageAlignment): string {
+  return `${imageBaseClasses} ${imageSizeClasses[size]} ${imageAlignmentClasses[alignment]}`;
+}
+
 export class RaftersImage extends RaftersElement {
+  static override styles = ':host { display: block; width: 100%; }';
+
   static readonly observedAttributes: ReadonlyArray<string> = OBSERVED_ATTRIBUTES;
 
-  /** Per-instance stylesheet rebuilt when size or alignment changes. */
-  private _instanceSheet: CSSStyleSheet | null = null;
-
-  /** Stable reference to the rendered `<figure>` wrapper. */
+  /** Stable reference to the rendered figure wrapper. */
   private _figure: HTMLElement | null = null;
 
-  /** Stable reference to the rendered `<img>` (when src is present). */
+  /** Stable reference to the rendered img (when src is present). */
   private _img: HTMLImageElement | null = null;
 
-  /** Stable reference to the rendered `<figcaption>` (when caption present). */
+  /** Stable reference to the rendered figcaption (when caption present). */
   private _caption: HTMLElement | null = null;
-
-  override connectedCallback(): void {
-    if (!this.shadowRoot) return;
-    this._instanceSheet = new CSSStyleSheet();
-    this._instanceSheet.replaceSync(this.composeCss());
-    this.shadowRoot.adoptedStyleSheets = [this._instanceSheet];
-    this.update();
-  }
 
   override attributeChangedCallback(
     name: string,
@@ -111,11 +115,14 @@ export class RaftersImage extends RaftersElement {
   ): void {
     if (oldValue === newValue) return;
 
-    // size / alignment map onto the adopted stylesheet only; the DOM shape
+    // size / alignment map onto the figure class string only; the DOM shape
     // is unchanged so no re-render is needed.
     if (name === 'size' || name === 'alignment') {
-      if (this._instanceSheet) {
-        this._instanceSheet.replaceSync(this.composeCss());
+      if (this._figure) {
+        this._figure.className = composeImageClasses(
+          parseSize(this.getAttribute('size')),
+          parseAlignment(this.getAttribute('alignment')),
+        );
       }
       return;
     }
@@ -146,7 +153,7 @@ export class RaftersImage extends RaftersElement {
         return;
       }
       this._caption = document.createElement('figcaption');
-      this._caption.className = 'image-caption';
+      this._caption.className = imageCaptionClasses;
       this._caption.textContent = newValue;
       this._figure.appendChild(this._caption);
       return;
@@ -158,33 +165,26 @@ export class RaftersImage extends RaftersElement {
   }
 
   override disconnectedCallback(): void {
-    this._instanceSheet = null;
+    super.disconnectedCallback();
     this._figure = null;
     this._img = null;
     this._caption = null;
   }
 
   /**
-   * Build the CSS string for the current size / alignment attributes.
-   */
-  private composeCss(): string {
-    return imageStylesheet({
-      size: parseSize(this.getAttribute('size')),
-      alignment: parseAlignment(this.getAttribute('alignment')),
-    });
-  }
-
-  /**
-   * Render the inner semantic `<figure>` with an optional `<img>` and an
-   * optional `<figcaption>`. DOM APIs only -- never innerHTML.
+   * Render the inner semantic figure with an optional img and an optional
+   * figcaption. DOM APIs only -- never innerHTML.
    *
-   * The figure always gets `.image`. The img (when present) carries no
-   * classes; styling comes from the adopted stylesheet via `.image img`.
-   * The caption (when present) gets `.image-caption`.
+   * The figure carries the composed base + size + alignment utility classes.
+   * The img (when present) carries the shared img utility classes. The
+   * caption (when present) carries the shared caption utility classes.
    */
   override render(): Node {
     const figure = document.createElement('figure');
-    figure.className = 'image';
+    figure.className = composeImageClasses(
+      parseSize(this.getAttribute('size')),
+      parseAlignment(this.getAttribute('alignment')),
+    );
     this._figure = figure;
     this._img = null;
     this._caption = null;
@@ -194,6 +194,7 @@ export class RaftersImage extends RaftersElement {
       const img = document.createElement('img');
       img.setAttribute('src', src);
       img.setAttribute('alt', this.getAttribute('alt') ?? '');
+      img.className = imageImgClasses;
       figure.appendChild(img);
       this._img = img;
     }
@@ -201,7 +202,7 @@ export class RaftersImage extends RaftersElement {
     const caption = this.getAttribute('caption');
     if (caption != null) {
       const captionEl = document.createElement('figcaption');
-      captionEl.className = 'image-caption';
+      captionEl.className = imageCaptionClasses;
       captionEl.textContent = caption;
       figure.appendChild(captionEl);
       this._caption = captionEl;
