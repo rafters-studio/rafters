@@ -405,7 +405,11 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
       updateBlock,
       getBlocks: () => blocksAtomRef.current.get(),
       focus: () => canvasRef.current?.focus(),
-      deselect: () => {},
+      deselect: () => {
+        window.getSelection()?.removeAllRanges();
+        canvasRef.current?.blur();
+        setFocusedBlockId(null);
+      },
     };
     React.useImperativeHandle(ref, () => controlsRef.current as EditorControls, []);
 
