@@ -47,11 +47,12 @@ import {
   setCursorInBlock,
 } from './cursor-tracker';
 import { createHistory } from './history';
+import { serializeElement } from './inline-formatter';
 import { createInputHandler } from './input-events';
 import { createKeyboardHandler } from './keyboard-handler';
 import { htmlSerializer } from './serializer-html';
 import { textSerializer } from './serializer-text';
-import type { BaseBlock, CleanupFunction } from './types';
+import type { BaseBlock, CleanupFunction, InlineContent } from './types';
 
 // =============================================================================
 // Types
@@ -118,6 +119,40 @@ const MARKDOWN_SHORTCUTS: MarkdownShortcut[] = [
 // Implementation
 // =============================================================================
 
+/**
+ * Read a block element's DOM content using the editor's content policy:
+ * unformatted text stays a plain string (the simple block.content shape),
+ * formatted text becomes mark-preserving InlineContent[]. This is the read-path
+ * fix for the inline-formatter write-path gap -- reconcileDOM previously
+ * flattened to el.textContent and dropped marks.
+ */
+export function domBlockContent(element: HTMLElement): string | InlineContent[] {
+  const segments = serializeElement(element);
+  if (segments.length === 0) return '';
+  const only = segments.length === 1 ? segments[0] : undefined;
+  if (only && only.marks === undefined && only.href === undefined) return only.text;
+  return segments;
+}
+
+/** Deep-equality for block content (string or InlineContent[]). */
+function contentEquals(
+  a: string | InlineContent[] | undefined,
+  b: string | InlineContent[] | undefined,
+): boolean {
+  if (a === b) return true;
+  if (typeof a === 'string' || a === undefined || typeof b === 'string' || b === undefined) {
+    return a === b;
+  }
+  if (a.length !== b.length) return false;
+  return a.every((x, i) => {
+    const y = b[i];
+    if (!y || x.text !== y.text || x.href !== y.href) return false;
+    const mx = x.marks ?? [];
+    const my = y.marks ?? [];
+    return mx.length === my.length && mx.every((m, j) => m === my[j]);
+  });
+}
+
 export function createDocumentEditor(options: DocumentEditorOptions): DocumentEditorControls {
   const { container, initialBlocks, onBlocksChange } = options;
   const cleanups: CleanupFunction[] = [];
@@ -175,10 +210,11 @@ export function createDocumentEditor(options: DocumentEditorOptions): DocumentEd
 
       const existing = blockMap.get(id);
       if (existing) {
-        // Update content from DOM
-        const text = el.textContent ?? '';
-        if (blockContentToText(existing.content) !== text) {
-          reconciled.push({ ...existing, content: text });
+        // Read content from DOM, preserving inline marks (bold/italic/code/
+        // strikethrough/link) instead of flattening to textContent.
+        const content = domBlockContent(el as HTMLElement);
+        if (!contentEquals(existing.content, content)) {
+          reconciled.push({ ...existing, content });
         } else {
           reconciled.push(existing);
         }
@@ -190,11 +226,7 @@ export function createDocumentEditor(options: DocumentEditorOptions): DocumentEd
       reconciled.length !== blocks.length ||
       reconciled.some((b, i) => {
         const orig = blocks[i];
-        return (
-          !orig ||
-          b.id !== orig.id ||
-          blockContentToText(b.content) !== blockContentToText(orig.content)
-        );
+        return !orig || b.id !== orig.id || !contentEquals(b.content, orig.content);
       })
     ) {
       updateBlocks(reconciled);

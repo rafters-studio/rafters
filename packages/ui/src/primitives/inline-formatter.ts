@@ -729,3 +729,49 @@ export function createInlineFormatter(options: InlineFormatterOptions): InlineFo
     cleanup,
   };
 }
+
+/**
+ * Default inline mark formats (bold, italic, code, strikethrough, link).
+ * The standard set the editor and serializers recognize.
+ */
+export const DEFAULT_FORMATS: FormatDefinition[] = [BOLD, ITALIC, CODE, STRIKETHROUGH, LINK];
+
+/**
+ * Serialize a block element's DOM content to mark-preserving InlineContent[].
+ *
+ * The read-path counterpart to deserializeToDOM: walks the element's text nodes
+ * and records the inline marks (strong/em/code/s/a) wrapping each, plus link
+ * hrefs. Unlike serializeSelection (which operates on the live selection), this
+ * serializes a whole element -- what reconcileDOM needs to write user formatting
+ * back into block.content instead of flattening to textContent.
+ */
+export function serializeElement(
+  element: HTMLElement,
+  formats: FormatDefinition[] = DEFAULT_FORMATS,
+): InlineContent[] {
+  if (typeof document === 'undefined') return [];
+  const tagToFormat = createTagToFormatMap(formats);
+  const range = document.createRange();
+  range.selectNodeContents(element);
+
+  const result: InlineContent[] = [];
+  for (const textNode of getTextNodesInRange(range)) {
+    const text = textNode.textContent ?? '';
+    if (text.length === 0) continue;
+
+    const marks = Array.from(getFormatsAtNode(textNode, element, tagToFormat));
+    let href: string | undefined;
+    if (marks.includes('link')) {
+      const linkElement = findAncestorWithTag(textNode, 'a', element);
+      if (linkElement) {
+        href = linkElement.getAttribute('href') ?? undefined;
+      }
+    }
+
+    const content: InlineContent = { text };
+    if (marks.length > 0) content.marks = marks;
+    if (href !== undefined) content.href = href;
+    result.push(content);
+  }
+  return result;
+}
