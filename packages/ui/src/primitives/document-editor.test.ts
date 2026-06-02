@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { domBlockContent } from './document-editor';
+import { createDocumentEditor, domBlockContent } from './document-editor';
+import type { BaseBlock } from './types';
 
 /**
  * Editor parity, gap #1 (docs/EDITOR_PARITY_GOAL.md). reconcileDOM previously
@@ -40,5 +41,47 @@ describe('domBlockContent', () => {
     el.appendChild(document.createTextNode('Hello'));
     el.appendChild(document.createTextNode(' world'));
     expect(domBlockContent(el)).toBe('Hello world');
+  });
+});
+
+describe('inline format shortcuts (apply-side)', () => {
+  it('Cmd+B on a selection writes the bold mark into block content', () => {
+    const container = document.createElement('div');
+    const p = document.createElement('p');
+    p.setAttribute('data-block-id', 'b1');
+    p.textContent = 'The quick brown fox';
+    container.appendChild(p);
+    document.body.appendChild(container);
+
+    let latest: BaseBlock[] = [];
+    const editor = createDocumentEditor({
+      container,
+      initialBlocks: [{ id: 'b1', type: 'text', content: 'The quick brown fox' }],
+      onBlocksChange: (blocks) => {
+        latest = blocks;
+      },
+    });
+
+    // Select the word "brown".
+    const textNode = p.firstChild as Text;
+    const idx = textNode.data.indexOf('brown');
+    const range = document.createRange();
+    range.setStart(textNode, idx);
+    range.setEnd(textNode, idx + 'brown'.length);
+    const sel = window.getSelection();
+    sel?.removeAllRanges();
+    sel?.addRange(range);
+
+    container.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'b', metaKey: true, bubbles: true, cancelable: true }),
+    );
+
+    expect(latest[0]?.content).toEqual([
+      { text: 'The quick ' },
+      { text: 'brown', marks: ['bold'] },
+      { text: ' fox' },
+    ]);
+
+    editor.destroy();
   });
 });

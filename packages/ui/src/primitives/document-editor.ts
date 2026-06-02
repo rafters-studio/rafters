@@ -47,12 +47,12 @@ import {
   setCursorInBlock,
 } from './cursor-tracker';
 import { createHistory } from './history';
-import { serializeElement } from './inline-formatter';
+import { createInlineFormatter, DEFAULT_FORMATS, serializeElement } from './inline-formatter';
 import { createInputHandler } from './input-events';
 import { createKeyboardHandler } from './keyboard-handler';
 import { htmlSerializer } from './serializer-html';
 import { textSerializer } from './serializer-text';
-import type { BaseBlock, CleanupFunction, InlineContent } from './types';
+import type { BaseBlock, CleanupFunction, InlineContent, InlineMark } from './types';
 
 // =============================================================================
 // Types
@@ -409,6 +409,25 @@ export function createDocumentEditor(options: DocumentEditorOptions): DocumentEd
 
   container.addEventListener('keydown', handleTypeShortcut);
   cleanups.push(() => container.removeEventListener('keydown', handleTypeShortcut));
+
+  // -- Inline formatting: Cmd/Ctrl+B / +I / +E toggle bold/italic/code on the
+  // current selection, then reconcile so the marks reach block.content. This is
+  // the apply-side entry point the inline-formatter previously lacked (the read
+  // side -- reconcileDOM preserving marks -- landed separately).
+  const formatter = createInlineFormatter({ container, formats: DEFAULT_FORMATS });
+  cleanups.push(formatter.cleanup);
+
+  const FORMAT_KEYS: Record<string, InlineMark> = { b: 'bold', i: 'italic', e: 'code' };
+  function handleFormatShortcut(event: KeyboardEvent): void {
+    if (event.altKey || !(event.metaKey || event.ctrlKey)) return;
+    const mark = FORMAT_KEYS[event.key.toLowerCase()];
+    if (!mark) return;
+    event.preventDefault();
+    formatter.toggleFormat(mark);
+    reconcileDOM();
+  }
+  container.addEventListener('keydown', handleFormatShortcut);
+  cleanups.push(() => container.removeEventListener('keydown', handleFormatShortcut));
 
   // -- Clipboard: paste with format detection, copy with serialization --
   const clipboard = createClipboard({
