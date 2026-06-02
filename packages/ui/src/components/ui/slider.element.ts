@@ -113,14 +113,14 @@ function parseOrientation(value: string | null): SliderOrientation {
 }
 
 function parseVariant(value: string | null): SliderVariant {
-  if (value && value in sliderVariantClasses) {
+  if (value && Object.hasOwn(sliderVariantClasses, value)) {
     return value as SliderVariant;
   }
   return 'default';
 }
 
 function parseSize(value: string | null): SliderSize {
-  if (value && value in sliderSizeClasses) {
+  if (value && Object.hasOwn(sliderSizeClasses, value)) {
     return value as SliderSize;
   }
   return 'default';

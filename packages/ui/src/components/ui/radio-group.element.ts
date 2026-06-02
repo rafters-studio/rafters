@@ -3,9 +3,11 @@
  * Component pair for mutually exclusive selection.
  *
  * Mirrors the semantics of radio-group.tsx (value, orientation,
- * disabled, required, name) using shadow-DOM-scoped CSS composed via
- * classy-wc. Both elements auto-register on import and are idempotent
- * against double-define.
+ * disabled, required, name). The inner nodes carry the SAME utility class
+ * strings the React/Astro targets use, imported from radio-group.classes.ts;
+ * presentation resolves from the shared compiled utility sheet adopted by
+ * RaftersElement (setUtilityCSS). Both elements auto-register on import and are
+ * idempotent against double-define.
  *
  * The group is form-associated via ElementInternals: it participates
  * in <form> submission as `name=value`, reports `valueMissing`

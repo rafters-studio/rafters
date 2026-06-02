@@ -1,10 +1,11 @@
 /**
  * Shared button-group layout class definitions
  *
- * Imported by button-group.tsx (React) to keep the connected-border and
- * focus-stacking rules in one place. The Web Component target consumes
- * button-group.styles.ts for the shadow-DOM CSS equivalent; this file
- * exists so framework targets share the same semantic surface.
+ * Imported by button-group.tsx (React), button-group.astro (Astro), and the
+ * button-group Web Component to keep the connected-border and focus-stacking
+ * rules in one place, so every framework target shares the same semantic
+ * surface. The Web Component renders its inner markup from these strings and
+ * keeps only its irreducible :host / ::slotted shadow CSS inline.
  */
 
 // ============================================================================

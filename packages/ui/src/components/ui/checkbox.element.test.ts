@@ -202,6 +202,20 @@ describe('rafters-checkbox', () => {
     expect(RaftersCheckbox.formAssociated).toBe(true);
   });
 
+  it('falls back to default for prototype-chain attribute values (no undefined classes)', async () => {
+    await loadElement();
+    const mod = await import('./checkbox.element');
+    const el = document.createElement('rafters-checkbox');
+    // `constructor` / `toString` live on Object.prototype: an `in` check would
+    // pass them through and inject `undefined` tokens. Object.hasOwn rejects them.
+    el.setAttribute('variant', 'constructor');
+    el.setAttribute('size', 'toString');
+    document.body.appendChild(el);
+    const inner = el.shadowRoot?.querySelector('button');
+    expect(inner?.className).toBe(mod.composeCheckboxClasses('default', 'default'));
+    expect(inner?.className).not.toContain('undefined');
+  });
+
   it('declares the documented observedAttributes', async () => {
     const RaftersCheckbox = await loadElement();
     expect(RaftersCheckbox.observedAttributes).toEqual([

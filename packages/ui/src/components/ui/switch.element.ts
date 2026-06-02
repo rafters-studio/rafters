@@ -70,14 +70,14 @@ const OBSERVED_ATTRIBUTES: ReadonlyArray<string> = [
 ] as const;
 
 function parseVariant(value: string | null): SwitchVariant {
-  if (value && value in switchVariantClasses) {
+  if (value && Object.hasOwn(switchVariantClasses, value)) {
     return value as SwitchVariant;
   }
   return 'default';
 }
 
 function parseSize(value: string | null): SwitchSize {
-  if (value && value in switchSizeClasses) {
+  if (value && Object.hasOwn(switchSizeClasses, value)) {
     return value as SwitchSize;
   }
   return 'default';

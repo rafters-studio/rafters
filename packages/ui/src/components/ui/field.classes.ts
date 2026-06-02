@@ -1,8 +1,9 @@
 /**
  * Shared class definitions for Field component
  *
- * Imported by field.tsx (React) to ensure visual parity with the Web Component
- * target at field.styles.ts. Field is a layout-composition wrapper: container
+ * Imported by field.tsx (React), field.astro (Astro), and the field Web
+ * Component (which renders its inner nodes from these strings) to ensure
+ * visual parity across targets. Field is a layout-composition wrapper: container
  * stacks label + control + helper/error with consistent spacing; the helper
  * and error variants share the small label type ramp but flip color.
  */

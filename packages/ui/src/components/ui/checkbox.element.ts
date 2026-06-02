@@ -74,14 +74,14 @@ const OBSERVED_ATTRIBUTES: ReadonlyArray<string> = [
 const VALUE_MISSING_MESSAGE = 'Please check this box.';
 
 function parseVariant(value: string | null): CheckboxVariant {
-  if (value && value in checkboxVariantClasses) {
+  if (value && Object.hasOwn(checkboxVariantClasses, value)) {
     return value as CheckboxVariant;
   }
   return 'default';
 }
 
 function parseSize(value: string | null): CheckboxSize {
-  if (value && value in checkboxSizeClasses) {
+  if (value && Object.hasOwn(checkboxSizeClasses, value)) {
     return value as CheckboxSize;
   }
   return 'default';

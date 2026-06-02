@@ -90,7 +90,7 @@ function parseVariant(value: string | null): ToggleGroupVariant {
 }
 
 function parseSize(value: string | null): ToggleGroupSize {
-  if (value && value in toggleGroupItemSizeClasses) {
+  if (value && Object.hasOwn(toggleGroupItemSizeClasses, value)) {
     return value as ToggleGroupSize;
   }
   return 'default';
