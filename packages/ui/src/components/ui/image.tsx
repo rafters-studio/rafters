@@ -33,22 +33,17 @@
 import * as React from 'react';
 import { useCallback, useRef, useState } from 'react';
 import classy from '../../primitives/classy';
+import {
+  type ImageAlignment,
+  type ImageSize,
+  imageAlignmentClasses,
+  imageBaseClasses,
+  imageCaptionClasses,
+  imageImgClasses,
+  imageSizeClasses,
+} from './image.classes';
 
-export type ImageAlignment = 'left' | 'center' | 'right';
-
-/** Token-based image size presets */
-export type ImageSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'full';
-
-/** Size preset to Tailwind max-width class mapping */
-const sizeClasses: Record<ImageSize, string> = {
-  xs: 'max-w-xs', // 320px
-  sm: 'max-w-sm', // 384px
-  md: 'max-w-md', // 448px
-  lg: 'max-w-lg', // 512px
-  xl: 'max-w-xl', // 576px
-  '2xl': 'max-w-2xl', // 672px
-  full: 'w-full', // 100%
-};
+export type { ImageAlignment, ImageSize };
 
 export interface ImageProps extends Omit<React.HTMLAttributes<HTMLElement>, 'onChange'> {
   /** Image source URL */
@@ -291,20 +286,13 @@ export const Image = React.forwardRef<HTMLElement, ImageProps>(
       onCaptionChange(text);
     }, [onCaptionChange]);
 
-    // Compute alignment classes
-    const alignmentClasses = {
-      left: 'mr-auto',
-      center: 'mx-auto',
-      right: 'ml-auto',
-    };
-
     return (
       <figure
         ref={ref}
         className={classy(
-          'relative',
-          size && sizeClasses[size],
-          alignmentClasses[alignment],
+          imageBaseClasses,
+          size && imageSizeClasses[size],
+          imageAlignmentClasses[alignment],
           editable && 'group',
           isDragOver && 'ring-2 ring-primary ring-offset-2',
           className,
@@ -323,7 +311,7 @@ export const Image = React.forwardRef<HTMLElement, ImageProps>(
             alt={alt}
             onLoad={handleLoad}
             onError={handleError}
-            className="block w-full h-auto"
+            className={imageImgClasses}
           />
 
           {/* Loading overlay */}
@@ -377,7 +365,7 @@ export const Image = React.forwardRef<HTMLElement, ImageProps>(
           <figcaption
             ref={captionRef}
             className={classy(
-              'mt-2 text-center text-sm text-muted-foreground',
+              imageCaptionClasses,
               editable &&
                 'outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded px-1',
             )}

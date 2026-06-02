@@ -34,26 +34,13 @@
  */
 import * as React from 'react';
 import classy from '../../primitives/classy';
-
-// ==================== Constants ====================
-
-// Connected button styling via CSS child selectors
-const HORIZONTAL_CONNECTED_CLASSES = [
-  '[&>*:first-child]:rounded-r-none',
-  '[&>*:last-child]:rounded-l-none',
-  '[&>*:not(:first-child):not(:last-child)]:rounded-none',
-  '[&>*:not(:first-child)]:-ml-px',
-].join(' ');
-
-const VERTICAL_CONNECTED_CLASSES = [
-  '[&>*:first-child]:rounded-b-none',
-  '[&>*:last-child]:rounded-t-none',
-  '[&>*:not(:first-child):not(:last-child)]:rounded-none',
-  '[&>*:not(:first-child)]:-mt-px',
-].join(' ');
-
-// Focus stacking
-const FOCUS_STACKING_CLASS = '[&>*:focus-visible]:z-10';
+import {
+  buttonGroupBaseClasses,
+  buttonGroupFocusStackingClasses,
+  buttonGroupHorizontalConnectedClasses,
+  buttonGroupOrientationClasses,
+  buttonGroupVerticalConnectedClasses,
+} from './button-group.classes';
 
 // ==================== Context ====================
 
@@ -97,16 +84,18 @@ export const ButtonGroup = React.forwardRef<HTMLDivElement, ButtonGroupProps>(
 
     // Base classes (non-arbitrary, safe for classy)
     const baseClasses = classy(
-      'inline-flex',
-      orientation === 'horizontal' ? 'flex-row' : 'flex-col',
+      buttonGroupBaseClasses,
+      buttonGroupOrientationClasses[orientation],
       className,
     );
 
-    // Combine all classes (using module-level constants for connected styling)
+    // Combine all classes (using shared class definitions for connected styling)
     const groupClasses = [
       baseClasses,
-      orientation === 'horizontal' ? HORIZONTAL_CONNECTED_CLASSES : VERTICAL_CONNECTED_CLASSES,
-      FOCUS_STACKING_CLASS,
+      orientation === 'horizontal'
+        ? buttonGroupHorizontalConnectedClasses
+        : buttonGroupVerticalConnectedClasses,
+      buttonGroupFocusStackingClasses,
     ].join(' ');
 
     return (

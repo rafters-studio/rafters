@@ -36,6 +36,7 @@
  */
 import * as React from 'react';
 import classy from '../../primitives/classy';
+import { aspectRatioBaseClasses, aspectRatioChildFillClasses } from './aspect-ratio.classes';
 
 export interface AspectRatioProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Width divided by height (e.g., 16/9 = 1.778) */
@@ -47,11 +48,7 @@ export const AspectRatio = React.forwardRef<HTMLDivElement, AspectRatioProps>(
     return (
       <div
         ref={ref}
-        className={classy(
-          'relative w-full',
-          '[&>*]:absolute [&>*]:inset-0 [&>*]:h-full [&>*]:w-full',
-          className,
-        )}
+        className={classy(aspectRatioBaseClasses, aspectRatioChildFillClasses, className)}
         style={{
           aspectRatio: ratio,
           ...style,

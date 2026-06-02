@@ -25,6 +25,7 @@
  */
 import * as React from 'react';
 import classy from '../../primitives/classy';
+import { separatorBaseClasses, separatorOrientationClasses } from './separator.classes';
 
 export interface SeparatorProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Orientation of the separator */
@@ -35,18 +36,17 @@ export interface SeparatorProps extends React.HTMLAttributes<HTMLDivElement> {
 
 export const Separator = React.forwardRef<HTMLDivElement, SeparatorProps>(
   ({ className, orientation = 'horizontal', decorative = true, ...props }, ref) => {
-    const orientationClasses = {
-      horizontal: 'h-px w-full',
-      vertical: 'h-full w-px',
-    };
-
     return (
       // biome-ignore lint/a11y/useAriaPropsSupportedByRole: aria-orientation is valid when role="separator"
       <div
         ref={ref}
         role={decorative ? 'none' : 'separator'}
         aria-orientation={!decorative ? orientation : undefined}
-        className={classy('shrink-0 bg-border', orientationClasses[orientation], className)}
+        className={classy(
+          separatorBaseClasses,
+          separatorOrientationClasses[orientation],
+          className,
+        )}
         {...props}
       />
     );

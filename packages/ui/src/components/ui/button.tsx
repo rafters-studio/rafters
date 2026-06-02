@@ -28,6 +28,7 @@
 import * as React from 'react';
 import classy from '../../primitives/classy';
 import { mergeProps } from '../../primitives/slot';
+import { buttonVariantClasses } from './button.classes';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   asChild?: boolean;
@@ -47,60 +48,6 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   size?: 'default' | 'xs' | 'sm' | 'lg' | 'icon' | 'icon-xs' | 'icon-sm' | 'icon-lg';
   loading?: boolean;
 }
-
-// Variant classes per docs/COMPONENT_STYLING_REFERENCE.md
-const variantClasses: Record<string, string> = {
-  // Semantic variants (default = primary)
-  default:
-    'bg-primary text-primary-foreground ' +
-    'hover:bg-primary-hover active:bg-primary-active ' +
-    'focus-visible:ring-2 focus-visible:ring-primary-ring',
-  primary:
-    'bg-primary text-primary-foreground ' +
-    'hover:bg-primary-hover active:bg-primary-active ' +
-    'focus-visible:ring-2 focus-visible:ring-primary-ring',
-  secondary:
-    'bg-secondary text-secondary-foreground ' +
-    'hover:bg-secondary-hover active:bg-secondary-active ' +
-    'focus-visible:ring-2 focus-visible:ring-secondary-ring',
-  destructive:
-    'bg-destructive text-destructive-foreground ' +
-    'hover:bg-destructive-hover active:bg-destructive-active ' +
-    'focus-visible:ring-2 focus-visible:ring-destructive-ring',
-  success:
-    'bg-success text-success-foreground ' +
-    'hover:bg-success-hover active:bg-success-active ' +
-    'focus-visible:ring-2 focus-visible:ring-success-ring',
-  warning:
-    'bg-warning text-warning-foreground ' +
-    'hover:bg-warning-hover active:bg-warning-active ' +
-    'focus-visible:ring-2 focus-visible:ring-warning-ring',
-  info:
-    'bg-info text-info-foreground ' +
-    'hover:bg-info-hover active:bg-info-active ' +
-    'focus-visible:ring-2 focus-visible:ring-info-ring',
-  muted:
-    'bg-muted text-muted-foreground ' +
-    'hover:bg-muted-hover active:bg-muted-active ' +
-    'focus-visible:ring-2 focus-visible:ring-ring',
-  accent:
-    'bg-accent text-accent-foreground ' +
-    'hover:bg-accent-hover active:bg-accent-active ' +
-    'focus-visible:ring-2 focus-visible:ring-accent-ring',
-  // Style variants
-  outline:
-    'border border-input bg-transparent text-foreground ' +
-    'hover:bg-accent hover:text-accent-foreground ' +
-    'focus-visible:ring-2 focus-visible:ring-ring',
-  ghost:
-    'bg-transparent text-foreground ' +
-    'hover:bg-accent hover:text-accent-foreground ' +
-    'focus-visible:ring-2 focus-visible:ring-ring',
-  link:
-    'text-primary underline-offset-4 ' +
-    'hover:underline ' +
-    'focus-visible:ring-2 focus-visible:ring-ring',
-};
 
 const sizeClasses: Record<string, string> = {
   default: 'h-10 px-4 py-2',
@@ -137,7 +84,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
     const cls = classy(
       base,
-      variantClasses[variant] ?? variantClasses.default,
+      buttonVariantClasses[variant] ?? buttonVariantClasses.default,
       sizeClasses[size] ?? sizeClasses.default,
       disabledCls,
       className,

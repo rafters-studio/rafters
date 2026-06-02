@@ -44,6 +44,11 @@
  */
 import * as React from 'react';
 import classy from '../../primitives/classy';
+import {
+  inputGroupBaseClasses,
+  inputGroupDisabledClasses,
+  inputGroupSizeClasses,
+} from './input-group.classes';
 
 export interface InputGroupProps extends React.HTMLAttributes<HTMLDivElement> {
   /**
@@ -56,23 +61,12 @@ export interface InputGroupProps extends React.HTMLAttributes<HTMLDivElement> {
   disabled?: boolean;
 }
 
-const sizeClasses: Record<string, string> = {
-  default: 'h-10',
-  sm: 'h-9 text-sm',
-  lg: 'h-11',
-};
-
 export const InputGroup = React.forwardRef<HTMLDivElement, InputGroupProps>(
   ({ size = 'default', disabled, className, children, ...props }, ref) => {
-    const base =
-      'flex items-center w-full rounded-md border border-input bg-background ' +
-      'ring-offset-background ' +
-      'focus-within:outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2';
-
     const cls = classy(
-      base,
-      sizeClasses[size] ?? sizeClasses.default,
-      disabled && 'opacity-50 cursor-not-allowed',
+      inputGroupBaseClasses,
+      inputGroupSizeClasses[size] ?? inputGroupSizeClasses.default,
+      disabled && inputGroupDisabledClasses,
       className,
     );
 
