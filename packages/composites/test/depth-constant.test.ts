@@ -5,23 +5,19 @@ import { COMPOSITE_MAX_DEPTH } from '../src/constants';
 
 /**
  * Editor parity gap #6 (docs/EDITOR_PARITY_GOAL.md; editor-known-gaps.mdx
- * "Asymmetric Circular-Reference Depth Limits"). The serializer (toMdx,
- * MAX_DEPTH=50) and the instantiator (instantiateBlocks, maxDepth=10) capped
- * recursion at different depths -- a pathological composite could serialize but
- * not instantiate. Both now share one constant.
+ * "Asymmetric Circular-Reference Depth Limits"). The instantiator
+ * (instantiateBlocks) caps nested-composite recursion via a shared constant.
+ * (The legacy toMdx serializer that shared this limit was removed in gap #4 --
+ * the canonical MDX serializer is `mdxSerializer` in @rafters/ui -- so the
+ * constant now governs the instantiator alone.)
  */
 describe('composite recursion depth is a single shared constant', () => {
   it('COMPOSITE_MAX_DEPTH is 10', () => {
     expect(COMPOSITE_MAX_DEPTH).toBe(10);
   });
 
-  it('serializer and bridge use the shared constant, not divergent hard-coded limits', () => {
-    const read = (f: string) => readFileSync(join(__dirname, '..', 'src', f), 'utf8');
-    const serializer = read('serializer.ts');
-    const bridge = read('bridge.ts');
-
-    expect(serializer).toContain('COMPOSITE_MAX_DEPTH');
-    expect(serializer).not.toMatch(/MAX_DEPTH\s*=\s*50/);
+  it('the block instantiator uses the shared constant, not a hard-coded limit', () => {
+    const bridge = readFileSync(join(__dirname, '..', 'src', 'bridge.ts'), 'utf8');
     expect(bridge).toContain('COMPOSITE_MAX_DEPTH');
     expect(bridge).not.toMatch(/maxDepth\s*\?\?\s*10\b/);
   });
