@@ -69,6 +69,12 @@ import {
   editorPaletteListClasses,
   editorPaletteSearchClasses,
   editorRulePaletteAsideClasses,
+  editorSaveActionClasses,
+  editorSaveActionsClasses,
+  editorSaveDialogClasses,
+  editorSaveFieldClasses,
+  editorSaveOverlayClasses,
+  editorSaveTriggerClasses,
   editorSidebarAsideClasses,
   editorSlashItemClasses,
   editorSlashItemSelectedClasses,
@@ -114,6 +120,10 @@ export interface EditorProps
   /** Inline format toolbar. When true, selecting text shows a floating toolbar
    *  to toggle bold/italic/code/strikethrough/link on the selection. */
   inlineToolbar?: boolean;
+  /** Save-as-composite handler. When provided, a "Save as composite" action
+   *  opens a dialog collecting name/category/description and fires this with the
+   *  current blocks. */
+  onSaveAsComposite?: (data: SaveCompositeData) => void | Promise<void>;
 }
 
 export interface EditorControls {
@@ -455,6 +465,7 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
       commandPalette,
       blockContextMenu,
       inlineToolbar,
+      onSaveAsComposite,
       ...props
     },
     ref,
@@ -493,6 +504,10 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
     const contextMenuRef = React.useRef<HTMLDivElement>(null);
     const contextMenuControllerRef = React.useRef<BlockContextMenuControls | null>(null);
     const [contextMenuOpen, setContextMenuOpen] = React.useState(false);
+    const [saveDialogOpen, setSaveDialogOpen] = React.useState(false);
+    const [saveName, setSaveName] = React.useState('');
+    const [saveCategory, setSaveCategory] = React.useState('');
+    const [saveDescription, setSaveDescription] = React.useState('');
     const inlineFormatterRef = React.useRef<InlineFormatterController | null>(null);
     const [toolbarOpen, setToolbarOpen] = React.useState(false);
     const [toolbarPosition, setToolbarPosition] = React.useState<{ top: number; left: number }>({
@@ -894,6 +909,16 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
             onChangeBlockType={handleChangeBlockType}
           />
         )}
+        {onSaveAsComposite && (
+          <button
+            type="button"
+            aria-label="Save as composite"
+            className={classy(editorSaveTriggerClasses)}
+            onClick={() => setSaveDialogOpen(true)}
+          >
+            Save as composite
+          </button>
+        )}
         {sidebar || rulePalette ? (
           <div className={classy(editorPaletteLayoutClasses)}>
             {sidebar && (
@@ -1057,6 +1082,66 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
                 {button.label}
               </button>
             ))}
+          </div>
+        )}
+        {onSaveAsComposite && saveDialogOpen && (
+          <div className={classy(editorSaveOverlayClasses)}>
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-label="Save as composite"
+              className={classy(editorSaveDialogClasses)}
+            >
+              <input
+                aria-label="Composite name"
+                placeholder="Name"
+                value={saveName}
+                onChange={(event) => setSaveName(event.target.value)}
+                className={classy(editorSaveFieldClasses)}
+              />
+              <input
+                aria-label="Composite category"
+                placeholder="Category"
+                value={saveCategory}
+                onChange={(event) => setSaveCategory(event.target.value)}
+                className={classy(editorSaveFieldClasses)}
+              />
+              <textarea
+                aria-label="Composite description"
+                placeholder="Description"
+                value={saveDescription}
+                onChange={(event) => setSaveDescription(event.target.value)}
+                className={classy(editorSaveFieldClasses)}
+              />
+              <div className={classy(editorSaveActionsClasses)}>
+                <button
+                  type="button"
+                  className={classy(editorSaveActionClasses)}
+                  onClick={() => setSaveDialogOpen(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={saveName.trim() === ''}
+                  className={classy(editorSaveActionClasses)}
+                  onClick={() => {
+                    void onSaveAsComposite({
+                      name: saveName.trim(),
+                      category: saveCategory.trim(),
+                      description: saveDescription.trim(),
+                      blocks: blocksAtomRef.current.get(),
+                    });
+                    setSaveDialogOpen(false);
+                    setSaveName('');
+                    setSaveCategory('');
+                    setSaveDescription('');
+                  }}
+                >
+                  Save
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </Container>

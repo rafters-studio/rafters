@@ -68,3 +68,25 @@ export const editorInlineToolbarButtonClasses =
 
 /** An active (applied) inline-toolbar format button. */
 export const editorInlineToolbarButtonActiveClasses = 'bg-accent';
+
+/** The "Save as composite" trigger button. */
+export const editorSaveTriggerClasses =
+  'cursor-pointer self-start rounded border border-border px-2 py-1 text-sm hover:bg-accent';
+
+/** Backdrop overlay behind the save-as-composite dialog. */
+export const editorSaveOverlayClasses =
+  'fixed inset-0 z-50 flex items-center justify-center bg-black/50';
+
+/** The save-as-composite dialog panel. */
+export const editorSaveDialogClasses =
+  'flex w-80 flex-col gap-2 rounded border border-border bg-popover p-4 shadow-md';
+
+/** A field input inside the save dialog. */
+export const editorSaveFieldClasses = 'rounded border border-border px-2 py-1 text-sm outline-none';
+
+/** The save dialog's action row. */
+export const editorSaveActionsClasses = 'flex justify-end gap-2';
+
+/** A save dialog action button. */
+export const editorSaveActionClasses =
+  'cursor-pointer rounded border border-border px-3 py-1 text-sm hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50';

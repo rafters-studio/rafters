@@ -731,3 +731,53 @@ describe('Editor inline toolbar', () => {
     stub.mockRestore();
   });
 });
+
+describe('Editor save as composite', () => {
+  it('does not render the save trigger when no handler is provided', () => {
+    render(<Editor defaultValue={BLOCKS} />);
+    expect(screen.queryByRole('button', { name: 'Save as composite' })).not.toBeInTheDocument();
+  });
+
+  it('opens a save dialog from the trigger', () => {
+    render(<Editor defaultValue={BLOCKS} onSaveAsComposite={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Save as composite' }));
+    expect(screen.getByRole('dialog', { name: 'Save as composite' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Composite name')).toBeInTheDocument();
+  });
+
+  it('disables Save until a name is entered', () => {
+    render(<Editor defaultValue={BLOCKS} onSaveAsComposite={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Save as composite' }));
+    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
+    fireEvent.change(screen.getByLabelText('Composite name'), { target: { value: 'My Form' } });
+    expect(screen.getByRole('button', { name: 'Save' })).toBeEnabled();
+  });
+
+  it('calls onSaveAsComposite with the metadata and current blocks', () => {
+    const onSave = vi.fn();
+    render(<Editor defaultValue={BLOCKS} onSaveAsComposite={onSave} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Save as composite' }));
+    fireEvent.change(screen.getByLabelText('Composite name'), { target: { value: 'My Form' } });
+    fireEvent.change(screen.getByLabelText('Composite category'), { target: { value: 'forms' } });
+    fireEvent.change(screen.getByLabelText('Composite description'), {
+      target: { value: 'A reusable form' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(onSave).toHaveBeenCalledWith({
+      name: 'My Form',
+      category: 'forms',
+      description: 'A reusable form',
+      blocks: BLOCKS,
+    });
+    expect(screen.queryByRole('dialog', { name: 'Save as composite' })).not.toBeInTheDocument();
+  });
+
+  it('closes without saving on Cancel', () => {
+    const onSave = vi.fn();
+    render(<Editor defaultValue={BLOCKS} onSaveAsComposite={onSave} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Save as composite' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(onSave).not.toHaveBeenCalled();
+    expect(screen.queryByRole('dialog', { name: 'Save as composite' })).not.toBeInTheDocument();
+  });
+});
