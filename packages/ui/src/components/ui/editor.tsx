@@ -32,12 +32,13 @@ import type { BaseBlock, CleanupFunction, Direction, InlineContent } from '../..
 import { Button } from './button';
 import { Container } from './container';
 import {
+  editorPaletteCategoryClasses,
+  editorPaletteItemClasses,
+  editorPaletteLayoutClasses,
+  editorPaletteListClasses,
+  editorPaletteSearchClasses,
+  editorRulePaletteAsideClasses,
   editorSidebarAsideClasses,
-  editorSidebarCategoryClasses,
-  editorSidebarItemClasses,
-  editorSidebarLayoutClasses,
-  editorSidebarListClasses,
-  editorSidebarSearchClasses,
 } from './editor.classes';
 import { Separator } from './separator';
 
@@ -65,6 +66,9 @@ export interface EditorProps
   /** Block-palette sidebar. When provided, mounts a categorized, searchable
    *  list of insertable blocks beside the canvas. */
   sidebar?: EditorSidebarConfig;
+  /** Rule palette. When provided, mounts a categorized, searchable list of
+   *  rules that apply to the focused block, on the opposite side of the canvas. */
+  rulePalette?: EditorRulePaletteConfig;
 }
 
 export interface EditorControls {
@@ -214,6 +218,73 @@ function DefaultEmptyState() {
   );
 }
 
+interface PaletteAsideProps {
+  label: string;
+  asideClasses: string;
+  searchable: boolean;
+  searchLabel: string;
+  searchPlaceholder: string;
+  groups: Map<string, BlockPaletteItem[]>;
+  listRef: React.RefObject<HTMLDivElement | null>;
+  renderItem?:
+    | ((item: { id: string; label: string; category: string }) => React.ReactNode)
+    | undefined;
+  onSearch: (query: string) => void;
+}
+
+/**
+ * A palette pane: an optional search input over a category-grouped, selectable
+ * item list. The block-palette primitive (mounted by the caller into listRef)
+ * owns ARIA + event delegation; this renders only the markup it scans. Shared
+ * by the block sidebar and the rule palette.
+ */
+function PaletteAside({
+  label,
+  asideClasses,
+  searchable,
+  searchLabel,
+  searchPlaceholder,
+  groups,
+  listRef,
+  renderItem,
+  onSearch,
+}: PaletteAsideProps) {
+  return (
+    <aside aria-label={label} className={classy(asideClasses)}>
+      {searchable && (
+        <input
+          type="search"
+          aria-label={searchLabel}
+          placeholder={searchPlaceholder}
+          className={classy(editorPaletteSearchClasses)}
+          onChange={(event) => onSearch(event.target.value)}
+        />
+      )}
+      <div ref={listRef} className={classy(editorPaletteListClasses)}>
+        {Array.from(groups.entries()).map(([category, items]) => (
+          <div key={category} role="presentation">
+            <div className={classy(editorPaletteCategoryClasses)}>{category}</div>
+            {items.map((item) => (
+              <div
+                key={item.id}
+                data-palette-item=""
+                data-palette-id={item.id}
+                role="option"
+                aria-selected="false"
+                draggable
+                tabIndex={-1}
+                className={classy(editorPaletteItemClasses)}
+              >
+                {renderItem ? renderItem(item) : item.label}
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </aside>
+  );
+}
+
 // =============================================================================
 // Block type toolbar
 // =============================================================================
@@ -318,6 +389,7 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
       disabled = false,
       dir,
       sidebar,
+      rulePalette,
       ...props
     },
     ref,
@@ -339,6 +411,11 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
     const [paletteGroups, setPaletteGroups] = React.useState<Map<string, BlockPaletteItem[]>>(
       () => new Map(),
     );
+    const rulePaletteRef = React.useRef<HTMLDivElement>(null);
+    const rulePaletteControlsRef = React.useRef<BlockPaletteControls | null>(null);
+    const [rulePaletteGroups, setRulePaletteGroups] = React.useState<
+      Map<string, BlockPaletteItem[]>
+    >(() => new Map());
 
     // -- Toolbar state --
     const [focusedBlockId, setFocusedBlockId] = React.useState<string | null>(null);
@@ -517,6 +594,37 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
       };
     }, [sidebar, disabled]);
 
+    // -- Rule palette lifecycle --
+    // Same mount pattern as the sidebar, but activation applies a rule to the
+    // focused block (gated by compatibleBlockTypes) instead of inserting one.
+    React.useEffect(() => {
+      const listEl = rulePaletteRef.current;
+      if (!listEl || !rulePalette) return;
+
+      const palette = createBlockPalette({
+        container: listEl,
+        items: rulePalette.items,
+        categories: rulePalette.categories,
+        disabled,
+        onActivate: (item) => {
+          const focusedId = focusedBlockIdRef.current;
+          if (!focusedId) return;
+          const block = blocksAtomRef.current.get().find((b) => b.id === focusedId);
+          if (!block) return;
+          const compatible = rulePalette.items.find((r) => r.id === item.id)?.compatibleBlockTypes;
+          if (compatible && compatible.length > 0 && !compatible.includes(block.type)) return;
+          rulePalette.onRuleApplied?.(focusedId, item.id, controlsRef.current as EditorControls);
+        },
+      });
+      rulePaletteControlsRef.current = palette;
+      setRulePaletteGroups(palette.getGroupedItems());
+
+      return () => {
+        palette.destroy();
+        rulePaletteControlsRef.current = null;
+      };
+    }, [rulePalette, disabled]);
+
     const focusedBlock = focusedBlockId ? blocks.find((b) => b.id === focusedBlockId) : undefined;
 
     const canvas = (
@@ -560,46 +668,45 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
             onChangeBlockType={handleChangeBlockType}
           />
         )}
-        {sidebar ? (
-          <div className={classy(editorSidebarLayoutClasses)}>
-            <aside aria-label="Block palette" className={classy(editorSidebarAsideClasses)}>
-              {sidebar.searchable && (
-                <input
-                  type="search"
-                  aria-label="Search blocks"
-                  placeholder="Search blocks"
-                  className={classy(editorSidebarSearchClasses)}
-                  onChange={(event) => {
-                    const palette = paletteRef.current;
-                    if (!palette) return;
-                    palette.setSearchQuery(event.target.value);
-                    setPaletteGroups(palette.getGroupedItems());
-                  }}
-                />
-              )}
-              <div ref={sidebarRef} className={classy(editorSidebarListClasses)}>
-                {Array.from(paletteGroups.entries()).map(([category, categoryItems]) => (
-                  <div key={category} role="presentation">
-                    <div className={classy(editorSidebarCategoryClasses)}>{category}</div>
-                    {categoryItems.map((item) => (
-                      <div
-                        key={item.id}
-                        data-palette-item=""
-                        data-palette-id={item.id}
-                        role="option"
-                        aria-selected="false"
-                        draggable
-                        tabIndex={-1}
-                        className={classy(editorSidebarItemClasses)}
-                      >
-                        {sidebar.renderItem ? sidebar.renderItem(item) : item.label}
-                      </div>
-                    ))}
-                  </div>
-                ))}
-              </div>
-            </aside>
+        {sidebar || rulePalette ? (
+          <div className={classy(editorPaletteLayoutClasses)}>
+            {sidebar && (
+              <PaletteAside
+                label="Block palette"
+                asideClasses={editorSidebarAsideClasses}
+                searchable={sidebar.searchable ?? false}
+                searchLabel="Search blocks"
+                searchPlaceholder="Search blocks"
+                groups={paletteGroups}
+                listRef={sidebarRef}
+                renderItem={sidebar.renderItem}
+                onSearch={(query) => {
+                  const palette = paletteRef.current;
+                  if (!palette) return;
+                  palette.setSearchQuery(query);
+                  setPaletteGroups(palette.getGroupedItems());
+                }}
+              />
+            )}
             {canvas}
+            {rulePalette && (
+              <PaletteAside
+                label="Rule palette"
+                asideClasses={editorRulePaletteAsideClasses}
+                searchable={rulePalette.searchable ?? false}
+                searchLabel="Search rules"
+                searchPlaceholder="Search rules"
+                groups={rulePaletteGroups}
+                listRef={rulePaletteRef}
+                renderItem={rulePalette.renderItem}
+                onSearch={(query) => {
+                  const palette = rulePaletteControlsRef.current;
+                  if (!palette) return;
+                  palette.setSearchQuery(query);
+                  setRulePaletteGroups(palette.getGroupedItems());
+                }}
+              />
+            )}
           </div>
         ) : (
           canvas

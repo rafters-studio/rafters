@@ -1,9 +1,10 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import type {
   EditorBlock,
   EditorControls,
+  EditorRulePaletteConfig,
   EditorSidebarConfig,
 } from '../../src/components/ui/editor';
 import { Editor } from '../../src/components/ui/editor';
@@ -401,5 +402,107 @@ describe('Editor sidebar', () => {
     const renderItem = (item: { label: string }) => <span>Custom:{item.label}</span>;
     render(<Editor sidebar={{ ...SIDEBAR, renderItem }} />);
     expect(screen.getByText('Custom:Heading')).toBeInTheDocument();
+  });
+});
+
+describe('Editor rule palette', () => {
+  const RULE_PALETTE: EditorRulePaletteConfig = {
+    items: [
+      { id: 'required', label: 'Required', category: 'Validation' },
+      { id: 'email', label: 'Email', category: 'Validation', compatibleBlockTypes: ['input'] },
+      { id: 'min-length', label: 'Min Length', category: 'Constraints' },
+    ],
+    categories: ['Validation', 'Constraints'],
+    searchable: true,
+  };
+
+  // Drive the editor's selectionchange-based focus tracking. happy-dom does not
+  // reflect a programmatic Range back through window.getSelection(), so stub the
+  // selection to point at the target block and fire selectionchange; trackFocus
+  // reads anchorNode and resolves the block id from it.
+  function focusBlock(container: HTMLElement, blockId: string): void {
+    const el = container.querySelector(`[data-block-id="${blockId}"]`);
+    if (!el) throw new Error(`block ${blockId} not found`);
+    const stub = vi.spyOn(window, 'getSelection').mockReturnValue({
+      anchorNode: el,
+      rangeCount: 1,
+      getRangeAt: () => document.createRange(),
+      removeAllRanges: () => {},
+      toString: () => '',
+    } as unknown as Selection);
+    act(() => {
+      document.dispatchEvent(new Event('selectionchange'));
+    });
+    stub.mockRestore();
+  }
+
+  it('does not render a rule palette when the prop is omitted', () => {
+    render(<Editor defaultValue={BLOCKS} />);
+    expect(screen.queryByRole('complementary', { name: 'Rule palette' })).not.toBeInTheDocument();
+  });
+
+  it('renders the rule palette when the prop is passed', () => {
+    render(<Editor defaultValue={BLOCKS} rulePalette={RULE_PALETTE} />);
+    expect(screen.getByRole('complementary', { name: 'Rule palette' })).toBeInTheDocument();
+  });
+
+  it('renders every configured rule and category', () => {
+    render(<Editor defaultValue={BLOCKS} rulePalette={RULE_PALETTE} />);
+    expect(screen.getByText('Required')).toBeInTheDocument();
+    expect(screen.getByText('Email')).toBeInTheDocument();
+    expect(screen.getByText('Min Length')).toBeInTheDocument();
+    expect(screen.getByText('Validation')).toBeInTheDocument();
+    expect(screen.getByText('Constraints')).toBeInTheDocument();
+  });
+
+  it('filters rules as the search query changes', () => {
+    render(<Editor defaultValue={BLOCKS} rulePalette={RULE_PALETTE} />);
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search rules' }), {
+      target: { value: 'requir' },
+    });
+    expect(screen.getByText('Required')).toBeInTheDocument();
+    expect(screen.queryByText('Email')).not.toBeInTheDocument();
+  });
+
+  it('applies a rule to the focused block on activation', () => {
+    const onRuleApplied = vi.fn();
+    const { container } = render(
+      <Editor defaultValue={BLOCKS} rulePalette={{ ...RULE_PALETTE, onRuleApplied }} />,
+    );
+    focusBlock(container, '1');
+    fireEvent.click(screen.getByText('Required'));
+    expect(onRuleApplied).toHaveBeenCalledWith(
+      '1',
+      'required',
+      expect.objectContaining({ updateBlock: expect.any(Function) }),
+    );
+  });
+
+  it('does not apply a rule when no block is focused', () => {
+    const onRuleApplied = vi.fn();
+    render(<Editor defaultValue={BLOCKS} rulePalette={{ ...RULE_PALETTE, onRuleApplied }} />);
+    fireEvent.click(screen.getByText('Required'));
+    expect(onRuleApplied).not.toHaveBeenCalled();
+  });
+
+  it('gates application on compatibleBlockTypes', () => {
+    const onRuleApplied = vi.fn();
+    const { container } = render(
+      <Editor defaultValue={BLOCKS} rulePalette={{ ...RULE_PALETTE, onRuleApplied }} />,
+    );
+    // BLOCKS are 'text'; the Email rule only applies to 'input'.
+    focusBlock(container, '1');
+    fireEvent.click(screen.getByText('Email'));
+    expect(onRuleApplied).not.toHaveBeenCalled();
+  });
+
+  it('renders both panes when sidebar and rulePalette are set', () => {
+    const sidebar: EditorSidebarConfig = {
+      items: [{ id: 'heading', label: 'Heading', category: 'Text' }],
+      categories: ['Text'],
+    };
+    render(<Editor defaultValue={BLOCKS} sidebar={sidebar} rulePalette={RULE_PALETTE} />);
+    expect(screen.getByRole('complementary', { name: 'Block palette' })).toBeInTheDocument();
+    expect(screen.getByRole('complementary', { name: 'Rule palette' })).toBeInTheDocument();
   });
 });
