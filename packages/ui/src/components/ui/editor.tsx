@@ -17,6 +17,11 @@
 import { atom } from 'nanostores';
 import * as React from 'react';
 import { convertBlockType } from '../../primitives/block-operations';
+import {
+  type BlockPaletteControls,
+  type BlockPaletteItem,
+  createBlockPalette,
+} from '../../primitives/block-palette';
 import classy from '../../primitives/classy';
 import { findBlockElement } from '../../primitives/cursor-tracker';
 import {
@@ -26,6 +31,14 @@ import {
 import type { BaseBlock, CleanupFunction, Direction, InlineContent } from '../../primitives/types';
 import { Button } from './button';
 import { Container } from './container';
+import {
+  editorSidebarAsideClasses,
+  editorSidebarCategoryClasses,
+  editorSidebarItemClasses,
+  editorSidebarLayoutClasses,
+  editorSidebarListClasses,
+  editorSidebarSearchClasses,
+} from './editor.classes';
 import { Separator } from './separator';
 
 // =============================================================================
@@ -49,6 +62,9 @@ export interface EditorProps
   disabled?: boolean;
   dir?: Direction;
   className?: string;
+  /** Block-palette sidebar. When provided, mounts a categorized, searchable
+   *  list of insertable blocks beside the canvas. */
+  sidebar?: EditorSidebarConfig;
 }
 
 export interface EditorControls {
@@ -301,6 +317,7 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
       emptyState,
       disabled = false,
       dir,
+      sidebar,
       ...props
     },
     ref,
@@ -317,9 +334,18 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
     // -- Refs --
     const canvasRef = React.useRef<HTMLDivElement>(null);
     const docEditorRef = React.useRef<DocumentEditorControls | null>(null);
+    const sidebarRef = React.useRef<HTMLDivElement>(null);
+    const paletteRef = React.useRef<BlockPaletteControls | null>(null);
+    const [paletteGroups, setPaletteGroups] = React.useState<Map<string, BlockPaletteItem[]>>(
+      () => new Map(),
+    );
 
     // -- Toolbar state --
     const [focusedBlockId, setFocusedBlockId] = React.useState<string | null>(null);
+    // Mirror of focusedBlockId for the palette's activation closure, so insert
+    // position stays current without re-running the palette mount effect.
+    const focusedBlockIdRef = React.useRef<string | null>(null);
+    focusedBlockIdRef.current = focusedBlockId;
     const [canUndo, setCanUndo] = React.useState(false);
     const [canRedo, setCanRedo] = React.useState(false);
 
@@ -460,7 +486,57 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
       }
     }, [isControlled, controlledValue]);
 
+    // -- Sidebar block-palette lifecycle --
+    // Mirrors the document-editor mount pattern: React renders the item groups
+    // into sidebarRef, the primitive owns ARIA + event delegation on the same
+    // container. Activation inserts after the focused block (or appends).
+    React.useEffect(() => {
+      const sidebarEl = sidebarRef.current;
+      if (!sidebarEl || !sidebar) return;
+
+      const palette = createBlockPalette({
+        container: sidebarEl,
+        items: sidebar.items,
+        categories: sidebar.categories,
+        disabled,
+        onActivate: (item) => {
+          const focusedId = focusedBlockIdRef.current;
+          const current = blocksAtomRef.current.get();
+          const insertIndex = focusedId
+            ? current.findIndex((b) => b.id === focusedId) + 1
+            : undefined;
+          sidebar.onItemInsert?.(item, controlsRef.current as EditorControls, insertIndex);
+        },
+      });
+      paletteRef.current = palette;
+      setPaletteGroups(palette.getGroupedItems());
+
+      return () => {
+        palette.destroy();
+        paletteRef.current = null;
+      };
+    }, [sidebar, disabled]);
+
     const focusedBlock = focusedBlockId ? blocks.find((b) => b.id === focusedBlockId) : undefined;
+
+    const canvas = (
+      <Container
+        as="div"
+        padding="4"
+        ref={canvasRef}
+        role="textbox"
+        aria-multiline="true"
+        aria-label="Document editor"
+        tabIndex={disabled ? -1 : 0}
+        suppressContentEditableWarning
+        className={classy('outline-none h-full')}
+      >
+        {blocks.length === 0 && (emptyState ?? <DefaultEmptyState />)}
+        {blocks.map((block) => (
+          <DocumentBlock key={block.id} block={block} />
+        ))}
+      </Container>
+    );
 
     // -- Render --
     return (
@@ -484,22 +560,50 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
             onChangeBlockType={handleChangeBlockType}
           />
         )}
-        <Container
-          as="div"
-          padding="4"
-          ref={canvasRef}
-          role="textbox"
-          aria-multiline="true"
-          aria-label="Document editor"
-          tabIndex={disabled ? -1 : 0}
-          suppressContentEditableWarning
-          className={classy('outline-none h-full')}
-        >
-          {blocks.length === 0 && (emptyState ?? <DefaultEmptyState />)}
-          {blocks.map((block) => (
-            <DocumentBlock key={block.id} block={block} />
-          ))}
-        </Container>
+        {sidebar ? (
+          <div className={classy(editorSidebarLayoutClasses)}>
+            <aside aria-label="Block palette" className={classy(editorSidebarAsideClasses)}>
+              {sidebar.searchable && (
+                <input
+                  type="search"
+                  aria-label="Search blocks"
+                  placeholder="Search blocks"
+                  className={classy(editorSidebarSearchClasses)}
+                  onChange={(event) => {
+                    const palette = paletteRef.current;
+                    if (!palette) return;
+                    palette.setSearchQuery(event.target.value);
+                    setPaletteGroups(palette.getGroupedItems());
+                  }}
+                />
+              )}
+              <div ref={sidebarRef} className={classy(editorSidebarListClasses)}>
+                {Array.from(paletteGroups.entries()).map(([category, categoryItems]) => (
+                  <div key={category} role="presentation">
+                    <div className={classy(editorSidebarCategoryClasses)}>{category}</div>
+                    {categoryItems.map((item) => (
+                      <div
+                        key={item.id}
+                        data-palette-item=""
+                        data-palette-id={item.id}
+                        role="option"
+                        aria-selected="false"
+                        draggable
+                        tabIndex={-1}
+                        className={classy(editorSidebarItemClasses)}
+                      >
+                        {sidebar.renderItem ? sidebar.renderItem(item) : item.label}
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </aside>
+            {canvas}
+          </div>
+        ) : (
+          canvas
+        )}
       </Container>
     );
   },

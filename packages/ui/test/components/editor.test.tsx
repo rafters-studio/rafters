@@ -1,7 +1,11 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import type { EditorBlock, EditorControls } from '../../src/components/ui/editor';
+import type {
+  EditorBlock,
+  EditorControls,
+  EditorSidebarConfig,
+} from '../../src/components/ui/editor';
 import { Editor } from '../../src/components/ui/editor';
 
 const BLOCKS: EditorBlock[] = [
@@ -323,5 +327,79 @@ describe('Editor', () => {
       const { container } = render(<Editor data-testid="editor" id="my-editor" />);
       expect(container.firstChild).toHaveAttribute('id', 'my-editor');
     });
+  });
+});
+
+describe('Editor sidebar', () => {
+  const SIDEBAR: EditorSidebarConfig = {
+    items: [
+      { id: 'heading', label: 'Heading', category: 'Text', keywords: ['h1'] },
+      { id: 'paragraph', label: 'Paragraph', category: 'Text' },
+      { id: 'image', label: 'Image', category: 'Media' },
+    ],
+    categories: ['Text', 'Media'],
+    searchable: true,
+  };
+
+  it('does not render a sidebar when the prop is omitted', () => {
+    render(<Editor />);
+    expect(screen.queryByRole('complementary', { name: 'Block palette' })).not.toBeInTheDocument();
+  });
+
+  it('renders the block-palette sidebar when the sidebar prop is passed', () => {
+    render(<Editor sidebar={SIDEBAR} />);
+    expect(screen.getByRole('complementary', { name: 'Block palette' })).toBeInTheDocument();
+    expect(screen.getByRole('listbox')).toBeInTheDocument();
+  });
+
+  it('renders every configured item', () => {
+    render(<Editor sidebar={SIDEBAR} />);
+    expect(screen.getByText('Heading')).toBeInTheDocument();
+    expect(screen.getByText('Paragraph')).toBeInTheDocument();
+    expect(screen.getByText('Image')).toBeInTheDocument();
+  });
+
+  it('renders category headers in configured order', () => {
+    render(<Editor sidebar={SIDEBAR} />);
+    expect(screen.getByText('Text')).toBeInTheDocument();
+    expect(screen.getByText('Media')).toBeInTheDocument();
+  });
+
+  it('renders a search input when searchable is true', () => {
+    render(<Editor sidebar={SIDEBAR} />);
+    expect(screen.getByRole('searchbox', { name: 'Search blocks' })).toBeInTheDocument();
+  });
+
+  it('omits the search input when searchable is false', () => {
+    render(<Editor sidebar={{ ...SIDEBAR, searchable: false }} />);
+    expect(screen.queryByRole('searchbox')).not.toBeInTheDocument();
+  });
+
+  it('filters items as the search query changes', () => {
+    render(<Editor sidebar={SIDEBAR} />);
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search blocks' }), {
+      target: { value: 'imag' },
+    });
+    expect(screen.getByText('Image')).toBeInTheDocument();
+    expect(screen.queryByText('Heading')).not.toBeInTheDocument();
+    expect(screen.queryByText('Paragraph')).not.toBeInTheDocument();
+  });
+
+  it('calls onItemInsert with the editor controls when an item is clicked', () => {
+    const onItemInsert = vi.fn();
+    render(<Editor sidebar={{ ...SIDEBAR, onItemInsert }} />);
+    fireEvent.click(screen.getByText('Heading'));
+    expect(onItemInsert).toHaveBeenCalledTimes(1);
+    expect(onItemInsert).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'heading' }),
+      expect.objectContaining({ addBlocks: expect.any(Function) }),
+      undefined,
+    );
+  });
+
+  it('uses a custom renderItem when provided', () => {
+    const renderItem = (item: { label: string }) => <span>Custom:{item.label}</span>;
+    render(<Editor sidebar={{ ...SIDEBAR, renderItem }} />);
+    expect(screen.getByText('Custom:Heading')).toBeInTheDocument();
   });
 });
