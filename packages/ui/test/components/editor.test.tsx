@@ -6,6 +6,7 @@ import type {
   EditorControls,
   EditorRulePaletteConfig,
   EditorSidebarConfig,
+  SlashCommand,
 } from '../../src/components/ui/editor';
 import { Editor } from '../../src/components/ui/editor';
 
@@ -504,5 +505,102 @@ describe('Editor rule palette', () => {
     render(<Editor defaultValue={BLOCKS} sidebar={sidebar} rulePalette={RULE_PALETTE} />);
     expect(screen.getByRole('complementary', { name: 'Block palette' })).toBeInTheDocument();
     expect(screen.getByRole('complementary', { name: 'Rule palette' })).toBeInTheDocument();
+  });
+});
+
+describe('Editor slash menu', () => {
+  function makeCommands(): { commands: SlashCommand[]; heading: ReturnType<typeof vi.fn> } {
+    const heading = vi.fn();
+    const commands: SlashCommand[] = [
+      { id: 'heading', label: 'Heading', keywords: ['h1', 'title'], action: heading },
+      { id: 'divider', label: 'Divider', action: vi.fn() },
+    ];
+    return { commands, heading };
+  }
+
+  // Type '/' at a valid position. The command-palette primitive reads the
+  // collapsed selection via window.getSelection() to decide whether to trigger;
+  // happy-dom does not maintain one, so stub it to point at a block start.
+  function typeSlash(container: HTMLElement, blockId: string): void {
+    const canvas = screen.getByLabelText('Document editor');
+    const anchor = container.querySelector(`[data-block-id="${blockId}"]`);
+    if (!anchor) throw new Error(`block ${blockId} not found`);
+    const range = {
+      collapsed: true,
+      startContainer: anchor,
+      startOffset: 0,
+      getBoundingClientRect: () => ({
+        top: 0,
+        bottom: 20,
+        left: 10,
+        right: 10,
+        width: 0,
+        height: 20,
+      }),
+    };
+    const stub = vi.spyOn(window, 'getSelection').mockReturnValue({
+      rangeCount: 1,
+      getRangeAt: () => range,
+    } as unknown as Selection);
+    act(() => {
+      fireEvent.keyDown(canvas, { key: '/' });
+    });
+    stub.mockRestore();
+  }
+
+  it('does not open the menu before a slash is typed', () => {
+    const { commands } = makeCommands();
+    render(<Editor defaultValue={BLOCKS} commandPalette={commands} />);
+    expect(screen.queryByRole('dialog', { name: 'Slash commands' })).not.toBeInTheDocument();
+  });
+
+  it('opens a command menu with a search input when slash is typed', () => {
+    const { commands } = makeCommands();
+    const { container } = render(<Editor defaultValue={BLOCKS} commandPalette={commands} />);
+    typeSlash(container, '1');
+    expect(screen.getByRole('dialog', { name: 'Slash commands' })).toBeInTheDocument();
+    expect(screen.getByRole('searchbox', { name: 'Search commands' })).toBeInTheDocument();
+    expect(screen.getByText('Heading')).toBeInTheDocument();
+    expect(screen.getByText('Divider')).toBeInTheDocument();
+  });
+
+  it('filters commands via the menu search input', () => {
+    const { commands } = makeCommands();
+    const { container } = render(<Editor defaultValue={BLOCKS} commandPalette={commands} />);
+    typeSlash(container, '1');
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search commands' }), {
+      target: { value: 'head' },
+    });
+    expect(screen.getByText('Heading')).toBeInTheDocument();
+    expect(screen.queryByText('Divider')).not.toBeInTheDocument();
+  });
+
+  it('runs a command action with the editor controls when clicked', () => {
+    const { commands, heading } = makeCommands();
+    const { container } = render(<Editor defaultValue={BLOCKS} commandPalette={commands} />);
+    typeSlash(container, '1');
+    fireEvent.mouseDown(screen.getByText('Heading'));
+    expect(heading).toHaveBeenCalledWith(
+      expect.objectContaining({ addBlocks: expect.any(Function) }),
+    );
+    expect(screen.queryByRole('dialog', { name: 'Slash commands' })).not.toBeInTheDocument();
+  });
+
+  it('executes the selected command on Enter', () => {
+    const { commands, heading } = makeCommands();
+    const { container } = render(<Editor defaultValue={BLOCKS} commandPalette={commands} />);
+    typeSlash(container, '1');
+    fireEvent.keyDown(screen.getByRole('searchbox', { name: 'Search commands' }), { key: 'Enter' });
+    expect(heading).toHaveBeenCalledTimes(1);
+  });
+
+  it('closes the menu on Escape', () => {
+    const { commands } = makeCommands();
+    const { container } = render(<Editor defaultValue={BLOCKS} commandPalette={commands} />);
+    typeSlash(container, '1');
+    fireEvent.keyDown(screen.getByRole('searchbox', { name: 'Search commands' }), {
+      key: 'Escape',
+    });
+    expect(screen.queryByRole('dialog', { name: 'Slash commands' })).not.toBeInTheDocument();
   });
 });

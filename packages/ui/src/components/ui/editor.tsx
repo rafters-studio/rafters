@@ -23,12 +23,22 @@ import {
   createBlockPalette,
 } from '../../primitives/block-palette';
 import classy from '../../primitives/classy';
+import {
+  type CommandPaletteController,
+  createCommandPalette,
+} from '../../primitives/command-palette';
 import { findBlockElement } from '../../primitives/cursor-tracker';
 import {
   createDocumentEditor,
   type DocumentEditorControls,
 } from '../../primitives/document-editor';
-import type { BaseBlock, CleanupFunction, Direction, InlineContent } from '../../primitives/types';
+import type {
+  BaseBlock,
+  CleanupFunction,
+  Command,
+  Direction,
+  InlineContent,
+} from '../../primitives/types';
 import { Button } from './button';
 import { Container } from './container';
 import {
@@ -39,6 +49,11 @@ import {
   editorPaletteSearchClasses,
   editorRulePaletteAsideClasses,
   editorSidebarAsideClasses,
+  editorSlashItemClasses,
+  editorSlashItemSelectedClasses,
+  editorSlashListClasses,
+  editorSlashMenuClasses,
+  editorSlashSearchClasses,
 } from './editor.classes';
 import { Separator } from './separator';
 
@@ -69,6 +84,9 @@ export interface EditorProps
   /** Rule palette. When provided, mounts a categorized, searchable list of
    *  rules that apply to the focused block, on the opposite side of the canvas. */
   rulePalette?: EditorRulePaletteConfig;
+  /** Slash commands. When provided, typing `/` at the start of a block (or after
+   *  whitespace) opens a caret-anchored command menu with its own search input. */
+  commandPalette?: SlashCommand[];
 }
 
 export interface EditorControls {
@@ -390,6 +408,7 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
       dir,
       sidebar,
       rulePalette,
+      commandPalette,
       ...props
     },
     ref,
@@ -416,6 +435,15 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
     const [rulePaletteGroups, setRulePaletteGroups] = React.useState<
       Map<string, BlockPaletteItem[]>
     >(() => new Map());
+    const slashControllerRef = React.useRef<CommandPaletteController | null>(null);
+    const slashInputRef = React.useRef<HTMLInputElement>(null);
+    const [slashOpen, setSlashOpen] = React.useState(false);
+    const [slashCommands, setSlashCommands] = React.useState<Command[]>([]);
+    const [slashSelectedIndex, setSlashSelectedIndex] = React.useState(-1);
+    const [slashPosition, setSlashPosition] = React.useState<{ top: number; left: number }>({
+      top: 0,
+      left: 0,
+    });
 
     // -- Toolbar state --
     const [focusedBlockId, setFocusedBlockId] = React.useState<string | null>(null);
@@ -625,6 +653,59 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
       };
     }, [rulePalette, disabled]);
 
+    // -- Slash command menu lifecycle --
+    // The command-palette primitive owns '/'-trigger detection (preventDefaulted,
+    // so '/' never enters the document), filtering, and execute. The rendered
+    // menu carries its own search input, so typing never touches the canvas; it
+    // is anchored at the caret.
+    React.useEffect(() => {
+      const canvasEl = canvasRef.current;
+      if (!canvasEl || disabled || !commandPalette) return;
+
+      const toCommand = (sc: SlashCommand): Command => {
+        const command: Command = {
+          id: sc.id,
+          label: sc.label,
+          action: () => sc.action(controlsRef.current as EditorControls),
+        };
+        if (sc.keywords) command.keywords = sc.keywords;
+        return command;
+      };
+
+      const controller = createCommandPalette({
+        container: canvasEl,
+        trigger: '/',
+        commands: commandPalette.map(toCommand),
+        onOpen: () => {
+          const selection = window.getSelection();
+          if (selection && selection.rangeCount > 0) {
+            const rect = selection.getRangeAt(0).getBoundingClientRect();
+            setSlashPosition({ top: rect.bottom, left: rect.left });
+          }
+          const state = controller.getState();
+          setSlashCommands(state.filteredCommands);
+          setSlashSelectedIndex(state.selectedIndex);
+          setSlashOpen(true);
+        },
+        onClose: () => setSlashOpen(false),
+        onSelect: (_command, index) => {
+          setSlashCommands(controller.getState().filteredCommands);
+          setSlashSelectedIndex(index);
+        },
+      });
+      slashControllerRef.current = controller;
+
+      return () => {
+        controller.cleanup();
+        slashControllerRef.current = null;
+      };
+    }, [commandPalette, disabled]);
+
+    // Focus the slash menu's search input when it opens.
+    React.useEffect(() => {
+      if (slashOpen) slashInputRef.current?.focus();
+    }, [slashOpen]);
+
     const focusedBlock = focusedBlockId ? blocks.find((b) => b.id === focusedBlockId) : undefined;
 
     const canvas = (
@@ -710,6 +791,72 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
           </div>
         ) : (
           canvas
+        )}
+        {slashOpen && (
+          <div
+            role="dialog"
+            aria-label="Slash commands"
+            className={classy(editorSlashMenuClasses)}
+            style={{ top: slashPosition.top, left: slashPosition.left }}
+          >
+            <input
+              ref={slashInputRef}
+              type="search"
+              aria-label="Search commands"
+              placeholder="Search commands"
+              className={classy(editorSlashSearchClasses)}
+              onChange={(event) => {
+                const controller = slashControllerRef.current;
+                if (!controller) return;
+                controller.setQuery(event.target.value);
+                const state = controller.getState();
+                setSlashCommands(state.filteredCommands);
+                setSlashSelectedIndex(state.selectedIndex);
+              }}
+              onKeyDown={(event) => {
+                const controller = slashControllerRef.current;
+                if (!controller) return;
+                if (event.key === 'ArrowDown') {
+                  event.preventDefault();
+                  controller.selectNext();
+                  setSlashSelectedIndex(controller.getState().selectedIndex);
+                } else if (event.key === 'ArrowUp') {
+                  event.preventDefault();
+                  controller.selectPrevious();
+                  setSlashSelectedIndex(controller.getState().selectedIndex);
+                } else if (event.key === 'Enter') {
+                  event.preventDefault();
+                  controller.execute();
+                } else if (event.key === 'Escape') {
+                  event.preventDefault();
+                  controller.close();
+                }
+              }}
+            />
+            <div role="listbox" aria-label="Commands" className={classy(editorSlashListClasses)}>
+              {slashCommands.map((command, index) => (
+                <div
+                  key={command.id}
+                  role="option"
+                  aria-selected={index === slashSelectedIndex}
+                  tabIndex={-1}
+                  className={classy(
+                    editorSlashItemClasses,
+                    index === slashSelectedIndex ? editorSlashItemSelectedClasses : '',
+                  )}
+                  onMouseDown={(event) => {
+                    // mousedown (not click) so the input's blur doesn't close the
+                    // menu before the command runs.
+                    event.preventDefault();
+                    command.action();
+                    slashControllerRef.current?.close();
+                  }}
+                >
+                  {command.label}
+                </div>
+              ))}
+            </div>
+          </div>
         )}
       </Container>
     );

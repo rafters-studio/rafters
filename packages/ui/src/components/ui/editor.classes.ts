@@ -30,3 +30,19 @@ export const editorPaletteCategoryClasses = 'px-1 py-1 text-xs font-medium text-
 
 /** A single palette item row. */
 export const editorPaletteItemClasses = 'cursor-pointer rounded px-2 py-1 text-sm hover:bg-accent';
+
+/** Floating slash-command menu, caret-anchored (viewport position via inline style). */
+export const editorSlashMenuClasses =
+  'fixed z-50 flex w-64 flex-col overflow-hidden rounded border border-border bg-popover shadow-md';
+
+/** The slash menu's command search input. */
+export const editorSlashSearchClasses = 'border-b border-border px-3 py-2 text-sm outline-none';
+
+/** The slash menu's scrollable command list. */
+export const editorSlashListClasses = 'max-h-64 overflow-y-auto p-1';
+
+/** A single slash-menu command row. */
+export const editorSlashItemClasses = 'cursor-pointer rounded px-2 py-1 text-sm hover:bg-accent';
+
+/** The selected slash-menu command row. */
+export const editorSlashItemSelectedClasses = 'bg-accent';
