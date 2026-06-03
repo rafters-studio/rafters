@@ -1,5 +1,11 @@
 # rafters
 
+## 0.0.60
+
+### Bug Fixes
+
+- fix(cli): `rafters add` derives a file's import-rewrite type (component vs primitive) from the file's registry path rather than the item's type. A registry item can bundle files of both kinds -- a UI component that ships the shared primitives it imports. Previously every file in such an item was rewritten with the item's type, so a primitive bundled inside a `ui` item landed in `lib/primitives/` (correct path) but had its `./sibling` imports rewritten to `@/components/ui/` instead of `@/lib/primitives/`, leaving the install broken on first run. Import rewriting now keys off the same per-file path signal `transformPath` already uses to choose the destination directory. The shared `types.ts` primitive continues to ride along via the generator's sibling-import bundling. Refs editor parity gap #8.
+
 ## 0.0.59
 
 ### Bug Fixes

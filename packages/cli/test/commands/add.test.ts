@@ -12,6 +12,7 @@ import { zocker } from 'zocker';
 import { z } from 'zod';
 import {
   collectDependencies,
+  fileTypeForRegistryPath,
   getInstalledNames,
   isAlreadyInstalled,
   trackInstalled,
@@ -126,6 +127,38 @@ import * as Dialog from '@radix-ui/react-dialog';`;
     const input = `import classy from "../../primitives/classy";`;
     const result = transformFileContent(input, null);
     expect(result).toBe(`import classy from '@/lib/primitives/classy';`);
+  });
+});
+
+describe('fileTypeForRegistryPath', () => {
+  it('treats lib/primitives/ files as primitives regardless of item type', () => {
+    expect(fileTypeForRegistryPath('lib/primitives/block-handler.ts', 'ui')).toBe('primitive');
+    expect(fileTypeForRegistryPath('lib/primitives/types.ts', 'composite')).toBe('primitive');
+  });
+
+  it('treats components/ui/ files as components regardless of item type', () => {
+    expect(fileTypeForRegistryPath('components/ui/editor.tsx', 'primitive')).toBe('component');
+  });
+
+  it('falls back to the item type for paths without a recognized prefix', () => {
+    expect(fileTypeForRegistryPath('composites/login-form.json', 'composite')).toBe('component');
+    expect(fileTypeForRegistryPath('rules/email.ts', 'primitive')).toBe('primitive');
+  });
+
+  it('rewrites a bundled primitive file to lib/primitives even inside a non-primitive item', () => {
+    // The `rafters add editor` bug: a primitive shipped to lib/primitives must
+    // import its siblings from @/lib/primitives, not @/components/ui -- even when
+    // it rides along inside a `ui` item rather than a standalone primitive item.
+    const path = 'lib/primitives/block-handler.ts';
+    const content = [
+      `import type { CleanupFunction } from './types';`,
+      `import { createBlockCanvas } from './block-canvas';`,
+    ].join('\n');
+    const fileType = fileTypeForRegistryPath(path, 'ui');
+    const result = transformFileContent(content, null, fileType);
+    expect(result).toContain(`from '@/lib/primitives/types'`);
+    expect(result).toContain(`from '@/lib/primitives/block-canvas'`);
+    expect(result).not.toContain('@/components/ui/');
   });
 });
 

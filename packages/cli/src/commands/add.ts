@@ -246,6 +246,27 @@ function transformPath(registryPath: string, config: RaftersConfig | null, cwd: 
 }
 
 /**
+ * Decide whether a registry file's imports are rewritten as a component's or a
+ * primitive's, keyed off the file's registry path rather than the item's type.
+ *
+ * A single registry item can bundle files of both kinds (e.g. a UI component
+ * that ships the shared primitives it imports), and `transformPath` already
+ * routes each file to its destination by path prefix. Import rewriting must use
+ * the same per-file signal, otherwise a primitive bundled inside a `ui` item
+ * lands in `lib/primitives/` but has its `./sibling` imports rewritten to
+ * `@/components/ui/` -- the `rafters add editor` bug. Falls back to the item's
+ * own type for paths without a recognized prefix.
+ */
+export function fileTypeForRegistryPath(
+  registryPath: string,
+  itemType: RegistryItem['type'],
+): 'component' | 'primitive' {
+  if (registryPath.startsWith('lib/primitives/')) return 'primitive';
+  if (registryPath.startsWith('components/ui/')) return 'component';
+  return itemType === 'primitive' ? 'primitive' : 'component';
+}
+
+/**
  * Check if a file already exists at the target path
  */
 function fileExists(cwd: string, relativePath: string): boolean {
@@ -375,8 +396,10 @@ async function installItem(
     // Ensure directory exists
     await mkdir(dirname(targetPath), { recursive: true });
 
-    // Transform and write the file
-    const fileType = item.type === 'primitive' ? 'primitive' : 'component';
+    // Transform and write the file. fileType is derived per-file from the
+    // registry path (not the item's type) so primitives bundled inside a
+    // component item still get their sibling imports rewritten to lib/primitives.
+    const fileType = fileTypeForRegistryPath(file.path, item.type);
     const transformedContent = transformFileContent(file.content, config, fileType, cwd);
     await writeFile(targetPath, transformedContent, 'utf-8');
 
