@@ -50,10 +50,17 @@ export {
   register as registerComposite,
   search as searchComposites,
 } from './registry';
-export type { RuleMatch } from './rules';
+export type {
+  BlockValidationError,
+  RuleMatch,
+  RuleRegistry,
+  ValidatableBlock,
+} from './rules';
 export {
+  builtInRules,
   findCompatibleConsumers,
   findCompatibleProducers,
   matchRules,
+  validateBlocks,
 } from './rules';
 export { toMdx } from './serializer';
