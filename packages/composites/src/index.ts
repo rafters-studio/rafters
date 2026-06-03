@@ -26,6 +26,7 @@ export {
   required,
   url,
 } from './built-in-rules/index';
+export { COMPOSITE_MAX_DEPTH } from './constants';
 export type {
   AppliedRule,
   CompositeBlock,

@@ -6,9 +6,8 @@
  * Child blocks render inline within their parent.
  */
 
+import { COMPOSITE_MAX_DEPTH } from './constants';
 import type { CompositeBlock } from './manifest';
-
-const MAX_DEPTH = 50;
 
 function kebabToPascal(kebab: string): string {
   const parts = kebab.split('-').filter((p) => p.length > 0);
@@ -22,7 +21,7 @@ function serializeBlock(
   visited = new Set<string>(),
   depth = 0,
 ): string {
-  if (depth > MAX_DEPTH) return '<!-- max nesting depth exceeded -->';
+  if (depth > COMPOSITE_MAX_DEPTH) return '<!-- max nesting depth exceeded -->';
   if (visited.has(block.id)) return '<!-- circular reference detected -->';
   visited.add(block.id);
 

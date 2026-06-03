@@ -8,6 +8,7 @@
  */
 
 import type { BlockPaletteItem } from '@rafters/ui/primitives/block-palette';
+import { COMPOSITE_MAX_DEPTH } from './constants';
 import type {
   AppliedRule,
   CompositeBlock,
@@ -23,7 +24,7 @@ export type InstantiatedBlock = CompositeBlock;
 export interface InstantiateOptions {
   /** Resolve nested `composite:*` block types. Return null if not found. */
   resolveComposite?: (compositeId: string) => CompositeFile | null;
-  /** Maximum recursion depth for nested composites (default 10). */
+  /** Maximum recursion depth for nested composites (default COMPOSITE_MAX_DEPTH). */
   maxDepth?: number;
 }
 
@@ -92,7 +93,7 @@ function expandBlocks(
   options: InstantiateOptions,
   depth: number,
 ): InstantiatedBlock[] {
-  const maxDepth = options.maxDepth ?? 10;
+  const maxDepth = options.maxDepth ?? COMPOSITE_MAX_DEPTH;
   if (depth >= maxDepth) return [];
 
   // Build old-ID -> new-ID map
