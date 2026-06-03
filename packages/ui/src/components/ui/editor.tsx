@@ -36,12 +36,23 @@ import {
   createDocumentEditor,
   type DocumentEditorControls,
 } from '../../primitives/document-editor';
+import {
+  BOLD,
+  CODE,
+  createInlineFormatter,
+  type InlineFormatterController,
+  ITALIC,
+  LINK,
+  STRIKETHROUGH,
+} from '../../primitives/inline-formatter';
+import { adjustToolbarPosition, getFormatButtons } from '../../primitives/inline-toolbar';
 import type {
   BaseBlock,
   CleanupFunction,
   Command,
   Direction,
   InlineContent,
+  InlineMark,
 } from '../../primitives/types';
 import { Button } from './button';
 import { Container } from './container';
@@ -49,6 +60,9 @@ import {
   editorContextMenuClasses,
   editorContextMenuDestructiveClasses,
   editorContextMenuItemClasses,
+  editorInlineToolbarButtonActiveClasses,
+  editorInlineToolbarButtonClasses,
+  editorInlineToolbarClasses,
   editorPaletteCategoryClasses,
   editorPaletteItemClasses,
   editorPaletteLayoutClasses,
@@ -97,6 +111,9 @@ export interface EditorProps
   /** Block context menu. When true, right-clicking a block opens a menu of
    *  block actions (move up/down, duplicate, delete). */
   blockContextMenu?: boolean;
+  /** Inline format toolbar. When true, selecting text shows a floating toolbar
+   *  to toggle bold/italic/code/strikethrough/link on the selection. */
+  inlineToolbar?: boolean;
 }
 
 export interface EditorControls {
@@ -414,6 +431,9 @@ const CONTEXT_MENU_ITEMS: ContextMenuItemDef[] = [
   { id: 'delete', label: 'Delete', destructive: true },
 ];
 
+/** Inline marks the format toolbar can toggle. */
+const INLINE_FORMATS = [BOLD, ITALIC, CODE, STRIKETHROUGH, LINK];
+
 // =============================================================================
 // Editor component
 // =============================================================================
@@ -434,6 +454,7 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
       rulePalette,
       commandPalette,
       blockContextMenu,
+      inlineToolbar,
       ...props
     },
     ref,
@@ -472,6 +493,13 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
     const contextMenuRef = React.useRef<HTMLDivElement>(null);
     const contextMenuControllerRef = React.useRef<BlockContextMenuControls | null>(null);
     const [contextMenuOpen, setContextMenuOpen] = React.useState(false);
+    const inlineFormatterRef = React.useRef<InlineFormatterController | null>(null);
+    const [toolbarOpen, setToolbarOpen] = React.useState(false);
+    const [toolbarPosition, setToolbarPosition] = React.useState<{ top: number; left: number }>({
+      top: 0,
+      left: 0,
+    });
+    const [activeFormats, setActiveFormats] = React.useState<InlineMark[]>([]);
 
     // -- Toolbar state --
     const [focusedBlockId, setFocusedBlockId] = React.useState<string | null>(null);
@@ -781,6 +809,48 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
       };
     }, [blockContextMenu, disabled]);
 
+    // -- Inline format toolbar lifecycle --
+    // On a non-collapsed selection within the canvas, show a floating toolbar at
+    // the selection rect; buttons toggle marks via the inline-formatter. (The
+    // applied marks persist to block.content through the document-editor
+    // reconcile read-path.)
+    React.useEffect(() => {
+      const canvasEl = canvasRef.current;
+      if (!canvasEl || disabled || !inlineToolbar) return;
+
+      const formatter = createInlineFormatter({ container: canvasEl, formats: INLINE_FORMATS });
+      inlineFormatterRef.current = formatter;
+
+      const handleSelectionChange = () => {
+        const selection = window.getSelection();
+        if (!selection || selection.isCollapsed || selection.rangeCount === 0) {
+          setToolbarOpen(false);
+          return;
+        }
+        const range = selection.getRangeAt(0);
+        if (!canvasEl.contains(range.commonAncestorContainer)) {
+          setToolbarOpen(false);
+          return;
+        }
+        const rect = range.getBoundingClientRect();
+        const buttons = getFormatButtons();
+        const pos = adjustToolbarPosition(
+          { x: rect.left, y: rect.top },
+          { width: buttons.length * 40, height: 40 },
+        );
+        setToolbarPosition({ top: pos.y, left: pos.x });
+        setActiveFormats(formatter.getActiveFormats());
+        setToolbarOpen(true);
+      };
+      document.addEventListener('selectionchange', handleSelectionChange);
+
+      return () => {
+        document.removeEventListener('selectionchange', handleSelectionChange);
+        formatter.cleanup();
+        inlineFormatterRef.current = null;
+      };
+    }, [inlineToolbar, disabled]);
+
     const focusedBlock = focusedBlockId ? blocks.find((b) => b.id === focusedBlockId) : undefined;
 
     const canvas = (
@@ -952,6 +1022,40 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
               >
                 {item.label}
               </div>
+            ))}
+          </div>
+        )}
+        {toolbarOpen && (
+          <div
+            role="toolbar"
+            aria-label="Text formatting"
+            className={classy(editorInlineToolbarClasses)}
+            style={{ top: toolbarPosition.top, left: toolbarPosition.left }}
+          >
+            {getFormatButtons().map((button) => (
+              <button
+                key={button.format}
+                type="button"
+                aria-label={button.label}
+                aria-pressed={activeFormats.includes(button.format)}
+                className={classy(
+                  editorInlineToolbarButtonClasses,
+                  activeFormats.includes(button.format)
+                    ? editorInlineToolbarButtonActiveClasses
+                    : '',
+                )}
+                onMouseDown={(event) => {
+                  // mousedown + preventDefault so the selection survives while the
+                  // format is toggled.
+                  event.preventDefault();
+                  const formatter = inlineFormatterRef.current;
+                  if (!formatter) return;
+                  formatter.toggleFormat(button.format);
+                  setActiveFormats(formatter.getActiveFormats());
+                }}
+              >
+                {button.label}
+              </button>
             ))}
           </div>
         )}

@@ -57,3 +57,14 @@ export const editorContextMenuItemClasses =
 
 /** A destructive context-menu item (e.g. delete). */
 export const editorContextMenuDestructiveClasses = 'text-destructive';
+
+/** Floating inline format toolbar, anchored at the selection (viewport position via inline style). */
+export const editorInlineToolbarClasses =
+  'fixed z-50 flex items-center gap-0.5 rounded border border-border bg-popover p-1 shadow-md';
+
+/** An inline-toolbar format button. */
+export const editorInlineToolbarButtonClasses =
+  'cursor-pointer rounded px-2 py-1 text-sm hover:bg-accent';
+
+/** An active (applied) inline-toolbar format button. */
+export const editorInlineToolbarButtonActiveClasses = 'bg-accent';

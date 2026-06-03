@@ -664,3 +664,70 @@ describe('Editor block context menu', () => {
     expect(next.map((b) => b.id)).toEqual(['2', '1', '3']);
   });
 });
+
+describe('Editor inline toolbar', () => {
+  // happy-dom does not reflect a programmatic Range through getSelection, so
+  // stub it: a non-collapsed selection over a block triggers the toolbar.
+  function selectBlockText(container: HTMLElement, blockId: string): ReturnType<typeof vi.spyOn> {
+    const block = container.querySelector(`[data-block-id="${blockId}"]`);
+    if (!block) throw new Error(`block ${blockId} not found`);
+    const range = document.createRange();
+    range.selectNodeContents(block);
+    return vi.spyOn(window, 'getSelection').mockReturnValue({
+      isCollapsed: false,
+      rangeCount: 1,
+      getRangeAt: () => range,
+      removeAllRanges: () => {},
+      addRange: () => {},
+      anchorNode: block,
+    } as unknown as Selection);
+  }
+
+  it('does not show a toolbar without a selection', () => {
+    render(<Editor defaultValue={BLOCKS} inlineToolbar />);
+    expect(screen.queryByRole('toolbar', { name: 'Text formatting' })).not.toBeInTheDocument();
+  });
+
+  it('shows a format toolbar on a non-collapsed selection', () => {
+    const { container } = render(<Editor defaultValue={BLOCKS} inlineToolbar />);
+    const stub = selectBlockText(container, '1');
+    act(() => {
+      document.dispatchEvent(new Event('selectionchange'));
+    });
+    expect(screen.getByRole('toolbar', { name: 'Text formatting' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Bold' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Italic' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Code' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Strikethrough' })).toBeInTheDocument();
+    stub.mockRestore();
+  });
+
+  it('hides the toolbar when the selection collapses', () => {
+    const { container } = render(<Editor defaultValue={BLOCKS} inlineToolbar />);
+    const stub = selectBlockText(container, '1');
+    act(() => {
+      document.dispatchEvent(new Event('selectionchange'));
+    });
+    expect(screen.getByRole('toolbar', { name: 'Text formatting' })).toBeInTheDocument();
+    stub.mockRestore();
+    const collapsed = vi.spyOn(window, 'getSelection').mockReturnValue({
+      isCollapsed: true,
+      rangeCount: 0,
+    } as unknown as Selection);
+    act(() => {
+      document.dispatchEvent(new Event('selectionchange'));
+    });
+    expect(screen.queryByRole('toolbar', { name: 'Text formatting' })).not.toBeInTheDocument();
+    collapsed.mockRestore();
+  });
+
+  it('toggles a format from the toolbar without error', () => {
+    const { container } = render(<Editor defaultValue={BLOCKS} inlineToolbar />);
+    const stub = selectBlockText(container, '1');
+    act(() => {
+      document.dispatchEvent(new Event('selectionchange'));
+    });
+    expect(() => fireEvent.mouseDown(screen.getByRole('button', { name: 'Bold' }))).not.toThrow();
+    stub.mockRestore();
+  });
+});
