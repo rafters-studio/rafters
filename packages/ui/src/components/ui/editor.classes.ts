@@ -46,3 +46,14 @@ export const editorSlashItemClasses = 'cursor-pointer rounded px-2 py-1 text-sm 
 
 /** The selected slash-menu command row. */
 export const editorSlashItemSelectedClasses = 'bg-accent';
+
+/** Block right-click context menu (positioned fixed by the primitive). */
+export const editorContextMenuClasses =
+  'z-50 min-w-40 rounded border border-border bg-popover p-1 shadow-md';
+
+/** A single context-menu item. */
+export const editorContextMenuItemClasses =
+  'cursor-pointer rounded px-2 py-1 text-sm outline-none hover:bg-accent focus:bg-accent';
+
+/** A destructive context-menu item (e.g. delete). */
+export const editorContextMenuDestructiveClasses = 'text-destructive';

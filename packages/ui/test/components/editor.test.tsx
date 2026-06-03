@@ -604,3 +604,63 @@ describe('Editor slash menu', () => {
     expect(screen.queryByRole('dialog', { name: 'Slash commands' })).not.toBeInTheDocument();
   });
 });
+
+describe('Editor block context menu', () => {
+  function rightClickBlock(container: HTMLElement, blockId: string): void {
+    const block = container.querySelector(`[data-block-id="${blockId}"]`);
+    if (!block) throw new Error(`block ${blockId} not found`);
+    fireEvent.contextMenu(block, { clientX: 10, clientY: 10 });
+  }
+
+  it('does not show a menu before a right-click', () => {
+    render(<Editor defaultValue={BLOCKS} blockContextMenu />);
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+  });
+
+  it('opens a block actions menu on right-click', () => {
+    const { container } = render(<Editor defaultValue={BLOCKS} blockContextMenu />);
+    rightClickBlock(container, '2');
+    expect(screen.getByRole('menu', { name: 'Block actions' })).toBeInTheDocument();
+    expect(screen.getByText('Delete')).toBeInTheDocument();
+    expect(screen.getByText('Duplicate')).toBeInTheDocument();
+    expect(screen.getByText('Move up')).toBeInTheDocument();
+    expect(screen.getByText('Move down')).toBeInTheDocument();
+  });
+
+  it('deletes the right-clicked block', () => {
+    const onValueChange = vi.fn();
+    const { container } = render(
+      <Editor defaultValue={BLOCKS} blockContextMenu onValueChange={onValueChange} />,
+    );
+    rightClickBlock(container, '2');
+    fireEvent.click(screen.getByText('Delete'));
+    expect(onValueChange).toHaveBeenLastCalledWith([
+      expect.objectContaining({ id: '1' }),
+      expect.objectContaining({ id: '3' }),
+    ]);
+  });
+
+  it('duplicates the right-clicked block after it', () => {
+    const onValueChange = vi.fn();
+    const { container } = render(
+      <Editor defaultValue={BLOCKS} blockContextMenu onValueChange={onValueChange} />,
+    );
+    rightClickBlock(container, '2');
+    fireEvent.click(screen.getByText('Duplicate'));
+    const next = onValueChange.mock.lastCall?.[0] as EditorBlock[];
+    expect(next).toHaveLength(4);
+    expect(next[2]?.content).toBe('Second block');
+    expect(next[2]?.id).not.toBe('2');
+  });
+
+  it('moves the right-clicked block up', () => {
+    const onValueChange = vi.fn();
+    const { container } = render(
+      <Editor defaultValue={BLOCKS} blockContextMenu onValueChange={onValueChange} />,
+    );
+    rightClickBlock(container, '2');
+    fireEvent.click(screen.getByText('Move up'));
+    const next = onValueChange.mock.lastCall?.[0] as EditorBlock[];
+    expect(next.map((b) => b.id)).toEqual(['2', '1', '3']);
+  });
+});

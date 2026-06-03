@@ -16,6 +16,10 @@
 
 import { atom } from 'nanostores';
 import * as React from 'react';
+import {
+  type BlockContextMenuControls,
+  createBlockContextMenu,
+} from '../../primitives/block-context-menu';
 import { convertBlockType } from '../../primitives/block-operations';
 import {
   type BlockPaletteControls,
@@ -42,6 +46,9 @@ import type {
 import { Button } from './button';
 import { Container } from './container';
 import {
+  editorContextMenuClasses,
+  editorContextMenuDestructiveClasses,
+  editorContextMenuItemClasses,
   editorPaletteCategoryClasses,
   editorPaletteItemClasses,
   editorPaletteLayoutClasses,
@@ -87,6 +94,9 @@ export interface EditorProps
   /** Slash commands. When provided, typing `/` at the start of a block (or after
    *  whitespace) opens a caret-anchored command menu with its own search input. */
   commandPalette?: SlashCommand[];
+  /** Block context menu. When true, right-clicking a block opens a menu of
+   *  block actions (move up/down, duplicate, delete). */
+  blockContextMenu?: boolean;
 }
 
 export interface EditorControls {
@@ -390,6 +400,20 @@ function EditorToolbar({
   );
 }
 
+interface ContextMenuItemDef {
+  id: string;
+  label: string;
+  destructive?: boolean;
+}
+
+/** Default block right-click actions. */
+const CONTEXT_MENU_ITEMS: ContextMenuItemDef[] = [
+  { id: 'move-up', label: 'Move up' },
+  { id: 'move-down', label: 'Move down' },
+  { id: 'duplicate', label: 'Duplicate' },
+  { id: 'delete', label: 'Delete', destructive: true },
+];
+
 // =============================================================================
 // Editor component
 // =============================================================================
@@ -409,6 +433,7 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
       sidebar,
       rulePalette,
       commandPalette,
+      blockContextMenu,
       ...props
     },
     ref,
@@ -444,6 +469,9 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
       top: 0,
       left: 0,
     });
+    const contextMenuRef = React.useRef<HTMLDivElement>(null);
+    const contextMenuControllerRef = React.useRef<BlockContextMenuControls | null>(null);
+    const [contextMenuOpen, setContextMenuOpen] = React.useState(false);
 
     // -- Toolbar state --
     const [focusedBlockId, setFocusedBlockId] = React.useState<string | null>(null);
@@ -706,6 +734,53 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
       if (slashOpen) slashInputRef.current?.focus();
     }, [slashOpen]);
 
+    // -- Block context menu lifecycle --
+    // The primitive listens for right-clicks on the canvas, resolves the block
+    // via [data-block-id], and shows/positions the consumer-rendered menu. The
+    // menu element is always rendered (the primitive toggles its hidden state);
+    // onAction maps the chosen item to a block mutation via the editor controls.
+    React.useEffect(() => {
+      const canvasEl = canvasRef.current;
+      const menuEl = contextMenuRef.current;
+      if (!canvasEl || !menuEl || disabled || !blockContextMenu) return;
+
+      const controller = createBlockContextMenu({
+        container: canvasEl,
+        menu: menuEl,
+        onOpen: () => setContextMenuOpen(true),
+        onClose: () => setContextMenuOpen(false),
+        onAction: (itemId, blockId) => {
+          const controls = controlsRef.current;
+          if (!controls) return;
+          const current = blocksAtomRef.current.get();
+          const index = current.findIndex((b) => b.id === blockId);
+          if (index === -1) return;
+          switch (itemId) {
+            case 'delete':
+              controls.removeBlocks(new Set([blockId]));
+              break;
+            case 'duplicate': {
+              const block = current[index];
+              if (block) controls.addBlock({ ...block, id: crypto.randomUUID() }, index + 1);
+              break;
+            }
+            case 'move-up':
+              controls.moveBlock(blockId, index - 1);
+              break;
+            case 'move-down':
+              controls.moveBlock(blockId, index + 1);
+              break;
+          }
+        },
+      });
+      contextMenuControllerRef.current = controller;
+
+      return () => {
+        controller.destroy();
+        contextMenuControllerRef.current = null;
+      };
+    }, [blockContextMenu, disabled]);
+
     const focusedBlock = focusedBlockId ? blocks.find((b) => b.id === focusedBlockId) : undefined;
 
     const canvas = (
@@ -856,6 +931,28 @@ export const Editor = React.forwardRef<EditorControls, EditorProps>(
                 </div>
               ))}
             </div>
+          </div>
+        )}
+        {blockContextMenu && (
+          <div
+            ref={contextMenuRef}
+            hidden={!contextMenuOpen}
+            className={classy(editorContextMenuClasses)}
+          >
+            {CONTEXT_MENU_ITEMS.map((item) => (
+              <div
+                key={item.id}
+                role="menuitem"
+                data-menu-item-id={item.id}
+                tabIndex={-1}
+                className={classy(
+                  editorContextMenuItemClasses,
+                  item.destructive ? editorContextMenuDestructiveClasses : '',
+                )}
+              >
+                {item.label}
+              </div>
+            ))}
           </div>
         )}
       </Container>
