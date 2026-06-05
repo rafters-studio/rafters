@@ -437,6 +437,9 @@ importers:
       '@rafters/ui':
         specifier: workspace:*
         version: link:../ui
+      react:
+        specifier: 'catalog:'
+        version: 19.2.0
     devDependencies:
       '@rafters/shared':
         specifier: workspace:*

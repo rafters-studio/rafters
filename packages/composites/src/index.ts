@@ -56,4 +56,4 @@ export {
   findCompatibleProducers,
   matchRules,
 } from './rules';
-export { toMdx } from './serializer';
+export { toMdx } from './to-mdx';
