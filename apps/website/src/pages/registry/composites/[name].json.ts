@@ -9,7 +9,7 @@ import { listCompositeNames, loadComposite } from '../../../lib/registry/compone
 export const prerender = true;
 
 export const getStaticPaths: GetStaticPaths = async () => {
-  const names = listCompositeNames();
+  const names = [...listCompositeNames(), 'composites'];
   return names.map((name) => ({ params: { name } }));
 };
 
