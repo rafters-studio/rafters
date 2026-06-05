@@ -14,6 +14,8 @@ export type {
   RuleConfigField,
   SaveCompositeData,
 } from './components/ui/editor.js';
+export type { InlineMarkdownMatch } from './primitives/inline-markdown.js';
+export { detectInlineMarkdown } from './primitives/inline-markdown.js';
 export type {
   DeserializeResult,
   EditorSerializer,
