@@ -558,15 +558,15 @@ export async function add(componentArgs: string[], options: AddOptions): Promise
   for (const itemName of components) {
     try {
       if (folder === 'composites') {
-        const composite = await client.fetchComposite(itemName);
         if (!seen.has(itemName)) {
+          const composite = await client.fetchComposite(itemName);
           seen.add(itemName);
           allItems.push(composite);
-        }
-        for (const dep of composite.primitives) {
-          if (!seen.has(dep)) {
-            const depItems = await client.resolveDependencies(dep, seen);
-            allItems.push(...depItems);
+          for (const dep of composite.primitives) {
+            if (!seen.has(dep)) {
+              const depItems = await client.resolveDependencies(dep, seen);
+              allItems.push(...depItems);
+            }
           }
         }
       } else {

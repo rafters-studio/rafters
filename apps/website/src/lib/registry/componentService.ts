@@ -115,7 +115,7 @@ export function listPrimitiveNames(): string[] {
 }
 
 /**
- * List all available composite names
+ * List available composite data file names (from .composite.json files)
  */
 export function listCompositeNames(): string[] {
   const compositesDir = getCompositesPath();
@@ -129,6 +129,10 @@ export function listCompositeNames(): string[] {
     }
     throw err;
   }
+}
+
+export function listAllCompositeKeys(): string[] {
+  return [...listCompositeNames(), 'composites'];
 }
 
 /**
@@ -696,7 +700,7 @@ export function getRegistryIndex(): RegistryIndex {
     homepage: 'https://rafters.studio',
     components: listComponentNames(),
     primitives: listPrimitiveNames(),
-    composites: [...listCompositeNames(), 'composites'],
+    composites: listAllCompositeKeys(),
     rules: [],
   };
 }
