@@ -1,5 +1,11 @@
 # rafters
 
+## 0.0.60
+
+### Features
+
+- feat(cli): `rafters add composites` installs the composites runtime. Running `rafters add composites` with no specific composite names scaffolds `composites/index.ts` -- a barrel that re-exports `toJsx`, `Composite`, `createComposites`, and `toMdx` from `@rafters/composites/client`. Adds `@rafters/composites` as a project dependency. Consumers get the runtime for rendering their own composites without needing any built-in defaults.
+
 ## 0.0.59
 
 ### Bug Fixes
