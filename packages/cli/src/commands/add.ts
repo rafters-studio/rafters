@@ -150,6 +150,29 @@ export function selectFilesForFramework(
  */
 const FOLDER_NAMES = new Set(['composites']);
 
+const COMPOSITES_RUNTIME_CONTENT = `export { Composite, createComposites, toJsx } from '@rafters/composites/client';
+export { toMdx } from '@rafters/composites/client';
+export type { CompositeProps, ToJsxOptions } from '@rafters/composites/client';
+`;
+
+function buildCompositesRuntimeItem(): RegistryItem {
+  return {
+    name: 'composites',
+    type: 'composite',
+    primitives: [],
+    rules: [],
+    composites: [],
+    files: [
+      {
+        path: 'composites/index.ts',
+        content: COMPOSITES_RUNTIME_CONTENT,
+        dependencies: ['@rafters/composites'],
+        devDependencies: [],
+      },
+    ],
+  };
+}
+
 /**
  * Check if an item is already tracked in the installed list
  */
@@ -530,6 +553,21 @@ export async function add(componentArgs: string[], options: AddOptions): Promise
 
     // Replace CLI args with installed list
     components = installedNames;
+  }
+
+  // `rafters add composites` with no names installs the composites runtime
+  if (folder === 'composites' && components.length === 0) {
+    const runtimeItem = buildCompositesRuntimeItem();
+    const result = await installItem(cwd, runtimeItem, options, config);
+    if (result.installed) {
+      if (config) {
+        trackInstalled(config, [runtimeItem]);
+        await saveConfig(cwd, config);
+      }
+      await installRegistryDependencies([runtimeItem], cwd);
+      log({ event: 'add:installed', component: 'composites', files: result.files });
+    }
+    return;
   }
 
   // Validate that at least one component is specified
