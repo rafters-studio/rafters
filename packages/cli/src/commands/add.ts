@@ -150,8 +150,7 @@ export function selectFilesForFramework(
  */
 const FOLDER_NAMES = new Set(['composites']);
 
-const COMPOSITES_RUNTIME_CONTENT = `export { Composite, createComposites, toJsx } from '@rafters/composites/client';
-export { toMdx } from '@rafters/composites/client';
+const COMPOSITES_RUNTIME_CONTENT = `export { Composite, createComposites, toJsx, toMdx } from '@rafters/composites/client';
 export type { CompositeProps, ToJsxOptions } from '@rafters/composites/client';
 `;
 
@@ -557,17 +556,7 @@ export async function add(componentArgs: string[], options: AddOptions): Promise
 
   // `rafters add composites` with no names installs the composites runtime
   if (folder === 'composites' && components.length === 0) {
-    const runtimeItem = buildCompositesRuntimeItem();
-    const result = await installItem(cwd, runtimeItem, options, config);
-    if (result.installed) {
-      if (config) {
-        trackInstalled(config, [runtimeItem]);
-        await saveConfig(cwd, config);
-      }
-      await installRegistryDependencies([runtimeItem], cwd);
-      log({ event: 'add:installed', component: 'composites', files: result.files });
-    }
-    return;
+    components = ['__composites_runtime__'];
   }
 
   // Validate that at least one component is specified
@@ -591,9 +580,11 @@ export async function add(componentArgs: string[], options: AddOptions): Promise
   for (const itemName of components) {
     try {
       if (folder === 'composites') {
-        // Fetch directly from composites endpoint
         if (!seen.has(itemName)) {
-          const item = await client.fetchComposite(itemName);
+          const item =
+            itemName === '__composites_runtime__'
+              ? buildCompositesRuntimeItem()
+              : await client.fetchComposite(itemName);
           seen.add(itemName);
           allItems.push(item);
         }
