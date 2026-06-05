@@ -1,11 +1,9 @@
 import { type ComponentType, createElement, type ReactNode } from 'react';
 import type { CompositeBlock, CompositeFile } from './manifest';
-
-const MAX_DEPTH = 50;
+import { kebabToPascal, walkBlocks } from './walk-blocks';
 
 export interface ToJsxOptions {
   components?: Record<string, ComponentType<Record<string, unknown>>>;
-  resolveComposite?: (id: string) => CompositeFile | null;
   fallback?: ComponentType<{ type: string }>;
 }
 
@@ -14,118 +12,59 @@ export interface CompositeProps extends ToJsxOptions {
   blocks?: CompositeBlock[];
 }
 
-function kebabToPascal(kebab: string): string {
-  const parts = kebab.split('-').filter((p) => p.length > 0);
-  if (parts.length === 0) return '';
-  return parts.map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join('');
-}
-
-function renderBlock(
-  block: CompositeBlock,
-  blockMap: Map<string, CompositeBlock>,
-  options: ToJsxOptions,
-  visited: Set<string>,
-  depth: number,
-): ReactNode {
-  if (depth > MAX_DEPTH) return null;
-  if (visited.has(block.id)) return null;
-  visited.add(block.id);
-
-  const { type, content, children, meta } = block;
+function createVisitor(options: ToJsxOptions) {
   const components = options.components ?? {};
 
-  if (type.startsWith('composite:')) {
-    const compositeId = type.slice('composite:'.length);
-    const resolved = options.resolveComposite?.(compositeId);
-    if (!resolved) return null;
-    return toJsx(resolved.blocks, options);
-  }
+  return (block: CompositeBlock, children: ReactNode[]): ReactNode => {
+    const Component = components[block.type] ?? components[kebabToPascal(block.type)];
 
-  const Component = components[type] ?? components[kebabToPascal(type)];
-
-  if (!Component) {
-    if (options.fallback) {
-      return createElement(options.fallback, { key: block.id, type });
+    if (!Component) {
+      if (options.fallback)
+        return createElement(options.fallback, { key: block.id, type: block.type });
+      return null;
     }
-    return null;
-  }
 
-  const props: Record<string, unknown> = {
-    key: block.id,
-    ...(meta ?? {}),
+    const props: Record<string, unknown> = { key: block.id, ...(block.meta ?? {}) };
+
+    if (block.content !== undefined) {
+      if (Array.isArray(block.content)) {
+        props.content = block.content;
+      } else {
+        children = [String(block.content), ...children];
+      }
+    }
+
+    return createElement(Component, props, children.length > 0 ? children : undefined);
   };
-
-  const childNodes: ReactNode[] = [];
-
-  if (children && children.length > 0) {
-    for (const childId of children) {
-      const child = blockMap.get(childId);
-      if (!child) continue;
-      childNodes.push(renderBlock(child, blockMap, options, visited, depth + 1));
-    }
-  }
-
-  if (content !== undefined) {
-    if (Array.isArray(content)) {
-      props.content = content;
-    } else {
-      childNodes.unshift(String(content));
-    }
-  }
-
-  return createElement(Component, props, childNodes.length > 0 ? childNodes : undefined);
 }
 
 export function toJsx(blocks: CompositeBlock[], options: ToJsxOptions = {}): ReactNode {
   if (blocks.length === 0) return null;
-
-  const blockMap = new Map<string, CompositeBlock>();
-  for (const block of blocks) {
-    blockMap.set(block.id, block);
-  }
-
-  const roots = blocks.filter((block) => !block.parentId);
-  const elements = roots.map((block) => renderBlock(block, blockMap, options, new Set(), 0));
-
-  return elements.length === 1 ? elements[0] : createElement('div', null, ...elements);
+  return walkBlocks(blocks, createVisitor(options), (r) =>
+    r.length === 1 ? (r[0] ?? null) : createElement('div', null, ...r),
+  );
 }
 
-export function Composite({
-  file,
-  blocks,
-  components,
-  resolveComposite,
-  fallback,
-}: CompositeProps): ReactNode {
+export function Composite({ file, blocks, components, fallback }: CompositeProps): ReactNode {
   const source = file?.blocks ?? blocks ?? [];
   const opts: ToJsxOptions = {};
   if (components) opts.components = components;
-  if (resolveComposite) opts.resolveComposite = resolveComposite;
   if (fallback) opts.fallback = fallback;
   return toJsx(source, opts);
 }
 
 export function createComposites(
   composites: Record<string, CompositeFile>,
-  options: Omit<ToJsxOptions, 'resolveComposite'> = {},
+  options: ToJsxOptions = {},
 ): Record<string, ComponentType<Partial<CompositeProps>>> {
-  const byId = new Map<string, CompositeFile>();
-  for (const [key, file] of Object.entries(composites)) {
-    byId.set(key, file);
-    byId.set(file.manifest.id, file);
-  }
-  const resolver = (id: string): CompositeFile | null => byId.get(id) ?? null;
-
   const result: Record<string, ComponentType<Partial<CompositeProps>>> = {};
 
   for (const [name, file] of Object.entries(composites)) {
     const Component = (props: Partial<CompositeProps> = {}): ReactNode => {
       const merged: CompositeProps = { file };
       const c = props.components ?? options.components;
-      const r = props.resolveComposite ?? resolver;
       const f = props.fallback ?? options.fallback;
       if (c) merged.components = c;
-      if (r) merged.resolveComposite = r;
       if (f) merged.fallback = f;
       return createElement(Composite, merged);
     };

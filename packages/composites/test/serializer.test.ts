@@ -137,13 +137,13 @@ describe('toMdx', () => {
     );
   });
 
-  it('detects circular references in grid children', () => {
+  it('silently drops circular references in grid children', () => {
     const blocks: CompositeBlock[] = [
       { id: '1', type: 'grid', meta: { columns: 1 }, children: ['2'] },
       { id: '2', type: 'grid', meta: { columns: 1 }, children: ['1'], parentId: '1' },
     ];
     const result = toMdx(blocks);
-    expect(result).toContain('<!-- circular reference detected -->');
+    expect(result).not.toContain('circular');
   });
 
   it('handles nested grid children', () => {
