@@ -9,12 +9,9 @@ export interface ToJsxOptions {
   fallback?: ComponentType<{ type: string }>;
 }
 
-export interface CompositeProps {
+export interface CompositeProps extends ToJsxOptions {
   file?: CompositeFile;
   blocks?: CompositeBlock[];
-  components?: Record<string, ComponentType<Record<string, unknown>>>;
-  resolveComposite?: (id: string) => CompositeFile | null;
-  fallback?: ComponentType<{ type: string }>;
 }
 
 function kebabToPascal(kebab: string): string {
@@ -64,7 +61,7 @@ function renderBlock(
     for (const childId of children) {
       const child = blockMap.get(childId);
       if (!child) continue;
-      childNodes.push(renderBlock(child, blockMap, options, new Set(visited), depth + 1));
+      childNodes.push(renderBlock(child, blockMap, options, visited, depth + 1));
     }
   }
 
@@ -111,28 +108,28 @@ export function Composite({
 export function createComposites(
   composites: Record<string, CompositeFile>,
   options: Omit<ToJsxOptions, 'resolveComposite'> = {},
-): Record<string, (props?: Partial<CompositeProps>) => ReactNode> {
-  const resolver = (id: string): CompositeFile | null => {
-    for (const file of Object.values(composites)) {
-      if (file.manifest.id === id) return file;
-    }
-    return composites[id] ?? null;
-  };
+): Record<string, ComponentType<Partial<CompositeProps>>> {
+  const byId = new Map<string, CompositeFile>();
+  for (const [key, file] of Object.entries(composites)) {
+    byId.set(key, file);
+    byId.set(file.manifest.id, file);
+  }
+  const resolver = (id: string): CompositeFile | null => byId.get(id) ?? null;
 
-  const result: Record<string, (props?: Partial<CompositeProps>) => ReactNode> = {};
+  const result: Record<string, ComponentType<Partial<CompositeProps>>> = {};
 
   for (const [name, file] of Object.entries(composites)) {
-    const Component = (props?: Partial<CompositeProps>): ReactNode => {
+    const Component = (props: Partial<CompositeProps> = {}): ReactNode => {
       const merged: CompositeProps = { file };
-      const c = props?.components ?? options.components;
-      const r = props?.resolveComposite ?? resolver;
-      const f = props?.fallback ?? options.fallback;
+      const c = props.components ?? options.components;
+      const r = props.resolveComposite ?? resolver;
+      const f = props.fallback ?? options.fallback;
       if (c) merged.components = c;
       if (r) merged.resolveComposite = r;
       if (f) merged.fallback = f;
-      return Composite(merged);
+      return createElement(Composite, merged);
     };
-    Object.defineProperty(Component, 'name', { value: name });
+    Component.displayName = name;
     result[name] = Component;
   }
 
