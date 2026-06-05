@@ -12,6 +12,8 @@ export interface CompositeProps extends ToJsxOptions {
   blocks?: CompositeBlock[];
 }
 
+const RESERVED_PROPS = new Set(['key', 'ref', 'children']);
+
 function createVisitor(options: ToJsxOptions) {
   const components = options.components ?? {};
 
@@ -24,7 +26,12 @@ function createVisitor(options: ToJsxOptions) {
       return null;
     }
 
-    const props: Record<string, unknown> = { key: block.id, ...(block.meta ?? {}) };
+    const props: Record<string, unknown> = { key: block.id };
+    if (block.meta) {
+      for (const [k, v] of Object.entries(block.meta)) {
+        if (!RESERVED_PROPS.has(k)) props[k] = v;
+      }
+    }
 
     if (block.content !== undefined) {
       if (Array.isArray(block.content)) {
@@ -56,11 +63,11 @@ export function Composite({ file, blocks, components, fallback }: CompositeProps
 export function createComposites(
   composites: Record<string, CompositeFile>,
   options: ToJsxOptions = {},
-): Record<string, ComponentType<Partial<CompositeProps>>> {
-  const result: Record<string, ComponentType<Partial<CompositeProps>>> = {};
+): Record<string, ComponentType<Partial<ToJsxOptions>>> {
+  const result: Record<string, ComponentType<Partial<ToJsxOptions>>> = {};
 
   for (const [name, file] of Object.entries(composites)) {
-    const Component = (props: Partial<CompositeProps> = {}): ReactNode => {
+    const Component = (props: Partial<ToJsxOptions> = {}): ReactNode => {
       const merged: CompositeProps = { file };
       const c = props.components ?? options.components;
       const f = props.fallback ?? options.fallback;
