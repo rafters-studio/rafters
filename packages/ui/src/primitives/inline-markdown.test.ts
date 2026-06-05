@@ -175,5 +175,34 @@ describe('detectInlineMarkdown', () => {
       const match = detectInlineMarkdown(content, 5);
       expect(match).toBeNull();
     });
+
+    it('does not false-match italic on partial bold closing', () => {
+      const content = '**hello*';
+      const match = detectInlineMarkdown(content, 8);
+      expect(match).toBeNull();
+    });
+
+    it('does not match underscore italic inside words', () => {
+      const content = 'foo_bar_';
+      const match = detectInlineMarkdown(content, 8);
+      expect(match).toBeNull();
+    });
+
+    it('does not match underscore italic in snake_case', () => {
+      const content = 'my_var_name';
+      const match = detectInlineMarkdown(content, 7);
+      expect(match).toBeNull();
+    });
+
+    it('matches underscore italic at word boundaries', () => {
+      const content = 'type _italic_ here';
+      const match = detectInlineMarkdown(content, 13);
+      expect(match).toEqual({
+        startOffset: 5,
+        endOffset: 13,
+        text: 'italic',
+        marks: ['italic'],
+      });
+    });
   });
 });

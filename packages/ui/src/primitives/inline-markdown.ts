@@ -39,8 +39,13 @@ const PATTERNS: PatternDef[] = [
   },
   {
     mark: 'italic',
-    pattern: /(?<!\\)(\*|_)(.+?)(?<!\\)\1/g,
-    textGroup: 2,
+    pattern: /(?<![\\*])\*(?!\*)(.+?)(?<![\\*])\*(?!\*)/g,
+    textGroup: 1,
+  },
+  {
+    mark: 'italic',
+    pattern: /(?<![\\\w])_(.+?)(?<!\\)_(?!\w)/g,
+    textGroup: 1,
   },
 ];
 
