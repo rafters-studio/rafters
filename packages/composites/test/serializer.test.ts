@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { CompositeBlock } from '../src/manifest';
-import { toMdx } from '../src/serializer';
+import { toMdx } from '../src/to-mdx';
 
 describe('toMdx', () => {
   it('returns empty string for empty blocks', () => {

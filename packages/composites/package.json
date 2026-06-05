@@ -4,7 +4,8 @@
   "version": "0.0.1",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./client": "./src/client.ts"
   },
   "scripts": {
     "test": "vitest run",
@@ -12,6 +13,7 @@
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
+    "react": "catalog:",
     "zod": "catalog:"
   },
   "dependencies": {
