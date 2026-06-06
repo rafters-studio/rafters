@@ -123,7 +123,7 @@ export function listPrimitiveNames(): string[] {
 }
 
 /**
- * List all available composite names
+ * List available composite data file names (from .composite.json files)
  */
 export function listCompositeNames(): string[] {
   const compositesDir = getCompositesPath();
@@ -139,19 +139,44 @@ export function listCompositeNames(): string[] {
   }
 }
 
-/**
- * Load a single composite by name
- */
+export function listAllCompositeKeys(): string[] {
+  return [...listCompositeNames(), 'composites'];
+}
+
+const BLOCK_TYPE_TO_COMPONENT: Record<string, string> = {
+  heading: 'typography',
+  text: 'typography',
+  button: 'button',
+  input: 'input',
+  grid: 'grid',
+  divider: 'separator',
+  blockquote: 'typography',
+};
+
+function extractComponentDeps(blocks: Array<{ type: string }>): string[] {
+  const deps = new Set<string>();
+  deps.add('composites');
+  for (const block of blocks) {
+    const component = BLOCK_TYPE_TO_COMPONENT[block.type];
+    if (component) deps.add(component);
+  }
+  return [...deps];
+}
+
 export function loadComposite(name: string): RegistryItem | null {
+  if (name === 'composites') return loadCompositesRuntime();
+
   const filePath = join(getCompositesPath(), `${name}.composite.json`);
 
   try {
     const content = readFileSync(filePath, 'utf-8');
+    const parsed = JSON.parse(content) as { blocks?: Array<{ type: string }> };
+    const componentDeps = extractComponentDeps(parsed.blocks ?? []);
 
     return {
       name,
       type: 'composite',
-      primitives: [],
+      primitives: componentDeps,
       files: [
         {
           path: `composites/${name}.composite.json`,
@@ -167,6 +192,42 @@ export function loadComposite(name: string): RegistryItem | null {
     }
     throw err;
   }
+}
+
+function getCompositesPackagePath(): string {
+  return join(process.cwd(), '../../packages/composites/src');
+}
+
+const COMPOSITES_RUNTIME_FILES = [
+  'manifest.ts',
+  'walk-blocks.ts',
+  'to-jsx.tsx',
+  'to-mdx.ts',
+  'bridge.ts',
+  'registry.ts',
+  'rules.ts',
+];
+
+export function loadCompositesRuntime(): RegistryItem {
+  const srcDir = getCompositesPackagePath();
+  const files: RegistryFile[] = COMPOSITES_RUNTIME_FILES.map((filename) => {
+    const content = readFileSync(join(srcDir, filename), 'utf-8');
+    return {
+      path: `composites/${filename}`,
+      content,
+      dependencies: filename === 'manifest.ts' ? ['zod'] : [],
+      devDependencies: [],
+    };
+  });
+
+  return {
+    name: 'composites',
+    type: 'composite' as RegistryItemType,
+    description:
+      'Composites runtime: block tree walker, JSX/MDX serializers, registry, bridge, and manifest types.',
+    primitives: [],
+    files,
+  };
 }
 
 /**
@@ -707,7 +768,7 @@ export function getRegistryIndex(): RegistryIndex {
     homepage: 'https://rafters.studio',
     components: listComponentNames(),
     primitives: listPrimitiveNames(),
-    composites: listCompositeNames(),
+    composites: listAllCompositeKeys(),
     rules: [],
   };
 }

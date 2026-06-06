@@ -1,5 +1,15 @@
 # rafters
 
+## 0.0.61
+
+### Bug Fixes
+
+- fix(cli): composites runtime served from registry, not hardcoded in CLI. `rafters add composites` now fetches source files from the registry endpoint, same pattern as components and primitives. Composites declare block-type component dependencies (e.g. login-form depends on typography, input, button) so `rafters add composites login-form` installs the full chain. `fetchItem` now falls back to the composites endpoint so composite deps resolve through the standard dependency chain.
+
+### Chores
+
+- chore: remove dead `apps/website` (the live site is in the shingle repo).
+
 ## 0.0.60
 
 ### Features
