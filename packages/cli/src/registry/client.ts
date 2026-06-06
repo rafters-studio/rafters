@@ -137,20 +137,22 @@ export class RegistryClient {
   }
 
   /**
-   * Fetch a registry item (component or primitive) by name
-   * Tries component first, then primitive
+   * Fetch a registry item by name
+   * Tries component, then primitive, then composite
    */
   async fetchItem(name: string): Promise<RegistryItem> {
     try {
       return await this.fetchComponent(name);
     } catch (err) {
-      // If component not found, try primitive
       if (err instanceof Error && err.message.includes('not found')) {
         try {
           return await this.fetchPrimitive(name);
         } catch {
-          // Re-throw original error if primitive also not found
-          throw err;
+          try {
+            return await this.fetchComposite(name);
+          } catch {
+            throw err;
+          }
         }
       }
       throw err;
