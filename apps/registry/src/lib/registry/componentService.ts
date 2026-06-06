@@ -143,22 +143,13 @@ export function listAllCompositeKeys(): string[] {
   return [...listCompositeNames(), 'composites'];
 }
 
-const BLOCK_TYPE_TO_COMPONENT: Record<string, string> = {
-  heading: 'typography',
-  text: 'typography',
-  button: 'button',
-  input: 'input',
-  grid: 'grid',
-  divider: 'separator',
-  blockquote: 'typography',
-};
-
 function extractComponentDeps(blocks: Array<{ type: string }>): string[] {
   const deps = new Set<string>();
   deps.add('composites');
   for (const block of blocks) {
-    const component = BLOCK_TYPE_TO_COMPONENT[block.type];
-    if (component) deps.add(component);
+    if (!block.type.startsWith('composite:')) {
+      deps.add(block.type);
+    }
   }
   return [...deps];
 }
