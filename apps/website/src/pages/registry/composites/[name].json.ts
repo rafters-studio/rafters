@@ -4,12 +4,12 @@
  */
 
 import type { APIRoute, GetStaticPaths } from 'astro';
-import { listCompositeNames, loadComposite } from '../../../lib/registry/componentService';
+import { listAllCompositeKeys, loadComposite } from '../../../lib/registry/componentService';
 
 export const prerender = true;
 
 export const getStaticPaths: GetStaticPaths = async () => {
-  const names = listCompositeNames();
+  const names = listAllCompositeKeys();
   return names.map((name) => ({ params: { name } }));
 };
 
