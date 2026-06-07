@@ -16,7 +16,18 @@ export const scalePlugin = definePlugin<ScaleInput, ColorReference>({
   outputSchema: ColorReferenceSchema,
   dependsOn: (input) => [input.familyName],
   transform: (input, get) => {
-    const family = get(input.familyName) as ColorValue | undefined;
+    let resolved = get(input.familyName);
+    let resolvedName = input.familyName;
+    if (
+      resolved &&
+      typeof resolved === 'object' &&
+      'family' in resolved &&
+      'position' in resolved
+    ) {
+      resolvedName = (resolved as ColorReference).family;
+      resolved = get(resolvedName);
+    }
+    const family = resolved as ColorValue | undefined;
     if (!family) {
       throw new Error(`scale plugin: family "${input.familyName}" not found in registry`);
     }
@@ -24,6 +35,6 @@ export const scalePlugin = definePlugin<ScaleInput, ColorReference>({
     if (position === undefined) {
       throw new Error(`scale plugin: invalid position index ${input.scalePosition}`);
     }
-    return { family: input.familyName, position };
+    return { family: resolvedName, position };
   },
 });

@@ -291,17 +291,30 @@ function generateRootBlock(semanticTokens: Token[], darkMode: 'class' | 'media' 
   return lines.join('\n');
 }
 
+function collectReferencedFamilies(semanticTokens: Token[]): Set<string> {
+  const families = new Set<string>();
+  for (const token of semanticTokens) {
+    const { value } = token;
+    if (typeof value === 'object' && value !== null && 'family' in value) {
+      families.add((value as ColorReference).family);
+    }
+  }
+  return families;
+}
+
 /**
  * Generate @theme block with raw color scales and utility tokens
  * Note: Semantic color bridges are NOT included here - they go in @theme inline
  */
-function generateThemeBlock(groups: GroupedTokens): string {
+function generateThemeBlock(groups: GroupedTokens, referencedFamilies: Set<string>): string {
   const lines: string[] = [];
   lines.push('@theme {');
 
-  // Color scales with --color- prefix
+  // Color scales — only families referenced by semantic tokens
   if (groups.color.length > 0) {
     for (const token of groups.color) {
+      const familyName = token.name.replace(/-\d+$/, '');
+      if (!referencedFamilies.has(familyName) && !referencedFamilies.has(token.name)) continue;
       const value = tokenValueToCSS(token);
       if (value === null) continue;
       lines.push(`  --color-${token.name}: ${value};`);
@@ -793,7 +806,8 @@ export function tokensToTailwind(
   }
 
   // @theme block with raw color scales and utility tokens
-  const themeBlock = generateThemeBlock(groups);
+  const referencedFamilies = collectReferencedFamilies(groups.semantic);
+  const themeBlock = generateThemeBlock(groups, referencedFamilies);
   sections.push(themeBlock);
   sections.push('');
 

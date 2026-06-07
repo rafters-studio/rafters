@@ -16,7 +16,18 @@ export const invertPlugin = definePlugin<InvertInput, ColorReference>({
   outputSchema: ColorReferenceSchema,
   dependsOn: (input) => [input.familyName],
   transform: (input, get) => {
-    const family = get(input.familyName) as ColorValue | undefined;
+    let resolved = get(input.familyName);
+    let resolvedName = input.familyName;
+    if (
+      resolved &&
+      typeof resolved === 'object' &&
+      'family' in resolved &&
+      'position' in resolved
+    ) {
+      resolvedName = (resolved as ColorReference).family;
+      resolved = get(resolvedName);
+    }
+    const family = resolved as ColorValue | undefined;
     if (!family) {
       throw new Error(`invert plugin: family "${input.familyName}" not found in registry`);
     }
@@ -27,6 +38,6 @@ export const invertPlugin = definePlugin<InvertInput, ColorReference>({
         `invert plugin: invalid dark index ${darkIndex} for base position ${input.basePosition}`,
       );
     }
-    return { family: input.familyName, position: darkPosition };
+    return { family: resolvedName, position: darkPosition };
   },
 });
