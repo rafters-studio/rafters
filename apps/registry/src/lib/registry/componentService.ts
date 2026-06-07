@@ -204,7 +204,7 @@ export function loadCompositesRuntime(): RegistryItem {
   const files: RegistryFile[] = COMPOSITES_RUNTIME_FILES.map((filename) => {
     const content = readFileSync(join(srcDir, filename), 'utf-8');
     return {
-      path: `composites/${filename}`,
+      path: `lib/composites/${filename}`,
       content,
       dependencies: filename === 'manifest.ts' ? ['zod'] : [],
       devDependencies: [],

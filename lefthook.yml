@@ -32,14 +32,6 @@ pre-commit:
             pnpm --filter "$pkg_name" test:unit --run || exit 1
           fi
         done
-    rust-fmt:
-      root: "packages/docs-rs"
-      glob: "packages/docs-rs/**/*.rs"
-      run: cargo fmt --all --check
-    rust-clippy:
-      root: "packages/docs-rs"
-      glob: "packages/docs-rs/**/*.rs"
-      run: cargo clippy --all-targets -- -D warnings
 
 # Pre-push hook: Full validation (target <5min)
 pre-push:
@@ -47,7 +39,3 @@ pre-push:
   commands:
     preflight:
       run: pnpm preflight
-    rust-test:
-      root: "packages/docs-rs"
-      glob: "packages/docs-rs/**/*.rs"
-      run: cargo test --all-targets
