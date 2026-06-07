@@ -10,13 +10,14 @@ function serializeProps(meta: Record<string, unknown> | undefined): string {
 
 function visitBlock(block: CompositeBlock, children: string[]): string {
   const { type, content, meta } = block;
-  const tag = kebabToPascal(type);
-  const props = serializeProps(meta);
 
   if (type.startsWith('composite:')) {
     const name = kebabToPascal(type.slice('composite:'.length));
     return name ? `<${name} />` : '';
   }
+
+  const tag = kebabToPascal(type);
+  const props = serializeProps(meta);
 
   if (children.length > 0) {
     return `<${tag}${props}>\n${children.join('\n')}\n</${tag}>`;
@@ -24,8 +25,9 @@ function visitBlock(block: CompositeBlock, children: string[]): string {
 
   if (content !== undefined) {
     if (Array.isArray(content)) {
+      const listTag = meta?.ordered === true ? 'ol' : 'ul';
       const items = (content as string[]).map((item) => `  <li>${item}</li>`).join('\n');
-      return `<${tag}${props}>\n${items}\n</${tag}>`;
+      return `<${listTag}>\n${items}\n</${listTag}>`;
     }
     return `<${tag}${props}>${String(content)}</${tag}>`;
   }
