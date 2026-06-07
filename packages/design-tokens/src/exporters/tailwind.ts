@@ -80,11 +80,14 @@ function getSemanticMappingsFromTokens(
   semanticTokens: Token[],
 ): Record<string, { light: string; dark: string }> {
   const mappings: Record<string, { light: string; dark: string }> = {};
+  const tokensByName = new Map<string, Token>();
+  for (const t of semanticTokens) tokensByName.set(t.name, t);
 
   for (const token of semanticTokens) {
     const { name, value, dependsOn } = token;
 
-    // Skip non-ColorReference values (state variants like primary-hover have string values)
+    if (name.endsWith('--dark')) continue;
+
     if (typeof value !== 'object' || value === null || !('family' in value)) {
       continue;
     }
@@ -92,14 +95,19 @@ function getSemanticMappingsFromTokens(
     const colorRef = value as ColorReference;
     const lightRef = `${colorRef.family}-${colorRef.position}`;
 
-    // Dark mode is in dependsOn[1] as string like 'neutral-50'
-    // If not available, use light mode as fallback
-    const darkRef = dependsOn?.[1] ?? lightRef;
+    let darkRef = lightRef;
+    const darkTokenName = dependsOn?.[1];
+    if (darkTokenName) {
+      const darkToken = tokensByName.get(darkTokenName);
+      if (darkToken?.value && typeof darkToken.value === 'object' && 'family' in darkToken.value) {
+        const darkColorRef = darkToken.value as ColorReference;
+        darkRef = `${darkColorRef.family}-${darkColorRef.position}`;
+      }
+    }
 
     mappings[name] = { light: lightRef, dark: darkRef };
   }
 
-  // Fill in any missing mappings from defaults (for completeness)
   for (const [name, mapping] of Object.entries(DEFAULT_SEMANTIC_COLOR_MAPPINGS)) {
     if (!mappings[name]) {
       mappings[name] = {
