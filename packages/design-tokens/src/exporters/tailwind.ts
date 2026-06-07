@@ -14,7 +14,6 @@
  */
 
 import type { ColorReference, ColorValue, Token, TypographyElementOverride } from '@rafters/shared';
-import { DEFAULT_SEMANTIC_COLOR_MAPPINGS } from '../generators/defaults.js';
 import type { TokenRegistry } from '../registry.js';
 
 /**
@@ -62,14 +61,6 @@ interface GroupedTokens {
 }
 
 /**
- * Convert SemanticColorMapping to the string format needed for Tailwind CSS
- * e.g., { family: 'neutral', position: '50' } -> 'neutral-50'
- */
-function colorRefToString(ref: { family: string; position: string }): string {
-  return `${ref.family}-${ref.position}`;
-}
-
-/**
  * Build semantic mappings from actual tokens in the registry.
  * Falls back to DEFAULT_SEMANTIC_COLOR_MAPPINGS for tokens not in registry.
  *
@@ -106,15 +97,6 @@ function getSemanticMappingsFromTokens(
     }
 
     mappings[name] = { light: lightRef, dark: darkRef };
-  }
-
-  for (const [name, mapping] of Object.entries(DEFAULT_SEMANTIC_COLOR_MAPPINGS)) {
-    if (!mappings[name]) {
-      mappings[name] = {
-        light: colorRefToString(mapping.light),
-        dark: colorRefToString(mapping.dark),
-      };
-    }
   }
 
   return mappings;
