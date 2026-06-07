@@ -96,10 +96,8 @@ describe('toMdx', () => {
     expect(result.startsWith('<p>Child</p>')).toBe(false);
   });
 
-  it('emits comment for unknown block type', () => {
-    expect(toMdx([{ id: '1', type: 'mystery', content: 'x' }])).toBe(
-      '<!-- unknown block type: mystery -->',
-    );
+  it('silently drops unknown block types', () => {
+    expect(toMdx([{ id: '1', type: 'mystery', content: 'x' }])).toBe('');
   });
 
   it('skips missing children references', () => {
@@ -131,10 +129,8 @@ describe('toMdx', () => {
     );
   });
 
-  it('emits comment for composite: with empty suffix', () => {
-    expect(toMdx([{ id: '1', type: 'composite:' }])).toBe(
-      '<!-- invalid composite type: composite: -->',
-    );
+  it('silently drops composite: with empty suffix', () => {
+    expect(toMdx([{ id: '1', type: 'composite:' }])).toBe('');
   });
 
   it('silently drops circular references in grid children', () => {

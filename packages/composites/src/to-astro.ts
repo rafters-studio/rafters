@@ -1,10 +1,13 @@
+import escapeHtml from 'escape-html';
 import type { CompositeBlock } from './manifest';
 import { kebabToPascal, walkBlocks } from './walk-blocks';
 
 function serializeProps(meta: Record<string, unknown> | undefined): string {
   if (!meta) return '';
   return Object.entries(meta)
-    .map(([k, v]) => (typeof v === 'string' ? ` ${k}="${v}"` : ` ${k}={${JSON.stringify(v)}}`))
+    .map(([k, v]) =>
+      typeof v === 'string' ? ` ${k}="${escapeHtml(v)}"` : ` ${k}={${JSON.stringify(v)}}`,
+    )
     .join('');
 }
 
@@ -26,10 +29,12 @@ function visitBlock(block: CompositeBlock, children: string[]): string {
   if (content !== undefined) {
     if (Array.isArray(content)) {
       const listTag = meta?.ordered === true ? 'ol' : 'ul';
-      const items = (content as string[]).map((item) => `  <li>${item}</li>`).join('\n');
+      const items = (content as string[])
+        .map((item) => `  <li>${escapeHtml(item)}</li>`)
+        .join('\n');
       return `<${listTag}>\n${items}\n</${listTag}>`;
     }
-    return `<${tag}${props}>${String(content)}</${tag}>`;
+    return `<${tag}${props}>${escapeHtml(String(content))}</${tag}>`;
   }
 
   return `<${tag}${props} />`;

@@ -17,10 +17,12 @@
     "zod": "catalog:"
   },
   "dependencies": {
-    "@rafters/ui": "workspace:*"
+    "@rafters/ui": "workspace:*",
+    "escape-html": "^1.0.3"
   },
   "devDependencies": {
     "@rafters/shared": "workspace:*",
+    "@types/escape-html": "^1.0.4",
     "@types/node": "catalog:",
     "@vitest/coverage-v8": "catalog:",
     "typescript": "catalog:",

@@ -203,7 +203,7 @@ importers:
         version: 4.1.0(@types/node@24.10.0)(@vitest/ui@4.1.0)(happy-dom@20.0.10)(jsdom@26.1.0)(msw@2.11.6(@types/node@24.10.0)(typescript@5.9.3))(vite@8.0.0(@types/node@24.10.0)(esbuild@0.27.3)(jiti@2.6.1)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2))
       wrangler:
         specifier: ^4.54.0
-        version: 4.54.0(@cloudflare/workers-types@4.20260124.0)
+        version: 4.54.0(@cloudflare/workers-types@4.20251213.0)
       zocker:
         specifier: 'catalog:'
         version: 3.0.0(zod@4.1.12)
@@ -338,7 +338,7 @@ importers:
         version: 8.2.0(@types/node@24.10.0)
       '@modelcontextprotocol/sdk':
         specifier: ^1.25.1
-        version: 1.25.1(hono@4.11.0)(zod@4.3.6)
+        version: 1.25.1(hono@4.11.0)(zod@4.1.12)
       commander:
         specifier: ^13.0.0
         version: 13.1.0
@@ -399,7 +399,7 @@ importers:
         version: 4.1.0(@types/node@24.10.0)(@vitest/ui@4.1.0)(happy-dom@20.0.10)(jsdom@26.1.0)(msw@2.11.6(@types/node@24.10.0)(typescript@5.9.3))(vite@8.0.0(@types/node@24.10.0)(esbuild@0.27.0)(jiti@2.6.1)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2))
       zocker:
         specifier: 'catalog:'
-        version: 3.0.0(zod@4.3.6)
+        version: 3.0.0(zod@4.1.12)
 
   packages/color-utils:
     dependencies:
@@ -437,6 +437,9 @@ importers:
       '@rafters/ui':
         specifier: workspace:*
         version: link:../ui
+      escape-html:
+        specifier: ^1.0.3
+        version: 1.0.3
       react:
         specifier: 'catalog:'
         version: 19.2.0
@@ -444,6 +447,9 @@ importers:
       '@rafters/shared':
         specifier: workspace:*
         version: link:../shared
+      '@types/escape-html':
+        specifier: ^1.0.4
+        version: 1.0.4
       '@types/node':
         specifier: 'catalog:'
         version: 24.10.0
@@ -615,7 +621,7 @@ importers:
         version: 4.1.0(@types/node@24.10.0)(@vitest/ui@4.1.0)(happy-dom@20.0.10)(jsdom@26.1.0)(msw@2.11.6(@types/node@24.10.0)(typescript@5.9.3))(vite@8.0.0(@types/node@24.10.0)(esbuild@0.27.3)(jiti@2.6.1)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2))
       zocker:
         specifier: 'catalog:'
-        version: 3.0.0(zod@4.3.6)
+        version: 3.0.0(zod@4.1.12)
 
   packages/ui:
     dependencies:
@@ -2994,6 +3000,9 @@ packages:
 
   '@types/deep-eql@4.0.2':
     resolution: {integrity: sha512-c9h9dVVMigMPc4bwTvC5dxqtqJZwQPePsWjPlpSOnojbor6pGqdk541lfA7AqFQr5pB1BRdq0juY9db81BwyFw==}
+
+  '@types/escape-html@1.0.4':
+    resolution: {integrity: sha512-qZ72SFTgUAZ5a7Tj6kf2SHLetiH5S6f8G5frB2SPQ3EyF02kxdyBFf4Tz4banE3xCgGnKgWLt//a6VuYHKYJTg==}
 
   '@types/estree-jsx@1.0.5':
     resolution: {integrity: sha512-52CcUVNFyfb1A2ALocQw/Dd1BQFNmSdkuC3BkZ6iqhdMfQz7JWOFRuJFloOzjk+6WijU56m9oKXFAXc7o3Towg==}
@@ -7542,7 +7551,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@modelcontextprotocol/sdk@1.25.1(hono@4.11.0)(zod@4.3.6)':
+  '@modelcontextprotocol/sdk@1.25.1(hono@4.11.0)(zod@4.1.12)':
     dependencies:
       '@hono/node-server': 1.19.11(hono@4.11.0)
       ajv: 8.17.1
@@ -7558,8 +7567,8 @@ snapshots:
       json-schema-typed: 8.0.2
       pkce-challenge: 5.0.1
       raw-body: 3.0.2
-      zod: 4.3.6
-      zod-to-json-schema: 3.25.0(zod@4.3.6)
+      zod: 4.1.12
+      zod-to-json-schema: 3.25.0(zod@4.1.12)
     transitivePeerDependencies:
       - hono
       - supports-color
@@ -8143,6 +8152,8 @@ snapshots:
       '@types/ms': 2.1.0
 
   '@types/deep-eql@4.0.2': {}
+
+  '@types/escape-html@1.0.4': {}
 
   '@types/estree-jsx@1.0.5':
     dependencies:
@@ -12025,19 +12036,13 @@ snapshots:
       randexp: 0.5.3
       zod: 4.1.12
 
-  zocker@3.0.0(zod@4.3.6):
-    dependencies:
-      '@faker-js/faker': 10.1.0
-      randexp: 0.5.3
-      zod: 4.3.6
-
   zod-to-json-schema@3.25.0(zod@3.25.76):
     dependencies:
       zod: 3.25.76
 
-  zod-to-json-schema@3.25.0(zod@4.3.6):
+  zod-to-json-schema@3.25.0(zod@4.1.12):
     dependencies:
-      zod: 4.3.6
+      zod: 4.1.12
 
   zod-to-ts@1.2.0(typescript@5.9.3)(zod@3.25.76):
     dependencies:
