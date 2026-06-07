@@ -19,8 +19,8 @@
  * recomputes via contrast against yellow's accessibility ladder; primary-hover
  * itself anchors because the override is recorded as userOverride.
  *
- * dependsOn[1] keeps the dark-counterpart token name for the Tailwind exporter
- * convention (typed: dependsOn[1] is the dark-mode position token).
+ * dependsOn[1] is the {name}--dark token. The Tailwind exporter resolves it
+ * to get the current dark ColorReference (cascade-derived, not static).
  */
 
 import type { Binding, ColorReference, Token } from '@rafters/shared';
@@ -127,14 +127,14 @@ function derivationToBinding(derivation: Derivation): Binding {
   }
 }
 
-function derivationParent(derivation: Derivation): string {
+function derivationParent(derivation: Derivation, suffix = ''): string {
   switch (derivation.kind) {
     case 'scale':
       return derivation.family;
     case 'state':
-      return derivation.from;
+      return `${derivation.from}${suffix}`;
     case 'contrast':
-      return derivation.against;
+      return `${derivation.against}${suffix}`;
   }
 }
 
@@ -158,17 +158,6 @@ function deriveDarkBinding(derivation: Derivation): Binding {
   }
 }
 
-function deriveDarkParent(derivation: Derivation): string {
-  switch (derivation.kind) {
-    case 'scale':
-      return derivation.family;
-    case 'state':
-      return `${derivation.from}--dark`;
-    case 'contrast':
-      return `${derivation.against}--dark`;
-  }
-}
-
 export function generateSemanticTokens(_config: ResolvedSystemConfig): GeneratorResult {
   const tokens: Token[] = [];
   const timestamp = new Date().toISOString();
@@ -184,7 +173,7 @@ export function generateSemanticTokens(_config: ResolvedSystemConfig): Generator
 
     const darkName = `${name}--dark`;
     const darkBinding = deriveDarkBinding(derivation);
-    const darkParent = deriveDarkParent(derivation);
+    const darkParent = derivationParent(derivation, '--dark');
 
     const dependsOn: string[] = [parent, darkName];
 
