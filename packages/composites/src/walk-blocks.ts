@@ -46,7 +46,8 @@ export function walkBlocks<T>(
 }
 
 export function kebabToPascal(kebab: string): string {
-  const parts = kebab.split('-').filter((p) => p.length > 0);
+  const sanitized = kebab.replace(/[^a-zA-Z0-9-]/g, '');
+  const parts = sanitized.split('-').filter((p) => p.length > 0);
   if (parts.length === 0) return '';
   return parts.map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join('');
 }
