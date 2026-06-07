@@ -1036,18 +1036,9 @@ export async function init(options: InitOptions): Promise<void> {
               }
             }
 
-            // Walk the 11 canonical SemanticColorSystem roles. Per role:
-            // (1) which family from the detected list, (2) which position
-            // in that family. Families stay in the list across roles --
-            // the designer can pick the same palette for multiple roles at
-            // different positions (their call, per the 2026-05-22 decision).
-            // Roles from `SemanticColorSystem` in `@rafters/color-utils`.
-            // Filter to those that exist as SEMANTIC-namespace tokens in
-            // the current registry. `neutral` exists too, but as a color
-            // family (a ColorValue with a scale) -- setting it via this
-            // path would replace the family with a ColorReference and
-            // break every default semantic that derives from it.
-            // `tertiary` ships only in some configurations.
+            // Walk semantic roles. The designer assigns detected palettes
+            // to each role. Filter to roles that exist as semantic-namespace
+            // tokens in the registry (tertiary ships only in some configs).
             const ALL_ROLES = [
               'primary',
               'secondary',
