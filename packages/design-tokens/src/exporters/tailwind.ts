@@ -7,7 +7,7 @@
  * - Semantic variables that switch via .dark class (Tailwind v4 @custom-variant)
  * - @theme inline bridge pattern
  *
- * Reads semantic color mappings from DEFAULT_SEMANTIC_COLOR_MAPPINGS (single source of truth).
+ * Semantic color mappings come from the registry -- the exporter only outputs what the registry contains.
  *
  * @see https://tailwindcss.com/docs/theme
  * @see https://ui.shadcn.com/docs/theming
@@ -62,7 +62,7 @@ interface GroupedTokens {
 
 /**
  * Build semantic mappings from actual tokens in the registry.
- * Falls back to DEFAULT_SEMANTIC_COLOR_MAPPINGS for tokens not in registry.
+ * Tokens not present are omitted from output.
  *
  * @param semanticTokens - Semantic tokens from the registry
  * @returns { light: 'neutral-50', dark: 'neutral-950' } format
