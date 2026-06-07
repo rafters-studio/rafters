@@ -1,5 +1,16 @@
 # rafters
 
+## 0.0.63
+
+### Bug Fixes
+
+- fix(design-tokens): Tailwind exporter no longer injects default semantic tokens that aren't in the registry. Previously `--rebuild` would add default colors the user never defined.
+- fix(design-tokens): rename `neutral` family to `zinc`, make `neutral` a proper semantic role. The importer can now assign any palette to the `neutral` role like primary, secondary, etc. Previously neutral was a special-cased color family that couldn't be reassigned.
+
+### Breaking Changes
+
+- The default achromatic family is now named `zinc` instead of `neutral`. Semantic tokens referencing `family: 'neutral'` in persisted `.rafters/tokens/` files need re-init to pick up the rename. `neutral` is now a semantic role (ColorReference to zinc by default).
+
 ## 0.0.62
 
 ### Bug Fixes
