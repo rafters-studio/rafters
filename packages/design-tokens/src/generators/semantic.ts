@@ -138,6 +138,37 @@ function derivationParent(derivation: Derivation): string {
   }
 }
 
+function deriveDarkBinding(derivation: Derivation): Binding {
+  switch (derivation.kind) {
+    case 'scale':
+      return {
+        plugin: 'invert',
+        input: { familyName: derivation.family, basePosition: derivation.scalePosition },
+      };
+    case 'state':
+      return {
+        plugin: 'state',
+        input: { from: `${derivation.from}--dark`, stateType: derivation.stateType },
+      };
+    case 'contrast':
+      return {
+        plugin: 'contrast',
+        input: { against: `${derivation.against}--dark`, level: derivation.level },
+      };
+  }
+}
+
+function deriveDarkParent(derivation: Derivation): string {
+  switch (derivation.kind) {
+    case 'scale':
+      return derivation.family;
+    case 'state':
+      return `${derivation.from}--dark`;
+    case 'contrast':
+      return `${derivation.against}--dark`;
+  }
+}
+
 export function generateSemanticTokens(_config: ResolvedSystemConfig): GeneratorResult {
   const tokens: Token[] = [];
   const timestamp = new Date().toISOString();
@@ -151,15 +182,11 @@ export function generateSemanticTokens(_config: ResolvedSystemConfig): Generator
     const binding = derivationToBinding(derivation);
     const parent = derivationParent(derivation);
 
-    // dependsOn[0] = the actual upstream node in the cascade graph (parent
-    // semantic or family).
-    // dependsOn[1] = dark-mode position token for the Tailwind exporter's
-    // typed convention. Preserved verbatim from the v1 generator.
-    const darkTokenName = `${darkRef.family}-${darkRef.position}`;
-    const dependsOn: string[] = [parent];
-    if (darkTokenName !== parent) {
-      dependsOn.push(darkTokenName);
-    }
+    const darkName = `${name}--dark`;
+    const darkBinding = deriveDarkBinding(derivation);
+    const darkParent = deriveDarkParent(derivation);
+
+    const dependsOn: string[] = [parent, darkName];
 
     tokens.push({
       name,
@@ -172,7 +199,7 @@ export function generateSemanticTokens(_config: ResolvedSystemConfig): Generator
       trustLevel: mapping.trustLevel,
       consequence: mapping.consequence,
       dependsOn,
-      description: `${mapping.meaning}. Light: ${lightRef.family}-${lightRef.position}, Dark: ${darkRef.family}-${darkRef.position}.`,
+      description: `${mapping.meaning}. Light: ${lightRef.family}-${lightRef.position}.`,
       generatedAt: timestamp,
       containerQueryAware: true,
       userOverride: null,
@@ -182,6 +209,19 @@ export function generateSemanticTokens(_config: ResolvedSystemConfig): Generator
       },
       requiresConfirmation:
         mapping.consequence === 'destructive' || mapping.consequence === 'permanent',
+    });
+
+    tokens.push({
+      name: darkName,
+      value: darkRef,
+      category: 'color',
+      namespace: 'semantic',
+      binding: darkBinding,
+      dependsOn: [darkParent],
+      description: `Dark mode counterpart of ${name}.`,
+      generatedAt: timestamp,
+      containerQueryAware: true,
+      userOverride: null,
     });
   }
 
