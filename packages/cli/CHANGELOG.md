@@ -1,5 +1,11 @@
 # rafters
 
+## 0.0.62
+
+### Bug Fixes
+
+- fix(design-tokens): dark mode now uses the cascade graph instead of static defaults. Dark counterparts are real graph nodes with `invert` bindings that recompute via WCAG pair data when a color family changes. Previously dark values were frozen at generation-time defaults regardless of the actual color. The Tailwind exporter resolves dark tokens by lookup and warns when a dark token is unresolved.
+
 ## 0.0.61
 
 ### Bug Fixes
