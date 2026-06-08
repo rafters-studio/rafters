@@ -1,7 +1,7 @@
 import { SCALE_POSITIONS } from '@rafters/color-utils';
 import { type ColorReference, ColorReferenceSchema, type ColorValue } from '@rafters/shared';
 import { z } from 'zod';
-import { definePlugin } from '../plugin.js';
+import { definePlugin, resolveParent } from '../plugin.js';
 
 const ContrastInputSchema = z.object({
   against: z.string(),
@@ -63,31 +63,6 @@ function requireScalePosition(index: number, label: string): string {
   return position;
 }
 
-function isPositionString(value: unknown): value is string {
-  return typeof value === 'string';
-}
-
-function resolveBasePosition(position: string): number {
-  const map: Record<string, number> = {
-    '50': 0,
-    '100': 1,
-    '200': 2,
-    '300': 3,
-    '400': 4,
-    '500': 5,
-    '600': 6,
-    '700': 7,
-    '800': 8,
-    '900': 9,
-    '950': 10,
-  };
-  const index = map[position];
-  if (index === undefined) {
-    throw new Error(`contrast plugin: unknown scale position "${position}"`);
-  }
-  return index;
-}
-
 /**
  * Find a WCAG-compliant foreground for a parent token's current value.
  *
@@ -104,26 +79,12 @@ export const contrastPlugin = definePlugin<ContrastInput, ColorReference>({
   outputSchema: ColorReferenceSchema,
   dependsOn: (input) => [input.against],
   transform: (input, get) => {
-    const parent = get(input.against);
-    if (!parent || typeof parent !== 'object' || !('family' in parent) || !('position' in parent)) {
-      throw new Error(
-        `contrast plugin: parent token "${input.against}" did not resolve to a ColorReference`,
-      );
+    const resolved = resolveParent(input.against, get);
+    if (!resolved) {
+      throw new Error(`contrast plugin: "${input.against}" could not resolve`);
     }
-    const parentRef = parent as { family: string; position: unknown };
-    if (!isPositionString(parentRef.position)) {
-      throw new Error(
-        `contrast plugin: parent token "${input.against}" position is not a scale string`,
-      );
-    }
-    const basePosition = resolveBasePosition(parentRef.position);
-
-    const family = get(parentRef.family) as ColorValueWithForegroundRefs | undefined;
-    if (!family) {
-      throw new Error(
-        `contrast plugin: family "${parentRef.family}" (from "${input.against}") not in registry`,
-      );
-    }
+    const { positionIndex: basePosition, family: rawFamily, familyName } = resolved;
+    const family = rawFamily as ColorValueWithForegroundRefs;
 
     if (family.foregroundReferences?.auto) {
       const ref = family.foregroundReferences.auto;
@@ -140,15 +101,15 @@ export const contrastPlugin = definePlugin<ContrastInput, ColorReference>({
       const partner = input.level === 'AAA' ? (aaaPartner ?? aaPartner) : aaPartner;
       if (partner !== undefined) {
         return {
-          family: parentRef.family,
-          position: requireScalePosition(partner, `${parentRef.family} pair`),
+          family: familyName,
+          position: requireScalePosition(partner, `${familyName} pair`),
         };
       }
     }
 
     throw new Error(
-      `contrast plugin: family "${parentRef.family}" has no foregroundReferences and no accessibility ` +
-        `WCAG pair partner for position ${parentRef.position} (against ${input.against})`,
+      `contrast plugin: family "${familyName}" has no foregroundReferences and no accessibility ` +
+        `WCAG pair partner for position ${resolved.ref.position} (against ${input.against})`,
     );
   },
 });
