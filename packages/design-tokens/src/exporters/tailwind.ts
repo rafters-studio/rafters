@@ -305,7 +305,7 @@ function generateThemeBlock(groups: GroupedTokens): string {
   if (groups.color.length > 0) {
     for (const token of groups.color) {
       const familyName = token.name.replace(/-\d+$/, '');
-      if (DEFAULT_PALETTE_NAMES.has(familyName) && token.userOverride != null) continue;
+      if (DEFAULT_PALETTE_NAMES.has(familyName) && token.userOverride == null) continue;
       const value = tokenValueToCSS(token);
       if (value === null) continue;
       lines.push(`  --color-${token.name}: ${value};`);

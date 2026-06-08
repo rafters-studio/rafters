@@ -33,14 +33,9 @@ export function resolveParent(
   const ref = raw as ColorReference;
   const positionIndex = POSITION_TO_INDEX[ref.position];
   if (positionIndex === undefined) return null;
-  let resolved = get(ref.family);
-  let familyName = ref.family;
-  if (resolved && typeof resolved === 'object' && 'family' in resolved && 'position' in resolved) {
-    familyName = (resolved as ColorReference).family;
-    resolved = get(familyName);
-  }
-  if (!resolved || typeof resolved !== 'object' || !('scale' in resolved)) return null;
-  return { ref, positionIndex, family: resolved as ColorValue, familyName };
+  const result = resolveFamily(ref.family, get);
+  if (!result) return null;
+  return { ref, positionIndex, ...result };
 }
 
 export type PluginSpec<I, O> = {

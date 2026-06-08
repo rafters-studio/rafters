@@ -88,7 +88,7 @@ export const statePlugin = definePlugin<StateInput, ColorReference>({
     if (!resolved) {
       throw new Error(`state plugin: "${input.from}" could not resolve`);
     }
-    const { positionIndex: basePosition, family: rawFamily, familyName: _familyName } = resolved;
+    const { positionIndex: basePosition, family: rawFamily } = resolved;
     const family = rawFamily as ColorValueWithStateRefs;
 
     const precomputed = family.stateReferences?.[input.stateType];
