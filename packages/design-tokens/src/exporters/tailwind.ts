@@ -14,7 +14,10 @@
  */
 
 import type { ColorReference, ColorValue, Token, TypographyElementOverride } from '@rafters/shared';
+import { DEFAULT_COLOR_PALETTE_BASES } from '../generators/defaults.js';
 import type { TokenRegistry } from '../registry.js';
+
+const DEFAULT_PALETTE_NAMES = new Set(Object.keys(DEFAULT_COLOR_PALETTE_BASES));
 
 /**
  * Options for Tailwind CSS export
@@ -299,9 +302,10 @@ function generateThemeBlock(groups: GroupedTokens): string {
   const lines: string[] = [];
   lines.push('@theme {');
 
-  // Color scales with --color- prefix
   if (groups.color.length > 0) {
     for (const token of groups.color) {
+      const familyName = token.name.replace(/-\d+$/, '');
+      if (DEFAULT_PALETTE_NAMES.has(familyName) && token.userOverride != null) continue;
       const value = tokenValueToCSS(token);
       if (value === null) continue;
       lines.push(`  --color-${token.name}: ${value};`);
