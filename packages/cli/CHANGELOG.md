@@ -1,5 +1,17 @@
 # rafters
 
+## 0.0.64
+
+### Bug Fixes
+
+- fix(design-tokens): neutral is now assignable via the cascade like any other semantic role. Scale and invert plugins resolve through ColorReferences via shared `resolveFamily` helper. When neutral is reassigned during import, the cascade propagates to all surface/text/border tokens.
+- fix(design-tokens): Tailwind exporter prunes color families not referenced by any semantic token. Default palettes that are unused after import no longer appear in the output.
+- fix(cli): init strips imported declarations from the source CSS after apply. Values now live in `.rafters/tokens/` and emit through rafters.css. Source file only keeps utilities, custom classes, and @apply rules.
+
+### Breaking Changes
+
+- The default color family is now named `zinc` (was `neutral`). `neutral` is a semantic role that points at zinc by default and can be reassigned during import. Existing `.rafters/tokens/` files from prior inits need re-init to pick up the rename.
+
 ## 0.0.63
 
 ### Bug Fixes

@@ -1,7 +1,7 @@
 import { SCALE_POSITIONS } from '@rafters/color-utils';
-import { type ColorReference, ColorReferenceSchema, type ColorValue } from '@rafters/shared';
+import { type ColorReference, ColorReferenceSchema } from '@rafters/shared';
 import { z } from 'zod';
-import { definePlugin } from '../plugin.js';
+import { definePlugin, resolveFamily } from '../plugin.js';
 
 const ScaleInputSchema = z.object({
   familyName: z.string(),
@@ -16,14 +16,14 @@ export const scalePlugin = definePlugin<ScaleInput, ColorReference>({
   outputSchema: ColorReferenceSchema,
   dependsOn: (input) => [input.familyName],
   transform: (input, get) => {
-    const family = get(input.familyName) as ColorValue | undefined;
-    if (!family) {
+    const result = resolveFamily(input.familyName, get);
+    if (!result) {
       throw new Error(`scale plugin: family "${input.familyName}" not found in registry`);
     }
     const position = SCALE_POSITIONS[input.scalePosition];
     if (position === undefined) {
       throw new Error(`scale plugin: invalid position index ${input.scalePosition}`);
     }
-    return { family: input.familyName, position };
+    return { family: result.resolvedName, position };
   },
 });

@@ -239,4 +239,62 @@ describe('cascade integration', () => {
       expect(r.get('primary-hover')?.value).toEqual(before.primaryHover);
     });
   });
+
+  describe('semantic role as family reference (neutral pattern)', () => {
+    function setupNeutralChain(): TokenRegistry {
+      const zinc: Token = {
+        name: 'zinc',
+        namespace: 'color',
+        category: 'color',
+        value: buildAccentFamily('zinc'),
+        userOverride: null,
+      };
+      const r = new TokenRegistry(
+        [
+          zinc,
+          semanticToken('neutral'),
+          semanticToken('background'),
+          semanticToken('foreground'),
+          semanticToken('background--dark'),
+        ],
+        [scalePlugin, invertPlugin],
+      );
+      r.bind('neutral', 'scale', { familyName: 'zinc', scalePosition: 5 });
+      r.bind('background', 'scale', { familyName: 'neutral', scalePosition: 0 });
+      r.bind('foreground', 'scale', { familyName: 'neutral', scalePosition: 10 });
+      r.bind('background--dark', 'invert', { familyName: 'neutral', basePosition: 0 });
+      return r;
+    }
+
+    it('scale plugin resolves through a ColorReference', () => {
+      const r = setupNeutralChain();
+      expect(r.get('background')?.value).toEqual({ family: 'zinc', position: '50' });
+      expect(r.get('foreground')?.value).toEqual({ family: 'zinc', position: '950' });
+    });
+
+    it('invert plugin resolves through a ColorReference', () => {
+      const r = setupNeutralChain();
+      const dark = r.get('background--dark')?.value;
+      expect(dark).toBeDefined();
+      expect((dark as { family: string }).family).toBe('zinc');
+    });
+
+    it('reassigning neutral cascades to all dependents', () => {
+      const r = setupNeutralChain();
+      const newFamily = buildAccentFamily('mud');
+      r.define({
+        name: 'mud',
+        namespace: 'color',
+        category: 'color',
+        value: newFamily,
+        userOverride: null,
+      });
+      r.set('neutral', { family: 'mud', position: '500' }, { reason: 'reassign neutral' });
+
+      expect(r.get('background')?.value).toEqual({ family: 'mud', position: '50' });
+      expect(r.get('foreground')?.value).toEqual({ family: 'mud', position: '950' });
+      const dark = r.get('background--dark')?.value;
+      expect((dark as { family: string }).family).toBe('mud');
+    });
+  });
 });

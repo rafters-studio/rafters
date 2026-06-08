@@ -85,6 +85,20 @@ async function backupCss(cssPath: string): Promise<string> {
   return backupPath;
 }
 
+async function stripImportedDeclarations(
+  cwd: string,
+  cssPath: string,
+  importedNames: string[],
+): Promise<void> {
+  if (importedNames.length === 0) return;
+  const fullPath = join(cwd, cssPath);
+  const content = await readFile(fullPath, 'utf-8');
+  const pattern = new RegExp(importedNames.map((n) => `^\\s*--${n}[^;]*;\\s*$`).join('|'), 'gm');
+  const cleaned = content.replace(pattern, '');
+  const collapsed = cleaned.replace(/\n{3,}/g, '\n\n');
+  await writeFile(fullPath, collapsed);
+}
+
 /**
  * Configuration persisted in `.rafters/config.rafters.json`.
  *
@@ -967,6 +981,11 @@ export async function init(options: InitOptions): Promise<void> {
           // overrides cascaded through their dependents.
           saveRegistryToDir(paths.tokens, registry);
           await generateOutputs(cwd, paths, registry, exports, shadcn);
+          const importedNames = [
+            ...toImportColors.map((c) => c.name),
+            ...toImportNonColors.map((d) => d.name),
+          ];
+          await stripImportedDeclarations(cwd, detectedCssPath, importedNames);
           log({
             event: 'init:import_applied',
             count: toImportColors.length + toImportNonColors.length - skipped.length,
@@ -1102,6 +1121,10 @@ export async function init(options: InitOptions): Promise<void> {
 
             saveRegistryToDir(paths.tokens, registry);
             await generateOutputs(cwd, paths, registry, exports, shadcn);
+            const themeImportedNames = families.flatMap((f) =>
+              SCALE_POSITIONS.map((p) => `color-${f.name}-${p}`).concat([`color-${f.name}`]),
+            );
+            await stripImportedDeclarations(cwd, detectedCssPath, themeImportedNames);
             log({
               event: 'init:import_palettes_applied',
               cssPath: detectedCssPath,
