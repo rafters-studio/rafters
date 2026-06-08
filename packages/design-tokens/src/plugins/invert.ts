@@ -1,11 +1,10 @@
 import { findDarkCounterpartIndex, SCALE_POSITIONS } from '@rafters/color-utils';
 import { type ColorReference, ColorReferenceSchema } from '@rafters/shared';
 import { z } from 'zod';
-import { definePlugin, resolveFamily } from '../plugin.js';
+import { definePlugin, resolveParent } from '../plugin.js';
 
 const InvertInputSchema = z.object({
-  familyName: z.string(),
-  basePosition: z.number().int().min(0).max(10),
+  fromToken: z.string(),
 });
 
 type InvertInput = z.infer<typeof InvertInputSchema>;
@@ -14,19 +13,17 @@ export const invertPlugin = definePlugin<InvertInput, ColorReference>({
   name: 'invert',
   inputSchema: InvertInputSchema,
   outputSchema: ColorReferenceSchema,
-  dependsOn: (input) => [input.familyName],
+  dependsOn: (input) => [input.fromToken],
   transform: (input, get) => {
-    const result = resolveFamily(input.familyName, get);
-    if (!result) {
-      throw new Error(`invert plugin: family "${input.familyName}" not found in registry`);
+    const parent = resolveParent(input.fromToken, get);
+    if (!parent) {
+      throw new Error(`invert plugin: "${input.fromToken}" could not resolve`);
     }
-    const darkIndex = findDarkCounterpartIndex(input.basePosition, result.family);
+    const darkIndex = findDarkCounterpartIndex(parent.positionIndex, parent.family);
     const darkPosition = SCALE_POSITIONS[darkIndex];
     if (!darkPosition) {
-      throw new Error(
-        `invert plugin: invalid dark index ${darkIndex} for base position ${input.basePosition}`,
-      );
+      throw new Error(`invert plugin: invalid dark index ${darkIndex}`);
     }
-    return { family: result.resolvedName, position: darkPosition };
+    return { family: parent.familyName, position: darkPosition };
   },
 });
