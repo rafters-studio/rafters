@@ -93,7 +93,10 @@ async function stripImportedDeclarations(
   if (importedNames.length === 0) return;
   const fullPath = join(cwd, cssPath);
   const content = await readFile(fullPath, 'utf-8');
-  const pattern = new RegExp(importedNames.map((n) => `^\\s*--${n}[^;]*;\\s*$`).join('|'), 'gm');
+  const pattern = new RegExp(
+    importedNames.map((n) => `^\\s*--${n}\\s*:[^;]*;\\s*$`).join('|'),
+    'gm',
+  );
   const cleaned = content.replace(pattern, '');
   const collapsed = cleaned.replace(/\n{3,}/g, '\n\n');
   await writeFile(fullPath, collapsed);

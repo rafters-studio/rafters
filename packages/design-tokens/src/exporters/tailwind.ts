@@ -293,10 +293,18 @@ function generateRootBlock(semanticTokens: Token[], darkMode: 'class' | 'media' 
 
 function collectReferencedFamilies(semanticTokens: Token[]): Set<string> {
   const families = new Set<string>();
+  const tokensByName = new Map<string, Token>();
+  for (const t of semanticTokens) tokensByName.set(t.name, t);
+
   for (const token of semanticTokens) {
     const { value } = token;
     if (typeof value === 'object' && value !== null && 'family' in value) {
-      families.add((value as ColorReference).family);
+      const family = (value as ColorReference).family;
+      families.add(family);
+      const backing = tokensByName.get(family);
+      if (backing?.value && typeof backing.value === 'object' && 'family' in backing.value) {
+        families.add((backing.value as ColorReference).family);
+      }
     }
   }
   return families;
