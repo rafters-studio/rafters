@@ -103,7 +103,7 @@ function setupSemanticChain(): TokenRegistry {
   r.bind('primary-foreground', 'contrast', { against: 'primary', level: 'AAA' });
   r.bind('primary-hover', 'state', { from: 'primary', stateType: 'hover' });
   r.bind('primary-active', 'state', { from: 'primary', stateType: 'active' });
-  r.bind('primary-dark', 'invert', { familyName: 'accent', basePosition: 5 });
+  r.bind('primary-dark', 'invert', { fromToken: 'primary' });
   return r;
 }
 
@@ -262,7 +262,7 @@ describe('cascade integration', () => {
       r.bind('neutral', 'scale', { familyName: 'zinc', scalePosition: 5 });
       r.bind('background', 'scale', { familyName: 'neutral', scalePosition: 0 });
       r.bind('foreground', 'scale', { familyName: 'neutral', scalePosition: 10 });
-      r.bind('background--dark', 'invert', { familyName: 'neutral', basePosition: 0 });
+      r.bind('background--dark', 'invert', { fromToken: 'background' });
       return r;
     }
 

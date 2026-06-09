@@ -1,7 +1,7 @@
 import { SCALE_POSITIONS } from '@rafters/color-utils';
 import { type ColorReference, ColorReferenceSchema, type ColorValue } from '@rafters/shared';
 import { z } from 'zod';
-import { definePlugin } from '../plugin.js';
+import { definePlugin, resolveParent } from '../plugin.js';
 
 const StateTypeSchema = z.enum(['hover', 'active', 'focus', 'disabled']);
 type StateType = z.infer<typeof StateTypeSchema>;
@@ -15,20 +15,6 @@ type StateInput = z.infer<typeof StateInputSchema>;
 
 type ColorValueWithStateRefs = ColorValue & {
   stateReferences?: Record<string, { family: string; position: string }>;
-};
-
-const POSITION_TO_INDEX: Record<string, number> = {
-  '50': 0,
-  '100': 1,
-  '200': 2,
-  '300': 3,
-  '400': 4,
-  '500': 5,
-  '600': 6,
-  '700': 7,
-  '800': 8,
-  '900': 9,
-  '950': 10,
 };
 
 /**
@@ -98,29 +84,12 @@ export const statePlugin = definePlugin<StateInput, ColorReference>({
   outputSchema: ColorReferenceSchema,
   dependsOn: (input) => [input.from],
   transform: (input, get) => {
-    const parent = get(input.from);
-    if (!parent || typeof parent !== 'object' || !('family' in parent) || !('position' in parent)) {
-      throw new Error(
-        `state plugin: parent token "${input.from}" did not resolve to a ColorReference`,
-      );
+    const resolved = resolveParent(input.from, get);
+    if (!resolved) {
+      throw new Error(`state plugin: "${input.from}" could not resolve`);
     }
-    const parentRef = parent as { family: string; position: unknown };
-    if (typeof parentRef.position !== 'string') {
-      throw new Error(`state plugin: parent token "${input.from}" position is not a scale string`);
-    }
-    const basePosition = POSITION_TO_INDEX[parentRef.position];
-    if (basePosition === undefined) {
-      throw new Error(
-        `state plugin: parent token "${input.from}" position "${parentRef.position}" is not a known scale step`,
-      );
-    }
-
-    const family = get(parentRef.family) as ColorValueWithStateRefs | undefined;
-    if (!family) {
-      throw new Error(
-        `state plugin: family "${parentRef.family}" (from "${input.from}") not in registry`,
-      );
-    }
+    const { positionIndex: basePosition, family: rawFamily } = resolved;
+    const family = rawFamily as ColorValueWithStateRefs;
 
     const precomputed = family.stateReferences?.[input.stateType];
     if (precomputed) {
@@ -130,7 +99,7 @@ export const statePlugin = definePlugin<StateInput, ColorReference>({
     const pairs = family.accessibility?.wcagAAA?.normal;
     if (!pairs || pairs.length === 0) {
       throw new Error(
-        `state plugin: family "${parentRef.family}" has no accessibility.wcagAAA.normal ladder (color generator must emit accessibility metadata)`,
+        `state plugin: family "${resolved.familyName}" has no accessibility.wcagAAA.normal ladder (color generator must emit accessibility metadata)`,
       );
     }
     const ladder = collectLadder(pairs);
@@ -144,15 +113,15 @@ export const statePlugin = definePlugin<StateInput, ColorReference>({
     const targetIndex = ladder[clampedRank];
     if (targetIndex === undefined) {
       throw new Error(
-        `state plugin: ladder lookup failed for rank ${clampedRank} on family "${parentRef.family}"`,
+        `state plugin: ladder lookup failed for rank ${clampedRank} on family "${resolved.familyName}"`,
       );
     }
     const position = SCALE_POSITIONS[targetIndex];
     if (!position) {
       throw new Error(
-        `state plugin: invalid scale index ${targetIndex} for family "${parentRef.family}"`,
+        `state plugin: invalid scale index ${targetIndex} for family "${resolved.familyName}"`,
       );
     }
-    return { family: parentRef.family, position };
+    return { family: resolved.familyName, position };
   },
 });

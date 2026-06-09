@@ -299,7 +299,6 @@ function generateThemeBlock(groups: GroupedTokens): string {
   const lines: string[] = [];
   lines.push('@theme {');
 
-  // Color scales with --color- prefix
   if (groups.color.length > 0) {
     for (const token of groups.color) {
       const value = tokenValueToCSS(token);

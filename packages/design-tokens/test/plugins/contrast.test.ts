@@ -83,7 +83,7 @@ describe('contrastPlugin', () => {
     const g = new TokenGraph([contrastPlugin]);
     g.seed('not-a-color-ref', 'some-string');
     expect(() => g.bind('fg', 'contrast', { against: 'not-a-color-ref', level: 'AAA' })).toThrow(
-      /did not resolve to a ColorReference/,
+      /could not resolve/,
     );
   });
 

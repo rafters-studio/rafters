@@ -138,12 +138,12 @@ function derivationParent(derivation: Derivation, suffix = ''): string {
   }
 }
 
-function deriveDarkBinding(derivation: Derivation): Binding {
+function deriveDarkBinding(derivation: Derivation, parentName: string): Binding {
   switch (derivation.kind) {
     case 'scale':
       return {
         plugin: 'invert',
-        input: { familyName: derivation.family, basePosition: derivation.scalePosition },
+        input: { fromToken: parentName },
       };
     case 'state':
       return {
@@ -172,7 +172,7 @@ export function generateSemanticTokens(_config: ResolvedSystemConfig): Generator
     const parent = derivationParent(derivation);
 
     const darkName = `${name}--dark`;
-    const darkBinding = deriveDarkBinding(derivation);
+    const darkBinding = deriveDarkBinding(derivation, name);
     const darkParent = derivationParent(derivation, '--dark');
 
     const dependsOn: string[] = [parent, darkName];

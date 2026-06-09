@@ -116,7 +116,7 @@ describe('statePlugin', () => {
     const g = new TokenGraph([statePlugin]);
     g.seed('not-a-color-ref', 'some-string');
     expect(() => g.bind('x', 'state', { from: 'not-a-color-ref', stateType: 'hover' })).toThrow(
-      /did not resolve to a ColorReference/,
+      /could not resolve/,
     );
   });
 

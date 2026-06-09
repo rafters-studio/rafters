@@ -24,6 +24,6 @@ export const scalePlugin = definePlugin<ScaleInput, ColorReference>({
     if (position === undefined) {
       throw new Error(`scale plugin: invalid position index ${input.scalePosition}`);
     }
-    return { family: result.resolvedName, position };
+    return { family: result.familyName, position };
   },
 });
