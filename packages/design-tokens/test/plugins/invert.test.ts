@@ -24,7 +24,10 @@ describe('invertPlugin', () => {
     expect(g.get('parent-dark')).toEqual({ family: 'accent', position: '900' });
   });
 
-  it('falls back to AA when AAA pair is too close', () => {
+  it('picks the AAA pair whose background leg is nearest the inverted target', () => {
+    // Parent at index 2; light pair is (2,4). Inverted bg target is 8.
+    // AAA anchors are only {2,4}: orientation (4,2) has from-dist 4 vs (2,4)'s 6,
+    // so the bg leg lands at 4 — the darkest AAA-paired anchor available.
     const family: ColorValue = {
       name: 'accent',
       scale: minimalScale,
@@ -37,10 +40,13 @@ describe('invertPlugin', () => {
     g.seed('accent', family);
     g.bind('parent', 'scale', { familyName: 'accent', scalePosition: 2 });
     g.bind('parent-dark', 'invert', { fromToken: 'parent' });
-    expect(g.get('parent-dark')).toEqual({ family: 'accent', position: '800' });
+    expect(g.get('parent-dark')).toEqual({ family: 'accent', position: '400' });
   });
 
-  it('falls back to mathematical inversion when no usable WCAG pair', () => {
+  it('uses the nearest passing pair even when the available pair is close', () => {
+    // Old code forced mathematical inversion when pair distance < 3; the new
+    // contract trusts the nearest passing pair. Parent 2 -> light pair (2,3),
+    // inverted bg target 8; (3,2) has from-dist 5 vs (2,3)'s 6 -> bg leg 3.
     const family: ColorValue = {
       name: 'accent',
       scale: minimalScale,
@@ -53,7 +59,7 @@ describe('invertPlugin', () => {
     g.seed('accent', family);
     g.bind('parent', 'scale', { familyName: 'accent', scalePosition: 2 });
     g.bind('parent-dark', 'invert', { fromToken: 'parent' });
-    expect(g.get('parent-dark')).toEqual({ family: 'accent', position: '800' });
+    expect(g.get('parent-dark')).toEqual({ family: 'accent', position: '300' });
   });
 
   it('throws when family has no accessibility data at all', () => {
@@ -62,7 +68,7 @@ describe('invertPlugin', () => {
     g.seed('accent', family);
     g.bind('parent', 'scale', { familyName: 'accent', scalePosition: 5 });
     expect(() => g.bind('parent-dark', 'invert', { fromToken: 'parent' })).toThrow(
-      /No WCAG accessibility data/,
+      /accessibility metadata required|no WCAG pair partner/,
     );
   });
 
@@ -92,7 +98,9 @@ describe('invertPlugin', () => {
     g.set('primary', { family: 'accent', position: '900' }, { reason: 'reassign' });
     const after = g.get('primary-dark');
 
-    expect(before).toEqual({ family: 'accent', position: '900' });
+    // Mid-tone parent (5): inverted bg target is 10-5=5, and (5,9) pairs it —
+    // a mid stays a mid (the #1635 contract), instead of the old jump to 900.
+    expect(before).toEqual({ family: 'accent', position: '500' });
     expect(after).toEqual({ family: 'accent', position: '50' });
   });
 });

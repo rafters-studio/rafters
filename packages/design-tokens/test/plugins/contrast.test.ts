@@ -93,7 +93,7 @@ describe('contrastPlugin', () => {
     g.seed('accent', family);
     g.seed('primary', { family: 'accent', position: '500' });
     expect(() => g.bind('primary-fg', 'contrast', { against: 'primary', level: 'AAA' })).toThrow(
-      /no foregroundReferences and no accessibility/,
+      /no WCAG pair partner|accessibility metadata requiredibility/,
     );
   });
 });

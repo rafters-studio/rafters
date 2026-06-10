@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Bug Fixes
+
+- fix(design-tokens): dark counterparts no longer collapse to scale extremes (#1635). The invert plugin derives dark values by pair inversion -- the light background+foreground pair is found first, then inverted as a unit; mid-tones stay mid-tones. Dark foregrounds derive as contrast against the dark background, so the pair relationship survives the cascade. Existing projects: run `rafters init --rebuild` to re-derive persisted dark tokens.
+
 ### Features
 
 - feat(color-utils): new `semanticFor(family)` selection module — purpose-driven pair finding (foreground, hover/active/focus/disabled) and dark derivation by pair inversion with structured tier reporting (#1636). Foreground/state selection is behavior-identical to the existing plugins.

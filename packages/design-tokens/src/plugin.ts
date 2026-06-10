@@ -1,4 +1,4 @@
-import { POSITION_TO_INDEX } from '@rafters/color-utils';
+import { POSITION_TO_INDEX, type SemanticContext, semanticFor } from '@rafters/color-utils';
 import type { ColorReference, ColorValue } from '@rafters/shared';
 import type { z } from 'zod';
 import type { Plugin } from './graph.js';
@@ -36,6 +36,23 @@ export function resolveParent(
   const result = resolveFamily(ref.family, get);
   if (!result) return null;
   return { ref, positionIndex, ...result };
+}
+
+/**
+ * Resolve a parent token and open a semantic selection context over its
+ * family — the shared preamble of every color plugin (invert/contrast/state).
+ * Throws with the plugin's name when the parent cannot resolve.
+ */
+export function requireSemanticParent(
+  tokenName: string,
+  get: (name: string) => unknown,
+  pluginName: string,
+): { sem: SemanticContext; resolved: ResolvedParent } {
+  const resolved = resolveParent(tokenName, get);
+  if (!resolved) {
+    throw new Error(`${pluginName} plugin: "${tokenName}" could not resolve`);
+  }
+  return { sem: semanticFor(resolved.family, { name: resolved.familyName }), resolved };
 }
 
 export type PluginSpec<I, O> = {
