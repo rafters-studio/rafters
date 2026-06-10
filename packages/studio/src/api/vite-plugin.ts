@@ -11,7 +11,7 @@
 
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { buildColorValue } from '@rafters/color-utils';
+import { buildColorValue, rebakeAccessibility } from '@rafters/color-utils';
 import {
   contrastPlugin,
   invertPlugin,
@@ -22,7 +22,13 @@ import {
   statePlugin,
   TokenRegistry,
 } from '@rafters/design-tokens';
-import { ColorReferenceSchema, ColorValueSchema, OKLCHSchema, TokenSchema } from '@rafters/shared';
+import {
+  ColorReferenceSchema,
+  type ColorValue,
+  ColorValueSchema,
+  OKLCHSchema,
+  TokenSchema,
+} from '@rafters/shared';
 import type { Plugin, ViteDevServer } from 'vite';
 import { z } from 'zod';
 
@@ -414,6 +420,17 @@ export async function handlePostToken(
     ...existingToken,
     ...(patchResult.data as Record<string, unknown>),
   };
+
+  // Re-bake WCAG matrices when the incoming value carries a scale -- a family
+  // supplied as bare {name, scale} would otherwise starve the contrast/state/
+  // invert plugins downstream (guard moved from the removed CLI set, #1643).
+  if (
+    mergedToken.value &&
+    typeof mergedToken.value === 'object' &&
+    'scale' in (mergedToken.value as Record<string, unknown>)
+  ) {
+    mergedToken.value = rebakeAccessibility(mergedToken.value as ColorValue);
+  }
 
   // Validate merged token against full schema
   const tokenResult = TokenSchema.safeParse(mergedToken);

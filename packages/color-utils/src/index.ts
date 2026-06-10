@@ -12,6 +12,7 @@ export {
   generateAccessibilityMetadata,
   meetsAPCAStandard,
   meetsWCAGStandard,
+  rebakeAccessibility,
 } from './accessibility.js';
 
 // Analysis
