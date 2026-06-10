@@ -26,8 +26,9 @@ export const statePlugin = definePlugin<StateInput, ColorReference>({
   outputSchema: ColorReferenceSchema,
   dependsOn: (input) => [input.from],
   transform: (input, get) => {
+    const dark = input.from.includes('--dark');
     const { sem, resolved } = requireSemanticParent(input.from, get, 'state');
-    const pair = sem.pair({ use: input.stateType, from: resolved.ref.position });
+    const pair = sem.pair({ use: input.stateType, from: resolved.ref.position, dark });
     return { family: pair.to.family, position: pair.to.position };
   },
 });
