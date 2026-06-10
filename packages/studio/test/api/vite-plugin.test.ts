@@ -6,6 +6,7 @@
  */
 
 import { EventEmitter } from 'node:events';
+import { buildColorValue } from '@rafters/color-utils';
 import { TokenRegistry } from '@rafters/design-tokens';
 import type { Token } from '@rafters/shared';
 import { ColorReferenceSchema, ColorValueSchema, TokenSchema } from '@rafters/shared';
@@ -741,6 +742,36 @@ describe('studioApiPlugin', () => {
       const response = JSON.parse(res._body);
       expect(response.ok).toBe(true);
       expect(response.token.value).toBe('oklch(0.7 0.3 260)');
+    });
+
+    it('rebakes accessibility when a scale-bearing family value is set (#1643)', async () => {
+      const familyToken: Token = {
+        name: 'mud',
+        value: buildColorValue({ l: 0.45, c: 0.08, h: 60, alpha: 1 }),
+        category: 'color',
+        namespace: 'color',
+        userOverride: null,
+      };
+      const registry = new TokenRegistry([familyToken]);
+      // A designer pastes a new scale: bare {name, scale}, no accessibility.
+      const bare = buildColorValue({ l: 0.55, c: 0.12, h: 200, alpha: 1 });
+      const req = createMockRequest({ value: { name: bare.name, scale: bare.scale } });
+      const res = createMockResponse();
+
+      await handlePostToken(req, res, 'mud', registry);
+
+      expect(res._statusCode).toBe(200);
+      const response = JSON.parse(res._body);
+      expect(response.ok).toBe(true);
+      // The guard must have re-derived the WCAG matrices for the NEW scale --
+      // without this, contrast/state/invert selection starves downstream.
+      const value = response.token.value;
+      expect(value.accessibility?.wcagAAA?.normal?.length).toBeGreaterThan(0);
+      expect(value.accessibility?.onBlack?.contrastRatio).toBeGreaterThan(1);
+      // Persisted in the registry, not just echoed.
+      const stored = registry.get('mud');
+      const storedValue = stored?.value as { accessibility?: { wcagAAA?: { normal: number[][] } } };
+      expect(storedValue.accessibility?.wcagAAA?.normal?.length).toBeGreaterThan(0);
     });
 
     it('successfully updates token with optional fields', async () => {
@@ -1606,15 +1637,21 @@ describe('studioApiPlugin', () => {
     });
 
     it('validates tokens with zocker-generated data', async () => {
-      // Generate valid tokens using zocker
+      // Generate valid tokens using zocker. Strip the binding: zocker
+      // invents random plugin names, and TokenRegistry rightly throws
+      // UnknownPluginError on plugins that are not registered -- a latent
+      // flake whenever the RNG rolled a binding (exposed by #1643's test).
       const generatedToken = zocker(TokenSchema).generate();
       generatedToken.name = 'zocker-generated';
+      generatedToken.binding = undefined;
+      generatedToken.userOverride = null;
 
       const registry = new TokenRegistry([generatedToken]);
 
       // Update with new zocker-generated value
       const updatedToken = zocker(TokenSchema).generate();
       updatedToken.name = 'zocker-generated';
+      updatedToken.binding = undefined;
 
       const req = createMockRequest([updatedToken]);
       const res = createMockResponse();
@@ -1873,6 +1910,9 @@ describe('studioApiPlugin', () => {
     it('works with zocker-generated tokens', () => {
       const generatedToken = zocker(TokenSchema).generate();
       generatedToken.namespace = 'zocker-namespace';
+      // Same latent flake as the batch test: zocker invents plugin names.
+      generatedToken.binding = undefined;
+      generatedToken.userOverride = null;
       const registry = new TokenRegistry([generatedToken, ...colorTokens]);
       const res = createMockResponse();
 
