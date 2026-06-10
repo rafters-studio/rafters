@@ -1219,7 +1219,7 @@ export const DEFAULT_SEMANTIC_COLOR_MAPPINGS: Record<string, SemanticColorMappin
   // Card surfaces
   card: {
     light: { family: 'neutral', position: '50' },
-    dark: { family: 'neutral', position: '950' },
+    dark: { family: 'neutral', position: '700' },
     meaning: 'Card and contained surface background',
     contexts: ['cards', 'modals', 'dialogs', 'panels'],
     do: ['Use for elevated surfaces'],
@@ -1235,7 +1235,7 @@ export const DEFAULT_SEMANTIC_COLOR_MAPPINGS: Record<string, SemanticColorMappin
   },
   'card-hover': {
     light: { family: 'neutral', position: '100' },
-    dark: { family: 'neutral', position: '900' },
+    dark: { family: 'neutral', position: '600' },
     meaning: 'Card hover state background',
     contexts: ['card-hover'],
     do: ['Use for card hover states'],
@@ -1243,17 +1243,49 @@ export const DEFAULT_SEMANTIC_COLOR_MAPPINGS: Record<string, SemanticColorMappin
   },
   'card-border': {
     light: { family: 'neutral', position: '200' },
-    dark: { family: 'neutral', position: '800' },
+    dark: { family: 'neutral', position: '500' },
     meaning: 'Card border color',
     contexts: ['card-borders'],
     do: ['Use for card borders'],
     never: ['Use for dividers within cards'],
   },
+  panel: {
+    light: { family: 'neutral', position: '100' },
+    dark: { family: 'neutral', position: '800' },
+    meaning: 'Elevated panel surface -- one level above the page',
+    contexts: ['panels', 'toolbars', 'headers', 'docks'],
+    do: ['Use for persistent elevated chrome', 'Pair with panel-foreground'],
+    never: ['Use for page-level backgrounds', 'Stack directly on card without a border'],
+  },
+  'panel-foreground': {
+    light: { family: 'neutral', position: '950' },
+    dark: { family: 'neutral', position: '50' },
+    meaning: 'Text and icons on panel surfaces',
+    contexts: ['panel-text'],
+    do: ['Use on panel backgrounds'],
+    never: ['Use on page background'],
+  },
+  'panel-hover': {
+    light: { family: 'neutral', position: '200' },
+    dark: { family: 'neutral', position: '700' },
+    meaning: 'Panel surface hover state',
+    contexts: ['panel-interaction'],
+    do: ['Use for hoverable panel regions'],
+    never: ['Use as a resting surface'],
+  },
+  'panel-border': {
+    light: { family: 'neutral', position: '200' },
+    dark: { family: 'neutral', position: '600' },
+    meaning: 'Borders separating panel from surrounding surfaces',
+    contexts: ['panel-edges'],
+    do: ['Use to delimit panels'],
+    never: ['Use as text color'],
+  },
 
   // Popover surfaces
   popover: {
     light: { family: 'neutral', position: '50' },
-    dark: { family: 'neutral', position: '950' },
+    dark: { family: 'neutral', position: '700' },
     meaning: 'Popover and dropdown background',
     contexts: ['dropdowns', 'tooltips', 'menus'],
     do: ['Use for floating elements'],
@@ -2385,7 +2417,7 @@ export const DEFAULT_SEMANTIC_COLOR_MAPPINGS: Record<string, SemanticColorMappin
   // ============================================================================
   sidebar: {
     light: { family: 'neutral', position: '50' },
-    dark: { family: 'neutral', position: '950' },
+    dark: { family: 'neutral', position: '900' },
     meaning: 'Sidebar background',
     contexts: ['navigation-sidebar', 'side-panels'],
     do: ['Use for sidebar backgrounds'],
@@ -2473,7 +2505,7 @@ export const DEFAULT_SEMANTIC_COLOR_MAPPINGS: Record<string, SemanticColorMappin
   },
   'sidebar-item': {
     light: { family: 'neutral', position: '50' },
-    dark: { family: 'neutral', position: '950' },
+    dark: { family: 'neutral', position: '900' },
     meaning: 'Sidebar item background',
     contexts: ['sidebar-items'],
     do: ['Use for sidebar item backgrounds'],
@@ -2557,7 +2589,7 @@ export const DEFAULT_SEMANTIC_COLOR_MAPPINGS: Record<string, SemanticColorMappin
   // ============================================================================
   nav: {
     light: { family: 'neutral', position: '50' },
-    dark: { family: 'neutral', position: '950' },
+    dark: { family: 'neutral', position: '900' },
     meaning: 'Navigation background',
     contexts: ['navbars', 'breadcrumbs', 'tabs'],
     do: ['Use for navigation backgrounds'],
@@ -2657,7 +2689,7 @@ export const DEFAULT_SEMANTIC_COLOR_MAPPINGS: Record<string, SemanticColorMappin
   },
   'table-header': {
     light: { family: 'neutral', position: '100' },
-    dark: { family: 'neutral', position: '900' },
+    dark: { family: 'neutral', position: '800' },
     meaning: 'Table header background',
     contexts: ['table-headers'],
     do: ['Use for table header backgrounds'],

@@ -1,0 +1,42 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`elevation ladder -- designed dark positions (#1638) > snapshot: the defaults elevation table (REVIEW WITH SEAN BEFORE LOCKING) 1`] = `
+{
+  "background": {
+    "dark": "950",
+    "light": "50",
+  },
+  "card": {
+    "dark": "700",
+    "light": "50",
+  },
+  "nav": {
+    "dark": "900",
+    "light": "50",
+  },
+  "overlay": {
+    "dark": "950",
+    "light": "950",
+  },
+  "panel": {
+    "dark": "800",
+    "light": "100",
+  },
+  "popover": {
+    "dark": "700",
+    "light": "50",
+  },
+  "sidebar": {
+    "dark": "900",
+    "light": "50",
+  },
+  "surface": {
+    "dark": "900",
+    "light": "50",
+  },
+  "table-header": {
+    "dark": "800",
+    "light": "100",
+  },
+}
+`;

@@ -23,23 +23,10 @@
  * to get the current dark ColorReference (cascade-derived, not static).
  */
 
+import { POSITION_TO_INDEX } from '@rafters/color-utils';
 import type { Binding, ColorReference, Token } from '@rafters/shared';
 import { DEFAULT_SEMANTIC_COLOR_MAPPINGS, type SemanticColorMapping } from './defaults.js';
 import type { GeneratorResult, ResolvedSystemConfig } from './types.js';
-
-const POSITION_TO_INDEX: Record<string, number> = {
-  '50': 0,
-  '100': 1,
-  '200': 2,
-  '300': 3,
-  '400': 4,
-  '500': 5,
-  '600': 6,
-  '700': 7,
-  '800': 8,
-  '900': 9,
-  '950': 10,
-};
 
 const FOREGROUND_SUFFIXES = ['-foreground', '-text', '-contrast'] as const;
 const STATE_SUFFIXES = ['-hover', '-active', '-focus', '-disabled'] as const;
@@ -138,13 +125,29 @@ function derivationParent(derivation: Derivation, suffix = ''): string {
   }
 }
 
-function deriveDarkBinding(derivation: Derivation, parentName: string): Binding {
+function deriveDarkBinding(
+  derivation: Derivation,
+  parentName: string,
+  darkRef: ColorReference,
+): Binding {
   switch (derivation.kind) {
-    case 'scale':
+    case 'scale': {
+      // Top-of-tree roles use the mapping's DESIGNED dark pair (elevation is
+      // a design decision, #1638) -- bound via scale so family reassignment
+      // still cascades (resolveFamily follows the role's ColorReference).
+      // Mode-invariant roles (overlay) pin simply by declaring dark == light.
+      // Derived tokens (foregrounds, states) keep computed derivation.
+      const scalePosition = POSITION_TO_INDEX[darkRef.position];
+      if (scalePosition === undefined) {
+        throw new Error(
+          `semantic generator: invalid designed dark position "${darkRef.position}" for ${parentName}`,
+        );
+      }
       return {
-        plugin: 'invert',
-        input: { fromToken: parentName },
+        plugin: 'scale',
+        input: { familyName: darkRef.family, scalePosition },
       };
+    }
     case 'state':
       return {
         plugin: 'state',
@@ -172,7 +175,7 @@ export function generateSemanticTokens(_config: ResolvedSystemConfig): Generator
     const parent = derivationParent(derivation);
 
     const darkName = `${name}--dark`;
-    const darkBinding = deriveDarkBinding(derivation, name);
+    const darkBinding = deriveDarkBinding(derivation, name, darkRef);
     const darkParent = derivationParent(derivation, '--dark');
 
     const dependsOn: string[] = [parent, darkName];
