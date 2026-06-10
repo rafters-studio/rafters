@@ -1,0 +1,471 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`generateSemanticColorSuggestions (seed-derived, anchored to colorWheel formulas) > snapshot: suggestions per seed (REVIEW WITH SEAN BEFORE LOCKING) 1`] = `
+{
+  "blue": {
+    "danger": [
+      {
+        "alpha": 1,
+        "c": 0.15,
+        "h": 25,
+        "l": 0.55,
+      },
+      {
+        "alpha": 1,
+        "c": 0.15,
+        "h": 30,
+        "l": 0.6,
+      },
+      {
+        "alpha": 1,
+        "c": 0.15,
+        "h": 15,
+        "l": 0.5,
+      },
+    ],
+    "destructive": [
+      {
+        "alpha": 1,
+        "c": 0.15,
+        "h": 25,
+        "l": 0.55,
+      },
+      {
+        "alpha": 1,
+        "c": 0.15,
+        "h": 30,
+        "l": 0.6,
+      },
+      {
+        "alpha": 1,
+        "c": 0.15,
+        "h": 15,
+        "l": 0.5,
+      },
+    ],
+    "info": [
+      {
+        "alpha": 1,
+        "c": 0.12,
+        "h": 233,
+        "l": 0.585,
+      },
+      {
+        "alpha": 1,
+        "c": 0.128,
+        "h": 240,
+        "l": 0.63,
+      },
+      {
+        "alpha": 1,
+        "c": 0.102,
+        "h": 225,
+        "l": 0.539,
+      },
+    ],
+    "success": [
+      {
+        "alpha": 1,
+        "c": 0.135,
+        "h": 145,
+        "l": 0.55,
+      },
+      {
+        "alpha": 1,
+        "c": 0.135,
+        "h": 155,
+        "l": 0.6,
+      },
+      {
+        "alpha": 1,
+        "c": 0.135,
+        "h": 135,
+        "l": 0.5,
+      },
+    ],
+    "warning": [
+      {
+        "alpha": 1,
+        "c": 0.135,
+        "h": 85,
+        "l": 0.75,
+      },
+      {
+        "alpha": 1,
+        "c": 0.135,
+        "h": 95,
+        "l": 0.8,
+      },
+      {
+        "alpha": 1,
+        "c": 0.135,
+        "h": 75,
+        "l": 0.7,
+      },
+    ],
+  },
+  "gray": {
+    "danger": [
+      {
+        "alpha": 1,
+        "c": 0.01,
+        "h": 25,
+        "l": 0.55,
+      },
+      {
+        "alpha": 1,
+        "c": 0.01,
+        "h": 30,
+        "l": 0.6,
+      },
+      {
+        "alpha": 1,
+        "c": 0.01,
+        "h": 15,
+        "l": 0.5,
+      },
+    ],
+    "destructive": [
+      {
+        "alpha": 1,
+        "c": 0.01,
+        "h": 25,
+        "l": 0.55,
+      },
+      {
+        "alpha": 1,
+        "c": 0.01,
+        "h": 30,
+        "l": 0.6,
+      },
+      {
+        "alpha": 1,
+        "c": 0.01,
+        "h": 15,
+        "l": 0.5,
+      },
+    ],
+    "info": [
+      {
+        "alpha": 1,
+        "c": 0.009,
+        "h": 230,
+        "l": 0.58,
+      },
+      {
+        "alpha": 1,
+        "c": 0.009,
+        "h": 240,
+        "l": 0.63,
+      },
+      {
+        "alpha": 1,
+        "c": 0.009,
+        "h": 220,
+        "l": 0.53,
+      },
+    ],
+    "success": [
+      {
+        "alpha": 1,
+        "c": 0.009,
+        "h": 145,
+        "l": 0.55,
+      },
+      {
+        "alpha": 1,
+        "c": 0.009,
+        "h": 155,
+        "l": 0.6,
+      },
+      {
+        "alpha": 1,
+        "c": 0.009,
+        "h": 135,
+        "l": 0.5,
+      },
+    ],
+    "warning": [
+      {
+        "alpha": 1,
+        "c": 0.009,
+        "h": 85,
+        "l": 0.75,
+      },
+      {
+        "alpha": 1,
+        "c": 0.009,
+        "h": 95,
+        "l": 0.8,
+      },
+      {
+        "alpha": 1,
+        "c": 0.009,
+        "h": 75,
+        "l": 0.7,
+      },
+    ],
+  },
+  "green": {
+    "danger": [
+      {
+        "alpha": 1,
+        "c": 0.15,
+        "h": 25,
+        "l": 0.55,
+      },
+      {
+        "alpha": 1,
+        "c": 0.15,
+        "h": 30,
+        "l": 0.6,
+      },
+      {
+        "alpha": 1,
+        "c": 0.15,
+        "h": 15,
+        "l": 0.5,
+      },
+    ],
+    "destructive": [
+      {
+        "alpha": 1,
+        "c": 0.15,
+        "h": 25,
+        "l": 0.55,
+      },
+      {
+        "alpha": 1,
+        "c": 0.15,
+        "h": 30,
+        "l": 0.6,
+      },
+      {
+        "alpha": 1,
+        "c": 0.15,
+        "h": 15,
+        "l": 0.5,
+      },
+    ],
+    "info": [
+      {
+        "alpha": 1,
+        "c": 0.12,
+        "h": 233,
+        "l": 0.585,
+      },
+      {
+        "alpha": 1,
+        "c": 0.128,
+        "h": 240,
+        "l": 0.63,
+      },
+      {
+        "alpha": 1,
+        "c": 0.102,
+        "h": 225,
+        "l": 0.539,
+      },
+    ],
+    "success": [
+      {
+        "alpha": 1,
+        "c": 0.135,
+        "h": 145,
+        "l": 0.55,
+      },
+      {
+        "alpha": 1,
+        "c": 0.135,
+        "h": 155,
+        "l": 0.6,
+      },
+      {
+        "alpha": 1,
+        "c": 0.135,
+        "h": 135,
+        "l": 0.5,
+      },
+    ],
+    "warning": [
+      {
+        "alpha": 1,
+        "c": 0.135,
+        "h": 85,
+        "l": 0.75,
+      },
+      {
+        "alpha": 1,
+        "c": 0.135,
+        "h": 95,
+        "l": 0.8,
+      },
+      {
+        "alpha": 1,
+        "c": 0.135,
+        "h": 75,
+        "l": 0.7,
+      },
+    ],
+  },
+  "red": {
+    "danger": [
+      {
+        "alpha": 1,
+        "c": 0.2,
+        "h": 25,
+        "l": 0.55,
+      },
+      {
+        "alpha": 1,
+        "c": 0.2,
+        "h": 30,
+        "l": 0.6,
+      },
+      {
+        "alpha": 1,
+        "c": 0.2,
+        "h": 15,
+        "l": 0.5,
+      },
+    ],
+    "destructive": [
+      {
+        "alpha": 1,
+        "c": 0.2,
+        "h": 25,
+        "l": 0.55,
+      },
+      {
+        "alpha": 1,
+        "c": 0.2,
+        "h": 30,
+        "l": 0.6,
+      },
+      {
+        "alpha": 1,
+        "c": 0.2,
+        "h": 15,
+        "l": 0.5,
+      },
+    ],
+    "info": [
+      {
+        "alpha": 1,
+        "c": 0.125,
+        "h": 235,
+        "l": 0.589,
+      },
+      {
+        "alpha": 1,
+        "c": 0.147,
+        "h": 241,
+        "l": 0.632,
+      },
+      {
+        "alpha": 1,
+        "c": 0.102,
+        "h": 225,
+        "l": 0.539,
+      },
+    ],
+    "success": [
+      {
+        "alpha": 1,
+        "c": 0.177,
+        "h": 144,
+        "l": 0.552,
+      },
+      {
+        "alpha": 1,
+        "c": 0.162,
+        "h": 152,
+        "l": 0.609,
+      },
+      {
+        "alpha": 1,
+        "c": 0.154,
+        "h": 138,
+        "l": 0.502,
+      },
+    ],
+    "warning": [
+      {
+        "alpha": 1,
+        "c": 0.155,
+        "h": 82,
+        "l": 0.752,
+      },
+      {
+        "alpha": 1,
+        "c": 0.164,
+        "h": 93,
+        "l": 0.802,
+      },
+      {
+        "alpha": 1,
+        "c": 0.152,
+        "h": 70,
+        "l": 0.702,
+      },
+    ],
+  },
+}
+`;
+
+exports[`semanticFor — invert (the #1635 fix: pair inversion, character-preserving) > snapshot table: family x position -> inverted from-leg (REVIEW WITH SEAN BEFORE LOCKING) 1`] = `
+{
+  "blue": {
+    "100": "900/200 (pair-exact,AAA)",
+    "200": "800/200 (pair-exact,AAA)",
+    "300": "700/50 (pair-nearest,AAA)",
+    "400": "700/50 (pair-nearest,AAA)",
+    "50": "950/300 (pair-exact,AAA)",
+    "500": "700/50 (pair-nearest,AAA)",
+    "600": "400/950 (pair-exact,AAA)",
+    "700": "300/950 (pair-exact,AAA)",
+    "800": "200/950 (pair-exact,AAA)",
+    "900": "100/950 (pair-exact,AAA)",
+    "950": "50/950 (pair-exact,AAA)",
+  },
+  "gray": {
+    "100": "900/200 (pair-exact,AAA)",
+    "200": "800/200 (pair-exact,AAA)",
+    "300": "700/50 (pair-nearest,AAA)",
+    "400": "700/50 (pair-nearest,AAA)",
+    "50": "950/300 (pair-exact,AAA)",
+    "500": "700/50 (pair-nearest,AAA)",
+    "600": "400/950 (pair-exact,AAA)",
+    "700": "300/950 (pair-exact,AAA)",
+    "800": "200/950 (pair-exact,AAA)",
+    "900": "100/950 (pair-exact,AAA)",
+    "950": "50/950 (pair-exact,AAA)",
+  },
+  "green": {
+    "100": "900/200 (pair-exact,AAA)",
+    "200": "800/200 (pair-exact,AAA)",
+    "300": "800/100 (pair-nearest,AAA)",
+    "400": "800/100 (pair-nearest,AAA)",
+    "50": "950/200 (pair-exact,AAA)",
+    "500": "800/50 (pair-nearest,AAA)",
+    "600": "800/50 (pair-nearest,AAA)",
+    "700": "300/950 (pair-exact,AAA)",
+    "800": "200/950 (pair-exact,AAA)",
+    "900": "100/950 (pair-exact,AAA)",
+    "950": "50/950 (pair-exact,AAA)",
+  },
+  "red": {
+    "100": "900/200 (pair-exact,AAA)",
+    "200": "800/200 (pair-exact,AAA)",
+    "300": "700/50 (pair-nearest,AAA)",
+    "400": "700/50 (pair-nearest,AAA)",
+    "50": "950/300 (pair-exact,AAA)",
+    "500": "300/950 (pair-nearest,AAA)",
+    "600": "300/950 (pair-nearest,AAA)",
+    "700": "300/950 (pair-exact,AAA)",
+    "800": "200/950 (pair-exact,AAA)",
+    "900": "100/950 (pair-exact,AAA)",
+    "950": "50/950 (pair-exact,AAA)",
+  },
+}
+`;

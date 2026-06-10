@@ -10,6 +10,7 @@ import type { ColorValue, OKLCH } from '@rafters/shared';
 import { buildColorValue } from './builder.js';
 import { roundOKLCH } from './conversion.js';
 import { adjustHue } from './manipulation.js';
+import { statusAnchor } from './semantic.js';
 
 export type HarmonyType =
   | 'complementary'
@@ -161,23 +162,15 @@ function complementaryWheel(seed: OKLCH, options: ColorWheelOptions): SemanticCo
   const mutedFinal = useGaussian ? applyGaussianChroma(mutedOklch) : mutedOklch;
   const mutedColorValue = buildColorValue(roundOKLCH(mutedFinal), { token: 'muted' });
 
-  // status colors -- no gaussian, must stay recognizable
-  const successColorValue = buildColorValue(
-    roundOKLCH({ l: 0.55, c: Math.min(0.18, seed.c * 0.9), h: 145, alpha }),
-    { token: 'success' },
-  );
-  const warningColorValue = buildColorValue(
-    roundOKLCH({ l: 0.75, c: Math.min(0.18, seed.c * 0.9), h: 85, alpha }),
-    { token: 'warning' },
-  );
-  const destructiveColorValue = buildColorValue(
-    roundOKLCH({ l: 0.55, c: Math.min(0.2, seed.c), h: 25, alpha }),
-    { token: 'destructive' },
-  );
-  const infoColorValue = buildColorValue(
-    roundOKLCH({ l: 0.58, c: Math.min(0.15, seed.c * 0.85), h: 230, alpha }),
-    { token: 'info' },
-  );
+  // status colors -- no gaussian, must stay recognizable. Anchored by the
+  // shared STATUS_ROLE_ANCHORS (semantic.ts) so the wheel and the
+  // semanticSuggestions on every ColorValue can never drift apart.
+  const successColorValue = buildColorValue(statusAnchor('success', seed), { token: 'success' });
+  const warningColorValue = buildColorValue(statusAnchor('warning', seed), { token: 'warning' });
+  const destructiveColorValue = buildColorValue(statusAnchor('destructive', seed), {
+    token: 'destructive',
+  });
+  const infoColorValue = buildColorValue(statusAnchor('info', seed), { token: 'info' });
 
   return {
     primary: primaryColorValue,
