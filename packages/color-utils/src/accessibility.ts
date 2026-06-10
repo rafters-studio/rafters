@@ -277,10 +277,43 @@ export function findAccessibleColor(
   return roundOKLCH(result);
 }
 
-const REBAKE_WHITE: OKLCH = { l: 1, c: 0, h: 0, alpha: 1 };
-const REBAKE_BLACK: OKLCH = { l: 0, c: 0, h: 0, alpha: 1 };
+const CONTRAST_WHITE: OKLCH = { l: 1, c: 0, h: 0, alpha: 1 };
+const CONTRAST_BLACK: OKLCH = { l: 0, c: 0, h: 0, alpha: 1 };
 const WCAG_AA_NORMAL = 4.5;
 const WCAG_AAA_NORMAL = 7;
+
+/**
+ * Assemble the WCAG half of ColorValue.accessibility for a scale: pair
+ * matrices plus on-white/on-black ratios and pass flags for a reference
+ * color. Shared by buildColorValue (which adds APCA on top) and
+ * rebakeAccessibility -- one assembly, two consumers, no drift.
+ */
+export function assembleWcagAccessibility(
+  scale: readonly OKLCH[],
+  reference: OKLCH,
+): Pick<NonNullable<ColorValue['accessibility']>, 'wcagAA' | 'wcagAAA' | 'onWhite' | 'onBlack'> {
+  const meta = generateAccessibilityMetadata([...scale]);
+  const onWhiteRatio = calculateWCAGContrast(reference, CONTRAST_WHITE);
+  const onBlackRatio = calculateWCAGContrast(reference, CONTRAST_BLACK);
+  return {
+    wcagAA: meta.wcagAA,
+    wcagAAA: meta.wcagAAA,
+    onWhite: {
+      wcagAA: onWhiteRatio >= WCAG_AA_NORMAL,
+      wcagAAA: onWhiteRatio >= WCAG_AAA_NORMAL,
+      contrastRatio: onWhiteRatio,
+      aa: meta.onWhite.aa,
+      aaa: meta.onWhite.aaa,
+    },
+    onBlack: {
+      wcagAA: onBlackRatio >= WCAG_AA_NORMAL,
+      wcagAAA: onBlackRatio >= WCAG_AAA_NORMAL,
+      contrastRatio: onBlackRatio,
+      aa: meta.onBlack.aa,
+      aaa: meta.onBlack.aaa,
+    },
+  };
+}
 
 /**
  * Re-derive accessibility metadata for a ColorValue whose scale changed.
@@ -291,30 +324,7 @@ const WCAG_AAA_NORMAL = 7;
  */
 export function rebakeAccessibility(value: ColorValue): ColorValue {
   if (!('scale' in value) || !Array.isArray(value.scale)) return value;
-  const meta = generateAccessibilityMetadata(value.scale);
   const reference = value.scale[5] ?? value.scale[0];
   if (!reference) return value;
-  const onWhiteRatio = calculateWCAGContrast(reference, REBAKE_WHITE);
-  const onBlackRatio = calculateWCAGContrast(reference, REBAKE_BLACK);
-  return {
-    ...value,
-    accessibility: {
-      wcagAA: meta.wcagAA,
-      wcagAAA: meta.wcagAAA,
-      onWhite: {
-        wcagAA: onWhiteRatio >= WCAG_AA_NORMAL,
-        wcagAAA: onWhiteRatio >= WCAG_AAA_NORMAL,
-        contrastRatio: onWhiteRatio,
-        aa: meta.onWhite.aa,
-        aaa: meta.onWhite.aaa,
-      },
-      onBlack: {
-        wcagAA: onBlackRatio >= WCAG_AA_NORMAL,
-        wcagAAA: onBlackRatio >= WCAG_AAA_NORMAL,
-        contrastRatio: onBlackRatio,
-        aa: meta.onBlack.aa,
-        aaa: meta.onBlack.aaa,
-      },
-    },
-  };
+  return { ...value, accessibility: assembleWcagAccessibility(value.scale, reference) };
 }
