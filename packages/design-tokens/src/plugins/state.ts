@@ -1,7 +1,6 @@
-import { semanticFor } from '@rafters/color-utils';
 import { type ColorReference, ColorReferenceSchema } from '@rafters/shared';
 import { z } from 'zod';
-import { definePlugin, resolveParent } from '../plugin.js';
+import { definePlugin, requireSemanticParent } from '../plugin.js';
 
 const StateTypeSchema = z.enum(['hover', 'active', 'focus', 'disabled']);
 
@@ -27,11 +26,7 @@ export const statePlugin = definePlugin<StateInput, ColorReference>({
   outputSchema: ColorReferenceSchema,
   dependsOn: (input) => [input.from],
   transform: (input, get) => {
-    const resolved = resolveParent(input.from, get);
-    if (!resolved) {
-      throw new Error(`state plugin: "${input.from}" could not resolve`);
-    }
-    const sem = semanticFor(resolved.family, { name: resolved.familyName });
+    const { sem, resolved } = requireSemanticParent(input.from, get, 'state');
     const pair = sem.pair({ use: input.stateType, from: resolved.ref.position });
     return { family: pair.to.family, position: pair.to.position };
   },

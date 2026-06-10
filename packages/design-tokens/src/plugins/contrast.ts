@@ -1,7 +1,6 @@
-import { semanticFor } from '@rafters/color-utils';
 import { type ColorReference, ColorReferenceSchema } from '@rafters/shared';
 import { z } from 'zod';
-import { definePlugin, resolveParent } from '../plugin.js';
+import { definePlugin, requireSemanticParent } from '../plugin.js';
 
 const ContrastInputSchema = z.object({
   against: z.string(),
@@ -25,11 +24,7 @@ export const contrastPlugin = definePlugin<ContrastInput, ColorReference>({
   outputSchema: ColorReferenceSchema,
   dependsOn: (input) => [input.against],
   transform: (input, get) => {
-    const resolved = resolveParent(input.against, get);
-    if (!resolved) {
-      throw new Error(`contrast plugin: "${input.against}" could not resolve`);
-    }
-    const sem = semanticFor(resolved.family, { name: resolved.familyName });
+    const { sem, resolved } = requireSemanticParent(input.against, get, 'contrast');
     const pair = sem.pair({ use: 'foreground', from: resolved.ref.position, level: input.level });
     return { family: pair.to.family, position: pair.to.position };
   },
