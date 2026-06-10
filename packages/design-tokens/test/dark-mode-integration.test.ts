@@ -44,6 +44,35 @@ describe('dark derivation chain over a real imported-palette family', () => {
     expect(new Set(darkIndexes).size).toBeGreaterThan(1);
   });
 
+  it('designer dark override anchors and survives the cascade (#1630)', () => {
+    const g = buildChain(5);
+    const computed = g.get('primary--dark') as ColorReference;
+    // Pick an override position that provably differs from the computed one.
+    const overridePosition = computed.position === '200' ? '800' : '200';
+
+    // Designer vetoes the computed dark: override like any other token.
+    g.set(
+      'primary--dark',
+      { family: 'mud', position: overridePosition },
+      { reason: 'computed dark too heavy for panel surfaces' },
+    );
+    expect((g.get('primary--dark') as ColorReference).position).toBe(overridePosition);
+
+    // The parent moves; the cascade re-runs; the override must HOLD.
+    g.set('primary', { family: 'mud', position: '700' }, { reason: 'brand shift' });
+    expect((g.get('primary--dark') as ColorReference).position).toBe(overridePosition);
+
+    // The dark FOREGROUND is not overridden — it must keep deriving, against
+    // the overridden dark background.
+    const darkFg = g.get('primary-foreground--dark') as ColorReference;
+    expect(darkFg.position).not.toBe(overridePosition);
+
+    // The override is recorded with its reason (the why-gate), not silent.
+    const node = g.node('primary--dark');
+    expect(node?.userOverride?.reason).toBe('computed dark too heavy for panel surfaces');
+    expect(node?.binding?.plugin).toBe('invert'); // re-derivation hook preserved
+  });
+
   it('dark foreground derives against the dark background (pair unity via the chain)', () => {
     const g = buildChain(5);
     const darkBg = g.get('primary--dark') as ColorReference;
