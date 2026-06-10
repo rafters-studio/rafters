@@ -625,6 +625,25 @@ function generateAnimationTokens(motionTokens: Token[]): string {
 }
 
 /**
+ * Depth words as real utilities (#1638 S3, the Tailwind namespace rule).
+ *
+ * Agents need WORDS to say where something sits -- z-depth-modal, not z-40 --
+ * and components already use this vocabulary (sheet, alert-dialog,
+ * context-menu, date-picker). Tailwind v4 does not theme z-index, so without
+ * these @utility rules every z-depth-* class is a silent no-op.
+ */
+function generateDepthUtilities(depthTokens: Token[]): string {
+  if (depthTokens.length === 0) return '';
+  const lines: string[] = ['/* Depth (z-index) utilities -- words over numbers */'];
+  for (const token of depthTokens) {
+    lines.push(`@utility z-${token.name} {`);
+    lines.push(`  z-index: var(--${token.name});`);
+    lines.push('}');
+  }
+  return lines.join('\n');
+}
+
+/**
  * Generate @utility classes from composite typography tokens.
  *
  * Each composite produces a @utility block using CSS properties with var() references.
@@ -817,6 +836,13 @@ export function tokensToTailwind(
   if (typographyUtilities) {
     sections.push('');
     sections.push(typographyUtilities);
+  }
+
+  // Depth (z-index) @utility words
+  const depthUtilities = generateDepthUtilities(groups.depth);
+  if (depthUtilities) {
+    sections.push('');
+    sections.push(depthUtilities);
   }
 
   // Typography element overrides (if any)
