@@ -80,9 +80,9 @@ const STATE_RANK_STEP: Record<
   StateUse,
   (rank: number, ladder: readonly number[], sign: number) => number
 > = {
-  hover: (rank, _l, s) => rank + 1 * s,
+  hover: (rank, _l, s) => rank + s,
   active: (rank, _l, s) => rank + 2 * s,
-  focus: (rank, _l, s) => rank + 1 * s,
+  focus: (rank, _l, s) => rank + s,
   disabled: (_rank, ladder) => closestRankTo(ladder, 5),
 };
 
