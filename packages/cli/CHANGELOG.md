@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Bug Fixes
+
+- fix(init): import now cleans `@theme inline` blocks and `:root` custom-property layers out of the source CSS (#1647). These token layers override rafters.css in the cascade; values live in `.rafters/tokens` and emit through rafters.css. Non-custom-property declarations in `:root` (e.g. `color-scheme`) survive; plain `@theme` blocks are untouched; the pre-strip backup remains the recovery path.
+
 ### Breaking Changes
 
 - fix(cli): `rafters set` is removed. Token mutation is a designer action: it lives in studio (and its API), behind the why-gate. Agents never write tokens -- an agent-reachable mutation surface is a boundary violation, not a convenience (#1643). The accessibility-rebake guard from the old command moved to @rafters/color-utils as `rebakeAccessibility` and now runs in the studio API PATCH path for scale-bearing values.

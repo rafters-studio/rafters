@@ -85,6 +85,107 @@ async function backupCss(cssPath: string): Promise<string> {
   return backupPath;
 }
 
+/**
+ * Block-level source cleaning after an applied import (#1647).
+ *
+ * Values now live in .rafters/tokens and emit through rafters.css, so token
+ * layers left in the source override the system in the cascade:
+ * - `@theme inline` blocks are removed entirely -- they are token bridges by
+ *   definition, and rafters.css emits the canonical bridge.
+ * - `:root` blocks (anywhere, including under @media) lose ALL custom-property
+ *   declarations; non-custom-prop declarations (color-scheme, ...) survive.
+ *   A block left with no content is removed; an at-rule shell emptied by that
+ *   removal is removed too.
+ * Plain `@theme` blocks are untouched: non-imported props there (custom
+ * fonts, ...) are intentional user tokens. Pre-strip backup is the recovery
+ * path. Brace matching is character-depth based; brace characters inside
+ * string values are not handled (acceptable for token layers).
+ */
+export function cleanSourceCssBlocks(content: string): string {
+  type Block = { headerStart: number; bodyStart: number; end: number; header: string };
+
+  function parseBlocks(src: string): Block[] {
+    const blocks: Block[] = [];
+    let depth = 0;
+    const headerStack: number[] = [];
+    let segmentStart = 0;
+    for (let i = 0; i < src.length; i++) {
+      const ch = src.charAt(i);
+      if (ch === '{') {
+        headerStack.push(segmentStart);
+        depth++;
+        if (depth >= 1) {
+          blocks.push({
+            headerStart: segmentStart,
+            bodyStart: i + 1,
+            end: -1,
+            header: src.slice(segmentStart, i).trim(),
+          });
+        }
+        segmentStart = i + 1;
+      } else if (ch === '}') {
+        depth--;
+        const open = blocks
+          .slice()
+          .reverse()
+          .find((b) => b.end === -1);
+        if (open) open.end = i + 1;
+        headerStack.pop();
+        segmentStart = i + 1;
+      } else if (ch === ';') {
+        segmentStart = i + 1;
+      }
+    }
+    return blocks.filter((b) => b.end !== -1);
+  }
+
+  function isContentEmpty(body: string): boolean {
+    return body.replace(/\/\*[\s\S]*?\*\//g, '').trim().length === 0;
+  }
+
+  let out = content;
+  // Iterate until stable: removing inner blocks can empty outer shells.
+  for (let pass = 0; pass < 10; pass++) {
+    const blocks = parseBlocks(out);
+    let edited = false;
+    // Walk innermost-last so splices don't invalidate earlier ranges;
+    // process one edit per pass for simplicity and re-parse.
+    for (const block of blocks.sort((a, b) => b.headerStart - a.headerStart)) {
+      const header = block.header;
+      if (/^@theme\s+inline$/.test(header)) {
+        out = out.slice(0, block.headerStart) + out.slice(block.end);
+        edited = true;
+        break;
+      }
+      if (header === ':root' || /(^|,)\s*:root\s*$/.test(header)) {
+        const body = out.slice(block.bodyStart, block.end - 1);
+        const cleanedBody = body.replace(/--[\w-]+\s*:[^;{}]*;?/g, '');
+        if (isContentEmpty(cleanedBody)) {
+          out = out.slice(0, block.headerStart) + out.slice(block.end);
+          edited = true;
+          break;
+        }
+        if (cleanedBody !== body) {
+          out = out.slice(0, block.bodyStart) + cleanedBody + out.slice(block.end - 1);
+          edited = true;
+          break;
+        }
+        continue;
+      }
+      if (header.startsWith('@media') || header.startsWith('@supports')) {
+        const body = out.slice(block.bodyStart, block.end - 1);
+        if (isContentEmpty(body)) {
+          out = out.slice(0, block.headerStart) + out.slice(block.end);
+          edited = true;
+          break;
+        }
+      }
+    }
+    if (!edited) break;
+  }
+  return out.replace(/[ \t]+$/gm, '').replace(/\n{3,}/g, '\n\n');
+}
+
 async function stripImportedDeclarations(
   cwd: string,
   cssPath: string,
@@ -94,7 +195,7 @@ async function stripImportedDeclarations(
   const fullPath = join(cwd, cssPath);
   const content = await readFile(fullPath, 'utf-8');
   const pattern = new RegExp(importedNames.map((n) => `^\\s*--${n}[^;]*;\\s*$`).join('|'), 'gm');
-  const cleaned = content.replace(pattern, '');
+  const cleaned = cleanSourceCssBlocks(content.replace(pattern, ''));
   const collapsed = cleaned.replace(/\n{3,}/g, '\n\n');
   await writeFile(fullPath, collapsed);
 }
