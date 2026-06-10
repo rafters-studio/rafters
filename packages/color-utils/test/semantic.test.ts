@@ -183,6 +183,67 @@ describe('semanticFor — state pairs (parity with state plugin)', () => {
   });
 });
 
+describe('semanticFor — dark state stepping (#1646: direction-aware)', () => {
+  it('dark hover/active step toward lighter (lower index), not darker', () => {
+    for (const [name, seed] of Object.entries(seeds)) {
+      const value = family(seed);
+      const sem = semanticFor(value, { name });
+      // dark parent at position 950 (index 10)
+      const hover = sem.pair({ use: 'hover', from: '950', dark: true });
+      const active = sem.pair({ use: 'active', from: '950', dark: true });
+      const hoverIdx = POSITION_TO_INDEX[hover.to.position] as number;
+      const activeIdx = POSITION_TO_INDEX[active.to.position] as number;
+      expect(hoverIdx, `${name} dark hover should be lighter than 950`).toBeLessThan(10);
+      expect(activeIdx, `${name} dark active should be lighter than 950`).toBeLessThan(10);
+      expect(activeIdx, `${name} dark active should step further than hover`).toBeLessThan(
+        hoverIdx,
+      );
+    }
+  });
+
+  it('light state stepping is unchanged (parity)', () => {
+    for (const [name, seed] of Object.entries(seeds)) {
+      const value = family(seed);
+      const sem = semanticFor(value, { name });
+      const hover = sem.pair({ use: 'hover', from: '50' });
+      const hoverDark = sem.pair({ use: 'hover', from: '50', dark: false });
+      expect(hover).toEqual(hoverDark);
+      const hoverIdx = POSITION_TO_INDEX[hover.to.position] as number;
+      expect(hoverIdx, `${name} light hover should be darker than 50`).toBeGreaterThan(0);
+    }
+  });
+
+  it('dark disabled still targets midpoint (not direction-flipped)', () => {
+    const sem = semanticFor(family(blue), { name: 'blue' });
+    const lightDisabled = sem.pair({ use: 'disabled', from: '950' });
+    const darkDisabled = sem.pair({ use: 'disabled', from: '950', dark: true });
+    expect(lightDisabled).toEqual(darkDisabled);
+  });
+
+  it('states() accepts dark parameter', () => {
+    const sem = semanticFor(family(blue), { name: 'blue' });
+    const darkStates = sem.states('950', true);
+    const lightStates = sem.states('950');
+    expect(POSITION_TO_INDEX[darkStates.hover.to.position]).not.toBe(
+      POSITION_TO_INDEX[lightStates.hover.to.position],
+    );
+  });
+
+  it('snapshot: dark state positions (REVIEW WITH SEAN BEFORE LOCKING)', () => {
+    const table: Record<string, Record<string, string>> = {};
+    for (const [name, seed] of Object.entries(seeds)) {
+      const sem = semanticFor(family(seed), { name });
+      const row: Record<string, string> = {};
+      for (const position of SCALE_POSITIONS) {
+        const states = sem.states(position, true);
+        row[position] = `h=${states.hover.to.position} a=${states.active.to.position}`;
+      }
+      table[name] = row;
+    }
+    expect(table).toMatchSnapshot();
+  });
+});
+
 describe('generateSemanticColorSuggestions (seed-derived, anchored to colorWheel formulas)', () => {
   it('derives chroma from the seed: a muted seed yields muted status colors', async () => {
     const { generateSemanticColorSuggestions, statusAnchor } = await import('../src/semantic.js');

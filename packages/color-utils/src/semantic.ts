@@ -54,11 +54,12 @@ export interface PairRequest {
   use: PairUse;
   from: string;
   level?: 'AA' | 'AAA';
+  dark?: boolean;
 }
 
 export interface SemanticContext {
   pair(request: PairRequest): Pair;
-  states(from: string): Record<StateUse, Pair>;
+  states(from: string, dark?: boolean): Record<StateUse, Pair>;
   invert(pair: Pair): Pair;
 }
 
@@ -74,11 +75,14 @@ export class SemanticSelectionError extends Error {
 
 const STATE_USES: readonly StateUse[] = ['hover', 'active', 'focus', 'disabled'];
 
-/** Rank step per state on the AAA ladder (parity with the state plugin). */
-const STATE_RANK_STEP: Record<StateUse, (rank: number, ladder: readonly number[]) => number> = {
-  hover: (rank) => rank + 1,
-  active: (rank) => rank + 2,
-  focus: (rank) => rank + 1,
+/** Rank step per state on the AAA ladder. sign: 1 for light (darker), -1 for dark (lighter). */
+const STATE_RANK_STEP: Record<
+  StateUse,
+  (rank: number, ladder: readonly number[], sign: number) => number
+> = {
+  hover: (rank, _l, s) => rank + 1 * s,
+  active: (rank, _l, s) => rank + 2 * s,
+  focus: (rank, _l, s) => rank + 1 * s,
   disabled: (_rank, ladder) => closestRankTo(ladder, 5),
 };
 
@@ -272,7 +276,7 @@ export function semanticFor(family: ColorValue, options?: { name?: string }): Se
     };
   }
 
-  function statePair(use: StateUse, from: string): Pair {
+  function statePair(use: StateUse, from: string, dark?: boolean): Pair {
     const precomputed = refs.stateReferences?.[use];
     if (precomputed) {
       return {
@@ -291,7 +295,8 @@ export function semanticFor(family: ColorValue, options?: { name?: string }): Se
     const base = requireIndex(from, familyName);
     const ladder = collectLadder(aaaPairs);
     const baseRank = closestRankTo(ladder, base);
-    const targetRank = STATE_RANK_STEP[use](baseRank, ladder);
+    const sign = dark ? -1 : 1;
+    const targetRank = STATE_RANK_STEP[use](baseRank, ladder, sign);
     const clampedRank = Math.max(0, Math.min(ladder.length - 1, targetRank));
     const targetIndex = ladder[clampedRank];
     if (targetIndex === undefined) {
@@ -368,11 +373,11 @@ export function semanticFor(family: ColorValue, options?: { name?: string }): Se
     pair(request: PairRequest): Pair {
       const level = request.level ?? 'AAA';
       if (request.use === 'foreground') return foregroundPair(request.from, level);
-      return statePair(request.use, request.from);
+      return statePair(request.use, request.from, request.dark);
     },
-    states(from: string): Record<StateUse, Pair> {
+    states(from: string, dark?: boolean): Record<StateUse, Pair> {
       const out = {} as Record<StateUse, Pair>;
-      for (const use of STATE_USES) out[use] = statePair(use, from);
+      for (const use of STATE_USES) out[use] = statePair(use, from, dark);
       return out;
     },
     invert,

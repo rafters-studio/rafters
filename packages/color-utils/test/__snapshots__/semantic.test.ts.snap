@@ -413,6 +413,63 @@ exports[`generateSemanticColorSuggestions (seed-derived, anchored to colorWheel 
 }
 `;
 
+exports[`semanticFor — dark state stepping (#1646: direction-aware) > snapshot: dark state positions (REVIEW WITH SEAN BEFORE LOCKING) 1`] = `
+{
+  "blue": {
+    "100": "h=50 a=50",
+    "200": "h=100 a=50",
+    "300": "h=200 a=100",
+    "400": "h=300 a=200",
+    "50": "h=50 a=50",
+    "500": "h=300 a=200",
+    "600": "h=400 a=300",
+    "700": "h=400 a=300",
+    "800": "h=700 a=400",
+    "900": "h=800 a=700",
+    "950": "h=900 a=800",
+  },
+  "gray": {
+    "100": "h=50 a=50",
+    "200": "h=100 a=50",
+    "300": "h=200 a=100",
+    "400": "h=300 a=200",
+    "50": "h=50 a=50",
+    "500": "h=300 a=200",
+    "600": "h=400 a=300",
+    "700": "h=400 a=300",
+    "800": "h=700 a=400",
+    "900": "h=800 a=700",
+    "950": "h=900 a=800",
+  },
+  "green": {
+    "100": "h=50 a=50",
+    "200": "h=100 a=50",
+    "300": "h=200 a=100",
+    "400": "h=300 a=200",
+    "50": "h=50 a=50",
+    "500": "h=400 a=300",
+    "600": "h=400 a=300",
+    "700": "h=500 a=400",
+    "800": "h=500 a=400",
+    "900": "h=800 a=500",
+    "950": "h=900 a=800",
+  },
+  "red": {
+    "100": "h=50 a=50",
+    "200": "h=100 a=50",
+    "300": "h=200 a=100",
+    "400": "h=200 a=100",
+    "50": "h=50 a=50",
+    "500": "h=200 a=100",
+    "600": "h=300 a=200",
+    "700": "h=300 a=200",
+    "800": "h=700 a=300",
+    "900": "h=800 a=700",
+    "950": "h=900 a=800",
+  },
+}
+`;
+
 exports[`semanticFor — invert (the #1635 fix: pair inversion, character-preserving) > snapshot table: family x position -> inverted from-leg (REVIEW WITH SEAN BEFORE LOCKING) 1`] = `
 {
   "blue": {
