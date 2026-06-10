@@ -9,7 +9,6 @@ import { Command } from 'commander';
 import { add } from './commands/add.js';
 import { init } from './commands/init.js';
 import { mcp } from './commands/mcp.js';
-import { set } from './commands/set.js';
 import { studio } from './commands/studio.js';
 import { withErrorHandler } from './utils/ui.js';
 
@@ -49,19 +48,6 @@ program
   .description('Start MCP server for AI agent access (stdio)')
   .option('--project-root <path>', 'Explicit project root (skips .rafters/ discovery)')
   .action(mcp);
-
-program
-  .command('set')
-  .description('Set a token value. Records userOverride and cascades to dependents.')
-  .argument('<name>', 'Token name')
-  .argument('<value>', 'New value (string, or JSON for ColorValue/ColorReference)')
-  .option(
-    '--reason <text>',
-    'Reason for the change (recorded with userOverride; prompted if missing in non-agent mode)',
-  )
-  .option('--rafters-dir <path>', 'Directory of .rafters.json files', '.rafters/tokens')
-  .option('--agent', 'Output JSON for machine consumption')
-  .action(withErrorHandler(set));
 
 program.command('studio').description('Open Studio UI for visual token editing').action(studio);
 

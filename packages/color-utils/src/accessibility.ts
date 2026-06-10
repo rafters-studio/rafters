@@ -2,7 +2,7 @@
  * Accessibility contrast calculation and compliance checking functions
  */
 
-import type { OKLCH } from '@rafters/shared';
+import type { ColorValue, OKLCH } from '@rafters/shared';
 import { APCAcontrast, sRGBtoY } from 'apca-w3';
 import Color from 'colorjs.io';
 import { z } from 'zod';
@@ -275,4 +275,56 @@ export function findAccessibleColor(
   }
 
   return roundOKLCH(result);
+}
+
+const CONTRAST_WHITE: OKLCH = { l: 1, c: 0, h: 0, alpha: 1 };
+const CONTRAST_BLACK: OKLCH = { l: 0, c: 0, h: 0, alpha: 1 };
+const WCAG_AA_NORMAL = 4.5;
+const WCAG_AAA_NORMAL = 7;
+
+/**
+ * Assemble the WCAG half of ColorValue.accessibility for a scale: pair
+ * matrices plus on-white/on-black ratios and pass flags for a reference
+ * color. Shared by buildColorValue (which adds APCA on top) and
+ * rebakeAccessibility -- one assembly, two consumers, no drift.
+ */
+export function assembleWcagAccessibility(
+  scale: readonly OKLCH[],
+  reference: OKLCH,
+): Pick<NonNullable<ColorValue['accessibility']>, 'wcagAA' | 'wcagAAA' | 'onWhite' | 'onBlack'> {
+  const meta = generateAccessibilityMetadata([...scale]);
+  const onWhiteRatio = calculateWCAGContrast(reference, CONTRAST_WHITE);
+  const onBlackRatio = calculateWCAGContrast(reference, CONTRAST_BLACK);
+  return {
+    wcagAA: meta.wcagAA,
+    wcagAAA: meta.wcagAAA,
+    onWhite: {
+      wcagAA: onWhiteRatio >= WCAG_AA_NORMAL,
+      wcagAAA: onWhiteRatio >= WCAG_AAA_NORMAL,
+      contrastRatio: onWhiteRatio,
+      aa: meta.onWhite.aa,
+      aaa: meta.onWhite.aaa,
+    },
+    onBlack: {
+      wcagAA: onBlackRatio >= WCAG_AA_NORMAL,
+      wcagAAA: onBlackRatio >= WCAG_AAA_NORMAL,
+      contrastRatio: onBlackRatio,
+      aa: meta.onBlack.aa,
+      aaa: meta.onBlack.aaa,
+    },
+  };
+}
+
+/**
+ * Re-derive accessibility metadata for a ColorValue whose scale changed.
+ * A family value supplied without its WCAG pair matrices would starve the
+ * contrast/state/invert selection downstream -- this guard re-bakes them.
+ * No-op for values without a scale. (Moved from the removed CLI set command;
+ * the studio API mutation path is the consumer. #1643)
+ */
+export function rebakeAccessibility(value: ColorValue): ColorValue {
+  if (!('scale' in value) || !Array.isArray(value.scale)) return value;
+  const reference = value.scale[5] ?? value.scale[0];
+  if (!reference) return value;
+  return { ...value, accessibility: assembleWcagAccessibility(value.scale, reference) };
 }

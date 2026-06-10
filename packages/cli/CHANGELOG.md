@@ -1,5 +1,12 @@
 # rafters
 
+## Unreleased
+
+### Breaking Changes
+
+- fix(cli): `rafters set` is removed. Token mutation is a designer action: it lives in studio (and its API), behind the why-gate. Agents never write tokens -- an agent-reachable mutation surface is a boundary violation, not a convenience (#1643). The accessibility-rebake guard from the old command moved to @rafters/color-utils as `rebakeAccessibility` and now runs in the studio API PATCH path for scale-bearing values.
+
+
 ## 0.0.65
 
 ### Bug Fixes

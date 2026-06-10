@@ -9,11 +9,7 @@
  */
 
 import type { ColorValue, OKLCH } from '@rafters/shared';
-import {
-  calculateAPCAContrast,
-  calculateWCAGContrast,
-  generateAccessibilityMetadata,
-} from './accessibility.js';
+import { assembleWcagAccessibility, calculateAPCAContrast } from './accessibility.js';
 import { getColorTemperature, isLightColor } from './analysis.js';
 import {
   calculateAtmosphericWeight,
@@ -95,12 +91,9 @@ export function buildColorValue(oklch: OKLCH, options: BuildColorValueOptions = 
   // Generate harmonies
   const harmony = generateHarmony(oklch);
 
-  // Generate accessibility metadata from the scale
-  const accessibilityMeta = generateAccessibilityMetadata(scale);
-
-  // Calculate contrast ratios against white and black
-  const contrastOnWhite = calculateWCAGContrast(oklch, WHITE);
-  const contrastOnBlack = calculateWCAGContrast(oklch, BLACK);
+  // WCAG accessibility (pair matrices + on-white/on-black) via the shared
+  // assembler; APCA is layered on below, builder-only.
+  const wcagAccessibility = assembleWcagAccessibility(scale, oklch);
   const apcaOnWhite = calculateAPCAContrast(oklch, WHITE);
   const apcaOnBlack = calculateAPCAContrast(oklch, BLACK);
 
@@ -142,22 +135,7 @@ export function buildColorValue(oklch: OKLCH, options: BuildColorValueOptions = 
 
     // Accessibility
     accessibility: {
-      wcagAA: accessibilityMeta.wcagAA,
-      wcagAAA: accessibilityMeta.wcagAAA,
-      onWhite: {
-        wcagAA: contrastOnWhite >= 4.5,
-        wcagAAA: contrastOnWhite >= 7,
-        contrastRatio: contrastOnWhite,
-        aa: accessibilityMeta.onWhite.aa,
-        aaa: accessibilityMeta.onWhite.aaa,
-      },
-      onBlack: {
-        wcagAA: contrastOnBlack >= 4.5,
-        wcagAAA: contrastOnBlack >= 7,
-        contrastRatio: contrastOnBlack,
-        aa: accessibilityMeta.onBlack.aa,
-        aaa: accessibilityMeta.onBlack.aaa,
-      },
+      ...wcagAccessibility,
       apca: {
         onWhite: apcaOnWhite,
         onBlack: apcaOnBlack,
