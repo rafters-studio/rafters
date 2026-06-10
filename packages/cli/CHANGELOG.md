@@ -1,5 +1,12 @@
 # rafters
 
+## Unreleased
+
+### Features
+
+- feat(color-utils): new `semanticFor(family)` selection module — purpose-driven pair finding (foreground, hover/active/focus/disabled) and dark derivation by pair inversion with structured tier reporting (#1636). Foreground/state selection is behavior-identical to the existing plugins.
+- feat(color-utils): `semanticSuggestions` on generated ColorValues are now seed-derived via the colorWheel status anchors (chroma follows the brand seed; hues stay within per-role recognizability bands) instead of static hue templates. `destructive` is the canonical status role; `danger` remains as a deprecated mirror until the API migrates.
+
 ## 0.0.64
 
 ### Bug Fixes

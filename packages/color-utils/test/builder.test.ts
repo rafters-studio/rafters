@@ -283,7 +283,8 @@ describe('buildColorValue', () => {
     it('includes all semantic categories', () => {
       const result = buildColorValue(blue);
 
-      expect(result.semanticSuggestions).toHaveProperty('danger');
+      expect(result.semanticSuggestions).toHaveProperty('destructive');
+      expect(result.semanticSuggestions).toHaveProperty('danger'); // deprecated mirror
       expect(result.semanticSuggestions).toHaveProperty('success');
       expect(result.semanticSuggestions).toHaveProperty('warning');
       expect(result.semanticSuggestions).toHaveProperty('info');
@@ -292,7 +293,7 @@ describe('buildColorValue', () => {
     it('each category has 3 suggestions', () => {
       const result = buildColorValue(blue);
 
-      expect(result.semanticSuggestions?.danger).toHaveLength(3);
+      expect(result.semanticSuggestions?.destructive).toHaveLength(3);
       expect(result.semanticSuggestions?.success).toHaveLength(3);
       expect(result.semanticSuggestions?.warning).toHaveLength(3);
       expect(result.semanticSuggestions?.info).toHaveLength(3);
@@ -300,7 +301,7 @@ describe('buildColorValue', () => {
 
     it('danger suggestions are in red hue range', () => {
       const result = buildColorValue(blue);
-      const danger = result.semanticSuggestions?.danger ?? [];
+      const danger = result.semanticSuggestions?.destructive ?? [];
 
       for (const color of danger) {
         // Red hues: 0-30 or 330-360

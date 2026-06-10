@@ -368,13 +368,32 @@ export const PerceptualWeightSchema = z.object({
 
 export type PerceptualWeight = z.infer<typeof PerceptualWeightSchema>;
 
-// Semantic Color Suggestions Schema
-export const SemanticColorSuggestionsSchema = z.object({
-  danger: z.array(OKLCHSchema),
-  success: z.array(OKLCHSchema),
-  warning: z.array(OKLCHSchema),
-  info: z.array(OKLCHSchema),
-});
+// Status roles for semantic color suggestions. 'destructive' is canonical
+// (matches colorWheel and the exporter's token vocabulary). Persisted files
+// and the API may still carry the legacy 'danger' key; the schema lifts it.
+export const SEMANTIC_STATUS_ROLES = ['destructive', 'success', 'warning', 'info'] as const;
+export type SemanticStatusRole = (typeof SEMANTIC_STATUS_ROLES)[number];
+
+// Semantic Color Suggestions Schema.
+// 'danger' is a deprecated mirror of 'destructive', kept while apps/api (which
+// asserts .danger) migrates to platform. Inputs with only the legacy key parse
+// cleanly; outputs carry both until the mirror is removed.
+export const SemanticColorSuggestionsSchema = z.preprocess(
+  (raw) => {
+    if (raw && typeof raw === 'object' && !('destructive' in raw) && 'danger' in raw) {
+      return { ...raw, destructive: (raw as { danger: unknown }).danger };
+    }
+    return raw;
+  },
+  z.object({
+    destructive: z.array(OKLCHSchema),
+    success: z.array(OKLCHSchema),
+    warning: z.array(OKLCHSchema),
+    info: z.array(OKLCHSchema),
+    /** @deprecated mirror of `destructive`; dies when apps/api leaves the repo */
+    danger: z.array(OKLCHSchema).optional(),
+  }),
+);
 
 export type SemanticColorSuggestions = z.infer<typeof SemanticColorSuggestionsSchema>;
 

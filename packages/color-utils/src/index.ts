@@ -48,9 +48,6 @@ export {
   calculatePerceptualWeight,
   generateHarmony,
   generateOKLCHScale,
-  generateSemanticColorSuggestions,
-  generateSemanticColorSystem,
-  generateSemanticColors,
 } from './harmony.js';
 
 // Manipulation
@@ -105,6 +102,22 @@ export {
   POSITION_TO_INDEX,
   SCALE_POSITIONS,
 } from './scale-positions.js';
+
+// Semantic selection (purpose-driven pair finding + seed-derived suggestions, #1636)
+export {
+  generateSemanticColorSuggestions,
+  type Pair,
+  type PairLeg,
+  type PairRequest,
+  type PairStandard,
+  type PairTier,
+  type PairUse,
+  type SemanticContext,
+  SemanticSelectionError,
+  type StateUse,
+  semanticFor,
+  statusAnchor,
+} from './semantic.js';
 
 // Validation
 export {

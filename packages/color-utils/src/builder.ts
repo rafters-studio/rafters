@@ -20,10 +20,10 @@ import {
   calculatePerceptualWeight,
   generateHarmony,
   generateOKLCHScale,
-  generateSemanticColorSuggestions,
 } from './harmony.js';
 import { generateColorName } from './naming/index.js';
 import { SCALE_POSITIONS } from './scale-positions.js';
+import { generateSemanticColorSuggestions } from './semantic.js';
 
 /** White reference color for contrast calculations */
 const WHITE: OKLCH = { l: 1, c: 0, h: 0, alpha: 1 };
