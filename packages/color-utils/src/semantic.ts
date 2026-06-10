@@ -317,26 +317,31 @@ export function semanticFor(family: ColorValue, options?: { name?: string }): Se
     const toTarget = toIndex === undefined ? undefined : 10 - toIndex;
 
     // Nearest passing pair to the inverted targets: AAA matrix first, AA next.
+    // Scoring is lexicographic, FROM-leg first: the background leg carries the
+    // token's character (the whole point of #1635); the foreground leg is
+    // advisory here because the cascade re-derives it as contrast against the
+    // dark background. Sum-scoring let a distant fg leg drag the bg to the
+    // wrong side of the scale.
     for (const [pairs, standard] of [
       [aaaPairs, 'AAA'],
       [aaPairs, 'AA'],
     ] as const) {
       if (!pairs || pairs.length === 0) continue;
-      let best: { from: number; to: number; score: number } | null = null;
+      let best: { from: number; to: number; fromDist: number; toDist: number } | null = null;
       for (const [p1, p2] of pairs) {
         if (p1 === undefined || p2 === undefined) continue;
         for (const [a, b] of [
           [p1, p2],
           [p2, p1],
         ]) {
-          const score =
-            Math.abs((a as number) - fromTarget) +
-            (toTarget === undefined ? 0 : Math.abs((b as number) - toTarget));
+          const fromDist = Math.abs((a as number) - fromTarget);
+          const toDist = toTarget === undefined ? 0 : Math.abs((b as number) - toTarget);
           const better =
             best === null ||
-            score < best.score ||
-            (score === best.score && (a as number) < best.from);
-          if (better) best = { from: a as number, to: b as number, score };
+            fromDist < best.fromDist ||
+            (fromDist === best.fromDist && toDist < best.toDist) ||
+            (fromDist === best.fromDist && toDist === best.toDist && (a as number) < best.from);
+          if (better) best = { from: a as number, to: b as number, fromDist, toDist };
         }
       }
       if (best) {
@@ -344,7 +349,7 @@ export function semanticFor(family: ColorValue, options?: { name?: string }): Se
           from: { family: familyName, position: requirePosition(best.from, familyName) },
           to: { family: familyName, position: requirePosition(best.to, familyName) },
           standard,
-          tier: best.score === 0 ? 'pair-exact' : 'pair-nearest',
+          tier: best.fromDist === 0 && best.toDist === 0 ? 'pair-exact' : 'pair-nearest',
         };
       }
     }

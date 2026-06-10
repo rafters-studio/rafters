@@ -94,14 +94,8 @@ export {
   RED_HUB,
   TOTAL_COMBINATIONS,
 } from './naming/index.js';
-// Scale positions and WCAG-pair helpers
-export {
-  findBestWcagPair,
-  findDarkCounterpartIndex,
-  MIN_WCAG_PAIR_DISTANCE,
-  POSITION_TO_INDEX,
-  SCALE_POSITIONS,
-} from './scale-positions.js';
+// Scale positions (vocabulary only; selection lives in semantic.ts)
+export { POSITION_TO_INDEX, SCALE_POSITIONS } from './scale-positions.js';
 
 // Semantic selection (purpose-driven pair finding + seed-derived suggestions, #1636)
 export {
