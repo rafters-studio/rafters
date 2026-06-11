@@ -621,6 +621,9 @@ function generateDepthUtilities(depthTokens: Token[]): string {
   if (depthTokens.length === 0) return '';
   const lines: string[] = ['/* Depth (z-index) utilities -- words over numbers */'];
   for (const token of depthTokens) {
+    // Only z-index-valued tokens become utilities; reference tokens like
+    // depth-scale (JSON) have no --var in :root to point at.
+    if (typeof token.value !== 'string' || !/^-?\d+$/.test(token.value)) continue;
     lines.push(`@utility z-${token.name} {`);
     lines.push(`  z-index: var(--${token.name});`);
     lines.push('}');

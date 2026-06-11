@@ -214,7 +214,9 @@ export const DEFAULT_DEPTH_DEFINITIONS: Record<string, DepthDef> = {
     stackingContext: false,
   },
   dropdown: {
-    value: 10,
+    // The shadcn menu-content band (z-50): menu content must beat sticky
+    // chrome and survive opening inside a dialog; DOM order breaks ties.
+    value: 50,
     meaning: 'Dropdown menus and select options',
     contexts: ['dropdowns', 'select-menus', 'autocomplete'],
     stackingContext: true,
@@ -256,7 +258,9 @@ export const DEFAULT_DEPTH_DEFINITIONS: Record<string, DepthDef> = {
     stackingContext: true,
   },
   overlay: {
-    value: 70,
+    // Backdrops dim BEHIND the modal they serve: below modal (40), above
+    // fixed chrome (30) so the dim still covers sticky/fixed elements.
+    value: 35,
     meaning: 'Overlay backdrops - screen-dimming layers behind modals',
     contexts: ['modal-backdrop', 'drawer-backdrop', 'sheet-backdrop'],
     stackingContext: true,
