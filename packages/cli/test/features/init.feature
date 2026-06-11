@@ -37,14 +37,14 @@ Feature: rafters init command
 
   Scenario: Rebuild migrates away the deleted elevation namespace
     Given a Next.js project with .rafters already initialized
-    And a stale elevation namespace file exists
+    And a stale "elevation" namespace file exists
     When I run "rafters init --rebuild"
     Then the command should succeed
     And the tokens directory should not contain "elevation.rafters.json"
 
   Scenario: Rebuild migrates away the deleted fill namespace
     Given a Next.js project with .rafters already initialized
-    And a stale fill namespace file exists
+    And a stale "fill" namespace file exists
     When I run "rafters init --rebuild"
     Then the command should succeed
     And the tokens directory should not contain "fill.rafters.json"

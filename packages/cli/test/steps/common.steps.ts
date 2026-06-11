@@ -111,42 +111,23 @@ Given('a Next.js project with .rafters already initialized', async () => {
   await execRafters(context.fixturePath, ['init']);
 });
 
-Given('a stale elevation namespace file exists', async () => {
-  // Pre-#1638-S2 projects carry an elevation.rafters.json; rebuild must drop it.
+// Deleted token namespaces (#1638 S2 elevation, #1637 fill): old projects
+// carry these files; rebuild must drop them.
+Given('a stale {string} namespace file exists', async ({}, namespace: string) => {
   const stale = {
-    namespace: 'elevation',
+    namespace,
     tokens: [
       {
-        name: 'elevation-modal-z',
-        value: 'var(--depth-modal)',
-        category: 'elevation',
-        namespace: 'elevation',
+        name: `${namespace}-stale-token`,
+        value: 'var(--stale)',
+        category: namespace,
+        namespace,
         userOverride: null,
       },
     ],
   };
   await writeFile(
-    join(context.fixturePath, '.rafters', 'tokens', 'elevation.rafters.json'),
-    JSON.stringify(stale, null, 2),
-  );
-});
-
-Given('a stale fill namespace file exists', async () => {
-  // Pre-#1637 projects carry a fill.rafters.json; rebuild must drop it.
-  const stale = {
-    namespace: 'fill',
-    tokens: [
-      {
-        name: 'fill-hero',
-        value: '{"gradient":{"direction":"to-b","stops":[{"color":"primary"}]}}',
-        category: 'fill',
-        namespace: 'fill',
-        userOverride: null,
-      },
-    ],
-  };
-  await writeFile(
-    join(context.fixturePath, '.rafters', 'tokens', 'fill.rafters.json'),
+    join(context.fixturePath, '.rafters', 'tokens', `${namespace}.rafters.json`),
     JSON.stringify(stale, null, 2),
   );
 });
