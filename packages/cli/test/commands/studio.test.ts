@@ -55,7 +55,6 @@ describe('studio prerequisites', () => {
         'shadow',
         'depth',
         'motion',
-        'elevation',
         'focus',
       ];
       for (const ns of namespaces) {
@@ -66,6 +65,10 @@ describe('studio prerequisites', () => {
         expect(content.namespace).toBe(ns);
         expect(content.tokens.length).toBeGreaterThan(0);
       }
+
+      // The elevation namespace is deleted (#1638 S2) -- depth words and
+      // shadow utilities are the rendering surface; meanings live in composites.
+      expect(existsSync(join(tokensDir, 'elevation.rafters.json'))).toBe(false);
     } finally {
       await cleanupFixture(fixturePath);
     }
@@ -87,7 +90,6 @@ describe('studio prerequisites', () => {
         'shadow',
         'depth',
         'motion',
-        'elevation',
         'focus',
         'breakpoint',
       ]) {
@@ -103,7 +105,6 @@ describe('studio prerequisites', () => {
       expect(counts.shadow).toBeGreaterThanOrEqual(8);
       expect(counts.depth).toBeGreaterThanOrEqual(9);
       expect(counts.motion).toBeGreaterThanOrEqual(50);
-      expect(counts.elevation).toBeGreaterThanOrEqual(20);
       expect(counts.focus).toBeGreaterThanOrEqual(15);
     } finally {
       await cleanupFixture(fixturePath);

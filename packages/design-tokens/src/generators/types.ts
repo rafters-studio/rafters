@@ -319,7 +319,10 @@ export const DEPTH_LEVELS = [
 export type DepthLevel = (typeof DEPTH_LEVELS)[number];
 
 /**
- * Elevation levels (semantic z-index + shadow pairings)
+ * Elevation level vocabulary -- metadata only (#1638 S2). The elevation
+ * token namespace is gone; these names survive as the Token.elevationLevel
+ * field and as composite/MCP intelligence (S4). Depth words (z-depth-*)
+ * and shadow utilities are the rendering surface.
  */
 export const ELEVATION_LEVELS = [
   'surface',

@@ -10,6 +10,8 @@
 
 ### Breaking Changes
 
+- feat(design-tokens): the elevation token namespace is deleted (#1638 S2). The `elevation-{level}` JSON composite tokens and their `-z`/`-shadow` alias shorthands were grammar extensions Tailwind cannot manage -- their values were already silently dropped from emitted CSS, and nothing consumed them. Depth words (`z-depth-*`, #1651) and shadow utilities are the rendering surface; `ELEVATION_LEVELS` and `Token.elevationLevel` survive as metadata vocabulary, and level meanings move into composite/MCP intelligence (S4). Existing projects: `rafters init --rebuild` drops the dead `elevation.rafters.json`.
+
 - fix(cli): `rafters set` is removed. Token mutation is a designer action: it lives in studio (and its API), behind the why-gate. Agents never write tokens -- an agent-reachable mutation surface is a boundary violation, not a convenience (#1643). The accessibility-rebake guard from the old command moved to @rafters/color-utils as `rebakeAccessibility` and now runs in the studio API PATCH path for scale-bearing values.
 
 

@@ -35,6 +35,13 @@ Feature: rafters init command
     Then the command should succeed
     And theme.css should be regenerated
 
+  Scenario: Rebuild migrates away the deleted elevation namespace
+    Given a Next.js project with .rafters already initialized
+    And a stale elevation namespace file exists
+    When I run "rafters init --rebuild"
+    Then the command should succeed
+    And the tokens directory should not contain "elevation.rafters.json"
+
   Scenario: Reset existing project to defaults
     Given a Next.js project with .rafters already initialized
     When I run "rafters init --reset"
