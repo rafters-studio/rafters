@@ -6,7 +6,7 @@
 
 import type { ChildProcess } from 'node:child_process';
 import { existsSync, readdirSync } from 'node:fs';
-import { readFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { expect } from '@playwright/test';
 import { createBdd } from 'playwright-bdd';
@@ -113,7 +113,6 @@ Given('a Next.js project with .rafters already initialized', async () => {
 
 Given('a stale elevation namespace file exists', async () => {
   // Pre-#1638-S2 projects carry an elevation.rafters.json; rebuild must drop it.
-  const { writeFile } = await import('node:fs/promises');
   const stale = {
     namespace: 'elevation',
     tokens: [
