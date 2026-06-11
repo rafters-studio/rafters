@@ -53,7 +53,6 @@ interface GroupedTokens {
   depth: Token[];
   motion: Token[];
   breakpoint: Token[];
-  elevation: Token[];
   focus: Token[];
   'typography-composite': Token[];
   fill: Token[];
@@ -158,7 +157,6 @@ function groupTokens(tokens: Token[]): GroupedTokens {
     depth: [],
     motion: [],
     breakpoint: [],
-    elevation: [],
     focus: [],
     'typography-composite': [],
     fill: [],
@@ -193,9 +191,6 @@ function groupTokens(tokens: Token[]): GroupedTokens {
         break;
       case 'breakpoint':
         groups.breakpoint.push(token);
-        break;
-      case 'elevation':
-        groups.elevation.push(token);
         break;
       case 'focus':
         groups.focus.push(token);
@@ -423,16 +418,6 @@ function generateThemeBlock(groups: GroupedTokens): string {
       const value = tokenValueToCSS(token);
       if (value === null) continue;
       if (isMediaQueryToken(token)) continue;
-      lines.push(`  --${token.name}: ${value};`);
-    }
-    lines.push('');
-  }
-
-  // Elevation tokens
-  if (groups.elevation.length > 0) {
-    for (const token of groups.elevation) {
-      const value = tokenValueToCSS(token);
-      if (value === null) continue;
       lines.push(`  --${token.name}: ${value};`);
     }
     lines.push('');
@@ -986,14 +971,6 @@ function generateThemeBlockWithVarRefs(groups: GroupedTokens): string {
     lines.push('');
   }
 
-  // Elevation tokens
-  if (groups.elevation.length > 0) {
-    for (const token of groups.elevation) {
-      lines.push(`  --${token.name}: var(--rafters-${token.name});`);
-    }
-    lines.push('');
-  }
-
   // Focus tokens
   if (groups.focus.length > 0) {
     for (const token of groups.focus) {
@@ -1138,16 +1115,6 @@ function generateVarsRootBlock(groups: GroupedTokens): string {
       const value = tokenValueToCSS(token);
       if (value === null) continue;
       if (isMediaQueryToken(token)) continue;
-      lines.push(`  --rafters-${token.name}: ${value};`);
-    }
-    lines.push('');
-  }
-
-  // Elevation tokens
-  if (groups.elevation.length > 0) {
-    for (const token of groups.elevation) {
-      const value = tokenValueToCSS(token);
-      if (value === null) continue;
       lines.push(`  --rafters-${token.name}: ${value};`);
     }
     lines.push('');

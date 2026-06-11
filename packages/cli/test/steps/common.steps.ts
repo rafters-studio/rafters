@@ -6,7 +6,7 @@
 
 import type { ChildProcess } from 'node:child_process';
 import { existsSync, readdirSync } from 'node:fs';
-import { readFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { expect } from '@playwright/test';
 import { createBdd } from 'playwright-bdd';
@@ -111,6 +111,26 @@ Given('a Next.js project with .rafters already initialized', async () => {
   await execRafters(context.fixturePath, ['init']);
 });
 
+Given('a stale elevation namespace file exists', async () => {
+  // Pre-#1638-S2 projects carry an elevation.rafters.json; rebuild must drop it.
+  const stale = {
+    namespace: 'elevation',
+    tokens: [
+      {
+        name: 'elevation-modal-z',
+        value: 'var(--depth-modal)',
+        category: 'elevation',
+        namespace: 'elevation',
+        userOverride: null,
+      },
+    ],
+  };
+  await writeFile(
+    join(context.fixturePath, '.rafters', 'tokens', 'elevation.rafters.json'),
+    JSON.stringify(stale, null, 2),
+  );
+});
+
 Given('component {string} is already installed', async ({}, component: string) => {
   const { execRafters } = await import('./helpers.js');
   await execRafters(context.fixturePath, ['add', component]);
@@ -171,6 +191,11 @@ Then('the tokens directory should contain namespace files', async () => {
   expect(existsSync(tokensPath)).toBe(true);
   const files = readdirSync(tokensPath);
   expect(files.length).toBeGreaterThan(0);
+});
+
+Then('the tokens directory should not contain {string}', async ({}, fileName: string) => {
+  const filePath = join(context.fixturePath, '.rafters', 'tokens', fileName);
+  expect(existsSync(filePath)).toBe(false);
 });
 
 Then('the theme.css should exist', async () => {

@@ -536,6 +536,10 @@ async function regenerateFromExisting(
     existingConfig.rulesPath = frameworkPaths.rules;
   }
 
+  // The elevation namespace is deleted (#1638 S2); drop the stale file so
+  // its dead tokens stop reloading into the registry on every rebuild.
+  await rm(join(paths.tokens, 'elevation.rafters.json'), { force: true });
+
   // Load all tokens from .rafters/tokens/
   const registry = loadRegistryFromDir(paths.tokens, REGISTRY_PLUGINS);
 
