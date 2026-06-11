@@ -1,3 +1,8 @@
+/**
+ * Card fill prop (v2, #1637) -- fill is a SIGNATURE: word | word/alpha |
+ * word-to-word, expanding to existing Tailwind utilities at the surface.
+ */
+
 import { render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { Card } from '../../src/components/ui/card';
@@ -9,33 +14,40 @@ function firstChild(container: HTMLElement): Element {
 }
 
 describe('Card - fill prop', () => {
-  it('resolves fill="surface" to registry classes', () => {
-    const { container } = render(<Card fill="surface">content</Card>);
-    const el = firstChild(container);
-    expect(el.className).toContain('bg-neutral-900');
-    expect(el.className).toContain('text-neutral-100');
-  });
-
-  it('resolves fill="primary" to primary surface', () => {
+  it('resolves fill="primary" to primary surface with paired foreground', () => {
     const { container } = render(<Card fill="primary">content</Card>);
     const el = firstChild(container);
     expect(el.className).toContain('bg-primary');
     expect(el.className).toContain('text-primary-foreground');
   });
 
-  it('resolves fill="glass" with backdrop blur', () => {
-    const { container } = render(<Card fill="glass">content</Card>);
+  it('resolves the panel role word -- the elevated panel surface', () => {
+    const { container } = render(<Card fill="panel">content</Card>);
     const el = firstChild(container);
-    expect(el.className).toContain('backdrop-blur-md');
+    expect(el.className).toContain('bg-panel');
+    expect(el.className).toContain('text-panel-foreground');
+  });
+
+  it('resolves word/alpha scrims', () => {
+    const { container } = render(<Card fill="foreground/80">content</Card>);
+    const el = firstChild(container);
+    expect(el.className).toContain('bg-foreground/80');
+  });
+
+  it('resolves gradient signatures to v4 utilities', () => {
+    const { container } = render(<Card fill="primary-to-primary/0">content</Card>);
+    const el = firstChild(container);
+    expect(el.className).toContain('bg-linear-to-b');
+    expect(el.className).not.toContain('bg-gradient');
   });
 
   it('sets data-fill attribute', () => {
-    const { container } = render(<Card fill="surface">content</Card>);
+    const { container } = render(<Card fill="primary">content</Card>);
     const el = firstChild(container);
-    expect(el.getAttribute('data-fill')).toBe('surface');
+    expect(el.getAttribute('data-fill')).toBe('primary');
   });
 
-  it('falls back to bg-{name} for unknown fill token', () => {
+  it('expands unknown words optimistically -- build-time safelist is the strict gate', () => {
     const { container } = render(<Card fill="custom-brand">content</Card>);
     const el = firstChild(container);
     expect(el.className).toContain('bg-custom-brand');

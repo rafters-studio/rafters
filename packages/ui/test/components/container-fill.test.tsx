@@ -1,3 +1,8 @@
+/**
+ * Container fill prop (v2, #1637) -- fill is a SIGNATURE: word | word/alpha
+ * | word-to-word, expanding to existing Tailwind utilities at the surface.
+ */
+
 import { render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { Container } from '../../src/components/ui/container';
@@ -9,38 +14,39 @@ function firstChild(container: HTMLElement): Element {
 }
 
 describe('Container - fill prop', () => {
-  it('resolves fill="surface" to registry classes', () => {
-    const { container } = render(<Container fill="surface">hi</Container>);
+  it('resolves a semantic word with its paired foreground', () => {
+    const { container } = render(<Container fill="primary">hi</Container>);
     const el = firstChild(container);
-    expect(el.className).toContain('bg-neutral-900');
-    expect(el.className).toContain('text-neutral-100');
+    expect(el.className).toContain('bg-primary');
+    expect(el.className).toContain('text-primary-foreground');
   });
 
-  it('resolves fill="panel" with opacity', () => {
-    const { container } = render(<Container fill="panel">hi</Container>);
+  it('resolves word/alpha with Tailwind slash spelling', () => {
+    const { container } = render(<Container fill="muted/50">hi</Container>);
     const el = firstChild(container);
-    expect(el.className).toContain('bg-neutral-800/95');
+    expect(el.className).toContain('bg-muted/50');
   });
 
-  it('resolves fill="overlay" with backdrop blur', () => {
-    const { container } = render(<Container fill="overlay">hi</Container>);
+  it('resolves a family-position word literally, no foreground pairing', () => {
+    const { container } = render(<Container fill="neutral-950/80">hi</Container>);
     const el = firstChild(container);
     expect(el.className).toContain('bg-neutral-950/80');
-    expect(el.className).toContain('backdrop-blur-sm');
+    expect(el.className).not.toContain('text-neutral');
   });
 
-  it('resolves fill="hero" to a gradient surface', () => {
-    const { container } = render(<Container fill="hero">hi</Container>);
+  it('resolves word-to-word to a v4 linear gradient surface', () => {
+    const { container } = render(<Container fill="primary-to-primary/0">hi</Container>);
     const el = firstChild(container);
-    expect(el.className).toContain('bg-gradient-to-b');
+    expect(el.className).toContain('bg-linear-to-b');
     expect(el.className).toContain('from-primary');
     expect(el.className).toContain('to-primary/0');
+    expect(el.className).not.toContain('bg-gradient');
   });
 
   it('sets data-fill attribute', () => {
-    const { container } = render(<Container fill="surface">hi</Container>);
+    const { container } = render(<Container fill="primary">hi</Container>);
     const el = firstChild(container);
-    expect(el.getAttribute('data-fill')).toBe('surface');
+    expect(el.getAttribute('data-fill')).toBe('primary');
   });
 
   it('omits data-fill when not set', () => {
@@ -51,14 +57,12 @@ describe('Container - fill prop', () => {
 
   it('fill prop takes precedence over background prop', () => {
     const { container } = render(
-      <Container fill="surface" background="accent">
+      <Container fill="primary" background="accent">
         hi
       </Container>,
     );
     const el = firstChild(container);
-    // fill's bg class should be present
-    expect(el.className).toContain('bg-neutral-900');
-    // legacy background class should NOT be present
+    expect(el.className).toContain('bg-primary');
     expect(el.className).not.toContain('bg-accent');
   });
 
@@ -68,9 +72,16 @@ describe('Container - fill prop', () => {
     expect(el.className).toContain('bg-muted');
   });
 
-  it('falls back to bg-{name} for unknown fill token', () => {
+  it('expands unknown words optimistically -- the build-time safelist pass is the strict gate', () => {
     const { container } = render(<Container fill="custom-xyz">hi</Container>);
     const el = firstChild(container);
     expect(el.className).toContain('bg-custom-xyz');
+  });
+
+  it('invalid signatures resolve to nothing instead of crashing', () => {
+    const { container } = render(<Container fill="a-to-b-to-c">hi</Container>);
+    const el = firstChild(container);
+    expect(el.className).not.toContain('bg-a');
+    expect(el.className).not.toContain('-to-');
   });
 });

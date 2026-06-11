@@ -164,6 +164,65 @@ describe('Word banks', () => {
   });
 });
 
+describe('Reserved fill separators (#1637)', () => {
+  // Generated names are single-hyphen joins of bank words, so bank
+  // cleanliness implies name cleanliness: a name can only contain the
+  // segment '-to-' if some bank word is exactly 'to', starts 'to-', ends
+  // '-to', or embeds '-to-'. The fill signature parser candidate-splits on
+  // '-to-' and requires both sides to resolve (the #1632 lesson) -- a bank
+  // word violating this would make a generated family name unparseable as
+  // a fill. 'via' and 'from' are reserved alongside: they are Tailwind's
+  // other gradient connectors and may join the signature later.
+  const RESERVED = ['to', 'via', 'from'];
+
+  function collectStrings(value: unknown, out: string[]): string[] {
+    if (typeof value === 'string') out.push(value);
+    else if (Array.isArray(value)) for (const v of value) collectStrings(v, out);
+    else if (value && typeof value === 'object')
+      for (const v of Object.values(value)) collectStrings(v, out);
+    return out;
+  }
+
+  async function allBankWords(): Promise<string[]> {
+    const { HUE_HUBS } = await import('../src/naming/hue-hubs.js');
+    const words: string[] = [
+      ...LUMINOSITY_WORDS,
+      ...INTENSITY_WORDS.light,
+      ...INTENSITY_WORDS.medium,
+      ...INTENSITY_WORDS.heavy,
+    ];
+    for (const temp of ['warm', 'cool', 'neutral'] as const) {
+      words.push(...MATERIAL_WORDS[temp]);
+    }
+    collectStrings(HUE_HUBS, words);
+    return words;
+  }
+
+  it('no bank word can create a reserved hyphen segment in a generated name', async () => {
+    const words = await allBankWords();
+    expect(words.length).toBeGreaterThan(1500); // the banks actually loaded
+    for (const reserved of RESERVED) {
+      for (const word of words) {
+        const segments = word.split('-');
+        expect(segments, `bank word "${word}" embeds reserved segment "${reserved}"`).not.toContain(
+          reserved,
+        );
+      }
+    }
+  });
+
+  it('generated names never contain -to- (spot check across the space)', () => {
+    for (let l = 0.05; l <= 0.95; l += 0.1) {
+      for (let c = 0.01; c <= 0.3; c += 0.05) {
+        for (let h = 0; h < 360; h += 20) {
+          const name = generateColorName({ l, c, h, alpha: 1 });
+          expect(name.includes('-to-'), `"${name}" contains reserved -to-`).toBe(false);
+        }
+      }
+    }
+  });
+});
+
 describe('generateColorName', () => {
   it('generates deterministic names (same input = same output)', () => {
     const oklch = { l: 0.65, c: 0.12, h: 230, alpha: 1 };

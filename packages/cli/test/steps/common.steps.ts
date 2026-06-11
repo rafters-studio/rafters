@@ -131,6 +131,26 @@ Given('a stale elevation namespace file exists', async () => {
   );
 });
 
+Given('a stale fill namespace file exists', async () => {
+  // Pre-#1637 projects carry a fill.rafters.json; rebuild must drop it.
+  const stale = {
+    namespace: 'fill',
+    tokens: [
+      {
+        name: 'fill-hero',
+        value: '{"gradient":{"direction":"to-b","stops":[{"color":"primary"}]}}',
+        category: 'fill',
+        namespace: 'fill',
+        userOverride: null,
+      },
+    ],
+  };
+  await writeFile(
+    join(context.fixturePath, '.rafters', 'tokens', 'fill.rafters.json'),
+    JSON.stringify(stale, null, 2),
+  );
+});
+
 Given('component {string} is already installed', async ({}, component: string) => {
   const { execRafters } = await import('./helpers.js');
   await execRafters(context.fixturePath, ['add', component]);

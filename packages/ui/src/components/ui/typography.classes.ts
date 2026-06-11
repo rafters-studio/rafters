@@ -9,7 +9,7 @@
  * `text-foreground` on 'a' < 'f').
  */
 
-import { getFillMetadata, resolveFillClasses } from '../../primitives/fill-resolver';
+import { resolveFillName } from '../../primitives/fill-resolver';
 
 export type TypographyVariant =
   | 'h1'
@@ -116,10 +116,9 @@ const DIM_TO_UTIL: Record<keyof TypographyTokenProps, (v: string) => string> = {
   family: (v) => `font-${v}`,
   align: (v) => `text-${v}`,
   transform: (v) => v,
-  color: (v) => {
-    const fill = getFillMetadata(v);
-    return fill ? resolveFillClasses(fill, 'text') : `text-${v}`;
-  },
+  // Fill signature in text context: plain words emit text-{word}; a
+  // word-to-word signature emits gradient text via bg-clip-text (#1637).
+  color: (v) => resolveFillName(v, 'text') || `text-${v}`,
 };
 
 const DIM_KEYS = Object.keys(DIM_TO_UTIL) as (keyof TypographyTokenProps)[];

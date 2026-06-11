@@ -22,7 +22,6 @@ import {
   DEFAULT_DEPTH_DEFINITIONS,
   DEFAULT_DURATION_DEFINITIONS,
   DEFAULT_EASING_DEFINITIONS,
-  DEFAULT_FILL_DEFINITIONS,
   DEFAULT_FOCUS_CONFIGS,
   DEFAULT_FONT_WEIGHTS,
   DEFAULT_RADIUS_DEFINITIONS,
@@ -32,7 +31,6 @@ import {
   DEFAULT_TYPOGRAPHY_SCALE,
 } from './defaults.js';
 import { generateDepthTokens } from './depth.js';
-import { generateFillTokens } from './fill.js';
 import { generateFocusTokens } from './focus.js';
 import { generateMotionTokens } from './motion.js';
 import { generateRadiusTokens } from './radius.js';
@@ -48,7 +46,6 @@ export { generateBreakpointTokens } from './breakpoint.js';
 export { buildColorScaleFromBase, generateColorTokens } from './color.js';
 export * from './defaults.js';
 export { generateDepthTokens } from './depth.js';
-export { generateFillTokens } from './fill.js';
 export { generateFocusTokens } from './focus.js';
 export { generateMotionTokens } from './motion.js';
 export { generateRadiusTokens } from './radius.js';
@@ -119,10 +116,6 @@ function createGeneratorDefs(colorPaletteBases?: Record<string, ColorPaletteBase
           DEFAULT_EASING_DEFINITIONS,
           DEFAULT_DELAY_DEFINITIONS,
         ),
-    },
-    {
-      name: 'fill',
-      generate: (_config) => generateFillTokens(_config, DEFAULT_FILL_DEFINITIONS),
     },
     {
       name: 'focus',

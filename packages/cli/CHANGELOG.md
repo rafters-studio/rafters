@@ -1,5 +1,15 @@
 # rafters
 
+## Unreleased
+
+### Features
+
+- feat(fills): fill grammar v2 -- fill is a signature (#1637). The fill prop on Container, Card, and Typography's color prop now takes a phrase over the color vocabulary: `word` (solid, with the paired `-foreground` on surfaces), `word/alpha` (Tailwind's slash-opacity, verbatim), `word-to-word` (two-stop gradient, emitted as Tailwind v4 `bg-linear-to-b from-* to-*` -- never the deprecated `bg-gradient-to-*`). Text context emits text color or gradient text via `bg-clip-text`. `-to-` is reserved in the color namer (alongside `via` and `from`), enforced by tests. Dark behavior falls out of which utility is emitted: semantic words flip via the cascade, family words stay literal.
+
+### Breaking Changes
+
+- feat(design-tokens): the v1 fill token namespace is deleted (#1637, supersedes #1628). The seven FillDef recipes (surface/panel/overlay/glass/primary/muted/hero) carried JSON values into CSS, hardcoded stale neutral-* references, had no dark behavior, and had zero production consumers. `registerFill`/`getFillMetadata`/`resolveFillClasses`/`parseFillValue` are gone from the fill resolver; the fill signature replaces them. Recipe names that are real roles still work as words (`fill="primary"`, `fill="panel"`, `fill="muted"`); `glass` ships nowhere -- glass looks are a design choice the system does not make. Existing projects: `rafters init --rebuild` drops the dead `fill.rafters.json`.
+
 ## 0.0.66
 
 ### Bug Fixes

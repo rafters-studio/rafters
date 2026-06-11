@@ -279,55 +279,6 @@ importers:
         specifier: ^4.76.0
         version: 4.76.0
 
-  apps/website:
-    dependencies:
-      '@astrojs/cloudflare':
-        specifier: ^12.6.12
-        version: 12.6.12(@types/node@24.10.0)(astro@5.16.5(@types/node@24.10.0)(jiti@2.6.1)(lightningcss@1.32.0)(rollup@4.52.5)(terser@5.44.1)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2))(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2)
-      '@astrojs/mdx':
-        specifier: ^4.3.13
-        version: 4.3.13(astro@5.16.5(@types/node@24.10.0)(jiti@2.6.1)(lightningcss@1.32.0)(rollup@4.52.5)(terser@5.44.1)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2))
-      '@astrojs/react':
-        specifier: ^4.4.2
-        version: 4.4.2(@types/node@24.10.0)(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(jiti@2.6.1)(lightningcss@1.32.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2)
-      '@rafters/design-tokens':
-        specifier: workspace:*
-        version: link:../../packages/design-tokens
-      '@tailwindcss/vite':
-        specifier: ^4.1.18
-        version: 4.1.18(vite@8.0.0(@types/node@24.10.0)(esbuild@0.27.3)(jiti@2.6.1)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2))
-      '@types/react':
-        specifier: 'catalog:'
-        version: 19.2.2
-      '@types/react-dom':
-        specifier: 'catalog:'
-        version: 19.2.2(@types/react@19.2.2)
-      astro:
-        specifier: ^5.16.5
-        version: 5.16.5(@types/node@24.10.0)(jiti@2.6.1)(lightningcss@1.32.0)(rollup@4.52.5)(terser@5.44.1)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2)
-      comment-parser:
-        specifier: ^1.4.1
-        version: 1.4.1
-      rafters:
-        specifier: workspace:*
-        version: link:../../packages/cli
-      react:
-        specifier: 'catalog:'
-        version: 19.2.0
-      react-dom:
-        specifier: 'catalog:'
-        version: 19.2.0(react@19.2.0)
-      tailwindcss:
-        specifier: ^4.1.18
-        version: 4.1.18
-    devDependencies:
-      '@types/node':
-        specifier: 'catalog:'
-        version: 24.10.0
-      wrangler:
-        specifier: ^4.54.0
-        version: 4.54.0(@cloudflare/workers-types@4.20260124.0)
-
   packages/cli:
     dependencies:
       '@antfu/ni':
@@ -338,7 +289,7 @@ importers:
         version: 8.2.0(@types/node@24.10.0)
       '@modelcontextprotocol/sdk':
         specifier: ^1.25.1
-        version: 1.25.1(hono@4.11.0)(zod@4.1.12)
+        version: 1.25.1(hono@4.11.0)(zod@4.3.6)
       commander:
         specifier: ^13.0.0
         version: 13.1.0
@@ -399,7 +350,7 @@ importers:
         version: 4.1.0(@types/node@24.10.0)(@vitest/ui@4.1.0)(happy-dom@20.0.10)(jsdom@26.1.0)(msw@2.11.6(@types/node@24.10.0)(typescript@5.9.3))(vite@8.0.0(@types/node@24.10.0)(esbuild@0.27.0)(jiti@2.6.1)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2))
       zocker:
         specifier: 'catalog:'
-        version: 3.0.0(zod@4.1.12)
+        version: 3.0.0(zod@4.3.6)
 
   packages/color-utils:
     dependencies:
@@ -621,7 +572,7 @@ importers:
         version: 4.1.0(@types/node@24.10.0)(@vitest/ui@4.1.0)(happy-dom@20.0.10)(jsdom@26.1.0)(msw@2.11.6(@types/node@24.10.0)(typescript@5.9.3))(vite@8.0.0(@types/node@24.10.0)(esbuild@0.27.3)(jiti@2.6.1)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2))
       zocker:
         specifier: 'catalog:'
-        version: 3.0.0(zod@4.1.12)
+        version: 3.0.0(zod@4.3.6)
 
   packages/ui:
     dependencies:
@@ -653,6 +604,9 @@ importers:
       '@hookform/resolvers':
         specifier: ^5.2.2
         version: 5.2.2(react-hook-form@7.66.0(react@19.2.0))
+      '@rafters/shared':
+        specifier: workspace:*
+        version: link:../shared
       '@testing-library/jest-dom':
         specifier: 'catalog:'
         version: 6.9.1
@@ -1125,9 +1079,6 @@ packages:
 
   '@cloudflare/workers-types@4.20251213.0':
     resolution: {integrity: sha512-PJAGdKfU7hs39C2YOFNLTdrfdqG6rbaVj5UuI306zS+TPokiskRLEgUXKqS6avN9Uu9Nyuf2a0hqoumLQCnJlQ==}
-
-  '@cloudflare/workers-types@4.20260124.0':
-    resolution: {integrity: sha512-h6TJlew6AtGuEXFc+k5ifalk+tg3fkg0lla6XbMAb2AKKfJGwlFNTwW2xyT/Ha92KY631CIJ+Ace08DPdFohdA==}
 
   '@colors/colors@1.5.0':
     resolution: {integrity: sha512-ooWCrlZP11i8GImSjTHYHLkvFDP48nS4+204nGb1RiX/WXYHmJA2III9/e2DWVabCESdW7hBAEzHRqUn9OUVvQ==}
@@ -6735,9 +6686,6 @@ snapshots:
 
   '@cloudflare/workers-types@4.20251213.0': {}
 
-  '@cloudflare/workers-types@4.20260124.0':
-    optional: true
-
   '@colors/colors@1.5.0':
     optional: true
 
@@ -7551,7 +7499,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@modelcontextprotocol/sdk@1.25.1(hono@4.11.0)(zod@4.1.12)':
+  '@modelcontextprotocol/sdk@1.25.1(hono@4.11.0)(zod@4.3.6)':
     dependencies:
       '@hono/node-server': 1.19.11(hono@4.11.0)
       ajv: 8.17.1
@@ -7567,8 +7515,8 @@ snapshots:
       json-schema-typed: 8.0.2
       pkce-challenge: 5.0.1
       raw-body: 3.0.2
-      zod: 4.1.12
-      zod-to-json-schema: 3.25.0(zod@4.1.12)
+      zod: 4.3.6
+      zod-to-json-schema: 3.25.0(zod@4.3.6)
     transitivePeerDependencies:
       - hono
       - supports-color
@@ -11908,23 +11856,6 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  wrangler@4.54.0(@cloudflare/workers-types@4.20260124.0):
-    dependencies:
-      '@cloudflare/kv-asset-handler': 0.4.1
-      '@cloudflare/unenv-preset': 2.7.13(unenv@2.0.0-rc.24)(workerd@1.20251210.0)
-      blake3-wasm: 2.1.5
-      esbuild: 0.27.0
-      miniflare: 4.20251210.0
-      path-to-regexp: 6.3.0
-      unenv: 2.0.0-rc.24
-      workerd: 1.20251210.0
-    optionalDependencies:
-      '@cloudflare/workers-types': 4.20260124.0
-      fsevents: 2.3.3
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
-
   wrangler@4.73.0:
     dependencies:
       '@cloudflare/kv-asset-handler': 0.4.2
@@ -12036,13 +11967,19 @@ snapshots:
       randexp: 0.5.3
       zod: 4.1.12
 
+  zocker@3.0.0(zod@4.3.6):
+    dependencies:
+      '@faker-js/faker': 10.1.0
+      randexp: 0.5.3
+      zod: 4.3.6
+
   zod-to-json-schema@3.25.0(zod@3.25.76):
     dependencies:
       zod: 3.25.76
 
-  zod-to-json-schema@3.25.0(zod@4.1.12):
+  zod-to-json-schema@3.25.0(zod@4.3.6):
     dependencies:
-      zod: 4.1.12
+      zod: 4.3.6
 
   zod-to-ts@1.2.0(typescript@5.9.3)(zod@3.25.76):
     dependencies:
