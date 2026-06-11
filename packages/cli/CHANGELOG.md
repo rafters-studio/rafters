@@ -4,6 +4,8 @@
 
 ### Bug Fixes
 
+- fix(design-tokens): depth ladder stacking corrected (#1655). z-depth-overlay 70 -> 35: backdrops dim behind the modal they serve instead of painting over their own dialog content (live since depth words started resolving). z-depth-dropdown 10 -> 50: menus no longer hide behind sticky headers or open dialogs. Tooltip speaks z-depth-tooltip instead of literal z-50 (sits above popovers like every other overlay component). The dangling @utility z-depth-scale (referencing an undefined variable) is no longer emitted. Existing projects: rafters init --rebuild.
+
 - fix(design-tokens): the dark elevation ladder is designed, not inverted (#1638). Top-of-tree surface roles bind their dark side to the mapping's designed position (background 950, sidebar/nav 900, panel 800, card/popover 700) instead of blind inversion -- stacked dark surfaces differentiate again, and mode-invariant roles (overlay backdrop) stay dark in both modes. New `panel` role family (panel, panel-foreground, panel-hover, panel-border). Family reassignment still cascades; designer overrides still anchor. Existing projects: rafters init --rebuild.
 
 - fix(init): import now cleans `@theme inline` blocks and `:root` custom-property layers out of the source CSS (#1647). These token layers override rafters.css in the cascade; values live in `.rafters/tokens` and emit through rafters.css. Non-custom-property declarations in `:root` (e.g. `color-scheme`) survive; plain `@theme` blocks are untouched; the pre-strip backup remains the recovery path.

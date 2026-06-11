@@ -60,4 +60,49 @@ describe('depth z-index utilities', () => {
       expect(css).toContain(`@utility ${word} {`);
     }
   });
+
+  it('reference tokens (JSON values) do not emit dangling utilities', () => {
+    const registry = buildDepthRegistry();
+    registry.define({
+      name: 'depth-scale',
+      value: JSON.stringify({ gap: 10, levels: {} }),
+      category: 'depth',
+      namespace: 'depth',
+      userOverride: null,
+    });
+    const out = registryToTailwind(registry);
+    // tokenValueToCSS skips JSON values, so --depth-scale never exists in
+    // :root; the utility must not be emitted pointing at nothing.
+    expect(out).not.toContain('@utility z-depth-scale');
+  });
+});
+
+describe('depth ladder stacking invariants (#1655)', () => {
+  // The defaults are the shipped ladder; these invariants are what the
+  // components' word usage relies on. A value change that breaks one of
+  // these reintroduces backdrop-over-content or menu-behind-chrome.
+  it('backdrops dim behind the modal they serve, above fixed chrome', async () => {
+    const { DEFAULT_DEPTH_DEFINITIONS: d } = await import('../../src/generators/defaults.js');
+    expect(d.overlay.value).toBeLessThan(d.modal.value);
+    expect(d.overlay.value).toBeGreaterThan(d.fixed.value);
+  });
+
+  it('menu content beats page chrome and survives opening inside a dialog', async () => {
+    const { DEFAULT_DEPTH_DEFINITIONS: d } = await import('../../src/generators/defaults.js');
+    expect(d.dropdown.value).toBeGreaterThan(d.sticky.value);
+    expect(d.dropdown.value).toBeGreaterThan(d.navigation.value);
+    expect(d.dropdown.value).toBeGreaterThan(d.fixed.value);
+    expect(d.dropdown.value).toBeGreaterThan(d.modal.value);
+  });
+
+  it('popover above modal, tooltip above popover, chrome below all overlays', async () => {
+    const { DEFAULT_DEPTH_DEFINITIONS: d } = await import('../../src/generators/defaults.js');
+    expect(d.popover.value).toBeGreaterThan(d.modal.value);
+    expect(d.tooltip.value).toBeGreaterThan(d.popover.value);
+    for (const chrome of ['sticky', 'navigation', 'fixed'] as const) {
+      expect(d[chrome].value).toBeLessThan(d.overlay.value);
+      expect(d[chrome].value).toBeLessThan(d.modal.value);
+    }
+    expect(d.base.value).toBe(0);
+  });
 });
