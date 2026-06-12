@@ -44,7 +44,16 @@ export type FillParseResult =
 
 export type FillContext = 'surface' | 'text';
 
-const SEPARATOR = '-to-';
+/**
+ * Hyphen segments reserved across the system (#1637). The fill parser
+ * splits at '-to-'; 'via' and 'from' are Tailwind's other gradient
+ * connectors and are reserved alongside so they can join the signature
+ * without a namer migration. The color namer's bank invariant test
+ * imports this list -- one copy of the reservation.
+ */
+export const RESERVED_FILL_SEGMENTS = ['to', 'via', 'from'] as const;
+
+const SEPARATOR = `-${RESERVED_FILL_SEGMENTS[0]}-`;
 const ALPHA_PATTERN = /^(100|[1-9]?[0-9])$/;
 const WORD_PATTERN = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
 
@@ -119,19 +128,55 @@ export function validateFillSignature(
   return null;
 }
 
-/** A scale-position suffix (50..950) marks a family-position word. */
-const POSITION_SUFFIX = /-(50|100|200|300|400|500|600|700|800|900|950)$/;
+/**
+ * The surface roles whose `{word}-foreground` pair is guaranteed by the
+ * frozen contract (shadcn drop-in names plus rafters role extensions --
+ * doctrine: contract names are frozen interface). Pairing is membership
+ * here, never spelling: family words (barbie-pink, blue-300) and unknown
+ * words never pair, so no phantom text-*-foreground class ever ships.
+ */
+const PAIRED_SURFACE_ROLES = new Set([
+  'background',
+  'card',
+  'panel',
+  'popover',
+  'surface',
+  'primary',
+  'secondary',
+  'muted',
+  'accent',
+  'destructive',
+  'success',
+  'warning',
+  'info',
+  'alert',
+  'highlight',
+  'selection',
+  'sidebar',
+  'nav',
+  'tooltip',
+  'overlay',
+  'table',
+  'table-header',
+  'code',
+  'badge',
+  'avatar',
+  'input',
+]);
 
 /**
  * The paired foreground word for a surface word, or null when pairing
- * does not apply (family-position words have no foreground tokens).
- * `background` pairs irregularly with `foreground`.
+ * does not apply. `background` pairs irregularly with `foreground`.
+ * With a vocabulary present (`hasWord`), any word whose `-foreground`
+ * pair resolves may pair; without one, only the frozen role set does.
  */
-export function foregroundWordFor(word: string): string | null {
-  if (POSITION_SUFFIX.test(word)) return null;
-  if (word === 'background') return 'foreground';
-  if (word.endsWith('-foreground') || word === 'foreground') return null;
-  return `${word}-foreground`;
+export function foregroundWordFor(
+  word: string,
+  hasWord?: (word: string) => boolean,
+): string | null {
+  const pair = word === 'background' ? 'foreground' : `${word}-foreground`;
+  if (hasWord) return hasWord(pair) ? pair : null;
+  return PAIRED_SURFACE_ROLES.has(word) ? pair : null;
 }
 
 function stopClass(prefix: string, stop: FillStop): string {
@@ -157,8 +202,8 @@ export function expandFillSignature(
   if (!second) {
     if (context === 'text') return stopClass('text', first);
     const parts = [stopClass('bg', first)];
-    const fg = foregroundWordFor(first.word);
-    if (fg && (!hasWord || hasWord(fg))) parts.push(`text-${fg}`);
+    const fg = foregroundWordFor(first.word, hasWord);
+    if (fg) parts.push(`text-${fg}`);
     return parts.join(' ');
   }
 
@@ -166,7 +211,7 @@ export function expandFillSignature(
   if (context === 'text') {
     return [...gradient, 'bg-clip-text', 'text-transparent'].join(' ');
   }
-  const fg = foregroundWordFor(first.word);
-  if (fg && (!hasWord || hasWord(fg))) gradient.push(`text-${fg}`);
+  const fg = foregroundWordFor(first.word, hasWord);
+  if (fg) gradient.push(`text-${fg}`);
   return gradient.join(' ');
 }

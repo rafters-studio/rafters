@@ -95,16 +95,19 @@ export interface ContainerProps extends React.HTMLAttributes<HTMLElement> {
   /**
    * Background color preset (legacy enum)
    * Allowed presets: 'none', 'muted', 'accent', 'card', 'primary'
-   * @deprecated Prefer the `fill` prop, which resolves through the fill
-   * token registry and supports opacity, backdrop blur, and gradients.
+   * @deprecated Prefer the `fill` prop -- a signature over the color
+   * vocabulary with Tailwind's slash-opacity and two-stop gradients.
    */
   background?: ContainerBackground | undefined;
 
   /**
-   * Fill token name resolved through the fill registry in surface context.
-   * Examples: "surface", "panel", "overlay", "glass", "primary", "muted", "hero".
-   * Unknown names fall back to `bg-{name}` so custom tokens still work.
-   * Takes precedence over `background` when both are set.
+   * Fill signature over the color vocabulary (#1637):
+   * `word` (solid -- role words pair their foreground: fill="primary"),
+   * `word/alpha` (Tailwind slash-opacity: fill="muted/50"),
+   * `word-to-word` (two-stop gradient: fill="primary-to-primary/0").
+   * Words are roles, families, or family-positions; invalid signatures
+   * resolve to nothing. Blur, blend, and direction are not fill's job --
+   * they are plain Tailwind utilities. Takes precedence over `background`.
    */
   fill?: string | undefined;
 
@@ -196,11 +199,13 @@ export const Container = React.forwardRef<HTMLElement, ContainerProps>(
       // Vertical flow with gap
       resolvedGap && gapClasses[resolvedGap],
 
-      // Fill token (surface context) takes precedence over legacy background
+      // Fill signature (surface context) takes precedence over legacy background
       fillClasses,
 
-      // Background (R-202) -- legacy prop, ignored when fill is set
-      !fill && background && backgroundClasses[background],
+      // Background (R-202) -- legacy prop, suppressed only when the fill
+      // actually resolved (an invalid fill must not strand the surface
+      // with no background at all)
+      !fillClasses && background && backgroundClasses[background],
 
       // Article gets typography
       isArticle && articleTypography,

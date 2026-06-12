@@ -32,8 +32,9 @@ interface Props extends HTMLAttributes<'div'> {
   /** @deprecated Prefer the `fill` prop. */
   background?: ContainerBackground;
   /**
-   * Fill token name resolved through the fill registry in surface context.
-   * Takes precedence over `background` when both are set.
+   * Fill signature over the color vocabulary (#1637): `word`,
+   * `word/alpha`, or `word-to-word`. Invalid signatures resolve to
+   * nothing. Takes precedence over `background` when it resolves.
    */
   fill?: string;
 }
@@ -69,7 +70,7 @@ const classes = classy(
   padding ? containerPaddingClasses[padding] : size && size !== 'full' && containerAutoEdgePadding,
   resolvedGap && containerGapClasses[resolvedGap],
   fillClasses,
-  !fill && background && containerBackgroundClasses[background],
+  !fillClasses && background && containerBackgroundClasses[background],
   isArticle && containerArticleTypography,
   className,
 );

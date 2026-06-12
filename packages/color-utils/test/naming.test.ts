@@ -2,6 +2,7 @@
  * Tests for the deterministic color naming module
  */
 
+import { RESERVED_FILL_SEGMENTS } from '@rafters/shared';
 import { describe, expect, it } from 'vitest';
 import {
   C_BUCKET_COUNT,
@@ -171,9 +172,9 @@ describe('Reserved fill separators (#1637)', () => {
   // '-to', or embeds '-to-'. The fill signature parser candidate-splits on
   // '-to-' and requires both sides to resolve (the #1632 lesson) -- a bank
   // word violating this would make a generated family name unparseable as
-  // a fill. 'via' and 'from' are reserved alongside: they are Tailwind's
-  // other gradient connectors and may join the signature later.
-  const RESERVED = ['to', 'via', 'from'];
+  // a fill. The list is imported from the parser's package so the namer
+  // gate and the parser can never drift.
+  const RESERVED = RESERVED_FILL_SEGMENTS;
 
   function collectStrings(value: unknown, out: string[]): string[] {
     if (typeof value === 'string') out.push(value);
@@ -212,10 +213,12 @@ describe('Reserved fill separators (#1637)', () => {
   });
 
   it('generated names never contain -to- (spot check across the space)', () => {
-    for (let l = 0.05; l <= 0.95; l += 0.1) {
-      for (let c = 0.01; c <= 0.3; c += 0.05) {
+    // Integer loop counters: float accumulation (l += 0.1) overshoots the
+    // bound on the last step and silently skips the lightest band.
+    for (let li = 0; li < 10; li++) {
+      for (let ci = 0; ci < 6; ci++) {
         for (let h = 0; h < 360; h += 20) {
-          const name = generateColorName({ l, c, h, alpha: 1 });
+          const name = generateColorName({ l: 0.05 + li * 0.1, c: 0.01 + ci * 0.05, h, alpha: 1 });
           expect(name.includes('-to-'), `"${name}" contains reserved -to-`).toBe(false);
         }
       }

@@ -13,6 +13,10 @@
  * crash); the build-time safelist pass validates words against the
  * registry vocabulary and is the strict gate.
  *
+ * Foreground pairing is membership in the frozen role contract, never
+ * spelling -- family words and unknown words never emit a phantom
+ * text-*-foreground class.
+ *
  * This module mirrors the canonical implementation in
  * @rafters/shared/src/fill-signature.ts -- ui stays dependency-free
  * because it is copied into consumer projects via the registry. A parity
@@ -31,7 +35,36 @@ interface FillStop {
 const SEPARATOR = '-to-';
 const ALPHA_PATTERN = /^(100|[1-9]?[0-9])$/;
 const WORD_PATTERN = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
-const POSITION_SUFFIX = /-(50|100|200|300|400|500|600|700|800|900|950)$/;
+
+/** Mirror of PAIRED_SURFACE_ROLES in @rafters/shared fill-signature. */
+const PAIRED_SURFACE_ROLES = new Set([
+  'background',
+  'card',
+  'panel',
+  'popover',
+  'surface',
+  'primary',
+  'secondary',
+  'muted',
+  'accent',
+  'destructive',
+  'success',
+  'warning',
+  'info',
+  'alert',
+  'highlight',
+  'selection',
+  'sidebar',
+  'nav',
+  'tooltip',
+  'overlay',
+  'table',
+  'table-header',
+  'code',
+  'badge',
+  'avatar',
+  'input',
+]);
 
 function parseStop(term: string): FillStop | null {
   const slash = term.indexOf('/');
@@ -43,7 +76,7 @@ function parseStop(term: string): FillStop | null {
   return { word, alpha: Number(alphaRaw) };
 }
 
-function parseSignature(input: string): FillStop[] | null {
+function parseSignature(input: string): [FillStop] | [FillStop, FillStop] | null {
   const trimmed = input.trim();
   if (trimmed.length === 0 || trimmed.includes(' ')) return null;
 
@@ -60,15 +93,10 @@ function parseSignature(input: string): FillStop[] | null {
   return from && to ? [from, to] : null;
 }
 
-/**
- * The paired foreground word for a surface word, or null when pairing
- * does not apply (family-position words have no foreground tokens).
- */
+/** Membership in the frozen role contract decides foreground pairing. */
 function foregroundWordFor(word: string): string | null {
-  if (POSITION_SUFFIX.test(word)) return null;
-  if (word === 'background') return 'foreground';
-  if (word.endsWith('-foreground') || word === 'foreground') return null;
-  return `${word}-foreground`;
+  if (!PAIRED_SURFACE_ROLES.has(word)) return null;
+  return word === 'background' ? 'foreground' : `${word}-foreground`;
 }
 
 function stopClass(prefix: string, stop: FillStop): string {
@@ -80,8 +108,8 @@ function stopClass(prefix: string, stop: FillStop): string {
 /**
  * Resolve a fill signature into CSS classes for a given context.
  *
- * Surface: bg word (+ paired foreground for role words); gradients emit
- * Tailwind v4 utilities (bg-linear-to-b -- never the deprecated
+ * Surface: bg word (+ paired foreground for frozen role words); gradients
+ * emit Tailwind v4 utilities (bg-linear-to-b -- never the deprecated
  * bg-gradient-to-*). Text: text word, or gradient text via bg-clip-text.
  *
  * Dark behavior falls out of which utility is emitted: semantic words
@@ -97,7 +125,7 @@ export function resolveFillName(name: string | undefined, context: FillContext):
   const stops = parseSignature(name);
   if (!stops) return '';
 
-  const [first, second] = stops as [FillStop, FillStop?];
+  const [first, second] = stops;
 
   if (!second) {
     if (context === 'text') return stopClass('text', first);
