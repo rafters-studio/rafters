@@ -1,208 +1,145 @@
 /**
- * Fill Resolver Primitive
+ * Fill Resolver Primitive (v2, #1637)
  *
- * Resolves fill token metadata into CSS classes based on consumption context.
+ * A fill is a SIGNATURE: a compact form that sets namespaced classes and
+ * existing Tailwind utilities on an element. Color vocabulary only:
+ *
+ *   word            solid            fill="primary"
+ *   word/alpha      with opacity     fill="muted/50"     (Tailwind's slash, verbatim)
+ *   word-to-word    2-stop gradient  fill="primary-to-primary/0"
+ *
+ * '-to-' is reserved in the color namer, so the first '-to-' split is
+ * deterministic. Expansion is optimistic at runtime (components never
+ * crash); the build-time safelist pass validates words against the
+ * registry vocabulary and is the strict gate.
+ *
+ * Foreground pairing is membership in the frozen role contract, never
+ * spelling -- family words and unknown words never emit a phantom
+ * text-*-foreground class.
+ *
+ * This module mirrors the canonical implementation in
+ * @rafters/shared/src/fill-signature.ts -- ui stays dependency-free
+ * because it is copied into consumer projects via the registry. A parity
+ * test in packages/ui/test keeps the two in lockstep.
+ *
  * Zero external dependencies -- works in React, Astro, and Web Components.
- *
- * Two contexts:
- * - "surface": resolves to background classes (bg-*, backdrop-blur-*, text-*)
- * - "text": resolves to text color classes (text-*, or bg-clip-text for gradients)
- *
- * Two entry points:
- * - resolveFillClasses(metadata, context): metadata-driven -- caller supplies shape
- * - resolveFillName(name, context): name-driven -- looks up the built-in or
- *   app-registered fill registry and resolves in one step. Unknown names fall
- *   back to direct class application (bg-{name} / text-{name}) so consumers do
- *   not crash on token drift.
  */
 
 export type FillContext = 'surface' | 'text';
 
-export interface FillMetadata {
-  color?: string;
-  opacity?: number;
-  foreground?: string;
-  backdropBlur?: string;
-  gradient?: {
-    direction: string;
-    stops: Array<{
-      color: string;
-      position?: string;
-      opacity?: number;
-    }>;
-  };
+interface FillStop {
+  word: string;
+  alpha?: number;
 }
 
-/**
- * Parse fill token value (JSON string) into structured metadata.
- */
-export function parseFillValue(value: string): FillMetadata | null {
-  try {
-    return JSON.parse(value) as FillMetadata;
-  } catch {
-    return null;
-  }
+const SEPARATOR = '-to-';
+const ALPHA_PATTERN = /^(100|[1-9]?[0-9])$/;
+const WORD_PATTERN = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
+
+/** Mirror of PAIRED_SURFACE_ROLES in @rafters/shared fill-signature. */
+const PAIRED_SURFACE_ROLES = new Set([
+  'background',
+  'card',
+  'panel',
+  'popover',
+  'surface',
+  'primary',
+  'secondary',
+  'muted',
+  'accent',
+  'destructive',
+  'success',
+  'warning',
+  'info',
+  'alert',
+  'highlight',
+  'selection',
+  'sidebar',
+  'nav',
+  'tooltip',
+  'overlay',
+  'table',
+  'table-header',
+  'code',
+  'badge',
+  'avatar',
+  'input',
+]);
+
+function parseStop(term: string): FillStop | null {
+  const slash = term.indexOf('/');
+  const word = slash === -1 ? term : term.slice(0, slash);
+  if (!WORD_PATTERN.test(word)) return null;
+  if (slash === -1) return { word };
+  const alphaRaw = term.slice(slash + 1);
+  if (!ALPHA_PATTERN.test(alphaRaw)) return null;
+  return { word, alpha: Number(alphaRaw) };
 }
 
-/**
- * Resolve a fill's metadata into CSS classes based on context.
- *
- * Surface context (Container, Card, Dialog):
- *   fill-surface { color: "neutral-900" } -> "bg-neutral-900 text-neutral-100"
- *   fill-glass { color: "neutral-900", opacity: 0.6, backdropBlur: "md" }
- *     -> "bg-neutral-900/60 backdrop-blur-md text-neutral-100"
- *   fill-hero { gradient } -> "bg-gradient-to-b from-primary to-primary/0 text-primary-foreground"
- *
- * Text context (Typography color prop):
- *   fill-primary { color: "primary" } -> "text-primary"
- *   fill-hero { gradient } -> "bg-gradient-to-r from-primary to-primary/0 bg-clip-text text-transparent"
- */
-export function resolveFillClasses(fill: FillMetadata, context: FillContext): string {
-  if (fill.gradient) {
-    return resolveGradientFill(fill, context);
-  }
+function parseSignature(input: string): [FillStop] | [FillStop, FillStop] | null {
+  const trimmed = input.trim();
+  if (trimmed.length === 0 || trimmed.includes(' ')) return null;
 
-  return resolveSolidFill(fill, context);
-}
-
-function resolveSolidFill(fill: FillMetadata, context: FillContext): string {
-  const parts: string[] = [];
-
-  if (!fill.color) return '';
-
-  if (context === 'surface') {
-    // Background color with optional opacity
-    if (fill.opacity !== undefined && fill.opacity < 1) {
-      parts.push(`bg-${fill.color}/${Math.round(fill.opacity * 100)}`);
-    } else {
-      parts.push(`bg-${fill.color}`);
-    }
-
-    // Backdrop blur
-    if (fill.backdropBlur) {
-      parts.push(`backdrop-blur-${fill.backdropBlur}`);
-    }
-
-    // Foreground text color
-    if (fill.foreground) {
-      parts.push(`text-${fill.foreground}`);
-    }
-  } else {
-    // Text context -- just the text color
-    if (fill.opacity !== undefined && fill.opacity < 1) {
-      parts.push(`text-${fill.color}/${Math.round(fill.opacity * 100)}`);
-    } else {
-      parts.push(`text-${fill.color}`);
-    }
+  const split = trimmed.indexOf(SEPARATOR);
+  if (split === -1) {
+    const stop = parseStop(trimmed);
+    return stop ? [stop] : null;
   }
 
-  return parts.join(' ');
+  const right = trimmed.slice(split + SEPARATOR.length);
+  if (right.includes(SEPARATOR)) return null; // two stops only
+  const from = parseStop(trimmed.slice(0, split));
+  const to = parseStop(right);
+  return from && to ? [from, to] : null;
 }
 
-function resolveGradientFill(fill: FillMetadata, context: FillContext): string {
-  const parts: string[] = [];
-  const gradient = fill.gradient;
+/** Membership in the frozen role contract decides foreground pairing. */
+function foregroundWordFor(word: string): string | null {
+  if (!PAIRED_SURFACE_ROLES.has(word)) return null;
+  return word === 'background' ? 'foreground' : `${word}-foreground`;
+}
 
-  if (!gradient) return '';
-
-  // Build gradient classes
-  parts.push(`bg-gradient-${gradient.direction}`);
-
-  const lastIndex = gradient.stops.length - 1;
-  for (const [i, stop] of gradient.stops.entries()) {
-    const prefix = i === 0 ? 'from' : i === lastIndex ? 'to' : 'via';
-
-    let colorClass = `${prefix}-${stop.color}`;
-    if (stop.opacity !== undefined && stop.opacity < 1) {
-      colorClass = `${prefix}-${stop.color}/${Math.round(stop.opacity * 100)}`;
-    }
-    parts.push(colorClass);
-  }
-
-  if (context === 'surface') {
-    // Surface: gradient background + foreground text
-    if (fill.foreground) {
-      parts.push(`text-${fill.foreground}`);
-    }
-  } else {
-    // Text context: gradient applied as text color via bg-clip-text
-    parts.push('bg-clip-text');
-    parts.push('text-transparent');
-  }
-
-  return parts.join(' ');
+function stopClass(prefix: string, stop: FillStop): string {
+  return stop.alpha === undefined
+    ? `${prefix}-${stop.word}`
+    : `${prefix}-${stop.word}/${stop.alpha}`;
 }
 
 /**
- * Built-in fill registry.
+ * Resolve a fill signature into CSS classes for a given context.
  *
- * Mirrors the default fill definitions shipped by @rafters/design-tokens so
- * components resolve common names without needing the token package at
- * runtime (ui is copied into consumer projects via the registry and must stay
- * zero-dep). Apps can override or extend via `registerFill`.
- */
-const fillRegistry: Record<string, FillMetadata> = {
-  surface: { color: 'neutral-900', foreground: 'neutral-100' },
-  panel: { color: 'neutral-800', opacity: 0.95, foreground: 'neutral-100' },
-  overlay: {
-    color: 'neutral-950',
-    opacity: 0.8,
-    backdropBlur: 'sm',
-    foreground: 'neutral-50',
-  },
-  glass: {
-    color: 'neutral-900',
-    opacity: 0.6,
-    backdropBlur: 'md',
-    foreground: 'neutral-100',
-  },
-  primary: { color: 'primary', foreground: 'primary-foreground' },
-  muted: { color: 'muted', foreground: 'muted-foreground' },
-  hero: {
-    gradient: {
-      direction: 'to-b',
-      stops: [{ color: 'primary' }, { color: 'primary', opacity: 0 }],
-    },
-    foreground: 'primary-foreground',
-  },
-};
-
-/**
- * Register or override a fill definition at runtime.
+ * Surface: bg word (+ paired foreground for frozen role words); gradients
+ * emit Tailwind v4 utilities (bg-linear-to-b -- never the deprecated
+ * bg-gradient-to-*). Text: text word, or gradient text via bg-clip-text.
  *
- * Apps whose design systems define custom fills can call this once at startup
- * (or inject via their root layout) to make those fills resolvable by name
- * from any component using the fill prop.
- */
-export function registerFill(name: string, metadata: FillMetadata): void {
-  fillRegistry[name] = metadata;
-}
-
-/**
- * Look up fill metadata by name. Returns undefined for unknown names.
- */
-export function getFillMetadata(name: string): FillMetadata | undefined {
-  return fillRegistry[name];
-}
-
-/**
- * Resolve a fill token name into CSS classes for a given context.
+ * Dark behavior falls out of which utility is emitted: semantic words
+ * compile to utilities over flipping vars, family words to literal scale
+ * utilities that never flip.
  *
- * Known names resolve through the registry. Unknown names fall back to
- * direct class application so consumers do not crash on token drift:
- *   surface context -> `bg-{name}`
- *   text context    -> `text-{name}`
- *
- * Empty/undefined input returns an empty string.
+ * Invalid signatures return '' -- runtime never crashes; the build-time
+ * safelist pass rejects them naming the unresolvable word.
  */
 export function resolveFillName(name: string | undefined, context: FillContext): string {
   if (!name) return '';
 
-  const metadata = fillRegistry[name];
-  if (metadata) {
-    return resolveFillClasses(metadata, context);
+  const stops = parseSignature(name);
+  if (!stops) return '';
+
+  const [first, second] = stops;
+
+  if (!second) {
+    if (context === 'text') return stopClass('text', first);
+    const parts = [stopClass('bg', first)];
+    const fg = foregroundWordFor(first.word);
+    if (fg) parts.push(`text-${fg}`);
+    return parts.join(' ');
   }
 
-  // Unknown name: fall back to direct Tailwind class application.
-  return context === 'surface' ? `bg-${name}` : `text-${name}`;
+  const gradient = ['bg-linear-to-b', stopClass('from', first), stopClass('to', second)];
+  if (context === 'text') {
+    return [...gradient, 'bg-clip-text', 'text-transparent'].join(' ');
+  }
+  const fg = foregroundWordFor(first.word);
+  if (fg) gradient.push(`text-${fg}`);
+  return gradient.join(' ');
 }

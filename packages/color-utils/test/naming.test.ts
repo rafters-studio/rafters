@@ -2,6 +2,7 @@
  * Tests for the deterministic color naming module
  */
 
+import { RESERVED_FILL_SEGMENTS } from '@rafters/shared';
 import { describe, expect, it } from 'vitest';
 import {
   C_BUCKET_COUNT,
@@ -160,6 +161,67 @@ describe('Word banks', () => {
     const luminositySet = new Set(LUMINOSITY_WORDS);
     for (const word of allIntensityWords) {
       expect(luminositySet.has(word)).toBe(false);
+    }
+  });
+});
+
+describe('Reserved fill separators (#1637)', () => {
+  // Generated names are single-hyphen joins of bank words, so bank
+  // cleanliness implies name cleanliness: a name can only contain the
+  // segment '-to-' if some bank word is exactly 'to', starts 'to-', ends
+  // '-to', or embeds '-to-'. The fill signature parser candidate-splits on
+  // '-to-' and requires both sides to resolve (the #1632 lesson) -- a bank
+  // word violating this would make a generated family name unparseable as
+  // a fill. The list is imported from the parser's package so the namer
+  // gate and the parser can never drift.
+  const RESERVED = RESERVED_FILL_SEGMENTS;
+
+  function collectStrings(value: unknown, out: string[]): string[] {
+    if (typeof value === 'string') out.push(value);
+    else if (Array.isArray(value)) for (const v of value) collectStrings(v, out);
+    else if (value && typeof value === 'object')
+      for (const v of Object.values(value)) collectStrings(v, out);
+    return out;
+  }
+
+  async function allBankWords(): Promise<string[]> {
+    const { HUE_HUBS } = await import('../src/naming/hue-hubs.js');
+    const words: string[] = [
+      ...LUMINOSITY_WORDS,
+      ...INTENSITY_WORDS.light,
+      ...INTENSITY_WORDS.medium,
+      ...INTENSITY_WORDS.heavy,
+    ];
+    for (const temp of ['warm', 'cool', 'neutral'] as const) {
+      words.push(...MATERIAL_WORDS[temp]);
+    }
+    collectStrings(HUE_HUBS, words);
+    return words;
+  }
+
+  it('no bank word can create a reserved hyphen segment in a generated name', async () => {
+    const words = await allBankWords();
+    expect(words.length).toBeGreaterThan(1500); // the banks actually loaded
+    for (const reserved of RESERVED) {
+      for (const word of words) {
+        const segments = word.split('-');
+        expect(segments, `bank word "${word}" embeds reserved segment "${reserved}"`).not.toContain(
+          reserved,
+        );
+      }
+    }
+  });
+
+  it('generated names never contain -to- (spot check across the space)', () => {
+    // Integer loop counters: float accumulation (l += 0.1) overshoots the
+    // bound on the last step and silently skips the lightest band.
+    for (let li = 0; li < 10; li++) {
+      for (let ci = 0; ci < 6; ci++) {
+        for (let h = 0; h < 360; h += 20) {
+          const name = generateColorName({ l: 0.05 + li * 0.1, c: 0.01 + ci * 0.05, h, alpha: 1 });
+          expect(name.includes('-to-'), `"${name}" contains reserved -to-`).toBe(false);
+        }
+      }
     }
   });
 });

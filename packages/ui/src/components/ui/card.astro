@@ -28,8 +28,9 @@ interface Props extends HTMLAttributes<'div'> {
   /** @deprecated Prefer the `fill` prop. */
   background?: CardBackground;
   /**
-   * Fill token name resolved through the fill registry in surface context.
-   * Overrides the default `bg-card` surface when set.
+   * Fill signature over the color vocabulary (#1637): `word`,
+   * `word/alpha`, or `word-to-word`. Invalid signatures resolve to
+   * nothing and the default `bg-card` surface stays.
    */
   fill?: string;
 }
@@ -46,8 +47,8 @@ const {
 
 const sizeStyles = size === 'sm' ? 'group/card-sm' : '';
 const fillClasses = fill ? resolveFillName(fill, 'surface') : '';
-// fill wins over legacy background
-const bgStyles = !fill && background ? cardBackgroundClasses[background] : '';
+// fill wins over legacy background -- but only when it actually resolved
+const bgStyles = !fillClasses && background ? cardBackgroundClasses[background] : '';
 const cls = classy(
   cardBaseClasses,
   sizeStyles,

@@ -91,10 +91,12 @@ export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   size?: 'default' | 'sm';
 
   /**
-   * Fill token name resolved through the fill registry in surface context.
-   * Examples: "surface", "panel", "overlay", "glass", "primary", "muted", "hero".
-   * Unknown names fall back to `bg-{name}` so custom tokens still work.
-   * When set, overrides the default `bg-card` surface.
+   * Fill signature over the color vocabulary (#1637):
+   * `word` (solid -- role words pair their foreground: fill="primary"),
+   * `word/alpha` (Tailwind slash-opacity: fill="muted/50"),
+   * `word-to-word` (two-stop gradient: fill="primary-to-primary/0").
+   * Invalid signatures resolve to nothing and the default `bg-card`
+   * surface stays. When the fill resolves, it overrides `bg-card`.
    */
   fill?: string | undefined;
 

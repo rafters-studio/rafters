@@ -8,6 +8,12 @@
  *
  * Each bank is organized by bucket index. Temperature and perceptual
  * density select which variant of a word to use for semantic meaning.
+ *
+ * RESERVED SEGMENTS (#1637): no bank word may be 'to', 'via', or 'from',
+ * nor start/end with one as a hyphen segment. Generated names join bank
+ * words with single hyphens, and the fill signature parser splits on
+ * '-to-' -- a violating word would make a family name unparseable as a
+ * fill. Enforced by the reservation test in test/naming.test.ts.
  */
 
 /**

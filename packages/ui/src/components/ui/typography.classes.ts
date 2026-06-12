@@ -9,7 +9,7 @@
  * `text-foreground` on 'a' < 'f').
  */
 
-import { getFillMetadata, resolveFillClasses } from '../../primitives/fill-resolver';
+import { resolveFillName } from '../../primitives/fill-resolver';
 
 export type TypographyVariant =
   | 'h1'
@@ -116,17 +116,17 @@ const DIM_TO_UTIL: Record<keyof TypographyTokenProps, (v: string) => string> = {
   family: (v) => `font-${v}`,
   align: (v) => `text-${v}`,
   transform: (v) => v,
-  color: (v) => {
-    const fill = getFillMetadata(v);
-    return fill ? resolveFillClasses(fill, 'text') : `text-${v}`;
-  },
+  // Fill signature in text context: plain words emit text-{word}; a
+  // word-to-word signature emits gradient text via bg-clip-text. Invalid
+  // signatures emit nothing -- same contract as Container/Card (#1637).
+  color: (v) => resolveFillName(v, 'text'),
 };
 
 const DIM_KEYS = Object.keys(DIM_TO_UTIL) as (keyof TypographyTokenProps)[];
 
 function emitDim(dim: keyof TypographyTokenProps, value: string, prefix = ''): string {
   const util = DIM_TO_UTIL[dim](value);
-  if (!prefix) return util;
+  if (!util || !prefix) return util;
   return util
     .split(/\s+/)
     .map((u) => `${prefix}${u}`)
@@ -137,7 +137,9 @@ function emitProps(props: TypographyTokenProps, prefix = ''): string {
   const classes: string[] = [];
   for (const key of DIM_KEYS) {
     const value = props[key];
-    if (value != null) classes.push(emitDim(key, value, prefix));
+    if (value == null) continue;
+    const util = emitDim(key, value, prefix);
+    if (util) classes.push(util);
   }
   return classes.join(' ');
 }

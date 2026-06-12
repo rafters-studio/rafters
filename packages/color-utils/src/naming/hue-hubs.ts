@@ -12,6 +12,11 @@
  * - Each cell contains 10+ semantically-appropriate words
  * - Temperature selects which hub variant to use
  * - Fractional L/C values sub-select within the word list
+ *
+ * RESERVED SEGMENTS (#1637): no entry may be 'to', 'via', or 'from', nor
+ * contain one as a hyphen segment (e.g. 'door-to-door' is forbidden;
+ * 'tomato' and 'torch' are fine). The fill signature parser splits names
+ * on '-to-'. Enforced by the reservation test in test/naming.test.ts.
  */
 
 /**

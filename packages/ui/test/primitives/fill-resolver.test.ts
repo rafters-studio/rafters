@@ -1,219 +1,140 @@
 /**
- * Fill resolver tests -- dual-context resolution
+ * Fill resolver tests (v2, #1637) -- the fill SIGNATURE.
+ *
+ * word | word/alpha | word-to-word, expanding to existing Tailwind
+ * utilities. The dark contract is proven by which utility is emitted:
+ * semantic words compile to utilities over flipping vars (bg-primary
+ * follows .dark), family words to literal scale utilities (never flip).
+ *
+ * The parity block keeps this dependency-free copy in lockstep with the
+ * canonical implementation in @rafters/shared.
  */
 
-import { describe, expect, it } from 'vitest';
 import {
-  getFillMetadata,
-  parseFillValue,
-  registerFill,
-  resolveFillClasses,
-  resolveFillName,
-} from '../../src/primitives/fill-resolver';
+  expandFillSignature,
+  parseFillSignature,
+  type FillContext as SharedFillContext,
+} from '@rafters/shared';
+import { describe, expect, it } from 'vitest';
+import { resolveFillName } from '../../src/primitives/fill-resolver';
 
-describe('parseFillValue', () => {
-  it('parses valid JSON fill metadata', () => {
-    const json = JSON.stringify({ color: 'neutral-900', opacity: 0.8 });
-    const result = parseFillValue(json);
-
-    expect(result).toEqual({ color: 'neutral-900', opacity: 0.8 });
-  });
-
-  it('returns null for invalid JSON', () => {
-    expect(parseFillValue('not-json')).toBeNull();
-  });
-});
-
-describe('resolveFillClasses - surface context', () => {
-  it('resolves solid color fill', () => {
-    const fill = { color: 'neutral-900', foreground: 'neutral-100' };
-    expect(resolveFillClasses(fill, 'surface')).toBe('bg-neutral-900 text-neutral-100');
-  });
-
-  it('resolves color with opacity', () => {
-    const fill = { color: 'neutral-900', opacity: 0.6, foreground: 'neutral-100' };
-    expect(resolveFillClasses(fill, 'surface')).toBe('bg-neutral-900/60 text-neutral-100');
-  });
-
-  it('resolves color with opacity and backdrop blur', () => {
-    const fill = {
-      color: 'neutral-900',
-      opacity: 0.6,
-      backdropBlur: 'md',
-      foreground: 'neutral-100',
-    };
-    expect(resolveFillClasses(fill, 'surface')).toBe(
-      'bg-neutral-900/60 backdrop-blur-md text-neutral-100',
-    );
-  });
-
-  it('resolves backdrop blur without opacity', () => {
-    const fill = { color: 'neutral-950', backdropBlur: 'sm', foreground: 'neutral-50' };
-    expect(resolveFillClasses(fill, 'surface')).toBe(
-      'bg-neutral-950 backdrop-blur-sm text-neutral-50',
-    );
-  });
-
-  it('resolves gradient fill', () => {
-    const fill = {
-      gradient: {
-        direction: 'to-b',
-        stops: [{ color: 'primary' }, { color: 'primary', opacity: 0 }],
-      },
-      foreground: 'primary-foreground',
-    };
-    expect(resolveFillClasses(fill, 'surface')).toBe(
-      'bg-gradient-to-b from-primary to-primary/0 text-primary-foreground',
-    );
-  });
-
-  it('resolves gradient with 3 stops', () => {
-    const fill = {
-      gradient: {
-        direction: 'to-r',
-        stops: [{ color: 'primary' }, { color: 'accent' }, { color: 'secondary' }],
-      },
-      foreground: 'primary-foreground',
-    };
-    expect(resolveFillClasses(fill, 'surface')).toBe(
-      'bg-gradient-to-r from-primary via-accent to-secondary text-primary-foreground',
-    );
-  });
-
-  it('resolves solid color without foreground', () => {
-    const fill = { color: 'neutral-900' };
-    expect(resolveFillClasses(fill, 'surface')).toBe('bg-neutral-900');
-  });
-
-  it('returns empty string for fill with no color or gradient', () => {
-    expect(resolveFillClasses({}, 'surface')).toBe('');
-  });
-
-  it('resolves full opacity as solid (no /100 suffix)', () => {
-    const fill = { color: 'primary', opacity: 1, foreground: 'primary-foreground' };
-    expect(resolveFillClasses(fill, 'surface')).toBe('bg-primary text-primary-foreground');
-  });
-});
-
-describe('resolveFillClasses - text context', () => {
-  it('resolves simple color as text class', () => {
-    const fill = { color: 'primary' };
-    expect(resolveFillClasses(fill, 'text')).toBe('text-primary');
-  });
-
-  it('resolves color with opacity as text class', () => {
-    const fill = { color: 'neutral-900', opacity: 0.6 };
-    expect(resolveFillClasses(fill, 'text')).toBe('text-neutral-900/60');
-  });
-
-  it('resolves gradient as clipped text', () => {
-    const fill = {
-      gradient: {
-        direction: 'to-r',
-        stops: [{ color: 'primary' }, { color: 'primary', opacity: 0 }],
-      },
-    };
-    expect(resolveFillClasses(fill, 'text')).toBe(
-      'bg-gradient-to-r from-primary to-primary/0 bg-clip-text text-transparent',
-    );
-  });
-
-  it('ignores foreground and backdrop blur in text context', () => {
-    const fill = {
-      color: 'primary',
-      foreground: 'primary-foreground',
-      backdropBlur: 'md',
-    };
-    // Text context only produces text-* class, ignores surface properties
-    expect(resolveFillClasses(fill, 'text')).toBe('text-primary');
-  });
-});
-
-describe('resolveFillName - built-in registry', () => {
-  it('resolves "surface" in surface context', () => {
-    expect(resolveFillName('surface', 'surface')).toBe('bg-neutral-900 text-neutral-100');
-  });
-
-  it('resolves "panel" with opacity', () => {
-    expect(resolveFillName('panel', 'surface')).toBe('bg-neutral-800/95 text-neutral-100');
-  });
-
-  it('resolves "overlay" with opacity and backdrop blur', () => {
-    expect(resolveFillName('overlay', 'surface')).toBe(
-      'bg-neutral-950/80 backdrop-blur-sm text-neutral-50',
-    );
-  });
-
-  it('resolves "glass" with backdrop blur', () => {
-    expect(resolveFillName('glass', 'surface')).toBe(
-      'bg-neutral-900/60 backdrop-blur-md text-neutral-100',
-    );
-  });
-
-  it('resolves "primary" in surface context', () => {
+describe('resolveFillName -- solid signatures', () => {
+  it('semantic role word pairs its foreground on surfaces', () => {
     expect(resolveFillName('primary', 'surface')).toBe('bg-primary text-primary-foreground');
+    expect(resolveFillName('muted', 'surface')).toBe('bg-muted text-muted-foreground');
   });
 
-  it('resolves "hero" gradient in surface context', () => {
-    expect(resolveFillName('hero', 'surface')).toBe(
-      'bg-gradient-to-b from-primary to-primary/0 text-primary-foreground',
-    );
+  it('background pairs irregularly with foreground', () => {
+    expect(resolveFillName('background', 'surface')).toBe('bg-background text-foreground');
   });
 
-  it('resolves "hero" gradient in text context with bg-clip-text', () => {
-    expect(resolveFillName('hero', 'text')).toBe(
-      'bg-gradient-to-b from-primary to-primary/0 bg-clip-text text-transparent',
-    );
+  it('foreground words never pair a foreground-of-foreground', () => {
+    expect(resolveFillName('foreground/80', 'surface')).toBe('bg-foreground/80');
+    expect(resolveFillName('primary-foreground', 'surface')).toBe('bg-primary-foreground');
   });
 
-  it('resolves "primary" in text context to text-primary', () => {
+  it('family-position words emit the literal scale utility, no pairing (dark contract: family words never flip)', () => {
+    expect(resolveFillName('blue-300', 'surface')).toBe('bg-blue-300');
+    expect(resolveFillName('neutral-950/80', 'surface')).toBe('bg-neutral-950/80');
+  });
+
+  it('semantic words emit the flipping-var utility (dark contract: semantic words follow .dark)', () => {
+    // bg-primary resolves through --primary, which the cascade flips in dark
+    // mode -- the signature never carries mode.
+    expect(resolveFillName('primary', 'surface')).toContain('bg-primary');
+    expect(resolveFillName('primary', 'surface')).not.toContain('dark:');
+  });
+
+  it('alpha uses Tailwind slash spelling verbatim', () => {
+    expect(resolveFillName('muted/50', 'surface')).toBe('bg-muted/50 text-muted-foreground');
+    expect(resolveFillName('muted/50', 'text')).toBe('text-muted/50');
+  });
+
+  it('text context emits text color only', () => {
     expect(resolveFillName('primary', 'text')).toBe('text-primary');
+    expect(resolveFillName('blue-300', 'text')).toBe('text-blue-300');
+  });
+});
+
+describe('resolveFillName -- gradient signatures', () => {
+  it('two stops expand to Tailwind v4 linear gradient utilities', () => {
+    expect(resolveFillName('primary-to-primary/0', 'surface')).toBe(
+      'bg-linear-to-b from-primary to-primary/0 text-primary-foreground',
+    );
   });
 
-  it('falls back to bg-{name} for unknown surface fill', () => {
-    expect(resolveFillName('nope', 'surface')).toBe('bg-nope');
+  it('never emits the deprecated v3 bg-gradient-to-* alias', () => {
+    expect(resolveFillName('primary-to-primary/0', 'surface')).not.toContain('bg-gradient');
   });
 
-  it('falls back to text-{name} for unknown text fill', () => {
-    expect(resolveFillName('nope', 'text')).toBe('text-nope');
+  it('text context emits gradient text via bg-clip-text', () => {
+    expect(resolveFillName('primary-to-primary/0', 'text')).toBe(
+      'bg-linear-to-b from-primary to-primary/0 bg-clip-text text-transparent',
+    );
   });
 
-  it('returns empty string for undefined name', () => {
+  it('per-stop alpha on either side', () => {
+    expect(resolveFillName('blue-300/40-to-red-500', 'surface')).toBe(
+      'bg-linear-to-b from-blue-300/40 to-red-500',
+    );
+  });
+
+  it('family-word gradients skip foreground pairing', () => {
+    expect(resolveFillName('blue-300-to-red-500', 'surface')).toBe(
+      'bg-linear-to-b from-blue-300 to-red-500',
+    );
+  });
+});
+
+describe('resolveFillName -- invalid signatures resolve to nothing (runtime never crashes)', () => {
+  it.each([
+    ['', 'empty'],
+    ['  ', 'whitespace'],
+    ['primary muted', 'spaces -- fill is a single signature'],
+    ['a-to-b-to-c', 'three stops'],
+    ['primary/blur', 'non-numeric alpha'],
+    ['primary/101', 'alpha out of range'],
+    ['Primary', 'uppercase'],
+    ['-primary', 'leading hyphen'],
+  ])('%s (%s) resolves to empty', (input) => {
+    expect(resolveFillName(input, 'surface')).toBe('');
+    expect(resolveFillName(input, 'text')).toBe('');
+  });
+
+  it('undefined resolves to empty', () => {
     expect(resolveFillName(undefined, 'surface')).toBe('');
   });
-
-  it('returns empty string for empty name', () => {
-    expect(resolveFillName('', 'surface')).toBe('');
-  });
 });
 
-describe('getFillMetadata', () => {
-  it('returns metadata for known names', () => {
-    expect(getFillMetadata('surface')).toEqual({
-      color: 'neutral-900',
-      foreground: 'neutral-100',
-    });
-  });
+describe('parity with @rafters/shared fill-signature (canonical implementation)', () => {
+  const FIXTURES = [
+    'primary',
+    'muted/50',
+    'background',
+    'foreground/80',
+    'blue-300',
+    'neutral-950/80',
+    'primary-to-primary/0',
+    'blue-300/40-to-red-500',
+    'primary-foreground',
+  ] as const;
 
-  it('returns undefined for unknown names', () => {
-    expect(getFillMetadata('definitely-not-a-fill')).toBeUndefined();
-  });
-});
+  it.each(FIXTURES.flatMap((f) => (['surface', 'text'] as const).map((c) => [f, c] as const)))(
+    '%s in %s context matches shared expansion',
+    (input, context) => {
+      const parsed = parseFillSignature(input);
+      expect(parsed.ok).toBe(true);
+      if (!parsed.ok) return;
+      const expected = expandFillSignature(parsed.signature, context as SharedFillContext);
+      expect(resolveFillName(input, context)).toBe(expected);
+    },
+  );
 
-describe('registerFill', () => {
-  it('registers a new fill that resolveFillName can find', () => {
-    registerFill('custom-brand', { color: 'brand-500', foreground: 'brand-50' });
-    expect(resolveFillName('custom-brand', 'surface')).toBe('bg-brand-500 text-brand-50');
-    expect(getFillMetadata('custom-brand')).toEqual({
-      color: 'brand-500',
-      foreground: 'brand-50',
-    });
-  });
-
-  it('overrides an existing fill registration', () => {
-    registerFill('surface', { color: 'zinc-900', foreground: 'zinc-50' });
-    expect(resolveFillName('surface', 'surface')).toBe('bg-zinc-900 text-zinc-50');
-    // restore the default so subsequent tests are not affected
-    registerFill('surface', { color: 'neutral-900', foreground: 'neutral-100' });
-  });
+  it.each(['', 'primary muted', 'a-to-b-to-c', 'primary/101'])(
+    'invalid input %j rejected by both',
+    (input) => {
+      expect(parseFillSignature(input).ok).toBe(false);
+      expect(resolveFillName(input, 'surface')).toBe('');
+    },
+  );
 });
