@@ -1,10 +1,12 @@
 # rafters
 
-## Unreleased
+## 0.0.68
 
 ### Bug Fixes
 
 - fix(studio): REST token mutations now persist to disk and regenerate CSS (#1662). The studio API's REST POST endpoints (`/api/tokens/:name` and `/api/tokens`) updated the in-memory registry but never called `persistAndNotify` -- tokens changed in the API response but never hit disk, never regenerated CSS output, and never triggered HMR. The middleware is now async; both POST paths await their handlers and persist on success (status < 400). Two integration tests prove the contract through the full middleware with a real temp `.rafters` directory.
+
+## 0.0.67
 
 ### Features
 
