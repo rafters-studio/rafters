@@ -565,8 +565,7 @@ export async function handlePostTokens(
 
   // Batch update -- loop define+set per token. The new registry doesn't ship
   // a transactional batch primitive; the cascade still walks correctly per
-  // call. Persistence is handled at the call site (the configureServer
-  // wrapper invokes saveRegistryToDir after the request completes).
+  // call.
   try {
     for (const token of tokens) {
       const reason = token.userOverride?.reason ?? STUDIO_REASON_DEFAULT;
@@ -711,7 +710,7 @@ export function studioApiPlugin(): Plugin {
       });
 
       // REST endpoints for token queries
-      server.middlewares.use((req, res, next) => {
+      server.middlewares.use(async (req, res, next) => {
         // Parse pathname only (ignore query strings)
         let pathname: string;
         try {
@@ -803,14 +802,16 @@ export function studioApiPlugin(): Plugin {
 
           // POST /api/tokens/:name - Update token with partial data
           if (req.method === 'POST') {
-            handlePostToken(req, res, name, registry).catch((error) => {
-              // Catch any unhandled errors from the async handler
+            try {
+              await handlePostToken(req, res, name, registry);
+              if (res.statusCode < 400) await persistAndNotify();
+            } catch (error) {
               console.log(`[rafters] Unhandled error in POST /api/tokens/${name}: ${error}`);
               if (!res.headersSent) {
                 res.statusCode = 500;
                 res.end(JSON.stringify({ ok: false, error: 'Internal server error' }));
               }
-            });
+            }
             return;
           }
 
@@ -861,13 +862,16 @@ export function studioApiPlugin(): Plugin {
 
           // POST /api/tokens - Batch update tokens
           if (req.method === 'POST') {
-            handlePostTokens(req, res, registry).catch((error) => {
+            try {
+              await handlePostTokens(req, res, registry);
+              if (res.statusCode < 400) await persistAndNotify();
+            } catch (error) {
               console.log(`[rafters] Unhandled error in POST /api/tokens: ${error}`);
               if (!res.headersSent) {
                 res.statusCode = 500;
                 res.end(JSON.stringify({ ok: false, error: 'Internal server error' }));
               }
-            });
+            }
             return;
           }
 

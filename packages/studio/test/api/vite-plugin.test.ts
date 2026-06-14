@@ -6,13 +6,20 @@
  */
 
 import { EventEmitter } from 'node:events';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { buildColorValue } from '@rafters/color-utils';
-import { TokenRegistry } from '@rafters/design-tokens';
+import { saveRegistryToDir, TokenRegistry } from '@rafters/design-tokens';
 import type { Token } from '@rafters/shared';
 import { ColorReferenceSchema, ColorValueSchema, TokenSchema } from '@rafters/shared';
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { zocker } from 'zocker';
 import { z } from 'zod';
+
+const TEST_TMP_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'tmp');
+
 import {
   handleBuildColor,
   handleGetTokens,
@@ -43,6 +50,52 @@ const ErrorResponseSchema = z.object({
   ok: z.literal(false),
   error: z.string(),
 });
+
+type MockResponse = import('node:http').ServerResponse & {
+  _statusCode: number;
+  _body: string;
+  _headers: Record<string, string>;
+};
+
+function createMockRequest(
+  body: unknown,
+  opts?: { method?: string; url?: string },
+): import('node:http').IncomingMessage {
+  const req = new EventEmitter() as import('node:http').IncomingMessage & {
+    method?: string;
+    url?: string;
+  };
+  if (opts?.method) req.method = opts.method;
+  if (opts?.url) req.url = opts.url;
+  setTimeout(() => {
+    req.emit('data', Buffer.from(JSON.stringify(body)));
+    req.emit('end');
+  }, 0);
+  return req;
+}
+
+function createMockResponse(): MockResponse {
+  const res = {
+    _statusCode: 200,
+    _body: '',
+    _headers: {} as Record<string, string>,
+    headersSent: false,
+    set statusCode(code: number) {
+      this._statusCode = code;
+    },
+    get statusCode() {
+      return this._statusCode;
+    },
+    setHeader(name: string, value: string) {
+      this._headers[name] = value;
+    },
+    end(body?: string) {
+      this._body = body ?? '';
+      this.headersSent = true;
+    },
+  };
+  return res as MockResponse;
+}
 
 describe('studioApiPlugin', () => {
   describe('plugin factory', () => {
@@ -611,49 +664,6 @@ describe('studioApiPlugin', () => {
   });
 
   describe('handlePostToken integration', () => {
-    // Helper to create mock request with body
-    function createMockRequest(body: unknown): import('node:http').IncomingMessage {
-      const req = new EventEmitter() as import('node:http').IncomingMessage;
-      // Simulate body data
-      setTimeout(() => {
-        req.emit('data', Buffer.from(JSON.stringify(body)));
-        req.emit('end');
-      }, 0);
-      return req;
-    }
-
-    // Helper to create mock response
-    function createMockResponse(): import('node:http').ServerResponse & {
-      _statusCode: number;
-      _body: string;
-      _headers: Record<string, string>;
-    } {
-      const res = {
-        _statusCode: 200,
-        _body: '',
-        _headers: {} as Record<string, string>,
-        headersSent: false,
-        set statusCode(code: number) {
-          this._statusCode = code;
-        },
-        get statusCode() {
-          return this._statusCode;
-        },
-        setHeader(name: string, value: string) {
-          this._headers[name] = value;
-        },
-        end(body?: string) {
-          this._body = body ?? '';
-          this.headersSent = true;
-        },
-      };
-      return res as import('node:http').ServerResponse & {
-        _statusCode: number;
-        _body: string;
-        _headers: Record<string, string>;
-      };
-    }
-
     // Create test token
     const testToken: Token = {
       name: 'test-token',
@@ -860,40 +870,6 @@ describe('studioApiPlugin', () => {
   });
 
   describe('namespace-specific validation', () => {
-    // Helper to create mock request with body
-    function createMockRequest(body: unknown): import('node:http').IncomingMessage {
-      const req = new EventEmitter() as import('node:http').IncomingMessage;
-      setTimeout(() => {
-        req.emit('data', Buffer.from(JSON.stringify(body)));
-        req.emit('end');
-      }, 0);
-      return req;
-    }
-
-    // Helper to create mock response
-    function createMockResponse(): import('node:http').ServerResponse & {
-      _statusCode: number;
-      _body: string;
-    } {
-      const res = {
-        _statusCode: 200,
-        _body: '',
-        headersSent: false,
-        set statusCode(code: number) {
-          this._statusCode = code;
-        },
-        get statusCode() {
-          return this._statusCode;
-        },
-        setHeader() {},
-        end(body?: string) {
-          this._body = body ?? '';
-          this.headersSent = true;
-        },
-      };
-      return res as import('node:http').ServerResponse & { _statusCode: number; _body: string };
-    }
-
     describe('color namespace', () => {
       const colorToken: Token = {
         name: 'color-test',
@@ -1402,48 +1378,6 @@ describe('studioApiPlugin', () => {
   });
 
   describe('handlePostTokens batch integration', () => {
-    // Helper to create mock request with body
-    function createMockRequest(body: unknown): import('node:http').IncomingMessage {
-      const req = new EventEmitter() as import('node:http').IncomingMessage;
-      setTimeout(() => {
-        req.emit('data', Buffer.from(JSON.stringify(body)));
-        req.emit('end');
-      }, 0);
-      return req;
-    }
-
-    // Helper to create mock response
-    function createMockResponse(): import('node:http').ServerResponse & {
-      _statusCode: number;
-      _body: string;
-      _headers: Record<string, string>;
-    } {
-      const res = {
-        _statusCode: 200,
-        _body: '',
-        _headers: {} as Record<string, string>,
-        headersSent: false,
-        set statusCode(code: number) {
-          this._statusCode = code;
-        },
-        get statusCode() {
-          return this._statusCode;
-        },
-        setHeader(name: string, value: string) {
-          this._headers[name] = value;
-        },
-        end(body?: string) {
-          this._body = body ?? '';
-          this.headersSent = true;
-        },
-      };
-      return res as import('node:http').ServerResponse & {
-        _statusCode: number;
-        _body: string;
-        _headers: Record<string, string>;
-      };
-    }
-
     // Generate test tokens using zocker
     const generateColorToken = (name: string): Token => ({
       name,
@@ -1929,40 +1863,6 @@ describe('studioApiPlugin', () => {
   });
 
   describe('handleBuildColor', () => {
-    // Helper to create mock request with body
-    function createMockRequest(body: unknown): import('node:http').IncomingMessage {
-      const req = new EventEmitter() as import('node:http').IncomingMessage;
-      setTimeout(() => {
-        req.emit('data', Buffer.from(JSON.stringify(body)));
-        req.emit('end');
-      }, 0);
-      return req;
-    }
-
-    // Helper to create mock response
-    function createMockResponse(): import('node:http').ServerResponse & {
-      _statusCode: number;
-      _body: string;
-    } {
-      const res = {
-        _statusCode: 200,
-        _body: '',
-        headersSent: false,
-        set statusCode(code: number) {
-          this._statusCode = code;
-        },
-        get statusCode() {
-          return this._statusCode;
-        },
-        setHeader() {},
-        end(body?: string) {
-          this._body = body ?? '';
-          this.headersSent = true;
-        },
-      };
-      return res as import('node:http').ServerResponse & { _statusCode: number; _body: string };
-    }
-
     // Response schema
     const ColorBuildResponseSchema = z.object({
       ok: z.literal(true),
@@ -2074,6 +1974,119 @@ describe('studioApiPlugin', () => {
       expect(response.colorValue.harmonies.complementary).toBeDefined();
       expect(response.colorValue.harmonies.triadic.length).toBeGreaterThanOrEqual(2);
       expect(response.colorValue.harmonies.analogous.length).toBeGreaterThanOrEqual(2);
+    });
+  });
+
+  describe('REST middleware persistence (#1662)', () => {
+    let tmpDir: string;
+
+    beforeEach(async () => {
+      mkdirSync(TEST_TMP_DIR, { recursive: true });
+      tmpDir = await mkdtemp(join(TEST_TMP_DIR, 'rafters-test-'));
+      const tokensDir = join(tmpDir, '.rafters', 'tokens');
+      const outputDir = join(tmpDir, '.rafters', 'output');
+      mkdirSync(tokensDir, { recursive: true });
+      mkdirSync(outputDir, { recursive: true });
+
+      const seedToken: Token = {
+        name: 'test-color',
+        value: 'oklch(0.5 0.2 250)',
+        category: 'color',
+        namespace: 'color',
+        userOverride: null,
+      };
+      const registry = new TokenRegistry([seedToken]);
+      saveRegistryToDir(tokensDir, registry);
+    });
+
+    afterEach(async () => {
+      vi.unstubAllEnvs();
+      vi.resetModules();
+      await rm(tmpDir, { recursive: true, force: true });
+    });
+
+    async function loadPluginForTmpDir() {
+      vi.resetModules();
+      vi.stubEnv('RAFTERS_PROJECT_PATH', tmpDir);
+      const mod = await import('../../src/api/vite-plugin');
+      return mod.studioApiPlugin();
+    }
+
+    function createMockServer() {
+      const wsSent: unknown[] = [];
+      const wsHandlers = new Map<string, (...args: unknown[]) => void>();
+      const middlewares: Array<(...args: unknown[]) => unknown> = [];
+      return {
+        server: {
+          ws: {
+            send(msg: unknown) {
+              wsSent.push(msg);
+            },
+            on(event: string, handler: (...args: unknown[]) => void) {
+              wsHandlers.set(event, handler);
+            },
+          },
+          middlewares: {
+            use(fn: (...args: unknown[]) => unknown) {
+              middlewares.push(fn);
+            },
+          },
+        },
+        wsSent,
+        wsHandlers,
+        middlewares,
+      };
+    }
+
+    it('POST /api/tokens/:name persists to disk and triggers HMR', async () => {
+      const plugin = await loadPluginForTmpDir();
+      const { server, wsSent, middlewares } = createMockServer();
+      await (plugin.configureServer as (s: unknown) => Promise<void>)(server);
+
+      const middleware = middlewares[0];
+      expect(middleware).toBeDefined();
+
+      const req = createMockRequest(
+        { value: 'oklch(0.8 0.1 120)' },
+        { method: 'POST', url: '/api/tokens/test-color' },
+      );
+      const res = createMockResponse();
+      const next = vi.fn();
+
+      await middleware(req, res, next);
+
+      expect(res._statusCode).toBeLessThan(400);
+
+      const varsPath = join(tmpDir, '.rafters', 'output', 'rafters.vars.css');
+      expect(existsSync(varsPath)).toBe(true);
+      const css = readFileSync(varsPath, 'utf-8');
+      expect(css).toContain('oklch(0.8 0.1 120)');
+
+      expect(wsSent).toContainEqual({ type: 'custom', event: 'rafters:css-updated' });
+    });
+
+    it('failed POST does not persist', async () => {
+      const plugin = await loadPluginForTmpDir();
+      const { server, wsSent, middlewares } = createMockServer();
+      await (plugin.configureServer as (s: unknown) => Promise<void>)(server);
+
+      const middleware = middlewares[0];
+
+      const varsPath = join(tmpDir, '.rafters', 'output', 'rafters.vars.css');
+      writeFileSync(varsPath, 'original');
+
+      const req = createMockRequest(
+        { value: { invalid: true } },
+        { method: 'POST', url: '/api/tokens/test-color' },
+      );
+      const res = createMockResponse();
+      const next = vi.fn();
+
+      await middleware(req, res, next);
+
+      expect(res._statusCode).toBeGreaterThanOrEqual(400);
+      expect(readFileSync(varsPath, 'utf-8')).toBe('original');
+      expect(wsSent).not.toContainEqual({ type: 'custom', event: 'rafters:css-updated' });
     });
   });
 });
