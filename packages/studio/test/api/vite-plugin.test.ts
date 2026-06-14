@@ -8,8 +8,8 @@
 import { EventEmitter } from 'node:events';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { mkdtemp, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { buildColorValue } from '@rafters/color-utils';
 import { saveRegistryToDir, TokenRegistry } from '@rafters/design-tokens';
 import type { Token } from '@rafters/shared';
@@ -17,6 +17,9 @@ import { ColorReferenceSchema, ColorValueSchema, TokenSchema } from '@rafters/sh
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { zocker } from 'zocker';
 import { z } from 'zod';
+
+const TEST_TMP_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'tmp');
+
 import {
   handleBuildColor,
   handleGetTokens,
@@ -1978,7 +1981,8 @@ describe('studioApiPlugin', () => {
     let tmpDir: string;
 
     beforeEach(async () => {
-      tmpDir = await mkdtemp(join(tmpdir(), 'rafters-test-'));
+      mkdirSync(TEST_TMP_DIR, { recursive: true });
+      tmpDir = await mkdtemp(join(TEST_TMP_DIR, 'rafters-test-'));
       const tokensDir = join(tmpDir, '.rafters', 'tokens');
       const outputDir = join(tmpDir, '.rafters', 'output');
       mkdirSync(tokensDir, { recursive: true });

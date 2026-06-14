@@ -804,7 +804,7 @@ export function studioApiPlugin(): Plugin {
           if (req.method === 'POST') {
             try {
               await handlePostToken(req, res, name, registry);
-              if (!res.statusCode || res.statusCode < 400) await persistAndNotify();
+              if (res.statusCode < 400) await persistAndNotify();
             } catch (error) {
               console.log(`[rafters] Unhandled error in POST /api/tokens/${name}: ${error}`);
               if (!res.headersSent) {
@@ -864,7 +864,7 @@ export function studioApiPlugin(): Plugin {
           if (req.method === 'POST') {
             try {
               await handlePostTokens(req, res, registry);
-              if (!res.statusCode || res.statusCode < 400) await persistAndNotify();
+              if (res.statusCode < 400) await persistAndNotify();
             } catch (error) {
               console.log(`[rafters] Unhandled error in POST /api/tokens: ${error}`);
               if (!res.headersSent) {

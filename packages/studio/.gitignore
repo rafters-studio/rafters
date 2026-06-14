@@ -1,2 +1,5 @@
 # Generated standalone dev tokens
 .rafters/
+
+# Test temp directories
+test/tmp/
