@@ -16,7 +16,7 @@ import {
   contrastPlugin,
   invertPlugin,
   loadRegistryFromDir,
-  registryToVars,
+  registryToTailwind,
   saveRegistryToDir,
   scalePlugin,
   statePlugin,
@@ -71,7 +71,7 @@ const ColorBuildOptionsSchema = z.object({
 });
 
 const projectPath = process.env.RAFTERS_PROJECT_PATH || process.cwd();
-const outputPath = join(projectPath, '.rafters', 'output', 'rafters.vars.css');
+const outputPath = join(projectPath, '.rafters', 'output', 'rafters.css');
 
 // Zod schema for incoming WebSocket messages
 const SetTokenMessageSchema = z.object({
@@ -619,7 +619,7 @@ export function studioApiPlugin(): Plugin {
           if (initialized) {
             saveRegistryToDir(tokensDir, registry);
           }
-          await writeFile(outputPath, registryToVars(registry));
+          await writeFile(outputPath, registryToTailwind(registry));
           server.ws.send({ type: 'custom', event: 'rafters:css-updated' });
         } catch (error) {
           console.log(`[rafters] CSS regeneration failed: ${error}`);

@@ -2057,7 +2057,7 @@ describe('studioApiPlugin', () => {
 
       expect(res._statusCode).toBeLessThan(400);
 
-      const varsPath = join(tmpDir, '.rafters', 'output', 'rafters.vars.css');
+      const varsPath = join(tmpDir, '.rafters', 'output', 'rafters.css');
       expect(existsSync(varsPath)).toBe(true);
       const css = readFileSync(varsPath, 'utf-8');
       expect(css).toContain('oklch(0.8 0.1 120)');
@@ -2072,7 +2072,7 @@ describe('studioApiPlugin', () => {
 
       const middleware = middlewares[0];
 
-      const varsPath = join(tmpDir, '.rafters', 'output', 'rafters.vars.css');
+      const varsPath = join(tmpDir, '.rafters', 'output', 'rafters.css');
       writeFileSync(varsPath, 'original');
 
       const req = createMockRequest(
