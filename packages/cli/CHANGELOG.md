@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Bug Fixes
+
+- fix(studio): REST token mutations now persist to disk and regenerate CSS (#1662). The studio API's REST POST endpoints (`/api/tokens/:name` and `/api/tokens`) updated the in-memory registry but never called `persistAndNotify` -- tokens changed in the API response but never hit disk, never regenerated CSS output, and never triggered HMR. The middleware is now async; both POST paths await their handlers and persist on success (status < 400). Two integration tests prove the contract through the full middleware with a real temp `.rafters` directory.
+
 ### Features
 
 - feat(fills): fill grammar v2 -- fill is a signature (#1637). The fill prop on Container, Card, and Typography's color prop now takes a phrase over the color vocabulary: `word` (solid, with the paired `-foreground` on surfaces), `word/alpha` (Tailwind's slash-opacity, verbatim), `word-to-word` (two-stop gradient, emitted as Tailwind v4 `bg-linear-to-b from-* to-*` -- never the deprecated `bg-gradient-to-*`). Text context emits text color or gradient text via `bg-clip-text`. `-to-` is reserved in the color namer (alongside `via` and `from`), enforced by tests. Dark behavior falls out of which utility is emitted: semantic words flip via the cascade, family words stay literal.
