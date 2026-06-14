@@ -6,11 +6,15 @@
  */
 
 import { EventEmitter } from 'node:events';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { buildColorValue } from '@rafters/color-utils';
-import { TokenRegistry } from '@rafters/design-tokens';
+import { saveRegistryToDir, TokenRegistry } from '@rafters/design-tokens';
 import type { Token } from '@rafters/shared';
 import { ColorReferenceSchema, ColorValueSchema, TokenSchema } from '@rafters/shared';
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { zocker } from 'zocker';
 import { z } from 'zod';
 import {
@@ -2074,6 +2078,160 @@ describe('studioApiPlugin', () => {
       expect(response.colorValue.harmonies.complementary).toBeDefined();
       expect(response.colorValue.harmonies.triadic.length).toBeGreaterThanOrEqual(2);
       expect(response.colorValue.harmonies.analogous.length).toBeGreaterThanOrEqual(2);
+    });
+  });
+
+  describe('REST middleware persistence (#1662)', () => {
+    let tmpDir: string;
+
+    beforeEach(async () => {
+      tmpDir = await mkdtemp(join(tmpdir(), 'rafters-test-'));
+      const tokensDir = join(tmpDir, '.rafters', 'tokens');
+      const outputDir = join(tmpDir, '.rafters', 'output');
+      mkdirSync(tokensDir, { recursive: true });
+      mkdirSync(outputDir, { recursive: true });
+
+      const seedToken: Token = {
+        name: 'test-color',
+        value: 'oklch(0.5 0.2 250)',
+        category: 'color',
+        namespace: 'color',
+        userOverride: null,
+      };
+      const registry = new TokenRegistry([seedToken]);
+      saveRegistryToDir(tokensDir, registry);
+    });
+
+    afterEach(async () => {
+      vi.unstubAllEnvs();
+      vi.resetModules();
+      await rm(tmpDir, { recursive: true, force: true });
+    });
+
+    async function loadPluginForTmpDir() {
+      vi.resetModules();
+      vi.stubEnv('RAFTERS_PROJECT_PATH', tmpDir);
+      const mod = await import('../../src/api/vite-plugin');
+      return mod.studioApiPlugin();
+    }
+
+    function createMockServer() {
+      const wsSent: unknown[] = [];
+      const wsHandlers = new Map<string, (...args: unknown[]) => void>();
+      const middlewares: Array<(...args: unknown[]) => unknown> = [];
+      return {
+        server: {
+          ws: {
+            send(msg: unknown) {
+              wsSent.push(msg);
+            },
+            on(event: string, handler: (...args: unknown[]) => void) {
+              wsHandlers.set(event, handler);
+            },
+          },
+          middlewares: {
+            use(fn: (...args: unknown[]) => unknown) {
+              middlewares.push(fn);
+            },
+          },
+        },
+        wsSent,
+        wsHandlers,
+        middlewares,
+      };
+    }
+
+    function createMockRequest(
+      method: string,
+      url: string,
+      body: unknown,
+    ): import('node:http').IncomingMessage {
+      const req = new EventEmitter() as import('node:http').IncomingMessage & {
+        method: string;
+        url: string;
+      };
+      req.method = method;
+      req.url = url;
+      setTimeout(() => {
+        req.emit('data', Buffer.from(JSON.stringify(body)));
+        req.emit('end');
+      }, 0);
+      return req;
+    }
+
+    function createMockResponse(): import('node:http').ServerResponse & {
+      _statusCode: number;
+      _body: string;
+    } {
+      const res = {
+        _statusCode: 200,
+        _body: '',
+        headersSent: false,
+        set statusCode(code: number) {
+          this._statusCode = code;
+        },
+        get statusCode() {
+          return this._statusCode;
+        },
+        setHeader(_name: string, _value: string) {},
+        end(body?: string) {
+          this._body = body ?? '';
+          this.headersSent = true;
+        },
+      };
+      return res as unknown as import('node:http').ServerResponse & {
+        _statusCode: number;
+        _body: string;
+      };
+    }
+
+    it('POST /api/tokens/:name persists to disk and triggers HMR', async () => {
+      const plugin = await loadPluginForTmpDir();
+      const { server, wsSent, middlewares } = createMockServer();
+      await (plugin.configureServer as (s: unknown) => Promise<void>)(server);
+
+      const middleware = middlewares[0];
+      expect(middleware).toBeDefined();
+
+      const req = createMockRequest('POST', '/api/tokens/test-color', {
+        value: 'oklch(0.8 0.1 120)',
+      });
+      const res = createMockResponse();
+      const next = vi.fn();
+
+      await middleware(req, res, next);
+
+      expect(res._statusCode).toBeLessThan(400);
+
+      const varsPath = join(tmpDir, '.rafters', 'output', 'rafters.vars.css');
+      expect(existsSync(varsPath)).toBe(true);
+      const css = readFileSync(varsPath, 'utf-8');
+      expect(css).toContain('oklch(0.8 0.1 120)');
+
+      expect(wsSent).toContainEqual({ type: 'custom', event: 'rafters:css-updated' });
+    });
+
+    it('failed POST does not persist', async () => {
+      const plugin = await loadPluginForTmpDir();
+      const { server, wsSent, middlewares } = createMockServer();
+      await (plugin.configureServer as (s: unknown) => Promise<void>)(server);
+
+      const middleware = middlewares[0];
+
+      const varsPath = join(tmpDir, '.rafters', 'output', 'rafters.vars.css');
+      writeFileSync(varsPath, 'original');
+
+      const req = createMockRequest('POST', '/api/tokens/test-color', {
+        value: { invalid: true },
+      });
+      const res = createMockResponse();
+      const next = vi.fn();
+
+      await middleware(req, res, next);
+
+      expect(res._statusCode).toBeGreaterThanOrEqual(400);
+      expect(readFileSync(varsPath, 'utf-8')).toBe('original');
+      expect(wsSent).not.toContainEqual({ type: 'custom', event: 'rafters:css-updated' });
     });
   });
 });
