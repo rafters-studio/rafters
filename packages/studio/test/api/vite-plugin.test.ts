@@ -48,6 +48,52 @@ const ErrorResponseSchema = z.object({
   error: z.string(),
 });
 
+type MockResponse = import('node:http').ServerResponse & {
+  _statusCode: number;
+  _body: string;
+  _headers: Record<string, string>;
+};
+
+function createMockRequest(
+  body: unknown,
+  opts?: { method?: string; url?: string },
+): import('node:http').IncomingMessage {
+  const req = new EventEmitter() as import('node:http').IncomingMessage & {
+    method?: string;
+    url?: string;
+  };
+  if (opts?.method) req.method = opts.method;
+  if (opts?.url) req.url = opts.url;
+  setTimeout(() => {
+    req.emit('data', Buffer.from(JSON.stringify(body)));
+    req.emit('end');
+  }, 0);
+  return req;
+}
+
+function createMockResponse(): MockResponse {
+  const res = {
+    _statusCode: 200,
+    _body: '',
+    _headers: {} as Record<string, string>,
+    headersSent: false,
+    set statusCode(code: number) {
+      this._statusCode = code;
+    },
+    get statusCode() {
+      return this._statusCode;
+    },
+    setHeader(name: string, value: string) {
+      this._headers[name] = value;
+    },
+    end(body?: string) {
+      this._body = body ?? '';
+      this.headersSent = true;
+    },
+  };
+  return res as MockResponse;
+}
+
 describe('studioApiPlugin', () => {
   describe('plugin factory', () => {
     it('exports a function', () => {
@@ -615,49 +661,6 @@ describe('studioApiPlugin', () => {
   });
 
   describe('handlePostToken integration', () => {
-    // Helper to create mock request with body
-    function createMockRequest(body: unknown): import('node:http').IncomingMessage {
-      const req = new EventEmitter() as import('node:http').IncomingMessage;
-      // Simulate body data
-      setTimeout(() => {
-        req.emit('data', Buffer.from(JSON.stringify(body)));
-        req.emit('end');
-      }, 0);
-      return req;
-    }
-
-    // Helper to create mock response
-    function createMockResponse(): import('node:http').ServerResponse & {
-      _statusCode: number;
-      _body: string;
-      _headers: Record<string, string>;
-    } {
-      const res = {
-        _statusCode: 200,
-        _body: '',
-        _headers: {} as Record<string, string>,
-        headersSent: false,
-        set statusCode(code: number) {
-          this._statusCode = code;
-        },
-        get statusCode() {
-          return this._statusCode;
-        },
-        setHeader(name: string, value: string) {
-          this._headers[name] = value;
-        },
-        end(body?: string) {
-          this._body = body ?? '';
-          this.headersSent = true;
-        },
-      };
-      return res as import('node:http').ServerResponse & {
-        _statusCode: number;
-        _body: string;
-        _headers: Record<string, string>;
-      };
-    }
-
     // Create test token
     const testToken: Token = {
       name: 'test-token',
@@ -864,40 +867,6 @@ describe('studioApiPlugin', () => {
   });
 
   describe('namespace-specific validation', () => {
-    // Helper to create mock request with body
-    function createMockRequest(body: unknown): import('node:http').IncomingMessage {
-      const req = new EventEmitter() as import('node:http').IncomingMessage;
-      setTimeout(() => {
-        req.emit('data', Buffer.from(JSON.stringify(body)));
-        req.emit('end');
-      }, 0);
-      return req;
-    }
-
-    // Helper to create mock response
-    function createMockResponse(): import('node:http').ServerResponse & {
-      _statusCode: number;
-      _body: string;
-    } {
-      const res = {
-        _statusCode: 200,
-        _body: '',
-        headersSent: false,
-        set statusCode(code: number) {
-          this._statusCode = code;
-        },
-        get statusCode() {
-          return this._statusCode;
-        },
-        setHeader() {},
-        end(body?: string) {
-          this._body = body ?? '';
-          this.headersSent = true;
-        },
-      };
-      return res as import('node:http').ServerResponse & { _statusCode: number; _body: string };
-    }
-
     describe('color namespace', () => {
       const colorToken: Token = {
         name: 'color-test',
@@ -1406,48 +1375,6 @@ describe('studioApiPlugin', () => {
   });
 
   describe('handlePostTokens batch integration', () => {
-    // Helper to create mock request with body
-    function createMockRequest(body: unknown): import('node:http').IncomingMessage {
-      const req = new EventEmitter() as import('node:http').IncomingMessage;
-      setTimeout(() => {
-        req.emit('data', Buffer.from(JSON.stringify(body)));
-        req.emit('end');
-      }, 0);
-      return req;
-    }
-
-    // Helper to create mock response
-    function createMockResponse(): import('node:http').ServerResponse & {
-      _statusCode: number;
-      _body: string;
-      _headers: Record<string, string>;
-    } {
-      const res = {
-        _statusCode: 200,
-        _body: '',
-        _headers: {} as Record<string, string>,
-        headersSent: false,
-        set statusCode(code: number) {
-          this._statusCode = code;
-        },
-        get statusCode() {
-          return this._statusCode;
-        },
-        setHeader(name: string, value: string) {
-          this._headers[name] = value;
-        },
-        end(body?: string) {
-          this._body = body ?? '';
-          this.headersSent = true;
-        },
-      };
-      return res as import('node:http').ServerResponse & {
-        _statusCode: number;
-        _body: string;
-        _headers: Record<string, string>;
-      };
-    }
-
     // Generate test tokens using zocker
     const generateColorToken = (name: string): Token => ({
       name,
@@ -1933,40 +1860,6 @@ describe('studioApiPlugin', () => {
   });
 
   describe('handleBuildColor', () => {
-    // Helper to create mock request with body
-    function createMockRequest(body: unknown): import('node:http').IncomingMessage {
-      const req = new EventEmitter() as import('node:http').IncomingMessage;
-      setTimeout(() => {
-        req.emit('data', Buffer.from(JSON.stringify(body)));
-        req.emit('end');
-      }, 0);
-      return req;
-    }
-
-    // Helper to create mock response
-    function createMockResponse(): import('node:http').ServerResponse & {
-      _statusCode: number;
-      _body: string;
-    } {
-      const res = {
-        _statusCode: 200,
-        _body: '',
-        headersSent: false,
-        set statusCode(code: number) {
-          this._statusCode = code;
-        },
-        get statusCode() {
-          return this._statusCode;
-        },
-        setHeader() {},
-        end(body?: string) {
-          this._body = body ?? '';
-          this.headersSent = true;
-        },
-      };
-      return res as import('node:http').ServerResponse & { _statusCode: number; _body: string };
-    }
-
     // Response schema
     const ColorBuildResponseSchema = z.object({
       ok: z.literal(true),
@@ -2141,50 +2034,6 @@ describe('studioApiPlugin', () => {
       };
     }
 
-    function createMockRequest(
-      method: string,
-      url: string,
-      body: unknown,
-    ): import('node:http').IncomingMessage {
-      const req = new EventEmitter() as import('node:http').IncomingMessage & {
-        method: string;
-        url: string;
-      };
-      req.method = method;
-      req.url = url;
-      setTimeout(() => {
-        req.emit('data', Buffer.from(JSON.stringify(body)));
-        req.emit('end');
-      }, 0);
-      return req;
-    }
-
-    function createMockResponse(): import('node:http').ServerResponse & {
-      _statusCode: number;
-      _body: string;
-    } {
-      const res = {
-        _statusCode: 200,
-        _body: '',
-        headersSent: false,
-        set statusCode(code: number) {
-          this._statusCode = code;
-        },
-        get statusCode() {
-          return this._statusCode;
-        },
-        setHeader(_name: string, _value: string) {},
-        end(body?: string) {
-          this._body = body ?? '';
-          this.headersSent = true;
-        },
-      };
-      return res as unknown as import('node:http').ServerResponse & {
-        _statusCode: number;
-        _body: string;
-      };
-    }
-
     it('POST /api/tokens/:name persists to disk and triggers HMR', async () => {
       const plugin = await loadPluginForTmpDir();
       const { server, wsSent, middlewares } = createMockServer();
@@ -2193,9 +2042,10 @@ describe('studioApiPlugin', () => {
       const middleware = middlewares[0];
       expect(middleware).toBeDefined();
 
-      const req = createMockRequest('POST', '/api/tokens/test-color', {
-        value: 'oklch(0.8 0.1 120)',
-      });
+      const req = createMockRequest(
+        { value: 'oklch(0.8 0.1 120)' },
+        { method: 'POST', url: '/api/tokens/test-color' },
+      );
       const res = createMockResponse();
       const next = vi.fn();
 
@@ -2221,9 +2071,10 @@ describe('studioApiPlugin', () => {
       const varsPath = join(tmpDir, '.rafters', 'output', 'rafters.vars.css');
       writeFileSync(varsPath, 'original');
 
-      const req = createMockRequest('POST', '/api/tokens/test-color', {
-        value: { invalid: true },
-      });
+      const req = createMockRequest(
+        { value: { invalid: true } },
+        { method: 'POST', url: '/api/tokens/test-color' },
+      );
       const res = createMockResponse();
       const next = vi.fn();
 
