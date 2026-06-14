@@ -1,5 +1,11 @@
 # rafters
 
+## 0.0.69
+
+### Bug Fixes
+
+- fix(studio): persistAndNotify writes to rafters.css with full Tailwind output (#1664). Was writing partial vars-only output to `rafters.vars.css`, a file nothing imports. Now writes full Tailwind CSS (`@import`, `@theme`, dark cascade, prose rules) to `rafters.css` via `registryToTailwind()`.
+
 ## 0.0.68
 
 ### Bug Fixes
