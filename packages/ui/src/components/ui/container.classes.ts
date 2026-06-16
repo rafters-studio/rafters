@@ -113,6 +113,43 @@ export const containerArticleTypography = [
   'max-w-prose',
 ].join(' ');
 
+export type ContainerPosition = 'sticky' | 'fixed' | 'relative' | 'absolute' | 'static';
+
+export const containerPositionClasses: Record<ContainerPosition, string> = {
+  sticky: 'sticky top-0',
+  fixed: 'fixed top-0 left-0 right-0',
+  relative: 'relative',
+  absolute: 'absolute',
+  static: 'static',
+};
+
+export type ContainerDepth =
+  | 'base'
+  | 'dropdown'
+  | 'sticky'
+  | 'navigation'
+  | 'fixed'
+  | 'modal'
+  | 'popover'
+  | 'tooltip'
+  | 'overlay'
+  | 'below'
+  | 'max';
+
+export const containerDepthClasses: Record<ContainerDepth, string> = {
+  base: 'z-depth-base',
+  dropdown: 'z-depth-dropdown',
+  sticky: 'z-depth-sticky',
+  navigation: 'z-depth-navigation',
+  fixed: 'z-depth-fixed',
+  modal: 'z-depth-modal',
+  popover: 'z-depth-popover',
+  tooltip: 'z-depth-tooltip',
+  overlay: 'z-depth-overlay',
+  below: 'z-depth-below',
+  max: 'z-depth-max',
+};
+
 export type ContainerBackground = 'none' | 'muted' | 'accent' | 'card' | 'primary';
 
 export const containerBackgroundClasses: Record<ContainerBackground, string> = {

@@ -2,22 +2,16 @@ import { describe, expect, it } from 'vitest';
 import { RaftersToolHandler, TOOL_DEFINITIONS } from '../../src/mcp/tools.js';
 
 describe('TOOL_DEFINITIONS', () => {
-  it('should define 5 tools', () => {
-    expect(TOOL_DEFINITIONS).toHaveLength(5);
+  it('should define 4 tools', () => {
+    expect(TOOL_DEFINITIONS).toHaveLength(4);
   });
 
   it('should have correct tool names', () => {
     const names = TOOL_DEFINITIONS.map((t) => t.name);
     expect(names).toContain('rafters_workspaces');
     expect(names).toContain('rafters_composite');
-    expect(names).toContain('rafters_rule');
     expect(names).toContain('rafters_pattern');
     expect(names).toContain('rafters_component');
-  });
-
-  it('should not include rafters_onboard (moved to rafters init / rafters import)', () => {
-    const names = TOOL_DEFINITIONS.map((t) => t.name);
-    expect(names).not.toContain('rafters_onboard');
   });
 
   it('should have descriptions for all tools', () => {
@@ -68,27 +62,6 @@ describe('RaftersToolHandler', () => {
       expect(result.content).toHaveLength(1);
       const data = JSON.parse(result.content[0].text as string);
       expect(data.patterns || data.error).toBeDefined();
-    });
-  });
-
-  describe('rafters_rule', () => {
-    it('should list built-in rules', async () => {
-      const handler = new RaftersToolHandler([], null);
-      const result = await handler.handleToolCall('rafters_rule', {});
-
-      const data = JSON.parse(result.content[0].text as string);
-      expect(data.rules).toBeDefined();
-      expect(data.rules.length).toBeGreaterThan(0);
-      expect(data.rules.some((r: { name: string }) => r.name === 'required')).toBe(true);
-    });
-
-    it('should filter rules by name', async () => {
-      const handler = new RaftersToolHandler([], null);
-      const result = await handler.handleToolCall('rafters_rule', { name: 'email' });
-
-      const data = JSON.parse(result.content[0].text as string);
-      expect(data.rules).toHaveLength(1);
-      expect(data.rules[0].name).toBe('email');
     });
   });
 
@@ -160,16 +133,6 @@ describe('RaftersToolHandler', () => {
       const data = JSON.parse(result.content[0].text as string);
       expect(data.error).toContain('Unknown tool');
       expect(data.suggestion).toContain('Available tools');
-    });
-
-    it('should point rafters_onboard callers to the CLI', async () => {
-      const handler = new RaftersToolHandler([], null);
-      const result = await handler.handleToolCall('rafters_onboard', {});
-
-      const data = JSON.parse(result.content[0].text as string);
-      expect(data.error).toContain('Unknown tool');
-      expect(data.suggestion).toContain('rafters init');
-      expect(data.suggestion).toContain('rafters import');
     });
   });
 });

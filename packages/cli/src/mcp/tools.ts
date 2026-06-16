@@ -4,9 +4,9 @@
  * 4 focused tools for agent ASSEMBLY (not design):
  *
  * 1. rafters_composite - Query composites with designer intent
- * 2. rafters_rule - Query or create validation rules
- * 3. rafters_pattern - Design pattern guidance (do/never)
- * 4. rafters_component - Component intelligence
+ * 2. rafters_pattern - Design pattern guidance (do/never)
+ * 3. rafters_component - Component intelligence
+ * 4. rafters_workspaces - List available workspaces
  *
  * Agents assemble from pre-made decisions. Token design lives in Studio.
  * Token import lives in `rafters init` / `rafters import`, not MCP.
@@ -61,30 +61,6 @@ export const TOOL_DEFINITIONS = [
         id: { type: 'string', description: 'Get a specific composite by ID' },
         query: { type: 'string', description: 'Fuzzy search by name/keywords' },
         category: { type: 'string', description: 'Filter by category' },
-      },
-      required: [],
-    },
-  },
-  {
-    name: 'rafters_rule',
-    description:
-      'Query validation rules or create new ones. Rules are named validation patterns (required, email, password, etc.) that composites can apply.',
-    inputSchema: {
-      type: 'object' as const,
-      properties: {
-        ...WORKSPACE_PARAM,
-        name: { type: 'string', description: 'Get a specific rule by name' },
-        query: { type: 'string', description: 'Search rules by name/description' },
-        create: {
-          type: 'object',
-          properties: {
-            name: { type: 'string', description: 'Rule name (kebab-case)' },
-            description: { type: 'string', description: 'What this rule validates' },
-            zodSchema: { type: 'string', description: 'Zod schema as a string' },
-          },
-          required: ['name', 'description', 'zodSchema'],
-          description: 'Create a new rule (provide all three fields)',
-        },
       },
       required: [],
     },
@@ -148,23 +124,23 @@ export class RaftersToolHandler {
         return this.handleWorkspaces();
       case 'rafters_composite':
         return this.handleComposite(args);
-      case 'rafters_rule':
-        return this.handleRule(args);
       case 'rafters_pattern':
         return this.handlePattern(args as { solves?: string; query?: string; workspace?: string });
       case 'rafters_component':
         return this.handleComponent(args.name as string);
-      default: {
-        const suggestion =
-          name === 'rafters_onboard'
-            ? 'rafters_onboard was removed. Token import is now a CLI operation: run `rafters init` (auto-detects and prompts) or `rafters import` (standalone).'
-            : 'Available tools: rafters_workspaces, rafters_composite, rafters_rule, rafters_pattern, rafters_component.';
+      default:
         return {
           content: [
-            { type: 'text', text: JSON.stringify({ error: `Unknown tool: ${name}`, suggestion }) },
+            {
+              type: 'text',
+              text: JSON.stringify({
+                error: `Unknown tool: ${name}`,
+                suggestion:
+                  'Available tools: rafters_workspaces, rafters_composite, rafters_pattern, rafters_component.',
+              }),
+            },
           ],
         };
-      }
     }
   }
 
@@ -330,57 +306,6 @@ export class RaftersToolHandler {
     }));
 
     return { content: [{ type: 'text', text: JSON.stringify({ composites: result }, null, 2) }] };
-  }
-
-  private async handleRule(args: Record<string, unknown>): Promise<CallToolResult> {
-    const { name, query, create } = args as {
-      name?: string;
-      query?: string;
-      create?: { name: string; description: string; zodSchema: string };
-    };
-
-    // Built-in rules
-    const builtInRules = [
-      { name: 'required', description: 'Field must have a value', source: 'registry' as const },
-      { name: 'email', description: 'Must be a valid email address', source: 'registry' as const },
-      {
-        name: 'password',
-        description: 'Password strength requirements',
-        source: 'registry' as const,
-      },
-      { name: 'url', description: 'Must be a valid URL', source: 'registry' as const },
-      {
-        name: 'credentials',
-        description: 'Combined username/password validation',
-        source: 'registry' as const,
-      },
-    ];
-
-    if (create) {
-      // TODO: Write rule to local rules directory
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify({
-              error: 'Rule creation not yet implemented',
-              suggestion: 'Rules will be written to .rafters/rules/<name>.ts',
-            }),
-          },
-        ],
-      };
-    }
-
-    let rules = builtInRules;
-
-    if (name) {
-      rules = rules.filter((r) => r.name === name);
-    } else if (query) {
-      const q = query.toLowerCase();
-      rules = rules.filter((r) => r.name.includes(q) || r.description.toLowerCase().includes(q));
-    }
-
-    return { content: [{ type: 'text', text: JSON.stringify({ rules }, null, 2) }] };
   }
 
   private async handlePattern(args: {

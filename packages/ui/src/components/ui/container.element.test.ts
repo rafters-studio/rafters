@@ -206,6 +206,8 @@ describe('rafters-container', () => {
       'size',
       'padding',
       'gap',
+      'position',
+      'depth',
       'background',
       'editable',
     ]);

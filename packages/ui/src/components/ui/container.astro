@@ -13,22 +13,28 @@ import classy from '../../primitives/classy';
 import { resolveFillName } from '../../primitives/fill-resolver';
 import {
   type ContainerBackground,
+  type ContainerDepth,
+  type ContainerPosition,
   containerArticleTypography,
   containerAutoEdgePadding,
   containerBackgroundClasses,
+  containerDepthClasses,
   containerGapClasses,
   containerPaddingClasses,
+  containerPositionClasses,
   containerSizeClasses,
   containerSizeGapScale,
 } from './container.classes';
 
 interface Props extends HTMLAttributes<'div'> {
-  as?: 'div' | 'main' | 'section' | 'article' | 'aside';
+  as?: 'div' | 'main' | 'header' | 'footer' | 'section' | 'article' | 'aside';
   size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | '6xl' | '7xl' | 'full';
   padding?: '0' | '1' | '2' | '3' | '4' | '5' | '6' | '8' | '10' | '12' | '16' | '20' | '24';
   gap?: boolean | '0' | '1' | '2' | '3' | '4' | '5' | '6' | '8' | '10' | '12' | '16' | '20' | '24';
   query?: boolean;
   queryName?: string;
+  position?: ContainerPosition;
+  depth?: ContainerDepth;
   /** @deprecated Prefer the `fill` prop. */
   background?: ContainerBackground;
   /**
@@ -46,6 +52,8 @@ const {
   gap,
   query = true,
   queryName,
+  position,
+  depth,
   background,
   fill,
   class: className,
@@ -71,6 +79,8 @@ const classes = classy(
   resolvedGap && containerGapClasses[resolvedGap],
   fillClasses,
   !fillClasses && background && containerBackgroundClasses[background],
+  position && containerPositionClasses[position],
+  depth && containerDepthClasses[depth],
   isArticle && containerArticleTypography,
   className,
 );
@@ -81,6 +91,8 @@ const dataFill = fill || undefined;
 
 {Element === 'div' && <div class={classes} style={containerStyle} data-fill={dataFill} {...attrs}><slot /></div>}
 {Element === 'main' && <main class={classes} style={containerStyle} data-fill={dataFill} {...attrs}><slot /></main>}
+{Element === 'header' && <header class={classes} style={containerStyle} data-fill={dataFill} {...attrs}><slot /></header>}
+{Element === 'footer' && <footer class={classes} style={containerStyle} data-fill={dataFill} {...attrs}><slot /></footer>}
 {Element === 'section' && <section class={classes} style={containerStyle} data-fill={dataFill} {...attrs}><slot /></section>}
 {Element === 'article' && <article class={classes} style={containerStyle} data-fill={dataFill} {...attrs}><slot /></article>}
 {Element === 'aside' && <aside class={classes} style={containerStyle} data-fill={dataFill} {...attrs}><slot /></aside>}
