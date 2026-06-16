@@ -1,5 +1,15 @@
 # rafters
 
+## Unreleased
+
+### Bug Fixes
+
+- fix(cli): `rafters add` now backfills the installed list when files are already on disk but untracked (#1668). Previously, an item whose files all existed was pushed to `skipped` and never recorded in `config.rafters.json` -- so a project installed before install-tracking existed (or after a config reset) could never repair its `installed` arrays by re-running `add`, and `--update-all` (which reads that list) had nothing to refresh. Re-running `add <name>` now records present-but-untracked items.
+
+### Changed
+
+- fix(cli): rules install under `lib/` to mirror primitives (#1668). The default `rulesPath` moves from `rules` / `src/rules` / `app/rules` to `lib/rules` / `src/lib/rules` / `app/lib/rules` across all framework specs, matching where primitives already live. Existing configs with an explicit `rulesPath` keep their value until re-init.
+
 ## 0.0.69
 
 ### Bug Fixes

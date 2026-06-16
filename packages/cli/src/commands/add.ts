@@ -235,7 +235,7 @@ function transformPath(registryPath: string, config: RaftersConfig | null, cwd: 
     ['components/ui/', config.componentsPath, 'components/ui'],
     ['lib/primitives/', config.primitivesPath, 'lib/primitives'],
     ['composites/', config.compositesPath, 'composites'],
-    ['rules/', config.rulesPath, 'rules'],
+    ['rules/', config.rulesPath, 'lib/rules'],
   ];
   for (const [prefix, field, fallback] of replacements) {
     if (registryPath.startsWith(prefix)) {
@@ -639,6 +639,13 @@ export async function add(componentArgs: string[], options: AddOptions): Promise
 
       if (result.skipped && !result.installed) {
         skipped.push(item.name);
+        // The files are already on disk but the config did not track this
+        // item -- reaching here means line 600's "tracked + on disk" guard
+        // did not fire, so the install list is out of sync with reality
+        // (a pre-tracking install, a hand-copied file, or a config reset).
+        // Record it so `installed` reflects what is actually present; this
+        // is what lets a stale project be backfilled by re-running `add`.
+        installedItems.push(item);
       }
     } catch (err) {
       // Warn but continue on peer component failures
@@ -692,7 +699,7 @@ export async function add(componentArgs: string[], options: AddOptions): Promise
       componentsPath: 'components/ui',
       primitivesPath: 'lib/primitives',
       compositesPath: 'composites',
-      rulesPath: 'rules',
+      rulesPath: 'lib/rules',
       cssPath: null,
       shadcn: false,
       exports: DEFAULT_EXPORTS,
