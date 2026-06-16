@@ -20,29 +20,35 @@
  * semantic element is the outer block-level box the React/Astro element is.
  *
  * Attributes:
- *  - as: 'div' | 'main' | 'section' | 'article' | 'aside' (default 'div')
+ *  - as: 'div' | 'main' | 'header' | 'footer' | 'section' | 'article' | 'aside' (default 'div')
  *  - size: 'sm'..'7xl' | 'full'
  *  - padding: '0' | '1' | ... | '24'
  *  - gap: same as padding scale, OR bare/empty -> derive from size
+ *  - position: 'sticky' | 'fixed' | 'relative' | 'absolute' | 'static'
+ *  - depth: 'base' | 'dropdown' | 'sticky' | 'navigation' | 'fixed' | 'modal' | 'popover' | 'tooltip' | 'overlay' | 'below' | 'max'
  *  - background: 'none' | 'muted' | 'accent' | 'card' | 'primary'
  *  - editable: boolean (presence-based)
  */
 import { RaftersElement } from '../../primitives/rafters-element';
 import {
   type ContainerBackground,
+  type ContainerDepth,
+  type ContainerPosition,
   containerArticleTypography,
   containerAutoEdgePadding,
   containerBackgroundClasses,
   containerCenterClasses,
+  containerDepthClasses,
   containerEditableClasses,
   containerGapClasses,
   containerPaddingClasses,
+  containerPositionClasses,
   containerQueryClasses,
   containerSizeClasses,
   containerSizeGapScale,
 } from './container.classes';
 
-export type ContainerAs = 'div' | 'main' | 'section' | 'article' | 'aside';
+export type ContainerAs = 'div' | 'main' | 'header' | 'footer' | 'section' | 'article' | 'aside';
 
 export type ContainerSize =
   | 'sm'
@@ -72,7 +78,15 @@ export type ContainerSpacing =
   | '20'
   | '24';
 
-const ALLOWED_AS: ReadonlyArray<ContainerAs> = ['div', 'main', 'section', 'article', 'aside'];
+const ALLOWED_AS: ReadonlyArray<ContainerAs> = [
+  'div',
+  'main',
+  'header',
+  'footer',
+  'section',
+  'article',
+  'aside',
+];
 
 const SIZES: ReadonlyArray<ContainerSize> = [
   'sm',
@@ -102,6 +116,28 @@ const SPACING: ReadonlyArray<ContainerSpacing> = [
   '16',
   '20',
   '24',
+];
+
+const POSITIONS: ReadonlyArray<ContainerPosition> = [
+  'sticky',
+  'fixed',
+  'relative',
+  'absolute',
+  'static',
+];
+
+const DEPTHS: ReadonlyArray<ContainerDepth> = [
+  'base',
+  'dropdown',
+  'sticky',
+  'navigation',
+  'fixed',
+  'modal',
+  'popover',
+  'tooltip',
+  'overlay',
+  'below',
+  'max',
 ];
 
 const BACKGROUNDS: ReadonlyArray<ContainerBackground> = [
@@ -150,10 +186,26 @@ function parseGap(value: string | null): ContainerSpacing | true | undefined {
   return isContainerSpacing(value) ? value : undefined;
 }
 
+function parsePosition(value: string | null): ContainerPosition | undefined {
+  if (value !== null && (POSITIONS as ReadonlyArray<string>).includes(value)) {
+    return value as ContainerPosition;
+  }
+  return undefined;
+}
+
+function parseDepth(value: string | null): ContainerDepth | undefined {
+  if (value !== null && (DEPTHS as ReadonlyArray<string>).includes(value)) {
+    return value as ContainerDepth;
+  }
+  return undefined;
+}
+
 export interface ContainerClassOptions {
   size?: ContainerSize | undefined;
   padding?: ContainerSpacing | undefined;
   gap?: ContainerSpacing | true | undefined;
+  position?: ContainerPosition | undefined;
+  depth?: ContainerDepth | undefined;
   background?: ContainerBackground | undefined;
   article?: boolean | undefined;
   editable?: boolean | undefined;
@@ -171,7 +223,7 @@ function resolveDerivedGap(size: ContainerSize | undefined): ContainerSpacing {
 }
 
 export function composeContainerClasses(options: ContainerClassOptions): string {
-  const { size, padding, gap, background, article, editable } = options;
+  const { size, padding, gap, position, depth, background, article, editable } = options;
   const parts: string[] = [];
   parts.push(containerQueryClasses);
   if (size) parts.push(containerSizeClasses[size] as string);
@@ -190,6 +242,8 @@ export function composeContainerClasses(options: ContainerClassOptions): string 
   if (resolvedGap !== null) {
     parts.push(containerGapClasses[resolvedGap] as string);
   }
+  if (position) parts.push(containerPositionClasses[position]);
+  if (depth) parts.push(containerDepthClasses[depth]);
   if (background && background !== 'none') {
     parts.push(containerBackgroundClasses[background as ContainerBackground]);
   }
@@ -202,6 +256,8 @@ const OBSERVED_ATTRIBUTES: ReadonlyArray<string> = [
   'size',
   'padding',
   'gap',
+  'position',
+  'depth',
   'background',
   'editable',
 ] as const;
@@ -235,6 +291,8 @@ export class RaftersContainer extends RaftersElement {
       size: parseSize(this.getAttribute('size')),
       padding: parsePadding(this.getAttribute('padding')),
       gap: parseGap(this.getAttribute('gap')),
+      position: parsePosition(this.getAttribute('position')),
+      depth: parseDepth(this.getAttribute('depth')),
       background: parseBackground(this.getAttribute('background')),
       article: this.getAs() === 'article',
       editable: this.hasAttribute('editable'),

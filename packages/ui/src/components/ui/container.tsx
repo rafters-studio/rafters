@@ -5,10 +5,12 @@
  * @attention-economics Neutral structural element: Controls content width and breathing room without competing for attention
  * @trust-building Predictable boundaries and consistent spacing patterns
  * @accessibility Semantic HTML elements with proper landmark roles for screen readers
- * @semantic-meaning Element-driven behavior: main=primary landmark, section=structural grouping, article=readable content with typography, aside=supplementary, div=no semantics
+ * @semantic-meaning Element-driven behavior: main=primary landmark, header=page/section header, footer=page/section footer, section=structural grouping, article=readable content with typography, aside=supplementary, div=no semantics
  *
  * @usage-patterns
  * DO: Use main for the primary content area (once per page)
+ * DO: Use header with position="sticky" and depth="navigation" for site headers
+ * DO: Use footer for page or section footers
  * DO: Use section for structural grouping within grids
  * DO: Use article for readable content - typography is automatic
  * DO: Use aside for supplementary content, add surface classes for depth
@@ -16,14 +18,21 @@
  * NEVER: Nest containers unnecessarily
  * NEVER: Use margins for spacing - let parent Grid handle gaps
  * NEVER: Use @container without w-full in flex/grid contexts (causes width collapse in Tailwind v4)
+ * NEVER: Write raw sticky/fixed/z-* utilities -- use position and depth props
  *
  * @example
  * ```tsx
+ * <Container as="header" position="sticky" depth="navigation" fill="background" size="full" padding="4">
+ *   <nav>Site navigation</nav>
+ * </Container>
  * <Container as="main" size="6xl" padding="6">
  *   <Container as="article">
  *     <h1>Title</h1>
  *     <p>Typography just works.</p>
  *   </Container>
+ * </Container>
+ * <Container as="footer" padding="6">
+ *   <p>Footer content</p>
  * </Container>
  * ```
  */
@@ -32,16 +41,20 @@ import classy from '../../primitives/classy';
 import { resolveFillName } from '../../primitives/fill-resolver';
 import {
   type ContainerBackground,
+  type ContainerDepth,
+  type ContainerPosition,
   containerArticleTypography,
   containerAutoEdgePadding,
   containerBackgroundClasses,
+  containerDepthClasses,
   containerGapClasses,
   containerPaddingClasses,
+  containerPositionClasses,
   containerSizeClasses,
   containerSizeGapScale,
 } from './container.classes';
 
-type ContainerElement = 'div' | 'main' | 'section' | 'article' | 'aside';
+type ContainerElement = 'div' | 'main' | 'header' | 'footer' | 'section' | 'article' | 'aside';
 
 export type { ContainerBackground } from './container.classes';
 
@@ -85,6 +98,18 @@ export interface ContainerProps extends React.HTMLAttributes<HTMLElement> {
   // ============================================================================
   // Editable Props (R-202)
   // ============================================================================
+
+  /**
+   * CSS position behavior.
+   * Use with depth for stacking: position="sticky" depth="navigation"
+   */
+  position?: ContainerPosition | undefined;
+
+  /**
+   * Stacking depth from the design system's z-depth scale.
+   * Pass-through to z-depth-* utilities so agents never write raw z-index.
+   */
+  depth?: ContainerDepth | undefined;
 
   /**
    * Enable editing mode for block editor
@@ -158,6 +183,8 @@ export const Container = React.forwardRef<HTMLElement, ContainerProps>(
       gap,
       query = true,
       queryName,
+      position,
+      depth,
       editable,
       background,
       fill,
@@ -206,6 +233,12 @@ export const Container = React.forwardRef<HTMLElement, ContainerProps>(
       // actually resolved (an invalid fill must not strand the surface
       // with no background at all)
       !fillClasses && background && backgroundClasses[background],
+
+      // Position
+      position && containerPositionClasses[position],
+
+      // Depth (z-index from the design system scale)
+      depth && containerDepthClasses[depth],
 
       // Article gets typography
       isArticle && articleTypography,
