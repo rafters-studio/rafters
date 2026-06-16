@@ -237,7 +237,7 @@ export const FRAMEWORK_SPECS: Record<Framework, FrameworkSpec> = {
       components: 'components/ui',
       primitives: 'lib/primitives',
       composites: 'composites',
-      rules: 'rules',
+      rules: 'lib/rules',
     },
   },
   vite: {
@@ -247,7 +247,7 @@ export const FRAMEWORK_SPECS: Record<Framework, FrameworkSpec> = {
       components: 'src/components/ui',
       primitives: 'src/lib/primitives',
       composites: 'src/composites',
-      rules: 'src/rules',
+      rules: 'src/lib/rules',
     },
   },
   remix: {
@@ -257,7 +257,7 @@ export const FRAMEWORK_SPECS: Record<Framework, FrameworkSpec> = {
       components: 'app/components/ui',
       primitives: 'app/lib/primitives',
       composites: 'app/composites',
-      rules: 'app/rules',
+      rules: 'app/lib/rules',
     },
   },
   'react-router': {
@@ -267,7 +267,7 @@ export const FRAMEWORK_SPECS: Record<Framework, FrameworkSpec> = {
       components: 'app/components/ui',
       primitives: 'app/lib/primitives',
       composites: 'app/composites',
-      rules: 'app/rules',
+      rules: 'app/lib/rules',
     },
   },
   astro: {
@@ -277,7 +277,7 @@ export const FRAMEWORK_SPECS: Record<Framework, FrameworkSpec> = {
       components: 'src/components/ui',
       primitives: 'src/lib/primitives',
       composites: 'src/composites',
-      rules: 'src/rules',
+      rules: 'src/lib/rules',
     },
   },
   wc: {
@@ -287,7 +287,7 @@ export const FRAMEWORK_SPECS: Record<Framework, FrameworkSpec> = {
       components: 'src/components/ui',
       primitives: 'src/lib/primitives',
       composites: 'src/composites',
-      rules: 'src/rules',
+      rules: 'src/lib/rules',
     },
   },
   vanilla: {
@@ -297,7 +297,7 @@ export const FRAMEWORK_SPECS: Record<Framework, FrameworkSpec> = {
       components: 'src/components/ui',
       primitives: 'src/lib/primitives',
       composites: 'src/composites',
-      rules: 'src/rules',
+      rules: 'src/lib/rules',
     },
   },
   unknown: {
@@ -306,7 +306,7 @@ export const FRAMEWORK_SPECS: Record<Framework, FrameworkSpec> = {
       components: 'components/ui',
       primitives: 'lib/primitives',
       composites: 'composites',
-      rules: 'rules',
+      rules: 'lib/rules',
     },
   },
 };
