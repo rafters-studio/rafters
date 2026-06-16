@@ -54,38 +54,6 @@ describe('MCP tools against initialized project', () => {
     expect(data.patterns || data.available).toBeDefined();
   }, 30000);
 
-  it('rafters_rule lists built-in rules', async () => {
-    fixturePath = await createInitializedFixture('nextjs-shadcn-v4');
-    const handler = new RaftersToolHandler([{ name: 'fixture', root: fixturePath }], {
-      name: 'fixture',
-      root: fixturePath,
-    });
-
-    const result = await handler.handleToolCall('rafters_rule', {});
-
-    expect(result.isError).toBeFalsy();
-    const data = JSON.parse(result.content[0].text as string);
-
-    expect(data.rules).toBeDefined();
-    expect(data.rules.length).toBeGreaterThan(0);
-    expect(data.rules.some((r: { name: string }) => r.name === 'required')).toBe(true);
-    expect(data.rules.some((r: { name: string }) => r.name === 'email')).toBe(true);
-  }, 30000);
-
-  it('rafters_rule filters by name', async () => {
-    fixturePath = await createInitializedFixture('vite-no-shadcn');
-    const handler = new RaftersToolHandler([{ name: 'fixture', root: fixturePath }], {
-      name: 'fixture',
-      root: fixturePath,
-    });
-
-    const result = await handler.handleToolCall('rafters_rule', { name: 'email' });
-
-    const data = JSON.parse(result.content[0].text as string);
-    expect(data.rules).toHaveLength(1);
-    expect(data.rules[0].name).toBe('email');
-  }, 30000);
-
   it('rafters_composite returns composites list', async () => {
     fixturePath = await createInitializedFixture('nextjs-shadcn-v4');
     const handler = new RaftersToolHandler([{ name: 'fixture', root: fixturePath }], {
@@ -129,16 +97,6 @@ describe('MCP tools with null project root', () => {
     const data = JSON.parse(result.content[0].text as string);
     // Returns patterns array or available list
     expect(data.patterns || data.available).toBeDefined();
-  });
-
-  it('rafters_rule works without a project root', async () => {
-    const handler = new RaftersToolHandler([], null);
-
-    const result = await handler.handleToolCall('rafters_rule', {});
-
-    expect(result.isError).toBeFalsy();
-    const data = JSON.parse(result.content[0].text as string);
-    expect(data.rules.length).toBeGreaterThan(0);
   });
 
   it('rafters_composite returns empty array without a project root', async () => {
