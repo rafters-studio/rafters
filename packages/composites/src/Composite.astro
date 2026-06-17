@@ -1,0 +1,194 @@
+---
+/**
+ * Composite render engine (Astro, SSG, zero client JS)
+ *
+ * Renders a composite -- a flat tree of blocks -- to server-side HTML. Placed
+ * by manifest id, not filename:
+ *
+ *   import Composite from '@/lib/composites/Composite.astro';
+ *   <Composite id="site-logo" />
+ *
+ * The engine is a thin shell. Every "what does this block become" decision
+ * lives in `resolveBlockTag` (pure, browser-safe, unit-tested). The engine
+ * only walks the tree and emits markup:
+ *
+ *   - composite -> recurse via <Astro.self id={refId} />
+ *   - component -> look the kebab name up in the discovered component map;
+ *                  render <Tag {...attrs}>children</Tag> if found, else fall
+ *                  back to a native element
+ *   - native    -> <Tag {...attrs}>{content}{children}</Tag>
+ *
+ * Children are rendered by recursing into <Astro.self blocks={subtree} />,
+ * where `subtree` is a self-contained flat slice rooted at the child (its
+ * parentId stripped so it renders as a root). Discovery runs once per render;
+ * recursion via explicit blocks skips the id lookup.
+ *
+ * Discovery is via inline literal `import.meta.glob` so Vite can statically
+ * analyze the patterns. Composites are discovered from `*.composite.json`
+ * files; user components from `src/components/ui/*.astro`, keyed by their
+ * kebab filename.
+ *
+ * If `id` resolves to no registered composite, the engine renders an HTML
+ * comment and nothing else. No hydration directives are ever emitted -- the
+ * output is pure server-rendered markup with zero client JS.
+ *
+ * Cross-composite cycles (a -> composite:b -> composite:a) are caught by a
+ * `seen` ancestor chain threaded through every recursion: a reference pointing
+ * back up the chain renders a cycle comment instead of looping at build.
+ */
+import { discoverFromVite, type ViteRawGlob } from './discovery-vite';
+import type { CompositeBlock, CompositeFile } from './manifest';
+import { resolveBlockTag } from './resolve-block';
+
+interface Props {
+  /** Manifest id of a discovered composite to render. */
+  id?: string;
+  /** A pre-loaded composite file (bypasses id lookup). */
+  composite?: CompositeFile;
+  /** A self-contained flat block list to render (bypasses id lookup). */
+  blocks?: CompositeBlock[];
+  /**
+   * Ancestor composite ids currently being expanded. Threaded through every
+   * recursion so a `composite:*` reference that points back up the chain
+   * (a -> composite:b -> composite:a) is caught and stopped instead of
+   * looping forever at build. Internal -- consumers never set this.
+   */
+  seen?: string[];
+}
+
+const { id, composite, blocks, seen } = Astro.props;
+
+// Ancestor chain of composite ids. `id` (this render's composite, when entered
+// by id) joins the chain; child-subtree recursions pass it through unchanged.
+const seenChain = seen ?? [];
+const cyclic = id !== undefined && seenChain.includes(id);
+const chain = id !== undefined ? [...seenChain, id] : seenChain;
+
+// Literal inline globs -- Vite statically analyzes these patterns. Do not
+// extract them into variables or helpers.
+const compositeGlob = import.meta.glob('/src/**/*.composite.json', {
+  eager: true,
+  query: '?raw',
+  import: 'default',
+}) as ViteRawGlob;
+
+const componentModules = import.meta.glob('/src/components/ui/*.astro', {
+  eager: true,
+}) as Record<string, { default: unknown }>;
+
+const { registry } = discoverFromVite(compositeGlob);
+
+// Map kebab component name (filename without extension) -> module default.
+const components: Record<string, unknown> = {};
+for (const [path, module] of Object.entries(componentModules)) {
+  const file = path.split('/').pop() ?? '';
+  const name = file.replace(/\.astro$/, '');
+  if (name) components[name] = module.default;
+}
+
+// Resolve the source blocks: explicit blocks/composite win over id lookup.
+// `missing` distinguishes "id given, not in registry" from "nothing to render".
+let sourceBlocks: CompositeBlock[] = [];
+let missing = false;
+if (blocks) {
+  sourceBlocks = blocks;
+} else if (composite) {
+  sourceBlocks = composite.blocks;
+} else if (id) {
+  const found = registry.get(id);
+  if (found) {
+    sourceBlocks = found.blocks;
+  } else {
+    missing = true;
+  }
+}
+
+// Build id -> block map and the root blocks (no parentId) to render.
+const blockMap = new Map<string, CompositeBlock>();
+for (const block of sourceBlocks) blockMap.set(block.id, block);
+const roots = sourceBlocks.filter((b) => !b.parentId);
+
+/** Direct child blocks of a block, in declared order, skipping dangling ids. */
+function childrenOf(block: CompositeBlock): CompositeBlock[] {
+  if (!block.children) return [];
+  const out: CompositeBlock[] = [];
+  for (const childId of block.children) {
+    const child = blockMap.get(childId);
+    if (child) out.push(child);
+  }
+  return out;
+}
+
+/**
+ * A self-contained flat slice rooted at `block`: the block itself with its
+ * parentId stripped (so it renders as a root), plus every descendant. Handed
+ * to <Astro.self blocks={...} /> so the child render has a complete blockMap.
+ */
+function subtree(block: CompositeBlock): CompositeBlock[] {
+  const slice: CompositeBlock[] = [];
+  const visited = new Set<string>();
+  const collect = (b: CompositeBlock, isRoot: boolean): void => {
+    if (visited.has(b.id)) return;
+    visited.add(b.id);
+    const { parentId, ...rest } = b;
+    slice.push(isRoot ? rest : b);
+    for (const child of childrenOf(b)) collect(child, false);
+  };
+  collect(block, true);
+  return slice;
+}
+
+/** Props bag from a block's meta. */
+function attrsOf(block: CompositeBlock): Record<string, unknown> {
+  return block.meta ? { ...block.meta } : {};
+}
+
+/** A block's string content, if any, rendered as a text child. */
+function textOf(block: CompositeBlock): string | null {
+  return typeof block.content === 'string' ? block.content : null;
+}
+---
+
+{missing && <Fragment set:html={`<!-- composite not found: ${id} -->`} />}
+{cyclic && <Fragment set:html={`<!-- composite cycle: ${[...seenChain, id].join(' -> ')} -->`} />}
+{
+  !cyclic &&
+    roots.map((block) => {
+      const resolution = resolveBlockTag(block.type);
+
+      if (resolution.kind === 'composite') {
+        // Recurse by id, extending the ancestor chain. The child render's own
+        // `cyclic` check catches a reference that points back up the chain.
+        return <Astro.self id={resolution.id} seen={chain} />;
+      }
+
+      const text = textOf(block);
+      const kids = childrenOf(block);
+      const attrs = attrsOf(block);
+
+      if (resolution.kind === 'component') {
+        const Tag = components[resolution.name] as
+          | ((props: Record<string, unknown>) => unknown)
+          | undefined;
+        const Component = Tag ?? 'div';
+        return (
+          <Component {...attrs}>
+            {text}
+            {kids.map((child) => (
+              <Astro.self blocks={subtree(child)} seen={chain} />
+            ))}
+          </Component>
+        );
+      }
+
+      const Native = resolution.tag;
+      return (
+        <Native {...attrs}>
+          {text}
+          {kids.map((child) => (
+            <Astro.self blocks={subtree(child)} seen={chain} />
+          ))}
+        </Native>
+      );
+    })
+}

@@ -192,11 +192,15 @@ function getCompositesPackagePath(): string {
 const COMPOSITES_RUNTIME_FILES = [
   'manifest.ts',
   'walk-blocks.ts',
+  'resolve-block.ts',
+  'discovery.ts',
+  'discovery-vite.ts',
   'to-jsx.tsx',
   'to-mdx.ts',
   'bridge.ts',
   'registry.ts',
   'rules.ts',
+  'Composite.astro',
 ];
 
 export function loadCompositesRuntime(): RegistryItem {

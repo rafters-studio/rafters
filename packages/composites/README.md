@@ -103,21 +103,36 @@ const { LoginForm, HeroBanner } = createComposites(
 <LoginForm />
 ```
 
-### toAstro
+### Composite.astro (render engine)
 
-Emits an Astro component string with imports in the frontmatter fence. Block types become PascalCase Astro component tags.
+The Astro render engine renders a composite to server-side HTML with zero
+client JS. It is installed into a consumer project as `lib/composites/Composite.astro`
+and placed by manifest id (not filename):
+
+```astro
+---
+import Composite from '@/lib/composites/Composite.astro';
+---
+
+<Composite id="site-logo" />
+```
+
+The engine discovers `*.composite.json` files and `src/components/ui/*.astro`
+components via inline `import.meta.glob`, then walks the block tree. Every
+"what does this block become" decision lives in the pure `resolveBlockTag`
+helper:
+
+- `composite:<id>` -> recurse into the referenced composite
+- a kebab name (e.g. `button`) -> the matching `*.astro` component, else native
+- a native alias (`link`->`a`, `image`->`img`, `text`->`span`, `heading`->`h2`,
+  `list`->`ul`) or any other type -> a plain HTML element (default `div`)
 
 ```typescript
-import { toAstro } from '@rafters/composites';
+import { resolveBlockTag } from '@rafters/composites';
 
-const astro = toAstro(composite.blocks);
-// ---
-// import Heading from '../components/ui/heading.astro';
-// import Button from '../components/ui/button.astro';
-// ---
-//
-// <Heading level={2}>Sign In</Heading>
-// <Button>Sign In</Button>
+resolveBlockTag('composite:hero'); // { kind: 'composite', id: 'hero' }
+resolveBlockTag('button');         // { kind: 'component', name: 'button' }
+resolveBlockTag('link');           // { kind: 'native', tag: 'a' }
 ```
 
 ## The walker
@@ -253,7 +268,10 @@ packages/composites/src/
   walk-blocks.ts   -- shared tree walker and BlockVisitor type
   to-mdx.ts        -- MDX string serializer
   to-jsx.tsx       -- React element serializer, Composite component, createComposites factory
-  to-astro.ts      -- Astro component string serializer
+  resolve-block.ts -- pure resolveBlockTag: block type -> composite | component | native
+  Composite.astro  -- Astro render engine (SSG, zero client JS), placed by manifest id
+  discovery.ts     -- browser-safe discovery core (validate, index, resolve refs)
+  discovery-vite.ts -- Vite glob adapter (discoverFromVite, viteGlobEntries)
   bridge.ts        -- instantiateBlocks, toBridgeItems, serializeToComposite
   registry.ts      -- in-memory composite registry
   rules.ts         -- rule matching (matchRules, findCompatible*)
