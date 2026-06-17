@@ -28,10 +28,22 @@ describe('composites runtime source files', () => {
     expect(read('resolve-block.ts')).toContain('export function resolveBlockTag');
   });
 
+  it('ships the pure rule-attr mapper', () => {
+    expect(read('rule-attrs.ts')).toContain('export function rulesToHtmlAttrs');
+  });
+
+  it('engine merges block rules into element attrs via rulesToHtmlAttrs', () => {
+    const engine = read('Composite.astro');
+    expect(engine).toContain("import { rulesToHtmlAttrs } from './rule-attrs'");
+    // Rule attrs combine with meta attrs and win on conflict (spread last).
+    expect(engine).toContain('rulesToHtmlAttrs(block.rules)');
+  });
+
   it('keeps the engine and resolver browser-safe (no node: imports)', () => {
     for (const file of [
       'Composite.astro',
       'resolve-block.ts',
+      'rule-attrs.ts',
       'discovery.ts',
       'discovery-vite.ts',
     ]) {

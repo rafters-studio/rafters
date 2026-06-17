@@ -289,6 +289,13 @@ export class RaftersToolHandler {
       input: c.input,
       output: c.output,
       blockCount: c.blocks.length,
+      // Surface which blocks carry which validation rules. Rules compile to
+      // native HTML5 constraint attributes at build, so agents need to see
+      // them to reason about a composite's behavior. Only blocks with rules
+      // are listed -- the array is empty when nothing is constrained.
+      blockRules: c.blocks
+        .filter((b) => b.rules && b.rules.length > 0)
+        .map((b) => ({ id: b.id, type: b.type, rules: b.rules })),
     }));
 
     return { content: [{ type: 'text', text: JSON.stringify({ composites: result }, null, 2) }] };

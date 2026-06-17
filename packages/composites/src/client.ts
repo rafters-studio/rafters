@@ -31,6 +31,7 @@ export type {
   NativeResolution,
 } from './resolve-block';
 export { resolveBlockTag } from './resolve-block';
+export { rulesToHtmlAttrs } from './rule-attrs';
 export type { CompositeProps, ToJsxOptions } from './to-jsx';
 export { Composite, createComposites, toJsx } from './to-jsx';
 export { toMdx } from './to-mdx';

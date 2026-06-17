@@ -39,6 +39,7 @@
 import { discoverFromVite, type ViteRawGlob } from './discovery-vite';
 import type { CompositeBlock, CompositeFile } from './manifest';
 import { resolveBlockTag } from './resolve-block';
+import { rulesToHtmlAttrs } from './rule-attrs';
 
 interface Props {
   /** Manifest id of a discovered composite to render. */
@@ -164,7 +165,10 @@ function textOf(block: CompositeBlock): string | null {
 
       const text = textOf(block);
       const kids = childrenOf(block);
-      const attrs = attrsOf(block);
+      // Meta attrs and rule-derived native HTML5 constraint attrs combine;
+      // rule attrs win on conflict. The mapping lives in rule-attrs.ts so the
+      // engine stays a thin shell. Composite refs never reach here.
+      const attrs = { ...attrsOf(block), ...rulesToHtmlAttrs(block.rules) };
 
       if (resolution.kind === 'component') {
         const Tag = components[resolution.name] as
