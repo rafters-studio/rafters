@@ -8,6 +8,15 @@ export {
   toBridgeItems,
 } from './bridge';
 export type {
+  CompositeAdapter,
+  DiscoveryError,
+  DiscoveryResult,
+  RawCompositeEntry,
+} from './discovery';
+export { discoverComposites } from './discovery';
+export type { ViteRawGlob } from './discovery-vite';
+export { discoverFromVite, viteAdapter, viteGlobEntries } from './discovery-vite';
+export type {
   AppliedRule,
   CompositeBlock,
   CompositeCategory,

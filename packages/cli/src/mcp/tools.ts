@@ -12,18 +12,19 @@
  * Token import lives in `rafters init` / `rafters import`, not MCP.
  */
 
-import { readdir, readFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import {
   type CompositeFile,
-  CompositeFileSchema,
   getAllComposites,
   getComposite,
   getCompositesByCategory,
   registerComposite,
   searchComposites,
 } from '@rafters/composites';
+// node-fs adapter lives behind the server-only subpath (it imports node:fs).
+import { discoverFromDirs } from '@rafters/composites/node';
 import type { RaftersConfig } from '../commands/init.js';
 import { registryClient } from '../registry/client.js';
 import { getRaftersPaths, resolveReadSet } from '../utils/paths.js';
@@ -196,48 +197,33 @@ export class RaftersToolHandler {
     };
   }
 
-  private async loadCompositesFromDir(dir: string): Promise<void> {
-    try {
-      const entries = await readdir(dir);
-      const files = entries.filter((f) => f.endsWith('.composite.json'));
-
-      for (const file of files) {
-        try {
-          const { readFile } = await import('node:fs/promises');
-          const raw = await readFile(join(dir, file), 'utf-8');
-          const parsed = JSON.parse(raw);
-          const result = CompositeFileSchema.safeParse(parsed);
-          if (result.success) {
-            try {
-              registerComposite(result.data);
-            } catch {
-              // Already registered
-            }
-          }
-        } catch {
-          // Invalid file
-        }
+  /**
+   * Recursively discover composites under the given directories via the shared
+   * discovery core (node-fs adapter), then register each into the in-memory
+   * registry. Duplicate ids -- across this call or against already-registered
+   * composites -- are ignored: the first registration wins.
+   */
+  private async loadCompositesFromDirs(...dirs: string[]): Promise<void> {
+    const { registry } = await discoverFromDirs(...dirs);
+    for (const composite of registry.values()) {
+      try {
+        registerComposite(composite);
+      } catch {
+        // Already registered -- first one wins.
       }
-    } catch {
-      // Directory not found
     }
   }
 
   private async ensureCompositesLoaded(workspace: Workspace | null): Promise<void> {
     if (!this.builtInCompositesLoaded) {
-      const builtInDirs = ['typography'];
-      for (const dir of builtInDirs) {
-        await this.loadCompositesFromDir(
-          join(process.cwd(), 'node_modules/@rafters/composites/src', dir),
-        );
-      }
+      await this.loadCompositesFromDirs(
+        join(process.cwd(), 'node_modules/@rafters/composites/src/typography'),
+      );
       this.builtInCompositesLoaded = true;
     }
 
     if (workspace && !this.compositesLoadedFor.has(workspace.root)) {
-      for (const dir of await this.compositeReadRoots(workspace.root)) {
-        await this.loadCompositesFromDir(dir);
-      }
+      await this.loadCompositesFromDirs(...(await this.compositeReadRoots(workspace.root)));
       this.compositesLoadedFor.add(workspace.root);
     }
   }

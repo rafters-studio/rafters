@@ -27,6 +27,19 @@ export {
   url,
 } from './built-in-rules/index';
 export type {
+  CompositeAdapter,
+  DiscoveryError,
+  DiscoveryResult,
+  RawCompositeEntry,
+} from './discovery';
+export { discoverComposites } from './discovery';
+// NOTE: the node-fs adapter (discovery-node) imports node:fs and is therefore
+// NOT exported here -- index.ts must stay browser-safe (the demo pulls it into
+// the client bundle). It lives behind the server-only "@rafters/composites/node"
+// subpath instead. See package.json exports.
+export type { ViteRawGlob } from './discovery-vite';
+export { discoverFromVite, viteAdapter, viteGlobEntries } from './discovery-vite';
+export type {
   AppliedRule,
   CompositeBlock,
   CompositeCategory,
