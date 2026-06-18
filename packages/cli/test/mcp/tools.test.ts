@@ -1,3 +1,4 @@
+import { registerComposite } from '@rafters/composites';
 import { describe, expect, it } from 'vitest';
 import { RaftersToolHandler, TOOL_DEFINITIONS } from '../../src/mcp/tools.js';
 
@@ -73,6 +74,40 @@ describe('RaftersToolHandler', () => {
       const data = JSON.parse(result.content[0].text as string);
       expect(data.composites).toBeDefined();
       expect(Array.isArray(data.composites)).toBe(true);
+    });
+
+    it('surfaces per-block rules so agents see which blocks carry which rules', async () => {
+      registerComposite({
+        manifest: {
+          id: 'rules-fixture-login',
+          name: 'Rules Fixture Login',
+          category: 'forms',
+          description: 'Fixture exercising block-level rules in the MCP response.',
+          keywords: ['fixture'],
+          cognitiveLoad: 1,
+        },
+        input: [],
+        output: [],
+        blocks: [
+          { id: 'email', type: 'input', rules: ['email', 'required'] },
+          { id: 'pw', type: 'input', rules: ['password'] },
+          { id: 'submit', type: 'button' },
+        ],
+      });
+
+      const handler = new RaftersToolHandler([], null);
+      const result = await handler.handleToolCall('rafters_composite', {
+        id: 'rules-fixture-login',
+      });
+
+      const data = JSON.parse(result.content[0].text as string);
+      const composite = data.composites.find((c: { id: string }) => c.id === 'rules-fixture-login');
+      expect(composite).toBeDefined();
+      // Only blocks carrying rules are listed; the unconstrained button is not.
+      expect(composite.blockRules).toEqual([
+        { id: 'email', type: 'input', rules: ['email', 'required'] },
+        { id: 'pw', type: 'input', rules: ['password'] },
+      ]);
     });
   });
 

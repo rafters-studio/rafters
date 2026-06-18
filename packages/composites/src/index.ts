@@ -70,6 +70,7 @@ export type {
   NativeResolution,
 } from './resolve-block';
 export { resolveBlockTag } from './resolve-block';
+export { rulesToHtmlAttrs } from './rule-attrs';
 export type { RuleMatch } from './rules';
 export {
   findCompatibleConsumers,
