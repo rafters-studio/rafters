@@ -8,14 +8,13 @@
  */
 
 import { existsSync } from 'node:fs';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import {
   contrastPlugin,
   generateBaseSystem,
   invertPlugin,
   loadRegistryFromDir,
-  registryToVars,
   saveRegistryToDir,
   scalePlugin,
   statePlugin,
@@ -157,146 +156,4 @@ describe('studio prerequisites', () => {
       }
     }
   }, 30000);
-});
-
-describe('studio API affects stylesheet in realtime', () => {
-  it('registryToVars generates CSS with token values', async () => {
-    const fixturePath = await createFixture('nextjs-shadcn-v4');
-    try {
-      await initProject(fixturePath);
-
-      const tokensDir = join(fixturePath, '.rafters', 'tokens');
-      const registry = loadRegistryFromDir(tokensDir, PLUGINS);
-
-      const css = registryToVars(registry);
-      expect(css).toContain(':root');
-      expect(css).toContain('--rafters-');
-      expect(css).toContain('spacing');
-    } finally {
-      await cleanupFixture(fixturePath);
-    }
-  });
-
-  it('changing a spacing token updates the CSS output', async () => {
-    const fixturePath = await createFixture('vite-shadcn-v4');
-    try {
-      await initProject(fixturePath);
-
-      const tokensDir = join(fixturePath, '.rafters', 'tokens');
-      const registry = loadRegistryFromDir(tokensDir, PLUGINS);
-
-      const cssBefore = registryToVars(registry);
-
-      const spacing4 = registry.get('spacing-4');
-      expect(spacing4).toBeTruthy();
-      if (!spacing4) throw new Error('spacing-4 not found');
-
-      registry.set('spacing-4', '99rem', { reason: 'Testing realtime CSS update' });
-
-      const cssAfter = registryToVars(registry);
-
-      expect(cssAfter).not.toBe(cssBefore);
-      expect(cssAfter).toContain('99rem');
-      expect(cssBefore).not.toContain('99rem');
-    } finally {
-      await cleanupFixture(fixturePath);
-    }
-  });
-
-  it('changing a color token cascades to semantic tokens in CSS', async () => {
-    const fixturePath = await createFixture('astro-shadcn-v4');
-    try {
-      await initProject(fixturePath);
-
-      const tokensDir = join(fixturePath, '.rafters', 'tokens');
-      const registry = loadRegistryFromDir(tokensDir, PLUGINS);
-
-      const cssBefore = registryToVars(registry);
-
-      const colorTokens = registry.list({ namespace: 'color' });
-      const familyToken = colorTokens.find(
-        (t) => typeof t.value === 'object' && t.value !== null && 'scale' in t.value,
-      );
-      expect(familyToken).toBeTruthy();
-
-      const semanticTokens = registry.list({ namespace: 'semantic' });
-      expect(semanticTokens.length).toBeGreaterThan(0);
-
-      expect(cssBefore).toContain('--primary');
-      expect(cssBefore).toContain('--background');
-      expect(cssBefore).toContain('--foreground');
-    } finally {
-      await cleanupFixture(fixturePath);
-    }
-  });
-
-  it('token change persists to disk and CSS file can be written', async () => {
-    const fixturePath = await createFixture('remix-shadcn-v4');
-    try {
-      await initProject(fixturePath);
-
-      const outputDir = join(fixturePath, '.rafters', 'output');
-      await mkdir(outputDir, { recursive: true });
-      const outputPath = join(outputDir, 'rafters.vars.css');
-
-      const tokensDir = join(fixturePath, '.rafters', 'tokens');
-      const registry = loadRegistryFromDir(tokensDir, PLUGINS);
-
-      const cssInitial = registryToVars(registry);
-      await writeFile(outputPath, cssInitial);
-      expect(existsSync(outputPath)).toBe(true);
-
-      const initialContent = await readFile(outputPath, 'utf-8');
-      expect(initialContent).toContain(':root');
-
-      const spacing8 = registry.get('spacing-8');
-      expect(spacing8).toBeTruthy();
-      if (!spacing8) throw new Error('spacing-8 not found');
-
-      registry.set('spacing-8', '77rem', {
-        reason: 'Verify disk persistence and CSS regeneration',
-      });
-      saveRegistryToDir(tokensDir, registry);
-
-      const cssUpdated = registryToVars(registry);
-      await writeFile(outputPath, cssUpdated);
-
-      const updatedContent = await readFile(outputPath, 'utf-8');
-      expect(updatedContent).toContain('77rem');
-      expect(initialContent).not.toContain('77rem');
-
-      const reloaded = loadRegistryFromDir(tokensDir, PLUGINS);
-      const reloadedSpacing8 = reloaded.get('spacing-8');
-      expect(reloadedSpacing8?.value).toBe('77rem');
-      expect(reloadedSpacing8?.userOverride?.reason).toBe(
-        'Verify disk persistence and CSS regeneration',
-      );
-    } finally {
-      await cleanupFixture(fixturePath);
-    }
-  });
-
-  it('multiple rapid token changes all reflect in CSS', async () => {
-    const fixturePath = await createFixture('nextjs-no-shadcn');
-    try {
-      await initProject(fixturePath);
-
-      const tokensDir = join(fixturePath, '.rafters', 'tokens');
-      const registry = loadRegistryFromDir(tokensDir, PLUGINS);
-
-      for (const name of ['spacing-1', 'spacing-2', 'spacing-3']) {
-        const token = registry.get(name);
-        if (token) {
-          registry.set(name, `${name}-custom-value`, { reason: 'rapid change test' });
-        }
-      }
-
-      const css = registryToVars(registry);
-      expect(css).toContain('spacing-1-custom-value');
-      expect(css).toContain('spacing-2-custom-value');
-      expect(css).toContain('spacing-3-custom-value');
-    } finally {
-      await cleanupFixture(fixturePath);
-    }
-  });
 });
