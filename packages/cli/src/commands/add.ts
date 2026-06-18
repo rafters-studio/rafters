@@ -145,6 +145,31 @@ export function selectFilesForFramework(
 }
 
 /**
+ * Composite runtime files whose installation is gated on the component target.
+ * The Astro render engine (`Composite.astro`) is meaningless outside an Astro
+ * project, so it installs only when the target is `astro`. Every other runtime
+ * file is framework-agnostic and always installs.
+ */
+const TARGET_GATED_COMPOSITE_FILES: ReadonlyArray<{ suffix: string; target: ComponentTarget }> = [
+  { suffix: 'Composite.astro', target: 'astro' },
+];
+
+/**
+ * Filter a composite item's runtime files by the project's component target.
+ * Drops target-gated files (e.g. `Composite.astro`) whose target does not
+ * match; leaves all other files untouched. Pure -- no I/O.
+ */
+export function selectCompositeFiles(
+  files: RegistryFile[],
+  target: ComponentTarget,
+): RegistryFile[] {
+  return files.filter((file) => {
+    const gate = TARGET_GATED_COMPOSITE_FILES.find((g) => file.path.endsWith(g.suffix));
+    return gate ? gate.target === target : true;
+  });
+}
+
+/**
  * Known folder names that can be used as the first argument to `rafters add`.
  * When detected, the CLI routes fetches to the matching registry endpoint.
  */
@@ -336,7 +361,11 @@ async function installItem(
   const installedFiles: string[] = [];
   let skipped = false;
 
-  // Filter files by framework target (only for UI components, not primitives/composites)
+  // Filter files by framework target.
+  //   - UI components: pick the framework-matching file (with .tsx fallback).
+  //   - Composites: keep all runtime files except target-gated ones (e.g.
+  //     Composite.astro installs only for the astro target).
+  //   - Primitives: install everything.
   let filesToInstall = item.files;
   if (item.type === 'ui') {
     const target = getComponentTarget(config);
@@ -351,6 +380,8 @@ async function installItem(
         message: `No ${targetToExtension(target)} version available for ${item.name}. Installing React version.`,
       });
     }
+  } else if (item.type === 'composite') {
+    filesToInstall = selectCompositeFiles(item.files, getComponentTarget(config));
   }
 
   for (const file of filesToInstall) {

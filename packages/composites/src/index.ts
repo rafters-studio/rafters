@@ -63,6 +63,13 @@ export {
   register as registerComposite,
   search as searchComposites,
 } from './registry';
+export type {
+  BlockResolution,
+  ComponentResolution,
+  CompositeResolution,
+  NativeResolution,
+} from './resolve-block';
+export { resolveBlockTag } from './resolve-block';
 export type { RuleMatch } from './rules';
 export {
   findCompatibleConsumers,

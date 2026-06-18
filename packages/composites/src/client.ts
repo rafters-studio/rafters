@@ -24,6 +24,13 @@ export type {
   CompositeManifest,
   UsagePatterns,
 } from './manifest';
+export type {
+  BlockResolution,
+  ComponentResolution,
+  CompositeResolution,
+  NativeResolution,
+} from './resolve-block';
+export { resolveBlockTag } from './resolve-block';
 export type { CompositeProps, ToJsxOptions } from './to-jsx';
 export { Composite, createComposites, toJsx } from './to-jsx';
 export { toMdx } from './to-mdx';

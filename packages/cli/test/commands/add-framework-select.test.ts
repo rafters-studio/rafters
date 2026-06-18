@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { selectFilesForFramework } from '../../src/commands/add.js';
+import { selectCompositeFiles, selectFilesForFramework } from '../../src/commands/add.js';
 import type { RegistryFile } from '../../src/registry/types.js';
+import type { ComponentTarget } from '../../src/utils/detect.js';
 
 function makeFile(path: string): RegistryFile {
   return { path, content: '', dependencies: [], devDependencies: [] };
@@ -87,5 +88,58 @@ describe('selectFilesForFramework', () => {
     const sharedOnly: RegistryFile[] = [makeFile('components/ui/button.classes.ts')];
     const result = selectFilesForFramework(sharedOnly, 'react');
     expect(result.files).toHaveLength(1);
+  });
+});
+
+describe('selectCompositeFiles', () => {
+  // Mirrors the composites runtime item the registry emits via
+  // loadCompositesRuntime: framework-agnostic runtime files plus the
+  // Astro render engine at lib/composites/Composite.astro.
+  const runtimeFiles: RegistryFile[] = [
+    makeFile('lib/composites/manifest.ts'),
+    makeFile('lib/composites/walk-blocks.ts'),
+    makeFile('lib/composites/resolve-block.ts'),
+    makeFile('lib/composites/discovery.ts'),
+    makeFile('lib/composites/discovery-vite.ts'),
+    makeFile('lib/composites/to-jsx.tsx'),
+    makeFile('lib/composites/to-mdx.ts'),
+    makeFile('lib/composites/bridge.ts'),
+    makeFile('lib/composites/registry.ts'),
+    makeFile('lib/composites/rules.ts'),
+    makeFile('lib/composites/Composite.astro'),
+  ];
+
+  const paths = (files: RegistryFile[]): string[] => files.map((f) => f.path);
+
+  it('installs Composite.astro for the astro target', () => {
+    expect(paths(selectCompositeFiles(runtimeFiles, 'astro'))).toContain(
+      'lib/composites/Composite.astro',
+    );
+  });
+
+  const nonAstro: ComponentTarget[] = ['react', 'vue', 'svelte', 'wc'];
+  for (const target of nonAstro) {
+    it(`drops Composite.astro for the ${target} target`, () => {
+      expect(paths(selectCompositeFiles(runtimeFiles, target))).not.toContain(
+        'lib/composites/Composite.astro',
+      );
+    });
+  }
+
+  it('always installs the framework-agnostic runtime files', () => {
+    for (const target of ['astro', 'react'] as ComponentTarget[]) {
+      const result = paths(selectCompositeFiles(runtimeFiles, target));
+      expect(result).toContain('lib/composites/manifest.ts');
+      expect(result).toContain('lib/composites/resolve-block.ts');
+      expect(result).toContain('lib/composites/discovery-vite.ts');
+      expect(result).toContain('lib/composites/registry.ts');
+    }
+  });
+
+  it('keeps non-astro runtime file count stable while only gating Composite.astro', () => {
+    const astro = selectCompositeFiles(runtimeFiles, 'astro');
+    const react = selectCompositeFiles(runtimeFiles, 'react');
+    expect(astro).toHaveLength(runtimeFiles.length);
+    expect(react).toHaveLength(runtimeFiles.length - 1);
   });
 });
