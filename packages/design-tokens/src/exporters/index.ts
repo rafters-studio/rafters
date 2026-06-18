@@ -13,7 +13,6 @@ export {
   registryToCompiled,
   registryToTailwind,
   registryToTailwindStatic,
-  registryToVars,
   type TailwindExportOptions,
   tokensToTailwind,
 } from './tailwind.js';
