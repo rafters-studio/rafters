@@ -1,48 +1,87 @@
 ---
 name: rafters-frontend
 description: Use when building frontend UI in a Rafters project -- enforces the assembly model (composites first, components second, native HTML inside Container article-mode) and prohibits any agent-side design choice.
-version: 2.0.0
+version: 2.1.0
 user-invocable: true
-allowed-tools: Read, Edit, Write, Glob, Grep, Bash, Agent
+allowed-tools: Read, Edit, Write, Glob, Grep, Bash
 ---
 
-## Core Rule
+# The system makes design choices. You assemble.
 
-**The system makes design choices. The agent assembles.**
+Color, spacing, size, weight, radius, shadow, hierarchy, layout rhythm -- all
+owned by the system and already decided. Your job is to pick the right pre-made
+piece for the content and intent, and put real content in it. You never author a
+visual decision. This is not a guideline -- a write-time hook **denies** any edit
+that contains a hand-authored visual choice. Assemble and it ships; design and it
+is rejected.
 
-This is the entire reason Rafters exists. Color, spacing, size, weight, radius, shadow, hierarchy, layout rhythm -- all owned by the system. The agent's job is to pick the right pre-made piece for the content and intent. Not to author visual decisions.
+## Gate: query before you write
 
-## Assembly Order
+You do not know this design system from training; you read it from the MCP, every
+time. **Before writing any UI, you must have (a) read the project's intent and
+attention budget from `.rafters/config.rafters.json`, and (b) queried the MCP for
+the piece you are about to render.** If you have not, you are not ready to write.
+Designing a layout or picking a color "from memory" is the one failure that
+produces non-rafters code.
 
-1. **`rafters_pattern`** -- start here. Search by what the page or section SOLVES (e.g. `solves: "authentication"`, `solves: "data entry"`, `solves: "navigation"`). Returns composites with designer intent + do/never + block structure.
-2. **`rafters_composite`** -- get a specific composite by ID, category, or fuzzy query. The composite's blocks carry their own `variant`, `size`, layout meta -- render them verbatim.
-3. **`rafters_component`** -- only when no composite covers the case. Returns component intelligence with do/never and the JSDoc guidance for variant/size choice in that exact situation.
-4. **`rafters_rule`** -- validation rules for forms (required, email, password, credentials, etc.).
+## The project's recorded intent and attention budget
 
-If a question has a composite answer, the answer is the composite. Do not reach for `rafters_component` to assemble a custom version of something a composite already covers.
+Two project-level constraints live in `.rafters/config.rafters.json`, recorded by
+the designer during Studio onboarding. They are inputs you honor, not choices you
+make.
 
-## Content Goes Inside `Container as="article">`
+- **Intent** (`config.intent`) -- the project's declared personality and
+  constraints (elegant company, tech product, personal blog, zine...). This is the
+  *designer's* taste, not yours. It narrows which composite or density fits: a zine
+  and a banking app solve "landing page" differently, and the intent tells you
+  which. Select to match the recorded intent; never substitute your own.
+- **Attention economics** (`config.attentionBudget` -- the cognitive-load
+  budget) -- how much attention this project will spend on a screen. Every
+  composite and component carries a cognitive-load score; the sum of what you place
+  on a page must stay within the budget. When you are over, do **not** trim styling
+  -- drop or defer content, split the page, or choose a leaner composite. The
+  system is allowed to say a screen is too busy; respect it.
 
-Native HTML, no classes, no Typography imports:
+If a field is absent (onboarding has not run), proceed with the composite the
+manifest provides and a sensible default budget -- do not invent values. (Deep
+budget scoring will move to a dedicated sub-agent later; for now, stay within the
+recorded budget by judgment.)
+
+## Decision procedure
+
+For each thing you need to render, in order:
+
+1. **Is it prose/content** (headings, paragraphs, lists, quotes)? → put it inside
+   `<Container as="article">` as **bare native HTML**, no classes, no imports.
+2. **Is it a page or section that solves a known problem** (auth, data entry,
+   navigation, pricing...)? → `rafters_pattern` `{ solves: "..." }`, then
+   `rafters_composite` for the match. **Render its blocks verbatim** -- each block
+   carries its own `variant`/`size`/layout meta. The manifest is the decision.
+3. **Is it a single affordance with no composite** (a lone button, badge)? →
+   `rafters_component`. Use the `variant`/`size` its JSDoc + `usagePatterns`
+   dictate for this exact situation.
+4. **Does rafters genuinely not ship the affordance?** → author a custom component
+   in `src/components/` (see bottom), where the rules relax.
+
+If a request has a composite answer, the answer is the composite. Do not drop to
+`rafters_component` to hand-build something a composite already covers. (Rules for
+forms -- required, email, etc. -- arrive on the composite's block `rules`, not a
+separate tool.)
+
+## Content: `<Container as="article">`
 
 ```tsx
 <Container as="article">
   <h1>Page Title</h1>
-  <p>Body paragraph.</p>
+  <p>Body paragraph with inline <code>code</code>.</p>
   <blockquote>A pull quote.</blockquote>
-  <ul>
-    <li>List item</li>
-  </ul>
-  <p>Inline <code>code</code> in prose.</p>
+  <ul><li>List item</li></ul>
 </Container>
 ```
 
-The container's typography composite system styles every native element correctly via the token system. You do not need to import `H1`, `P`, `Small`, `Code` -- those exist for narrow edge cases outside content regions. Inside an article container, native HTML is the right path.
-
-**Never:**
-- `<h1 className="text-4xl font-bold">` -- the class is the bug; bare `<h1>` is correct
-- `<P size="sm" color="muted">` -- depromoted; write `<p>` inside an article container instead
-- `<H1>` imports for content
+The container's typography system styles every native element through the token
+system. Do not import `H1`/`P`/`Small`/`Code` for content, and do not pass them
+`size`/`color` -- bare native HTML inside the article container is correct.
 
 ## Layout: Container + Grid
 
@@ -50,96 +89,87 @@ The container's typography composite system styles every native element correctl
 <Container as="main">
   <Container as="section">
     <h2>Section title</h2>
-    <Grid preset="cards">
-      <Card>...</Card>
-      <Card>...</Card>
-      <Card>...</Card>
-    </Grid>
+    <Grid preset="cards"><Card>...</Card><Card>...</Card></Grid>
   </Container>
 </Container>
 ```
 
-Container owns max-width, padding, and gap. Grid owns column structure and column gap. No flex utilities, no grid utilities, no gap/p/m utilities. The components handle it.
+Container owns max-width, padding, gap. Grid owns columns and column gap.
 
 | Grid preset | Use for |
 |---|---|
 | linear | Equal-priority columns |
-| golden | Hierarchical (2:1 ratio) |
+| golden | Hierarchical (2:1) |
 | bento | Asymmetric showcase |
 | cards | Responsive card flow |
+| split | Equal columns |
 | sidebar | Sidebar + main |
 | form | Label/input pairs |
 | row | Horizontal group |
 | stack | Vertical sequence |
-| split | Equal columns |
 
-## Components: Affordances
+## Variant is semantic, never aesthetic
 
-`Card`, `Button`, `Alert`, `Empty`, `Badge`, `Input`, `Field`, `Tabs`, `Tooltip`, `Dialog`, etc. -- these are the affordances composites assemble from. Use them WHEN there is no composite. When a composite exists, the composite's block list tells you which components to render and which `variant` / `size` to pass.
+When you fall through to `rafters_component`, the `variant` is dictated by the
+JSDoc for the situation -- not chosen because you like how it looks.
 
-When falling through to `rafters_component`:
-- The component's JSDoc + `usagePatterns` tell you when each variant is correct
-- `variant` is a SEMANTIC choice driven by the JSDoc -- not an aesthetic preference (no choosing "ghost vs link" because you like it; the JSDoc tells you which fits the situation)
-- Wrong: "Let's make this Button look subtle, so `variant=ghost`"
-- Right: "This is the secondary action in a card footer; the Button JSDoc says secondary actions in card footers use `variant=secondary`"
+- Wrong: "make this button subtle, so `variant=ghost`"
+- Right: "this is the secondary action in a card footer; the JSDoc says that is
+  `variant=secondary`"
 
-## Hard Rules -- Never
+## Never -- and what to do instead
 
-- **No utility classes for visual properties.** No `bg-*`, `text-*`, `border-*`, `font-*`, `rounded-*`, `shadow-*`, `w-*`, `h-*`, `p-*`, `m-*`, `gap-*`, `flex`, `grid`, `items-*`, `justify-*`. None.
-- **No `var(--rafters-*)` in any file.** The exporter wires the CSS variables; the consumer NEVER references them directly.
-- **No `cn()` / `twMerge()`.** Use `classy()` if you need conditional classes (rare; usually means you are reaching for something a component should own).
-- **No `class=` / `className=` on Rafters components.** Use the component's token props (`variant`, `size`, etc.) -- AS DICTATED by the composite manifest or the component's JSDoc, not as a free choice.
-- **No wrapper `<div>` around Rafters components.** Components include their own spacing and sizing.
-- **No editing files in `lib/primitives/` or `components/ui/*.classes.ts`.** These are installed by `rafters add`. Fix consuming code or file an upstream bug.
-- **No arbitrary values.** No `text-[14px]`, no `bg-[#hex]`, no `w-[300px]`.
-- **No raw `<h1>` / `<p>` / `<span>` with classes.** Either you are inside `<Container as="article">` (where bare native HTML is correct) or you are using a component.
+Every row here is a write the hook rejects. Pre-empt it.
 
-## Authoring Custom Components
+| Never (assembly code) | Instead |
+|---|---|
+| `cn(...)` / `twMerge(...)` | `classy(...)` (rarely needed -- usually a component should own it) |
+| arbitrary values: `w-[300px]`, `text-[14px]`, `bg-[#hex]` | design tokens |
+| `flex`, `grid`, `gap-*`, `items-*`, `justify-*` | `Container` / `Grid` |
+| `p-*`, `m-*`, `px-*`, `mt-*` ... | `Container` owns spacing |
+| `bg-primary`, `text-destructive`, `border-success` ... | composite block `variant`, or component `variant` prop per JSDoc |
+| `text-sm`, `text-4xl`, `font-bold` ... | native HTML inside `<Container as="article">`, or the composite |
+| `rounded-*`, `shadow-*`, `w-[0-9]`, `h-*`, `max-w-*` ... | component-owned; don't set them |
+| `var(--rafters-*)` anywhere | never -- the exporter wires variables; consumers don't reference them |
+| `class=`/`className=` on a Rafters component | its token props (`variant`, `size`, ...) |
+| `<div className="...">` wrapping `<Button>`/`<Input>`/`<Card>`/`<Select>`/`<Dialog>` | components include their own spacing -- no wrapper |
+| `<h1>`/`<p>`/`<span>` **with classes** | bare native HTML inside `<Container as="article">`, or a component |
+| editing `lib/primitives/` or `components/ui/*.classes.ts` | read-only (installed by `rafters add`); fix consuming code or file upstream |
 
-When rafters doesn't ship the affordance you need, custom components live in `src/components/` (NOT `src/components/ui/` -- that subtree is rafters-installed and read-only). Inside `src/components/`, the rules relax: you DO author class strings, DO call `classy()` for conditional merging, DO reference semantic tokens via Tailwind utilities (`bg-primary`, `text-foreground`, etc.). That is how a custom component hooks into the rafters token system.
+## The one exception: authoring a custom component
+
+Only when rafters does not ship the affordance. It lives in `src/components/`
+(NOT `src/components/ui/`, which is rafters-installed, read-only). There you DO
+write class strings, DO use `classy()` for conditional merging, and DO reference
+semantic tokens via Tailwind utilities (`bg-primary`, `text-foreground`) -- that
+is how a custom component hooks into the token system.
 
 ```tsx
-// src/components/FeatureTile.tsx -- authoring
+// src/components/FeatureTile.tsx
 import { classy } from '@rafters/ui/classy';
 import type { ReactNode } from 'react';
 
-interface FeatureTileProps {
-  variant?: 'default' | 'highlighted';
-  children: ReactNode;
-}
-
-/**
- * Compact feature card for marketing layouts.
- * @cognitive-load 2/10
- * @accessibility AAA
- */
-export function FeatureTile({ variant = 'default', children }: FeatureTileProps) {
+/** Compact feature card. @cognitive-load 2/10 @accessibility AAA */
+export function FeatureTile({ highlighted, children }: { highlighted?: boolean; children: ReactNode }) {
   return (
-    <div
-      className={classy(
-        'rounded-lg p-6',
-        variant === 'highlighted' ? 'bg-primary text-primary-foreground' : 'bg-card text-foreground',
-      )}
-    >
+    <div className={classy('rounded-lg p-6', highlighted ? 'bg-primary text-primary-foreground' : 'bg-card text-foreground')}>
       {children}
     </div>
   );
 }
 ```
 
-**Authoring still bans:**
-- `var(--rafters-*)` -- use the Tailwind utility, never the raw CSS variable
-- Arbitrary values -- `bg-[#hex]`, `text-[14px]`, `w-[300px]` all forbidden
-- `cn()` / `twMerge()` -- `classy()` only
+Still banned even when authoring: `var(--rafters-*)`, arbitrary values,
+`cn()`/`twMerge()`. Assembly code (pages, layouts, routes) gets none of these
+relaxations.
 
-**A scaffolding MCP tool (`rafters_scaffold_component`) is planned** -- see issue #1548 -- that will generate this boilerplate, check similarity against existing components first to prevent duplication, and tag the output so the plugin can identify scaffolded files. Until that lands, follow the conventions above.
+## Before you finish
 
-## What the Agent Actually Decides
-
-- Information architecture: what content goes on a page, in what order
-- Composite selection: which pre-made pattern fits this content and intent
-- Component selection (fallback): which affordance when no composite exists
-- Interaction flow: routing, state transitions, data wiring
-- Content: the actual words and data the user reads
-
-Everything else -- size, color, spacing, weight, radius, shadow, hierarchy, layout rhythm, variant aesthetics -- the system owns.
+1. Every visible piece traces to: a composite, a component, or native HTML inside
+   `<Container as="article">`. Nothing visual was hand-authored in assembly code.
+2. No row of the Never table appears in what you wrote.
+3. The composites/variants you chose match the project's recorded `intent`, and
+   the composition stays within `attentionBudget` (split or trim content, never
+   styling, if over).
+4. You can name the MCP intelligence (designer intent, do/never, JSDoc) and the
+   config intent/budget behind each choice -- not your own taste.
