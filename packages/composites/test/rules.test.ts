@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import type { CompositeFile } from '../src/manifest';
-import { findCompatibleConsumers, findCompatibleProducers, matchRules } from '../src/rules';
+import type { CompositeBlock, CompositeFile } from '../src/manifest';
+import {
+  deriveCompositeBoundary,
+  findCompatibleConsumers,
+  findCompatibleProducers,
+  matchRules,
+} from '../src/rules';
 
 function makeComposite(
   overrides: Partial<Pick<CompositeFile, 'input' | 'output'>> & {
@@ -146,5 +151,59 @@ describe('findCompatibleProducers', () => {
   it('returns empty array for empty candidates', () => {
     const consumer = makeComposite({ input: ['x'] });
     expect(findCompatibleProducers(consumer, [])).toEqual([]);
+  });
+});
+
+function blk(id: string, io: { input?: string[]; output?: string[] } = {}): CompositeBlock {
+  return { id, type: 'text', input: io.input ?? [], output: io.output ?? [] };
+}
+
+function compositeOf(blocks: CompositeBlock[]): CompositeFile {
+  return {
+    manifest: {
+      id: 'c',
+      name: 'C',
+      category: 'widget',
+      description: '',
+      keywords: [],
+      cognitiveLoad: 1,
+    },
+    input: [],
+    output: [],
+    blocks,
+  };
+}
+
+describe('deriveCompositeBoundary', () => {
+  it('bubbles up block inputs not produced internally', () => {
+    const c = compositeOf([blk('a', { input: ['email'] })]);
+    expect(deriveCompositeBoundary(c)).toEqual({ input: ['email'], output: [] });
+  });
+
+  it('exposes block outputs not consumed internally', () => {
+    const c = compositeOf([blk('a', { output: ['user'] })]);
+    expect(deriveCompositeBoundary(c)).toEqual({ input: [], output: ['user'] });
+  });
+
+  it('hides internally-wired edges (an output feeds an input by name)', () => {
+    const c = compositeOf([
+      blk('producer', { output: ['email'] }),
+      blk('consumer', { input: ['email'], output: ['valid'] }),
+    ]);
+    // email is produced and consumed internally -> off the boundary; valid is unconsumed -> boundary output
+    expect(deriveCompositeBoundary(c)).toEqual({ input: [], output: ['valid'] });
+  });
+
+  it('dedupes and preserves first-seen order', () => {
+    const c = compositeOf([
+      blk('a', { input: ['x', 'y'] }),
+      blk('b', { input: ['x'], output: ['z'] }),
+    ]);
+    expect(deriveCompositeBoundary(c)).toEqual({ input: ['x', 'y'], output: ['z'] });
+  });
+
+  it('is empty for blocks without I/O', () => {
+    const c = compositeOf([blk('a'), blk('b')]);
+    expect(deriveCompositeBoundary(c)).toEqual({ input: [], output: [] });
   });
 });

@@ -28,6 +28,10 @@ export type AppliedRule = z.infer<typeof AppliedRuleSchema>;
 export const CompositeBlockSchema = z.object({
   id: z.string().min(1),
   type: z.string().min(1),
+  /** Signatures this block consumes / produces (rule names) -- the typed I/O edges.
+   * Within a composite, an output named X feeds any block input named X. */
+  input: z.array(z.string()).optional(),
+  output: z.array(z.string()).optional(),
   content: z.unknown().optional(),
   children: z.array(z.string()).optional(),
   parentId: z.string().optional(),

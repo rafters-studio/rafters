@@ -73,6 +73,7 @@ export { resolveBlockTag } from './resolve-block';
 export { rulesToHtmlAttrs } from './rule-attrs';
 export type { RuleMatch } from './rules';
 export {
+  deriveCompositeBoundary,
   findCompatibleConsumers,
   findCompatibleProducers,
   matchRules,
