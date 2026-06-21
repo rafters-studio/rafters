@@ -228,6 +228,15 @@ describe('isAlreadyInstalled', () => {
     expect(isAlreadyInstalled(baseConfig, item)).toBe(true);
   });
 
+  it('returns true for installed rule (not the primitives bucket)', () => {
+    const config: RaftersConfig = {
+      ...baseConfig,
+      installed: { components: [], primitives: [], composites: [], rules: ['email'] },
+    };
+    const item: RegistryItem = { name: 'email', type: 'rule', primitives: [], files: [] };
+    expect(isAlreadyInstalled(config, item)).toBe(true);
+  });
+
   it('returns false for uninstalled component', () => {
     const item: RegistryItem = { name: 'dialog', type: 'ui', primitives: [], files: [] };
     expect(isAlreadyInstalled(baseConfig, item)).toBe(false);
@@ -285,6 +294,26 @@ describe('trackInstalled', () => {
     trackInstalled(config, items);
 
     expect(config.installed?.primitives).toContain('classy');
+  });
+
+  it('adds rules to the rules bucket, not primitives', () => {
+    const config: RaftersConfig = {
+      framework: 'react-router',
+      componentsPath: 'components/ui',
+      primitivesPath: 'lib/primitives',
+      compositesPath: 'composites',
+      cssPath: null,
+      shadcn: false,
+      exports: { tailwind: true, typescript: true, dtcg: false, compiled: false },
+      installed: { components: [], primitives: [] },
+    };
+
+    const items: RegistryItem[] = [{ name: 'email', type: 'rule', primitives: [], files: [] }];
+
+    trackInstalled(config, items);
+
+    expect(config.installed?.rules).toContain('email');
+    expect(config.installed?.primitives).not.toContain('email');
   });
 
   it('deduplicates when adding same item twice', () => {

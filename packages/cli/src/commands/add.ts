@@ -9,7 +9,7 @@ import { existsSync } from 'node:fs';
 import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { RegistryClient } from '../registry/client.js';
-import type { RegistryFile, RegistryItem } from '../registry/types.js';
+import type { RegistryFile, RegistryItem, RegistryItemType } from '../registry/types.js';
 import {
   type ComponentTarget,
   resolveComponentTarget,
@@ -180,13 +180,14 @@ const FOLDER_NAMES = new Set(['composites']);
  */
 export function isAlreadyInstalled(config: RaftersConfig | null, item: RegistryItem): boolean {
   if (!config?.installed) return false;
-  if (item.type === 'ui') {
-    return config.installed.components.includes(item.name);
-  }
-  if (item.type === 'composite') {
-    return (config.installed.composites ?? []).includes(item.name);
-  }
-  return config.installed.primitives.includes(item.name);
+  const { components, primitives, composites, rules } = config.installed;
+  const bucketByType: Record<RegistryItemType, string[]> = {
+    ui: components,
+    primitive: primitives,
+    composite: composites ?? [],
+    rule: rules ?? [],
+  };
+  return bucketByType[item.type].includes(item.name);
 }
 
 /**
@@ -225,13 +226,14 @@ export function trackInstalled(config: RaftersConfig, items: RegistryItem[]): vo
   const installed = config.installed;
   if (!installed.composites) installed.composites = [];
   if (!installed.rules) installed.rules = [];
+  const bucketByType: Record<RegistryItemType, string[]> = {
+    ui: installed.components,
+    primitive: installed.primitives,
+    composite: installed.composites,
+    rule: installed.rules,
+  };
   for (const item of items) {
-    const bucket =
-      item.type === 'ui'
-        ? installed.components
-        : item.type === 'composite'
-          ? installed.composites
-          : installed.primitives;
+    const bucket = bucketByType[item.type];
     if (!bucket.includes(item.name)) bucket.push(item.name);
   }
   installed.components.sort();
