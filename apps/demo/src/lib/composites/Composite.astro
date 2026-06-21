@@ -1,0 +1,140 @@
+---
+/**
+ * Composite render engine -- copied in from @rafters/composites (the intended
+ * copy-in model). Pure helpers are imported from the package; the literal
+ * import.meta.glob patterns resolve against THIS app's /src so they discover the
+ * demo's composites and ui components. See the package source for the full doc.
+ */
+import {
+  type CompositeBlock,
+  type CompositeFile,
+  discoverFromVite,
+  resolveBlockTag,
+  rulesToHtmlAttrs,
+  type ViteRawGlob,
+} from '@rafters/composites';
+
+interface Props {
+  id?: string;
+  composite?: CompositeFile;
+  blocks?: CompositeBlock[];
+  seen?: string[];
+}
+
+const { id, composite, blocks, seen } = Astro.props;
+
+const seenChain = seen ?? [];
+const cyclic = id !== undefined && seenChain.includes(id);
+const chain = id !== undefined ? [...seenChain, id] : seenChain;
+
+// Literal inline globs -- Vite statically analyzes these patterns. Do not
+// extract them into variables or helpers.
+const compositeGlob = import.meta.glob('/src/**/*.composite.json', {
+  eager: true,
+  query: '?raw',
+  import: 'default',
+}) as ViteRawGlob;
+
+const componentModules = import.meta.glob('/src/components/ui/*.astro', {
+  eager: true,
+}) as Record<string, { default: unknown }>;
+
+const { registry } = discoverFromVite(compositeGlob);
+
+const components: Record<string, unknown> = {};
+for (const [path, module] of Object.entries(componentModules)) {
+  const file = path.split('/').pop() ?? '';
+  const name = file.replace(/\.astro$/, '');
+  if (name) components[name] = module.default;
+}
+
+let sourceBlocks: CompositeBlock[] = [];
+let missing = false;
+if (blocks) {
+  sourceBlocks = blocks;
+} else if (composite) {
+  sourceBlocks = composite.blocks;
+} else if (id) {
+  const found = registry.get(id);
+  if (found) {
+    sourceBlocks = found.blocks;
+  } else {
+    missing = true;
+  }
+}
+
+const blockMap = new Map<string, CompositeBlock>();
+for (const block of sourceBlocks) blockMap.set(block.id, block);
+const roots = sourceBlocks.filter((b) => !b.parentId);
+
+function childrenOf(block: CompositeBlock): CompositeBlock[] {
+  if (!block.children) return [];
+  const out: CompositeBlock[] = [];
+  for (const childId of block.children) {
+    const child = blockMap.get(childId);
+    if (child) out.push(child);
+  }
+  return out;
+}
+
+function subtree(block: CompositeBlock): CompositeBlock[] {
+  const slice: CompositeBlock[] = [];
+  const visited = new Set<string>();
+  const collect = (b: CompositeBlock, isRoot: boolean): void => {
+    if (visited.has(b.id)) return;
+    visited.add(b.id);
+    const { parentId, ...rest } = b;
+    slice.push(isRoot ? rest : b);
+    for (const child of childrenOf(b)) collect(child, false);
+  };
+  collect(block, true);
+  return slice;
+}
+
+function attrsOf(block: CompositeBlock): Record<string, unknown> {
+  return block.meta ? { ...block.meta } : {};
+}
+
+function textOf(block: CompositeBlock): string | null {
+  return typeof block.content === 'string' ? block.content : null;
+}
+---
+
+{missing && <Fragment set:html={`<!-- composite not found: ${id} -->`} />}
+{cyclic && <Fragment set:html={`<!-- composite cycle: ${[...seenChain, id].join(' -> ')} -->`} />}
+{
+  !cyclic &&
+    roots.map((block) => {
+      const resolution = resolveBlockTag(block.type);
+
+      if (resolution.kind === 'composite') {
+        return <Astro.self id={resolution.id} seen={chain} />;
+      }
+
+      const text = textOf(block);
+      const kids = childrenOf(block);
+      const attrs = { ...attrsOf(block), ...rulesToHtmlAttrs(block.rules) };
+
+      if (resolution.kind === 'component') {
+        const Component = components[resolution.name] ?? 'div';
+        return (
+          <Component {...attrs}>
+            {text}
+            {kids.map((child) => (
+              <Astro.self blocks={subtree(child)} seen={chain} />
+            ))}
+          </Component>
+        );
+      }
+
+      const Native = resolution.tag;
+      return (
+        <Native {...attrs}>
+          {text}
+          {kids.map((child) => (
+            <Astro.self blocks={subtree(child)} seen={chain} />
+          ))}
+        </Native>
+      );
+    })
+}

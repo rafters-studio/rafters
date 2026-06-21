@@ -1,0 +1,10 @@
+---
+// Thin demo component for composite block type "input". The slot is the block's
+// content (the label); type/required/minlength arrive as rule-derived HTML5 attrs.
+const { inputType, type, required, minlength, ...rest } = Astro.props;
+const resolvedType = type ?? inputType ?? 'text';
+---
+<label class="cx-field">
+  <span class="cx-field-label"><slot /></span>
+  <input type={resolvedType} required={required} minlength={minlength} {...rest} />
+</label>

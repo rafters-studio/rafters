@@ -1,0 +1,5 @@
+---
+// Thin demo component for composite block type "button".
+const { variant, ...rest } = Astro.props;
+---
+<button class="cx-button" data-variant={variant} {...rest}><slot /></button>

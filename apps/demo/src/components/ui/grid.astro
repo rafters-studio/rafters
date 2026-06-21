@@ -1,0 +1,5 @@
+---
+// Thin demo component for composite block type "grid".
+const { columns, ...rest } = Astro.props;
+---
+<div class="cx-grid" data-columns={columns} {...rest}><slot /></div>
