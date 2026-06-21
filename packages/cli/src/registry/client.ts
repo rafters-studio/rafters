@@ -96,17 +96,16 @@ export class RegistryClient {
    * Tries each source in order; a non-"not found" error (network, 5xx) aborts.
    */
   async fetchItem(name: string): Promise<RegistryItem> {
-    let firstError: unknown;
     for (const type of FETCH_ORDER) {
       try {
         return await this.fetchByType[type](name);
       } catch (err) {
-        firstError ??= err;
+        // Absent from this source -> try the next; a real error (network/5xx) aborts.
         if (err instanceof Error && err.message.includes('not found')) continue;
         throw err;
       }
     }
-    throw firstError;
+    throw new Error(`"${name}" not found in registry (component, primitive, composite, or rule)`);
   }
 
   /**

@@ -206,4 +206,13 @@ describe('deriveCompositeBoundary', () => {
     const c = compositeOf([blk('a'), blk('b')]);
     expect(deriveCompositeBoundary(c)).toEqual({ input: [], output: [] });
   });
+
+  it('treats blocks with undeclared (undefined) I/O as having none', () => {
+    // input/output are optional on the schema; a parsed block may omit them.
+    const c = compositeOf([
+      { id: 'a', type: 'text' },
+      { id: 'b', type: 'text', input: ['email'] },
+    ]);
+    expect(deriveCompositeBoundary(c)).toEqual({ input: ['email'], output: [] });
+  });
 });

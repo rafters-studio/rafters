@@ -65,6 +65,17 @@ async function loadConfig(cwd: string): Promise<RaftersConfig | null> {
 }
 
 /**
+ * Registry URL precedence: CLI flag > project config (self-hosted) > built-in default.
+ * Returns undefined when neither is set; RegistryClient applies the default.
+ */
+export function resolveRegistryUrl(
+  options: AddOptions,
+  config: RaftersConfig | null,
+): string | undefined {
+  return options.registryUrl ?? config?.registryUrl;
+}
+
+/**
  * Save config back to .rafters/config.rafters.json
  */
 async function saveConfig(cwd: string, config: RaftersConfig): Promise<void> {
@@ -494,7 +505,7 @@ export async function add(componentArgs: string[], options: AddOptions): Promise
   const cwd = process.cwd();
   // Registry URL resolves: CLI flag > project config (self-hosted / internal registry) > default.
   const config = await loadConfig(cwd);
-  const client = new RegistryClient(options.registryUrl ?? config?.registryUrl);
+  const client = new RegistryClient(resolveRegistryUrl(options, config));
 
   // Detect folder name as first argument (e.g., `rafters add composites hero-banner`)
   let folder: string | undefined;

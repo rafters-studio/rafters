@@ -11,9 +11,11 @@ import { describe, expect, it } from 'vitest';
 import { zocker } from 'zocker';
 import { z } from 'zod';
 import {
+  type AddOptions,
   collectDependencies,
   getInstalledNames,
   isAlreadyInstalled,
+  resolveRegistryUrl,
   trackInstalled,
   transformFileContent,
 } from '../../src/commands/add.js';
@@ -254,6 +256,33 @@ describe('isAlreadyInstalled', () => {
     };
     const item: RegistryItem = { name: 'button', type: 'ui', primitives: [], files: [] };
     expect(isAlreadyInstalled(configNoInstalled, item)).toBe(false);
+  });
+});
+
+describe('resolveRegistryUrl', () => {
+  const minimal = (registryUrl?: string): RaftersConfig => ({
+    framework: 'react-router',
+    componentsPath: 'components/ui',
+    primitivesPath: 'lib/primitives',
+    compositesPath: 'composites',
+    cssPath: null,
+    shadcn: false,
+    exports: { tailwind: true, typescript: true, dtcg: false, compiled: false },
+    registryUrl,
+  });
+
+  it('prefers the CLI flag over config', () => {
+    const opts: AddOptions = { registryUrl: 'http://flag' };
+    expect(resolveRegistryUrl(opts, minimal('http://cfg'))).toBe('http://flag');
+  });
+
+  it('falls back to config when no flag is given', () => {
+    expect(resolveRegistryUrl({}, minimal('http://cfg'))).toBe('http://cfg');
+  });
+
+  it('returns undefined when neither is set (RegistryClient applies the default)', () => {
+    expect(resolveRegistryUrl({}, null)).toBeUndefined();
+    expect(resolveRegistryUrl({}, minimal(undefined))).toBeUndefined();
   });
 });
 
