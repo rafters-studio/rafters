@@ -16,6 +16,13 @@ export type OutsideClickHandler = (event: MouseEvent | TouchEvent | PointerEvent
 export type EscapeKeyHandler = (event: KeyboardEvent) => void;
 
 /**
+ * Scroll-trigger handler. Fires when the observed element crosses the trigger
+ * line. `active` is whether it is currently intersecting; `entry` is the raw
+ * IntersectionObserver entry for consumers that need ratios/bounds.
+ */
+export type ScrollTriggerHandler = (active: boolean, entry: IntersectionObserverEntry) => void;
+
+/**
  * Orientation for navigation primitives
  */
 export type Orientation = 'horizontal' | 'vertical' | 'both';
