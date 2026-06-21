@@ -489,7 +489,10 @@ export async function add(componentArgs: string[], options: AddOptions): Promise
   setAgentMode(options.agent ?? false);
 
   let components = componentArgs;
-  const client = new RegistryClient(options.registryUrl);
+  const cwd = process.cwd();
+  // Registry URL resolves: CLI flag > project config (self-hosted / internal registry) > default.
+  const config = await loadConfig(cwd);
+  const client = new RegistryClient(options.registryUrl ?? config?.registryUrl);
 
   // Detect folder name as first argument (e.g., `rafters add composites hero-banner`)
   let folder: string | undefined;
@@ -524,8 +527,6 @@ export async function add(componentArgs: string[], options: AddOptions): Promise
     return;
   }
 
-  const cwd = process.cwd();
-
   // Validate that .rafters/ exists
   const initialized = await isInitialized(cwd);
   if (!initialized) {
@@ -533,9 +534,6 @@ export async function add(componentArgs: string[], options: AddOptions): Promise
     process.exitCode = 1;
     return;
   }
-
-  // Load project config for path mappings
-  const config = await loadConfig(cwd);
 
   // --update is a clearer alias for --overwrite
   if (options.update) {
