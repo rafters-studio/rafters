@@ -171,10 +171,10 @@ function textOf(block: CompositeBlock): string | null {
       const attrs = { ...attrsOf(block), ...rulesToHtmlAttrs(block.rules) };
 
       if (resolution.kind === 'component') {
-        const Tag = components[resolution.name] as
-          | ((props: Record<string, unknown>) => unknown)
-          | undefined;
-        const Component = Tag ?? 'div';
+        // Note: no inline TS cast here -- a multi-line `as (...) => unknown`
+        // annotation in the template fails astro/esbuild ("Expected ) but
+        // found :"). The component map is `unknown`-valued; Astro renders it.
+        const Component = components[resolution.name] ?? 'div';
         return (
           <Component {...attrs}>
             {text}
