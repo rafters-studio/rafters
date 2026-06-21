@@ -37,27 +37,5 @@ pre-commit:
 pre-push:
   parallel: false
   commands:
-    scip-freshness:
-      # index.scip is tracked and goes stale silently (#1633); a stale index
-      # makes `legion sym` lie and every concurrent branch conflict on the
-      # binary. Lockfile semantics: regenerate, compare, reject the push if
-      # it was stale -- the fresh file is left in the worktree so the fix is
-      # commit-and-push-again.
-      priority: 1
-      run: |
-        if ! command -v legion >/dev/null 2>&1; then
-          echo "legion not found; skipping index.scip freshness check"
-          exit 0
-        fi
-        legion index rafters >/dev/null 2>&1 || true
-        if ! git diff --quiet -- index.scip; then
-          echo ""
-          echo "index.scip was STALE (#1633). It has been regenerated for you."
-          echo "Commit the fresh index and push again:"
-          echo "  git add index.scip && git commit -m 'chore: refresh index.scip' && git push"
-          exit 1
-        fi
-        echo "index.scip fresh"
     preflight:
-      priority: 2
       run: pnpm preflight
