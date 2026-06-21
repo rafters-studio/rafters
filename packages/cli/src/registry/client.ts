@@ -22,8 +22,8 @@ const REGISTRY_SOURCE: Record<RegistryItemType, { folder: string; label: string 
   rule: { folder: 'rules', label: 'Rule' },
 };
 
-/** Order tried by fetchItem when the type is not known up front. */
-const FETCH_ORDER: RegistryItemType[] = ['ui', 'primitive', 'composite', 'rule'];
+/** Order tried by fetchItem when the type is unknown -- the insertion order of REGISTRY_SOURCE. */
+const FETCH_ORDER = Object.keys(REGISTRY_SOURCE) as RegistryItemType[];
 
 type Fetcher = (name: string) => Promise<RegistryItem>;
 
