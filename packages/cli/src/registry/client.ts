@@ -1,7 +1,7 @@
 /**
  * Registry Client
  *
- * Fetches components and primitives from the rafters registry.
+ * Fetches items (components, primitives, composites, rules) from the rafters registry.
  */
 
 import {
@@ -9,158 +9,107 @@ import {
   RegistryIndexSchema,
   type RegistryItem,
   RegistryItemSchema,
+  type RegistryItemType,
 } from './types.js';
 
 const DEFAULT_REGISTRY_URL = 'https://rafters.studio';
 
+/** The registry folder and human label for each item type. */
+const REGISTRY_SOURCE: Record<RegistryItemType, { folder: string; label: string }> = {
+  ui: { folder: 'components', label: 'Component' },
+  primitive: { folder: 'primitives', label: 'Primitive' },
+  composite: { folder: 'composites', label: 'Composite' },
+  rule: { folder: 'rules', label: 'Rule' },
+};
+
+/** Order tried by fetchItem when the type is unknown -- the insertion order of REGISTRY_SOURCE. */
+const FETCH_ORDER = Object.keys(REGISTRY_SOURCE) as RegistryItemType[];
+
+type Fetcher = (name: string) => Promise<RegistryItem>;
+
 /**
- * Registry client for fetching components and primitives
+ * Registry client for fetching registry items.
  */
 export class RegistryClient {
   private baseUrl: string;
   private cache = new Map<string, RegistryItem>();
+  private readonly fetchByType: Record<RegistryItemType, Fetcher>;
+
+  /** Typed fetchers -- one shared body, specialized per type. */
+  readonly fetchComponent: Fetcher;
+  readonly fetchPrimitive: Fetcher;
+  readonly fetchComposite: Fetcher;
+  readonly fetchRule: Fetcher;
 
   constructor(baseUrl: string = DEFAULT_REGISTRY_URL) {
     this.baseUrl = baseUrl.replace(/\/$/, '');
+
+    // The one fetch body -- a closure over baseUrl + cache, specialized by type.
+    const fetchFrom =
+      (type: RegistryItemType): Fetcher =>
+      async (name) => {
+        const { folder, label } = REGISTRY_SOURCE[type];
+        const cacheKey = `${type}:${name}`;
+        const cached = this.cache.get(cacheKey);
+        if (cached) return cached;
+
+        const response = await fetch(`${this.baseUrl}/registry/${folder}/${name}.json`);
+        if (response.status === 404) {
+          throw new Error(`${label} "${name}" not found`);
+        }
+        if (!response.ok) {
+          throw new Error(
+            `Failed to fetch ${label.toLowerCase()} "${name}": ${response.status} ${response.statusText}`,
+          );
+        }
+
+        const item = RegistryItemSchema.parse(await response.json());
+        this.cache.set(cacheKey, item);
+        return item;
+      };
+
+    this.fetchByType = {
+      ui: fetchFrom('ui'),
+      primitive: fetchFrom('primitive'),
+      composite: fetchFrom('composite'),
+      rule: fetchFrom('rule'),
+    };
+    this.fetchComponent = this.fetchByType.ui;
+    this.fetchPrimitive = this.fetchByType.primitive;
+    this.fetchComposite = this.fetchByType.composite;
+    this.fetchRule = this.fetchByType.rule;
   }
 
   /**
-   * Fetch the registry index
+   * Fetch the registry index.
    */
   async fetchIndex(): Promise<RegistryIndex> {
-    const url = `${this.baseUrl}/registry/index.json`;
-    const response = await fetch(url);
-
+    const response = await fetch(`${this.baseUrl}/registry/index.json`);
     if (!response.ok) {
       throw new Error(`Failed to fetch registry index: ${response.status} ${response.statusText}`);
     }
-
-    const data: unknown = await response.json();
-    return RegistryIndexSchema.parse(data);
+    return RegistryIndexSchema.parse(await response.json());
   }
 
   /**
-   * Fetch a component by name
-   */
-  async fetchComponent(name: string): Promise<RegistryItem> {
-    // Check cache first
-    const cacheKey = `component:${name}`;
-    const cached = this.cache.get(cacheKey);
-    if (cached) {
-      return cached;
-    }
-
-    const url = `${this.baseUrl}/registry/components/${name}.json`;
-    const response = await fetch(url);
-
-    if (response.status === 404) {
-      throw new Error(`Component "${name}" not found`);
-    }
-
-    if (!response.ok) {
-      throw new Error(
-        `Failed to fetch component "${name}": ${response.status} ${response.statusText}`,
-      );
-    }
-
-    const data: unknown = await response.json();
-    const item = RegistryItemSchema.parse(data);
-
-    // Cache the result
-    this.cache.set(cacheKey, item);
-
-    return item;
-  }
-
-  /**
-   * Fetch a primitive by name
-   */
-  async fetchPrimitive(name: string): Promise<RegistryItem> {
-    // Check cache first
-    const cacheKey = `primitive:${name}`;
-    const cached = this.cache.get(cacheKey);
-    if (cached) {
-      return cached;
-    }
-
-    const url = `${this.baseUrl}/registry/primitives/${name}.json`;
-    const response = await fetch(url);
-
-    if (response.status === 404) {
-      throw new Error(`Primitive "${name}" not found`);
-    }
-
-    if (!response.ok) {
-      throw new Error(
-        `Failed to fetch primitive "${name}": ${response.status} ${response.statusText}`,
-      );
-    }
-
-    const data: unknown = await response.json();
-    const item = RegistryItemSchema.parse(data);
-
-    // Cache the result
-    this.cache.set(cacheKey, item);
-
-    return item;
-  }
-
-  /**
-   * Fetch a composite by name
-   */
-  async fetchComposite(name: string): Promise<RegistryItem> {
-    const cacheKey = `composite:${name}`;
-    const cached = this.cache.get(cacheKey);
-    if (cached) {
-      return cached;
-    }
-
-    const url = `${this.baseUrl}/registry/composites/${name}.json`;
-    const response = await fetch(url);
-
-    if (response.status === 404) {
-      throw new Error(`Composite "${name}" not found`);
-    }
-
-    if (!response.ok) {
-      throw new Error(
-        `Failed to fetch composite "${name}": ${response.status} ${response.statusText}`,
-      );
-    }
-
-    const data: unknown = await response.json();
-    const item = RegistryItemSchema.parse(data);
-
-    this.cache.set(cacheKey, item);
-
-    return item;
-  }
-
-  /**
-   * Fetch a registry item by name
-   * Tries component, then primitive, then composite
+   * Fetch a registry item by name when the type is unknown.
+   * Tries each source in order; a non-"not found" error (network, 5xx) aborts.
    */
   async fetchItem(name: string): Promise<RegistryItem> {
-    try {
-      return await this.fetchComponent(name);
-    } catch (err) {
-      if (err instanceof Error && err.message.includes('not found')) {
-        try {
-          return await this.fetchPrimitive(name);
-        } catch {
-          try {
-            return await this.fetchComposite(name);
-          } catch {
-            throw err;
-          }
-        }
+    for (const type of FETCH_ORDER) {
+      try {
+        return await this.fetchByType[type](name);
+      } catch (err) {
+        // Absent from this source -> try the next; a real error (network/5xx) aborts.
+        if (err instanceof Error && err.message.includes('not found')) continue;
+        throw err;
       }
-      throw err;
     }
+    throw new Error(`"${name}" not found in registry (component, primitive, composite, or rule)`);
   }
 
   /**
-   * List all available components
+   * List all available components.
    */
   async listComponents(): Promise<Array<{ name: string; description?: string }>> {
     const index = await this.fetchIndex();
@@ -168,7 +117,7 @@ export class RegistryClient {
   }
 
   /**
-   * List all available composites
+   * List all available composites.
    */
   async listComposites(): Promise<Array<{ name: string; description?: string }>> {
     const index = await this.fetchIndex();
@@ -176,7 +125,7 @@ export class RegistryClient {
   }
 
   /**
-   * Check if a component exists in the registry
+   * Check if a component exists in the registry.
    */
   async componentExists(name: string): Promise<boolean> {
     try {
@@ -188,7 +137,7 @@ export class RegistryClient {
   }
 
   /**
-   * Check if a primitive exists in the registry
+   * Check if a primitive exists in the registry.
    */
   async primitiveExists(name: string): Promise<boolean> {
     try {
@@ -200,35 +149,27 @@ export class RegistryClient {
   }
 
   /**
-   * Resolve all dependencies for a component recursively
-   * Returns items in installation order (dependencies first)
+   * Resolve all dependencies for an item recursively.
+   * Returns items in installation order (dependencies first).
    */
   async resolveDependencies(name: string, resolved = new Set<string>()): Promise<RegistryItem[]> {
-    if (resolved.has(name)) {
-      return [];
-    }
+    if (resolved.has(name)) return [];
 
     const item = await this.fetchItem(name);
     resolved.add(name);
 
     const deps: RegistryItem[] = [];
-
-    // Resolve primitive dependencies first
     for (const dep of item.primitives) {
       if (!resolved.has(dep)) {
-        const depItems = await this.resolveDependencies(dep, resolved);
-        deps.push(...depItems);
+        deps.push(...(await this.resolveDependencies(dep, resolved)));
       }
     }
-
-    // Add the item itself after its dependencies
     deps.push(item);
-
     return deps;
   }
 }
 
 /**
- * Default registry client instance
+ * Default registry client instance.
  */
 export const registryClient = new RegistryClient();

@@ -211,6 +211,8 @@ async function stripImportedDeclarations(
  */
 export interface RaftersConfig {
   framework: Framework;
+  /** Registry to install from / query. Set this to host your own internal registry. */
+  registryUrl?: string;
   componentTarget?: ComponentTarget;
   componentsPath: PathField;
   primitivesPath: PathField;

@@ -23,7 +23,7 @@ export type RegistryFile = z.infer<typeof RegistryFileSchema>;
 /**
  * Item type in registry
  */
-export const RegistryItemTypeSchema = z.enum(['ui', 'primitive', 'composite']);
+export const RegistryItemTypeSchema = z.enum(['ui', 'primitive', 'composite', 'rule']);
 
 export type RegistryItemType = z.infer<typeof RegistryItemTypeSchema>;
 

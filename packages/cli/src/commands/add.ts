@@ -9,7 +9,7 @@ import { existsSync } from 'node:fs';
 import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { RegistryClient } from '../registry/client.js';
-import type { RegistryFile, RegistryItem } from '../registry/types.js';
+import type { RegistryFile, RegistryItem, RegistryItemType } from '../registry/types.js';
 import {
   type ComponentTarget,
   resolveComponentTarget,
@@ -62,6 +62,17 @@ async function loadConfig(cwd: string): Promise<RaftersConfig | null> {
     }
     return null;
   }
+}
+
+/**
+ * Registry URL precedence: CLI flag > project config (self-hosted) > built-in default.
+ * Returns undefined when neither is set; RegistryClient applies the default.
+ */
+export function resolveRegistryUrl(
+  options: AddOptions,
+  config: RaftersConfig | null,
+): string | undefined {
+  return options.registryUrl ?? config?.registryUrl;
 }
 
 /**
@@ -180,13 +191,14 @@ const FOLDER_NAMES = new Set(['composites']);
  */
 export function isAlreadyInstalled(config: RaftersConfig | null, item: RegistryItem): boolean {
   if (!config?.installed) return false;
-  if (item.type === 'ui') {
-    return config.installed.components.includes(item.name);
-  }
-  if (item.type === 'composite') {
-    return (config.installed.composites ?? []).includes(item.name);
-  }
-  return config.installed.primitives.includes(item.name);
+  const { components, primitives, composites, rules } = config.installed;
+  const bucketByType: Record<RegistryItemType, string[]> = {
+    ui: components,
+    primitive: primitives,
+    composite: composites ?? [],
+    rule: rules ?? [],
+  };
+  return bucketByType[item.type].includes(item.name);
 }
 
 /**
@@ -225,13 +237,14 @@ export function trackInstalled(config: RaftersConfig, items: RegistryItem[]): vo
   const installed = config.installed;
   if (!installed.composites) installed.composites = [];
   if (!installed.rules) installed.rules = [];
+  const bucketByType: Record<RegistryItemType, string[]> = {
+    ui: installed.components,
+    primitive: installed.primitives,
+    composite: installed.composites,
+    rule: installed.rules,
+  };
   for (const item of items) {
-    const bucket =
-      item.type === 'ui'
-        ? installed.components
-        : item.type === 'composite'
-          ? installed.composites
-          : installed.primitives;
+    const bucket = bucketByType[item.type];
     if (!bucket.includes(item.name)) bucket.push(item.name);
   }
   installed.components.sort();
@@ -489,7 +502,10 @@ export async function add(componentArgs: string[], options: AddOptions): Promise
   setAgentMode(options.agent ?? false);
 
   let components = componentArgs;
-  const client = new RegistryClient(options.registryUrl);
+  const cwd = process.cwd();
+  // Registry URL resolves: CLI flag > project config (self-hosted / internal registry) > default.
+  const config = await loadConfig(cwd);
+  const client = new RegistryClient(resolveRegistryUrl(options, config));
 
   // Detect folder name as first argument (e.g., `rafters add composites hero-banner`)
   let folder: string | undefined;
@@ -524,8 +540,6 @@ export async function add(componentArgs: string[], options: AddOptions): Promise
     return;
   }
 
-  const cwd = process.cwd();
-
   // Validate that .rafters/ exists
   const initialized = await isInitialized(cwd);
   if (!initialized) {
@@ -533,9 +547,6 @@ export async function add(componentArgs: string[], options: AddOptions): Promise
     process.exitCode = 1;
     return;
   }
-
-  // Load project config for path mappings
-  const config = await loadConfig(cwd);
 
   // --update is a clearer alias for --overwrite
   if (options.update) {

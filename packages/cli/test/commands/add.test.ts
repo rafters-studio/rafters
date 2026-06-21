@@ -11,9 +11,11 @@ import { describe, expect, it } from 'vitest';
 import { zocker } from 'zocker';
 import { z } from 'zod';
 import {
+  type AddOptions,
   collectDependencies,
   getInstalledNames,
   isAlreadyInstalled,
+  resolveRegistryUrl,
   trackInstalled,
   transformFileContent,
 } from '../../src/commands/add.js';
@@ -228,6 +230,15 @@ describe('isAlreadyInstalled', () => {
     expect(isAlreadyInstalled(baseConfig, item)).toBe(true);
   });
 
+  it('returns true for installed rule (not the primitives bucket)', () => {
+    const config: RaftersConfig = {
+      ...baseConfig,
+      installed: { components: [], primitives: [], composites: [], rules: ['email'] },
+    };
+    const item: RegistryItem = { name: 'email', type: 'rule', primitives: [], files: [] };
+    expect(isAlreadyInstalled(config, item)).toBe(true);
+  });
+
   it('returns false for uninstalled component', () => {
     const item: RegistryItem = { name: 'dialog', type: 'ui', primitives: [], files: [] };
     expect(isAlreadyInstalled(baseConfig, item)).toBe(false);
@@ -245,6 +256,33 @@ describe('isAlreadyInstalled', () => {
     };
     const item: RegistryItem = { name: 'button', type: 'ui', primitives: [], files: [] };
     expect(isAlreadyInstalled(configNoInstalled, item)).toBe(false);
+  });
+});
+
+describe('resolveRegistryUrl', () => {
+  const minimal = (registryUrl?: string): RaftersConfig => ({
+    framework: 'react-router',
+    componentsPath: 'components/ui',
+    primitivesPath: 'lib/primitives',
+    compositesPath: 'composites',
+    cssPath: null,
+    shadcn: false,
+    exports: { tailwind: true, typescript: true, dtcg: false, compiled: false },
+    registryUrl,
+  });
+
+  it('prefers the CLI flag over config', () => {
+    const opts: AddOptions = { registryUrl: 'http://flag' };
+    expect(resolveRegistryUrl(opts, minimal('http://cfg'))).toBe('http://flag');
+  });
+
+  it('falls back to config when no flag is given', () => {
+    expect(resolveRegistryUrl({}, minimal('http://cfg'))).toBe('http://cfg');
+  });
+
+  it('returns undefined when neither is set (RegistryClient applies the default)', () => {
+    expect(resolveRegistryUrl({}, null)).toBeUndefined();
+    expect(resolveRegistryUrl({}, minimal(undefined))).toBeUndefined();
   });
 });
 
@@ -285,6 +323,26 @@ describe('trackInstalled', () => {
     trackInstalled(config, items);
 
     expect(config.installed?.primitives).toContain('classy');
+  });
+
+  it('adds rules to the rules bucket, not primitives', () => {
+    const config: RaftersConfig = {
+      framework: 'react-router',
+      componentsPath: 'components/ui',
+      primitivesPath: 'lib/primitives',
+      compositesPath: 'composites',
+      cssPath: null,
+      shadcn: false,
+      exports: { tailwind: true, typescript: true, dtcg: false, compiled: false },
+      installed: { components: [], primitives: [] },
+    };
+
+    const items: RegistryItem[] = [{ name: 'email', type: 'rule', primitives: [], files: [] }];
+
+    trackInstalled(config, items);
+
+    expect(config.installed?.rules).toContain('email');
+    expect(config.installed?.primitives).not.toContain('email');
   });
 
   it('deduplicates when adding same item twice', () => {
