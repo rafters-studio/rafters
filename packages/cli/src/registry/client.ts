@@ -137,8 +137,37 @@ export class RegistryClient {
   }
 
   /**
+   * Fetch a rule by name
+   */
+  async fetchRule(name: string): Promise<RegistryItem> {
+    const cacheKey = `rule:${name}`;
+    const cached = this.cache.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    const url = `${this.baseUrl}/registry/rules/${name}.json`;
+    const response = await fetch(url);
+
+    if (response.status === 404) {
+      throw new Error(`Rule "${name}" not found`);
+    }
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch rule "${name}": ${response.status} ${response.statusText}`);
+    }
+
+    const data: unknown = await response.json();
+    const item = RegistryItemSchema.parse(data);
+
+    this.cache.set(cacheKey, item);
+
+    return item;
+  }
+
+  /**
    * Fetch a registry item by name
-   * Tries component, then primitive, then composite
+   * Tries component, then primitive, then composite, then rule
    */
   async fetchItem(name: string): Promise<RegistryItem> {
     try {
@@ -151,7 +180,11 @@ export class RegistryClient {
           try {
             return await this.fetchComposite(name);
           } catch {
-            throw err;
+            try {
+              return await this.fetchRule(name);
+            } catch {
+              throw err;
+            }
           }
         }
       }
