@@ -1,4 +1,5 @@
 ---
+import BaseLayout from '../layouts/BaseLayout.astro';
 import Composite from '../lib/composites/Composite.astro';
 
 // A selection of the demo's composites, rendered server-side by the engine.
@@ -12,20 +13,14 @@ const ids = [
 ];
 ---
 
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <title>Composite render test</title>
-  </head>
-  <body>
-    <h1>Composite render test</h1>
-    {
-      ids.map((id) => (
-        <section data-composite={id}>
-          <p data-label>{id}</p>
-          <Composite id={id} />
-        </section>
-      ))
-    }
-  </body>
-</html>
+<BaseLayout title="Composites" description="Composite render test -- composites rendered server-side by the engine">
+  <h1>Composite render test</h1>
+  {
+    ids.map((id) => (
+      <section data-composite={id}>
+        <p data-label>{id}</p>
+        <Composite id={id} />
+      </section>
+    ))
+  }
+</BaseLayout>
