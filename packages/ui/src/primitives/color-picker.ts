@@ -200,12 +200,14 @@ export function createColorPickerState(options: ColorPickerStateOptions): ColorP
       ...dirOption,
       onMove: (point: NormalizedPoint) => {
         colorState.patch({ h: hueFromBarPos(point.left) });
-        onColorChange?.(colorState.get());
+        const next = colorState.get();
+        onColorChange?.(next);
       },
       onKeyMove: (delta: MoveDelta) => {
         const newH = resolveKeyDelta(colorState.get().h, delta.dLeft, 360, 360);
         colorState.patch({ h: newH });
-        onColorChange?.(colorState.get());
+        const next = colorState.get();
+        onColorChange?.(next);
       },
     }),
   );

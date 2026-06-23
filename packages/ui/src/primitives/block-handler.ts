@@ -119,21 +119,17 @@ export interface BlockHandlerControls {
 // Implementation
 // ============================================================================
 
-const INITIAL_STATE: BlockHandlerState = {
-  selectedIds: new Set(),
-  focusedId: undefined,
-  canUndo: false,
-  canRedo: false,
-};
-
 export function createBlockHandler(options: BlockHandlerOptions): BlockHandlerControls {
   const { container, $blocks, onBlocksChange, onSlashCommand } = options;
   const cleanups: CleanupFunction[] = [];
 
-  // Shared reactive state. Factory initial so reset() yields a fresh selectedIds Set.
+  // Shared reactive state. Factory initial (all fields explicit) so reset() always
+  // yields fresh reference-typed values, e.g. a new selectedIds Set.
   const state = createMemory<BlockHandlerState>(() => ({
-    ...INITIAL_STATE,
     selectedIds: new Set(),
+    focusedId: undefined,
+    canUndo: false,
+    canRedo: false,
   }));
 
   // History for undo/redo
