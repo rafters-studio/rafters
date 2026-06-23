@@ -9,11 +9,13 @@ describe('createHistory reactive snapshot', () => {
     expect(h.snapshot.get()).toEqual({ current: 0, ...EMPTY });
   });
 
-  it('getState() reads through the reactive snapshot', () => {
+  it('getState() reflects the live snapshot values', () => {
     const h = createHistory<number>({ initialState: 0 });
+    expect(h.getState()).toEqual({ current: 0, ...EMPTY });
     h.push(1);
-    expect(h.getState()).toEqual(h.snapshot.get());
     expect(h.getState().current).toBe(1);
+    expect(h.getState().canUndo).toBe(true);
+    expect(h.getState().undoCount).toBe(1);
   });
 
   it('updates the snapshot on push, undo, and redo', () => {
@@ -67,6 +69,31 @@ describe('createHistory reactive snapshot', () => {
 
     h.undo();
     expect(h.snapshot.get().current).toBe(0);
+  });
+
+  it('emits one notification per batch, not one per push', () => {
+    const h = createHistory<number>({ initialState: 0 });
+    const seen: number[] = [];
+    h.snapshot.subscribe((s) => seen.push(s.current));
+    h.batch(() => {
+      h.push(1);
+      h.push(2);
+      h.push(3);
+    });
+    // immediate fire (0) + exactly one post-batch fire (3); no intermediate 1/2
+    expect(seen).toEqual([0, 3]);
+  });
+
+  it('exposes a Memory: select fires only when the chosen slice changes', () => {
+    const h = createHistory<number>({ initialState: 0 });
+    const undoStates: boolean[] = [];
+    h.snapshot.select(
+      (s) => s.canUndo,
+      (canUndo) => undoStates.push(canUndo),
+    );
+    h.push(1); // canUndo false -> true (fires)
+    h.push(2); // canUndo stays true (no fire)
+    expect(undoStates).toEqual([true]);
   });
 
   it('clear resets the snapshot to the initial state', () => {

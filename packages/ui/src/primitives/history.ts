@@ -20,8 +20,7 @@
  * ```
  */
 
-import type { ReadableAtom } from 'nanostores';
-import { createMemory } from './memory';
+import { createMemory, type Memory } from './memory';
 
 export interface HistoryOptions<T> {
   /**
@@ -77,10 +76,11 @@ export interface History<T> {
   getState: () => HistoryState<T>;
 
   /**
-   * Reactive snapshot of the history state. Subscribe (or select) for undo/redo
-   * availability changes instead of polling getState().
+   * Reactive snapshot of the history state. Subscribe or select for undo/redo
+   * availability changes instead of polling getState(). Treat as read-only -
+   * history owns the writes; consumers observe.
    */
-  snapshot: ReadableAtom<HistoryState<T>>;
+  snapshot: Memory<HistoryState<T>>;
 
   /**
    * Push a new state to history
@@ -207,10 +207,10 @@ export function createHistory<T>(options: HistoryOptions<T>): History<T> {
       return;
     }
 
-    // In batch mode, just update current without recording
+    // In batch mode, just update current without recording or notifying.
+    // finalizeBatch is the single sync point for the whole batch.
     if (isBatching) {
       current = state;
-      sync();
       return;
     }
 
@@ -359,7 +359,7 @@ export function createHistory<T>(options: HistoryOptions<T>): History<T> {
 
   return {
     getState,
-    snapshot: snapshot.atom,
+    snapshot,
     push,
     undo,
     redo,

@@ -27,8 +27,9 @@
  * ```
  */
 
-import { useCallback, useRef, useSyncExternalStore } from 'react';
+import { useCallback, useRef } from 'react';
 import { createHistory, type History, type HistoryState } from '../primitives/history';
+import { useMemory } from './use-memory';
 
 export interface UseHistoryOptions<T> {
   /**
@@ -131,13 +132,8 @@ export function useHistory<T>(options: UseHistoryOptions<T>): UseHistoryReturn<T
   // biome-ignore lint/style/noNonNullAssertion: initialized by the if-block above
   const history = historyRef.current!;
 
-  // Subscribe to the reactive snapshot; re-renders (concurrent-safe) on any change.
-  const subscribe = useCallback(
-    (onChange: () => void) => history.snapshot.subscribe(onChange),
-    [history],
-  );
-  const getSnapshot = useCallback(() => history.snapshot.get(), [history]);
-  const historyState: HistoryState<T> = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+  // Subscribe to history's reactive snapshot; re-renders (concurrent-safe) on any change.
+  const historyState = useMemory(history.snapshot);
 
   const push = useCallback((state: T): void => history.push(state), [history]);
   const undo = useCallback((): T | null => history.undo(), [history]);
