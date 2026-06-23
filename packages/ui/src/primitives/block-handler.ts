@@ -138,6 +138,14 @@ export function createBlockHandler(options: BlockHandlerOptions): BlockHandlerCo
     limit: 50,
   });
 
+  // Mirror history's undo/redo availability into handler state reactively,
+  // so push/undo/redo no longer have to copy it by hand.
+  cleanups.push(
+    history.snapshot.subscribe((snap) => {
+      state.patch({ canUndo: snap.canUndo, canRedo: snap.canRedo });
+    }),
+  );
+
   // Wire block canvas
   const canvasOptions: Parameters<typeof createBlockCanvas>[0] = {
     container,
@@ -163,10 +171,6 @@ export function createBlockHandler(options: BlockHandlerOptions): BlockHandlerCo
   // Track blocks changes for history
   const unsubBlocks = $blocks.subscribe((blocks) => {
     history.push(blocks);
-    state.patch({
-      canUndo: history.canUndo(),
-      canRedo: history.canRedo(),
-    });
   });
   cleanups.push(unsubBlocks);
 
@@ -174,10 +178,6 @@ export function createBlockHandler(options: BlockHandlerOptions): BlockHandlerCo
     const prev = history.undo();
     if (prev) {
       onBlocksChange?.(prev);
-      state.patch({
-        canUndo: history.canUndo(),
-        canRedo: history.canRedo(),
-      });
     }
   }
 
@@ -185,10 +185,6 @@ export function createBlockHandler(options: BlockHandlerOptions): BlockHandlerCo
     const next = history.redo();
     if (next) {
       onBlocksChange?.(next);
-      state.patch({
-        canUndo: history.canUndo(),
-        canRedo: history.canRedo(),
-      });
     }
   }
 

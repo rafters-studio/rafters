@@ -20,6 +20,9 @@
  * ```
  */
 
+import type { ReadableAtom } from 'nanostores';
+import { createMemory } from './memory';
+
 export interface HistoryOptions<T> {
   /**
    * Initial state for the history
@@ -72,6 +75,12 @@ export interface History<T> {
    * Get current history state
    */
   getState: () => HistoryState<T>;
+
+  /**
+   * Reactive snapshot of the history state. Subscribe (or select) for undo/redo
+   * availability changes instead of polling getState().
+   */
+  snapshot: ReadableAtom<HistoryState<T>>;
 
   /**
    * Push a new state to history
@@ -165,16 +174,29 @@ export function createHistory<T>(options: HistoryOptions<T>): History<T> {
   // State before batch started
   let batchStartState: T | null = null;
 
+  // Reactive projection of the history state; recomputed after every mutation.
+  const snapshot = createMemory<HistoryState<T>>({
+    current,
+    canUndo: false,
+    canRedo: false,
+    undoCount: 0,
+    redoCount: 0,
+  });
+
+  function sync(): void {
+    snapshot.set({
+      current,
+      canUndo: past.length > 0,
+      canRedo: future.length > 0,
+      undoCount: past.length,
+      redoCount: future.length,
+    });
+  }
+
   /**
    * Get current history state
    */
-  const getState = (): HistoryState<T> => ({
-    current,
-    canUndo: past.length > 0,
-    canRedo: future.length > 0,
-    undoCount: past.length,
-    redoCount: future.length,
-  });
+  const getState = (): HistoryState<T> => snapshot.get();
 
   /**
    * Push a new state to history
@@ -188,6 +210,7 @@ export function createHistory<T>(options: HistoryOptions<T>): History<T> {
     // In batch mode, just update current without recording
     if (isBatching) {
       current = state;
+      sync();
       return;
     }
 
@@ -204,6 +227,8 @@ export function createHistory<T>(options: HistoryOptions<T>): History<T> {
 
     // Clear redo stack
     future = [];
+
+    sync();
   };
 
   /**
@@ -226,6 +251,7 @@ export function createHistory<T>(options: HistoryOptions<T>): History<T> {
     // Update current
     current = previous;
 
+    sync();
     return current;
   };
 
@@ -249,6 +275,7 @@ export function createHistory<T>(options: HistoryOptions<T>): History<T> {
     // Update current
     current = next;
 
+    sync();
     return current;
   };
 
@@ -281,6 +308,8 @@ export function createHistory<T>(options: HistoryOptions<T>): History<T> {
 
         // Clear redo stack
         future = [];
+
+        sync();
       }
     }
   };
@@ -315,6 +344,7 @@ export function createHistory<T>(options: HistoryOptions<T>): History<T> {
     future = [];
     isBatching = false;
     batchStartState = null;
+    sync();
   };
 
   /**
@@ -329,6 +359,7 @@ export function createHistory<T>(options: HistoryOptions<T>): History<T> {
 
   return {
     getState,
+    snapshot: snapshot.atom,
     push,
     undo,
     redo,
