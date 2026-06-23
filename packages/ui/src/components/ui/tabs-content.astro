@@ -2,8 +2,8 @@
 /**
  * Tab content panel (Astro)
  *
- * Shown or hidden based on the associated radio input state.
- * Initially visible only when its tab trigger has defaultChecked.
+ * Shown or hidden by the parent Tabs root script based on the shared
+ * selection-group cell. Initially visible when defaultActive is set (SSR).
  *
  * @cognitive-load 1/10
  * @accessibility role=tabpanel, aria-labelledby, focusable
@@ -34,6 +34,7 @@ const tabId = `${tabsId}-tab-${value}`;
   tabindex="0"
   hidden={!defaultActive}
   data-state={defaultActive ? 'active' : 'inactive'}
+  data-value={value}
   class={classy(tabsContentClasses, className)}
   {...attrs}
 >

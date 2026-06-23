@@ -1,22 +1,25 @@
 ---
 /**
- * CSS-only tabbed interface component (Astro)
+ * Tabbed interface (Astro) driven by the shared selection-group primitive.
  *
- * Zero client JavaScript for tab switching. Uses hidden radio inputs with
- * CSS :checked selectors. A small inline script handles arrow key navigation.
+ * State lives in createSelectionGroup (the same primitive the React <Tabs> uses);
+ * a single processed <script> - bundled and deduplicated once per page - imports
+ * it and wires every tab group on the page. Triggers are real buttons; the script
+ * reflects the selected value onto aria-selected / data-state / tabindex and panel
+ * visibility. Config crosses the server -> client boundary via data-* attributes.
  *
  * @cognitive-load 4/10
- * @accessibility role=tablist, role=tab, role=tabpanel, aria-selected, arrow key navigation
+ * @accessibility role=tablist, role=tab, role=tabpanel, aria-selected, arrow/Home/End nav
  *
  * @example
  * ```astro
  * <Tabs id="demo" defaultValue="overview">
  *   <TabsList>
- *     <TabsTrigger tabsId="demo" value="overview">Overview</TabsTrigger>
+ *     <TabsTrigger tabsId="demo" value="overview" defaultChecked>Overview</TabsTrigger>
  *     <TabsTrigger tabsId="demo" value="details">Details</TabsTrigger>
  *   </TabsList>
- *   <TabsContent tabsId="demo" value="overview">Overview content</TabsContent>
- *   <TabsContent tabsId="demo" value="details">Details content</TabsContent>
+ *   <TabsContent tabsId="demo" value="overview" defaultActive>Overview</TabsContent>
+ *   <TabsContent tabsId="demo" value="details">Details</TabsContent>
  * </Tabs>
  * ```
  */
@@ -25,9 +28,9 @@ import classy from '../../primitives/classy';
 import { tabsRootClasses } from './tabs.classes';
 
 interface Props extends HTMLAttributes<'div'> {
-  /** Unique identifier for this tab group, used to link radios, labels, and panels */
+  /** Unique identifier for this tab group. */
   id: string;
-  /** Which tab value is selected by default */
+  /** Which tab value is selected by default. */
   defaultValue: string;
 }
 
@@ -36,9 +39,75 @@ const { id, defaultValue, class: className, ...attrs } = Astro.props;
 
 <div
   class={classy(tabsRootClasses, className)}
-  data-tabs-root={id}
-  data-tabs-default={defaultValue}
+  data-rafters-tabs
+  data-tabs-id={id}
+  data-default-value={defaultValue}
   {...attrs}
 >
   <slot />
 </div>
+
+<script>
+  import { createSelectionGroup } from '../../primitives/selection-group';
+
+  function setup(root: HTMLElement): void {
+    if (root.dataset.bound === 'true') return;
+    root.dataset.bound = 'true';
+
+    const group = createSelectionGroup({ initial: root.dataset.defaultValue });
+    const triggers = (): HTMLElement[] =>
+      Array.from(root.querySelectorAll<HTMLElement>('[role="tab"]'));
+    const panels = (): HTMLElement[] =>
+      Array.from(root.querySelectorAll<HTMLElement>('[role="tabpanel"]'));
+
+    // Reflect selection state onto the DOM. Fires immediately with the initial value.
+    group.subscribe((selected) => {
+      const active = selected[0];
+      for (const tab of triggers()) {
+        const on = tab.dataset.value === active;
+        tab.setAttribute('aria-selected', String(on));
+        tab.setAttribute('data-state', on ? 'active' : 'inactive');
+        tab.tabIndex = on ? 0 : -1;
+      }
+      for (const panel of panels()) {
+        const on = panel.dataset.value === active;
+        panel.hidden = !on;
+        panel.setAttribute('data-state', on ? 'active' : 'inactive');
+      }
+    });
+
+    root.addEventListener('click', (event) => {
+      const target = event.target as HTMLElement;
+      const tab = target.closest<HTMLElement>('[role="tab"]:not([disabled])');
+      if (tab?.dataset.value) {
+        group.select(tab.dataset.value);
+        tab.focus();
+      }
+    });
+
+    root.addEventListener('keydown', (event) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('[role="tablist"]')) return;
+      const tabs = triggers().filter((tab) => !tab.hasAttribute('disabled'));
+      const current = tabs.indexOf(document.activeElement as HTMLElement);
+      if (current === -1) return;
+
+      let next: number | null = null;
+      if (event.key === 'ArrowLeft') next = current > 0 ? current - 1 : tabs.length - 1;
+      else if (event.key === 'ArrowRight') next = current < tabs.length - 1 ? current + 1 : 0;
+      else if (event.key === 'Home') next = 0;
+      else if (event.key === 'End') next = tabs.length - 1;
+
+      const move = next === null ? null : tabs[next];
+      if (move?.dataset.value) {
+        event.preventDefault();
+        move.focus();
+        group.select(move.dataset.value);
+      }
+    });
+  }
+
+  for (const root of document.querySelectorAll<HTMLElement>('[data-rafters-tabs]')) {
+    setup(root);
+  }
+</script>

@@ -28,7 +28,9 @@
  */
 
 import * as React from 'react';
+import { useMemory } from '../../hooks/use-memory';
 import classy from '../../primitives/classy';
+import { createSelectionGroup, type SelectionGroup } from '../../primitives/selection-group';
 import { tabsContentClasses, tabsListClasses, tabsTriggerBaseClasses } from './tabs.classes';
 
 // Context for sharing tab state
@@ -67,19 +69,35 @@ export function Tabs({
   children,
   ...props
 }: TabsProps) {
-  // State management (controlled vs uncontrolled)
-  const [uncontrolledValue, setUncontrolledValue] = React.useState(defaultValue);
+  // State lives in a shared, framework-agnostic selection-group cell (single mode).
+  // The Astro/WC twins drive the same primitive from their own bridges - the
+  // select/toggle logic is written once in createSelectionGroup, not per framework.
   const isControlled = controlledValue !== undefined;
-  const value = isControlled ? controlledValue : uncontrolledValue;
+  const groupRef = React.useRef<SelectionGroup | null>(null);
+  if (groupRef.current === null) {
+    groupRef.current = createSelectionGroup({
+      initial: isControlled ? controlledValue : defaultValue,
+    });
+  }
+  const group = groupRef.current;
+  const selected = useMemory(group.memory).selected[0] ?? '';
+  const value = controlledValue ?? selected;
+
+  // Keep the cell mirrored to the controlled prop.
+  React.useEffect(() => {
+    if (isControlled) {
+      group.set(controlledValue === undefined ? [] : [controlledValue]);
+    }
+  }, [isControlled, controlledValue, group]);
 
   const handleValueChange = React.useCallback(
     (newValue: string) => {
       if (!isControlled) {
-        setUncontrolledValue(newValue);
+        group.select(newValue);
       }
       onValueChange?.(newValue);
     },
-    [isControlled, onValueChange],
+    [isControlled, onValueChange, group],
   );
 
   // Generate stable base ID for ARIA relationships
