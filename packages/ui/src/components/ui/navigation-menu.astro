@@ -1,0 +1,82 @@
+---
+/**
+ * NavigationMenu (Astro) driven by the shared createNavigationMenu controller.
+ *
+ * A single processed <script> (bundled, deduped once per page) imports the same
+ * controller the React <NavigationMenu> uses, so behavior cannot drift. The initially
+ * open item is read from the server-rendered data-state of the triggers.
+ *
+ * @cognitive-load 5/10
+ * @accessibility role=navigation, aria-expanded triggers, aria-controls, arrow-key nav
+ *
+ * @example
+ * ```astro
+ * <NavigationMenu id="main">
+ *   <NavigationMenuList navId="main">
+ *     <NavigationMenuItem>
+ *       <NavigationMenuTrigger navId="main" value="products">Products</NavigationMenuTrigger>
+ *       <NavigationMenuContent navId="main" value="products">
+ *         <NavigationMenuLink href="/products/widgets">Widgets</NavigationMenuLink>
+ *       </NavigationMenuContent>
+ *     </NavigationMenuItem>
+ *   </NavigationMenuList>
+ * </NavigationMenu>
+ * ```
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { navigationMenuRootClasses } from './navigation-menu.classes';
+
+interface Props extends HTMLAttributes<'nav'> {
+  /** Unique identifier for this navigation menu. */
+  id: string;
+  /** Arrow-key navigation orientation across the top-level triggers. */
+  orientation?: 'horizontal' | 'vertical';
+  /** Delay (ms) before hover opens / closes a menu. */
+  delayDuration?: number;
+  /** Accessible name for the navigation landmark. */
+  label?: string;
+}
+
+const {
+  id,
+  orientation = 'horizontal',
+  delayDuration = 200,
+  label = 'Main navigation',
+  class: className,
+  ...attrs
+} = Astro.props;
+---
+
+<nav
+  aria-label={label}
+  data-rafters-navigation-menu
+  data-nav-id={id}
+  data-orientation={orientation}
+  data-nav-delay={delayDuration}
+  class={classy(navigationMenuRootClasses, className)}
+  {...attrs}
+>
+  <slot />
+</nav>
+
+<script>
+  import { createNavigationMenu } from './navigation-menu.controller';
+
+  for (const root of document.querySelectorAll<HTMLElement>('[data-rafters-navigation-menu]')) {
+    if (root.dataset.bound === 'true') continue;
+    root.dataset.bound = 'true';
+
+    const initial = root
+      .querySelector<HTMLElement>('[data-nav-trigger][data-state="open"]')
+      ?.dataset.value;
+
+    const delay = Number.parseInt(root.dataset.navDelay ?? '', 10);
+
+    createNavigationMenu(root, {
+      orientation: root.dataset.orientation === 'vertical' ? 'vertical' : 'horizontal',
+      ...(Number.isNaN(delay) ? {} : { delayDuration: delay }),
+      ...(initial === undefined ? {} : { initial }),
+    });
+  }
+</script>

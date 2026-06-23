@@ -1,0 +1,17 @@
+---
+/**
+ * NavigationMenu item (Astro) - wraps a trigger + content pair (or a bare link).
+ *
+ * @cognitive-load 1/10
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+
+interface Props extends HTMLAttributes<'li'> {}
+
+const { class: className, ...attrs } = Astro.props;
+---
+
+<li class={classy('relative', className)} {...attrs}>
+  <slot />
+</li>

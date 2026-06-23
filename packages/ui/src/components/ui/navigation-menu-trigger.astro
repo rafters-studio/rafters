@@ -1,0 +1,74 @@
+---
+/**
+ * NavigationMenu trigger (Astro) - a real <button>.
+ *
+ * The parent NavigationMenu root script (createNavigationMenu) handles toggling, roving
+ * focus, hover-intent, dismiss, and reflecting aria-expanded / data-state. data-value
+ * links it to its content; data-roving-item lets roving-focus include it; data-state sets
+ * the SSR-initial open state (and chevron rotation) which the controller reads.
+ *
+ * @cognitive-load 2/10
+ * @accessibility button, aria-expanded, aria-controls, aria-haspopup, roving tabindex
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import {
+  navigationMenuTriggerChevronClasses,
+  navigationMenuTriggerClasses,
+} from './navigation-menu.classes';
+
+interface Props extends HTMLAttributes<'button'> {
+  /** The navigation menu id (must match the parent NavigationMenu id). */
+  navId: string;
+  /** Value identifying this item. */
+  value: string;
+  /** Whether this item is disabled. */
+  disabled?: boolean;
+  /** Whether this item's menu is open by default. */
+  defaultOpen?: boolean;
+}
+
+const {
+  navId,
+  value,
+  disabled = false,
+  defaultOpen = false,
+  class: className,
+  ...attrs
+} = Astro.props;
+
+const triggerId = `${navId}-trigger-${value}`;
+const contentId = `${navId}-content-${value}`;
+---
+
+<button
+  type="button"
+  id={triggerId}
+  aria-controls={contentId}
+  aria-haspopup="menu"
+  aria-expanded={defaultOpen ? 'true' : 'false'}
+  data-nav-trigger
+  data-roving-item
+  data-value={value}
+  data-state={defaultOpen ? 'open' : 'closed'}
+  disabled={disabled}
+  class={classy(navigationMenuTriggerClasses, className)}
+  {...attrs}
+>
+  <slot />
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+    class={classy(navigationMenuTriggerChevronClasses)}
+  >
+    <path d="m6 9 6 6 6-6"></path>
+  </svg>
+</button>

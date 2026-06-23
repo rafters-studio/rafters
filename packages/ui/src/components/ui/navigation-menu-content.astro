@@ -1,0 +1,50 @@
+---
+/**
+ * NavigationMenu content (Astro) - the panel revealed when its trigger is open.
+ *
+ * Always present in the DOM; visibility (hidden) and data-state / aria-hidden are driven
+ * by the parent NavigationMenu root script (createNavigationMenu). defaultOpen sets the
+ * SSR-initial state.
+ *
+ * @cognitive-load 1/10
+ * @accessibility aria-labelledby links the panel to its trigger
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import {
+  navigationMenuContentActiveClasses,
+  navigationMenuContentClasses,
+} from './navigation-menu.classes';
+
+interface Props extends HTMLAttributes<'div'> {
+  /** The navigation menu id (must match the parent NavigationMenu id). */
+  navId: string;
+  /** Value identifying which item controls this panel. */
+  value: string;
+  /** Whether this panel is open by default. */
+  defaultOpen?: boolean;
+}
+
+const { navId, value, defaultOpen = false, class: className, ...attrs } = Astro.props;
+
+const triggerId = `${navId}-trigger-${value}`;
+const contentId = `${navId}-content-${value}`;
+---
+
+<div
+  id={contentId}
+  aria-labelledby={triggerId}
+  aria-hidden={defaultOpen ? 'false' : 'true'}
+  hidden={!defaultOpen}
+  data-nav-content
+  data-value={value}
+  data-state={defaultOpen ? 'open' : 'closed'}
+  class={classy(
+    navigationMenuContentClasses,
+    defaultOpen && navigationMenuContentActiveClasses,
+    className,
+  )}
+  {...attrs}
+>
+  <slot />
+</div>
