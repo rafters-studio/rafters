@@ -26,7 +26,6 @@
  *   primitives/block-operations.ts, primitives/history.ts,
  *   primitives/serializer-html.ts, primitives/serializer-text.ts
  */
-import { atom } from 'nanostores';
 import {
   blockContentToText,
   convertBlockType,
@@ -49,6 +48,7 @@ import {
 import { createHistory } from './history';
 import { createInputHandler } from './input-events';
 import { createKeyboardHandler } from './keyboard-handler';
+import { createMemory } from './memory';
 import { htmlSerializer } from './serializer-html';
 import { textSerializer } from './serializer-text';
 import type { BaseBlock, CleanupFunction } from './types';
@@ -128,7 +128,7 @@ export function createDocumentEditor(options: DocumentEditorOptions): DocumentEd
     limit: 100,
   });
 
-  const $state = atom<DocumentEditorState>({
+  const state = createMemory<DocumentEditorState>({
     blocks: initialBlocks,
     canUndo: false,
     canRedo: false,
@@ -136,7 +136,7 @@ export function createDocumentEditor(options: DocumentEditorOptions): DocumentEd
 
   function updateBlocks(next: BaseBlock[]): void {
     history.push(next);
-    $state.set({
+    state.set({
       blocks: next,
       canUndo: history.canUndo(),
       canRedo: history.canRedo(),
@@ -161,7 +161,7 @@ export function createDocumentEditor(options: DocumentEditorOptions): DocumentEd
   // -- DOM reconciliation: read block elements and sync to model --
   function reconcileDOM(): void {
     const blockEls = container.querySelectorAll('[data-block-id]');
-    const blocks = $state.get().blocks;
+    const blocks = state.get().blocks;
     const blockMap = new Map(blocks.map((b) => [b.id, b]));
 
     // Build new block list from DOM order
@@ -212,7 +212,7 @@ export function createDocumentEditor(options: DocumentEditorOptions): DocumentEd
 
       // insertParagraph = Enter key (browser already split the DOM)
       if (data.inputType === 'insertParagraph') {
-        const result = splitBlock($state.get().blocks, pos.blockId, pos.offset);
+        const result = splitBlock(state.get().blocks, pos.blockId, pos.offset);
         updateBlocks(result.blocks);
         // Focus the new block after React re-renders
         requestAnimationFrame(() => {
@@ -232,7 +232,7 @@ export function createDocumentEditor(options: DocumentEditorOptions): DocumentEd
         const pos = getCursorPosition();
         if (!pos) return;
 
-        const blocks = $state.get().blocks;
+        const blocks = state.get().blocks;
         const block = blocks.find((b) => b.id === pos.blockId);
         if (!block || block.type !== 'text') return;
 
@@ -267,7 +267,7 @@ export function createDocumentEditor(options: DocumentEditorOptions): DocumentEd
       const pos = getCursorPosition();
       if (!pos) return;
 
-      const blocks = $state.get().blocks;
+      const blocks = state.get().blocks;
       const index = blocks.findIndex((b) => b.id === pos.blockId);
       const block = blocks[index];
       if (!block) return;
@@ -323,7 +323,7 @@ export function createDocumentEditor(options: DocumentEditorOptions): DocumentEd
       const pos = getCursorPosition();
       if (!pos) return;
 
-      const blocks = $state.get().blocks;
+      const blocks = state.get().blocks;
       const result = mergeWithNext(blocks, pos.blockId);
       updateBlocks(result.blocks);
       requestAnimationFrame(() => {
@@ -344,7 +344,7 @@ export function createDocumentEditor(options: DocumentEditorOptions): DocumentEd
     const pos = getCursorPosition();
     if (!pos) return;
 
-    const blocks = $state.get().blocks;
+    const blocks = state.get().blocks;
     let next: BaseBlock[] | null = null;
 
     switch (event.key) {
@@ -382,7 +382,7 @@ export function createDocumentEditor(options: DocumentEditorOptions): DocumentEd
       const pos = getCursorPosition();
       if (!pos) return;
 
-      const blocks = $state.get().blocks;
+      const blocks = state.get().blocks;
       const block = blocks.find((b) => b.id === pos.blockId);
 
       // In code blocks, paste as plain text (let browser handle it)
@@ -437,7 +437,7 @@ export function createDocumentEditor(options: DocumentEditorOptions): DocumentEd
 
     event.preventDefault();
 
-    const blocks = $state.get().blocks;
+    const blocks = state.get().blocks;
     const anchorId = anchorBlock.getAttribute('data-block-id') ?? '';
     const focusId = focusBlock.getAttribute('data-block-id') ?? '';
     const anchorIdx = blocks.findIndex((b) => b.id === anchorId);
@@ -466,7 +466,7 @@ export function createDocumentEditor(options: DocumentEditorOptions): DocumentEd
   }
 
   function addBlocks(newBlocks: BaseBlock[], index?: number): void {
-    const current = $state.get().blocks;
+    const current = state.get().blocks;
     const next = [...current];
     if (index !== undefined && index >= 0 && index <= next.length) {
       next.splice(index, 0, ...newBlocks);
@@ -479,7 +479,7 @@ export function createDocumentEditor(options: DocumentEditorOptions): DocumentEd
   function undo(): void {
     const prev = history.undo();
     if (prev) {
-      $state.set({
+      state.set({
         blocks: prev,
         canUndo: history.canUndo(),
         canRedo: history.canRedo(),
@@ -491,7 +491,7 @@ export function createDocumentEditor(options: DocumentEditorOptions): DocumentEd
   function redo(): void {
     const next = history.redo();
     if (next) {
-      $state.set({
+      state.set({
         blocks: next,
         canUndo: history.canUndo(),
         canRedo: history.canRedo(),
@@ -509,7 +509,7 @@ export function createDocumentEditor(options: DocumentEditorOptions): DocumentEd
   }
 
   return {
-    $state,
+    $state: state.atom,
     setBlocks,
     addBlocks,
     undo,
