@@ -48,13 +48,13 @@
  * state.destroy();
  * ```
  */
-import { atom } from 'nanostores';
 import { createColorArea, updateColorArea } from './color-area';
 import type { ColorInputField } from './color-input';
 import { createColorInput, updateColorInput } from './color-input';
 import { createSwatch, updateSwatch } from './color-swatch';
 import { createHueBar, updateHueBar } from './hue-bar';
 import { createInteractive } from './interactive';
+import { createMemory } from './memory';
 import { hueFromBarPos, inP3, inSrgb } from './oklch-gamut';
 import type {
   CleanupFunction,
@@ -165,7 +165,7 @@ export function createColorPickerState(options: ColorPickerStateOptions): ColorP
 
   const safeMaxChroma = Math.max(maxChroma, 1e-6);
   const cleanups: CleanupFunction[] = [];
-  const $color = atom<OklchColor>(initialColor);
+  const colorState = createMemory<OklchColor>(initialColor);
 
   const dirOption = dir !== undefined ? { dir } : {};
 
@@ -176,17 +176,17 @@ export function createColorPickerState(options: ColorPickerStateOptions): ColorP
       disabled,
       ...dirOption,
       onMove: (point: NormalizedPoint) => {
-        const cur = $color.get();
+        const cur = colorState.get();
         const newColor = { l: point.left, c: (1 - point.top) * safeMaxChroma, h: cur.h };
-        $color.set(newColor);
+        colorState.set(newColor);
         onColorChange?.(newColor);
       },
       onKeyMove: (delta: MoveDelta) => {
-        const cur = $color.get();
+        const cur = colorState.get();
         const newL = resolveKeyDelta(cur.l, delta.dLeft, 1, 1);
         const newC = resolveKeyDelta(cur.c, -delta.dTop, safeMaxChroma, safeMaxChroma);
         const newColor = { l: newL, c: newC, h: cur.h };
-        $color.set(newColor);
+        colorState.set(newColor);
         onColorChange?.(newColor);
       },
     }),
@@ -199,17 +199,13 @@ export function createColorPickerState(options: ColorPickerStateOptions): ColorP
       disabled,
       ...dirOption,
       onMove: (point: NormalizedPoint) => {
-        const cur = $color.get();
-        const newColor = { ...cur, h: hueFromBarPos(point.left) };
-        $color.set(newColor);
-        onColorChange?.(newColor);
+        colorState.patch({ h: hueFromBarPos(point.left) });
+        onColorChange?.(colorState.get());
       },
       onKeyMove: (delta: MoveDelta) => {
-        const cur = $color.get();
-        const newH = resolveKeyDelta(cur.h, delta.dLeft, 360, 360);
-        const newColor = { ...cur, h: newH };
-        $color.set(newColor);
-        onColorChange?.(newColor);
+        const newH = resolveKeyDelta(colorState.get().h, delta.dLeft, 360, 360);
+        colorState.patch({ h: newH });
+        onColorChange?.(colorState.get());
       },
     }),
   );
@@ -233,12 +229,12 @@ export function createColorPickerState(options: ColorPickerStateOptions): ColorP
       value: initialColor,
       onChange: (newColor) => {
         const color = { l: newColor.l, c: newColor.c, h: newColor.h };
-        $color.set(color);
+        colorState.set(color);
         onColorChange?.(color);
       },
       onCommit: (newColor) => {
         const color = { l: newColor.l, c: newColor.c, h: newColor.h };
-        $color.set(color);
+        colorState.set(color);
         onColorCommit?.(color);
       },
     }),
@@ -255,7 +251,7 @@ export function createColorPickerState(options: ColorPickerStateOptions): ColorP
   }
 
   // Subscribe to color changes and propagate to leaf primitives
-  const unsubColor = $color.subscribe((color) => {
+  const unsubColor = colorState.subscribe((color) => {
     updateColorArea(areaCanvas, { hue: color.h, maxChroma: safeMaxChroma });
     updateHueBar(hueCanvas, { lightness: color.l, chroma: color.c, vivid: true });
     updateColorInput(fields, {
@@ -275,7 +271,7 @@ export function createColorPickerState(options: ColorPickerStateOptions): ColorP
   const commitAndDetach = () => {
     document.removeEventListener('mouseup', commitAndDetach);
     document.removeEventListener('touchend', commitAndDetach);
-    onColorCommit?.($color.get());
+    onColorCommit?.(colorState.get());
   };
   const attachCommit = () => {
     if (disabled) return;
@@ -297,16 +293,16 @@ export function createColorPickerState(options: ColorPickerStateOptions): ColorP
   });
 
   function setColor(color: OklchColor): void {
-    $color.set(color);
+    colorState.set(color);
     onColorChange?.(color);
   }
 
   function pushColor(color: OklchColor): void {
-    $color.set(color);
+    colorState.set(color);
   }
 
   return {
-    $color,
+    $color: colorState.atom,
     setColor,
     pushColor,
     destroy() {
