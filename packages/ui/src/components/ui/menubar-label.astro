@@ -1,0 +1,21 @@
+---
+/**
+ * Menubar label (Astro) - a non-interactive section heading inside a menu.
+ *
+ * @cognitive-load 1/10
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { menubarInsetClasses, menubarLabelClasses } from './menubar.classes';
+
+interface Props extends HTMLAttributes<'div'> {
+  /** Whether to inset the label (aligns with checkbox/radio indicators). */
+  inset?: boolean;
+}
+
+const { inset = false, class: className, ...attrs } = Astro.props;
+---
+
+<div class={classy(menubarLabelClasses, inset && menubarInsetClasses, className)} {...attrs}>
+  <slot />
+</div>

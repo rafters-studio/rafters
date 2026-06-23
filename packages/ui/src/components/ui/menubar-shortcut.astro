@@ -1,0 +1,18 @@
+---
+/**
+ * Menubar shortcut (Astro) - a right-aligned keyboard hint inside a menu item.
+ *
+ * @cognitive-load 1/10
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { menubarShortcutClasses } from './menubar.classes';
+
+interface Props extends HTMLAttributes<'div'> {}
+
+const { class: className, ...attrs } = Astro.props;
+---
+
+<div class={classy(menubarShortcutClasses, className)} {...attrs}>
+  <slot />
+</div>

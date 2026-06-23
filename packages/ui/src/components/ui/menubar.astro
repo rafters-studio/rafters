@@ -1,0 +1,66 @@
+---
+/**
+ * Menubar (Astro) driven by the shared createMenubar controller.
+ *
+ * A single processed <script> (bundled, deduped once per page) imports the same
+ * controller the React <Menubar> uses, so behavior cannot drift. The initially open
+ * menu (if any) is read from the server-rendered data-state of the triggers.
+ *
+ * @cognitive-load 5/10
+ * @accessibility role=menubar root, role=menuitem triggers, role=menu content, full keyboard nav
+ *
+ * @example
+ * ```astro
+ * <Menubar id="app">
+ *   <MenubarMenu>
+ *     <MenubarTrigger menubarId="app" value="file">File</MenubarTrigger>
+ *     <MenubarContent menubarId="app" value="file">
+ *       <MenubarItem>New</MenubarItem>
+ *     </MenubarContent>
+ *   </MenubarMenu>
+ * </Menubar>
+ * ```
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { menubarRootClasses } from './menubar.classes';
+
+interface Props extends HTMLAttributes<'div'> {
+  /** Unique identifier for this menubar group. */
+  id: string;
+  /** Loop arrow navigation across triggers and within menus. */
+  loop?: boolean;
+}
+
+const { id, loop = true, class: className, ...attrs } = Astro.props;
+---
+
+<div
+  role="menubar"
+  class={classy(menubarRootClasses, className)}
+  data-rafters-menubar
+  data-menubar-id={id}
+  data-menubar-loop={loop ? 'true' : 'false'}
+  {...attrs}
+>
+  <slot />
+</div>
+
+<script>
+  import { createMenubar } from './menubar.controller';
+
+  for (const root of document.querySelectorAll<HTMLElement>('[data-rafters-menubar]')) {
+    if (root.dataset.bound === 'true') continue;
+    root.dataset.bound = 'true';
+
+    const openTrigger = root.querySelector<HTMLElement>(
+      '[data-menubar-trigger][data-state="open"]',
+    );
+    const initial = openTrigger?.dataset.value;
+
+    createMenubar(root, {
+      loop: root.dataset.menubarLoop !== 'false',
+      ...(initial === undefined ? {} : { initial }),
+    });
+  }
+</script>

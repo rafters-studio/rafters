@@ -15,6 +15,9 @@ export const menubarContentAnimationClasses =
 
 export const menubarLabelClasses = 'px-2 py-1.5 text-label-medium';
 
+/** Left padding applied to inset labels/items/sub-triggers (aligns with checkbox/radio indicators). */
+export const menubarInsetClasses = 'pl-8';
+
 export const menubarItemClasses =
   'relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-body-small outline-none transition-colors duration-100 motion-reduce:transition-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50';
 

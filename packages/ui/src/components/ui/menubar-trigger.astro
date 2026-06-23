@@ -1,0 +1,44 @@
+---
+/**
+ * Menubar trigger (Astro) - a real <button role="menuitem">.
+ * The parent Menubar root script (createMenubar) handles open/close, roving focus,
+ * and reflecting aria-expanded / data-state. data-value links it to its content.
+ *
+ * @cognitive-load 2/10
+ * @accessibility role=menuitem, aria-haspopup, aria-expanded, aria-controls
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { menubarTriggerClasses } from './menubar.classes';
+
+interface Props extends HTMLAttributes<'button'> {
+  /** The menubar group id (must match the parent Menubar id). */
+  menubarId: string;
+  /** Value identifying this menu. */
+  value: string;
+  /** Whether this menu is open by default. */
+  defaultOpen?: boolean;
+}
+
+const { menubarId, value, defaultOpen = false, class: className, ...attrs } = Astro.props;
+
+const triggerId = `${menubarId}-trigger-${value}`;
+const contentId = `${menubarId}-content-${value}`;
+---
+
+<button
+  type="button"
+  role="menuitem"
+  id={triggerId}
+  aria-haspopup="menu"
+  aria-controls={contentId}
+  aria-expanded={defaultOpen ? 'true' : 'false'}
+  tabindex="-1"
+  data-menubar-trigger
+  data-value={value}
+  data-state={defaultOpen ? 'open' : 'closed'}
+  class={classy(menubarTriggerClasses, className)}
+  {...attrs}
+>
+  <slot />
+</button>
