@@ -57,11 +57,11 @@
  * handler.destroy();
  * ```
  */
-import { atom } from 'nanostores';
 import type { BlockCanvasBlock } from './block-canvas';
 import { createBlockCanvas } from './block-canvas';
 import { createClipboard } from './clipboard';
 import { createHistory } from './history';
+import { createMemory } from './memory';
 import type { CleanupFunction } from './types';
 
 // ============================================================================
@@ -119,19 +119,18 @@ export interface BlockHandlerControls {
 // Implementation
 // ============================================================================
 
-const INITIAL_STATE: BlockHandlerState = {
-  selectedIds: new Set(),
-  focusedId: undefined,
-  canUndo: false,
-  canRedo: false,
-};
-
 export function createBlockHandler(options: BlockHandlerOptions): BlockHandlerControls {
   const { container, $blocks, onBlocksChange, onSlashCommand } = options;
   const cleanups: CleanupFunction[] = [];
 
-  // Shared reactive state
-  const $state = atom<BlockHandlerState>({ ...INITIAL_STATE });
+  // Shared reactive state. Factory initial (all fields explicit) so reset() always
+  // yields fresh reference-typed values, e.g. a new selectedIds Set.
+  const state = createMemory<BlockHandlerState>(() => ({
+    selectedIds: new Set(),
+    focusedId: undefined,
+    canUndo: false,
+    canRedo: false,
+  }));
 
   // History for undo/redo
   const history = createHistory<BlockCanvasBlock[]>({
@@ -143,13 +142,13 @@ export function createBlockHandler(options: BlockHandlerOptions): BlockHandlerCo
   const canvasOptions: Parameters<typeof createBlockCanvas>[0] = {
     container,
     getBlocks: () => $blocks.get(),
-    getSelectedIds: () => $state.get().selectedIds,
-    getFocusedId: () => $state.get().focusedId,
+    getSelectedIds: () => state.get().selectedIds,
+    getFocusedId: () => state.get().focusedId,
     onSelectionChange: (ids) => {
-      $state.set({ ...$state.get(), selectedIds: ids });
+      state.patch({ selectedIds: ids });
     },
     onFocusChange: (id) => {
-      $state.set({ ...$state.get(), focusedId: id ?? undefined });
+      state.patch({ focusedId: id ?? undefined });
     },
   };
   if (onSlashCommand) {
@@ -164,8 +163,7 @@ export function createBlockHandler(options: BlockHandlerOptions): BlockHandlerCo
   // Track blocks changes for history
   const unsubBlocks = $blocks.subscribe((blocks) => {
     history.push(blocks);
-    $state.set({
-      ...$state.get(),
+    state.patch({
       canUndo: history.canUndo(),
       canRedo: history.canRedo(),
     });
@@ -176,8 +174,7 @@ export function createBlockHandler(options: BlockHandlerOptions): BlockHandlerCo
     const prev = history.undo();
     if (prev) {
       onBlocksChange?.(prev);
-      $state.set({
-        ...$state.get(),
+      state.patch({
         canUndo: history.canUndo(),
         canRedo: history.canRedo(),
       });
@@ -188,8 +185,7 @@ export function createBlockHandler(options: BlockHandlerOptions): BlockHandlerCo
     const next = history.redo();
     if (next) {
       onBlocksChange?.(next);
-      $state.set({
-        ...$state.get(),
+      state.patch({
         canUndo: history.canUndo(),
         canRedo: history.canRedo(),
       });
@@ -197,7 +193,7 @@ export function createBlockHandler(options: BlockHandlerOptions): BlockHandlerCo
   }
 
   return {
-    $state,
+    $state: state.atom,
     handleBlockClick: canvas.handleBlockClick,
     handleCanvasBackgroundClick: canvas.handleCanvasBackgroundClick,
     selectAll: canvas.selectAll,

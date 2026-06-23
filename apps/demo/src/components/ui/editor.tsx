@@ -28,14 +28,14 @@
  * ```
  */
 
+import type { BlockHandlerControls, BlockHandlerState } from '@rafters/ui/primitives/block-handler';
+import { createBlockHandler } from '@rafters/ui/primitives/block-handler';
 import { atom } from 'nanostores';
 import * as React from 'react';
 import { createPortal } from 'react-dom';
 import { Container } from '@/components/ui/container';
 import type { BlockContextMenuControls } from '@/lib/primitives/block-context-menu';
 import { createBlockContextMenu } from '@/lib/primitives/block-context-menu';
-import type { BlockHandlerControls, BlockHandlerState } from '@/lib/primitives/block-handler';
-import { createBlockHandler } from '@/lib/primitives/block-handler';
 import type { BlockPaletteItem } from '@/lib/primitives/block-palette';
 import { createBlockPalette } from '@/lib/primitives/block-palette';
 import { createCanvasDropZone } from '@/lib/primitives/canvas-drop-zone';
