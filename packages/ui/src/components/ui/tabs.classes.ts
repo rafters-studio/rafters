@@ -13,11 +13,12 @@ export const tabsTriggerBaseClasses = [
   'disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none',
 ].join(' ');
 
-export const tabsTriggerActiveClasses =
-  'bg-background text-foreground shadow-sm data-[state=active]:bg-background data-[state=active]:text-foreground';
-
-export const tabsTriggerInactiveClasses =
-  'text-muted-foreground hover:bg-muted hover:text-foreground';
+// State-driven styling: the controller toggles data-state on each trigger, so the
+// same class string works for React and Astro with no conditional application.
+export const tabsTriggerStateClasses = [
+  'data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm',
+  'data-[state=inactive]:text-muted-foreground hover:bg-muted hover:text-foreground',
+].join(' ');
 
 export const tabsRootClasses = 'flex flex-col gap-2';
 

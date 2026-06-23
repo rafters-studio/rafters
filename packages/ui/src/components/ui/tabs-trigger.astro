@@ -11,11 +11,7 @@
  */
 import type { HTMLAttributes } from 'astro/types';
 import classy from '../../primitives/classy';
-import {
-  tabsTriggerActiveClasses,
-  tabsTriggerBaseClasses,
-  tabsTriggerInactiveClasses,
-} from './tabs.classes';
+import { tabsTriggerBaseClasses, tabsTriggerStateClasses } from './tabs.classes';
 
 interface Props extends HTMLAttributes<'button'> {
   /** The tabs group id (must match the parent Tabs id) */
@@ -51,12 +47,7 @@ const tabId = `${tabsId}-tab-${value}`;
   disabled={disabled}
   data-state={defaultChecked ? 'active' : 'inactive'}
   data-value={value}
-  class={classy(
-    tabsTriggerBaseClasses,
-    defaultChecked ? tabsTriggerActiveClasses : tabsTriggerInactiveClasses,
-    disabled && 'pointer-events-none opacity-50',
-    className,
-  )}
+  class={classy(tabsTriggerBaseClasses, tabsTriggerStateClasses, className)}
   {...attrs}
 >
   <slot />

@@ -48,66 +48,12 @@ const { id, defaultValue, class: className, ...attrs } = Astro.props;
 </div>
 
 <script>
-  import { createSelectionGroup } from '../../primitives/selection-group';
-
-  function setup(root: HTMLElement): void {
-    if (root.dataset.bound === 'true') return;
-    root.dataset.bound = 'true';
-
-    const group = createSelectionGroup({ initial: root.dataset.defaultValue });
-    const triggers = (): HTMLElement[] =>
-      Array.from(root.querySelectorAll<HTMLElement>('[role="tab"]'));
-    const panels = (): HTMLElement[] =>
-      Array.from(root.querySelectorAll<HTMLElement>('[role="tabpanel"]'));
-
-    // Reflect selection state onto the DOM. Fires immediately with the initial value.
-    group.subscribe((selected) => {
-      const active = selected[0];
-      for (const tab of triggers()) {
-        const on = tab.dataset.value === active;
-        tab.setAttribute('aria-selected', String(on));
-        tab.setAttribute('data-state', on ? 'active' : 'inactive');
-        tab.tabIndex = on ? 0 : -1;
-      }
-      for (const panel of panels()) {
-        const on = panel.dataset.value === active;
-        panel.hidden = !on;
-        panel.setAttribute('data-state', on ? 'active' : 'inactive');
-      }
-    });
-
-    root.addEventListener('click', (event) => {
-      const target = event.target as HTMLElement;
-      const tab = target.closest<HTMLElement>('[role="tab"]:not([disabled])');
-      if (tab?.dataset.value) {
-        group.select(tab.dataset.value);
-        tab.focus();
-      }
-    });
-
-    root.addEventListener('keydown', (event) => {
-      const target = event.target as HTMLElement;
-      if (!target.closest('[role="tablist"]')) return;
-      const tabs = triggers().filter((tab) => !tab.hasAttribute('disabled'));
-      const current = tabs.indexOf(document.activeElement as HTMLElement);
-      if (current === -1) return;
-
-      let next: number | null = null;
-      if (event.key === 'ArrowLeft') next = current > 0 ? current - 1 : tabs.length - 1;
-      else if (event.key === 'ArrowRight') next = current < tabs.length - 1 ? current + 1 : 0;
-      else if (event.key === 'Home') next = 0;
-      else if (event.key === 'End') next = tabs.length - 1;
-
-      const move = next === null ? null : tabs[next];
-      if (move?.dataset.value) {
-        event.preventDefault();
-        move.focus();
-        group.select(move.dataset.value);
-      }
-    });
-  }
+  // Behavior lives in the shared controller; the script just mounts it per root.
+  import { createTabs } from './tabs.controller';
 
   for (const root of document.querySelectorAll<HTMLElement>('[data-rafters-tabs]')) {
-    setup(root);
+    if (root.dataset.bound === 'true') continue;
+    root.dataset.bound = 'true';
+    createTabs(root, { initial: root.dataset.defaultValue });
   }
 </script>
