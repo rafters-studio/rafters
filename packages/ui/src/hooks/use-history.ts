@@ -27,8 +27,9 @@
  * ```
  */
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef } from 'react';
 import { createHistory, type History, type HistoryState } from '../primitives/history';
+import { useMemory } from './use-memory';
 
 export interface UseHistoryOptions<T> {
   /**
@@ -128,69 +129,17 @@ export function useHistory<T>(options: UseHistoryOptions<T>): UseHistoryReturn<T
   if (historyRef.current === null) {
     historyRef.current = createHistory(options);
   }
+  // biome-ignore lint/style/noNonNullAssertion: initialized by the if-block above
+  const history = historyRef.current!;
 
-  // State to trigger re-renders when history changes
-  const [historyState, setHistoryState] = useState<HistoryState<T>>(
-    // biome-ignore lint/style/noNonNullAssertion: historyRef.current is guaranteed to be set by the if-block above
-    () => historyRef.current!.getState(),
-  );
+  // Subscribe to history's reactive snapshot; re-renders (concurrent-safe) on any change.
+  const historyState = useMemory(history.snapshot);
 
-  // Update React state from history controller
-  const syncState = useCallback(() => {
-    if (historyRef.current) {
-      setHistoryState(historyRef.current.getState());
-    }
-  }, []);
-
-  // Push a new state to history
-  const push = useCallback(
-    (state: T): void => {
-      if (historyRef.current) {
-        historyRef.current.push(state);
-        syncState();
-      }
-    },
-    [syncState],
-  );
-
-  // Undo to previous state
-  const undo = useCallback((): T | null => {
-    if (historyRef.current) {
-      const result = historyRef.current.undo();
-      syncState();
-      return result;
-    }
-    return null;
-  }, [syncState]);
-
-  // Redo to next state
-  const redo = useCallback((): T | null => {
-    if (historyRef.current) {
-      const result = historyRef.current.redo();
-      syncState();
-      return result;
-    }
-    return null;
-  }, [syncState]);
-
-  // Batch multiple push calls into single undo step
-  const batch = useCallback(
-    (fn: () => void): void => {
-      if (historyRef.current) {
-        historyRef.current.batch(fn);
-        syncState();
-      }
-    },
-    [syncState],
-  );
-
-  // Reset history to initial state
-  const clear = useCallback((): void => {
-    if (historyRef.current) {
-      historyRef.current.clear();
-      syncState();
-    }
-  }, [syncState]);
+  const push = useCallback((state: T): void => history.push(state), [history]);
+  const undo = useCallback((): T | null => history.undo(), [history]);
+  const redo = useCallback((): T | null => history.redo(), [history]);
+  const batch = useCallback((fn: () => void): void => history.batch(fn), [history]);
+  const clear = useCallback((): void => history.clear(), [history]);
 
   return {
     state: historyState,
