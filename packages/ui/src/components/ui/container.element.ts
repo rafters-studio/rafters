@@ -24,6 +24,8 @@
  *  - size: 'sm'..'7xl' | 'full'
  *  - padding: '0' | '1' | ... | '24'
  *  - gap: same as padding scale, OR bare/empty -> derive from size
+ *  - col-span: 1..12 -- grid column span when placed directly in a grid
+ *  - row-span: 1..3 -- grid row span when placed directly in a grid
  *  - position: 'sticky' | 'fixed' | 'relative' | 'absolute' | 'static'
  *  - depth: 'base' | 'dropdown' | 'sticky' | 'navigation' | 'fixed' | 'modal' | 'popover' | 'tooltip' | 'overlay' | 'below' | 'max'
  *  - background: 'none' | 'muted' | 'accent' | 'card' | 'primary'
@@ -47,8 +49,12 @@ import {
   containerSizeClasses,
   containerSizeGapScale,
 } from './container.classes';
+import { gridColSpanClasses, gridRowSpanClasses } from './grid.classes';
 
 export type ContainerAs = 'div' | 'main' | 'header' | 'footer' | 'section' | 'article' | 'aside';
+
+export type ContainerColSpan = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
+export type ContainerRowSpan = 1 | 2 | 3;
 
 export type ContainerSize =
   | 'sm'
@@ -148,6 +154,10 @@ const BACKGROUNDS: ReadonlyArray<ContainerBackground> = [
   'primary',
 ];
 
+const COL_SPANS: ReadonlyArray<ContainerColSpan> = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+
+const ROW_SPANS: ReadonlyArray<ContainerRowSpan> = [1, 2, 3];
+
 function isContainerSize(value: string | null): value is ContainerSize {
   return value !== null && (SIZES as ReadonlyArray<string>).includes(value);
 }
@@ -200,6 +210,15 @@ function parseDepth(value: string | null): ContainerDepth | undefined {
   return undefined;
 }
 
+function parseSpan<T extends number>(
+  value: string | null,
+  allowed: ReadonlyArray<T>,
+): T | undefined {
+  if (value === null) return undefined;
+  const parsed = Number.parseInt(value, 10);
+  return (allowed as ReadonlyArray<number>).includes(parsed) ? (parsed as T) : undefined;
+}
+
 export interface ContainerClassOptions {
   size?: ContainerSize | undefined;
   padding?: ContainerSpacing | undefined;
@@ -207,6 +226,8 @@ export interface ContainerClassOptions {
   position?: ContainerPosition | undefined;
   depth?: ContainerDepth | undefined;
   background?: ContainerBackground | undefined;
+  colSpan?: ContainerColSpan | undefined;
+  rowSpan?: ContainerRowSpan | undefined;
   article?: boolean | undefined;
   editable?: boolean | undefined;
 }
@@ -223,7 +244,8 @@ function resolveDerivedGap(size: ContainerSize | undefined): ContainerSpacing {
 }
 
 export function composeContainerClasses(options: ContainerClassOptions): string {
-  const { size, padding, gap, position, depth, background, article, editable } = options;
+  const { size, padding, gap, position, depth, background, colSpan, rowSpan, article, editable } =
+    options;
   const parts: string[] = [];
   parts.push(containerQueryClasses);
   if (size) parts.push(containerSizeClasses[size] as string);
@@ -242,6 +264,8 @@ export function composeContainerClasses(options: ContainerClassOptions): string 
   if (resolvedGap !== null) {
     parts.push(containerGapClasses[resolvedGap] as string);
   }
+  if (colSpan) parts.push(gridColSpanClasses[colSpan] as string);
+  if (rowSpan) parts.push(gridRowSpanClasses[rowSpan] as string);
   if (position) parts.push(containerPositionClasses[position]);
   if (depth) parts.push(containerDepthClasses[depth]);
   if (background && background !== 'none') {
@@ -256,6 +280,8 @@ const OBSERVED_ATTRIBUTES: ReadonlyArray<string> = [
   'size',
   'padding',
   'gap',
+  'col-span',
+  'row-span',
   'position',
   'depth',
   'background',
@@ -294,6 +320,8 @@ export class RaftersContainer extends RaftersElement {
       position: parsePosition(this.getAttribute('position')),
       depth: parseDepth(this.getAttribute('depth')),
       background: parseBackground(this.getAttribute('background')),
+      colSpan: parseSpan(this.getAttribute('col-span'), COL_SPANS),
+      rowSpan: parseSpan(this.getAttribute('row-span'), ROW_SPANS),
       article: this.getAs() === 'article',
       editable: this.hasAttribute('editable'),
     });
