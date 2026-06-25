@@ -1,6 +1,12 @@
 /**
  * Tabbed interface component with keyboard navigation and ARIA compliance
  *
+ * Behavior (selection state, arrow/Home/End navigation, roving tabindex, ARIA and
+ * visibility reflection) lives in the framework-agnostic createTabs controller, which
+ * composes the shared primitives (selection-group + roving-focus). React renders the
+ * markup and delegates to the controller via a callback ref - the same controller the
+ * Astro and web-component wrappers use, so behavior cannot drift between frameworks.
+ *
  * @cognitive-load 4/10 - Content organization with state management requires cognitive processing
  * @attention-economics Content organization: visible=current context, hidden=available contexts, active=user focus
  * @trust-building Persistent selection, clear active indication, predictable navigation patterns
@@ -10,8 +16,6 @@
  * @usage-patterns
  * DO: Use for related content showing different views of same data/context
  * DO: Provide clear, descriptive, scannable tab names (7±2 maximum)
- * DO: Make active state visually prominent and immediately clear
- * DO: Arrange tabs by frequency or logical workflow sequence
  * NEVER: More than 7 tabs, unrelated content sections, unclear active state
  *
  * @example
@@ -29,12 +33,17 @@
 
 import * as React from 'react';
 import classy from '../../primitives/classy';
-import { tabsContentClasses, tabsListClasses, tabsTriggerBaseClasses } from './tabs.classes';
+import {
+  tabsContentClasses,
+  tabsListClasses,
+  tabsTriggerBaseClasses,
+  tabsTriggerStateClasses,
+} from './tabs.classes';
+import { createTabs, type TabsController } from './tabs.controller';
 
-// Context for sharing tab state
+// Context carries only the stable base id for ARIA relationships. All behavior
+// lives in the controller, so there is no value/dispatch threaded through context.
 interface TabsContextValue {
-  value: string;
-  onValueChange: (value: string) => void;
   baseId: string;
 }
 
@@ -67,36 +76,45 @@ export function Tabs({
   children,
   ...props
 }: TabsProps) {
-  // State management (controlled vs uncontrolled)
-  const [uncontrolledValue, setUncontrolledValue] = React.useState(defaultValue);
   const isControlled = controlledValue !== undefined;
-  const value = isControlled ? controlledValue : uncontrolledValue;
-
-  const handleValueChange = React.useCallback(
-    (newValue: string) => {
-      if (!isControlled) {
-        setUncontrolledValue(newValue);
-      }
-      onValueChange?.(newValue);
-    },
-    [isControlled, onValueChange],
-  );
-
-  // Generate stable base ID for ARIA relationships
   const baseId = React.useId();
 
-  const contextValue = React.useMemo(
-    () => ({
-      value,
-      onValueChange: handleValueChange,
-      baseId,
-    }),
-    [value, handleValueChange, baseId],
-  );
+  // Capture the initial active value once; the controller owns state thereafter.
+  const initialRef = React.useRef(isControlled ? controlledValue : defaultValue);
+  // Keep the latest onValueChange reachable without re-mounting the controller.
+  const onChangeRef = React.useRef(onValueChange);
+  React.useEffect(() => {
+    onChangeRef.current = onValueChange;
+  });
+
+  const controllerRef = React.useRef<TabsController | null>(null);
+
+  // Mount the controller via a callback ref: runs during commit (before paint),
+  // so initial selection is reflected with no flash, and React renders no
+  // selection-derived attributes, so re-renders cannot clobber the controller.
+  const setRoot = React.useCallback((node: HTMLDivElement | null) => {
+    if (!node) return;
+    const controller = createTabs(node, {
+      initial: initialRef.current,
+      onChange: (value) => onChangeRef.current?.(value),
+    });
+    controllerRef.current = controller;
+    return () => {
+      controller.destroy();
+      controllerRef.current = null;
+    };
+  }, []);
+
+  // Controlled mode: mirror the prop into the controller.
+  React.useEffect(() => {
+    if (isControlled && controlledValue !== undefined) {
+      controllerRef.current?.setValue(controlledValue);
+    }
+  }, [isControlled, controlledValue]);
 
   return (
-    <TabsContext.Provider value={contextValue}>
-      <div className={classy(className)} {...props}>
+    <TabsContext.Provider value={{ baseId }}>
+      <div ref={setRoot} className={classy(className)} {...props}>
         {children}
       </div>
     </TabsContext.Provider>
@@ -110,50 +128,9 @@ Tabs.displayName = 'Tabs';
 export interface TabsListProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 export function TabsList({ className, children, ...props }: TabsListProps) {
-  const listRef = React.useRef<HTMLDivElement>(null);
-
-  const handleKeyDown = React.useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
-    const list = listRef.current;
-    if (!list) return;
-
-    const tabs = Array.from(
-      list.querySelectorAll<HTMLButtonElement>('[role="tab"]:not([disabled])'),
-    );
-    const currentIndex = tabs.indexOf(document.activeElement as HTMLButtonElement);
-
-    if (currentIndex === -1) return;
-
-    let nextIndex: number | null = null;
-
-    switch (event.key) {
-      case 'ArrowLeft':
-        nextIndex = currentIndex > 0 ? currentIndex - 1 : tabs.length - 1;
-        break;
-      case 'ArrowRight':
-        nextIndex = currentIndex < tabs.length - 1 ? currentIndex + 1 : 0;
-        break;
-      case 'Home':
-        nextIndex = 0;
-        break;
-      case 'End':
-        nextIndex = tabs.length - 1;
-        break;
-    }
-
-    if (nextIndex !== null) {
-      event.preventDefault();
-      tabs[nextIndex]?.focus();
-    }
-  }, []);
-
+  // Keyboard navigation is owned by the controller's roving-focus; this is markup only.
   return (
-    <div
-      ref={listRef}
-      role="tablist"
-      className={classy(tabsListClasses, className)}
-      onKeyDown={handleKeyDown}
-      {...props}
-    >
+    <div role="tablist" className={classy(tabsListClasses, className)} {...props}>
       {children}
     </div>
   );
@@ -169,35 +146,21 @@ export interface TabsTriggerProps extends React.ButtonHTMLAttributes<HTMLButtonE
 }
 
 export function TabsTrigger({ value, className, children, disabled, ...props }: TabsTriggerProps) {
-  const { value: selectedValue, onValueChange, baseId } = useTabsContext();
-  const isSelected = value === selectedValue;
-
-  const handleClick = React.useCallback(() => {
-    if (!disabled) {
-      onValueChange(value);
-    }
-  }, [disabled, onValueChange, value]);
-
+  const { baseId } = useTabsContext();
   const tabId = `${baseId}-tab-${value}`;
   const panelId = `${baseId}-panel-${value}`;
 
+  // No aria-selected / tabindex / onClick here: the controller reflects selection
+  // state and handles activation (click delegation + roving focus) on the root.
   return (
     <button
       type="button"
       role="tab"
       id={tabId}
-      aria-selected={isSelected}
       aria-controls={panelId}
-      tabIndex={isSelected ? 0 : -1}
       disabled={disabled}
-      data-state={isSelected ? 'active' : 'inactive'}
-      className={classy(
-        tabsTriggerBaseClasses,
-        'disabled:pointer-events-none disabled:opacity-50',
-        'data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm',
-        className,
-      )}
-      onClick={handleClick}
+      data-value={value}
+      className={classy(tabsTriggerBaseClasses, tabsTriggerStateClasses, className)}
       {...props}
     >
       {children}
@@ -212,36 +175,22 @@ TabsTrigger.displayName = 'TabsTrigger';
 export interface TabsContentProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Value that identifies this panel */
   value: string;
-  /** Force mount content even when inactive */
-  forceMount?: boolean;
 }
 
-export function TabsContent({
-  value,
-  forceMount,
-  className,
-  children,
-  ...props
-}: TabsContentProps) {
-  const { value: selectedValue, baseId } = useTabsContext();
-  const isSelected = value === selectedValue;
-
+export function TabsContent({ value, className, children, ...props }: TabsContentProps) {
+  const { baseId } = useTabsContext();
   const tabId = `${baseId}-tab-${value}`;
   const panelId = `${baseId}-panel-${value}`;
 
-  if (!forceMount && !isSelected) {
-    return null;
-  }
-
+  // Visibility (hidden) and data-state are set by the controller before paint.
   return (
     <div
       role="tabpanel"
       id={panelId}
       aria-labelledby={tabId}
-      // biome-ignore lint/a11y/noNoninteractiveTabindex: tabpanels should be focusable per WAI-ARIA authoring practices
+      // biome-ignore lint/a11y/noNoninteractiveTabindex: tabpanels are focusable per WAI-ARIA authoring practices
       tabIndex={0}
-      hidden={!isSelected}
-      data-state={isSelected ? 'active' : 'inactive'}
+      data-value={value}
       className={classy(tabsContentClasses, className)}
       {...props}
     >

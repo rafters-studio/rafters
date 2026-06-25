@@ -1,10 +1,23 @@
 /**
  * Menubar component for application-style horizontal menu navigation
  *
+ * Behavior (which top-level menu is open, Arrow Left/Right + Home/End across triggers,
+ * Arrow Up/Down + typeahead within an open menu, escape / outside-click dismissal,
+ * focus-first-item-on-open, focus-return-to-trigger-on-close, and ARIA / visibility
+ * reflection) lives in the framework-agnostic createMenubar controller, which composes
+ * the shared primitives (selection-group + roving-focus + typeahead + escape-keydown +
+ * outside-click). React renders the markup and delegates to the controller via a
+ * callback ref - the same controller the Astro and web-component wrappers use, so
+ * behavior cannot drift between frameworks.
+ *
+ * Inactive menu content stays MOUNTED but hidden (the controller toggles `hidden` +
+ * `data-state`), mirroring tabs/accordion. Checkbox/radio item checked state is light
+ * local React state - it is not part of the open/active-menu behavior the controller owns.
+ *
  * @cognitive-load 5/10 - Horizontal menu bar with nested dropdowns requires spatial awareness
  * @attention-economics Application navigation: always visible, groups commands by category
- * @trust-building Familiar desktop app pattern (File, Edit, View...), keyboard shortcuts, hover transitions
- * @accessibility Full keyboard support (arrows between menus and within), role="menubar" on root, role="menu" on dropdowns
+ * @trust-building Familiar desktop app pattern (File, Edit, View...), keyboard shortcuts
+ * @accessibility Full keyboard support, role="menubar" on root, role="menu" on dropdowns
  * @semantic-meaning Navigation menu: Menu=category group, Item=action, CheckboxItem=toggle, RadioItem=exclusive choice
  *
  * @usage-patterns
@@ -21,7 +34,6 @@
  *     <MenubarTrigger>File</MenubarTrigger>
  *     <MenubarContent>
  *       <MenubarItem>New Tab <MenubarShortcut>Cmd+T</MenubarShortcut></MenubarItem>
- *       <MenubarItem>New Window</MenubarItem>
  *       <MenubarSeparator />
  *       <MenubarItem>Print...</MenubarItem>
  *     </MenubarContent>
@@ -30,7 +42,6 @@
  *     <MenubarTrigger>Edit</MenubarTrigger>
  *     <MenubarContent>
  *       <MenubarItem>Undo <MenubarShortcut>Cmd+Z</MenubarShortcut></MenubarItem>
- *       <MenubarItem>Redo</MenubarItem>
  *     </MenubarContent>
  *   </MenubarMenu>
  * </Menubar>
@@ -38,22 +49,14 @@
  */
 
 import * as React from 'react';
-import { createPortal } from 'react-dom';
 import classy from '../../primitives/classy';
-import { computePosition } from '../../primitives/collision-detector';
-import { onEscapeKeyDown } from '../../primitives/escape-keydown';
-import { onPointerDownOutside } from '../../primitives/outside-click';
-import { getPortalContainer } from '../../primitives/portal';
-import { createRovingFocus } from '../../primitives/roving-focus';
 import { mergeProps } from '../../primitives/slot';
-import { createTypeahead } from '../../primitives/typeahead';
-import type { Align, Side } from '../../primitives/types';
 import {
   menubarCheckboxIndicatorClasses,
   menubarCheckboxItemClasses,
   menubarCheckIconClasses,
-  menubarContentAnimationClasses,
   menubarContentClasses,
+  menubarInsetClasses,
   menubarItemClasses,
   menubarLabelClasses,
   menubarRadioDotClasses,
@@ -66,56 +69,20 @@ import {
   menubarSubTriggerIconClasses,
   menubarTriggerClasses,
 } from './menubar.classes';
-
-// ==================== Types ====================
-
-interface MenubarContextValue {
-  activeMenuId: string | null;
-  onMenuOpen: (menuId: string) => void;
-  onMenuClose: () => void;
-  triggerRefs: Map<string, HTMLButtonElement | null>;
-  registerTrigger: (menuId: string, ref: HTMLButtonElement | null) => void;
-}
-
-interface MenubarMenuContextValue {
-  menuId: string;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  triggerRef: React.RefObject<HTMLButtonElement | null>;
-  contentId: string;
-}
-
-interface MenubarContentContextValue {
-  onItemSelect: () => void;
-}
-
-interface MenubarRadioGroupContextValue {
-  value: string;
-  onValueChange: (value: string) => void;
-}
-
-interface MenubarSubContextValue {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  triggerRef: React.RefObject<HTMLButtonElement | null>;
-  contentId: string;
-}
+import { createMenubar, type MenubarController } from './menubar.controller';
 
 // ==================== Contexts ====================
 
-const MenubarContext = React.createContext<MenubarContextValue | null>(null);
-const MenubarMenuContext = React.createContext<MenubarMenuContextValue | null>(null);
-const MenubarContentContext = React.createContext<MenubarContentContextValue | null>(null);
-const MenubarRadioGroupContext = React.createContext<MenubarRadioGroupContextValue | null>(null);
-const MenubarSubContext = React.createContext<MenubarSubContextValue | null>(null);
-
-function useMenubarContext() {
-  const context = React.useContext(MenubarContext);
-  if (!context) {
-    throw new Error('Menubar components must be used within Menubar');
-  }
-  return context;
+// Menu context carries only the stable value + ARIA ids for one menu. All open/close
+// behavior lives in the controller, so there is no open state threaded through context.
+interface MenubarMenuContextValue {
+  /** The menu's value (also used as data-value and the menu's id namespace). */
+  value: string;
+  triggerId: string;
+  contentId: string;
 }
+
+const MenubarMenuContext = React.createContext<MenubarMenuContextValue | null>(null);
 
 function useMenubarMenuContext() {
   const context = React.useContext(MenubarMenuContext);
@@ -125,13 +92,13 @@ function useMenubarMenuContext() {
   return context;
 }
 
-function useMenubarContentContext() {
-  const context = React.useContext(MenubarContentContext);
-  if (!context) {
-    throw new Error('MenubarItem must be used within MenubarContent');
-  }
-  return context;
+// Radio group context: checked state for radio items (light local state, not controller-owned).
+interface MenubarRadioGroupContextValue {
+  value: string;
+  onValueChange: (value: string) => void;
 }
+
+const MenubarRadioGroupContext = React.createContext<MenubarRadioGroupContextValue | null>(null);
 
 function useMenubarRadioGroupContext() {
   const context = React.useContext(MenubarRadioGroupContext);
@@ -140,6 +107,17 @@ function useMenubarRadioGroupContext() {
   }
   return context;
 }
+
+// Sub context: open state for a single submenu (light local state). Submenus are a
+// nested disclosure inside an open menu; the top-level open/close is the part the
+// controller owns. Submenu open/close stays as local React state here.
+interface MenubarSubContextValue {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  contentId: string;
+}
+
+const MenubarSubContext = React.createContext<MenubarSubContextValue | null>(null);
 
 function useMenubarSubContext() {
   return React.useContext(MenubarSubContext);
@@ -152,104 +130,38 @@ export interface MenubarProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 const MenubarRoot = React.forwardRef<HTMLDivElement, MenubarProps>(
-  ({ className, loop = true, onKeyDown, children, ...props }, ref) => {
-    const [activeMenuId, setActiveMenuId] = React.useState<string | null>(null);
-    const triggerRefs = React.useRef(new Map<string, HTMLButtonElement | null>());
-    const menubarRef = React.useRef<HTMLDivElement>(null);
+  ({ className, loop = true, children, ...props }, ref) => {
+    const controllerRef = React.useRef<MenubarController | null>(null);
+    const nodeRef = React.useRef<HTMLDivElement | null>(null);
 
-    // Compose refs
-    React.useImperativeHandle(ref, () => menubarRef.current as HTMLDivElement);
+    React.useImperativeHandle(ref, () => nodeRef.current as HTMLDivElement);
 
-    const onMenuOpen = React.useCallback((menuId: string) => {
-      setActiveMenuId(menuId);
-    }, []);
-
-    const onMenuClose = React.useCallback(() => {
-      setActiveMenuId(null);
-    }, []);
-
-    const registerTrigger = React.useCallback(
-      (menuId: string, triggerRef: HTMLButtonElement | null) => {
-        triggerRefs.current.set(menuId, triggerRef);
+    // Mount the controller via a callback ref: runs during commit (before paint), so
+    // initial open state is reflected with no flash, and React renders no open-derived
+    // attributes, so re-renders cannot clobber the controller.
+    const setRoot = React.useCallback(
+      (node: HTMLDivElement | null) => {
+        nodeRef.current = node;
+        if (!node) return;
+        const controller = createMenubar(node, { loop });
+        controllerRef.current = controller;
+        return () => {
+          controller.destroy();
+          controllerRef.current = null;
+        };
       },
-      [],
-    );
-
-    // Setup roving focus for menu triggers
-    React.useEffect(() => {
-      if (!menubarRef.current) return;
-
-      const cleanup = createRovingFocus(menubarRef.current, {
-        orientation: 'horizontal',
-        loop,
-      });
-
-      return cleanup;
-    }, [loop]);
-
-    // Handle left/right arrow keys to navigate between menus when one is open
-    const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-      onKeyDown?.(event);
-
-      if (!activeMenuId) return;
-
-      const triggers = Array.from(triggerRefs.current.entries());
-      const currentIndex = triggers.findIndex(([id]) => id === activeMenuId);
-
-      if (currentIndex === -1) return;
-
-      if (event.key === 'ArrowRight') {
-        event.preventDefault();
-        const nextIndex = loop
-          ? (currentIndex + 1) % triggers.length
-          : Math.min(currentIndex + 1, triggers.length - 1);
-        const nextEntry = triggers[nextIndex];
-        if (nextEntry) {
-          const [nextMenuId, nextTrigger] = nextEntry;
-          if (nextTrigger && nextMenuId !== activeMenuId) {
-            setActiveMenuId(nextMenuId);
-            nextTrigger.focus();
-          }
-        }
-      } else if (event.key === 'ArrowLeft') {
-        event.preventDefault();
-        const prevIndex = loop
-          ? (currentIndex - 1 + triggers.length) % triggers.length
-          : Math.max(currentIndex - 1, 0);
-        const prevEntry = triggers[prevIndex];
-        if (prevEntry) {
-          const [prevMenuId, prevTrigger] = prevEntry;
-          if (prevTrigger && prevMenuId !== activeMenuId) {
-            setActiveMenuId(prevMenuId);
-            prevTrigger.focus();
-          }
-        }
-      }
-    };
-
-    const contextValue = React.useMemo(
-      () => ({
-        activeMenuId,
-        onMenuOpen,
-        onMenuClose,
-        triggerRefs: triggerRefs.current,
-        registerTrigger,
-      }),
-      [activeMenuId, onMenuOpen, onMenuClose, registerTrigger],
+      [loop],
     );
 
     return (
-      <MenubarContext.Provider value={contextValue}>
-        <div
-          ref={menubarRef}
-          role="menubar"
-          className={classy(menubarRootClasses, className)}
-          onKeyDown={handleKeyDown}
-          {...props}
-        >
-          {children}
-        </div>
-      </MenubarContext.Provider>
+      <div
+        ref={setRoot}
+        role="menubar"
+        className={classy(menubarRootClasses, className)}
+        {...props}
+      >
+        {children}
+      </div>
     );
   },
 );
@@ -263,35 +175,14 @@ export interface MenubarMenuProps {
 }
 
 export function MenubarMenu({ children }: MenubarMenuProps) {
-  const { activeMenuId, onMenuOpen, onMenuClose } = useMenubarContext();
-
   const id = React.useId();
-  const menuId = `menubar-menu-${id}`;
-  const contentId = `menubar-menu-content-${id}`;
-  const triggerRef = React.useRef<HTMLButtonElement | null>(null);
-
-  const open = activeMenuId === menuId;
-
-  const handleOpenChange = React.useCallback(
-    (newOpen: boolean) => {
-      if (newOpen) {
-        onMenuOpen(menuId);
-      } else {
-        onMenuClose();
-      }
-    },
-    [menuId, onMenuOpen, onMenuClose],
-  );
+  const value = `menubar-menu-${id}`;
+  const triggerId = `${value}-trigger`;
+  const contentId = `${value}-content`;
 
   const contextValue = React.useMemo(
-    () => ({
-      menuId,
-      open,
-      onOpenChange: handleOpenChange,
-      triggerRef,
-      contentId,
-    }),
-    [menuId, open, handleOpenChange, contentId],
+    () => ({ value, triggerId, contentId }),
+    [value, triggerId, contentId],
   );
 
   return <MenubarMenuContext.Provider value={contextValue}>{children}</MenubarMenuContext.Provider>;
@@ -304,100 +195,31 @@ export interface MenubarTriggerProps extends React.ButtonHTMLAttributes<HTMLButt
 }
 
 export const MenubarTrigger = React.forwardRef<HTMLButtonElement, MenubarTriggerProps>(
-  ({ asChild, className, onClick, onPointerEnter, onKeyDown, ...props }, ref) => {
-    const { activeMenuId, registerTrigger } = useMenubarContext();
-    const { menuId, open, onOpenChange, triggerRef, contentId } = useMenubarMenuContext();
+  ({ asChild, className, ...props }, ref) => {
+    const { value, triggerId, contentId } = useMenubarMenuContext();
 
-    // Track if menu was just opened by hover to avoid toggling it closed on click
-    const openedByHoverRef = React.useRef(false);
-
-    const composedRef = React.useCallback(
-      (node: HTMLButtonElement | null) => {
-        triggerRef.current = node;
-        registerTrigger(menuId, node);
-        if (typeof ref === 'function') {
-          ref(node);
-        } else if (ref) {
-          ref.current = node;
-        }
-      },
-      [ref, triggerRef, registerTrigger, menuId],
-    );
-
-    const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-      onClick?.(event);
-
-      // If we just opened this menu via hover (mouse enter), don't toggle it closed
-      if (openedByHoverRef.current) {
-        openedByHoverRef.current = false;
-        return;
-      }
-
-      // Toggle if this menu is open, otherwise open it
-      if (open) {
-        onOpenChange(false);
-      } else {
-        onOpenChange(true);
-      }
-    };
-
-    // When hovering over a trigger while another menu is open, switch to this menu
-    const handlePointerEnter = (event: React.PointerEvent<HTMLButtonElement>) => {
-      onPointerEnter?.(event);
-      if (activeMenuId && activeMenuId !== menuId) {
-        openedByHoverRef.current = true;
-        onOpenChange(true);
-      }
-    };
-
-    const handleKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
-      onKeyDown?.(event);
-
-      if (event.key === 'ArrowDown' || event.key === 'Enter' || event.key === ' ') {
-        event.preventDefault();
-        onOpenChange(true);
-      }
-    };
-
-    const ariaProps = {
-      'aria-expanded': open,
-      'aria-controls': contentId,
+    // No aria-expanded / data-state / tabindex / onClick here: the controller reflects
+    // open state and handles activation (click delegation + roving focus) on the root.
+    const triggerProps = {
+      ref,
+      type: 'button' as const,
+      role: 'menuitem' as const,
+      id: triggerId,
       'aria-haspopup': 'menu' as const,
-      'data-state': open ? 'open' : 'closed',
+      'aria-controls': contentId,
+      'data-menubar-trigger': '',
+      'data-value': value,
+      className: classy(menubarTriggerClasses, className),
     };
 
     if (asChild && React.isValidElement(props.children)) {
       const child = props.children as React.ReactElement<Record<string, unknown>>;
       const childProps = (child.props ?? {}) as Record<string, unknown>;
-      const merged = mergeProps(
-        {
-          ref: composedRef,
-          role: 'menuitem',
-          tabIndex: -1,
-          ...ariaProps,
-          onClick: handleClick,
-          onPointerEnter: handlePointerEnter,
-          onKeyDown: handleKeyDown,
-        } as Partial<unknown>,
-        childProps,
-      );
+      const merged = mergeProps(triggerProps as Partial<unknown>, childProps);
       return React.cloneElement(child, merged as Partial<Record<string, unknown>>);
     }
 
-    return (
-      <button
-        ref={composedRef}
-        type="button"
-        role="menuitem"
-        tabIndex={-1}
-        className={classy(menubarTriggerClasses, className)}
-        onClick={handleClick}
-        onPointerEnter={handlePointerEnter}
-        onKeyDown={handleKeyDown}
-        {...ariaProps}
-        {...props}
-      />
-    );
+    return <button {...triggerProps} {...props} />;
   },
 );
 
@@ -411,318 +233,51 @@ export interface MenubarPortalProps {
   forceMount?: boolean;
 }
 
-export function MenubarPortal({ children, container, forceMount }: MenubarPortalProps) {
-  const { open } = useMenubarMenuContext();
-  const [mounted, setMounted] = React.useState(false);
-
-  React.useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const portalContainer = getPortalContainer(
-    container !== undefined ? { container, enabled: true } : { enabled: true },
-  );
-
-  const shouldRender = forceMount || open;
-
-  if (!shouldRender || !mounted || !portalContainer) {
-    return null;
-  }
-
-  return createPortal(children, portalContainer);
+// Retained for API stability. In the controller model, menu content stays mounted in
+// the DOM (the controller toggles visibility), so the portal is a passthrough.
+export function MenubarPortal({ children }: MenubarPortalProps) {
+  return <>{children}</>;
 }
+
+MenubarPortal.displayName = 'MenubarPortal';
 
 // ==================== MenubarContent ====================
 
 export interface MenubarContentProps extends React.HTMLAttributes<HTMLDivElement> {
   asChild?: boolean;
-  forceMount?: boolean;
-  side?: Side;
-  align?: Align;
-  sideOffset?: number;
-  alignOffset?: number;
-  onEscapeKeyDown?: (event: KeyboardEvent) => void;
-  onPointerDownOutside?: (event: PointerEvent | TouchEvent) => void;
   loop?: boolean;
 }
 
 export const MenubarContent = React.forwardRef<HTMLDivElement, MenubarContentProps>(
-  (
-    {
-      asChild,
-      forceMount,
-      side = 'bottom',
-      align = 'start',
-      sideOffset = 8,
-      alignOffset = -4,
-      onEscapeKeyDown: onEscapeKeyDownProp,
-      onPointerDownOutside: onPointerDownOutsideProp,
-      loop = true,
-      className,
-      style,
-      onKeyDown,
-      ...props
-    },
-    ref,
-  ) => {
-    const { onMenuClose, triggerRefs } = useMenubarContext();
-    const { open, onOpenChange, contentId, triggerRef, menuId } = useMenubarMenuContext();
-    const subContext = useMenubarSubContext();
-    const contentRef = React.useRef<HTMLDivElement>(null);
-    const [position, setPosition] = React.useState<{
-      x: number;
-      y: number;
-      side: Side;
-      align: Align;
-    }>({
-      x: 0,
-      y: 0,
-      side,
-      align,
-    });
+  ({ asChild, loop, className, children, ...props }, ref) => {
+    const { value, triggerId, contentId } = useMenubarMenuContext();
 
-    // Compose refs
-    React.useImperativeHandle(ref, () => contentRef.current as HTMLDivElement);
-
-    // Get anchor element
-    const getAnchorElement = React.useCallback(() => {
-      if (subContext) {
-        return subContext.triggerRef.current;
-      }
-      return triggerRef.current;
-    }, [subContext, triggerRef]);
-
-    // Position the menu
-    React.useEffect(() => {
-      if (!open) return;
-
-      const updatePosition = () => {
-        const anchorElement = getAnchorElement();
-        const floatingElement = contentRef.current;
-
-        if (!anchorElement || !floatingElement) return;
-
-        const result = computePosition(anchorElement, floatingElement, {
-          side: subContext ? 'right' : side,
-          align: subContext ? 'start' : align,
-          sideOffset: subContext ? 2 : sideOffset,
-          alignOffset: subContext ? -4 : alignOffset,
-          avoidCollisions: true,
-        });
-
-        setPosition({
-          x: result.x,
-          y: result.y,
-          side: result.side,
-          align: result.align,
-        });
-      };
-
-      const frame = requestAnimationFrame(updatePosition);
-
-      window.addEventListener('scroll', updatePosition, { capture: true, passive: true });
-      window.addEventListener('resize', updatePosition, { passive: true });
-
-      return () => {
-        cancelAnimationFrame(frame);
-        window.removeEventListener('scroll', updatePosition, { capture: true });
-        window.removeEventListener('resize', updatePosition);
-      };
-    }, [open, side, align, sideOffset, alignOffset, subContext, getAnchorElement]);
-
-    // Setup roving focus
-    React.useEffect(() => {
-      if (!open || !contentRef.current) return;
-
-      const cleanup = createRovingFocus(contentRef.current, {
-        orientation: 'vertical',
-        loop,
-      });
-
-      return cleanup;
-    }, [open, loop]);
-
-    // Setup typeahead
-    React.useEffect(() => {
-      if (!open || !contentRef.current) return;
-
-      const container = contentRef.current;
-
-      const cleanup = createTypeahead(container, {
-        getItems: () =>
-          container.querySelectorAll<HTMLElement>(
-            '[role="menuitem"]:not([disabled]), [role="menuitemcheckbox"]:not([disabled]), [role="menuitemradio"]:not([disabled])',
-          ),
-        onMatch: (item) => {
-          item.focus();
-        },
-      });
-
-      return cleanup;
-    }, [open]);
-
-    // Escape key handler
-    React.useEffect(() => {
-      if (!open) return;
-
-      const cleanup = onEscapeKeyDown((event) => {
-        onEscapeKeyDownProp?.(event);
-        if (!event.defaultPrevented) {
-          onMenuClose();
-          triggerRef.current?.focus();
-        }
-      });
-
-      return cleanup;
-    }, [open, onMenuClose, onEscapeKeyDownProp, triggerRef]);
-
-    // Outside click handler
-    React.useEffect(() => {
-      if (!open || !contentRef.current) return;
-
-      const cleanup = onPointerDownOutside(contentRef.current, (event) => {
-        const target = event.target as Node;
-
-        // Check if clicking another menubar trigger
-        const entries = Array.from(triggerRefs.entries());
-        for (const [, trigger] of entries) {
-          if (trigger?.contains(target)) {
-            // Let the trigger handle opening its own menu
-            return;
-          }
-        }
-
-        onPointerDownOutsideProp?.(event);
-
-        if (!event.defaultPrevented) {
-          onMenuClose();
-        }
-      });
-
-      return cleanup;
-    }, [open, onMenuClose, onPointerDownOutsideProp, triggerRefs]);
-
-    // Focus first item on open
-    React.useEffect(() => {
-      if (!open || !contentRef.current) return;
-
-      const firstItem = contentRef.current.querySelector<HTMLElement>(
-        '[role="menuitem"]:not([disabled]), [role="menuitemcheckbox"]:not([disabled]), [role="menuitemradio"]:not([disabled])',
-      );
-
-      if (firstItem) {
-        firstItem.focus();
-      }
-    }, [open]);
-
-    // Handle arrow left to close and go to previous menu
-    const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-      onKeyDown?.(event);
-
-      if (event.key === 'ArrowLeft' && !subContext) {
-        event.preventDefault();
-        // Close this menu and focus previous trigger
-        const triggers = Array.from(triggerRefs.entries());
-        const currentIndex = triggers.findIndex(([id]) => id === menuId);
-        if (currentIndex > 0) {
-          const prevEntry = triggers[currentIndex - 1];
-          if (prevEntry) {
-            const [, prevTrigger] = prevEntry;
-            if (prevTrigger) {
-              onOpenChange(false);
-              prevTrigger.focus();
-            }
-          }
-        }
-      } else if (event.key === 'ArrowRight' && !subContext) {
-        // Check if we're on a submenu trigger
-        const activeElement = document.activeElement;
-        if (activeElement?.getAttribute('aria-haspopup') === 'menu') {
-          // Let the submenu trigger handle this
-          return;
-        }
-
-        event.preventDefault();
-        // Close this menu and focus next trigger
-        const triggers = Array.from(triggerRefs.entries());
-        const currentIndex = triggers.findIndex(([id]) => id === menuId);
-        if (currentIndex < triggers.length - 1) {
-          const nextEntry = triggers[currentIndex + 1];
-          if (nextEntry) {
-            const [, nextTrigger] = nextEntry;
-            if (nextTrigger) {
-              onOpenChange(false);
-              nextTrigger.focus();
-            }
-          }
-        }
-      }
-    };
-
-    // Handle item selection
-    const onItemSelect = React.useCallback(() => {
-      onMenuClose();
-      triggerRef.current?.focus();
-    }, [onMenuClose, triggerRef]);
-
-    const contentContextValue = React.useMemo(() => ({ onItemSelect }), [onItemSelect]);
-
-    const shouldRender = forceMount || open;
-
-    if (!shouldRender) {
-      return null;
-    }
-
-    const contentStyle: React.CSSProperties = {
-      ...style,
-      position: 'fixed',
-      left: 0,
-      top: 0,
-      transform: `translate(${Math.round(position.x)}px, ${Math.round(position.y)}px)`,
-    };
-
+    // Always mounted; the controller sets hidden + data-state (closed by default on
+    // mount via subscribe). Roving focus / typeahead are mounted by the controller on open.
     const contentProps = {
-      ref: contentRef,
-      id: subContext ? subContext.contentId : contentId,
-      role: 'menu',
+      ref,
+      id: contentId,
+      role: 'menu' as const,
+      'aria-labelledby': triggerId,
       'aria-orientation': 'vertical' as const,
-      'data-state': open ? 'open' : 'closed',
-      'data-side': position.side,
-      'data-align': position.align,
-      className: classy(menubarContentClasses, menubarContentAnimationClasses, className),
-      style: contentStyle,
-      onKeyDown: handleKeyDown,
-      ...props,
+      'data-menubar-content': '',
+      'data-value': value,
+      hidden: true,
+      className: classy(menubarContentClasses, className),
     };
 
-    let content: React.ReactNode;
-
-    if (asChild && React.isValidElement(props.children)) {
-      content = (
-        <MenubarContentContext.Provider value={contentContextValue}>
-          {(() => {
-            const ch = props.children as React.ReactElement<Record<string, unknown>>;
-            const cp = (ch.props ?? {}) as Record<string, unknown>;
-            return React.cloneElement(
-              ch,
-              mergeProps(contentProps, cp) as Partial<Record<string, unknown>>,
-            );
-          })()}
-        </MenubarContentContext.Provider>
-      );
-    } else {
-      content = (
-        <MenubarContentContext.Provider value={contentContextValue}>
-          <div {...contentProps} />
-        </MenubarContentContext.Provider>
-      );
+    if (asChild && React.isValidElement(children)) {
+      const child = children as React.ReactElement<Record<string, unknown>>;
+      const childProps = (child.props ?? {}) as Record<string, unknown>;
+      const merged = mergeProps(contentProps as Partial<unknown>, childProps);
+      return React.cloneElement(child, merged as Partial<Record<string, unknown>>);
     }
 
-    const portalContainer = getPortalContainer({ enabled: true });
-    if (portalContainer) {
-      return createPortal(content, portalContainer);
-    }
-    return content;
+    return (
+      <div {...contentProps} {...props}>
+        {children}
+      </div>
+    );
   },
 );
 
@@ -752,7 +307,7 @@ export const MenubarLabel = React.forwardRef<HTMLDivElement, MenubarLabelProps>(
     return (
       <div
         ref={ref}
-        className={classy(menubarLabelClasses, inset && 'pl-8', className)}
+        className={classy(menubarLabelClasses, inset && menubarInsetClasses, className)}
         {...props}
       />
     );
@@ -770,43 +325,26 @@ export interface MenubarItemProps extends Omit<React.HTMLAttributes<HTMLDivEleme
 }
 
 export const MenubarItem = React.forwardRef<HTMLDivElement, MenubarItemProps>(
-  ({ className, inset, disabled, onSelect, onClick, onKeyDown, ...props }, ref) => {
-    const { onItemSelect } = useMenubarContentContext();
-
-    const handleSelect = React.useCallback(() => {
-      if (disabled) return;
-
-      const event = new Event('select', { cancelable: true });
-      onSelect?.(event);
-
-      if (!event.defaultPrevented) {
-        onItemSelect();
-      }
-    }, [disabled, onSelect, onItemSelect]);
-
+  ({ className, inset, disabled, onSelect, onClick, ...props }, ref) => {
+    // The controller closes the menu and returns focus on item click/Enter/Space. This
+    // handler only runs the user's onSelect; selection always closes the menu (matching
+    // the prior activation behavior).
     const handleClick = (event: React.MouseEvent<HTMLDivElement>) => {
       onClick?.(event);
-      handleSelect();
-    };
-
-    const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-      onKeyDown?.(event);
-      if (event.key === 'Enter' || event.key === ' ') {
-        event.preventDefault();
-        handleSelect();
-      }
+      if (disabled) return;
+      onSelect?.(new Event('select', { cancelable: true }));
     };
 
     return (
+      // biome-ignore lint/a11y/useKeyWithClickEvents: keyboard activation (Enter/Space) is handled by the createMenubar controller, which synthesizes the click on the focused item
       <div
         ref={ref}
         role="menuitem"
         tabIndex={disabled ? undefined : -1}
         aria-disabled={disabled || undefined}
         data-disabled={disabled ? '' : undefined}
-        className={classy(menubarItemClasses, inset && 'pl-8', className)}
+        className={classy(menubarItemClasses, inset && menubarInsetClasses, className)}
         onClick={handleClick}
-        onKeyDown={handleKeyDown}
         {...props}
       />
     );
@@ -834,40 +372,20 @@ export const MenubarCheckboxItem = React.forwardRef<HTMLDivElement, MenubarCheck
       onCheckedChange,
       onSelect,
       onClick,
-      onKeyDown,
       children,
       ...props
     },
     ref,
   ) => {
-    const { onItemSelect } = useMenubarContentContext();
-
-    const handleSelect = React.useCallback(() => {
-      if (disabled) return;
-
-      const event = new Event('select', { cancelable: true });
-      onSelect?.(event);
-
-      if (!event.defaultPrevented) {
-        onCheckedChange?.(!checked);
-        onItemSelect();
-      }
-    }, [disabled, onSelect, onCheckedChange, checked, onItemSelect]);
-
     const handleClick = (event: React.MouseEvent<HTMLDivElement>) => {
       onClick?.(event);
-      handleSelect();
-    };
-
-    const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-      onKeyDown?.(event);
-      if (event.key === 'Enter' || event.key === ' ') {
-        event.preventDefault();
-        handleSelect();
-      }
+      if (disabled) return;
+      onSelect?.(new Event('select', { cancelable: true }));
+      onCheckedChange?.(!checked);
     };
 
     return (
+      // biome-ignore lint/a11y/useKeyWithClickEvents: keyboard activation (Enter/Space) is handled by the createMenubar controller, which synthesizes the click on the focused item
       <div
         ref={ref}
         role="menuitemcheckbox"
@@ -878,10 +396,9 @@ export const MenubarCheckboxItem = React.forwardRef<HTMLDivElement, MenubarCheck
         data-state={checked ? 'checked' : 'unchecked'}
         className={classy(menubarCheckboxItemClasses, className)}
         onClick={handleClick}
-        onKeyDown={handleKeyDown}
         {...props}
       >
-        <span className={menubarCheckboxIndicatorClasses}>
+        <div className={menubarCheckboxIndicatorClasses} aria-hidden="true">
           {checked && (
             <svg
               className={menubarCheckIconClasses}
@@ -894,7 +411,7 @@ export const MenubarCheckboxItem = React.forwardRef<HTMLDivElement, MenubarCheck
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
           )}
-        </span>
+        </div>
         {children}
       </div>
     );
@@ -920,10 +437,7 @@ export const MenubarRadioGroup = React.forwardRef<HTMLDivElement, MenubarRadioGr
     );
 
     const contextValue = React.useMemo(
-      () => ({
-        value,
-        onValueChange: handleValueChange,
-      }),
+      () => ({ value, onValueChange: handleValueChange }),
       [value, handleValueChange],
     );
 
@@ -948,38 +462,19 @@ export interface MenubarRadioItemProps
 }
 
 export const MenubarRadioItem = React.forwardRef<HTMLDivElement, MenubarRadioItemProps>(
-  ({ className, value, disabled, onSelect, onClick, onKeyDown, children, ...props }, ref) => {
+  ({ className, value, disabled, onSelect, onClick, children, ...props }, ref) => {
     const { value: selectedValue, onValueChange } = useMenubarRadioGroupContext();
-    const { onItemSelect } = useMenubarContentContext();
-
     const checked = value === selectedValue;
-
-    const handleSelect = React.useCallback(() => {
-      if (disabled) return;
-
-      const event = new Event('select', { cancelable: true });
-      onSelect?.(event);
-
-      if (!event.defaultPrevented) {
-        onValueChange(value);
-        onItemSelect();
-      }
-    }, [disabled, onSelect, onValueChange, value, onItemSelect]);
 
     const handleClick = (event: React.MouseEvent<HTMLDivElement>) => {
       onClick?.(event);
-      handleSelect();
-    };
-
-    const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-      onKeyDown?.(event);
-      if (event.key === 'Enter' || event.key === ' ') {
-        event.preventDefault();
-        handleSelect();
-      }
+      if (disabled) return;
+      onSelect?.(new Event('select', { cancelable: true }));
+      onValueChange(value);
     };
 
     return (
+      // biome-ignore lint/a11y/useKeyWithClickEvents: keyboard activation (Enter/Space) is handled by the createMenubar controller, which synthesizes the click on the focused item
       <div
         ref={ref}
         role="menuitemradio"
@@ -990,12 +485,11 @@ export const MenubarRadioItem = React.forwardRef<HTMLDivElement, MenubarRadioIte
         data-state={checked ? 'checked' : 'unchecked'}
         className={classy(menubarRadioItemClasses, className)}
         onClick={handleClick}
-        onKeyDown={handleKeyDown}
         {...props}
       >
-        <span className={menubarRadioIndicatorClasses}>
-          {checked && <span className={menubarRadioDotClasses} aria-hidden="true" />}
-        </span>
+        <div className={menubarRadioIndicatorClasses} aria-hidden="true">
+          {checked && <div className={menubarRadioDotClasses} aria-hidden="true" />}
+        </div>
         {children}
       </div>
     );
@@ -1018,11 +512,15 @@ MenubarSeparator.displayName = 'MenubarSeparator';
 
 // ==================== MenubarShortcut ====================
 
-export interface MenubarShortcutProps extends React.HTMLAttributes<HTMLSpanElement> {}
+export interface MenubarShortcutProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 export function MenubarShortcut({ className, ...props }: MenubarShortcutProps) {
-  return <span className={classy(menubarShortcutClasses, className)} {...props} />;
+  // A right-aligned shortcut hint; rendered as a div to satisfy the system typography
+  // rule (no raw span with className). menubarShortcutClasses pushes it to the trailing edge.
+  return <div className={classy(menubarShortcutClasses, className)} {...props} />;
 }
+
+MenubarShortcut.displayName = 'MenubarShortcut';
 
 // ==================== MenubarSub ====================
 
@@ -1056,20 +554,16 @@ export function MenubarSub({
 
   const id = React.useId();
   const contentId = `menubar-submenu-content-${id}`;
-  const triggerRef = React.useRef<HTMLButtonElement | null>(null);
 
   const contextValue = React.useMemo(
-    () => ({
-      open,
-      onOpenChange: handleOpenChange,
-      triggerRef,
-      contentId,
-    }),
+    () => ({ open, onOpenChange: handleOpenChange, contentId }),
     [open, handleOpenChange, contentId],
   );
 
   return <MenubarSubContext.Provider value={contextValue}>{children}</MenubarSubContext.Provider>;
 }
+
+MenubarSub.displayName = 'MenubarSub';
 
 // ==================== MenubarSubTrigger ====================
 
@@ -1090,48 +584,27 @@ export const MenubarSubTrigger = React.forwardRef<HTMLDivElement, MenubarSubTrig
       throw new Error('MenubarSubTrigger must be used within MenubarSub');
     }
 
-    const { open, onOpenChange, triggerRef, contentId } = subContext;
+    const { open, onOpenChange, contentId } = subContext;
 
-    // Compose refs
-    const composedRef = React.useCallback(
-      (node: HTMLDivElement | null) => {
-        triggerRef.current = node as unknown as HTMLButtonElement;
-        if (typeof ref === 'function') {
-          ref(node);
-        } else if (ref) {
-          ref.current = node;
-        }
-      },
-      [ref, triggerRef],
-    );
-
+    // Submenu open-on-hover (with a small delay) stays as local behavior - it is a
+    // nested disclosure inside an already-open menu, not the top-level open/close the
+    // controller owns.
     const handlePointerEnter = (event: React.PointerEvent<HTMLDivElement>) => {
       onPointerEnter?.(event);
       if (disabled) return;
-
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-      timeoutRef.current = setTimeout(() => {
-        onOpenChange(true);
-      }, 100);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      timeoutRef.current = setTimeout(() => onOpenChange(true), 100);
     };
 
     const handlePointerLeave = (event: React.PointerEvent<HTMLDivElement>) => {
       onPointerLeave?.(event);
-
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-      timeoutRef.current = setTimeout(() => {
-        onOpenChange(false);
-      }, 100);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      timeoutRef.current = setTimeout(() => onOpenChange(false), 100);
     };
 
     const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
       onKeyDown?.(event);
       if (disabled) return;
-
       if (event.key === 'ArrowRight' || event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
         onOpenChange(true);
@@ -1140,15 +613,13 @@ export const MenubarSubTrigger = React.forwardRef<HTMLDivElement, MenubarSubTrig
 
     React.useEffect(() => {
       return () => {
-        if (timeoutRef.current) {
-          clearTimeout(timeoutRef.current);
-        }
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
       };
     }, []);
 
     return (
       <div
-        ref={composedRef}
+        ref={ref}
         role="menuitem"
         aria-haspopup="menu"
         aria-expanded={open}
@@ -1157,7 +628,7 @@ export const MenubarSubTrigger = React.forwardRef<HTMLDivElement, MenubarSubTrig
         aria-disabled={disabled || undefined}
         data-disabled={disabled ? '' : undefined}
         data-state={open ? 'open' : 'closed'}
-        className={classy(menubarSubTriggerClasses, inset && 'pl-8', className)}
+        className={classy(menubarSubTriggerClasses, inset && menubarInsetClasses, className)}
         onPointerEnter={handlePointerEnter}
         onPointerLeave={handlePointerLeave}
         onKeyDown={handleKeyDown}
@@ -1183,56 +654,56 @@ MenubarSubTrigger.displayName = 'MenubarSubTrigger';
 
 // ==================== MenubarSubContent ====================
 
-export interface MenubarSubContentProps extends Omit<MenubarContentProps, 'side' | 'align'> {}
+export interface MenubarSubContentProps extends React.HTMLAttributes<HTMLDivElement> {
+  loop?: boolean;
+}
 
 export const MenubarSubContent = React.forwardRef<HTMLDivElement, MenubarSubContentProps>(
-  ({ className, onPointerEnter, onPointerLeave, ...props }, ref) => {
+  ({ className, loop, onPointerEnter, onPointerLeave, children, ...props }, ref) => {
     const subContext = useMenubarSubContext();
-    const menuContext = useMenubarMenuContext();
     const timeoutRef = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
     if (!subContext) {
       throw new Error('MenubarSubContent must be used within MenubarSub');
     }
 
-    const { open, onOpenChange } = subContext;
+    const { open, onOpenChange, contentId } = subContext;
 
     const handlePointerEnter = (event: React.PointerEvent<HTMLDivElement>) => {
-      onPointerEnter?.(event as React.PointerEvent<HTMLDivElement>);
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
+      onPointerEnter?.(event);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
 
     const handlePointerLeave = (event: React.PointerEvent<HTMLDivElement>) => {
-      onPointerLeave?.(event as React.PointerEvent<HTMLDivElement>);
-      timeoutRef.current = setTimeout(() => {
-        onOpenChange(false);
-      }, 100);
+      onPointerLeave?.(event);
+      timeoutRef.current = setTimeout(() => onOpenChange(false), 100);
     };
 
     React.useEffect(() => {
       return () => {
-        if (timeoutRef.current) {
-          clearTimeout(timeoutRef.current);
-        }
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
       };
     }, []);
 
+    // Submenu content mounts only while open (local disclosure state, not controller-owned).
     if (!open) {
       return null;
     }
 
     return (
-      <MenubarMenuContext.Provider value={menuContext}>
-        <MenubarContent
-          ref={ref}
-          className={className}
-          onPointerEnter={handlePointerEnter}
-          onPointerLeave={handlePointerLeave}
-          {...props}
-        />
-      </MenubarMenuContext.Provider>
+      <div
+        ref={ref}
+        id={contentId}
+        role="menu"
+        aria-orientation="vertical"
+        data-state="open"
+        className={classy(menubarContentClasses, className)}
+        onPointerEnter={handlePointerEnter}
+        onPointerLeave={handlePointerLeave}
+        {...props}
+      >
+        {children}
+      </div>
     );
   },
 );
@@ -1240,11 +711,6 @@ export const MenubarSubContent = React.forwardRef<HTMLDivElement, MenubarSubCont
 MenubarSubContent.displayName = 'MenubarSubContent';
 
 // ==================== Namespaced Export (shadcn style) ====================
-
-MenubarMenu.displayName = 'MenubarMenu';
-MenubarPortal.displayName = 'MenubarPortal';
-MenubarShortcut.displayName = 'MenubarShortcut';
-MenubarSub.displayName = 'MenubarSub';
 
 export const Menubar = Object.assign(MenubarRoot, {
   Menu: MenubarMenu,

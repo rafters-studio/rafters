@@ -33,8 +33,9 @@ describe('Tabs', () => {
       </Tabs>,
     );
 
-    expect(screen.getByText('Content 2')).toBeInTheDocument();
-    expect(screen.queryByText('Content 1')).not.toBeInTheDocument();
+    // Inactive panels stay mounted but hidden (controller-driven, matches Astro).
+    expect(screen.getByText('Content 2')).toBeVisible();
+    expect(screen.getByText('Content 1')).not.toBeVisible();
   });
 
   it('switches tabs on click (uncontrolled)', () => {
@@ -49,13 +50,13 @@ describe('Tabs', () => {
       </Tabs>,
     );
 
-    expect(screen.getByText('Content 1')).toBeInTheDocument();
-    expect(screen.queryByText('Content 2')).not.toBeInTheDocument();
+    expect(screen.getByText('Content 1')).toBeVisible();
+    expect(screen.getByText('Content 2')).not.toBeVisible();
 
     fireEvent.click(screen.getByRole('tab', { name: 'Tab 2' }));
 
-    expect(screen.queryByText('Content 1')).not.toBeInTheDocument();
-    expect(screen.getByText('Content 2')).toBeInTheDocument();
+    expect(screen.getByText('Content 1')).not.toBeVisible();
+    expect(screen.getByText('Content 2')).toBeVisible();
   });
 
   it('works in controlled mode', () => {
@@ -209,8 +210,8 @@ describe('Tabs', () => {
 
     fireEvent.click(screen.getByRole('tab', { name: 'Tab 2' }));
 
-    expect(screen.getByText('Content 1')).toBeInTheDocument();
-    expect(screen.queryByText('Content 2')).not.toBeInTheDocument();
+    expect(screen.getByText('Content 1')).toBeVisible();
+    expect(screen.getByText('Content 2')).not.toBeVisible();
   });
 
   it('sets correct data-state on triggers', () => {
@@ -245,9 +246,7 @@ describe('Tabs', () => {
           <TabsTrigger value="tab2">Tab 2</TabsTrigger>
         </TabsList>
         <TabsContent value="tab1">Content 1</TabsContent>
-        <TabsContent value="tab2" forceMount>
-          Content 2
-        </TabsContent>
+        <TabsContent value="tab2">Content 2</TabsContent>
       </Tabs>,
     );
 
@@ -260,7 +259,7 @@ describe('Tabs', () => {
     expect(panel2).toHaveAttribute('data-state', 'inactive');
   });
 
-  it('supports forceMount on TabsContent', () => {
+  it('keeps inactive panels mounted and hidden', () => {
     render(
       <Tabs defaultValue="tab1">
         <TabsList>
@@ -268,17 +267,14 @@ describe('Tabs', () => {
           <TabsTrigger value="tab2">Tab 2</TabsTrigger>
         </TabsList>
         <TabsContent value="tab1">Content 1</TabsContent>
-        <TabsContent value="tab2" forceMount>
-          Content 2
-        </TabsContent>
+        <TabsContent value="tab2">Content 2</TabsContent>
       </Tabs>,
     );
 
-    // Both panels exist in DOM when forceMount is used
+    // All panels stay mounted; the controller hides the inactive one.
     expect(screen.getByText('Content 1')).toBeInTheDocument();
     expect(screen.getByText('Content 2')).toBeInTheDocument();
 
-    // Inactive panel is hidden
     const panel2 = screen.getByText('Content 2').closest('[role="tabpanel"]');
     expect(panel2).toHaveAttribute('hidden');
   });

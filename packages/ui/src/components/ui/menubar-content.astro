@@ -1,0 +1,42 @@
+---
+/**
+ * Menubar content panel (Astro) - role=menu.
+ * Always rendered; visibility (hidden) and data-state are driven by the parent
+ * Menubar root script (createMenubar). defaultOpen sets the SSR initial state.
+ *
+ * @cognitive-load 2/10
+ * @accessibility role=menu, aria-orientation, aria-labelledby
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { menubarContentClasses } from './menubar.classes';
+
+interface Props extends HTMLAttributes<'div'> {
+  /** The menubar group id (must match the parent Menubar id). */
+  menubarId: string;
+  /** Value identifying which menu this content belongs to. */
+  value: string;
+  /** Whether this menu is open by default. */
+  defaultOpen?: boolean;
+}
+
+const { menubarId, value, defaultOpen = false, class: className, ...attrs } = Astro.props;
+
+const triggerId = `${menubarId}-trigger-${value}`;
+const contentId = `${menubarId}-content-${value}`;
+---
+
+<div
+  id={contentId}
+  role="menu"
+  aria-orientation="vertical"
+  aria-labelledby={triggerId}
+  data-menubar-content
+  data-value={value}
+  data-state={defaultOpen ? 'open' : 'closed'}
+  hidden={!defaultOpen}
+  class={classy(menubarContentClasses, className)}
+  {...attrs}
+>
+  <slot />
+</div>

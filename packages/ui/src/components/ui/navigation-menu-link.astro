@@ -1,0 +1,29 @@
+---
+/**
+ * NavigationMenu link (Astro) - an anchor inside a content panel.
+ *
+ * Active styling is driven by the data-active attribute (see navigationMenuLinkClasses),
+ * so the system owns the visual value.
+ *
+ * @cognitive-load 1/10
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { navigationMenuLinkClasses } from './navigation-menu.classes';
+
+interface Props extends HTMLAttributes<'a'> {
+  /** Whether this link is currently active. */
+  active?: boolean;
+}
+
+const { active = false, href, class: className, ...attrs } = Astro.props;
+---
+
+<a
+  href={href ?? '#'}
+  data-active={active ? '' : undefined}
+  class={classy(navigationMenuLinkClasses, className)}
+  {...attrs}
+>
+  <slot />
+</a>

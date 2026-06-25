@@ -1,0 +1,16 @@
+---
+/**
+ * Menubar separator (Astro) - a horizontal rule between menu sections.
+ *
+ * @cognitive-load 1/10
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { menubarSeparatorClasses } from './menubar.classes';
+
+interface Props extends HTMLAttributes<'hr'> {}
+
+const { class: className, ...attrs } = Astro.props;
+---
+
+<hr class={classy(menubarSeparatorClasses, className)} {...attrs} />

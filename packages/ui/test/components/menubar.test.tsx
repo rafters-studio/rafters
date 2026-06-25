@@ -51,7 +51,7 @@ describe('Menubar - SSR Safety', () => {
     expect(html).toContain('role="menubar"');
   });
 
-  it('should not render portal content on server', () => {
+  it('should render menu content closed (hidden) on server', () => {
     const html = renderToString(
       <Menubar>
         <MenubarMenu>
@@ -65,7 +65,11 @@ describe('Menubar - SSR Safety', () => {
       </Menubar>,
     );
 
-    expect(html).not.toContain('Server Item');
+    // In the controller model, content stays mounted but hidden (no portal unmount),
+    // so it appears in the SSR output with the hidden attribute set.
+    expect(html).toContain('Server Item');
+    expect(html).toContain('hidden');
+    expect(html).toContain('data-menubar-content');
   });
 });
 
@@ -86,12 +90,12 @@ describe('Menubar - Client Hydration', () => {
       </Menubar>,
     );
 
-    expect(screen.queryByText('New')).not.toBeInTheDocument();
+    expect(screen.getByText('New')).not.toBeVisible();
 
     await user.click(screen.getByText('File'));
 
     await waitFor(() => {
-      expect(screen.getByText('New')).toBeInTheDocument();
+      expect(screen.getByText('New')).toBeVisible();
     });
   });
 });
@@ -113,12 +117,12 @@ describe('Menubar - Basic Interactions', () => {
       </Menubar>,
     );
 
-    expect(screen.queryByText('New')).not.toBeInTheDocument();
+    expect(screen.getByText('New')).not.toBeVisible();
 
     await user.click(screen.getByText('File'));
 
     await waitFor(() => {
-      expect(screen.getByText('New')).toBeInTheDocument();
+      expect(screen.getByText('New')).toBeVisible();
     });
   });
 
@@ -147,7 +151,7 @@ describe('Menubar - Basic Interactions', () => {
     await user.click(screen.getByText('New'));
 
     await waitFor(() => {
-      expect(screen.queryByText('New')).not.toBeInTheDocument();
+      expect(screen.getByText('New')).not.toBeVisible();
     });
   });
 
@@ -176,7 +180,7 @@ describe('Menubar - Basic Interactions', () => {
     await user.keyboard('{Escape}');
 
     await waitFor(() => {
-      expect(screen.queryByText('New')).not.toBeInTheDocument();
+      expect(screen.getByText('New')).not.toBeVisible();
     });
   });
 
@@ -210,7 +214,7 @@ describe('Menubar - Basic Interactions', () => {
     fireEvent.pointerDown(screen.getByTestId('outside'));
 
     await waitFor(() => {
-      expect(screen.queryByText('New')).not.toBeInTheDocument();
+      expect(screen.getByText('New')).not.toBeVisible();
     });
   });
 
@@ -249,8 +253,8 @@ describe('Menubar - Basic Interactions', () => {
     await user.hover(screen.getByText('Edit'));
 
     await waitFor(() => {
-      expect(screen.getByText('Undo')).toBeInTheDocument();
-      expect(screen.queryByText('New File')).not.toBeInTheDocument();
+      expect(screen.getByText('Undo')).toBeVisible();
+      expect(screen.getByText('New File')).not.toBeVisible();
     });
   });
 });
@@ -505,8 +509,8 @@ describe('Menubar - Multiple Menus', () => {
     await user.click(screen.getByText('Edit'));
 
     await waitFor(() => {
-      expect(screen.getByText('Undo')).toBeInTheDocument();
-      expect(screen.queryByText('New File')).not.toBeInTheDocument();
+      expect(screen.getByText('Undo')).toBeVisible();
+      expect(screen.getByText('New File')).not.toBeVisible();
     });
   });
 });
@@ -1087,7 +1091,7 @@ describe('Menubar - Focus Return', () => {
     await user.keyboard('{Escape}');
 
     await waitFor(() => {
-      expect(screen.queryByText('Item')).not.toBeInTheDocument();
+      expect(screen.getByText('Item')).not.toBeVisible();
       expect(trigger).toHaveFocus();
     });
   });

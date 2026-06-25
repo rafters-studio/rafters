@@ -1,0 +1,18 @@
+---
+/**
+ * Menubar menu (Astro) - a grouping wrapper for one trigger + content pair.
+ * Carries no behavior; the parent Menubar root script (createMenubar) drives
+ * open/close via the trigger/content data-* contract.
+ *
+ * @cognitive-load 1/10
+ */
+import type { HTMLAttributes } from 'astro/types';
+
+interface Props extends HTMLAttributes<'div'> {}
+
+const { class: className, ...attrs } = Astro.props;
+---
+
+<div data-menubar-menu class={className} {...attrs}>
+  <slot />
+</div>

@@ -1,0 +1,33 @@
+---
+/**
+ * Accordion item (Astro) - wraps a trigger + content pair.
+ * data-state is set initially for SSR and then driven by the controller.
+ *
+ * @cognitive-load 1/10
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { accordionItemClasses } from './accordion.classes';
+
+interface Props extends HTMLAttributes<'div'> {
+  /** Value identifying this item. */
+  value: string;
+  /** Whether this item is disabled. */
+  disabled?: boolean;
+  /** Whether this item is open by default. */
+  defaultOpen?: boolean;
+}
+
+const { value, disabled = false, defaultOpen = false, class: className, ...attrs } = Astro.props;
+---
+
+<div
+  data-accordion-item
+  data-value={value}
+  data-state={defaultOpen ? 'open' : 'closed'}
+  data-disabled={disabled ? '' : undefined}
+  class={classy(accordionItemClasses, className)}
+  {...attrs}
+>
+  <slot />
+</div>

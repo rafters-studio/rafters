@@ -1,0 +1,74 @@
+---
+/**
+ * Accordion trigger (Astro) - a button inside a role=heading wrapper.
+ * The parent Accordion root script (createAccordion) handles toggling, roving
+ * focus, and reflecting aria-expanded / data-state. data-value links it to its
+ * content; data-roving-item lets roving-focus include it.
+ *
+ * @cognitive-load 2/10
+ * @accessibility role=heading wrapper, aria-expanded, aria-controls
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import {
+  accordionTriggerClasses,
+  accordionTriggerHeadingClasses,
+  accordionTriggerIconClasses,
+} from './accordion.classes';
+
+interface Props extends HTMLAttributes<'button'> {
+  /** The accordion group id (must match the parent Accordion id). */
+  accordionId: string;
+  /** Value identifying this item. */
+  value: string;
+  /** Whether this item is disabled. */
+  disabled?: boolean;
+  /** Whether this item is open by default. */
+  defaultOpen?: boolean;
+}
+
+const {
+  accordionId,
+  value,
+  disabled = false,
+  defaultOpen = false,
+  class: className,
+  ...attrs
+} = Astro.props;
+
+const triggerId = `${accordionId}-trigger-${value}`;
+const contentId = `${accordionId}-content-${value}`;
+---
+
+<div role="heading" aria-level={3} class={accordionTriggerHeadingClasses}>
+  <button
+    type="button"
+    id={triggerId}
+    aria-controls={contentId}
+    aria-expanded={defaultOpen ? 'true' : 'false'}
+    data-accordion-trigger
+    data-roving-item
+    data-value={value}
+    data-state={defaultOpen ? 'open' : 'closed'}
+    disabled={disabled}
+    class={classy(accordionTriggerClasses, className)}
+    {...attrs}
+  >
+    <slot />
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+      class={classy(accordionTriggerIconClasses)}
+    >
+      <polyline points="6 9 12 15 18 9"></polyline>
+    </svg>
+  </button>
+</div>

@@ -1,0 +1,33 @@
+---
+/**
+ * Menubar item (Astro) - role=menuitem.
+ * The parent Menubar root script (createMenubar) closes the menu and returns focus
+ * when a non-disabled item is activated (click / Enter / Space).
+ *
+ * @cognitive-load 1/10
+ * @accessibility role=menuitem, aria-disabled, roving tabindex
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { menubarInsetClasses, menubarItemClasses } from './menubar.classes';
+
+interface Props extends HTMLAttributes<'div'> {
+  /** Whether this item is disabled. */
+  disabled?: boolean;
+  /** Whether to inset the item (aligns with checkbox/radio indicators). */
+  inset?: boolean;
+}
+
+const { disabled = false, inset = false, class: className, ...attrs } = Astro.props;
+---
+
+<div
+  role="menuitem"
+  tabindex={disabled ? undefined : -1}
+  aria-disabled={disabled ? 'true' : undefined}
+  data-disabled={disabled ? '' : undefined}
+  class={classy(menubarItemClasses, inset && menubarInsetClasses, className)}
+  {...attrs}
+>
+  <slot />
+</div>

@@ -1,6 +1,12 @@
 /**
  * Accordion component for progressive disclosure of content sections
  *
+ * Behavior (expansion state, ArrowUp/Down/Home/End navigation, roving tabindex, ARIA
+ * and visibility reflection) lives in the framework-agnostic createAccordion controller,
+ * which composes the shared primitives (selection-group + roving-focus). React renders
+ * markup and delegates via a callback ref - the same controller the Astro and
+ * web-component wrappers use, so behavior cannot drift between frameworks.
+ *
  * @cognitive-load 3/10 - Progressive disclosure reduces information overload
  * @attention-economics Content hierarchy: headers compete for scanning attention, expanded content demands focus
  * @trust-building Predictable expand/collapse behavior, persistent state for user control
@@ -9,7 +15,6 @@
  *
  * @usage-patterns
  * DO: Use for FAQs, settings groups, or long-form content organization
- * DO: Keep headers scannable and descriptive
  * DO: Use single mode when sections are mutually exclusive
  * DO: Use multiple mode for independent content sections
  * NEVER: Hide critical information in collapsed sections, nest accordions deeply
@@ -35,31 +40,19 @@ import {
   accordionTriggerHeadingClasses,
   accordionTriggerIconClasses,
 } from './accordion.classes';
+import { type AccordionController, createAccordion } from './accordion.controller';
 
-// ==================== Context ====================
-
-interface AccordionContextValue {
-  type: 'single' | 'multiple';
-  value: string[];
-  onItemToggle: (itemValue: string) => void;
-  collapsible: boolean;
+function normalizeValue(value: string | string[] | undefined): string[] {
+  if (value === undefined) return [];
+  return Array.isArray(value) ? value : [value];
 }
 
-const AccordionContext = React.createContext<AccordionContextValue | null>(null);
-
-function useAccordionContext() {
-  const context = React.useContext(AccordionContext);
-  if (!context) {
-    throw new Error('Accordion components must be used within Accordion');
-  }
-  return context;
-}
+// ==================== Item context (value + ARIA ids only) ====================
 
 interface AccordionItemContextValue {
   value: string;
   triggerId: string;
   contentId: string;
-  isOpen: boolean;
   disabled: boolean;
 }
 
@@ -98,112 +91,47 @@ export function Accordion({
   children,
   ...props
 }: AccordionProps) {
-  // Normalize value to always be string[] internally
-  const normalizeValue = (val: string | string[] | undefined): string[] => {
-    if (val === undefined) return [];
-    if (Array.isArray(val)) return val;
-    return val ? [val] : [];
-  };
-
-  // Derive initial value
-  const getInitialValue = (): string[] => {
-    return normalizeValue(defaultValue);
-  };
-
-  // State management (controlled vs uncontrolled)
-  const [uncontrolledValue, setUncontrolledValue] = React.useState(getInitialValue);
   const isControlled = controlledValue !== undefined;
-  const value = isControlled ? normalizeValue(controlledValue) : uncontrolledValue;
 
-  const containerRef = React.useRef<HTMLDivElement>(null);
+  const initialRef = React.useRef(normalizeValue(isControlled ? controlledValue : defaultValue));
+  const onChangeRef = React.useRef(onValueChange);
+  React.useEffect(() => {
+    onChangeRef.current = onValueChange;
+  });
 
-  const handleItemToggle = React.useCallback(
-    (itemValue: string) => {
-      let newValue: string[];
+  const controllerRef = React.useRef<AccordionController | null>(null);
 
-      if (type === 'single') {
-        if (value.includes(itemValue)) {
-          // Closing the open item
-          newValue = collapsible ? [] : [itemValue];
-        } else {
-          // Opening a new item
-          newValue = [itemValue];
-        }
-      } else {
-        // Multiple mode: toggle the item
-        if (value.includes(itemValue)) {
-          newValue = value.filter((v) => v !== itemValue);
-        } else {
-          newValue = [...value, itemValue];
-        }
-      }
-
-      if (!isControlled) {
-        setUncontrolledValue(newValue);
-      }
-
-      // Return value in expected format based on type
-      if (type === 'single') {
-        onValueChange?.(newValue[0] ?? '');
-      } else {
-        onValueChange?.(newValue);
-      }
+  const setRoot = React.useCallback(
+    (node: HTMLDivElement | null) => {
+      if (!node) return;
+      const controller = createAccordion(node, {
+        type,
+        collapsible,
+        initial: initialRef.current,
+        onChange: (values) => {
+          onChangeRef.current?.(type === 'single' ? (values[0] ?? '') : values);
+        },
+      });
+      controllerRef.current = controller;
+      return () => {
+        controller.destroy();
+        controllerRef.current = null;
+      };
     },
-    [type, value, isControlled, collapsible, onValueChange],
+    [type, collapsible],
   );
 
-  // Keyboard navigation between items
-  const handleKeyDown = React.useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const triggers = Array.from(
-      container.querySelectorAll<HTMLButtonElement>('[data-accordion-trigger]:not([disabled])'),
-    );
-
-    const currentIndex = triggers.indexOf(document.activeElement as HTMLButtonElement);
-    if (currentIndex === -1) return;
-
-    let nextIndex: number | null = null;
-
-    switch (event.key) {
-      case 'ArrowDown':
-        nextIndex = currentIndex < triggers.length - 1 ? currentIndex + 1 : 0;
-        break;
-      case 'ArrowUp':
-        nextIndex = currentIndex > 0 ? currentIndex - 1 : triggers.length - 1;
-        break;
-      case 'Home':
-        nextIndex = 0;
-        break;
-      case 'End':
-        nextIndex = triggers.length - 1;
-        break;
+  // Controlled mode: mirror the prop into the controller.
+  React.useEffect(() => {
+    if (isControlled) {
+      controllerRef.current?.setValue(normalizeValue(controlledValue));
     }
-
-    if (nextIndex !== null) {
-      event.preventDefault();
-      triggers[nextIndex]?.focus();
-    }
-  }, []);
-
-  const contextValue = React.useMemo(
-    () => ({
-      type,
-      value,
-      onItemToggle: handleItemToggle,
-      collapsible,
-    }),
-    [type, value, handleItemToggle, collapsible],
-  );
+  }, [isControlled, controlledValue]);
 
   return (
-    <AccordionContext.Provider value={contextValue}>
-      {/* biome-ignore lint/a11y/noStaticElementInteractions: keyboard event delegation for arrow key navigation between accordion items */}
-      <div ref={containerRef} className={classy(className)} onKeyDown={handleKeyDown} {...props}>
-        {children}
-      </div>
-    </AccordionContext.Provider>
+    <div ref={setRoot} className={classy(className)} {...props}>
+      {children}
+    </div>
   );
 }
 
@@ -225,28 +153,20 @@ export function AccordionItem({
   children,
   ...props
 }: AccordionItemProps) {
-  const { value: openValues } = useAccordionContext();
   const baseId = React.useId();
-
-  const isOpen = openValues.includes(value);
   const triggerId = `${baseId}-trigger`;
   const contentId = `${baseId}-content`;
 
   const itemContextValue = React.useMemo(
-    () => ({
-      value,
-      triggerId,
-      contentId,
-      isOpen,
-      disabled,
-    }),
-    [value, triggerId, contentId, isOpen, disabled],
+    () => ({ value, triggerId, contentId, disabled }),
+    [value, triggerId, contentId, disabled],
   );
 
   return (
     <AccordionItemContext.Provider value={itemContextValue}>
       <div
-        data-state={isOpen ? 'open' : 'closed'}
+        data-accordion-item
+        data-value={value}
         data-disabled={disabled ? '' : undefined}
         className={classy(accordionItemClasses, className)}
         {...props}
@@ -269,29 +189,24 @@ export function AccordionTrigger({
   disabled: propDisabled,
   ...props
 }: AccordionTriggerProps) {
-  const { onItemToggle } = useAccordionContext();
-  const { value, triggerId, contentId, isOpen, disabled: itemDisabled } = useAccordionItemContext();
-
+  const { value, triggerId, contentId, disabled: itemDisabled } = useAccordionItemContext();
   const disabled = propDisabled ?? itemDisabled;
 
-  const handleClick = React.useCallback(() => {
-    if (!disabled) {
-      onItemToggle(value);
-    }
-  }, [disabled, onItemToggle, value]);
-
+  // No aria-expanded / data-state / onClick here: the controller reflects state and
+  // handles toggling (click delegation) + roving focus on the root. The heading uses
+  // role/aria-level rather than a raw h-tag (the system owns typography components).
   return (
-    <h3 className={accordionTriggerHeadingClasses}>
+    // biome-ignore lint/a11y/useSemanticElements: WAI-ARIA heading wrapper; the system typography rule disallows a raw <h3 className>, so role/aria-level is used
+    <div role="heading" aria-level={3} className={accordionTriggerHeadingClasses}>
       <button
         type="button"
         id={triggerId}
-        aria-expanded={isOpen}
         aria-controls={contentId}
-        data-state={isOpen ? 'open' : 'closed'}
         data-accordion-trigger
+        data-roving-item
+        data-value={value}
         disabled={disabled}
         className={classy(accordionTriggerClasses, className)}
-        onClick={handleClick}
         {...props}
       >
         {children}
@@ -307,12 +222,11 @@ export function AccordionTrigger({
           strokeLinejoin="round"
           aria-hidden="true"
           className={classy(accordionTriggerIconClasses)}
-          data-state={isOpen ? 'open' : 'closed'}
         >
           <polyline points="6 9 12 15 18 9" />
         </svg>
       </button>
-    </h3>
+    </div>
   );
 }
 
@@ -320,32 +234,20 @@ AccordionTrigger.displayName = 'AccordionTrigger';
 
 // ==================== AccordionContent ====================
 
-export interface AccordionContentProps extends React.HTMLAttributes<HTMLDivElement> {
-  /** Force mount content even when closed */
-  forceMount?: boolean;
-}
+export interface AccordionContentProps extends React.HTMLAttributes<HTMLDivElement> {}
 
-export function AccordionContent({
-  forceMount,
-  className,
-  children,
-  ...props
-}: AccordionContentProps) {
-  const { triggerId, contentId, isOpen } = useAccordionItemContext();
+export function AccordionContent({ className, children, ...props }: AccordionContentProps) {
+  const { value, triggerId, contentId } = useAccordionItemContext();
 
-  // Use grid-rows trick for smooth height animation
-  if (!forceMount && !isOpen) {
-    return null;
-  }
-
+  // Always mounted; the controller toggles hidden + data-state. (No forceMount/null.)
   return (
     // biome-ignore lint/a11y/useSemanticElements: div with role="region" is the WAI-ARIA pattern for accordion content
     <div
       id={contentId}
       role="region"
       aria-labelledby={triggerId}
-      data-state={isOpen ? 'open' : 'closed'}
-      hidden={!isOpen}
+      data-accordion-content
+      data-value={value}
       className={classy(accordionContentClasses, className)}
       {...props}
     >

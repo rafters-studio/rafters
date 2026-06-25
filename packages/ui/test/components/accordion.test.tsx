@@ -41,7 +41,7 @@ describe('Accordion', () => {
       </Accordion>,
     );
 
-    expect(screen.queryByText('Content 1')).not.toBeInTheDocument();
+    expect(screen.getByText('Content 1')).not.toBeVisible();
 
     fireEvent.click(screen.getByRole('button', { name: 'Item 1' }));
 
@@ -62,7 +62,7 @@ describe('Accordion', () => {
       </Accordion>,
     );
 
-    expect(screen.queryByText('Content 1')).not.toBeInTheDocument();
+    expect(screen.getByText('Content 1')).not.toBeVisible();
     expect(screen.getByText('Content 2')).toBeInTheDocument();
   });
 
@@ -81,11 +81,11 @@ describe('Accordion', () => {
     );
 
     expect(screen.getByText('Content 1')).toBeInTheDocument();
-    expect(screen.queryByText('Content 2')).not.toBeInTheDocument();
+    expect(screen.getByText('Content 2')).not.toBeVisible();
 
     fireEvent.click(screen.getByRole('button', { name: 'Item 2' }));
 
-    expect(screen.queryByText('Content 1')).not.toBeInTheDocument();
+    expect(screen.getByText('Content 1')).not.toBeVisible();
     expect(screen.getByText('Content 2')).toBeInTheDocument();
   });
 
@@ -122,7 +122,7 @@ describe('Accordion', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Item 1' }));
 
-    expect(screen.queryByText('Content 1')).not.toBeInTheDocument();
+    expect(screen.getByText('Content 1')).not.toBeVisible();
   });
 
   it('allows multiple items open in multiple mode', () => {
@@ -166,7 +166,7 @@ describe('Accordion', () => {
 
     expect(screen.getByText('Content 1')).toBeInTheDocument();
     expect(screen.getByText('Content 2')).toBeInTheDocument();
-    expect(screen.queryByText('Content 3')).not.toBeInTheDocument();
+    expect(screen.getByText('Content 3')).not.toBeVisible();
   });
 
   it('works in controlled mode (single)', () => {
@@ -188,7 +188,7 @@ describe('Accordion', () => {
 
     render(<ControlledAccordion />);
 
-    expect(screen.queryByText('Content 1')).not.toBeInTheDocument();
+    expect(screen.getByText('Content 1')).not.toBeVisible();
 
     fireEvent.click(screen.getByRole('button', { name: 'Item 1' }));
 
@@ -376,7 +376,7 @@ describe('Accordion', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Item 1' }));
 
-    expect(screen.queryByText('Content 1')).not.toBeInTheDocument();
+    expect(screen.getByText('Content 1')).not.toBeVisible();
   });
 
   it('sets correct data-state on items', () => {

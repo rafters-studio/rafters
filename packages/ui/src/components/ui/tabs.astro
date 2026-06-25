@@ -1,22 +1,25 @@
 ---
 /**
- * CSS-only tabbed interface component (Astro)
+ * Tabbed interface (Astro) driven by the shared selection-group primitive.
  *
- * Zero client JavaScript for tab switching. Uses hidden radio inputs with
- * CSS :checked selectors. A small inline script handles arrow key navigation.
+ * State lives in createSelectionGroup (the same primitive the React <Tabs> uses);
+ * a single processed <script> - bundled and deduplicated once per page - imports
+ * it and wires every tab group on the page. Triggers are real buttons; the script
+ * reflects the selected value onto aria-selected / data-state / tabindex and panel
+ * visibility. Config crosses the server -> client boundary via data-* attributes.
  *
  * @cognitive-load 4/10
- * @accessibility role=tablist, role=tab, role=tabpanel, aria-selected, arrow key navigation
+ * @accessibility role=tablist, role=tab, role=tabpanel, aria-selected, arrow/Home/End nav
  *
  * @example
  * ```astro
  * <Tabs id="demo" defaultValue="overview">
  *   <TabsList>
- *     <TabsTrigger tabsId="demo" value="overview">Overview</TabsTrigger>
+ *     <TabsTrigger tabsId="demo" value="overview" defaultChecked>Overview</TabsTrigger>
  *     <TabsTrigger tabsId="demo" value="details">Details</TabsTrigger>
  *   </TabsList>
- *   <TabsContent tabsId="demo" value="overview">Overview content</TabsContent>
- *   <TabsContent tabsId="demo" value="details">Details content</TabsContent>
+ *   <TabsContent tabsId="demo" value="overview" defaultActive>Overview</TabsContent>
+ *   <TabsContent tabsId="demo" value="details">Details</TabsContent>
  * </Tabs>
  * ```
  */
@@ -25,9 +28,9 @@ import classy from '../../primitives/classy';
 import { tabsRootClasses } from './tabs.classes';
 
 interface Props extends HTMLAttributes<'div'> {
-  /** Unique identifier for this tab group, used to link radios, labels, and panels */
+  /** Unique identifier for this tab group. */
   id: string;
-  /** Which tab value is selected by default */
+  /** Which tab value is selected by default. */
   defaultValue: string;
 }
 
@@ -36,9 +39,21 @@ const { id, defaultValue, class: className, ...attrs } = Astro.props;
 
 <div
   class={classy(tabsRootClasses, className)}
-  data-tabs-root={id}
-  data-tabs-default={defaultValue}
+  data-rafters-tabs
+  data-tabs-id={id}
+  data-default-value={defaultValue}
   {...attrs}
 >
   <slot />
 </div>
+
+<script>
+  // Behavior lives in the shared controller; the script just mounts it per root.
+  import { createTabs } from './tabs.controller';
+
+  for (const root of document.querySelectorAll<HTMLElement>('[data-rafters-tabs]')) {
+    if (root.dataset.bound === 'true') continue;
+    root.dataset.bound = 'true';
+    createTabs(root, { initial: root.dataset.defaultValue });
+  }
+</script>

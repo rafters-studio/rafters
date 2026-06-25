@@ -1,6 +1,23 @@
 /**
  * Navigation menu component for site-level navigation with expandable sections
  *
+ * Behavior (which menu is open, arrow-key navigation across triggers, roving tabindex,
+ * hover-intent open/close, Escape + outside-click dismiss, and ARIA / visibility
+ * reflection) lives in the framework-agnostic createNavigationMenu controller, which
+ * composes the shared primitives (selection-group + roving-focus + dismissable-layer).
+ * React renders structural markup and delegates via a callback ref - the same controller
+ * the Astro and web-component wrappers use, so behavior cannot drift between frameworks.
+ *
+ * Trigger and Content render NO open-derived attributes that the controller owns once
+ * mounted (it reflects aria-expanded / data-state / hidden before paint); they render
+ * only a static, non-reactive initial state for SSR so the server HTML is correct and
+ * re-renders cannot clobber the controller. The decorative Viewport and Indicator are
+ * the exception: they subscribe to the controller's open value to size / position
+ * themselves, since that chrome has no server-rendered markup to drive it.
+ *
+ * All Tailwind utilities live in navigation-menu.classes.ts; active / open styling is
+ * driven off data-state / data-active set by the controller, not inline utilities.
+ *
  * @cognitive-load 5/10 - Navigation requires scanning and decision-making but with predictable patterns
  * @attention-economics Primary navigation: visible structure, expandable sections reveal content on demand
  * @trust-building Predictable hover/click behavior, clear visual indicators, smooth transitions
@@ -21,7 +38,7 @@
  * ```tsx
  * <NavigationMenu>
  *   <NavigationMenu.List>
- *     <NavigationMenu.Item>
+ *     <NavigationMenu.Item value="products">
  *       <NavigationMenu.Trigger>Products</NavigationMenu.Trigger>
  *       <NavigationMenu.Content>
  *         <NavigationMenu.Link href="/products/widgets">Widgets</NavigationMenu.Link>
@@ -39,8 +56,6 @@
 
 import * as React from 'react';
 import classy from '../../primitives/classy';
-import { onEscapeKeyDown } from '../../primitives/escape-keydown';
-import { onPointerDownOutside } from '../../primitives/outside-click';
 import { mergeProps } from '../../primitives/slot';
 import {
   navigationMenuContentActiveClasses,
@@ -48,6 +63,7 @@ import {
   navigationMenuIndicatorActiveClasses,
   navigationMenuIndicatorArrowClasses,
   navigationMenuIndicatorClasses,
+  navigationMenuItemClasses,
   navigationMenuLinkClasses,
   navigationMenuListClasses,
   navigationMenuRootClasses,
@@ -55,31 +71,30 @@ import {
   navigationMenuTriggerClasses,
   navigationMenuViewportActiveClasses,
   navigationMenuViewportClasses,
+  navigationMenuViewportWrapperClasses,
 } from './navigation-menu.classes';
-
-// ==================== Types ====================
-
-interface NavigationMenuContextValue {
-  value: string;
-  onValueChange: (value: string) => void;
-  baseId: string;
-  orientation: 'horizontal' | 'vertical';
-  delayDuration: number;
-  skipDelayDuration: number;
-  viewportRef: React.RefObject<HTMLDivElement | null>;
-  triggerRefs: React.MutableRefObject<Map<string, HTMLButtonElement | null>>;
-  contentRefs: React.MutableRefObject<Map<string, HTMLDivElement | null>>;
-  closeTimerRef: React.MutableRefObject<ReturnType<typeof setTimeout> | undefined>;
-}
-
-interface NavigationMenuItemContextValue {
-  value: string;
-  triggerRef: React.RefObject<HTMLButtonElement | null>;
-  contentRef: React.RefObject<HTMLDivElement | null>;
-  isActive: boolean;
-}
+import { createNavigationMenu, type NavigationMenuController } from './navigation-menu.controller';
 
 // ==================== Contexts ====================
+
+// Root context carries only stable, non-reactive data for ARIA relationships and the
+// SSR-initial open value. All behavior lives in the controller. Viewport / Indicator
+// read live open state through subscribe (they are decorative chrome).
+interface NavigationMenuContextValue {
+  baseId: string;
+  orientation: 'horizontal' | 'vertical';
+  /** The value open at mount - used only for SSR-initial attributes, never reactive. */
+  initialValue: string;
+  /** Subscribe to the controller's live open value (for Viewport / Indicator). */
+  subscribe: (listener: (value: string) => void) => () => void;
+  /** Current open value at call time (for first paint of decorative chrome). */
+  getValue: () => string;
+}
+
+// Item context carries the item's value only; ids are derived from baseId + value.
+interface NavigationMenuItemContextValue {
+  value: string;
+}
 
 const NavigationMenuContext = React.createContext<NavigationMenuContextValue | null>(null);
 const NavigationMenuItemContext = React.createContext<NavigationMenuItemContextValue | null>(null);
@@ -100,6 +115,12 @@ function useNavigationMenuItemContext() {
   return context;
 }
 
+/** Subscribe a component to the controller's open value. */
+function useOpenValue(): string {
+  const { subscribe, getValue } = useNavigationMenuContext();
+  return React.useSyncExternalStore(subscribe, getValue, getValue);
+}
+
 // ==================== NavigationMenu (Root) ====================
 
 export interface NavigationMenuProps extends React.HTMLAttributes<HTMLElement> {
@@ -113,8 +134,6 @@ export interface NavigationMenuProps extends React.HTMLAttributes<HTMLElement> {
   orientation?: 'horizontal' | 'vertical';
   /** Delay before opening on hover (ms) */
   delayDuration?: number;
-  /** Delay between moving from one item to another (ms) */
-  skipDelayDuration?: number;
 }
 
 export function NavigationMenu({
@@ -123,89 +142,85 @@ export function NavigationMenu({
   onValueChange,
   orientation = 'horizontal',
   delayDuration = 200,
-  skipDelayDuration = 300,
   className,
   children,
   ...props
 }: NavigationMenuProps) {
-  const [uncontrolledValue, setUncontrolledValue] = React.useState(defaultValue);
-
   const isControlled = controlledValue !== undefined;
-  const value = isControlled ? controlledValue : uncontrolledValue;
+  const baseId = React.useId();
 
-  const handleValueChange = React.useCallback(
-    (newValue: string) => {
-      if (!isControlled) {
-        setUncontrolledValue(newValue);
-      }
-      onValueChange?.(newValue);
+  // Capture the initial open value once; the controller owns state thereafter.
+  const initialRef = React.useRef(isControlled ? controlledValue : defaultValue);
+  const onChangeRef = React.useRef(onValueChange);
+  React.useEffect(() => {
+    onChangeRef.current = onValueChange;
+  });
+
+  const controllerRef = React.useRef<NavigationMenuController | null>(null);
+
+  // A tiny store mirrors the controller's open value so decorative chrome (Viewport /
+  // Indicator) can subscribe without forcing the structural Trigger/Content to re-render.
+  const openValueRef = React.useRef(initialRef.current);
+  const listenersRef = React.useRef(new Set<(value: string) => void>());
+  const subscribe = React.useCallback((listener: (value: string) => void) => {
+    listenersRef.current.add(listener);
+    return () => {
+      listenersRef.current.delete(listener);
+    };
+  }, []);
+  const getValue = React.useCallback(() => openValueRef.current, []);
+
+  // Mount the controller via a callback ref: runs during commit (before paint), so the
+  // initial open state is reflected with no flash, and React renders no open-derived
+  // attributes that the controller owns, so re-renders cannot clobber it.
+  const setRoot = React.useCallback(
+    (node: HTMLElement | null) => {
+      if (!node) return;
+      const controller = createNavigationMenu(node, {
+        orientation,
+        delayDuration,
+        initial: initialRef.current,
+        onChange: (value) => {
+          onChangeRef.current?.(value);
+        },
+      });
+      controllerRef.current = controller;
+      // Mirror the controller's open value into the local store.
+      const unsubscribe = controller.group.subscribe((selected) => {
+        openValueRef.current = selected[0] ?? '';
+        for (const listener of listenersRef.current) listener(openValueRef.current);
+      });
+      return () => {
+        unsubscribe();
+        controller.destroy();
+        controllerRef.current = null;
+      };
     },
-    [isControlled, onValueChange],
+    [orientation, delayDuration],
   );
 
-  const baseId = React.useId();
-  const viewportRef = React.useRef<HTMLDivElement | null>(null);
-  const triggerRefs = React.useRef<Map<string, HTMLButtonElement | null>>(new Map());
-  const contentRefs = React.useRef<Map<string, HTMLDivElement | null>>(new Map());
-  const closeTimerRef = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-
-  // Close on escape
+  // Controlled mode: mirror the prop into the controller.
   React.useEffect(() => {
-    if (!value) return;
-
-    const cleanup = onEscapeKeyDown((event) => {
-      if (!event.defaultPrevented) {
-        handleValueChange('');
-        // Focus the trigger that was open
-        const trigger = triggerRefs.current.get(value);
-        trigger?.focus();
-      }
-    });
-
-    return cleanup;
-  }, [value, handleValueChange]);
-
-  // Close on outside click
-  React.useEffect(() => {
-    if (!value || !viewportRef.current) return;
-
-    const cleanup = onPointerDownOutside(viewportRef.current, (event) => {
-      // Check if click was on any trigger
-      let clickedOnTrigger = false;
-      for (const trigger of triggerRefs.current.values()) {
-        if (trigger?.contains(event.target as Node)) {
-          clickedOnTrigger = true;
-          break;
-        }
-      }
-
-      if (!clickedOnTrigger && !event.defaultPrevented) {
-        handleValueChange('');
-      }
-    });
-
-    return cleanup;
-  }, [value, handleValueChange]);
+    if (isControlled && controlledValue !== undefined) {
+      controllerRef.current?.setValue(controlledValue);
+    }
+  }, [isControlled, controlledValue]);
 
   const contextValue = React.useMemo(
     () => ({
-      value,
-      onValueChange: handleValueChange,
       baseId,
       orientation,
-      delayDuration,
-      skipDelayDuration,
-      viewportRef,
-      triggerRefs,
-      contentRefs,
-      closeTimerRef,
+      initialValue: initialRef.current,
+      subscribe,
+      getValue,
     }),
-    [value, handleValueChange, baseId, orientation, delayDuration, skipDelayDuration],
+    [baseId, orientation, subscribe, getValue],
   );
 
   return (
     <NavigationMenuContext.Provider value={contextValue}>
       <nav
+        ref={setRoot}
         aria-label="Main navigation"
         data-orientation={orientation}
         className={classy(navigationMenuRootClasses, className)}
@@ -249,28 +264,14 @@ export interface NavigationMenuItemProps extends React.HTMLAttributes<HTMLLIElem
 
 export const NavigationMenuItem = React.forwardRef<HTMLLIElement, NavigationMenuItemProps>(
   ({ value: propValue, className, children, ...props }, ref) => {
-    const context = useNavigationMenuContext();
     const generatedId = React.useId();
     const value = propValue ?? generatedId;
 
-    const triggerRef = React.useRef<HTMLButtonElement | null>(null);
-    const contentRef = React.useRef<HTMLDivElement | null>(null);
-
-    const isActive = context.value === value;
-
-    const itemContextValue = React.useMemo(
-      () => ({
-        value,
-        triggerRef,
-        contentRef,
-        isActive,
-      }),
-      [value, isActive],
-    );
+    const itemContextValue = React.useMemo(() => ({ value }), [value]);
 
     return (
       <NavigationMenuItemContext.Provider value={itemContextValue}>
-        <li ref={ref} className={classy('relative', className)} {...props}>
+        <li ref={ref} className={classy(navigationMenuItemClasses, className)} {...props}>
           {children}
         </li>
       </NavigationMenuItemContext.Provider>
@@ -287,124 +288,36 @@ export interface NavigationMenuTriggerProps extends React.ButtonHTMLAttributes<H
 export const NavigationMenuTrigger = React.forwardRef<
   HTMLButtonElement,
   NavigationMenuTriggerProps
->(({ className, children, onPointerEnter, onPointerLeave, onClick, onKeyDown, ...props }, ref) => {
-  const context = useNavigationMenuContext();
-  const itemContext = useNavigationMenuItemContext();
-  const openTimerRef = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+>(({ className, children, ...props }, ref) => {
+  const { baseId, initialValue } = useNavigationMenuContext();
+  const { value } = useNavigationMenuItemContext();
 
-  const { value, onValueChange, baseId, delayDuration, triggerRefs, closeTimerRef } = context;
-  const { value: itemValue, isActive } = itemContext;
+  const triggerId = `${baseId}-trigger-${value}`;
+  const contentId = `${baseId}-content-${value}`;
 
-  // Compose refs
-  const composedRef = React.useCallback(
-    (node: HTMLButtonElement | null) => {
-      if (typeof ref === 'function') {
-        ref(node);
-      } else if (ref) {
-        ref.current = node;
-      }
-      itemContext.triggerRef.current = node;
-      triggerRefs.current.set(itemValue, node);
-    },
-    [ref, itemContext.triggerRef, triggerRefs, itemValue],
-  );
-
-  // Clear open timer on unmount (close timer is shared via context)
-  React.useEffect(() => {
-    return () => {
-      if (openTimerRef.current) clearTimeout(openTimerRef.current);
-    };
-  }, []);
-
-  const handlePointerEnter = (event: React.PointerEvent<HTMLButtonElement>) => {
-    onPointerEnter?.(event);
-
-    if (closeTimerRef.current) {
-      clearTimeout(closeTimerRef.current);
-      closeTimerRef.current = undefined;
-    }
-
-    // If already open somewhere, switch immediately
-    if (value && value !== itemValue) {
-      onValueChange(itemValue);
-    } else if (!isActive) {
-      openTimerRef.current = setTimeout(() => {
-        onValueChange(itemValue);
-      }, delayDuration);
-    }
-  };
-
-  const handlePointerLeave = (event: React.PointerEvent<HTMLButtonElement>) => {
-    onPointerLeave?.(event);
-
-    if (openTimerRef.current) {
-      clearTimeout(openTimerRef.current);
-      openTimerRef.current = undefined;
-    }
-
-    // Don't close immediately - let the content handle hover
-    closeTimerRef.current = setTimeout(() => {
-      if (isActive) {
-        onValueChange('');
-      }
-    }, delayDuration);
-  };
-
-  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    onClick?.(event);
-
-    // Toggle on click
-    if (isActive) {
-      onValueChange('');
-    } else {
-      onValueChange(itemValue);
-    }
-  };
-
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
-    onKeyDown?.(event);
-
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      if (isActive) {
-        onValueChange('');
-      } else {
-        onValueChange(itemValue);
-      }
-    }
-
-    // Arrow down opens the menu
-    if (event.key === 'ArrowDown' && !isActive) {
-      event.preventDefault();
-      onValueChange(itemValue);
-    }
-  };
-
-  const triggerId = `${baseId}-trigger-${itemValue}`;
-  const contentId = `${baseId}-content-${itemValue}`;
+  // SSR-initial open state only. The controller reflects aria-expanded / data-state and
+  // owns click / keyboard / hover via root-level delegation, so there is no onClick /
+  // onKeyDown / onPointerEnter here. data-nav-trigger + data-value form the markup
+  // contract; data-roving-item lets roving-focus include this trigger.
+  const open = initialValue === value;
 
   return (
     <button
-      ref={composedRef}
+      ref={ref}
       id={triggerId}
       type="button"
-      aria-expanded={isActive}
       aria-controls={contentId}
       aria-haspopup="menu"
-      data-state={isActive ? 'open' : 'closed'}
-      className={classy(navigationMenuTriggerClasses, isActive && 'bg-accent-subtle', className)}
-      onPointerEnter={handlePointerEnter}
-      onPointerLeave={handlePointerLeave}
-      onClick={handleClick}
-      onKeyDown={handleKeyDown}
+      aria-expanded={open}
+      data-state={open ? 'open' : 'closed'}
+      data-nav-trigger
+      data-roving-item
+      data-value={value}
+      className={classy(navigationMenuTriggerClasses, className)}
       {...props}
     >
       {children}
-      <ChevronDown
-        className={classy(navigationMenuTriggerChevronClasses)}
-        style={{ transform: isActive ? 'rotate(180deg)' : undefined }}
-        aria-hidden="true"
-      />
+      <ChevronDown className={classy(navigationMenuTriggerChevronClasses)} aria-hidden="true" />
     </button>
   );
 });
@@ -413,78 +326,40 @@ NavigationMenuTrigger.displayName = 'NavigationMenuTrigger';
 
 // ==================== NavigationMenuContent ====================
 
-export interface NavigationMenuContentProps extends React.HTMLAttributes<HTMLDivElement> {
-  /** Force mount the content (for animations) */
-  forceMount?: boolean;
-}
+export interface NavigationMenuContentProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 export const NavigationMenuContent = React.forwardRef<HTMLDivElement, NavigationMenuContentProps>(
-  ({ forceMount, className, onPointerEnter, onPointerLeave, children, ...props }, ref) => {
-    const context = useNavigationMenuContext();
-    const itemContext = useNavigationMenuItemContext();
+  ({ className, children, ...props }, ref) => {
+    const { baseId, initialValue } = useNavigationMenuContext();
+    const { value } = useNavigationMenuItemContext();
 
-    const { onValueChange, baseId, delayDuration, contentRefs, closeTimerRef } = context;
-    const { value: itemValue, isActive } = itemContext;
+    const contentId = `${baseId}-content-${value}`;
+    const triggerId = `${baseId}-trigger-${value}`;
 
-    // Compose refs
-    const composedRef = React.useCallback(
-      (node: HTMLDivElement | null) => {
-        if (typeof ref === 'function') {
-          ref(node);
-        } else if (ref) {
-          ref.current = node;
-        }
-        itemContext.contentRef.current = node;
-        contentRefs.current.set(itemValue, node);
-      },
-      [ref, itemContext.contentRef, contentRefs, itemValue],
-    );
-
-    const handlePointerEnter = (event: React.PointerEvent<HTMLDivElement>) => {
-      onPointerEnter?.(event);
-
-      if (closeTimerRef.current) {
-        clearTimeout(closeTimerRef.current);
-        closeTimerRef.current = undefined;
-      }
-    };
-
-    const handlePointerLeave = (event: React.PointerEvent<HTMLDivElement>) => {
-      onPointerLeave?.(event);
-
-      closeTimerRef.current = setTimeout(() => {
-        onValueChange('');
-      }, delayDuration);
-    };
-
-    const contentId = `${baseId}-content-${itemValue}`;
-    const triggerId = `${baseId}-trigger-${itemValue}`;
-
-    const shouldRender = forceMount || isActive;
+    // Always mounted; the controller toggles hidden / data-state / aria-hidden before
+    // paint. SSR renders the static initial state (closed content keeps visibility:hidden
+    // so it is correct before hydration). initialValue is non-reactive, so re-renders
+    // cannot clobber the controller. The visibility/height/overflow are inline because
+    // they are dynamic hide-state, not a static design utility.
+    const open = initialValue === value;
 
     return (
-      // biome-ignore lint/a11y/useAriaPropsSupportedByRole: aria-labelledby is appropriate for navigation menu content that is labeled by its trigger
+      // biome-ignore lint/a11y/useAriaPropsSupportedByRole: aria-labelledby is appropriate for navigation menu content labeled by its trigger
       <div
-        ref={composedRef}
+        ref={ref}
         id={contentId}
         aria-labelledby={triggerId}
-        aria-hidden={!shouldRender}
-        data-state={isActive ? 'open' : 'closed'}
+        aria-hidden={!open}
+        hidden={!open}
+        data-state={open ? 'open' : 'closed'}
+        data-nav-content
+        data-value={value}
         className={classy(
           navigationMenuContentClasses,
-          isActive && navigationMenuContentActiveClasses,
+          open && navigationMenuContentActiveClasses,
           className,
         )}
-        style={{
-          position: 'absolute',
-          ...(!shouldRender && {
-            visibility: 'hidden' as const,
-            height: 0,
-            overflow: 'hidden' as const,
-          }),
-        }}
-        onPointerEnter={handlePointerEnter}
-        onPointerLeave={handlePointerLeave}
+        style={open ? undefined : { visibility: 'hidden', height: 0, overflow: 'hidden' }}
         {...props}
       >
         {children}
@@ -506,14 +381,9 @@ export interface NavigationMenuLinkProps extends React.AnchorHTMLAttributes<HTML
 
 export const NavigationMenuLink = React.forwardRef<HTMLAnchorElement, NavigationMenuLinkProps>(
   ({ asChild, active, className, children, ...props }, ref) => {
-    const context = React.useContext(NavigationMenuContext);
-
-    const handleSelect = React.useCallback(() => {
-      // Close menu after selection
-      context?.onValueChange('');
-    }, [context]);
-
-    const cls = classy(navigationMenuLinkClasses, active && 'bg-accent-subtle', className);
+    // Active styling is driven by the data-active attribute (see navigationMenuLinkClasses),
+    // not an inline utility, so the system owns the visual value.
+    const cls = classy(navigationMenuLinkClasses, className);
 
     if (asChild && React.isValidElement(children)) {
       const child = children as React.ReactElement<
@@ -525,7 +395,6 @@ export const NavigationMenuLink = React.forwardRef<HTMLAnchorElement, Navigation
       const parentProps = {
         ref,
         className: cls,
-        onClick: handleSelect,
         'data-active': active || undefined,
         ...props,
       };
@@ -544,7 +413,6 @@ export const NavigationMenuLink = React.forwardRef<HTMLAnchorElement, Navigation
         href={props.href ?? '#'}
         className={cls}
         data-active={active || undefined}
-        onClick={handleSelect}
         {...props}
       >
         {children}
@@ -563,68 +431,21 @@ export interface NavigationMenuViewportProps extends React.HTMLAttributes<HTMLDi
 }
 
 export const NavigationMenuViewport = React.forwardRef<HTMLDivElement, NavigationMenuViewportProps>(
-  ({ forceMount, className, onPointerEnter, onPointerLeave, ...props }, ref) => {
-    const context = useNavigationMenuContext();
-    const { value, viewportRef, contentRefs, closeTimerRef, onValueChange, delayDuration } =
-      context;
-
-    // Compose refs
-    const composedRef = React.useCallback(
-      (node: HTMLDivElement | null) => {
-        if (typeof ref === 'function') {
-          ref(node);
-        } else if (ref) {
-          ref.current = node;
-        }
-        viewportRef.current = node;
-      },
-      [ref, viewportRef],
-    );
-
+  ({ forceMount, className, ...props }, ref) => {
+    const value = useOpenValue();
     const isOpen = Boolean(value);
     const shouldRender = forceMount || isOpen;
 
-    // Get the active content for sizing
-    const activeContent = value ? contentRefs.current.get(value) : null;
-    const [size, setSize] = React.useState({ width: 0, height: 0 });
-
-    React.useEffect(() => {
-      if (activeContent) {
-        setSize({
-          width: activeContent.offsetWidth,
-          height: activeContent.offsetHeight,
-        });
-      }
-    }, [activeContent]);
-
-    const handleViewportPointerEnter = (event: React.PointerEvent<HTMLDivElement>) => {
-      onPointerEnter?.(event);
-      if (closeTimerRef.current) {
-        clearTimeout(closeTimerRef.current);
-        closeTimerRef.current = undefined;
-      }
-    };
-
-    const handleViewportPointerLeave = (event: React.PointerEvent<HTMLDivElement>) => {
-      onPointerLeave?.(event);
-      closeTimerRef.current = setTimeout(() => {
-        onValueChange('');
-      }, delayDuration);
-    };
-
+    // Inline hide-state (dynamic), not a design utility.
     const hiddenStyle = !shouldRender
       ? { visibility: 'hidden' as const, height: 0, overflow: 'hidden' as const }
       : {};
 
     return (
-      <div
-        className="left-0 top-full"
-        style={{ position: 'absolute', ...hiddenStyle }}
-        onPointerEnter={handleViewportPointerEnter}
-        onPointerLeave={handleViewportPointerLeave}
-      >
+      <div className={navigationMenuViewportWrapperClasses} style={hiddenStyle}>
         <div
-          ref={composedRef}
+          ref={ref}
+          data-nav-viewport
           data-state={isOpen ? 'open' : 'closed'}
           aria-hidden={!shouldRender}
           className={classy(
@@ -632,28 +453,8 @@ export const NavigationMenuViewport = React.forwardRef<HTMLDivElement, Navigatio
             isOpen && navigationMenuViewportActiveClasses,
             className,
           )}
-          style={{
-            position: 'relative',
-            width: size.width || undefined,
-            height: size.height || undefined,
-          }}
           {...props}
-        >
-          {/* Render all contents but only show active one */}
-          {Array.from(contentRefs.current.entries()).map(([itemValue, content]) => {
-            if (!content) return null;
-            const contentIsActive = value === itemValue;
-            return (
-              <div
-                key={itemValue}
-                data-state={contentIsActive ? 'open' : 'closed'}
-                style={{ display: contentIsActive ? 'block' : 'none' }}
-              >
-                {/* Content is rendered in NavigationMenuContent, this just positions it */}
-              </div>
-            );
-          })}
-        </div>
+        />
       </div>
     );
   },
@@ -672,29 +473,8 @@ export const NavigationMenuIndicator = React.forwardRef<
   HTMLDivElement,
   NavigationMenuIndicatorProps
 >(({ forceMount, className, ...props }, ref) => {
-  const context = useNavigationMenuContext();
-  const { value, triggerRefs } = context;
-
-  const [position, setPosition] = React.useState({ left: 0, width: 0 });
+  const value = useOpenValue();
   const isVisible = Boolean(value);
-
-  // Update position based on active trigger
-  React.useEffect(() => {
-    if (value) {
-      const trigger = triggerRefs.current.get(value);
-      if (trigger) {
-        const rect = trigger.getBoundingClientRect();
-        const parentRect = trigger.parentElement?.getBoundingClientRect();
-        if (parentRect) {
-          setPosition({
-            left: rect.left - parentRect.left,
-            width: rect.width,
-          });
-        }
-      }
-    }
-  }, [value, triggerRefs]);
-
   const shouldRender = forceMount || isVisible;
 
   if (!shouldRender) {
@@ -710,15 +490,10 @@ export const NavigationMenuIndicator = React.forwardRef<
         isVisible && navigationMenuIndicatorActiveClasses,
         className,
       )}
-      style={{
-        position: 'absolute',
-        left: position.left,
-        width: position.width,
-      }}
       aria-hidden="true"
       {...props}
     >
-      <div className={navigationMenuIndicatorArrowClasses} style={{ position: 'relative' }} />
+      <div className={navigationMenuIndicatorArrowClasses} />
     </div>
   );
 });
@@ -727,7 +502,7 @@ NavigationMenuIndicator.displayName = 'NavigationMenuIndicator';
 
 // ==================== Internal Icons ====================
 
-function ChevronDown({ className, style }: { className?: string; style?: React.CSSProperties }) {
+function ChevronDown({ className }: { className?: string }) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -740,7 +515,6 @@ function ChevronDown({ className, style }: { className?: string; style?: React.C
       strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
-      style={style}
       aria-hidden="true"
     >
       <path d="m6 9 6 6 6-6" />

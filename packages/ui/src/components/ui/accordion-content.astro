@@ -1,0 +1,43 @@
+---
+/**
+ * Accordion content panel (Astro) - role=region.
+ * Visibility (hidden) and data-state are driven by the parent Accordion root
+ * script (createAccordion); defaultOpen sets the SSR initial state.
+ *
+ * @cognitive-load 1/10
+ * @accessibility role=region, aria-labelledby
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { accordionContentClasses, accordionContentInnerClasses } from './accordion.classes';
+
+interface Props extends HTMLAttributes<'div'> {
+  /** The accordion group id (must match the parent Accordion id). */
+  accordionId: string;
+  /** Value identifying which item controls this panel. */
+  value: string;
+  /** Whether this panel is open by default. */
+  defaultOpen?: boolean;
+}
+
+const { accordionId, value, defaultOpen = false, class: className, ...attrs } = Astro.props;
+
+const triggerId = `${accordionId}-trigger-${value}`;
+const contentId = `${accordionId}-content-${value}`;
+---
+
+<div
+  id={contentId}
+  role="region"
+  aria-labelledby={triggerId}
+  data-accordion-content
+  data-value={value}
+  data-state={defaultOpen ? 'open' : 'closed'}
+  hidden={!defaultOpen}
+  class={classy(accordionContentClasses, className)}
+  {...attrs}
+>
+  <div class={accordionContentInnerClasses}>
+    <slot />
+  </div>
+</div>

@@ -10,14 +10,16 @@ export const accordionItemClasses = 'border-b';
 export const accordionTriggerHeadingClasses = 'flex';
 
 export const accordionTriggerClasses =
-  'flex flex-1 items-center justify-between py-4 text-title-small transition-all duration-300 motion-reduce:transition-none ' +
+  'group flex flex-1 items-center justify-between py-4 text-title-small transition-all duration-300 motion-reduce:transition-none ' +
   'hover:underline ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ' +
   'disabled:pointer-events-none disabled:opacity-50';
 
+// Icon rotates off the trigger's data-state (set by the controller) via the group
+// variant, so the controller only writes one attribute per trigger.
 export const accordionTriggerIconClasses =
   'h-4 w-4 shrink-0 transition-transform duration-300 motion-reduce:transition-none ' +
-  'data-[state=open]:rotate-180';
+  'group-data-[state=open]:rotate-180';
 
 export const accordionContentClasses =
   'overflow-hidden text-body-small transition-all duration-300 motion-reduce:transition-none ' +

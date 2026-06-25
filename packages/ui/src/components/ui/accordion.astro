@@ -1,0 +1,67 @@
+---
+/**
+ * Accordion (Astro) driven by the shared createAccordion controller.
+ *
+ * A single processed <script> (bundled, deduped once per page) imports the same
+ * controller the React <Accordion> uses, so behavior cannot drift. Initial open
+ * items are read from the server-rendered data-state of the triggers.
+ *
+ * @cognitive-load 3/10
+ * @accessibility role=heading triggers, aria-expanded, region content, arrow-key navigation
+ *
+ * @example
+ * ```astro
+ * <Accordion id="faq" type="single" collapsible>
+ *   <AccordionItem value="a" defaultOpen>
+ *     <AccordionTrigger accordionId="faq" value="a" defaultOpen>Q1</AccordionTrigger>
+ *     <AccordionContent accordionId="faq" value="a" defaultOpen>A1</AccordionContent>
+ *   </AccordionItem>
+ * </Accordion>
+ * ```
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+
+interface Props extends HTMLAttributes<'div'> {
+  /** Unique identifier for this accordion group. */
+  id: string;
+  /** single = one open at a time; multiple = any number. */
+  type?: 'single' | 'multiple';
+  /** In single mode, allow closing the open item. */
+  collapsible?: boolean;
+}
+
+const { id, type = 'single', collapsible = false, class: className, ...attrs } = Astro.props;
+---
+
+<div
+  class={classy(className)}
+  data-rafters-accordion
+  data-accordion-id={id}
+  data-accordion-type={type}
+  data-accordion-collapsible={collapsible ? 'true' : 'false'}
+  {...attrs}
+>
+  <slot />
+</div>
+
+<script>
+  import { createAccordion } from './accordion.controller';
+
+  for (const root of document.querySelectorAll<HTMLElement>('[data-rafters-accordion]')) {
+    if (root.dataset.bound === 'true') continue;
+    root.dataset.bound = 'true';
+
+    const initial = Array.from(
+      root.querySelectorAll<HTMLElement>('[data-accordion-trigger][data-state="open"]'),
+    )
+      .map((trigger) => trigger.dataset.value)
+      .filter((value): value is string => value !== undefined);
+
+    createAccordion(root, {
+      type: root.dataset.accordionType === 'multiple' ? 'multiple' : 'single',
+      collapsible: root.dataset.accordionCollapsible === 'true',
+      initial,
+    });
+  }
+</script>

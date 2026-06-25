@@ -1,0 +1,27 @@
+---
+/**
+ * NavigationMenu list (Astro) - the row of top-level items.
+ *
+ * @cognitive-load 1/10
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { navigationMenuListClasses } from './navigation-menu.classes';
+
+interface Props extends HTMLAttributes<'ul'> {
+  /** The navigation menu id (must match the parent NavigationMenu id). */
+  navId: string;
+  /** Arrow-key navigation orientation (mirrors the parent). */
+  orientation?: 'horizontal' | 'vertical';
+}
+
+const { navId: _navId, orientation = 'horizontal', class: className, ...attrs } = Astro.props;
+---
+
+<ul
+  data-orientation={orientation}
+  class={classy(navigationMenuListClasses, className)}
+  {...attrs}
+>
+  <slot />
+</ul>
