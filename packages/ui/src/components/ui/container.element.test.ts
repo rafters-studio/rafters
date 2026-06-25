@@ -12,6 +12,7 @@ import {
   containerSizeClasses,
 } from './container.classes';
 import { composeContainerClasses, RaftersContainer } from './container.element';
+import { gridColSpanClasses, gridRowSpanClasses } from './grid.classes';
 
 afterEach(() => {
   while (document.body.firstChild) {
@@ -141,6 +142,30 @@ describe('rafters-container', () => {
     expect(innerClass(el)).not.toContain(containerBackgroundClasses.muted);
   });
 
+  it('applies the column span utility when placed in a grid', () => {
+    const el = mount('rafters-container', { 'col-span': '2' });
+    expect(innerClass(el)).toContain(gridColSpanClasses[2]);
+  });
+
+  it('applies the row span utility', () => {
+    const el = mount('rafters-container', { 'row-span': '2' });
+    expect(innerClass(el)).toContain(gridRowSpanClasses[2]);
+  });
+
+  it('ignores out-of-range span values', () => {
+    const el = mount('rafters-container', { 'col-span': '99', 'row-span': '7' });
+    expect(innerClass(el)).not.toContain('col-span-99');
+    expect(innerClass(el)).not.toContain('row-span-7');
+  });
+
+  it('recomposes the span when col-span changes', () => {
+    const el = mount('rafters-container', { 'col-span': '2' });
+    expect(innerClass(el)).toContain(gridColSpanClasses[2]);
+    el.setAttribute('col-span', '4');
+    expect(innerClass(el)).toContain(gridColSpanClasses[4]);
+    expect(innerClass(el)).not.toContain(gridColSpanClasses[2]);
+  });
+
   it('article applies the typography utilities', () => {
     const el = mount('rafters-container', { as: 'article' });
     expect(innerClass(el)).toContain(containerArticleTypography);
@@ -206,6 +231,8 @@ describe('rafters-container', () => {
       'size',
       'padding',
       'gap',
+      'col-span',
+      'row-span',
       'position',
       'depth',
       'background',

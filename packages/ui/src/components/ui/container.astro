@@ -25,6 +25,7 @@ import {
   containerSizeClasses,
   containerSizeGapScale,
 } from './container.classes';
+import { gridColSpanClasses, gridRowSpanClasses } from './grid.classes';
 
 interface Props extends HTMLAttributes<'div'> {
   as?: 'div' | 'main' | 'header' | 'footer' | 'section' | 'article' | 'aside';
@@ -33,6 +34,10 @@ interface Props extends HTMLAttributes<'div'> {
   gap?: boolean | '0' | '1' | '2' | '3' | '4' | '5' | '6' | '8' | '10' | '12' | '16' | '20' | '24';
   query?: boolean;
   queryName?: string;
+  /** Column span when placed directly in a Grid (no Grid.Item wrapper). */
+  colSpan?: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
+  /** Row span when placed directly in a Grid. */
+  rowSpan?: 1 | 2 | 3;
   position?: ContainerPosition;
   depth?: ContainerDepth;
   /** @deprecated Prefer the `fill` prop. */
@@ -52,6 +57,8 @@ const {
   gap,
   query = true,
   queryName,
+  colSpan,
+  rowSpan,
   position,
   depth,
   background,
@@ -77,6 +84,8 @@ const classes = classy(
   size && size !== 'full' && 'mx-auto',
   padding ? containerPaddingClasses[padding] : size && size !== 'full' && containerAutoEdgePadding,
   resolvedGap && containerGapClasses[resolvedGap],
+  colSpan && gridColSpanClasses[colSpan],
+  rowSpan && gridRowSpanClasses[rowSpan],
   fillClasses,
   !fillClasses && background && containerBackgroundClasses[background],
   position && containerPositionClasses[position],

@@ -15,6 +15,7 @@
  * DO: Use article for readable content - typography is automatic
  * DO: Use aside for supplementary content, add surface classes for depth
  * DO: Spacing happens inside (padding), not outside (no margins)
+ * DO: Place a Container directly in a Grid and give it colSpan/rowSpan -- no Grid.Item wrapper needed
  * NEVER: Nest containers unnecessarily
  * NEVER: Use margins for spacing - let parent Grid handle gaps
  * NEVER: Use @container without w-full in flex/grid contexts (causes width collapse in Tailwind v4)
@@ -34,6 +35,12 @@
  * <Container as="footer" padding="6">
  *   <p>Footer content</p>
  * </Container>
+ *
+ * // Self-placing grid children -- no Grid.Item wrappers
+ * <Grid columns={3} gap="6">
+ *   <Container as="article" size="5xl" colSpan={2} queryName="main">…</Container>
+ *   <Container as="aside" colSpan={1} queryName="rail">…</Container>
+ * </Grid>
  * ```
  */
 import * as React from 'react';
@@ -53,6 +60,7 @@ import {
   containerSizeClasses,
   containerSizeGapScale,
 } from './container.classes';
+import { gridColSpanClasses, gridRowSpanClasses } from './grid.classes';
 
 type ContainerElement = 'div' | 'main' | 'header' | 'footer' | 'section' | 'article' | 'aside';
 
@@ -94,6 +102,20 @@ export interface ContainerProps extends React.HTMLAttributes<HTMLElement> {
    * Use with @container/name in child styles
    */
   queryName?: string;
+
+  /**
+   * Column span when this Container is a direct child of a Grid.
+   * Lets the Container carry its own grid placement instead of being
+   * wrapped in a Grid.Item. Same vocabulary as Grid.Item's colSpan.
+   * No effect outside a grid context.
+   */
+  colSpan?: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
+
+  /**
+   * Row span when this Container is a direct child of a Grid.
+   * Pairs with colSpan for self-placing grid children.
+   */
+  rowSpan?: 1 | 2 | 3;
 
   // ============================================================================
   // Editable Props (R-202)
@@ -183,6 +205,8 @@ export const Container = React.forwardRef<HTMLElement, ContainerProps>(
       gap,
       query = true,
       queryName,
+      colSpan,
+      rowSpan,
       position,
       depth,
       editable,
@@ -225,6 +249,11 @@ export const Container = React.forwardRef<HTMLElement, ContainerProps>(
 
       // Vertical flow with gap
       resolvedGap && gapClasses[resolvedGap],
+
+      // Grid placement -- applies when this Container is a grid child,
+      // folding Grid.Item's span vocabulary onto the Container itself.
+      colSpan && gridColSpanClasses[colSpan],
+      rowSpan && gridRowSpanClasses[rowSpan],
 
       // Fill signature (surface context) takes precedence over legacy background
       fillClasses,
