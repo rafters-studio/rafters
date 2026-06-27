@@ -1099,12 +1099,12 @@ export const DEFAULT_SEMANTIC_COLOR_MAPPINGS: Record<string, SemanticColorMappin
     never: ['Use for dividers within cards'],
   },
   panel: {
-    light: { family: 'neutral', position: '100' },
+    light: { family: 'neutral', position: '200' },
     dark: { family: 'neutral', position: '800' },
-    meaning: 'Elevated panel surface -- one level above the page',
+    meaning: 'Persistent elevated chrome -- headers, docks, fixed toolbars',
     contexts: ['panels', 'toolbars', 'headers', 'docks'],
     do: ['Use for persistent elevated chrome', 'Pair with panel-foreground'],
-    never: ['Use for page-level backgrounds', 'Stack directly on card without a border'],
+    never: ['Use for page-level backgrounds', 'Use for transient surfaces'],
   },
   'panel-foreground': {
     light: { family: 'neutral', position: '950' },
@@ -1159,12 +1159,12 @@ export const DEFAULT_SEMANTIC_COLOR_MAPPINGS: Record<string, SemanticColorMappin
 
   // Generic surface
   surface: {
-    light: { family: 'neutral', position: '50' },
+    light: { family: 'neutral', position: '100' },
     dark: { family: 'neutral', position: '900' },
-    meaning: 'Elevated surface background',
-    contexts: ['elevated-elements'],
-    do: ['Use for elevated surfaces'],
-    never: ['Use for page background'],
+    meaning: 'Base chrome surface -- toolbars, app shell, UI frame',
+    contexts: ['chrome', 'app-shell', 'toolbars'],
+    do: ['Use for application chrome'],
+    never: ['Use for page background', 'Use for content containers'],
   },
   'surface-foreground': {
     light: { family: 'neutral', position: '950' },
@@ -2265,9 +2265,9 @@ export const DEFAULT_SEMANTIC_COLOR_MAPPINGS: Record<string, SemanticColorMappin
   // SIDEBAR TOKENS (shadcn compatible + extended)
   // ============================================================================
   sidebar: {
-    light: { family: 'neutral', position: '50' },
+    light: { family: 'neutral', position: '100' },
     dark: { family: 'neutral', position: '900' },
-    meaning: 'Sidebar background',
+    meaning: 'Sidebar background -- almost on the surface',
     contexts: ['navigation-sidebar', 'side-panels'],
     do: ['Use for sidebar backgrounds'],
     never: ['Use for main content areas'],

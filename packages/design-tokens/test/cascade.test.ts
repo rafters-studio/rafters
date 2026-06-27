@@ -297,4 +297,83 @@ describe('cascade integration', () => {
       expect((dark as { family: string }).family).toBe('mud');
     });
   });
+
+  describe('border, ring, subtle cascade through the state plugin', () => {
+    function setupSurfaceChain(): TokenRegistry {
+      const r = new TokenRegistry(
+        [
+          buildAccentToken(buildAccentFamily()),
+          semanticToken('surface'),
+          semanticToken('surface-border'),
+          semanticToken('surface-ring'),
+          semanticToken('surface-subtle'),
+          semanticToken('surface-hover'),
+        ],
+        [scalePlugin, contrastPlugin, statePlugin, invertPlugin],
+      );
+      r.bind('surface', 'scale', { familyName: 'accent', scalePosition: 1 });
+      r.bind('surface-border', 'state', { from: 'surface', stateType: 'border' });
+      r.bind('surface-ring', 'state', { from: 'surface', stateType: 'ring' });
+      r.bind('surface-subtle', 'state', { from: 'surface', stateType: 'subtle' });
+      r.bind('surface-hover', 'state', { from: 'surface', stateType: 'hover' });
+      return r;
+    }
+
+    it('border derives from parent, not hardcoded', () => {
+      const r = setupSurfaceChain();
+      const surface = r.get('surface')?.value as { family: string; position: string };
+      const border = r.get('surface-border')?.value as { family: string; position: string };
+      expect(border.family).toBe(surface.family);
+      expect(border.position).not.toBe(surface.position);
+    });
+
+    it('ring stays at the same position as parent', () => {
+      const r = setupSurfaceChain();
+      const surface = r.get('surface')?.value as { family: string; position: string };
+      const ring = r.get('surface-ring')?.value as { family: string; position: string };
+      expect(ring.family).toBe(surface.family);
+      expect(ring.position).toBe(surface.position);
+    });
+
+    it('subtle steps opposite direction from hover', () => {
+      const r = setupSurfaceChain();
+      const surface = r.get('surface')?.value as { family: string; position: string };
+      const hover = r.get('surface-hover')?.value as { family: string; position: string };
+      const subtle = r.get('surface-subtle')?.value as { family: string; position: string };
+      const surfaceIdx = Number.parseInt(surface.position);
+      const hoverIdx = Number.parseInt(hover.position);
+      const subtleIdx = Number.parseInt(subtle.position);
+      expect(hoverIdx).toBeGreaterThan(surfaceIdx);
+      expect(subtleIdx).toBeLessThan(surfaceIdx);
+    });
+
+    it('border cascades when parent is remapped', () => {
+      const r = setupSurfaceChain();
+      const beforeBorder = r.get('surface-border')?.value as { family: string; position: string };
+      expect(beforeBorder.family).toBe('accent');
+
+      const newFamily = buildAccentFamily('sky');
+      r.define({
+        name: 'sky',
+        namespace: 'color',
+        category: 'color',
+        value: newFamily,
+        userOverride: null,
+      });
+      r.set('surface', { family: 'sky', position: '200' }, { reason: 'remap to sky' });
+
+      const afterBorder = r.get('surface-border')?.value as { family: string; position: string };
+      expect(afterBorder.family).toBe('sky');
+    });
+
+    it('userOverride on border anchors it against parent remap', () => {
+      const r = setupSurfaceChain();
+      const pinned = { family: 'accent', position: '800' };
+      r.set('surface-border', pinned, { reason: 'designer override' });
+      expect(r.get('surface-border')?.value).toEqual(pinned);
+
+      r.set('surface', { family: 'accent', position: '500' }, { reason: 'remap' });
+      expect(r.get('surface-border')?.value).toEqual(pinned);
+    });
+  });
 });

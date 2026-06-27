@@ -176,7 +176,15 @@ describe('semanticFor — state pairs (parity with state plugin)', () => {
   it('states() returns one pair per state type', () => {
     const sem = semanticFor(family(blue), { name: 'blue' });
     const all = sem.states('500');
-    expect(Object.keys(all).sort()).toEqual(['active', 'disabled', 'focus', 'hover']);
+    expect(Object.keys(all).sort()).toEqual([
+      'active',
+      'border',
+      'disabled',
+      'focus',
+      'hover',
+      'ring',
+      'subtle',
+    ]);
     for (const state of states) {
       expect(all[state]).toEqual(sem.pair({ use: state, from: '500' }));
     }
@@ -241,6 +249,63 @@ describe('semanticFor — dark state stepping (#1646: direction-aware)', () => {
       table[name] = row;
     }
     expect(table).toMatchSnapshot();
+  });
+});
+
+describe('semanticFor — surface derivations (border, ring, subtle)', () => {
+  it('border steps +2 from base (same as active)', () => {
+    for (const [name, seed] of Object.entries(seeds)) {
+      const sem = semanticFor(family(seed), { name });
+      for (const position of SCALE_POSITIONS) {
+        const border = sem.pair({ use: 'border', from: position });
+        const active = sem.pair({ use: 'active', from: position });
+        expect(
+          POSITION_TO_INDEX[border.to.position],
+          `${name}@${position}: border should equal active (+2)`,
+        ).toBe(POSITION_TO_INDEX[active.to.position]);
+      }
+    }
+  });
+
+  it('ring is always closer to base than hover (zero step vs one step)', () => {
+    for (const [name, seed] of Object.entries(seeds)) {
+      const sem = semanticFor(family(seed), { name });
+      for (const position of SCALE_POSITIONS) {
+        const hover = sem.pair({ use: 'hover', from: position });
+        const ring = sem.pair({ use: 'ring', from: position });
+        const hoverIdx = POSITION_TO_INDEX[hover.to.position] as number;
+        const ringIdx = POSITION_TO_INDEX[ring.to.position] as number;
+        const baseIdx = POSITION_TO_INDEX[position] as number;
+        expect(
+          Math.abs(ringIdx - baseIdx),
+          `${name}@${position}: ring should be no further from base than hover`,
+        ).toBeLessThanOrEqual(Math.abs(hoverIdx - baseIdx));
+      }
+    }
+  });
+
+  it('subtle steps opposite direction from hover (toward lighter in light mode)', () => {
+    for (const [name, seed] of Object.entries(seeds)) {
+      const sem = semanticFor(family(seed), { name });
+      const hover = sem.pair({ use: 'hover', from: '500' });
+      const subtle = sem.pair({ use: 'subtle', from: '500' });
+      const hoverIdx = POSITION_TO_INDEX[hover.to.position] as number;
+      const subtleIdx = POSITION_TO_INDEX[subtle.to.position] as number;
+      expect(subtleIdx, `${name}: subtle should be lighter than base (500)`).toBeLessThan(5);
+      expect(hoverIdx, `${name}: hover should be darker than base (500)`).toBeGreaterThan(5);
+    }
+  });
+
+  it('dark border steps toward lighter (opposite of light mode)', () => {
+    for (const [name, seed] of Object.entries(seeds)) {
+      const sem = semanticFor(family(seed), { name });
+      const lightBorder = sem.pair({ use: 'border', from: '200' });
+      const darkBorder = sem.pair({ use: 'border', from: '200', dark: true });
+      const lightIdx = POSITION_TO_INDEX[lightBorder.to.position] as number;
+      const darkIdx = POSITION_TO_INDEX[darkBorder.to.position] as number;
+      expect(lightIdx, `${name}: light border should be darker than 200`).toBeGreaterThan(2);
+      expect(darkIdx, `${name}: dark border should be lighter than 200`).toBeLessThan(2);
+    }
   });
 });
 

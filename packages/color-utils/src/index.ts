@@ -109,6 +109,7 @@ export {
   type PairUse,
   type SemanticContext,
   SemanticSelectionError,
+  STATE_USES,
   type StateUse,
   semanticFor,
   statusAnchor,

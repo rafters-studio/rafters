@@ -30,7 +30,7 @@ import { roundOKLCH } from './conversion.js';
 import { toNearestGamut } from './gamut.js';
 import { POSITION_TO_INDEX, SCALE_POSITIONS } from './scale-positions.js';
 
-export type StateUse = 'hover' | 'active' | 'focus' | 'disabled';
+export type StateUse = 'hover' | 'active' | 'focus' | 'disabled' | 'border' | 'ring' | 'subtle';
 export type PairUse = 'foreground' | StateUse;
 
 /** Which strategy produced the pair. Ordered roughly best -> worst. */
@@ -73,7 +73,15 @@ export class SemanticSelectionError extends Error {
   }
 }
 
-const STATE_USES: readonly StateUse[] = ['hover', 'active', 'focus', 'disabled'];
+export const STATE_USES: readonly StateUse[] = [
+  'hover',
+  'active',
+  'focus',
+  'disabled',
+  'border',
+  'ring',
+  'subtle',
+];
 
 /** Rank step per state on the AAA ladder. sign: 1 for light (darker), -1 for dark (lighter). */
 const STATE_RANK_STEP: Record<
@@ -84,6 +92,9 @@ const STATE_RANK_STEP: Record<
   active: (rank, _l, s) => rank + 2 * s,
   focus: (rank, _l, s) => rank + s,
   disabled: (_rank, ladder) => closestRankTo(ladder, 5),
+  border: (rank, _l, s) => rank + 2 * s,
+  ring: (rank) => rank,
+  subtle: (rank, _l, s) => rank - 2 * s,
 };
 
 /** Escape hatches the generators may precompute onto a family. */
