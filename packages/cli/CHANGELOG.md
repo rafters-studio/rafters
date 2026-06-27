@@ -1,14 +1,36 @@
 # rafters
 
-## Unreleased
+## 0.0.70
+
+### Features
+
+- feat(design-tokens): border, ring, and subtle tokens cascade through the WCAG system (#1721). 46 semantic tokens that were hardcoded with static family+position values now derive through the state plugin using the WCAG AAA ladder: border = +2 steps (visible edge against adjacent surface), ring = +0 (same rank as parent -- the brand color IS the focus ring), subtle = -2 (opposite direction, toward lighter). When a designer remaps a parent token, all three variants recompute automatically. `rafters init --rebuild`.
+
+- feat(design-tokens): surface ladder with meaningful differentiation (#1721). Surface base positions form a real elevation hierarchy instead of all sitting at neutral-50: surface and sidebar at 100 (base chrome), panel at 200 (persistent elevated chrome). Card, table, and popover stay at 50 (content containers, differentiated by border+shadow). Tooltip (900) and overlay (950) unchanged.
+
+- feat(design-tokens): state types derive from a single source of truth (#1721). StateUse, STATE_USES, the state plugin's Zod schema, and the semantic generator's suffix array all derive from the canonical list exported by @rafters/color-utils. Previously four independent copies that could silently diverge.
+
+- feat(composites): block-level typed I/O, derived composite boundary, discovery core, framework adapters, and build-time render engine (#1670, #1671, #1672, #1674). Composites are now first-class: .composite.json files resolve through a pure build-time engine (Composite.astro + resolver), native HTML5 rules emit and surface via MCP, and a discovery core with React/Astro/Vue/Svelte/WC adapters provides framework-native rendering.
+
+- feat(registry): 'rule' is a first-class registry type (#1672). Rules install, track, and resolve through the same pipeline as components, primitives, and composites.
+
+- feat(registry): resolve registry URL from config for self-hosted registries.
+
+- feat(ui): Container accepts colSpan/rowSpan for self-placing grid children (#1718). Container can place itself within a parent Grid without a wrapper.
+
+- feat(ui): memory.ts reactive state primitive + useMemory hook (#1685). Zero-dependency reactive state with undo/redo history, batch sync, and a React hook. Tabs, accordion, navigation-menu, and menubar delegate to memory-backed controllers.
 
 ### Bug Fixes
 
-- fix(cli): `rafters add` now backfills the installed list when files are already on disk but untracked (#1668). Previously, an item whose files all existed was pushed to `skipped` and never recorded in `config.rafters.json` -- so a project installed before install-tracking existed (or after a config reset) could never repair its `installed` arrays by re-running `add`, and `--update-all` (which reads that list) had nothing to refresh. Re-running `add <name>` now records present-but-untracked items.
+- fix(cli): `rafters add` now backfills the installed list when files are already on disk but untracked (#1668). Re-running `add <name>` now records present-but-untracked items.
+
+- fix(cli): rules install under `lib/` to mirror primitives (#1668).
 
 ### Changed
 
-- fix(cli): rules install under `lib/` to mirror primitives (#1668). The default `rulesPath` moves from `rules` / `src/rules` / `app/rules` to `lib/rules` / `src/lib/rules` / `app/lib/rules` across all framework specs, matching where primitives already live. Existing configs with an explicit `rulesPath` keep their value until re-init.
+- chore: retire index.scip pre-push hook, untrack binary (#1719).
+
+- chore(design-tokens): remove dead registryToVars exporter (#1679).
 
 ## 0.0.69
 
