@@ -2,7 +2,15 @@ import { type ColorReference, ColorReferenceSchema } from '@rafters/shared';
 import { z } from 'zod';
 import { definePlugin, requireSemanticParent } from '../plugin.js';
 
-const StateTypeSchema = z.enum(['hover', 'active', 'focus', 'disabled']);
+const StateTypeSchema = z.enum([
+  'hover',
+  'active',
+  'focus',
+  'disabled',
+  'border',
+  'ring',
+  'subtle',
+]);
 
 const StateInputSchema = z.object({
   from: z.string(),

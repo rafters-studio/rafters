@@ -29,12 +29,24 @@ import { DEFAULT_SEMANTIC_COLOR_MAPPINGS, type SemanticColorMapping } from './de
 import type { GeneratorResult, ResolvedSystemConfig } from './types.js';
 
 const FOREGROUND_SUFFIXES = ['-foreground', '-text', '-contrast'] as const;
-const STATE_SUFFIXES = ['-hover', '-active', '-focus', '-disabled'] as const;
+const STATE_SUFFIXES = [
+  '-hover',
+  '-active',
+  '-focus',
+  '-disabled',
+  '-border',
+  '-ring',
+  '-subtle',
+] as const;
 type StateSuffix = (typeof STATE_SUFFIXES)[number];
 
 type Derivation =
   | { kind: 'scale'; family: string; scalePosition: number }
-  | { kind: 'state'; from: string; stateType: 'hover' | 'active' | 'focus' | 'disabled' }
+  | {
+      kind: 'state';
+      from: string;
+      stateType: 'hover' | 'active' | 'focus' | 'disabled' | 'border' | 'ring' | 'subtle';
+    }
   | { kind: 'contrast'; against: string; level: 'AAA' };
 
 function toColorRef(mapping: SemanticColorMapping): ColorReference {

@@ -20,7 +20,7 @@ exports[`elevation ladder -- designed dark positions (#1638) > snapshot: the def
   },
   "panel": {
     "dark": "800",
-    "light": "100",
+    "light": "200",
   },
   "popover": {
     "dark": "700",
@@ -28,11 +28,11 @@ exports[`elevation ladder -- designed dark positions (#1638) > snapshot: the def
   },
   "sidebar": {
     "dark": "900",
-    "light": "50",
+    "light": "100",
   },
   "surface": {
     "dark": "900",
-    "light": "50",
+    "light": "100",
   },
   "table-header": {
     "dark": "800",
