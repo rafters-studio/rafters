@@ -23,30 +23,17 @@
  * to get the current dark ColorReference (cascade-derived, not static).
  */
 
-import { POSITION_TO_INDEX } from '@rafters/color-utils';
+import { POSITION_TO_INDEX, STATE_USES, type StateUse } from '@rafters/color-utils';
 import type { Binding, ColorReference, Token } from '@rafters/shared';
 import { DEFAULT_SEMANTIC_COLOR_MAPPINGS, type SemanticColorMapping } from './defaults.js';
 import type { GeneratorResult, ResolvedSystemConfig } from './types.js';
 
 const FOREGROUND_SUFFIXES = ['-foreground', '-text', '-contrast'] as const;
-const STATE_SUFFIXES = [
-  '-hover',
-  '-active',
-  '-focus',
-  '-disabled',
-  '-border',
-  '-ring',
-  '-subtle',
-] as const;
-type StateSuffix = (typeof STATE_SUFFIXES)[number];
+const STATE_SUFFIXES = STATE_USES.map((s) => `-${s}` as const);
 
 type Derivation =
   | { kind: 'scale'; family: string; scalePosition: number }
-  | {
-      kind: 'state';
-      from: string;
-      stateType: 'hover' | 'active' | 'focus' | 'disabled' | 'border' | 'ring' | 'subtle';
-    }
+  | { kind: 'state'; from: string; stateType: StateUse }
   | { kind: 'contrast'; against: string; level: 'AAA' };
 
 function toColorRef(mapping: SemanticColorMapping): ColorReference {
@@ -89,7 +76,7 @@ function deriveDerivation(
         return {
           kind: 'state',
           from: parent,
-          stateType: suffix.slice(1) as StateSuffix extends `-${infer S}` ? S : never,
+          stateType: suffix.slice(1) as StateUse,
         };
       }
     }

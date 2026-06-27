@@ -73,7 +73,7 @@ export class SemanticSelectionError extends Error {
   }
 }
 
-const STATE_USES: readonly StateUse[] = [
+export const STATE_USES: readonly StateUse[] = [
   'hover',
   'active',
   'focus',

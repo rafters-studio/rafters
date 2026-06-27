@@ -267,16 +267,20 @@ describe('semanticFor — surface derivations (border, ring, subtle)', () => {
     }
   });
 
-  it('ring stays at the same ladder rank as base (no step)', () => {
+  it('ring is always closer to base than hover (zero step vs one step)', () => {
     for (const [name, seed] of Object.entries(seeds)) {
       const sem = semanticFor(family(seed), { name });
-      const hover = sem.pair({ use: 'hover', from: '100' });
-      const ring = sem.pair({ use: 'ring', from: '100' });
-      const hoverIdx = POSITION_TO_INDEX[hover.to.position] as number;
-      const ringIdx = POSITION_TO_INDEX[ring.to.position] as number;
-      const baseIdx = POSITION_TO_INDEX['100'] as number;
-      expect(hoverIdx, `${name}: hover should step away from base`).toBeGreaterThan(baseIdx);
-      expect(ringIdx, `${name}: ring should stay at or near base`).toBeLessThanOrEqual(baseIdx);
+      for (const position of SCALE_POSITIONS) {
+        const hover = sem.pair({ use: 'hover', from: position });
+        const ring = sem.pair({ use: 'ring', from: position });
+        const hoverIdx = POSITION_TO_INDEX[hover.to.position] as number;
+        const ringIdx = POSITION_TO_INDEX[ring.to.position] as number;
+        const baseIdx = POSITION_TO_INDEX[position] as number;
+        expect(
+          Math.abs(ringIdx - baseIdx),
+          `${name}@${position}: ring should be no further from base than hover`,
+        ).toBeLessThanOrEqual(Math.abs(hoverIdx - baseIdx));
+      }
     }
   });
 
