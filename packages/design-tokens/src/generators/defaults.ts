@@ -1370,6 +1370,22 @@ export const DEFAULT_SEMANTIC_COLOR_MAPPINGS: Record<string, SemanticColorMappin
     do: ['Use for secondary element focus rings'],
     never: ['Use for decorative rings'],
   },
+  'secondary-subtle': {
+    light: { family: 'neutral', position: '100' },
+    dark: { family: 'neutral', position: '900' },
+    meaning: 'Subtle secondary background for badges/alerts',
+    contexts: ['secondary-badges', 'secondary-alerts'],
+    do: ['Use for subtle secondary backgrounds'],
+    never: ['Use for secondary buttons'],
+  },
+  'secondary-subtle-foreground': {
+    light: { family: 'neutral', position: '900' },
+    dark: { family: 'neutral', position: '100' },
+    meaning: 'Text on subtle secondary backgrounds',
+    contexts: ['secondary-subtle-text'],
+    do: ['Use for text on subtle secondary'],
+    never: ['Use without secondary-subtle background'],
+  },
 
   // ============================================================================
   // MUTED - Subdued elements (shadcn compatible + extended)
@@ -1489,6 +1505,22 @@ export const DEFAULT_SEMANTIC_COLOR_MAPPINGS: Record<string, SemanticColorMappin
     contexts: ['accent-focus-ring'],
     do: ['Use for accent element focus rings'],
     never: ['Use for decorative rings'],
+  },
+  'accent-subtle': {
+    light: { family: 'neutral', position: '100' },
+    dark: { family: 'neutral', position: '900' },
+    meaning: 'Subtle accent background for badges/alerts',
+    contexts: ['accent-badges', 'accent-alerts'],
+    do: ['Use for subtle accent backgrounds'],
+    never: ['Use for accent buttons'],
+  },
+  'accent-subtle-foreground': {
+    light: { family: 'neutral', position: '900' },
+    dark: { family: 'neutral', position: '100' },
+    meaning: 'Text on subtle accent backgrounds',
+    contexts: ['accent-subtle-text'],
+    do: ['Use for text on subtle accent'],
+    never: ['Use without accent-subtle background'],
   },
 
   // ============================================================================
