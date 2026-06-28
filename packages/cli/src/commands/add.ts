@@ -8,6 +8,15 @@
 import { existsSync } from 'node:fs';
 import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
+import {
+  contrastPlugin,
+  invertPlugin,
+  loadRegistryFromDir,
+  regenerateOutputs,
+  resolveContentSources,
+  scalePlugin,
+  statePlugin,
+} from '@rafters/design-tokens';
 import { RegistryClient } from '../registry/client.js';
 import type { RegistryFile, RegistryItem, RegistryItemType } from '../registry/types.js';
 import {
@@ -31,6 +40,40 @@ export interface AddOptions {
   updateAll?: boolean;
   registryUrl?: string;
   agent?: boolean;
+}
+
+const REGISTRY_PLUGINS = [scalePlugin, contrastPlugin, statePlugin, invertPlugin];
+
+/**
+ * Regenerate the output artifacts after an install/update changes the installed
+ * component vocabulary, so the compiled standalone sheet (the WC utility sheet)
+ * reflects the new class strings. Delegates to the single regen path; failures
+ * here are logged but do not fail the install (the files are already on disk).
+ */
+async function regenerateAfterInstall(cwd: string, config: RaftersConfig): Promise<void> {
+  const paths = getRaftersPaths(cwd);
+  let registry: ReturnType<typeof loadRegistryFromDir>;
+  try {
+    registry = loadRegistryFromDir(paths.tokens, REGISTRY_PLUGINS);
+  } catch {
+    // No tokens on disk yet (project not initialized) -- nothing to regenerate.
+    return;
+  }
+  if (registry.size() === 0) return;
+  try {
+    await regenerateOutputs(registry, {
+      outputDir: paths.output,
+      exports: config.exports,
+      contentSources: resolveContentSources(cwd, config),
+      darkMode: config.darkMode ?? 'class',
+      includeImport: !config.shadcn,
+    });
+  } catch (err) {
+    log({
+      event: 'add:regen-failed',
+      message: `Output regeneration failed: ${err instanceof Error ? err.message : String(err)}`,
+    });
+  }
 }
 
 /**
@@ -730,10 +773,12 @@ export async function add(componentArgs: string[], options: AddOptions): Promise
     });
   }
 
-  // Update config with installed items
+  // Update config with installed items, then regenerate outputs so the new
+  // (or removed-on-update) component vocabulary reaches the compiled sheet.
   if (installedItems.length > 0 && config) {
     trackInstalled(config, installedItems);
     await saveConfig(cwd, config);
+    await regenerateAfterInstall(cwd, config);
   } else if (installedItems.length > 0 && !config) {
     // No config file yet -- create minimal installed tracking
     const newConfig: RaftersConfig = {
@@ -749,6 +794,7 @@ export async function add(componentArgs: string[], options: AddOptions): Promise
     };
     trackInstalled(newConfig, installedItems);
     await saveConfig(cwd, newConfig);
+    await regenerateAfterInstall(cwd, newConfig);
   }
 
   // Summary

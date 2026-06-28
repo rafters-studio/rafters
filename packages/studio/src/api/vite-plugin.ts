@@ -9,14 +9,15 @@
  * Use `persist: true` (default) when enrichment is complete.
  */
 
-import { writeFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { buildColorValue, rebakeAccessibility } from '@rafters/color-utils';
 import {
   contrastPlugin,
   invertPlugin,
   loadRegistryFromDir,
-  registryToTailwind,
+  regenerateOutputs,
+  resolveContentSources,
   saveRegistryToDir,
   scalePlugin,
   statePlugin,
@@ -71,7 +72,30 @@ const ColorBuildOptionsSchema = z.object({
 });
 
 const projectPath = process.env.RAFTERS_PROJECT_PATH || process.cwd();
-const outputPath = join(projectPath, '.rafters', 'output', 'rafters.css');
+const outputDir = join(projectPath, '.rafters', 'output');
+const configPath = join(projectPath, '.rafters', 'config.rafters.json');
+
+/**
+ * The slice of config.rafters.json the regen path needs: which outputs to emit
+ * and the component paths the compiled sheet scans. Read fresh on each regen so
+ * a changed config (e.g. a newly added namespace) is honored.
+ */
+interface StudioConfig {
+  exports?: { tailwind: boolean; typescript: boolean; dtcg: boolean; compiled: boolean };
+  componentsPath?: string | Array<string | { path: string }>;
+  primitivesPath?: string | Array<string | { path: string }>;
+  compositesPath?: string | Array<string | { path: string }>;
+  shadcn?: boolean;
+  darkMode?: 'class' | 'media';
+}
+
+async function loadStudioConfig(): Promise<StudioConfig | null> {
+  try {
+    return JSON.parse(await readFile(configPath, 'utf8')) as StudioConfig;
+  } catch {
+    return null;
+  }
+}
 
 // Zod schema for incoming WebSocket messages
 const SetTokenMessageSchema = z.object({
@@ -610,21 +634,90 @@ export function studioApiPlugin(): Plugin {
         initialized = false;
       }
 
-      // Persist the registry to disk and signal HMR. Replaces v1's
-      // setChangeCallback / setAdapter wiring -- callers explicitly invoke
-      // this after each change instead of relying on a registry-internal
-      // callback chain.
+      // The one output+HMR step: project the current registry to disk outputs
+      // and signal HMR. Does NOT persist tokens -- that is the caller's choice,
+      // which is also what keeps the file watch below from looping (it never
+      // writes back into a watched path).
+      const regenerate = async (): Promise<void> => {
+        const config = await loadStudioConfig();
+        const exports = config?.exports ?? {
+          tailwind: true,
+          typescript: false,
+          dtcg: false,
+          compiled: false,
+        };
+        await regenerateOutputs(
+          registry,
+          {
+            outputDir,
+            exports,
+            contentSources: config ? resolveContentSources(projectPath, config) : [],
+            darkMode: config?.darkMode ?? 'class',
+            includeImport: !config?.shadcn,
+          },
+          { notify: () => server.ws.send({ type: 'custom', event: 'rafters:css-updated' }) },
+        );
+      };
+
+      // Persist the registry to disk, then regenerate outputs + signal HMR.
+      // Replaces v1's setChangeCallback / setAdapter wiring -- callers explicitly
+      // invoke this after each in-memory change.
       const persistAndNotify = async (): Promise<void> => {
         try {
           if (initialized) {
             saveRegistryToDir(tokensDir, registry);
           }
-          await writeFile(outputPath, registryToTailwind(registry));
-          server.ws.send({ type: 'custom', event: 'rafters:css-updated' });
+          await regenerate();
         } catch (error) {
           console.log(`[rafters] CSS regeneration failed: ${error}`);
         }
       };
+
+      // The single file watch: any change to the token files, the configured
+      // component/primitive/composite class sources, or the config reloads the
+      // registry from disk and regenerates (no token write -> no watch loop).
+      // This is the only filesystem-driven regen path; studio API edits share
+      // the same `regenerate` via persistAndNotify.
+      const reloadAndRegenerate = async (): Promise<void> => {
+        try {
+          registry = loadRegistryFromDir(tokensDir, REGISTRY_PLUGINS);
+          initialized = true;
+        } catch {
+          // Tokens unreadable mid-edit -- keep the current registry and still
+          // regenerate so a .classes.ts-only change is picked up.
+        }
+        try {
+          await regenerate();
+        } catch (error) {
+          console.log(`[rafters] CSS regeneration failed: ${error}`);
+        }
+      };
+
+      {
+        const watchConfig = await loadStudioConfig();
+        const classDirs = watchConfig ? resolveContentSources(projectPath, watchConfig) : [];
+        const watchTargets = [
+          join(tokensDir, '*.rafters.json'),
+          configPath,
+          ...classDirs.map((dir) => join(dir, '**/*.classes.ts')),
+        ];
+        server.watcher.add(watchTargets);
+        let debounce: ReturnType<typeof setTimeout> | null = null;
+        const onChange = (changed: string): void => {
+          const watched =
+            changed.endsWith('.classes.ts') ||
+            changed.endsWith('.rafters.json') ||
+            changed === configPath;
+          if (!watched) return;
+          if (debounce) clearTimeout(debounce);
+          debounce = setTimeout(() => {
+            void reloadAndRegenerate();
+          }, 150);
+        };
+        server.watcher.on('change', onChange);
+        server.watcher.on('add', onChange);
+        server.watcher.on('unlink', onChange);
+      }
 
       // Listen for token updates from client
       server.ws.on('rafters:set-token', async (rawData: unknown, client) => {

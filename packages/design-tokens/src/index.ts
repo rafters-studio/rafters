@@ -32,6 +32,14 @@ export {
 } from './importers/shapes.js';
 export { extractThemeBlocks } from './importers/theme.js';
 export {
+  type ContentPathField,
+  type OutputExports,
+  type RegenerateOutputsHooks,
+  type RegenerateOutputsInput,
+  regenerateOutputs,
+  resolveContentSources,
+} from './outputs.js';
+export {
   findTokenFile,
   loadRegistryFromDir,
   type NamespaceFileEnvelope,

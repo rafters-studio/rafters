@@ -1,5 +1,18 @@
 # rafters
 
+## 0.0.71
+
+### Features
+
+- feat(design-tokens, cli, studio): standalone CSS is complete, deterministic, and regenerated on every vocabulary change (epic #1723). The compiled `rafters.standalone.css` is the utility stylesheet every Web Component adopts into its shadow root, so it must contain a rule for every utility the installed components reference. It was previously a photograph of whatever content was reachable from the inherited process CWD -- non-deterministic and incomplete (a missing `bg-surface` was the visible symptom). Fixes:
+  - `registryToCompiled` now compiles `@import "tailwindcss" source(none)` plus an explicit `@source` per configured component path, with an explicit `cwd` (#1725). Output is a pure function of (registry values, content sources) -- identical regardless of where the command runs.
+  - `@tailwindcss/cli` ships as a `rafters` dependency (#1724), so the standalone export works in a consumer install with no Tailwind of their own -- the whole point of the standalone sheet.
+  - One regeneration path: `regenerateOutputs` is the single function that writes every output (`rafters.css` / `.ts` / `.json` / `.standalone.css`) and fires HMR. `init`'s `generateOutputs` and studio's `persistAndNotify` delegate to it (#1726); `rafters add` / `--update` / `--update-all` call it so a newly installed component's classes reach the sheet (#1727); and a single studio file watch over the token files, component `*.classes.ts`, and config regenerates on change (#1728).
+
+### Bug Fixes
+
+- fix(design-tokens): add `accent-subtle` / `accent-subtle-foreground` / `secondary-subtle` / `secondary-subtle-foreground` (#1729). Components (e.g. alert variants) reference these but they were absent from the semantic defaults, so the utilities resolved to nothing. Existing projects: `rafters init --rebuild`.
+
 ## 0.0.70
 
 ### Features

@@ -1047,8 +1047,16 @@ export function registryToTailwindStatic(registry: TokenRegistry): string {
 export interface CompiledCssOptions {
   /** Minify the output (default: true) */
   minify?: boolean;
-  /** Include @import "tailwindcss" in source (default: true) */
-  includeImport?: boolean;
+  /**
+   * Absolute paths (files or directories) Tailwind should scan for utility
+   * candidates, emitted as explicit `@source` directives. The compiled sheet
+   * is a standalone artifact, so it always uses `@import "tailwindcss"
+   * source(none)` to disable Tailwind's content auto-detection -- the output
+   * is then a pure function of (registry values, contentSources), never of
+   * the process CWD. When empty, only theme tokens and base layers are
+   * emitted (no utility rules).
+   */
+  contentSources?: string[];
 }
 
 /**
@@ -1076,10 +1084,17 @@ export async function registryToCompiled(
   registry: TokenRegistry,
   options: CompiledCssOptions = {},
 ): Promise<string> {
-  const { minify = true, includeImport = true } = options;
+  const { minify = true, contentSources = [] } = options;
 
-  // Generate the Tailwind theme CSS
-  const themeCss = registryToTailwind(registry, { includeImport });
+  // Theme body without its own @import -- the standalone sheet supplies the
+  // import with source(none) below so utilities come only from contentSources.
+  const themeBody = registryToTailwind(registry, { includeImport: false });
+
+  // source(none) disables Tailwind's CWD content auto-detection; each
+  // contentSource is scanned explicitly. Output is then independent of where
+  // this runs -- a pure function of (registry values, contentSources).
+  const sourceDirectives = contentSources.map((src) => `@source "${src}";`).join('\n');
+  const input = `@import "tailwindcss" source(none);\n${sourceDirectives}\n${themeBody}`;
 
   const { execFileSync } = await import('node:child_process');
   const { mkdtempSync, writeFileSync, readFileSync, rmSync } = await import('node:fs');
@@ -1099,29 +1114,30 @@ export async function registryToCompiled(
   // The bin is at dist/index.mjs relative to package.json
   const binPath = join(pkgDir, 'dist', 'index.mjs');
 
-  // Create temp dir in the package location where tailwindcss can be resolved
+  // The temp input lives inside the @tailwindcss/cli package so the CLI can
+  // resolve `@import "tailwindcss"` (the engine) via normal node resolution.
+  // With source(none) this location does NOT influence content scanning, so
+  // it has no effect on output -- only the explicit @source paths do.
   const tempDir = mkdtempSync(join(pkgDir, '.tmp-compile-'));
   const tempInput = join(tempDir, 'input.css');
   const tempOutput = join(tempDir, 'output.css');
 
   try {
-    // Write theme CSS to temp file
-    writeFileSync(tempInput, themeCss);
+    writeFileSync(tempInput, input);
 
-    // Run Tailwind CLI
     const args = [binPath, '-i', tempInput, '-o', tempOutput];
     if (minify) {
       args.push('--minify');
     }
-    execFileSync('node', args, { stdio: 'pipe', timeout: 30_000 });
+    // Explicit cwd = the package dir (not the inherited process CWD), so a
+    // stray Tailwind config or content root in the caller's tree cannot leak in.
+    execFileSync('node', args, { stdio: 'pipe', timeout: 30_000, cwd: pkgDir });
 
-    // Read and return compiled output
     return readFileSync(tempOutput, 'utf-8');
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     throw new Error(`Failed to compile CSS: ${message}`);
   } finally {
-    // Clean up temp dir
     rmSync(tempDir, { recursive: true, force: true });
   }
 }

@@ -30,15 +30,13 @@ import {
   importColorFamily,
   invertPlugin,
   loadRegistryFromDir,
-  registryToCompiled,
-  registryToTailwind,
-  registryToTypeScript,
+  regenerateOutputs,
+  resolveContentSources,
   saveRegistryToDir,
   scalePlugin,
   senseShadcnCss,
   statePlugin,
   TokenRegistry,
-  toDTCG,
 } from '@rafters/design-tokens';
 import type { OKLCH } from '@rafters/shared';
 
@@ -471,43 +469,30 @@ export async function generateOutputs(
   exports: ExportConfig,
   shadcn: ShadcnConfig | null,
   darkMode: 'class' | 'media' = 'class',
+  config?: RaftersConfig | null,
 ): Promise<string[]> {
-  const outputs: string[] = [];
+  // The compiled (standalone) sheet scans the configured component vocabulary.
+  // When no config is available yet (fresh init, nothing installed), the source
+  // set is empty and the sheet is theme-only -- it fills in once components land.
+  const contentSources = config ? resolveContentSources(cwd, config) : [];
 
-  // Tailwind CSS (with @import "tailwindcss")
-  if (exports.tailwind) {
-    const tailwindCss = registryToTailwind(registry, { includeImport: !shadcn, darkMode });
-    await writeFile(join(paths.output, 'rafters.css'), tailwindCss);
-    outputs.push('rafters.css');
+  // CLI-only concern: the compiled export needs @tailwindcss/cli present. Prompt
+  // (or throw in agent mode) before delegating to the shared regen path.
+  if (exports.compiled && !isTailwindCliInstalled()) {
+    log({ event: 'init:prompting_exports' }); // stop spinner before prompt
+    await ensureTailwindCli(cwd);
   }
-
-  // TypeScript constants
-  if (exports.typescript) {
-    const typescriptSrc = registryToTypeScript(registry, { includeJSDoc: true });
-    await writeFile(join(paths.output, 'rafters.ts'), typescriptSrc);
-    outputs.push('rafters.ts');
-  }
-
-  // DTCG JSON (W3C Design Tokens)
-  if (exports.dtcg) {
-    const dtcgJson = toDTCG([...registry.list()]);
-    await writeFile(join(paths.output, 'rafters.json'), JSON.stringify(dtcgJson, null, 2));
-    outputs.push('rafters.json');
-  }
-
-  // Compiled CSS (processed by Tailwind, no @import)
   if (exports.compiled) {
-    if (!isTailwindCliInstalled()) {
-      log({ event: 'init:prompting_exports' }); // stop spinner before prompt
-      await ensureTailwindCli(cwd);
-    }
     log({ event: 'init:compiling_css' });
-    const compiledCss = await registryToCompiled(registry, { includeImport: !shadcn });
-    await writeFile(join(paths.output, 'rafters.standalone.css'), compiledCss);
-    outputs.push('rafters.standalone.css');
   }
 
-  return outputs;
+  return regenerateOutputs(registry, {
+    outputDir: paths.output,
+    exports,
+    contentSources,
+    darkMode,
+    includeImport: !shadcn,
+  });
 }
 
 async function regenerateFromExisting(
@@ -576,8 +561,17 @@ async function regenerateFromExisting(
   // Ensure output directory exists
   await mkdir(paths.output, { recursive: true });
 
-  // Generate outputs
-  const outputs = await generateOutputs(cwd, paths, registry, exports, shadcn);
+  // Generate outputs (existingConfig carries the component paths the compiled
+  // sheet scans; null -> theme-only compiled until components are installed)
+  const outputs = await generateOutputs(
+    cwd,
+    paths,
+    registry,
+    exports,
+    shadcn,
+    'class',
+    existingConfig,
+  );
 
   // Update config with new export settings (create if missing)
   if (existingConfig) {
@@ -705,8 +699,17 @@ async function resetToDefaults(
   // Ensure output directory exists
   await mkdir(paths.output, { recursive: true });
 
-  // Generate outputs
-  const outputs = await generateOutputs(cwd, paths, registry, exports, shadcn);
+  // Generate outputs (existingConfig carries the component paths the compiled
+  // sheet scans; null -> theme-only compiled until components are installed)
+  const outputs = await generateOutputs(
+    cwd,
+    paths,
+    registry,
+    exports,
+    shadcn,
+    'class',
+    existingConfig,
+  );
 
   // Update config with new export settings (create if missing)
   if (existingConfig) {
