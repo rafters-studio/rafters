@@ -32,8 +32,11 @@
 
 import * as React from 'react';
 import { createPortal } from 'react-dom';
+import { useMemory } from '../../hooks/use-memory';
 import classy from '../../primitives/classy';
+import { createDisclosure } from '../../primitives/create-disclosure';
 import { onEscapeKeyDown } from '../../primitives/escape-keydown';
+import { createMemory } from '../../primitives/memory';
 import { onPointerDownOutside } from '../../primitives/outside-click';
 import { getPortalContainer } from '../../primitives/portal';
 import { createRovingFocus } from '../../primitives/roving-focus';
@@ -136,20 +139,34 @@ export function ContextMenu({
   defaultOpen = false,
   onOpenChange,
 }: ContextMenuProps) {
-  const [uncontrolledOpen, setUncontrolledOpen] = React.useState(defaultOpen);
-  const [position, setPosition] = React.useState({ x: 0, y: 0 });
+  // Open lives on createDisclosure; the right-click pointer {x,y} lives on a
+  // tiny per-root createMemory cell. Both are the single source of truth - no
+  // component-local useState. The controlled/uncontrolled dual-mode stays at
+  // this React boundary (reflect the prop in via setOpen, fire onOpenChange on
+  // user actions), exactly as the disclosure batch prescribes.
+  const disclosure = React.useRef(createDisclosure({ initialOpen: defaultOpen })).current;
+  const point = React.useRef(createMemory(() => ({ x: 0, y: 0 }))).current;
 
   const isControlled = controlledOpen !== undefined;
+  const uncontrolledOpen = useMemory(disclosure.memory).open;
   const open = isControlled ? controlledOpen : uncontrolledOpen;
+  const position = useMemory(point);
 
   const handleOpenChange = React.useCallback(
     (newOpen: boolean) => {
       if (!isControlled) {
-        setUncontrolledOpen(newOpen);
+        disclosure.setOpen(newOpen);
       }
       onOpenChange?.(newOpen);
     },
-    [isControlled, onOpenChange],
+    [isControlled, onOpenChange, disclosure],
+  );
+
+  const setPosition = React.useCallback(
+    (next: { x: number; y: number }) => {
+      point.set(next);
+    },
+    [point],
   );
 
   const id = React.useId();
@@ -163,7 +180,7 @@ export function ContextMenu({
       position,
       setPosition,
     }),
-    [open, handleOpenChange, contentId, position],
+    [open, handleOpenChange, contentId, position, setPosition],
   );
 
   return <ContextMenuContext.Provider value={contextValue}>{children}</ContextMenuContext.Provider>;
@@ -777,19 +794,22 @@ export function ContextMenuSub({
   defaultOpen = false,
   onOpenChange,
 }: ContextMenuSubProps) {
-  const [uncontrolledOpen, setUncontrolledOpen] = React.useState(defaultOpen);
+  // Submenu open uses the same createDisclosure boundary as the root - the
+  // controlled/uncontrolled dual-mode stays here, no component-local useState.
+  const disclosure = React.useRef(createDisclosure({ initialOpen: defaultOpen })).current;
 
   const isControlled = controlledOpen !== undefined;
+  const uncontrolledOpen = useMemory(disclosure.memory).open;
   const open = isControlled ? controlledOpen : uncontrolledOpen;
 
   const handleOpenChange = React.useCallback(
     (newOpen: boolean) => {
       if (!isControlled) {
-        setUncontrolledOpen(newOpen);
+        disclosure.setOpen(newOpen);
       }
       onOpenChange?.(newOpen);
     },
-    [isControlled, onOpenChange],
+    [isControlled, onOpenChange, disclosure],
   );
 
   const id = React.useId();

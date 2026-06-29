@@ -265,6 +265,58 @@ describe('ContextMenu - Position at Cursor', () => {
       expect(style.position).toBe('fixed');
     });
   });
+
+  it('opens at the pointer and positions content at the captured coordinates', async () => {
+    render(
+      <ContextMenu>
+        <ContextMenuTrigger>Right-click me</ContextMenuTrigger>
+        <ContextMenuPortal>
+          <ContextMenuContent>
+            <ContextMenuItem>Item 1</ContextMenuItem>
+          </ContextMenuContent>
+        </ContextMenuPortal>
+      </ContextMenu>,
+    );
+
+    fireEvent.contextMenu(screen.getByText('Right-click me'), {
+      clientX: 120,
+      clientY: 80,
+    });
+
+    const menu = await screen.findByRole('menu');
+    expect(menu).toBeVisible();
+    await waitFor(() => {
+      expect(menu).toHaveStyle({ left: '120px', top: '80px' });
+    });
+  });
+
+  it('closes on Escape after opening at the pointer', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <ContextMenu>
+        <ContextMenuTrigger>Right-click me</ContextMenuTrigger>
+        <ContextMenuPortal>
+          <ContextMenuContent>
+            <ContextMenuItem>Item 1</ContextMenuItem>
+          </ContextMenuContent>
+        </ContextMenuPortal>
+      </ContextMenu>,
+    );
+
+    fireEvent.contextMenu(screen.getByText('Right-click me'), {
+      clientX: 120,
+      clientY: 80,
+    });
+
+    await screen.findByRole('menu');
+
+    await user.keyboard('{Escape}');
+
+    await waitFor(() => {
+      expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    });
+  });
 });
 
 describe('ContextMenu - Controlled Mode', () => {
