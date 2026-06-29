@@ -546,10 +546,15 @@ export function loadComponent(name: string): RegistryItem | null {
       });
 
       // Merge primitive/internal deps from all variants.
-      // Filter out shared auxiliary files (e.g. button.classes) -- they are bundled
-      // with the component's files, not standalone primitives.
+      // Filter out shared auxiliary files -- they are bundled with the
+      // component's files, never fetched as standalone primitives. This must
+      // match ANY shared sibling, not just this component's own: a component
+      // can import a sibling's shared file (e.g. container imports
+      // ./grid.classes for shared column classes), and that file is bundled by
+      // name (see the sibling-import bundling below), so it must not leak into
+      // primitives as a phantom item (which would 404 on install).
       const realPrimitives = analysis.importDeps.internal.filter(
-        (dep) => !SHARED_SUFFIXES.some((suffix) => dep === name + suffix.replace(/\.ts$/, '')),
+        (dep) => !SHARED_SUFFIXES.some((suffix) => dep.endsWith(suffix.replace(/\.ts$/, ''))),
       );
       primitivesAll = [
         ...new Set([...primitivesAll, ...realPrimitives, ...analysis.primitiveDeps]),
