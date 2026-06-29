@@ -32,8 +32,10 @@
 
 import * as React from 'react';
 import { createPortal } from 'react-dom';
+import { useMemory } from '../../hooks/use-memory';
 import classy from '../../primitives/classy';
 import { computePosition } from '../../primitives/collision-detector';
+import { createDisclosure } from '../../primitives/create-disclosure';
 import { onEscapeKeyDown } from '../../primitives/escape-keydown';
 import { onPointerDownOutside } from '../../primitives/outside-click';
 import { getPortalContainer } from '../../primitives/portal';
@@ -137,19 +139,25 @@ export function DropdownMenu({
   defaultOpen = false,
   onOpenChange,
 }: DropdownMenuProps) {
-  const [uncontrolledOpen, setUncontrolledOpen] = React.useState(defaultOpen);
-
+  const disclosure = React.useRef(
+    createDisclosure({ initialOpen: controlledOpen ?? defaultOpen ?? false }),
+  ).current;
   const isControlled = controlledOpen !== undefined;
-  const open = isControlled ? controlledOpen : uncontrolledOpen;
+
+  React.useEffect(() => {
+    if (isControlled) disclosure.setOpen(controlledOpen);
+  }, [isControlled, controlledOpen, disclosure]);
+
+  const open = useMemory(disclosure.memory).open;
 
   const handleOpenChange = React.useCallback(
     (newOpen: boolean) => {
-      if (!isControlled) {
-        setUncontrolledOpen(newOpen);
-      }
       onOpenChange?.(newOpen);
+      if (!isControlled) {
+        disclosure.setOpen(newOpen);
+      }
     },
-    [isControlled, onOpenChange],
+    [isControlled, onOpenChange, disclosure],
   );
 
   const id = React.useId();
@@ -817,19 +825,25 @@ export function DropdownMenuSub({
   defaultOpen = false,
   onOpenChange,
 }: DropdownMenuSubProps) {
-  const [uncontrolledOpen, setUncontrolledOpen] = React.useState(defaultOpen);
-
+  const disclosure = React.useRef(
+    createDisclosure({ initialOpen: controlledOpen ?? defaultOpen ?? false }),
+  ).current;
   const isControlled = controlledOpen !== undefined;
-  const open = isControlled ? controlledOpen : uncontrolledOpen;
+
+  React.useEffect(() => {
+    if (isControlled) disclosure.setOpen(controlledOpen);
+  }, [isControlled, controlledOpen, disclosure]);
+
+  const open = useMemory(disclosure.memory).open;
 
   const handleOpenChange = React.useCallback(
     (newOpen: boolean) => {
-      if (!isControlled) {
-        setUncontrolledOpen(newOpen);
-      }
       onOpenChange?.(newOpen);
+      if (!isControlled) {
+        disclosure.setOpen(newOpen);
+      }
     },
-    [isControlled, onOpenChange],
+    [isControlled, onOpenChange, disclosure],
   );
 
   const id = React.useId();
