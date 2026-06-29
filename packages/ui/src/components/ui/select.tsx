@@ -47,9 +47,11 @@ import { createPortal } from 'react-dom';
 import classy from '../../primitives/classy';
 import { computePosition } from '../../primitives/collision-detector';
 import { onEscapeKeyDown } from '../../primitives/escape-keydown';
+import type { Memory } from '../../primitives/memory';
 import { onPointerDownOutside } from '../../primitives/outside-click';
 import { getPortalContainer } from '../../primitives/portal';
 import { createRovingFocus } from '../../primitives/roving-focus';
+import type { SelectionGroupState } from '../../primitives/selection-group';
 import { mergeProps } from '../../primitives/slot';
 import { createTypeahead } from '../../primitives/typeahead';
 import type { Align, Side } from '../../primitives/types';
@@ -78,24 +80,41 @@ import {
   selectValuePlaceholderClasses,
   selectViewportClasses,
 } from './select.classes';
+import { createSelect, type SelectCellState, type SelectController } from './select.controller';
+
+// ==================== Slice subscription ====================
+
+// Subscribe a component to one slice of a Memory cell. Re-renders only when the
+// selected slice changes (useSyncExternalStore bails out via Object.is), so an
+// open consumer never re-renders on a labelVersion bump and vice versa.
+function useMemorySlice<T, S>(memory: Memory<T>, selector: (value: T) => S): S {
+  const subscribe = React.useCallback(
+    (onStoreChange: () => void) => memory.subscribe(() => onStoreChange()),
+    [memory],
+  );
+  const getSnapshot = React.useCallback(() => selector(memory.get()), [memory, selector]);
+  return React.useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+}
+
+const selectOpen = (state: SelectCellState): boolean => state.open;
+const selectHighlighted = (state: SelectCellState): string | undefined => state.highlightedValue;
+const selectLabelVersion = (state: SelectCellState): number => state.labelVersion;
+const selectFirstValue = (state: SelectionGroupState): string | undefined => state.selected[0];
 
 // ==================== Context ====================
 
+// Context carries the framework-free controller plus the static plumbing (ids, refs,
+// disabled, name). Reactive state (open / value / highlight / labels) is read by each
+// leaf via useMemorySlice, so a label registration re-renders SelectValue without
+// churning the open/highlight consumers.
 interface SelectContextValue {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  value: string | undefined;
-  onValueChange: (value: string) => void;
+  controller: SelectController;
   disabled: boolean;
   contentId: string;
   triggerId: string;
   triggerRef: React.RefObject<HTMLButtonElement | null>;
   contentRef: React.RefObject<HTMLDivElement | null>;
   name: string | undefined;
-  highlightedValue: string | undefined;
-  onHighlightChange: (value: string | undefined) => void;
-  registerLabel: (value: string, label: string) => void;
-  getLabel: (value: string) => string | undefined;
 }
 
 const SelectContext = React.createContext<SelectContextValue | null>(null);
@@ -133,63 +152,55 @@ export function Select({
   disabled = false,
   name,
 }: SelectProps) {
-  // Uncontrolled state for value
-  const [uncontrolledValue, setUncontrolledValue] = React.useState(defaultValue);
   const isValueControlled = controlledValue !== undefined;
-  const value = isValueControlled ? controlledValue : uncontrolledValue;
-
-  // Uncontrolled state for open
-  const [uncontrolledOpen, setUncontrolledOpen] = React.useState(defaultOpen);
   const isOpenControlled = controlledOpen !== undefined;
-  const open = isOpenControlled ? controlledOpen : uncontrolledOpen;
 
-  // Highlighted item for keyboard navigation
-  const [highlightedValue, setHighlightedValue] = React.useState<string | undefined>(undefined);
+  // Capture the initial value/open once; the controller owns state thereafter.
+  const initialValueRef = React.useRef(isValueControlled ? controlledValue : defaultValue);
+  const initialOpenRef = React.useRef(isOpenControlled ? controlledOpen : defaultOpen);
 
-  // Label registry: maps item values to their display labels.
-  // Uses state so SelectValue re-renders when labels are first registered.
-  const [labelMap, setLabelMap] = React.useState<Map<string, string>>(() => new Map());
+  // Keep the latest callbacks reachable without re-creating the controller.
+  const onValueChangeRef = React.useRef(onValueChange);
+  const onOpenChangeRef = React.useRef(onOpenChange);
+  React.useEffect(() => {
+    onValueChangeRef.current = onValueChange;
+    onOpenChangeRef.current = onOpenChange;
+  });
 
-  const registerLabel = React.useCallback((itemValue: string, label: string) => {
-    setLabelMap((prev) => {
-      if (prev.get(itemValue) === label) return prev;
-      const next = new Map(prev);
-      next.set(itemValue, label);
-      return next;
+  // The framework-free controller is the single source of truth for state. Lazily
+  // created once (no DOM root needed - roving/typeahead are wired as effects below).
+  const controllerRef = React.useRef<SelectController | null>(null);
+  if (controllerRef.current === null) {
+    controllerRef.current = createSelect({
+      // Empty string means "no selection" - omit so the group starts empty.
+      ...(initialValueRef.current === '' ? {} : { initialValue: initialValueRef.current }),
+      initialOpen: initialOpenRef.current,
+      onValueChange: (next) => onValueChangeRef.current?.(next),
+      onOpenChange: (next) => onOpenChangeRef.current?.(next),
     });
-  }, []);
+  }
+  const controller = controllerRef.current;
 
-  const getLabel = React.useCallback(
-    (itemValue: string): string | undefined => {
-      return labelMap.get(itemValue);
-    },
-    [labelMap],
-  );
+  React.useEffect(() => () => controller.destroy(), [controller]);
 
-  const handleValueChange = React.useCallback(
-    (newValue: string) => {
-      if (!isValueControlled) {
-        setUncontrolledValue(newValue);
-      }
-      onValueChange?.(newValue);
-    },
-    [isValueControlled, onValueChange],
-  );
+  // Controlled value: mirror the prop into the group (no callback re-fire).
+  React.useEffect(() => {
+    if (!isValueControlled) return;
+    const next = controlledValue ?? '';
+    if (controller.group.get()[0] !== next) {
+      controller.setValue(next);
+    }
+  }, [isValueControlled, controlledValue, controller]);
 
-  const handleOpenChange = React.useCallback(
-    (newOpen: boolean) => {
-      if (disabled) return;
-      if (!isOpenControlled) {
-        setUncontrolledOpen(newOpen);
-      }
-      onOpenChange?.(newOpen);
-      // Reset highlight when closing
-      if (!newOpen) {
-        setHighlightedValue(undefined);
-      }
-    },
-    [isOpenControlled, onOpenChange, disabled],
-  );
+  // Controlled open: mirror the prop into the cell directly (no onOpenChange re-fire),
+  // preserving the close-clears-highlight reset.
+  React.useEffect(() => {
+    if (!isOpenControlled) return;
+    const next = controlledOpen ?? false;
+    if (controller.cell.get().open !== next) {
+      controller.cell.patch(next ? { open: true } : { open: false, highlightedValue: undefined });
+    }
+  }, [isOpenControlled, controlledOpen, controller]);
 
   // Generate stable IDs
   const id = React.useId();
@@ -202,34 +213,15 @@ export function Select({
 
   const contextValue = React.useMemo(
     () => ({
-      open,
-      onOpenChange: handleOpenChange,
-      value,
-      onValueChange: handleValueChange,
+      controller,
       disabled,
       contentId,
       triggerId,
       triggerRef,
       contentRef,
       name,
-      highlightedValue,
-      onHighlightChange: setHighlightedValue,
-      registerLabel,
-      getLabel,
     }),
-    [
-      open,
-      handleOpenChange,
-      value,
-      handleValueChange,
-      disabled,
-      contentId,
-      triggerId,
-      name,
-      highlightedValue,
-      registerLabel,
-      getLabel,
-    ],
+    [controller, disabled, contentId, triggerId, name],
   );
 
   return <SelectContext.Provider value={contextValue}>{children}</SelectContext.Provider>;
@@ -250,35 +242,28 @@ export function SelectTrigger({
   size = 'default',
   ...props
 }: SelectTriggerProps) {
-  const {
-    open,
-    onOpenChange,
-    disabled,
-    contentId,
-    triggerId,
-    triggerRef,
-    value,
-    onHighlightChange,
-  } = useSelectContext();
+  const { controller, disabled, contentId, triggerId, triggerRef } = useSelectContext();
+  const open = useMemorySlice(controller.cell, selectOpen);
+  const value = useMemorySlice(controller.group.memory, selectFirstValue);
 
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     props.onClick?.(event);
-    if (!event.defaultPrevented) {
-      onOpenChange(!open);
+    if (!event.defaultPrevented && !disabled) {
+      controller.setOpen(!open);
     }
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
     props.onKeyDown?.(event);
-    if (event.defaultPrevented) return;
+    if (event.defaultPrevented || disabled) return;
 
     // Open on ArrowDown, ArrowUp, Enter, or Space
     if (['ArrowDown', 'ArrowUp', 'Enter', ' '].includes(event.key) && !open) {
       event.preventDefault();
-      onOpenChange(true);
+      controller.setOpen(true);
       // Highlight current value when opening with keyboard
       if (value) {
-        onHighlightChange(value);
+        controller.setHighlighted(value);
       }
     }
   };
@@ -371,12 +356,15 @@ export function SelectValue({
   children,
   ...props
 }: SelectValueProps) {
-  const { value, getLabel } = useSelectContext();
+  const { controller } = useSelectContext();
+  const value = useMemorySlice(controller.group.memory, selectFirstValue);
+  // Re-render when labels are (re)registered without churning open/highlight consumers.
+  useMemorySlice(controller.cell, selectLabelVersion);
 
   // Look up the human-readable label registered by the selected SelectItem.
   // Falls back to the raw value if no label has been registered yet.
   const hasValue = value !== undefined && value !== '';
-  const label = hasValue ? getLabel(value) : undefined;
+  const label = hasValue ? controller.getLabel(value) : undefined;
   const displayValue = label ?? (hasValue ? value : placeholder);
   const isPlaceholder = !hasValue;
 
@@ -410,7 +398,8 @@ export interface SelectPortalProps {
 }
 
 export function SelectPortal({ children, container }: SelectPortalProps) {
-  const { open } = useSelectContext();
+  const { controller } = useSelectContext();
+  const open = useMemorySlice(controller.cell, selectOpen);
   const [mounted, setMounted] = React.useState(false);
 
   React.useEffect(() => {
@@ -449,17 +438,10 @@ export function SelectContent({
   asChild,
   ...props
 }: SelectContentProps) {
-  const {
-    open,
-    onOpenChange,
-    contentId,
-    triggerRef,
-    contentRef,
-    value,
-    onValueChange,
-    onHighlightChange,
-    highlightedValue,
-  } = useSelectContext();
+  const { controller, contentId, triggerRef, contentRef } = useSelectContext();
+  const open = useMemorySlice(controller.cell, selectOpen);
+  const highlightedValue = useMemorySlice(controller.cell, selectHighlighted);
+  const value = useMemorySlice(controller.group.memory, selectFirstValue);
 
   const [positionState, setPositionState] = React.useState<{
     x: number;
@@ -516,12 +498,12 @@ export function SelectContent({
     if (!open) return;
 
     const cleanup = onEscapeKeyDown(() => {
-      onOpenChange(false);
+      controller.setOpen(false);
       triggerRef.current?.focus();
     });
 
     return cleanup;
-  }, [open, onOpenChange, triggerRef]);
+  }, [open, controller, triggerRef]);
 
   // Outside click handler
   React.useEffect(() => {
@@ -532,11 +514,11 @@ export function SelectContent({
       if (triggerRef.current?.contains(target)) {
         return;
       }
-      onOpenChange(false);
+      controller.setOpen(false);
     });
 
     return cleanup;
-  }, [open, onOpenChange, triggerRef, contentRef]);
+  }, [open, controller, triggerRef, contentRef]);
 
   // Roving focus for keyboard navigation
   React.useEffect(() => {
@@ -548,13 +530,13 @@ export function SelectContent({
       onNavigate: (element) => {
         const itemValue = element.getAttribute('data-value');
         if (itemValue) {
-          onHighlightChange(itemValue);
+          controller.setHighlighted(itemValue);
         }
       },
     });
 
     return cleanup;
-  }, [open, contentRef, onHighlightChange]);
+  }, [open, contentRef, controller]);
 
   // Typeahead search
   React.useEffect(() => {
@@ -567,13 +549,13 @@ export function SelectContent({
         item.focus();
         const itemValue = item.getAttribute('data-value');
         if (itemValue) {
-          onHighlightChange(itemValue);
+          controller.setHighlighted(itemValue);
         }
       },
     });
 
     return cleanup;
-  }, [open, contentRef, onHighlightChange]);
+  }, [open, contentRef, controller]);
 
   // Focus first item on open
   React.useEffect(() => {
@@ -603,14 +585,14 @@ export function SelectContent({
         targetItem.focus();
         const itemValue = targetItem.getAttribute('data-value');
         if (itemValue) {
-          onHighlightChange(itemValue);
+          controller.setHighlighted(itemValue);
         }
       }
     };
 
     const frame = requestAnimationFrame(focusInitialItem);
     return () => cancelAnimationFrame(frame);
-  }, [open, contentRef, value, onHighlightChange]);
+  }, [open, contentRef, value, controller]);
 
   // Handle keyboard selection
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -620,8 +602,8 @@ export function SelectContent({
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       if (highlightedValue) {
-        onValueChange(highlightedValue);
-        onOpenChange(false);
+        // selectValue replaces the value, fires onValueChange, and closes.
+        controller.selectValue(highlightedValue);
         triggerRef.current?.focus();
       }
     }
@@ -802,15 +784,9 @@ export function SelectItem({
   asChild,
   ...props
 }: SelectItemProps) {
-  const {
-    value,
-    onValueChange,
-    onOpenChange,
-    triggerRef,
-    highlightedValue,
-    onHighlightChange,
-    registerLabel,
-  } = useSelectContext();
+  const { controller, triggerRef } = useSelectContext();
+  const value = useMemorySlice(controller.group.memory, selectFirstValue);
+  const highlightedValue = useMemorySlice(controller.cell, selectHighlighted);
 
   const isSelected = value === itemValue;
   const isHighlighted = highlightedValue === itemValue;
@@ -822,7 +798,7 @@ export function SelectItem({
     if (labelTextRef.current) {
       const text = labelTextRef.current.textContent?.trim();
       if (text) {
-        registerLabel(itemValue, text);
+        controller.registerLabel(itemValue, text);
       }
     }
   });
@@ -831,8 +807,8 @@ export function SelectItem({
     props.onClick?.(event);
     if (event.defaultPrevented || disabled) return;
 
-    onValueChange(itemValue);
-    onOpenChange(false);
+    // selectValue replaces the value, fires onValueChange, and closes.
+    controller.selectValue(itemValue);
     triggerRef.current?.focus();
   };
 
@@ -842,15 +818,14 @@ export function SelectItem({
 
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
-      onValueChange(itemValue);
-      onOpenChange(false);
+      controller.selectValue(itemValue);
       triggerRef.current?.focus();
     }
   };
 
   const handlePointerMove = () => {
     if (!disabled && highlightedValue !== itemValue) {
-      onHighlightChange(itemValue);
+      controller.setHighlighted(itemValue);
     }
   };
 
