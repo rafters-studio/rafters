@@ -31,8 +31,11 @@
  * ```
  */
 
+import type { ReadableAtom } from 'nanostores';
 import * as React from 'react';
+import { useMemory } from '../../hooks/use-memory';
 import classy from '../../primitives/classy';
+import { createMemory, type Memory } from '../../primitives/memory';
 import {
   resizableHandleClasses,
   resizableHandleDisabledClasses,
@@ -61,11 +64,23 @@ interface PanelData {
   collapsedSize: number;
 }
 
+/**
+ * Shallow equality for the persisted sizes slice. The persistence subscriber selects
+ * `list.map((p) => p.size)` - a fresh array on every change - so the default `Object.is`
+ * gate would never dedupe. This compares element-wise so saveSizes fires only when a
+ * size actually changes, not on unrelated panel mutations.
+ */
+export function sizesEqual(a: number[], b: number[]): boolean {
+  return a.length === b.length && a.every((size, index) => size === b[index]);
+}
+
 // ==================== Context ====================
 
 interface ResizableContextValue {
   direction: Direction;
   panels: PanelData[];
+  /** Read-only reactive sizes atom for downstream / imperative consumers. */
+  sizes: ReadableAtom<number[]>;
   registerPanel: (panel: PanelData) => void;
   unregisterPanel: (id: string) => void;
   resizePanels: (handleIndex: number, delta: number) => void;
@@ -103,163 +118,172 @@ export function ResizablePanelGroup({
   children,
   ...props
 }: ResizablePanelGroupProps) {
-  const [panels, setPanels] = React.useState<PanelData[]>([]);
+  // Panel state lives in a per-instance createMemory cell (factory form for a clean
+  // reset). React subscribes via useMemory; actions read/replace the cell directly.
+  const panelsRef = React.useRef<Memory<PanelData[]> | null>(null);
+  if (panelsRef.current === null) {
+    panelsRef.current = createMemory<PanelData[]>(() => []);
+  }
+  const panelsMemory = panelsRef.current;
+  const panels = useMemory(panelsMemory);
+
+  // Read-only sizes atom for downstream / imperative consumers (created once).
+  const sizesRef = React.useRef<ReadableAtom<number[]> | null>(null);
+  if (sizesRef.current === null) {
+    sizesRef.current = panelsMemory.derive((list) => list.map((p) => p.size));
+  }
+  const sizes = sizesRef.current;
+
   const [handleIds, setHandleIds] = React.useState<string[]>([]);
 
-  // Load saved sizes from localStorage
+  // Load saved sizes from localStorage, then persist via an equality-gated subscriber.
+  // Persistence is no longer inlined into the action callbacks; the cell is the single
+  // source of truth and the subscriber fires only when a size actually changes.
   React.useEffect(() => {
     if (!autoSaveId || typeof window === 'undefined') return;
 
     const saved = localStorage.getItem(`resizable:${autoSaveId}`);
     if (saved) {
       try {
-        const sizes = JSON.parse(saved) as number[];
-        setPanels((prev) =>
-          prev.map((panel, i) => ({
+        const savedSizes = JSON.parse(saved) as number[];
+        panelsMemory.set(
+          panelsMemory.get().map((panel, i) => ({
             ...panel,
-            size: sizes[i] ?? panel.size,
+            size: savedSizes[i] ?? panel.size,
           })),
         );
       } catch {
         // Invalid data, ignore
       }
     }
-  }, [autoSaveId]);
 
-  // Save sizes to localStorage
-  const saveSizes = React.useCallback(
-    (newPanels: PanelData[]) => {
-      if (!autoSaveId || typeof window === 'undefined') return;
-      const sizes = newPanels.map((p) => p.size);
-      localStorage.setItem(`resizable:${autoSaveId}`, JSON.stringify(sizes));
+    return panelsMemory.select(
+      (list) => list.map((p) => p.size),
+      (nextSizes) => {
+        localStorage.setItem(`resizable:${autoSaveId}`, JSON.stringify(nextSizes));
+      },
+      sizesEqual,
+    );
+  }, [autoSaveId, panelsMemory]);
+
+  // Idempotent register-by-id: drop any existing entry, then append. Calling this twice
+  // for the same id (StrictMode double-invocation) yields one entry, never a duplicate.
+  const registerPanel = React.useCallback(
+    (panel: PanelData) => {
+      const rest = panelsMemory.get().filter((p) => p.id !== panel.id);
+      panelsMemory.set([...rest, panel]);
     },
-    [autoSaveId],
+    [panelsMemory],
   );
 
-  const registerPanel = React.useCallback((panel: PanelData) => {
-    setPanels((prev) => {
-      // Don't duplicate
-      if (prev.some((p) => p.id === panel.id)) {
-        return prev.map((p) => (p.id === panel.id ? panel : p));
-      }
-      return [...prev, panel];
-    });
-  }, []);
-
-  const unregisterPanel = React.useCallback((id: string) => {
-    setPanels((prev) => prev.filter((p) => p.id !== id));
-  }, []);
+  const unregisterPanel = React.useCallback(
+    (id: string) => {
+      panelsMemory.set(panelsMemory.get().filter((p) => p.id !== id));
+    },
+    [panelsMemory],
+  );
 
   const resizePanels = React.useCallback(
     (handleIndex: number, delta: number) => {
-      setPanels((prev) => {
-        const panelBefore = prev[handleIndex];
-        const panelAfter = prev[handleIndex + 1];
+      const prev = panelsMemory.get();
+      const panelBefore = prev[handleIndex];
+      const panelAfter = prev[handleIndex + 1];
 
-        if (!panelBefore || !panelAfter) return prev;
+      if (!panelBefore || !panelAfter) return;
 
-        // Calculate new sizes
-        let newSizeBefore = panelBefore.size + delta;
-        let newSizeAfter = panelAfter.size - delta;
+      // Calculate new sizes
+      let newSizeBefore = panelBefore.size + delta;
+      let newSizeAfter = panelAfter.size - delta;
 
-        // Apply constraints
-        if (newSizeBefore < panelBefore.minSize) {
-          const diff = panelBefore.minSize - newSizeBefore;
-          newSizeBefore = panelBefore.minSize;
-          newSizeAfter -= diff;
-        }
+      // Apply constraints
+      if (newSizeBefore < panelBefore.minSize) {
+        const diff = panelBefore.minSize - newSizeBefore;
+        newSizeBefore = panelBefore.minSize;
+        newSizeAfter -= diff;
+      }
 
-        if (newSizeAfter < panelAfter.minSize) {
-          const diff = panelAfter.minSize - newSizeAfter;
-          newSizeAfter = panelAfter.minSize;
-          newSizeBefore -= diff;
-        }
+      if (newSizeAfter < panelAfter.minSize) {
+        const diff = panelAfter.minSize - newSizeAfter;
+        newSizeAfter = panelAfter.minSize;
+        newSizeBefore -= diff;
+      }
 
-        if (newSizeBefore > panelBefore.maxSize) {
-          newSizeBefore = panelBefore.maxSize;
-        }
+      if (newSizeBefore > panelBefore.maxSize) {
+        newSizeBefore = panelBefore.maxSize;
+      }
 
-        if (newSizeAfter > panelAfter.maxSize) {
-          newSizeAfter = panelAfter.maxSize;
-        }
+      if (newSizeAfter > panelAfter.maxSize) {
+        newSizeAfter = panelAfter.maxSize;
+      }
 
-        const newPanels = prev.map((p, i) => {
-          if (i === handleIndex) return { ...p, size: newSizeBefore, collapsed: false };
-          if (i === handleIndex + 1) return { ...p, size: newSizeAfter, collapsed: false };
-          return p;
-        });
-
-        onLayout?.(newPanels.map((p) => p.size));
-        saveSizes(newPanels);
-
-        return newPanels;
+      const newPanels = prev.map((p, i) => {
+        if (i === handleIndex) return { ...p, size: newSizeBefore, collapsed: false };
+        if (i === handleIndex + 1) return { ...p, size: newSizeAfter, collapsed: false };
+        return p;
       });
+
+      onLayout?.(newPanels.map((p) => p.size));
+      panelsMemory.set(newPanels);
     },
-    [onLayout, saveSizes],
+    [onLayout, panelsMemory],
   );
 
   const collapsePanel = React.useCallback(
     (id: string) => {
-      setPanels((prev) => {
-        const panelIndex = prev.findIndex((p) => p.id === id);
-        if (panelIndex === -1) return prev;
+      const prev = panelsMemory.get();
+      const panelIndex = prev.findIndex((p) => p.id === id);
+      if (panelIndex === -1) return;
 
-        const panel = prev[panelIndex];
-        if (!panel || !panel.collapsible || panel.collapsed) return prev;
+      const panel = prev[panelIndex];
+      if (!panel || !panel.collapsible || panel.collapsed) return;
 
-        // Find adjacent panel to take the space
-        const adjacentIndex = panelIndex === 0 ? 1 : panelIndex - 1;
-        const adjacent = prev[adjacentIndex];
-        if (!adjacent) return prev;
+      // Find adjacent panel to take the space
+      const adjacentIndex = panelIndex === 0 ? 1 : panelIndex - 1;
+      const adjacent = prev[adjacentIndex];
+      if (!adjacent) return;
 
-        const sizeToGive = panel.size - panel.collapsedSize;
+      const sizeToGive = panel.size - panel.collapsedSize;
 
-        const newPanels = prev.map((p, i) => {
-          if (i === panelIndex) return { ...p, size: p.collapsedSize, collapsed: true };
-          if (i === adjacentIndex) return { ...p, size: p.size + sizeToGive };
-          return p;
-        });
-
-        onLayout?.(newPanels.map((p) => p.size));
-        saveSizes(newPanels);
-
-        return newPanels;
+      const newPanels = prev.map((p, i) => {
+        if (i === panelIndex) return { ...p, size: p.collapsedSize, collapsed: true };
+        if (i === adjacentIndex) return { ...p, size: p.size + sizeToGive };
+        return p;
       });
+
+      onLayout?.(newPanels.map((p) => p.size));
+      panelsMemory.set(newPanels);
     },
-    [onLayout, saveSizes],
+    [onLayout, panelsMemory],
   );
 
   const expandPanel = React.useCallback(
     (id: string) => {
-      setPanels((prev) => {
-        const panelIndex = prev.findIndex((p) => p.id === id);
-        if (panelIndex === -1) return prev;
+      const prev = panelsMemory.get();
+      const panelIndex = prev.findIndex((p) => p.id === id);
+      if (panelIndex === -1) return;
 
-        const panel = prev[panelIndex];
-        if (!panel || !panel.collapsed) return prev;
+      const panel = prev[panelIndex];
+      if (!panel || !panel.collapsed) return;
 
-        // Find adjacent panel to take space from
-        const adjacentIndex = panelIndex === 0 ? 1 : panelIndex - 1;
-        const adjacent = prev[adjacentIndex];
-        if (!adjacent) return prev;
+      // Find adjacent panel to take space from
+      const adjacentIndex = panelIndex === 0 ? 1 : panelIndex - 1;
+      const adjacent = prev[adjacentIndex];
+      if (!adjacent) return;
 
-        // Restore to default size (use minSize as baseline)
-        const targetSize = Math.max(panel.minSize, 20); // Reasonable default
-        const sizeToTake = targetSize - panel.collapsedSize;
+      // Restore to default size (use minSize as baseline)
+      const targetSize = Math.max(panel.minSize, 20); // Reasonable default
+      const sizeToTake = targetSize - panel.collapsedSize;
 
-        const newPanels = prev.map((p, i) => {
-          if (i === panelIndex) return { ...p, size: targetSize, collapsed: false };
-          if (i === adjacentIndex) return { ...p, size: Math.max(p.minSize, p.size - sizeToTake) };
-          return p;
-        });
-
-        onLayout?.(newPanels.map((p) => p.size));
-        saveSizes(newPanels);
-
-        return newPanels;
+      const newPanels = prev.map((p, i) => {
+        if (i === panelIndex) return { ...p, size: targetSize, collapsed: false };
+        if (i === adjacentIndex) return { ...p, size: Math.max(p.minSize, p.size - sizeToTake) };
+        return p;
       });
+
+      onLayout?.(newPanels.map((p) => p.size));
+      panelsMemory.set(newPanels);
     },
-    [onLayout, saveSizes],
+    [onLayout, panelsMemory],
   );
 
   const registerHandle = React.useCallback((id: string) => {
@@ -293,6 +317,7 @@ export function ResizablePanelGroup({
     () => ({
       direction,
       panels,
+      sizes,
       registerPanel,
       unregisterPanel,
       resizePanels,
@@ -306,6 +331,7 @@ export function ResizablePanelGroup({
     [
       direction,
       panels,
+      sizes,
       registerPanel,
       unregisterPanel,
       resizePanels,
