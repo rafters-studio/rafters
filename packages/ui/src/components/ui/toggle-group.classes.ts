@@ -32,3 +32,14 @@ export const toggleGroupItemOutlinePressedClasses = 'bg-accent text-accent-foreg
 export const toggleGroupItemDefaultClasses = 'bg-transparent';
 
 export const toggleGroupItemDefaultPressedClasses = 'bg-background text-foreground shadow-sm';
+
+// State-driven pressed styling: the controller toggles data-state=on|off on each
+// item, so the same class string works for React (and any controller-driven target)
+// with no conditional application. Mirrors the pressed strings above as data-state
+// variants. The web component composes the plain pressed strings imperatively and
+// is intentionally left untouched.
+export const toggleGroupItemDefaultStateClasses =
+  'data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm';
+
+export const toggleGroupItemOutlineStateClasses =
+  'data-[state=on]:bg-accent data-[state=on]:text-accent-foreground';

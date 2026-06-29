@@ -18,3 +18,12 @@ export const radioGroupItemBaseClasses =
   'disabled:cursor-not-allowed disabled:opacity-50';
 
 export const radioGroupItemIndicatorClasses = 'block h-2 w-2 rounded-full bg-current';
+
+// State-driven indicator visibility: the controller toggles data-state=checked|unchecked
+// on each item button (marked `group`), so the dot shows only when checked - no
+// conditional rendering. The compound `group-data-[state=unchecked]` selector outranks
+// the indicator's own `block`, so the dot hides reliably when unchecked. The web
+// component renders the dot only when checked and is intentionally left untouched.
+export const radioGroupItemGroupClass = 'group';
+
+export const radioGroupItemIndicatorStateClasses = 'group-data-[state=unchecked]:hidden';

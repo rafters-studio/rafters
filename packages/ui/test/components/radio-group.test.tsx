@@ -257,10 +257,17 @@ describe('RadioGroup', () => {
     const radio1 = screen.getByRole('radio', { name: 'Option 1' });
     const radio2 = screen.getByRole('radio', { name: 'Option 2' });
 
-    // Radio 1 should have indicator (inner span)
-    expect(radio1.querySelector('span')).toBeInTheDocument();
-    // Radio 2 should not have indicator
-    expect(radio2.querySelector('span')).not.toBeInTheDocument();
+    // The indicator span is always rendered; visibility is data-state driven (the
+    // controller toggles data-state on the button and the dot hides via
+    // group-data-[state=unchecked]:hidden). Assert the reflection mechanism is wired:
+    // both items carry the indicator, and the checked button drives it visible.
+    expect(radio1.querySelector('[data-radio-indicator]')).toBeInTheDocument();
+    expect(radio2.querySelector('[data-radio-indicator]')).toBeInTheDocument();
+    expect(radio1).toHaveAttribute('data-state', 'checked');
+    expect(radio2).toHaveAttribute('data-state', 'unchecked');
+    expect(radio2.querySelector('[data-radio-indicator]')).toHaveClass(
+      'group-data-[state=unchecked]:hidden',
+    );
   });
 
   it('selects on Space key', () => {
