@@ -32,11 +32,28 @@
  */
 
 import * as React from 'react';
+import { useMemory } from '../../hooks/use-memory';
 import classy from '../../primitives/classy';
+import { createMemory } from '../../primitives/memory';
 
 // ==================== Types ====================
 
 type Orientation = 'horizontal' | 'vertical';
+
+/**
+ * Reactive navigation/transient state for a carousel instance.
+ *
+ * `currentIndex` and `isPaused` are the shareable navigation state. `itemsVersion`
+ * is a bump counter incremented on register/unregister; the item count itself lives
+ * in a ref (see {@link Carousel}) so registration churn does not force a broad
+ * Map/array-in-cell re-render -- consumers re-render via the version bump, then read
+ * the live count from the ref.
+ */
+interface CarouselState {
+  currentIndex: number;
+  isPaused: boolean;
+  itemsVersion: number;
+}
 
 // ==================== Context ====================
 
@@ -49,8 +66,8 @@ interface CarouselContextValue {
   scrollPrevious: () => void;
   scrollNext: () => void;
   scrollTo: (index: number) => void;
-  registerItem: () => void;
-  unregisterItem: () => void;
+  registerItem: (id: string) => void;
+  unregisterItem: (id: string) => void;
   carouselRef: React.RefObject<HTMLDivElement | null>;
 }
 
@@ -82,46 +99,64 @@ export function Carousel({
   children,
   ...props
 }: CarouselProps) {
-  const [currentIndex, setCurrentIndex] = React.useState(0);
-  const [totalItems, setTotalItems] = React.useState(0);
-  const [isPaused, setIsPaused] = React.useState(false);
+  // Navigation/transient state lives in one reactive cell per instance. The whole
+  // value is subscribed via useMemory (state is small); a change to any field
+  // (including the itemsVersion bump) re-renders so totalItems is recomputed.
+  const [memory] = React.useState(() =>
+    createMemory<CarouselState>(() => ({ currentIndex: 0, isPaused: false, itemsVersion: 0 })),
+  );
+  const { currentIndex, isPaused } = useMemory(memory);
+
+  // The item registry is a bottom-up child registry keyed by id. The count lives
+  // here (a ref) instead of the cell; register/unregister bump itemsVersion to
+  // signal consumers without putting the array in the cell.
+  const itemIdsRef = React.useRef<string[]>([]);
+  const totalItems = itemIdsRef.current.length;
+
   const carouselRef = React.useRef<HTMLDivElement | null>(null);
 
   const canScrollPrevious = loop || currentIndex > 0;
   const canScrollNext = loop || currentIndex < totalItems - 1;
 
   const scrollPrevious = React.useCallback(() => {
-    setCurrentIndex((prev) => {
-      if (prev === 0) {
-        return loop ? totalItems - 1 : 0;
-      }
-      return prev - 1;
-    });
-  }, [loop, totalItems]);
+    const total = itemIdsRef.current.length;
+    const prev = memory.get().currentIndex;
+    const next = prev === 0 ? (loop ? total - 1 : 0) : prev - 1;
+    memory.patch({ currentIndex: next });
+  }, [loop, memory]);
 
   const scrollNext = React.useCallback(() => {
-    setCurrentIndex((prev) => {
-      if (prev === totalItems - 1) {
-        return loop ? 0 : totalItems - 1;
-      }
-      return prev + 1;
-    });
-  }, [loop, totalItems]);
+    const total = itemIdsRef.current.length;
+    const prev = memory.get().currentIndex;
+    const next = prev === total - 1 ? (loop ? 0 : total - 1) : prev + 1;
+    memory.patch({ currentIndex: next });
+  }, [loop, memory]);
 
   const scrollTo = React.useCallback(
     (index: number) => {
-      setCurrentIndex(Math.max(0, Math.min(index, totalItems - 1)));
+      const total = itemIdsRef.current.length;
+      memory.patch({ currentIndex: Math.max(0, Math.min(index, total - 1)) });
     },
-    [totalItems],
+    [memory],
   );
 
-  const registerItem = React.useCallback(() => {
-    setTotalItems((prev) => prev + 1);
-  }, []);
+  // Registration is idempotent-by-id (filter-then-set) so StrictMode's
+  // double-invoked mount effect does not double-count a single item.
+  const registerItem = React.useCallback(
+    (id: string) => {
+      itemIdsRef.current = [...itemIdsRef.current.filter((entry) => entry !== id), id];
+      memory.patch({ itemsVersion: memory.get().itemsVersion + 1 });
+    },
+    [memory],
+  );
 
-  const unregisterItem = React.useCallback(() => {
-    setTotalItems((prev) => Math.max(0, prev - 1));
-  }, []);
+  const unregisterItem = React.useCallback(
+    (id: string) => {
+      itemIdsRef.current = itemIdsRef.current.filter((entry) => entry !== id);
+      memory.patch({ itemsVersion: memory.get().itemsVersion + 1 });
+    },
+    [memory],
+  );
 
   // Auto-play
   React.useEffect(() => {
@@ -197,10 +232,10 @@ export function Carousel({
         // biome-ignore lint/a11y/noNoninteractiveTabindex: Carousel requires focus for keyboard navigation (arrow keys to switch slides)
         tabIndex={0}
         onKeyDown={handleKeyDown}
-        onMouseEnter={() => setIsPaused(true)}
-        onMouseLeave={() => setIsPaused(false)}
-        onFocus={() => setIsPaused(true)}
-        onBlur={() => setIsPaused(false)}
+        onMouseEnter={() => memory.patch({ isPaused: true })}
+        onMouseLeave={() => memory.patch({ isPaused: false })}
+        onFocus={() => memory.patch({ isPaused: true })}
+        onBlur={() => memory.patch({ isPaused: false })}
         data-carousel=""
         data-orientation={orientation}
         className={classy('relative', className)}
@@ -245,11 +280,12 @@ export interface CarouselItemProps extends React.HTMLAttributes<HTMLDivElement> 
 
 export function CarouselItem({ className, children, ...props }: CarouselItemProps) {
   const { registerItem, unregisterItem } = useCarouselContext();
+  const id = React.useId();
 
   React.useEffect(() => {
-    registerItem();
-    return () => unregisterItem();
-  }, [registerItem, unregisterItem]);
+    registerItem(id);
+    return () => unregisterItem(id);
+  }, [registerItem, unregisterItem, id]);
 
   return (
     // biome-ignore lint/a11y/useSemanticElements: role="group" with aria-roledescription="slide" is the standard pattern for carousel slides per WAI-ARIA practices
