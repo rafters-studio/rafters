@@ -34,7 +34,7 @@ import * as React from 'react';
 import { createPortal } from 'react-dom';
 import { useMemory } from '../../hooks/use-memory';
 import classy from '../../primitives/classy';
-import { createDisclosure } from '../../primitives/create-disclosure';
+import { createDisclosure } from '../../primitives/disclosure';
 import { onEscapeKeyDown } from '../../primitives/escape-keydown';
 import { createMemory } from '../../primitives/memory';
 import { onPointerDownOutside } from '../../primitives/outside-click';
