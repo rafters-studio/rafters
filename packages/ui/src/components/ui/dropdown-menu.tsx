@@ -35,7 +35,7 @@ import { createPortal } from 'react-dom';
 import { useMemory } from '../../hooks/use-memory';
 import classy from '../../primitives/classy';
 import { computePosition } from '../../primitives/collision-detector';
-import { createDisclosure } from '../../primitives/create-disclosure';
+import { createDisclosure } from '../../primitives/disclosure';
 import { onEscapeKeyDown } from '../../primitives/escape-keydown';
 import { onPointerDownOutside } from '../../primitives/outside-click';
 import { getPortalContainer } from '../../primitives/portal';
