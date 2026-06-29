@@ -28,7 +28,7 @@
 import * as React from 'react';
 import { useMemory } from '../../hooks/use-memory';
 import classy from '../../primitives/classy';
-import { createDisclosure } from '../../primitives/create-disclosure';
+import { createDisclosure } from '../../primitives/disclosure';
 import { mergeProps } from '../../primitives/slot';
 import { collapsibleContentClasses } from './collapsible.classes';
 
