@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   Sidebar,
   SidebarContent,
@@ -199,6 +199,83 @@ describe('Sidebar - Open/Close State', () => {
     );
 
     expect(screen.getByTestId('open')).toHaveTextContent('false');
+  });
+});
+
+describe('Sidebar - Cookie Persistence', () => {
+  let cookieSpy: ReturnType<typeof vi.fn>;
+  let originalCookie: PropertyDescriptor | undefined;
+
+  beforeEach(() => {
+    mockMatchMedia(false);
+    cookieSpy = vi.fn();
+    let store = '';
+    originalCookie = Object.getOwnPropertyDescriptor(Document.prototype, 'cookie');
+    Object.defineProperty(document, 'cookie', {
+      configurable: true,
+      get: () => store,
+      set: (value: string) => {
+        store = value;
+        cookieSpy(value);
+      },
+    });
+  });
+
+  afterEach(() => {
+    if (originalCookie) {
+      Object.defineProperty(document, 'cookie', originalCookie);
+    }
+  });
+
+  it('does not write the cookie on initial mount (subscriber is equality-gated)', () => {
+    render(
+      <SidebarProvider>
+        <SidebarTrigger data-testid="trigger" />
+      </SidebarProvider>,
+    );
+
+    expect(cookieSpy).not.toHaveBeenCalled();
+  });
+
+  it('writes the cookie once when open changes via toggle', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <SidebarProvider>
+        <SidebarTrigger data-testid="trigger" />
+        <SidebarStateDisplay />
+      </SidebarProvider>,
+    );
+
+    expect(cookieSpy).not.toHaveBeenCalled();
+
+    await user.click(screen.getByTestId('trigger'));
+
+    expect(screen.getByTestId('state')).toHaveTextContent('collapsed');
+    expect(cookieSpy).toHaveBeenCalledTimes(1);
+    expect(cookieSpy).toHaveBeenCalledWith(expect.stringContaining('sidebar:state=false'));
+  });
+
+  it('does not write the cookie on an unrelated re-render', async () => {
+    const user = userEvent.setup();
+
+    const { rerender } = render(
+      <SidebarProvider data-foo="a">
+        <SidebarTrigger data-testid="trigger" />
+      </SidebarProvider>,
+    );
+
+    await user.click(screen.getByTestId('trigger'));
+    expect(cookieSpy).toHaveBeenCalledTimes(1);
+
+    // Re-render without changing open state: the subscriber must not fire again.
+    rerender(
+      <SidebarProvider data-foo="b">
+        <SidebarTrigger data-testid="trigger" />
+      </SidebarProvider>,
+    );
+
+    expect(cookieSpy).toHaveBeenCalledTimes(1);
   });
 });
 

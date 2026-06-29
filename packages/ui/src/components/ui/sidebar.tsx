@@ -48,7 +48,9 @@
  */
 
 import * as React from 'react';
+import { useMemory } from '../../hooks/use-memory';
 import classy from '../../primitives/classy';
+import { createMemory } from '../../primitives/memory';
 import { mergeProps } from '../../primitives/slot';
 import {
   sidebarContentClasses,
@@ -105,6 +107,17 @@ type SidebarCollapsible = 'offcanvas' | 'icon' | 'none';
 
 // ==================== Context ====================
 
+/**
+ * Reactive open-state for one provider instance. The two booleans live in a single
+ * `createMemory` cell so persistence (the cookie) can be wired as a state subscriber
+ * rather than coupled into the setter. `isMobile` is intentionally excluded: it is a
+ * browser signal (media query), not application state.
+ */
+interface SidebarState {
+  open: boolean;
+  openMobile: boolean;
+}
+
 interface SidebarContextValue {
   state: 'expanded' | 'collapsed';
   open: boolean;
@@ -146,31 +159,60 @@ export function SidebarProvider({
   children,
   ...props
 }: SidebarProviderProps) {
-  const [openMobile, setOpenMobile] = React.useState(false);
-  const [_open, _setOpen] = React.useState(defaultOpen);
+  // Open-state lives in one reactive cell, created once per provider instance so it is
+  // stable across renders. Seed `open` with the controlled value when present so the
+  // first render reflects it without a flash; later controlled changes mirror in below.
+  const [memory] = React.useState(() =>
+    createMemory<SidebarState>(() => ({
+      open: controlledOpen ?? defaultOpen,
+      openMobile: false,
+    })),
+  );
+  const { open, openMobile } = useMemory(memory);
 
-  // Controlled vs uncontrolled
-  const open = controlledOpen ?? _open;
+  // Controlled mode: reflect the prop into the cell so the single source of truth for
+  // `open` is always the cell (consumers + the cookie subscriber read from it).
+  React.useEffect(() => {
+    if (controlledOpen !== undefined) {
+      memory.patch({ open: controlledOpen });
+    }
+  }, [controlledOpen, memory]);
+
+  // Persistence is a reaction to state, not a side effect baked into the setter.
+  // `select` is equality-gated and does not fire on subscribe, so the cookie is written
+  // only when `open` actually changes - never on an unrelated re-render.
+  React.useEffect(() => {
+    const writeCookie = (isOpen: boolean): void => {
+      if (typeof document !== 'undefined') {
+        // biome-ignore lint/suspicious/noDocumentCookie: Cookie is used for sidebar state persistence across page loads
+        document.cookie = `${SIDEBAR_COOKIE_NAME}=${isOpen}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
+      }
+    };
+    return memory.select((state) => state.open, writeCookie);
+  }, [memory]);
+
   const setOpen = React.useCallback(
     (value: boolean | ((prev: boolean) => boolean)) => {
-      const nextOpen = typeof value === 'function' ? value(open) : value;
+      const nextOpen = typeof value === 'function' ? value(memory.get().open) : value;
 
       if (onOpenChange) {
         onOpenChange(nextOpen);
       } else {
-        _setOpen(nextOpen);
-      }
-
-      // Set cookie for persistence
-      if (typeof document !== 'undefined') {
-        // biome-ignore lint/suspicious/noDocumentCookie: Cookie is used for sidebar state persistence across page loads
-        document.cookie = `${SIDEBAR_COOKIE_NAME}=${nextOpen}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
+        memory.patch({ open: nextOpen });
       }
     },
-    [open, onOpenChange],
+    [memory, onOpenChange],
   );
 
-  // Simple mobile detection via media query
+  const setOpenMobile = React.useCallback(
+    (value: boolean) => {
+      memory.patch({ openMobile: value });
+    },
+    [memory],
+  );
+
+  // Simple mobile detection via media query. This is a browser signal, not application
+  // state, so it stays a local `useState` and never enters the cell.
   const [isMobile, setIsMobile] = React.useState(false);
 
   React.useEffect(() => {
@@ -184,11 +226,11 @@ export function SidebarProvider({
 
   const toggleSidebar = React.useCallback(() => {
     if (isMobile) {
-      setOpenMobile((prev) => !prev);
+      memory.patch({ openMobile: !memory.get().openMobile });
     } else {
       setOpen((prev) => !prev);
     }
-  }, [isMobile, setOpen]);
+  }, [isMobile, memory, setOpen]);
 
   // Keyboard shortcut (Cmd/Ctrl + B)
   React.useEffect(() => {
@@ -215,7 +257,7 @@ export function SidebarProvider({
       setOpenMobile,
       toggleSidebar,
     }),
-    [state, open, setOpen, isMobile, openMobile, toggleSidebar],
+    [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar],
   );
 
   return (
