@@ -40,7 +40,7 @@ import { createPortal } from 'react-dom';
 import { useMemory } from '../../hooks/use-memory';
 import classy from '../../primitives/classy';
 import { type CollisionOptions, computePosition } from '../../primitives/collision-detector';
-import { createDisclosure } from '../../primitives/create-disclosure';
+import { createDisclosure } from '../../primitives/disclosure';
 import { onEscapeKeyDown } from '../../primitives/escape-keydown';
 import { getPortalContainer } from '../../primitives/portal';
 import { mergeProps } from '../../primitives/slot';
