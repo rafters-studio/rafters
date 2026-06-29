@@ -1,5 +1,5 @@
-import { StrictMode } from "react";
 import { fireEvent, render, screen } from '@testing-library/react';
+import { StrictMode } from 'react';
 import { describe, expect, it } from 'vitest';
 import {
   Carousel,
@@ -459,14 +459,13 @@ describe('Carousel - Custom Button Content', () => {
   });
 });
 
-
-describe("Carousel - registration (createMemory migration)", () => {
+describe('Carousel - registration (createMemory migration)', () => {
   function ItemCountProbe() {
     const { totalItems } = useCarousel();
     return <span data-testid="item-count">{totalItems}</span>;
   }
 
-  it("counts each item exactly once under StrictMode (idempotent register-by-id)", () => {
+  it('counts each item exactly once under StrictMode (idempotent register-by-id)', () => {
     render(
       <StrictMode>
         <Carousel>
@@ -480,10 +479,10 @@ describe("Carousel - registration (createMemory migration)", () => {
       </StrictMode>,
     );
     // StrictMode double-invokes mount effects; idempotent register must not double-count.
-    expect(screen.getByTestId("item-count").textContent).toBe("3");
+    expect(screen.getByTestId('item-count').textContent).toBe('3');
   });
 
-  it("recomputes the count when the item set changes (itemsVersion bump)", () => {
+  it('recomputes the count when the item set changes (itemsVersion bump)', () => {
     const { rerender } = render(
       <Carousel>
         <CarouselContent>
@@ -493,7 +492,7 @@ describe("Carousel - registration (createMemory migration)", () => {
         <ItemCountProbe />
       </Carousel>,
     );
-    expect(screen.getByTestId("item-count").textContent).toBe("2");
+    expect(screen.getByTestId('item-count').textContent).toBe('2');
     rerender(
       <Carousel>
         <CarouselContent>
@@ -504,6 +503,6 @@ describe("Carousel - registration (createMemory migration)", () => {
         <ItemCountProbe />
       </Carousel>,
     );
-    expect(screen.getByTestId("item-count").textContent).toBe("3");
+    expect(screen.getByTestId('item-count').textContent).toBe('3');
   });
 });

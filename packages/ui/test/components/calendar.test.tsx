@@ -413,17 +413,16 @@ describe('Calendar - Data Attributes', () => {
   });
 });
 
-
-describe("Calendar - navigation state (createMemory migration)", () => {
-  it("advances and rewinds the visible month through the cell", () => {
+describe('Calendar - navigation state (createMemory migration)', () => {
+  it('advances and rewinds the visible month through the cell', () => {
     render(<Calendar defaultMonth={new Date(2024, 5, 15)} />); // June 2024
-    expect(screen.getByText("June 2024")).toBeInTheDocument();
+    expect(screen.getByText('June 2024')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Next month" }));
-    expect(screen.getByText("July 2024")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Next month' }));
+    expect(screen.getByText('July 2024')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Previous month" }));
-    fireEvent.click(screen.getByRole("button", { name: "Previous month" }));
-    expect(screen.getByText("May 2024")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Previous month' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Previous month' }));
+    expect(screen.getByText('May 2024')).toBeInTheDocument();
   });
 });
