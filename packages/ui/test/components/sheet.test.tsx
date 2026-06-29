@@ -278,6 +278,44 @@ describe('Sheet - Controlled Mode', () => {
       expect(onOpenChange).toHaveBeenCalledWith(false);
     });
   });
+
+  it('controlled prop drives open; cell does not self-open (disclosure delegation)', async () => {
+    const user = userEvent.setup();
+    const onOpenChange = vi.fn();
+
+    const { rerender } = render(
+      <Sheet open={false} onOpenChange={onOpenChange}>
+        <SheetTrigger>Open</SheetTrigger>
+        <SheetPortal>
+          <SheetContent>
+            <SheetTitle>Body</SheetTitle>
+          </SheetContent>
+        </SheetPortal>
+      </Sheet>,
+    );
+
+    await user.click(screen.getByText('Open'));
+
+    // Callback fired, but the cell did NOT self-open while controlled.
+    expect(onOpenChange).toHaveBeenCalledWith(true);
+    expect(screen.queryByText('Body')).not.toBeInTheDocument();
+
+    // The owning prop reflects in.
+    rerender(
+      <Sheet open onOpenChange={onOpenChange}>
+        <SheetTrigger>Open</SheetTrigger>
+        <SheetPortal>
+          <SheetContent>
+            <SheetTitle>Body</SheetTitle>
+          </SheetContent>
+        </SheetPortal>
+      </Sheet>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Body')).toBeInTheDocument();
+    });
+  });
 });
 
 describe('Sheet - Side Variants', () => {

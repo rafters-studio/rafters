@@ -279,6 +279,44 @@ describe('Dialog - Controlled Mode', () => {
       expect(onOpenChange).toHaveBeenCalledWith(false);
     });
   });
+
+  it('controlled prop drives open; cell does not self-open (disclosure delegation)', async () => {
+    const user = userEvent.setup();
+    const onOpenChange = vi.fn();
+
+    const { rerender } = render(
+      <Dialog open={false} onOpenChange={onOpenChange}>
+        <DialogTrigger>Open</DialogTrigger>
+        <DialogPortal>
+          <DialogContent>
+            <DialogTitle>Body</DialogTitle>
+          </DialogContent>
+        </DialogPortal>
+      </Dialog>,
+    );
+
+    await user.click(screen.getByText('Open'));
+
+    // Callback fired, but the cell did NOT self-open while controlled.
+    expect(onOpenChange).toHaveBeenCalledWith(true);
+    expect(screen.queryByText('Body')).not.toBeInTheDocument();
+
+    // The owning prop reflects in.
+    rerender(
+      <Dialog open onOpenChange={onOpenChange}>
+        <DialogTrigger>Open</DialogTrigger>
+        <DialogPortal>
+          <DialogContent>
+            <DialogTitle>Body</DialogTitle>
+          </DialogContent>
+        </DialogPortal>
+      </Dialog>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Body')).toBeInTheDocument();
+    });
+  });
 });
 
 describe('Dialog - ARIA Attributes', () => {
