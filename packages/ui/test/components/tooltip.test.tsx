@@ -608,9 +608,8 @@ describe('Tooltip - forceMount', () => {
   });
 });
 
-
-describe("Tooltip - open state delegates to createDisclosure (migration)", () => {
-  it("reflects a controlled open prop through the disclosure cell", () => {
+describe('Tooltip - open state delegates to createDisclosure (migration)', () => {
+  it('reflects a controlled open prop through the disclosure cell', () => {
     const { rerender } = render(
       <TooltipProvider>
         <Tooltip open={false}>
@@ -619,7 +618,7 @@ describe("Tooltip - open state delegates to createDisclosure (migration)", () =>
         </Tooltip>
       </TooltipProvider>,
     );
-    expect(screen.queryByText("Reflected tooltip")).not.toBeInTheDocument();
+    expect(screen.queryByText('Reflected tooltip')).not.toBeInTheDocument();
     rerender(
       <TooltipProvider>
         <Tooltip open={true}>
@@ -628,6 +627,6 @@ describe("Tooltip - open state delegates to createDisclosure (migration)", () =>
         </Tooltip>
       </TooltipProvider>,
     );
-    expect(screen.getByText("Reflected tooltip")).toBeInTheDocument();
+    expect(screen.getByText('Reflected tooltip')).toBeInTheDocument();
   });
 });
