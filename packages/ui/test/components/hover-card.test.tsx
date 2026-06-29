@@ -836,3 +836,24 @@ describe('HoverCard - forceMount', () => {
     });
   });
 });
+
+
+describe("HoverCard - open state delegates to createDisclosure (migration)", () => {
+  afterEach(() => cleanup());
+  it("reflects a controlled open prop through the disclosure cell", () => {
+    const { rerender } = render(
+      <HoverCard open={false}>
+        <HoverCardTrigger>Trigger</HoverCardTrigger>
+        <HoverCardContent>Reflected hovercard</HoverCardContent>
+      </HoverCard>,
+    );
+    expect(screen.queryByText("Reflected hovercard")).not.toBeInTheDocument();
+    rerender(
+      <HoverCard open={true}>
+        <HoverCardTrigger>Trigger</HoverCardTrigger>
+        <HoverCardContent>Reflected hovercard</HoverCardContent>
+      </HoverCard>,
+    );
+    expect(screen.getByText("Reflected hovercard")).toBeInTheDocument();
+  });
+});
