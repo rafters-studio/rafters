@@ -37,8 +37,10 @@
 
 import * as React from 'react';
 import { createPortal } from 'react-dom';
+import { useMemory } from '../../hooks/use-memory';
 import classy from '../../primitives/classy';
 import { type CollisionOptions, computePosition } from '../../primitives/collision-detector';
+import { createDisclosure } from '../../primitives/create-disclosure';
 import { onEscapeKeyDown } from '../../primitives/escape-keydown';
 import { getPortalContainer } from '../../primitives/portal';
 import { mergeProps } from '../../primitives/slot';
@@ -130,10 +132,22 @@ export function HoverCard({
   closeDelay = 300,
   children,
 }: HoverCardProps): React.JSX.Element {
-  const [uncontrolledOpen, setUncontrolledOpen] = React.useState(defaultOpen);
+  // Open state lives on the shared createDisclosure cell (issue #1695). The
+  // controlled/uncontrolled dual-mode stays at the React boundary: a controlled
+  // prop is reflected in via setOpen, and user actions fire onOpenChange.
+  const disclosure = React.useRef(
+    createDisclosure({ initialOpen: controlledOpen ?? defaultOpen ?? false }),
+  ).current;
 
   const isControlled = controlledOpen !== undefined;
-  const open = isControlled ? controlledOpen : uncontrolledOpen;
+
+  React.useEffect(() => {
+    if (isControlled) {
+      disclosure.setOpen(controlledOpen);
+    }
+  }, [isControlled, controlledOpen, disclosure]);
+
+  const open = useMemory(disclosure.memory).open;
 
   const handleOpenChange = React.useCallback(
     (newOpen: boolean) => {
@@ -141,11 +155,11 @@ export function HoverCard({
         globalOpenTimestamp = Date.now();
       }
       if (!isControlled) {
-        setUncontrolledOpen(newOpen);
+        disclosure.setOpen(newOpen);
       }
       onOpenChange?.(newOpen);
     },
-    [isControlled, onOpenChange],
+    [isControlled, onOpenChange, disclosure],
   );
 
   const triggerRef = React.useRef<HTMLElement | null>(null);
