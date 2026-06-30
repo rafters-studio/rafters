@@ -164,9 +164,17 @@ function isSharedFile(path: string): boolean {
 }
 
 /**
+ * Targets where falling back to .tsx is reasonable -- the framework can render
+ * React components (Astro with @astrojs/react, future Vue/Svelte wrappers).
+ * WC projects cannot use React components, so a missing .element.ts must error,
+ * not silently install unusable .tsx files.
+ */
+const REACT_FALLBACK_TARGETS = new Set<ComponentTarget>(['astro', 'vue', 'svelte']);
+
+/**
  * Select files matching the target framework from a registry item's file list.
  * Keeps shared auxiliary files (.classes.ts etc.) regardless of target.
- * Falls back to .tsx if no framework-matching files exist.
+ * Falls back to .tsx only for targets that can render React components.
  *
  * Returns { files, fallback } where fallback is true if .tsx was used as fallback.
  */
@@ -186,15 +194,23 @@ export function selectFilesForFramework(
     return { files: [...matched, ...shared], fallback: false };
   }
 
-  // Fallback: use .tsx files (React is the universal fallback)
-  if (target !== 'react') {
+  // Fallback: use .tsx files only for targets that can render React components.
+  // WC projects cannot use React components -- return only shared files so the
+  // caller can detect the missing component and error.
+  if (REACT_FALLBACK_TARGETS.has(target)) {
     const fallbackFiles = files.filter((f) => f.path.endsWith('.tsx'));
     if (fallbackFiles.length > 0) {
       return { files: [...fallbackFiles, ...shared], fallback: true };
     }
   }
 
-  // No files matched at all -- return everything
+  // Target has no matching files and no React fallback -- return only shared
+  // files. For targets like `wc`, this signals the component is unavailable.
+  if (target !== 'react' && !REACT_FALLBACK_TARGETS.has(target)) {
+    return { files: shared, fallback: false };
+  }
+
+  // React target or react-fallback target with no .tsx either -- return everything
   return { files, fallback: false };
 }
 
@@ -435,6 +451,15 @@ async function installItem(
         target,
         message: `No ${targetToExtension(target)} version available for ${item.name}. Installing React version.`,
       });
+    }
+
+    // No framework-specific files and no fallback -- the component doesn't
+    // support this target. Error instead of installing unrelated files.
+    const hasComponentFile = selection.files.some((f) => !isSharedFile(f.path));
+    if (!hasComponentFile) {
+      throw new Error(
+        `No ${targetToExtension(target)} version available for "${item.name}" and no compatible fallback exists.`,
+      );
     }
   } else if (item.type === 'composite') {
     filesToInstall = selectCompositeFiles(item.files, getComponentTarget(config));
