@@ -52,7 +52,9 @@
 
 import * as React from 'react';
 import { createPortal } from 'react-dom';
+import { useMemory } from '../../hooks/use-memory';
 import classy from '../../primitives/classy';
+import { createDisclosure } from '../../primitives/disclosure';
 import { onEscapeKeyDown } from '../../primitives/escape-keydown';
 import { createFocusTrap, preventBodyScroll } from '../../primitives/focus-trap';
 import { getPortalContainer } from '../../primitives/portal';
@@ -111,24 +113,33 @@ export function AlertDialog({
   defaultOpen = false,
   onOpenChange,
 }: AlertDialogProps) {
-  // Uncontrolled state
-  const [uncontrolledOpen, setUncontrolledOpen] = React.useState(defaultOpen);
+  // One disclosure cell per mounted root; seeded from the controlled value or defaultOpen.
+  const disclosureRef = React.useRef(
+    createDisclosure({ initialOpen: controlledOpen ?? defaultOpen }),
+  );
+  const disclosure = disclosureRef.current;
 
   // Reference to cancel button for initial focus
   const cancelRef = React.useRef<HTMLButtonElement | null>(null);
 
   // Determine if controlled
   const isControlled = controlledOpen !== undefined;
-  const open = isControlled ? controlledOpen : uncontrolledOpen;
 
+  // Controlled: reflect the incoming prop into the cell (programmatic, no callback).
+  React.useEffect(() => {
+    if (isControlled) disclosure.setOpen(controlledOpen);
+  }, [isControlled, controlledOpen, disclosure]);
+
+  // Current value for render.
+  const open = useMemory(disclosure.memory).open;
+
+  // User action: fire the callback; in uncontrolled mode also drive the cell.
   const handleOpenChange = React.useCallback(
     (newOpen: boolean) => {
-      if (!isControlled) {
-        setUncontrolledOpen(newOpen);
-      }
       onOpenChange?.(newOpen);
+      if (!isControlled) disclosure.setOpen(newOpen);
     },
-    [isControlled, onOpenChange],
+    [isControlled, onOpenChange, disclosure],
   );
 
   // Generate stable IDs for ARIA relationships

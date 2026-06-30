@@ -26,7 +26,9 @@
  */
 
 import * as React from 'react';
+import { useMemory } from '../../hooks/use-memory';
 import classy from '../../primitives/classy';
+import { createDisclosure } from '../../primitives/disclosure';
 import { mergeProps } from '../../primitives/slot';
 import { collapsibleContentClasses } from './collapsible.classes';
 
@@ -71,23 +73,32 @@ export function Collapsible({
   children,
   ...props
 }: CollapsibleProps) {
-  // Uncontrolled state
-  const [uncontrolledOpen, setUncontrolledOpen] = React.useState(defaultOpen);
+  // One disclosure cell per mounted root; seeded from the controlled value or defaultOpen.
+  const disclosureRef = React.useRef(
+    createDisclosure({ initialOpen: controlledOpen ?? defaultOpen }),
+  );
+  const disclosure = disclosureRef.current;
 
   // Determine if controlled
   const isControlled = controlledOpen !== undefined;
-  const open = isControlled ? controlledOpen : uncontrolledOpen;
 
+  // Controlled: reflect the incoming prop into the cell (programmatic, no callback).
+  React.useEffect(() => {
+    if (isControlled) disclosure.setOpen(controlledOpen);
+  }, [isControlled, controlledOpen, disclosure]);
+
+  // Current value for render.
+  const open = useMemory(disclosure.memory).open;
+
+  // User action: fire the callback; in uncontrolled mode also drive the cell.
   const handleOpenChange = React.useCallback(
     (newOpen: boolean) => {
       if (disabled) return;
 
-      if (!isControlled) {
-        setUncontrolledOpen(newOpen);
-      }
       onOpenChange?.(newOpen);
+      if (!isControlled) disclosure.setOpen(newOpen);
     },
-    [isControlled, disabled, onOpenChange],
+    [isControlled, disabled, onOpenChange, disclosure],
   );
 
   // Generate stable IDs for ARIA relationships
