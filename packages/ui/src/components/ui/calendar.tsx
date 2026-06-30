@@ -29,11 +29,25 @@
  */
 
 import * as React from 'react';
+import { useMemory } from '../../hooks/use-memory';
 import classy from '../../primitives/classy';
+import { createMemory } from '../../primitives/memory';
 
 // ==================== Types ====================
 
 type CalendarMode = 'single' | 'multiple' | 'range';
+
+/**
+ * Reactive navigation state for a calendar instance.
+ *
+ * `currentMonth` is the visible month (navigation); `focusedDate` is the keyboard
+ * focus within the grid. Selection is NOT here -- the calendar is selection-controlled
+ * (the consumer owns `selected`/`onSelect`).
+ */
+interface CalendarState {
+  currentMonth: Date;
+  focusedDate: Date | null;
+}
 
 interface DateRange {
   from: Date | undefined;
@@ -117,28 +131,34 @@ export function Calendar<T extends CalendarMode = 'single'>({
   className,
   ...props
 }: CalendarProps<T>) {
-  const [currentMonth, setCurrentMonth] = React.useState(() => {
-    if (defaultMonth) return defaultMonth;
-    if (mode === 'single' && selected instanceof Date) return selected;
-    if (mode === 'range' && (selected as DateRange)?.from) {
-      const rangeFrom = (selected as DateRange).from;
-      if (rangeFrom) return rangeFrom;
-    }
-    return new Date();
-  });
-
-  const [focusedDate, setFocusedDate] = React.useState<Date | null>(null);
+  // Navigation/transient state lives in one reactive cell per instance, created once
+  // with a stable initializer. Selection is intentionally absent: it stays controlled.
+  const [memory] = React.useState(() =>
+    createMemory<CalendarState>(() => ({
+      currentMonth: (() => {
+        if (defaultMonth) return defaultMonth;
+        if (mode === 'single' && selected instanceof Date) return selected;
+        if (mode === 'range' && (selected as DateRange)?.from) {
+          const rangeFrom = (selected as DateRange).from;
+          if (rangeFrom) return rangeFrom;
+        }
+        return new Date();
+      })(),
+      focusedDate: null,
+    })),
+  );
+  const { currentMonth, focusedDate } = useMemory(memory);
 
   const year = currentMonth.getFullYear();
   const month = currentMonth.getMonth();
 
   // Navigation handlers
   const goToPreviousMonth = () => {
-    setCurrentMonth(new Date(year, month - 1, 1));
+    memory.patch({ currentMonth: new Date(year, month - 1, 1) });
   };
 
   const goToNextMonth = () => {
-    setCurrentMonth(new Date(year, month + 1, 1));
+    memory.patch({ currentMonth: new Date(year, month + 1, 1) });
   };
 
   // Check if date is disabled
@@ -248,10 +268,14 @@ export function Calendar<T extends CalendarMode = 'single'>({
 
     if (newDate) {
       e.preventDefault();
-      setFocusedDate(newDate);
-      // Update month if needed
+      // Update month alongside focus in one patch when navigation crosses a boundary.
       if (newDate.getMonth() !== month || newDate.getFullYear() !== year) {
-        setCurrentMonth(new Date(newDate.getFullYear(), newDate.getMonth(), 1));
+        memory.patch({
+          focusedDate: newDate,
+          currentMonth: new Date(newDate.getFullYear(), newDate.getMonth(), 1),
+        });
+      } else {
+        memory.patch({ focusedDate: newDate });
       }
     }
   };
@@ -418,7 +442,7 @@ export function Calendar<T extends CalendarMode = 'single'>({
                         disabled={isDisabled}
                         onClick={() => handleDateSelect(day.date)}
                         onKeyDown={(e) => handleKeyDown(e, day.date)}
-                        onFocus={() => setFocusedDate(day.date)}
+                        onFocus={() => memory.patch({ focusedDate: day.date })}
                         className={classy(
                           'inline-flex items-center justify-center size-8 rounded-md text-sm',
                           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
