@@ -289,7 +289,12 @@ describe('ToggleGroup', () => {
       );
 
       expect(container.querySelector('[role="group"]')).toHaveClass('bg-muted', 'p-1');
-      expect(screen.getByRole('button')).toHaveClass('bg-background', 'shadow-sm');
+      // Pressed styling is now data-state driven (the controller toggles data-state),
+      // so the class string carries the state variants rather than the bare utilities.
+      expect(screen.getByRole('button')).toHaveClass(
+        'data-[state=on]:bg-background',
+        'data-[state=on]:shadow-sm',
+      );
     });
 
     it('applies outline variant styles', () => {
@@ -300,7 +305,7 @@ describe('ToggleGroup', () => {
       );
 
       const button = screen.getByRole('button');
-      expect(button).toHaveClass('border', 'bg-accent');
+      expect(button).toHaveClass('border', 'data-[state=on]:bg-accent');
     });
 
     it('applies size styles', () => {

@@ -31,13 +31,15 @@
 
 import * as React from 'react';
 import classy from '../../primitives/classy';
-import { createRovingFocus } from '../../primitives/roving-focus';
 import {
   radioGroupHorizontalClasses,
   radioGroupItemBaseClasses,
+  radioGroupItemGroupClass,
   radioGroupItemIndicatorClasses,
+  radioGroupItemIndicatorStateClasses,
   radioGroupVerticalClasses,
 } from './radio-group.classes';
+import { createRadioGroup, type RadioGroupController } from './radio-group.controller';
 
 // ==================== Types ====================
 
@@ -61,11 +63,11 @@ export interface RadioGroupItemProps extends React.ButtonHTMLAttributes<HTMLButt
 
 // ==================== Context ====================
 
+// Context carries only group-level presentation (disabled) and the generated radio
+// `name` for native grouping. Selection state and keyboard behavior live in the
+// controller, so no value/dispatch is threaded.
 interface RadioGroupContextValue {
-  value: string;
-  onValueChange: (value: string) => void;
   disabled: boolean;
-  orientation: 'horizontal' | 'vertical';
   name: string;
 }
 
@@ -95,64 +97,54 @@ export const RadioGroup = React.forwardRef<HTMLDivElement, RadioGroupProps>(
     },
     ref,
   ) => {
-    // State management (controlled vs uncontrolled)
-    const [uncontrolledValue, setUncontrolledValue] = React.useState(defaultValue);
     const isControlled = controlledValue !== undefined;
-    const value = isControlled ? controlledValue : uncontrolledValue;
 
-    // Ref for the container
-    const containerRef = React.useRef<HTMLDivElement>(null);
+    // Capture the initial selected value once; the controller owns state thereafter.
+    const initialRef = React.useRef(isControlled ? controlledValue : defaultValue);
+    // Keep the latest onValueChange reachable without re-mounting the controller.
+    const onChangeRef = React.useRef(onValueChange);
+    React.useEffect(() => {
+      onChangeRef.current = onValueChange;
+    });
 
-    // Merge refs
-    React.useImperativeHandle(ref, () => containerRef.current as HTMLDivElement);
+    const controllerRef = React.useRef<RadioGroupController | null>(null);
 
-    // Generate stable name for grouping
+    // Generate a stable name for native <input type="radio"> grouping. This is markup
+    // identity, not selection state, so it stays in the React layer.
     const name = React.useId();
 
-    const handleValueChange = React.useCallback(
-      (newValue: string) => {
-        if (!isControlled) {
-          setUncontrolledValue(newValue);
+    // Mount the controller via a callback ref (also forwarding the node to `ref`):
+    // runs during commit before paint, so initial selection is reflected with no flash.
+    const setRoot = React.useCallback(
+      (node: HTMLDivElement | null) => {
+        if (typeof ref === 'function') {
+          ref(node);
+        } else if (ref) {
+          ref.current = node;
         }
-        onValueChange?.(newValue);
+        if (!node) return;
+        const controller = createRadioGroup(node, {
+          initial: initialRef.current,
+          orientation,
+          onChange: (value) => onChangeRef.current?.(value),
+        });
+        controllerRef.current = controller;
+        return () => {
+          controller.destroy();
+          controllerRef.current = null;
+        };
       },
-      [isControlled, onValueChange],
+      [ref, orientation],
     );
 
-    // Setup roving focus - re-initialize when orientation changes
-    // biome-ignore lint/correctness/useExhaustiveDependencies: value dependency needed to re-compute currentIndex when selection changes
+    // Controlled mode: mirror the prop into the controller.
     React.useEffect(() => {
-      const container = containerRef.current;
-      if (!container) return;
+      if (isControlled && controlledValue !== undefined) {
+        controllerRef.current?.setValue(controlledValue);
+      }
+    }, [isControlled, controlledValue]);
 
-      const cleanup = createRovingFocus(container, {
-        orientation,
-        loop: true,
-        // Find the currently checked item to set as initial index
-        currentIndex: (() => {
-          const items = Array.from(
-            container.querySelectorAll<HTMLButtonElement>('[role="radio"]:not([disabled])'),
-          );
-          const checkedIndex = items.findIndex(
-            (item) => item.getAttribute('aria-checked') === 'true',
-          );
-          return checkedIndex >= 0 ? checkedIndex : 0;
-        })(),
-      });
-
-      return cleanup;
-    }, [orientation, value]);
-
-    const contextValue = React.useMemo(
-      () => ({
-        value,
-        onValueChange: handleValueChange,
-        disabled,
-        orientation,
-        name,
-      }),
-      [value, handleValueChange, disabled, orientation, name],
-    );
+    const contextValue = React.useMemo(() => ({ disabled, name }), [disabled, name]);
 
     const baseClasses =
       orientation === 'horizontal' ? radioGroupHorizontalClasses : radioGroupVerticalClasses;
@@ -160,7 +152,7 @@ export const RadioGroup = React.forwardRef<HTMLDivElement, RadioGroupProps>(
     return (
       <RadioGroupContext.Provider value={contextValue}>
         <div
-          ref={containerRef}
+          ref={setRoot}
           role="radiogroup"
           aria-orientation={orientation}
           className={classy(baseClasses, className)}
@@ -179,53 +171,34 @@ RadioGroup.displayName = 'RadioGroup';
 
 export const RadioGroupItem = React.forwardRef<HTMLButtonElement, RadioGroupItemProps>(
   ({ value, className, children, disabled: itemDisabled, ...props }, ref) => {
-    const {
-      value: selectedValue,
-      onValueChange,
-      disabled: groupDisabled,
-      name,
-    } = useRadioGroupContext();
+    const { disabled: groupDisabled, name } = useRadioGroupContext();
 
-    const isChecked = value === selectedValue;
     const isDisabled = groupDisabled || itemDisabled;
 
-    const handleClick = React.useCallback(() => {
-      if (!isDisabled) {
-        onValueChange(value);
-      }
-    }, [isDisabled, onValueChange, value]);
-
-    const handleKeyDown = React.useCallback(
-      (event: React.KeyboardEvent<HTMLButtonElement>) => {
-        // Space and Enter select the radio
-        if (event.key === ' ' || event.key === 'Enter') {
-          event.preventDefault();
-          if (!isDisabled) {
-            onValueChange(value);
-          }
-        }
-      },
-      [isDisabled, onValueChange, value],
-    );
-
-    // Base styles
-
+    // No data-state / onClick / onKeyDown here: the controller reflects checked state
+    // (and toggles the indicator via data-state CSS) and handles selection (click +
+    // Space/Enter delegation + roving focus) on the root. aria-checked is rendered as a
+    // constant `false` baseline only to satisfy the radio role's required ARIA prop;
+    // React never re-asserts an unchanged prop, so the controller's runtime value (set
+    // before paint) is not clobbered on re-render.
     return (
       // biome-ignore lint/a11y/useSemanticElements: Custom radio with visual styling not possible with native input
       <button
         type="button"
         ref={ref}
         role="radio"
-        aria-checked={isChecked}
-        data-state={isChecked ? 'checked' : 'unchecked'}
+        aria-checked={false}
+        data-value={value}
         disabled={isDisabled}
         name={name}
-        className={classy(radioGroupItemBaseClasses, className)}
-        onClick={handleClick}
-        onKeyDown={handleKeyDown}
+        className={classy(radioGroupItemBaseClasses, radioGroupItemGroupClass, className)}
         {...props}
       >
-        {isChecked && <span className={radioGroupItemIndicatorClasses} aria-hidden="true" />}
+        <span
+          data-radio-indicator
+          className={classy(radioGroupItemIndicatorClasses, radioGroupItemIndicatorStateClasses)}
+          aria-hidden="true"
+        />
         {children}
       </button>
     );

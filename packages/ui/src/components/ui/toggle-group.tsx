@@ -32,24 +32,23 @@
 
 import * as React from 'react';
 import classy from '../../primitives/classy';
-import { createRovingFocus } from '../../primitives/roving-focus';
 import {
   toggleGroupClasses,
   toggleGroupDefaultVariantClasses,
   toggleGroupItemBaseClasses,
   toggleGroupItemDefaultClasses,
-  toggleGroupItemDefaultPressedClasses,
+  toggleGroupItemDefaultStateClasses,
   toggleGroupItemOutlineClasses,
-  toggleGroupItemOutlinePressedClasses,
+  toggleGroupItemOutlineStateClasses,
   toggleGroupItemSizeClasses,
 } from './toggle-group.classes';
+import { createToggleGroup, type ToggleGroupController } from './toggle-group.controller';
 
 // ==================== Context ====================
 
+// Context carries only group-level presentation (variant, size, disabled). Selection
+// state and keyboard behavior live in the controller, so no value/dispatch is threaded.
 interface ToggleGroupContextValue {
-  type: 'single' | 'multiple';
-  value: string | string[];
-  onItemToggle: (itemValue: string) => void;
   variant: 'default' | 'outline';
   size: 'default' | 'sm' | 'lg';
   disabled: boolean;
@@ -99,69 +98,50 @@ export function ToggleGroup({
   children,
   ...props
 }: ToggleGroupProps) {
-  // Derive initial value based on type
-  const getInitialValue = (): string | string[] => {
-    if (defaultValue !== undefined) {
-      return defaultValue;
-    }
-    return type === 'single' ? '' : [];
-  };
-
-  // State management (controlled vs uncontrolled)
-  const [uncontrolledValue, setUncontrolledValue] = React.useState(getInitialValue);
   const isControlled = controlledValue !== undefined;
-  const value = isControlled ? controlledValue : uncontrolledValue;
 
-  const groupRef = React.useRef<HTMLDivElement>(null);
-
-  // Set up roving focus
+  // Capture the initial pressed value once; the controller owns state thereafter.
+  const initialRef = React.useRef(isControlled ? controlledValue : defaultValue);
+  // Keep the latest onValueChange reachable without re-mounting the controller.
+  const onChangeRef = React.useRef(onValueChange);
   React.useEffect(() => {
-    const container = groupRef.current;
-    if (!container) return;
+    onChangeRef.current = onValueChange;
+  });
 
-    const cleanup = createRovingFocus(container, {
-      orientation: orientation === 'vertical' ? 'vertical' : 'horizontal',
-      loop: true,
-    });
+  const controllerRef = React.useRef<ToggleGroupController | null>(null);
 
-    return cleanup;
-  }, [orientation]);
-
-  const handleItemToggle = React.useCallback(
-    (itemValue: string) => {
-      let newValue: string | string[];
-
-      if (type === 'single') {
-        // In single mode, clicking selected item deselects it
-        newValue = value === itemValue ? '' : itemValue;
-      } else {
-        // In multiple mode, toggle the item in the array
-        const currentArray = Array.isArray(value) ? value : [];
-        if (currentArray.includes(itemValue)) {
-          newValue = currentArray.filter((v) => v !== itemValue);
-        } else {
-          newValue = [...currentArray, itemValue];
-        }
-      }
-
-      if (!isControlled) {
-        setUncontrolledValue(newValue);
-      }
-      onValueChange?.(newValue);
+  // Mount the controller via a callback ref: runs during commit (before paint), so
+  // initial selection is reflected with no flash, and React renders no
+  // selection-derived attributes, so re-renders cannot clobber the controller.
+  const setRoot = React.useCallback(
+    (node: HTMLDivElement | null) => {
+      if (!node) return;
+      const initial = initialRef.current;
+      const controller = createToggleGroup(node, {
+        type,
+        orientation,
+        onChange: (value) => onChangeRef.current?.(value),
+        ...(initial === undefined ? {} : { initial }),
+      });
+      controllerRef.current = controller;
+      return () => {
+        controller.destroy();
+        controllerRef.current = null;
+      };
     },
-    [type, value, isControlled, onValueChange],
+    [type, orientation],
   );
 
+  // Controlled mode: mirror the prop into the controller.
+  React.useEffect(() => {
+    if (isControlled && controlledValue !== undefined) {
+      controllerRef.current?.setValue(controlledValue);
+    }
+  }, [isControlled, controlledValue]);
+
   const contextValue = React.useMemo(
-    () => ({
-      type,
-      value,
-      onItemToggle: handleItemToggle,
-      variant,
-      size,
-      disabled,
-    }),
-    [type, value, handleItemToggle, variant, size, disabled],
+    () => ({ variant, size, disabled }),
+    [variant, size, disabled],
   );
 
   // Group styling
@@ -175,7 +155,7 @@ export function ToggleGroup({
     <ToggleGroupContext.Provider value={contextValue}>
       {/* biome-ignore lint/a11y/useSemanticElements: role="group" is correct for toggle groups per WAI-ARIA APG, fieldset is for form elements */}
       <div
-        ref={groupRef}
+        ref={setRoot}
         role="group"
         data-orientation={orientation}
         className={groupClasses}
@@ -203,68 +183,35 @@ export function ToggleGroupItem({
   disabled: itemDisabled,
   className,
   children,
-  onClick,
   ...props
 }: ToggleGroupItemProps) {
-  const {
-    type,
-    value: groupValue,
-    onItemToggle,
-    variant,
-    size,
-    disabled: groupDisabled,
-  } = useToggleGroupContext();
+  const { variant, size, disabled: groupDisabled } = useToggleGroupContext();
 
   const disabled = groupDisabled || itemDisabled;
 
-  // Determine if this item is pressed
-  const isPressed = React.useMemo(() => {
-    if (type === 'single') {
-      return groupValue === value;
-    }
-    return Array.isArray(groupValue) && groupValue.includes(value);
-  }, [type, groupValue, value]);
-
-  const handleClick = React.useCallback(
-    (event: React.MouseEvent<HTMLButtonElement>) => {
-      if (!disabled) {
-        onItemToggle(value);
-      }
-      onClick?.(event);
-    },
-    [disabled, onItemToggle, value, onClick],
-  );
-
-  // Build variant-specific classes
-  const getVariantClasses = () => {
-    if (variant === 'outline') {
-      return classy(
-        toggleGroupItemOutlineClasses,
-        isPressed && toggleGroupItemOutlinePressedClasses,
-      );
-    }
-    // default variant
-    return classy(toggleGroupItemDefaultClasses, isPressed && toggleGroupItemDefaultPressedClasses);
-  };
+  // Pressed styling is data-state driven (the controller toggles data-state=on|off),
+  // so the class string is the same regardless of selection - no conditional application.
+  const variantClasses =
+    variant === 'outline'
+      ? classy(toggleGroupItemOutlineClasses, toggleGroupItemOutlineStateClasses)
+      : classy(toggleGroupItemDefaultClasses, toggleGroupItemDefaultStateClasses);
 
   const itemClasses = classy(
     toggleGroupItemBaseClasses,
-    // Size
     toggleGroupItemSizeClasses[size] ?? toggleGroupItemSizeClasses.default,
-    // Variant
-    getVariantClasses(),
+    variantClasses,
     className,
   );
 
+  // No aria-pressed / data-state / onClick here: the controller reflects pressed state
+  // and handles toggling (click delegation + roving focus) on the root.
   return (
     <button
       type="button"
-      aria-pressed={isPressed}
-      data-state={isPressed ? 'on' : 'off'}
       data-roving-item
+      data-value={value}
       disabled={disabled}
       className={itemClasses}
-      onClick={handleClick}
       {...props}
     >
       {children}
