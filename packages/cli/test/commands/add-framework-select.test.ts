@@ -77,6 +77,37 @@ describe('selectFilesForFramework', () => {
     );
   });
 
+  it('does not fall back to .tsx for wc target', () => {
+    const reactOnly: RegistryFile[] = [
+      makeFile('components/ui/dialog.tsx'),
+      makeFile('components/ui/dialog.classes.ts'),
+    ];
+    const result = selectFilesForFramework(reactOnly, 'wc');
+    expect(result.fallback).toBe(false);
+    // Only shared files -- no .tsx fallback
+    expect(result.files).toHaveLength(1);
+    expect(result.files[0].path).toBe('components/ui/dialog.classes.ts');
+  });
+
+  it('selects .element.ts files for wc target', () => {
+    const wcFiles: RegistryFile[] = [
+      makeFile('components/ui/button.tsx'),
+      makeFile('components/ui/button.element.ts'),
+      makeFile('components/ui/button.classes.ts'),
+    ];
+    const result = selectFilesForFramework(wcFiles, 'wc');
+    expect(result.fallback).toBe(false);
+    expect(result.files).toContainEqual(
+      expect.objectContaining({ path: 'components/ui/button.element.ts' }),
+    );
+    expect(result.files).toContainEqual(
+      expect.objectContaining({ path: 'components/ui/button.classes.ts' }),
+    );
+    expect(result.files).not.toContainEqual(
+      expect.objectContaining({ path: 'components/ui/button.tsx' }),
+    );
+  });
+
   it('returns all files when nothing matches and target is react', () => {
     const oddFiles: RegistryFile[] = [makeFile('components/ui/widget.svelte')];
     const result = selectFilesForFramework(oddFiles, 'react');
