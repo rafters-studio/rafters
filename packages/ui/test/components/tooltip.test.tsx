@@ -607,3 +607,26 @@ describe('Tooltip - forceMount', () => {
     });
   });
 });
+
+describe('Tooltip - open state delegates to createDisclosure (migration)', () => {
+  it('reflects a controlled open prop through the disclosure cell', () => {
+    const { rerender } = render(
+      <TooltipProvider>
+        <Tooltip open={false}>
+          <TooltipTrigger>Trigger</TooltipTrigger>
+          <TooltipContent>Reflected tooltip</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>,
+    );
+    expect(screen.queryByText('Reflected tooltip')).not.toBeInTheDocument();
+    rerender(
+      <TooltipProvider>
+        <Tooltip open={true}>
+          <TooltipTrigger>Trigger</TooltipTrigger>
+          <TooltipContent>Reflected tooltip</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>,
+    );
+    expect(screen.getByText('Reflected tooltip')).toBeInTheDocument();
+  });
+});

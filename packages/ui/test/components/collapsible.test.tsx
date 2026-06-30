@@ -96,6 +96,31 @@ describe('Collapsible', () => {
     expect(screen.getByText('Controlled Content')).toBeInTheDocument();
   });
 
+  it('controlled prop drives open; cell does not self-open (disclosure delegation)', () => {
+    const onOpenChange = vi.fn();
+    const { rerender } = render(
+      <Collapsible open={false} onOpenChange={onOpenChange}>
+        <CollapsibleTrigger>Toggle</CollapsibleTrigger>
+        <CollapsibleContent>Controlled Content</CollapsibleContent>
+      </Collapsible>,
+    );
+
+    fireEvent.click(screen.getByRole('button'));
+
+    // Callback fired, but the cell did NOT self-open while controlled.
+    expect(onOpenChange).toHaveBeenCalledWith(true);
+    expect(screen.queryByText('Controlled Content')).not.toBeInTheDocument();
+
+    // The owning prop reflects in.
+    rerender(
+      <Collapsible open onOpenChange={onOpenChange}>
+        <CollapsibleTrigger>Toggle</CollapsibleTrigger>
+        <CollapsibleContent>Controlled Content</CollapsibleContent>
+      </Collapsible>,
+    );
+    expect(screen.getByText('Controlled Content')).toBeInTheDocument();
+  });
+
   it('calls onOpenChange callback', () => {
     const handleChange = vi.fn();
 

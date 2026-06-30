@@ -309,6 +309,44 @@ describe('AlertDialog - Controlled Mode', () => {
       expect(onOpenChange).toHaveBeenCalledWith(false);
     });
   });
+
+  it('controlled prop drives open; cell does not self-open (disclosure delegation)', async () => {
+    const user = userEvent.setup();
+    const onOpenChange = vi.fn();
+
+    const { rerender } = render(
+      <AlertDialog open={false} onOpenChange={onOpenChange}>
+        <AlertDialogTrigger>Open</AlertDialogTrigger>
+        <AlertDialogPortal>
+          <AlertDialogContent>
+            <AlertDialogTitle>Body</AlertDialogTitle>
+          </AlertDialogContent>
+        </AlertDialogPortal>
+      </AlertDialog>,
+    );
+
+    await user.click(screen.getByText('Open'));
+
+    // Callback fired, but the cell did NOT self-open while controlled.
+    expect(onOpenChange).toHaveBeenCalledWith(true);
+    expect(screen.queryByText('Body')).not.toBeInTheDocument();
+
+    // The owning prop reflects in.
+    rerender(
+      <AlertDialog open onOpenChange={onOpenChange}>
+        <AlertDialogTrigger>Open</AlertDialogTrigger>
+        <AlertDialogPortal>
+          <AlertDialogContent>
+            <AlertDialogTitle>Body</AlertDialogTitle>
+          </AlertDialogContent>
+        </AlertDialogPortal>
+      </AlertDialog>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Body')).toBeInTheDocument();
+    });
+  });
 });
 
 describe('AlertDialog - ARIA Attributes', () => {
