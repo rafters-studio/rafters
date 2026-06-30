@@ -854,6 +854,45 @@ describe('DropdownMenu - Submenus', () => {
     );
   });
 
+  it('should keep root open when a nested submenu opens (independent state)', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <DropdownMenu defaultOpen>
+        <DropdownMenuTrigger>Open</DropdownMenuTrigger>
+        <DropdownMenuPortal>
+          <DropdownMenuContent>
+            <DropdownMenuItem>Root Item</DropdownMenuItem>
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>More</DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                <DropdownMenuItem>Sub Item</DropdownMenuItem>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+          </DropdownMenuContent>
+        </DropdownMenuPortal>
+      </DropdownMenu>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('More')).toBeInTheDocument();
+    });
+
+    expect(screen.queryByText('Sub Item')).not.toBeInTheDocument();
+
+    await user.hover(screen.getByText('More'));
+
+    await waitFor(
+      () => {
+        expect(screen.getByText('Sub Item')).toBeInTheDocument();
+      },
+      { timeout: 500 },
+    );
+
+    // Opening the submenu does not collapse the root menu.
+    expect(screen.getByText('Root Item')).toBeInTheDocument();
+  });
+
   it('submenu trigger should have aria-haspopup="menu"', async () => {
     render(
       <DropdownMenu defaultOpen>
