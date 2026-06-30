@@ -31,8 +31,10 @@
 
 import * as React from 'react';
 import { createPortal } from 'react-dom';
+import { useMemory } from '../../hooks/use-memory';
 import classy from '../../primitives/classy';
 import { type CollisionOptions, computePosition } from '../../primitives/collision-detector';
+import { createDisclosure } from '../../primitives/disclosure';
 import { getPortalContainer } from '../../primitives/portal';
 import { mergeProps } from '../../primitives/slot';
 import { tooltipContentClasses } from './tooltip.classes';
@@ -141,10 +143,23 @@ export function Tooltip({
   children,
 }: TooltipProps) {
   const providerContext = useTooltipProviderContext();
-  const [uncontrolledOpen, setUncontrolledOpen] = React.useState(defaultOpen);
+
+  // Open state lives on the shared createDisclosure cell (issue #1695) - the
+  // same framework-free core the Astro target can drive. The controlled/
+  // uncontrolled dual-mode stays at the React boundary.
+  const disclosure = React.useRef(
+    createDisclosure({ initialOpen: controlledOpen ?? defaultOpen ?? false }),
+  ).current;
 
   const isControlled = controlledOpen !== undefined;
-  const open = isControlled ? controlledOpen : uncontrolledOpen;
+
+  React.useEffect(() => {
+    if (isControlled) {
+      disclosure.setOpen(controlledOpen);
+    }
+  }, [isControlled, controlledOpen, disclosure]);
+
+  const open = useMemory(disclosure.memory).open;
 
   const delayDuration = delayDurationProp ?? providerContext.delayDuration;
 
@@ -154,11 +169,11 @@ export function Tooltip({
         globalOpenTimestamp = Date.now();
       }
       if (!isControlled) {
-        setUncontrolledOpen(newOpen);
+        disclosure.setOpen(newOpen);
       }
       onOpenChange?.(newOpen);
     },
-    [isControlled, onOpenChange],
+    [isControlled, onOpenChange, disclosure],
   );
 
   const triggerRef = React.useRef<HTMLElement | null>(null);
