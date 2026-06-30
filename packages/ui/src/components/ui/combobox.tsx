@@ -35,40 +35,27 @@
 
 import * as React from 'react';
 import { createPortal } from 'react-dom';
+import { useMemory } from '../../hooks/use-memory';
 import classy from '../../primitives/classy';
 import { computePosition } from '../../primitives/collision-detector';
 import { onEscapeKeyDown } from '../../primitives/escape-keydown';
 import { onPointerDownOutside } from '../../primitives/outside-click';
 import { getPortalContainer } from '../../primitives/portal';
 import type { Align, Side } from '../../primitives/types';
-
-// ==================== Types ====================
-
-interface ComboboxOption {
-  value: string;
-  label: string;
-  disabled?: boolean;
-}
+import { type ComboboxController, createCombobox } from './combobox.controller';
 
 // ==================== Context ====================
 
+// All combobox state lives in the framework-free controller (createSelectionGroup
+// for the value + a createMemory cell for open/inputValue/activeIndex/optionsVersion,
+// options in a ref). Context carries only the controller plus view-local refs/ids.
 interface ComboboxContextValue {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  value: string;
-  onValueChange: (value: string) => void;
-  inputValue: string;
-  onInputChange: (value: string) => void;
-  activeIndex: number;
-  setActiveIndex: (index: number) => void;
-  options: ComboboxOption[];
-  registerOption: (option: ComboboxOption) => void;
-  unregisterOption: (value: string) => void;
+  controller: ComboboxController;
+  disabled: boolean;
   inputRef: React.RefObject<HTMLInputElement | null>;
   contentRef: React.RefObject<HTMLDivElement | null>;
   listboxId: string;
   inputId: string;
-  selectOption: (value: string) => void;
 }
 
 const ComboboxContext = React.createContext<ComboboxContextValue | null>(null);
@@ -104,133 +91,58 @@ export function Combobox({
   onOpenChange,
   disabled = false,
 }: ComboboxProps) {
-  // Controlled/uncontrolled value
-  const [uncontrolledValue, setUncontrolledValue] = React.useState(defaultValue);
   const isValueControlled = controlledValue !== undefined;
-  const value = isValueControlled ? controlledValue : uncontrolledValue;
-
-  // Controlled/uncontrolled open
-  const [uncontrolledOpen, setUncontrolledOpen] = React.useState(defaultOpen);
   const isOpenControlled = controlledOpen !== undefined;
-  const open = isOpenControlled ? controlledOpen : uncontrolledOpen;
 
-  // Input value (for filtering)
-  const [inputValue, setInputValue] = React.useState('');
+  // Keep the latest callbacks reachable without re-creating the controller.
+  const onValueChangeRef = React.useRef(onValueChange);
+  const onOpenChangeRef = React.useRef(onOpenChange);
+  React.useEffect(() => {
+    onValueChangeRef.current = onValueChange;
+    onOpenChangeRef.current = onOpenChange;
+  });
 
-  // Active/highlighted option index
-  const [activeIndex, setActiveIndex] = React.useState(-1);
+  // The controller owns all combobox state; it is created once and stays stable.
+  const [controller] = React.useState<ComboboxController>(() =>
+    createCombobox({
+      initialValue: isValueControlled ? controlledValue : defaultValue,
+      initialOpen: isOpenControlled ? controlledOpen : defaultOpen,
+      onValueChange: (next) => onValueChangeRef.current?.(next),
+      onOpenChange: (next) => onOpenChangeRef.current?.(next),
+    }),
+  );
 
-  // Registered options
-  const [options, setOptions] = React.useState<ComboboxOption[]>([]);
+  React.useEffect(() => () => controller.destroy(), [controller]);
 
-  // Refs
+  // Controlled value: mirror the prop into the controller silently (no callback).
+  React.useEffect(() => {
+    if (isValueControlled && controlledValue !== undefined) {
+      controller.setValue(controlledValue);
+    }
+  }, [isValueControlled, controlledValue, controller]);
+
+  // Controlled open: mirror the prop into the cell silently (patch, not setOpen,
+  // so the parent's own prop change does not echo back through onOpenChange).
+  React.useEffect(() => {
+    if (
+      isOpenControlled &&
+      controlledOpen !== undefined &&
+      controller.cell.get().open !== controlledOpen
+    ) {
+      controller.cell.patch(controlledOpen ? { open: true, activeIndex: -1 } : { open: false });
+    }
+  }, [isOpenControlled, controlledOpen, controller]);
+
+  // Refs and ids stay view-local.
   const inputRef = React.useRef<HTMLInputElement | null>(null);
   const contentRef = React.useRef<HTMLDivElement | null>(null);
-
-  // IDs
   const id = React.useId();
   const listboxId = `combobox-listbox-${id}`;
   const inputId = `combobox-input-${id}`;
 
-  const handleOpenChange = React.useCallback(
-    (newOpen: boolean) => {
-      if (disabled) return;
-      if (!isOpenControlled) {
-        setUncontrolledOpen(newOpen);
-      }
-      onOpenChange?.(newOpen);
-
-      // Reset active index when opening
-      if (newOpen) {
-        setActiveIndex(-1);
-      }
-    },
-    [disabled, isOpenControlled, onOpenChange],
-  );
-
-  const handleValueChange = React.useCallback(
-    (newValue: string) => {
-      if (!isValueControlled) {
-        setUncontrolledValue(newValue);
-      }
-      onValueChange?.(newValue);
-    },
-    [isValueControlled, onValueChange],
-  );
-
-  const handleInputChange = React.useCallback(
-    (newValue: string) => {
-      setInputValue(newValue);
-      // Open on typing
-      if (newValue && !open) {
-        handleOpenChange(true);
-      }
-      // Reset active index when input changes
-      setActiveIndex(-1);
-    },
-    [open, handleOpenChange],
-  );
-
-  const registerOption = React.useCallback((option: ComboboxOption) => {
-    setOptions((prev) => {
-      if (prev.some((o) => o.value === option.value)) {
-        return prev.map((o) => (o.value === option.value ? option : o));
-      }
-      return [...prev, option];
-    });
-  }, []);
-
-  const unregisterOption = React.useCallback((optionValue: string) => {
-    setOptions((prev) => prev.filter((o) => o.value !== optionValue));
-  }, []);
-
-  const selectOption = React.useCallback(
-    (optionValue: string) => {
-      const option = options.find((o) => o.value === optionValue);
-      if (option && !option.disabled) {
-        handleValueChange(optionValue);
-        setInputValue(option.label);
-        handleOpenChange(false);
-        inputRef.current?.focus();
-      }
-    },
-    [options, handleValueChange, handleOpenChange],
-  );
-
   const contextValue = React.useMemo<ComboboxContextValue>(
-    () => ({
-      open,
-      onOpenChange: handleOpenChange,
-      value,
-      onValueChange: handleValueChange,
-      inputValue,
-      onInputChange: handleInputChange,
-      activeIndex,
-      setActiveIndex,
-      options,
-      registerOption,
-      unregisterOption,
-      inputRef,
-      contentRef,
-      listboxId,
-      inputId,
-      selectOption,
-    }),
-    [
-      open,
-      handleOpenChange,
-      value,
-      handleValueChange,
-      inputValue,
-      handleInputChange,
-      activeIndex,
-      options,
-      registerOption,
-      unregisterOption,
-      listboxId,
-      inputId,
-      selectOption,
-    ],
+    () => ({ controller, disabled, inputRef, contentRef, listboxId, inputId }),
+    [controller, disabled, listboxId, inputId],
   );
 
   return <ComboboxContext.Provider value={contextValue}>{children}</ComboboxContext.Provider>;
@@ -248,28 +160,9 @@ export function ComboboxInput({
   onBlur,
   ...props
 }: ComboboxInputProps) {
-  const {
-    open,
-    onOpenChange,
-    inputValue,
-    onInputChange,
-    activeIndex,
-    setActiveIndex,
-    options,
-    inputRef,
-    listboxId,
-    inputId,
-    selectOption,
-  } = useComboboxContext();
-
-  // Filter visible options
-  const filteredOptions = React.useMemo(() => {
-    if (!inputValue) return options;
-    const lower = inputValue.toLowerCase();
-    return options.filter(
-      (o) => o.label.toLowerCase().includes(lower) || o.value.toLowerCase().includes(lower),
-    );
-  }, [options, inputValue]);
+  const { controller, disabled, inputRef, listboxId, inputId } = useComboboxContext();
+  const { open, inputValue, activeIndex } = useMemory(controller.cell);
+  const filteredOptions = controller.filteredOptions();
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     onKeyDown?.(e);
@@ -279,32 +172,33 @@ export function ComboboxInput({
       case 'ArrowDown':
         e.preventDefault();
         if (!open) {
-          onOpenChange(true);
+          if (!disabled) controller.setOpen(true);
         } else {
-          setActiveIndex(Math.min(activeIndex + 1, filteredOptions.length - 1));
+          controller.setActiveIndex(Math.min(activeIndex + 1, filteredOptions.length - 1));
         }
         break;
       case 'ArrowUp':
         e.preventDefault();
         if (open) {
-          setActiveIndex(Math.max(activeIndex - 1, 0));
+          controller.setActiveIndex(Math.max(activeIndex - 1, 0));
         }
         break;
       case 'Enter':
         e.preventDefault();
         if (open && activeIndex >= 0 && filteredOptions[activeIndex]) {
-          selectOption(filteredOptions[activeIndex].value);
+          controller.selectOption(filteredOptions[activeIndex].value);
+          inputRef.current?.focus();
         }
         break;
       case 'Escape':
         if (open) {
           e.preventDefault();
-          onOpenChange(false);
+          controller.setOpen(false);
         }
         break;
       case 'Tab':
         if (open) {
-          onOpenChange(false);
+          controller.setOpen(false);
         }
         break;
     }
@@ -321,7 +215,12 @@ export function ComboboxInput({
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onInputChange(e.target.value);
+    // When disabled, update the query text but never open (mirrors prior behavior).
+    if (disabled) {
+      controller.cell.patch({ inputValue: e.target.value, activeIndex: -1 });
+      return;
+    }
+    controller.setInputValue(e.target.value);
   };
 
   const activeOptionId =
@@ -361,7 +260,9 @@ export function ComboboxInput({
       <button
         type="button"
         tabIndex={-1}
-        onClick={() => onOpenChange(!open)}
+        onClick={() => {
+          if (!disabled) controller.setOpen(!open);
+        }}
         className={classy(
           'absolute right-0 top-0 flex h-full items-center px-2',
           'text-muted-foreground hover:text-foreground',
@@ -407,7 +308,8 @@ export function ComboboxContent({
   style,
   ...props
 }: ComboboxContentProps) {
-  const { open, onOpenChange, inputRef, contentRef, listboxId } = useComboboxContext();
+  const { controller, inputRef, contentRef, listboxId } = useComboboxContext();
+  const { open } = useMemory(controller.cell);
   const [mounted, setMounted] = React.useState(false);
   const [position, setPosition] = React.useState<{
     x: number;
@@ -467,10 +369,10 @@ export function ComboboxContent({
     if (!open) return;
 
     return onEscapeKeyDown(() => {
-      onOpenChange(false);
+      controller.setOpen(false);
       inputRef.current?.focus();
     });
-  }, [open, onOpenChange, inputRef]);
+  }, [open, controller, inputRef]);
 
   // Outside click handler
   React.useEffect(() => {
@@ -483,9 +385,9 @@ export function ComboboxContent({
       // Don't close if clicking the toggle button (inside input wrapper)
       if (inputRef.current?.parentElement?.contains(target)) return;
 
-      onOpenChange(false);
+      controller.setOpen(false);
     });
-  }, [open, onOpenChange, inputRef, contentRef]);
+  }, [open, controller, inputRef, contentRef]);
 
   if (!open || !mounted) return null;
 
@@ -530,16 +432,10 @@ export function ComboboxContent({
 export interface ComboboxEmptyProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 export function ComboboxEmpty({ className, children, ...props }: ComboboxEmptyProps) {
-  const { options, inputValue } = useComboboxContext();
-
-  // Filter visible options
-  const filteredOptions = React.useMemo(() => {
-    if (!inputValue) return options;
-    const lower = inputValue.toLowerCase();
-    return options.filter(
-      (o) => o.label.toLowerCase().includes(lower) || o.value.toLowerCase().includes(lower),
-    );
-  }, [options, inputValue]);
+  const { controller } = useComboboxContext();
+  // Re-derive when inputValue or the registry version changes.
+  useMemory(controller.cell);
+  const filteredOptions = controller.filteredOptions();
 
   // Only show if no results
   if (filteredOptions.length > 0) return null;
@@ -592,28 +488,22 @@ export function ComboboxItem({
   children,
   ...props
 }: ComboboxItemProps) {
-  const {
-    value: selectedValue,
-    inputValue,
-    activeIndex,
-    setActiveIndex,
-    options,
-    registerOption,
-    unregisterOption,
-    listboxId,
-    selectOption,
-  } = useComboboxContext();
+  const { controller, inputRef, listboxId } = useComboboxContext();
+  const { inputValue, activeIndex } = useMemory(controller.cell);
+  const { selected } = useMemory(controller.group.memory);
+  const selectedValue = selected[0];
 
   // Get label from children
   const label = typeof children === 'string' ? children : itemValue;
 
   // Register option
   React.useEffect(() => {
-    registerOption({ value: itemValue, label, disabled });
-    return () => unregisterOption(itemValue);
-  }, [itemValue, label, disabled, registerOption, unregisterOption]);
+    controller.registerOption({ value: itemValue, label, disabled });
+    return () => controller.unregisterOption(itemValue);
+  }, [itemValue, label, disabled, controller]);
 
-  // Filter check
+  // Filter check - derived from this item's own label/value to avoid the
+  // first-render registration race (the registry is populated in an effect).
   const isFiltered = React.useMemo(() => {
     if (!inputValue) return false;
     const lower = inputValue.toLowerCase();
@@ -623,25 +513,22 @@ export function ComboboxItem({
   // Don't render if filtered out
   if (isFiltered) return null;
 
-  // Find index among filtered options
-  const filteredOptions = options.filter((o) => {
-    if (!inputValue) return true;
-    const lower = inputValue.toLowerCase();
-    return o.label.toLowerCase().includes(lower) || o.value.toLowerCase().includes(lower);
-  });
-  const index = filteredOptions.findIndex((o) => o.value === itemValue);
+  // Find index among the controller's filtered options (drives the highlight).
+  const index = controller.filteredOptions().findIndex((o) => o.value === itemValue);
   const isActive = index === activeIndex;
   const isSelected = selectedValue === itemValue;
 
   const handleClick = () => {
     if (!disabled) {
-      selectOption(itemValue);
+      controller.selectOption(itemValue);
+      // Focus stays imperative at the boundary (controller does not touch the DOM).
+      inputRef.current?.focus();
     }
   };
 
   const handleMouseEnter = () => {
     if (!disabled) {
-      setActiveIndex(index);
+      controller.setActiveIndex(index);
     }
   };
 
