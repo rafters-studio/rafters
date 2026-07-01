@@ -13,7 +13,7 @@ export type {
   EditorSidebarConfig,
   RuleConfigField,
   SaveCompositeData,
-} from './components/ui/editor.js';
+} from './old/ui/editor.js';
 export type {
   DeserializeResult,
   EditorSerializer,

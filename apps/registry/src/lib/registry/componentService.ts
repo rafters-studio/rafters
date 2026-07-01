@@ -52,7 +52,7 @@ export interface RegistryIndex {
  * Get path to UI package components
  */
 function getComponentsPath(): string {
-  return join(process.cwd(), '../../packages/ui/src/components/ui');
+  return join(process.cwd(), '../../packages/ui/src/old/ui');
 }
 
 /**

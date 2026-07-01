@@ -15,7 +15,7 @@ import {
 import { COMPONENT_CATEGORIES, type ComponentCategory, type ComponentMetadata } from './types';
 
 // Path to UI components (relative from apps/demo)
-const COMPONENTS_PATH = join(process.cwd(), '../../packages/ui/src/components/ui');
+const COMPONENTS_PATH = join(process.cwd(), '../../packages/ui/src/old/ui');
 
 /**
  * Convert kebab-case to Title Case
@@ -53,7 +53,7 @@ export function loadComponent(name: string): ComponentMetadata | null {
       variants: extractVariants(source),
       sizes: extractSizes(source),
       dependencies: extractDependencies(source),
-      filePath: `packages/ui/src/components/ui/${name}.tsx`,
+      filePath: `packages/ui/src/old/ui/${name}.tsx`,
     };
   } catch {
     return null;
