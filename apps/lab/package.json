@@ -1,0 +1,26 @@
+{
+  "name": "lab",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Non-deployed proving ground for behavior-layer components. New-grain components demo here before the live registry (apps/demo) picks them up.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@rafters/ui": "workspace:*",
+    "react": "catalog:",
+    "react-dom": "catalog:"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.18",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "tailwindcss": "^4.1.18",
+    "typescript": "catalog:",
+    "vite": "^8.0.0"
+  }
+}

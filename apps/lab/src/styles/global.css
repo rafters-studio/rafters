@@ -1,0 +1,9 @@
+/*
+ * Lab consumes the demo app's generated rafters token sheet (committed
+ * artifact) until lab earns its own .rafters config. One token source,
+ * zero deploy surface.
+ */
+@import '../../../demo/.rafters/output/rafters.css';
+
+/* Scan the UI package (new grain AND quarantined old) for utility classes */
+@source '../../../../packages/ui/src';
