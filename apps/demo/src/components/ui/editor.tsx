@@ -160,8 +160,10 @@ export interface SaveCompositeData {
   blocks: EditorBlock[];
 }
 
-export interface EditorProps
-  extends Omit<React.HTMLAttributes<HTMLDivElement>, 'defaultValue' | 'onChange'> {
+export interface EditorProps extends Omit<
+  React.HTMLAttributes<HTMLDivElement>,
+  'defaultValue' | 'onChange'
+> {
   /** Initial blocks for uncontrolled mode */
   defaultValue?: EditorBlock[];
   /** Controlled blocks */

@@ -101,8 +101,10 @@ const WEEKDAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
 // ==================== Calendar ====================
 
-export interface CalendarProps<T extends CalendarMode = 'single'>
-  extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onSelect'> {
+export interface CalendarProps<T extends CalendarMode = 'single'> extends Omit<
+  React.HTMLAttributes<HTMLDivElement>,
+  'onSelect'
+> {
   mode?: T;
   selected?: SelectedValue<T>;
   onSelect?: SelectHandler<T>;

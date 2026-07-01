@@ -35,8 +35,10 @@ import {
   sliderVariantClasses,
 } from './slider.classes';
 
-export interface SliderProps
-  extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onChange' | 'defaultValue'> {
+export interface SliderProps extends Omit<
+  React.HTMLAttributes<HTMLDivElement>,
+  'onChange' | 'defaultValue'
+> {
   /** Controlled value (array of numbers for single or range) */
   value?: number[];
   /** Default value for uncontrolled usage */

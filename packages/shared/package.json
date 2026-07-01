@@ -1,16 +1,19 @@
 {
   "name": "@rafters/shared",
-  "private": true,
   "version": "0.0.1",
+  "private": true,
   "description": "Shared W3C DTCG schemas, base types, and utilities for Rafters design system",
+  "files": [
+    "src"
+  ],
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
     "./types": "./src/types.ts"
   },
-  "files": [
-    "src"
-  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "test": "vitest run",
     "test:unit": "vitest run",
@@ -28,8 +31,5 @@
     "typescript": "catalog:",
     "vitest": "catalog:",
     "zocker": "catalog:"
-  },
-  "publishConfig": {
-    "access": "public"
   }
 }

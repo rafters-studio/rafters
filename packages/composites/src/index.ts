@@ -19,13 +19,7 @@ export {
   toBridgeItems,
   toKebabId,
 } from './bridge';
-export {
-  credentials,
-  email,
-  password,
-  required,
-  url,
-} from './built-in-rules/index';
+export { credentials, email, password, required, url } from './built-in-rules/index';
 export type {
   CompositeAdapter,
   DiscoveryError,

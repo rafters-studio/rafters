@@ -355,8 +355,10 @@ MenubarItem.displayName = 'MenubarItem';
 
 // ==================== MenubarCheckboxItem ====================
 
-export interface MenubarCheckboxItemProps
-  extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onSelect'> {
+export interface MenubarCheckboxItemProps extends Omit<
+  React.HTMLAttributes<HTMLDivElement>,
+  'onSelect'
+> {
   checked?: boolean;
   disabled?: boolean;
   onCheckedChange?: (checked: boolean) => void;
@@ -454,8 +456,10 @@ MenubarRadioGroup.displayName = 'MenubarRadioGroup';
 
 // ==================== MenubarRadioItem ====================
 
-export interface MenubarRadioItemProps
-  extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onSelect'> {
+export interface MenubarRadioItemProps extends Omit<
+  React.HTMLAttributes<HTMLDivElement>,
+  'onSelect'
+> {
   value: string;
   disabled?: boolean;
   onSelect?: (event: Event) => void;

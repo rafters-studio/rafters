@@ -1,0 +1,45 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "unicorn", "oxc"],
+  "categories": {
+    "correctness": "warn"
+  },
+  "rules": {
+    "typescript/no-explicit-any": "error",
+    "no-debugger": "error",
+    "no-var": "error",
+    "no-fallthrough": "error",
+    "prefer-const": "error",
+    "typescript/no-non-null-assertion": "warn",
+    "unicorn/no-array-for-each": "error",
+    "unicorn/no-thenable": "error",
+    "no-unused-vars": "off",
+    "typescript/no-unused-vars": [
+      "error",
+      {
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^_",
+        "ignoreRestSiblings": true
+      }
+    ],
+    "no-unused-private-class-members": "error",
+    "no-console": "warn"
+  },
+  "ignorePatterns": [
+    "**/node_modules",
+    "**/dist",
+    "**/build",
+    "**/.turbo",
+    "**/.astro",
+    "**/*.log",
+    "playwright-report",
+    "test-results",
+    "**/.cache",
+    "**/worker-configuration.d.ts",
+    "**/.rafters",
+    ".claude/worktrees",
+    "docs-site",
+    "docs/templates"
+  ]
+}

@@ -1,14 +1,14 @@
 {
   "name": "@rafters/design-tokens",
-  "private": true,
   "version": "0.0.1",
+  "private": true,
+  "files": [
+    "src"
+  ],
   "type": "module",
   "exports": {
     ".": "./src/index.ts"
   },
-  "files": [
-    "src"
-  ],
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",

@@ -234,8 +234,10 @@ export function CommandDialog({
 
 // ==================== CommandInput ====================
 
-export interface CommandInputProps
-  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange'> {}
+export interface CommandInputProps extends Omit<
+  React.InputHTMLAttributes<HTMLInputElement>,
+  'value' | 'onChange'
+> {}
 
 export function CommandInput({
   className,
