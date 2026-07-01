@@ -545,8 +545,10 @@ DropdownMenuLabel.displayName = 'DropdownMenuLabel';
 
 // ==================== DropdownMenuItem ====================
 
-export interface DropdownMenuItemProps
-  extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onSelect'> {
+export interface DropdownMenuItemProps extends Omit<
+  React.HTMLAttributes<HTMLDivElement>,
+  'onSelect'
+> {
   inset?: boolean;
   disabled?: boolean;
   onSelect?: (event: Event) => void;
@@ -600,8 +602,10 @@ DropdownMenuItem.displayName = 'DropdownMenuItem';
 
 // ==================== DropdownMenuCheckboxItem ====================
 
-export interface DropdownMenuCheckboxItemProps
-  extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onSelect'> {
+export interface DropdownMenuCheckboxItemProps extends Omit<
+  React.HTMLAttributes<HTMLDivElement>,
+  'onSelect'
+> {
   checked?: boolean;
   disabled?: boolean;
   onCheckedChange?: (checked: boolean) => void;
@@ -726,8 +730,10 @@ DropdownMenuRadioGroup.displayName = 'DropdownMenuRadioGroup';
 
 // ==================== DropdownMenuRadioItem ====================
 
-export interface DropdownMenuRadioItemProps
-  extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onSelect'> {
+export interface DropdownMenuRadioItemProps extends Omit<
+  React.HTMLAttributes<HTMLDivElement>,
+  'onSelect'
+> {
   value: string;
   disabled?: boolean;
   onSelect?: (event: Event) => void;
@@ -980,8 +986,10 @@ DropdownMenuSubTrigger.displayName = 'DropdownMenuSubTrigger';
 
 // ==================== DropdownMenuSubContent ====================
 
-export interface DropdownMenuSubContentProps
-  extends Omit<DropdownMenuContentProps, 'side' | 'align'> {}
+export interface DropdownMenuSubContentProps extends Omit<
+  DropdownMenuContentProps,
+  'side' | 'align'
+> {}
 
 export const DropdownMenuSubContent = React.forwardRef<HTMLDivElement, DropdownMenuSubContentProps>(
   ({ className, onPointerEnter, onPointerLeave, ...props }, ref) => {

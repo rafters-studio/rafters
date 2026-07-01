@@ -514,8 +514,10 @@ ContextMenuLabel.displayName = 'ContextMenuLabel';
 
 // ==================== ContextMenuItem ====================
 
-export interface ContextMenuItemProps
-  extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onSelect'> {
+export interface ContextMenuItemProps extends Omit<
+  React.HTMLAttributes<HTMLDivElement>,
+  'onSelect'
+> {
   inset?: boolean;
   disabled?: boolean;
   onSelect?: (event: Event) => void;
@@ -569,8 +571,10 @@ ContextMenuItem.displayName = 'ContextMenuItem';
 
 // ==================== ContextMenuCheckboxItem ====================
 
-export interface ContextMenuCheckboxItemProps
-  extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onSelect'> {
+export interface ContextMenuCheckboxItemProps extends Omit<
+  React.HTMLAttributes<HTMLDivElement>,
+  'onSelect'
+> {
   checked?: boolean;
   disabled?: boolean;
   onCheckedChange?: (checked: boolean) => void;
@@ -695,8 +699,10 @@ ContextMenuRadioGroup.displayName = 'ContextMenuRadioGroup';
 
 // ==================== ContextMenuRadioItem ====================
 
-export interface ContextMenuRadioItemProps
-  extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onSelect'> {
+export interface ContextMenuRadioItemProps extends Omit<
+  React.HTMLAttributes<HTMLDivElement>,
+  'onSelect'
+> {
   value: string;
   disabled?: boolean;
   onSelect?: (event: Event) => void;
@@ -943,8 +949,10 @@ ContextMenuSubTrigger.displayName = 'ContextMenuSubTrigger';
 
 // ==================== ContextMenuSubContent ====================
 
-export interface ContextMenuSubContentProps
-  extends Omit<React.HTMLAttributes<HTMLDivElement>, 'style'> {
+export interface ContextMenuSubContentProps extends Omit<
+  React.HTMLAttributes<HTMLDivElement>,
+  'style'
+> {
   forceMount?: boolean;
   loop?: boolean;
 }

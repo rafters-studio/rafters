@@ -35,9 +35,7 @@
 
     "noEmit": true,
     "importHelpers": false,
-    "downlevelIteration": false,
 
-    "baseUrl": ".",
     "paths": {
       "@rafters/shared": ["./packages/shared/src/index.ts"],
       "@rafters/shared/*": ["./packages/shared/src/*"],

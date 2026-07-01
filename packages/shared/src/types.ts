@@ -75,17 +75,9 @@ export type DTCGTokenBase = z.infer<typeof DTCGTokenBaseSchema>;
 export const DTCGColorValueSchema = z.object({
   colorSpace: z.literal('oklch'),
   channels: z.tuple([
-    z
-      .number()
-      .min(0)
-      .max(1), // Lightness
-    z
-      .number()
-      .min(0), // Chroma
-    z
-      .number()
-      .min(0)
-      .max(360), // Hue
+    z.number().min(0).max(1), // Lightness
+    z.number().min(0), // Chroma
+    z.number().min(0).max(360), // Hue
   ]),
   alpha: z.number().min(0).max(1).optional().default(1),
 });
@@ -98,9 +90,7 @@ export type DTCGColorValue = z.infer<typeof DTCGColorValueSchema>;
 export const DTCGColorTokenSchema = DTCGTokenBaseSchema.extend({
   $value: z.union([
     DTCGColorValueSchema, // Explicit OKLCH
-    z
-      .string()
-      .regex(/^\{[^{}]+\}$/), // Reference: {color.primary.500}
+    z.string().regex(/^\{[^{}]+\}$/), // Reference: {color.primary.500}
   ]),
   $type: z.literal('color'),
 });

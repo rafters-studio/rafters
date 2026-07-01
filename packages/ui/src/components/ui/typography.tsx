@@ -90,7 +90,8 @@ export interface TypographyProps extends React.HTMLAttributes<HTMLElement>, Typo
  * provides simplified callback signatures for editor use.
  */
 export interface EditableHeadingProps
-  extends Omit<TypographyProps, 'onChange' | 'onBlur' | 'onFocus' | 'onKeyDown'>,
+  extends
+    Omit<TypographyProps, 'onChange' | 'onBlur' | 'onFocus' | 'onKeyDown'>,
     EditableTypographyProps {
   /** Content as string for controlled editing */
   children?: React.ReactNode;
@@ -101,7 +102,8 @@ export interface EditableHeadingProps
  * Supports InlineContent[] for rich text with inline formatting.
  */
 export interface EditableParagraphProps
-  extends Omit<TypographyProps, 'onChange' | 'onBlur' | 'onFocus' | 'onKeyDown'>,
+  extends
+    Omit<TypographyProps, 'onChange' | 'onBlur' | 'onFocus' | 'onKeyDown'>,
     EditableTypographyProps {
   /** Content as string or InlineContent[] for rich text */
   children?: React.ReactNode;
@@ -132,7 +134,8 @@ export interface SelectionInfo {
  * Supports InlineContent[] for the quote body and optional citation editing.
  */
 export interface EditableQuoteProps
-  extends Omit<TypographyProps, 'onChange' | 'onBlur' | 'onFocus' | 'onKeyDown'>,
+  extends
+    Omit<TypographyProps, 'onChange' | 'onBlur' | 'onFocus' | 'onKeyDown'>,
     EditableTypographyProps {
   /** Quote content */
   children?: React.ReactNode;

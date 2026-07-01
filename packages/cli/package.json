@@ -4,10 +4,19 @@
   "description": "Design Intelligence CLI. Scaffold tokens, import existing shadcn/Tailwind v4 sources, add components, and serve an MCP server so AI agents read decisions instead of guessing.",
   "homepage": "https://rafters.studio",
   "license": "MIT",
-  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rafters-studio/rafters.git",
+    "directory": "packages/cli"
+  },
   "bin": {
     "rafters": "./dist/index.js"
   },
+  "files": [
+    "dist",
+    "LICENSE"
+  ],
+  "type": "module",
   "exports": {
     ".": "./dist/index.js",
     "./registry/types": {
@@ -15,10 +24,9 @@
       "import": "./dist/registry/types.js"
     }
   },
-  "files": [
-    "dist",
-    "LICENSE"
-  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
@@ -57,13 +65,5 @@
     "typescript": "catalog:",
     "vitest": "catalog:",
     "zocker": "catalog:"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/rafters-studio/rafters.git",
-    "directory": "packages/cli"
-  },
-  "publishConfig": {
-    "access": "public"
   }
 }

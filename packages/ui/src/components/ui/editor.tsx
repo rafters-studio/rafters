@@ -38,8 +38,10 @@ export interface EditorBlock extends BaseBlock {
   rules?: AppliedRule[];
 }
 
-export interface EditorProps
-  extends Omit<React.HTMLAttributes<HTMLDivElement>, 'defaultValue' | 'onChange'> {
+export interface EditorProps extends Omit<
+  React.HTMLAttributes<HTMLDivElement>,
+  'defaultValue' | 'onChange'
+> {
   defaultValue?: EditorBlock[];
   value?: EditorBlock[];
   onValueChange?: (blocks: EditorBlock[]) => void;

@@ -25,8 +25,10 @@
 import * as React from 'react';
 import classy from '@/lib/primitives/classy';
 
-export interface SwitchProps
-  extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'onChange'> {
+export interface SwitchProps extends Omit<
+  React.ButtonHTMLAttributes<HTMLButtonElement>,
+  'onChange'
+> {
   /** Controlled checked state */
   checked?: boolean;
   /** Default checked state for uncontrolled usage */

@@ -1,0 +1,12 @@
+{
+  "$schema": "../../node_modules/oxlint/configuration_schema.json",
+  "extends": ["../../.oxlintrc.json"],
+  "plugins": ["react", "react-hooks"],
+  "env": {
+    "serviceworker": true,
+    "browser": true
+  },
+  "rules": {
+    "react-hooks/exhaustive-deps": "warn"
+  }
+}

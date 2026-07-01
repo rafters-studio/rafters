@@ -11,20 +11,20 @@
     "producers": [
       {
         "queue": "color-processing-queue",
-        "binding": "COLOR_QUEUE"
-      }
+        "binding": "COLOR_QUEUE",
+      },
     ],
     "consumers": [
       {
-        "queue": "color-processing-queue"
-      }
-    ]
+        "queue": "color-processing-queue",
+      },
+    ],
   },
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "rafters-test",
-      "database_id": "test-db-id"
-    }
-  ]
+      "database_id": "test-db-id",
+    },
+  ],
 }

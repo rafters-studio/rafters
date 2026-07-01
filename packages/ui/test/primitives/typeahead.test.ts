@@ -166,9 +166,9 @@ describe('createTypeahead', () => {
 
   it('uses custom getItemText function', () => {
     // Add data-label attributes
-    items.forEach((item, i) => {
+    for (const [i, item] of items.entries()) {
       item.setAttribute('data-label', ['One', 'Two', 'Three', 'Four', 'Five'][i] || '');
-    });
+    }
 
     const onMatch = vi.fn();
     const cleanup = createTypeahead(container, {

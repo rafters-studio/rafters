@@ -1,15 +1,18 @@
 {
   "name": "@rafters/color-utils",
-  "private": true,
   "version": "0.0.1",
+  "private": true,
   "description": "OKLCH color manipulation utilities for Rafters design system",
+  "files": [
+    "src"
+  ],
   "type": "module",
   "exports": {
     ".": "./src/index.ts"
   },
-  "files": [
-    "src"
-  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
@@ -29,8 +32,5 @@
     "typescript": "catalog:",
     "vitest": "catalog:",
     "zocker": "catalog:"
-  },
-  "publishConfig": {
-    "access": "public"
   }
 }

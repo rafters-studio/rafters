@@ -3,11 +3,6 @@
   "version": "0.0.1",
   "private": true,
   "type": "module",
-  "engines": {
-    "node": ">=24.12.0",
-    "pnpm": ">=10.25.0"
-  },
-  "packageManager": "pnpm@10.25.0",
   "scripts": {
     "dev": "pnpm -r --parallel dev",
     "build": "pnpm -r build",
@@ -19,17 +14,18 @@
     "test:all": "pnpm preflight && pnpm -r test:integration && pnpm test:e2e",
     "test:watch": "pnpm -r test:unit --watch",
     "typecheck": "pnpm -r typecheck",
-    "lint": "biome check",
-    "lint:fix": "biome check --write",
-    "format": "biome format --write",
-    "preflight": "pnpm typecheck && pnpm lint && pnpm test:unit && pnpm test:a11y && pnpm build",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
+    "format": "oxfmt .",
+    "format:check": "oxfmt --check .",
+    "typecheck:fast": "pnpm --filter \"./packages/*\" exec tsgo --noEmit",
+    "preflight": "pnpm typecheck && pnpm lint && pnpm format:check && pnpm test:unit && pnpm test:a11y && pnpm build",
     "ci": "pnpm test:all",
     "clean": "pnpm -r clean && rm -rf node_modules",
     "release": "pnpm --filter=rafters build"
   },
   "devDependencies": {
     "@axe-core/playwright": "catalog:",
-    "@biomejs/biome": "catalog:",
     "@cloudflare/vitest-pool-workers": "catalog:",
     "@playwright/test": "catalog:",
     "@tailwindcss/cli": "^4.1.18",
@@ -38,12 +34,15 @@
     "@testing-library/user-event": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
+    "@typescript/native-preview": "7.0.0-dev.20260630.1",
     "@vitejs/plugin-react": "catalog:",
     "@vitest/coverage-v8": "catalog:",
     "@vitest/ui": "catalog:",
     "happy-dom": "catalog:",
     "lefthook": "catalog:",
     "msw": "catalog:",
+    "oxfmt": "0.41.0",
+    "oxlint": "1.56.0",
     "react": "catalog:",
     "react-dom": "catalog:",
     "tsx": "^4.21.0",
@@ -51,5 +50,10 @@
     "vitest": "catalog:",
     "zocker": "catalog:",
     "zod": "catalog:"
-  }
+  },
+  "engines": {
+    "node": ">=24.12.0",
+    "pnpm": ">=10.25.0"
+  },
+  "packageManager": "pnpm@10.25.0"
 }

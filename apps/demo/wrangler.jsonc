@@ -11,14 +11,14 @@
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": {
     "binding": "ASSETS",
-    "directory": "./dist"
+    "directory": "./dist",
   },
   "observability": {
-    "enabled": true
+    "enabled": true,
   },
   "placement": { "mode": "smart" },
   "dev": {
     "local_protocol": "http",
-    "port": 3001
-  }
+    "port": 3001,
+  },
 }

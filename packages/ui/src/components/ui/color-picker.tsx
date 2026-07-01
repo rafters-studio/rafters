@@ -29,8 +29,10 @@ import { createColorPickerState, getGamutTier } from '../../primitives/color-pic
 import { barPosFromHue } from '../../primitives/oklch-gamut';
 import type { Direction, GamutTier, OklchColor } from '../../primitives/types';
 
-export interface ColorPickerProps
-  extends Omit<React.HTMLAttributes<HTMLDivElement>, 'defaultValue' | 'onChange'> {
+export interface ColorPickerProps extends Omit<
+  React.HTMLAttributes<HTMLDivElement>,
+  'defaultValue' | 'onChange'
+> {
   /** Controlled OKLCH color value */
   value?: OklchColor;
   /** Default color for uncontrolled usage */

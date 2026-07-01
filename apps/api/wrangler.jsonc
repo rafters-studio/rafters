@@ -11,43 +11,43 @@
   "minify": true,
   "logpush": true,
   "observability": {
-    "enabled": true
+    "enabled": true,
   },
   "routes": [
     {
       "pattern": "api.rafters.studio",
       "zone_id": "142da5fc1cd70bb8bb80be9926f83750",
-      "custom_domain": true
-    }
+      "custom_domain": true,
+    },
   ],
   "vectorize": [
     {
       "binding": "VECTORIZE",
       "index_name": "rafters-colors",
-      "remote": true
-    }
+      "remote": true,
+    },
   ],
   "ai": {
     "binding": "AI",
-    "remote": true
+    "remote": true,
   },
   "services": [
     {
       "binding": "CORE_API",
-      "service": "ezmode-api"
-    }
+      "service": "ezmode-api",
+    },
   ],
   "queues": {
     "producers": [
       {
         "queue": "color-processing-queue",
-        "binding": "COLOR_QUEUE"
-      }
+        "binding": "COLOR_QUEUE",
+      },
     ],
     "consumers": [
       {
-        "queue": "color-processing-queue"
-      }
-    ]
-  }
+        "queue": "color-processing-queue",
+      },
+    ],
+  },
 }

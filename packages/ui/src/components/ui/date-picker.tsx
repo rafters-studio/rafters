@@ -46,8 +46,10 @@ interface DateRange {
 
 // ==================== DatePicker ====================
 
-export interface DatePickerProps<T extends DatePickerMode = 'single'>
-  extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'value' | 'onChange'> {
+export interface DatePickerProps<T extends DatePickerMode = 'single'> extends Omit<
+  React.ButtonHTMLAttributes<HTMLButtonElement>,
+  'value' | 'onChange'
+> {
   mode?: T;
   value?: T extends 'single' ? Date | undefined : DateRange | undefined;
   onValueChange?: T extends 'single'

@@ -62,9 +62,9 @@ describe('color-scale primitive', () => {
       name: 'ocean-blue',
     });
     const options = container.querySelectorAll('[role="option"]');
-    SCALE_KEYS.forEach((key, i) => {
+    for (const [i, key] of SCALE_KEYS.entries()) {
       expect((options[i] as HTMLElement).getAttribute('data-scale-position')).toBe(key);
-    });
+    }
   });
 
   it('sets OKLCH color data attributes on each swatch', () => {

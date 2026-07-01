@@ -26,9 +26,9 @@ const TOKEN_UPDATE_TIMEOUT_MS = 10_000;
 function isHmrAvailable(): boolean {
   return Boolean(
     import.meta.hot &&
-      typeof import.meta.hot.on === 'function' &&
-      typeof import.meta.hot.off === 'function' &&
-      typeof import.meta.hot.send === 'function',
+    typeof import.meta.hot.on === 'function' &&
+    typeof import.meta.hot.off === 'function' &&
+    typeof import.meta.hot.send === 'function',
   );
 }
 
@@ -48,6 +48,7 @@ export function setToken(options: SetTokenOptions): Promise<UpdateResult> {
 
     // biome-ignore lint/style/noNonNullAssertion: checked by isHmrAvailable
     const hot = import.meta.hot!;
+    // oxlint-disable-next-line prefer-const -- assigned below but captured by the cleanup closure first (forward reference)
     let timeoutId: ReturnType<typeof setTimeout>;
 
     const cleanup = () => {

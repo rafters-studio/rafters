@@ -30,8 +30,10 @@ import {
   checkboxVariantClasses,
 } from './checkbox.classes';
 
-export interface CheckboxProps
-  extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'onChange'> {
+export interface CheckboxProps extends Omit<
+  React.ButtonHTMLAttributes<HTMLButtonElement>,
+  'onChange'
+> {
   /** Controlled checked state */
   checked?: boolean;
   /** Default checked state for uncontrolled usage */

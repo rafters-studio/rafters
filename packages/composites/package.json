@@ -1,7 +1,7 @@
 {
   "name": "@rafters/composites",
-  "private": true,
   "version": "0.0.1",
+  "private": true,
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
@@ -12,10 +12,6 @@
     "test": "vitest run",
     "test:unit": "vitest run",
     "typecheck": "tsc --noEmit"
-  },
-  "peerDependencies": {
-    "react": "catalog:",
-    "zod": "catalog:"
   },
   "dependencies": {
     "@rafters/ui": "workspace:*",
@@ -28,6 +24,10 @@
     "@vitest/coverage-v8": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:",
+    "zod": "catalog:"
+  },
+  "peerDependencies": {
+    "react": "catalog:",
     "zod": "catalog:"
   }
 }

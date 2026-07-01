@@ -150,8 +150,10 @@ export function Combobox({
 
 // ==================== ComboboxInput ====================
 
-export interface ComboboxInputProps
-  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange'> {}
+export interface ComboboxInputProps extends Omit<
+  React.InputHTMLAttributes<HTMLInputElement>,
+  'value' | 'onChange'
+> {}
 
 export function ComboboxInput({
   className,

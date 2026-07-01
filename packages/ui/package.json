@@ -1,7 +1,7 @@
 {
   "name": "@rafters/ui",
-  "private": true,
   "version": "0.0.0",
+  "private": true,
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
@@ -19,16 +19,14 @@
     "test:a11y": "vitest run .a11y.",
     "typecheck": "tsc --noEmit"
   },
-  "peerDependencies": {
-    "react": "catalog:",
-    "react-dom": "catalog:",
-    "vue": "^3.4.0",
-    "zod": "catalog:"
-  },
-  "peerDependenciesMeta": {
-    "vue": {
-      "optional": true
-    }
+  "dependencies": {
+    "css-tree": "^3.2.1",
+    "mdast-util-from-markdown": "^2.0.3",
+    "mdast-util-mdx": "^3.0.0",
+    "mdast-util-to-markdown": "^2.1.2",
+    "micromark": "^4.0.2",
+    "micromark-extension-mdxjs": "^3.0.0",
+    "nanostores": "^1.1.0"
   },
   "devDependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -51,13 +49,15 @@
     "vitest-axe": "catalog:",
     "zod": "catalog:"
   },
-  "dependencies": {
-    "css-tree": "^3.2.1",
-    "mdast-util-from-markdown": "^2.0.3",
-    "mdast-util-mdx": "^3.0.0",
-    "mdast-util-to-markdown": "^2.1.2",
-    "micromark": "^4.0.2",
-    "micromark-extension-mdxjs": "^3.0.0",
-    "nanostores": "^1.1.0"
+  "peerDependencies": {
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "vue": "^3.4.0",
+    "zod": "catalog:"
+  },
+  "peerDependenciesMeta": {
+    "vue": {
+      "optional": true
+    }
   }
 }

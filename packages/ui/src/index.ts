@@ -25,16 +25,7 @@ export {
   createJsonSerializer,
   jsonSerializer,
 } from './primitives/serializer.js';
-export {
-  createHtmlSerializer,
-  htmlSerializer,
-} from './primitives/serializer-html.js';
-export {
-  createMdxSerializer,
-  mdxSerializer,
-} from './primitives/serializer-mdx.js';
-export {
-  createTextSerializer,
-  textSerializer,
-} from './primitives/serializer-text.js';
+export { createHtmlSerializer, htmlSerializer } from './primitives/serializer-html.js';
+export { createMdxSerializer, mdxSerializer } from './primitives/serializer-mdx.js';
+export { createTextSerializer, textSerializer } from './primitives/serializer-text.js';
 export type { BaseBlock } from './primitives/types.js';
