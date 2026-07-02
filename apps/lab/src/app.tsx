@@ -1,134 +1,57 @@
 import * as React from 'react';
-import { Button, type ButtonVariant } from '../../../packages/ui/src/components/button/button';
+import { Button } from '../../../packages/ui/src/components/button/button';
 import { Container } from '@rafters/ui/components/ui/container';
 import { Grid } from '@rafters/ui/components/ui/grid';
-import { Code, H1, H2, P, Small } from '@rafters/ui/components/ui/typography';
+import { H1, P, Small } from '@rafters/ui/components/ui/typography';
+import { ButtonPage } from './pages/button';
+import { DialogPage } from './pages/dialog';
+import { NavigationMenuPage } from './pages/navigation-menu';
 
-const VARIANTS: ButtonVariant[] = [
-  'default',
-  'primary',
-  'secondary',
-  'destructive',
-  'success',
-  'warning',
-  'info',
-  'muted',
-  'accent',
-  'outline',
-  'ghost',
-  'link',
-];
+const PAGES = {
+  button: { title: 'Button', render: ButtonPage },
+  dialog: { title: 'Dialog', render: DialogPage },
+  'navigation-menu': { title: 'Navigation Menu', render: NavigationMenuPage },
+} as const;
 
-function VariantsSection() {
-  return (
-    <Container as="section">
-      <H2>Variants</H2>
-      <P>The shadcn superset. Classes are literal semantic-token strings in the behavior file.</P>
-      <Grid columns={{ base: 2, md: 4 }}>
-        {VARIANTS.map((variant) => (
-          <Button key={variant} variant={variant}>
-            {variant}
-          </Button>
-        ))}
-      </Grid>
-    </Container>
-  );
+type PageKey = keyof typeof PAGES;
+
+function pageFromHash(): PageKey {
+  const key = window.location.hash.replace('#', '');
+  return key in PAGES ? (key as PageKey) : 'button';
 }
 
-function SizesSection() {
-  return (
-    <Container as="section">
-      <H2>Sizes</H2>
-      <Grid columns={4}>
-        <Button size="xs">xs</Button>
-        <Button size="sm">sm</Button>
-        <Button size="default">default</Button>
-        <Button size="lg">lg</Button>
-      </Grid>
-      <P>
-        Icon sizes require an accessible name at the type level -- omitting <Code>aria-label</Code>{' '}
-        on an icon size is a compile error, not a lint warning.
-      </P>
-      <Grid columns={4}>
-        <Button size="icon-xs" aria-label="Add item">
-          +
-        </Button>
-        <Button size="icon-sm" aria-label="Add item">
-          +
-        </Button>
-        <Button size="icon" aria-label="Add item">
-          +
-        </Button>
-        <Button size="icon-lg" aria-label="Add item">
-          +
-        </Button>
-      </Grid>
-    </Container>
-  );
-}
-
-function StatesSection() {
-  const [saving, setSaving] = React.useState(false);
-  const [muted, setMuted] = React.useState(false);
-
-  const simulateSave = () => {
-    setSaving(true);
-    window.setTimeout(() => setSaving(false), 2500);
-  };
-
-  return (
-    <Container as="section">
-      <H2>States beyond shadcn</H2>
-      <P>
-        Loading keeps the label, keeps focus, and suppresses re-activation through{' '}
-        <Code>canDispatch</Code> -- click it and try clicking again.
-      </P>
-      <Grid columns={{ base: 1, md: 3 }}>
-        <Button loading={saving} onClick={simulateSave} loadingAnnouncement="Saving your changes">
-          Save changes
-        </Button>
-        <Button
-          toggle
-          pressed={muted}
-          onPressedChange={setMuted}
-          variant={muted ? 'accent' : 'outline'}
-        >
-          {muted ? 'Muted' : 'Mute'}
-        </Button>
-        <Container>
-          <Small>
-            Toggle state: <Code>aria-pressed={String(muted)}</Code>
-          </Small>
-        </Container>
-      </Grid>
-      <P>
-        Two disabled models: hard disabled is the native attribute; soft-disabled stays focusable
-        and discoverable (<Code>aria-disabled</Code>) while actions no-op.
-      </P>
-      <Grid columns={{ base: 1, md: 3 }}>
-        <Button disabled>Hard disabled</Button>
-        <Button softDisabled>Soft disabled</Button>
-        <Button softDisabled toggle>
-          Soft-disabled toggle
-        </Button>
-      </Grid>
-    </Container>
-  );
+function subscribeToHash(onChange: () => void): () => void {
+  window.addEventListener('hashchange', onChange);
+  return () => window.removeEventListener('hashchange', onChange);
 }
 
 export function App() {
+  const page = React.useSyncExternalStore(subscribeToHash, pageFromHash);
+  const Page = PAGES[page].render;
+
   return (
     <Container as="main" size="5xl" padding="8">
       <Container as="header">
         <H1>Behavior Layer Lab</H1>
         <P>
-          Button is the first test article: one framework-agnostic behavior definition, presented by
-          the React binding. This page is a proving ground -- it never deploys.
+          Test articles for the score pattern: the behavior file IS the component; framework files
+          are performances. This page is a proving ground -- it never deploys.
         </P>
+        <Grid columns={{ base: 1, md: 3 }}>
+          {(Object.keys(PAGES) as PageKey[]).map((key) => (
+            <Button
+              key={key}
+              variant={key === page ? 'accent' : 'ghost'}
+              onClick={() => {
+                window.location.hash = key;
+              }}
+            >
+              {PAGES[key].title}
+            </Button>
+          ))}
+        </Grid>
       </Container>
-      <VariantsSection />
-      <SizesSection />
-      <StatesSection />
+      <Page />
       <Container as="footer">
         <Small>Spec: packages/ui/docs/spec -- issue #1752</Small>
       </Container>
