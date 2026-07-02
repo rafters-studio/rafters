@@ -1,25 +1,3 @@
-/**
- * The composer (Spec 02 -- packages/ui/docs/spec/02-composer.md).
- *
- * A pure typed fold from slices to one BehaviorSpec. Slices are DATA --
- * fragments of a BehaviorSpec covering one concern. They do not own memory;
- * the composed spec's createBehavior instance owns the single cell of the
- * merged state.
- *
- * Merge rules (per field):
- * - initialState: spread in fold order; a key collision THROWS.
- * - actions: union; a duplicate action name THROWS.
- * - canDispatch: logical AND of all contributors.
- * - aria: per-part shallow merge; a duplicate attribute on the same part
- *   THROWS unless the glue slice sets it (glue overrides).
- * - keymap: exactly one non-glue slice may claim an event; two claims THROW
- *   (resolve the tie in the glue slice, which always wins).
- * - parts: union; duplicate names must carry identical PartDecls.
- * - effects: concatenation.
- *
- * Collisions are component-author bugs, so the throws are unconditional --
- * loud in dev, loud in prod, deterministic in tests.
- */
 import type {
   ActionPayloads,
   AriaAttrs,
@@ -37,16 +15,12 @@ export interface Slice<Config, State, Actions extends ActionPayloads, Part exten
   actions?: {
     [K in keyof Actions]: (state: State, payload: Actions[K]) => State;
   };
-  canDispatch?: (state: State, action: keyof Actions) => boolean;
+  canDispatch?: (state: State, action: keyof Actions, config: Config) => boolean;
   aria?: (state: State, config: Config, ids: PartIds<Part>) => Partial<Record<Part, AriaAttrs>>;
   keymap?: (event: KeyInput, state: State, part: Part) => keyof Actions | null;
   effects?: (state: State, config: Config) => EffectSpec[];
 }
 
-/**
- * The glue slice: last in the fold, contributes no state, sees the MERGED
- * state, may override aria and claim contested keymap entries.
- */
 export interface GlueSlice<
   Config,
   MergedState,
@@ -58,7 +32,7 @@ export interface GlueSlice<
   actions?: {
     [K in keyof Actions]: (state: MergedState, payload: Actions[K]) => MergedState;
   };
-  canDispatch?: (state: MergedState, action: keyof Actions) => boolean;
+  canDispatch?: (state: MergedState, action: keyof Actions, config: Config) => boolean;
   aria?: (
     state: MergedState,
     config: Config,
@@ -68,12 +42,6 @@ export interface GlueSlice<
   effects?: (state: MergedState, config: Config) => EffectSpec[];
 }
 
-/**
- * TypeScript intersections do not error on key collisions; this constraint
- * surfaces one as an impossible PARAMETER type naming the colliding keys
- * (an unresolved conditional in the RETURN type is unrelatable to the
- * overload implementation signature -- prototype finding).
- */
 export type DisjointFrom<A, B> = [Extract<keyof A, keyof B>] extends [never]
   ? unknown
   : { __stateKeyCollision: Extract<keyof A, keyof B> };
@@ -89,7 +57,7 @@ function isGlue(candidate: UnknownSlice | UnknownGlue): candidate is UnknownGlue
 export function compose<Config, S1 extends object, A1 extends ActionPayloads, P1 extends string>(
   name: string,
   slice: Slice<Config, S1, A1, P1>,
-): BehaviorSpec<Config, S1, A1, P1>;
+): Omit<BehaviorSpec<Config, S1, A1, P1>, 'classes'>;
 export function compose<
   Config,
   S1 extends object,
@@ -100,7 +68,7 @@ export function compose<
   name: string,
   slice: Slice<Config, S1, A1, P1>,
   glue: GlueSlice<Config, S1, GA, P1>,
-): BehaviorSpec<Config, S1, A1 & GA, P1>;
+): Omit<BehaviorSpec<Config, S1, A1 & GA, P1>, 'classes'>;
 export function compose<
   Config,
   S1 extends object,
@@ -113,7 +81,7 @@ export function compose<
   name: string,
   first: Slice<Config, S1, A1, P1>,
   second: Slice<Config, S2, A2, P2> & DisjointFrom<S2, S1>,
-): BehaviorSpec<Config, S1 & S2, A1 & A2, P1 | P2>;
+): Omit<BehaviorSpec<Config, S1 & S2, A1 & A2, P1 | P2>, 'classes'>;
 export function compose<
   Config,
   S1 extends object,
@@ -128,11 +96,11 @@ export function compose<
   first: Slice<Config, S1, A1, P1>,
   second: Slice<Config, S2, A2, P2> & DisjointFrom<S2, S1>,
   glue: GlueSlice<Config, S1 & S2, GA, P1 | P2>,
-): BehaviorSpec<Config, S1 & S2, A1 & A2 & GA, P1 | P2>;
+): Omit<BehaviorSpec<Config, S1 & S2, A1 & A2 & GA, P1 | P2>, 'classes'>;
 export function compose(
   name: string,
   ...rawEntries: ReadonlyArray<object>
-): BehaviorSpec<unknown, UnknownState, ActionPayloads, string> {
+): Omit<BehaviorSpec<unknown, UnknownState, ActionPayloads, string>, 'classes'> {
   const entries = rawEntries as ReadonlyArray<UnknownSlice | UnknownGlue>;
   const glue = entries.filter(isGlue);
   if (glue.length > 1) {
@@ -148,7 +116,6 @@ export function compose(
   const theGlue = glue[0];
   const contributors: ReadonlyArray<UnknownSlice | UnknownGlue> = entries;
 
-  // parts: union; duplicate names must agree exactly.
   const parts: Record<string, PartDecl> = {};
   for (const slice of slices) {
     for (const [part, decl] of Object.entries(slice.parts ?? {})) {
@@ -160,7 +127,6 @@ export function compose(
     }
   }
 
-  // actions: union; duplicates throw.
   const actionOwners = new Map<string, string>();
   for (const entry of contributors) {
     for (const action of Object.keys(entry.actions ?? {})) {
@@ -197,8 +163,8 @@ export function compose(
       return merged;
     },
     actions,
-    canDispatch: (state, action) =>
-      contributors.every((entry) => entry.canDispatch?.(state, action) ?? true),
+    canDispatch: (state, action, config) =>
+      contributors.every((entry) => entry.canDispatch?.(state, action, config) ?? true),
     aria: (state, config, ids) => {
       const merged: Record<string, AriaAttrs> = {};
       for (const slice of slices) {

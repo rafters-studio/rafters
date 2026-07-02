@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import userEvent from '@testing-library/user-event';
-import { buttonBehavior, type ButtonConfig } from '../../../src/components/button/button.behavior';
+import { button, type ButtonConfig } from '../../../src/components/button/button.behavior';
 import {
   assertAxeClean,
   assertContractFulfillment,
@@ -94,14 +94,8 @@ export function runButtonConformance(adapter: ButtonAdapter): void {
         const result = await adapter.render(scenario.props, 'Save changes');
         try {
           const config = configFor(scenario.props);
-          const state = buttonBehavior.initialState(config);
-          assertContractFulfillment(
-            buttonBehavior,
-            result.root,
-            state,
-            config,
-            scenario.expectedParts,
-          );
+          const state = button.initialState(config);
+          assertContractFulfillment(button, result.root, state, config, scenario.expectedParts);
         } finally {
           result.cleanup();
         }

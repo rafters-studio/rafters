@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createMemory } from '../../src/primitives/memory';
-import { runEffects, sameEffect, type EffectSpec } from '../../src/behavior/effects';
+import { runEffects, sameEffect, type EffectSpec } from '../../src/lib/effects';
 
 interface State {
   loading: boolean;

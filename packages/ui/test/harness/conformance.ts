@@ -12,7 +12,7 @@
  */
 import { expect } from 'vitest';
 import { axe } from 'vitest-axe';
-import type { ActionPayloads, BehaviorSpec, PartIds } from '../../src/behavior/contract';
+import type { ActionPayloads, BehaviorSpec, PartIds } from '../../src/lib/contract';
 
 export interface RenderResult {
   /** The element axe runs against (a container is fine). */

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createBehavior, type BehaviorSpec } from '../../src/behavior/contract';
+import { createBehavior, type BehaviorSpec } from '../../src/lib/contract';
 
 interface CounterConfig {
   start: number;
@@ -8,85 +8,89 @@ interface CounterConfig {
 
 interface CounterState {
   count: number;
-  frozen: boolean;
 }
 
 type CounterActions = {
   increment: undefined;
   set: number;
-  freeze: boolean;
 };
 
 const counter: BehaviorSpec<CounterConfig, CounterState, CounterActions, 'root'> = {
   name: 'counter',
   parts: { root: {} },
-  initialState: (config) => ({ count: config.start, frozen: config.frozen ?? false }),
+  initialState: (config) => ({ count: config.start }),
   actions: {
     increment: (state) => ({ ...state, count: state.count + 1 }),
     set: (state, count) => ({ ...state, count }),
-    freeze: (state, frozen) => ({ ...state, frozen }),
   },
-  canDispatch: (state, action) => (action === 'freeze' ? true : !state.frozen),
+  canDispatch: (_state, _action, config) => !(config.frozen ?? false),
   aria: (state, _config, ids) => ({
     root: { 'aria-valuenow': String(state.count), 'data-id': ids.root },
   }),
   keymap: (event, _state, part) =>
     part === 'root' && event.key === 'ArrowUp' ? 'increment' : null,
+  classes: () => ({ root: 'counter' }),
   effects: () => [],
 };
 
 describe('createBehavior', () => {
   it('seeds state from config through initialState', () => {
-    const instance = createBehavior(counter, { start: 5 });
-    expect(instance.memory.get()).toEqual({ count: 5, frozen: false });
+    const { memory } = createBehavior(counter, { start: 5 });
+    expect(memory.get()).toEqual({ count: 5 });
   });
 
   it('dispatch applies the reducer and reports acceptance', () => {
-    const instance = createBehavior(counter, { start: 0 });
-    expect(instance.dispatch('increment')).toBe(true);
-    expect(instance.dispatch('set', 41)).toBe(true);
-    expect(instance.memory.get().count).toBe(41);
+    const { memory, dispatch } = createBehavior(counter, { start: 0 });
+    expect(dispatch('increment')).toBe(true);
+    expect(dispatch('set', 41)).toBe(true);
+    expect(memory.get().count).toBe(41);
   });
 
-  it('canDispatch gates the reducer AND the return value', () => {
-    const instance = createBehavior(counter, { start: 0, frozen: true });
-    expect(instance.dispatch('increment')).toBe(false);
-    expect(instance.memory.get().count).toBe(0);
-    expect(instance.dispatch('freeze', false)).toBe(true);
-    expect(instance.dispatch('increment')).toBe(true);
-    expect(instance.memory.get().count).toBe(1);
+  it('canDispatch gates the reducer via config', () => {
+    const { memory, dispatch } = createBehavior(counter, { start: 0, frozen: true });
+    expect(dispatch('increment')).toBe(false);
+    expect(memory.get().count).toBe(0);
   });
 
-  it('projections are bound to current state and config', () => {
-    const instance = createBehavior(counter, { start: 2 });
-    expect(instance.aria({ root: 'abc' })).toEqual({
+  it('unfrozen config allows dispatch', () => {
+    const { memory, dispatch } = createBehavior(counter, { start: 0 });
+    expect(dispatch('increment')).toBe(true);
+    expect(memory.get().count).toBe(1);
+  });
+
+  it('projections are pure functions on the spec', () => {
+    const config = { start: 2 };
+    const { memory } = createBehavior(counter, config);
+    const state = memory.get();
+    expect(counter.aria(state, config, { root: 'abc' })).toEqual({
       root: { 'aria-valuenow': '2', 'data-id': 'abc' },
     });
-    expect(instance.keymap({ key: 'ArrowUp' }, 'root')).toBe('increment');
-    expect(instance.keymap({ key: 'ArrowDown' }, 'root')).toBeNull();
+    expect(counter.keymap({ key: 'ArrowUp' }, state, 'root')).toBe('increment');
+    expect(counter.keymap({ key: 'ArrowDown' }, state, 'root')).toBeNull();
+    expect(counter.classes(config, state)).toEqual({ root: 'counter' });
   });
 
   it('state changes flow to subscribers through the one memory cell', () => {
-    const instance = createBehavior(counter, { start: 0 });
+    const { memory, dispatch } = createBehavior(counter, { start: 0 });
     const seen: number[] = [];
-    const stop = instance.memory.select(
+    const stop = memory.select(
       (s) => s.count,
       (count) => {
         seen.push(count);
       },
     );
-    instance.dispatch('increment');
-    instance.dispatch('increment');
+    dispatch('increment');
+    dispatch('increment');
     stop();
-    instance.dispatch('increment');
+    dispatch('increment');
     expect(seen).toEqual([1, 2]);
   });
 
   it('suppressed dispatches do not touch the memory cell', () => {
-    const instance = createBehavior(counter, { start: 0, frozen: true });
+    const { memory, dispatch } = createBehavior(counter, { start: 0, frozen: true });
     const listener = vi.fn();
-    const stop = instance.memory.select((s) => s.count, listener);
-    instance.dispatch('increment');
+    const stop = memory.select((s) => s.count, listener);
+    dispatch('increment');
     stop();
     expect(listener).not.toHaveBeenCalled();
   });

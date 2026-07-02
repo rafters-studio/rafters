@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { compose, type GlueSlice, type Slice } from '../../src/behavior/compose';
+import { compose, type GlueSlice, type Slice } from '../../src/lib/compose';
 
 interface Config {
   label: string;
@@ -12,7 +12,7 @@ const alpha: Slice<Config, AlphaState, AlphaActions, 'root' | 'panel'> = {
   parts: { root: {}, panel: { optional: true } },
   initialState: () => ({ alpha: 0 }),
   actions: { bump: (state) => ({ ...state, alpha: state.alpha + 1 }) },
-  canDispatch: (state) => state.alpha < 3,
+  canDispatch: (state, _action, _config) => state.alpha < 3,
   aria: (state) => ({ root: { 'data-alpha': String(state.alpha) } }),
   keymap: (event, _state, part) => (part === 'root' && event.key === 'a' ? 'bump' : null),
   effects: (_state, config) => [
@@ -49,8 +49,8 @@ describe('compose merge rules', () => {
 
   it('canDispatch is the AND of all contributors', () => {
     const spec = compose('ab', alpha, beta);
-    expect(spec.canDispatch({ alpha: 0, beta: false }, 'flip')).toBe(true);
-    expect(spec.canDispatch({ alpha: 3, beta: false }, 'flip')).toBe(false);
+    expect(spec.canDispatch({ alpha: 0, beta: false }, 'flip', { label: 'x' })).toBe(true);
+    expect(spec.canDispatch({ alpha: 3, beta: false }, 'flip', { label: 'x' })).toBe(false);
   });
 
   it('keymap routes to the single claiming slice per part', () => {

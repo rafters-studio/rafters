@@ -1,23 +1,16 @@
-/**
- * The button ARIA table, keymap, and suppression matrix -- proven ONCE as
- * pure functions (Spec 01: unit test the contract before anything renders).
- */
 import { describe, expect, it } from 'vitest';
-import {
-  buttonBehavior,
-  createButtonBehavior,
-  type ButtonConfig,
-} from '../../../src/components/button/button.behavior';
+import { createBehavior } from '../../../src/lib/contract';
+import { button, type ButtonConfig } from '../../../src/components/button/button.behavior';
 
 const base: ButtonConfig = { variant: 'default', size: 'default' };
 const ids = { root: 'r', label: 'r-label', spinner: 'r-spinner' };
 
 function ariaFor(config: Partial<ButtonConfig>) {
   const full = { ...base, ...config };
-  return buttonBehavior.aria(buttonBehavior.initialState(full), full, ids);
+  return button.aria(button.initialState(full), full, ids);
 }
 
-describe('button aria projection (the auditable table)', () => {
+describe('button aria projection', () => {
   it('idle: no busy, no aria-disabled, no aria-pressed', () => {
     expect(ariaFor({}).root).toEqual({
       'aria-busy': undefined,
@@ -40,18 +33,20 @@ describe('button aria projection (the auditable table)', () => {
     expect(aria.root?.['data-state']).toBe('soft-disabled');
   });
 
-  it('hard disabled: NO aria-disabled duplication (native attribute is binding-level)', () => {
+  it('hard disabled: NO aria-disabled duplication', () => {
     expect(ariaFor({ disabled: true }).root?.['aria-disabled']).toBeUndefined();
   });
 
-  it('toggle: aria-pressed tracks pressed tri-state', () => {
+  it('toggle: aria-pressed tracks pressed state', () => {
     expect(ariaFor({ toggle: true }).root?.['aria-pressed']).toBe('false');
-    expect(ariaFor({ toggle: true, pressed: true }).root?.['aria-pressed']).toBe('true');
+  });
+
+  it('non-toggle: no aria-pressed', () => {
     expect(ariaFor({}).root?.['aria-pressed']).toBeUndefined();
   });
 });
 
-describe('button suppression matrix (canDispatch)', () => {
+describe('button suppression (canDispatch reads config)', () => {
   const cases: Array<[Partial<ButtonConfig>, boolean]> = [
     [{}, true],
     [{ disabled: true }, false],
@@ -59,81 +54,101 @@ describe('button suppression matrix (canDispatch)', () => {
     [{ loading: true }, false],
     [{ disabled: true, loading: true }, false],
   ];
-  for (const [config, expected] of cases) {
-    it(`press with ${JSON.stringify(config)} -> ${expected}`, () => {
-      const state = buttonBehavior.initialState({ ...base, ...config });
-      expect(buttonBehavior.canDispatch(state, 'press')).toBe(expected);
+  for (const [overrides, expected] of cases) {
+    const config = { ...base, ...overrides };
+    it(`press with ${JSON.stringify(overrides)} -> ${expected}`, () => {
+      const state = button.initialState(config);
+      expect(button.canDispatch(state, 'press', config)).toBe(expected);
     });
   }
-
-  it('set* actions are never suppressed (controlled-sync path)', () => {
-    const state = buttonBehavior.initialState({ ...base, disabled: true, loading: true });
-    expect(buttonBehavior.canDispatch(state, 'setLoading')).toBe(true);
-    expect(buttonBehavior.canDispatch(state, 'setDisabled')).toBe(true);
-  });
 });
 
 describe('button actions', () => {
-  it('press flips pressed only in toggle mode', () => {
-    const toggle = createButtonBehavior({ ...base, toggle: true });
-    expect(toggle.dispatch('press')).toBe(true);
-    expect(toggle.memory.get().pressed).toBe(true);
-    expect(toggle.dispatch('press')).toBe(true);
-    expect(toggle.memory.get().pressed).toBe(false);
-
-    const plain = createButtonBehavior(base);
-    expect(plain.dispatch('press')).toBe(true);
-    expect(plain.memory.get().pressed).toBeUndefined();
+  it('press flips pressed in toggle mode', () => {
+    const config = { ...base, toggle: true };
+    const { memory, dispatch } = createBehavior(button, config);
+    expect(dispatch('press')).toBe(true);
+    expect(memory.get().pressed).toBe(true);
+    expect(dispatch('press')).toBe(true);
+    expect(memory.get().pressed).toBe(false);
   });
 
-  it('press is suppressed while loading -- the double-submission guard', () => {
-    const instance = createButtonBehavior(base);
-    instance.dispatch('setLoading', true);
-    expect(instance.dispatch('press')).toBe(false);
-    instance.dispatch('setLoading', false);
-    expect(instance.dispatch('press')).toBe(true);
-  });
-
-  it('setPressed is a no-op outside toggle mode', () => {
-    const plain = createButtonBehavior(base);
-    plain.dispatch('setPressed', true);
-    expect(plain.memory.get().pressed).toBeUndefined();
+  it('press is a no-op on pressed in non-toggle mode', () => {
+    const { memory, dispatch } = createBehavior(button, base);
+    dispatch('press');
+    expect(memory.get().pressed).toBeUndefined();
   });
 });
 
 describe('button keymap', () => {
-  const state = buttonBehavior.initialState(base);
+  const state = button.initialState(base);
   it('Enter and Space on root map to press', () => {
-    expect(buttonBehavior.keymap({ key: 'Enter' }, state, 'root')).toBe('press');
-    expect(buttonBehavior.keymap({ key: ' ' }, state, 'root')).toBe('press');
+    expect(button.keymap({ key: 'Enter' }, state, 'root')).toBe('press');
+    expect(button.keymap({ key: ' ' }, state, 'root')).toBe('press');
   });
   it('other keys and other parts are not claimed', () => {
-    expect(buttonBehavior.keymap({ key: 'Escape' }, state, 'root')).toBeNull();
-    expect(buttonBehavior.keymap({ key: 'Enter' }, state, 'label')).toBeNull();
+    expect(button.keymap({ key: 'Escape' }, state, 'root')).toBeNull();
+    expect(button.keymap({ key: 'Enter' }, state, 'label')).toBeNull();
+  });
+});
+
+describe('button classes', () => {
+  it('projects variant and size classes', () => {
+    const config: ButtonConfig = { variant: 'destructive', size: 'lg' };
+    const classes = button.classes(config, button.initialState(config));
+    expect(classes.root).toContain('bg-destructive');
+    expect(classes.root).toContain('h-12');
+  });
+
+  const cqSizes: Array<[ButtonConfig['size'], string, string]> = [
+    ['default', 'h-11', '@md:h-10'],
+    ['xs', 'h-11', '@md:h-6'],
+    ['sm', 'h-11', '@md:h-8'],
+    ['icon', 'h-11', '@md:h-10'],
+    ['icon-xs', 'h-11', '@md:h-6'],
+    ['icon-sm', 'h-11', '@md:h-8'],
+  ];
+  for (const [size, touchClass, desktopClass] of cqSizes) {
+    it(`${size}: touch-first ${touchClass}, desktop ${desktopClass}`, () => {
+      const config: ButtonConfig = { ...base, size };
+      const classes = button.classes(config, button.initialState(config));
+      expect(classes.root).toContain(touchClass);
+      expect(classes.root).toContain(desktopClass);
+    });
+  }
+
+  it('lg and icon-lg skip CQ override -- already above touch floor', () => {
+    for (const size of ['lg', 'icon-lg'] as const) {
+      const config: ButtonConfig = { ...base, size };
+      const classes = button.classes(config, button.initialState(config));
+      expect(classes.root).not.toContain('@md:h-');
+    }
+  });
+
+  it('spinner scales with CQ', () => {
+    const config: ButtonConfig = { ...base, loading: true };
+    const classes = button.classes(config, button.initialState(config));
+    expect(classes.spinner).toContain('h-5');
+    expect(classes.spinner).toContain('@md:h-4');
   });
 });
 
 describe('button effects', () => {
-  it('loading requests a polite announcement with the configured message', () => {
-    const config = { ...base, loadingAnnouncement: 'Saving your changes' };
-    const state = { ...buttonBehavior.initialState(config), loading: true };
-    expect(buttonBehavior.effects(state, config)).toEqual([
-      { type: 'announce', message: 'Saving your changes', politeness: 'polite' },
+  it('loading config requests a polite announcement', () => {
+    const config = { ...base, loading: true, loadingAnnouncement: 'Saving' };
+    expect(button.effects(button.initialState(config), config)).toEqual([
+      { type: 'announce', message: 'Saving', politeness: 'polite' },
     ]);
   });
 
-  it('defaults the loading message and omits the loaded message unless configured', () => {
-    const loading = { ...buttonBehavior.initialState(base), loading: true };
-    expect(buttonBehavior.effects(loading, base)).toEqual([
+  it('defaults the loading message', () => {
+    const config = { ...base, loading: true };
+    expect(button.effects(button.initialState(config), config)).toEqual([
       { type: 'announce', message: 'Loading', politeness: 'polite' },
     ]);
-    expect(buttonBehavior.effects(buttonBehavior.initialState(base), base)).toEqual([]);
   });
 
-  it('a configured loaded message is requested when not loading', () => {
-    const config = { ...base, loadedAnnouncement: 'Saved' };
-    expect(buttonBehavior.effects(buttonBehavior.initialState(config), config)).toEqual([
-      { type: 'announce', message: 'Saved', politeness: 'polite' },
-    ]);
+  it('no effects when not loading', () => {
+    expect(button.effects(button.initialState(base), base)).toEqual([]);
   });
 });
