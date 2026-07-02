@@ -1,8 +1,6 @@
 {
-  "$schema": "https://rafters.studio/schemas/namespace-tokens.json",
   "namespace": "typography-composite",
-  "version": "1.0.0",
-  "generatedAt": "2026-04-07T19:26:12.301Z",
+  "generatedAt": "2026-07-02T18:46:36.432Z",
   "tokens": [
     {
       "name": "display-large",
@@ -16,20 +14,6 @@
       ],
       "trustLevel": "high",
       "consequence": "reversible",
-      "dependsOn": [
-        "font-heading",
-        "font-size-5xl",
-        "font-weight-bold",
-        "line-height-5xl",
-        "letter-spacing-5xl"
-      ],
-      "applicableComponents": [
-        "hero"
-      ],
-      "containerQueryAware": true,
-      "generateUtilityClass": true,
-      "description": "Typography composite: font-heading text-5xl font-bold. Largest display text for hero sections and landing pages",
-      "generatedAt": "2026-04-07T19:26:12.279Z",
       "usagePatterns": {
         "do": [
           "Use sparingly for maximum visual impact",
@@ -39,7 +23,22 @@
           "Use more than once per page",
           "Use in constrained containers like cards"
         ]
-      }
+      },
+      "userOverride": null,
+      "dependsOn": [
+        "font-heading",
+        "font-size-5xl",
+        "font-weight-bold",
+        "line-height-5xl",
+        "letter-spacing-5xl"
+      ],
+      "containerQueryAware": true,
+      "applicableComponents": [
+        "hero"
+      ],
+      "generateUtilityClass": true,
+      "description": "Typography composite: font-heading text-5xl font-bold. Largest display text for hero sections and landing pages",
+      "generatedAt": "2026-07-02T18:46:36.065Z"
     },
     {
       "name": "display-medium",
@@ -53,20 +52,6 @@
       ],
       "trustLevel": "high",
       "consequence": "reversible",
-      "dependsOn": [
-        "font-heading",
-        "font-size-4xl",
-        "font-weight-bold",
-        "line-height-4xl",
-        "letter-spacing-4xl"
-      ],
-      "applicableComponents": [
-        "h1"
-      ],
-      "containerQueryAware": true,
-      "generateUtilityClass": true,
-      "description": "Typography composite: font-heading text-4xl font-bold. Primary page heading -- one per page",
-      "generatedAt": "2026-04-07T19:26:12.279Z",
       "usagePatterns": {
         "do": [
           "Use once per page for the main title",
@@ -76,7 +61,22 @@
           "Use multiple times on a single page",
           "Use inside cards or dialogs"
         ]
-      }
+      },
+      "userOverride": null,
+      "dependsOn": [
+        "font-heading",
+        "font-size-4xl",
+        "font-weight-bold",
+        "line-height-4xl",
+        "letter-spacing-4xl"
+      ],
+      "containerQueryAware": true,
+      "applicableComponents": [
+        "h1"
+      ],
+      "generateUtilityClass": true,
+      "description": "Typography composite: font-heading text-4xl font-bold. Primary page heading -- one per page",
+      "generatedAt": "2026-07-02T18:46:36.065Z"
     },
     {
       "name": "title-large",
@@ -90,20 +90,6 @@
       ],
       "trustLevel": "medium",
       "consequence": "reversible",
-      "dependsOn": [
-        "font-heading",
-        "font-size-3xl",
-        "font-weight-semibold",
-        "line-height-3xl",
-        "letter-spacing-3xl"
-      ],
-      "applicableComponents": [
-        "h2"
-      ],
-      "containerQueryAware": true,
-      "generateUtilityClass": true,
-      "description": "Typography composite: font-heading text-3xl font-semibold. Major section heading",
-      "generatedAt": "2026-04-07T19:26:12.279Z",
       "usagePatterns": {
         "do": [
           "Use to divide major content sections",
@@ -113,7 +99,22 @@
           "Skip heading levels (h1 then h3)",
           "Use for decorative emphasis"
         ]
-      }
+      },
+      "userOverride": null,
+      "dependsOn": [
+        "font-heading",
+        "font-size-3xl",
+        "font-weight-semibold",
+        "line-height-3xl",
+        "letter-spacing-3xl"
+      ],
+      "containerQueryAware": true,
+      "applicableComponents": [
+        "h2"
+      ],
+      "generateUtilityClass": true,
+      "description": "Typography composite: font-heading text-3xl font-semibold. Major section heading",
+      "generatedAt": "2026-07-02T18:46:36.065Z"
     },
     {
       "name": "title-medium",
@@ -131,26 +132,6 @@
       ],
       "trustLevel": "medium",
       "consequence": "reversible",
-      "dependsOn": [
-        "font-heading",
-        "font-size-lg",
-        "font-weight-semibold",
-        "line-height-lg",
-        "letter-spacing-lg"
-      ],
-      "applicableComponents": [
-        "h3",
-        "card-title",
-        "dialog-title",
-        "sheet-title",
-        "drawer-title",
-        "empty-title",
-        "alert-dialog-title"
-      ],
-      "containerQueryAware": true,
-      "generateUtilityClass": true,
-      "description": "Typography composite: font-heading text-lg font-semibold. Component and subsection title -- shared by card, dialog, sheet, drawer, empty state",
-      "generatedAt": "2026-04-07T19:26:12.279Z",
       "usagePatterns": {
         "do": [
           "Use for component-level headings",
@@ -160,7 +141,28 @@
           "Mix with other title sizes in the same component",
           "Override without why-gate"
         ]
-      }
+      },
+      "userOverride": null,
+      "dependsOn": [
+        "font-heading",
+        "font-size-lg",
+        "font-weight-semibold",
+        "line-height-lg",
+        "letter-spacing-lg"
+      ],
+      "containerQueryAware": true,
+      "applicableComponents": [
+        "h3",
+        "card-title",
+        "dialog-title",
+        "sheet-title",
+        "drawer-title",
+        "empty-title",
+        "alert-dialog-title"
+      ],
+      "generateUtilityClass": true,
+      "description": "Typography composite: font-heading text-lg font-semibold. Component and subsection title -- shared by card, dialog, sheet, drawer, empty state",
+      "generatedAt": "2026-07-02T18:46:36.065Z"
     },
     {
       "name": "title-small",
@@ -175,22 +177,6 @@
       ],
       "trustLevel": "medium",
       "consequence": "reversible",
-      "dependsOn": [
-        "font-heading",
-        "font-size-base",
-        "font-weight-semibold",
-        "line-height-base",
-        "letter-spacing-base"
-      ],
-      "applicableComponents": [
-        "h4",
-        "alert-title",
-        "accordion-trigger"
-      ],
-      "containerQueryAware": true,
-      "generateUtilityClass": true,
-      "description": "Typography composite: font-heading text-base font-semibold. Minor heading and alert title",
-      "generatedAt": "2026-04-07T19:26:12.279Z",
       "usagePatterns": {
         "do": [
           "Use for subsections within a card or panel",
@@ -199,7 +185,24 @@
         "never": [
           "Use as the primary heading on a page"
         ]
-      }
+      },
+      "userOverride": null,
+      "dependsOn": [
+        "font-heading",
+        "font-size-base",
+        "font-weight-semibold",
+        "line-height-base",
+        "letter-spacing-base"
+      ],
+      "containerQueryAware": true,
+      "applicableComponents": [
+        "h4",
+        "alert-title",
+        "accordion-trigger"
+      ],
+      "generateUtilityClass": true,
+      "description": "Typography composite: font-heading text-base font-semibold. Minor heading and alert title",
+      "generatedAt": "2026-07-02T18:46:36.065Z"
     },
     {
       "name": "body-large",
@@ -214,20 +217,6 @@
       ],
       "trustLevel": "low",
       "consequence": "reversible",
-      "dependsOn": [
-        "font-body",
-        "font-size-xl",
-        "font-weight-normal",
-        "line-height-xl",
-        "letter-spacing-xl"
-      ],
-      "applicableComponents": [
-        "lead"
-      ],
-      "containerQueryAware": true,
-      "generateUtilityClass": true,
-      "description": "Typography composite: font-body text-xl font-normal. Lead paragraph and introductory text",
-      "generatedAt": "2026-04-07T19:26:12.279Z",
       "usagePatterns": {
         "do": [
           "Use for the first paragraph of a section",
@@ -237,7 +226,22 @@
           "Use for all body text",
           "Use in compact UI like sidebars"
         ]
-      }
+      },
+      "userOverride": null,
+      "dependsOn": [
+        "font-body",
+        "font-size-xl",
+        "font-weight-normal",
+        "line-height-xl",
+        "letter-spacing-xl"
+      ],
+      "containerQueryAware": true,
+      "applicableComponents": [
+        "lead"
+      ],
+      "generateUtilityClass": true,
+      "description": "Typography composite: font-body text-xl font-normal. Lead paragraph and introductory text",
+      "generatedAt": "2026-07-02T18:46:36.065Z"
     },
     {
       "name": "body-medium",
@@ -254,23 +258,6 @@
       ],
       "trustLevel": "low",
       "consequence": "reversible",
-      "dependsOn": [
-        "font-body",
-        "font-size-base",
-        "font-weight-normal",
-        "line-height-base",
-        "letter-spacing-base"
-      ],
-      "applicableComponents": [
-        "p",
-        "list-item",
-        "blockquote",
-        "accordion-content"
-      ],
-      "containerQueryAware": true,
-      "generateUtilityClass": true,
-      "description": "Typography composite: font-body text-base font-normal. Default body text for paragraphs and content",
-      "generatedAt": "2026-04-07T19:26:12.279Z",
       "usagePatterns": {
         "do": [
           "Use for all standard body content",
@@ -280,7 +267,25 @@
           "Use for labels or UI chrome",
           "Set below 1rem"
         ]
-      }
+      },
+      "userOverride": null,
+      "dependsOn": [
+        "font-body",
+        "font-size-base",
+        "font-weight-normal",
+        "line-height-base",
+        "letter-spacing-base"
+      ],
+      "containerQueryAware": true,
+      "applicableComponents": [
+        "p",
+        "list-item",
+        "blockquote",
+        "accordion-content"
+      ],
+      "generateUtilityClass": true,
+      "description": "Typography composite: font-body text-base font-normal. Default body text for paragraphs and content",
+      "generatedAt": "2026-07-02T18:46:36.065Z"
     },
     {
       "name": "body-small",
@@ -298,6 +303,17 @@
       ],
       "trustLevel": "low",
       "consequence": "reversible",
+      "usagePatterns": {
+        "do": [
+          "Use for supplementary information",
+          "Use for compact UI elements like menus and tables"
+        ],
+        "never": [
+          "Use for primary content that users must read",
+          "Set below 0.875rem for body text"
+        ]
+      },
+      "userOverride": null,
       "dependsOn": [
         "font-body",
         "font-size-sm",
@@ -305,6 +321,7 @@
         "line-height-sm",
         "letter-spacing-sm"
       ],
+      "containerQueryAware": true,
       "applicableComponents": [
         "card-description",
         "dialog-description",
@@ -318,20 +335,9 @@
         "select",
         "textarea"
       ],
-      "containerQueryAware": true,
       "generateUtilityClass": true,
       "description": "Typography composite: font-body text-sm font-normal. Secondary text -- descriptions, tooltips, menu items, table cells",
-      "generatedAt": "2026-04-07T19:26:12.279Z",
-      "usagePatterns": {
-        "do": [
-          "Use for supplementary information",
-          "Use for compact UI elements like menus and tables"
-        ],
-        "never": [
-          "Use for primary content that users must read",
-          "Set below 0.875rem for body text"
-        ]
-      }
+      "generatedAt": "2026-07-02T18:46:36.065Z"
     },
     {
       "name": "label-large",
@@ -348,24 +354,6 @@
       ],
       "trustLevel": "medium",
       "consequence": "reversible",
-      "dependsOn": [
-        "font-body",
-        "font-size-base",
-        "font-weight-medium",
-        "line-height-base",
-        "letter-spacing-base"
-      ],
-      "applicableComponents": [
-        "button",
-        "tab-trigger",
-        "nav-trigger",
-        "toggle",
-        "pagination-link"
-      ],
-      "containerQueryAware": true,
-      "generateUtilityClass": true,
-      "description": "Typography composite: font-body text-base font-medium. Interactive element text -- buttons, tabs, nav triggers, toggles",
-      "generatedAt": "2026-04-07T19:26:12.279Z",
       "usagePatterns": {
         "do": [
           "Use for primary interactive controls",
@@ -375,7 +363,26 @@
           "Use for passive content",
           "Mix with body text styling"
         ]
-      }
+      },
+      "userOverride": null,
+      "dependsOn": [
+        "font-body",
+        "font-size-base",
+        "font-weight-medium",
+        "line-height-base",
+        "letter-spacing-base"
+      ],
+      "containerQueryAware": true,
+      "applicableComponents": [
+        "button",
+        "tab-trigger",
+        "nav-trigger",
+        "toggle",
+        "pagination-link"
+      ],
+      "generateUtilityClass": true,
+      "description": "Typography composite: font-body text-base font-medium. Interactive element text -- buttons, tabs, nav triggers, toggles",
+      "generatedAt": "2026-07-02T18:46:36.065Z"
     },
     {
       "name": "label-medium",
@@ -391,23 +398,6 @@
       ],
       "trustLevel": "low",
       "consequence": "reversible",
-      "dependsOn": [
-        "font-body",
-        "font-size-sm",
-        "font-weight-medium",
-        "line-height-sm",
-        "letter-spacing-sm"
-      ],
-      "applicableComponents": [
-        "label",
-        "breadcrumb",
-        "button-sm",
-        "sidebar-item"
-      ],
-      "containerQueryAware": true,
-      "generateUtilityClass": true,
-      "description": "Typography composite: font-body text-sm font-medium. Form labels, breadcrumbs, small buttons, sidebar items",
-      "generatedAt": "2026-04-07T19:26:12.279Z",
       "usagePatterns": {
         "do": [
           "Use for form field labels",
@@ -417,7 +407,25 @@
           "Use for headings",
           "Use for primary call-to-action buttons"
         ]
-      }
+      },
+      "userOverride": null,
+      "dependsOn": [
+        "font-body",
+        "font-size-sm",
+        "font-weight-medium",
+        "line-height-sm",
+        "letter-spacing-sm"
+      ],
+      "containerQueryAware": true,
+      "applicableComponents": [
+        "label",
+        "breadcrumb",
+        "button-sm",
+        "sidebar-item"
+      ],
+      "generateUtilityClass": true,
+      "description": "Typography composite: font-body text-sm font-medium. Form labels, breadcrumbs, small buttons, sidebar items",
+      "generatedAt": "2026-07-02T18:46:36.065Z"
     },
     {
       "name": "label-small",
@@ -433,23 +441,6 @@
       ],
       "trustLevel": "low",
       "consequence": "reversible",
-      "dependsOn": [
-        "font-body",
-        "font-size-xs",
-        "font-weight-medium",
-        "line-height-xs",
-        "letter-spacing-xs"
-      ],
-      "applicableComponents": [
-        "badge",
-        "sidebar-label",
-        "caption",
-        "command-group-heading"
-      ],
-      "containerQueryAware": true,
-      "generateUtilityClass": true,
-      "description": "Typography composite: font-body text-xs font-medium. Smallest label text -- badges, sidebar labels, captions",
-      "generatedAt": "2026-04-07T19:26:12.279Z",
       "usagePatterns": {
         "do": [
           "Use only for tertiary UI information",
@@ -459,7 +450,25 @@
           "Use for content users must read to complete a task",
           "Set below 0.75rem"
         ]
-      }
+      },
+      "userOverride": null,
+      "dependsOn": [
+        "font-body",
+        "font-size-xs",
+        "font-weight-medium",
+        "line-height-xs",
+        "letter-spacing-xs"
+      ],
+      "containerQueryAware": true,
+      "applicableComponents": [
+        "badge",
+        "sidebar-label",
+        "caption",
+        "command-group-heading"
+      ],
+      "generateUtilityClass": true,
+      "description": "Typography composite: font-body text-xs font-medium. Smallest label text -- badges, sidebar labels, captions",
+      "generatedAt": "2026-07-02T18:46:36.065Z"
     },
     {
       "name": "code-large",
@@ -474,20 +483,6 @@
       ],
       "trustLevel": "low",
       "consequence": "reversible",
-      "dependsOn": [
-        "font-code",
-        "font-size-base",
-        "font-weight-normal",
-        "line-height-base",
-        "letter-spacing-base"
-      ],
-      "applicableComponents": [
-        "code-block"
-      ],
-      "containerQueryAware": true,
-      "generateUtilityClass": true,
-      "description": "Typography composite: font-code text-base font-normal. Code blocks and pre-formatted text",
-      "generatedAt": "2026-04-07T19:26:12.279Z",
       "usagePatterns": {
         "do": [
           "Use for multi-line code content",
@@ -497,7 +492,22 @@
           "Use for inline code snippets",
           "Use for non-code content"
         ]
-      }
+      },
+      "userOverride": null,
+      "dependsOn": [
+        "font-code",
+        "font-size-base",
+        "font-weight-normal",
+        "line-height-base",
+        "letter-spacing-base"
+      ],
+      "containerQueryAware": true,
+      "applicableComponents": [
+        "code-block"
+      ],
+      "generateUtilityClass": true,
+      "description": "Typography composite: font-code text-base font-normal. Code blocks and pre-formatted text",
+      "generatedAt": "2026-07-02T18:46:36.065Z"
     },
     {
       "name": "code-small",
@@ -512,21 +522,6 @@
       ],
       "trustLevel": "low",
       "consequence": "reversible",
-      "dependsOn": [
-        "font-code",
-        "font-size-sm",
-        "font-weight-normal",
-        "line-height-sm",
-        "letter-spacing-sm"
-      ],
-      "applicableComponents": [
-        "code-inline",
-        "kbd"
-      ],
-      "containerQueryAware": true,
-      "generateUtilityClass": true,
-      "description": "Typography composite: font-code text-sm font-normal. Inline code and keyboard key indicators",
-      "generatedAt": "2026-04-07T19:26:12.279Z",
       "usagePatterns": {
         "do": [
           "Use for code references within prose",
@@ -536,7 +531,23 @@
           "Use for multi-line code blocks",
           "Use for body text"
         ]
-      }
+      },
+      "userOverride": null,
+      "dependsOn": [
+        "font-code",
+        "font-size-sm",
+        "font-weight-normal",
+        "line-height-sm",
+        "letter-spacing-sm"
+      ],
+      "containerQueryAware": true,
+      "applicableComponents": [
+        "code-inline",
+        "kbd"
+      ],
+      "generateUtilityClass": true,
+      "description": "Typography composite: font-code text-sm font-normal. Inline code and keyboard key indicators",
+      "generatedAt": "2026-07-02T18:46:36.065Z"
     },
     {
       "name": "shortcut",
@@ -551,20 +562,6 @@
       ],
       "trustLevel": "low",
       "consequence": "reversible",
-      "dependsOn": [
-        "font-code",
-        "font-size-xs",
-        "font-weight-normal",
-        "line-height-xs",
-        "letter-spacing-widest"
-      ],
-      "applicableComponents": [
-        "keyboard-shortcut"
-      ],
-      "containerQueryAware": true,
-      "generateUtilityClass": true,
-      "description": "Typography composite: font-code text-xs font-normal. Keyboard shortcut indicators in menus",
-      "generatedAt": "2026-04-07T19:26:12.279Z",
       "usagePatterns": {
         "do": [
           "Use for keyboard shortcut text in menus and command palettes"
@@ -573,7 +570,22 @@
           "Use for regular text content",
           "Use outside of menu/command contexts"
         ]
-      }
+      },
+      "userOverride": null,
+      "dependsOn": [
+        "font-code",
+        "font-size-xs",
+        "font-weight-normal",
+        "line-height-xs",
+        "letter-spacing-widest"
+      ],
+      "containerQueryAware": true,
+      "applicableComponents": [
+        "keyboard-shortcut"
+      ],
+      "generateUtilityClass": true,
+      "description": "Typography composite: font-code text-xs font-normal. Keyboard shortcut indicators in menus",
+      "generatedAt": "2026-07-02T18:46:36.065Z"
     }
   ]
 }

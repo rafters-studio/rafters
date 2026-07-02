@@ -78,6 +78,19 @@ function escapeStringValue(value: string): string {
   return `'${value.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
 }
 
+const VALID_IDENTIFIER = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
+
+/** Object-literal key for a namespace: quoted unless it is a valid identifier
+ *  (hyphenated namespaces like typography-composite must be quoted). */
+function namespaceKey(namespace: string): string {
+  return VALID_IDENTIFIER.test(namespace) ? namespace : `'${namespace}'`;
+}
+
+/** Property access for a namespace: dot access unless quoting is required. */
+function namespaceAccess(namespace: string): string {
+  return VALID_IDENTIFIER.test(namespace) ? `tokens.${namespace}` : `tokens['${namespace}']`;
+}
+
 /**
  * Convert namespace name to PascalCase for type name
  */
@@ -119,7 +132,7 @@ function generateTokensObject(
 
   for (const namespace of namespaces) {
     const tokens = tokensByNamespace.get(namespace) || [];
-    lines.push(`  ${namespace}: {`);
+    lines.push(`  ${namespaceKey(namespace)}: {`);
 
     for (const token of tokens) {
       const value = tokenValueToTS(token);
@@ -152,7 +165,7 @@ function generateTypeAliases(namespaces: string[]): string {
   // Individual namespace types
   for (const namespace of namespaces) {
     const typeName = `${namespaceToTypeName(namespace)}Token`;
-    lines.push(`export type ${typeName} = keyof typeof tokens.${namespace};`);
+    lines.push(`export type ${typeName} = keyof (typeof ${namespaceAccess(namespace)});`);
   }
 
   // Union of all token names
