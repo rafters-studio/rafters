@@ -1,8 +1,5 @@
 import * as React from 'react';
-import { useBehaviorEffects } from '../../hooks/use-behavior-effects';
-import { useMemory } from '../../hooks/use-memory';
-import { createBehavior, type KeyInput } from '../../lib/contract';
-import type { EffectHost } from '../../lib/effects';
+import { keyInputOf, useBehavior, type BehaviorBinding } from '../../hooks/use-behavior';
 import classy from '../../primitives/classy';
 import { mergeProps } from '../../primitives/slot';
 import {
@@ -10,21 +7,21 @@ import {
   navContentAria,
   navigationMenu,
   navTriggerAria,
+  type NavigationMenuActions,
   type NavigationMenuConfig,
+  type NavigationMenuPart,
   type NavigationMenuState,
 } from './navigation-menu.behavior';
 import { navigationMenuClasses, type NavigationMenuClassSet } from './navigation-menu.classes';
 
-type NavAction = 'open' | 'hoverOpen' | 'toggle' | 'close';
-
-interface NavigationMenuContextValue {
+interface NavigationMenuContextValue extends BehaviorBinding<
+  NavigationMenuState,
+  NavigationMenuActions,
+  NavigationMenuPart
+> {
   config: NavigationMenuConfig;
-  state: NavigationMenuState;
   active: string | null;
-  baseId: string;
   classes: NavigationMenuClassSet;
-  requestItem: (action: NavAction, value?: string) => void;
-  setList: (element: HTMLElement | null) => void;
 }
 
 const NavigationMenuContext = React.createContext<NavigationMenuContextValue | null>(null);
@@ -74,60 +71,29 @@ export function NavigationMenu({
 }: NavigationMenuProps) {
   const config: NavigationMenuConfig = { value, defaultValue, orientation, delayDuration };
 
-  const { memory, dispatch } = React.useMemo(() => createBehavior(navigationMenu, config), []);
-  const state = useMemory(memory);
-  const active = activeItem(state, config);
-  const baseId = React.useId();
-
-  const requestItem = (action: NavAction, itemValue?: string) => {
-    const before = activeItem(memory.get(), config) ?? '';
-    const accepted =
-      action === 'close'
-        ? dispatch('close', config)
-        : itemValue !== undefined && dispatch(action, config, itemValue);
-    if (!accepted) return;
-    // The requested value is whatever the reducer left in intrinsic state;
-    // fire the callback only when the effective value actually moved.
-    const next = memory.get().active ?? '';
-    if (next !== before) onValueChange?.(next);
-  };
-
-  const rootRef = React.useRef<HTMLElement | null>(null);
-  const listRef = React.useRef<HTMLElement | null>(null);
-  const latestRequestItem = React.useRef(requestItem);
-  React.useEffect(() => {
-    latestRequestItem.current = requestItem;
+  const binding = useBehavior(navigationMenu, config, {
+    // Consumer callback fires only when the effective value actually moved:
+    // absorbed post-hover clicks and same-value opens stay silent.
+    onAccepted: (_action, before, after) => {
+      const beforeEffective = activeItem(before, config) ?? '';
+      const next = after.active ?? '';
+      if (next !== beforeEffective) onValueChange?.(next);
+    },
   });
-  const hostRef = React.useRef<EffectHost | null>(null);
-  hostRef.current ??= {
-    getPart: (part) =>
-      part === 'root' ? rootRef.current : part === 'list' ? listRef.current : null,
-    dispatch: (action, payload) =>
-      latestRequestItem.current(
-        action as NavAction,
-        typeof payload === 'string' ? payload : undefined,
-      ),
-  };
-
-  useBehaviorEffects(navigationMenu.effects(state, config), hostRef.current);
-
-  const ids = { root: baseId, list: `${baseId}-list`, trigger: '', content: '' };
-  const aria = navigationMenu.aria(state, config, ids);
+  const { state, ids, aria, request, setPart, getPart } = binding;
+  const active = activeItem(state, config);
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
     onKeyDown?.(event);
     if (event.defaultPrevented) return;
     const target = event.target as HTMLElement;
     const trigger = target.closest<HTMLElement>('[data-part="trigger"]');
-    const part = trigger ? 'trigger' : 'root';
-    const input: KeyInput = {
-      key: event.key,
-      shiftKey: event.shiftKey,
-      ctrlKey: event.ctrlKey,
-      altKey: event.altKey,
-      metaKey: event.metaKey,
-    };
-    const action = navigationMenu.keymap(input, state, part, config);
+    const action = navigationMenu.keymap(
+      keyInputOf(event),
+      state,
+      trigger ? 'trigger' : 'root',
+      config,
+    );
     if (!action) return;
     // Native <button> triggers convert Enter/Space to click; the click
     // handler dispatches toggle (Spec 01 rule 5).
@@ -136,40 +102,30 @@ export function NavigationMenu({
       const itemValue = trigger?.dataset['value'];
       if (!itemValue) return;
       event.preventDefault();
-      requestItem('open', itemValue);
+      request('open', itemValue);
       return;
     }
-    if (action === 'close') {
-      if (active === null) return;
+    if (action === 'close' && active !== null) {
       event.preventDefault();
-      const openTrigger = rootRef.current?.querySelector<HTMLElement>(
+      const openTrigger = getPart('root')?.querySelector<HTMLElement>(
         `[data-part="trigger"][data-value="${active}"]`,
       );
-      requestItem('close');
+      request('close');
       openTrigger?.focus();
     }
   };
 
-  const setList = React.useCallback((element: HTMLElement | null) => {
-    listRef.current = element;
-  }, []);
-
   const contextValue: NavigationMenuContextValue = {
+    ...binding,
     config,
-    state,
     active,
-    baseId,
     classes: navigationMenuClasses(config, state),
-    requestItem,
-    setList,
   };
 
   return (
     <NavigationMenuContext.Provider value={contextValue}>
       <nav
-        ref={(node) => {
-          rootRef.current = node;
-        }}
+        ref={setPart('root')}
         data-part="root"
         id={ids.root}
         className={classy(contextValue.classes.root, className)}
@@ -186,15 +142,12 @@ export function NavigationMenu({
 export type NavigationMenuListProps = React.HTMLAttributes<HTMLUListElement>;
 
 export function NavigationMenuList({ className, ...props }: NavigationMenuListProps) {
-  const { config, state, classes, baseId, setList } =
-    useNavigationMenuContext('NavigationMenuList');
-  const ids = { root: baseId, list: `${baseId}-list`, trigger: '', content: '' };
-  const aria = navigationMenu.aria(state, config, ids);
+  const { ids, aria, classes, setPart } = useNavigationMenuContext('NavigationMenuList');
   return (
     <ul
       data-part="list"
       id={ids.list}
-      ref={setList}
+      ref={setPart('list')}
       className={classy(classes.list, className)}
       {...aria.list}
       {...props}
@@ -207,11 +160,11 @@ export interface NavigationMenuItemProps extends React.LiHTMLAttributes<HTMLLIEl
 }
 
 export function NavigationMenuItem({ value, className, ...props }: NavigationMenuItemProps) {
-  const { baseId, classes } = useNavigationMenuContext('NavigationMenuItem');
+  const { ids, classes } = useNavigationMenuContext('NavigationMenuItem');
   const itemContext: NavigationMenuItemContextValue = {
     value,
-    triggerId: `${baseId}-trigger-${value}`,
-    contentId: `${baseId}-content-${value}`,
+    triggerId: `${ids.root}-trigger-${value}`,
+    contentId: `${ids.root}-content-${value}`,
   };
   return (
     <NavigationMenuItemContext.Provider value={itemContext}>
@@ -228,7 +181,7 @@ export function NavigationMenuTrigger({
   onClick,
   ...props
 }: NavigationMenuTriggerProps) {
-  const { config, state, classes, requestItem } = useNavigationMenuContext('NavigationMenuTrigger');
+  const { config, state, classes, request } = useNavigationMenuContext('NavigationMenuTrigger');
   const { value, triggerId, contentId } = useItemContext('NavigationMenuTrigger');
   const aria = navTriggerAria(value, state, config, { contentId });
 
@@ -244,7 +197,7 @@ export function NavigationMenuTrigger({
       onClick={(event) => {
         onClick?.(event);
         if (event.defaultPrevented) return;
-        requestItem('toggle', value);
+        request('toggle', value);
       }}
       {...props}
     >

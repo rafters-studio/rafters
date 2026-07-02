@@ -52,9 +52,14 @@ shape, action reducers, ARIA projection, keyboard map, effect descriptions.
 It is framework-agnostic, pure, and testable without a DOM. It imports
 nothing framework-shaped and never imports `classes.ts`.
 
-Framework files render the declared parts, subscribe to memory, apply the
-behavior's projections and the decoration's classes, and map DOM events to
-actions. Any decision in a framework file is a bug.
+Framework files render the declared parts and map DOM events to actions --
+nothing else. The repeated machinery (instance lifecycle, memory
+subscription, id supply, the part registry, the effects runner, the
+accepted-dispatch protocol) lives in ONE adapter per framework
+(`hooks/use-behavior.ts` for React), written once and inherited by every
+component. A framework file that touches `createBehavior`, memory, or an
+`EffectHost` directly is re-expressing the adapter. Any decision in a
+framework file is a bug.
 
 ## Config vs state
 

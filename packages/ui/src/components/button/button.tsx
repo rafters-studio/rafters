@@ -1,7 +1,5 @@
 import * as React from 'react';
-import { createBehavior } from '../../lib/contract';
-import { useBehaviorEffects } from '../../hooks/use-behavior-effects';
-import { useMemory } from '../../hooks/use-memory';
+import { useBehavior } from '../../hooks/use-behavior';
 import classy from '../../primitives/classy';
 import { button, type ButtonConfig, type ButtonSize, type ButtonVariant } from './button.behavior';
 import { buttonClasses } from './button.classes';
@@ -60,15 +58,13 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>((props, r
     loading,
   };
 
-  const { memory, dispatch } = React.useMemo(() => createBehavior(button, config), []);
-  const state = useMemory(memory);
-
-  const effectHostRef = React.useRef({ getPart: () => null, dispatch: () => {} });
-  useBehaviorEffects(button.effects(state, config), effectHostRef.current);
-
-  const uid = React.useId();
-  const ids = { root: uid, label: `${uid}-label`, spinner: `${uid}-spinner` };
-  const aria = button.aria(state, config, ids);
+  const { state, ids, aria, request } = useBehavior(button, config, {
+    onAccepted: (_action, _before, after) => {
+      if (toggle) {
+        onPressedChange?.(pressed === undefined ? after.pressed === true : !pressed);
+      }
+    },
+  });
   const classes = buttonClasses(config, state);
 
   return (
@@ -77,17 +73,14 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>((props, r
       type={type ?? 'button'}
       disabled={disabled}
       data-part="root"
+      id={ids.root}
       className={classy(classes.root, className)}
       {...aria.root}
       onClick={(event) => {
-        if (!dispatch('press', config)) {
+        if (!request('press')) {
           event.preventDefault();
           event.stopPropagation();
           return;
-        }
-        if (toggle) {
-          const next = pressed === undefined ? memory.get().pressed === true : !pressed;
-          onPressedChange?.(next);
         }
         onClick?.(event);
       }}
