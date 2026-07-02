@@ -17,7 +17,7 @@ export interface Slice<Config, State, Actions extends ActionPayloads, Part exten
   };
   canDispatch?: (state: State, action: keyof Actions, config: Config) => boolean;
   aria?: (state: State, config: Config, ids: PartIds<Part>) => Partial<Record<Part, AriaAttrs>>;
-  keymap?: (event: KeyInput, state: State, part: Part) => keyof Actions | null;
+  keymap?: (event: KeyInput, state: State, part: Part, config: Config) => keyof Actions | null;
   effects?: (state: State, config: Config) => EffectSpec[];
 }
 
@@ -38,7 +38,12 @@ export interface GlueSlice<
     config: Config,
     ids: PartIds<Part>,
   ) => Partial<Record<Part, AriaAttrs>>;
-  keymap?: (event: KeyInput, state: MergedState, part: Part) => keyof Actions | null;
+  keymap?: (
+    event: KeyInput,
+    state: MergedState,
+    part: Part,
+    config: Config,
+  ) => keyof Actions | null;
   effects?: (state: MergedState, config: Config) => EffectSpec[];
 }
 
@@ -57,7 +62,7 @@ function isGlue(candidate: UnknownSlice | UnknownGlue): candidate is UnknownGlue
 export function compose<Config, S1 extends object, A1 extends ActionPayloads, P1 extends string>(
   name: string,
   slice: Slice<Config, S1, A1, P1>,
-): Omit<BehaviorSpec<Config, S1, A1, P1>, 'classes'>;
+): BehaviorSpec<Config, S1, A1, P1>;
 export function compose<
   Config,
   S1 extends object,
@@ -68,7 +73,7 @@ export function compose<
   name: string,
   slice: Slice<Config, S1, A1, P1>,
   glue: GlueSlice<Config, S1, GA, P1>,
-): Omit<BehaviorSpec<Config, S1, A1 & GA, P1>, 'classes'>;
+): BehaviorSpec<Config, S1, A1 & GA, P1>;
 export function compose<
   Config,
   S1 extends object,
@@ -81,7 +86,7 @@ export function compose<
   name: string,
   first: Slice<Config, S1, A1, P1>,
   second: Slice<Config, S2, A2, P2> & DisjointFrom<S2, S1>,
-): Omit<BehaviorSpec<Config, S1 & S2, A1 & A2, P1 | P2>, 'classes'>;
+): BehaviorSpec<Config, S1 & S2, A1 & A2, P1 | P2>;
 export function compose<
   Config,
   S1 extends object,
@@ -96,11 +101,11 @@ export function compose<
   first: Slice<Config, S1, A1, P1>,
   second: Slice<Config, S2, A2, P2> & DisjointFrom<S2, S1>,
   glue: GlueSlice<Config, S1 & S2, GA, P1 | P2>,
-): Omit<BehaviorSpec<Config, S1 & S2, A1 & A2 & GA, P1 | P2>, 'classes'>;
+): BehaviorSpec<Config, S1 & S2, A1 & A2 & GA, P1 | P2>;
 export function compose(
   name: string,
   ...rawEntries: ReadonlyArray<object>
-): Omit<BehaviorSpec<unknown, UnknownState, ActionPayloads, string>, 'classes'> {
+): BehaviorSpec<unknown, UnknownState, ActionPayloads, string> {
   const entries = rawEntries as ReadonlyArray<UnknownSlice | UnknownGlue>;
   const glue = entries.filter(isGlue);
   if (glue.length > 1) {
@@ -187,11 +192,11 @@ export function compose(
       }
       return merged;
     },
-    keymap: (event, state, part) => {
-      const glueClaim = theGlue?.keymap?.(event, state, part) ?? null;
+    keymap: (event, state, part, config) => {
+      const glueClaim = theGlue?.keymap?.(event, state, part, config) ?? null;
       if (glueClaim !== null) return glueClaim;
       const claims = slices
-        .map((slice) => ({ slice, action: slice.keymap?.(event, state, part) ?? null }))
+        .map((slice) => ({ slice, action: slice.keymap?.(event, state, part, config) ?? null }))
         .filter((claim) => claim.action !== null);
       if (claims.length > 1) {
         throw new Error(

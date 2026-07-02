@@ -2,6 +2,27 @@
 
 One component, defined once, presented by every framework.
 
+## The pattern: the score
+
+The pattern has a name, ratified 2026-07-02. The behavior file is a **score**:
+it describes, it never executes. State transitions, not state. ARIA
+projections, not DOM mutations. Keyboard mappings, not event listeners. Pure
+functions and data, concrete enough to be unambiguous, abstract enough to be
+interpreted.
+
+Framework files are **performances** of the score. React plays it with hooks
+and JSX. A Web Component plays it with shadow DOM and attributes. Astro plays
+it once, at build time, then puts the instrument down. Same score, different
+instruments; the score does not care which orchestra showed up.
+
+`classes.ts` is **decoration** -- the presentation layer, selecting literal
+token strings off the same config and state the score projects.
+
+This is what "headless" was supposed to mean. The industry's headless
+libraries (React Aria, Radix, Headless UI) are bodies without skin: they
+execute inside one framework and call it headless because it ships no CSS.
+That is skinless. A score is headless -- it has no runtime of its own at all.
+
 ## Rules
 
 1. The behavior file IS the component. Not a helper it imports -- the identity, the contract, the thing that gets audited.
@@ -15,18 +36,25 @@ One component, defined once, presented by every framework.
 
 ## The component shape
 
-A component is a behavior file and one implementation per framework target.
+A component is a score, its decoration, and one performance per framework
+target.
 
 ```
-button.behavior.ts    # THE component — state, actions, aria, keymap, classes, effects
-button.tsx            # React implementation
-button.element.ts     # Web Component implementation
-button.astro          # Astro implementation
+button.behavior.ts    # THE component (the score) — state, actions, aria, keymap, effects
+button.classes.ts     # decoration — literal token-class selection from config + state
+button.tsx            # React performance
+button.element.ts     # Web Component performance
+button.astro          # Astro performance
 ```
 
-The behavior file carries everything: types, config, state shape, action reducers, ARIA projection, keyboard map, class projection, effect descriptions. It is framework-agnostic, pure, and testable without a DOM.
+The behavior file carries the component's identity: types, config, state
+shape, action reducers, ARIA projection, keyboard map, effect descriptions.
+It is framework-agnostic, pure, and testable without a DOM. It imports
+nothing framework-shaped and never imports `classes.ts`.
 
-Framework files render the declared parts, subscribe to memory, apply the behavior's projections, and map DOM events to actions. Any decision in a framework file is a bug.
+Framework files render the declared parts, subscribe to memory, apply the
+behavior's projections and the decoration's classes, and map DOM events to
+actions. Any decision in a framework file is a bug.
 
 ## Config vs state
 
@@ -38,11 +66,10 @@ State is intrinsic -- only things that change from user interaction (pressed in 
 
 ## The composer
 
-Primitives are a pile. The composer is a pure typed fold from slices to one behavior spec. `compose` returns everything except `classes` -- classes are component-level, added by the behavior file after composition.
+Primitives are a pile. The composer is a pure typed fold from slices to one behavior spec. Classes are not part of the fold -- decoration lives in `classes.ts`, keyed off the same config and state.
 
 ```ts
-const composed = compose('button', pressable<ButtonConfig>());
-export const button: BehaviorSpec<...> = { ...composed, classes: (config, state) => ({ ... }) };
+export const button: BehaviorSpec<...> = compose('button', pressable<ButtonConfig>());
 ```
 
 Collision rules: state key collision throws, duplicate action throws, two slices claiming the same key throws (resolve in the glue slice). Loud in dev, loud in prod, deterministic in tests.

@@ -22,13 +22,7 @@ export type PartIds<Part extends string> = Record<Part, string>;
 export type ActionPayloads = Record<string, unknown>;
 export type PayloadArgs<P> = P extends undefined ? [] : [payload: P];
 
-export interface BehaviorSpec<
-  Config,
-  State,
-  Actions extends ActionPayloads,
-  Part extends string,
-  ClassSet = Record<Part, string>,
-> {
+export interface BehaviorSpec<Config, State, Actions extends ActionPayloads, Part extends string> {
   name: string;
   parts: Record<Part, PartDecl>;
   initialState: (config: Config) => State;
@@ -41,31 +35,29 @@ export interface BehaviorSpec<
 
   aria: (state: State, config: Config, ids: PartIds<Part>) => Partial<Record<Part, AriaAttrs>>;
 
-  keymap: (event: KeyInput, state: State, part: Part) => keyof Actions | null;
-
-  classes: (config: Config, state: State) => ClassSet;
+  keymap: (event: KeyInput, state: State, part: Part, config: Config) => keyof Actions | null;
 
   effects: (state: State, config: Config) => EffectSpec[];
 }
 
-export function createBehavior<
-  Config,
-  State,
-  Actions extends ActionPayloads,
-  Part extends string,
-  ClassSet = Record<Part, string>,
->(
-  spec: BehaviorSpec<Config, State, Actions, Part, ClassSet>,
-  config: Config,
+export function createBehavior<Config, State, Actions extends ActionPayloads, Part extends string>(
+  spec: BehaviorSpec<Config, State, Actions, Part>,
+  initialConfig: Config,
 ): {
   memory: Memory<State>;
-  dispatch: <K extends keyof Actions>(action: K, ...payload: PayloadArgs<Actions[K]>) => boolean;
+  dispatch: <K extends keyof Actions>(
+    action: K,
+    config: Config,
+    ...payload: PayloadArgs<Actions[K]>
+  ) => boolean;
 } {
-  const memory = createMemory<State>(() => spec.initialState(config));
+  const memory = createMemory<State>(() => spec.initialState(initialConfig));
 
   return {
     memory,
-    dispatch(action, ...payload) {
+    // Config is a parameter, not a capture: suppression must read the
+    // caller's CURRENT config, and the instance outlives any one render.
+    dispatch(action, config, ...payload) {
       const state = memory.get();
       if (!spec.canDispatch(state, action, config)) return false;
       memory.set(spec.actions[action](state, payload[0] as Actions[typeof action]));

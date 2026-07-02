@@ -9,6 +9,13 @@ against this contract. A behavior file that satisfies this contract is a valid
 component behavior regardless of how it was produced (hand-written or composed
 via Spec 02).
 
+## The pattern name (ratified 2026-07-02)
+
+The behavior file is a **score**: it describes and never executes. Framework
+files are **performances** of it -- mechanical renditions in each framework's
+idiom, with no decisions of their own. `classes.ts` is **decoration**. The
+behavior IS the component; everything else is implementation and decoration.
+
 ## Vocabulary
 
 - **Config** — static, per-instance choices made by the consumer (variant,
@@ -65,11 +72,12 @@ export interface BehaviorSpec<
     [K in keyof Actions]: (state: State, payload: Actions[K]) => State;
   };
 
-  /** Pure gate: may this action fire in this state? Frameworks consult it
-   *  before applying the reducer AND before invoking consumer callbacks
-   *  (onClick and friends). Suppression logic (disabled, loading,
-   *  soft-disabled) lives here, never in a framework file. */
-  canDispatch: (state: State, action: keyof Actions) => boolean;
+  /** Pure gate: may this action fire in this state, under this config?
+   *  Frameworks consult it before applying the reducer AND before invoking
+   *  consumer callbacks (onClick and friends). Suppression logic (disabled,
+   *  loading, soft-disabled) lives here, never in a framework file. Config
+   *  is a parameter because suppression reads from config, not state. */
+  canDispatch: (state: State, action: keyof Actions, config: Config) => boolean;
 
   /** The auditable ARIA contract, keyed by part. */
   aria: (
@@ -79,11 +87,15 @@ export interface BehaviorSpec<
   ) => Partial<Record<Part, AriaAttrs>>;
 
   /** Keyboard contract, keyed by the part that receives the event.
-   *  Returns the action to dispatch, or null (event not claimed). */
+   *  Returns the action to dispatch, or null (event not claimed). Config is
+   *  a parameter because key claims can be config-dependent (amended by the
+   *  navigation-menu article: ArrowDown opens only when the roving axis is
+   *  horizontal). */
   keymap: (
     event: KeyInput,
     state: State,
     part: Part,
+    config: Config,
   ) => keyof Actions | null;
 
   /** Declarative effect requests for the current state (Spec 03).
@@ -94,25 +106,22 @@ export interface BehaviorSpec<
 
 ## The instance
 
-`createBehavior(spec, config)` returns the runtime instance every binding
-holds:
+`createBehavior(spec, config)` returns the two things a performance holds --
+nothing more:
 
 ```ts
-export interface BehaviorInstance<State, Actions> {
-  readonly memory: Memory<State>; // primitives/memory.ts -- the one cell
-  /** Applies the reducer iff canDispatch allows it.
+{
+  memory: Memory<State>; // primitives/memory.ts -- the one cell
+  /** Applies the reducer iff canDispatch(state, action, config) allows it.
    *  Returns whether the action was accepted. */
-  dispatch<K extends keyof Actions>(action: K, payload: Actions[K]): boolean;
-  /** Convenience passthroughs of the spec, bound to config. */
-  readonly aria: (state: State, ids: PartIds<string>) => Partial<Record<string, AriaAttrs>>;
-  readonly keymap: (event: KeyInput, state: State, part: string) => keyof Actions | null;
-  readonly effects: (state: State) => EffectSpec[];
-  readonly parts: Record<string, PartDecl>;
+  dispatch<K extends keyof Actions>(action: K, ...payload): boolean;
 }
 ```
 
-One instance owns exactly one memory cell. State merged from slices
-(Spec 02) still lives in this single cell.
+There is no instance object and no bound passthroughs: projections (`aria`,
+`keymap`, `effects`) are called directly on the spec as pure functions, with
+config passed fresh each time. One instance owns exactly one memory cell.
+State merged from slices (Spec 02) still lives in this single cell.
 
 ## Rules
 

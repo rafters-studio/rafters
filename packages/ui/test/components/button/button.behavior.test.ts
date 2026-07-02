@@ -67,16 +67,30 @@ describe('button actions', () => {
   it('press flips pressed in toggle mode', () => {
     const config = { ...base, toggle: true };
     const { memory, dispatch } = createBehavior(button, config);
-    expect(dispatch('press')).toBe(true);
+    expect(dispatch('press', config)).toBe(true);
     expect(memory.get().pressed).toBe(true);
-    expect(dispatch('press')).toBe(true);
+    expect(dispatch('press', config)).toBe(true);
     expect(memory.get().pressed).toBe(false);
   });
 
   it('press is a no-op on pressed in non-toggle mode', () => {
     const { memory, dispatch } = createBehavior(button, base);
-    dispatch('press');
+    dispatch('press', base);
     expect(memory.get().pressed).toBeUndefined();
+  });
+
+  it('defaultPressed seeds the initial toggle state', () => {
+    const config = { ...base, toggle: true, defaultPressed: true };
+    const { memory } = createBehavior(button, config);
+    expect(memory.get().pressed).toBe(true);
+  });
+
+  it('dispatch gates on the config it is CALLED with, not the mount config', () => {
+    const mountConfig = { ...base, toggle: true };
+    const { memory, dispatch } = createBehavior(button, mountConfig);
+    const laterConfig = { ...mountConfig, loading: true };
+    expect(dispatch('press', laterConfig)).toBe(false);
+    expect(memory.get().pressed).toBe(false);
   });
 });
 
@@ -89,47 +103,6 @@ describe('button keymap', () => {
   it('other keys and other parts are not claimed', () => {
     expect(button.keymap({ key: 'Escape' }, state, 'root')).toBeNull();
     expect(button.keymap({ key: 'Enter' }, state, 'label')).toBeNull();
-  });
-});
-
-describe('button classes', () => {
-  it('projects variant and size classes', () => {
-    const config: ButtonConfig = { variant: 'destructive', size: 'lg' };
-    const classes = button.classes(config, button.initialState(config));
-    expect(classes.root).toContain('bg-destructive');
-    expect(classes.root).toContain('h-12');
-  });
-
-  const cqSizes: Array<[ButtonConfig['size'], string, string]> = [
-    ['default', 'h-11', '@md:h-10'],
-    ['xs', 'h-11', '@md:h-6'],
-    ['sm', 'h-11', '@md:h-8'],
-    ['icon', 'h-11', '@md:h-10'],
-    ['icon-xs', 'h-11', '@md:h-6'],
-    ['icon-sm', 'h-11', '@md:h-8'],
-  ];
-  for (const [size, touchClass, desktopClass] of cqSizes) {
-    it(`${size}: touch-first ${touchClass}, desktop ${desktopClass}`, () => {
-      const config: ButtonConfig = { ...base, size };
-      const classes = button.classes(config, button.initialState(config));
-      expect(classes.root).toContain(touchClass);
-      expect(classes.root).toContain(desktopClass);
-    });
-  }
-
-  it('lg and icon-lg skip CQ override -- already above touch floor', () => {
-    for (const size of ['lg', 'icon-lg'] as const) {
-      const config: ButtonConfig = { ...base, size };
-      const classes = button.classes(config, button.initialState(config));
-      expect(classes.root).not.toContain('@md:h-');
-    }
-  });
-
-  it('spinner scales with CQ', () => {
-    const config: ButtonConfig = { ...base, loading: true };
-    const classes = button.classes(config, button.initialState(config));
-    expect(classes.spinner).toContain('h-5');
-    expect(classes.spinner).toContain('@md:h-4');
   });
 });
 

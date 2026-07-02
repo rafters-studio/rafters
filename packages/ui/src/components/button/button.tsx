@@ -1,10 +1,12 @@
 import * as React from 'react';
 import { createBehavior } from '../../lib/contract';
+import { useBehaviorEffects } from '../../hooks/use-behavior-effects';
 import { useMemory } from '../../hooks/use-memory';
 import classy from '../../primitives/classy';
 import { button, type ButtonConfig, type ButtonSize, type ButtonVariant } from './button.behavior';
+import { buttonClasses } from './button.classes';
 
-export { buttonVariants } from './button.behavior';
+export { buttonVariants } from './button.classes';
 export type { ButtonSize, ButtonVariant };
 
 type NonIconSize = 'default' | 'xs' | 'sm' | 'lg';
@@ -50,6 +52,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>((props, r
     variant,
     size,
     toggle,
+    defaultPressed,
     loadingAnnouncement,
     loadedAnnouncement,
     disabled,
@@ -60,10 +63,13 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>((props, r
   const { memory, dispatch } = React.useMemo(() => createBehavior(button, config), []);
   const state = useMemory(memory);
 
+  const effectHostRef = React.useRef({ getPart: () => null, dispatch: () => {} });
+  useBehaviorEffects(button.effects(state, config), effectHostRef.current);
+
   const uid = React.useId();
   const ids = { root: uid, label: `${uid}-label`, spinner: `${uid}-spinner` };
   const aria = button.aria(state, config, ids);
-  const classes = button.classes(config, state);
+  const classes = buttonClasses(config, state);
 
   return (
     <button
@@ -74,7 +80,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>((props, r
       className={classy(classes.root, className)}
       {...aria.root}
       onClick={(event) => {
-        if (!dispatch('press')) {
+        if (!dispatch('press', config)) {
           event.preventDefault();
           event.stopPropagation();
           return;

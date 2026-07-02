@@ -4,6 +4,7 @@ import type { EffectSpec } from './effects';
 
 export interface PressableConfig {
   toggle?: boolean | undefined;
+  defaultPressed?: boolean | undefined;
   loadingAnnouncement?: string | undefined;
   loadedAnnouncement?: string | undefined;
   disabled?: boolean | undefined;
@@ -37,7 +38,7 @@ export function pressable<Config extends PressableConfig>(): Slice<
     name: 'pressable',
     parts,
     initialState: (config) => ({
-      pressed: config.toggle ? false : undefined,
+      pressed: config.toggle ? (config.defaultPressed ?? false) : undefined,
     }),
     actions: {
       press: (state) =>

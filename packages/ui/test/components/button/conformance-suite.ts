@@ -81,7 +81,7 @@ function configFor(props: ButtonScenarioProps): ButtonConfig {
     disabled: props.disabled ?? false,
     softDisabled: props.softDisabled ?? false,
     loading: props.loading ?? false,
-    pressed: props.pressed ?? false,
+    defaultPressed: props.pressed ?? false,
   };
 }
 
