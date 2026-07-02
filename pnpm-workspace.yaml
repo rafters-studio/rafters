@@ -2,6 +2,17 @@ packages:
   - apps/*
   - packages/*
 
+# Build-script decisions (pnpm 11 allowBuilds, replaces onlyBuiltDependencies).
+# false = binaries arrive via optional platform deps; the postinstall is redundant.
+allowBuilds:
+  '@parcel/watcher': false
+  esbuild: false
+  lefthook: true
+  msw: false
+  sharp: false
+  vue-demi: true
+  workerd: false
+
 catalog:
   '@axe-core/playwright': ^4.11.0
   '@cloudflare/vitest-pool-workers': ^0.13.0
@@ -30,6 +41,3 @@ catalog:
   vitest-axe: ^1.0.0-pre.3
   zocker: 3.0.0
   zod: ^4.0.0
-
-onlyBuiltDependencies:
-  - vue-demi

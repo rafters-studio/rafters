@@ -35,6 +35,6 @@ pnpm lint          # biome check
 ## Environment
 
 - Node.js ≥ 24.12.0
-- pnpm ≥ 10.25.0
+- pnpm ≥ 11.0.0
 - React ≥ 19.0.0
 - TypeScript 5.9.x (strict)
