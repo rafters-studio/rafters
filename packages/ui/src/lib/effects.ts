@@ -74,13 +74,25 @@ export interface HoverIntentEffect {
   closeAction: string;
 }
 
+/** Two-dimensional roving tabindex across the [data-roving-item] children
+ *  of a part arranged in a fixed-column grid (the ARIA grid pattern's
+ *  keyboard contract). Left/Right move by 1, Up/Down by `columns`,
+ *  Home/End to first/last. Column count comes from config -- role="grid"
+ *  is type-gated to fixed columns, so no DOM measuring. */
+export interface GridRovingEffect {
+  type: 'grid-roving';
+  part: string;
+  columns: number;
+}
+
 export type EffectSpec =
   | AnnounceEffect
   | FocusTrapEffect
   | ScrollLockEffect
   | DismissOnOutsideEffect
   | RovingFocusEffect
-  | HoverIntentEffect;
+  | HoverIntentEffect
+  | GridRovingEffect;
 
 /** One-shot (edge-triggered) effect types; everything else is ongoing. */
 const ONE_SHOT: ReadonlySet<EffectSpec['type']> = new Set(['announce']);
@@ -99,6 +111,8 @@ export function effectKey(effect: EffectSpec): string {
       return `dismiss-on-outside:${effect.part}:${effect.action}:${(effect.exceptParts ?? []).join(',')}`;
     case 'roving-focus':
       return `roving-focus:${effect.part}:${effect.orientation}`;
+    case 'grid-roving':
+      return `grid-roving:${effect.part}:${effect.columns}`;
     case 'hover-intent':
       return `hover-intent:${effect.part}:${effect.triggerPart}:${effect.contentPart}:${effect.delay}:${effect.immediate}:${effect.openAction}:${effect.closeAction}`;
   }
@@ -148,6 +162,68 @@ export function executeEffect(effect: EffectSpec, host: EffectHost): EffectClean
     case 'roving-focus': {
       const element = host.getPart(effect.part);
       return element ? createRovingFocus(element, { orientation: effect.orientation }) : undefined;
+    }
+    case 'grid-roving': {
+      const root = host.getPart(effect.part);
+      if (!root) return undefined;
+      const items = () =>
+        Array.from(root.querySelectorAll<HTMLElement>('[data-roving-item]')).filter(
+          (item) => !item.hasAttribute('disabled') && item.getAttribute('aria-disabled') !== 'true',
+        );
+
+      const setTabStops = (current: number) => {
+        for (const [index, item] of items().entries()) {
+          item.setAttribute('tabindex', index === current ? '0' : '-1');
+        }
+      };
+      setTabStops(0);
+
+      const onKeyDown = (event: KeyboardEvent) => {
+        const cells = items();
+        if (cells.length === 0) return;
+        const active = document.activeElement as HTMLElement | null;
+        const current = active ? cells.indexOf(active) : -1;
+        if (current === -1) return;
+
+        let next: number;
+        switch (event.key) {
+          case 'ArrowRight':
+            next = Math.min(current + 1, cells.length - 1);
+            break;
+          case 'ArrowLeft':
+            next = Math.max(current - 1, 0);
+            break;
+          case 'ArrowDown':
+            next = Math.min(current + effect.columns, cells.length - 1);
+            break;
+          case 'ArrowUp':
+            next = Math.max(current - effect.columns, 0);
+            break;
+          case 'Home':
+            next = 0;
+            break;
+          case 'End':
+            next = cells.length - 1;
+            break;
+          default:
+            return;
+        }
+        event.preventDefault();
+        setTabStops(next);
+        cells[next]?.focus();
+      };
+
+      const onFocusIn = (event: FocusEvent) => {
+        const index = items().indexOf(event.target as HTMLElement);
+        if (index !== -1) setTabStops(index);
+      };
+
+      root.addEventListener('keydown', onKeyDown);
+      root.addEventListener('focusin', onFocusIn);
+      return () => {
+        root.removeEventListener('keydown', onKeyDown);
+        root.removeEventListener('focusin', onFocusIn);
+      };
     }
     case 'hover-intent': {
       const root = host.getPart(effect.part);
