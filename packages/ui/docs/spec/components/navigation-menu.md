@@ -112,7 +112,8 @@ restarts the executor with fresh timers.
 | click-after-hover-switch closes the just-opened menu | defect-do-not-port — fixed via `pointerOpened` absorb |
 | inline `visibility/height/overflow` hide-state on content | defect-do-not-port — controller-era SSR workaround; `hidden` from the projection does the job |
 | `aria-hidden` alongside `hidden` on content | simplified — `hidden` suffices |
-| Viewport / Indicator components, `forceMount` | deferred — needs ruling |
+| Viewport / Indicator components, `forceMount` | contract (ruled 2026-07-03: shadcn surface is the floor). Declared as optional parts; chrome state projected by the score (viewport data-state open/closed, indicator visible/hidden, aria-hidden). Oracle's inline visibility/height hide-state not ported; `hidden` while closed under forceMount |
+| `navigationMenuTriggerStyle()` | contract (shadcn export; thin view over the trigger classes) |
 | typeahead | never existed in the oracle; menubar-pattern concern, not disclosure nav — not ported |
 
 ## Deltas that need Sean's eye

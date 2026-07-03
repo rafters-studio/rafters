@@ -28,6 +28,10 @@ export interface UseBehaviorOptions<State, Actions extends ActionPayloads> {
    *  after the reducer. The binding maps this to its consumer callback
    *  (onOpenChange, onValueChange) without duplicating reducer logic. */
   onAccepted?: (action: keyof Actions, before: State, after: State) => void;
+  /** Consulted before an EFFECT-initiated dispatch (outside pointerdown).
+   *  Return true to veto -- the binding's chance to run consumer veto
+   *  callbacks (onPointerDownOutside and friends). */
+  vetoEffectDispatch?: (action: keyof Actions, nativeEvent: Event | undefined) => boolean;
 }
 
 export interface BehaviorBinding<State, Actions extends ActionPayloads, Part extends string> {
@@ -123,7 +127,8 @@ export function useBehavior<Config, State, Actions extends ActionPayloads, Part 
   const hostRef = React.useRef<EffectHost | null>(null);
   hostRef.current ??= {
     getPart,
-    dispatch: (action, payload) => {
+    dispatch: (action, payload, nativeEvent) => {
+      if (optionsRef.current.vetoEffectDispatch?.(action as keyof Actions, nativeEvent)) return;
       latestRequest.current(
         action as keyof Actions,
         ...([payload] as PayloadArgs<Actions[keyof Actions]>),

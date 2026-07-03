@@ -13,6 +13,8 @@ import {
   DialogDescription,
   DialogFooter,
   DialogHeader,
+  DialogOverlay,
+  DialogPortal,
   DialogTitle,
   DialogTrigger,
 } from '../../../src/components/dialog/dialog';
@@ -210,6 +212,105 @@ describe('dialog conformance [react]', () => {
     expect(partElement(body(), 'content')).not.toBeNull();
 
     rerender(<TestDialog open={false} onOpenChange={onOpenChange} />);
+    expect(partElement(body(), 'content')).toBeNull();
+  });
+
+  it('explicit Portal + Overlay composition renders without the automatic wrappers', async () => {
+    const user = userEvent.setup();
+    render(
+      <Dialog>
+        <DialogTrigger>Open</DialogTrigger>
+        <DialogPortal>
+          <DialogOverlay />
+          <DialogContent>
+            <DialogTitle>Composed</DialogTitle>
+          </DialogContent>
+        </DialogPortal>
+      </Dialog>,
+    );
+    await user.click(partElement(body(), 'trigger') as HTMLElement);
+    expect(partElement(body(), 'content')).not.toBeNull();
+    expect(document.querySelectorAll('[data-part="overlay"]')).toHaveLength(1);
+    // Oracle default: no automatic close button inside an explicit portal.
+    expect(partElement(body(), 'close')).toBeNull();
+    await assertAxeClean(body());
+  });
+
+  it('forceMount keeps the content in the DOM, hidden and inert, while closed', () => {
+    render(
+      <Dialog>
+        <DialogTrigger>Open</DialogTrigger>
+        <DialogContent forceMount>
+          <DialogTitle>Always mounted</DialogTitle>
+        </DialogContent>
+      </Dialog>,
+    );
+    const content = partElement(body(), 'content');
+    expect(content).not.toBeNull();
+    expect(content?.getAttribute('data-state')).toBe('closed');
+    expect(content?.closest('[hidden]')).not.toBeNull();
+    expect(document.body.style.overflow).not.toBe('hidden');
+  });
+
+  it('container portals the content into the given element', async () => {
+    const user = userEvent.setup();
+    const target = document.createElement('div');
+    target.id = 'portal-target';
+    document.body.appendChild(target);
+    render(
+      <Dialog>
+        <DialogTrigger>Open</DialogTrigger>
+        <DialogContent container={target}>
+          <DialogTitle>Housed</DialogTitle>
+        </DialogContent>
+      </Dialog>,
+    );
+    await user.click(partElement(body(), 'trigger') as HTMLElement);
+    expect(target.querySelector('[data-part="content"]')).not.toBeNull();
+  });
+
+  it('onEscapeKeyDown veto keeps the dialog open', async () => {
+    const user = userEvent.setup();
+    render(
+      <Dialog defaultOpen>
+        <DialogContent onEscapeKeyDown={(event) => event.preventDefault()}>
+          <DialogTitle>Stubborn</DialogTitle>
+        </DialogContent>
+      </Dialog>,
+    );
+    await user.keyboard('{Escape}');
+    expect(partElement(body(), 'content')).not.toBeNull();
+  });
+
+  it('onPointerDownOutside veto keeps the dialog open; without veto it closes', async () => {
+    const user = userEvent.setup();
+    const outside = vi.fn((event: Event) => event.preventDefault());
+    const { unmount } = render(
+      <div>
+        <button type="button">Elsewhere</button>
+        <Dialog defaultOpen>
+          <DialogContent onPointerDownOutside={outside}>
+            <DialogTitle>Guarded</DialogTitle>
+          </DialogContent>
+        </Dialog>
+      </div>,
+    );
+    await user.click(document.querySelector('button') as HTMLElement);
+    expect(outside).toHaveBeenCalled();
+    expect(partElement(body(), 'content')).not.toBeNull();
+    unmount();
+
+    render(
+      <div>
+        <button type="button">Elsewhere</button>
+        <Dialog defaultOpen>
+          <DialogContent>
+            <DialogTitle>Unguarded</DialogTitle>
+          </DialogContent>
+        </Dialog>
+      </div>,
+    );
+    await user.click(document.querySelector('button') as HTMLElement);
     expect(partElement(body(), 'content')).toBeNull();
   });
 

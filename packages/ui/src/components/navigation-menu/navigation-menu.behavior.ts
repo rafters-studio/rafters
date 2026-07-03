@@ -41,7 +41,7 @@ export type NavigationMenuActions = {
   close: undefined;
 };
 
-export type NavigationMenuPart = 'root' | 'list' | 'trigger' | 'content';
+export type NavigationMenuPart = 'root' | 'list' | 'trigger' | 'content' | 'viewport' | 'indicator';
 
 /** The effective open item: controlled value shadows intrinsic state. */
 export function activeItem(
@@ -70,6 +70,9 @@ const navigation: Slice<
     // Content stays in the DOM hidden when closed: navigation links must be
     // crawlable and SSR-stable. Presence is constant; visibility is state.
     content: { many: true },
+    // Decorative chrome (shadcn surface); present while open.
+    viewport: { optional: true },
+    indicator: { optional: true },
   },
   initialState: (config) => {
     const seed = config.value ?? config.defaultValue ?? '';
@@ -88,16 +91,27 @@ const navigation: Slice<
   },
   canDispatch: (state, action, config) =>
     action === 'close' ? activeItem(state, config) !== null : true,
-  aria: (state, config, _ids) => ({
-    root: {
-      'aria-label': 'Main navigation',
-      'data-orientation': orientationOf(config),
-      'data-state': activeItem(state, config) === null ? 'closed' : 'open',
-    },
-    list: {
-      'data-orientation': orientationOf(config),
-    },
-  }),
+  aria: (state, config, _ids) => {
+    const open = activeItem(state, config) !== null;
+    return {
+      root: {
+        'aria-label': 'Main navigation',
+        'data-orientation': orientationOf(config),
+        'data-state': open ? 'open' : 'closed',
+      },
+      list: {
+        'data-orientation': orientationOf(config),
+      },
+      viewport: {
+        'data-state': open ? 'open' : 'closed',
+        'aria-hidden': open ? undefined : 'true',
+      },
+      indicator: {
+        'data-state': open ? 'visible' : 'hidden',
+        'aria-hidden': 'true',
+      },
+    };
+  },
   keymap: (event, _state, part, config) => {
     if (event.key === 'Escape') return 'close';
     // ArrowDown opens the focused trigger only when the roving axis is

@@ -14,6 +14,8 @@ import {
 } from './navigation-menu.behavior';
 import { navigationMenuClasses, type NavigationMenuClassSet } from './navigation-menu.classes';
 
+export { navigationMenuTriggerStyle } from './navigation-menu.classes';
+
 interface NavigationMenuContextValue extends BehaviorBinding<
   NavigationMenuState,
   NavigationMenuActions,
@@ -235,6 +237,61 @@ export function NavigationMenuContent({ className, ...props }: NavigationMenuCon
       {...aria}
       {...props}
     />
+  );
+}
+
+export interface NavigationMenuViewportProps extends React.HTMLAttributes<HTMLDivElement> {
+  forceMount?: boolean;
+}
+
+export function NavigationMenuViewport({
+  forceMount,
+  className,
+  ...props
+}: NavigationMenuViewportProps) {
+  const { active, ids, aria, classes, setPart } =
+    useNavigationMenuContext('NavigationMenuViewport');
+  const open = active !== null;
+  if (!(forceMount || open)) return null;
+  return (
+    <div className={classes.viewportWrapper} hidden={open ? undefined : true}>
+      <div
+        data-part="viewport"
+        id={ids.viewport || undefined}
+        ref={setPart('viewport')}
+        className={classy(classes.viewport, className)}
+        {...aria.viewport}
+        {...props}
+      />
+    </div>
+  );
+}
+
+export interface NavigationMenuIndicatorProps extends React.HTMLAttributes<HTMLDivElement> {
+  forceMount?: boolean;
+}
+
+export function NavigationMenuIndicator({
+  forceMount,
+  className,
+  ...props
+}: NavigationMenuIndicatorProps) {
+  const { active, ids, aria, classes, setPart } =
+    useNavigationMenuContext('NavigationMenuIndicator');
+  const open = active !== null;
+  if (!(forceMount || open)) return null;
+  return (
+    <div
+      data-part="indicator"
+      id={ids.indicator || undefined}
+      ref={setPart('indicator')}
+      hidden={open ? undefined : true}
+      className={classy(classes.indicator, className)}
+      {...aria.indicator}
+      {...props}
+    >
+      <div className={classes.indicatorArrow} />
+    </div>
   );
 }
 

@@ -115,7 +115,10 @@ export type EffectCleanup = () => void;
  *  accepted-dispatch-and-callback protocol. */
 export interface EffectHost {
   getPart(part: string): HTMLElement | null;
-  dispatch(action: string, payload?: unknown): void;
+  /** nativeEvent rides along for effect-initiated dispatches (outside
+   *  pointerdown) so bindings can offer consumer veto callbacks BEFORE the
+   *  dispatch. It never reaches the behavior. */
+  dispatch(action: string, payload?: unknown, nativeEvent?: Event): void;
 }
 
 /** The default executor: maps each EffectSpec type to its primitive.
@@ -139,7 +142,7 @@ export function executeEffect(effect: EffectSpec, host: EffectHost): EffectClean
         for (const part of effect.exceptParts ?? []) {
           if (host.getPart(part)?.contains(target)) return;
         }
-        host.dispatch(effect.action);
+        host.dispatch(effect.action, undefined, event);
       });
     }
     case 'roving-focus': {

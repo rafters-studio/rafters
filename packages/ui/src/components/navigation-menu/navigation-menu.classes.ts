@@ -8,6 +8,10 @@ export interface NavigationMenuClassSet {
   triggerChevron: string;
   content: string;
   link: string;
+  viewportWrapper: string;
+  viewport: string;
+  indicator: string;
+  indicatorArrow: string;
 }
 
 const rootClasses = 'relative z-10 flex max-w-max flex-1 items-center justify-center';
@@ -42,6 +46,19 @@ const linkClasses =
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ' +
   'data-[active]:bg-accent-subtle';
 
+const viewportWrapperClasses = 'absolute left-0 top-full';
+
+const viewportClasses =
+  'h-min w-full overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-lg ' +
+  'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95';
+
+const indicatorClasses =
+  'absolute bottom-0 z-10 flex h-2.5 items-end justify-center overflow-hidden ' +
+  'transition-transform duration-200 motion-reduce:transition-none ' +
+  'data-[state=visible]:animate-in data-[state=visible]:fade-in';
+
+const indicatorArrowClasses = 'top-full h-2 w-2 rotate-45 rounded-tl-sm bg-border shadow-md';
+
 export function navigationMenuClasses(
   _config: NavigationMenuConfig,
   _state: NavigationMenuState,
@@ -54,5 +71,15 @@ export function navigationMenuClasses(
     triggerChevron: triggerChevronClasses,
     content: contentClasses,
     link: linkClasses,
+    viewportWrapper: viewportWrapperClasses,
+    viewport: viewportClasses,
+    indicator: indicatorClasses,
+    indicatorArrow: indicatorArrowClasses,
   };
+}
+
+/** shadcn-compatible export: the trigger's class string, for consumers who
+ *  style a NavigationMenuLink as a trigger. */
+export function navigationMenuTriggerStyle(): string {
+  return triggerClasses;
 }

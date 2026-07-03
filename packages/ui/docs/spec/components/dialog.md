@@ -82,9 +82,9 @@ violation; absence is honest.
 | always-set `aria-controls`/`aria-describedby` | defect-do-not-port — dangling references when target absent; replaced by registration + empty-id convention |
 | trigger pointerdown closes then click re-opens | defect-do-not-port — fixed via `exceptParts: ['trigger']` |
 | `data-[state=open]` classes on close button | defect-do-not-port — dead selectors; no data-state was ever set on that element |
-| explicit DialogPortal / `container` prop | deferred — needs ruling (portal target selection) |
-| `forceMount` | deferred — needs ruling (animation-library affordance) |
-| onEscapeKeyDown / onPointerDownOutside / onInteractOutside veto props | deferred — needs ruling |
+| explicit DialogPortal / DialogOverlay / `container` prop | contract (ruled 2026-07-03: shadcn surface is the floor). Content inside an explicit portal skips its automatic portal + overlay; close button defaults off there (oracle rule) |
+| `forceMount` | contract, with a divergence: force-mounted closed layers carry `hidden` (a closed modal must be inert to AT and must not block the page). Animation tooling revisits this with the motion ruling |
+| onEscapeKeyDown / onPointerDownOutside / onInteractOutside veto props | contract (oracle signatures: native event, preventDefault to veto). Outside-dismiss veto flows executor -> EffectHost.dispatch(action, payload, nativeEvent) -> the binding's vetoEffectDispatch, BEFORE the dispatch |
 | non-modal pointer passthrough (container still blocks the page) | open defect in oracle AND new build — needs design ruling |
 | sr-only "Close" span + aria-label together | simplified to aria-label only |
 

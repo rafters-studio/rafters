@@ -11,11 +11,15 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   NavigationMenu,
   NavigationMenuContent,
+  NavigationMenuIndicator,
   NavigationMenuItem,
   NavigationMenuLink,
   NavigationMenuList,
   NavigationMenuTrigger,
+  NavigationMenuViewport,
+  navigationMenuTriggerStyle,
 } from '../../../src/components/navigation-menu/navigation-menu';
+import { navigationMenuClasses } from '../../../src/components/navigation-menu/navigation-menu.classes';
 import { assertAxeClean, partElement } from '../../harness/conformance';
 
 interface SetupProps {
@@ -187,6 +191,45 @@ describe('navigation-menu conformance [react]', () => {
     await user.keyboard('{Escape}');
     expect(onValueChange).toHaveBeenCalledTimes(3);
     expect(onValueChange).toHaveBeenLastCalledWith('');
+  });
+
+  it('viewport and indicator chrome appear while open, leave when closed', async () => {
+    const user = userEvent.setup();
+    render(
+      <NavigationMenu>
+        <NavigationMenuList>
+          <NavigationMenuItem value="a">
+            <NavigationMenuTrigger>A</NavigationMenuTrigger>
+            <NavigationMenuContent>
+              <NavigationMenuLink href="/a">A home</NavigationMenuLink>
+            </NavigationMenuContent>
+          </NavigationMenuItem>
+          <NavigationMenuIndicator />
+        </NavigationMenuList>
+        <NavigationMenuViewport />
+      </NavigationMenu>,
+    );
+    expect(partElement(body(), 'viewport')).toBeNull();
+    expect(partElement(body(), 'indicator')).toBeNull();
+
+    await user.click(triggerFor('a'));
+    const viewport = partElement(body(), 'viewport');
+    const indicator = partElement(body(), 'indicator');
+    expect(viewport?.getAttribute('data-state')).toBe('open');
+    expect(viewport?.hasAttribute('aria-hidden')).toBe(false);
+    expect(indicator?.getAttribute('data-state')).toBe('visible');
+    expect(indicator?.getAttribute('aria-hidden')).toBe('true');
+
+    await user.keyboard('{Escape}');
+    expect(partElement(body(), 'viewport')).toBeNull();
+    expect(partElement(body(), 'indicator')).toBeNull();
+  });
+
+  it('navigationMenuTriggerStyle matches the trigger projection', () => {
+    render(<TestMenu />);
+    expect(navigationMenuTriggerStyle()).toBe(
+      navigationMenuClasses({}, { active: null, pointerOpened: false }).trigger,
+    );
   });
 
   it('link renders with data-active driving the styling contract', () => {

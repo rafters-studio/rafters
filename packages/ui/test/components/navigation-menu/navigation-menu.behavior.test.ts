@@ -12,17 +12,21 @@ const base: NavigationMenuConfig = {};
 const openOnA: NavigationMenuConfig = { defaultValue: 'a' };
 
 describe('navigation-menu parts', () => {
-  it('declares root, list, and the many-instance trigger/content', () => {
+  it('declares root, list, the many-instance trigger/content, and the chrome', () => {
     expect(Object.keys(navigationMenu.parts).sort()).toEqual([
       'content',
+      'indicator',
       'list',
       'root',
       'trigger',
+      'viewport',
     ]);
     expect(navigationMenu.parts.trigger.many).toBe(true);
     expect(navigationMenu.parts.content.many).toBe(true);
     // Content is NOT optional: closed panels stay in the DOM for crawlers.
     expect(navigationMenu.parts.content.optional).toBeUndefined();
+    expect(navigationMenu.parts.viewport.optional).toBe(true);
+    expect(navigationMenu.parts.indicator.optional).toBe(true);
   });
 });
 
@@ -104,7 +108,7 @@ describe('navigation-menu keymap', () => {
 });
 
 describe('navigation-menu aria', () => {
-  const ids = { root: 'r', list: 'l', trigger: '', content: '' };
+  const ids = { root: 'r', list: 'l', trigger: '', content: '', viewport: 'v', indicator: 'i' };
 
   it('root and list carry orientation; root reflects open state', () => {
     const aria = navigationMenu.aria({ active: null, pointerOpened: false }, base, ids);
@@ -152,6 +156,15 @@ describe('navigation-menu aria', () => {
       { contentId: 'c' },
     );
     expect(aria['aria-expanded']).toBe('true');
+  });
+
+  it('viewport and indicator chrome reflect the open state', () => {
+    const closed = navigationMenu.aria({ active: null, pointerOpened: false }, base, ids);
+    expect(closed.viewport).toEqual({ 'data-state': 'closed', 'aria-hidden': 'true' });
+    expect(closed.indicator).toEqual({ 'data-state': 'hidden', 'aria-hidden': 'true' });
+    const open = navigationMenu.aria({ active: 'a', pointerOpened: false }, base, ids);
+    expect(open.viewport).toEqual({ 'data-state': 'open', 'aria-hidden': undefined });
+    expect(open.indicator).toEqual({ 'data-state': 'visible', 'aria-hidden': 'true' });
   });
 });
 
