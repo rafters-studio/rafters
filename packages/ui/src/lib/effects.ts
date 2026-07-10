@@ -135,6 +135,20 @@ export interface EffectHost {
   dispatch(action: string, payload?: unknown, nativeEvent?: Event): void;
 }
 
+/** `document.activeElement` does not pierce shadow roots -- inside a WC's
+ *  shadow tree it reports the HOST, never the focused descendant. Resolve
+ *  active element relative to the queried node's own root (shadow root or
+ *  document), walking into nested shadow roots the same way. A no-op for
+ *  light-DOM callers (`root.getRootNode() === document`). */
+function deepActiveElement(root: HTMLElement): Element | null {
+  const scopeRoot = root.getRootNode() as Document | ShadowRoot;
+  let active = scopeRoot.activeElement;
+  while (active?.shadowRoot?.activeElement) {
+    active = active.shadowRoot.activeElement;
+  }
+  return active;
+}
+
 /** The default executor: maps each EffectSpec type to its primitive.
  *  Ongoing effects return their cleanup; one-shot effects return nothing. */
 export function executeEffect(effect: EffectSpec, host: EffectHost): EffectCleanup | undefined {
@@ -181,7 +195,7 @@ export function executeEffect(effect: EffectSpec, host: EffectHost): EffectClean
       const onKeyDown = (event: KeyboardEvent) => {
         const cells = items();
         if (cells.length === 0) return;
-        const active = document.activeElement as HTMLElement | null;
+        const active = deepActiveElement(root) as HTMLElement | null;
         const current = active ? cells.indexOf(active) : -1;
         if (current === -1) return;
 

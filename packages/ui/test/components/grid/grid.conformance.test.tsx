@@ -1,36 +1,81 @@
+/**
+ * React render adapter + the shared grid conformance suite, plus the
+ * React-idiomatic scenarios the shared suite cannot express portably
+ * (source-order independence, explicit-span composition, arrow-key roving
+ * via userEvent -- see conformance-suite.ts's GridAdapter for why these
+ * stay local; the WC equivalents live in grid.element.conformance.test.ts).
+ */
 import * as React from 'react';
 import { cleanup, render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it } from 'vitest';
-import { Grid } from '../../../src/components/grid/grid';
-import { assertAxeClean, partElement } from '../../harness/conformance';
+import { Grid, type GridProps } from '../../../src/components/grid/grid';
+import { partElement } from '../../harness/conformance';
+import {
+  runGridConformance,
+  type GridAdapter,
+  type GridChildSpec,
+  type GridScenarioProps,
+} from './conformance-suite';
 
-const body = () => document.body;
+type FixedColumns = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
+
+function toGridProps(props: GridScenarioProps): GridProps {
+  const shared = { gap: props.gap, padding: props.padding };
+  if (props.role === 'grid') {
+    return {
+      ...shared,
+      role: 'grid',
+      columns: (props.columns ?? 1) as FixedColumns,
+      'aria-label': props.ariaLabel ?? '',
+      preset: 'linear',
+    };
+  }
+  return {
+    ...shared,
+    role: props.role,
+    columns: props.columns,
+    preset: props.preset,
+    pattern: props.pattern,
+  };
+}
+
+function toChildren(children: GridChildSpec[]): React.ReactNode {
+  return children.map((child, index) =>
+    child.priority !== undefined || child.colSpan !== undefined || child.rowSpan !== undefined ? (
+      // biome-ignore lint/suspicious/noArrayIndexKey: scenario children are positional by definition
+      <Grid.Item
+        key={index}
+        priority={child.priority}
+        colSpan={child.colSpan}
+        rowSpan={child.rowSpan}
+      >
+        {child.text}
+      </Grid.Item>
+    ) : (
+      // biome-ignore lint/suspicious/noArrayIndexKey: scenario children are positional by definition
+      <span key={index}>{child.text}</span>
+    ),
+  );
+}
+
+const reactAdapter: GridAdapter = {
+  name: 'react',
+  render(props, children) {
+    const utils = render(<Grid {...toGridProps(props)}>{toChildren(children)}</Grid>);
+    const root = utils.container.querySelector<HTMLElement>('[data-part="root"]');
+    if (!root) throw new Error('react adapter: no [data-part="root"] rendered');
+    return { host: utils.container, root, cleanup: () => utils.unmount() };
+  },
+};
 
 afterEach(() => {
   cleanup();
 });
 
-describe('grid conformance [react]', () => {
-  it('layout grid: silent furniture, priority projected onto items', async () => {
-    render(
-      <main>
-        <Grid preset="bento" pattern="dashboard">
-          <Grid.Item priority="primary">Metric</Grid.Item>
-          <Grid.Item priority="secondary">Chart</Grid.Item>
-          <Grid.Item priority="tertiary">Feed</Grid.Item>
-        </Grid>
-      </main>,
-    );
-    const root = partElement(body(), 'root') as HTMLElement;
-    expect(root.hasAttribute('role')).toBe(false);
-    expect(root.getAttribute('data-preset')).toBe('bento');
-    const items = root.querySelectorAll('[data-priority]');
-    expect(items).toHaveLength(3);
-    expect(items[0]?.getAttribute('data-priority')).toBe('primary');
-    await assertAxeClean(body());
-  });
+runGridConformance(reactAdapter);
 
+describe('grid conformance [react] framework-specific', () => {
   it('reordering the tree does not change which item is the hero', () => {
     render(
       <Grid preset="golden">
@@ -38,28 +83,8 @@ describe('grid conformance [react]', () => {
         <Grid.Item priority="primary">Hero</Grid.Item>
       </Grid>,
     );
-    // The placement selector targets [data-priority=primary] regardless of
-    // position -- the second child carries the declaration.
-    const hero = body().querySelector('[data-priority="primary"]');
+    const hero = document.body.querySelector('[data-priority="primary"]');
     expect(hero?.textContent).toBe('Hero');
-  });
-
-  it('role=grid: rows and gridcells rendered, structure axe-clean', async () => {
-    render(
-      <main>
-        <Grid role="grid" columns={2} aria-label="Photo picker">
-          <button type="button">One</button>
-          <button type="button">Two</button>
-          <button type="button">Three</button>
-        </Grid>
-      </main>,
-    );
-    const root = partElement(body(), 'root') as HTMLElement;
-    expect(root.getAttribute('role')).toBe('grid');
-    expect(root.getAttribute('aria-label')).toBe('Photo picker');
-    expect(root.querySelectorAll('[role="row"]')).toHaveLength(2);
-    expect(root.querySelectorAll('[role="gridcell"]')).toHaveLength(3);
-    await assertAxeClean(body());
   });
 
   it('role=grid: arrow keys rove in two dimensions', async () => {
@@ -72,7 +97,8 @@ describe('grid conformance [react]', () => {
         <span>d</span>
       </Grid>,
     );
-    const cells = Array.from(body().querySelectorAll<HTMLElement>('[role="gridcell"]'));
+    const root = partElement(document.body, 'root') as HTMLElement;
+    const cells = Array.from(root.querySelectorAll<HTMLElement>('[role="gridcell"]'));
     expect(cells[0]?.getAttribute('tabindex')).toBe('0');
     expect(cells[1]?.getAttribute('tabindex')).toBe('-1');
 
@@ -89,18 +115,5 @@ describe('grid conformance [react]', () => {
     expect(document.activeElement).toBe(cells[3]);
     await user.keyboard('{Home}');
     expect(document.activeElement).toBe(cells[0]);
-  });
-
-  it('explicit spans compose with priority on items', () => {
-    render(
-      <Grid columns={4}>
-        <Grid.Item colSpan={2} rowSpan={2} priority="primary">
-          Wide
-        </Grid.Item>
-      </Grid>,
-    );
-    const item = body().querySelector('[data-priority="primary"]');
-    expect(item?.className).toContain('col-span-2');
-    expect(item?.className).toContain('row-span-2');
   });
 });

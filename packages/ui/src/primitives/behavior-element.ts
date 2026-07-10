@@ -15,13 +15,14 @@
  * finer-grained patching earns that machinery when it has a test that
  * requires it.
  *
- * Dispatch-and-callback and the effects runner are the two boundary-3
- * responsibilities this class does NOT wire yet: no shipped WC performance
- * has mutable state (Container is a static score, canDispatch is
- * unreachable, effects() is always []). Spec 03's effect vocabulary and
- * runner (lib/effects.ts) are already framework-agnostic; the first
- * stateful WC port (dialog) is where `dispatch()` and the runner plug into
- * this class -- a seam filled in, not a rewrite.
+ * The effects runner is wired here (Spec 03: "WC: apply after each patch,
+ * stop on disconnect"), earned by Grid's conditional grid-roving effect --
+ * the first WC performance whose score returns anything from `effects()`.
+ * Dispatch-and-callback is still NOT wired: no shipped WC performance has a
+ * REACHABLE action yet (Container's canDispatch is unreachable; Grid's
+ * grid-roving effect moves focus without dispatching). `EffectHost.dispatch`
+ * is a documented no-op seam -- the first WC with a reachable action fills
+ * it in against lib/effects.ts's already framework-agnostic protocol.
  */
 import {
   createBehavior,
@@ -29,6 +30,7 @@ import {
   type BehaviorSpec,
   type PartIds,
 } from '../lib/contract';
+import { createEffectRunner, type EffectHost, type EffectRunner } from '../lib/effects';
 import type { Memory } from './memory';
 import { RaftersElement } from './rafters-element';
 
@@ -44,6 +46,14 @@ export abstract class BehaviorElement<
   private static instanceCounter = 0;
   private readonly instanceId = `rf-${++BehaviorElement.instanceCounter}`;
   private behaviorMemory: Memory<State> | null = null;
+  private effectRunner: EffectRunner | null = null;
+  private readonly effectHost: EffectHost = {
+    getPart: (part) => this.shadowRoot?.querySelector<HTMLElement>(`[data-part="${part}"]`) ?? null,
+    dispatch: () => {
+      // No shipped WC performance dispatches from an effect yet (Spec 03
+      // seam, see class docblock).
+    },
+  };
 
   /**
    * Config assembly's component-specific half: read the current attributes
@@ -71,7 +81,37 @@ export abstract class BehaviorElement<
 
   override connectedCallback(): void {
     this.behaviorMemory ??= createBehavior(this.spec, this.readConfig()).memory;
+    this.effectRunner ??= createEffectRunner();
     super.connectedCallback();
+  }
+
+  override disconnectedCallback(): void {
+    this.effectRunner?.stop();
+    this.effectRunner = null;
+    super.disconnectedCallback();
+  }
+
+  /** Patch-in-place (shadow content only) plus the effects reconcile --
+   *  "apply after each patch" (Spec 03). Ridden by every attribute change
+   *  via RaftersElement.attributeChangedCallback -> update().
+   *
+   *  KNOWN LIMITATION: RaftersElement.update() replaces the ENTIRE shadow
+   *  subtree every call (no part-level patching yet). An ONGOING effect
+   *  whose requested key is unchanged across two renders (e.g. grid-roving
+   *  with the same column count) is left bound to the now-detached PREVIOUS
+   *  root by the runner's key-identity diff -- the runner sees "still
+   *  requested" and does not rebind. Mount-time behavior is correct; an
+   *  attribute change that keeps the same effect key while swapping the
+   *  live DOM is not yet. Not fixed here: full-replace is the whole of
+   *  today's "patch-in-place", and reconciling it needs the part-level
+   *  diffing this class already defers ("a component that needs
+   *  finer-grained patching earns that machinery when it has a test that
+   *  requires it") -- not a scope this port grows into. */
+  override update(): void {
+    super.update();
+    const config = this.readConfig();
+    const state = this.behaviorMemory?.get() ?? this.spec.initialState(config);
+    this.effectRunner?.apply(this.spec.effects(state, config), this.effectHost);
   }
 
   override render(): Node {
