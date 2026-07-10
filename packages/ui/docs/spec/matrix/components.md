@@ -2,7 +2,7 @@
 
 One line per component: what it is, what it does, what it uses (current primitive imports -> planned re-composition), states, motion, framework support.
 Generated 2026-07-09 from live index evidence (sym tree, import scan) + authored semantics. Excluded: editor, color-picker, color-inspector.
-Behavior-layer support: only the five articles have react (verified); container additionally has astro (verified). Old tree availability listed for interim use.
+Behavior-layer support: only the five articles have react (verified); container and button additionally have astro (verified). Old tree availability listed for interim use.
 
 ## static (21)
 
@@ -34,7 +34,7 @@ Behavior-layer support: only the five articles have react (verified); container 
 
 | component | is | does | states | uses (current) | uses (planned) | motion | old tree | layer |
 |---|---|---|---|---|---|---|---|---|
-| **button** A | Action trigger (ARTICLE) | Dispatches press; Enter/Space; loading announces busy | pressed, busy, disabled | - | - | transition-colors | astro/react/wc | react OK |
+| **button** A | Action trigger (ARTICLE) | Dispatches press; Enter/Space; loading announces busy | pressed, busy, disabled | - | - | transition-colors | astro/react/wc | react + astro OK |
 | **button-group** | Adjoined button set | Groups buttons with shared borders and single focus ring | - | - | - | none | react/wc | none |
 | **calendar** | Month grid | Grid-navigates dates (arrows/page); selects single/range | focused date, selected, month | memory | keyboard-handler, roving-focus | none | react | none |
 | **pagination** | Page navigation | Links/buttons for page selection with current marked | current page | - | - | transition-colors | astro/react | none |

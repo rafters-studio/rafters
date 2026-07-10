@@ -28,6 +28,7 @@ function toProps(props: ButtonScenarioProps): ButtonProps {
 const reactAdapter: ButtonAdapter = {
   name: 'react',
   supportsIconLabel: true,
+  supportsInteraction: true,
   render(props, label): RenderResult {
     const utils = render(<Button {...toProps(props)}>{label}</Button>);
     const root = utils.container.querySelector<HTMLElement>('[data-part="root"]');

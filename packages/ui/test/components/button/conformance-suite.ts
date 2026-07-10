@@ -32,6 +32,12 @@ export interface ButtonAdapter {
    *  that cannot express it (WC host aria-label does not cross the shadow
    *  boundary onto the inner button) opt out. */
   supportsIconLabel: boolean;
+  /** Whether this binding ships a client runtime that dispatches actions
+   *  (click/keyboard). Static-tier bindings (Astro: no client runtime,
+   *  Spec 03) render only the initial contract from config -- the
+   *  interaction assertions below assume a dispatch loop none of them
+   *  have and must not run against them. */
+  supportsInteraction: boolean;
 }
 
 interface Scenario {
@@ -111,50 +117,52 @@ export function runButtonConformance(adapter: ButtonAdapter): void {
       });
     }
 
-    it('toggle: Enter and Space flip aria-pressed through the keymap', async () => {
-      const result = await adapter.render({ toggle: true }, 'Mute');
-      try {
-        const root = result.root;
-        expect(root.getAttribute('aria-pressed')).toBe('false');
-        const user = userEvent.setup();
-        root.focus();
-        await user.keyboard('{Enter}');
-        expect(partElement(root, 'root')?.getAttribute('aria-pressed')).toBe('true');
-        await user.keyboard(' ');
-        expect(partElement(root, 'root')?.getAttribute('aria-pressed')).toBe('false');
-      } finally {
-        result.cleanup();
-      }
-    });
+    if (adapter.supportsInteraction) {
+      it('toggle: Enter and Space flip aria-pressed through the keymap', async () => {
+        const result = await adapter.render({ toggle: true }, 'Mute');
+        try {
+          const root = result.root;
+          expect(root.getAttribute('aria-pressed')).toBe('false');
+          const user = userEvent.setup();
+          root.focus();
+          await user.keyboard('{Enter}');
+          expect(partElement(root, 'root')?.getAttribute('aria-pressed')).toBe('true');
+          await user.keyboard(' ');
+          expect(partElement(root, 'root')?.getAttribute('aria-pressed')).toBe('false');
+        } finally {
+          result.cleanup();
+        }
+      });
 
-    it('loading: activation is suppressed, focus is kept, label survives', async () => {
-      const result = await adapter.render({ toggle: true, loading: true }, 'Submit');
-      try {
-        const root = result.root;
-        expect(root.hasAttribute('disabled')).toBe(false);
-        expect(root.getAttribute('aria-busy')).toBe('true');
-        expect(partText(root, 'label')).toContain('Submit');
-        const user = userEvent.setup();
-        await user.click(root);
-        expect(root.getAttribute('aria-pressed')).toBe('false');
-      } finally {
-        result.cleanup();
-      }
-    });
+      it('loading: activation is suppressed, focus is kept, label survives', async () => {
+        const result = await adapter.render({ toggle: true, loading: true }, 'Submit');
+        try {
+          const root = result.root;
+          expect(root.hasAttribute('disabled')).toBe(false);
+          expect(root.getAttribute('aria-busy')).toBe('true');
+          expect(partText(root, 'label')).toContain('Submit');
+          const user = userEvent.setup();
+          await user.click(root);
+          expect(root.getAttribute('aria-pressed')).toBe('false');
+        } finally {
+          result.cleanup();
+        }
+      });
 
-    it('soft-disabled: discoverable, focusable, suppressed', async () => {
-      const result = await adapter.render({ toggle: true, softDisabled: true }, 'Archive');
-      try {
-        const root = result.root;
-        expect(root.hasAttribute('disabled')).toBe(false);
-        expect(root.getAttribute('aria-disabled')).toBe('true');
-        const user = userEvent.setup();
-        await user.click(root);
-        expect(root.getAttribute('aria-pressed')).toBe('false');
-      } finally {
-        result.cleanup();
-      }
-    });
+      it('soft-disabled: discoverable, focusable, suppressed', async () => {
+        const result = await adapter.render({ toggle: true, softDisabled: true }, 'Archive');
+        try {
+          const root = result.root;
+          expect(root.hasAttribute('disabled')).toBe(false);
+          expect(root.getAttribute('aria-disabled')).toBe('true');
+          const user = userEvent.setup();
+          await user.click(root);
+          expect(root.getAttribute('aria-pressed')).toBe('false');
+        } finally {
+          result.cleanup();
+        }
+      });
+    }
 
     it('hard disabled: native disabled only, no redundant aria-disabled', async () => {
       const result = await adapter.render({ disabled: true }, 'Delete');

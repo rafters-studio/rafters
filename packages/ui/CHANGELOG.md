@@ -9,6 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Button, Astro performance.** `button.astro` joins `button.tsx` as the
+  second render target of the score (`button.behavior.ts`), server-rendered
+  and static: it computes the initial contract from config --
+  `button.initialState`, `buttonClasses`, `button.aria` -- and renders it
+  once, with no client runtime, no effects (Spec 03: the `announce` effect
+  needs an executor a static render doesn't have), and no keyboard branches
+  (a native `<button>` already fires click on Enter/Space). `toggle` +
+  `defaultPressed` still render correctly since they're config, not
+  interaction. Ids are inputs the behavior never generates (Spec 01 rule 3);
+  this tier has no id-supplying adapter and pressable's `aria` projection
+  never reads them, so empty strings satisfy the signature without inventing
+  machinery. Conformance reuses the button suite (`conformance-suite.ts`)
+  through a new `supportsInteraction` adapter flag: the static/axe/contract
+  assertions run for every scenario, the three keyboard/click assertions
+  (which assume a dispatch loop this tier doesn't have) are opted out.
+  Matrix line: `frameworks.behaviorLayer.astro` -> `verified`.
 - **Container, Astro performance.** `container.astro` joins `container.tsx`
   as the second render target of the static score -- a thin wrapper with no
   decisions of its own: config in, `container.classes.ts` (the same
