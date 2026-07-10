@@ -1,4 +1,4 @@
-import type { AriaAttrs, KeyInput, PartIds } from '../../lib/contract';
+import type { KeyInput, PartIds } from '../../lib/contract';
 import classy from '../../primitives/classy';
 import { BehaviorElement } from '../../primitives/behavior-element';
 import {
@@ -340,16 +340,6 @@ export class RaftersDialog extends BehaviorElement<
     if (close) {
       if (!close.id) close.id = ids.close;
       this.applyAttrs(close, projection.close ?? {});
-    }
-  }
-
-  private applyAttrs(element: HTMLElement, attrs: AriaAttrs): void {
-    for (const [attr, value] of Object.entries(attrs)) {
-      if (value === undefined) {
-        element.removeAttribute(attr);
-      } else {
-        element.setAttribute(attr, String(value));
-      }
     }
   }
 }

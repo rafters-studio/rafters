@@ -37,6 +37,7 @@
 import {
   createBehavior,
   type ActionPayloads,
+  type AriaAttrs,
   type BehaviorSpec,
   type PartIds,
   type PayloadArgs,
@@ -196,12 +197,20 @@ export abstract class BehaviorElement<
       if (!attrs) continue;
       const element = this.findPart(root, part);
       if (!element) continue;
-      for (const [attr, value] of Object.entries(attrs)) {
-        if (value === undefined) {
-          element.removeAttribute(attr);
-        } else {
-          element.setAttribute(attr, String(value));
-        }
+      this.applyAttrs(element, attrs);
+    }
+  }
+
+  /** Write an aria projection onto one element -- absence (`undefined`)
+   *  removes the attribute rather than rendering it. The one attribute-
+   *  writing loop every performance's aria application goes through,
+   *  shared/light-DOM structural styles alike. */
+  protected applyAttrs(element: Element, attrs: AriaAttrs): void {
+    for (const [attr, value] of Object.entries(attrs)) {
+      if (value === undefined) {
+        element.removeAttribute(attr);
+      } else {
+        element.setAttribute(attr, String(value));
       }
     }
   }
