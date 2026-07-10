@@ -2,7 +2,7 @@
 
 One line per component: what it is, what it does, what it uses (current primitive imports -> planned re-composition), states, motion, framework support.
 Generated 2026-07-09 from live index evidence (sym tree, import scan) + authored semantics. Excluded: editor, color-picker, color-inspector.
-Behavior-layer support: only the five articles have react (verified); container, button, grid, and dialog additionally have astro (verified). Old tree availability listed for interim use.
+Behavior-layer support: only the five articles have react (verified); container, button, grid, dialog, and navigation-menu additionally have astro (verified). Old tree availability listed for interim use.
 
 ## static (21)
 
@@ -102,6 +102,6 @@ Behavior-layer support: only the five articles have react (verified); container,
 |---|---|---|---|---|---|---|---|---|
 | **carousel** | Slide sequence | Advances slides prev/next/goto; swipe on touch | index, canPrev/canNext | memory | drag-drop, keyboard-handler | none -> slide-advance: slide, axis x | react | none |
 | **menubar** | Horizontal application menu bar | Bar of menus; roving focus across triggers; open follows focus | open menu, highlighted | - | disclosure, escape-keydown, outside-click, roving-focus, typeahead | animate-in/out fade+zoom -> enter/exit: fade+zoom | astro/react | none |
-| **navigation-menu** A | Site navigation bar (ARTICLE) | Bar of disclosure triggers; one panel open; hover intent | activeItem, open per trigger | - | - | animate-in (dead classes, task 7) -> panel enter/exit: fade+zoom | astro/react | react OK |
+| **navigation-menu** A | Site navigation bar (ARTICLE) | Bar of disclosure triggers; one panel open; hover intent | activeItem, open per trigger | - | - | animate-in (dead classes, task 7) -> panel enter/exit: fade+zoom | astro/react | react + astro OK |
 | **resizable** | Draggable split panels | Drag handles resize adjacent panels; keyboard resizes | sizes, dragging | memory | interactive, keyboard-handler | transition-shadow handle | react | none |
 | **sidebar** | Collapsible navigation rail | Expands/collapses app nav; remembers state; mobile overlay mode | open, collapsed rail, mobile | memory | - | translate-x slide -> expand/collapse: slide, axis x | react | none |

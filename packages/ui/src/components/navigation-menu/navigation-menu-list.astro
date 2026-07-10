@@ -1,0 +1,41 @@
+---
+/**
+ * NavigationMenuList -- the Astro performance of the score's `list` part
+ * (navigation-menu.behavior.ts), the roving-focus region in the React
+ * performance. `roving-focus` is an effect (Spec 03) and never runs here,
+ * so this file renders the bare `<ul>`: no `data-roving-item` bookkeeping
+ * to seed, no tabindex management to fake. Native tab order across the
+ * triggers is the honest static behavior.
+ *
+ * `orientation` is repeated from navigation-menu.astro (no shared context
+ * across Astro's opaque slot boundary -- see that file's docblock); it
+ * drives the same `data-orientation` projection here that the root carries
+ * on `<nav>`.
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { navigationMenu, type NavigationMenuConfig } from './navigation-menu.behavior';
+import { navigationMenuClasses } from './navigation-menu.classes';
+
+interface Props extends HTMLAttributes<'ul'> {
+  orientation?: 'horizontal' | 'vertical';
+}
+
+const { orientation = 'horizontal', class: className, ...attrs } = Astro.props;
+
+const config: NavigationMenuConfig = { orientation };
+const state = navigationMenu.initialState(config);
+const classes = navigationMenuClasses(config, state);
+const aria = navigationMenu.aria(state, config, {
+  root: '',
+  list: '',
+  trigger: '',
+  content: '',
+  viewport: '',
+  indicator: '',
+});
+---
+
+<ul data-part="list" class={classy(classes.list, className)} {...aria.list} {...attrs}>
+  <slot />
+</ul>

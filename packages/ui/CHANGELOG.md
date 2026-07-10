@@ -9,6 +9,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Navigation-menu, Astro performance.** `navigation-menu.astro` (root
+  `<nav>`), `navigation-menu-list.astro` (`<ul>`), `navigation-menu-item.astro`
+  (`<li>` holding one trigger/content pair), and `navigation-menu-link.astro`
+  (`<a>`) join `navigation-menu.tsx` as the score's second render target.
+  Unlike `dialog.astro`, content is not dropped -- `content` is declared
+  "ALWAYS in the DOM, hidden when closed" so navigation links stay
+  crawlable -- but every panel still renders CLOSED: `toggle`/`hoverOpen`
+  dispatch through a click/hover loop this tier does not have, backed by
+  `dismiss-on-outside` and an Escape `keymap` this tier cannot honor either,
+  so an SSR-open item would show `aria-expanded="true"` with no way for a
+  keyboard or screen-reader user to close it -- the same lie `dialog.astro`'s
+  dropped `open` state was ruled against. `value`/`defaultValue` are not
+  exposed as config anywhere in this directory's Astro surface, and neither
+  is `delayDuration` (it only feeds `hover-intent`, which never runs here --
+  a knob with no observable effect is its own dishonesty). `orientation`
+  stays: it drives a real `data-orientation` projection on both root and
+  list, repeated on each since Astro's slot model has no shared context.
+  `navigation-menu-item.astro` renders BOTH the `trigger` and `content`
+  parts from one file, unlike the React tree's Item/Trigger/Content
+  three-way split -- splitting them into two sibling files would force the
+  same `nav-trigger-${value}`/`nav-content-${value}` id-format string into
+  two places with no shared source, the "two performances share a line
+  beyond the adapter" drift boundary 3 rules against, since Astro has no
+  adapter to hold it once; folding computes the id pair ONCE.
+  `navTriggerAria`/`navContentAria` still run for real against the closed
+  state, so the projected `aria-expanded`/`aria-controls`/`aria-labelledby`/
+  `hidden` are score-derived, not hand-authored. `data-roving-item` is
+  dropped (no `roving-focus` effect to enumerate for), `aria-haspopup="menu"`
+  is not ported (oracle disposition: defect-do-not-port), and Viewport/
+  Indicator are dropped entirely -- both only render while open or
+  `forceMount`, which never happens statically, so they would contribute
+  nothing but inert markup. The chevron glyph and `NavigationMenuLink`'s
+  `data-active` passthrough are ported; `asChild` is not (no Astro
+  equivalent). Conformance
+  (`navigation-menu.astro.conformance.test.ts`, container's standalone
+  `AstroContainer` pattern since navigation-menu has no shared adapter suite)
+  ports the closed-panel and correlated-id scenarios from the React suite;
+  click/roving-focus/ArrowDown-open/Escape/dismiss/hover-intent scenarios
+  drop along with the interaction, not skip-registered. Documented in
+  `docs/spec/components/navigation-menu.md`'s new Astro-performance section.
+  Matrix line: `frameworks.behaviorLayer.astro` -> `verified`.
 - **Dialog, Astro performance.** `dialog.astro` joins `dialog.tsx` as the
   static score's fifth render target -- but renders only the CLOSED state,
   never the open one. The `open` state is not a static fact: it is the

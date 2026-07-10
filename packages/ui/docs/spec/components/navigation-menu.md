@@ -8,10 +8,65 @@ Files (`src/components/navigation-menu/`):
 
 ```
 navigation-menu.classes.ts    navigation-menu.behavior.ts    navigation-menu.tsx
+navigation-menu.astro    navigation-menu-list.astro    navigation-menu-item.astro
+navigation-menu-link.astro
 ```
 
-Tests mirror into `test/components/navigation-menu/`. WC and Astro
-performances not yet written (same debt as button and dialog).
+Tests mirror into `test/components/navigation-menu/`. WC performance not yet
+written (same debt as button and dialog).
+
+## Astro performance: closed panels, correlated ids, folded item
+
+`navigation-menu.astro` (root `<nav>`), `navigation-menu-list.astro`
+(`<ul>`), `navigation-menu-item.astro` (`<li>` holding one trigger/content
+pair), and `navigation-menu-link.astro` (`<a>`) join `navigation-menu.tsx`
+as the score's second render target. Unlike dialog.astro, content is not
+dropped: `content` is declared "ALWAYS in the DOM, hidden when closed" so
+navigation links stay crawlable, and that presence needs no effect to be
+honest. What IS dropped is ever being open: `toggle`/`hoverOpen` dispatch
+through a click/hover loop this tier does not have, backed by
+`dismiss-on-outside` and an Escape `keymap` this tier cannot honor either.
+An SSR-open item would show `aria-expanded="true"` with no way for a
+keyboard or screen-reader user to close it -- the same lie dialog.astro's
+dropped `open` state was ruled against -- so `value`/`defaultValue` are not
+exposed as config anywhere in this directory's Astro surface, and every
+panel renders `hidden`/`data-state="closed"`. `delayDuration` is dropped
+too: it only feeds `hover-intent`, which never runs here, and a knob with no
+observable effect is its own dishonesty (dialog.astro precedent).
+`orientation` stays, since it drives a real `data-orientation` projection
+on both root and list.
+
+`navigation-menu-item.astro` renders BOTH the `trigger` and `content` parts
+from one file, unlike the React tree's Item/Trigger/Content three-way split.
+Astro's slot model has no context: a component cannot hand computed ids to
+independently-rendered slotted children the way React's
+`NavigationMenuItemContext` hands `triggerId`/`contentId` down. Splitting
+trigger and content into two sibling files would force the same
+`nav-trigger-${value}` / `nav-content-${value}` id-format string into two
+places with no shared source -- the "two performances share a line beyond
+the adapter" drift boundary 3 rules against, since Astro has no adapter to
+hold it once. Folding both parts into one file computes the id pair ONCE.
+`navTriggerAria`/`navContentAria` still run for real against the closed
+state, so the projected `aria-expanded`/`aria-controls`/`aria-labelledby`/
+`hidden` are score-derived, not hand-authored.
+
+`data-roving-item` is dropped, not carried over: it exists so the
+`roving-focus` effect can enumerate triggers, and that effect never runs
+here. `aria-haspopup="menu"` is not ported (disposition below:
+defect-do-not-port). Viewport and Indicator are dropped entirely, not
+un-rendered for some inputs: both only render while open or `forceMount`,
+and this tier's `open` is never true, so they contribute nothing but inert
+markup -- consistent with the spec's own note that they have "no
+consumers exist." The chevron glyph and `NavigationMenuLink`'s `data-active`
+passthrough are ported (`asChild` is not: no Astro equivalent, and the
+plain `<a>` covers the one real use).
+
+Conformance (`navigation-menu.astro.conformance.test.ts`, container's
+standalone `AstroContainer` pattern since navigation-menu has no shared
+adapter suite the way button does) ports the closed-panel and
+correlated-id scenarios from the React suite; click/roving-focus/
+ArrowDown-open/Escape/dismiss/hover-intent scenarios drop along with the
+interaction, not skip-registered.
 
 ## What the score owns vs what effects own
 

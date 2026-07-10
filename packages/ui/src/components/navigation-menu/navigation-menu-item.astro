@@ -1,0 +1,108 @@
+---
+/**
+ * NavigationMenuItem -- the Astro performance of one item's disclosure pair
+ * (`trigger` + `content`, navigation-menu.behavior.ts). Renders BOTH parts
+ * from a single file, unlike the React tree's three-way split
+ * (Item/Trigger/Content).
+ *
+ * Astro's slot model is opaque and carries no context: a component cannot
+ * hand computed values to independently-rendered children the way React's
+ * `NavigationMenuItem` hands `triggerId`/`contentId` to
+ * `NavigationMenuTrigger`/`NavigationMenuContent` through
+ * `NavigationMenuItemContext`. Splitting trigger and content into two
+ * sibling `.astro` files would force the same id-format string
+ * (`nav-trigger-${value}` / `nav-content-${value}`) into two places with no
+ * shared source to hold it once -- exactly the "two performances share a
+ * line beyond the adapter" drift boundary 3 rules against, since Astro has
+ * no adapter to own id supply the way React's `useBehavior` does. Folding
+ * both parts into this one file computes the id pair ONCE, the same
+ * correlation `NavigationMenuItem` already owns in the React tree, just
+ * performed here instead of threaded through context.
+ *
+ * The state rendered is always closed. Opening is `toggle`/`hoverOpen`
+ * dispatched through a click/hover loop this tier does not have (no client
+ * runtime, Spec 03), backed by `dismiss-on-outside` and an Escape `keymap`
+ * this tier cannot honor either. A pre-opened item would show
+ * `aria-expanded="true"` with no way for a keyboard or screen-reader user
+ * to close it -- the same lie dialog.astro's dropped open state was ruled
+ * against. So `value` drives `data-value`/id-correlation only, never an
+ * initial open state: no `value`/`defaultValue` config is exposed anywhere
+ * in this directory's Astro performance (dialog.astro precedent -- a knob
+ * with no honest observable effect is its own dishonesty).
+ * `navTriggerAria`/`navContentAria` still run for real against that closed
+ * state, so the projected aria is score-derived, not hand-authored.
+ *
+ * `data-roving-item` is dropped, not carried over: it exists so the
+ * `roving-focus` effect can enumerate triggers, and that effect never runs
+ * here -- keeping the marker would claim machinery this tier does not
+ * ship. `aria-haspopup="menu"` is not ported (navigation-menu.md oracle
+ * disposition: defect-do-not-port -- content is not `role="menu"`). The
+ * chevron glyph is ported (disposition: oracle-traceable).
+ *
+ * Ids are formatted from `value` alone -- `NavigationMenuItemProps` in the
+ * React tree is `value` plus `li` attributes only, and this performance
+ * matches that surface rather than adding a second scope prop. Two items
+ * sharing the same `value` across two DIFFERENT NavigationMenu instances on
+ * one page would collide; choose page-unique values, the same discipline
+ * any hand-authored id already requires.
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import {
+  navContentAria,
+  navigationMenu,
+  navTriggerAria,
+  type NavigationMenuConfig,
+} from './navigation-menu.behavior';
+import { navigationMenuClasses } from './navigation-menu.classes';
+
+interface Props extends HTMLAttributes<'li'> {
+  value: string;
+}
+
+const { value, class: className, ...attrs } = Astro.props;
+
+const config: NavigationMenuConfig = {};
+const state = navigationMenu.initialState(config);
+const classes = navigationMenuClasses(config, state);
+
+const triggerId = `nav-trigger-${value}`;
+const contentId = `nav-content-${value}`;
+const triggerAria = navTriggerAria(value, state, config, { contentId });
+const contentAria = navContentAria(value, state, config, { triggerId });
+---
+
+<li class={classy(classes.item, className)} {...attrs}>
+  <button
+    type="button"
+    id={triggerId}
+    data-part="trigger"
+    data-value={value}
+    class={classes.trigger}
+    {...triggerAria}
+  >
+    <slot name="trigger" />
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      class={classes.triggerChevron}
+      aria-hidden="true"
+    >
+      <path d="m6 9 6 6 6-6"></path>
+    </svg>
+  </button>
+  <div
+    id={contentId}
+    data-part="content"
+    data-value={value}
+    class={classes.content}
+    {...contentAria}
+  >
+    <slot />
+  </div>
+</li>

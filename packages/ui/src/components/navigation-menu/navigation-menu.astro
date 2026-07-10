@@ -1,0 +1,67 @@
+---
+/**
+ * NavigationMenu -- the Astro performance of the score
+ * (navigation-menu.behavior.ts). The `<nav>` landmark only: list, items,
+ * triggers, and content panels are the sibling performances in this
+ * directory (navigation-menu-list.astro, navigation-menu-item.astro,
+ * navigation-menu-link.astro).
+ *
+ * Astro is the static tier: no client runtime, no effects (Spec 03). The
+ * score's only state axis -- which item is open -- moves through actions
+ * this tier cannot dispatch (`toggle`/`hoverOpen` fire from a click/hover
+ * loop; `close` fires from `dismiss-on-outside`/Escape, both effects). So
+ * this performance renders the "closed panels" surface: the bar, every
+ * trigger, every content panel present and crawlable, none of them open.
+ * `value`/`defaultValue` are not exposed as config here -- see
+ * navigation-menu-item.astro's docblock for why an initially-open item
+ * would be dishonest at this tier, the same reasoning dialog.astro applied
+ * to `open`/`defaultOpen`.
+ *
+ * `orientation` DOES have an observable static effect (`aria`'s
+ * `data-orientation` projection, read by both root and list), so it stays a
+ * prop -- unlike `delayDuration`, which only feeds the `hover-intent`
+ * effect and never runs here, so it is dropped (a knob with no observable
+ * effect is its own dishonesty, dialog.astro precedent). Astro's slot model
+ * has no context to share one `orientation` between root and list the way
+ * React's `NavigationMenuContext` does; the consumer repeats it on both,
+ * the same explicit-repetition affordance grid-item.astro's `priority`
+ * accepts for its own cross-file concerns.
+ *
+ * `navigationMenu.initialState({})` and `navigationMenu.aria` still run for
+ * real, so the projected `data-state`/`data-orientation` are score-derived,
+ * not hand-authored. `ids` is empty-string `PartIds` (Spec 01 rule 3: ids
+ * are inputs; the root's aria projection never resolves one).
+ */
+import type { HTMLAttributes } from 'astro/types';
+import type { PartIds } from '../../lib/contract';
+import classy from '../../primitives/classy';
+import {
+  navigationMenu,
+  type NavigationMenuConfig,
+  type NavigationMenuPart,
+} from './navigation-menu.behavior';
+import { navigationMenuClasses } from './navigation-menu.classes';
+
+interface Props extends HTMLAttributes<'nav'> {
+  orientation?: 'horizontal' | 'vertical';
+}
+
+const { orientation = 'horizontal', class: className, ...attrs } = Astro.props;
+
+const config: NavigationMenuConfig = { orientation };
+const state = navigationMenu.initialState(config);
+const classes = navigationMenuClasses(config, state);
+const ids: PartIds<NavigationMenuPart> = {
+  root: '',
+  list: '',
+  trigger: '',
+  content: '',
+  viewport: '',
+  indicator: '',
+};
+const aria = navigationMenu.aria(state, config, ids);
+---
+
+<nav data-part="root" class={classy(classes.root, className)} {...aria.root} {...attrs}>
+  <slot />
+</nav>

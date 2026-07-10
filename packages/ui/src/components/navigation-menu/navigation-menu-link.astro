@@ -1,0 +1,30 @@
+---
+/**
+ * NavigationMenuLink -- the Astro performance of a link inside a content
+ * panel. Not a declared score part (navigation-menu.behavior.ts has no
+ * `link` in `parts`) and carries no state of its own -- same as the React
+ * `NavigationMenuLink`, which reads no context and only reflects the
+ * `active` prop the CONSUMER sets onto `data-active`. `asChild` (the React
+ * tree's polymorphic-render affordance) is not ported: Astro has no
+ * equivalent composition primitive, and the plain `<a>` already covers the
+ * one real use.
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { navigationMenu, type NavigationMenuConfig } from './navigation-menu.behavior';
+import { navigationMenuClasses } from './navigation-menu.classes';
+
+interface Props extends HTMLAttributes<'a'> {
+  active?: boolean;
+}
+
+const { active, class: className, ...attrs } = Astro.props;
+
+const config: NavigationMenuConfig = {};
+const state = navigationMenu.initialState(config);
+const classes = navigationMenuClasses(config, state);
+---
+
+<a class={classy(classes.link, className)} data-active={active || undefined} {...attrs}>
+  <slot />
+</a>
