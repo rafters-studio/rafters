@@ -9,6 +9,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Dialog, WC performance.** `dialog.element.ts` joins `dialog.tsx` as a
+  render target of the `dialog` score -- the heaviest WC case yet
+  (modal-overlay, effectful: focus-trap, scroll-lock, dismiss-on-outside
+  all live) and the first WC performance with a REACHABLE action
+  (trigger/Escape/close-button all dispatch). Every part the effects
+  runner touches renders in LIGHT DOM, not shadow DOM: `dismiss-on-outside`
+  listens on `document` and reads `event.target`, which retargets to the
+  shadow HOST for anything rendered inside a shadow root (every click
+  inside the tree becomes indistinguishable from a click on it), and
+  `focus-trap.ts` reads `document.activeElement` directly, which reports
+  the host rather than the focused descendant once focus is inside a
+  shadow tree -- the same departure `navigation-menu`'s WC port needed, for
+  the same reason. `<rafters-dialog>`'s shadow root therefore carries
+  nothing but a one-time passthrough `<slot>`; `update()` is overridden
+  wholesale (`buildParts()` unused), discovering `trigger`/`content`/
+  `title`/`description` from consumer-authored `data-part` markup rather
+  than building them, and mechanically building (over `dialog.classes.ts`,
+  mirroring `dialog.tsx`'s own `DialogContent`/`DialogOverlay` defaults)
+  the overlay, close button, and fixed-position wrapper `content` sits
+  inside while open. `content` is genuinely mounted/unmounted from the DOM
+  on open/close (matching `dialog.tsx`'s default unmount-on-close, not a
+  `hidden` stand-in that would leave an empty `fixed inset-0` wrapper
+  capturing pointer events) but idempotently -- a re-run of `update()`
+  while still open reuses the already-mounted nodes, so an ongoing effect
+  bound to `content` never orphans against a swapped root. Extends
+  `primitives/behavior-element.ts` (Spec 00 boundary 3) with the
+  accepted-dispatch protocol (`request`) and a real `EffectHost.dispatch`
+  (previously a documented no-op seam), plus a `getPart` that checks shadow
+  content first, then the host's own light-DOM children -- one lookup for
+  both structural styles. No true portal to `document.body`: content
+  mounts as a light-DOM child of the host, `position: fixed` doing the
+  viewport-escape a portal would (the score does not require portaling,
+  so this is latitude, not parity debt). Not attempted (React-only
+  ergonomics with no WC prop/callback channel): `forceMount`, the explicit
+  `DialogPortal`/`DialogOverlay` composition, the `container` portal
+  target, and the `onEscapeKeyDown`/`onPointerDownOutside` veto callbacks.
+  Conformance runs the shared harness against a WC render adapter, sharing
+  its scenario suite with the React adapter (`test/components/dialog/
+  conformance-suite.ts`); React-only scenarios stay local to
+  `dialog.conformance.test.tsx`. Matrix line: `frameworks.behaviorLayer.wc`
+  -> `verified`.
 - **Grid, WC performance.** `grid.element.ts` joins `grid.tsx` as a render
   target of the static score: `<rafters-grid>` is a thin wrapper over
   `grid.behavior.ts` + `grid.classes.ts`, config assembled from attributes

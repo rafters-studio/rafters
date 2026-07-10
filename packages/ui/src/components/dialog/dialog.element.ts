@@ -110,6 +110,14 @@ export class RaftersDialog extends BehaviorElement<
 
   private slotted = false;
   private eventsWired = false;
+  /** Cached once discovered -- the DOM presence model below genuinely
+   *  DETACHES content on close (matching dialog.tsx's default unmount, not
+   *  a `hidden` stand-in: an empty `fixed inset-0` wrapper left mounted
+   *  would still capture pointer events over the whole viewport). Once
+   *  detached, `this.querySelector` can no longer find it, so the
+   *  reference is captured on first discovery and reused for the life of
+   *  the instance. */
+  private contentRef: HTMLElement | null = null;
 
   protected override readConfig(): DialogConfig {
     return {
@@ -129,11 +137,12 @@ export class RaftersDialog extends BehaviorElement<
   override update(): void {
     this.ensureSlot();
     this.wireEvents();
+    this.contentRef ??= this.querySelector<HTMLElement>('[data-part="content"]');
 
     const config = this.readConfig();
     const state = this.currentState(config);
     const open = isOpen(state, config);
-    const content = this.querySelector<HTMLElement>('[data-part="content"]');
+    const content = this.contentRef;
 
     if (content) {
       if (open) this.mountContent(content, config, state);
@@ -192,7 +201,7 @@ export class RaftersDialog extends BehaviorElement<
 
   /**
    * Ensure the open-state structure -- overlay (modal only) and the
-   * fixed-position wrapper `content` sits inside -- exists, WITHOUT
+   * fixed-position wrapper `content` sits inside -- is IN THE DOM, WITHOUT
    * recreating anything already there. Idempotent by construction: a
    * second call while still open finds `content.parentElement` already
    * carrying `data-dialog-container` and does nothing structural, so an
@@ -206,9 +215,9 @@ export class RaftersDialog extends BehaviorElement<
       container = document.createElement('div');
       container.setAttribute('data-dialog-container', '');
       container.className = classes.container;
-      this.appendChild(container);
       container.appendChild(content);
     }
+    if (!container.isConnected) this.appendChild(container);
 
     if (config.modal === false) {
       this.querySelector<HTMLElement>('[data-part="overlay"]')?.remove();
@@ -224,22 +233,24 @@ export class RaftersDialog extends BehaviorElement<
     }
 
     content.tabIndex = -1;
-    content.hidden = false;
   }
 
-  /** Tear down the open-state structure this element built (overlay,
-   *  positioning wrapper), restoring `content` as a direct light-DOM child
-   *  of the host and hiding it. The close button is left in place --
-   *  `mountContent`'s idempotence check already tolerates it existing, and
-   *  removing/recreating it on every open/close cycle buys nothing. */
+  /** Tear down the open-state structure this element built: the overlay
+   *  and the positioning wrapper -- taking `content` (still nested inside
+   *  it) out of the document WITH it, matching dialog.tsx's default
+   *  unmount-on-close (not a `hidden` stand-in: an empty `fixed inset-0`
+   *  wrapper left mounted would still capture pointer events over the
+   *  whole viewport). `contentRef` keeps the detached node reachable for
+   *  the next open. The close button travels with it -- nothing to
+   *  recreate on reopen. */
   private unmountContent(content: HTMLElement): void {
     this.querySelector<HTMLElement>('[data-part="overlay"]')?.remove();
     const container = content.parentElement;
     if (container?.hasAttribute('data-dialog-container')) {
-      this.insertBefore(content, container);
       container.remove();
+    } else {
+      content.remove();
     }
-    content.hidden = true;
   }
 
   private buildCloseButton(buttonClass: string, iconClass: string): HTMLButtonElement {
@@ -310,8 +321,6 @@ export class RaftersDialog extends BehaviorElement<
       if (!content.id) content.id = ids.content;
       this.applyAttrs(content, projection.content ?? {});
       content.className = classy(classes.content, content.className);
-    } else if (content) {
-      this.applyAttrs(content, projection.content ?? {});
     }
 
     if (title) {

@@ -1,7 +1,10 @@
 /**
- * React performance of the dialog score, driven end to end. The portal
- * renders into document.body, so part queries run against body, not the
- * RTL container.
+ * React render adapter + the shared dialog conformance suite, plus the
+ * React-idiomatic scenarios the shared suite cannot express portably
+ * (controlled/uncontrolled callbacks, explicit DialogPortal composition,
+ * forceMount, the `container` prop, veto callbacks -- see
+ * conformance-suite.ts's header for why these stay local; no WC
+ * counterpart exists for any of them).
  */
 import * as React from 'react';
 import { cleanup, render } from '@testing-library/react';
@@ -18,13 +21,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '../../../src/components/dialog/dialog';
-import { dialog } from '../../../src/components/dialog/dialog.behavior';
+import { assertAxeClean, partElement } from '../../harness/conformance';
 import {
-  assertAxeClean,
-  assertContractFulfillment,
-  domPartIds,
-  partElement,
-} from '../../harness/conformance';
+  runDialogConformance,
+  type DialogAdapter,
+  type DialogScenarioProps,
+} from './conformance-suite';
 
 interface SetupProps {
   open?: boolean;
@@ -52,149 +54,28 @@ function TestDialog({ withDescription = true, ...props }: SetupProps) {
 
 const body = () => document.body;
 
+const reactAdapter: DialogAdapter = {
+  name: 'react',
+  render(props: DialogScenarioProps) {
+    const utils = render(
+      <TestDialog
+        defaultOpen={props.defaultOpen}
+        modal={props.modal}
+        withDescription={props.withDescription}
+      />,
+    );
+    return { host: body(), root: body(), cleanup: () => utils.unmount() };
+  },
+};
+
 afterEach(() => {
   cleanup();
   document.body.replaceChildren();
 });
 
-describe('dialog conformance [react]', () => {
-  it('closed: only the trigger renders, collapsed and axe-clean', async () => {
-    render(<TestDialog />);
-    const trigger = partElement(body(), 'trigger');
-    expect(trigger).not.toBeNull();
-    expect(partElement(body(), 'content')).toBeNull();
-    expect(trigger?.getAttribute('aria-expanded')).toBe('false');
-    expect(trigger?.hasAttribute('aria-controls')).toBe(false);
-    await assertAxeClean(body());
-  });
+runDialogConformance(reactAdapter);
 
-  it('open: every part renders and ARIA equals the projection', async () => {
-    const user = userEvent.setup();
-    render(<TestDialog />);
-    await user.click(partElement(body(), 'trigger') as HTMLElement);
-
-    const config = { defaultOpen: false, modal: true };
-    const state = { open: true };
-    assertContractFulfillment(dialog, body(), state, config, [
-      'trigger',
-      'content',
-      'overlay',
-      'title',
-      'description',
-      'close',
-    ]);
-    await assertAxeClean(body());
-  });
-
-  it('omitted description projects NO aria-describedby', async () => {
-    const user = userEvent.setup();
-    render(<TestDialog withDescription={false} />);
-    await user.click(partElement(body(), 'trigger') as HTMLElement);
-    const content = partElement(body(), 'content');
-    expect(content?.hasAttribute('aria-describedby')).toBe(false);
-    expect(content?.getAttribute('aria-labelledby')).toBeTruthy();
-    await assertAxeClean(body());
-  });
-
-  it('trigger and content are wired by real DOM ids', async () => {
-    const user = userEvent.setup();
-    render(<TestDialog />);
-    await user.click(partElement(body(), 'trigger') as HTMLElement);
-    const ids = domPartIds(body(), ['trigger', 'content', 'title', 'description'] as const);
-    const trigger = partElement(body(), 'trigger');
-    const content = partElement(body(), 'content');
-    expect(trigger?.getAttribute('aria-controls')).toBe(ids.content);
-    expect(content?.getAttribute('aria-labelledby')).toBe(ids.title);
-    expect(content?.getAttribute('aria-describedby')).toBe(ids.description);
-  });
-
-  it('focus moves into the dialog and Tab is trapped', async () => {
-    const user = userEvent.setup();
-    render(<TestDialog />);
-    await user.click(partElement(body(), 'trigger') as HTMLElement);
-
-    const content = partElement(body(), 'content') as HTMLElement;
-    expect(content.contains(document.activeElement)).toBe(true);
-
-    const focusable = Array.from(content.querySelectorAll<HTMLElement>('button:not([disabled])'));
-    for (let i = 0; i < focusable.length + 1; i += 1) {
-      await user.tab();
-      expect(content.contains(document.activeElement)).toBe(true);
-    }
-  });
-
-  it('Escape closes and restores focus to the trigger', async () => {
-    const user = userEvent.setup();
-    render(<TestDialog />);
-    const trigger = partElement(body(), 'trigger') as HTMLElement;
-    await user.click(trigger);
-    expect(partElement(body(), 'content')).not.toBeNull();
-
-    await user.keyboard('{Escape}');
-    expect(partElement(body(), 'content')).toBeNull();
-    expect(document.activeElement).toBe(trigger);
-    expect(trigger.getAttribute('aria-expanded')).toBe('false');
-  });
-
-  it('pointerdown outside dismisses; on the trigger it toggles closed, not closed-then-open', async () => {
-    const user = userEvent.setup();
-    render(
-      <div>
-        <button type="button">Elsewhere</button>
-        <TestDialog />
-      </div>,
-    );
-    const trigger = partElement(body(), 'trigger') as HTMLElement;
-
-    await user.click(trigger);
-    expect(partElement(body(), 'content')).not.toBeNull();
-    await user.click(document.querySelector('button') as HTMLElement);
-    expect(partElement(body(), 'content')).toBeNull();
-
-    await user.click(trigger);
-    expect(partElement(body(), 'content')).not.toBeNull();
-    await user.click(trigger);
-    expect(partElement(body(), 'content')).toBeNull();
-  });
-
-  it('close button closes', async () => {
-    const user = userEvent.setup();
-    render(<TestDialog />);
-    await user.click(partElement(body(), 'trigger') as HTMLElement);
-    await user.click(partElement(body(), 'close') as HTMLElement);
-    expect(partElement(body(), 'content')).toBeNull();
-  });
-
-  it('scroll is locked while open and released on close', async () => {
-    const user = userEvent.setup();
-    render(<TestDialog />);
-    await user.click(partElement(body(), 'trigger') as HTMLElement);
-    expect(document.body.style.overflow).toBe('hidden');
-    await user.keyboard('{Escape}');
-    expect(document.body.style.overflow).not.toBe('hidden');
-  });
-
-  it('non-modal: no overlay, no trap, no scroll lock, Escape still works', async () => {
-    const user = userEvent.setup();
-    render(<TestDialog modal={false} />);
-    await user.click(partElement(body(), 'trigger') as HTMLElement);
-    expect(partElement(body(), 'overlay')).toBeNull();
-    expect(document.body.style.overflow).not.toBe('hidden');
-    const content = partElement(body(), 'content') as HTMLElement;
-    expect(content.getAttribute('aria-modal')).toBeNull();
-
-    (content.querySelector('button') as HTMLElement).focus();
-    await user.keyboard('{Escape}');
-    expect(partElement(body(), 'content')).toBeNull();
-  });
-
-  it('defaultOpen mounts open with the trap live', () => {
-    render(<TestDialog defaultOpen />);
-    const content = partElement(body(), 'content');
-    expect(content).not.toBeNull();
-    expect(document.body.style.overflow).toBe('hidden');
-  });
-
+describe('dialog conformance [react] framework-specific', () => {
   it('controlled: callbacks fire, state follows the prop, never the gesture', async () => {
     const user = userEvent.setup();
     const onOpenChange = vi.fn();
