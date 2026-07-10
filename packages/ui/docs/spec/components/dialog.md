@@ -7,11 +7,43 @@ validation target Spec 01 named before freeze.
 Files (`src/components/dialog/`):
 
 ```
-dialog.classes.ts    dialog.behavior.ts    dialog.tsx
+dialog.classes.ts    dialog.behavior.ts    dialog.tsx    dialog.astro
 ```
 
-Tests mirror into `test/components/dialog/`. WC and Astro performances not
-yet written (same debt as button).
+Tests mirror into `test/components/dialog/`. WC performance not yet written
+(same debt as button).
+
+## Astro performance: closed-state markup only
+
+`dialog.astro` renders the trigger, in the closed state, and nothing else.
+It is not a scaled-down dialog -- it is the one state this tier can honestly
+render.
+
+The `open` state is not a static fact: it is the `content`/`overlay`/`close`
+parts held up by `focus-trap`, `scroll-lock`, and `dismiss-on-outside` (all
+effects, Spec 03) plus an Escape `keymap` dispatched through a loop this
+tier does not have (no client runtime -- Spec 03). Rendering that structure
+anyway -- `role="dialog" aria-modal="true"` with no real trap and no way
+out for a keyboard or screen-reader user -- would be the same 4.1.2 lie
+grid.md's dropped `role="grid"` was ruled against. Absent is the only
+honest choice, so `content`, `overlay`, `title`, `description`, and `close`
+are dropped for this tier, not merely un-rendered for some inputs.
+
+Consequently `open`, `defaultOpen`, and `modal` are not exposed as props:
+every one of them only affects parts this tier never renders, so a knob
+that visibly does nothing is its own dishonesty. `dialog.initialState({})`
+and `dialog.aria` still run for real (config `{}`, which is the score's own
+closed default) so the closed-state aria projection is score-derived, not
+hand-authored -- the same config-in/aria-out shape every other performance
+uses, just with a config the consumer cannot perturb at this tier.
+
+The projected trigger aria in the closed state never resolves an id
+(`aria-controls` is only projected while open); empty-string `PartIds`
+satisfy the signature the same way button.astro's do.
+
+Conformance (`dialog.astro.conformance.test.ts`) ports only the React
+suite's "closed" scenario. The open/trap/Escape/dismiss/veto scenarios drop
+along with the state, not skip-registered.
 
 ## Composition
 

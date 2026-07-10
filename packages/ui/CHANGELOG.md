@@ -9,6 +9,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Dialog, Astro performance.** `dialog.astro` joins `dialog.tsx` as the
+  static score's fifth render target -- but renders only the CLOSED state,
+  never the open one. The `open` state is not a static fact: it is the
+  `content`/`overlay`/`close` parts held up by `focus-trap`, `scroll-lock`,
+  and `dismiss-on-outside` (all effects, Spec 03) plus an Escape `keymap`
+  dispatched through a loop this tier does not have. Rendering that
+  structure anyway -- `role="dialog" aria-modal="true"` with no real trap
+  and no way out -- would be the same 4.1.2 lie `grid.md`'s dropped
+  `role="grid"` was ruled against, so `content`, `overlay`, `title`,
+  `description`, and `close` are dropped for this tier, not merely
+  un-rendered. `open`/`defaultOpen`/`modal` are not exposed as props since
+  none of them changes this tier's one renderable state -- a knob with no
+  observable effect is its own dishonesty -- but `dialog.initialState({})`
+  and `dialog.aria` still run for real, so the closed-state trigger aria
+  (`aria-haspopup="dialog"`, `aria-expanded="false"`, `data-state="closed"`,
+  no dangling `aria-controls`) is score-derived, not hand-authored. There is
+  no base trigger class in `dialog.classes.ts` (the React `DialogTrigger`
+  ships unstyled), so the consumer's `class` passes straight through with no
+  decoration to merge. Conformance (`dialog.astro.conformance.test.ts`,
+  container's standalone `AstroContainer` pattern) ports only the React
+  suite's "closed" scenario; open/trap/Escape/dismiss/veto scenarios drop
+  along with the state, not skip-registered. Documented in
+  `docs/spec/components/dialog.md`'s new Astro-performance section. Matrix
+  line: `frameworks.behaviorLayer.astro` -> `verified`.
 - **Grid, Astro performance.** `grid.astro` (plus `grid-item.astro`) joins
   `grid.tsx` as the second render target of the score (`grid.behavior.ts`):
   config in, `gridClasses` and `grid.aria`'s `data-preset`/`data-columns`

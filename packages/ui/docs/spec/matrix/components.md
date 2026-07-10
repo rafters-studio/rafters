@@ -2,7 +2,7 @@
 
 One line per component: what it is, what it does, what it uses (current primitive imports -> planned re-composition), states, motion, framework support.
 Generated 2026-07-09 from live index evidence (sym tree, import scan) + authored semantics. Excluded: editor, color-picker, color-inspector.
-Behavior-layer support: only the five articles have react (verified); container, button, and grid additionally have astro (verified). Old tree availability listed for interim use.
+Behavior-layer support: only the five articles have react (verified); container, button, grid, and dialog additionally have astro (verified). Old tree availability listed for interim use.
 
 ## static (21)
 
@@ -73,7 +73,7 @@ Behavior-layer support: only the five articles have react (verified); container,
 | component | is | does | states | uses (current) | uses (planned) | motion | old tree | layer |
 |---|---|---|---|---|---|---|---|---|
 | **alert-dialog** | Consequence-gated confirm dialog | Interrupts with a decision; focus defaults to Cancel; no outside-dismiss | open | disclosure, escape-keydown, focus-trap, portal | - | transition-colors -> enter/exit: fade+zoom | react | none |
-| **dialog** A | Modal dialog (ARTICLE) | Opens trapped modal over scrim; severity gate; modal/non-modal | open, modal, severity | dialog-aria, disclosure, escape-keydown, focus-trap, outside-click, portal | - | transition-opacity close -> enter/exit: fade+zoom (pending 0-B) | react | react OK |
+| **dialog** A | Modal dialog (ARTICLE) | Opens trapped modal over scrim; severity gate; modal/non-modal | open, modal, severity | dialog-aria, disclosure, escape-keydown, focus-trap, outside-click, portal | - | transition-opacity close -> enter/exit: fade+zoom (pending 0-B) | react | react + astro OK |
 | **drawer** | Bottom drawer (touch) | Slides up from bottom; drag-to-dismiss optional | open, snap point | dialog-aria, disclosure, escape-keydown, focus-trap, outside-click, portal | drag-drop | none -> enter/exit: slide, axis y | react | none |
 | **sheet** | Edge-anchored modal panel | Slides from a side over a scrim; traps focus | open, side | dialog-aria, disclosure, escape-keydown, focus-trap, outside-click, portal | - | animate-in/out slide -> enter/exit: slide per side | react | none |
 

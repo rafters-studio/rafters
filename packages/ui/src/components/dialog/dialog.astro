@@ -1,0 +1,62 @@
+---
+/**
+ * Dialog -- the Astro performance of the score (dialog.behavior.ts).
+ *
+ * Astro is the static tier: no client runtime, no effects (Spec 03). A
+ * dialog's OPEN state is not a static fact -- it is the score's `content`,
+ * `overlay`, and `close` parts held up by `focus-trap`, `scroll-lock`, and
+ * `dismiss-on-outside` (all effects, Spec 03) plus an Escape `keymap`
+ * dispatched through a loop this tier does not have. Rendering that
+ * structure without any of the machinery that makes it safe -- a
+ * `role="dialog" aria-modal="true"` surface with no real trap and no way
+ * out for a keyboard or screen-reader user -- would be the exact 4.1.2 lie
+ * grid.astro's dropped `role="grid"` was avoiding. So this performance
+ * renders the CLOSED-state markup only: the trigger, carrying the aria
+ * that holds without JS (`aria-haspopup="dialog"`, `aria-expanded="false"`,
+ * `data-state="closed"`, no `aria-controls` -- nothing to reference).
+ * `content`/`overlay`/`title`/`description`/`close` are a state this tier
+ * cannot honestly enter and so are never rendered here.
+ *
+ * No dialog config (`open`, `defaultOpen`, `modal`) changes that outcome --
+ * every one of them only affects parts this tier drops -- so none is
+ * exposed as a prop; offering a knob with no observable effect is its own
+ * dishonesty. `config` is still threaded through the real
+ * `dialog.initialState` / `dialog.aria` functions as `{}` (the score's own
+ * defaults resolve to closed) rather than a hand-authored aria object, so
+ * this performance stays mechanical rather than a decision (boundary 2).
+ *
+ * `dialog.aria`'s closed-state trigger projection never resolves an id
+ * (`aria-controls` is only projected while open, guarded by
+ * `disclosable.aria`), so -- like button.astro -- empty-string `PartIds`
+ * satisfy the signature without inventing id-supply machinery this
+ * performance has no runtime use for.
+ *
+ * There is no base trigger class in dialog.classes.ts (the React
+ * DialogTrigger renders unstyled, bring-your-own-button, same as the
+ * oracle surface) so this performance has no decoration to select among
+ * -- the consumer's `class` passes straight through.
+ */
+import type { HTMLAttributes } from 'astro/types';
+import type { PartIds } from '../../lib/contract';
+import { dialog, type DialogConfig, type DialogPart } from './dialog.behavior';
+
+type Props = HTMLAttributes<'button'>;
+
+const { class: className, ...attrs } = Astro.props;
+
+const config: DialogConfig = {};
+const state = dialog.initialState(config);
+const ids: PartIds<DialogPart> = {
+  trigger: '',
+  content: '',
+  overlay: '',
+  title: '',
+  description: '',
+  close: '',
+};
+const aria = dialog.aria(state, config, ids);
+---
+
+<button type="button" data-part="trigger" class={className} {...aria.trigger} {...attrs}>
+  <slot />
+</button>
