@@ -1,35 +1,41 @@
 /**
  * BehaviorElement -- the WC adapter (Spec 00 boundary 3: one per framework,
  * system-wide). The custom-element counterpart to hooks/use-behavior.ts:
- * instance memory, id supply, and aria application are handled here so a
- * component's `.element.ts` file holds only its idiomatic surface --
- * attribute names/parsing and part structure -- over this class. A
- * `.element.ts` file that imports createBehavior or primitives/memory
+ * instance memory, id supply, aria application, the accepted-dispatch
+ * protocol, and the effects runner are handled here so a component's
+ * `.element.ts` file holds only its idiomatic surface -- attribute
+ * names/parsing and part structure -- over this class. A `.element.ts` file
+ * that imports createBehavior, createEffectRunner, or primitives/memory
  * directly is re-expressing the adapter (boundary 3 violation test).
  *
- * Lifecycle and patch-in-place ride RaftersElement unchanged: attribute
- * changes already call `update()` -> `render()`, replacing only the
- * shadow-root content -- the host node itself, and any slotted light-DOM
- * children, are never torn down. That is boundary 3's "patch-in-place" for
- * a component with no part-level diffing need; a component that needs
- * finer-grained patching earns that machinery when it has a test that
- * requires it.
+ * Attribute-driven changes ride RaftersElement's lifecycle unchanged:
+ * `attributeChangedCallback` calls `update()` -> `render()`, replacing the
+ * shadow-root content wholesale -- the host node itself, and any slotted
+ * light-DOM children, are never torn down. Dispatch-driven changes (a
+ * performance's part listener calling `request()`) do NOT rebuild: they
+ * patch the aria projection onto the ALREADY-MOUNTED DOM in place
+ * (`patchAria`), because a rebuild would detach whatever element the user
+ * just interacted with mid-gesture (focus lost between an Enter and the
+ * Space that follows it). This is boundary 3's "patch-in-place" earned by
+ * the first component with a test that requires it (button): ARIA-only,
+ * not full part-structure diffing -- a component whose state DOES change
+ * part presence earns that machinery next.
  *
- * Dispatch-and-callback and the effects runner are the two boundary-3
- * responsibilities this class does NOT wire yet: no shipped WC performance
- * has mutable state (Container is a static score, canDispatch is
- * unreachable, effects() is always []). Spec 03's effect vocabulary and
- * runner (lib/effects.ts) are already framework-agnostic; the first
- * stateful WC port (dialog) is where `dispatch()` and the runner plug into
- * this class -- a seam filled in, not a rewrite.
+ * The effects runner (lib/effects.ts, already framework-agnostic) applies
+ * after every patch and stops on disconnect, per Spec 03's WC row. One-shot
+ * effects (`announce`) are exercised end to end by button; ongoing effects
+ * (`focus-trap`, `scroll-lock`, `dismiss-on-outside`, ...) are structurally
+ * supported by the same runner but unexercised until the first WC port that
+ * needs one -- that port validates the path, not rewires it.
  */
 import {
   createBehavior,
   type ActionPayloads,
   type BehaviorSpec,
   type PartIds,
+  type PayloadArgs,
 } from '../lib/contract';
-import type { Memory } from './memory';
+import { createEffectRunner, type EffectHost, type EffectRunner } from '../lib/effects';
 import { RaftersElement } from './rafters-element';
 
 export abstract class BehaviorElement<
@@ -43,7 +49,9 @@ export abstract class BehaviorElement<
 
   private static instanceCounter = 0;
   private readonly instanceId = `rf-${++BehaviorElement.instanceCounter}`;
-  private behaviorMemory: Memory<State> | null = null;
+  private behaviorInstance: ReturnType<typeof createBehavior<Config, State, Actions, Part>> | null =
+    null;
+  private effectRunner: EffectRunner | null = null;
 
   /**
    * Config assembly's component-specific half: read the current attributes
@@ -70,17 +78,91 @@ export abstract class BehaviorElement<
   }
 
   override connectedCallback(): void {
-    this.behaviorMemory ??= createBehavior(this.spec, this.readConfig()).memory;
+    this.behaviorInstance ??= createBehavior(this.spec, this.readConfig());
     super.connectedCallback();
+  }
+
+  override disconnectedCallback(): void {
+    this.effectRunner?.stop();
+    this.effectRunner = null;
+    super.disconnectedCallback();
+  }
+
+  /** Attribute-driven re-render: full rebuild via RaftersElement's
+   *  `update()` -> `render()`, then the effects seam. Dispatch-driven
+   *  changes go through `request()` -> `patchAria()` instead (no rebuild). */
+  override update(): void {
+    super.update();
+    this.runEffects();
   }
 
   override render(): Node {
     const config = this.readConfig();
-    const state = this.behaviorMemory?.get() ?? this.spec.initialState(config);
+    const state = this.behaviorInstance?.memory.get() ?? this.spec.initialState(config);
     const ids = this.partIds();
     const root = this.buildParts(state, config, ids);
     this.applyAria(root, state, config, ids);
     return root;
+  }
+
+  /**
+   * The accepted-dispatch protocol (Spec 01): applies the reducer iff
+   * `canDispatch` allows it under the CURRENT config, then re-renders. A
+   * performance's part event listeners (e.g. a click handler built in
+   * `buildParts`) call this instead of touching memory or createBehavior
+   * directly -- the WC counterpart to useBehavior's `request`.
+   */
+  protected request<K extends keyof Actions>(
+    action: K,
+    ...payload: PayloadArgs<Actions[K]>
+  ): boolean {
+    if (!this.behaviorInstance) return false;
+    const accepted = this.behaviorInstance.dispatch(action, this.readConfig(), ...payload);
+    if (accepted) {
+      this.patchAria();
+      this.runEffects();
+    }
+    return accepted;
+  }
+
+  /** Resolve a declared part to its live shadow-DOM element -- the
+   *  EffectHost half of the effects seam (Spec 03), and the WC counterpart
+   *  to useBehavior's getPart. */
+  protected getPart(part: string): HTMLElement | null {
+    return this.shadowRoot?.querySelector<HTMLElement>(`[data-part="${part}"]`) ?? null;
+  }
+
+  /** Re-apply the aria projection onto the CURRENTLY MOUNTED shadow content
+   *  without rebuilding it. Dispatch never changes button's part presence
+   *  (press flips `pressed`, nothing else); a component whose state DOES
+   *  change part presence needs real structural patching, not this. */
+  private patchAria(): void {
+    const rootNode = this.shadowRoot?.firstChild;
+    if (!rootNode) return;
+    const config = this.readConfig();
+    const state = this.behaviorInstance?.memory.get() ?? this.spec.initialState(config);
+    this.applyAria(rootNode, state, config, this.partIds());
+  }
+
+  /** Reconcile the behavior's declarative effect list against the live
+   *  runner (Spec 03): starts what appeared, stops what disappeared. Called
+   *  after every patch (attribute rebuild or dispatch) so one-shot effects
+   *  fire on the transition that requests them, never on the baseline
+   *  apply that merely reflects already-true config. */
+  private runEffects(): void {
+    const config = this.readConfig();
+    const state = this.behaviorInstance?.memory.get() ?? this.spec.initialState(config);
+    this.effectRunner ??= createEffectRunner();
+    const host: EffectHost = {
+      getPart: (part) => this.getPart(part),
+      dispatch: (action, payload) => {
+        this.request(
+          action as keyof Actions,
+          ...([payload] as PayloadArgs<Actions[keyof Actions]>),
+        );
+      },
+    };
+    this.effectRunner.apply(this.spec.effects(state, config), host);
   }
 
   /** Aria/classes application's aria half: walk the declared parts, project,

@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Button, WC performance.** `button.element.ts` joins `button.tsx` as a
+  render target of the score -- a thin wrapper over `button.behavior.ts`
+  and `button.classes.ts` with a real native `<button>` inside the shadow
+  root, so Enter/Space fulfill the keymap with no keydown branch (Spec 01
+  rule 5, verified empirically). The WC adapter gains the dispatch-and-
+  callback protocol, an ARIA-only patch-in-place path for dispatch-triggered
+  re-renders (a full rebuild would detach the element mid-press and drop
+  focus), and the one-shot effects seam (announce, via the existing
+  `createEffectRunner`, stopped on disconnect). Conformance shares the
+  button scenario suite with the React adapter: 18 tests green. Matrix
+  line: `frameworks.behaviorLayer.wc` -> `ported`; the WC-specific
+  announce-effect framework test is the remaining step to `verified`.
 - **Container, WC performance.** `container.element.ts` joins `container.tsx`
   as a render target of the static score -- a thin wrapper with no decisions
   of its own: config assembled from attributes in, `container.classes.ts`
