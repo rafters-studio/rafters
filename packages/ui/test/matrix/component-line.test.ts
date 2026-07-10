@@ -41,6 +41,6 @@ describe('component matrix', () => {
       .filter((l) => (l.raw as { status: string }).status === 'ported')
       .map((l) => (l.raw as { name: string }).name)
       .sort();
-    expect(ported).toEqual(['button', 'container', 'dialog', 'grid', 'navigation-menu']);
+    expect(ported).toEqual(['alert', 'button', 'container', 'dialog', 'grid', 'navigation-menu']);
   });
 });
