@@ -9,7 +9,8 @@ carries everything, and the performance is pure decoration application
 Files (`src/components/container/`):
 
 ```
-container.classes.ts    container.behavior.ts    container.tsx
+container.classes.ts    container.behavior.ts
+container.tsx           container.element.ts
 ```
 
 ## Purpose
@@ -55,6 +56,15 @@ internal spacing, and layout flow, so agents never hand-roll wrapper divs.
 
 ## Open
 
-- WC + Astro performances (same debt as the other articles).
+- Astro performance (same debt as the other articles).
+- WC performance shipped (`container.element.ts`): a thin wrapper over the
+  same `container.classes.ts` decoration React uses, riding the new WC
+  adapter (`primitives/behavior-element.ts`, boundary 3: instance memory,
+  id supply, aria application) carried in this port -- the first WC
+  performance in the new grain. Custom elements cannot change their own
+  tag, so the semantic element `as` chooses is built inside the shadow
+  root with a default `<slot>`, one node removed from React's shape;
+  conformance runs via the shared harness (`test/harness/conformance.ts`,
+  reused unmodified) against a WC render adapter.
 - Static-score conformance is thinner than interactive articles: element
   contract + classes assertions + axe. No interaction tier exists to run.
