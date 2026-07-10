@@ -17,7 +17,7 @@
   },
   "scripts": {
     "test": "vitest",
-    "test:unit": "vitest run",
+    "test:unit": "vitest run && vitest run -c vitest.config.astro.ts",
     "test:a11y": "vitest run .a11y.",
     "typecheck": "tsc --noEmit"
   },
@@ -42,6 +42,7 @@
     "@types/react-dom": "catalog:",
     "@vitejs/plugin-react": "catalog:",
     "@vitest/coverage-v8": "catalog:",
+    "astro": "^5.16.5",
     "happy-dom": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",

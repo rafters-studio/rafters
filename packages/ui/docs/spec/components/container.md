@@ -55,6 +55,15 @@ internal spacing, and layout flow, so agents never hand-roll wrapper divs.
 
 ## Open
 
-- WC + Astro performances (same debt as the other articles).
+- WC performance (same debt as the other articles).
+- Astro performance shipped (`container.astro`): a thin wrapper over the
+  same `container.classes.ts` decoration React uses, the element switch
+  resolved through Astro's dynamic-tag support (one capitalized variable,
+  not one branch per element -- the oracle's `container.astro` paid for
+  the repetition, this one doesn't). Conformance runs via the shared
+  harness against Astro's Container API (`test/harness/conformance.ts`,
+  reused unmodified); the render adapter needed its own vitest project
+  (`vitest.config.astro.ts`, `astro/config`'s `getViteConfig`) since
+  importing a `.astro` file needs Astro's own Vite transform.
 - Static-score conformance is thinner than interactive articles: element
   contract + classes assertions + axe. No interaction tier exists to run.
