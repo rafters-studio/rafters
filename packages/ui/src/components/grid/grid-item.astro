@@ -1,0 +1,29 @@
+---
+/**
+ * GridItem -- the Astro performance of Grid's placement channel
+ * (gridItemAttrs, grid.behavior.ts). No score of its own: it projects
+ * data-priority so the stock layouts in grid.classes.ts can place it,
+ * exactly as button.astro renders button.behavior.ts's projection.
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { gridItemAttrs, type ContentPriority } from './grid.behavior';
+import { gridColSpanClasses, gridRowSpanClasses } from './grid.classes';
+
+interface Props extends HTMLAttributes<'div'> {
+  priority?: ContentPriority;
+  colSpan?: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
+  rowSpan?: 1 | 2 | 3;
+}
+
+const { priority, colSpan, rowSpan, class: className, ...attrs } = Astro.props;
+
+const classes = classy(
+  colSpan && gridColSpanClasses[colSpan],
+  rowSpan && gridRowSpanClasses[rowSpan],
+  className,
+);
+const itemAttrs = gridItemAttrs(priority);
+---
+
+<div class={classes || undefined} {...itemAttrs} {...attrs}><slot /></div>

@@ -2,7 +2,7 @@
 
 One line per component: what it is, what it does, what it uses (current primitive imports -> planned re-composition), states, motion, framework support.
 Generated 2026-07-09 from live index evidence (sym tree, import scan) + authored semantics. Excluded: editor, color-picker, color-inspector.
-Behavior-layer support: only the five articles have react (verified); container and button additionally have astro (verified). Old tree availability listed for interim use.
+Behavior-layer support: only the five articles have react (verified); container, button, and grid additionally have astro (verified). Old tree availability listed for interim use.
 
 ## static (21)
 
@@ -17,7 +17,7 @@ Behavior-layer support: only the five articles have react (verified); container 
 | **container** A | Layout keystone (ARTICLE) | Owns negative space: stack/grid/block modes, landmarks, CQ provider | - | fill-resolver | - | none | astro/react/wc | react + astro OK |
 | **embed** | External media frame | Wraps third-party iframes with title and aspect control | loading, loaded | - | - | none | react/wc | none |
 | **empty** | Empty-state placeholder | Communicates absence of content with icon/title/action slots | - | - | - | none | astro/react/wc | none |
-| **grid** A | 12-column grid (ARTICLE) | Linear/preset columns; spans; conditional grid-roving when role=grid | - | - | - | none | astro/react/wc | react OK |
+| **grid** A | 12-column grid (ARTICLE) | Linear/preset columns; spans; conditional grid-roving when role=grid | - | - | - | none | astro/react/wc | react + astro OK |
 | **image** | Token-aware img wrapper | Renders responsive image with radius/fill tokens | loading, error | - | - | none | astro/react/wc | none |
 | **item** | Generic list row | Lays out leading/content/trailing in a row | - | - | - | transition-colors | astro/react/wc | none |
 | **kbd** | Keyboard key cap | Displays a key or shortcut visually | - | - | - | none | astro/react/wc | none |

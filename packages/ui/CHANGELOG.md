@@ -9,6 +9,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Grid, Astro performance.** `grid.astro` (plus `grid-item.astro`) joins
+  `grid.tsx` as the second render target of the score (`grid.behavior.ts`):
+  config in, `gridClasses` and `grid.aria`'s `data-preset`/`data-columns`
+  projection out, server-rendered once. `GridItem`'s placement channel
+  (`gridItemAttrs` -- items declare `data-priority`, the stock layouts place
+  by that projection) ports unchanged. `role="grid"` is dropped for this
+  tier, not merely un-rendered: the ARIA grid pattern needs the row/gridcell
+  chunking React does via `React.Children.toArray` (Astro's slot model has
+  no child-enumeration primitive to chunk by) and the `grid-roving` keyboard
+  contract, which is an effect ("Astro: no client runtime, no effects" --
+  Spec 03). `grid.md` rules `role="grid"` "honest or absent"; rendering the
+  role with no row structure and no keyboard behind it is the exact defect
+  the oracle (`src/old/ui/grid.astro`) was flagged for, so absent is the
+  only honest choice -- `Props` omits `role`
+  (`Omit<HTMLAttributes<'div'>, 'role'>`, mirroring `grid.tsx`'s own
+  `Omit`) so the attribute passthrough cannot reopen it. Presets, patterns,
+  columns, gap/padding, and spans are unaffected: they are config, and
+  config is exactly what a static render can honor.
+  Conformance ports the layout-grid/reordering/span scenarios from the
+  React suite (`grid.astro.conformance.test.ts`, container's standalone
+  `AstroContainer` pattern since grid has no shared adapter suite); the
+  role=grid row/gridcell/roving scenarios are dropped along with the
+  feature. Matrix line: `frameworks.behaviorLayer.astro` -> `verified`.
 - **Button, Astro performance.** `button.astro` joins `button.tsx` as the
   second render target of the score (`button.behavior.ts`), server-rendered
   and static: it computes the initial contract from config --

@@ -1,0 +1,66 @@
+---
+/**
+ * Grid -- the Astro performance of the static score (grid.behavior.ts).
+ *
+ * A static score has nothing to subscribe to: config in, classes and the
+ * data-preset/data-columns projection out, server-rendered once. No client
+ * runtime, no effects (Spec 03).
+ *
+ * `role="grid"` is dropped for this tier, not merely un-rendered. The ARIA
+ * grid pattern needs two things this tier cannot supply: the row/gridcell
+ * chunking (React does it via `React.Children.toArray`; Astro's slot model
+ * hands a performance opaque rendered HTML, with no child-enumeration
+ * primitive to chunk by -- parsing that HTML in the frontmatter would be
+ * exactly the logic-in-the-performance the boundary line forbids) and the
+ * `grid-roving` keyboard contract, which is an EFFECT ("Astro: no client
+ * runtime, no effects" -- Spec 03). grid.md rules role="grid" "honest or
+ * absent"; absent is the only honest choice here -- rendering the role
+ * with no row structure and no keyboard behind it is the exact defect
+ * (`role="grid" set with no keyboard/row semantics`) the oracle was
+ * flagged for. `Props` omits `role` (mirroring grid.tsx's
+ * `Omit<React.HTMLAttributes<HTMLDivElement>, 'role'>`) so the passthrough
+ * spread cannot reopen the door the type gate closes. Presets, patterns,
+ * columns, gap/padding, and the data-priority placement channel
+ * (grid-item.astro) are unaffected: they are config, and config is exactly
+ * what a static render can honor.
+ */
+import type { HTMLAttributes } from 'astro/types';
+import type { PartIds } from '../../lib/contract';
+import classy from '../../primitives/classy';
+import {
+  grid,
+  type BentoPattern,
+  type GridConfig,
+  type GridPart,
+  type GridPreset,
+  type ResponsiveColumns,
+  type SpacingValue,
+} from './grid.behavior';
+import { gridClasses } from './grid.classes';
+
+interface Props extends Omit<HTMLAttributes<'div'>, 'role'> {
+  preset?: GridPreset;
+  pattern?: BentoPattern;
+  columns?: ResponsiveColumns;
+  gap?: SpacingValue;
+  padding?: SpacingValue;
+}
+
+const {
+  preset = 'linear',
+  pattern,
+  columns,
+  gap,
+  padding,
+  class: className,
+  ...attrs
+} = Astro.props;
+
+const config: GridConfig = { preset, pattern, columns, gap, padding };
+const state = grid.initialState(config);
+const classes = gridClasses(config, state);
+const ids: PartIds<GridPart> = { root: '', row: '', cell: '' };
+const aria = grid.aria(state, config, ids);
+---
+
+<div data-part="root" class={classy(classes.root, className)} {...aria.root} {...attrs}><slot /></div>
