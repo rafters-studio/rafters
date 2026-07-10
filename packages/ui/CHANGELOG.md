@@ -9,6 +9,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Navigation-menu, WC performance.** `navigation-menu.element.ts` joins
+  `navigation-menu.tsx` as a render target of the score -- the first
+  effectful WC port, and the first to render into light DOM rather than the
+  shadow root. Spec 03's `dismiss-on-outside` listens on `document` and
+  reads `event.target`, which retargets to the shadow HOST for content built
+  inside a shadow root, so a genuine inside click reads as outside and
+  closes the menu on it; `roving-focus` and `hover-intent` likewise assume
+  one un-shadowed subtree. `<rafters-navigation-menu>` carries
+  `data-part="root"` on itself; its shadow root holds nothing but a
+  passthrough `<slot>`; every other declared part (list/trigger/content/
+  viewport/indicator) is consumer-authored light-DOM markup, discovered by
+  `data-part`/`data-value` and enhanced in place -- aria projected on,
+  classes merged on, dispatch and the effects runner wired over it. No part
+  DOM is built or replaced. Extends the WC adapter
+  (`primitives/behavior-element.ts`) with dispatch, memory subscription, and
+  the effects runner -- the seam Container's port left unfilled. Conformance
+  drives the WC surface directly against the shared harness
+  (`test/harness/conformance.ts`): open/close/switch by click, roving arrow
+  keys across real light-DOM triggers, Escape-and-refocus, hover-intent
+  timing, controlled-value, and the assertion the light-DOM decision exists
+  for -- a click on open content must never be misread as outside, only a
+  genuinely outside click closes. Matrix line: `frameworks.behaviorLayer.wc`
+  -> `verified`.
 - **Container, WC performance.** `container.element.ts` joins `container.tsx`
   as a render target of the static score -- a thin wrapper with no decisions
   of its own: config assembled from attributes in, `container.classes.ts`

@@ -15,20 +15,28 @@
  * finer-grained patching earns that machinery when it has a test that
  * requires it.
  *
- * Dispatch-and-callback and the effects runner are the two boundary-3
- * responsibilities this class does NOT wire yet: no shipped WC performance
- * has mutable state (Container is a static score, canDispatch is
- * unreachable, effects() is always []). Spec 03's effect vocabulary and
- * runner (lib/effects.ts) are already framework-agnostic; the first
- * stateful WC port (dialog) is where `dispatch()` and the runner plug into
- * this class -- a seam filled in, not a rewrite.
+ * Dispatch-and-callback and the effects runner (navigation-menu, the first
+ * stateful WC port) plug in here: `connectedCallback` creates the
+ * instance's memory+dispatch pair and subscribes so an accepted action
+ * re-renders; `request` is the accepted-dispatch protocol; `reconcileEffects`
+ * hands the current effect list to a runner this class owns. A subclass
+ * whose interactive parts must live in light DOM (Spec 03's
+ * dismiss-on-outside listens on `document` and reads `event.target`, which
+ * retargets to the shadow HOST for shadow-rooted content -- roving-focus and
+ * hover-intent likewise assume one un-shadowed subtree) overrides `update()`
+ * entirely instead of relying on `render()`/`buildParts()`; `request`,
+ * `currentState`, `reconcileEffects`, and `findPart` stay available either
+ * way, since dispatch and the effects runner are adapter concerns
+ * independent of where the DOM lives.
  */
 import {
   createBehavior,
   type ActionPayloads,
   type BehaviorSpec,
   type PartIds,
+  type PayloadArgs,
 } from '../lib/contract';
+import { createEffectRunner, type EffectHost, type EffectRunner } from '../lib/effects';
 import type { Memory } from './memory';
 import { RaftersElement } from './rafters-element';
 
@@ -44,6 +52,15 @@ export abstract class BehaviorElement<
   private static instanceCounter = 0;
   private readonly instanceId = `rf-${++BehaviorElement.instanceCounter}`;
   private behaviorMemory: Memory<State> | null = null;
+  private behaviorDispatch:
+    | (<K extends keyof Actions>(
+        action: K,
+        config: Config,
+        ...payload: PayloadArgs<Actions[K]>
+      ) => boolean)
+    | null = null;
+  private memoryUnsubscribe: (() => void) | null = null;
+  private effectRunner: EffectRunner | null = null;
 
   /**
    * Config assembly's component-specific half: read the current attributes
@@ -70,13 +87,54 @@ export abstract class BehaviorElement<
   }
 
   override connectedCallback(): void {
-    this.behaviorMemory ??= createBehavior(this.spec, this.readConfig()).memory;
+    if (!this.behaviorMemory) {
+      const behavior = createBehavior(this.spec, this.readConfig());
+      this.behaviorMemory = behavior.memory;
+      this.behaviorDispatch = behavior.dispatch;
+    }
     super.connectedCallback();
+    // Fires immediately with the current value (nanostores semantics), so
+    // the first subscribe causes one harmless extra render; every action
+    // accepted after that re-renders through this listener alone.
+    this.memoryUnsubscribe ??= this.behaviorMemory.subscribe(() => this.update());
+  }
+
+  override disconnectedCallback(): void {
+    this.memoryUnsubscribe?.();
+    this.memoryUnsubscribe = null;
+    this.effectRunner?.stop();
+    this.effectRunner = null;
+    super.disconnectedCallback();
+  }
+
+  /** The accepted-dispatch protocol (mirrors useBehavior's `request`):
+   *  applies the reducer iff canDispatch allows it under the CURRENT
+   *  config. Returns acceptance. */
+  protected request<K extends keyof Actions>(
+    action: K,
+    ...payload: PayloadArgs<Actions[K]>
+  ): boolean {
+    if (!this.behaviorDispatch) return false;
+    return this.behaviorDispatch(action, this.readConfig(), ...payload);
+  }
+
+  /** The current intrinsic state, falling back to the spec's initial state
+   *  before the instance's memory exists (e.g. a render forced before
+   *  connectedCallback). */
+  protected currentState(): State {
+    return this.behaviorMemory?.get() ?? this.spec.initialState(this.readConfig());
+  }
+
+  /** Reconcile the spec's declared effects for the current state/config
+   *  against the given host. One runner per instance, created lazily. */
+  protected reconcileEffects(host: EffectHost): void {
+    this.effectRunner ??= createEffectRunner();
+    this.effectRunner.apply(this.spec.effects(this.currentState(), this.readConfig()), host);
   }
 
   override render(): Node {
     const config = this.readConfig();
-    const state = this.behaviorMemory?.get() ?? this.spec.initialState(config);
+    const state = this.currentState();
     const ids = this.partIds();
     const root = this.buildParts(state, config, ids);
     this.applyAria(root, state, config, ids);
@@ -104,9 +162,13 @@ export abstract class BehaviorElement<
     }
   }
 
-  private findPart(root: Node, part: string): Element | null {
+  /** Resolve a declared part to its live element under `root` -- `root`
+   *  itself when it carries the part's data-part, otherwise the first
+   *  descendant that does. Shared by shadow-DOM performances (via
+   *  applyAria) and light-DOM performances (as their EffectHost.getPart). */
+  protected findPart(root: Node, part: string): HTMLElement | null {
     if (!(root instanceof Element)) return null;
-    if (root.getAttribute('data-part') === part) return root;
-    return root.querySelector(`[data-part="${part}"]`);
+    if (root.getAttribute('data-part') === part) return root as HTMLElement;
+    return root.querySelector<HTMLElement>(`[data-part="${part}"]`);
   }
 }
