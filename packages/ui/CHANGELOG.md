@@ -17,6 +17,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   plus the `sm | default | lg` size scale. `asChild` is not carried forward
   yet -- deferred, see `docs/spec/components/badge.md`. WC/Astro bindings
   not yet written.
+- **Alert, ported to the behavior layer.** `Alert`/`AlertTitle`/`AlertDescription`/
+  `AlertAction` join the new behavior-layer tree as the second sweep static
+  (imitating Container). `role="alert"` is projected unconditionally by the
+  score; the nine-variant severity vocabulary carries forward from the
+  oracle with one fix -- each subtle background now pairs with its OWN
+  subtle-foreground token instead of the solid variant's foreground, which
+  was contrast-tuned for the solid fill. shadcn's `Alert`/`AlertTitle`/
+  `AlertDescription` surface is a drop-in match; `AlertAction` is an
+  oracle-only addition carried forward unchanged.
 - **Container grid placement.** Container now accepts `colSpan` (1-12) and
   `rowSpan` (1-3), the same span vocabulary as `Grid.Item`. A Container placed
   directly inside a `Grid` can carry its own placement, so content no longer
