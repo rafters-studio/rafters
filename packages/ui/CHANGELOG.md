@@ -9,6 +9,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Separator, ported to the behavior layer.** `separator.behavior.ts` +
+  `separator.classes.ts` + `separator.astro` (issue #1791, Astro-only pass --
+  no `.tsx`/WC performance in this scope). The whole contract is which of
+  two ARIA lies the score refuses to tell: decorative by default
+  (`role="none"`, no `aria-orientation` -- an unannounced hairline costs
+  nothing) or, with `decorative={false}`, the real `role="separator"` with a
+  live `aria-orientation`, the honest-or-absent pattern `grid.behavior.ts`
+  established for its own conditional role. `separator.parts.root` declares
+  no fixed role for the same reason grid's `row`/`cell` roles are the only
+  ones fixed -- the value switches on config, so the harness asserts DOM
+  against `separator.aria`'s live projection rather than a literal
+  `PartDecl.role`. `separatorClasses` carries the hairline decoration
+  (`shrink-0 bg-border`, orientation-keyed `h-px w-full` /
+  `h-full w-px`) ported verbatim from the oracle -- `bg-border` is the
+  correct primitive here, not a background/fill violation: a 1px line has
+  no edge to stroke a border ON, so the token color painted as the
+  element's own fill IS how a hairline renders, and there is no
+  `*-subtle`/`*-foreground` contrast pairing to repoint since there is no
+  text content and only one token in play. No state, no actions, no
+  keymap, no effects -- Spec 04 declares no motion intent either.
+  Conformance (`separator.astro.conformance.test.ts`, container's
+  standalone `AstroContainer` pattern) plus pure behavior/classes unit
+  tests. Documented in `docs/spec/components/separator.md`. Matrix line:
+  `frameworks.behaviorLayer.astro` -> `verified`; `react` stays `missing`.
 - **Navigation-menu, Astro performance.** `navigation-menu.astro` (root
   `<nav>`), `navigation-menu-list.astro` (`<ul>`), `navigation-menu-item.astro`
   (`<li>` holding one trigger/content pair), and `navigation-menu-link.astro`

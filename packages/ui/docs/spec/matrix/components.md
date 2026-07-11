@@ -24,7 +24,7 @@ Behavior-layer support: only the five articles have react (verified); container,
 | **label** | Form control label | Associates text with a control (htmlFor) | - | - | - | none | astro/react/wc | none |
 | **progress** | Progress bar | Shows determinate value or indeterminate activity | value, indeterminate | - | - | transition-all -> value-change | astro/react/wc | none |
 | **scroll-area** | Styled scroll container | Custom scrollbar rendering over native scroll | scrolling | - | - | transition-colors | react | none |
-| **separator** | Visual divider | Horizontal/vertical rule; decorative by default (role=none), semantic on request | - | - | - | none | astro/react/wc | none |
+| **separator** | Visual divider | Horizontal/vertical rule; decorative by default (role=none), semantic on request | - | classy | - | none | astro/react/wc | astro OK |
 | **skeleton** | Loading shimmer | Occupies layout while content loads | - | - | - | animate-pulse -> feedback-loop | astro/react/wc | none |
 | **spinner** | Busy indicator | Signals in-flight work | - | - | - | animate-spin -> feedback-loop | astro/react/wc | none |
 | **table** | Semantic data table | Renders table landmarks; rows can carry selected state | row: selected | - | - | transition-colors | astro/react | none |
