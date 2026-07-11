@@ -1,0 +1,15 @@
+---
+/**
+ * BreadcrumbList -- the ordered list of crumbs. No score of its own
+ * (oracle parity: breadcrumb-list.astro carries no aria, only decoration).
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { breadcrumbListClasses } from './breadcrumb.classes';
+
+interface Props extends HTMLAttributes<'ol'> {}
+
+const { class: className, ...attrs } = Astro.props;
+---
+
+<ol class={classy(breadcrumbListClasses, className)} {...attrs}><slot /></ol>

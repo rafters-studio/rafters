@@ -1,0 +1,47 @@
+---
+/**
+ * BreadcrumbEllipsis -- a collapsed-trail marker (oracle: BreadcrumbEllipsis).
+ * Presentational and hidden from assistive tech.
+ *
+ * Renders as a `<div>`, not the oracle's `<span role="presentation">`,
+ * for the same typography-guard reason as breadcrumb-page.astro; a
+ * flex item's box behavior is identical either way inside the item's
+ * `inline-flex` row.
+ *
+ * The oracle also nested an `sr-only` "More" span inside this element --
+ * dead code, since the wrapper's own `aria-hidden="true"` already removes
+ * the whole subtree from the accessibility tree (nothing can reach text
+ * hidden under an aria-hidden ancestor). Defect-do-not-port; dropped.
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { breadcrumbEllipsisClasses } from './breadcrumb.classes';
+
+interface Props extends HTMLAttributes<'div'> {}
+
+const { class: className, ...attrs } = Astro.props;
+---
+
+<div
+  role="presentation"
+  aria-hidden="true"
+  class={classy(breadcrumbEllipsisClasses, className)}
+  {...attrs}
+>
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+  >
+    <circle cx="12" cy="12" r="1" />
+    <circle cx="19" cy="12" r="1" />
+    <circle cx="5" cy="12" r="1" />
+  </svg>
+</div>

@@ -1,0 +1,35 @@
+---
+/**
+ * Breadcrumb -- the Astro performance of the score (breadcrumb.behavior.ts).
+ * The `<nav>` landmark only: list, item, link, page, separator, and
+ * ellipsis are the sibling performances in this directory
+ * (breadcrumb-list.astro, breadcrumb-item.astro, breadcrumb-link.astro,
+ * breadcrumb-page.astro, breadcrumb-separator.astro,
+ * breadcrumb-ellipsis.astro), matching navigation-menu.astro's split.
+ *
+ * A static score has nothing to subscribe to: config in, the
+ * `aria-label` projection out, server-rendered once. No client runtime,
+ * no effects (Spec 03).
+ */
+import type { HTMLAttributes } from 'astro/types';
+import type { PartIds } from '../../lib/contract';
+import classy from '../../primitives/classy';
+import { breadcrumb, type BreadcrumbPart } from './breadcrumb.behavior';
+import { breadcrumbClasses } from './breadcrumb.classes';
+
+interface Props extends HTMLAttributes<'nav'> {
+  ariaLabel?: string;
+}
+
+const { ariaLabel, class: className, ...attrs } = Astro.props;
+
+const config = { ariaLabel };
+const state = breadcrumb.initialState(config);
+const classes = breadcrumbClasses(config, state);
+const ids: PartIds<BreadcrumbPart> = { root: '' };
+const aria = breadcrumb.aria(state, config, ids);
+---
+
+<nav data-part="root" class={classy(classes.root, className)} {...aria.root} {...attrs}>
+  <slot />
+</nav>

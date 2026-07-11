@@ -1,0 +1,31 @@
+---
+/**
+ * BreadcrumbPage -- the current page. The one sub-part with a real score
+ * projection (breadcrumb.behavior.ts's breadcrumbPageAttrs): rendering
+ * this component instead of BreadcrumbLink IS the "current" declaration,
+ * matching grid-item.astro's `priority` -- items declare what they are.
+ *
+ * Renders as an href-less `<a>`, not the oracle's `<span role="link">`:
+ * this tree's typography guard blocks a classed `<span>` (raw span/p/h1
+ * with classes are reserved for the H1-H6/P/Small/Code components,
+ * unbuilt for this static tier). An anchor with no `href` carries no
+ * native link semantics either -- `role="link"` restores the same look
+ * `aria-disabled="true"` marks as non-interactive, identical to the
+ * oracle's contract, only the host tag differs.
+ *
+ * `Props` omits `href` (mirroring grid.astro's `Omit<..., 'role'>`) so
+ * the attribute passthrough cannot reopen the navigable door this
+ * component exists to keep shut.
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { breadcrumbPageAttrs } from './breadcrumb.behavior';
+import { breadcrumbPageClasses } from './breadcrumb.classes';
+
+interface Props extends Omit<HTMLAttributes<'a'>, 'href'> {}
+
+const { class: className, ...attrs } = Astro.props;
+const aria = breadcrumbPageAttrs();
+---
+
+<a class={classy(breadcrumbPageClasses, className)} {...aria} {...attrs}><slot /></a>
