@@ -9,6 +9,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Item, static score + Astro performance.** `item.classes.ts` +
+  `item.astro`: a generic list row laying out `leading`/`content`/`trailing`
+  parts, ported without a `.tsx` render target in this pass. Item is the
+  first score in this wave with no `item.behavior.ts`: it projects no ARIA
+  (`states: []`), so unlike container/grid/dialog/navigation-menu there is
+  nothing for a behavior file to hold beyond a config type -- that type
+  (`ItemConfig`) lives directly in `item.classes.ts`. Dropped from the
+  oracle (`src/old/ui/item.astro`): `role="option"`, `aria-selected`,
+  `aria-disabled`, `tabindex`, and the selected/disabled/hover color states
+  -- interactive selection is not this component's job at this tier; a
+  future selectable-list component composes Item rather than Item
+  pretending to be `role="option"` outside a listbox (itself an axe
+  violation the oracle carried). New-grain: the oracle's fixed
+  icon+label+description shape generalizes into three plain slots --
+  `leading`/`content`/`trailing`, each gated on `Astro.slots.has` so an
+  absent slot renders no wrapper. `leading` is deliberately NOT
+  `aria-hidden` by default (defect-do-not-port): the oracle force-hid its
+  icon slot, but `leading` can now hold anything, and only the consumer
+  knows whether that content needs an accessible name. Conformance
+  (`item.astro.conformance.test.ts`, container's precedent for a
+  no-projection static) is axe-clean plus structural assertions only -- no
+  `assertContractFulfillment` call, since there is no `BehaviorSpec` to
+  assert against. Matrix line: `frameworks.behaviorLayer.astro` ->
+  `verified`; `react` stays `missing`.
 - **Navigation-menu, Astro performance.** `navigation-menu.astro` (root
   `<nav>`), `navigation-menu-list.astro` (`<ul>`), `navigation-menu-item.astro`
   (`<li>` holding one trigger/content pair), and `navigation-menu-link.astro`

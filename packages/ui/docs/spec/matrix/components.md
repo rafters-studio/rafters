@@ -19,7 +19,7 @@ Behavior-layer support: only the five articles have react (verified); container,
 | **empty** | Empty-state placeholder | Communicates absence of content with icon/title/action slots | - | - | - | none | astro/react/wc | none |
 | **grid** A | 12-column grid (ARTICLE) | Linear/preset columns; spans; conditional grid-roving when role=grid | - | - | - | none | astro/react/wc | react + astro OK |
 | **image** | Token-aware img wrapper | Renders responsive image with radius/fill tokens | loading, error | - | - | none | astro/react/wc | none |
-| **item** | Generic list row | Lays out leading/content/trailing in a row | - | - | - | transition-colors | astro/react/wc | none |
+| **item** | Generic list row | Lays out leading/content/trailing in a row | - | - | - | none | astro/react/wc | astro OK |
 | **kbd** | Keyboard key cap | Displays a key or shortcut visually | - | - | - | none | astro/react/wc | none |
 | **label** | Form control label | Associates text with a control (htmlFor) | - | - | - | none | astro/react/wc | none |
 | **progress** | Progress bar | Shows determinate value or indeterminate activity | value, indeterminate | - | - | transition-all -> value-change | astro/react/wc | none |
