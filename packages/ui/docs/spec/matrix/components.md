@@ -26,7 +26,7 @@ Behavior-layer support: only the five articles have react (verified); container,
 | **scroll-area** | Styled scroll container | Custom scrollbar rendering over native scroll | scrolling | - | - | transition-colors | react | none |
 | **separator** | Visual divider | Horizontal/vertical rule; decorative by default (role=none), semantic on request | - | - | - | none | astro/react/wc | none |
 | **skeleton** | Loading shimmer | Occupies layout while content loads | - | - | - | animate-pulse -> feedback-loop | astro/react/wc | none |
-| **spinner** | Busy indicator | Signals in-flight work | - | - | - | animate-spin -> feedback-loop | astro/react/wc | none |
+| **spinner** | Busy indicator | Signals in-flight work | - | - | - | animate-spin -> feedback-loop | astro/react/wc | astro OK |
 | **table** | Semantic data table | Renders table landmarks; rows can carry selected state | row: selected | - | - | transition-colors | astro/react | none |
 | **typography** | Semantic text set (H1-H6, P, Code, Small, Blockquote, List) | Renders native text elements with token props; no raw class surface | - | - | - | none | astro/react/wc | none |
 

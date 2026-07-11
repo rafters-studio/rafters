@@ -9,6 +9,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Spinner, Astro performance.** `spinner.astro` joins `spinner.behavior.ts`
+  and `spinner.classes.ts` as the first render target of this static score.
+  Unlike Container/Grid, the aria projection is real and unconditional:
+  `role="status"` plus an accessible name (`aria-label`, config `label`,
+  defaulting to `"Loading"`) render exactly as the score computes them --
+  config in, `<output>` with the projected ARIA out, no client runtime, no
+  effects (Spec 03). The oracle's (`src/old/ui/spinner.*`) `size` and
+  `variant` props port verbatim, including the ring's `border-{token}
+  border-r-transparent` classes -- semantic token classes, the same family
+  as Button's `bg-primary`, not the raw color utilities the discipline
+  forbids; no `bg-*-subtle` + `*-foreground` contrast pairing was found to
+  repoint. The hardcoded `aria-label="Loading"` literal is the one oracle
+  defect: baked into every old-tree target with no override, it is now
+  config (`label`) instead of a string constant, "Loading" staying the
+  default so silent callers see identical behavior. The oracle's redundant
+  `sr-only` span is dropped (new-grain: `aria-label` is the single name
+  source now, not a bug in the oracle, just superseded by having one
+  channel instead of two). The spin itself (`animate-spin
+  motion-reduce:animate-none`) is a literal CSS animation, not a Spec 04
+  `MotionDecl` transition -- MotionDecl governs state changes and Spinner
+  declares none; the continuous loop is matrix-tracked as a `feedback-loop`
+  motion intent (evidence metadata), the same precedent Button's own inline
+  spinner already sets. No React performance in this pass; `frameworks.
+  behaviorLayer.react` stays `missing`. Matrix line: `frameworks.
+  behaviorLayer.astro` -> `verified`.
 - **Navigation-menu, Astro performance.** `navigation-menu.astro` (root
   `<nav>`), `navigation-menu-list.astro` (`<ul>`), `navigation-menu-item.astro`
   (`<li>` holding one trigger/content pair), and `navigation-menu-link.astro`

@@ -1,0 +1,53 @@
+---
+/**
+ * Spinner -- the Astro performance of the static score (spinner.behavior.ts).
+ *
+ * A static score has nothing to subscribe to: this performance is pure
+ * decoration application. No client runtime, no effects (Spec 03). Unlike
+ * Container/Grid, the aria projection here is real and unconditional
+ * (`role="status"` + accessible name), so it renders exactly as the score
+ * computes it -- config in, `<output>` with the projected ARIA out.
+ *
+ * `<output>`'s implicit ARIA role is already "status"; the explicit
+ * `role="status"` from the projection is redundant with native semantics
+ * but keeps the DOM contract testable and identical across every render
+ * target (the same discipline Container applies to landmark elements,
+ * just with the role stated instead of implied).
+ *
+ * Motion: `animate-spin` is a literal CSS animation, not a Spec 04
+ * MotionDecl transition -- MotionDecl governs state changes (enter/exit/
+ * emphasis/transition) and Spinner has none to declare (Spec 04: "Statics
+ * declare nothing"). The continuous spin is matrix-tracked as a
+ * `feedback-loop` motion intent (evidence-only metadata), not fed through
+ * the transition schema; Button's own inline spinner sets the same
+ * precedent.
+ */
+import type { HTMLAttributes } from 'astro/types';
+import type { PartIds } from '../../lib/contract';
+import classy from '../../primitives/classy';
+import { spinner, type SpinnerPart, type SpinnerSize, type SpinnerVariant } from './spinner.behavior';
+import { spinnerClasses } from './spinner.classes';
+
+interface Props extends Omit<HTMLAttributes<'output'>, 'role' | 'aria-label'> {
+  size?: SpinnerSize;
+  variant?: SpinnerVariant;
+  /** Accessible name announced by role="status". Defaults to "Loading". */
+  label?: string;
+}
+
+const {
+  size = 'default',
+  variant = 'default',
+  label,
+  class: className,
+  ...attrs
+} = Astro.props;
+
+const config = { size, variant, label };
+const state = spinner.initialState(config);
+const classes = spinnerClasses(config, state);
+const ids: PartIds<SpinnerPart> = { root: '' };
+const aria = spinner.aria(state, config, ids);
+---
+
+<output data-part="root" class={classy(classes.root, className)} {...aria.root} {...attrs} />
