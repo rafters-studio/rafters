@@ -16,7 +16,7 @@ Behavior-layer support: only the five articles have react (verified); container,
 | **card** | Content surface with fill signature | Groups related content on an elevated surface | - | fill-resolver | - | transition-shadow | astro/react/wc | none |
 | **container** A | Layout keystone (ARTICLE) | Owns negative space: stack/grid/block modes, landmarks, CQ provider | - | fill-resolver | - | none | astro/react/wc | react + astro OK |
 | **embed** | External media frame | Wraps third-party iframes with title and aspect control | loading, loaded | - | - | none | react/wc | none |
-| **empty** | Empty-state placeholder | Communicates absence of content with icon/title/action slots | - | - | - | none | astro/react/wc | none |
+| **empty** | Empty-state placeholder | Communicates absence of content with media/title/description/actions slots | - | - | - | none | astro/react/wc | astro OK |
 | **grid** A | 12-column grid (ARTICLE) | Linear/preset columns; spans; conditional grid-roving when role=grid | - | - | - | none | astro/react/wc | react + astro OK |
 | **image** | Token-aware img wrapper | Renders responsive image with radius/fill tokens | loading, error | - | - | none | astro/react/wc | none |
 | **item** | Generic list row | Lays out leading/content/trailing in a row | - | - | - | transition-colors | astro/react/wc | none |

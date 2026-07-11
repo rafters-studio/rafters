@@ -9,6 +9,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Empty, Astro performance.** `empty.astro` joins `empty.classes.ts` as
+  the static score's Astro target -- the first static tier to ship with no
+  `empty.behavior.ts`. Empty has no config surface at all: nothing on it
+  branches the decoration, so a `BehaviorSpec` whose aria projection always
+  returns `{}` over an empty `Config` and an empty `State` would be
+  machinery describing nothing (`container.astro`'s own aria projection is
+  also always `{}`, but its behavior file earns its keep because
+  `as`/`size`/`padding`/... genuinely branch the output; Empty has no such
+  branch). The oracle's five-component split
+  (`Empty`/`EmptyIcon`/`EmptyTitle`/`EmptyDescription`/`EmptyAction`,
+  `src/old/ui/empty*.astro`) collapses into one file with four named slots
+  -- `media`, `title`, `description`, `actions`. A caller who omits a slot
+  gets no element for it: `Astro.slots.has()` is a render-time check, not a
+  client effect, so an unfilled slot never leaves an empty `<h3>` or empty
+  `<div>` behind for axe to flag -- the oracle avoided the same defect by a
+  different mechanism (simply omitting the sub-component). `title` and
+  `description` render through dynamic tags (`Title`/`Description` bound to
+  `h3`/`p`) the same way `container.astro`'s `as` renders through `Tag`.
+  Renamed from the oracle: `EmptyIcon` -> `media` (icons AND illustrations,
+  not icons only) and `EmptyAction` -> `actions` (plural: the wrapper
+  already held more than one button); token classes ported verbatim
+  otherwise. Conformance (`empty.astro.conformance.test.ts`, container's
+  standalone `AstroContainer` pattern) covers the all-slots-filled scenario
+  and, critically, the slot-omission scenario that exercises the
+  `Astro.slots.has()` guard. Matrix line: `frameworks.behaviorLayer.astro`
+  -> `verified`.
 - **Navigation-menu, Astro performance.** `navigation-menu.astro` (root
   `<nav>`), `navigation-menu-list.astro` (`<ul>`), `navigation-menu-item.astro`
   (`<li>` holding one trigger/content pair), and `navigation-menu-link.astro`
