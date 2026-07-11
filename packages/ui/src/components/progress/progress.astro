@@ -1,0 +1,59 @@
+---
+/**
+ * Progress -- the Astro performance of the static score (progress.behavior.ts).
+ *
+ * A static score has nothing to subscribe to: config in, classes and the
+ * ARIA projection out, server-rendered once. No client runtime, no effects
+ * (Spec 03). `value` undefined renders the indeterminate contract --
+ * `aria-valuenow` absent, `aria-busy="true"`, the indicator's animation
+ * utility keyed off the projected `data-state` -- exactly what a static
+ * render can honor: an indeterminate progress bar has no client-driven
+ * animation loop to fake here, only the CSS keyframe utility the oracle
+ * already ships (its keyframes live in the compiled utility sheet, same as
+ * the React and WC targets).
+ *
+ * The width channel is the same narrow style-attribute exception Container
+ * used for `queryName`: a continuous 0-100 value has no literal class to
+ * select, so it is the one thing this performance computes rather than
+ * selects -- via `progressPercent`, the pure helper the behavior score
+ * exports, not inline math in the frontmatter.
+ */
+import type { HTMLAttributes } from 'astro/types';
+import type { PartIds } from '../../lib/contract';
+import classy from '../../primitives/classy';
+import {
+  progress,
+  progressPercent,
+  type ProgressConfig,
+  type ProgressPart,
+  type ProgressSize,
+} from './progress.behavior';
+import { progressClasses } from './progress.classes';
+
+interface Props extends HTMLAttributes<'div'> {
+  value?: number;
+  max?: number;
+  size?: ProgressSize;
+  fill?: string;
+}
+
+const { value, max = 100, size, fill, class: className, ...attrs } = Astro.props;
+
+const config: ProgressConfig = { value, max, size, fill };
+const state = progress.initialState(config);
+const classes = progressClasses(config, state);
+const ids: PartIds<ProgressPart> = { root: '', indicator: '' };
+const aria = progress.aria(state, config, ids);
+
+const determinate = value !== undefined;
+const percent = progressPercent(config);
+---
+
+<div data-part="root" class={classy(classes.root, className)} {...aria.root} {...attrs}>
+  <div
+    data-part="indicator"
+    class={classes.indicator}
+    style={determinate ? `width: ${percent}%` : undefined}
+    {...aria.indicator}
+  />
+</div>

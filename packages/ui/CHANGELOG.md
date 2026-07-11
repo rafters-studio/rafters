@@ -9,6 +9,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Progress, Astro performance.** `progress.astro` joins `progress.behavior.ts`
+  and `progress.classes.ts` as the static score's first render target -- no
+  `progress.tsx` in this change. Root carries `role="progressbar"` plus
+  `aria-valuemin`/`aria-valuemax`/`aria-valuenow` projected straight from
+  `progress.aria`; `aria-valuenow` is omitted (not zeroed) while `value` is
+  undefined, per WAI-ARIA 1.2's own indeterminate contract, and `aria-busy`
+  sets to mirror it. `data-state` (`determinate`/`indeterminate`) projects
+  onto both `root` and `indicator` so the indeterminate slide animation is
+  a `data-[state=indeterminate]:` selector in `progress.classes.ts`, never a
+  ternary in the performance (boundary 6's style-the-contract corollary).
+  The indicator's color is a `fill` signature (#1637) resolved through
+  `resolveFillName`, default `primary` -- the oracle's `variant` enum
+  (`bg-primary`/`bg-destructive`/...) is superseded here the same way
+  Container's `background` enum was. The width channel is Container's
+  `queryName` style-attribute exception again: a continuous 0-100 value has
+  no literal class, so `progressPercent` (the pure helper the score
+  exports) computes it and the performance sets one inline `width`. The
+  oracle's native `<progress class="sr-only">` + visual-div split
+  (React/Astro) is dropped in favor of the WC oracle's own explicit
+  `role="progressbar"` div, which is what the projection model needs;
+  `aria-valuetext`/`getValueLabel` are dropped as redundant with
+  `aria-valuenow`+`aria-valuemin`+`aria-valuemax` (assistive tech computes
+  the percentage on its own). A consumer supplies its own
+  `aria-label`/`aria-labelledby` -- the score invents no default text, same
+  as Container's `aside` example. Conformance
+  (`progress.astro.conformance.test.ts`, container's standalone
+  `AstroContainer` pattern) covers determinate, clamped, and indeterminate
+  scenarios against the shared harness (axe clean + contract fulfillment).
+  Matrix line: `frameworks.behaviorLayer.astro` -> `verified`.
 - **Navigation-menu, Astro performance.** `navigation-menu.astro` (root
   `<nav>`), `navigation-menu-list.astro` (`<ul>`), `navigation-menu-item.astro`
   (`<li>` holding one trigger/content pair), and `navigation-menu-link.astro`
