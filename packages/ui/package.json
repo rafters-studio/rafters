@@ -7,6 +7,7 @@
     ".": "./src/index.ts",
     "./primitives/*": "./src/primitives/*.ts",
     "./components/*": "./src/old/*.tsx",
+    "./next/badge": "./src/components/badge/badge.tsx",
     "./next/button": "./src/components/button/button.tsx",
     "./next/button.element": "./src/components/button/button.element.ts",
     "./hooks/*": "./src/hooks/*.ts",

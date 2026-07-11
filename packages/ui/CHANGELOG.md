@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Badge ported to the behavior layer.** `Badge` (React) is now a static
+  score (`badge.behavior.ts` + `badge.classes.ts` + `badge.tsx`), imitating
+  Container: no state, no actions, no keymap, no motion block. Full oracle
+  variant vocabulary preserved (`default | primary | secondary | destructive
+  | success | warning | info | muted | accent | outline | ghost | link`),
+  plus the `sm | default | lg` size scale. `asChild` is not carried forward
+  yet -- deferred, see `docs/spec/components/badge.md`. WC/Astro bindings
+  not yet written.
 - **Container grid placement.** Container now accepts `colSpan` (1-12) and
   `rowSpan` (1-3), the same span vocabulary as `Grid.Item`. A Container placed
   directly inside a `Grid` can carry its own placement, so content no longer
