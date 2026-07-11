@@ -1,0 +1,160 @@
+---
+/**
+ * Card -- the Astro performance of the static score (card.behavior.ts).
+ *
+ * A static score has nothing to subscribe to: config in, classes out,
+ * semantic element chosen by `as` (rendered through Astro's dynamic-tag
+ * support, same mechanism as container.astro). No client runtime, no
+ * effects (Spec 03); Card declares no motion (Spec 04 statics) -- the
+ * oracle's `interactive` hover/focus-ring variant carried a hand-authored
+ * `transition-shadow duration-150`, exactly the raw duration Spec 04 bans
+ * ("components never name durations"); dropped rather than ported
+ * (oracle disposition: defect-do-not-port).
+ *
+ * `header`/`title`/`description`/`content`/`footer` are Astro NAMED slots,
+ * not the oracle's separate CardHeader/CardTitle/... components -- the
+ * oracle's per-part files existed only to give React children somewhere to
+ * land; Astro's `Astro.slots.has(name)` reads presence directly, so one
+ * file renders every part conditionally, matching button.astro's
+ * root/label/spinner precedent (multiple parts, one performance) rather
+ * than navigation-menu's sibling-file split (which exists there only
+ * because those siblings carry independent id-correlation state a static
+ * card part never needs). `header` wraps `title`/`description` together
+ * (the oracle's actual CardHeader composition) and additionally exposes its
+ * own slot for content that belongs beside them (an avatar, for instance)
+ * without forcing every header to be title+description.
+ *
+ * The oracle's root `<Card>` carried one bare `<slot />` -- unnamed
+ * children are folded into `content` here (alongside the named `content`
+ * slot) so a plain `<Card>text</Card>`, the oracle's simplest usage, keeps
+ * rendering that text instead of Astro silently dropping it the moment a
+ * component exposes named slots. `title`'s heading level is configurable
+ * (`titleAs`, oracle's `CardTitle` `as` prop) through the same dynamic-tag
+ * mechanism `as` uses for the root, defaulting to `h3`.
+ *
+ * The oracle's `CardAction` part (grid-positioned via `col-start-2` inside
+ * a header the oracle itself never made a grid container --
+ * `cardHeaderClasses` is `flex flex-col`, so those column/row utilities
+ * never activated) is dropped: out of this port's scope and, on the
+ * evidence, inert in the oracle it came from (oracle disposition:
+ * defect-do-not-port). The `editable`/`onTitleChange`/`onDescriptionChange`
+ * block-editor props (`contentEditable`, paste handlers) need a client
+ * event loop this tier does not have (oracle disposition:
+ * framework-affordance, React-only). `background` + `CardBackground` (the
+ * oracle's own JSDoc marks it `@deprecated Prefer the fill prop`) and
+ * `size="sm"`'s `group/card-sm` marker (nothing in the codebase keys off
+ * it) are dropped as well (oracle dispositions: defect-do-not-port).
+ *
+ * Ids are inputs the behavior never generates (Spec 01 rule 3); `card.aria`
+ * never resolves one, so empty-string `PartIds` satisfy the signature
+ * without inventing id-supply machinery this performance has no runtime
+ * use for -- same as container.astro and button.astro.
+ */
+import type { HTMLAttributes } from 'astro/types';
+import type { PartIds } from '../../lib/contract';
+import classy from '../../primitives/classy';
+import {
+  card,
+  type CardConfig,
+  type CardElement,
+  type CardHeadingLevel,
+  type CardPart,
+} from './card.behavior';
+import { cardClasses } from './card.classes';
+
+interface Props extends HTMLAttributes<'div'> {
+  as?: CardElement;
+  titleAs?: CardHeadingLevel;
+  fill?: string;
+}
+
+const {
+  as: Tag = 'div',
+  titleAs: TitleTag = 'h3',
+  fill,
+  class: className,
+  ...attrs
+} = Astro.props;
+
+const config: CardConfig = { as: Tag, titleAs: TitleTag, fill };
+const state = card.initialState(config);
+const classes = cardClasses(config, state);
+const ids: PartIds<CardPart> = {
+  root: '',
+  header: '',
+  title: '',
+  description: '',
+  content: '',
+  footer: '',
+};
+const aria = card.aria(state, config, ids);
+
+const hasTitle = Astro.slots.has('title');
+const hasDescription = Astro.slots.has('description');
+const hasHeader = hasTitle || hasDescription || Astro.slots.has('header');
+// Unnamed children fold into content -- the oracle's bare <slot /> usage
+// (<Card>text</Card>) stays honored alongside the named content slot.
+const hasContent = Astro.slots.has('content') || Astro.slots.has('default');
+const hasFooter = Astro.slots.has('footer');
+---
+
+<Tag
+  data-part="root"
+  class={classy(classes.root, className)}
+  data-fill={fill || undefined}
+  {...aria.root}
+  {...attrs}
+>
+  {
+    hasHeader && (
+      <div
+        data-part="header"
+        class={classes.header}
+        {...aria.header}
+      >
+        {hasTitle && (
+          <TitleTag
+            data-part="title"
+            class={classes.title}
+            {...aria.title}
+          >
+            <slot name="title" />
+          </TitleTag>
+        )}
+        {hasDescription && (
+          <p
+            data-part="description"
+            class={classes.description}
+            {...aria.description}
+          >
+            <slot name="description" />
+          </p>
+        )}
+        <slot name="header" />
+      </div>
+    )
+  }
+  {
+    hasContent && (
+      <div
+        data-part="content"
+        class={classes.content}
+        {...aria.content}
+      >
+        <slot name="content" />
+        <slot />
+      </div>
+    )
+  }
+  {
+    hasFooter && (
+      <div
+        data-part="footer"
+        class={classes.footer}
+        {...aria.footer}
+      >
+        <slot name="footer" />
+      </div>
+    )
+  }
+</Tag>

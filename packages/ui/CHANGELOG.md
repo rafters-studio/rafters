@@ -9,6 +9,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Card, Astro performance.** `card.astro` joins `card.classes.ts` and
+  `card.behavior.ts` as the score's first render target (#1762 tracks the
+  full port; this slice is astro-only -- no `card.tsx`). Static tier: no
+  client runtime, no effects (Spec 03), no motion (Spec 04 statics declare
+  nothing). `header`/`title`/`description`/`content`/`footer` are Astro
+  NAMED slots read via `Astro.slots.has(name)`, one file rendering every
+  part conditionally -- matches `button.astro`'s root/label/spinner
+  precedent (multiple parts, one performance) rather than
+  `navigation-menu`'s sibling-file split, which exists there only for
+  id-correlation state a static card part never needs. `header` wraps
+  `title`/`description` together (the oracle's actual `CardHeader`
+  composition) plus its own slot for adjacent content; unnamed children
+  fold into `content` so the oracle's simplest usage, `<Card>text</Card>`,
+  keeps rendering instead of Astro silently dropping it. `title`'s heading
+  level is configurable (`titleAs`, oracle's `CardTitle` `as` prop),
+  defaulting to `h3`, through the same dynamic-tag mechanism `as` uses for
+  the root element switch (`div`/`article`/`section`/`aside`, matching
+  `container.astro`). Base surface tokens
+  (`bg-card`/`text-card-foreground`/`border-card-border`,
+  `text-title-medium`, `text-body-small`) are ported verbatim from the
+  oracle (`src/old/ui/card.*`) -- the same pairings `dialog.classes.ts`
+  already proved. `fill` (#1637) is ported, applied to the root surface
+  only. Dropped (oracle disposition: defect-do-not-port):
+  `background`/`CardBackground` (the oracle's own JSDoc marks it
+  "@deprecated Prefer the fill prop"), `interactive`'s hover/focus-ring
+  transition (a hand-authored `duration-150`, exactly the raw duration
+  Spec 04 bans), `size="sm"`'s `group/card-sm` marker (nothing in the
+  codebase keys off it), and `CardAction`'s grid-position utilities
+  (`col-start-2` etc. inside a header the oracle itself never made a grid
+  container -- `cardHeaderClasses` is `flex flex-col`, so those utilities
+  never activated). Dropped (oracle disposition: framework-affordance):
+  `editable`/`onTitleChange`/`onDescriptionChange` (`contentEditable` +
+  paste handlers need a client event loop this tier does not have).
+  Conformance (`card.astro.conformance.test.ts`, container's standalone
+  `AstroContainer` pattern) covers the element switch, header composition,
+  optional-part absence, the fill signature, and both new-gap fixes above.
+  Matrix line: `frameworks.behaviorLayer.astro` -> `verified`.
 - **Navigation-menu, Astro performance.** `navigation-menu.astro` (root
   `<nav>`), `navigation-menu-list.astro` (`<ul>`), `navigation-menu-item.astro`
   (`<li>` holding one trigger/content pair), and `navigation-menu-link.astro`
