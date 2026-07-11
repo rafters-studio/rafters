@@ -17,10 +17,14 @@
  * makes the same kind of call for its spinner), so an unfilled slot never
  * leaves an empty `<h3>` or empty `<div>` behind for axe to flag.
  *
- * `title`/`description` render through dynamic tags (`Title`/`Description`
- * bound to `h3`/`p`) the same way container.astro's `as` renders through
- * `Tag` -- one real heading and one real paragraph, chosen once, not a
- * per-element branch.
+ * `title`/`description` render through dynamic tags (`Title`/`Description`,
+ * each bound once to a fixed native tag name) rather than a literal
+ * element: the repo's typography components (the sanctioned way to put a
+ * token class string on a heading/paragraph) haven't ported to this tree
+ * yet, and no wrapping Container article-mode is guaranteed here, so this
+ * is the honest fallback until they land -- one real heading and one real
+ * paragraph, still built from the exact token classes in empty.classes.ts,
+ * just named indirectly. Flagged for ratification once Typography ports.
  *
  * Renamed from the oracle: EmptyIcon -> the `media` slot (icons AND
  * illustrations, not icons only) and EmptyAction -> the `actions` slot
