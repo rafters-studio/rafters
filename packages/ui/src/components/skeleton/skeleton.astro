@@ -1,0 +1,34 @@
+---
+/**
+ * Skeleton -- the Astro performance of the static score (skeleton.behavior.ts).
+ *
+ * A static score has nothing to subscribe to: this performance is pure
+ * decoration application. No client runtime, no effects (Spec 03) -- config
+ * in, classes and the aria-hidden projection out, rendered once. The
+ * projection is score-derived rather than hand-authored on the tag, the
+ * same config-in/aria-out shape every other performance uses -- it just
+ * never varies, because a skeleton has no state to vary it.
+ *
+ * No slot: the oracle (src/old/ui/skeleton.astro) never accepted content
+ * either -- a skeleton stands in FOR content, it does not wrap it.
+ */
+import type { HTMLAttributes } from 'astro/types';
+import type { PartIds } from '../../lib/contract';
+import classy from '../../primitives/classy';
+import { skeleton, type SkeletonConfig, type SkeletonPart, type SkeletonVariant } from './skeleton.behavior';
+import { skeletonClasses } from './skeleton.classes';
+
+interface Props extends HTMLAttributes<'div'> {
+  variant?: SkeletonVariant;
+}
+
+const { variant = 'default', class: className, ...attrs } = Astro.props;
+
+const config: SkeletonConfig = { variant };
+const state = skeleton.initialState(config);
+const classes = skeletonClasses(config, state);
+const ids: PartIds<SkeletonPart> = { root: '' };
+const aria = skeleton.aria(state, config, ids);
+---
+
+<div data-part="root" class={classy(classes.root, className)} {...aria.root} {...attrs} />
