@@ -1,0 +1,41 @@
+---
+/**
+ * Separator -- the Astro performance of the static score
+ * (separator.behavior.ts).
+ *
+ * A static score has nothing to subscribe to: this performance is pure
+ * decoration application. No client runtime, no effects (Spec 03), no
+ * keymap -- config in, `separator.aria`'s role/orientation projection and
+ * `separatorClasses`' hairline out, server-rendered once. `decorative` and
+ * `orientation` are config, and config is exactly what a static render can
+ * honor; the role/aria-orientation swap is score-derived (`separator.aria`),
+ * not hand-authored in the markup the way the oracle wrote it inline.
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import {
+  separator,
+  type SeparatorConfig,
+  type SeparatorOrientation,
+} from './separator.behavior';
+import { separatorClasses } from './separator.classes';
+
+interface Props extends Omit<HTMLAttributes<'div'>, 'role'> {
+  orientation?: SeparatorOrientation;
+  decorative?: boolean;
+}
+
+const {
+  orientation = 'horizontal',
+  decorative = true,
+  class: className,
+  ...attrs
+} = Astro.props;
+
+const config: SeparatorConfig = { orientation, decorative };
+const state = separator.initialState(config);
+const classes = separatorClasses(config, state);
+const aria = separator.aria(state, config, { root: '' });
+---
+
+<div data-part="root" class={classy(classes.root, className)} {...aria.root} {...attrs} />
