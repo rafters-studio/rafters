@@ -2,7 +2,7 @@
 
 One line per component: what it is, what it does, what it uses (current primitive imports -> planned re-composition), states, motion, framework support.
 Generated 2026-07-09 from live index evidence (sym tree, import scan) + authored semantics. Excluded: editor, color-picker, color-inspector.
-Behavior-layer support: only the five articles have react (verified); container, button, grid, dialog, and navigation-menu additionally have astro (verified). Old tree availability listed for interim use.
+Behavior-layer support: only the five articles have react (verified); container, button, grid, dialog, and navigation-menu additionally have astro (verified). label has astro (verified) without a react performance yet -- astro-only port scope. Old tree availability listed for interim use.
 
 ## static (21)
 
@@ -21,7 +21,7 @@ Behavior-layer support: only the five articles have react (verified); container,
 | **image** | Token-aware img wrapper | Renders responsive image with radius/fill tokens | loading, error | - | - | none | astro/react/wc | none |
 | **item** | Generic list row | Lays out leading/content/trailing in a row | - | - | - | transition-colors | astro/react/wc | none |
 | **kbd** | Keyboard key cap | Displays a key or shortcut visually | - | - | - | none | astro/react/wc | none |
-| **label** | Form control label | Associates text with a control (htmlFor) | - | - | - | none | astro/react/wc | none |
+| **label** | Form control label | Associates text with a control (htmlFor) | - | - | - | none | astro/react/wc | astro OK |
 | **progress** | Progress bar | Shows determinate value or indeterminate activity | value, indeterminate | - | - | transition-all -> value-change | astro/react/wc | none |
 | **scroll-area** | Styled scroll container | Custom scrollbar rendering over native scroll | scrolling | - | - | transition-colors | react | none |
 | **separator** | Visual divider | Horizontal/vertical rule; decorative by default (role=none), semantic on request | - | - | - | none | astro/react/wc | none |

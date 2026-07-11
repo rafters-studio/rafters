@@ -9,6 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Label, Astro performance.** `label.astro` and `label.classes.ts` port
+  the form-control label as the static score's first non-article target --
+  astro-only for this pass, no `label.tsx`. No `label.behavior.ts`: the
+  for/id association is a native `label[for]` attribute forwarded through
+  Props, not a synthesized ARIA projection, so there is nothing left for a
+  `BehaviorSpec.aria` to score once the native attribute is accounted for
+  (container's precedent -- `aria: () => ({ root: {} })` -- carries a
+  behavior file anyway only because it also owns the grid-mode config
+  surface; label has no config beyond `variant`, so `label.classes.ts`
+  owns `LabelConfig`/`LabelVariant` directly). Variant color classes port
+  verbatim from the oracle (`src/old/ui/label.classes.ts`): plain `text-*`
+  tokens on the page background, not the `bg-*-subtle`/`*-foreground`
+  contrast-pairing defect class, since label never carries a chip-style
+  background. `peer-disabled:*` styling is declared unconditionally --
+  it activates off a sibling input's `disabled` state via the CSS `peer`
+  convention, not a label prop. Conformance
+  (`label.astro.conformance.test.ts`) follows
+  `container.astro.conformance.test.ts`'s standalone `AstroContainer`
+  pattern: axe clean, for/id association, variant token selection,
+  peer-disabled declaration, class merge via classy. Matrix line:
+  `frameworks.behaviorLayer.astro` -> `verified`.
 - **Navigation-menu, Astro performance.** `navigation-menu.astro` (root
   `<nav>`), `navigation-menu-list.astro` (`<ul>`), `navigation-menu-item.astro`
   (`<li>` holding one trigger/content pair), and `navigation-menu-link.astro`

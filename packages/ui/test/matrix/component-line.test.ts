@@ -36,11 +36,11 @@ describe('component matrix', () => {
     expect(new Set(names).size).toBe(names.length);
   });
 
-  it('the five articles are marked ported', () => {
+  it('the five articles plus the first non-article static (label) are marked ported', () => {
     const ported = lines
       .filter((l) => (l.raw as { status: string }).status === 'ported')
       .map((l) => (l.raw as { name: string }).name)
       .sort();
-    expect(ported).toEqual(['button', 'container', 'dialog', 'grid', 'navigation-menu']);
+    expect(ported).toEqual(['button', 'container', 'dialog', 'grid', 'label', 'navigation-menu']);
   });
 });
