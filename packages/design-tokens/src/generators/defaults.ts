@@ -444,43 +444,49 @@ export interface EasingDef {
 export const DEFAULT_EASING_DEFINITIONS: Record<string, EasingDef> = {
   linear: {
     curve: [0, 0, 1, 1],
-    meaning: 'Linear - constant speed, mechanical feel',
+    meaning:
+      'Linear - constant speed. A process, not a gesture. For progress and fades, where personality would be wrong',
     contexts: ['progress-bars', 'loading-spinners', 'opacity-fades'],
     css: 'linear',
   },
   'ease-in': {
     curve: [0.42, 0, 1, 1],
-    meaning: 'Ease in - starts slow, accelerates (exiting)',
+    meaning:
+      'Ease in - departure, letting go. Hesitates, then leaves quickly. For elements leaving the screen',
     contexts: ['exit-animations', 'elements-leaving'],
     css: 'cubic-bezier(0.42, 0, 1, 1)',
   },
   'ease-out': {
     curve: [0, 0, 0.58, 1],
-    meaning: 'Ease out - starts fast, decelerates (entering)',
+    meaning:
+      'Ease out - arrival, welcome, settling into place. Responds fast, lands gently. For elements entering',
     contexts: ['enter-animations', 'elements-appearing'],
     css: 'cubic-bezier(0, 0, 0.58, 1)',
   },
   'ease-in-out': {
     curve: [0.42, 0, 0.58, 1],
-    meaning: 'Ease in-out - symmetric acceleration/deceleration',
+    meaning: 'Ease in-out - deliberate, moving with purpose. For state changes within the screen',
     contexts: ['state-changes', 'transforms', 'general-purpose'],
     css: 'cubic-bezier(0.42, 0, 0.58, 1)',
   },
   productive: {
     curve: [0.2, 0, 0.38, 0.9],
-    meaning: 'Productive - quick, efficient, minimal overshoot',
+    meaning:
+      'Productive - quick, efficient, minimal overshoot. Work interfaces: the motion serves the task',
     contexts: ['work-ui', 'data-displays', 'business-apps'],
     css: 'cubic-bezier(0.2, 0, 0.38, 0.9)',
   },
   expressive: {
     curve: [0.4, 0.14, 0.3, 1],
-    meaning: 'Expressive - dramatic, attention-grabbing',
+    meaning:
+      'Expressive - dramatic, attention-spending. Onboarding and celebration: the motion IS the message',
     contexts: ['marketing', 'onboarding', 'celebrations', 'emphasis'],
     css: 'cubic-bezier(0.4, 0.14, 0.3, 1)',
   },
   spring: {
     curve: [0.175, 0.885, 0.32, 1.275],
-    meaning: 'Spring - bouncy overshoot for playful feel',
+    meaning:
+      'Spring - alive. Overshoot and settle read as physical presence; the eye treats animate motion as animate',
     contexts: ['buttons', 'icons', 'playful-ui', 'celebrations'],
     css: 'cubic-bezier(0.175, 0.885, 0.32, 1.275)',
   },

@@ -63,9 +63,11 @@ export function disclosable<Config extends DisclosableConfig>(): Slice<
       return {
         trigger: {
           'aria-expanded': open ? 'true' : 'false',
-          // Only referenced while the content is actually in the DOM: a
-          // dangling aria-controls id is an axe violation.
-          'aria-controls': open ? ids.content : undefined,
+          // Empty-id sentinel (Spec 01, ruled 2026-07-08): reference the
+          // content only when its id is real. Keying on `open` alone leaks
+          // aria-controls="" on the first paint of an initially-open
+          // disclosure, before the content ref has registered.
+          'aria-controls': open && ids.content ? ids.content : undefined,
           'data-state': open ? 'open' : 'closed',
         },
         content: {

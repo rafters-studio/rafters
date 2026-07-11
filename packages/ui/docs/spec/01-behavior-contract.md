@@ -1,7 +1,7 @@
 # Spec 01 — The Behavior Contract
 
-Status: DRAFT (not ratified). Validated by: button (walking skeleton), then one
-effectful multi-part component before freeze.
+Status: FROZEN 2026-07-09. Rulings of 2026-07-08 applied (docket:
+vault/rulings-docket-2026-07-08.md). Freezes with Specs 00-04.
 
 This document defines the export shape of every `x.behavior.ts`. The
 conformance harness, the classes layer, and every framework binding compile
@@ -54,7 +54,12 @@ export interface PartDecl {
 }
 
 /** SSR-stable element ids, supplied by the framework binding
- *  (React useId, WC instance counter). Behavior never generates ids. */
+ *  (React useId, WC instance counter). Behavior never generates ids.
+ *  Empty-id sentinel (ruled 2026-07-08): a binding passes '' for a part it
+ *  did not render. Projections emit `undefined` for any aria reference to an
+ *  empty id -- a dangling aria-controls is an axe violation; absence is
+ *  honest. The strip guard is centralized in the adapter (wave 0-A); behavior
+ *  files do not hand-write `ids.x || undefined`. */
 export type PartIds<P extends string> = Record<P, string>;
 
 export interface BehaviorSpec<
@@ -76,10 +81,20 @@ export interface BehaviorSpec<
    *  Frameworks consult it before applying the reducer AND before invoking
    *  consumer callbacks (onClick and friends). Suppression logic (disabled,
    *  loading, soft-disabled) lives here, never in a framework file. Config
-   *  is a parameter because suppression reads from config, not state. */
+   *  is a parameter because suppression reads from config, not state.
+   *  Payload-blind by ruling (2026-07-08): the gate never sees the payload.
+   *  Idempotence against same-value dispatches is the reducer's job -- the
+   *  effective-value-diff convention: a reducer receiving the current
+   *  effective value returns state unchanged. */
   canDispatch: (state: State, action: keyof Actions, config: Config) => boolean;
 
-  /** The auditable ARIA contract, keyed by part. */
+  /** The ARIA contract, keyed by part. Covers singular parts only.
+   *  Many-part instances (ruled 2026-07-08): a part declared `many: true` is
+   *  omitted here. The behavior file exports a co-located pure function per
+   *  many part -- `<part>Aria(instanceKey, state, config, ids)` -- which the
+   *  binding calls once per rendered instance. Instance ids derive from the
+   *  adapter (wave 0-A), never hand-templated. The harness asserts instances
+   *  via assertInstanceContractFulfillment. */
   aria: (
     state: State,
     config: Config,
@@ -101,6 +116,10 @@ export interface BehaviorSpec<
   /** Declarative effect requests for the current state (Spec 03).
    *  Executors diff consecutive results and start/stop accordingly. */
   effects: (state: State, config: Config) => EffectSpec[];
+
+  /** Motion declarations per (transition, part) -- Spec 04. Motion is
+   *  behavior: intent + axis + sizeClass only. Statics omit this. */
+  motion?: MotionMap<Part>;
 }
 ```
 
@@ -122,6 +141,10 @@ There is no instance object and no bound passthroughs: projections (`aria`,
 `keymap`, `effects`) are called directly on the spec as pure functions, with
 config passed fresh each time. One instance owns exactly one memory cell.
 State merged from slices (Spec 02) still lives in this single cell.
+
+The framework binding additionally exposes `present` (ruled 2026-07-08): a
+per-part boolean for parts declared `optional`, so consumers and projections
+read presence explicitly instead of inferring it from id emptiness.
 
 ## Rules
 
@@ -165,14 +188,16 @@ For any behavior satisfying this contract the shared harness can run:
 1. **axe** on each binding's rendered DOM, per interesting state.
 2. **contract fulfillment** -- every declared part present (respecting
    `optional`/`many`), rendered ARIA equals `aria(state, config, ids)` for
-   every state in the component's state table.
+   every state in the component's state table. Many-part instances are
+   asserted via `assertInstanceContractFulfillment` (querySelectorAll, one
+   assertion per instance against the part's `<part>Aria` function).
 3. **interaction** -- for each keymap entry: dispatch the key to the part,
    assert the accepted action and the resulting state/DOM.
 4. **effects** -- for each EffectSpec type the component declares, the
    executor-level assertion defined in Spec 03.
 
-Open items for ratification:
+Resolved elsewhere:
 
-- Exact `Merge`/disjointness typing arrives with Spec 02.
-- EffectSpec vocabulary arrives with Spec 03; this contract only fixes the
-  `effects()` signature.
+- Disjointness typing: Spec 02 (landed with the button prototype).
+- EffectSpec vocabulary: Spec 03.
+- MotionMap and derivation: Spec 04.

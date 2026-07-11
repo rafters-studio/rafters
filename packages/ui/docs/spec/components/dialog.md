@@ -1,8 +1,7 @@
 # Component Spec — Dialog
 
-Status: DRAFT. Second test article: the first composed score (slice +
-structure slice + glue), the first effectful multi-part component, the
-validation target Spec 01 named before freeze.
+Status: DRAFT. Second test article. Validates composition (Spec 02) and
+effects (Spec 03).
 
 Files (`src/components/dialog/`):
 
@@ -10,8 +9,7 @@ Files (`src/components/dialog/`):
 dialog.classes.ts    dialog.behavior.ts    dialog.tsx
 ```
 
-Tests mirror into `test/components/dialog/`. WC and Astro performances not
-yet written (same debt as button).
+Tests mirror into `test/components/dialog/`. WC and Astro not yet written.
 
 ## Composition
 
@@ -44,7 +42,7 @@ No `toggle` action: the trigger dispatches `open` or `close` computed from
 the effective value, so intrinsic state can never drift from a controlled
 consumer.
 
-## Parts and ARIA (the auditable table)
+## Parts and ARIA
 
 | Part | Presence | ARIA |
 | --- | --- | --- |
@@ -55,10 +53,10 @@ consumer.
 | description | consumer renders | referenced by describedby via registration |
 | close | while open (default on) | `aria-label="Close"` |
 
-Empty-id convention (new, needs ratification): a binding passes `''` as the
-PartId of a part it did not render; projections emit `undefined` (attribute
-absent) for references to empty ids. A dangling `aria-describedby` is an axe
-violation; absence is honest.
+Empty-id convention (ratified 2026-07-08): a binding passes `''` as the
+PartId of a part it did not render; projections emit `undefined` for
+references to empty ids. A dangling `aria-describedby` is an axe violation;
+absence is honest. The guard moves into the adapter (wave 0-A).
 
 ## Keyboard and effects
 
@@ -83,21 +81,19 @@ violation; absence is honest.
 | trigger pointerdown closes then click re-opens | defect-do-not-port — fixed via `exceptParts: ['trigger']` |
 | `data-[state=open]` classes on close button | defect-do-not-port — dead selectors; no data-state was ever set on that element |
 | explicit DialogPortal / DialogOverlay / `container` prop | contract (ruled 2026-07-03: shadcn surface is the floor). Content inside an explicit portal skips its automatic portal + overlay; close button defaults off there (oracle rule) |
-| `forceMount` | contract, with a divergence: force-mounted closed layers carry `hidden` (a closed modal must be inert to AT and must not block the page). Animation tooling revisits this with the motion ruling |
+| `forceMount` | contract, with a divergence: force-mounted closed layers carry `hidden` (a closed modal must be inert to AT and must not block the page). The Presence adapter (wave 0-B, ruled 2026-07-08) replaces this for exit animation |
 | onEscapeKeyDown / onPointerDownOutside / onInteractOutside veto props | contract (oracle signatures: native event, preventDefault to veto). Outside-dismiss veto flows executor -> EffectHost.dispatch(action, payload, nativeEvent) -> the binding's vetoEffectDispatch, BEFORE the dispatch |
-| non-modal pointer passthrough (container still blocks the page) | open defect in oracle AND new build — needs design ruling |
+| non-modal pointer passthrough (container still blocks the page) | ruled 2026-07-08: full Radix parity — pointer passthrough, no trap, no scroll lock, outside-pointerdown still dismisses |
 | sr-only "Close" span + aria-label together | simplified to aria-label only |
 
-## Deltas that need Sean's eye
+## Deltas from the oracle
 
-1. Close button sizing: oracle was a 16px icon with no touch target. New
-   build applies the ratified CQ rule mechanically (`h-11 w-11` touch,
-   `@md:h-8 @md:w-8` desktop, icon `h-5 -> @md:h-4`) — the specific desktop
-   numbers are agent-picked and need a designer ruling.
+1. Close button sizing: `h-11 w-11` touch, `@md:h-8 @md:w-8` desktop.
+   Ruled 2026-07-08: keep.
 2. Header/footer breakpoints moved from viewport (`sm:`) to container
    (`@md:`) per the CQ system rule.
-3. `tabIndex={-1}` added to content so the score's Escape contract holds
-   when a consumer renders no focusable children.
+3. `tabIndex={-1}` on content so Escape works when the consumer renders no
+   focusable children.
 
 ## WCAG 2.1 AA obligations
 

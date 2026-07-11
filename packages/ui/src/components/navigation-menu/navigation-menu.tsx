@@ -162,11 +162,12 @@ export interface NavigationMenuItemProps extends React.LiHTMLAttributes<HTMLLIEl
 }
 
 export function NavigationMenuItem({ value, className, ...props }: NavigationMenuItemProps) {
-  const { ids, classes } = useNavigationMenuContext('NavigationMenuItem');
+  const { instanceId, classes } = useNavigationMenuContext('NavigationMenuItem');
   const itemContext: NavigationMenuItemContextValue = {
     value,
-    triggerId: `${ids.root}-trigger-${value}`,
-    contentId: `${ids.root}-content-${value}`,
+    // Instance ids come from the adapter (Spec 01) -- never hand-templated.
+    triggerId: instanceId('trigger', value),
+    contentId: instanceId('content', value),
   };
   return (
     <NavigationMenuItemContext.Provider value={itemContext}>

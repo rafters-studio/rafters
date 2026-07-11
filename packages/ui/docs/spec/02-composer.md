@@ -1,8 +1,10 @@
 # Spec 02 — Slices and the Composer
 
-Status: DRAFT (not ratified). Button exercises this spec only trivially (one
-slice); the second test article (an effectful, multi-part component) is the
-real validation gate before freeze.
+Status: FROZEN 2026-07-09. Validated by dialog and navigation-menu.
+
+What component authors need: slices are data. `compose` folds them. State-key
+collisions don't compile. Cross-slice coordination goes in the glue slice,
+nowhere else. Everything below is reference for maintaining the machinery.
 
 ## What a slice is
 

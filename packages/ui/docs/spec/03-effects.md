@@ -1,6 +1,6 @@
 # Spec 03 — Effects
 
-Status: DRAFT. Vocabulary v2, grown by the dialog test article (2026-07-02).
+Status: FROZEN 2026-07-09. Vocabulary v3 (rulings of 2026-07-08 applied).
 
 Behaviors describe impure work; executors perform it. A behavior returns
 `EffectSpec[]` from `effects(state, config)` — pure data, computed from the
@@ -32,6 +32,16 @@ the line, never hack it locally (boundary 7).
 outside `part`. Events landing inside any `exceptParts` are ignored: a
 layer's own trigger must not dismiss the layer and re-activate it on the
 same gesture (live defect in the dialog oracle).
+
+Vocabulary v3 additions (ruled 2026-07-08):
+
+| Spec | Kind | Executor primitive |
+| --- | --- | --- |
+| `presence { part }` | ongoing | Presence adapter (wave 0-B): keeps the part mounted through its exit animation, then releases. Astro: no-op (CSS-only, no exit animation) |
+
+Non-modal ruling (2026-07-08): a non-modal overlay declares NO focus-trap,
+NO scroll-lock. Pointer events pass through; dismiss-on-outside still fires.
+Modality selects the effect list; it never changes an effect's meaning.
 
 ## The host
 

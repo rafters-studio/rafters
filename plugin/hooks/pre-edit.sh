@@ -82,6 +82,14 @@ case "$FILE_PATH" in
   */src/components/*) IS_AUTHORING=1 ;;
 esac
 
+# SOURCE context: the rafters design-system monorepo itself. Building the
+# typography components means writing raw <h1>/<p> with token classes --
+# that IS the product. The raw-HTML rule below is a consumer rule only.
+IS_SOURCE=0
+case "$FILE_PATH" in
+  */packages/ui/src/*) IS_SOURCE=1 ;;
+esac
+
 # Get the content being written
 if [ "$TOOL_NAME" = "Write" ]; then
   CONTENT=$(echo "$INPUT" | jq -r '.tool_input.content // empty')
@@ -167,8 +175,9 @@ if echo "$CONTENT" | grep -qE "<(${RAFTERS_COMPONENTS})\b[^>]*\b(class=|classNam
   VIOLATIONS+="TOKEN PROPS, NOT CLASSES: Do not pass class/className to Rafters components. Use token props (size, weight, color, variant, etc.) for overrides. The component owns its classes.\n"
 fi
 
-# RAW HTML ELEMENTS -- use Rafters typography components
-if echo "$CONTENT" | grep -qE '<(h[1-6]|p|span)\b[^>]*(class=|className=)'; then
+# RAW HTML ELEMENTS -- use Rafters typography components. Consumer rule:
+# exempt in SOURCE context (the design system builds these elements).
+if [ "$IS_SOURCE" != "1" ] && echo "$CONTENT" | grep -qE '<(h[1-6]|p|span)\b[^>]*(class=|className=)'; then
   VIOLATIONS+="USE TYPOGRAPHY COMPONENTS: Found raw <h1>/<p>/<span> with classes. Use H1, H2, P, Small, Code typography components with token props instead.\n"
 fi
 

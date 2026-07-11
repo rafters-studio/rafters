@@ -79,7 +79,7 @@ label    (always present; NEVER removed or replaced while loading)
 spinner  (optional; present iff state.loading)
 ```
 
-## ARIA projection (the auditable table)
+## ARIA projection
 
 | State                  | root attributes |
 | ---------------------- | --------------- |
@@ -140,7 +140,9 @@ the WC warns in dev mode and the conformance harness fails the case in CI.
   Keep `disabled:opacity-50 disabled:cursor-not-allowed`; add
   `aria-disabled:opacity-50 aria-disabled:cursor-not-allowed` for the
   soft-disabled state.
-- Motion: keep `transition-colors duration-150 motion-reduce:transition-none`.
+- Motion: `transition-colors motion-reduce:transition-none`. The raw
+  `duration-150` literal is superseded by Spec 04 — durations become
+  token-backed when the motion plumbing lands (wave 0-B).
 
 ## WCAG 2.1 AA obligations (minimum bar)
 

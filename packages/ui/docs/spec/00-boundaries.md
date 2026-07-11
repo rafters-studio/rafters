@@ -1,6 +1,7 @@
 # Spec 00 — Boundaries
 
-Status: DRAFT. The authority map every other spec is downstream of. Each
+Status: FROZEN 2026-07-09. Rulings of 2026-07-08 applied.
+The authority map every other spec is downstream of. Each
 boundary names what sits on each side, the test for a violation, and who
 rules on crossings. When a spec or an implementation contradicts this
 document, this document wins until Sean amends it.
@@ -80,13 +81,20 @@ OR the structure description growing logic. The moment structure data has a
 conditional beyond declared part presence, we are building a template
 framework — the thing this architecture exists to not be.
 
+**Corollary — the truss rule (ruled 2026-07-08):** a Container is a claim
+about a relationship, not a styling hook. Every rim names what it separates
+— a zone, a group, a landmark. A Container that separates nothing should
+not exist. Layout is Container and Grid, nothing else; nesting spends
+subdivision steps and the scale floor makes gratuitous depth unrepresentable.
+
 ## 6. Token vocabulary / class selection — the styling line
 
 **The registry owns:** the vocabulary — semantic tokens, state tokens,
 decoration.
 
 **classes.ts owns:** selection among literal strings. Never construction,
-never arbitrary values, never named colors.
+never arbitrary values, never named colors. Fill, never background (ruled
+2026-07-08: fill is the only color-surface channel in the contract).
 
 **Corollary — style the contract:** state-dependent looks key off the
 PROJECTED attributes (disabled:, aria-disabled:, aria-busy:, data-state)
@@ -120,6 +128,12 @@ defect-do-not-port (e.g. loading label replacement).
 **Violation test:** porting behavior without a disposition, or "improving"
 without recording the delta. Exports flip one component at a time; src/old
 dies only when out-proven.
+
+**Scope rulings (2026-07-08/09):** the editor cluster is fully out of
+behavior-layer scope — own-project scale. color-picker and color-inspector
+are punted with it. The old controllers are rejected architecture: they get
+dispositions, never transcription. The machine comes from the primitives and
+the archetype article, never from src/old.
 
 ## 10. Spec / build — the process line
 

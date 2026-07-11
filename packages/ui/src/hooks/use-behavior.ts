@@ -49,6 +49,14 @@ export interface BehaviorBinding<State, Actions extends ActionPayloads, Part ext
    *  many-part instances are addressed via data attributes in the DOM. */
   setPart: (part: Part) => (element: HTMLElement | null) => void;
   getPart: (part: string) => HTMLElement | null;
+  /** Per-part presence for parts declared `optional` (Spec 01, ruled
+   *  2026-07-08). Explicit -- consumers never infer presence from id
+   *  emptiness. Non-optional parts always read true. */
+  present: Record<Part, boolean>;
+  /** SSR-stable id for one INSTANCE of a many part (Spec 01, ruled
+   *  2026-07-08). The single sanctioned derivation -- bindings never
+   *  hand-template instance ids. */
+  instanceId: (part: Part, key: string) => string;
 }
 
 export function useBehavior<Config, State, Actions extends ActionPayloads, Part extends string>(
@@ -100,9 +108,11 @@ export function useBehavior<Config, State, Actions extends ActionPayloads, Part 
 
   const uid = React.useId();
   const ids = {} as PartIds<Part>;
+  const present = {} as Record<Part, boolean>;
   for (const part of Object.keys(spec.parts) as Part[]) {
     const declaredAbsent = spec.parts[part]?.optional && !presentParts.has(part);
     ids[part] = declaredAbsent ? '' : `${uid}-${part}`;
+    present[part] = !declaredAbsent;
   }
 
   const optionsRef = React.useRef(options);
@@ -137,14 +147,43 @@ export function useBehavior<Config, State, Actions extends ActionPayloads, Part 
   };
   useBehaviorEffects(spec.effects(state, config), hostRef.current);
 
+  const instanceId = React.useCallback((part: Part, key: string) => `${uid}-${part}-${key}`, [uid]);
+
   return {
     state,
     ids,
-    aria: spec.aria(state, config, ids),
+    aria: stripEmptyIdRefs(spec.aria(state, config, ids)),
     request,
     setPart,
     getPart,
+    present,
+    instanceId,
   };
+}
+
+/** Attributes whose value is an element id reference. */
+const ID_REF_ATTRS = [
+  'aria-controls',
+  'aria-labelledby',
+  'aria-describedby',
+  'aria-activedescendant',
+  'aria-owns',
+] as const;
+
+/** The centralized empty-id strip guard (Spec 01, ruled 2026-07-08): an id
+ *  reference to the empty-string sentinel becomes absence. Projections stop
+ *  hand-writing `ids.x || undefined`; this catches every leak once. */
+function stripEmptyIdRefs<Part extends string>(
+  aria: Partial<Record<Part, AriaAttrs>>,
+): Partial<Record<Part, AriaAttrs>> {
+  for (const part of Object.keys(aria) as Part[]) {
+    const attrs = aria[part];
+    if (!attrs) continue;
+    for (const attr of ID_REF_ATTRS) {
+      if (attrs[attr] === '') attrs[attr] = undefined;
+    }
+  }
+  return aria;
 }
 
 /** Translate a React keyboard event into the contract's KeyInput. */

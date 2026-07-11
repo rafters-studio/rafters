@@ -27,6 +27,13 @@ export function partElement(root: HTMLElement, part: string): HTMLElement | null
   return root.querySelector<HTMLElement>(`[data-part="${part}"]`);
 }
 
+/** Every rendered instance of a many part (Spec 01: PartDecl.many). */
+export function partElements(root: HTMLElement, part: string): HTMLElement[] {
+  const all = Array.from(root.querySelectorAll<HTMLElement>(`[data-part="${part}"]`));
+  if (root.getAttribute('data-part') === part) all.unshift(root);
+  return all;
+}
+
 /** Text content of a part, following slots into the light DOM so the same
  *  assertion works for shadow-DOM bindings. */
 export function partText(root: HTMLElement, part: string): string {
@@ -104,6 +111,42 @@ export function assertContractFulfillment<
         expect(element.hasAttribute(attr), `part "${part}" must NOT render ${attr}`).toBe(false);
       } else {
         expect(element.getAttribute(attr), `part "${part}" ${attr}`).toBe(String(value));
+      }
+    }
+  }
+}
+
+/**
+ * Tier 2 for many parts (Spec 01, ruled 2026-07-08): a part declared
+ * `many: true` projects per instance via its sibling `<part>Aria` function.
+ * The suite supplies the instance keys in DOM order; every rendered instance
+ * is asserted against its own projection -- including absence.
+ */
+export function assertInstanceContractFulfillment<Part extends string>(
+  root: HTMLElement,
+  part: Part,
+  instanceKeys: ReadonlyArray<string>,
+  instanceAria: (key: string) => Record<string, string | boolean | undefined>,
+): void {
+  const elements = partElements(root, part);
+  expect(elements.length, `many part "${part}": rendered instances must match supplied keys`).toBe(
+    instanceKeys.length,
+  );
+
+  for (const [i, key] of instanceKeys.entries()) {
+    const element = elements[i];
+    expect(element, `instance "${key}" of part "${part}"`).toBeDefined();
+    if (!element) continue;
+    for (const [attr, value] of Object.entries(instanceAria(key))) {
+      if (value === undefined) {
+        expect(
+          element.hasAttribute(attr),
+          `instance "${key}" of "${part}" must NOT render ${attr}`,
+        ).toBe(false);
+      } else {
+        expect(element.getAttribute(attr), `instance "${key}" of "${part}" ${attr}`).toBe(
+          String(value),
+        );
       }
     }
   }
