@@ -1,0 +1,30 @@
+---
+/**
+ * Label -- the Astro performance of the static score (label.classes.ts).
+ *
+ * A static score with no aria projection: this performance is pure
+ * decoration application over a native `<label>`. No client runtime, no
+ * effects (Spec 03), no motion (Spec 04 statics). The for/id association
+ * is the native `for` attribute, forwarded through Props like any other
+ * HTML attribute -- nothing here synthesizes or overrides it.
+ *
+ * `peer-disabled:*` in label.classes.ts styles off a SIBLING input's
+ * `disabled` state via the CSS `peer` convention; the label itself carries
+ * no disabled state of its own.
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import type { LabelConfig, LabelVariant } from './label.classes';
+import { labelClasses } from './label.classes';
+
+interface Props extends HTMLAttributes<'label'> {
+  variant?: LabelVariant;
+}
+
+const { variant = 'default', class: className, ...attrs } = Astro.props;
+
+const config: LabelConfig = { variant };
+const classes = labelClasses(config);
+---
+
+<label data-part="root" class={classy(classes.root, className)} {...attrs}><slot /></label>
