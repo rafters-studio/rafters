@@ -9,7 +9,7 @@ Behavior-layer support: only the five articles have react (verified); container,
 | component | is | does | states | uses (current) | uses (planned) | motion | old tree | layer |
 |---|---|---|---|---|---|---|---|---|
 | **alert** | Inline status banner with severity variants | Displays feedback content in flow; role=alert announces on appearance | - | - | - | transition-colors | astro/react/wc | none |
-| **aspect-ratio** | Ratio-locked box | Constrains children to a fixed width/height ratio | - | - | - | none | react/wc | none |
+| **aspect-ratio** | Ratio-locked box | Constrains children to a fixed width/height ratio | - | - | - | none | react/wc | astro OK |
 | **avatar** | User image with fallback | Shows image; falls back to initials on load failure | loaded, error->fallback | - | - | none | astro/react/wc | none |
 | **badge** | Small label chip | Displays a short status/count label inline | - | - | - | transition-colors | astro/react/wc | none |
 | **breadcrumb** | Hierarchical location trail | Renders nav landmark of ancestor links with current page marked | - | - | - | transition-colors | astro/react/wc | none |

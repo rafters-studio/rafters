@@ -9,6 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Aspect-ratio, Astro performance.** `aspect-ratio.astro` is the score's
+  first port with no `.behavior.ts`: the entire config is `ratio?: number`,
+  there is no aria projection to encode -- content inside carries its own
+  semantics, per the oracle's own accessibility note -- so there is nothing
+  for a `BehaviorSpec` to centralize the way `container.behavior.ts`
+  centralizes container's size/padding/position/depth surface. The
+  decoration (`aspect-ratio.classes.ts`) is a static class set, not a
+  `(config, state) =>` function, ported verbatim from the oracle
+  (`aspectRatioBaseClasses`, `aspectRatioChildFillClasses`); no color/fill
+  tokens are in play so the bg-subtle/foreground contrast defect class does
+  not apply. The `ratio` value itself is data-driven and caller-supplied,
+  so it cannot be a fixed token or an arbitrary-value class (banned); it
+  rides the one narrow style channel, matching `container.astro`'s
+  `queryName` -> `containerName` precedent -- no inline style math beyond
+  the ratio value. Conformance wraps the render in `<main>` before running
+  axe (`grid.astro.conformance`'s pattern): aspect-ratio is content, not a
+  landmark, and a bare div at `document.body` root trips axe's region rule.
+  React performance and shadcn drop-in parity are out of scope for this
+  port and deferred. Matrix line: `frameworks.behaviorLayer.astro` ->
+  `verified`.
 - **Navigation-menu, Astro performance.** `navigation-menu.astro` (root
   `<nav>`), `navigation-menu-list.astro` (`<ul>`), `navigation-menu-item.astro`
   (`<li>` holding one trigger/content pair), and `navigation-menu-link.astro`

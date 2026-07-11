@@ -1,0 +1,34 @@
+---
+/**
+ * AspectRatio -- the Astro performance of a pure-layout static (no
+ * behavior file: no config beyond `ratio`, no aria projection to encode --
+ * see aspect-ratio.classes.ts for why the decoration itself is static).
+ * No client runtime, no effects (Spec 03) -- config in, classes + one
+ * narrow style declaration out.
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { aspectRatioBaseClasses, aspectRatioChildFillClasses } from './aspect-ratio.classes';
+
+interface Props extends HTMLAttributes<'div'> {
+  /** Width divided by height (e.g., 16/9 = 1.778). Default 1 (square). */
+  ratio?: number;
+}
+
+const { ratio = 1, class: className, ...attrs } = Astro.props;
+
+// The ratio value is data-driven and cannot be a fixed token or a class
+// (arbitrary-value utilities are banned); this is the one narrow style
+// channel, matching container.astro's containerName precedent -- no
+// inline style math beyond the ratio value itself.
+const ratioStyle = `aspect-ratio: ${ratio}`;
+---
+
+<div
+  data-part="root"
+  class={classy(aspectRatioBaseClasses, aspectRatioChildFillClasses, className)}
+  style={ratioStyle}
+  {...attrs}
+>
+  <slot />
+</div>
