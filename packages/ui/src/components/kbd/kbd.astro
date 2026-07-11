@@ -1,0 +1,23 @@
+---
+/**
+ * Kbd -- the Astro performance of the static score (kbd.classes.ts).
+ *
+ * A static score has nothing to subscribe to: this performance is pure
+ * decoration application. No client runtime, no effects (Spec 03) -- one
+ * semantic <kbd> wrapping a slot, the fixed token decoration applied, the
+ * consumer's class merged on top. There is no config to compute an initial
+ * contract FROM (unlike Container/Button), so there is nothing here for a
+ * behavior score to hold -- see kbd.classes.ts for the ruling.
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { kbdClasses } from './kbd.classes';
+
+interface Props extends HTMLAttributes<'kbd'> {}
+
+const { class: className, ...attrs } = Astro.props;
+
+const classes = kbdClasses();
+---
+
+<kbd data-part="root" class={classy(classes.root, className)} {...attrs}><slot /></kbd>
