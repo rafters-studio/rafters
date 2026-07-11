@@ -1,0 +1,68 @@
+---
+/**
+ * Typography -- the Astro performance of the static score (typography.classes.ts).
+ *
+ * No behavior.ts: this static has no aria projection at all, so there is
+ * nothing for a harness to audit beyond the element/classes contract (see
+ * typography.classes.ts). Pure decoration application, one tag -- `as`
+ * rendered through Astro's dynamic-tag support (a capitalized variable
+ * bound to a native element name), the same fix Container applied to the
+ * oracle's branch-per-element repetition (src/old/ui/typography.astro).
+ *
+ * `citation` is the oracle's non-editable Blockquote citation path (static
+ * <cite>, no contenteditable) -- the editable machinery around it is
+ * new-grain, superseded by the studio-layer block editor, not this score.
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import type {
+  TypographyElement,
+  TypographyConfig,
+  TypographyTokenProps,
+} from './typography.classes';
+import { typographyClasses } from './typography.classes';
+
+interface Props extends HTMLAttributes<'div'>, TypographyTokenProps {
+  as?: TypographyElement;
+  /** Blockquote-only: a trailing <cite>. No-op on other elements. */
+  citation?: string;
+}
+
+const {
+  as: Tag = 'p',
+  size,
+  weight,
+  color,
+  line,
+  tracking,
+  family,
+  align,
+  transform,
+  citation,
+  class: className,
+  ...attrs
+} = Astro.props;
+
+const config: TypographyConfig = {
+  as: Tag,
+  size,
+  weight,
+  color,
+  line,
+  tracking,
+  family,
+  align,
+  transform,
+};
+
+const classes = typographyClasses(config);
+---
+
+<Tag data-part="root" class={classy(classes.root, className)} {...attrs}>
+  <slot />
+  {
+    Tag === 'blockquote' && citation && (
+      <cite class="mt-2 block text-sm text-muted-foreground not-italic">{citation}</cite>
+    )
+  }
+</Tag>

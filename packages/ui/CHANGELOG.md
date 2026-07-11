@@ -9,6 +9,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Typography, Astro performance.** `typography.astro` +
+  `typography.classes.ts` are the fifth static score (after Container,
+  Grid, Button, Dialog, Navigation-menu) and, unlike all four of those,
+  carry no `behavior.ts` at all: headings, paragraph, code, small,
+  blockquote, and lists have zero runtime-conditional attributes to
+  project, so there is nothing for a `BehaviorSpec`-driven harness to
+  audit (Spec 00 boundary 9 -- only a REAL aria projection earns a
+  behavior file; Container/Grid keep theirs because the harness still
+  audits their EMPTY projection as a documented fact). One tag: `as`
+  resolves through Astro's dynamic-tag support, the same fix Container
+  applied to the oracle's (`src/old/ui/typography.astro`) branch-per-
+  element repetition. Variant defaults (`h1`-`h6`, `p`, `code`, `small`,
+  `blockquote`, `ul`, `ol`) are the oracle's
+  (`src/old/ui/typography.classes.ts`) raw Tailwind sizes, ported
+  VERBATIM as literal Record lookups (Spec 01: classes.ts selects among
+  literals, never constructs them) -- not the type-system role tokens
+  (`text-display-medium` etc.); repointing to role tokens is a designer
+  pass, the same deferred debt Container's article-mode typography flow
+  carries. `h5`/`h6` resolve to `h4`'s defaults (oracle: no separate
+  visual tier). `h1`'s container-query size step-up (`@lg:text-5xl`)
+  survives only when the consumer doesn't override `size`. `color` is
+  the fill signature over the text context (`resolveFillName`, #1637),
+  same primitive Container's `fill` prop uses. Blockquote's `citation`
+  ports the oracle's non-editable path only -- a trailing `<cite>`, no
+  contenteditable. Dropped as new-grain, superseded by the studio-layer
+  block editor, not this score: the oracle's entire R-200 contenteditable
+  surface (`editable`/`onChange`/`onSelectionChange`/citation editing/
+  list item add-remove-indent). Dropped as already-superseded (ratified
+  in the old tree's own history): `Lead`/`Large`/`Muted` -- now `P` with
+  explicit token props. Out of the matrix's declared surface
+  (H1-H6/P/Code/Small/Blockquote/List), so not built this wave: `Mark`,
+  `Abbr`, multi-line `CodeBlock` (language picker, line numbers -- editor
+  concerns). `List` has no separate `li` sub-component: `ul`/`ol` style
+  raw `<li>` slot children via `[&>li]:mt-2`, matching how Container's
+  article-mode typography flow already styles descendant lists.
+  Conformance (`typography.astro.conformance.test.ts`, the shared harness
+  via `AstroContainer`) covers element/tag selection, oracle-parity
+  sizing, token-prop override-not-fight semantics, the fill-signature
+  color path, list/citation rendering, and axe (fragments wrapped in a
+  `<main>` landmark in the test render, not the component -- axe's
+  `region` rule, not a component concern). Matrix line:
+  `frameworks.behaviorLayer.astro` -> `verified`; `react` stays
+  `missing` (out of scope this wave).
 - **Navigation-menu, Astro performance.** `navigation-menu.astro` (root
   `<nav>`), `navigation-menu-list.astro` (`<ul>`), `navigation-menu-item.astro`
   (`<li>` holding one trigger/content pair), and `navigation-menu-link.astro`
