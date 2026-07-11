@@ -1,0 +1,55 @@
+---
+/**
+ * Empty -- the Astro performance of a pure static composition. No
+ * empty.behavior.ts: unlike Container/Grid, Empty has no config surface at
+ * all -- nothing on this component varies its decoration, so a BehaviorSpec
+ * whose aria projection would always return `{}` over an empty Config and
+ * an empty State is machinery with nothing to describe (container.astro's
+ * own aria projection is exactly `{}`, and it still carries a behavior file
+ * only because `as`/`size`/`padding`/... genuinely branch the decoration;
+ * Empty has no such branch).
+ *
+ * The oracle's five-component split (Empty/EmptyIcon/EmptyTitle/
+ * EmptyDescription/EmptyAction, src/old/ui/empty*.astro) collapses into one
+ * file with four named slots. A caller who omits a slot gets no element for
+ * it: `Astro.slots.has()` is a render-time check, not a client effect
+ * (Spec 03 rules out effects, not server-side conditionals -- button.astro
+ * makes the same kind of call for its spinner), so an unfilled slot never
+ * leaves an empty `<h3>` or empty `<div>` behind for axe to flag.
+ *
+ * `title`/`description` render through dynamic tags (`Title`/`Description`
+ * bound to `h3`/`p`) the same way container.astro's `as` renders through
+ * `Tag` -- one real heading and one real paragraph, chosen once, not a
+ * per-element branch.
+ *
+ * Renamed from the oracle: EmptyIcon -> the `media` slot (icons AND
+ * illustrations, not icons only) and EmptyAction -> the `actions` slot
+ * (plural: the wrapper already held more than one button). Token classes
+ * are ported verbatim otherwise (empty.classes.ts).
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { emptyClasses } from './empty.classes';
+
+interface Props extends HTMLAttributes<'div'> {}
+
+const { class: className, ...attrs } = Astro.props;
+
+const classes = emptyClasses();
+const hasMedia = Astro.slots.has('media');
+const hasTitle = Astro.slots.has('title');
+const hasDescription = Astro.slots.has('description');
+const hasActions = Astro.slots.has('actions');
+
+const Title = 'h3';
+const Description = 'p';
+---
+
+<div data-part="root" class={classy(classes.root, className)} {...attrs}>
+  {hasMedia && <div data-part="media" class={classes.media}><slot name="media" /></div>}
+  {hasTitle && <Title data-part="title" class={classes.title}><slot name="title" /></Title>}
+  {hasDescription && (
+    <Description data-part="description" class={classes.description}><slot name="description" /></Description>
+  )}
+  {hasActions && <div data-part="actions" class={classes.actions || undefined}><slot name="actions" /></div>}
+</div>
