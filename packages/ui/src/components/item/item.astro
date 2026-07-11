@@ -1,0 +1,48 @@
+---
+/**
+ * Item -- the Astro performance of the static score (item.classes.ts).
+ *
+ * A static score has nothing to subscribe to: this performance is pure
+ * decoration application. No client runtime, no effects (Spec 03), no
+ * behavior file to read from -- item projects no ARIA. Three named parts,
+ * `leading` and `trailing` gated on `Astro.slots.has` so an empty slot
+ * renders no wrapper element (the oracle, src/old/ui/item.astro, always
+ * emitted the icon wrapper's markup regardless of use).
+ *
+ * `leading` is NOT aria-hidden by default (defect-do-not-port from the
+ * oracle, which force-hid its icon slot): leading now holds whatever the
+ * consumer puts there, not only decorative icons, and only the consumer
+ * knows whether that content needs an accessible name.
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { itemClasses, type ItemConfig, type ItemSize } from './item.classes';
+
+interface Props extends HTMLAttributes<'div'> {
+  size?: ItemSize;
+}
+
+const { size = 'default', class: className, ...attrs } = Astro.props;
+
+const config: ItemConfig = { size };
+const classes = itemClasses(config);
+
+const hasLeading = Astro.slots.has('leading');
+const hasTrailing = Astro.slots.has('trailing');
+---
+
+<div data-part="root" class={classy(classes.root, className)} {...attrs}>
+  {hasLeading && (
+    <div data-part="leading" class={classes.leading}>
+      <slot name="leading" />
+    </div>
+  )}
+  <div data-part="content" class={classes.content}>
+    <slot />
+  </div>
+  {hasTrailing && (
+    <div data-part="trailing" class={classes.trailing}>
+      <slot name="trailing" />
+    </div>
+  )}
+</div>
