@@ -9,6 +9,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Kbd, Astro performance.** `kbd.astro` is kbd's FIRST render target in
+  the new tree -- no `kbd.tsx` exists yet, unlike container/grid/button/
+  dialog/navigation-menu, which added astro as a second performance
+  alongside an existing React one. A semantic `<kbd>` wraps a slot,
+  decorated by `kbd.classes.ts`'s fixed token class string (ported
+  verbatim from the oracle: `rounded border border-border bg-muted
+  px-1.5 py-0.5 text-code-small text-muted-foreground shadow-sm`), with
+  the consumer's `class` merged via `classy` and all other HTML
+  attributes passed through. No `kbd.behavior.ts`: the oracle
+  (`src/old/ui/kbd.{astro,tsx,element.ts}`) ships zero variants and zero
+  sizes across all three old-tree targets, so a `Config`/`State` pair
+  with no fields would be ceremony nothing downstream reads -- native
+  `<kbd>` is self-describing, the same reasoning that leaves Container's
+  `as`-driven landmarks unprojected. `bg-muted` + `text-muted-foreground`
+  is the fill-resolver's own paired role (`muted` is a
+  `PAIRED_SURFACE_ROLES` member whose foreground word IS
+  `muted-foreground`), not the `bg-*-subtle`/solid-`*-foreground`
+  contrast defect flagged elsewhere in the oracle audit; `text-code-small`
+  is the typography composite the token registry already maps to `'kbd'`
+  by name, so it is a straight port, not a repoint. No sequence/
+  combination grouping prop exists in any oracle target -- consumers
+  compose multiple `<Kbd>` plus an external flex wrapper -- so none is
+  invented here. Conformance (`kbd.astro.conformance.test.ts`,
+  container's standalone `AstroContainer` pattern) wraps the render in
+  `<main>` for axe's region rule, the same fix `grid.astro.conformance
+  .test.ts` uses, since kbd is inline content, not a landmark. Documented
+  in `docs/spec/components/kbd.md`. Matrix line:
+  `frameworks.behaviorLayer.astro` -> `verified`; `react` stays `missing`
+  (no React performance in this scope).
 - **Navigation-menu, Astro performance.** `navigation-menu.astro` (root
   `<nav>`), `navigation-menu-list.astro` (`<ul>`), `navigation-menu-item.astro`
   (`<li>` holding one trigger/content pair), and `navigation-menu-link.astro`
