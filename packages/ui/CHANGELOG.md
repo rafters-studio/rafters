@@ -9,6 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Skeleton, Astro performance.** `skeleton.astro` joins `skeleton.behavior.ts`
+  and `skeleton.classes.ts` as the first render target of the score -- the
+  narrowest static in the tree: one part, no state, no actions, no keymap,
+  no effects, and a single ARIA fact that never varies. The oracle's Astro
+  performance (`src/old/ui/skeleton.astro`) claimed "aria-hidden decorative"
+  in its own docblock but never rendered the attribute; the new score closes
+  that gap by making `aria-hidden="true"` part of the behavior's `aria`
+  projection -- asserted by the harness on every render, not left to a
+  comment a screen reader never reads. `variant` ports the oracle's nine-way
+  color enum, but every surface resolves to the SUBTLE token
+  (`bg-<name>-subtle`, or `bg-muted` for `default`/`muted`) with no paired
+  `*-foreground` class -- the part renders no text, so a foreground token
+  would be a class the DOM never uses. `animate-pulse
+  motion-reduce:animate-none` ports unchanged. Conformance
+  (`skeleton.astro.conformance.test.ts`, container's standalone
+  `AstroContainer` pattern) asserts the part, the unconditional
+  `aria-hidden`, the variant-to-class mapping, and an axe-clean render.
+  Astro-only in this port; the React performance is not yet written.
+  Documented in `docs/spec/components/skeleton.md`. Matrix line:
+  `frameworks.behaviorLayer.astro` -> `verified`.
 - **Navigation-menu, Astro performance.** `navigation-menu.astro` (root
   `<nav>`), `navigation-menu-list.astro` (`<ul>`), `navigation-menu-item.astro`
   (`<li>` holding one trigger/content pair), and `navigation-menu-link.astro`
