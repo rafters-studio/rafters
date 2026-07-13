@@ -27,7 +27,7 @@ const CANDIDATE_MARKERS = [
   '@custom-variant dark',
   '@theme inline {',
   '@theme {',
-  ':root {',
+  ':root, :host {',
   '.dark {',
   '@keyframes',
   '@utility',
@@ -53,7 +53,7 @@ function baseRegistry(): TokenRegistry {
 // section. That decision is the whole point of this test.
 const DYNAMIC_SECTIONS = [
   '.dark {',
-  ':root {',
+  ':root, :host {',
   '@custom-variant dark',
   '@import "tailwindcss"',
   '@keyframes',

@@ -230,7 +230,7 @@ function generateThemeInlineBlock(semanticTokens: Token[]): string {
 function generateRootBlock(semanticTokens: Token[], darkMode: 'class' | 'media' = 'class'): string {
   const semanticMappings = getSemanticMappingsFromTokens(semanticTokens);
   const lines: string[] = [];
-  lines.push(':root {');
+  lines.push(':root, :host {');
 
   // Light mode --rafters-* tokens
   for (const [name, mapping] of Object.entries(semanticMappings)) {
