@@ -1,5 +1,8 @@
 import * as React from 'react';
-import { keyInputOf, useBehavior, type BehaviorBinding } from '../../hooks/use-behavior';
+import { createBehavior, type PartIds, type PayloadArgs } from '../../lib/contract';
+import { keyInputOf } from '../../hooks/use-behavior';
+import { useBehaviorEffects } from '../../hooks/use-behavior-effects';
+import { useMemory } from '../../hooks/use-memory';
 import classy from '../../primitives/classy';
 import { mergeProps } from '../../primitives/slot';
 import {
@@ -16,11 +19,16 @@ import { navigationMenuClasses, type NavigationMenuClassSet } from './navigation
 
 export { navigationMenuTriggerStyle } from './navigation-menu.classes';
 
-interface NavigationMenuContextValue extends BehaviorBinding<
-  NavigationMenuState,
-  NavigationMenuActions,
-  NavigationMenuPart
-> {
+interface NavigationMenuContextValue {
+  state: NavigationMenuState;
+  ids: PartIds<NavigationMenuPart>;
+  aria: Partial<Record<NavigationMenuPart, Record<string, string | boolean | undefined>>>;
+  request: <K extends keyof NavigationMenuActions>(
+    action: K,
+    ...payload: PayloadArgs<NavigationMenuActions[K]>
+  ) => boolean;
+  getPart: (part: string) => HTMLElement | null;
+  instanceId: (part: NavigationMenuPart, key: string) => string;
   config: NavigationMenuConfig;
   active: string | null;
   classes: NavigationMenuClassSet;
@@ -73,33 +81,81 @@ export function NavigationMenu({
 }: NavigationMenuProps) {
   const config: NavigationMenuConfig = { value, defaultValue, orientation, delayDuration };
 
-  const binding = useBehavior(navigationMenu, config, {
-    // Consumer callback fires only when the effective value actually moved:
-    // absorbed post-hover clicks and same-value opens stay silent.
-    onAccepted: (_action, before, after) => {
-      const beforeEffective = activeItem(before, config) ?? '';
-      const next = after.active ?? '';
-      if (next !== beforeEffective) onValueChange?.(next);
-    },
-  });
-  const { state, ids, aria, request, setPart, getPart } = binding;
+  // The controller composes the score with the substrate -- no useBehavior.
+  // createBehavior is the model instance (memory + canDispatch-gated
+  // dispatch); useMemory subscribes React to it; useBehaviorEffects runs the
+  // score's roving/hover/dismiss effects through the neutral runner. The rest
+  // is only what React itself needs: ids (useId) and the dispatch call.
+  const { memory, dispatch } = React.useMemo(() => createBehavior(navigationMenu, config), []);
+  const state = useMemory(memory);
   const active = activeItem(state, config);
+
+  const uid = React.useId();
+  const ids = React.useMemo(() => {
+    const out = {} as PartIds<NavigationMenuPart>;
+    for (const part of Object.keys(navigationMenu.parts) as NavigationMenuPart[]) {
+      out[part] = `${uid}-${part}`;
+    }
+    return out;
+  }, [uid]);
+  const instanceId = (part: NavigationMenuPart, key: string) => `${uid}-${part}-${key}`;
+
+  // getPart resolves a part to its element by querying under the root: the
+  // DOM is the registry, so there is no ref bookkeeping to keep.
+  const rootRef = React.useRef<HTMLElement>(null);
+  const getPart = React.useCallback(
+    (part: string): HTMLElement | null =>
+      part === 'root'
+        ? rootRef.current
+        : (rootRef.current?.querySelector<HTMLElement>(`[data-part="${part}"]`) ?? null),
+    [],
+  );
+
+  // Effect-initiated dispatches (hover intent resolves after the render that
+  // started it) must read the CURRENT config and callback, so those two ride
+  // in a ref rather than being captured stale.
+  const latest = React.useRef({ config, onValueChange });
+  latest.current = { config, onValueChange };
+  const request = React.useCallback(
+    <K extends keyof NavigationMenuActions>(
+      action: K,
+      ...payload: PayloadArgs<NavigationMenuActions[K]>
+    ): boolean => {
+      const { config: cfg, onValueChange: cb } = latest.current;
+      // Effective value before vs the INTRINSIC value after: a controlled
+      // menu's effective value never moves (config shadows it), but the
+      // consumer callback must still report the value it should set next.
+      const before = activeItem(memory.get(), cfg) ?? '';
+      if (!dispatch(action, cfg, ...payload)) return false;
+      const next = memory.get().active ?? '';
+      if (next !== before) cb?.(next);
+      return true;
+    },
+    [memory, dispatch],
+  );
+
+  useBehaviorEffects(navigationMenu.effects(state, config), {
+    getPart,
+    dispatch: (action, payload) =>
+      request(
+        action as keyof NavigationMenuActions,
+        ...([payload] as PayloadArgs<NavigationMenuActions[keyof NavigationMenuActions]>),
+      ),
+  });
+
+  const aria = navigationMenu.aria(state, config, ids);
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
     onKeyDown?.(event);
     if (event.defaultPrevented) return;
-    const target = event.target as HTMLElement;
-    const trigger = target.closest<HTMLElement>('[data-part="trigger"]');
+    const trigger = (event.target as HTMLElement).closest<HTMLElement>('[data-part="trigger"]');
     const action = navigationMenu.keymap(
       keyInputOf(event),
       state,
       trigger ? 'trigger' : 'root',
       config,
     );
-    if (!action) return;
-    // Native <button> triggers convert Enter/Space to click; the click
-    // handler dispatches toggle (Spec 01 rule 5).
-    if (action === 'toggle') return;
+    if (!action || action === 'toggle') return; // native button click dispatches toggle
     if (action === 'open') {
       const itemValue = trigger?.dataset['value'];
       if (!itemValue) return;
@@ -118,7 +174,12 @@ export function NavigationMenu({
   };
 
   const contextValue: NavigationMenuContextValue = {
-    ...binding,
+    state,
+    ids,
+    aria,
+    request,
+    getPart,
+    instanceId,
     config,
     active,
     classes: navigationMenuClasses(config, state),
@@ -127,7 +188,7 @@ export function NavigationMenu({
   return (
     <NavigationMenuContext.Provider value={contextValue}>
       <nav
-        ref={setPart('root')}
+        ref={rootRef}
         data-part="root"
         id={ids.root}
         className={classy(contextValue.classes.root, className)}
@@ -144,12 +205,11 @@ export function NavigationMenu({
 export type NavigationMenuListProps = React.HTMLAttributes<HTMLUListElement>;
 
 export function NavigationMenuList({ className, ...props }: NavigationMenuListProps) {
-  const { ids, aria, classes, setPart } = useNavigationMenuContext('NavigationMenuList');
+  const { ids, aria, classes } = useNavigationMenuContext('NavigationMenuList');
   return (
     <ul
       data-part="list"
       id={ids.list}
-      ref={setPart('list')}
       className={classy(classes.list, className)}
       {...aria.list}
       {...props}
@@ -165,7 +225,7 @@ export function NavigationMenuItem({ value, className, ...props }: NavigationMen
   const { instanceId, classes } = useNavigationMenuContext('NavigationMenuItem');
   const itemContext: NavigationMenuItemContextValue = {
     value,
-    // Instance ids come from the adapter (Spec 01) -- never hand-templated.
+    // Instance ids derived from the root uid -- never hand-templated per call site.
     triggerId: instanceId('trigger', value),
     contentId: instanceId('content', value),
   };
@@ -250,16 +310,14 @@ export function NavigationMenuViewport({
   className,
   ...props
 }: NavigationMenuViewportProps) {
-  const { active, ids, aria, classes, setPart } =
-    useNavigationMenuContext('NavigationMenuViewport');
+  const { active, ids, aria, classes } = useNavigationMenuContext('NavigationMenuViewport');
   const open = active !== null;
   if (!(forceMount || open)) return null;
   return (
     <div className={classes.viewportWrapper} hidden={open ? undefined : true}>
       <div
         data-part="viewport"
-        id={ids.viewport || undefined}
-        ref={setPart('viewport')}
+        id={ids.viewport}
         className={classy(classes.viewport, className)}
         {...aria.viewport}
         {...props}
@@ -277,15 +335,13 @@ export function NavigationMenuIndicator({
   className,
   ...props
 }: NavigationMenuIndicatorProps) {
-  const { active, ids, aria, classes, setPart } =
-    useNavigationMenuContext('NavigationMenuIndicator');
+  const { active, ids, aria, classes } = useNavigationMenuContext('NavigationMenuIndicator');
   const open = active !== null;
   if (!(forceMount || open)) return null;
   return (
     <div
       data-part="indicator"
-      id={ids.indicator || undefined}
-      ref={setPart('indicator')}
+      id={ids.indicator}
       hidden={open ? undefined : true}
       className={classy(classes.indicator, className)}
       {...aria.indicator}

@@ -1,0 +1,109 @@
+---
+/**
+ * Astro performance (controller) for navigation-menu.
+ *
+ * Server-renders the full LIGHT-DOM markup with classes and the score's
+ * initial (closed) projection already applied, so the navigation is correct
+ * and crawlable before any JS. The <script> then hands each instance to
+ * bindNavigationMenu -- the SAME DOM-native controller the Web Component
+ * uses. Astro imports the behavior binding like any other module; there is
+ * no astro-specific runtime.
+ *
+ * The projection is computed here from the same navigationMenu.aria /
+ * navTriggerAria / navContentAria the React and WC controllers read -- one
+ * score, three performances, zero drift.
+ */
+import {
+  navigationMenu,
+  navTriggerAria,
+  navContentAria,
+  type NavigationMenuConfig,
+  type NavigationMenuPart,
+} from './navigation-menu.behavior';
+import { navigationMenuClasses } from './navigation-menu.classes';
+import type { PartIds } from '../../lib/contract';
+
+interface Item {
+  value: string;
+  label: string;
+  links: { href: string; label: string }[];
+}
+
+interface Props {
+  id: string;
+  items: Item[];
+  orientation?: 'horizontal' | 'vertical';
+  delayDuration?: number;
+}
+
+const { id, items, orientation = 'horizontal', delayDuration = 200 } = Astro.props;
+
+const config: NavigationMenuConfig = { orientation, delayDuration };
+const state = navigationMenu.initialState(config);
+const classes = navigationMenuClasses(config, state);
+
+const ids = {} as PartIds<NavigationMenuPart>;
+for (const part of Object.keys(navigationMenu.parts) as NavigationMenuPart[]) {
+  ids[part] = `${id}-${part}`;
+}
+const rootAria = navigationMenu.aria(state, config, ids);
+const instanceId = (part: NavigationMenuPart, value: string) => `${id}-${part}-${value}`;
+---
+
+<nav
+  data-part="root"
+  id={ids.root}
+  orientation={orientation}
+  delay-duration={String(delayDuration)}
+  class={classes.root}
+  {...rootAria.root}
+>
+  <ul data-part="list" id={ids.list} class={classes.list} {...rootAria.list}>
+    {
+      items.map((item) => {
+        const triggerId = instanceId('trigger', item.value);
+        const contentId = instanceId('content', item.value);
+        return (
+          <li class={classes.item}>
+            <button
+              type="button"
+              id={triggerId}
+              data-part="trigger"
+              data-value={item.value}
+              data-roving-item
+              class={classes.trigger}
+              {...navTriggerAria(item.value, state, config, { contentId })}
+            >
+              {item.label}
+            </button>
+            <div
+              id={contentId}
+              data-part="content"
+              data-value={item.value}
+              class={classes.content}
+              {...navContentAria(item.value, state, config, { triggerId })}
+            >
+              {item.links.map((link) => (
+                <a href={link.href} class={classes.link}>
+                  {link.label}
+                </a>
+              ))}
+            </div>
+          </li>
+        );
+      })
+    }
+  </ul>
+</nav>
+
+<script>
+  import { bindNavigationMenu } from './navigation-menu.behavior';
+
+  // The <script> is bundled and runs once per page; bind every instance's
+  // server-rendered markup. Same controller as the Web Component.
+  for (const root of document.querySelectorAll<HTMLElement>('nav[data-part="root"]')) {
+    if (root.dataset['bound'] === 'true') continue;
+    root.dataset['bound'] = 'true';
+    bindNavigationMenu(root);
+  }
+</script>
