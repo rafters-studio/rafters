@@ -49,6 +49,7 @@ describe('component matrix', () => {
       'container',
       'dialog',
       'grid',
+      'input',
       'navigation-menu',
     ]);
   });
