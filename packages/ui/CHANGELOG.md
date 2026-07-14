@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Button, re-done on the settled behavior-layer pattern (#1823).** The score
+  gains `bindButton` -- the DOM-native client the WC and Astro performances
+  share -- proving the pattern reaches the simple-interactive archetype. The
+  React controller drops `useBehavior` (createBehavior + useMemory +
+  useBehaviorEffects). The native `<button>` fulfills Enter/Space as a click,
+  so the bind wires click -> press only (no keydown branch); a suppressed press
+  (disabled/loading/soft-disabled) cancels the default. The `announce`
+  (loading) effect is edge-triggered: a button rendered already-loading
+  projects `aria-busy` but does NOT announce -- the DOM-native bind proves that
+  baseline suppression, the runtime loading transition is proven in the
+  retained-mode (React) suite. `button.element.ts` (WC) and `button.astro`
+  join. React + WC conformance green; Astro built (toolchain lands with the
+  astro wave).
+
 - **Dialog, three-framework performances on the settled pattern (#1821).** The
   score gains `bindDialog` -- the DOM-native client the WC and Astro performances
   share -- proving the pattern extends to the two overlay concerns: presence

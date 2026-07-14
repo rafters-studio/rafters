@@ -1,0 +1,120 @@
+---
+/**
+ * Astro performance (controller) for button.
+ *
+ * Server-renders the full LIGHT-DOM <button> with classes and the score's
+ * initial projection already applied, so the control is correct and
+ * accessible before any JS. The <script> then hands each server-rendered root
+ * to bindButton -- the SAME DOM-native controller the Web Component uses. Astro
+ * imports the behavior binding like any other module; there is no
+ * astro-specific runtime.
+ *
+ * The projection is computed here from the same button.aria the React and WC
+ * controllers read -- one score, three performances, zero drift. A button that
+ * renders already-loading projects aria-busy but does NOT announce: the
+ * announce effect is edge-triggered, and the bind's first paint is baseline
+ * (see bindButton).
+ */
+import {
+  button,
+  type ButtonConfig,
+  type ButtonPart,
+  type ButtonSize,
+  type ButtonVariant,
+} from './button.behavior';
+import { buttonClasses } from './button.classes';
+import type { PartIds } from '../../lib/contract';
+
+interface Props {
+  id: string;
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  type?: 'button' | 'submit' | 'reset';
+  toggle?: boolean;
+  defaultPressed?: boolean;
+  disabled?: boolean;
+  softDisabled?: boolean;
+  loading?: boolean;
+  loadingAnnouncement?: string;
+  label?: string;
+  'aria-label'?: string;
+}
+
+const {
+  id,
+  variant = 'default',
+  size = 'default',
+  type = 'button',
+  toggle = false,
+  defaultPressed = false,
+  disabled = false,
+  softDisabled = false,
+  loading = false,
+  loadingAnnouncement,
+  label,
+  'aria-label': ariaLabel,
+} = Astro.props;
+
+const config: ButtonConfig = {
+  variant,
+  size,
+  toggle,
+  defaultPressed,
+  disabled,
+  softDisabled,
+  loading,
+  loadingAnnouncement,
+};
+const state = button.initialState(config);
+const classes = buttonClasses(config, state);
+
+const ids = {} as PartIds<ButtonPart>;
+for (const part of Object.keys(button.parts) as ButtonPart[]) {
+  ids[part] = `${id}-${part}`;
+}
+const aria = button.aria(state, config, ids);
+---
+
+<button
+  type={type}
+  data-part="root"
+  id={ids.root}
+  class={classes.root}
+  disabled={disabled}
+  aria-label={ariaLabel}
+  data-loading-announcement={loadingAnnouncement}
+  {...aria.root}
+>
+  {
+    loading && (
+      <svg
+        data-part="spinner"
+        id={ids.spinner}
+        class={classes.spinner}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        {...aria.spinner}
+      >
+        <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+      </svg>
+    )
+  }
+  <span data-part="label" id={ids.label}>
+    {label}<slot />
+  </span>
+</button>
+
+<script>
+  import { bindButton } from './button.behavior';
+
+  // The <script> is bundled and runs once per page; bind every instance's
+  // server-rendered root. Same controller as the Web Component.
+  for (const root of document.querySelectorAll<HTMLElement>('button[data-part="root"]')) {
+    if (root.dataset['bound'] === 'true') continue;
+    root.dataset['bound'] = 'true';
+    bindButton(root);
+  }
+</script>

@@ -3,9 +3,10 @@
  * The React and WC conformance tests are each their adapter plus a call
  * into runButtonConformance.
  */
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import userEvent from '@testing-library/user-event';
 import { button, type ButtonConfig } from '../../../src/components/button/button.behavior';
+import { clearAllAnnouncers, getAnnouncerCount } from '../../../src/primitives/sr-announcer';
 import {
   assertAxeClean,
   assertContractFulfillment,
@@ -87,6 +88,10 @@ function configFor(props: ButtonScenarioProps): ButtonConfig {
 
 export function runButtonConformance(adapter: ButtonAdapter): void {
   describe(`button conformance [${adapter.name}]`, () => {
+    afterEach(() => {
+      clearAllAnnouncers();
+    });
+
     for (const scenario of SCENARIOS) {
       if (scenario.iconLabel && !adapter.supportsIconLabel) continue;
 
@@ -122,6 +127,21 @@ export function runButtonConformance(adapter: ButtonAdapter): void {
         expect(partElement(root, 'root')?.getAttribute('aria-pressed')).toBe('true');
         await user.keyboard(' ');
         expect(partElement(root, 'root')?.getAttribute('aria-pressed')).toBe('false');
+      } finally {
+        result.cleanup();
+      }
+    });
+
+    it('loading at mount: aria-busy projected, announce suppressed (edge, not level)', async () => {
+      // A button whose markup renders already-loading is baseline for the
+      // one-shot announce effect: aria-busy is projected but NO live-region
+      // announcement fires. The runtime loading transition (false->true) is
+      // the retained-mode surface, proven in the React-only suite.
+      expect(getAnnouncerCount()).toBe(0);
+      const result = await adapter.render({ loading: true }, 'Saving');
+      try {
+        expect(result.root.getAttribute('aria-busy')).toBe('true');
+        expect(getAnnouncerCount()).toBe(0);
       } finally {
         result.cleanup();
       }
