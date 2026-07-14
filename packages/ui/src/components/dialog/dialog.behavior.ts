@@ -1,5 +1,12 @@
 import { compose, type GlueSlice, type Slice } from '../../lib/compose';
-import type { BehaviorSpec } from '../../lib/contract';
+import {
+  createBehavior,
+  type AriaAttrs,
+  type BehaviorSpec,
+  type PartIds,
+} from '../../lib/contract';
+import { createEffectRunner, type EffectHost } from '../../lib/effects';
+import { updateAriaAttribute } from '../../primitives/aria-manager';
 import {
   disclosable,
   isOpen,
@@ -97,3 +104,108 @@ export const dialog: BehaviorSpec<DialogConfig, DialogState, DialogActions, Dial
   dialogSurface,
   dialogGlue,
 );
+
+/**
+ * The DOM-native binding of the dialog score -- the client. The Web Component
+ * and the Astro <script> both import THIS; only React reads the projections
+ * declaratively. Same shape as bindNavigationMenu, plus the two overlay
+ * concerns: PRESENCE (content/overlay are present-but-hidden, toggled on the
+ * open axis -- effect-observed parts must be light DOM so focus-trap's
+ * activeElement read and dismiss's document .contains work) and the ONGOING
+ * effects runner (focus-trap, scroll-lock, dismiss-on-outside run while open
+ * and modal, stopped on close). Enter-only; exit animation waits on Presence.
+ */
+export function bindDialog(root: HTMLElement): () => void {
+  const config: DialogConfig = {
+    modal: root.getAttribute('modal') !== 'false',
+    defaultOpen:
+      root.getAttribute('default-open') === 'true' ||
+      root.querySelector<HTMLElement>('[data-part="content"]')?.dataset['state'] === 'open',
+  };
+
+  const getPart = (part: string): HTMLElement | null =>
+    part === 'root' ? root : root.querySelector<HTMLElement>(`[data-part="${part}"]`);
+
+  const { memory, dispatch } = createBehavior(dialog, config);
+  const runner = createEffectRunner();
+
+  const request = (action: keyof DialogActions): boolean => dispatch(action, config);
+  const host: EffectHost = {
+    getPart,
+    dispatch: (action) => void request(action as keyof DialogActions),
+  };
+
+  // ids READ from the server/author markup, never generated.
+  const ids = {} as PartIds<DialogPart>;
+  for (const part of Object.keys(dialog.parts) as DialogPart[]) ids[part] = getPart(part)?.id ?? '';
+
+  // The projection is already resolved, so apply it raw (validate:false skips
+  // aria-manager's author-input coercion that flips the string 'false').
+  const applyProjection = (el: HTMLElement, attrs: AriaAttrs) => {
+    for (const [name, value] of Object.entries(attrs)) {
+      updateAriaAttribute(el, name as never, value as never, { validate: false });
+    }
+  };
+
+  const render = () => {
+    const state = memory.get();
+    const open = isOpen(state, config);
+    const projection = dialog.aria(state, config, ids);
+    for (const part of Object.keys(projection) as DialogPart[]) {
+      const attrs = projection[part];
+      const el = getPart(part);
+      if (el && attrs) applyProjection(el, attrs);
+    }
+    // Presence: the overlay and the content container hide off the open axis.
+    // The parts stay in light DOM (crawlable, and effects can read them).
+    for (const part of ['overlay', 'content'] as const) {
+      const el = getPart(part);
+      if (el) el.hidden = !open;
+    }
+    runner.apply(dialog.effects(state, config), host);
+  };
+  const unsubscribe = memory.subscribe(render); // fires immediately: first paint
+
+  const onClick = (event: Event) => {
+    const target = event.target as HTMLElement;
+    if (target.closest('[data-part="close"]')) {
+      request('close');
+      return;
+    }
+    if (target.closest('[data-part="trigger"]')) {
+      request(isOpen(memory.get(), config) ? 'close' : 'open');
+    }
+  };
+  root.addEventListener('click', onClick);
+
+  const onKeydown = (event: KeyboardEvent) => {
+    const partEl = (event.target as HTMLElement).closest<HTMLElement>('[data-part]');
+    const part = partEl?.dataset['part'] as DialogPart | undefined;
+    if (!part) return;
+    const action = dialog.keymap(
+      {
+        key: event.key,
+        shiftKey: event.shiftKey,
+        ctrlKey: event.ctrlKey,
+        altKey: event.altKey,
+        metaKey: event.metaKey,
+      },
+      memory.get(),
+      part,
+      config,
+    );
+    if (!action) return;
+    event.preventDefault();
+    const trigger = getPart('trigger');
+    request(action);
+    if (action === 'close') trigger?.focus();
+  };
+  root.addEventListener('keydown', onKeydown);
+
+  return () => {
+    unsubscribe();
+    runner.stop();
+    root.removeEventListener('click', onClick);
+    root.removeEventListener('keydown', onKeydown);
+  };
+}
