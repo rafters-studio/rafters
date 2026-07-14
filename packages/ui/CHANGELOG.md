@@ -33,6 +33,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `dialog.element.ts` (WC) and `dialog.astro` join. React + WC conformance green;
   Astro built (toolchain lands with the astro wave).
 
+- **Card ported to the behavior layer -- the composition archetype, three
+  frameworks.** `Card`/`CardHeader`/`CardTitle`/`CardDescription`/
+  `CardContent`/`CardFooter`/`CardAction` land across React, the
+  `<rafters-card>` web component, and Astro. Card is a pure static: its score
+  (`card.behavior.ts`) projects no ARIA, holds no state, runs no effects --
+  so there is nothing to bind. There is no `bindCard`, the React controller
+  uses no `useBehavior`/`useMemory`, the Astro performance ships no `<script>`,
+  and the web component performs no binding. The finding: a pure static's
+  framework files are the thinnest possible -- markup + classes + slots. The
+  `fill` signature replaces the default `bg-card` surface (colour vocabulary,
+  #1637); the deprecated `background` prop and all editor/block/interactive
+  props from the oracle are dropped. shadcn's Card family is a drop-in match.
+  Conformance runs across React + WC via the shared harness; the Astro file
+  SSRs the same `cardClasses` projection.
 - **Badge ported to the behavior layer.** `Badge` (React) is now a static
   score (`badge.behavior.ts` + `badge.classes.ts` + `badge.tsx`), imitating
   Container: no state, no actions, no keymap, no motion block. Full oracle
