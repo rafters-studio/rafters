@@ -61,6 +61,22 @@ to project (an empty one, but a declared part) -- the same split Container and
 Alert draw between "what the score projects" and "what the consumer composes
 inside."
 
+### Framework slot model
+
+React composes freely: the consumer nests the sub-components by hand, so a
+content-only card renders only the nodes it uses. The web component and Astro
+performances cannot nest arbitrary children into regions without a runtime, so
+they expose fixed named slots (`header`, `title`, `description`, `action`
+nested inside the header region; `content`, `footer` as root-level siblings;
+plus a default slot). Title/description/action are nested inside the header
+region so they inherit its `p-6`, matching React's `CardHeader` nesting -- the
+rendered structure agrees across all three.
+
+The one honest cost: a fixed slot region is always rendered, so an unfilled
+region is empty padded space. Hiding it would require a `slotchange` listener
+-- a bind -- which is precisely what a pure static must not carry. Pre-rendered
+regions are the accepted price of a no-bind multi-region static.
+
 ## Config, state, actions
 
 ```ts
@@ -108,6 +124,7 @@ gate, or execute -- which is precisely why it needs no client.
 | `size` (`sm` compact variant / `group/card-sm`) | dropped -- no consumer of the group utility survives; a compact card is a padding override via `className` |
 | `editable`/`onTitleChange`/`onDescriptionChange` (contenteditable block-editor plumbing) | dropped -- editor/block props are out of scope for the surface |
 | `CardTitle` rendering a raw heading | contract -- Typography's H1-H6 do not exist in the new tree yet (matrix: typography, pending); repointing at a typography role component is a follow-up |
+| `cardActionClasses` grid placement (`col-start-2 row-start-1 …`) | contract, but inert -- the header is `flex flex-col` in every framework (React included), so the grid-placement utilities never take effect. Carried forward verbatim from the oracle rather than invented or dropped; a header that opts into a grid layout is a future disposition, not this port's |
 
 ## Deltas from the oracle
 

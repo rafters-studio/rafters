@@ -13,9 +13,10 @@
  * Web Component performances read -- one score, three performances, zero
  * drift. `fill` mirrors the React/WC `fill` prop.
  */
-import { cardClasses, type CardClassSet } from './card.classes';
 import {
   cardActionClasses,
+  cardClasses,
+  type CardClassSet,
   cardContentClasses,
   cardDescriptionClasses,
   cardFooterClasses,
@@ -37,11 +38,15 @@ const rootClass = [classes.root, className].filter(Boolean).join(' ');
 ---
 
 <Tag data-part="root" data-fill={fill || undefined} class={rootClass} {...attrs}>
-  <div data-slot="card-header" class={cardHeaderClasses}><slot name="header" /></div>
-  <div data-slot="card-title" class={cardTitleClasses}><slot name="title" /></div>
-  <div data-slot="card-description" class={cardDescriptionClasses}><slot name="description" /></div>
+  <div data-slot="card-header" class={cardHeaderClasses}>
+    <slot name="header" />
+    <div data-slot="card-title" class={cardTitleClasses}><slot name="title" /></div>
+    <div data-slot="card-description" class={cardDescriptionClasses}>
+      <slot name="description" />
+    </div>
+    <div data-slot="card-action" class={cardActionClasses}><slot name="action" /></div>
+  </div>
   <div data-slot="card-content" class={cardContentClasses}><slot name="content" /></div>
   <div data-slot="card-footer" class={cardFooterClasses}><slot name="footer" /></div>
-  <div data-slot="card-action" class={cardActionClasses}><slot name="action" /></div>
   <slot />
 </Tag>

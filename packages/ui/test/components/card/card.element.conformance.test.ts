@@ -72,6 +72,18 @@ describe('card conformance [wc]', () => {
     );
   });
 
+  it('nests title/description/action inside the header region (React parity)', () => {
+    const host = mount();
+    const header = host.shadowRoot?.querySelector('[data-slot="card-header"]') as HTMLElement;
+    expect(header).not.toBeNull();
+    for (const name of ['title', 'description', 'action']) {
+      expect(header.querySelector(`slot[name="${name}"]`), name).not.toBeNull();
+    }
+    // content and footer are root-level siblings, not header-nested
+    expect(header.querySelector('slot[name="content"]')).toBeNull();
+    expect(header.querySelector('slot[name="footer"]')).toBeNull();
+  });
+
   it('slotted light-DOM content passes through', () => {
     const host = mount('', '<h3 slot="title">Report</h3><div slot="content">Body</div>');
     const titleSlot = host.shadowRoot?.querySelector<HTMLSlotElement>('slot[name="title"]');
