@@ -9,6 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Input ported to the behavior layer -- the text-input archetype across
+  three frameworks.** `input.behavior.ts` carries the score (a VALUE-primary
+  control: `config.value` controlled/shadows, `state.value` intrinsic seed
+  from `defaultValue`, effective read via `effectiveValue`) plus `bindInput`,
+  the DOM-native client the `<rafters-input>` web component and the Astro
+  `<script>` both perform. React (`input.tsx`) is a thin, drop-in shadcn
+  `<input>` surface: it spreads props, composes the consumer's `onChange`, and
+  reads the projection declaratively -- no `useBehavior`. `setValue` is gated
+  by `disabled`/`readonly`; `onValueChange` fires on a real change comparing
+  effective-before against intrinsic-after (so a controlled field still reports
+  every edit). The score projects `aria-invalid` (always `true`/`false`),
+  `aria-required`, `aria-describedby` to an error id, and `data-state`; it has
+  NO effects and NO keymap -- the native `<input>` owns caret, IME, and
+  selection -- making this the simplest bind in the family (value-sync + aria).
+  React and WC are conformance-verified against the shared harness; `input.astro`
+  ships but is unverified (no Astro test harness yet). See
+  `docs/spec/components/input.md`.
 - **Badge ported to the behavior layer.** `Badge` (React) is now a static
   score (`badge.behavior.ts` + `badge.classes.ts` + `badge.tsx`), imitating
   Container: no state, no actions, no keymap, no motion block. Full oracle
