@@ -1,6 +1,9 @@
 import * as React from 'react';
 import { createPortal } from 'react-dom';
-import { keyInputOf, useBehavior, type BehaviorBinding } from '../../hooks/use-behavior';
+import { createBehavior, type AriaAttrs, type PartIds } from '../../lib/contract';
+import { keyInputOf } from '../../hooks/use-behavior';
+import { useBehaviorEffects } from '../../hooks/use-behavior-effects';
+import { useMemory } from '../../hooks/use-memory';
 import classy from '../../primitives/classy';
 import { mergeProps } from '../../primitives/slot';
 import {
@@ -19,7 +22,13 @@ interface DismissVetoCallbacks {
   onInteractOutside?: ((event: Event) => void) | undefined;
 }
 
-interface DialogContextValue extends BehaviorBinding<DialogState, DialogActions, DialogPart> {
+interface DialogContextValue {
+  state: DialogState;
+  ids: PartIds<DialogPart>;
+  aria: Partial<Record<DialogPart, AriaAttrs>>;
+  request: (action: keyof DialogActions) => boolean;
+  setPart: (part: DialogPart) => (element: HTMLElement | null) => void;
+  getPart: (part: string) => HTMLElement | null;
   config: DialogConfig;
   effectiveOpen: boolean;
   classes: DialogClassSet;
@@ -58,25 +67,98 @@ export function Dialog({
   const config: DialogConfig = { open, defaultOpen, modal };
   const dismissVetoRef = React.useRef<DismissVetoCallbacks | null>(null);
 
-  const binding = useBehavior(dialog, config, {
-    onAccepted: (action) => onOpenChange?.(action === 'open'),
-    // Outside-pointerdown dismissals offer the consumer veto first (oracle
-    // protocol: callback runs, close proceeds unless defaultPrevented).
-    vetoEffectDispatch: (action, nativeEvent) => {
-      if (action !== 'close' || !nativeEvent) return false;
-      const veto = dismissVetoRef.current;
-      if (!veto) return false;
-      veto.onPointerDownOutside?.(nativeEvent);
-      veto.onInteractOutside?.(nativeEvent);
-      return nativeEvent.defaultPrevented;
+  // The controller composes the score with the substrate -- no useBehavior.
+  const { memory, dispatch } = React.useMemo(() => createBehavior(dialog, config), []);
+  const state = useMemory(memory);
+  const effectiveOpen = isOpen(state, config);
+
+  const uid = React.useId();
+
+  // Content portals to document.body with a unique id, so getPart resolves by
+  // id -- no ref registry. Optional parts still need a mount signal (setPart)
+  // purely so an omitted description projects no dangling aria-describedby.
+  const [presentParts, setPresentParts] = React.useState<ReadonlySet<string>>(new Set());
+  const partCallbacks = React.useRef<Map<string, (el: HTMLElement | null) => void>>(new Map());
+  const setPart = React.useCallback((part: DialogPart) => {
+    let callback = partCallbacks.current.get(part);
+    if (!callback) {
+      callback = (element: HTMLElement | null) =>
+        setPresentParts((previous) => {
+          const present = element !== null;
+          if (previous.has(part) === present) return previous;
+          const next = new Set(previous);
+          if (present) next.add(part);
+          else next.delete(part);
+          return next;
+        });
+      partCallbacks.current.set(part, callback);
+    }
+    return callback;
+  }, []);
+  const getPart = React.useCallback(
+    (part: string): HTMLElement | null =>
+      typeof document === 'undefined' ? null : document.getElementById(`${uid}-${part}`),
+    [uid],
+  );
+
+  // title and description are the UNGUARDED cross-ref sources (labelledby/
+  // describedby have no `open` guard, unlike aria-controls), so an absent one
+  // must resolve to an empty id. Every other part keeps a stable id -- content
+  // especially, since the focus-trap effect finds it by id.
+  const ids = React.useMemo(() => {
+    const out = {} as PartIds<DialogPart>;
+    for (const part of Object.keys(dialog.parts) as DialogPart[]) {
+      const crossRefSource = part === 'title' || part === 'description';
+      out[part] = crossRefSource && !presentParts.has(part) ? '' : `${uid}-${part}`;
+    }
+    return out;
+  }, [uid, presentParts]);
+
+  const latest = React.useRef({ config, onOpenChange });
+  latest.current = { config, onOpenChange };
+  const request = React.useCallback(
+    (action: keyof DialogActions): boolean => {
+      const { config: cfg, onOpenChange: cb } = latest.current;
+      if (!dispatch(action, cfg)) return false;
+      cb?.(action === 'open');
+      return true;
     },
-  });
+    [dispatch],
+  );
+
+  const host = React.useMemo(
+    () => ({
+      getPart,
+      // Outside-pointerdown dismissals offer the consumer veto first (oracle
+      // protocol: callback runs, close proceeds unless defaultPrevented).
+      dispatch: (action: string, _payload?: unknown, nativeEvent?: Event) => {
+        if (action === 'close' && nativeEvent) {
+          const veto = dismissVetoRef.current;
+          if (veto) {
+            veto.onPointerDownOutside?.(nativeEvent);
+            veto.onInteractOutside?.(nativeEvent);
+            if (nativeEvent.defaultPrevented) return;
+          }
+        }
+        request(action as keyof DialogActions);
+      },
+    }),
+    [getPart, request],
+  );
+  useBehaviorEffects(dialog.effects(state, config), host);
+
+  const aria = dialog.aria(state, config, ids);
 
   const contextValue: DialogContextValue = {
-    ...binding,
+    state,
+    ids,
+    aria,
+    request,
+    setPart,
+    getPart,
     config,
-    effectiveOpen: isOpen(binding.state, config),
-    classes: dialogClasses(config, binding.state),
+    effectiveOpen,
+    classes: dialogClasses(config, state),
     dismissVetoRef,
   };
 
