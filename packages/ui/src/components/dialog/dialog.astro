@@ -1,0 +1,82 @@
+---
+/**
+ * Astro performance for dialog. Server-renders the full light-DOM structure
+ * with the closed-state projection already applied (correct and inert before
+ * JS), then the <script> hands each instance to bindDialog -- the SAME
+ * DOM-native client the Web Component uses. One score, three performances.
+ *
+ * Content stays in light DOM (present-but-hidden) so the effects the bind
+ * runs -- focus-trap, scroll-lock, dismiss-on-outside -- can read it. Exit
+ * animation waits on the Presence adapter; this is enter-only.
+ */
+import { dialog, type DialogConfig, type DialogPart } from './dialog.behavior';
+import { dialogClasses } from './dialog.classes';
+import type { PartIds } from '../../lib/contract';
+
+interface Props {
+  id: string;
+  modal?: boolean;
+  defaultOpen?: boolean;
+  title?: string;
+  description?: string;
+}
+
+const { id, modal = true, defaultOpen = false, title, description } = Astro.props;
+
+const config: DialogConfig = { modal, defaultOpen };
+const state = dialog.initialState(config);
+const classes = dialogClasses(config, state);
+
+// Optional cross-ref sources resolve to empty when their slot is absent, so
+// the score's `|| undefined` guards emit no dangling reference.
+const ids = {} as PartIds<DialogPart>;
+for (const part of Object.keys(dialog.parts) as DialogPart[]) {
+  const absent = (part === 'title' && !title) || (part === 'description' && !description);
+  ids[part] = absent ? '' : `${id}-${part}`;
+}
+const aria = dialog.aria(state, config, ids);
+const open = state.open;
+---
+
+<rafters-dialog data-part="root" modal={String(modal)} default-open={String(defaultOpen)}>
+  <button type="button" id={ids.trigger} data-part="trigger" class={classes.trigger} {...aria.trigger}>
+    <slot name="trigger">Open</slot>
+  </button>
+
+  <div id={ids.overlay} data-part="overlay" class={classes.overlay} hidden={!open} {...aria.overlay}></div>
+
+  <div class={classes.container} hidden={!open}>
+    <div
+      id={ids.content}
+      data-part="content"
+      tabindex="-1"
+      class={classes.content}
+      {...aria.content}
+      hidden={!open}
+    >
+      {title && <h2 id={ids.title} data-part="title" class={classes.title}>{title}</h2>}
+      {
+        description && (
+          <div id={ids.description} data-part="description" class={classes.description}>
+            {description}
+          </div>
+        )
+      }
+      <slot />
+      <button type="button" id={ids.close} data-part="close" class={classes.close} {...aria.close}>
+        <slot name="close">Close</slot>
+      </button>
+    </div>
+  </div>
+</rafters-dialog>
+
+<script>
+  import { bindDialog } from './dialog.behavior';
+
+  for (const root of document.querySelectorAll('rafters-dialog[data-part="root"]')) {
+    const el = root as HTMLElement;
+    if (el.dataset['bound'] === 'true') continue;
+    el.dataset['bound'] = 'true';
+    bindDialog(el);
+  }
+</script>

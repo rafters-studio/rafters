@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Dialog, three-framework performances on the settled pattern (#1821).** The
+  score gains `bindDialog` -- the DOM-native client the WC and Astro performances
+  share -- proving the pattern extends to the two overlay concerns: presence
+  (content/overlay present-but-hidden so effects read light DOM) and the ongoing
+  effects runner (focus-trap, scroll-lock, dismiss). The React controller drops
+  `useBehavior` (createBehavior + useMemory + useBehaviorEffects; getPart by id
+  since content portals; presence only for the unguarded cross-ref sources).
+  `dialog.element.ts` (WC) and `dialog.astro` join. React + WC conformance green;
+  Astro built (toolchain lands with the astro wave).
+
 - **Badge ported to the behavior layer.** `Badge` (React) is now a static
   score (`badge.behavior.ts` + `badge.classes.ts` + `badge.tsx`), imitating
   Container: no state, no actions, no keymap, no motion block. Full oracle
