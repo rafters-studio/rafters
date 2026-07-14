@@ -1,5 +1,6 @@
-import type { AriaAttrs, BehaviorSpec } from '../../lib/contract';
-import type { EffectSpec } from '../../lib/effects';
+import { createBehavior, type AriaAttrs, type BehaviorSpec } from '../../lib/contract';
+import { createEffectRunner, type EffectHost, type EffectSpec } from '../../lib/effects';
+import { updateAriaAttribute } from '../../primitives/aria-manager';
 
 /**
  * Grid: named attention structures over a 12-column vocabulary. A static
@@ -90,4 +91,81 @@ export const grid: BehaviorSpec<GridConfig, GridState, GridActions, GridPart> = 
  *  attribute, never off source position. */
 export function gridItemAttrs(priority: ContentPriority | undefined): AriaAttrs {
   return { 'data-priority': priority };
+}
+
+/** Parse the WC/Astro `columns` attribute into the score's config value.
+ *  Only a bare integer or `auto` is expressible as an attribute; a
+ *  responsive object is a React-only prop. A non-numeric, non-`auto` value
+ *  reads as absent (auto default). */
+function parseColumns(raw: string | null): ResponsiveColumns | undefined {
+  if (raw === null) return undefined;
+  if (raw === 'auto') return 'auto';
+  if (/^\d+$/.test(raw)) return Number(raw) as ColumnsValue;
+  return undefined;
+}
+
+/**
+ * The DOM-native binding of the grid score -- the client. The Web Component
+ * and the Astro <script> both import THIS; only React (retained-mode) reads
+ * the projection declaratively. Grid is a STATIC score, so the binding is the
+ * thinnest of the family: no click/keydown wiring (grid has no keymap and no
+ * actions), just the one-shot projection apply and the conditional
+ * grid-roving effect that engages only under an honest role="grid".
+ *
+ * Three-gotcha ledger for this archetype:
+ *   1. Controlled-callback before/after: N/A. Grid has no controlled value
+ *      and no actions (GridActions = Record<never, never>), so there is no
+ *      callback to fire and nothing to compare.
+ *   2. aria-manager coerces the resolved string 'false' to truthy -- the
+ *      projection is already final, so apply it with { validate: false }
+ *      (below), skipping author-input coercion.
+ *   3. WC bind deferred one microtask -- see grid.element.ts.
+ *
+ * The role disposition (carried from the WC port): a bare `role="grid"` on a
+ * light-DOM host BEFORE the row/gridcell children exist is a 4.1.2 axe
+ * violation and collides with the platform `role`. So the opt-in attribute is
+ * `grid-role`; the binding reads it and PROJECTS the real `role="grid"` onto
+ * the root part, which by then owns authored row/gridcell descendants.
+ */
+export function bindGrid(root: HTMLElement): () => void {
+  const attr = (name: string): string | undefined => root.getAttribute(name) ?? undefined;
+  const config: GridConfig = {
+    preset: attr('preset') as GridPreset | undefined,
+    pattern: attr('pattern') as BentoPattern | undefined,
+    columns: parseColumns(root.getAttribute('columns')),
+    gap: attr('gap') as SpacingValue | undefined,
+    padding: attr('padding') as SpacingValue | undefined,
+    role: root.getAttribute('grid-role') === 'grid' ? 'grid' : undefined,
+    ariaLabel: attr('aria-label'),
+  };
+
+  const getPart = (part: string): HTMLElement | null =>
+    part === 'root' ? root : root.querySelector<HTMLElement>(`[data-part="${part}"]`);
+
+  const { memory } = createBehavior(grid, config);
+  const runner = createEffectRunner();
+  // Grid has no actions; the effect host never dispatches.
+  const host: EffectHost = { getPart, dispatch: () => {} };
+
+  // The projection is already resolved (final strings, undefined = absent),
+  // so apply it raw: validate:false skips aria-manager's author-input
+  // coercion, which would re-interpret a string like 'false' as truthy.
+  const applyProjection = (el: HTMLElement, attrs: AriaAttrs) => {
+    for (const [name, value] of Object.entries(attrs)) {
+      updateAriaAttribute(el, name as never, value as never, { validate: false });
+    }
+  };
+
+  const render = () => {
+    const state = memory.get();
+    const projection = grid.aria(state, config, { root: root.id ?? '', row: '', cell: '' });
+    if (projection.root) applyProjection(root, projection.root);
+    runner.apply(grid.effects(state, config), host);
+  };
+  const unsubscribe = memory.subscribe(render); // fires immediately: first paint
+
+  return () => {
+    unsubscribe();
+    runner.stop();
+  };
 }

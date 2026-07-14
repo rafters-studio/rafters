@@ -9,6 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Grid re-done on the settled behavior-layer pattern (React + WC + Astro).**
+  `Grid` now carries the full three-framework surface: the score plus its
+  DOM-native client `bindGrid(root)` live in `grid.behavior.ts`, the
+  `<rafters-grid>` web component (`grid.element.ts`) and the Astro performance
+  (`grid.astro`) both import that one client, and the React controller
+  (`grid.tsx`) drops `useBehavior` for `createBehavior` + `useMemory` +
+  `useBehaviorEffects`. Behavior is unchanged: presentation grids stay silent
+  furniture (no role), and an honest `role="grid"` still engages the 2D
+  grid-roving keyboard contract (Left/Right by 1, Up/Down by columns,
+  Home/End). The `role="grid"` opt-in attribute is `grid-role` on the WC/Astro
+  host (a bare `role` collides with the platform attribute and trips axe
+  before the row/gridcell children exist); the binding projects the real
+  `role="grid"` once the structure is present. The shared `grid-roving`
+  executor now resolves the focused cell via `getRootNode()` rather than
+  `document.activeElement`, so it pierces a shadow tree correctly (identical
+  in light DOM).
 - **Badge ported to the behavior layer.** `Badge` (React) is now a static
   score (`badge.behavior.ts` + `badge.classes.ts` + `badge.tsx`), imitating
   Container: no state, no actions, no keymap, no motion block. Full oracle

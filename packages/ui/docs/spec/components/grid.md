@@ -7,8 +7,14 @@ effect. The stock-layout carrier.
 Files (`src/components/grid/`):
 
 ```
-grid.classes.ts    grid.behavior.ts    grid.tsx
+grid.behavior.ts   grid.classes.ts   grid.tsx   grid.element.ts   grid.astro
 ```
+
+`grid.behavior.ts` holds the score AND `bindGrid(root)` -- the DOM-native
+client both the `<rafters-grid>` web component (`grid.element.ts`) and the
+Astro `<script>` (`grid.astro`) import. React (`grid.tsx`) reads the
+projection declaratively via `createBehavior` + `useMemory` +
+`useBehaviorEffects` (no `useBehavior`). One score, three performances.
 
 ## Rulings (Sean, 2026-07-03)
 
@@ -58,6 +64,36 @@ that JSON is the template framework boundary 5 prohibits.
 | `Grid.Item` `priority` prop rendering data-priority with zero effect | defect-do-not-port as dead prop; now the placement channel |
 | responsive columns object on the VIEWPORT axis | ported per documented intent (page-level layouts respond to viewport); container-axis variant pending ratification |
 | editable / showColumnDropZones / GridItemDropZone / onConfigChange | stripped — studio-layer concern (pending ratification); onConfigChange was a void'd dead callback |
+
+## Three-framework dispositions
+
+- **`role="grid"` opt-in attribute is `grid-role`.** On a light-DOM host a
+  bare `role="grid"` both collides with the platform `role` attribute and is
+  a 4.1.2 axe violation before the row/gridcell children are parsed.
+  `bindGrid` reads `grid-role` and PROJECTS the honest `role="grid"` onto the
+  root once the structure exists. React keeps the idiomatic `role` prop (it
+  renders role and rows in the same commit, so there is no bare-role window).
+- **`grid-roving` executor resolves focus via `getRootNode()`.** Not
+  `document.activeElement` -- inside a shadow tree that reports the host, so a
+  shadow performance would never match a cell. Identical to `document` in
+  light DOM (carried from the WC port).
+- **Astro conformance is not exercised.** `grid.astro` ships and SSRs the
+  initial projection, but the repo has no `conformance [astro]` harness on
+  `feat/behavior-layer`, so the matrix leaves `astro: "missing"`. React and
+  WC drive the one score under the shared harness (`react`/`wc: "verified"`).
+
+## Three-gotcha ledger
+
+1. **Controlled-callback before/after: N/A.** Grid has no controlled value
+   and no actions (`GridActions = Record<never, never>`), so there is no
+   consumer callback to fire and nothing to compare. The gotcha is
+   inapplicable to this archetype, not omitted.
+2. **`aria-manager` `{ validate: false }`.** The score's projection is
+   already resolved, so `bindGrid` applies it with `validate:false` to skip
+   author-input coercion (which would flip the string `'false'` to truthy).
+3. **WC bind deferred one microtask.** `grid.element.ts` binds in a
+   `queueMicrotask` because `connectedCallback` can fire before the light-DOM
+   row/gridcell children are parsed.
 
 ## WCAG obligations
 
