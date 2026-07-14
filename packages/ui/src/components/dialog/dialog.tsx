@@ -4,6 +4,7 @@ import { createBehavior, type AriaAttrs, type PartIds } from '../../lib/contract
 import { keyInputOf } from '../../hooks/use-behavior';
 import { useBehaviorEffects } from '../../hooks/use-behavior-effects';
 import { useMemory } from '../../hooks/use-memory';
+import { usePresence } from '../../hooks/use-presence';
 import classy from '../../primitives/classy';
 import { mergeProps } from '../../primitives/slot';
 import {
@@ -265,6 +266,9 @@ export function DialogContent({
   const { config, state, effectiveOpen, ids, aria, classes, request, setPart, dismissVetoRef } =
     useDialogContext('DialogContent');
   const isInsidePortal = React.useContext(DialogPortalContext);
+  // Presence (wave 0-B): keep the content mounted through its exit animation.
+  // With no exit animation it releases immediately, so behavior is unchanged.
+  const { present, ref: presenceRef } = usePresence(effectiveOpen);
 
   React.useEffect(() => {
     dismissVetoRef.current = { onPointerDownOutside, onInteractOutside };
@@ -273,7 +277,7 @@ export function DialogContent({
     };
   });
 
-  if (!(forceMount || effectiveOpen)) return null;
+  if (!(forceMount || present)) return null;
   if (typeof document === 'undefined') return null;
 
   const modal = config.modal !== false;
@@ -296,11 +300,11 @@ export function DialogContent({
     // forceMount keeps the nodes for animation tooling; a closed modal must
     // still be invisible to AT, untabbable, and must not block the page --
     // hidden on the fixed-position container covers all three.
-    <div className={classes.container} hidden={effectiveOpen ? undefined : true}>
+    <div className={classes.container} hidden={present ? undefined : true}>
       <div
         data-part="content"
         id={ids.content || undefined}
-        ref={setPart('content')}
+        ref={presenceRef}
         tabIndex={-1}
         className={classy(classes.content, className)}
         {...aria.content}
