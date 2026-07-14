@@ -1,0 +1,90 @@
+---
+/**
+ * Container -- the Astro performance of the static score (container.behavior.ts).
+ *
+ * A static score has nothing to subscribe to: this performance is pure
+ * decoration application. No client runtime, no effects (Spec 03) -- config
+ * in, classes out, semantic element chosen by `as`. `as` is rendered through
+ * Astro's dynamic-tag support (a capitalized variable bound to a native
+ * element name) so the element switch is one tag, not one branch per
+ * element -- the repetition the oracle (src/old/ui/container.astro) paid
+ * for by hand.
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import type {
+  ContainerConfig,
+  ContainerDepth,
+  ContainerElement,
+  ContainerPadding,
+  ContainerPosition,
+  ContainerSize,
+} from './container.behavior';
+import { containerClasses } from './container.classes';
+import type { ResponsiveColumns } from '../grid/grid.behavior';
+
+interface Props extends HTMLAttributes<'div'> {
+  as?: ContainerElement;
+  size?: ContainerSize;
+  padding?: ContainerPadding;
+  gap?: boolean | ContainerPadding;
+  /** Grid mode: define a container and a grid in one tag (linear columns,
+   *  1-12 or responsive; presets stay Grid's). */
+  columns?: ResponsiveColumns;
+  query?: boolean;
+  queryName?: string;
+  colSpan?: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
+  rowSpan?: 1 | 2 | 3;
+  position?: ContainerPosition;
+  depth?: ContainerDepth;
+  fill?: string;
+}
+
+const {
+  as: Tag = 'div',
+  size,
+  padding,
+  gap,
+  columns,
+  query = true,
+  queryName,
+  colSpan,
+  rowSpan,
+  position,
+  depth,
+  fill,
+  class: className,
+  ...attrs
+} = Astro.props;
+
+const config: ContainerConfig = {
+  as: Tag,
+  size,
+  padding,
+  gap,
+  columns,
+  query,
+  queryName,
+  colSpan,
+  rowSpan,
+  position,
+  depth,
+  fill,
+};
+
+const classes = containerClasses(config, {});
+
+// containerName cannot be a literal class (arbitrary values are banned);
+// the one style channel, ruled narrowly for CQ naming -- matches container.tsx.
+const containerStyle = queryName ? `container-name: ${queryName}` : undefined;
+---
+
+<Tag
+  data-part="root"
+  class={classy(classes.root, className)}
+  style={containerStyle}
+  data-fill={fill || undefined}
+  {...attrs}
+>
+  <slot />
+</Tag>
