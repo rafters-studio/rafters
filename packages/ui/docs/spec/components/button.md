@@ -1,17 +1,67 @@
 # Component Spec — Button
 
-Status: DRAFT. First test article for Spec 01. Ruled by Sean 2026-07-01:
-use classy; 100% shadcn compatible; all rafters states beyond shadcn;
-WCAG 2.1 AA at bare minimum; semantic token classes only.
+Status: PORTED (#1823). First test article for Spec 01, now re-done on the
+settled behavior-layer pattern (imitating navigation-menu and dialog). Ruled by
+Sean 2026-07-01: use classy; 100% shadcn compatible; all rafters states beyond
+shadcn; WCAG 2.1 AA at bare minimum; semantic token classes only.
 
 Files (new grain, `src/components/button/`):
 
 ```
-button.classes.ts    button.behavior.ts
+button.classes.ts    button.behavior.ts (score + bindButton)
 button.tsx           button.element.ts       button.astro
 ```
 
 Tests mirror into `test/components/button/`.
+
+## Three-framework performances (settled pattern)
+
+The score is a single `pressable` slice. `button.behavior.ts` also exports
+`bindButton(root)` -- the DOM-native client the Web Component and the Astro
+`<script>` both perform; only React (retained-mode) reads the projections
+declaratively instead. One binding, three performances, zero drift.
+
+- **React** (`button.tsx`): thin controller over `createBehavior` + `useMemory`
+  + `useBehaviorEffects` -- no `useBehavior`. Reads the aria projection
+  declaratively and spreads it onto the `<button>`.
+- **WC** (`button.element.ts`): a light-DOM enhancer. The author (or Astro)
+  provides a real inner `<button data-part="root">` so native Enter/Space
+  survive; `connectedCallback` defers the bind one microtask (children may not
+  be parsed yet) and hands the inner root to `bindButton`.
+- **Astro** (`button.astro`): server-renders the `<button>` with the initial
+  projection already applied (correct before JS), then a `<script>` hands each
+  `button[data-part="root"]` to `bindButton`.
+
+`bindButton` reads its config ONCE from the projected markup (the same
+`aria-busy` / `aria-pressed` / `aria-disabled` / native `disabled` the score
+projects are the inputs it re-derives from -- no dual attributes to drift),
+exactly as `bindDialog` reads `default-open`. It wires click -> press only (the
+native button converts Enter/Space to a click; there is no keydown branch), and
+a rejected press (the double-submit / soft-disabled / loading gate) cancels the
+click's default. The aria projection is applied through aria-manager with
+`{ validate: false }` so the resolved string `'false'` is not re-coerced to
+truthy.
+
+### The three gotchas (encoded)
+
+1. **Controlled callback** (`button.tsx`): `onPressedChange` compares the
+   effective value BEFORE (the `pressed` prop when controlled) against the
+   INTRINSIC value AFTER the reducer -- never effective-vs-effective, which a
+   controlled prop would pin flat.
+2. **aria-manager coercion** (`bindButton`): the resolved projection is applied
+   with `{ validate: false }`; author-input validation would flip `'false'`.
+3. **WC bind deferred one microtask** (`button.element.ts`):
+   `connectedCallback` can fire before the light-DOM inner button is parsed.
+
+### The announce effect is edge-triggered
+
+`announce` (loading) is a one-shot effect. The effect runner's first `apply()`
+is baseline: a button whose markup renders already-loading projects `aria-busy`
+but does NOT announce. The DOM-native bind (WC/Astro) proves that baseline
+suppression only -- config is read once from markup, so there is no runtime
+transition to observe. The loading transition (false -> true) that DOES
+announce is the retained-mode surface, proven in the React-only conformance
+suite where `useBehaviorEffects` persists the runner across commits.
 
 ## Compatibility contract (shadcn superset)
 
@@ -38,28 +88,30 @@ way shadcn's tailwind-merge does. Conflicting overrides keep both classes.
 
 ## Config, state, actions
 
+The shipping score is the `pressable` slice (`src/lib/pressable.ts`). Its
+config carries the mode inputs; the only state axis is `pressed`, and the only
+action is `press`. `disabled` / `softDisabled` / `loading` are config (a button
+is told what it is), read by `canDispatch`, `aria`, and `effects`:
+
 ```ts
-interface ButtonConfig {
-  variant: Variant;            // 12
-  size: Size;                  // 8
-  toggle?: boolean;            // aria-pressed mode
+interface PressableConfig {
+  toggle?: boolean;                // aria-pressed mode
+  defaultPressed?: boolean;        // uncontrolled seed
+  disabled?: boolean;              // hard: native disabled attribute
+  softDisabled?: boolean;          // aria-disabled, focusable, actions no-op
+  loading?: boolean;
   loadingAnnouncement?: string;    // default: "Loading"
   loadedAnnouncement?: string;     // default: "" (no announcement)
 }
 
-interface ButtonState {
-  disabled: boolean;       // hard: native disabled attribute
-  softDisabled: boolean;   // aria-disabled, still focusable, actions no-op
-  loading: boolean;
-  pressed?: boolean;       // only meaningful when config.toggle
+// ButtonConfig extends PressableConfig with variant (12) and size (8).
+
+interface PressableState {
+  pressed: boolean | undefined;    // undefined unless config.toggle
 }
 
-type ButtonActions = {
-  press: void;                       // the user activation
-  setLoading: boolean;
-  setDisabled: boolean;
-  setSoftDisabled: boolean;
-  setPressed: boolean;               // controlled-sync path
+type PressableActions = {
+  press: undefined;                // the user activation
 };
 ```
 
@@ -68,7 +120,10 @@ type ButtonActions = {
   in one pure function. Framework bindings fire `onClick` only on accepted
   dispatches (Spec 01 rule 4).
 - `press` with `config.toggle` flips `pressed`; without it, `press` is a
-  state-identity action whose acceptance drives the consumer callback.
+  state-identity no-op whose acceptance drives the consumer callback.
+- There is intentionally no `setLoading` / `setPressed` action: loading is
+  config (the archetype is explicit), and the controlled `pressed` sync is the
+  React binding's concern, not the score's.
 
 ## Parts
 
