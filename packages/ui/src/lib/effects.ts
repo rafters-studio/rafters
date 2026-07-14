@@ -181,7 +181,12 @@ export function executeEffect(effect: EffectSpec, host: EffectHost): EffectClean
       const onKeyDown = (event: KeyboardEvent) => {
         const cells = items();
         if (cells.length === 0) return;
-        const active = document.activeElement as HTMLElement | null;
+        // Resolve the focused cell against the grid's OWN root node, not
+        // document: inside a shadow tree document.activeElement reports the
+        // host, so a shadow-DOM performance would never match a cell. In
+        // light DOM getRootNode() is the document, so this is identical there.
+        const active = (root.getRootNode() as Document | ShadowRoot)
+          .activeElement as HTMLElement | null;
         const current = active ? cells.indexOf(active) : -1;
         if (current === -1) return;
 

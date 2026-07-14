@@ -8,9 +8,27 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
 } from '../../../../packages/ui/src/components/navigation-menu/navigation-menu';
+// Side-effect import registers <rafters-navigation-menu>. Same behavior file
+// as the React component above -- this is the DOM-native performance.
+import '../../../../packages/ui/src/components/navigation-menu/navigation-menu.element';
+import {
+  navigationMenuClasses,
+  navigationMenuTriggerStyle,
+} from '../../../../packages/ui/src/components/navigation-menu/navigation-menu.classes';
 import { Container } from '@rafters/ui/components/ui/container';
 import { Grid } from '@rafters/ui/components/ui/grid';
 import { Code, H1, H2, P, Small } from '@rafters/ui/components/ui/typography';
+
+declare module 'react' {
+  namespace JSX {
+    interface IntrinsicElements {
+      'rafters-navigation-menu': React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement> & { orientation?: string; 'delay-duration'?: string },
+        HTMLElement
+      >;
+    }
+  }
+}
 
 function DemoMenu(props: { value?: string; onValueChange?: (value: string) => void }) {
   return (
@@ -87,6 +105,80 @@ function ControlledSection() {
   );
 }
 
+const WC_ITEMS = [
+  {
+    value: 'products',
+    label: 'Products',
+    links: ['Design tokens', 'Components', 'Behavior layer'],
+  },
+  { value: 'docs', label: 'Docs', links: ['Getting started', 'Specs'] },
+  { value: 'company', label: 'Company', links: ['About'] },
+];
+
+function WcMenu() {
+  const cls = navigationMenuClasses({}, { active: null, pointerOpened: false });
+  return (
+    <rafters-navigation-menu orientation="horizontal" delay-duration="200" className={cls.root}>
+      <ul data-part="list" className={cls.list}>
+        {WC_ITEMS.map((item) => {
+          const triggerId = `wc-trigger-${item.value}`;
+          const contentId = `wc-content-${item.value}`;
+          return (
+            <li key={item.value} className={cls.item}>
+              {/* Server/author-minted closed state, so it is correct before the
+                  element upgrades (no flash of open panels). */}
+              <button
+                type="button"
+                id={triggerId}
+                data-part="trigger"
+                data-value={item.value}
+                data-roving-item
+                className={navigationMenuTriggerStyle()}
+                aria-expanded="false"
+                aria-controls={contentId}
+                data-state="closed"
+              >
+                {item.label}
+              </button>
+              <div
+                id={contentId}
+                data-part="content"
+                data-value={item.value}
+                className={cls.content}
+                aria-labelledby={triggerId}
+                data-state="closed"
+                hidden
+              >
+                {item.links.map((link) => (
+                  <a key={link} href="#navigation-menu" className={cls.link}>
+                    {link}
+                  </a>
+                ))}
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </rafters-navigation-menu>
+  );
+}
+
+function WebComponentSection() {
+  return (
+    <Container as="section">
+      <H2>Same score, Web Component</H2>
+      <P>
+        No React below this line. <Code>&lt;rafters-navigation-menu&gt;</Code> enhances plain
+        light-DOM markup and drives it through the <em>same</em>{' '}
+        <Code>navigation-menu.behavior.ts</Code> the React menu above uses -- hover, click, roving,
+        Escape, outside-dismiss all identical, because there is one behavior file. The markup ships
+        its own closed state, so it is correct and crawlable before the element upgrades.
+      </P>
+      <WcMenu />
+    </Container>
+  );
+}
+
 export function NavigationMenuPage() {
   return (
     <Container as="article">
@@ -100,6 +192,7 @@ export function NavigationMenuPage() {
       </Container>
       <BasicSection />
       <ControlledSection />
+      <WebComponentSection />
     </Container>
   );
 }
