@@ -16,8 +16,12 @@ const overlayClasses = 'fixed inset-0 z-depth-overlay bg-foreground/80';
 
 const containerClasses = 'fixed inset-0 z-depth-modal flex items-center justify-center p-4';
 
+// data-[state=closed]:pointer-events-none -- the ratified motion ruling's
+// taste residue: while a closing overlay is held present through its exit
+// window (usePresence defers the unmount), it must not swallow clicks.
 const contentClasses =
-  'relative w-full max-w-lg rounded-lg border border-card-border bg-card p-6 text-card-foreground shadow-lg';
+  'relative w-full max-w-lg rounded-lg border border-card-border bg-card p-6 text-card-foreground shadow-lg ' +
+  'data-[state=closed]:pointer-events-none';
 
 const headerClasses = 'flex flex-col space-y-1.5 text-center @md:text-left';
 
