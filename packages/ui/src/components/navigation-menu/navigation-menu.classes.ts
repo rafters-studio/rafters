@@ -33,9 +33,12 @@ const triggerChevronClasses =
   'ml-1 h-3 w-3 transition-transform duration-200 motion-reduce:transition-none ' +
   'group-data-[state=open]:rotate-180';
 
+// Animated enter/exit awaits the motion-utility wiring (#7): the rafters
+// sheet emits @keyframes + --ease/--duration vars but no ready animate-in
+// utilities, and the panel toggles `hidden` (a display:none node cannot
+// transition). Static until the presence-visible motion utilities land.
 const contentClasses =
-  'absolute left-0 top-full w-max rounded-md border bg-popover p-2 text-popover-foreground shadow-lg ' +
-  'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95';
+  'absolute left-0 top-full w-max rounded-md border bg-popover p-2 text-popover-foreground shadow-lg';
 
 const linkClasses =
   'block select-none space-y-1 rounded-md p-3 no-underline outline-none ' +
@@ -49,13 +52,11 @@ const linkClasses =
 const viewportWrapperClasses = 'absolute left-0 top-full';
 
 const viewportClasses =
-  'h-min w-full overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-lg ' +
-  'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95';
+  'h-min w-full overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-lg';
 
 const indicatorClasses =
   'absolute bottom-0 z-10 flex h-2.5 items-end justify-center overflow-hidden ' +
-  'transition-transform duration-200 motion-reduce:transition-none ' +
-  'data-[state=visible]:animate-in data-[state=visible]:fade-in';
+  'transition-transform duration-200 motion-reduce:transition-none';
 
 const indicatorArrowClasses = 'top-full h-2 w-2 rotate-45 rounded-tl-sm bg-border shadow-md';
 
