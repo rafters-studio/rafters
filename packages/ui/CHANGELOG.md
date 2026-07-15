@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **`alert` migrated to the static pattern; `useBehavior` deleted (#1827).**
+  Alert was the last component still calling the `useBehavior` React adapter.
+  Its score is a pure static -- constant `role="alert"`, no state or effects,
+  and its aria projection ignores ids -- so the controller now computes the
+  projection directly, the same config-in/classes-and-aria-out shape as
+  container and card. With alert migrated, `hooks/use-behavior.ts` is removed;
+  its one surviving utility, `keyInputOf` (React `KeyboardEvent` -> contract
+  `KeyInput`), moves to `hooks/key-input.ts`. Every framework file now composes
+  the substrate directly -- no shared per-framework adapter remains.
+
 ### Added
 
 - **Button, re-done on the settled behavior-layer pattern (#1823).** The score
