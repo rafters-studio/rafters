@@ -43,6 +43,35 @@ export const ProvenanceSchema = z.object({
   signature: z.string().optional(),
 });
 
+/** Designer-facing metadata carried forward from the old-tree component's
+ *  JSDoc header (src/old/ui/<name>.tsx): cognitive load, attention economics,
+ *  trust, accessibility, semantics, and usage do/never rules. A metadata
+ *  sidecar so the tracking fields above stay stable -- extracted, never
+ *  re-authored. Optional: a component with no old-tree JSDoc simply omits it. */
+export const ComponentMetadataSchema = z.object({
+  /** The old-tree file the header was lifted from. */
+  source: z.string(),
+  /** The JSDoc lead prose (what the component is). */
+  description: z.string().optional(),
+  /** @cognitive-load: the 0-10 intrinsic score and its one-line rationale. */
+  cognitiveLoad: z
+    .object({
+      score: z.number().int().min(0).max(10),
+      note: z.string().optional(),
+    })
+    .optional(),
+  /** @attention-economics. */
+  attentionEconomics: z.string().optional(),
+  /** @trust-building. */
+  trustBuilding: z.string().optional(),
+  /** @accessibility. */
+  accessibility: z.string().optional(),
+  /** @semantic-meaning. */
+  semanticMeaning: z.string().optional(),
+  /** @usage-patterns: the DO / NEVER lines, one per entry. */
+  usagePatterns: z.array(z.string()).optional(),
+});
+
 export const ComponentLineSchema = z.object({
   /** Line-shape discriminator, settled with veneer (their lines carry
    *  veneer.doc/1, veneer.index/1). Bump on breaking shape change. */
@@ -51,6 +80,9 @@ export const ComponentLineSchema = z.object({
   archetype: z.enum(ARCHETYPES),
   status: z.enum(['ported', 'pending']),
   provenance: ProvenanceSchema.optional(),
+
+  /** Old-tree JSDoc header, carried forward. */
+  metadata: ComponentMetadataSchema.optional(),
 
   /** One sentence: what it is. */
   is: z.string().min(1),
