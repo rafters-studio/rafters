@@ -8,6 +8,22 @@ import type {
 } from './contract';
 import type { EffectSpec } from './effects';
 
+/** Order-insensitive structural serialization: two PartDecls with the same
+ *  entries in a different key order are the SAME declaration, not a collision.
+ *  Plain `JSON.stringify` is key-order sensitive and would throw a false
+ *  "declared twice with different PartDecls" on identical decls. */
+function canonicalPartDecl(decl: unknown): string {
+  return JSON.stringify(decl, (_key, value) =>
+    value && typeof value === 'object' && !Array.isArray(value)
+      ? Object.fromEntries(
+          Object.entries(value as Record<string, unknown>).sort(([a], [b]) =>
+            a < b ? -1 : a > b ? 1 : 0,
+          ),
+        )
+      : value,
+  );
+}
+
 export interface Slice<Config, State, Actions extends ActionPayloads, Part extends string> {
   name: string;
   parts?: Partial<Record<Part, PartDecl>>;
@@ -125,7 +141,7 @@ export function compose(
   for (const slice of slices) {
     for (const [part, decl] of Object.entries(slice.parts ?? {})) {
       const existing = parts[part];
-      if (existing && JSON.stringify(existing) !== JSON.stringify(decl)) {
+      if (existing && canonicalPartDecl(existing) !== canonicalPartDecl(decl)) {
         throw new Error(`compose(${name}): part "${part}" declared twice with different PartDecls`);
       }
       parts[part] = decl as PartDecl;

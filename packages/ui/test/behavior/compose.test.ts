@@ -161,4 +161,19 @@ describe('compose merge rules', () => {
     };
     expect(() => compose('parts', alpha, rival)).toThrow(/part "panel"/);
   });
+
+  it('accepts an identical PartDecl declared in a different key order', () => {
+    const one: Slice<Config, AlphaState, AlphaActions, 'panel'> = {
+      name: 'one',
+      parts: { panel: { role: 'region', optional: true } },
+      initialState: () => ({ alpha: 0 }),
+    };
+    const two: Slice<Config, BetaState, BetaActions, 'panel'> = {
+      name: 'two',
+      parts: { panel: { optional: true, role: 'region' } },
+      initialState: () => ({ beta: false }),
+    };
+    // Same decl, keys in a different order -- a canonical compare, not a collision.
+    expect(() => compose('reorder', one, two)).not.toThrow();
+  });
 });

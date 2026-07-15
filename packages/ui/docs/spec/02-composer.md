@@ -22,9 +22,9 @@ export interface Slice<
   parts?: Partial<Record<Part, PartDecl>>;
   initialState: (config: Config) => State;
   actions?: { [K in keyof Actions]: (state: State, payload: Actions[K]) => State };
-  canDispatch?: (state: State, action: keyof Actions) => boolean;
+  canDispatch?: (state: State, action: keyof Actions, config: Config) => boolean;
   aria?: (state: State, config: Config, ids: PartIds<Part>) => Partial<Record<Part, AriaAttrs>>;
-  keymap?: (event: KeyInput, state: State, part: Part) => keyof Actions | null;
+  keymap?: (event: KeyInput, state: State, part: Part, config: Config) => keyof Actions | null;
   effects?: (state: State, config: Config) => EffectSpec[];
 }
 ```
