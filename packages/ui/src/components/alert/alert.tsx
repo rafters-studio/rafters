@@ -17,7 +17,6 @@
  * icon or the text itself carrying the meaning.
  */
 import * as React from 'react';
-import { useBehavior } from '../../hooks/use-behavior';
 import classy from '../../primitives/classy';
 import { alert, type AlertConfig, type AlertVariant } from './alert.behavior';
 import {
@@ -34,19 +33,19 @@ export interface AlertProps extends React.HTMLAttributes<HTMLDivElement> {
 export const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
   ({ variant, className, ...props }, ref) => {
     const config: AlertConfig = { variant };
-    const { ids, aria } = useBehavior(alert, config);
     const classes = alertClasses(config, {});
 
-    // No effects and no optional parts -- nothing ever calls getPart, so
-    // there is nothing for setPart's presence tracking to do (button's
-    // root follows the same plain-ref shape for the same reason).
+    // A static score: role="alert" is constant, no state, no ids, no effects.
+    // Config in, classes + aria out -- the card/container shape, no
+    // useBehavior. The aria projection ignores ids, so pass an empty one.
+    const { root: aria } = alert.aria({}, config, { root: '' });
+
     return (
       <div
         ref={ref}
         data-part="root"
-        id={ids.root}
         className={classy(classes.root, className)}
-        {...aria.root}
+        {...aria}
         {...props}
       />
     );

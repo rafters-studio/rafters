@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { createPortal } from 'react-dom';
 import { createBehavior, type AriaAttrs, type PartIds } from '../../lib/contract';
-import { keyInputOf } from '../../hooks/use-behavior';
+import { keyInputOf } from '../../hooks/key-input';
 import { useBehaviorEffects } from '../../hooks/use-behavior-effects';
 import { useMemory } from '../../hooks/use-memory';
 import { usePresence } from '../../hooks/use-presence';

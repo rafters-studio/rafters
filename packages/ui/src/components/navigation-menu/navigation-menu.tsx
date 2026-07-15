@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { createBehavior, type PartIds, type PayloadArgs } from '../../lib/contract';
-import { keyInputOf } from '../../hooks/use-behavior';
+import { keyInputOf } from '../../hooks/key-input';
 import { useBehaviorEffects } from '../../hooks/use-behavior-effects';
 import { useMemory } from '../../hooks/use-memory';
 import classy from '../../primitives/classy';
