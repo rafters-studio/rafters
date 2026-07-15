@@ -74,6 +74,17 @@ function toArray(value: string | string[] | undefined): string[] {
   return Array.isArray(value) ? value : [value];
 }
 
+/**
+ * Create a selection group: the shared engine for anything that picks from a set.
+ *
+ * One primitive, two modes. `multiple: false` (default) is exclusive selection --
+ * tabs, radio groups, select. `multiple: true` is additive -- multi-accordion,
+ * toggle groups. `collapsible: true` lets single mode deselect to empty (accordion
+ * that can fully close); without it, single mode always holds exactly one value.
+ *
+ * State lives in one Memory cell; `subscribe` fires immediately with the current
+ * value. Selection is by string value, never by index.
+ */
 export function createSelectionGroup(options: SelectionGroupOptions = {}): SelectionGroup {
   const { multiple = false, collapsible = false } = options;
   const memory = createMemory<SelectionGroupState>(() => ({ selected: toArray(options.initial) }));

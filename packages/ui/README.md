@@ -1,98 +1,105 @@
 # @rafters/ui
 
-Lightweight UI primitives and framework adapters used by the Rafters design system.
+One component, defined once, presented by every framework.
 
-This package contains a small, framework-agnostic primitives layer (SSR-safe) and thin React adapters that implement a shadcn-compatible API. It is intended for rapid development of accessible, testable UI components while keeping runtime code framework-agnostic.
+## The pattern: the score
 
-## Layout
+The pattern has a name, ratified 2026-07-02. The behavior file is a **score**:
+it describes, it never executes. State transitions, not state. ARIA
+projections, not DOM mutations. Keyboard mappings, not event listeners. Pure
+functions and data, concrete enough to be unambiguous, abstract enough to be
+interpreted.
 
-- `src/primitives/` — Pure TypeScript DOM primitives (no React). Each primitive is SSR-aware and returns cleanup functions where applicable.
-- `src/components/` — React adapters and component exports (drop-in shadcn/Radix API compatible).
-- `test/` — Vitest tests that mirror `src/` (preferred location for tests).
+Framework files are **performances** of the score. React plays it with hooks
+and JSX. A Web Component plays it with shadow DOM and attributes. Astro plays
+it once, at build time, then puts the instrument down. Same score, different
+instruments; the score does not care which orchestra showed up.
 
-Files of interest
-- `src/primitives/types.ts` — shared primitive types (`CleanupFunction`, etc.)
-- `src/primitives/focus-trap.ts` — focus trap and body scroll helpers
-- `src/primitives/outside-click.ts` — pointer/mouse outside detection
-- `src/primitives/portal.ts` — portal container helpers
-- `src/components/ui/dialog.tsx` — Dialog component built on primitives
+`classes.ts` is **decoration** -- the presentation layer, selecting literal
+token strings off the same config and state the score projects.
 
-## Quick Start (development)
+This is what "headless" was supposed to mean. The industry's headless
+libraries (React Aria, Radix, Headless UI) are bodies without skin: they
+execute inside one framework and call it headless because it ships no CSS.
+That is skinless. A score is headless -- it has no runtime of its own at all.
 
-Install workspace deps from repo root (pnpm workspace):
+## Rules
 
-```bash
-pnpm install
+1. The behavior file IS the component. Not a helper it imports -- the identity, the contract, the thing that gets audited.
+2. Framework files are implementations. They receive the behavior and put it on screen. No decisions, no identity of their own.
+3. Every component uses container queries by default. Sizes respond to the container, not the viewport.
+4. Classes are literal semantic-token strings. No arbitrary/bracket values.
+5. Config is props. State is intrinsic. Props (disabled, loading, variant, size) pass fresh into every projection -- never mirrored into memory.
+6. No useEffect for syncing props. If you need useEffect to make the behavior layer work with a framework, the behavior layer's API is wrong.
+7. Primitives are the behavior building blocks. The composer folds them. Framework files are pure wiring.
+8. No emoji. No `any`. `pnpm` only. `async`/`await` only. `pnpm preflight` before every commit.
+
+## The component shape
+
+A component is a score, its decoration, and one performance per framework
+target.
+
+```
+button.behavior.ts    # THE component (the score) — state, actions, aria, keymap, effects
+button.classes.ts     # decoration — literal token-class selection from config + state
+button.tsx            # React performance
+button.element.ts     # Web Component performance
+button.astro          # Astro performance
 ```
 
-Run unit tests for this package:
+The behavior file carries the component's identity: types, config, state
+shape, action reducers, ARIA projection, keyboard map, effect descriptions.
+It is framework-agnostic, pure, and testable without a DOM. It imports
+nothing framework-shaped and never imports `classes.ts`.
 
-```bash
-pnpm -C packages/ui run test:unit
-```
+Framework files render the declared parts and map DOM events to actions --
+nothing else. The repeated machinery (instance lifecycle, memory
+subscription, id supply, the part registry, the effects runner, the
+accepted-dispatch protocol) lives in ONE adapter per framework
+(`hooks/use-behavior.ts` for React), written once and inherited by every
+component. A framework file that touches `createBehavior`, memory, or an
+`EffectHost` directly is re-expressing the adapter. Any decision in a
+framework file is a bug.
 
-Run component tests (Playwright CT):
+## Config vs state
 
-```bash
-pnpm -C packages/ui run test:component
-```
+Config comes from props -- variant, size, disabled, loading, softDisabled, toggle. It is rebuilt every render and passed fresh to every projection function.
 
-Typecheck:
+State is intrinsic -- only things that change from user interaction (pressed in toggle mode). State lives in a memory cell. Memory is the primitive; the framework does not own state.
 
-```bash
-pnpm -C packages/ui run typecheck
-```
+`canDispatch` receives both state and config because suppression logic (disabled, loading) reads from config, not state.
 
-## Testing conventions
+## The composer
 
-- Unit tests live in `test/` and mirror the shape of `src/` (e.g. `test/primitives/*` ↔ `src/primitives/*`).
-- Keep tests deterministic and environment-safe (many primitives are SSR-aware).
-- Use `vitest` and `happy-dom` for DOM tests; component CT uses Playwright.
-
-## Primitive development notes
-
-- Primitives must be framework-agnostic: avoid importing React/Vue.
-- All primitives should guard against SSR (`typeof window === 'undefined'` or `typeof document === 'undefined'`) and return no-op cleanup on server.
-- Export small, strongly-typed APIs and centralize shared types in `src/primitives/types.ts`.
-- Write unit tests exercising DOM behavior and cleanup functions.
-
-## Tailwind & Tokens Requirement
-
-- This package's React adapters and example components require **Tailwind CSS v4** and the Rafters token system to be present.
-- Use Rafters design tokens for spacing, color, typography, etc., rather than arbitrary inline values.
-- Do **not** use Tailwind's arbitrary/bracket syntax (for example: `w-[10px]`, `bg-[#fff]`, `p-[var(--x)]`, or similar `-[...]` notations). Always prefer token keys or theme values (e.g. `p-4`, `text-primary`, `bg-surface`).
-- The build/test tooling and accessibility/intelligence features assume token-driven values; inline arbitrary values may break CI checks, token lookups, and accessibility calculations.
-
-If you need a new utility or token, add it to the Rafters token registry rather than using bracketed arbitrary Tailwind values.
-
-## Why no tailwind-merge?
-
-The `classy` utility intentionally does NOT resolve Tailwind utility conflicts. If you pass `p-4 p-8`, both classes stay in the output - making overrides explicit and debuggable in the DOM.
-
-The design system should be the source of truth. If you're frequently fighting it with utility conflicts, that's a signal to fix the design system, not paper over it with merge logic.
-
-## Exports
-
-The package exposes primitives and components via the `exports` field in `package.json`. Consumers can import directly from paths like:
+Primitives are a pile. The composer is a pure typed fold from slices to one behavior spec. Classes are not part of the fold -- decoration lives in `classes.ts`, keyed off the same config and state.
 
 ```ts
-import { createFocusTrap } from '@rafters/ui/primitives/focus-trap';
-import { Dialog } from '@rafters/ui/dialog';
+export const button: BehaviorSpec<...> = compose('button', pressable<ButtonConfig>());
 ```
 
-If you modify exported paths, update `package.json` accordingly.
+Collision rules: state key collision throws, duplicate action throws, two slices claiming the same key throws (resolve in the glue slice). Loud in dev, loud in prod, deterministic in tests.
 
-## Contributing
+## Dependency rule
 
-- Add new primitive under `src/primitives` with strict types and tests in `test/primitives`.
-- Add a small React adapter under `src/components` if a framework API is needed.
-- Run `pnpm -C packages/ui run test:unit` before opening a PR.
+```
+primitives  <-  behavior  <-  framework files
+```
 
-## Troubleshooting
+Behavior depends on primitives. Framework files depend on behavior. Nothing depends back. Memory is a primitive.
 
-- If `vitest` reports "No test suite found" for a file inside `src/`, ensure tests are actually present under `test/` and remove duplicate/placeholder test files from `src/`.
-- For Playwright CT failures in CI, ensure browsers are installed on the runner and that `pnpm -C packages/ui run test:component` is invoked after Playwright installation.
+## Testing
 
----
+- `behavior.test.ts` -- unit, once. Pure functions, no DOM, exhaustive.
+- Per-framework conformance -- one harness, N render adapters. The harness runs axe + contract-fulfillment + interaction against the behavior's declared parts/aria/keymap.
 
-If you want, I can also add a short `CONTRIBUTING.md` with the primitive checklist (SSR, tests, types) or wire this README into the package manifest. Which would you prefer next?
+Tests live in `test/`, mirroring `src/`.
+
+## Migration
+
+Rewriting, not refactoring. Old components in `src/old/`, old tests in `test/old/`. Exports kept green via `index.ts` re-exports. Old components are oracles -- reference implementations to diff against, not code to preserve.
+
+## Styling
+
+- Tailwind CSS v4 and the Rafters token system.
+- No arbitrary/bracket values. Use token keys.
+- `classy` does not resolve Tailwind conflicts.

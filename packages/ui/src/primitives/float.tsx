@@ -112,6 +112,18 @@ function useFloatContext() {
 
 // ==================== Float.Root ====================
 
+/**
+ * Anchor-positioning root: the container for anything that floats near a trigger.
+ *
+ * Float.Root holds open state (controlled via `open`/`onOpenChange`, or
+ * uncontrolled via `defaultOpen`) and the anchor ref. Float.Anchor marks the
+ * element to position against; Float.Content renders the floating panel with
+ * side/align/collision handling; Float.Arrow points at the anchor.
+ *
+ * This is the positioning substrate for popover, tooltip, hover-card, and the
+ * menu family. It positions; it does not dismiss, trap focus, or lock scroll --
+ * compose dismiss/focus primitives for that.
+ */
 function FloatRoot({
   children,
   open: controlledOpen,

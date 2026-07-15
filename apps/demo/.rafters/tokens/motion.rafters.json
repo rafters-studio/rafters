@@ -1,8 +1,6 @@
 {
-  "$schema": "https://rafters.studio/schemas/namespace-tokens.json",
   "namespace": "motion",
-  "version": "1.0.0",
-  "generatedAt": "2026-04-07T19:26:12.303Z",
+  "generatedAt": "2026-07-02T18:46:36.433Z",
   "tokens": [
     {
       "name": "motion-duration-base",
@@ -13,11 +11,6 @@
       "usageContext": [
         "calculation-reference"
       ],
-      "progressionSystem": "minor-third",
-      "description": "Base duration (150ms). Motion uses minor-third progression (ratio 1.2).",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
-      "containerQueryAware": false,
-      "reducedMotionAware": true,
       "usagePatterns": {
         "do": [
           "Reference as the calculation base"
@@ -25,7 +18,13 @@
         "never": [
           "Change without understanding full motion scale impact"
         ]
-      }
+      },
+      "userOverride": null,
+      "progressionSystem": "minor-third",
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
+      "description": "Base duration (150ms). Motion uses minor-third progression (ratio 1.2).",
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-duration-instant",
@@ -37,16 +36,6 @@
         "disabled-motion",
         "prefers-reduced-motion"
       ],
-      "scalePosition": 0,
-      "progressionSystem": "minor-third",
-      "motionIntent": "transition",
-      "motionDuration": 0,
-      "mathRelationship": "0",
-      "dependsOn": [],
-      "description": "Duration instant: 0ms. Instant - no animation",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
-      "containerQueryAware": false,
-      "reducedMotionAware": true,
       "usagePatterns": {
         "do": [
           "Use for prefers-reduced-motion",
@@ -56,7 +45,18 @@
           "Ignore prefers-reduced-motion",
           "Use slow animations for frequent actions"
         ]
-      }
+      },
+      "userOverride": null,
+      "dependsOn": [],
+      "progressionSystem": "minor-third",
+      "scalePosition": 0,
+      "mathRelationship": "0",
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
+      "motionIntent": "transition",
+      "motionDuration": 0,
+      "description": "Duration instant: 0ms. Instant - no animation",
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-duration-fast",
@@ -70,18 +70,6 @@
         "active",
         "micro-feedback"
       ],
-      "scalePosition": 1,
-      "progressionSystem": "minor-third",
-      "motionIntent": "transition",
-      "motionDuration": 125,
-      "mathRelationship": "150 × 1.2^-1",
-      "dependsOn": [
-        "motion-duration-base"
-      ],
-      "description": "Duration fast: 125ms. Fast - micro-interactions, hover states",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
-      "containerQueryAware": false,
-      "reducedMotionAware": true,
       "usagePatterns": {
         "do": [
           "Use for hover/focus states",
@@ -91,7 +79,20 @@
           "Ignore prefers-reduced-motion",
           "Use slow animations for frequent actions"
         ]
-      }
+      },
+      "userOverride": null,
+      "dependsOn": [
+        "motion-duration-base"
+      ],
+      "progressionSystem": "minor-third",
+      "scalePosition": 1,
+      "mathRelationship": "150 × 1.2^-1",
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
+      "motionIntent": "transition",
+      "motionDuration": 125,
+      "description": "Duration fast: 125ms. Fast - micro-interactions, hover states",
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-duration-normal",
@@ -104,18 +105,6 @@
         "toggles",
         "state-changes"
       ],
-      "scalePosition": 2,
-      "progressionSystem": "minor-third",
-      "motionIntent": "transition",
-      "motionDuration": 150,
-      "mathRelationship": "150ms (base)",
-      "dependsOn": [
-        "motion-duration-base"
-      ],
-      "description": "Duration normal: 150ms. Normal - standard UI transitions",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
-      "containerQueryAware": false,
-      "reducedMotionAware": true,
       "usagePatterns": {
         "do": [
           "Use for most UI transitions",
@@ -125,7 +114,20 @@
           "Ignore prefers-reduced-motion",
           "Use slow animations for frequent actions"
         ]
-      }
+      },
+      "userOverride": null,
+      "dependsOn": [
+        "motion-duration-base"
+      ],
+      "progressionSystem": "minor-third",
+      "scalePosition": 2,
+      "mathRelationship": "150ms (base)",
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
+      "motionIntent": "transition",
+      "motionDuration": 150,
+      "description": "Duration normal: 150ms. Normal - standard UI transitions",
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-duration-slow",
@@ -139,18 +141,6 @@
         "panels",
         "enter-exit"
       ],
-      "scalePosition": 3,
-      "progressionSystem": "minor-third",
-      "motionIntent": "enter",
-      "motionDuration": 180,
-      "mathRelationship": "150 × 1.2^1",
-      "dependsOn": [
-        "motion-duration-base"
-      ],
-      "description": "Duration slow: 180ms. Slow - enter/exit animations",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
-      "containerQueryAware": false,
-      "reducedMotionAware": true,
       "usagePatterns": {
         "do": [
           "Use for enter/exit animations",
@@ -160,7 +150,20 @@
           "Ignore prefers-reduced-motion",
           "Use slow animations for frequent actions"
         ]
-      }
+      },
+      "userOverride": null,
+      "dependsOn": [
+        "motion-duration-base"
+      ],
+      "progressionSystem": "minor-third",
+      "scalePosition": 3,
+      "mathRelationship": "150 × 1.2^1",
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
+      "motionIntent": "enter",
+      "motionDuration": 180,
+      "description": "Duration slow: 180ms. Slow - enter/exit animations",
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-duration-slower",
@@ -173,18 +176,6 @@
         "hero-animations",
         "emphasis"
       ],
-      "scalePosition": 4,
-      "progressionSystem": "minor-third",
-      "motionIntent": "emphasis",
-      "motionDuration": 216,
-      "mathRelationship": "150 × 1.2^2",
-      "dependsOn": [
-        "motion-duration-base"
-      ],
-      "description": "Duration slower: 216ms. Slower - emphasis, large element transitions",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
-      "containerQueryAware": false,
-      "reducedMotionAware": true,
       "usagePatterns": {
         "do": [
           "Use for enter/exit animations",
@@ -194,7 +185,20 @@
           "Ignore prefers-reduced-motion",
           "Use slow animations for frequent actions"
         ]
-      }
+      },
+      "userOverride": null,
+      "dependsOn": [
+        "motion-duration-base"
+      ],
+      "progressionSystem": "minor-third",
+      "scalePosition": 4,
+      "mathRelationship": "150 × 1.2^2",
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
+      "motionIntent": "emphasis",
+      "motionDuration": 216,
+      "description": "Duration slower: 216ms. Slower - emphasis, large element transitions",
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-easing-linear",
@@ -207,17 +211,6 @@
         "loading-spinners",
         "opacity-fades"
       ],
-      "easingCurve": [
-        0,
-        0,
-        1,
-        1
-      ],
-      "easingName": "linear",
-      "description": "Easing linear: linear. Linear - constant speed, mechanical feel",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
-      "containerQueryAware": false,
-      "reducedMotionAware": true,
       "usagePatterns": {
         "do": [
           "Use for opacity fades",
@@ -227,7 +220,19 @@
           "Use ease-in for entering (feels sluggish)",
           "Use ease-out for exiting (feels abrupt)"
         ]
-      }
+      },
+      "userOverride": null,
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
+      "easingCurve": [
+        0,
+        0,
+        1,
+        1
+      ],
+      "easingName": "linear",
+      "description": "Easing linear: linear. Linear - constant speed, mechanical feel",
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-easing-ease-in",
@@ -239,17 +244,6 @@
         "exit-animations",
         "elements-leaving"
       ],
-      "easingCurve": [
-        0.42,
-        0,
-        1,
-        1
-      ],
-      "easingName": "ease-in",
-      "description": "Easing ease-in: cubic-bezier(0.42, 0, 1, 1). Ease in - starts slow, accelerates (exiting)",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
-      "containerQueryAware": false,
-      "reducedMotionAware": true,
       "usagePatterns": {
         "do": [
           "Use for exiting elements",
@@ -259,7 +253,19 @@
           "Use ease-in for entering (feels sluggish)",
           "Use ease-out for exiting (feels abrupt)"
         ]
-      }
+      },
+      "userOverride": null,
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
+      "easingCurve": [
+        0.42,
+        0,
+        1,
+        1
+      ],
+      "easingName": "ease-in",
+      "description": "Easing ease-in: cubic-bezier(0.42, 0, 1, 1). Ease in - starts slow, accelerates (exiting)",
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-easing-ease-out",
@@ -271,17 +277,6 @@
         "enter-animations",
         "elements-appearing"
       ],
-      "easingCurve": [
-        0,
-        0,
-        0.58,
-        1
-      ],
-      "easingName": "ease-out",
-      "description": "Easing ease-out: cubic-bezier(0, 0, 0.58, 1). Ease out - starts fast, decelerates (entering)",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
-      "containerQueryAware": false,
-      "reducedMotionAware": true,
       "usagePatterns": {
         "do": [
           "Use for entering elements",
@@ -291,7 +286,19 @@
           "Use ease-in for entering (feels sluggish)",
           "Use ease-out for exiting (feels abrupt)"
         ]
-      }
+      },
+      "userOverride": null,
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
+      "easingCurve": [
+        0,
+        0,
+        0.58,
+        1
+      ],
+      "easingName": "ease-out",
+      "description": "Easing ease-out: cubic-bezier(0, 0, 0.58, 1). Ease out - starts fast, decelerates (entering)",
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-easing-ease-in-out",
@@ -304,17 +311,6 @@
         "transforms",
         "general-purpose"
       ],
-      "easingCurve": [
-        0.42,
-        0,
-        0.58,
-        1
-      ],
-      "easingName": "ease-in-out",
-      "description": "Easing ease-in-out: cubic-bezier(0.42, 0, 0.58, 1). Ease in-out - symmetric acceleration/deceleration",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
-      "containerQueryAware": false,
-      "reducedMotionAware": true,
       "usagePatterns": {
         "do": [
           "Use for general transitions",
@@ -324,7 +320,19 @@
           "Use ease-in for entering (feels sluggish)",
           "Use ease-out for exiting (feels abrupt)"
         ]
-      }
+      },
+      "userOverride": null,
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
+      "easingCurve": [
+        0.42,
+        0,
+        0.58,
+        1
+      ],
+      "easingName": "ease-in-out",
+      "description": "Easing ease-in-out: cubic-bezier(0.42, 0, 0.58, 1). Ease in-out - symmetric acceleration/deceleration",
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-easing-productive",
@@ -337,17 +345,6 @@
         "data-displays",
         "business-apps"
       ],
-      "easingCurve": [
-        0.2,
-        0,
-        0.38,
-        0.9
-      ],
-      "easingName": "productive",
-      "description": "Easing productive: cubic-bezier(0.2, 0, 0.38, 0.9). Productive - quick, efficient, minimal overshoot",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
-      "containerQueryAware": false,
-      "reducedMotionAware": true,
       "usagePatterns": {
         "do": [
           "Use for general transitions",
@@ -357,7 +354,19 @@
           "Use ease-in for entering (feels sluggish)",
           "Use ease-out for exiting (feels abrupt)"
         ]
-      }
+      },
+      "userOverride": null,
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
+      "easingCurve": [
+        0.2,
+        0,
+        0.38,
+        0.9
+      ],
+      "easingName": "productive",
+      "description": "Easing productive: cubic-bezier(0.2, 0, 0.38, 0.9). Productive - quick, efficient, minimal overshoot",
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-easing-expressive",
@@ -371,17 +380,6 @@
         "celebrations",
         "emphasis"
       ],
-      "easingCurve": [
-        0.4,
-        0.14,
-        0.3,
-        1
-      ],
-      "easingName": "expressive",
-      "description": "Easing expressive: cubic-bezier(0.4, 0.14, 0.3, 1). Expressive - dramatic, attention-grabbing",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
-      "containerQueryAware": false,
-      "reducedMotionAware": true,
       "usagePatterns": {
         "do": [
           "Use for general transitions",
@@ -391,7 +389,19 @@
           "Use ease-in for entering (feels sluggish)",
           "Use ease-out for exiting (feels abrupt)"
         ]
-      }
+      },
+      "userOverride": null,
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
+      "easingCurve": [
+        0.4,
+        0.14,
+        0.3,
+        1
+      ],
+      "easingName": "expressive",
+      "description": "Easing expressive: cubic-bezier(0.4, 0.14, 0.3, 1). Expressive - dramatic, attention-grabbing",
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-easing-spring",
@@ -405,17 +415,6 @@
         "playful-ui",
         "celebrations"
       ],
-      "easingCurve": [
-        0.175,
-        0.885,
-        0.32,
-        1.275
-      ],
-      "easingName": "spring",
-      "description": "Easing spring: cubic-bezier(0.175, 0.885, 0.32, 1.275). Spring - bouncy overshoot for playful feel",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
-      "containerQueryAware": false,
-      "reducedMotionAware": true,
       "usagePatterns": {
         "do": [
           "Use for general transitions",
@@ -425,7 +424,19 @@
           "Use ease-in for entering (feels sluggish)",
           "Use ease-out for exiting (feels abrupt)"
         ]
-      }
+      },
+      "userOverride": null,
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
+      "easingCurve": [
+        0.175,
+        0.885,
+        0.32,
+        1.275
+      ],
+      "easingName": "spring",
+      "description": "Easing spring: cubic-bezier(0.175, 0.885, 0.32, 1.275). Spring - bouncy overshoot for playful feel",
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-delay-none",
@@ -436,13 +447,14 @@
       "usageContext": [
         "immediate-response"
       ],
-      "delayMs": 0,
-      "mathRelationship": "0",
+      "userOverride": null,
       "dependsOn": [],
-      "description": "Delay none: 0ms. Based on duration progression.",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
+      "mathRelationship": "0",
       "containerQueryAware": false,
-      "reducedMotionAware": true
+      "reducedMotionAware": true,
+      "delayMs": 0,
+      "description": "Delay none: 0ms. Based on duration progression.",
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-delay-short",
@@ -454,15 +466,16 @@
         "staggered-lists",
         "sequential-elements"
       ],
-      "delayMs": 125,
-      "mathRelationship": "150 × 1.2^-1",
+      "userOverride": null,
       "dependsOn": [
         "motion-duration-base"
       ],
-      "description": "Delay short: 125ms. Based on duration progression.",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
+      "mathRelationship": "150 × 1.2^-1",
       "containerQueryAware": false,
-      "reducedMotionAware": true
+      "reducedMotionAware": true,
+      "delayMs": 125,
+      "description": "Delay short: 125ms. Based on duration progression.",
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-delay-medium",
@@ -474,15 +487,16 @@
         "modal-content",
         "after-transition"
       ],
-      "delayMs": 150,
-      "mathRelationship": "150ms (base)",
+      "userOverride": null,
       "dependsOn": [
         "motion-duration-base"
       ],
-      "description": "Delay medium: 150ms. Based on duration progression.",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
+      "mathRelationship": "150ms (base)",
       "containerQueryAware": false,
-      "reducedMotionAware": true
+      "reducedMotionAware": true,
+      "delayMs": 150,
+      "description": "Delay medium: 150ms. Based on duration progression.",
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-delay-long",
@@ -494,15 +508,16 @@
         "emphasis",
         "dramatic-reveals"
       ],
-      "delayMs": 180,
-      "mathRelationship": "150 × 1.2^1",
+      "userOverride": null,
       "dependsOn": [
         "motion-duration-base"
       ],
-      "description": "Delay long: 180ms. Based on duration progression.",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
+      "mathRelationship": "150 × 1.2^1",
       "containerQueryAware": false,
-      "reducedMotionAware": true
+      "reducedMotionAware": true,
+      "delayMs": 180,
+      "description": "Delay long: 180ms. Based on duration progression.",
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-keyframe-fade-in",
@@ -515,11 +530,12 @@
         "appear",
         "show"
       ],
+      "userOverride": null,
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
       "keyframeName": "fade-in",
       "description": "Keyframe fade-in: Fade from transparent to opaque",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
-      "containerQueryAware": false,
-      "reducedMotionAware": true
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-keyframe-fade-out",
@@ -532,11 +548,12 @@
         "disappear",
         "hide"
       ],
+      "userOverride": null,
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
       "keyframeName": "fade-out",
       "description": "Keyframe fade-out: Fade from opaque to transparent",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
-      "containerQueryAware": false,
-      "reducedMotionAware": true
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-keyframe-slide-in-from-top",
@@ -549,11 +566,12 @@
         "notification",
         "toast"
       ],
+      "userOverride": null,
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
       "keyframeName": "slide-in-from-top",
       "description": "Keyframe slide-in-from-top: Slide in from above",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
-      "containerQueryAware": false,
-      "reducedMotionAware": true
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-keyframe-slide-in-from-bottom",
@@ -566,11 +584,12 @@
         "drawer",
         "mobile-menu"
       ],
+      "userOverride": null,
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
       "keyframeName": "slide-in-from-bottom",
       "description": "Keyframe slide-in-from-bottom: Slide in from below",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
-      "containerQueryAware": false,
-      "reducedMotionAware": true
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-keyframe-slide-in-from-left",
@@ -583,11 +602,12 @@
         "panel",
         "drawer"
       ],
+      "userOverride": null,
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
       "keyframeName": "slide-in-from-left",
       "description": "Keyframe slide-in-from-left: Slide in from left",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
-      "containerQueryAware": false,
-      "reducedMotionAware": true
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-keyframe-slide-in-from-right",
@@ -600,11 +620,12 @@
         "panel",
         "drawer"
       ],
+      "userOverride": null,
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
       "keyframeName": "slide-in-from-right",
       "description": "Keyframe slide-in-from-right: Slide in from right",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
-      "containerQueryAware": false,
-      "reducedMotionAware": true
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-keyframe-slide-out-to-top",
@@ -616,11 +637,12 @@
         "dropdown-exit",
         "notification-dismiss"
       ],
+      "userOverride": null,
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
       "keyframeName": "slide-out-to-top",
       "description": "Keyframe slide-out-to-top: Slide out upward",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
-      "containerQueryAware": false,
-      "reducedMotionAware": true
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-keyframe-slide-out-to-bottom",
@@ -632,11 +654,12 @@
         "sheet-exit",
         "drawer-close"
       ],
+      "userOverride": null,
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
       "keyframeName": "slide-out-to-bottom",
       "description": "Keyframe slide-out-to-bottom: Slide out downward",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
-      "containerQueryAware": false,
-      "reducedMotionAware": true
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-keyframe-slide-out-to-left",
@@ -648,11 +671,12 @@
         "sidebar-close",
         "panel-exit"
       ],
+      "userOverride": null,
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
       "keyframeName": "slide-out-to-left",
       "description": "Keyframe slide-out-to-left: Slide out to left",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
-      "containerQueryAware": false,
-      "reducedMotionAware": true
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-keyframe-slide-out-to-right",
@@ -664,11 +688,12 @@
         "sidebar-close",
         "panel-exit"
       ],
+      "userOverride": null,
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
       "keyframeName": "slide-out-to-right",
       "description": "Keyframe slide-out-to-right: Slide out to right",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
-      "containerQueryAware": false,
-      "reducedMotionAware": true
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-keyframe-scale-in",
@@ -681,11 +706,12 @@
         "popover",
         "dialog"
       ],
+      "userOverride": null,
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
       "keyframeName": "scale-in",
       "description": "Keyframe scale-in: Scale up while fading in",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
-      "containerQueryAware": false,
-      "reducedMotionAware": true
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-keyframe-scale-out",
@@ -697,11 +723,12 @@
         "modal-exit",
         "popover-close"
       ],
+      "userOverride": null,
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
       "keyframeName": "scale-out",
       "description": "Keyframe scale-out: Scale down while fading out",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
-      "containerQueryAware": false,
-      "reducedMotionAware": true
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-keyframe-spin",
@@ -714,11 +741,12 @@
         "spinner",
         "refresh"
       ],
+      "userOverride": null,
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
       "keyframeName": "spin",
       "description": "Keyframe spin: Continuous rotation",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
-      "containerQueryAware": false,
-      "reducedMotionAware": true
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-keyframe-ping",
@@ -731,11 +759,12 @@
         "attention",
         "pulse"
       ],
+      "userOverride": null,
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
       "keyframeName": "ping",
       "description": "Keyframe ping: Expanding pulse that fades out",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
-      "containerQueryAware": false,
-      "reducedMotionAware": true
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-keyframe-pulse",
@@ -747,11 +776,12 @@
         "skeleton",
         "loading-placeholder"
       ],
+      "userOverride": null,
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
       "keyframeName": "pulse",
       "description": "Keyframe pulse: Gentle opacity pulse",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
-      "containerQueryAware": false,
-      "reducedMotionAware": true
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-keyframe-bounce",
@@ -763,11 +793,12 @@
         "attention",
         "scroll-indicator"
       ],
+      "userOverride": null,
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
       "keyframeName": "bounce",
       "description": "Keyframe bounce: Bouncing motion",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
-      "containerQueryAware": false,
-      "reducedMotionAware": true
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-keyframe-accordion-down",
@@ -780,11 +811,12 @@
         "collapsible",
         "expand"
       ],
+      "userOverride": null,
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
       "keyframeName": "accordion-down",
       "description": "Keyframe accordion-down: Expand accordion content",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
-      "containerQueryAware": false,
-      "reducedMotionAware": true
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-keyframe-accordion-up",
@@ -797,11 +829,12 @@
         "collapsible",
         "collapse"
       ],
+      "userOverride": null,
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
       "keyframeName": "accordion-up",
       "description": "Keyframe accordion-up: Collapse accordion content",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
-      "containerQueryAware": false,
-      "reducedMotionAware": true
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-keyframe-caret-blink",
@@ -813,11 +846,12 @@
         "input-caret",
         "text-cursor"
       ],
+      "userOverride": null,
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
       "keyframeName": "caret-blink",
       "description": "Keyframe caret-blink: Text cursor blinking",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
-      "containerQueryAware": false,
-      "reducedMotionAware": true
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-animation-fade-in",
@@ -829,20 +863,21 @@
         "enter",
         "appear"
       ],
-      "animationName": "fade-in",
-      "keyframeName": "fade-in",
-      "animationDuration": "125ms",
-      "animationEasing": "cubic-bezier(0, 0, 0.58, 1)",
-      "animationIterations": "1",
+      "userOverride": null,
       "dependsOn": [
         "motion-keyframe-fade-in",
         "motion-duration-fast",
         "motion-easing-ease-out"
       ],
-      "description": "Animation fade-in: Fade in animation",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false,
-      "reducedMotionAware": true
+      "reducedMotionAware": true,
+      "keyframeName": "fade-in",
+      "animationName": "fade-in",
+      "animationDuration": "125ms",
+      "animationEasing": "cubic-bezier(0, 0, 0.58, 1)",
+      "animationIterations": "1",
+      "description": "Animation fade-in: Fade in animation",
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-animation-fade-out",
@@ -854,20 +889,21 @@
         "exit",
         "disappear"
       ],
-      "animationName": "fade-out",
-      "keyframeName": "fade-out",
-      "animationDuration": "125ms",
-      "animationEasing": "cubic-bezier(0.42, 0, 1, 1)",
-      "animationIterations": "1",
+      "userOverride": null,
       "dependsOn": [
         "motion-keyframe-fade-out",
         "motion-duration-fast",
         "motion-easing-ease-in"
       ],
-      "description": "Animation fade-out: Fade out animation",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false,
-      "reducedMotionAware": true
+      "reducedMotionAware": true,
+      "keyframeName": "fade-out",
+      "animationName": "fade-out",
+      "animationDuration": "125ms",
+      "animationEasing": "cubic-bezier(0.42, 0, 1, 1)",
+      "animationIterations": "1",
+      "description": "Animation fade-out: Fade out animation",
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-animation-slide-in-from-top",
@@ -879,20 +915,21 @@
         "dropdown",
         "notification"
       ],
-      "animationName": "slide-in-from-top",
-      "keyframeName": "slide-in-from-top",
-      "animationDuration": "150ms",
-      "animationEasing": "cubic-bezier(0, 0, 0.58, 1)",
-      "animationIterations": "1",
+      "userOverride": null,
       "dependsOn": [
         "motion-keyframe-slide-in-from-top",
         "motion-duration-normal",
         "motion-easing-ease-out"
       ],
-      "description": "Animation slide-in-from-top: Slide in from top",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false,
-      "reducedMotionAware": true
+      "reducedMotionAware": true,
+      "keyframeName": "slide-in-from-top",
+      "animationName": "slide-in-from-top",
+      "animationDuration": "150ms",
+      "animationEasing": "cubic-bezier(0, 0, 0.58, 1)",
+      "animationIterations": "1",
+      "description": "Animation slide-in-from-top: Slide in from top",
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-animation-slide-in-from-bottom",
@@ -904,20 +941,21 @@
         "sheet",
         "drawer"
       ],
-      "animationName": "slide-in-from-bottom",
-      "keyframeName": "slide-in-from-bottom",
-      "animationDuration": "150ms",
-      "animationEasing": "cubic-bezier(0, 0, 0.58, 1)",
-      "animationIterations": "1",
+      "userOverride": null,
       "dependsOn": [
         "motion-keyframe-slide-in-from-bottom",
         "motion-duration-normal",
         "motion-easing-ease-out"
       ],
-      "description": "Animation slide-in-from-bottom: Slide in from bottom",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false,
-      "reducedMotionAware": true
+      "reducedMotionAware": true,
+      "keyframeName": "slide-in-from-bottom",
+      "animationName": "slide-in-from-bottom",
+      "animationDuration": "150ms",
+      "animationEasing": "cubic-bezier(0, 0, 0.58, 1)",
+      "animationIterations": "1",
+      "description": "Animation slide-in-from-bottom: Slide in from bottom",
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-animation-slide-in-from-left",
@@ -929,20 +967,21 @@
         "sidebar",
         "panel"
       ],
-      "animationName": "slide-in-from-left",
-      "keyframeName": "slide-in-from-left",
-      "animationDuration": "150ms",
-      "animationEasing": "cubic-bezier(0, 0, 0.58, 1)",
-      "animationIterations": "1",
+      "userOverride": null,
       "dependsOn": [
         "motion-keyframe-slide-in-from-left",
         "motion-duration-normal",
         "motion-easing-ease-out"
       ],
-      "description": "Animation slide-in-from-left: Slide in from left",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false,
-      "reducedMotionAware": true
+      "reducedMotionAware": true,
+      "keyframeName": "slide-in-from-left",
+      "animationName": "slide-in-from-left",
+      "animationDuration": "150ms",
+      "animationEasing": "cubic-bezier(0, 0, 0.58, 1)",
+      "animationIterations": "1",
+      "description": "Animation slide-in-from-left: Slide in from left",
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-animation-slide-in-from-right",
@@ -954,20 +993,21 @@
         "sidebar",
         "panel"
       ],
-      "animationName": "slide-in-from-right",
-      "keyframeName": "slide-in-from-right",
-      "animationDuration": "150ms",
-      "animationEasing": "cubic-bezier(0, 0, 0.58, 1)",
-      "animationIterations": "1",
+      "userOverride": null,
       "dependsOn": [
         "motion-keyframe-slide-in-from-right",
         "motion-duration-normal",
         "motion-easing-ease-out"
       ],
-      "description": "Animation slide-in-from-right: Slide in from right",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false,
-      "reducedMotionAware": true
+      "reducedMotionAware": true,
+      "keyframeName": "slide-in-from-right",
+      "animationName": "slide-in-from-right",
+      "animationDuration": "150ms",
+      "animationEasing": "cubic-bezier(0, 0, 0.58, 1)",
+      "animationIterations": "1",
+      "description": "Animation slide-in-from-right: Slide in from right",
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-animation-slide-out-to-top",
@@ -978,20 +1018,21 @@
       "usageContext": [
         "dropdown-exit"
       ],
-      "animationName": "slide-out-to-top",
-      "keyframeName": "slide-out-to-top",
-      "animationDuration": "125ms",
-      "animationEasing": "cubic-bezier(0.42, 0, 1, 1)",
-      "animationIterations": "1",
+      "userOverride": null,
       "dependsOn": [
         "motion-keyframe-slide-out-to-top",
         "motion-duration-fast",
         "motion-easing-ease-in"
       ],
-      "description": "Animation slide-out-to-top: Slide out to top",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false,
-      "reducedMotionAware": true
+      "reducedMotionAware": true,
+      "keyframeName": "slide-out-to-top",
+      "animationName": "slide-out-to-top",
+      "animationDuration": "125ms",
+      "animationEasing": "cubic-bezier(0.42, 0, 1, 1)",
+      "animationIterations": "1",
+      "description": "Animation slide-out-to-top: Slide out to top",
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-animation-slide-out-to-bottom",
@@ -1002,20 +1043,21 @@
       "usageContext": [
         "sheet-exit"
       ],
-      "animationName": "slide-out-to-bottom",
-      "keyframeName": "slide-out-to-bottom",
-      "animationDuration": "125ms",
-      "animationEasing": "cubic-bezier(0.42, 0, 1, 1)",
-      "animationIterations": "1",
+      "userOverride": null,
       "dependsOn": [
         "motion-keyframe-slide-out-to-bottom",
         "motion-duration-fast",
         "motion-easing-ease-in"
       ],
-      "description": "Animation slide-out-to-bottom: Slide out to bottom",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false,
-      "reducedMotionAware": true
+      "reducedMotionAware": true,
+      "keyframeName": "slide-out-to-bottom",
+      "animationName": "slide-out-to-bottom",
+      "animationDuration": "125ms",
+      "animationEasing": "cubic-bezier(0.42, 0, 1, 1)",
+      "animationIterations": "1",
+      "description": "Animation slide-out-to-bottom: Slide out to bottom",
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-animation-slide-out-to-left",
@@ -1026,20 +1068,21 @@
       "usageContext": [
         "sidebar-close"
       ],
-      "animationName": "slide-out-to-left",
-      "keyframeName": "slide-out-to-left",
-      "animationDuration": "125ms",
-      "animationEasing": "cubic-bezier(0.42, 0, 1, 1)",
-      "animationIterations": "1",
+      "userOverride": null,
       "dependsOn": [
         "motion-keyframe-slide-out-to-left",
         "motion-duration-fast",
         "motion-easing-ease-in"
       ],
-      "description": "Animation slide-out-to-left: Slide out to left",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false,
-      "reducedMotionAware": true
+      "reducedMotionAware": true,
+      "keyframeName": "slide-out-to-left",
+      "animationName": "slide-out-to-left",
+      "animationDuration": "125ms",
+      "animationEasing": "cubic-bezier(0.42, 0, 1, 1)",
+      "animationIterations": "1",
+      "description": "Animation slide-out-to-left: Slide out to left",
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-animation-slide-out-to-right",
@@ -1050,20 +1093,21 @@
       "usageContext": [
         "sidebar-close"
       ],
-      "animationName": "slide-out-to-right",
-      "keyframeName": "slide-out-to-right",
-      "animationDuration": "125ms",
-      "animationEasing": "cubic-bezier(0.42, 0, 1, 1)",
-      "animationIterations": "1",
+      "userOverride": null,
       "dependsOn": [
         "motion-keyframe-slide-out-to-right",
         "motion-duration-fast",
         "motion-easing-ease-in"
       ],
-      "description": "Animation slide-out-to-right: Slide out to right",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false,
-      "reducedMotionAware": true
+      "reducedMotionAware": true,
+      "keyframeName": "slide-out-to-right",
+      "animationName": "slide-out-to-right",
+      "animationDuration": "125ms",
+      "animationEasing": "cubic-bezier(0.42, 0, 1, 1)",
+      "animationIterations": "1",
+      "description": "Animation slide-out-to-right: Slide out to right",
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-animation-scale-in",
@@ -1075,20 +1119,21 @@
         "modal",
         "popover"
       ],
-      "animationName": "scale-in",
-      "keyframeName": "scale-in",
-      "animationDuration": "150ms",
-      "animationEasing": "cubic-bezier(0.175, 0.885, 0.32, 1.275)",
-      "animationIterations": "1",
+      "userOverride": null,
       "dependsOn": [
         "motion-keyframe-scale-in",
         "motion-duration-normal",
         "motion-easing-spring"
       ],
-      "description": "Animation scale-in: Scale in with spring",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false,
-      "reducedMotionAware": true
+      "reducedMotionAware": true,
+      "keyframeName": "scale-in",
+      "animationName": "scale-in",
+      "animationDuration": "150ms",
+      "animationEasing": "cubic-bezier(0.175, 0.885, 0.32, 1.275)",
+      "animationIterations": "1",
+      "description": "Animation scale-in: Scale in with spring",
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-animation-scale-out",
@@ -1099,20 +1144,21 @@
       "usageContext": [
         "modal-exit"
       ],
-      "animationName": "scale-out",
-      "keyframeName": "scale-out",
-      "animationDuration": "125ms",
-      "animationEasing": "cubic-bezier(0.42, 0, 1, 1)",
-      "animationIterations": "1",
+      "userOverride": null,
       "dependsOn": [
         "motion-keyframe-scale-out",
         "motion-duration-fast",
         "motion-easing-ease-in"
       ],
-      "description": "Animation scale-out: Scale out",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false,
-      "reducedMotionAware": true
+      "reducedMotionAware": true,
+      "keyframeName": "scale-out",
+      "animationName": "scale-out",
+      "animationDuration": "125ms",
+      "animationEasing": "cubic-bezier(0.42, 0, 1, 1)",
+      "animationIterations": "1",
+      "description": "Animation scale-out: Scale out",
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-animation-spin",
@@ -1124,19 +1170,20 @@
         "loading",
         "spinner"
       ],
-      "animationName": "spin",
-      "keyframeName": "spin",
-      "animationDuration": "1s",
-      "animationEasing": "linear",
-      "animationIterations": "infinite",
+      "userOverride": null,
       "dependsOn": [
         "motion-keyframe-spin",
         "motion-easing-linear"
       ],
-      "description": "Animation spin: Continuous spin",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false,
-      "reducedMotionAware": true
+      "reducedMotionAware": true,
+      "keyframeName": "spin",
+      "animationName": "spin",
+      "animationDuration": "1s",
+      "animationEasing": "linear",
+      "animationIterations": "infinite",
+      "description": "Animation spin: Continuous spin",
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-animation-ping",
@@ -1147,19 +1194,20 @@
       "usageContext": [
         "notification"
       ],
-      "animationName": "ping",
-      "keyframeName": "ping",
-      "animationDuration": "1s",
-      "animationEasing": "cubic-bezier(0, 0, 0.58, 1)",
-      "animationIterations": "infinite",
+      "userOverride": null,
       "dependsOn": [
         "motion-keyframe-ping",
         "motion-easing-ease-out"
       ],
-      "description": "Animation ping: Pinging pulse",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false,
-      "reducedMotionAware": true
+      "reducedMotionAware": true,
+      "keyframeName": "ping",
+      "animationName": "ping",
+      "animationDuration": "1s",
+      "animationEasing": "cubic-bezier(0, 0, 0.58, 1)",
+      "animationIterations": "infinite",
+      "description": "Animation ping: Pinging pulse",
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-animation-pulse",
@@ -1171,19 +1219,20 @@
         "skeleton",
         "loading"
       ],
-      "animationName": "pulse",
-      "keyframeName": "pulse",
-      "animationDuration": "2s",
-      "animationEasing": "cubic-bezier(0.42, 0, 0.58, 1)",
-      "animationIterations": "infinite",
+      "userOverride": null,
       "dependsOn": [
         "motion-keyframe-pulse",
         "motion-easing-ease-in-out"
       ],
-      "description": "Animation pulse: Gentle pulse",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false,
-      "reducedMotionAware": true
+      "reducedMotionAware": true,
+      "keyframeName": "pulse",
+      "animationName": "pulse",
+      "animationDuration": "2s",
+      "animationEasing": "cubic-bezier(0.42, 0, 0.58, 1)",
+      "animationIterations": "infinite",
+      "description": "Animation pulse: Gentle pulse",
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-animation-bounce",
@@ -1194,19 +1243,20 @@
       "usageContext": [
         "attention"
       ],
-      "animationName": "bounce",
-      "keyframeName": "bounce",
-      "animationDuration": "1s",
-      "animationEasing": "cubic-bezier(0.42, 0, 0.58, 1)",
-      "animationIterations": "infinite",
+      "userOverride": null,
       "dependsOn": [
         "motion-keyframe-bounce",
         "motion-easing-ease-in-out"
       ],
-      "description": "Animation bounce: Bouncing",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false,
-      "reducedMotionAware": true
+      "reducedMotionAware": true,
+      "keyframeName": "bounce",
+      "animationName": "bounce",
+      "animationDuration": "1s",
+      "animationEasing": "cubic-bezier(0.42, 0, 0.58, 1)",
+      "animationIterations": "infinite",
+      "description": "Animation bounce: Bouncing",
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-animation-accordion-down",
@@ -1218,20 +1268,21 @@
         "accordion",
         "collapsible"
       ],
-      "animationName": "accordion-down",
-      "keyframeName": "accordion-down",
-      "animationDuration": "150ms",
-      "animationEasing": "cubic-bezier(0, 0, 0.58, 1)",
-      "animationIterations": "1",
+      "userOverride": null,
       "dependsOn": [
         "motion-keyframe-accordion-down",
         "motion-duration-normal",
         "motion-easing-ease-out"
       ],
-      "description": "Animation accordion-down: Accordion expand",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false,
-      "reducedMotionAware": true
+      "reducedMotionAware": true,
+      "keyframeName": "accordion-down",
+      "animationName": "accordion-down",
+      "animationDuration": "150ms",
+      "animationEasing": "cubic-bezier(0, 0, 0.58, 1)",
+      "animationIterations": "1",
+      "description": "Animation accordion-down: Accordion expand",
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-animation-accordion-up",
@@ -1243,20 +1294,21 @@
         "accordion",
         "collapsible"
       ],
-      "animationName": "accordion-up",
-      "keyframeName": "accordion-up",
-      "animationDuration": "150ms",
-      "animationEasing": "cubic-bezier(0, 0, 0.58, 1)",
-      "animationIterations": "1",
+      "userOverride": null,
       "dependsOn": [
         "motion-keyframe-accordion-up",
         "motion-duration-normal",
         "motion-easing-ease-out"
       ],
-      "description": "Animation accordion-up: Accordion collapse",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false,
-      "reducedMotionAware": true
+      "reducedMotionAware": true,
+      "keyframeName": "accordion-up",
+      "animationName": "accordion-up",
+      "animationDuration": "150ms",
+      "animationEasing": "cubic-bezier(0, 0, 0.58, 1)",
+      "animationIterations": "1",
+      "description": "Animation accordion-up: Accordion collapse",
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-animation-caret-blink",
@@ -1267,19 +1319,20 @@
       "usageContext": [
         "input"
       ],
-      "animationName": "caret-blink",
-      "keyframeName": "caret-blink",
-      "animationDuration": "1.25s",
-      "animationEasing": "cubic-bezier(0, 0, 0.58, 1)",
-      "animationIterations": "infinite",
+      "userOverride": null,
       "dependsOn": [
         "motion-keyframe-caret-blink",
         "motion-easing-ease-out"
       ],
-      "description": "Animation caret-blink: Caret blinking",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
       "containerQueryAware": false,
-      "reducedMotionAware": true
+      "reducedMotionAware": true,
+      "keyframeName": "caret-blink",
+      "animationName": "caret-blink",
+      "animationDuration": "1.25s",
+      "animationEasing": "cubic-bezier(0, 0, 0.58, 1)",
+      "animationIterations": "infinite",
+      "description": "Animation caret-blink: Caret blinking",
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-fade-in",
@@ -1291,7 +1344,13 @@
         "fade-in",
         "appear"
       ],
-      "motionDuration": 125,
+      "userOverride": null,
+      "dependsOn": [
+        "motion-duration-fast",
+        "motion-easing-ease-out"
+      ],
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
       "easingCurve": [
         0,
         0,
@@ -1299,14 +1358,9 @@
         1
       ],
       "easingName": "ease-out",
-      "dependsOn": [
-        "motion-duration-fast",
-        "motion-easing-ease-out"
-      ],
+      "motionDuration": 125,
       "description": "Fade in animation preset. Combines fast duration with ease-out easing.",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
-      "containerQueryAware": false,
-      "reducedMotionAware": true
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-fade-out",
@@ -1318,7 +1372,13 @@
         "fade-out",
         "disappear"
       ],
-      "motionDuration": 125,
+      "userOverride": null,
+      "dependsOn": [
+        "motion-duration-fast",
+        "motion-easing-ease-in"
+      ],
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
       "easingCurve": [
         0.42,
         0,
@@ -1326,14 +1386,9 @@
         1
       ],
       "easingName": "ease-in",
-      "dependsOn": [
-        "motion-duration-fast",
-        "motion-easing-ease-in"
-      ],
+      "motionDuration": 125,
       "description": "Fade out animation preset. Combines fast duration with ease-in easing.",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
-      "containerQueryAware": false,
-      "reducedMotionAware": true
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-slide-in",
@@ -1346,7 +1401,13 @@
         "panel-enter",
         "modal-enter"
       ],
-      "motionDuration": 150,
+      "userOverride": null,
+      "dependsOn": [
+        "motion-duration-normal",
+        "motion-easing-ease-out"
+      ],
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
       "easingCurve": [
         0,
         0,
@@ -1354,14 +1415,9 @@
         1
       ],
       "easingName": "ease-out",
-      "dependsOn": [
-        "motion-duration-normal",
-        "motion-easing-ease-out"
-      ],
+      "motionDuration": 150,
       "description": "Slide in animation preset. Combines normal duration with ease-out easing.",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
-      "containerQueryAware": false,
-      "reducedMotionAware": true
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-slide-out",
@@ -1374,7 +1430,13 @@
         "panel-exit",
         "modal-exit"
       ],
-      "motionDuration": 125,
+      "userOverride": null,
+      "dependsOn": [
+        "motion-duration-fast",
+        "motion-easing-ease-in"
+      ],
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
       "easingCurve": [
         0.42,
         0,
@@ -1382,14 +1444,9 @@
         1
       ],
       "easingName": "ease-in",
-      "dependsOn": [
-        "motion-duration-fast",
-        "motion-easing-ease-in"
-      ],
+      "motionDuration": 125,
       "description": "Slide out animation preset. Combines fast duration with ease-in easing.",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
-      "containerQueryAware": false,
-      "reducedMotionAware": true
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-scale-in",
@@ -1402,7 +1459,13 @@
         "button-press",
         "emphasis"
       ],
-      "motionDuration": 150,
+      "userOverride": null,
+      "dependsOn": [
+        "motion-duration-normal",
+        "motion-easing-spring"
+      ],
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
       "easingCurve": [
         0.175,
         0.885,
@@ -1410,14 +1473,9 @@
         1.275
       ],
       "easingName": "spring",
-      "dependsOn": [
-        "motion-duration-normal",
-        "motion-easing-spring"
-      ],
+      "motionDuration": 150,
       "description": "Scale in with spring animation. Combines normal duration with spring easing.",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
-      "containerQueryAware": false,
-      "reducedMotionAware": true
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     },
     {
       "name": "motion-progression",
@@ -1425,9 +1483,10 @@
       "category": "motion",
       "namespace": "motion",
       "semanticMeaning": "Metadata about the motion progression system",
+      "userOverride": null,
+      "containerQueryAware": false,
       "description": "Motion uses minor-third progression from 150ms base.",
-      "generatedAt": "2026-04-07T19:26:12.280Z",
-      "containerQueryAware": false
+      "generatedAt": "2026-07-02T18:46:36.066Z"
     }
   ]
 }

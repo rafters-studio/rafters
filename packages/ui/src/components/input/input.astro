@@ -1,0 +1,91 @@
+---
+/**
+ * Astro performance (controller) for input.
+ *
+ * Server-renders the light-DOM <input> with classes and the score's initial
+ * validity projection already applied, so the field is correct before any JS.
+ * The <script> then hands each instance to bindInput -- the SAME DOM-native
+ * controller the Web Component uses. One score, three performances, zero drift.
+ *
+ * The projection is computed here from the same inputBehavior.aria the React
+ * and WC controllers read.
+ */
+import { inputBehavior, type InputConfig, type InputPart } from './input.behavior';
+import { inputClassSet } from './input.classes';
+import type { PartIds } from '../../lib/contract';
+
+interface Props {
+  id: string;
+  value?: string;
+  defaultValue?: string;
+  type?: string;
+  name?: string;
+  placeholder?: string;
+  disabled?: boolean;
+  readonly?: boolean;
+  required?: boolean;
+  invalid?: boolean;
+  /** Optional error message; rendered as the aria-describedby target. */
+  error?: string;
+}
+
+const {
+  id,
+  value,
+  defaultValue,
+  type = 'text',
+  name,
+  placeholder,
+  disabled = false,
+  readonly = false,
+  required = false,
+  invalid = false,
+  error,
+} = Astro.props;
+
+const config: InputConfig = { value, defaultValue, disabled, readonly, required, invalid };
+const state = inputBehavior.initialState(config);
+const classes = inputClassSet(config, state);
+
+const ids = {} as PartIds<InputPart>;
+for (const part of Object.keys(inputBehavior.parts) as InputPart[]) {
+  ids[part] = part === 'error' && error ? `${id}-error` : part === 'input' ? id : '';
+}
+const projection = inputBehavior.aria(state, config, ids);
+const seeded = config.value ?? config.defaultValue ?? '';
+---
+
+<input
+  data-part="input"
+  id={id}
+  type={type}
+  name={name}
+  placeholder={placeholder}
+  value={seeded}
+  disabled={disabled}
+  readonly={readonly}
+  class={classes.input}
+  {...projection.input}
+/>
+{
+  error && (
+    <div data-part="error" id={ids.error} class={classes.error}>
+      {error}
+    </div>
+  )
+}
+
+<script>
+  import { bindInput } from './input.behavior';
+
+  // The <script> is bundled and runs once per page; bind every instance's
+  // server-rendered markup. Same controller as the Web Component. The input's
+  // parent is the binding root so the delegated 'input' listener and the error
+  // sibling both fall under it.
+  for (const el of document.querySelectorAll<HTMLElement>('input[data-part="input"]')) {
+    const root = el.parentElement;
+    if (!root || root.dataset['inputBound'] === 'true') continue;
+    root.dataset['inputBound'] = 'true';
+    bindInput(root);
+  }
+</script>

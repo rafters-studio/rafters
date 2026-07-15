@@ -70,180 +70,180 @@ export const tokens = {
     'breakpoint-scale': {"viewport":{"sm":640,"md":768,"lg":1024,"xl":1280,"2xl":1536},"container":{"3xs":"16rem","2xs":"18rem","xs":"20rem","sm":"24rem","md":"28rem","lg":"32rem","xl":"36rem","2xl":"42rem","3xl":"48rem","4xl":"56rem","5xl":"64rem","6xl":"72rem","7xl":"80rem"},"note":"Container queries use --container-* theme variables with rem values. Use @xs:, @sm:, @md:, etc. variants."},
   },
   color: {
-    /** neutral shade at 50 level - light background range */
-    'neutral-50': 'oklch(0.985 0 0)',
-    /** neutral shade at 100 level - light background range */
-    'neutral-100': 'oklch(0.967 0 0)',
-    /** neutral shade at 200 level - light background range */
-    'neutral-200': 'oklch(0.92 0 0)',
-    /** neutral shade at 300 level - light background range */
-    'neutral-300': 'oklch(0.869 0 0)',
-    /** neutral shade at 400 level - mid-tone for borders and secondary text */
-    'neutral-400': 'oklch(0.707 0 0)',
-    /** neutral shade at 500 level - mid-tone for borders and secondary text */
-    'neutral-500': 'oklch(0.552 0 0)',
-    /** neutral shade at 600 level - mid-tone for borders and secondary text */
-    'neutral-600': 'oklch(0.442 0 0)',
-    /** neutral shade at 700 level - dark foreground range */
-    'neutral-700': 'oklch(0.37 0 0)',
-    /** neutral shade at 800 level - dark foreground range */
-    'neutral-800': 'oklch(0.269 0 0)',
-    /** neutral shade at 900 level - dark foreground range */
-    'neutral-900': 'oklch(0.2 0 0)',
-    /** neutral shade at 950 level - dark foreground range */
-    'neutral-950': 'oklch(0.141 0 0)',
-    /** Complete neutral color family with 11-position scale */
-    'neutral': 'oklch(0.552 0.000 0.0)',
+    /** zinc shade at 50 level - light background range */
+    'zinc-50': 'oklch(0.985 0 0)',
+    /** zinc shade at 100 level - light background range */
+    'zinc-100': 'oklch(0.967 0 0)',
+    /** zinc shade at 200 level - light background range */
+    'zinc-200': 'oklch(0.92 0 0)',
+    /** zinc shade at 300 level - light background range */
+    'zinc-300': 'oklch(0.869 0 0)',
+    /** zinc shade at 400 level - mid-tone for borders and secondary text */
+    'zinc-400': 'oklch(0.707 0 0)',
+    /** zinc shade at 500 level - mid-tone for borders and secondary text */
+    'zinc-500': 'oklch(0.552 0 0)',
+    /** zinc shade at 600 level - mid-tone for borders and secondary text */
+    'zinc-600': 'oklch(0.442 0 0)',
+    /** zinc shade at 700 level - dark foreground range */
+    'zinc-700': 'oklch(0.37 0 0)',
+    /** zinc shade at 800 level - dark foreground range */
+    'zinc-800': 'oklch(0.269 0 0)',
+    /** zinc shade at 900 level - dark foreground range */
+    'zinc-900': 'oklch(0.2 0 0)',
+    /** zinc shade at 950 level - dark foreground range */
+    'zinc-950': 'oklch(0.141 0 0)',
+    /** Complete zinc color family with 11-position scale */
+    'zinc': 'oklch(0.552 0.000 0.0)',
     /** silver-true-glacier shade at 50 level - light background range */
-    'silver-true-glacier-50': 'oklch(0.98 0.018 180)',
+    'silver-true-glacier-50': 'oklch(0.95 0.036 180)',
     /** silver-true-glacier shade at 100 level - light background range */
-    'silver-true-glacier-100': 'oklch(0.95 0.018 180)',
+    'silver-true-glacier-100': 'oklch(0.896 0.12 180)',
     /** silver-true-glacier shade at 200 level - light background range */
-    'silver-true-glacier-200': 'oklch(0.9 0.03 180)',
+    'silver-true-glacier-200': 'oklch(0.839 0.12 180)',
     /** silver-true-glacier shade at 300 level - light background range */
-    'silver-true-glacier-300': 'oklch(0.8 0.084 180)',
+    'silver-true-glacier-300': 'oklch(0.78 0.12 180)',
     /** silver-true-glacier shade at 400 level - mid-tone for borders and secondary text */
-    'silver-true-glacier-400': 'oklch(0.7 0.084 180)',
+    'silver-true-glacier-400': 'oklch(0.716 0.12 180)',
     /** silver-true-glacier shade at 500 level - mid-tone for borders and secondary text */
-    'silver-true-glacier-500': 'oklch(0.55 0.12 180)',
+    'silver-true-glacier-500': 'oklch(0.645 0.12 180)',
     /** silver-true-glacier shade at 600 level - mid-tone for borders and secondary text */
-    'silver-true-glacier-600': 'oklch(0.4 0.12 180)',
+    'silver-true-glacier-600': 'oklch(0.55 0.12 180)',
     /** silver-true-glacier shade at 700 level - dark foreground range */
-    'silver-true-glacier-700': 'oklch(0.25 0.108 180)',
+    'silver-true-glacier-700': 'oklch(0.425 0.12 180)',
     /** silver-true-glacier shade at 800 level - dark foreground range */
-    'silver-true-glacier-800': 'oklch(0.15 0.108 180)',
+    'silver-true-glacier-800': 'oklch(0.3 0.12 180)',
     /** silver-true-glacier shade at 900 level - dark foreground range */
-    'silver-true-glacier-900': 'oklch(0.08 0.096 180)',
+    'silver-true-glacier-900': 'oklch(0.175 0.12 180)',
     /** silver-true-glacier shade at 950 level - dark foreground range */
-    'silver-true-glacier-950': 'oklch(0.04 0.096 180)',
+    'silver-true-glacier-950': 'oklch(0.05 0.072 180)',
     /** Complete silver-true-glacier color family with 11-position scale */
-    'silver-true-glacier': 'oklch(0.550 0.120 180.0)',
+    'silver-true-glacier': 'oklch(0.645 0.120 180.0)',
     /** silver-bold-fire-truck shade at 50 level - light background range */
-    'silver-bold-fire-truck-50': 'oklch(0.98 0.03 0)',
+    'silver-bold-fire-truck-50': 'oklch(0.95 0.06 0)',
     /** silver-bold-fire-truck shade at 100 level - light background range */
-    'silver-bold-fire-truck-100': 'oklch(0.95 0.03 0)',
+    'silver-bold-fire-truck-100': 'oklch(0.896 0.2 0)',
     /** silver-bold-fire-truck shade at 200 level - light background range */
-    'silver-bold-fire-truck-200': 'oklch(0.9 0.05 0)',
+    'silver-bold-fire-truck-200': 'oklch(0.839 0.2 0)',
     /** silver-bold-fire-truck shade at 300 level - light background range */
-    'silver-bold-fire-truck-300': 'oklch(0.8 0.14 0)',
+    'silver-bold-fire-truck-300': 'oklch(0.78 0.2 0)',
     /** silver-bold-fire-truck shade at 400 level - mid-tone for borders and secondary text */
-    'silver-bold-fire-truck-400': 'oklch(0.7 0.14 0)',
+    'silver-bold-fire-truck-400': 'oklch(0.716 0.2 0)',
     /** silver-bold-fire-truck shade at 500 level - mid-tone for borders and secondary text */
-    'silver-bold-fire-truck-500': 'oklch(0.55 0.2 0)',
+    'silver-bold-fire-truck-500': 'oklch(0.645 0.2 0)',
     /** silver-bold-fire-truck shade at 600 level - mid-tone for borders and secondary text */
-    'silver-bold-fire-truck-600': 'oklch(0.4 0.2 0)',
+    'silver-bold-fire-truck-600': 'oklch(0.55 0.2 0)',
     /** silver-bold-fire-truck shade at 700 level - dark foreground range */
-    'silver-bold-fire-truck-700': 'oklch(0.25 0.18 0)',
+    'silver-bold-fire-truck-700': 'oklch(0.425 0.2 0)',
     /** silver-bold-fire-truck shade at 800 level - dark foreground range */
-    'silver-bold-fire-truck-800': 'oklch(0.15 0.18 0)',
+    'silver-bold-fire-truck-800': 'oklch(0.3 0.2 0)',
     /** silver-bold-fire-truck shade at 900 level - dark foreground range */
-    'silver-bold-fire-truck-900': 'oklch(0.08 0.16 0)',
+    'silver-bold-fire-truck-900': 'oklch(0.175 0.2 0)',
     /** silver-bold-fire-truck shade at 950 level - dark foreground range */
-    'silver-bold-fire-truck-950': 'oklch(0.04 0.16 0)',
+    'silver-bold-fire-truck-950': 'oklch(0.05 0.12 0)',
     /** Complete silver-bold-fire-truck color family with 11-position scale */
-    'silver-bold-fire-truck': 'oklch(0.550 0.200 0.0)',
+    'silver-bold-fire-truck': 'oklch(0.645 0.200 0.0)',
     /** silver-true-honey shade at 50 level - light background range */
-    'silver-true-honey-50': 'oklch(0.98 0.018 60)',
+    'silver-true-honey-50': 'oklch(0.95 0.036 60)',
     /** silver-true-honey shade at 100 level - light background range */
-    'silver-true-honey-100': 'oklch(0.95 0.018 60)',
+    'silver-true-honey-100': 'oklch(0.896 0.12 60)',
     /** silver-true-honey shade at 200 level - light background range */
-    'silver-true-honey-200': 'oklch(0.9 0.03 60)',
+    'silver-true-honey-200': 'oklch(0.839 0.12 60)',
     /** silver-true-honey shade at 300 level - light background range */
-    'silver-true-honey-300': 'oklch(0.8 0.084 60)',
+    'silver-true-honey-300': 'oklch(0.78 0.12 60)',
     /** silver-true-honey shade at 400 level - mid-tone for borders and secondary text */
-    'silver-true-honey-400': 'oklch(0.7 0.084 60)',
+    'silver-true-honey-400': 'oklch(0.716 0.12 60)',
     /** silver-true-honey shade at 500 level - mid-tone for borders and secondary text */
-    'silver-true-honey-500': 'oklch(0.55 0.12 60)',
+    'silver-true-honey-500': 'oklch(0.645 0.12 60)',
     /** silver-true-honey shade at 600 level - mid-tone for borders and secondary text */
-    'silver-true-honey-600': 'oklch(0.4 0.12 60)',
+    'silver-true-honey-600': 'oklch(0.55 0.12 60)',
     /** silver-true-honey shade at 700 level - dark foreground range */
-    'silver-true-honey-700': 'oklch(0.25 0.108 60)',
+    'silver-true-honey-700': 'oklch(0.425 0.12 60)',
     /** silver-true-honey shade at 800 level - dark foreground range */
-    'silver-true-honey-800': 'oklch(0.15 0.108 60)',
+    'silver-true-honey-800': 'oklch(0.3 0.12 60)',
     /** silver-true-honey shade at 900 level - dark foreground range */
-    'silver-true-honey-900': 'oklch(0.08 0.096 60)',
+    'silver-true-honey-900': 'oklch(0.175 0.12 60)',
     /** silver-true-honey shade at 950 level - dark foreground range */
-    'silver-true-honey-950': 'oklch(0.04 0.096 60)',
+    'silver-true-honey-950': 'oklch(0.05 0.072 60)',
     /** Complete silver-true-honey color family with 11-position scale */
-    'silver-true-honey': 'oklch(0.550 0.120 60.0)',
+    'silver-true-honey': 'oklch(0.645 0.120 60.0)',
     /** silver-true-citrine shade at 50 level - light background range */
-    'silver-true-citrine-50': 'oklch(0.98 0.018 90)',
+    'silver-true-citrine-50': 'oklch(0.95 0.036 90)',
     /** silver-true-citrine shade at 100 level - light background range */
-    'silver-true-citrine-100': 'oklch(0.95 0.018 90)',
+    'silver-true-citrine-100': 'oklch(0.896 0.12 90)',
     /** silver-true-citrine shade at 200 level - light background range */
-    'silver-true-citrine-200': 'oklch(0.9 0.03 90)',
+    'silver-true-citrine-200': 'oklch(0.839 0.12 90)',
     /** silver-true-citrine shade at 300 level - light background range */
-    'silver-true-citrine-300': 'oklch(0.8 0.084 90)',
+    'silver-true-citrine-300': 'oklch(0.78 0.12 90)',
     /** silver-true-citrine shade at 400 level - mid-tone for borders and secondary text */
-    'silver-true-citrine-400': 'oklch(0.7 0.084 90)',
+    'silver-true-citrine-400': 'oklch(0.716 0.12 90)',
     /** silver-true-citrine shade at 500 level - mid-tone for borders and secondary text */
-    'silver-true-citrine-500': 'oklch(0.55 0.12 90)',
+    'silver-true-citrine-500': 'oklch(0.645 0.12 90)',
     /** silver-true-citrine shade at 600 level - mid-tone for borders and secondary text */
-    'silver-true-citrine-600': 'oklch(0.4 0.12 90)',
+    'silver-true-citrine-600': 'oklch(0.55 0.12 90)',
     /** silver-true-citrine shade at 700 level - dark foreground range */
-    'silver-true-citrine-700': 'oklch(0.25 0.108 90)',
+    'silver-true-citrine-700': 'oklch(0.425 0.12 90)',
     /** silver-true-citrine shade at 800 level - dark foreground range */
-    'silver-true-citrine-800': 'oklch(0.15 0.108 90)',
+    'silver-true-citrine-800': 'oklch(0.3 0.12 90)',
     /** silver-true-citrine shade at 900 level - dark foreground range */
-    'silver-true-citrine-900': 'oklch(0.08 0.096 90)',
+    'silver-true-citrine-900': 'oklch(0.175 0.12 90)',
     /** silver-true-citrine shade at 950 level - dark foreground range */
-    'silver-true-citrine-950': 'oklch(0.04 0.096 90)',
+    'silver-true-citrine-950': 'oklch(0.05 0.072 90)',
     /** Complete silver-true-citrine color family with 11-position scale */
-    'silver-true-citrine': 'oklch(0.550 0.120 90.0)',
+    'silver-true-citrine': 'oklch(0.645 0.120 90.0)',
     /** silver-true-sky shade at 50 level - light background range */
-    'silver-true-sky-50': 'oklch(0.98 0.018 210)',
+    'silver-true-sky-50': 'oklch(0.95 0.036 210)',
     /** silver-true-sky shade at 100 level - light background range */
-    'silver-true-sky-100': 'oklch(0.95 0.018 210)',
+    'silver-true-sky-100': 'oklch(0.896 0.12 210)',
     /** silver-true-sky shade at 200 level - light background range */
-    'silver-true-sky-200': 'oklch(0.9 0.03 210)',
+    'silver-true-sky-200': 'oklch(0.839 0.12 210)',
     /** silver-true-sky shade at 300 level - light background range */
-    'silver-true-sky-300': 'oklch(0.8 0.084 210)',
+    'silver-true-sky-300': 'oklch(0.78 0.12 210)',
     /** silver-true-sky shade at 400 level - mid-tone for borders and secondary text */
-    'silver-true-sky-400': 'oklch(0.7 0.084 210)',
+    'silver-true-sky-400': 'oklch(0.716 0.12 210)',
     /** silver-true-sky shade at 500 level - mid-tone for borders and secondary text */
-    'silver-true-sky-500': 'oklch(0.55 0.12 210)',
+    'silver-true-sky-500': 'oklch(0.645 0.12 210)',
     /** silver-true-sky shade at 600 level - mid-tone for borders and secondary text */
-    'silver-true-sky-600': 'oklch(0.4 0.12 210)',
+    'silver-true-sky-600': 'oklch(0.55 0.12 210)',
     /** silver-true-sky shade at 700 level - dark foreground range */
-    'silver-true-sky-700': 'oklch(0.25 0.108 210)',
+    'silver-true-sky-700': 'oklch(0.425 0.12 210)',
     /** silver-true-sky shade at 800 level - dark foreground range */
-    'silver-true-sky-800': 'oklch(0.15 0.108 210)',
+    'silver-true-sky-800': 'oklch(0.3 0.12 210)',
     /** silver-true-sky shade at 900 level - dark foreground range */
-    'silver-true-sky-900': 'oklch(0.08 0.096 210)',
+    'silver-true-sky-900': 'oklch(0.175 0.12 210)',
     /** silver-true-sky shade at 950 level - dark foreground range */
-    'silver-true-sky-950': 'oklch(0.04 0.096 210)',
+    'silver-true-sky-950': 'oklch(0.05 0.072 210)',
     /** Complete silver-true-sky color family with 11-position scale */
-    'silver-true-sky': 'oklch(0.550 0.120 210.0)',
+    'silver-true-sky': 'oklch(0.645 0.120 210.0)',
     /** silver-true-violet shade at 50 level - light background range */
-    'silver-true-violet-50': 'oklch(0.98 0.018 270)',
+    'silver-true-violet-50': 'oklch(0.95 0.036 270)',
     /** silver-true-violet shade at 100 level - light background range */
-    'silver-true-violet-100': 'oklch(0.95 0.018 270)',
+    'silver-true-violet-100': 'oklch(0.896 0.12 270)',
     /** silver-true-violet shade at 200 level - light background range */
-    'silver-true-violet-200': 'oklch(0.9 0.03 270)',
+    'silver-true-violet-200': 'oklch(0.839 0.12 270)',
     /** silver-true-violet shade at 300 level - light background range */
-    'silver-true-violet-300': 'oklch(0.8 0.084 270)',
+    'silver-true-violet-300': 'oklch(0.78 0.12 270)',
     /** silver-true-violet shade at 400 level - mid-tone for borders and secondary text */
-    'silver-true-violet-400': 'oklch(0.7 0.084 270)',
+    'silver-true-violet-400': 'oklch(0.716 0.12 270)',
     /** silver-true-violet shade at 500 level - mid-tone for borders and secondary text */
-    'silver-true-violet-500': 'oklch(0.55 0.12 270)',
+    'silver-true-violet-500': 'oklch(0.645 0.12 270)',
     /** silver-true-violet shade at 600 level - mid-tone for borders and secondary text */
-    'silver-true-violet-600': 'oklch(0.4 0.12 270)',
+    'silver-true-violet-600': 'oklch(0.55 0.12 270)',
     /** silver-true-violet shade at 700 level - dark foreground range */
-    'silver-true-violet-700': 'oklch(0.25 0.108 270)',
+    'silver-true-violet-700': 'oklch(0.425 0.12 270)',
     /** silver-true-violet shade at 800 level - dark foreground range */
-    'silver-true-violet-800': 'oklch(0.15 0.108 270)',
+    'silver-true-violet-800': 'oklch(0.3 0.12 270)',
     /** silver-true-violet shade at 900 level - dark foreground range */
-    'silver-true-violet-900': 'oklch(0.08 0.096 270)',
+    'silver-true-violet-900': 'oklch(0.175 0.12 270)',
     /** silver-true-violet shade at 950 level - dark foreground range */
-    'silver-true-violet-950': 'oklch(0.04 0.096 270)',
+    'silver-true-violet-950': 'oklch(0.05 0.072 270)',
     /** Complete silver-true-violet color family with 11-position scale */
-    'silver-true-violet': 'oklch(0.550 0.120 270.0)',
+    'silver-true-violet': 'oklch(0.645 0.120 270.0)',
   },
   depth: {
     /** Base layer - document flow elements */
     'depth-base': '0',
     /** Dropdown menus and select options */
-    'depth-dropdown': '10',
+    'depth-dropdown': '50',
     /** Sticky elements - headers, toolbars */
     'depth-sticky': '20',
     /** Navigation panels - sidebars, slide-out nav */
@@ -257,59 +257,13 @@ export const tokens = {
     /** Tooltips - highest common layer */
     'depth-tooltip': '60',
     /** Overlay backdrops - screen-dimming layers behind modals */
-    'depth-overlay': '70',
+    'depth-overlay': '35',
     /** Below base layer - backgrounds, decorative elements */
     'depth-below': '-1',
     /** Maximum layer - emergency overlay (e.g., dev tools) */
     'depth-max': '9999',
     /** Depth scale reference */
-    'depth-scale': {"gap":10,"note":"Each level has 10-unit gaps for intermediate values","levels":{"base":0,"dropdown":10,"sticky":20,"navigation":25,"fixed":30,"modal":40,"popover":50,"tooltip":60,"overlay":70}},
-  },
-  elevation: {
-    /** Surface level - flat, in-flow elements */
-    'elevation-surface': {"depth":"var(--depth-base)","shadow":"var(--shadow-none)"},
-    /** Z-index component of surface elevation */
-    'elevation-surface-z': 'var(--depth-base)',
-    /** Shadow component of surface elevation */
-    'elevation-surface-shadow': 'var(--shadow-none)',
-    /** Slightly raised - subtle depth without z-index change */
-    'elevation-raised': {"depth":"var(--depth-base)","shadow":"var(--shadow-sm)"},
-    /** Z-index component of raised elevation */
-    'elevation-raised-z': 'var(--depth-base)',
-    /** Shadow component of raised elevation */
-    'elevation-raised-shadow': 'var(--shadow-sm)',
-    /** Overlay level - dropdowns and menus */
-    'elevation-overlay': {"depth":"var(--depth-dropdown)","shadow":"var(--shadow)"},
-    /** Z-index component of overlay elevation */
-    'elevation-overlay-z': 'var(--depth-dropdown)',
-    /** Shadow component of overlay elevation */
-    'elevation-overlay-shadow': 'var(--shadow)',
-    /** Sticky level - persistent navigation */
-    'elevation-sticky': {"depth":"var(--depth-sticky)","shadow":"var(--shadow-md)"},
-    /** Z-index component of sticky elevation */
-    'elevation-sticky-z': 'var(--depth-sticky)',
-    /** Shadow component of sticky elevation */
-    'elevation-sticky-shadow': 'var(--shadow-md)',
-    /** Modal level - blocking dialogs */
-    'elevation-modal': {"depth":"var(--depth-modal)","shadow":"var(--shadow-lg)"},
-    /** Z-index component of modal elevation */
-    'elevation-modal-z': 'var(--depth-modal)',
-    /** Shadow component of modal elevation */
-    'elevation-modal-shadow': 'var(--shadow-lg)',
-    /** Popover level - above modals */
-    'elevation-popover': {"depth":"var(--depth-popover)","shadow":"var(--shadow-xl)"},
-    /** Z-index component of popover elevation */
-    'elevation-popover-z': 'var(--depth-popover)',
-    /** Shadow component of popover elevation */
-    'elevation-popover-shadow': 'var(--shadow-xl)',
-    /** Tooltip level - highest common UI */
-    'elevation-tooltip': {"depth":"var(--depth-tooltip)","shadow":"var(--shadow-lg)"},
-    /** Z-index component of tooltip elevation */
-    'elevation-tooltip-z': 'var(--depth-tooltip)',
-    /** Shadow component of tooltip elevation */
-    'elevation-tooltip-shadow': 'var(--shadow-lg)',
-    /** Elevation scale reference */
-    'elevation-scale': {"levels":{"surface":{"depth":"depth-base","shadow":"shadow-none"},"raised":{"depth":"depth-base","shadow":"shadow-sm"},"overlay":{"depth":"depth-dropdown","shadow":"shadow"},"sticky":{"depth":"depth-sticky","shadow":"shadow-md"},"modal":{"depth":"depth-modal","shadow":"shadow-lg"},"popover":{"depth":"depth-popover","shadow":"shadow-xl"},"tooltip":{"depth":"depth-tooltip","shadow":"shadow-lg"}},"note":"Each elevation level pairs z-index with appropriate shadow"},
+    'depth-scale': {"gap":10,"note":"Each level has 10-unit gaps for intermediate values","levels":{"base":0,"dropdown":50,"sticky":20,"navigation":25,"fixed":30,"modal":40,"popover":50,"tooltip":60,"overlay":35}},
   },
   focus: {
     /** Default focus ring width - WCAG 2.2 requires minimum 2px */
@@ -472,446 +426,797 @@ export const tokens = {
   radius: {
     /** Base border radius - all other radii derive from this value */
     'radius-base': '0.375rem',
+    /** Base top-left radius - override to affect all scales for this corner */
+    'radius-tl': 'var(--rafters-radius-base)',
+    /** Base top-right radius - override to affect all scales for this corner */
+    'radius-tr': 'var(--rafters-radius-base)',
+    /** Base bottom-left radius - override to affect all scales for this corner */
+    'radius-bl': 'var(--rafters-radius-base)',
+    /** Base bottom-right radius - override to affect all scales for this corner */
+    'radius-br': 'var(--rafters-radius-base)',
     /** No border radius - sharp corners */
     'radius-none': '0',
     /** Small radius for subtle rounding */
-    'radius-sm': '0.31rem',
+    'radius-sm': 'calc(var(--rafters-radius-base) * 0.833)',
+    /** top-left radius at sm scale */
+    'radius-sm-tl': 'calc(var(--rafters-radius-tl) * 0.833)',
+    /** top-right radius at sm scale */
+    'radius-sm-tr': 'calc(var(--rafters-radius-tr) * 0.833)',
+    /** bottom-left radius at sm scale */
+    'radius-sm-bl': 'calc(var(--rafters-radius-bl) * 0.833)',
+    /** bottom-right radius at sm scale */
+    'radius-sm-br': 'calc(var(--rafters-radius-br) * 0.833)',
     /** Default radius - primary UI elements */
-    'radius': '0.38rem',
+    'radius': 'var(--rafters-radius-base)',
     /** Medium radius for containers */
-    'radius-md': '0.45rem',
+    'radius-md': 'calc(var(--rafters-radius-base) * 1.2)',
+    /** top-left radius at md scale */
+    'radius-md-tl': 'calc(var(--rafters-radius-tl) * 1.2)',
+    /** top-right radius at md scale */
+    'radius-md-tr': 'calc(var(--rafters-radius-tr) * 1.2)',
+    /** bottom-left radius at md scale */
+    'radius-md-bl': 'calc(var(--rafters-radius-bl) * 1.2)',
+    /** bottom-right radius at md scale */
+    'radius-md-br': 'calc(var(--rafters-radius-br) * 1.2)',
     /** Large radius for prominent containers */
-    'radius-lg': '0.54rem',
+    'radius-lg': 'calc(var(--rafters-radius-base) * 1.44)',
+    /** top-left radius at lg scale */
+    'radius-lg-tl': 'calc(var(--rafters-radius-tl) * 1.44)',
+    /** top-right radius at lg scale */
+    'radius-lg-tr': 'calc(var(--rafters-radius-tr) * 1.44)',
+    /** bottom-left radius at lg scale */
+    'radius-lg-bl': 'calc(var(--rafters-radius-bl) * 1.44)',
+    /** bottom-right radius at lg scale */
+    'radius-lg-br': 'calc(var(--rafters-radius-br) * 1.44)',
     /** Extra large radius for emphasized elements */
-    'radius-xl': '0.65rem',
+    'radius-xl': 'calc(var(--rafters-radius-base) * 1.728)',
+    /** top-left radius at xl scale */
+    'radius-xl-tl': 'calc(var(--rafters-radius-tl) * 1.728)',
+    /** top-right radius at xl scale */
+    'radius-xl-tr': 'calc(var(--rafters-radius-tr) * 1.728)',
+    /** bottom-left radius at xl scale */
+    'radius-xl-bl': 'calc(var(--rafters-radius-bl) * 1.728)',
+    /** bottom-right radius at xl scale */
+    'radius-xl-br': 'calc(var(--rafters-radius-br) * 1.728)',
     /** Maximum meaningful radius */
-    'radius-2xl': '0.78rem',
+    'radius-2xl': 'calc(var(--rafters-radius-base) * 2.074)',
+    /** top-left radius at 2xl scale */
+    'radius-2xl-tl': 'calc(var(--rafters-radius-tl) * 2.074)',
+    /** top-right radius at 2xl scale */
+    'radius-2xl-tr': 'calc(var(--rafters-radius-tr) * 2.074)',
+    /** bottom-left radius at 2xl scale */
+    'radius-2xl-bl': 'calc(var(--rafters-radius-bl) * 2.074)',
+    /** bottom-right radius at 2xl scale */
+    'radius-2xl-br': 'calc(var(--rafters-radius-br) * 2.074)',
     /** Very large radius for special cases */
-    'radius-3xl': '0.93rem',
+    'radius-3xl': 'calc(var(--rafters-radius-base) * 2.488)',
+    /** top-left radius at 3xl scale */
+    'radius-3xl-tl': 'calc(var(--rafters-radius-tl) * 2.488)',
+    /** top-right radius at 3xl scale */
+    'radius-3xl-tr': 'calc(var(--rafters-radius-tr) * 2.488)',
+    /** bottom-left radius at 3xl scale */
+    'radius-3xl-bl': 'calc(var(--rafters-radius-bl) * 2.488)',
+    /** bottom-right radius at 3xl scale */
+    'radius-3xl-br': 'calc(var(--rafters-radius-br) * 2.488)',
     /** Fully rounded - circles and pills */
     'radius-full': '9999px',
   },
   semantic: {
+    /** Neutral base family for surfaces, text, and borders */
+    'neutral': 'var(--color-zinc-500)',
+    'neutral--dark': 'var(--color-zinc-400)',
     /** Primary page background color */
-    'background': 'var(--color-neutral-50)',
+    'background': 'var(--color-zinc-50)',
+    'background--dark': 'var(--color-zinc-950)',
     /** Primary text color */
-    'foreground': 'var(--color-neutral-950)',
+    'foreground': 'var(--color-zinc-950)',
+    'foreground--dark': 'var(--color-zinc-50)',
     /** Card and contained surface background */
-    'card': 'var(--color-neutral-50)',
+    'card': 'var(--color-zinc-50)',
+    'card--dark': 'var(--color-zinc-700)',
     /** Text on card surfaces */
-    'card-foreground': 'var(--color-neutral-950)',
+    'card-foreground': 'var(--color-zinc-600)',
+    'card-foreground--dark': 'var(--color-zinc-50)',
     /** Card hover state background */
-    'card-hover': 'var(--color-neutral-100)',
+    'card-hover': 'var(--color-zinc-100)',
+    'card-hover--dark': 'var(--color-zinc-600)',
     /** Card border color */
-    'card-border': 'var(--color-neutral-200)',
+    'card-border': 'var(--color-zinc-200)',
+    'card-border--dark': 'var(--color-zinc-400)',
+    /** Persistent elevated chrome -- headers, docks, fixed toolbars */
+    'panel': 'var(--color-zinc-200)',
+    'panel--dark': 'var(--color-zinc-800)',
+    /** Text and icons on panel surfaces */
+    'panel-foreground': 'var(--color-zinc-700)',
+    'panel-foreground--dark': 'var(--color-zinc-50)',
+    /** Panel surface hover state */
+    'panel-hover': 'var(--color-zinc-300)',
+    'panel-hover--dark': 'var(--color-zinc-700)',
+    /** Borders separating panel from surrounding surfaces */
+    'panel-border': 'var(--color-zinc-400)',
+    'panel-border--dark': 'var(--color-zinc-600)',
     /** Popover and dropdown background */
-    'popover': 'var(--color-neutral-50)',
+    'popover': 'var(--color-zinc-50)',
+    'popover--dark': 'var(--color-zinc-700)',
     /** Text in popovers */
-    'popover-foreground': 'var(--color-neutral-950)',
+    'popover-foreground': 'var(--color-zinc-600)',
+    'popover-foreground--dark': 'var(--color-zinc-50)',
     /** Popover border color */
-    'popover-border': 'var(--color-neutral-200)',
-    /** Elevated surface background */
-    'surface': 'var(--color-neutral-50)',
+    'popover-border': 'var(--color-zinc-200)',
+    'popover-border--dark': 'var(--color-zinc-400)',
+    /** Base chrome surface -- toolbars, app shell, UI frame */
+    'surface': 'var(--color-zinc-100)',
+    'surface--dark': 'var(--color-zinc-900)',
     /** Text on surface backgrounds */
-    'surface-foreground': 'var(--color-neutral-950)',
+    'surface-foreground': 'var(--color-zinc-700)',
+    'surface-foreground--dark': 'var(--color-zinc-50)',
     /** Surface hover state */
-    'surface-hover': 'var(--color-neutral-100)',
+    'surface-hover': 'var(--color-zinc-200)',
+    'surface-hover--dark': 'var(--color-zinc-800)',
     /** Surface active/pressed state */
-    'surface-active': 'var(--color-neutral-200)',
+    'surface-active': 'var(--color-zinc-300)',
+    'surface-active--dark': 'var(--color-zinc-700)',
     /** Surface border color */
-    'surface-border': 'var(--color-neutral-200)',
+    'surface-border': 'var(--color-zinc-300)',
+    'surface-border--dark': 'var(--color-zinc-700)',
     /** Primary interactive elements - buttons, links, focus states */
-    'primary': 'var(--color-neutral-900)',
+    'primary': 'var(--color-zinc-900)',
+    'primary--dark': 'var(--color-zinc-50)',
     /** Text on primary color backgrounds */
-    'primary-foreground': 'var(--color-neutral-50)',
+    'primary-foreground': 'var(--color-zinc-50)',
+    'primary-foreground--dark': 'var(--color-zinc-600)',
     /** Primary hover state */
-    'primary-hover': 'var(--color-neutral-800)',
+    'primary-hover': 'var(--color-zinc-950)',
+    'primary-hover--dark': 'var(--color-zinc-50)',
     /** Text on primary hover */
-    'primary-hover-foreground': 'var(--color-neutral-50)',
+    'primary-hover-foreground': 'var(--color-zinc-50)',
+    'primary-hover-foreground--dark': 'var(--color-zinc-600)',
     /** Primary active/pressed state */
-    'primary-active': 'var(--color-neutral-700)',
+    'primary-active': 'var(--color-zinc-950)',
+    'primary-active--dark': 'var(--color-zinc-50)',
     /** Text on primary active */
-    'primary-active-foreground': 'var(--color-neutral-50)',
+    'primary-active-foreground': 'var(--color-zinc-50)',
+    'primary-active-foreground--dark': 'var(--color-zinc-600)',
     /** Primary focus state */
-    'primary-focus': 'var(--color-neutral-900)',
+    'primary-focus': 'var(--color-zinc-950)',
+    'primary-focus--dark': 'var(--color-zinc-50)',
     /** Primary border color */
-    'primary-border': 'var(--color-neutral-900)',
+    'primary-border': 'var(--color-zinc-950)',
+    'primary-border--dark': 'var(--color-zinc-50)',
     /** Primary focus ring color */
-    'primary-ring': 'var(--color-neutral-900)',
+    'primary-ring': 'var(--color-zinc-900)',
+    'primary-ring--dark': 'var(--color-zinc-50)',
     /** Subtle primary background for badges/alerts */
-    'primary-subtle': 'var(--color-neutral-100)',
+    'primary-subtle': 'var(--color-zinc-700)',
+    'primary-subtle--dark': 'var(--color-zinc-200)',
     /** Text on subtle primary backgrounds */
-    'primary-subtle-foreground': 'var(--color-neutral-900)',
+    'primary-subtle-foreground': 'var(--color-zinc-50)',
+    'primary-subtle-foreground--dark': 'var(--color-zinc-700)',
     /** Secondary interactive elements - less prominent actions */
-    'secondary': 'var(--color-neutral-100)',
+    'secondary': 'var(--color-zinc-100)',
+    'secondary--dark': 'var(--color-zinc-800)',
     /** Text on secondary color backgrounds */
-    'secondary-foreground': 'var(--color-neutral-900)',
+    'secondary-foreground': 'var(--color-zinc-700)',
+    'secondary-foreground--dark': 'var(--color-zinc-50)',
     /** Secondary hover state */
-    'secondary-hover': 'var(--color-neutral-200)',
+    'secondary-hover': 'var(--color-zinc-200)',
+    'secondary-hover--dark': 'var(--color-zinc-700)',
     /** Text on secondary hover */
-    'secondary-hover-foreground': 'var(--color-neutral-900)',
+    'secondary-hover-foreground': 'var(--color-zinc-700)',
+    'secondary-hover-foreground--dark': 'var(--color-zinc-50)',
     /** Secondary active/pressed state */
-    'secondary-active': 'var(--color-neutral-300)',
+    'secondary-active': 'var(--color-zinc-300)',
+    'secondary-active--dark': 'var(--color-zinc-600)',
     /** Text on secondary active */
-    'secondary-active-foreground': 'var(--color-neutral-900)',
+    'secondary-active-foreground': 'var(--color-zinc-700)',
+    'secondary-active-foreground--dark': 'var(--color-zinc-50)',
     /** Secondary focus state */
-    'secondary-focus': 'var(--color-neutral-100)',
+    'secondary-focus': 'var(--color-zinc-200)',
+    'secondary-focus--dark': 'var(--color-zinc-700)',
     /** Secondary border color */
-    'secondary-border': 'var(--color-neutral-300)',
+    'secondary-border': 'var(--color-zinc-300)',
+    'secondary-border--dark': 'var(--color-zinc-600)',
     /** Secondary focus ring color */
-    'secondary-ring': 'var(--color-neutral-400)',
+    'secondary-ring': 'var(--color-zinc-100)',
+    'secondary-ring--dark': 'var(--color-zinc-800)',
+    /** Subtle secondary background for badges/alerts */
+    'secondary-subtle': 'var(--color-zinc-50)',
+    'secondary-subtle--dark': 'var(--color-zinc-950)',
+    /** Text on subtle secondary backgrounds */
+    'secondary-subtle-foreground': 'var(--color-zinc-600)',
+    'secondary-subtle-foreground--dark': 'var(--color-zinc-50)',
     /** Muted backgrounds for subtle emphasis */
-    'muted': 'var(--color-neutral-100)',
+    'muted': 'var(--color-zinc-100)',
+    'muted--dark': 'var(--color-zinc-800)',
     /** Muted text for secondary information */
-    'muted-foreground': 'var(--color-neutral-500)',
+    'muted-foreground': 'var(--color-zinc-700)',
+    'muted-foreground--dark': 'var(--color-zinc-50)',
     /** Muted hover state */
-    'muted-hover': 'var(--color-neutral-200)',
+    'muted-hover': 'var(--color-zinc-200)',
+    'muted-hover--dark': 'var(--color-zinc-700)',
     /** Text on muted hover */
-    'muted-hover-foreground': 'var(--color-neutral-600)',
+    'muted-hover-foreground': 'var(--color-zinc-700)',
+    'muted-hover-foreground--dark': 'var(--color-zinc-50)',
     /** Muted active state */
-    'muted-active': 'var(--color-neutral-300)',
+    'muted-active': 'var(--color-zinc-300)',
+    'muted-active--dark': 'var(--color-zinc-600)',
     /** Muted border color */
-    'muted-border': 'var(--color-neutral-200)',
+    'muted-border': 'var(--color-zinc-300)',
+    'muted-border--dark': 'var(--color-zinc-600)',
     /** Accent for hover states and highlights */
-    'accent': 'var(--color-neutral-100)',
+    'accent': 'var(--color-zinc-100)',
+    'accent--dark': 'var(--color-zinc-800)',
     /** Text on accent backgrounds */
-    'accent-foreground': 'var(--color-neutral-900)',
+    'accent-foreground': 'var(--color-zinc-700)',
+    'accent-foreground--dark': 'var(--color-zinc-50)',
     /** Accent hover state */
-    'accent-hover': 'var(--color-neutral-200)',
+    'accent-hover': 'var(--color-zinc-200)',
+    'accent-hover--dark': 'var(--color-zinc-700)',
     /** Text on accent hover */
-    'accent-hover-foreground': 'var(--color-neutral-900)',
+    'accent-hover-foreground': 'var(--color-zinc-700)',
+    'accent-hover-foreground--dark': 'var(--color-zinc-50)',
     /** Accent active state */
-    'accent-active': 'var(--color-neutral-300)',
+    'accent-active': 'var(--color-zinc-300)',
+    'accent-active--dark': 'var(--color-zinc-600)',
     /** Text on accent active */
-    'accent-active-foreground': 'var(--color-neutral-900)',
+    'accent-active-foreground': 'var(--color-zinc-700)',
+    'accent-active-foreground--dark': 'var(--color-zinc-50)',
     /** Accent border color */
-    'accent-border': 'var(--color-neutral-300)',
+    'accent-border': 'var(--color-zinc-300)',
+    'accent-border--dark': 'var(--color-zinc-600)',
     /** Accent focus ring color */
-    'accent-ring': 'var(--color-neutral-400)',
+    'accent-ring': 'var(--color-zinc-100)',
+    'accent-ring--dark': 'var(--color-zinc-800)',
+    /** Subtle accent background for badges/alerts */
+    'accent-subtle': 'var(--color-zinc-50)',
+    'accent-subtle--dark': 'var(--color-zinc-950)',
+    /** Text on subtle accent backgrounds */
+    'accent-subtle-foreground': 'var(--color-zinc-600)',
+    'accent-subtle-foreground--dark': 'var(--color-zinc-50)',
     /** Destructive actions - delete, remove, critical warnings */
     'destructive': 'var(--color-silver-bold-fire-truck-600)',
+    'destructive--dark': 'var(--color-silver-bold-fire-truck-500)',
     /** Text on destructive backgrounds */
-    'destructive-foreground': 'var(--color-neutral-50)',
+    'destructive-foreground': 'var(--color-silver-bold-fire-truck-50)',
+    'destructive-foreground--dark': 'var(--color-silver-bold-fire-truck-950)',
     /** Destructive hover state */
-    'destructive-hover': 'var(--color-silver-bold-fire-truck-700)',
+    'destructive-hover': 'var(--color-silver-bold-fire-truck-800)',
+    'destructive-hover--dark': 'var(--color-silver-bold-fire-truck-300)',
     /** Text on destructive hover */
-    'destructive-hover-foreground': 'var(--color-neutral-50)',
+    'destructive-hover-foreground': 'var(--color-silver-bold-fire-truck-50)',
+    'destructive-hover-foreground--dark': 'var(--color-silver-bold-fire-truck-900)',
     /** Destructive active/pressed state */
-    'destructive-active': 'var(--color-silver-bold-fire-truck-800)',
+    'destructive-active': 'var(--color-silver-bold-fire-truck-900)',
+    'destructive-active--dark': 'var(--color-silver-bold-fire-truck-200)',
     /** Text on destructive active */
-    'destructive-active-foreground': 'var(--color-neutral-50)',
+    'destructive-active-foreground': 'var(--color-silver-bold-fire-truck-50)',
+    'destructive-active-foreground--dark': 'var(--color-silver-bold-fire-truck-800)',
     /** Destructive focus state */
-    'destructive-focus': 'var(--color-silver-bold-fire-truck-600)',
+    'destructive-focus': 'var(--color-silver-bold-fire-truck-800)',
+    'destructive-focus--dark': 'var(--color-silver-bold-fire-truck-300)',
     /** Destructive border color */
-    'destructive-border': 'var(--color-silver-bold-fire-truck-600)',
+    'destructive-border': 'var(--color-silver-bold-fire-truck-900)',
+    'destructive-border--dark': 'var(--color-silver-bold-fire-truck-200)',
     /** Destructive focus ring color */
-    'destructive-ring': 'var(--color-silver-bold-fire-truck-600)',
+    'destructive-ring': 'var(--color-silver-bold-fire-truck-700)',
+    'destructive-ring--dark': 'var(--color-silver-bold-fire-truck-400)',
     /** Subtle destructive background for error alerts */
-    'destructive-subtle': 'var(--color-silver-bold-fire-truck-50)',
+    'destructive-subtle': 'var(--color-silver-bold-fire-truck-300)',
+    'destructive-subtle--dark': 'var(--color-silver-bold-fire-truck-800)',
     /** Text on subtle destructive backgrounds */
-    'destructive-subtle-foreground': 'var(--color-silver-bold-fire-truck-700)',
+    'destructive-subtle-foreground': 'var(--color-silver-bold-fire-truck-900)',
+    'destructive-subtle-foreground--dark': 'var(--color-silver-bold-fire-truck-50)',
     /** Success states - confirmations, completions, positive feedback */
     'success': 'var(--color-silver-true-citrine-600)',
+    'success--dark': 'var(--color-silver-true-citrine-500)',
     /** Text on success backgrounds */
-    'success-foreground': 'var(--color-neutral-50)',
+    'success-foreground': 'var(--color-silver-true-citrine-50)',
+    'success-foreground--dark': 'var(--color-silver-true-citrine-900)',
     /** Success hover state */
-    'success-hover': 'var(--color-silver-true-citrine-700)',
+    'success-hover': 'var(--color-silver-true-citrine-800)',
+    'success-hover--dark': 'var(--color-silver-true-citrine-300)',
     /** Text on success hover */
-    'success-hover-foreground': 'var(--color-neutral-50)',
+    'success-hover-foreground': 'var(--color-silver-true-citrine-50)',
+    'success-hover-foreground--dark': 'var(--color-silver-true-citrine-900)',
     /** Success active/pressed state */
-    'success-active': 'var(--color-silver-true-citrine-800)',
+    'success-active': 'var(--color-silver-true-citrine-900)',
+    'success-active--dark': 'var(--color-silver-true-citrine-200)',
     /** Text on success active */
-    'success-active-foreground': 'var(--color-neutral-50)',
+    'success-active-foreground': 'var(--color-silver-true-citrine-50)',
+    'success-active-foreground--dark': 'var(--color-silver-true-citrine-800)',
     /** Success focus state */
-    'success-focus': 'var(--color-silver-true-citrine-600)',
+    'success-focus': 'var(--color-silver-true-citrine-800)',
+    'success-focus--dark': 'var(--color-silver-true-citrine-300)',
     /** Success border color */
-    'success-border': 'var(--color-silver-true-citrine-600)',
+    'success-border': 'var(--color-silver-true-citrine-900)',
+    'success-border--dark': 'var(--color-silver-true-citrine-200)',
     /** Success focus ring color */
-    'success-ring': 'var(--color-silver-true-citrine-600)',
+    'success-ring': 'var(--color-silver-true-citrine-700)',
+    'success-ring--dark': 'var(--color-silver-true-citrine-400)',
     /** Subtle success background for success alerts */
-    'success-subtle': 'var(--color-silver-true-citrine-50)',
+    'success-subtle': 'var(--color-silver-true-citrine-300)',
+    'success-subtle--dark': 'var(--color-silver-true-citrine-800)',
     /** Text on subtle success backgrounds */
-    'success-subtle-foreground': 'var(--color-silver-true-citrine-700)',
+    'success-subtle-foreground': 'var(--color-silver-true-citrine-900)',
+    'success-subtle-foreground--dark': 'var(--color-silver-true-citrine-50)',
     /** Warning states - caution, potential issues, important notices */
     'warning': 'var(--color-silver-true-honey-500)',
+    'warning--dark': 'var(--color-silver-true-honey-500)',
     /** Text on warning backgrounds */
-    'warning-foreground': 'var(--color-neutral-950)',
+    'warning-foreground': 'var(--color-silver-true-honey-900)',
+    'warning-foreground--dark': 'var(--color-silver-true-honey-900)',
     /** Warning hover state */
-    'warning-hover': 'var(--color-silver-true-honey-600)',
+    'warning-hover': 'var(--color-silver-true-honey-700)',
+    'warning-hover--dark': 'var(--color-silver-true-honey-300)',
     /** Text on warning hover */
-    'warning-hover-foreground': 'var(--color-neutral-950)',
+    'warning-hover-foreground': 'var(--color-silver-true-honey-50)',
+    'warning-hover-foreground--dark': 'var(--color-silver-true-honey-900)',
     /** Warning active/pressed state */
-    'warning-active': 'var(--color-silver-true-honey-700)',
+    'warning-active': 'var(--color-silver-true-honey-800)',
+    'warning-active--dark': 'var(--color-silver-true-honey-200)',
     /** Text on warning active */
-    'warning-active-foreground': 'var(--color-neutral-50)',
+    'warning-active-foreground': 'var(--color-silver-true-honey-50)',
+    'warning-active-foreground--dark': 'var(--color-silver-true-honey-800)',
     /** Warning focus state */
-    'warning-focus': 'var(--color-silver-true-honey-500)',
+    'warning-focus': 'var(--color-silver-true-honey-700)',
+    'warning-focus--dark': 'var(--color-silver-true-honey-300)',
     /** Warning border color */
-    'warning-border': 'var(--color-silver-true-honey-500)',
+    'warning-border': 'var(--color-silver-true-honey-800)',
+    'warning-border--dark': 'var(--color-silver-true-honey-200)',
     /** Warning focus ring color */
-    'warning-ring': 'var(--color-silver-true-honey-600)',
+    'warning-ring': 'var(--color-silver-true-honey-400)',
+    'warning-ring--dark': 'var(--color-silver-true-honey-400)',
     /** Subtle warning background for warning alerts */
-    'warning-subtle': 'var(--color-silver-true-honey-50)',
+    'warning-subtle': 'var(--color-silver-true-honey-200)',
+    'warning-subtle--dark': 'var(--color-silver-true-honey-800)',
     /** Text on subtle warning backgrounds */
     'warning-subtle-foreground': 'var(--color-silver-true-honey-800)',
+    'warning-subtle-foreground--dark': 'var(--color-silver-true-honey-50)',
     /** Informational states - tips, help, neutral information */
     'info': 'var(--color-silver-true-sky-600)',
+    'info--dark': 'var(--color-silver-true-sky-500)',
     /** Text on info backgrounds */
-    'info-foreground': 'var(--color-neutral-50)',
+    'info-foreground': 'var(--color-silver-true-sky-50)',
+    'info-foreground--dark': 'var(--color-silver-true-sky-900)',
     /** Info hover state */
-    'info-hover': 'var(--color-silver-true-sky-700)',
+    'info-hover': 'var(--color-silver-true-sky-800)',
+    'info-hover--dark': 'var(--color-silver-true-sky-300)',
     /** Text on info hover */
-    'info-hover-foreground': 'var(--color-neutral-50)',
+    'info-hover-foreground': 'var(--color-silver-true-sky-50)',
+    'info-hover-foreground--dark': 'var(--color-silver-true-sky-900)',
     /** Info active/pressed state */
-    'info-active': 'var(--color-silver-true-sky-800)',
+    'info-active': 'var(--color-silver-true-sky-900)',
+    'info-active--dark': 'var(--color-silver-true-sky-200)',
     /** Text on info active */
-    'info-active-foreground': 'var(--color-neutral-50)',
+    'info-active-foreground': 'var(--color-silver-true-sky-50)',
+    'info-active-foreground--dark': 'var(--color-silver-true-sky-800)',
     /** Info focus state */
-    'info-focus': 'var(--color-silver-true-sky-600)',
+    'info-focus': 'var(--color-silver-true-sky-800)',
+    'info-focus--dark': 'var(--color-silver-true-sky-300)',
     /** Info border color */
-    'info-border': 'var(--color-silver-true-sky-600)',
+    'info-border': 'var(--color-silver-true-sky-900)',
+    'info-border--dark': 'var(--color-silver-true-sky-200)',
     /** Info focus ring color */
-    'info-ring': 'var(--color-silver-true-sky-600)',
+    'info-ring': 'var(--color-silver-true-sky-400)',
+    'info-ring--dark': 'var(--color-silver-true-sky-400)',
     /** Subtle info background for info alerts */
-    'info-subtle': 'var(--color-silver-true-sky-50)',
+    'info-subtle': 'var(--color-silver-true-sky-200)',
+    'info-subtle--dark': 'var(--color-silver-true-sky-900)',
     /** Text on subtle info backgrounds */
-    'info-subtle-foreground': 'var(--color-silver-true-sky-700)',
+    'info-subtle-foreground': 'var(--color-silver-true-sky-800)',
+    'info-subtle-foreground--dark': 'var(--color-silver-true-sky-50)',
     /** Critical alert states */
     'alert': 'var(--color-silver-bold-fire-truck-600)',
+    'alert--dark': 'var(--color-silver-bold-fire-truck-500)',
     /** Text on alert backgrounds */
-    'alert-foreground': 'var(--color-neutral-50)',
+    'alert-foreground': 'var(--color-silver-bold-fire-truck-50)',
+    'alert-foreground--dark': 'var(--color-silver-bold-fire-truck-950)',
     /** Alert hover state */
-    'alert-hover': 'var(--color-silver-bold-fire-truck-700)',
+    'alert-hover': 'var(--color-silver-bold-fire-truck-800)',
+    'alert-hover--dark': 'var(--color-silver-bold-fire-truck-300)',
     /** Text on alert hover */
-    'alert-hover-foreground': 'var(--color-neutral-50)',
+    'alert-hover-foreground': 'var(--color-silver-bold-fire-truck-50)',
+    'alert-hover-foreground--dark': 'var(--color-silver-bold-fire-truck-900)',
     /** Alert active state */
-    'alert-active': 'var(--color-silver-bold-fire-truck-800)',
+    'alert-active': 'var(--color-silver-bold-fire-truck-900)',
+    'alert-active--dark': 'var(--color-silver-bold-fire-truck-200)',
     /** Text on alert active */
-    'alert-active-foreground': 'var(--color-neutral-50)',
+    'alert-active-foreground': 'var(--color-silver-bold-fire-truck-50)',
+    'alert-active-foreground--dark': 'var(--color-silver-bold-fire-truck-800)',
     /** Alert border color */
-    'alert-border': 'var(--color-silver-bold-fire-truck-600)',
+    'alert-border': 'var(--color-silver-bold-fire-truck-900)',
+    'alert-border--dark': 'var(--color-silver-bold-fire-truck-200)',
     /** Alert focus ring color */
-    'alert-ring': 'var(--color-silver-bold-fire-truck-600)',
+    'alert-ring': 'var(--color-silver-bold-fire-truck-700)',
+    'alert-ring--dark': 'var(--color-silver-bold-fire-truck-400)',
     /** Subtle alert background */
-    'alert-subtle': 'var(--color-silver-bold-fire-truck-50)',
+    'alert-subtle': 'var(--color-silver-bold-fire-truck-300)',
+    'alert-subtle--dark': 'var(--color-silver-bold-fire-truck-800)',
     /** Text on subtle alert backgrounds */
-    'alert-subtle-foreground': 'var(--color-silver-bold-fire-truck-700)',
+    'alert-subtle-foreground': 'var(--color-silver-bold-fire-truck-900)',
+    'alert-subtle-foreground--dark': 'var(--color-silver-bold-fire-truck-50)',
     /** Highlight for search results, selected text, emphasis */
     'highlight': 'var(--color-silver-true-violet-200)',
+    'highlight--dark': 'var(--color-silver-true-violet-800)',
     /** Text on highlight backgrounds */
-    'highlight-foreground': 'var(--color-silver-true-violet-900)',
+    'highlight-foreground': 'var(--color-silver-true-violet-800)',
+    'highlight-foreground--dark': 'var(--color-silver-true-violet-50)',
     /** Highlight hover state */
     'highlight-hover': 'var(--color-silver-true-violet-300)',
+    'highlight-hover--dark': 'var(--color-silver-true-violet-700)',
     /** Text on highlight hover */
     'highlight-hover-foreground': 'var(--color-silver-true-violet-900)',
+    'highlight-hover-foreground--dark': 'var(--color-silver-true-violet-50)',
     /** Highlight active state */
     'highlight-active': 'var(--color-silver-true-violet-400)',
+    'highlight-active--dark': 'var(--color-silver-true-violet-400)',
     /** Text on highlight active */
-    'highlight-active-foreground': 'var(--color-silver-true-violet-950)',
+    'highlight-active-foreground': 'var(--color-silver-true-violet-900)',
+    'highlight-active-foreground--dark': 'var(--color-silver-true-violet-900)',
     /** Default border color */
-    'border': 'var(--color-neutral-200)',
+    'border': 'var(--color-zinc-200)',
+    'border--dark': 'var(--color-zinc-800)',
     /** Border hover state */
-    'border-hover': 'var(--color-neutral-300)',
+    'border-hover': 'var(--color-zinc-300)',
+    'border-hover--dark': 'var(--color-zinc-700)',
     /** Border focus state */
-    'border-focus': 'var(--color-neutral-400)',
+    'border-focus': 'var(--color-zinc-300)',
+    'border-focus--dark': 'var(--color-zinc-700)',
     /** Border active state */
-    'border-active': 'var(--color-neutral-500)',
+    'border-active': 'var(--color-zinc-400)',
+    'border-active--dark': 'var(--color-zinc-600)',
     /** Input field border color */
-    'input': 'var(--color-neutral-200)',
+    'input': 'var(--color-zinc-200)',
+    'input--dark': 'var(--color-zinc-800)',
     /** Input text color */
-    'input-foreground': 'var(--color-neutral-950)',
+    'input-foreground': 'var(--color-zinc-700)',
+    'input-foreground--dark': 'var(--color-zinc-50)',
     /** Input hover state */
-    'input-hover': 'var(--color-neutral-300)',
+    'input-hover': 'var(--color-zinc-300)',
+    'input-hover--dark': 'var(--color-zinc-700)',
     /** Input focus state */
-    'input-focus': 'var(--color-neutral-400)',
+    'input-focus': 'var(--color-zinc-300)',
+    'input-focus--dark': 'var(--color-zinc-700)',
     /** Disabled input background */
-    'input-disabled': 'var(--color-neutral-100)',
+    'input-disabled': 'var(--color-zinc-400)',
+    'input-disabled--dark': 'var(--color-zinc-400)',
     /** Disabled input text color */
-    'input-disabled-foreground': 'var(--color-neutral-400)',
+    'input-disabled-foreground': 'var(--color-zinc-950)',
+    'input-disabled-foreground--dark': 'var(--color-zinc-950)',
     /** Placeholder text color */
-    'input-placeholder': 'var(--color-neutral-500)',
+    'input-placeholder': 'var(--color-zinc-500)',
+    'input-placeholder--dark': 'var(--color-zinc-400)',
     /** Invalid input border */
     'input-invalid': 'var(--color-silver-bold-fire-truck-500)',
+    'input-invalid--dark': 'var(--color-silver-bold-fire-truck-500)',
     /** Invalid input error text */
-    'input-invalid-foreground': 'var(--color-silver-bold-fire-truck-700)',
+    'input-invalid-foreground': 'var(--color-silver-bold-fire-truck-950)',
+    'input-invalid-foreground--dark': 'var(--color-silver-bold-fire-truck-950)',
     /** Valid input border */
     'input-valid': 'var(--color-silver-true-citrine-500)',
+    'input-valid--dark': 'var(--color-silver-true-citrine-500)',
     /** Valid input success text */
-    'input-valid-foreground': 'var(--color-silver-true-citrine-700)',
+    'input-valid-foreground': 'var(--color-silver-true-citrine-900)',
+    'input-valid-foreground--dark': 'var(--color-silver-true-citrine-900)',
     /** Focus ring color */
-    'ring': 'var(--color-neutral-950)',
+    'ring': 'var(--color-zinc-950)',
+    'ring--dark': 'var(--color-zinc-300)',
     /** Focus ring offset color */
-    'ring-offset': 'var(--color-neutral-50)',
+    'ring-offset': 'var(--color-zinc-50)',
+    'ring-offset--dark': 'var(--color-zinc-950)',
     /** Primary focus ring */
-    'ring-primary': 'var(--color-neutral-900)',
+    'ring-primary': 'var(--color-zinc-900)',
+    'ring-primary--dark': 'var(--color-zinc-50)',
     /** Destructive focus ring */
     'ring-destructive': 'var(--color-silver-bold-fire-truck-600)',
+    'ring-destructive--dark': 'var(--color-silver-bold-fire-truck-400)',
     /** Success focus ring */
     'ring-success': 'var(--color-silver-true-citrine-600)',
+    'ring-success--dark': 'var(--color-silver-true-citrine-400)',
     /** Warning focus ring */
     'ring-warning': 'var(--color-silver-true-honey-600)',
+    'ring-warning--dark': 'var(--color-silver-true-honey-400)',
     /** Info focus ring */
     'ring-info': 'var(--color-silver-true-sky-600)',
+    'ring-info--dark': 'var(--color-silver-true-sky-400)',
     /** Link color */
     'link': 'var(--color-silver-true-sky-700)',
+    'link--dark': 'var(--color-silver-true-sky-400)',
     /** Link hover color */
-    'link-hover': 'var(--color-silver-true-sky-800)',
+    'link-hover': 'var(--color-silver-true-sky-900)',
+    'link-hover--dark': 'var(--color-silver-true-sky-300)',
     /** Link active/pressed color */
-    'link-active': 'var(--color-silver-true-sky-900)',
+    'link-active': 'var(--color-silver-true-sky-950)',
+    'link-active--dark': 'var(--color-silver-true-sky-200)',
     /** Visited link color */
     'link-visited': 'var(--color-silver-true-violet-700)',
+    'link-visited--dark': 'var(--color-silver-true-violet-400)',
     /** Link focus color */
-    'link-focus': 'var(--color-silver-true-sky-700)',
+    'link-focus': 'var(--color-silver-true-sky-900)',
+    'link-focus--dark': 'var(--color-silver-true-sky-300)',
     /** Text selection background */
     'selection': 'var(--color-silver-true-sky-200)',
+    'selection--dark': 'var(--color-silver-true-sky-800)',
     /** Text selection foreground */
-    'selection-foreground': 'var(--color-neutral-950)',
-    /** Sidebar background */
-    'sidebar': 'var(--color-neutral-50)',
+    'selection-foreground': 'var(--color-silver-true-sky-800)',
+    'selection-foreground--dark': 'var(--color-silver-true-sky-50)',
+    /** Sidebar background -- almost on the surface */
+    'sidebar': 'var(--color-zinc-100)',
+    'sidebar--dark': 'var(--color-zinc-900)',
     /** Sidebar text color */
-    'sidebar-foreground': 'var(--color-neutral-950)',
+    'sidebar-foreground': 'var(--color-zinc-700)',
+    'sidebar-foreground--dark': 'var(--color-zinc-50)',
     /** Sidebar muted text */
-    'sidebar-muted': 'var(--color-neutral-500)',
+    'sidebar-muted': 'var(--color-zinc-500)',
+    'sidebar-muted--dark': 'var(--color-zinc-400)',
     /** Sidebar primary accent */
-    'sidebar-primary': 'var(--color-neutral-900)',
+    'sidebar-primary': 'var(--color-zinc-900)',
+    'sidebar-primary--dark': 'var(--color-zinc-50)',
     /** Text on sidebar primary */
-    'sidebar-primary-foreground': 'var(--color-neutral-50)',
+    'sidebar-primary-foreground': 'var(--color-zinc-50)',
+    'sidebar-primary-foreground--dark': 'var(--color-zinc-600)',
     /** Sidebar primary hover */
-    'sidebar-primary-hover': 'var(--color-neutral-800)',
+    'sidebar-primary-hover': 'var(--color-zinc-950)',
+    'sidebar-primary-hover--dark': 'var(--color-zinc-50)',
     /** Sidebar primary active */
-    'sidebar-primary-active': 'var(--color-neutral-700)',
+    'sidebar-primary-active': 'var(--color-zinc-950)',
+    'sidebar-primary-active--dark': 'var(--color-zinc-50)',
     /** Sidebar hover/accent state */
-    'sidebar-accent': 'var(--color-neutral-100)',
+    'sidebar-accent': 'var(--color-zinc-100)',
+    'sidebar-accent--dark': 'var(--color-zinc-800)',
     /** Text on sidebar accent */
-    'sidebar-accent-foreground': 'var(--color-neutral-900)',
+    'sidebar-accent-foreground': 'var(--color-zinc-700)',
+    'sidebar-accent-foreground--dark': 'var(--color-zinc-50)',
     /** Sidebar accent hover */
-    'sidebar-accent-hover': 'var(--color-neutral-200)',
+    'sidebar-accent-hover': 'var(--color-zinc-200)',
+    'sidebar-accent-hover--dark': 'var(--color-zinc-700)',
     /** Sidebar accent active */
-    'sidebar-accent-active': 'var(--color-neutral-300)',
+    'sidebar-accent-active': 'var(--color-zinc-300)',
+    'sidebar-accent-active--dark': 'var(--color-zinc-600)',
     /** Sidebar item background */
-    'sidebar-item': 'var(--color-neutral-50)',
+    'sidebar-item': 'var(--color-zinc-50)',
+    'sidebar-item--dark': 'var(--color-zinc-900)',
     /** Sidebar item text */
-    'sidebar-item-foreground': 'var(--color-neutral-700)',
+    'sidebar-item-foreground': 'var(--color-zinc-600)',
+    'sidebar-item-foreground--dark': 'var(--color-zinc-50)',
     /** Sidebar item hover */
-    'sidebar-item-hover': 'var(--color-neutral-100)',
+    'sidebar-item-hover': 'var(--color-zinc-100)',
+    'sidebar-item-hover--dark': 'var(--color-zinc-800)',
     /** Sidebar item hover text */
-    'sidebar-item-hover-foreground': 'var(--color-neutral-900)',
+    'sidebar-item-hover-foreground': 'var(--color-zinc-700)',
+    'sidebar-item-hover-foreground--dark': 'var(--color-zinc-50)',
     /** Sidebar item active */
-    'sidebar-item-active': 'var(--color-neutral-200)',
+    'sidebar-item-active': 'var(--color-zinc-200)',
+    'sidebar-item-active--dark': 'var(--color-zinc-700)',
     /** Sidebar item active text */
-    'sidebar-item-active-foreground': 'var(--color-neutral-950)',
+    'sidebar-item-active-foreground': 'var(--color-zinc-700)',
+    'sidebar-item-active-foreground--dark': 'var(--color-zinc-50)',
     /** Sidebar selected item */
-    'sidebar-item-selected': 'var(--color-neutral-100)',
+    'sidebar-item-selected': 'var(--color-zinc-100)',
+    'sidebar-item-selected--dark': 'var(--color-zinc-800)',
     /** Sidebar selected item text */
-    'sidebar-item-selected-foreground': 'var(--color-neutral-950)',
+    'sidebar-item-selected-foreground': 'var(--color-zinc-700)',
+    'sidebar-item-selected-foreground--dark': 'var(--color-zinc-50)',
     /** Sidebar border/divider color */
-    'sidebar-border': 'var(--color-neutral-200)',
+    'sidebar-border': 'var(--color-zinc-300)',
+    'sidebar-border--dark': 'var(--color-zinc-700)',
     /** Sidebar focus ring */
-    'sidebar-ring': 'var(--color-neutral-950)',
+    'sidebar-ring': 'var(--color-zinc-100)',
+    'sidebar-ring--dark': 'var(--color-zinc-900)',
     /** Navigation background */
-    'nav': 'var(--color-neutral-50)',
+    'nav': 'var(--color-zinc-50)',
+    'nav--dark': 'var(--color-zinc-900)',
     /** Navigation text */
-    'nav-foreground': 'var(--color-neutral-700)',
+    'nav-foreground': 'var(--color-zinc-600)',
+    'nav-foreground--dark': 'var(--color-zinc-50)',
     /** Navigation hover */
-    'nav-hover': 'var(--color-neutral-100)',
+    'nav-hover': 'var(--color-zinc-100)',
+    'nav-hover--dark': 'var(--color-zinc-800)',
     /** Navigation hover text */
-    'nav-hover-foreground': 'var(--color-neutral-900)',
+    'nav-hover-foreground': 'var(--color-zinc-700)',
+    'nav-hover-foreground--dark': 'var(--color-zinc-50)',
     /** Navigation active */
-    'nav-active': 'var(--color-neutral-200)',
+    'nav-active': 'var(--color-zinc-200)',
+    'nav-active--dark': 'var(--color-zinc-700)',
     /** Navigation active text */
-    'nav-active-foreground': 'var(--color-neutral-950)',
+    'nav-active-foreground': 'var(--color-zinc-700)',
+    'nav-active-foreground--dark': 'var(--color-zinc-50)',
     /** Navigation selected */
-    'nav-selected': 'var(--color-neutral-900)',
+    'nav-selected': 'var(--color-zinc-900)',
+    'nav-selected--dark': 'var(--color-zinc-50)',
     /** Navigation selected text */
-    'nav-selected-foreground': 'var(--color-neutral-50)',
+    'nav-selected-foreground': 'var(--color-zinc-50)',
+    'nav-selected-foreground--dark': 'var(--color-zinc-600)',
     /** Navigation disabled */
-    'nav-disabled': 'var(--color-neutral-200)',
+    'nav-disabled': 'var(--color-zinc-400)',
+    'nav-disabled--dark': 'var(--color-zinc-400)',
     /** Navigation disabled text */
-    'nav-disabled-foreground': 'var(--color-neutral-400)',
+    'nav-disabled-foreground': 'var(--color-zinc-950)',
+    'nav-disabled-foreground--dark': 'var(--color-zinc-950)',
     /** Table background */
-    'table': 'var(--color-neutral-50)',
+    'table': 'var(--color-zinc-50)',
+    'table--dark': 'var(--color-zinc-950)',
     /** Table text */
-    'table-foreground': 'var(--color-neutral-950)',
+    'table-foreground': 'var(--color-zinc-600)',
+    'table-foreground--dark': 'var(--color-zinc-50)',
     /** Table header background */
-    'table-header': 'var(--color-neutral-100)',
+    'table-header': 'var(--color-zinc-100)',
+    'table-header--dark': 'var(--color-zinc-800)',
     /** Table header text */
-    'table-header-foreground': 'var(--color-neutral-950)',
+    'table-header-foreground': 'var(--color-zinc-700)',
+    'table-header-foreground--dark': 'var(--color-zinc-50)',
     /** Table row hover */
-    'table-row-hover': 'var(--color-neutral-50)',
+    'table-row-hover': 'var(--color-zinc-50)',
+    'table-row-hover--dark': 'var(--color-zinc-900)',
     /** Table row selected */
-    'table-row-selected': 'var(--color-neutral-100)',
+    'table-row-selected': 'var(--color-zinc-100)',
+    'table-row-selected--dark': 'var(--color-zinc-800)',
     /** Table row selected text */
-    'table-row-selected-foreground': 'var(--color-neutral-950)',
+    'table-row-selected-foreground': 'var(--color-zinc-700)',
+    'table-row-selected-foreground--dark': 'var(--color-zinc-50)',
     /** Table border */
-    'table-border': 'var(--color-neutral-200)',
+    'table-border': 'var(--color-zinc-200)',
+    'table-border--dark': 'var(--color-zinc-800)',
     /** Tooltip background */
-    'tooltip': 'var(--color-neutral-900)',
+    'tooltip': 'var(--color-zinc-900)',
+    'tooltip--dark': 'var(--color-zinc-50)',
     /** Tooltip text */
-    'tooltip-foreground': 'var(--color-neutral-50)',
+    'tooltip-foreground': 'var(--color-zinc-50)',
+    'tooltip-foreground--dark': 'var(--color-zinc-600)',
     /** Overlay background */
-    'overlay': 'var(--color-neutral-950)',
+    'overlay': 'var(--color-zinc-950)',
+    'overlay--dark': 'var(--color-zinc-950)',
     /** Overlay text */
-    'overlay-foreground': 'var(--color-neutral-50)',
+    'overlay-foreground': 'var(--color-zinc-50)',
+    'overlay-foreground--dark': 'var(--color-zinc-50)',
     /** Skeleton loader background */
-    'skeleton': 'var(--color-neutral-200)',
+    'skeleton': 'var(--color-zinc-200)',
+    'skeleton--dark': 'var(--color-zinc-800)',
     /** Skeleton loader highlight */
-    'skeleton-highlight': 'var(--color-neutral-300)',
+    'skeleton-highlight': 'var(--color-zinc-300)',
+    'skeleton-highlight--dark': 'var(--color-zinc-700)',
     /** Primary chart color */
     'chart-1': 'var(--color-silver-true-glacier-500)',
+    'chart-1--dark': 'var(--color-silver-true-glacier-400)',
     /** Secondary chart color */
     'chart-2': 'var(--color-silver-true-sky-500)',
+    'chart-2--dark': 'var(--color-silver-true-sky-400)',
     /** Tertiary chart color */
     'chart-3': 'var(--color-silver-true-citrine-500)',
+    'chart-3--dark': 'var(--color-silver-true-citrine-400)',
     /** Quaternary chart color */
     'chart-4': 'var(--color-silver-true-honey-500)',
+    'chart-4--dark': 'var(--color-silver-true-honey-400)',
     /** Quinary chart color */
     'chart-5': 'var(--color-silver-true-violet-500)',
+    'chart-5--dark': 'var(--color-silver-true-violet-400)',
     /** Scrollbar thumb color */
-    'scrollbar': 'var(--color-neutral-300)',
+    'scrollbar': 'var(--color-zinc-300)',
+    'scrollbar--dark': 'var(--color-zinc-700)',
     /** Scrollbar thumb hover */
-    'scrollbar-hover': 'var(--color-neutral-400)',
+    'scrollbar-hover': 'var(--color-zinc-400)',
+    'scrollbar-hover--dark': 'var(--color-zinc-600)',
     /** Scrollbar track background */
-    'scrollbar-track': 'var(--color-neutral-100)',
+    'scrollbar-track': 'var(--color-zinc-100)',
+    'scrollbar-track--dark': 'var(--color-zinc-900)',
     /** Code block background */
-    'code': 'var(--color-neutral-100)',
+    'code': 'var(--color-zinc-100)',
+    'code--dark': 'var(--color-zinc-900)',
     /** Code text color */
-    'code-foreground': 'var(--color-neutral-900)',
+    'code-foreground': 'var(--color-zinc-700)',
+    'code-foreground--dark': 'var(--color-zinc-50)',
     /** Code block border */
-    'code-border': 'var(--color-neutral-200)',
+    'code-border': 'var(--color-zinc-300)',
+    'code-border--dark': 'var(--color-zinc-700)',
     /** Badge background */
-    'badge': 'var(--color-neutral-100)',
+    'badge': 'var(--color-zinc-100)',
+    'badge--dark': 'var(--color-zinc-800)',
     /** Badge text color */
-    'badge-foreground': 'var(--color-neutral-900)',
+    'badge-foreground': 'var(--color-zinc-700)',
+    'badge-foreground--dark': 'var(--color-zinc-50)',
     /** Badge border */
-    'badge-border': 'var(--color-neutral-200)',
+    'badge-border': 'var(--color-zinc-300)',
+    'badge-border--dark': 'var(--color-zinc-600)',
     /** Avatar fallback background */
-    'avatar': 'var(--color-neutral-200)',
+    'avatar': 'var(--color-zinc-200)',
+    'avatar--dark': 'var(--color-zinc-800)',
     /** Avatar fallback text/icon color */
-    'avatar-foreground': 'var(--color-neutral-600)',
+    'avatar-foreground': 'var(--color-zinc-700)',
+    'avatar-foreground--dark': 'var(--color-zinc-50)',
   },
   shadow: {
     /** Base unit for shadow calculations - tied to spacing for consistency */
     'shadow-base-unit': '0.25rem',
     /** No shadow - flat appearance */
     'shadow-none': 'none',
+    /** offset-x component of xs shadow */
+    'shadow-xs-offset-x': '0rem',
+    /** offset-y component of xs shadow */
+    'shadow-xs-offset-y': '0.063rem',
+    /** blur component of xs shadow */
+    'shadow-xs-blur': '0.125rem',
+    /** spread component of xs shadow */
+    'shadow-xs-spread': '0rem',
+    /** color component of xs shadow */
+    'shadow-xs-color': 'rgb(0 0 0 / 0.05)',
     /** Extra small shadow - subtle depth hint */
-    'shadow-xs': '0 0.063rem 0.125rem 0rem rgb(0 0 0 / 0.05)',
+    'shadow-xs': 'var(--rafters-shadow-xs-offset-x) var(--rafters-shadow-xs-offset-y) var(--rafters-shadow-xs-blur) var(--rafters-shadow-xs-spread) var(--rafters-shadow-xs-color)',
+    /** offset-x component of sm shadow */
+    'shadow-sm-offset-x': '0rem',
+    /** offset-y component of sm shadow */
+    'shadow-sm-offset-y': '0.063rem',
+    /** blur component of sm shadow */
+    'shadow-sm-blur': '0.25rem',
+    /** spread component of sm shadow */
+    'shadow-sm-spread': '0rem',
+    /** color component of sm shadow */
+    'shadow-sm-color': 'rgb(0 0 0 / 0.06)',
     /** Small shadow - slight elevation */
-    'shadow-sm': '0 0.063rem 0.25rem 0rem rgb(0 0 0 / 0.06), 0 0.063rem 0.125rem 0rem rgb(0 0 0 / 0.1)',
+    'shadow-sm': 'var(--rafters-shadow-sm-offset-x) var(--rafters-shadow-sm-offset-y) var(--rafters-shadow-sm-blur) var(--rafters-shadow-sm-spread) var(--rafters-shadow-sm-color), 0 0.063rem 0.125rem 0rem rgb(0 0 0 / 0.1)',
+    /** offset-x component of DEFAULT shadow */
+    'shadow-offset-x': '0rem',
+    /** offset-y component of DEFAULT shadow */
+    'shadow-offset-y': '0.125rem',
+    /** blur component of DEFAULT shadow */
+    'shadow-blur': '0.375rem',
+    /** spread component of DEFAULT shadow */
+    'shadow-spread': '-0.062rem',
+    /** color component of DEFAULT shadow */
+    'shadow-color': 'rgb(0 0 0 / 0.1)',
     /** Default shadow - standard elevation */
-    'shadow': '0 0.125rem 0.375rem -0.062rem rgb(0 0 0 / 0.1), 0 0.063rem 0.125rem 0rem rgb(0 0 0 / 0.1)',
+    'shadow': 'var(--rafters-shadow-offset-x) var(--rafters-shadow-offset-y) var(--rafters-shadow-blur) var(--rafters-shadow-spread) var(--rafters-shadow-color), 0 0.063rem 0.125rem 0rem rgb(0 0 0 / 0.1)',
+    /** offset-x component of md shadow */
+    'shadow-md-offset-x': '0rem',
+    /** offset-y component of md shadow */
+    'shadow-md-offset-y': '0.25rem',
+    /** blur component of md shadow */
+    'shadow-md-blur': '0.5rem',
+    /** spread component of md shadow */
+    'shadow-md-spread': '-0.125rem',
+    /** color component of md shadow */
+    'shadow-md-color': 'rgb(0 0 0 / 0.1)',
     /** Medium shadow - noticeable elevation */
-    'shadow-md': '0 0.25rem 0.5rem -0.125rem rgb(0 0 0 / 0.1), 0 0.125rem 0.25rem -0.062rem rgb(0 0 0 / 0.1)',
+    'shadow-md': 'var(--rafters-shadow-md-offset-x) var(--rafters-shadow-md-offset-y) var(--rafters-shadow-md-blur) var(--rafters-shadow-md-spread) var(--rafters-shadow-md-color), 0 0.125rem 0.25rem -0.062rem rgb(0 0 0 / 0.1)',
+    /** offset-x component of lg shadow */
+    'shadow-lg-offset-x': '0rem',
+    /** offset-y component of lg shadow */
+    'shadow-lg-offset-y': '0.5rem',
+    /** blur component of lg shadow */
+    'shadow-lg-blur': '1rem',
+    /** spread component of lg shadow */
+    'shadow-lg-spread': '-0.187rem',
+    /** color component of lg shadow */
+    'shadow-lg-color': 'rgb(0 0 0 / 0.1)',
     /** Large shadow - significant elevation */
-    'shadow-lg': '0 0.5rem 1rem -0.187rem rgb(0 0 0 / 0.1), 0 0.25rem 0.5rem -0.125rem rgb(0 0 0 / 0.1)',
+    'shadow-lg': 'var(--rafters-shadow-lg-offset-x) var(--rafters-shadow-lg-offset-y) var(--rafters-shadow-lg-blur) var(--rafters-shadow-lg-spread) var(--rafters-shadow-lg-color), 0 0.25rem 0.5rem -0.125rem rgb(0 0 0 / 0.1)',
+    /** offset-x component of xl shadow */
+    'shadow-xl-offset-x': '0rem',
+    /** offset-y component of xl shadow */
+    'shadow-xl-offset-y': '1.25rem',
+    /** blur component of xl shadow */
+    'shadow-xl-blur': '1.5rem',
+    /** spread component of xl shadow */
+    'shadow-xl-spread': '-0.25rem',
+    /** color component of xl shadow */
+    'shadow-xl-color': 'rgb(0 0 0 / 0.1)',
     /** Extra large shadow - high elevation */
-    'shadow-xl': '0 1.25rem 1.5rem -0.25rem rgb(0 0 0 / 0.1), 0 0.5rem 1rem -0.187rem rgb(0 0 0 / 0.1)',
+    'shadow-xl': 'var(--rafters-shadow-xl-offset-x) var(--rafters-shadow-xl-offset-y) var(--rafters-shadow-xl-blur) var(--rafters-shadow-xl-spread) var(--rafters-shadow-xl-color), 0 0.5rem 1rem -0.187rem rgb(0 0 0 / 0.1)',
+    /** offset-x component of 2xl shadow */
+    'shadow-2xl-offset-x': '0rem',
+    /** offset-y component of 2xl shadow */
+    'shadow-2xl-offset-y': '1.5rem',
+    /** blur component of 2xl shadow */
+    'shadow-2xl-blur': '3rem',
+    /** spread component of 2xl shadow */
+    'shadow-2xl-spread': '-0.5rem',
+    /** color component of 2xl shadow */
+    'shadow-2xl-color': 'rgb(0 0 0 / 0.25)',
     /** Maximum shadow - highest elevation */
-    'shadow-2xl': '0 1.5rem 3rem -0.5rem rgb(0 0 0 / 0.25)',
+    'shadow-2xl': 'var(--rafters-shadow-2xl-offset-x) var(--rafters-shadow-2xl-offset-y) var(--rafters-shadow-2xl-blur) var(--rafters-shadow-2xl-spread) var(--rafters-shadow-2xl-color)',
     /** Primary colored shadow for emphasis */
-    'shadow-primary': '0 0.125rem 0.375rem -0.062rem color-mix(in oklch, var(--primary) 12%, transparent)',
+    'shadow-primary': 'var(--rafters-shadow-offset-x) var(--rafters-shadow-offset-y) var(--rafters-shadow-blur) var(--rafters-shadow-spread) color-mix(in oklch, var(--primary) 12%, transparent)',
     /** Destructive colored shadow for warnings */
-    'shadow-destructive': '0 0.125rem 0.375rem -0.062rem color-mix(in oklch, var(--destructive) 12%, transparent)',
+    'shadow-destructive': 'var(--rafters-shadow-offset-x) var(--rafters-shadow-offset-y) var(--rafters-shadow-blur) var(--rafters-shadow-spread) color-mix(in oklch, var(--destructive) 12%, transparent)',
     /** Metadata about the shadow progression system */
     'shadow-progression': {"ratio":"minor-third","ratioValue":1.2,"baseUnit":4,"note":"Shadow values derived from spacing progression for visual harmony"},
   },
@@ -921,71 +1226,71 @@ export const tokens = {
     /** Zero spacing - remove all spacing */
     'spacing-0': '0',
     /** Micro spacing for tight layouts and inline elements */
-    'spacing-0.5': '0.125rem',
+    'spacing-0.5': 'calc(var(--rafters-spacing-base) * 0.5)',
     /** Micro spacing for tight layouts and inline elements */
-    'spacing-1': '0.25rem',
+    'spacing-1': 'var(--rafters-spacing-base)',
     /** Small spacing for component internals and related elements */
-    'spacing-1.5': '0.375rem',
+    'spacing-1.5': 'calc(var(--rafters-spacing-base) * 1.5)',
     /** Small spacing for component internals and related elements */
-    'spacing-2': '0.5rem',
+    'spacing-2': 'calc(var(--rafters-spacing-base) * 2)',
     /** Small spacing for component internals and related elements */
-    'spacing-2.5': '0.625rem',
+    'spacing-2.5': 'calc(var(--rafters-spacing-base) * 2.5)',
     /** Small spacing for component internals and related elements */
-    'spacing-3': '0.75rem',
+    'spacing-3': 'calc(var(--rafters-spacing-base) * 3)',
     /** Small spacing for component internals and related elements */
-    'spacing-3.5': '0.875rem',
+    'spacing-3.5': 'calc(var(--rafters-spacing-base) * 3.5)',
     /** Small spacing for component internals and related elements */
-    'spacing-4': '2rem',
+    'spacing-4': 'calc(var(--rafters-spacing-base) * 4)',
     /** Medium spacing for section separation and breathing room */
-    'spacing-5': '1.25rem',
+    'spacing-5': 'calc(var(--rafters-spacing-base) * 5)',
     /** Medium spacing for section separation and breathing room */
-    'spacing-6': '1.5rem',
+    'spacing-6': 'calc(var(--rafters-spacing-base) * 6)',
     /** Medium spacing for section separation and breathing room */
-    'spacing-7': '1.75rem',
+    'spacing-7': 'calc(var(--rafters-spacing-base) * 7)',
     /** Medium spacing for section separation and breathing room */
-    'spacing-8': '2rem',
+    'spacing-8': 'calc(var(--rafters-spacing-base) * 8)',
     /** Medium spacing for section separation and breathing room */
-    'spacing-9': '2.25rem',
+    'spacing-9': 'calc(var(--rafters-spacing-base) * 9)',
     /** Medium spacing for section separation and breathing room */
-    'spacing-10': '2.5rem',
+    'spacing-10': 'calc(var(--rafters-spacing-base) * 10)',
     /** Medium spacing for section separation and breathing room */
-    'spacing-11': '2.75rem',
+    'spacing-11': 'calc(var(--rafters-spacing-base) * 11)',
     /** Medium spacing for section separation and breathing room */
-    'spacing-12': '3rem',
+    'spacing-12': 'calc(var(--rafters-spacing-base) * 12)',
     /** Large spacing for major section breaks and layout gaps */
-    'spacing-14': '3.5rem',
+    'spacing-14': 'calc(var(--rafters-spacing-base) * 14)',
     /** Large spacing for major section breaks and layout gaps */
-    'spacing-16': '4rem',
+    'spacing-16': 'calc(var(--rafters-spacing-base) * 16)',
     /** Large spacing for major section breaks and layout gaps */
-    'spacing-20': '5rem',
+    'spacing-20': 'calc(var(--rafters-spacing-base) * 20)',
     /** Large spacing for major section breaks and layout gaps */
-    'spacing-24': '6rem',
+    'spacing-24': 'calc(var(--rafters-spacing-base) * 24)',
     /** Large spacing for major section breaks and layout gaps */
-    'spacing-28': '7rem',
+    'spacing-28': 'calc(var(--rafters-spacing-base) * 28)',
     /** Large spacing for major section breaks and layout gaps */
-    'spacing-32': '8rem',
+    'spacing-32': 'calc(var(--rafters-spacing-base) * 32)',
     /** Extra large spacing for page-level layout and hero sections */
-    'spacing-36': '9rem',
+    'spacing-36': 'calc(var(--rafters-spacing-base) * 36)',
     /** Extra large spacing for page-level layout and hero sections */
-    'spacing-40': '10rem',
+    'spacing-40': 'calc(var(--rafters-spacing-base) * 40)',
     /** Extra large spacing for page-level layout and hero sections */
-    'spacing-44': '11rem',
+    'spacing-44': 'calc(var(--rafters-spacing-base) * 44)',
     /** Extra large spacing for page-level layout and hero sections */
-    'spacing-48': '12rem',
+    'spacing-48': 'calc(var(--rafters-spacing-base) * 48)',
     /** Extra large spacing for page-level layout and hero sections */
-    'spacing-52': '13rem',
+    'spacing-52': 'calc(var(--rafters-spacing-base) * 52)',
     /** Extra large spacing for page-level layout and hero sections */
-    'spacing-56': '14rem',
+    'spacing-56': 'calc(var(--rafters-spacing-base) * 56)',
     /** Extra large spacing for page-level layout and hero sections */
-    'spacing-60': '15rem',
+    'spacing-60': 'calc(var(--rafters-spacing-base) * 60)',
     /** Extra large spacing for page-level layout and hero sections */
-    'spacing-64': '16rem',
+    'spacing-64': 'calc(var(--rafters-spacing-base) * 64)',
     /** Extra large spacing for page-level layout and hero sections */
-    'spacing-72': '18rem',
+    'spacing-72': 'calc(var(--rafters-spacing-base) * 72)',
     /** Extra large spacing for page-level layout and hero sections */
-    'spacing-80': '20rem',
+    'spacing-80': 'calc(var(--rafters-spacing-base) * 80)',
     /** Extra large spacing for page-level layout and hero sections */
-    'spacing-96': '24rem',
+    'spacing-96': 'calc(var(--rafters-spacing-base) * 96)',
     /** Metadata about the spacing progression system */
     'spacing-progression': {"ratio":"minor-third","ratioValue":1.2,"baseUnit":4,"sample":[0,4,4.8,5.76,6.91,8.29,9.95,11.94,14.33,17.2]},
   },
@@ -994,6 +1299,14 @@ export const tokens = {
     'font-sans': "'Noto Sans Variable', sans-serif",
     /** Monospace font family for code */
     'font-mono': "ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace",
+    /** Serif font family for editorial and long-form content */
+    'font-serif': 'Georgia, "Times New Roman", Times, serif',
+    /** Font family for headings and display text */
+    'font-heading': 'var(--font-sans)',
+    /** Font family for body text and UI elements */
+    'font-body': 'var(--font-sans)',
+    /** Font family for code, keyboard shortcuts, and technical content */
+    'font-code': 'var(--font-mono)',
     /** Body text range for primary content */
     'font-size-base': '1rem',
     /** Small text for captions, labels, and secondary information */
@@ -1093,34 +1406,64 @@ export const tokens = {
     /** Metadata about the typography progression system */
     'typography-progression': {"ratio":"minor-third","ratioValue":1.2,"baseFontSize":16,"scale":{"xs":11.11,"sm":13.33,"base":16,"lg":19.2,"xl":23.04,"2xl":27.65,"3xl":33.18,"4xl":39.81,"5xl":47.78,"6xl":57.33,"7xl":68.8,"8xl":82.56,"9xl":99.07}},
   },
+  'typography-composite': {
+    /** Largest display text for hero sections and landing pages */
+    'display-large': {"fontFamily":"heading","fontSize":"5xl","fontWeight":"bold","lineHeight":"5xl","letterSpacing":"5xl","responsive":{"lg":{"fontSize":"6xl"}}},
+    /** Primary page heading -- one per page */
+    'display-medium': {"fontFamily":"heading","fontSize":"4xl","fontWeight":"bold","lineHeight":"4xl","letterSpacing":"4xl","responsive":{"lg":{"fontSize":"5xl"}}},
+    /** Major section heading */
+    'title-large': {"fontFamily":"heading","fontSize":"3xl","fontWeight":"semibold","lineHeight":"3xl","letterSpacing":"3xl"},
+    /** Component and subsection title -- shared by card, dialog, sheet, drawer, empty state */
+    'title-medium': {"fontFamily":"heading","fontSize":"lg","fontWeight":"semibold","lineHeight":"lg","letterSpacing":"lg"},
+    /** Minor heading and alert title */
+    'title-small': {"fontFamily":"heading","fontSize":"base","fontWeight":"semibold","lineHeight":"base","letterSpacing":"base"},
+    /** Lead paragraph and introductory text */
+    'body-large': {"fontFamily":"body","fontSize":"xl","fontWeight":"normal","lineHeight":"xl","letterSpacing":"xl"},
+    /** Default body text for paragraphs and content */
+    'body-medium': {"fontFamily":"body","fontSize":"base","fontWeight":"normal","lineHeight":"base","letterSpacing":"base"},
+    /** Secondary text -- descriptions, tooltips, menu items, table cells */
+    'body-small': {"fontFamily":"body","fontSize":"sm","fontWeight":"normal","lineHeight":"sm","letterSpacing":"sm"},
+    /** Interactive element text -- buttons, tabs, nav triggers, toggles */
+    'label-large': {"fontFamily":"body","fontSize":"base","fontWeight":"medium","lineHeight":"base","letterSpacing":"base"},
+    /** Form labels, breadcrumbs, small buttons, sidebar items */
+    'label-medium': {"fontFamily":"body","fontSize":"sm","fontWeight":"medium","lineHeight":"sm","letterSpacing":"sm"},
+    /** Smallest label text -- badges, sidebar labels, captions */
+    'label-small': {"fontFamily":"body","fontSize":"xs","fontWeight":"medium","lineHeight":"xs","letterSpacing":"xs"},
+    /** Code blocks and pre-formatted text */
+    'code-large': {"fontFamily":"code","fontSize":"base","fontWeight":"normal","lineHeight":"base","letterSpacing":"base"},
+    /** Inline code and keyboard key indicators */
+    'code-small': {"fontFamily":"code","fontSize":"sm","fontWeight":"normal","lineHeight":"sm","letterSpacing":"sm"},
+    /** Keyboard shortcut indicators in menus */
+    'shortcut': {"fontFamily":"code","fontSize":"xs","fontWeight":"normal","lineHeight":"xs","letterSpacing":"widest"},
+  },
 } as const;
 
 export type TokenNamespace = keyof typeof tokens;
 
-export type BreakpointToken = keyof typeof tokens.breakpoint;
-export type ColorToken = keyof typeof tokens.color;
-export type DepthToken = keyof typeof tokens.depth;
-export type ElevationToken = keyof typeof tokens.elevation;
-export type FocusToken = keyof typeof tokens.focus;
-export type MotionToken = keyof typeof tokens.motion;
-export type RadiusToken = keyof typeof tokens.radius;
-export type SemanticToken = keyof typeof tokens.semantic;
-export type ShadowToken = keyof typeof tokens.shadow;
-export type SpacingToken = keyof typeof tokens.spacing;
-export type TypographyToken = keyof typeof tokens.typography;
+export type BreakpointToken = keyof (typeof tokens.breakpoint);
+export type ColorToken = keyof (typeof tokens.color);
+export type DepthToken = keyof (typeof tokens.depth);
+export type FocusToken = keyof (typeof tokens.focus);
+export type MotionToken = keyof (typeof tokens.motion);
+export type RadiusToken = keyof (typeof tokens.radius);
+export type SemanticToken = keyof (typeof tokens.semantic);
+export type ShadowToken = keyof (typeof tokens.shadow);
+export type SpacingToken = keyof (typeof tokens.spacing);
+export type TypographyToken = keyof (typeof tokens.typography);
+export type TypographyCompositeToken = keyof (typeof tokens['typography-composite']);
 
 export type TokenName =
   | BreakpointToken
   | ColorToken
   | DepthToken
-  | ElevationToken
   | FocusToken
   | MotionToken
   | RadiusToken
   | SemanticToken
   | ShadowToken
   | SpacingToken
-  | TypographyToken;
+  | TypographyToken
+  | TypographyCompositeToken;
 
 /** Get a token value by namespace and name */
 export function getToken<N extends TokenNamespace>(

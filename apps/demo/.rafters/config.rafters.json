@@ -44,5 +44,6 @@
       "typeahead"
     ]
   },
-  "compositesPath": "src/composites"
+  "compositesPath": "src/composites",
+  "rulesPath": "src/lib/rules"
 }

@@ -6,16 +6,19 @@
   "exports": {
     ".": "./src/index.ts",
     "./primitives/*": "./src/primitives/*.ts",
-    "./components/*": "./src/components/*.tsx",
+    "./components/*": "./src/old/*.tsx",
+    "./next/badge": "./src/components/badge/badge.tsx",
+    "./next/button": "./src/components/button/button.tsx",
+    "./next/button.element": "./src/components/button/button.element.ts",
     "./hooks/*": "./src/hooks/*.ts",
-    "./dialog": "./src/components/ui/dialog.tsx",
-    "./dialog.vue": "./src/components/ui/dialog.vue.ts",
-    "./skeleton": "./src/components/ui/skeleton.tsx",
+    "./dialog": "./src/old/ui/dialog.tsx",
+    "./dialog.vue": "./src/old/ui/dialog.vue.ts",
+    "./skeleton": "./src/old/ui/skeleton.tsx",
     "./lib/*": "./src/lib/*.ts"
   },
   "scripts": {
     "test": "vitest",
-    "test:unit": "vitest run",
+    "test:unit": "vitest run && vitest run -c vitest.config.astro.ts",
     "test:a11y": "vitest run .a11y.",
     "typecheck": "tsc --noEmit"
   },
@@ -40,6 +43,7 @@
     "@types/react-dom": "catalog:",
     "@vitejs/plugin-react": "catalog:",
     "@vitest/coverage-v8": "catalog:",
+    "astro": "^5.16.5",
     "happy-dom": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",

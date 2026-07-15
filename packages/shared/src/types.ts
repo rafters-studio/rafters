@@ -241,6 +241,13 @@ export type Intelligence = z.infer<typeof IntelligenceSchema>;
 // Color Intelligence Schema (from API with uncertainty quantification)
 // Note: Color naming is now deterministic via generateColorName() in @rafters/color-utils
 export const ColorIntelligenceSchema = z.object({
+  // Designer-facing evocative handle ("Aged Terracotta", "Solar Citrine") from
+  // the intelligence generator. Language, not identity: the deterministic
+  // `name` on ColorValue is the stable, parseable address; `label` is the
+  // voice. Optional because pre-label intelligence persists in Vectorize and
+  // token files. Backported from platform's generateColorIntelligence, which
+  // requires it on generation.
+  label: z.string().optional(),
   reasoning: z.string(),
   emotionalImpact: z.string(),
   culturalContext: z.string(),

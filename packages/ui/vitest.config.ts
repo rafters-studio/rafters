@@ -13,7 +13,14 @@ export default defineConfig({
       'test/**/*.test.{ts,tsx}',
       'test/**/*.a11y.{ts,tsx}',
     ],
-    exclude: ['test/**/*.spec.{ts,tsx}', 'test/**/*.e2e.{ts,tsx}'],
+    exclude: [
+      'test/**/*.spec.{ts,tsx}',
+      'test/**/*.e2e.{ts,tsx}',
+      // Astro conformance tests import .astro files, which need Astro's own
+      // Vite transform (vitest.config.astro.ts) -- the react-only plugin set
+      // here cannot parse them.
+      'test/**/*.astro.conformance.test.ts',
+    ],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],

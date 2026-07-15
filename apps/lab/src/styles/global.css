@@ -1,0 +1,9 @@
+/*
+ * The lab consumes the published, self-contained sheet and nothing else --
+ * the pure copy-in consumer story. rafters.standalone.css is the compiled
+ * output (Preflight reset + @theme tokens + the utilities the scan baked in);
+ * no @import "tailwindcss", no @source, no theme source. If a component looks
+ * unstyled here, its classes were not in the scanned set when the sheet was
+ * compiled -- that is the signal, not a lab bug.
+ */
+@import '../../../demo/.rafters/output/rafters.standalone.css';

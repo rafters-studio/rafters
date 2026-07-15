@@ -23,4 +23,10 @@ test-results
 # Rust
 target/
 *.rs.bk
-apps/demo/.rafters/output/
+# The generated token SHEETS apps import (rafters.css / rafters.ts /
+# rafters.standalone.css) are tracked artifacts -- CI has no generate step, so
+# a blanket ignore of output/ orphaned them and broke the lab build. Track the
+# sheets; ignore the generated intermediate (rafters.json) nothing imports and
+# the transient reset snapshots.
+apps/demo/.rafters/output/rafters.json
+apps/demo/.rafters/output/reset-*.json
