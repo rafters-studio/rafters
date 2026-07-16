@@ -31,6 +31,13 @@ Per component, three kinds of file and nothing else:
   the framework file, it belongs in the behavior; the decorator only wires and
   views.
 
+  Reconciled with the frozen contract: Spec 01 ratified these three roles as
+  **score** (the behavior), **performances** (the framework files), and
+  **decoration** (`classes.ts`). "Decorator" is not a rename -- it is the
+  *shape* a performance takes: a performance decorates the score with its
+  decoration (the classes) plus the framework wiring. The role names are frozen
+  in Spec 01; the pattern name is this guide's teaching lens on top of them.
+
 There is no `useBehavior`, no `behavior-element`, no per-component adapter, no
 shared "binder". The substrate the score composes is in `lib/` and
 `primitives/`; **check the primitives matrix (`docs/spec/matrix/primitives.jsonl`)
@@ -49,7 +56,7 @@ before writing any primitive** -- `aria-manager`, `focus-trap`, `roving-focus`,
   React effect.
 - `primitives/rafters-element.ts` -- the shadow-DOM WC base (for pure statics).
 
-## `bindX` -- the DOM-native controller (WC + Astro share it)
+## `bindX` -- the DOM-native client (WC + Astro share it)
 
 Lives in the behavior file. Shape (see `bindNavigationMenu`, `bindDialog`):
 
@@ -68,7 +75,7 @@ Lives in the behavior file. Shape (see `bindNavigationMenu`, `bindDialog`):
 
 | archetype | reference | shape |
 |---|---|---|
-| pure static | `container`, `card` | no `bindX`, no `useBehavior`/`useMemory`; controllers are markup + classes + slots only. WC = `RaftersElement` shadow + `<slot>`. |
+| pure static | `container`, `card` | no `bindX`, no `useBehavior`/`useMemory`; the decorators are markup + classes + slots only. WC = `RaftersElement` shadow + `<slot>`. |
 | simple-interactive | `button` | `bindButton`; native `<button>` fulfils Enter/Space, so wire `click` only. One-shot `announce` effect is edge-triggered. |
 | static + effect | `grid` | static except a conditional effect (grid-roving when `role=grid`). |
 | text-input | `input` | primary state is a **value**; `setValue` gated by disabled/readonly; native input owns caret/IME/selection -- do not re-implement. |
@@ -116,7 +123,7 @@ Lives in the behavior file. Shape (see `bindNavigationMenu`, `bindDialog`):
 ## Open contract gap (settle before the next compound wave)
 
 Many-part instance projections (`navTriggerAria`/`navContentAria`) live
-*outside* `BehaviorSpec.aria` as bespoke functions the controllers call by
+*outside* `BehaviorSpec.aria` as bespoke functions the decorators call by
 name, because `aria` returns one `AriaAttrs` per part *name* and cannot express
 N instances. First-class them (`instanceAria(part, value, state, config, ids)`)
 so the many-part loop goes generic -- before tabs/accordion/menubar/select.
