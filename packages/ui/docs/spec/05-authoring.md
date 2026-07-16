@@ -5,7 +5,7 @@ across the seven control-group components, the reference the sweep follows.
 Read a reference implementation alongside this: `navigation-menu` (compound)
 and `dialog` (overlay) are the richest; `container`/`card` are the simplest.
 
-## The one rule: model, view, controllers
+## The one rule: a behavior, and its decorators
 
 Per component, three kinds of file and nothing else:
 
@@ -14,10 +14,22 @@ Per component, three kinds of file and nothing else:
   The score never *performs*; it describes. It is a total function from state
   to attributes, so it survives contact with any framework.
 - **`x.classes.ts` = the view.** Class strings. No logic.
-- **`x.tsx` / `x.element.ts` / `x.astro` = the controllers.** As thin as the
-  framework allows. React reads the projections declaratively; the WC and Astro
-  performances import the *same* `bindX`. One binding, three performances, zero
-  drift -- because there is only one behavior file.
+- **`x.tsx` / `x.element.ts` / `x.astro` = decorators over the behavior.**
+  Each is a thin wrapper that adds exactly two things around the invariant
+  behavior core, and nothing else: the **view** (`x.classes.ts`) and the
+  framework **wiring** (the runtime adapter). React reads the projections
+  declaratively via `useMemory`; the WC decorates with the custom-element
+  lifecycle, Astro with SSR markup -- both call the *same* `bindX`. One
+  behavior, three decorators, zero drift, because there is only one behavior
+  file.
+
+  Decorator in *spirit*, not GoF-strict -- read the word as the shape, not the
+  taxonomy. The framework file **adapts one runtime to the one behavior** and
+  paints on the classes; it does NOT re-implement the behavior's interface, and
+  decorators never stack (you never wrap a framework file in another). If you
+  find yourself putting a decision -- a reducer, an aria rule, a keymap -- in
+  the framework file, it belongs in the behavior; the decorator only wires and
+  views.
 
 There is no `useBehavior`, no `behavior-element`, no per-component adapter, no
 shared "binder". The substrate the score composes is in `lib/` and
@@ -75,7 +87,7 @@ Lives in the behavior file. Shape (see `bindNavigationMenu`, `bindDialog`):
 
 ## Honest costs (do not pretend these away)
 
-- **React compound controllers carry real hook weight.** A static (button,
+- **React compound decorators carry real hook weight.** A static (button,
   badge) is a couple lines; a compound controlled component is ~40-50 lines of
   genuine wiring (instance, ids, the dispatch protocol, effect host). That is
   retained-mode's floor, not fat.
