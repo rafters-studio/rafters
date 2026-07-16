@@ -5,7 +5,7 @@
  * hover-delay primitive) drive through the DOM binding. Delays are zeroed on
  * the element so intent resolves synchronously.
  */
-import { cleanup, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { RaftersTooltip } from '../../../src/components/tooltip/tooltip.element';
@@ -82,5 +82,21 @@ describe('tooltip conformance [wc]', () => {
     expect(content().hidden).toBe(false);
     await user.unhover(content());
     await waitFor(() => expect(content().hidden).toBe(true));
+  });
+
+  it('Escape dismisses a default-open tip that never received a hover/focus event', async () => {
+    // Regression (shared bindTooltip path, also drives Astro): a defaultOpen tip
+    // dismissed only through the hover primitive stayed open, since no prior
+    // hover/focus had given the primitive state to close. A raw Escape keydown
+    // with no focus event must still close it.
+    document.body.innerHTML = `
+      <rafters-tooltip data-part="root" delay-duration="0" default-open="true">
+        <button type="button" data-part="trigger" id="t-trigger" data-state="open">Help</button>
+        <div data-part="content" id="t-content" role="tooltip" data-state="open">More info</div>
+      </rafters-tooltip>`;
+    await Promise.resolve();
+    expect(content().hidden).toBe(false);
+    fireEvent.keyDown(trigger(), { key: 'Escape' });
+    expect(content().hidden).toBe(true);
   });
 });

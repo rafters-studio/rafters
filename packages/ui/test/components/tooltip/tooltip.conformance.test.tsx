@@ -4,7 +4,7 @@
  * container. Delays are zeroed so hover/focus intent resolves synchronously.
  */
 import * as React from 'react';
-import { cleanup, render, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -189,5 +189,16 @@ describe('tooltip conformance [react]', () => {
     render(<TestTooltip defaultOpen />);
     expect(partElement(body(), 'content')).not.toBeNull();
     expect(partElement(body(), 'trigger')?.getAttribute('data-state')).toBe('open');
+  });
+
+  it('Escape dismisses a defaultOpen tip that never received a hover/focus event', () => {
+    // Regression: dismissal routed only through the hover primitive left a
+    // defaultOpen tip open, because no prior hover/focus had given the primitive
+    // any state to close. fireEvent (not user.keyboard) reproduces it: a raw
+    // Escape keydown with no focus event to sync the primitive first.
+    render(<TestTooltip defaultOpen />);
+    expect(partElement(body(), 'content')).not.toBeNull();
+    fireEvent.keyDown(partElement(body(), 'trigger') as HTMLElement, { key: 'Escape' });
+    expect(partElement(body(), 'content')).toBeNull();
   });
 });

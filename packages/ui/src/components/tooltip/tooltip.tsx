@@ -220,7 +220,7 @@ export function TooltipTrigger({
   children,
   ...props
 }: TooltipTriggerProps) {
-  const { config, effectiveOpen, ids, aria, classes, hover, triggerRef } =
+  const { config, effectiveOpen, ids, aria, classes, hover, triggerRef, request } =
     useTooltipContext('TooltipTrigger');
 
   const setRef = React.useCallback(
@@ -249,9 +249,13 @@ export function TooltipTrigger({
   const handleKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
     onKeyDown?.(event);
     if (event.defaultPrevented) return;
-    // The score claims Escape; the hover primitive resets so a re-hover reopens.
+    // The score claims Escape. Dismiss through the score directly (see
+    // bindTooltip): a defaultOpen tip with no prior hover has no pending state in
+    // the hover primitive, so hover.close() alone would not close it. Dispatch
+    // close, then reset the primitive so a re-hover reopens.
     if (tooltip.keymap(keyInputOf(event), { open: effectiveOpen }, 'trigger', config) === 'close') {
       event.preventDefault();
+      request('close');
       hover.close();
     }
   };

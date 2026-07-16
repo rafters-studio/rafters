@@ -222,7 +222,11 @@ export function bindTooltip(root: HTMLElement): () => void {
     );
     if (action !== 'close') return;
     event.preventDefault();
-    // Sync the hover primitive so a later re-hover can reopen the tip.
+    // Dismiss through the score directly. A defaultOpen tip that never received
+    // a hover/focus event has no pending state in the hover primitive, so
+    // hover.close() alone is a no-op and the tip would stay open. Dispatch close,
+    // then sync the primitive so a later re-hover can reopen the tip.
+    request('close');
     hover.close();
   };
 
