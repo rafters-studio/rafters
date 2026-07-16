@@ -21,6 +21,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Tooltip ported to the behavior layer (#1803).** One score
+  (`tooltip.behavior.ts`: reducers, aria/keymap projections, empty effects, plus
+  `bindTooltip` the DOM-native client) decorated by three thin performances
+  (React `.tsx`, WC `.element.ts`, Astro `.astro`), all driving the same
+  `bindTooltip`. The disclosable trigger projection
+  (`aria-expanded`/`aria-controls`) is suppressed and replaced with
+  `aria-describedby` -- a tooltip describes, it does not expand. Hover-intent
+  timing and collision-detected positioning are composed by the clients from the
+  `hover-delay` and `collision-detector` primitives (DOM concerns the effect
+  vocabulary deliberately does not carry); the placement decision lives once in
+  `tooltipPlacement` / `positionTooltipContent`. Escape dismiss added to satisfy
+  the WAI-ARIA tooltip pattern -- and dismissal dispatches `close` to the score
+  directly, so a `defaultOpen` tip with no prior hover still closes. React + WC +
+  Astro conformance green.
+
 - **Button, re-done on the settled behavior-layer pattern (#1823).** The score
   gains `bindButton` -- the DOM-native client the WC and Astro performances
   share -- proving the pattern reaches the simple-interactive archetype. The
