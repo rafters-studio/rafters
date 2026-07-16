@@ -1,0 +1,90 @@
+---
+/**
+ * Progress -- the Astro decorator of the Progress score.
+ *
+ * Server-renders the full LIGHT-DOM markup with classes, the resolved ARIA
+ * projection, and the indicator fill width already applied, so the meter is
+ * correct and crawlable before any JS. The <script> then hands each instance
+ * to bindProgress -- the SAME DOM-native client the Web Component uses. One
+ * score, three decorators, zero drift.
+ *
+ * The root div IS the progressbar (data-part="root"); it carries the config as
+ * attributes so bindProgress reconstructs the identical config on the client.
+ * `aria-label` (or `aria-labelledby`) passes through natively -- a progressbar
+ * needs an accessible name.
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import {
+  progress,
+  resolveProgress,
+  type ProgressConfig,
+  type ProgressPart,
+  type ProgressSize,
+  type ProgressVariant,
+} from './progress.behavior';
+import { progressClasses } from './progress.classes';
+import type { PartIds } from '../../lib/contract';
+
+interface Props extends HTMLAttributes<'div'> {
+  value?: number;
+  max?: number;
+  variant?: ProgressVariant;
+  size?: ProgressSize;
+  /** Accessible label; overrides the default `${percent}%`. */
+  valueText?: string;
+}
+
+const {
+  value,
+  max = 100,
+  variant = 'default',
+  size = 'default',
+  valueText,
+  class: className,
+  ...attrs
+} = Astro.props;
+
+const config: ProgressConfig = { value, max, variant, size, valueText };
+const state = progress.initialState(config);
+const classes = progressClasses(config, state);
+
+const ids = {} as PartIds<ProgressPart>;
+for (const part of Object.keys(progress.parts) as ProgressPart[]) ids[part] = '';
+const projection = progress.aria(state, config, ids);
+const rootAria = projection.root ?? {};
+const indicatorAria = projection.indicator ?? {};
+
+const { indeterminate, percent } = resolveProgress(config);
+
+// The attributes bindProgress re-reads to reconstruct the identical config.
+const valueAttr = indeterminate ? undefined : value;
+const indicatorStyle = indeterminate ? undefined : `width: ${percent}%`;
+---
+
+<div
+  data-part="root"
+  data-progress
+  value={valueAttr}
+  max={max}
+  variant={variant}
+  size={size}
+  value-text={valueText}
+  class={classy(classes.root, className)}
+  {...rootAria}
+  {...attrs}
+>
+  <div data-part="indicator" class={classes.indicator} style={indicatorStyle} {...indicatorAria} />
+</div>
+
+<script>
+  import { bindProgress } from './progress.behavior';
+
+  // The <script> is bundled and runs once per page; bind every instance's
+  // server-rendered markup. Same client as the Web Component.
+  for (const root of document.querySelectorAll<HTMLElement>('[data-part="root"][data-progress]')) {
+    if (root.dataset['bound'] === 'true') continue;
+    root.dataset['bound'] = 'true';
+    bindProgress(root);
+  }
+</script>

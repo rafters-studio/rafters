@@ -21,6 +21,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Progress ported to the behavior layer (#1786).** One score
+  (`progress.behavior.ts`: `resolveProgress` as the single computation plus the
+  progressbar aria projection, and `bindProgress` the DOM-native client the WC
+  and Astro performances share) decorated by three thin performances (React
+  `.tsx`, WC `.element.ts`, Astro `.astro`), all driving the same `bindProgress`.
+  Progress is a static score -- no state, no actions, no keymap, no effects --
+  but unlike Container/Card its ARIA is LIVE: the `root` part projects
+  `role="progressbar"` with `aria-valuemin`/`max`/`now`/`text`, so the harness
+  audits the projection here. `value` is CONFIG, not state (the consumer's datum,
+  immutable from the score's view; the WC re-reads it on attribute change, React
+  re-renders on prop change). Indeterminate (value absent or non-finite) omits
+  `aria-valuenow`/`aria-valuetext` and carries `aria-busy="true"`. The three
+  oracle a11y approaches (old React/Astro sr-only native `<progress>` + visual
+  div; old WC `role="progressbar"`) unify on one projected progressbar -- the WC
+  oracle's approach, equivalent screen-reader semantic without a duplicate node.
+  shadcn-compat base (`value`/`max`) and rafters extensions (`variant`, `size`,
+  `getValueLabel`) both preserved. React + WC + Astro conformance green.
+
 - **Tooltip ported to the behavior layer (#1803).** One score
   (`tooltip.behavior.ts`: reducers, aria/keymap projections, empty effects, plus
   `bindTooltip` the DOM-native client) decorated by three thin performances
