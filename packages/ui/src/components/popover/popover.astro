@@ -1,0 +1,94 @@
+---
+/**
+ * Astro performance for popover. Server-renders the full light-DOM structure
+ * with the closed-state projection already applied (correct and inert before
+ * JS), then the <script> hands each instance to bindPopover -- the SAME
+ * DOM-native client the Web Component uses. One score, three performances.
+ *
+ * Content stays in light DOM (present-but-hidden) so the dismiss effect the
+ * bind runs can read it, and so the positioning affordance can measure it.
+ * Exit animation waits on the Presence adapter; this is enter-only.
+ */
+import { popover, type PopoverConfig, type PopoverPart } from './popover.behavior';
+import { popoverClasses } from './popover.classes';
+import type { PartIds } from '../../lib/contract';
+import type { Align, Side } from '../../primitives/types';
+
+interface Props {
+  id: string;
+  defaultOpen?: boolean;
+  side?: Side;
+  align?: Align;
+  sideOffset?: number;
+  alignOffset?: number;
+  showClose?: boolean;
+}
+
+const {
+  id,
+  defaultOpen = false,
+  side = 'bottom',
+  align = 'center',
+  sideOffset = 4,
+  alignOffset = 0,
+  showClose = false,
+} = Astro.props;
+
+const config: PopoverConfig = { defaultOpen };
+const state = popover.initialState(config);
+const classes = popoverClasses(config, state);
+
+const ids = {} as PartIds<PopoverPart>;
+for (const part of Object.keys(popover.parts) as PopoverPart[]) ids[part] = `${id}-${part}`;
+const aria = popover.aria(state, config, ids);
+const open = state.open;
+---
+
+<rafters-popover
+  data-part="root"
+  default-open={String(defaultOpen)}
+  side={side}
+  align={align}
+  side-offset={String(sideOffset)}
+  align-offset={String(alignOffset)}
+>
+  <button
+    type="button"
+    id={ids.trigger}
+    data-part="trigger"
+    {...aria.trigger}
+  >
+    <slot name="trigger">Open</slot>
+  </button>
+
+  <div
+    id={ids.content}
+    data-part="content"
+    tabindex="-1"
+    class={classes.content}
+    data-side={side}
+    data-align={align}
+    {...aria.content}
+    hidden={!open}
+  >
+    <slot />
+    {
+      showClose && (
+        <button type="button" id={ids.close} data-part="close" class={classes.close}>
+          <slot name="close">Close</slot>
+        </button>
+      )
+    }
+  </div>
+</rafters-popover>
+
+<script>
+  import { bindPopover } from './popover.behavior';
+
+  for (const root of document.querySelectorAll('rafters-popover[data-part="root"]')) {
+    const el = root as HTMLElement;
+    if (el.dataset['bound'] === 'true') continue;
+    el.dataset['bound'] = 'true';
+    bindPopover(el);
+  }
+</script>
