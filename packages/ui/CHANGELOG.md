@@ -36,6 +36,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   directly, so a `defaultOpen` tip with no prior hover still closes. React + WC +
   Astro conformance green.
 
+- **Select, ported to the behavior layer (#1790).** The `menu-collection-popup`
+  archetype: navigation-menu's compound combobox/listbox/option ARIA over
+  dialog's overlay effects. One score slice carries `{open, value, highlighted}`
+  (open/value controlled-shadowed; `highlighted` mirrors DOM focus so exactly
+  one option is ever active), with `bindSelect` -- the DOM-native client the WC
+  (`select.element.ts`) and Astro (`select.astro`) performances share -- and the
+  React decorator preserving the full shadcn drop-in surface plus the `Select.*`
+  namespace. `typeahead` joins the closed effect vocabulary (its executor wraps
+  the existing typeahead primitive; roving-focus is the precedent), so all three
+  performances get type-to-search for free. The oracle's `labelVersion` label
+  registry is dropped -- the listbox lives in light DOM present-but-hidden, so
+  the value text reads the selected option directly. A new `form-value` primitive
+  (a pure mirrored-hidden-input attrs builder) adds the form association the old
+  select lacked. React + WC + Astro conformance green (aria + keymap against
+  rendered DOM); behavior and classes-parity suites join.
+
 - **Button, re-done on the settled behavior-layer pattern (#1823).** The score
   gains `bindButton` -- the DOM-native client the WC and Astro performances
   share -- proving the pattern reaches the simple-interactive archetype. The
