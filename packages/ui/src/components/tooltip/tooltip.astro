@@ -1,0 +1,102 @@
+---
+/**
+ * Astro performance for tooltip. Server-renders the light-DOM structure with
+ * the closed-state projection already applied (correct and inert before JS),
+ * then the <script> hands each instance to bindTooltip -- the SAME DOM-native
+ * client the Web Component uses. One score, three performances.
+ *
+ * The content stays in light DOM (present-but-hidden) so the hover-delay
+ * primitive the bind composes can read it, and so it is crawlable before JS.
+ * Positioning and hover timing are the bind's job; this is enter-only.
+ */
+import { tooltip, tooltipPlacement, type TooltipConfig, type TooltipPart } from './tooltip.behavior';
+import { tooltipClasses } from './tooltip.classes';
+import type { PartIds } from '../../lib/contract';
+
+interface Props {
+  id: string;
+  /** Tooltip text content. */
+  content: string;
+  delayDuration?: number;
+  skipDelayDuration?: number;
+  disableHoverableContent?: boolean;
+  defaultOpen?: boolean;
+  side?: TooltipConfig['side'];
+  align?: TooltipConfig['align'];
+  sideOffset?: number;
+}
+
+const {
+  id,
+  content,
+  delayDuration,
+  skipDelayDuration,
+  disableHoverableContent = false,
+  defaultOpen = false,
+  side,
+  align,
+  sideOffset,
+} = Astro.props;
+
+const config: TooltipConfig = {
+  defaultOpen,
+  delayDuration,
+  skipDelayDuration,
+  disableHoverableContent,
+  side,
+  align,
+  sideOffset,
+};
+const state = tooltip.initialState(config);
+const classes = tooltipClasses(config, state);
+const placement = tooltipPlacement(config);
+
+const ids = {} as PartIds<TooltipPart>;
+for (const part of Object.keys(tooltip.parts) as TooltipPart[]) ids[part] = `${id}-${part}`;
+const aria = tooltip.aria(state, config, ids);
+const open = state.open;
+---
+
+<rafters-tooltip
+  data-part="root"
+  delay-duration={delayDuration === undefined ? undefined : String(delayDuration)}
+  skip-delay-duration={skipDelayDuration === undefined ? undefined : String(skipDelayDuration)}
+  disable-hoverable-content={String(disableHoverableContent)}
+  default-open={String(defaultOpen)}
+  side={placement.side}
+  align={placement.align}
+  side-offset={sideOffset === undefined ? undefined : String(sideOffset)}
+>
+  <button
+    type="button"
+    id={ids.trigger}
+    data-part="trigger"
+    class={classes.trigger}
+    data-state={open ? 'open' : 'closed'}
+    {...aria.trigger}
+  >
+    <slot />
+  </button>
+
+  <div
+    id={ids.content}
+    data-part="content"
+    class={classes.content}
+    data-state={open ? 'open' : 'closed'}
+    hidden={!open}
+    {...aria.content}
+  >
+    {content}
+  </div>
+</rafters-tooltip>
+
+<script>
+  import { bindTooltip } from './tooltip.behavior';
+
+  for (const root of document.querySelectorAll('rafters-tooltip[data-part="root"]')) {
+    const el = root as HTMLElement;
+    if (el.dataset['bound'] === 'true') continue;
+    el.dataset['bound'] = 'true';
+    bindTooltip(el);
+  }
+</script>
