@@ -21,6 +21,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Popover ported to the behavior layer (#1785).** One score
+  (`popover.behavior.ts`: the disclosable open axis plus surface and popover glue
+  -- `role="dialog"`, aria wiring, Escape and outside-dismiss that spare the
+  trigger and anchor -- plus `bindPopover` the DOM-native client) decorated by
+  three thin performances (React `.tsx`, WC `.element.ts`, Astro `.astro`), all
+  driving the same `bindPopover`. A non-modal overlay: focus moves to the panel
+  on open with no focus-trap and no scroll-lock. Anchored positioning is composed
+  by the clients from the `collision-detector` primitive (a DOM concern the effect
+  vocabulary deliberately does not carry), so the placement decision lives once in
+  `positionPopover` and resolved side/align stay ephemeral DOM state the score
+  never projects. The full shadcn surface is preserved --
+  Root/Trigger/Anchor/Portal/Content/Close, the `PopoverRoot` alias, auto-portal
+  versus explicit `Portal`, and the
+  `onEscapeKeyDown`/`onPointerDownOutside`/`onInteractOutside` veto protocol.
+  React + WC + Astro conformance green.
+
 - **Tooltip ported to the behavior layer (#1803).** One score
   (`tooltip.behavior.ts`: reducers, aria/keymap projections, empty effects, plus
   `bindTooltip` the DOM-native client) decorated by three thin performances
