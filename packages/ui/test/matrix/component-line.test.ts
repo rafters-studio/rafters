@@ -51,6 +51,7 @@ describe('component matrix', () => {
       'grid',
       'input',
       'navigation-menu',
+      'scroll-area',
       'tooltip',
     ]);
   });
