@@ -52,6 +52,9 @@ describe('component matrix', () => {
       'input',
       'navigation-menu',
       'popover',
+      'progress',
+      'scroll-area',
+      'select',
       'tooltip',
     ]);
   });
