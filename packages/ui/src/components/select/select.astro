@@ -1,0 +1,129 @@
+---
+/**
+ * Astro performance for select. Server-renders the full light-DOM listbox
+ * with the closed-state projection already applied (correct and inert before
+ * JS), then the <script> hands each instance to bindSelect -- the SAME
+ * DOM-native client the Web Component uses. One score, three performances.
+ *
+ * The listbox stays in light DOM (present-but-hidden) so the effects the bind
+ * runs -- roving-focus, typeahead, dismiss-on-outside -- can read it, and the
+ * value text is read from the selected option.
+ */
+import {
+  formValueAttrs,
+  select,
+  selectItemAria,
+  type SelectConfig,
+  type SelectPart,
+} from './select.behavior';
+import { selectClasses } from './select.classes';
+import type { PartIds } from '../../lib/contract';
+
+interface Option {
+  value: string;
+  label: string;
+  disabled?: boolean;
+}
+
+interface Props {
+  id: string;
+  options: Option[];
+  value?: string;
+  placeholder?: string;
+  disabled?: boolean;
+  name?: string;
+}
+
+const { id, options, value = '', placeholder = 'Select an option', disabled = false, name } =
+  Astro.props;
+
+const config: SelectConfig = { defaultValue: value, disabled, name };
+const state = select.initialState(config);
+const classes = selectClasses(config, state);
+
+const ids = {} as PartIds<SelectPart>;
+for (const part of Object.keys(select.parts) as SelectPart[]) {
+  ids[part] = `${id}-${part}`;
+}
+const aria = select.aria(state, config, ids);
+
+const selected = options.find((option) => option.value === value);
+const displayLabel = selected?.label ?? placeholder;
+const isEmpty = selected === undefined;
+
+// Form association composed through the form-value primitive.
+const hiddenInput = formValueAttrs({ name, value });
+---
+
+<rafters-select
+  data-part="root"
+  id={ids.root}
+  value={value}
+  disabled={disabled ? '' : undefined}
+  name={name}
+  {...aria.root}
+>
+  <button
+    type="button"
+    id={ids.trigger}
+    data-part="trigger"
+    disabled={disabled}
+    class={classes.trigger}
+    {...aria.trigger}
+  >
+    <div data-part="value" data-placeholder={placeholder} data-empty={isEmpty ? '' : undefined} class={classes.value}>
+      {displayLabel}
+    </div>
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      class={classes.chevron}
+      aria-hidden="true"
+    >
+      <path d="m6 9 6 6 6-6"></path>
+    </svg>
+  </button>
+
+  <div id={ids.content} data-part="content" class={classes.content} hidden={!state.open} {...aria.content}>
+    <div class={classes.viewport}>
+      {
+        options.map((option) => {
+          const itemAria = selectItemAria(option.value, state, config);
+          return (
+            <div
+              role="option"
+              data-part="item"
+              data-value={option.value}
+              data-roving-item=""
+              data-disabled={option.disabled ? '' : undefined}
+              aria-disabled={option.disabled ? 'true' : undefined}
+              tabindex={option.disabled ? undefined : -1}
+              class={classes.item}
+              {...itemAria}
+            >
+              <div class={classes.itemIndicator} aria-hidden="true"></div>
+              <div class={classes.itemText}>{option.label}</div>
+            </div>
+          );
+        })
+      }
+    </div>
+  </div>
+
+  {hiddenInput && <input data-part="hidden-input" {...hiddenInput} />}
+</rafters-select>
+
+<script>
+  import { bindSelect } from './select.behavior';
+
+  for (const root of document.querySelectorAll<HTMLElement>('rafters-select[data-part="root"]')) {
+    if (root.dataset['bound'] === 'true') continue;
+    root.dataset['bound'] = 'true';
+    bindSelect(root);
+  }
+</script>
