@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`radio-group` ported to the behavior layer (#1787).** The imperative
+  `old/ui/radio-group.controller.ts` + form-associated WC pair are replaced by a
+  single score (`radio-group.behavior.ts`): selection is reducer state
+  (`{ value }`), focus movement is the `roving-focus` effect, and the `item`
+  many-part projects `aria-checked`/`data-state` per instance via
+  `radioItemAria`. `bindRadioGroup` is the DOM-native client the WC and Astro
+  performances share; React reads the projections declaratively. Selection now
+  follows focus (WAI-ARIA APG: an arrow key moves focus AND selects), improving
+  on the old move-only controller. Form association via ElementInternals is
+  deferred to the not-yet-built `form-value` primitive; `name`/`required`
+  survive as an inert surface (see `docs/spec/components/radio-group.md`
+  dispositions).
+
 ### Changed
 
 - **`alert` migrated to the static pattern; `useBehavior` deleted (#1827).**
@@ -21,20 +36,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Separator ported to the behavior layer (#1791).** A static score
-  (`separator.behavior.ts`) whose aria projection -- unlike the other statics
-  (card/container/scroll-area) -- is NOT empty: a divider's role and
-  orientation are its whole accessible contract and a pure function of config,
-  so the projection is painted directly by each performance with no
-  `bindSeparator`. Decorative by default (`role="none"`, out of the
-  accessibility tree); opt out (`decorative={false}`) for a semantic
-  `role="separator"` carrying `aria-orientation`. `orientation` selects the
-  thin axis (`h-px w-full` / `h-full w-px`) over the `bg-border` fill, ported
-  verbatim from the oracle. Three thin performances (React `.tsx`, WC
-  `.element.ts`, Astro `.astro`); the Web Component keeps the oracle's
-  presence-based `decorative` attribute semantic while React/Astro expose the
-  plain boolean prop. React + WC + Astro conformance green. Exported at
-  `@rafters/ui/next/separator`.
+- **Switch ported to the behavior layer (#1797).** One score
+  (`switch.behavior.ts`: the toggle-family checked axis -- its own slice, not a
+  fold of `pressable`, projecting `role="switch"` + `aria-checked` +
+  `data-state:checked|unchecked` over a `thumb`, with the disabled gate on
+  `toggle` and a pure `switchFormValue` projection for the name/value/required
+  form axis -- plus `bindSwitch` the DOM-native client) decorated by three thin
+  performances (React `.tsx`, WC `.element.ts`, Astro `.astro`), all driving the
+  same `bindSwitch`. The root is a native `<button role="switch">`, so
+  Enter/Space activation is fulfilled by the browser as a click and the bind
+  wires click -> toggle only -- no keydown branch to double-fire against the
+  native click. Controlled/uncontrolled follows the same ownership-of-truth
+  boundary as input: `config.checked` shadows the intrinsic `state.checked`
+  seeded from `defaultChecked`, and projections read the effective value. The
+  shadcn drop-in surface (`checked`/`defaultChecked`/`onCheckedChange`) and the
+  rafters extensions (`variant`, `size`, `value`, `name`, `required`) are both
+  preserved. React + WC + Astro conformance green.
 
 - **Popover ported to the behavior layer (#1785).** One score
   (`popover.behavior.ts`: the disclosable open axis plus surface and popover glue
