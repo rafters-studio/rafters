@@ -1,0 +1,97 @@
+---
+/**
+ * Astro performance (controller) for radio-group.
+ *
+ * Server-renders the full LIGHT-DOM markup with classes and the score's initial
+ * projection already applied, so the group is correct and accessible before any
+ * JS. The <script> then hands each server-rendered root to bindRadioGroup -- the
+ * SAME DOM-native controller the Web Component uses. Astro imports the behavior
+ * binding like any other module; there is no astro-specific runtime.
+ *
+ * The projection is computed here from the same radioGroup.aria / radioItemAria
+ * the React and WC controllers read -- one score, three performances, zero
+ * drift.
+ */
+import {
+  radioGroup,
+  radioItemAria,
+  type RadioGroupConfig,
+  type RadioGroupPart,
+} from './radio-group.behavior';
+import { radioGroupClasses } from './radio-group.classes';
+import type { PartIds } from '../../lib/contract';
+
+interface Item {
+  value: string;
+  label: string;
+  disabled?: boolean;
+}
+
+interface Props {
+  id: string;
+  items: Item[];
+  value?: string;
+  orientation?: 'horizontal' | 'vertical';
+  disabled?: boolean;
+  required?: boolean;
+  name?: string;
+}
+
+const {
+  id,
+  items,
+  value = '',
+  orientation = 'vertical',
+  disabled = false,
+  required = false,
+  name,
+} = Astro.props;
+
+const config: RadioGroupConfig = { defaultValue: value, orientation, disabled, required, name };
+const state = radioGroup.initialState(config);
+const classes = radioGroupClasses(config, state);
+
+const ids = {} as PartIds<RadioGroupPart>;
+for (const part of Object.keys(radioGroup.parts) as RadioGroupPart[]) {
+  ids[part] = `${id}-${part}`;
+}
+const rootAria = radioGroup.aria(state, config, ids);
+---
+
+<div
+  data-part="root"
+  id={ids.root}
+  role="radiogroup"
+  data-name={name}
+  class={classes.root}
+  {...rootAria.root}
+>
+  {
+    items.map((item) => (
+      <button
+        type="button"
+        role="radio"
+        data-part="item"
+        data-value={item.value}
+        disabled={disabled || item.disabled}
+        class={classes.item}
+        {...radioItemAria(item.value, state, config)}
+      >
+        <span data-part="indicator" class={classes.indicator} aria-hidden="true" />
+        {item.label}
+      </button>
+    ))
+  }
+</div>
+
+<script>
+  import { bindRadioGroup } from './radio-group.behavior';
+
+  // The <script> is bundled and runs once per page; bind every instance's
+  // server-rendered root. Same controller as the Web Component.
+  for (const root of document.querySelectorAll<HTMLElement>('[data-part="root"][role="radiogroup"]')) {
+    if (root.dataset['bound'] === 'true') continue;
+    root.dataset['bound'] = 'true';
+    bindRadioGroup(root);
+  }
+</script>
