@@ -21,6 +21,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Table ported to the behavior layer (#1798).** The pure-static finding Card
+  and Container record, reached again for a compound: the oracle
+  (`src/old/ui/table.tsx`) is CSS-only markup, so the score
+  (`table.behavior.ts`) holds no state, no actions, no keymap, and no effects,
+  its root projects no ARIA (the `<table>`/`<thead>`/`<tr>`/`<th>`/`<td>` tree
+  carries native role=table/rowgroup/row/columnheader/cell), and there is no
+  `bindTable` -- the React `.tsx` uses no `useBehavior`/`useMemory` and the
+  Astro `.astro` ships no `<script>`. The one contract beyond the empty root is
+  the SELECTED ROW: `Table.Row`'s `selected` prop projects through
+  `tableRowAttrs` to `aria-selected="true"` plus the `data-state="selected"`
+  hook (a consumer-set datum, not a selection model; the same per-instance
+  shape as Grid's `gridItemAttrs`), and unselected rows carry neither. The full
+  shadcn compound surface is preserved --
+  Table/Header/Body/Footer/Row/Head/Cell/Caption -- and row selection now
+  announces (`aria-selected`), where the oracle set only the class hook. React
+  + Astro conformance green; the WC surface is deferred (a table's sections must
+  be real table descendants, which the shadow+slot static model cannot wrap).
 - **Popover ported to the behavior layer (#1785).** One score
   (`popover.behavior.ts`: the disclosable open axis plus surface and popover glue
   -- `role="dialog"`, aria wiring, Escape and outside-dismiss that spare the
