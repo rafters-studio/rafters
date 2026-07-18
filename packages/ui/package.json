@@ -10,6 +10,8 @@
     "./next/badge": "./src/components/badge/badge.tsx",
     "./next/button": "./src/components/button/button.tsx",
     "./next/button.element": "./src/components/button/button.element.ts",
+    "./next/separator": "./src/components/separator/separator.tsx",
+    "./next/separator.element": "./src/components/separator/separator.element.ts",
     "./hooks/*": "./src/hooks/*.ts",
     "./dialog": "./src/old/ui/dialog.tsx",
     "./dialog.vue": "./src/old/ui/dialog.vue.ts",
