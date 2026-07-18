@@ -36,26 +36,28 @@ describe('component matrix', () => {
     expect(new Set(names).size).toBe(names.length);
   });
 
-  it('ported components are exactly the landed ports', () => {
-    const ported = lines
-      .filter((l) => (l.raw as { status: string }).status === 'ported')
-      .map((l) => (l.raw as { name: string }).name)
-      .sort();
-    expect(ported).toEqual([
-      'alert',
-      'badge',
-      'button',
-      'card',
-      'container',
-      'dialog',
-      'grid',
-      'input',
-      'navigation-menu',
-      'popover',
-      'progress',
-      'scroll-area',
-      'select',
-      'tooltip',
-    ]);
+  // Per-row invariant (replaces the old hardcoded ported-list): a component is
+  // `ported` iff its React surface -- the universal primary decorator -- is
+  // `verified`. This is checked per line, so a port PR only touches its OWN
+  // components.jsonl row; parallel port PRs never collide on a shared line, yet
+  // a port that flips status without verifying (or a pending row that claims
+  // verified) still fails here.
+  it('a component is ported iff its React surface is verified', () => {
+    for (const { raw, lineNo } of lines) {
+      const c = raw as {
+        name: string;
+        status: string;
+        frameworks: { behaviorLayer: { react: string } };
+      };
+      const isPorted = c.status === 'ported';
+      const reactVerified = c.frameworks.behaviorLayer.react === 'verified';
+      if (isPorted !== reactVerified) {
+        throw new Error(
+          `line ${lineNo} (${c.name}): status="${c.status}" but ` +
+            `frameworks.behaviorLayer.react="${c.frameworks.behaviorLayer.react}" -- ` +
+            `a ported component must have its React surface verified, and only ported components may claim it`,
+        );
+      }
+    }
   });
 });
