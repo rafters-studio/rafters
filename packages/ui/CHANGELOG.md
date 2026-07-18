@@ -21,6 +21,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **ButtonGroup ported to the behavior layer (#1760).** One static score
+  (`button-group.behavior.ts`: no state, actions, keymap, or effects -- a
+  constant `role="group"` aria projection, the alert idiom, plus orientation
+  parsing) decorated by three thin performances (React `.tsx`, WC
+  `.element.ts`, Astro `.astro`). It adjoins related buttons with collapsed
+  shared borders and a single focus ring that stacks above its neighbors.
+  React and Astro collapse the borders with Tailwind arbitrary descendant
+  selectors on the light-DOM children; the Web Component, whose buttons project
+  through a `<slot>`, encodes the same rules as irreducible `::slotted` shadow
+  CSS keyed by the reflected `data-orientation` -- ported verbatim from the
+  oracle element. Size inheritance stays a React-only affordance
+  (`ButtonGroupContext` + `useButtonGroupContext`, now carrying the ported
+  Button's full `ButtonSize`); wiring Button to consume it is a separate,
+  out-of-scope change (see the component doc's oracle-disposition table).
+  React + WC + Astro conformance green.
+
 - **Popover ported to the behavior layer (#1785).** One score
   (`popover.behavior.ts`: the disclosable open axis plus surface and popover glue
   -- `role="dialog"`, aria wiring, Escape and outside-dismiss that spare the

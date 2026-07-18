@@ -1,0 +1,44 @@
+---
+/**
+ * ButtonGroup -- the Astro performance of the static score
+ * (button-group.behavior.ts). A static score has nothing to subscribe to: this
+ * performance is pure decoration application. No client runtime, no <script>,
+ * no effects (Spec 03) -- config in, classes + the score's constant aria
+ * projection (role="group") out. Orientation drives the connected-border
+ * classes and the reflected data-orientation.
+ *
+ * Size inheritance is a React-only context affordance and is not expressible
+ * here; the Astro surface carries orientation and the accessible label only.
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { buttonGroup, type ButtonGroupConfig, type ButtonGroupOrientation } from './button-group.behavior';
+import { buttonGroupClasses } from './button-group.classes';
+
+interface Props extends HTMLAttributes<'div'> {
+  orientation?: ButtonGroupOrientation;
+  'aria-label'?: string;
+}
+
+const {
+  orientation = 'horizontal',
+  'aria-label': ariaLabel,
+  class: className,
+  ...attrs
+} = Astro.props;
+
+const config: ButtonGroupConfig = { orientation };
+const classes = buttonGroupClasses(config, {});
+const { root: aria } = buttonGroup.aria({}, config, { root: '' });
+---
+
+<div
+  data-part="root"
+  data-orientation={orientation}
+  class={classy(classes.root, className)}
+  aria-label={ariaLabel}
+  {...aria}
+  {...attrs}
+>
+  <slot />
+</div>

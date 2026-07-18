@@ -45,6 +45,7 @@ describe('component matrix', () => {
       'alert',
       'badge',
       'button',
+      'button-group',
       'card',
       'container',
       'dialog',
