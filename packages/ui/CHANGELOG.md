@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`radio-group` ported to the behavior layer (#1787).** The imperative
+  `old/ui/radio-group.controller.ts` + form-associated WC pair are replaced by a
+  single score (`radio-group.behavior.ts`): selection is reducer state
+  (`{ value }`), focus movement is the `roving-focus` effect, and the `item`
+  many-part projects `aria-checked`/`data-state` per instance via
+  `radioItemAria`. `bindRadioGroup` is the DOM-native client the WC and Astro
+  performances share; React reads the projections declaratively. Selection now
+  follows focus (WAI-ARIA APG: an arrow key moves focus AND selects), improving
+  on the old move-only controller. Form association via ElementInternals is
+  deferred to the not-yet-built `form-value` primitive; `name`/`required`
+  survive as an inert surface (see `docs/spec/components/radio-group.md`
+  dispositions).
+
 ### Changed
 
 - **`alert` migrated to the static pattern; `useBehavior` deleted (#1827).**

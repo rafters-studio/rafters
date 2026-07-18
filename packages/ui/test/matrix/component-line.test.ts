@@ -53,6 +53,7 @@ describe('component matrix', () => {
       'navigation-menu',
       'popover',
       'progress',
+      'radio-group',
       'scroll-area',
       'select',
       'switch',
