@@ -1,0 +1,120 @@
+---
+/**
+ * Astro performance for checkbox. Server-renders the light-DOM
+ * `<button role="checkbox">` with the score's initial projection already
+ * applied (correct and accessible before JS), a sibling hidden input for form
+ * association, then the <script> hands each server-rendered root to
+ * bindCheckbox -- the SAME DOM-native client the Web Component uses. One score,
+ * three performances.
+ */
+import {
+  checkbox,
+  checkboxSubmitValue,
+  formValueAttrs,
+  isCheckboxChecked,
+  type CheckboxConfig,
+  type CheckboxPart,
+  type CheckboxSize,
+  type CheckboxVariant,
+  type CheckedState,
+} from './checkbox.behavior';
+import { checkboxClasses } from './checkbox.classes';
+import type { PartIds } from '../../lib/contract';
+
+interface Props {
+  id: string;
+  checked?: CheckedState;
+  disabled?: boolean;
+  required?: boolean;
+  name?: string;
+  value?: string;
+  variant?: CheckboxVariant;
+  size?: CheckboxSize;
+  'aria-label'?: string;
+  'aria-labelledby'?: string;
+}
+
+const {
+  id,
+  checked = false,
+  disabled = false,
+  required = false,
+  name,
+  value,
+  variant = 'default',
+  size = 'default',
+  'aria-label': ariaLabel,
+  'aria-labelledby': ariaLabelledby,
+} = Astro.props;
+
+const config: CheckboxConfig = {
+  defaultChecked: checked,
+  disabled,
+  required,
+  name,
+  value,
+  variant,
+  size,
+};
+const state = checkbox.initialState(config);
+const classes = checkboxClasses(config, state);
+
+const ids = {} as PartIds<CheckboxPart>;
+for (const part of Object.keys(checkbox.parts) as CheckboxPart[]) {
+  ids[part] = `${id}-${part}`;
+}
+const aria = checkbox.aria(state, config, ids);
+
+// Form association composed through the form-value primitive; the input is
+// present-but-disabled while the box is unchecked so it submits nothing.
+const hidden = name ? formValueAttrs({ name, value: checkboxSubmitValue(config) }) : null;
+const submittable = isCheckboxChecked(state, config);
+---
+
+<rafters-checkbox>
+  <button
+    type="button"
+    data-part="root"
+    id={ids.root}
+    class={classes.root}
+    disabled={disabled}
+    aria-label={ariaLabel}
+    aria-labelledby={ariaLabelledby}
+    {...aria.root}
+  >
+    <svg
+      class={classes.check}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      stroke-width="3"
+      aria-hidden="true"
+    >
+      <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path>
+    </svg>
+    <svg
+      class={classes.dash}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      stroke-width="3"
+      aria-hidden="true"
+    >
+      <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14"></path>
+    </svg>
+  </button>
+  {hidden && <input data-part="hidden-input" {...hidden} disabled={!submittable || disabled} />}
+</rafters-checkbox>
+
+<script>
+  import { bindCheckbox } from './checkbox.behavior';
+
+  for (const host of document.querySelectorAll<HTMLElement>('rafters-checkbox')) {
+    if (host.dataset['bound'] === 'true') continue;
+    const root = host.querySelector<HTMLElement>('[data-part="root"]');
+    if (root) {
+      host.dataset['bound'] = 'true';
+      bindCheckbox(root);
+    }
+  }
+</script>

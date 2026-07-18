@@ -1,0 +1,39 @@
+---
+/**
+ * Astro performance of the Empty score.
+ *
+ * Empty is a PURE STATIC: the score projects no ARIA, holds no state, and runs
+ * no effects. So this file ships NO `<script>` and imports NO `bindEmpty`
+ * (there is none) -- it is server-rendered markup with the shared class strings
+ * and named slots, and there is nothing to hydrate. The root classes come from
+ * the SAME `emptyClasses` projection the React and Web Component performances
+ * read -- one score, three performances, zero drift.
+ */
+import {
+  emptyActionClasses,
+  emptyClasses,
+  type EmptyClassSet,
+  emptyDescriptionClasses,
+  emptyIconClasses,
+  emptyTitleClasses,
+} from './empty.classes';
+
+interface Props {
+  class?: string;
+}
+
+const { class: className, ...attrs } = Astro.props;
+
+const classes: EmptyClassSet = emptyClasses({}, {});
+const rootClass = [classes.root, className].filter(Boolean).join(' ');
+---
+
+<div data-part="root" class={rootClass} {...attrs}>
+  <div data-slot="empty-icon" class={emptyIconClasses}><slot name="icon" /></div>
+  <div data-slot="empty-title" class={emptyTitleClasses}><slot name="title" /></div>
+  <div data-slot="empty-description" class={emptyDescriptionClasses}>
+    <slot name="description" />
+  </div>
+  <div data-slot="empty-action" class={emptyActionClasses}><slot name="action" /></div>
+  <slot />
+</div>
