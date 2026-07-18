@@ -21,6 +21,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Skeleton ported to the behavior layer (#1794).** One static score
+  (`skeleton.behavior.ts`: no state, no actions, no keymap, no effects, no
+  `bindSkeleton`) decorated by three thin performances (React `.tsx`, WC
+  `.element.ts`, Astro `.astro`). Skeleton is the one static whose aria
+  projection is NOT empty: a bare `div` has no semantic element to mark it
+  decorative, so the score projects a CONSTANT `aria-hidden="true"` and the
+  conformance harness enforces it across all three frameworks -- closing the
+  oracle's drift, where only the Web Component set it and React/Astro left the
+  placeholder exposed to assistive tech. A decorative leaf: no slot, no
+  children. The shimmer stays CSS-only (`animate-pulse`) and honours
+  `prefers-reduced-motion` via `motion-reduce:animate-none`. The oracle's
+  background-channel `variant` prop is dropped (the port rule is "fill, not
+  background", the `fill-resolver` primitive is not in this component's `uses`,
+  and shadcn's Skeleton has no variant); consumers size and shape the
+  placeholder through `className`, the shadcn drop-in surface. React + WC +
+  Astro conformance green.
+
 - **Popover ported to the behavior layer (#1785).** One score
   (`popover.behavior.ts`: the disclosable open axis plus surface and popover glue
   -- `role="dialog"`, aria wiring, Escape and outside-dismiss that spare the
