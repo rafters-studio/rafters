@@ -1,0 +1,32 @@
+---
+/**
+ * Astro performance of the ScrollArea score.
+ *
+ * ScrollArea is a PURE STATIC: the score projects no ARIA, holds no state, and
+ * runs no effects. So this file ships NO `<script>` and imports NO
+ * `bindScrollArea` (there is none) -- it is server-rendered markup with the
+ * shared class strings and a default slot, and there is nothing to hydrate.
+ * That is the pure-static finding: markup + classes + slots, zero client
+ * JavaScript.
+ *
+ * The root classes come from the SAME `scrollAreaClasses` projection the React
+ * and Web Component performances read -- one score, three performances, zero
+ * drift. `orientation` mirrors the React/WC `orientation` prop.
+ */
+import type { ScrollAreaOrientation } from './scroll-area.behavior';
+import { scrollAreaClasses } from './scroll-area.classes';
+
+interface Props {
+  orientation?: ScrollAreaOrientation;
+  class?: string;
+}
+
+const { orientation = 'vertical', class: className, ...attrs } = Astro.props;
+
+const classes = scrollAreaClasses({ orientation }, {});
+const rootClass = [classes.root, className].filter(Boolean).join(' ');
+---
+
+<div data-part="root" class={rootClass} {...attrs}>
+  <slot />
+</div>
