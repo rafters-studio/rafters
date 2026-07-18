@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`radio-group` ported to the behavior layer (#1787).** The imperative
+  `old/ui/radio-group.controller.ts` + form-associated WC pair are replaced by a
+  single score (`radio-group.behavior.ts`): selection is reducer state
+  (`{ value }`), focus movement is the `roving-focus` effect, and the `item`
+  many-part projects `aria-checked`/`data-state` per instance via
+  `radioItemAria`. `bindRadioGroup` is the DOM-native client the WC and Astro
+  performances share; React reads the projections declaratively. Selection now
+  follows focus (WAI-ARIA APG: an arrow key moves focus AND selects), improving
+  on the old move-only controller. Form association via ElementInternals is
+  deferred to the not-yet-built `form-value` primitive; `name`/`required`
+  survive as an inert surface (see `docs/spec/components/radio-group.md`
+  dispositions).
+
 ### Changed
 
 - **`alert` migrated to the static pattern; `useBehavior` deleted (#1827).**
@@ -21,19 +36,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Spinner ported to the behavior layer (#1796).** A pure static busy
-  indicator: one score (`spinner.behavior.ts`) with no state, no actions, no
-  keymap, and no effects, so there is no `bindSpinner` -- the three
-  performances (React `.tsx`, WC `.element.ts`, Astro `.astro`) are markup +
-  classes + the projected label, nothing more. The `<output>` root carries its
-  implicit `role="status"` natively, so the score projects only the non-native
-  accessible name (`aria-label="Loading"`, unconditional) -- the same
-  native-vs-projected split alert draws with `role="alert"`. `size` and
-  `variant` drive the ring classes through one `spinnerClasses` projection;
-  `motion-reduce:animate-none` honours reduced motion. The oracle's redundant
-  sr-only "Loading" span is dropped in favour of the projected label alone (the
-  simplification dialog and progress already made). React + WC + Astro
-  conformance green.
+- **Switch ported to the behavior layer (#1797).** One score
+  (`switch.behavior.ts`: the toggle-family checked axis -- its own slice, not a
+  fold of `pressable`, projecting `role="switch"` + `aria-checked` +
+  `data-state:checked|unchecked` over a `thumb`, with the disabled gate on
+  `toggle` and a pure `switchFormValue` projection for the name/value/required
+  form axis -- plus `bindSwitch` the DOM-native client) decorated by three thin
+  performances (React `.tsx`, WC `.element.ts`, Astro `.astro`), all driving the
+  same `bindSwitch`. The root is a native `<button role="switch">`, so
+  Enter/Space activation is fulfilled by the browser as a click and the bind
+  wires click -> toggle only -- no keydown branch to double-fire against the
+  native click. Controlled/uncontrolled follows the same ownership-of-truth
+  boundary as input: `config.checked` shadows the intrinsic `state.checked`
+  seeded from `defaultChecked`, and projections read the effective value. The
+  shadcn drop-in surface (`checked`/`defaultChecked`/`onCheckedChange`) and the
+  rafters extensions (`variant`, `size`, `value`, `name`, `required`) are both
+  preserved. React + WC + Astro conformance green.
 
 - **Popover ported to the behavior layer (#1785).** One score
   (`popover.behavior.ts`: the disclosable open axis plus surface and popover glue
