@@ -21,6 +21,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Toggle ported to the behavior layer (#1801).** One score
+  (`toggle.behavior.ts`) composes the `pressable` slice with a one-attribute glue
+  that overrides `data-state` to `on`/`off` from the pressed axis -- the
+  `state-swap` fill that rides `data-[state=on]` -- plus `bindToggle`, the
+  DOM-native client. A toggle-family control: every performance forces
+  `config.toggle = true`, so `pressed` is always a boolean and `aria-pressed`
+  always projects; one press flips it, and `canDispatch` gates the hard-disabled
+  case. Three thin performances (React `.tsx`, WC `.element.ts`, Astro `.astro`)
+  all drive the same `bindToggle`. The shadcn Toggle surface is preserved and
+  extended -- `variant` (2 shadcn + 8 oracle = 10), `size` (default/sm/lg),
+  `pressed`/`defaultPressed`/`onPressedChange`, and `toggleVariants()`. The old
+  tree's form-associated WC (`ElementInternals`) is deliberately dropped: like
+  every ported enhancer the behavior-layer WC is a light-DOM wrapper over a
+  native `<button>`, not a form-associated shadow element. React + WC + Astro
+  conformance green.
+
 - **Popover ported to the behavior layer (#1785).** One score
   (`popover.behavior.ts`: the disclosable open axis plus surface and popover glue
   -- `role="dialog"`, aria wiring, Escape and outside-dismiss that spare the
