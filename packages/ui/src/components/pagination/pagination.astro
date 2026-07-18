@@ -1,0 +1,25 @@
+---
+/**
+ * Pagination -- the Astro performance of the static score
+ * (pagination.behavior.ts).
+ *
+ * Pagination is a PURE STATIC: the score projects no ARIA, holds no state, and
+ * runs no effects. So this file ships NO `<script>` and imports NO
+ * `bindPagination` (there is none) -- it is server-rendered markup with the
+ * fixed `nav[aria-label="Pagination"]` landmark and a default slot, and there
+ * is nothing to hydrate. The content/item/link/previous/next/ellipsis rhythm
+ * comes from `pagination.classes.ts` on the consumer-composed slotted children,
+ * parallel to the React and Web Component performances.
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { paginationNavClasses } from './pagination.classes';
+
+interface Props extends HTMLAttributes<'nav'> {}
+
+const { class: className, ...attrs } = Astro.props;
+---
+
+<nav data-part="root" aria-label="Pagination" class={classy(paginationNavClasses, className)} {...attrs}>
+  <slot />
+</nav>
