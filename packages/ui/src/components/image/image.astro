@@ -1,0 +1,107 @@
+---
+/**
+ * Image -- the Astro decorator of the Image score.
+ *
+ * Server-renders the full LIGHT-DOM figure/figcaption markup with classes and
+ * the resolved ARIA projection already applied, so the image is correct and
+ * crawlable before any JS. The <script> then hands each instance to bindImage --
+ * the SAME DOM-native client the Web Component uses. One score, three
+ * decorators, zero drift.
+ *
+ * Zero client-side load tracking: `status` is config (default 'loaded'), so a
+ * server-rendered image is clean. The editor surface (upload, drag-drop, paste,
+ * alignment toolbar, contentEditable caption) is out of scope.
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import {
+  image,
+  resolveImage,
+  type ImageAlignment,
+  type ImageConfig,
+  type ImagePart,
+  type ImageRadius,
+  type ImageSize,
+  type ImageStatus,
+} from './image.behavior';
+import { imageClasses } from './image.classes';
+import type { PartIds } from '../../lib/contract';
+
+interface Props extends Omit<HTMLAttributes<'figure'>, 'src' | 'alt'> {
+  src: string;
+  alt: string;
+  size?: ImageSize;
+  alignment?: ImageAlignment;
+  radius?: ImageRadius;
+  fill?: string;
+  status?: ImageStatus;
+  caption?: string;
+  errorMessage?: string;
+  loadingLabel?: string;
+}
+
+const {
+  src,
+  alt,
+  size,
+  alignment = 'center',
+  radius = 'lg',
+  fill,
+  status,
+  caption,
+  errorMessage,
+  loadingLabel,
+  class: className,
+  ...attrs
+} = Astro.props;
+
+const config: ImageConfig = { size, alignment, radius, fill, status, errorMessage, loadingLabel };
+const classes = imageClasses(config, {});
+const resolved = resolveImage(config);
+
+const ids = {} as PartIds<ImagePart>;
+for (const part of Object.keys(image.parts) as ImagePart[]) ids[part] = '';
+const projection = image.aria({}, config, ids);
+const imgAria = projection.img ?? {};
+const statusAria = projection.status ?? {};
+---
+
+<figure
+  data-part="root"
+  data-image
+  size={size}
+  alignment={alignment}
+  radius={radius}
+  fill={fill}
+  status={status}
+  error-message={errorMessage}
+  loading-label={loadingLabel}
+  class={classy(classes.root, className)}
+  {...attrs}
+>
+  <div data-part="frame" class={classes.frame}>
+    <img data-part="img" src={src} alt={alt} loading="lazy" class={classes.img} {...imgAria} />
+    {
+      resolved.hasOverlay && (
+        <div data-part="status" class={classes.status} {...statusAria}>
+          {resolved.message}
+        </div>
+      )
+    }
+  </div>
+  {caption !== undefined && (
+    <figcaption data-part="caption" class={classes.caption}>{caption}</figcaption>
+  )}
+</figure>
+
+<script>
+  import { bindImage } from './image.behavior';
+
+  // The <script> is bundled and runs once per page; bind every instance's
+  // server-rendered markup. Same client as the Web Component.
+  for (const root of document.querySelectorAll<HTMLElement>('[data-part="root"][data-image]')) {
+    if (root.dataset['bound'] === 'true') continue;
+    root.dataset['bound'] = 'true';
+    bindImage(root);
+  }
+</script>
