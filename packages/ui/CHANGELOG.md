@@ -21,6 +21,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Separator ported to the behavior layer (#1791).** A static score
+  (`separator.behavior.ts`) whose aria projection -- unlike the other statics
+  (card/container/scroll-area) -- is NOT empty: a divider's role and
+  orientation are its whole accessible contract and a pure function of config,
+  so the projection is painted directly by each performance with no
+  `bindSeparator`. Decorative by default (`role="none"`, out of the
+  accessibility tree); opt out (`decorative={false}`) for a semantic
+  `role="separator"` carrying `aria-orientation`. `orientation` selects the
+  thin axis (`h-px w-full` / `h-full w-px`) over the `bg-border` fill, ported
+  verbatim from the oracle. Three thin performances (React `.tsx`, WC
+  `.element.ts`, Astro `.astro`); the Web Component keeps the oracle's
+  presence-based `decorative` attribute semantic while React/Astro expose the
+  plain boolean prop. React + WC + Astro conformance green. Exported at
+  `@rafters/ui/next/separator`.
+
 - **Popover ported to the behavior layer (#1785).** One score
   (`popover.behavior.ts`: the disclosable open axis plus surface and popover glue
   -- `role="dialog"`, aria wiring, Escape and outside-dismiss that spare the

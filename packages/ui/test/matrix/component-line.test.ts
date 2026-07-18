@@ -55,6 +55,7 @@ describe('component matrix', () => {
       'progress',
       'scroll-area',
       'select',
+      'separator',
       'tooltip',
     ]);
   });
