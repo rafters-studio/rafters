@@ -21,6 +21,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Switch ported to the behavior layer (#1797).** One score
+  (`switch.behavior.ts`: the toggle-family checked axis -- its own slice, not a
+  fold of `pressable`, projecting `role="switch"` + `aria-checked` +
+  `data-state:checked|unchecked` over a `thumb`, with the disabled gate on
+  `toggle` and a pure `switchFormValue` projection for the name/value/required
+  form axis -- plus `bindSwitch` the DOM-native client) decorated by three thin
+  performances (React `.tsx`, WC `.element.ts`, Astro `.astro`), all driving the
+  same `bindSwitch`. The root is a native `<button role="switch">`, so
+  Enter/Space activation is fulfilled by the browser as a click and the bind
+  wires click -> toggle only -- no keydown branch to double-fire against the
+  native click. Controlled/uncontrolled follows the same ownership-of-truth
+  boundary as input: `config.checked` shadows the intrinsic `state.checked`
+  seeded from `defaultChecked`, and projections read the effective value. The
+  shadcn drop-in surface (`checked`/`defaultChecked`/`onCheckedChange`) and the
+  rafters extensions (`variant`, `size`, `value`, `name`, `required`) are both
+  preserved. React + WC + Astro conformance green.
+
 - **Popover ported to the behavior layer (#1785).** One score
   (`popover.behavior.ts`: the disclosable open axis plus surface and popover glue
   -- `role="dialog"`, aria wiring, Escape and outside-dismiss that spare the
