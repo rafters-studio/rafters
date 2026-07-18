@@ -1,0 +1,111 @@
+---
+/**
+ * Astro performance (controller) for switch.
+ *
+ * Server-renders the full LIGHT-DOM <button role="switch"> with classes and the
+ * score's initial projection (aria-checked/aria-required/data-state) already
+ * applied, so the control is correct and accessible before any JS. The <script>
+ * then hands each server-rendered root to bindSwitch -- the SAME DOM-native
+ * controller the Web Component uses. One score, three performances, zero drift.
+ *
+ * The projection is computed here from the same switchBehavior.aria the React
+ * and WC controllers read. The switch has no intrinsic text, so the consumer
+ * MUST supply an accessible name (aria-label / aria-labelledby / a paired
+ * label) -- surfaced here as the `aria-label`/`aria-labelledby` props.
+ */
+import {
+  switchBehavior,
+  type SwitchConfig,
+  type SwitchPart,
+  type SwitchSize,
+  type SwitchVariant,
+} from './switch.behavior';
+import { switchClasses } from './switch.classes';
+import type { PartIds } from '../../lib/contract';
+
+interface Props {
+  id: string;
+  variant?: SwitchVariant;
+  size?: SwitchSize;
+  checked?: boolean;
+  disabled?: boolean;
+  required?: boolean;
+  name?: string;
+  value?: string;
+  'aria-label'?: string;
+  'aria-labelledby'?: string;
+}
+
+const {
+  id,
+  variant = 'default',
+  size = 'default',
+  checked = false,
+  disabled = false,
+  required = false,
+  name,
+  value,
+  'aria-label': ariaLabel,
+  'aria-labelledby': ariaLabelledby,
+} = Astro.props;
+
+const config: SwitchConfig = {
+  variant,
+  size,
+  defaultChecked: checked,
+  disabled,
+  required,
+  name,
+  value,
+};
+const state = switchBehavior.initialState(config);
+const classes = switchClasses(config, state);
+
+const ids = {} as PartIds<SwitchPart>;
+for (const part of Object.keys(switchBehavior.parts) as SwitchPart[]) {
+  ids[part] = `${id}-${part}`;
+}
+const aria = switchBehavior.aria(state, config, ids);
+
+// The thumb is a decorative element (aria-hidden), never a typography role; its
+// attributes -- including the class -- ride a spread object, plain composition.
+const thumbAttrs = {
+  'data-part': 'thumb',
+  id: ids.thumb,
+  class: classes.thumb,
+  ...aria.thumb,
+};
+---
+
+<button
+  type="button"
+  role="switch"
+  data-part="root"
+  id={ids.root}
+  class={classes.root}
+  disabled={disabled}
+  name={name}
+  value={value}
+  data-name={name}
+  data-value={value}
+  aria-label={ariaLabel}
+  aria-labelledby={ariaLabelledby}
+  {...aria.root}
+>
+  <span {...thumbAttrs}></span>
+</button>
+
+<script>
+  import { bindSwitch } from './switch.behavior';
+
+  // The <script> is bundled and runs once per page; bind every instance's
+  // server-rendered root. Same controller as the Web Component.
+  const roots = document.querySelectorAll<HTMLElement>(
+    'button[data-part="root"][role="switch"]',
+  );
+  for (const root of roots) {
+    if (root.dataset['bound'] === 'true') continue;
+    root.dataset['bound'] = 'true';
+    bindSwitch(root);
+  }
+</script>

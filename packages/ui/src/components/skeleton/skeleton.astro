@@ -1,0 +1,29 @@
+---
+/**
+ * Astro performance of the Skeleton score.
+ *
+ * Skeleton is a PURE STATIC: the score holds no state and runs no effects, so
+ * this file ships NO `<script>` and imports NO `bindSkeleton` (there is none)
+ * -- it is server-rendered markup with the shared class string and the score's
+ * constant aria projection, and there is nothing to hydrate. That is the
+ * pure-static finding: markup + classes, zero client JavaScript.
+ *
+ * The root classes and the constant `aria-hidden` come from the SAME score the
+ * React and Web Component performances read -- one score, three performances,
+ * zero drift. Skeleton is a decorative LEAF: no slot, no children.
+ */
+import { skeleton } from './skeleton.behavior';
+import { skeletonClasses } from './skeleton.classes';
+
+interface Props {
+  class?: string;
+}
+
+const { class: className, ...attrs } = Astro.props;
+
+const classes = skeletonClasses({}, {});
+const rootClass = [classes.root, className].filter(Boolean).join(' ');
+const aria = skeleton.aria({}, {}, { root: '' }).root;
+---
+
+<div data-part="root" data-slot="skeleton" class={rootClass} {...aria} {...attrs}></div>

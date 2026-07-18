@@ -1,0 +1,26 @@
+---
+/**
+ * Astro performance of the Kbd score.
+ *
+ * Kbd is a PURE STATIC: the score projects no ARIA, holds no state, runs no
+ * effects. So this file ships NO `<script>` and imports NO `bindKbd` (there is
+ * none) -- it is server-rendered markup with the shared class string and a
+ * default slot, and there is nothing to hydrate. That is the static finding: a
+ * pure static's Astro performance is markup + classes + slot, zero client
+ * JavaScript.
+ *
+ * The root class comes from the SAME `kbdClasses` projection the React and Web
+ * Component performances read -- one score, three performances, zero drift.
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { kbdClasses } from './kbd.classes';
+
+type Props = HTMLAttributes<'kbd'>;
+
+const { class: className, ...attrs } = Astro.props;
+
+const classes = kbdClasses({}, {});
+---
+
+<kbd data-part="root" class={classy(classes.root, className)} {...attrs}><slot /></kbd>

@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`radio-group` ported to the behavior layer (#1787).** The imperative
+  `old/ui/radio-group.controller.ts` + form-associated WC pair are replaced by a
+  single score (`radio-group.behavior.ts`): selection is reducer state
+  (`{ value }`), focus movement is the `roving-focus` effect, and the `item`
+  many-part projects `aria-checked`/`data-state` per instance via
+  `radioItemAria`. `bindRadioGroup` is the DOM-native client the WC and Astro
+  performances share; React reads the projections declaratively. Selection now
+  follows focus (WAI-ARIA APG: an arrow key moves focus AND selects), improving
+  on the old move-only controller. Form association via ElementInternals is
+  deferred to the not-yet-built `form-value` primitive; `name`/`required`
+  survive as an inert surface (see `docs/spec/components/radio-group.md`
+  dispositions).
+
 ### Changed
 
 - **`alert` migrated to the static pattern; `useBehavior` deleted (#1827).**
@@ -21,23 +36,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Table ported to the behavior layer (#1798).** The pure-static finding Card
-  and Container record, reached again for a compound: the oracle
-  (`src/old/ui/table.tsx`) is CSS-only markup, so the score
-  (`table.behavior.ts`) holds no state, no actions, no keymap, and no effects,
-  its root projects no ARIA (the `<table>`/`<thead>`/`<tr>`/`<th>`/`<td>` tree
-  carries native role=table/rowgroup/row/columnheader/cell), and there is no
-  `bindTable` -- the React `.tsx` uses no `useBehavior`/`useMemory` and the
-  Astro `.astro` ships no `<script>`. The one contract beyond the empty root is
-  the SELECTED ROW: `Table.Row`'s `selected` prop projects through
-  `tableRowAttrs` to `aria-selected="true"` plus the `data-state="selected"`
-  hook (a consumer-set datum, not a selection model; the same per-instance
-  shape as Grid's `gridItemAttrs`), and unselected rows carry neither. The full
-  shadcn compound surface is preserved --
-  Table/Header/Body/Footer/Row/Head/Cell/Caption -- and row selection now
-  announces (`aria-selected`), where the oracle set only the class hook. React
-  + Astro conformance green; the WC surface is deferred (a table's sections must
-  be real table descendants, which the shadow+slot static model cannot wrap).
+- **Switch ported to the behavior layer (#1797).** One score
+  (`switch.behavior.ts`: the toggle-family checked axis -- its own slice, not a
+  fold of `pressable`, projecting `role="switch"` + `aria-checked` +
+  `data-state:checked|unchecked` over a `thumb`, with the disabled gate on
+  `toggle` and a pure `switchFormValue` projection for the name/value/required
+  form axis -- plus `bindSwitch` the DOM-native client) decorated by three thin
+  performances (React `.tsx`, WC `.element.ts`, Astro `.astro`), all driving the
+  same `bindSwitch`. The root is a native `<button role="switch">`, so
+  Enter/Space activation is fulfilled by the browser as a click and the bind
+  wires click -> toggle only -- no keydown branch to double-fire against the
+  native click. Controlled/uncontrolled follows the same ownership-of-truth
+  boundary as input: `config.checked` shadows the intrinsic `state.checked`
+  seeded from `defaultChecked`, and projections read the effective value. The
+  shadcn drop-in surface (`checked`/`defaultChecked`/`onCheckedChange`) and the
+  rafters extensions (`variant`, `size`, `value`, `name`, `required`) are both
+  preserved. React + WC + Astro conformance green.
+
 - **Popover ported to the behavior layer (#1785).** One score
   (`popover.behavior.ts`: the disclosable open axis plus surface and popover glue
   -- `role="dialog"`, aria wiring, Escape and outside-dismiss that spare the
