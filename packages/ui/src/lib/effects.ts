@@ -20,6 +20,7 @@ import { createFocusTrap, preventBodyScroll } from '../primitives/focus-trap';
 import { onPointerDownOutside } from '../primitives/outside-click';
 import { createRovingFocus } from '../primitives/roving-focus';
 import { announceToScreenReader } from '../primitives/sr-announcer';
+import { createTypeahead } from '../primitives/typeahead';
 
 /** Announce a message via a screen-reader live region (executor: sr-announcer). */
 export interface AnnounceEffect {
@@ -74,6 +75,16 @@ export interface HoverIntentEffect {
   closeAction: string;
 }
 
+/** Type-to-search over the focusable [role="option"] descendants of a part
+ *  (executor: typeahead). Accumulated keystrokes move DOM focus to the best
+ *  matching option; the option-focus that follows is ephemeral DOM state, so
+ *  the component's own focus listener mirrors it into behavior state (a
+ *  highlight), exactly as roving-focus leaves focus tracking to the binding. */
+export interface TypeaheadEffect {
+  type: 'typeahead';
+  part: string;
+}
+
 /** Two-dimensional roving tabindex across the [data-roving-item] children
  *  of a part arranged in a fixed-column grid (the ARIA grid pattern's
  *  keyboard contract). Left/Right move by 1, Up/Down by `columns`,
@@ -92,7 +103,8 @@ export type EffectSpec =
   | DismissOnOutsideEffect
   | RovingFocusEffect
   | HoverIntentEffect
-  | GridRovingEffect;
+  | GridRovingEffect
+  | TypeaheadEffect;
 
 /** One-shot (edge-triggered) effect types; everything else is ongoing. */
 const ONE_SHOT: ReadonlySet<EffectSpec['type']> = new Set(['announce']);
@@ -115,6 +127,8 @@ export function effectKey(effect: EffectSpec): string {
       return `grid-roving:${effect.part}:${effect.columns}`;
     case 'hover-intent':
       return `hover-intent:${effect.part}:${effect.triggerPart}:${effect.contentPart}:${effect.delay}:${effect.immediate}:${effect.openAction}:${effect.closeAction}`;
+    case 'typeahead':
+      return `typeahead:${effect.part}`;
   }
 }
 
@@ -283,6 +297,21 @@ export function executeEffect(effect: EffectSpec, host: EffectHost): EffectClean
         root.removeEventListener('pointerenter', onPointerEnter, true);
         root.removeEventListener('pointerleave', onPointerLeave, true);
       };
+    }
+    case 'typeahead': {
+      const element = host.getPart(effect.part);
+      if (!element) return undefined;
+      // Wrap the existing typeahead primitive; do not reimplement it. The
+      // match moves DOM focus to the option -- the component's focus listener
+      // turns that into a highlight, so this executor stays select-agnostic.
+      return createTypeahead(element, {
+        getItems: () =>
+          Array.from(element.querySelectorAll<HTMLElement>('[role="option"]')).filter(
+            (item) =>
+              !item.hasAttribute('data-disabled') && item.getAttribute('aria-disabled') !== 'true',
+          ),
+        onMatch: (item) => item.focus(),
+      });
     }
   }
 }

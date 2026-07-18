@@ -36,6 +36,86 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Popover ported to the behavior layer (#1785).** One score
+  (`popover.behavior.ts`: the disclosable open axis plus surface and popover glue
+  -- `role="dialog"`, aria wiring, Escape and outside-dismiss that spare the
+  trigger and anchor -- plus `bindPopover` the DOM-native client) decorated by
+  three thin performances (React `.tsx`, WC `.element.ts`, Astro `.astro`), all
+  driving the same `bindPopover`. A non-modal overlay: focus moves to the panel
+  on open with no focus-trap and no scroll-lock. Anchored positioning is composed
+  by the clients from the `collision-detector` primitive (a DOM concern the effect
+  vocabulary deliberately does not carry), so the placement decision lives once in
+  `positionPopover` and resolved side/align stay ephemeral DOM state the score
+  never projects. The full shadcn surface is preserved --
+  Root/Trigger/Anchor/Portal/Content/Close, the `PopoverRoot` alias, auto-portal
+  versus explicit `Portal`, and the
+  `onEscapeKeyDown`/`onPointerDownOutside`/`onInteractOutside` veto protocol.
+  React + WC + Astro conformance green.
+
+- **Progress ported to the behavior layer (#1786).** One score
+  (`progress.behavior.ts`: `resolveProgress` as the single computation plus the
+  progressbar aria projection, and `bindProgress` the DOM-native client the WC
+  and Astro performances share) decorated by three thin performances (React
+  `.tsx`, WC `.element.ts`, Astro `.astro`), all driving the same `bindProgress`.
+  Progress is a static score -- no state, no actions, no keymap, no effects --
+  but unlike Container/Card its ARIA is LIVE: the `root` part projects
+  `role="progressbar"` with `aria-valuemin`/`max`/`now`/`text`, so the harness
+  audits the projection here. `value` is CONFIG, not state (the consumer's datum,
+  immutable from the score's view; the WC re-reads it on attribute change, React
+  re-renders on prop change). Indeterminate (value absent or non-finite) omits
+  `aria-valuenow`/`aria-valuetext` and carries `aria-busy="true"`. The three
+  oracle a11y approaches (old React/Astro sr-only native `<progress>` + visual
+  div; old WC `role="progressbar"`) unify on one projected progressbar -- the WC
+  oracle's approach, equivalent screen-reader semantic without a duplicate node.
+  shadcn-compat base (`value`/`max`) and rafters extensions (`variant`, `size`,
+  `getValueLabel`) both preserved. React + WC + Astro conformance green.
+- **ScrollArea ported to the behavior layer (#1789).** The pure-static finding
+  Card and Container record, reached again: the oracle
+  (`src/old/ui/scroll-area.tsx`) was CSS-only -- no handlers, no state, no
+  scroll-position tracking -- so the score (`scroll-area.behavior.ts`) holds no
+  state, no actions, no keymap, no effects, and projects an empty ARIA contract.
+  Native scroll owns every semantic (momentum, keyboard scrolling, focus order),
+  which means there is no `bindScrollArea`: the React performance uses no
+  `useBehavior`/`useMemory`, the Astro performance ships no `<script>`, and the
+  Web Component performs no binding. The three decorators are the thinnest
+  possible -- markup + `scroll-area.classes.ts` (base surface, WebKit scrollbar,
+  orientation overflow switch) + slots. The shadcn-compatible base (vertical /
+  horizontal orientation, decorative `ScrollBar` companion) is preserved, with
+  the rafters `both`-axis orientation extension layered on top. React + WC +
+  Astro conformance green, each asserting the one static contract (root renders,
+  projects no ARIA).
+
+- **Tooltip ported to the behavior layer (#1803).** One score
+  (`tooltip.behavior.ts`: reducers, aria/keymap projections, empty effects, plus
+  `bindTooltip` the DOM-native client) decorated by three thin performances
+  (React `.tsx`, WC `.element.ts`, Astro `.astro`), all driving the same
+  `bindTooltip`. The disclosable trigger projection
+  (`aria-expanded`/`aria-controls`) is suppressed and replaced with
+  `aria-describedby` -- a tooltip describes, it does not expand. Hover-intent
+  timing and collision-detected positioning are composed by the clients from the
+  `hover-delay` and `collision-detector` primitives (DOM concerns the effect
+  vocabulary deliberately does not carry); the placement decision lives once in
+  `tooltipPlacement` / `positionTooltipContent`. Escape dismiss added to satisfy
+  the WAI-ARIA tooltip pattern -- and dismissal dispatches `close` to the score
+  directly, so a `defaultOpen` tip with no prior hover still closes. React + WC +
+  Astro conformance green.
+
+- **Select, ported to the behavior layer (#1790).** The `menu-collection-popup`
+  archetype: navigation-menu's compound combobox/listbox/option ARIA over
+  dialog's overlay effects. One score slice carries `{open, value, highlighted}`
+  (open/value controlled-shadowed; `highlighted` mirrors DOM focus so exactly
+  one option is ever active), with `bindSelect` -- the DOM-native client the WC
+  (`select.element.ts`) and Astro (`select.astro`) performances share -- and the
+  React decorator preserving the full shadcn drop-in surface plus the `Select.*`
+  namespace. `typeahead` joins the closed effect vocabulary (its executor wraps
+  the existing typeahead primitive; roving-focus is the precedent), so all three
+  performances get type-to-search for free. The oracle's `labelVersion` label
+  registry is dropped -- the listbox lives in light DOM present-but-hidden, so
+  the value text reads the selected option directly. A new `form-value` primitive
+  (a pure mirrored-hidden-input attrs builder) adds the form association the old
+  select lacked. React + WC + Astro conformance green (aria + keymap against
+  rendered DOM); behavior and classes-parity suites join.
+
 - **Button, re-done on the settled behavior-layer pattern (#1823).** The score
   gains `bindButton` -- the DOM-native client the WC and Astro performances
   share -- proving the pattern reaches the simple-interactive archetype. The
