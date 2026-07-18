@@ -1,0 +1,43 @@
+---
+/**
+ * Astro performance of the Separator score.
+ *
+ * Separator is a static score: role and aria-orientation are a pure function
+ * of config. This file ships NO `<script>` and imports NO `bindSeparator`
+ * (there is none) -- it is server-rendered markup with the shared class
+ * strings and the score's resolved aria projection painted directly. Nothing
+ * to hydrate.
+ *
+ * The root classes and the role/aria-orientation come from the SAME
+ * `separatorClasses`/`separator.aria` projections the React and Web Component
+ * performances read -- one score, three performances, zero drift. `decorative`
+ * is a plain boolean prop default true, matching React.
+ */
+import { separator } from './separator.behavior';
+import type { SeparatorConfig, SeparatorOrientation } from './separator.behavior';
+import { separatorClasses } from './separator.classes';
+
+interface Props {
+  orientation?: SeparatorOrientation;
+  decorative?: boolean;
+  class?: string;
+}
+
+const { orientation = 'horizontal', decorative = true, class: className, ...attrs } = Astro.props;
+
+const config: SeparatorConfig = { orientation, decorative };
+const classes = separatorClasses(config, {});
+const rootClass = [classes.root, className].filter(Boolean).join(' ');
+
+const projection = separator.aria({}, config, { root: '' }).root ?? {};
+const role = projection.role as string | undefined;
+const ariaOrientation = projection['aria-orientation'] as SeparatorOrientation | undefined;
+---
+
+<div
+  data-part="root"
+  role={role}
+  aria-orientation={ariaOrientation}
+  class={rootClass}
+  {...attrs}
+/>
