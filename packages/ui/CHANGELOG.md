@@ -21,6 +21,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Spinner ported to the behavior layer (#1796).** A pure static busy
+  indicator: one score (`spinner.behavior.ts`) with no state, no actions, no
+  keymap, and no effects, so there is no `bindSpinner` -- the three
+  performances (React `.tsx`, WC `.element.ts`, Astro `.astro`) are markup +
+  classes + the projected label, nothing more. The `<output>` root carries its
+  implicit `role="status"` natively, so the score projects only the non-native
+  accessible name (`aria-label="Loading"`, unconditional) -- the same
+  native-vs-projected split alert draws with `role="alert"`. `size` and
+  `variant` drive the ring classes through one `spinnerClasses` projection;
+  `motion-reduce:animate-none` honours reduced motion. The oracle's redundant
+  sr-only "Loading" span is dropped in favour of the projected label alone (the
+  simplification dialog and progress already made). React + WC + Astro
+  conformance green.
+
 - **Popover ported to the behavior layer (#1785).** One score
   (`popover.behavior.ts`: the disclosable open axis plus surface and popover glue
   -- `role="dialog"`, aria wiring, Escape and outside-dismiss that spare the
