@@ -1,0 +1,35 @@
+---
+/**
+ * AspectRatio -- the Astro performance of the static score
+ * (aspect-ratio.behavior.ts).
+ *
+ * A static score has nothing to subscribe to: this performance ships NO
+ * `<script>` and imports NO `bindAspectRatio` (there is none) -- it is
+ * server-rendered markup with the shared class strings and the resolved ratio
+ * on the one inline style channel. Config in, classes out, nothing to hydrate.
+ *
+ * The root classes come from the SAME `aspectRatioClasses` projection the React
+ * and Web Component performances read, and the ratio from the SAME
+ * `resolveRatio` -- one score, three performances, zero drift.
+ */
+import classy from '../../primitives/classy';
+import { type AspectRatioConfig, resolveRatio } from './aspect-ratio.behavior';
+import { aspectRatioClasses } from './aspect-ratio.classes';
+
+interface Props {
+  ratio?: number;
+  class?: string;
+}
+
+const { ratio = 1, class: className, ...attrs } = Astro.props;
+
+const config: AspectRatioConfig = { ratio };
+const classes = aspectRatioClasses(config, {});
+
+// The one style channel: the ratio is data-driven, so it rides inline.
+const ratioStyle = `aspect-ratio: ${resolveRatio(config)}`;
+---
+
+<div data-part="root" class={classy(classes.root, className)} style={ratioStyle} {...attrs}>
+  <slot />
+</div>
