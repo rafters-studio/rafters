@@ -1,0 +1,86 @@
+---
+/**
+ * Astro performance (controller) for toggle.
+ *
+ * Server-renders the full LIGHT-DOM <button> with classes and the score's
+ * initial projection already applied, so the control is correct and
+ * accessible before any JS. The <script> then hands each server-rendered root
+ * to bindToggle -- the SAME DOM-native controller the Web Component uses. Astro
+ * imports the behavior binding like any other module; there is no
+ * astro-specific runtime.
+ *
+ * The projection is computed here from the same toggle.aria the React and WC
+ * controllers read -- one score, three performances, zero drift.
+ */
+import {
+  toggle,
+  type ToggleConfig,
+  type TogglePart,
+  type ToggleSize,
+  type ToggleVariant,
+} from './toggle.behavior';
+import { toggleClasses } from './toggle.classes';
+import type { PartIds } from '../../lib/contract';
+
+interface Props {
+  id: string;
+  variant?: ToggleVariant;
+  size?: ToggleSize;
+  defaultPressed?: boolean;
+  disabled?: boolean;
+  label?: string;
+  'aria-label'?: string;
+}
+
+const {
+  id,
+  variant = 'default',
+  size = 'default',
+  defaultPressed = false,
+  disabled = false,
+  label,
+  'aria-label': ariaLabel,
+} = Astro.props;
+
+const config: ToggleConfig = {
+  variant,
+  size,
+  toggle: true,
+  defaultPressed,
+  disabled,
+};
+const state = toggle.initialState(config);
+const classes = toggleClasses(config, state);
+
+const ids = {} as PartIds<TogglePart>;
+for (const part of Object.keys(toggle.parts) as TogglePart[]) {
+  ids[part] = `${id}-${part}`;
+}
+const aria = toggle.aria(state, config, ids);
+---
+
+<button
+  type="button"
+  data-part="root"
+  id={ids.root}
+  class={classes.root}
+  disabled={disabled}
+  aria-label={ariaLabel}
+  {...aria.root}
+>
+  <span data-part="label" id={ids.label}>
+    {label}<slot />
+  </span>
+</button>
+
+<script>
+  import { bindToggle } from './toggle.behavior';
+
+  // The <script> is bundled and runs once per page; bind every instance's
+  // server-rendered root. Same controller as the Web Component.
+  for (const root of document.querySelectorAll<HTMLElement>('button[data-part="root"]')) {
+    if (root.dataset['bound'] === 'true') continue;
+    root.dataset['bound'] = 'true';
+    bindToggle(root);
+  }
+</script>
