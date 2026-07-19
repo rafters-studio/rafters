@@ -1,10 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createBehavior } from '../../../src/lib/contract';
 import {
   activeItem,
   navContentAria,
   navigationMenu,
   navTriggerAria,
+  startNavigationMenuEffects,
   type NavigationMenuConfig,
 } from '../../../src/components/navigation-menu/navigation-menu.behavior';
 
@@ -168,37 +169,126 @@ describe('navigation-menu aria', () => {
   });
 });
 
-describe('navigation-menu effects', () => {
-  it('closed: roving focus and delayed hover intent, no dismissal layer', () => {
-    const effects = navigationMenu.effects({ active: null, pointerOpened: false }, base);
-    expect(effects).toEqual([
-      { type: 'roving-focus', part: 'list', orientation: 'horizontal' },
-      {
-        type: 'hover-intent',
-        part: 'root',
-        triggerPart: 'trigger',
-        contentPart: 'content',
-        delay: 200,
-        immediate: false,
-        openAction: 'hoverOpen',
-        closeAction: 'close',
-      },
-    ]);
+describe('navigation-menu effects composition', () => {
+  // The score no longer emits vocabulary effects: roving/hover/dismiss are
+  // composed directly from the primitives by startNavigationMenuEffects, which
+  // both the DOM-native and React bindings call. These tests drive that
+  // composition seam -- including the immediate-switch semantics conformance
+  // does not exercise -- against real DOM.
+  interface Harness {
+    root: HTMLElement;
+    open: { value: string | null };
+    onHoverOpen: ReturnType<typeof vi.fn>;
+    onClose: ReturnType<typeof vi.fn>;
+    stop: () => void;
+  }
+
+  const stops: Array<() => void> = [];
+
+  afterEach(() => {
+    for (const stop of stops.splice(0)) stop();
+    vi.useRealTimers();
+    document.body.innerHTML = '';
   });
 
-  it('open: hover switches immediately and outside pointerdown dismisses', () => {
-    const effects = navigationMenu.effects({ active: 'a', pointerOpened: false }, base);
-    expect(effects).toContainEqual({ type: 'dismiss-on-outside', part: 'root', action: 'close' });
-    const hover = effects.find((effect) => effect.type === 'hover-intent');
-    expect(hover).toMatchObject({ immediate: true });
+  function mountMenu(): HTMLElement {
+    document.body.innerHTML = `
+      <nav data-part="root">
+        <ul data-part="list">
+          <li>
+            <button type="button" data-part="trigger" data-value="a" data-roving-item>A</button>
+            <div data-part="content" data-value="a"><a href="/a">A</a></div>
+          </li>
+          <li>
+            <button type="button" data-part="trigger" data-value="b" data-roving-item>B</button>
+            <div data-part="content" data-value="b"><a href="/b">B</a></div>
+          </li>
+        </ul>
+      </nav>`;
+    return document.body.querySelector('[data-part="root"]') as HTMLElement;
+  }
+
+  const triggerFor = (root: HTMLElement, value: string): HTMLElement => {
+    const element = root.querySelector<HTMLElement>(`[data-part="trigger"][data-value="${value}"]`);
+    if (!element) throw new Error(`no trigger for ${value}`);
+    return element;
+  };
+
+  function start(delay = 200): Harness {
+    const root = mountMenu();
+    const open = { value: null as string | null };
+    const onHoverOpen = vi.fn((value: string) => {
+      open.value = value;
+    });
+    const onClose = vi.fn(() => {
+      open.value = null;
+    });
+    const stop = startNavigationMenuEffects({
+      root,
+      list: root.querySelector<HTMLElement>('[data-part="list"]'),
+      orientation: 'horizontal',
+      delay,
+      isOpen: () => open.value !== null,
+      onHoverOpen,
+      onClose,
+    });
+    stops.push(stop);
+    return { root, open, onHoverOpen, onClose, stop };
+  }
+
+  it('roving tabindex initializes across the trigger list', () => {
+    const h = start();
+    expect(triggerFor(h.root, 'a').getAttribute('tabindex')).toBe('0');
+    expect(triggerFor(h.root, 'b').getAttribute('tabindex')).toBe('-1');
   });
 
-  it('orientation and delay flow from config', () => {
-    const effects = navigationMenu.effects(
-      { active: null, pointerOpened: false },
-      { orientation: 'vertical', delayDuration: 50 },
-    );
-    expect(effects[0]).toMatchObject({ orientation: 'vertical' });
-    expect(effects[1]).toMatchObject({ delay: 50 });
+  it('hover opens the trigger after the delay when nothing is open', () => {
+    vi.useFakeTimers();
+    const h = start(200);
+    triggerFor(h.root, 'a').dispatchEvent(new Event('pointerenter'));
+    vi.advanceTimersByTime(199);
+    expect(h.onHoverOpen).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(1);
+    expect(h.onHoverOpen).toHaveBeenCalledWith('a');
+  });
+
+  it('while a panel is open, hovering another trigger switches immediately', () => {
+    vi.useFakeTimers();
+    const h = start(200);
+    h.open.value = 'a'; // a panel is already open
+    triggerFor(h.root, 'b').dispatchEvent(new Event('pointerenter'));
+    // No timer advance: the menubar-style switch is synchronous.
+    expect(h.onHoverOpen).toHaveBeenCalledWith('b');
+  });
+
+  it('leaving schedules a close only while a panel is open', () => {
+    vi.useFakeTimers();
+    const h = start(200);
+    // Closed: a leave never closes.
+    triggerFor(h.root, 'a').dispatchEvent(new Event('pointerleave'));
+    vi.advanceTimersByTime(200);
+    expect(h.onClose).not.toHaveBeenCalled();
+    // Open: a leave closes after the delay.
+    h.open.value = 'a';
+    triggerFor(h.root, 'a').dispatchEvent(new Event('pointerleave'));
+    vi.advanceTimersByTime(199);
+    expect(h.onClose).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(1);
+    expect(h.onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('outside pointerdown closes; cleanup detaches every listener', () => {
+    const h = start();
+    h.open.value = 'a';
+    const outside = document.createElement('button');
+    document.body.appendChild(outside);
+    outside.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    expect(h.onClose).toHaveBeenCalledTimes(1);
+
+    h.stop();
+    outside.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    triggerFor(h.root, 'a').dispatchEvent(new Event('pointerenter'));
+    expect(h.onClose).toHaveBeenCalledTimes(1);
+    expect(h.onHoverOpen).not.toHaveBeenCalled();
   });
 });
