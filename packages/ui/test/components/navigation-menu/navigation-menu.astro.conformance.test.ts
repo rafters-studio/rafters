@@ -10,7 +10,11 @@ import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it } from 'vitest';
 import NavigationMenu from '../../../src/components/navigation-menu/navigation-menu.astro';
-import { bindNavigationMenu } from '../../../src/components/navigation-menu/navigation-menu.behavior';
+import {
+  bindNavigationMenu,
+  navigationMenu,
+} from '../../../src/components/navigation-menu/navigation-menu.behavior';
+import { assertInstanceAriaFulfillment } from '../../harness/conformance';
 
 const items = [
   {
@@ -54,6 +58,20 @@ describe('navigation-menu conformance [astro]', () => {
     // Links are in the DOM even while closed -- SSR-stable and crawlable.
     expect(content('products').querySelector('a[href="/a"]')).not.toBeNull();
     expect(trigger('products').getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('per-instance ARIA equals the score projection, closed (SSR) and open', async () => {
+    const user = userEvent.setup();
+    const root = await mount();
+    // SSR-rendered markup already carries the closed projection.
+    assertInstanceAriaFulfillment(navigationMenu, root, { active: null, pointerOpened: false }, {});
+    await user.click(trigger('products'));
+    assertInstanceAriaFulfillment(
+      navigationMenu,
+      root,
+      { active: 'products', pointerOpened: false },
+      {},
+    );
   });
 
   it('click opens a panel: content shown, trigger expanded', async () => {

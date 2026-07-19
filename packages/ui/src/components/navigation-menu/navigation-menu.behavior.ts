@@ -3,6 +3,7 @@ import {
   createBehavior,
   type AriaAttrs,
   type BehaviorSpec,
+  type InstanceIds,
   type PartIds,
 } from '../../lib/contract';
 import { updateAriaAttribute } from '../../primitives/aria-manager';
@@ -134,12 +135,46 @@ const navigation: Slice<
   },
 };
 
+/**
+ * Per-instance ARIA for the `many` parts (Spec 01: BehaviorSpec.instanceAria).
+ * `aria()` projects one AriaAttrs per part NAME; trigger/content occur once per
+ * item value, so their projections take the instance value and the instance's
+ * sibling ids (a trigger reads its content's id; content reads its trigger's).
+ * The generic contract member `navigationMenu.instanceAria` points at this
+ * exact function, so the conformance harness drives it without bespoke wiring
+ * while the component's own decorators call the concrete function directly.
+ */
+export function navInstanceAria(
+  part: NavigationMenuPart,
+  value: string,
+  state: NavigationMenuState,
+  config: NavigationMenuConfig,
+  ids: InstanceIds<NavigationMenuPart>,
+): AriaAttrs {
+  const open = activeItem(state, config) === value;
+  if (part === 'trigger') {
+    return {
+      'aria-expanded': open ? 'true' : 'false',
+      'aria-controls': ids.content ?? '',
+      'data-state': open ? 'open' : 'closed',
+    };
+  }
+  if (part === 'content') {
+    return {
+      'aria-labelledby': ids.trigger ?? '',
+      'data-state': open ? 'open' : 'closed',
+      hidden: open ? undefined : true,
+    };
+  }
+  return {};
+}
+
 export const navigationMenu: BehaviorSpec<
   NavigationMenuConfig,
   NavigationMenuState,
   NavigationMenuActions,
   NavigationMenuPart
-> = compose('navigation-menu', navigation);
+> = { ...compose('navigation-menu', navigation), instanceAria: navInstanceAria };
 
 /** The parts, orientation, delay, and dispatch the roving/hover/dismiss trio
  *  composes against. */
@@ -201,40 +236,6 @@ export function startNavigationMenuEffects({
 }
 
 /**
- * Per-instance projections for the many-instance parts. Spec 01's aria()
- * projects one AriaAttrs per part NAME; trigger/content occur once per item
- * value, so their projections take the instance value. (Contract amendment
- * candidate: instance projection for `many` parts.)
- */
-export function navTriggerAria(
-  value: string,
-  state: NavigationMenuState,
-  config: NavigationMenuConfig,
-  ids: { contentId: string },
-): AriaAttrs {
-  const open = activeItem(state, config) === value;
-  return {
-    'aria-expanded': open ? 'true' : 'false',
-    'aria-controls': ids.contentId,
-    'data-state': open ? 'open' : 'closed',
-  };
-}
-
-export function navContentAria(
-  value: string,
-  state: NavigationMenuState,
-  config: NavigationMenuConfig,
-  ids: { triggerId: string },
-): AriaAttrs {
-  const open = activeItem(state, config) === value;
-  return {
-    'aria-labelledby': ids.triggerId,
-    'data-state': open ? 'open' : 'closed',
-    hidden: open ? undefined : true,
-  };
-}
-
-/**
  * The DOM-native binding of the score -- the client. The Web Component and
  * the Astro <script> both import THIS; only React (retained-mode) reads the
  * projections above declaratively instead. Composes the substrate the same
@@ -277,19 +278,27 @@ export function bindNavigationMenu(root: HTMLElement): () => void {
     }
   };
 
-  // Project every instance of a `many` part, resolving its sibling's id.
-  const projectInstances = (
-    part: 'trigger' | 'content',
-    sibling: 'trigger' | 'content',
-    project: (value: string, siblingId: string) => AriaAttrs,
-  ) => {
-    for (const el of root.querySelectorAll<HTMLElement>(`[data-part="${part}"]`)) {
-      const value = el.dataset['value'];
-      if (value === undefined) continue;
-      const siblingId =
-        root.querySelector<HTMLElement>(`[data-part="${sibling}"][data-value="${value}"]`)?.id ??
-        '';
-      applyProjection(el, project(value, siblingId));
+  // The `many` parts, resolved once from the score's own declaration -- no
+  // hardcoded trigger/content list, so any many-part score binds identically.
+  const manyParts = (Object.keys(navigationMenu.parts) as NavigationMenuPart[]).filter(
+    (part) => navigationMenu.parts[part].many,
+  );
+
+  // Project every rendered instance of every `many` part, resolving each
+  // instance's sibling ids (the elements of the many parts sharing its value).
+  const projectInstances = (state: NavigationMenuState) => {
+    for (const part of manyParts) {
+      for (const el of root.querySelectorAll<HTMLElement>(`[data-part="${part}"]`)) {
+        const value = el.dataset['value'];
+        if (value === undefined) continue;
+        const instanceIds: InstanceIds<NavigationMenuPart> = {};
+        for (const sibling of manyParts) {
+          instanceIds[sibling] =
+            root.querySelector<HTMLElement>(`[data-part="${sibling}"][data-value="${value}"]`)
+              ?.id ?? '';
+        }
+        applyProjection(el, navInstanceAria(part, value, state, config, instanceIds));
+      }
     }
   };
 
@@ -301,12 +310,7 @@ export function bindNavigationMenu(root: HTMLElement): () => void {
       const el = getPart(part);
       if (el && attrs) applyProjection(el, attrs);
     }
-    projectInstances('trigger', 'content', (value, contentId) =>
-      navTriggerAria(value, state, config, { contentId }),
-    );
-    projectInstances('content', 'trigger', (value, triggerId) =>
-      navContentAria(value, state, config, { triggerId }),
-    );
+    projectInstances(state);
   };
   const unsubscribe = memory.subscribe(render); // fires immediately: first paint
 

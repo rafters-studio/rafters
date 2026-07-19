@@ -6,9 +6,8 @@ import classy from '../../primitives/classy';
 import { mergeProps } from '../../primitives/slot';
 import {
   activeItem,
-  navContentAria,
+  navInstanceAria,
   navigationMenu,
-  navTriggerAria,
   startNavigationMenuEffects,
   type NavigationMenuActions,
   type NavigationMenuConfig,
@@ -255,7 +254,10 @@ export function NavigationMenuTrigger({
 }: NavigationMenuTriggerProps) {
   const { config, state, classes, request } = useNavigationMenuContext('NavigationMenuTrigger');
   const { value, triggerId, contentId } = useItemContext('NavigationMenuTrigger');
-  const aria = navTriggerAria(value, state, config, { contentId });
+  const aria = navInstanceAria('trigger', value, state, config, {
+    trigger: triggerId,
+    content: contentId,
+  });
 
   return (
     <button
@@ -296,7 +298,10 @@ export type NavigationMenuContentProps = React.HTMLAttributes<HTMLDivElement>;
 export function NavigationMenuContent({ className, ...props }: NavigationMenuContentProps) {
   const { config, state, classes } = useNavigationMenuContext('NavigationMenuContent');
   const { value, triggerId, contentId } = useItemContext('NavigationMenuContent');
-  const aria = navContentAria(value, state, config, { triggerId });
+  const aria = navInstanceAria('content', value, state, config, {
+    trigger: triggerId,
+    content: contentId,
+  });
 
   return (
     <div

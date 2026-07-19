@@ -19,8 +19,13 @@ import {
   NavigationMenuViewport,
   navigationMenuTriggerStyle,
 } from '../../../src/components/navigation-menu/navigation-menu';
+import { navigationMenu } from '../../../src/components/navigation-menu/navigation-menu.behavior';
 import { navigationMenuClasses } from '../../../src/components/navigation-menu/navigation-menu.classes';
-import { assertAxeClean, partElement } from '../../harness/conformance';
+import {
+  assertAxeClean,
+  assertInstanceAriaFulfillment,
+  partElement,
+} from '../../harness/conformance';
 
 interface SetupProps {
   value?: string;
@@ -86,6 +91,21 @@ describe('navigation-menu conformance [react]', () => {
     const content = contentFor('products');
     expect(trigger.getAttribute('aria-controls')).toBe(content.id);
     expect(content.getAttribute('aria-labelledby')).toBe(trigger.id);
+  });
+
+  it('per-instance ARIA equals the score projection, closed and open', async () => {
+    const user = userEvent.setup();
+    render(<TestMenu />);
+    const root = partElement(body(), 'root') as HTMLElement;
+    // The generic harness reads spec.instanceAria and every rendered instance.
+    assertInstanceAriaFulfillment(navigationMenu, root, { active: null, pointerOpened: false }, {});
+    await user.click(triggerFor('products'));
+    assertInstanceAriaFulfillment(
+      navigationMenu,
+      root,
+      { active: 'products', pointerOpened: false },
+      {},
+    );
   });
 
   it('click opens, click again closes, clicking another switches', async () => {

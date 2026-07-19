@@ -117,10 +117,12 @@ export function assertContractFulfillment<
 }
 
 /**
- * Tier 2 for many parts (Spec 01, ruled 2026-07-08): a part declared
- * `many: true` projects per instance via its sibling `<part>Aria` function.
- * The suite supplies the instance keys in DOM order; every rendered instance
- * is asserted against its own projection -- including absence.
+ * Tier 2 for `many` parts, BESPOKE variant: the suite supplies an
+ * `instanceAria(key)` closure and the DOM-order instance keys. Used by
+ * uniform-item components (radio-group, table) whose per-instance projection
+ * takes only the key -- no sibling ids -- so it lives beside the component, not
+ * on the spec. Spec-driven many parts (nav-menu) use
+ * `assertInstanceAriaFulfillment` below instead.
  */
 export function assertInstanceContractFulfillment<Part extends string>(
   root: HTMLElement,
@@ -147,6 +149,68 @@ export function assertInstanceContractFulfillment<Part extends string>(
         expect(element.getAttribute(attr), `instance "${key}" of "${part}" ${attr}`).toBe(
           String(value),
         );
+      }
+    }
+  }
+}
+
+/**
+ * Tier 2 for `many` parts (Spec 01, BehaviorSpec.instanceAria): the score's own
+ * `instanceAria(part, value, state, config, ids)` projects each instance, and
+ * this driver asserts every rendered instance against it -- generically, with
+ * NO per-component wiring. It reads which parts are `many` from the spec, finds
+ * each instance by its `data-value`, resolves the instance's sibling ids from
+ * the DOM (behaviors never generate ids -- Spec 01), and compares.
+ *
+ * A spec that omits `instanceAria` (statics, uniform-item components) has no
+ * per-instance ARIA to assert, so this is a no-op for them.
+ */
+export function assertInstanceAriaFulfillment<
+  Config,
+  State,
+  Actions extends ActionPayloads,
+  Part extends string,
+>(
+  spec: BehaviorSpec<Config, State, Actions, Part>,
+  root: HTMLElement,
+  state: State,
+  config: Config,
+): void {
+  const project = spec.instanceAria;
+  if (!project) return;
+
+  const manyParts = (Object.keys(spec.parts) as Part[]).filter((part) => spec.parts[part].many);
+  for (const part of manyParts) {
+    for (const element of partElements(root, part)) {
+      const value = element.dataset['value'];
+      if (value === undefined) continue;
+      const ids: Partial<Record<Part, string>> = {};
+      for (const sibling of manyParts) {
+        ids[sibling] =
+          root.querySelector<HTMLElement>(`[data-part="${sibling}"][data-value="${value}"]`)?.id ??
+          '';
+      }
+      for (const [attr, projected] of Object.entries(project(part, value, state, config, ids))) {
+        if (projected === undefined) {
+          expect(
+            element.hasAttribute(attr),
+            `instance "${value}" of "${part}" must NOT render ${attr}`,
+          ).toBe(false);
+        } else if (typeof projected === 'boolean') {
+          // A boolean projection asserts PRESENCE, not a serialized value:
+          // React writes hidden={true} as `hidden=""` while the DOM-native
+          // binding writes `hidden="true"`. hasAttribute is the only check that
+          // holds across all three frameworks. (Only `true`/undefined occur on
+          // nav-menu's `hidden`; a boolean `false` would diverge, but no score
+          // emits one -- absence is expressed as undefined.)
+          expect(element.hasAttribute(attr), `instance "${value}" of "${part}" ${attr}`).toBe(
+            projected,
+          );
+        } else {
+          expect(element.getAttribute(attr), `instance "${value}" of "${part}" ${attr}`).toBe(
+            projected,
+          );
+        }
       }
     }
   }

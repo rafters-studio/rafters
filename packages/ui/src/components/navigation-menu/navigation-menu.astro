@@ -10,13 +10,12 @@
  * no astro-specific runtime.
  *
  * The projection is computed here from the same navigationMenu.aria /
- * navTriggerAria / navContentAria the React and WC controllers read -- one
- * score, three performances, zero drift.
+ * navInstanceAria the React and WC controllers read -- one score, three
+ * performances, zero drift.
  */
 import {
   navigationMenu,
-  navTriggerAria,
-  navContentAria,
+  navInstanceAria,
   type NavigationMenuConfig,
   type NavigationMenuPart,
 } from './navigation-menu.behavior';
@@ -72,7 +71,7 @@ const instanceId = (part: NavigationMenuPart, value: string) => `${id}-${part}-$
               data-value={item.value}
               data-roving-item
               class={classes.trigger}
-              {...navTriggerAria(item.value, state, config, { contentId })}
+              {...navInstanceAria('trigger', item.value, state, config, { trigger: triggerId, content: contentId })}
             >
               {item.label}
             </button>
@@ -81,7 +80,7 @@ const instanceId = (part: NavigationMenuPart, value: string) => `${id}-${part}-$
               data-part="content"
               data-value={item.value}
               class={classes.content}
-              {...navContentAria(item.value, state, config, { triggerId })}
+              {...navInstanceAria('content', item.value, state, config, { trigger: triggerId, content: contentId })}
             >
               {item.links.map((link) => (
                 <a href={link.href} class={classes.link}>
