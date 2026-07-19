@@ -1,71 +1,65 @@
-# Spec 03 — Effects
+# Spec 03 — Effects (RETIRED)
 
-Status: FROZEN 2026-07-09. Vocabulary v3 (rulings of 2026-07-08 applied).
+Status: **RETIRED 2026-07-19.** Supersedes FROZEN-2026-07-09. The effects-as-data
+vocabulary this spec defined (`EffectSpec[]` returned from `effects()`, reconciled by a
+runner, mapped to primitives by executors) is removed. Behaviors now compose the
+primitives **directly**. This file is kept as the record of what changed and why, and to
+carry forward the two rulings that are still true (temporal kinds, non-modal).
 
-Behaviors describe impure work; executors perform it. A behavior returns
-`EffectSpec[]` from `effects(state, config)` — pure data, computed from the
-current state and config. The runner reconciles consecutive lists and the
-executor maps each spec onto a primitive. A component that needs an effect
-the vocabulary cannot express is a change request against THIS spec — stop
-the line, never hack it locally (boundary 7).
+## Why it was retired
 
-## Temporal kinds
+Every `EffectSpec` arm wrapped a primitive that already existed (`sr-announcer`,
+`focus-trap`, `roving-focus`, `typeahead`, `outside-click`, `hover-delay`). The layer
+added nothing but a translation step — and its blank executor slot was a honeypot: two
+executors (`grid-roving`, `hover-intent`) **reimplemented** their primitives
+(`roving-focus`, `hover-delay`) instead of composing them, because a `case` in a switch is
+a place to write a half-solution, whereas `createRovingFocus(root, { columns })` is not.
 
-- **One-shot** (edge-triggered): fired once when the effect appears in the
-  list. Effects present in the very first apply are baseline and are NOT
-  fired — a component that mounts already-loading does not announce
-  "Loading" to a screen reader that can already see it.
-- **Ongoing** (level-triggered): started whenever present — including the
-  first apply (a dialog that mounts open IS trapped) — and stopped when the
-  effect leaves the list or the runner stops. Executors return the cleanup.
+The mandate here ("a component that needs an effect the vocabulary cannot express is a
+change request against THIS spec") is exactly what caused the accretion: it told every port
+to ADD an arm rather than reach for — or extend — a primitive.
 
-## Vocabulary v2
+## The rule now
 
-| Spec | Kind | Executor primitive |
-| --- | --- | --- |
-| `announce { message, politeness }` | one-shot | sr-announcer |
-| `focus-trap { part }` | ongoing | focus-trap/createFocusTrap; stop restores focus |
-| `scroll-lock` | ongoing | focus-trap/preventBodyScroll |
-| `dismiss-on-outside { part, action, exceptParts? }` | ongoing | outside-click/onPointerDownOutside |
+A behavior **composes primitives directly**. Impure work lives in a composition function in
+the behavior file; each framework boundary calls it and nothing more:
 
-`dismiss-on-outside` dispatches `action` through the host on pointerdown
-outside `part`. Events landing inside any `exceptParts` are ignored: a
-layer's own trigger must not dismiss the layer and re-activate it on the
-same gesture (live defect in the dialog oracle).
+- The composition (start the primitives, hold their cleanups) lives in `x.behavior.ts` — a
+  plain function (e.g. `startDialogModalEffects({ content, getTrigger, onDismiss })`) when
+  it composes more than one primitive, or an inline call when it is one.
+- **WC / Astro**: `bindX` calls it on the relevant transition, holds the cleanup, tears down.
+- **React**: a `useEffect` calls the SAME function, returns its cleanup.
 
-Vocabulary v3 additions (ruled 2026-07-08):
+There is no `EffectSpec`, no `effects()` member, no `createEffectRunner`, no `EffectHost`,
+no `use-behavior-effects`. Need a capability → compose the primitive from the primitives
+matrix. Need a capability no primitive has → **extend or add a PRIMITIVE**, never a local
+executor. See `05-authoring.md`; references: `radio-group` (one primitive, direct call) and
+`dialog` (multi-primitive composition function).
 
-| Spec | Kind | Executor primitive |
-| --- | --- | --- |
-| `presence { part }` | ongoing | Presence adapter (wave 0-B): keeps the part mounted through its exit animation, then releases. Astro: no-op (CSS-only, no exit animation) |
+## Carried forward — still true
 
-Non-modal ruling (2026-07-08): a non-modal overlay declares NO focus-trap,
-NO scroll-lock. Pointer events pass through; dismiss-on-outside still fires.
-Modality selects the effect list; it never changes an effect's meaning.
+**Temporal kinds** (the composition function owns this lifecycle, not a runner):
+- **One-shot / edge-triggered** (e.g. a screen-reader announce): fire once on the state
+  TRANSITION, not on baseline mount — a component that mounts already-loading must not
+  announce "Loading". The composition tracks the previous value and fires only on the edge.
+- **Ongoing / level-triggered** (focus-trap, scroll-lock, dismiss, roving): start when the
+  condition becomes true (including a component that mounts already-open — a dialog that
+  mounts open IS trapped), and tear down when it becomes false or on unmount. The primitive
+  returns the cleanup.
 
-## The host
+**Which primitive each old effect composed** (use this as the composition map):
 
-Executors reach the DOM only through an `EffectHost` supplied by the
-framework binding:
+| old effect | compose this primitive |
+| --- | --- |
+| announce | `sr-announcer` (`announceToScreenReader` / `createPoliteAnnouncer`) |
+| focus-trap | `focus-trap` (`createFocusTrap`) — cleanup restores focus |
+| scroll-lock | `focus-trap` (`preventBodyScroll`) |
+| dismiss-on-outside | `outside-click` (`onPointerDownOutside`) — spare `exceptParts`; a layer's own trigger must not dismiss then re-activate on one gesture |
+| roving-focus | `roving-focus` (`createRovingFocus`) |
+| grid-roving | `roving-focus` extended to 2D (`{ columns }`) — do NOT reimplement it |
+| hover-intent | `hover-delay` (`createHoverIntent` / `createControlledHoverDelay`) — do NOT reimplement it |
+| typeahead | `typeahead` (`createTypeahead`) |
 
-```ts
-interface EffectHost {
-  getPart(part: string): HTMLElement | null; // resolve declared part -> element
-  dispatch(action: string): void; // the binding's accepted-dispatch + callback protocol
-}
-```
-
-The behavior stays element-free; the binding owns part registration (refs in
-React, shadow-DOM queries in WC). Effects started in an earlier apply keep
-their start-time host; `apply(effects, host)` takes the current host so new
-effects capture fresh state.
-
-## The runner
-
-`createEffectRunner()` returns `{ apply(effects, host), stop() }` — a pure
-diff over `effectKey` identity. Framework adapters own the lifecycle:
-
-- React: `hooks/use-behavior-effects.ts` applies after every commit and
-  stops on unmount.
-- WC: apply after each patch, stop on disconnect. (Not yet written.)
-- Astro: no client runtime, no effects; static tiers only.
+**Non-modal ruling (2026-07-08, still holds):** a non-modal overlay composes NO focus-trap
+and NO scroll-lock; pointer events pass through; outside-dismiss still applies. Modality
+selects which primitives the behavior composes; it never changes a primitive's meaning.

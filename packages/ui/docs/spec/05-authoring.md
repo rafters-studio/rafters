@@ -10,9 +10,12 @@ and `dialog` (overlay) are the richest; `container`/`card` are the simplest.
 Per component, three kinds of file and nothing else:
 
 - **`x.behavior.ts` = the model.** The pure score -- reducers, aria/keymap
-  projections, effects-as-data -- AND `bindX(root)`, the DOM-native client.
-  The score never *performs*; it describes. It is a total function from state
-  to attributes, so it survives contact with any framework.
+  projections -- AND `bindX(root)`, the DOM-native client, plus (when the
+  component does impure work) a small composition function. The score's
+  projections never *perform*; they describe -- a total function from state to
+  attributes, so they survive contact with any framework. Impure work (focus
+  trap, dismiss, roving, announce) is COMPOSED from primitives in a function in
+  this file that each framework boundary calls -- see `bindX` below.
 - **`x.classes.ts` = the view.** Class strings. No logic.
 - **`x.tsx` / `x.element.ts` / `x.astro` = decorators over the behavior.**
   Each is a thin wrapper that adds exactly two things around the invariant
@@ -44,29 +47,50 @@ shared "binder". The substrate the score composes is in `lib/` and
 before writing any primitive** -- `aria-manager`, `focus-trap`, `roving-focus`,
 `memory` etc. already exist.
 
+**Never put a wrapper between a behavior and a primitive.** No effect vocabulary,
+no `EffectSpec` union, no runner, no executor slot, no registry. A behavior that
+needs a capability COMPOSES the primitive directly; a behavior that needs a
+capability no primitive has EXTENDS or ADDS a primitive -- never a local
+half-solution. A shared executor slot is a honeypot: it is exactly what once let
+`grid-roving` and `hover-intent` reimplement `roving-focus`/`hover-delay` instead
+of composing them. (The retired effects-as-data layer -- Spec 03 -- was removed
+for precisely this reason.)
+
 ## The substrate you compose (never rewrite)
 
 - `lib/contract.ts` -- `createBehavior(spec, config)` -> `{ memory, dispatch }`.
-- `lib/effects.ts` -- `createEffectRunner()`; effects are a closed data union
-  run by the existing primitives (focus-trap, roving, hover, dismiss).
+- `primitives/*` -- the behavior primitives you compose directly: `sr-announcer`,
+  `focus-trap`, `roving-focus`, `outside-click`/`dismissable-layer`, `hover-delay`,
+  `typeahead`, `disclosure`, `selection-group`, `collision-detector`, ... Check the
+  primitives matrix; every impure capability is one of these.
 - `primitives/aria-manager.ts` -- `updateAriaAttribute(el, name, value, { validate: false })`
   applies a resolved projection to an element.
 - `hooks/use-memory.ts` -- `useMemory` (the one surviving React hook,
-  `useSyncExternalStore`); `hooks/use-behavior-effects.ts` runs the runner in a
-  React effect.
+  `useSyncExternalStore`). React runs a behavior's composed primitives in a plain
+  `useEffect` that calls the same composition function `bindX` does.
 - `primitives/rafters-element.ts` -- the shadow-DOM WC base (for pure statics).
 
 ## `bindX` -- the DOM-native client (WC + Astro share it)
 
-Lives in the behavior file. Shape (see `bindNavigationMenu`, `bindDialog`):
+Lives in the behavior file. Shape (see `bindDialog`, `bindRadioGroup`). Two
+composition shapes: a **direct call** when it is one primitive (`radio-group`:
+`createRovingFocus` inline in both `bindRadioGroup` and the React `useEffect`),
+and a **colocated composition function** when more than one (`dialog`'s
+`startDialogModalEffects({ content, getTrigger, onDismiss })`, called by both the
+bind and the React `useEffect`):
 
 1. Read config from the root's `data-*`/attributes.
 2. `getPart` -- `root.querySelector('[data-part="x"]')` (or `getElementById`
    when a part portals out, as dialog's content does).
-3. `createBehavior` + `createEffectRunner`; an `EffectHost` of `{ getPart, dispatch }`.
+3. `createBehavior` -> `{ memory, dispatch }`.
 4. Read part ids from the server markup -- never generate them.
-5. `render()` = apply the aria projection with `aria-manager` (`validate: false`),
-   toggle `hidden` on presence parts, `runner.apply(spec.effects(...))`.
+5. `render()` = apply the aria projection with `aria-manager` (`validate: false`)
+   and toggle `hidden` on presence parts. For impure work, call the behavior's
+   composition function on the relevant state transition and hold its cleanup:
+   ongoing primitives (focus-trap, dismiss, roving) start when their condition
+   becomes true (including a component that mounts already-open) and tear down on
+   the reverse transition/unbind; one-shot ones (announce) fire only on the edge,
+   never on baseline mount.
 6. `memory.subscribe(render)` (fires immediately: first paint).
 7. Wire events (`click` -> dispatch; `keydown` -> `spec.keymap` -> dispatch),
    return a teardown.
@@ -76,11 +100,11 @@ Lives in the behavior file. Shape (see `bindNavigationMenu`, `bindDialog`):
 | archetype | reference | shape |
 |---|---|---|
 | pure static | `container`, `card` | no `bindX`, no `useBehavior`/`useMemory`; the decorators are markup + classes + slots only. WC = `RaftersElement` shadow + `<slot>`. |
-| simple-interactive | `button` | `bindButton`; native `<button>` fulfils Enter/Space, so wire `click` only. One-shot `announce` effect is edge-triggered. |
-| static + effect | `grid` | static except a conditional effect (grid-roving when `role=grid`). |
+| simple-interactive | `button` | `bindButton`; native `<button>` fulfils Enter/Space, so wire `click` only. Composes `sr-announcer` on the loading edge (one-shot). |
+| static + composed | `grid` | static except it composes `roving-focus` (2D, `{ columns }`) when `role=grid`. |
 | text-input | `input` | primary state is a **value**; `setValue` gated by disabled/readonly; native input owns caret/IME/selection -- do not re-implement. |
-| overlay + presence | `dialog` | presence (content mounts/unmounts in React, `hidden`-toggles in the bind) + the ongoing effects runner (focus-trap, scroll-lock, dismiss). Effect-observed parts stay light DOM. |
-| compound | `navigation-menu` | many-part instances (trigger/content per value), roving + hover-intent + dismiss effects. |
+| overlay + presence | `dialog` | presence (content mounts/unmounts in React, `hidden`-toggles in the bind) + a composition function that starts `focus-trap` + `scroll-lock` (`preventBodyScroll`) + `outside-click` on open and tears them down on close. Composed parts stay light DOM. |
+| compound | `navigation-menu` | many-part instances (trigger/content per value); composes `roving-focus` + `hover-delay` + `outside-click`. |
 
 ## The three gotchas (encode all three)
 
@@ -96,13 +120,13 @@ Lives in the behavior file. Shape (see `bindNavigationMenu`, `bindDialog`):
 
 - **React compound decorators carry real hook weight.** A static (button,
   badge) is a couple lines; a compound controlled component is ~40-50 lines of
-  genuine wiring (instance, ids, the dispatch protocol, effect host). That is
-  retained-mode's floor, not fat.
+  genuine wiring (instance, ids, the dispatch protocol, the composed primitives
+  in a `useEffect`). That is retained-mode's floor, not fat.
 - **Portaled overlays need presence tracking** -- but only for the *unguarded*
   cross-ref sources (`aria-labelledby`/`describedby`, which lack the `open`
   guard `aria-controls` has). Everything else keeps a stable id.
 - **Two WC shapes.** Behavior-carrying components are **light-DOM enhancers**
-  (the bind reads real document DOM for effects). Pure statics are **shadow +
+  (the bind reads real document DOM for the primitives it composes). Pure statics are **shadow +
   slots** (`RaftersElement`) -- simpler, but they render every region, so
   unfilled slots become empty padded space. Accepted cost of a no-bind static.
 - `card`/`alert` render raw heading/`<p>` via `createElement` because Typography

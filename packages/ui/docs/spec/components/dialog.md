@@ -1,7 +1,15 @@
 # Component Spec — Dialog
 
-Status: DRAFT. Second test article. Validates composition (Spec 02) and
-effects (Spec 03).
+Status: DRAFT. Second test article. Validates composition (Spec 02).
+
+> **Effects-as-data is retired (Spec 03 retired 2026-07-19).** Where this doc
+> below describes dialog emitting `focus-trap`/`scroll-lock`/`dismiss` effects
+> through a runner, the current implementation composes those primitives
+> DIRECTLY: a `startDialogModalEffects({ content, getTrigger, onDismiss })`
+> function in `dialog.behavior.ts` starts `createFocusTrap` + `preventBodyScroll`
+> + `onPointerDownOutside` on open and tears them down on close, called by both
+> `bindDialog` (WC/Astro) and a React `useEffect`. dialog is the OVERLAY reference
+> for this pattern -- see `05-authoring.md`. Do not reintroduce an effect list.
 
 Files (`src/components/dialog/`):
 

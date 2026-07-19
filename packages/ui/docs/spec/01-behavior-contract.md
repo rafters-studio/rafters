@@ -113,9 +113,12 @@ export interface BehaviorSpec<
     config: Config,
   ) => keyof Actions | null;
 
-  /** Declarative effect requests for the current state (Spec 03).
-   *  Executors diff consecutive results and start/stop accordingly. */
-  effects: (state: State, config: Config) => EffectSpec[];
+  /** RETIRED (Spec 03 retired 2026-07-19). Behaviors compose primitives
+   *  directly in a composition function the framework boundaries call; they no
+   *  longer return an effect list. This member is removed from the type by the
+   *  teardown (issue #1867) once no behavior declares it. Do NOT add it to a
+   *  new behavior -- compose the primitive. */
+  effects?: (state: State, config: Config) => EffectSpec[];
 
   /** Motion declarations per (transition, part) -- Spec 04. Motion is
    *  behavior: intent + axis + sizeClass only. Statics omit this. */
