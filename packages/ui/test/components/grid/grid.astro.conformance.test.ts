@@ -1,7 +1,7 @@
 /**
  * Astro performance of the Grid score. Grid is a STATIC score -- no state, no
  * actions, no keymap -- but the STRUCTURE contract (role disposition, the
- * conditional grid-roving effect) is behavior, so this test drives both
+ * conditional 2D roving-focus composition) is behavior, so this test drives both
  * archetypes end to end. AstroContainer renders the SSR markup but does NOT
  * run the <script>, so the test calls bindGrid directly -- that IS the
  * script's job. A presentation grid stays inert; an honest role="grid"
@@ -39,7 +39,7 @@ describe('grid conformance [astro]', () => {
     );
     expect(root.hasAttribute('role')).toBe(false);
     expect(root.getAttribute('data-preset')).toBe('bento');
-    // The grid-roving effect never engaged: nothing claimed a 0 tab stop.
+    // Roving-focus never engaged: nothing claimed a 0 tab stop.
     expect(document.body.querySelector('[tabindex="0"]')).toBeNull();
     expect(root.textContent).toContain('Metric');
   });

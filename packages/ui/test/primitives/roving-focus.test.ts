@@ -263,6 +263,87 @@ describe('createRovingFocus', () => {
   });
 });
 
+describe('createRovingFocus 2D (columns)', () => {
+  let container: HTMLDivElement;
+
+  beforeEach(() => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+  });
+
+  afterEach(() => {
+    document.body.removeChild(container);
+  });
+
+  // A 2x2 grid of roving cells, matching the ARIA grid conformance fixtures.
+  function createGrid(count: number): HTMLButtonElement[] {
+    const items: HTMLButtonElement[] = [];
+    for (let i = 0; i < count; i++) {
+      const item = document.createElement('button');
+      item.setAttribute('data-roving-item', '');
+      container.appendChild(item);
+      items.push(item);
+    }
+    return items;
+  }
+
+  it('roves in two dimensions: Left/Right by 1, Up/Down by a row', () => {
+    const items = createGrid(4);
+    const cleanup = createRovingFocus(container, { columns: 2 });
+
+    expect(items[0]?.getAttribute('tabindex')).toBe('0');
+    expect(items[1]?.getAttribute('tabindex')).toBe('-1');
+
+    items[0]?.focus();
+    container.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    expect(document.activeElement).toBe(items[1]);
+    container.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    expect(document.activeElement).toBe(items[3]);
+    container.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+    expect(document.activeElement).toBe(items[2]);
+    container.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+    expect(document.activeElement).toBe(items[0]);
+
+    cleanup();
+  });
+
+  it('Home/End jump to the first/last cell', () => {
+    const items = createGrid(4);
+    const cleanup = createRovingFocus(container, { columns: 2 });
+
+    items[0]?.focus();
+    container.dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }));
+    expect(document.activeElement).toBe(items[3]);
+    container.dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true }));
+    expect(document.activeElement).toBe(items[0]);
+
+    cleanup();
+  });
+
+  it('clamps at the edges (no wrap)', () => {
+    const items = createGrid(4);
+    const cleanup = createRovingFocus(container, { columns: 2 });
+
+    // Top-left: Up and Left stay put.
+    items[0]?.focus();
+    container.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+    container.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+    expect(document.activeElement).toBe(items[0]);
+    container.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+    expect(document.activeElement).toBe(items[0]);
+
+    // Bottom-right: Down and Right stay put.
+    items[3]?.focus();
+    container.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+    container.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    expect(document.activeElement).toBe(items[3]);
+    container.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    expect(document.activeElement).toBe(items[3]);
+
+    cleanup();
+  });
+});
+
 describe('focusItem', () => {
   let container: HTMLDivElement;
 

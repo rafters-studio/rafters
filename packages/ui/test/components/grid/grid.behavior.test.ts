@@ -28,22 +28,13 @@ describe('grid aria projection', () => {
   });
 });
 
-describe('grid effects', () => {
-  it('presentation grids have no effects', () => {
-    expect(grid.effects(state, { columns: 3 })).toEqual([]);
-    expect(grid.effects(state, { columns: { base: 2, md: 4 } })).toEqual([]);
-  });
-
-  it('role=grid with fixed columns wires 2D roving', () => {
-    expect(grid.effects(state, { role: 'grid', columns: 4, ariaLabel: 'x' })).toEqual([
-      { type: 'grid-roving', part: 'root', columns: 4 },
-    ]);
-  });
-
-  it('role=grid without fixed columns wires NOTHING (honesty gate)', () => {
-    expect(grid.effects(state, { role: 'grid', columns: 'auto', ariaLabel: 'x' })).toEqual([]);
-  });
-});
+// The 2D grid keyboard contract is no longer a declarative effect on the score
+// -- the WC/Astro bind and the React controller each compose the roving-focus
+// primitive directly (createRovingFocus with its 2D columns option), gated on
+// an honest role="grid" with a fixed column count. That behavior (Left/Right
+// move by one column, Up/Down by a full row, Home/End to the ends, clamped at
+// the edges, presentation/fluid grids stay inert) is asserted end to end in the
+// react/wc/astro conformance suites, which drive the real DOM it operates on.
 
 describe('grid item projection', () => {
   it('items declare their priority through data-priority', () => {
