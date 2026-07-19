@@ -1,0 +1,71 @@
+---
+/**
+ * Typography -- the Astro performance of the static score
+ * (typography.behavior.ts). A static has nothing to subscribe to: this is pure
+ * decoration application, zero client JavaScript. `as` chooses the semantic
+ * element and derives the variant (via the score's `variantForElement`: h5/h6
+ * borrow h4's scale, span reads as body); an explicit `variant` overrides that.
+ * Token props override individual typography dimensions.
+ *
+ * The element is rendered through Astro's dynamic-tag support (a capitalized
+ * variable bound to a native element name), so element selection is one tag,
+ * not the branch-per-element the oracle (src/old/ui/typography.astro) paid for
+ * by hand.
+ *
+ * @cognitive-load 1/10
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import {
+  resolveVariant,
+  variantForElement,
+  type TypographyElement,
+  type TypographyVariant,
+} from './typography.behavior';
+import { resolveTypography } from './typography.classes';
+
+interface Props extends HTMLAttributes<'div'> {
+  as?: TypographyElement;
+  variant?: TypographyVariant;
+  size?: string;
+  weight?: string;
+  color?: string;
+  line?: string;
+  tracking?: string;
+  family?: string;
+  align?: string;
+  transform?: string;
+}
+
+const {
+  as: Tag = 'p',
+  variant,
+  size,
+  weight,
+  color,
+  line,
+  tracking,
+  family,
+  align,
+  transform,
+  class: className,
+  ...attrs
+} = Astro.props;
+
+const resolvedVariant = variant ? resolveVariant(variant) : variantForElement(Tag);
+const classes = classy(
+  resolveTypography(resolvedVariant, {
+    size,
+    weight,
+    color,
+    line,
+    tracking,
+    family,
+    align,
+    transform,
+  }),
+  className,
+);
+---
+
+<Tag data-part="root" class={classes} {...attrs}><slot /></Tag>
