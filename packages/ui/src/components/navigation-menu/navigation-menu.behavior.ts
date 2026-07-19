@@ -1,12 +1,14 @@
-import { compose, type GlueSlice, type Slice } from '../../lib/compose';
+import { compose, type Slice } from '../../lib/compose';
 import {
   createBehavior,
   type AriaAttrs,
   type BehaviorSpec,
   type PartIds,
 } from '../../lib/contract';
-import { createEffectRunner, type EffectHost, type EffectSpec } from '../../lib/effects';
 import { updateAriaAttribute } from '../../primitives/aria-manager';
+import { createMenuHoverIntent } from '../../primitives/hover-delay';
+import { onPointerDownOutside } from '../../primitives/outside-click';
+import { createRovingFocus } from '../../primitives/roving-focus';
 
 /**
  * Navigation menu: a bar of triggers, each disclosing a content panel, one
@@ -132,42 +134,71 @@ const navigation: Slice<
   },
 };
 
-const navigationGlue: GlueSlice<
-  NavigationMenuConfig,
-  NavigationMenuState,
-  Record<never, never>,
-  NavigationMenuPart
-> = {
-  kind: 'glue',
-  name: 'navigation-menu',
-  effects: (state, config): EffectSpec[] => {
-    const open = activeItem(state, config) !== null;
-    const effects: EffectSpec[] = [
-      { type: 'roving-focus', part: 'list', orientation: orientationOf(config) },
-      {
-        type: 'hover-intent',
-        part: 'root',
-        triggerPart: 'trigger',
-        contentPart: 'content',
-        delay: config.delayDuration ?? 200,
-        immediate: open,
-        openAction: 'hoverOpen',
-        closeAction: 'close',
-      },
-    ];
-    if (open) {
-      effects.push({ type: 'dismiss-on-outside', part: 'root', action: 'close' });
-    }
-    return effects;
-  },
-};
-
 export const navigationMenu: BehaviorSpec<
   NavigationMenuConfig,
   NavigationMenuState,
   NavigationMenuActions,
   NavigationMenuPart
-> = compose('navigation-menu', navigation, navigationGlue);
+> = compose('navigation-menu', navigation);
+
+/** The parts, orientation, delay, and dispatch the roving/hover/dismiss trio
+ *  composes against. */
+export interface NavigationMenuEffectPorts {
+  /** The composite root: menubar hover intent listens here and an outside
+   *  pointerdown landing beyond it dismisses. */
+  root: HTMLElement;
+  /** The trigger list: roving tabindex moves focus across its items. Absent
+   *  markup simply skips roving. */
+  list: HTMLElement | null;
+  orientation: 'horizontal' | 'vertical';
+  /** Hover-intent open/close delay in ms. */
+  delay: number;
+  /** Whether a panel is currently open, read live -- see createMenuHoverIntent. */
+  isOpen: () => boolean;
+  /** Open (or hover-switch to) the trigger carrying this value. */
+  onHoverOpen: (value: string) => void;
+  /** Close whatever is open. */
+  onClose: () => void;
+}
+
+/**
+ * The navigation-menu DOM trio, composed directly from the primitives
+ * (replacing the retired effects runner): roving tabindex across the trigger
+ * list, menubar hover intent over the root, and outside-pointerdown dismissal.
+ * Level-triggered whenever the menu is mounted -- BOTH the DOM-native
+ * bindNavigationMenu and the React NavigationMenu start this once and call the
+ * returned cleanup on unmount. The outside-dismiss listener stays attached
+ * throughout; `close` is idempotence-gated (canDispatch rejects it when
+ * nothing is open), so onClose acts only while a panel is open -- no per-open
+ * re-composition. Cleanup releases LIFO.
+ */
+export function startNavigationMenuEffects({
+  root,
+  list,
+  orientation,
+  delay,
+  isOpen,
+  onHoverOpen,
+  onClose,
+}: NavigationMenuEffectPorts): () => void {
+  const releaseRoving = list ? createRovingFocus(list, { orientation }) : () => {};
+  const releaseHover = createMenuHoverIntent(root, {
+    triggerSelector: '[data-part="trigger"]',
+    contentSelector: '[data-part="content"]',
+    delay,
+    isOpen,
+    onOpen: onHoverOpen,
+    onClose,
+  });
+  const releaseDismiss = onPointerDownOutside(root, () => {
+    onClose();
+  });
+  return () => {
+    releaseDismiss();
+    releaseHover();
+    releaseRoving();
+  };
+}
 
 /**
  * Per-instance projections for the many-instance parts. Spec 01's aria()
@@ -207,10 +238,11 @@ export function navContentAria(
  * The DOM-native binding of the score -- the client. The Web Component and
  * the Astro <script> both import THIS; only React (retained-mode) reads the
  * projections above declaratively instead. Composes the substrate the same
- * way the React controller does: createBehavior is the model, the effect
- * runner drives the roving/hover/dismiss primitives, aria-manager applies the
- * projection, and the DOM is the part registry. Living here keeps one binding
- * for every DOM-native performance -- no per-framework copy, no drift.
+ * way the React controller does: createBehavior is the model,
+ * startNavigationMenuEffects composes the roving/hover/dismiss primitives
+ * directly, aria-manager applies the projection, and the DOM is the part
+ * registry. Living here keeps one binding for every DOM-native performance --
+ * no per-framework copy, no drift.
  */
 export function bindNavigationMenu(root: HTMLElement): () => void {
   const config: NavigationMenuConfig = {
@@ -226,16 +258,9 @@ export function bindNavigationMenu(root: HTMLElement): () => void {
     part === 'root' ? root : root.querySelector<HTMLElement>(`[data-part="${part}"]`);
 
   const { memory, dispatch } = createBehavior(navigationMenu, config);
-  const runner = createEffectRunner();
 
   const request = (action: keyof NavigationMenuActions, payload?: string): boolean =>
     dispatch(action, config, ...((payload === undefined ? [] : [payload]) as [string]));
-
-  const host: EffectHost = {
-    getPart,
-    dispatch: (action, payload) =>
-      void request(action as keyof NavigationMenuActions, payload as string | undefined),
-  };
 
   // ids are READ from the markup (server- or author-minted), never generated.
   const ids = {} as PartIds<NavigationMenuPart>;
@@ -282,9 +307,21 @@ export function bindNavigationMenu(root: HTMLElement): () => void {
     projectInstances('content', 'trigger', (value, triggerId) =>
       navContentAria(value, state, config, { triggerId }),
     );
-    runner.apply(navigationMenu.effects(state, config), host);
   };
   const unsubscribe = memory.subscribe(render); // fires immediately: first paint
+
+  // Compose the roving/hover/dismiss trio directly, level-triggered whenever
+  // mounted -- one instance for the menu's lifetime; hover reads the open
+  // state live, so no re-composition on open/close.
+  const stopEffects = startNavigationMenuEffects({
+    root,
+    list: getPart('list'),
+    orientation: orientationOf(config),
+    delay: config.delayDuration ?? 200,
+    isOpen: () => activeItem(memory.get(), config) !== null,
+    onHoverOpen: (value) => void request('hoverOpen', value),
+    onClose: () => void request('close'),
+  });
 
   const onClick = (event: Event) => {
     const trigger = (event.target as HTMLElement).closest<HTMLElement>('[data-part="trigger"]');
@@ -330,7 +367,7 @@ export function bindNavigationMenu(root: HTMLElement): () => void {
 
   return () => {
     unsubscribe();
-    runner.stop();
+    stopEffects();
     root.removeEventListener('click', onClick);
     root.removeEventListener('keydown', onKeydown);
   };

@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { createBehavior, type PartIds, type PayloadArgs } from '../../lib/contract';
 import { keyInputOf } from '../../hooks/key-input';
-import { useBehaviorEffects } from '../../hooks/use-behavior-effects';
 import { useMemory } from '../../hooks/use-memory';
 import classy from '../../primitives/classy';
 import { mergeProps } from '../../primitives/slot';
@@ -10,6 +9,7 @@ import {
   navContentAria,
   navigationMenu,
   navTriggerAria,
+  startNavigationMenuEffects,
   type NavigationMenuActions,
   type NavigationMenuConfig,
   type NavigationMenuPart,
@@ -83,9 +83,9 @@ export function NavigationMenu({
 
   // The controller composes the score with the substrate -- no useBehavior.
   // createBehavior is the model instance (memory + canDispatch-gated
-  // dispatch); useMemory subscribes React to it; useBehaviorEffects runs the
-  // score's roving/hover/dismiss effects through the neutral runner. The rest
-  // is only what React itself needs: ids (useId) and the dispatch call.
+  // dispatch); useMemory subscribes React to it; a mount effect composes the
+  // score's roving/hover/dismiss primitives directly. The rest is only what
+  // React itself needs: ids (useId) and the dispatch call.
   const { memory, dispatch } = React.useMemo(() => createBehavior(navigationMenu, config), []);
   const state = useMemory(memory);
   const active = activeItem(state, config);
@@ -134,14 +134,23 @@ export function NavigationMenu({
     [memory, dispatch],
   );
 
-  useBehaviorEffects(navigationMenu.effects(state, config), {
-    getPart,
-    dispatch: (action, payload) =>
-      request(
-        action as keyof NavigationMenuActions,
-        ...([payload] as PayloadArgs<NavigationMenuActions[keyof NavigationMenuActions]>),
-      ),
-  });
+  // Compose the roving/hover/dismiss trio directly, once per mount (rebuilt
+  // only when orientation or delay change). Hover reads the open state live
+  // from memory, so open/close needs no dependency and roving/hover are not
+  // torn down per render. getPart, memory, and request are stable.
+  React.useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    return startNavigationMenuEffects({
+      root,
+      list: getPart('list'),
+      orientation,
+      delay: delayDuration,
+      isOpen: () => activeItem(memory.get(), latest.current.config) !== null,
+      onHoverOpen: (value) => void request('hoverOpen', value),
+      onClose: () => void request('close'),
+    });
+  }, [orientation, delayDuration, getPart, memory, request]);
 
   const aria = navigationMenu.aria(state, config, ids);
 
