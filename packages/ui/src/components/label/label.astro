@@ -1,0 +1,29 @@
+---
+/**
+ * Astro performance of the Label score.
+ *
+ * Label is a PURE STATIC: the score projects no ARIA, holds no state, and runs
+ * no effects. So this file ships NO `<script>` and imports NO `bindLabel`
+ * (there is none) -- it is server-rendered markup with the shared class
+ * strings and a default slot, and there is nothing to hydrate.
+ *
+ * The root classes come from the SAME `labelClasses` projection the React and
+ * Web Component performances read -- one score, three performances, zero
+ * drift. The native `for` association attribute passes straight through via
+ * `{...attrs}`, exactly as the consumer supplies it.
+ */
+import type { HTMLAttributes } from 'astro/types';
+import { labelClasses, type LabelClassSet } from './label.classes';
+import type { LabelVariant } from './label.behavior';
+
+interface Props extends HTMLAttributes<'label'> {
+  variant?: LabelVariant;
+}
+
+const { variant = 'default', class: className, ...attrs } = Astro.props;
+
+const classes: LabelClassSet = labelClasses({ variant }, {});
+const rootClass = [classes.root, className].filter(Boolean).join(' ');
+---
+
+<label data-part="root" class={rootClass} {...attrs}><slot /></label>
