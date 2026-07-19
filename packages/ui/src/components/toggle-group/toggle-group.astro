@@ -1,0 +1,116 @@
+---
+/**
+ * Astro performance (controller) for toggle-group.
+ *
+ * Server-renders the full LIGHT-DOM markup with classes and the score's initial
+ * projection already applied, so the group is correct and accessible before any
+ * JS. The <script> then hands each server-rendered root to bindToggleGroup --
+ * the SAME DOM-native controller the Web Component uses. Astro imports the
+ * behavior binding like any other module; there is no astro-specific runtime.
+ *
+ * The projection is computed here from the same toggleGroup.aria / toggleItemAria
+ * the React and WC controllers read -- one score, three performances, zero drift.
+ */
+import {
+  toggleGroup,
+  toggleItemAria,
+  type ToggleGroupConfig,
+  type ToggleGroupPart,
+  type ToggleGroupSize,
+  type ToggleGroupType,
+  type ToggleGroupVariant,
+} from './toggle-group.behavior';
+import { toggleGroupClasses } from './toggle-group.classes';
+import type { PartIds } from '../../lib/contract';
+
+interface Item {
+  value: string;
+  label: string;
+  disabled?: boolean;
+}
+
+interface Props {
+  id: string;
+  items: Item[];
+  type?: ToggleGroupType;
+  value?: string | string[];
+  orientation?: 'horizontal' | 'vertical';
+  disabled?: boolean;
+  required?: boolean;
+  name?: string;
+  variant?: ToggleGroupVariant;
+  size?: ToggleGroupSize;
+}
+
+const {
+  id,
+  items,
+  type = 'single',
+  value,
+  orientation = 'horizontal',
+  disabled = false,
+  required = false,
+  name,
+  variant = 'default',
+  size = 'default',
+} = Astro.props;
+
+const config: ToggleGroupConfig = {
+  type,
+  defaultValue: value,
+  orientation,
+  disabled,
+  required,
+  name,
+  variant,
+  size,
+};
+const state = toggleGroup.initialState(config);
+const classes = toggleGroupClasses(config, state);
+
+const ids = {} as PartIds<ToggleGroupPart>;
+for (const part of Object.keys(toggleGroup.parts) as ToggleGroupPart[]) {
+  ids[part] = `${id}-${part}`;
+}
+const rootAria = toggleGroup.aria(state, config, ids);
+---
+
+<div
+  data-part="root"
+  id={ids.root}
+  role="group"
+  data-type={type}
+  data-name={name}
+  class={classes.root}
+  {...rootAria.root}
+>
+  {
+    items.map((item) => (
+      <button
+        type="button"
+        data-part="item"
+        data-value={item.value}
+        data-roving-item
+        disabled={disabled || item.disabled}
+        class={classes.item}
+        {...toggleItemAria(item.value, state, config)}
+      >
+        {item.label}
+      </button>
+    ))
+  }
+</div>
+
+<script>
+  import { bindToggleGroup } from './toggle-group.behavior';
+
+  // The <script> is bundled and runs once per page; bind every instance's
+  // server-rendered root. Same controller as the Web Component.
+  for (const root of document.querySelectorAll<HTMLElement>(
+    '[data-part="root"][role="group"][data-type]',
+  )) {
+    if (root.dataset['bound'] === 'true') continue;
+    root.dataset['bound'] = 'true';
+    bindToggleGroup(root);
+  }
+</script>
