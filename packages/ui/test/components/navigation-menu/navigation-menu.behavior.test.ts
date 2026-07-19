@@ -2,9 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createBehavior } from '../../../src/lib/contract';
 import {
   activeItem,
-  navContentAria,
+  navInstanceAria,
   navigationMenu,
-  navTriggerAria,
   startNavigationMenuEffects,
   type NavigationMenuConfig,
 } from '../../../src/components/navigation-menu/navigation-menu.behavior';
@@ -123,38 +122,39 @@ describe('navigation-menu aria', () => {
   });
 
   it('trigger instances: expanded tracks the active value, controls is never dangling', () => {
-    const open = navTriggerAria('a', { active: 'a', pointerOpened: false }, base, {
-      contentId: 'c-a',
+    const open = navInstanceAria('trigger', 'a', { active: 'a', pointerOpened: false }, base, {
+      content: 'c-a',
     });
     expect(open).toEqual({
       'aria-expanded': 'true',
       'aria-controls': 'c-a',
       'data-state': 'open',
     });
-    const closed = navTriggerAria('b', { active: 'a', pointerOpened: false }, base, {
-      contentId: 'c-b',
+    const closed = navInstanceAria('trigger', 'b', { active: 'a', pointerOpened: false }, base, {
+      content: 'c-b',
     });
     expect(closed['aria-expanded']).toBe('false');
     expect(closed['data-state']).toBe('closed');
   });
 
   it('content instances: labelled by their trigger, hidden when closed', () => {
-    const open = navContentAria('a', { active: 'a', pointerOpened: false }, base, {
-      triggerId: 't-a',
+    const open = navInstanceAria('content', 'a', { active: 'a', pointerOpened: false }, base, {
+      trigger: 't-a',
     });
     expect(open).toEqual({ 'aria-labelledby': 't-a', 'data-state': 'open', hidden: undefined });
-    const closed = navContentAria('a', { active: null, pointerOpened: false }, base, {
-      triggerId: 't-a',
+    const closed = navInstanceAria('content', 'a', { active: null, pointerOpened: false }, base, {
+      trigger: 't-a',
     });
     expect(closed['hidden']).toBe(true);
   });
 
   it('instance projections read the CONTROLLED value', () => {
-    const aria = navTriggerAria(
+    const aria = navInstanceAria(
+      'trigger',
       'a',
       { active: null, pointerOpened: false },
       { value: 'a' },
-      { contentId: 'c' },
+      { content: 'c' },
     );
     expect(aria['aria-expanded']).toBe('true');
   });

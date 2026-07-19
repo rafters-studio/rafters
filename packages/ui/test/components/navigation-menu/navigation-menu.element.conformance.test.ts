@@ -6,7 +6,9 @@
 import { cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { navigationMenu } from '../../../src/components/navigation-menu/navigation-menu.behavior';
 import { RaftersNavigationMenu } from '../../../src/components/navigation-menu/navigation-menu.element';
+import { assertInstanceAriaFulfillment } from '../../harness/conformance';
 
 beforeAll(() => {
   if (!customElements.get('rafters-navigation-menu')) {
@@ -50,6 +52,21 @@ describe('navigation-menu conformance [wc]', () => {
     expect(trigger('products').getAttribute('aria-expanded')).toBe('false');
     expect(trigger('products').getAttribute('aria-controls')).toBe('c-products');
     expect(content('products').getAttribute('aria-labelledby')).toBe('t-products');
+  });
+
+  it('per-instance ARIA equals the score projection, closed and open', async () => {
+    const user = userEvent.setup();
+    const root = await mount();
+    // The DOM-native binding writes hidden="true"; the harness asserts by
+    // presence, so the same driver holds across React/WC/Astro.
+    assertInstanceAriaFulfillment(navigationMenu, root, { active: null, pointerOpened: false }, {});
+    await user.click(trigger('products'));
+    assertInstanceAriaFulfillment(
+      navigationMenu,
+      root,
+      { active: 'products', pointerOpened: false },
+      {},
+    );
   });
 
   it('click opens, click again closes, clicking another switches', async () => {
