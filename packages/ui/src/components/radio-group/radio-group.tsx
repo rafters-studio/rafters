@@ -1,8 +1,8 @@
 import * as React from 'react';
 import { createBehavior, type PartIds } from '../../lib/contract';
-import { useBehaviorEffects } from '../../hooks/use-behavior-effects';
 import { useMemory } from '../../hooks/use-memory';
 import classy from '../../primitives/classy';
+import { createRovingFocus } from '../../primitives/roving-focus';
 import {
   radioGroup,
   radioItemAria,
@@ -96,8 +96,8 @@ export function RadioGroup({
   const config: RadioGroupConfig = { value, defaultValue, orientation, disabled, required, name };
 
   // The controller composes the score with the substrate -- no useBehavior.
-  // createBehavior is the model; useMemory subscribes React to it;
-  // useBehaviorEffects runs the roving-focus effect through the neutral runner.
+  // createBehavior is the model; useMemory subscribes React to it; a useEffect
+  // below composes the roving-focus primitive directly against the root.
   const { memory, dispatch } = React.useMemo(() => createBehavior(radioGroup, config), []);
   const state = useMemory(memory);
 
@@ -111,13 +111,6 @@ export function RadioGroup({
   }, [uid]);
 
   const rootRef = React.useRef<HTMLDivElement>(null);
-  const getPart = React.useCallback(
-    (part: string): HTMLElement | null =>
-      part === 'root'
-        ? rootRef.current
-        : (rootRef.current?.querySelector<HTMLElement>(`[data-part="${part}"]`) ?? null),
-    [],
-  );
 
   // Gotcha #1: the controlled callback compares the EFFECTIVE value before
   // against the INTRINSIC value after the reducer -- a controlled group's
@@ -137,17 +130,22 @@ export function RadioGroup({
     [memory, dispatch],
   );
 
-  useBehaviorEffects(radioGroup.effects(state, config), {
-    getPart,
-    dispatch: (_action, payload) => void request(payload as string),
-  });
+  // Compose the roving-focus primitive directly against the root -- it owns the
+  // roving tabindex and arrow/Home/End movement across the [role="radio"] items.
+  // Declared ABOVE the selection effect so its native keydown listener registers
+  // first and moves focus before the selection handler reads activeElement.
+  React.useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    return createRovingFocus(root, { orientation });
+  }, [orientation]);
 
   // Selection is wired as a NATIVE keydown listener, registered in an effect
-  // that runs AFTER useBehaviorEffects -- so it fires after the roving-focus
-  // effect's own native listener has already moved focus. This is the same
-  // registration order the DOM-native bind relies on; a React synthetic
-  // onKeyDown would fire before roving and read stale focus. Space/Enter select
-  // the focused item; arrows/Home/End select whatever item roving just focused.
+  // that runs AFTER the roving-focus effect above -- so it fires after roving's
+  // own native listener has already moved focus. This is the same registration
+  // order the DOM-native bind relies on; a React synthetic onKeyDown would fire
+  // before roving and read stale focus. Space/Enter select the focused item;
+  // arrows/Home/End select whatever item roving just focused.
   React.useEffect(() => {
     const root = rootRef.current;
     if (!root) return;

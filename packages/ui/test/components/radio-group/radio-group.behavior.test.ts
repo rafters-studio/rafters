@@ -1,7 +1,7 @@
 /**
  * Pure behavior test for the radio-group score. No DOM: exercises reducers,
- * aria/keymap projections, canDispatch gates, effects-as-data, and the
- * per-instance radioItemAria projection directly.
+ * aria/keymap projections, canDispatch gates, and the per-instance
+ * radioItemAria projection directly.
  */
 import { describe, expect, it } from 'vitest';
 import { createBehavior } from '../../../src/lib/contract';
@@ -141,13 +141,9 @@ describe('radio-group keymap', () => {
   });
 });
 
-describe('radio-group effects', () => {
-  it('always requests roving-focus on the root at the configured orientation', () => {
-    expect(radioGroup.effects({ value: null }, { orientation: 'horizontal' })).toEqual([
-      { type: 'roving-focus', part: 'root', orientation: 'horizontal' },
-    ]);
-    expect(radioGroup.effects({ value: null }, {})).toEqual([
-      { type: 'roving-focus', part: 'root', orientation: 'vertical' },
-    ]);
-  });
-});
+// Roving keyboard navigation is no longer a declarative effect on the score --
+// the WC/Astro bind and the React controller each compose the roving-focus
+// primitive directly. Its behavior (arrow/Home/End move focus AND select the
+// newly focused item, horizontal orientation, roving skips disabled items) is
+// asserted end to end in the react/wc/astro conformance suites, which drive the
+// real DOM the primitive operates on.

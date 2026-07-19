@@ -5,8 +5,8 @@ import {
   type BehaviorSpec,
   type PartIds,
 } from '../../lib/contract';
-import { createEffectRunner, type EffectHost, type EffectSpec } from '../../lib/effects';
 import { updateAriaAttribute } from '../../primitives/aria-manager';
+import { createRovingFocus } from '../../primitives/roving-focus';
 
 /**
  * Radio group: an exclusive set of options where exactly one (or none) is
@@ -15,7 +15,7 @@ import { updateAriaAttribute } from '../../primitives/aria-manager';
  *
  * The score's only state axis is the selected value. Focus movement across
  * items is NOT state -- it is ephemeral DOM state owned by the roving-focus
- * effect (mirroring navigation-menu). Selection follows focus per the WAI-ARIA
+ * primitive (mirroring navigation-menu). Selection follows focus per the WAI-ARIA
  * radio pattern: an arrow key moves focus AND selects the newly focused item;
  * Space/Enter select the focused item; Tab enters the group without selecting.
  *
@@ -91,12 +91,9 @@ const radio: Slice<RadioGroupConfig, RadioGroupState, RadioGroupActions, RadioGr
     },
   }),
   // Space/Enter select the focused item. Arrow keys are owned by the
-  // roving-focus effect for movement; the bind adds select-follows-focus.
+  // roving-focus primitive for movement; the bind adds select-follows-focus.
   keymap: (event, _state, part) =>
     part === 'item' && (event.key === 'Enter' || event.key === ' ') ? 'select' : null,
-  effects: (_state, config): EffectSpec[] => [
-    { type: 'roving-focus', part: 'root', orientation: orientationOf(config) },
-  ],
 };
 
 export const radioGroup: BehaviorSpec<
@@ -141,13 +138,12 @@ const MOVEMENT_KEYS: ReadonlySet<string> = new Set([
  * The DOM-native binding of the radio-group score -- the client. The Web
  * Component and the Astro <script> both import THIS; only React (retained-mode)
  * reads the projections above declaratively instead. Composes the substrate the
- * same way the React controller does: createBehavior is the model, the effect
- * runner drives the roving-focus primitive, aria-manager applies the
- * projection, and the DOM is the part registry.
+ * same way the React controller does: createBehavior is the model,
+ * createRovingFocus drives arrow/Home/End movement and the roving tabindex,
+ * aria-manager applies the projection, and the DOM is the part registry.
  *
- * Select-follows-focus: the roving-focus effect registers its keydown listener
- * during the immediate first paint (subscribe -> render -> runner.apply), which
- * runs BEFORE this bind attaches its own keydown listener. So on an arrow key
+ * Select-follows-focus: createRovingFocus registers its keydown listener during
+ * bind (before this bind attaches its own keydown listener). So on an arrow key
  * roving moves focus first, and by the time the bind's handler runs
  * document.activeElement is already the newly focused radio -- which it then
  * selects. Tab-in never routes through keydown, so it focuses without selecting.
@@ -170,16 +166,15 @@ export function bindRadioGroup(root: HTMLElement): () => void {
     part === 'root' ? root : root.querySelector<HTMLElement>(`[data-part="${part}"]`);
 
   const { memory, dispatch } = createBehavior(radioGroup, config);
-  const runner = createEffectRunner();
+
+  // Compose the roving-focus primitive directly -- it owns the roving tabindex
+  // and arrow/Home/End movement across the [role="radio"] items. Registered
+  // here, before the bind's own keydown listener below, so on an arrow key
+  // roving moves focus first and the bind then selects whatever now has focus.
+  const stopRoving = createRovingFocus(root, { orientation: orientationOf(config) });
 
   const request = (action: keyof RadioGroupActions, payload: string): boolean =>
     dispatch(action, config, payload);
-
-  const host: EffectHost = {
-    getPart,
-    dispatch: (action, payload) =>
-      void request(action as keyof RadioGroupActions, payload as string),
-  };
 
   // ids are READ from the markup (server- or author-minted), never generated.
   const ids = {} as PartIds<RadioGroupPart>;
@@ -209,7 +204,6 @@ export function bindRadioGroup(root: HTMLElement): () => void {
       if (value === undefined) continue;
       applyProjection(el, radioItemAria(value, state, config));
     }
-    runner.apply(radioGroup.effects(state, config), host);
   };
   const unsubscribe = memory.subscribe(render); // fires immediately: first paint
 
@@ -244,7 +238,7 @@ export function bindRadioGroup(root: HTMLElement): () => void {
 
   return () => {
     unsubscribe();
-    runner.stop();
+    stopRoving();
     root.removeEventListener('click', onClick);
     root.removeEventListener('keydown', onKeyDown);
   };
