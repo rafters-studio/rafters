@@ -1,0 +1,32 @@
+---
+/**
+ * Astro performance of the Table score. Table is a PURE STATIC -- the score
+ * projects no ARIA onto the root, holds no state, and runs no effects -- so
+ * this file ships NO `<script>` and there is NO bindTable. It is server-
+ * rendered markup with the shared root/wrapper classes and a default slot;
+ * there is nothing to hydrate. One score, two performances (React + Astro),
+ * zero drift -- here the performance is markup + classes + slot, nothing more.
+ *
+ * Composition model: a `<table>` cannot be built from named region slots the
+ * way Card is (its `<thead>`/`<tbody>`/`<tr>` must be real table descendants),
+ * so the consumer composes the semantic tree inside the default slot, applying
+ * the exported class strings (`tableHeaderClasses`, `tableRowClasses`, ...) to
+ * their own `<thead>`/`<tr>`/`<td>`. A selected row applies `tableRowAttrs`
+ * from `table.behavior.ts` -- the SAME projection the React `Table.Row` spreads
+ * -- to carry `aria-selected` and the `data-state="selected"` hook. This
+ * mirrors the oracle's Astro surface (root + slot, sub-parts as class strings).
+ */
+import type { HTMLAttributes } from 'astro/types';
+import { tableRootClasses, tableWrapperClasses } from './table.classes';
+
+interface Props extends HTMLAttributes<'table'> {}
+
+const { class: className, ...attrs } = Astro.props;
+const rootClass = [tableRootClasses, className].filter(Boolean).join(' ');
+---
+
+<div class={tableWrapperClasses}>
+  <table data-part="root" class={rootClass} {...attrs}>
+    <slot />
+  </table>
+</div>

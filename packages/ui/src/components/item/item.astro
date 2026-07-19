@@ -1,0 +1,57 @@
+---
+/**
+ * Astro performance of the Item score. Item is a static score with a
+ * config-driven projection -- no state, no effects -- so this file ships NO
+ * `<script>` and imports NO `bindItem` (there is none). It is server-rendered
+ * markup: the shared classes, the named slots, and the SAME `item.aria`
+ * projection the React and Web Component performances read. One score, three
+ * performances, zero drift.
+ *
+ * A projected `undefined` is omitted by Astro's attribute spread, so
+ * aria-disabled / data-selected / data-disabled render only when true.
+ */
+import type { HTMLAttributes } from 'astro/types';
+import { item, parseItemSize, type ItemConfig } from './item.behavior';
+import {
+  itemClasses,
+  itemContentClasses,
+  itemDescriptionClasses,
+  itemIconClasses,
+  itemLabelClasses,
+} from './item.classes';
+
+interface Props extends HTMLAttributes<'div'> {
+  selected?: boolean;
+  disabled?: boolean;
+  size?: 'default' | 'sm' | 'lg';
+  description?: string;
+}
+
+const {
+  selected = false,
+  disabled = false,
+  size = 'default',
+  description,
+  class: className,
+  ...attrs
+} = Astro.props;
+
+const config: ItemConfig = { size: parseItemSize(size), selected, disabled };
+const classes = itemClasses(config, {});
+const aria = item.aria({}, config, { root: '' }).root ?? {};
+const rootClass = [classes.root, className].filter(Boolean).join(' ');
+
+const hasIcon = Astro.slots.has('icon');
+---
+
+<div data-part="root" class={rootClass} {...aria} {...attrs}>
+  {hasIcon && (
+    <div class={itemIconClasses} aria-hidden="true">
+      <slot name="icon" />
+    </div>
+  )}
+  <div class={itemContentClasses}>
+    <div class={itemLabelClasses}><slot /></div>
+    {description && <div class={itemDescriptionClasses}>{description}</div>}
+  </div>
+</div>
