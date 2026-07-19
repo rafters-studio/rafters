@@ -83,10 +83,8 @@ describe('image aria projection', () => {
 });
 
 describe('image is a static score', () => {
-  it('has no keymap and no effects', () => {
+  it('has no keymap', () => {
     expect(image.keymap({ key: 'Enter' }, state, 'root', {})).toBeNull();
-    expect(image.effects(state, {})).toEqual([]);
-    expect(image.effects(state, { status: 'loading' })).toEqual([]);
   });
 
   it('has no actions and initial state is empty', () => {

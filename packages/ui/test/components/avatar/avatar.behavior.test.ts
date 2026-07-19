@@ -79,10 +79,6 @@ describe('avatar is a static score -- no client, no bind', () => {
     expect(avatar.keymap({ key: 'Enter' }, state, 'root', {})).toBeNull();
   });
 
-  it('has no effects -- nothing to perform, so nothing to bind', () => {
-    expect(avatar.effects(state, {})).toEqual([]);
-  });
-
   it('initial state is empty -- the datum is config, not state', () => {
     expect(avatar.initialState({})).toEqual({});
   });

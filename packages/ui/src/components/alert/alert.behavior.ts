@@ -38,5 +38,4 @@ export const alert: BehaviorSpec<AlertConfig, AlertState, AlertActions, AlertPar
   // unconditionally (never native to div, so the score must state it).
   aria: () => ({ root: { role: 'alert' } }),
   keymap: () => null,
-  effects: () => [],
 };

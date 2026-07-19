@@ -120,7 +120,6 @@ export const progress: BehaviorSpec<ProgressConfig, ProgressState, ProgressActio
       };
     },
     keymap: () => null,
-    effects: () => [],
   };
 
 function parseVariant(raw: string | null): ProgressVariant {

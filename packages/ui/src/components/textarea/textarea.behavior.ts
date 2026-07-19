@@ -100,8 +100,6 @@ const textarea: Slice<TextareaConfig, TextareaState, TextareaActions, TextareaPa
   },
   // The native <textarea> owns every key: no keymap action to claim.
   keymap: () => null,
-  // No focus-trap, no roving, no dismissal -- the simplest bind shape.
-  effects: () => [],
 };
 
 export const textareaBehavior: BehaviorSpec<

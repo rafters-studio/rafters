@@ -43,10 +43,6 @@ describe('spinner is a pure static -- no client, no bind', () => {
     expect(spinner.keymap({ key: 'Enter' }, state, 'root', {})).toBeNull();
   });
 
-  it('has no effects -- nothing to perform, so nothing to bind', () => {
-    expect(spinner.effects(state, {})).toEqual([]);
-  });
-
   it('initial state is empty -- a static score has nothing to remember', () => {
     expect(spinner.initialState({})).toEqual({});
   });

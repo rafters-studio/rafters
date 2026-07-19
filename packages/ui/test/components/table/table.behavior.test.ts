@@ -34,10 +34,6 @@ describe('table has no interactive contract', () => {
     expect(table.keymap({ key: 'ArrowDown' }, state, 'row', config)).toBeNull();
   });
 
-  it('runs no effects', () => {
-    expect(table.effects(state, config)).toEqual([]);
-  });
-
   it('has no actions and initial state is empty', () => {
     expect(Object.keys(table.actions)).toEqual([]);
     expect(table.initialState(config)).toEqual({});

@@ -16,9 +16,8 @@ describe('badge behavior (static score: nothing to subscribe to)', () => {
     expect(badge.aria({}, {}, { root: 'r' })).toEqual({ root: {} });
   });
 
-  it('claims no keys and declares no effects', () => {
+  it('claims no keys', () => {
     expect(badge.keymap({ key: 'Enter' }, {}, 'root', {})).toBeNull();
-    expect(badge.effects({}, {})).toEqual([]);
   });
 
   it('canDispatch is permissive (there is nothing to gate)', () => {

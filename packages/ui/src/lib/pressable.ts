@@ -1,6 +1,5 @@
 import type { AriaAttrs, PartDecl } from './contract';
 import type { Slice } from './compose';
-import type { EffectSpec } from './effects';
 
 export interface PressableConfig {
   toggle?: boolean | undefined;
@@ -60,15 +59,5 @@ export function pressable<Config extends PressableConfig>(): Slice<
     },
     keymap: (event, _state, part) =>
       part === 'root' && (event.key === 'Enter' || event.key === ' ') ? 'press' : null,
-    effects: (_state, config): EffectSpec[] =>
-      config.loading
-        ? [
-            {
-              type: 'announce',
-              message: config.loadingAnnouncement ?? 'Loading',
-              politeness: 'polite',
-            },
-          ]
-        : [],
   };
 }

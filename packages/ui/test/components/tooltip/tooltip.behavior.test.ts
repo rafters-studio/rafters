@@ -111,13 +111,6 @@ describe('tooltip keymap (dismiss)', () => {
   });
 });
 
-describe('tooltip effects', () => {
-  it('are empty in every state: hover timing and positioning are DOM concerns', () => {
-    expect(tooltip.effects(tooltip.initialState(closed), closed)).toEqual([]);
-    expect(tooltip.effects(tooltip.initialState(openUncontrolled), openUncontrolled)).toEqual([]);
-  });
-});
-
 describe('tooltipPlacement defaults', () => {
   it('defaults to top/center with a 4px offset', () => {
     expect(tooltipPlacement({})).toEqual({ side: 'top', align: 'center', sideOffset: 4 });

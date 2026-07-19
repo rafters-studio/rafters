@@ -97,8 +97,6 @@ const input: Slice<InputConfig, InputState, InputActions, InputPart> = {
   },
   // The native <input> owns every key: no keymap action to claim.
   keymap: () => null,
-  // No focus-trap, no roving, no dismissal -- the simplest bind shape.
-  effects: () => [],
 };
 
 export const inputBehavior: BehaviorSpec<InputConfig, InputState, InputActions, InputPart> =

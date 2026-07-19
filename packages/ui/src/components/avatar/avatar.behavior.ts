@@ -94,5 +94,4 @@ export const avatar: BehaviorSpec<AvatarConfig, AvatarState, AvatarActions, Avat
   // ARIA -- is Avatar's contract, and presence is `resolveAvatar`.
   aria: () => ({ root: {}, image: {}, fallback: {} }),
   keymap: () => null,
-  effects: () => [],
 };

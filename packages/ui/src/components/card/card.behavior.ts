@@ -57,5 +57,4 @@ export const card: BehaviorSpec<CardConfig, CardState, CardActions, CardPart> = 
   // every framework.
   aria: () => ({ root: {} }),
   keymap: () => null,
-  effects: () => [],
 };

@@ -34,10 +34,6 @@ describe('skeleton is a pure static -- no client, no bind', () => {
     expect(skeleton.keymap({ key: 'Tab' }, state, 'root', {})).toBeNull();
   });
 
-  it('has no effects -- nothing to perform, so nothing to bind', () => {
-    expect(skeleton.effects(state, {})).toEqual([]);
-  });
-
   it('initial state is empty -- a static score has nothing to remember', () => {
     expect(skeleton.initialState({})).toEqual({});
   });

@@ -101,14 +101,9 @@ describe('textarea aria projection', () => {
   });
 });
 
-describe('textarea keymap and effects (the simplest bind shape)', () => {
+describe('textarea keymap (the simplest bind shape)', () => {
   it('claims no keys -- the native textarea owns editing', () => {
     expect(textareaBehavior.keymap({ key: 'a' }, { value: '' }, 'textarea', {})).toBeNull();
     expect(textareaBehavior.keymap({ key: 'Enter' }, { value: '' }, 'textarea', {})).toBeNull();
-  });
-
-  it('describes no effects in any state', () => {
-    expect(textareaBehavior.effects({ value: '' }, {})).toEqual([]);
-    expect(textareaBehavior.effects({ value: 'x' }, { invalid: true, disabled: true })).toEqual([]);
   });
 });

@@ -29,10 +29,6 @@ describe('empty is a pure static -- no client, no bind', () => {
     expect(empty.keymap({ key: 'Enter' }, state, 'root', {})).toBeNull();
   });
 
-  it('has no effects -- nothing to perform, so nothing to bind', () => {
-    expect(empty.effects(state, {})).toEqual([]);
-  });
-
   it('initial state is empty -- a static score has nothing to remember', () => {
     expect(empty.initialState({})).toEqual({});
   });

@@ -60,5 +60,4 @@ export const scrollArea: BehaviorSpec<
   // harness asserts the empty contract across every framework.
   aria: () => ({ root: {} }),
   keymap: () => null,
-  effects: () => [],
 };

@@ -44,5 +44,4 @@ export const empty: BehaviorSpec<EmptyConfig, EmptyState, EmptyActions, EmptyPar
   // contract across every framework.
   aria: () => ({ root: {} }),
   keymap: () => null,
-  effects: () => [],
 };

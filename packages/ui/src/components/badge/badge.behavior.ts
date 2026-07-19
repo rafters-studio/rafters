@@ -44,5 +44,4 @@ export const badge: BehaviorSpec<BadgeConfig, BadgeState, BadgeActions, BadgePar
   // inline chip projects nothing for the harness to assert beyond presence.
   aria: () => ({ root: {} }),
   keymap: () => null,
-  effects: () => [],
 };

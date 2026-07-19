@@ -88,10 +88,9 @@ const tooltipGlue: GlueSlice<TooltipConfig, TooltipState, { close: undefined }, 
   },
   // WAI-ARIA tooltip pattern: Escape dismisses the tip. The idempotence gate
   // makes this a no-op when already closed.
-  keymap: (event) => (event.key === 'Escape' ? 'close' : null),
   // Positioning and hover-intent timing are DOM concerns composed directly by
-  // the clients (collision-detector + hover-delay), not vocabulary effects.
-  effects: () => [],
+  // the clients (collision-detector + hover-delay), not behavior state.
+  keymap: (event) => (event.key === 'Escape' ? 'close' : null),
 };
 
 export const tooltip: BehaviorSpec<TooltipConfig, TooltipState, TooltipActions, TooltipPart> =

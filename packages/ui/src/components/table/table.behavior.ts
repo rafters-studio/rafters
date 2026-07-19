@@ -54,7 +54,6 @@ export const table: BehaviorSpec<TableConfig, TableState, TableActions, TablePar
   // nothing onto the root, and the harness asserts the empty contract.
   aria: () => ({ root: {} }),
   keymap: () => null,
-  effects: () => [],
 };
 
 /**

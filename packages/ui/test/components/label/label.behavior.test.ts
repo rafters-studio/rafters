@@ -30,10 +30,6 @@ describe('label is a pure static -- no client, no bind', () => {
     expect(label.keymap({ key: 'Enter' }, state, 'root', {})).toBeNull();
   });
 
-  it('has no effects -- nothing to perform, so nothing to bind', () => {
-    expect(label.effects(state, {})).toEqual([]);
-  });
-
   it('initial state is empty -- a static score has nothing to remember', () => {
     expect(label.initialState({})).toEqual({});
   });

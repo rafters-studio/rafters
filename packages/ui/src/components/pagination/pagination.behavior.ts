@@ -56,5 +56,4 @@ export const pagination: BehaviorSpec<
   // empty contract across every framework.
   aria: () => ({ root: {} }),
   keymap: () => null,
-  effects: () => [],
 };

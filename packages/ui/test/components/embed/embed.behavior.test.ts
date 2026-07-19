@@ -40,10 +40,6 @@ describe('embed is a pure static -- no client, no bind', () => {
     expect(embed.keymap({ key: 'Enter' }, state, 'root', config)).toBeNull();
   });
 
-  it('has no effects -- the loading lifecycle is native lazy-load, not a reducer', () => {
-    expect(embed.effects(state, config)).toEqual([]);
-  });
-
   it('initial state is empty -- a static score has nothing to remember', () => {
     expect(embed.initialState(config)).toEqual({});
   });

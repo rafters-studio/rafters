@@ -121,7 +121,6 @@ const checkboxSlice: Slice<CheckboxConfig, CheckboxState, CheckboxActions, Check
   // button's click (framework affordance) -- the bind wires click only, so no
   // keydown branch claims it here.
   keymap: (event, _state, part) => (part === 'root' && event.key === ' ' ? 'toggle' : null),
-  effects: () => [],
 };
 
 export const checkbox: BehaviorSpec<CheckboxConfig, CheckboxState, CheckboxActions, CheckboxPart> =

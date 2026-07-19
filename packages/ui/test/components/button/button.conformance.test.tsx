@@ -41,12 +41,12 @@ const reactAdapter: ButtonAdapter = {
 runButtonConformance(reactAdapter);
 
 /**
- * The announce effect is edge-triggered: it fires on a loading TRANSITION, not
- * on a mount that is already loading. This is the retained-mode surface --
- * React reruns effects across commits, so the runner (persisted in
- * useBehaviorEffects) sees loading appear after a non-loading baseline. The
- * DOM-native bind proves only baseline suppression (shared suite); the runtime
- * transition lives here.
+ * The loading announcement is edge-triggered: it fires on a loading TRANSITION,
+ * not on a mount that is already loading. The Button composes the sr-announcer
+ * primitive directly in a React effect that compares the previous loading flag
+ * against the current one, so it announces only when loading crosses
+ * false->true and stays silent on a baseline mount. The DOM-native bind proves
+ * only baseline suppression (shared suite); the runtime transition lives here.
  */
 describe('button announce [react, edge-triggered]', () => {
   afterEach(() => {

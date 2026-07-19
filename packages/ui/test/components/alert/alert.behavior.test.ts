@@ -30,10 +30,6 @@ describe('alert has no dynamic behavior', () => {
     expect(alert.keymap({ key: 'Escape' }, state, 'root', {})).toBeNull();
   });
 
-  it('has no effects', () => {
-    expect(alert.effects(state, {})).toEqual([]);
-  });
-
   it('initial state is empty -- a static score has nothing to remember', () => {
     expect(alert.initialState({})).toEqual({});
   });

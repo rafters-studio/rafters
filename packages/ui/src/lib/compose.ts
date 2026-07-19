@@ -6,7 +6,6 @@ import type {
   PartDecl,
   PartIds,
 } from './contract';
-import type { EffectSpec } from './effects';
 
 /** Order-insensitive structural serialization: two PartDecls with the same
  *  entries in a different key order are the SAME declaration, not a collision.
@@ -34,7 +33,6 @@ export interface Slice<Config, State, Actions extends ActionPayloads, Part exten
   canDispatch?: (state: State, action: keyof Actions, config: Config) => boolean;
   aria?: (state: State, config: Config, ids: PartIds<Part>) => Partial<Record<Part, AriaAttrs>>;
   keymap?: (event: KeyInput, state: State, part: Part, config: Config) => keyof Actions | null;
-  effects?: (state: State, config: Config) => EffectSpec[];
 }
 
 export interface GlueSlice<
@@ -60,7 +58,6 @@ export interface GlueSlice<
     part: Part,
     config: Config,
   ) => keyof Actions | null;
-  effects?: (state: MergedState, config: Config) => EffectSpec[];
 }
 
 export type DisjointFrom<A, B> = [Extract<keyof A, keyof B>] extends [never]
@@ -223,7 +220,5 @@ export function compose(
       }
       return claims[0]?.action ?? null;
     },
-    effects: (state, config) =>
-      contributors.flatMap((entry) => entry.effects?.(state, config) ?? []),
   };
 }

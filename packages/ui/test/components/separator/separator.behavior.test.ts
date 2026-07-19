@@ -57,11 +57,6 @@ describe('separator is a static score -- no client, no bind', () => {
     expect(separator.keymap({ key: 'ArrowRight' }, state, 'root', {})).toBeNull();
   });
 
-  it('has no effects -- nothing to perform, so nothing to bind', () => {
-    expect(separator.effects(state, {})).toEqual([]);
-    expect(separator.effects(state, { decorative: false })).toEqual([]);
-  });
-
   it('initial state is empty -- a static score has nothing to remember', () => {
     expect(separator.initialState({})).toEqual({});
   });

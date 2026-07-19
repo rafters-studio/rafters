@@ -85,5 +85,4 @@ export const aspectRatio: BehaviorSpec<
   // so the score projects nothing and the harness asserts the empty contract.
   aria: () => ({ root: {} }),
   keymap: () => null,
-  effects: () => [],
 };
