@@ -5,8 +5,9 @@ import {
   type BehaviorSpec,
   type PartIds,
 } from '../../lib/contract';
-import { createEffectRunner, type EffectHost } from '../../lib/effects';
 import { updateAriaAttribute } from '../../primitives/aria-manager';
+import { createFocusTrap, preventBodyScroll } from '../../primitives/focus-trap';
+import { onPointerDownOutside } from '../../primitives/outside-click';
 import {
   disclosable,
   isOpen,
@@ -110,10 +111,15 @@ export const dialog: BehaviorSpec<DialogConfig, DialogState, DialogActions, Dial
  * and the Astro <script> both import THIS; only React reads the projections
  * declaratively. Same shape as bindNavigationMenu, plus the two overlay
  * concerns: PRESENCE (content/overlay are present-but-hidden, toggled on the
- * open axis -- effect-observed parts must be light DOM so focus-trap's
+ * open axis -- the trapped/dismiss-observed parts must be light DOM so focus-trap's
  * activeElement read and dismiss's document .contains work) and the ONGOING
- * effects runner (focus-trap, scroll-lock, dismiss-on-outside run while open
- * and modal, stopped on close). Enter-only; exit animation waits on Presence.
+ * overlay lifecycle. The bind OWNS that lifecycle directly: on the open(+modal)
+ * transition it starts the trio -- createFocusTrap(content), preventBodyScroll(),
+ * onPointerDownOutside(content) sparing the trigger -- and tears all three down
+ * on close/unbind (focus restore rides on the trap's teardown). Level-triggered:
+ * started once when it should be active, stopped once when it should not, so the
+ * render tick (which fires on every state change) never re-arms a live trap.
+ * Enter-only; exit animation waits on Presence.
  */
 export function bindDialog(root: HTMLElement): () => void {
   const config: DialogConfig = {
@@ -127,12 +133,38 @@ export function bindDialog(root: HTMLElement): () => void {
     part === 'root' ? root : root.querySelector<HTMLElement>(`[data-part="${part}"]`);
 
   const { memory, dispatch } = createBehavior(dialog, config);
-  const runner = createEffectRunner();
 
   const request = (action: keyof DialogActions): boolean => dispatch(action, config);
-  const host: EffectHost = {
-    getPart,
-    dispatch: (action) => void request(action as keyof DialogActions),
+
+  // The modal overlay lifecycle, composed directly from the primitives (no
+  // effect runner). While open+modal the trio is live; its cleanups are held
+  // here so the level-triggered guard in render() starts it exactly once and
+  // stops it exactly once. Teardown runs the cleanups in start order, so the
+  // focus-trap's focus restore fires first -- matching the runner it replaces.
+  let overlay: Array<() => void> | null = null;
+  const startOverlay = () => {
+    const content = getPart('content');
+    if (!content) return;
+    overlay = [
+      createFocusTrap(content),
+      preventBodyScroll(),
+      onPointerDownOutside(content, (event) => {
+        const target = event.target as Node;
+        // Spare the trigger: without this, pointerdown on it dismisses the
+        // layer and the same gesture's click re-opens it (exceptParts).
+        if (getPart('trigger')?.contains(target)) return;
+        // The native event is in hand here so a binding could veto BEFORE the
+        // close dispatch (React's dismissVetoRef path); the DOM-native bind has
+        // no veto consumer, so it dispatches close directly -- as it did when
+        // the dismiss executor's host.dispatch dropped the event.
+        request('close');
+      }),
+    ];
+  };
+  const stopOverlay = () => {
+    if (!overlay) return;
+    for (const cleanup of overlay) cleanup();
+    overlay = null;
   };
 
   // ids READ from the server/author markup, never generated.
@@ -162,7 +194,12 @@ export function bindDialog(root: HTMLElement): () => void {
       const el = getPart(part);
       if (el) el.hidden = !open;
     }
-    runner.apply(dialog.effects(state, config), host);
+    // Level-triggered: present only while open+modal. Start on the false->true
+    // transition (after content is un-hidden, so focus-trap can focus into it),
+    // tear down on true->false. The overlay handle is the transition guard.
+    const shouldBeActive = open && isModal(config);
+    if (shouldBeActive && !overlay) startOverlay();
+    else if (!shouldBeActive && overlay) stopOverlay();
   };
   const unsubscribe = memory.subscribe(render); // fires immediately: first paint
 
@@ -204,7 +241,7 @@ export function bindDialog(root: HTMLElement): () => void {
 
   return () => {
     unsubscribe();
-    runner.stop();
+    stopOverlay();
     root.removeEventListener('click', onClick);
     root.removeEventListener('keydown', onKeydown);
   };
