@@ -5,8 +5,8 @@ import {
   type BehaviorSpec,
   type PartIds,
 } from '../../lib/contract';
-import { createEffectRunner, type EffectHost } from '../../lib/effects';
 import { updateAriaAttribute } from '../../primitives/aria-manager';
+import { announceToScreenReader } from '../../primitives/sr-announcer';
 import {
   pressable,
   type PressableActions,
@@ -57,8 +57,8 @@ export const button: BehaviorSpec<ButtonConfig, ButtonState, ButtonActions, Butt
  * The DOM-native binding of the button score -- the client. The Web Component
  * and the Astro <script> both import THIS; only React (retained-mode) reads the
  * projections declaratively instead. Same shape as bindDialog / bindNavigationMenu:
- * createBehavior is the model, the effect runner drives the announce primitive,
- * aria-manager applies the projection, and the DOM is the part registry.
+ * createBehavior is the model, the render composes the sr-announcer primitive
+ * directly, aria-manager applies the projection, and the DOM is the part registry.
  *
  * Archetype notes (simple-interactive):
  * - The `root` is a native <button>, so Enter/Space are fulfilled by the
@@ -66,11 +66,12 @@ export const button: BehaviorSpec<ButtonConfig, ButtonState, ButtonActions, Butt
  *   there is no keydown branch. A suppressed press (disabled/loading/soft-
  *   disabled, gated by canDispatch) also prevents the click's default so a
  *   form is not submitted and a double activation cannot land.
- * - The announce effect is edge-triggered (one-shot). The runner's first
- *   apply() is baseline: a button whose markup mounts already-loading projects
- *   aria-busy but does NOT announce. The runtime loading transition is the
- *   retained-mode (React) surface -- the DOM-native bind reads config once from
- *   the server/author markup, exactly like bindDialog reads default-open.
+ * - The loading announcement is edge-triggered: it fires once on the loading
+ *   false->true transition, never on a baseline mount (a button whose markup
+ *   mounts already-loading projects aria-busy but stays silent). The bind reads
+ *   config once from the server/author markup, so loading never transitions
+ *   here -- the edge tracking below is the same shape the React controller
+ *   uses, and the runtime transition is the retained-mode (React) surface.
  */
 export function bindButton(root: HTMLElement): () => void {
   // Config is READ from the projected markup (server- or author-minted), never
@@ -91,12 +92,20 @@ export function bindButton(root: HTMLElement): () => void {
     part === 'root' ? root : root.querySelector<HTMLElement>(`[data-part="${part}"]`);
 
   const { memory, dispatch } = createBehavior(button, config);
-  const runner = createEffectRunner();
 
   const request = (action: keyof ButtonActions): boolean => dispatch(action, config);
-  const host: EffectHost = {
-    getPart,
-    dispatch: (action) => void request(action as keyof ButtonActions),
+
+  // Edge-triggered loading announcement, composing sr-announcer directly. Seed
+  // the previous-loading tracker to the baseline config so a mount that is
+  // already loading is NOT announced; only a false->true transition fires. The
+  // DOM-native bind reads config once, so this never transitions in practice --
+  // it holds the same contract the React controller drives at runtime.
+  let prevLoading = config.loading ?? false;
+  const announceLoadingEdge = (loading: boolean) => {
+    if (loading && !prevLoading) {
+      announceToScreenReader(config.loadingAnnouncement ?? 'Loading', 'polite');
+    }
+    prevLoading = loading;
   };
 
   // ids are READ from the markup; button carries no id-ref aria, but the
@@ -121,7 +130,7 @@ export function bindButton(root: HTMLElement): () => void {
       const el = getPart(part);
       if (el && attrs) applyProjection(el, attrs);
     }
-    runner.apply(button.effects(state, config), host);
+    announceLoadingEdge(config.loading ?? false);
   };
   const unsubscribe = memory.subscribe(render); // fires immediately: first paint (baseline)
 
@@ -138,7 +147,6 @@ export function bindButton(root: HTMLElement): () => void {
 
   return () => {
     unsubscribe();
-    runner.stop();
     root.removeEventListener('click', onClick);
   };
 }

@@ -1,8 +1,8 @@
 import * as React from 'react';
 import { createBehavior, type PartIds } from '../../lib/contract';
-import { useBehaviorEffects } from '../../hooks/use-behavior-effects';
 import { useMemory } from '../../hooks/use-memory';
 import classy from '../../primitives/classy';
+import { announceToScreenReader } from '../../primitives/sr-announcer';
 import {
   button,
   type ButtonActions,
@@ -90,29 +90,11 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>((props, r
   };
 
   // The controller composes the score with the substrate directly -- no
-  // useBehavior. createBehavior is the model, useMemory subscribes, and
-  // useBehaviorEffects reconciles the announce effect after every commit
-  // (the runner persists across commits, so loading false->true fires while a
-  // mount-already-loading button stays baseline-suppressed).
+  // useBehavior. createBehavior is the model, useMemory subscribes, and the
+  // effect below composes the sr-announcer primitive directly on the loading
+  // false->true edge (a mount-already-loading button stays baseline-suppressed).
   const { memory, dispatch } = React.useMemo(() => createBehavior(button, config), []);
   const state = useMemory(memory);
-
-  const rootRef = React.useRef<HTMLButtonElement | null>(null);
-  const setRef = React.useCallback(
-    (element: HTMLButtonElement | null) => {
-      rootRef.current = element;
-      if (typeof ref === 'function') ref(element);
-      else if (ref) ref.current = element;
-    },
-    [ref],
-  );
-  const getPart = React.useCallback(
-    (part: string): HTMLElement | null =>
-      part === 'root'
-        ? rootRef.current
-        : (rootRef.current?.querySelector<HTMLElement>(`[data-part="${part}"]`) ?? null),
-    [],
-  );
 
   // Gotcha #1: the controlled callback compares the EFFECTIVE value before
   // (the `pressed` prop when controlled) against the INTRINSIC value after the
@@ -131,11 +113,19 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>((props, r
     [dispatch, memory],
   );
 
-  const host = React.useMemo(
-    () => ({ getPart, dispatch: (action: string) => void request(action as keyof ButtonActions) }),
-    [getPart, request],
-  );
-  useBehaviorEffects(button.effects(state, config), host);
+  // Compose the sr-announcer primitive directly, edge-triggered: announce the
+  // loading message once on the loading false->true transition, never on a
+  // baseline mount. prevLoading seeds to the current loading so the first commit
+  // is baseline; announceToScreenReader is called only inside the edge branch so
+  // no live region is constructed for a button that never transitions.
+  const prevLoading = React.useRef(loading);
+  React.useEffect(() => {
+    const wasLoading = prevLoading.current;
+    prevLoading.current = loading;
+    if (loading && !wasLoading) {
+      announceToScreenReader(loadingAnnouncement ?? 'Loading', 'polite');
+    }
+  }, [loading, loadingAnnouncement]);
 
   const uid = React.useId();
   const ids = {} as PartIds<ButtonPart>;
@@ -145,7 +135,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>((props, r
 
   return (
     <button
-      ref={setRef}
+      ref={ref}
       type={type ?? 'button'}
       disabled={disabled}
       data-part="root"
