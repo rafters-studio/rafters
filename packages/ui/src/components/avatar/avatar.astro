@@ -1,0 +1,49 @@
+---
+/**
+ * Avatar -- the Astro performance of the Avatar score.
+ *
+ * A caller-decides static, zero client JavaScript, matching the oracle: the
+ * caller passes `src` to render the image, or omits it (or sets `status`) to
+ * fall back. Presence is the SAME `resolveAvatar` the React and Web Component
+ * performances read -- one score, three performances, zero drift. There is no
+ * `<script>` and no `bindAvatar`; there is nothing to hydrate.
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import {
+  type AvatarConfig,
+  type AvatarSize,
+  type AvatarStatus,
+  resolveAvatar,
+} from './avatar.behavior';
+import { avatarClasses } from './avatar.classes';
+
+interface Props extends HTMLAttributes<'span'> {
+  size?: AvatarSize;
+  src?: string;
+  alt?: string;
+  /** Explicit load outcome; defaults from `src` (present -> loaded). */
+  status?: AvatarStatus;
+  /** Fallback text; omit to use the default slot for the initials/icon. */
+  fallback?: string;
+}
+
+const { size, src, alt = '', status, fallback, class: className, ...attrs } = Astro.props;
+
+const effectiveStatus: AvatarStatus = status ?? (src ? 'loaded' : 'error');
+const config: AvatarConfig = { size, status: effectiveStatus };
+const resolved = resolveAvatar(config);
+const classes = avatarClasses(config);
+const rootClass = classy(classes.root, className);
+---
+
+<span data-part="root" class={rootClass} {...attrs}>
+  {!resolved.imageHidden && src && (
+    <img data-part="image" src={src} alt={alt} class={classes.image} />
+  )}
+  {!resolved.fallbackHidden && (
+    <span data-part="fallback" class={classes.fallback}>
+      {fallback ? fallback : <slot />}
+    </span>
+  )}
+</span>
