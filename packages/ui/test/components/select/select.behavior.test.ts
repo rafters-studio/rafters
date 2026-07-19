@@ -181,23 +181,9 @@ describe('select keymap', () => {
   });
 });
 
-describe('select effects', () => {
-  it('closed: no effects', () => {
-    expect(select.effects(select.initialState(closed), closed)).toEqual([]);
-  });
-
-  it('open: roving focus, typeahead, and outside dismissal sparing the trigger', () => {
-    expect(select.effects(select.initialState(openSeed), openSeed)).toEqual([
-      { type: 'roving-focus', part: 'content', orientation: 'vertical' },
-      { type: 'typeahead', part: 'content' },
-      { type: 'dismiss-on-outside', part: 'content', action: 'close', exceptParts: ['trigger'] },
-    ]);
-  });
-
-  it('controlled open drives effects without touching intrinsic state', () => {
-    const config: SelectConfig = { open: true };
-    expect(select.effects({ open: false, value: '', highlighted: undefined }, config)).toHaveLength(
-      3,
-    );
-  });
-});
+// The open-listbox effect trio (roving focus, typeahead, trigger-spared outside
+// dismissal) is no longer a declarative effect-spec on the score; the bindings
+// compose the primitives directly via startSelectOpenEffects. The BEHAVIOR is
+// asserted end to end in the conformance suites (select.conformance.test.tsx /
+// .astro. / .element.): arrows rove the options, a keystroke jumps focus to the
+// matching option, and a pointerdown outside the listbox closes it.

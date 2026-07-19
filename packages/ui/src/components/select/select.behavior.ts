@@ -5,9 +5,11 @@ import {
   type BehaviorSpec,
   type PartIds,
 } from '../../lib/contract';
-import { createEffectRunner, type EffectHost, type EffectSpec } from '../../lib/effects';
 import { updateAriaAttribute } from '../../primitives/aria-manager';
 import { formValueAttrs } from '../../primitives/form-value';
+import { onPointerDownOutside } from '../../primitives/outside-click';
+import { createRovingFocus } from '../../primitives/roving-focus';
+import { createTypeahead } from '../../primitives/typeahead';
 
 /**
  * Select: a listbox picker. The trigger (a combobox button) discloses a
@@ -158,22 +160,65 @@ const selectSlice: Slice<SelectConfig, SelectState, SelectActions, SelectPart> =
     }
     return null;
   },
-  effects: (state, config): EffectSpec[] => {
-    if (!isOpen(state, config)) return [];
-    return [
-      { type: 'roving-focus', part: 'content', orientation: 'vertical' },
-      { type: 'typeahead', part: 'content' },
-      // Outside pointerdown closes; the trigger toggles instead of
-      // close-then-open on the same gesture.
-      { type: 'dismiss-on-outside', part: 'content', action: 'close', exceptParts: ['trigger'] },
-    ];
-  },
 };
 
 export const select: BehaviorSpec<SelectConfig, SelectState, SelectActions, SelectPart> = compose(
   'select',
   selectSlice,
 );
+
+/** The parts and dispatch the open-listbox trio composes against. */
+export interface SelectOpenPorts {
+  /** The listbox: focus roves inside it, typeahead jumps within it, and a
+   *  pointerdown landing outside it dismisses. */
+  content: HTMLElement;
+  /** Resolves the trigger so the opening gesture's pointerdown is spared --
+   *  otherwise it would both dismiss the listbox and re-open it. */
+  getTrigger: () => HTMLElement | null;
+  /** Outside-pointerdown handler, already spared of the trigger. Receives the
+   *  native event so a boundary could offer a consumer veto before closing. */
+  onDismiss: (event: Event) => void;
+}
+
+/** The [role="option"] descendants of the listbox that are not disabled --
+ *  the item set roving and typeahead operate over (shared so both agree). */
+function enabledOptions(content: HTMLElement): HTMLElement[] {
+  return Array.from(content.querySelectorAll<HTMLElement>('[role="option"]')).filter(
+    (item) => !item.hasAttribute('data-disabled') && item.getAttribute('aria-disabled') !== 'true',
+  );
+}
+
+/**
+ * The open-listbox effect trio, composed directly (replacing the effects
+ * runner): rove arrow/Home/End focus across the options, type-to-jump to the
+ * best matching option, and dismiss on a pointerdown outside `content` --
+ * sparing the trigger. Both matches move DOM focus to an option; the binding's
+ * own focus listener mirrors that into the highlight (roving/typeahead stay
+ * select-agnostic). Level-triggered: BOTH bindSelect and the React Select start
+ * this on the open transition (after content is un-hidden so the option set is
+ * focusable) and call the returned cleanup on close/unmount.
+ */
+export function startSelectOpenEffects({
+  content,
+  getTrigger,
+  onDismiss,
+}: SelectOpenPorts): () => void {
+  const stopRoving = createRovingFocus(content, { orientation: 'vertical' });
+  const stopTypeahead = createTypeahead(content, {
+    getItems: () => enabledOptions(content),
+    onMatch: (item) => item.focus(),
+  });
+  const stopDismiss = onPointerDownOutside(content, (event) => {
+    const target = event.target as Node;
+    if (getTrigger()?.contains(target)) return;
+    onDismiss(event);
+  });
+  return () => {
+    stopDismiss();
+    stopTypeahead();
+    stopRoving();
+  };
+}
 
 /**
  * Per-instance projection for the many-instance `item` part. Spec 01's aria()
@@ -240,16 +285,13 @@ export function bindSelect(root: HTMLElement): () => void {
     part === 'root' ? root : root.querySelector<HTMLElement>(`[data-part="${part}"]`);
 
   const { memory, dispatch } = createBehavior(select, config);
-  const runner = createEffectRunner();
 
   const request = (action: keyof SelectActions, payload?: string): boolean =>
     dispatch(action, config, ...((payload === undefined ? [] : [payload]) as [string]));
 
-  const host: EffectHost = {
-    getPart,
-    dispatch: (action, payload) =>
-      void request(action as keyof SelectActions, payload as string | undefined),
-  };
+  // The open-listbox effect trio is level-triggered: present only while open.
+  // render() starts it on the transition and this cleanup stops it on close.
+  let openEffectsCleanup: (() => void) | null = null;
 
   // ids READ from the server/author markup, never generated.
   const ids = {} as PartIds<SelectPart>;
@@ -297,7 +339,24 @@ export function bindSelect(root: HTMLElement): () => void {
     const input = root.querySelector<HTMLInputElement>('input[data-part="hidden-input"]');
     if (input) input.value = value;
 
-    runner.apply(select.effects(state, config), host);
+    // Compose the open-listbox effect trio directly, level-triggered: start it
+    // once on the open transition (content is now un-hidden above so roving and
+    // typeahead see focusable options), tear it down when the listbox closes.
+    if (open && !openEffectsCleanup) {
+      const content = getPart('content');
+      if (content) {
+        openEffectsCleanup = startSelectOpenEffects({
+          content,
+          getTrigger: () => getPart('trigger'),
+          onDismiss: () => {
+            request('close');
+          },
+        });
+      }
+    } else if (!open && openEffectsCleanup) {
+      openEffectsCleanup();
+      openEffectsCleanup = null;
+    }
 
     // Open-focus: land on the selected (or first) option when the listbox
     // opens and focus is not already inside it. Once focus is in, subsequent
@@ -393,7 +452,8 @@ export function bindSelect(root: HTMLElement): () => void {
 
   return () => {
     unsubscribe();
-    runner.stop();
+    openEffectsCleanup?.();
+    openEffectsCleanup = null;
     root.removeEventListener('click', onClick);
     root.removeEventListener('keydown', onKeydown);
     root.removeEventListener('focusin', onFocusIn);
