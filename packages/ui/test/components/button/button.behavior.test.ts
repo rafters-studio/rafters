@@ -106,22 +106,11 @@ describe('button keymap', () => {
   });
 });
 
-describe('button effects', () => {
-  it('loading config requests a polite announcement', () => {
-    const config = { ...base, loading: true, loadingAnnouncement: 'Saving' };
-    expect(button.effects(button.initialState(config), config)).toEqual([
-      { type: 'announce', message: 'Saving', politeness: 'polite' },
-    ]);
-  });
-
-  it('defaults the loading message', () => {
-    const config = { ...base, loading: true };
-    expect(button.effects(button.initialState(config), config)).toEqual([
-      { type: 'announce', message: 'Loading', politeness: 'polite' },
-    ]);
-  });
-
-  it('no effects when not loading', () => {
-    expect(button.effects(button.initialState(base), base)).toEqual([]);
-  });
-});
+// The loading announcement is no longer a declarative effect on the score --
+// the WC/Astro bind and the React controller each compose the sr-announcer
+// primitive directly, edge-triggered. Its behavior (a mount that is already
+// loading projects aria-busy but stays silent; a loading false->true transition
+// announces the loading message once) is asserted end to end: baseline
+// suppression in the shared conformance suite ('loading at mount ... announce
+// suppressed') and the runtime transition in the React-only edge-triggered
+// suite ('announces when loading transitions false -> true').
