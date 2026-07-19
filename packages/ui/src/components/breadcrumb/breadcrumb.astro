@@ -1,0 +1,24 @@
+---
+/**
+ * Breadcrumb -- the Astro performance of the static score
+ * (breadcrumb.behavior.ts).
+ *
+ * Breadcrumb is a PURE STATIC: the score projects no ARIA, holds no state, and
+ * runs no effects. So this file ships NO `<script>` and imports NO
+ * `bindBreadcrumb` (there is none) -- it is server-rendered markup with the
+ * fixed `nav[aria-label="Breadcrumb"]` landmark and a default slot, and there
+ * is nothing to hydrate. The list/item/link/page/separator/ellipsis rhythm
+ * comes from `breadcrumb.classes.ts` on the consumer-composed slotted
+ * children, parallel to the React and Web Component performances.
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+
+interface Props extends HTMLAttributes<'nav'> {}
+
+const { class: className, ...attrs } = Astro.props;
+---
+
+<nav data-part="root" aria-label="Breadcrumb" class={classy(className)} {...attrs}>
+  <slot />
+</nav>
