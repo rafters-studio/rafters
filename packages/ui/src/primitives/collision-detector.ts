@@ -144,6 +144,27 @@ function getViewportRect(): DOMRect {
 }
 
 /**
+ * Anchor accepted by {@link computePosition}.
+ * - `HTMLElement`: measured via `getBoundingClientRect()`
+ * - `DOMRect`: used directly
+ * - `{ x, y }` point: treated as a zero-size rect at the given coordinates
+ */
+export type Anchor = HTMLElement | DOMRect | { x: number; y: number };
+
+/**
+ * Resolve any accepted anchor into the DOMRect the positioning math runs on.
+ */
+function resolveAnchorRect(anchor: Anchor): DOMRect {
+  if ('getBoundingClientRect' in anchor) {
+    return anchor.getBoundingClientRect();
+  }
+  if ('width' in anchor) {
+    return anchor;
+  }
+  return new DOMRect(anchor.x, anchor.y, 0, 0);
+}
+
+/**
  * Calculate position for given side and alignment
  */
 function calculateBasePosition(
@@ -260,6 +281,10 @@ function calculateArrowPosition(
 /**
  * Compute optimal position for floating element
  *
+ * The anchor may be an `HTMLElement` (measured via `getBoundingClientRect()`),
+ * a `DOMRect` (used directly), or a `{ x, y }` point (treated as a zero-size
+ * rect at that coordinate -- useful for context menus at a cursor position).
+ *
  * @example
  * ```typescript
  * const result = computePosition(anchor, floating, {
@@ -275,7 +300,7 @@ function calculateArrowPosition(
  * ```
  */
 export function computePosition(
-  anchor: HTMLElement,
+  anchor: Anchor,
   floating: HTMLElement,
   options: CollisionOptions = {},
 ): CollisionResult {
@@ -304,7 +329,7 @@ export function computePosition(
   } = options;
 
   // Get rects
-  const anchorRect = anchor.getBoundingClientRect();
+  const anchorRect = resolveAnchorRect(anchor);
   const floatingRect = floating.getBoundingClientRect();
   const boundaryRect = collisionBoundary
     ? collisionBoundary.getBoundingClientRect()
