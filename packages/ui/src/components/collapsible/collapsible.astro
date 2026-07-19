@@ -1,0 +1,68 @@
+---
+/**
+ * Astro performance for collapsible. Server-renders the full light-DOM
+ * structure with the initial-state projection already applied (correct and
+ * inert before JS), then the <script> hands each instance to bindCollapsible --
+ * the SAME DOM-native client the Web Component uses. One score, three
+ * performances, zero drift.
+ *
+ * The content stays in light DOM (present-but-hidden) so the expand/collapse
+ * transition runs on the same node without an unmount to defer.
+ */
+import {
+  collapsible,
+  type CollapsibleConfig,
+  type CollapsiblePart,
+} from './collapsible.behavior';
+import { collapsibleClasses } from './collapsible.classes';
+import type { PartIds } from '../../lib/contract';
+
+interface Props {
+  id: string;
+  defaultOpen?: boolean;
+  disabled?: boolean;
+  label?: string;
+}
+
+const { id, defaultOpen = false, disabled = false, label = 'Toggle' } = Astro.props;
+
+const config: CollapsibleConfig = { defaultOpen, disabled };
+const state = collapsible.initialState(config);
+const classes = collapsibleClasses(config, state);
+
+// Only trigger/content carry ids (aria-controls targets content); root has none.
+const ids = {} as PartIds<CollapsiblePart>;
+for (const part of Object.keys(collapsible.parts) as CollapsiblePart[]) {
+  ids[part] = part === 'root' ? '' : `${id}-${part}`;
+}
+const aria = collapsible.aria(state, config, ids);
+const open = state.open;
+---
+
+<rafters-collapsible data-part="root" default-open={String(defaultOpen)} class={classes.root} {...aria.root}>
+  <button
+    type="button"
+    id={ids.trigger}
+    data-part="trigger"
+    disabled={disabled}
+    class={classes.trigger}
+    {...aria.trigger}
+  >
+    <slot name="trigger">{label}</slot>
+  </button>
+
+  <div id={ids.content} data-part="content" class={classes.content} hidden={!open} {...aria.content}>
+    <slot />
+  </div>
+</rafters-collapsible>
+
+<script>
+  import { bindCollapsible } from './collapsible.behavior';
+
+  for (const root of document.querySelectorAll('rafters-collapsible[data-part="root"]')) {
+    const el = root as HTMLElement;
+    if (el.dataset['bound'] === 'true') continue;
+    el.dataset['bound'] = 'true';
+    bindCollapsible(el);
+  }
+</script>
