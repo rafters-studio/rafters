@@ -308,27 +308,35 @@ export function createDismissableLayerStack(
   // Add to stack
   layerStack.push(layer);
 
-  // Create base dismissable layer with modified escape handling
+  const isTopmost = () => layerStack[layerStack.length - 1] === layer;
+
+  // The base createDismissableLayer fires onInteractOutside and onDismiss
+  // unconditionally after the trigger-specific handler. Passing the raw
+  // options.onDismiss straight through would dismiss EVERY stacked layer on a
+  // single Escape (or a single outside click). Gate all consumer callbacks --
+  // including onInteractOutside and onDismiss -- on this layer being topmost,
+  // so one Escape pops exactly one layer, top-down.
   const baseCleanup = createDismissableLayer(layer, {
     ...options,
     onEscapeKeyDown: (event) => {
-      // Only handle escape for topmost layer
-      if (layerStack[layerStack.length - 1] !== layer) return;
-
+      if (!isTopmost()) return;
       options.onEscapeKeyDown?.(event);
-      // Let the original onDismiss handle through the base implementation
     },
     onPointerDownOutside: (event) => {
-      // Only handle pointer down for topmost layer
-      if (layerStack[layerStack.length - 1] !== layer) return;
-
+      if (!isTopmost()) return;
       options.onPointerDownOutside?.(event);
     },
     onFocusOutside: (event) => {
-      // Only handle focus for topmost layer
-      if (layerStack[layerStack.length - 1] !== layer) return;
-
+      if (!isTopmost()) return;
       options.onFocusOutside?.(event);
+    },
+    onInteractOutside: (event) => {
+      if (!isTopmost()) return;
+      options.onInteractOutside?.(event);
+    },
+    onDismiss: () => {
+      if (!isTopmost()) return;
+      options.onDismiss?.();
     },
   });
 

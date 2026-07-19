@@ -56,6 +56,16 @@ half-solution. A shared executor slot is a honeypot: it is exactly what once let
 of composing them. (The retired effects-as-data layer -- Spec 03 -- was removed
 for precisely this reason.)
 
+**Canonical dismissal path (the port wave).** An overlay composes its dismissal
+DIRECTLY: `outside-click` for pointerdown-outside, and Escape via the score's
+keymap (as `dialog` does) or the `escape-keydown` primitive -- the shape `dialog`
+proves in `startDialogModalEffects` (dismiss on pointerdown outside `content`,
+sparing the trigger). The overlay ports -- alert-dialog, drawer, sheet, hover-card,
+dropdown-menu, command, context-menu, combobox -- reach for those primitives, NOT
+for `dismissable-layer`'s module-global `layerStack`. The standalone stack stays
+for existing consumers, but a port never reaches for it: one dismissal path, not a
+three-way "which mechanism?" fork.
+
 ## The substrate you compose (never rewrite)
 
 - `lib/contract.ts` -- `createBehavior(spec, config)` -> `{ memory, dispatch }`.

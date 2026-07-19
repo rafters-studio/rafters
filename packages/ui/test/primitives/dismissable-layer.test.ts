@@ -243,21 +243,26 @@ describe('createDismissableLayerStack', () => {
     expect(getDismissableLayerStack()).toHaveLength(0);
   });
 
-  it('only handles escape for topmost layer', () => {
+  it('dismisses only the topmost layer on Escape', () => {
     const onDismiss1 = vi.fn();
     const onDismiss2 = vi.fn();
 
     const cleanup1 = createDismissableLayerStack(layer1, { onDismiss: onDismiss1 });
     const cleanup2 = createDismissableLayerStack(layer2, { onDismiss: onDismiss2 });
 
-    // Escape should only affect topmost layer
+    // A single Escape dismisses ONLY the topmost layer (layer2), never the one
+    // beneath it. onDismiss1 firing here is the regression this test guards.
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(onDismiss2).toHaveBeenCalledTimes(1);
+    expect(onDismiss1).not.toHaveBeenCalled();
 
-    // Note: Due to how events work, both may receive the event but only topmost should process
-    // The implementation filters by checking if layer is topmost
+    // Once the top layer unmounts, the next Escape falls through to the layer
+    // beneath it -- one Escape pops one layer, top-down.
+    cleanup2();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(onDismiss1).toHaveBeenCalledTimes(1);
 
     cleanup1();
-    cleanup2();
   });
 });
 
