@@ -1,0 +1,84 @@
+---
+/**
+ * Astro performance of the Embed score.
+ *
+ * Embed is a PURE STATIC: the score projects no ARIA, holds no state, and runs
+ * no effects. So this file ships NO <script> and imports NO `bindEmbed` (there
+ * is none) -- it is server-rendered markup from the SAME `resolveEmbed`
+ * resolver and shared class strings the React and Web Component performances
+ * read, and there is nothing to hydrate. One score, three performances, zero
+ * drift.
+ *
+ * Scope matches the resolver: the iframe path only. A missing, disallowed, or
+ * unresolvable URL (and any Twitter URL -- the widget flow is out of scope)
+ * renders the recovery fallback. The iframe security attributes come verbatim
+ * from the score's constants; the aspect ratio is the one inline style channel.
+ *
+ * The fallback message is a <div>, not the <p> the React/WC performances use:
+ * the Typography role components do not exist in the new tree yet, and Astro
+ * has no createElement escape hatch (the sanctioned raw-tag workaround React
+ * and the WC use). The block-level text renders identically from the shared
+ * message class; repointing at a Typography component is the same pending
+ * designer pass Card and Alert record.
+ */
+import {
+  type AspectRatio,
+  type EmbedProvider,
+  FALLBACK_LINK_TEXT,
+  IFRAME_ALLOW,
+  IFRAME_REFERRER_POLICY,
+  resolveEmbed,
+} from './embed.behavior';
+import {
+  embedContainerClasses,
+  embedFallbackClasses,
+  embedFallbackLinkClasses,
+  embedFallbackMessageClasses,
+  embedIframeClasses,
+} from './embed.classes';
+
+interface Props {
+  url: string;
+  provider?: EmbedProvider;
+  aspectRatio?: AspectRatio;
+  title?: string;
+  class?: string;
+}
+
+const { url, provider, aspectRatio, title, class: className } = Astro.props;
+
+const descriptor = resolveEmbed({ url, provider, aspectRatio, title });
+
+const containerClass = [embedContainerClasses, className].filter(Boolean).join(' ');
+const fallbackClass = [embedFallbackClasses, className].filter(Boolean).join(' ');
+---
+
+{
+  descriptor.kind === 'iframe' ? (
+    <div data-part="root" class={containerClass} style={`aspect-ratio: ${descriptor.aspectRatio}`}>
+      <iframe
+        src={descriptor.src}
+        title={descriptor.title}
+        class={embedIframeClasses}
+        allow={IFRAME_ALLOW}
+        allowfullscreen
+        loading="lazy"
+        referrerpolicy={IFRAME_REFERRER_POLICY}
+      />
+    </div>
+  ) : (
+    <div data-part="root" class={fallbackClass}>
+      <div class={embedFallbackMessageClasses}>{descriptor.message}</div>
+      {descriptor.includeLink && descriptor.url ? (
+        <a
+          href={descriptor.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          class={embedFallbackLinkClasses}
+        >
+          {FALLBACK_LINK_TEXT}
+        </a>
+      ) : null}
+    </div>
+  )
+}
