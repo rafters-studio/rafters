@@ -1,0 +1,114 @@
+---
+/**
+ * Astro performance for hover-card. Server-renders the light-DOM structure with
+ * the closed-state projection already applied (correct and inert before JS),
+ * then the <script> hands each instance to bindHoverCard -- the SAME DOM-native
+ * client the Web Component uses. One score, three performances.
+ *
+ * The content stays in light DOM (present-but-hidden) so the hover-delay
+ * primitive the bind composes can read it, and so it is crawlable before JS.
+ * Positioning and hover timing are the bind's job; this is enter-only.
+ *
+ * The card is role="dialog"; supply `label` (or an aria-labelledby target in the
+ * content slot) so the preview has an accessible name.
+ */
+import {
+  hoverCard,
+  hoverCardPlacement,
+  type HoverCardConfig,
+  type HoverCardPart,
+} from './hover-card.behavior';
+import { hoverCardClasses } from './hover-card.classes';
+import type { PartIds } from '../../lib/contract';
+
+interface Props {
+  id: string;
+  /** Href for the trigger anchor (keeps it a real, focusable link). */
+  href?: string;
+  /** Accessible name for the role=dialog preview. */
+  label?: string;
+  openDelay?: number;
+  closeDelay?: number;
+  disableHoverableContent?: boolean;
+  defaultOpen?: boolean;
+  side?: HoverCardConfig['side'];
+  align?: HoverCardConfig['align'];
+  sideOffset?: number;
+}
+
+const {
+  id,
+  href,
+  label,
+  openDelay,
+  closeDelay,
+  disableHoverableContent = false,
+  defaultOpen = false,
+  side,
+  align,
+  sideOffset,
+} = Astro.props;
+
+const config: HoverCardConfig = {
+  defaultOpen,
+  openDelay,
+  closeDelay,
+  disableHoverableContent,
+  side,
+  align,
+  sideOffset,
+};
+const state = hoverCard.initialState(config);
+const classes = hoverCardClasses(config, state);
+const placement = hoverCardPlacement(config);
+
+const ids = {} as PartIds<HoverCardPart>;
+for (const part of Object.keys(hoverCard.parts) as HoverCardPart[]) ids[part] = `${id}-${part}`;
+const aria = hoverCard.aria(state, config, ids);
+const open = state.open;
+---
+
+<rafters-hover-card
+  data-part="root"
+  open-delay={openDelay === undefined ? undefined : String(openDelay)}
+  close-delay={closeDelay === undefined ? undefined : String(closeDelay)}
+  disable-hoverable-content={String(disableHoverableContent)}
+  default-open={String(defaultOpen)}
+  side={placement.side}
+  align={placement.align}
+  side-offset={sideOffset === undefined ? undefined : String(sideOffset)}
+>
+  <a
+    href={href}
+    id={ids.trigger}
+    data-part="trigger"
+    class={classes.trigger}
+    data-state={open ? 'open' : 'closed'}
+    {...aria.trigger}
+  >
+    <slot />
+  </a>
+
+  <div
+    id={ids.content}
+    data-part="content"
+    class={classes.content}
+    data-state={open ? 'open' : 'closed'}
+    aria-label={label}
+    hidden={!open}
+    {...aria.content}
+  >
+    <slot name="content" />
+  </div>
+</rafters-hover-card>
+
+<script>
+  import { bindHoverCard } from './hover-card.behavior';
+
+  for (const root of document.querySelectorAll('rafters-hover-card[data-part="root"]')) {
+    const el = root as HTMLElement;
+    if (el.dataset['bound'] === 'true') continue;
+    el.dataset['bound'] = 'true';
+    bindHoverCard(el);
+  }
+</script>
