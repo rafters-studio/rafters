@@ -1,8 +1,16 @@
 # Component Spec — Navigation Menu
 
-Status: DRAFT. Third test article: many-instance parts, effect-owned focus,
+Status: DRAFT. Third test article: many-instance parts, roving focus,
 time-based interaction (hover intent), and the component whose oracle
 controller was the exact pattern the behavior layer exists to replace.
+
+> **Effects-as-data is retired (Spec 03 retired 2026-07-19).** Where this doc
+> describes `roving`/`hover-intent`/`dismiss` effects, the target implementation
+> (issue #1864) composes the primitives DIRECTLY: `createRovingFocus` +
+> `hover-delay` (`createHoverIntent`) + `onPointerDownOutside`, in a composition
+> function called by both `bindNavigationMenu` and a React `useEffect`. The old
+> `hover-intent` executor REIMPLEMENTED `hover-delay` -- compose the primitive,
+> never copy it. See `05-authoring.md`.
 
 Files (`src/components/navigation-menu/`):
 

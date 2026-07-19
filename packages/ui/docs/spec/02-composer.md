@@ -25,9 +25,13 @@ export interface Slice<
   canDispatch?: (state: State, action: keyof Actions, config: Config) => boolean;
   aria?: (state: State, config: Config, ids: PartIds<Part>) => Partial<Record<Part, AriaAttrs>>;
   keymap?: (event: KeyInput, state: State, part: Part, config: Config) => keyof Actions | null;
-  effects?: (state: State, config: Config) => EffectSpec[];
+  effects?: (state: State, config: Config) => EffectSpec[]; // RETIRED -- see below; removed by teardown #1867
 }
 ```
+
+> **`effects` is retired (Spec 03 retired 2026-07-19).** Slices no longer contribute
+> effect lists; behaviors compose primitives directly. The composer stops synthesizing
+> `.effects` in the teardown (issue #1867). Do not declare `effects` on a new slice.
 
 Slices do NOT own memory cells. `compose` produces one `BehaviorSpec` whose
 `createBehavior` instance owns the single cell of the merged state type.
