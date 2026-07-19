@@ -1,12 +1,12 @@
 import { createBehavior, type AriaAttrs, type BehaviorSpec } from '../../lib/contract';
-import { createEffectRunner, type EffectHost, type EffectSpec } from '../../lib/effects';
 import { updateAriaAttribute } from '../../primitives/aria-manager';
+import { createRovingFocus } from '../../primitives/roving-focus';
 
 /**
  * Grid: named attention structures over a 12-column vocabulary. A static
  * score -- no state, no actions, no keymap -- but the structure contract
- * (roles, per-instance priority projection, the grid-roving keyboard
- * effect) is behavior, and the harness audits it here.
+ * (roles, per-instance priority projection, the 2D roving keyboard
+ * navigation) is behavior, and the harness audits it here.
  *
  * Ruled 2026-07-03:
  * - columns are whatever the agent wants, 1-12 (the literal class ceiling
@@ -79,11 +79,11 @@ export const grid: BehaviorSpec<GridConfig, GridState, GridActions, GridPart> = 
     },
   }),
   keymap: () => null,
-  effects: (_state, config): EffectSpec[] => {
-    const columns = fixedColumns(config);
-    if (config.role !== 'grid' || columns === null) return [];
-    return [{ type: 'grid-roving', part: 'root', columns }];
-  },
+  // Static score, like container: the ARIA grid keyboard contract is not
+  // effects-as-data. The bindings compose the roving-focus primitive directly
+  // (createRovingFocus with its 2D columns option), gated on an honest
+  // role="grid" with a fixed column count -- see bindGrid below and grid.tsx.
+  effects: () => [],
 };
 
 /** Per-instance projection for grid items: the item DECLARES its priority;
@@ -109,8 +109,8 @@ function parseColumns(raw: string | null): ResponsiveColumns | undefined {
  * and the Astro <script> both import THIS; only React (retained-mode) reads
  * the projection declaratively. Grid is a STATIC score, so the binding is the
  * thinnest of the family: no click/keydown wiring (grid has no keymap and no
- * actions), just the one-shot projection apply and the conditional
- * grid-roving effect that engages only under an honest role="grid".
+ * actions), just the one-shot projection apply and the roving-focus primitive,
+ * composed directly and engaged only under an honest role="grid".
  *
  * Three-gotcha ledger for this archetype:
  *   1. Controlled-callback before/after: N/A. Grid has no controlled value
@@ -139,13 +139,17 @@ export function bindGrid(root: HTMLElement): () => void {
     ariaLabel: attr('aria-label'),
   };
 
-  const getPart = (part: string): HTMLElement | null =>
-    part === 'root' ? root : root.querySelector<HTMLElement>(`[data-part="${part}"]`);
-
   const { memory } = createBehavior(grid, config);
-  const runner = createEffectRunner();
-  // Grid has no actions; the effect host never dispatches.
-  const host: EffectHost = { getPart, dispatch: () => {} };
+
+  // role="grid" with a fixed column count engages the ARIA grid keyboard
+  // contract: 2D roving across the [data-roving-item] cells. Composed
+  // directly -- createRovingFocus owns the roving tabindex and arrow/Home/End
+  // movement (Left/Right by 1, Up/Down by a row). Presentation grids and
+  // fluid-column grids stay inert: the honesty gate is the same predicate the
+  // score's aria projection uses (fixed columns only).
+  const columns = fixedColumns(config);
+  const stopRoving =
+    config.role === 'grid' && columns !== null ? createRovingFocus(root, { columns }) : undefined;
 
   // The projection is already resolved (final strings, undefined = absent),
   // so apply it raw: validate:false skips aria-manager's author-input
@@ -160,12 +164,11 @@ export function bindGrid(root: HTMLElement): () => void {
     const state = memory.get();
     const projection = grid.aria(state, config, { root: root.id ?? '', row: '', cell: '' });
     if (projection.root) applyProjection(root, projection.root);
-    runner.apply(grid.effects(state, config), host);
   };
   const unsubscribe = memory.subscribe(render); // fires immediately: first paint
 
   return () => {
     unsubscribe();
-    runner.stop();
+    stopRoving?.();
   };
 }

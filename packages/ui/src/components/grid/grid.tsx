@@ -1,8 +1,8 @@
 import * as React from 'react';
 import { createBehavior, type PartIds } from '../../lib/contract';
-import { useBehaviorEffects } from '../../hooks/use-behavior-effects';
 import { useMemory } from '../../hooks/use-memory';
 import classy from '../../primitives/classy';
+import { createRovingFocus } from '../../primitives/roving-focus';
 import {
   grid,
   gridItemAttrs,
@@ -81,26 +81,27 @@ function GridRoot(props: GridProps) {
   const config: GridConfig = { preset, pattern, columns, gap, padding, role, ariaLabel };
 
   // The controller composes the score with the substrate -- no useBehavior.
-  // Grid is a static score: createBehavior is a formality (state never
-  // moves), useMemory subscribes React to it, and useBehaviorEffects runs the
-  // one conditional effect (grid-roving, present only under role="grid").
-  // There are no actions, so the effect host never dispatches.
+  // Grid is a static score: createBehavior is a formality (state never moves),
+  // useMemory subscribes React to it, and a useEffect below composes the
+  // roving-focus primitive directly (present only under an honest role="grid").
   const { memory } = React.useMemo(() => createBehavior(grid, config), []);
   const state = useMemory(memory);
   const classes = gridClasses(config, state);
   const interactive = role === 'grid' && typeof columns === 'number';
 
-  // getPart resolves a part to its element by querying under the root: the
-  // DOM is the registry, so there is no ref bookkeeping to keep.
   const rootRef = React.useRef<HTMLDivElement>(null);
-  const getPart = React.useCallback(
-    (part: string): HTMLElement | null =>
-      part === 'root'
-        ? rootRef.current
-        : (rootRef.current?.querySelector<HTMLElement>(`[data-part="${part}"]`) ?? null),
-    [],
-  );
-  useBehaviorEffects(grid.effects(state, config), { getPart, dispatch: () => {} });
+
+  // role="grid" with a fixed column count engages the ARIA grid keyboard
+  // contract: compose the roving-focus primitive directly with its 2D columns
+  // option (Left/Right by 1, Up/Down by a row, Home/End to the ends). It owns
+  // the roving tabindex across the [data-roving-item] cells. Presentation and
+  // fluid-column grids stay inert -- the effect only runs when interactive.
+  React.useEffect(() => {
+    if (!interactive) return;
+    const root = rootRef.current;
+    if (!root) return;
+    return createRovingFocus(root, { columns: columns as number });
+  }, [interactive, columns]);
 
   // grid.aria ignores ids (the root carries no id refs); pass empties.
   const aria = grid.aria(state, config, { root: '', row: '', cell: '' } as PartIds<GridPart>);

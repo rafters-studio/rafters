@@ -31,6 +31,17 @@ export interface RovingFocusOptions {
   orientation?: Orientation;
 
   /**
+   * Two-dimensional grid navigation. When set, arrow keys rove a fixed-column
+   * grid instead of a 1D list: ArrowLeft/Right move by 1, ArrowUp/Down move by
+   * a full row (`columns`), Home/End jump to the first/last item. Movement
+   * clamps at the edges (no wrap). Reuses the same [data-roving-item] tabstop,
+   * focus tracking, and disabled filtering as the 1D path; the `orientation`,
+   * `loop`, and `dir` options do not apply in this mode. This is the ARIA grid
+   * pattern's keyboard contract (role="grid" with a fixed column count).
+   */
+  columns?: number;
+
+  /**
    * Whether to wrap navigation at ends
    * @default true
    */
@@ -170,6 +181,26 @@ function shouldNavigate(
 }
 
 /**
+ * Grid navigation delta for a key in 2D mode: ArrowLeft/Right step one column,
+ * ArrowUp/Down step a full row (`columns`). Returns null for keys that do not
+ * rove the grid, so the caller leaves them to Home/End or the browser.
+ */
+function gridDelta(key: string, columns: number): number | null {
+  switch (key) {
+    case 'ArrowRight':
+      return 1;
+    case 'ArrowLeft':
+      return -1;
+    case 'ArrowDown':
+      return columns;
+    case 'ArrowUp':
+      return -columns;
+    default:
+      return null;
+  }
+}
+
+/**
  * Create roving focus behavior for a container
  * Returns cleanup function to remove event listeners
  *
@@ -201,6 +232,7 @@ export function createRovingFocus(
     orientation = 'horizontal',
     loop = true,
     dir = 'ltr',
+    columns,
     currentIndex: initialIndex = 0,
     onNavigate,
     preventDefault = true,
@@ -239,6 +271,23 @@ export function createRovingFocus(
     if (key === 'End') {
       if (preventDefault) event.preventDefault();
       currentIndex = items.length - 1;
+      const item = items[currentIndex];
+      if (item) {
+        updateTabindex(items, currentIndex);
+        item.focus();
+        onNavigate?.(item, currentIndex);
+      }
+      return;
+    }
+
+    // Two-dimensional grid navigation: ArrowLeft/Right move by one column,
+    // ArrowUp/Down by a full row, clamped at the edges (no wrap). Reuses the
+    // tabstop/focus machinery below; Home/End were already handled above.
+    if (columns !== undefined) {
+      const delta = gridDelta(key, columns);
+      if (delta === null) return;
+      if (preventDefault) event.preventDefault();
+      currentIndex = Math.max(0, Math.min(currentIndex + delta, items.length - 1));
       const item = items[currentIndex];
       if (item) {
         updateTabindex(items, currentIndex);

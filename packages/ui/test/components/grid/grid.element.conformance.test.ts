@@ -2,7 +2,7 @@
  * WC performance of the grid score, driven end to end against light-DOM
  * markup. Same score as the React conformance test -- proves the static
  * projection (role disposition, data-preset/data-columns) and the conditional
- * grid-roving effect drive through the DOM binding.
+ * 2D roving-focus composition drive through the DOM binding.
  *
  * The two archetype cases the issue names:
  *  - role="grid" (opted in via grid-role) engages the 2D keyboard contract;
@@ -92,7 +92,7 @@ describe('grid conformance [wc]', () => {
     const root = await mountPresentation();
     expect(root.hasAttribute('role')).toBe(false);
     expect(root.getAttribute('data-preset')).toBe('bento');
-    // The grid-roving effect never engaged: nothing claimed a 0 tab stop.
+    // Roving-focus never engaged: nothing claimed a 0 tab stop.
     expect(document.body.querySelector('[tabindex="0"]')).toBeNull();
     const declared = Array.from(document.body.querySelectorAll('[data-priority]'));
     expect(declared).toHaveLength(3);
