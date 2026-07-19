@@ -12,9 +12,10 @@
  *   association via a mirrored hidden input.
  *
  * The React performance is a DECORATOR over select.behavior.ts: it adds only
- * the view (select.classes.ts) and React wiring (useMemory + useBehaviorEffects
- * + the dispatch protocol). Every decision -- reducers, aria, keymap, effects --
- * lives in the score. The shadcn drop-in surface (Trigger, Value, Content,
+ * the view (select.classes.ts) and React wiring (useMemory + a useEffect that
+ * composes startSelectOpenEffects + the dispatch protocol). Every decision --
+ * reducers, aria, keymap, and the open-listbox effect trio -- lives in the
+ * score. The shadcn drop-in surface (Trigger, Value, Content,
  * Item, Group, Label, Separator, Portal, Viewport, ScrollUp/DownButton, Icon)
  * plus the `Select.*` namespace is preserved; each extra is a thin view wrapper.
  *
@@ -37,7 +38,6 @@
 import * as React from 'react';
 import { createBehavior, type AriaAttrs, type PartIds, type PayloadArgs } from '../../lib/contract';
 import { keyInputOf } from '../../hooks/key-input';
-import { useBehaviorEffects } from '../../hooks/use-behavior-effects';
 import { useMemory } from '../../hooks/use-memory';
 import classy from '../../primitives/classy';
 import { mergeProps } from '../../primitives/slot';
@@ -49,6 +49,7 @@ import {
   selectItemAria,
   selectedLabel,
   selectedValue,
+  startSelectOpenEffects,
   type SelectActions,
   type SelectConfig,
   type SelectPart,
@@ -171,14 +172,24 @@ export function Select({
     [memory, dispatch],
   );
 
-  useBehaviorEffects(select.effects(state, config), {
-    getPart,
-    dispatch: (action, payload) =>
-      request(
-        action as keyof SelectActions,
-        ...([payload] as PayloadArgs<SelectActions[keyof SelectActions]>),
-      ),
-  });
+  // The open-listbox effect trio, composed directly on the open transition
+  // (replacing the effects runner): roving focus, typeahead, and outside
+  // dismissal sparing the trigger. Level-triggered via the dependency array;
+  // declared ABOVE the open-focus effect so roving sets the roving tabindex
+  // before focusSelectedOption lands focus. getPart/request are stable, so the
+  // listeners are torn down and rebuilt only on the open transition.
+  React.useEffect(() => {
+    if (!effectiveOpen) return;
+    const content = getPart('content');
+    if (!content) return;
+    return startSelectOpenEffects({
+      content,
+      getTrigger: () => getPart('trigger'),
+      onDismiss: () => {
+        request('close');
+      },
+    });
+  }, [effectiveOpen, getPart, request]);
 
   // Open-focus: land on the selected (or first) option when the listbox opens
   // and focus is not already inside it -- the same rule bindSelect runs.
