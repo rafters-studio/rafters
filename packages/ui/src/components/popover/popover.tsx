@@ -35,10 +35,10 @@ import * as React from 'react';
 import { createPortal } from 'react-dom';
 import { createBehavior, type AriaAttrs, type PartIds } from '../../lib/contract';
 import { keyInputOf } from '../../hooks/key-input';
-import { useBehaviorEffects } from '../../hooks/use-behavior-effects';
 import { useMemory } from '../../hooks/use-memory';
 import { usePresence } from '../../hooks/use-presence';
 import classy from '../../primitives/classy';
+import { onPointerDownOutside } from '../../primitives/outside-click';
 import { mergeProps } from '../../primitives/slot';
 import type { Align, Side } from '../../primitives/types';
 import {
@@ -131,26 +131,30 @@ export function Popover({ children, open, defaultOpen = false, onOpenChange }: P
     [dispatch],
   );
 
-  const host = React.useMemo(
-    () => ({
-      getPart,
+  // The light-dismiss, composed directly on the open edge (replacing the
+  // effects runner): dismiss on a pointerdown outside the content, sparing the
+  // trigger and anchor. Level-triggered via the dependency array; the cleanup
+  // tears the listener down on close/unmount. Runs at the parent level after
+  // PopoverContent has mounted its portaled content, so getPart resolves it.
+  React.useEffect(() => {
+    if (!effectiveOpen) return;
+    const content = getPart('content');
+    if (!content) return;
+    return onPointerDownOutside(content, (event) => {
+      const target = event.target as Node;
+      if (getPart('trigger')?.contains(target)) return;
+      if (getPart('anchor')?.contains(target)) return;
       // Outside-pointerdown dismissals offer the consumer veto first (oracle
-      // protocol: callback runs, close proceeds unless defaultPrevented).
-      dispatch: (action: string, _payload?: unknown, nativeEvent?: Event) => {
-        if (action === 'close' && nativeEvent) {
-          const veto = dismissVetoRef.current;
-          if (veto) {
-            veto.onPointerDownOutside?.(nativeEvent);
-            veto.onInteractOutside?.(nativeEvent);
-            if (nativeEvent.defaultPrevented) return;
-          }
-        }
-        request(action as keyof PopoverActions);
-      },
-    }),
-    [getPart, request],
-  );
-  useBehaviorEffects(popover.effects(state, config), host);
+      // protocol: callbacks run, close proceeds unless defaultPrevented).
+      const veto = dismissVetoRef.current;
+      if (veto) {
+        veto.onPointerDownOutside?.(event);
+        veto.onInteractOutside?.(event);
+        if (event.defaultPrevented) return;
+      }
+      request('close');
+    });
+  }, [effectiveOpen, getPart, request]);
 
   const aria = popover.aria(state, config, ids);
 

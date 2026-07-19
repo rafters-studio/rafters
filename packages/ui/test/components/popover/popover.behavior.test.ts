@@ -115,24 +115,10 @@ describe('popover keymap', () => {
   });
 });
 
-describe('popover effects (non-modal)', () => {
-  it('closed: no effects', () => {
-    expect(popover.effects(popover.initialState(closed), closed)).toEqual([]);
-  });
-
-  it('open: only outside-dismissal, sparing trigger AND anchor -- no trap, no scroll lock', () => {
-    expect(popover.effects(popover.initialState(openUncontrolled), openUncontrolled)).toEqual([
-      {
-        type: 'dismiss-on-outside',
-        part: 'content',
-        action: 'close',
-        exceptParts: ['trigger', 'anchor'],
-      },
-    ]);
-  });
-
-  it('controlled open drives the dismiss effect without touching intrinsic state', () => {
-    const config: PopoverConfig = { open: true };
-    expect(popover.effects({ open: false }, config)).toHaveLength(1);
-  });
-});
+// The outside-pointerdown light-dismiss is no longer a declarative effect on
+// the score -- the WC/Astro bind and the React controller each compose the
+// onPointerDownOutside primitive directly. Its behavior (a pointerdown outside
+// the content closes the popover, sparing the trigger and anchor; present only
+// while open; non-modal, so no focus-trap or scroll-lock) is asserted end to
+// end in the react/wc/astro conformance suites, which drive the real DOM the
+// primitive operates on.
