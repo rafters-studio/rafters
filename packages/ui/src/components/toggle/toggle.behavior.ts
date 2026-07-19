@@ -5,7 +5,6 @@ import {
   type BehaviorSpec,
   type PartIds,
 } from '../../lib/contract';
-import { createEffectRunner, type EffectHost } from '../../lib/effects';
 import { updateAriaAttribute } from '../../primitives/aria-manager';
 import {
   pressable,
@@ -94,13 +93,8 @@ export function bindToggle(root: HTMLElement): () => void {
     part === 'root' ? root : root.querySelector<HTMLElement>(`[data-part="${part}"]`);
 
   const { memory, dispatch } = createBehavior(toggle, config);
-  const runner = createEffectRunner();
 
   const request = (action: keyof ToggleActions): boolean => dispatch(action, config);
-  const host: EffectHost = {
-    getPart,
-    dispatch: (action) => void request(action as keyof ToggleActions),
-  };
 
   // ids are READ from the markup; toggle carries no id-ref aria, but the
   // projection contract still takes them.
@@ -124,7 +118,6 @@ export function bindToggle(root: HTMLElement): () => void {
       const el = getPart(part);
       if (el && attrs) applyProjection(el, attrs);
     }
-    runner.apply(toggle.effects(state, config), host);
   };
   const unsubscribe = memory.subscribe(render); // fires immediately: first paint
 
@@ -141,7 +134,6 @@ export function bindToggle(root: HTMLElement): () => void {
 
   return () => {
     unsubscribe();
-    runner.stop();
     root.removeEventListener('click', onClick);
   };
 }

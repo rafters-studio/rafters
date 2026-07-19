@@ -93,11 +93,7 @@ describe('toggle keymap', () => {
   });
 });
 
-describe('toggle effects', () => {
-  it('a toggle has no effects -- it is an instant state swap, never loading', () => {
-    expect(toggle.effects(toggle.initialState(base), base)).toEqual([]);
-    expect(toggle.effects(toggle.initialState({ ...base, defaultPressed: true }), base)).toEqual(
-      [],
-    );
-  });
-});
+// A toggle is an instant state swap, never loading -- it composes no effect
+// primitive at either boundary. The WC/Astro bind and the React controller both
+// wire click -> press only; there is no runner and nothing to drive. So there is
+// no effects data to assert here.
