@@ -5,7 +5,6 @@ import {
   type BehaviorSpec,
   type PartIds,
 } from '../../lib/contract';
-import { createEffectRunner, type EffectHost } from '../../lib/effects';
 import {
   disclosable,
   isOpen,
@@ -16,6 +15,7 @@ import {
 } from '../../lib/disclosable';
 import { updateAriaAttribute } from '../../primitives/aria-manager';
 import { computePosition } from '../../primitives/collision-detector';
+import { onPointerDownOutside } from '../../primitives/outside-click';
 import type { Align, Side } from '../../primitives/types';
 
 /**
@@ -67,9 +67,10 @@ const popoverSurface: Slice<
   initialState: () => ({}),
 };
 
-/** The popover glue: the dialog-role identity, the Escape contract, and the
- *  non-modal dismiss effect. No focus-trap and no scroll-lock -- popover is
- *  deliberately non-modal. */
+/** The popover glue: the dialog-role identity and the Escape contract. No
+ *  focus-trap and no scroll-lock -- popover is deliberately non-modal. The
+ *  light-dismiss (outside-pointerdown) is composed directly by the bindings,
+ *  not declared here. */
 const popoverGlue: GlueSlice<PopoverConfig, PopoverState, { close: undefined }, PopoverPart> = {
   kind: 'glue',
   name: 'popover',
@@ -79,19 +80,6 @@ const popoverGlue: GlueSlice<PopoverConfig, PopoverState, { close: undefined }, 
     content: { role: 'dialog' },
   }),
   keymap: (event, _state, part) => (part === 'content' && event.key === 'Escape' ? 'close' : null),
-  effects: (state, config) => {
-    if (!isOpen(state, config)) return [];
-    return [
-      {
-        type: 'dismiss-on-outside',
-        part: 'content',
-        action: 'close',
-        // Spare BOTH the trigger (so a toggle gesture does not dismiss then
-        // re-open) and the anchor (which can be a distinct element).
-        exceptParts: ['trigger', 'anchor'],
-      },
-    ];
-  },
 };
 
 export const popover: BehaviorSpec<PopoverConfig, PopoverState, PopoverActions, PopoverPart> =
@@ -147,8 +135,11 @@ function numberAttribute(root: HTMLElement, name: string): number | undefined {
  * declaratively. Two overlay concerns beyond the pure score: PRESENCE (content
  * is present-but-hidden, toggled on the open axis) and the framework
  * affordances (positioning + focus-first, edge-triggered on open; reposition
- * on scroll/resize while open). Non-modal, so the ongoing effect set is just
- * dismiss-on-outside. Enter-only; exit animation waits on Presence.
+ * on scroll/resize while open). Non-modal, so the only composed primitive is
+ * the outside-pointerdown light-dismiss (onPointerDownOutside), started on the
+ * open edge and torn down on close/unbind -- sparing the trigger and anchor so
+ * a toggle gesture does not dismiss then re-open. Enter-only; exit animation
+ * waits on Presence.
  */
 export function bindPopover(root: HTMLElement): () => void {
   const contentEl = root.querySelector<HTMLElement>('[data-part="content"]');
@@ -167,13 +158,12 @@ export function bindPopover(root: HTMLElement): () => void {
     part === 'root' ? root : root.querySelector<HTMLElement>(`[data-part="${part}"]`);
 
   const { memory, dispatch } = createBehavior(popover, config);
-  const runner = createEffectRunner();
 
   const request = (action: keyof PopoverActions): boolean => dispatch(action, config);
-  const host: EffectHost = {
-    getPart,
-    dispatch: (action) => void request(action as keyof PopoverActions),
-  };
+
+  // The light-dismiss is level-triggered: present only while open. render()
+  // starts it on the open edge and this cleanup stops it on close.
+  let dismissCleanup: (() => void) | null = null;
 
   // ids READ from the server/author markup, never generated.
   const ids = {} as PartIds<PopoverPart>;
@@ -217,17 +207,29 @@ export function bindPopover(root: HTMLElement): () => void {
       if (el && attrs) applyProjection(el, attrs);
     }
     // Presence: content hides off the open axis, staying in light DOM so the
-    // dismiss effect can read it via document .contains.
+    // dismiss listener can read it via document .contains.
     const content = getPart('content');
     if (content) content.hidden = !open;
-    runner.apply(popover.effects(state, config), host);
-    // Edge-triggered affordances: position + focus on the closed->open edge,
-    // stop repositioning on the open->closed edge.
+    // Edge-triggered affordances: on the closed->open edge position + focus and
+    // start the outside-pointerdown light-dismiss; on the open->closed edge stop
+    // repositioning and tear the dismiss listener down.
     if (open && !wasOpen) {
       startPositioning();
       focusFirst(content);
+      if (content) {
+        dismissCleanup = onPointerDownOutside(content, (event) => {
+          const target = event.target as Node;
+          // Spare BOTH the trigger (so a toggle gesture does not dismiss then
+          // re-open) and the anchor (which can be a distinct element).
+          if (getPart('trigger')?.contains(target)) return;
+          if (getPart('anchor')?.contains(target)) return;
+          request('close');
+        });
+      }
     } else if (!open && wasOpen) {
       stopPositioning();
+      dismissCleanup?.();
+      dismissCleanup = null;
     }
     wasOpen = open;
   };
@@ -269,7 +271,8 @@ export function bindPopover(root: HTMLElement): () => void {
 
   return () => {
     unsubscribe();
-    runner.stop();
+    dismissCleanup?.();
+    dismissCleanup = null;
     stopPositioning();
     root.removeEventListener('click', onClick);
     root.removeEventListener('keydown', onKeydown);
