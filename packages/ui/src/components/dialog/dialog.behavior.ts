@@ -5,8 +5,9 @@ import {
   type BehaviorSpec,
   type PartIds,
 } from '../../lib/contract';
-import { createEffectRunner, type EffectHost } from '../../lib/effects';
 import { updateAriaAttribute } from '../../primitives/aria-manager';
+import { createFocusTrap, preventBodyScroll } from '../../primitives/focus-trap';
+import { onPointerDownOutside } from '../../primitives/outside-click';
 import {
   disclosable,
   isOpen,
@@ -52,8 +53,9 @@ const dialogSurface: Slice<
   initialState: () => ({}),
 };
 
-/** The dialog glue: ARIA identity, the Escape contract, and the modal
- *  effect set, written over the merged state. */
+/** The dialog glue: ARIA identity and the Escape contract, written over the
+ *  merged state. The modal overlay concerns (focus-trap, scroll-lock,
+ *  outside-dismiss) are composed directly by the bindings, not declared here. */
 const dialogGlue: GlueSlice<DialogConfig, DialogState, { close: undefined }, DialogPart> = {
   kind: 'glue',
   name: 'dialog',
@@ -81,22 +83,47 @@ const dialogGlue: GlueSlice<DialogConfig, DialogState, { close: undefined }, Dia
     };
   },
   keymap: (event, _state, part) => (part === 'content' && event.key === 'Escape' ? 'close' : null),
-  effects: (state, config) => {
-    if (!isOpen(state, config) || !isModal(config)) return [];
-    return [
-      { type: 'focus-trap', part: 'content' },
-      { type: 'scroll-lock' },
-      {
-        type: 'dismiss-on-outside',
-        part: 'content',
-        action: 'close',
-        // Without this, pointerdown on the trigger dismisses the layer and
-        // the same gesture's click re-opens it (live defect in the oracle).
-        exceptParts: ['trigger'],
-      },
-    ];
-  },
 };
+
+/** The parts and dispatch the modal overlay trio composes against. */
+export interface DialogModalPorts {
+  /** The dialog surface: focus is trapped inside it and a pointerdown landing
+   *  outside it dismisses. */
+  content: HTMLElement;
+  /** Resolves the trigger so the opening gesture's pointerdown is spared --
+   *  otherwise it would both dismiss the layer and re-open it. */
+  getTrigger: () => HTMLElement | null;
+  /** Outside-pointerdown handler, already spared of the trigger. Receives the
+   *  native event so a boundary can offer a consumer veto before closing. */
+  onDismiss: (event: Event) => void;
+}
+
+/**
+ * The modal overlay trio, composed directly (replacing the effects runner):
+ * trap Tab focus inside `content`, lock body scroll, and dismiss on a
+ * pointerdown outside `content` -- sparing the trigger. Level-triggered:
+ * BOTH the DOM-native bindDialog and the React Dialog start this on the
+ * open+modal transition and call the returned cleanup on close/unmount.
+ * Focus restore rides the trap teardown, so the cleanup releases LIFO.
+ */
+export function startDialogModalEffects({
+  content,
+  getTrigger,
+  onDismiss,
+}: DialogModalPorts): () => void {
+  const releaseTrap = createFocusTrap(content);
+  const releaseScroll = preventBodyScroll();
+  const releaseDismiss = onPointerDownOutside(content, (event) => {
+    const target = event.target as Node;
+    if (getTrigger()?.contains(target)) return;
+    onDismiss(event);
+  });
+  return () => {
+    releaseDismiss();
+    releaseScroll();
+    releaseTrap();
+  };
+}
 
 export const dialog: BehaviorSpec<DialogConfig, DialogState, DialogActions, DialogPart> = compose(
   'dialog',
@@ -110,10 +137,11 @@ export const dialog: BehaviorSpec<DialogConfig, DialogState, DialogActions, Dial
  * and the Astro <script> both import THIS; only React reads the projections
  * declaratively. Same shape as bindNavigationMenu, plus the two overlay
  * concerns: PRESENCE (content/overlay are present-but-hidden, toggled on the
- * open axis -- effect-observed parts must be light DOM so focus-trap's
- * activeElement read and dismiss's document .contains work) and the ONGOING
- * effects runner (focus-trap, scroll-lock, dismiss-on-outside run while open
- * and modal, stopped on close). Enter-only; exit animation waits on Presence.
+ * open axis -- the trapped/dismissable parts must be light DOM so focus-trap's
+ * activeElement read and dismiss's document .contains work) and the modal
+ * overlay trio (focus-trap, scroll-lock, dismiss-on-outside), composed
+ * directly and level-triggered: started on the open+modal transition and torn
+ * down on close/unbind. Enter-only; exit animation waits on Presence.
  */
 export function bindDialog(root: HTMLElement): () => void {
   const config: DialogConfig = {
@@ -127,13 +155,12 @@ export function bindDialog(root: HTMLElement): () => void {
     part === 'root' ? root : root.querySelector<HTMLElement>(`[data-part="${part}"]`);
 
   const { memory, dispatch } = createBehavior(dialog, config);
-  const runner = createEffectRunner();
 
   const request = (action: keyof DialogActions): boolean => dispatch(action, config);
-  const host: EffectHost = {
-    getPart,
-    dispatch: (action) => void request(action as keyof DialogActions),
-  };
+
+  // The modal overlay trio is level-triggered: present only while open+modal.
+  // render() starts it on the transition and this cleanup stops it on close.
+  let modalCleanup: (() => void) | null = null;
 
   // ids READ from the server/author markup, never generated.
   const ids = {} as PartIds<DialogPart>;
@@ -162,7 +189,25 @@ export function bindDialog(root: HTMLElement): () => void {
       const el = getPart(part);
       if (el) el.hidden = !open;
     }
-    runner.apply(dialog.effects(state, config), host);
+    // Compose the modal overlay trio directly, level-triggered: start it once
+    // on the open+modal transition (content is now un-hidden above so the trap
+    // can read its focusables), tear it down when it should no longer be present.
+    const wantModal = open && isModal(config);
+    if (wantModal && !modalCleanup) {
+      const content = getPart('content');
+      if (content) {
+        modalCleanup = startDialogModalEffects({
+          content,
+          getTrigger: () => getPart('trigger'),
+          onDismiss: () => {
+            request('close');
+          },
+        });
+      }
+    } else if (!wantModal && modalCleanup) {
+      modalCleanup();
+      modalCleanup = null;
+    }
   };
   const unsubscribe = memory.subscribe(render); // fires immediately: first paint
 
@@ -204,7 +249,8 @@ export function bindDialog(root: HTMLElement): () => void {
 
   return () => {
     unsubscribe();
-    runner.stop();
+    modalCleanup?.();
+    modalCleanup = null;
     root.removeEventListener('click', onClick);
     root.removeEventListener('keydown', onKeydown);
   };

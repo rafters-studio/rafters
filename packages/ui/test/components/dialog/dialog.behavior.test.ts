@@ -142,32 +142,7 @@ describe('dialog keymap', () => {
   });
 });
 
-describe('dialog effects', () => {
-  it('closed: no effects', () => {
-    expect(dialog.effects(dialog.initialState(closed), closed)).toEqual([]);
-  });
-
-  it('open modal: focus trap, scroll lock, outside dismissal sparing the trigger', () => {
-    const config = openUncontrolled;
-    expect(dialog.effects(dialog.initialState(config), config)).toEqual([
-      { type: 'focus-trap', part: 'content' },
-      { type: 'scroll-lock' },
-      {
-        type: 'dismiss-on-outside',
-        part: 'content',
-        action: 'close',
-        exceptParts: ['trigger'],
-      },
-    ]);
-  });
-
-  it('open non-modal: no modal effects', () => {
-    const config: DialogConfig = { ...openUncontrolled, modal: false };
-    expect(dialog.effects(dialog.initialState(config), config)).toEqual([]);
-  });
-
-  it('controlled open drives effects without touching intrinsic state', () => {
-    const config: DialogConfig = { open: true };
-    expect(dialog.effects({ open: false }, config)).toHaveLength(3);
-  });
-});
+// The modal overlay trio (focus-trap, scroll-lock, trigger-spared outside
+// dismissal) is no longer a declarative effect-spec on the score; the bindings
+// compose the primitives directly. The BEHAVIOR is asserted end to end in the
+// conformance suites (dialog.conformance.test.tsx / .astro. / .element.).

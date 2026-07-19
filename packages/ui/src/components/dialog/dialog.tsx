@@ -2,7 +2,6 @@ import * as React from 'react';
 import { createPortal } from 'react-dom';
 import { createBehavior, type AriaAttrs, type PartIds } from '../../lib/contract';
 import { keyInputOf } from '../../hooks/key-input';
-import { useBehaviorEffects } from '../../hooks/use-behavior-effects';
 import { useMemory } from '../../hooks/use-memory';
 import { usePresence } from '../../hooks/use-presence';
 import classy from '../../primitives/classy';
@@ -10,6 +9,7 @@ import { mergeProps } from '../../primitives/slot';
 import {
   dialog,
   isOpen,
+  startDialogModalEffects,
   type DialogActions,
   type DialogConfig,
   type DialogPart,
@@ -127,26 +127,29 @@ export function Dialog({
     [dispatch],
   );
 
-  const host = React.useMemo(
-    () => ({
-      getPart,
+  // The modal overlay trio, composed directly on the open+modal transition
+  // (replacing the effects runner). Level-triggered via the dependency array;
+  // the cleanup tears the trio down (focus restore rides the trap teardown).
+  React.useEffect(() => {
+    if (!effectiveOpen || !modal) return;
+    const content = getPart('content');
+    if (!content) return;
+    return startDialogModalEffects({
+      content,
+      getTrigger: () => getPart('trigger'),
       // Outside-pointerdown dismissals offer the consumer veto first (oracle
-      // protocol: callback runs, close proceeds unless defaultPrevented).
-      dispatch: (action: string, _payload?: unknown, nativeEvent?: Event) => {
-        if (action === 'close' && nativeEvent) {
-          const veto = dismissVetoRef.current;
-          if (veto) {
-            veto.onPointerDownOutside?.(nativeEvent);
-            veto.onInteractOutside?.(nativeEvent);
-            if (nativeEvent.defaultPrevented) return;
-          }
+      // protocol: callbacks run, close proceeds unless defaultPrevented).
+      onDismiss: (event) => {
+        const veto = dismissVetoRef.current;
+        if (veto) {
+          veto.onPointerDownOutside?.(event);
+          veto.onInteractOutside?.(event);
+          if (event.defaultPrevented) return;
         }
-        request(action as keyof DialogActions);
+        request('close');
       },
-    }),
-    [getPart, request],
-  );
-  useBehaviorEffects(dialog.effects(state, config), host);
+    });
+  }, [effectiveOpen, modal, getPart, request]);
 
   const aria = dialog.aria(state, config, ids);
 
