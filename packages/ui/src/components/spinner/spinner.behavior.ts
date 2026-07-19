@@ -54,5 +54,4 @@ export const spinner: BehaviorSpec<SpinnerConfig, SpinnerState, SpinnerActions, 
   // the <output> element, so the score never states it.
   aria: () => ({ root: { 'aria-label': 'Loading' } }),
   keymap: () => null,
-  effects: () => [],
 };

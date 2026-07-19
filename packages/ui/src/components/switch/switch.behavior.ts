@@ -138,8 +138,6 @@ const switchSlice: Slice<SwitchConfig, SwitchState, SwitchActions, SwitchPart> =
     part === 'root' && (event.key === ' ' || event.key === 'Spacebar' || event.key === 'Enter')
       ? 'toggle'
       : null,
-  // No focus-trap, no roving, no announce -- the simplest bind shape.
-  effects: () => [],
 };
 
 export const switchBehavior: BehaviorSpec<SwitchConfig, SwitchState, SwitchActions, SwitchPart> =

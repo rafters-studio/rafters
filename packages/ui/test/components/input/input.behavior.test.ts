@@ -101,14 +101,9 @@ describe('input aria projection', () => {
   });
 });
 
-describe('input keymap and effects (the simplest bind shape)', () => {
+describe('input keymap (the simplest bind shape)', () => {
   it('claims no keys -- the native input owns editing', () => {
     expect(inputBehavior.keymap({ key: 'a' }, { value: '' }, 'input', {})).toBeNull();
     expect(inputBehavior.keymap({ key: 'Enter' }, { value: '' }, 'input', {})).toBeNull();
-  });
-
-  it('describes no effects in any state', () => {
-    expect(inputBehavior.effects({ value: '' }, {})).toEqual([]);
-    expect(inputBehavior.effects({ value: 'x' }, { invalid: true, disabled: true })).toEqual([]);
   });
 });

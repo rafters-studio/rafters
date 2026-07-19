@@ -52,5 +52,4 @@ export const breadcrumb: BehaviorSpec<
   // and the harness asserts the empty contract across every framework.
   aria: () => ({ root: {} }),
   keymap: () => null,
-  effects: () => [],
 };

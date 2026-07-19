@@ -63,5 +63,4 @@ export const label: BehaviorSpec<LabelConfig, LabelState, LabelActions, LabelPar
   // nothing and the harness asserts the empty contract across every framework.
   aria: () => ({ root: {} }),
   keymap: () => null,
-  effects: () => [],
 };

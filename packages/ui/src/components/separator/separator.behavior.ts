@@ -60,5 +60,4 @@ export const separator: BehaviorSpec<
     };
   },
   keymap: () => null,
-  effects: () => [],
 };

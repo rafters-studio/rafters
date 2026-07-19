@@ -77,10 +77,6 @@ describe('item is a static score -- no client, no bind', () => {
     expect(item.keymap({ key: ' ' }, state, 'root', {})).toBeNull();
   });
 
-  it('has no effects -- nothing to perform, so nothing to bind', () => {
-    expect(item.effects(state, {})).toEqual([]);
-  });
-
   it('initial state is empty -- a static score has nothing to remember', () => {
     expect(item.initialState({})).toEqual({});
   });

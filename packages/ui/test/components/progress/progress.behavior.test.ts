@@ -107,10 +107,8 @@ describe('progress aria projection', () => {
 });
 
 describe('progress is a static score', () => {
-  it('has no keymap and no effects', () => {
+  it('has no keymap', () => {
     expect(progress.keymap({ key: 'Enter' }, state, 'root', {})).toBeNull();
-    expect(progress.effects(state, { value: 50 })).toEqual([]);
-    expect(progress.effects(state, {})).toEqual([]);
   });
 
   it('has no actions and initial state is empty', () => {

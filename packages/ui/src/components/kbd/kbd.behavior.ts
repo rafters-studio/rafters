@@ -36,5 +36,4 @@ export const kbd: BehaviorSpec<KbdConfig, KbdState, KbdActions, KbdPart> = {
   // framework.
   aria: () => ({ root: {} }),
   keymap: () => null,
-  effects: () => [],
 };

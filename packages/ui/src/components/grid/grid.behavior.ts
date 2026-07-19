@@ -78,12 +78,11 @@ export const grid: BehaviorSpec<GridConfig, GridState, GridActions, GridPart> = 
       'data-columns': typeof config.columns === 'number' ? String(config.columns) : undefined,
     },
   }),
-  keymap: () => null,
-  // Static score, like container: the ARIA grid keyboard contract is not
-  // effects-as-data. The bindings compose the roving-focus primitive directly
+  // Static score, like container: the ARIA grid keyboard contract is not a
+  // behavior action. The bindings compose the roving-focus primitive directly
   // (createRovingFocus with its 2D columns option), gated on an honest
   // role="grid" with a fixed column count -- see bindGrid below and grid.tsx.
-  effects: () => [],
+  keymap: () => null,
 };
 
 /** Per-instance projection for grid items: the item DECLARES its priority;

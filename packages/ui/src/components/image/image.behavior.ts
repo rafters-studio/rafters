@@ -134,7 +134,6 @@ export const image: BehaviorSpec<ImageConfig, ImageState, ImageActions, ImagePar
     };
   },
   keymap: () => null,
-  effects: () => [],
 };
 
 function parseEnum<T extends string>(raw: string | null, allowed: ReadonlyArray<T>): T | undefined {

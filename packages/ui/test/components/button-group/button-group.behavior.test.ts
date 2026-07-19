@@ -59,10 +59,6 @@ describe('button-group has no dynamic behavior', () => {
     ).toBeNull();
   });
 
-  it('has no effects', () => {
-    expect(buttonGroup.effects(state, { orientation: 'horizontal' })).toEqual([]);
-  });
-
   it('initial state is empty -- a static score has nothing to remember', () => {
     expect(buttonGroup.initialState({ orientation: 'horizontal' })).toEqual({});
   });

@@ -55,5 +55,4 @@ export const buttonGroup: BehaviorSpec<
   // score cannot know the label, so it is never projected here.
   aria: () => ({ root: { role: 'group' } }),
   keymap: () => null,
-  effects: () => [],
 };

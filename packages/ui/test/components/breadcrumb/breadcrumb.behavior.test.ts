@@ -33,10 +33,6 @@ describe('breadcrumb is a pure static -- no client, no bind', () => {
     expect(breadcrumb.keymap({ key: 'Enter' }, state, 'root', config)).toBeNull();
   });
 
-  it('has no effects -- nothing to perform, so nothing to bind', () => {
-    expect(breadcrumb.effects(state, config)).toEqual([]);
-  });
-
   it('initial state is empty -- a static score has nothing to remember', () => {
     expect(breadcrumb.initialState(config)).toEqual({});
   });

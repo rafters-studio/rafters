@@ -1,5 +1,4 @@
 import { createMemory, type Memory } from '../primitives/memory';
-import type { EffectSpec } from './effects';
 
 export interface KeyInput {
   key: string;
@@ -36,8 +35,6 @@ export interface BehaviorSpec<Config, State, Actions extends ActionPayloads, Par
   aria: (state: State, config: Config, ids: PartIds<Part>) => Partial<Record<Part, AriaAttrs>>;
 
   keymap: (event: KeyInput, state: State, part: Part, config: Config) => keyof Actions | null;
-
-  effects: (state: State, config: Config) => EffectSpec[];
 }
 
 export function createBehavior<Config, State, Actions extends ActionPayloads, Part extends string>(

@@ -29,8 +29,8 @@ export interface InputProps extends Omit<
  * a lone <input> that spreads the consumer's props, composes their onChange,
  * and adds the score's controlled value + validity projection.
  *
- * Thin by construction: the score has no effects, so there is no
- * useBehaviorEffects, no host, and no getPart registry. The error id comes
+ * Thin by construction: the score is projection-only, so the controller just
+ * wires memory + classes -- no host and no getPart registry. The error id comes
  * from a PROP, not a mounted child, so there is no presence tracking either --
  * ids.error resolves deterministically from errorId, which is why this
  * controller needs no state beyond the memory.

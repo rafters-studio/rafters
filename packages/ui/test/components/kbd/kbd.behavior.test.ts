@@ -29,10 +29,6 @@ describe('kbd is a pure static -- no client, no bind', () => {
     expect(kbd.keymap({ key: 'Enter' }, state, 'root', {})).toBeNull();
   });
 
-  it('has no effects -- nothing to perform, so nothing to bind', () => {
-    expect(kbd.effects(state, {})).toEqual([]);
-  });
-
   it('initial state is empty -- a static score has nothing to remember', () => {
     expect(kbd.initialState({})).toEqual({});
   });

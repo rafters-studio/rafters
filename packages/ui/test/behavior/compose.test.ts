@@ -15,9 +15,6 @@ const alpha: Slice<Config, AlphaState, AlphaActions, 'root' | 'panel'> = {
   canDispatch: (state, _action, _config) => state.alpha < 3,
   aria: (state) => ({ root: { 'data-alpha': String(state.alpha) } }),
   keymap: (event, _state, part) => (part === 'root' && event.key === 'a' ? 'bump' : null),
-  effects: (_state, config) => [
-    { type: 'announce', message: `alpha:${config.label}`, politeness: 'polite' },
-  ],
 };
 
 type BetaState = { beta: boolean };
@@ -32,7 +29,7 @@ const beta: Slice<Config, BetaState, BetaActions, 'root' | 'panel'> = {
 };
 
 describe('compose merge rules', () => {
-  it('merges state, actions, parts, aria, and effects across slices', () => {
+  it('merges state, actions, parts, and aria across slices', () => {
     const spec = compose('ab', alpha, beta);
     const state = spec.initialState({ label: 'x' });
     expect(state).toEqual({ alpha: 0, beta: false });
@@ -42,9 +39,6 @@ describe('compose merge rules', () => {
       root: { 'data-alpha': '0' },
       panel: { 'data-beta': 'false' },
     });
-    expect(spec.effects(state, { label: 'x' })).toEqual([
-      { type: 'announce', message: 'alpha:x', politeness: 'polite' },
-    ]);
   });
 
   it('canDispatch is the AND of all contributors', () => {

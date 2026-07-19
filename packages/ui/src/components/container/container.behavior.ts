@@ -98,5 +98,4 @@ export const container: BehaviorSpec<
   // score projects nothing and the harness asserts the ELEMENT contract.
   aria: () => ({ root: {} }),
   keymap: () => null,
-  effects: () => [],
 };

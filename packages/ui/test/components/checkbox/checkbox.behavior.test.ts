@@ -131,11 +131,7 @@ describe('checkbox keymap', () => {
   });
 });
 
-describe('checkbox effects and form value', () => {
-  it('has no effects (no announce, no roving)', () => {
-    expect(checkbox.effects(checkbox.initialState({}), {})).toEqual([]);
-  });
-
+describe('checkbox form value', () => {
   it('submit value defaults to "on", overridable by value', () => {
     expect(checkboxSubmitValue({})).toBe('on');
     expect(checkboxSubmitValue({ value: 'yes' })).toBe('yes');

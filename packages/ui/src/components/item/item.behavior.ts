@@ -80,8 +80,7 @@ export const item: BehaviorSpec<ItemConfig, ItemState, ItemActions, ItemPart> = 
   actions: {},
   canDispatch: () => true,
   // The one live contract: option semantics projected from config. Everything
-  // else (state/keymap/effects) is empty -- there is nothing to bind.
+  // else (state/keymap) is empty -- there is nothing to bind.
   aria: (_state, config) => ({ root: itemRootAria(config) }),
   keymap: () => null,
-  effects: () => [],
 };

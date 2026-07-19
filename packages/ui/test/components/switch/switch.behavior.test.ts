@@ -114,18 +114,6 @@ describe('switch keymap', () => {
   });
 });
 
-describe('switch effects', () => {
-  it('never requests effects', () => {
-    expect(switchBehavior.effects(switchBehavior.initialState(base), base)).toEqual([]);
-    expect(
-      switchBehavior.effects(switchBehavior.initialState({ ...base, defaultChecked: true }), {
-        ...base,
-        defaultChecked: true,
-      }),
-    ).toEqual([]);
-  });
-});
-
 describe('effectiveChecked', () => {
   const unchecked: SwitchState = { checked: false };
   const intrinsicChecked: SwitchState = { checked: true };

@@ -48,5 +48,4 @@ export const skeleton: BehaviorSpec<SkeletonConfig, SkeletonState, SkeletonActio
     // framework. This is the one static whose projection is non-empty.
     aria: () => ({ root: { 'aria-hidden': 'true' } }),
     keymap: () => null,
-    effects: () => [],
   };

@@ -383,5 +383,4 @@ export const embed: BehaviorSpec<EmbedConfig, EmbedState, EmbedActions, EmbedPar
   // the harness asserts the empty contract across every performance.
   aria: () => ({ root: {} }),
   keymap: () => null,
-  effects: () => [],
 };

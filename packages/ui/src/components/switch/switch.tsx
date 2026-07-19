@@ -20,8 +20,8 @@ export type { SwitchSize, SwitchVariant };
  * surface: a lone <button role="switch"> with a thumb, controlled/uncontrolled
  * `checked` and `onCheckedChange`, plus the rafters `variant`/`size` extensions.
  *
- * Thin by construction: the score has no effects, so there is no
- * useBehaviorEffects, no host, and no getPart registry beyond the toggle
+ * Thin by construction: the score is projection-only, so the controller just
+ * wires memory + classes -- no host and no getPart registry beyond the toggle
  * request. The value/name/required props ride the form-value axis into the
  * score's projection; native form submission is a form adapter's job (the
  * button carries no native form value), tracked in the component doc.
