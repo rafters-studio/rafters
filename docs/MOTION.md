@@ -2,171 +2,174 @@
 
 Motion communicates. It tells the user what happened, where they are, and what to expect next. Every animation in the system exists because it answers one of these questions. If it doesn't answer any of them, it doesn't move.
 
+That last rule is not taste. Decorative animation measurably impairs recall -- it is extraneous cognitive load wearing a costume.[^stokes-2020] An animation without a purpose does not fail to help; it hurts.
+
+## Why motion exists
+
+**Object permanence.** Objects continue to exist when they are no longer visible -- a understanding humans develop in infancy and take for granted in the physical world.[^piaget-1954] Digital interfaces routinely violate it. A panel vanishes: did it close, minimize, or get destroyed? Without transition, every state change is a discontinuity the brain must resolve consciously rather than intuitively. Disrupting a spatial mental model raises cognitive load.[^tversky-1993]
+
+This is measured, not asserted. Bederson and Boltman had twenty subjects navigate a family tree with and without animated transitions: animation improved spatial recall with no penalty on task time.[^bederson-1999] Heer and Robertson found the same for statistical graphics -- animated transitions preserved which data element was which across chart-type changes.[^heer-2007] Chang and Ungar made the argument as early as 1993: interface elements should behave as though they have mass and inertia.[^chang-1993]
+
+**Emotional safety.** A button that teleports to its pressed state tells you nothing. A button that compresses under your touch and rebounds tells you: I received your input, I am responding, the response is proportional to what you did. That is body language. Remove it and you get an interface that works and feels hostile.
+
+## The perceptual bands
+
+The duration scale is derived from how the visual system actually works, then harmonized within that constraint. Perception sets the bounds; math fits inside them. Deriving harmony first produces a scale that is mathematically elegant and perceptually useless.
+
+- **Under ~100ms** -- perceived as instantaneous. Nothing is communicated; there is no benefit over an instant change.
+- **~200-300ms** -- the communicative window. Fast enough to feel responsive, slow enough for the visual system to track a trajectory and build a spatial model.
+- **Over ~500ms** -- sluggish. The brain has already predicted the outcome and is waiting for the screen to catch up.
+
+Honesty about the middle band: it is a practice-validated heuristic, not a measured law, and it is widely misattributed to Thorpe et al., which measured rapid categorization of static images (~150ms) rather than motion tracking.[^thorpe-1996] The real support is indirect and worth stating plainly: Card, Moran and Newell put the perceptual processor cycle at roughly 100ms, so a 200-300ms animation spans two to three frames -- enough to perceive direction and trajectory, not enough to consume attention.[^card-1983] Nielsen's 0.1s instantaneous threshold anchors the lower bound.[^nielsen-1993] Do not cite Thorpe for this.
+
 ## Principles
 
-**Respond, don't perform.** The interface reacts to the user. It never performs for an audience. A button press gets instant acknowledgment. A modal entrance gets smooth deceleration. A loading spinner gets linear rotation. Nothing bounces, slides, or fades without a reason the user would understand if asked.
+**Respond, don't perform.** The interface reacts to the user. It never performs for an audience. Nothing bounces, slides, or fades without a reason the user would understand if asked.
 
-**Precision over expression.** Durations are short. Curves are tuned. The fastest interactions (hover, focus) are nearly instant. The slowest (full-screen transitions) stay under 500ms. Nothing in the system exceeds 700ms. If an animation feels long, it is wrong.
+**Precision over expression.** The fastest interactions are nearly instant. The slowest stay under 500ms. Nothing exceeds 700ms. If an animation feels long, it is wrong.
 
-**Exits are faster than entrances.** When something appears, the user needs a moment to comprehend it. When something disappears, the user already decided it should go. Entrance duration minus 50-100ms is the exit duration. This asymmetry respects where the user's attention is.
+**Exits are faster than entrances.** When something appears, the user needs a moment to comprehend it. When something disappears, the user already decided it should go. Entrance duration minus 50-100ms is the exit duration. You greet warmly and leave quietly.
 
-**Feedback survives reduce-motion.** When a user enables reduced motion, we remove spectacle but preserve feedback. Spatial transitions become cross-fades. Bounces become critically damped. But hover states, focus rings, and press acknowledgments remain -- because removing them creates uncertainty about whether input was received.
+**Duration is a function of size and distance.** Larger elements moving further need longer durations, because that is how physics works and the visual system expects physics. This principle is what *produces* the token values below -- a modal is larger and travels further than a dropdown, which is why `motion-modal-in` is 350ms and `motion-dropdown-in` is 250ms. Authors do not re-derive it; they use the semantic token that already encodes it.
 
-**Nothing blocks interaction.** No animation prevents the user from acting. If a modal is still opening and the user taps elsewhere, the modal closes immediately. Animations are interruptible by design.
+**One element at a time.** The eye tracks one moving element. Sequential animation creates narrative; simultaneous animation creates noise.
 
-## Duration Scale
+**Feedback survives reduce-motion.** Remove spectacle, preserve feedback. Spatial transitions become cross-fades; hover, focus and press acknowledgments remain, because removing them creates uncertainty about whether input was received.
 
-Our duration scale derives from the same mathematical progression as our spacing and typography. Each tier serves a specific interaction category.
+**Nothing blocks interaction.** If a modal is still opening and the user taps elsewhere, it closes immediately. Animations are interruptible by design.
 
-| Token | Value | Purpose |
-|-------|-------|---------|
-| `duration-instant` | 0ms | Cursor changes, text selection, badge counts. No perceptible transition. |
-| `duration-micro` | 100ms | Focus rings, press feedback. Must feel immediate but visible. |
-| `duration-fast` | 150ms | Hover states. The user's finger or cursor is already there -- the response must match their speed. |
-| `duration-moderate` | 250ms | Dropdowns, tab switches, small reveals. Enough time to track the change without waiting for it. |
-| `duration-normal` | 350ms | Modal entrances, toggle animations, standard state transitions. The workhorse of the system. |
-| `duration-slow` | 500ms | Sheet presentations, page transitions, large spatial movements. Reserved for transitions where the user needs orientation. |
+## Duration scale
 
-The ceiling is 500ms for standard UI. Full-screen transitions may reach 700ms but this is the absolute maximum. Our research found that users perceive anything over 400ms as "waiting." We allow up to 500ms only when the spatial movement is large enough to justify it.
+| Token | Value | Band | Purpose |
+|-------|-------|------|---------|
+| `duration-instant` | 0ms | -- | Cursor changes, text selection, badge counts. No perceptible transition. |
+| `duration-micro` | 100ms | at the instantaneous threshold | Focus rings, press feedback. Immediate but visible. |
+| `duration-fast` | 150ms | below the communicative window | Hover states. The cursor is already there; the response must match its speed. |
+| `duration-moderate` | 250ms | communicative | Dropdowns, tab switches, small reveals. |
+| `duration-normal` | 350ms | communicative, larger movement | Modal entrances, toggles, standard state transitions. The workhorse. |
+| `duration-slow` | 500ms | at the sluggish boundary | Sheets, page transitions, large spatial movement where the user needs orientation. |
 
-## Easing Curves
+Below `moderate`, motion is acknowledgment rather than communication -- correct for hover and focus, wrong for anything the user must comprehend. A scale whose tiers all sit under 200ms cannot express a communicative transition at all.
 
-We define six curves. Each has a specific physical intention.
+## Easing curves
 
-### Standard
-`cubic-bezier(0.25, 0.1, 0.25, 1.0)`
+Six curves. Rafters is not a brand -- it is the system a brand is built on, and the curve is where personality lives. A single-brand system correctly ships one curve;[^audi-ci] a system that others build brands with ships the vocabulary they choose their personality from. A project built on Rafters should not use all six indiscriminately: it should establish which curves are its voice.
 
-The default. Elements decelerate into their final position. This curve communicates precision -- things arrive exactly where they should, with the confidence of something engineered rather than thrown.
+The emotional register is not decoration. It is how the shape is read, and it is empirically grounded: Dragicevic et al. tested constant-speed against slow-in/slow-out for object tracking, and slow-in/slow-out won.[^dragicevic-2011]
 
-Used for: most state transitions, hover effects, general-purpose motion.
+### Standard -- `cubic-bezier(0.25, 0.1, 0.25, 1.0)`
+Elements decelerate into their final position. Communicates precision: things arrive exactly where they should, engineered rather than thrown. Most state transitions, hover effects, general-purpose motion.
 
-### Enter
-`cubic-bezier(0.0, 0.0, 0.2, 1.0)`
+### Enter -- `cubic-bezier(0.0, 0.0, 0.2, 1.0)`
+Aggressive deceleration. **Arrival, welcome, settling into place.** The fast start communicates responsiveness; the slow finish communicates care. Anything entering the viewport.
 
-Aggressive deceleration. Elements appear to materialize with purpose -- fast start, gradual settle. The initial velocity is high, which makes the entrance feel responsive even at longer durations.
+### Exit -- `cubic-bezier(0.4, 0.0, 1.0, 1.0)`
+Accelerating departure. **Withdrawal, giving space.** The hesitation acknowledges the user; the fast exit avoids lingering. Anything leaving the viewport.
 
-Used for: modal appearances, dropdown opens, content reveals. Anything entering the viewport.
+### Linear -- `linear`
+Constant velocity. Mechanical, procedural, without personality -- exactly right for progress and loading, where the system is working rather than interacting. Never for interactive transitions.
 
-### Exit
-`cubic-bezier(0.4, 0.0, 1.0, 1.0)`
+### Spring smooth -- `cubic-bezier(0.2, 0.9, 0.3, 1.0)`
+A critically-damped spring. Feels like something physical coming to rest. Page transitions, sheets, large spatial movement the user tracks.
 
-Accelerating departure. Elements leave quickly without lingering. The curve front-loads the deceleration and ends with acceleration, which makes exits feel decisive.
+### Spring snappy -- `cubic-bezier(0.2, 0.8, 0.2, 1.0)`
+A tighter spring, less settle. Toggles, presses, interactions that follow input closely.
 
-Used for: modal closes, dropdown closes, content dismissals. Anything leaving the viewport.
+Springs read as alive because of biological motion perception. Johansson showed that point-lights on a moving body are instantly seen as a human figure and are unrecognizable when static;[^johansson-1973] Pratt et al. showed that motion perceived as animate -- self-propelled, variable speed -- captures attention more effectively than mechanical motion.[^pratt-2010] Springs exhibit exactly those hallmarks.
 
-### Linear
-`linear`
+## Semantic motion tokens
 
-No easing. Constant velocity from start to finish. This is the only curve that feels mechanical, which is exactly right for progress indicators and loading states -- the system is working, not interacting.
-
-Used for: progress bars, loading spinners, determinate uploads. Never for interactive transitions.
-
-### Spring Smooth
-`cubic-bezier(0.2, 0.9, 0.3, 1.0)`
-
-A CSS approximation of a critically-damped spring. The initial movement is fast (the spring is released), then the element settles smoothly into position. This curve feels natural -- like something physical coming to rest.
-
-Used for: page transitions, sheet presentations, large spatial movements where the user needs to track the element's journey.
-
-### Spring Snappy
-`cubic-bezier(0.2, 0.8, 0.2, 1.0)`
-
-A tighter spring with less settle time. Snappier than smooth, more organic than standard. This is the curve for interactions where responsiveness matters more than smoothness.
-
-Used for: toggle switches, button presses, interactive elements that follow the user's input closely.
-
-## Semantic Motion Tokens
-
-Components don't reference durations and curves directly. They reference semantic motion tokens that encode the complete transition specification.
+Components do not reference durations and curves directly. They reference semantic tokens encoding the complete specification. Each value is the size-and-distance principle already applied.
 
 | Token | Duration | Easing | Property |
 |-------|----------|--------|----------|
-| `motion-hover` | duration-fast | standard | colors |
-| `motion-focus` | duration-micro | linear | ring, shadow |
-| `motion-press` | duration-micro | spring-snappy | transform, colors |
-| `motion-toggle` | duration-moderate | spring-snappy | colors, transform |
-| `motion-dropdown-in` | duration-moderate | enter | opacity, transform |
-| `motion-dropdown-out` | duration-fast | exit | opacity, transform |
-| `motion-modal-in` | duration-normal | enter | opacity, transform |
-| `motion-modal-out` | duration-moderate | exit | opacity, transform |
-| `motion-sheet-in` | duration-slow | spring-smooth | transform |
-| `motion-sheet-out` | duration-normal | exit | transform |
-| `motion-expand` | duration-normal | enter | height, opacity |
-| `motion-collapse` | duration-moderate | exit | height, opacity |
-| `motion-page` | duration-slow | spring-smooth | opacity, transform |
+| `motion-hover` | fast | standard | colors |
+| `motion-focus` | micro | linear | ring, shadow |
+| `motion-press` | micro | spring-snappy | transform, colors |
+| `motion-toggle` | moderate | spring-snappy | colors, transform |
+| `motion-dropdown-in` | moderate | enter | opacity, transform |
+| `motion-dropdown-out` | fast | exit | opacity, transform |
+| `motion-modal-in` | normal | enter | opacity, transform |
+| `motion-modal-out` | moderate | exit | opacity, transform |
+| `motion-sheet-in` | slow | spring-smooth | transform |
+| `motion-sheet-out` | normal | exit | transform |
+| `motion-expand` | normal | enter | height, opacity |
+| `motion-collapse` | moderate | exit | height, opacity |
+| `motion-page` | slow | spring-smooth | opacity, transform |
 
-Notice the asymmetry: every `-in` and `-out` pair has a shorter exit. `modal-in` is 350ms, `modal-out` is 250ms. `dropdown-in` is 250ms, `dropdown-out` is 150ms. The user chose to leave.
+Every `-in`/`-out` pair has a shorter exit. The user chose to leave.
 
-## What Gets No Motion
+## Combination constraints
 
-Some changes are instant. Adding motion would slow them down without communicating anything.
+These are rules, not values, and they have no home in a token. They exist because the number of possible parameter combinations is larger than intuition can navigate.[^audi-ci]
 
-- Cursor changes
-- Text color on validation (the border and ring animate, the text doesn't)
-- Icon swaps (hamburger to X, chevron rotation)
-- Badge count updates
-- Scroll position changes
-- Breadcrumb updates
-- Tooltip appearance (opacity only, no spatial motion)
+| Parameter | Rule | Why |
+|---|---|---|
+| Direction | Horizontal or vertical. **Never diagonal.** | The eye tracks one axis at a time. Axis-aligned movement creates order. |
+| Scaling | May combine with movement. | Scale changes state, movement changes position; together they read as arriving at a new size. |
+| Opacity | May combine with movement. | Fade plus slide is the standard enter/exit. Fade alone is for elements that do not move. |
+| Rotation | Small elements only. **Never combined with another parameter.** | Rotation is visually dominant; combined with translation it is chaos. Isolated, it reads as processing. |
+| Timing | Sequential, not simultaneous. | Staggered sequences create narrative. Simultaneous animation is noise. |
 
-## Reduced Motion
+## What gets no motion
 
-When the user enables `prefers-reduced-motion: reduce`, the system adapts:
+Cursor changes. Text colour on validation (the border and ring animate, the text does not). Icon swaps. Badge counts. Scroll position. Breadcrumbs. Tooltip appearance (opacity only, no spatial motion).
 
-**Preserved (with reduced parameters):**
-- Hover state changes (color transitions remain, duration unchanged)
-- Focus ring appearance (instant or near-instant, always was)
-- Press feedback (opacity/color, no transform)
-- Toggle state changes (cross-fade, no slide)
+## Reduced motion
 
-**Replaced with cross-fade:**
-- Modal entrance/exit becomes 150ms opacity fade
-- Sheet presentation becomes 250ms opacity fade
-- Page transitions become 200ms cross-fade
-- Dropdown open/close becomes 100ms opacity fade
+Motion causes physical harm, not annoyance -- dizziness, nausea, vertigo. Roughly 35% of US adults over 40 have vestibular dysfunction.[^agrawal-2009] Respecting `prefers-reduced-motion`[^w3c-mq5] is an accessibility requirement, and WCAG 2.1 SC 2.3.3 asks for it directly.[^wcag-2.3.3]
 
-**Removed entirely:**
-- All transform animations (scale, translate, rotate)
-- All bounce/overshoot
-- Loading spinner rotation (replaced with pulsing opacity)
-- Parallax effects
-- Background ambient motion
+**Preserved:** hover colour transitions, focus rings, press feedback (opacity/colour, no transform), toggle state (cross-fade, no slide).
 
-The principle: the user opted out of spatial movement, not out of knowing what changed. We preserve the information, remove the spectacle.
+**Replaced with cross-fade:** modal 150ms, sheet 250ms, page 200ms, dropdown 100ms.
 
-## Implementation
+**Removed:** all transform animation, bounce and overshoot, spinner rotation (becomes pulsing opacity), parallax, ambient motion.
 
-In CSS, motion tokens map to Tailwind utilities via the `@theme` layer:
+The user opted out of spatial movement, not out of knowing what changed.
 
-```css
-@theme {
-  --duration-instant: 0ms;
-  --duration-micro: 100ms;
-  --duration-fast: 150ms;
-  --duration-moderate: 250ms;
-  --duration-normal: 350ms;
-  --duration-slow: 500ms;
+## The ceiling rule
 
-  --ease-standard: cubic-bezier(0.25, 0.1, 0.25, 1.0);
-  --ease-enter: cubic-bezier(0.0, 0.0, 0.2, 1.0);
-  --ease-exit: cubic-bezier(0.4, 0.0, 1.0, 1.0);
-  --ease-spring-smooth: cubic-bezier(0.2, 0.9, 0.3, 1.0);
-  --ease-spring-snappy: cubic-bezier(0.2, 0.8, 0.2, 1.0);
-}
-```
+Longer than 500ms means one of three things: the element moves too far (break it into steps), the element is too large (cross-fade instead), or the animation is decorative (remove it). The only exception is full-screen transitions in spatially-navigated applications, where 700ms is absolute.
 
-Components reference these via Tailwind utilities:
+Exceeding the limits requires the why-gate: the override is recorded with a reason, the previous value preserved, and the system remembers it was a conscious decision rather than a default.
 
-```
-transition-colors duration-fast ease-standard motion-reduce:transition-none
-```
+## The four-voice test
 
-The `motion-reduce:transition-none` is on every component with transitions. No exceptions. The reduced motion layer handles what replaces the removed transitions.
+- **Rams** -- is this animation necessary?
+- **Ive** -- does the timing respect how the eye tracks movement?
+- **Davis** -- are the durations harmonically related?
+- **Nielsen** -- does this help the user understand what happened?
 
-## The Ceiling Rule
+All four must say yes. Note the order of operations between Ive and Davis: perception constrains the scale, harmony fits within it. Deriving a harmonic progression first and checking perception afterwards is how a scale ends up entirely below the communicative window.
 
-If you are writing an animation that takes longer than 500ms, stop. Either the element is moving too far (break the transition into smaller steps), the element is too large (cross-fade instead of spatial motion), or the animation is decorative (remove it).
+## Implementation status
 
-The only exception: full-screen page transitions in applications with spatial navigation models, where 700ms is the absolute ceiling.
+This document is the specification. It is **not** what currently ships. Tracked in #1899.
 
-If a designer needs to exceed these limits, they use the why-gate. The override is recorded with a reason, the previous value is preserved, and the system remembers that this was a conscious decision, not a default.
+- The generated duration scale is `instant 0 / fast 125 / normal 150 / slow 180 / slower 216` -- different names and different values from the table above, with every tier at or below 216ms.
+- The six curves above are not generated; the exporter emits a different easing vocabulary.
+- **No semantic motion token exists.** Components therefore hardcode raw numeric durations, which is what this layer exists to prevent.
+- The keyframe table in `packages/design-tokens/src/generators/motion.ts` is copied from shadcn, and `accordion-down`/`accordion-up` interpolate `var(--radix-accordion-content-height)`, which nothing in this system sets -- so they animate to an undefined height.
+- Combination constraints have no representation anywhere.
+
+## Sources
+
+The research backing this document lives in `vault-2026/projects/rafters/courses/motion-as-emotional-safety.md` (full citations) and `vault-2026/concepts/motion-as-emotional-safety.md` (the Audi analysis). Note that the concepts document still attributes the 200-300ms window to Thorpe; the course corrects it, and this document follows the course.
+
+[^piaget-1954]: Piaget, J. (1954). *The Construction of Reality in the Child*. Basic Books.
+[^tversky-1993]: Tversky, B. (1993). Cognitive maps, cognitive collages, and spatial mental models. *Spatial Information Theory*, 14-24.
+[^bederson-1999]: Bederson, B. B., & Boltman, A. (1999). Does Animation Help Users Build Mental Maps of Spatial Information? *IEEE InfoVis '99*, 28-35.
+[^heer-2007]: Heer, J., & Robertson, G. G. (2007). Animated Transitions in Statistical Data Graphics. *IEEE TVCG*, 13(6), 1240-1247.
+[^chang-1993]: Chang, B.-W., & Ungar, D. (1993). Animation: from cartoons to the user interface. *UIST '93*, 45-55.
+[^thorpe-1996]: Thorpe, S., Fize, D., & Marlot, C. (1996). Speed of processing in the human visual system. *Nature*, 381, 520-522. Cited here only to mark it as commonly misapplied to motion duration.
+[^card-1983]: Card, S. K., Moran, T. P., & Newell, A. (1983). *The Psychology of Human-Computer Interaction*.
+[^nielsen-1993]: Nielsen, J. (1993). Response Times: The 3 Important Limits. Nielsen Norman Group.
+[^thomas-1981]: Thomas, F., & Johnston, O. (1981). *The Illusion of Life: Disney Animation*.
+[^dragicevic-2011]: Dragicevic, P., et al. (2011). Temporal distortion for animated transitions. *CHI '11*, 2009-2018.
+[^johansson-1973]: Johansson, G. (1973). Visual perception of biological motion. *Perception & Psychophysics*, 14, 201-211.
+[^pratt-2010]: Pratt, J., et al. (2010). It's alive! Animate motion captures visual attention. *Psychological Science*, 21(11), 1724-1730.
+[^stokes-2020]: Stokes, A. (2020). Decorative animations impair recall and are a source of extraneous cognitive load. *Advances in Physiology Education*, 44, 107-111.
+[^audi-ci]: Audi AG. Audi CI Portal: Animation Guidelines. styleguide.audi.com.
+[^agrawal-2009]: Agrawal, Y., et al. (2009). Disorders of balance and vestibular function in US adults. *Archives of Internal Medicine*, 169(10), 938-944.
+[^w3c-mq5]: W3C (2020). Media Queries Level 5: prefers-reduced-motion.
+[^wcag-2.3.3]: W3C (2018). WCAG 2.1 SC 2.3.3: Animation from Interactions (AAA).
