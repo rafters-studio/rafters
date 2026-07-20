@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`tabs` ported to the behavior layer (#1799).** The imperative
+  `old/ui/tabs.controller.ts` and its four-file Astro surface are replaced by a
+  single score (`tabs.behavior.ts`): the active tab is reducer state
+  (`{ value }`), focus movement is the composed `roving-focus` primitive bound
+  to the tablist, and the `trigger`/`panel` many-parts cross-reference each
+  other through the score's `instanceAria` member. `bindTabs` is the DOM-native
+  client the WC and Astro performances share; React reads the projections
+  declaratively. Automatic activation (an arrow key moves focus AND activates)
+  and the roving cursor seeded to the active tab both carry over from the
+  oracle. `orientation` is new: the rail projects `aria-orientation` and roving
+  moves on the matching axis, defaulting to horizontal (see
+  `docs/spec/components/tabs.md` dispositions).
 - **`radio-group` ported to the behavior layer (#1787).** The imperative
   `old/ui/radio-group.controller.ts` + form-associated WC pair are replaced by a
   single score (`radio-group.behavior.ts`): selection is reducer state
