@@ -1,0 +1,163 @@
+---
+/**
+ * Astro performance (controller) for input-otp.
+ *
+ * Server-renders the full LIGHT-DOM field -- the one real <input> (named,
+ * autocomplete="one-time-code", carrying the score's accessible name) plus one
+ * painted slot per character -- with the score's initial projection already
+ * applied, so the code can be typed, pasted or autofilled before any JS runs.
+ * The <script> then hands each server-rendered root to bindInputOtp -- the SAME
+ * DOM-native controller the Web Component uses. One score, three performances,
+ * zero drift.
+ *
+ * Grouping is declarative: `groups={[3, 3]}` renders two groups of three with a
+ * separator between, the SSR equivalent of the React compound children.
+ */
+import {
+  inputOtpBehavior,
+  slotState,
+  otpSlotAttrs,
+  type InputOtpConfig,
+  type InputOtpPart,
+} from './input-otp.behavior';
+import { inputOtpClassSet } from './input-otp.classes';
+import type { PartIds } from '../../lib/contract';
+
+interface Props {
+  id: string;
+  maxLength: number;
+  /** Per-character accept test as a regex source string. */
+  pattern?: string;
+  defaultValue?: string;
+  disabled?: boolean;
+  required?: boolean;
+  name?: string;
+  /** Slot counts per group; defaults to one group holding every slot. */
+  groups?: number[];
+  'aria-label'?: string;
+}
+
+const {
+  id,
+  maxLength,
+  pattern,
+  defaultValue,
+  disabled = false,
+  required = false,
+  name,
+  groups,
+  'aria-label': ariaLabel,
+} = Astro.props;
+
+const config: InputOtpConfig = {
+  maxLength,
+  pattern,
+  defaultValue,
+  disabled,
+  required,
+  label: ariaLabel,
+};
+const state = inputOtpBehavior.initialState(config);
+const classes = inputOtpClassSet(config, state);
+
+const ids = {} as PartIds<InputOtpPart>;
+for (const part of Object.keys(inputOtpBehavior.parts) as InputOtpPart[]) {
+  ids[part] = `${id}-${part}`;
+}
+const aria = inputOtpBehavior.aria(state, config, ids);
+
+// Split the flat slot range into the requested groups; an absent/empty `groups`
+// prop is one group holding every slot.
+const sizes = groups && groups.length > 0 ? groups : [maxLength];
+let cursor = 0;
+const groupedIndexes = sizes.map((size) => {
+  const indexes = Array.from({ length: size }, (_, offset) => cursor + offset).filter(
+    (index) => index < maxLength,
+  );
+  cursor += size;
+  return indexes;
+});
+
+// Class-bearing spans ride a spread attrs object rather than a literal class=,
+// the same escape slider.astro uses -- these carry no typography role.
+const slots = groupedIndexes.map((indexes) =>
+  indexes.map((index) => {
+    const slot = slotState(index, state, config);
+    return {
+      attrs: {
+        'data-part': 'slot',
+        'data-value': index,
+        class: classes.slot,
+        ...otpSlotAttrs(String(index), state, config),
+      },
+      char: { 'data-otp-char': '', class: classes.char },
+      caret: {
+        'data-otp-caret': '',
+        'aria-hidden': 'true',
+        hidden: !slot.caret,
+        class: classes.caret,
+      },
+      caretBar: { class: classes.caretBar },
+      text: slot.char,
+    };
+  }),
+);
+const separatorAttrs = {
+  'data-part': 'separator',
+  'aria-hidden': 'true',
+  class: classes.separator,
+};
+---
+
+<div
+  data-part="root"
+  id={ids.root}
+  data-max-length={maxLength}
+  data-pattern={pattern}
+  class={classes.root}
+  {...aria.root}
+>
+  <input
+    data-part="input"
+    id={ids.input}
+    type="text"
+    inputmode="numeric"
+    autocomplete="one-time-code"
+    name={name}
+    value={state.value}
+    maxlength={maxLength}
+    disabled={disabled}
+    required={required}
+    class={classes.input}
+    {...aria.input}
+  />
+  {
+    slots.map((group, groupIndex) => (
+      <>
+        {groupIndex > 0 && <div {...separatorAttrs}>-</div>}
+        <div data-part="group" class={classes.group}>
+          {/* One line, deliberately: any whitespace between these children
+              lands in the slot's textContent, and the slot's text IS the
+              rendered character -- the React and WC performances emit it with
+              no surrounding whitespace, so the SSR markup must match. */}
+          {group.map((slot) => (
+            <div {...slot.attrs}><span {...slot.char}>{slot.text}</span><span {...slot.caret}><span {...slot.caretBar} /></span></div>
+          ))}
+        </div>
+      </>
+    ))
+  }
+</div>
+
+<script>
+  import { bindInputOtp } from './input-otp.behavior';
+
+  // The <script> is bundled and runs once per page; bind every instance's
+  // server-rendered root. Same controller as the Web Component.
+  const roots = document.querySelectorAll<HTMLElement>('div[data-part="root"][data-max-length]');
+  for (const root of roots) {
+    if (root.dataset['otpBound'] === 'true') continue;
+    root.dataset['otpBound'] = 'true';
+    bindInputOtp(root);
+  }
+</script>

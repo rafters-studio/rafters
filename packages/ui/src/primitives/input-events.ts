@@ -142,7 +142,12 @@ export function createInputHandler(options: InputHandlerOptions): InputHandler {
       inputType,
       data: event.data,
       isComposing: event.isComposing || composing,
-      targetRanges: event.getTargetRanges(),
+      // getTargetRanges() is only meaningful for contenteditable, and is absent
+      // on the InputEvent of a native <input> in some engines (and in the test
+      // environment). Calling it unguarded threw and took the whole listener
+      // down, which meant this primitive could not be composed by a
+      // native-input component at all. Absent ranges are simply none.
+      targetRanges: typeof event.getTargetRanges === 'function' ? event.getTargetRanges() : [],
     };
   };
 
