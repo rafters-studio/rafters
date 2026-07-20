@@ -30,11 +30,11 @@ import { inputOtpClassSet } from './input-otp.classes';
  * controlled input would fight the native caret the score deliberately does not
  * own.
  *
- * @cognitive-load 4/10 - decision 1, information 2, interaction 1, disruption 3,
- * learning 1. There is only one thing to enter and it is dictated by another
- * device, so no decision is being made; the load is transcription under a time
- * limit. The slot count tells the user exactly how much is left, but the task
- * interrupts whatever they were doing, which is where the disruption sits.
+ * @cognitive-load 4/10 - decision 0, information 1, interaction 1, disruption 1,
+ * learning 1. Nothing is being decided: the code is dictated by another device,
+ * so the load is transcription, and the slot count is the only information to
+ * read. The task interrupts whatever the user was doing, and the segmented shape
+ * has to be recognised as one field rather than several.
  * @attention-economics The segmented slots make remaining work countable at a
  * glance and the caret marks the exact next position, so attention never has to
  * re-scan the field. Auto-advance and whole-code paste remove the per-character
