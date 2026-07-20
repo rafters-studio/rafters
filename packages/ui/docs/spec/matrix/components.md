@@ -64,7 +64,7 @@ Behavior-layer support: only the five articles have react (verified). Old tree a
 
 | component | is | does | states | uses (current) | uses (planned) | motion | old tree | layer |
 |---|---|---|---|---|---|---|---|---|
-| **accordion** | Stacked expandable sections | Opens one/many sections; header buttons control regions | item: open/closed | - | disclosure, roving-focus, selection-group | animate-accordion-up/down -> expand/collapse: height, axis y | astro/react | none |
+| **accordion** | Stacked expandable sections | Opens one/many sections; header buttons control regions | item: open/closed | roving-focus | - | animate-accordion-up/down -> expand/collapse: height, axis y | astro/react | react/wc/astro OK |
 | **collapsible** | Single expandable region | Toggles one content region open/closed | open, closed | disclosure | - | animate-collapsible-up/down -> expand/collapse: height, axis y | react | none |
 | **tabs** | Tabbed panels | Shows one panel per selected tab; arrows move (automatic activation) | active tab | - | roving-focus, selection-group | data-[state=active] swap -> indicator-move: transition, axis x | astro/react | none |
 
