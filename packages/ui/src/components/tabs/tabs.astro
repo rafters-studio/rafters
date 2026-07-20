@@ -1,0 +1,121 @@
+---
+/**
+ * Astro performance (controller) for tabs.
+ *
+ * Server-renders the full LIGHT-DOM markup with classes and the score's initial
+ * projection already applied, so the correct panel is showing and the set is
+ * accessible before any JS. The <script> then hands each server-rendered root
+ * to bindTabs -- the SAME DOM-native controller the Web Component uses. Astro
+ * imports the behavior binding like any other module; there is no astro-specific
+ * runtime.
+ *
+ * The projection is computed here from the same tabs.aria / tabsInstanceAria the
+ * React and WC controllers read -- one score, three performances, zero drift.
+ */
+import {
+  tabs,
+  tabsIds,
+  tabsInstanceAria,
+  type TabsConfig,
+  type TabsOrientation,
+  type TabsPart,
+} from './tabs.behavior';
+import { tabsClasses } from './tabs.classes';
+import type { PartIds } from '../../lib/contract';
+
+interface Tab {
+  value: string;
+  label: string;
+  /** Panel body. Props-driven, matching every merged Astro performance: Astro
+   *  requires static slot names, so a per-value slot is not expressible. */
+  content?: string;
+  disabled?: boolean;
+}
+
+interface Props {
+  id: string;
+  tabs: Tab[];
+  /** Which tab is active on first paint. */
+  value?: string;
+  orientation?: TabsOrientation;
+}
+
+const { id, tabs: items, value = '', orientation = 'horizontal' } = Astro.props;
+
+const config: TabsConfig = { defaultValue: value, orientation };
+const state = tabs.initialState(config);
+const classes = tabsClasses(config, state);
+
+const ids = {} as PartIds<TabsPart>;
+for (const part of Object.keys(tabs.parts) as TabsPart[]) {
+  ids[part] = `${id}-${part}`;
+}
+const rootAria = tabs.aria(state, config, ids);
+
+// The roving tabindex before JS: the active trigger is the single tab stop, so
+// keyboard order is already correct on the server-rendered page.
+const firstEnabled = items.find((item) => !item.disabled)?.value;
+const tabStop = items.some((item) => item.value === state.value) ? state.value : firstEnabled;
+---
+
+<div data-part="root" id={ids.root} class={classes.root} {...rootAria.root}>
+  <div data-part="list" id={ids.list} role="tablist" class={classes.list} {...rootAria.list}>
+    {
+      items.map((item) => {
+        const { triggerId, panelId } = tabsIds(id, item.value);
+        return (
+          <button
+            type="button"
+            role="tab"
+            id={triggerId}
+            data-part="trigger"
+            data-value={item.value}
+            disabled={item.disabled}
+            tabindex={item.value === tabStop ? 0 : -1}
+            class={classes.trigger}
+            {...tabsInstanceAria('trigger', item.value, state, config, {
+              trigger: triggerId,
+              panel: panelId,
+            })}
+          >
+            {item.label}
+          </button>
+        );
+      })
+    }
+  </div>
+  {
+    items.map((item) => {
+      const { triggerId, panelId } = tabsIds(id, item.value);
+      return (
+        <div
+          role="tabpanel"
+          id={panelId}
+          data-part="panel"
+          data-value={item.value}
+          tabindex="0"
+          class={classes.panel}
+          {...tabsInstanceAria('panel', item.value, state, config, {
+            trigger: triggerId,
+            panel: panelId,
+          })}
+        >
+          {item.content}
+        </div>
+      );
+    })
+  }
+</div>
+
+<script>
+  import { bindTabs } from './tabs.behavior';
+
+  // The <script> is bundled and runs once per page; bind every instance's
+  // server-rendered root. Same controller as the Web Component.
+  for (const root of document.querySelectorAll<HTMLElement>('[data-part="root"]')) {
+    if (!root.querySelector('[data-part="list"][role="tablist"]')) continue;
+    if (root.dataset['bound'] === 'true') continue;
+    root.dataset['bound'] = 'true';
+    bindTabs(root);
+  }
+</script>
