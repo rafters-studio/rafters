@@ -7,8 +7,6 @@
     ".": "./src/index.ts",
     "./primitives/*": "./src/primitives/*.ts",
     "./components/*": "./src/old/*.tsx",
-    "./next/*.element": "./src/components/*/*.element.ts",
-    "./next/*": "./src/components/*/*.tsx",
     "./hooks/*": "./src/hooks/*.ts",
     "./dialog": "./src/old/ui/dialog.tsx",
     "./dialog.vue": "./src/old/ui/dialog.vue.ts",
