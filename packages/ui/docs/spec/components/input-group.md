@@ -153,6 +153,17 @@ Durations and easing come from tokens; the score declares no motion.
 1. **Light DOM, not shadow DOM.** The Web Component enhances author markup
    rather than rendering a wrapper into a shadow root. This is what lets the
    affixes be plain elements and the ring be a plain class.
+
+   The cost, stated plainly because it is the likeliest reviewer question: the
+   bind applies the ARIA/state projection and the disabled propagation, but it
+   does NOT paint classes. A hand-authored `<rafters-input-group>` is
+   behaviorally correct and visually unstyled unless the author also copies the
+   class strings (which is what `input-group.astro` server-renders, and what
+   the React performance paints). The oracle's shadow element DID apply its own
+   classes, so this is a real trade, not a wash: it buys the light-DOM
+   affixes, the plain `focus-within` ring, and one element instead of two. It
+   is the same trade `input` and `field` made -- decoration is the
+   performance's job, not the client's -- so the family stays consistent.
 2. **Fill is `bg-transparent`.** The group inherits the surface it sits on.
 3. **The propagation OR** (above) -- the one behavioral correction.
 4. **Bind-once.** Like input/field/radio-group, the client wires server/author
