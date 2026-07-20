@@ -1,0 +1,150 @@
+---
+/**
+ * Astro performance (controller) for slider.
+ *
+ * Server-renders the full LIGHT-DOM container -- track, range, and one
+ * role=slider thumb per value -- with classes, the score's initial projection
+ * (data-orientation / aria-valuemin/max/now / aria-orientation), and the thumb
+ * geometry already applied, so the control is correct and accessible before any
+ * JS. The <script> then hands each server-rendered root to bindSlider -- the
+ * SAME DOM-native controller the Web Component uses. One score, three
+ * performances, zero drift.
+ *
+ * The slider has no intrinsic text, so the consumer MUST supply an accessible
+ * name (aria-label / aria-labelledby), applied to every thumb.
+ */
+import {
+  effectiveValues,
+  percentFor,
+  sliderBehavior,
+  sliderFormValue,
+  sliderThumbAria,
+  type SliderConfig,
+  type SliderOrientation,
+  type SliderPart,
+  type SliderSize,
+  type SliderVariant,
+} from './slider.behavior';
+import { sliderClasses } from './slider.classes';
+import type { PartIds } from '../../lib/contract';
+
+interface Props {
+  id: string;
+  variant?: SliderVariant;
+  size?: SliderSize;
+  min?: number;
+  max?: number;
+  step?: number;
+  orientation?: SliderOrientation;
+  defaultValue?: number[];
+  disabled?: boolean;
+  name?: string;
+  'aria-label'?: string;
+  'aria-labelledby'?: string;
+}
+
+const {
+  id,
+  variant = 'default',
+  size = 'default',
+  min = 0,
+  max = 100,
+  step = 1,
+  orientation = 'horizontal',
+  defaultValue = [min],
+  disabled = false,
+  name,
+  'aria-label': ariaLabel,
+  'aria-labelledby': ariaLabelledby,
+} = Astro.props;
+
+const config: SliderConfig = {
+  variant,
+  size,
+  min,
+  max,
+  step,
+  orientation,
+  defaultValue,
+  disabled,
+  name,
+};
+const state = sliderBehavior.initialState(config);
+const classes = sliderClasses(config, state);
+
+const ids = {} as PartIds<SliderPart>;
+for (const part of Object.keys(sliderBehavior.parts) as SliderPart[]) {
+  ids[part] = `${id}-${part}`;
+}
+const aria = sliderBehavior.aria(state, config, ids);
+
+const values = effectiveValues(state, config);
+const isHorizontal = orientation === 'horizontal';
+const low = Math.min(...values);
+const high = Math.max(...values);
+const rangeStart = values.length > 1 ? percentFor(low, config) : 0;
+const rangeEnd = percentFor(high, config);
+const rangeStyle = isHorizontal
+  ? `left:${rangeStart}%;right:${100 - rangeEnd}%;top:0;bottom:0`
+  : `bottom:${rangeStart}%;top:${100 - rangeEnd}%;left:0;right:0`;
+
+// The class rides a spread attrs object (never a literal class= on a span), the
+// same escape switch.astro uses -- these carry no typography role.
+const trackAttrs = { 'data-part': 'track', id: ids.track, class: classes.track, ...aria.track };
+const rangeAttrs = { 'data-part': 'range', class: classes.range, style: rangeStyle, ...aria.range };
+
+const thumbs = values.map((value, index) => {
+  const pct = percentFor(value, config);
+  const style = isHorizontal
+    ? `left:${pct}%;top:50%;transform:translate(-50%,-50%)`
+    : `bottom:${pct}%;left:50%;transform:translate(-50%,50%)`;
+  return {
+    role: 'slider',
+    'data-part': 'thumb',
+    'data-index': index,
+    'data-value': value,
+    tabindex: disabled ? -1 : 0,
+    'aria-label': ariaLabel,
+    'aria-labelledby': ariaLabelledby,
+    class: classes.thumb,
+    style,
+    ...sliderThumbAria(String(value), state, config),
+  };
+});
+
+const hiddenInputs = sliderFormValue(state, config);
+---
+
+<div
+  data-part="root"
+  id={ids.root}
+  data-step={step}
+  data-name={name}
+  class={classes.root}
+  {...aria.root}
+>
+  <span {...trackAttrs}>
+    <span {...rangeAttrs}></span>
+  </span>
+
+  {thumbs.map((thumb) => <span {...thumb}></span>)}
+
+  {
+    hiddenInputs.map((input, index) => (
+      <input type="hidden" data-slider-input data-index={index} name={input.name} value={input.value} />
+    ))
+  }
+</div>
+
+<script>
+  import { bindSlider } from './slider.behavior';
+
+  // The <script> is bundled and runs once per page; bind every instance's
+  // server-rendered root. Same controller as the Web Component.
+  const roots = document.querySelectorAll<HTMLElement>('div[data-part="root"][data-step]');
+  for (const root of roots) {
+    if (root.dataset['bound'] === 'true') continue;
+    root.dataset['bound'] = 'true';
+    bindSlider(root);
+  }
+</script>
