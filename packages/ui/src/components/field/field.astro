@@ -1,0 +1,80 @@
+---
+/**
+ * Astro performance of the field score. Server-renders the light-DOM structure
+ * -- the label, a `<slot/>` for the control, and the helper OR error text --
+ * with the disabled/required host signals set, then the `<script>` hands each
+ * instance to bindField (the SAME DOM-native client the Web Component uses).
+ *
+ * bindField wires the one thing SSR cannot reach into the slotted control:
+ * the native `for`/`id` association, the score's ARIA projection, and disabled
+ * propagation. One score, three performances, zero drift -- the label decoration
+ * and helper/error classes come from the SAME field.classes.ts the React and WC
+ * performances read.
+ *
+ * The description yields to the error: at most one helper node is rendered, so
+ * the control's `aria-describedby` never references a hidden node.
+ */
+import { descriptionId, errorId } from './field.behavior';
+import { composeFieldLabelClasses, fieldClassSet } from './field.classes';
+
+interface Props {
+  /** Field id -- shared by the label `for`, the control `id`, and the derived
+   *  `${id}-description` / `${id}-error` sibling ids. The slotted control must
+   *  carry this same id (bindField reads the association off it). */
+  id: string;
+  label: string;
+  description?: string;
+  error?: string;
+  required?: boolean;
+  disabled?: boolean;
+}
+
+const { id, label, description, error, required = false, disabled = false } = Astro.props;
+
+const classes = fieldClassSet({ required, disabled }, {});
+const hasError = typeof error === 'string' && error.length > 0;
+const hasDescription = typeof description === 'string' && description.length > 0;
+const showDescription = hasDescription && !hasError;
+---
+
+<rafters-field
+  data-part="root"
+  class={classes.container}
+  data-required={required ? '' : undefined}
+  data-disabled={disabled ? '' : undefined}
+>
+  <label data-part="label" for={id} class={composeFieldLabelClasses(disabled)}>
+    {label}
+    {required && <b class={classes.requiredMarker} aria-hidden="true">*</b>}
+  </label>
+
+  <slot />
+
+  {
+    showDescription && (
+      <div data-part="description" id={descriptionId(id)} class={classes.description}>
+        {description}
+      </div>
+    )
+  }
+
+  {
+    hasError && (
+      <div data-part="error" id={errorId(id)} class={classes.error} role="alert">
+        {error}
+      </div>
+    )
+  }
+</rafters-field>
+
+<script>
+  import { bindField } from './field.behavior';
+
+  // The <script> is bundled and runs once per page; bind every instance's
+  // server-rendered markup. Same client as the Web Component.
+  for (const root of document.querySelectorAll<HTMLElement>('rafters-field[data-part="root"]')) {
+    if (root.dataset['bound'] === 'true') continue;
+    root.dataset['bound'] = 'true';
+    bindField(root);
+  }
+</script>
