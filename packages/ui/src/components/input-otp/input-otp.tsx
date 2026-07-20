@@ -195,12 +195,12 @@ export function InputOTP({
   });
   const classes = inputOtpClassSet(config, state);
 
-  const contextValue = React.useMemo<InputOTPContextValue>(
-    () => ({ state, config }),
-    // The slots re-paint on state; config identity changes every render, so the
-    // memo keys on the fields the slot projection actually reads.
-    [state, config.maxLength, config.value, config.disabled, config.pattern],
-  );
+  // Deliberately unmemoized. `config` is rebuilt from props every render, so a
+  // memo could only key on its individual fields -- which is both a lie to the
+  // linter and a cache that misses whenever any of them moves. The slots are
+  // pure projections of (state, config) and must re-paint on exactly those, so
+  // a fresh context value per render is the correct behavior, not a leak.
+  const contextValue: InputOTPContextValue = { state, config };
 
   return (
     <InputOTPContext.Provider value={contextValue}>
