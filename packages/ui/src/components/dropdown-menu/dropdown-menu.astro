@@ -1,0 +1,77 @@
+---
+/**
+ * Astro performance for dropdown-menu. Server-renders the full light-DOM menu
+ * with the closed-state projection already applied (correct and inert before
+ * JS), then the <script> hands each instance to bindDropdownMenu -- the SAME
+ * DOM-native client the Web Component uses. One score, three performances.
+ *
+ * The menu stays in light DOM (present-but-hidden) so the effects the bind runs
+ * -- roving-focus, typeahead, dismiss-on-outside -- can read it.
+ */
+import {
+  dropdownMenu,
+  type DropdownMenuConfig,
+  type DropdownMenuPart,
+} from './dropdown-menu.behavior';
+import { dropdownMenuClasses } from './dropdown-menu.classes';
+import type { PartIds } from '../../lib/contract';
+
+interface Item {
+  label: string;
+  disabled?: boolean;
+}
+
+interface Props {
+  id: string;
+  label: string;
+  items: Item[];
+}
+
+const { id, label, items } = Astro.props;
+
+const config: DropdownMenuConfig = {};
+const state = dropdownMenu.initialState(config);
+const classes = dropdownMenuClasses(config, state);
+
+const ids = {} as PartIds<DropdownMenuPart>;
+for (const part of Object.keys(dropdownMenu.parts) as DropdownMenuPart[]) {
+  ids[part] = `${id}-${part}`;
+}
+const aria = dropdownMenu.aria(state, config, ids);
+---
+
+<rafters-dropdown-menu data-part="root" id={ids.root} {...aria.root}>
+  <button type="button" id={ids.trigger} data-part="trigger" class={classes.trigger} {...aria.trigger}>
+    {label}
+  </button>
+
+  <div id={ids.content} data-part="content" class={classes.content} hidden={!state.open} {...aria.content}>
+    {
+      items.map((item) => (
+        <div
+          role="menuitem"
+          data-part="item"
+          data-roving-item=""
+          data-disabled={item.disabled ? '' : undefined}
+          aria-disabled={item.disabled ? 'true' : undefined}
+          tabindex={item.disabled ? undefined : -1}
+          class={classes.item}
+        >
+          {item.label}
+        </div>
+      ))
+    }
+  </div>
+</rafters-dropdown-menu>
+
+<script>
+  import { bindDropdownMenu } from './dropdown-menu.behavior';
+
+  for (const root of document.querySelectorAll<HTMLElement>(
+    'rafters-dropdown-menu[data-part="root"]',
+  )) {
+    if (root.dataset['bound'] === 'true') continue;
+    root.dataset['bound'] = 'true';
+    bindDropdownMenu(root);
+  }
+</script>
