@@ -691,6 +691,67 @@ function generateTypographyCompositeUtilities(compositeTokens: Token[]): string 
 }
 
 /**
+ * Generate `motion-<name>` @utility classes from the semantic motion tokens
+ * (motion-semantic-* tokens carrying property/duration-tier/curve JSON).
+ *
+ * Each token becomes one transition LONGHAND @utility: transition-property +
+ * transition-duration (var(--duration-*)) + transition-timing-function
+ * (var(--ease-*)). Longhand, not shorthand, so a nested
+ * `@media (prefers-reduced-motion: reduce)` can re-set a single property
+ * (drop transforms, become a cross-fade) without restating the whole rule.
+ * The var() refs resolve against the duration and ease theme vars in @theme.
+ *
+ * @utility lands in @layer utilities, so `transition-none` / `motion-reduce:`
+ * overrides still win normally, and a NEW namespace means no @theme-generated
+ * built-in shadows it. The @media-inside-@utility mirrors the existing
+ * @container-inside-@utility nesting in generateTypographyCompositeUtilities.
+ */
+function generateMotionUtilities(motionTokens: Token[]): string {
+  const semanticTokens = motionTokens.filter((t) => t.name.startsWith('motion-semantic-'));
+  if (semanticTokens.length === 0) {
+    return '';
+  }
+
+  interface MotionSpec {
+    properties: string[];
+    durationTier: string;
+    curve: string;
+    reducedMotion: { properties: string[]; ms?: number } | null;
+  }
+
+  const lines: string[] = ['/* Semantic motion utilities -- transition longhand per token */'];
+
+  for (const token of semanticTokens) {
+    if (typeof token.value !== 'string') continue;
+    let spec: MotionSpec;
+    try {
+      spec = JSON.parse(token.value) as MotionSpec;
+    } catch {
+      continue;
+    }
+
+    const className = token.name.replace('motion-semantic-', 'motion-');
+    lines.push(`@utility ${className} {`);
+    lines.push(`  transition-property: ${spec.properties.join(', ')};`);
+    lines.push(`  transition-duration: var(--duration-${spec.durationTier});`);
+    lines.push(`  transition-timing-function: var(--ease-${spec.curve});`);
+
+    if (spec.reducedMotion) {
+      lines.push('  @media (prefers-reduced-motion: reduce) {');
+      lines.push(`    transition-property: ${spec.reducedMotion.properties.join(', ')};`);
+      if (typeof spec.reducedMotion.ms === 'number') {
+        lines.push(`    transition-duration: ${spec.reducedMotion.ms}ms;`);
+      }
+      lines.push('  }');
+    }
+
+    lines.push('}');
+  }
+
+  return lines.join('\n');
+}
+
+/**
  * Map a typography override property to a Tailwind utility class.
  */
 function overridePropertyToUtility(property: string, value: string): string {
@@ -819,6 +880,13 @@ export function tokensToTailwind(
     sections.push(depthUtilities);
   }
 
+  // Semantic motion @utility classes (motion-*)
+  const motionUtilities = generateMotionUtilities(groups.motion);
+  if (motionUtilities) {
+    sections.push('');
+    sections.push(motionUtilities);
+  }
+
   // Typography element overrides (if any)
   const overrideCSS = generateTypographyOverrideCSS(typographyOverrides);
   if (overrideCSS) {
@@ -931,6 +999,9 @@ function generateThemeBlockWithVarRefs(groups: GroupedTokens): string {
       if (token.name.startsWith('motion-duration-') && token.name !== 'motion-duration-base')
         continue;
       if (token.name.startsWith('motion-easing-')) continue;
+      // Semantic motion tokens are JSON specs consumed by generateMotionUtilities,
+      // not raw custom properties -- no --var to reference.
+      if (token.name.startsWith('motion-semantic-')) continue;
       lines.push(`  --${token.name}: var(--rafters-${token.name});`);
     }
     lines.push('');

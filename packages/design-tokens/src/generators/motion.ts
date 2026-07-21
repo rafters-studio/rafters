@@ -1,14 +1,14 @@
 /**
  * Motion Generator
  *
- * Generates motion tokens (duration, easing, delay) using mathematical progressions
- * from @rafters/math-utils. Uses minor-third (1.2) ratio by default for harmonious
- * timing that feels connected to the spacing system.
+ * Generates motion tokens: duration tiers, easing curves, delays, keyframes,
+ * animations, and the semantic motion layer.
  *
- * This generator uses step-based progression: value = base * ratio^step
- * - step 0 = base value
- * - step 1 = base * ratio (slower)
- * - step -1 = base / ratio (faster)
+ * Duration tiers are PERCEPTUALLY DERIVED literals (docs/MOTION.md) -- fitted to
+ * how the visual system tracks motion, NOT a ratio progression. Delays still use
+ * step-based progression (value = base * ratio^step) from @rafters/math-utils.
+ * The semantic motion tokens (motion-semantic-*) carry a full transition spec as
+ * JSON; the Tailwind exporter turns each into one `motion-<name>` @utility.
  *
  * This generator is a pure function - it receives motion definitions as input.
  * Default motion values are provided by the orchestrator from defaults.ts.
@@ -20,9 +20,23 @@ import {
   resolveRatio,
 } from '@rafters/math-utils';
 import type { Token } from '@rafters/shared';
-import type { DelayDef, DurationDef, EasingDef } from './defaults.js';
+import type { DelayDef, DurationDef, EasingDef, MotionSemanticMapping } from './defaults.js';
 import type { GeneratorResult, ResolvedSystemConfig } from './types.js';
 import { EASING_CURVES, MOTION_DURATION_SCALE } from './types.js';
+
+/**
+ * Legacy easing keys (the pre-#1903 vocabulary) mapped to the six named curves.
+ * The retained looping/enter-exit @keyframes animations reference these old keys;
+ * remapping keeps them alive across the curve rename instead of silently dropping
+ * them (an `easingDefs[oldKey]` miss would `continue` and vanish the animation).
+ */
+const LEGACY_EASING_REMAP: Record<string, string> = {
+  linear: 'linear',
+  'ease-out': 'enter',
+  'ease-in': 'exit',
+  'ease-in-out': 'standard',
+  spring: 'spring-snappy',
+};
 
 /**
  * Generate motion tokens from provided definitions
@@ -32,6 +46,7 @@ export function generateMotionTokens(
   durationDefs: Record<string, DurationDef>,
   easingDefs: Record<string, EasingDef>,
   delayDefs: Record<string, DelayDef>,
+  semanticMappings: Record<string, MotionSemanticMapping>,
 ): GeneratorResult {
   const tokens: Token[] = [];
   const timestamp = new Date().toISOString();
@@ -47,55 +62,43 @@ export function generateMotionTokens(
     value: `${baseTransitionDuration}ms`,
     category: 'motion',
     namespace: 'motion',
-    semanticMeaning: 'Base transition duration - all motion timing derives from this',
-    usageContext: ['calculation-reference'],
+    semanticMeaning:
+      'Legacy base transition duration. The perceptual duration scale (motion-duration-*) no longer derives from this; retained only as a reference value and delay-progression base.',
+    usageContext: ['calculation-reference', 'delay-base'],
     progressionSystem: progressionRatio as 'minor-third',
-    description: `Base duration (${baseTransitionDuration}ms). Motion uses ${progressionRatio} progression (ratio ${ratioVal}).`,
+    description: `Base duration (${baseTransitionDuration}ms). Delay tokens use ${progressionRatio} progression (ratio ${ratioVal}); duration tiers are perceptually derived literals.`,
     generatedAt: timestamp,
     containerQueryAware: false,
     reducedMotionAware: true,
     userOverride: null,
     usagePatterns: {
-      do: ['Reference as the calculation base'],
-      never: ['Change without understanding full motion scale impact'],
+      do: ['Reference as the delay-progression base'],
+      never: ['Assume the perceptual duration tiers derive from this'],
     },
   });
 
-  // Generate duration tokens
+  // Generate duration tokens. Values are perceptually derived literals
+  // (docs/MOTION.md), NOT a ratio progression -- each tier records its band.
   for (const scale of MOTION_DURATION_SCALE) {
     const def = durationDefs[scale];
     if (!def) continue;
     const scaleIndex = MOTION_DURATION_SCALE.indexOf(scale);
-
-    let durationMs: number;
-    let mathRelationship: string;
-
-    if (def.step === 'instant') {
-      durationMs = 0;
-      mathRelationship = '0';
-    } else {
-      // Use computeStep() for step-based calculation
-      durationMs = Math.round(computeStep(baseTransitionDuration, def.step));
-      mathRelationship =
-        def.step === 0
-          ? `${baseTransitionDuration}ms (base)`
-          : `${baseTransitionDuration} × ${ratioVal}^${def.step}`;
-    }
+    const durationMs = def.ms;
+    const bandNote = def.band ? ` Band: ${def.band}.` : '';
 
     tokens.push({
       name: `motion-duration-${scale}`,
-      value: durationMs === 0 ? '0ms' : `${durationMs}ms`,
+      value: `${durationMs}ms`,
       category: 'motion',
       namespace: 'motion',
-      semanticMeaning: def.meaning,
+      semanticMeaning: `${def.meaning}${bandNote}`,
       usageContext: def.contexts,
       scalePosition: scaleIndex,
-      progressionSystem: progressionRatio as 'minor-third',
       motionIntent: def.motionIntent,
       motionDuration: durationMs,
-      mathRelationship,
-      dependsOn: def.step === 'instant' ? [] : ['motion-duration-base'],
-      description: `Duration ${scale}: ${durationMs}ms. ${def.meaning}`,
+      mathRelationship: def.band ? `${durationMs}ms (perceptual: ${def.band})` : `${durationMs}ms`,
+      dependsOn: [],
+      description: `Duration ${scale}: ${durationMs}ms.${bandNote} ${def.meaning}`,
       generatedAt: timestamp,
       containerQueryAware: false,
       reducedMotionAware: true,
@@ -104,11 +107,9 @@ export function generateMotionTokens(
         do:
           scale === 'instant'
             ? ['Use for prefers-reduced-motion', 'Use for disabled animations']
-            : scale === 'fast'
-              ? ['Use for hover/focus states', 'Use for micro-interactions']
-              : scale === 'normal'
-                ? ['Use for most UI transitions', 'Use for state changes']
-                : ['Use for enter/exit animations', 'Use for emphasis'],
+            : scale === 'micro' || scale === 'fast'
+              ? ['Use for acknowledgment feedback (hover, focus, press)']
+              : ['Use for communicative transitions where the user must track the change'],
         never: ['Ignore prefers-reduced-motion', 'Use slow animations for frequent actions'],
       },
     });
@@ -136,15 +137,15 @@ export function generateMotionTokens(
       usagePatterns: {
         do:
           curve === 'linear'
-            ? ['Use for opacity fades', 'Use for progress indicators']
-            : curve === 'ease-out'
-              ? ['Use for entering elements', 'Use for appearing content']
-              : curve === 'ease-in'
-                ? ['Use for exiting elements', 'Use for disappearing content']
-                : ['Use for general transitions', 'Match context to curve feel'],
+            ? ['Use for progress and loading, where the system is working not interacting']
+            : curve === 'enter'
+              ? ['Use for anything entering the viewport']
+              : curve === 'exit'
+                ? ['Use for anything leaving the viewport']
+                : ['Match the curve register to the interaction feel'],
         never: [
-          'Use ease-in for entering (feels sluggish)',
-          'Use ease-out for exiting (feels abrupt)',
+          'Use exit for entering (arrives reluctantly)',
+          'Use linear for interactive spatial transitions (reads as mechanical)',
         ],
       },
     });
@@ -524,18 +525,16 @@ export function generateMotionTokens(
     } else {
       const durationDef = durationDefs[anim.duration];
       if (!durationDef) continue;
-      const durationMs =
-        durationDef.step === 'instant'
-          ? 0
-          : Math.round(computeStep(baseTransitionDuration, durationDef.step));
-      durationValue = `${durationMs}ms`;
+      durationValue = `${durationDef.ms}ms`;
       durationRef = `var(--motion-duration-${anim.duration})`;
     }
 
-    // Get easing
-    const easingDef = easingDefs[anim.easing];
+    // Get easing -- remap the legacy key to the current curve vocabulary so the
+    // retained @keyframes animations survive the #1903 curve rename.
+    const easingKey = LEGACY_EASING_REMAP[anim.easing] ?? anim.easing;
+    const easingDef = easingDefs[easingKey];
     if (!easingDef) continue;
-    const easingRef = `var(--motion-easing-${anim.easing})`;
+    const easingRef = `var(--motion-easing-${easingKey})`;
 
     // Build animation value
     const iterations = anim.iterations || '';
@@ -560,7 +559,7 @@ export function generateMotionTokens(
         ...(anim.duration.endsWith('s') || anim.duration.endsWith('ms')
           ? []
           : [`motion-duration-${anim.duration}`]),
-        `motion-easing-${anim.easing}`,
+        `motion-easing-${easingKey}`,
       ],
       description: `Animation ${anim.name}: ${anim.meaning}`,
       generatedAt: timestamp,
@@ -611,15 +610,11 @@ export function generateMotionTokens(
 
   for (const comp of composites) {
     const durationDef = durationDefs[comp.duration];
-    const easingDef = easingDefs[comp.easing];
+    const easingKey = LEGACY_EASING_REMAP[comp.easing] ?? comp.easing;
+    const easingDef = easingDefs[easingKey];
     if (!durationDef || !easingDef) continue;
 
-    let durationMs: number;
-    if (durationDef.step === 'instant') {
-      durationMs = 0;
-    } else {
-      durationMs = Math.round(computeStep(baseTransitionDuration, durationDef.step));
-    }
+    const durationMs = durationDef.ms;
 
     tokens.push({
       name: comp.name,
@@ -630,9 +625,9 @@ export function generateMotionTokens(
       usageContext: comp.contexts,
       motionDuration: durationMs,
       easingCurve: easingDef.curve,
-      easingName: comp.easing as (typeof EASING_CURVES)[number],
-      dependsOn: [`motion-duration-${comp.duration}`, `motion-easing-${comp.easing}`],
-      description: `${comp.meaning}. Combines ${comp.duration} duration with ${comp.easing} easing.`,
+      easingName: easingKey as (typeof EASING_CURVES)[number],
+      dependsOn: [`motion-duration-${comp.duration}`, `motion-easing-${easingKey}`],
+      description: `${comp.meaning}. Combines ${comp.duration} duration with ${easingKey} easing.`,
       generatedAt: timestamp,
       containerQueryAware: false,
       reducedMotionAware: true,
@@ -640,19 +635,58 @@ export function generateMotionTokens(
     });
   }
 
-  // Motion progression metadata
+  // Semantic motion tokens (docs/MOTION.md semantic table). Each carries its
+  // full transition spec as JSON -- the exporter reads these to emit one
+  // `motion-<name>` @utility per token (property + duration + easing longhand,
+  // with a prefers-reduced-motion override). JSON value => the @theme motion
+  // loop skips it (tokenValueToCSS returns null for JSON), so it never leaks a
+  // raw custom property. Named after typography-composite's single-source model.
+  for (const [name, mapping] of Object.entries(semanticMappings)) {
+    tokens.push({
+      name: `motion-semantic-${name}`,
+      value: JSON.stringify({
+        properties: mapping.properties,
+        durationTier: mapping.durationTier,
+        curve: mapping.curve,
+        reducedMotion: mapping.reducedMotion,
+      }),
+      category: 'motion',
+      namespace: 'motion',
+      semanticMeaning: `${mapping.meaning} ${mapping.sizeReasoning}`,
+      usageContext: mapping.contexts,
+      motionIntent:
+        mapping.category === 'enter'
+          ? 'enter'
+          : mapping.category === 'exit'
+            ? 'exit'
+            : 'transition',
+      generateUtilityClass: true,
+      dependsOn: [`motion-duration-${mapping.durationTier}`, `motion-easing-${mapping.curve}`],
+      description: `Semantic motion motion-${name}: ${mapping.properties.join(', ')} over ${mapping.durationTier} with ${mapping.curve}. ${mapping.sizeReasoning}`,
+      generatedAt: timestamp,
+      containerQueryAware: false,
+      reducedMotionAware: true,
+      userOverride: null,
+      usagePatterns: {
+        do: [`Apply class motion-${name} and let a state/presence change trigger the transition`],
+        never: ['Hardcode a raw numeric duration in place of this token'],
+      },
+    });
+  }
+
+  // Motion metadata
   tokens.push({
     name: 'motion-progression',
     value: JSON.stringify({
       ratio: progressionRatio,
       ratioValue: ratioVal,
       baseDuration: baseTransitionDuration,
-      note: 'Motion timing uses step-based progression (base * ratio^step) for unified feel',
+      note: 'Duration tiers are perceptually derived literals (docs/MOTION.md); delay tokens use the workspace progression ratio from the base duration.',
     }),
     category: 'motion',
     namespace: 'motion',
-    semanticMeaning: 'Metadata about the motion progression system',
-    description: `Motion uses ${progressionRatio} progression from ${baseTransitionDuration}ms base.`,
+    semanticMeaning: 'Metadata about the motion system',
+    description: `Duration tiers are perceptual literals; delays use ${progressionRatio} progression from ${baseTransitionDuration}ms base.`,
     generatedAt: timestamp,
     containerQueryAware: false,
     userOverride: null,
