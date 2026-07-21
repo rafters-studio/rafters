@@ -1,0 +1,109 @@
+---
+/**
+ * Astro performance for alert-dialog. Server-renders the full light-DOM
+ * structure with the closed-state projection already applied (correct and
+ * inert before JS), then the <script> hands each instance to bindAlertDialog --
+ * the SAME DOM-native client the Web Component uses. One score, three
+ * performances.
+ *
+ * Content stays in light DOM (present-but-hidden) so the effects the bind runs
+ * -- focus-trap, scroll-lock -- can read it. There is no outside-dismiss: an
+ * alert dialog closes only via Cancel, the action, or Escape. Exit animation
+ * waits on the Presence adapter; this is enter-only.
+ */
+import { alertDialog, type AlertDialogConfig, type AlertDialogPart } from './alert-dialog.behavior';
+import { alertDialogClasses } from './alert-dialog.classes';
+import type { PartIds } from '../../lib/contract';
+
+interface Props {
+  id: string;
+  defaultOpen?: boolean;
+  title?: string;
+  description?: string;
+  cancelLabel?: string;
+  actionLabel?: string;
+}
+
+const {
+  id,
+  defaultOpen = false,
+  title,
+  description,
+  cancelLabel = 'Cancel',
+  actionLabel = 'Continue',
+} = Astro.props;
+
+const config: AlertDialogConfig = { defaultOpen };
+const state = alertDialog.initialState(config);
+const classes = alertDialogClasses(config, state);
+
+// Optional cross-ref sources resolve to empty when their slot is absent, so
+// the score's `|| undefined` guards emit no dangling reference.
+const ids = {} as PartIds<AlertDialogPart>;
+for (const part of Object.keys(alertDialog.parts) as AlertDialogPart[]) {
+  const absent = (part === 'title' && !title) || (part === 'description' && !description);
+  ids[part] = absent ? '' : `${id}-${part}`;
+}
+const aria = alertDialog.aria(state, config, ids);
+const open = state.open;
+---
+
+<rafters-alert-dialog data-part="root" default-open={String(defaultOpen)}>
+  <button type="button" id={ids.trigger} data-part="trigger" {...aria.trigger}>
+    <slot name="trigger">Open</slot>
+  </button>
+
+  <div id={ids.overlay} data-part="overlay" class={classes.overlay} hidden={!open} {...aria.overlay}></div>
+
+  <div class={classes.container} hidden={!open}>
+    <div
+      id={ids.content}
+      data-part="content"
+      tabindex="-1"
+      class={classes.content}
+      {...aria.content}
+      hidden={!open}
+    >
+      <div class={classes.header}>
+        {
+          title && (
+            <h2
+              id={ids.title}
+              data-part="title"
+              class={classes.title}
+            >
+              {title}
+            </h2>
+          )
+        }
+        {
+          description && (
+            <div id={ids.description} data-part="description" class={classes.description}>
+              {description}
+            </div>
+          )
+        }
+      </div>
+      <slot />
+      <div class={classes.footer}>
+        <button type="button" id={ids.cancel} data-part="cancel" class={classes.cancel}>
+          <slot name="cancel">{cancelLabel}</slot>
+        </button>
+        <button type="button" id={ids.action} data-part="action" class={classes.action}>
+          <slot name="action">{actionLabel}</slot>
+        </button>
+      </div>
+    </div>
+  </div>
+</rafters-alert-dialog>
+
+<script>
+  import { bindAlertDialog } from './alert-dialog.behavior';
+
+  for (const root of document.querySelectorAll('rafters-alert-dialog[data-part="root"]')) {
+    const el = root as HTMLElement;
+    if (el.dataset['bound'] === 'true') continue;
+    el.dataset['bound'] = 'true';
+    bindAlertDialog(el);
+  }
+</script>
