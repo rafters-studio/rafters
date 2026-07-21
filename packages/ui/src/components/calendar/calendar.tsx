@@ -62,6 +62,10 @@ interface CalendarBaseProps {
   fromDate?: Date;
   /** Dates after this are disabled. */
   toDate?: Date;
+  /** React-only predicate (a function is not serializable, so WC/Astro keep the
+   *  fromDate/toDate bounds): a date is disabled when it returns true, layered
+   *  over the serializable bounds. */
+  disabled?: (date: Date) => boolean;
   /** Render adjacent-month filler days. Default true. */
   showOutsideDays?: boolean;
   /** Always render six weeks. Default false. */
@@ -174,6 +178,12 @@ export function Calendar(props: CalendarProps) {
     today: today ? toISO(today) : defaultToday,
   };
 
+  // A day is disabled when the serializable bounds refuse it OR the React-only
+  // `disabled` predicate returns true. The predicate is React-only (a function
+  // is not serializable); WC/Astro use the bounds alone (see calendar.md).
+  const dayDisabled = (iso: string): boolean =>
+    isDateDisabled(iso, config) || (props.disabled?.(fromISO(iso)) ?? false);
+
   // createBehavior is the model (created once); useMemory subscribes React to it;
   // dispatch takes the CURRENT config each call, so a controlled `selected`
   // shadows intrinsic state without re-creating the instance.
@@ -199,7 +209,7 @@ export function Calendar(props: CalendarProps) {
   const request = React.useCallback(
     (iso: string): void => {
       const { props: p, config: c } = latest.current;
-      if (isDateDisabled(iso, c)) return;
+      if (isDateDisabled(iso, c) || (p.disabled?.(fromISO(iso)) ?? false)) return;
       const before = effectiveSelected(memory.get(), c);
       const next = nextSelection(before, iso);
       dispatch('setSelected', c, { selection: next });
@@ -314,10 +324,15 @@ export function Calendar(props: CalendarProps) {
         <tbody>
           {weeks.map((week) => (
             <tr key={week[0]?.iso} data-part="week" className={classes.week}>
-              {week.map((cell) =>
-                cell.day === 0 ? (
-                  <td key={cell.iso} role="gridcell" data-part="day" />
-                ) : (
+              {week.map((cell) => {
+                if (cell.day === 0) {
+                  return <td key={cell.iso} role="gridcell" data-part="day" />;
+                }
+                // The React-only predicate is layered over the score's bounds
+                // projection: override aria-disabled/data-disabled so a
+                // predicate-disabled day is visually and functionally inert.
+                const disabled = dayDisabled(cell.iso);
+                return (
                   <td
                     key={cell.iso}
                     role="gridcell"
@@ -330,11 +345,13 @@ export function Calendar(props: CalendarProps) {
                       if (!cell.outside) request(cell.iso);
                     }}
                     {...dayAria(cell.iso, state, config)}
+                    aria-disabled={disabled ? 'true' : undefined}
+                    data-disabled={disabled ? 'true' : undefined}
                   >
                     {cell.day}
                   </td>
-                ),
-              )}
+                );
+              })}
             </tr>
           ))}
         </tbody>

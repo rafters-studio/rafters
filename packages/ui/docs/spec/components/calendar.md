@@ -114,6 +114,17 @@ harness asserts. Blanked cells (`showOutsideDays=false`) are inert `gridcell`s
 with no `data-value` — the instance-ARIA driver keys off `data-value` and skips
 them.
 
+The score's `aria-disabled` projection reflects the serializable
+`fromDate`/`toDate` bounds only; the React `disabled` predicate (below) is a
+React-only affordance layered on top of that projection in the decorator, so the
+score's total function stays serializable and the WC/Astro paths keep the bounds
+alone. Known limitation (LOW): shown outside-month days are visually muted
+(`data-outside`, `opacity-50`) and functionally inert (click blocked, never a
+tabstop) but carry no `aria-disabled`, so a screen-reader user gets no non-visual
+equivalent of the muting; `aria-disabled` is not projected for outside status
+because the score cannot express it without diverging from the harness's
+projection-equality check. Not axe-flagged.
+
 ## Keyboard
 
 | Key | Action |
@@ -143,7 +154,7 @@ re-render.
 | prev/next month controls with aria-labels | contract |
 | showOutsideDays / fixedWeeks / weekStartsOn / fromDate / toDate | contract |
 | Enter/Space activate the focused date | contract |
-| `disabled(date)` predicate function | framework-affordance (React): a function is not serializable, so WC/Astro express disabled dates via the serializable `fromDate`/`toDate` bounds; React may layer the predicate on top |
+| `disabled(date)` predicate function | contract, framework-affordance (React): implemented as the `disabled?: (date: Date) => boolean` prop, layered over the serializable `fromDate`/`toDate` bounds -- a predicate-disabled day gets `aria-disabled`/`data-disabled` and refuses selection on click and keyboard-activate. A function is not serializable, so WC/Astro use the bounds alone (that asymmetry is by design) |
 | day rendered as `<button>` with `aria-selected` | defect-do-not-port — `aria-selected` is not an allowed attribute on `role=button`; ported to a focusable `role="gridcell"` (APG date-grid) |
 | `role="application"` on the root | dropped — the grid table is the widget (`role="grid"`); `application` suppresses AT reading mode with no benefit here |
 | grid left with no tabstop when nothing focused/selected | defect-do-not-port — `tabbableDate` always yields one tabbable cell (focus > selection > today > first) so the grid is reachable by Tab |

@@ -209,6 +209,31 @@ describe('calendar conformance [react]', () => {
     expect(onSelect).not.toHaveBeenCalled();
   });
 
+  it('the React disabled predicate marks a day inert and refuses click + keyboard select', async () => {
+    const user = userEvent.setup();
+    const onSelect = vi.fn();
+    render(
+      <Calendar
+        today={TODAY}
+        defaultMonth={MONTH}
+        disabled={(date) => date.getDate() === 15}
+        onSelect={onSelect}
+      />,
+    );
+    expect(dayCell('2026-07-15').getAttribute('aria-disabled')).toBe('true');
+    expect(dayCell('2026-07-15').getAttribute('data-disabled')).toBe('true');
+    await user.click(dayCell('2026-07-15'));
+    expect(dayCell('2026-07-15').getAttribute('aria-selected')).toBe('false');
+    dayCell('2026-07-15').focus();
+    await user.keyboard('{Enter}');
+    expect(dayCell('2026-07-15').getAttribute('aria-selected')).toBe('false');
+    expect(onSelect).not.toHaveBeenCalled();
+    // A day the predicate allows still selects.
+    await user.click(dayCell('2026-07-16'));
+    expect(dayCell('2026-07-16').getAttribute('aria-selected')).toBe('true');
+    expect(onSelect).toHaveBeenCalledTimes(1);
+  });
+
   it('controlled: state follows the prop, callback reports the value to set', async () => {
     const user = userEvent.setup();
     const onSelect = vi.fn();
