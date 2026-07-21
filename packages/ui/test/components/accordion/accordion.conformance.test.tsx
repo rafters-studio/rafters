@@ -63,10 +63,13 @@ afterEach(() => {
 });
 
 describe('accordion conformance [react]', () => {
-  it('collapsed: panels stay in the DOM, hidden -- the body is crawlable', async () => {
+  it('collapsed: panels stay in the DOM, inert -- the body is crawlable', async () => {
     render(<TestAccordion />);
     expect(partElements(body(), 'content')).toHaveLength(3);
-    expect(contentFor('a').hidden).toBe(true);
+    // inert, never hidden: removed from the a11y tree + tab order while staying
+    // rendered so the grid-rows transition can run.
+    expect(contentFor('a').hasAttribute('inert')).toBe(true);
+    expect(contentFor('a').hasAttribute('hidden')).toBe(false);
     expect(contentFor('a').getAttribute('data-state')).toBe('closed');
     expect(triggerFor('a').getAttribute('aria-expanded')).toBe('false');
     await assertAxeClean(body());
@@ -87,7 +90,7 @@ describe('accordion conformance [react]', () => {
       expect(triggerFor(value).getAttribute('aria-controls')).toBe(contentFor(value).id);
       expect(contentFor(value).getAttribute('aria-labelledby')).toBe(triggerFor(value).id);
     }
-    expect(contentFor('b').hidden).toBe(true);
+    expect(contentFor('b').hasAttribute('inert')).toBe(true);
   });
 
   it('per-instance ARIA equals the score projection, collapsed and expanded', async () => {
@@ -113,8 +116,8 @@ describe('accordion conformance [react]', () => {
     const user = userEvent.setup();
     render(<TestAccordion defaultValue="a" />);
     await user.click(triggerFor('b'));
-    expect(contentFor('b').hidden).toBe(false);
-    expect(contentFor('a').hidden).toBe(true);
+    expect(contentFor('b').hasAttribute('inert')).toBe(false);
+    expect(contentFor('a').hasAttribute('inert')).toBe(true);
     await assertAxeClean(body());
   });
 
@@ -122,14 +125,14 @@ describe('accordion conformance [react]', () => {
     const user = userEvent.setup();
     render(<TestAccordion defaultValue="a" />);
     await user.click(triggerFor('a'));
-    expect(contentFor('a').hidden).toBe(false);
+    expect(contentFor('a').hasAttribute('inert')).toBe(false);
   });
 
   it('single collapsible: clicking the open header closes everything', async () => {
     const user = userEvent.setup();
     render(<TestAccordion defaultValue="a" collapsible />);
     await user.click(triggerFor('a'));
-    expect(contentFor('a').hidden).toBe(true);
+    expect(contentFor('a').hasAttribute('inert')).toBe(true);
   });
 
   it('multiple: sections expand independently and accumulate', async () => {
@@ -137,12 +140,12 @@ describe('accordion conformance [react]', () => {
     render(<TestAccordion type="multiple" />);
     await user.click(triggerFor('a'));
     await user.click(triggerFor('c'));
-    expect(contentFor('a').hidden).toBe(false);
-    expect(contentFor('c').hidden).toBe(false);
+    expect(contentFor('a').hasAttribute('inert')).toBe(false);
+    expect(contentFor('c').hasAttribute('inert')).toBe(false);
     await assertAxeClean(body());
     await user.click(triggerFor('a'));
-    expect(contentFor('a').hidden).toBe(true);
-    expect(contentFor('c').hidden).toBe(false);
+    expect(contentFor('a').hasAttribute('inert')).toBe(true);
+    expect(contentFor('c').hasAttribute('inert')).toBe(false);
   });
 
   it('ArrowDown/ArrowUp rove focus across headers with wrap; Home/End jump', async () => {
@@ -164,7 +167,7 @@ describe('accordion conformance [react]', () => {
     render(<TestAccordion />);
     triggerFor('a').focus();
     await user.keyboard('{ArrowDown}');
-    expect(contentFor('b').hidden).toBe(true);
+    expect(contentFor('b').hasAttribute('inert')).toBe(true);
   });
 
   it('Enter and Space on the focused header toggle it', async () => {
@@ -172,17 +175,17 @@ describe('accordion conformance [react]', () => {
     render(<TestAccordion type="multiple" />);
     triggerFor('a').focus();
     await user.keyboard('{Enter}');
-    expect(contentFor('a').hidden).toBe(false);
+    expect(contentFor('a').hasAttribute('inert')).toBe(false);
     triggerFor('b').focus();
     await user.keyboard(' ');
-    expect(contentFor('b').hidden).toBe(false);
+    expect(contentFor('b').hasAttribute('inert')).toBe(false);
   });
 
   it('a disabled section cannot be opened and is skipped by roving', async () => {
     const user = userEvent.setup();
     render(<TestAccordion disabledItem="b" />);
     await user.click(triggerFor('b'));
-    expect(contentFor('b').hidden).toBe(true);
+    expect(contentFor('b').hasAttribute('inert')).toBe(true);
     triggerFor('a').focus();
     await user.keyboard('{ArrowDown}');
     expect(document.activeElement).toBe(triggerFor('c'));
@@ -193,7 +196,7 @@ describe('accordion conformance [react]', () => {
     const onValueChange = vi.fn();
     render(<TestAccordion disabled onValueChange={onValueChange} />);
     await user.click(triggerFor('a'));
-    expect(contentFor('a').hidden).toBe(true);
+    expect(contentFor('a').hasAttribute('inert')).toBe(true);
     expect(onValueChange).not.toHaveBeenCalled();
     expect(partElement(body(), 'root')?.getAttribute('data-disabled')).toBe('true');
   });
@@ -205,10 +208,10 @@ describe('accordion conformance [react]', () => {
 
     await user.click(triggerFor('a'));
     expect(onValueChange).toHaveBeenLastCalledWith('a');
-    expect(contentFor('a').hidden).toBe(true);
+    expect(contentFor('a').hasAttribute('inert')).toBe(true);
 
     rerender(<TestAccordion value="a" onValueChange={onValueChange} />);
-    expect(contentFor('a').hidden).toBe(false);
+    expect(contentFor('a').hasAttribute('inert')).toBe(false);
     expect(triggerFor('a').getAttribute('aria-expanded')).toBe('true');
   });
 
@@ -247,7 +250,7 @@ describe('accordion conformance [react]', () => {
         </Accordion.Item>
       </Accordion>,
     );
-    expect(contentFor('a').hidden).toBe(false);
+    expect(contentFor('a').hasAttribute('inert')).toBe(false);
     expect(triggerFor('a').getAttribute('aria-expanded')).toBe('true');
   });
 });

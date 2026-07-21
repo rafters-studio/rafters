@@ -11,10 +11,14 @@ export interface AccordionClassSet {
   trigger: string;
   /** The chevron, rotated off the trigger's data-state via the group variant. */
   triggerIcon: string;
-  /** The panel: clips its content and carries the height-axis motion intent. */
+  /** The panel: a grid whose single row animates 0fr<->1fr, the transitionable
+   *  stand-in for height:auto. Present in the DOM in both states (never
+   *  display:none, which would block the transition); the score projects `inert`
+   *  when collapsed to keep the clipped content out of the a11y tree + tab order. */
   content: string;
-  /** The panel's inner padding box (the panel itself must stay unpadded so it
-   *  can collapse to zero height). */
+  /** The panel's inner clip box: min-h-0 + overflow-hidden so the row can
+   *  collapse to zero and the padded content is clipped rather than forcing
+   *  height. The panel itself stays unpadded so it collapses cleanly. */
   contentInner: string;
 }
 
@@ -26,31 +30,45 @@ const itemClasses = 'border-b';
 
 const headingClasses = 'flex';
 
+// `motion-hover` is the semantic hover-feedback token (colors, fast/standard,
+// preserved under reduced motion) -- it replaces the raw `transition-all
+// duration-300`, which was both off the perceptual scale and untethered to a
+// token. The header's interactive feedback declares its intent by name.
 const triggerClasses =
-  'group flex flex-1 items-center justify-between py-4 text-title-small ' +
-  'transition-all duration-300 motion-reduce:transition-none ' +
+  'group flex flex-1 items-center justify-between py-4 text-title-small motion-hover ' +
   'hover:underline ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ' +
   'disabled:pointer-events-none disabled:opacity-50';
 
-// The icon rotates off the trigger's data-state (projected by the score) via
-// the group variant, so the projection writes one attribute per trigger and the
-// chevron follows for free.
-const triggerIconClasses =
-  'h-4 w-4 shrink-0 transition-transform duration-300 motion-reduce:transition-none ' +
-  'group-data-[state=open]:rotate-180';
+// The chevron rotates off the trigger's data-state (projected by the score) via
+// the group variant. `motion-toggle` (transform, moderate, spring-snappy) is the
+// semantic token for a state-flip transform and carries the reduced-motion
+// behavior itself, replacing the raw `transition-transform duration-300`.
+const triggerIconClasses = 'h-4 w-4 shrink-0 motion-toggle group-data-[state=open]:rotate-180';
 
-// Motion intent (declared, not keyframed): expand/collapse along the height
-// axis. overflow-hidden clips the panel while it grows/shrinks; the transition
-// carries the token-scale duration and yields to reduced motion. The oracle's
-// `data-[state=*]:animate-accordion-up/down` utilities are NOT ported: their
-// keyframes interpolate `var(--radix-accordion-content-height)`, a Radix-owned
-// variable nothing in this system ever sets, so they animate to an undefined
-// height (see accordion.md dispositions).
+// Expand/collapse animate `grid-template-rows` 0fr<->1fr -- the transitionable
+// stand-in for height:auto -- via the `motion-expand` / `motion-collapse`
+// semantic tokens (normal/enter opening, the faster moderate/exit closing).
+// The panel is a grid, present in both states; `motion-reduce` snaps the rows
+// and fades opacity (the tokens' reduced-motion property is opacity, so the
+// state-driven opacity pair below is what reduced-motion users see). The
+// oracle's `animate-accordion-up/down` are NOT ported: they interpolate
+// `var(--radix-accordion-content-height)`, which nothing in this system sets.
+// grid-rows use `minmax(0, Nfr)`, not bare `Nfr`: a bare `0fr` track keeps its
+// automatic minimum at min-content, which the inner box's padding floors above
+// zero, so a "collapsed" panel keeps a padding-height gap. `minmax(0, 0fr)`
+// pins the floor to 0 so the row truly collapses. Verified in a browser --
+// happy-dom does no layout and cannot catch this.
 const contentClasses =
-  'overflow-hidden text-body-small transition-all duration-300 motion-reduce:transition-none';
+  'grid text-body-small ' +
+  'data-[state=closed]:grid-rows-[minmax(0,0fr)] data-[state=open]:grid-rows-[minmax(0,1fr)] ' +
+  'data-[state=closed]:opacity-0 data-[state=open]:opacity-100 ' +
+  'data-[state=open]:motion-expand data-[state=closed]:motion-collapse';
 
-const contentInnerClasses = 'pb-4 pt-0';
+// min-h-0 lets the grid row collapse below the child's min-content height (the
+// classic grid-rows-0fr requirement); overflow-hidden clips the padded content
+// while the row is closing.
+const contentInnerClasses = 'min-h-0 overflow-hidden pb-4 pt-0';
 
 /** The view: class strings keyed by config/state. No logic. */
 export function accordionClasses(
