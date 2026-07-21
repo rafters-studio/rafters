@@ -90,7 +90,7 @@ axe violation) never appears.
 | Trigger/Portal/Overlay/Content/Header/Footer/Title/Description/Cancel/Action surface | contract |
 | Escape closes | contract (moved from a document listener to the content keymap) |
 | `onEscapeKeyDown` veto prop | contract (oracle signature: native event, preventDefault to veto) |
-| asChild on Trigger/Cancel/Action/Title/Description | framework affordance (React) |
+| asChild on Trigger/Cancel/Action | framework affordance (React); Title/Description omit it, matching dialog |
 | `forceMount` | contract, with a divergence: force-mounted closed layers carry `hidden` (a closed modal must be inert to AT and must not block the page). The Presence adapter (wave 0-B) replaces this for exit animation |
 | explicit AlertDialogPortal / AlertDialogOverlay / `container` prop | contract (shadcn surface is the floor) |
 | always-set `aria-describedby` when no description | defect-do-not-port -- dangling reference; replaced by registration + empty-id convention |
