@@ -388,49 +388,74 @@ export const DEFAULT_SHADOW_DEFINITIONS: Record<string, ShadowDef> = {
 // =============================================================================
 
 export interface DurationDef {
-  /** Steps from base using the progression ratio (0 = base, negative = faster, positive = slower) */
-  step: number | 'instant';
+  /** Literal duration in ms. Perceptually derived (docs/MOTION.md), not a ratio step. */
+  ms: number;
+  /**
+   * Perceptual band this tier sits in. Empty string for `instant` (below all
+   * perception). Recorded verbatim in the token's semanticMeaning.
+   */
+  band: string;
   meaning: string;
   contexts: string[];
   motionIntent: 'enter' | 'exit' | 'emphasis' | 'transition';
 }
 
 /**
- * Duration scale using step-based progression.
- * Values are computed as: baseDuration * ratio^step
- * With minor-third (1.2) and baseDuration of 150ms:
- *   step -1 = 125ms, step 0 = 150ms, step 1 = 180ms, step 2 = 216ms, etc.
+ * Duration scale, perceptually derived from docs/MOTION.md.
+ *
+ * These are literal ms values fitted to how the visual system tracks motion,
+ * NOT a ratio progression: under ~100ms reads as instantaneous (communicates
+ * nothing), ~200-300ms is the communicative window, and over ~500ms reads as
+ * sluggish. Tiers below `moderate` are acknowledgment, not communication.
  */
 export const DEFAULT_DURATION_DEFINITIONS: Record<string, DurationDef> = {
   instant: {
-    step: 'instant',
-    meaning: 'Instant - no animation',
-    contexts: ['disabled-motion', 'prefers-reduced-motion'],
+    ms: 0,
+    band: '',
+    meaning:
+      'No perceptible transition. Cursor changes, text selection, badge counts. Below all perception -- there is nothing to track, so nothing is communicated.',
+    contexts: ['disabled-motion', 'prefers-reduced-motion', 'cursor', 'badge-count'],
+    motionIntent: 'transition',
+  },
+  micro: {
+    ms: 100,
+    band: 'at the instantaneous threshold (Nielsen 0.1s)',
+    meaning:
+      'Immediate but visible. Focus rings and press feedback. At the instantaneous threshold -- acknowledgment that input landed, not communication of a change.',
+    contexts: ['focus', 'press', 'micro-feedback'],
     motionIntent: 'transition',
   },
   fast: {
-    step: -1,
-    meaning: 'Fast - micro-interactions, hover states',
-    contexts: ['hover', 'focus', 'active', 'micro-feedback'],
+    ms: 150,
+    band: 'below the communicative window',
+    meaning:
+      'Hover states. The cursor is already there, so the response must match its speed. Below the communicative window -- acknowledgment, not communication.',
+    contexts: ['hover', 'micro-feedback'],
+    motionIntent: 'transition',
+  },
+  moderate: {
+    ms: 250,
+    band: 'communicative (~200-300ms)',
+    meaning:
+      'Dropdowns, tab switches, small reveals. The communicative window: fast enough to feel responsive, slow enough for the eye to track a trajectory and build a spatial model.',
+    contexts: ['dropdowns', 'tab-switches', 'small-reveals'],
     motionIntent: 'transition',
   },
   normal: {
-    step: 0,
-    meaning: 'Normal - standard UI transitions',
-    contexts: ['buttons', 'toggles', 'state-changes'],
-    motionIntent: 'transition',
-  },
-  slow: {
-    step: 1,
-    meaning: 'Slow - enter/exit animations',
-    contexts: ['modals', 'dialogs', 'panels', 'enter-exit'],
+    ms: 350,
+    band: 'communicative, larger movement',
+    meaning:
+      'The workhorse -- modal entrances, toggles, standard state transitions. The communicative window for larger movement.',
+    contexts: ['modals', 'toggles', 'state-changes'],
     motionIntent: 'enter',
   },
-  slower: {
-    step: 2,
-    meaning: 'Slower - emphasis, large element transitions',
-    contexts: ['page-transitions', 'hero-animations', 'emphasis'],
-    motionIntent: 'emphasis',
+  slow: {
+    ms: 500,
+    band: 'at the sluggish boundary',
+    meaning:
+      'Sheets, page transitions, large spatial movement where the user needs orientation. At the sluggish boundary -- the ceiling for anything but full-screen spatial transitions.',
+    contexts: ['sheets', 'page-transitions', 'large-spatial-movement'],
+    motionIntent: 'enter',
   },
 };
 
@@ -441,54 +466,245 @@ export interface EasingDef {
   css: string;
 }
 
+/**
+ * The six named curves from docs/MOTION.md. `meaning` carries the emotional
+ * REGISTER (how the shape is read), not the mechanics -- register is the gap the
+ * research named and this closes. `enter`/`exit` are a deliberately asymmetric
+ * pair: greet warmly, leave quietly. The springs deliberately do NOT overshoot.
+ */
 export const DEFAULT_EASING_DEFINITIONS: Record<string, EasingDef> = {
+  standard: {
+    curve: [0.25, 0.1, 0.25, 1],
+    meaning:
+      'Precision -- arrives exactly where it should, engineered rather than thrown. Decelerates into its final position. General-purpose state transitions and hover.',
+    contexts: ['state-changes', 'hover', 'general-purpose'],
+    css: 'cubic-bezier(0.25, 0.1, 0.25, 1)',
+  },
+  enter: {
+    curve: [0, 0, 0.2, 1],
+    meaning:
+      'Arrival, welcome, settling into place. The fast start communicates responsiveness; the slow finish communicates care. Anything entering the viewport. Paired with `exit` as a deliberately asymmetric couple. (Dragicevic 2011: slow-in/slow-out outperforms constant speed for tracking.)',
+    contexts: ['enter-animations', 'elements-appearing'],
+    css: 'cubic-bezier(0, 0, 0.2, 1)',
+  },
+  exit: {
+    curve: [0.4, 0, 1, 1],
+    meaning:
+      'Withdrawal, giving space. The brief hesitation acknowledges the user; the fast departure avoids lingering. Anything leaving the viewport. Paired with `enter` as a deliberately asymmetric couple -- exits are faster than entrances by design.',
+    contexts: ['exit-animations', 'elements-leaving'],
+    css: 'cubic-bezier(0.4, 0, 1, 1)',
+  },
   linear: {
     curve: [0, 0, 1, 1],
     meaning:
-      'Linear - constant speed. A process, not a gesture. For progress and fades, where personality would be wrong',
-    contexts: ['progress-bars', 'loading-spinners', 'opacity-fades'],
+      'Mechanical, procedural, without personality -- a process, not a gesture. Progress and loading, where the system is working rather than interacting. Never for interactive spatial transitions.',
+    contexts: ['progress-bars', 'loading-spinners', 'opacity-fades', 'focus-ring-fade'],
     css: 'linear',
   },
-  'ease-in': {
-    curve: [0.42, 0, 1, 1],
+  'spring-smooth': {
+    curve: [0.2, 0.9, 0.3, 1],
     meaning:
-      'Ease in - departure, letting go. Hesitates, then leaves quickly. For elements leaving the screen',
-    contexts: ['exit-animations', 'elements-leaving'],
-    css: 'cubic-bezier(0.42, 0, 1, 1)',
+      'Alive, coming physically to rest -- a critically-damped spring with no overshoot. Page transitions, sheets, large tracked spatial movement. (Johansson 1973 / Pratt 2010: animate motion is perceived as alive and captures attention.)',
+    contexts: ['page-transitions', 'sheets', 'large-spatial-movement'],
+    css: 'cubic-bezier(0.2, 0.9, 0.3, 1)',
   },
-  'ease-out': {
-    curve: [0, 0, 0.58, 1],
+  'spring-snappy': {
+    curve: [0.2, 0.8, 0.2, 1],
     meaning:
-      'Ease out - arrival, welcome, settling into place. Responds fast, lands gently. For elements entering',
-    contexts: ['enter-animations', 'elements-appearing'],
-    css: 'cubic-bezier(0, 0, 0.58, 1)',
+      'Alive, tight, following input closely -- a tighter spring with less settle and no overshoot. Toggles, presses, interactions that track input.',
+    contexts: ['toggles', 'presses', 'input-tracking'],
+    css: 'cubic-bezier(0.2, 0.8, 0.2, 1)',
   },
-  'ease-in-out': {
-    curve: [0.42, 0, 0.58, 1],
-    meaning: 'Ease in-out - deliberate, moving with purpose. For state changes within the screen',
-    contexts: ['state-changes', 'transforms', 'general-purpose'],
-    css: 'cubic-bezier(0.42, 0, 0.58, 1)',
+};
+
+// =============================================================================
+// SEMANTIC MOTION MAPPINGS
+// =============================================================================
+
+/**
+ * Semantic motion token mapping. Each entry is the full transition specification
+ * for one `motion-<name>` @utility: which properties transition, which duration
+ * tier and easing curve, and how it degrades under prefers-reduced-motion.
+ *
+ * Duration/easing are referenced by NAME (resolved to `var(--duration-*)` /
+ * `var(--ease-*)` at export), never inlined -- one source, override-propagating.
+ * The value each token encodes is timing + property set; the from/to values are
+ * the component's concern (see packages/ui/docs/spec/05-authoring.md).
+ */
+export interface MotionSemanticMapping {
+  /** CSS properties this transition animates (become `transition-property`). */
+  properties: string[];
+  /** Duration tier name -- a key of DEFAULT_DURATION_DEFINITIONS. */
+  durationTier: string;
+  /** Easing curve name -- a key of DEFAULT_EASING_DEFINITIONS. */
+  curve: string;
+  /**
+   * prefers-reduced-motion override. `null` = preserved unchanged (feedback that
+   * must survive: hover colour, focus ring). Otherwise the reduced property set
+   * (transforms dropped, spatial motion becomes cross-fade) and an optional ms
+   * override; omit `ms` to keep the tier duration.
+   */
+  reducedMotion: { properties: string[]; ms?: number } | null;
+  /** enter/exit ride a presence change; interaction rides a state the component holds. */
+  category: 'interaction' | 'enter' | 'exit';
+  /** The size/distance reasoning behind the duration choice (docs/MOTION.md). */
+  sizeReasoning: string;
+  meaning: string;
+  contexts: string[];
+}
+
+/**
+ * The thirteen semantic motion tokens (docs/MOTION.md semantic table).
+ *
+ * Every `-in`/`-out` pair encodes the shorter exit in its tier choice (dropdown
+ * 250/150, modal 350/250, sheet 500/350) -- MOTION.md's "exits are faster"
+ * invariant, so authors inherit it without re-deriving. `expand`/`collapse`
+ * transition `grid-template-rows` (0fr<->1fr), not `height`: height:auto is not
+ * transitionable, grid-rows is, in pure CSS with no framework height var.
+ */
+export const DEFAULT_MOTION_SEMANTIC_MAPPINGS: Record<string, MotionSemanticMapping> = {
+  hover: {
+    properties: ['color', 'background-color', 'border-color'],
+    durationTier: 'fast',
+    curve: 'standard',
+    reducedMotion: null,
+    category: 'interaction',
+    sizeReasoning:
+      'Colour only, no movement -- the cursor is already on target, so the response matches its speed at the fast tier.',
+    meaning: 'Hover-state colour transition. Acknowledges pointer presence.',
+    contexts: ['hover', 'links', 'interactive-surfaces'],
   },
-  productive: {
-    curve: [0.2, 0, 0.38, 0.9],
-    meaning:
-      'Productive - quick, efficient, minimal overshoot. Work interfaces: the motion serves the task',
-    contexts: ['work-ui', 'data-displays', 'business-apps'],
-    css: 'cubic-bezier(0.2, 0, 0.38, 0.9)',
+  focus: {
+    properties: ['box-shadow', 'outline-color'],
+    durationTier: 'micro',
+    curve: 'linear',
+    reducedMotion: null,
+    category: 'interaction',
+    sizeReasoning:
+      'A ring appearing, not moving -- micro tier at linear velocity reads as the system marking focus, not a gesture. (Tailwind ring is box-shadow.)',
+    meaning: 'Focus-ring transition. Marks the focused element.',
+    contexts: ['focus-visible', 'keyboard-navigation'],
   },
-  expressive: {
-    curve: [0.4, 0.14, 0.3, 1],
-    meaning:
-      'Expressive - dramatic, attention-spending. Onboarding and celebration: the motion IS the message',
-    contexts: ['marketing', 'onboarding', 'celebrations', 'emphasis'],
-    css: 'cubic-bezier(0.4, 0.14, 0.3, 1)',
+  press: {
+    properties: ['transform', 'color', 'background-color'],
+    durationTier: 'micro',
+    curve: 'spring-snappy',
+    reducedMotion: { properties: ['color', 'background-color'] },
+    category: 'interaction',
+    sizeReasoning:
+      'The fastest, tightest feedback -- micro tier with a snappy spring follows the finger. Under reduced motion the transform drops; the colour change survives.',
+    meaning: 'Press/active feedback. Confirms the input was received.',
+    contexts: ['press', 'active', 'buttons'],
   },
-  spring: {
-    curve: [0.175, 0.885, 0.32, 1.275],
-    meaning:
-      'Spring - alive. Overshoot and settle read as physical presence; the eye treats animate motion as animate',
-    contexts: ['buttons', 'icons', 'playful-ui', 'celebrations'],
-    css: 'cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+  toggle: {
+    properties: ['color', 'background-color', 'transform'],
+    durationTier: 'moderate',
+    curve: 'spring-snappy',
+    reducedMotion: { properties: ['color', 'background-color'] },
+    category: 'interaction',
+    sizeReasoning:
+      'A thumb travelling a track is a small, tracked movement -- moderate tier, snappy spring. Reduced motion drops the transform to a colour cross-fade.',
+    meaning: 'Toggle/switch state change. Shows the new state.',
+    contexts: ['switch', 'toggle', 'checkbox'],
+  },
+  'dropdown-in': {
+    properties: ['opacity', 'transform'],
+    durationTier: 'moderate',
+    curve: 'enter',
+    reducedMotion: { properties: ['opacity'], ms: 100 },
+    category: 'enter',
+    sizeReasoning:
+      'A dropdown is small and travels a short distance -- moderate tier, one step below the modal, with the arrival curve.',
+    meaning: 'Dropdown/menu entrance.',
+    contexts: ['dropdown', 'menu', 'select', 'popover'],
+  },
+  'dropdown-out': {
+    properties: ['opacity', 'transform'],
+    durationTier: 'fast',
+    curve: 'exit',
+    reducedMotion: { properties: ['opacity'], ms: 100 },
+    category: 'exit',
+    sizeReasoning:
+      'The exit of a small element -- fast tier (shorter than its moderate entrance) with the departure curve. The user already chose to dismiss it.',
+    meaning: 'Dropdown/menu exit.',
+    contexts: ['dropdown', 'menu', 'select', 'popover'],
+  },
+  'modal-in': {
+    properties: ['opacity', 'transform'],
+    durationTier: 'normal',
+    curve: 'enter',
+    reducedMotion: { properties: ['opacity'], ms: 150 },
+    category: 'enter',
+    sizeReasoning:
+      'A modal is larger and travels farther than a dropdown -- normal tier, one step up, with the arrival curve. Size and distance produce the longer duration.',
+    meaning: 'Modal/dialog entrance.',
+    contexts: ['modal', 'dialog', 'alert-dialog'],
+  },
+  'modal-out': {
+    properties: ['opacity', 'transform'],
+    durationTier: 'moderate',
+    curve: 'exit',
+    reducedMotion: { properties: ['opacity'], ms: 150 },
+    category: 'exit',
+    sizeReasoning:
+      'The modal exit -- moderate tier (shorter than its normal entrance) with the departure curve.',
+    meaning: 'Modal/dialog exit.',
+    contexts: ['modal', 'dialog', 'alert-dialog'],
+  },
+  'sheet-in': {
+    properties: ['transform'],
+    durationTier: 'slow',
+    curve: 'spring-smooth',
+    reducedMotion: { properties: ['opacity'], ms: 250 },
+    category: 'enter',
+    sizeReasoning:
+      'A sheet is the largest spatial movement -- slow tier with the physical settle of a smooth spring, because the user must track it into place. Reduced motion becomes a cross-fade.',
+    meaning: 'Sheet/drawer entrance.',
+    contexts: ['sheet', 'drawer', 'side-panel'],
+  },
+  'sheet-out': {
+    properties: ['transform'],
+    durationTier: 'normal',
+    curve: 'exit',
+    reducedMotion: { properties: ['opacity'], ms: 250 },
+    category: 'exit',
+    sizeReasoning:
+      'The sheet exit -- normal tier (shorter than its slow entrance) with the departure curve.',
+    meaning: 'Sheet/drawer exit.',
+    contexts: ['sheet', 'drawer', 'side-panel'],
+  },
+  expand: {
+    properties: ['grid-template-rows', 'opacity'],
+    durationTier: 'normal',
+    curve: 'enter',
+    reducedMotion: { properties: ['opacity'] },
+    category: 'enter',
+    sizeReasoning:
+      'Content unfolding to its natural height -- normal tier with the arrival curve. Transitions grid-template-rows (0fr->1fr), the transitionable stand-in for height:auto. Reduced motion snaps the rows and fades opacity.',
+    meaning: 'Expand/reveal collapsible content (accordion, disclosure).',
+    contexts: ['accordion', 'collapsible', 'disclosure'],
+  },
+  collapse: {
+    properties: ['grid-template-rows', 'opacity'],
+    durationTier: 'moderate',
+    curve: 'exit',
+    reducedMotion: { properties: ['opacity'] },
+    category: 'exit',
+    sizeReasoning:
+      'Content folding away -- moderate tier (shorter than its normal expansion) with the departure curve. Reduced motion snaps the rows.',
+    meaning: 'Collapse/hide collapsible content (accordion, disclosure).',
+    contexts: ['accordion', 'collapsible', 'disclosure'],
+  },
+  page: {
+    properties: ['opacity', 'transform'],
+    durationTier: 'slow',
+    curve: 'spring-smooth',
+    reducedMotion: { properties: ['opacity'], ms: 200 },
+    category: 'enter',
+    sizeReasoning:
+      'A whole-view transition -- slow tier with the physical settle of a smooth spring, because the user reorients across the largest possible distance.',
+    meaning: 'Page/route transition.',
+    contexts: ['page-transition', 'route-change', 'view-switch'],
   },
 };
 

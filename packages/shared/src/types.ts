@@ -534,7 +534,7 @@ export const TokenSchema = z.object({
   motionIntent: z.enum(['enter', 'exit', 'emphasis', 'transition']).optional(),
   easingCurve: z.tuple([z.number(), z.number(), z.number(), z.number()]).optional(), // cubicBezier [x1, y1, x2, y2]
   easingName: z
-    .enum(['linear', 'ease-in', 'ease-out', 'ease-in-out', 'productive', 'expressive', 'spring'])
+    .enum(['standard', 'enter', 'exit', 'linear', 'spring-smooth', 'spring-snappy'])
     .optional(),
   delayMs: z.number().optional(), // Delay before animation starts
 

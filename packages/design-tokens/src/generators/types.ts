@@ -337,26 +337,64 @@ export const ELEVATION_LEVELS = [
 export type ElevationLevel = (typeof ELEVATION_LEVELS)[number];
 
 /**
- * Motion duration scale names
+ * Motion duration scale names.
+ *
+ * Perceptually derived tiers (docs/MOTION.md), NOT a ratio progression. Order is
+ * ascending duration: instant(0) micro(100) fast(150) moderate(250) normal(350)
+ * slow(500). `micro` and `moderate` are new; the old `slower` tier is removed.
  */
-export const MOTION_DURATION_SCALE = ['instant', 'fast', 'normal', 'slow', 'slower'] as const;
+export const MOTION_DURATION_SCALE = [
+  'instant',
+  'micro',
+  'fast',
+  'moderate',
+  'normal',
+  'slow',
+] as const;
 
 export type MotionDurationScale = (typeof MOTION_DURATION_SCALE)[number];
 
 /**
- * Easing curve names
+ * Easing curve names -- the six named curves from docs/MOTION.md.
+ *
+ * Emitted as `--ease-*`, a real Tailwind v4 theme namespace, so `ease-*`
+ * utilities compile. Each curve carries an emotional register (not mechanics)
+ * in its metadata; `enter`/`exit` are a deliberately asymmetric pair.
  */
 export const EASING_CURVES = [
+  'standard',
+  'enter',
+  'exit',
   'linear',
-  'ease-in',
-  'ease-out',
-  'ease-in-out',
-  'productive',
-  'expressive',
-  'spring',
+  'spring-smooth',
+  'spring-snappy',
 ] as const;
 
 export type EasingCurve = (typeof EASING_CURVES)[number];
+
+/**
+ * Semantic motion token names (docs/MOTION.md semantic table). Each is emitted
+ * as a `motion-<name>` @utility that composes a duration tier, an easing curve,
+ * and the transition property set into one transition longhand. Components
+ * reference the class; they never name durations, curves, or beziers.
+ */
+export const MOTION_SEMANTIC_TOKENS = [
+  'hover',
+  'focus',
+  'press',
+  'toggle',
+  'dropdown-in',
+  'dropdown-out',
+  'modal-in',
+  'modal-out',
+  'sheet-in',
+  'sheet-out',
+  'expand',
+  'collapse',
+  'page',
+] as const;
+
+export type MotionSemanticToken = (typeof MOTION_SEMANTIC_TOKENS)[number];
 
 /**
  * Breakpoint scale names

@@ -116,6 +116,45 @@ bind and the React `useEffect`):
 | overlay + presence | `dialog` | presence (content mounts/unmounts in React, `hidden`-toggles in the bind) + a composition function that starts `focus-trap` + `scroll-lock` (`preventBodyScroll`) + `outside-click` on open and tears them down on close. Composed parts stay light DOM. |
 | compound | `navigation-menu` | many-part instances (trigger/content per value); composes `roving-focus` + `hover-delay` + `outside-click`. |
 
+## Motion: semantic tokens only, never raw numerics
+
+A component's `classes.ts` reaches for a **semantic motion token** and nothing
+else. The token layer (`packages/design-tokens`, #1902/#1903/#1904) generates
+thirteen `motion-*` @utility classes -- `motion-hover`, `motion-focus`,
+`motion-press`, `motion-toggle`, `motion-dropdown-in`/`-out`,
+`motion-modal-in`/`-out`, `motion-sheet-in`/`-out`, `motion-expand`,
+`motion-collapse`, `motion-page` -- each of which encodes the complete
+transition: which properties animate, the perceptually-derived duration tier,
+the named easing curve, and the `prefers-reduced-motion` degradation. The
+duration is `f(size, distance)` already applied; the semantic name carries the
+use case so you inherit the principle (modal is `normal`, dropdown is
+`moderate`, exits are shorter than entrances) without re-deriving it.
+
+**Raw numeric durations and hand-picked easings are prohibited.** Never write
+`duration-300`, `duration-[350ms]`, `ease-[cubic-bezier(...)]`, or a
+`transition-duration`/`transition-timing-function` literal in a component. Those
+are the exact guesses this layer exists to prevent -- a class whose timing no one
+can enforce or audit. If no `motion-*` token fits, that is a token-layer gap:
+raise it, do not paper over it with a numeric.
+
+The token encodes timing + property set; the **from/to values are the
+component's concern**. Consumption has a shape per category:
+
+- **Interaction** (`motion-hover`/`focus`/`press`/`toggle`): the class defines
+  the timing; a variant triggers the change. `class="motion-press active:scale-95
+  active:bg-primary-active"` -- the transition rides the `active:` swap.
+- **Enter/exit** (`motion-*-in`/`-out`): the token carries only
+  property/duration/easing. The component declares the closed rest state and the
+  open active state and toggles via `data-state`, AND keeps the exiting node
+  mounted (presence management, Spec 04) so the out transition can play:
+  `class="motion-modal-in opacity-0 scale-95 data-[state=open]:opacity-100
+  data-[state=open]:scale-100"`. Slapping `motion-modal-in` on a conditionally
+  *rendered* element animates nothing and errors nowhere -- the silent no-op.
+- **Expand/collapse** (`motion-expand`/`collapse`): the animated property is
+  `grid-template-rows` (`0fr`<->`1fr`), never `height` (`height:auto` is not
+  transitionable). Wrap in a grid container with the motion class; the child
+  needs `min-h-0 overflow-hidden` or the `0fr` row still shows its content.
+
 ## The three gotchas (encode all three)
 
 1. **Controlled callback**: compare the *effective* value before against the
