@@ -1,0 +1,133 @@
+---
+/**
+ * Astro performance for combobox. Server-renders the full light-DOM listbox
+ * with the closed-state projection already applied (correct and inert before
+ * JS), then the <script> hands each instance to bindCombobox -- the SAME
+ * DOM-native client the Web Component uses. One score, three performances.
+ *
+ * The listbox stays in light DOM (present-but-hidden) so the binding can filter
+ * options in place, position against the input, and light-dismiss on outside
+ * pointerdown. Options carry the fixed `${content-id}-option-${value}` id the
+ * aria-activedescendant projection references.
+ */
+import type { PartIds } from '../../lib/contract';
+import {
+  combobox,
+  comboboxItemAria,
+  type ComboboxConfig,
+  type ComboboxPart,
+} from './combobox.behavior';
+import { comboboxClasses } from './combobox.classes';
+
+interface Option {
+  value: string;
+  label: string;
+  disabled?: boolean;
+}
+
+interface Props {
+  id: string;
+  options: Option[];
+  value?: string;
+  placeholder?: string;
+  disabled?: boolean;
+  empty?: string;
+}
+
+const {
+  id,
+  options,
+  value = '',
+  placeholder = 'Search...',
+  disabled = false,
+  empty = 'No results found.',
+} = Astro.props;
+
+const config: ComboboxConfig = { defaultValue: value, disabled };
+const state = combobox.initialState(config);
+const classes = comboboxClasses(config, state);
+
+const ids = {} as PartIds<ComboboxPart>;
+for (const part of Object.keys(combobox.parts) as ComboboxPart[]) {
+  ids[part] = `${id}-${part}`;
+}
+const aria = combobox.aria(state, config, ids);
+---
+
+<rafters-combobox
+  data-part="root"
+  id={ids.root}
+  value={value}
+  disabled={disabled ? '' : undefined}
+  class={classes.root}
+  {...aria.root}
+>
+  <div data-part="field" class={classes.field}>
+    <input
+      data-part="input"
+      id={ids.input}
+      type="text"
+      autocomplete="off"
+      placeholder={placeholder}
+      value={state.query}
+      disabled={disabled}
+      class={classes.input}
+      {...aria.input}
+    />
+    <button
+      type="button"
+      data-part="trigger"
+      tabindex="-1"
+      aria-label="Open"
+      class={classes.trigger}
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        class={classes.chevron}
+        aria-hidden="true"
+      >
+        <path d="m6 9 6 6 6-6"></path>
+      </svg>
+    </button>
+  </div>
+
+  <div id={ids.content} data-part="content" class={classes.content} hidden={!state.open} {...aria.content}>
+    {
+      options.map((option) => {
+        const itemAria = comboboxItemAria(option.value, state, config);
+        return (
+          <div
+            role="option"
+            data-part="item"
+            id={`${ids.content}-option-${option.value}`}
+            data-value={option.value}
+            data-disabled={option.disabled ? '' : undefined}
+            aria-disabled={option.disabled ? 'true' : undefined}
+            class={classes.item}
+            {...itemAria}
+          >
+            <div class={classes.itemIndicator} aria-hidden="true"></div>
+            <div class={classes.itemText}>{option.label}</div>
+          </div>
+        );
+      })
+    }
+    <div data-part="empty" class={classes.empty} hidden={options.length > 0}>{empty}</div>
+  </div>
+</rafters-combobox>
+
+<script>
+  import { bindCombobox } from './combobox.behavior';
+
+  for (const root of document.querySelectorAll<HTMLElement>('rafters-combobox[data-part="root"]')) {
+    if (root.dataset['bound'] === 'true') continue;
+    root.dataset['bound'] = 'true';
+    bindCombobox(root);
+  }
+</script>
