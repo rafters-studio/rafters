@@ -56,7 +56,7 @@ Behavior-layer support: only the five articles have react (verified). Old tree a
 |---|---|---|---|---|---|---|---|---|
 | **field** | Label+control+message wrapper | Wires label, description, and validation message ids to a control | invalid | - | - | none | react/wc | none |
 | **input** | Single-line text field | Edits text; reflects validity; form-associated | value, invalid, disabled | - | form-value, input-events | transition-shadow focus | astro/react/wc | none |
-| **input-group** | Input with addons | Composes input with leading/trailing addons as one control | value, invalid | - | form-value, input-events | none | react/wc | none |
+| **input-group** | Input with addons | Composes input with leading/trailing addons as one control | value, invalid | - | - | none | react/wc | react/wc/astro OK |
 | **input-otp** | Segmented one-time-code input | One char per slot; auto-advance; paste splits | slots filled, active slot | - | form-value, input-events, keyboard-handler | animate-pulse caret -> caret-blink: feedback-loop | react/wc | none |
 | **textarea** | Multi-line text field | Edits multiline text; autosize optional | value, invalid, disabled | - | form-value, input-events | transition-shadow focus | react/wc | none |
 

@@ -129,8 +129,9 @@ const accordionSlice: Slice<AccordionConfig, AccordionState, AccordionActions, A
     // accordion pattern requires the button to be contained by a heading.
     heading: { many: true, role: 'heading' },
     trigger: { many: true },
-    // Panels stay in the DOM hidden when collapsed: the content must be
-    // crawlable and SSR-stable, and the height transition needs the same node.
+    // Panels stay in the DOM when collapsed (inert, not hidden -- see
+    // instanceAria): the content must be crawlable and SSR-stable, and the
+    // grid-rows transition needs the same node.
     content: { many: true, role: 'region' },
   },
   initialState: (config) => {
@@ -201,11 +202,21 @@ const accordionSlice: Slice<AccordionConfig, AccordionState, AccordionActions, A
  * its trigger's).
  *
  * `aria-controls` is projected UNCONDITIONALLY (guarded only on the id being
- * real), not on the open axis: the panel is present-but-hidden rather than
+ * real), not on the open axis: the panel is present-and-inert rather than
  * unmounted, so the reference is never dangling and the oracle advertised it
  * closed as well as open. That is the opposite of the `disclosable` slice's
  * `open && ids.content` guard, which exists for overlays whose content leaves
  * the DOM.
+ *
+ * A collapsed panel projects `inert` -- NOT `hidden`. `hidden` is
+ * `display:none`, which removes the panel from the a11y tree and tab order but
+ * also blocks the `grid-template-rows` transition (you cannot animate a
+ * display:none element). `inert` keeps the panel rendered (so it animates) while
+ * still removing it from the a11y tree and taking its focusables out of the tab
+ * order -- the same a11y guarantee `hidden` gave, minus the animation block. The
+ * visual collapse is the grid row going to 0fr; `inert` handles the semantics.
+ * This is the animated-presence pattern; dialog/popover inherit it (pending the
+ * spec ruling under #1899).
  */
 export function accordionInstanceAria(
   part: AccordionPart,
@@ -236,7 +247,7 @@ export function accordionInstanceAria(
       role: 'region',
       'aria-labelledby': ids.trigger || undefined,
       'data-state': stateAttr,
-      hidden: expanded ? undefined : true,
+      inert: expanded ? undefined : true,
     };
   }
   return {};
@@ -264,8 +275,8 @@ const TRIGGER_SELECTOR = '[data-part="trigger"][data-value]:not([disabled])';
  *
  * Activation is delegated click only: the header <button>s convert Enter/Space
  * to a native click, so no keydown branch is needed. Panels are
- * present-but-hidden -- `hidden` rides the instance projection, so the exit
- * transition runs on the same node.
+ * present-and-inert -- `inert` rides the instance projection (not `hidden`, which
+ * would block the animation), so the grid-rows transition runs on the same node.
  */
 export function bindAccordion(root: HTMLElement): () => void {
   const expandedAtMount = Array.from(

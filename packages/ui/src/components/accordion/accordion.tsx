@@ -81,9 +81,9 @@ export interface AccordionProps extends Omit<
  * Stacked expandable sections: header buttons that disclose regions, one open
  * at a time (`single`) or any number (`multiple`). ArrowUp/ArrowDown and
  * Home/End move focus across the headers via a roving tabindex; Enter, Space, or
- * click toggles the focused section. Panels stay in the DOM hidden when
- * collapsed, so their content is crawlable and the height transition runs on the
- * same node.
+ * click toggles the focused section. Panels stay in the DOM (inert, not hidden)
+ * when collapsed, so their content is crawlable and the grid-rows transition
+ * runs on the same node.
  *
  * @cognitive-load 3/10 - decision 1, information 1, interaction 1, disruption 0,
  * learning 0. One decision at a time (which section to open) over a visible list

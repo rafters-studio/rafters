@@ -88,7 +88,7 @@ consumer callback fires, so a refused edit must not look like a move.
 | item (many) | one per section | `data-state` |
 | heading (many) | one per section | `role="heading"`, `aria-level` |
 | trigger (many) | one per section | `aria-expanded`, `aria-controls`, `data-state` |
-| content (many) | one per section, always in the DOM | `role="region"`, `aria-labelledby`, `data-state`, `hidden` while collapsed |
+| content (many) | one per section, always in the DOM | `role="region"`, `aria-labelledby`, `data-state`, `inert` while collapsed |
 
 `item`/`heading`/`trigger`/`content` are `many` parts, so their attributes come
 from `BehaviorSpec.instanceAria(part, value, state, config, ids)` rather than
@@ -98,7 +98,7 @@ instances. The shared harness drives `spec.instanceAria` generically
 is asserted against the score with no per-component wiring.
 
 `aria-controls` is projected unconditionally -- guarded only on the sibling id
-being real, not on the open axis. Panels are present-but-hidden rather than
+being real, not on the open axis. Panels are present-and-inert rather than
 unmounted, so the reference is never dangling and the oracle advertised it while
 collapsed too. This deliberately diverges from the `disclosable` slice's
 `open && ids.content` guard, which exists for overlays whose content leaves the
@@ -139,25 +139,36 @@ files expose.
 | `role="heading"` wrapper with `aria-level={3}` around the header button | contract, generalized: the level is `config.headingLevel` and rides the `heading` instance projection instead of being hand-written per framework |
 | header button `aria-expanded` + `aria-controls`, set while collapsed too | contract |
 | panel `role="region"` + `aria-labelledby` back to its header | contract |
-| panel always mounted, visibility toggled by `hidden` | contract (crawlable content, and the height transition runs on the same node) |
+| panel always mounted, collapsed via grid-rows + `inert` (not `hidden`) | contract (crawlable content; `hidden` is display:none and would block the transition, so a collapsed panel projects `inert` -- out of the a11y tree + tab order, still rendered so the grid-rows transition runs on the same node) |
 | ArrowUp/ArrowDown/Home/End roving tabindex over `[data-roving-item]` headers | contract (the same `roving-focus` primitive, composed directly on the vertical axis) |
 | chevron `<svg>` rotating via `group-data-[state=open]:rotate-180` | contract |
 | `data-accordion-item` / `data-accordion-trigger` / `data-accordion-content` markers | framework-affordance -- replaced by the layer-wide `data-part` + `data-value` registry the harness and the binds query |
 | Astro `accordionId` prop threaded to every child to hand-template `${accordionId}-trigger-${value}` ids | framework-affordance -- the Astro decorator mints instance ids from the root `id`, as navigation-menu does; children no longer need the group id |
 | React `AccordionItem` minting ids from `useId()` per item | framework-affordance -- ids now derive from one root `useId()` so the trigger/panel pair is resolvable without an item-local context of its own |
 | `AccordionItemContext` throwing outside its provider | contract (both provider levels throw with a named message) |
-| `data-[state=closed]:animate-accordion-up` / `data-[state=open]:animate-accordion-down` on the panel | defect-do-not-port -- those keyframes interpolate `var(--radix-accordion-content-height)`, a Radix-owned variable nothing in this system ever sets, so the animation runs to an undefined height; replaced by `overflow-hidden transition-all duration-300 motion-reduce:transition-none` (declared height-axis intent) |
+| `data-[state=closed]:animate-accordion-up` / `data-[state=open]:animate-accordion-down` on the panel | defect-do-not-port -- those keyframes interpolate `var(--radix-accordion-content-height)`, a Radix-owned variable nothing in this system ever sets, so the animation runs to an undefined height; replaced by a `grid-template-rows` transition (`minmax(0,0fr)` <-> `minmax(0,1fr)`) driven by the `motion-expand` / `motion-collapse` semantic tokens |
 | React root rendering a bare `classy(className)` with no root class | contract -- `accordionClasses().root` is deliberately empty: the root is the styling anchor for the projected `data-*`, not a visual |
 
 ## Motion
 
-Expand/collapse along the height axis (y). Declared as intent only:
-`overflow-hidden transition-all duration-300 motion-reduce:transition-none` on
-the panel, plus `transition-transform duration-300` on the chevron. Duration and
-easing come from the token scale; reduced motion disables both. Padding lives on
-the panel's inner box, never on the panel itself, so the panel can collapse to
-zero height. A keyframed height animation waits on a real content-height
-utility in the token system.
+Expand/collapse along the height axis (y), via the semantic motion tokens (see
+`docs/MOTION.md`):
+
+- The panel is a grid whose single row animates `grid-template-rows`
+  `minmax(0,0fr)` <-> `minmax(0,1fr)` -- the transitionable stand-in for
+  `height:auto`. `motion-expand` (normal/enter) drives the open direction and
+  `motion-collapse` (moderate/exit) the close, so the exit is faster than the
+  entrance. Both carry the reduced-motion fallback (snap the rows, fade opacity)
+  in the token itself; the `data-[state]:opacity-0/100` pair is what those users
+  see. The `minmax(0, ...)` floor is load-bearing: a bare `0fr` track keeps its
+  min-content minimum, which the inner padding floors above zero, leaving a gap
+  on a "collapsed" panel. Padding lives on the inner clip box, never on the
+  panel, so the row collapses cleanly.
+- The chevron rotates via `motion-toggle` (transform, moderate/spring-snappy)
+  plus `group-data-[state=open]:rotate-180`.
+
+No raw numeric durations and no keyframes: the removed `animate-accordion-*`
+depended on a Radix-owned content-height variable this system never sets.
 
 ## WCAG 2.1 AA obligations
 
@@ -171,7 +182,8 @@ utility in the token system.
   and leaves the accordion once rather than stepping through every section.
 - 2.4.7: a token focus ring on each header (`focus-visible:ring-ring` with an
   offset).
-- Collapsed panels carry `hidden`, so they are inert and out of the tab order
-  rather than merely invisible.
+- Collapsed panels carry `inert`, so they are removed from the a11y tree and the
+  tab order rather than merely clipped -- `inert` (not `hidden`) because the
+  panel must stay rendered for the grid-rows transition to run.
 - A disabled section advertises the native `disabled` state, leaves the tab
   order, and cannot be toggled by pointer or keyboard.

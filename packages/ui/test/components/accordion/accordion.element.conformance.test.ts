@@ -47,7 +47,7 @@ function sectionMarkup(
                 aria-controls="acc-content-${value}"${disabled ? ' disabled' : ''}>${label}</button>
       </div>
       <div id="acc-content-${value}" data-part="content" data-value="${value}" role="region"
-           aria-labelledby="acc-trigger-${value}" data-state="${state}"${expanded ? '' : ' hidden'}>
+           aria-labelledby="acc-trigger-${value}" data-state="${state}"${expanded ? '' : ' inert'}>
         Body ${label}
       </div>
     </div>`;
@@ -95,9 +95,9 @@ describe('accordion conformance [wc]', () => {
   it('seeds the intrinsic set from the server-rendered open section', async () => {
     await mount({ open: ['b'] });
     expect(trigger('b').getAttribute('aria-expanded')).toBe('true');
-    expect(content('b').hasAttribute('hidden')).toBe(false);
+    expect(content('b').hasAttribute('inert')).toBe(false);
     expect(trigger('a').getAttribute('aria-expanded')).toBe('false');
-    expect(content('a').hasAttribute('hidden')).toBe(true);
+    expect(content('a').hasAttribute('inert')).toBe(true);
     await assertAxeClean(document.body);
   });
 
@@ -111,8 +111,8 @@ describe('accordion conformance [wc]', () => {
     const user = userEvent.setup();
     await mount({ open: ['a'] });
     await user.click(trigger('b'));
-    expect(content('b').hasAttribute('hidden')).toBe(false);
-    expect(content('a').hasAttribute('hidden')).toBe(true);
+    expect(content('b').hasAttribute('inert')).toBe(false);
+    expect(content('a').hasAttribute('inert')).toBe(true);
     expect(trigger('a').getAttribute('data-state')).toBe('closed');
   });
 
@@ -120,14 +120,14 @@ describe('accordion conformance [wc]', () => {
     const user = userEvent.setup();
     await mount({ open: ['a'] });
     await user.click(trigger('a'));
-    expect(content('a').hasAttribute('hidden')).toBe(false);
+    expect(content('a').hasAttribute('inert')).toBe(false);
   });
 
   it('single collapsible: re-clicking the open header collapses everything', async () => {
     const user = userEvent.setup();
     await mount({ open: ['a'], collapsible: true });
     await user.click(trigger('a'));
-    expect(content('a').hasAttribute('hidden')).toBe(true);
+    expect(content('a').hasAttribute('inert')).toBe(true);
   });
 
   it('multiple: sections accumulate and collapse independently', async () => {
@@ -135,11 +135,11 @@ describe('accordion conformance [wc]', () => {
     await mount({ type: 'multiple' });
     await user.click(trigger('a'));
     await user.click(trigger('c'));
-    expect(content('a').hasAttribute('hidden')).toBe(false);
-    expect(content('c').hasAttribute('hidden')).toBe(false);
+    expect(content('a').hasAttribute('inert')).toBe(false);
+    expect(content('c').hasAttribute('inert')).toBe(false);
     await user.click(trigger('a'));
-    expect(content('a').hasAttribute('hidden')).toBe(true);
-    expect(content('c').hasAttribute('hidden')).toBe(false);
+    expect(content('a').hasAttribute('inert')).toBe(true);
+    expect(content('c').hasAttribute('inert')).toBe(false);
   });
 
   it('ArrowDown/ArrowUp rove focus with wrap; Home/End jump to the ends', async () => {
@@ -161,7 +161,7 @@ describe('accordion conformance [wc]', () => {
     await mount();
     trigger('a').focus();
     await user.keyboard('{ArrowDown}');
-    expect(content('b').hasAttribute('hidden')).toBe(true);
+    expect(content('b').hasAttribute('inert')).toBe(true);
   });
 
   it('Enter and Space on the focused header toggle it', async () => {
@@ -169,17 +169,17 @@ describe('accordion conformance [wc]', () => {
     await mount({ type: 'multiple' });
     trigger('a').focus();
     await user.keyboard('{Enter}');
-    expect(content('a').hasAttribute('hidden')).toBe(false);
+    expect(content('a').hasAttribute('inert')).toBe(false);
     trigger('b').focus();
     await user.keyboard(' ');
-    expect(content('b').hasAttribute('hidden')).toBe(false);
+    expect(content('b').hasAttribute('inert')).toBe(false);
   });
 
   it('roving skips a disabled section and the click is refused', async () => {
     const user = userEvent.setup();
     await mount({ disabledItems: ['b'] });
     await user.click(trigger('b'));
-    expect(content('b').hasAttribute('hidden')).toBe(true);
+    expect(content('b').hasAttribute('inert')).toBe(true);
     trigger('a').focus();
     await user.keyboard('{ArrowDown}');
     expect(document.activeElement).toBe(trigger('c'));
@@ -189,7 +189,7 @@ describe('accordion conformance [wc]', () => {
     const user = userEvent.setup();
     await mount({ disabled: true });
     await user.click(trigger('a'));
-    expect(content('a').hasAttribute('hidden')).toBe(true);
+    expect(content('a').hasAttribute('inert')).toBe(true);
   });
 
   it('disconnecting the element tears the binding down', async () => {
@@ -201,6 +201,6 @@ describe('accordion conformance [wc]', () => {
     host.remove();
     document.body.append(panelA, headerA);
     await user.click(headerA);
-    expect(panelA.hasAttribute('hidden')).toBe(true);
+    expect(panelA.hasAttribute('inert')).toBe(true);
   });
 });

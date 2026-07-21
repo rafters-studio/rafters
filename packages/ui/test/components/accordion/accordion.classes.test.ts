@@ -44,20 +44,41 @@ describe('accordion trigger classes', () => {
     expect(classesFor({}).triggerIcon).toContain('group-data-[state=open]:rotate-180');
   });
 
-  it('the chevron rotation yields to reduced motion', () => {
-    expect(classesFor({}).triggerIcon).toContain('motion-reduce:transition-none');
+  it('the chevron rotation rides the motion-toggle semantic token', () => {
+    // motion-toggle (transform, moderate, spring-snappy) carries its own
+    // reduced-motion behavior -- no raw duration, no hand-written transition.
+    expect(classesFor({}).triggerIcon.split(/\s+/)).toContain('motion-toggle');
   });
 });
 
 describe('accordion content classes', () => {
-  it('the panel clips its content so it can collapse to zero height', () => {
-    expect(classesFor({}).content.split(/\s+/)).toContain('overflow-hidden');
+  it('the panel is a grid whose row animates, clipping happens on the inner box', () => {
+    // The panel itself is the grid track (0fr<->1fr); overflow-hidden + min-h-0
+    // ride the inner box so the row can collapse below min-content height.
+    expect(classesFor({}).content.split(/\s+/)).toContain('grid');
+    expect(classesFor({}).contentInner.split(/\s+/)).toContain('overflow-hidden');
+    expect(classesFor({}).contentInner.split(/\s+/)).toContain('min-h-0');
   });
 
-  it('the panel declares height-axis motion intent that yields to reduced motion', () => {
+  it('the panel animates grid-template-rows via the expand/collapse tokens', () => {
     const content = classesFor({}).content;
-    expect(content).toContain('transition-all');
-    expect(content).toContain('motion-reduce:transition-none');
+    // grid-rows minmax(0,0fr)<->minmax(0,1fr): the transitionable stand-in for
+    // height:auto, with the floor pinned to 0 so the row fully collapses.
+    expect(content).toContain('data-[state=open]:grid-rows-[minmax(0,1fr)]');
+    expect(content).toContain('data-[state=closed]:grid-rows-[minmax(0,0fr)]');
+    // The semantic tokens carry duration + curve + the reduced-motion fallback.
+    expect(content).toContain('data-[state=open]:motion-expand');
+    expect(content).toContain('data-[state=closed]:motion-collapse');
+    // No raw numeric duration survives.
+    expect(content).not.toMatch(/duration-\d/);
+  });
+
+  it('the reduced-motion opacity fallback is state-driven', () => {
+    // The tokens snap the rows and fade opacity under reduced motion, so the
+    // opacity pair is what those users see.
+    const content = classesFor({}).content;
+    expect(content).toContain('data-[state=open]:opacity-100');
+    expect(content).toContain('data-[state=closed]:opacity-0');
   });
 
   it('the oracle radix-variable keyframes are not ported', () => {
