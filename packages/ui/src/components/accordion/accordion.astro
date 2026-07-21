@@ -4,8 +4,8 @@
  *
  * Server-renders the full LIGHT-DOM markup with classes and the score's initial
  * projection already applied, so the sections are correct, crawlable, and
- * accessible before any JS -- the seeded panel is open and the rest are hidden
- * with no flash. The <script> then hands each server-rendered root to
+ * accessible before any JS -- the seeded panel is open and the rest are inert
+ * (collapsed via grid-rows) with no flash. The <script> then hands each server-rendered root to
  * bindAccordion -- the SAME DOM-native controller the Web Component uses. Astro
  * imports the behavior binding like any other module; there is no astro-specific
  * runtime.
