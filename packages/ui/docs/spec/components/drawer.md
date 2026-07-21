@@ -83,9 +83,15 @@ ids. A dangling `aria-describedby` is an axe violation; absence is honest.
 
 ## Keyboard and effects
 
-- `keymap`: Escape on `content` -> `close`. Focus containment makes the
-  content-scoped listener sufficient in modal mode; non-modal Escape works while
-  focus is inside the drawer.
+- `keymap`: Escape on `content` -> `close`. The keymap is content-scoped, but
+  the resolution is by CONTAINMENT, not by the event target's own `data-part`:
+  the DOM-native `bindDrawer` treats any keydown landing inside the content
+  element as `content` (mirroring the React decorator, which hardcodes
+  `'content'`). This matters because the focus-trap gives initial focus to the
+  first focusable DESCENDANT -- often the close button (`data-part="close"`) in a
+  bare drawer -- and a target-scoped resolution would then classify Escape as
+  `close` and drop it. Containment keeps Escape working from any focusable child;
+  non-modal Escape works the same while focus is inside the drawer.
 - Modal trio (open+modal): `createFocusTrap(content)`, `preventBodyScroll()`,
   `onPointerDownOutside(content, close)` sparing the trigger. Otherwise none.
 

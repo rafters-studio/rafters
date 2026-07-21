@@ -88,6 +88,30 @@ describe('drawer conformance [wc]', () => {
     expect(content().hidden).toBe(true);
   });
 
+  it('Escape closes even when the close button holds the trap initial focus', async () => {
+    // Regression: the focus-trap focuses the first focusable DESCENDANT. In a
+    // bare drawer whose only focusable child is the close button, initial focus
+    // lands on data-part="close", so a target-scoped keymap would drop Escape.
+    // The bind resolves any keydown inside content as content-scoped.
+    const user = userEvent.setup();
+    document.body.innerHTML = `
+      <rafters-drawer side="bottom">
+        <button type="button" data-part="trigger" id="dr-trigger" aria-haspopup="dialog" aria-expanded="false" data-state="closed">Open</button>
+        <div data-part="overlay" id="dr-overlay" aria-hidden="true" data-state="closed" hidden></div>
+        <div data-part="content" id="dr-content" role="dialog" tabindex="-1" aria-labelledby="dr-title" data-state="closed" hidden>
+          <div id="dr-title" data-part="title" role="heading" aria-level="2">Actions</div>
+          <button type="button" data-part="close" id="dr-close" aria-label="Close">x</button>
+        </div>
+      </rafters-drawer>`;
+    await Promise.resolve();
+    await user.click(trigger());
+    // The close button is the only focusable child, so it takes initial focus.
+    expect(document.activeElement).toBe(document.body.querySelector('[data-part="close"]'));
+    await user.keyboard('{Escape}');
+    expect(content().hidden).toBe(true);
+    expect(document.activeElement).toBe(trigger());
+  });
+
   it('non-modal: no scroll lock, Escape still closes', async () => {
     const user = userEvent.setup();
     await mount(false);

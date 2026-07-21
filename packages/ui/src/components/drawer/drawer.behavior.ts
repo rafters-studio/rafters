@@ -240,8 +240,20 @@ export function bindDrawer(root: HTMLElement): () => void {
   root.addEventListener('click', onClick);
 
   const onKeydown = (event: KeyboardEvent) => {
-    const partEl = (event.target as HTMLElement).closest<HTMLElement>('[data-part]');
-    const part = partEl?.dataset['part'] as DrawerPart | undefined;
+    const target = event.target as HTMLElement;
+    // Any keydown landing inside the content surface is content-scoped -- this
+    // mirrors the React decorator, which hardcodes 'content'. Without it, when
+    // the focus-trap's initial focus lands on a focusable descendant (e.g. the
+    // close button, data-part="close", the only focusable in a bare drawer),
+    // closest('[data-part]') would resolve that part and the content-only
+    // Escape keymap would silently fail (WCAG 2.1.1). Same class as the merged
+    // alert-dialog fix.
+    const content = getPart('content');
+    const partEl = target.closest<HTMLElement>('[data-part]');
+    const part: DrawerPart | undefined =
+      content && content.contains(target)
+        ? 'content'
+        : (partEl?.dataset['part'] as DrawerPart | undefined);
     if (!part) return;
     const action = drawer.keymap(
       {

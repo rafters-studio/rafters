@@ -48,6 +48,21 @@ describe('drawer conformance [astro]', () => {
     expect(content().className).toContain('right-0');
   });
 
+  it('Escape closes even when the close button holds the trap initial focus', async () => {
+    // Regression: with no default-slot content, the close button is the only
+    // focusable descendant, so the focus-trap gives it initial focus. A
+    // target-scoped keymap would classify Escape as `close` and drop it; the
+    // bind resolves any keydown inside content as content-scoped.
+    const user = userEvent.setup();
+    await mount({ title: 'Actions' });
+    await user.click(trigger());
+    const close = document.body.querySelector<HTMLElement>('[data-part="close"]')!;
+    expect(document.activeElement).toBe(close);
+    await user.keyboard('{Escape}');
+    expect(content().hidden).toBe(true);
+    expect(document.activeElement).toBe(trigger());
+  });
+
   it('bind: trigger opens, focus trapped, scroll locked; Escape closes + restores focus', async () => {
     const user = userEvent.setup();
     await mount({ title: 'Actions' }, { default: '<button type="button">Save</button>' });
