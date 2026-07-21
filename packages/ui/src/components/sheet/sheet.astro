@@ -1,0 +1,93 @@
+---
+/**
+ * Astro performance for sheet. Server-renders the full light-DOM structure with
+ * the closed-state projection already applied (correct and inert before JS),
+ * then the <script> hands each instance to bindSheet -- the SAME DOM-native
+ * client the Web Component uses. One score, three performances.
+ *
+ * Content stays in light DOM (present-but-hidden) so the effects the bind runs
+ * -- focus-trap, scroll-lock, dismiss-on-outside -- can read it. The `side`
+ * variant is authored into the content's class here; it is decoration, so the
+ * binding never touches it. The title renders through Astro's dynamic-tag
+ * support (the sanctioned typography escape, cf. typography.astro), keeping the
+ * heading semantic without a hand-rolled literal. Exit animation waits on the
+ * Presence adapter; this is enter-only.
+ */
+import {
+  sheet,
+  type SheetConfig,
+  type SheetPart,
+  type SheetSide,
+} from './sheet.behavior';
+import { sheetClasses, sheetContentClasses } from './sheet.classes';
+import type { PartIds } from '../../lib/contract';
+
+interface Props {
+  id: string;
+  side?: SheetSide;
+  modal?: boolean;
+  defaultOpen?: boolean;
+  title?: string;
+  description?: string;
+}
+
+const { id, side = 'right', modal = true, defaultOpen = false, title, description } = Astro.props;
+
+const config: SheetConfig = { modal, defaultOpen };
+const state = sheet.initialState(config);
+const classes = sheetClasses(config, state);
+const contentClass = sheetContentClasses(side);
+const Title = 'h2';
+
+// Optional cross-ref sources resolve to empty when their slot is absent, so the
+// score's `|| undefined` guards emit no dangling reference.
+const ids = {} as PartIds<SheetPart>;
+for (const part of Object.keys(sheet.parts) as SheetPart[]) {
+  const absent = (part === 'title' && !title) || (part === 'description' && !description);
+  ids[part] = absent ? '' : `${id}-${part}`;
+}
+const aria = sheet.aria(state, config, ids);
+const open = state.open;
+---
+
+<rafters-sheet data-part="root" modal={String(modal)} default-open={String(defaultOpen)}>
+  <button type="button" id={ids.trigger} data-part="trigger" {...aria.trigger}>
+    <slot name="trigger">Open</slot>
+  </button>
+
+  <div id={ids.overlay} data-part="overlay" class={classes.overlay} hidden={!open} {...aria.overlay}></div>
+
+  <div
+    id={ids.content}
+    data-part="content"
+    data-side={side}
+    tabindex="-1"
+    class={contentClass}
+    {...aria.content}
+    hidden={!open}
+  >
+    {title && <Title id={ids.title} data-part="title" class={classes.title}>{title}</Title>}
+    {
+      description && (
+        <div id={ids.description} data-part="description" class={classes.description}>
+          {description}
+        </div>
+      )
+    }
+    <slot />
+    <button type="button" id={ids.close} data-part="close" class={classes.close} {...aria.close}>
+      <slot name="close">Close</slot>
+    </button>
+  </div>
+</rafters-sheet>
+
+<script>
+  import { bindSheet } from './sheet.behavior';
+
+  for (const root of document.querySelectorAll('rafters-sheet[data-part="root"]')) {
+    const el = root as HTMLElement;
+    if (el.dataset['bound'] === 'true') continue;
+    el.dataset['bound'] = 'true';
+    bindSheet(el);
+  }
+</script>
