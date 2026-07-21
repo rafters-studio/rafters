@@ -68,7 +68,6 @@ interface CommandContextValue {
     action: K,
     ...payload: PayloadArgs<CommandActions[K]>
   ) => boolean;
-  getPart: (part: string) => HTMLElement | null;
   itemId: (value: string) => string;
   classes: CommandClassSet;
 }
@@ -119,13 +118,6 @@ export function Command({
   const itemId = React.useCallback((v: string) => `${uid}-item-${sanitize(v)}`, [uid]);
 
   const rootRef = React.useRef<HTMLDivElement>(null);
-  const getPart = React.useCallback(
-    (part: string): HTMLElement | null =>
-      part === 'root'
-        ? rootRef.current
-        : (rootRef.current?.querySelector<HTMLElement>(`[data-part="${part}"]`) ?? null),
-    [],
-  );
 
   const latest = React.useRef({ config, onValueChange });
   latest.current = { config, onValueChange };
@@ -178,7 +170,6 @@ export function Command({
     aria,
     effectiveQuery,
     request,
-    getPart,
     itemId,
     classes: commandClasses(config, state),
   };
