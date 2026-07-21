@@ -1,0 +1,162 @@
+---
+/**
+ * Astro performance (controller) for context-menu.
+ *
+ * Server-renders the full LIGHT-DOM markup with classes and the score's initial
+ * (closed) projection already applied, so the menu is correct and inert before
+ * any JS. The <script> then hands each instance to bindContextMenu -- the SAME
+ * DOM-native controller the Web Component uses. One score, three performances,
+ * zero drift.
+ */
+import {
+  contextMenu,
+  type ContextMenuConfig,
+  type ContextMenuPart,
+} from './context-menu.behavior';
+import { contextMenuClasses } from './context-menu.classes';
+import type { PartIds } from '../../lib/contract';
+
+interface MenuEntry {
+  type?: 'item' | 'separator' | 'label' | 'sub';
+  label?: string;
+  shortcut?: string;
+  disabled?: boolean;
+  /** Items of a submenu (type='sub'). */
+  subItems?: { label: string; disabled?: boolean }[];
+}
+
+interface Props {
+  id: string;
+  triggerLabel: string;
+  items: MenuEntry[];
+  loop?: boolean;
+  avoidCollisions?: boolean;
+}
+
+const { id, triggerLabel, items, loop = true, avoidCollisions = true } = Astro.props;
+
+const config: ContextMenuConfig = { loop, avoidCollisions };
+const state = contextMenu.initialState(config);
+const classes = contextMenuClasses(config, state);
+
+const ids = {} as PartIds<ContextMenuPart>;
+for (const part of Object.keys(contextMenu.parts) as ContextMenuPart[]) {
+  ids[part] = `${id}-${part}`;
+}
+const aria = contextMenu.aria(state, config, ids);
+
+// The trigger's attributes are assembled here so the element carries no literal
+// class attribute in its tag (the inline wrapper is styling-neutral chrome).
+const triggerProps = {
+  'data-part': 'trigger',
+  id: ids.trigger,
+  tabindex: '-1',
+  class: classes.trigger,
+  ...aria.trigger,
+};
+---
+
+<div
+  data-part="root"
+  data-context-menu-root
+  id={ids.root}
+  loop={String(loop)}
+  avoid-collisions={String(avoidCollisions)}
+>
+  <span {...triggerProps}>{triggerLabel}</span>
+  <div
+    data-part="content"
+    id={ids.content}
+    role="menu"
+    aria-label={triggerLabel}
+    class={classes.content}
+    style="position: fixed; left: 0; top: 0;"
+    {...aria.content}
+  >
+    {
+      items.map((entry, index) => {
+        if (entry.type === 'separator') {
+          return <hr class={classes.separator} />;
+        }
+        if (entry.type === 'label') {
+          return <div class={classes.label}>{entry.label}</div>;
+        }
+        if (entry.type === 'sub') {
+          const subId = `${id}-sub-${index}`;
+          return (
+            <div data-part="sub">
+              <div
+                data-part="sub-trigger"
+                id={`${subId}-trigger`}
+                role="menuitem"
+                tabindex="-1"
+                aria-haspopup="menu"
+                aria-expanded="false"
+                data-state="closed"
+                class={classes.subTrigger}
+              >
+                {entry.label}
+                <svg
+                  class={classes.subTriggerChevron}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  aria-hidden="true"
+                >
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </div>
+              <div
+                data-part="sub-content"
+                id={`${subId}-content`}
+                role="menu"
+                aria-label={entry.label}
+                data-state="closed"
+                hidden
+                class={classes.content}
+                style="position: fixed; left: 0; top: 0;"
+              >
+                {(entry.subItems ?? []).map((subEntry) => (
+                  <div
+                    role="menuitem"
+                    tabindex="-1"
+                    aria-disabled={subEntry.disabled ? 'true' : undefined}
+                    data-disabled={subEntry.disabled ? '' : undefined}
+                    class={classes.item}
+                  >
+                    {subEntry.label}
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        }
+        return (
+          <div
+            role="menuitem"
+            tabindex="-1"
+            aria-disabled={entry.disabled ? 'true' : undefined}
+            data-disabled={entry.disabled ? '' : undefined}
+            class={classes.item}
+          >
+            {entry.label}
+            {entry.shortcut ? <kbd class={classes.shortcut}>{entry.shortcut}</kbd> : null}
+          </div>
+        );
+      })
+    }
+  </div>
+</div>
+
+<script>
+  import { bindContextMenu } from './context-menu.behavior';
+
+  // The <script> is bundled and runs once per page; bind every instance's
+  // server-rendered markup. Same controller as the Web Component.
+  for (const root of document.querySelectorAll<HTMLElement>('[data-context-menu-root]')) {
+    if (root.dataset['bound'] === 'true') continue;
+    root.dataset['bound'] = 'true';
+    bindContextMenu(root);
+  }
+</script>
