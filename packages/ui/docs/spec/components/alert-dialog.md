@@ -69,8 +69,12 @@ axe violation) never appears.
 
 ## Keyboard and effects
 
-- `keymap`: Escape on `content` -> `close`. Focus containment (the trap) makes
-  the content-scoped listener sufficient.
+- `keymap`: Escape on `content` | `cancel` | `action` -> `close`. Unlike dialog's
+  content-only listener, the keymap is widened because initial focus lands on the
+  `cancel` part (not `content`): the DOM-native bind resolves the keydown's part
+  via `closest('[data-part]')`, so a content-only listener would silently fail to
+  close when focus sits on Cancel. Escape dismisses from anywhere inside the
+  dialog (correct WCAG behavior).
 - Modal overlay pair (composed directly, always on while open):
   `createFocusTrap(content)` then focus the `cancel` part (initial focus lands
   on the safer choice, overriding the trap's first-focusable default), plus
