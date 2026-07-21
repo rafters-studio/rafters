@@ -126,6 +126,37 @@ bind and the React `useEffect`):
 3. **WC bind deferred**: `connectedCallback` can fire before light-DOM children
    parse -- bind on the next microtask.
 
+## Composing motion (combination constraints)
+
+When a component animates, the duration and easing come from motion tokens --
+but *which parameters you combine* is governed by cross-parameter rules that no
+single token can hold. They are not prose to remember; they are queryable data
+plus a validator in `@rafters/design-tokens`
+(`generators/motion-constraints.ts`), so an agent composing motion is told the
+rule before it writes the wrong thing. The full rationale is `docs/MOTION.md`;
+the authoring shape is:
+
+- **`MOTION_COMBINATION_CONSTRAINTS`** and **`MOTION_GOVERNING_RULE`** -- the
+  five constraints and the governing rule as structured metadata (read them
+  when you need the *why*).
+- **`validateMotionComposition(composition)`** -- describe the animation by the
+  parameters it engages (`translate` axes, `scale`, `opacity`, `rotate`,
+  `elementSize`, `timing`, `answers`) and get back the violations. Empty means
+  legal; `isLegalMotionComposition` is the boolean form.
+
+Enforcement is **mechanical** for the three prohibitions and advisory for the
+rest, and the split is recorded in the data:
+
+- **Rejected** (mechanical): diagonal movement (both axes at once); rotation
+  combined with any other parameter, or on a large element; simultaneous timing
+  across co-occurring elements; a composition that declares no answered
+  question.
+- **Blessed** (permission, never rejected): scale combined with movement,
+  opacity combined with movement -- `fade + slide` is the standard enter/exit.
+- **Advisory**: the governing rule checks that you *declared* which question the
+  motion answers (what happened / where am I / what next); whether that answer
+  is genuinely true is your judgment, not the validator's.
+
 ## Honest costs (do not pretend these away)
 
 - **React compound decorators carry real hook weight.** A static (button,

@@ -101,7 +101,7 @@ Every `-in`/`-out` pair has a shorter exit. The user chose to leave.
 
 ## Combination constraints
 
-These are rules, not values, and they have no home in a token. They exist because the number of possible parameter combinations is larger than intuition can navigate.[^audi-ci]
+These are rules, not values. A cross-parameter rule has no home in any single token -- so instead of leaving them as prose, they live as structured, queryable metadata an agent composing motion can read before it writes the wrong thing. They exist because the number of possible parameter combinations is larger than intuition can navigate.[^audi-ci]
 
 | Parameter | Rule | Why |
 |---|---|---|
@@ -110,6 +110,21 @@ These are rules, not values, and they have no home in a token. They exist becaus
 | Opacity | May combine with movement. | Fade plus slide is the standard enter/exit. Fade alone is for elements that do not move. |
 | Rotation | Small elements only. **Never combined with another parameter.** | Rotation is visually dominant; combined with translation it is chaos. Isolated, it reads as processing. |
 | Timing | Sequential, not simultaneous. | Staggered sequences create narrative. Simultaneous animation is noise. |
+
+### Where the constraints live
+
+The table above is mirrored by machine-readable data and a validator in `@rafters/design-tokens` (`packages/design-tokens/src/generators/motion-constraints.ts`), the package the CLI already depends on, so tooling can read the rule rather than re-deriving it from prose:
+
+- **`MOTION_COMBINATION_CONSTRAINTS`** -- the five constraints as data, each carrying an `id`, `rule`, `rationale`, and a `kind`.
+- **`MOTION_GOVERNING_RULE`** -- the rule below, with its three questions and its enforcement posture.
+- **`validateMotionComposition(composition)`** -- takes a proposed animation described by the *parameters it engages* (translate axis, scale, opacity, rotation, element size, timing) and returns the constraint violations. An empty list means legal. `isLegalMotionComposition` is the boolean wrapper.
+
+Two splits are deliberate and are recorded in the data itself:
+
+- **Permission vs prohibition.** Only Direction, Rotation, and Timing have teeth -- the validator rejects diagonal movement, rotation combined with anything (or on a large element), and simultaneous timing. Scaling and Opacity are `kind: 'permission'`: they *bless* combining with movement (`scale + move`, `fade + slide`), so the validator never rejects them. A validator that rejected "any two parameters combined" would contradict this spec.
+- **Mechanical vs advisory** for the governing rule (below). Its `enforcement` field is `mechanical-presence-advisory-truth`: the validator mechanically requires that a composition *declares* which question it answers, but whether the declared answer is *true* is a human or agent judgment and stays advisory.
+
+**Governing rule -- motion that answers no question does not move.** If an animation does not tell the user what happened, where they are, or what to expect next, it is decorative. This one has teeth: decorative animation measurably impairs recall.[^stokes-2020] `validateMotionComposition` enforces the presence half -- a composition with no declared `answers` is rejected.
 
 ## What gets no motion
 
@@ -150,7 +165,7 @@ This document is the specification. It is **not** what currently ships. Tracked 
 - The six curves above are not generated; the exporter emits a different easing vocabulary.
 - **No semantic motion token exists.** Components therefore hardcode raw numeric durations, which is what this layer exists to prevent.
 - The keyframe table in `packages/design-tokens/src/generators/motion.ts` is copied from shadcn, and `accordion-down`/`accordion-up` interpolate `var(--radix-accordion-content-height)`, which nothing in this system sets -- so they animate to an undefined height.
-- Combination constraints have no representation anywhere.
+- Combination constraints are represented as structured metadata and a mechanical validator (`motion-constraints.ts`), even though the token *values* above are not yet generated. This is the one part of this document that ships.
 
 ## Sources
 
