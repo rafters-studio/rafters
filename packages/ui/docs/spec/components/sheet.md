@@ -109,7 +109,7 @@ then, sheet is enter-only in the visual sense and correct at every state via
 | always-set `aria-controls`/`aria-describedby` | defect-do-not-port — dangling references when target absent; replaced by registration + empty-id convention |
 | trigger pointerdown closes then click re-opens | defect-do-not-port — fixed by sparing the trigger in the outside-dismiss |
 | `data-[state=open]` classes on the close button | defect-do-not-port — dead selectors; no data-state was ever set on that element |
-| explicit SheetPortal / SheetOverlay / `container` prop | contract (shadcn surface is the floor). Content inside an explicit portal skips its automatic portal + overlay; close button defaults off there |
+| explicit SheetPortal / SheetOverlay / `container` prop | contract (shadcn surface is the floor). Content inside an explicit portal skips its automatic portal + overlay; the close button is still rendered there (sheet keeps `showCloseButton ?? true`, unlike dialog) |
 | forceMount | contract, with a divergence: force-mounted closed layers carry `hidden` (a closed modal must be inert to AT and must not block the page). Presence (wave 0-B) replaces this for exit animation |
 | onEscapeKeyDown / onPointerDownOutside / onInteractOutside veto props | contract (oracle signatures: native event, preventDefault to veto) |
 | `animate-in/out slide-*` + `duration-500/300` on content/overlay | defect-do-not-port — raw numeric durations; motion re-declared as intent, left to the token layer (#1899) |
