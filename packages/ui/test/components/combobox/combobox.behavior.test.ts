@@ -209,6 +209,11 @@ describe('combobox aria projection', () => {
     });
   });
 
+  it("the toggle's accessible name tracks the gesture: Open when closed, Close when open", () => {
+    expect(ariaAt(closed).trigger).toEqual({ 'aria-label': 'Open' });
+    expect(ariaAt(openSeed).trigger).toEqual({ 'aria-label': 'Close' });
+  });
+
   it('disabled surfaces on root and input', () => {
     const aria = ariaAt({ disabled: true });
     expect(aria.root?.['data-disabled']).toBe('');

@@ -198,6 +198,12 @@ const comboboxSlice: Slice<ComboboxConfig, ComboboxState, ComboboxActions, Combo
         'aria-disabled': disabled ? 'true' : undefined,
         'data-state': open ? 'open' : 'closed',
       },
+      // The toggle's accessible name tracks what the gesture does next. It lives
+      // in the projection (not inline in a decorator) so all three performances
+      // update it: the WC/Astro binds apply it on every render, React reads it.
+      trigger: {
+        'aria-label': open ? 'Close' : 'Open',
+      },
       content: {
         role: 'listbox',
         // The listbox is named by the input that controls it.

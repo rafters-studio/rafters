@@ -300,7 +300,7 @@ export function ComboboxInput({ className, ...props }: ComboboxInputProps) {
         type="button"
         data-part="trigger"
         tabIndex={-1}
-        aria-label={effectiveOpen ? 'Close' : 'Open'}
+        {...aria.trigger}
         onClick={handleToggle}
         className={classes.trigger}
       >

@@ -127,4 +127,17 @@ describe('combobox conformance [wc]', () => {
     await user.click(outside);
     expect(content().hidden).toBe(true);
   });
+
+  it("the toggle's accessible name flips with the open state", async () => {
+    const user = userEvent.setup();
+    await mount();
+    // The bind applies the projection on first paint, overwriting the SSR label.
+    expect(toggle().getAttribute('aria-label')).toBe('Open');
+    await user.click(toggle());
+    expect(content().hidden).toBe(false);
+    expect(toggle().getAttribute('aria-label')).toBe('Close');
+    await user.click(toggle());
+    expect(content().hidden).toBe(true);
+    expect(toggle().getAttribute('aria-label')).toBe('Open');
+  });
 });

@@ -93,4 +93,17 @@ describe('combobox conformance [astro]', () => {
     await user.keyboard('{Escape}');
     expect(content().hidden).toBe(true);
   });
+
+  it('SSR renders the toggle label and the bind flips it with the open state', async () => {
+    const user = userEvent.setup();
+    await mount();
+    // SSR closed-state projection names the toggle "Open" before hydration.
+    expect(toggle().getAttribute('aria-label')).toBe('Open');
+    await user.click(toggle());
+    expect(content().hidden).toBe(false);
+    expect(toggle().getAttribute('aria-label')).toBe('Close');
+    await user.click(toggle());
+    expect(content().hidden).toBe(true);
+    expect(toggle().getAttribute('aria-label')).toBe('Open');
+  });
 });
