@@ -93,4 +93,12 @@ describe('calendar conformance [astro]', () => {
     await user.click(partElement(document.body, 'next')!);
     expect(partElement(document.body, 'heading')?.textContent).toBe('August 2026');
   });
+
+  it('Enter activates a focused header control (native button, not suppressed)', async () => {
+    const user = userEvent.setup();
+    await mount();
+    partElement(document.body, 'next')!.focus();
+    await user.keyboard('{Enter}');
+    expect(partElement(document.body, 'heading')?.textContent).toBe('August 2026');
+  });
 });

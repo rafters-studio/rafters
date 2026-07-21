@@ -145,6 +145,24 @@ describe('calendar conformance [react]', () => {
     expect(partElement(body(), 'heading')?.textContent).toBe('August 2026');
   });
 
+  it('Enter activates a focused header control (native button, not suppressed)', async () => {
+    const user = userEvent.setup();
+    render(<Calendar today={TODAY} defaultMonth={MONTH} />);
+    partElement(body(), 'prev')!.focus();
+    await user.keyboard('{Enter}');
+    expect(partElement(body(), 'heading')?.textContent).toBe('June 2026');
+  });
+
+  it('an arrow on a header control does not steal focus into the grid', async () => {
+    const user = userEvent.setup();
+    render(<Calendar today={TODAY} defaultMonth={MONTH} />);
+    const prev = partElement(body(), 'prev')!;
+    prev.focus();
+    await user.keyboard('{ArrowRight}');
+    expect(document.activeElement).toBe(prev);
+    expect(partElement(body(), 'heading')?.textContent).toBe('July 2026');
+  });
+
   it('range mode selects an ordered pair over two clicks', async () => {
     const user = userEvent.setup();
     render(

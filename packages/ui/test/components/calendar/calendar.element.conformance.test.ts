@@ -107,6 +107,14 @@ describe('calendar conformance [wc]', () => {
     expect(partElement(document.body, 'heading')?.textContent).toBe('June 2026');
   });
 
+  it('Enter activates a focused header control (native button, not suppressed)', async () => {
+    const user = userEvent.setup();
+    await mount();
+    partElement(document.body, 'prev')!.focus();
+    await user.keyboard('{Enter}');
+    expect(partElement(document.body, 'heading')?.textContent).toBe('June 2026');
+  });
+
   it('range mode fills the interior between two clicks', async () => {
     const user = userEvent.setup();
     await mount({ mode: 'range' });

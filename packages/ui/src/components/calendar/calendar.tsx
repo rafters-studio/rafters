@@ -215,34 +215,45 @@ export function Calendar(props: CalendarProps) {
   React.useEffect(() => {
     const root = rootRef.current;
     if (!root) return;
+    // preventDefault is scoped INSIDE each handler (only when a day cell owns
+    // focus) so a keydown bubbling from the focused prev/next button keeps its
+    // native action: Enter still activates the month controls (WCAG 2.1.1) and
+    // an arrow on a button does not yank focus into the grid.
+    const focusedDayCell = (): HTMLElement | null => {
+      const active = document.activeElement as HTMLElement | null;
+      const cell = active?.closest<HTMLElement>(DAY_SELECTOR) ?? null;
+      return cell && root.contains(cell) ? cell : null;
+    };
     const stopMovement = createKeyboardHandler(root, {
       key: [...MOVEMENT_KEYS],
-      preventDefault: true,
+      preventDefault: false,
       handler: (event) => {
-        const cfg = latest.current.config;
-        const active = document.activeElement as HTMLElement | null;
-        const cell = active?.closest<HTMLElement>(DAY_SELECTOR) ?? null;
-        const from = cell?.dataset['value'] ?? tabbableDate(memory.get(), cfg);
+        const cell = focusedDayCell();
+        const from = cell?.dataset['value'];
+        if (!from) return;
         const target = dateForKey(event.key, from, event.shiftKey);
         if (!target) return;
-        dispatch('focusDate', cfg, target);
+        event.preventDefault();
+        dispatch('focusDate', latest.current.config, target);
       },
     });
     const stopActivate = createKeyboardHandler(root, {
       key: ['Enter', 'Space'],
-      preventDefault: true,
-      handler: () => {
-        const active = document.activeElement as HTMLElement | null;
-        const cell = active?.closest<HTMLElement>(DAY_SELECTOR) ?? null;
+      preventDefault: false,
+      handler: (event) => {
+        const cell = focusedDayCell();
         const iso = cell?.dataset['value'];
-        if (iso && cell?.getAttribute('data-outside') !== 'true') request(iso);
+        if (iso && cell?.getAttribute('data-outside') !== 'true') {
+          event.preventDefault();
+          request(iso);
+        }
       },
     });
     return () => {
       stopMovement();
       stopActivate();
     };
-  }, [memory, dispatch, request]);
+  }, [dispatch, request]);
 
   // Move DOM focus to the focused cell after a keyboard navigation re-render.
   // focusedDate is only set by the keyboard handler (which requires focus to be

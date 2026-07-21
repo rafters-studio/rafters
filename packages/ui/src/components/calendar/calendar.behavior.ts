@@ -612,14 +612,20 @@ export function bindCalendar(root: HTMLElement): () => void {
     cell?.focus();
   };
 
+  // preventDefault is scoped INSIDE the handler (only when a day cell owns focus)
+  // so a keydown bubbling from the focused prev/next button keeps its native
+  // action: Enter still activates the month controls (WCAG 2.1.1), and an arrow
+  // on a button does not yank focus into the grid.
   const stopMovement = createKeyboardHandler(root, {
     key: ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown'],
-    preventDefault: true,
+    preventDefault: false,
     handler: (event) => {
       const cell = focusedCell();
-      const from = cell?.dataset['value'] ?? tabbableDate(memory.get(), config);
+      const from = cell?.dataset['value'];
+      if (!from) return;
       const target = dateForKey(event.key, from, event.shiftKey);
       if (!target) return;
+      event.preventDefault();
       dispatch('focusDate', config, target);
       focusFocusedCell();
     },
@@ -627,11 +633,14 @@ export function bindCalendar(root: HTMLElement): () => void {
 
   const stopActivate = createKeyboardHandler(root, {
     key: ['Enter', 'Space'],
-    preventDefault: true,
-    handler: () => {
+    preventDefault: false,
+    handler: (event) => {
       const cell = focusedCell();
       const iso = cell?.dataset['value'];
-      if (iso && cell?.getAttribute('data-outside') !== 'true') activate(iso);
+      if (iso && cell?.getAttribute('data-outside') !== 'true') {
+        event.preventDefault();
+        activate(iso);
+      }
     },
   });
 
