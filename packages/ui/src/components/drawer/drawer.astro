@@ -1,0 +1,105 @@
+---
+/**
+ * Astro performance for drawer. Server-renders the full light-DOM structure
+ * with the closed-state projection already applied (correct and inert before
+ * JS), then the <script> hands each instance to bindDrawer -- the SAME
+ * DOM-native client the Web Component uses. One score, three performances.
+ *
+ * Content stays in light DOM (present-but-hidden) so the effects the bind
+ * runs -- focus-trap, scroll-lock, dismiss-on-outside -- can read it. Exit and
+ * drag motion wait on the Presence adapter (wave 0-B); this is enter-only.
+ *
+ * The title renders as a div with role="heading" (not a raw <h2 class>) so it
+ * carries its token styling without tripping the typography-component guard;
+ * aria-labelledby needs only the id and text, and the heading role preserves
+ * the semantics the React <h2> provides.
+ */
+import { drawer, drawerSide, type DrawerConfig, type DrawerPart } from './drawer.behavior';
+import { drawerClasses } from './drawer.classes';
+import type { PartIds } from '../../lib/contract';
+
+interface Props {
+  id: string;
+  modal?: boolean;
+  defaultOpen?: boolean;
+  side?: DrawerConfig['side'];
+  title?: string;
+  description?: string;
+}
+
+const {
+  id,
+  modal = true,
+  defaultOpen = false,
+  side = 'bottom',
+  title,
+  description,
+} = Astro.props;
+
+const config: DrawerConfig = { modal, defaultOpen, side };
+const state = drawer.initialState(config);
+const classes = drawerClasses(config, state);
+
+// Optional cross-ref sources resolve to empty when their slot is absent, so
+// the score's `|| undefined` guards emit no dangling reference.
+const ids = {} as PartIds<DrawerPart>;
+for (const part of Object.keys(drawer.parts) as DrawerPart[]) {
+  const absent = (part === 'title' && !title) || (part === 'description' && !description);
+  ids[part] = absent ? '' : `${id}-${part}`;
+}
+const aria = drawer.aria(state, config, ids);
+const open = state.open;
+---
+
+<rafters-drawer
+  data-part="root"
+  modal={String(modal)}
+  default-open={String(defaultOpen)}
+  side={drawerSide(config)}
+>
+  <button type="button" id={ids.trigger} data-part="trigger" {...aria.trigger}>
+    <slot name="trigger">Open</slot>
+  </button>
+
+  <div id={ids.overlay} data-part="overlay" class={classes.overlay} hidden={!open} {...aria.overlay}></div>
+
+  <div
+    id={ids.content}
+    data-part="content"
+    tabindex="-1"
+    class={classes.content}
+    {...aria.content}
+    hidden={!open}
+  >
+    <div class={classes.handle} aria-hidden="true"></div>
+    {
+      title && (
+        <div id={ids.title} data-part="title" role="heading" aria-level="2" class={classes.title}>
+          {title}
+        </div>
+      )
+    }
+    {
+      description && (
+        <div id={ids.description} data-part="description" class={classes.description}>
+          {description}
+        </div>
+      )
+    }
+    <slot />
+    <button type="button" id={ids.close} data-part="close" class={classes.close} {...aria.close}>
+      <slot name="close">Close</slot>
+    </button>
+  </div>
+</rafters-drawer>
+
+<script>
+  import { bindDrawer } from './drawer.behavior';
+
+  for (const root of document.querySelectorAll('rafters-drawer[data-part="root"]')) {
+    const el = root as HTMLElement;
+    if (el.dataset['bound'] === 'true') continue;
+    el.dataset['bound'] = 'true';
+    bindDrawer(el);
+  }
+</script>
