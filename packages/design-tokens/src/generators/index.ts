@@ -49,6 +49,21 @@ export * from './defaults.js';
 export { generateDepthTokens } from './depth.js';
 export { generateFocusTokens } from './focus.js';
 export { generateMotionTokens } from './motion.js';
+export {
+  isLegalMotionComposition,
+  MOTION_COMBINATION_CONSTRAINTS,
+  MOTION_GOVERNING_RULE,
+  type MotionAxis,
+  type MotionComposition,
+  type MotionConstraint,
+  type MotionConstraintId,
+  type MotionElementSize,
+  type MotionGoverningRule,
+  type MotionParameter,
+  type MotionQuestion,
+  type MotionViolation,
+  validateMotionComposition,
+} from './motion-constraints.js';
 export { generateRadiusTokens } from './radius.js';
 export { generateSemanticTokens } from './semantic.js';
 export { generateShadowTokens } from './shadow.js';
