@@ -14,15 +14,21 @@ import {
   type ContextMenuPart,
 } from './context-menu.behavior';
 import { contextMenuClasses } from './context-menu.classes';
+import ContextMenuSub from './context-menu-sub.astro';
 import type { PartIds } from '../../lib/contract';
+
+/** A submenu item: a leaf, or a further nested submenu. */
+type SubEntry =
+  | { type?: 'item'; label: string; disabled?: boolean }
+  | { type: 'sub'; label: string; subItems: { label: string; disabled?: boolean }[] };
 
 interface MenuEntry {
   type?: 'item' | 'separator' | 'label' | 'sub';
   label?: string;
   shortcut?: string;
   disabled?: boolean;
-  /** Items of a submenu (type='sub'). */
-  subItems?: { label: string; disabled?: boolean }[];
+  /** Items of a submenu (type='sub'); a subItem may itself be a nested submenu. */
+  subItems?: SubEntry[];
 }
 
 interface Props {
@@ -82,54 +88,12 @@ const triggerProps = {
           return <div class={classes.label}>{entry.label}</div>;
         }
         if (entry.type === 'sub') {
-          const subId = `${id}-sub-${index}`;
           return (
-            <div data-part="sub">
-              <div
-                data-part="sub-trigger"
-                id={`${subId}-trigger`}
-                role="menuitem"
-                tabindex="-1"
-                aria-haspopup="menu"
-                aria-expanded="false"
-                data-state="closed"
-                class={classes.subTrigger}
-              >
-                {entry.label}
-                <svg
-                  class={classes.subTriggerChevron}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  aria-hidden="true"
-                >
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-                </svg>
-              </div>
-              <div
-                data-part="sub-content"
-                id={`${subId}-content`}
-                role="menu"
-                aria-label={entry.label}
-                data-state="closed"
-                hidden
-                class={classes.content}
-                style="position: fixed; left: 0; top: 0;"
-              >
-                {(entry.subItems ?? []).map((subEntry) => (
-                  <div
-                    role="menuitem"
-                    tabindex="-1"
-                    aria-disabled={subEntry.disabled ? 'true' : undefined}
-                    data-disabled={subEntry.disabled ? '' : undefined}
-                    class={classes.item}
-                  >
-                    {subEntry.label}
-                  </div>
-                ))}
-              </div>
-            </div>
+            <ContextMenuSub
+              id={`${id}-sub-${index}`}
+              label={entry.label ?? ''}
+              subItems={entry.subItems ?? []}
+            />
           );
         }
         return (

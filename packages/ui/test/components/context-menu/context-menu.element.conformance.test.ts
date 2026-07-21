@@ -31,7 +31,12 @@ async function mount(): Promise<HTMLElement> {
             <div data-part="sub-trigger" role="menuitem" tabindex="-1" id="cm-sub-trigger">More</div>
             <div data-part="sub-content" role="menu" aria-label="More" id="cm-sub-content" data-state="closed" style="position: fixed; left: 0; top: 0;">
               <div role="menuitem">Deep</div>
-              <div role="menuitem">Deeper</div>
+              <div data-part="sub" id="cm-sub2">
+                <div data-part="sub-trigger" role="menuitem" tabindex="-1" id="cm-sub2-trigger">Even more</div>
+                <div data-part="sub-content" role="menu" aria-label="Even more" id="cm-sub2-content" data-state="closed" style="position: fixed; left: 0; top: 0;">
+                  <div role="menuitem">Grandchild</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -159,8 +164,8 @@ describe('context-menu conformance [wc]', () => {
     const user = userEvent.setup();
     await mount();
     fireEvent.contextMenu(trigger(), { clientX: 10, clientY: 10 });
-    const st = document.body.querySelector<HTMLElement>('[data-part="sub-trigger"]') as HTMLElement;
-    const sc = document.body.querySelector<HTMLElement>('[data-part="sub-content"]') as HTMLElement;
+    const st = document.getElementById('cm-sub-trigger') as HTMLElement;
+    const sc = document.getElementById('cm-sub-content') as HTMLElement;
     st.focus();
     await user.keyboard('{ArrowRight}');
     expect(sc.hidden).toBe(false);
@@ -168,5 +173,39 @@ describe('context-menu conformance [wc]', () => {
     // Escape in the submenu closes the submenu first, back to the sub-trigger.
     expect(sc.hidden).toBe(true);
     expect(document.activeElement).toBe(st);
+  });
+
+  // Open the level-1 submenu (Sub A) and its nested level-2 submenu (Sub A.1).
+  async function openTwoLevels(user: ReturnType<typeof userEvent.setup>): Promise<HTMLElement> {
+    fireEvent.contextMenu(trigger(), { clientX: 10, clientY: 10 });
+    (document.getElementById('cm-sub-trigger') as HTMLElement).focus();
+    await user.keyboard('{ArrowRight}');
+    (document.getElementById('cm-sub2-trigger') as HTMLElement).focus();
+    await user.keyboard('{ArrowRight}');
+    const grandchild = document.getElementById('cm-sub2-content') as HTMLElement;
+    expect(grandchild.hidden).toBe(false);
+    return grandchild;
+  }
+
+  it('dismissing the whole menu collapses a NESTED (grandchild) submenu, not just one level', async () => {
+    const user = userEvent.setup();
+    await mount();
+    const grandchild = await openTwoLevels(user);
+    const outside = document.createElement('button');
+    document.body.appendChild(outside);
+    fireEvent.pointerDown(outside);
+    expect(content().hidden).toBe(true);
+    expect(grandchild.hidden).toBe(true);
+    expect(grandchild.getAttribute('data-state')).toBe('closed');
+  });
+
+  it('selecting a top-level item while a nested submenu is open collapses the grandchild', async () => {
+    const user = userEvent.setup();
+    await mount();
+    const grandchild = await openTwoLevels(user);
+    await user.click(itemByText('Cut'));
+    expect(content().hidden).toBe(true);
+    expect(grandchild.hidden).toBe(true);
+    expect(grandchild.getAttribute('data-state')).toBe('closed');
   });
 });

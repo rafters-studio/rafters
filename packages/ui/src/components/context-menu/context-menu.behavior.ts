@@ -479,7 +479,14 @@ export function bindContextSubMenu(
   subContent.addEventListener('click', onContentClick);
 
   return {
-    close: () => void request('close'),
+    // Collapse the whole subtree: close nested children BEFORE this level, so a
+    // grandchild is never orphaned open when an ancestor closes (the parent's
+    // cascade and the select-an-item path both call this). React is exempt --
+    // its ContextMenuSubContent unmounts the nested subtree via usePresence.
+    close: () => {
+      for (const child of nested) child.close();
+      request('close');
+    },
     teardown: () => {
       clearTimers();
       unsubscribe();

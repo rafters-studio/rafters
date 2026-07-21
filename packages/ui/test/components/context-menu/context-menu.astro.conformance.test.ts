@@ -45,7 +45,10 @@ const itemsWithSub = [
   {
     type: 'sub' as const,
     label: 'More',
-    subItems: [{ label: 'Deep' }, { label: 'Deeper' }],
+    subItems: [
+      { label: 'Deep' },
+      { type: 'sub' as const, label: 'Even more', subItems: [{ label: 'Grandchild' }] },
+    ],
   },
 ];
 
@@ -64,6 +67,17 @@ const subTrigger = () =>
   document.body.querySelector<HTMLElement>('[data-part="sub-trigger"]') as HTMLElement;
 const subContent = () =>
   document.body.querySelector<HTMLElement>('[data-part="sub-content"]') as HTMLElement;
+const subTriggerByText = (text: string): HTMLElement => {
+  const match = Array.from(
+    document.body.querySelectorAll<HTMLElement>('[data-part="sub-trigger"]'),
+  ).find((element) => element.textContent?.trim().startsWith(text));
+  if (!match) throw new Error(`no sub-trigger ${text}`);
+  return match;
+};
+const grandchildContent = () =>
+  document.body.querySelector<HTMLElement>(
+    '[data-part="sub-content"][aria-label="Even more"]',
+  ) as HTMLElement;
 
 const trigger = () =>
   document.body.querySelector<HTMLElement>('[data-part="trigger"]') as HTMLElement;
@@ -146,5 +160,37 @@ describe('context-menu conformance [astro]', () => {
     await user.keyboard('{ArrowLeft}');
     expect(subContent().hidden).toBe(true);
     expect(document.activeElement).toBe(subTrigger());
+  });
+
+  // Open the level-1 (More) and level-2 (Even more) submenus from SSR markup.
+  async function openTwoLevels(user: ReturnType<typeof userEvent.setup>): Promise<HTMLElement> {
+    fireEvent.contextMenu(trigger(), { clientX: 12, clientY: 22 });
+    subTriggerByText('More').focus();
+    await user.keyboard('{ArrowRight}');
+    subTriggerByText('Even more').focus();
+    await user.keyboard('{ArrowRight}');
+    const grandchild = grandchildContent();
+    expect(grandchild.hidden).toBe(false);
+    return grandchild;
+  }
+
+  it('dismissing the whole menu collapses a NESTED (grandchild) submenu in the SSR path', async () => {
+    const user = userEvent.setup();
+    await mountWithSub();
+    const grandchild = await openTwoLevels(user);
+    const outside = document.createElement('button');
+    document.body.appendChild(outside);
+    fireEvent.pointerDown(outside);
+    expect(content().hidden).toBe(true);
+    expect(grandchild.hidden).toBe(true);
+  });
+
+  it('selecting a top-level item while a nested submenu is open collapses the grandchild', async () => {
+    const user = userEvent.setup();
+    await mountWithSub();
+    const grandchild = await openTwoLevels(user);
+    await user.click(itemByText('Cut'));
+    expect(content().hidden).toBe(true);
+    expect(grandchild.hidden).toBe(true);
   });
 });

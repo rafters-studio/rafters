@@ -1,0 +1,81 @@
+---
+/**
+ * Recursive submenu sub-template for the Astro performance. Renders a sub-trigger
+ * plus its (initially closed, hidden) sub-content, recursing into nested
+ * submenus via itself so the SSR markup supports arbitrary nesting -- the same
+ * depth bindContextSubMenu binds. Not a decorator; a fragment of the one Astro
+ * performance, sharing the same classes and the same data-part contract.
+ */
+import ContextMenuSub from './context-menu-sub.astro';
+import { contextMenuClasses } from './context-menu.classes';
+
+type SubEntry =
+  | { type?: 'item'; label: string; disabled?: boolean }
+  | { type: 'sub'; label: string; subItems: SubEntry[] };
+
+interface Props {
+  id: string;
+  label: string;
+  subItems: SubEntry[];
+}
+
+const { id, label, subItems } = Astro.props;
+const classes = contextMenuClasses({}, { open: false, x: 0, y: 0 });
+---
+
+<div data-part="sub">
+  <div
+    data-part="sub-trigger"
+    id={`${id}-trigger`}
+    role="menuitem"
+    tabindex="-1"
+    aria-haspopup="menu"
+    aria-expanded="false"
+    data-state="closed"
+    class={classes.subTrigger}
+  >
+    {label}
+    <svg
+      class={classes.subTriggerChevron}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      stroke-width="2"
+      aria-hidden="true"
+    >
+      <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+    </svg>
+  </div>
+  <div
+    data-part="sub-content"
+    id={`${id}-content`}
+    role="menu"
+    aria-label={label}
+    data-state="closed"
+    hidden
+    class={classes.content}
+    style="position: fixed; left: 0; top: 0;"
+  >
+    {
+      subItems.map((subEntry, subIndex) =>
+        subEntry.type === 'sub' ? (
+          <ContextMenuSub
+            id={`${id}-sub-${subIndex}`}
+            label={subEntry.label}
+            subItems={subEntry.subItems}
+          />
+        ) : (
+          <div
+            role="menuitem"
+            tabindex="-1"
+            aria-disabled={subEntry.disabled ? 'true' : undefined}
+            data-disabled={subEntry.disabled ? '' : undefined}
+            class={classes.item}
+          >
+            {subEntry.label}
+          </div>
+        ),
+      )
+    }
+  </div>
+</div>
