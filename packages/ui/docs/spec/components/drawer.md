@@ -71,7 +71,9 @@ effective value, so intrinsic state can never drift from a controlled consumer.
 
 The grab handle is a decorative div (`aria-hidden="true"`) inside content, not a
 score part -- it signals a drag affordance whose gesture is not yet wired (see
-dispositions). In Astro the title renders as a `div[role="heading"][aria-level]`
+dispositions). It renders as a horizontal top-center pill, tuned for the default
+bottom edge; on the position-only top/left/right edges it is not re-oriented
+(intentional, not an oversight), since those edges' motion is deferred too. In Astro the title renders as a `div[role="heading"][aria-level]`
 (not a raw `<h2 class>`) to satisfy the typography-component guard while keeping
 heading semantics; React and the WC light-DOM use a real `<h2>`.
 
