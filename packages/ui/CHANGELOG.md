@@ -9,6 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`input-group` ported to the behavior layer (#1778).** The oracle's
+  shadow-DOM element pair (`<rafters-input-group>` +
+  `<rafters-input-group-addon>`) collapses into one light-DOM enhancer over a
+  single score (`input-group.behavior.ts`). The group is a WRAPPER, not a value
+  owner: the contained native control keeps its value, caret, IME, and form
+  participation, so the score has no state axis, no actions, and no keymap --
+  the `field` shape, applied to the text-input family. It projects validity onto
+  the control (`aria-invalid`, omitted when valid so a contained `Input` stays
+  the single authority) plus `data-state` on the root, which is what draws the
+  border. Affix position becomes two declared parts (`addonStart`/`addonEnd`),
+  so the harness asserts `data-position` identically in React, the Web
+  Component, and Astro. One behavioral correction: the oracle propagated
+  `disabled` unconditionally and silently re-enabled an individually disabled
+  control, so propagation is now an OR (`isControlDisabled`) and reaches every
+  disableable descendant, affix buttons included. `form-value` and
+  `input-events` are dispositioned not-ported (see
+  `docs/spec/components/input-group.md`).
+
 - **`tabs` ported to the behavior layer (#1799).** The imperative
   `old/ui/tabs.controller.ts` and its four-file Astro surface are replaced by a
   single score (`tabs.behavior.ts`): the active tab is reducer state
@@ -21,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   oracle. `orientation` is new: the rail projects `aria-orientation` and roving
   moves on the matching axis, defaulting to horizontal (see
   `docs/spec/components/tabs.md` dispositions).
+
 - **`radio-group` ported to the behavior layer (#1787).** The imperative
   `old/ui/radio-group.controller.ts` + form-associated WC pair are replaced by a
   single score (`radio-group.behavior.ts`): selection is reducer state

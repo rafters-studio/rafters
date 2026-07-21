@@ -38,19 +38,21 @@ const content = (value: string) =>
   document.body.querySelector<HTMLElement>(`[data-part="content"][data-value="${value}"]`)!;
 
 describe('accordion conformance [astro]', () => {
-  it('SSR: the seeded section is open and the rest are hidden before any JS', async () => {
+  it('SSR: the seeded section is open and the rest are inert before any JS', async () => {
     const root = await mount({ value: 'b' });
     expect(root.getAttribute('data-orientation')).toBe('vertical');
     expect(root.getAttribute('data-type')).toBe('single');
     expect(trigger('b').getAttribute('aria-expanded')).toBe('true');
-    expect(content('b').hasAttribute('hidden')).toBe(false);
-    expect(content('a').hasAttribute('hidden')).toBe(true);
+    expect(content('b').hasAttribute('inert')).toBe(false);
+    expect(content('a').hasAttribute('inert')).toBe(true);
+    // Seeded inert, never hidden -- the collapsed panel animates on first open.
+    expect(content('a').hasAttribute('hidden')).toBe(false);
   });
 
   it('SSR: panel bodies are in the markup even while collapsed -- crawlable', async () => {
     await mount();
     expect(content('a').textContent).toContain('Body alpha');
-    expect(content('a').hasAttribute('hidden')).toBe(true);
+    expect(content('a').hasAttribute('inert')).toBe(true);
   });
 
   it('SSR: ids are minted from the root id and cross-referenced both ways', async () => {
@@ -77,25 +79,25 @@ describe('accordion conformance [astro]', () => {
     const user = userEvent.setup();
     await mount({ value: 'a' });
     await user.click(trigger('b'));
-    expect(content('b').hasAttribute('hidden')).toBe(false);
-    expect(content('a').hasAttribute('hidden')).toBe(true);
+    expect(content('b').hasAttribute('inert')).toBe(false);
+    expect(content('a').hasAttribute('inert')).toBe(true);
   });
 
   it('single collapsible: re-clicking the open header collapses everything', async () => {
     const user = userEvent.setup();
     await mount({ value: 'a', collapsible: true });
     await user.click(trigger('a'));
-    expect(content('a').hasAttribute('hidden')).toBe(true);
+    expect(content('a').hasAttribute('inert')).toBe(true);
   });
 
   it('multiple: SSR seeds every value and clicks accumulate', async () => {
     const user = userEvent.setup();
     await mount({ type: 'multiple', value: ['a', 'c'] });
-    expect(content('a').hasAttribute('hidden')).toBe(false);
-    expect(content('c').hasAttribute('hidden')).toBe(false);
+    expect(content('a').hasAttribute('inert')).toBe(false);
+    expect(content('c').hasAttribute('inert')).toBe(false);
     await user.click(trigger('b'));
-    expect(content('b').hasAttribute('hidden')).toBe(false);
-    expect(content('a').hasAttribute('hidden')).toBe(false);
+    expect(content('b').hasAttribute('inert')).toBe(false);
+    expect(content('a').hasAttribute('inert')).toBe(false);
   });
 
   it('ArrowDown/ArrowUp rove focus across the headers', async () => {
@@ -113,7 +115,7 @@ describe('accordion conformance [astro]', () => {
     await mount();
     trigger('c').focus();
     await user.keyboard(' ');
-    expect(content('c').hasAttribute('hidden')).toBe(false);
+    expect(content('c').hasAttribute('inert')).toBe(false);
   });
 
   it('a disabled section is natively disabled and refuses activation', async () => {
@@ -126,6 +128,6 @@ describe('accordion conformance [astro]', () => {
     });
     expect(trigger('b').hasAttribute('disabled')).toBe(true);
     await user.click(trigger('b'));
-    expect(content('b').hasAttribute('hidden')).toBe(true);
+    expect(content('b').hasAttribute('inert')).toBe(true);
   });
 });

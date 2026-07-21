@@ -1,0 +1,137 @@
+---
+/**
+ * Astro performance of the input-group score. Server-renders the light-DOM
+ * assembly -- the bordered root, the optional leading/trailing affixes, and the
+ * control -- with the score's projection already applied, so the group is
+ * correct and correctly styled before any JS runs. The `<script>` then hands
+ * each instance to bindInputGroup, the SAME DOM-native client the Web Component
+ * uses. One score, three performances, zero drift.
+ *
+ * The affixes are named slots (`start` / `end`) and are rendered only when
+ * filled, so an unused side contributes no empty padded cell and no stray
+ * divider -- the light-DOM answer to the shadow-slot cost the oracle paid.
+ *
+ * `data-disabled` and `data-invalid` are HOST SIGNALS the client reads back;
+ * `data-state` is the score's own output. Keeping them separate is what lets
+ * bindInputGroup recover the config from server markup without mistaking its
+ * own projection for author input.
+ */
+import classy from '../../primitives/classy';
+import {
+  inputGroupBehavior,
+  isControlDisabled,
+  type InputGroupConfig,
+  type InputGroupSize,
+} from './input-group.behavior';
+import {
+  composeInputGroupAddonClasses,
+  inputGroupClassSet,
+  type InputGroupAddonVariant,
+} from './input-group.classes';
+
+interface Props {
+  /** The control's id -- the target a Label `for` or a Field association points at. */
+  id: string;
+  size?: InputGroupSize;
+  disabled?: boolean;
+  invalid?: boolean;
+  name?: string;
+  type?: string;
+  placeholder?: string;
+  value?: string;
+  'aria-label'?: string;
+  /** Fill treatment for the leading affix. Decoration only. */
+  startVariant?: InputGroupAddonVariant;
+  /** Fill treatment for the trailing affix. Decoration only. */
+  endVariant?: InputGroupAddonVariant;
+}
+
+const {
+  id,
+  size = 'default',
+  disabled = false,
+  invalid = false,
+  name,
+  type = 'text',
+  placeholder,
+  value,
+  'aria-label': ariaLabel,
+  startVariant = 'default',
+  endVariant = 'default',
+} = Astro.props;
+
+const config: InputGroupConfig = { size, disabled, invalid };
+const classes = inputGroupClassSet(config, {});
+const projection = inputGroupBehavior.aria({}, config, {
+  root: '',
+  control: id,
+  addonStart: '',
+  addonEnd: '',
+});
+
+const hasStart = Astro.slots.has('start');
+const hasEnd = Astro.slots.has('end');
+// The group's disabled reaches the SSR control through the score's rule, not
+// through a second reading of the prop.
+const controlDisabled = isControlDisabled(config, false);
+---
+
+<rafters-input-group
+  data-part="root"
+  data-size={size}
+  data-disabled={disabled ? '' : undefined}
+  data-invalid={invalid ? '' : undefined}
+  class={classy(classes.root)}
+  {...projection.root}
+>
+  {
+    hasStart && (
+      <div
+        data-part="addonStart"
+        class={composeInputGroupAddonClasses('start', startVariant)}
+        {...projection.addonStart}
+      >
+        <slot name="start" />
+      </div>
+    )
+  }
+
+  <input
+    data-part="control"
+    id={id}
+    type={type}
+    name={name}
+    placeholder={placeholder}
+    value={value}
+    aria-label={ariaLabel}
+    disabled={controlDisabled}
+    class={classes.control}
+    {...projection.control}
+  />
+
+  {
+    hasEnd && (
+      <div
+        data-part="addonEnd"
+        class={composeInputGroupAddonClasses('end', endVariant)}
+        {...projection.addonEnd}
+      >
+        <slot name="end" />
+      </div>
+    )
+  }
+</rafters-input-group>
+
+<script>
+  import { bindInputGroup } from './input-group.behavior';
+
+  // The <script> is bundled and runs once per page; bind every instance's
+  // server-rendered markup. Same client as the Web Component.
+  for (const root of document.querySelectorAll<HTMLElement>(
+    'rafters-input-group[data-part="root"]',
+  )) {
+    if (root.dataset['bound'] === 'true') continue;
+    root.dataset['bound'] = 'true';
+    bindInputGroup(root);
+  }
+</script>
