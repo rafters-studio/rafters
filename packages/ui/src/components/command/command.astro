@@ -1,0 +1,122 @@
+---
+/**
+ * Astro performance for command. Server-renders the full light-DOM palette with
+ * the initial projection already applied (correct and inert before JS), then the
+ * <script> hands each instance to bindCommand -- the SAME DOM-native client the
+ * Web Component uses. One score, three performances.
+ *
+ * The list is always present (the palette has no open axis); options hide
+ * individually when they do not match the query, which the bind applies once JS
+ * runs. Before JS every option is shown (the empty query matches all).
+ */
+import { command, commandItemAria, type CommandConfig, type CommandPart } from './command.behavior';
+import { commandClasses } from './command.classes';
+import type { PartIds } from '../../lib/contract';
+
+interface Item {
+  value: string;
+  label: string;
+  disabled?: boolean;
+  shortcut?: string;
+}
+
+interface Props {
+  id: string;
+  items: Item[];
+  label?: string;
+  placeholder?: string;
+  emptyText?: string;
+}
+
+const {
+  id,
+  items,
+  label = 'Suggestions',
+  placeholder = 'Type a command...',
+  emptyText = 'No results found.',
+} = Astro.props;
+
+const config: CommandConfig = { label };
+const state = command.initialState(config);
+const classes = commandClasses(config, state);
+
+const ids = {} as PartIds<CommandPart>;
+for (const part of Object.keys(command.parts) as CommandPart[]) {
+  ids[part] = `${id}-${part}`;
+}
+const aria = command.aria(state, config, ids);
+
+const sanitize = (value: string): string => value.replace(/[^a-zA-Z0-9_-]/g, '-');
+---
+
+<rafters-command data-part="root" id={ids.root} data-label={label} class={classes.root}>
+  <div data-part="input-wrapper" class={classes.inputWrapper}>
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      class={classes.inputIcon}
+      aria-hidden="true"
+    >
+      <circle cx="11" cy="11" r="8"></circle>
+      <path d="m21 21-4.3-4.3"></path>
+    </svg>
+    <input
+      data-part="input"
+      id={ids.input}
+      type="text"
+      value=""
+      placeholder={placeholder}
+      autocomplete="off"
+      autocorrect="off"
+      spellcheck="false"
+      aria-label={placeholder}
+      {...aria.input}
+      class={classes.input}
+    />
+  </div>
+
+  <div data-part="list" id={ids.list} {...aria.list} class={classes.list}>
+    <div data-part="empty" id={ids.empty} class={classes.empty} role="presentation" hidden>
+      {emptyText}
+    </div>
+    {
+      items.map((item) => {
+        const itemAria = commandItemAria(item.value, state, config);
+        return (
+          <div
+            role="option"
+            id={`${id}-item-${sanitize(item.value)}`}
+            data-part="item"
+            data-value={item.value}
+            data-disabled={item.disabled ? '' : undefined}
+            aria-disabled={item.disabled ? 'true' : undefined}
+            class={classes.item}
+            {...itemAria}
+          >
+            <span>{item.label}</span>
+            {item.shortcut && (
+              <kbd data-part="shortcut" class={classes.shortcut}>
+                {item.shortcut}
+              </kbd>
+            )}
+          </div>
+        );
+      })
+    }
+  </div>
+</rafters-command>
+
+<script>
+  import { bindCommand } from './command.behavior';
+
+  for (const root of document.querySelectorAll<HTMLElement>('rafters-command[data-part="root"]')) {
+    if (root.dataset['bound'] === 'true') continue;
+    root.dataset['bound'] = 'true';
+    bindCommand(root);
+  }
+</script>
