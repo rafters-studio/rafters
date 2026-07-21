@@ -117,12 +117,19 @@ describe('combobox conformance [react]', () => {
 
   it('ArrowDown opens the list, highlights the first option, and points activedescendant at it', async () => {
     const user = userEvent.setup();
-    render(<TestCombobox />);
+    render(
+      <main>
+        <TestCombobox />
+      </main>,
+    );
     input().focus();
     await user.keyboard('{ArrowDown}');
     expect(content().hidden).toBe(false);
     expect(option('react').getAttribute('data-highlighted')).toBe('');
     expect(input().getAttribute('aria-activedescendant')).toBe(option('react').id);
+    // Axe over the OPEN state: the listbox named by the input, and a live
+    // aria-activedescendant pointing at an option that is a sibling of the input.
+    await assertAxeClean(body());
 
     await user.keyboard('{ArrowDown}');
     expect(option('vue').getAttribute('data-highlighted')).toBe('');
