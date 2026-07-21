@@ -183,17 +183,22 @@ describe('accordion instance projection', () => {
     expect(orphan['aria-controls']).toBeUndefined();
   });
 
-  it('the panel is a region named by its trigger, hidden while collapsed', () => {
+  it('the panel is a region named by its trigger, inert while collapsed', () => {
+    // Collapsed panels project `inert` (not `hidden`): still removed from the
+    // a11y tree + tab order, but rendered so the grid-rows transition can run.
     const open = accordionInstanceAria('content', 'a', state, config, ids);
     expect(open['role']).toBe('region');
     expect(open['aria-labelledby']).toBe('t-a');
+    expect(open['inert']).toBeUndefined();
     expect(open['hidden']).toBeUndefined();
 
     const closed = accordionInstanceAria('content', 'b', state, config, {
       trigger: 't-b',
       content: 'c-b',
     });
-    expect(closed['hidden']).toBe(true);
+    expect(closed['inert']).toBe(true);
+    // Never `hidden` -- display:none would block the animation.
+    expect(closed['hidden']).toBeUndefined();
   });
 
   it('the heading wrapper carries role and the configured level', () => {
