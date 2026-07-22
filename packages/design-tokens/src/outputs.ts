@@ -5,7 +5,8 @@
  * Every trigger (CLI init, CLI add/update, studio token mutation, the file
  * watch) funnels through {@link regenerateOutputs}. There is exactly one
  * function that writes `rafters.css` / `rafters.ts` / `rafters.json` /
- * `rafters.standalone.css` and fires the HMR notification, so the emitted set
+ * `rafters.standalone.css` / `rafters.documentation.css` and fires the HMR
+ * notification, so the emitted set
  * can never drift between callers and there is no second regen/HMR mechanism.
  *
  * Token persistence (saveRegistryToDir) stays the caller's concern -- it is a
@@ -16,7 +17,11 @@ import { existsSync, realpathSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { isAbsolute, join, resolve } from 'node:path';
 import { toDTCG } from './exporters/dtcg.js';
-import { registryToCompiled, registryToTailwind } from './exporters/tailwind.js';
+import {
+  registryToCompiled,
+  registryToDocumentation,
+  registryToTailwind,
+} from './exporters/tailwind.js';
 import { registryToTypeScript } from './exporters/typescript.js';
 import type { TokenRegistry } from './registry.js';
 
@@ -26,6 +31,7 @@ export interface OutputExports {
   typescript: boolean;
   dtcg: boolean;
   compiled: boolean;
+  documentation: boolean;
 }
 
 export interface RegenerateOutputsInput {
@@ -148,6 +154,12 @@ export async function regenerateOutputs(
     const compiled = await registryToCompiled(registry, { contentSources });
     await writeFile(join(outputDir, 'rafters.standalone.css'), compiled);
     written.push('rafters.standalone.css');
+  }
+
+  if (exports.documentation) {
+    const doc = await registryToDocumentation(registry);
+    await writeFile(join(outputDir, 'rafters.documentation.css'), doc);
+    written.push('rafters.documentation.css');
   }
 
   hooks.notify?.();

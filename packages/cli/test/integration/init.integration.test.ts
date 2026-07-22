@@ -43,6 +43,7 @@ describe('rafters init - fresh initialization', () => {
       typescript: true,
       dtcg: false,
       compiled: false,
+      documentation: false,
     });
     expect(config.installed).toEqual({
       components: [],

@@ -7,6 +7,7 @@ export interface ExportConfig {
   typescript: boolean;
   dtcg: boolean;
   compiled: boolean;
+  documentation: boolean;
 }
 
 export const DEFAULT_EXPORTS: ExportConfig = {
@@ -14,6 +15,7 @@ export const DEFAULT_EXPORTS: ExportConfig = {
   typescript: true,
   dtcg: false,
   compiled: false,
+  documentation: false,
 };
 
 export interface ExportChoice {
@@ -44,6 +46,11 @@ export const EXPORT_CHOICES: ExportChoice[] = [
     value: 'compiled',
     checked: false,
   },
+  {
+    name: 'Documentation CSS (complete utility surface for docs/previews)',
+    value: 'documentation',
+    checked: false,
+  },
 ];
 
 // Future exports - shown as disabled
@@ -71,6 +78,7 @@ export function selectionsToConfig(selections: string[]): ExportConfig {
     typescript: selections.includes('typescript'),
     dtcg: selections.includes('dtcg'),
     compiled: selections.includes('compiled'),
+    documentation: selections.includes('documentation'),
   };
 }
 
@@ -83,5 +91,6 @@ export function configToSelections(config: ExportConfig): string[] {
   if (config.typescript) selections.push('typescript');
   if (config.dtcg) selections.push('dtcg');
   if (config.compiled) selections.push('compiled');
+  if (config.documentation) selections.push('documentation');
   return selections;
 }
