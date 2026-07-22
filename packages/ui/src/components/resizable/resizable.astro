@@ -1,0 +1,143 @@
+---
+/**
+ * Astro performance (controller) for resizable.
+ *
+ * Server-renders the full LIGHT-DOM group -- panels interleaved with
+ * role=separator handles -- with classes, the score's initial projection
+ * (data-orientation / aria-valuenow/min/max / aria-orientation) and each panel's
+ * flex-basis already applied, so the split is correct and accessible before any
+ * JS. Each panel carries its data-panel-min/max/default so bindResizable can
+ * rebuild the config from the DOM. The <script> then hands each server-rendered
+ * root to bindResizable -- the SAME DOM-native controller the Web Component uses.
+ * One score, three performances, zero drift.
+ *
+ * A separator has no intrinsic text, so each handle gets an accessible name
+ * (defaulting to "Resize"); per-panel content rides the named slot `panel-{i}`.
+ */
+import {
+  resizableBehavior,
+  resizableHandleAria,
+  type ResizableConfig,
+  type ResizableDirection,
+  type ResizablePanelConfig,
+  type ResizablePart,
+} from './resizable.behavior';
+import { resizableClasses } from './resizable.classes';
+import type { PartIds } from '../../lib/contract';
+
+interface PanelProp {
+  defaultSize?: number;
+  minSize?: number;
+  maxSize?: number;
+  /** Panel content. Astro forbids a dynamic `slot name`, so per-panel content
+   *  rides the data (like nav-menu.astro's structured items), not N slots. */
+  content?: string;
+}
+
+interface Props {
+  id: string;
+  direction?: ResizableDirection;
+  panels: PanelProp[];
+  withHandle?: boolean;
+  disabled?: boolean;
+  handleLabel?: string;
+}
+
+const {
+  id,
+  direction = 'horizontal',
+  panels,
+  withHandle = false,
+  disabled = false,
+  handleLabel = 'Resize',
+} = Astro.props;
+
+const share = panels.length > 0 ? 100 / panels.length : 100;
+const panelConfigs: ResizablePanelConfig[] = panels.map((panel) => ({
+  defaultSize: panel.defaultSize ?? share,
+  minSize: panel.minSize ?? 0,
+  maxSize: panel.maxSize ?? 100,
+}));
+
+const config: ResizableConfig = { direction, panels: panelConfigs, disabled };
+const state = resizableBehavior.initialState(config);
+const classes = resizableClasses(config, state);
+
+const ids = {} as PartIds<ResizablePart>;
+for (const part of Object.keys(resizableBehavior.parts) as ResizablePart[]) {
+  ids[part] = `${id}-${part}`;
+}
+const aria = resizableBehavior.aria(state, config, ids);
+---
+
+<div
+  data-part="root"
+  id={ids.root}
+  data-direction={direction}
+  class={classes.root}
+  {...aria.root}
+>
+  {
+    panelConfigs.map((panel, index) => (
+      <>
+        <div
+          data-part="panel"
+          data-index={index}
+          data-panel-default={panel.defaultSize}
+          data-panel-min={panel.minSize}
+          data-panel-max={panel.maxSize}
+          class={classes.panel}
+          style={`flex-basis:${state.sizes[index]}%`}
+        >
+          {panels[index]?.content}
+        </div>
+        {index < panelConfigs.length - 1 && (
+          <div
+            role="separator"
+            data-part="handle"
+            data-index={index}
+            data-value={index}
+            data-disabled={disabled ? 'true' : undefined}
+            tabindex={disabled ? -1 : 0}
+            aria-label={handleLabel}
+            class={classes.handle}
+            {...resizableHandleAria(String(index), state, config)}
+          >
+            {withHandle && (
+              <div class={classes.grip}>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class={classes.gripIcon}
+                  aria-hidden="true"
+                >
+                  <title>Drag handle</title>
+                  <circle cx="12" cy="5" r="1" />
+                  <circle cx="12" cy="12" r="1" />
+                  <circle cx="12" cy="19" r="1" />
+                </svg>
+              </div>
+            )}
+          </div>
+        )}
+      </>
+    ))
+  }
+</div>
+
+<script>
+  import { bindResizable } from './resizable.behavior';
+
+  // The <script> is bundled and runs once per page; bind every instance's
+  // server-rendered root. Same controller as the Web Component.
+  for (const root of document.querySelectorAll<HTMLElement>('div[data-part="root"][data-direction]')) {
+    if (root.dataset['bound'] === 'true') continue;
+    root.dataset['bound'] = 'true';
+    bindResizable(root);
+  }
+</script>
