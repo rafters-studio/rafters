@@ -20,6 +20,8 @@ const REGISTRY_SOURCE: Record<RegistryItemType, { folder: string; label: string 
   primitive: { folder: 'primitives', label: 'Primitive' },
   composite: { folder: 'composites', label: 'Composite' },
   rule: { folder: 'rules', label: 'Rule' },
+  lib: { folder: 'lib', label: 'Lib' },
+  hooks: { folder: 'hooks', label: 'Hook' },
 };
 
 /** Order tried by fetchItem when the type is unknown -- the insertion order of REGISTRY_SOURCE. */
@@ -73,6 +75,8 @@ export class RegistryClient {
       primitive: fetchFrom('primitive'),
       composite: fetchFrom('composite'),
       rule: fetchFrom('rule'),
+      lib: fetchFrom('lib'),
+      hooks: fetchFrom('hooks'),
     };
     this.fetchComponent = this.fetchByType.ui;
     this.fetchPrimitive = this.fetchByType.primitive;

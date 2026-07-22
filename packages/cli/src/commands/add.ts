@@ -250,12 +250,14 @@ const FOLDER_NAMES = new Set(['composites']);
  */
 export function isAlreadyInstalled(config: RaftersConfig | null, item: RegistryItem): boolean {
   if (!config?.installed) return false;
-  const { components, primitives, composites, rules } = config.installed;
+  const { components, primitives, composites, rules, lib, hooks } = config.installed;
   const bucketByType: Record<RegistryItemType, string[]> = {
     ui: components,
     primitive: primitives,
     composite: composites ?? [],
     rule: rules ?? [],
+    lib: lib ?? [],
+    hooks: hooks ?? [],
   };
   return bucketByType[item.type].includes(item.name);
 }
@@ -296,11 +298,15 @@ export function trackInstalled(config: RaftersConfig, items: RegistryItem[]): vo
   const installed = config.installed;
   if (!installed.composites) installed.composites = [];
   if (!installed.rules) installed.rules = [];
+  if (!installed.lib) installed.lib = [];
+  if (!installed.hooks) installed.hooks = [];
   const bucketByType: Record<RegistryItemType, string[]> = {
     ui: installed.components,
     primitive: installed.primitives,
     composite: installed.composites,
     rule: installed.rules,
+    lib: installed.lib,
+    hooks: installed.hooks,
   };
   for (const item of items) {
     const bucket = bucketByType[item.type];
@@ -310,6 +316,8 @@ export function trackInstalled(config: RaftersConfig, items: RegistryItem[]): vo
   installed.primitives.sort();
   installed.composites.sort();
   installed.rules.sort();
+  installed.lib.sort();
+  installed.hooks.sort();
 }
 
 /**
@@ -325,14 +333,30 @@ function rootFor(field: PathField | undefined, cwd: string, fallback: string): s
  * Transform registry path to project path based on config
  * e.g., "components/ui/button.tsx" -> "app/components/ui/button.tsx"
  */
-function transformPath(registryPath: string, config: RaftersConfig | null, cwd: string): string {
+export function transformPath(
+  registryPath: string,
+  config: RaftersConfig | null,
+  cwd: string = process.cwd(),
+): string {
   if (!config) return registryPath;
 
-  const replacements: Array<[string, PathField, string]> = [
+  // lib/ and hooks/ substrate route to their own dirs under the source root,
+  // derived from primitivesPath (src/lib/primitives -> src/lib and src/hooks).
+  // Assumes primitivesPath nests under a lib dir (the init default); a custom
+  // flat `src/primitives` would derive libRoot=src. No config field -> rootFor
+  // returns the derived fallback.
+  const primitivesResolved = rootFor(config.primitivesPath, cwd, 'lib/primitives');
+  const libRoot = dirname(primitivesResolved);
+  const hooksRoot = join(dirname(libRoot), 'hooks');
+
+  // Order matters: the more specific `lib/primitives/` must precede `lib/`.
+  const replacements: Array<[string, PathField | undefined, string]> = [
     ['components/ui/', config.componentsPath, 'components/ui'],
     ['lib/primitives/', config.primitivesPath, 'lib/primitives'],
     ['composites/', config.compositesPath, 'composites'],
     ['rules/', config.rulesPath, 'lib/rules'],
+    ['lib/', undefined, libRoot],
+    ['hooks/', undefined, hooksRoot],
   ];
   for (const [prefix, field, fallback] of replacements) {
     if (registryPath.startsWith(prefix)) {
@@ -361,7 +385,7 @@ function fileExists(cwd: string, relativePath: string): boolean {
 export function transformFileContent(
   content: string,
   config: RaftersConfig | null,
-  fileType: 'component' | 'primitive' = 'component',
+  fileType: 'component' | 'primitive' | 'lib' | 'hooks' = 'component',
   cwd: string = process.cwd(),
 ): string {
   let transformed = content;
@@ -391,24 +415,36 @@ export function transformFileContent(
     `from '@/${aliasPrimitives}/$1'`,
   );
 
-  // Transform relative sibling imports (./foo) based on file type:
-  // - component files -> componentsPath (siblings are other components)
-  // - primitive files -> primitivesPath (siblings are other primitives)
-  const aliasSibling = fileType === 'primitive' ? aliasPrimitives : aliasComponents;
+  // Derive lib and hooks aliases up front so sibling resolution can use them:
+  // lib is the parent of primitivesPath (src/lib/primitives -> lib), hooks is a
+  // sibling of components (src/components/ui -> hooks).
+  const aliasLib = stripSourceRoot(dirname(primitivesPath));
+  const componentsMatch = aliasComponents.match(/^(.*)components\/ui$/);
+  const aliasHooks = componentsMatch ? `${componentsMatch[1]}hooks`.replace(/^\//, '') : 'hooks';
+
+  // Transform relative sibling imports (./foo) to the dir THIS file installs
+  // into. A lib file's `./compose` must resolve to @/lib/compose, a hook's
+  // sibling to @/hooks, a primitive's to @/lib/primitives, else componentsPath.
+  const aliasSibling =
+    fileType === 'primitive'
+      ? aliasPrimitives
+      : fileType === 'lib'
+        ? aliasLib
+        : fileType === 'hooks'
+          ? aliasHooks
+          : aliasComponents;
   transformed = transformed.replace(/from\s+['"]\.\/([^'"]+)['"]/g, `from '@/${aliasSibling}/$1'`);
 
-  // Transform parent lib imports - derive lib path as parent directory of primitivesPath
-  const aliasLib = stripSourceRoot(dirname(primitivesPath));
+  // Transform parent lib imports (one OR two `../` levels: flat components reach
+  // lib via ../lib, nested behavior-layer components via ../../lib).
   transformed = transformed.replace(
-    /from\s+['"]\.\.\/lib\/([^'"]+)['"]/g,
+    /from\s+['"](?:\.\.\/){1,2}lib\/([^'"]+)['"]/g,
     `from '@/${aliasLib}/$1'`,
   );
 
-  // Transform parent hooks imports - derive hooks path from components path structure
-  const componentsMatch = aliasComponents.match(/^(.*)components\/ui$/);
-  const aliasHooks = componentsMatch ? `${componentsMatch[1]}hooks`.replace(/^\//, '') : 'hooks';
+  // Transform parent hooks imports (same one-or-two-level depth handling).
   transformed = transformed.replace(
-    /from\s+['"]\.\.\/hooks\/([^'"]+)['"]/g,
+    /from\s+['"](?:\.\.\/){1,2}hooks\/([^'"]+)['"]/g,
     `from '@/${aliasHooks}/$1'`,
   );
 
@@ -487,8 +523,12 @@ async function installItem(
     // Ensure directory exists
     await mkdir(dirname(targetPath), { recursive: true });
 
-    // Transform and write the file
-    const fileType = item.type === 'primitive' ? 'primitive' : 'component';
+    // Transform and write the file. lib/hooks/primitive substrate resolve their
+    // own siblings within their own dir, so the file type drives sibling aliasing.
+    const fileType =
+      item.type === 'primitive' || item.type === 'lib' || item.type === 'hooks'
+        ? item.type
+        : 'component';
     const transformedContent = transformFileContent(file.content, config, fileType, cwd);
     await writeFile(targetPath, transformedContent, 'utf-8');
 

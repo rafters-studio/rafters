@@ -18,6 +18,7 @@ import {
   resolveRegistryUrl,
   trackInstalled,
   transformFileContent,
+  transformPath,
 } from '../../src/commands/add.js';
 import type { RaftersConfig } from '../../src/commands/init.js';
 import type { RegistryItem } from '../../src/registry/types.js';
@@ -94,6 +95,44 @@ describe('transformFileContent', () => {
     expect(result).toBe(`import { useMediaQuery } from '@/hooks/use-media-query';`);
   });
 
+  // Behavior-layer components are nested (src/components/<name>/<name>.tsx), so
+  // they reach the lib/hooks substrate through ../../ (two levels), not ../.
+  it('transforms nested ../../lib/ imports to @/lib/', () => {
+    const input = `import { createBehavior } from '../../lib/contract';`;
+    const result = transformFileContent(input, null);
+    expect(result).toBe(`import { createBehavior } from '@/lib/contract';`);
+  });
+
+  it('transforms nested ../../hooks/ imports to @/hooks/', () => {
+    const input = `import { useMemory } from '../../hooks/use-memory';`;
+    const result = transformFileContent(input, null);
+    expect(result).toBe(`import { useMemory } from '@/hooks/use-memory';`);
+  });
+
+  // A lib substrate file installs to @/lib, so ITS `./sibling` must resolve to
+  // @/lib/sibling -- not @/components/ui/sibling (the component default).
+  it('resolves a lib file sibling import to @/lib', () => {
+    const input = `import type { Slice } from './compose';`;
+    const result = transformFileContent(input, null, 'lib');
+    expect(result).toBe(`import type { Slice } from '@/lib/compose';`);
+  });
+
+  it('resolves a hooks file sibling import to @/hooks', () => {
+    const input = `import { keyInput } from './key-input';`;
+    const result = transformFileContent(input, null, 'hooks');
+    expect(result).toBe(`import { keyInput } from '@/hooks/key-input';`);
+  });
+
+  it('resolves a lib/hook file ../primitives import to @/lib/primitives', () => {
+    const input = `import { createMemory } from '../primitives/memory';`;
+    expect(transformFileContent(input, null, 'lib')).toBe(
+      `import { createMemory } from '@/lib/primitives/memory';`,
+    );
+    expect(transformFileContent(input, null, 'hooks')).toBe(
+      `import { createMemory } from '@/lib/primitives/memory';`,
+    );
+  });
+
   it('does not incorrectly transform ../lib/ as component import', () => {
     const input = `import { cn } from '../lib/utils';`;
     const result = transformFileContent(input, null);
@@ -128,6 +167,31 @@ import * as Dialog from '@radix-ui/react-dialog';`;
     const input = `import classy from "../../primitives/classy";`;
     const result = transformFileContent(input, null);
     expect(result).toBe(`import classy from '@/lib/primitives/classy';`);
+  });
+});
+
+describe('transformPath routes substrate to the source root', () => {
+  const config = {
+    framework: 'vite' as const,
+    componentsPath: 'src/components/ui',
+    primitivesPath: 'src/lib/primitives',
+    compositesPath: 'src/composites',
+    rulesPath: 'src/lib/rules',
+    cssPath: null,
+    shadcn: false,
+    exports: { tailwind: true, typescript: true, dtcg: false, compiled: false },
+  };
+
+  it('routes a lib file to <src>/lib', () => {
+    expect(transformPath('lib/contract.ts', config)).toBe('src/lib/contract.ts');
+  });
+
+  it('routes a hooks file to <src>/hooks', () => {
+    expect(transformPath('hooks/use-memory.ts', config)).toBe('src/hooks/use-memory.ts');
+  });
+
+  it('still routes primitives to <src>/lib/primitives (not mis-caught by the lib/ rule)', () => {
+    expect(transformPath('lib/primitives/classy.ts', config)).toBe('src/lib/primitives/classy.ts');
   });
 });
 
