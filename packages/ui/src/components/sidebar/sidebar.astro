@@ -1,0 +1,95 @@
+---
+/**
+ * Astro performance for sidebar. Server-renders the full light-DOM shell with
+ * the initial projection already applied (desktop-expanded, mobile-closed --
+ * correct and navigable before JS), then the <script> hands each instance to
+ * bindSidebar, the SAME DOM-native client the Web Component uses. One score,
+ * three performances.
+ *
+ * The panel is a single <nav> carrying both axes' data hooks; side/variant are
+ * authored into its classes here (decoration the binding never touches). On the
+ * mobile viewport bindSidebar enhances that same <nav> into a modal overlay
+ * (role=dialog + the sheet modal trio) and `hidden`s it when closed; the desktop
+ * rail path is untouched. Nav content arrives through the default slot; the
+ * trigger through the `trigger` slot. Motion is undeclared (horizontal-slide
+ * tokens pending, #1899/#1902), so this is state-correct, not animated.
+ */
+import {
+  sidebar,
+  type SidebarConfig,
+  type SidebarPart,
+  type SidebarSide,
+  type SidebarVariant,
+} from './sidebar.behavior';
+import { sidebarClasses, sidebarPanelClasses } from './sidebar.classes';
+import type { PartIds } from '../../lib/contract';
+
+interface Props {
+  id: string;
+  side?: SidebarSide;
+  variant?: SidebarVariant;
+  collapsible?: SidebarConfig['collapsible'];
+  defaultOpen?: boolean;
+}
+
+const {
+  id,
+  side = 'left',
+  variant = 'sidebar',
+  collapsible = 'offcanvas',
+  defaultOpen = true,
+} = Astro.props;
+
+const config: SidebarConfig = { defaultOpen, side, variant, collapsible };
+const state = sidebar.initialState(config);
+const classes = sidebarClasses();
+const panelClass = sidebarPanelClasses(side, variant);
+
+const ids = {} as PartIds<SidebarPart>;
+for (const part of Object.keys(sidebar.parts) as SidebarPart[]) ids[part] = `${id}-${part}`;
+const aria = sidebar.aria(state, config, ids);
+---
+
+<rafters-sidebar
+  data-part="root"
+  data-side={side}
+  data-variant={variant}
+  data-collapsible={collapsible}
+  data-default-open={String(defaultOpen)}
+  class={classes.provider}
+>
+  <button type="button" id={ids.trigger} data-part="trigger" class={classes.trigger} {...aria.trigger}>
+    <slot name="trigger">Toggle Sidebar</slot>
+  </button>
+
+  <nav
+    id={ids.panel}
+    data-part="panel"
+    data-side={side}
+    data-variant={variant}
+    tabindex="-1"
+    class={panelClass}
+    {...aria.panel}
+  >
+    <button
+      type="button"
+      id={ids.rail}
+      data-part="rail"
+      tabindex="-1"
+      title="Toggle Sidebar"
+      class={classes.rail}
+      {...aria.rail}></button>
+    <slot />
+  </nav>
+</rafters-sidebar>
+
+<script>
+  import { bindSidebar } from './sidebar.behavior';
+
+  for (const root of document.querySelectorAll('rafters-sidebar[data-part="root"]')) {
+    const el = root as HTMLElement;
+    if (el.dataset['bound'] === 'true') continue;
+    el.dataset['bound'] = 'true';
+    bindSidebar(el);
+  }
+</script>
