@@ -447,6 +447,14 @@ export function transformFileContent(
     );
   }
 
+  // Cross-component sibling: ../name/name.suffix -> @/components/ui/name.suffix
+  // Source layout is nested (grid/grid.classes.ts); consumer layout is flat
+  // (grid.classes.ts next to grid.tsx). Collapse the repeated dir prefix.
+  transformed = transformed.replace(
+    /from\s+['"]\.\.\/([^/'"]+)\/\1([^'"]*)['"]/g,
+    `from '@/${aliasComponents}/$1$2'`,
+  );
+
   // Any remaining parent import is a sibling component -> componentsPath.
   transformed = transformed.replace(
     /from\s+['"]\.\.\/([^'"]+)['"]/g,

@@ -1,5 +1,11 @@
 # rafters
 
+## 0.0.74
+
+### Bug Fixes
+
+- fix(cli): collapse nested cross-component imports to flat consumer layout. Components like container import sibling shared files via `../grid/grid.classes` (nested source layout); `transformFileContent` now collapses `../name/name.suffix` to `@/components/ui/name.suffix` (flat consumer layout). Affects container, field, sidebar, button-group.
+
 ## 0.0.73
 
 ### Features
