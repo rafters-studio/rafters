@@ -9,7 +9,7 @@ import {
   tokenVar,
   transition,
   when,
-} from './classy-wc';
+} from '../../src/primitives/classy-wc';
 
 describe('composeDeclarations', () => {
   it('renders a single property map', () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createMemory } from './memory';
+import { createMemory } from '../../src/primitives/memory';
 
 describe('createMemory', () => {
   it('exposes the initial value', () => {

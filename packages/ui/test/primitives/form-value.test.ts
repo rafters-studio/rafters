@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formValueAttrs, isFormAssociated } from './form-value';
+import { formValueAttrs, isFormAssociated } from '../../src/primitives/form-value';
 
 describe('form-value', () => {
   it('is form-associated only with a non-empty name', () => {

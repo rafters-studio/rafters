@@ -6,7 +6,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { RaftersElement } from './rafters-element';
+import { RaftersElement } from '../../src/primitives/rafters-element';
 
 // Reset shared state between tests
 beforeEach(() => {

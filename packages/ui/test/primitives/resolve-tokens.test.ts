@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { createResolver, MAX_REFERENCE_DEPTH, TokenResolver } from './resolve-tokens';
+import {
+  createResolver,
+  MAX_REFERENCE_DEPTH,
+  TokenResolver,
+} from '../../src/primitives/resolve-tokens';
 
 const sampleDTCG = {
   'font-size-sm': { $value: '0.875rem', $type: 'dimension' },

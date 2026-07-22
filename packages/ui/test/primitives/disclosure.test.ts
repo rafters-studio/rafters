@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createDisclosure } from './disclosure';
+import { createDisclosure } from '../../src/primitives/disclosure';
 
 describe('createDisclosure', () => {
   it('subscribe fires immediately, then on change; stops after unsubscribe', () => {

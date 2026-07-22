@@ -3,7 +3,14 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { arcPath, createGraph, linearScale, linePath, polarToCartesian, smoothPath } from './graph';
+import {
+  arcPath,
+  createGraph,
+  linearScale,
+  linePath,
+  polarToCartesian,
+  smoothPath,
+} from '../../src/primitives/graph';
 
 describe('createGraph', () => {
   let container: HTMLElement;

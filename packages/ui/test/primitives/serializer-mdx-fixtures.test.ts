@@ -1,9 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import type { SerializerBlock } from './serializer';
-import { mdxSerializer } from './serializer-mdx';
-import type { InlineContent } from './types';
+import type { SerializerBlock } from '../../src/primitives/serializer';
+import { mdxSerializer } from '../../src/primitives/serializer-mdx';
+import type { InlineContent } from '../../src/primitives/types';
 
 // =============================================================================
 // Helpers

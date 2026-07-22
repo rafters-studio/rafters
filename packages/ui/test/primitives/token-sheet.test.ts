@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { extractTokenSheet } from './token-sheet.js';
+import { extractTokenSheet } from '../../src/primitives/token-sheet.js';
 
 const FIXTURES = join(__dirname, '__fixtures__');
 
@@ -78,7 +78,7 @@ describe('extractTokenSheet', () => {
   });
 
   it('integrates with RaftersElement.setTokenCSS', async () => {
-    const { RaftersElement } = await import('./rafters-element.js');
+    const { RaftersElement } = await import('../../src/primitives/rafters-element.js');
     const raw = await readFile(join(FIXTURES, 'rafters.css'), 'utf-8');
     const result = extractTokenSheet(raw);
     expect(() => RaftersElement.setTokenCSS(result)).not.toThrow();
@@ -92,7 +92,7 @@ describe('loadTokenSheet', () => {
     const dir = mkdtempSync(join(originalCwd, '.tmp-token-sheet-'));
     try {
       process.chdir(dir);
-      const { loadTokenSheet } = await import('./token-sheet.js');
+      const { loadTokenSheet } = await import('../../src/primitives/token-sheet.js');
       await expect(loadTokenSheet()).rejects.toEqual(
         expect.objectContaining({ code: 'OUTPUT_NOT_FOUND' }),
       );

@@ -4,8 +4,8 @@ import {
   contentToPlainText,
   createJsonSerializer,
   type SerializerBlock,
-} from './serializer';
-import type { InlineContent } from './types';
+} from '../../src/primitives/serializer';
+import type { InlineContent } from '../../src/primitives/types';
 
 // =============================================================================
 // Test fixtures
