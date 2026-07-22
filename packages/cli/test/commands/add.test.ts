@@ -165,12 +165,16 @@ describe('transformFileContent', () => {
     ).toBe(`import { createMemory } from '@/lib/primitives/memory';`);
   });
 
-  it('treats a ../<dir>/ import as a sibling component when the dir is not a known kind', () => {
-    // Kinds are data: without `lib` in substrateKinds it is not substrate, so it
-    // falls to the component path. Real installs always pass the discovered kinds.
+  it('collapses a cross-component ../name/name import to flat layout', () => {
     const input = `import { Card } from '../card/card';`;
     const result = transformFileContent(input, null);
-    expect(result).toBe(`import { Card } from '@/components/ui/card/card';`);
+    expect(result).toBe(`import { Card } from '@/components/ui/card';`);
+  });
+
+  it('collapses a cross-component ../name/name.suffix import to flat layout', () => {
+    const input = `import { gridClasses } from '../grid/grid.classes';`;
+    const result = transformFileContent(input, null);
+    expect(result).toBe(`import { gridClasses } from '@/components/ui/grid.classes';`);
   });
 
   it('handles multiple imports in one file', () => {
