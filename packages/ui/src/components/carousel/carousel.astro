@@ -1,0 +1,124 @@
+---
+/**
+ * Astro performance (controller) for carousel.
+ *
+ * Server-renders the full LIGHT-DOM markup with the score's initial projection
+ * already applied, so the slides, controls, and current position are correct
+ * before any JS. The <script> then hands each instance to bindCarousel -- the
+ * SAME DOM-native controller the Web Component uses. The projection is computed
+ * here from the same carouselBehavior.aria / carouselInstanceAria the React and
+ * WC performances read -- one score, three performances, zero drift.
+ */
+import {
+  canScrollNext,
+  canScrollPrev,
+  carouselBehavior,
+  carouselInstanceAria,
+  trackStyle,
+  type CarouselConfig,
+  type CarouselPart,
+} from './carousel.behavior';
+import { carouselClasses } from './carousel.classes';
+import type { PartIds } from '../../lib/contract';
+
+interface Props {
+  id: string;
+  /** Slide bodies (HTML strings), rendered in order. */
+  slides: string[];
+  orientation?: 'horizontal' | 'vertical';
+  loop?: boolean;
+  label?: string;
+  /** Render the slide-picker indicator row. */
+  indicators?: boolean;
+}
+
+const { id, slides, orientation = 'horizontal', loop = false, label, indicators = false } =
+  Astro.props;
+
+const config: CarouselConfig = { orientation, loop, count: slides.length, label };
+const state = carouselBehavior.initialState(config);
+const classes = carouselClasses(config);
+
+const ids = {} as PartIds<CarouselPart>;
+for (const part of Object.keys(carouselBehavior.parts) as CarouselPart[]) {
+  ids[part] = `${id}-${part}`;
+}
+const aria = carouselBehavior.aria(state, config, ids);
+const trackTransform = `transform: ${trackStyle(state, config).transform}`;
+---
+
+<div
+  data-part="root"
+  data-carousel
+  id={ids.root}
+  role="region"
+  data-orientation={orientation}
+  data-loop={String(loop)}
+  class={classes.root}
+  {...aria.root}
+>
+  <button
+    type="button"
+    data-part="previous"
+    class={classes.previous}
+    disabled={!canScrollPrev(state, config)}
+    {...aria.previous}
+  >
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg>
+  </button>
+
+  <div data-part="content" class={classes.content} {...aria.content}>
+    <div data-part="track" class={classes.track} style={trackTransform}>
+      {
+        slides.map((slide, index) => (
+          <div
+            role="group"
+            data-part="item"
+            data-value={index}
+            class={classes.item}
+            set:html={slide}
+            {...carouselInstanceAria('item', String(index), state, config)}
+          />
+        ))
+      }
+    </div>
+  </div>
+
+  <button
+    type="button"
+    data-part="next"
+    class={classes.next}
+    disabled={!canScrollNext(state, config)}
+    {...aria.next}
+  >
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>
+  </button>
+
+  {
+    indicators && (
+      <div data-part="indicators" role="group" class={classes.indicators} {...aria.indicators}>
+        {slides.map((_, index) => (
+          <button
+            type="button"
+            data-part="indicator"
+            data-value={index}
+            class={classes.indicator}
+            {...carouselInstanceAria('indicator', String(index), state, config)}
+          />
+        ))}
+      </div>
+    )
+  }
+</div>
+
+<script>
+  import { bindCarousel } from './carousel.behavior';
+
+  // The <script> is bundled and runs once per page; bind every instance's
+  // server-rendered markup. Same controller as the Web Component.
+  for (const root of document.querySelectorAll<HTMLElement>('div[data-part="root"][data-carousel]')) {
+    if (root.dataset['bound'] === 'true') continue;
+    root.dataset['bound'] = 'true';
+    bindCarousel(root);
+  }
+</script>
