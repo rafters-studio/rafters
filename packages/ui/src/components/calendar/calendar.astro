@@ -1,0 +1,153 @@
+---
+/**
+ * Astro performance (controller) for calendar.
+ *
+ * Server-renders the full light-DOM markup -- header controls, heading, and the
+ * grid with its weekday row and the initial month's day cells, each carrying the
+ * score's projection -- so the calendar is correct and accessible before any JS.
+ * The <script> then hands every server-rendered root to bindCalendar, the SAME
+ * DOM-native controller the Web Component uses, which takes over the day cells,
+ * the heading text, and the ARIA on month changes. One score, three
+ * performances, zero drift: the day class is passed to the bind via
+ * data-day-class so the runtime-built cells paint identically to these.
+ */
+import {
+  buildMonthGrid,
+  calendarBehavior,
+  dayAria,
+  firstOfMonth,
+  formatMonth,
+  parseSelection,
+  tabbableDate,
+  todayISO,
+  weekdayHeaders,
+  type CalendarConfig,
+  type CalendarMode,
+  type CalendarPart,
+} from './calendar.behavior';
+import { calendarClasses } from './calendar.classes';
+import type { PartIds } from '../../lib/contract';
+
+interface Props {
+  id: string;
+  mode?: CalendarMode;
+  /** Serialized selection: `yyyy-mm-dd`, comma-list, or `from..to`. */
+  selected?: string;
+  defaultMonth?: string;
+  fromDate?: string;
+  toDate?: string;
+  showOutsideDays?: boolean;
+  fixedWeeks?: boolean;
+  weekStartsOn?: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+  today?: string;
+}
+
+const {
+  id,
+  mode = 'single',
+  selected,
+  defaultMonth,
+  fromDate,
+  toDate,
+  showOutsideDays = true,
+  fixedWeeks = false,
+  weekStartsOn = 0,
+  today = todayISO(),
+} = Astro.props;
+
+const config: CalendarConfig = {
+  mode,
+  defaultSelected: parseSelection(mode, selected ?? null),
+  defaultMonth,
+  fromDate,
+  toDate,
+  showOutsideDays,
+  fixedWeeks,
+  weekStartsOn,
+  today,
+};
+
+const state = calendarBehavior.initialState(config);
+const classes = calendarClasses(config, state);
+
+const ids = {} as PartIds<CalendarPart>;
+for (const part of Object.keys(calendarBehavior.parts) as CalendarPart[]) {
+  ids[part] = `${id}-${part}`;
+}
+const aria = calendarBehavior.aria(state, config, ids);
+const weeks = buildMonthGrid(config, state.currentMonth);
+const tabbable = tabbableDate(state, config);
+const headers = weekdayHeaders(weekStartsOn);
+const visibleMonth = firstOfMonth(state.currentMonth);
+---
+
+<div
+  data-part="root"
+  id={ids.root}
+  class={classes.root}
+  data-mode={mode}
+  data-selected={selected}
+  data-month={defaultMonth}
+  data-from-date={fromDate}
+  data-to-date={toDate}
+  data-show-outside-days={String(showOutsideDays)}
+  data-fixed-weeks={String(fixedWeeks)}
+  data-week-starts-on={String(weekStartsOn)}
+  data-today={today}
+>
+  <div data-part="header" class={classes.header}>
+    <button type="button" data-part="prev" id={ids.prev} class={classes.nav} {...aria.prev}>
+      <span aria-hidden="true">&#8249;</span>
+    </button>
+    <div data-part="heading" id={ids.heading} class={classes.heading} {...aria.heading}>
+      {formatMonth(visibleMonth)}
+    </div>
+    <button type="button" data-part="next" id={ids.next} class={classes.nav} {...aria.next}>
+      <span aria-hidden="true">&#8250;</span>
+    </button>
+  </div>
+  <table data-part="grid" id={ids.grid} role="grid" class={classes.grid} data-day-class={classes.day} {...aria.grid}>
+    <thead>
+      <tr>
+        {headers.map((weekday) => (
+          <th scope="col" class={classes.weekday}>{weekday}</th>
+        ))}
+      </tr>
+    </thead>
+    <tbody>
+      {
+        weeks.map((week) => (
+          <tr data-part="week" class={classes.week}>
+            {week.map((cell) =>
+              cell.day === 0 ? (
+                <td role="gridcell" data-part="day" />
+              ) : (
+                <td
+                  role="gridcell"
+                  data-part="day"
+                  data-value={cell.iso}
+                  data-outside={cell.outside ? 'true' : undefined}
+                  class={classes.day}
+                  tabindex={cell.iso === tabbable && !cell.outside ? 0 : -1}
+                  {...dayAria(cell.iso, state, config)}
+                >
+                  {cell.day}
+                </td>
+              ),
+            )}
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+</div>
+
+<script>
+  import { bindCalendar } from './calendar.behavior';
+
+  for (const root of document.querySelectorAll<HTMLElement>('[data-part="root"][data-mode]')) {
+    if (root.dataset['bound'] === 'true') continue;
+    root.dataset['bound'] = 'true';
+    bindCalendar(root);
+  }
+</script>

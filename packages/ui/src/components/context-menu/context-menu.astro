@@ -1,0 +1,126 @@
+---
+/**
+ * Astro performance (controller) for context-menu.
+ *
+ * Server-renders the full LIGHT-DOM markup with classes and the score's initial
+ * (closed) projection already applied, so the menu is correct and inert before
+ * any JS. The <script> then hands each instance to bindContextMenu -- the SAME
+ * DOM-native controller the Web Component uses. One score, three performances,
+ * zero drift.
+ */
+import {
+  contextMenu,
+  type ContextMenuConfig,
+  type ContextMenuPart,
+} from './context-menu.behavior';
+import { contextMenuClasses } from './context-menu.classes';
+import ContextMenuSub from './context-menu-sub.astro';
+import type { PartIds } from '../../lib/contract';
+
+/** A submenu item: a leaf, or a further nested submenu. */
+type SubEntry =
+  | { type?: 'item'; label: string; disabled?: boolean }
+  | { type: 'sub'; label: string; subItems: { label: string; disabled?: boolean }[] };
+
+interface MenuEntry {
+  type?: 'item' | 'separator' | 'label' | 'sub';
+  label?: string;
+  shortcut?: string;
+  disabled?: boolean;
+  /** Items of a submenu (type='sub'); a subItem may itself be a nested submenu. */
+  subItems?: SubEntry[];
+}
+
+interface Props {
+  id: string;
+  triggerLabel: string;
+  items: MenuEntry[];
+  loop?: boolean;
+  avoidCollisions?: boolean;
+}
+
+const { id, triggerLabel, items, loop = true, avoidCollisions = true } = Astro.props;
+
+const config: ContextMenuConfig = { loop, avoidCollisions };
+const state = contextMenu.initialState(config);
+const classes = contextMenuClasses(config, state);
+
+const ids = {} as PartIds<ContextMenuPart>;
+for (const part of Object.keys(contextMenu.parts) as ContextMenuPart[]) {
+  ids[part] = `${id}-${part}`;
+}
+const aria = contextMenu.aria(state, config, ids);
+
+// The trigger's attributes are assembled here so the element carries no literal
+// class attribute in its tag (the inline wrapper is styling-neutral chrome).
+const triggerProps = {
+  'data-part': 'trigger',
+  id: ids.trigger,
+  tabindex: '-1',
+  class: classes.trigger,
+  ...aria.trigger,
+};
+---
+
+<div
+  data-part="root"
+  data-context-menu-root
+  id={ids.root}
+  loop={String(loop)}
+  avoid-collisions={String(avoidCollisions)}
+>
+  <span {...triggerProps}>{triggerLabel}</span>
+  <div
+    data-part="content"
+    id={ids.content}
+    role="menu"
+    aria-label={triggerLabel}
+    class={classes.content}
+    style="position: fixed; left: 0; top: 0;"
+    {...aria.content}
+  >
+    {
+      items.map((entry, index) => {
+        if (entry.type === 'separator') {
+          return <hr class={classes.separator} />;
+        }
+        if (entry.type === 'label') {
+          return <div class={classes.label}>{entry.label}</div>;
+        }
+        if (entry.type === 'sub') {
+          return (
+            <ContextMenuSub
+              id={`${id}-sub-${index}`}
+              label={entry.label ?? ''}
+              subItems={entry.subItems ?? []}
+            />
+          );
+        }
+        return (
+          <div
+            role="menuitem"
+            tabindex="-1"
+            aria-disabled={entry.disabled ? 'true' : undefined}
+            data-disabled={entry.disabled ? '' : undefined}
+            class={classes.item}
+          >
+            {entry.label}
+            {entry.shortcut ? <kbd class={classes.shortcut}>{entry.shortcut}</kbd> : null}
+          </div>
+        );
+      })
+    }
+  </div>
+</div>
+
+<script>
+  import { bindContextMenu } from './context-menu.behavior';
+
+  // The <script> is bundled and runs once per page; bind every instance's
+  // server-rendered markup. Same controller as the Web Component.
+  for (const root of document.querySelectorAll<HTMLElement>('[data-context-menu-root]')) {
+    if (root.dataset['bound'] === 'true') continue;
+    root.dataset['bound'] = 'true';
+    bindContextMenu(root);
+  }
+</script>
