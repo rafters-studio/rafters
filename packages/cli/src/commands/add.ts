@@ -151,7 +151,7 @@ function getComponentTarget(config: RaftersConfig | null): ComponentTarget {
  * Shared file extensions that should always be included regardless of framework target.
  * These are auxiliary files (class maps, types, constants) used by framework-specific components.
  */
-const SHARED_EXTENSIONS = new Set(['.classes.ts', '.types.ts', '.constants.ts']);
+const SHARED_EXTENSIONS = new Set(['.behavior.ts', '.classes.ts']);
 
 /**
  * Check if a file path is a shared auxiliary file.

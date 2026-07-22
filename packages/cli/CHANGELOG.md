@@ -1,5 +1,11 @@
 # rafters
 
+## 0.0.75
+
+### Bug Fixes
+
+- fix(cli): install `.behavior.ts` files with components. The behavior score is the source of truth every framework variant imports -- without it the installed component is non-functional. `SHARED_EXTENSIONS` was missing `.behavior.ts`. Also removed dead `.types.ts` and `.constants.ts` entries (no component uses either suffix).
+
 ## 0.0.74
 
 ### Bug Fixes
