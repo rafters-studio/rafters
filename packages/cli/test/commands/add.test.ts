@@ -16,8 +16,10 @@ import {
   getInstalledNames,
   isAlreadyInstalled,
   resolveRegistryUrl,
+  substrateProjectPath,
   trackInstalled,
   transformFileContent,
+  transformPath,
 } from '../../src/commands/add.js';
 import type { RaftersConfig } from '../../src/commands/init.js';
 import type { RegistryItem } from '../../src/registry/types.js';
@@ -82,24 +84,93 @@ describe('transformFileContent', () => {
     expect(result).toBe(`import { Card } from '@/components/ui/card';`);
   });
 
-  it('transforms ../lib/ imports to @/lib/', () => {
-    const input = `import { cn } from '../lib/utils';`;
-    const result = transformFileContent(input, null);
-    expect(result).toBe(`import { cn } from '@/lib/utils';`);
+  // Parent imports into a discovered substrate kind rewrite to @/<kind>. Kinds
+  // are DATA (passed in), so `lib`/`hooks` are not special-cased in code.
+  it('transforms ../<kind>/ substrate imports to @/<kind>/', () => {
+    expect(
+      transformFileContent(`import { cn } from '../lib/utils';`, null, 'component', process.cwd(), {
+        substrateKinds: ['lib'],
+      }),
+    ).toBe(`import { cn } from '@/lib/utils';`);
+    expect(
+      transformFileContent(
+        `import { useMediaQuery } from '../hooks/use-media-query';`,
+        null,
+        'component',
+        process.cwd(),
+        { substrateKinds: ['hooks'] },
+      ),
+    ).toBe(`import { useMediaQuery } from '@/hooks/use-media-query';`);
   });
 
-  it('transforms ../hooks/ imports to @/hooks/', () => {
-    const input = `import { useMediaQuery } from '../hooks/use-media-query';`;
-    const result = transformFileContent(input, null);
-    expect(result).toBe(`import { useMediaQuery } from '@/hooks/use-media-query';`);
+  // Behavior-layer components are nested (src/components/<name>/<name>.tsx), so
+  // they reach substrate through ../../ (two levels), not ../.
+  it('transforms nested ../../<kind>/ imports to @/<kind>/', () => {
+    expect(
+      transformFileContent(
+        `import { createBehavior } from '../../lib/contract';`,
+        null,
+        'component',
+        process.cwd(),
+        { substrateKinds: ['lib', 'hooks'] },
+      ),
+    ).toBe(`import { createBehavior } from '@/lib/contract';`);
+    expect(
+      transformFileContent(
+        `import { useMemory } from '../../hooks/use-memory';`,
+        null,
+        'component',
+        process.cwd(),
+        { substrateKinds: ['lib', 'hooks'] },
+      ),
+    ).toBe(`import { useMemory } from '@/hooks/use-memory';`);
   });
 
-  it('does not incorrectly transform ../lib/ as component import', () => {
-    const input = `import { cn } from '../lib/utils';`;
+  // A substrate file installs to its own dir (derived from its install path),
+  // so ITS `./sibling` resolves there -- a lib file's sibling to @/lib.
+  it('resolves a substrate file sibling import to its own install dir', () => {
+    expect(
+      transformFileContent(
+        `import type { Slice } from './compose';`,
+        null,
+        'substrate',
+        process.cwd(),
+        {
+          installPath: 'lib/contract.ts',
+        },
+      ),
+    ).toBe(`import type { Slice } from '@/lib/compose';`);
+    expect(
+      transformFileContent(
+        `import { keyInput } from './key-input';`,
+        null,
+        'substrate',
+        process.cwd(),
+        {
+          installPath: 'hooks/use-x.ts',
+        },
+      ),
+    ).toBe(`import { keyInput } from '@/hooks/key-input';`);
+  });
+
+  it('resolves a substrate file ../primitives import to @/lib/primitives', () => {
+    expect(
+      transformFileContent(
+        `import { createMemory } from '../primitives/memory';`,
+        null,
+        'substrate',
+        process.cwd(),
+        { installPath: 'lib/contract.ts' },
+      ),
+    ).toBe(`import { createMemory } from '@/lib/primitives/memory';`);
+  });
+
+  it('treats a ../<dir>/ import as a sibling component when the dir is not a known kind', () => {
+    // Kinds are data: without `lib` in substrateKinds it is not substrate, so it
+    // falls to the component path. Real installs always pass the discovered kinds.
+    const input = `import { Card } from '../card/card';`;
     const result = transformFileContent(input, null);
-    // Should NOT be @/components/ui/lib/utils
-    expect(result).not.toContain('@/components/ui/lib');
-    expect(result).toBe(`import { cn } from '@/lib/utils';`);
+    expect(result).toBe(`import { Card } from '@/components/ui/card/card';`);
   });
 
   it('handles multiple imports in one file', () => {
@@ -128,6 +199,31 @@ import * as Dialog from '@radix-ui/react-dialog';`;
     const input = `import classy from "../../primitives/classy";`;
     const result = transformFileContent(input, null);
     expect(result).toBe(`import classy from '@/lib/primitives/classy';`);
+  });
+});
+
+describe('substrate install-path routing', () => {
+  const config = {
+    framework: 'vite' as const,
+    componentsPath: 'src/components/ui',
+    primitivesPath: 'src/lib/primitives',
+    compositesPath: 'src/composites',
+    rulesPath: 'src/lib/rules',
+    cssPath: null,
+    shadcn: false,
+    exports: { tailwind: true, typescript: true, dtcg: false, compiled: false },
+  };
+
+  it('routes any substrate kind under the source root, derived from componentsPath', () => {
+    // The kind is the served path prefix; source root is componentsPath minus
+    // components/ui. Works for any kind (lib, hooks, or a new one) with no rule.
+    expect(substrateProjectPath('lib/contract.ts', config)).toBe('src/lib/contract.ts');
+    expect(substrateProjectPath('hooks/use-memory.ts', config)).toBe('src/hooks/use-memory.ts');
+    expect(substrateProjectPath('slices/toggle.ts', config)).toBe('src/slices/toggle.ts');
+  });
+
+  it('transformPath still routes primitives to the configured primitives path', () => {
+    expect(transformPath('lib/primitives/classy.ts', config)).toBe('src/lib/primitives/classy.ts');
   });
 });
 

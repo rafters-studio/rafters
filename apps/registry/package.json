@@ -6,14 +6,20 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
-    "preview": "astro preview"
+    "preview": "astro preview",
+    "test": "vitest run",
+    "test:unit": "vitest run",
+    "typecheck": "astro check"
   },
   "dependencies": {
     "astro": "^6.0.8",
-    "comment-parser": "^1.4.1",
-    "rafters": "workspace:*"
+    "comment-parser": "^1.4.1"
   },
   "devDependencies": {
+    "@astrojs/check": "^0.9.9",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:",
     "wrangler": "^4.76.0"
   }
 }

@@ -1,5 +1,12 @@
 # rafters
 
+## Unreleased
+
+### Features
+
+- feat(cli, registry): `rafters add` installs the behavior-layer runtime substrate (#1896). Behavior-layer components import their score contract, compose slices, and reactive hooks from dirs under `ui/src` (`lib/`, `hooks/`, ...); these are now resolved and installed copy-in like primitives. The registry DISCOVERS substrate dirs from the filesystem and serves them under one `/registry/substrate/*.json` namespace as `substrate` items, the install dir carried in each item's file path -- adding a new substrate dir needs no code change. Transitive dependency resolution means a served component's entire graph is complete, with no dangling `@/<kind>` imports on install.
+- feat(cli): import transform is substrate-kind agnostic (#1896). `transformFileContent` rewrites `../<kind>/*` and `../../<kind>/*` for any kind discovered from the resolved items (not a hardcoded list), resolves a substrate file's own siblings from its install path, and substrate installs under the source root (`src/<kind>`). Nested `src/components/<name>/<name>.tsx` two-level depths are handled alongside one-level.
+
 ## 0.0.71
 
 ### Features

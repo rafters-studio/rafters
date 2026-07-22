@@ -225,6 +225,7 @@ export interface RaftersConfig {
     primitives: string[];
     composites: string[];
     rules: string[];
+    substrate?: string[];
   };
 }
 

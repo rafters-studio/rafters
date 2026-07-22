@@ -21,9 +21,14 @@ export const RegistryFileSchema = z.object({
 export type RegistryFile = z.infer<typeof RegistryFileSchema>;
 
 /**
- * Item type in registry
+ * Item type in registry.
+ * `substrate` is the behavior-layer runtime (the score contract, compose
+ * slices, reactive hooks -- everything under ui/src outside components /
+ * primitives / composites). It is a copy-in shared dependency resolved like a
+ * primitive; the specific dir it installs into (`@/lib`, `@/hooks`, ...) is
+ * carried in the item's file path, so the type never grows per kind.
  */
-export const RegistryItemTypeSchema = z.enum(['ui', 'primitive', 'composite', 'rule']);
+export const RegistryItemTypeSchema = z.enum(['ui', 'primitive', 'composite', 'rule', 'substrate']);
 
 export type RegistryItemType = z.infer<typeof RegistryItemTypeSchema>;
 
@@ -78,6 +83,7 @@ export const RegistryIndexSchema = z.object({
   primitives: z.array(z.string()),
   composites: z.array(z.string()).default([]),
   rules: z.array(z.string()).default([]),
+  substrate: z.array(z.string()).default([]),
 });
 
 export type RegistryIndex = z.infer<typeof RegistryIndexSchema>;

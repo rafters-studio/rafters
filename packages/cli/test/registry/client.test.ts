@@ -1,0 +1,101 @@
+/**
+ * Unit tests for RegistryClient dependency resolution across the behavior-layer
+ * substrate item types (lib/hooks). Exercises the REAL fetchItem/resolveDependencies
+ * walk with a stubbed fetch -- no server -- so the "rafters add pulls the full
+ * closure" path (#1896) is verified, not just the loaders and transforms.
+ */
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { RegistryClient } from '../../src/registry/client.js';
+import type { RegistryItem } from '../../src/registry/types.js';
+
+const BASE = 'https://rafters.test';
+
+function item(
+  name: string,
+  type: RegistryItem['type'],
+  primitives: string[],
+  path: string,
+): RegistryItem {
+  return {
+    name,
+    type,
+    primitives,
+    files: [{ path, content: `// ${name}`, dependencies: [], devDependencies: [] }],
+    rules: [],
+    composites: [],
+  };
+}
+
+// A minimal graph: button -> classy (primitive), contract + use-memory
+// (substrate, served under the flat substrate/ namespace, kind carried in the
+// path); contract & use-memory both -> memory (primitive, deduped).
+const GRAPH: Record<string, RegistryItem> = {
+  'components/button': item(
+    'button',
+    'ui',
+    ['classy', 'contract', 'use-memory'],
+    'components/ui/button.tsx',
+  ),
+  'primitives/classy': item('classy', 'primitive', [], 'lib/primitives/classy.ts'),
+  'primitives/memory': item('memory', 'primitive', [], 'lib/primitives/memory.ts'),
+  'substrate/contract': item('contract', 'substrate', ['memory'], 'lib/contract.ts'),
+  'substrate/use-memory': item('use-memory', 'substrate', ['memory'], 'hooks/use-memory.ts'),
+};
+
+beforeEach(() => {
+  vi.stubGlobal('fetch', (url: string) => {
+    const match = url.match(/\/registry\/([^/]+)\/([^/]+)\.json$/);
+    const key = match ? `${match[1]}/${match[2]}` : '';
+    const found = GRAPH[key];
+    if (!found) {
+      return Promise.resolve(new Response('not found', { status: 404 }));
+    }
+    return Promise.resolve(
+      new Response(JSON.stringify(found), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
+  });
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
+describe('RegistryClient resolves the substrate closure', () => {
+  it('walks button through lib and hooks to a complete, deduped, ordered set', async () => {
+    const client = new RegistryClient(BASE);
+    const items = await client.resolveDependencies('button');
+    const names = items.map((i) => i.name);
+
+    // Every graph node resolved, deduped.
+    expect(new Set(names)).toEqual(
+      new Set(['memory', 'classy', 'contract', 'use-memory', 'button']),
+    );
+    expect(names.filter((n) => n === 'memory')).toHaveLength(1);
+
+    // Dependencies precede the component that needs them (install order).
+    expect(names[names.length - 1]).toBe('button');
+    expect(names.indexOf('memory')).toBeLessThan(names.indexOf('contract'));
+  });
+
+  it('resolves substrate deps to the substrate type with kind-carrying paths', async () => {
+    const client = new RegistryClient(BASE);
+    const items = await client.resolveDependencies('button');
+    const byName = new Map(items.map((i) => [i.name, i]));
+
+    expect(byName.get('contract')?.type).toBe('substrate');
+    expect(byName.get('contract')?.files[0].path).toBe('lib/contract.ts');
+    expect(byName.get('use-memory')?.type).toBe('substrate');
+    expect(byName.get('use-memory')?.files[0].path).toBe('hooks/use-memory.ts');
+  });
+
+  it('fetchItem falls through component/primitive endpoints to reach a substrate item', async () => {
+    const client = new RegistryClient(BASE);
+    // "contract" 404s as component and primitive, resolves under substrate/.
+    const contract = await client.fetchItem('contract');
+    expect(contract.type).toBe('substrate');
+  });
+});

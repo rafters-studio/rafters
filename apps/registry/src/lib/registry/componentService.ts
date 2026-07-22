@@ -3,10 +3,19 @@
  * Loads components and primitives from UI package for registry endpoints
  */
 
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { parse, type Spec } from 'comment-parser';
-import type { RegistryItemType } from 'rafters/registry/types';
+
+/**
+ * Registry item types. Defined locally (like RegistryItem/RegistryFile/
+ * RegistryIndex below) so the registry never imports from the `rafters` CLI's
+ * BUILT dist -- rafters is code-first and only the CLI builds, in the build
+ * step, which runs after typecheck. Importing from dist made `astro check`
+ * depend on a build that has not happened yet in CI. The CLI's zod
+ * RegistryItemTypeSchema is the runtime source of truth these must match.
+ */
+type RegistryItemType = 'ui' | 'primitive' | 'composite' | 'rule' | 'substrate';
 
 // Intelligence metadata extracted from JSDoc comments
 export interface ComponentIntelligence {
@@ -46,13 +55,14 @@ export interface RegistryIndex {
   primitives: string[];
   composites: string[];
   rules: string[];
+  substrate: string[];
 }
 
 /**
  * Get path to UI package components
  */
 function getComponentsPath(): string {
-  return join(process.cwd(), '../../packages/ui/src/old/ui');
+  return join(process.cwd(), '../../packages/ui/src/components');
 }
 
 /**
@@ -78,10 +88,12 @@ const COMPONENT_EXTENSIONS = ['.tsx', '.astro', '.vue', '.svelte', '.element.ts'
 
 /**
  * Shared auxiliary file suffixes bundled with components.
- * These provide class maps, types, constants, or shadow-DOM styles shared
- * across framework variants.
+ * `.behavior.ts` is the score -- the single source of truth every framework
+ * variant (.tsx, .element.ts, .astro) imports; without it the served component
+ * is non-functional. The rest provide class maps, types, constants, or
+ * shadow-DOM styles shared across variants.
  */
-const SHARED_SUFFIXES = ['.classes.ts', '.types.ts', '.constants.ts', '.styles.ts'];
+const SHARED_SUFFIXES = ['.behavior.ts', '.classes.ts', '.types.ts', '.constants.ts', '.styles.ts'];
 
 /** Regex matching import statements -- shared across extraction functions */
 const IMPORT_REGEX =
@@ -93,20 +105,23 @@ const VALUE_IMPORT_REGEX =
 
 /**
  * List all available component names.
- * Deduplicates across extensions so a component with both .tsx and .astro appears once.
+ * `src/components` is NESTED: each component is a directory (`button/`) whose
+ * primary file is `<name>/<name>.tsx` (or another framework extension). A
+ * directory counts as a component only when it carries such a primary file --
+ * this guards the silent-empty trap: a bare path swap would otherwise return
+ * every directory name and then fail every load with no error.
  */
 export function listComponentNames(): string[] {
   const componentsDir = getComponentsPath();
-  const allFiles = readdirSync(componentsDir);
   const names = new Set<string>();
 
-  for (const f of allFiles) {
-    for (const ext of COMPONENT_EXTENSIONS) {
-      if (f.endsWith(ext)) {
-        names.add(basename(f, ext));
-        break;
-      }
-    }
+  for (const entry of readdirSync(componentsDir, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    const { name } = entry;
+    const hasPrimary = COMPONENT_EXTENSIONS.some((ext) =>
+      existsSync(join(componentsDir, name, `${name}${ext}`)),
+    );
+    if (hasPrimary) names.add(name);
   }
 
   return [...names].sort();
@@ -120,6 +135,107 @@ export function listPrimitiveNames(): string[] {
   return readdirSync(primitivesDir)
     .filter((f) => f.endsWith('.ts') || f.endsWith('.tsx'))
     .map((f) => basename(f, f.endsWith('.tsx') ? '.tsx' : '.ts'));
+}
+
+/** packages/ui/src -- the root every source kind lives under. */
+function getUiSrcPath(): string {
+  return join(process.cwd(), '../../packages/ui/src');
+}
+
+/**
+ * Dirs under ui/src that have DEDICATED loaders or are deprecated. Everything
+ * else is generic copy-in substrate (the behavior-layer runtime: lib, hooks,
+ * and any future flat dir). This is the only place kinds are named, and only
+ * dirs with their own handling belong here -- a plain new folder is discovered
+ * automatically, no edit required.
+ */
+const NON_SUBSTRATE_DIRS = new Set(['components', 'old', 'primitives', 'composites']);
+
+/**
+ * Discover substrate kind directories from the filesystem. Adding a flat dir
+ * under ui/src makes it a served substrate kind with no code change here.
+ */
+export function listSubstrateKinds(): string[] {
+  try {
+    return readdirSync(getUiSrcPath(), { withFileTypes: true })
+      .filter((entry) => entry.isDirectory() && !NON_SUBSTRATE_DIRS.has(entry.name))
+      .map((entry) => entry.name)
+      .sort();
+  } catch (err: unknown) {
+    if (err instanceof Error && 'code' in err && (err as NodeJS.ErrnoException).code === 'ENOENT') {
+      return [];
+    }
+    throw err;
+  }
+}
+
+/**
+ * Every substrate file name across all discovered kinds, flat. The namespace is
+ * flat because it is served under one `/registry/substrate/*` endpoint and
+ * resolved by name; names are unique across kinds (asserted by the disjointness
+ * test). Excludes tests and barrel indexes.
+ */
+export function listSubstrate(): string[] {
+  const names = new Set<string>();
+  for (const kind of listSubstrateKinds()) {
+    for (const f of readdirSync(join(getUiSrcPath(), kind))) {
+      if (
+        f.endsWith('.ts') &&
+        !f.endsWith('.test.ts') &&
+        !f.endsWith('.d.ts') &&
+        f !== 'index.ts'
+      ) {
+        names.add(basename(f, '.ts'));
+      }
+    }
+  }
+  return [...names].sort();
+}
+
+/**
+ * Names of every RELATIVE dependency a source references -- value AND type.
+ * A type-only import (e.g. `import type { Slice } from './compose'`) still
+ * requires the file to be installed for the consumer's TypeScript to compile,
+ * so the substrate closure must include it. Returns bare names; `fetchItem`
+ * resolves each across the primitive/substrate/... endpoints.
+ */
+function extractSubstrateDepNames(content: string): string[] {
+  const names = new Set<string>();
+  for (const match of content.matchAll(IMPORT_REGEX)) {
+    const spec = match[1];
+    if (!spec.startsWith('.')) continue;
+    const name = basename(spec).replace(/\.(tsx?|jsx?)$/, '');
+    if (name) names.add(name);
+  }
+  return [...names];
+}
+
+/**
+ * Load a substrate file by name -- finds which discovered kind dir holds it.
+ * The item is `type: 'substrate'`; the kind is carried in the install path
+ * (`<kind>/<name>.ts`), so the CLI installs and resolves it without per-kind
+ * knowledge. Lists transitive substrate deps so resolveDependencies pulls the
+ * full closure.
+ */
+export function loadSubstrate(name: string): RegistryItem | null {
+  for (const kind of listSubstrateKinds()) {
+    const loaded = tryReadTs(join(getUiSrcPath(), kind), name);
+    if (!loaded) continue;
+
+    const { content, ext } = loaded;
+    const { allExternalDeps, devDependencies, intelligence } = analyzeSource(content, true);
+    const result: RegistryItem = {
+      name,
+      type: 'substrate',
+      primitives: extractSubstrateDepNames(content),
+      files: [
+        { path: `${kind}/${name}${ext}`, content, dependencies: allExternalDeps, devDependencies },
+      ],
+    };
+    if (intelligence) result.intelligence = intelligence;
+    return result;
+  }
+  return null;
 }
 
 /**
@@ -523,7 +639,9 @@ function analyzeSource(
  * shared auxiliary files (.classes.ts, etc.) to include in the registry item.
  */
 export function loadComponent(name: string): RegistryItem | null {
-  const componentsDir = getComponentsPath();
+  // Nested layout: every file for a component lives in its own directory
+  // (`<components>/<name>/<name>.tsx`, `.behavior.ts`, `.classes.ts`, ...).
+  const componentDir = join(getComponentsPath(), name);
   const files: RegistryFile[] = [];
   let primitivesAll: string[] = [];
   let intelligence: ReturnType<typeof parseJSDocFromSource> | undefined;
@@ -533,7 +651,7 @@ export function loadComponent(name: string): RegistryItem | null {
   // (.astro, .vue, .svelte) are framework variants that may not carry their
   // own JSDoc -- they inherit the .tsx intelligence in the merge below.
   for (const ext of COMPONENT_EXTENSIONS) {
-    const filePath = join(componentsDir, `${name}${ext}`);
+    const filePath = join(componentDir, `${name}${ext}`);
     try {
       const content = readFileSync(filePath, 'utf-8');
       const analysis = analyzeSource(content, false, ext === '.tsx' ? name : undefined);
@@ -589,7 +707,7 @@ export function loadComponent(name: string): RegistryItem | null {
 
   // Try loading shared files by name (e.g., button -> button.classes.ts)
   for (const suffix of SHARED_SUFFIXES) {
-    const sharedPath = join(componentsDir, `${name}${suffix}`);
+    const sharedPath = join(componentDir, `${name}${suffix}`);
     const sharedFilePath = `components/ui/${name}${suffix}`;
     if (loadedPaths.has(sharedFilePath)) continue;
     try {
@@ -610,7 +728,7 @@ export function loadComponent(name: string): RegistryItem | null {
         const filePath = `components/ui/${sibling}.ts`;
         if (loadedPaths.has(filePath)) continue;
         try {
-          const content = readFileSync(join(componentsDir, `${sibling}.ts`), 'utf-8');
+          const content = readFileSync(join(componentDir, `${sibling}.ts`), 'utf-8');
           files.push({ path: filePath, content, dependencies: [], devDependencies: [] });
           loadedPaths.add(filePath);
         } catch {
@@ -623,7 +741,7 @@ export function loadComponent(name: string): RegistryItem | null {
   // Bundle sub-components that import this component's shared files.
   // e.g., typography-h1.astro imports ./typography.classes -> bundled with typography.
   // But alert-dialog.tsx (has its own .classes.ts) is NOT bundled with alert.
-  const allDirFiles = readdirSync(componentsDir);
+  const allDirFiles = readdirSync(componentDir);
   const subPrefix = `${name}-`;
   for (const f of allDirFiles) {
     const matchedExt = COMPONENT_EXTENSIONS.find((ext) => f.endsWith(ext));
@@ -631,7 +749,7 @@ export function loadComponent(name: string): RegistryItem | null {
     if (loadedPaths.has(`components/ui/${f}`)) continue;
 
     // Only bundle if the sub-component imports this component's shared file
-    const subPath = join(componentsDir, f);
+    const subPath = join(componentDir, f);
     try {
       const content = readFileSync(subPath, 'utf-8');
       const subSiblings = extractSiblingImports(content);
@@ -655,6 +773,33 @@ export function loadComponent(name: string): RegistryItem | null {
       // Sub-component file read error -- skip
     }
   }
+
+  // Behavior-layer runtime substrate (lib/, hooks/) is resolved copy-in like
+  // primitives: collect the names the component's files reference so
+  // resolveDependencies pulls the full closure (contract, compose, use-memory,
+  // ...). Both one- and two-level depths, matching the nested component layout.
+  const kinds = listSubstrateKinds();
+  const substrateImport =
+    kinds.length > 0 ? new RegExp(`(?:\\.\\./)+(?:${kinds.join('|')})/([\\w-]+)`) : null;
+  const substrateDeps = new Set<string>();
+  if (substrateImport) {
+    for (const file of files) {
+      for (const match of file.content.matchAll(IMPORT_REGEX)) {
+        const hit = match[1].match(substrateImport);
+        if (hit) substrateDeps.add(hit[1]);
+      }
+    }
+  }
+  primitivesAll = [...new Set([...primitivesAll, ...substrateDeps])];
+
+  // Drop deps that are actually the component's OWN sibling/sub-component files
+  // (e.g. context-menu-sub.astro, bundled above). They live in this folder, so
+  // they are never standalone registry items -- listing them would make
+  // resolveDependencies chase a name that 404s. Compare on extension-stripped
+  // basenames so `./context-menu-sub.astro` matches the bundled file.
+  const stripExt = (s: string): string => s.replace(/\.[^./]+$/, '');
+  const ownBasenames = new Set(readdirSync(componentDir).map(stripExt));
+  primitivesAll = primitivesAll.filter((dep) => !ownBasenames.has(stripExt(dep)));
 
   const result: RegistryItem = {
     name,
@@ -771,6 +916,7 @@ export function getRegistryIndex(): RegistryIndex {
     primitives: listPrimitiveNames(),
     composites: listAllCompositeKeys(),
     rules: [],
+    substrate: listSubstrate(),
   };
 }
 
