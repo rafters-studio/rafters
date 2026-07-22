@@ -99,10 +99,6 @@ const SHARED_SUFFIXES = ['.behavior.ts', '.classes.ts', '.types.ts', '.constants
 const IMPORT_REGEX =
   /import\s+(?:type\s+)?(?:(?:\{[^}]*\}|\*\s+as\s+\w+|\w+)\s+from\s+)?['"]([^'"]+)['"]/g;
 
-/** Same pattern but excludes "import type" to avoid treating type-only imports as deps */
-const VALUE_IMPORT_REGEX =
-  /import\s+(?:(?:\{[^}]*\}|\*\s+as\s+\w+|\w+)\s+from\s+)?['"]([^'"]+)['"]/g;
-
 /**
  * List all available component names.
  * `src/components` is NESTED: each component is a directory (`button/`) whose
@@ -712,8 +708,15 @@ export function loadComponent(name: string): RegistryItem | null {
     if (loadedPaths.has(sharedFilePath)) continue;
     try {
       const content = readFileSync(sharedPath, 'utf-8');
-      files.push({ path: sharedFilePath, content, dependencies: [], devDependencies: [] });
+      const analysis = analyzeSource(content, false);
+      files.push({
+        path: sharedFilePath,
+        content,
+        dependencies: analysis.allExternalDeps,
+        devDependencies: analysis.devDependencies,
+      });
       loadedPaths.add(sharedFilePath);
+      primitivesAll = [...new Set([...primitivesAll, ...analysis.primitiveDeps])];
     } catch {
       // No shared file -- skip
     }
@@ -729,8 +732,15 @@ export function loadComponent(name: string): RegistryItem | null {
         if (loadedPaths.has(filePath)) continue;
         try {
           const content = readFileSync(join(componentDir, `${sibling}.ts`), 'utf-8');
-          files.push({ path: filePath, content, dependencies: [], devDependencies: [] });
+          const analysis = analyzeSource(content, false);
+          files.push({
+            path: filePath,
+            content,
+            dependencies: analysis.allExternalDeps,
+            devDependencies: analysis.devDependencies,
+          });
           loadedPaths.add(filePath);
+          primitivesAll = [...new Set([...primitivesAll, ...analysis.primitiveDeps])];
         } catch {
           // Not found -- skip
         }
@@ -988,17 +998,14 @@ export function extractSiblingImports(content: string): string[] {
  * @param isPrimitive - If true, ./foo imports are treated as sibling primitives
  */
 function extractPrimitiveDependencies(content: string, isPrimitive = false): string[] {
-  const primitives: string[] = [];
+  const deps: string[] = [];
+  const substrateKinds = listSubstrateKinds();
 
-  // Uses VALUE_IMPORT_REGEX (excludes "import type") to avoid treating
-  // type-only shared files (like types.ts) as standalone primitive dependencies.
-  const matches = content.matchAll(VALUE_IMPORT_REGEX);
+  const matches = content.matchAll(IMPORT_REGEX);
 
   for (const match of matches) {
     const pkg = match[1];
 
-    // Check if it's a primitive import
-    // For primitives, ./foo (sibling import) is another primitive
     const isSiblingImport = isPrimitive && pkg.startsWith('./') && !pkg.slice(2).includes('/');
     const isPrimitiveImport =
       pkg.includes('/primitives/') ||
@@ -1006,13 +1013,18 @@ function extractPrimitiveDependencies(content: string, isPrimitive = false): str
       pkg.includes('../../primitives/') ||
       isSiblingImport;
 
-    if (isPrimitiveImport) {
-      const primitiveName = basename(pkg, '.ts');
-      if (!primitives.includes(primitiveName)) {
-        primitives.push(primitiveName);
+    const isSubstrateImport = substrateKinds.some(
+      (kind) =>
+        pkg.includes(`/${kind}/`) || pkg.includes(`../${kind}/`) || pkg.includes(`../../${kind}/`),
+    );
+
+    if (isPrimitiveImport || isSubstrateImport) {
+      const depName = basename(pkg, '.ts');
+      if (!deps.includes(depName)) {
+        deps.push(depName);
       }
     }
   }
 
-  return primitives;
+  return deps;
 }
