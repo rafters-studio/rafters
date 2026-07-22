@@ -2,13 +2,12 @@ import { describe, expect, it } from 'vitest';
 import {
   getRegistryIndex,
   listComponentNames,
-  listHookNames,
-  listLibNames,
   listPrimitiveNames,
+  listSubstrate,
+  listSubstrateKinds,
   loadComponent,
-  loadHook,
-  loadLib,
   loadPrimitive,
+  loadSubstrate,
   type RegistryItem,
 } from '../src/lib/registry/componentService';
 
@@ -68,37 +67,46 @@ describe('registry serves behavior-layer components from src/components', () => 
   });
 });
 
-describe('registry resolves the behavior-layer runtime substrate (lib/hooks)', () => {
-  it('lists lib and hooks names, excluding tests and the barrel index', () => {
-    const lib = listLibNames();
-    const hooks = listHookNames();
-    expect(lib).toContain('contract');
-    expect(lib).toContain('compose');
-    expect(hooks).toContain('use-memory');
-    expect(lib).not.toContain('index');
-    expect(hooks).not.toContain('index');
-    expect(lib.every((n) => !n.endsWith('.test'))).toBe(true);
+describe('registry resolves the behavior-layer runtime substrate', () => {
+  it('discovers substrate kinds from the filesystem (lib, hooks, ...)', () => {
+    const kinds = listSubstrateKinds();
+    expect(kinds).toContain('lib');
+    expect(kinds).toContain('hooks');
+    // Dedicated-loader / deprecated dirs are NOT substrate.
+    expect(kinds).not.toContain('components');
+    expect(kinds).not.toContain('primitives');
+    expect(kinds).not.toContain('old');
+    expect(kinds).not.toContain('composites');
   });
 
-  it('exposes lib and hooks in the registry index', () => {
+  it('lists substrate names flat, excluding tests and barrel indexes', () => {
+    const names = listSubstrate();
+    expect(names).toContain('contract');
+    expect(names).toContain('compose');
+    expect(names).toContain('use-memory');
+    expect(names).not.toContain('index');
+    expect(names.every((n) => !n.endsWith('.test'))).toBe(true);
+  });
+
+  it('exposes the flat substrate list in the registry index', () => {
     const index = getRegistryIndex();
-    expect(index.lib).toContain('contract');
-    expect(index.hooks).toContain('use-memory');
+    expect(index.substrate).toContain('contract');
+    expect(index.substrate).toContain('use-memory');
   });
 
-  it('serves a lib file to @/lib with its transitive deps', () => {
-    const contract = loadLib('contract');
+  it('serves a lib file as a substrate item, kind carried in the path', () => {
+    const contract = loadSubstrate('contract');
     if (!contract) throw new Error('contract did not load');
-    expect(contract.type).toBe('lib');
+    expect(contract.type).toBe('substrate');
     expect(contract.files.map((f) => f.path)).toEqual(['lib/contract.ts']);
     // contract imports ../primitives/memory (value) -> resolvable primitive dep
     expect(contract.primitives).toContain('memory');
   });
 
-  it('serves a hook file to @/hooks with react and its substrate deps', () => {
-    const useMemory = loadHook('use-memory');
+  it('serves a hook file as a substrate item with react and its deps', () => {
+    const useMemory = loadSubstrate('use-memory');
     if (!useMemory) throw new Error('use-memory did not load');
-    expect(useMemory.type).toBe('hooks');
+    expect(useMemory.type).toBe('substrate');
     expect(useMemory.files.map((f) => f.path)).toEqual(['hooks/use-memory.ts']);
     expect(useMemory.files[0].dependencies).toContain('react@19.2.0');
     expect(useMemory.primitives).toContain('memory');
@@ -107,7 +115,7 @@ describe('registry resolves the behavior-layer runtime substrate (lib/hooks)', (
   it('captures TYPE-ONLY substrate imports (compose depends on contract)', () => {
     // compose imports `type ... from './contract'` -- type-only, but the file
     // must still install for tsc, so it must appear as a dependency.
-    const compose = loadLib('compose');
+    const compose = loadSubstrate('compose');
     if (!compose) throw new Error('compose did not load');
     expect(compose.primitives).toContain('contract');
   });
@@ -120,21 +128,19 @@ describe('registry resolves the behavior-layer runtime substrate (lib/hooks)', (
     expect(button.primitives).toContain('use-memory');
   });
 
-  it('returns null for an unknown lib/hook name', () => {
-    expect(loadLib('does-not-exist')).toBeNull();
-    expect(loadHook('does-not-exist')).toBeNull();
+  it('returns null for an unknown substrate name', () => {
+    expect(loadSubstrate('does-not-exist')).toBeNull();
   });
 
-  it('component, primitive, lib, and hook name sets are pairwise DISJOINT', () => {
-    // fetchItem resolves a dep name by trying endpoints in order. If a name
-    // lived in two categories, `rafters add` would fetch the wrong item (e.g. a
-    // component named the same as a lib file would shadow the substrate). The
-    // whole uniform-name resolution depends on these sets never overlapping.
+  it('component, primitive, and substrate name sets are pairwise DISJOINT', () => {
+    // fetchItem resolves a dep name by trying endpoints in order, and substrate
+    // is a flat namespace across all kinds. If a name lived in two categories
+    // (or two kinds), `rafters add` would fetch the wrong item. Uniform-name
+    // resolution depends on these sets never overlapping.
     const sets = {
       components: listComponentNames(),
       primitives: listPrimitiveNames(),
-      lib: listLibNames(),
-      hooks: listHookNames(),
+      substrate: listSubstrate(),
     };
     const keys = Object.keys(sets) as (keyof typeof sets)[];
     const collisions: string[] = [];
@@ -147,6 +153,8 @@ describe('registry resolves the behavior-layer runtime substrate (lib/hooks)', (
       }
     }
     expect(collisions).toEqual([]);
+    // Flat substrate also requires unique names ACROSS kinds.
+    expect(new Set(listSubstrate()).size).toBe(listSubstrate().length);
   });
 });
 
@@ -158,7 +166,7 @@ describe('every served component resolves a COMPLETE dependency closure', () => 
   // dependency name fails to resolve, `rafters add` would install a component
   // with a dangling import -- exactly the gap this cutover closes.
   function resolveItem(name: string): RegistryItem | null {
-    return loadComponent(name) ?? loadPrimitive(name) ?? loadLib(name) ?? loadHook(name);
+    return loadComponent(name) ?? loadPrimitive(name) ?? loadSubstrate(name);
   }
 
   function closureUnresolved(root: string): string[] {

@@ -46,8 +46,7 @@ export interface RegistryIndex {
   primitives: string[];
   composites: string[];
   rules: string[];
-  lib: string[];
-  hooks: string[];
+  substrate: string[];
 }
 
 /**
@@ -69,20 +68,6 @@ function getPrimitivesPath(): string {
  */
 function getCompositesPath(): string {
   return join(process.cwd(), '../../packages/ui/src/composites');
-}
-
-/**
- * Get path to the behavior-layer lib substrate (contract, compose, slices).
- */
-function getLibPath(): string {
-  return join(process.cwd(), '../../packages/ui/src/lib');
-}
-
-/**
- * Get path to the behavior-layer hooks substrate (use-memory, use-presence, ...).
- */
-function getHooksPath(): string {
-  return join(process.cwd(), '../../packages/ui/src/hooks');
 }
 
 /**
@@ -143,17 +128,29 @@ export function listPrimitiveNames(): string[] {
     .map((f) => basename(f, f.endsWith('.tsx') ? '.tsx' : '.ts'));
 }
 
+/** packages/ui/src -- the root every source kind lives under. */
+function getUiSrcPath(): string {
+  return join(process.cwd(), '../../packages/ui/src');
+}
+
 /**
- * List substrate file names in a dir, excluding tests and the barrel index.
+ * Dirs under ui/src that have DEDICATED loaders or are deprecated. Everything
+ * else is generic copy-in substrate (the behavior-layer runtime: lib, hooks,
+ * and any future flat dir). This is the only place kinds are named, and only
+ * dirs with their own handling belong here -- a plain new folder is discovered
+ * automatically, no edit required.
  */
-function listSubstrateNames(dir: string): string[] {
+const NON_SUBSTRATE_DIRS = new Set(['components', 'old', 'primitives', 'composites']);
+
+/**
+ * Discover substrate kind directories from the filesystem. Adding a flat dir
+ * under ui/src makes it a served substrate kind with no code change here.
+ */
+export function listSubstrateKinds(): string[] {
   try {
-    return readdirSync(dir)
-      .filter(
-        (f) =>
-          f.endsWith('.ts') && !f.endsWith('.test.ts') && !f.endsWith('.d.ts') && f !== 'index.ts',
-      )
-      .map((f) => basename(f, '.ts'))
+    return readdirSync(getUiSrcPath(), { withFileTypes: true })
+      .filter((entry) => entry.isDirectory() && !NON_SUBSTRATE_DIRS.has(entry.name))
+      .map((entry) => entry.name)
       .sort();
   } catch (err: unknown) {
     if (err instanceof Error && 'code' in err && (err as NodeJS.ErrnoException).code === 'ENOENT') {
@@ -163,14 +160,27 @@ function listSubstrateNames(dir: string): string[] {
   }
 }
 
-/** List behavior-layer lib substrate names (contract, compose, ...). */
-export function listLibNames(): string[] {
-  return listSubstrateNames(getLibPath());
-}
-
-/** List behavior-layer hooks substrate names (use-memory, use-presence, ...). */
-export function listHookNames(): string[] {
-  return listSubstrateNames(getHooksPath());
+/**
+ * Every substrate file name across all discovered kinds, flat. The namespace is
+ * flat because it is served under one `/registry/substrate/*` endpoint and
+ * resolved by name; names are unique across kinds (asserted by the disjointness
+ * test). Excludes tests and barrel indexes.
+ */
+export function listSubstrate(): string[] {
+  const names = new Set<string>();
+  for (const kind of listSubstrateKinds()) {
+    for (const f of readdirSync(join(getUiSrcPath(), kind))) {
+      if (
+        f.endsWith('.ts') &&
+        !f.endsWith('.test.ts') &&
+        !f.endsWith('.d.ts') &&
+        f !== 'index.ts'
+      ) {
+        names.add(basename(f, '.ts'));
+      }
+    }
+  }
+  return [...names].sort();
 }
 
 /**
@@ -178,7 +188,7 @@ export function listHookNames(): string[] {
  * A type-only import (e.g. `import type { Slice } from './compose'`) still
  * requires the file to be installed for the consumer's TypeScript to compile,
  * so the substrate closure must include it. Returns bare names; `fetchItem`
- * resolves each across the primitive/lib/hooks endpoints.
+ * resolves each across the primitive/substrate/... endpoints.
  */
 function extractSubstrateDepNames(content: string): string[] {
   const names = new Set<string>();
@@ -192,43 +202,31 @@ function extractSubstrateDepNames(content: string): string[] {
 }
 
 /**
- * Load a single lib or hooks substrate file as a copy-in registry item.
- * Installs to its own dir (`lib/<name>.ts` / `hooks/<name>.ts`) and lists its
- * transitive substrate dependencies (primitives, sibling lib/hooks) so
- * `resolveDependencies` pulls the full closure.
+ * Load a substrate file by name -- finds which discovered kind dir holds it.
+ * The item is `type: 'substrate'`; the kind is carried in the install path
+ * (`<kind>/<name>.ts`), so the CLI installs and resolves it without per-kind
+ * knowledge. Lists transitive substrate deps so resolveDependencies pulls the
+ * full closure.
  */
-function loadSubstrate(name: string, kind: 'lib' | 'hooks'): RegistryItem | null {
-  const dir = kind === 'lib' ? getLibPath() : getHooksPath();
-  const loaded = tryReadTs(dir, name);
-  if (!loaded) return null;
+export function loadSubstrate(name: string): RegistryItem | null {
+  for (const kind of listSubstrateKinds()) {
+    const loaded = tryReadTs(join(getUiSrcPath(), kind), name);
+    if (!loaded) continue;
 
-  const { content, ext } = loaded;
-  const { allExternalDeps, devDependencies, intelligence } = analyzeSource(content, true);
-  const result: RegistryItem = {
-    name,
-    type: kind,
-    primitives: extractSubstrateDepNames(content),
-    files: [
-      {
-        path: `${kind}/${name}${ext}`,
-        content,
-        dependencies: allExternalDeps,
-        devDependencies,
-      },
-    ],
-  };
-  if (intelligence) result.intelligence = intelligence;
-  return result;
-}
-
-/** Load a behavior-layer lib file (contract, compose, ...) copy-in. */
-export function loadLib(name: string): RegistryItem | null {
-  return loadSubstrate(name, 'lib');
-}
-
-/** Load a behavior-layer hook file (use-memory, ...) copy-in. */
-export function loadHook(name: string): RegistryItem | null {
-  return loadSubstrate(name, 'hooks');
+    const { content, ext } = loaded;
+    const { allExternalDeps, devDependencies, intelligence } = analyzeSource(content, true);
+    const result: RegistryItem = {
+      name,
+      type: 'substrate',
+      primitives: extractSubstrateDepNames(content),
+      files: [
+        { path: `${kind}/${name}${ext}`, content, dependencies: allExternalDeps, devDependencies },
+      ],
+    };
+    if (intelligence) result.intelligence = intelligence;
+    return result;
+  }
+  return null;
 }
 
 /**
@@ -771,11 +769,16 @@ export function loadComponent(name: string): RegistryItem | null {
   // primitives: collect the names the component's files reference so
   // resolveDependencies pulls the full closure (contract, compose, use-memory,
   // ...). Both one- and two-level depths, matching the nested component layout.
+  const kinds = listSubstrateKinds();
+  const substrateImport =
+    kinds.length > 0 ? new RegExp(`(?:\\.\\./)+(?:${kinds.join('|')})/([\\w-]+)`) : null;
   const substrateDeps = new Set<string>();
-  for (const file of files) {
-    for (const match of file.content.matchAll(IMPORT_REGEX)) {
-      const hit = match[1].match(/(?:\.\.\/)+(?:lib|hooks)\/([\w-]+)/);
-      if (hit) substrateDeps.add(hit[1]);
+  if (substrateImport) {
+    for (const file of files) {
+      for (const match of file.content.matchAll(IMPORT_REGEX)) {
+        const hit = match[1].match(substrateImport);
+        if (hit) substrateDeps.add(hit[1]);
+      }
     }
   }
   primitivesAll = [...new Set([...primitivesAll, ...substrateDeps])];
@@ -904,8 +907,7 @@ export function getRegistryIndex(): RegistryIndex {
     primitives: listPrimitiveNames(),
     composites: listAllCompositeKeys(),
     rules: [],
-    lib: listLibNames(),
-    hooks: listHookNames(),
+    substrate: listSubstrate(),
   };
 }
 

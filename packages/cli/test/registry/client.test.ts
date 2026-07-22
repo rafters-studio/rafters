@@ -27,8 +27,9 @@ function item(
   };
 }
 
-// A minimal graph: button -> classy (primitive), contract (lib), use-memory
-// (hooks); contract & use-memory both -> memory (primitive, deduped).
+// A minimal graph: button -> classy (primitive), contract + use-memory
+// (substrate, served under the flat substrate/ namespace, kind carried in the
+// path); contract & use-memory both -> memory (primitive, deduped).
 const GRAPH: Record<string, RegistryItem> = {
   'components/button': item(
     'button',
@@ -38,8 +39,8 @@ const GRAPH: Record<string, RegistryItem> = {
   ),
   'primitives/classy': item('classy', 'primitive', [], 'lib/primitives/classy.ts'),
   'primitives/memory': item('memory', 'primitive', [], 'lib/primitives/memory.ts'),
-  'lib/contract': item('contract', 'lib', ['memory'], 'lib/contract.ts'),
-  'hooks/use-memory': item('use-memory', 'hooks', ['memory'], 'hooks/use-memory.ts'),
+  'substrate/contract': item('contract', 'substrate', ['memory'], 'lib/contract.ts'),
+  'substrate/use-memory': item('use-memory', 'substrate', ['memory'], 'hooks/use-memory.ts'),
 };
 
 beforeEach(() => {
@@ -80,21 +81,21 @@ describe('RegistryClient resolves the substrate closure', () => {
     expect(names.indexOf('memory')).toBeLessThan(names.indexOf('contract'));
   });
 
-  it('resolves the lib and hooks deps to their substrate item types', async () => {
+  it('resolves substrate deps to the substrate type with kind-carrying paths', async () => {
     const client = new RegistryClient(BASE);
     const items = await client.resolveDependencies('button');
     const byName = new Map(items.map((i) => [i.name, i]));
 
-    expect(byName.get('contract')?.type).toBe('lib');
+    expect(byName.get('contract')?.type).toBe('substrate');
     expect(byName.get('contract')?.files[0].path).toBe('lib/contract.ts');
-    expect(byName.get('use-memory')?.type).toBe('hooks');
+    expect(byName.get('use-memory')?.type).toBe('substrate');
     expect(byName.get('use-memory')?.files[0].path).toBe('hooks/use-memory.ts');
   });
 
-  it('fetchItem falls through component/primitive endpoints to reach a lib item', async () => {
+  it('fetchItem falls through component/primitive endpoints to reach a substrate item', async () => {
     const client = new RegistryClient(BASE);
-    // "contract" 404s as component and primitive, resolves as lib.
+    // "contract" 404s as component and primitive, resolves under substrate/.
     const contract = await client.fetchItem('contract');
-    expect(contract.type).toBe('lib');
+    expect(contract.type).toBe('substrate');
   });
 });
