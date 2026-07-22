@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { extractTokenSheet } from '../../src/primitives/token-sheet.js';
 
-const FIXTURES = join(__dirname, '../../src/primitives/__fixtures__');
+const FIXTURES = join(__dirname, '__fixtures__');
 
 describe('extractTokenSheet', () => {
   it('extracts every --* custom property from real Tailwind v4 output', async () => {

@@ -10,7 +10,7 @@ import type { InlineContent } from '../../src/primitives/types';
 // =============================================================================
 
 function loadFixture(name: string): string {
-  return readFileSync(join(__dirname, '../../src/primitives/__fixtures__', name), 'utf-8');
+  return readFileSync(join(__dirname, '__fixtures__', name), 'utf-8');
 }
 
 function deserialize(input: string) {
