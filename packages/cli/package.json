@@ -1,6 +1,6 @@
 {
   "name": "rafters",
-  "version": "0.0.71",
+  "version": "0.0.72",
   "description": "Design Intelligence CLI. Scaffold tokens, import existing shadcn/Tailwind v4 sources, add components, and serve an MCP server so AI agents read decisions instead of guessing.",
   "homepage": "https://rafters.studio",
   "license": "MIT",
