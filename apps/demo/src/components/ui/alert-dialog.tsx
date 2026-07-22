@@ -1,0 +1,439 @@
+/**
+ * Alert dialog: a consequence-gated confirm dialog for destructive or
+ * irreversible actions. It interrupts with a decision, traps focus, defaults
+ * focus to Cancel (the safer choice), and -- unlike Dialog -- never dismisses
+ * on an outside click. The user must choose.
+ *
+ * @cognitive-load 7/10 - high extraneous load: the dialog seizes the whole
+ *   viewport and forces a decision before any other interaction resumes;
+ *   intrinsic load is low (two choices), germane load is the consequence the
+ *   description spells out; working-memory cost is a single held question;
+ *   decision reversibility is the point (Cancel is always the escape hatch).
+ * @attention-economics Full-capture interrupt: the overlay and forced-modal
+ *   trap collapse the attention field to one decision. Reserve it for stakes
+ *   that justify blocking; routine confirmations belong elsewhere.
+ * @trust-building Focus defaults to Cancel so the reflexive Enter/Space keeps
+ *   the user safe; the action button carries the destructive styling so the
+ *   consequence is legible before the click; Escape offers a safe exit.
+ * @accessibility role="alertdialog" with aria-modal, aria-labelledby/
+ *   describedby wiring, a focus trap, and Escape-to-close with focus restored
+ *   to the trigger.
+ */
+import * as React from 'react';
+import { createPortal } from 'react-dom';
+import { createBehavior, type AriaAttrs, type PartIds } from '@/lib/contract';
+import { keyInputOf } from '@/hooks/key-input';
+import { useMemory } from '@/hooks/use-memory';
+import { usePresence } from '@/hooks/use-presence';
+import classy from '@/lib/primitives/classy';
+import { mergeProps } from '@/lib/primitives/slot';
+import {
+  alertDialog,
+  isOpen,
+  startAlertDialogModalEffects,
+  type AlertDialogActions,
+  type AlertDialogConfig,
+  type AlertDialogPart,
+  type AlertDialogState,
+} from '@/components/ui/alert-dialog.behavior';
+import { alertDialogClasses, type AlertDialogClassSet } from '@/components/ui/alert-dialog.classes';
+
+interface AlertDialogContextValue {
+  state: AlertDialogState;
+  ids: PartIds<AlertDialogPart>;
+  aria: Partial<Record<AlertDialogPart, AriaAttrs>>;
+  request: (action: keyof AlertDialogActions) => boolean;
+  setPart: (part: AlertDialogPart) => (element: HTMLElement | null) => void;
+  getPart: (part: string) => HTMLElement | null;
+  config: AlertDialogConfig;
+  effectiveOpen: boolean;
+  classes: AlertDialogClassSet;
+}
+
+const AlertDialogContext = React.createContext<AlertDialogContextValue | null>(null);
+
+function useAlertDialogContext(component: string): AlertDialogContextValue {
+  const context = React.useContext(AlertDialogContext);
+  if (!context) {
+    throw new Error(`${component} must be used within <AlertDialog>`);
+  }
+  return context;
+}
+
+/** True when rendering inside an explicit <AlertDialogPortal> (Radix-style
+ *  composition); AlertDialogContent then skips its automatic portal + overlay. */
+const AlertDialogPortalContext = React.createContext(false);
+
+export interface AlertDialogProps {
+  children: React.ReactNode;
+  open?: boolean;
+  defaultOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}
+
+export function AlertDialog({
+  children,
+  open,
+  defaultOpen = false,
+  onOpenChange,
+}: AlertDialogProps) {
+  const config: AlertDialogConfig = { open, defaultOpen };
+
+  // The controller composes the score with the substrate -- no useBehavior.
+  const { memory, dispatch } = React.useMemo(() => createBehavior(alertDialog, config), []);
+  const state = useMemory(memory);
+  const effectiveOpen = isOpen(state, config);
+
+  const uid = React.useId();
+
+  // Content portals to document.body with a unique id, so getPart resolves by
+  // id -- no ref registry. Optional parts still need a mount signal (setPart)
+  // purely so an omitted description projects no dangling aria-describedby.
+  const [presentParts, setPresentParts] = React.useState<ReadonlySet<string>>(new Set());
+  const partCallbacks = React.useRef<Map<string, (el: HTMLElement | null) => void>>(new Map());
+  const setPart = React.useCallback((part: AlertDialogPart) => {
+    let callback = partCallbacks.current.get(part);
+    if (!callback) {
+      callback = (element: HTMLElement | null) =>
+        setPresentParts((previous) => {
+          const present = element !== null;
+          if (previous.has(part) === present) return previous;
+          const next = new Set(previous);
+          if (present) next.add(part);
+          else next.delete(part);
+          return next;
+        });
+      partCallbacks.current.set(part, callback);
+    }
+    return callback;
+  }, []);
+  const getPart = React.useCallback(
+    (part: string): HTMLElement | null =>
+      typeof document === 'undefined' ? null : document.getElementById(`${uid}-${part}`),
+    [uid],
+  );
+
+  // title and description are the UNGUARDED cross-ref sources (labelledby/
+  // describedby have no `open` guard, unlike aria-controls), so an absent one
+  // must resolve to an empty id. Every other part keeps a stable id -- content
+  // especially, since the focus-trap effect finds it by id.
+  const ids = React.useMemo(() => {
+    const out = {} as PartIds<AlertDialogPart>;
+    for (const part of Object.keys(alertDialog.parts) as AlertDialogPart[]) {
+      const crossRefSource = part === 'title' || part === 'description';
+      out[part] = crossRefSource && !presentParts.has(part) ? '' : `${uid}-${part}`;
+    }
+    return out;
+  }, [uid, presentParts]);
+
+  const latest = React.useRef({ config, onOpenChange });
+  latest.current = { config, onOpenChange };
+  const request = React.useCallback(
+    (action: keyof AlertDialogActions): boolean => {
+      const { config: cfg, onOpenChange: cb } = latest.current;
+      if (!dispatch(action, cfg)) return false;
+      cb?.(action === 'open');
+      return true;
+    },
+    [dispatch],
+  );
+
+  const aria = alertDialog.aria(state, config, ids);
+
+  const contextValue: AlertDialogContextValue = {
+    state,
+    ids,
+    aria,
+    request,
+    setPart,
+    getPart,
+    config,
+    effectiveOpen,
+    classes: alertDialogClasses(config, state),
+  };
+
+  return <AlertDialogContext.Provider value={contextValue}>{children}</AlertDialogContext.Provider>;
+}
+
+export interface AlertDialogPortalProps {
+  children: React.ReactNode;
+  /** Portal target; defaults to document.body. */
+  container?: HTMLElement | null;
+  forceMount?: boolean;
+}
+
+export function AlertDialogPortal({ children, container, forceMount }: AlertDialogPortalProps) {
+  const { effectiveOpen } = useAlertDialogContext('AlertDialogPortal');
+  if (!(forceMount || effectiveOpen)) return null;
+  if (typeof document === 'undefined') return null;
+  return createPortal(
+    <AlertDialogPortalContext.Provider value={true}>{children}</AlertDialogPortalContext.Provider>,
+    container ?? document.body,
+  );
+}
+
+export interface AlertDialogOverlayProps extends React.HTMLAttributes<HTMLDivElement> {
+  forceMount?: boolean | undefined;
+}
+
+export function AlertDialogOverlay({ forceMount, className, ...props }: AlertDialogOverlayProps) {
+  const { effectiveOpen, ids, aria, classes, setPart } =
+    useAlertDialogContext('AlertDialogOverlay');
+  if (!(forceMount || effectiveOpen)) return null;
+  return (
+    <div
+      data-part="overlay"
+      id={ids.overlay || undefined}
+      ref={setPart('overlay')}
+      // A force-mounted closed overlay must not cover the page.
+      hidden={effectiveOpen ? undefined : true}
+      className={classy(classes.overlay, className)}
+      {...aria.overlay}
+      {...props}
+    />
+  );
+}
+
+export interface AlertDialogContentProps extends React.HTMLAttributes<HTMLDivElement> {
+  forceMount?: boolean;
+  /** Portal target for the automatic portal; defaults to document.body. */
+  container?: HTMLElement | null;
+  /** Consumer veto: called before Escape closes; preventDefault to keep open. */
+  onEscapeKeyDown?: (event: KeyboardEvent) => void;
+}
+
+export function AlertDialogContent({
+  forceMount,
+  container,
+  onEscapeKeyDown,
+  className,
+  children,
+  onKeyDown,
+  ...props
+}: AlertDialogContentProps) {
+  const { config, state, effectiveOpen, ids, aria, classes, request, getPart } =
+    useAlertDialogContext('AlertDialogContent');
+  const isInsidePortal = React.useContext(AlertDialogPortalContext);
+  // Presence (wave 0-B): keep the content mounted through its exit animation.
+  // With no exit animation it releases immediately, so behavior is unchanged.
+  const { present, ref: presenceRef } = usePresence(effectiveOpen);
+
+  // The modal overlay pair, composed directly on the open transition (replacing
+  // the effects runner). Level-triggered via the dependency array; the cleanup
+  // tears the pair down (focus restore rides the trap teardown). Always modal.
+  React.useEffect(() => {
+    if (!effectiveOpen) return;
+    const content = getPart('content');
+    if (!content) return;
+    return startAlertDialogModalEffects({
+      content,
+      getCancel: () => getPart('cancel'),
+    });
+  }, [effectiveOpen, getPart]);
+
+  if (!(forceMount || present)) return null;
+  if (typeof document === 'undefined') return null;
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    onKeyDown?.(event);
+    if (event.defaultPrevented) return;
+    const action = alertDialog.keymap(keyInputOf(event), state, 'content', config);
+    if (!action) return;
+    if (action === 'close') {
+      onEscapeKeyDown?.(event.nativeEvent);
+      if (event.nativeEvent.defaultPrevented) return;
+    }
+    event.preventDefault();
+    request(action);
+  };
+
+  const content = (
+    // forceMount keeps the nodes for animation tooling; a closed modal must
+    // still be invisible to AT, untabbable, and must not block the page --
+    // hidden on the fixed-position container covers all three.
+    <div className={classes.container} hidden={present ? undefined : true}>
+      <div
+        data-part="content"
+        id={ids.content || undefined}
+        ref={presenceRef}
+        tabIndex={-1}
+        className={classy(classes.content, className)}
+        {...aria.content}
+        onKeyDown={handleKeyDown}
+        {...props}
+      >
+        {children}
+      </div>
+    </div>
+  );
+
+  // Inside an explicit <AlertDialogPortal>: the consumer owns portal + overlay.
+  if (isInsidePortal) return content;
+
+  // shadcn-style: Content brings its own portal and overlay (always modal).
+  return createPortal(
+    <>
+      <AlertDialogOverlay forceMount={forceMount} />
+      {content}
+    </>,
+    container ?? document.body,
+  );
+}
+
+export type AlertDialogHeaderProps = React.HTMLAttributes<HTMLDivElement>;
+
+export function AlertDialogHeader({ className, ...props }: AlertDialogHeaderProps) {
+  const { classes } = useAlertDialogContext('AlertDialogHeader');
+  return <div className={classy(classes.header, className)} {...props} />;
+}
+
+export type AlertDialogFooterProps = React.HTMLAttributes<HTMLDivElement>;
+
+export function AlertDialogFooter({ className, ...props }: AlertDialogFooterProps) {
+  const { classes } = useAlertDialogContext('AlertDialogFooter');
+  return <div className={classy(classes.footer, className)} {...props} />;
+}
+
+export type AlertDialogTitleProps = React.HTMLAttributes<HTMLHeadingElement>;
+
+export function AlertDialogTitle({ className, ...props }: AlertDialogTitleProps) {
+  const { ids, classes, setPart } = useAlertDialogContext('AlertDialogTitle');
+  return (
+    <h2
+      data-part="title"
+      id={ids.title || undefined}
+      ref={setPart('title')}
+      className={classy(classes.title, className)}
+      {...props}
+    />
+  );
+}
+
+export type AlertDialogDescriptionProps = React.HTMLAttributes<HTMLParagraphElement>;
+
+export function AlertDialogDescription({ className, ...props }: AlertDialogDescriptionProps) {
+  const { ids, classes, setPart } = useAlertDialogContext('AlertDialogDescription');
+  return (
+    <p
+      data-part="description"
+      id={ids.description || undefined}
+      ref={setPart('description')}
+      className={classy(classes.description, className)}
+      {...props}
+    />
+  );
+}
+
+export interface AlertDialogActionProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  asChild?: boolean;
+}
+
+export function AlertDialogAction({
+  asChild,
+  onClick,
+  className,
+  children,
+  ...props
+}: AlertDialogActionProps) {
+  const { ids, classes, request, setPart } = useAlertDialogContext('AlertDialogAction');
+
+  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    onClick?.(event);
+    request('close');
+  };
+
+  const partProps = {
+    'data-part': 'action',
+    id: ids.action,
+    ref: setPart('action'),
+    className: classy(classes.action, className),
+    onClick: handleClick,
+  };
+
+  if (asChild && React.isValidElement(children)) {
+    const childProps = children.props as Record<string, unknown>;
+    return React.cloneElement(children, mergeProps(partProps, childProps) as React.Attributes);
+  }
+
+  return (
+    <button type="button" {...partProps} {...props}>
+      {children}
+    </button>
+  );
+}
+
+export interface AlertDialogCancelProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  asChild?: boolean;
+}
+
+export function AlertDialogCancel({
+  asChild,
+  onClick,
+  className,
+  children,
+  ...props
+}: AlertDialogCancelProps) {
+  const { ids, classes, request, setPart } = useAlertDialogContext('AlertDialogCancel');
+
+  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    onClick?.(event);
+    request('close');
+  };
+
+  const partProps = {
+    'data-part': 'cancel',
+    id: ids.cancel,
+    ref: setPart('cancel'),
+    className: classy(classes.cancel, className),
+    onClick: handleClick,
+  };
+
+  if (asChild && React.isValidElement(children)) {
+    const childProps = children.props as Record<string, unknown>;
+    return React.cloneElement(children, mergeProps(partProps, childProps) as React.Attributes);
+  }
+
+  return (
+    <button type="button" {...partProps} {...props}>
+      {children}
+    </button>
+  );
+}
+
+export interface AlertDialogTriggerProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  asChild?: boolean;
+}
+
+export function AlertDialogTrigger({
+  asChild,
+  onClick,
+  children,
+  ...props
+}: AlertDialogTriggerProps) {
+  const { effectiveOpen, ids, aria, request, setPart } =
+    useAlertDialogContext('AlertDialogTrigger');
+
+  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    onClick?.(event);
+    request(effectiveOpen ? 'close' : 'open');
+  };
+
+  const partProps = {
+    'data-part': 'trigger',
+    id: ids.trigger,
+    ref: setPart('trigger'),
+    ...aria.trigger,
+    onClick: handleClick,
+  };
+
+  if (asChild && React.isValidElement(children)) {
+    const childProps = children.props as Record<string, unknown>;
+    return React.cloneElement(children, mergeProps(partProps, childProps) as React.Attributes);
+  }
+
+  return (
+    <button type="button" {...partProps} {...props}>
+      {children}
+    </button>
+  );
+}

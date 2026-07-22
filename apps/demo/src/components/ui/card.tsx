@@ -1,347 +1,191 @@
 /**
- * Flexible container component for grouping related content with semantic structure
+ * Card -- a content surface for grouping related information on an elevated,
+ * bordered panel. Compose Card with CardHeader, CardTitle, CardDescription,
+ * CardContent, CardFooter, and CardAction; the surface is the contract, the
+ * slots are the composition. The default `bg-card` surface can be replaced
+ * with a `fill` signature over the colour vocabulary (never a raw background).
  *
- * @cognitive-load 2/10 - Simple container with clear boundaries and minimal cognitive overhead
- * @attention-economics Neutral container: Content drives attention, elevation hierarchy for interactive states
- * @trust-building Consistent spacing, predictable interaction patterns, clear content boundaries
- * @accessibility Proper heading structure, landmark roles, keyboard navigation for interactive cards
- * @semantic-meaning Structural roles: article=standalone content, section=grouped content, aside=supplementary information
+ * @cognitive-load 2/10 - decision 0, info 1, interaction 0, disruption 0, learning 1
+ * @attention-economics Neutral surface: the content drives attention, never
+ * the container. A card groups; it does not announce. Reserve high-chroma
+ * fills for cards that genuinely lead a view, or the elevation hierarchy
+ * flattens into noise.
+ * @trust-building Consistent padding rhythm (header/content/footer share the
+ * p-6 scale), predictable boundaries, no surprise interactivity -- a card is
+ * a surface, not a button; wrap it in a link or place a Button inside when a
+ * whole-card action is wanted.
+ * @accessibility The surface projects no ARIA -- semantics come from the
+ * element (`as`) and from real headings inside. Use CardTitle's `as` to place
+ * the heading at the correct outline level for the page; never skip levels.
+ * @semantic-meaning Structural element via `as`: article = standalone
+ * syndicatable content, section = a grouped region, aside = supplementary
+ * content, div = a presentational grouping with no landmark.
  *
- * @usage-patterns
- * DO: Group related information with clear visual boundaries
- * DO: Create interactive cards with hover states and focus management
- * DO: Establish information hierarchy with header, content, actions
- * DO: Implement responsive scaling with consistent proportions
- * NEVER: Use decorative containers without semantic purpose
- * NEVER: Nest cards within cards
- * NEVER: Use Card for layout (use Grid/Container instead)
+ * A pure static score has nothing to subscribe to: the performance is pure
+ * decoration application. No useBehavior, no memory, no bind -- config in,
+ * classes out, slots through, semantic element chosen by `as`.
  *
  * @example
  * ```tsx
- * // Standalone content - use article
  * <Card as="article">
  *   <CardHeader>
  *     <CardTitle>Blog Post Title</CardTitle>
- *     <CardDescription>Published Jan 2025</CardDescription>
+ *     <CardDescription>Published Jan 2026</CardDescription>
  *   </CardHeader>
  *   <CardContent>Post excerpt...</CardContent>
- * </Card>
- *
- * // Interactive card - product listing
- * <Card interactive>
- *   <CardHeader>
- *     <CardTitle>Product Name</CardTitle>
- *   </CardHeader>
- *   <CardContent>$99.00</CardContent>
  *   <CardFooter>
- *     <Button>Add to Cart</Button>
+ *     <Button>Read more</Button>
  *   </CardFooter>
- * </Card>
- *
- * // Supplementary content - use aside
- * <Card as="aside">
- *   <CardHeader>
- *     <CardTitle>Related Links</CardTitle>
- *   </CardHeader>
- *   <CardContent>...</CardContent>
  * </Card>
  * ```
  */
 import * as React from 'react';
-import { useCallback, useRef } from 'react';
 import classy from '@/lib/primitives/classy';
-
-// ============================================================================
-// Card Context (R-202)
-// ============================================================================
-
-interface CardContextValue {
-  editable: boolean | undefined;
-  onTitleChange: ((title: string) => void) | undefined;
-  onDescriptionChange: ((description: string) => void) | undefined;
-}
-
-const CardContext = React.createContext<CardContextValue | null>(null);
-
-function useCardContext() {
-  return React.useContext(CardContext);
-}
-
-// ============================================================================
-// Card Props
-// ============================================================================
+import type { CardConfig, CardElement } from '@/components/ui/card.behavior';
+import {
+  cardActionClasses,
+  cardClasses,
+  cardContentClasses,
+  cardDescriptionClasses,
+  cardFooterClasses,
+  cardHeaderClasses,
+  cardTitleClasses,
+} from '@/components/ui/card.classes';
 
 export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
-  as?: 'div' | 'article' | 'section' | 'aside';
-  interactive?: boolean;
-  /** Size variant for compact cards */
-  size?: 'default' | 'sm';
-
-  // ============================================================================
-  // Editable Props (R-202)
-  // ============================================================================
-
+  as?: CardElement;
   /**
-   * Enable editing mode for block editor
-   * Makes CardTitle and CardDescription contenteditable
+   * Fill signature over the colour vocabulary (#1637): `word`, `word/alpha`,
+   * or `word-to-word`. When it resolves, the fill surface replaces the
+   * default `bg-card` surface; an invalid signature keeps the default.
    */
-  editable?: boolean | undefined;
-
-  /**
-   * Called when CardTitle text changes (if editable)
-   */
-  onTitleChange?: ((title: string) => void) | undefined;
-
-  /**
-   * Called when CardDescription text changes (if editable)
-   */
-  onDescriptionChange?: ((description: string) => void) | undefined;
+  fill?: string;
 }
 
 export const Card = React.forwardRef<HTMLDivElement, CardProps>(
-  (
-    {
-      as: Component = 'div',
-      interactive,
-      size = 'default',
-      editable,
-      onTitleChange,
-      onDescriptionChange,
-      className,
+  ({ as: Element = 'div', fill, className, children, ...props }, ref) => {
+    const config: CardConfig = { as: Element, fill };
+    const classes = cardClasses(config, {});
+
+    // No effects and no optional parts -- nothing ever calls getPart, so the
+    // ref is a plain forward. The score projects nothing, so there is no aria
+    // to spread; the element's own semantics are the whole contract.
+    return React.createElement(
+      Element,
+      {
+        ref,
+        'data-part': 'root',
+        className: classy(classes.root, className) || undefined,
+        'data-fill': fill || undefined,
+        ...props,
+      },
       children,
-      ...props
-    },
-    ref,
-  ) => {
-    const base = 'bg-card text-card-foreground border border-card-border rounded-lg shadow-sm';
-
-    // Size variants (shadcn v4 compatibility)
-    const sizeStyles = size === 'sm' ? 'group/card-sm' : '';
-
-    const interactiveStyles = interactive
-      ? 'hover:bg-card-hover hover:shadow-md transition-shadow duration-normal motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
-      : '';
-
-    // Editable mode styling (R-202)
-    const editableStyles = editable
-      ? 'outline-2 outline-dashed outline-muted-foreground/30 outline-offset-2'
-      : '';
-
-    const cls = classy(base, sizeStyles, interactiveStyles, editableStyles, className);
-
-    const contextValue: CardContextValue = {
-      editable,
-      onTitleChange,
-      onDescriptionChange,
-    };
-
-    return (
-      <CardContext.Provider value={contextValue}>
-        <Component
-          ref={ref}
-          className={cls}
-          tabIndex={interactive ? 0 : undefined}
-          data-editable={editable || undefined}
-          {...props}
-        >
-          {children}
-        </Component>
-      </CardContext.Provider>
     );
   },
 );
 
 Card.displayName = 'Card';
 
-export interface CardHeaderProps extends React.HTMLAttributes<HTMLDivElement> {}
+export type CardHeaderProps = React.HTMLAttributes<HTMLDivElement>;
 
 export const CardHeader = React.forwardRef<HTMLDivElement, CardHeaderProps>(
-  ({ className, ...props }, ref) => {
-    const cls = classy('flex flex-col gap-1.5 p-6', className);
-    return <div ref={ref} data-slot="card-header" className={cls} {...props} />;
-  },
+  ({ className, ...props }, ref) => (
+    <div
+      ref={ref}
+      data-slot="card-header"
+      className={classy(cardHeaderClasses, className)}
+      {...props}
+    />
+  ),
 );
 
 CardHeader.displayName = 'CardHeader';
 
 export interface CardTitleProps extends React.HTMLAttributes<HTMLHeadingElement> {
   as?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
-  /** Placeholder text shown when empty in edit mode */
-  placeholder?: string | undefined;
 }
 
+/**
+ * Renders a raw heading (default h3) via createElement because Typography's
+ * H1-H6 do not exist yet in the new tree (matrix: typography, pending) -- the
+ * same raw-heading disposition Alert records. Repointing at a typography role
+ * component is a follow-up, not an agent call to make now. `as` places the
+ * heading at the correct outline level for the surrounding page.
+ */
 export const CardTitle = React.forwardRef<HTMLHeadingElement, CardTitleProps>(
-  ({ as: Component = 'h3', className, placeholder = 'Add title...', children, ...props }, ref) => {
-    const context = useCardContext();
-    const elementRef = useRef<HTMLHeadingElement>(null);
-
-    const handleInput = useCallback(() => {
-      if (!elementRef.current || !context?.onTitleChange) return;
-      const text = elementRef.current.textContent ?? '';
-      context.onTitleChange(text);
-    }, [context]);
-
-    // Prevent Enter from inserting line breaks in titles
-    const handleKeyDown = useCallback((event: React.KeyboardEvent) => {
-      if (event.key === 'Enter') {
-        event.preventDefault();
-      }
-    }, []);
-
-    // Strip formatting on paste - titles are plain text
-    const handlePaste = useCallback((event: React.ClipboardEvent) => {
-      event.preventDefault();
-      const text = event.clipboardData.getData('text/plain').replace(/[\r\n]+/g, ' ');
-      const selection = window.getSelection();
-      if (selection?.rangeCount) {
-        const range = selection.getRangeAt(0);
-        range.deleteContents();
-        range.insertNode(document.createTextNode(text));
-        range.collapse(false);
-      }
-    }, []);
-
-    // Combine refs
-    const combinedRef = (element: HTMLHeadingElement | null) => {
-      (elementRef as React.MutableRefObject<HTMLHeadingElement | null>).current = element;
-      if (typeof ref === 'function') {
-        ref(element);
-      } else if (ref) {
-        (ref as React.MutableRefObject<HTMLHeadingElement | null>).current = element;
-      }
-    };
-
-    const cls = classy(
-      'text-2xl font-semibold leading-none tracking-tight',
-      context?.editable && 'outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded',
-      className,
-    );
-
-    const editableProps = context?.editable
-      ? {
-          contentEditable: true,
-          suppressContentEditableWarning: true,
-          onInput: handleInput,
-          onKeyDown: handleKeyDown,
-          onPaste: handlePaste,
-          'data-placeholder': placeholder,
-          'aria-placeholder': placeholder,
-        }
-      : {};
-
-    return (
-      <Component ref={combinedRef} className={cls} {...editableProps} {...props}>
-        {children}
-      </Component>
-    );
-  },
+  ({ as: Element = 'h3', className, children, ...props }, ref) =>
+    React.createElement(
+      Element,
+      { ref, 'data-slot': 'card-title', className: classy(cardTitleClasses, className), ...props },
+      children,
+    ),
 );
 
 CardTitle.displayName = 'CardTitle';
 
-export interface CardDescriptionProps extends React.HTMLAttributes<HTMLParagraphElement> {
-  /** Placeholder text shown when empty in edit mode */
-  placeholder?: string | undefined;
-}
+export type CardDescriptionProps = React.HTMLAttributes<HTMLParagraphElement>;
 
+/** Raw paragraph via createElement, same Typography-pending disposition as the
+ *  title -- plain composition over a literal class string. */
 export const CardDescription = React.forwardRef<HTMLParagraphElement, CardDescriptionProps>(
-  ({ className, placeholder = 'Add description...', children, ...props }, ref) => {
-    const context = useCardContext();
-    const elementRef = useRef<HTMLParagraphElement>(null);
-
-    const handleInput = useCallback(() => {
-      if (!elementRef.current || !context?.onDescriptionChange) return;
-      const text = elementRef.current.textContent ?? '';
-      context.onDescriptionChange(text);
-    }, [context]);
-
-    // Prevent Enter from inserting line breaks in descriptions
-    const handleKeyDown = useCallback((event: React.KeyboardEvent) => {
-      if (event.key === 'Enter') {
-        event.preventDefault();
-      }
-    }, []);
-
-    // Strip formatting on paste - descriptions are plain text
-    const handlePaste = useCallback((event: React.ClipboardEvent) => {
-      event.preventDefault();
-      const text = event.clipboardData.getData('text/plain').replace(/[\r\n]+/g, ' ');
-      const selection = window.getSelection();
-      if (selection?.rangeCount) {
-        const range = selection.getRangeAt(0);
-        range.deleteContents();
-        range.insertNode(document.createTextNode(text));
-        range.collapse(false);
-      }
-    }, []);
-
-    // Combine refs
-    const combinedRef = (element: HTMLParagraphElement | null) => {
-      (elementRef as React.MutableRefObject<HTMLParagraphElement | null>).current = element;
-      if (typeof ref === 'function') {
-        ref(element);
-      } else if (ref) {
-        (ref as React.MutableRefObject<HTMLParagraphElement | null>).current = element;
-      }
-    };
-
-    const cls = classy(
-      'text-sm text-muted-foreground',
-      context?.editable && 'outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded',
-      className,
-    );
-
-    const editableProps = context?.editable
-      ? {
-          contentEditable: true,
-          suppressContentEditableWarning: true,
-          onInput: handleInput,
-          onKeyDown: handleKeyDown,
-          onPaste: handlePaste,
-          'data-placeholder': placeholder,
-          'aria-placeholder': placeholder,
-        }
-      : {};
-
-    return (
-      <p ref={combinedRef} className={cls} {...editableProps} {...props}>
-        {children}
-      </p>
-    );
-  },
+  ({ className, children, ...props }, ref) =>
+    React.createElement(
+      'p',
+      {
+        ref,
+        'data-slot': 'card-description',
+        className: classy(cardDescriptionClasses, className),
+        ...props,
+      },
+      children,
+    ),
 );
 
 CardDescription.displayName = 'CardDescription';
 
-export interface CardActionProps extends React.HTMLAttributes<HTMLDivElement> {}
+export type CardActionProps = React.HTMLAttributes<HTMLDivElement>;
 
+/** Trailing control slot (dismiss/menu), positioned into the header grid --
+ *  shadcn v4 surface. Plain composition, no data-part. */
 export const CardAction = React.forwardRef<HTMLDivElement, CardActionProps>(
-  ({ className, ...props }, ref) => {
-    const cls = classy('col-start-2 row-span-2 row-start-1 self-start justify-self-end', className);
-    return <div ref={ref} data-slot="card-action" className={cls} {...props} />;
-  },
+  ({ className, ...props }, ref) => (
+    <div
+      ref={ref}
+      data-slot="card-action"
+      className={classy(cardActionClasses, className)}
+      {...props}
+    />
+  ),
 );
 
 CardAction.displayName = 'CardAction';
 
-export interface CardContentProps extends React.HTMLAttributes<HTMLDivElement> {}
+export type CardContentProps = React.HTMLAttributes<HTMLDivElement>;
 
 export const CardContent = React.forwardRef<HTMLDivElement, CardContentProps>(
-  ({ className, ...props }, ref) => {
-    const cls = classy('p-6 pt-0', className);
-    return <div ref={ref} className={cls} {...props} />;
-  },
+  ({ className, ...props }, ref) => (
+    <div
+      ref={ref}
+      data-slot="card-content"
+      className={classy(cardContentClasses, className)}
+      {...props}
+    />
+  ),
 );
 
 CardContent.displayName = 'CardContent';
 
-export interface CardFooterProps extends React.HTMLAttributes<HTMLDivElement> {}
+export type CardFooterProps = React.HTMLAttributes<HTMLDivElement>;
 
 export const CardFooter = React.forwardRef<HTMLDivElement, CardFooterProps>(
-  ({ className, ...props }, ref) => {
-    const cls = classy('flex items-center p-6 pt-0', className);
-    return <div ref={ref} className={cls} {...props} />;
-  },
+  ({ className, ...props }, ref) => (
+    <div
+      ref={ref}
+      data-slot="card-footer"
+      className={classy(cardFooterClasses, className)}
+      {...props}
+    />
+  ),
 );
 
 CardFooter.displayName = 'CardFooter';

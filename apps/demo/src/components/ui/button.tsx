@@ -1,228 +1,178 @@
-/**
- * Interactive button component for user actions
- *
- * @cognitive-load 3/10 - Simple action trigger with clear visual hierarchy
- * @attention-economics Size hierarchy: sm=tertiary actions, default=secondary interactions, lg=primary calls-to-action. Primary variant commands highest attention - use sparingly (maximum 1 per section)
- * @trust-building Destructive actions require confirmation patterns. Loading states prevent double-submission. Visual feedback reinforces user actions.
- * @accessibility WCAG AAA compliant with 44px minimum touch targets, high contrast ratios, and screen reader optimization
- * @semantic-meaning Variant mapping: default=main actions, secondary=supporting actions, destructive=irreversible actions with safety patterns
- *
- * @usage-patterns
- * DO: Primary: Main user goal, maximum 1 per section
- * DO: Secondary: Alternative paths, supporting actions
- * DO: Destructive: Permanent actions, requires confirmation patterns
- * NEVER: Multiple primary buttons competing for attention
- *
- * @example
- * ```tsx
- * // Primary action - highest attention, use once per section
- * <Button variant="default">Save Changes</Button>
- *
- * // Destructive action - requires confirmation UX
- * <Button variant="destructive">Delete Account</Button>
- *
- * // Loading state - prevents double submission
- * <Button loading>Processing...</Button>
- * ```
- */
 import * as React from 'react';
+import { createBehavior, type PartIds } from '@/lib/contract';
+import { useMemory } from '@/hooks/use-memory';
 import classy from '@/lib/primitives/classy';
-import { mergeProps } from '@/lib/primitives/slot';
+import { announceToScreenReader } from '@/lib/primitives/sr-announcer';
+import {
+  button,
+  type ButtonActions,
+  type ButtonConfig,
+  type ButtonPart,
+  type ButtonSize,
+  type ButtonVariant,
+} from '@/components/ui/button.behavior';
+import { buttonClasses } from '@/components/ui/button.classes';
 
-export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  asChild?: boolean;
-  variant?:
-    | 'default'
-    | 'primary'
-    | 'secondary'
-    | 'destructive'
-    | 'success'
-    | 'warning'
-    | 'info'
-    | 'muted'
-    | 'accent'
-    | 'outline'
-    | 'ghost'
-    | 'link';
-  size?: 'default' | 'xs' | 'sm' | 'lg' | 'icon' | 'icon-xs' | 'icon-sm' | 'icon-lg';
+export { buttonVariants } from '@/components/ui/button.classes';
+export type { ButtonSize, ButtonVariant };
+
+type NonIconSize = 'default' | 'xs' | 'sm' | 'lg';
+type IconSize = 'icon' | 'icon-xs' | 'icon-sm' | 'icon-lg';
+type AccessibleName = { 'aria-label': string } | { 'aria-labelledby': string };
+
+/**
+ * Action trigger. Dispatches a press; Enter/Space activate natively; loading
+ * announces busy and gates re-activation.
+ *
+ * @cognitive-load 3/10 - decision 1, information 1, interaction 1, disruption
+ * 0, learning 0. One control, one decision (activate or not); the loading and
+ * pressed states add a little information to read. Universally learned
+ * affordance, no disruption.
+ * @attention-economics Primary-action surface: at most one high-emphasis
+ * variant (default/primary/destructive) per view; ghost/link/outline are the
+ * unlimited low-attention register.
+ * @trust-building The double-submit guard and soft-disabled gate keep an
+ * in-flight or unavailable action from firing twice or silently; the control
+ * stays focusable and discoverable rather than vanishing behind
+ * pointer-events.
+ * @accessibility Native `<button>` semantics (role, Enter/Space) are
+ * preserved. Loading keeps the label as the accessible name and adds an
+ * aria-hidden spinner plus `aria-busy`; soft-disabled projects `aria-disabled`
+ * while staying focusable; hard-disabled uses native `disabled` only. Toggle
+ * mode projects `aria-pressed`. Icon-only sizes require an accessible name at
+ * the type level.
+ */
+interface ButtonBaseProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: ButtonVariant;
   loading?: boolean;
+  softDisabled?: boolean;
+  toggle?: boolean;
+  pressed?: boolean;
+  defaultPressed?: boolean;
+  onPressedChange?: (pressed: boolean) => void;
+  loadingAnnouncement?: string;
+  loadedAnnouncement?: string;
 }
 
-// Variant classes per docs/COMPONENT_STYLING_REFERENCE.md
-const variantClasses: Record<string, string> = {
-  // Semantic variants (default = primary)
-  default:
-    'bg-primary text-primary-foreground ' +
-    'hover:bg-primary-hover active:bg-primary-active ' +
-    'focus-visible:ring-2 focus-visible:ring-primary-ring',
-  primary:
-    'bg-primary text-primary-foreground ' +
-    'hover:bg-primary-hover active:bg-primary-active ' +
-    'focus-visible:ring-2 focus-visible:ring-primary-ring',
-  secondary:
-    'bg-secondary text-secondary-foreground ' +
-    'hover:bg-secondary-hover active:bg-secondary-active ' +
-    'focus-visible:ring-2 focus-visible:ring-secondary-ring',
-  destructive:
-    'bg-destructive text-destructive-foreground ' +
-    'hover:bg-destructive-hover active:bg-destructive-active ' +
-    'focus-visible:ring-2 focus-visible:ring-destructive-ring',
-  success:
-    'bg-success text-success-foreground ' +
-    'hover:bg-success-hover active:bg-success-active ' +
-    'focus-visible:ring-2 focus-visible:ring-success-ring',
-  warning:
-    'bg-warning text-warning-foreground ' +
-    'hover:bg-warning-hover active:bg-warning-active ' +
-    'focus-visible:ring-2 focus-visible:ring-warning-ring',
-  info:
-    'bg-info text-info-foreground ' +
-    'hover:bg-info-hover active:bg-info-active ' +
-    'focus-visible:ring-2 focus-visible:ring-info-ring',
-  muted:
-    'bg-muted text-muted-foreground ' +
-    'hover:bg-muted-hover active:bg-muted-active ' +
-    'focus-visible:ring-2 focus-visible:ring-ring',
-  accent:
-    'bg-accent text-accent-foreground ' +
-    'hover:bg-accent-hover active:bg-accent-active ' +
-    'focus-visible:ring-2 focus-visible:ring-accent-ring',
-  // Style variants
-  outline:
-    'border border-input bg-transparent text-foreground ' +
-    'hover:bg-accent hover:text-accent-foreground ' +
-    'focus-visible:ring-2 focus-visible:ring-ring',
-  ghost:
-    'bg-transparent text-foreground ' +
-    'hover:bg-accent hover:text-accent-foreground ' +
-    'focus-visible:ring-2 focus-visible:ring-ring',
-  link:
-    'text-primary underline-offset-4 ' +
-    'hover:underline ' +
-    'focus-visible:ring-2 focus-visible:ring-ring',
-};
+export type ButtonProps = ButtonBaseProps &
+  ({ size?: NonIconSize } | ({ size: IconSize } & AccessibleName));
 
-const sizeClasses: Record<string, string> = {
-  default: 'h-10 px-4 py-2',
-  xs: 'h-6 px-2 text-xs',
-  sm: 'h-8 px-3 text-xs',
-  lg: 'h-12 px-6 text-base',
-  icon: 'h-10 w-10',
-  'icon-xs': 'h-6 w-6',
-  'icon-sm': 'h-8 w-8',
-  'icon-lg': 'h-12 w-12',
-};
+export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>((props, ref) => {
+  const {
+    className,
+    variant = 'default',
+    size = 'default',
+    disabled = false,
+    loading = false,
+    softDisabled = false,
+    toggle = false,
+    pressed,
+    defaultPressed = false,
+    onPressedChange,
+    loadingAnnouncement,
+    loadedAnnouncement,
+    onClick,
+    children,
+    type,
+    ...rest
+  } = props;
 
-export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  (
-    {
-      asChild,
-      className,
-      variant = 'default',
-      size = 'default',
-      disabled,
-      loading,
-      children,
-      ...props
+  const config: ButtonConfig = {
+    variant,
+    size,
+    toggle,
+    defaultPressed,
+    loadingAnnouncement,
+    loadedAnnouncement,
+    disabled,
+    softDisabled,
+    loading,
+  };
+
+  // The controller composes the score with the substrate directly -- no
+  // useBehavior. createBehavior is the model, useMemory subscribes, and the
+  // effect below composes the sr-announcer primitive directly on the loading
+  // false->true edge (a mount-already-loading button stays baseline-suppressed).
+  const { memory, dispatch } = React.useMemo(() => createBehavior(button, config), []);
+  const state = useMemory(memory);
+
+  // Gotcha #1: the controlled callback compares the EFFECTIVE value before
+  // (the `pressed` prop when controlled) against the INTRINSIC value after the
+  // reducer -- never effective-vs-effective, which a controlled prop would
+  // pin flat. A toggle press always flips, so no equality guard is needed;
+  // canDispatch already gates the disabled/loading/soft-disabled cases.
+  const latest = React.useRef({ config, toggle, pressed, onPressedChange });
+  latest.current = { config, toggle, pressed, onPressedChange };
+  const request = React.useCallback(
+    (action: keyof ButtonActions): boolean => {
+      const { config: cfg, toggle: tgl, pressed: ctrl, onPressedChange: cb } = latest.current;
+      if (!dispatch(action, cfg)) return false;
+      if (tgl) cb?.(ctrl === undefined ? memory.get().pressed === true : !ctrl);
+      return true;
     },
-    ref,
-  ) => {
-    const base =
-      'inline-flex items-center justify-center gap-2 rounded-md font-medium cursor-pointer ' +
-      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ' +
-      'transition-colors';
+    [dispatch, memory],
+  );
 
-    const disabledCls =
-      disabled || loading ? 'opacity-50 pointer-events-none cursor-not-allowed' : '';
-
-    const cls = classy(
-      base,
-      variantClasses[variant] ?? variantClasses.default,
-      sizeClasses[size] ?? sizeClasses.default,
-      disabledCls,
-      className,
-    );
-
-    const content = (
-      <button
-        type={props.type ?? 'button'}
-        aria-disabled={disabled || loading ? 'true' : undefined}
-        aria-busy={loading ? 'true' : undefined}
-        disabled={disabled || loading}
-        ref={ref}
-        className={cls}
-        {...props}
-      >
-        {loading ? <span aria-hidden>Loading...</span> : children}
-      </button>
-    );
-
-    if (asChild && React.isValidElement(children)) {
-      const child = children as React.ReactElement<
-        Record<string, unknown>,
-        string | React.JSXElementConstructor<unknown>
-      >;
-      const childPropsTyped = child.props as Record<string, unknown>;
-
-      // Build parent props to merge
-      const parentProps = {
-        ref,
-        className: cls,
-        'aria-disabled': disabled || loading ? 'true' : undefined,
-        'aria-busy': loading ? 'true' : undefined,
-        ...props,
-      };
-
-      // Use mergeProps for proper prop composition
-      const mergedProps = mergeProps(
-        parentProps as Parameters<typeof mergeProps>[0],
-        childPropsTyped,
-      );
-
-      // Handle disabled state for non-button elements
-      const tag = typeof child.type === 'string' ? child.type : null;
-      const isNativeButton = tag === 'button';
-
-      if (isNativeButton) {
-        (mergedProps as Record<string, unknown>).disabled = disabled || loading;
-      } else {
-        // For non-button elements, add role="button" if not present
-        if (!childPropsTyped.role) {
-          (mergedProps as Record<string, unknown>).role = 'button';
-        }
-
-        // Intercept clicks when disabled
-        const origOnClick = mergedProps.onClick as ((...args: unknown[]) => void) | undefined;
-        (mergedProps as Record<string, unknown>).onClick = (e: React.MouseEvent) => {
-          if (disabled || loading) {
-            e.preventDefault();
-            e.stopPropagation();
-            return;
-          }
-          origOnClick?.(e);
-        };
-
-        // Handle keyboard activation for non-button elements
-        const origOnKeyDown = mergedProps.onKeyDown as
-          | ((e: React.KeyboardEvent) => void)
-          | undefined;
-        (mergedProps as Record<string, unknown>).onKeyDown = (e: React.KeyboardEvent) => {
-          if (disabled || loading) return;
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            (e.currentTarget as HTMLElement).click();
-          }
-          origOnKeyDown?.(e);
-        };
-      }
-
-      return React.cloneElement(child, mergedProps as Partial<Record<string, unknown>>);
+  // Compose the sr-announcer primitive directly, edge-triggered: announce the
+  // loading message once on the loading false->true transition, never on a
+  // baseline mount. prevLoading seeds to the current loading so the first commit
+  // is baseline; announceToScreenReader is called only inside the edge branch so
+  // no live region is constructed for a button that never transitions.
+  const prevLoading = React.useRef(loading);
+  React.useEffect(() => {
+    const wasLoading = prevLoading.current;
+    prevLoading.current = loading;
+    if (loading && !wasLoading) {
+      announceToScreenReader(loadingAnnouncement ?? 'Loading', 'polite');
     }
+  }, [loading, loadingAnnouncement]);
 
-    return content;
-  },
-);
+  const uid = React.useId();
+  const ids = {} as PartIds<ButtonPart>;
+  for (const part of Object.keys(button.parts) as ButtonPart[]) ids[part] = `${uid}-${part}`;
+  const aria = button.aria(state, config, ids);
+  const classes = buttonClasses(config, state);
+
+  return (
+    <button
+      ref={ref}
+      type={type ?? 'button'}
+      disabled={disabled}
+      data-part="root"
+      id={ids.root}
+      className={classy(classes.root, className)}
+      {...aria.root}
+      onClick={(event) => {
+        if (!request('press')) {
+          event.preventDefault();
+          event.stopPropagation();
+          return;
+        }
+        onClick?.(event);
+      }}
+      {...rest}
+    >
+      {loading ? (
+        <svg
+          data-part="spinner"
+          id={ids.spinner}
+          className={classes.spinner}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          {...aria.spinner}
+        >
+          <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+        </svg>
+      ) : null}
+      <span data-part="label" id={ids.label}>
+        {children}
+      </span>
+    </button>
+  );
+});
 
 Button.displayName = 'Button';
-
 export default Button;

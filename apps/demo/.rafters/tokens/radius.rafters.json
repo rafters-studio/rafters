@@ -1,6 +1,6 @@
 {
   "namespace": "radius",
-  "generatedAt": "2026-07-02T18:46:36.432Z",
+  "generatedAt": "2026-07-22T22:56:24.652Z",
   "tokens": [
     {
       "name": "radius-base",
@@ -23,7 +23,7 @@
       "progressionSystem": "minor-third",
       "containerQueryAware": false,
       "description": "Base radius (0.375rem / 6px). Scale uses minor-third progression (ratio 1.2).",
-      "generatedAt": "2026-07-02T18:46:36.065Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "radius-tl",
@@ -40,7 +40,7 @@
       ],
       "containerQueryAware": false,
       "description": "top-left radius. Defaults to radius-base. Set to 0 for a sharp corner on every component.",
-      "generatedAt": "2026-07-02T18:46:36.065Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "radius-tr",
@@ -57,7 +57,7 @@
       ],
       "containerQueryAware": false,
       "description": "top-right radius. Defaults to radius-base. Set to 0 for a sharp corner on every component.",
-      "generatedAt": "2026-07-02T18:46:36.065Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "radius-bl",
@@ -74,7 +74,7 @@
       ],
       "containerQueryAware": false,
       "description": "bottom-left radius. Defaults to radius-base. Set to 0 for a sharp corner on every component.",
-      "generatedAt": "2026-07-02T18:46:36.065Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "radius-br",
@@ -91,7 +91,7 @@
       ],
       "containerQueryAware": false,
       "description": "bottom-right radius. Defaults to radius-base. Set to 0 for a sharp corner on every component.",
-      "generatedAt": "2026-07-02T18:46:36.065Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "radius-none",
@@ -111,7 +111,7 @@
       "mathRelationship": "0",
       "containerQueryAware": false,
       "description": "Border radius none: 0 (0)",
-      "generatedAt": "2026-07-02T18:46:36.065Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "radius-sm",
@@ -134,7 +134,7 @@
       "mathRelationship": "base × 1.2^-1 (×0.833)",
       "containerQueryAware": false,
       "description": "Border radius sm: calc(var(--rafters-radius-base) * 0.833) (base × 1.2^-1 (×0.833))",
-      "generatedAt": "2026-07-02T18:46:36.065Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "radius-sm-tl",
@@ -155,7 +155,7 @@
       "scalePosition": 1,
       "containerQueryAware": false,
       "description": "top-left radius sm: derives from radius-tl base",
-      "generatedAt": "2026-07-02T18:46:36.065Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "radius-sm-tr",
@@ -176,7 +176,7 @@
       "scalePosition": 1,
       "containerQueryAware": false,
       "description": "top-right radius sm: derives from radius-tr base",
-      "generatedAt": "2026-07-02T18:46:36.065Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "radius-sm-bl",
@@ -197,7 +197,7 @@
       "scalePosition": 1,
       "containerQueryAware": false,
       "description": "bottom-left radius sm: derives from radius-bl base",
-      "generatedAt": "2026-07-02T18:46:36.065Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "radius-sm-br",
@@ -218,7 +218,7 @@
       "scalePosition": 1,
       "containerQueryAware": false,
       "description": "bottom-right radius sm: derives from radius-br base",
-      "generatedAt": "2026-07-02T18:46:36.065Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "radius",
@@ -241,7 +241,7 @@
       "mathRelationship": "0.375rem (base)",
       "containerQueryAware": false,
       "description": "Border radius DEFAULT: var(--rafters-radius-base) (0.375rem (base))",
-      "generatedAt": "2026-07-02T18:46:36.065Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "radius-md",
@@ -263,7 +263,7 @@
       "mathRelationship": "base × 1.2^1 (×1.2)",
       "containerQueryAware": false,
       "description": "Border radius md: calc(var(--rafters-radius-base) * 1.2) (base × 1.2^1 (×1.2))",
-      "generatedAt": "2026-07-02T18:46:36.065Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "radius-md-tl",
@@ -283,7 +283,7 @@
       "scalePosition": 3,
       "containerQueryAware": false,
       "description": "top-left radius md: derives from radius-tl base",
-      "generatedAt": "2026-07-02T18:46:36.065Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "radius-md-tr",
@@ -303,7 +303,7 @@
       "scalePosition": 3,
       "containerQueryAware": false,
       "description": "top-right radius md: derives from radius-tr base",
-      "generatedAt": "2026-07-02T18:46:36.065Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "radius-md-bl",
@@ -323,7 +323,7 @@
       "scalePosition": 3,
       "containerQueryAware": false,
       "description": "bottom-left radius md: derives from radius-bl base",
-      "generatedAt": "2026-07-02T18:46:36.065Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "radius-md-br",
@@ -343,7 +343,7 @@
       "scalePosition": 3,
       "containerQueryAware": false,
       "description": "bottom-right radius md: derives from radius-br base",
-      "generatedAt": "2026-07-02T18:46:36.065Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "radius-lg",
@@ -365,7 +365,7 @@
       "mathRelationship": "base × 1.2^2 (×1.44)",
       "containerQueryAware": false,
       "description": "Border radius lg: calc(var(--rafters-radius-base) * 1.44) (base × 1.2^2 (×1.44))",
-      "generatedAt": "2026-07-02T18:46:36.065Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "radius-lg-tl",
@@ -385,7 +385,7 @@
       "scalePosition": 4,
       "containerQueryAware": false,
       "description": "top-left radius lg: derives from radius-tl base",
-      "generatedAt": "2026-07-02T18:46:36.065Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "radius-lg-tr",
@@ -405,7 +405,7 @@
       "scalePosition": 4,
       "containerQueryAware": false,
       "description": "top-right radius lg: derives from radius-tr base",
-      "generatedAt": "2026-07-02T18:46:36.065Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "radius-lg-bl",
@@ -425,7 +425,7 @@
       "scalePosition": 4,
       "containerQueryAware": false,
       "description": "bottom-left radius lg: derives from radius-bl base",
-      "generatedAt": "2026-07-02T18:46:36.065Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "radius-lg-br",
@@ -445,7 +445,7 @@
       "scalePosition": 4,
       "containerQueryAware": false,
       "description": "bottom-right radius lg: derives from radius-br base",
-      "generatedAt": "2026-07-02T18:46:36.065Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "radius-xl",
@@ -466,7 +466,7 @@
       "mathRelationship": "base × 1.2^3 (×1.728)",
       "containerQueryAware": false,
       "description": "Border radius xl: calc(var(--rafters-radius-base) * 1.728) (base × 1.2^3 (×1.728))",
-      "generatedAt": "2026-07-02T18:46:36.065Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "radius-xl-tl",
@@ -485,7 +485,7 @@
       "scalePosition": 5,
       "containerQueryAware": false,
       "description": "top-left radius xl: derives from radius-tl base",
-      "generatedAt": "2026-07-02T18:46:36.065Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "radius-xl-tr",
@@ -504,7 +504,7 @@
       "scalePosition": 5,
       "containerQueryAware": false,
       "description": "top-right radius xl: derives from radius-tr base",
-      "generatedAt": "2026-07-02T18:46:36.065Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "radius-xl-bl",
@@ -523,7 +523,7 @@
       "scalePosition": 5,
       "containerQueryAware": false,
       "description": "bottom-left radius xl: derives from radius-bl base",
-      "generatedAt": "2026-07-02T18:46:36.065Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "radius-xl-br",
@@ -542,7 +542,7 @@
       "scalePosition": 5,
       "containerQueryAware": false,
       "description": "bottom-right radius xl: derives from radius-br base",
-      "generatedAt": "2026-07-02T18:46:36.065Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "radius-2xl",
@@ -564,7 +564,7 @@
       "mathRelationship": "base × 1.2^4 (×2.074)",
       "containerQueryAware": false,
       "description": "Border radius 2xl: calc(var(--rafters-radius-base) * 2.074) (base × 1.2^4 (×2.074))",
-      "generatedAt": "2026-07-02T18:46:36.065Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "radius-2xl-tl",
@@ -584,7 +584,7 @@
       "scalePosition": 6,
       "containerQueryAware": false,
       "description": "top-left radius 2xl: derives from radius-tl base",
-      "generatedAt": "2026-07-02T18:46:36.065Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "radius-2xl-tr",
@@ -604,7 +604,7 @@
       "scalePosition": 6,
       "containerQueryAware": false,
       "description": "top-right radius 2xl: derives from radius-tr base",
-      "generatedAt": "2026-07-02T18:46:36.065Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "radius-2xl-bl",
@@ -624,7 +624,7 @@
       "scalePosition": 6,
       "containerQueryAware": false,
       "description": "bottom-left radius 2xl: derives from radius-bl base",
-      "generatedAt": "2026-07-02T18:46:36.065Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "radius-2xl-br",
@@ -644,7 +644,7 @@
       "scalePosition": 6,
       "containerQueryAware": false,
       "description": "bottom-right radius 2xl: derives from radius-br base",
-      "generatedAt": "2026-07-02T18:46:36.065Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "radius-3xl",
@@ -665,7 +665,7 @@
       "mathRelationship": "base × 1.2^5 (×2.488)",
       "containerQueryAware": false,
       "description": "Border radius 3xl: calc(var(--rafters-radius-base) * 2.488) (base × 1.2^5 (×2.488))",
-      "generatedAt": "2026-07-02T18:46:36.065Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "radius-3xl-tl",
@@ -684,7 +684,7 @@
       "scalePosition": 7,
       "containerQueryAware": false,
       "description": "top-left radius 3xl: derives from radius-tl base",
-      "generatedAt": "2026-07-02T18:46:36.065Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "radius-3xl-tr",
@@ -703,7 +703,7 @@
       "scalePosition": 7,
       "containerQueryAware": false,
       "description": "top-right radius 3xl: derives from radius-tr base",
-      "generatedAt": "2026-07-02T18:46:36.065Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "radius-3xl-bl",
@@ -722,7 +722,7 @@
       "scalePosition": 7,
       "containerQueryAware": false,
       "description": "bottom-left radius 3xl: derives from radius-bl base",
-      "generatedAt": "2026-07-02T18:46:36.065Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "radius-3xl-br",
@@ -741,7 +741,7 @@
       "scalePosition": 7,
       "containerQueryAware": false,
       "description": "bottom-right radius 3xl: derives from radius-br base",
-      "generatedAt": "2026-07-02T18:46:36.065Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "radius-full",
@@ -761,7 +761,7 @@
       "mathRelationship": "infinite (9999px)",
       "containerQueryAware": false,
       "description": "Border radius full: 9999px (infinite (9999px))",
-      "generatedAt": "2026-07-02T18:46:36.065Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     }
   ]
 }

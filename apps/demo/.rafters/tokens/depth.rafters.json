@@ -1,6 +1,6 @@
 {
   "namespace": "depth",
-  "generatedAt": "2026-07-02T18:46:36.433Z",
+  "generatedAt": "2026-07-22T22:56:24.652Z",
   "tokens": [
     {
       "name": "depth-base",
@@ -27,7 +27,7 @@
       "scalePosition": 0,
       "containerQueryAware": false,
       "description": "Z-index 0 for base layer. In document flow.",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "depth-dropdown",
@@ -55,7 +55,7 @@
       "scalePosition": 1,
       "containerQueryAware": false,
       "description": "Z-index 50 for dropdown layer. Creates new stacking context.",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "depth-sticky",
@@ -83,7 +83,7 @@
       "scalePosition": 2,
       "containerQueryAware": false,
       "description": "Z-index 20 for sticky layer. Creates new stacking context.",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "depth-navigation",
@@ -111,7 +111,7 @@
       "scalePosition": 3,
       "containerQueryAware": false,
       "description": "Z-index 25 for navigation layer. Creates new stacking context.",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "depth-fixed",
@@ -139,7 +139,7 @@
       "scalePosition": 4,
       "containerQueryAware": false,
       "description": "Z-index 30 for fixed layer. Creates new stacking context.",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "depth-modal",
@@ -167,7 +167,7 @@
       "scalePosition": 5,
       "containerQueryAware": false,
       "description": "Z-index 40 for modal layer. Creates new stacking context.",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "depth-popover",
@@ -195,7 +195,7 @@
       "scalePosition": 6,
       "containerQueryAware": false,
       "description": "Z-index 50 for popover layer. Creates new stacking context.",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "depth-tooltip",
@@ -222,7 +222,7 @@
       "scalePosition": 7,
       "containerQueryAware": false,
       "description": "Z-index 60 for tooltip layer. Creates new stacking context.",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "depth-overlay",
@@ -250,7 +250,7 @@
       "scalePosition": 8,
       "containerQueryAware": false,
       "description": "Z-index 35 for overlay layer. Creates new stacking context.",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "depth-below",
@@ -275,7 +275,7 @@
       "userOverride": null,
       "containerQueryAware": false,
       "description": "Z-index -1 for elements that should appear behind base content.",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "depth-max",
@@ -301,7 +301,7 @@
       "userOverride": null,
       "containerQueryAware": false,
       "description": "Maximum z-index 9999 for special cases only.",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "depth-scale",
@@ -312,7 +312,7 @@
       "userOverride": null,
       "containerQueryAware": false,
       "description": "Reference for z-index scale structure. 10-unit gaps allow intermediate values.",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     }
   ]
 }

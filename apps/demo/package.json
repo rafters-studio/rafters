@@ -1,35 +1,28 @@
 {
   "name": "demo",
-  "version": "0.0.1",
   "private": true,
+  "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "astro dev",
-    "build": "astro build",
-    "preview": "astro build && wrangler dev",
-    "astro": "astro",
-    "deploy": "astro build && wrangler deploy",
-    "cf-typegen": "wrangler types"
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "oxlint",
+    "preview": "vite preview"
   },
   "dependencies": {
-    "@astrojs/cloudflare": "^12.6.12",
-    "@astrojs/mdx": "^4.3.13",
-    "@astrojs/react": "^4.4.2",
-    "@rafters/color-utils": "workspace:*",
-    "@rafters/composites": "workspace:*",
-    "@rafters/design-tokens": "workspace:*",
-    "@rafters/ui": "workspace:*",
-    "@tailwindcss/vite": "^4.1.18",
-    "@types/react": "catalog:",
-    "@types/react-dom": "catalog:",
-    "astro": "^5.16.5",
+    "@tailwindcss/vite": "^4.3.3",
     "nanostores": "^1.1.0",
-    "react": "catalog:",
-    "react-dom": "catalog:",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
     "tailwindcss": "^4.1.18"
   },
   "devDependencies": {
-    "@types/node": "catalog:",
-    "wrangler": "^4.54.0"
+    "@types/node": "^24.13.2",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.3",
+    "oxlint": "^1.71.0",
+    "typescript": "~6.0.2",
+    "vite": "^8.1.1"
   }
 }

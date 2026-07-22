@@ -1,40 +1,43 @@
 {
   "namespace": "motion",
-  "generatedAt": "2026-07-02T18:46:36.433Z",
+  "generatedAt": "2026-07-22T22:56:24.653Z",
   "tokens": [
     {
       "name": "motion-duration-base",
       "value": "150ms",
       "category": "motion",
       "namespace": "motion",
-      "semanticMeaning": "Base transition duration - all motion timing derives from this",
+      "semanticMeaning": "Legacy base transition duration. The perceptual duration scale (motion-duration-*) no longer derives from this; retained only as a reference value and delay-progression base.",
       "usageContext": [
-        "calculation-reference"
+        "calculation-reference",
+        "delay-base"
       ],
       "usagePatterns": {
         "do": [
-          "Reference as the calculation base"
+          "Reference as the delay-progression base"
         ],
         "never": [
-          "Change without understanding full motion scale impact"
+          "Assume the perceptual duration tiers derive from this"
         ]
       },
       "userOverride": null,
       "progressionSystem": "minor-third",
       "containerQueryAware": false,
       "reducedMotionAware": true,
-      "description": "Base duration (150ms). Motion uses minor-third progression (ratio 1.2).",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "description": "Base duration (150ms). Delay tokens use minor-third progression (ratio 1.2); duration tiers are perceptually derived literals.",
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "motion-duration-instant",
       "value": "0ms",
       "category": "motion",
       "namespace": "motion",
-      "semanticMeaning": "Instant - no animation",
+      "semanticMeaning": "No perceptible transition. Cursor changes, text selection, badge counts. Below all perception -- there is nothing to track, so nothing is communicated.",
       "usageContext": [
         "disabled-motion",
-        "prefers-reduced-motion"
+        "prefers-reduced-motion",
+        "cursor",
+        "badge-count"
       ],
       "usagePatterns": {
         "do": [
@@ -48,32 +51,29 @@
       },
       "userOverride": null,
       "dependsOn": [],
-      "progressionSystem": "minor-third",
       "scalePosition": 0,
-      "mathRelationship": "0",
+      "mathRelationship": "0ms",
       "containerQueryAware": false,
       "reducedMotionAware": true,
       "motionIntent": "transition",
       "motionDuration": 0,
-      "description": "Duration instant: 0ms. Instant - no animation",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "description": "Duration instant: 0ms. No perceptible transition. Cursor changes, text selection, badge counts. Below all perception -- there is nothing to track, so nothing is communicated.",
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
-      "name": "motion-duration-fast",
-      "value": "125ms",
+      "name": "motion-duration-micro",
+      "value": "100ms",
       "category": "motion",
       "namespace": "motion",
-      "semanticMeaning": "Fast - micro-interactions, hover states",
+      "semanticMeaning": "Immediate but visible. Focus rings and press feedback. At the instantaneous threshold -- acknowledgment that input landed, not communication of a change. Band: at the instantaneous threshold (Nielsen 0.1s).",
       "usageContext": [
-        "hover",
         "focus",
-        "active",
+        "press",
         "micro-feedback"
       ],
       "usagePatterns": {
         "do": [
-          "Use for hover/focus states",
-          "Use for micro-interactions"
+          "Use for acknowledgment feedback (hover, focus, press)"
         ],
         "never": [
           "Ignore prefers-reduced-motion",
@@ -81,34 +81,91 @@
         ]
       },
       "userOverride": null,
-      "dependsOn": [
-        "motion-duration-base"
-      ],
-      "progressionSystem": "minor-third",
+      "dependsOn": [],
       "scalePosition": 1,
-      "mathRelationship": "150 × 1.2^-1",
+      "mathRelationship": "100ms (perceptual: at the instantaneous threshold (Nielsen 0.1s))",
       "containerQueryAware": false,
       "reducedMotionAware": true,
       "motionIntent": "transition",
-      "motionDuration": 125,
-      "description": "Duration fast: 125ms. Fast - micro-interactions, hover states",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "motionDuration": 100,
+      "description": "Duration micro: 100ms. Band: at the instantaneous threshold (Nielsen 0.1s). Immediate but visible. Focus rings and press feedback. At the instantaneous threshold -- acknowledgment that input landed, not communication of a change.",
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
-      "name": "motion-duration-normal",
+      "name": "motion-duration-fast",
       "value": "150ms",
       "category": "motion",
       "namespace": "motion",
-      "semanticMeaning": "Normal - standard UI transitions",
+      "semanticMeaning": "Hover states. The cursor is already there, so the response must match its speed. Below the communicative window -- acknowledgment, not communication. Band: below the communicative window.",
       "usageContext": [
-        "buttons",
+        "hover",
+        "micro-feedback"
+      ],
+      "usagePatterns": {
+        "do": [
+          "Use for acknowledgment feedback (hover, focus, press)"
+        ],
+        "never": [
+          "Ignore prefers-reduced-motion",
+          "Use slow animations for frequent actions"
+        ]
+      },
+      "userOverride": null,
+      "dependsOn": [],
+      "scalePosition": 2,
+      "mathRelationship": "150ms (perceptual: below the communicative window)",
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
+      "motionIntent": "transition",
+      "motionDuration": 150,
+      "description": "Duration fast: 150ms. Band: below the communicative window. Hover states. The cursor is already there, so the response must match its speed. Below the communicative window -- acknowledgment, not communication.",
+      "generatedAt": "2026-07-22T22:56:24.283Z"
+    },
+    {
+      "name": "motion-duration-moderate",
+      "value": "250ms",
+      "category": "motion",
+      "namespace": "motion",
+      "semanticMeaning": "Dropdowns, tab switches, small reveals. The communicative window: fast enough to feel responsive, slow enough for the eye to track a trajectory and build a spatial model. Band: communicative (~200-300ms).",
+      "usageContext": [
+        "dropdowns",
+        "tab-switches",
+        "small-reveals"
+      ],
+      "usagePatterns": {
+        "do": [
+          "Use for communicative transitions where the user must track the change"
+        ],
+        "never": [
+          "Ignore prefers-reduced-motion",
+          "Use slow animations for frequent actions"
+        ]
+      },
+      "userOverride": null,
+      "dependsOn": [],
+      "scalePosition": 3,
+      "mathRelationship": "250ms (perceptual: communicative (~200-300ms))",
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
+      "motionIntent": "transition",
+      "motionDuration": 250,
+      "description": "Duration moderate: 250ms. Band: communicative (~200-300ms). Dropdowns, tab switches, small reveals. The communicative window: fast enough to feel responsive, slow enough for the eye to track a trajectory and build a spatial model.",
+      "generatedAt": "2026-07-22T22:56:24.283Z"
+    },
+    {
+      "name": "motion-duration-normal",
+      "value": "350ms",
+      "category": "motion",
+      "namespace": "motion",
+      "semanticMeaning": "The workhorse -- modal entrances, toggles, standard state transitions. The communicative window for larger movement. Band: communicative, larger movement.",
+      "usageContext": [
+        "modals",
         "toggles",
         "state-changes"
       ],
       "usagePatterns": {
         "do": [
-          "Use for most UI transitions",
-          "Use for state changes"
+          "Use for communicative transitions where the user must track the change"
         ],
         "never": [
           "Ignore prefers-reduced-motion",
@@ -116,70 +173,30 @@
         ]
       },
       "userOverride": null,
-      "dependsOn": [
-        "motion-duration-base"
-      ],
-      "progressionSystem": "minor-third",
-      "scalePosition": 2,
-      "mathRelationship": "150ms (base)",
-      "containerQueryAware": false,
-      "reducedMotionAware": true,
-      "motionIntent": "transition",
-      "motionDuration": 150,
-      "description": "Duration normal: 150ms. Normal - standard UI transitions",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
-    },
-    {
-      "name": "motion-duration-slow",
-      "value": "180ms",
-      "category": "motion",
-      "namespace": "motion",
-      "semanticMeaning": "Slow - enter/exit animations",
-      "usageContext": [
-        "modals",
-        "dialogs",
-        "panels",
-        "enter-exit"
-      ],
-      "usagePatterns": {
-        "do": [
-          "Use for enter/exit animations",
-          "Use for emphasis"
-        ],
-        "never": [
-          "Ignore prefers-reduced-motion",
-          "Use slow animations for frequent actions"
-        ]
-      },
-      "userOverride": null,
-      "dependsOn": [
-        "motion-duration-base"
-      ],
-      "progressionSystem": "minor-third",
-      "scalePosition": 3,
-      "mathRelationship": "150 × 1.2^1",
+      "dependsOn": [],
+      "scalePosition": 4,
+      "mathRelationship": "350ms (perceptual: communicative, larger movement)",
       "containerQueryAware": false,
       "reducedMotionAware": true,
       "motionIntent": "enter",
-      "motionDuration": 180,
-      "description": "Duration slow: 180ms. Slow - enter/exit animations",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "motionDuration": 350,
+      "description": "Duration normal: 350ms. Band: communicative, larger movement. The workhorse -- modal entrances, toggles, standard state transitions. The communicative window for larger movement.",
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
-      "name": "motion-duration-slower",
-      "value": "216ms",
+      "name": "motion-duration-slow",
+      "value": "500ms",
       "category": "motion",
       "namespace": "motion",
-      "semanticMeaning": "Slower - emphasis, large element transitions",
+      "semanticMeaning": "Sheets, page transitions, large spatial movement where the user needs orientation. At the sluggish boundary -- the ceiling for anything but full-screen spatial transitions. Band: at the sluggish boundary.",
       "usageContext": [
+        "sheets",
         "page-transitions",
-        "hero-animations",
-        "emphasis"
+        "large-spatial-movement"
       ],
       "usagePatterns": {
         "do": [
-          "Use for enter/exit animations",
-          "Use for emphasis"
+          "Use for communicative transitions where the user must track the change"
         ],
         "never": [
           "Ignore prefers-reduced-motion",
@@ -187,38 +204,132 @@
         ]
       },
       "userOverride": null,
-      "dependsOn": [
-        "motion-duration-base"
-      ],
-      "progressionSystem": "minor-third",
-      "scalePosition": 4,
-      "mathRelationship": "150 × 1.2^2",
+      "dependsOn": [],
+      "scalePosition": 5,
+      "mathRelationship": "500ms (perceptual: at the sluggish boundary)",
       "containerQueryAware": false,
       "reducedMotionAware": true,
-      "motionIntent": "emphasis",
-      "motionDuration": 216,
-      "description": "Duration slower: 216ms. Slower - emphasis, large element transitions",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "motionIntent": "enter",
+      "motionDuration": 500,
+      "description": "Duration slow: 500ms. Band: at the sluggish boundary. Sheets, page transitions, large spatial movement where the user needs orientation. At the sluggish boundary -- the ceiling for anything but full-screen spatial transitions.",
+      "generatedAt": "2026-07-22T22:56:24.283Z"
+    },
+    {
+      "name": "motion-easing-standard",
+      "value": "cubic-bezier(0.25, 0.1, 0.25, 1)",
+      "category": "motion",
+      "namespace": "motion",
+      "semanticMeaning": "Precision -- arrives exactly where it should, engineered rather than thrown. Decelerates into its final position. General-purpose state transitions and hover.",
+      "usageContext": [
+        "state-changes",
+        "hover",
+        "general-purpose"
+      ],
+      "usagePatterns": {
+        "do": [
+          "Match the curve register to the interaction feel"
+        ],
+        "never": [
+          "Use exit for entering (arrives reluctantly)",
+          "Use linear for interactive spatial transitions (reads as mechanical)"
+        ]
+      },
+      "userOverride": null,
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
+      "easingCurve": [
+        0.25,
+        0.1,
+        0.25,
+        1
+      ],
+      "easingName": "standard",
+      "description": "Easing standard: cubic-bezier(0.25, 0.1, 0.25, 1). Precision -- arrives exactly where it should, engineered rather than thrown. Decelerates into its final position. General-purpose state transitions and hover.",
+      "generatedAt": "2026-07-22T22:56:24.283Z"
+    },
+    {
+      "name": "motion-easing-enter",
+      "value": "cubic-bezier(0, 0, 0.2, 1)",
+      "category": "motion",
+      "namespace": "motion",
+      "semanticMeaning": "Arrival, welcome, settling into place. The fast start communicates responsiveness; the slow finish communicates care. Anything entering the viewport. Paired with `exit` as a deliberately asymmetric couple. (Dragicevic 2011: slow-in/slow-out outperforms constant speed for tracking.)",
+      "usageContext": [
+        "enter-animations",
+        "elements-appearing"
+      ],
+      "usagePatterns": {
+        "do": [
+          "Use for anything entering the viewport"
+        ],
+        "never": [
+          "Use exit for entering (arrives reluctantly)",
+          "Use linear for interactive spatial transitions (reads as mechanical)"
+        ]
+      },
+      "userOverride": null,
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
+      "easingCurve": [
+        0,
+        0,
+        0.2,
+        1
+      ],
+      "easingName": "enter",
+      "description": "Easing enter: cubic-bezier(0, 0, 0.2, 1). Arrival, welcome, settling into place. The fast start communicates responsiveness; the slow finish communicates care. Anything entering the viewport. Paired with `exit` as a deliberately asymmetric couple. (Dragicevic 2011: slow-in/slow-out outperforms constant speed for tracking.)",
+      "generatedAt": "2026-07-22T22:56:24.283Z"
+    },
+    {
+      "name": "motion-easing-exit",
+      "value": "cubic-bezier(0.4, 0, 1, 1)",
+      "category": "motion",
+      "namespace": "motion",
+      "semanticMeaning": "Withdrawal, giving space. The brief hesitation acknowledges the user; the fast departure avoids lingering. Anything leaving the viewport. Paired with `enter` as a deliberately asymmetric couple -- exits are faster than entrances by design.",
+      "usageContext": [
+        "exit-animations",
+        "elements-leaving"
+      ],
+      "usagePatterns": {
+        "do": [
+          "Use for anything leaving the viewport"
+        ],
+        "never": [
+          "Use exit for entering (arrives reluctantly)",
+          "Use linear for interactive spatial transitions (reads as mechanical)"
+        ]
+      },
+      "userOverride": null,
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
+      "easingCurve": [
+        0.4,
+        0,
+        1,
+        1
+      ],
+      "easingName": "exit",
+      "description": "Easing exit: cubic-bezier(0.4, 0, 1, 1). Withdrawal, giving space. The brief hesitation acknowledges the user; the fast departure avoids lingering. Anything leaving the viewport. Paired with `enter` as a deliberately asymmetric couple -- exits are faster than entrances by design.",
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "motion-easing-linear",
       "value": "linear",
       "category": "motion",
       "namespace": "motion",
-      "semanticMeaning": "Linear - constant speed, mechanical feel",
+      "semanticMeaning": "Mechanical, procedural, without personality -- a process, not a gesture. Progress and loading, where the system is working rather than interacting. Never for interactive spatial transitions.",
       "usageContext": [
         "progress-bars",
         "loading-spinners",
-        "opacity-fades"
+        "opacity-fades",
+        "focus-ring-fade"
       ],
       "usagePatterns": {
         "do": [
-          "Use for opacity fades",
-          "Use for progress indicators"
+          "Use for progress and loading, where the system is working not interacting"
         ],
         "never": [
-          "Use ease-in for entering (feels sluggish)",
-          "Use ease-out for exiting (feels abrupt)"
+          "Use exit for entering (arrives reluctantly)",
+          "Use linear for interactive spatial transitions (reads as mechanical)"
         ]
       },
       "userOverride": null,
@@ -231,128 +342,27 @@
         1
       ],
       "easingName": "linear",
-      "description": "Easing linear: linear. Linear - constant speed, mechanical feel",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "description": "Easing linear: linear. Mechanical, procedural, without personality -- a process, not a gesture. Progress and loading, where the system is working rather than interacting. Never for interactive spatial transitions.",
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
-      "name": "motion-easing-ease-in",
-      "value": "cubic-bezier(0.42, 0, 1, 1)",
+      "name": "motion-easing-spring-smooth",
+      "value": "cubic-bezier(0.2, 0.9, 0.3, 1)",
       "category": "motion",
       "namespace": "motion",
-      "semanticMeaning": "Ease in - starts slow, accelerates (exiting)",
+      "semanticMeaning": "Alive, coming physically to rest -- a critically-damped spring with no overshoot. Page transitions, sheets, large tracked spatial movement. (Johansson 1973 / Pratt 2010: animate motion is perceived as alive and captures attention.)",
       "usageContext": [
-        "exit-animations",
-        "elements-leaving"
+        "page-transitions",
+        "sheets",
+        "large-spatial-movement"
       ],
       "usagePatterns": {
         "do": [
-          "Use for exiting elements",
-          "Use for disappearing content"
+          "Match the curve register to the interaction feel"
         ],
         "never": [
-          "Use ease-in for entering (feels sluggish)",
-          "Use ease-out for exiting (feels abrupt)"
-        ]
-      },
-      "userOverride": null,
-      "containerQueryAware": false,
-      "reducedMotionAware": true,
-      "easingCurve": [
-        0.42,
-        0,
-        1,
-        1
-      ],
-      "easingName": "ease-in",
-      "description": "Easing ease-in: cubic-bezier(0.42, 0, 1, 1). Ease in - starts slow, accelerates (exiting)",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
-    },
-    {
-      "name": "motion-easing-ease-out",
-      "value": "cubic-bezier(0, 0, 0.58, 1)",
-      "category": "motion",
-      "namespace": "motion",
-      "semanticMeaning": "Ease out - starts fast, decelerates (entering)",
-      "usageContext": [
-        "enter-animations",
-        "elements-appearing"
-      ],
-      "usagePatterns": {
-        "do": [
-          "Use for entering elements",
-          "Use for appearing content"
-        ],
-        "never": [
-          "Use ease-in for entering (feels sluggish)",
-          "Use ease-out for exiting (feels abrupt)"
-        ]
-      },
-      "userOverride": null,
-      "containerQueryAware": false,
-      "reducedMotionAware": true,
-      "easingCurve": [
-        0,
-        0,
-        0.58,
-        1
-      ],
-      "easingName": "ease-out",
-      "description": "Easing ease-out: cubic-bezier(0, 0, 0.58, 1). Ease out - starts fast, decelerates (entering)",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
-    },
-    {
-      "name": "motion-easing-ease-in-out",
-      "value": "cubic-bezier(0.42, 0, 0.58, 1)",
-      "category": "motion",
-      "namespace": "motion",
-      "semanticMeaning": "Ease in-out - symmetric acceleration/deceleration",
-      "usageContext": [
-        "state-changes",
-        "transforms",
-        "general-purpose"
-      ],
-      "usagePatterns": {
-        "do": [
-          "Use for general transitions",
-          "Match context to curve feel"
-        ],
-        "never": [
-          "Use ease-in for entering (feels sluggish)",
-          "Use ease-out for exiting (feels abrupt)"
-        ]
-      },
-      "userOverride": null,
-      "containerQueryAware": false,
-      "reducedMotionAware": true,
-      "easingCurve": [
-        0.42,
-        0,
-        0.58,
-        1
-      ],
-      "easingName": "ease-in-out",
-      "description": "Easing ease-in-out: cubic-bezier(0.42, 0, 0.58, 1). Ease in-out - symmetric acceleration/deceleration",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
-    },
-    {
-      "name": "motion-easing-productive",
-      "value": "cubic-bezier(0.2, 0, 0.38, 0.9)",
-      "category": "motion",
-      "namespace": "motion",
-      "semanticMeaning": "Productive - quick, efficient, minimal overshoot",
-      "usageContext": [
-        "work-ui",
-        "data-displays",
-        "business-apps"
-      ],
-      "usagePatterns": {
-        "do": [
-          "Use for general transitions",
-          "Match context to curve feel"
-        ],
-        "never": [
-          "Use ease-in for entering (feels sluggish)",
-          "Use ease-out for exiting (feels abrupt)"
+          "Use exit for entering (arrives reluctantly)",
+          "Use linear for interactive spatial transitions (reads as mechanical)"
         ]
       },
       "userOverride": null,
@@ -360,83 +370,46 @@
       "reducedMotionAware": true,
       "easingCurve": [
         0.2,
-        0,
-        0.38,
-        0.9
-      ],
-      "easingName": "productive",
-      "description": "Easing productive: cubic-bezier(0.2, 0, 0.38, 0.9). Productive - quick, efficient, minimal overshoot",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
-    },
-    {
-      "name": "motion-easing-expressive",
-      "value": "cubic-bezier(0.4, 0.14, 0.3, 1)",
-      "category": "motion",
-      "namespace": "motion",
-      "semanticMeaning": "Expressive - dramatic, attention-grabbing",
-      "usageContext": [
-        "marketing",
-        "onboarding",
-        "celebrations",
-        "emphasis"
-      ],
-      "usagePatterns": {
-        "do": [
-          "Use for general transitions",
-          "Match context to curve feel"
-        ],
-        "never": [
-          "Use ease-in for entering (feels sluggish)",
-          "Use ease-out for exiting (feels abrupt)"
-        ]
-      },
-      "userOverride": null,
-      "containerQueryAware": false,
-      "reducedMotionAware": true,
-      "easingCurve": [
-        0.4,
-        0.14,
+        0.9,
         0.3,
         1
       ],
-      "easingName": "expressive",
-      "description": "Easing expressive: cubic-bezier(0.4, 0.14, 0.3, 1). Expressive - dramatic, attention-grabbing",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "easingName": "spring-smooth",
+      "description": "Easing spring-smooth: cubic-bezier(0.2, 0.9, 0.3, 1). Alive, coming physically to rest -- a critically-damped spring with no overshoot. Page transitions, sheets, large tracked spatial movement. (Johansson 1973 / Pratt 2010: animate motion is perceived as alive and captures attention.)",
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
-      "name": "motion-easing-spring",
-      "value": "cubic-bezier(0.175, 0.885, 0.32, 1.275)",
+      "name": "motion-easing-spring-snappy",
+      "value": "cubic-bezier(0.2, 0.8, 0.2, 1)",
       "category": "motion",
       "namespace": "motion",
-      "semanticMeaning": "Spring - bouncy overshoot for playful feel",
+      "semanticMeaning": "Alive, tight, following input closely -- a tighter spring with less settle and no overshoot. Toggles, presses, interactions that track input.",
       "usageContext": [
-        "buttons",
-        "icons",
-        "playful-ui",
-        "celebrations"
+        "toggles",
+        "presses",
+        "input-tracking"
       ],
       "usagePatterns": {
         "do": [
-          "Use for general transitions",
-          "Match context to curve feel"
+          "Match the curve register to the interaction feel"
         ],
         "never": [
-          "Use ease-in for entering (feels sluggish)",
-          "Use ease-out for exiting (feels abrupt)"
+          "Use exit for entering (arrives reluctantly)",
+          "Use linear for interactive spatial transitions (reads as mechanical)"
         ]
       },
       "userOverride": null,
       "containerQueryAware": false,
       "reducedMotionAware": true,
       "easingCurve": [
-        0.175,
-        0.885,
-        0.32,
-        1.275
+        0.2,
+        0.8,
+        0.2,
+        1
       ],
-      "easingName": "spring",
-      "description": "Easing spring: cubic-bezier(0.175, 0.885, 0.32, 1.275). Spring - bouncy overshoot for playful feel",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "easingName": "spring-snappy",
+      "description": "Easing spring-snappy: cubic-bezier(0.2, 0.8, 0.2, 1). Alive, tight, following input closely -- a tighter spring with less settle and no overshoot. Toggles, presses, interactions that track input.",
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "motion-delay-none",
@@ -454,7 +427,7 @@
       "reducedMotionAware": true,
       "delayMs": 0,
       "description": "Delay none: 0ms. Based on duration progression.",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "motion-delay-short",
@@ -475,7 +448,7 @@
       "reducedMotionAware": true,
       "delayMs": 125,
       "description": "Delay short: 125ms. Based on duration progression.",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "motion-delay-medium",
@@ -496,7 +469,7 @@
       "reducedMotionAware": true,
       "delayMs": 150,
       "description": "Delay medium: 150ms. Based on duration progression.",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "motion-delay-long",
@@ -517,7 +490,7 @@
       "reducedMotionAware": true,
       "delayMs": 180,
       "description": "Delay long: 180ms. Based on duration progression.",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "motion-keyframe-fade-in",
@@ -535,7 +508,7 @@
       "reducedMotionAware": true,
       "keyframeName": "fade-in",
       "description": "Keyframe fade-in: Fade from transparent to opaque",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "motion-keyframe-fade-out",
@@ -553,7 +526,7 @@
       "reducedMotionAware": true,
       "keyframeName": "fade-out",
       "description": "Keyframe fade-out: Fade from opaque to transparent",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "motion-keyframe-slide-in-from-top",
@@ -571,7 +544,7 @@
       "reducedMotionAware": true,
       "keyframeName": "slide-in-from-top",
       "description": "Keyframe slide-in-from-top: Slide in from above",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "motion-keyframe-slide-in-from-bottom",
@@ -589,7 +562,7 @@
       "reducedMotionAware": true,
       "keyframeName": "slide-in-from-bottom",
       "description": "Keyframe slide-in-from-bottom: Slide in from below",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "motion-keyframe-slide-in-from-left",
@@ -607,7 +580,7 @@
       "reducedMotionAware": true,
       "keyframeName": "slide-in-from-left",
       "description": "Keyframe slide-in-from-left: Slide in from left",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "motion-keyframe-slide-in-from-right",
@@ -625,7 +598,7 @@
       "reducedMotionAware": true,
       "keyframeName": "slide-in-from-right",
       "description": "Keyframe slide-in-from-right: Slide in from right",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "motion-keyframe-slide-out-to-top",
@@ -642,7 +615,7 @@
       "reducedMotionAware": true,
       "keyframeName": "slide-out-to-top",
       "description": "Keyframe slide-out-to-top: Slide out upward",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "motion-keyframe-slide-out-to-bottom",
@@ -659,7 +632,7 @@
       "reducedMotionAware": true,
       "keyframeName": "slide-out-to-bottom",
       "description": "Keyframe slide-out-to-bottom: Slide out downward",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "motion-keyframe-slide-out-to-left",
@@ -676,7 +649,7 @@
       "reducedMotionAware": true,
       "keyframeName": "slide-out-to-left",
       "description": "Keyframe slide-out-to-left: Slide out to left",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "motion-keyframe-slide-out-to-right",
@@ -693,7 +666,7 @@
       "reducedMotionAware": true,
       "keyframeName": "slide-out-to-right",
       "description": "Keyframe slide-out-to-right: Slide out to right",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "motion-keyframe-scale-in",
@@ -711,7 +684,7 @@
       "reducedMotionAware": true,
       "keyframeName": "scale-in",
       "description": "Keyframe scale-in: Scale up while fading in",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "motion-keyframe-scale-out",
@@ -728,7 +701,7 @@
       "reducedMotionAware": true,
       "keyframeName": "scale-out",
       "description": "Keyframe scale-out: Scale down while fading out",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "motion-keyframe-spin",
@@ -746,7 +719,7 @@
       "reducedMotionAware": true,
       "keyframeName": "spin",
       "description": "Keyframe spin: Continuous rotation",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "motion-keyframe-ping",
@@ -764,7 +737,7 @@
       "reducedMotionAware": true,
       "keyframeName": "ping",
       "description": "Keyframe ping: Expanding pulse that fades out",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "motion-keyframe-pulse",
@@ -781,7 +754,7 @@
       "reducedMotionAware": true,
       "keyframeName": "pulse",
       "description": "Keyframe pulse: Gentle opacity pulse",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "motion-keyframe-bounce",
@@ -798,7 +771,7 @@
       "reducedMotionAware": true,
       "keyframeName": "bounce",
       "description": "Keyframe bounce: Bouncing motion",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "motion-keyframe-accordion-down",
@@ -816,7 +789,7 @@
       "reducedMotionAware": true,
       "keyframeName": "accordion-down",
       "description": "Keyframe accordion-down: Expand accordion content",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "motion-keyframe-accordion-up",
@@ -834,7 +807,7 @@
       "reducedMotionAware": true,
       "keyframeName": "accordion-up",
       "description": "Keyframe accordion-up: Collapse accordion content",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "motion-keyframe-caret-blink",
@@ -851,11 +824,11 @@
       "reducedMotionAware": true,
       "keyframeName": "caret-blink",
       "description": "Keyframe caret-blink: Text cursor blinking",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "motion-animation-fade-in",
-      "value": "fade-in var(--motion-duration-fast) var(--motion-easing-ease-out)",
+      "value": "fade-in var(--motion-duration-fast) var(--motion-easing-enter)",
       "category": "motion",
       "namespace": "motion",
       "semanticMeaning": "Fade in animation",
@@ -867,21 +840,21 @@
       "dependsOn": [
         "motion-keyframe-fade-in",
         "motion-duration-fast",
-        "motion-easing-ease-out"
+        "motion-easing-enter"
       ],
       "containerQueryAware": false,
       "reducedMotionAware": true,
       "keyframeName": "fade-in",
       "animationName": "fade-in",
-      "animationDuration": "125ms",
-      "animationEasing": "cubic-bezier(0, 0, 0.58, 1)",
+      "animationDuration": "150ms",
+      "animationEasing": "cubic-bezier(0, 0, 0.2, 1)",
       "animationIterations": "1",
       "description": "Animation fade-in: Fade in animation",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "motion-animation-fade-out",
-      "value": "fade-out var(--motion-duration-fast) var(--motion-easing-ease-in)",
+      "value": "fade-out var(--motion-duration-fast) var(--motion-easing-exit)",
       "category": "motion",
       "namespace": "motion",
       "semanticMeaning": "Fade out animation",
@@ -893,21 +866,21 @@
       "dependsOn": [
         "motion-keyframe-fade-out",
         "motion-duration-fast",
-        "motion-easing-ease-in"
+        "motion-easing-exit"
       ],
       "containerQueryAware": false,
       "reducedMotionAware": true,
       "keyframeName": "fade-out",
       "animationName": "fade-out",
-      "animationDuration": "125ms",
-      "animationEasing": "cubic-bezier(0.42, 0, 1, 1)",
+      "animationDuration": "150ms",
+      "animationEasing": "cubic-bezier(0.4, 0, 1, 1)",
       "animationIterations": "1",
       "description": "Animation fade-out: Fade out animation",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "motion-animation-slide-in-from-top",
-      "value": "slide-in-from-top var(--motion-duration-normal) var(--motion-easing-ease-out)",
+      "value": "slide-in-from-top var(--motion-duration-normal) var(--motion-easing-enter)",
       "category": "motion",
       "namespace": "motion",
       "semanticMeaning": "Slide in from top",
@@ -919,21 +892,21 @@
       "dependsOn": [
         "motion-keyframe-slide-in-from-top",
         "motion-duration-normal",
-        "motion-easing-ease-out"
+        "motion-easing-enter"
       ],
       "containerQueryAware": false,
       "reducedMotionAware": true,
       "keyframeName": "slide-in-from-top",
       "animationName": "slide-in-from-top",
-      "animationDuration": "150ms",
-      "animationEasing": "cubic-bezier(0, 0, 0.58, 1)",
+      "animationDuration": "350ms",
+      "animationEasing": "cubic-bezier(0, 0, 0.2, 1)",
       "animationIterations": "1",
       "description": "Animation slide-in-from-top: Slide in from top",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "motion-animation-slide-in-from-bottom",
-      "value": "slide-in-from-bottom var(--motion-duration-normal) var(--motion-easing-ease-out)",
+      "value": "slide-in-from-bottom var(--motion-duration-normal) var(--motion-easing-enter)",
       "category": "motion",
       "namespace": "motion",
       "semanticMeaning": "Slide in from bottom",
@@ -945,21 +918,21 @@
       "dependsOn": [
         "motion-keyframe-slide-in-from-bottom",
         "motion-duration-normal",
-        "motion-easing-ease-out"
+        "motion-easing-enter"
       ],
       "containerQueryAware": false,
       "reducedMotionAware": true,
       "keyframeName": "slide-in-from-bottom",
       "animationName": "slide-in-from-bottom",
-      "animationDuration": "150ms",
-      "animationEasing": "cubic-bezier(0, 0, 0.58, 1)",
+      "animationDuration": "350ms",
+      "animationEasing": "cubic-bezier(0, 0, 0.2, 1)",
       "animationIterations": "1",
       "description": "Animation slide-in-from-bottom: Slide in from bottom",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "motion-animation-slide-in-from-left",
-      "value": "slide-in-from-left var(--motion-duration-normal) var(--motion-easing-ease-out)",
+      "value": "slide-in-from-left var(--motion-duration-normal) var(--motion-easing-enter)",
       "category": "motion",
       "namespace": "motion",
       "semanticMeaning": "Slide in from left",
@@ -971,21 +944,21 @@
       "dependsOn": [
         "motion-keyframe-slide-in-from-left",
         "motion-duration-normal",
-        "motion-easing-ease-out"
+        "motion-easing-enter"
       ],
       "containerQueryAware": false,
       "reducedMotionAware": true,
       "keyframeName": "slide-in-from-left",
       "animationName": "slide-in-from-left",
-      "animationDuration": "150ms",
-      "animationEasing": "cubic-bezier(0, 0, 0.58, 1)",
+      "animationDuration": "350ms",
+      "animationEasing": "cubic-bezier(0, 0, 0.2, 1)",
       "animationIterations": "1",
       "description": "Animation slide-in-from-left: Slide in from left",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "motion-animation-slide-in-from-right",
-      "value": "slide-in-from-right var(--motion-duration-normal) var(--motion-easing-ease-out)",
+      "value": "slide-in-from-right var(--motion-duration-normal) var(--motion-easing-enter)",
       "category": "motion",
       "namespace": "motion",
       "semanticMeaning": "Slide in from right",
@@ -997,21 +970,21 @@
       "dependsOn": [
         "motion-keyframe-slide-in-from-right",
         "motion-duration-normal",
-        "motion-easing-ease-out"
+        "motion-easing-enter"
       ],
       "containerQueryAware": false,
       "reducedMotionAware": true,
       "keyframeName": "slide-in-from-right",
       "animationName": "slide-in-from-right",
-      "animationDuration": "150ms",
-      "animationEasing": "cubic-bezier(0, 0, 0.58, 1)",
+      "animationDuration": "350ms",
+      "animationEasing": "cubic-bezier(0, 0, 0.2, 1)",
       "animationIterations": "1",
       "description": "Animation slide-in-from-right: Slide in from right",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "motion-animation-slide-out-to-top",
-      "value": "slide-out-to-top var(--motion-duration-fast) var(--motion-easing-ease-in)",
+      "value": "slide-out-to-top var(--motion-duration-fast) var(--motion-easing-exit)",
       "category": "motion",
       "namespace": "motion",
       "semanticMeaning": "Slide out to top",
@@ -1022,21 +995,21 @@
       "dependsOn": [
         "motion-keyframe-slide-out-to-top",
         "motion-duration-fast",
-        "motion-easing-ease-in"
+        "motion-easing-exit"
       ],
       "containerQueryAware": false,
       "reducedMotionAware": true,
       "keyframeName": "slide-out-to-top",
       "animationName": "slide-out-to-top",
-      "animationDuration": "125ms",
-      "animationEasing": "cubic-bezier(0.42, 0, 1, 1)",
+      "animationDuration": "150ms",
+      "animationEasing": "cubic-bezier(0.4, 0, 1, 1)",
       "animationIterations": "1",
       "description": "Animation slide-out-to-top: Slide out to top",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "motion-animation-slide-out-to-bottom",
-      "value": "slide-out-to-bottom var(--motion-duration-fast) var(--motion-easing-ease-in)",
+      "value": "slide-out-to-bottom var(--motion-duration-fast) var(--motion-easing-exit)",
       "category": "motion",
       "namespace": "motion",
       "semanticMeaning": "Slide out to bottom",
@@ -1047,21 +1020,21 @@
       "dependsOn": [
         "motion-keyframe-slide-out-to-bottom",
         "motion-duration-fast",
-        "motion-easing-ease-in"
+        "motion-easing-exit"
       ],
       "containerQueryAware": false,
       "reducedMotionAware": true,
       "keyframeName": "slide-out-to-bottom",
       "animationName": "slide-out-to-bottom",
-      "animationDuration": "125ms",
-      "animationEasing": "cubic-bezier(0.42, 0, 1, 1)",
+      "animationDuration": "150ms",
+      "animationEasing": "cubic-bezier(0.4, 0, 1, 1)",
       "animationIterations": "1",
       "description": "Animation slide-out-to-bottom: Slide out to bottom",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "motion-animation-slide-out-to-left",
-      "value": "slide-out-to-left var(--motion-duration-fast) var(--motion-easing-ease-in)",
+      "value": "slide-out-to-left var(--motion-duration-fast) var(--motion-easing-exit)",
       "category": "motion",
       "namespace": "motion",
       "semanticMeaning": "Slide out to left",
@@ -1072,21 +1045,21 @@
       "dependsOn": [
         "motion-keyframe-slide-out-to-left",
         "motion-duration-fast",
-        "motion-easing-ease-in"
+        "motion-easing-exit"
       ],
       "containerQueryAware": false,
       "reducedMotionAware": true,
       "keyframeName": "slide-out-to-left",
       "animationName": "slide-out-to-left",
-      "animationDuration": "125ms",
-      "animationEasing": "cubic-bezier(0.42, 0, 1, 1)",
+      "animationDuration": "150ms",
+      "animationEasing": "cubic-bezier(0.4, 0, 1, 1)",
       "animationIterations": "1",
       "description": "Animation slide-out-to-left: Slide out to left",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "motion-animation-slide-out-to-right",
-      "value": "slide-out-to-right var(--motion-duration-fast) var(--motion-easing-ease-in)",
+      "value": "slide-out-to-right var(--motion-duration-fast) var(--motion-easing-exit)",
       "category": "motion",
       "namespace": "motion",
       "semanticMeaning": "Slide out to right",
@@ -1097,21 +1070,21 @@
       "dependsOn": [
         "motion-keyframe-slide-out-to-right",
         "motion-duration-fast",
-        "motion-easing-ease-in"
+        "motion-easing-exit"
       ],
       "containerQueryAware": false,
       "reducedMotionAware": true,
       "keyframeName": "slide-out-to-right",
       "animationName": "slide-out-to-right",
-      "animationDuration": "125ms",
-      "animationEasing": "cubic-bezier(0.42, 0, 1, 1)",
+      "animationDuration": "150ms",
+      "animationEasing": "cubic-bezier(0.4, 0, 1, 1)",
       "animationIterations": "1",
       "description": "Animation slide-out-to-right: Slide out to right",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "motion-animation-scale-in",
-      "value": "scale-in var(--motion-duration-normal) var(--motion-easing-spring)",
+      "value": "scale-in var(--motion-duration-normal) var(--motion-easing-spring-snappy)",
       "category": "motion",
       "namespace": "motion",
       "semanticMeaning": "Scale in with spring",
@@ -1123,21 +1096,21 @@
       "dependsOn": [
         "motion-keyframe-scale-in",
         "motion-duration-normal",
-        "motion-easing-spring"
+        "motion-easing-spring-snappy"
       ],
       "containerQueryAware": false,
       "reducedMotionAware": true,
       "keyframeName": "scale-in",
       "animationName": "scale-in",
-      "animationDuration": "150ms",
-      "animationEasing": "cubic-bezier(0.175, 0.885, 0.32, 1.275)",
+      "animationDuration": "350ms",
+      "animationEasing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
       "animationIterations": "1",
       "description": "Animation scale-in: Scale in with spring",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "motion-animation-scale-out",
-      "value": "scale-out var(--motion-duration-fast) var(--motion-easing-ease-in)",
+      "value": "scale-out var(--motion-duration-fast) var(--motion-easing-exit)",
       "category": "motion",
       "namespace": "motion",
       "semanticMeaning": "Scale out",
@@ -1148,17 +1121,17 @@
       "dependsOn": [
         "motion-keyframe-scale-out",
         "motion-duration-fast",
-        "motion-easing-ease-in"
+        "motion-easing-exit"
       ],
       "containerQueryAware": false,
       "reducedMotionAware": true,
       "keyframeName": "scale-out",
       "animationName": "scale-out",
-      "animationDuration": "125ms",
-      "animationEasing": "cubic-bezier(0.42, 0, 1, 1)",
+      "animationDuration": "150ms",
+      "animationEasing": "cubic-bezier(0.4, 0, 1, 1)",
       "animationIterations": "1",
       "description": "Animation scale-out: Scale out",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "motion-animation-spin",
@@ -1183,11 +1156,11 @@
       "animationEasing": "linear",
       "animationIterations": "infinite",
       "description": "Animation spin: Continuous spin",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "motion-animation-ping",
-      "value": "ping 1s var(--motion-easing-ease-out) infinite",
+      "value": "ping 1s var(--motion-easing-enter) infinite",
       "category": "motion",
       "namespace": "motion",
       "semanticMeaning": "Pinging pulse",
@@ -1197,21 +1170,21 @@
       "userOverride": null,
       "dependsOn": [
         "motion-keyframe-ping",
-        "motion-easing-ease-out"
+        "motion-easing-enter"
       ],
       "containerQueryAware": false,
       "reducedMotionAware": true,
       "keyframeName": "ping",
       "animationName": "ping",
       "animationDuration": "1s",
-      "animationEasing": "cubic-bezier(0, 0, 0.58, 1)",
+      "animationEasing": "cubic-bezier(0, 0, 0.2, 1)",
       "animationIterations": "infinite",
       "description": "Animation ping: Pinging pulse",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "motion-animation-pulse",
-      "value": "pulse 2s var(--motion-easing-ease-in-out) infinite",
+      "value": "pulse 2s var(--motion-easing-standard) infinite",
       "category": "motion",
       "namespace": "motion",
       "semanticMeaning": "Gentle pulse",
@@ -1222,21 +1195,21 @@
       "userOverride": null,
       "dependsOn": [
         "motion-keyframe-pulse",
-        "motion-easing-ease-in-out"
+        "motion-easing-standard"
       ],
       "containerQueryAware": false,
       "reducedMotionAware": true,
       "keyframeName": "pulse",
       "animationName": "pulse",
       "animationDuration": "2s",
-      "animationEasing": "cubic-bezier(0.42, 0, 0.58, 1)",
+      "animationEasing": "cubic-bezier(0.25, 0.1, 0.25, 1)",
       "animationIterations": "infinite",
       "description": "Animation pulse: Gentle pulse",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "motion-animation-bounce",
-      "value": "bounce 1s var(--motion-easing-ease-in-out) infinite",
+      "value": "bounce 1s var(--motion-easing-standard) infinite",
       "category": "motion",
       "namespace": "motion",
       "semanticMeaning": "Bouncing",
@@ -1246,21 +1219,21 @@
       "userOverride": null,
       "dependsOn": [
         "motion-keyframe-bounce",
-        "motion-easing-ease-in-out"
+        "motion-easing-standard"
       ],
       "containerQueryAware": false,
       "reducedMotionAware": true,
       "keyframeName": "bounce",
       "animationName": "bounce",
       "animationDuration": "1s",
-      "animationEasing": "cubic-bezier(0.42, 0, 0.58, 1)",
+      "animationEasing": "cubic-bezier(0.25, 0.1, 0.25, 1)",
       "animationIterations": "infinite",
       "description": "Animation bounce: Bouncing",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "motion-animation-accordion-down",
-      "value": "accordion-down var(--motion-duration-normal) var(--motion-easing-ease-out)",
+      "value": "accordion-down var(--motion-duration-normal) var(--motion-easing-enter)",
       "category": "motion",
       "namespace": "motion",
       "semanticMeaning": "Accordion expand",
@@ -1272,21 +1245,21 @@
       "dependsOn": [
         "motion-keyframe-accordion-down",
         "motion-duration-normal",
-        "motion-easing-ease-out"
+        "motion-easing-enter"
       ],
       "containerQueryAware": false,
       "reducedMotionAware": true,
       "keyframeName": "accordion-down",
       "animationName": "accordion-down",
-      "animationDuration": "150ms",
-      "animationEasing": "cubic-bezier(0, 0, 0.58, 1)",
+      "animationDuration": "350ms",
+      "animationEasing": "cubic-bezier(0, 0, 0.2, 1)",
       "animationIterations": "1",
       "description": "Animation accordion-down: Accordion expand",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "motion-animation-accordion-up",
-      "value": "accordion-up var(--motion-duration-normal) var(--motion-easing-ease-out)",
+      "value": "accordion-up var(--motion-duration-normal) var(--motion-easing-enter)",
       "category": "motion",
       "namespace": "motion",
       "semanticMeaning": "Accordion collapse",
@@ -1298,21 +1271,21 @@
       "dependsOn": [
         "motion-keyframe-accordion-up",
         "motion-duration-normal",
-        "motion-easing-ease-out"
+        "motion-easing-enter"
       ],
       "containerQueryAware": false,
       "reducedMotionAware": true,
       "keyframeName": "accordion-up",
       "animationName": "accordion-up",
-      "animationDuration": "150ms",
-      "animationEasing": "cubic-bezier(0, 0, 0.58, 1)",
+      "animationDuration": "350ms",
+      "animationEasing": "cubic-bezier(0, 0, 0.2, 1)",
       "animationIterations": "1",
       "description": "Animation accordion-up: Accordion collapse",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "motion-animation-caret-blink",
-      "value": "caret-blink 1.25s var(--motion-easing-ease-out) infinite",
+      "value": "caret-blink 1.25s var(--motion-easing-enter) infinite",
       "category": "motion",
       "namespace": "motion",
       "semanticMeaning": "Caret blinking",
@@ -1322,21 +1295,21 @@
       "userOverride": null,
       "dependsOn": [
         "motion-keyframe-caret-blink",
-        "motion-easing-ease-out"
+        "motion-easing-enter"
       ],
       "containerQueryAware": false,
       "reducedMotionAware": true,
       "keyframeName": "caret-blink",
       "animationName": "caret-blink",
       "animationDuration": "1.25s",
-      "animationEasing": "cubic-bezier(0, 0, 0.58, 1)",
+      "animationEasing": "cubic-bezier(0, 0, 0.2, 1)",
       "animationIterations": "infinite",
       "description": "Animation caret-blink: Caret blinking",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "motion-fade-in",
-      "value": "125ms cubic-bezier(0, 0, 0.58, 1)",
+      "value": "150ms cubic-bezier(0, 0, 0.2, 1)",
       "category": "motion",
       "namespace": "motion",
       "semanticMeaning": "Fade in animation preset",
@@ -1347,24 +1320,24 @@
       "userOverride": null,
       "dependsOn": [
         "motion-duration-fast",
-        "motion-easing-ease-out"
+        "motion-easing-enter"
       ],
       "containerQueryAware": false,
       "reducedMotionAware": true,
       "easingCurve": [
         0,
         0,
-        0.58,
+        0.2,
         1
       ],
-      "easingName": "ease-out",
-      "motionDuration": 125,
-      "description": "Fade in animation preset. Combines fast duration with ease-out easing.",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "easingName": "enter",
+      "motionDuration": 150,
+      "description": "Fade in animation preset. Combines fast duration with enter easing.",
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "motion-fade-out",
-      "value": "125ms cubic-bezier(0.42, 0, 1, 1)",
+      "value": "150ms cubic-bezier(0.4, 0, 1, 1)",
       "category": "motion",
       "namespace": "motion",
       "semanticMeaning": "Fade out animation preset",
@@ -1375,24 +1348,24 @@
       "userOverride": null,
       "dependsOn": [
         "motion-duration-fast",
-        "motion-easing-ease-in"
+        "motion-easing-exit"
       ],
       "containerQueryAware": false,
       "reducedMotionAware": true,
       "easingCurve": [
-        0.42,
+        0.4,
         0,
         1,
         1
       ],
-      "easingName": "ease-in",
-      "motionDuration": 125,
-      "description": "Fade out animation preset. Combines fast duration with ease-in easing.",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "easingName": "exit",
+      "motionDuration": 150,
+      "description": "Fade out animation preset. Combines fast duration with exit easing.",
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "motion-slide-in",
-      "value": "150ms cubic-bezier(0, 0, 0.58, 1)",
+      "value": "350ms cubic-bezier(0, 0, 0.2, 1)",
       "category": "motion",
       "namespace": "motion",
       "semanticMeaning": "Slide in animation preset",
@@ -1404,24 +1377,24 @@
       "userOverride": null,
       "dependsOn": [
         "motion-duration-normal",
-        "motion-easing-ease-out"
+        "motion-easing-enter"
       ],
       "containerQueryAware": false,
       "reducedMotionAware": true,
       "easingCurve": [
         0,
         0,
-        0.58,
+        0.2,
         1
       ],
-      "easingName": "ease-out",
-      "motionDuration": 150,
-      "description": "Slide in animation preset. Combines normal duration with ease-out easing.",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "easingName": "enter",
+      "motionDuration": 350,
+      "description": "Slide in animation preset. Combines normal duration with enter easing.",
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "motion-slide-out",
-      "value": "125ms cubic-bezier(0.42, 0, 1, 1)",
+      "value": "150ms cubic-bezier(0.4, 0, 1, 1)",
       "category": "motion",
       "namespace": "motion",
       "semanticMeaning": "Slide out animation preset",
@@ -1433,24 +1406,24 @@
       "userOverride": null,
       "dependsOn": [
         "motion-duration-fast",
-        "motion-easing-ease-in"
+        "motion-easing-exit"
       ],
       "containerQueryAware": false,
       "reducedMotionAware": true,
       "easingCurve": [
-        0.42,
+        0.4,
         0,
         1,
         1
       ],
-      "easingName": "ease-in",
-      "motionDuration": 125,
-      "description": "Slide out animation preset. Combines fast duration with ease-in easing.",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "easingName": "exit",
+      "motionDuration": 150,
+      "description": "Slide out animation preset. Combines fast duration with exit easing.",
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "motion-scale-in",
-      "value": "150ms cubic-bezier(0.175, 0.885, 0.32, 1.275)",
+      "value": "350ms cubic-bezier(0.2, 0.8, 0.2, 1)",
       "category": "motion",
       "namespace": "motion",
       "semanticMeaning": "Scale in with spring animation",
@@ -1462,31 +1435,435 @@
       "userOverride": null,
       "dependsOn": [
         "motion-duration-normal",
-        "motion-easing-spring"
+        "motion-easing-spring-snappy"
       ],
       "containerQueryAware": false,
       "reducedMotionAware": true,
       "easingCurve": [
-        0.175,
-        0.885,
-        0.32,
-        1.275
+        0.2,
+        0.8,
+        0.2,
+        1
       ],
-      "easingName": "spring",
-      "motionDuration": 150,
-      "description": "Scale in with spring animation. Combines normal duration with spring easing.",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "easingName": "spring-snappy",
+      "motionDuration": 350,
+      "description": "Scale in with spring animation. Combines normal duration with spring-snappy easing.",
+      "generatedAt": "2026-07-22T22:56:24.283Z"
+    },
+    {
+      "name": "motion-semantic-hover",
+      "value": "{\"properties\":[\"color\",\"background-color\",\"border-color\"],\"durationTier\":\"fast\",\"curve\":\"standard\",\"reducedMotion\":null}",
+      "category": "motion",
+      "namespace": "motion",
+      "semanticMeaning": "Hover-state colour transition. Acknowledges pointer presence. Colour only, no movement -- the cursor is already on target, so the response matches its speed at the fast tier.",
+      "usageContext": [
+        "hover",
+        "links",
+        "interactive-surfaces"
+      ],
+      "usagePatterns": {
+        "do": [
+          "Apply class motion-hover and let a state/presence change trigger the transition"
+        ],
+        "never": [
+          "Hardcode a raw numeric duration in place of this token"
+        ]
+      },
+      "userOverride": null,
+      "dependsOn": [
+        "motion-duration-fast",
+        "motion-easing-standard"
+      ],
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
+      "motionIntent": "transition",
+      "generateUtilityClass": true,
+      "description": "Semantic motion motion-hover: color, background-color, border-color over fast with standard. Colour only, no movement -- the cursor is already on target, so the response matches its speed at the fast tier.",
+      "generatedAt": "2026-07-22T22:56:24.283Z"
+    },
+    {
+      "name": "motion-semantic-focus",
+      "value": "{\"properties\":[\"box-shadow\",\"outline-color\"],\"durationTier\":\"micro\",\"curve\":\"linear\",\"reducedMotion\":null}",
+      "category": "motion",
+      "namespace": "motion",
+      "semanticMeaning": "Focus-ring transition. Marks the focused element. A ring appearing, not moving -- micro tier at linear velocity reads as the system marking focus, not a gesture. (Tailwind ring is box-shadow.)",
+      "usageContext": [
+        "focus-visible",
+        "keyboard-navigation"
+      ],
+      "usagePatterns": {
+        "do": [
+          "Apply class motion-focus and let a state/presence change trigger the transition"
+        ],
+        "never": [
+          "Hardcode a raw numeric duration in place of this token"
+        ]
+      },
+      "userOverride": null,
+      "dependsOn": [
+        "motion-duration-micro",
+        "motion-easing-linear"
+      ],
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
+      "motionIntent": "transition",
+      "generateUtilityClass": true,
+      "description": "Semantic motion motion-focus: box-shadow, outline-color over micro with linear. A ring appearing, not moving -- micro tier at linear velocity reads as the system marking focus, not a gesture. (Tailwind ring is box-shadow.)",
+      "generatedAt": "2026-07-22T22:56:24.283Z"
+    },
+    {
+      "name": "motion-semantic-press",
+      "value": "{\"properties\":[\"transform\",\"color\",\"background-color\"],\"durationTier\":\"micro\",\"curve\":\"spring-snappy\",\"reducedMotion\":{\"properties\":[\"color\",\"background-color\"]}}",
+      "category": "motion",
+      "namespace": "motion",
+      "semanticMeaning": "Press/active feedback. Confirms the input was received. The fastest, tightest feedback -- micro tier with a snappy spring follows the finger. Under reduced motion the transform drops; the colour change survives.",
+      "usageContext": [
+        "press",
+        "active",
+        "buttons"
+      ],
+      "usagePatterns": {
+        "do": [
+          "Apply class motion-press and let a state/presence change trigger the transition"
+        ],
+        "never": [
+          "Hardcode a raw numeric duration in place of this token"
+        ]
+      },
+      "userOverride": null,
+      "dependsOn": [
+        "motion-duration-micro",
+        "motion-easing-spring-snappy"
+      ],
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
+      "motionIntent": "transition",
+      "generateUtilityClass": true,
+      "description": "Semantic motion motion-press: transform, color, background-color over micro with spring-snappy. The fastest, tightest feedback -- micro tier with a snappy spring follows the finger. Under reduced motion the transform drops; the colour change survives.",
+      "generatedAt": "2026-07-22T22:56:24.283Z"
+    },
+    {
+      "name": "motion-semantic-toggle",
+      "value": "{\"properties\":[\"color\",\"background-color\",\"transform\"],\"durationTier\":\"moderate\",\"curve\":\"spring-snappy\",\"reducedMotion\":{\"properties\":[\"color\",\"background-color\"]}}",
+      "category": "motion",
+      "namespace": "motion",
+      "semanticMeaning": "Toggle/switch state change. Shows the new state. A thumb travelling a track is a small, tracked movement -- moderate tier, snappy spring. Reduced motion drops the transform to a colour cross-fade.",
+      "usageContext": [
+        "switch",
+        "toggle",
+        "checkbox"
+      ],
+      "usagePatterns": {
+        "do": [
+          "Apply class motion-toggle and let a state/presence change trigger the transition"
+        ],
+        "never": [
+          "Hardcode a raw numeric duration in place of this token"
+        ]
+      },
+      "userOverride": null,
+      "dependsOn": [
+        "motion-duration-moderate",
+        "motion-easing-spring-snappy"
+      ],
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
+      "motionIntent": "transition",
+      "generateUtilityClass": true,
+      "description": "Semantic motion motion-toggle: color, background-color, transform over moderate with spring-snappy. A thumb travelling a track is a small, tracked movement -- moderate tier, snappy spring. Reduced motion drops the transform to a colour cross-fade.",
+      "generatedAt": "2026-07-22T22:56:24.283Z"
+    },
+    {
+      "name": "motion-semantic-dropdown-in",
+      "value": "{\"properties\":[\"opacity\",\"transform\"],\"durationTier\":\"moderate\",\"curve\":\"enter\",\"reducedMotion\":{\"properties\":[\"opacity\"],\"ms\":100}}",
+      "category": "motion",
+      "namespace": "motion",
+      "semanticMeaning": "Dropdown/menu entrance. A dropdown is small and travels a short distance -- moderate tier, one step below the modal, with the arrival curve.",
+      "usageContext": [
+        "dropdown",
+        "menu",
+        "select",
+        "popover"
+      ],
+      "usagePatterns": {
+        "do": [
+          "Apply class motion-dropdown-in and let a state/presence change trigger the transition"
+        ],
+        "never": [
+          "Hardcode a raw numeric duration in place of this token"
+        ]
+      },
+      "userOverride": null,
+      "dependsOn": [
+        "motion-duration-moderate",
+        "motion-easing-enter"
+      ],
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
+      "motionIntent": "enter",
+      "generateUtilityClass": true,
+      "description": "Semantic motion motion-dropdown-in: opacity, transform over moderate with enter. A dropdown is small and travels a short distance -- moderate tier, one step below the modal, with the arrival curve.",
+      "generatedAt": "2026-07-22T22:56:24.283Z"
+    },
+    {
+      "name": "motion-semantic-dropdown-out",
+      "value": "{\"properties\":[\"opacity\",\"transform\"],\"durationTier\":\"fast\",\"curve\":\"exit\",\"reducedMotion\":{\"properties\":[\"opacity\"],\"ms\":100}}",
+      "category": "motion",
+      "namespace": "motion",
+      "semanticMeaning": "Dropdown/menu exit. The exit of a small element -- fast tier (shorter than its moderate entrance) with the departure curve. The user already chose to dismiss it.",
+      "usageContext": [
+        "dropdown",
+        "menu",
+        "select",
+        "popover"
+      ],
+      "usagePatterns": {
+        "do": [
+          "Apply class motion-dropdown-out and let a state/presence change trigger the transition"
+        ],
+        "never": [
+          "Hardcode a raw numeric duration in place of this token"
+        ]
+      },
+      "userOverride": null,
+      "dependsOn": [
+        "motion-duration-fast",
+        "motion-easing-exit"
+      ],
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
+      "motionIntent": "exit",
+      "generateUtilityClass": true,
+      "description": "Semantic motion motion-dropdown-out: opacity, transform over fast with exit. The exit of a small element -- fast tier (shorter than its moderate entrance) with the departure curve. The user already chose to dismiss it.",
+      "generatedAt": "2026-07-22T22:56:24.283Z"
+    },
+    {
+      "name": "motion-semantic-modal-in",
+      "value": "{\"properties\":[\"opacity\",\"transform\"],\"durationTier\":\"normal\",\"curve\":\"enter\",\"reducedMotion\":{\"properties\":[\"opacity\"],\"ms\":150}}",
+      "category": "motion",
+      "namespace": "motion",
+      "semanticMeaning": "Modal/dialog entrance. A modal is larger and travels farther than a dropdown -- normal tier, one step up, with the arrival curve. Size and distance produce the longer duration.",
+      "usageContext": [
+        "modal",
+        "dialog",
+        "alert-dialog"
+      ],
+      "usagePatterns": {
+        "do": [
+          "Apply class motion-modal-in and let a state/presence change trigger the transition"
+        ],
+        "never": [
+          "Hardcode a raw numeric duration in place of this token"
+        ]
+      },
+      "userOverride": null,
+      "dependsOn": [
+        "motion-duration-normal",
+        "motion-easing-enter"
+      ],
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
+      "motionIntent": "enter",
+      "generateUtilityClass": true,
+      "description": "Semantic motion motion-modal-in: opacity, transform over normal with enter. A modal is larger and travels farther than a dropdown -- normal tier, one step up, with the arrival curve. Size and distance produce the longer duration.",
+      "generatedAt": "2026-07-22T22:56:24.283Z"
+    },
+    {
+      "name": "motion-semantic-modal-out",
+      "value": "{\"properties\":[\"opacity\",\"transform\"],\"durationTier\":\"moderate\",\"curve\":\"exit\",\"reducedMotion\":{\"properties\":[\"opacity\"],\"ms\":150}}",
+      "category": "motion",
+      "namespace": "motion",
+      "semanticMeaning": "Modal/dialog exit. The modal exit -- moderate tier (shorter than its normal entrance) with the departure curve.",
+      "usageContext": [
+        "modal",
+        "dialog",
+        "alert-dialog"
+      ],
+      "usagePatterns": {
+        "do": [
+          "Apply class motion-modal-out and let a state/presence change trigger the transition"
+        ],
+        "never": [
+          "Hardcode a raw numeric duration in place of this token"
+        ]
+      },
+      "userOverride": null,
+      "dependsOn": [
+        "motion-duration-moderate",
+        "motion-easing-exit"
+      ],
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
+      "motionIntent": "exit",
+      "generateUtilityClass": true,
+      "description": "Semantic motion motion-modal-out: opacity, transform over moderate with exit. The modal exit -- moderate tier (shorter than its normal entrance) with the departure curve.",
+      "generatedAt": "2026-07-22T22:56:24.283Z"
+    },
+    {
+      "name": "motion-semantic-sheet-in",
+      "value": "{\"properties\":[\"transform\"],\"durationTier\":\"slow\",\"curve\":\"spring-smooth\",\"reducedMotion\":{\"properties\":[\"opacity\"],\"ms\":250}}",
+      "category": "motion",
+      "namespace": "motion",
+      "semanticMeaning": "Sheet/drawer entrance. A sheet is the largest spatial movement -- slow tier with the physical settle of a smooth spring, because the user must track it into place. Reduced motion becomes a cross-fade.",
+      "usageContext": [
+        "sheet",
+        "drawer",
+        "side-panel"
+      ],
+      "usagePatterns": {
+        "do": [
+          "Apply class motion-sheet-in and let a state/presence change trigger the transition"
+        ],
+        "never": [
+          "Hardcode a raw numeric duration in place of this token"
+        ]
+      },
+      "userOverride": null,
+      "dependsOn": [
+        "motion-duration-slow",
+        "motion-easing-spring-smooth"
+      ],
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
+      "motionIntent": "enter",
+      "generateUtilityClass": true,
+      "description": "Semantic motion motion-sheet-in: transform over slow with spring-smooth. A sheet is the largest spatial movement -- slow tier with the physical settle of a smooth spring, because the user must track it into place. Reduced motion becomes a cross-fade.",
+      "generatedAt": "2026-07-22T22:56:24.283Z"
+    },
+    {
+      "name": "motion-semantic-sheet-out",
+      "value": "{\"properties\":[\"transform\"],\"durationTier\":\"normal\",\"curve\":\"exit\",\"reducedMotion\":{\"properties\":[\"opacity\"],\"ms\":250}}",
+      "category": "motion",
+      "namespace": "motion",
+      "semanticMeaning": "Sheet/drawer exit. The sheet exit -- normal tier (shorter than its slow entrance) with the departure curve.",
+      "usageContext": [
+        "sheet",
+        "drawer",
+        "side-panel"
+      ],
+      "usagePatterns": {
+        "do": [
+          "Apply class motion-sheet-out and let a state/presence change trigger the transition"
+        ],
+        "never": [
+          "Hardcode a raw numeric duration in place of this token"
+        ]
+      },
+      "userOverride": null,
+      "dependsOn": [
+        "motion-duration-normal",
+        "motion-easing-exit"
+      ],
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
+      "motionIntent": "exit",
+      "generateUtilityClass": true,
+      "description": "Semantic motion motion-sheet-out: transform over normal with exit. The sheet exit -- normal tier (shorter than its slow entrance) with the departure curve.",
+      "generatedAt": "2026-07-22T22:56:24.283Z"
+    },
+    {
+      "name": "motion-semantic-expand",
+      "value": "{\"properties\":[\"grid-template-rows\",\"opacity\"],\"durationTier\":\"normal\",\"curve\":\"enter\",\"reducedMotion\":{\"properties\":[\"opacity\"]}}",
+      "category": "motion",
+      "namespace": "motion",
+      "semanticMeaning": "Expand/reveal collapsible content (accordion, disclosure). Content unfolding to its natural height -- normal tier with the arrival curve. Transitions grid-template-rows (0fr->1fr), the transitionable stand-in for height:auto. Reduced motion snaps the rows and fades opacity.",
+      "usageContext": [
+        "accordion",
+        "collapsible",
+        "disclosure"
+      ],
+      "usagePatterns": {
+        "do": [
+          "Apply class motion-expand and let a state/presence change trigger the transition"
+        ],
+        "never": [
+          "Hardcode a raw numeric duration in place of this token"
+        ]
+      },
+      "userOverride": null,
+      "dependsOn": [
+        "motion-duration-normal",
+        "motion-easing-enter"
+      ],
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
+      "motionIntent": "enter",
+      "generateUtilityClass": true,
+      "description": "Semantic motion motion-expand: grid-template-rows, opacity over normal with enter. Content unfolding to its natural height -- normal tier with the arrival curve. Transitions grid-template-rows (0fr->1fr), the transitionable stand-in for height:auto. Reduced motion snaps the rows and fades opacity.",
+      "generatedAt": "2026-07-22T22:56:24.283Z"
+    },
+    {
+      "name": "motion-semantic-collapse",
+      "value": "{\"properties\":[\"grid-template-rows\",\"opacity\"],\"durationTier\":\"moderate\",\"curve\":\"exit\",\"reducedMotion\":{\"properties\":[\"opacity\"]}}",
+      "category": "motion",
+      "namespace": "motion",
+      "semanticMeaning": "Collapse/hide collapsible content (accordion, disclosure). Content folding away -- moderate tier (shorter than its normal expansion) with the departure curve. Reduced motion snaps the rows.",
+      "usageContext": [
+        "accordion",
+        "collapsible",
+        "disclosure"
+      ],
+      "usagePatterns": {
+        "do": [
+          "Apply class motion-collapse and let a state/presence change trigger the transition"
+        ],
+        "never": [
+          "Hardcode a raw numeric duration in place of this token"
+        ]
+      },
+      "userOverride": null,
+      "dependsOn": [
+        "motion-duration-moderate",
+        "motion-easing-exit"
+      ],
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
+      "motionIntent": "exit",
+      "generateUtilityClass": true,
+      "description": "Semantic motion motion-collapse: grid-template-rows, opacity over moderate with exit. Content folding away -- moderate tier (shorter than its normal expansion) with the departure curve. Reduced motion snaps the rows.",
+      "generatedAt": "2026-07-22T22:56:24.283Z"
+    },
+    {
+      "name": "motion-semantic-page",
+      "value": "{\"properties\":[\"opacity\",\"transform\"],\"durationTier\":\"slow\",\"curve\":\"spring-smooth\",\"reducedMotion\":{\"properties\":[\"opacity\"],\"ms\":200}}",
+      "category": "motion",
+      "namespace": "motion",
+      "semanticMeaning": "Page/route transition. A whole-view transition -- slow tier with the physical settle of a smooth spring, because the user reorients across the largest possible distance.",
+      "usageContext": [
+        "page-transition",
+        "route-change",
+        "view-switch"
+      ],
+      "usagePatterns": {
+        "do": [
+          "Apply class motion-page and let a state/presence change trigger the transition"
+        ],
+        "never": [
+          "Hardcode a raw numeric duration in place of this token"
+        ]
+      },
+      "userOverride": null,
+      "dependsOn": [
+        "motion-duration-slow",
+        "motion-easing-spring-smooth"
+      ],
+      "containerQueryAware": false,
+      "reducedMotionAware": true,
+      "motionIntent": "enter",
+      "generateUtilityClass": true,
+      "description": "Semantic motion motion-page: opacity, transform over slow with spring-smooth. A whole-view transition -- slow tier with the physical settle of a smooth spring, because the user reorients across the largest possible distance.",
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "motion-progression",
-      "value": "{\"ratio\":\"minor-third\",\"ratioValue\":1.2,\"baseDuration\":150,\"note\":\"Motion timing uses step-based progression (base * ratio^step) for unified feel\"}",
+      "value": "{\"ratio\":\"minor-third\",\"ratioValue\":1.2,\"baseDuration\":150,\"note\":\"Duration tiers are perceptually derived literals (docs/MOTION.md); delay tokens use the workspace progression ratio from the base duration.\"}",
       "category": "motion",
       "namespace": "motion",
-      "semanticMeaning": "Metadata about the motion progression system",
+      "semanticMeaning": "Metadata about the motion system",
       "userOverride": null,
       "containerQueryAware": false,
-      "description": "Motion uses minor-third progression from 150ms base.",
-      "generatedAt": "2026-07-02T18:46:36.066Z"
+      "description": "Duration tiers are perceptual literals; delays use minor-third progression from 150ms base.",
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     }
   ]
 }
