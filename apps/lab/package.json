@@ -2,7 +2,7 @@
   "name": "lab",
   "version": "0.0.0",
   "private": true,
-  "description": "Non-deployed proving ground for behavior-layer components. New-grain components demo here before the live registry (apps/demo) picks them up.",
+  "description": "Live dogfooding app for rafters. A real Vite + React consumer install: Tailwind v4 compiles utilities on the fly against a genuine `rafters init` token theme. Type/component toys prove the system before the registry ships them.",
   "type": "module",
   "scripts": {
     "dev": "vite",
