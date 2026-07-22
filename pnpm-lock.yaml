@@ -308,9 +308,6 @@ importers:
       comment-parser:
         specifier: ^1.4.1
         version: 1.4.1
-      rafters:
-        specifier: workspace:*
-        version: link:../../packages/cli
     devDependencies:
       '@astrojs/check':
         specifier: ^0.9.9
@@ -6763,11 +6760,6 @@ packages:
     resolution: {integrity: sha512-3qVyCOexLCWw06PQa5kRPwvMWMZ/eZeCRWUvgD6a0OkqL/4iCnxy2WumbWifa937Uo5xhyWJ0uxlU39ljhNh7A==}
     hasBin: true
 
-  yaml@2.8.2:
-    resolution: {integrity: sha512-mplynKqc1C2hTVYxd0PU2xQAc22TI1vShAYGksCCfxbn/dFwnHTNi1bvYsBTkhdUNtGIf5xNOg938rrSSYvS9A==}
-    engines: {node: '>= 14.6'}
-    hasBin: true
-
   yaml@2.8.3:
     resolution: {integrity: sha512-AvbaCLOO2Otw/lW5bmh9d/WEdcDFdQp2Z2ZUH3pX9U2ihyUY0nvLv7J6TrWowklRGPYbB/IuIMfYgxaCPg5Bpg==}
     engines: {node: '>= 14.6'}
@@ -11439,7 +11431,7 @@ snapshots:
 
   openapi3-ts@4.5.0:
     dependencies:
-      yaml: 2.8.2
+      yaml: 2.9.0
 
   ora@9.0.0:
     dependencies:
@@ -12579,10 +12571,10 @@ snapshots:
     dependencies:
       '@oxc-project/runtime': 0.115.0
       lightningcss: 1.32.0
-      picomatch: 4.0.3
+      picomatch: 4.0.5
       postcss: 8.5.8
       rolldown: 1.0.0-rc.9
-      tinyglobby: 0.2.15
+      tinyglobby: 0.2.17
     optionalDependencies:
       '@types/node': 24.10.0
       esbuild: 0.27.0
@@ -12596,10 +12588,10 @@ snapshots:
     dependencies:
       '@oxc-project/runtime': 0.115.0
       lightningcss: 1.32.0
-      picomatch: 4.0.3
+      picomatch: 4.0.5
       postcss: 8.5.8
       rolldown: 1.0.0-rc.9
-      tinyglobby: 0.2.15
+      tinyglobby: 0.2.17
     optionalDependencies:
       '@types/node': 24.10.0
       esbuild: 0.27.3
@@ -12983,8 +12975,6 @@ snapshots:
       vscode-languageserver-types: 3.18.0
       vscode-uri: 3.1.0
       yaml: 2.8.3
-
-  yaml@2.8.2: {}
 
   yaml@2.8.3: {}
 

@@ -13,8 +13,7 @@
   },
   "dependencies": {
     "astro": "^6.0.8",
-    "comment-parser": "^1.4.1",
-    "rafters": "workspace:*"
+    "comment-parser": "^1.4.1"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.9",

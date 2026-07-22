@@ -6,7 +6,16 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { parse, type Spec } from 'comment-parser';
-import type { RegistryItemType } from 'rafters/registry/types';
+
+/**
+ * Registry item types. Defined locally (like RegistryItem/RegistryFile/
+ * RegistryIndex below) so the registry never imports from the `rafters` CLI's
+ * BUILT dist -- rafters is code-first and only the CLI builds, in the build
+ * step, which runs after typecheck. Importing from dist made `astro check`
+ * depend on a build that has not happened yet in CI. The CLI's zod
+ * RegistryItemTypeSchema is the runtime source of truth these must match.
+ */
+type RegistryItemType = 'ui' | 'primitive' | 'composite' | 'rule' | 'substrate';
 
 // Intelligence metadata extracted from JSDoc comments
 export interface ComponentIntelligence {
