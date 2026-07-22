@@ -15,14 +15,16 @@ conformance).
 
 A persistent navigation rail. On desktop it expands to a full rail or collapses
 (to an icon strip or fully off-canvas), and it remembers that choice across
-loads. Below the `md` breakpoint the same panel becomes a dismissable overlay
-over a scrim.
+loads. Below the `md` breakpoint the same navigation becomes a MODAL overlay --
+the merged `sheet` -- matching shadcn's architecture.
 
 ## Composition
 
 ```
 sidebar (bespoke slice)   state {open, openMobile}, actions open/close/openMobile/closeMobile,
-                          parts root/trigger/rail/panel/overlay, aria + Escape keymap
+                          parts root/trigger/rail/panel, aria + Escape keymap
+sheet (merged component)  the mobile overlay: React renders <Sheet>/<SheetContent>;
+                          WC/Astro compose startSheetModalEffects on the panel
 ```
 
 The slice is bespoke, not `disclosable`: the sidebar has TWO independent axes
@@ -36,6 +38,11 @@ the pure score cannot hold. The routing decision is a pure exported function,
 `toggleIntent(state, config, isMobile)`, so it lives IN the behavior; each
 performance supplies only the `isMobile` reading and calls it. `isMobile` never
 enters the score's state.
+
+The mobile overlay COMPOSES the merged `sheet` rather than re-deriving modality:
+the React performance renders `<Sheet open={openMobile}>` + `<SheetContent>`; the
+WC/Astro binds compose `startSheetModalEffects` (sheet's own exported modal trio)
+on the panel. `openMobile` drives the sheet's open state either way.
 
 ## Config, state, actions
 
@@ -66,47 +73,57 @@ mobile prop, so `openMobile` is always intrinsic and has no change callback.
 | Part | Presence | ARIA / data |
 | --- | --- | --- |
 | root | always | none (the provider wrapper and bind root) |
-| trigger | optional | `aria-controls` (panel id, only when real), `data-state` (expanded/collapsed) |
+| trigger | optional | `aria-controls` (desktop panel id, only when real; dropped on mobile where the panel is the Sheet), `data-state` |
 | rail | optional | `aria-label="Toggle Sidebar"`, `data-state` |
 | panel | always | `data-state` (expanded/collapsed), `data-collapsible` (mode, only while collapsed and not `none`), `data-mobile` (open/closed) |
-| overlay | optional | `aria-label="Close sidebar"`, `data-state` (open/closed); present-but-hidden off the mobile axis |
+
+`role="dialog"` + `aria-modal` + `aria-label="Sidebar"` are NOT in the score's
+projection -- they are bind-managed on the panel while the mobile overlay is open
+(they depend on the viewport signal, which the score does not hold), mirroring the
+React `SheetContent` surface. On mobile in React the panel is not rendered at all
+(the overlay is the portaled Sheet), so the trigger drops its `aria-controls`
+there to avoid a dangling reference.
 
 The trigger carries NO `aria-expanded`. The gesture moves whichever axis the
 viewport selects, so a single expanded value would misreport on the other
-viewport; `aria-controls` (a stable relationship) is projected instead. Empty-id
-convention: a part the binding did not render passes `''`, and the projection
-emits `undefined` rather than a dangling reference.
+viewport; `aria-controls` (a stable relationship, desktop only) is projected
+instead. Empty-id convention: a part the binding did not render passes `''`, and
+the projection emits `undefined` rather than a dangling reference.
 
-The panel is a single `<nav>` carrying BOTH axes' hooks; the view keys the
-desktop width collapse off `data-state`/`data-collapsible` (scoped `md:`) and the
-mobile off-canvas slide off `data-mobile` (below `md`). One element, two
-viewports -- never two panels with duplicated ids and duplicated AT content.
+The panel is a single `<nav>`. On desktop the view keys the width collapse off
+`data-state`/`data-collapsible` (scoped `md:`). On mobile: in React the `Sidebar`
+renders the merged `<Sheet>` instead of the nav (one runtime branch on
+`isMobile`, no duplicated children); in WC/Astro the one `<nav>` is enhanced in
+place into a modal by the bind, and `hidden` when the overlay is closed.
 
 ## Keyboard and dismissal
 
 - **Cmd/Ctrl+B**: an imperative window listener (the shortcut is global, not
   part-scoped) routed through `toggleIntent`. Wired in `bindSidebar` (WC/Astro)
   and a React effect.
-- **Escape** on the panel -> `closeMobile`, restoring focus to the trigger. The
-  bind resolves the keydown part by CONTAINMENT (`panel.contains(target)`),
-  never `target.closest('[data-part]')`: the latter misroutes when focus rests on
-  a focusable descendant that carries its own `data-part` (the rail), the
-  systemic dialog-family defect tracked in #1921. React hardcodes the part
-  `'panel'` on the element it renders, the same resolution by construction.
-- **Scrim click** -> `closeMobile`.
+- **Escape** on the panel -> `closeMobile`. The bind resolves the keydown part by
+  CONTAINMENT (`panel.contains(target)`), never `target.closest('[data-part]')`:
+  the latter misroutes when focus rests on a focusable descendant that carries its
+  own `data-part` (the rail), the systemic dialog-family defect tracked in #1921.
+  React's desktop nav hardcodes the part `'panel'` (the same resolution by
+  construction); React's mobile Escape is the Sheet's own. On close the sheet
+  focus-trap teardown restores focus to the opener (the trigger).
+- **Outside pointerdown** on mobile dismisses via the sheet modal trio's
+  `onPointerDownOutside` (sparing the trigger) -- not a bespoke scrim handler.
 
-The mobile overlay is DISMISSABLE, not modal: no focus-trap, no scroll-lock, no
-outside-click primitive. This is faithful to the oracle (its mobile panel had a
-plain scrim button and no trap) and honors the port issue's "add no primitives".
-See the dispositions below.
+The mobile overlay is MODAL, via the composed `sheet`: focus is trapped inside,
+body scroll is locked, an outside pointerdown dismisses, and -- decisively for
+focus management -- the overlay content is UNREACHABLE while closed (React
+unmounts `SheetContent`; the WC/Astro bind `hidden`s the panel), so its links
+leave the tab order and a11y tree.
 
 ## Motion
 
-UNDECLARED. The issue's motion intent is "expand/collapse: slide, axis x" -- a
-horizontal collapse (width / off-canvas translate). The ratified animated-presence
-pattern (`motion-expand`/`motion-collapse` + `grid-template-rows`
-`minmax(0,0fr)<->minmax(0,1fr)` + `inert` on the collapsed panel) is the VERTICAL
-accordion trick and does NOT transfer here:
+The DESKTOP horizontal collapse is UNDECLARED. The issue's motion intent is
+"expand/collapse: slide, axis x" -- a horizontal collapse (width / off-canvas).
+The ratified animated-presence pattern (`motion-expand`/`motion-collapse` +
+`grid-template-rows` `minmax(0,0fr)<->minmax(0,1fr)` + `inert` on the collapsed
+panel) is the VERTICAL accordion trick and does NOT transfer here:
 
 - `grid-template-rows` animates the block (y) axis; sidebar collapse is the
   inline (x) axis. Applying it would animate height while width is what changes.
@@ -116,9 +133,10 @@ accordion trick and does NOT transfer here:
 
 No horizontal-slide/width semantic motion token exists yet (the token layer is
 being rebuilt, #1899/#1902), so -- following the sheet precedent -- the from/to
-states ride the `data-state`/`data-mobile` hooks while the timing is left to the
-future token layer rather than hardcoded (`duration-200 ease-linear` etc. are
-dropped). Small `duration-150` hover/press acknowledgments on the menu buttons
+states ride the `data-state` hooks while the timing is left to the future token
+layer rather than hardcoded (`duration-200 ease-linear` etc. are dropped). The
+MOBILE overlay's enter/exit is the merged `sheet`'s own concern, not the
+sidebar's. Small `duration-150` hover/press acknowledgments on the menu buttons
 are kept (Spec 04 retains interaction feedback), never the layout motion.
 
 ## Oracle dispositions (src/old/ui/sidebar.tsx, boundary 9)
@@ -134,12 +152,12 @@ surface; `dropped` = intentionally not ported; `defect-do-not-port` = oracle bug
 | `toggleSidebar` routing to a viewport-appropriate axis | contract; moved into pure `toggleIntent(state, config, isMobile)` |
 | cookie persistence: write on `open` change, seed from `defaultOpen`, never read back | contract; replicated write-only via `memory.select` in the bind and a React effect |
 | Cmd/Ctrl+B window shortcut | contract; window listener routed through `toggleIntent` in all three performances |
-| mobile overlay = scrim button (click closes) + sliding panel | contract; the dismissable (non-modal) overlay is preserved |
-| mobile overlay had NO focus-trap / scroll-lock / outside-click / Escape | contract for the first three (deliberately add none -- issue: "add none"); Escape ADDED as an a11y hardening (panel keymap, containment-resolved) |
-| shadcn wraps the mobile sidebar in a modal `Sheet` | dropped; the rafters oracle diverged to a non-modal scrim, and this port keeps that (documented divergence from shadcn, per issue point 7) |
+| mobile overlay = plain scrim button + sliding panel (the rafters oracle's non-modal divergence) | defect-do-not-port; replaced by the merged modal `sheet` -- the non-modal scrim is exactly what left closed-overlay links tab-reachable |
+| mobile overlay had NO focus-trap / scroll-lock / outside-dismiss | defect-do-not-port; the composed sheet modal trio supplies all three (WCAG 2.2 AAA focus management) |
+| shadcn wraps the mobile sidebar in a modal `Sheet` | contract; now composed -- React renders `<Sheet>`/`<SheetContent>`, WC/Astro compose `startSheetModalEffects` on the panel |
 | `side` / `variant` / `collapsible` props | contract; positional/surface decoration as `data-*` + classes, never ARIA |
 | `collapsible="none"` non-collapsible branch | contract; `data-collapsible` is never projected for `none` |
-| desktop "gap" element for a smooth width transition | dropped; it existed only to animate width, and motion is undeclared |
+| desktop "gap" element for a smooth width transition | dropped; it existed only to animate width, and desktop motion is undeclared |
 | Rail (desktop toggle, `tabIndex=-1`, labelled) | contract |
 | Inset (`<main>` landmark) | contract |
 | Header/Footer/Content/Group(+Label/Action/Content)/Menu(+Item/Button/Action/Badge/Skeleton/Sub/SubItem/SubButton)/Separator | contract; pure decoration (classes + `data-sidebar` attrs), no behavior |
@@ -147,29 +165,29 @@ surface; `dropped` = intentionally not ported; `defect-do-not-port` = oracle bug
 | MenuButton `variant`/`size`, MenuSubButton `size`, `isActive` (`data-active`) | contract; decoration variants |
 | MenuSkeleton random bar width (`Math.random`) | framework-affordance (React only); the WC/Astro shells do not render skeletons |
 | JSDoc claimed a "nav role" landmark but rendered a `<div>` | defect-do-not-port; this port actually delivers `<nav>` for the panel (the landmark the oracle only aspired to) |
-| trigger had no `aria-controls`/`aria-expanded` | contract, hardened: `aria-controls` -> panel added; `aria-expanded` deliberately omitted (viewport-ambiguous) |
-| raw `duration-200 ease-linear`/`ease-in-out` collapse + slide transitions | defect-do-not-port; raw numeric durations, dropped -- motion left undeclared pending horizontal tokens (#1899/#1902) |
+| trigger had no `aria-controls`/`aria-expanded` | contract, hardened: desktop `aria-controls` -> panel added (dropped on mobile, where the panel is the Sheet); `aria-expanded` deliberately omitted (viewport-ambiguous) |
+| raw `duration-200 ease-linear`/`ease-in-out` desktop collapse transition | defect-do-not-port; raw numeric durations, dropped -- desktop motion undeclared pending horizontal tokens (#1899/#1902) |
 | accordion grid-rows/`inert` animated-presence (spawn point 5) | not applicable; horizontal collapse (axis x) and a visible `icon` rail must not be `inert` -- see Motion |
 
 ## Known limitations (honest not-delivered)
 
-1. **Mobile-closed panel remains tab-reachable.** With one panel + CSS translate,
-   a closed mobile overlay's links are translated off-screen but stay in the a11y
-   tree. This is not hidden with reactive `inert` on purpose: the same element is
-   the desktop `icon` rail, which must stay reachable, so a mode-dependent `inert`
-   would wrongly hide it. A future fix belongs to the presence/token layer.
-2. **No animation.** Collapse and slide are state-correct but not animated until
-   horizontal-slide motion tokens land (#1899/#1902).
-3. **Non-modal mobile overlay.** No focus containment or scroll lock on mobile;
-   this matches the oracle and the "add no primitives" constraint. If a modal
-   mobile sidebar is later wanted, compose the sheet modal trio then.
+1. **No desktop collapse animation.** The horizontal expand/collapse is
+   state-correct but unanimated until a horizontal-slide / width motion token
+   lands (#1899/#1902). The mobile overlay's enter/exit is animated by the merged
+   `sheet` (its own concern).
 
-## WCAG 2.1 AA obligations
+## WCAG obligations
 
-- 1.3.1 / 4.1.2: the panel is a `<nav>` landmark; the trigger is a labelled
-  control wired by real id (`aria-controls`) to the panel; the scrim is a
-  labelled dismiss button. Asserted against real DOM by the conformance harness.
+- 1.3.1 / 4.1.2: on desktop the panel is a `<nav>` landmark and the trigger is a
+  labelled control wired by real id (`aria-controls`) to it; on mobile the overlay
+  is `role="dialog"` + `aria-modal` with an accessible name (`aria-label="Sidebar"`).
+  Asserted against real DOM by the conformance harness.
 - 2.1.1 / 2.1.2: Escape dismisses the mobile overlay and restores focus to the
-  trigger; the collapsed desktop rail stays keyboard-navigable (never removed
-  from the tree, never `inert`).
+  trigger; focus is trapped inside the open overlay and cycles without escaping;
+  the collapsed desktop rail stays keyboard-navigable (never removed, never
+  `inert`).
+- 2.4.3 Focus Order (AAA-grade management): the mobile overlay traps focus while
+  open and, while CLOSED, is unreachable -- its links are not in the tab order or
+  a11y tree (React unmounts the content; WC/Astro `hidden` the panel), each
+  asserted per framework in the conformance suites.
 - 2.4.7: token focus ring on the menu controls.

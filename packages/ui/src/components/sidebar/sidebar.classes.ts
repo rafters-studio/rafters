@@ -20,7 +20,7 @@ export interface SidebarClassSet {
   provider: string;
   trigger: string;
   rail: string;
-  overlay: string;
+  mobilePanel: string;
   inset: string;
   header: string;
   footer: string;
@@ -44,25 +44,22 @@ export interface SidebarClassSet {
 
 const providerClasses = 'group/sidebar-wrapper flex min-h-svh w-full';
 
-// The mobile scrim: a full-viewport dismiss surface on the overlay depth. The
-// binding hides it off the mobile axis, so it never intercepts clicks while the
-// overlay is closed.
-const overlayClasses = 'fixed inset-0 z-depth-overlay bg-foreground/80 cursor-default md:hidden';
-
-// The one panel. Mobile: a fixed off-canvas overlay. Desktop (md:): a sticky
-// rail whose width collapses. No transition utilities: the layout motion is
-// undeclared (see the file header); only the from/to states ride the data hooks.
+// The one panel. Mobile: a fixed overlay panel (a modal dialog while open; the
+// bind `hidden`s it when closed). Desktop (md:): a sticky rail whose width
+// collapses. No transition utilities: the layout motion is undeclared (see the
+// file header); the enter/exit of the mobile modal is the sheet's concern in
+// React, and undeclared for the WC/Astro in-place enhancement.
 const panelBaseClasses =
   'flex flex-col bg-sidebar text-sidebar-foreground ' +
   'fixed inset-y-0 z-depth-modal h-svh w-72 ' +
-  'md:sticky md:top-0 md:z-depth-navigation md:h-svh md:w-64 md:data-[mobile=closed]:translate-x-0 ' +
+  'md:sticky md:top-0 md:z-depth-navigation md:h-svh md:w-64 ' +
   'md:data-[state=collapsed]:data-[collapsible=icon]:w-12 ' +
   'md:data-[state=collapsed]:data-[collapsible=offcanvas]:w-0 ' +
   'md:data-[state=collapsed]:data-[collapsible=offcanvas]:overflow-hidden';
 
 const panelSideClasses: Record<SidebarSide, string> = {
-  left: 'left-0 data-[mobile=closed]:-translate-x-full border-r border-sidebar-border',
-  right: 'right-0 data-[mobile=closed]:translate-x-full border-l border-sidebar-border',
+  left: 'left-0 border-r border-sidebar-border',
+  right: 'right-0 border-l border-sidebar-border',
 };
 
 const panelVariantClasses: Record<SidebarVariant, string> = {
@@ -80,6 +77,10 @@ export function sidebarPanelClasses(side: SidebarSide, variant: SidebarVariant):
 }
 
 const triggerClasses = 'inline-flex size-7 items-center justify-center';
+
+// The mobile overlay surface: the sidebar fill laid over the merged Sheet's own
+// positioning (Sheet owns the modal frame; this only paints the sidebar chrome).
+const mobilePanelClasses = 'flex h-full w-full flex-col bg-sidebar text-sidebar-foreground';
 
 // The desktop drag rail: a hairline hit target on the collapsing edge. Hidden on
 // mobile (the overlay owns dismissal there). The layout slide is undeclared; the
@@ -213,7 +214,7 @@ export function sidebarClasses(): SidebarClassSet {
     provider: providerClasses,
     trigger: triggerClasses,
     rail: railClasses,
-    overlay: overlayClasses,
+    mobilePanel: mobilePanelClasses,
     inset: insetClasses,
     header: headerClasses,
     footer: footerClasses,

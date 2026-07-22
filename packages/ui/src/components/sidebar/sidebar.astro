@@ -7,11 +7,12 @@
  * three performances.
  *
  * The panel is a single <nav> carrying both axes' data hooks; side/variant are
- * authored into its classes here (decoration the binding never touches). The
- * scrim is present-but-hidden off the mobile axis. Nav content arrives through
- * the default slot; the trigger through the `trigger` slot. Motion is undeclared
- * (horizontal-slide tokens pending, #1899/#1902), so this is state-correct, not
- * animated.
+ * authored into its classes here (decoration the binding never touches). On the
+ * mobile viewport bindSidebar enhances that same <nav> into a modal overlay
+ * (role=dialog + the sheet modal trio) and `hidden`s it when closed; the desktop
+ * rail path is untouched. Nav content arrives through the default slot; the
+ * trigger through the `trigger` slot. Motion is undeclared (horizontal-slide
+ * tokens pending, #1899/#1902), so this is state-correct, not animated.
  */
 import {
   sidebar,
@@ -47,7 +48,6 @@ const panelClass = sidebarPanelClasses(side, variant);
 const ids = {} as PartIds<SidebarPart>;
 for (const part of Object.keys(sidebar.parts) as SidebarPart[]) ids[part] = `${id}-${part}`;
 const aria = sidebar.aria(state, config, ids);
-const mobileOpen = state.openMobile;
 ---
 
 <rafters-sidebar
@@ -62,20 +62,12 @@ const mobileOpen = state.openMobile;
     <slot name="trigger">Toggle Sidebar</slot>
   </button>
 
-  <button
-    type="button"
-    id={ids.overlay}
-    data-part="overlay"
-    class={classes.overlay}
-    hidden={!mobileOpen}
-    {...aria.overlay}
-  ></button>
-
   <nav
     id={ids.panel}
     data-part="panel"
     data-side={side}
     data-variant={variant}
+    tabindex="-1"
     class={panelClass}
     {...aria.panel}
   >

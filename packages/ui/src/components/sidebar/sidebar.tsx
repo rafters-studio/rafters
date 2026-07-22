@@ -1,31 +1,33 @@
 /**
  * Collapsible application navigation rail. On desktop it expands to a full rail
  * or collapses to an icon strip (or fully off-canvas), persisting that choice;
- * below the md breakpoint it becomes a dismissable overlay over a scrim. The
+ * below the md breakpoint it becomes a modal overlay (the merged Sheet). The
  * primary, always-present chrome a user orients by.
  *
  * @cognitive-load 3/10 - A familiar, persistent navigation pattern in a fixed
  *   location: the user never hunts for it, and the two states (expanded rail,
- *   collapsed icons) are both legible. The mobile overlay narrows the surface
- *   without hiding where the user was.
+ *   collapsed icons) are both legible. The mobile overlay narrows the surface to
+ *   one focused choice set without hiding where the user was.
  * @attention-economics Near-zero standing cost: the rail sits at the edge and is
  *   scanned only when navigating. The mobile overlay is a brief, reversible
- *   detour -- the scrim dims the page but keeps it in view, so orientation is
- *   never lost.
+ *   detour -- the modal scrim dims the page but keeps it in view, so orientation
+ *   is never lost.
  * @trust-building One consistent edge and toggle direction, a Cmd/Ctrl+B
- *   shortcut, state remembered across loads, and a mobile scrim plus Escape that
- *   both read as obvious, reversible exits -- so collapsing or opening always
- *   feels safe.
+ *   shortcut, state remembered across loads, and a mobile overlay whose scrim,
+ *   Escape, and close all read as obvious, reversible exits -- so collapsing or
+ *   opening always feels safe.
  * @accessibility The rail stays navigable while collapsed (never removed from the
- *   a11y tree); the trigger is a labelled control wired by real id to the panel
- *   it controls; the mobile scrim is a labelled dismiss button; Escape dismisses
- *   the overlay and returns focus to the trigger.
+ *   a11y tree); the trigger is a labelled control wired by real id to the desktop
+ *   panel; the mobile overlay is a modal dialog (focus trapped, scroll locked,
+ *   Escape dismisses and restores focus, and its content is unreachable while
+ *   closed) via the composed Sheet.
  *
  * The React performance is a DECORATOR over sidebar.behavior.ts: it adds only the
  * view (sidebar.classes.ts) and React wiring (useMemory + effects that read the
- * viewport, persist the cookie, and bind Cmd/Ctrl+B). Every decision -- reducers,
- * the aria projection, the Escape keymap, the toggle routing -- lives in the
- * score, shared with the WC and Astro performances via bindSidebar.
+ * viewport, persist the cookie, and bind Cmd/Ctrl+B), and composes the merged
+ * Sheet for the mobile overlay. Every decision -- reducers, the aria projection,
+ * the Escape keymap, the toggle routing -- lives in the score, shared with the WC
+ * and Astro performances via bindSidebar.
  *
  * @example
  * ```tsx
@@ -53,6 +55,7 @@ import { keyInputOf } from '../../hooks/key-input';
 import { useMemory } from '../../hooks/use-memory';
 import classy from '../../primitives/classy';
 import { mergeProps } from '../../primitives/slot';
+import { Sheet, SheetContent } from '../sheet/sheet';
 import {
   sidebar,
   toggleIntent,
@@ -213,49 +216,59 @@ export interface SidebarProps extends React.HTMLAttributes<HTMLElement> {
 }
 
 export function Sidebar({ side, variant, className, children, onKeyDown, ...props }: SidebarProps) {
-  const { state, config, aria, ids, request, classes } = useSidebar();
+  const { state, config, aria, ids, request, isMobile, classes } = useSidebar();
   const resolvedSide = side ?? config.side ?? 'left';
   const resolvedVariant = variant ?? config.variant ?? 'sidebar';
-  const mobileOpen = aria.panel?.['data-mobile'] === 'open';
 
-  // The panel is the Escape scope; React hardcodes the part it renders here,
-  // mirroring the DOM-native bind's containment resolution. The idempotence gate
-  // makes closeMobile a no-op while the overlay is closed (desktop), so Escape is
-  // inert there rather than swallowed.
+  // Mobile: the overlay IS our merged Sheet -- a modal dialog (focus-trap,
+  // scroll-lock, dismiss-on-outside, Escape, and content UNMOUNTED when closed so
+  // its links leave the tab order and a11y tree, WCAG 2.2 AAA). Controlled by the
+  // sidebar's openMobile axis; matches shadcn's SidebarProvider architecture.
+  if (isMobile) {
+    return (
+      <Sheet
+        open={state.openMobile}
+        onOpenChange={(next) => request(next ? 'openMobile' : 'closeMobile')}
+        modal
+      >
+        <SheetContent
+          side={resolvedSide}
+          aria-label="Sidebar"
+          data-sidebar="sidebar"
+          showCloseButton={false}
+          className={classy(classes.mobilePanel, className)}
+          {...props}
+        >
+          {children}
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
+  // Desktop: the persistent rail. The panel-scoped keymap is kept for symmetry
+  // with the bind; on desktop there is no mobile overlay so closeMobile is a
+  // gated no-op and Escape is inert (not swallowed).
   const handleKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
     onKeyDown?.(event);
     if (event.defaultPrevented) return;
     const action = sidebar.keymap(keyInputOf(event), state, 'panel', config);
     if (!action) return;
-    if (!request(action)) return;
-    event.preventDefault();
-    if (typeof document !== 'undefined') document.getElementById(ids.trigger)?.focus();
+    if (request(action)) event.preventDefault();
   };
 
   return (
-    <>
-      <button
-        type="button"
-        data-part="overlay"
-        id={ids.overlay}
-        hidden={mobileOpen ? undefined : true}
-        className={classes.overlay}
-        onClick={() => request('closeMobile')}
-        {...aria.overlay}
-      />
-      <nav
-        data-part="panel"
-        id={ids.panel}
-        data-side={resolvedSide}
-        data-variant={resolvedVariant}
-        className={classy(sidebarPanelClasses(resolvedSide, resolvedVariant), className)}
-        onKeyDown={handleKeyDown}
-        {...aria.panel}
-        {...props}
-      >
-        {children}
-      </nav>
-    </>
+    <nav
+      data-part="panel"
+      id={ids.panel}
+      data-side={resolvedSide}
+      data-variant={resolvedVariant}
+      className={classy(sidebarPanelClasses(resolvedSide, resolvedVariant), className)}
+      onKeyDown={handleKeyDown}
+      {...aria.panel}
+      {...props}
+    >
+      {children}
+    </nav>
   );
 }
 
@@ -277,12 +290,16 @@ export function SidebarTrigger({
     request(toggleIntent(state, config, isMobile));
   };
 
+  // On mobile the panel is not rendered (the overlay is the portaled Sheet), so
+  // the projected aria-controls -> panel id would dangle. Drop it there; the
+  // trigger keeps its accessible name and toggles openMobile.
   const partProps = {
     'data-part': 'trigger',
     id: ids.trigger,
     className: classy(classes.trigger, className),
     onClick: handleClick,
     ...aria.trigger,
+    ...(isMobile ? { 'aria-controls': undefined } : {}),
   };
 
   if (asChild && React.isValidElement(children)) {

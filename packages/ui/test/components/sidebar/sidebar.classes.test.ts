@@ -11,12 +11,12 @@ import {
 const classes = sidebarClasses();
 
 describe('sidebar shell classes', () => {
-  it('the scrim fills the viewport on the overlay depth and is desktop-hidden', () => {
-    expect(classes.overlay).toContain('fixed');
-    expect(classes.overlay).toContain('inset-0');
-    expect(classes.overlay).toContain('z-depth-overlay');
-    expect(classes.overlay).toContain('bg-foreground/80');
-    expect(classes.overlay).toContain('md:hidden');
+  it('the mobile overlay surface paints the sidebar fill over the Sheet frame', () => {
+    // Sheet owns the modal positioning; this class only carries the sidebar
+    // chrome, so it must not re-declare fixed/inset positioning.
+    expect(classes.mobilePanel).toContain('bg-sidebar');
+    expect(classes.mobilePanel).toContain('flex');
+    expect(classes.mobilePanel).not.toContain('fixed');
   });
 
   it('the rail hairline is desktop-only on the navigation depth', () => {
@@ -46,11 +46,9 @@ describe('sidebar panel: one element, both axes', () => {
     expect(panel).toContain('md:data-[state=collapsed]:data-[collapsible=offcanvas]:w-0');
   });
 
-  it('keys the mobile off-canvas slide off data-mobile, per side', () => {
-    expect(panelSideClasses.left).toContain('data-[mobile=closed]:-translate-x-full');
+  it('anchors the panel to its side edge with the matching border', () => {
     expect(panelSideClasses.left).toContain('left-0');
     expect(panelSideClasses.left).toContain('border-r');
-    expect(panelSideClasses.right).toContain('data-[mobile=closed]:translate-x-full');
     expect(panelSideClasses.right).toContain('right-0');
     expect(panelSideClasses.right).toContain('border-l');
   });

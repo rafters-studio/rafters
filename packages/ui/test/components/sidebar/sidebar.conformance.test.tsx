@@ -1,7 +1,8 @@
 /**
- * React performance of the sidebar score, driven end to end. Nothing portals, so
- * part queries run against the RTL container. The mobile axis is exercised by
- * mocking matchMedia (the viewport signal useIsMobile reads).
+ * React performance of the sidebar score, driven end to end. The desktop rail
+ * renders in the RTL container; the mobile overlay is the merged Sheet, which
+ * portals to document.body. The mobile axis is exercised by mocking matchMedia
+ * (the viewport signal useIsMobile reads).
  */
 import * as React from 'react';
 import { cleanup, render } from '@testing-library/react';
@@ -61,13 +62,17 @@ function TestSidebar(props: SetupProps) {
   );
 }
 
+const menuButton = () => document.body.querySelector<HTMLElement>('[data-sidebar="menu-button"]');
+const dialog = () => document.body.querySelector<HTMLElement>('[role="dialog"]');
+
 afterEach(() => {
   cleanup();
+  document.body.replaceChildren();
   setViewport(false);
 });
 
 describe('sidebar conformance [react]', () => {
-  it('default: expanded rail, every declared part present, ARIA equals the projection', async () => {
+  it('desktop default: expanded rail, every declared part present, ARIA equals the projection', async () => {
     setViewport(false);
     const { container } = render(<TestSidebar />);
     const config: SidebarConfig = {
@@ -82,7 +87,6 @@ describe('sidebar conformance [react]', () => {
       'trigger',
       'rail',
       'panel',
-      'overlay',
     ]);
     await assertAxeClean(container);
   });
@@ -97,8 +101,8 @@ describe('sidebar conformance [react]', () => {
     await user.click(partElement(container, 'trigger') as HTMLElement);
     expect(panel.getAttribute('data-state')).toBe('collapsed');
     expect(panel.getAttribute('data-collapsible')).toBe('icon');
-    // The desktop collapse never touches the mobile axis.
-    expect(panel.getAttribute('data-mobile')).toBe('closed');
+    // The collapsed desktop rail stays in the tree, navigable (never hidden).
+    expect(panel.hasAttribute('hidden')).toBe(false);
   });
 
   it('desktop: the rail toggles the same expand axis as the trigger', async () => {
@@ -110,66 +114,44 @@ describe('sidebar conformance [react]', () => {
     expect(panel.getAttribute('data-state')).toBe('collapsed');
   });
 
-  it('mobile: the trigger reveals the overlay and unhides the scrim', async () => {
+  it('mobile: a CLOSED overlay renders no nav content -- links are not in the DOM or tab order', () => {
     setViewport(true);
-    const user = userEvent.setup();
-    const { container } = render(<TestSidebar />);
-    const panel = partElement(container, 'panel') as HTMLElement;
-    const overlay = partElement(container, 'overlay') as HTMLElement;
-    expect(overlay.hasAttribute('hidden')).toBe(true);
-
-    await user.click(partElement(container, 'trigger') as HTMLElement);
-    expect(panel.getAttribute('data-mobile')).toBe('open');
-    expect(overlay.hasAttribute('hidden')).toBe(false);
-    // The mobile overlay never touches the desktop expand axis.
-    expect(panel.getAttribute('data-state')).toBe('expanded');
+    render(<TestSidebar />);
+    // The merged Sheet is closed, so SheetContent is unmounted: the menu button
+    // does not exist anywhere in the document (the AAA focus-management fix).
+    expect(menuButton()).toBeNull();
+    expect(dialog()).toBeNull();
   });
 
-  it('mobile: clicking the scrim dismisses the overlay', async () => {
+  it('mobile: the trigger reveals a modal dialog with the nav content and traps focus', async () => {
     setViewport(true);
     const user = userEvent.setup();
-    const { container } = render(<TestSidebar />);
-    await user.click(partElement(container, 'trigger') as HTMLElement);
-    const panel = partElement(container, 'panel') as HTMLElement;
-    expect(panel.getAttribute('data-mobile')).toBe('open');
+    render(<TestSidebar />);
+    await user.click(partElement(document.body, 'trigger') as HTMLElement);
 
-    await user.click(partElement(container, 'overlay') as HTMLElement);
-    expect(panel.getAttribute('data-mobile')).toBe('closed');
+    const modal = dialog() as HTMLElement;
+    expect(modal).not.toBeNull();
+    expect(modal.getAttribute('aria-modal')).toBe('true');
+    expect(modal.getAttribute('aria-label')).toBe('Sidebar');
+    expect(menuButton()).not.toBeNull();
+    expect(modal.contains(document.activeElement)).toBe(true);
+    expect(document.body.style.overflow).toBe('hidden');
+    await assertAxeClean(document.body);
   });
 
-  it('mobile: Escape inside the panel dismisses and restores focus to the trigger', async () => {
+  it('mobile: Escape closes the overlay, unmounts the nav, and restores focus to the trigger', async () => {
     setViewport(true);
     const user = userEvent.setup();
-    const { container } = render(<TestSidebar />);
-    const trigger = partElement(container, 'trigger') as HTMLElement;
+    render(<TestSidebar />);
+    const trigger = partElement(document.body, 'trigger') as HTMLElement;
     await user.click(trigger);
-    const panel = partElement(container, 'panel') as HTMLElement;
-    expect(panel.getAttribute('data-mobile')).toBe('open');
+    expect(dialog()).not.toBeNull();
 
-    // Focus a control INSIDE the panel, then press Escape: the panel-scoped
-    // keymap must fire even though focus is on a descendant.
-    const menuButton = panel.querySelector<HTMLElement>(
-      '[data-sidebar="menu-button"]',
-    ) as HTMLElement;
-    menuButton.focus();
     await user.keyboard('{Escape}');
-    expect(panel.getAttribute('data-mobile')).toBe('closed');
+    expect(dialog()).toBeNull();
+    expect(menuButton()).toBeNull();
     expect(document.activeElement).toBe(trigger);
-  });
-
-  it('desktop: Escape is inert while the overlay is closed (no swallowed key)', async () => {
-    setViewport(false);
-    const user = userEvent.setup();
-    const { container } = render(<TestSidebar />);
-    const panel = partElement(container, 'panel') as HTMLElement;
-    const menuButton = panel.querySelector<HTMLElement>(
-      '[data-sidebar="menu-button"]',
-    ) as HTMLElement;
-    menuButton.focus();
-    await user.keyboard('{Escape}');
-    // The idempotence gate makes closeMobile a no-op; nothing changes.
-    expect(panel.getAttribute('data-mobile')).toBe('closed');
-    expect(panel.getAttribute('data-state')).toBe('expanded');
+    expect(document.body.style.overflow).not.toBe('hidden');
   });
 
   it('controlled: onOpenChange fires and the desktop axis follows the prop, not the gesture', async () => {
@@ -184,7 +166,6 @@ describe('sidebar conformance [react]', () => {
 
     await user.click(partElement(container, 'trigger') as HTMLElement);
     expect(onOpenChange).toHaveBeenLastCalledWith(true);
-    // Effective value is controlled: the rail stays collapsed until the prop moves.
     expect(panel.getAttribute('data-state')).toBe('collapsed');
 
     rerender(<TestSidebar open onOpenChange={onOpenChange} />);

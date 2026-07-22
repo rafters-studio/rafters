@@ -3,7 +3,11 @@
  * renders the SSR markup but does NOT run the <script>, so the test calls
  * bindSidebar directly -- that IS the script's job -- then drives the same score
  * the React and WC performances drive. The viewport signal is mocked via
- * matchMedia (read live at gesture time by the bind).
+ * matchMedia (read live by the bind).
+ *
+ * The mobile overlay is the SSR panel enhanced in place into a modal by the bind
+ * (role=dialog + the sheet modal trio); a closed mobile overlay is `hidden` so
+ * its links leave the tab order and a11y tree.
  */
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import userEvent from '@testing-library/user-event';
@@ -24,14 +28,11 @@ function setViewport(isMobile: boolean): void {
   })) as unknown as typeof window.matchMedia;
 }
 
-async function mount(
-  props: Record<string, unknown> = {},
-  slots: Record<string, string> = {},
-): Promise<HTMLElement> {
+async function mount(props: Record<string, unknown> = {}): Promise<HTMLElement> {
   const container = await AstroContainer.create();
   const html = await container.renderToString(Sidebar, {
     props: { id: 'sb', ...props },
-    slots: { default: '<a href="/dashboard" data-sidebar="menu-button">Dashboard</a>', ...slots },
+    slots: { default: '<a href="/dashboard" data-sidebar="menu-button">Dashboard</a>' },
   });
   document.body.innerHTML = html;
   const root = document.body.querySelector('rafters-sidebar') as HTMLElement;
@@ -42,7 +43,6 @@ async function mount(
 const trigger = () => document.body.querySelector<HTMLElement>('[data-part="trigger"]')!;
 const rail = () => document.body.querySelector<HTMLElement>('[data-part="rail"]')!;
 const panel = () => document.body.querySelector<HTMLElement>('[data-part="panel"]')!;
-const overlay = () => document.body.querySelector<HTMLElement>('[data-part="overlay"]')!;
 
 beforeEach(() => setViewport(false));
 afterEach(() => {
@@ -51,15 +51,10 @@ afterEach(() => {
 });
 
 describe('sidebar conformance [astro]', () => {
-  it('SSR default: expanded rail, scrim hidden and crawlable', async () => {
+  it('SSR default: expanded rail, present and navigable, wired to the panel by real id', async () => {
     await mount();
     expect(panel().getAttribute('data-state')).toBe('expanded');
-    expect(panel().getAttribute('data-mobile')).toBe('closed');
-    expect(overlay().hidden).toBe(true);
-  });
-
-  it('SSR wires the trigger to the panel by real id', async () => {
-    await mount();
+    expect(panel().hidden).toBe(false);
     expect(trigger().getAttribute('aria-controls')).toBe(panel().id);
     expect(panel().id).toBe('sb-panel');
   });
@@ -72,19 +67,29 @@ describe('sidebar conformance [astro]', () => {
     expect(panel().getAttribute('data-collapsible')).toBe('icon');
   });
 
-  it('bind mobile: the trigger reveals the overlay; Escape from a data-part descendant dismisses', async () => {
-    const user = userEvent.setup();
+  it('bind mobile: a CLOSED overlay hides the panel so its links are unreachable', async () => {
     setViewport(true);
     await mount();
+    expect(panel().hidden).toBe(true);
+  });
+
+  it('bind mobile: the trigger opens a modal dialog; Escape from a data-part descendant dismisses', async () => {
+    setViewport(true);
+    const user = userEvent.setup();
+    await mount();
     await user.click(trigger());
-    expect(panel().getAttribute('data-mobile')).toBe('open');
-    expect(overlay().hidden).toBe(false);
+    expect(panel().hidden).toBe(false);
+    expect(panel().getAttribute('role')).toBe('dialog');
+    expect(panel().getAttribute('aria-modal')).toBe('true');
+    expect(panel().contains(document.activeElement)).toBe(true);
+    expect(document.body.style.overflow).toBe('hidden');
 
     // Containment resolution: focus the rail (its own data-part, inside the
     // panel) then Escape -- it must still dismiss and restore focus.
     rail().focus();
     await user.keyboard('{Escape}');
-    expect(panel().getAttribute('data-mobile')).toBe('closed');
+    expect(panel().hidden).toBe(true);
     expect(document.activeElement).toBe(trigger());
+    expect(document.body.style.overflow).not.toBe('hidden');
   });
 });

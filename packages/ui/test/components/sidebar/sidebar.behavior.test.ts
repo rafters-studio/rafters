@@ -16,7 +16,6 @@ const ids: PartIds<SidebarPart> = {
   trigger: 't',
   rail: 'rl',
   panel: 'p',
-  overlay: 'o',
 };
 
 function ariaAt(config: SidebarConfig, state: SidebarState = sidebar.initialState(config)) {
@@ -25,19 +24,13 @@ function ariaAt(config: SidebarConfig, state: SidebarState = sidebar.initialStat
 
 describe('sidebar parts', () => {
   it('declares the full behavior surface', () => {
-    expect(Object.keys(sidebar.parts).sort()).toEqual([
-      'overlay',
-      'panel',
-      'rail',
-      'root',
-      'trigger',
-    ]);
+    expect(Object.keys(sidebar.parts).sort()).toEqual(['panel', 'rail', 'root', 'trigger']);
     // The panel is the only always-present interactive part besides root; the
-    // rest are optional.
+    // rest are optional. There is no scrim part: the mobile overlay is the merged
+    // Sheet (React) or the bind-enhanced modal panel (WC/Astro).
     expect(sidebar.parts.panel.optional).toBeUndefined();
     expect(sidebar.parts.trigger.optional).toBe(true);
     expect(sidebar.parts.rail.optional).toBe(true);
-    expect(sidebar.parts.overlay.optional).toBe(true);
   });
 });
 
@@ -157,12 +150,14 @@ describe('sidebar aria projection', () => {
     expect(aria.trigger?.['aria-controls']).toBeUndefined();
   });
 
-  it('mobile axis flips the panel and scrim data-state without touching the desktop one', () => {
+  it('mobile axis flips the panel data-mobile without touching the desktop one', () => {
     const shown: SidebarState = { open: true, openMobile: true };
     const aria = sidebar.aria(shown, {}, ids);
     expect(aria.panel?.['data-mobile']).toBe('open');
     expect(aria.panel?.['data-state']).toBe('expanded');
-    expect(aria.overlay).toEqual({ 'aria-label': 'Close sidebar', 'data-state': 'open' });
+    // role=dialog/aria-modal are bind-managed (viewport-dependent), never in the
+    // pure projection.
+    expect(aria.panel?.role).toBeUndefined();
   });
 
   it('side and variant are decoration -- they never enter the projection', () => {

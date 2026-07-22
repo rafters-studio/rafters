@@ -1,14 +1,15 @@
 /**
  * WC performance of the sidebar score, driven end to end against light-DOM
  * markup. Same score as the React conformance test. The viewport signal is
- * mocked via matchMedia (the bind reads it live at gesture time, so no effect
- * timing is involved).
+ * mocked via matchMedia (the bind reads it live).
  *
- * The Escape test focuses the RAIL -- a focusable element that carries its own
- * data-part and sits INSIDE the panel -- then presses Escape. This is the exact
- * shape of the dialog-family defect #1921: `target.closest('[data-part]')` would
- * resolve to the rail and swallow the key; the bind resolves the part by
- * CONTAINMENT (`panel.contains(target)`), so Escape still dismisses.
+ * The mobile overlay is the panel enhanced IN PLACE by the bind into a modal
+ * (role=dialog + the sheet modal trio), composing the merged sheet's own
+ * behavior; a closed mobile overlay is `hidden` so its links leave the tab order
+ * and a11y tree (WCAG 2.2 AAA). The Escape test focuses the RAIL -- a focusable
+ * element that carries its own data-part inside the panel -- to prove the part is
+ * resolved by CONTAINMENT (`panel.contains`), not `closest('[data-part]')`, the
+ * dialog-family defect #1921.
  */
 import { cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -38,8 +39,7 @@ async function mount(): Promise<HTMLElement> {
   document.body.innerHTML = `
     <rafters-sidebar data-part="root" data-default-open="true" data-side="left" data-collapsible="offcanvas">
       <button type="button" data-part="trigger" id="sb-trigger" aria-controls="sb-panel" data-state="expanded">Toggle</button>
-      <button type="button" data-part="overlay" id="sb-overlay" aria-label="Close sidebar" data-state="closed" hidden></button>
-      <nav data-part="panel" id="sb-panel" data-state="expanded" data-mobile="closed">
+      <nav data-part="panel" id="sb-panel" data-state="expanded" data-mobile="closed" tabindex="-1">
         <button type="button" data-part="rail" id="sb-rail" tabindex="-1" aria-label="Toggle Sidebar" data-state="expanded"></button>
         <button type="button" data-sidebar="menu-button">Dashboard</button>
       </nav>
@@ -51,7 +51,6 @@ async function mount(): Promise<HTMLElement> {
 const trigger = () => document.body.querySelector<HTMLElement>('[data-part="trigger"]')!;
 const rail = () => document.body.querySelector<HTMLElement>('[data-part="rail"]')!;
 const panel = () => document.body.querySelector<HTMLElement>('[data-part="panel"]')!;
-const overlay = () => document.body.querySelector<HTMLElement>('[data-part="overlay"]')!;
 
 beforeEach(() => setViewport(false));
 afterEach(() => {
@@ -61,10 +60,11 @@ afterEach(() => {
 });
 
 describe('sidebar conformance [wc]', () => {
-  it('default: the rail is expanded and the scrim is hidden', async () => {
+  it('desktop default: the rail is expanded, present and navigable (never hidden)', async () => {
     await mount();
     expect(panel().getAttribute('data-state')).toBe('expanded');
-    expect(overlay().hidden).toBe(true);
+    expect(panel().hidden).toBe(false);
+    expect(panel().hasAttribute('role')).toBe(false);
   });
 
   it('desktop: the trigger collapses the rail and projects the collapse mode', async () => {
@@ -73,6 +73,7 @@ describe('sidebar conformance [wc]', () => {
     await user.click(trigger());
     expect(panel().getAttribute('data-state')).toBe('collapsed');
     expect(panel().getAttribute('data-collapsible')).toBe('offcanvas');
+    expect(panel().hidden).toBe(false);
   });
 
   it('desktop: the rail toggles the expand axis', async () => {
@@ -82,38 +83,40 @@ describe('sidebar conformance [wc]', () => {
     expect(panel().getAttribute('data-state')).toBe('collapsed');
   });
 
-  it('mobile: the trigger reveals the overlay and unhides the scrim', async () => {
-    const user = userEvent.setup();
+  it('mobile: a CLOSED overlay hides the panel -- its links leave the tab order and a11y tree', async () => {
     setViewport(true);
     await mount();
-    await user.click(trigger());
-    expect(panel().getAttribute('data-mobile')).toBe('open');
-    expect(overlay().hidden).toBe(false);
-    expect(panel().getAttribute('data-state')).toBe('expanded');
+    expect(panel().hidden).toBe(true);
+    expect(panel().hasAttribute('role')).toBe(false);
   });
 
-  it('mobile: clicking the scrim dismisses the overlay', async () => {
-    const user = userEvent.setup();
+  it('mobile: the trigger opens a modal dialog, traps focus, and locks scroll', async () => {
     setViewport(true);
+    const user = userEvent.setup();
     await mount();
     await user.click(trigger());
-    await user.click(overlay());
-    expect(panel().getAttribute('data-mobile')).toBe('closed');
-    expect(overlay().hidden).toBe(true);
+    expect(panel().hidden).toBe(false);
+    expect(panel().getAttribute('role')).toBe('dialog');
+    expect(panel().getAttribute('aria-modal')).toBe('true');
+    expect(panel().getAttribute('aria-label')).toBe('Sidebar');
+    expect(panel().contains(document.activeElement)).toBe(true);
+    expect(document.body.style.overflow).toBe('hidden');
   });
 
-  it('mobile: Escape resolves the panel by CONTAINMENT even from a data-part descendant', async () => {
-    const user = userEvent.setup();
+  it('mobile: Escape resolves the panel by CONTAINMENT from a data-part descendant, closes and restores focus', async () => {
     setViewport(true);
+    const user = userEvent.setup();
     await mount();
     await user.click(trigger());
-    expect(panel().getAttribute('data-mobile')).toBe('open');
+    expect(panel().getAttribute('role')).toBe('dialog');
 
     // Focus the rail (its own data-part, inside the panel), then Escape.
     rail().focus();
     await user.keyboard('{Escape}');
-    expect(panel().getAttribute('data-mobile')).toBe('closed');
+    expect(panel().hidden).toBe(true);
+    expect(panel().hasAttribute('role')).toBe(false);
     expect(document.activeElement).toBe(trigger());
+    expect(document.body.style.overflow).not.toBe('hidden');
   });
 
   it('Cmd/Ctrl+B toggles the desktop expand axis', async () => {

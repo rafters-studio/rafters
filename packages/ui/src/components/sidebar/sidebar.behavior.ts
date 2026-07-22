@@ -6,6 +6,7 @@ import {
   type PartIds,
 } from '../../lib/contract';
 import { updateAriaAttribute } from '../../primitives/aria-manager';
+import { startSheetModalEffects } from '../sheet/sheet.behavior';
 
 /** The edge the rail is anchored to. Purely positional: it selects the view's
  *  side variant and the collapse/slide direction. It never enters a reducer and
@@ -61,7 +62,7 @@ export type SidebarActions = {
   closeMobile: undefined;
 };
 
-export type SidebarPart = 'root' | 'trigger' | 'rail' | 'panel' | 'overlay';
+export type SidebarPart = 'root' | 'trigger' | 'rail' | 'panel';
 
 /** The effective desktop-expand value: a controlled `open` shadows intrinsic. */
 export function isOpen(state: SidebarState, config: SidebarConfig): boolean {
@@ -101,7 +102,6 @@ const sidebarSlice: Slice<SidebarConfig, SidebarState, SidebarActions, SidebarPa
     trigger: { optional: true },
     rail: { optional: true },
     panel: {},
-    overlay: { optional: true },
   },
   initialState: (config) => ({
     // A fresh app opens expanded (oracle default true); a controlled value seeds
@@ -149,14 +149,11 @@ const sidebarSlice: Slice<SidebarConfig, SidebarState, SidebarActions, SidebarPa
         'data-state': desktopState,
         // Collapse mode is a hook only while collapsed; `none` never collapses.
         'data-collapsible': open || mode === 'none' ? undefined : mode,
-        // Mobile overlay axis, independent of the desktop state above.
+        // Mobile overlay axis, independent of the desktop state above. The modal
+        // role/aria-modal that turn the panel into a dialog while the mobile
+        // overlay is open are bind-managed (they depend on the viewport signal,
+        // which the score does not hold) -- see bindSidebar.
         'data-mobile': mobileOpen ? 'open' : 'closed',
-      },
-      overlay: {
-        // A real, labelled scrim button (the oracle's earned dismiss affordance),
-        // not an aria-hidden presentation layer.
-        'aria-label': 'Close sidebar',
-        'data-state': mobileOpen ? 'open' : 'closed',
       },
     };
   },
@@ -173,6 +170,10 @@ export const sidebar: BehaviorSpec<SidebarConfig, SidebarState, SidebarActions, 
 /** The keyboard shortcut that toggles the sidebar, matching the oracle. */
 const TOGGLE_KEY = 'b';
 
+/** Accessible name for the mobile overlay dialog (matches the React SheetContent
+ *  aria-label): a nameless role=dialog is an axe violation. */
+const MOBILE_DIALOG_LABEL = 'Sidebar';
+
 /**
  * The DOM-native binding of the sidebar score -- the client the Web Component
  * and the Astro <script> both import; only React reads the projections
@@ -180,17 +181,19 @@ const TOGGLE_KEY = 'b';
  *
  * - `createBehavior` is the model (the one memory cell, the two axes).
  * - `aria-manager` applies the resolved projection.
- * - Presence: the mobile scrim is present-but-hidden, toggled on the openMobile
- *   axis (the panel itself is never hidden -- a collapsed desktop rail stays
- *   visible and navigable; CSS translates the mobile-closed panel off-canvas).
+ * - Presence + modality on the mobile axis: below `md`, an open overlay turns the
+ *   panel into a modal dialog (role=dialog, aria-modal, and the sheet modal trio
+ *   -- focus-trap, scroll-lock, dismiss-on-outside -- COMPOSED from
+ *   `startSheetModalEffects`, the merged sheet's own behavior), and a CLOSED
+ *   mobile overlay `hidden`s the panel so its links leave the tab order and a11y
+ *   tree (WCAG 2.2 AAA focus management). On the desktop viewport the panel is
+ *   never modal and never hidden -- the collapsed rail stays visible/navigable.
  *
- * Dismissal is DELIBERATELY light (the oracle added no focus-trap, scroll-lock,
- * or outside-click primitive to its mobile panel, and the port issue said add
- * none): a click on the scrim closes, and Escape closes via the score keymap.
- * The Escape part is resolved by CONTAINMENT (`panel.contains(target)`), not
- * `target.closest('[data-part]')` -- the latter misroutes when focus rests on a
- * focusable descendant that carries its own data-part (a menu button), the
- * systemic dialog-family defect tracked in #1921.
+ * Escape closes via the score keymap, its part resolved by CONTAINMENT
+ * (`panel.contains(target)`), not `target.closest('[data-part]')` -- the latter
+ * misroutes when focus rests on a focusable descendant that carries its own
+ * data-part (the rail), the systemic dialog-family defect tracked in #1921. On
+ * close the sheet trap teardown restores focus to the opener (the trigger).
  *
  * Cmd/Ctrl+B is an imperative window listener (the shortcut is global, not
  * part-scoped) routed through `toggleIntent`; the desktop `open` axis is
@@ -228,6 +231,10 @@ export function bindSidebar(root: HTMLElement): () => void {
     }
   };
 
+  // The sheet modal trio is level-triggered: present only while the mobile
+  // overlay is open. render() starts it on the transition and stops it on close.
+  let modalCleanup: (() => void) | null = null;
+
   const render = () => {
     const state = memory.get();
     const projection = sidebar.aria(state, config, ids);
@@ -236,11 +243,50 @@ export function bindSidebar(root: HTMLElement): () => void {
       const el = getPart(part);
       if (el && attrs) applyProjection(el, attrs);
     }
-    // Presence: only the scrim hides off the mobile axis; the panel stays put.
-    const overlay = getPart('overlay');
-    if (overlay) overlay.hidden = !isMobileOpen(state);
+
+    const panel = getPart('panel');
+    const overlayOpen = isMobile() && isMobileOpen(state);
+    if (panel) {
+      // Presence: a closed mobile overlay removes the panel from the tree so its
+      // links are unreachable (AAA); the open overlay and the desktop rail stay.
+      panel.hidden = isMobile() && !isMobileOpen(state);
+      // Modality: while the mobile overlay is open the panel IS the dialog. These
+      // depend on the viewport signal, so the bind manages them (the score, which
+      // holds no isMobile, cannot). Mirrors the React SheetContent surface.
+      if (overlayOpen) {
+        panel.setAttribute('role', 'dialog');
+        panel.setAttribute('aria-modal', 'true');
+        panel.setAttribute('aria-label', MOBILE_DIALOG_LABEL);
+      } else {
+        panel.removeAttribute('role');
+        panel.removeAttribute('aria-modal');
+        panel.removeAttribute('aria-label');
+      }
+    }
+
+    // Compose the merged sheet's modal trio directly, level-triggered: focus-trap
+    // + scroll-lock + dismiss-on-pointerdown-outside (sparing the trigger). The
+    // panel is un-hidden above before the trap reads its focusables. On close the
+    // trap teardown restores focus to the opener.
+    if (overlayOpen && !modalCleanup && panel) {
+      modalCleanup = startSheetModalEffects({
+        content: panel,
+        getTrigger: () => getPart('trigger'),
+        onDismiss: () => {
+          request('closeMobile');
+        },
+      });
+    } else if (!overlayOpen && modalCleanup) {
+      modalCleanup();
+      modalCleanup = null;
+    }
   };
   const unsubscribe = memory.subscribe(render); // fires immediately: first paint
+
+  // Presence + modality now depend on the viewport, so re-render on its change --
+  // otherwise a desktop->mobile-closed resize leaves the panel wrongly visible.
+  const onViewportChange = () => render();
+  mql?.addEventListener('change', onViewportChange);
 
   // Persistence is a reaction to the desktop axis, equality-gated so it writes
   // only on a real change -- never on an unrelated re-render. Write-only: init
@@ -256,10 +302,8 @@ export function bindSidebar(root: HTMLElement): () => void {
 
   const onClick = (event: Event) => {
     const target = event.target as HTMLElement;
-    if (target.closest('[data-part="overlay"]')) {
-      request('closeMobile');
-      return;
-    }
+    // Mobile-overlay dismissal on outside pointerdown is the sheet trio's job;
+    // clicks here only drive the toggle affordances.
     if (target.closest('[data-part="trigger"]') || target.closest('[data-part="rail"]')) {
       request(toggleIntent(memory.get(), config, isMobile()));
     }
@@ -285,10 +329,9 @@ export function bindSidebar(root: HTMLElement): () => void {
       config,
     );
     if (!action) return;
-    if (!request(action)) return;
-    event.preventDefault();
-    // Escape returns focus to the trigger, mirroring a dismissable layer.
-    if (action === 'closeMobile') getPart('trigger')?.focus();
+    // On a real close the sheet trap teardown (in render) restores focus to the
+    // opener, so no explicit focus call is needed here.
+    if (request(action)) event.preventDefault();
   };
   root.addEventListener('keydown', onKeydown);
 
@@ -302,6 +345,9 @@ export function bindSidebar(root: HTMLElement): () => void {
 
   return () => {
     unsubscribe();
+    modalCleanup?.();
+    modalCleanup = null;
+    mql?.removeEventListener('change', onViewportChange);
     stopPersist();
     root.removeEventListener('click', onClick);
     root.removeEventListener('keydown', onKeydown);
