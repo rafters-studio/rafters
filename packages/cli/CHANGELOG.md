@@ -1,5 +1,16 @@
 # rafters
 
+## 0.0.73
+
+### Features
+
+- feat(design-tokens, cli, studio): documentation CSS export (#1931). New `exports.documentation` flag produces `rafters.documentation.css` -- the complete utility surface derived from the token graph at base + state variants (hover/focus-visible/focus/active/dark), compiled via Tailwind with no component scanning. The output is the sheet veneer adopts whole for live previews and treeshakes at bake.
+
+### Bug Fixes
+
+- fix(studio): vite-plugin default export fallback now matches `DEFAULT_EXPORTS` (`typescript` was incorrectly `false`).
+- fix(studio): vite-plugin watcher re-resolves content source dirs on config change so a newly added component path is picked up without a dev server restart.
+
 ## 0.0.72
 
 ### Features
