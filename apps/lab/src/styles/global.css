@@ -1,9 +1,14 @@
 /*
- * The lab consumes the published, self-contained sheet and nothing else --
- * the pure copy-in consumer story. rafters.standalone.css is the compiled
- * output (Preflight reset + @theme tokens + the utilities the scan baked in);
- * no @import "tailwindcss", no @source, no theme source. If a component looks
- * unstyled here, its classes were not in the scanned set when the sheet was
- * compiled -- that is the signal, not a lab bug.
+ * Live rafters install. rafters.css = `@import "tailwindcss"` + the generated
+ * @theme (823 tokens) + the article typography layer. The @tailwindcss/vite
+ * plugin compiles utilities on the fly against it -- a new type role or toy
+ * class appears immediately, no frozen sheet to rebuild.
+ *
+ * The @rafters/ui components live outside this vite root, so they are not
+ * auto-scanned; @source registers them (and the lab's own pages) for class
+ * generation.
  */
-@import '../../../demo/.rafters/output/rafters.standalone.css';
+@import '../../.rafters/output/rafters.css';
+
+@source '../';
+@source '../../../../packages/ui/src';
