@@ -11,6 +11,7 @@ export { type ToDTCGOptions, toDTCG } from './dtcg.js';
 export {
   type CompiledCssOptions,
   registryToCompiled,
+  registryToDocumentation,
   registryToTailwind,
   registryToTailwindStatic,
   type TailwindExportOptions,

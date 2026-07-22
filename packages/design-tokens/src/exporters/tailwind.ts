@@ -1212,3 +1212,176 @@ export async function registryToCompiled(
     rmSync(tempDir, { recursive: true, force: true });
   }
 }
+
+const COLOR_UTILITIES = [
+  'bg',
+  'text',
+  'border',
+  'ring',
+  'outline',
+  'fill',
+  'stroke',
+  'accent',
+  'caret',
+  'decoration',
+  'divide',
+  'shadow',
+  'placeholder',
+] as const;
+
+const SPACING_UTILITIES = [
+  'p',
+  'px',
+  'py',
+  'pt',
+  'pr',
+  'pb',
+  'pl',
+  'm',
+  'mx',
+  'my',
+  'mt',
+  'mr',
+  'mb',
+  'ml',
+  'gap',
+  'gap-x',
+  'gap-y',
+  'w',
+  'h',
+  'size',
+  'inset',
+  'top',
+  'right',
+  'bottom',
+  'left',
+  'space-x',
+  'space-y',
+] as const;
+
+const RADIUS_UTILITIES = [
+  'rounded',
+  'rounded-t',
+  'rounded-r',
+  'rounded-b',
+  'rounded-l',
+  'rounded-tl',
+  'rounded-tr',
+  'rounded-br',
+  'rounded-bl',
+] as const;
+
+const STATE_VARIANTS = ['hover', 'focus-visible', 'focus', 'active', 'dark'] as const;
+
+/**
+ * Derive the complete set of Tailwind utility candidates from theme custom
+ * properties. Each --color-<slug> becomes bg-<slug>, text-<slug>, etc.; each
+ * --spacing-<slug> becomes p-<slug>, m-<slug>, gap-<slug>, etc. The result is
+ * the exhaustive base utility surface the token graph can produce -- no
+ * component scanning required.
+ */
+function deriveCandidates(themeCSS: string): string[] {
+  const themeVarNames: string[] = [];
+  const themeBlockRe = /@theme\s*(?:inline\s*)?\{([^}]*)\}/gs;
+  let blockMatch: RegExpExecArray | null;
+  while ((blockMatch = themeBlockRe.exec(themeCSS)) !== null) {
+    const block = blockMatch[1] ?? '';
+    const varRe = /--([a-z][a-z0-9-]*)\s*:/g;
+    let varMatch: RegExpExecArray | null;
+    while ((varMatch = varRe.exec(block)) !== null) {
+      if (varMatch[1]) themeVarNames.push(varMatch[1]);
+    }
+  }
+
+  const candidates = new Set<string>();
+
+  for (const name of themeVarNames) {
+    if (name.startsWith('color-')) {
+      const slug = name.slice(6);
+      for (const p of COLOR_UTILITIES) candidates.add(`${p}-${slug}`);
+    } else if (name.startsWith('spacing-')) {
+      const slug = name.slice(8);
+      for (const p of SPACING_UTILITIES) candidates.add(`${p}-${slug}`);
+    } else if (name.startsWith('radius-')) {
+      const slug = name.slice(7);
+      for (const p of RADIUS_UTILITIES) candidates.add(`${p}-${slug}`);
+    } else if (name.startsWith('shadow-') && !/-(blur|spread|offset|color|inset)/.test(name)) {
+      candidates.add(`shadow-${name.slice(7)}`);
+    } else if (name.startsWith('font-size-')) {
+      candidates.add(`text-${name.slice(10)}`);
+    } else if (name.startsWith('font-weight-')) {
+      candidates.add(`font-${name.slice(12)}`);
+    } else if (name.startsWith('ease-')) {
+      candidates.add(name);
+    } else if (name.startsWith('animate-')) {
+      candidates.add(name);
+    }
+  }
+
+  const base = [...candidates];
+  for (const variant of STATE_VARIANTS) {
+    for (const c of base) {
+      candidates.add(`${variant}:${c}`);
+    }
+  }
+
+  return [...candidates];
+}
+
+/**
+ * Produce the complete documentation stylesheet -- every utility the token
+ * graph can emit at base + state variants, compiled via Tailwind with no
+ * component scanning. Veneer treeshakes the result at bake time; during dev
+ * it is adopted whole via constructable stylesheets.
+ */
+export async function registryToDocumentation(
+  registry: TokenRegistry,
+  options: { minify?: boolean } = {},
+): Promise<string> {
+  const { minify = true } = options;
+  const themeBody = registryToTailwind(registry, { includeImport: false });
+  const candidates = deriveCandidates(themeBody);
+
+  const { mkdtempSync, writeFileSync, rmSync } = await import('node:fs');
+  const { join, dirname } = await import('node:path');
+  const { createRequire } = await import('node:module');
+
+  const require = createRequire(import.meta.url);
+  let pkgDir: string;
+  try {
+    const pkgJsonPath = require.resolve('@tailwindcss/cli/package.json');
+    pkgDir = dirname(pkgJsonPath);
+  } catch {
+    throw new Error(
+      'Failed to resolve @tailwindcss/cli -- install it to generate documentation CSS',
+    );
+  }
+
+  const tempDir = mkdtempSync(join(pkgDir, '.tmp-doc-compile-'));
+  const candidateFile = join(tempDir, 'candidates.txt');
+  writeFileSync(candidateFile, candidates.join('\n'));
+
+  const sourceDirective = `@source "${candidateFile}";`;
+  const input = `@import "tailwindcss" source(none);\n${sourceDirective}\n${themeBody}`;
+
+  const tempInput = join(tempDir, 'input.css');
+  const tempOutput = join(tempDir, 'output.css');
+
+  try {
+    writeFileSync(tempInput, input);
+
+    const { execFileSync } = await import('node:child_process');
+    const binPath = join(pkgDir, 'dist', 'index.mjs');
+    const args = [binPath, '-i', tempInput, '-o', tempOutput];
+    if (minify) args.push('--minify');
+    execFileSync('node', args, { stdio: 'pipe', timeout: 60_000, cwd: pkgDir });
+
+    const { readFileSync } = await import('node:fs');
+    return readFileSync(tempOutput, 'utf-8');
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to compile documentation CSS: ${message}`);
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
+}

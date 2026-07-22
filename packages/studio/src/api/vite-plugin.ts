@@ -81,7 +81,13 @@ const configPath = join(projectPath, '.rafters', 'config.rafters.json');
  * a changed config (e.g. a newly added namespace) is honored.
  */
 interface StudioConfig {
-  exports?: { tailwind: boolean; typescript: boolean; dtcg: boolean; compiled: boolean };
+  exports?: {
+    tailwind: boolean;
+    typescript: boolean;
+    dtcg: boolean;
+    compiled: boolean;
+    documentation: boolean;
+  };
   componentsPath?: string | Array<string | { path: string }>;
   primitivesPath?: string | Array<string | { path: string }>;
   compositesPath?: string | Array<string | { path: string }>;
@@ -642,9 +648,10 @@ export function studioApiPlugin(): Plugin {
         const config = await loadStudioConfig();
         const exports = config?.exports ?? {
           tailwind: true,
-          typescript: false,
+          typescript: true,
           dtcg: false,
           compiled: false,
+          documentation: false,
         };
         await regenerateOutputs(
           registry,
@@ -694,14 +701,21 @@ export function studioApiPlugin(): Plugin {
       };
 
       {
-        const watchConfig = await loadStudioConfig();
-        const classDirs = watchConfig ? resolveContentSources(projectPath, watchConfig) : [];
-        const watchTargets = [
-          join(tokensDir, '*.rafters.json'),
-          configPath,
-          ...classDirs.map((dir) => join(dir, '**/*.classes.ts')),
-        ];
-        server.watcher.add(watchTargets);
+        const trackedClassDirs = new Set<string>();
+
+        const syncWatchTargets = async (): Promise<void> => {
+          const watchConfig = await loadStudioConfig();
+          const classDirs = watchConfig ? resolveContentSources(projectPath, watchConfig) : [];
+          const newDirs = classDirs.filter((d) => !trackedClassDirs.has(d));
+          if (newDirs.length > 0) {
+            server.watcher.add(newDirs.map((dir) => join(dir, '**/*.classes.ts')));
+            for (const d of newDirs) trackedClassDirs.add(d);
+          }
+        };
+
+        server.watcher.add([join(tokensDir, '*.rafters.json'), configPath]);
+        await syncWatchTargets();
+
         let debounce: ReturnType<typeof setTimeout> | null = null;
         const onChange = (changed: string): void => {
           const watched =
@@ -711,7 +725,11 @@ export function studioApiPlugin(): Plugin {
           if (!watched) return;
           if (debounce) clearTimeout(debounce);
           debounce = setTimeout(() => {
-            void reloadAndRegenerate();
+            const isConfigChange = changed === configPath;
+            const run = isConfigChange
+              ? syncWatchTargets().then(reloadAndRegenerate)
+              : reloadAndRegenerate();
+            void run;
           }, 150);
         };
         server.watcher.on('change', onChange);
