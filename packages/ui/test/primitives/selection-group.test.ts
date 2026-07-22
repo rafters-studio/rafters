@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createSelectionGroup } from './selection-group';
+import { createSelectionGroup } from '../../src/primitives/selection-group';
 
 describe('createSelectionGroup', () => {
   describe('single mode (tabs)', () => {

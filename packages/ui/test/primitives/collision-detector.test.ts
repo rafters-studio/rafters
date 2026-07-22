@@ -510,3 +510,58 @@ describe('getAvailableSpace', () => {
     globalThis.window = originalWindow;
   });
 });
+
+describe('computePosition anchor kinds', () => {
+  function makeFloating(width: number, height: number): HTMLElement {
+    const el = document.createElement('div');
+    el.getBoundingClientRect = () => new DOMRect(0, 0, width, height);
+    return el;
+  }
+
+  it('accepts a point anchor as a zero-size rect', () => {
+    const floating = makeFloating(50, 20);
+
+    const result = computePosition({ x: 100, y: 100 }, floating, {
+      side: 'bottom',
+      align: 'center',
+      avoidCollisions: false,
+    });
+
+    expect(result.x).toBe(75);
+    expect(result.y).toBe(100);
+  });
+
+  it('accepts a DOMRect anchor directly (size is honored, not zeroed)', () => {
+    const floating = makeFloating(50, 20);
+
+    const result = computePosition(new DOMRect(200, 50, 40, 30), floating, {
+      side: 'bottom',
+      align: 'center',
+      avoidCollisions: false,
+    });
+
+    expect(result.x).toBe(195);
+    expect(result.y).toBe(80);
+  });
+
+  it('resolves an HTMLElement identically to its matching DOMRect', () => {
+    const floating = makeFloating(50, 20);
+    const rect = new DOMRect(200, 50, 40, 30);
+    const anchorEl = document.createElement('div');
+    anchorEl.getBoundingClientRect = () => rect;
+
+    const fromElement = computePosition(anchorEl, floating, {
+      side: 'bottom',
+      align: 'center',
+      avoidCollisions: false,
+    });
+    const fromRect = computePosition(rect, floating, {
+      side: 'bottom',
+      align: 'center',
+      avoidCollisions: false,
+    });
+
+    expect(fromRect.x).toBe(fromElement.x);
+    expect(fromRect.y).toBe(fromElement.y);
+  });
+});

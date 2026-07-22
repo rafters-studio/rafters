@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import type { SerializerBlock } from './serializer';
-import { createHtmlSerializer, htmlSerializer } from './serializer-html';
-import type { InlineContent } from './types';
+import type { SerializerBlock } from '../../src/primitives/serializer';
+import { createHtmlSerializer, htmlSerializer } from '../../src/primitives/serializer-html';
+import type { InlineContent } from '../../src/primitives/types';
 
 function deserialize(input: string) {
   return htmlSerializer.deserialize(input);

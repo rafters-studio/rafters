@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import type { SerializerBlock } from './serializer';
-import { createMdxSerializer, mdxSerializer } from './serializer-mdx';
-import type { InlineContent } from './types';
+import type { SerializerBlock } from '../../src/primitives/serializer';
+import { createMdxSerializer, mdxSerializer } from '../../src/primitives/serializer-mdx';
+import type { InlineContent } from '../../src/primitives/types';
 
 // =============================================================================
 // Helpers
@@ -175,11 +175,11 @@ describe('deserialize MDX', () => {
   });
 
   it('parses import statements', () => {
-    const input = "import Hero from './Hero'\n\n# Hello";
+    const input = "import Hero from '../../src/primitives/Hero'\n\n# Hello";
     const { blocks } = deserialize(input);
     const esm = blocks.find((b) => b.type === 'esm');
     expect(esm).toBeTruthy();
-    expect(esm?.content).toContain("import Hero from './Hero'");
+    expect(esm?.content).toContain("import Hero from '../../src/primitives/Hero'");
   });
 
   it('parses block expressions', () => {

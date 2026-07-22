@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import type { SerializerBlock } from './serializer';
-import { createTextSerializer, textSerializer } from './serializer-text';
-import type { InlineContent } from './types';
+import type { SerializerBlock } from '../../src/primitives/serializer';
+import { createTextSerializer, textSerializer } from '../../src/primitives/serializer-text';
+import type { InlineContent } from '../../src/primitives/types';
 
 function deserialize(input: string) {
   return textSerializer.deserialize(input);
