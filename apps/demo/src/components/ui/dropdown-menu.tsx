@@ -58,7 +58,10 @@ import {
   type DropdownMenuConfig,
   type DropdownMenuPart,
 } from '@/components/ui/dropdown-menu.behavior';
-import { dropdownMenuClasses, type DropdownMenuClassSet } from '@/components/ui/dropdown-menu.classes';
+import {
+  dropdownMenuClasses,
+  type DropdownMenuClassSet,
+} from '@/components/ui/dropdown-menu.classes';
 
 interface DropdownMenuContextValue {
   ids: PartIds<DropdownMenuPart>;

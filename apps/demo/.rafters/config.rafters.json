@@ -9,8 +9,8 @@
   "shadcn": false,
   "exports": {
     "tailwind": true,
-    "typescript": true,
-    "dtcg": false,
+    "typescript": false,
+    "dtcg": true,
     "compiled": false,
     "documentation": true
   },

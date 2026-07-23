@@ -1,4 +1,9 @@
-import type { BadgeConfig, BadgeSize, BadgeState, BadgeVariant } from '@/components/ui/badge.behavior';
+import type {
+  BadgeConfig,
+  BadgeSize,
+  BadgeState,
+  BadgeVariant,
+} from '@/components/ui/badge.behavior';
 
 export interface BadgeClassSet {
   root: string;

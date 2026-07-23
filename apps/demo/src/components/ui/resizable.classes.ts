@@ -1,4 +1,8 @@
-import type { ResizableConfig, ResizableDirection, ResizableState } from '@/components/ui/resizable.behavior';
+import type {
+  ResizableConfig,
+  ResizableDirection,
+  ResizableState,
+} from '@/components/ui/resizable.behavior';
 
 export interface ResizableClassSet {
   root: string;

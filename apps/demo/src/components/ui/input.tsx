@@ -2,7 +2,12 @@ import * as React from 'react';
 import { createBehavior, type PartIds } from '@/lib/contract';
 import { useMemory } from '@/hooks/use-memory';
 import classy from '@/lib/primitives/classy';
-import { effectiveValue, inputBehavior, type InputConfig, type InputPart } from '@/components/ui/input.behavior';
+import {
+  effectiveValue,
+  inputBehavior,
+  type InputConfig,
+  type InputPart,
+} from '@/components/ui/input.behavior';
 import { inputClassSet } from '@/components/ui/input.classes';
 
 export interface InputProps extends Omit<

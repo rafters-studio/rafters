@@ -54,7 +54,11 @@ import {
   type SheetSide,
   type SheetState,
 } from '@/components/ui/sheet.behavior';
-import { sheetClasses, sheetContentClasses, type SheetClassSet } from '@/components/ui/sheet.classes';
+import {
+  sheetClasses,
+  sheetContentClasses,
+  type SheetClassSet,
+} from '@/components/ui/sheet.classes';
 
 /** The oracle-compatible dismissal veto surface on SheetContent. */
 interface DismissVetoCallbacks {

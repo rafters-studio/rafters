@@ -1,5 +1,15 @@
 # rafters
 
+## 0.0.76
+
+### Features
+
+- feat(design-tokens): documentation CSS post-processed for shadow-DOM adoption. The compiled sheet is now pure utility rules + a `:host`-scoped token block with `container-type: inline-size`. Strips `@layer theme`, `@layer properties`, Tailwind banner, and `:root` selectors. Veneer adopts the sheet into each WC preview's shadow root as a self-contained constructable stylesheet -- no host-page dependency.
+
+### Bug Fixes
+
+- feat(demo): rebuild as Vite 8 + React 19 + Tailwind v4 dogfood app. All 54 behavior-layer components installed with full dependency graph. Variable Noto Sans, documentation CSS enabled.
+
 ## 0.0.75
 
 ### Bug Fixes

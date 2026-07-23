@@ -1,10 +1,5 @@
 import { compose, type Slice } from '@/lib/compose';
-import {
-  createBehavior,
-  type AriaAttrs,
-  type BehaviorSpec,
-  type PartIds,
-} from '@/lib/contract';
+import { createBehavior, type AriaAttrs, type BehaviorSpec, type PartIds } from '@/lib/contract';
 import { updateAriaAttribute } from '@/lib/primitives/aria-manager';
 import { formValueAttrs } from '@/lib/primitives/form-value';
 import { onPointerDownOutside } from '@/lib/primitives/outside-click';

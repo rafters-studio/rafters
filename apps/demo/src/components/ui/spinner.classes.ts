@@ -1,4 +1,9 @@
-import type { SpinnerConfig, SpinnerSize, SpinnerState, SpinnerVariant } from '@/components/ui/spinner.behavior';
+import type {
+  SpinnerConfig,
+  SpinnerSize,
+  SpinnerState,
+  SpinnerVariant,
+} from '@/components/ui/spinner.behavior';
 
 export interface SpinnerClassSet {
   root: string;

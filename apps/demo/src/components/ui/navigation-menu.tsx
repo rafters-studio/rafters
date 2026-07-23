@@ -14,7 +14,10 @@ import {
   type NavigationMenuPart,
   type NavigationMenuState,
 } from '@/components/ui/navigation-menu.behavior';
-import { navigationMenuClasses, type NavigationMenuClassSet } from '@/components/ui/navigation-menu.classes';
+import {
+  navigationMenuClasses,
+  type NavigationMenuClassSet,
+} from '@/components/ui/navigation-menu.classes';
 
 export { navigationMenuTriggerStyle } from '@/components/ui/navigation-menu.classes';
 

@@ -1,4 +1,7 @@
-import type { NavigationMenuConfig, NavigationMenuState } from '@/components/ui/navigation-menu.behavior';
+import type {
+  NavigationMenuConfig,
+  NavigationMenuState,
+} from '@/components/ui/navigation-menu.behavior';
 
 export interface NavigationMenuClassSet {
   root: string;

@@ -1,4 +1,8 @@
-import type { SeparatorConfig, SeparatorOrientation, SeparatorState } from '@/components/ui/separator.behavior';
+import type {
+  SeparatorConfig,
+  SeparatorOrientation,
+  SeparatorState,
+} from '@/components/ui/separator.behavior';
 
 export interface SeparatorClassSet {
   root: string;
