@@ -1,6 +1,6 @@
 {
   "namespace": "color",
-  "generatedAt": "2026-07-02T18:46:36.430Z",
+  "generatedAt": "2026-07-22T22:56:24.651Z",
   "tokens": [
     {
       "name": "zinc-50",
@@ -19,7 +19,7 @@
       "scalePosition": 0,
       "containerQueryAware": true,
       "description": "zinc color at 50 position (OKLCH L=0.985)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "zinc-100",
@@ -38,7 +38,7 @@
       "scalePosition": 1,
       "containerQueryAware": true,
       "description": "zinc color at 100 position (OKLCH L=0.967)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "zinc-200",
@@ -56,7 +56,7 @@
       "scalePosition": 2,
       "containerQueryAware": true,
       "description": "zinc color at 200 position (OKLCH L=0.92)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "zinc-300",
@@ -74,7 +74,7 @@
       "scalePosition": 3,
       "containerQueryAware": true,
       "description": "zinc color at 300 position (OKLCH L=0.869)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "zinc-400",
@@ -93,7 +93,7 @@
       "scalePosition": 4,
       "containerQueryAware": true,
       "description": "zinc color at 400 position (OKLCH L=0.707)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "zinc-500",
@@ -112,7 +112,7 @@
       "scalePosition": 5,
       "containerQueryAware": true,
       "description": "zinc color at 500 position (OKLCH L=0.552)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "zinc-600",
@@ -130,7 +130,7 @@
       "scalePosition": 6,
       "containerQueryAware": true,
       "description": "zinc color at 600 position (OKLCH L=0.442)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "zinc-700",
@@ -148,7 +148,7 @@
       "scalePosition": 7,
       "containerQueryAware": true,
       "description": "zinc color at 700 position (OKLCH L=0.37)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "zinc-800",
@@ -167,7 +167,7 @@
       "scalePosition": 8,
       "containerQueryAware": true,
       "description": "zinc color at 800 position (OKLCH L=0.269)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "zinc-900",
@@ -186,7 +186,7 @@
       "scalePosition": 9,
       "containerQueryAware": true,
       "description": "zinc color at 900 position (OKLCH L=0.2)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "zinc-950",
@@ -205,7 +205,7 @@
       "scalePosition": 10,
       "containerQueryAware": true,
       "description": "zinc color at 950 position (OKLCH L=0.141)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "zinc",
@@ -1138,7 +1138,7 @@
       "userOverride": null,
       "containerQueryAware": true,
       "description": "Achromatic zinc palette. Default backing family for the neutral semantic role.",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-glacier-50",
@@ -1157,7 +1157,7 @@
       "scalePosition": 0,
       "containerQueryAware": true,
       "description": "silver-true-glacier color at 50 position (OKLCH L=0.95)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-glacier-100",
@@ -1176,7 +1176,7 @@
       "scalePosition": 1,
       "containerQueryAware": true,
       "description": "silver-true-glacier color at 100 position (OKLCH L=0.896)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-glacier-200",
@@ -1194,7 +1194,7 @@
       "scalePosition": 2,
       "containerQueryAware": true,
       "description": "silver-true-glacier color at 200 position (OKLCH L=0.839)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-glacier-300",
@@ -1212,7 +1212,7 @@
       "scalePosition": 3,
       "containerQueryAware": true,
       "description": "silver-true-glacier color at 300 position (OKLCH L=0.78)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-glacier-400",
@@ -1231,7 +1231,7 @@
       "scalePosition": 4,
       "containerQueryAware": true,
       "description": "silver-true-glacier color at 400 position (OKLCH L=0.716)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-glacier-500",
@@ -1250,7 +1250,7 @@
       "scalePosition": 5,
       "containerQueryAware": true,
       "description": "silver-true-glacier color at 500 position (OKLCH L=0.645)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-glacier-600",
@@ -1268,7 +1268,7 @@
       "scalePosition": 6,
       "containerQueryAware": true,
       "description": "silver-true-glacier color at 600 position (OKLCH L=0.55)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-glacier-700",
@@ -1286,7 +1286,7 @@
       "scalePosition": 7,
       "containerQueryAware": true,
       "description": "silver-true-glacier color at 700 position (OKLCH L=0.425)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-glacier-800",
@@ -1305,7 +1305,7 @@
       "scalePosition": 8,
       "containerQueryAware": true,
       "description": "silver-true-glacier color at 800 position (OKLCH L=0.3)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-glacier-900",
@@ -1324,7 +1324,7 @@
       "scalePosition": 9,
       "containerQueryAware": true,
       "description": "silver-true-glacier color at 900 position (OKLCH L=0.175)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-glacier-950",
@@ -1343,7 +1343,7 @@
       "scalePosition": 10,
       "containerQueryAware": true,
       "description": "silver-true-glacier color at 950 position (OKLCH L=0.05)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-glacier",
@@ -2155,7 +2155,7 @@
       "userOverride": null,
       "containerQueryAware": true,
       "description": "Cool cyan/teal palette - serene, balanced, calming.",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-bold-fire-truck-50",
@@ -2174,7 +2174,7 @@
       "scalePosition": 0,
       "containerQueryAware": true,
       "description": "silver-bold-fire-truck color at 50 position (OKLCH L=0.95)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-bold-fire-truck-100",
@@ -2193,7 +2193,7 @@
       "scalePosition": 1,
       "containerQueryAware": true,
       "description": "silver-bold-fire-truck color at 100 position (OKLCH L=0.896)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-bold-fire-truck-200",
@@ -2211,7 +2211,7 @@
       "scalePosition": 2,
       "containerQueryAware": true,
       "description": "silver-bold-fire-truck color at 200 position (OKLCH L=0.839)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-bold-fire-truck-300",
@@ -2229,7 +2229,7 @@
       "scalePosition": 3,
       "containerQueryAware": true,
       "description": "silver-bold-fire-truck color at 300 position (OKLCH L=0.78)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-bold-fire-truck-400",
@@ -2248,7 +2248,7 @@
       "scalePosition": 4,
       "containerQueryAware": true,
       "description": "silver-bold-fire-truck color at 400 position (OKLCH L=0.716)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-bold-fire-truck-500",
@@ -2267,7 +2267,7 @@
       "scalePosition": 5,
       "containerQueryAware": true,
       "description": "silver-bold-fire-truck color at 500 position (OKLCH L=0.645)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-bold-fire-truck-600",
@@ -2285,7 +2285,7 @@
       "scalePosition": 6,
       "containerQueryAware": true,
       "description": "silver-bold-fire-truck color at 600 position (OKLCH L=0.55)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-bold-fire-truck-700",
@@ -2303,7 +2303,7 @@
       "scalePosition": 7,
       "containerQueryAware": true,
       "description": "silver-bold-fire-truck color at 700 position (OKLCH L=0.425)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-bold-fire-truck-800",
@@ -2322,7 +2322,7 @@
       "scalePosition": 8,
       "containerQueryAware": true,
       "description": "silver-bold-fire-truck color at 800 position (OKLCH L=0.3)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-bold-fire-truck-900",
@@ -2341,7 +2341,7 @@
       "scalePosition": 9,
       "containerQueryAware": true,
       "description": "silver-bold-fire-truck color at 900 position (OKLCH L=0.175)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-bold-fire-truck-950",
@@ -2360,7 +2360,7 @@
       "scalePosition": 10,
       "containerQueryAware": true,
       "description": "silver-bold-fire-truck color at 950 position (OKLCH L=0.05)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-bold-fire-truck",
@@ -3188,7 +3188,7 @@
       "userOverride": null,
       "containerQueryAware": true,
       "description": "Bold fire-truck red palette - warm, energetic, attention-grabbing.",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-honey-50",
@@ -3207,7 +3207,7 @@
       "scalePosition": 0,
       "containerQueryAware": true,
       "description": "silver-true-honey color at 50 position (OKLCH L=0.95)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-honey-100",
@@ -3226,7 +3226,7 @@
       "scalePosition": 1,
       "containerQueryAware": true,
       "description": "silver-true-honey color at 100 position (OKLCH L=0.896)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-honey-200",
@@ -3244,7 +3244,7 @@
       "scalePosition": 2,
       "containerQueryAware": true,
       "description": "silver-true-honey color at 200 position (OKLCH L=0.839)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-honey-300",
@@ -3262,7 +3262,7 @@
       "scalePosition": 3,
       "containerQueryAware": true,
       "description": "silver-true-honey color at 300 position (OKLCH L=0.78)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-honey-400",
@@ -3281,7 +3281,7 @@
       "scalePosition": 4,
       "containerQueryAware": true,
       "description": "silver-true-honey color at 400 position (OKLCH L=0.716)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-honey-500",
@@ -3300,7 +3300,7 @@
       "scalePosition": 5,
       "containerQueryAware": true,
       "description": "silver-true-honey color at 500 position (OKLCH L=0.645)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-honey-600",
@@ -3318,7 +3318,7 @@
       "scalePosition": 6,
       "containerQueryAware": true,
       "description": "silver-true-honey color at 600 position (OKLCH L=0.55)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-honey-700",
@@ -3336,7 +3336,7 @@
       "scalePosition": 7,
       "containerQueryAware": true,
       "description": "silver-true-honey color at 700 position (OKLCH L=0.425)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-honey-800",
@@ -3355,7 +3355,7 @@
       "scalePosition": 8,
       "containerQueryAware": true,
       "description": "silver-true-honey color at 800 position (OKLCH L=0.3)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-honey-900",
@@ -3374,7 +3374,7 @@
       "scalePosition": 9,
       "containerQueryAware": true,
       "description": "silver-true-honey color at 900 position (OKLCH L=0.175)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-honey-950",
@@ -3393,7 +3393,7 @@
       "scalePosition": 10,
       "containerQueryAware": true,
       "description": "silver-true-honey color at 950 position (OKLCH L=0.05)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-honey",
@@ -4197,7 +4197,7 @@
       "userOverride": null,
       "containerQueryAware": true,
       "description": "Warm honey gold palette - inviting, refined, subtle warmth.",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-citrine-50",
@@ -4216,7 +4216,7 @@
       "scalePosition": 0,
       "containerQueryAware": true,
       "description": "silver-true-citrine color at 50 position (OKLCH L=0.95)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-citrine-100",
@@ -4235,7 +4235,7 @@
       "scalePosition": 1,
       "containerQueryAware": true,
       "description": "silver-true-citrine color at 100 position (OKLCH L=0.896)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-citrine-200",
@@ -4253,7 +4253,7 @@
       "scalePosition": 2,
       "containerQueryAware": true,
       "description": "silver-true-citrine color at 200 position (OKLCH L=0.839)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-citrine-300",
@@ -4271,7 +4271,7 @@
       "scalePosition": 3,
       "containerQueryAware": true,
       "description": "silver-true-citrine color at 300 position (OKLCH L=0.78)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-citrine-400",
@@ -4290,7 +4290,7 @@
       "scalePosition": 4,
       "containerQueryAware": true,
       "description": "silver-true-citrine color at 400 position (OKLCH L=0.716)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-citrine-500",
@@ -4309,7 +4309,7 @@
       "scalePosition": 5,
       "containerQueryAware": true,
       "description": "silver-true-citrine color at 500 position (OKLCH L=0.645)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-citrine-600",
@@ -4327,7 +4327,7 @@
       "scalePosition": 6,
       "containerQueryAware": true,
       "description": "silver-true-citrine color at 600 position (OKLCH L=0.55)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-citrine-700",
@@ -4345,7 +4345,7 @@
       "scalePosition": 7,
       "containerQueryAware": true,
       "description": "silver-true-citrine color at 700 position (OKLCH L=0.425)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-citrine-800",
@@ -4364,7 +4364,7 @@
       "scalePosition": 8,
       "containerQueryAware": true,
       "description": "silver-true-citrine color at 800 position (OKLCH L=0.3)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-citrine-900",
@@ -4383,7 +4383,7 @@
       "scalePosition": 9,
       "containerQueryAware": true,
       "description": "silver-true-citrine color at 900 position (OKLCH L=0.175)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-citrine-950",
@@ -4402,7 +4402,7 @@
       "scalePosition": 10,
       "containerQueryAware": true,
       "description": "silver-true-citrine color at 950 position (OKLCH L=0.05)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-citrine",
@@ -5206,7 +5206,7 @@
       "userOverride": null,
       "containerQueryAware": true,
       "description": "Fresh citrine green palette - natural, growth, harmony.",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-sky-50",
@@ -5225,7 +5225,7 @@
       "scalePosition": 0,
       "containerQueryAware": true,
       "description": "silver-true-sky color at 50 position (OKLCH L=0.95)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-sky-100",
@@ -5244,7 +5244,7 @@
       "scalePosition": 1,
       "containerQueryAware": true,
       "description": "silver-true-sky color at 100 position (OKLCH L=0.896)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-sky-200",
@@ -5262,7 +5262,7 @@
       "scalePosition": 2,
       "containerQueryAware": true,
       "description": "silver-true-sky color at 200 position (OKLCH L=0.839)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-sky-300",
@@ -5280,7 +5280,7 @@
       "scalePosition": 3,
       "containerQueryAware": true,
       "description": "silver-true-sky color at 300 position (OKLCH L=0.78)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-sky-400",
@@ -5299,7 +5299,7 @@
       "scalePosition": 4,
       "containerQueryAware": true,
       "description": "silver-true-sky color at 400 position (OKLCH L=0.716)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-sky-500",
@@ -5318,7 +5318,7 @@
       "scalePosition": 5,
       "containerQueryAware": true,
       "description": "silver-true-sky color at 500 position (OKLCH L=0.645)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-sky-600",
@@ -5336,7 +5336,7 @@
       "scalePosition": 6,
       "containerQueryAware": true,
       "description": "silver-true-sky color at 600 position (OKLCH L=0.55)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-sky-700",
@@ -5354,7 +5354,7 @@
       "scalePosition": 7,
       "containerQueryAware": true,
       "description": "silver-true-sky color at 700 position (OKLCH L=0.425)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-sky-800",
@@ -5373,7 +5373,7 @@
       "scalePosition": 8,
       "containerQueryAware": true,
       "description": "silver-true-sky color at 800 position (OKLCH L=0.3)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-sky-900",
@@ -5392,7 +5392,7 @@
       "scalePosition": 9,
       "containerQueryAware": true,
       "description": "silver-true-sky color at 900 position (OKLCH L=0.175)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-sky-950",
@@ -5411,7 +5411,7 @@
       "scalePosition": 10,
       "containerQueryAware": true,
       "description": "silver-true-sky color at 950 position (OKLCH L=0.05)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-sky",
@@ -6224,7 +6224,7 @@
       "userOverride": null,
       "containerQueryAware": true,
       "description": "Calm sky blue palette - trustworthy, serene, reliable.",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-violet-50",
@@ -6243,7 +6243,7 @@
       "scalePosition": 0,
       "containerQueryAware": true,
       "description": "silver-true-violet color at 50 position (OKLCH L=0.95)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-violet-100",
@@ -6262,7 +6262,7 @@
       "scalePosition": 1,
       "containerQueryAware": true,
       "description": "silver-true-violet color at 100 position (OKLCH L=0.896)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-violet-200",
@@ -6280,7 +6280,7 @@
       "scalePosition": 2,
       "containerQueryAware": true,
       "description": "silver-true-violet color at 200 position (OKLCH L=0.839)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-violet-300",
@@ -6298,7 +6298,7 @@
       "scalePosition": 3,
       "containerQueryAware": true,
       "description": "silver-true-violet color at 300 position (OKLCH L=0.78)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-violet-400",
@@ -6317,7 +6317,7 @@
       "scalePosition": 4,
       "containerQueryAware": true,
       "description": "silver-true-violet color at 400 position (OKLCH L=0.716)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-violet-500",
@@ -6336,7 +6336,7 @@
       "scalePosition": 5,
       "containerQueryAware": true,
       "description": "silver-true-violet color at 500 position (OKLCH L=0.645)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-violet-600",
@@ -6354,7 +6354,7 @@
       "scalePosition": 6,
       "containerQueryAware": true,
       "description": "silver-true-violet color at 600 position (OKLCH L=0.55)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-violet-700",
@@ -6372,7 +6372,7 @@
       "scalePosition": 7,
       "containerQueryAware": true,
       "description": "silver-true-violet color at 700 position (OKLCH L=0.425)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-violet-800",
@@ -6391,7 +6391,7 @@
       "scalePosition": 8,
       "containerQueryAware": true,
       "description": "silver-true-violet color at 800 position (OKLCH L=0.3)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-violet-900",
@@ -6410,7 +6410,7 @@
       "scalePosition": 9,
       "containerQueryAware": true,
       "description": "silver-true-violet color at 900 position (OKLCH L=0.175)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-violet-950",
@@ -6429,7 +6429,7 @@
       "scalePosition": 10,
       "containerQueryAware": true,
       "description": "silver-true-violet color at 950 position (OKLCH L=0.05)",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     },
     {
       "name": "silver-true-violet",
@@ -7233,7 +7233,7 @@
       "userOverride": null,
       "containerQueryAware": true,
       "description": "Creative violet palette - luxurious, imaginative, refined.",
-      "generatedAt": "2026-07-02T18:46:36.033Z"
+      "generatedAt": "2026-07-22T22:56:24.242Z"
     }
   ]
 }

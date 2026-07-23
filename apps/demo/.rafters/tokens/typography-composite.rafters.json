@@ -1,6 +1,6 @@
 {
   "namespace": "typography-composite",
-  "generatedAt": "2026-07-02T18:46:36.432Z",
+  "generatedAt": "2026-07-22T22:56:24.652Z",
   "tokens": [
     {
       "name": "display-large",
@@ -38,7 +38,7 @@
       ],
       "generateUtilityClass": true,
       "description": "Typography composite: font-heading text-5xl font-bold. Largest display text for hero sections and landing pages",
-      "generatedAt": "2026-07-02T18:46:36.065Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "display-medium",
@@ -76,7 +76,7 @@
       ],
       "generateUtilityClass": true,
       "description": "Typography composite: font-heading text-4xl font-bold. Primary page heading -- one per page",
-      "generatedAt": "2026-07-02T18:46:36.065Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "title-large",
@@ -114,7 +114,7 @@
       ],
       "generateUtilityClass": true,
       "description": "Typography composite: font-heading text-3xl font-semibold. Major section heading",
-      "generatedAt": "2026-07-02T18:46:36.065Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "title-medium",
@@ -162,7 +162,7 @@
       ],
       "generateUtilityClass": true,
       "description": "Typography composite: font-heading text-lg font-semibold. Component and subsection title -- shared by card, dialog, sheet, drawer, empty state",
-      "generatedAt": "2026-07-02T18:46:36.065Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "title-small",
@@ -202,7 +202,7 @@
       ],
       "generateUtilityClass": true,
       "description": "Typography composite: font-heading text-base font-semibold. Minor heading and alert title",
-      "generatedAt": "2026-07-02T18:46:36.065Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "body-large",
@@ -241,7 +241,7 @@
       ],
       "generateUtilityClass": true,
       "description": "Typography composite: font-body text-xl font-normal. Lead paragraph and introductory text",
-      "generatedAt": "2026-07-02T18:46:36.065Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "body-medium",
@@ -285,7 +285,7 @@
       ],
       "generateUtilityClass": true,
       "description": "Typography composite: font-body text-base font-normal. Default body text for paragraphs and content",
-      "generatedAt": "2026-07-02T18:46:36.065Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "body-small",
@@ -337,7 +337,7 @@
       ],
       "generateUtilityClass": true,
       "description": "Typography composite: font-body text-sm font-normal. Secondary text -- descriptions, tooltips, menu items, table cells",
-      "generatedAt": "2026-07-02T18:46:36.065Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "label-large",
@@ -382,7 +382,7 @@
       ],
       "generateUtilityClass": true,
       "description": "Typography composite: font-body text-base font-medium. Interactive element text -- buttons, tabs, nav triggers, toggles",
-      "generatedAt": "2026-07-02T18:46:36.065Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "label-medium",
@@ -425,7 +425,7 @@
       ],
       "generateUtilityClass": true,
       "description": "Typography composite: font-body text-sm font-medium. Form labels, breadcrumbs, small buttons, sidebar items",
-      "generatedAt": "2026-07-02T18:46:36.065Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "label-small",
@@ -468,7 +468,7 @@
       ],
       "generateUtilityClass": true,
       "description": "Typography composite: font-body text-xs font-medium. Smallest label text -- badges, sidebar labels, captions",
-      "generatedAt": "2026-07-02T18:46:36.065Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "code-large",
@@ -507,7 +507,7 @@
       ],
       "generateUtilityClass": true,
       "description": "Typography composite: font-code text-base font-normal. Code blocks and pre-formatted text",
-      "generatedAt": "2026-07-02T18:46:36.065Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "code-small",
@@ -547,7 +547,7 @@
       ],
       "generateUtilityClass": true,
       "description": "Typography composite: font-code text-sm font-normal. Inline code and keyboard key indicators",
-      "generatedAt": "2026-07-02T18:46:36.065Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     },
     {
       "name": "shortcut",
@@ -585,7 +585,7 @@
       ],
       "generateUtilityClass": true,
       "description": "Typography composite: font-code text-xs font-normal. Keyboard shortcut indicators in menus",
-      "generatedAt": "2026-07-02T18:46:36.065Z"
+      "generatedAt": "2026-07-22T22:56:24.283Z"
     }
   ]
 }

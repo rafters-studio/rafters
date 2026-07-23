@@ -1,18 +1,20 @@
 /**
- * Keyboard key indicator component for displaying shortcuts and key combinations
+ * Kbd -- a keyboard key cap for displaying keys, shortcuts, and combinations.
+ * Render one key per Kbd and compose several for a combination
+ * (`<Kbd>Cmd</Kbd> + <Kbd>S</Kbd>`); use platform-appropriate modifiers.
  *
- * @cognitive-load 1/10 - Simple visual indicator, no interaction required
- * @attention-economics Tertiary information: supplements primary content without competing
- * @trust-building Teaches keyboard shortcuts, builds power-user confidence
- * @accessibility Semantic kbd element, screen reader compatible
- * @semantic-meaning Keyboard representation: displays key names, shortcuts, combinations
+ * @cognitive-load 1/10 - decision 0, info 1, interaction 0, disruption 0, learning 0
+ * @attention-economics Tertiary information: a key cap supplements the primary
+ * content without competing for attention -- it annotates, it never announces.
+ * @trust-building Teaches keyboard shortcuts in place, building power-user
+ * confidence; a consistent cap shape makes shortcuts scannable across a view.
+ * @accessibility The semantic `<kbd>` element is the whole contract -- it marks
+ * its text as keyboard input for assistive technology, so the score projects no
+ * ARIA and adds no role. The key text is the accessible name by construction.
  *
- * @usage-patterns
- * DO: Use in tooltips to show keyboard shortcuts
- * DO: Use in menus alongside action items
- * DO: Use platform-appropriate modifier keys (⌘ for Mac, Ctrl for Windows)
- * DO: Combine multiple Kbd elements for key combinations
- * NEVER: Use for non-keyboard content, use without context
+ * A pure static score has nothing to subscribe to: the performance is pure
+ * decoration application. No useMemory, no bind -- config in, classes out,
+ * children through, the semantic `<kbd>` element is fixed.
  *
  * @example
  * ```tsx
@@ -20,25 +22,35 @@
  * <Kbd>Enter</Kbd>
  *
  * // Key combination
- * <span className="flex gap-1">
- *   <Kbd>⌘</Kbd>
- *   <Kbd>S</Kbd>
- * </span>
+ * <Kbd>Cmd</Kbd> + <Kbd>S</Kbd>
  * ```
  */
-import type * as React from 'react';
+import * as React from 'react';
 import classy from '@/lib/primitives/classy';
+import { kbdClasses } from '@/components/ui/kbd.classes';
 
-export interface KbdProps extends React.HTMLAttributes<HTMLElement> {}
+export type KbdProps = React.HTMLAttributes<HTMLElement>;
 
-export function Kbd({ className, ...props }: KbdProps) {
-  return (
-    <kbd
-      className={classy(
-        'inline-flex items-center justify-center rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-xs font-medium text-muted-foreground shadow-sm',
-        className,
-      )}
-      {...props}
-    />
-  );
-}
+export const Kbd = React.forwardRef<HTMLElement, KbdProps>(
+  ({ className, children, ...props }, ref) => {
+    const classes = kbdClasses({}, {});
+
+    // No effects and no optional parts -- nothing ever calls getPart, so the
+    // ref is a plain forward. The score projects nothing, so there is no aria
+    // to spread; the `<kbd>` element's own semantics are the whole contract.
+    return (
+      <kbd
+        ref={ref}
+        data-part="root"
+        className={classy(classes.root, className) || undefined}
+        {...props}
+      >
+        {children}
+      </kbd>
+    );
+  },
+);
+
+Kbd.displayName = 'Kbd';
+
+export default Kbd;

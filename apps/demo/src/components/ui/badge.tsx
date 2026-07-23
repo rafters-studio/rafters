@@ -1,82 +1,43 @@
-/**
- * Status badge component with multi-sensory communication patterns
- *
- * @cognitive-load 2/10 - Optimized for peripheral scanning with minimal cognitive overhead
- * @attention-economics Secondary/tertiary support: Maximum 1 high-attention badge per section, unlimited subtle badges
- * @trust-building Low trust informational display with optional interaction patterns
- * @accessibility Multi-sensory communication: Color + Icon + Text + Pattern prevents single-point accessibility failure
- * @semantic-meaning Status communication with semantic variants: success=completion, warning=caution, error=problems, info=neutral information
- *
- * @usage-patterns
- * DO: Use for status indicators with multi-sensory communication
- * DO: Navigation badges for notification counts and sidebar status
- * DO: Category labels with semantic meaning over arbitrary colors
- * DO: Interactive badges with enhanced touch targets for removal/expansion
- * NEVER: Primary actions, complex information, critical alerts requiring immediate action
- *
- * @example
- * ```tsx
- * // Status badge with semantic meaning
- * <Badge variant="success">Completed</Badge>
- *
- * // Warning indicator
- * <Badge variant="warning">Pending Review</Badge>
- * ```
- */
-import type * as React from 'react';
+import * as React from 'react';
 import classy from '@/lib/primitives/classy';
+import type { BadgeSize, BadgeVariant } from '@/components/ui/badge.behavior';
+import { badgeClasses } from '@/components/ui/badge.classes';
 
+export { badgeVariants } from '@/components/ui/badge.classes';
+
+/**
+ * Small label chip. Displays a short status/count label inline.
+ *
+ * @cognitive-load 2/10 - decision 0, information 1, interaction 0,
+ * disruption 0, learning 1. Display only: one label to read, no decision,
+ * no interaction, no context disruption. Color-coding conventions
+ * (destructive=red, success=green) are the sole learning cost.
+ * @attention-economics Secondary/tertiary support: at most one
+ * high-attention badge (destructive/warning) per section; subtle variants
+ * (muted/outline/ghost) are unlimited.
+ * @trust-building Low-trust informational display. Never a primary action
+ * surface -- a badge announces state, it does not gate it.
+ * @accessibility The label text is the entire accessible payload; no role
+ * is projected. Multi-sensory communication (color + text, never color
+ * alone) is a designer-vocabulary property of the variant classes, not a
+ * behavior of this component.
+ */
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
-  /** Visual variant per docs/COMPONENT_STYLING_REFERENCE.md */
-  variant?:
-    | 'default'
-    | 'primary'
-    | 'secondary'
-    | 'destructive'
-    | 'success'
-    | 'warning'
-    | 'info'
-    | 'muted'
-    | 'accent'
-    | 'outline'
-    | 'ghost'
-    | 'link';
-  /** Size variant */
-  size?: 'sm' | 'default' | 'lg';
+  /** Visual variant. Oracle's full vocabulary (contract, boundary 9). */
+  variant?: BadgeVariant;
+  size?: BadgeSize;
 }
 
-// Variant classes per docs/COMPONENT_STYLING_REFERENCE.md
-const variantClasses: Record<string, string> = {
-  default: 'bg-primary text-primary-foreground',
-  primary: 'bg-primary text-primary-foreground',
-  secondary: 'bg-secondary text-secondary-foreground',
-  destructive: 'bg-destructive text-destructive-foreground',
-  success: 'bg-success text-success-foreground',
-  warning: 'bg-warning text-warning-foreground',
-  info: 'bg-info text-info-foreground',
-  muted: 'bg-muted text-muted-foreground',
-  accent: 'bg-accent text-accent-foreground',
-  outline: 'bg-transparent border border-input text-foreground',
-  ghost: 'hover:bg-muted hover:text-muted-foreground',
-  link: 'text-primary underline-offset-4 hover:underline',
-};
+export const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
+  ({ variant = 'default', size = 'default', className, ...props }, ref) => {
+    const classes = badgeClasses({ variant, size }, {});
 
-const sizeClasses: Record<string, string> = {
-  sm: 'px-2 py-0.5 text-xs',
-  default: 'px-2.5 py-0.5 text-xs',
-  lg: 'px-3 py-1 text-sm',
-};
+    return (
+      <span ref={ref} data-part="root" className={classy(classes.root, className)} {...props} />
+    );
+  },
+);
 
-export function Badge({ className, variant = 'default', size = 'default', ...props }: BadgeProps) {
-  const baseClasses =
-    'inline-flex items-center justify-center rounded-full font-semibold transition-colors';
+Badge.displayName = 'Badge';
 
-  const classes = classy(
-    baseClasses,
-    variantClasses[variant] ?? variantClasses.default,
-    sizeClasses[size] ?? sizeClasses.default,
-    className,
-  );
-
-  return <span className={classes} {...props} />;
-}
+export default Badge;

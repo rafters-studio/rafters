@@ -300,32 +300,32 @@ export const tokens = {
     'focus-high-contrast': {"width":"0.188rem","offset":"0.125rem","style":"solid","color":"Highlight"},
   },
   motion: {
-    /** Base transition duration - all motion timing derives from this */
+    /** Legacy base transition duration. The perceptual duration scale (motion-duration-*) no longer derives from this; retained only as a reference value and delay-progression base. */
     'motion-duration-base': '150ms',
-    /** Instant - no animation */
+    /** No perceptible transition. Cursor changes, text selection, badge counts. Below all perception -- there is nothing to track, so nothing is communicated. */
     'motion-duration-instant': '0ms',
-    /** Fast - micro-interactions, hover states */
-    'motion-duration-fast': '125ms',
-    /** Normal - standard UI transitions */
-    'motion-duration-normal': '150ms',
-    /** Slow - enter/exit animations */
-    'motion-duration-slow': '180ms',
-    /** Slower - emphasis, large element transitions */
-    'motion-duration-slower': '216ms',
-    /** Linear - constant speed, mechanical feel */
+    /** Immediate but visible. Focus rings and press feedback. At the instantaneous threshold -- acknowledgment that input landed, not communication of a change. Band: at the instantaneous threshold (Nielsen 0.1s). */
+    'motion-duration-micro': '100ms',
+    /** Hover states. The cursor is already there, so the response must match its speed. Below the communicative window -- acknowledgment, not communication. Band: below the communicative window. */
+    'motion-duration-fast': '150ms',
+    /** Dropdowns, tab switches, small reveals. The communicative window: fast enough to feel responsive, slow enough for the eye to track a trajectory and build a spatial model. Band: communicative (~200-300ms). */
+    'motion-duration-moderate': '250ms',
+    /** The workhorse -- modal entrances, toggles, standard state transitions. The communicative window for larger movement. Band: communicative, larger movement. */
+    'motion-duration-normal': '350ms',
+    /** Sheets, page transitions, large spatial movement where the user needs orientation. At the sluggish boundary -- the ceiling for anything but full-screen spatial transitions. Band: at the sluggish boundary. */
+    'motion-duration-slow': '500ms',
+    /** Precision -- arrives exactly where it should, engineered rather than thrown. Decelerates into its final position. General-purpose state transitions and hover. */
+    'motion-easing-standard': 'cubic-bezier(0.25, 0.1, 0.25, 1)',
+    /** Arrival, welcome, settling into place. The fast start communicates responsiveness; the slow finish communicates care. Anything entering the viewport. Paired with `exit` as a deliberately asymmetric couple. (Dragicevic 2011: slow-in/slow-out outperforms constant speed for tracking.) */
+    'motion-easing-enter': 'cubic-bezier(0, 0, 0.2, 1)',
+    /** Withdrawal, giving space. The brief hesitation acknowledges the user; the fast departure avoids lingering. Anything leaving the viewport. Paired with `enter` as a deliberately asymmetric couple -- exits are faster than entrances by design. */
+    'motion-easing-exit': 'cubic-bezier(0.4, 0, 1, 1)',
+    /** Mechanical, procedural, without personality -- a process, not a gesture. Progress and loading, where the system is working rather than interacting. Never for interactive spatial transitions. */
     'motion-easing-linear': 'linear',
-    /** Ease in - starts slow, accelerates (exiting) */
-    'motion-easing-ease-in': 'cubic-bezier(0.42, 0, 1, 1)',
-    /** Ease out - starts fast, decelerates (entering) */
-    'motion-easing-ease-out': 'cubic-bezier(0, 0, 0.58, 1)',
-    /** Ease in-out - symmetric acceleration/deceleration */
-    'motion-easing-ease-in-out': 'cubic-bezier(0.42, 0, 0.58, 1)',
-    /** Productive - quick, efficient, minimal overshoot */
-    'motion-easing-productive': 'cubic-bezier(0.2, 0, 0.38, 0.9)',
-    /** Expressive - dramatic, attention-grabbing */
-    'motion-easing-expressive': 'cubic-bezier(0.4, 0.14, 0.3, 1)',
-    /** Spring - bouncy overshoot for playful feel */
-    'motion-easing-spring': 'cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+    /** Alive, coming physically to rest -- a critically-damped spring with no overshoot. Page transitions, sheets, large tracked spatial movement. (Johansson 1973 / Pratt 2010: animate motion is perceived as alive and captures attention.) */
+    'motion-easing-spring-smooth': 'cubic-bezier(0.2, 0.9, 0.3, 1)',
+    /** Alive, tight, following input closely -- a tighter spring with less settle and no overshoot. Toggles, presses, interactions that track input. */
+    'motion-easing-spring-snappy': 'cubic-bezier(0.2, 0.8, 0.2, 1)',
     /** None animation delay */
     'motion-delay-none': '0ms',
     /** Short animation delay */
@@ -373,55 +373,81 @@ export const tokens = {
     /** Text cursor blinking */
     'motion-keyframe-caret-blink': '0%, 70%, 100% { opacity: 1; } 20%, 50% { opacity: 0; }',
     /** Fade in animation */
-    'motion-animation-fade-in': 'fade-in var(--motion-duration-fast) var(--motion-easing-ease-out)',
+    'motion-animation-fade-in': 'fade-in var(--motion-duration-fast) var(--motion-easing-enter)',
     /** Fade out animation */
-    'motion-animation-fade-out': 'fade-out var(--motion-duration-fast) var(--motion-easing-ease-in)',
+    'motion-animation-fade-out': 'fade-out var(--motion-duration-fast) var(--motion-easing-exit)',
     /** Slide in from top */
-    'motion-animation-slide-in-from-top': 'slide-in-from-top var(--motion-duration-normal) var(--motion-easing-ease-out)',
+    'motion-animation-slide-in-from-top': 'slide-in-from-top var(--motion-duration-normal) var(--motion-easing-enter)',
     /** Slide in from bottom */
-    'motion-animation-slide-in-from-bottom': 'slide-in-from-bottom var(--motion-duration-normal) var(--motion-easing-ease-out)',
+    'motion-animation-slide-in-from-bottom': 'slide-in-from-bottom var(--motion-duration-normal) var(--motion-easing-enter)',
     /** Slide in from left */
-    'motion-animation-slide-in-from-left': 'slide-in-from-left var(--motion-duration-normal) var(--motion-easing-ease-out)',
+    'motion-animation-slide-in-from-left': 'slide-in-from-left var(--motion-duration-normal) var(--motion-easing-enter)',
     /** Slide in from right */
-    'motion-animation-slide-in-from-right': 'slide-in-from-right var(--motion-duration-normal) var(--motion-easing-ease-out)',
+    'motion-animation-slide-in-from-right': 'slide-in-from-right var(--motion-duration-normal) var(--motion-easing-enter)',
     /** Slide out to top */
-    'motion-animation-slide-out-to-top': 'slide-out-to-top var(--motion-duration-fast) var(--motion-easing-ease-in)',
+    'motion-animation-slide-out-to-top': 'slide-out-to-top var(--motion-duration-fast) var(--motion-easing-exit)',
     /** Slide out to bottom */
-    'motion-animation-slide-out-to-bottom': 'slide-out-to-bottom var(--motion-duration-fast) var(--motion-easing-ease-in)',
+    'motion-animation-slide-out-to-bottom': 'slide-out-to-bottom var(--motion-duration-fast) var(--motion-easing-exit)',
     /** Slide out to left */
-    'motion-animation-slide-out-to-left': 'slide-out-to-left var(--motion-duration-fast) var(--motion-easing-ease-in)',
+    'motion-animation-slide-out-to-left': 'slide-out-to-left var(--motion-duration-fast) var(--motion-easing-exit)',
     /** Slide out to right */
-    'motion-animation-slide-out-to-right': 'slide-out-to-right var(--motion-duration-fast) var(--motion-easing-ease-in)',
+    'motion-animation-slide-out-to-right': 'slide-out-to-right var(--motion-duration-fast) var(--motion-easing-exit)',
     /** Scale in with spring */
-    'motion-animation-scale-in': 'scale-in var(--motion-duration-normal) var(--motion-easing-spring)',
+    'motion-animation-scale-in': 'scale-in var(--motion-duration-normal) var(--motion-easing-spring-snappy)',
     /** Scale out */
-    'motion-animation-scale-out': 'scale-out var(--motion-duration-fast) var(--motion-easing-ease-in)',
+    'motion-animation-scale-out': 'scale-out var(--motion-duration-fast) var(--motion-easing-exit)',
     /** Continuous spin */
     'motion-animation-spin': 'spin 1s var(--motion-easing-linear) infinite',
     /** Pinging pulse */
-    'motion-animation-ping': 'ping 1s var(--motion-easing-ease-out) infinite',
+    'motion-animation-ping': 'ping 1s var(--motion-easing-enter) infinite',
     /** Gentle pulse */
-    'motion-animation-pulse': 'pulse 2s var(--motion-easing-ease-in-out) infinite',
+    'motion-animation-pulse': 'pulse 2s var(--motion-easing-standard) infinite',
     /** Bouncing */
-    'motion-animation-bounce': 'bounce 1s var(--motion-easing-ease-in-out) infinite',
+    'motion-animation-bounce': 'bounce 1s var(--motion-easing-standard) infinite',
     /** Accordion expand */
-    'motion-animation-accordion-down': 'accordion-down var(--motion-duration-normal) var(--motion-easing-ease-out)',
+    'motion-animation-accordion-down': 'accordion-down var(--motion-duration-normal) var(--motion-easing-enter)',
     /** Accordion collapse */
-    'motion-animation-accordion-up': 'accordion-up var(--motion-duration-normal) var(--motion-easing-ease-out)',
+    'motion-animation-accordion-up': 'accordion-up var(--motion-duration-normal) var(--motion-easing-enter)',
     /** Caret blinking */
-    'motion-animation-caret-blink': 'caret-blink 1.25s var(--motion-easing-ease-out) infinite',
+    'motion-animation-caret-blink': 'caret-blink 1.25s var(--motion-easing-enter) infinite',
     /** Fade in animation preset */
-    'motion-fade-in': '125ms cubic-bezier(0, 0, 0.58, 1)',
+    'motion-fade-in': '150ms cubic-bezier(0, 0, 0.2, 1)',
     /** Fade out animation preset */
-    'motion-fade-out': '125ms cubic-bezier(0.42, 0, 1, 1)',
+    'motion-fade-out': '150ms cubic-bezier(0.4, 0, 1, 1)',
     /** Slide in animation preset */
-    'motion-slide-in': '150ms cubic-bezier(0, 0, 0.58, 1)',
+    'motion-slide-in': '350ms cubic-bezier(0, 0, 0.2, 1)',
     /** Slide out animation preset */
-    'motion-slide-out': '125ms cubic-bezier(0.42, 0, 1, 1)',
+    'motion-slide-out': '150ms cubic-bezier(0.4, 0, 1, 1)',
     /** Scale in with spring animation */
-    'motion-scale-in': '150ms cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-    /** Metadata about the motion progression system */
-    'motion-progression': {"ratio":"minor-third","ratioValue":1.2,"baseDuration":150,"note":"Motion timing uses step-based progression (base * ratio^step) for unified feel"},
+    'motion-scale-in': '350ms cubic-bezier(0.2, 0.8, 0.2, 1)',
+    /** Hover-state colour transition. Acknowledges pointer presence. Colour only, no movement -- the cursor is already on target, so the response matches its speed at the fast tier. */
+    'motion-semantic-hover': {"properties":["color","background-color","border-color"],"durationTier":"fast","curve":"standard","reducedMotion":null},
+    /** Focus-ring transition. Marks the focused element. A ring appearing, not moving -- micro tier at linear velocity reads as the system marking focus, not a gesture. (Tailwind ring is box-shadow.) */
+    'motion-semantic-focus': {"properties":["box-shadow","outline-color"],"durationTier":"micro","curve":"linear","reducedMotion":null},
+    /** Press/active feedback. Confirms the input was received. The fastest, tightest feedback -- micro tier with a snappy spring follows the finger. Under reduced motion the transform drops; the colour change survives. */
+    'motion-semantic-press': {"properties":["transform","color","background-color"],"durationTier":"micro","curve":"spring-snappy","reducedMotion":{"properties":["color","background-color"]}},
+    /** Toggle/switch state change. Shows the new state. A thumb travelling a track is a small, tracked movement -- moderate tier, snappy spring. Reduced motion drops the transform to a colour cross-fade. */
+    'motion-semantic-toggle': {"properties":["color","background-color","transform"],"durationTier":"moderate","curve":"spring-snappy","reducedMotion":{"properties":["color","background-color"]}},
+    /** Dropdown/menu entrance. A dropdown is small and travels a short distance -- moderate tier, one step below the modal, with the arrival curve. */
+    'motion-semantic-dropdown-in': {"properties":["opacity","transform"],"durationTier":"moderate","curve":"enter","reducedMotion":{"properties":["opacity"],"ms":100}},
+    /** Dropdown/menu exit. The exit of a small element -- fast tier (shorter than its moderate entrance) with the departure curve. The user already chose to dismiss it. */
+    'motion-semantic-dropdown-out': {"properties":["opacity","transform"],"durationTier":"fast","curve":"exit","reducedMotion":{"properties":["opacity"],"ms":100}},
+    /** Modal/dialog entrance. A modal is larger and travels farther than a dropdown -- normal tier, one step up, with the arrival curve. Size and distance produce the longer duration. */
+    'motion-semantic-modal-in': {"properties":["opacity","transform"],"durationTier":"normal","curve":"enter","reducedMotion":{"properties":["opacity"],"ms":150}},
+    /** Modal/dialog exit. The modal exit -- moderate tier (shorter than its normal entrance) with the departure curve. */
+    'motion-semantic-modal-out': {"properties":["opacity","transform"],"durationTier":"moderate","curve":"exit","reducedMotion":{"properties":["opacity"],"ms":150}},
+    /** Sheet/drawer entrance. A sheet is the largest spatial movement -- slow tier with the physical settle of a smooth spring, because the user must track it into place. Reduced motion becomes a cross-fade. */
+    'motion-semantic-sheet-in': {"properties":["transform"],"durationTier":"slow","curve":"spring-smooth","reducedMotion":{"properties":["opacity"],"ms":250}},
+    /** Sheet/drawer exit. The sheet exit -- normal tier (shorter than its slow entrance) with the departure curve. */
+    'motion-semantic-sheet-out': {"properties":["transform"],"durationTier":"normal","curve":"exit","reducedMotion":{"properties":["opacity"],"ms":250}},
+    /** Expand/reveal collapsible content (accordion, disclosure). Content unfolding to its natural height -- normal tier with the arrival curve. Transitions grid-template-rows (0fr->1fr), the transitionable stand-in for height:auto. Reduced motion snaps the rows and fades opacity. */
+    'motion-semantic-expand': {"properties":["grid-template-rows","opacity"],"durationTier":"normal","curve":"enter","reducedMotion":{"properties":["opacity"]}},
+    /** Collapse/hide collapsible content (accordion, disclosure). Content folding away -- moderate tier (shorter than its normal expansion) with the departure curve. Reduced motion snaps the rows. */
+    'motion-semantic-collapse': {"properties":["grid-template-rows","opacity"],"durationTier":"moderate","curve":"exit","reducedMotion":{"properties":["opacity"]}},
+    /** Page/route transition. A whole-view transition -- slow tier with the physical settle of a smooth spring, because the user reorients across the largest possible distance. */
+    'motion-semantic-page': {"properties":["opacity","transform"],"durationTier":"slow","curve":"spring-smooth","reducedMotion":{"properties":["opacity"],"ms":200}},
+    /** Metadata about the motion system */
+    'motion-progression': {"ratio":"minor-third","ratioValue":1.2,"baseDuration":150,"note":"Duration tiers are perceptually derived literals (docs/MOTION.md); delay tokens use the workspace progression ratio from the base duration."},
   },
   radius: {
     /** Base border radius - all other radii derive from this value */

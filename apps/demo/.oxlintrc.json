@@ -1,12 +1,8 @@
 {
-  "$schema": "../../node_modules/oxlint/configuration_schema.json",
-  "extends": ["../../.oxlintrc.json"],
-  "plugins": ["react", "react-hooks"],
-  "env": {
-    "serviceworker": true,
-    "browser": true
-  },
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["react", "typescript", "oxc"],
   "rules": {
-    "react-hooks/exhaustive-deps": "warn"
+    "react/rules-of-hooks": "error",
+    "react/only-export-components": ["warn", { "allowConstantExport": true }]
   }
 }

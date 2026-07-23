@@ -1,170 +1,172 @@
-/**
- * Toggle switch component for on/off binary states
- *
- * @cognitive-load 2/10 - Clear binary state with immediate visual feedback
- * @attention-economics Low attention: thumb position communicates state instantly
- * @trust-building Immediate state change, reversible action, physical metaphor (light switch)
- * @accessibility Keyboard toggle (Space), proper ARIA checked state, motion for state transition
- * @semantic-meaning Binary toggle: on=enabled/active, off=disabled/inactive. Use for settings with immediate effect
- *
- * @usage-patterns
- * DO: Use for settings that take effect immediately
- * DO: Pair with descriptive label explaining what the switch controls
- * DO: Use when action is reversible without consequence
- * DO: Position consistently (left of label or right-aligned)
- * NEVER: Use for form submissions, use for actions requiring confirmation
- *
- * @example
- * ```tsx
- * <div className="flex items-center gap-2">
- *   <Switch id="notifications" />
- *   <Label htmlFor="notifications">Enable notifications</Label>
- * </div>
- * ```
- */
 import * as React from 'react';
+import { createBehavior, type PartIds } from '@/lib/contract';
+import { useMemory } from '@/hooks/use-memory';
 import classy from '@/lib/primitives/classy';
+import {
+  switchBehavior,
+  type SwitchActions,
+  type SwitchConfig,
+  type SwitchPart,
+  type SwitchSize,
+  type SwitchVariant,
+} from '@/components/ui/switch.behavior';
+import { switchClasses } from '@/components/ui/switch.classes';
 
+export { switchVariants } from '@/components/ui/switch.classes';
+export type { SwitchSize, SwitchVariant };
+
+/**
+ * Switch -- the React performance of the switch score. The shadcn Switch
+ * surface: a lone <button role="switch"> with a thumb, controlled/uncontrolled
+ * `checked` and `onCheckedChange`, plus the rafters `variant`/`size` extensions.
+ *
+ * Thin by construction: the score is projection-only, so the controller just
+ * wires memory + classes -- no host and no getPart registry beyond the toggle
+ * request. The value/name/required props ride the form-value axis into the
+ * score's projection; native form submission is a form adapter's job (the
+ * button carries no native form value), tracked in the component doc.
+ *
+ * @cognitive-load 2/10 - decision 1, information 1, interaction 0, disruption
+ * 0, learning 0. One control, one binary decision (on or off); the thumb
+ * position is the only information to read. Universally learned light-switch
+ * affordance, no disruption, nothing to learn.
+ * @attention-economics Low-attention surface: the thumb position communicates
+ * state at a glance, so a switch never competes for attention the way a
+ * primary-action button does. Pair one per setting; do not stack switches that
+ * gate each other.
+ * @trust-building Immediate, reversible state change with a physical metaphor;
+ * the disabled gate keeps an unavailable toggle from firing while staying
+ * discoverable, and the change is undoable without consequence.
+ * @accessibility Native <button> semantics carry Enter/Space activation;
+ * `role="switch"` + `aria-checked` announce the binary state, `aria-required`
+ * advertises the constraint, and the thumb is `aria-hidden`. The control has no
+ * intrinsic text, so consumers MUST supply an accessible name (a paired
+ * <label>, `aria-label`, or `aria-labelledby`). Hard-disabled uses native
+ * `disabled` only.
+ */
 export interface SwitchProps extends Omit<
   React.ButtonHTMLAttributes<HTMLButtonElement>,
-  'onChange'
+  'onChange' | 'value'
 > {
-  /** Controlled checked state */
+  /** Controlled checked: shadows the intrinsic state when present. */
   checked?: boolean;
-  /** Default checked state for uncontrolled usage */
+  /** Uncontrolled seed for the intrinsic checked state. */
   defaultChecked?: boolean;
-  /** Callback when checked state changes */
+  /** Semantic change callback: fires on a real toggle with the checked value
+   *  the consumer should adopt next (the intrinsic-after value, so a controlled
+   *  switch still reports every change). */
   onCheckedChange?: (checked: boolean) => void;
-  /** Visual variant per docs/COMPONENT_STYLING_REFERENCE.md */
-  variant?:
-    | 'default'
-    | 'primary'
-    | 'secondary'
-    | 'destructive'
-    | 'success'
-    | 'warning'
-    | 'info'
-    | 'accent';
-  /** Size variant */
-  size?: 'sm' | 'default' | 'lg';
+  variant?: SwitchVariant;
+  size?: SwitchSize;
+  /** Form-value axis: the value submitted under `name` when checked. */
+  value?: string;
+  /** Constraint advertised to AT via aria-required. */
+  required?: boolean;
 }
 
-// Variant classes for checked state
-const variantClasses: Record<string, { checked: string; ring: string }> = {
-  default: { checked: 'bg-primary', ring: 'focus-visible:ring-primary-ring' },
-  primary: { checked: 'bg-primary', ring: 'focus-visible:ring-primary-ring' },
-  secondary: { checked: 'bg-secondary', ring: 'focus-visible:ring-secondary-ring' },
-  destructive: { checked: 'bg-destructive', ring: 'focus-visible:ring-destructive-ring' },
-  success: { checked: 'bg-success', ring: 'focus-visible:ring-success-ring' },
-  warning: { checked: 'bg-warning', ring: 'focus-visible:ring-warning-ring' },
-  info: { checked: 'bg-info', ring: 'focus-visible:ring-info-ring' },
-  accent: { checked: 'bg-accent', ring: 'focus-visible:ring-accent-ring' },
-};
+export const Switch = React.forwardRef<HTMLButtonElement, SwitchProps>((props, ref) => {
+  const {
+    className,
+    checked,
+    defaultChecked = false,
+    onCheckedChange,
+    variant = 'default',
+    size = 'default',
+    disabled = false,
+    name,
+    value,
+    required = false,
+    onClick,
+    ...rest
+  } = props;
 
-const sizeClasses: Record<string, { track: string; thumb: string; translate: string }> = {
-  sm: { track: 'h-5 w-9', thumb: 'h-4 w-4', translate: 'translate-x-4' },
-  default: { track: 'h-6 w-11', thumb: 'h-5 w-5', translate: 'translate-x-5' },
-  lg: { track: 'h-7 w-14', thumb: 'h-6 w-6', translate: 'translate-x-7' },
-};
+  const config: SwitchConfig = {
+    variant,
+    size,
+    checked,
+    defaultChecked,
+    disabled,
+    name,
+    value,
+    required,
+  };
 
-export const Switch = React.forwardRef<HTMLButtonElement, SwitchProps>(
-  (
-    {
-      className,
-      checked: controlledChecked,
-      defaultChecked = false,
-      onCheckedChange,
-      onClick,
-      onKeyDown,
-      disabled,
-      variant = 'default',
-      size = 'default',
-      ...props
+  // The controller composes the score with the substrate directly -- no
+  // useBehavior. createBehavior is the model, useMemory subscribes.
+  const { memory, dispatch } = React.useMemo(() => createBehavior(switchBehavior, config), []);
+  const state = useMemory(memory);
+
+  const rootRef = React.useRef<HTMLButtonElement | null>(null);
+  const setRef = React.useCallback(
+    (element: HTMLButtonElement | null) => {
+      rootRef.current = element;
+      if (typeof ref === 'function') ref(element);
+      else if (ref) ref.current = element;
     },
-    ref,
-  ) => {
-    // State management (controlled vs uncontrolled)
-    const [uncontrolledChecked, setUncontrolledChecked] = React.useState(defaultChecked);
-    const isControlled = controlledChecked !== undefined;
-    const checked = isControlled ? controlledChecked : uncontrolledChecked;
+    [ref],
+  );
 
-    const toggle = React.useCallback(() => {
-      const newChecked = !checked;
+  // Gotcha #1: the controlled callback compares the EFFECTIVE value before
+  // (the `checked` prop when controlled) against the INTRINSIC value after the
+  // reducer -- never effective-vs-effective, which a controlled prop would pin
+  // flat. A toggle always flips, so no equality guard is needed; canDispatch
+  // already gates the disabled case. Riding in a ref keeps the latest config
+  // and callback off the dispatch closure.
+  const latest = React.useRef({ config, checked, onCheckedChange });
+  latest.current = { config, checked, onCheckedChange };
+  const request = React.useCallback(
+    (action: keyof SwitchActions): boolean => {
+      const { config: cfg, checked: ctrl, onCheckedChange: cb } = latest.current;
+      if (!dispatch(action, cfg)) return false;
+      cb?.(ctrl === undefined ? memory.get().checked : !ctrl);
+      return true;
+    },
+    [dispatch, memory],
+  );
 
-      if (!isControlled) {
-        setUncontrolledChecked(newChecked);
-      }
+  const uid = React.useId();
+  const ids = {} as PartIds<SwitchPart>;
+  for (const part of Object.keys(switchBehavior.parts) as SwitchPart[])
+    ids[part] = `${uid}-${part}`;
+  const aria = switchBehavior.aria(state, config, ids);
+  const classes = switchClasses(config, state);
 
-      onCheckedChange?.(newChecked);
-    }, [checked, isControlled, onCheckedChange]);
+  // The thumb is a decorative element (aria-hidden), not a typography role; it
+  // is built with createElement so the class string is plain composition, the
+  // same escape the card title/description use for raw elements.
+  const thumb = React.createElement('span', {
+    'data-part': 'thumb',
+    id: ids.thumb,
+    className: classes.thumb,
+    ...aria.thumb,
+  });
 
-    const handleClick = React.useCallback(
-      (event: React.MouseEvent<HTMLButtonElement>) => {
-        if (disabled) return;
-        toggle();
-        onClick?.(event);
-      },
-      [disabled, toggle, onClick],
-    );
-
-    const handleKeyDown = React.useCallback(
-      (event: React.KeyboardEvent<HTMLButtonElement>) => {
-        // Space key toggles the switch (Enter is handled by button click)
-        if (event.key === ' ') {
+  return (
+    <button
+      ref={setRef}
+      type="button"
+      role="switch"
+      disabled={disabled}
+      name={name}
+      value={value}
+      data-part="root"
+      id={ids.root}
+      className={classy(classes.root, className)}
+      {...aria.root}
+      onClick={(event) => {
+        if (!request('toggle')) {
           event.preventDefault();
-          if (!disabled) {
-            toggle();
-          }
+          event.stopPropagation();
+          return;
         }
-        onKeyDown?.(event);
-      },
-      [disabled, toggle, onKeyDown],
-    );
-
-    // Get variant and size classes with explicit defaults
-    const v = variantClasses[variant] || variantClasses.default;
-    const s = sizeClasses[size] || sizeClasses.default;
-
-    // Track (background) styles per docs/COMPONENT_STYLING_REFERENCE.md
-    const trackClasses = classy(
-      'peer inline-flex shrink-0 cursor-pointer items-center',
-      s?.track,
-      'rounded-full border-2 border-transparent',
-      'transition-colors',
-      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-      v?.ring,
-      'disabled:cursor-not-allowed disabled:opacity-50',
-      checked ? v?.checked : 'bg-input',
-      className,
-    );
-
-    // Thumb (movable indicator) styles
-    const thumbClasses = classy(
-      'pointer-events-none block rounded-full bg-background shadow-lg ring-0',
-      s?.thumb,
-      'transition-transform',
-      checked ? s?.translate : 'translate-x-0',
-    );
-
-    return (
-      <button
-        type="button"
-        role="switch"
-        aria-checked={checked}
-        data-state={checked ? 'checked' : 'unchecked'}
-        disabled={disabled}
-        ref={ref}
-        className={trackClasses}
-        onClick={handleClick}
-        onKeyDown={handleKeyDown}
-        {...props}
-      >
-        <span className={thumbClasses} />
-      </button>
-    );
-  },
-);
+        onClick?.(event);
+      }}
+      {...rest}
+    >
+      {thumb}
+    </button>
+  );
+});
 
 Switch.displayName = 'Switch';
-
 export default Switch;

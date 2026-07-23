@@ -1,296 +1,177 @@
-/**
- * Intelligent layout grid with semantic presets and embedded design reasoning
- *
- * @cognitive-load 4/10 - Layout container with intelligent presets that respect Miller's Law
- * @attention-economics Preset hierarchy: linear=democratic attention, golden=hierarchical flow, bento=complex attention patterns
- * @trust-building Mathematical spacing, Miller's Law cognitive load limits, consistent preset behavior
- * @accessibility WCAG AAA compliance with optional ARIA grid role for interactive layouts
- * @semantic-meaning Layout intelligence: linear=equal-priority content, golden=natural hierarchy, bento=content showcases with semantic asymmetry
- *
- * @usage-patterns
- * DO: Linear - Product catalogs, image galleries, equal-priority content
- * DO: Golden - Editorial layouts, feature showcases, natural hierarchy
- * DO: Bento - Dashboards, content showcases (use sparingly, high cognitive load)
- * DO: Limit items to 8 max on wide screens (Miller's Law)
- * NEVER: Decorative asymmetry without semantic meaning
- * NEVER: Exceed cognitive load limits
- *
- * @example
- * ```tsx
- * // Equal-priority grid
- * <Grid preset="linear" columns={3} gap="4">
- *   <Grid.Item>Card 1</Grid.Item>
- *   <Grid.Item>Card 2</Grid.Item>
- *   <Grid.Item>Card 3</Grid.Item>
- * </Grid>
- *
- * // Bento dashboard layout
- * <Grid preset="bento" pattern="dashboard">
- *   <Grid.Item priority="primary">Main Metric</Grid.Item>
- *   <Grid.Item priority="secondary">Chart</Grid.Item>
- * </Grid>
- * ```
- */
 import * as React from 'react';
+import { createBehavior, type PartIds } from '@/lib/contract';
+import { useMemory } from '@/hooks/use-memory';
 import classy from '@/lib/primitives/classy';
+import { createRovingFocus } from '@/lib/primitives/roving-focus';
+import {
+  grid,
+  gridItemAttrs,
+  type ContentPriority,
+  type GridConfig,
+  type GridPart,
+  type ResponsiveColumns,
+} from '@/components/ui/grid.behavior';
+import { gridClasses, gridColSpanClasses, gridRowSpanClasses } from '@/components/ui/grid.classes';
 
-// ==================== Types ====================
+type FixedColumns = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
 
-type BentoPattern = 'editorial' | 'dashboard' | 'feature' | 'portfolio';
-type GridPreset = 'linear' | 'golden' | 'bento';
-type ContentPriority = 'primary' | 'secondary' | 'tertiary';
+/**
+ * The 12-column grid: named attention structures over a column vocabulary.
+ * Linear/preset layouts are silent furniture; an honest `role="grid"` engages
+ * the ARIA grid keyboard contract (2D roving).
+ *
+ * @cognitive-load 2/10 - decision 1, information 0, interaction 0 (layout
+ * mode) or 3 (grid mode: arrow-key traversal is learned), disruption 0,
+ * learning 1. As layout it is pure structure; as role="grid" it adds a
+ * keyboard contract users must discover.
+ * @attention-economics The placement channel IS the attention economy:
+ * `priority` declares hierarchy and the stock layouts (golden, bento) spend
+ * span on `primary`. At most one primary per grid -- two heroes is no hero.
+ * @trust-building Structural, not persuasive. Reordering the source tree
+ * never changes which item is the hero (placement keys off declared
+ * priority, never source position), so the visual hierarchy is honest.
+ * @accessibility Layout grids project NO role (1.3.1: structure is not
+ * over-announced). role="grid" is type-gated to fixed columns + an
+ * accessible name + row/gridcell structure (4.1.2) and supplies full
+ * arrow/Home/End keyboard traversal (2.1.1).
+ */
+interface GridBaseProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'role'> {
+  preset?: 'linear' | 'golden' | 'bento';
+  pattern?: 'editorial' | 'dashboard' | 'feature' | 'portfolio';
+  gap?: GridConfig['gap'];
+  padding?: GridConfig['padding'];
+}
 
-// ==================== Context ====================
+/** role='grid' promises the ARIA grid pattern, so it demands what the
+ *  pattern demands at the type level: a FIXED column count (fluid columns
+ *  cannot honestly claim row structure), an accessible name, and the
+ *  linear preset (uniform cells -- spans would break row chunking). */
+type GridA11yProps =
+  | { role?: 'presentation' | undefined; columns?: ResponsiveColumns; 'aria-label'?: string }
+  | {
+      role: 'grid';
+      columns: FixedColumns;
+      'aria-label': string;
+      preset?: 'linear';
+      pattern?: never;
+    };
+
+export type GridProps = GridBaseProps & GridA11yProps;
 
 interface GridContextValue {
-  preset: GridPreset;
-  pattern: BentoPattern | undefined;
-  editable: boolean | undefined;
-  showColumnDropZones: boolean | undefined;
+  interactive: boolean;
 }
 
-const GridContext = React.createContext<GridContextValue | null>(null);
+const GridContext = React.createContext<GridContextValue>({ interactive: false });
 
-function useGridContext() {
-  return React.useContext(GridContext);
-}
-
-// ==================== Grid ====================
-
-/** Grid configuration for onConfigChange callback */
-export interface GridConfig {
-  columns?: 1 | 2 | 3 | 4 | 5 | 6 | 'auto';
-  gap?: '0' | '1' | '2' | '3' | '4' | '5' | '6' | '8' | '10' | '12';
-  preset?: GridPreset;
-}
-
-export interface GridProps extends React.HTMLAttributes<HTMLDivElement> {
-  /**
-   * Semantic preset with embedded UX reasoning
-   * - linear: Democratic attention, equal columns (cognitive load: 2/10)
-   * - golden: Hierarchical attention, 2:1 ratio (cognitive load: 4/10)
-   * - bento: Complex attention, asymmetric (cognitive load: 6/10)
-   * @default 'linear'
-   */
-  preset?: GridPreset;
-
-  /**
-   * Bento layout pattern - only applies when preset="bento"
-   * - editorial: Hero + supporting articles
-   * - dashboard: Primary metric + supporting data
-   * - feature: Main feature + benefits
-   * - portfolio: Featured work + gallery
-   */
-  pattern?: BentoPattern;
-
-  /**
-   * Column count for linear preset
-   * Responsive object or single value
-   * @default auto-fit based on content
-   */
-  columns?: 1 | 2 | 3 | 4 | 5 | 6 | 'auto';
-
-  /**
-   * Gap between items using Tailwind spacing
-   */
-  gap?: '0' | '1' | '2' | '3' | '4' | '5' | '6' | '8' | '10' | '12';
-
-  /**
-   * Accessibility role
-   * - 'presentation': Layout-only (default)
-   * - 'grid': Interactive grid with keyboard navigation
-   */
-  role?: 'presentation' | 'grid';
-
-  /**
-   * Accessible label - required when role="grid"
-   */
-  'aria-label'?: string;
-
-  // ============================================================================
-  // Editable Props (R-202)
-  // ============================================================================
-
-  /**
-   * Enable editing mode for block editor
-   * Shows column guides and enables drop zones
-   */
-  editable?: boolean | undefined;
-
-  /**
-   * Show drop zone indicators in each column
-   * Displays placeholder when cells are empty in edit mode
-   */
-  showColumnDropZones?: boolean | undefined;
-
-  /**
-   * Called when grid configuration changes in edit mode
-   */
-  onConfigChange?: ((config: GridConfig) => void) | undefined;
-}
-
-const gapClasses: Record<string, string> = {
-  '0': 'gap-0',
-  '1': 'gap-1',
-  '2': 'gap-2',
-  '3': 'gap-3',
-  '4': 'gap-4',
-  '5': 'gap-5',
-  '6': 'gap-6',
-  '8': 'gap-8',
-  '10': 'gap-10',
-  '12': 'gap-12',
-};
-
-const columnClasses: Record<string | number, string> = {
-  1: 'grid-cols-1',
-  2: 'grid-cols-2',
-  3: 'grid-cols-3',
-  4: 'grid-cols-4',
-  5: 'grid-cols-5',
-  6: 'grid-cols-6',
-  auto: 'grid-cols-1 @sm:grid-cols-2 @lg:grid-cols-3 @xl:grid-cols-4',
-};
-
-// Bento pattern grid definitions
-const bentoPatterns: Record<BentoPattern, string> = {
-  // Hero (2x2) + 2 side items
-  editorial: 'grid-cols-3 grid-rows-2 [&>*:first-child]:col-span-2 [&>*:first-child]:row-span-2',
-  // Primary metric large + supporting smaller
-  dashboard: 'grid-cols-4 grid-rows-2 [&>*:first-child]:col-span-2 [&>*:first-child]:row-span-2',
-  // Feature left + benefits right
-  feature: 'grid-cols-2 [&>*:first-child]:row-span-2',
-  // Featured large + gallery grid
-  portfolio: 'grid-cols-3 grid-rows-3 [&>*:first-child]:col-span-2 [&>*:first-child]:row-span-2',
-};
-
-// Golden ratio: approximately 1.618:1, we use 2:1 for grid simplicity
-const goldenClasses = 'grid-cols-3 [&>*:first-child]:col-span-2';
-
-function GridRoot({
-  preset = 'linear',
-  pattern,
-  columns = 'auto',
-  gap = '4',
-  role = 'presentation',
-  editable,
-  showColumnDropZones,
-  onConfigChange: _onConfigChange,
-  className,
-  children,
-  ...props
-}: GridProps) {
-  // TODO: Implement grid config UI that calls _onConfigChange
-  void _onConfigChange;
-  const classes = classy(
-    'grid',
-
-    // Gap
-    gap && gapClasses[gap],
-
-    // Preset-specific layouts
-    preset === 'linear' && columnClasses[columns],
-    preset === 'golden' && goldenClasses,
-    preset === 'bento' && pattern && bentoPatterns[pattern],
-
-    // Responsive defaults for linear
-    preset === 'linear' && columns === 'auto' && 'sm:grid-cols-2 lg:grid-cols-3',
-
-    // Editable mode styling (R-202)
-    editable && 'outline-2 outline-dashed outline-muted-foreground/30 outline-offset-2 rounded p-2',
-
+function GridRoot(props: GridProps) {
+  const {
+    preset = 'linear',
+    pattern,
+    columns,
+    gap,
+    padding,
+    role,
+    'aria-label': ariaLabel,
     className,
-  );
+    children,
+    ...rest
+  } = props;
 
-  const contextValue: GridContextValue = { preset, pattern, editable, showColumnDropZones };
+  const config: GridConfig = { preset, pattern, columns, gap, padding, role, ariaLabel };
+
+  // The controller composes the score with the substrate -- no useBehavior.
+  // Grid is a static score: createBehavior is a formality (state never moves),
+  // useMemory subscribes React to it, and a useEffect below composes the
+  // roving-focus primitive directly (present only under an honest role="grid").
+  const { memory } = React.useMemo(() => createBehavior(grid, config), []);
+  const state = useMemory(memory);
+  const classes = gridClasses(config, state);
+  const interactive = role === 'grid' && typeof columns === 'number';
+
+  const rootRef = React.useRef<HTMLDivElement>(null);
+
+  // role="grid" with a fixed column count engages the ARIA grid keyboard
+  // contract: compose the roving-focus primitive directly with its 2D columns
+  // option (Left/Right by 1, Up/Down by a row, Home/End to the ends). It owns
+  // the roving tabindex across the [data-roving-item] cells. Presentation and
+  // fluid-column grids stay inert -- the effect only runs when interactive.
+  React.useEffect(() => {
+    if (!interactive) return;
+    const root = rootRef.current;
+    if (!root) return;
+    return createRovingFocus(root, { columns: columns as number });
+  }, [interactive, columns]);
+
+  // grid.aria ignores ids (the root carries no id refs); pass empties.
+  const aria = grid.aria(state, config, { root: '', row: '', cell: '' } as PartIds<GridPart>);
+
+  // ARIA grid structure: chunk children into role=row wrappers of exactly
+  // `columns` cells. Mechanical -- geometry comes from config, roles from
+  // the score's part declarations.
+  const content = interactive
+    ? chunk(React.Children.toArray(children), columns as number).map((row, rowIndex) => (
+        // biome-ignore lint/suspicious/noArrayIndexKey: rows are positional by definition
+        <div key={rowIndex} data-part="row" role="row" className="contents">
+          {row.map((cell, cellIndex) => (
+            <div
+              // biome-ignore lint/suspicious/noArrayIndexKey: cells are positional by definition
+              key={cellIndex}
+              data-part="cell"
+              role="gridcell"
+              data-roving-item
+              tabIndex={-1}
+            >
+              {cell}
+            </div>
+          ))}
+        </div>
+      ))
+    : children;
 
   return (
-    <GridContext.Provider value={contextValue}>
+    <GridContext.Provider value={{ interactive }}>
       <div
-        role={role === 'grid' ? 'grid' : undefined}
-        className={classes}
-        data-editable={editable || undefined}
-        data-preset={preset}
-        data-columns={typeof columns === 'number' ? columns : undefined}
-        {...props}
+        data-part="root"
+        ref={rootRef}
+        className={classy(classes.root, className)}
+        {...aria.root}
+        {...rest}
       >
-        {children}
+        {content}
       </div>
     </GridContext.Provider>
   );
 }
 
-// ==================== Grid.Item ====================
+function chunk<T>(items: T[], size: number): T[][] {
+  const rows: T[][] = [];
+  for (let index = 0; index < items.length; index += size) {
+    rows.push(items.slice(index, index + size));
+  }
+  return rows;
+}
 
 export interface GridItemProps extends React.HTMLAttributes<HTMLDivElement> {
-  /**
-   * Content priority for bento layouts
-   * Affects visual hierarchy and grid placement
-   */
+  /** The item DECLARES what it is; the stock layouts place it by this
+   *  projection, never by source order. */
   priority?: ContentPriority;
-
-  /**
-   * Explicit column span override
-   */
-  colSpan?: 1 | 2 | 3 | 4;
-
-  /**
-   * Explicit row span override
-   */
+  colSpan?: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
   rowSpan?: 1 | 2 | 3;
 }
 
-const colSpanClasses: Record<number, string> = {
-  1: 'col-span-1',
-  2: 'col-span-2',
-  3: 'col-span-3',
-  4: 'col-span-4',
-};
-
-const rowSpanClasses: Record<number, string> = {
-  1: 'row-span-1',
-  2: 'row-span-2',
-  3: 'row-span-3',
-};
-
-/**
- * Drop zone placeholder for empty grid items in edit mode
- */
-function GridItemDropZone() {
-  return (
-    <div className="flex min-h-16 items-center justify-center rounded border-2 border-dashed border-muted-foreground/20 bg-muted/20 p-2 text-muted-foreground">
-      <span className="text-xs">Drop here</span>
-    </div>
-  );
-}
-
-function GridItem({ priority, colSpan, rowSpan, className, children, ...props }: GridItemProps) {
-  const context = useGridContext();
-  const isEmpty = React.Children.count(children) === 0;
-
+function GridItem({ priority, colSpan, rowSpan, className, ...props }: GridItemProps) {
   const classes = classy(
-    // Explicit spans override preset behavior
-    colSpan && colSpanClasses[colSpan],
-    rowSpan && rowSpanClasses[rowSpan],
-
-    // Editable mode styling (R-202)
-    context?.editable && 'outline outline-1 outline-dashed outline-muted-foreground/20 rounded',
-
+    colSpan && gridColSpanClasses[colSpan],
+    rowSpan && gridRowSpanClasses[rowSpan],
     className,
   );
 
-  // Show drop zone in edit mode when item is empty
-  const content =
-    context?.editable && context?.showColumnDropZones && isEmpty ? <GridItemDropZone /> : children;
-
-  return (
-    <div className={classes || undefined} data-priority={priority} {...props}>
-      {content}
-    </div>
-  );
+  return <div className={classes || undefined} {...gridItemAttrs(priority)} {...props} />;
 }
 
-// ==================== Compound Export ====================
+GridRoot.displayName = 'Grid';
+GridItem.displayName = 'GridItem';
 
 export const Grid = Object.assign(GridRoot, {
   Item: GridItem,

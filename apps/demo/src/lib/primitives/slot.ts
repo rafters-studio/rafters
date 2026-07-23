@@ -329,7 +329,7 @@ export function mergeClassNames(parentClass: string, childClass: string): string
  * Props object for framework-agnostic prop merging
  */
 export interface SlotProps {
-  className?: string;
+  className?: string | undefined;
   style?: React.CSSProperties | undefined;
   [key: string]: unknown;
 }

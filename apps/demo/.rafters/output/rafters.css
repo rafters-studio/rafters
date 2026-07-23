@@ -312,43 +312,43 @@
   --motion-keyframe-accordion-down: from { height: 0; } to { height: var(--radix-accordion-content-height); };
   --motion-keyframe-accordion-up: from { height: var(--radix-accordion-content-height); } to { height: 0; };
   --motion-keyframe-caret-blink: 0%, 70%, 100% { opacity: 1; } 20%, 50% { opacity: 0; };
-  --motion-animation-fade-in: fade-in var(--motion-duration-fast) var(--motion-easing-ease-out);
-  --motion-animation-fade-out: fade-out var(--motion-duration-fast) var(--motion-easing-ease-in);
-  --motion-animation-slide-in-from-top: slide-in-from-top var(--motion-duration-normal) var(--motion-easing-ease-out);
-  --motion-animation-slide-in-from-bottom: slide-in-from-bottom var(--motion-duration-normal) var(--motion-easing-ease-out);
-  --motion-animation-slide-in-from-left: slide-in-from-left var(--motion-duration-normal) var(--motion-easing-ease-out);
-  --motion-animation-slide-in-from-right: slide-in-from-right var(--motion-duration-normal) var(--motion-easing-ease-out);
-  --motion-animation-slide-out-to-top: slide-out-to-top var(--motion-duration-fast) var(--motion-easing-ease-in);
-  --motion-animation-slide-out-to-bottom: slide-out-to-bottom var(--motion-duration-fast) var(--motion-easing-ease-in);
-  --motion-animation-slide-out-to-left: slide-out-to-left var(--motion-duration-fast) var(--motion-easing-ease-in);
-  --motion-animation-slide-out-to-right: slide-out-to-right var(--motion-duration-fast) var(--motion-easing-ease-in);
-  --motion-animation-scale-in: scale-in var(--motion-duration-normal) var(--motion-easing-spring);
-  --motion-animation-scale-out: scale-out var(--motion-duration-fast) var(--motion-easing-ease-in);
+  --motion-animation-fade-in: fade-in var(--motion-duration-fast) var(--motion-easing-enter);
+  --motion-animation-fade-out: fade-out var(--motion-duration-fast) var(--motion-easing-exit);
+  --motion-animation-slide-in-from-top: slide-in-from-top var(--motion-duration-normal) var(--motion-easing-enter);
+  --motion-animation-slide-in-from-bottom: slide-in-from-bottom var(--motion-duration-normal) var(--motion-easing-enter);
+  --motion-animation-slide-in-from-left: slide-in-from-left var(--motion-duration-normal) var(--motion-easing-enter);
+  --motion-animation-slide-in-from-right: slide-in-from-right var(--motion-duration-normal) var(--motion-easing-enter);
+  --motion-animation-slide-out-to-top: slide-out-to-top var(--motion-duration-fast) var(--motion-easing-exit);
+  --motion-animation-slide-out-to-bottom: slide-out-to-bottom var(--motion-duration-fast) var(--motion-easing-exit);
+  --motion-animation-slide-out-to-left: slide-out-to-left var(--motion-duration-fast) var(--motion-easing-exit);
+  --motion-animation-slide-out-to-right: slide-out-to-right var(--motion-duration-fast) var(--motion-easing-exit);
+  --motion-animation-scale-in: scale-in var(--motion-duration-normal) var(--motion-easing-spring-snappy);
+  --motion-animation-scale-out: scale-out var(--motion-duration-fast) var(--motion-easing-exit);
   --motion-animation-spin: spin 1s var(--motion-easing-linear) infinite;
-  --motion-animation-ping: ping 1s var(--motion-easing-ease-out) infinite;
-  --motion-animation-pulse: pulse 2s var(--motion-easing-ease-in-out) infinite;
-  --motion-animation-bounce: bounce 1s var(--motion-easing-ease-in-out) infinite;
-  --motion-animation-accordion-down: accordion-down var(--motion-duration-normal) var(--motion-easing-ease-out);
-  --motion-animation-accordion-up: accordion-up var(--motion-duration-normal) var(--motion-easing-ease-out);
-  --motion-animation-caret-blink: caret-blink 1.25s var(--motion-easing-ease-out) infinite;
-  --motion-fade-in: 125ms cubic-bezier(0, 0, 0.58, 1);
-  --motion-fade-out: 125ms cubic-bezier(0.42, 0, 1, 1);
-  --motion-slide-in: 150ms cubic-bezier(0, 0, 0.58, 1);
-  --motion-slide-out: 125ms cubic-bezier(0.42, 0, 1, 1);
-  --motion-scale-in: 150ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --motion-animation-ping: ping 1s var(--motion-easing-enter) infinite;
+  --motion-animation-pulse: pulse 2s var(--motion-easing-standard) infinite;
+  --motion-animation-bounce: bounce 1s var(--motion-easing-standard) infinite;
+  --motion-animation-accordion-down: accordion-down var(--motion-duration-normal) var(--motion-easing-enter);
+  --motion-animation-accordion-up: accordion-up var(--motion-duration-normal) var(--motion-easing-enter);
+  --motion-animation-caret-blink: caret-blink 1.25s var(--motion-easing-enter) infinite;
+  --motion-fade-in: 150ms cubic-bezier(0, 0, 0.2, 1);
+  --motion-fade-out: 150ms cubic-bezier(0.4, 0, 1, 1);
+  --motion-slide-in: 350ms cubic-bezier(0, 0, 0.2, 1);
+  --motion-slide-out: 150ms cubic-bezier(0.4, 0, 1, 1);
+  --motion-scale-in: 350ms cubic-bezier(0.2, 0.8, 0.2, 1);
 
   --duration-instant: 0ms;
-  --duration-fast: 125ms;
-  --duration-normal: 150ms;
-  --duration-slow: 180ms;
-  --duration-slower: 216ms;
+  --duration-micro: 100ms;
+  --duration-fast: 150ms;
+  --duration-moderate: 250ms;
+  --duration-normal: 350ms;
+  --duration-slow: 500ms;
+  --ease-standard: cubic-bezier(0.25, 0.1, 0.25, 1);
+  --ease-enter: cubic-bezier(0, 0, 0.2, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
   --ease-linear: linear;
-  --ease-ease-in: cubic-bezier(0.42, 0, 1, 1);
-  --ease-ease-out: cubic-bezier(0, 0, 0.58, 1);
-  --ease-ease-in-out: cubic-bezier(0.42, 0, 0.58, 1);
-  --ease-productive: cubic-bezier(0.2, 0, 0.38, 0.9);
-  --ease-expressive: cubic-bezier(0.4, 0.14, 0.3, 1);
-  --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --ease-spring-smooth: cubic-bezier(0.2, 0.9, 0.3, 1);
+  --ease-spring-snappy: cubic-bezier(0.2, 0.8, 0.2, 1);
 
   --breakpoint-sm: 640px;
   --breakpoint-md: 768px;
@@ -385,25 +385,25 @@
   --focus-outline-subtle: 0.063rem solid var(--ring);
   --focus-offset-subtle: 0.125rem;
 
-  --animate-fade-in: fade-in var(--motion-duration-fast) var(--motion-easing-ease-out);
-  --animate-fade-out: fade-out var(--motion-duration-fast) var(--motion-easing-ease-in);
-  --animate-slide-in-from-top: slide-in-from-top var(--motion-duration-normal) var(--motion-easing-ease-out);
-  --animate-slide-in-from-bottom: slide-in-from-bottom var(--motion-duration-normal) var(--motion-easing-ease-out);
-  --animate-slide-in-from-left: slide-in-from-left var(--motion-duration-normal) var(--motion-easing-ease-out);
-  --animate-slide-in-from-right: slide-in-from-right var(--motion-duration-normal) var(--motion-easing-ease-out);
-  --animate-slide-out-to-top: slide-out-to-top var(--motion-duration-fast) var(--motion-easing-ease-in);
-  --animate-slide-out-to-bottom: slide-out-to-bottom var(--motion-duration-fast) var(--motion-easing-ease-in);
-  --animate-slide-out-to-left: slide-out-to-left var(--motion-duration-fast) var(--motion-easing-ease-in);
-  --animate-slide-out-to-right: slide-out-to-right var(--motion-duration-fast) var(--motion-easing-ease-in);
-  --animate-scale-in: scale-in var(--motion-duration-normal) var(--motion-easing-spring);
-  --animate-scale-out: scale-out var(--motion-duration-fast) var(--motion-easing-ease-in);
+  --animate-fade-in: fade-in var(--motion-duration-fast) var(--motion-easing-enter);
+  --animate-fade-out: fade-out var(--motion-duration-fast) var(--motion-easing-exit);
+  --animate-slide-in-from-top: slide-in-from-top var(--motion-duration-normal) var(--motion-easing-enter);
+  --animate-slide-in-from-bottom: slide-in-from-bottom var(--motion-duration-normal) var(--motion-easing-enter);
+  --animate-slide-in-from-left: slide-in-from-left var(--motion-duration-normal) var(--motion-easing-enter);
+  --animate-slide-in-from-right: slide-in-from-right var(--motion-duration-normal) var(--motion-easing-enter);
+  --animate-slide-out-to-top: slide-out-to-top var(--motion-duration-fast) var(--motion-easing-exit);
+  --animate-slide-out-to-bottom: slide-out-to-bottom var(--motion-duration-fast) var(--motion-easing-exit);
+  --animate-slide-out-to-left: slide-out-to-left var(--motion-duration-fast) var(--motion-easing-exit);
+  --animate-slide-out-to-right: slide-out-to-right var(--motion-duration-fast) var(--motion-easing-exit);
+  --animate-scale-in: scale-in var(--motion-duration-normal) var(--motion-easing-spring-snappy);
+  --animate-scale-out: scale-out var(--motion-duration-fast) var(--motion-easing-exit);
   --animate-spin: spin 1s var(--motion-easing-linear) infinite;
-  --animate-ping: ping 1s var(--motion-easing-ease-out) infinite;
-  --animate-pulse: pulse 2s var(--motion-easing-ease-in-out) infinite;
-  --animate-bounce: bounce 1s var(--motion-easing-ease-in-out) infinite;
-  --animate-accordion-down: accordion-down var(--motion-duration-normal) var(--motion-easing-ease-out);
-  --animate-accordion-up: accordion-up var(--motion-duration-normal) var(--motion-easing-ease-out);
-  --animate-caret-blink: caret-blink 1.25s var(--motion-easing-ease-out) infinite;
+  --animate-ping: ping 1s var(--motion-easing-enter) infinite;
+  --animate-pulse: pulse 2s var(--motion-easing-standard) infinite;
+  --animate-bounce: bounce 1s var(--motion-easing-standard) infinite;
+  --animate-accordion-down: accordion-down var(--motion-duration-normal) var(--motion-easing-enter);
+  --animate-accordion-up: accordion-up var(--motion-duration-normal) var(--motion-easing-enter);
+  --animate-caret-blink: caret-blink 1.25s var(--motion-easing-enter) infinite;
 }
 
 @theme inline {
@@ -616,7 +616,7 @@
   --color-avatar-foreground: var(--avatar-foreground);
 }
 
-:root {
+:root, :host {
   --rafters-neutral: var(--color-zinc-500);
   --rafters-background: var(--color-zinc-50);
   --rafters-foreground: var(--color-zinc-950);
@@ -1671,6 +1671,113 @@
 }
 @utility z-depth-max {
   z-index: var(--depth-max);
+}
+
+/* Semantic motion utilities -- transition longhand per token */
+@utility motion-hover {
+  transition-property: color, background-color, border-color;
+  transition-duration: var(--duration-fast);
+  transition-timing-function: var(--ease-standard);
+}
+@utility motion-focus {
+  transition-property: box-shadow, outline-color;
+  transition-duration: var(--duration-micro);
+  transition-timing-function: var(--ease-linear);
+}
+@utility motion-press {
+  transition-property: transform, color, background-color;
+  transition-duration: var(--duration-micro);
+  transition-timing-function: var(--ease-spring-snappy);
+  @media (prefers-reduced-motion: reduce) {
+    transition-property: color, background-color;
+  }
+}
+@utility motion-toggle {
+  transition-property: color, background-color, transform;
+  transition-duration: var(--duration-moderate);
+  transition-timing-function: var(--ease-spring-snappy);
+  @media (prefers-reduced-motion: reduce) {
+    transition-property: color, background-color;
+  }
+}
+@utility motion-dropdown-in {
+  transition-property: opacity, transform;
+  transition-duration: var(--duration-moderate);
+  transition-timing-function: var(--ease-enter);
+  @media (prefers-reduced-motion: reduce) {
+    transition-property: opacity;
+    transition-duration: 100ms;
+  }
+}
+@utility motion-dropdown-out {
+  transition-property: opacity, transform;
+  transition-duration: var(--duration-fast);
+  transition-timing-function: var(--ease-exit);
+  @media (prefers-reduced-motion: reduce) {
+    transition-property: opacity;
+    transition-duration: 100ms;
+  }
+}
+@utility motion-modal-in {
+  transition-property: opacity, transform;
+  transition-duration: var(--duration-normal);
+  transition-timing-function: var(--ease-enter);
+  @media (prefers-reduced-motion: reduce) {
+    transition-property: opacity;
+    transition-duration: 150ms;
+  }
+}
+@utility motion-modal-out {
+  transition-property: opacity, transform;
+  transition-duration: var(--duration-moderate);
+  transition-timing-function: var(--ease-exit);
+  @media (prefers-reduced-motion: reduce) {
+    transition-property: opacity;
+    transition-duration: 150ms;
+  }
+}
+@utility motion-sheet-in {
+  transition-property: transform;
+  transition-duration: var(--duration-slow);
+  transition-timing-function: var(--ease-spring-smooth);
+  @media (prefers-reduced-motion: reduce) {
+    transition-property: opacity;
+    transition-duration: 250ms;
+  }
+}
+@utility motion-sheet-out {
+  transition-property: transform;
+  transition-duration: var(--duration-normal);
+  transition-timing-function: var(--ease-exit);
+  @media (prefers-reduced-motion: reduce) {
+    transition-property: opacity;
+    transition-duration: 250ms;
+  }
+}
+@utility motion-expand {
+  transition-property: grid-template-rows, opacity;
+  transition-duration: var(--duration-normal);
+  transition-timing-function: var(--ease-enter);
+  @media (prefers-reduced-motion: reduce) {
+    transition-property: opacity;
+  }
+}
+@utility motion-collapse {
+  transition-property: grid-template-rows, opacity;
+  transition-duration: var(--duration-moderate);
+  transition-timing-function: var(--ease-exit);
+  @media (prefers-reduced-motion: reduce) {
+    transition-property: opacity;
+  }
+}
+@utility motion-page {
+  transition-property: opacity, transform;
+  transition-duration: var(--duration-slow);
+  transition-timing-function: var(--ease-spring-smooth);
+  @media (prefers-reduced-motion: reduce) {
+    transition-property: opacity;
+    transition-duration: 200ms;
+  }
 }
 
 @layer base {

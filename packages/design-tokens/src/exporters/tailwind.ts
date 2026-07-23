@@ -1330,15 +1330,16 @@ function deriveCandidates(themeCSS: string): string[] {
 
 /**
  * Produce the complete documentation stylesheet -- every utility the token
- * graph can emit at base + state variants, compiled via Tailwind with no
- * component scanning. Veneer treeshakes the result at bake time; during dev
- * it is adopted whole via constructable stylesheets.
+ * graph can emit at base + state variants PLUS every utility the installed
+ * components actually reference. The candidate file covers the token surface;
+ * the content sources cover the component surface (flex, grid, w-full, etc.).
+ * Veneer treeshakes the result at bake time; during dev it is adopted whole.
  */
 export async function registryToDocumentation(
   registry: TokenRegistry,
-  options: { minify?: boolean } = {},
+  options: { minify?: boolean; contentSources?: string[] } = {},
 ): Promise<string> {
-  const { minify = true } = options;
+  const { minify = true, contentSources = [] } = options;
   const themeBody = registryToTailwind(registry, { includeImport: false });
   const candidates = deriveCandidates(themeBody);
 
@@ -1361,8 +1362,11 @@ export async function registryToDocumentation(
   const candidateFile = join(tempDir, 'candidates.txt');
   writeFileSync(candidateFile, candidates.join('\n'));
 
-  const sourceDirective = `@source "${candidateFile}";`;
-  const input = `@import "tailwindcss" source(none);\n${sourceDirective}\n${themeBody}`;
+  const sourceDirectives = [
+    `@source "${candidateFile}";`,
+    ...contentSources.map((src) => `@source "${src}";`),
+  ].join('\n');
+  const input = `@import "tailwindcss" source(none);\n${sourceDirectives}\n${themeBody}`;
 
   const tempInput = join(tempDir, 'input.css');
   const tempOutput = join(tempDir, 'output.css');
@@ -1377,11 +1381,56 @@ export async function registryToDocumentation(
     execFileSync('node', args, { stdio: 'pipe', timeout: 60_000, cwd: pkgDir });
 
     const { readFileSync } = await import('node:fs');
-    return readFileSync(tempOutput, 'utf-8');
+    const raw = readFileSync(tempOutput, 'utf-8');
+    return postProcessDocSheet(raw);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     throw new Error(`Failed to compile documentation CSS: ${message}`);
   } finally {
     rmSync(tempDir, { recursive: true, force: true });
   }
+}
+
+/**
+ * Post-process the compiled documentation sheet for shadow-DOM adoption:
+ * - Extract theme vars from `@layer theme`, rewrite `:root,:host` to `:host`
+ *   with `container-type: inline-size` added
+ * - Strip `@layer properties` (Tailwind internal fallback vars)
+ * - Strip `@layer theme` (replaced by the `:host` block)
+ * - Strip the Tailwind banner comment
+ * - Keep `@layer base`, `@layer components`, `@layer utilities` intact
+ */
+function postProcessDocSheet(css: string): string {
+  const parts: string[] = [];
+
+  // Extract the theme layer's var declarations, rewrite to :host-only
+  const themeLayerRe = /@layer theme\{(.*?)\}(?=@layer|$)/s;
+  const themeMatch = themeLayerRe.exec(css);
+  if (themeMatch) {
+    let themeContent = themeMatch[1] ?? '';
+    themeContent = themeContent.replace(/:root,:host/g, ':host');
+    parts.push(`:host{container-type:inline-size}${themeContent}`);
+  }
+
+  // Keep base, components, utilities layers
+  const layerRe = /@layer (base|components|utilities)\{/g;
+  let match: RegExpExecArray | null;
+  while ((match = layerRe.exec(css)) !== null) {
+    const start = match.index;
+    let depth = 0;
+    let end = start;
+    for (let i = start; i < css.length; i++) {
+      if (css[i] === '{') depth++;
+      if (css[i] === '}') {
+        depth--;
+        if (depth === 0) {
+          end = i + 1;
+          break;
+        }
+      }
+    }
+    parts.push(css.slice(start, end));
+  }
+
+  return parts.join('');
 }
