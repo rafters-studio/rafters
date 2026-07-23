@@ -66,25 +66,37 @@ export function generateMotionTokens(
       'Legacy base transition duration. The perceptual duration scale (motion-duration-*) no longer derives from this; retained only as a reference value and delay-progression base.',
     usageContext: ['calculation-reference', 'delay-base'],
     progressionSystem: progressionRatio as 'minor-third',
-    description: `Base duration (${baseTransitionDuration}ms). Delay tokens use ${progressionRatio} progression (ratio ${ratioVal}); duration tiers are perceptually derived literals.`,
+    description: `Base duration (${baseTransitionDuration}ms). Delay tokens use ${progressionRatio} progression (ratio ${ratioVal}); duration tiers are perceptual RANGES a designer sets within and do not derive from this base.`,
     generatedAt: timestamp,
     containerQueryAware: false,
     reducedMotionAware: true,
     userOverride: null,
     usagePatterns: {
       do: ['Reference as the delay-progression base'],
-      never: ['Assume the perceptual duration tiers derive from this'],
+      never: [
+        'Assume the perceptual duration tiers derive from this -- they are ranges a designer sets within, bounded by perception, not computed from this base',
+      ],
     },
   });
 
-  // Generate duration tokens. Values are perceptually derived literals
-  // (docs/MOTION.md), NOT a ratio progression -- each tier records its band.
+  // Generate duration tokens. Each tier is a perceptual RANGE the designer picks
+  // within (docs/MOTION.md), NOT a constant and NOT a ratio progression. The
+  // emitted value is the tier's default -- what ships at neutral intent, until a
+  // designer moves it.
+  //
+  // The bounds are NOT emitted onto the token: they are system data, identical in
+  // every install and invariant per project, so serializing them into every
+  // consumer's token JSON would be storing a constant. Studio reads them from
+  // DEFAULT_DURATION_DEFINITIONS to clamp its picker. Only the human-readable
+  // range appears here, in `mathRelationship` and `description`.
   for (const scale of MOTION_DURATION_SCALE) {
     const def = durationDefs[scale];
     if (!def) continue;
     const scaleIndex = MOTION_DURATION_SCALE.indexOf(scale);
-    const durationMs = def.ms;
+    const durationMs = def.default;
+    const [rangeMin, rangeMax] = def.range;
     const bandNote = def.band ? ` Band: ${def.band}.` : '';
+    const rangeNote = rangeMin === rangeMax ? ' Fixed.' : ` Range: ${rangeMin}-${rangeMax}ms.`;
 
     tokens.push({
       name: `motion-duration-${scale}`,
@@ -96,9 +108,11 @@ export function generateMotionTokens(
       scalePosition: scaleIndex,
       motionIntent: def.motionIntent,
       motionDuration: durationMs,
-      mathRelationship: def.band ? `${durationMs}ms (perceptual: ${def.band})` : `${durationMs}ms`,
+      mathRelationship: def.band
+        ? `${durationMs}ms within ${rangeMin}-${rangeMax}ms (perceptual: ${def.band})`
+        : `${durationMs}ms (fixed)`,
       dependsOn: [],
-      description: `Duration ${scale}: ${durationMs}ms.${bandNote} ${def.meaning}`,
+      description: `Duration ${scale}: ${durationMs}ms.${rangeNote}${bandNote} ${def.meaning}`,
       generatedAt: timestamp,
       containerQueryAware: false,
       reducedMotionAware: true,
@@ -525,7 +539,7 @@ export function generateMotionTokens(
     } else {
       const durationDef = durationDefs[anim.duration];
       if (!durationDef) continue;
-      durationValue = `${durationDef.ms}ms`;
+      durationValue = `${durationDef.default}ms`;
       durationRef = `var(--motion-duration-${anim.duration})`;
     }
 
@@ -614,7 +628,7 @@ export function generateMotionTokens(
     const easingDef = easingDefs[easingKey];
     if (!durationDef || !easingDef) continue;
 
-    const durationMs = durationDef.ms;
+    const durationMs = durationDef.default;
 
     tokens.push({
       name: comp.name,

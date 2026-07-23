@@ -388,8 +388,18 @@ export const DEFAULT_SHADOW_DEFINITIONS: Record<string, ShadowDef> = {
 // =============================================================================
 
 export interface DurationDef {
-  /** Literal duration in ms. Perceptually derived (docs/MOTION.md), not a ratio step. */
-  ms: number;
+  /**
+   * Perceptual band bounds `[min, max]` in ms. THE TIER IS A RANGE, NOT A VALUE:
+   * perception sets the bounds, the designer picks inside them (docs/MOTION.md).
+   * Studio clamps its picker to this, so a duration outside its band is not
+   * reachable by accident. `instant` is `[0, 0]` -- fixed, the null case.
+   */
+  range: readonly [number, number];
+  /**
+   * The value at neutral intent, and what ships until a designer moves it. Must
+   * lie inside `range` (asserted by the generator's regression test).
+   */
+  default: number;
   /**
    * Perceptual band this tier sits in. Empty string for `instant` (below all
    * perception). Recorded verbatim in the token's semanticMeaning.
@@ -401,16 +411,25 @@ export interface DurationDef {
 }
 
 /**
- * Duration scale, perceptually derived from docs/MOTION.md.
+ * Duration tiers, perceptually bounded per docs/MOTION.md.
  *
- * These are literal ms values fitted to how the visual system tracks motion,
- * NOT a ratio progression: under ~100ms reads as instantaneous (communicates
- * nothing), ~200-300ms is the communicative window, and over ~500ms reads as
- * sluggish. Tiers below `moderate` are acknowledgment, not communication.
+ * Each tier is a RANGE the designer picks within, NOT a constant and NOT a ratio
+ * progression. `moderate` is not `fast x ratio` -- it is "somewhere in the
+ * communicative window", and the window is a fact about perception rather than a
+ * step on a curve. Harmony is spacing's discipline; perception is motion's.
+ *
+ * The bands: under ~100ms reads as instantaneous (communicates nothing),
+ * ~200-300ms is the communicative window, over ~500ms reads as sluggish. Tiers
+ * below `moderate` are acknowledgment, not communication -- which is why the
+ * ranges do not overlap downward into it.
+ *
+ * Defaults are the values shipped at neutral intent. Nothing moves until a
+ * designer moves it.
  */
 export const DEFAULT_DURATION_DEFINITIONS: Record<string, DurationDef> = {
   instant: {
-    ms: 0,
+    range: [0, 0],
+    default: 0,
     band: '',
     meaning:
       'No perceptible transition. Cursor changes, text selection, badge counts. Below all perception -- there is nothing to track, so nothing is communicated.',
@@ -418,7 +437,8 @@ export const DEFAULT_DURATION_DEFINITIONS: Record<string, DurationDef> = {
     motionIntent: 'transition',
   },
   micro: {
-    ms: 100,
+    range: [50, 120],
+    default: 100,
     band: 'at the instantaneous threshold (Nielsen 0.1s)',
     meaning:
       'Immediate but visible. Focus rings and press feedback. At the instantaneous threshold -- acknowledgment that input landed, not communication of a change.',
@@ -426,7 +446,8 @@ export const DEFAULT_DURATION_DEFINITIONS: Record<string, DurationDef> = {
     motionIntent: 'transition',
   },
   fast: {
-    ms: 150,
+    range: [120, 200],
+    default: 150,
     band: 'below the communicative window',
     meaning:
       'Hover states. The cursor is already there, so the response must match its speed. Below the communicative window -- acknowledgment, not communication.',
@@ -434,7 +455,8 @@ export const DEFAULT_DURATION_DEFINITIONS: Record<string, DurationDef> = {
     motionIntent: 'transition',
   },
   moderate: {
-    ms: 250,
+    range: [200, 300],
+    default: 250,
     band: 'communicative (~200-300ms)',
     meaning:
       'Dropdowns, tab switches, small reveals. The communicative window: fast enough to feel responsive, slow enough for the eye to track a trajectory and build a spatial model.',
@@ -442,7 +464,8 @@ export const DEFAULT_DURATION_DEFINITIONS: Record<string, DurationDef> = {
     motionIntent: 'transition',
   },
   normal: {
-    ms: 350,
+    range: [300, 400],
+    default: 350,
     band: 'communicative, larger movement',
     meaning:
       'The workhorse -- modal entrances, toggles, standard state transitions. The communicative window for larger movement.',
@@ -450,7 +473,8 @@ export const DEFAULT_DURATION_DEFINITIONS: Record<string, DurationDef> = {
     motionIntent: 'enter',
   },
   slow: {
-    ms: 500,
+    range: [400, 500],
+    default: 500,
     band: 'at the sluggish boundary',
     meaning:
       'Sheets, page transitions, large spatial movement where the user needs orientation. At the sluggish boundary -- the ceiling for anything but full-screen spatial transitions.',

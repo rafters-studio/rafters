@@ -187,13 +187,19 @@ Two splits are deliberate and are recorded in the data itself:
 
 **Governing rule -- motion that answers no question does not move.** If an animation does not tell the user what happened, where they are, or what to expect next, it is decorative. This one has teeth: decorative animation measurably impairs recall.[^stokes-2020] `validateMotionComposition` enforces the presence half -- a composition with no declared `answers` is rejected.
 
+### Scope: this validates us, not you
+
+The validator is a tool rafters holds itself to and exposes, **not a gate on consumer code.** Every component rafters ships composes legal motion, and that is the promise. A project built on rafters that composes diagonal movement with rotation gets no error, because policing another team's design decisions is not this system's job -- shipping components that demonstrate the right ones is.
+
 ## What gets no motion
 
 Cursor changes. Text colour on validation (the border and ring animate, the text does not). Icon swaps. Badge counts. Scroll position. Breadcrumbs. Tooltip appearance (opacity only, no spatial motion).
 
 ## Reduced motion
 
-Motion causes physical harm, not annoyance -- dizziness, nausea, vertigo. Roughly 35% of US adults over 40 have vestibular dysfunction.[^agrawal-2009] Respecting `prefers-reduced-motion`[^w3c-mq5] is an accessibility requirement, and WCAG 2.1 SC 2.3.3 asks for it directly.[^wcag-2.3.3]
+Motion causes physical harm, not annoyance -- dizziness, nausea, vertigo. Roughly 35% of US adults over 40 have vestibular dysfunction.[^agrawal-2009] Respecting `prefers-reduced-motion`[^w3c-mq5] is an accessibility requirement, and WCAG 2.2 SC 2.3.3 asks for it directly.[^wcag-2.3.3]
+
+The reduced-motion substitutions are **not ours to derive.** WCAG 2.2 governs them; where the standard is specific we follow it rather than reasoning from the perceptual bands.
 
 **Preserved:** hover colour transitions, focus rings, press feedback (opacity/colour, no transform), toggle state (cross-fade, no slide).
 
@@ -265,4 +271,4 @@ The research backing this document lives in `vault-2026/projects/rafters/courses
 [^audi-ci]: Audi AG. Audi CI Portal: Animation Guidelines. styleguide.audi.com.
 [^agrawal-2009]: Agrawal, Y., et al. (2009). Disorders of balance and vestibular function in US adults. *Archives of Internal Medicine*, 169(10), 938-944.
 [^w3c-mq5]: W3C (2020). Media Queries Level 5: prefers-reduced-motion.
-[^wcag-2.3.3]: W3C (2018). WCAG 2.1 SC 2.3.3: Animation from Interactions (AAA).
+[^wcag-2.3.3]: W3C (2023). WCAG 2.2 SC 2.3.3: Animation from Interactions (AAA).
