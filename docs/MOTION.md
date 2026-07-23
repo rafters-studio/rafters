@@ -34,30 +34,6 @@ So: **no duration, easing, or keyframe in this system is a constant.** Every one
 
 Intent is the project's aesthetic starting position -- the first question Studio asks, before any token exists. It drives spacing, type, radius and depth as well as motion; a system whose spacing says *elegant* and whose motion says *efficient* is incoherent, and the only way to prevent that is one source every namespace reads.
 
-That source is foundational and **not yet written** -- intent gets its own document, upstream of this one and of `SPACING.md`, `TYPOGRAPHY.md`, `RADIUS.md` and `DEPTH.md`. Until it exists, the vocabulary below is described here only as far as motion consumes it, and the canonical definition is owed.
-
-This document covers only motion's slice.
-
-### Magnitude interpolates, character quantizes
-
-The single rule that governs how intent resolves into motion, and it is perceptual rather than arbitrary.
-
-**Spacing is a magnitude.** Any point on the line is a real value -- 17px is a legitimate spacing. So a designer can settle *between* intent snap points and get custom numbers, and the result is meaningful.
-
-**Curves are characters.** A cubic-bezier interpolated halfway between `enter` and `spring-snappy` is not a hybrid personality. It is an arbitrary curve that reads as neither. So **curves snap to the nearest anchor** rather than blending.
-
-Durations sit with magnitude; curves sit with character. This is why the duration tiers below are ranges and the curves below are roles.
-
-### Naming a position
-
-A project sitting exactly on a snap point is named for it: `elegant`. A project that has moved off it is named for the nearest point plus a marker: **`elegant (custom)`**.
-
-The marker *is* the drift signal -- nothing separate has to detect it. Because the label tracks the nearest point, drifting past the midpoint re-labels to `efficient (custom)` on its own, so it can never go stale. The label is derived for humans; the underlying position persists, because curve-snapping and regeneration need it.
-
-The absence of the marker is meaningful: plain `elegant` means untouched, which makes *reset to elegant* an obvious affordance and lets Studio show exactly what has been changed.
-
-**Everything is editable.** Intent is a starting position, not a lock.
-
 ## Principles
 
 **Respond, don't perform.** The interface reacts to the user. It never performs for an audience. Nothing bounces, slides, or fades without a reason the user would understand if asked.
@@ -95,9 +71,7 @@ Below `moderate`, motion is acknowledgment rather than communication -- correct 
 
 ## Easing curves
 
-Six curves. Rafters is not a brand -- it is the system a brand is built on, and the curve is where personality lives. A single-brand system correctly ships one curve;[^audi-ci] a system that others build brands with ships the vocabulary they choose their personality from.
-
-Audi's curve is `cubic-bezier(0.75, 0.02, 0.5, 1)`, **derived from the acceleration profile of the car.**[^audi-ci] It was not picked from a menu -- it was computed from a real fact about the product, which is why one curve produces one coherent personality. Rafters needs six because it serves many brands, but they must derive the same way rather than sit as literals.
+Six curves. Rafters is not a brand -- it is the system a brand is built on, and the curve is where personality lives. A single-brand system correctly ships one curve; a system that others build brands with ships the vocabulary they choose their personality from.
 
 ### Curves are roles, not numbers
 
@@ -162,7 +136,7 @@ Expand and collapse animate `grid-template-rows` (`0fr` <-> `1fr`), never `heigh
 
 ## Combination constraints
 
-These are rules, not values. A cross-parameter rule has no home in any single token -- so instead of leaving them as prose, they live as structured, queryable metadata an agent composing motion can read before it writes the wrong thing. They exist because the number of possible parameter combinations is larger than intuition can navigate.[^audi-ci]
+These are rules, not values. A cross-parameter rule has no home in any single token -- so instead of leaving them as prose, they live as structured, queryable metadata an agent composing motion can read before it writes the wrong thing. They exist because the number of possible parameter combinations is larger than intuition can navigate.
 
 | Parameter | Rule | Why |
 |---|---|---|
@@ -174,7 +148,7 @@ These are rules, not values. A cross-parameter rule has no home in any single to
 
 ### Where the constraints live
 
-The table above is mirrored by machine-readable data and a validator in `@rafters/design-tokens` (`packages/design-tokens/src/generators/motion-constraints.ts`), the package the CLI already depends on, so tooling can read the rule rather than re-deriving it from prose:
+The table above is mirrored by machine-readable data and a validator (`packages/design-tokens/src/generators/motion-constraints.ts`), so tooling can read the rule rather than re-deriving it from prose:
 
 - **`MOTION_COMBINATION_CONSTRAINTS`** -- the five constraints as data, each carrying an `id`, `rule`, `rationale`, and a `kind`.
 - **`MOTION_GOVERNING_RULE`** -- the rule below, with its three questions and its enforcement posture.
@@ -215,42 +189,6 @@ Longer than 500ms means one of three things: the element moves too far (break it
 
 The tier ranges enforce the 500ms ceiling mechanically -- `slow` tops out there and Studio cannot pick past it. Exceeding it requires the why-gate: the override is recorded with a reason, the previous value preserved, and the system remembers it was a conscious decision rather than a default.
 
-## The four-voice test
-
-- **Rams** -- is this animation necessary?
-- **Ive** -- does the timing respect how the eye tracks movement?
-- **Davis** -- does the intent hold together across every namespace?
-- **Nielsen** -- does this help the user understand what happened?
-
-All four must say yes.
-
-A note on Davis, because his question changed. It used to ask whether the durations were *harmonically related*, which assumed a progression. Motion has no progression -- the tiers are perceptual bands, and a designer choosing 137ms for `fast` is not disharmonious, they are inside the band. **Harmony is spacing's test**, where a base and a ratio genuinely rule. Davis's question for motion is coherence: does this project read as one intent, or has motion drifted off what spacing and type are saying?
-
-## Implementation status
-
-This document is the specification. Substantial parts of it are **not** what currently ships. Tracked in #1899.
-
-**Ships today (via #1909):**
-
-- Six duration tiers and six easing curves, at the default values in the tables above.
-- Thirteen semantic `motion-*` tokens, compiling as `@utility` classes and consumable as bare class names.
-- Combination constraints as structured metadata plus a mechanical validator (`motion-constraints.ts`).
-- Accordion consumes the semantic tokens, including the `grid-template-rows` expand/collapse pattern.
-
-**Partial:**
-
-- **The component sweep never happened.** Accordion is the only component using semantic motion tokens. Roughly thirty others still hardcode `duration-150`, `duration-200`, `duration-100` and `duration-300` with hand-written `transition-*` properties -- the exact literals this layer exists to prevent. Both spellings compile, so nothing fails and nothing warns.
-
-**Not built -- everything intent-related in this document:**
-
-- Intent itself: the foundational document, the vocabulary, Studio onboarding, the two-skeleton preview.
-- Duration **ranges**. The tiers are currently fixed literals (`def.ms` in `generators/motion.ts`), and the generator documents this as deliberate -- the base duration token's own guidance reads *"never assume the perceptual duration tiers derive from this."* A designer's base setting moves the delay tokens and nothing else.
-- Easing **derivation**. The six curves are literals (`def.css`), not resolved from bias, intensity and settle.
-- `elegant (custom)` naming, drift tracking, and the reset affordance.
-- Curve-snapping hysteresis at intent midpoints.
-
-**Also outstanding:** the keyframe table is still copied shadcn vocabulary rather than authored as rafters primitives, and `bounce` hardcodes two cubic-beziers *inside* the keyframe, bypassing the easing vocabulary entirely.
-
 ## Sources
 
 The research backing this document lives in `vault-2026/projects/rafters/courses/motion-as-emotional-safety.md` (full citations) and `vault-2026/concepts/motion-as-emotional-safety.md` (the Audi analysis). Note that the concepts document still attributes the 200-300ms window to Thorpe; the course corrects it, and this document follows the course.
@@ -268,7 +206,6 @@ The research backing this document lives in `vault-2026/projects/rafters/courses
 [^johansson-1973]: Johansson, G. (1973). Visual perception of biological motion. *Perception & Psychophysics*, 14, 201-211.
 [^pratt-2010]: Pratt, J., et al. (2010). It's alive! Animate motion captures visual attention. *Psychological Science*, 21(11), 1724-1730.
 [^stokes-2020]: Stokes, A. (2020). Decorative animations impair recall and are a source of extraneous cognitive load. *Advances in Physiology Education*, 44, 107-111.
-[^audi-ci]: Audi AG. Audi CI Portal: Animation Guidelines. styleguide.audi.com.
 [^agrawal-2009]: Agrawal, Y., et al. (2009). Disorders of balance and vestibular function in US adults. *Archives of Internal Medicine*, 169(10), 938-944.
 [^w3c-mq5]: W3C (2020). Media Queries Level 5: prefers-reduced-motion.
 [^wcag-2.3.3]: W3C (2023). WCAG 2.2 SC 2.3.3: Animation from Interactions (AAA).

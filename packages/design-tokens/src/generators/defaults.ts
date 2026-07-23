@@ -541,6 +541,359 @@ export const DEFAULT_EASING_DEFINITIONS: Record<string, EasingDef> = {
   },
 };
 
+/**
+ * Ratio-derived values a keyframe may interpolate. The generator computes these
+ * once from the progression ratio and hands them to each definition, so keyframe
+ * VALUES stay derived while only the CSS shape is authored here.
+ */
+export interface KeyframeContext {
+  /** 1/ratio^0.25 -- a subtle entrance scale. */
+  scaleStart: number;
+  /** ratio^3 -- the expanding ping. */
+  pingScale: number;
+  /** 1/ratio^4 -- the pulse midpoint. */
+  pulseOpacity: number;
+  /** 100/ratio^6 -- bounce height, as a percentage. */
+  bouncePercent: number;
+}
+
+export interface KeyframeDef {
+  /** Built from the ratio-derived context rather than authored as a literal. */
+  css: (ctx: KeyframeContext) => string;
+  meaning: string;
+  contexts: string[];
+}
+
+/**
+ * Keyframe definitions.
+ *
+ * PROVENANCE, stated plainly: this vocabulary is inherited from shadcn/Tailwind,
+ * not authored as rafters motion primitives. The numeric values derive from the
+ * progression ratio, but the SET -- which keyframes exist at all -- is a lift.
+ * Sean's ruling (2026-07-23) is that keyframe character comes out of the intent
+ * study; until that lands, these are relocated rather than blessed.
+ *
+ * Two specific things pending that study:
+ * - `bounce` embeds two literal cubic-beziers via animation-timing-function,
+ *   bypassing the easing vocabulary. They are NOT tokenizable as-is: its first
+ *   curve is (0.8, 0, 1, 1), which is not any of the six named curves (`exit` is
+ *   (0.4, 0, 1, 1)), so substituting a token would silently change how bounce
+ *   moves. Left intact deliberately.
+ * - The looping set (`spin`, `ping`, `pulse`, `bounce`, `caret-blink`) are
+ *   continuous animations rather than transitions, so no perceptual duration band
+ *   applies to them. Their loop periods are likewise unblessed.
+ *
+ * DELETED 2026-07-23: `accordion-down` / `accordion-up`. They interpolated
+ * `var(--radix-accordion-content-height)`, which Radix sets from JS measurement
+ * and nothing in this system ever sets -- so they animated to an undefined height
+ * in every consumer, silently, since #447. `motion-expand` / `motion-collapse`
+ * replaced them with a `grid-template-rows` transition, which animates on an
+ * element that stays present and needs no measured value.
+ */
+export const DEFAULT_KEYFRAME_DEFINITIONS: Record<string, KeyframeDef> = {
+  'fade-in': {
+    css: () => 'from { opacity: 0; } to { opacity: 1; }',
+    meaning: 'Fade from transparent to opaque',
+    contexts: ['enter', 'appear', 'show'],
+  },
+  'fade-out': {
+    css: () => 'from { opacity: 1; } to { opacity: 0; }',
+    meaning: 'Fade from opaque to transparent',
+    contexts: ['exit', 'disappear', 'hide'],
+  },
+  'slide-in-from-top': {
+    css: () => 'from { transform: translateY(-100%); } to { transform: translateY(0); }',
+    meaning: 'Slide in from above',
+    contexts: ['dropdown', 'notification', 'toast'],
+  },
+  'slide-in-from-bottom': {
+    css: () => 'from { transform: translateY(100%); } to { transform: translateY(0); }',
+    meaning: 'Slide in from below',
+    contexts: ['sheet', 'drawer', 'mobile-menu'],
+  },
+  'slide-in-from-left': {
+    css: () => 'from { transform: translateX(-100%); } to { transform: translateX(0); }',
+    meaning: 'Slide in from left',
+    contexts: ['sidebar', 'panel', 'drawer'],
+  },
+  'slide-in-from-right': {
+    css: () => 'from { transform: translateX(100%); } to { transform: translateX(0); }',
+    meaning: 'Slide in from right',
+    contexts: ['sidebar', 'panel', 'drawer'],
+  },
+  'slide-out-to-top': {
+    css: () => 'from { transform: translateY(0); } to { transform: translateY(-100%); }',
+    meaning: 'Slide out upward',
+    contexts: ['dropdown-exit', 'notification-dismiss'],
+  },
+  'slide-out-to-bottom': {
+    css: () => 'from { transform: translateY(0); } to { transform: translateY(100%); }',
+    meaning: 'Slide out downward',
+    contexts: ['sheet-exit', 'drawer-close'],
+  },
+  'slide-out-to-left': {
+    css: () => 'from { transform: translateX(0); } to { transform: translateX(-100%); }',
+    meaning: 'Slide out to left',
+    contexts: ['sidebar-close', 'panel-exit'],
+  },
+  'slide-out-to-right': {
+    css: () => 'from { transform: translateX(0); } to { transform: translateX(100%); }',
+    meaning: 'Slide out to right',
+    contexts: ['sidebar-close', 'panel-exit'],
+  },
+  'scale-in': {
+    css: (ctx) =>
+      `from { transform: scale(${ctx.scaleStart}); opacity: 0; } to { transform: scale(1); opacity: 1; }`,
+    meaning: 'Scale up while fading in',
+    contexts: ['modal', 'popover', 'dialog'],
+  },
+  'scale-out': {
+    css: (ctx) =>
+      `from { transform: scale(1); opacity: 1; } to { transform: scale(${ctx.scaleStart}); opacity: 0; }`,
+    meaning: 'Scale down while fading out',
+    contexts: ['modal-exit', 'popover-close'],
+  },
+  spin: {
+    css: () => 'from { transform: rotate(0deg); } to { transform: rotate(360deg); }',
+    meaning: 'Continuous rotation',
+    contexts: ['loading', 'spinner', 'refresh'],
+  },
+  ping: {
+    css: (ctx) => `75%, 100% { transform: scale(${ctx.pingScale}); opacity: 0; }`,
+    meaning: 'Expanding pulse that fades out',
+    contexts: ['notification-badge', 'attention', 'pulse'],
+  },
+  pulse: {
+    css: (ctx) => `0%, 100% { opacity: 1; } 50% { opacity: ${ctx.pulseOpacity}; }`,
+    meaning: 'Gentle opacity pulse',
+    contexts: ['skeleton', 'loading-placeholder'],
+  },
+  bounce: {
+    // Inline beziers retained deliberately -- see the provenance note above.
+    css: (ctx) =>
+      `0%, 100% { transform: translateY(-${ctx.bouncePercent}%); animation-timing-function: cubic-bezier(0.8, 0, 1, 1); } 50% { transform: translateY(0); animation-timing-function: cubic-bezier(0, 0, 0.2, 1); }`,
+    meaning: 'Bouncing motion',
+    contexts: ['attention', 'scroll-indicator'],
+  },
+  'caret-blink': {
+    css: () => '0%, 70%, 100% { opacity: 1; } 20%, 50% { opacity: 0; }',
+    meaning: 'Text cursor blinking',
+    contexts: ['input-caret', 'text-cursor'],
+  },
+};
+
+/**
+ * How an animation gets its duration. A transition reads a perceptual TIER; a
+ * continuous animation has a LOOP PERIOD, which no band governs because nothing
+ * is being tracked to a destination. Previously the generator distinguished these
+ * by sniffing whether the string ended in "s" -- stringly-typed state standing in
+ * for a real distinction.
+ */
+export type AnimationDuration = { tier: string } | { loopPeriod: string };
+
+export interface AnimationDef {
+  /** Key of DEFAULT_KEYFRAME_DEFINITIONS. */
+  keyframe: string;
+  duration: AnimationDuration;
+  /** Key of DEFAULT_EASING_DEFINITIONS -- the current six-curve vocabulary. */
+  curve: string;
+  iterations?: string;
+  meaning: string;
+  contexts: string[];
+}
+
+/**
+ * Animation definitions -- keyframe plus duration plus curve.
+ *
+ * These previously spoke the pre-#1903 easing vocabulary (`ease-out`, `ease-in`,
+ * `ease-in-out`, `spring`) and survived the curve rename only through a
+ * LEGACY_EASING_REMAP table inside the generator. They now name the six curves
+ * directly and that remap is retired. The mapping applied was exactly the remap's:
+ * ease-out -> enter, ease-in -> exit, ease-in-out -> standard, spring ->
+ * spring-snappy, linear -> linear. Output is unchanged.
+ *
+ * Loop periods (`spin`, `ping`, `pulse`, `bounce`, `caret-blink`) carry the same
+ * unblessed-vocabulary caveat as their keyframes.
+ */
+export const DEFAULT_ANIMATION_DEFINITIONS: Record<string, AnimationDef> = {
+  'fade-in': {
+    keyframe: 'fade-in',
+    duration: { tier: 'fast' },
+    curve: 'enter',
+    meaning: 'Fade in animation',
+    contexts: ['enter', 'appear'],
+  },
+  'fade-out': {
+    keyframe: 'fade-out',
+    duration: { tier: 'fast' },
+    curve: 'exit',
+    meaning: 'Fade out animation',
+    contexts: ['exit', 'disappear'],
+  },
+  'slide-in-from-top': {
+    keyframe: 'slide-in-from-top',
+    duration: { tier: 'normal' },
+    curve: 'enter',
+    meaning: 'Slide in from top',
+    contexts: ['dropdown', 'notification'],
+  },
+  'slide-in-from-bottom': {
+    keyframe: 'slide-in-from-bottom',
+    duration: { tier: 'normal' },
+    curve: 'enter',
+    meaning: 'Slide in from bottom',
+    contexts: ['sheet', 'drawer'],
+  },
+  'slide-in-from-left': {
+    keyframe: 'slide-in-from-left',
+    duration: { tier: 'normal' },
+    curve: 'enter',
+    meaning: 'Slide in from left',
+    contexts: ['sidebar', 'panel'],
+  },
+  'slide-in-from-right': {
+    keyframe: 'slide-in-from-right',
+    duration: { tier: 'normal' },
+    curve: 'enter',
+    meaning: 'Slide in from right',
+    contexts: ['sidebar', 'panel'],
+  },
+  'slide-out-to-top': {
+    keyframe: 'slide-out-to-top',
+    duration: { tier: 'fast' },
+    curve: 'exit',
+    meaning: 'Slide out to top',
+    contexts: ['dropdown-exit'],
+  },
+  'slide-out-to-bottom': {
+    keyframe: 'slide-out-to-bottom',
+    duration: { tier: 'fast' },
+    curve: 'exit',
+    meaning: 'Slide out to bottom',
+    contexts: ['sheet-exit'],
+  },
+  'slide-out-to-left': {
+    keyframe: 'slide-out-to-left',
+    duration: { tier: 'fast' },
+    curve: 'exit',
+    meaning: 'Slide out to left',
+    contexts: ['sidebar-close'],
+  },
+  'slide-out-to-right': {
+    keyframe: 'slide-out-to-right',
+    duration: { tier: 'fast' },
+    curve: 'exit',
+    meaning: 'Slide out to right',
+    contexts: ['sidebar-close'],
+  },
+  'scale-in': {
+    keyframe: 'scale-in',
+    duration: { tier: 'normal' },
+    curve: 'spring-snappy',
+    meaning: 'Scale in with spring',
+    contexts: ['modal', 'popover'],
+  },
+  'scale-out': {
+    keyframe: 'scale-out',
+    duration: { tier: 'fast' },
+    curve: 'exit',
+    meaning: 'Scale out',
+    contexts: ['modal-exit'],
+  },
+  spin: {
+    keyframe: 'spin',
+    duration: { loopPeriod: '1s' },
+    curve: 'linear',
+    iterations: 'infinite',
+    meaning: 'Continuous spin',
+    contexts: ['loading', 'spinner'],
+  },
+  ping: {
+    keyframe: 'ping',
+    duration: { loopPeriod: '1s' },
+    curve: 'enter',
+    iterations: 'infinite',
+    meaning: 'Pinging pulse',
+    contexts: ['notification'],
+  },
+  pulse: {
+    keyframe: 'pulse',
+    duration: { loopPeriod: '2s' },
+    curve: 'standard',
+    iterations: 'infinite',
+    meaning: 'Gentle pulse',
+    contexts: ['skeleton', 'loading'],
+  },
+  bounce: {
+    keyframe: 'bounce',
+    duration: { loopPeriod: '1s' },
+    curve: 'standard',
+    iterations: 'infinite',
+    meaning: 'Bouncing',
+    contexts: ['attention'],
+  },
+  'caret-blink': {
+    keyframe: 'caret-blink',
+    duration: { loopPeriod: '1.25s' },
+    curve: 'enter',
+    iterations: 'infinite',
+    meaning: 'Caret blinking',
+    contexts: ['input'],
+  },
+};
+
+export interface MotionCompositePreset {
+  /** Key of DEFAULT_DURATION_DEFINITIONS. */
+  durationTier: string;
+  /** Key of DEFAULT_EASING_DEFINITIONS -- the current six-curve vocabulary. */
+  curve: string;
+  meaning: string;
+  contexts: string[];
+}
+
+/**
+ * Composite presets -- a duration paired with a curve, emitted as one token.
+ * Retained for backwards compatibility; the semantic motion tokens
+ * (DEFAULT_MOTION_SEMANTIC_MAPPINGS) are the current way to express this, since
+ * they also carry the property set and the reduced-motion degradation.
+ *
+ * The record key is the full token name, which these carry verbatim rather than
+ * receiving a generated prefix. Like the animations, they spoke the pre-#1903
+ * easing vocabulary and now name the six curves directly.
+ */
+export const DEFAULT_MOTION_COMPOSITE_PRESETS: Record<string, MotionCompositePreset> = {
+  'motion-fade-in': {
+    durationTier: 'fast',
+    curve: 'enter',
+    meaning: 'Fade in animation preset',
+    contexts: ['fade-in', 'appear'],
+  },
+  'motion-fade-out': {
+    durationTier: 'fast',
+    curve: 'exit',
+    meaning: 'Fade out animation preset',
+    contexts: ['fade-out', 'disappear'],
+  },
+  'motion-slide-in': {
+    durationTier: 'normal',
+    curve: 'enter',
+    meaning: 'Slide in animation preset',
+    contexts: ['slide-in', 'panel-enter', 'modal-enter'],
+  },
+  'motion-slide-out': {
+    durationTier: 'fast',
+    curve: 'exit',
+    meaning: 'Slide out animation preset',
+    contexts: ['slide-out', 'panel-exit', 'modal-exit'],
+  },
+  'motion-scale-in': {
+    durationTier: 'normal',
+    curve: 'spring-snappy',
+    meaning: 'Scale in with spring animation',
+    contexts: ['pop-in', 'button-press', 'emphasis'],
+  },
+};
+
 // =============================================================================
 // SEMANTIC MOTION MAPPINGS
 // =============================================================================

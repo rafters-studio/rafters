@@ -1,0 +1,73 @@
+import { describe, expect, it } from 'vitest';
+import {
+  DEFAULT_ANIMATION_DEFINITIONS,
+  DEFAULT_DELAY_DEFINITIONS,
+  DEFAULT_DURATION_DEFINITIONS,
+  DEFAULT_EASING_DEFINITIONS,
+  DEFAULT_KEYFRAME_DEFINITIONS,
+  DEFAULT_MOTION_COMPOSITE_PRESETS,
+  DEFAULT_MOTION_SEMANTIC_MAPPINGS,
+} from '../src/generators/defaults.js';
+import { generateMotionTokens } from '../src/generators/motion.js';
+import type { ResolvedSystemConfig } from '../src/generators/types.js';
+
+/**
+ * GOLDEN OUTPUT GUARD.
+ *
+ * The motion generator is being refactored so it RECEIVES its whole vocabulary
+ * (keyframes and animations were literal arrays in the function body while every
+ * other definition arrived as a parameter). A relocation must not change a single
+ * emitted byte -- the only intended output change is the deletion of the broken
+ * `accordion-down` / `accordion-up` pair, which interpolate
+ * `var(--radix-accordion-content-height)` that nothing in this system sets.
+ *
+ * So this snapshot is the completeness proof: refactor, re-run, and the diff must
+ * be exactly those deletions and nothing else. A relocated keyframe whose CSS
+ * shifted, or an easing that moved when the legacy remap retired, shows up here.
+ *
+ * Read the diff. Never update this blind.
+ */
+
+const CONFIG = {
+  baseTransitionDuration: 150,
+  progressionRatio: 'minor-third',
+} as unknown as ResolvedSystemConfig;
+
+function emitMotion() {
+  return generateMotionTokens(
+    CONFIG,
+    DEFAULT_DURATION_DEFINITIONS,
+    DEFAULT_EASING_DEFINITIONS,
+    DEFAULT_DELAY_DEFINITIONS,
+    DEFAULT_MOTION_SEMANTIC_MAPPINGS,
+    DEFAULT_KEYFRAME_DEFINITIONS,
+    DEFAULT_ANIMATION_DEFINITIONS,
+    DEFAULT_MOTION_COMPOSITE_PRESETS,
+  );
+}
+
+describe('motion generator: golden output', () => {
+  it('emits a stable set of token names', () => {
+    const names = emitMotion()
+      .tokens.map((t) => t.name)
+      .sort();
+    expect(names).toMatchSnapshot();
+  });
+
+  it('emits stable name -> value pairs', () => {
+    const pairs = emitMotion()
+      .tokens.map((t) => `${t.name} = ${String(t.value)}`)
+      .sort();
+    expect(pairs).toMatchSnapshot();
+  });
+
+  it('emits no keyframe referencing a variable this system never sets', () => {
+    // The original #1899 defect. `--radix-accordion-content-height` is set by
+    // Radix from JS measurement; nothing here sets it, so any keyframe
+    // interpolating it animates to an undefined height in every consumer.
+    const offenders = emitMotion()
+      .tokens.filter((t) => String(t.value).includes('--radix-'))
+      .map((t) => t.name);
+    expect(offenders).toEqual([]);
+  });
+});
