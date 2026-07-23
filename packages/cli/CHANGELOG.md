@@ -1,5 +1,11 @@
 # rafters
 
+## 0.0.77
+
+### Bug Fixes
+
+- fix(design-tokens): documentation CSS now includes `@container` rules. The `@theme` block parser used `[^}]*` which truncated at nested braces, missing `--container-*` vars. Replaced with brace-depth parser (`extractThemeBlocks`). Container-prefixed layout candidates (`@sm:`, `@md:`, `@lg:`, `@xl:`) are now generated for spacing, grid, flex, and sizing utilities.
+
 ## 0.0.76
 
 ### Features
