@@ -1273,6 +1273,39 @@ const RADIUS_UTILITIES = [
 
 const STATE_VARIANTS = ['hover', 'focus-visible', 'focus', 'active', 'dark'] as const;
 
+const CONTAINER_LAYOUT_UTILITIES = [
+  'grid-cols',
+  'gap',
+  'p',
+  'px',
+  'py',
+  'pt',
+  'pr',
+  'pb',
+  'pl',
+  'h',
+  'w',
+  'max-w',
+  'flex-row',
+  'flex-col',
+  'flex-col-reverse',
+  'flex-wrap',
+  'items-center',
+  'justify-end',
+  'justify-center',
+  'justify-between',
+  'text-left',
+  'text-center',
+  'text-right',
+  'space-x',
+  'space-y',
+  'mt',
+  'rounded',
+  'rounded-sm',
+  'rounded-md',
+  'rounded-lg',
+] as const;
+
 /**
  * Derive the complete set of Tailwind utility candidates from theme custom
  * properties. Each --color-<slug> becomes bg-<slug>, text-<slug>, etc.; each
@@ -1280,12 +1313,30 @@ const STATE_VARIANTS = ['hover', 'focus-visible', 'focus', 'active', 'dark'] as 
  * the exhaustive base utility surface the token graph can produce -- no
  * component scanning required.
  */
+function extractThemeBlocks(css: string): string[] {
+  const blocks: string[] = [];
+  const re = /@theme\s*(?:inline\s*)?\{/g;
+  let match: RegExpExecArray | null;
+  while ((match = re.exec(css)) !== null) {
+    let depth = 1;
+    const start = match.index + match[0].length;
+    for (let i = start; i < css.length; i++) {
+      if (css[i] === '{') depth++;
+      if (css[i] === '}') {
+        depth--;
+        if (depth === 0) {
+          blocks.push(css.slice(start, i));
+          break;
+        }
+      }
+    }
+  }
+  return blocks;
+}
+
 function deriveCandidates(themeCSS: string): string[] {
   const themeVarNames: string[] = [];
-  const themeBlockRe = /@theme\s*(?:inline\s*)?\{([^}]*)\}/gs;
-  let blockMatch: RegExpExecArray | null;
-  while ((blockMatch = themeBlockRe.exec(themeCSS)) !== null) {
-    const block = blockMatch[1] ?? '';
+  for (const block of extractThemeBlocks(themeCSS)) {
     const varRe = /--([a-z][a-z0-9-]*)\s*:/g;
     let varMatch: RegExpExecArray | null;
     while ((varMatch = varRe.exec(block)) !== null) {
@@ -1322,6 +1373,21 @@ function deriveCandidates(themeCSS: string): string[] {
   for (const variant of STATE_VARIANTS) {
     for (const c of base) {
       candidates.add(`${variant}:${c}`);
+    }
+  }
+
+  // Container query variants for layout utilities. Only layout-shaped
+  // utilities get container prefixes -- crossing the full color/shadow
+  // surface with 13 container sizes would produce ~18MB.
+  const containerSizes = themeVarNames
+    .filter((n) => n.startsWith('container-'))
+    .map((n) => n.slice(10));
+  const layoutCandidates = base.filter((c) =>
+    CONTAINER_LAYOUT_UTILITIES.some((u) => c === u || c.startsWith(`${u}-`)),
+  );
+  for (const size of containerSizes) {
+    for (const c of layoutCandidates) {
+      candidates.add(`@${size}:${c}`);
     }
   }
 
