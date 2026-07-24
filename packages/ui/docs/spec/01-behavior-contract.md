@@ -120,7 +120,7 @@ export interface BehaviorSpec<
    *  new behavior -- compose the primitive. */
   effects?: (state: State, config: Config) => EffectSpec[];
 
-  /** Motion declarations per (transition, part) -- Spec 04. Motion is
+  /** Motion declarations per (transition, part) -- docs/MOTION.md. Motion is
    *  behavior: intent + axis + sizeClass only. Statics omit this. */
   motion?: MotionMap<Part>;
 }
@@ -203,4 +203,4 @@ Resolved elsewhere:
 
 - Disjointness typing: Spec 02 (landed with the button prototype).
 - EffectSpec vocabulary: Spec 03.
-- MotionMap and derivation: Spec 04.
+- MotionMap and derivation: docs/MOTION.md.

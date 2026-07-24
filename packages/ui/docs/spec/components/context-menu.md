@@ -117,7 +117,7 @@ numeric durations or hand-picked easings (Spec 05). Positioning uses `left`/`top
 
 Exit motion (`motion-dropdown-out`) is intentionally NOT declared: the content
 toggles `hidden` when closed, so the exiting node leaves the box model before an
-out transition can play. A played exit awaits the Presence layer (Spec 04);
+out transition can play. A played exit awaits the Presence layer (docs/MOTION.md);
 declaring it now would be a silent no-op. No motion token is missing -- both
 `motion-dropdown-in` and `-out` exist; only the presence plumbing to run the exit
 does not yet.

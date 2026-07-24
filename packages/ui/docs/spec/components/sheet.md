@@ -89,7 +89,7 @@ Intent: `enter`/`exit` = slide along the anchored axis (x for left/right, y for
 top/bottom). This is DECLARED here but left UNIMPLEMENTED: the semantic
 slide-per-side motion tokens do not exist yet — the motion token layer is being
 rebuilt (#1899), and a hardcoded `duration-*`/`animate-in` now is drift later
-(Spec 04). The oracle's `animate-in/out slide-*` + `duration-500/300` utilities
+(docs/MOTION.md). The oracle's `animate-in/out slide-*` + `duration-500/300` utilities
 are therefore DROPPED, not ported. Enter animation ships once the tokens land;
 exit animation additionally waits on the Presence adapter (wave 0-B). Until
 then, sheet is enter-only in the visual sense and correct at every state via

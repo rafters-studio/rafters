@@ -146,7 +146,7 @@ component's concern**. Consumption has a shape per category:
 - **Enter/exit** (`motion-*-in`/`-out`): the token carries only
   property/duration/easing. The component declares the closed rest state and the
   open active state and toggles via `data-state`, AND keeps the exiting node
-  mounted (presence management, Spec 04) so the out transition can play:
+  mounted (presence management, docs/MOTION.md) so the out transition can play:
   `class="motion-modal-in opacity-0 scale-95 data-[state=open]:opacity-100
   data-[state=open]:scale-100"`. Slapping `motion-modal-in` on a conditionally
   *rendered* element animates nothing and errors nowhere -- the silent no-op.
