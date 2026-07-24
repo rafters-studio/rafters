@@ -75,7 +75,7 @@ HTML spec for decorative images.
 - `effects(state, config)`: `[]`. No focus-trap, roving, dismiss, or announce
   primitive — the load contract is a pure projection, driven by React's state
   or read once from server/author markup by `bindImage`.
-- Motion: **none** (Spec 04 intent). The overlay is a static token surface — no
+- Motion: **none** (docs/MOTION.md intent). The overlay is a static token surface — no
   spinner, no transition.
 
 ## Oracle dispositions (src/old/ui/image.*)
@@ -95,7 +95,7 @@ HTML spec for decorative images.
 | alignment toolbar (editable) | dropped — editor surface, out of scope |
 | contentEditable caption (onCaptionChange) | dropped — editor surface, out of scope |
 | `isDragOver` ring | dropped — follows drag-drop out of scope |
-| loading spinner animation | defect-do-not-port under Spec 04 (motion none); replaced by a static placeholder |
+| loading spinner animation | defect-do-not-port under docs/MOTION.md (motion none); replaced by a static placeholder |
 
 The WC oracle (`image.element.ts`) had already shed the entire editor surface
 and rendered display-only; this port unifies the surviving load/error semantics

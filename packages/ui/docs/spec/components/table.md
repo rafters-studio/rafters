@@ -123,7 +123,7 @@ a decoration intent; its duration comes from tokens, never a hardcoded utility.
 | overflow wrapper `<div>` around the `<table>` | contract -- horizontal scroll for wide data |
 | `data-[state=selected]` row hook | contract -- now driven by the `selected` prop through `tableRowAttrs`, which also adds `aria-selected` (the oracle set only the class hook, no ARIA) |
 | `[&:has([role=checkbox])]:pr-0` / `[&>[role=checkbox]]:translate-y-0.5` cell selectors | contract -- shadcn checkbox flush |
-| `duration-150` on the row transition | dropped -- redundant with `transition-colors` (Tailwind's default duration), and durations come from tokens (Spec 04) |
+| `duration-150` on the row transition | dropped -- redundant with `transition-colors` (Tailwind's default duration), and durations come from tokens (docs/MOTION.md) |
 | Astro `data-table=""` marker attributes | dropped -- replaced by the `data-part`/`data-slot` vocabulary the harness reads |
 | Web Component surface | deferred -- oldTree ships no WC; the shadow+slot static model cannot wrap real table descendants (see Framework scope) |
 

@@ -137,7 +137,7 @@ states ride the `data-state` hooks while the timing is left to the future token
 layer rather than hardcoded (`duration-200 ease-linear` etc. are dropped). The
 MOBILE overlay's enter/exit is the merged `sheet`'s own concern, not the
 sidebar's. Small `duration-150` hover/press acknowledgments on the menu buttons
-are kept (Spec 04 retains interaction feedback), never the layout motion.
+are kept (docs/MOTION.md retains interaction feedback), never the layout motion.
 
 ## Oracle dispositions (src/old/ui/sidebar.tsx, boundary 9)
 

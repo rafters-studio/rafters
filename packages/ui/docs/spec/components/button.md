@@ -196,7 +196,7 @@ the WC warns in dev mode and the conformance harness fails the case in CI.
   `aria-disabled:opacity-50 aria-disabled:cursor-not-allowed` for the
   soft-disabled state.
 - Motion: `transition-colors motion-reduce:transition-none`. The raw
-  `duration-150` literal is superseded by Spec 04 — durations become
+  `duration-150` literal is superseded by docs/MOTION.md — durations become
   token-backed when the motion plumbing lands (wave 0-B).
 
 ## WCAG 2.1 AA obligations (minimum bar)

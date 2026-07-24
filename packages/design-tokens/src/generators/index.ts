@@ -13,6 +13,7 @@ import type { Token } from '@rafters/shared';
 import { generateBreakpointTokens } from './breakpoint.js';
 import { buildColorScaleFromBase, generateColorTokens } from './color.js';
 import {
+  DEFAULT_ANIMATION_DEFINITIONS,
   type ColorPaletteBase,
   type ColorScaleInput,
   DEFAULT_BREAKPOINTS,
@@ -24,6 +25,8 @@ import {
   DEFAULT_EASING_DEFINITIONS,
   DEFAULT_FOCUS_CONFIGS,
   DEFAULT_FONT_WEIGHTS,
+  DEFAULT_KEYFRAME_DEFINITIONS,
+  DEFAULT_MOTION_COMPOSITE_PRESETS,
   DEFAULT_MOTION_SEMANTIC_MAPPINGS,
   DEFAULT_RADIUS_DEFINITIONS,
   DEFAULT_SEMANTIC_COLOR_BASES,
@@ -132,6 +135,9 @@ function createGeneratorDefs(colorPaletteBases?: Record<string, ColorPaletteBase
           DEFAULT_EASING_DEFINITIONS,
           DEFAULT_DELAY_DEFINITIONS,
           DEFAULT_MOTION_SEMANTIC_MAPPINGS,
+          DEFAULT_KEYFRAME_DEFINITIONS,
+          DEFAULT_ANIMATION_DEFINITIONS,
+          DEFAULT_MOTION_COMPOSITE_PRESETS,
         ),
     },
     {
