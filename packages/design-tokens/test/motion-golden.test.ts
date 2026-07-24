@@ -72,6 +72,21 @@ describe('motion generator: golden output', () => {
     expect(standard?.value).toBe('cubic-bezier(0.4, 0, 0.2, 1)');
   });
 
+  it('resolves the duration tiers to the efficient-baseline defaults', () => {
+    // Efficient (the neutral default intent) picks the LOW end of each
+    // perceptual range -- it is a fast-running intent that lives in
+    // micro/fast/moderate and rarely reaches slow. So the tier defaults are the
+    // low bound of each band, not its midpoint. Proven explicitly so the
+    // baseline cannot drift back to the mid-range values it once shipped.
+    const byName = new Map(emitMotion().tokens.map((t) => [t.name, String(t.value)]));
+    expect(byName.get('motion-duration-instant')).toBe('0ms');
+    expect(byName.get('motion-duration-micro')).toBe('100ms');
+    expect(byName.get('motion-duration-fast')).toBe('150ms');
+    expect(byName.get('motion-duration-moderate')).toBe('200ms');
+    expect(byName.get('motion-duration-normal')).toBe('300ms');
+    expect(byName.get('motion-duration-slow')).toBe('400ms');
+  });
+
   it('emits no keyframe referencing a variable this system never sets', () => {
     // The original #1899 defect. `--radix-accordion-content-height` is set by
     // Radix from JS measurement; nothing here sets it, so any keyframe

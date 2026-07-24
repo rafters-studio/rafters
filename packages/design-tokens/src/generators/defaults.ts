@@ -456,7 +456,7 @@ export const DEFAULT_DURATION_DEFINITIONS: Record<string, DurationDef> = {
   },
   moderate: {
     range: [200, 300],
-    default: 250,
+    default: 200,
     band: 'communicative (~200-300ms)',
     meaning:
       'Dropdowns, tab switches, small reveals. The communicative window: fast enough to feel responsive, slow enough for the eye to track a trajectory and build a spatial model.',
@@ -465,7 +465,7 @@ export const DEFAULT_DURATION_DEFINITIONS: Record<string, DurationDef> = {
   },
   normal: {
     range: [300, 400],
-    default: 350,
+    default: 300,
     band: 'communicative, larger movement',
     meaning:
       'The workhorse -- modal entrances, toggles, standard state transitions. The communicative window for larger movement.',
@@ -474,7 +474,7 @@ export const DEFAULT_DURATION_DEFINITIONS: Record<string, DurationDef> = {
   },
   slow: {
     range: [400, 500],
-    default: 500,
+    default: 400,
     band: 'at the sluggish boundary',
     meaning:
       'Sheets, page transitions, large spatial movement where the user needs orientation. At the sluggish boundary -- the ceiling for anything but full-screen spatial transitions.',
@@ -933,9 +933,11 @@ export interface MotionSemanticMapping {
 /**
  * The thirteen semantic motion tokens (docs/MOTION.md semantic table).
  *
- * Every `-in`/`-out` pair encodes the shorter exit in its tier choice (dropdown
- * 250/150, modal 350/250, sheet 500/350) -- MOTION.md's "exits are faster"
- * invariant, so authors inherit it without re-deriving. `expand`/`collapse`
+ * Most `-in`/`-out` pairs encode the shorter exit in their tier choice (dropdown
+ * moderate/fast, modal normal/moderate, expand/collapse normal/moderate) --
+ * MOTION.md's "exits are faster" invariant, so authors inherit it without
+ * re-deriving. `sheet` is the exception: both directions sit at the normal tier,
+ * a spatial panel the user tracks in and out at the same pace. `expand`/`collapse`
  * transition `grid-template-rows` (0fr<->1fr), not `height`: height:auto is not
  * transitionable, grid-rows is, in pure CSS with no framework height var.
  */
@@ -1030,12 +1032,12 @@ export const DEFAULT_MOTION_SEMANTIC_MAPPINGS: Record<string, MotionSemanticMapp
   },
   'sheet-in': {
     properties: ['transform'],
-    durationTier: 'slow',
+    durationTier: 'normal',
     curve: 'spring-smooth',
     reducedMotion: { properties: ['opacity'], ms: 250 },
     category: 'enter',
     sizeReasoning:
-      'A sheet is the largest spatial movement -- slow tier with the physical settle of a smooth spring, because the user must track it into place. Reduced motion becomes a cross-fade.',
+      'A sheet is a large spatial movement -- normal tier with the physical settle of a smooth spring, because the user must track it into place. Reduced motion becomes a cross-fade.',
     meaning: 'Sheet/drawer entrance.',
     contexts: ['sheet', 'drawer', 'side-panel'],
   },
@@ -1074,12 +1076,12 @@ export const DEFAULT_MOTION_SEMANTIC_MAPPINGS: Record<string, MotionSemanticMapp
   },
   page: {
     properties: ['opacity', 'transform'],
-    durationTier: 'slow',
+    durationTier: 'normal',
     curve: 'spring-smooth',
     reducedMotion: { properties: ['opacity'], ms: 200 },
     category: 'enter',
     sizeReasoning:
-      'A whole-view transition -- slow tier with the physical settle of a smooth spring, because the user reorients across the largest possible distance.',
+      'A whole-view transition -- normal tier with the physical settle of a smooth spring, because the user reorients across a large distance.',
     meaning: 'Page/route transition.',
     contexts: ['page-transition', 'route-change', 'view-switch'],
   },
