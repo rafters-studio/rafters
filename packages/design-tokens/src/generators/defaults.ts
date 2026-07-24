@@ -498,11 +498,11 @@ export interface EasingDef {
  */
 export const DEFAULT_EASING_DEFINITIONS: Record<string, EasingDef> = {
   standard: {
-    curve: [0.25, 0.1, 0.25, 1],
+    curve: [0.4, 0, 0.2, 1],
     meaning:
-      'Precision -- arrives exactly where it should, engineered rather than thrown. Decelerates into its final position. General-purpose state transitions and hover.',
+      'Precision -- a responsive start that decelerates into place, engineered rather than thrown. The general-purpose workhorse for state transitions and hover: the fast start matches a cursor already on target, where a symmetric ease would drag.',
     contexts: ['state-changes', 'hover', 'general-purpose'],
-    css: 'cubic-bezier(0.25, 0.1, 0.25, 1)',
+    css: 'cubic-bezier(0.4, 0, 0.2, 1)',
   },
   enter: {
     curve: [0, 0, 0.2, 1],

@@ -61,6 +61,17 @@ describe('motion generator: golden output', () => {
     expect(pairs).toMatchSnapshot();
   });
 
+  it('resolves the standard easing curve to its defined bezier', () => {
+    // The standard curve is the intent baseline's workhorse (efficient = the
+    // neutral default). It is a mild decelerate with a responsive start
+    // -- cubic-bezier(0.4, 0, 0.2, 1) -- NOT the symmetric ease it once was.
+    // Proven explicitly so a redefinition cannot slip through a blind snapshot
+    // update; standard is referenced by var(--ease-standard) everywhere, so this
+    // one token value is the whole surface the change moves.
+    const standard = emitMotion().tokens.find((t) => t.name === 'motion-easing-standard');
+    expect(standard?.value).toBe('cubic-bezier(0.4, 0, 0.2, 1)');
+  });
+
   it('emits no keyframe referencing a variable this system never sets', () => {
     // The original #1899 defect. `--radix-accordion-content-height` is set by
     // Radix from JS measurement; nothing here sets it, so any keyframe
