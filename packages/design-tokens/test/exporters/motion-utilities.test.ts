@@ -68,7 +68,7 @@ describe('semantic motion utilities compile (#1902/#1903/#1904)', () => {
     expect(css).toContain('transition-property: grid-template-rows, opacity;');
     expect(css).not.toContain('transition-property: height');
     // The referenced theme vars carry the perceptual value and the named curve.
-    expect(css).toContain('--duration-normal: 350ms;');
+    expect(css).toContain('--duration-normal: 300ms;');
     expect(css).toContain('--ease-enter: cubic-bezier(0, 0, 0.2, 1);');
   });
 
@@ -80,7 +80,7 @@ describe('semantic motion utilities compile (#1902/#1903/#1904)', () => {
     // The nested @media survived compile + minify -- the blueprint-risk-#1 shape.
     expect(css, 'reduced-motion block dropped').toContain('prefers-reduced-motion');
     // The referenced duration theme var resolved into the sheet (Tailwind minifies
-    // 350ms -> .35s), proving the class is not a dangling var() reference.
-    expect(css, 'duration var tree-shaken').toMatch(/--duration-normal:\s*(350ms|\.35s)/);
+    // 300ms -> .3s), proving the class is not a dangling var() reference.
+    expect(css, 'duration var tree-shaken').toMatch(/--duration-normal:\s*(300ms|\.3s)/);
   });
 });

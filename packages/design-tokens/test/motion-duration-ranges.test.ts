@@ -6,27 +6,32 @@ import { MOTION_DURATION_SCALE } from '../src/generators/types.js';
  * Duration tiers are perceptual RANGES a designer picks within, not constants
  * (docs/MOTION.md). These guard the two properties that make that safe:
  *
- * 1. REGRESSION -- the defaults are byte-for-byte what shipped before ranges
- *    existed, so introducing the range moved nothing visually. Every one of
- *    these numbers was a hardcoded `ms` literal; if one changes, a consumer's
- *    motion changed and someone should have said so.
+ * 1. REGRESSION -- the defaults are the efficient-baseline values (efficient is
+ *    the neutral default intent). Efficient runs fast, so its pick is the LOW
+ *    end of each range, not the midpoint. If one changes, a consumer's motion
+ *    changed and someone should have said so.
  * 2. COHERENCE -- every default lies inside its own range, the bands do not
  *    overlap downward into the communicative window, and the ceiling holds.
  */
 
-/** The exact ms values emitted before tiers became ranges. Do not "fix" these. */
-const SHIPPED_DEFAULTS: Record<string, number> = {
+/**
+ * The efficient-baseline defaults: the LOW end of each range, because efficient
+ * (the neutral default intent) is a fast-running intent that lives in
+ * micro/fast/moderate and rarely reaches slow. Do not "fix" these -- a change
+ * here is a change to what every project ships at neutral intent.
+ */
+const EFFICIENT_DEFAULTS: Record<string, number> = {
   instant: 0,
   micro: 100,
   fast: 150,
-  moderate: 250,
-  normal: 350,
-  slow: 500,
+  moderate: 200,
+  normal: 300,
+  slow: 400,
 };
 
 describe('duration tiers: regression', () => {
-  it('every default equals the value that shipped before ranges existed', () => {
-    for (const [tier, expected] of Object.entries(SHIPPED_DEFAULTS)) {
+  it('every default equals the efficient-baseline value', () => {
+    for (const [tier, expected] of Object.entries(EFFICIENT_DEFAULTS)) {
       const def = DEFAULT_DURATION_DEFINITIONS[tier];
       expect(def, `tier "${tier}" is missing`).toBeDefined();
       expect(def?.default, `tier "${tier}" default moved`).toBe(expected);
