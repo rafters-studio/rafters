@@ -1,5 +1,17 @@
 # rafters
 
+## 0.0.78
+
+### Features
+
+- feat(design-tokens): duration tiers are now perceptual ranges a designer moves within, not fixed constants (#1943). Each tier carries a `[min, max]` band plus a default, and Studio clamps its picker to the band -- a duration outside its perceptual window is unreachable by accident. The tiers are explicitly not a ratio progression; `moderate` is somewhere in the communicative window, not `fast x ratio`.
+- feat(design-tokens): retune the motion baseline to the efficient (neutral-default) intent (#1946). The `standard` easing curve becomes `cubic-bezier(0.4, 0, 0.2, 1)` -- a mild decelerate with a responsive start, replacing the old symmetric ease -- and the duration tier defaults move to the low end of each range (`moderate` 200ms, `normal` 300ms, `slow` 400ms). Anything referencing the `motion-*` / `--ease-*` / `--duration-*` tokens follows automatically; `sheet` and `page` motion drop off the slow tier.
+- feat(design-tokens): the motion generator now receives its whole vocabulary as input -- keyframes, animations, and composite presets are parameters rather than literals in the generator body -- so the emitted motion system is a pure function of its definitions (#1943).
+
+### Bug Fixes
+
+- fix(design-tokens): remove the broken `accordion-down` / `accordion-up` keyframes (#1899). They interpolated `var(--radix-accordion-content-height)`, which nothing in this system sets, so they compiled as real utilities that animated to an undefined height in every consumer. The `motion-expand` / `motion-collapse` `grid-template-rows` transition replaces them.
+
 ## 0.0.77
 
 ### Bug Fixes
