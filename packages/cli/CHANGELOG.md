@@ -1,5 +1,11 @@
 # rafters
 
+## Unreleased
+
+### Bug Fixes
+
+- fix(ui): popover now actually animates (#1952). Its panel declared six tailwindcss-animate utilities -- `animate-in`, `animate-out`, `fade-in-0`/`fade-out-0`, `zoom-in-95`/`zoom-out-95` and four `slide-in-from-*-2` -- and that package is not a dependency of any workspace, so none of them resolved and the panel snapped open and shut with no transition at all. It now enters on `motion-dropdown-in` and exits on `motion-dropdown-out`, with both opacity endpoints declared, because the semantic utilities are transitions rather than animations and a transition has no implicit start frame. The panel fades only: `positionPopover` writes placement as an inline `style.transform`, which outranks any class-declared transform, so scale and directional slide are unavailable until placement moves onto a wrapper element. The close control's hover fade drops its raw `duration-150` for the `duration-moderate` tier.
+
 ## 0.0.78
 
 ### Features
