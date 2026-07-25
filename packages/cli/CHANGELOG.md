@@ -1,5 +1,11 @@
 # rafters
 
+## Unreleased
+
+### Bug Fixes
+
+- fix(ui): hover-card now actually animates (#1958). Its preview panel declared `animate-in`, `fade-in-0`, `zoom-in-95` and four `slide-in-from-*-2` utilities from tailwindcss-animate, which is a dependency of no workspace, so none resolved and the panel appeared with no transition. It now enters on `motion-dropdown-in` with both opacity endpoints stated, plus a `@starting-style` from-value because the panel mounts on open and a transition has no implicit start frame. It stays opacity-only and enter-only on purpose, and both are now commented: placement is written as an inline `style.transform`, which outranks any class-declared transform, so scale and slide could never have moved this panel; and without a Presence adapter the content unmounts the instant it closes, so an exit utility would resolve and never run. The `motion-reduce:animate-none` guard is gone -- it guarded animations that never existed, and `motion-dropdown-in` carries its own reduced-motion block.
+
 ## 0.0.78
 
 ### Features
