@@ -44,9 +44,29 @@ describe('popover classes', () => {
 
   it('writes no raw duration, leaving the tier to the token layer', () => {
     for (const set of [classes.content, classes.close]) {
+      // Bare numeric (duration-150) and arbitrary literal (duration-[150ms])
+      // are both raw. A var() reference to a tier token is not -- it is the
+      // token layer, reached through the only syntax Tailwind offers, since
+      // `--duration-*` is not a theme namespace the way `--ease-*` is.
       expect(set).not.toMatch(/duration-\d/);
-      expect(set).not.toMatch(/duration-\[/);
+      expect(set).not.toMatch(/duration-\[\d/);
     }
+  });
+
+  it('reaches the duration tier through a token reference, not a bare utility', () => {
+    // The trap this asserts against: `duration-moderate` reads as the obvious
+    // tidy form and compiles to nothing, because Tailwind's duration-* utility
+    // takes bare numbers and there is no --duration-* namespace. Only the
+    // arbitrary-value form resolves.
+    //
+    // Matched per class token rather than by substring: the var() reference
+    // itself contains the text `-duration-moderate`, so a bare regex over the
+    // whole string reports the very thing it is meant to forbid.
+    const tokens = classes.close.split(/\s+/);
+    expect(tokens).toContain('duration-[var(--duration-moderate)]');
+    expect(tokens.filter((t) => /^duration-(micro|fast|moderate|normal|slow)$/.test(t))).toEqual(
+      [],
+    );
   });
 
   it('leaves reduced motion to whichever layer actually owns it', () => {
