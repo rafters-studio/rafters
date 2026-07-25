@@ -309,8 +309,6 @@
   --motion-keyframe-ping: 75%, 100% { transform: scale(1.7); opacity: 0; };
   --motion-keyframe-pulse: 0%, 100% { opacity: 1; } 50% { opacity: 0.48; };
   --motion-keyframe-bounce: 0%, 100% { transform: translateY(-33%); animation-timing-function: cubic-bezier(0.8, 0, 1, 1); } 50% { transform: translateY(0); animation-timing-function: cubic-bezier(0, 0, 0.2, 1); };
-  --motion-keyframe-accordion-down: from { height: 0; } to { height: var(--radix-accordion-content-height); };
-  --motion-keyframe-accordion-up: from { height: var(--radix-accordion-content-height); } to { height: 0; };
   --motion-keyframe-caret-blink: 0%, 70%, 100% { opacity: 1; } 20%, 50% { opacity: 0; };
   --motion-animation-fade-in: fade-in var(--motion-duration-fast) var(--motion-easing-enter);
   --motion-animation-fade-out: fade-out var(--motion-duration-fast) var(--motion-easing-exit);
@@ -328,22 +326,20 @@
   --motion-animation-ping: ping 1s var(--motion-easing-enter) infinite;
   --motion-animation-pulse: pulse 2s var(--motion-easing-standard) infinite;
   --motion-animation-bounce: bounce 1s var(--motion-easing-standard) infinite;
-  --motion-animation-accordion-down: accordion-down var(--motion-duration-normal) var(--motion-easing-enter);
-  --motion-animation-accordion-up: accordion-up var(--motion-duration-normal) var(--motion-easing-enter);
   --motion-animation-caret-blink: caret-blink 1.25s var(--motion-easing-enter) infinite;
   --motion-fade-in: 150ms cubic-bezier(0, 0, 0.2, 1);
   --motion-fade-out: 150ms cubic-bezier(0.4, 0, 1, 1);
-  --motion-slide-in: 350ms cubic-bezier(0, 0, 0.2, 1);
+  --motion-slide-in: 300ms cubic-bezier(0, 0, 0.2, 1);
   --motion-slide-out: 150ms cubic-bezier(0.4, 0, 1, 1);
-  --motion-scale-in: 350ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  --motion-scale-in: 300ms cubic-bezier(0.2, 0.8, 0.2, 1);
 
   --duration-instant: 0ms;
   --duration-micro: 100ms;
   --duration-fast: 150ms;
-  --duration-moderate: 250ms;
-  --duration-normal: 350ms;
-  --duration-slow: 500ms;
-  --ease-standard: cubic-bezier(0.25, 0.1, 0.25, 1);
+  --duration-moderate: 200ms;
+  --duration-normal: 300ms;
+  --duration-slow: 400ms;
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
   --ease-enter: cubic-bezier(0, 0, 0.2, 1);
   --ease-exit: cubic-bezier(0.4, 0, 1, 1);
   --ease-linear: linear;
@@ -401,8 +397,6 @@
   --animate-ping: ping 1s var(--motion-easing-enter) infinite;
   --animate-pulse: pulse 2s var(--motion-easing-standard) infinite;
   --animate-bounce: bounce 1s var(--motion-easing-standard) infinite;
-  --animate-accordion-down: accordion-down var(--motion-duration-normal) var(--motion-easing-enter);
-  --animate-accordion-up: accordion-up var(--motion-duration-normal) var(--motion-easing-enter);
   --animate-caret-blink: caret-blink 1.25s var(--motion-easing-enter) infinite;
 }
 
@@ -1519,14 +1513,6 @@
   0%, 100% { transform: translateY(-33%); animation-timing-function: cubic-bezier(0.8, 0, 1, 1); } 50% { transform: translateY(0); animation-timing-function: cubic-bezier(0, 0, 0.2, 1); }
 }
 
-@keyframes accordion-down {
-  from { height: 0; } to { height: var(--radix-accordion-content-height); }
-}
-
-@keyframes accordion-up {
-  from { height: var(--radix-accordion-content-height); } to { height: 0; }
-}
-
 @keyframes caret-blink {
   0%, 70%, 100% { opacity: 1; } 20%, 50% { opacity: 0; }
 }
@@ -1738,7 +1724,7 @@
 }
 @utility motion-sheet-in {
   transition-property: transform;
-  transition-duration: var(--duration-slow);
+  transition-duration: var(--duration-normal);
   transition-timing-function: var(--ease-spring-smooth);
   @media (prefers-reduced-motion: reduce) {
     transition-property: opacity;
@@ -1772,7 +1758,7 @@
 }
 @utility motion-page {
   transition-property: opacity, transform;
-  transition-duration: var(--duration-slow);
+  transition-duration: var(--duration-normal);
   transition-timing-function: var(--ease-spring-smooth);
   @media (prefers-reduced-motion: reduce) {
     transition-property: opacity;
