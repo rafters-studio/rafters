@@ -1,6 +1,6 @@
 {
   "namespace": "breakpoint",
-  "generatedAt": "2026-07-22T22:56:24.652Z",
+  "generatedAt": "2026-07-25T00:55:52.659Z",
   "tokens": [
     {
       "name": "breakpoint-sm",
@@ -27,7 +27,7 @@
       "containerQueryAware": false,
       "viewportAware": true,
       "description": "Viewport breakpoint at 640px. Targets: phone-landscape, small-tablet.",
-      "generatedAt": "2026-07-22T22:56:24.282Z"
+      "generatedAt": "2026-07-25T00:55:52.296Z"
     },
     {
       "name": "screen-sm",
@@ -42,7 +42,7 @@
       "containerQueryAware": false,
       "viewportAware": true,
       "description": "Media query: @media (min-width: 640px)",
-      "generatedAt": "2026-07-22T22:56:24.282Z"
+      "generatedAt": "2026-07-25T00:55:52.296Z"
     },
     {
       "name": "breakpoint-md",
@@ -69,7 +69,7 @@
       "containerQueryAware": false,
       "viewportAware": true,
       "description": "Viewport breakpoint at 768px. Targets: tablet-portrait, small-laptop.",
-      "generatedAt": "2026-07-22T22:56:24.282Z"
+      "generatedAt": "2026-07-25T00:55:52.296Z"
     },
     {
       "name": "screen-md",
@@ -84,7 +84,7 @@
       "containerQueryAware": false,
       "viewportAware": true,
       "description": "Media query: @media (min-width: 768px)",
-      "generatedAt": "2026-07-22T22:56:24.282Z"
+      "generatedAt": "2026-07-25T00:55:52.296Z"
     },
     {
       "name": "breakpoint-lg",
@@ -111,7 +111,7 @@
       "containerQueryAware": false,
       "viewportAware": true,
       "description": "Viewport breakpoint at 1024px. Targets: tablet-landscape, laptop, small-desktop.",
-      "generatedAt": "2026-07-22T22:56:24.282Z"
+      "generatedAt": "2026-07-25T00:55:52.296Z"
     },
     {
       "name": "screen-lg",
@@ -126,7 +126,7 @@
       "containerQueryAware": false,
       "viewportAware": true,
       "description": "Media query: @media (min-width: 1024px)",
-      "generatedAt": "2026-07-22T22:56:24.282Z"
+      "generatedAt": "2026-07-25T00:55:52.296Z"
     },
     {
       "name": "breakpoint-xl",
@@ -153,7 +153,7 @@
       "containerQueryAware": false,
       "viewportAware": true,
       "description": "Viewport breakpoint at 1280px. Targets: desktop, large-laptop.",
-      "generatedAt": "2026-07-22T22:56:24.282Z"
+      "generatedAt": "2026-07-25T00:55:52.296Z"
     },
     {
       "name": "screen-xl",
@@ -168,7 +168,7 @@
       "containerQueryAware": false,
       "viewportAware": true,
       "description": "Media query: @media (min-width: 1280px)",
-      "generatedAt": "2026-07-22T22:56:24.282Z"
+      "generatedAt": "2026-07-25T00:55:52.296Z"
     },
     {
       "name": "breakpoint-2xl",
@@ -195,7 +195,7 @@
       "containerQueryAware": false,
       "viewportAware": true,
       "description": "Viewport breakpoint at 1536px. Targets: large-desktop, external-monitor.",
-      "generatedAt": "2026-07-22T22:56:24.282Z"
+      "generatedAt": "2026-07-25T00:55:52.296Z"
     },
     {
       "name": "screen-2xl",
@@ -210,7 +210,7 @@
       "containerQueryAware": false,
       "viewportAware": true,
       "description": "Media query: @media (min-width: 1536px)",
-      "generatedAt": "2026-07-22T22:56:24.282Z"
+      "generatedAt": "2026-07-25T00:55:52.296Z"
     },
     {
       "name": "container-3xs",
@@ -237,7 +237,7 @@
       "containerQueryAware": true,
       "viewportAware": false,
       "description": "Container query size @3xs = 16rem (256px). Smallest container (256px) - icons, badges.",
-      "generatedAt": "2026-07-22T22:56:24.282Z"
+      "generatedAt": "2026-07-25T00:55:52.296Z"
     },
     {
       "name": "container-2xs",
@@ -264,7 +264,7 @@
       "containerQueryAware": true,
       "viewportAware": false,
       "description": "Container query size @2xs = 18rem (288px). Extra extra small (288px) - compact cards.",
-      "generatedAt": "2026-07-22T22:56:24.282Z"
+      "generatedAt": "2026-07-25T00:55:52.296Z"
     },
     {
       "name": "container-xs",
@@ -291,7 +291,7 @@
       "containerQueryAware": true,
       "viewportAware": false,
       "description": "Container query size @xs = 20rem (320px). Extra small (320px) - mobile-width cards.",
-      "generatedAt": "2026-07-22T22:56:24.282Z"
+      "generatedAt": "2026-07-25T00:55:52.296Z"
     },
     {
       "name": "container-sm",
@@ -318,7 +318,7 @@
       "containerQueryAware": true,
       "viewportAware": false,
       "description": "Container query size @sm = 24rem (384px). Small (384px) - standard cards.",
-      "generatedAt": "2026-07-22T22:56:24.282Z"
+      "generatedAt": "2026-07-25T00:55:52.296Z"
     },
     {
       "name": "container-md",
@@ -345,7 +345,7 @@
       "containerQueryAware": true,
       "viewportAware": false,
       "description": "Container query size @md = 28rem (448px). Medium (448px) - wide cards, panels.",
-      "generatedAt": "2026-07-22T22:56:24.282Z"
+      "generatedAt": "2026-07-25T00:55:52.296Z"
     },
     {
       "name": "container-lg",
@@ -372,7 +372,7 @@
       "containerQueryAware": true,
       "viewportAware": false,
       "description": "Container query size @lg = 32rem (512px). Large (512px) - sidebars, dialog content.",
-      "generatedAt": "2026-07-22T22:56:24.282Z"
+      "generatedAt": "2026-07-25T00:55:52.296Z"
     },
     {
       "name": "container-xl",
@@ -399,7 +399,7 @@
       "containerQueryAware": true,
       "viewportAware": false,
       "description": "Container query size @xl = 36rem (576px). Extra large (576px) - main content panels.",
-      "generatedAt": "2026-07-22T22:56:24.282Z"
+      "generatedAt": "2026-07-25T00:55:52.296Z"
     },
     {
       "name": "container-2xl",
@@ -426,7 +426,7 @@
       "containerQueryAware": true,
       "viewportAware": false,
       "description": "Container query size @2xl = 42rem (672px). 2XL (672px) - wide content areas.",
-      "generatedAt": "2026-07-22T22:56:24.282Z"
+      "generatedAt": "2026-07-25T00:55:52.296Z"
     },
     {
       "name": "container-3xl",
@@ -453,7 +453,7 @@
       "containerQueryAware": true,
       "viewportAware": false,
       "description": "Container query size @3xl = 48rem (768px). 3XL (768px) - tablet-width containers.",
-      "generatedAt": "2026-07-22T22:56:24.282Z"
+      "generatedAt": "2026-07-25T00:55:52.296Z"
     },
     {
       "name": "container-4xl",
@@ -480,7 +480,7 @@
       "containerQueryAware": true,
       "viewportAware": false,
       "description": "Container query size @4xl = 56rem (896px). 4XL (896px) - wide panels.",
-      "generatedAt": "2026-07-22T22:56:24.282Z"
+      "generatedAt": "2026-07-25T00:55:52.296Z"
     },
     {
       "name": "container-5xl",
@@ -507,7 +507,7 @@
       "containerQueryAware": true,
       "viewportAware": false,
       "description": "Container query size @5xl = 64rem (1024px). 5XL (1024px) - desktop content.",
-      "generatedAt": "2026-07-22T22:56:24.282Z"
+      "generatedAt": "2026-07-25T00:55:52.296Z"
     },
     {
       "name": "container-6xl",
@@ -534,7 +534,7 @@
       "containerQueryAware": true,
       "viewportAware": false,
       "description": "Container query size @6xl = 72rem (1152px). 6XL (1152px) - wide desktop content.",
-      "generatedAt": "2026-07-22T22:56:24.282Z"
+      "generatedAt": "2026-07-25T00:55:52.296Z"
     },
     {
       "name": "container-7xl",
@@ -561,7 +561,7 @@
       "containerQueryAware": true,
       "viewportAware": false,
       "description": "Container query size @7xl = 80rem (1280px). 7XL (1280px) - maximum content width.",
-      "generatedAt": "2026-07-22T22:56:24.282Z"
+      "generatedAt": "2026-07-25T00:55:52.296Z"
     },
     {
       "name": "breakpoint-sm-max",
@@ -576,7 +576,7 @@
       "containerQueryAware": false,
       "viewportAware": true,
       "description": "Max-width 639px (just before sm breakpoint).",
-      "generatedAt": "2026-07-22T22:56:24.282Z"
+      "generatedAt": "2026-07-25T00:55:52.296Z"
     },
     {
       "name": "breakpoint-md-max",
@@ -591,7 +591,7 @@
       "containerQueryAware": false,
       "viewportAware": true,
       "description": "Max-width 767px (just before md breakpoint).",
-      "generatedAt": "2026-07-22T22:56:24.282Z"
+      "generatedAt": "2026-07-25T00:55:52.296Z"
     },
     {
       "name": "breakpoint-lg-max",
@@ -606,7 +606,7 @@
       "containerQueryAware": false,
       "viewportAware": true,
       "description": "Max-width 1023px (just before lg breakpoint).",
-      "generatedAt": "2026-07-22T22:56:24.282Z"
+      "generatedAt": "2026-07-25T00:55:52.296Z"
     },
     {
       "name": "breakpoint-xl-max",
@@ -621,7 +621,7 @@
       "containerQueryAware": false,
       "viewportAware": true,
       "description": "Max-width 1279px (just before xl breakpoint).",
-      "generatedAt": "2026-07-22T22:56:24.282Z"
+      "generatedAt": "2026-07-25T00:55:52.296Z"
     },
     {
       "name": "breakpoint-2xl-max",
@@ -636,7 +636,7 @@
       "containerQueryAware": false,
       "viewportAware": true,
       "description": "Max-width 1535px (just before 2xl breakpoint).",
-      "generatedAt": "2026-07-22T22:56:24.282Z"
+      "generatedAt": "2026-07-25T00:55:52.296Z"
     },
     {
       "name": "breakpoint-motion-reduce",
@@ -663,7 +663,7 @@
       "reducedMotionAware": true,
       "animationSafe": true,
       "description": "Media query for users preferring reduced motion.",
-      "generatedAt": "2026-07-22T22:56:24.282Z"
+      "generatedAt": "2026-07-25T00:55:52.296Z"
     },
     {
       "name": "breakpoint-dark",
@@ -678,7 +678,7 @@
       "userOverride": null,
       "containerQueryAware": false,
       "description": "Media query for users preferring dark color scheme.",
-      "generatedAt": "2026-07-22T22:56:24.282Z"
+      "generatedAt": "2026-07-25T00:55:52.296Z"
     },
     {
       "name": "breakpoint-high-contrast",
@@ -694,7 +694,7 @@
       "userOverride": null,
       "containerQueryAware": false,
       "description": "Media query for users preferring increased contrast.",
-      "generatedAt": "2026-07-22T22:56:24.282Z"
+      "generatedAt": "2026-07-25T00:55:52.296Z"
     },
     {
       "name": "breakpoint-forced-colors",
@@ -721,7 +721,7 @@
       "userOverride": null,
       "containerQueryAware": false,
       "description": "Media query for Windows High Contrast Mode.",
-      "generatedAt": "2026-07-22T22:56:24.282Z"
+      "generatedAt": "2026-07-25T00:55:52.296Z"
     },
     {
       "name": "breakpoint-scale",
@@ -732,7 +732,7 @@
       "userOverride": null,
       "containerQueryAware": true,
       "description": "Complete breakpoint scale for viewport (px) and container queries (rem).",
-      "generatedAt": "2026-07-22T22:56:24.282Z"
+      "generatedAt": "2026-07-25T00:55:52.296Z"
     }
   ]
 }

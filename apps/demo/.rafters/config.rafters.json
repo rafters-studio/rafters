@@ -10,7 +10,7 @@
   "exports": {
     "tailwind": true,
     "typescript": false,
-    "dtcg": true,
+    "dtcg": false,
     "compiled": false,
     "documentation": true
   },
