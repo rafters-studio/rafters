@@ -1,5 +1,11 @@
 # rafters
 
+## Unreleased
+
+### Features
+
+- feat(design-tokens): duration tiers emit as real utilities (#1954). `duration-moderate`, `duration-normal` and the rest now resolve, each emitting `transition-duration: var(--duration-<tier>)`. They did not before, and the reason is a trap worth stating: `--ease-*` IS a Tailwind v4 theme namespace, so `ease-standard` generates on its own, while `--duration-*` is not one -- Tailwind's `duration-*` reads bare numbers. So `duration-moderate` looked exactly as correct as `ease-standard` and compiled to nothing. Reaching a tier previously meant `duration-[var(--duration-moderate)]`. This is the same fix, for the same reason, as the `z-depth-*` utilities. The numeric utilities are unaffected: `duration-150` still compiles.
+
 ## 0.0.78
 
 ### Features
