@@ -6,6 +6,10 @@
 
 - feat(design-tokens): duration tiers emit as real utilities (#1954). `duration-moderate`, `duration-normal` and the rest now resolve, each emitting `transition-duration: var(--duration-<tier>)`. They did not before, and the reason is a trap worth stating: `--ease-*` IS a Tailwind v4 theme namespace, so `ease-standard` generates on its own, while `--duration-*` is not one -- Tailwind's `duration-*` reads bare numbers. So `duration-moderate` looked exactly as correct as `ease-standard` and compiled to nothing. Reaching a tier previously meant `duration-[var(--duration-moderate)]`. This is the same fix, for the same reason, as the `z-depth-*` utilities. The numeric utilities are unaffected: `duration-150` still compiles.
 
+### Bug Fixes
+
+- fix(ui): select now actually animates (#1956). Its listbox declared six tailwindcss-animate utilities -- `animate-in`, `animate-out`, `fade-in-0`/`fade-out-0`, `zoom-in-95`/`zoom-out-95` -- and that package is a dependency of no workspace, so none resolved and the listbox opened and closed with no transition. It now enters on `motion-dropdown-in` and exits on `motion-dropdown-out`, with both opacity and scale endpoints stated, because the semantic utilities are transitions rather than animations and a transition has no implicit start frame. The zoom the dead classes intended is restored rather than dropped: nothing writes an inline `style.transform` to this element, so transform is free here. The trigger's `transition-shadow duration-100` becomes `motion-focus` and the chevron's `transition-transform duration-200` becomes `motion-toggle`, so no raw millisecond value remains. Reduced motion is now decided per element by the utility applied to it -- the trigger keeps its guard because `motion-focus` has no `prefers-reduced-motion` block, the chevron drops it because `motion-toggle` does.
+
 ## 0.0.78
 
 ### Features
