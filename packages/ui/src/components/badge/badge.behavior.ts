@@ -9,35 +9,21 @@ import type { BehaviorSpec } from '../../lib/contract';
  * read in flow by any assistive technology that reaches it.
  */
 
-export type BadgeVariant =
-  | 'default'
-  | 'primary'
-  | 'secondary'
-  | 'destructive'
-  | 'success'
-  | 'warning'
-  | 'info'
-  | 'muted'
-  | 'accent'
-  | 'outline'
-  | 'ghost'
-  | 'link';
-
-export type BadgeSize = 'sm' | 'default' | 'lg';
-
-export interface BadgeConfig {
-  variant?: BadgeVariant | undefined;
-  size?: BadgeSize | undefined;
-}
-
 /**
- * The variant and size vocabularies, enumerated once so the DOM-native
- * performances can narrow a `string | null` attribute without re-listing the
- * union (the same shape Avatar uses). Attribute narrowing is a parse, not a
- * decision: an unrecognised value narrows to `undefined` and `badgeClasses`
- * applies the single `default` fallback -- the performances never name it.
+ * The vocabularies are the arrays; the unions are DERIVED from them. The
+ * DOM-native performances take attributes as `string | null` and must narrow
+ * before they can call `badgeClasses`, so the vocabulary needs a runtime form.
+ * Deriving the type from the array rather than declaring both keeps them
+ * structurally impossible to desync -- the old tree kept a parallel list in its
+ * element and quietly lost `link` from it. `badgeClasses` still keys a
+ * `Record<BadgeVariant, string>`, so a new entry here fails to compile until it
+ * has classes.
+ *
+ * Narrowing is a parse, not a decision: an unrecognised value narrows to
+ * `undefined` and `badgeClasses` applies the single `default` fallback, so no
+ * performance ever names the default itself.
  */
-export const BADGE_VARIANTS: ReadonlyArray<BadgeVariant> = [
+export const BADGE_VARIANTS = [
   'default',
   'primary',
   'secondary',
@@ -50,9 +36,12 @@ export const BADGE_VARIANTS: ReadonlyArray<BadgeVariant> = [
   'outline',
   'ghost',
   'link',
-];
+] as const;
 
-export const BADGE_SIZES: ReadonlyArray<BadgeSize> = ['sm', 'default', 'lg'];
+export const BADGE_SIZES = ['sm', 'default', 'lg'] as const;
+
+export type BadgeVariant = (typeof BADGE_VARIANTS)[number];
+export type BadgeSize = (typeof BADGE_SIZES)[number];
 
 export function isBadgeVariant(value: string | null | undefined): value is BadgeVariant {
   return value != null && (BADGE_VARIANTS as ReadonlyArray<string>).includes(value);
@@ -60,6 +49,11 @@ export function isBadgeVariant(value: string | null | undefined): value is Badge
 
 export function isBadgeSize(value: string | null | undefined): value is BadgeSize {
   return value != null && (BADGE_SIZES as ReadonlyArray<string>).includes(value);
+}
+
+export interface BadgeConfig {
+  variant?: BadgeVariant | undefined;
+  size?: BadgeSize | undefined;
 }
 
 export type BadgeState = Record<never, never>;
