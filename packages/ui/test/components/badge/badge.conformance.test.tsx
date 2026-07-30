@@ -33,6 +33,12 @@ describe('badge conformance [react]', () => {
     assertContractFulfillment(badge, container, {}, { variant: 'info', size: 'default' }, ['root']);
   });
 
+  it('carries the shadcn data-slot for drop-in parity', () => {
+    const { container } = render(<Badge>Slotted</Badge>);
+    const root = container.querySelector('[data-part="root"]') as HTMLElement;
+    expect(root.getAttribute('data-slot')).toBe('badge');
+  });
+
   it('defaults to the primary variant and default size', () => {
     const { container } = render(<Badge>Default</Badge>);
     const root = container.querySelector('[data-part="root"]') as HTMLElement;

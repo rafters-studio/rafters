@@ -62,6 +62,12 @@ describe('badge conformance [astro]', () => {
     expect(root.className).toContain('text-label-medium');
   });
 
+  it('carries the shadcn data-slot for drop-in parity', async () => {
+    const body = await render();
+    const root = partElement(body, 'root') as HTMLElement;
+    expect(root.getAttribute('data-slot')).toBe('badge');
+  });
+
   it('consumer class merges via classy', async () => {
     const body = await render({ class: 'ml-2' }, { default: 'Tagged' });
     const root = partElement(body, 'root') as HTMLElement;

@@ -33,7 +33,13 @@ export const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
     const classes = badgeClasses({ variant, size }, {});
 
     return (
-      <span ref={ref} data-part="root" className={classy(classes.root, className)} {...props} />
+      <span
+        ref={ref}
+        data-part="root"
+        data-slot="badge"
+        className={classy(classes.root, className)}
+        {...props}
+      />
     );
   },
 );

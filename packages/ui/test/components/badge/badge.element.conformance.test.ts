@@ -55,6 +55,10 @@ describe('badge conformance [wc]', () => {
     expect(root.getAttribute('role')).toBeNull();
   });
 
+  it('carries the shadcn data-slot for drop-in parity', () => {
+    expect(rootPart(mount()).getAttribute('data-slot')).toBe('badge');
+  });
+
   it('defaults to the primary variant and default size (like React)', () => {
     const root = rootPart(mount());
     expect(root.className).toContain('bg-primary');

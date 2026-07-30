@@ -17,6 +17,12 @@
  * the label text stays in the light tree where assistive technology reads it
  * in flow -- the same accessible payload the React and Astro performances ship.
  *
+ * The root carries BOTH `data-part` and `data-slot`, and they are not
+ * redundant: `data-part` is the internal contract the behavior and the
+ * conformance harness address, while `data-slot="badge"` is the consumer-facing
+ * styling and query surface shadcn's components emit. All three performances
+ * carry it.
+ *
  * Attributes:
  *   variant  default | primary | secondary | destructive | success | warning
  *            | info | muted | accent | outline | ghost | link
@@ -43,6 +49,7 @@ export class RaftersBadge extends RaftersElement {
 
     const root = document.createElement('span');
     root.setAttribute('data-part', 'root');
+    root.setAttribute('data-slot', 'badge');
     root.className = badgeClasses(
       {
         variant: isBadgeVariant(variant) ? variant : undefined,
