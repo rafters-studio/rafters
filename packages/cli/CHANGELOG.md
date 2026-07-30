@@ -1,5 +1,11 @@
 # rafters
 
+## Unreleased
+
+### Features
+
+- feat(design-tokens): duration and easing tokens resolve through the `--rafters-*` layer like the rest of the system (#1974). `--duration-moderate` held the literal `200ms`; it now holds `var(--rafters-motion-duration-moderate)`, with the value on the `--rafters-*` declaration. This is the same split shadow already uses for its decomposed parts and radius uses for its corners. Motion was the last composite family whose Tailwind-facing token carried a value rather than a reference, which is why changing a duration tier meant regenerating the sheet while changing `primary` is a var re-point -- colour emits `--color-primary: var(--primary)`. Computed output is unchanged: every consumer resolves to the same duration and curve, and the semantic `motion-*` utilities needed no edit because they were already written as `var(--duration-<tier>)`.
+
 ## 0.0.78
 
 ### Features
