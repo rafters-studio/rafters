@@ -9,28 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Astro and Web Component performances for `alert` (#1805, #1806).**
-  `alert.astro` and `alert.element.ts` join the React performance over the
-  existing `alert.behavior.ts` + `alert.classes.ts`, leaving alert with all
-  three targets. Both are thin: they read the root decoration from
-  `alertClasses` and paint `role="alert"` from `alert.aria(...)` rather than
-  restating it, so the contract stays in the score. Composition follows the
-  card/empty shape for a multi-region static -- fixed `title`/`description`/
-  `action` slot regions plus a default slot, with only the root as a declared
-  part -- which replaces the oracle's three-file Astro split
-  (`alert.astro` + `alert-title.astro` + `alert-description.astro`) and its
-  WC that had no sub-component surface at all. The WC keeps the oracle's
-  `variant` attribute and its silent fall-back to `default` on an unknown
-  value. Astro and the WC render the title region as a `div` rather than
-  React's `h5`: a bind-free static cannot omit an unfilled region, and an
-  always-present empty heading is an axe violation -- the same disposition
-  card and empty record. `[&>svg]` icon positioning does not reach a slotted
-  SVG inside the shadow root, so `<rafters-alert>` does not position the
-  consumer's icon; see `docs/spec/components/alert.md` for why that is
-  dropped rather than fixed. React's `AlertTitle`/`AlertDescription`/
-  `AlertAction` gain the `data-slot` markers card and empty already carry, so
-  the three performances name the same regions.
-
 - **`input-group` ported to the behavior layer (#1778).** The oracle's
   shadow-DOM element pair (`<rafters-input-group>` +
   `<rafters-input-group-addon>`) collapses into one light-DOM enhancer over a
