@@ -60,7 +60,12 @@ export type AlertTitleProps = React.HTMLAttributes<HTMLHeadingElement>;
  *  tree (matrix: typography, pending); the tag matches the shadcn surface. */
 export const AlertTitle = React.forwardRef<HTMLHeadingElement, AlertTitleProps>(
   ({ className, ...props }, ref) => (
-    <h5 ref={ref} className={classy(alertTitleClasses, className)} {...props} />
+    <h5
+      ref={ref}
+      data-slot="alert-title"
+      className={classy(alertTitleClasses, className)}
+      {...props}
+    />
   ),
 );
 
@@ -70,7 +75,12 @@ export type AlertDescriptionProps = React.HTMLAttributes<HTMLDivElement>;
 
 export const AlertDescription = React.forwardRef<HTMLDivElement, AlertDescriptionProps>(
   ({ className, ...props }, ref) => (
-    <div ref={ref} className={classy(alertDescriptionClasses, className)} {...props} />
+    <div
+      ref={ref}
+      data-slot="alert-description"
+      className={classy(alertDescriptionClasses, className)}
+      {...props}
+    />
   ),
 );
 
@@ -82,10 +92,17 @@ export type AlertActionProps = React.HTMLAttributes<HTMLDivElement>;
  *  Plain composition, like Title and Description: the behavior declares
  *  exactly one part (root), so this carries no data-part marker -- a
  *  binding rendering an undeclared part is structure the score never
- *  authorized (boundary 5). */
+ *  authorized (boundary 5). The `data-slot` marker is not a part -- it is the
+ *  name the Astro and Web Component performances give the same region, so the
+ *  three surfaces are assertable against one another. */
 export const AlertAction = React.forwardRef<HTMLDivElement, AlertActionProps>(
   ({ className, ...props }, ref) => (
-    <div ref={ref} className={classy(alertActionClasses, className)} {...props} />
+    <div
+      ref={ref}
+      data-slot="alert-action"
+      className={classy(alertActionClasses, className)}
+      {...props}
+    />
   ),
 );
 

@@ -7,9 +7,11 @@ Files (`src/components/alert/`):
 
 ```
 alert.classes.ts    alert.behavior.ts    alert.tsx
+alert.astro         alert.element.ts
 ```
 
-Tests mirror into `test/components/alert/`. WC and Astro not yet written.
+Tests mirror into `test/components/alert/`. All three performances -- React,
+Astro, Web Component -- are written and conformance-green.
 
 ## Purpose
 
@@ -75,8 +77,10 @@ nothing to dispatch, gate, or execute.
 | `bg-*-subtle` paired with the SOLID `text-*-foreground` | defect-do-not-port -- the solid foreground is contrast-tuned against the solid fill, not the subtle one. Repointed to each variant's own `*-subtle-foreground` token |
 | `muted` variant (flat `bg-muted`/`text-muted-foreground`/`border-border`) | contract -- `muted` has no subtle tier in the registry, so it keeps its existing flat pairing rather than inventing one |
 | icon slot via `[&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4`, description shift via `[&>svg+div]:-translate-y-0.5` | contract -- decorative icon positioning is a selector against a child SVG the consumer supplies, not an authored glyph (boundary 1: no invented icon, only layout for one the consumer brings) |
-| WC (`<rafters-alert>`, `variant` attribute only, title/description/action out of scope) | not ported this wave -- behaviorLayer WC target is `missing`, tracked in the matrix |
-| Astro target | not ported this wave -- behaviorLayer Astro target is `missing`, tracked in the matrix |
+| WC (`<rafters-alert>`, `variant` attribute only, title/description/action out of scope) | contract -- ported (#1806). The `variant` attribute and its silent fall-back to `default` on an unknown value carry over verbatim; the oracle's "subcomponents out of scope" limit does NOT, because the new tree gives every multi-region static named slot regions (card, empty) |
+| Astro target | contract -- ported (#1805). The oracle's three-file split (`alert.astro` + `alert-title.astro` + `alert-description.astro`) collapses into one file with named slots, the shape card and empty already settled |
+| Oracle's `classy(base, variant, className)` composition in the Astro/WC targets | framework-affordance -- replaced by the shared `alertClasses` projection, so all three performances read one function |
+| Oracle's hardcoded `role="alert"` attribute in the Astro/WC targets | framework-affordance -- replaced by painting `alert.aria({}, config, { root: '' })`, so the contract is stated once, in the score |
 
 ## Deltas from the oracle
 
@@ -86,6 +90,35 @@ nothing to dispatch, gate, or execute.
    component (H1-H6) does not exist yet (matrix: `typography`, pending);
    repointing at a typography role component is a follow-up, not an agent
    call to make now.
+3. The React sub-components carry `data-slot="alert-title"` /
+   `"alert-description"` / `"alert-action"` markers, matching card and empty.
+   They are not parts -- they are the shared name the Astro and Web Component
+   performances give the same region, so the three surfaces are assertable
+   against one another.
+
+## Performance notes
+
+Alert composes through three named-slot regions (title, description, action)
+plus a default slot, the shape card and empty settled for a multi-region
+static. Two consequences a reader should know about:
+
+1. **Astro/WC render the title region as a `div`, not React's `h5`.** A
+   bind-free static cannot omit an unfilled region without a `slotchange`
+   listener, and an always-present empty heading is an axe `empty-heading`
+   violation. Card and empty record the same disposition. A consumer who wants
+   a real heading slots one in.
+2. **The `[&>svg]` icon positioning does not reach a slotted SVG in the Web
+   Component.** In the shadow DOM the root's child is the `<slot>` element, not
+   the assigned SVG, so the absolute-positioning selectors never match. React
+   and Astro position the icon; `<rafters-alert>` does not. Fixing it would
+   mean a fourth region and a new class export in `alert.classes.ts`, and the
+   disposition table above holds the icon as consumer-supplied layout rather
+   than an authored part -- so it is dropped, exactly as empty dropped its
+   oracle descendant CSS. Astro also loses the
+   `[&>svg+div]:-translate-y-0.5` optical nudge, because the default slot
+   trails the regions and so no div follows the SVG; the absolute positioning
+   and the `[&:has(svg)]:pl-11` gutter, which are what actually place the icon,
+   both hold.
 
 ## shadcn drop-in parity
 
