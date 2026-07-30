@@ -1,0 +1,41 @@
+---
+/**
+ * Astro performance of the Badge score.
+ *
+ * Badge is a PURE STATIC: the score holds no state, claims no keys, runs no
+ * effects, and projects an EMPTY aria map -- the label text is the entire
+ * accessible payload. So this file ships NO `<script>` and imports NO
+ * `bindBadge` (there is none); there is nothing to hydrate. It is
+ * server-rendered markup with the shared class string and the slotted label.
+ *
+ * The root classes come from the SAME `badgeClasses` the React and Web
+ * Component performances read -- one score, three performances, zero drift.
+ * The `default` variant/size fallback lives in `badgeClasses`, so `variant`
+ * and `size` pass through untouched: this file makes no decision.
+ *
+ * This IS the design-system primitive, so the root element is the raw host tag
+ * carrying the token classes -- the same shape `badge.tsx` and `avatar.astro`
+ * ship. Consumers reach for this component instead of authoring the chip
+ * markup themselves.
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import type { BadgeSize, BadgeVariant } from './badge.behavior';
+import { badgeClasses } from './badge.classes';
+
+interface Props extends HTMLAttributes<'span'> {
+  /** Visual variant. The oracle's full vocabulary (contract, boundary 9). */
+  variant?: BadgeVariant;
+  size?: BadgeSize;
+}
+
+const { variant, size, class: className, ...attrs } = Astro.props;
+
+const classes = badgeClasses({ variant, size }, {});
+const rootClass = classy(classes.root, className);
+---
+
+<span
+  data-part="root"
+  class={rootClass}
+  {...attrs}><slot /></span>

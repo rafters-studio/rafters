@@ -30,6 +30,38 @@ export interface BadgeConfig {
   size?: BadgeSize | undefined;
 }
 
+/**
+ * The variant and size vocabularies, enumerated once so the DOM-native
+ * performances can narrow a `string | null` attribute without re-listing the
+ * union (the same shape Avatar uses). Attribute narrowing is a parse, not a
+ * decision: an unrecognised value narrows to `undefined` and `badgeClasses`
+ * applies the single `default` fallback -- the performances never name it.
+ */
+export const BADGE_VARIANTS: ReadonlyArray<BadgeVariant> = [
+  'default',
+  'primary',
+  'secondary',
+  'destructive',
+  'success',
+  'warning',
+  'info',
+  'muted',
+  'accent',
+  'outline',
+  'ghost',
+  'link',
+];
+
+export const BADGE_SIZES: ReadonlyArray<BadgeSize> = ['sm', 'default', 'lg'];
+
+export function isBadgeVariant(value: string | null | undefined): value is BadgeVariant {
+  return value != null && (BADGE_VARIANTS as ReadonlyArray<string>).includes(value);
+}
+
+export function isBadgeSize(value: string | null | undefined): value is BadgeSize {
+  return value != null && (BADGE_SIZES as ReadonlyArray<string>).includes(value);
+}
+
 export type BadgeState = Record<never, never>;
 export type BadgeActions = Record<never, never>;
 export type BadgePart = 'root';
