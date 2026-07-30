@@ -1,0 +1,68 @@
+---
+/**
+ * Astro performance of the Alert score.
+ *
+ * Alert is a STATIC score: `role="alert"` is constant and the severity variant
+ * is a pure function of config. So this file ships NO `<script>` and imports NO
+ * `bindAlert` (there is none) -- it is server-rendered markup with the shared
+ * class strings, the score's resolved aria projection painted directly, and
+ * named slots. Nothing to hydrate.
+ *
+ * The root classes and the role come from the SAME `alertClasses` /
+ * `alert.aria` projections the React and Web Component performances read --
+ * one score, three performances, zero drift. The role is painted from the
+ * projection rather than hardcoded, which is what makes this a wrapper over
+ * the score instead of a second statement of the contract.
+ *
+ * Structure follows empty/card: one `data-part="root"` region (the banner --
+ * the only declared part, boundary 5) nesting fixed `data-slot` wrappers for
+ * title, description, and action, plus a trailing default slot. The default
+ * slot is where the consumer's decorative SVG goes: the icon is positioned by
+ * `[&>svg]` selectors on the root (a selector against a child the consumer
+ * supplies, not an authored glyph -- see the alert spec dispositions), so it
+ * needs to be a direct child of the root, which is exactly what an unwrapped
+ * default slot gives it in server-rendered markup. The one part of that
+ * selector set the fixed-region layout does not reach is the
+ * `[&>svg+div]:-translate-y-0.5` nudge: the default slot trails the regions
+ * (card/empty ordering), so no div follows the SVG. That is a half-pixel
+ * optical alignment, not a contract -- absolute positioning and the `:has(svg)`
+ * padding, which are what actually place the icon, both hold.
+ *
+ * Title renders a `div`, not the `h5` the React `AlertTitle` renders: a
+ * bind-free static cannot omit an unfilled region without a slotchange
+ * listener, and an always-present empty `h5` is an axe `empty-heading`
+ * violation. Same disposition card and empty already record. A consumer who
+ * wants a real heading slots one in.
+ */
+import { alert, type AlertConfig, type AlertVariant } from './alert.behavior';
+import {
+  alertActionClasses,
+  alertClasses,
+  type AlertClassSet,
+  alertDescriptionClasses,
+  alertTitleClasses,
+} from './alert.classes';
+
+interface Props {
+  variant?: AlertVariant;
+  class?: string;
+}
+
+const { variant, class: className, ...attrs } = Astro.props;
+
+const config: AlertConfig = { variant };
+const classes: AlertClassSet = alertClasses(config, {});
+const rootClass = [classes.root, className].filter(Boolean).join(' ');
+
+const projection = alert.aria({}, config, { root: '' }).root ?? {};
+const role = projection.role as string | undefined;
+---
+
+<div data-part="root" role={role} class={rootClass} {...attrs}>
+  <div data-slot="alert-title" class={alertTitleClasses}><slot name="title" /></div>
+  <div data-slot="alert-description" class={alertDescriptionClasses}>
+    <slot name="description" />
+  </div>
+  <div data-slot="alert-action" class={alertActionClasses}><slot name="action" /></div>
+  <slot />
+</div>

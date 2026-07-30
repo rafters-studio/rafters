@@ -46,6 +46,27 @@ describe('alert conformance [react]', () => {
     await assertAxeClean(body());
   });
 
+  it('sub-components carry data-slot markers matching Astro/WC', () => {
+    // The three performances name the same regions: React puts the marker on
+    // the sub-component, Astro and the WC put it on the wrapper around the
+    // named slot. Asserting it here is what makes the parity claim in the
+    // astro/element suites a claim about something.
+    const { container } = render(
+      <Alert>
+        <AlertTitle>Saved</AlertTitle>
+        <AlertDescription>Your changes were saved.</AlertDescription>
+        <AlertAction>
+          <button type="button">Undo</button>
+        </AlertAction>
+      </Alert>,
+    );
+    expect(container.querySelector('[data-slot="alert-title"]')?.tagName).toBe('H5');
+    expect(container.querySelector('[data-slot="alert-description"]')).not.toBeNull();
+    expect(container.querySelector('[data-slot="alert-action"]')).not.toBeNull();
+    // A marker is not a part: the score declares exactly one.
+    expect(container.querySelectorAll('[data-part]')).toHaveLength(1);
+  });
+
   it('consumer className merges via classy', () => {
     render(<Alert className="mt-4">x</Alert>);
     const element = body().querySelector('[data-part="root"]') as HTMLElement;
