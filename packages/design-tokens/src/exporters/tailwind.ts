@@ -386,21 +386,25 @@ function generateThemeBlock(groups: GroupedTokens): string {
     lines.push('');
   }
 
-  // Motion duration tokens -- Tailwind reads --duration-* (no transition-duration utility, but available as var())
+  // Motion duration/easing tokens -- Tailwind reads --duration-* and --ease-*.
+  // The literal value lands on --rafters-<token name>; the Tailwind-facing token
+  // holds a var() reference to it. Same split shadow uses for its decomposed
+  // parts above (:353) and radius uses at :336 -- the --rafters-* layer is where
+  // a unique value lives, so re-pointing it moves every consumer without a
+  // regenerate. Emitting the literal here instead is what made a duration tier
+  // the one composite family Studio could not change the way it changes primary.
   if (groups.motion.length > 0) {
     for (const token of groups.motion) {
-      if (token.name.startsWith('motion-duration-') && token.name !== 'motion-duration-base') {
-        const key = token.name.replace('motion-duration-', '');
-        const value = tokenValueToCSS(token);
-        if (value === null) continue;
-        lines.push(`  --duration-${key}: ${value};`);
-      }
-      if (token.name.startsWith('motion-easing-')) {
-        const key = token.name.replace('motion-easing-', '');
-        const value = tokenValueToCSS(token);
-        if (value === null) continue;
-        lines.push(`  --ease-${key}: ${value};`);
-      }
+      const isDuration =
+        token.name.startsWith('motion-duration-') && token.name !== 'motion-duration-base';
+      const isEasing = token.name.startsWith('motion-easing-');
+      if (!isDuration && !isEasing) continue;
+      const value = tokenValueToCSS(token);
+      if (value === null) continue;
+      const namespace = isDuration ? 'duration' : 'ease';
+      const key = token.name.replace(isDuration ? 'motion-duration-' : 'motion-easing-', '');
+      lines.push(`  --rafters-${token.name}: ${value};`);
+      lines.push(`  --${namespace}-${key}: var(--rafters-${token.name});`);
     }
     lines.push('');
   }
