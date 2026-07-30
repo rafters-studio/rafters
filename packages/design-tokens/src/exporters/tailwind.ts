@@ -386,25 +386,21 @@ function generateThemeBlock(groups: GroupedTokens): string {
     lines.push('');
   }
 
-  // Motion duration/easing tokens -- Tailwind reads --duration-* and --ease-*.
-  // The literal value lands on --rafters-<token name>; the Tailwind-facing token
-  // holds a var() reference to it. Same split shadow uses for its decomposed
-  // parts above (:353) and radius uses at :336 -- the --rafters-* layer is where
-  // a unique value lives, so re-pointing it moves every consumer without a
-  // regenerate. Emitting the literal here instead is what made a duration tier
-  // the one composite family Studio could not change the way it changes primary.
+  // Motion duration tokens -- Tailwind reads --duration-* (no transition-duration utility, but available as var())
   if (groups.motion.length > 0) {
     for (const token of groups.motion) {
-      const isDuration =
-        token.name.startsWith('motion-duration-') && token.name !== 'motion-duration-base';
-      const isEasing = token.name.startsWith('motion-easing-');
-      if (!isDuration && !isEasing) continue;
-      const value = tokenValueToCSS(token);
-      if (value === null) continue;
-      const namespace = isDuration ? 'duration' : 'ease';
-      const key = token.name.replace(isDuration ? 'motion-duration-' : 'motion-easing-', '');
-      lines.push(`  --rafters-${token.name}: ${value};`);
-      lines.push(`  --${namespace}-${key}: var(--rafters-${token.name});`);
+      if (token.name.startsWith('motion-duration-') && token.name !== 'motion-duration-base') {
+        const key = token.name.replace('motion-duration-', '');
+        const value = tokenValueToCSS(token);
+        if (value === null) continue;
+        lines.push(`  --duration-${key}: ${value};`);
+      }
+      if (token.name.startsWith('motion-easing-')) {
+        const key = token.name.replace('motion-easing-', '');
+        const value = tokenValueToCSS(token);
+        if (value === null) continue;
+        lines.push(`  --ease-${key}: ${value};`);
+      }
     }
     lines.push('');
   }
@@ -616,42 +612,6 @@ function generateDepthUtilities(depthTokens: Token[]): string {
     if (typeof token.value !== 'string' || !/^-?\d+$/.test(token.value)) continue;
     lines.push(`@utility z-${token.name} {`);
     lines.push(`  z-index: var(--${token.name});`);
-    lines.push('}');
-  }
-  return lines.join('\n');
-}
-
-/**
- * Duration tiers as real utilities -- the Tailwind namespace rule a second time.
- *
- * `--ease-*` IS a Tailwind v4 theme namespace, so `ease-standard` generates on its
- * own. `--duration-*` is NOT one: Tailwind's `duration-*` reads bare numbers. So
- * `duration-moderate` looks exactly as correct as `ease-standard`, reads as the
- * obvious tidy form, and compiles to nothing -- the same silent no-op
- * `generateDepthUtilities` exists to prevent, and the same fix, emit the word.
- *
- * Without these, reaching a tier from a component means writing
- * `duration-[var(--duration-moderate)]`: exporter syntax pushed into component
- * files, and one well-meant cleanup away from becoming a dead class.
- *
- * These coexist with Tailwind's numeric utilities -- `duration-150` still compiles;
- * a named tier and a bare number are different candidates, not competing ones.
- */
-function generateDurationUtilities(motionTokens: Token[]): string {
-  // motion-duration-base is the authoring input the tiers were once derived from,
-  // and @theme deliberately emits no --duration-base for it, so a utility here
-  // would point at a var that does not exist.
-  const tierTokens = motionTokens.filter(
-    (t) => t.name.startsWith('motion-duration-') && t.name !== 'motion-duration-base',
-  );
-  if (tierTokens.length === 0) return '';
-
-  const lines: string[] = ['/* Duration tier utilities -- words over milliseconds */'];
-  for (const token of tierTokens) {
-    if (typeof token.value !== 'string') continue;
-    const tier = token.name.replace('motion-duration-', '');
-    lines.push(`@utility duration-${tier} {`);
-    lines.push(`  transition-duration: var(--duration-${tier});`);
     lines.push('}');
   }
   return lines.join('\n');
@@ -918,13 +878,6 @@ export function tokensToTailwind(
   if (depthUtilities) {
     sections.push('');
     sections.push(depthUtilities);
-  }
-
-  // Duration tier @utility words (duration-moderate over duration-200)
-  const durationUtilities = generateDurationUtilities(groups.motion);
-  if (durationUtilities) {
-    sections.push('');
-    sections.push(durationUtilities);
   }
 
   // Semantic motion @utility classes (motion-*)

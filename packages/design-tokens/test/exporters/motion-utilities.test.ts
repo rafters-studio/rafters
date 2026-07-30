@@ -67,16 +67,9 @@ describe('semantic motion utilities compile (#1902/#1903/#1904)', () => {
     // expand/collapse transition grid-template-rows, never height.
     expect(css).toContain('transition-property: grid-template-rows, opacity;');
     expect(css).not.toContain('transition-property: height');
-    // The literal lands on the --rafters-* layer; the Tailwind-facing token holds
-    // a var() reference to it. This is the split that lets Studio re-point a tier
-    // without regenerating, and it is the same shape shadow and radius use.
-    expect(css).toContain('--rafters-motion-duration-normal: 300ms;');
-    expect(css).toContain('--duration-normal: var(--rafters-motion-duration-normal);');
-    expect(css).toContain('--rafters-motion-easing-enter: cubic-bezier(0, 0, 0.2, 1);');
-    expect(css).toContain('--ease-enter: var(--rafters-motion-easing-enter);');
-    // The Tailwind-facing token must never carry the literal -- that regression is
-    // exactly what makes a tier unchangeable at runtime.
-    expect(css).not.toContain('--duration-normal: 300ms;');
+    // The referenced theme vars carry the perceptual value and the named curve.
+    expect(css).toContain('--duration-normal: 300ms;');
+    expect(css).toContain('--ease-enter: cubic-bezier(0, 0, 0.2, 1);');
   });
 
   it('compiles a token-named motion class to a real rule, reduced-motion block intact', async () => {
@@ -86,16 +79,8 @@ describe('semantic motion utilities compile (#1902/#1903/#1904)', () => {
     expect(css).toContain('.motion-hover');
     // The nested @media survived compile + minify -- the blueprint-risk-#1 shape.
     expect(css, 'reduced-motion block dropped').toContain('prefers-reduced-motion');
-    // Both links of the indirection survived compile + minify, proving the class is
-    // not a dangling var(). Tailwind minifies 300ms -> .3s, and the reference itself
-    // must still point at a var that is actually declared in the emitted sheet --
-    // a surviving reference to a tree-shaken var would compile and resolve to
-    // nothing, which is the failure this asserts against.
-    expect(css, 'rafters duration var tree-shaken').toMatch(
-      /--rafters-motion-duration-normal:\s*(300ms|\.3s)/,
-    );
-    expect(css, 'duration token lost its reference').toMatch(
-      /--duration-normal:\s*var\(--rafters-motion-duration-normal\)/,
-    );
+    // The referenced duration theme var resolved into the sheet (Tailwind minifies
+    // 300ms -> .3s), proving the class is not a dangling var() reference.
+    expect(css, 'duration var tree-shaken').toMatch(/--duration-normal:\s*(300ms|\.3s)/);
   });
 });
