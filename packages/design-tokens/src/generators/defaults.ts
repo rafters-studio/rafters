@@ -1006,11 +1006,18 @@ export const DEFAULT_MOTION_SEMANTIC_MAPPINGS: Record<string, MotionSemanticMapp
     properties: ['color', 'background-color', 'transform'],
     travel: 'none',
     band: 'moderate',
-    curve: 'spring-snappy',
+    // `standard`, not `spring-snappy`. The 30-site study found 29 of 30 sites
+    // carry zero overshoot curves, and the one that does is the friendly
+    // exemplar -- spring-snappy belongs to friendly and effectively nowhere
+    // else. Efficient is the shipped default intent and is characterised as
+    // zero-overshoot, so a spring here contradicts the intent it ships under.
+    // Matches the recorded ruling: an efficient toggle is crisp; friendly is
+    // the intent that springs a switch.
+    curve: 'standard',
     reducedMotion: { properties: ['color', 'background-color'] },
     category: 'interaction',
     sizeReasoning:
-      'A thumb travelling a track is a small, tracked movement -- moderate tier, snappy spring. Reduced motion drops the transform to a colour cross-fade.',
+      'A thumb travelling a track is a small, tracked movement -- moderate tier at the standard curve. Reduced motion drops the transform to a colour cross-fade.',
     meaning: 'Toggle/switch state change. Shows the new state.',
     contexts: ['switch', 'toggle', 'checkbox'],
   },
