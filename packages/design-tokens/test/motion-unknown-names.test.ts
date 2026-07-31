@@ -54,18 +54,22 @@ function generate(
 }
 
 describe('motion generator rejects unknown tier and curve names (#1977)', () => {
+  // Since #1982 the spatial mappings no longer NAME a tier or curve -- both derive
+  // from travel and intent -- so a spatial mapping cannot carry a bad name at all.
+  // What remains typo-able is the band and curve an INTERACTION mapping declares,
+  // because those have no travel to derive from. The first entry (hover) is one.
   it('every shipping definition resolves -- this guard lands with no value change', () => {
     expect(() => generate()).not.toThrow();
   });
 
-  it('an unknown duration tier on a semantic mapping fails the build', () => {
+  it('an unknown band on an interaction mapping fails the build', () => {
     const [firstName, firstMapping] = Object.entries(DEFAULT_MOTION_SEMANTIC_MAPPINGS)[0] as [
       string,
       (typeof DEFAULT_MOTION_SEMANTIC_MAPPINGS)[string],
     ];
     const semantic = {
       ...DEFAULT_MOTION_SEMANTIC_MAPPINGS,
-      [firstName]: { ...firstMapping, durationTier: 'moderat' },
+      [firstName]: { ...firstMapping, band: 'moderat' },
     };
     expect(() => generate({ semantic })).toThrowError(/unknown duration tier "moderat"/);
   });
@@ -101,7 +105,7 @@ describe('motion generator rejects unknown tier and curve names (#1977)', () => 
     ];
     const semantic = {
       ...DEFAULT_MOTION_SEMANTIC_MAPPINGS,
-      [firstName]: { ...firstMapping, durationTier: 'moderat' },
+      [firstName]: { ...firstMapping, band: 'moderat' },
     };
 
     // The failure is nearly always a near-miss, so the fix is unguessable without

@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_DURATION_DEFINITIONS } from '../src/generators/defaults.js';
+import {
+  DEFAULT_ANIMATION_DEFINITIONS,
+  DEFAULT_DELAY_DEFINITIONS,
+  DEFAULT_DURATION_DEFINITIONS,
+  DEFAULT_EASING_DEFINITIONS,
+  DEFAULT_KEYFRAME_DEFINITIONS,
+  DEFAULT_MOTION_COMPOSITE_PRESETS,
+  DEFAULT_MOTION_SEMANTIC_MAPPINGS,
+} from '../src/generators/defaults.js';
+import { generateMotionTokens } from '../src/generators/motion.js';
 import {
   BAND_ORDER,
   deriveBand,
@@ -153,5 +162,103 @@ describe('curve derives from category and travel', () => {
       expect(deriveCurve('enter', travel, 'efficient', undefined)).not.toBe('spring-snappy');
       expect(deriveCurve('exit', travel, 'efficient', undefined)).not.toBe('spring-snappy');
     }
+  });
+});
+
+describe('end to end: changing intent moves the emitted tokens (epic #1973)', () => {
+  function semanticFor(intent: string) {
+    const result = generateMotionTokens(
+      { baseTransitionDuration: 150, progressionRatio: 'perfect-fourth', intent } as never,
+      DEFAULT_DURATION_DEFINITIONS,
+      DEFAULT_EASING_DEFINITIONS,
+      DEFAULT_DELAY_DEFINITIONS,
+      DEFAULT_MOTION_SEMANTIC_MAPPINGS,
+      DEFAULT_KEYFRAME_DEFINITIONS,
+      DEFAULT_ANIMATION_DEFINITIONS,
+      DEFAULT_MOTION_COMPOSITE_PRESETS,
+    );
+    const out = new Map<string, string>();
+    for (const t of result.tokens) {
+      if (!t.name.startsWith('motion-semantic-')) continue;
+      const spec = JSON.parse(t.value as string) as { durationTier: string; curve: string };
+      out.set(t.name, `${spec.durationTier}/${spec.curve}`);
+    }
+    return out;
+  }
+
+  it('no mapping names a tier or a curve any more -- there is nowhere left to bake a choice', () => {
+    for (const [name, mapping] of Object.entries(DEFAULT_MOTION_SEMANTIC_MAPPINGS)) {
+      if (mapping.category === 'interaction') continue;
+      expect(mapping.band, `${name} still declares a band`).toBeUndefined();
+      expect(mapping.curve, `${name} still declares a curve`).toBeUndefined();
+    }
+  });
+
+  it('the derived output is identical to what shipped, for all 13', () => {
+    // The golden test guards the emitted CSS; this guards the token spec itself.
+    expect(semanticFor('efficient')).toMatchInlineSnapshot(`
+      Map {
+        "motion-semantic-hover" => "fast/standard",
+        "motion-semantic-focus" => "micro/linear",
+        "motion-semantic-press" => "micro/spring-snappy",
+        "motion-semantic-toggle" => "moderate/spring-snappy",
+        "motion-semantic-dropdown-in" => "moderate/enter",
+        "motion-semantic-dropdown-out" => "fast/exit",
+        "motion-semantic-modal-in" => "normal/enter",
+        "motion-semantic-modal-out" => "moderate/exit",
+        "motion-semantic-sheet-in" => "normal/spring-smooth",
+        "motion-semantic-sheet-out" => "normal/exit",
+        "motion-semantic-expand" => "normal/enter",
+        "motion-semantic-collapse" => "moderate/exit",
+        "motion-semantic-page" => "normal/spring-smooth",
+      }
+    `);
+  });
+});
+
+describe('the epic condition: a designer changes intent and motion moves', () => {
+  function durationsFor(intent: string) {
+    const result = generateMotionTokens(
+      { baseTransitionDuration: 150, progressionRatio: 'perfect-fourth', intent } as never,
+      DEFAULT_DURATION_DEFINITIONS,
+      DEFAULT_EASING_DEFINITIONS,
+      DEFAULT_DELAY_DEFINITIONS,
+      DEFAULT_MOTION_SEMANTIC_MAPPINGS,
+      DEFAULT_KEYFRAME_DEFINITIONS,
+      DEFAULT_ANIMATION_DEFINITIONS,
+      DEFAULT_MOTION_COMPOSITE_PRESETS,
+    );
+    const out: Record<string, string> = {};
+    for (const t of result.tokens) {
+      if (t.name.startsWith('motion-duration-')) out[t.name] = t.value as string;
+    }
+    return out;
+  }
+
+  it('efficient emits exactly the values that ship today', () => {
+    const d = durationsFor('efficient');
+    expect(d['motion-duration-micro']).toBe('100ms');
+    expect(d['motion-duration-fast']).toBe('150ms');
+    expect(d['motion-duration-moderate']).toBe('200ms');
+    expect(d['motion-duration-normal']).toBe('300ms');
+    expect(d['motion-duration-slow']).toBe('400ms');
+  });
+
+  it('elegant emits longer communicative durations -- WITHOUT ANY TABLE BEING EDITED', () => {
+    const efficient = durationsFor('efficient');
+    const elegant = durationsFor('elegant');
+
+    expect(elegant['motion-duration-moderate']).toBe('300ms');
+    expect(elegant['motion-duration-normal']).toBe('400ms');
+    expect(elegant['motion-duration-slow']).toBe('500ms');
+
+    expect(elegant['motion-duration-moderate']).not.toBe(efficient['motion-duration-moderate']);
+  });
+
+  it('the acknowledgment landmarks do not move -- perception is not a matter of taste', () => {
+    // micro is the Nielsen threshold and fast matches cursor speed. An intent
+    // may not restyle a perceptual constant.
+    expect(durationsFor('elegant')['motion-duration-micro']).toBe('100ms');
+    expect(durationsFor('elegant')['motion-duration-fast']).toBe('150ms');
   });
 });
