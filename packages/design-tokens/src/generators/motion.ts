@@ -35,6 +35,7 @@ import type {
   MotionCompositePreset,
   MotionSemanticMapping,
 } from './defaults.js';
+import { deriveBand, deriveCurve, deriveDuration, type MotionIntent } from './motion-derivation.js';
 import type { GeneratorResult, ResolvedSystemConfig } from './types.js';
 import { EASING_CURVES, MOTION_DURATION_SCALE } from './types.js';
 
@@ -89,6 +90,13 @@ export function generateMotionTokens(
   const timestamp = new Date().toISOString();
   const { baseTransitionDuration, progressionRatio } = config;
 
+  // The active intent. `ResolvedSystemConfig` has no `intent` field yet -- adding
+  // one is cross-cutting, since intent drives spacing, radius and type as well as
+  // motion, and widening the system config inside a motion change would be the
+  // wrong seam. Read optionally with the neutral default so the derivation is
+  // live now and the config work stays separable.
+  const intent: MotionIntent = (config as { intent?: MotionIntent }).intent ?? 'efficient';
+
   const ratio = resolveRatio(progressionRatio);
   const ratioVal = computeRatioValue(ratio);
   const computeStep = (base: number, step: number) => ratioStep(ratio, base, step);
@@ -130,7 +138,12 @@ export function generateMotionTokens(
     const def = durationDefs[scale];
     if (!def) continue;
     const scaleIndex = MOTION_DURATION_SCALE.indexOf(scale);
-    const durationMs = def.default;
+    // The band supplies the window; the intent picks a point inside it. This is
+    // the link that makes an intent change move motion -- without it the tier
+    // emits a constant and every downstream reference inherits the constant.
+    // At the neutral intent this returns each tier's shipped default, so the
+    // emitted system is unchanged until someone chooses a different intent.
+    const durationMs = deriveDuration(scale, intent, durationDefs);
     const [rangeMin, rangeMax] = def.range;
     const bandNote = def.band ? ` Band: ${def.band}.` : '';
     const rangeNote = rangeMin === rangeMax ? ' Fixed.' : ` Range: ${rangeMin}-${rangeMax}ms.`;
@@ -381,20 +394,25 @@ export function generateMotionTokens(
   // loop skips it (tokenValueToCSS returns null for JSON), so it never leaks a
   // raw custom property. Named after typography-composite's single-source model.
   for (const [name, mapping] of Object.entries(semanticMappings)) {
-    // Unlike the animation and composite paths, this one never resolved its tier
-    // or curve at all -- it wrote both names straight into the blob AND into
-    // dependsOn. A typo therefore produced a dangling dependency edge and a
-    // var(--duration-<typo>) that renders nothing, with no lookup anywhere to
-    // fail. Resolve purely to validate; the emitted value stays a reference.
-    requireDef(durationDefs, mapping.durationTier, 'duration tier', `semantic motion "${name}"`);
-    requireDef(easingDefs, mapping.curve, 'easing curve', `semantic motion "${name}"`);
+    // Tier and curve are DERIVED, not read. The mapping declares how far the
+    // thing travels; perception decides which band that lands in and character
+    // decides the curve. Nothing here names a tier, so there is no place left to
+    // bake a choice -- which is the whole point of the exercise.
+    const durationTier = deriveBand(mapping.category, mapping.travel, mapping.band);
+    const curve = deriveCurve(mapping.category, mapping.travel, intent, mapping.curve);
+
+    // Still validate, for the same reason as the other paths: the derived names
+    // flow into dependsOn and into a var() the exporter emits unconditionally, so
+    // a name that does not resolve would render nothing and fail nowhere.
+    requireDef(durationDefs, durationTier, 'duration tier', `semantic motion "${name}"`);
+    requireDef(easingDefs, curve, 'easing curve', `semantic motion "${name}"`);
 
     tokens.push({
       name: `motion-semantic-${name}`,
       value: JSON.stringify({
         properties: mapping.properties,
-        durationTier: mapping.durationTier,
-        curve: mapping.curve,
+        durationTier,
+        curve,
         reducedMotion: mapping.reducedMotion,
       }),
       category: 'motion',
@@ -408,8 +426,8 @@ export function generateMotionTokens(
             ? 'exit'
             : 'transition',
       generateUtilityClass: true,
-      dependsOn: [`motion-duration-${mapping.durationTier}`, `motion-easing-${mapping.curve}`],
-      description: `Semantic motion motion-${name}: ${mapping.properties.join(', ')} over ${mapping.durationTier} with ${mapping.curve}. ${mapping.sizeReasoning}`,
+      dependsOn: [`motion-duration-${durationTier}`, `motion-easing-${curve}`],
+      description: `Semantic motion motion-${name}: ${mapping.properties.join(', ')} over ${durationTier} with ${curve}. ${mapping.sizeReasoning}`,
       generatedAt: timestamp,
       containerQueryAware: false,
       reducedMotionAware: true,

@@ -18,6 +18,9 @@
  */
 
 import type { OKLCH } from '@rafters/shared';
+// Type-only both ways -- motion-derivation imports DurationDef from here. Both
+// sides are erased at compile, so this pair never forms a runtime cycle.
+import type { MotionBand, MotionTravel } from './motion-derivation.js';
 
 // =============================================================================
 // COLOR DEFAULTS
@@ -911,10 +914,31 @@ export const DEFAULT_MOTION_COMPOSITE_PRESETS: Record<string, MotionCompositePre
 export interface MotionSemanticMapping {
   /** CSS properties this transition animates (become `transition-property`). */
   properties: string[];
-  /** Duration tier name -- a key of DEFAULT_DURATION_DEFINITIONS. */
-  durationTier: string;
-  /** Easing curve name -- a key of DEFAULT_EASING_DEFINITIONS. */
-  curve: string;
+  /**
+   * How far the animated thing moves. THE input for anything spatial -- the
+   * duration band and the curve both derive from it, so neither is named here.
+   *
+   * Ordinal rather than metric because the output is discrete: six perceptual
+   * bands selected by a step function. A pixel or spacing-step figure would be
+   * precision the decision never consumes.
+   */
+  travel: MotionTravel;
+  /**
+   * Interaction-only. hover, focus, press and toggle do not move through space,
+   * so travel cannot select a band for them -- they separate by FEEDBACK KIND
+   * instead (`micro` acknowledges that input landed, `fast` matches a cursor
+   * already on target). Declared here rather than forced through a spatial rule
+   * that would be fitting rather than deriving.
+   *
+   * Must be absent for `enter`/`exit`, where the band is derived.
+   */
+  band?: MotionBand;
+  /**
+   * Interaction-only, for the same reason as `band`. Feedback character is
+   * per-token, not per-category. Absent for `enter`/`exit`, where the curve
+   * derives from category and travel.
+   */
+  curve?: string;
   /**
    * prefers-reduced-motion override. `null` = preserved unchanged (feedback that
    * must survive: hover colour, focus ring). Otherwise the reduced property set
@@ -944,7 +968,8 @@ export interface MotionSemanticMapping {
 export const DEFAULT_MOTION_SEMANTIC_MAPPINGS: Record<string, MotionSemanticMapping> = {
   hover: {
     properties: ['color', 'background-color', 'border-color'],
-    durationTier: 'fast',
+    travel: 'none',
+    band: 'fast',
     curve: 'standard',
     reducedMotion: null,
     category: 'interaction',
@@ -955,7 +980,8 @@ export const DEFAULT_MOTION_SEMANTIC_MAPPINGS: Record<string, MotionSemanticMapp
   },
   focus: {
     properties: ['box-shadow', 'outline-color'],
-    durationTier: 'micro',
+    travel: 'none',
+    band: 'micro',
     curve: 'linear',
     reducedMotion: null,
     category: 'interaction',
@@ -966,7 +992,8 @@ export const DEFAULT_MOTION_SEMANTIC_MAPPINGS: Record<string, MotionSemanticMapp
   },
   press: {
     properties: ['transform', 'color', 'background-color'],
-    durationTier: 'micro',
+    travel: 'none',
+    band: 'micro',
     curve: 'spring-snappy',
     reducedMotion: { properties: ['color', 'background-color'] },
     category: 'interaction',
@@ -977,7 +1004,8 @@ export const DEFAULT_MOTION_SEMANTIC_MAPPINGS: Record<string, MotionSemanticMapp
   },
   toggle: {
     properties: ['color', 'background-color', 'transform'],
-    durationTier: 'moderate',
+    travel: 'none',
+    band: 'moderate',
     curve: 'spring-snappy',
     reducedMotion: { properties: ['color', 'background-color'] },
     category: 'interaction',
@@ -988,8 +1016,7 @@ export const DEFAULT_MOTION_SEMANTIC_MAPPINGS: Record<string, MotionSemanticMapp
   },
   'dropdown-in': {
     properties: ['opacity', 'transform'],
-    durationTier: 'moderate',
-    curve: 'enter',
+    travel: 'short',
     reducedMotion: { properties: ['opacity'], ms: 100 },
     category: 'enter',
     sizeReasoning:
@@ -999,8 +1026,7 @@ export const DEFAULT_MOTION_SEMANTIC_MAPPINGS: Record<string, MotionSemanticMapp
   },
   'dropdown-out': {
     properties: ['opacity', 'transform'],
-    durationTier: 'fast',
-    curve: 'exit',
+    travel: 'short',
     reducedMotion: { properties: ['opacity'], ms: 100 },
     category: 'exit',
     sizeReasoning:
@@ -1010,8 +1036,7 @@ export const DEFAULT_MOTION_SEMANTIC_MAPPINGS: Record<string, MotionSemanticMapp
   },
   'modal-in': {
     properties: ['opacity', 'transform'],
-    durationTier: 'normal',
-    curve: 'enter',
+    travel: 'medium',
     reducedMotion: { properties: ['opacity'], ms: 150 },
     category: 'enter',
     sizeReasoning:
@@ -1021,8 +1046,7 @@ export const DEFAULT_MOTION_SEMANTIC_MAPPINGS: Record<string, MotionSemanticMapp
   },
   'modal-out': {
     properties: ['opacity', 'transform'],
-    durationTier: 'moderate',
-    curve: 'exit',
+    travel: 'medium',
     reducedMotion: { properties: ['opacity'], ms: 150 },
     category: 'exit',
     sizeReasoning:
@@ -1032,8 +1056,7 @@ export const DEFAULT_MOTION_SEMANTIC_MAPPINGS: Record<string, MotionSemanticMapp
   },
   'sheet-in': {
     properties: ['transform'],
-    durationTier: 'normal',
-    curve: 'spring-smooth',
+    travel: 'large',
     reducedMotion: { properties: ['opacity'], ms: 250 },
     category: 'enter',
     sizeReasoning:
@@ -1043,8 +1066,7 @@ export const DEFAULT_MOTION_SEMANTIC_MAPPINGS: Record<string, MotionSemanticMapp
   },
   'sheet-out': {
     properties: ['transform'],
-    durationTier: 'normal',
-    curve: 'exit',
+    travel: 'large',
     reducedMotion: { properties: ['opacity'], ms: 250 },
     category: 'exit',
     sizeReasoning:
@@ -1054,8 +1076,7 @@ export const DEFAULT_MOTION_SEMANTIC_MAPPINGS: Record<string, MotionSemanticMapp
   },
   expand: {
     properties: ['grid-template-rows', 'opacity'],
-    durationTier: 'normal',
-    curve: 'enter',
+    travel: 'medium',
     reducedMotion: { properties: ['opacity'] },
     category: 'enter',
     sizeReasoning:
@@ -1065,8 +1086,7 @@ export const DEFAULT_MOTION_SEMANTIC_MAPPINGS: Record<string, MotionSemanticMapp
   },
   collapse: {
     properties: ['grid-template-rows', 'opacity'],
-    durationTier: 'moderate',
-    curve: 'exit',
+    travel: 'medium',
     reducedMotion: { properties: ['opacity'] },
     category: 'exit',
     sizeReasoning:
@@ -1076,8 +1096,7 @@ export const DEFAULT_MOTION_SEMANTIC_MAPPINGS: Record<string, MotionSemanticMapp
   },
   page: {
     properties: ['opacity', 'transform'],
-    durationTier: 'normal',
-    curve: 'spring-smooth',
+    travel: 'large',
     reducedMotion: { properties: ['opacity'], ms: 200 },
     category: 'enter',
     sizeReasoning:
