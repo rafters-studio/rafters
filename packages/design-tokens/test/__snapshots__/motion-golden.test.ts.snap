@@ -144,7 +144,7 @@ exports[`motion generator: golden output > emits stable name -> value pairs 1`] 
   "motion-semantic-press = {"properties":["transform","color","background-color"],"durationTier":"micro","curve":"spring-snappy","reducedMotion":{"properties":["color","background-color"]}}",
   "motion-semantic-sheet-in = {"properties":["transform"],"durationTier":"normal","curve":"spring-smooth","reducedMotion":{"properties":["opacity"],"ms":250}}",
   "motion-semantic-sheet-out = {"properties":["transform"],"durationTier":"normal","curve":"exit","reducedMotion":{"properties":["opacity"],"ms":250}}",
-  "motion-semantic-toggle = {"properties":["color","background-color","transform"],"durationTier":"moderate","curve":"spring-snappy","reducedMotion":{"properties":["color","background-color"]}}",
+  "motion-semantic-toggle = {"properties":["color","background-color","transform"],"durationTier":"moderate","curve":"standard","reducedMotion":{"properties":["color","background-color"]}}",
   "motion-slide-in = 300ms cubic-bezier(0, 0, 0.2, 1)",
   "motion-slide-out = 150ms cubic-bezier(0.4, 0, 1, 1)",
 ]

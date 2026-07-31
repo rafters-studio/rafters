@@ -2,8 +2,13 @@
 
 ## Unreleased
 
+### Features
+
+- feat(design-tokens): motion duration and curve are derived, not authored (#1982). A semantic motion mapping no longer names a duration tier or an easing curve -- it declares how far the thing travels, and both fall out. `band = f(travel, category)`, `position = g(intent)`, `curve = h(category, travel)`. The six duration tiers are unchanged and become output bands: they are perceptual facts, so they bound what any intent may express. The practical consequence is that changing the active intent moves motion with no table edited -- at `efficient` the communicative bands emit 200/300/400 as they always have, at `elegant` they emit 300/400/500. The acknowledgment bands do not move at any intent: `micro` stays 100ms (the Nielsen instantaneous threshold) and `fast` stays 150ms (cursor-matching speed), because perception is not a matter of taste. Emitted output is unchanged at the default intent, pinned by a snapshot of all 13 derived pairs plus the existing golden.
+
 ### Bug Fixes
 
+- fix(design-tokens): `motion-toggle` uses the standard curve, not a spring (#1965). It shipped `spring-snappy` against a recorded ruling that an efficient toggle is crisp. The 30-site intent study is the evidence: 29 of 30 surveyed sites carry zero overshoot curves, and the single exception is the friendly exemplar -- spring-snappy belongs to friendly and effectively nowhere else. Efficient is the shipped default intent and is characterised as zero-overshoot, so a spring contradicted the intent it shipped under. One line of emitted output changes.
 - fix(design-tokens): an unknown duration tier or easing curve now fails the build instead of vanishing (#1977). The motion generator skipped any mapping whose tier or curve it did not recognise -- a bare `continue`, no throw, no warning -- while the exporter emitted `var(--duration-<name>)` regardless. A typo therefore produced syntactically valid CSS that resolves to nothing: the element did not animate, the build stayed green, and no test failed. The semantic-motion path was worse, never resolving its names at all and writing them straight into both the token value and `dependsOn`, so a typo also produced a dangling dependency edge. All four lookups now throw at generation time, naming the offending definition and listing the known vocabulary -- the failure is almost always a near-miss, and the fix is unguessable without the valid names in front of you. Every shipping definition resolves, so this lands with no change to any emitted value.
 
 ## 0.0.78

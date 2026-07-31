@@ -201,7 +201,7 @@ describe('end to end: changing intent moves the emitted tokens (epic #1973)', ()
         "motion-semantic-hover" => "fast/standard",
         "motion-semantic-focus" => "micro/linear",
         "motion-semantic-press" => "micro/spring-snappy",
-        "motion-semantic-toggle" => "moderate/spring-snappy",
+        "motion-semantic-toggle" => "moderate/standard",
         "motion-semantic-dropdown-in" => "moderate/enter",
         "motion-semantic-dropdown-out" => "fast/exit",
         "motion-semantic-modal-in" => "normal/enter",
