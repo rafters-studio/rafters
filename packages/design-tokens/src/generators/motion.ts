@@ -39,6 +39,32 @@ import type { GeneratorResult, ResolvedSystemConfig } from './types.js';
 import { EASING_CURVES, MOTION_DURATION_SCALE } from './types.js';
 
 /**
+ * Resolve a named definition or fail loudly.
+ *
+ * Every one of these lookups previously did `if (!def) continue`, which drops the
+ * token and lets the build stay green. The reference survives elsewhere: the
+ * semantic path writes `motion-duration-<name>` into `dependsOn` and the exporter
+ * emits `var(--duration-<name>)` unconditionally, so a typo produced syntactically
+ * valid CSS that resolves to nothing -- no throw, no warning, no failing test, and
+ * an element that simply does not animate.
+ *
+ * The name is authored data, so an unknown one is a definition error and belongs
+ * at generation time. Listing the known names matters more than it looks: the
+ * failure is almost always a near-miss (`easing` vs `ease`, a renamed curve), and
+ * the fix is unguessable without the vocabulary in front of you.
+ */
+function requireDef<T>(defs: Record<string, T>, key: string, kind: string, owner: string): T {
+  const def = defs[key];
+  if (def === undefined) {
+    throw new Error(
+      `motion generator: ${owner} references unknown ${kind} "${key}". ` +
+        `Known ${kind}s: ${Object.keys(defs).sort().join(', ')}.`,
+    );
+  }
+  return def;
+}
+
+/**
  * Generate motion tokens from provided definitions.
  *
  * Every part of the vocabulary arrives as a parameter. Keyframes and animations
@@ -267,15 +293,18 @@ export function generateMotionTokens(
       durationRef = anim.duration.loopPeriod;
       durationDependency = [];
     } else {
-      const durationDef = durationDefs[anim.duration.tier];
-      if (!durationDef) continue;
+      const durationDef = requireDef(
+        durationDefs,
+        anim.duration.tier,
+        'duration tier',
+        `animation "${name}"`,
+      );
       durationValue = `${durationDef.default}ms`;
       durationRef = `var(--motion-duration-${anim.duration.tier})`;
       durationDependency = [`motion-duration-${anim.duration.tier}`];
     }
 
-    const easingDef = easingDefs[anim.curve];
-    if (!easingDef) continue;
+    const easingDef = requireDef(easingDefs, anim.curve, 'easing curve', `animation "${name}"`);
     const easingRef = `var(--motion-easing-${anim.curve})`;
 
     const iterations = anim.iterations || '';
@@ -311,9 +340,18 @@ export function generateMotionTokens(
   // Composite presets -- retained for backwards compatibility; the semantic
   // motion tokens are the current expression of the same idea.
   for (const [name, comp] of Object.entries(compositePresets)) {
-    const durationDef = durationDefs[comp.durationTier];
-    const easingDef = easingDefs[comp.curve];
-    if (!durationDef || !easingDef) continue;
+    const durationDef = requireDef(
+      durationDefs,
+      comp.durationTier,
+      'duration tier',
+      `composite preset "${name}"`,
+    );
+    const easingDef = requireDef(
+      easingDefs,
+      comp.curve,
+      'easing curve',
+      `composite preset "${name}"`,
+    );
 
     const durationMs = durationDef.default;
 
@@ -343,6 +381,14 @@ export function generateMotionTokens(
   // loop skips it (tokenValueToCSS returns null for JSON), so it never leaks a
   // raw custom property. Named after typography-composite's single-source model.
   for (const [name, mapping] of Object.entries(semanticMappings)) {
+    // Unlike the animation and composite paths, this one never resolved its tier
+    // or curve at all -- it wrote both names straight into the blob AND into
+    // dependsOn. A typo therefore produced a dangling dependency edge and a
+    // var(--duration-<typo>) that renders nothing, with no lookup anywhere to
+    // fail. Resolve purely to validate; the emitted value stays a reference.
+    requireDef(durationDefs, mapping.durationTier, 'duration tier', `semantic motion "${name}"`);
+    requireDef(easingDefs, mapping.curve, 'easing curve', `semantic motion "${name}"`);
+
     tokens.push({
       name: `motion-semantic-${name}`,
       value: JSON.stringify({

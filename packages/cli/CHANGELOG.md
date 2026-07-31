@@ -1,5 +1,11 @@
 # rafters
 
+## Unreleased
+
+### Bug Fixes
+
+- fix(design-tokens): an unknown duration tier or easing curve now fails the build instead of vanishing (#1977). The motion generator skipped any mapping whose tier or curve it did not recognise -- a bare `continue`, no throw, no warning -- while the exporter emitted `var(--duration-<name>)` regardless. A typo therefore produced syntactically valid CSS that resolves to nothing: the element did not animate, the build stayed green, and no test failed. The semantic-motion path was worse, never resolving its names at all and writing them straight into both the token value and `dependsOn`, so a typo also produced a dangling dependency edge. All four lookups now throw at generation time, naming the offending definition and listing the known vocabulary -- the failure is almost always a near-miss, and the fix is unguessable without the valid names in front of you. Every shipping definition resolves, so this lands with no change to any emitted value.
+
 ## 0.0.78
 
 ### Features
