@@ -14,6 +14,7 @@
  * is a plain boolean prop default true, matching React.
  */
 import { separator } from './separator.behavior';
+import type { AriaAttrs } from '../../lib/contract';
 import type { SeparatorConfig, SeparatorOrientation } from './separator.behavior';
 import { separatorClasses } from './separator.classes';
 
@@ -29,8 +30,8 @@ const config: SeparatorConfig = { orientation, decorative };
 const classes = separatorClasses(config, {});
 const rootClass = [classes.root, className].filter(Boolean).join(' ');
 
-const projection = separator.aria({}, config, { root: '' }).root ?? {};
-const role = projection.role as string | undefined;
+const projection: AriaAttrs = separator.aria({}, config, { root: '' }).root ?? {};
+const role = projection.role;
 const ariaOrientation = projection['aria-orientation'] as SeparatorOrientation | undefined;
 ---
 

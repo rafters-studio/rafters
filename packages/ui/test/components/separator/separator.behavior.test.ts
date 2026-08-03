@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { separator } from '../../../src/components/separator/separator.behavior';
+import type { AriaRole } from '../../../src/lib/contract';
 
 const state = {};
 const ids = { root: 'r' };
@@ -34,6 +35,18 @@ describe('separator aria projection', () => {
         'aria-orientation': 'vertical',
       },
     );
+  });
+
+  // The projected role is typed AriaRole, not a bare string: it lands on `role=`
+  // of a real element, whose typing accepts only the ARIA vocabulary. The
+  // annotations below are the assertion -- they do not compile if the
+  // projection widens back to string (#2002).
+  it('projects role as an AriaRole, so performances paint it without casting', () => {
+    const decorativeRole: AriaRole | undefined = separator.aria(state, {}, ids).root?.role;
+    const semanticRole: AriaRole | undefined = separator.aria(state, { decorative: false }, ids)
+      .root?.role;
+    expect(decorativeRole).toBe('none');
+    expect(semanticRole).toBe('separator');
   });
 
   it('decorative=true is explicit-equivalent to the default', () => {
