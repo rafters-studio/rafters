@@ -446,23 +446,9 @@ function generateThemeBlock(groups: GroupedTokens): string {
   }
 
   // The Tailwind-facing duration/ease names, as REFERENCES to the leaves above.
-  //
-  // Purely additive: every name that existed before still exists, and every
-  // consumer of `var(--duration-moderate)` keeps working. What changed is that
-  // these no longer hold a second copy of the value -- a literal here would mean
-  // retuning one leaf moved two lines, and the two could then disagree. They die
-  // in the component sweep, when their consumers do.
-  if (groups.motion.length > 0) {
-    for (const token of groups.motion) {
-      if (token.name.startsWith('motion-duration-') && token.name !== 'motion-duration-base') {
-        const key = token.name.replace('motion-duration-', '');
-        lines.push(`  --duration-${key}: var(--rafters-duration-${key});`);
-      }
-      if (token.name.startsWith('motion-easing-')) {
-        const key = token.name.replace('motion-easing-', '');
-        lines.push(`  --ease-${key}: var(--rafters-ease-${key});`);
-      }
-    }
+  const bridgeLines = generateMotionBridgeVars(groups.motion);
+  if (bridgeLines) {
+    lines.push(bridgeLines);
     lines.push('');
   }
 
@@ -836,6 +822,36 @@ function generateMotionNamespaceVars(motionTokens: Token[]): string {
 }
 
 /**
+ * Emit the Tailwind-facing `--duration-*` / `--ease-*` names as REFERENCES to
+ * the namespace leaves. Indented for the @theme block.
+ *
+ * Purely additive: every name that existed before still exists, and every
+ * consumer of `var(--duration-moderate)` keeps working. What changed is that
+ * these no longer hold a second copy of the value -- a literal here would mean
+ * retuning one leaf moved two lines, and the two could then disagree. They die
+ * in the component sweep, when their consumers do.
+ *
+ * Both emission paths (`generateThemeBlock` and `generateThemeBlockWithVarRefs`)
+ * call this, because after #1991 the bridge is the same line in both: the
+ * dynamic sheet used to write a literal here and the static one a reference, and
+ * that difference is exactly what the leaf layer removed.
+ */
+function generateMotionBridgeVars(motionTokens: Token[]): string {
+  const lines: string[] = [];
+  for (const token of motionTokens) {
+    if (token.name.startsWith('motion-duration-') && token.name !== 'motion-duration-base') {
+      const key = token.name.replace('motion-duration-', '');
+      lines.push(`  --duration-${key}: var(--rafters-duration-${key});`);
+    }
+    if (token.name.startsWith('motion-easing-')) {
+      const key = token.name.replace('motion-easing-', '');
+      lines.push(`  --ease-${key}: var(--rafters-ease-${key});`);
+    }
+  }
+  return lines.join('\n');
+}
+
+/**
  * Emit one `@utility <namespace>-<member>` block per namespace member.
  *
  * Every block references a var by NAME and contains no motion value, so the
@@ -1142,18 +1158,10 @@ function generateThemeBlockWithVarRefs(groups: GroupedTokens): string {
   }
 
   // Motion duration/easing tokens with Tailwind-native names, bridged onto the
-  // namespace leaves -- the same reference the dynamic path emits.
-  if (groups.motion.length > 0) {
-    for (const token of groups.motion) {
-      if (token.name.startsWith('motion-duration-') && token.name !== 'motion-duration-base') {
-        const key = token.name.replace('motion-duration-', '');
-        lines.push(`  --duration-${key}: var(--rafters-duration-${key});`);
-      }
-      if (token.name.startsWith('motion-easing-')) {
-        const key = token.name.replace('motion-easing-', '');
-        lines.push(`  --ease-${key}: var(--rafters-ease-${key});`);
-      }
-    }
+  // namespace leaves -- byte-identical to the dynamic path, and shared with it.
+  const bridgeLines = generateMotionBridgeVars(groups.motion);
+  if (bridgeLines) {
+    lines.push(bridgeLines);
     lines.push('');
   }
 
