@@ -254,12 +254,10 @@ function readCustomProperty(
   customProperty: string,
   element: Element | null | undefined,
 ): string | null {
-  const view = typeof globalThis.getComputedStyle === 'function' ? globalThis : null;
-  if (view === null) return null;
-  const root = typeof document === 'undefined' ? null : document.documentElement;
-  const target = element ?? root;
+  if (typeof globalThis.getComputedStyle !== 'function') return null;
+  const target = element ?? (typeof document === 'undefined' ? null : document.documentElement);
   if (target === null) return null;
-  const raw = view.getComputedStyle(target).getPropertyValue(customProperty).trim();
+  const raw = globalThis.getComputedStyle(target).getPropertyValue(customProperty).trim();
   return raw === '' ? null : raw;
 }
 

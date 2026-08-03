@@ -1168,14 +1168,15 @@ export interface MotionNamespaceMemberDef {
  * reacts, which is a statement about how eager it is.
  *
  * `hover-intent` is the only value here with a claim on reality: 200ms is what
- * tooltip and navigation-menu hardcode in their behaviours today. The rest are
+ * navigation-menu hardcoded before #1995 made both it and tooltip read this
+ * token through the runtime accessor (tooltip's own literal was 700). The rest are
  * PROPOSED -- a coherent starting point for the knobs instrument, not findings.
  */
 export const DEFAULT_DELAY_NAMESPACE: Record<string, MotionNamespaceMemberDef> = {
   'hover-intent': {
     value: '200ms',
     provenance: 'observed',
-    note: 'The value tooltip and navigation-menu ship hardcoded in their behaviours today. Observed in working code, not tuned.',
+    note: 'Observed in navigation-menu, which hardcoded it before #1995 routed both it and tooltip through the runtime accessor. Observed in working code, not tuned.',
     meaning:
       'How long a pointer must rest before the system believes the hover was meant. Long enough to survive a pass-through, short enough that a deliberate hover does not feel ignored.',
     contexts: ['tooltip', 'hover-card', 'navigation-menu'],

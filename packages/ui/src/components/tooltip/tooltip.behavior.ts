@@ -33,13 +33,20 @@ export function tooltipOpenDelay(element?: Element | null): number {
 }
 
 /**
- * The close / warm-reopen grace, read from `--rafters-delay-skip`.
+ * The close delay, read from `--rafters-delay-linger`.
  *
- * `skip` is the window inside which a just-closed surface is still warm. The
- * tooltip is its first real consumer.
+ * NOT `delay-skip`, despite the prop being named `skipDelayDuration` after the
+ * oracle. What this delay actually governs is how long the tip stays after the
+ * pointer leaves, so a near-miss on the way to the content is forgiven -- which
+ * is `linger`, verbatim. `skip` is the warm-reopen grace: reopen inside it and
+ * the ENTRANCE delay is skipped. `hover-delay` has no warm-reopen mechanism to
+ * hang that on (`skipDelays` there is an unconditional boolean, not a window),
+ * so `delay-skip` stays without a consumer rather than being mislabelled onto
+ * this one. Both members happen to sit at 300ms today, which is exactly why the
+ * confusion would have gone unnoticed.
  */
-export function tooltipSkipDelay(element?: Element | null): number {
-  return motionDelayMs('skip', { element });
+export function tooltipCloseDelay(element?: Element | null): number {
+  return motionDelayMs('linger', { element });
 }
 
 export interface TooltipConfig extends DisclosableConfig {
@@ -47,7 +54,7 @@ export interface TooltipConfig extends DisclosableConfig {
    *  `--rafters-delay-hover-intent` via {@link tooltipOpenDelay}. */
   delayDuration?: number | undefined;
   /** Delay before an un-hovered trigger closes the tip. Unset reads
-   *  `--rafters-delay-skip` via {@link tooltipSkipDelay}. */
+   *  `--rafters-delay-linger` via {@link tooltipCloseDelay}. */
   skipDelayDuration?: number | undefined;
   /** When true, moving the pointer onto the content does NOT hold it open.
    *  Default false (content is hoverable). */
@@ -177,7 +184,7 @@ export function bindTooltip(root: HTMLElement): () => void {
   const content = getPart('content');
   const config: TooltipConfig = {
     delayDuration: numData('delayDuration', tooltipOpenDelay(root)),
-    skipDelayDuration: numData('skipDelayDuration', tooltipSkipDelay(root)),
+    skipDelayDuration: numData('skipDelayDuration', tooltipCloseDelay(root)),
     disableHoverableContent: data['disableHoverableContent'] === 'true',
     defaultOpen: data['defaultOpen'] === 'true' || content?.dataset['state'] === 'open',
     side: (data['side'] as Side | undefined) ?? undefined,
@@ -216,7 +223,7 @@ export function bindTooltip(root: HTMLElement): () => void {
   // through the idempotent dispatch, so the score stays the single truth.
   const hover = createControlledHoverDelay({
     openDelay: config.delayDuration ?? tooltipOpenDelay(root),
-    closeDelay: config.skipDelayDuration ?? tooltipSkipDelay(root),
+    closeDelay: config.skipDelayDuration ?? tooltipCloseDelay(root),
     onOpen: () => request('open'),
     onClose: () => request('close'),
   });

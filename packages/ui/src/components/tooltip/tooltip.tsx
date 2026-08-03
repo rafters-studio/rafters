@@ -38,7 +38,7 @@ import {
   positionTooltipContent,
   tooltip,
   tooltipOpenDelay,
-  tooltipSkipDelay,
+  tooltipCloseDelay,
   type TooltipActions,
   type TooltipConfig,
   type TooltipPart,
@@ -184,7 +184,7 @@ export function TooltipRoot({
     () =>
       createControlledHoverDelay({
         openDelay: config.delayDuration ?? tooltipOpenDelay(triggerRef.current),
-        closeDelay: config.skipDelayDuration ?? tooltipSkipDelay(triggerRef.current),
+        closeDelay: config.skipDelayDuration ?? tooltipCloseDelay(triggerRef.current),
         onOpen: () => request('open'),
         onClose: () => request('close'),
       }),
