@@ -85,6 +85,47 @@ const cases = [
   },
 ];
 
+describe('presence contract: dropdown-menu via asChild', () => {
+  // asChild routes every part prop through mergeProps + cloneElement instead of
+  // onto a div this file controls. If `ref` or `data-state` is dropped in that
+  // merge, presence waits on a node that never receives the exit classes -- the
+  // menu closes with no exit and nothing else in the suite would notice, because
+  // every other case renders the plain form.
+  function renderAt(open: boolean) {
+    return (
+      <DropdownMenu open={open}>
+        <DropdownMenuTrigger aria-label="Options">Options</DropdownMenuTrigger>
+        <DropdownMenuContent asChild aria-label="Options">
+          <div>
+            <DropdownMenuItem>Edit</DropdownMenuItem>
+          </div>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  }
+
+  it('carries data-state onto the cloned child', () => {
+    render(renderAt(true));
+    expect(content()?.getAttribute('data-state')).toBe('open');
+  });
+
+  it('holds the cloned child through its exit keyframe, then hides it', () => {
+    const { rerender } = render(renderAt(true));
+    runningExitKeyframe();
+
+    rerender(renderAt(false));
+    const node = content();
+    // The ref reached the clone: presence measured a real node and is waiting.
+    expect(node?.hasAttribute('hidden')).toBe(false);
+    expect(node?.getAttribute('data-state')).toBe('closed');
+
+    act(() => {
+      node?.dispatchEvent(new Event('animationend'));
+    });
+    expect(content()?.hasAttribute('hidden')).toBe(true);
+  });
+});
+
 describe.each(cases)('presence contract: $name', ({ render: renderAt, absent }) => {
   it('mounts open, carrying the data-state the enter keyframe keys off', () => {
     render(renderAt(true));
