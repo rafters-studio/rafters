@@ -173,24 +173,35 @@ export function bindTooltip(root: HTMLElement): () => void {
 
   // Config travels as `data-*` and nothing else (#2001/#2004), so the read is
   // `dataset` by camelCase key -- `data-delay-duration` is dataset.delayDuration.
+  // The fallback is a THUNK, not a value: an attribute that IS present must not
+  // pay for -- or be broken by -- a token read it will discard. A malformed
+  // unrelated custom property makes the accessor throw by design (#1995 fail
+  // loud), and an eager argument would have made that throw reach an element
+  // that never asked for the token. Same lazy convention as
+  // navigation-menu.behavior.ts, and the same `Number()` parse.
   const data = root.dataset;
-  const numData = (key: string, fallback: number): number => {
+  const numData = (key: string, fallback: () => number): number => {
     const raw = data[key];
-    if (raw === undefined) return fallback;
+    if (raw === undefined) return fallback();
     const parsed = Number(raw);
-    return Number.isFinite(parsed) ? parsed : fallback;
+    return Number.isFinite(parsed) ? parsed : fallback();
   };
+
+  // Hoisted: the score's config and the hover-delay primitive read the SAME
+  // resolved number, so there is no second read to disagree with the first.
+  const openDelayMs = numData('delayDuration', () => tooltipOpenDelay(root));
+  const closeDelayMs = numData('skipDelayDuration', () => tooltipCloseDelay(root));
 
   const content = getPart('content');
   const config: TooltipConfig = {
-    delayDuration: numData('delayDuration', tooltipOpenDelay(root)),
-    skipDelayDuration: numData('skipDelayDuration', tooltipCloseDelay(root)),
+    delayDuration: openDelayMs,
+    skipDelayDuration: closeDelayMs,
     disableHoverableContent: data['disableHoverableContent'] === 'true',
     defaultOpen: data['defaultOpen'] === 'true' || content?.dataset['state'] === 'open',
     side: (data['side'] as Side | undefined) ?? undefined,
     align: (data['align'] as Align | undefined) ?? undefined,
     // Presence, not truthiness: data-side-offset="0" is a real offset.
-    sideOffset: 'sideOffset' in data ? numData('sideOffset', 4) : undefined,
+    sideOffset: 'sideOffset' in data ? numData('sideOffset', () => 4) : undefined,
   };
 
   const { memory, dispatch } = createBehavior(tooltip, config);
@@ -222,8 +233,8 @@ export function bindTooltip(root: HTMLElement): () => void {
   // Hover-intent timing composed from the primitive. onOpen/onClose flow
   // through the idempotent dispatch, so the score stays the single truth.
   const hover = createControlledHoverDelay({
-    openDelay: config.delayDuration ?? tooltipOpenDelay(root),
-    closeDelay: config.skipDelayDuration ?? tooltipCloseDelay(root),
+    openDelay: openDelayMs,
+    closeDelay: closeDelayMs,
     onOpen: () => request('open'),
     onClose: () => request('close'),
   });

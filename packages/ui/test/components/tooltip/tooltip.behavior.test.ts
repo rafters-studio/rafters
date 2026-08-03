@@ -174,6 +174,58 @@ describe('bindTooltip: data-side-offset parse', () => {
   });
 });
 
+/**
+ * The token fallback is LAZY. The accessor fails loud on a malformed custom
+ * property (#1995), so an eagerly evaluated fallback would let a broken
+ * `--rafters-delay-hover-intent` anywhere on the root break a tooltip that
+ * declares its own `data-delay-duration` and never consults the token. The
+ * discriminator is exactly that: same malformed token, attribute present vs
+ * absent.
+ */
+describe('bindTooltip: the token fallback is only read when the attribute is absent', () => {
+  const teardowns: Array<() => void> = [];
+
+  afterEach(() => {
+    for (const teardown of teardowns.splice(0)) teardown();
+    document.body.innerHTML = '';
+  });
+
+  /** Malformed on the ROOT: the accessor is called with `{ element: root }`. */
+  function mountMalformed(delayDuration?: string): HTMLElement {
+    const root = document.createElement('div');
+    root.dataset['part'] = 'root';
+    root.style.setProperty('--rafters-delay-hover-intent', 'soon');
+    root.style.setProperty('--rafters-delay-linger', 'later');
+    if (delayDuration !== undefined) {
+      root.dataset['delayDuration'] = delayDuration;
+      root.dataset['skipDelayDuration'] = delayDuration;
+    }
+
+    const trigger = document.createElement('button');
+    trigger.type = 'button';
+    trigger.dataset['part'] = 'trigger';
+    trigger.id = 'lazy-trigger';
+
+    const content = document.createElement('div');
+    content.dataset['part'] = 'content';
+    content.id = 'lazy-content';
+
+    root.append(trigger, content);
+    document.body.appendChild(root);
+    return root;
+  }
+
+  it('binds on the attribute even when the token is malformed', () => {
+    const root = mountMalformed('120');
+    expect(() => teardowns.push(bindTooltip(root))).not.toThrow();
+  });
+
+  it('throws naming the token when the attribute is absent', () => {
+    const root = mountMalformed();
+    expect(() => bindTooltip(root)).toThrow(/rafters-delay-hover-intent" resolved to "soon"/);
+  });
+});
+
 describe('tooltipPlacement defaults', () => {
   it('defaults to top/center with a 4px offset', () => {
     expect(tooltipPlacement({})).toEqual({ side: 'top', align: 'center', sideOffset: 4 });

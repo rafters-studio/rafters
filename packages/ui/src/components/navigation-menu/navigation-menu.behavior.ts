@@ -269,8 +269,13 @@ export function bindNavigationMenu(root: HTMLElement): () => void {
     // Presence, not truthiness (#2011): `data-delay-duration="0"` is a real
     // request for no delay, and `|| 200` used to swallow it. Parse, then keep
     // the number only if it IS a number; absence falls through to the token.
+    // Lazy, and `Number()` rather than `parseInt`: the token read only happens
+    // on the branch that needs it, and `"200px"` is a malformed attribute
+    // rather than a silent 200. Same convention as tooltip.behavior.ts.
     delayDuration: (() => {
-      const parsed = Number.parseInt(root.dataset['delayDuration'] ?? '', 10);
+      const raw = root.dataset['delayDuration'];
+      if (raw === undefined) return navigationMenuHoverDelay(root);
+      const parsed = Number(raw);
       return Number.isFinite(parsed) ? parsed : navigationMenuHoverDelay(root);
     })(),
     defaultValue:
