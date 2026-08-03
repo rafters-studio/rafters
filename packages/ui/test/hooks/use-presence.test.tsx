@@ -200,6 +200,31 @@ describe('usePresence', () => {
       expect(getByTestId('node').getAttribute('data-state')).toBe('open');
     });
 
+    it('ignores the dying ENTER animation and waits for the exit', () => {
+      // Found in a real browser, invisible in jsdom until asserted here.
+      // Closing while the enter keyframe is still running CANCELS it, and the
+      // browser fires animationcancel on the same node. A handler that releases
+      // on any animation event unmounts on the enter's death -- the exit never
+      // paints a frame. The exit is identified by name, so the enter's event is
+      // ignored.
+      vi.useFakeTimers();
+      const { getByTestId, rerender, queryByTestId } = render(<Overlay open />);
+      const node = getByTestId('node');
+      computedStyle(RUNNING_EXIT_KEYFRAME);
+
+      rerender(<Overlay open={false} />);
+
+      act(() => {
+        node.dispatchEvent(new AnimationEvent('animationcancel', { animationName: 'scale-in' }));
+      });
+      expect(getByTestId('node').getAttribute('data-state')).toBe('closed');
+
+      act(() => {
+        node.dispatchEvent(new AnimationEvent('animationend', { animationName: 'scale-out' }));
+      });
+      expect(queryByTestId('node')).toBeNull();
+    });
+
     it('still unmounts after open -> close -> open -> close', () => {
       vi.useFakeTimers();
       const { getByTestId, rerender, queryByTestId } = render(<Overlay open />);

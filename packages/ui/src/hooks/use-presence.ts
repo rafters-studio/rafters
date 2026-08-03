@@ -73,24 +73,57 @@ function longestRun(durations: string, delays: string): number {
   return longest;
 }
 
+interface ExitMeasurement {
+  /** How long the exit will run, in ms; 0 means nothing is running. */
+  runMs: number;
+  /**
+   * The exit animation's name, or null if the exit is a transition (or nothing).
+   *
+   * Presence must know this, not just the duration. When a close interrupts a
+   * RUNNING ENTER, the browser cancels the enter animation and fires
+   * `animationcancel` on the same node -- and a handler that releases on any
+   * animation event unmounts the overlay instantly, on the enter's death rather
+   * than the exit's completion. That is a race (it only fires if the enter was
+   * still running), it truncates the exit to nothing, and it was invisible in
+   * jsdom: it took watching a real browser to see it. The name is the filter.
+   */
+  name: string | null;
+}
+
 /**
- * How long the node's exit will run, in ms, or 0 if nothing is running.
- *
- * Zero is the reduced-motion answer AND the no-animation answer, and both mean
- * the same thing to presence: release now, do not wait for an event.
+ * The animation name an event carries, or null when it does not carry one --
+ * a transitionend, or a bare Event. Null means "unidentified", and an
+ * unidentified end is honoured rather than filtered out: the filter exists to
+ * reject a DIFFERENT, named animation, not to demand identification.
  */
-function exitRunMs(element: HTMLElement): number {
-  if (typeof getComputedStyle !== 'function') return 0;
+function animationNameOf(event: Event): string | null {
+  if (typeof AnimationEvent === 'undefined' || !(event instanceof AnimationEvent)) return null;
+  return event.animationName;
+}
+
+/**
+ * Measure the exit the node is about to run.
+ *
+ * A zero runMs is the reduced-motion answer AND the no-animation answer, and
+ * both mean the same thing to presence: release now, do not wait for an event.
+ */
+function measureExit(element: HTMLElement): ExitMeasurement {
+  if (typeof getComputedStyle !== 'function') return { runMs: 0, name: null };
   const style = getComputedStyle(element);
+  const animationName = style.animationName || 'none';
   const animated =
-    (style.animationName || 'none') !== 'none'
+    animationName !== 'none'
       ? longestRun(style.animationDuration || '', style.animationDelay || '')
       : 0;
   const transitioned =
     (style.transitionProperty || 'none') !== 'none'
       ? longestRun(style.transitionDuration || '', style.transitionDelay || '')
       : 0;
-  return Math.max(animated, transitioned);
+  return {
+    runMs: Math.max(animated, transitioned),
+    // Only claim a name when the animation is what we are actually waiting on.
+    name: animated >= transitioned && animated > 0 ? animationName : null,
+  };
 }
 
 /**
@@ -122,7 +155,7 @@ export function usePresence(open: boolean): Presence {
       setPresent(false);
       return;
     }
-    const runMs = exitRunMs(node);
+    const { runMs, name: exitName } = measureExit(node);
     if (runMs === 0) {
       // No movement to wait for (reduced motion, or no exit animation at all).
       // Releasing here is what keeps the reduced-motion path off an
@@ -139,6 +172,11 @@ export function usePresence(open: boolean): Presence {
     };
     const done = (event: Event) => {
       if (event.target !== node) return; // ignore descendant animations
+      // ...and ignore the DYING ENTER. Interrupting a running enter cancels it,
+      // which fires animationcancel on this very node; releasing on that ends
+      // the exit before its first frame paints.
+      const fired = animationNameOf(event);
+      if (exitName !== null && fired !== null && fired !== exitName) return;
       release();
     };
     node.addEventListener('animationend', done);
