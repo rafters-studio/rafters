@@ -9,6 +9,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it } from 'vitest';
 import Drawer from '../../../src/components/drawer/drawer.astro';
 import { bindDrawer } from '../../../src/components/drawer/drawer.behavior';
+import { assertConfigTravelsAsData } from '../../harness/conformance';
 
 afterEach(() => {
   document.body.innerHTML = '';
@@ -21,7 +22,7 @@ async function mount(
   const container = await AstroContainer.create();
   const html = await container.renderToString(Drawer, { props: { id: 'dr', ...props }, slots });
   document.body.innerHTML = html;
-  const root = document.body.querySelector('rafters-drawer') as HTMLElement;
+  const root = document.body.querySelector('[data-part="root"][data-drawer]') as HTMLElement;
   bindDrawer(root); // the <script> does this per instance on the real page
   return root;
 }
@@ -74,5 +75,32 @@ describe('drawer conformance [astro]', () => {
     expect(content().hidden).toBe(true);
     expect(document.activeElement).toBe(trigger());
     expect(document.body.style.overflow).not.toBe('hidden');
+  });
+
+  // #2004: the root is a real element with a class, not an unregistered
+  // <rafters-drawer> used as a query hook. #2001: its config is data-* only.
+  it('root is a semantic, classed div and config crosses the seam as data-* only', async () => {
+    const root = await mount({ title: 'Actions', modal: false, side: 'right' });
+    expect(root.tagName).toBe('DIV');
+    expect(root.className).toBe('contents');
+    expect(root.hasAttribute('data-drawer')).toBe(true);
+
+    assertConfigTravelsAsData(root, {
+      modal: 'false',
+      defaultOpen: 'false',
+      side: 'right',
+    });
+  });
+
+  it('rehydration: bindDrawer reconstructs defaultOpen from dataset alone', async () => {
+    const root = await mount({ title: 'Actions', defaultOpen: true });
+    expect(root.dataset['defaultOpen']).toBe('true');
+    // Erase the SSR open projection AND the content's data-state fallback, then
+    // re-bind: only data-default-open, read through dataset, can bring it back.
+    const panel = content();
+    panel.removeAttribute('data-state');
+    panel.hidden = true;
+    bindDrawer(root);
+    expect(panel.hidden).toBe(false);
   });
 });

@@ -158,23 +158,26 @@ export function bindHoverCard(root: HTMLElement): () => void {
   const getPart = (part: string): HTMLElement | null =>
     part === 'root' ? root : root.querySelector<HTMLElement>(`[data-part="${part}"]`);
 
-  const numAttr = (name: string, fallback: number): number => {
-    const raw = root.getAttribute(name);
-    if (raw === null) return fallback;
+  // Config travels as `data-*` and nothing else (#2001/#2004), so the read is
+  // `dataset` by camelCase key -- `data-open-delay` is dataset.openDelay.
+  const data = root.dataset;
+  const numData = (key: string, fallback: number): number => {
+    const raw = data[key];
+    if (raw === undefined) return fallback;
     const parsed = Number(raw);
     return Number.isFinite(parsed) ? parsed : fallback;
   };
 
   const content = getPart('content');
   const config: HoverCardConfig = {
-    openDelay: numAttr('open-delay', DEFAULT_OPEN_DELAY),
-    closeDelay: numAttr('close-delay', DEFAULT_CLOSE_DELAY),
-    disableHoverableContent: root.getAttribute('disable-hoverable-content') === 'true',
-    defaultOpen:
-      root.getAttribute('default-open') === 'true' || content?.dataset['state'] === 'open',
-    side: (root.getAttribute('side') as Side | null) ?? undefined,
-    align: (root.getAttribute('align') as Align | null) ?? undefined,
-    sideOffset: root.hasAttribute('side-offset') ? numAttr('side-offset', 4) : undefined,
+    openDelay: numData('openDelay', DEFAULT_OPEN_DELAY),
+    closeDelay: numData('closeDelay', DEFAULT_CLOSE_DELAY),
+    disableHoverableContent: data['disableHoverableContent'] === 'true',
+    defaultOpen: data['defaultOpen'] === 'true' || content?.dataset['state'] === 'open',
+    side: (data['side'] as Side | undefined) ?? undefined,
+    align: (data['align'] as Align | undefined) ?? undefined,
+    // Presence, not truthiness: data-side-offset="0" is a real offset.
+    sideOffset: 'sideOffset' in data ? numData('sideOffset', 4) : undefined,
   };
 
   const { memory, dispatch } = createBehavior(hoverCard, config);

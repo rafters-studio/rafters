@@ -19,7 +19,7 @@ beforeAll(() => {
 
 async function mount(closeDelay = 0): Promise<HTMLElement> {
   document.body.innerHTML = `
-    <rafters-hover-card data-part="root" open-delay="0" close-delay="${closeDelay}">
+    <rafters-hover-card data-part="root" data-open-delay="0" data-close-delay="${closeDelay}">
       <a href="#" data-part="trigger" id="hc-trigger" data-state="closed">@john</a>
       <div data-part="content" id="hc-content" role="dialog" aria-label="John Doe" data-state="closed" hidden>
         Software Engineer
@@ -92,7 +92,7 @@ describe('hover-card conformance [wc]', () => {
     // hover/focus had given the primitive state to close. A raw Escape keydown
     // with no focus event must still close it.
     document.body.innerHTML = `
-      <rafters-hover-card data-part="root" open-delay="0" default-open="true">
+      <rafters-hover-card data-part="root" data-open-delay="0" data-default-open="true">
         <a href="#" data-part="trigger" id="hc-trigger" data-state="open">@john</a>
         <div data-part="content" id="hc-content" role="dialog" aria-label="John Doe" data-state="open">Software Engineer</div>
       </rafters-hover-card>`;

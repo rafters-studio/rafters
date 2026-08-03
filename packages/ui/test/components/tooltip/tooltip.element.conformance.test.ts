@@ -19,7 +19,7 @@ beforeAll(() => {
 
 async function mount(skipDelay = 0): Promise<HTMLElement> {
   document.body.innerHTML = `
-    <rafters-tooltip data-part="root" delay-duration="0" skip-delay-duration="${skipDelay}">
+    <rafters-tooltip data-part="root" data-delay-duration="0" data-skip-delay-duration="${skipDelay}">
       <button type="button" data-part="trigger" id="t-trigger" data-state="closed">Help</button>
       <div data-part="content" id="t-content" role="tooltip" data-state="closed" hidden>More info</div>
     </rafters-tooltip>`;
@@ -90,7 +90,7 @@ describe('tooltip conformance [wc]', () => {
     // hover/focus had given the primitive state to close. A raw Escape keydown
     // with no focus event must still close it.
     document.body.innerHTML = `
-      <rafters-tooltip data-part="root" delay-duration="0" default-open="true">
+      <rafters-tooltip data-part="root" data-delay-duration="0" data-default-open="true">
         <button type="button" data-part="trigger" id="t-trigger" data-state="open">Help</button>
         <div data-part="content" id="t-content" role="tooltip" data-state="open">More info</div>
       </rafters-tooltip>`;

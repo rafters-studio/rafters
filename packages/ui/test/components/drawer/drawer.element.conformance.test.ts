@@ -15,7 +15,7 @@ beforeAll(() => {
 
 async function mount(modal = true): Promise<HTMLElement> {
   document.body.innerHTML = `
-    <rafters-drawer${modal ? '' : ' modal="false"'} side="bottom">
+    <rafters-drawer${modal ? '' : ' data-modal="false"'} data-side="bottom">
       <button type="button" data-part="trigger" id="dr-trigger" aria-haspopup="dialog" aria-expanded="false" data-state="closed">Open</button>
       <div data-part="overlay" id="dr-overlay" aria-hidden="true" data-state="closed" hidden></div>
       <div data-part="content" id="dr-content" role="dialog" tabindex="-1" aria-labelledby="dr-title" data-state="closed" hidden>
@@ -95,7 +95,7 @@ describe('drawer conformance [wc]', () => {
     // The bind resolves any keydown inside content as content-scoped.
     const user = userEvent.setup();
     document.body.innerHTML = `
-      <rafters-drawer side="bottom">
+      <rafters-drawer data-side="bottom">
         <button type="button" data-part="trigger" id="dr-trigger" aria-haspopup="dialog" aria-expanded="false" data-state="closed">Open</button>
         <div data-part="overlay" id="dr-overlay" aria-hidden="true" data-state="closed" hidden></div>
         <div data-part="content" id="dr-content" role="dialog" tabindex="-1" aria-labelledby="dr-title" data-state="closed" hidden>

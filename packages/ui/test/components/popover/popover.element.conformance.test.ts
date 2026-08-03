@@ -17,7 +17,7 @@ beforeAll(() => {
 
 async function mount(): Promise<HTMLElement> {
   document.body.innerHTML = `
-    <rafters-popover data-part="root" side="bottom" align="center">
+    <rafters-popover data-part="root" data-side="bottom" data-align="center">
       <button type="button" data-part="trigger" id="p-trigger" aria-haspopup="dialog" aria-expanded="false" data-state="closed">Open</button>
       <div data-part="content" id="p-content" role="dialog" tabindex="-1" data-state="closed" data-side="bottom" data-align="center" hidden>
         <button type="button">Action</button>
