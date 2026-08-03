@@ -25,6 +25,7 @@ import {
   resolveRatio,
 } from '@rafters/math-utils';
 import type { Token } from '@rafters/shared';
+import { DEFAULT_MOTION_INTENT_DURATIONS } from './defaults.js';
 import type {
   AnimationDef,
   DelayDef,
@@ -35,7 +36,13 @@ import type {
   MotionCompositePreset,
   MotionSemanticMapping,
 } from './defaults.js';
-import { deriveBand, deriveCurve, deriveDuration, type MotionIntent } from './motion-derivation.js';
+import {
+  deriveBand,
+  deriveCurve,
+  deriveDuration,
+  type IntentDurationMatrix,
+  type MotionIntent,
+} from './motion-derivation.js';
 import type { GeneratorResult, ResolvedSystemConfig } from './types.js';
 import { EASING_CURVES, MOTION_DURATION_SCALE } from './types.js';
 
@@ -97,6 +104,13 @@ export function generateMotionTokens(
   // live now and the config work stays separable.
   const intent: MotionIntent = (config as { intent?: MotionIntent }).intent ?? 'efficient';
 
+  // The per-intent starting points. Supplied by the orchestrator like every other
+  // definition set, so a project can hand in its own matrix -- these are designer
+  // inputs, not system constants.
+  const intentDurations =
+    (config as { intentDurations?: IntentDurationMatrix }).intentDurations ??
+    DEFAULT_MOTION_INTENT_DURATIONS;
+
   const ratio = resolveRatio(progressionRatio);
   const ratioVal = computeRatioValue(ratio);
   const computeStep = (base: number, step: number) => ratioStep(ratio, base, step);
@@ -143,7 +157,7 @@ export function generateMotionTokens(
     // emits a constant and every downstream reference inherits the constant.
     // At the neutral intent this returns each tier's shipped default, so the
     // emitted system is unchanged until someone chooses a different intent.
-    const durationMs = deriveDuration(scale, intent, durationDefs);
+    const durationMs = deriveDuration(scale, intent, durationDefs, intentDurations);
     const [rangeMin, rangeMax] = def.range;
     const bandNote = def.band ? ` Band: ${def.band}.` : '';
     const rangeNote = rangeMin === rangeMax ? ' Fixed.' : ` Range: ${rangeMin}-${rangeMax}ms.`;

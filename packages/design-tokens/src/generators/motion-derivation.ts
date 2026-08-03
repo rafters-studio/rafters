@@ -56,66 +56,28 @@ const TRAVEL_BAND: Record<MotionTravel, MotionBand> = {
   none: 'fast',
   short: 'moderate',
   medium: 'normal',
-  large: 'slow',
+  large: 'normal',
 };
-
-/**
- * `sheet-in` and `page` declare "large spatial movement" and the `slow` tier
- * lists `sheets` and `page-transitions` in its own contexts -- yet both ship at
- * `normal`. That is a deliberate human call (`b864de01`), not drift.
- *
- * The derivation therefore does NOT silently overwrite it. Naming the exception
- * here keeps it a visible, arguable decision instead of a number nobody can
- * trace, which is the whole point of deriving rather than typing.
- */
-export const LARGE_TRAVEL_DISAGREEMENT = {
-  derived: 'slow' as MotionBand,
-  shipped: 'normal' as MotionBand,
-  reason:
-    'b864de01 places the sheet pair at normal deliberately -- the one pair without a shortened exit. Unresolved: either the model needs a term that justifies normal, or these move to slow.',
-};
-
-/** Honour the shipped call while the disagreement stands. */
-function applyLargeTravelException(band: MotionBand, travel: MotionTravel): MotionBand {
-  return travel === 'large' ? LARGE_TRAVEL_DISAGREEMENT.shipped : band;
-}
 
 /**
  * Exit is one band shorter than its enter -- greet warmly, leave quietly.
  *
- * Holds for three of the four shipped pairs (dropdown moderate->fast, modal
- * normal->moderate, expand normal->moderate). The sheet pair is the documented
- * exception and is handled by the large-travel rule above, which lands both
- * halves on `normal`.
+ * Applied to every pair as of the current matrix, sheet included, which states
+ * the rule without qualification. All nine spatial mappings follow it:
+ * dropdown moderate->fast, modal normal->moderate, sheet normal->moderate,
+ * expand normal->moderate.
+ *
+ * An earlier pass here carved out a large-travel exception, reading `b864de01`
+ * ("the one pair without a shortened exit") as the rule. The matrix's drift
+ * table lists that same value as drift, so the exception was encoding a
+ * disagreement rather than a decision. Worth knowing if the sheet pair comes
+ * back up -- the argument for it moving in and out at one pace is a real one,
+ * it just is not what the current matrix says.
  */
 function shortenForExit(band: MotionBand): MotionBand {
   const i = BAND_ORDER.indexOf(band);
   return BAND_ORDER[Math.max(0, i - 1)] as MotionBand;
 }
-
-/**
- * Where inside its band an intent sits, as a 0..1 position.
- *
- * Only two intents have measured data. `efficient` sits at the LOW end of every
- * band -- that is what ships today and what `motion-duration-ranges.test.ts`
- * documents ("efficient runs fast, so its pick is the LOW end of each range").
- * `elegant` is the measured peak for motion-duration in the 30-site study.
- *
- * The remaining three are NOT yet researched. They inherit the neutral position
- * rather than receiving an invented one -- a guessed number here would be
- * indistinguishable from data at the call site, which is exactly how the last
- * hand-typed table came to look derived.
- */
-const INTENT_POSITION: Record<MotionIntent, number> = {
-  efficient: 0,
-  elegant: 1,
-  friendly: 0,
-  technical: 0,
-  editorial: 0,
-};
-
-/** Intents whose position is measured rather than inherited from neutral. */
-export const RESEARCHED_INTENTS: ReadonlySet<MotionIntent> = new Set(['efficient', 'elegant']);
 
 /**
  * Duration in ms: the band supplies the window, the intent picks a point in it.
@@ -139,10 +101,22 @@ export const RESEARCHED_INTENTS: ReadonlySet<MotionIntent> = new Set(['efficient
  */
 const LANDMARK_BANDS: ReadonlySet<MotionBand> = new Set(['instant', 'micro', 'fast']);
 
+/**
+ * Where each intent starts inside each band. Supplied as DATA, not computed --
+ * see DEFAULT_MOTION_INTENT_DURATIONS for why a single interpolated position
+ * cannot express the agreed baseline.
+ *
+ * A missing cell falls back to the band's own default, so a partially-filled
+ * matrix is valid and a designer can move one intent's `normal` without
+ * supplying the other twenty-nine.
+ */
+export type IntentDurationMatrix = Record<string, Partial<Record<string, number>>>;
+
 export function deriveDuration(
   band: MotionBand,
   intent: MotionIntent,
   durationDefs: Record<string, DurationDef>,
+  matrix?: IntentDurationMatrix,
 ): number {
   const def = durationDefs[band];
   if (def === undefined) {
@@ -150,11 +124,17 @@ export function deriveDuration(
       `motion derivation: unknown band "${band}". Known bands: ${BAND_ORDER.join(', ')}.`,
     );
   }
+  // A landmark is not a matter of character: 100ms is the Nielsen instantaneous
+  // threshold and 150ms matches a cursor already on target. No intent moves them.
   if (LANDMARK_BANDS.has(band)) return def.default;
 
   const [min, max] = def.range;
-  const position = INTENT_POSITION[intent];
-  return Math.round(min + (max - min) * position);
+  const start = matrix?.[intent]?.[band] ?? def.default;
+
+  // The band clamps the starting point. Character may pick anywhere inside the
+  // perceptual window and nowhere outside it -- which is the whole reason tiers
+  // are ranges rather than constants, and why no separate validation is needed.
+  return Math.min(max, Math.max(min, start));
 }
 
 /**
@@ -180,15 +160,8 @@ export function deriveBand(
     return declaredBand;
   }
 
-  const base = applyLargeTravelException(TRAVEL_BAND[travel], travel);
-
-  // Large travel is "the one pair without a shortened exit" (b864de01): a tracked
-  // spatial surface moves in and out at one pace, because the user is following
-  // it both ways. So the exit rule does not apply -- and that is a second,
-  // independent reason the sheet pair sits where it does, distinct from the band
-  // disagreement above.
-  if (category === 'exit' && travel !== 'large') return shortenForExit(base);
-  return base;
+  const base = TRAVEL_BAND[travel];
+  return category === 'exit' ? shortenForExit(base) : base;
 }
 
 /**

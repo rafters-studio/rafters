@@ -14,7 +14,6 @@ import {
   deriveBand,
   deriveCurve,
   deriveDuration,
-  LARGE_TRAVEL_DISAGREEMENT,
   type MotionTravel,
 } from '../src/generators/motion-derivation.js';
 
@@ -39,7 +38,7 @@ const SPATIAL: Array<{
   { name: 'modal-in', travel: 'medium', category: 'enter', ships: 'normal' },
   { name: 'modal-out', travel: 'medium', category: 'exit', ships: 'moderate' },
   { name: 'sheet-in', travel: 'large', category: 'enter', ships: 'normal' },
-  { name: 'sheet-out', travel: 'large', category: 'exit', ships: 'normal' },
+  { name: 'sheet-out', travel: 'large', category: 'exit', ships: 'moderate' },
 ];
 
 describe('band derives from travel and category', () => {
@@ -50,23 +49,22 @@ describe('band derives from travel and category', () => {
   }
 
   it('exit is one band shorter than its enter, for every non-large pair', () => {
-    for (const travel of ['short', 'medium'] as MotionTravel[]) {
+    for (const travel of ['short', 'medium', 'large'] as MotionTravel[]) {
       const enter = deriveBand('enter', travel, undefined);
       const exit = deriveBand('exit', travel, undefined);
       expect(BAND_ORDER.indexOf(exit)).toBe(BAND_ORDER.indexOf(enter) - 1);
     }
   });
 
-  it('the large-travel pair does NOT shorten on exit -- the documented exception', () => {
-    expect(deriveBand('enter', 'large', undefined)).toBe(deriveBand('exit', 'large', undefined));
-  });
-
-  it('records the large-travel disagreement rather than resolving it silently', () => {
-    // The model says slow; b864de01 says normal. Both are asserted so that
-    // changing either one has to be deliberate.
-    expect(LARGE_TRAVEL_DISAGREEMENT.derived).toBe('slow');
-    expect(LARGE_TRAVEL_DISAGREEMENT.shipped).toBe('normal');
-    expect(deriveBand('enter', 'large', undefined)).toBe(LARGE_TRAVEL_DISAGREEMENT.shipped);
+  it('exit shortens for EVERY pair, large travel included -- no exceptions', () => {
+    // The agreed matrix states the rule without qualification. An earlier pass
+    // carved out a large-travel exception by reading b864de01 as the rule; the
+    // matrix's drift table records that commit as the drift instead.
+    for (const travel of ['short', 'medium', 'large'] as MotionTravel[]) {
+      const enter = deriveBand('enter', travel, undefined);
+      const exit = deriveBand('exit', travel, undefined);
+      expect(BAND_ORDER.indexOf(exit)).toBe(BAND_ORDER.indexOf(enter) - 1);
+    }
   });
 
   it('an interaction mapping must declare its band -- it has no travel', () => {
@@ -81,7 +79,7 @@ describe('duration derives from band and intent', () => {
   it('efficient reproduces the shipped default for every communicative band', () => {
     // The bands that carry spatial motion. These are what a travel-driven
     // derivation actually produces, and they match byte for byte.
-    const shipped: Record<string, number> = { moderate: 200, normal: 300, slow: 400 };
+    const shipped: Record<string, number> = { moderate: 250, normal: 350, slow: 500 };
     for (const [band, ms] of Object.entries(shipped)) {
       expect(deriveDuration(band as never, 'efficient', DEFAULT_DURATION_DEFINITIONS)).toBe(ms);
     }
@@ -112,23 +110,30 @@ describe('duration derives from band and intent', () => {
     expect(deriveDuration('micro', 'elegant', DEFAULT_DURATION_DEFINITIONS)).toBe(100);
   });
 
-  it('elegant sits at the high end -- the measured motion-duration peak', () => {
-    expect(deriveDuration('moderate', 'elegant', DEFAULT_DURATION_DEFINITIONS)).toBe(300);
-    expect(deriveDuration('normal', 'elegant', DEFAULT_DURATION_DEFINITIONS)).toBe(400);
+  it('an unresearched intent falls back to the neutral band default', () => {
+    // elegant's row is empty on purpose. The study established the DIRECTION
+    // (motion-duration peaks at elegant) but never a value, so it inherits the
+    // neutral baseline rather than a number somebody invented.
+    expect(deriveDuration('moderate', 'elegant', DEFAULT_DURATION_DEFINITIONS)).toBe(250);
   });
 
-  it('CHANGING INTENT MOVES DURATION -- the whole point of the epic', () => {
-    const efficient = deriveDuration('moderate', 'efficient', DEFAULT_DURATION_DEFINITIONS);
-    const elegant = deriveDuration('moderate', 'elegant', DEFAULT_DURATION_DEFINITIONS);
-    expect(elegant).toBeGreaterThan(efficient);
+  it('A DESIGNER-SUPPLIED STARTING POINT MOVES DURATION -- the point of the epic', () => {
+    // The matrix is a designer input. Supplying a row is the whole mechanism;
+    // the shipped rows are seed data, not the feature.
+    const custom = { elegant: { moderate: 300 } };
+    expect(deriveDuration('moderate', 'elegant', DEFAULT_DURATION_DEFINITIONS, custom)).toBe(300);
+    expect(deriveDuration('moderate', 'efficient', DEFAULT_DURATION_DEFINITIONS, custom)).toBe(250);
   });
 
   it('the band clamps the intent -- character never escapes perception', () => {
     // moderate is the communicative window [200,300]. No intent may reach 400,
     // because 400 is a different perceptual band, not a stronger flavour of this one.
     const [min, max] = DEFAULT_DURATION_DEFINITIONS.moderate?.range as [number, number];
+    // Including a designer who asks for something outside the window: the band
+    // is a fact about perception, so it clamps rather than obeys.
+    const absurd = { elegant: { moderate: 5000 }, technical: { moderate: 1 } };
     for (const intent of ['efficient', 'elegant', 'friendly', 'technical', 'editorial'] as const) {
-      const ms = deriveDuration('moderate', intent, DEFAULT_DURATION_DEFINITIONS);
+      const ms = deriveDuration('moderate', intent, DEFAULT_DURATION_DEFINITIONS, absurd);
       expect(ms).toBeGreaterThanOrEqual(min);
       expect(ms).toBeLessThanOrEqual(max);
     }
@@ -207,7 +212,7 @@ describe('end to end: changing intent moves the emitted tokens (epic #1973)', ()
         "motion-semantic-modal-in" => "normal/enter",
         "motion-semantic-modal-out" => "moderate/exit",
         "motion-semantic-sheet-in" => "normal/spring-smooth",
-        "motion-semantic-sheet-out" => "normal/exit",
+        "motion-semantic-sheet-out" => "moderate/exit",
         "motion-semantic-expand" => "normal/enter",
         "motion-semantic-collapse" => "moderate/exit",
         "motion-semantic-page" => "normal/spring-smooth",
@@ -239,20 +244,18 @@ describe('the epic condition: a designer changes intent and motion moves', () =>
     const d = durationsFor('efficient');
     expect(d['motion-duration-micro']).toBe('100ms');
     expect(d['motion-duration-fast']).toBe('150ms');
-    expect(d['motion-duration-moderate']).toBe('200ms');
-    expect(d['motion-duration-normal']).toBe('300ms');
-    expect(d['motion-duration-slow']).toBe('400ms');
+    expect(d['motion-duration-moderate']).toBe('250ms');
+    expect(d['motion-duration-normal']).toBe('350ms');
+    expect(d['motion-duration-slow']).toBe('500ms');
   });
 
-  it('elegant emits longer communicative durations -- WITHOUT ANY TABLE BEING EDITED', () => {
-    const efficient = durationsFor('efficient');
-    const elegant = durationsFor('elegant');
-
-    expect(elegant['motion-duration-moderate']).toBe('300ms');
-    expect(elegant['motion-duration-normal']).toBe('400ms');
-    expect(elegant['motion-duration-slow']).toBe('500ms');
-
-    expect(elegant['motion-duration-moderate']).not.toBe(efficient['motion-duration-moderate']);
+  it('the four unstudied intents emit the neutral baseline, not invented values', () => {
+    // Honest state of the data: only efficient has a researched row. The others
+    // are empty and therefore identical to neutral. That is a gap in the RESEARCH,
+    // not in the mechanism -- the previous test proves a supplied row moves.
+    for (const intent of ['elegant', 'friendly', 'technical', 'editorial']) {
+      expect(durationsFor(intent)['motion-duration-moderate']).toBe('250ms');
+    }
   });
 
   it('the acknowledgment landmarks do not move -- perception is not a matter of taste', () => {

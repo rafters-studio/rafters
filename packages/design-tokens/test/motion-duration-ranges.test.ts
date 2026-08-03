@@ -24,9 +24,9 @@ const EFFICIENT_DEFAULTS: Record<string, number> = {
   instant: 0,
   micro: 100,
   fast: 150,
-  moderate: 200,
-  normal: 300,
-  slow: 400,
+  moderate: 250,
+  normal: 350,
+  slow: 500,
 };
 
 describe('duration tiers: regression', () => {

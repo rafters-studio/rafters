@@ -459,7 +459,7 @@ export const DEFAULT_DURATION_DEFINITIONS: Record<string, DurationDef> = {
   },
   moderate: {
     range: [200, 300],
-    default: 200,
+    default: 250,
     band: 'communicative (~200-300ms)',
     meaning:
       'Dropdowns, tab switches, small reveals. The communicative window: fast enough to feel responsive, slow enough for the eye to track a trajectory and build a spatial model.',
@@ -468,7 +468,7 @@ export const DEFAULT_DURATION_DEFINITIONS: Record<string, DurationDef> = {
   },
   normal: {
     range: [300, 400],
-    default: 300,
+    default: 350,
     band: 'communicative, larger movement',
     meaning:
       'The workhorse -- modal entrances, toggles, standard state transitions. The communicative window for larger movement.',
@@ -477,13 +477,70 @@ export const DEFAULT_DURATION_DEFINITIONS: Record<string, DurationDef> = {
   },
   slow: {
     range: [400, 500],
-    default: 400,
+    default: 500,
     band: 'at the sluggish boundary',
     meaning:
       'Sheets, page transitions, large spatial movement where the user needs orientation. At the sluggish boundary -- the ceiling for anything but full-screen spatial transitions.',
     contexts: ['sheets', 'page-transitions', 'large-spatial-movement'],
     motionIntent: 'enter',
   },
+};
+
+/**
+ * Where each intent STARTS inside each perceptual band.
+ *
+ * This table is motion's intent, held in motion. As of the last discussion there
+ * is no layer above it: the colour scale is the intent in colour, the spacing
+ * progression is the intent in spacing, and these durations plus the curve roles
+ * are the intent in motion. The thinking is that coherence comes from every
+ * namespace deriving consistently rather than from a document asserting it, which
+ * is why two centralizing designs were tried and set aside -- an INTENT.md above
+ * the namespace docs, and a coordinate space with the intent words as points.
+ * Recorded so the next person knows they were considered, not to rule them out.
+ *
+ * The 30-site study is why the rows differ at all: each namespace peaks at one
+ * intent and is flat elsewhere, and motion-duration is the namespace that peaks at
+ * elegant. Efficient owns no peak, which is what makes it the neutral one.
+ *
+ * A matrix, not a formula. An earlier pass modelled intent as a single 0..1
+ * position interpolated across every band, which cannot express the agreed
+ * baseline: `moderate` 250 sits mid-band in [200,300], `normal` 350 sits mid-band
+ * in [300,400], but `slow` 500 sits at the TOP of [400,500]. One position cannot
+ * be mid, mid and top at once, so the formula was fitting rather than describing.
+ *
+ * These are STARTING POINTS, not constants. A designer moves them; Studio clamps
+ * each to its band, because the band is a fact about perception and the starting
+ * point is a matter of character. Only the value moves -- the window does not.
+ *
+ * `instant`, `micro` and `fast` are absent from every row on purpose. They are
+ * perceptual landmarks rather than positions: 0 is nothing, 100ms is the Nielsen
+ * instantaneous threshold, 150ms matches a cursor already on target. An intent
+ * does not get to restyle those, so there is no cell to edit.
+ *
+ * Only `efficient` is seeded from research. The other four rows inherit it until
+ * their own studies land -- an invented number here would be indistinguishable
+ * from a measured one at the point of use, which is exactly how the last table
+ * came to look derived.
+ */
+export type MotionIntentDurations = Partial<Record<string, number>>;
+
+export const DEFAULT_MOTION_INTENT_DURATIONS: Record<string, MotionIntentDurations> = {
+  // The agreed baseline (ruling of 2026-07-23): moderate 250, normal 350,
+  // slow 500. The gaps are 100, 100, 150 -- NOT a flat ladder, and not a ratio
+  // progression either. Perception is not evenly spaced.
+  efficient: { moderate: 250, normal: 350, slow: 500 },
+
+  // EMPTY ON PURPOSE, not "same as efficient". An empty row falls back to the
+  // band's neutral default, which is the honest behaviour for an intent whose
+  // motion has not been studied. Copying efficient's numbers into these would
+  // read as five measured rows at every call site and would be four fabrications.
+  //
+  // The 30-site study established the DIRECTION for one of them -- motion-duration
+  // peaks at elegant -- but a direction is not a value, and this table holds values.
+  elegant: {},
+  friendly: {},
+  technical: {},
+  editorial: {},
 };
 
 export interface EasingDef {

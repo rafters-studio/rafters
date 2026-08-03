@@ -82,9 +82,9 @@ describe('motion generator: golden output', () => {
     expect(byName.get('motion-duration-instant')).toBe('0ms');
     expect(byName.get('motion-duration-micro')).toBe('100ms');
     expect(byName.get('motion-duration-fast')).toBe('150ms');
-    expect(byName.get('motion-duration-moderate')).toBe('200ms');
-    expect(byName.get('motion-duration-normal')).toBe('300ms');
-    expect(byName.get('motion-duration-slow')).toBe('400ms');
+    expect(byName.get('motion-duration-moderate')).toBe('250ms');
+    expect(byName.get('motion-duration-normal')).toBe('350ms');
+    expect(byName.get('motion-duration-slow')).toBe('500ms');
   });
 
   it('emits no keyframe referencing a variable this system never sets', () => {
