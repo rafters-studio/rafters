@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { separator } from '../../../src/components/separator/separator.behavior';
+import type { AriaRole } from '../../../src/lib/contract';
 
 const state = {};
 const ids = { root: 'r' };
@@ -34,6 +35,21 @@ describe('separator aria projection', () => {
         'aria-orientation': 'vertical',
       },
     );
+  });
+
+  // The projected role is typed AriaRole, not a bare string (#2002). HONEST
+  // LIMIT: the annotation below documents intent but is NOT compile-enforced --
+  // tsconfig excludes test files and vitest runs without typechecking, so a
+  // type regression would not fail here. The runtime value assertion is what
+  // this test actually guards; the type is guarded only by astro check over
+  // the .astro consumers, which no automated path currently runs (see #2008's
+  // audit note -- the dogfood consumer install is the real tripwire today).
+  it('projects role as an AriaRole, so performances paint it without casting', () => {
+    const decorativeRole: AriaRole | undefined = separator.aria(state, {}, ids).root?.role;
+    const semanticRole: AriaRole | undefined = separator.aria(state, { decorative: false }, ids)
+      .root?.role;
+    expect(decorativeRole).toBe('none');
+    expect(semanticRole).toBe('separator');
   });
 
   it('decorative=true is explicit-equivalent to the default', () => {

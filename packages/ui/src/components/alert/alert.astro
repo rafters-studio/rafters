@@ -34,6 +34,7 @@
  * violation. Same disposition card and empty already record. A consumer who
  * wants a real heading slots one in.
  */
+import type { AriaAttrs } from '../../lib/contract';
 import { alert, type AlertConfig, type AlertVariant } from './alert.behavior';
 import {
   alertActionClasses,
@@ -54,8 +55,10 @@ const config: AlertConfig = { variant };
 const classes: AlertClassSet = alertClasses(config, {});
 const rootClass = [classes.root, className].filter(Boolean).join(' ');
 
-const projection = alert.aria({}, config, { root: '' }).root ?? {};
-const role = projection.role as string | undefined;
+// Annotation is documentation, not load-bearing -- inference reaches AriaAttrs
+// without it through contextual typing of the ?? {} fallback.
+const projection: AriaAttrs = alert.aria({}, config, { root: '' }).root ?? {};
+const role = projection.role;
 ---
 
 <div data-part="root" role={role} class={rootClass} {...attrs}>

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { alert } from '../../../src/components/alert/alert.behavior';
+import type { AriaRole } from '../../../src/lib/contract';
 
 const state = {};
 const ids = { root: 'r' };
@@ -14,6 +15,14 @@ describe('alert aria projection', () => {
   it('projects role=alert unconditionally, independent of config', () => {
     expect(alert.aria(state, {}, ids).root?.role).toBe('alert');
     expect(alert.aria(state, { variant: 'destructive' }, ids).root?.role).toBe('alert');
+  });
+
+  // The annotation documents the projected type (#2002) but is NOT
+  // compile-enforced -- test files are excluded from typecheck and vitest does
+  // not typecheck. The runtime assertion below is what this test guards.
+  it('projects role as an AriaRole, so performances paint it without casting', () => {
+    const role: AriaRole | undefined = alert.aria(state, {}, ids).root?.role;
+    expect(role).toBe('alert');
   });
 });
 
