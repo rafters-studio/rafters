@@ -136,25 +136,36 @@ export const image: BehaviorSpec<ImageConfig, ImageState, ImageActions, ImagePar
   keymap: () => null,
 };
 
-function parseEnum<T extends string>(raw: string | null, allowed: ReadonlyArray<T>): T | undefined {
-  return raw !== null && (allowed as ReadonlyArray<string>).includes(raw) ? (raw as T) : undefined;
+function parseEnum<T extends string>(
+  raw: string | undefined,
+  allowed: ReadonlyArray<T>,
+): T | undefined {
+  return raw !== undefined && (allowed as ReadonlyArray<string>).includes(raw)
+    ? (raw as T)
+    : undefined;
 }
 
 /**
- * Reconstruct the score's config from a root element's attributes -- the
- * inverse of the SSR/WC markup. Shared by bindImage and the Web Component so
- * the two never drift on how an attribute maps to config. `src`/`alt` are
- * native passthrough on the inner img and are not part of the projection.
+ * Reconstruct the score's config from a root element's `data-*` attributes --
+ * the inverse of the SSR/WC markup. Shared by bindImage and the Web Component
+ * so the two never drift on how an attribute maps to config.
+ *
+ * Config travels as `data-*` and nothing else (#2001). `size` and `fill` in
+ * particular are real platform attributes elsewhere (input/select, SVG), and
+ * the root here is a real <figure>: only `data-*` is valid on it, and only
+ * `data-*` reaches `dataset`, which is what this reads. `src`/`alt` are native
+ * passthrough on the inner img and are not part of the projection.
  */
 export function readImageConfig(root: HTMLElement): ImageConfig {
+  const data = root.dataset;
   return {
-    size: parseEnum(root.getAttribute('size'), ALLOWED_SIZES),
-    alignment: parseEnum(root.getAttribute('alignment'), ALLOWED_ALIGNMENTS),
-    radius: parseEnum(root.getAttribute('radius'), ALLOWED_RADII),
-    fill: root.getAttribute('fill') ?? undefined,
-    status: parseEnum(root.getAttribute('status'), ALLOWED_STATUSES),
-    errorMessage: root.getAttribute('error-message') ?? undefined,
-    loadingLabel: root.getAttribute('loading-label') ?? undefined,
+    size: parseEnum(data['size'], ALLOWED_SIZES),
+    alignment: parseEnum(data['alignment'], ALLOWED_ALIGNMENTS),
+    radius: parseEnum(data['radius'], ALLOWED_RADII),
+    fill: data['fill'],
+    status: parseEnum(data['status'], ALLOWED_STATUSES),
+    errorMessage: data['errorMessage'],
+    loadingLabel: data['loadingLabel'],
   };
 }
 

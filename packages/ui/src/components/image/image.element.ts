@@ -15,19 +15,20 @@
  * the oracle and are NOT here. The load/error surface is expressed through the
  * `status` attribute (default 'loaded' -- a clean image before any JS).
  *
- * Attributes:
- *   src            Image URL forwarded to the inner img.
- *   alt            Alt text; defaults to "" (the HTML spec for decorative
- *                  images) when absent.
- *   size           xs | sm | md | lg | xl | 2xl | full. Unknown values are
- *                  dropped (no max-width).
- *   alignment      left | center | right. Default 'center'.
- *   radius         none | sm | md | lg | xl | 2xl | 3xl | full. Default 'lg'.
- *   fill           Fill signature painted behind the image.
- *   status         loading | loaded | error. Default 'loaded'.
- *   caption        Optional text below the image, assigned via textContent.
- *   error-message  Overlay text when status='error'.
- *   loading-label  Overlay text when status='loading'.
+ * Attributes (config is `data-*` across all three targets -- see #2001; `src`,
+ * `alt` and `caption` are content forwarded to native slots, not config):
+ *   src                 Image URL forwarded to the inner img.
+ *   alt                 Alt text; defaults to "" (the HTML spec for decorative
+ *                       images) when absent.
+ *   caption             Optional text below the image, via textContent.
+ *   data-size           xs | sm | md | lg | xl | 2xl | full. Unknown values are
+ *                       dropped (no max-width).
+ *   data-alignment      left | center | right. Default 'center'.
+ *   data-radius         none | sm | md | lg | xl | 2xl | 3xl | full. Default 'lg'.
+ *   data-fill           Fill signature painted behind the image.
+ *   data-status         loading | loaded | error. Default 'loaded'.
+ *   data-error-message  Overlay text when data-status='error'.
+ *   data-loading-label  Overlay text when data-status='loading'.
  *
  * Gotcha 3: connectedCallback can fire before the light DOM is settled, so the
  * structure build + bind is deferred one microtask. Attribute changes after the
@@ -46,27 +47,21 @@ import { imageClasses } from './image.classes';
 /** Config attributes reflected onto the rendered figure so bindImage
  *  reconstructs the identical config (the Astro figure carries the same). */
 const REFLECTED_ATTRIBUTES: ReadonlyArray<string> = [
-  'size',
-  'alignment',
-  'radius',
-  'fill',
-  'status',
-  'error-message',
-  'loading-label',
+  'data-size',
+  'data-alignment',
+  'data-radius',
+  'data-fill',
+  'data-status',
+  'data-error-message',
+  'data-loading-label',
 ];
 
 export class RaftersImage extends HTMLElement {
   static readonly observedAttributes: ReadonlyArray<string> = [
     'src',
     'alt',
-    'size',
-    'alignment',
-    'radius',
-    'fill',
-    'status',
     'caption',
-    'error-message',
-    'loading-label',
+    ...REFLECTED_ATTRIBUTES,
   ];
 
   private teardown: (() => void) | null = null;

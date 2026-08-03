@@ -12,6 +12,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it } from 'vitest';
 import Grid from '../../../src/components/grid/grid.astro';
 import { bindGrid } from '../../../src/components/grid/grid.behavior';
+import { assertConfigTravelsAsData } from '../../harness/conformance';
 
 afterEach(() => {
   document.body.innerHTML = '';
@@ -86,5 +87,35 @@ describe('grid conformance [astro]', () => {
     expect(document.activeElement).toBe(grid[2]);
     await user.keyboard('{ArrowUp}');
     expect(document.activeElement).toBe(grid[0]);
+  });
+
+  // The #2001 pairing: config is data-* in the markup AND read through dataset
+  // in the bind. Both halves asserted here so a half-fix fails loudly.
+  it('config crosses the SSR/bind seam as data-* only, and rehydration still works', async () => {
+    const root = await mount({
+      preset: 'bento',
+      pattern: 'dashboard',
+      gap: '4',
+      padding: '2',
+      role: 'grid',
+      columns: 2,
+      ariaLabel: 'Cells',
+      cells: [{ html: 'a' }, { html: 'b' }, { html: 'c' }, { html: 'd' }],
+    });
+
+    assertConfigTravelsAsData(root, {
+      preset: 'bento',
+      pattern: 'dashboard',
+      columns: '2',
+      gap: '4',
+      padding: '2',
+      gridRole: 'grid',
+    });
+
+    // Rehydration: neither the honest role nor the roving tab stop is SSR'd --
+    // both exist only because bindGrid reconstructed the config from dataset.
+    expect(root.getAttribute('role')).toBe('grid');
+    expect(root.getAttribute('aria-label')).toBe('Cells');
+    expect(cells()[0]?.getAttribute('tabindex')).toBe('0');
   });
 });

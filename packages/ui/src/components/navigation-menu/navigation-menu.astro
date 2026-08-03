@@ -12,6 +12,12 @@
  * The projection is computed here from the same navigationMenu.aria /
  * navInstanceAria the React and WC controllers read -- one score, three
  * performances, zero drift.
+ *
+ * Config travels as `data-*` and nothing else (#2001): `orientation` and
+ * `delay-duration` are not valid attributes on a <nav>, and only `data-*`
+ * reaches `dataset`, which is what bindNavigationMenu reads. `data-orientation`
+ * is emitted by the score's own aria projection below, so it is spread in with
+ * {...rootAria.root} rather than written twice.
  */
 import {
   navigationMenu,
@@ -52,8 +58,7 @@ const instanceId = (part: NavigationMenuPart, value: string) => `${id}-${part}-$
 <nav
   data-part="root"
   id={ids.root}
-  orientation={orientation}
-  delay-duration={String(delayDuration)}
+  data-delay-duration={String(delayDuration)}
   class={classes.root}
   {...rootAria.root}
 >

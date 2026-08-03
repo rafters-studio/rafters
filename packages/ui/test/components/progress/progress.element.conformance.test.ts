@@ -31,7 +31,7 @@ afterEach(() => {
 
 describe('progress conformance [wc]', () => {
   it('determinate: host is the progressbar, projection fulfilled, fill sized', async () => {
-    const host = await mount('value="66" aria-label="Upload progress"');
+    const host = await mount('data-value="66" aria-label="Upload progress"');
     const root = partElement(document.body, 'root') as HTMLElement;
     expect(root).toBe(host);
     expect(root.getAttribute('role')).toBe('progressbar');
@@ -54,19 +54,21 @@ describe('progress conformance [wc]', () => {
     expect(indicator.className).toContain('animate-progress-indeterminate');
   });
 
-  it('custom max and value-text drive valuemax and the label', async () => {
-    const host = await mount('value="3" max="10" value-text="3 of 10 files" aria-label="Files"');
+  it('custom data-max and data-value-text drive valuemax and the label', async () => {
+    const host = await mount(
+      'data-value="3" data-max="10" data-value-text="3 of 10 files" aria-label="Files"',
+    );
     expect(host.getAttribute('aria-valuemax')).toBe('10');
     expect(host.getAttribute('aria-valuenow')).toBe('3');
     expect(host.getAttribute('aria-valuetext')).toBe('3 of 10 files');
   });
 
   it('a live value change re-derives the projection and the fill', async () => {
-    const host = await mount('value="20" aria-label="Upload"');
+    const host = await mount('data-value="20" aria-label="Upload"');
     const before = host.querySelector<HTMLElement>('[data-part="indicator"]');
     expect(before?.style.width).toBe('20%');
 
-    host.setAttribute('value', '80');
+    host.setAttribute('data-value', '80');
     const after = host.querySelector<HTMLElement>('[data-part="indicator"]');
     expect(host.getAttribute('aria-valuenow')).toBe('80');
     expect(after?.style.width).toBe('80%');
@@ -76,7 +78,7 @@ describe('progress conformance [wc]', () => {
 
   it('is axe-clean with an accessible name', async () => {
     document.body.innerHTML =
-      '<main><rafters-progress value="50" aria-label="Upload progress"></rafters-progress></main>';
+      '<main><rafters-progress data-value="50" aria-label="Upload progress"></rafters-progress></main>';
     await Promise.resolve();
     const results = await axe(document.body);
     expect(results.violations).toEqual([]);

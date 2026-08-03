@@ -9,7 +9,9 @@
  * score, three decorators, zero drift.
  *
  * The root div IS the progressbar (data-part="root"); it carries the config as
- * attributes so bindProgress reconstructs the identical config on the client.
+ * `data-*` attributes so bindProgress reconstructs the identical config on the
+ * client. Config is `data-*` and nothing else (#2001) -- `value`/`max` are real
+ * attributes on <progress>, not on a <div>, and `size` is real on input/select.
  * `aria-label` (or `aria-labelledby`) passes through natively -- a progressbar
  * needs an accessible name.
  */
@@ -57,7 +59,7 @@ const indicatorAria = projection.indicator ?? {};
 
 const { indeterminate, percent } = resolveProgress(config);
 
-// The attributes bindProgress re-reads to reconstruct the identical config.
+// The data-* attributes bindProgress re-reads to reconstruct the identical config.
 const valueAttr = indeterminate ? undefined : value;
 const indicatorStyle = indeterminate ? undefined : `width: ${percent}%`;
 ---
@@ -65,11 +67,11 @@ const indicatorStyle = indeterminate ? undefined : `width: ${percent}%`;
 <div
   data-part="root"
   data-progress
-  value={valueAttr}
-  max={max}
-  variant={variant}
-  size={size}
-  value-text={valueText}
+  data-value={valueAttr}
+  data-max={max}
+  data-variant={variant}
+  data-size={size}
+  data-value-text={valueText}
   class={classy(classes.root, className)}
   {...rootAria}
   {...attrs}

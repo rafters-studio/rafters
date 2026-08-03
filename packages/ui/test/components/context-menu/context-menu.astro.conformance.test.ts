@@ -15,7 +15,11 @@ import {
   bindContextMenu,
   contextMenu,
 } from '../../../src/components/context-menu/context-menu.behavior';
-import { assertAxeClean, assertContractFulfillment } from '../../harness/conformance';
+import {
+  assertAxeClean,
+  assertConfigTravelsAsData,
+  assertContractFulfillment,
+} from '../../harness/conformance';
 
 const items = [
   { label: 'Cut' },
@@ -192,5 +196,19 @@ describe('context-menu conformance [astro]', () => {
     await user.click(itemByText('Cut'));
     expect(content().hidden).toBe(true);
     expect(grandchild.hidden).toBe(true);
+  });
+
+  // The #2001 pairing: config is data-* in the markup AND read through dataset
+  // in the bind. Neither `loop` nor `avoid-collisions` is valid on a <div>.
+  it('config crosses the SSR/bind seam as data-* only, and rehydration still works', async () => {
+    const root = await mount();
+
+    assertConfigTravelsAsData(root, { loop: 'true', avoidCollisions: 'true' });
+
+    // Rehydration: the contextmenu wiring exists only because bindContextMenu
+    // built its config from dataset alone.
+    fireEvent.contextMenu(trigger(), { clientX: 12, clientY: 22 });
+    expect(content().hidden).toBe(false);
+    expect(content().getAttribute('data-state')).toBe('open');
   });
 });

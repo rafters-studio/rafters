@@ -8,6 +8,10 @@
  * the SAME DOM-native client the Web Component uses. One score, three
  * decorators, zero drift.
  *
+ * Config travels as `data-*` and nothing else (#2001): `size`/`fill` are real
+ * platform attributes elsewhere and none of these are valid on a <figure>, so
+ * the whole config block is `data-*` and readImageConfig reads `dataset`.
+ *
  * Zero client-side load tracking: `status` is config (default 'loaded'), so a
  * server-rendered image is clean. The editor surface (upload, drag-drop, paste,
  * alignment toolbar, contentEditable caption) is out of scope.
@@ -69,13 +73,13 @@ const statusAria = projection.status ?? {};
 <figure
   data-part="root"
   data-image
-  size={size}
-  alignment={alignment}
-  radius={radius}
-  fill={fill}
-  status={status}
-  error-message={errorMessage}
-  loading-label={loadingLabel}
+  data-size={size}
+  data-alignment={alignment}
+  data-radius={radius}
+  data-fill={fill}
+  data-status={status}
+  data-error-message={errorMessage}
+  data-loading-label={loadingLabel}
   class={classy(classes.root, className)}
   {...attrs}
 >

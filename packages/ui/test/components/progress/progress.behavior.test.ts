@@ -124,9 +124,15 @@ describe('readProgressConfig', () => {
     return node;
   }
 
-  it('reconstructs config from attributes (the inverse of the markup)', () => {
+  it('reconstructs config from data-* attributes (the inverse of the markup)', () => {
     const config: ProgressConfig = readProgressConfig(
-      el({ value: '3', max: '10', variant: 'success', size: 'lg', 'value-text': '3 of 10' }),
+      el({
+        'data-value': '3',
+        'data-max': '10',
+        'data-variant': 'success',
+        'data-size': 'lg',
+        'data-value-text': '3 of 10',
+      }),
     );
     expect(config).toEqual({
       value: 3,
@@ -138,7 +144,7 @@ describe('readProgressConfig', () => {
   });
 
   it('absent value reads as indeterminate; unknown variant/size fall back', () => {
-    const config = readProgressConfig(el({ variant: 'bogus', size: 'huge' }));
+    const config = readProgressConfig(el({ 'data-variant': 'bogus', 'data-size': 'huge' }));
     expect(config.value).toBeUndefined();
     expect(config.variant).toBe('default');
     expect(config.size).toBe('default');

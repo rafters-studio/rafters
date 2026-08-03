@@ -14,7 +14,10 @@ import {
   bindNavigationMenu,
   navigationMenu,
 } from '../../../src/components/navigation-menu/navigation-menu.behavior';
-import { assertInstanceAriaFulfillment } from '../../harness/conformance';
+import {
+  assertConfigTravelsAsData,
+  assertInstanceAriaFulfillment,
+} from '../../harness/conformance';
 
 const items = [
   {
@@ -102,5 +105,20 @@ describe('navigation-menu conformance [astro]', () => {
     await user.keyboard('{Escape}');
     expect(content('products').hidden).toBe(true);
     expect(trigger('products').getAttribute('aria-expanded')).toBe('false');
+  });
+
+  // The #2001 pairing: config is data-* in the markup AND read through dataset
+  // in the bind. Neither `orientation` nor `delay-duration` is valid on a <nav>.
+  it('config crosses the SSR/bind seam as data-* only, and rehydration still works', async () => {
+    const user = userEvent.setup();
+    const root = await mount();
+
+    assertConfigTravelsAsData(root, { orientation: 'horizontal', delayDuration: '200' });
+
+    // Rehydration: opening is wired only by bindNavigationMenu, which built its
+    // config from dataset alone.
+    await user.click(trigger('products'));
+    expect(content('products').hidden).toBe(false);
+    expect(trigger('products').getAttribute('aria-expanded')).toBe('true');
   });
 });

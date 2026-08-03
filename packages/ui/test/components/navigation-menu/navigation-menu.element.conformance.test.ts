@@ -18,7 +18,7 @@ beforeAll(() => {
 
 async function mount(): Promise<HTMLElement> {
   document.body.innerHTML = `
-    <rafters-navigation-menu delay-duration="1">
+    <rafters-navigation-menu data-delay-duration="1">
       <ul data-part="list">
         <li>
           <button type="button" data-part="trigger" data-value="products" data-roving-item id="t-products">Products</button>

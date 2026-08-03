@@ -22,6 +22,30 @@ export interface RenderResult {
   cleanup: () => void;
 }
 
+/**
+ * The markup/behavior pairing #2001 asks to be enforced rather than conventional.
+ *
+ * Config reaches a DOM-native binding as `data-*` and nothing else: `data-*` is
+ * the only attribute space valid on a standard HTML element, and the only one
+ * that reaches `element.dataset` -- which is what every `bindX` now reads. This
+ * asserts BOTH halves of the pair on one root, so a half-fix (markup renamed,
+ * behavior still on getAttribute, or the reverse) fails loudly instead of
+ * rendering fine and silently not rehydrating.
+ *
+ * @param expected dataset key (camelCase, e.g. `gridRole`) -> expected value
+ */
+export function assertConfigTravelsAsData(
+  root: HTMLElement,
+  expected: Record<string, string | undefined>,
+): void {
+  for (const [key, value] of Object.entries(expected)) {
+    expect(root.dataset[key], `dataset.${key}`).toBe(value);
+    // The bare, pre-fix spelling must be gone: `delayDuration` -> `delay-duration`.
+    const bare = key.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
+    expect(root.hasAttribute(bare), `bare attribute "${bare}" must not be rendered`).toBe(false);
+  }
+}
+
 export function partElement(root: HTMLElement, part: string): HTMLElement | null {
   if (root.getAttribute('data-part') === part) return root;
   return root.querySelector<HTMLElement>(`[data-part="${part}"]`);
