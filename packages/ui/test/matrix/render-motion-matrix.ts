@@ -11,7 +11,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { MotionCell } from './motion-cell.ts';
+import type { MotionCell, Provenance } from './motion-cell.ts';
 import { parseMotionCells } from './motion-cell.ts';
 import { EPILOGUE, GENERATED_HEADER, PREAMBLE, SECTIONS } from './motion-template.ts';
 
@@ -72,7 +72,7 @@ function renderExtent(cell: MotionCell): string {
 }
 
 /** The markdown's `*` means proposed and unreviewed. Only `proposed` earns it. */
-function star(value: string, provenance: string): string {
+function star(value: string, provenance: Provenance): string {
   return provenance === 'proposed' ? `${value}*` : value;
 }
 
