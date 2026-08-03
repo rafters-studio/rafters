@@ -45,10 +45,35 @@ describe('motion.jsonl', () => {
       } else {
         expect(cell.duration, key).not.toHaveProperty('provenance');
       }
-      if (cell.extent.kind === 'structural') {
+      if (cell.curve.kind !== 'role') {
+        expect(cell.curve, key).not.toHaveProperty('provenance');
+      }
+      if (cell.extent.kind !== 'generic') {
         expect(cell.extent, key).not.toHaveProperty('provenance');
       }
     }
+  });
+
+  it('REJECTS provenance smuggled onto a non-tunable value', () => {
+    // The negative assertions above only bite because the non-tunable union
+    // members are strict: a plain z.object() would strip the key silently and
+    // the data would look honest no matter what was committed. This pins the
+    // rejection itself.
+    const base = JSON.parse(JSON.stringify(cells.find((c) => c.duration.kind === 'pointer-rule')));
+    base.duration = { kind: 'pointer-rule', provenance: 'measured' };
+    expect(() => parseMotionCells(`${JSON.stringify(base)}\n`)).toThrow();
+
+    const structural = JSON.parse(
+      JSON.stringify(cells.find((c) => c.extent.kind === 'structural')),
+    );
+    structural.extent = { kind: 'structural', provenance: 'measured' };
+    expect(() => parseMotionCells(`${JSON.stringify(structural)}\n`)).toThrow();
+  });
+
+  it('refuses to render a cell whose section matches no heading', () => {
+    const orphan = JSON.parse(JSON.stringify(cells[0]));
+    orphan.section = 'no such section';
+    expect(() => renderMotionMatrix([...cells.slice(1), orphan])).toThrow(/rendered in no section/);
   });
 
   it('never claims a value was measured', () => {

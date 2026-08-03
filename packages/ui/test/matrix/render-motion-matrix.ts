@@ -103,12 +103,26 @@ function renderTable(cells: readonly MotionCell[]): string {
 
 export function renderMotionMatrix(cells: readonly MotionCell[]): string {
   const parts: string[] = [GENERATED_HEADER, '', PREAMBLE];
+  let rendered = 0;
   for (const section of SECTIONS) {
     const sectionCells = cells.filter((cell) => cell.section === section.heading);
     if (sectionCells.length === 0) {
       throw new Error(`section "${section.heading}" has no cells in motion.jsonl`);
     }
+    rendered += sectionCells.length;
     parts.push(`### ${section.heading}`, section.intro, renderTable(sectionCells), section.outro);
+  }
+  // The reverse guard: a cell whose section matches no heading would silently
+  // vanish from every table, and the md-equals-renderer test agrees with
+  // itself either way. Every cell renders exactly once or nothing renders.
+  if (rendered !== cells.length) {
+    const known = new Set(SECTIONS.map((s) => s.heading));
+    const orphans = cells.filter((c) => !known.has(c.section));
+    throw new Error(
+      `${cells.length - rendered} cell(s) rendered in no section: ${orphans
+        .map((c) => `${c.component}|${c.part}|${c.transition} (section "${c.section}")`)
+        .join('; ')}`,
+    );
   }
   parts.push(EPILOGUE);
   return parts.join('\n');

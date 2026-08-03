@@ -43,20 +43,24 @@ export type Namespace = keyof typeof VOCABULARY;
 export const ProvenanceSchema = z.enum(['baseline', 'proposed', 'measured', 'tuned']);
 export type Provenance = z.infer<typeof ProvenanceSchema>;
 
+// Non-tunable members are STRICT: a plain z.object() strips unknown keys, so a
+// bogus `provenance` smuggled onto a pointer-rule/structural/follows/none cell
+// would be silently discarded instead of rejected -- and the whole point of
+// leaving provenance off these is that nobody can turn a knob on them.
 const DurationSchema = z.discriminatedUnion('kind', [
-  z.object({ kind: z.literal('none') }),
+  z.strictObject({ kind: z.literal('none') }),
   z.object({ kind: z.literal('tier'), tier: z.string().min(1), provenance: ProvenanceSchema }),
   z.object({ kind: z.literal('period'), period: z.string().min(1), provenance: ProvenanceSchema }),
   /** The pointer rule: the part tracks the pointer exactly. Not a tunable cell. */
-  z.object({ kind: z.literal('pointer-rule') }),
+  z.strictObject({ kind: z.literal('pointer-rule') }),
   /** This cell takes whatever the cell it names resolved to. */
-  z.object({ kind: z.literal('follows'), source: z.string().min(1) }),
+  z.strictObject({ kind: z.literal('follows'), source: z.string().min(1) }),
 ]);
 
 const CurveSchema = z.discriminatedUnion('kind', [
-  z.object({ kind: z.literal('none') }),
+  z.strictObject({ kind: z.literal('none') }),
   z.object({ kind: z.literal('role'), role: z.string().min(1), provenance: ProvenanceSchema }),
-  z.object({ kind: z.literal('follows') }),
+  z.strictObject({ kind: z.literal('follows') }),
 ]);
 
 const DelaySchema = z.object({
@@ -65,14 +69,14 @@ const DelaySchema = z.object({
 });
 
 const ExtentSchema = z.discriminatedUnion('kind', [
-  z.object({ kind: z.literal('none') }),
+  z.strictObject({ kind: z.literal('none') }),
   z.object({
     kind: z.literal('generic'),
     generic: z.string().min(1),
     provenance: ProvenanceSchema,
   }),
   /** Geometry, not a token: percent of own size, a fixed angle, a step distance. */
-  z.object({ kind: z.literal('structural'), detail: z.string().min(1).optional() }),
+  z.strictObject({ kind: z.literal('structural'), detail: z.string().min(1).optional() }),
 ]);
 
 export const MotionCellSchema = z.object({
