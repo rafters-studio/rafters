@@ -1,3 +1,4 @@
+import { type OverrideKind, OverrideKindSchema } from '@rafters/shared';
 import { z } from 'zod';
 
 export type Plugin = {
@@ -12,6 +13,9 @@ export const UserOverrideSchema = z.object({
   previousValue: z.unknown(),
   reason: z.string(),
   context: z.string().optional(),
+  // Provenance. Optional by design: absent means unknown, which is what every
+  // override written before this field existed actually is.
+  kind: OverrideKindSchema.optional(),
 });
 
 export type UserOverride = z.infer<typeof UserOverrideSchema>;
@@ -35,6 +39,7 @@ export type Node = z.infer<typeof NodeSchema>;
 export type SetOptions = {
   reason: string;
   context?: string;
+  kind?: OverrideKind;
 };
 
 export class CircularDependencyError extends Error {
@@ -74,6 +79,7 @@ export class TokenGraph {
         previousValue: existing?.value,
         reason: options.reason,
         ...(options.context ? { context: options.context } : {}),
+        ...(options.kind ? { kind: options.kind } : {}),
       },
       ...(existing?.binding ? { binding: existing.binding } : {}),
     };

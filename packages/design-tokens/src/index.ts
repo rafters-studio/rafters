@@ -46,6 +46,13 @@ export {
   saveRegistryToDir,
 } from './persistence.js';
 export type { PluginSpec } from './plugin.js';
+export {
+  type ApplyPresetOptions,
+  type ApplyPresetResult,
+  applyPreset,
+  isDesignerAttributed,
+  type PresetValueSet,
+} from './preset.js';
 export { definePlugin } from './plugin.js';
 export {
   calcPlugin,

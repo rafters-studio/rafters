@@ -455,6 +455,16 @@ export const BindingSchema = z.object({
 });
 export type Binding = z.infer<typeof BindingSchema>;
 
+// Override provenance: WHO put the value there, as a machine-readable kind
+// rather than a free-text convention on the reason string.
+//   baseline -- the generated system value, restated as an explicit override
+//   preset   -- written by applying a Studio value-set
+//   designer -- a human decision; preset application must not clobber it
+// Extension point: 'measured' / 'tuned' can join the enum later.
+export const OVERRIDE_KINDS = ['baseline', 'preset', 'designer'] as const;
+export const OverrideKindSchema = z.enum(OVERRIDE_KINDS);
+export type OverrideKind = z.infer<typeof OverrideKindSchema>;
+
 // Comprehensive Design Token Schema - Single Source of Truth
 export const TokenSchema = z.object({
   // Core token data
@@ -497,6 +507,12 @@ export const TokenSchema = z.object({
       reason: z.string(),
       // Additional context (e.g. "Q1 marketing campaign", "accessibility audit")
       context: z.string().optional(),
+      // Who attributed the value. The reason string is for humans; kind is what
+      // machines branch on (preset application skips kind === 'designer').
+      // Optional and never defaulted: absent means the provenance is unknown,
+      // which is the honest state of every override written before this field
+      // existed.
+      kind: OverrideKindSchema.optional(),
     })
     .nullable(),
 

@@ -1,6 +1,6 @@
 import { type Token, TokenSchema } from '@rafters/shared';
 import type { z } from 'zod';
-import { type Node, type Plugin, type SetOptions, TokenGraph } from './graph.js';
+import { type Node, type Plugin, type SetOptions, TokenGraph, type UserOverride } from './graph.js';
 
 type TokenValue = z.infer<typeof TokenSchema>['value'];
 type UserOverrideField = NonNullable<z.infer<typeof TokenSchema>['userOverride']>;
@@ -34,13 +34,7 @@ export class TokenRegistry {
     // rebinds, but the override anchor blocks pass 2 from re-running the
     // transform now.
     for (const t of parsed) {
-      const override = t.userOverride
-        ? {
-            previousValue: t.userOverride.previousValue,
-            reason: t.userOverride.reason,
-            ...(t.userOverride.context ? { context: t.userOverride.context } : {}),
-          }
-        : undefined;
+      const override = toNodeOverride(t.userOverride);
       if (t.binding && !override) continue;
       this.graph.seed(t.name, t.value, {
         ...(override ? { userOverride: override } : {}),
@@ -68,13 +62,7 @@ export class TokenRegistry {
     }
     const t = result.data;
     this.metadata.set(t.name, t);
-    const override = t.userOverride
-      ? {
-          previousValue: t.userOverride.previousValue,
-          reason: t.userOverride.reason,
-          ...(t.userOverride.context ? { context: t.userOverride.context } : {}),
-        }
-      : undefined;
+    const override = toNodeOverride(t.userOverride);
     if (t.binding && !override) {
       this.graph.bind(t.name, t.binding.plugin, t.binding.input);
     } else {
@@ -167,6 +155,20 @@ export class TokenParseError extends Error {
   }
 }
 
+// Token schema shape -> graph node shape. One copy site so a newly added
+// override field cannot be dropped on the way in.
+function toNodeOverride(field: Token['userOverride']): UserOverride | undefined {
+  if (!field) return undefined;
+  return {
+    previousValue: field.previousValue,
+    reason: field.reason,
+    ...(field.context ? { context: field.context } : {}),
+    ...(field.kind ? { kind: field.kind } : {}),
+  };
+}
+
+// Graph node shape -> token schema shape. This is what persistence writes:
+// saveRegistryToDir serialises registry.list(), which routes through here.
 function toUserOverrideField(
   override: NonNullable<Node['userOverride']>,
   baseValue: TokenValue,
@@ -177,5 +179,6 @@ function toUserOverrideField(
     reason: override.reason,
   };
   if (override.context) result.context = override.context;
+  if (override.kind) result.kind = override.kind;
   return result;
 }
