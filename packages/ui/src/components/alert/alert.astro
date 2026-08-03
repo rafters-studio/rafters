@@ -55,6 +55,8 @@ const config: AlertConfig = { variant };
 const classes: AlertClassSet = alertClasses(config, {});
 const rootClass = [classes.root, className].filter(Boolean).join(' ');
 
+// Annotation is documentation, not load-bearing -- inference reaches AriaAttrs
+// without it through contextual typing of the ?? {} fallback.
 const projection: AriaAttrs = alert.aria({}, config, { root: '' }).root ?? {};
 const role = projection.role;
 ---

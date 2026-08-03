@@ -30,6 +30,9 @@ const config: SeparatorConfig = { orientation, decorative };
 const classes = separatorClasses(config, {});
 const rootClass = [classes.root, className].filter(Boolean).join(' ');
 
+// The annotation documents the projection's type; inference reaches the same
+// result without it (contextual typing of the ?? {} fallback), so it is
+// documentation, not load-bearing.
 const projection: AriaAttrs = separator.aria({}, config, { root: '' }).root ?? {};
 const role = projection.role;
 const ariaOrientation = projection['aria-orientation'] as SeparatorOrientation | undefined;

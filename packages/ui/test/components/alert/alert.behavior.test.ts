@@ -17,8 +17,9 @@ describe('alert aria projection', () => {
     expect(alert.aria(state, { variant: 'destructive' }, ids).root?.role).toBe('alert');
   });
 
-  // The annotation is the assertion: it does not compile if the projected role
-  // widens back to a bare string, which is what forced the cast in #2002.
+  // The annotation documents the projected type (#2002) but is NOT
+  // compile-enforced -- test files are excluded from typecheck and vitest does
+  // not typecheck. The runtime assertion below is what this test guards.
   it('projects role as an AriaRole, so performances paint it without casting', () => {
     const role: AriaRole | undefined = alert.aria(state, {}, ids).root?.role;
     expect(role).toBe('alert');
