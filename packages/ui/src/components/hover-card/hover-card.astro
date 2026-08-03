@@ -28,7 +28,9 @@ import type { PartIds } from '../../lib/contract';
 
 interface Props {
   id: string;
-  /** Href for the trigger anchor (keeps it a real, focusable link). */
+  /** Href for the trigger anchor (keeps it a real, focusable link). The anchor
+   *  is inline-flex INSIDE the block root; the component as a whole is placed
+   *  by Container, not inlined mid-sentence in a paragraph. */
   href?: string;
   /** Accessible name for the role=dialog preview. */
   label?: string;

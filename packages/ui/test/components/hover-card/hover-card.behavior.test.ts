@@ -1,6 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { createBehavior, type PartIds } from '../../../src/lib/contract';
 import {
+  bindHoverCard,
   hoverCard,
   hoverCardPlacement,
   isOpen,
@@ -121,5 +122,62 @@ describe('hoverCardPlacement defaults', () => {
       align: 'start',
       sideOffset: 8,
     });
+  });
+});
+
+/**
+ * bindHoverCard reads sideOffset by PRESENCE (`'sideOffset' in data`), not by
+ * truthiness: data-side-offset="0" is a real, flush offset and must not fall
+ * back to the 4px default. The observable is the positioner's translate, so a
+ * regression to `data['sideOffset'] ? ... : undefined` fails these.
+ */
+describe('bindHoverCard: data-side-offset parse', () => {
+  const teardowns: Array<() => void> = [];
+
+  afterEach(() => {
+    for (const teardown of teardowns.splice(0)) teardown();
+    document.body.innerHTML = '';
+  });
+
+  /** Default-open so the first paint positions the content synchronously. */
+  function mountOpen(sideOffset?: string): HTMLElement {
+    const root = document.createElement('div');
+    root.dataset['part'] = 'root';
+    root.dataset['defaultOpen'] = 'true';
+    root.dataset['side'] = 'bottom';
+    root.dataset['align'] = 'start';
+    if (sideOffset !== undefined) root.dataset['sideOffset'] = sideOffset;
+
+    const trigger = document.createElement('a');
+    trigger.href = '#';
+    trigger.dataset['part'] = 'trigger';
+    trigger.id = 'hc-trigger';
+    trigger.textContent = '@john';
+
+    const content = document.createElement('div');
+    content.dataset['part'] = 'content';
+    content.id = 'hc-content';
+    content.dataset['state'] = 'open';
+    content.textContent = 'Software Engineer';
+
+    root.append(trigger, content);
+    document.body.appendChild(root);
+    teardowns.push(bindHoverCard(root));
+    return content;
+  }
+
+  /** The y translate the positioner stamped, in px. */
+  function translateY(content: HTMLElement): number {
+    const match = /translate\((-?\d+)px, (-?\d+)px\)/.exec(content.style.transform);
+    expect(match).not.toBeNull();
+    return Number(match?.[2]);
+  }
+
+  it('data-side-offset="0" is a real 0, not the 4px default', () => {
+    expect(translateY(mountOpen('0'))).toBe(0);
+  });
+
+  it('an absent data-side-offset falls back to the 4px default', () => {
+    expect(translateY(mountOpen())).toBe(4);
   });
 });

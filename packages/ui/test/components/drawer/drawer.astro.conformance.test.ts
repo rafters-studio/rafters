@@ -77,9 +77,9 @@ describe('drawer conformance [astro]', () => {
     expect(document.body.style.overflow).not.toBe('hidden');
   });
 
-  // #2004: the root is a real element with a class, not an unregistered
+  // #2004: the root is a real, semantic element, not an unregistered
   // <rafters-drawer> used as a query hook. #2001: its config is data-* only.
-  it('root is a semantic, classed div and config crosses the seam as data-* only', async () => {
+  it('root is a semantic, unclassed div and config crosses the seam as data-* only', async () => {
     const root = await mount({ title: 'Actions', modal: false, side: 'right' });
     expect(root.tagName).toBe('DIV');
     // No class, ever: a behavior root is a binding host, not a box, and it

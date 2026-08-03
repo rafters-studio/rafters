@@ -60,9 +60,9 @@ describe('popover conformance [astro]', () => {
     expect(content().hidden).toBe(true);
   });
 
-  // #2004: the root is a real element with a class, not an unregistered
+  // #2004: the root is a real, semantic element, not an unregistered
   // <rafters-popover> used as a query hook. #2001: its config is data-* only.
-  it('root is a semantic, classed div and config crosses the seam as data-* only', async () => {
+  it('root is a semantic, unclassed div and config crosses the seam as data-* only', async () => {
     const root = await mount({ side: 'top', align: 'start', sideOffset: 0, alignOffset: 8 });
     expect(root.tagName).toBe('DIV');
     // No class, ever: a behavior root is a binding host, not a box, and it

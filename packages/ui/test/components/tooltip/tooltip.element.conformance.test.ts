@@ -37,6 +37,11 @@ afterEach(() => {
 });
 
 describe('tooltip conformance [wc]', () => {
+  it('host pins display:block to match the unclassed block root of the other targets', async () => {
+    const host = await mount();
+    expect(host.style.display).toBe('block');
+  });
+
   it('closed: content hidden, trigger undescribed', async () => {
     await mount();
     expect(content().hidden).toBe(true);

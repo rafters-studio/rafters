@@ -7,7 +7,12 @@ export interface TooltipClassSet {
 
 // The DOM-native root is a binding host, not a box: it carries data-part="root"
 // and the config, and NO class -- a behavior root never styles itself; layout
-// belongs to the consumer's Container/Grid (operator ruling, 2026-08-02).
+// belongs to the consumer's Container/Grid (operator ruling, 2026-08-02). With
+// no class the unclassed <div> root is a BLOCK box: a tooltip is composed by
+// Container, not dropped mid-sentence into running text.
+
+// Inside that root the trigger is still inline-flex -- that is the button's own
+// box, not the root's, and it keeps the label and any icon on one line.
 const triggerClasses = 'inline-flex';
 
 // z-depth-tooltip is the semantic depth token (not a raw z-index); fill uses

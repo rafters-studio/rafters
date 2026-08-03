@@ -3,7 +3,7 @@
  * light-DOM markup. Same score as the React conformance test -- the only
  * difference is the controller applies the projection imperatively.
  */
-import { cleanup } from '@testing-library/react';
+import { cleanup, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { navigationMenu } from '../../../src/components/navigation-menu/navigation-menu.behavior';
@@ -16,9 +16,9 @@ beforeAll(() => {
   }
 });
 
-async function mount(): Promise<HTMLElement> {
+async function mount(delayDuration = 1): Promise<HTMLElement> {
   document.body.innerHTML = `
-    <rafters-navigation-menu data-delay-duration="1">
+    <rafters-navigation-menu data-delay-duration="${delayDuration}">
       <ul data-part="list">
         <li>
           <button type="button" data-part="trigger" data-value="products" data-roving-item id="t-products">Products</button>
@@ -110,6 +110,19 @@ describe('navigation-menu conformance [wc]', () => {
     await user.keyboard('{Escape}');
     expect(content('products').hidden).toBe(true);
     expect(document.activeElement).toBe(trigger('products'));
+  });
+
+  // The fixture's data-delay-duration is not decoration: it is the hover-intent
+  // window the binding composes. This is the only test that spends it -- hover
+  // must NOT open synchronously, and must open once the window elapses.
+  it('hover opens the panel only after the configured delay elapses', async () => {
+    const user = userEvent.setup();
+    await mount(60);
+    await user.hover(trigger('products'));
+    // Still shut: the intent window has not elapsed, so hover is not a click.
+    expect(content('products').hidden).toBe(true);
+    await waitFor(() => expect(content('products').hidden).toBe(false));
+    expect(trigger('products').getAttribute('aria-expanded')).toBe('true');
   });
 
   it('pointerdown outside closes', async () => {
