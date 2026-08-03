@@ -266,15 +266,17 @@ export function bindNavigationMenu(root: HTMLElement): () => void {
   // projection (see navigationMenu.aria), so the markup must not re-emit it.
   const config: NavigationMenuConfig = {
     orientation: root.dataset['orientation'] === 'vertical' ? 'vertical' : 'horizontal',
-    // Presence, not truthiness (#2011): `data-delay-duration="0"` is a real
-    // request for no delay, and `|| 200` used to swallow it. Parse, then keep
-    // the number only if it IS a number; absence falls through to the token.
+    // NON-EMPTY presence, not truthiness (#2011): `data-delay-duration="0"` is
+    // a real request for no delay, and `|| 200` used to swallow it -- but
+    // `data-delay-duration=""` is the attribute written with nothing in it,
+    // which is absence, not zero. `Number('')` is 0, so the empty string has to
+    // be rejected explicitly or a blank attribute becomes a silent 0ms.
     // Lazy, and `Number()` rather than `parseInt`: the token read only happens
     // on the branch that needs it, and `"200px"` is a malformed attribute
     // rather than a silent 200. Same convention as tooltip.behavior.ts.
     delayDuration: (() => {
       const raw = root.dataset['delayDuration'];
-      if (raw === undefined) return navigationMenuHoverDelay(root);
+      if (raw === undefined || raw === '') return navigationMenuHoverDelay(root);
       const parsed = Number(raw);
       return Number.isFinite(parsed) ? parsed : navigationMenuHoverDelay(root);
     })(),

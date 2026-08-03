@@ -179,10 +179,16 @@ export function bindTooltip(root: HTMLElement): () => void {
   // loud), and an eager argument would have made that throw reach an element
   // that never asked for the token. Same lazy convention as
   // navigation-menu.behavior.ts, and the same `Number()` parse.
+  //
+  // Absence is `undefined` OR the empty string (#2011): a present-but-blank
+  // `data-delay-duration=""` carries no number, and `Number('')` is 0, so
+  // without the explicit check a blank attribute would become a silent 0ms
+  // delay instead of falling back to the token. An explicit `"0"` still means
+  // a real zero.
   const data = root.dataset;
   const numData = (key: string, fallback: () => number): number => {
     const raw = data[key];
-    if (raw === undefined) return fallback();
+    if (raw === undefined || raw === '') return fallback();
     const parsed = Number(raw);
     return Number.isFinite(parsed) ? parsed : fallback();
   };
@@ -200,7 +206,10 @@ export function bindTooltip(root: HTMLElement): () => void {
     defaultOpen: data['defaultOpen'] === 'true' || content?.dataset['state'] === 'open',
     side: (data['side'] as Side | undefined) ?? undefined,
     align: (data['align'] as Align | undefined) ?? undefined,
-    // Presence, not truthiness: data-side-offset="0" is a real offset.
+    // Non-empty presence, not truthiness: `data-side-offset="0"` is a real 0px
+    // offset, while a blank `data-side-offset=""` is absence and takes the 4px
+    // default -- `numData` rejects the empty string, so both the blank and the
+    // wholly absent attribute land on the same 4.
     sideOffset: 'sideOffset' in data ? numData('sideOffset', () => 4) : undefined,
   };
 

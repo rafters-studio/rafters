@@ -172,6 +172,12 @@ describe('bindTooltip: data-side-offset parse', () => {
   it('an absent data-side-offset falls back to the 4px default', () => {
     expect(translateY(mountOpen())).toBe(4);
   });
+
+  // A blank attribute is absence, not zero: `Number('')` is 0, so the empty
+  // string has to be rejected explicitly or `data-side-offset=""` reads as 0px.
+  it('a blank data-side-offset="" falls back to the 4px default, not 0', () => {
+    expect(translateY(mountOpen(''))).toBe(4);
+  });
 });
 
 /**
@@ -223,6 +229,19 @@ describe('bindTooltip: the token fallback is only read when the attribute is abs
   it('throws naming the token when the attribute is absent', () => {
     const root = mountMalformed();
     expect(() => bindTooltip(root)).toThrow(/rafters-delay-hover-intent" resolved to "soon"/);
+  });
+
+  // The blank attribute takes the SAME branch as the absent one -- it reaches
+  // the token, which is what makes the malformed token throw here. Before the
+  // fix `Number('')` was a finite 0 and this bound silently at 0ms.
+  it('a blank data-delay-duration="" reads the token, exactly as absence does', () => {
+    const root = mountMalformed('');
+    expect(() => bindTooltip(root)).toThrow(/rafters-delay-hover-intent" resolved to "soon"/);
+  });
+
+  it('an explicit data-delay-duration="0" is still a real zero, never the token', () => {
+    const root = mountMalformed('0');
+    expect(() => teardowns.push(bindTooltip(root))).not.toThrow();
   });
 });
 
