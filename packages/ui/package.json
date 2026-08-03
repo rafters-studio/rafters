@@ -14,6 +14,7 @@
     "./lib/*": "./src/lib/*.ts"
   },
   "scripts": {
+    "matrix:motion": "tsx test/matrix/render-motion-matrix.ts",
     "test": "vitest",
     "test:unit": "vitest run && vitest run -c vitest.config.astro.ts",
     "test:a11y": "vitest run .a11y.",
