@@ -269,10 +269,12 @@ export function DialogContent({
   const { config, state, effectiveOpen, ids, aria, classes, request, setPart, dismissVetoRef } =
     useDialogContext('DialogContent');
   const isInsidePortal = React.useContext(DialogPortalContext);
-  // Presence: keep the content mounted through its exit animation. `state` is
-  // the data-state the enter/exit keyframes key off -- without it on the node
-  // the classes' data-[state=*] selectors never match and nothing animates.
-  const { present, ref: presenceRef, state: presenceState } = usePresence(effectiveOpen);
+  // Presence: keep the content mounted through its exit animation. `data-state`
+  // is NOT set here -- disclosable already contributes it through `aria.content`,
+  // from `isOpen(state, config)`, which is the same value `effectiveOpen` carries
+  // into presence. One attribute, one writer. See the ownership note in
+  // use-presence.ts.
+  const { present, ref: presenceRef } = usePresence(effectiveOpen);
 
   React.useEffect(() => {
     dismissVetoRef.current = { onPointerDownOutside, onInteractOutside };
@@ -309,7 +311,12 @@ export function DialogContent({
         data-part="content"
         id={ids.content || undefined}
         ref={presenceRef}
-        data-state={presenceState}
+        // Inert, not hidden, for the exit window (the ratified ruling). The node
+        // must keep rendering so the exit keyframe paints, but a closing dialog
+        // is already semantically gone: inert takes it out of the a11y tree, the
+        // tab order, and hit-testing without the display:none that would kill the
+        // animation. It lifts the moment the dialog reopens.
+        inert={effectiveOpen ? undefined : true}
         tabIndex={-1}
         className={classy(classes.content, className)}
         {...aria.content}

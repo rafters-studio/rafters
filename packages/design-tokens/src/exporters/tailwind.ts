@@ -1206,13 +1206,19 @@ function generateThemeBlockWithVarRefs(groups: GroupedTokens): string {
     lines.push('');
   }
 
-  // Animation utility tokens (from motion-animation-* tokens)
+  // Animation utility tokens (from motion-animation-* tokens).
+  //
+  // The VALUE, not a `var(--rafters-animate-*)` bridge -- the same line the
+  // dynamic path emits. `--rafters-animate-*` was invented here and declared
+  // nowhere: no token is named `animate-*`, so no leaf of that name exists in
+  // either sheet, and every `animate-*` utility in the static Studio sheet
+  // resolved to nothing. Retheming still reaches these, because the value is an
+  // animation shorthand whose duration and easing are THEMSELVES var()s onto
+  // the declared `--rafters-duration-*` / `--rafters-ease-*` leaves. The
+  // indirection was never needed; it was only ever a dangling reference.
   const animationTokens = groups.motion.filter((t) => t.name.startsWith('motion-animation-'));
   if (animationTokens.length > 0) {
-    for (const token of animationTokens) {
-      const animName = token.animationName || token.name.replace('motion-animation-', '');
-      lines.push(`  --animate-${animName}: var(--rafters-animate-${animName});`);
-    }
+    lines.push(generateAnimationTokens(groups.motion));
   }
 
   lines.push('}');

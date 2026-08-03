@@ -279,9 +279,11 @@ export function PopoverContent({
   const { config, state, effectiveOpen, ids, aria, classes, request, getPart, dismissVetoRef } =
     usePopoverContext('PopoverContent');
   const isInsidePortal = React.useContext(PopoverPortalContext);
-  // Presence: keep the content mounted through its exit animation. `state`
-  // becomes data-state, which is what the enter/exit keyframes key off.
-  const { present, ref: presenceRef, state: presenceState } = usePresence(effectiveOpen);
+  // Presence: keep the content mounted through its exit animation. `data-state`
+  // is NOT set here -- disclosable already contributes it through `aria.content`,
+  // from the same effective-open value presence is given. One writer per
+  // attribute; see the ownership note in use-presence.ts.
+  const { present, ref: presenceRef } = usePresence(effectiveOpen);
 
   React.useEffect(() => {
     dismissVetoRef.current = { onPointerDownOutside, onInteractOutside };
@@ -331,10 +333,16 @@ export function PopoverContent({
       data-part="content"
       id={ids.content || undefined}
       ref={presenceRef}
-      data-state={presenceState}
+      // Inert, not hidden, for the exit window (the ratified ruling). The node
+      // keeps rendering so the exit keyframe paints, while inert takes the
+      // closing panel out of the a11y tree, the tab order, and hit-testing. It
+      // lifts the moment the popover reopens.
+      inert={effectiveOpen ? undefined : true}
       tabIndex={-1}
-      // Requested side/align seed the enter-animation direction before the
-      // positioning affordance resolves the true placement at runtime.
+      // The REQUESTED placement, published for consumer styling and for the
+      // positioning affordance to reconcile against at runtime. It no longer
+      // seeds an enter direction: presence dropped slide-on-enter along with the
+      // tailwindcss-animate vocabulary (see popover.classes.ts).
       data-side={side}
       data-align={align}
       className={classy(classes.content, className)}

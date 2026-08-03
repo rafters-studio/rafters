@@ -2,15 +2,24 @@
  * THE PRESENCE CONTRACT, across its three proof components (#1996).
  *
  * The per-component conformance suites drive behavior; this file drives the one
- * thing they all share and none of them owned: the node must carry data-state,
- * must STILL BE THERE while its exit keyframe runs, and must go once it ends.
+ * thing they all share and none of them owned: the EXIT WINDOW. The node must
+ * still be there while its exit keyframe runs, carrying data-state=closed and
+ * `inert`, and must go once the keyframe ends.
  *
- * Before this, data-state was never set on any of the three -- dialog's classes
- * already shipped a `data-[state=closed]:pointer-events-none` selector that
- * could not match anything -- so the exit keyframe never started and presence
- * had nothing to hold. A test that only asserts "closed means gone" passes
- * happily against that bug, which is why every case here asserts the node is
- * present DURING the exit, not just absent after it.
+ * What was actually broken before this: not the attribute. `data-state` has
+ * always reached the content node -- the `disclosable` slice contributes it and
+ * every one of the three spreads `aria.content`. What was missing was the HOLD.
+ * Closing unmounted (or `hidden`-ed) the node in the same commit that flipped
+ * data-state, so the exit keyframe was never given a frame to paint. A test that
+ * only asserts "closed means gone" passes happily against that bug, which is why
+ * every case here asserts the node is present DURING the exit, not just absent
+ * after it.
+ *
+ * And presence deliberately does NOT write data-state itself -- the duplicate
+ * assignment it once carried was dead, because disclosable's contribution spread
+ * over it and the two values are equal on every render anyway. These cases read
+ * the attribute without presence writing it, which is what proves the single
+ * remaining writer is sufficient across all three (asChild path included).
  */
 import * as React from 'react';
 import { act, cleanup, render } from '@testing-library/react';
@@ -72,8 +81,14 @@ const cases = [
     name: 'dropdown-menu',
     // Present-but-hidden in light DOM -- presence gates `hidden` instead. Same
     // mechanism: leaving display:none starts the keyframe, and the exit keyframe
-    // needs `hidden` withheld until it has run.
-    absent: (node: HTMLElement | null) => expect(node?.hasAttribute('hidden')).toBe(true),
+    // needs `hidden` withheld until it has run. Post-exit the node is BOTH
+    // hidden and inert: inert landed at the start of the exit and never lifts
+    // while closed, so a menu that is merely `hidden` would be a regression of
+    // the inert-not-hidden ruling in the other direction.
+    absent: (node: HTMLElement | null) => {
+      expect(node?.hasAttribute('hidden')).toBe(true);
+      expect(node?.hasAttribute('inert')).toBe(true);
+    },
     render: (open: boolean) => (
       <DropdownMenu open={open}>
         <DropdownMenuTrigger aria-label="Options">Options</DropdownMenuTrigger>
@@ -144,6 +159,33 @@ describe.each(cases)('presence contract: $name', ({ render: renderAt, absent }) 
     // The exit is renderable: the node is still attached, so frames of the
     // closed keyframe actually paint before it goes.
     expect(node?.isConnected).toBe(true);
+  });
+
+  it('projects inert -- not hidden -- for the whole exit window', () => {
+    // The ratified inert-not-hidden ruling. A closing overlay is semantically
+    // gone the instant state flips: it must leave the a11y tree, the tab order,
+    // and hit-testing immediately. But `hidden` is display:none, and applying it
+    // now would kill the exit keyframe outright -- the very thing presence is
+    // holding the node for. `inert` gives the semantics without the display,
+    // which is why it is the attribute that lands at the START of the window.
+    const { rerender } = render(renderAt(true));
+    // Open: nothing is inert. Nothing to assert against later otherwise -- an
+    // always-inert node would pass the exit-window check for the wrong reason.
+    expect(content()?.hasAttribute('inert')).toBe(false);
+
+    runningExitKeyframe();
+    rerender(renderAt(false));
+
+    const node = content();
+    expect(node?.hasAttribute('inert')).toBe(true);
+    // ...and it is genuinely the exit window: still connected, still animating.
+    expect(node?.isConnected).toBe(true);
+    expect(node?.getAttribute('data-state')).toBe('closed');
+
+    // Reopening mid-exit lifts it again, so an interrupted close cannot leave a
+    // live overlay permanently untabbable.
+    rerender(renderAt(true));
+    expect(content()?.hasAttribute('inert')).toBe(false);
   });
 
   it('goes once the exit keyframe ends', () => {

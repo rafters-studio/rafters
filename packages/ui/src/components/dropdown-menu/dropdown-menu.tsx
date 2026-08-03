@@ -284,16 +284,22 @@ export function DropdownMenuContent({
   // element LEAVING display:none starts its animation exactly as a mounting one
   // does, so enter needs no @starting-style; exit needs `hidden` withheld until
   // the keyframe has run, which is what holding `present` buys.
-  const { present, ref: presenceRef, state: presenceState } = usePresence(effectiveOpen);
+  const { present, ref: presenceRef } = usePresence(effectiveOpen);
 
-  // ref and data-state ride partProps so the asChild branch gets BOTH. Presence
-  // waiting on a node that never received the exit classes is a wedge, and
-  // asChild is the path where that silently happens.
+  // `ref` rides partProps so the asChild branch gets it: presence waiting on a
+  // node that never received the exit classes is a wedge, and asChild is the
+  // path where that silently happens. `data-state` does NOT ride it -- it comes
+  // from disclosable via `aria.content`, spread below, off the same effective-
+  // open value presence is given. One writer per attribute.
   const partProps = {
     'data-part': 'content',
     id: ids.content,
     ref: presenceRef,
-    'data-state': presenceState,
+    // Inert, not hidden, for the exit window (the ratified ruling). `hidden` is
+    // display:none and would kill the exit keyframe outright; inert leaves the
+    // menu rendering while removing it from the a11y tree, the tab order, and
+    // hit-testing. `hidden` still lands, but only AFTER the exit has run.
+    inert: effectiveOpen ? undefined : true,
     hidden: present ? undefined : true,
     ...aria.content,
   };

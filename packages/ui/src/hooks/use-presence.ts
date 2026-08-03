@@ -10,9 +10,22 @@
  *           HELD by the behavior layer until the animation ends. Presence owns
  *           the unmount; CSS owns the movement.
  *
- * Callers render while `present` is true, put `state` on the animated node as
- * `data-state`, and attach `ref` to that same node. The node's own classes key
- * the enter/exit keyframes off `data-[state=open]` / `data-[state=closed]`.
+ * Callers render while `present` is true and attach `ref` to the animated node.
+ * That node's classes key the enter/exit keyframes off `data-[state=open]` /
+ * `data-[state=closed]`.
+ *
+ * WHO WRITES `data-state`. Not this hook, for any caller that composes the
+ * `disclosable` slice -- dialog, popover, dropdown-menu all do. `disclosable`
+ * already contributes `data-state` to the content part from
+ * `isOpen(state, config)`, and that is the SAME value the caller passes here as
+ * `open`, so the two are equal on every render, exit window included: while the
+ * node is closing, `open` is false and `present` is true, and both writers say
+ * `closed`. There is nothing to reconcile, so there is no reason to have two.
+ * The attribute has one writer, and it is disclosable.
+ *
+ * `state` is returned for callers OUTSIDE that composition (a bare
+ * `usePresence` on a node with no behavior contract behind it), which is why it
+ * remains part of the interface rather than being deleted.
  *
  * THE THREE WAYS THIS WEDGES, and what stops each:
  *   1. The animation is cancelled, or `animationend` never arrives at all (a
@@ -46,7 +59,12 @@ export interface Presence {
   present: boolean;
   /** Attach to the animated node so presence can watch its animation end. */
   ref: (element: HTMLElement | null) => void;
-  /** 'open' | 'closed' -- put on the node as data-state; the exit CSS keys off it. */
+  /**
+   * 'open' | 'closed' -- the data-state the exit CSS keys off. Callers composing
+   * `disclosable` must NOT put this on the node: that slice already contributes
+   * the identical value. For callers with no behavior contract behind them, this
+   * is the attribute's source. See the ownership note above.
+   */
   state: PresenceState;
 }
 
@@ -77,17 +95,33 @@ interface ExitMeasurement {
   /** How long the exit will run, in ms; 0 means nothing is running. */
   runMs: number;
   /**
-   * The exit animation's name, or null if the exit is a transition (or nothing).
+   * The exit animation's names -- EVERY name in the computed `animation-name`
+   * list -- or empty when the exit is a transition (or nothing).
    *
-   * Presence must know this, not just the duration. When a close interrupts a
+   * A list, not a single string, because `animation-name` is a comma-separated
+   * CSS list and a node may legitimately run several exit keyframes at once
+   * (`animation-name: scale-out, fade-out`). Each fires its own `animationend`
+   * carrying its own single name, so comparing the event against the raw
+   * computed string would match NONE of them and the exit would only ever be
+   * released by the backstop timer -- a visible extra beat on every close.
+   *
+   * Presence must know these, not just the duration. When a close interrupts a
    * RUNNING ENTER, the browser cancels the enter animation and fires
    * `animationcancel` on the same node -- and a handler that releases on any
    * animation event unmounts the overlay instantly, on the enter's death rather
    * than the exit's completion. That is a race (it only fires if the enter was
    * still running), it truncates the exit to nothing, and it was invisible in
-   * jsdom: it took watching a real browser to see it. The name is the filter.
+   * jsdom: it took watching a real browser to see it. The names are the filter.
    */
-  name: string | null;
+  names: string[];
+}
+
+/** The trimmed, non-empty members of a comma-separated CSS list. */
+function cssList(value: string): string[] {
+  return value
+    .split(',')
+    .map((part) => part.trim())
+    .filter((part) => part.length > 0);
 }
 
 /**
@@ -108,21 +142,22 @@ function animationNameOf(event: Event): string | null {
  * both mean the same thing to presence: release now, do not wait for an event.
  */
 function measureExit(element: HTMLElement): ExitMeasurement {
-  if (typeof getComputedStyle !== 'function') return { runMs: 0, name: null };
+  if (typeof getComputedStyle !== 'function') return { runMs: 0, names: [] };
   const style = getComputedStyle(element);
   const animationName = style.animationName || 'none';
+  // `none` is also a legal MEMBER of the list ('none, scale-out'), so filter it
+  // out per-member rather than only rejecting the whole string.
+  const names = cssList(animationName).filter((name) => name !== 'none');
   const animated =
-    animationName !== 'none'
-      ? longestRun(style.animationDuration || '', style.animationDelay || '')
-      : 0;
+    names.length > 0 ? longestRun(style.animationDuration || '', style.animationDelay || '') : 0;
   const transitioned =
     (style.transitionProperty || 'none') !== 'none'
       ? longestRun(style.transitionDuration || '', style.transitionDelay || '')
       : 0;
   return {
     runMs: Math.max(animated, transitioned),
-    // Only claim a name when the animation is what we are actually waiting on.
-    name: animated >= transitioned && animated > 0 ? animationName : null,
+    // Only claim names when the animation is what we are actually waiting on.
+    names: animated >= transitioned && animated > 0 ? names : [],
   };
 }
 
@@ -155,7 +190,7 @@ export function usePresence(open: boolean): Presence {
       setPresent(false);
       return;
     }
-    const { runMs, name: exitName } = measureExit(node);
+    const { runMs, names: exitNames } = measureExit(node);
     if (runMs === 0) {
       // No movement to wait for (reduced motion, or no exit animation at all).
       // Releasing here is what keeps the reduced-motion path off an
@@ -176,7 +211,7 @@ export function usePresence(open: boolean): Presence {
       // which fires animationcancel on this very node; releasing on that ends
       // the exit before its first frame paints.
       const fired = animationNameOf(event);
-      if (exitName !== null && fired !== null && fired !== exitName) return;
+      if (exitNames.length > 0 && fired !== null && !exitNames.includes(fired)) return;
       release();
     };
     node.addEventListener('animationend', done);

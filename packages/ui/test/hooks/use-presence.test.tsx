@@ -225,6 +225,39 @@ describe('usePresence', () => {
       expect(queryByTestId('node')).toBeNull();
     });
 
+    it('matches any member of a multi-name animation-name list', () => {
+      // `animation-name` is a comma-separated CSS LIST, and a node running two
+      // exit keyframes at once computes to 'scale-out, fade-out'. Each keyframe
+      // fires its own animationend carrying its own SINGLE name, so a filter
+      // that compares the event against the raw computed string matches none of
+      // them: the exit is released only by the backstop timer, a visible extra
+      // beat on every close. The filter splits and trims.
+      vi.useFakeTimers();
+      const { getByTestId, rerender, queryByTestId } = render(<Overlay open />);
+      const node = getByTestId('node');
+      computedStyle({
+        animationName: 'scale-out, fade-out',
+        animationDuration: '0.2s, 0.15s',
+        animationDelay: '0s, 0s',
+      });
+
+      rerender(<Overlay open={false} />);
+
+      // A name in neither position is still rejected -- the filter got looser,
+      // not absent, and the dying enter must still be ignored.
+      act(() => {
+        node.dispatchEvent(new AnimationEvent('animationcancel', { animationName: 'scale-in' }));
+      });
+      expect(getByTestId('node').getAttribute('data-state')).toBe('closed');
+
+      // The SECOND member, the one only reachable by splitting, releases it --
+      // and the trailing member is where the untrimmed leading space lives.
+      act(() => {
+        node.dispatchEvent(new AnimationEvent('animationend', { animationName: 'fade-out' }));
+      });
+      expect(queryByTestId('node')).toBeNull();
+    });
+
     it('still unmounts after open -> close -> open -> close', () => {
       vi.useFakeTimers();
       const { getByTestId, rerender, queryByTestId } = render(<Overlay open />);
