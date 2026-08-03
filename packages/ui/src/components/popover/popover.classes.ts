@@ -6,6 +6,10 @@ export interface PopoverClassSet {
   closeIcon: string;
 }
 
+// The DOM-native root is a binding host, not a box: it carries data-part="root"
+// and the config, and NO class -- a behavior root never styles itself; layout
+// belongs to the consumer's Container/Grid (operator ruling, 2026-08-02).
+
 // Ported from the old popover.classes.ts. The panel sits on the popover depth
 // token, fills with the popover surface tokens, and animates enter/exit with
 // fade + zoom, sliding from the resolved side. motion-reduce disables it.

@@ -17,6 +17,9 @@ export interface DrawerClassSet {
   closeIcon: string;
 }
 
+// The DOM-native root is a binding host, not a box: it carries data-part="root"
+// and the config, and NO class -- a behavior root never styles itself; layout
+// belongs to the consumer's Container/Grid (operator ruling, 2026-08-02).
 const overlayClasses = 'fixed inset-0 z-depth-overlay bg-foreground/80';
 
 // The panel is fixed to its anchoring edge (no centering container -- unlike a

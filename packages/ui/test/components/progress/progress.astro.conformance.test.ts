@@ -12,7 +12,12 @@ import {
   progress,
   type ProgressConfig,
 } from '../../../src/components/progress/progress.behavior';
-import { assertAxeClean, assertContractFulfillment, partElement } from '../../harness/conformance';
+import {
+  assertAxeClean,
+  assertConfigTravelsAsData,
+  assertContractFulfillment,
+  partElement,
+} from '../../harness/conformance';
 
 const parts = ['root', 'indicator'] as const;
 
@@ -71,5 +76,39 @@ describe('progress conformance [astro]', () => {
     const root = await mount({ value: 50, class: 'my-4', 'aria-label': 'Upload' });
     expect(root.className).toContain('rounded-full');
     expect(root.className).toContain('my-4');
+  });
+
+  // The #2001 pairing: config is data-* in the markup AND read through dataset
+  // in the bind. `value`/`max` are real on <progress> and `size` on input/select,
+  // so the bare spellings must not appear on this <div> at all.
+  it('config crosses the SSR/bind seam as data-* only, and rehydration still works', async () => {
+    const root = await mount({
+      value: 3,
+      max: 10,
+      variant: 'success',
+      size: 'lg',
+      valueText: '3 of 10 files',
+      'aria-label': 'Files',
+    });
+
+    assertConfigTravelsAsData(root, {
+      value: '3',
+      max: '10',
+      variant: 'success',
+      size: 'lg',
+      valueText: '3 of 10 files',
+    });
+
+    // Rehydration: wipe the projected value contract and the fill, re-bind, and
+    // both come back -- only possible by reading the config from dataset.
+    const indicator = partElement(root, 'indicator') as HTMLElement;
+    root.removeAttribute('aria-valuenow');
+    root.removeAttribute('aria-valuemax');
+    indicator.removeAttribute('style');
+    bindProgress(root);
+    expect(root.getAttribute('aria-valuenow')).toBe('3');
+    expect(root.getAttribute('aria-valuemax')).toBe('10');
+    expect(root.getAttribute('aria-valuetext')).toBe('3 of 10 files');
+    expect(indicator.style.width).toBe('30%');
   });
 });

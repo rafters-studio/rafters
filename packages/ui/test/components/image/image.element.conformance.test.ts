@@ -49,7 +49,7 @@ describe('image conformance [wc]', () => {
   });
 
   it('loading: the img is aria-busy and the overlay is role="status"', async () => {
-    const root = await mount(`src="${SRC}" alt="Loading" status="loading"`);
+    const root = await mount(`src="${SRC}" alt="Loading" data-status="loading"`);
     const img = partElement(root, 'img') as HTMLElement;
     expect(img.getAttribute('aria-busy')).toBe('true');
     const status = partElement(root, 'status') as HTMLElement;
@@ -64,7 +64,9 @@ describe('image conformance [wc]', () => {
   });
 
   it('error: the overlay is role="alert" carrying the message', async () => {
-    const root = await mount(`src="${SRC}" alt="Broken" status="error" error-message="Gone"`);
+    const root = await mount(
+      `src="${SRC}" alt="Broken" data-status="error" data-error-message="Gone"`,
+    );
     const status = partElement(root, 'status') as HTMLElement;
     expect(status.getAttribute('role')).toBe('alert');
     expect(status.textContent).toBe('Gone');
@@ -78,12 +80,12 @@ describe('image conformance [wc]', () => {
   });
 
   it('a live status change re-derives the projection (loading -> loaded)', async () => {
-    await mount(`src="${SRC}" alt="Photo" status="loading"`);
+    await mount(`src="${SRC}" alt="Photo" data-status="loading"`);
     const host = document.querySelector('rafters-image') as HTMLElement;
     expect((partElement(document.body, 'img') as HTMLElement).getAttribute('aria-busy')).toBe(
       'true',
     );
-    host.setAttribute('status', 'loaded');
+    host.setAttribute('data-status', 'loaded');
     await Promise.resolve();
     const img = partElement(document.body, 'img') as HTMLElement;
     expect(img.hasAttribute('aria-busy')).toBe(false);

@@ -75,7 +75,14 @@ export const grid: BehaviorSpec<GridConfig, GridState, GridActions, GridPart> = 
       role: config.role === 'grid' ? 'grid' : undefined,
       'aria-label': config.role === 'grid' ? config.ariaLabel : undefined,
       'data-preset': config.preset ?? 'linear',
-      'data-columns': typeof config.columns === 'number' ? String(config.columns) : undefined,
+      // The projection OWNS data-preset/data-columns: the markup must not also
+      // emit them, or re-applying the projection would fight the authored
+      // value. `auto` is projected too so the attribute round-trips through
+      // readGridConfig for every attribute-expressible column value.
+      'data-columns':
+        typeof config.columns === 'number' || config.columns === 'auto'
+          ? String(config.columns)
+          : undefined,
     },
   }),
   // Static score, like container: the ARIA grid keyboard contract is not a
@@ -92,15 +99,38 @@ export function gridItemAttrs(priority: ContentPriority | undefined): AriaAttrs 
   return { 'data-priority': priority };
 }
 
-/** Parse the WC/Astro `columns` attribute into the score's config value.
+/** Parse the WC/Astro `data-columns` attribute into the score's config value.
  *  Only a bare integer or `auto` is expressible as an attribute; a
  *  responsive object is a React-only prop. A non-numeric, non-`auto` value
  *  reads as absent (auto default). */
-function parseColumns(raw: string | null): ResponsiveColumns | undefined {
-  if (raw === null) return undefined;
+function parseColumns(raw: string | undefined): ResponsiveColumns | undefined {
+  if (raw === undefined) return undefined;
   if (raw === 'auto') return 'auto';
   if (/^\d+$/.test(raw)) return Number(raw) as ColumnsValue;
   return undefined;
+}
+
+/**
+ * Reconstruct the score's config from a root element's `data-*` attributes --
+ * the inverse of the SSR/WC markup, and the pairing #2001 asks for: config
+ * travels as `data-*` ONLY, so the read is `element.dataset` rather than a
+ * hand-rolled getAttribute over invented attribute names.
+ *
+ * `data-preset` and `data-columns` are written by the score's own aria
+ * projection (see grid.aria above), so they are already on the root before
+ * this ever runs; the remaining keys are authored in the markup.
+ */
+export function readGridConfig(root: HTMLElement): GridConfig {
+  const data = root.dataset;
+  return {
+    preset: data['preset'] as GridPreset | undefined,
+    pattern: data['pattern'] as BentoPattern | undefined,
+    columns: parseColumns(data['columns']),
+    gap: data['gap'] as SpacingValue | undefined,
+    padding: data['padding'] as SpacingValue | undefined,
+    role: data['gridRole'] === 'grid' ? 'grid' : undefined,
+    ariaLabel: root.getAttribute('aria-label') ?? undefined,
+  };
 }
 
 /**
@@ -123,20 +153,11 @@ function parseColumns(raw: string | null): ResponsiveColumns | undefined {
  * The role disposition (carried from the WC port): a bare `role="grid"` on a
  * light-DOM host BEFORE the row/gridcell children exist is a 4.1.2 axe
  * violation and collides with the platform `role`. So the opt-in attribute is
- * `grid-role`; the binding reads it and PROJECTS the real `role="grid"` onto
+ * `data-grid-role`; the binding reads it and PROJECTS the real `role="grid"` onto
  * the root part, which by then owns authored row/gridcell descendants.
  */
 export function bindGrid(root: HTMLElement): () => void {
-  const attr = (name: string): string | undefined => root.getAttribute(name) ?? undefined;
-  const config: GridConfig = {
-    preset: attr('preset') as GridPreset | undefined,
-    pattern: attr('pattern') as BentoPattern | undefined,
-    columns: parseColumns(root.getAttribute('columns')),
-    gap: attr('gap') as SpacingValue | undefined,
-    padding: attr('padding') as SpacingValue | undefined,
-    role: root.getAttribute('grid-role') === 'grid' ? 'grid' : undefined,
-    ariaLabel: attr('aria-label'),
-  };
+  const config: GridConfig = readGridConfig(root);
 
   const { memory } = createBehavior(grid, config);
 

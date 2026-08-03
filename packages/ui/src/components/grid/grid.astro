@@ -9,9 +9,14 @@
  * performances, zero drift.
  *
  * The role disposition (carried from the WC port): the opt-in attribute is
- * `grid-role`, never a bare `role`. bindGrid reads `grid-role` and re-applies
- * the honest `role="grid"` projection; because the server already SSR'd the
- * row/gridcell structure, the projected role is honest from first paint.
+ * `data-grid-role`, never a bare `role`. bindGrid reads `data-grid-role` and
+ * re-applies the honest `role="grid"` projection; because the server already
+ * SSR'd the row/gridcell structure, the projected role is honest from first
+ * paint.
+ *
+ * Config travels as `data-*` and nothing else (#2001): `preset`/`columns`/
+ * `gap`/`padding` are not valid attributes on a <div>, and only `data-*`
+ * reaches `element.dataset`, which is what readGridConfig reads.
  */
 import {
   grid,
@@ -78,20 +83,16 @@ function chunk<T>(items: T[], size: number): T[][] {
 }
 const rows = interactive && columnCount > 0 ? chunk(cells, columnCount) : [];
 
-// The attributes bindGrid re-reads to reconstruct the identical config.
-const columnsAttr = typeof columns === 'number' || columns === 'auto' ? String(columns) : undefined;
 ---
 
 <div
   data-part="root"
   data-grid
   id={id}
-  preset={preset}
-  pattern={pattern}
-  columns={columnsAttr}
-  gap={gap}
-  padding={padding}
-  grid-role={role}
+  data-pattern={pattern}
+  data-gap={gap}
+  data-padding={padding}
+  data-grid-role={role}
   class={classes.root}
   {...rootAria}
 >

@@ -13,6 +13,11 @@
  * carries its token styling without tripping the typography-component guard;
  * aria-labelledby needs only the id and text, and the heading role preserves
  * the semantics the React <h2> provides.
+ *
+ * The root is a semantic <div data-part="root">, not <rafters-drawer> (#2004):
+ * this target never registers the custom element. The marker `data-drawer`
+ * scopes the binding selector, and the config rides as `data-*` (#2001), which
+ * is what bindDrawer reads through `dataset`.
  */
 import { drawer, drawerSide, type DrawerConfig, type DrawerPart } from './drawer.behavior';
 import { drawerClasses } from './drawer.classes';
@@ -51,11 +56,12 @@ const aria = drawer.aria(state, config, ids);
 const open = state.open;
 ---
 
-<rafters-drawer
+<div
   data-part="root"
-  modal={String(modal)}
-  default-open={String(defaultOpen)}
-  side={drawerSide(config)}
+  data-drawer
+  data-modal={String(modal)}
+  data-default-open={String(defaultOpen)}
+  data-side={drawerSide(config)}
 >
   <button type="button" id={ids.trigger} data-part="trigger" {...aria.trigger}>
     <slot name="trigger">Open</slot>
@@ -91,15 +97,16 @@ const open = state.open;
       <slot name="close">Close</slot>
     </button>
   </div>
-</rafters-drawer>
+</div>
 
 <script>
   import { bindDrawer } from './drawer.behavior';
 
-  for (const root of document.querySelectorAll('rafters-drawer[data-part="root"]')) {
-    const el = root as HTMLElement;
-    if (el.dataset['bound'] === 'true') continue;
-    el.dataset['bound'] = 'true';
-    bindDrawer(el);
+  // The marker attribute scopes the selector to THIS component's roots --
+  // [data-part="root"] alone would match every rafters root on the page.
+  for (const root of document.querySelectorAll<HTMLElement>('[data-part="root"][data-drawer]')) {
+    if (root.dataset['bound'] === 'true') continue;
+    root.dataset['bound'] = 'true';
+    bindDrawer(root);
   }
 </script>

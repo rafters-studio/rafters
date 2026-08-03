@@ -11,13 +11,14 @@
  * The host renders the indicator as a light-DOM child (data-part="indicator");
  * consumer content is not projected (progress has no slot).
  *
- * Attributes:
- *  - value:      number in [0, max] (absent / non-numeric = indeterminate)
- *  - max:        number > 0 (default 100; non-positive falls back to 100)
- *  - variant:    default | primary | secondary | destructive | success |
- *                warning | info | accent (default 'default')
- *  - size:       sm | default | lg (default 'default')
- *  - value-text: optional accessible label; overrides the default `${percent}%`
+ * Attributes (config is `data-*` across all three targets -- see #2001):
+ *  - data-value:      number in [0, max] (absent / non-numeric = indeterminate)
+ *  - data-max:        number > 0 (default 100; non-positive falls back to 100)
+ *  - data-variant:    default | primary | secondary | destructive | success |
+ *                     warning | info | accent (default 'default')
+ *  - data-size:       sm | default | lg (default 'default')
+ *  - data-value-text: optional accessible label; overrides the default
+ *                     `${percent}%`
  *  - aria-label / aria-labelledby: native passthrough on the progressbar host
  *
  * Gotcha 3: connectedCallback can fire before the light-DOM is settled, so the
@@ -37,11 +38,11 @@ import { progressClasses } from './progress.classes';
 
 export class RaftersProgress extends HTMLElement {
   static readonly observedAttributes: ReadonlyArray<string> = [
-    'value',
-    'max',
-    'variant',
-    'size',
-    'value-text',
+    'data-value',
+    'data-max',
+    'data-variant',
+    'data-size',
+    'data-value-text',
   ];
 
   private teardown: (() => void) | null = null;

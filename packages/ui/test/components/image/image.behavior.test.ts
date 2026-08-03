@@ -100,16 +100,16 @@ describe('readImageConfig', () => {
     return node;
   }
 
-  it('reconstructs config from attributes (the inverse of the markup)', () => {
+  it('reconstructs config from data-* attributes (the inverse of the markup)', () => {
     const config = readImageConfig(
       el({
-        size: 'md',
-        alignment: 'left',
-        radius: '2xl',
-        fill: 'muted',
-        status: 'error',
-        'error-message': 'Broken',
-        'loading-label': 'Wait',
+        'data-size': 'md',
+        'data-alignment': 'left',
+        'data-radius': '2xl',
+        'data-fill': 'muted',
+        'data-status': 'error',
+        'data-error-message': 'Broken',
+        'data-loading-label': 'Wait',
       }),
     );
     expect(config).toEqual({
@@ -124,7 +124,9 @@ describe('readImageConfig', () => {
   });
 
   it('unknown enum values fall back to undefined (defaults resolve downstream)', () => {
-    const config = readImageConfig(el({ size: 'gigantic', alignment: 'diagonal', status: 'huh' }));
+    const config = readImageConfig(
+      el({ 'data-size': 'gigantic', 'data-alignment': 'diagonal', 'data-status': 'huh' }),
+    );
     expect(config.size).toBeUndefined();
     expect(config.alignment).toBeUndefined();
     expect(config.status).toBeUndefined();

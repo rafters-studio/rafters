@@ -1,6 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { createBehavior, type PartIds } from '../../../src/lib/contract';
 import {
+  bindTooltip,
   isOpen,
   tooltip,
   tooltipPlacement,
@@ -108,6 +109,68 @@ describe('tooltip keymap (dismiss)', () => {
   it('other keys are not claimed', () => {
     expect(tooltip.keymap({ key: 'Enter' }, open, 'trigger')).toBeNull();
     expect(tooltip.keymap({ key: 'Tab' }, open, 'content')).toBeNull();
+  });
+});
+
+/**
+ * bindTooltip reads sideOffset by PRESENCE (`'sideOffset' in data`), not by
+ * truthiness: data-side-offset="0" is a real, flush offset and must not fall
+ * back to the 4px default. The observable is the positioner's translate.
+ *
+ * Note which regression these actually catch: `dataset` values are always
+ * STRINGS, and '0' is truthy, so a string-truthiness rewrite is not a live
+ * zero-mask at this site. The mask that can really happen is numeric -- e.g.
+ * `numData('sideOffset', 4) || undefined` -- and that form fails both cases
+ * below.
+ */
+describe('bindTooltip: data-side-offset parse', () => {
+  const teardowns: Array<() => void> = [];
+
+  afterEach(() => {
+    for (const teardown of teardowns.splice(0)) teardown();
+    document.body.innerHTML = '';
+  });
+
+  /** Default-open so the first paint positions the content synchronously. */
+  function mountOpen(sideOffset?: string): HTMLElement {
+    const root = document.createElement('div');
+    root.dataset['part'] = 'root';
+    root.dataset['defaultOpen'] = 'true';
+    root.dataset['side'] = 'bottom';
+    root.dataset['align'] = 'start';
+    if (sideOffset !== undefined) root.dataset['sideOffset'] = sideOffset;
+
+    const trigger = document.createElement('button');
+    trigger.type = 'button';
+    trigger.dataset['part'] = 'trigger';
+    trigger.id = 't-trigger';
+    trigger.textContent = 'Help';
+
+    const content = document.createElement('div');
+    content.dataset['part'] = 'content';
+    content.id = 't-content';
+    content.dataset['state'] = 'open';
+    content.textContent = 'More info';
+
+    root.append(trigger, content);
+    document.body.appendChild(root);
+    teardowns.push(bindTooltip(root));
+    return content;
+  }
+
+  /** The y translate the positioner stamped, in px. */
+  function translateY(content: HTMLElement): number {
+    const match = /translate\((-?\d+)px, (-?\d+)px\)/.exec(content.style.transform);
+    expect(match).not.toBeNull();
+    return Number(match?.[2]);
+  }
+
+  it('data-side-offset="0" is a real 0, not the 4px default', () => {
+    expect(translateY(mountOpen('0'))).toBe(0);
+  });
+
+  it('an absent data-side-offset falls back to the 4px default', () => {
+    expect(translateY(mountOpen())).toBe(4);
   });
 });
 

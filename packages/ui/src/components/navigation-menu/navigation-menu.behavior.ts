@@ -246,9 +246,13 @@ export function startNavigationMenuEffects({
  * no per-framework copy, no drift.
  */
 export function bindNavigationMenu(root: HTMLElement): () => void {
+  // Config travels as `data-*` and nothing else (#2001): `orientation` and
+  // `delay-duration` are not valid attributes on a <nav>, and only `data-*`
+  // reaches `dataset`. `data-orientation` is written by the score's own aria
+  // projection (see navigationMenu.aria), so the markup must not re-emit it.
   const config: NavigationMenuConfig = {
-    orientation: root.getAttribute('orientation') === 'vertical' ? 'vertical' : 'horizontal',
-    delayDuration: Number.parseInt(root.getAttribute('delay-duration') ?? '', 10) || 200,
+    orientation: root.dataset['orientation'] === 'vertical' ? 'vertical' : 'horizontal',
+    delayDuration: Number.parseInt(root.dataset['delayDuration'] ?? '', 10) || 200,
     defaultValue:
       root.querySelector<HTMLElement>('[data-part="trigger"][data-state="open"]')?.dataset[
         'value'

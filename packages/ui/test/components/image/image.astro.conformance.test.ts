@@ -8,7 +8,12 @@ import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import { afterEach, describe, expect, it } from 'vitest';
 import Image from '../../../src/components/image/image.astro';
 import { bindImage, image, type ImageConfig } from '../../../src/components/image/image.behavior';
-import { assertAxeClean, assertContractFulfillment, partElement } from '../../harness/conformance';
+import {
+  assertAxeClean,
+  assertConfigTravelsAsData,
+  assertContractFulfillment,
+  partElement,
+} from '../../harness/conformance';
 
 const SRC = 'https://example.com/photo.jpg';
 
@@ -71,5 +76,40 @@ describe('image conformance [astro]', () => {
     expect(root.className).toContain('my-4');
     const frame = partElement(root, 'frame') as HTMLElement;
     expect(frame.className).toContain('rounded-2xl');
+  });
+
+  // The #2001 pairing: config is data-* in the markup AND read through dataset
+  // in the bind. `size` and `fill` are real platform attributes elsewhere, so
+  // the bare spellings must not appear on the <figure> at all.
+  it('config crosses the SSR/bind seam as data-* only, and rehydration still works', async () => {
+    const root = await mount({
+      src: SRC,
+      alt: 'Broken',
+      size: 'md',
+      alignment: 'left',
+      radius: '2xl',
+      fill: 'muted',
+      status: 'error',
+      errorMessage: 'Gone',
+      loadingLabel: 'Wait',
+    });
+
+    assertConfigTravelsAsData(root, {
+      size: 'md',
+      alignment: 'left',
+      radius: '2xl',
+      fill: 'muted',
+      status: 'error',
+      errorMessage: 'Gone',
+      loadingLabel: 'Wait',
+    });
+
+    // Rehydration: wipe the projected role, re-bind, and it comes back -- which
+    // it can only do by reconstructing `status` from dataset.
+    const status = partElement(root, 'status') as HTMLElement;
+    status.removeAttribute('role');
+    bindImage(root);
+    expect(status.getAttribute('role')).toBe('alert');
+    expect(status.textContent?.trim()).toBe('Gone');
   });
 });

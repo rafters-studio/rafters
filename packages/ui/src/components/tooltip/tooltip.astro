@@ -8,6 +8,13 @@
  * The content stays in light DOM (present-but-hidden) so the hover-delay
  * primitive the bind composes can read it, and so it is crawlable before JS.
  * Positioning and hover timing are the bind's job; this is enter-only.
+ *
+ * The root is a semantic <div data-part="root">, not <rafters-tooltip> (#2004):
+ * this target never registers the custom element, so the tag was an unknown
+ * element used as a query hook -- display:inline with no class. The marker
+ * `data-tooltip` scopes the binding selector the way grid/progress/context-menu
+ * already do, and the config rides as `data-*` (#2001), which is what
+ * bindTooltip reads through `dataset`.
  */
 import { tooltip, tooltipPlacement, type TooltipConfig, type TooltipPart } from './tooltip.behavior';
 import { tooltipClasses } from './tooltip.classes';
@@ -57,15 +64,18 @@ const aria = tooltip.aria(state, config, ids);
 const open = state.open;
 ---
 
-<rafters-tooltip
+<div
   data-part="root"
-  delay-duration={delayDuration === undefined ? undefined : String(delayDuration)}
-  skip-delay-duration={skipDelayDuration === undefined ? undefined : String(skipDelayDuration)}
-  disable-hoverable-content={String(disableHoverableContent)}
-  default-open={String(defaultOpen)}
-  side={placement.side}
-  align={placement.align}
-  side-offset={sideOffset === undefined ? undefined : String(sideOffset)}
+  data-tooltip
+  data-delay-duration={delayDuration === undefined ? undefined : String(delayDuration)}
+  data-skip-delay-duration={skipDelayDuration === undefined
+    ? undefined
+    : String(skipDelayDuration)}
+  data-disable-hoverable-content={String(disableHoverableContent)}
+  data-default-open={String(defaultOpen)}
+  data-side={placement.side}
+  data-align={placement.align}
+  data-side-offset={sideOffset === undefined ? undefined : String(sideOffset)}
 >
   <button
     type="button"
@@ -88,15 +98,18 @@ const open = state.open;
   >
     {content}
   </div>
-</rafters-tooltip>
+</div>
 
 <script>
   import { bindTooltip } from './tooltip.behavior';
 
-  for (const root of document.querySelectorAll('rafters-tooltip[data-part="root"]')) {
-    const el = root as HTMLElement;
-    if (el.dataset['bound'] === 'true') continue;
-    el.dataset['bound'] = 'true';
-    bindTooltip(el);
+  // The <script> is bundled and runs once per page; bind every instance's
+  // server-rendered markup. Same controller as the Web Component. The marker
+  // attribute scopes the selector to THIS component's roots -- [data-part="root"]
+  // alone would match every rafters root on the page.
+  for (const root of document.querySelectorAll<HTMLElement>('[data-part="root"][data-tooltip]')) {
+    if (root.dataset['bound'] === 'true') continue;
+    root.dataset['bound'] = 'true';
+    bindTooltip(root);
   }
 </script>

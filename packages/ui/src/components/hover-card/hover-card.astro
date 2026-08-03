@@ -11,6 +11,11 @@
  *
  * The card is role="dialog"; supply `label` (or an aria-labelledby target in the
  * content slot) so the preview has an accessible name.
+ *
+ * The root is a semantic <div data-part="root">, not <rafters-hover-card>
+ * (#2004): this target never registers the custom element. The marker
+ * `data-hover-card` scopes the binding selector, and the config rides as
+ * `data-*` (#2001), which is what bindHoverCard reads through `dataset`.
  */
 import {
   hoverCard,
@@ -23,7 +28,9 @@ import type { PartIds } from '../../lib/contract';
 
 interface Props {
   id: string;
-  /** Href for the trigger anchor (keeps it a real, focusable link). */
+  /** Href for the trigger anchor (keeps it a real, focusable link). The anchor
+   *  is inline-flex INSIDE the block root; the component as a whole is placed
+   *  by Container, not inlined mid-sentence in a paragraph. */
   href?: string;
   /** Accessible name for the role=dialog preview. */
   label?: string;
@@ -68,15 +75,16 @@ const aria = hoverCard.aria(state, config, ids);
 const open = state.open;
 ---
 
-<rafters-hover-card
+<div
   data-part="root"
-  open-delay={openDelay === undefined ? undefined : String(openDelay)}
-  close-delay={closeDelay === undefined ? undefined : String(closeDelay)}
-  disable-hoverable-content={String(disableHoverableContent)}
-  default-open={String(defaultOpen)}
-  side={placement.side}
-  align={placement.align}
-  side-offset={sideOffset === undefined ? undefined : String(sideOffset)}
+  data-hover-card
+  data-open-delay={openDelay === undefined ? undefined : String(openDelay)}
+  data-close-delay={closeDelay === undefined ? undefined : String(closeDelay)}
+  data-disable-hoverable-content={String(disableHoverableContent)}
+  data-default-open={String(defaultOpen)}
+  data-side={placement.side}
+  data-align={placement.align}
+  data-side-offset={sideOffset === undefined ? undefined : String(sideOffset)}
 >
   <a
     href={href}
@@ -100,15 +108,16 @@ const open = state.open;
   >
     <slot name="content" />
   </div>
-</rafters-hover-card>
+</div>
 
 <script>
   import { bindHoverCard } from './hover-card.behavior';
 
-  for (const root of document.querySelectorAll('rafters-hover-card[data-part="root"]')) {
-    const el = root as HTMLElement;
-    if (el.dataset['bound'] === 'true') continue;
-    el.dataset['bound'] = 'true';
-    bindHoverCard(el);
+  // The marker attribute scopes the selector to THIS component's roots --
+  // [data-part="root"] alone would match every rafters root on the page.
+  for (const root of document.querySelectorAll<HTMLElement>('[data-part="root"][data-hover-card]')) {
+    if (root.dataset['bound'] === 'true') continue;
+    root.dataset['bound'] = 'true';
+    bindHoverCard(root);
   }
 </script>

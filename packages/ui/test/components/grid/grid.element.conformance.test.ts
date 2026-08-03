@@ -5,7 +5,7 @@
  * 2D roving-focus composition drive through the DOM binding.
  *
  * The two archetype cases the issue names:
- *  - role="grid" (opted in via grid-role) engages the 2D keyboard contract;
+ *  - role="grid" (opted in via data-grid-role) engages the 2D keyboard contract;
  *  - a presentation grid stays inert -- no role, no roving tab stop.
  */
 import { cleanup } from '@testing-library/react';
@@ -18,10 +18,11 @@ beforeAll(() => {
 });
 
 async function mountGridMode(): Promise<HTMLElement> {
-  // role="grid" markup is authored (or SSR'd) pre-chunked: grid-role opts in,
-  // the row/gridcell structure already exists, the binding projects role.
+  // role="grid" markup is authored (or SSR'd) pre-chunked: data-grid-role opts
+  // in, the row/gridcell structure already exists, the binding projects role.
+  // Config is data-* only (#2001), so every key here reaches root.dataset.
   document.body.innerHTML = `
-    <rafters-grid data-part="root" data-grid grid-role="grid" columns="2" aria-label="Cells">
+    <rafters-grid data-part="root" data-grid data-grid-role="grid" data-columns="2" aria-label="Cells">
       <div data-part="row" role="row" class="contents">
         <div data-part="cell" role="gridcell" data-roving-item tabindex="-1">a</div>
         <div data-part="cell" role="gridcell" data-roving-item tabindex="-1">b</div>
@@ -37,7 +38,7 @@ async function mountGridMode(): Promise<HTMLElement> {
 
 async function mountPresentation(): Promise<HTMLElement> {
   document.body.innerHTML = `
-    <rafters-grid data-part="root" data-grid preset="bento" pattern="dashboard">
+    <rafters-grid data-part="root" data-grid data-preset="bento" data-pattern="dashboard">
       <div data-priority="primary">Metric</div>
       <div data-priority="secondary">Chart</div>
       <div data-priority="tertiary">Feed</div>

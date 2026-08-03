@@ -8,6 +8,11 @@
  * Content stays in light DOM (present-but-hidden) so the dismiss effect the
  * bind runs can read it, and so the positioning affordance can measure it.
  * Exit animation waits on the Presence adapter; this is enter-only.
+ *
+ * The root is a semantic <div data-part="root">, not <rafters-popover> (#2004):
+ * this target never registers the custom element. The marker `data-popover`
+ * scopes the binding selector, and the config rides as `data-*` (#2001), which
+ * is what bindPopover reads through `dataset`.
  */
 import { popover, type PopoverConfig, type PopoverPart } from './popover.behavior';
 import { popoverClasses } from './popover.classes';
@@ -44,13 +49,14 @@ const aria = popover.aria(state, config, ids);
 const open = state.open;
 ---
 
-<rafters-popover
+<div
   data-part="root"
-  default-open={String(defaultOpen)}
-  side={side}
-  align={align}
-  side-offset={String(sideOffset)}
-  align-offset={String(alignOffset)}
+  data-popover
+  data-default-open={String(defaultOpen)}
+  data-side={side}
+  data-align={align}
+  data-side-offset={String(sideOffset)}
+  data-align-offset={String(alignOffset)}
 >
   <button
     type="button"
@@ -80,15 +86,16 @@ const open = state.open;
       )
     }
   </div>
-</rafters-popover>
+</div>
 
 <script>
   import { bindPopover } from './popover.behavior';
 
-  for (const root of document.querySelectorAll('rafters-popover[data-part="root"]')) {
-    const el = root as HTMLElement;
-    if (el.dataset['bound'] === 'true') continue;
-    el.dataset['bound'] = 'true';
-    bindPopover(el);
+  // The marker attribute scopes the selector to THIS component's roots --
+  // [data-part="root"] alone would match every rafters root on the page.
+  for (const root of document.querySelectorAll<HTMLElement>('[data-part="root"][data-popover]')) {
+    if (root.dataset['bound'] === 'true') continue;
+    root.dataset['bound'] = 'true';
+    bindPopover(root);
   }
 </script>
