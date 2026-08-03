@@ -115,6 +115,8 @@ describe('navigation-menu conformance [wc]', () => {
   // The fixture's data-delay-duration is not decoration: it is the hover-intent
   // window the binding composes. This is the only test that spends it -- hover
   // must NOT open synchronously, and must open once the window elapses.
+  // Real timers plus waitFor over a short window, matching the hoverable-content
+  // test in the tooltip WC suite; this suite has no fake-timer precedent.
   it('hover opens the panel only after the configured delay elapses', async () => {
     const user = userEvent.setup();
     await mount(60);

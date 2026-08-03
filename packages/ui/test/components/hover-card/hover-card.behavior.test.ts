@@ -128,8 +128,13 @@ describe('hoverCardPlacement defaults', () => {
 /**
  * bindHoverCard reads sideOffset by PRESENCE (`'sideOffset' in data`), not by
  * truthiness: data-side-offset="0" is a real, flush offset and must not fall
- * back to the 4px default. The observable is the positioner's translate, so a
- * regression to `data['sideOffset'] ? ... : undefined` fails these.
+ * back to the 4px default. The observable is the positioner's translate.
+ *
+ * Note which regression these actually catch: `dataset` values are always
+ * STRINGS, and '0' is truthy, so a string-truthiness rewrite is not a live
+ * zero-mask at this site. The mask that can really happen is numeric -- e.g.
+ * `numData('sideOffset', 4) || undefined` -- and that form fails both cases
+ * below.
  */
 describe('bindHoverCard: data-side-offset parse', () => {
   const teardowns: Array<() => void> = [];
