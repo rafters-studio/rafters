@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_ANIMATION_DEFINITIONS,
-  DEFAULT_DELAY_DEFINITIONS,
+  DEFAULT_DELAY_NAMESPACE,
   DEFAULT_DURATION_DEFINITIONS,
   DEFAULT_EASING_DEFINITIONS,
+  DEFAULT_EXTENT_NAMESPACE,
   DEFAULT_KEYFRAME_DEFINITIONS,
   DEFAULT_MOTION_COMPOSITE_PRESETS,
   DEFAULT_MOTION_SEMANTIC_MAPPINGS,
+  DEFAULT_PERIOD_NAMESPACE,
 } from '../src/generators/defaults.js';
 import { generateMotionTokens } from '../src/generators/motion.js';
 import type { ResolvedSystemConfig } from '../src/generators/types.js';
@@ -38,7 +40,9 @@ function emitMotion() {
     CONFIG,
     DEFAULT_DURATION_DEFINITIONS,
     DEFAULT_EASING_DEFINITIONS,
-    DEFAULT_DELAY_DEFINITIONS,
+    DEFAULT_DELAY_NAMESPACE,
+    DEFAULT_EXTENT_NAMESPACE,
+    DEFAULT_PERIOD_NAMESPACE,
     DEFAULT_MOTION_SEMANTIC_MAPPINGS,
     DEFAULT_KEYFRAME_DEFINITIONS,
     DEFAULT_ANIMATION_DEFINITIONS,
@@ -73,18 +77,33 @@ describe('motion generator: golden output', () => {
   });
 
   it('resolves the duration tiers to the efficient-baseline defaults', () => {
-    // Efficient (the neutral default intent) picks the LOW end of each
-    // perceptual range -- it is a fast-running intent that lives in
-    // micro/fast/moderate and rarely reaches slow. So the tier defaults are the
-    // low bound of each band, not its midpoint. Proven explicitly so the
-    // baseline cannot drift back to the mid-range values it once shipped.
+    // Efficient (the neutral default intent) emits each tier's AUTHORED DEFAULT.
+    // The ladder is banded, not flat: 150 -> 250 -> 350 -> 500, gaps of 100, 100
+    // and 150, so two adjacent tiers are always tellable apart. The flat
+    // 200/300/400 that shipped between b864de01 and #1991 was band MINIMUMS
+    // leaking out through the derivation, not a decision anyone made.
     const byName = new Map(emitMotion().tokens.map((t) => [t.name, String(t.value)]));
     expect(byName.get('motion-duration-instant')).toBe('0ms');
     expect(byName.get('motion-duration-micro')).toBe('100ms');
     expect(byName.get('motion-duration-fast')).toBe('150ms');
-    expect(byName.get('motion-duration-moderate')).toBe('200ms');
-    expect(byName.get('motion-duration-normal')).toBe('300ms');
-    expect(byName.get('motion-duration-slow')).toBe('400ms');
+    expect(byName.get('motion-duration-moderate')).toBe('250ms');
+    expect(byName.get('motion-duration-normal')).toBe('350ms');
+    expect(byName.get('motion-duration-slow')).toBe('500ms');
+  });
+
+  it('emits the five namespaces as rafters-* leaves, and no motion-delay-* orphans', () => {
+    const names = emitMotion().tokens.map((t) => t.name);
+    for (const expected of [
+      'rafters-duration-moderate',
+      'rafters-ease-standard',
+      'rafters-delay-hover-intent',
+      'rafters-extent-pop',
+      'rafters-period-spin',
+    ]) {
+      expect(names, `${expected} missing`).toContain(expected);
+    }
+    // The ratio-stepped delay scale generated four tokens nothing referenced.
+    expect(names.filter((n) => n.startsWith('motion-delay-'))).toEqual([]);
   });
 
   it('emits no keyframe referencing a variable this system never sets', () => {

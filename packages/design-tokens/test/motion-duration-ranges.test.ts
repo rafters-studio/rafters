@@ -7,26 +7,30 @@ import { MOTION_DURATION_SCALE } from '../src/generators/types.js';
  * (docs/MOTION.md). These guard the two properties that make that safe:
  *
  * 1. REGRESSION -- the defaults are the efficient-baseline values (efficient is
- *    the neutral default intent). Efficient runs fast, so its pick is the LOW
- *    end of each range, not the midpoint. If one changes, a consumer's motion
- *    changed and someone should have said so.
+ *    the neutral default intent), and the neutral intent emits them verbatim.
+ *    If one changes, a consumer's motion changed and someone should have said so.
  * 2. COHERENCE -- every default lies inside its own range, the bands do not
  *    overlap downward into the communicative window, and the ceiling holds.
  */
 
 /**
- * The efficient-baseline defaults: the LOW end of each range, because efficient
- * (the neutral default intent) is a fast-running intent that lives in
- * micro/fast/moderate and rarely reaches slow. Do not "fix" these -- a change
- * here is a change to what every project ships at neutral intent.
+ * The efficient-baseline defaults, BANDED: 150 -> 250 -> 350 -> 500, gaps of
+ * 100, 100 and 150. The gaps are the point -- two adjacent tiers have to be
+ * tellable apart or the vocabulary has more words than it has ideas.
+ *
+ * These are NOT the low end of each range. The flat 200/300/400 ladder that
+ * shipped between b864de01 and #1991 was band minimums arriving through the
+ * derivation, and it read as deliberate because the defaults had been edited
+ * down to match. Do not "fix" these -- a change here is a change to what every
+ * project ships at neutral intent.
  */
 const EFFICIENT_DEFAULTS: Record<string, number> = {
   instant: 0,
   micro: 100,
   fast: 150,
-  moderate: 200,
-  normal: 300,
-  slow: 400,
+  moderate: 250,
+  normal: 350,
+  slow: 500,
 };
 
 describe('duration tiers: regression', () => {

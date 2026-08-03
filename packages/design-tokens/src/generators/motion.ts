@@ -6,9 +6,16 @@
  *
  * Duration tiers are perceptual RANGES a designer picks within (docs/MOTION.md),
  * NOT constants and NOT a ratio progression -- perception sets the bounds and the
- * emitted value is the tier's default until a designer moves it. Delays are the
- * one thing here that does progress: step-based (value = base * ratio^step) from
- * @rafters/math-utils. The semantic motion tokens (motion-semantic-*) carry a
+ * emitted value is the tier's default until a designer moves it. Delays no longer
+ * progress from the base duration: `motion-delay-{none,short,medium,long}` were
+ * ratio steps that no component ever referenced, and #1991 replaced them with the
+ * `delay` namespace, whose members are relationships (hover-intent, linger,
+ * choreo-step, stagger-step, skip) rather than steps on a curve.
+ *
+ * This generator also emits THE FIVE NAMESPACES as `rafters-<ns>-<member>` system
+ * leaves -- duration, ease, delay, extent, period, of equal rank (ruling
+ * 019fc49f). Those are the values; every other motion name in the emitted sheet
+ * becomes a reference to one of them. The semantic motion tokens (motion-semantic-*) carry a
  * full transition spec as JSON; the Tailwind exporter turns each into one
  * `motion-<name>` @utility.
  *
@@ -19,21 +26,18 @@
  * for only four of the seven definition sets.
  */
 
-import {
-  ratioValue as computeRatioValue,
-  progression as ratioStep,
-  resolveRatio,
-} from '@rafters/math-utils';
+import { ratioValue as computeRatioValue, resolveRatio } from '@rafters/math-utils';
 import type { Token } from '@rafters/shared';
 import type {
   AnimationDef,
-  DelayDef,
   DurationDef,
   EasingDef,
   KeyframeContext,
   KeyframeDef,
   MotionCompositePreset,
+  MotionNamespaceMemberDef,
   MotionSemanticMapping,
+  MotionValueProvenance,
 } from './defaults.js';
 import { deriveBand, deriveCurve, deriveDuration, type MotionIntent } from './motion-derivation.js';
 import type { GeneratorResult, ResolvedSystemConfig } from './types.js';
@@ -65,6 +69,61 @@ function requireDef<T>(defs: Record<string, T>, key: string, kind: string, owner
   return def;
 }
 
+/** The five namespaces of equal rank (ruling 019fc49f, 2026-08-02). */
+export const MOTION_NAMESPACES = ['duration', 'ease', 'delay', 'extent', 'period'] as const;
+export type MotionNamespace = (typeof MOTION_NAMESPACES)[number];
+
+/** The var/token name a namespace member owns: `rafters-<namespace>-<member>`. */
+export function motionNamespaceTokenName(namespace: MotionNamespace, member: string): string {
+  return `rafters-${namespace}-${member}`;
+}
+
+/**
+ * Build one namespace leaf.
+ *
+ * `dependsOn` is empty on purpose: a leaf is the bottom of the graph. Provenance
+ * rides in `description` rather than on a new `Token` field, because `TokenSchema`
+ * does not change for this work -- the three new namespaces validate as plain
+ * tokens, which is the property toy 9 was built to prove.
+ */
+function namespaceLeaf(input: {
+  namespaceName: MotionNamespace;
+  member: string;
+  value: string;
+  provenance: MotionValueProvenance;
+  note: string;
+  meaning: string;
+  contexts: string[];
+  timestamp: string;
+}): Token {
+  const { namespaceName, member, value, provenance, note, meaning, contexts, timestamp } = input;
+  return {
+    name: motionNamespaceTokenName(namespaceName, member),
+    value,
+    category: 'motion',
+    namespace: 'motion',
+    semanticMeaning: meaning,
+    usageContext: contexts,
+    dependsOn: [],
+    description: `${namespaceName}-${member}: ${value} [provenance: ${provenance}] ${note} ${meaning}`,
+    generatedAt: timestamp,
+    containerQueryAware: false,
+    // Mirrors the exporter's REDUCED_MOTION_ZEROED set: only duration and delay
+    // are zeroed under prefers-reduced-motion. ease/extent are shaped BY a
+    // duration, not zeroed themselves; period is exempt by law (loops slow,
+    // never stop).
+    reducedMotionAware: namespaceName === 'duration' || namespaceName === 'delay',
+    userOverride: null,
+    usagePatterns: {
+      do: [`Use the generated utility \`${namespaceName}-${member}\``],
+      never: [
+        'Hardcode this value in a component',
+        'Add a second name for the same idea -- one fast, everywhere, always',
+      ],
+    },
+  };
+}
+
 /**
  * Generate motion tokens from provided definitions.
  *
@@ -80,7 +139,9 @@ export function generateMotionTokens(
   config: ResolvedSystemConfig,
   durationDefs: Record<string, DurationDef>,
   easingDefs: Record<string, EasingDef>,
-  delayDefs: Record<string, DelayDef>,
+  delayDefs: Record<string, MotionNamespaceMemberDef>,
+  extentDefs: Record<string, MotionNamespaceMemberDef>,
+  periodDefs: Record<string, MotionNamespaceMemberDef>,
   semanticMappings: Record<string, MotionSemanticMapping>,
   keyframeDefs: Record<string, KeyframeDef>,
   animationDefs: Record<string, AnimationDef>,
@@ -99,7 +160,6 @@ export function generateMotionTokens(
 
   const ratio = resolveRatio(progressionRatio);
   const ratioVal = computeRatioValue(ratio);
-  const computeStep = (base: number, step: number) => ratioStep(ratio, base, step);
 
   // Base duration token
   tokens.push({
@@ -108,10 +168,10 @@ export function generateMotionTokens(
     category: 'motion',
     namespace: 'motion',
     semanticMeaning:
-      'Legacy base transition duration. The perceptual duration scale (motion-duration-*) no longer derives from this; retained only as a reference value and delay-progression base.',
-    usageContext: ['calculation-reference', 'delay-base'],
+      'Legacy base transition duration. Nothing derives from this any more: the perceptual duration scale never did, and the ratio-stepped delay tokens that did were removed in #1991. Retained as a reference value only.',
+    usageContext: ['calculation-reference'],
     progressionSystem: progressionRatio as 'minor-third',
-    description: `Base duration (${baseTransitionDuration}ms). Delay tokens use ${progressionRatio} progression (ratio ${ratioVal}); duration tiers are perceptual RANGES a designer sets within and do not derive from this base.`,
+    description: `Base duration (${baseTransitionDuration}ms). A reference value with no dependents: duration tiers are perceptual RANGES a designer sets within, and the delay namespace holds relationships rather than ratio steps.`,
     generatedAt: timestamp,
     containerQueryAware: false,
     reducedMotionAware: true,
@@ -215,46 +275,73 @@ export function generateMotionTokens(
     });
   }
 
-  // Generate delay tokens
-  for (const [name, def] of Object.entries(delayDefs)) {
-    let delayMs: number;
-    let mathRelationship: string;
+  // THE FIVE NAMESPACES, as --rafters-* system leaves.
+  //
+  // duration and ease read the SAME definitions the tier tokens above read, so
+  // there is exactly one moderate and one standard curve in the system. delay,
+  // extent and period arrive as their own leaf tables because nothing derives
+  // them -- a delay is a relationship, an extent is a geometry, a period is a
+  // loop, and none of the three is a function of a perceptual band.
+  //
+  // These carry LITERALS. Everything else that names a motion value becomes a
+  // reference to one of them in the exporter, which is what makes retuning a
+  // leaf a one-line change to the emitted sheet.
+  for (const scale of MOTION_DURATION_SCALE) {
+    const def = durationDefs[scale];
+    if (!def) continue;
+    const durationMs = deriveDuration(scale, intent, durationDefs);
+    tokens.push(
+      namespaceLeaf({
+        namespaceName: 'duration',
+        member: scale,
+        value: `${durationMs}ms`,
+        provenance: 'baseline',
+        note: def.band
+          ? `Efficient baseline. ${durationMs}ms within the ${def.band} band (${def.range[0]}-${def.range[1]}ms).`
+          : `Efficient baseline. Fixed at ${durationMs}ms.`,
+        meaning: def.meaning,
+        contexts: def.contexts,
+        timestamp,
+      }),
+    );
+  }
 
-    if (def.step === 'none') {
-      delayMs = 0;
-      mathRelationship = '0';
-    } else {
-      // Use computeStep() for step-based calculation
-      delayMs = Math.round(computeStep(baseTransitionDuration, def.step));
-      mathRelationship =
-        def.step === 0
-          ? `${baseTransitionDuration}ms (base)`
-          : `${baseTransitionDuration} × ${ratioVal}^${def.step}`;
+  for (const curve of EASING_CURVES) {
+    const def = easingDefs[curve];
+    if (!def) continue;
+    tokens.push(
+      namespaceLeaf({
+        namespaceName: 'ease',
+        member: curve,
+        value: def.css,
+        provenance: 'baseline',
+        note: 'Efficient baseline curve.',
+        meaning: def.meaning,
+        contexts: def.contexts,
+        timestamp,
+      }),
+    );
+  }
+
+  for (const [namespaceName, members] of [
+    ['delay', delayDefs],
+    ['extent', extentDefs],
+    ['period', periodDefs],
+  ] as const) {
+    for (const [member, def] of Object.entries(members)) {
+      tokens.push(
+        namespaceLeaf({
+          namespaceName,
+          member,
+          value: def.value,
+          provenance: def.provenance,
+          note: def.note,
+          meaning: def.meaning,
+          contexts: def.contexts,
+          timestamp,
+        }),
+      );
     }
-
-    tokens.push({
-      name: `motion-delay-${name}`,
-      value: delayMs === 0 ? '0ms' : `${delayMs}ms`,
-      category: 'motion',
-      namespace: 'motion',
-      semanticMeaning: `${name.charAt(0).toUpperCase() + name.slice(1)} animation delay`,
-      usageContext:
-        name === 'none'
-          ? ['immediate-response']
-          : name === 'short'
-            ? ['staggered-lists', 'sequential-elements']
-            : name === 'medium'
-              ? ['modal-content', 'after-transition']
-              : ['emphasis', 'dramatic-reveals'],
-      delayMs,
-      mathRelationship,
-      dependsOn: def.step === 'none' ? [] : ['motion-duration-base'],
-      description: `Delay ${name}: ${delayMs}ms. Based on duration progression.`,
-      generatedAt: timestamp,
-      containerQueryAware: false,
-      reducedMotionAware: true,
-      userOverride: null,
-    });
   }
 
   // Keyframe definitions - values derived from progression ratio for mathematical harmony
@@ -446,12 +533,12 @@ export function generateMotionTokens(
       ratio: progressionRatio,
       ratioValue: ratioVal,
       baseDuration: baseTransitionDuration,
-      note: 'Duration tiers are perceptually derived literals (docs/MOTION.md); delay tokens use the workspace progression ratio from the base duration.',
+      note: 'Duration tiers are perceptually derived literals (docs/MOTION.md); the five motion namespaces are authored leaves and nothing in motion uses the progression ratio.',
     }),
     category: 'motion',
     namespace: 'motion',
     semanticMeaning: 'Metadata about the motion system',
-    description: `Duration tiers are perceptual literals; delays use ${progressionRatio} progression from ${baseTransitionDuration}ms base.`,
+    description: `Duration tiers are perceptual literals; the five motion namespaces (duration, ease, delay, extent, period) are authored leaves. The ${progressionRatio} progression and the ${baseTransitionDuration}ms base are recorded here but no longer drive any motion value.`,
     generatedAt: timestamp,
     containerQueryAware: false,
     userOverride: null,
