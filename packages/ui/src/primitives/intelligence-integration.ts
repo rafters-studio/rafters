@@ -103,26 +103,19 @@ export function validateDialogAccessibility(config: {
   };
 }
 
-/**
- * Get animation timing based on motion preferences
- * Respects prefers-reduced-motion for accessibility
+/*
+ * `getAnimationTiming(preference)` lived here and is retired (#1995).
+ *
+ * It returned a hardcoded 200ms and `cubic-bezier(0.16, 1, 0.3, 1)` -- an
+ * invented seventh curve, in the primitives layer, matching none of the six the
+ * system ships. A grep across `packages/` found no callers: only the definition
+ * and its two listings in the primitives spec matrix, both removed with it.
+ *
+ * Its one correct behaviour -- zero duration under prefers-reduced-motion --
+ * moves to `motion-tokens.ts`, where it applies to the `duration` and `delay`
+ * namespaces and exempts `period`, because a stopped work loop says the work
+ * stopped. Callers that want a timing ask the accessor for a named token.
  */
-export function getAnimationTiming(preference: 'reduced' | 'normal'): {
-  duration: number;
-  easing: string;
-} {
-  if (preference === 'reduced') {
-    return {
-      duration: 0,
-      easing: 'linear',
-    };
-  }
-
-  return {
-    duration: 200,
-    easing: 'cubic-bezier(0.16, 1, 0.3, 1)',
-  };
-}
 
 /**
  * Detect user's motion preference from media query

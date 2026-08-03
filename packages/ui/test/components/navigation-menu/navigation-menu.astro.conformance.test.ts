@@ -39,9 +39,11 @@ afterEach(() => {
   document.body.innerHTML = '';
 });
 
-async function mount(): Promise<HTMLElement> {
+async function mount(props: Record<string, unknown> = {}): Promise<HTMLElement> {
   const container = await AstroContainer.create();
-  const html = await container.renderToString(NavigationMenu, { props: { id: 'nav', items } });
+  const html = await container.renderToString(NavigationMenu, {
+    props: { id: 'nav', items, ...props },
+  });
   document.body.innerHTML = html;
   const root = document.body.querySelector('nav[data-part="root"]') as HTMLElement;
   bindNavigationMenu(root); // the <script> does this per instance on the real page
@@ -111,14 +113,22 @@ describe('navigation-menu conformance [astro]', () => {
   // in the bind. Neither `orientation` nor `delay-duration` is valid on a <nav>.
   it('config crosses the SSR/bind seam as data-* only, and rehydration still works', async () => {
     const user = userEvent.setup();
-    const root = await mount();
+    const root = await mount({ delayDuration: 120 });
 
-    assertConfigTravelsAsData(root, { orientation: 'horizontal', delayDuration: '200' });
+    assertConfigTravelsAsData(root, { orientation: 'horizontal', delayDuration: '120' });
 
     // Rehydration: opening is wired only by bindNavigationMenu, which built its
     // config from dataset alone.
     await user.click(trigger('products'));
     expect(content('products').hidden).toBe(false);
     expect(trigger('products').getAttribute('aria-expanded')).toBe('true');
+  });
+
+  // #1995: an omitted delay must NOT be frozen into the markup. Absence is what
+  // lets the binding read `--rafters-delay-hover-intent` at mount time.
+  it('omits data-delay-duration when the author did not set one', async () => {
+    const root = await mount();
+    expect(root.dataset['delayDuration']).toBeUndefined();
+    expect(root.hasAttribute('data-delay-duration')).toBe(false);
   });
 });

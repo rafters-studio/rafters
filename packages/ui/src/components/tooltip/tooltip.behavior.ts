@@ -15,18 +15,39 @@ import {
 } from '../../lib/disclosable';
 import { computePosition } from '../../primitives/collision-detector';
 import { createControlledHoverDelay } from '../../primitives/hover-delay';
+import { motionDelayMs } from '../../primitives/motion-tokens';
 import { updateAriaAttribute } from '../../primitives/aria-manager';
 import type { Align, Side } from '../../primitives/types';
 
-/** The default hover-open delay, ms (matches the oracle's 700ms). */
-export const DEFAULT_DELAY_DURATION = 700;
-/** The default hover-close delay, ms (matches the oracle's 300ms). */
-export const DEFAULT_SKIP_DELAY_DURATION = 300;
+/**
+ * The hover-open delay, read from `--rafters-delay-hover-intent`.
+ *
+ * The tooltip used to carry its own 700ms literal. The motion matrix assigns
+ * this cell the `hover-intent` delay generic (motion.jsonl, tooltip/content/
+ * "closed -> open"), so the value now comes from the system token like every
+ * other motion decision -- one fast, everywhere, always. Under reduced motion
+ * the accessor resolves it to zero.
+ */
+export function tooltipOpenDelay(element?: Element | null): number {
+  return motionDelayMs('hover-intent', { element });
+}
+
+/**
+ * The close / warm-reopen grace, read from `--rafters-delay-skip`.
+ *
+ * `skip` is the window inside which a just-closed surface is still warm. The
+ * tooltip is its first real consumer.
+ */
+export function tooltipSkipDelay(element?: Element | null): number {
+  return motionDelayMs('skip', { element });
+}
 
 export interface TooltipConfig extends DisclosableConfig {
-  /** Delay before a hovered/focused trigger opens the tip. Default 700ms. */
+  /** Delay before a hovered/focused trigger opens the tip. Unset reads
+   *  `--rafters-delay-hover-intent` via {@link tooltipOpenDelay}. */
   delayDuration?: number | undefined;
-  /** Delay before an un-hovered trigger closes the tip. Default 300ms. */
+  /** Delay before an un-hovered trigger closes the tip. Unset reads
+   *  `--rafters-delay-skip` via {@link tooltipSkipDelay}. */
   skipDelayDuration?: number | undefined;
   /** When true, moving the pointer onto the content does NOT hold it open.
    *  Default false (content is hoverable). */
@@ -155,8 +176,8 @@ export function bindTooltip(root: HTMLElement): () => void {
 
   const content = getPart('content');
   const config: TooltipConfig = {
-    delayDuration: numData('delayDuration', DEFAULT_DELAY_DURATION),
-    skipDelayDuration: numData('skipDelayDuration', DEFAULT_SKIP_DELAY_DURATION),
+    delayDuration: numData('delayDuration', tooltipOpenDelay(root)),
+    skipDelayDuration: numData('skipDelayDuration', tooltipSkipDelay(root)),
     disableHoverableContent: data['disableHoverableContent'] === 'true',
     defaultOpen: data['defaultOpen'] === 'true' || content?.dataset['state'] === 'open',
     side: (data['side'] as Side | undefined) ?? undefined,
@@ -194,8 +215,8 @@ export function bindTooltip(root: HTMLElement): () => void {
   // Hover-intent timing composed from the primitive. onOpen/onClose flow
   // through the idempotent dispatch, so the score stays the single truth.
   const hover = createControlledHoverDelay({
-    openDelay: config.delayDuration ?? DEFAULT_DELAY_DURATION,
-    closeDelay: config.skipDelayDuration ?? DEFAULT_SKIP_DELAY_DURATION,
+    openDelay: config.delayDuration ?? tooltipOpenDelay(root),
+    closeDelay: config.skipDelayDuration ?? tooltipSkipDelay(root),
     onOpen: () => request('open'),
     onClose: () => request('close'),
   });
