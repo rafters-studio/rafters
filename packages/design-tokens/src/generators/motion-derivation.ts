@@ -94,24 +94,33 @@ function shortenForExit(band: MotionBand): MotionBand {
 }
 
 /**
- * Where inside its band an intent sits, as a 0..1 position.
+ * Where inside its band an intent sits, as a 0..1 position -- or `null`, meaning
+ * "take the tier's AUTHORED DEFAULT".
  *
- * Only two intents have measured data. `efficient` sits at the LOW end of every
- * band -- that is what ships today and what `motion-duration-ranges.test.ts`
- * documents ("efficient runs fast, so its pick is the LOW end of each range").
- * `elegant` is the measured peak for motion-duration in the 30-site study.
+ * `null` is not a missing number, it is the correct answer for an intent with no
+ * position of its own. `DurationDef.default` is defined as "the value at neutral
+ * intent", so the neutral intent reading anything else is a contradiction the
+ * type already forbids. It used to read position 0 -- the band MINIMUM -- and
+ * that coincided with the authored defaults only because the defaults had
+ * drifted down to their minimums (the flat 200/300/400 ladder). Restoring the
+ * banded baseline in #1991 separated the two and exposed which one was meant.
  *
- * The remaining three are NOT yet researched. They inherit the neutral position
- * rather than receiving an invented one -- a guessed number here would be
- * indistinguishable from data at the call site, which is exactly how the last
- * hand-typed table came to look derived.
+ * `elegant` is the measured peak for motion-duration in the 30-site study and is
+ * the one intent that genuinely positions itself inside the band.
+ *
+ * The remaining three are NOT researched. They take `null` for the same reason
+ * they used to inherit the neutral position: a guessed number here would be
+ * indistinguishable from data at the call site. Reading the authored default is
+ * also the only inheritance that cannot silently ship a SECOND `moderate` --
+ * position 0 under three intents and the authored 250ms under one is exactly the
+ * vocabulary drift the generics ruling exists to prevent.
  */
-const INTENT_POSITION: Record<MotionIntent, number> = {
-  efficient: 0,
+const INTENT_POSITION: Record<MotionIntent, number | null> = {
+  efficient: null,
   elegant: 1,
-  friendly: 0,
-  technical: 0,
-  editorial: 0,
+  friendly: null,
+  technical: null,
+  editorial: null,
 };
 
 /** Intents whose position is measured rather than inherited from neutral. */
@@ -152,8 +161,10 @@ export function deriveDuration(
   }
   if (LANDMARK_BANDS.has(band)) return def.default;
 
-  const [min, max] = def.range;
   const position = INTENT_POSITION[intent];
+  if (position === null) return def.default;
+
+  const [min, max] = def.range;
   return Math.round(min + (max - min) * position);
 }
 

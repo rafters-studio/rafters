@@ -30,7 +30,11 @@ import {
 // motion-modal-in carries a reduced-motion override (opacity, 150ms); motion-hover
 // is preserved unchanged (no @media block). Both exercised as literal classes.
 const FIXTURE_CLASSES =
-  'motion-modal-in motion-hover motion-expand opacity-0 data-[state=open]:opacity-100';
+  'motion-modal-in motion-hover motion-expand opacity-0 data-[state=open]:opacity-100 ' +
+  // One member of each of the five namespaces (#1991). `ease-standard` is the
+  // interesting one: `ease-*` IS a Tailwind v4 theme namespace, so this is the
+  // only case where our generated block meets a built-in of the same name.
+  'duration-fast ease-standard delay-hover-intent extent-pop period-spin';
 
 function baseRegistry(): TokenRegistry {
   const system = generateBaseSystem({});
@@ -67,9 +71,13 @@ describe('semantic motion utilities compile (#1902/#1903/#1904)', () => {
     // expand/collapse transition grid-template-rows, never height.
     expect(css).toContain('transition-property: grid-template-rows, opacity;');
     expect(css).not.toContain('transition-property: height');
-    // The referenced theme vars carry the perceptual value and the named curve.
-    expect(css).toContain('--duration-normal: 300ms;');
-    expect(css).toContain('--ease-enter: cubic-bezier(0, 0, 0.2, 1);');
+    // The referenced theme vars bridge onto the namespace leaves (#1991), and the
+    // leaves carry the perceptual value and the named curve. A literal on the
+    // bridge would be a second copy of the value that could drift from the leaf.
+    expect(css).toContain('--duration-normal: var(--rafters-duration-normal);');
+    expect(css).toContain('--rafters-duration-normal: 350ms;');
+    expect(css).toContain('--ease-enter: var(--rafters-ease-enter);');
+    expect(css).toContain('--rafters-ease-enter: cubic-bezier(0, 0, 0.2, 1);');
   });
 
   it('compiles a token-named motion class to a real rule, reduced-motion block intact', async () => {
@@ -79,8 +87,64 @@ describe('semantic motion utilities compile (#1902/#1903/#1904)', () => {
     expect(css).toContain('.motion-hover');
     // The nested @media survived compile + minify -- the blueprint-risk-#1 shape.
     expect(css, 'reduced-motion block dropped').toContain('prefers-reduced-motion');
-    // The referenced duration theme var resolved into the sheet (Tailwind minifies
-    // 300ms -> .3s), proving the class is not a dangling var() reference.
-    expect(css, 'duration var tree-shaken').toMatch(/--duration-normal:\s*(300ms|\.3s)/);
+    // The referenced duration theme var resolved into the sheet, proving the
+    // class is not a dangling var() reference.
+    expect(css, 'duration bridge tree-shaken').toMatch(
+      /--duration-normal:\s*var\(--rafters-duration-normal\)/,
+    );
+  });
+
+  it('every motion var in the COMPILED sheet is declared -- BOTH hops', async () => {
+    // Reflection 019fb063, promoted to a test. A var() reference to a custom
+    // property Tailwind dropped compiles cleanly and resolves to NOTHING. It is
+    // invisible in the emitted sheet and invisible in a "does the sheet contain
+    // both lines" assertion -- only reference-AND-declaration, both read off the
+    // COMPILED output, catches it.
+    //
+    // #1991 added a HOP. `motion-modal-in` now reads
+    // var(--duration-normal) -> var(--rafters-duration-normal) -> 350ms, and
+    // 019fb063 only ever measured a single hop surviving Tailwind. Checking the
+    // tail alone would pass on a chain whose middle was dropped, so both hops
+    // are covered here.
+    const css = await registryToCompiled(baseRegistry(), { contentSources: [fixtureDir] });
+
+    // The prefixes this change touches. `--motion-duration-*` / `--motion-easing-*`
+    // are deliberately NOT here: `--motion-animation-*` and `--animate-*` have
+    // referenced them since before this work while the theme block skips them, so
+    // they are undeclared today. That is a real pre-existing defect (every
+    // animate-* utility ships with no duration and no timing function) and it is
+    // filed rather than fixed here -- widening this check to cover it would make
+    // a #1991 test fail for a defect #1991 did not introduce.
+    const CHECKED = /^--(duration|ease|rafters-(duration|ease|delay|extent|period))-/;
+
+    const referenced = new Set<string>();
+    for (const match of css.matchAll(/var\((--[a-z][a-z0-9-]*)\)/g)) {
+      const name = match[1];
+      if (name && CHECKED.test(name)) referenced.add(name);
+    }
+    expect(
+      referenced.size,
+      'no motion var references at all -- the layer vanished',
+    ).toBeGreaterThan(0);
+    // Both ends of the bridge must actually be among the references.
+    expect(referenced).toContain('--duration-normal');
+    expect(referenced).toContain('--rafters-duration-normal');
+
+    const undeclared = [...referenced].filter((name) => !css.includes(`${name}:`));
+    expect(undeclared, 'referenced but never declared -- resolves to nothing').toEqual([]);
+  });
+
+  it('compiles a real rule for a member of each of the five namespaces', async () => {
+    const css = await registryToCompiled(baseRegistry(), { contentSources: [fixtureDir] });
+    for (const [className, declaration] of [
+      ['.duration-fast', 'var(--rafters-duration-fast)'],
+      ['.ease-standard', 'var(--rafters-ease-standard)'],
+      ['.delay-hover-intent', 'var(--rafters-delay-hover-intent)'],
+      ['.extent-pop', 'var(--rafters-extent-pop)'],
+      ['.period-spin', 'var(--rafters-period-spin)'],
+    ] as const) {
+      expect(css, `${className} did not compile to a rule`).toContain(className);
+      expect(css, `${className} lost its var reference`).toContain(declaration);
+    }
   });
 });

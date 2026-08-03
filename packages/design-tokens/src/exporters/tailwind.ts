@@ -30,6 +30,57 @@ export interface TailwindExportOptions {
 
 const SHADOW_PART_SUFFIX = /-(offset-x|offset-y|blur|spread|color)$/;
 
+/**
+ * THE FIVE MOTION NAMESPACES (ruling 019fc49f, issue #1991).
+ *
+ * Each member is emitted as one `--rafters-<namespace>-<member>` custom property
+ * carrying a LITERAL, plus one `@utility <namespace>-<member>` block that
+ * references it by NAME. That split is the whole mechanism:
+ *
+ *   - the var is the only place a motion value exists, so Studio retuning one
+ *     leaf changes exactly one line of the emitted sheet;
+ *   - the utility never contains a value, so every @utility block is
+ *     byte-identical across a retune. One fast, everywhere, always.
+ *
+ * We generate these blocks ourselves rather than leaning on Tailwind theme
+ * inference, because NONE of the five is a Tailwind v4 theme namespace --
+ * `duration-*` takes bare numbers (the #1955 trap: `duration-moderate` reads as
+ * correct and compiles to nothing), and `delay-*`, `extent-*` and `period-*` are
+ * not namespaces at all. `ease-*` is the single exception, and it gets an
+ * explicit block anyway so all five behave identically.
+ */
+const MOTION_NAMESPACE_PROPERTY: Record<string, string> = {
+  duration: 'transition-duration',
+  ease: 'transition-timing-function',
+  delay: 'transition-delay',
+  // Extents are consumed inside transforms and keyframes, so the utility
+  // publishes the chosen extent under a fixed name the consuming rule reads.
+  // The name comes from toy 9 (worktree-toy-motion-registry).
+  extent: '--rafters-consumed-extent',
+  period: 'animation-duration',
+};
+
+/**
+ * Namespaces the reduced-motion law zeroes.
+ *
+ * Under `prefers-reduced-motion: reduce` every duration and every delay resolves
+ * to zero. `period` is deliberately absent: loops slow, they never stop, because
+ * a stopped spinner says the work stopped. No slowdown factor is written here --
+ * nobody has tuned one, and an invented multiplier would read as a finding.
+ * `ease` and `extent` are absent because zeroing the duration already removes
+ * the motion they shape.
+ */
+const REDUCED_MOTION_ZEROED: ReadonlySet<string> = new Set(['duration', 'delay']);
+
+const MOTION_NAMESPACE_TOKEN = /^rafters-(duration|ease|delay|extent|period)-(.+)$/;
+
+/** Split a `rafters-<ns>-<member>` token name, or null if it is not one. */
+function motionNamespaceParts(name: string): { namespace: string; member: string } | null {
+  const match = MOTION_NAMESPACE_TOKEN.exec(name);
+  if (!match?.[1] || !match[2]) return null;
+  return { namespace: match[1], member: match[2] };
+}
+
 /** Check if a shadow token name is a decomposed part rather than a composite */
 function isShadowDecomposedPart(name: string): boolean {
   return SHADOW_PART_SUFFIX.test(name);
@@ -372,6 +423,13 @@ function generateThemeBlock(groups: GroupedTokens): string {
     lines.push('');
   }
 
+  // The five motion namespaces -- the system LEAVES. These carry the literals.
+  const motionNamespaceLines = generateMotionNamespaceVars(groups.motion);
+  if (motionNamespaceLines) {
+    lines.push(motionNamespaceLines);
+    lines.push('');
+  }
+
   // Motion tokens (raw values for non-duration/easing)
   if (groups.motion.length > 0) {
     for (const token of groups.motion) {
@@ -379,6 +437,7 @@ function generateThemeBlock(groups: GroupedTokens): string {
       if (token.name.startsWith('motion-duration-') && token.name !== 'motion-duration-base')
         continue;
       if (token.name.startsWith('motion-easing-')) continue;
+      if (motionNamespaceParts(token.name)) continue;
       const value = tokenValueToCSS(token);
       if (value === null) continue;
       lines.push(`  --${token.name}: ${value};`);
@@ -386,20 +445,22 @@ function generateThemeBlock(groups: GroupedTokens): string {
     lines.push('');
   }
 
-  // Motion duration tokens -- Tailwind reads --duration-* (no transition-duration utility, but available as var())
+  // The Tailwind-facing duration/ease names, as REFERENCES to the leaves above.
+  //
+  // Purely additive: every name that existed before still exists, and every
+  // consumer of `var(--duration-moderate)` keeps working. What changed is that
+  // these no longer hold a second copy of the value -- a literal here would mean
+  // retuning one leaf moved two lines, and the two could then disagree. They die
+  // in the component sweep, when their consumers do.
   if (groups.motion.length > 0) {
     for (const token of groups.motion) {
       if (token.name.startsWith('motion-duration-') && token.name !== 'motion-duration-base') {
         const key = token.name.replace('motion-duration-', '');
-        const value = tokenValueToCSS(token);
-        if (value === null) continue;
-        lines.push(`  --duration-${key}: ${value};`);
+        lines.push(`  --duration-${key}: var(--rafters-duration-${key});`);
       }
       if (token.name.startsWith('motion-easing-')) {
         const key = token.name.replace('motion-easing-', '');
-        const value = tokenValueToCSS(token);
-        if (value === null) continue;
-        lines.push(`  --ease-${key}: ${value};`);
+        lines.push(`  --ease-${key}: var(--rafters-ease-${key});`);
       }
     }
     lines.push('');
@@ -752,6 +813,61 @@ function generateMotionUtilities(motionTokens: Token[]): string {
 }
 
 /**
+ * Emit the five motion namespaces as `--rafters-<namespace>-<member>` leaves.
+ *
+ * Indented for the @theme block. These are the only place a motion value is
+ * written down, in either emission path -- the static Studio sheet included,
+ * because a sheet whose `--duration-*` bridges point at properties it never
+ * declares is the exact silent failure reflection 019fb063 records.
+ */
+function generateMotionNamespaceVars(motionTokens: Token[]): string {
+  const lines: string[] = [];
+  for (const token of motionTokens) {
+    if (!motionNamespaceParts(token.name)) continue;
+    const value = tokenValueToCSS(token);
+    if (value === null) continue;
+    lines.push(`  --${token.name}: ${value};`);
+  }
+  if (lines.length === 0) return '';
+  return [
+    '  /* The five motion namespaces -- system leaves, the values live here */',
+    ...lines,
+  ].join('\n');
+}
+
+/**
+ * Emit one `@utility <namespace>-<member>` block per namespace member.
+ *
+ * Every block references a var by NAME and contains no motion value, so the
+ * whole set is byte-identical across any retune -- the toy-9 invariant, asserted
+ * in `motion-css-golden.test.ts`. The only literal any block may contain is the
+ * reduced-motion zero, which is a law rather than a tuned value.
+ */
+function generateMotionNamespaceUtilities(motionTokens: Token[]): string {
+  const lines: string[] = ['/* The five motion namespaces -- one utility per member */'];
+  let emitted = 0;
+
+  for (const token of motionTokens) {
+    const parts = motionNamespaceParts(token.name);
+    if (!parts) continue;
+    const property = MOTION_NAMESPACE_PROPERTY[parts.namespace];
+    if (property === undefined) continue;
+
+    emitted++;
+    lines.push(`@utility ${parts.namespace}-${parts.member} {`);
+    lines.push(`  ${property}: var(--${token.name});`);
+    if (REDUCED_MOTION_ZEROED.has(parts.namespace)) {
+      lines.push('  @media (prefers-reduced-motion: reduce) {');
+      lines.push(`    ${property}: 0ms;`);
+      lines.push('  }');
+    }
+    lines.push('}');
+  }
+
+  return emitted === 0 ? '' : lines.join('\n');
+}
+
+/**
  * Map a typography override property to a Tailwind utility class.
  */
 function overridePropertyToUtility(property: string, value: string): string {
@@ -880,6 +996,13 @@ export function tokensToTailwind(
     sections.push(depthUtilities);
   }
 
+  // The five motion namespaces (duration-*, ease-*, delay-*, extent-*, period-*)
+  const namespaceUtilities = generateMotionNamespaceUtilities(groups.motion);
+  if (namespaceUtilities) {
+    sections.push('');
+    sections.push(namespaceUtilities);
+  }
+
   // Semantic motion @utility classes (motion-*)
   const motionUtilities = generateMotionUtilities(groups.motion);
   if (motionUtilities) {
@@ -993,6 +1116,16 @@ function generateThemeBlockWithVarRefs(groups: GroupedTokens): string {
     lines.push('');
   }
 
+  // The five motion namespaces -- leaves, so they carry the literal even here.
+  // Everything else in this block is a var() reference; these are what the
+  // references point AT, and a reference whose target is never declared resolves
+  // to nothing without erroring (019fb063).
+  const motionNamespaceLines = generateMotionNamespaceVars(groups.motion);
+  if (motionNamespaceLines) {
+    lines.push(motionNamespaceLines);
+    lines.push('');
+  }
+
   // Motion tokens (raw values for non-duration/easing)
   if (groups.motion.length > 0) {
     for (const token of groups.motion) {
@@ -1002,21 +1135,23 @@ function generateThemeBlockWithVarRefs(groups: GroupedTokens): string {
       // Semantic motion tokens are JSON specs consumed by generateMotionUtilities,
       // not raw custom properties -- no --var to reference.
       if (token.name.startsWith('motion-semantic-')) continue;
+      if (motionNamespaceParts(token.name)) continue;
       lines.push(`  --${token.name}: var(--rafters-${token.name});`);
     }
     lines.push('');
   }
 
-  // Motion duration/easing tokens with Tailwind-native names
+  // Motion duration/easing tokens with Tailwind-native names, bridged onto the
+  // namespace leaves -- the same reference the dynamic path emits.
   if (groups.motion.length > 0) {
     for (const token of groups.motion) {
       if (token.name.startsWith('motion-duration-') && token.name !== 'motion-duration-base') {
         const key = token.name.replace('motion-duration-', '');
-        lines.push(`  --duration-${key}: var(--rafters-${token.name});`);
+        lines.push(`  --duration-${key}: var(--rafters-duration-${key});`);
       }
       if (token.name.startsWith('motion-easing-')) {
         const key = token.name.replace('motion-easing-', '');
-        lines.push(`  --ease-${key}: var(--rafters-${token.name});`);
+        lines.push(`  --ease-${key}: var(--rafters-ease-${key});`);
       }
     }
     lines.push('');

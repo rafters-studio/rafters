@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_ANIMATION_DEFINITIONS,
-  DEFAULT_DELAY_DEFINITIONS,
+  DEFAULT_DELAY_NAMESPACE,
   DEFAULT_DURATION_DEFINITIONS,
   DEFAULT_EASING_DEFINITIONS,
+  DEFAULT_EXTENT_NAMESPACE,
   DEFAULT_KEYFRAME_DEFINITIONS,
   DEFAULT_MOTION_COMPOSITE_PRESETS,
   DEFAULT_MOTION_SEMANTIC_MAPPINGS,
+  DEFAULT_PERIOD_NAMESPACE,
 } from '../src/generators/defaults.js';
 import { generateMotionTokens } from '../src/generators/motion.js';
 import {
@@ -81,7 +83,13 @@ describe('duration derives from band and intent', () => {
   it('efficient reproduces the shipped default for every communicative band', () => {
     // The bands that carry spatial motion. These are what a travel-driven
     // derivation actually produces, and they match byte for byte.
-    const shipped: Record<string, number> = { moderate: 200, normal: 300, slow: 400 };
+    //
+    // #1991 restored the banded baseline (gaps of 100/100/150) and changed what
+    // "efficient" READS: the tier's authored default, not its band minimum. The
+    // two used to coincide, which is how the flat 200/300/400 ladder passed for
+    // a decision. `DurationDef.default` is defined as "the value at neutral
+    // intent", so this is the only reading the type allows.
+    const shipped: Record<string, number> = { moderate: 250, normal: 350, slow: 500 };
     for (const [band, ms] of Object.entries(shipped)) {
       expect(deriveDuration(band as never, 'efficient', DEFAULT_DURATION_DEFINITIONS)).toBe(ms);
     }
@@ -171,7 +179,9 @@ describe('end to end: changing intent moves the emitted tokens (epic #1973)', ()
       { baseTransitionDuration: 150, progressionRatio: 'perfect-fourth', intent } as never,
       DEFAULT_DURATION_DEFINITIONS,
       DEFAULT_EASING_DEFINITIONS,
-      DEFAULT_DELAY_DEFINITIONS,
+      DEFAULT_DELAY_NAMESPACE,
+      DEFAULT_EXTENT_NAMESPACE,
+      DEFAULT_PERIOD_NAMESPACE,
       DEFAULT_MOTION_SEMANTIC_MAPPINGS,
       DEFAULT_KEYFRAME_DEFINITIONS,
       DEFAULT_ANIMATION_DEFINITIONS,
@@ -222,7 +232,9 @@ describe('the epic condition: a designer changes intent and motion moves', () =>
       { baseTransitionDuration: 150, progressionRatio: 'perfect-fourth', intent } as never,
       DEFAULT_DURATION_DEFINITIONS,
       DEFAULT_EASING_DEFINITIONS,
-      DEFAULT_DELAY_DEFINITIONS,
+      DEFAULT_DELAY_NAMESPACE,
+      DEFAULT_EXTENT_NAMESPACE,
+      DEFAULT_PERIOD_NAMESPACE,
       DEFAULT_MOTION_SEMANTIC_MAPPINGS,
       DEFAULT_KEYFRAME_DEFINITIONS,
       DEFAULT_ANIMATION_DEFINITIONS,
@@ -239,9 +251,9 @@ describe('the epic condition: a designer changes intent and motion moves', () =>
     const d = durationsFor('efficient');
     expect(d['motion-duration-micro']).toBe('100ms');
     expect(d['motion-duration-fast']).toBe('150ms');
-    expect(d['motion-duration-moderate']).toBe('200ms');
-    expect(d['motion-duration-normal']).toBe('300ms');
-    expect(d['motion-duration-slow']).toBe('400ms');
+    expect(d['motion-duration-moderate']).toBe('250ms');
+    expect(d['motion-duration-normal']).toBe('350ms');
+    expect(d['motion-duration-slow']).toBe('500ms');
   });
 
   it('elegant emits longer communicative durations -- WITHOUT ANY TABLE BEING EDITED', () => {
@@ -250,6 +262,10 @@ describe('the epic condition: a designer changes intent and motion moves', () =>
 
     expect(elegant['motion-duration-moderate']).toBe('300ms');
     expect(elegant['motion-duration-normal']).toBe('400ms');
+    // `slow` is the one band where the two intents now agree: the restored
+    // baseline puts efficient at 500ms, which is also the band ceiling elegant
+    // reaches for. They agree because the ceiling is a perceptual fact -- past
+    // ~500ms everything reads as sluggish, whatever the character.
     expect(elegant['motion-duration-slow']).toBe('500ms');
 
     expect(elegant['motion-duration-moderate']).not.toBe(efficient['motion-duration-moderate']);

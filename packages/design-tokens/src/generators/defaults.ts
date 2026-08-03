@@ -428,6 +428,14 @@ export interface DurationDef {
  *
  * Defaults are the values shipped at neutral intent. Nothing moves until a
  * designer moves it.
+ *
+ * BANDED, NOT FLAT. The communicative tiers step 150 -> 250 -> 350 -> 500: gaps
+ * of 100, 100 and 150, so two adjacent tiers are always tellable apart. The flat
+ * 200/300/400 ladder this system shipped between b864de01 and #1991 was drift,
+ * not a decision -- it fell out of reading each tier's band MINIMUM instead of
+ * its authored default (see `motion-derivation.ts`). Every restored value sits
+ * inside its band, which is the evidence the bands were never the thing that
+ * moved.
  */
 export const DEFAULT_DURATION_DEFINITIONS: Record<string, DurationDef> = {
   instant: {
@@ -459,7 +467,7 @@ export const DEFAULT_DURATION_DEFINITIONS: Record<string, DurationDef> = {
   },
   moderate: {
     range: [200, 300],
-    default: 200,
+    default: 250,
     band: 'communicative (~200-300ms)',
     meaning:
       'Dropdowns, tab switches, small reveals. The communicative window: fast enough to feel responsive, slow enough for the eye to track a trajectory and build a spatial model.',
@@ -468,7 +476,7 @@ export const DEFAULT_DURATION_DEFINITIONS: Record<string, DurationDef> = {
   },
   normal: {
     range: [300, 400],
-    default: 300,
+    default: 350,
     band: 'communicative, larger movement',
     meaning:
       'The workhorse -- modal entrances, toggles, standard state transitions. The communicative window for larger movement.',
@@ -477,7 +485,7 @@ export const DEFAULT_DURATION_DEFINITIONS: Record<string, DurationDef> = {
   },
   slow: {
     range: [400, 500],
-    default: 400,
+    default: 500,
     band: 'at the sluggish boundary',
     meaning:
       'Sheets, page transitions, large spatial movement where the user needs orientation. At the sluggish boundary -- the ceiling for anything but full-screen spatial transitions.',
@@ -576,15 +584,23 @@ export interface KeyframeDef {
  * Sean's ruling (2026-07-23) is that keyframe character comes out of the intent
  * study; until that lands, these are relocated rather than blessed.
  *
- * Two specific things pending that study:
- * - `bounce` embeds two literal cubic-beziers via animation-timing-function,
- *   bypassing the easing vocabulary. They are NOT tokenizable as-is: its first
- *   curve is (0.8, 0, 1, 1), which is not any of the six named curves (`exit` is
- *   (0.4, 0, 1, 1)), so substituting a token would silently change how bounce
- *   moves. Left intact deliberately.
+ * DECIDED 2026-08-02 (#1991), previously left open:
+ * - `bounce`'s two inline cubic-beziers STAY INLINE, and this is now a rule
+ *   rather than a deferral. A timing function written INSIDE a keyframe is
+ *   gravity geometry -- it describes the shape of the fall and the rebound, and
+ *   it belongs to the keyframe that draws them. The `ease` namespace governs
+ *   transitions and animation-LEVEL timing: the character of an interaction, not
+ *   the physics inside a loop. The evidence is the down-phase itself,
+ *   (0.8, 0, 1, 1): it has no member in the six-curve vocabulary and never
+ *   should, because no interaction should accelerate like a falling object.
+ *   Substituting the nearest curve (`exit`, (0.4, 0, 1, 1)) would change how
+ *   bounce moves for the sake of tidiness -- an unforced value change.
  * - The looping set (`spin`, `ping`, `pulse`, `bounce`, `caret-blink`) are
  *   continuous animations rather than transitions, so no perceptual duration band
- *   applies to them. Their loop periods are likewise unblessed.
+ *   applies. Their loop periods are the `period` namespace's job; the values in
+ *   the animation definitions below are the same numbers, and the sweep that
+ *   points the animations at `var(--rafters-period-*)` is component work, not
+ *   token work.
  *
  * DELETED 2026-07-23: `accordion-down` / `accordion-up`. They interpolated
  * `var(--radix-accordion-content-height)`, which Radix sets from JS measurement
@@ -1113,22 +1129,159 @@ export const DEFAULT_MOTION_SEMANTIC_MAPPINGS: Record<string, MotionSemanticMapp
   },
 };
 
-export interface DelayDef {
-  /** Steps from base using the progression ratio (0 = base, negative = shorter, positive = longer) */
-  step: number | 'none';
+// =============================================================================
+// THE MOTION NAMESPACES: delay, extent, period
+// =============================================================================
+
+/**
+ * Where a value came from. This is the field that keeps the system honest about
+ * what it knows, and it is prose-only -- it flows into the token's `description`
+ * and never becomes a `Token` field, because `TokenSchema` does not change here.
+ *
+ *   baseline  the July efficient baseline -- what the system already ships
+ *   observed  read off working code (a literal a component hardcodes today)
+ *   proposed  a starting point nobody has tuned against a real component yet
+ *
+ * There is deliberately no `measured` or `tuned` member: nothing in this file
+ * has been through the knobs instrument, and a value that claims it has is worse
+ * than no value at all.
+ */
+export type MotionValueProvenance = 'baseline' | 'observed' | 'proposed';
+
+/**
+ * One member of one motion namespace -- a LEAF. It carries a literal and nothing
+ * derives from it, which is what makes retuning a leaf a one-line change to the
+ * emitted sheet.
+ */
+export interface MotionNamespaceMemberDef {
+  /** The CSS value, verbatim. */
+  value: string;
+  provenance: MotionValueProvenance;
+  /** Why this value is this value, in the words of whoever put it here. */
+  note: string;
+  meaning: string;
+  contexts: string[];
 }
 
 /**
- * Delay scale using step-based progression.
- * Values are computed as: baseDuration * ratio^step
- * With minor-third (1.2) and baseDuration of 150ms:
- *   step -1 = 125ms, step 0 = 150ms, step 1 = 180ms, step 2 = 216ms, etc.
+ * DELAY -- the relationship namespace. How long the system waits before it
+ * reacts, which is a statement about how eager it is.
+ *
+ * `hover-intent` is the only value here with a claim on reality: 200ms is what
+ * tooltip and navigation-menu hardcode in their behaviours today. The rest are
+ * PROPOSED -- a coherent starting point for the knobs instrument, not findings.
  */
-export const DEFAULT_DELAY_DEFINITIONS: Record<string, DelayDef> = {
-  none: { step: 'none' },
-  short: { step: -1 },
-  medium: { step: 0 },
-  long: { step: 1 },
+export const DEFAULT_DELAY_NAMESPACE: Record<string, MotionNamespaceMemberDef> = {
+  'hover-intent': {
+    value: '200ms',
+    provenance: 'observed',
+    note: 'The value tooltip and navigation-menu ship hardcoded in their behaviours today. Observed in working code, not tuned.',
+    meaning:
+      'How long a pointer must rest before the system believes the hover was meant. Long enough to survive a pass-through, short enough that a deliberate hover does not feel ignored.',
+    contexts: ['tooltip', 'hover-card', 'navigation-menu'],
+  },
+  linger: {
+    value: '300ms',
+    provenance: 'proposed',
+    note: 'PROPOSED. The grace window before a hovered surface closes, so a diagonal cursor path to a submenu does not dismiss it.',
+    meaning: 'How long a surface stays after the pointer leaves, so a near-miss is forgiven.',
+    contexts: ['hover-card', 'navigation-menu', 'submenu'],
+  },
+  'choreo-step': {
+    value: '50ms',
+    provenance: 'proposed',
+    note: 'PROPOSED. The offset between two parts of ONE surface moving together (panel then its content).',
+    meaning: 'The beat between choreographed parts of a single surface.',
+    contexts: ['modal-content', 'panel-content', 'sequenced-parts'],
+  },
+  'stagger-step': {
+    value: '0ms',
+    provenance: 'proposed',
+    note: 'PROPOSED, and zero is a value: efficient does not stagger lists. A non-zero stagger is a character choice a designer makes, not a default.',
+    meaning: 'The per-item offset when a list animates in.',
+    contexts: ['staggered-lists', 'sequential-elements'],
+  },
+  skip: {
+    value: '300ms',
+    provenance: 'proposed',
+    note: 'PROPOSED. The warm-reopen window: reopen inside it and the entrance delay is skipped, because the user is already oriented.',
+    meaning: 'How long a just-closed surface stays warm enough to reopen without ceremony.',
+    contexts: ['tooltip-reopen', 'menu-reopen'],
+  },
+};
+
+/**
+ * EXTENT -- the geometry namespace. How FAR a thing moves, scales or draws.
+ *
+ * This namespace compresses out of every motion discussion because extents are
+ * the hardest dimension to name, which is exactly why it is here: extents carry
+ * half the personality. Every value below is PROPOSED. They are mechanically
+ * coherent (a pop that does not read as a jump, a press that reads as pressure)
+ * and none of them has been tuned against a real component.
+ */
+export const DEFAULT_EXTENT_NAMESPACE: Record<string, MotionNamespaceMemberDef> = {
+  pop: {
+    value: '0.95',
+    provenance: 'proposed',
+    note: 'PROPOSED. The scale a surface enters from. Close to 1 so the entrance reads as arrival rather than as a zoom.',
+    meaning: 'How far a surface scales up as it arrives.',
+    contexts: ['modal', 'popover', 'dialog'],
+  },
+  press: {
+    value: '0.97',
+    provenance: 'proposed',
+    note: 'PROPOSED. Depression under a press. Smaller than `pop` because the finger is the evidence -- the motion only confirms it.',
+    meaning: 'How far a control depresses when pressed.',
+    contexts: ['button', 'toggle', 'press-feedback'],
+  },
+  draw: {
+    value: '1',
+    provenance: 'proposed',
+    note: 'PROPOSED. The completed fraction of a drawn indicator. 1 is full travel; a value below it is a deliberately incomplete stroke.',
+    meaning: 'How far an indicator draws along its track.',
+    contexts: ['tabs-indicator', 'underline', 'progress-stroke'],
+  },
+};
+
+/**
+ * PERIOD -- the loop namespace. How long one cycle of a continuous animation
+ * takes. No perceptual band governs these, because nothing is being tracked to a
+ * destination; the system is working, not communicating a change.
+ *
+ * These loops are also the one thing reduced motion does NOT zero. A stopped
+ * spinner says the work stopped. The ruling is that loops slow rather than stop
+ * -- and the slowdown factor is deliberately absent below, because nobody has
+ * tuned one and an invented multiplier would read as a finding.
+ */
+export const DEFAULT_PERIOD_NAMESPACE: Record<string, MotionNamespaceMemberDef> = {
+  spin: {
+    value: '1s',
+    provenance: 'baseline',
+    note: 'The shipped loop period of the spin animation.',
+    meaning: 'One full rotation of a working indicator.',
+    contexts: ['loading', 'spinner', 'refresh'],
+  },
+  pulse: {
+    value: '2s',
+    provenance: 'baseline',
+    note: 'The shipped loop period of the pulse animation.',
+    meaning: 'One breath of a skeleton or placeholder.',
+    contexts: ['skeleton', 'loading-placeholder'],
+  },
+  blink: {
+    value: '1.25s',
+    provenance: 'baseline',
+    note: 'The shipped loop period of the caret-blink animation.',
+    meaning: 'One blink of a text caret.',
+    contexts: ['input-caret', 'text-cursor'],
+  },
+  shimmer: {
+    value: '2s',
+    provenance: 'proposed',
+    note: 'PROPOSED. No shimmer animation ships yet; the period is here because the namespace is a vocabulary, not a list of what happens to exist.',
+    meaning: 'One sweep of a shimmer across a loading surface.',
+    contexts: ['skeleton', 'loading-placeholder'],
+  },
 };
 
 // =============================================================================
