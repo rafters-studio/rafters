@@ -147,4 +147,27 @@ describe('semantic motion utilities compile (#1902/#1903/#1904)', () => {
       expect(css, `${className} lost its var reference`).toContain(declaration);
     }
   });
+
+  it('the hand-authored ease declaration wins the merged rule', async () => {
+    // ease-* is the ONE namespace Tailwind v4 also theme-infers a utility for
+    // (from the --ease-* bridge), so the compiled sheet merges Tailwind's
+    // inferred declaration with ours into a single .ease-<member> rule. The
+    // computed value is only correct because OUR declaration comes last. This
+    // pins that ordering: if it ever flips, the bridge's declaration would win
+    // and a retune of the leaf alone could stop reaching consumers -- the
+    // review round's finding, promoted to a loud failure.
+    const css = await registryToCompiled(baseRegistry(), { contentSources: [fixtureDir] });
+    const rules = css.match(/\.ease-standard\s*\{[^}]*\}/g) ?? [];
+    expect(rules.length, '.ease-standard rule missing from compiled sheet').toBeGreaterThan(0);
+    const declarations = rules
+      .join(';')
+      .split(/[;{}]/)
+      .map((d) => d.trim())
+      .filter((d) => d.startsWith('transition-timing-function:'));
+    expect(declarations.length).toBeGreaterThan(0);
+    expect(
+      declarations[declarations.length - 1],
+      'the last transition-timing-function must reference the leaf, not the bridge',
+    ).toBe('transition-timing-function:var(--rafters-ease-standard)');
+  });
 });

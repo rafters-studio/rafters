@@ -14,6 +14,7 @@
  */
 
 import type { ColorReference, ColorValue, Token, TypographyElementOverride } from '@rafters/shared';
+import type { MotionNamespace } from '../generators/motion.js';
 import type { TokenRegistry } from '../registry.js';
 
 /**
@@ -49,7 +50,7 @@ const SHADOW_PART_SUFFIX = /-(offset-x|offset-y|blur|spread|color)$/;
  * not namespaces at all. `ease-*` is the single exception, and it gets an
  * explicit block anyway so all five behave identically.
  */
-const MOTION_NAMESPACE_PROPERTY: Record<string, string> = {
+const MOTION_NAMESPACE_PROPERTY = {
   duration: 'transition-duration',
   ease: 'transition-timing-function',
   delay: 'transition-delay',
@@ -58,7 +59,14 @@ const MOTION_NAMESPACE_PROPERTY: Record<string, string> = {
   // The name comes from toy 9 (worktree-toy-motion-registry).
   extent: '--rafters-consumed-extent',
   period: 'animation-duration',
-};
+} as const satisfies Record<MotionNamespace, string>;
+
+// The exporter never imports generator RUNTIME (registry-in, not
+// generator-internals-in), but the namespace SET must not be re-declarable by
+// hand: `satisfies Record<MotionNamespace, string>` fails the build the moment
+// the generator's union gains or loses a member this map does not mirror, and
+// the token regex below derives from the map so it cannot drift separately.
+const MOTION_NAMESPACE_NAMES = Object.keys(MOTION_NAMESPACE_PROPERTY) as readonly MotionNamespace[];
 
 /**
  * Namespaces the reduced-motion law zeroes.
@@ -70,15 +78,15 @@ const MOTION_NAMESPACE_PROPERTY: Record<string, string> = {
  * `ease` and `extent` are absent because zeroing the duration already removes
  * the motion they shape.
  */
-const REDUCED_MOTION_ZEROED: ReadonlySet<string> = new Set(['duration', 'delay']);
+const REDUCED_MOTION_ZEROED: ReadonlySet<MotionNamespace> = new Set(['duration', 'delay']);
 
-const MOTION_NAMESPACE_TOKEN = /^rafters-(duration|ease|delay|extent|period)-(.+)$/;
+const MOTION_NAMESPACE_TOKEN = new RegExp(`^rafters-(${MOTION_NAMESPACE_NAMES.join('|')})-(.+)$`);
 
 /** Split a `rafters-<ns>-<member>` token name, or null if it is not one. */
-function motionNamespaceParts(name: string): { namespace: string; member: string } | null {
+function motionNamespaceParts(name: string): { namespace: MotionNamespace; member: string } | null {
   const match = MOTION_NAMESPACE_TOKEN.exec(name);
   if (!match?.[1] || !match[2]) return null;
-  return { namespace: match[1], member: match[2] };
+  return { namespace: match[1] as MotionNamespace, member: match[2] };
 }
 
 /** Check if a shadow token name is a decomposed part rather than a composite */
@@ -831,6 +839,13 @@ function generateMotionNamespaceVars(motionTokens: Token[]): string {
  * retuning one leaf moved two lines, and the two could then disagree. They die
  * in the component sweep, when their consumers do.
  *
+ * KNOWN LIMITATION until that sweep: the bridge names carry NO reduced-motion
+ * path -- the zeroing law lives in the generated utilities. New code must
+ * consume the utilities (or the --rafters-* leaves through the runtime
+ * accessor), never `var(--duration-*)` directly, or it silently escapes the
+ * law. Pre-existing posture, disclosed here so nobody reaches for the bridge
+ * expecting compliance.
+ *
  * Both emission paths (`generateThemeBlock` and `generateThemeBlockWithVarRefs`)
  * call this, because after #1991 the bridge is the same line in both: the
  * dynamic sheet used to write a literal here and the static one a reference, and
@@ -866,8 +881,9 @@ function generateMotionNamespaceUtilities(motionTokens: Token[]): string {
   for (const token of motionTokens) {
     const parts = motionNamespaceParts(token.name);
     if (!parts) continue;
+    // Total by construction: parts.namespace is MotionNamespace and the map
+    // satisfies Record<MotionNamespace, string> -- no silent-drop branch.
     const property = MOTION_NAMESPACE_PROPERTY[parts.namespace];
-    if (property === undefined) continue;
 
     emitted++;
     lines.push(`@utility ${parts.namespace}-${parts.member} {`);

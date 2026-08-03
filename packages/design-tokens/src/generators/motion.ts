@@ -108,7 +108,11 @@ function namespaceLeaf(input: {
     description: `${namespaceName}-${member}: ${value} [provenance: ${provenance}] ${note} ${meaning}`,
     generatedAt: timestamp,
     containerQueryAware: false,
-    reducedMotionAware: namespaceName !== 'period',
+    // Mirrors the exporter's REDUCED_MOTION_ZEROED set: only duration and delay
+    // are zeroed under prefers-reduced-motion. ease/extent are shaped BY a
+    // duration, not zeroed themselves; period is exempt by law (loops slow,
+    // never stop).
+    reducedMotionAware: namespaceName === 'duration' || namespaceName === 'delay',
     userOverride: null,
     usagePatterns: {
       do: [`Use the generated utility \`${namespaceName}-${member}\``],

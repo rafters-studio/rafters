@@ -93,8 +93,11 @@ describe('motion CSS: golden emission', () => {
 
   it('generates a utility for every member of every namespace', () => {
     const css = emitCSS(baseTokens());
-    // Nothing here rides Tailwind theme inference -- none of the five is a v4
-    // theme namespace (the #1955 lesson), so we emit every block ourselves.
+    // Nothing here RELIES on Tailwind theme inference -- we emit every block
+    // ourselves (the #1955 lesson). One caveat, matching tailwind.ts: `ease-*`
+    // IS a v4 theme namespace, so Tailwind also infers its own ease utilities
+    // from the --ease-* bridge; the compiled-layer test pins which declaration
+    // wins. The other four are not theme namespaces at all.
     expect(css).toContain(
       '@utility duration-fast {\n  transition-duration: var(--rafters-duration-fast);',
     );
