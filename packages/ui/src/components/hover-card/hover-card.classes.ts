@@ -1,17 +1,13 @@
 import type { HoverCardConfig, HoverCardState } from './hover-card.behavior';
 
 export interface HoverCardClassSet {
-  root: string;
   trigger: string;
   content: string;
 }
 
 // The DOM-native root is a binding host, not a box: it carries data-part="root"
-// and the config, and its two children (an inline anchor trigger and a
-// fixed-positioned panel) place themselves. `contents` removes the wrapper box
-// so the anchor flows in the consumer's prose exactly as an unwrapped <a>
-// would -- the layout-neutral answer to the display:inline hazard in #2004.
-const rootClasses = 'contents';
+// and the config, and NO class -- a behavior root never styles itself; layout
+// belongs to the consumer's Container/Grid (operator ruling, 2026-08-02).
 
 // The trigger is a bare inline anchor: the consumer's link keeps its own type,
 // underline, and focus affordances. Hover-card adds no chrome to it.
@@ -33,7 +29,6 @@ export function hoverCardClasses(
   _state: HoverCardState,
 ): HoverCardClassSet {
   return {
-    root: rootClasses,
     trigger: triggerClasses,
     content: contentClasses,
   };

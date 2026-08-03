@@ -65,7 +65,9 @@ describe('popover conformance [astro]', () => {
   it('root is a semantic, classed div and config crosses the seam as data-* only', async () => {
     const root = await mount({ side: 'top', align: 'start', sideOffset: 0, alignOffset: 8 });
     expect(root.tagName).toBe('DIV');
-    expect(root.className).toBe('contents');
+    // No class, ever: a behavior root is a binding host, not a box, and it
+    // never styles itself (operator ruling, 2026-08-02). Layout is Container's.
+    expect(root.hasAttribute('class')).toBe(false);
     expect(root.hasAttribute('data-popover')).toBe(true);
 
     assertConfigTravelsAsData(root, {

@@ -1,18 +1,14 @@
 import type { PopoverConfig, PopoverState } from './popover.behavior';
 
 export interface PopoverClassSet {
-  root: string;
   content: string;
   close: string;
   closeIcon: string;
 }
 
 // The DOM-native root is a binding host, not a box: it carries data-part="root"
-// and the config, and its two children (the trigger button and a fixed-
-// positioned panel) place themselves. `contents` removes the wrapper box so the
-// trigger flows in the consumer's layout exactly as an unwrapped button would --
-// the layout-neutral answer to the display:inline hazard in #2004.
-const rootClasses = 'contents';
+// and the config, and NO class -- a behavior root never styles itself; layout
+// belongs to the consumer's Container/Grid (operator ruling, 2026-08-02).
 
 // Ported from the old popover.classes.ts. The panel sits on the popover depth
 // token, fills with the popover surface tokens, and animates enter/exit with
@@ -39,7 +35,6 @@ const closeIconClasses = 'h-5 w-5 @md:h-4 @md:w-4';
 
 export function popoverClasses(_config: PopoverConfig, _state: PopoverState): PopoverClassSet {
   return {
-    root: rootClasses,
     content: contentClasses,
     close: closeClasses,
     closeIcon: closeIconClasses,

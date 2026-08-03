@@ -6,7 +6,6 @@ import {
 } from './drawer.behavior';
 
 export interface DrawerClassSet {
-  root: string;
   overlay: string;
   content: string;
   handle: string;
@@ -19,13 +18,8 @@ export interface DrawerClassSet {
 }
 
 // The DOM-native root is a binding host, not a box: it carries data-part="root"
-// and the config, and all three children (trigger, overlay, panel) place
-// themselves -- the overlay and panel are `fixed`. `contents` removes the
-// wrapper box so the trigger flows in the consumer's layout exactly as an
-// unwrapped button would -- the layout-neutral answer to the display:inline
-// hazard in #2004.
-const rootClasses = 'contents';
-
+// and the config, and NO class -- a behavior root never styles itself; layout
+// belongs to the consumer's Container/Grid (operator ruling, 2026-08-02).
 const overlayClasses = 'fixed inset-0 z-depth-overlay bg-foreground/80';
 
 // The panel is fixed to its anchoring edge (no centering container -- unlike a
@@ -69,7 +63,6 @@ const closeIconClasses = 'h-5 w-5 @md:h-4 @md:w-4';
 
 export function drawerClasses(config: DrawerConfig, _state: DrawerState): DrawerClassSet {
   return {
-    root: rootClasses,
     overlay: overlayClasses,
     content: `${contentBaseClasses} ${sideClasses[drawerSide(config)]}`,
     handle: handleClasses,
