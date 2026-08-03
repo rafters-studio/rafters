@@ -279,8 +279,9 @@ export function PopoverContent({
   const { config, state, effectiveOpen, ids, aria, classes, request, getPart, dismissVetoRef } =
     usePopoverContext('PopoverContent');
   const isInsidePortal = React.useContext(PopoverPortalContext);
-  // Presence (wave 0-B): keep the content mounted through its exit animation.
-  const { present, ref: presenceRef } = usePresence(effectiveOpen);
+  // Presence: keep the content mounted through its exit animation. `state`
+  // becomes data-state, which is what the enter/exit keyframes key off.
+  const { present, ref: presenceRef, state: presenceState } = usePresence(effectiveOpen);
 
   React.useEffect(() => {
     dismissVetoRef.current = { onPointerDownOutside, onInteractOutside };
@@ -330,6 +331,7 @@ export function PopoverContent({
       data-part="content"
       id={ids.content || undefined}
       ref={presenceRef}
+      data-state={presenceState}
       tabIndex={-1}
       // Requested side/align seed the enter-animation direction before the
       // positioning affordance resolves the true placement at runtime.

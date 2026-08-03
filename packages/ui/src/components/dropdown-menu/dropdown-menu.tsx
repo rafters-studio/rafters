@@ -47,6 +47,7 @@ import * as React from 'react';
 import { createBehavior, type AriaAttrs, type PartIds } from '../../lib/contract';
 import { keyInputOf } from '../../hooks/key-input';
 import { useMemory } from '../../hooks/use-memory';
+import { usePresence } from '../../hooks/use-presence';
 import classy from '../../primitives/classy';
 import { mergeProps } from '../../primitives/slot';
 import {
@@ -278,11 +279,22 @@ export function DropdownMenuContent({
   ...props
 }: DropdownMenuContentProps) {
   const { ids, aria, effectiveOpen, classes } = useDropdownMenuContext('DropdownMenuContent');
+  // The menu lives in light DOM, so presence here gates `hidden` rather than a
+  // mount -- but the mechanism is identical. `hidden` is `display: none`, and an
+  // element LEAVING display:none starts its animation exactly as a mounting one
+  // does, so enter needs no @starting-style; exit needs `hidden` withheld until
+  // the keyframe has run, which is what holding `present` buys.
+  const { present, ref: presenceRef, state: presenceState } = usePresence(effectiveOpen);
 
+  // ref and data-state ride partProps so the asChild branch gets BOTH. Presence
+  // waiting on a node that never received the exit classes is a wedge, and
+  // asChild is the path where that silently happens.
   const partProps = {
     'data-part': 'content',
     id: ids.content,
-    hidden: effectiveOpen ? undefined : true,
+    ref: presenceRef,
+    'data-state': presenceState,
+    hidden: present ? undefined : true,
     ...aria.content,
   };
 

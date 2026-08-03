@@ -10,17 +10,27 @@ export interface PopoverClassSet {
 // and the config, and NO class -- a behavior root never styles itself; layout
 // belongs to the consumer's Container/Grid (operator ruling, 2026-08-02).
 
-// Ported from the old popover.classes.ts. The panel sits on the popover depth
-// token, fills with the popover surface tokens, and animates enter/exit with
-// fade + zoom, sliding from the resolved side. motion-reduce disables it.
+// The panel sits on the popover depth token and fills with the popover surface
+// tokens. Enter/exit is PRESENCE (#1996): the node arrives with its keyframe
+// already attached and runs it, and usePresence holds the unmount until the
+// exit keyframe ends. No @starting-style, no transition-behavior.
+//
+// The animate-* utilities come from the token layer's --animate-* theme entries,
+// which carry the duration tier and curve. This replaces the tailwindcss-animate
+// vocabulary (animate-in / fade-in-0 / zoom-in-95 / slide-in-from-*) that used to
+// sit here -- the hand-rolled form dropdown-menu's own classes call prohibited,
+// and it depended on a plugin this repo does not ship. Slide-on-enter goes with
+// it: it is not part of the presence contract and no acceptance asks for it.
+//
+// motion-reduce:animate-none is the reduced-motion path, and it is deliberately
+// animate-none rather than a zeroed duration: the duration-* utilities set
+// transition-duration, so they cannot zero a keyframe animation. With no
+// animation at all, presence releases synchronously instead of waiting on an
+// animationend that would never fire.
 const contentClasses =
   'z-depth-popover w-72 rounded-md border bg-popover p-4 text-popover-foreground shadow-lg outline-none ' +
-  'transition-all duration-200 motion-reduce:transition-none ' +
-  'data-[state=open]:animate-in data-[state=closed]:animate-out ' +
-  'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 ' +
-  'data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 ' +
-  'data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 ' +
-  'data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2';
+  'data-[state=open]:animate-scale-in data-[state=closed]:animate-scale-out ' +
+  'data-[state=closed]:pointer-events-none motion-reduce:animate-none';
 
 // The optional in-panel dismiss control. Sized to the touch floor, scaling
 // down through the container query, echoing dialog's close affordance.

@@ -400,12 +400,20 @@ export function generateMotionTokens(
         `animation "${name}"`,
       );
       durationValue = `${durationDef.default}ms`;
-      durationRef = `var(--motion-duration-${anim.duration.tier})`;
-      durationDependency = [`motion-duration-${anim.duration.tier}`];
+      // The namespace LEAF, not `--motion-duration-*`. Nothing has ever declared
+      // `--motion-duration-*` in either emission path, so every animation value
+      // built on it carried a dangling var(): `animation: scale-out  ;` parses,
+      // computes to a zero duration, and the animation silently never runs --
+      // the failure mode reflection 019fb063 names. The leaves (`--rafters-
+      // duration-*`, `--rafters-ease-*`) are declared by generateMotionNamespaceVars.
+      durationRef = `var(--rafters-duration-${anim.duration.tier})`;
+      durationDependency = [`rafters-duration-${anim.duration.tier}`];
     }
 
     const easingDef = requireDef(easingDefs, anim.curve, 'easing curve', `animation "${name}"`);
-    const easingRef = `var(--motion-easing-${anim.curve})`;
+    // `easing` was renamed to `ease` when the five namespaces landed; the leaf
+    // name is the one the sheet declares.
+    const easingRef = `var(--rafters-ease-${anim.curve})`;
 
     const iterations = anim.iterations || '';
     const animValue = iterations
@@ -427,7 +435,7 @@ export function generateMotionTokens(
       dependsOn: [
         `motion-keyframe-${anim.keyframe}`,
         ...durationDependency,
-        `motion-easing-${anim.curve}`,
+        `rafters-ease-${anim.curve}`,
       ],
       description: `Animation ${name}: ${anim.meaning}`,
       generatedAt: timestamp,

@@ -269,9 +269,10 @@ export function DialogContent({
   const { config, state, effectiveOpen, ids, aria, classes, request, setPart, dismissVetoRef } =
     useDialogContext('DialogContent');
   const isInsidePortal = React.useContext(DialogPortalContext);
-  // Presence (wave 0-B): keep the content mounted through its exit animation.
-  // With no exit animation it releases immediately, so behavior is unchanged.
-  const { present, ref: presenceRef } = usePresence(effectiveOpen);
+  // Presence: keep the content mounted through its exit animation. `state` is
+  // the data-state the enter/exit keyframes key off -- without it on the node
+  // the classes' data-[state=*] selectors never match and nothing animates.
+  const { present, ref: presenceRef, state: presenceState } = usePresence(effectiveOpen);
 
   React.useEffect(() => {
     dismissVetoRef.current = { onPointerDownOutside, onInteractOutside };
@@ -308,6 +309,7 @@ export function DialogContent({
         data-part="content"
         id={ids.content || undefined}
         ref={presenceRef}
+        data-state={presenceState}
         tabIndex={-1}
         className={classy(classes.content, className)}
         {...aria.content}
