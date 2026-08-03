@@ -840,11 +840,11 @@ function generateMotionNamespaceVars(motionTokens: Token[]): string {
  * in the component sweep, when their consumers do.
  *
  * KNOWN LIMITATION until that sweep: the bridge names carry NO reduced-motion
- * path -- the zeroing law lives in the generated utilities. New code must
- * consume the utilities (or the --rafters-* leaves through the runtime
- * accessor), never `var(--duration-*)` directly, or it silently escapes the
- * law. Pre-existing posture, disclosed here so nobody reaches for the bridge
- * expecting compliance.
+ * path -- the zeroing law lives in the generated utilities, which are the ONLY
+ * compliant consumption path today. Never `var(--duration-*)` directly, or the
+ * law is silently escaped. A typed runtime accessor for JS-consumed cells is
+ * #1995 and does not exist yet. Pre-existing posture, disclosed here so nobody
+ * reaches for the bridge expecting compliance.
  *
  * Both emission paths (`generateThemeBlock` and `generateThemeBlockWithVarRefs`)
  * call this, because after #1991 the bridge is the same line in both: the
