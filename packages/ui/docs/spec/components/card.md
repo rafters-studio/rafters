@@ -251,6 +251,16 @@ Two intentional differences, both stated here rather than discovered:
    Section Headings at AAA), and description prose is announced as a paragraph.
    Nothing a shadcn consumer wrote stops working.
 
+   **Scope, precisely:** this holds where the COMPONENT owns the element -- the
+   React `CardTitle`/`CardDescription`, and the importable `card-title.astro`.
+   It does NOT describe `card.astro`'s named-slot regions or the web component's
+   `slotRegion` wrappers: those are class-carrying `div`s and the CONSUMER
+   supplies the element, so a named-slot card is only as accessible as the tag
+   passed into it (`<h3 slot="title">`). That is a property of the fixed-slot
+   model, not a divergence from it -- a bind-free static cannot rewrite a
+   slotted node's tag. Use the sub-component files when you want the element
+   guaranteed.
+
 ## WCAG 2.2 AAA obligations
 
 The bar for this component is **AAA**, not AA: the product is shadcn's API with
@@ -266,6 +276,9 @@ AAA underneath, and that is the whole value over shadcn itself.
 - 2.4.10 Section Headings (AAA): `CardTitle` is a real heading, so a card's
   title is a navigable section heading rather than styled text. This is the
   divergence from shadcn's `div` and it is why the divergence is worth having.
+  It is guaranteed by the component only where the component owns the element
+  (React, and `card-title.astro`); in `card.astro`'s named slots and in the web
+  component the consumer supplies the tag, so pass a real heading there.
 - 1.4.6 Contrast (Enhanced) (AAA, 7:1): the default `bg-card` /
   `text-card-foreground` pairing clears it in both themes. Measured on a
   canonical near-zero-chroma neutral family through

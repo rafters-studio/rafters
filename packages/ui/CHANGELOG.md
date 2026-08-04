@@ -24,7 +24,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `card-content.astro`, `card-footer.astro`), so an Astro tree composes exactly
   like the React tree; `card.astro`'s named slots stay as a convenience, and a
   slot region is now rendered only when that slot has content, so the two ways
-  of filling a Card cannot collide.
+  of filling a Card cannot collide. Note the accessibility scope: `CardTitle`
+  renders a real heading and `CardDescription` a real `p` where the component
+  owns the element (React, and the new `card-title.astro`); `card.astro`'s named
+  slots and the web component wrap slotted content in class-only `div`s, so
+  there the consumer supplies the tag and should pass a real heading.
 
 ### Changed
 

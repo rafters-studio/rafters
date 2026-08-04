@@ -21,13 +21,15 @@
  * wrap it in a link or place a Button inside when a whole-card action is
  * wanted.
  * @accessibility WCAG 2.2 AAA. The surface projects no ARIA -- semantics come
- * from the element (`as`) and from real headings inside. CardTitle is a REAL
- * heading and CardDescription a REAL p (where shadcn renders div/div): the
- * accepted, behavior-additive AAA divergence, satisfying 1.3.1 and 2.4.10
- * Section Headings. Use CardTitle's `as` to place the heading at the correct
- * outline level for the page; never skip levels. The bg-card /
- * text-card-foreground pairing clears 1.4.6 Contrast (Enhanced) 7:1 in both
- * themes.
+ * from the element (`as`) and from real headings inside. In this React
+ * performance CardTitle is a REAL heading and CardDescription a REAL p (where
+ * shadcn renders div/div): the accepted, behavior-additive AAA divergence,
+ * satisfying 1.3.1 and 2.4.10 Section Headings. (The named-slot performances --
+ * card.astro's slots and the web component -- wrap slotted content in class-only
+ * divs, so there the CONSUMER supplies the element; pass a real heading.) Use
+ * CardTitle's `as` to place the heading at the correct outline level for the
+ * page; never skip levels. The bg-card / text-card-foreground pairing clears
+ * 1.4.6 Contrast (Enhanced) 7:1 in both themes.
  * @semantic-meaning Structural element via `as`: article = standalone
  * syndicatable content, section = a grouped region, aside = supplementary
  * content, div = a presentational grouping with no landmark.
