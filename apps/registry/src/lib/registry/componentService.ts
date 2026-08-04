@@ -117,10 +117,72 @@ export function listComponentNames(): string[] {
     const hasPrimary = COMPONENT_EXTENSIONS.some((ext) =>
       existsSync(join(componentsDir, name, `${name}${ext}`)),
     );
-    if (hasPrimary) names.add(name);
+    if (!hasPrimary) continue;
+    names.add(name);
+    for (const sub of listSubComponentNames(name)) names.add(sub);
   }
 
   return [...names].sort();
+}
+
+/**
+ * Sub-component names living INSIDE a parent's directory: `card/card-header.astro`
+ * yields `card-header`. A sub-component is a first-class registry name -- a
+ * consumer writes `import CardHeader from '@/components/ui/card-header.astro'`,
+ * so `rafters add card-header` has to resolve. They are addressable without a
+ * directory of their own; see `resolveComponentDir`.
+ *
+ * A name is only a sub-component here if no directory of its own exists --
+ * `alert-dialog/` and `hover-card/` are full components that merely share a
+ * prefix, and the directory wins.
+ */
+function listSubComponentNames(parent: string): string[] {
+  const componentsDir = getComponentsPath();
+  const parentDir = join(componentsDir, parent);
+  const names = new Set<string>();
+
+  for (const file of readdirSync(parentDir)) {
+    const ext = COMPONENT_EXTENSIONS.find((candidate) => file.endsWith(candidate));
+    if (!ext) continue;
+    const base = file.slice(0, -ext.length);
+    if (base === parent || !base.startsWith(`${parent}-`)) continue;
+    if (existsSync(join(componentsDir, base))) continue;
+    names.add(base);
+  }
+
+  return [...names];
+}
+
+/**
+ * Directory holding `name`'s source files, or null when nothing serves it.
+ *
+ * Components own a directory (`card/card.tsx`). Sub-components do not -- they
+ * live beside their parent (`card/card-header.astro`, `typography/typography-h1.astro`)
+ * because they share the parent's `.classes.ts`. Resolution trims trailing
+ * `-segment`s off the name to find the owning parent, so `card-header` resolves
+ * inside `card/` without a directory of its own, and adding a sub-component is
+ * a new file rather than a new folder.
+ *
+ * A directory of the component's own always wins, so `alert-dialog` and
+ * `hover-card` keep resolving to themselves rather than to `alert`/`hover`.
+ */
+function resolveComponentDir(name: string): { dir: string; owner: string } | null {
+  const componentsDir = getComponentsPath();
+  const hasPrimary = (dir: string, base: string): boolean =>
+    COMPONENT_EXTENSIONS.some((ext) => existsSync(join(dir, `${base}${ext}`)));
+
+  const ownDir = join(componentsDir, name);
+  if (existsSync(ownDir) && hasPrimary(ownDir, name)) return { dir: ownDir, owner: name };
+
+  const segments = name.split('-');
+  for (let cut = segments.length - 1; cut > 0; cut--) {
+    const parent = segments.slice(0, cut).join('-');
+    const parentDir = join(componentsDir, parent);
+    if (!existsSync(parentDir) || !hasPrimary(parentDir, parent)) continue;
+    if (hasPrimary(parentDir, name)) return { dir: parentDir, owner: parent };
+  }
+
+  return null;
 }
 
 /**
@@ -637,7 +699,12 @@ function analyzeSource(
 export function loadComponent(name: string): RegistryItem | null {
   // Nested layout: every file for a component lives in its own directory
   // (`<components>/<name>/<name>.tsx`, `.behavior.ts`, `.classes.ts`, ...).
-  const componentDir = join(getComponentsPath(), name);
+  // Sub-components (`card-header`, `typography-h1`) have no directory of their
+  // own -- they live beside the parent whose `.classes.ts` they import -- so
+  // the directory is resolved rather than assumed.
+  const resolved = resolveComponentDir(name);
+  if (!resolved) return null;
+  const componentDir = resolved.dir;
   const files: RegistryFile[] = [];
   let primitivesAll: string[] = [];
   let intelligence: ReturnType<typeof parseJSDocFromSource> | undefined;
