@@ -8,6 +8,7 @@ import {
 } from '../../lib/contract';
 import { updateAriaAttribute } from '../../primitives/aria-manager';
 import { createMenuHoverIntent } from '../../primitives/hover-delay';
+import { motionDelayMs } from '../../primitives/motion-tokens';
 import { onPointerDownOutside } from '../../primitives/outside-click';
 import { createRovingFocus } from '../../primitives/roving-focus';
 
@@ -26,7 +27,8 @@ export interface NavigationMenuConfig {
   /** Uncontrolled seed. */
   defaultValue?: string | undefined;
   orientation?: 'horizontal' | 'vertical' | undefined;
-  /** Hover-intent delay in ms. */
+  /** Hover-intent delay in ms. Unset reads `--rafters-delay-hover-intent` via
+   *  {@link navigationMenuHoverDelay}. */
   delayDuration?: number | undefined;
 }
 
@@ -176,6 +178,18 @@ export const navigationMenu: BehaviorSpec<
   NavigationMenuPart
 > = { ...compose('navigation-menu', navigation), instanceAria: navInstanceAria };
 
+/**
+ * The hover-intent delay, read from `--rafters-delay-hover-intent`.
+ *
+ * This replaces the 200ms literal the binding carried in two places. The motion
+ * matrix assigns this cell the `hover-intent` delay generic (motion.jsonl,
+ * navigation-menu/panel/"closed -> open"), and the accessor resolves it to zero
+ * under reduced motion.
+ */
+export function navigationMenuHoverDelay(element?: Element | null): number {
+  return motionDelayMs('hover-intent', { element });
+}
+
 /** The parts, orientation, delay, and dispatch the roving/hover/dismiss trio
  *  composes against. */
 export interface NavigationMenuEffectPorts {
@@ -252,7 +266,20 @@ export function bindNavigationMenu(root: HTMLElement): () => void {
   // projection (see navigationMenu.aria), so the markup must not re-emit it.
   const config: NavigationMenuConfig = {
     orientation: root.dataset['orientation'] === 'vertical' ? 'vertical' : 'horizontal',
-    delayDuration: Number.parseInt(root.dataset['delayDuration'] ?? '', 10) || 200,
+    // NON-EMPTY presence, not truthiness (#2011): `data-delay-duration="0"` is
+    // a real request for no delay, and `|| 200` used to swallow it -- but
+    // `data-delay-duration=""` is the attribute written with nothing in it,
+    // which is absence, not zero. `Number('')` is 0, so the empty string has to
+    // be rejected explicitly or a blank attribute becomes a silent 0ms.
+    // Lazy, and `Number()` rather than `parseInt`: the token read only happens
+    // on the branch that needs it, and `"200px"` is a malformed attribute
+    // rather than a silent 200. Same convention as tooltip.behavior.ts.
+    delayDuration: (() => {
+      const raw = root.dataset['delayDuration'];
+      if (raw === undefined || raw === '') return navigationMenuHoverDelay(root);
+      const parsed = Number(raw);
+      return Number.isFinite(parsed) ? parsed : navigationMenuHoverDelay(root);
+    })(),
     defaultValue:
       root.querySelector<HTMLElement>('[data-part="trigger"][data-state="open"]')?.dataset[
         'value'
@@ -325,7 +352,7 @@ export function bindNavigationMenu(root: HTMLElement): () => void {
     root,
     list: getPart('list'),
     orientation: orientationOf(config),
-    delay: config.delayDuration ?? 200,
+    delay: config.delayDuration ?? navigationMenuHoverDelay(root),
     isOpen: () => activeItem(memory.get(), config) !== null,
     onHoverOpen: (value) => void request('hoverOpen', value),
     onClose: () => void request('close'),

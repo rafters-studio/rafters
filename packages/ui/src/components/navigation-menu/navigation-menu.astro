@@ -41,7 +41,11 @@ interface Props {
   delayDuration?: number;
 }
 
-const { id, items, orientation = 'horizontal', delayDuration = 200 } = Astro.props;
+// No default delay here (#1995): an omitted `delayDuration` must reach the
+// client as an ABSENT `data-delay-duration`, so the binding reads
+// `--rafters-delay-hover-intent` off the mounted root. A server-side default
+// would freeze a number into the markup that no token could move.
+const { id, items, orientation = 'horizontal', delayDuration } = Astro.props;
 
 const config: NavigationMenuConfig = { orientation, delayDuration };
 const state = navigationMenu.initialState(config);
@@ -58,7 +62,7 @@ const instanceId = (part: NavigationMenuPart, value: string) => `${id}-${part}-$
 <nav
   data-part="root"
   id={ids.root}
-  data-delay-duration={String(delayDuration)}
+  data-delay-duration={delayDuration === undefined ? undefined : String(delayDuration)}
   class={classes.root}
   {...rootAria.root}
 >

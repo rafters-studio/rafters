@@ -172,6 +172,77 @@ describe('bindTooltip: data-side-offset parse', () => {
   it('an absent data-side-offset falls back to the 4px default', () => {
     expect(translateY(mountOpen())).toBe(4);
   });
+
+  // A blank attribute is absence, not zero: `Number('')` is 0, so the empty
+  // string has to be rejected explicitly or `data-side-offset=""` reads as 0px.
+  it('a blank data-side-offset="" falls back to the 4px default, not 0', () => {
+    expect(translateY(mountOpen(''))).toBe(4);
+  });
+});
+
+/**
+ * The token fallback is LAZY. The accessor fails loud on a malformed custom
+ * property (#1995), so an eagerly evaluated fallback would let a broken
+ * `--rafters-delay-hover-intent` anywhere on the root break a tooltip that
+ * declares its own `data-delay-duration` and never consults the token. The
+ * discriminator is exactly that: same malformed token, attribute present vs
+ * absent.
+ */
+describe('bindTooltip: the token fallback is only read when the attribute is absent', () => {
+  const teardowns: Array<() => void> = [];
+
+  afterEach(() => {
+    for (const teardown of teardowns.splice(0)) teardown();
+    document.body.innerHTML = '';
+  });
+
+  /** Malformed on the ROOT: the accessor is called with `{ element: root }`. */
+  function mountMalformed(delayDuration?: string): HTMLElement {
+    const root = document.createElement('div');
+    root.dataset['part'] = 'root';
+    root.style.setProperty('--rafters-delay-hover-intent', 'soon');
+    root.style.setProperty('--rafters-delay-linger', 'later');
+    if (delayDuration !== undefined) {
+      root.dataset['delayDuration'] = delayDuration;
+      root.dataset['skipDelayDuration'] = delayDuration;
+    }
+
+    const trigger = document.createElement('button');
+    trigger.type = 'button';
+    trigger.dataset['part'] = 'trigger';
+    trigger.id = 'lazy-trigger';
+
+    const content = document.createElement('div');
+    content.dataset['part'] = 'content';
+    content.id = 'lazy-content';
+
+    root.append(trigger, content);
+    document.body.appendChild(root);
+    return root;
+  }
+
+  it('binds on the attribute even when the token is malformed', () => {
+    const root = mountMalformed('120');
+    expect(() => teardowns.push(bindTooltip(root))).not.toThrow();
+  });
+
+  it('throws naming the token when the attribute is absent', () => {
+    const root = mountMalformed();
+    expect(() => bindTooltip(root)).toThrow(/rafters-delay-hover-intent" resolved to "soon"/);
+  });
+
+  // The blank attribute takes the SAME branch as the absent one -- it reaches
+  // the token, which is what makes the malformed token throw here. Before the
+  // fix `Number('')` was a finite 0 and this bound silently at 0ms.
+  it('a blank data-delay-duration="" reads the token, exactly as absence does', () => {
+    const root = mountMalformed('');
+    expect(() => bindTooltip(root)).toThrow(/rafters-delay-hover-intent" resolved to "soon"/);
+  });
+
+  it('an explicit data-delay-duration="0" is still a real zero, never the token', () => {
+    const root = mountMalformed('0');
+    expect(() => teardowns.push(bindTooltip(root))).not.toThrow();
+  });
 });
 
 describe('tooltipPlacement defaults', () => {

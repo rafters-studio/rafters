@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createBehavior } from '../../../src/lib/contract';
 import {
   activeItem,
+  bindNavigationMenu,
   navInstanceAria,
   navigationMenu,
   startNavigationMenuEffects,
@@ -290,5 +291,64 @@ describe('navigation-menu effects composition', () => {
     triggerFor(h.root, 'a').dispatchEvent(new Event('pointerenter'));
     expect(h.onClose).toHaveBeenCalledTimes(1);
     expect(h.onHoverOpen).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * `data-delay-duration` resolution: NON-EMPTY presence, not truthiness (#2011).
+ * A malformed `--rafters-delay-hover-intent` on the root is the discriminator --
+ * the accessor fails loud (#1995), so reaching the token is observable as a
+ * throw. `""` must reach it (blank is absence); `"0"` must not (zero is real).
+ */
+describe('bindNavigationMenu: data-delay-duration presence', () => {
+  const teardowns: Array<() => void> = [];
+
+  afterEach(() => {
+    for (const teardown of teardowns.splice(0)) teardown();
+    document.body.innerHTML = '';
+  });
+
+  function mountMalformed(delayDuration?: string): HTMLElement {
+    const root = document.createElement('nav');
+    root.dataset['part'] = 'root';
+    root.id = 'nm-root';
+    root.style.setProperty('--rafters-delay-hover-intent', 'soon');
+    if (delayDuration !== undefined) root.dataset['delayDuration'] = delayDuration;
+
+    const list = document.createElement('ul');
+    list.dataset['part'] = 'list';
+    list.id = 'nm-list';
+
+    const item = document.createElement('li');
+    const trigger = document.createElement('button');
+    trigger.type = 'button';
+    trigger.dataset['part'] = 'trigger';
+    trigger.dataset['value'] = 'a';
+    trigger.id = 'nm-trigger-a';
+    item.appendChild(trigger);
+    list.appendChild(item);
+
+    const content = document.createElement('div');
+    content.dataset['part'] = 'content';
+    content.dataset['value'] = 'a';
+    content.id = 'nm-content-a';
+
+    root.append(list, content);
+    document.body.appendChild(root);
+    return root;
+  }
+
+  it('a blank data-delay-duration="" reads the token, exactly as absence does', () => {
+    expect(() => bindNavigationMenu(mountMalformed(''))).toThrow(
+      /rafters-delay-hover-intent" resolved to "soon"/,
+    );
+    expect(() => bindNavigationMenu(mountMalformed())).toThrow(
+      /rafters-delay-hover-intent" resolved to "soon"/,
+    );
+  });
+
+  it('an explicit data-delay-duration="0" is still a real zero, never the token', () => {
+    const root = mountMalformed('0');
+    expect(() => teardowns.push(bindNavigationMenu(root))).not.toThrow();
   });
 });

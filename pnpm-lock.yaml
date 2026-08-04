@@ -610,6 +610,9 @@ importers:
 
   packages/ui:
     dependencies:
+      '@rafters/design-tokens':
+        specifier: workspace:*
+        version: link:../design-tokens
       css-tree:
         specifier: ^3.2.1
         version: 3.2.1
