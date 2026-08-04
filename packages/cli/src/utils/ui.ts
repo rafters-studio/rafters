@@ -258,7 +258,17 @@ export function log(event: Record<string, unknown>): void {
       const skippedCount = event.skipped as number;
       const untrackedCount = event.untracked as number;
       const failedCount = event.failed as number;
-      context.spinner?.succeed(`Wrote ${written} item${written !== 1 ? 's' : ''}`);
+      // The headline is the only thing a scrolling reader takes in. Succeeding
+      // unconditionally is the same defect the per-outcome lines below exist to
+      // fix: honest counts under a green tick still read as a clean run.
+      const headline = `Wrote ${written} item${written !== 1 ? 's' : ''}`;
+      if (failedCount > 0) {
+        // No claim about the exit code here -- the renderer does not set it and
+        // must not assert what it cannot see. add() owns that.
+        context.spinner?.fail(`${headline}, ${failedCount} failed -- see below`);
+      } else {
+        context.spinner?.succeed(headline);
+      }
       if (skippedCount > 0) {
         const names = (event.skippedComponents as string[] | undefined) ?? [];
         console.log(

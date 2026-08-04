@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { log, setAgentMode, withErrorHandler } from '../../src/utils/ui.js';
+import { cleanup, log, setAgentMode, withErrorHandler } from '../../src/utils/ui.js';
 
 describe('withErrorHandler', () => {
   let savedExitCode: number | undefined;
@@ -112,5 +112,82 @@ describe('add:complete human output', () => {
     expect(output).not.toContain('Skipped');
     expect(output).not.toContain('Untracked');
     expect(output).not.toContain('Failed');
+  });
+});
+
+/**
+ * The headline is rendered by ora, not console.log, and only exists when a
+ * spinner is running -- so `add:start` has to be logged first and stderr has to
+ * be the captured stream. Without both, the assertion silently tests nothing.
+ *
+ * What is pinned: a run with failures does not print a success headline. Honest
+ * per-outcome lines under a green tick is the same lie as a blanket
+ * "Added N components", one level up.
+ */
+describe('add:complete headline', () => {
+  let stderrSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    setAgentMode(false);
+    stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+    setAgentMode(false);
+  });
+
+  function headline(): string {
+    return stderrSpy.mock.calls.map((call) => String(call[0] ?? '')).join('');
+  }
+
+  function complete(written: number, failed: number): void {
+    log({ event: 'add:start', components: ['button'] });
+    log({
+      event: 'add:complete',
+      written,
+      skipped: 0,
+      untracked: 0,
+      failed,
+      components: [],
+      skippedComponents: [],
+      untrackedComponents: [],
+      failedComponents: failed > 0 ? ['dialog'] : [],
+    });
+  }
+
+  it('does not claim success when items failed', () => {
+    complete(0, 3);
+
+    const out = headline();
+    expect(out).toContain('Wrote 0 items');
+    expect(out).toContain('3 failed');
+  });
+
+  it('still succeeds when nothing failed', () => {
+    complete(2, 0);
+
+    const out = headline();
+    expect(out).toContain('Wrote 2 items');
+    expect(out).not.toContain('failed');
+  });
+
+  it('renders the two outcomes as different text', () => {
+    complete(2, 0);
+    const success = headline();
+    stderrSpy.mockClear();
+    cleanup();
+
+    complete(0, 3);
+    const failure = headline();
+
+    // Asserted on the text, not on ora's symbol: under a non-TTY stream ora
+    // falls back to the same dash for succeed() and fail(), so a symbol
+    // assertion would pass on a stream where the two look identical.
+    expect(failure).not.toBe(success);
+    expect(failure).toContain('failed');
+    expect(success).not.toContain('failed');
   });
 });

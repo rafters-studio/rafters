@@ -872,7 +872,8 @@ export async function add(componentArgs: string[], options: AddOptions): Promise
       if (result.skipped && !result.installed) {
         skipped.push(item.name);
         // The files are already on disk but the config did not track this
-        // item -- reaching here means line 600's "tracked + on disk" guard
+        // item -- reaching here means the "tracked in config AND present on
+        // disk" skip guard above (isAlreadyInstalled + isInstalledOnDisk)
         // did not fire, so the install list is out of sync with reality
         // (a pre-tracking install, a hand-copied file, or a config reset).
         // Record it so `installed` reflects what is actually present; this
@@ -960,6 +961,14 @@ export async function add(componentArgs: string[], options: AddOptions): Promise
     untrackedComponents: untrackedNames,
     failedComponents: failed,
   });
+
+  // An item that could not be installed is a failed run, not a partial success.
+  // Exiting 0 here is what lets a scripted install (CI, a postinstall step, an
+  // agent shelling out) treat a half-written tree as done. `add` is only called
+  // from the CLI entry point, so nothing long-lived is poisoned by this.
+  if (failed.length > 0) {
+    process.exitCode = 1;
+  }
 
   // Under --update-all every file is overwritten, so a skip is never the
   // "already exists, use --update" case -- telling the user to re-run with
