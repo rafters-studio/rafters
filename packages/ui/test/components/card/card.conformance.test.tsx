@@ -87,11 +87,131 @@ describe('card conformance [react]', () => {
     expect(root.getAttribute('data-fill')).toBe('primary');
   });
 
-  it('consumer className merges via classy', () => {
-    render(<Card className="mt-4">x</Card>);
+  it('className is NOT SUPPORTED -- it never reaches the element', () => {
+    // The deliberate API break in the drop-in contract (see card.md). The props
+    // type Omits className, so this cast is what a JavaScript caller would do;
+    // the runtime strip is what stops `...props` smuggling it through anyway.
+    // Asserting absence is the point -- a deleted test would be no evidence.
+    render(<Card {...({ className: 'mt-4' } as unknown as Record<string, never>)}>x</Card>);
     const root = body().querySelector('[data-part="root"]') as HTMLElement;
-    expect(root.className).toContain('rounded-lg');
-    expect(root.className).toContain('mt-4');
+    expect(root.className).toContain('rounded-xl');
+    expect(root.className).not.toContain('mt-4');
+  });
+
+  it('className is refused by every sub-component too, not just the root', () => {
+    const smuggled = { className: 'mt-4' } as unknown as Record<string, never>;
+    render(
+      <Card>
+        <CardHeader {...smuggled}>
+          <CardTitle {...smuggled}>t</CardTitle>
+          <CardDescription {...smuggled}>d</CardDescription>
+          <CardAction {...smuggled}>a</CardAction>
+        </CardHeader>
+        <CardContent {...smuggled}>c</CardContent>
+        <CardFooter {...smuggled}>f</CardFooter>
+      </Card>,
+    );
+    for (const slot of [
+      'card-header',
+      'card-title',
+      'card-description',
+      'card-action',
+      'card-content',
+      'card-footer',
+    ]) {
+      const el = body().querySelector(`[data-slot="${slot}"]`) as HTMLElement;
+      expect(el, slot).not.toBeNull();
+      expect(el.className, slot).not.toContain('mt-4');
+    }
+  });
+
+  it('data-slot is the swap contract: every node carries shadcn v4 names', () => {
+    // A consumer's `has-data-[slot=card-action]` / `[data-slot=card]` selectors
+    // must keep matching after the swap. data-part stays the INTERNAL binding
+    // contract and remains root-only.
+    render(
+      <Card>
+        <CardHeader>
+          <CardTitle>t</CardTitle>
+          <CardDescription>d</CardDescription>
+          <CardAction>a</CardAction>
+        </CardHeader>
+        <CardContent>c</CardContent>
+        <CardFooter>f</CardFooter>
+      </Card>,
+    );
+    const root = body().querySelector('[data-part="root"]') as HTMLElement;
+    expect(root.getAttribute('data-slot')).toBe('card');
+    for (const slot of [
+      'card-header',
+      'card-title',
+      'card-description',
+      'card-action',
+      'card-content',
+      'card-footer',
+    ]) {
+      expect(body().querySelector(`[data-slot="${slot}"]`), slot).not.toBeNull();
+    }
+  });
+
+  it('CardAction is a DIRECT CHILD of the grid header, so its placement resolves', () => {
+    // The proof is structural + class, not computed layout: jsdom has no
+    // compiled Tailwind sheet, so getComputedStyle would report nothing either
+    // way. What was actually broken is the parentage -- placement utilities
+    // with a `flex flex-col` parent. These assertions lock the two things that
+    // make them take effect: a grid header, and the action directly inside it.
+    render(
+      <Card>
+        <CardHeader data-testid="header">
+          <CardTitle>t</CardTitle>
+          <CardAction data-testid="action">
+            <button type="button">Menu</button>
+          </CardAction>
+        </CardHeader>
+      </Card>,
+    );
+    const header = body().querySelector('[data-testid="header"]') as HTMLElement;
+    const action = body().querySelector('[data-testid="action"]') as HTMLElement;
+    expect(action.parentElement).toBe(header);
+    expect(header.className).toContain('grid');
+    expect(header.className).toContain('has-data-[slot=card-action]:grid-cols-[1fr_auto]');
+    expect(action.className).toContain('col-start-2');
+    expect(action.className).toContain('row-start-1');
+    // And the variant has something to match on: the action's own data-slot.
+    expect(header.querySelector('[data-slot="card-action"]')).toBe(action);
+  });
+
+  it('a header with NO action still has no second column to place into', () => {
+    render(
+      <Card>
+        <CardHeader data-testid="header">
+          <CardTitle>t</CardTitle>
+          <CardDescription>d</CardDescription>
+        </CardHeader>
+      </Card>,
+    );
+    const header = body().querySelector('[data-testid="header"]') as HTMLElement;
+    // The grid-cols variant is present in the class string but has nothing to
+    // match: no descendant carries data-slot="card-action", so the header stays
+    // single-column.
+    expect(header.querySelector('[data-slot="card-action"]')).toBeNull();
+    expect(header.className).toContain('grid-rows-[auto_auto]');
+  });
+
+  it('CardDescription is a real p and CardTitle a real heading (the AAA divergence)', () => {
+    // shadcn renders div/div here. Ours are behavior-additive and API-identical.
+    render(
+      <Card>
+        <CardHeader>
+          <CardTitle>t</CardTitle>
+          <CardDescription>d</CardDescription>
+        </CardHeader>
+      </Card>,
+    );
+    expect((body().querySelector('[data-slot="card-title"]') as HTMLElement).tagName).toBe('H3');
+    expect((body().querySelector('[data-slot="card-description"]') as HTMLElement).tagName).toBe(
+      'P',
+    );
   });
 
   it('has no keyboard contract and dispatches nothing observable', () => {

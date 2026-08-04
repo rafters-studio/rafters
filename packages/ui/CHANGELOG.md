@@ -9,6 +9,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Card meets the shadcn replacement requirement (#2019).** `data-slot` now
+  lands on every node in all three performances (`card`, `card-header`,
+  `card-title`, `card-description`, `card-action`, `card-content`,
+  `card-footer`), so a consumer's `has-data-[slot=…]` selectors keep matching
+  after the import swap; `data-part` stays the internal binding contract and
+  remains root-only. `CardHeader` becomes a grid
+  (`auto-rows-min grid-rows-[auto_auto]` with
+  `has-data-[slot=card-action]:grid-cols-[1fr_auto]`), which is what makes
+  `CardAction`'s placement utilities do anything -- they were carried forward
+  from the oracle and had been inert against a `flex flex-col` parent in every
+  framework. The Astro sub-components return as importable files
+  (`card-header.astro`, `card-title.astro`, `card-action.astro`,
+  `card-content.astro`, `card-footer.astro`), so an Astro tree composes exactly
+  like the React tree; `card.astro`'s named slots stay as a convenience, and a
+  slot region is now rendered only when that slot has content, so the two ways
+  of filling a Card cannot collide. Note the accessibility scope: `CardTitle`
+  renders a real heading and `CardDescription` a real `p` where the component
+  owns the element (React, and the new `card-title.astro`); `card.astro`'s named
+  slots and the web component wrap slotted content in class-only `div`s, so
+  there the consumer supplies the tag and should pass a real heading.
+
+### Changed
+
+- **Card adopts shadcn v4 spacing, which changes existing rendering (#2019).**
+  The root carries the vertical rhythm (`flex flex-col gap-6 py-6`) and each
+  part only its horizontal inset (`px-6`), replacing the per-part `p-6 pt-0`;
+  the panel is `rounded-xl`, not `rounded-lg`. Arbitrary children dropped
+  straight into a Card now get the same rhythm as the declared parts, which is
+  the point. Card's semantic typography role tokens (`text-title-medium`,
+  `text-body-small`) are kept over shadcn's raw `font-semibold`/`text-sm`.
+
+### Removed
+
+- **BREAKING: Card no longer accepts `className` (or `class` in Astro), on the
+  root or on any of the seven sub-components (#2019).** The one deliberate API
+  break in the drop-in contract, and the thesis rather than an oversight:
+  design travels through token props (`fill`, `as`), which are checkable and
+  cascade with the token layer; a class escape hatch is how design gets
+  re-decided at every call site, and agents do not do design. Enforced twice --
+  the props types `Omit` it so a TypeScript caller is refused at compile time,
+  and every performance strips it at runtime so a `{...props}` spread cannot
+  smuggle it onto the element. A migrating shadcn card tree that passes
+  `className` will fail to compile, and there is no longer a compact-card
+  padding override; a card that needs different spacing needs a token prop.
+
 - **`input-group` ported to the behavior layer (#1778).** The oracle's
   shadow-DOM element pair (`<rafters-input-group>` +
   `<rafters-input-group-addon>`) collapses into one light-DOM enhancer over a

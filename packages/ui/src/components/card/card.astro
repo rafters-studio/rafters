@@ -12,6 +12,21 @@
  * The root classes come from the SAME `cardClasses` projection the React and
  * Web Component performances read -- one score, three performances, zero
  * drift. `fill` mirrors the React/WC `fill` prop.
+ *
+ * TWO WAYS TO FILL A CARD, and they must not collide:
+ *
+ *   1. Composition (the parity surface, matching React exactly) --
+ *      `<Card><CardHeader><CardTitle/></CardHeader><CardContent/></Card>`,
+ *      importing card-header.astro and siblings. Children land in the default
+ *      slot.
+ *   2. Named slots (the convenience) -- `<Card><h3 slot="title"/></Card>`.
+ *
+ * A named-slot REGION is therefore rendered only when that slot actually has
+ * content (`Astro.slots.has`). Composing sub-components then yields exactly the
+ * React tree with no phantom empty regions wrapped around it, and the header's
+ * `has-data-[slot=card-action]` variant only opens its second column when an
+ * action is really there. This is a server-side check, not a `slotchange`
+ * listener -- still no client JavaScript, still no bind.
  */
 import {
   cardActionClasses,
@@ -25,28 +40,64 @@ import {
 } from './card.classes';
 import type { CardElement } from './card.behavior';
 
+/**
+ * `class` is NOT a Card prop (see card.md): design travels through token props,
+ * never a class escape hatch. It is destructured off and discarded so `...attrs`
+ * cannot carry it onto the element either.
+ */
 interface Props {
   as?: CardElement;
   fill?: string;
-  class?: string;
 }
 
-const { as: Tag = 'div', fill, class: className, ...attrs } = Astro.props;
+const { as: Tag = 'div', fill, class: _discardedClass, ...attrs } = Astro.props as Props & {
+  class?: string;
+};
 
 const classes: CardClassSet = cardClasses({ fill }, {});
-const rootClass = [classes.root, className].filter(Boolean).join(' ');
+
+const hasTitle = Astro.slots.has('title');
+const hasDescription = Astro.slots.has('description');
+const hasAction = Astro.slots.has('action');
+const hasHeader = Astro.slots.has('header') || hasTitle || hasDescription || hasAction;
 ---
 
-<Tag data-part="root" data-fill={fill || undefined} class={rootClass} {...attrs}>
-  <div data-slot="card-header" class={cardHeaderClasses}>
-    <slot name="header" />
-    <div data-slot="card-title" class={cardTitleClasses}><slot name="title" /></div>
-    <div data-slot="card-description" class={cardDescriptionClasses}>
-      <slot name="description" />
-    </div>
-    <div data-slot="card-action" class={cardActionClasses}><slot name="action" /></div>
-  </div>
-  <div data-slot="card-content" class={cardContentClasses}><slot name="content" /></div>
-  <div data-slot="card-footer" class={cardFooterClasses}><slot name="footer" /></div>
+<Tag data-part="root" data-slot="card" data-fill={fill || undefined} class={classes.root} {...attrs}>
+  {
+    hasHeader && (
+      <div data-slot="card-header" class={cardHeaderClasses}>
+        <slot name="header" />
+        {hasTitle && (
+          <div data-slot="card-title" class={cardTitleClasses}>
+            <slot name="title" />
+          </div>
+        )}
+        {hasDescription && (
+          <div data-slot="card-description" class={cardDescriptionClasses}>
+            <slot name="description" />
+          </div>
+        )}
+        {hasAction && (
+          <div data-slot="card-action" class={cardActionClasses}>
+            <slot name="action" />
+          </div>
+        )}
+      </div>
+    )
+  }
+  {
+    Astro.slots.has('content') && (
+      <div data-slot="card-content" class={cardContentClasses}>
+        <slot name="content" />
+      </div>
+    )
+  }
+  {
+    Astro.slots.has('footer') && (
+      <div data-slot="card-footer" class={cardFooterClasses}>
+        <slot name="footer" />
+      </div>
+    )
+  }
   <slot />
 </Tag>

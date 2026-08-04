@@ -67,6 +67,75 @@ describe('registry serves behavior-layer components from src/components', () => 
   });
 });
 
+/**
+ * Sub-components are FIRST-CLASS REGISTRY NAMES (#2019). A shadcn consumer
+ * writes `import CardHeader from '@/components/ui/card-header.astro'`, so
+ * `rafters add card-header` has to serve it -- it used to 404, because
+ * resolution assumed `<components>/<name>/<name>.ext` and there is no
+ * `card-header/` directory. Sub-components live BESIDE the parent whose
+ * `.classes.ts` they import, so the directory is now resolved by trimming
+ * trailing `-segment`s off the name, with a directory of the component's own
+ * always winning.
+ */
+describe('registry serves sub-components addressably', () => {
+  it('lists card sub-components as names of their own', () => {
+    const names = listComponentNames();
+    for (const sub of ['card-header', 'card-title', 'card-action', 'card-content', 'card-footer']) {
+      expect(names, sub).toContain(sub);
+    }
+    // The parent is still its own item.
+    expect(names).toContain('card');
+  });
+
+  it('serves card-header with its file AND the parent shared file it imports', () => {
+    const item = loadComponent('card-header');
+    if (!item) throw new Error('card-header did not load');
+    const paths = item.files.map((f) => f.path);
+    expect(paths).toContain('components/ui/card-header.astro');
+    // Without card.classes.ts at that exact install path, the sub-component's
+    // `./card.classes` import dangles on install -- the silent failure.
+    expect(paths).toContain('components/ui/card.classes.ts');
+  });
+
+  it('every card sub-component bundles the shared classes it imports', () => {
+    for (const sub of ['card-title', 'card-action', 'card-content', 'card-footer']) {
+      const item = loadComponent(sub);
+      if (!item) throw new Error(`${sub} did not load`);
+      const paths = item.files.map((f) => f.path);
+      expect(paths, sub).toContain(`components/ui/${sub}.astro`);
+      expect(paths, sub).toContain('components/ui/card.classes.ts');
+    }
+  });
+
+  it('a directory of its own always WINS over parent-prefix resolution', () => {
+    // alert-dialog and hover-card merely share a prefix with alert/hover; they
+    // are full components and must keep resolving to themselves.
+    const alertDialog = loadComponent('alert-dialog');
+    if (!alertDialog) throw new Error('alert-dialog did not load');
+    expect(alertDialog.files.map((f) => f.path)).toContain('components/ui/alert-dialog.tsx');
+
+    const hoverCard = loadComponent('hover-card');
+    if (!hoverCard) throw new Error('hover-card did not load');
+    expect(hoverCard.files.map((f) => f.path)).toContain('components/ui/hover-card.tsx');
+  });
+
+  it('the parent still ships whole -- card bundles its sub-components', () => {
+    const card = loadComponent('card');
+    if (!card) throw new Error('card did not load');
+    const paths = card.files.map((f) => f.path);
+    expect(paths).toContain('components/ui/card.tsx');
+    expect(paths).toContain('components/ui/card.astro');
+    expect(paths).toContain('components/ui/card-header.astro');
+  });
+
+  it('still returns null for a sub-component name with no file behind it', () => {
+    // The mechanism makes a sub-component addressable the moment its file
+    // lands; it does not invent one. typography-h1 has no file in this tree.
+    expect(loadComponent('card-nonexistent')).toBeNull();
+    expect(loadComponent('typography-h1')).toBeNull();
+  });
+});
+
 describe('registry resolves the behavior-layer runtime substrate', () => {
   it('discovers substrate kinds from the filesystem (lib, hooks, ...)', () => {
     const kinds = listSubstrateKinds();
