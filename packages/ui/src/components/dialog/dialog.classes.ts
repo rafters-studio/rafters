@@ -19,9 +19,17 @@ const containerClasses = 'fixed inset-0 z-depth-modal flex items-center justify-
 // data-[state=closed]:pointer-events-none -- the ratified motion ruling's
 // taste residue: while a closing overlay is held present through its exit
 // window (usePresence defers the unmount), it must not swallow clicks.
+// Enter/exit is PRESENCE (#1996): the node MOUNTS with its keyframe attached
+// and runs it -- no @starting-style, which is a transitions-on-mount hack this
+// system does not use -- and usePresence holds the unmount until the exit
+// keyframe ends. animate-* come from the token layer's --animate-* entries,
+// which carry the duration tier and curve. motion-reduce:animate-none is the
+// reduced-motion path (see popover.classes.ts for why animate-none and not a
+// zeroed duration).
 const contentClasses =
   'relative w-full max-w-lg rounded-lg border border-card-border bg-card p-6 text-card-foreground shadow-lg ' +
-  'data-[state=closed]:pointer-events-none';
+  'data-[state=open]:animate-scale-in data-[state=closed]:animate-scale-out ' +
+  'data-[state=closed]:pointer-events-none motion-reduce:animate-none';
 
 const headerClasses = 'flex flex-col space-y-1.5 text-center @md:text-left';
 

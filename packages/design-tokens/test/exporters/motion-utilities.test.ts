@@ -22,6 +22,7 @@ import {
   invertPlugin,
   registryToCompiled,
   registryToTailwind,
+  registryToTailwindStatic,
   scalePlugin,
   statePlugin,
   TokenRegistry,
@@ -34,7 +35,13 @@ const FIXTURE_CLASSES =
   // One member of each of the five namespaces (#1991). `ease-standard` is the
   // interesting one: `ease-*` IS a Tailwind v4 theme namespace, so this is the
   // only case where our generated block meets a built-in of the same name.
-  'duration-fast ease-standard delay-hover-intent extent-pop period-spin';
+  'duration-fast ease-standard delay-hover-intent extent-pop period-spin ' +
+  // An animate-* utility, so the dangling-var sweep below actually has an
+  // `--animate-*` reference to sweep. Without a literal candidate in the
+  // content, Tailwind emits no rule and widening the check would cover nothing.
+  // scale-out is the presence exit keyframe (#1996), which is the animation the
+  // #2000 bug silently zeroed.
+  'animate-scale-out';
 
 function baseRegistry(): TokenRegistry {
   const system = generateBaseSystem({});
@@ -108,14 +115,18 @@ describe('semantic motion utilities compile (#1902/#1903/#1904)', () => {
     // are covered here.
     const css = await registryToCompiled(baseRegistry(), { contentSources: [fixtureDir] });
 
-    // The prefixes this change touches. `--motion-duration-*` / `--motion-easing-*`
-    // are deliberately NOT here: `--motion-animation-*` and `--animate-*` have
-    // referenced them since before this work while the theme block skips them, so
-    // they are undeclared today. That is a real pre-existing defect (every
-    // animate-* utility ships with no duration and no timing function) and it is
-    // filed rather than fixed here -- widening this check to cover it would make
-    // a #1991 test fail for a defect #1991 did not introduce.
-    const CHECKED = /^--(duration|ease|rafters-(duration|ease|delay|extent|period))-/;
+    // Every motion prefix, the animation chain INCLUDED. It used to stop short:
+    // `--motion-duration-*` / `--motion-easing-*` were carved out because
+    // `--animate-*` referenced them while nothing declared them, so every
+    // animate-* utility shipped with no duration and no timing function --
+    // `animation: scale-out  ;`, which parses, computes to a zero duration, and
+    // silently never runs. That was #2000, and this PR fixes it at the source
+    // (motion.ts now builds the animation value on the declared namespace leaves
+    // `--rafters-duration-*` / `--rafters-ease-*`). The carve-out described a
+    // defect that no longer exists, so it is gone and the prefixes are in the
+    // sweep: reintroducing the `--motion-duration-*` reference now fails here.
+    const CHECKED =
+      /^--(duration|ease|animate|motion-(duration|easing|animation)|rafters-(duration|ease|delay|extent|period|animate))-/;
 
     const referenced = new Set<string>();
     for (const match of css.matchAll(/var\((--[a-z][a-z0-9-]*)\)/g)) {
@@ -129,9 +140,47 @@ describe('semantic motion utilities compile (#1902/#1903/#1904)', () => {
     // Both ends of the bridge must actually be among the references.
     expect(referenced).toContain('--duration-normal');
     expect(referenced).toContain('--rafters-duration-normal');
+    // And the animation chain is genuinely in the sweep, not silently empty:
+    // .animate-scale-out -> var(--animate-scale-out) -> the animation shorthand,
+    // whose duration and easing are themselves var()s that must resolve.
+    expect(referenced).toContain('--animate-scale-out');
 
     const undeclared = [...referenced].filter((name) => !css.includes(`${name}:`));
     expect(undeclared, 'referenced but never declared -- resolves to nothing').toEqual([]);
+  });
+
+  it('the STATIC Studio sheet has no dangling motion var either', () => {
+    // Same class of bug as the compiled sweep above, second emission path. The
+    // static sheet is the one Studio writes to disk, and it had its own copy:
+    // `--animate-X: var(--rafters-animate-X)`, a namespace no token is named
+    // for and no exporter declares, in this sheet or the runtime one. Every
+    // animate-* utility in Studio therefore resolved to nothing.
+    //
+    // The sweep is SCOPED to the motion namespaces on purpose. The static
+    // sheet's other bridges (`--color-*: var(--rafters-color-*)`) legitimately
+    // point at leaves declared in the separate runtime :root file, so a blanket
+    // same-sheet check would false-positive on all of them. The motion leaves
+    // are different: generateMotionNamespaceVars writes them into THIS sheet,
+    // so for these prefixes same-sheet declaration is the actual contract.
+    const css = registryToTailwindStatic(baseRegistry());
+    const MOTION_LEAF = /^--rafters-(duration|ease|delay|extent|period|animate)-/;
+
+    const referenced = new Set<string>();
+    for (const match of css.matchAll(/var\((--[a-z][a-z0-9-]*)\)/g)) {
+      const name = match[1];
+      if (name && MOTION_LEAF.test(name)) referenced.add(name);
+    }
+    expect(
+      referenced.size,
+      'no motion leaf references at all -- the layer vanished',
+    ).toBeGreaterThan(0);
+
+    const undeclared = [...referenced].filter((name) => !css.includes(`${name}:`));
+    expect(undeclared, 'referenced but never declared in the static sheet').toEqual([]);
+
+    // And the animation entries carry the value rather than the invented bridge.
+    expect(css).not.toContain('--rafters-animate-');
+    expect(css).toMatch(/--animate-scale-out:\s*scale-out /);
   });
 
   it('compiles a real rule for a member of each of the five namespaces', async () => {

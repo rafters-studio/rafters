@@ -22,13 +22,18 @@ const triggerClasses =
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
 
 // z-depth-dropdown is the semantic depth token; fill (bg-popover), not a raw
-// color. Enter/exit motion is intentionally UNDECLARED -- see the component doc:
-// the semantic motion-dropdown-in/-out utilities are not yet emitted by the
-// token layer (#1899/#1902-1904), and the oracle's animate-in/zoom/fade/slide
-// string is the prohibited hand-rolled form (05-authoring, MOTION.md).
+// color. Enter/exit is PRESENCE (#1996), and it is no longer undeclared: the
+// animate-* utilities below come from the token layer's --animate-* entries,
+// which carry the duration tier and curve, so this is the system's own path and
+// not the prohibited hand-rolled animate-in/zoom/fade/slide string. The menu is
+// present-but-hidden, so the keyframe starts as the node leaves display:none --
+// no @starting-style -- and usePresence withholds `hidden` until the exit
+// keyframe ends. motion-reduce:animate-none is the reduced-motion path.
 const contentClasses =
   'z-depth-dropdown min-w-32 overflow-hidden rounded-md border bg-popover p-1 ' +
-  'text-popover-foreground shadow-lg';
+  'text-popover-foreground shadow-lg ' +
+  'data-[state=open]:animate-scale-in data-[state=closed]:animate-scale-out ' +
+  'data-[state=closed]:pointer-events-none motion-reduce:animate-none';
 
 // The active item is the roving-focus current item, styled via :focus. No
 // data-highlighted axis (the highlight is ephemeral DOM focus, not score state).

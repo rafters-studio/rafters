@@ -131,6 +131,40 @@ describe('motion CSS: golden emission', () => {
     expect(emitCSS(baseTokens())).not.toContain('--motion-delay-');
   });
 
+  it('never references a custom property the sheet does not declare', () => {
+    // Reflection 019fb063, promoted from prose to an assertion. `--animate-scale-out`
+    // referenced `--motion-duration-fast`, which NOTHING declares in either emission
+    // path: `animation: scale-out  ;` parses, resolves to a zero duration, and the
+    // animation silently never runs. That is why presence had no exit frames to hold.
+    // Reference-plus-declaration, both read off the same emitted sheet. Scoped to
+    // the motion surface because this is the motion golden -- the base sheet has
+    // dangling `--color-neutral-*` references too, which are a separate defect and
+    // a separate issue, not something to fix under a presence card.
+    const css = emitCSS(baseTokens());
+    const declared = new Set<string>();
+    for (const match of css.matchAll(/(--[\w-]+)\s*:/g)) {
+      if (match[1]) declared.add(match[1]);
+    }
+    const dangling = new Set<string>();
+    for (const match of css.matchAll(/var\((--[\w-]+)/g)) {
+      const name = match[1];
+      // Tailwind's own internals (--tw-*) are declared by Tailwind, not by us.
+      if (!name || declared.has(name)) continue;
+      if (!MOTION_LINE.test(name)) continue;
+      dangling.add(name);
+    }
+    expect([...dangling].sort()).toEqual([]);
+  });
+
+  it('builds every animation on the namespace leaves', () => {
+    const css = emitCSS(baseTokens());
+    expect(css).toContain(
+      '--animate-scale-out: scale-out var(--rafters-duration-fast) var(--rafters-ease-exit);',
+    );
+    expect(css).not.toContain('var(--motion-duration-');
+    expect(css).not.toContain('var(--motion-easing-');
+  });
+
   it('retuning one leaf changes exactly one line, and no @utility block at all', () => {
     // TOY 9, ASSERTION Q3, promoted to a test. This is the byte-level form of
     // "one fast, everywhere, always": utilities reference names, never values,
