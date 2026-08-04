@@ -25,7 +25,22 @@ describe('dialog classes', () => {
     expect(classes.footer).not.toContain('sm:');
   });
 
-  it('motion respects reduced-motion', () => {
+  it('enter/exit are the dialog CELLS, keyed off data-state (#1996 / #2017)', () => {
+    // motion.jsonl: dialog / content / closed -> open is normal + enter, and
+    // open -> closed is moderate + exit. Two distinct cells, two utilities --
+    // not one shared animation standing in for both (the #2012 defect).
+    expect(classes.content).toContain('data-[state=open]:animate-dialog-content-open');
+    expect(classes.content).toContain('data-[state=closed]:animate-dialog-content-close');
+    expect(classes.content).not.toContain('animate-scale-in');
+    expect(classes.content).not.toContain('animate-scale-out');
+  });
+
+  it('motion respects reduced-motion, and does NOT do it with animate-none', () => {
+    // Mechanism B (#2017): the cell utility zeroes animation-duration under the
+    // media query. animate-none here would win destructively -- `animation:
+    // none` resets the shorthand -- and would stop the animationend that
+    // presence releases the unmount on.
+    expect(classes.content).not.toContain('motion-reduce:animate-none');
     expect(classes.close).toContain('motion-reduce:transition-none');
   });
 });

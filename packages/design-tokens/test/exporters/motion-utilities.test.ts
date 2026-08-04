@@ -41,7 +41,21 @@ const FIXTURE_CLASSES =
   // content, Tailwind emits no rule and widening the check would cover nothing.
   // scale-out is the presence exit keyframe (#1996), which is the animation the
   // #2000 bug silently zeroed.
-  'animate-scale-out';
+  'animate-scale-out ' +
+  // The per-cell animation composites (#2017). BOTH candidate forms: the bare
+  // class, so the rule can be read without variant escaping, and the data-state
+  // variant the three classes files actually type, because a bare candidate
+  // alone would not prove a variant can wrap a utility whose body contains a
+  // nested @media.
+  'animate-dialog-content-open animate-dialog-content-close ' +
+  'animate-popover-content-open animate-popover-content-close ' +
+  'animate-dropdown-menu-content-open animate-dropdown-menu-content-close ' +
+  'data-[state=open]:animate-dialog-content-open ' +
+  'data-[state=closed]:animate-dialog-content-close ' +
+  'data-[state=open]:animate-popover-content-open ' +
+  'data-[state=closed]:animate-popover-content-close ' +
+  'data-[state=open]:animate-dropdown-menu-content-open ' +
+  'data-[state=closed]:animate-dropdown-menu-content-close';
 
 function baseRegistry(): TokenRegistry {
   const system = generateBaseSystem({});
@@ -218,5 +232,148 @@ describe('semantic motion utilities compile (#1902/#1903/#1904)', () => {
       declarations[declarations.length - 1],
       'the last transition-timing-function must reference the leaf, not the bridge',
     ).toBe('transition-timing-function:var(--rafters-ease-standard)');
+  });
+
+  // ==========================================================================
+  // MOTION CELLS (#2017) -- matrix conformance, asserted at the COMPILED layer.
+  //
+  // 019fc544: a generator-text proof does not transfer. Everything below is read
+  // out of `registryToCompiled` output, after real Tailwind compilation and
+  // minification, because that is the artifact a browser reads.
+  // ==========================================================================
+
+  /** Every cell, with the assignment its motion.jsonl row declares. */
+  const CELLS = [
+    ['dialog-content-open', 'scale-in', 'normal', 'enter'],
+    ['dialog-content-close', 'scale-out', 'moderate', 'exit'],
+    ['popover-content-open', 'scale-in', 'moderate', 'enter'],
+    ['popover-content-close', 'scale-out', 'fast', 'exit'],
+    ['dropdown-menu-content-open', 'scale-in', 'moderate', 'enter'],
+    ['dropdown-menu-content-close', 'scale-out', 'fast', 'exit'],
+  ] as const;
+
+  it('each animated matrix cell compiles to its OWN rule with its OWN tier and curve', async () => {
+    // The #2012 defect, stated as a test: three distinct cells were collapsed
+    // into one baked animation at normal + spring-snappy. Six cells, six rules,
+    // six assignments read off the matrix -- and spring-snappy appears in none
+    // of them, because it is press/friendly feedback and never an entrance.
+    const css = await registryToCompiled(baseRegistry(), { contentSources: [fixtureDir] });
+
+    for (const [cell, keyframe, tier, curve] of CELLS) {
+      // The BASE rule only -- `.animate-<cell>{...}` unescaped (so not the
+      // `.data-\[state\=open\]\:animate-<cell>` variants) and outside the
+      // reduced-motion @media, which legitimately repeats the same selector.
+      //
+      // EXACTLY ONE. A second base rule would mean Tailwind theme-inferred a
+      // competing `.animate-<cell>` from an `--animate-*` entry, and that rule
+      // sets the animation SHORTHAND -- which resets animation-duration and
+      // would silently discard the reduced-motion zero (toy 14's A-beats-B
+      // destruction, arriving from inside our own emission).
+      const allRules = css.match(new RegExp(`(^|[^\\\\])\\.animate-${cell}\\{[^}]*\\}`, 'g')) ?? [];
+      const baseRules = allRules.filter((r) => !r.includes('animation-duration:0s'));
+      expect(baseRules.length, `.animate-${cell} did not compile to exactly one base rule`).toBe(1);
+      const body = baseRules.join('');
+      // Longhand, never the shorthand: only longhand lets the nested media
+      // query re-set one property, and a shorthand anywhere would reset it.
+      expect(body, `${cell} emitted the animation shorthand`).not.toMatch(/[^-]animation:/);
+      expect(body, `${cell} lost its keyframe`).toContain(`animation-name:${keyframe}`);
+      expect(body, `${cell} is not on its assigned tier`).toContain(
+        `animation-duration:var(--rafters-duration-${tier})`,
+      );
+      expect(body, `${cell} is not on its assigned curve`).toContain(
+        `animation-timing-function:var(--rafters-ease-${curve})`,
+      );
+      // No second value anywhere: references only, never a literal.
+      expect(body, `${cell} carries a duration literal`).not.toMatch(/\d+m?s\b/);
+      expect(body, `${cell} carries a curve literal`).not.toMatch(/cubic-bezier|steps\(/);
+    }
+
+    expect(css, 'spring-snappy is press-only -- no entrance may name it').not.toContain(
+      'animation-timing-function:var(--rafters-ease-spring-snappy)',
+    );
+  });
+
+  it('keyframe geometry is the extent LEAF, and it resolves in the same sheet', async () => {
+    // Keyframes are SHAPES: the entrance scale is `extent-pop`, referenced by
+    // name, not the `1/ratio^0.25` formula #2012 shipped while extent-pop had
+    // no consumer at all. Both scale keyframes, and the leaf declared here too
+    // -- a var() onto an undeclared property compiles clean and animates to
+    // nothing (019fb063).
+    const css = await registryToCompiled(baseRegistry(), { contentSources: [fixtureDir] });
+
+    for (const keyframe of ['scale-in', 'scale-out']) {
+      const block = new RegExp(`@keyframes ${keyframe}\\{[^@]*?\\}\\}`).exec(css)?.[0];
+      expect(block, `@keyframes ${keyframe} missing from the compiled sheet`).toBeDefined();
+      expect(block, `${keyframe} lost the extent reference`).toContain(
+        'scale(var(--rafters-extent-pop))',
+      );
+      // The formula's output, pinned so a reintroduction fails loudly.
+      expect(block, `${keyframe} still carries a derived literal`).not.toContain('scale(0.9');
+    }
+    expect(css, 'the extent leaf is undeclared -- the keyframe scales to nothing').toMatch(
+      /--rafters-extent-pop:\s*\.?0?\.95/,
+    );
+  });
+
+  it('reduced motion is mechanism B, and mechanism A is nowhere near it', async () => {
+    // B: zero animation-duration in the emission. It preserves the keyframe's
+    // end state and still fires animationend, which is what presence releases
+    // the unmount on. A (`animation: none`) fires nothing and, wherever it
+    // wins, resets the shorthand and discards B with it -- so the two must
+    // never both apply to a cell.
+    const css = await registryToCompiled(baseRegistry(), { contentSources: [fixtureDir] });
+
+    const reducedBlocks =
+      css.match(/@media\s*\(prefers-reduced-motion:\s*reduce\)\{.*?\}\}/g) ?? [];
+    const reduced = reducedBlocks.join('');
+    for (const [cell] of CELLS) {
+      // Substring, not a full selector: the variant forms compile with escaped
+      // selectors and both they and the bare rule must carry the zero.
+      expect(reduced, `${cell} has no reduced-motion path`).toContain(`animate-${cell}`);
+    }
+    expect(reduced, 'mechanism B did not compile -- the duration is not zeroed').toContain(
+      'animation-duration:0s',
+    );
+    // Mechanism A must not be in the sheet at all: no cell asks for it, and the
+    // three consuming classes files dropped motion-reduce:animate-none for it.
+    expect(css, 'mechanism A is present and will destructively override B').not.toContain(
+      'animation:none',
+    );
+  });
+
+  it('the period exemption survives -- loops slow, they never stop', async () => {
+    // The property that decided the mechanism. Under B the exemption is SET
+    // MEMBERSHIP (REDUCED_MOTION_ZEROED omits `period`), so the loop utility
+    // simply gets no reduced-motion block. Under A it would have been one
+    // cell-blind rule and the exemption would depend on an author remembering
+    // not to type a class.
+    const css = await registryToCompiled(baseRegistry(), { contentSources: [fixtureDir] });
+    const reducedBlocks =
+      css.match(/@media\s*\(prefers-reduced-motion:\s*reduce\)\{.*?\}\}/g) ?? [];
+    expect(reducedBlocks.length, 'no reduced-motion blocks at all').toBeGreaterThan(0);
+    expect(
+      reducedBlocks.join(''),
+      'a loop period was zeroed -- a stopped spinner says the work stopped',
+    ).not.toContain('.period-spin');
+  });
+
+  it('a leaf retune moves the cells that reference it, and nothing else', async () => {
+    // The governing property: change, override and cascade ARE the system. Both
+    // anchored popups sit on `moderate`; retuning that one leaf must reach both
+    // without either cell being touched, and the emitted utility bodies must be
+    // byte-identical because they are references.
+    const before = registryToTailwind(baseRegistry());
+    const registry = baseRegistry();
+    registry.set('rafters-duration-moderate', '275ms', {
+      reason: 'test: a designer retunes one leaf',
+      kind: 'preference',
+    });
+    const after = registryToTailwind(registry);
+
+    const cellBlocks = (css: string) =>
+      (css.match(/@utility animate-[a-z-]+ \{[\s\S]*?\n\}/g) ?? []).join('\n');
+    expect(cellBlocks(before), 'the cell utilities are not value-free').toBe(cellBlocks(after));
+    expect(before).toContain('--rafters-duration-moderate: 250ms;');
+    expect(after).toContain('--rafters-duration-moderate: 275ms;');
   });
 });

@@ -17,8 +17,16 @@ import type { Token } from '@rafters/shared';
  * Never update it blind.
  */
 
-/** Lines of the emitted sheet that carry motion. */
-const MOTION_LINE = /(duration|ease|delay|extent|period|motion|animate|keyframes|transition)/i;
+/**
+ * Lines of the emitted sheet that carry motion.
+ *
+ * `animation` earns its own alternative: `animate` does not match
+ * `animation-name` / `animation-duration`, so the per-cell utility blocks (#2017)
+ * were landing in this snapshot with their keyframe line silently filtered out
+ * -- a golden that hides the very declaration under review.
+ */
+const MOTION_LINE =
+  /(duration|ease|delay|extent|period|motion|animate|animation|keyframes|transition)/i;
 
 function motionLines(css: string): string[] {
   return css

@@ -28,10 +28,26 @@ describe('dropdown-menu classes', () => {
     expect(classes.label).toContain('text-label-medium');
   });
 
-  it('enter/exit and interaction motion are left UNDECLARED (no hand-rolled animation or raw durations)', () => {
-    // The semantic motion-dropdown-in/-out tokens are not yet emitted by the
-    // token layer; the oracle's animate-in/zoom/fade/slide + duration-N string
-    // is the prohibited hand-rolled form (05-authoring, MOTION.md). See the doc.
+  it('enter/exit are the dropdown-menu CELLS, keyed off data-state (#1996 / #2017)', () => {
+    // motion.jsonl: dropdown-menu / content / closed -> open is moderate +
+    // enter, open -> closed is fast + exit. The assignments match popover's
+    // today and the cells stay SEPARATE anyway -- the matrix declares two
+    // moments, and a shared name would drag one when the other is retuned.
+    expect(classes.content).toContain('data-[state=open]:animate-dropdown-menu-content-open');
+    expect(classes.content).toContain('data-[state=closed]:animate-dropdown-menu-content-close');
+    expect(classes.content).not.toContain('animate-scale-in');
+    expect(classes.content).not.toContain('animate-scale-out');
+  });
+
+  it('motion respects reduced-motion, and does NOT do it with animate-none', () => {
+    // Mechanism B (#2017): zeroed inside the generated utility. animate-none
+    // would reset the shorthand and kill the animationend presence waits on.
+    expect(classes.content).not.toContain('motion-reduce:animate-none');
+  });
+
+  it('no hand-rolled animation vocabulary and no raw durations', () => {
+    // The oracle's animate-in/zoom/fade/slide + duration-N string is the
+    // prohibited hand-rolled form (05-authoring, MOTION.md). See the doc.
     for (const value of Object.values(classes)) {
       expect(value).not.toContain('animate-in');
       expect(value).not.toContain('animate-out');

@@ -34,9 +34,13 @@
  *      delay, releases the unmount. Derived, not a constant: a magic 500ms
  *      would pin a closed dialog on screen under a slow intent and truncate a
  *      slower one.
- *   2. Reduced motion. The utilities resolve the movement to nothing, so no
- *      animation is created and no event will ever fire. -> the wait is never
- *      entered: with no running animation presence releases synchronously.
+ *   2. Reduced motion. The generated cell utilities zero `animation-duration`
+ *      under `prefers-reduced-motion` (mechanism B, #2017) -- the animation is
+ *      still ATTACHED and still completes, instantly, and still fires
+ *      `animationend`. So the wait IS entered and the normal event path
+ *      releases; the exit is simply over in the same frame. An element with no
+ *      animation and no transition at all is the separate case, and that one
+ *      releases synchronously because nothing will ever fire.
  *   3. Rapid open -> close -> open. A pending release from the previous close
  *      would land on the node that is now legitimately open. -> the listeners
  *      AND the timer are torn down by the same cleanup, which runs on every
@@ -138,8 +142,13 @@ function animationNameOf(event: Event): string | null {
 /**
  * Measure the exit the node is about to run.
  *
- * A zero runMs is the reduced-motion answer AND the no-animation answer, and
- * both mean the same thing to presence: release now, do not wait for an event.
+ * A zero `runMs` does NOT mean "nothing will fire". Under reduced motion the
+ * cell utilities zero `animation-duration` while leaving the animation attached
+ * (mechanism B, #2017), so the exit runs for 0ms and `animationend` arrives
+ * anyway. `names` is therefore claimed whenever an animation is ATTACHED, not
+ * only when it has a duration -- the pair (runMs 0, names non-empty) is exactly
+ * the reduced-motion exit, and it must be waited on rather than released blind.
+ * Only (runMs 0, names empty) means nothing is coming.
  */
 function measureExit(element: HTMLElement): ExitMeasurement {
   if (typeof getComputedStyle !== 'function') return { runMs: 0, names: [] };
@@ -157,7 +166,10 @@ function measureExit(element: HTMLElement): ExitMeasurement {
   return {
     runMs: Math.max(animated, transitioned),
     // Only claim names when the animation is what we are actually waiting on.
-    names: animated >= transitioned && animated > 0 ? names : [],
+    // `animated > 0` was the old guard and it dropped the reduced-motion exit on
+    // the floor: a zeroed animation-duration made `animated` 0, the names went
+    // empty, and presence released synchronously without ever listening.
+    names: animated >= transitioned && names.length > 0 ? names : [],
   };
 }
 
@@ -166,6 +178,22 @@ function measureExit(element: HTMLElement): ExitMeasurement {
  * it must never beat a healthy animation to the punch, or every exit truncates.
  * One frame of slack plus a small proportional allowance covers compositor
  * jitter without holding a wedged node around for a perceptible extra beat.
+ *
+ * THESE TWO CONSTANTS ARE AN ENGINEERING FAILSAFE AND SIT OUTSIDE THE VALUE
+ * SYSTEM. State it plainly, because #2012 shipped them unclassified and a
+ * reviewer was right to call that a defect: every OTHER number in motion is
+ * either a perceptual fact or a designer's personality, and those belong in the
+ * five namespaces where Studio can retune them. The x1.5 and the +50 are
+ * neither. They exist only for the case where `animationend` never arrives -- an
+ * animation that is replaced rather than cancelled, or a transition declared on
+ * a property that never changes -- and in EVERY healthy exit, including the
+ * zero-duration reduced-motion one, the event wins and this timer is cleared
+ * before it fires. Nothing here is ever perceived as motion, so there is nothing
+ * here to tune. If a user can feel this number, the animation was already broken
+ * and the number is what kept the app usable.
+ *
+ * The consequence of that classification: do not promote these to tokens, do not
+ * derive them from a duration tier, and do not let an intent change reach them.
  */
 function fallbackMs(runMs: number): number {
   return Math.ceil(runMs * 1.5) + 50;
@@ -191,10 +219,14 @@ export function usePresence(open: boolean): Presence {
       return;
     }
     const { runMs, names: exitNames } = measureExit(node);
-    if (runMs === 0) {
-      // No movement to wait for (reduced motion, or no exit animation at all).
-      // Releasing here is what keeps the reduced-motion path off an
-      // `animationend` that is never coming.
+    if (runMs === 0 && exitNames.length === 0) {
+      // Nothing is attached, so nothing will ever fire -- release now rather
+      // than wait on an event that is not coming. NOT the reduced-motion case:
+      // there an animation IS attached at zero duration, it completes in the
+      // same frame, and it fires `animationend` like any other. That path falls
+      // through to the listener below on purpose (#2017) -- releasing it here
+      // would silently take the presence contract off the event and onto
+      // whatever happened to run first.
       setPresent(false);
       return;
     }

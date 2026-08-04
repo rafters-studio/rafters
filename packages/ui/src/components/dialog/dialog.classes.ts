@@ -22,14 +22,25 @@ const containerClasses = 'fixed inset-0 z-depth-modal flex items-center justify-
 // Enter/exit is PRESENCE (#1996): the node MOUNTS with its keyframe attached
 // and runs it -- no @starting-style, which is a transitions-on-mount hack this
 // system does not use -- and usePresence holds the unmount until the exit
-// keyframe ends. animate-* come from the token layer's --animate-* entries,
-// which carry the duration tier and curve. motion-reduce:animate-none is the
-// reduced-motion path (see popover.classes.ts for why animate-none and not a
-// zeroed duration).
+// keyframe ends.
+//
+// THE CELL IS THE SPEC (#2017). These two utilities are the generated
+// consumption of two rows of packages/ui/docs/spec/matrix/motion.jsonl --
+// dialog / content / closed -> open (normal, enter, extent pop) and
+// dialog / content / open -> closed (moderate, exit, extent pop). One reference
+// per cell, exactly as every other generic is consumed: no raw var(), no
+// literal, and no shared animation standing in for three distinct moments (the
+// #2012 defect this replaces).
+//
+// NO motion-reduce:animate-none. Reduced motion is handled INSIDE the generated
+// utility, which zeroes animation-duration under the media query. Adding
+// animate-none here would win destructively -- `animation: none` resets the
+// shorthand -- and would also stop animationend from firing, which is the event
+// presence releases the unmount on.
 const contentClasses =
   'relative w-full max-w-lg rounded-lg border border-card-border bg-card p-6 text-card-foreground shadow-lg ' +
-  'data-[state=open]:animate-scale-in data-[state=closed]:animate-scale-out ' +
-  'data-[state=closed]:pointer-events-none motion-reduce:animate-none';
+  'data-[state=open]:animate-dialog-content-open data-[state=closed]:animate-dialog-content-close ' +
+  'data-[state=closed]:pointer-events-none';
 
 const headerClasses = 'flex flex-col space-y-1.5 text-center @md:text-left';
 

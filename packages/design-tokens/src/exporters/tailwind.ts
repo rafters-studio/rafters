@@ -54,9 +54,17 @@ const MOTION_NAMESPACE_PROPERTY = {
   duration: 'transition-duration',
   ease: 'transition-timing-function',
   delay: 'transition-delay',
-  // Extents are consumed inside transforms and keyframes, so the utility
-  // publishes the chosen extent under a fixed name the consuming rule reads.
-  // The name comes from toy 9 (worktree-toy-motion-registry).
+  // Extents are consumed inside transforms, so the utility publishes the chosen
+  // extent under a fixed name the consuming rule reads. The name comes from toy
+  // 9 (worktree-toy-motion-registry).
+  //
+  // THIS IS THE UTILITY-SIDE CONTRACT, and it is one of TWO (#2017). A CLASS
+  // picks an extent by naming a member (`extent-pop`) and the rule downstream
+  // reads `--rafters-consumed-extent` without knowing which member won.
+  // KEYFRAME BODIES DO NOT USE THIS ALIAS: they are generator-owned emission and
+  // reference the LEAF directly (`var(--rafters-extent-pop)`, see
+  // DEFAULT_KEYFRAME_DEFINITIONS). A shape is not a function of whatever extent
+  // the consuming class last selected. Do not merge the two contracts.
   extent: '--rafters-consumed-extent',
   period: 'animation-duration',
 } as const satisfies Record<MotionNamespace, string>;
@@ -807,6 +815,72 @@ function generateMotionUtilities(motionTokens: Token[]): string {
 }
 
 /**
+ * Emit one `@utility animate-<cell>` block per animated matrix cell (#2017).
+ *
+ * The cell composite is emitted as LONGHAND -- animation-name, -duration,
+ * -timing-function -- for the same reason `generateMotionUtilities` emits
+ * transition longhand: a nested `@media (prefers-reduced-motion: reduce)` can
+ * then re-set ONE property without restating the rule.
+ *
+ * REDUCED MOTION IS MECHANISM B: zero `animation-duration` in the emission. The
+ * alternative, `motion-reduce:animate-none` on the consuming class, was measured
+ * against this one (toy 14) and loses on three counts:
+ *   - `animation: none` removes the animation, so the element never reaches the
+ *     keyframe's END STATE. Zeroing the duration completes it instantly and
+ *     keeps the end state;
+ *   - a zero duration still FIRES `animationend`, which is what the presence
+ *     contract releases the unmount on. `animate-none` fires nothing, so a
+ *     closing dialog would be released by the backstop timer instead;
+ *   - the period exemption (loops slow, they never stop) is expressible here as
+ *     SET MEMBERSHIP -- this function emits the block, the period utilities do
+ *     not -- while `animate-none` compiles to one cell-blind rule whose
+ *     exemption exists only if the author remembers not to type it on a spinner.
+ *
+ * THE TWO MECHANISMS MUST NOT BOTH APPLY. Wherever `animate-none` wins it wins
+ * DESTRUCTIVELY: `animation: none` resets the whole shorthand and discards the
+ * zeroed duration with it. That is why the three consuming classes files dropped
+ * `motion-reduce:animate-none` when they took up these utilities.
+ *
+ * No value appears in any block -- duration and curve are var()s onto the leaves
+ * -- so the whole set is byte-identical across a retune, the toy-9 invariant.
+ */
+function generateMotionCellUtilities(motionTokens: Token[]): string {
+  const cellTokens = motionTokens.filter((t) => t.name.startsWith('motion-cell-'));
+  if (cellTokens.length === 0) return '';
+
+  interface CellSpec {
+    keyframe: string;
+    durationTier: string;
+    curve: string;
+  }
+
+  const lines: string[] = [
+    '/* Motion cells -- one utility per animated (component, part, transition) */',
+  ];
+
+  for (const token of cellTokens) {
+    if (typeof token.value !== 'string') continue;
+    let spec: CellSpec;
+    try {
+      spec = JSON.parse(token.value) as CellSpec;
+    } catch {
+      continue;
+    }
+
+    lines.push(`@utility ${token.name.replace('motion-cell-', 'animate-')} {`);
+    lines.push(`  animation-name: ${spec.keyframe};`);
+    lines.push(`  animation-duration: var(--rafters-duration-${spec.durationTier});`);
+    lines.push(`  animation-timing-function: var(--rafters-ease-${spec.curve});`);
+    lines.push('  @media (prefers-reduced-motion: reduce) {');
+    lines.push('    animation-duration: 0s;');
+    lines.push('  }');
+    lines.push('}');
+  }
+
+  return lines.join('\n');
+}
+
+/**
  * Emit the five motion namespaces as `--rafters-<namespace>-<member>` leaves.
  *
  * Indented for the @theme block. These are the only place a motion value is
@@ -1042,6 +1116,13 @@ export function tokensToTailwind(
     sections.push(motionUtilities);
   }
 
+  // Per-cell animation @utility classes (animate-<component>-<part>-<transition>)
+  const cellUtilities = generateMotionCellUtilities(groups.motion);
+  if (cellUtilities) {
+    sections.push('');
+    sections.push(cellUtilities);
+  }
+
   // Typography element overrides (if any)
   const overrideCSS = generateTypographyOverrideCSS(typographyOverrides);
   if (overrideCSS) {
@@ -1167,6 +1248,11 @@ function generateThemeBlockWithVarRefs(groups: GroupedTokens): string {
       // Semantic motion tokens are JSON specs consumed by generateMotionUtilities,
       // not raw custom properties -- no --var to reference.
       if (token.name.startsWith('motion-semantic-')) continue;
+      // Motion cells are JSON specs consumed by generateMotionCellUtilities, for
+      // the same reason: there is no --var to point a bridge at, and emitting
+      // one would declare `--motion-cell-x: var(--rafters-motion-cell-x)` onto a
+      // property nothing declares -- the silent dangling reference of 019fb063.
+      if (token.name.startsWith('motion-cell-')) continue;
       if (motionNamespaceParts(token.name)) continue;
       lines.push(`  --${token.name}: var(--rafters-${token.name});`);
     }

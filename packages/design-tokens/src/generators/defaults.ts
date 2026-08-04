@@ -558,8 +558,6 @@ export const DEFAULT_EASING_DEFINITIONS: Record<string, EasingDef> = {
  * VALUES stay derived while only the CSS shape is authored here.
  */
 export interface KeyframeContext {
-  /** 1/ratio^0.25 -- a subtle entrance scale. */
-  scaleStart: number;
   /** ratio^3 -- the expanding ping. */
   pingScale: number;
   /** 1/ratio^4 -- the pulse midpoint. */
@@ -601,6 +599,30 @@ export interface KeyframeDef {
  *   the animation definitions below are the same numbers, and the sweep that
  *   points the animations at `var(--rafters-period-*)` is component work, not
  *   token work.
+ *
+ * KEYFRAMES ARE SHAPES (#2017). A keyframe body carries GEOMETRY and nothing
+ * else -- no duration, no curve, and no literal extent. The scale a surface
+ * enters from is the `extent` namespace's job, so `scale-in` / `scale-out`
+ * reference `var(--rafters-extent-pop)` rather than a number. This replaces the
+ * `scaleStart = 1/ratio^0.25` derivation that shipped in #2012: a ratio formula
+ * in value position is a second value for one knob, inside the namespace whose
+ * whole premise is that motion values are entropy and not a progression. The
+ * derivation is gone and `extent-pop` has its first consumer.
+ *
+ * EXIT REUSES `extent-pop` (operator ruling): a close is the symmetric scale
+ * back to the same point. A separate exit extent would be a new matrix
+ * dimension, and no study asks for one.
+ *
+ * THE TWO EXTENT CONSUMPTION CONTRACTS -- do not merge them:
+ *   1. EMISSION SIDE (here). Keyframe bodies are generator-owned CSS, so they
+ *      name the LEAF directly: `var(--rafters-extent-pop)`, declared in every
+ *      emission path by `generateMotionNamespaceVars`.
+ *   2. UTILITY SIDE. `@utility extent-pop` publishes the chosen extent under the
+ *      fixed alias `--rafters-consumed-extent` (see `MOTION_NAMESPACE_PROPERTY`
+ *      in the Tailwind exporter), which is how a CLASS-level consumer picks an
+ *      extent without naming a member.
+ * One contract per side. A keyframe reaching for the alias would read whatever
+ * extent the consuming class last chose, which is not a property a shape has.
  *
  * DELETED 2026-07-23: `accordion-down` / `accordion-up`. They interpolated
  * `var(--radix-accordion-content-height)`, which Radix sets from JS measurement
@@ -661,14 +683,14 @@ export const DEFAULT_KEYFRAME_DEFINITIONS: Record<string, KeyframeDef> = {
     contexts: ['sidebar-close', 'panel-exit'],
   },
   'scale-in': {
-    css: (ctx) =>
-      `from { transform: scale(${ctx.scaleStart}); opacity: 0; } to { transform: scale(1); opacity: 1; }`,
+    css: () =>
+      'from { transform: scale(var(--rafters-extent-pop)); opacity: 0; } to { transform: scale(1); opacity: 1; }',
     meaning: 'Scale up while fading in',
     contexts: ['modal', 'popover', 'dialog'],
   },
   'scale-out': {
-    css: (ctx) =>
-      `from { transform: scale(1); opacity: 1; } to { transform: scale(${ctx.scaleStart}); opacity: 0; }`,
+    css: () =>
+      'from { transform: scale(1); opacity: 1; } to { transform: scale(var(--rafters-extent-pop)); opacity: 0; }',
     meaning: 'Scale down while fading out',
     contexts: ['modal-exit', 'popover-close'],
   },
@@ -733,6 +755,16 @@ export interface AnimationDef {
  *
  * Loop periods (`spin`, `ping`, `pulse`, `bounce`, `caret-blink`) carry the same
  * unblessed-vocabulary caveat as their keyframes.
+ *
+ * NO MATRIX CELL CONSUMES `scale-in` / `scale-out` ANY MORE (#2017). The three
+ * components that did -- dialog, popover, dropdown-menu -- now consume their own
+ * cell composites in DEFAULT_MOTION_CELL_ANIMATIONS, which is what fixes the
+ * #2012 collapse. These two are left standing UNCHANGED and unretuned on
+ * purpose: `scale-in` carries `spring-snappy`, which the July baseline reserves
+ * for press/friendly feedback, and quietly repointing it at `enter` would be
+ * inventing an assignment no cell made -- the same class of error as the
+ * derivation this issue deletes. Whether they should exist at all is a deletion
+ * call for the sweep, not a value change to slip into a conformance fix.
  */
 export const DEFAULT_ANIMATION_DEFINITIONS: Record<string, AnimationDef> = {
   'fade-in': {
@@ -858,6 +890,114 @@ export const DEFAULT_ANIMATION_DEFINITIONS: Record<string, AnimationDef> = {
     iterations: 'infinite',
     meaning: 'Caret blinking',
     contexts: ['input'],
+  },
+};
+
+/**
+ * ONE ANIMATED MATRIX CELL, as a composite of references (#2017).
+ *
+ * A cell is a (component, part, transition) triple in
+ * `packages/ui/docs/spec/matrix/motion.jsonl`, and THE CELL IS THE SPEC: the
+ * tier, the curve and the extent are read off the row, never inferred. This type
+ * exists because #2012 collapsed three DISTINCT cells (dialog open, popover
+ * open, dropdown-menu open) into one baked animation at normal + spring-snappy
+ * -- the wrong curve class entirely, since spring-snappy is press/friendly
+ * feedback and never an efficient entrance.
+ *
+ * WHY CELL-NAMED COMPOSITES ARE NOT A VOCABULARY VIOLATION (operator ruling).
+ * The "no per-cell names" rule governs the five NAMESPACES: there is one `fast`,
+ * everywhere, always, because two fasts is how drift starts. A composite that
+ * REFERENCES `fast` mints no second value -- it is a statement about which
+ * shared tier this moment uses. `motion-scale-in` is already a named composite
+ * of exactly this shape; these are the same thing with the cell, rather than a
+ * guess, choosing the members.
+ *
+ * Nothing here is a literal. `keyframe` names a shape, `tier` and `curve` name
+ * leaves, and the emitted value is a var() per reference -- so retuning a leaf
+ * moves one line of the sheet and every cell that points at it follows.
+ */
+export interface MotionCellAnimation {
+  /** Key of DEFAULT_KEYFRAME_DEFINITIONS -- the SHAPE, carrying no timing. */
+  keyframe: string;
+  /** Key of DEFAULT_DURATION_DEFINITIONS -- the cell's `duration.tier`. */
+  tier: string;
+  /** Key of DEFAULT_EASING_DEFINITIONS -- the cell's `curve.role`. */
+  curve: string;
+  /** The matrix coordinates this composite transcribes, for review and for docs. */
+  cell: { component: string; part: string; transition: string };
+  meaning: string;
+  contexts: string[];
+}
+
+/**
+ * THE ANIMATED CELLS, transcribed from motion.jsonl. Each key becomes one
+ * `motion-cell-<key>` token and one `animate-<key>` utility.
+ *
+ * Verbatim from the matrix rows, which is the only permitted provenance here:
+ *   dialog / content        closed -> open   normal   enter   extent pop
+ *   dialog / content        open -> closed   moderate exit    extent pop
+ *   popover / content       closed -> open   moderate enter   extent pop
+ *   popover / content       open -> closed   fast     exit    extent pop
+ *   dropdown-menu / content closed -> open   moderate enter   extent pop
+ *   dropdown-menu / content open -> closed   fast     exit    extent pop
+ *
+ * Popover and dropdown-menu carry identical assignments today. They stay two
+ * cells, not one shared name: the matrix declares two moments, and collapsing
+ * them is precisely the move that produced the #2012 defect -- the day one of
+ * them is retuned, a shared name would drag the other with it silently.
+ *
+ * The extent is not named here because the KEYFRAME carries it (`scale-in` /
+ * `scale-out` reference `var(--rafters-extent-pop)`), which is what "keyframes
+ * are shapes" means: geometry rides with the shape, timing attaches at the cell.
+ */
+export const DEFAULT_MOTION_CELL_ANIMATIONS: Record<string, MotionCellAnimation> = {
+  'dialog-content-open': {
+    keyframe: 'scale-in',
+    tier: 'normal',
+    curve: 'enter',
+    cell: { component: 'dialog', part: 'content', transition: 'closed -> open' },
+    meaning: 'A dialog arriving: fade + zoom from the pop extent, on the arrival curve.',
+    contexts: ['dialog', 'modal', 'alert-dialog'],
+  },
+  'dialog-content-close': {
+    keyframe: 'scale-out',
+    tier: 'moderate',
+    curve: 'exit',
+    cell: { component: 'dialog', part: 'content', transition: 'open -> closed' },
+    meaning: 'A dialog leaving: fade + zoom back to the pop extent, on the departure curve.',
+    contexts: ['dialog', 'modal', 'alert-dialog'],
+  },
+  'popover-content-open': {
+    keyframe: 'scale-in',
+    tier: 'moderate',
+    curve: 'enter',
+    cell: { component: 'popover', part: 'content', transition: 'closed -> open' },
+    meaning: 'A popover arriving: smaller and nearer than a dialog, so one tier quicker.',
+    contexts: ['popover', 'anchored-popup'],
+  },
+  'popover-content-close': {
+    keyframe: 'scale-out',
+    tier: 'fast',
+    curve: 'exit',
+    cell: { component: 'popover', part: 'content', transition: 'open -> closed' },
+    meaning: 'A popover leaving: the user already chose to dismiss it.',
+    contexts: ['popover', 'anchored-popup'],
+  },
+  'dropdown-menu-content-open': {
+    keyframe: 'scale-in',
+    tier: 'moderate',
+    curve: 'enter',
+    cell: { component: 'dropdown-menu', part: 'content', transition: 'closed -> open' },
+    meaning: 'A menu arriving: same anchored-popup moment as popover, declared separately.',
+    contexts: ['dropdown-menu', 'menu', 'anchored-popup'],
+  },
+  'dropdown-menu-content-close': {
+    keyframe: 'scale-out',
+    tier: 'fast',
+    curve: 'exit',
+    cell: { component: 'dropdown-menu', part: 'content', transition: 'open -> closed' },
+    meaning: 'A menu leaving, after a choice or a dismissal.',
+    contexts: ['dropdown-menu', 'menu', 'anchored-popup'],
   },
 };
 

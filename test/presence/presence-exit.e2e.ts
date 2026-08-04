@@ -12,7 +12,16 @@
  *  - a node held through its exit is genuinely renderable mid-flight
  *    (`isConnected`, non-zero currentTime), and goes when the exit ends;
  *  - both disposal shapes: unmount (dialog, popover) and re-`hidden`
- *    (dropdown-menu, which lives in light DOM).
+ *    (dropdown-menu, which lives in light DOM);
+ *  - that a REDUCED-MOTION exit -- animation attached, duration zeroed, which is
+ *    mechanism B (#2017) -- still fires `animationend` and still releases
+ *    presence through the event rather than the timeout failsafe.
+ *
+ * The rules below are the DIALOG CELL: dialog / content / closed -> open is
+ * normal + enter, open -> closed is moderate + exit, read off
+ * packages/ui/docs/spec/matrix/motion.jsonl. Each cell owns its own utility now
+ * -- #2012 collapsed three cells into one shared animation, and this spec would
+ * have gone on passing against it, which is why the tiers are named here.
  *
  * NOT proven here: the React wiring. There is no dev server in this repo and a
  * spec may not start one, so this drives the CONTRACT'S DOM SHAPE against the
@@ -29,22 +38,45 @@
  */
 import { expect, test } from '@playwright/test';
 
-/** Generated motion values, verbatim from the motion golden. */
+/**
+ * Generated motion values, verbatim from the motion golden. `extent-pop` joined
+ * this list in #2017: the scale keyframes reference the LEAF now instead of a
+ * ratio-derived literal, so a sheet without it would scale to nothing.
+ */
 const LEAVES = `
   --rafters-duration-fast: 150ms;
+  --rafters-duration-moderate: 250ms;
   --rafters-duration-normal: 350ms;
+  --rafters-ease-enter: cubic-bezier(0, 0, 0.2, 1);
   --rafters-ease-exit: cubic-bezier(0.4, 0, 1, 1);
-  --rafters-ease-spring-snappy: cubic-bezier(0.2, 0.8, 0.2, 1);
-`;
-
-/** The generated animation shorthands, post-#2000: built on the declared leaves. */
-const ANIMATIONS = `
-  --animate-scale-in: scale-in var(--rafters-duration-normal) var(--rafters-ease-spring-snappy);
-  --animate-scale-out: scale-out var(--rafters-duration-fast) var(--rafters-ease-exit);
+  --rafters-extent-pop: 0.95;
 `;
 
 /**
- * The pre-#2000 shorthand: same shape, referencing `--motion-duration-*` /
+ * The DIALOG CELL's compiled utilities, in the longhand form the exporter emits
+ * (#2017) -- one rule per (component, part, transition), each on the tier and
+ * curve its motion.jsonl row assigns. The exit is `moderate`, not `fast`: this
+ * is the dialog, and a dialog leaves one tier slower than a popover.
+ */
+const CELL_RULES = `
+#content[data-state="open"] {
+  animation-name: scale-in;
+  animation-duration: var(--rafters-duration-normal);
+  animation-timing-function: var(--rafters-ease-enter);
+}
+#content[data-state="closed"] {
+  animation-name: scale-out;
+  animation-duration: var(--rafters-duration-moderate);
+  animation-timing-function: var(--rafters-ease-exit);
+}
+@media (prefers-reduced-motion: reduce) {
+  #content[data-state="open"] { animation-duration: 0s; }
+  #content[data-state="closed"] { animation-duration: 0s; }
+}
+`;
+
+/**
+ * The pre-#2000 shorthand: referencing `--motion-duration-*` /
  * `--motion-easing-*`, which nothing declares in either emission path.
  */
 const ANIMATIONS_BUGGED = `
@@ -53,12 +85,12 @@ const ANIMATIONS_BUGGED = `
 
 const KEYFRAMES = `
 @keyframes scale-in {
-  from { transform: scale(0.96); opacity: 0; }
+  from { transform: scale(var(--rafters-extent-pop)); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
 }
 @keyframes scale-out {
   from { transform: scale(1); opacity: 1; }
-  to { transform: scale(0.96); opacity: 0; }
+  to { transform: scale(var(--rafters-extent-pop)); opacity: 0; }
 }
 `;
 
@@ -73,10 +105,9 @@ const KEYFRAMES = `
 function harness(mode: 'unmount' | 'hidden'): string {
   return `
 <style>
-:root { ${LEAVES} ${ANIMATIONS} ${ANIMATIONS_BUGGED} }
+:root { ${LEAVES} ${ANIMATIONS_BUGGED} }
 ${KEYFRAMES}
-#content[data-state="open"] { animation: var(--animate-scale-in); }
-#content[data-state="closed"] { animation: var(--animate-scale-out); }
+${CELL_RULES}
 #bugged[data-state="closed"] { animation: var(--animate-scale-out-bugged); }
 [hidden] { display: none; }
 </style>
@@ -117,9 +148,9 @@ for (const mode of ['unmount', 'hidden'] as const) {
 
     await page.evaluate(() => (window as unknown as { close_: () => void }).close_());
 
-    // MID-EXIT. Sampled immediately after the close, well inside the 150ms the
-    // exit runs for. The node must still be attached, still rendering, with a
-    // scale-out animation actually on the timeline.
+    // MID-EXIT. Sampled immediately after the close, well inside the 250ms the
+    // dialog exit runs for. The node must still be attached, still rendering,
+    // with a scale-out animation actually on the timeline.
     const midExit = await page.evaluate(() => {
       const node = document.getElementById('content');
       if (!node) return null;
@@ -156,7 +187,11 @@ for (const mode of ['unmount', 'hidden'] as const) {
     // also the race the exit-name filter in usePresence exists for.
     const exit = midExit?.running.find((a) => a.name === 'scale-out');
     expect(exit, 'the exit keyframe is not on the timeline').toBeDefined();
-    expect(exit?.duration, 'the exit resolved to a zero duration -- the #2000 failure').toBe(150);
+    // 250, not 150: the dialog / content / open -> closed cell is `moderate`.
+    // Carrying the old 150 forward would be asserting popover's tier against
+    // dialog's markup -- the cells-consumed vs cells-assigned drift #2017 is
+    // about.
+    expect(exit?.duration, 'the exit resolved to a zero duration -- the #2000 failure').toBe(250);
     expect(exit?.playState).toBe('running');
 
     // POST-EXIT. Disposal is held until the animation ends, then lands.
@@ -170,6 +205,51 @@ for (const mode of ['unmount', 'hidden'] as const) {
     }
   });
 }
+
+test('#2017: a REDUCED-MOTION exit still releases via animationend, not the backstop', async ({
+  page,
+}) => {
+  // THE MECHANISM-B CONTRACT, in the only place it can actually be observed.
+  // The generated cell utility zeroes `animation-duration` under
+  // prefers-reduced-motion rather than setting `animation: none`, and the whole
+  // argument for that choice is this: a zero-duration animation still COMPLETES
+  // and still FIRES `animationend`, so presence releases on the event exactly as
+  // it does at full duration. `animate-none` fires nothing, and every
+  // reduced-motion close would fall through to the timeout failsafe.
+  //
+  // The harness disposes ONLY inside an `animationend` listener, so a disposal
+  // arriving at all is the proof. jsdom cannot make this assertion -- it has no
+  // animation timeline, so it cannot distinguish "fired instantly" from "never
+  // fired".
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('about:blank');
+  await page.setContent(harness('unmount'));
+
+  const reduced = await page.evaluate(() => {
+    const node = document.getElementById('content');
+    return getComputedStyle(node as HTMLElement).animationDuration;
+  });
+  expect(reduced, 'reduced motion did not zero the duration').toBe('0s');
+
+  await page.evaluate(() => (window as unknown as { close_: () => void }).close_());
+  await page.waitForFunction(() => (window as unknown as { disposed: boolean }).disposed, null, {
+    timeout: 5000,
+  });
+  await expect(page.locator('#content')).toHaveCount(0);
+
+  // ...and mechanism A is not what did it: `animation: none` would have left no
+  // animation to end, so nothing would ever have fired.
+  const name = await page.evaluate(() => {
+    const probe = document.createElement('div');
+    probe.id = 'content';
+    probe.setAttribute('data-state', 'closed');
+    document.body.append(probe);
+    const value = getComputedStyle(probe).animationName;
+    probe.remove();
+    return value;
+  });
+  expect(name, 'the animation was removed, not zeroed -- that is mechanism A').toBe('scale-out');
+});
 
 test('#2000: the pre-fix animation value resolves to a zero duration', async ({ page }) => {
   // The regression this PR fixes, stated as the browser states it. A var() onto

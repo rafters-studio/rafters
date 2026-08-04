@@ -34,6 +34,7 @@ import type {
   EasingDef,
   KeyframeContext,
   KeyframeDef,
+  MotionCellAnimation,
   MotionCompositePreset,
   MotionNamespaceMemberDef,
   MotionSemanticMapping,
@@ -146,6 +147,7 @@ export function generateMotionTokens(
   keyframeDefs: Record<string, KeyframeDef>,
   animationDefs: Record<string, AnimationDef>,
   compositePresets: Record<string, MotionCompositePreset>,
+  cellAnimations: Record<string, MotionCellAnimation>,
 ): GeneratorResult {
   const tokens: Token[] = [];
   const timestamp = new Date().toISOString();
@@ -344,20 +346,25 @@ export function generateMotionTokens(
     }
   }
 
-  // Keyframe definitions - values derived from progression ratio for mathematical harmony
-  // Compute animation values from ratio:
-  // - scaleStart: 1/ratio^0.25 ≈ 0.955 for subtle entrance scale
-  // - pingScale: ratio^3 ≈ 1.73 for expanding effect (rounded to 2 for simplicity)
-  // - pulseOpacity: 1/ratio^4 ≈ 0.48 for gentle pulse midpoint
-  // - bounceTranslate: 100/ratio^6 ≈ 33% for bounce height
+  // Keyframe context for the LOOPING shapes, whose numbers still come off the
+  // progression ratio.
+  //
+  // `scaleStart` is GONE (#2017). It was `1/ratio^0.25`, a ratio derivation
+  // standing in value position inside the namespace whose premise is that motion
+  // values are entropy -- and it minted a second entrance scale while
+  // `--rafters-extent-pop` shipped with no consumer at all. `scale-in` and
+  // `scale-out` now reference the extent leaf directly, so the entrance scale
+  // has exactly one home and Studio can retune it.
+  //
+  // The remaining three are unchanged and deliberately not swept here: ping,
+  // pulse and bounce are loop shapes with no matrix cell behind them, and moving
+  // them would be an unforced value change in a conformance fix.
   const ratioValue = ratioVal;
-  const scaleStart = Math.round((1 / ratioValue ** 0.25) * 100) / 100; // ~0.95 for 1.2 ratio
   const pingScale = Math.round(ratioValue ** 3 * 10) / 10; // ~1.7 for 1.2 ratio, round to nearest 0.1
   const pulseOpacity = Math.round((1 / ratioValue ** 4) * 100) / 100; // ~0.48 for 1.2 ratio
   const bouncePercent = Math.round(100 / ratioValue ** 6); // ~33% for 1.2 ratio
 
   const keyframeContext: KeyframeContext = {
-    scaleStart,
     pingScale,
     pulseOpacity,
     bouncePercent,
@@ -442,6 +449,60 @@ export function generateMotionTokens(
       containerQueryAware: false,
       reducedMotionAware: true,
       userOverride: null,
+    });
+  }
+
+  // PER-CELL ANIMATION COMPOSITES (#2017). One token per animated matrix cell,
+  // carrying its three assignments -- shape, tier, curve -- as a JSON spec the
+  // exporter turns into one `animate-<cell>` @utility.
+  //
+  // JSON rather than a shorthand string, for the reason the semantic motion
+  // tokens are JSON: the utility is emitted as LONGHAND (animation-name /
+  // -duration / -timing-function) so a nested prefers-reduced-motion block can
+  // re-set the duration alone. A shorthand would have to be restated, and a
+  // restated shorthand is what destroys mechanism B (see the exporter).
+  //
+  // Nothing is resolved here. The tier and curve are NAMES, they become var()s
+  // onto the leaves at emission, and that is what keeps this a reference rather
+  // than a second value: retune `rafters-duration-moderate` and both anchored
+  // popups follow without this file being touched.
+  for (const [name, cell] of Object.entries(cellAnimations)) {
+    requireDef(keyframeDefs, cell.keyframe, 'keyframe', `motion cell "${name}"`);
+    requireDef(durationDefs, cell.tier, 'duration tier', `motion cell "${name}"`);
+    requireDef(easingDefs, cell.curve, 'easing curve', `motion cell "${name}"`);
+
+    const { component, part, transition } = cell.cell;
+    tokens.push({
+      name: `motion-cell-${name}`,
+      value: JSON.stringify({
+        keyframe: cell.keyframe,
+        durationTier: cell.tier,
+        curve: cell.curve,
+      }),
+      category: 'motion',
+      namespace: 'motion',
+      semanticMeaning: cell.meaning,
+      usageContext: cell.contexts,
+      animationName: name,
+      keyframeName: cell.keyframe,
+      generateUtilityClass: true,
+      dependsOn: [
+        `motion-keyframe-${cell.keyframe}`,
+        `rafters-duration-${cell.tier}`,
+        `rafters-ease-${cell.curve}`,
+      ],
+      description: `Motion cell ${component} / ${part} / ${transition}: ${cell.keyframe} over ${cell.tier} with ${cell.curve}. ${cell.meaning}`,
+      generatedAt: timestamp,
+      containerQueryAware: false,
+      reducedMotionAware: true,
+      userOverride: null,
+      usagePatterns: {
+        do: [`Apply class animate-${name} on the ${component} ${part} for "${transition}"`],
+        never: [
+          'Reuse this cell on a different component -- assignments come from motion.jsonl, one cell at a time',
+          'Add motion-reduce:animate-none alongside it -- animation:none resets the shorthand and discards the zeroed duration',
+        ],
+      },
     });
   }
 
