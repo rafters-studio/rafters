@@ -6,6 +6,7 @@ import {
   DEFAULT_EASING_DEFINITIONS,
   DEFAULT_EXTENT_NAMESPACE,
   DEFAULT_KEYFRAME_DEFINITIONS,
+  DEFAULT_MOTION_CELL_ANIMATIONS,
   DEFAULT_MOTION_COMPOSITE_PRESETS,
   DEFAULT_MOTION_SEMANTIC_MAPPINGS,
   DEFAULT_PERIOD_NAMESPACE,
@@ -186,6 +187,7 @@ describe('end to end: changing intent moves the emitted tokens (epic #1973)', ()
       DEFAULT_KEYFRAME_DEFINITIONS,
       DEFAULT_ANIMATION_DEFINITIONS,
       DEFAULT_MOTION_COMPOSITE_PRESETS,
+      DEFAULT_MOTION_CELL_ANIMATIONS,
     );
     const out = new Map<string, string>();
     for (const t of result.tokens) {
@@ -239,6 +241,7 @@ describe('the epic condition: a designer changes intent and motion moves', () =>
       DEFAULT_KEYFRAME_DEFINITIONS,
       DEFAULT_ANIMATION_DEFINITIONS,
       DEFAULT_MOTION_COMPOSITE_PRESETS,
+      DEFAULT_MOTION_CELL_ANIMATIONS,
     );
     const out: Record<string, string> = {};
     for (const t of result.tokens) {

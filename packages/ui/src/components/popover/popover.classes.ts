@@ -15,22 +15,28 @@ export interface PopoverClassSet {
 // already attached and runs it, and usePresence holds the unmount until the
 // exit keyframe ends. No @starting-style, no transition-behavior.
 //
-// The animate-* utilities come from the token layer's --animate-* theme entries,
-// which carry the duration tier and curve. This replaces the tailwindcss-animate
+// THE CELL IS THE SPEC (#2017). These two utilities are the generated
+// consumption of two rows of packages/ui/docs/spec/matrix/motion.jsonl --
+// popover / content / closed -> open (moderate, enter, extent pop) and
+// popover / content / open -> closed (fast, exit, extent pop). A popover is
+// smaller and nearer than a dialog, so it arrives one tier quicker; that is the
+// matrix's judgement, not this file's. This also replaces the tailwindcss-animate
 // vocabulary (animate-in / fade-in-0 / zoom-in-95 / slide-in-from-*) that used to
 // sit here -- the hand-rolled form dropdown-menu's own classes call prohibited,
 // and it depended on a plugin this repo does not ship. Slide-on-enter goes with
 // it: it is not part of the presence contract and no acceptance asks for it.
 //
-// motion-reduce:animate-none is the reduced-motion path, and it is deliberately
-// animate-none rather than a zeroed duration: the duration-* utilities set
-// transition-duration, so they cannot zero a keyframe animation. With no
-// animation at all, presence releases synchronously instead of waiting on an
-// animationend that would never fire.
+// NO motion-reduce:animate-none. The generated utility zeroes animation-duration
+// under prefers-reduced-motion instead (mechanism B). That preserves the
+// keyframe's end state AND still fires animationend, which is what presence
+// releases the unmount on -- animate-none fires nothing, so every reduced-motion
+// close would fall through to the backstop timer. The two mechanisms never
+// compose: `animation: none` resets the shorthand and discards the zeroed
+// duration wherever it wins.
 const contentClasses =
   'z-depth-popover w-72 rounded-md border bg-popover p-4 text-popover-foreground shadow-lg outline-none ' +
-  'data-[state=open]:animate-scale-in data-[state=closed]:animate-scale-out ' +
-  'data-[state=closed]:pointer-events-none motion-reduce:animate-none';
+  'data-[state=open]:animate-popover-content-open data-[state=closed]:animate-popover-content-close ' +
+  'data-[state=closed]:pointer-events-none';
 
 // The optional in-panel dismiss control. Sized to the touch floor, scaling
 // down through the container query, echoing dialog's close affordance.

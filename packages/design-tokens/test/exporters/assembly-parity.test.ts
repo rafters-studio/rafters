@@ -63,16 +63,29 @@ const DYNAMIC_SECTIONS = [
   '@utility',
 ];
 
-// Static (studio) intentionally omits the live `:root`/`.dark` cascade,
-// `@custom-variant dark`, and the @utility groups -- it references --rafters-*
-// vars instead. Any section added to registryToTailwind that ALSO belongs in the
-// static path must be added here, or this test documents the divergence.
+// Static (studio) intentionally omits the live `:root`/`.dark` cascade and
+// `@custom-variant dark` -- it references --rafters-* vars instead. Any section
+// added to registryToTailwind that ALSO belongs in the static path must be added
+// here, or this test documents the divergence.
+//
+// `@utility` MOVED HERE in #2017, and this tripwire is what forced the decision.
+// The static sheet still omits MOST utility groups (the five motion namespaces,
+// the semantic motion classes, depth, typography composites) -- a long-standing
+// gap, unchanged. It now carries exactly one: the per-cell animation utilities.
+// They are not optional there. Every other animate-* class reaches this sheet by
+// Tailwind THEME INFERENCE from the `--animate-*` entries, and the cells are
+// deliberately outside that namespace, because a theme-inferred rule sets the
+// animation SHORTHAND and would reset the reduced-motion zeroed duration. So
+// without the block, dialog / popover / dropdown-menu compile to nothing in
+// Studio while animating correctly in the consumer sheet -- one path silently
+// dead, which is the 019fb063 failure exactly.
 const STATIC_SECTIONS = [
   '@import "tailwindcss"',
   '@keyframes',
   '@layer base',
   '@theme inline {',
   '@theme {',
+  '@utility',
 ];
 
 describe('Tailwind assembly parity (#1730)', () => {

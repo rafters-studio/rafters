@@ -150,9 +150,10 @@ describe('usePresence', () => {
   });
 
   describe('reduced motion', () => {
-    it('releases synchronously instead of waiting on an animationend that never fires', () => {
-      // Under motion-reduce the animation resolves to none, so no animation is
-      // created and no event is coming. Presence must not enter the wait at all.
+    it('releases synchronously when NOTHING is attached and no event is coming', () => {
+      // `animation-name: none` with no transition either: nothing will ever
+      // fire, so entering the wait would pin the node until the backstop. This
+      // is the no-animation case, NOT the reduced-motion one -- see below.
       vi.useFakeTimers();
       const { rerender, queryByTestId, getByTestId } = render(<Overlay open />);
       computedStyle({ animationName: 'none', animationDuration: '0s' });
@@ -163,12 +164,46 @@ describe('usePresence', () => {
       expect(getByTestId('gone')).toBeDefined();
     });
 
-    it('treats a zeroed duration the same as no animation', () => {
-      const { rerender, queryByTestId } = render(<Overlay open />);
-      computedStyle({ animationName: 'scale-out', animationDuration: '0ms' });
+    it('a ZERO-DURATION exit still releases via animationend, not the backstop (#2017)', () => {
+      // THE MECHANISM-B CONTRACT, and the reason B was chosen over
+      // `motion-reduce:animate-none`. The generated cell utility zeroes
+      // animation-duration under prefers-reduced-motion while leaving the
+      // animation ATTACHED, so the exit completes instantly AND still fires
+      // animationend -- which is what presence releases the unmount on.
+      //
+      // The failure this pins: presence used to treat runMs === 0 as "nothing
+      // is coming" and release synchronously, which silently took the exit off
+      // the event. Both halves are asserted -- the node is HELD until the event
+      // arrives, and the backstop is not what let it go.
+      vi.useFakeTimers();
+      const { getByTestId, rerender, queryByTestId } = render(<Overlay open />);
+      const node = getByTestId('node');
+      computedStyle({ animationName: 'scale-out', animationDuration: '0s' });
 
       rerender(<Overlay open={false} />);
-      expect(queryByTestId('node')).toBeNull();
+      // Held: the wait was entered, the listener is attached.
+      expect(getByTestId('node').getAttribute('data-state')).toBe('closed');
+
+      act(() => {
+        node.dispatchEvent(new AnimationEvent('animationend', { animationName: 'scale-out' }));
+      });
+      expect(queryByTestId('node'), 'the zero-duration exit never released').toBeNull();
+    });
+
+    it('the backstop is not the release path for a zero-duration exit', () => {
+      // The negative half of the same claim, stated separately so it cannot be
+      // satisfied by a timer that happens to be short. With no event dispatched
+      // the node is STILL present after a tick -- the 50ms failsafe has not run
+      // -- which proves the previous test's release came from animationend.
+      vi.useFakeTimers();
+      const { getByTestId, rerender } = render(<Overlay open />);
+      computedStyle({ animationName: 'scale-out', animationDuration: '0s' });
+
+      rerender(<Overlay open={false} />);
+      act(() => {
+        vi.advanceTimersByTime(1);
+      });
+      expect(getByTestId('node').getAttribute('data-state')).toBe('closed');
     });
   });
 

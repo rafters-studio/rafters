@@ -12,9 +12,14 @@ describe('popover classes', () => {
     expect(classes.content).toContain('text-popover-foreground');
   });
 
-  it('enter/exit are keyframes keyed off data-state (the presence contract)', () => {
-    expect(classes.content).toContain('data-[state=open]:animate-scale-in');
-    expect(classes.content).toContain('data-[state=closed]:animate-scale-out');
+  it('enter/exit are the popover CELLS, keyed off data-state (#1996 / #2017)', () => {
+    // The cell is the spec: popover / content / closed -> open and open ->
+    // closed, each with its own tier and curve. A shared animate-scale-in here
+    // was the #2012 defect -- three distinct cells collapsed into one.
+    expect(classes.content).toContain('data-[state=open]:animate-popover-content-open');
+    expect(classes.content).toContain('data-[state=closed]:animate-popover-content-close');
+    expect(classes.content).not.toContain('animate-scale-in');
+    expect(classes.content).not.toContain('animate-scale-out');
   });
 
   it('uses no @starting-style and no tailwindcss-animate vocabulary', () => {
@@ -27,10 +32,15 @@ describe('popover classes', () => {
     expect(classes.content).not.toContain('zoom-in-95');
   });
 
-  it('motion respects reduced-motion', () => {
-    // animate-none, not a zeroed duration: the duration-* utilities set
-    // transition-duration and cannot zero a keyframe animation.
-    expect(classes.content).toContain('motion-reduce:animate-none');
+  it('motion respects reduced-motion, and does NOT do it with animate-none', () => {
+    // Mechanism B (#2017): the generated cell utility zeroes animation-duration
+    // under the media query. `motion-reduce:animate-none` must NOT appear here
+    // -- `animation: none` resets the shorthand, so wherever it wins it discards
+    // the zeroed duration AND stops animationend from firing, which is the event
+    // presence releases the unmount on.
+    expect(classes.content).not.toContain('motion-reduce:animate-none');
+    // The close control is a TRANSITION, not a keyframe, and transition-none is
+    // still its correct reduced-motion path.
     expect(classes.close).toContain('motion-reduce:transition-none');
   });
 

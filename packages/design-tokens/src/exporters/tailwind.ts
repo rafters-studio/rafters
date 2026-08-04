@@ -54,9 +54,17 @@ const MOTION_NAMESPACE_PROPERTY = {
   duration: 'transition-duration',
   ease: 'transition-timing-function',
   delay: 'transition-delay',
-  // Extents are consumed inside transforms and keyframes, so the utility
-  // publishes the chosen extent under a fixed name the consuming rule reads.
-  // The name comes from toy 9 (worktree-toy-motion-registry).
+  // Extents are consumed inside transforms, so the utility publishes the chosen
+  // extent under a fixed name the consuming rule reads. The name comes from toy
+  // 9 (worktree-toy-motion-registry).
+  //
+  // THIS IS THE UTILITY-SIDE CONTRACT, and it is one of TWO (#2017). A CLASS
+  // picks an extent by naming a member (`extent-pop`) and the rule downstream
+  // reads `--rafters-consumed-extent` without knowing which member won.
+  // KEYFRAME BODIES DO NOT USE THIS ALIAS: they are generator-owned emission and
+  // reference the LEAF directly (`var(--rafters-extent-pop)`, see
+  // DEFAULT_KEYFRAME_DEFINITIONS). A shape is not a function of whatever extent
+  // the consuming class last selected. Do not merge the two contracts.
   extent: '--rafters-consumed-extent',
   period: 'animation-duration',
 } as const satisfies Record<MotionNamespace, string>;
@@ -807,6 +815,91 @@ function generateMotionUtilities(motionTokens: Token[]): string {
 }
 
 /**
+ * Emit one `@utility animate-<cell>` block per animated matrix cell (#2017).
+ *
+ * The cell composite is emitted as LONGHAND -- animation-name, -duration,
+ * -timing-function -- for the same reason `generateMotionUtilities` emits
+ * transition longhand: a nested `@media (prefers-reduced-motion: reduce)` can
+ * then re-set ONE property without restating the rule.
+ *
+ * REDUCED MOTION IS MECHANISM B: zero `animation-duration` in the emission. The
+ * alternative, `motion-reduce:animate-none` on the consuming class, was measured
+ * against this one (toy 14) and loses on three counts:
+ *   - `animation: none` removes the animation, so the element never reaches the
+ *     keyframe's END STATE. Zeroing the duration completes it instantly and
+ *     keeps the end state;
+ *   - a zero duration still FIRES `animationend`, which is what the presence
+ *     contract releases the unmount on. `animate-none` fires nothing, so a
+ *     closing dialog would be released by the backstop timer instead;
+ *   - the period exemption (loops slow, they never stop) is expressible here as
+ *     SET MEMBERSHIP -- this function emits the block, the period utilities do
+ *     not -- while `animate-none` compiles to one cell-blind rule whose
+ *     exemption exists only if the author remembers not to type it on a spinner.
+ *
+ * THE TWO MECHANISMS MUST NOT BOTH APPLY. Wherever `animate-none` wins it wins
+ * DESTRUCTIVELY: `animation: none` resets the whole shorthand and discards the
+ * zeroed duration with it. That is why the three consuming classes files dropped
+ * `motion-reduce:animate-none` when they took up these utilities.
+ *
+ * No value appears in any UNPINNED block -- duration and curve are var()s onto
+ * the leaves -- so the derived set is byte-identical across a retune, the toy-9
+ * invariant.
+ *
+ * A PINNED CELL IS STILL A CELL. `registry.set` on one of these writes a plain
+ * animation shorthand over the JSON spec, which is the sanctioned way an
+ * operator hand-tunes a single moment (toy 13 measures it, and an explicit
+ * `registry.bind()` is the one exit that clears the pin). The pin therefore
+ * emits as the shorthand it is, with the SAME reduced-motion block attached --
+ * dropping the block on a non-JSON value would silently take a hand-tuned cell
+ * out of the reduced-motion law, and skipping the token entirely would delete
+ * the utility and stop the component animating with no error at all. Both are
+ * the 019fb063 silent-resolution failure arriving from inside our own emission.
+ */
+function generateMotionCellUtilities(motionTokens: Token[]): string {
+  const cellTokens = motionTokens.filter((t) => t.name.startsWith('motion-cell-'));
+  if (cellTokens.length === 0) return '';
+
+  interface CellSpec {
+    keyframe: string;
+    durationTier: string;
+    curve: string;
+  }
+
+  const lines: string[] = [
+    '/* Motion cells -- one utility per animated (component, part, transition) */',
+  ];
+
+  for (const token of cellTokens) {
+    if (typeof token.value !== 'string') continue;
+    let spec: CellSpec | null = null;
+    try {
+      spec = JSON.parse(token.value) as CellSpec;
+    } catch {
+      spec = null;
+    }
+
+    lines.push(`@utility ${token.name.replace('motion-cell-', 'animate-')} {`);
+    if (spec === null) {
+      // A user-pinned cell: the value is an animation shorthand, verbatim.
+      lines.push(`  animation: ${token.value};`);
+    } else {
+      lines.push(`  animation-name: ${spec.keyframe};`);
+      lines.push(`  animation-duration: var(--rafters-duration-${spec.durationTier});`);
+      lines.push(`  animation-timing-function: var(--rafters-ease-${spec.curve});`);
+    }
+    // The reduced-motion law reaches derived and pinned cells alike. It lands
+    // AFTER the shorthand in the pinned case, so it wins on the duration and
+    // only on the duration -- exactly what mechanism B is.
+    lines.push('  @media (prefers-reduced-motion: reduce) {');
+    lines.push('    animation-duration: 0s;');
+    lines.push('  }');
+    lines.push('}');
+  }
+
+  return lines.join('\n');
+}
+
+/**
  * Emit the five motion namespaces as `--rafters-<namespace>-<member>` leaves.
  *
  * Indented for the @theme block. These are the only place a motion value is
@@ -1042,6 +1135,13 @@ export function tokensToTailwind(
     sections.push(motionUtilities);
   }
 
+  // Per-cell animation @utility classes (animate-<component>-<part>-<transition>)
+  const cellUtilities = generateMotionCellUtilities(groups.motion);
+  if (cellUtilities) {
+    sections.push('');
+    sections.push(cellUtilities);
+  }
+
   // Typography element overrides (if any)
   const overrideCSS = generateTypographyOverrideCSS(typographyOverrides);
   if (overrideCSS) {
@@ -1167,6 +1267,11 @@ function generateThemeBlockWithVarRefs(groups: GroupedTokens): string {
       // Semantic motion tokens are JSON specs consumed by generateMotionUtilities,
       // not raw custom properties -- no --var to reference.
       if (token.name.startsWith('motion-semantic-')) continue;
+      // Motion cells are JSON specs consumed by generateMotionCellUtilities, for
+      // the same reason: there is no --var to point a bridge at, and emitting
+      // one would declare `--motion-cell-x: var(--rafters-motion-cell-x)` onto a
+      // property nothing declares -- the silent dangling reference of 019fb063.
+      if (token.name.startsWith('motion-cell-')) continue;
       if (motionNamespaceParts(token.name)) continue;
       lines.push(`  --${token.name}: var(--rafters-${token.name});`);
     }
@@ -1268,6 +1373,30 @@ export function registryToTailwindStatic(registry: TokenRegistry): string {
   const keyframes = generateKeyframes(groups.motion);
   if (keyframes) {
     sections.push(keyframes);
+  }
+
+  // Per-cell animation @utility classes -- BOTH emission paths, deliberately.
+  //
+  // The other animate-* utilities reach this sheet by THEME INFERENCE: the
+  // `--animate-*` entries above are a Tailwind v4 namespace, so Tailwind
+  // generates `.animate-<name>` for them. Motion cells are not in that
+  // namespace (on purpose -- a theme-inferred rule sets the animation
+  // SHORTHAND, which would reset the reduced-motion zeroed duration), so
+  // without this call the three components that consume them would compile to
+  // nothing in the Studio sheet while working in the dynamic one. That split is
+  // the 019fb063 silent failure with a second path to arrive by.
+  //
+  // Safe to share: the function emits references only and reads nothing but
+  // tokens, so both sheets carry byte-identical blocks -- which is the property
+  // the golden asserts.
+  //
+  // KNOWN LIMITATION, unchanged by this: the five-namespace and semantic-motion
+  // @utility blocks are still absent from the static sheet. Those never worked
+  // here and adding them is the utility-parity sweep, not this fix.
+  const cellUtilities = generateMotionCellUtilities(groups.motion);
+  if (cellUtilities) {
+    sections.push('');
+    sections.push(cellUtilities);
   }
 
   // Article type system - @layer base with @apply compositions
