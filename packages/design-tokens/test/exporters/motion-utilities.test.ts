@@ -195,6 +195,58 @@ describe('semantic motion utilities compile (#1902/#1903/#1904)', () => {
     // And the animation entries carry the value rather than the invented bridge.
     expect(css).not.toContain('--rafters-animate-');
     expect(css).toMatch(/--animate-scale-out:\s*scale-out /);
+
+    // The motion CELLS reach this sheet too (#2017). They are NOT in the
+    // `--animate-*` theme namespace -- on purpose, since a theme-inferred rule
+    // sets the animation shorthand and would reset the reduced-motion zero --
+    // so they arrive only if the static path emits the @utility blocks itself.
+    // Without this the three consuming components would animate in the dynamic
+    // sheet and compile to nothing in Studio's.
+    expect(css, 'the motion cells are missing from the static sheet').toContain(
+      '@utility animate-dialog-content-open {',
+    );
+    expect(css).toContain('animation-duration: var(--rafters-duration-normal);');
+    // And the cell tokens do not also emit a bridge onto a leaf nothing
+    // declares -- they are JSON specs, not custom properties.
+    expect(css).not.toContain('--motion-cell-');
+  });
+
+  it('the two emission paths emit BYTE-IDENTICAL cell utilities', () => {
+    // The toy-9 invariant, applied to the cells: the blocks contain references
+    // and no values, so there is nothing for the two paths to disagree about.
+    // A difference here means one path started resolving something.
+    const blocks = (css: string) =>
+      (css.match(/@utility animate-[a-z-]+ \{[\s\S]*?\n\}/g) ?? []).join('\n');
+    expect(blocks(registryToTailwindStatic(baseRegistry()))).toBe(
+      blocks(registryToTailwind(baseRegistry())),
+    );
+  });
+
+  it('a PINNED cell still emits a utility, and the reduced-motion law still reaches it', () => {
+    // `registry.set` on a cell is the sanctioned hand-tune (toy 13 measures it,
+    // and an explicit registry.bind() is the one exit that clears the pin). The
+    // pinned value is an animation shorthand rather than the JSON spec, and the
+    // exporter must not treat that as garbage: skipping the token would DELETE
+    // the utility, so the component would silently stop animating with nothing
+    // logged -- and dropping the media block would take a hand-tuned cell out
+    // of the reduced-motion law. The governing diagnostic is that the registry
+    // can still override this node; a silent deletion is not an override.
+    const registry = baseRegistry();
+    registry.set('motion-cell-dialog-content-open', 'scale-in 250ms cubic-bezier(0.2, 0, 0, 1)', {
+      reason: 'test: operator hand-tunes one cell',
+      kind: 'preference',
+    });
+    const css = registryToTailwind(registry);
+
+    expect(css, 'the pin deleted the utility').toContain('@utility animate-dialog-content-open {');
+    expect(css).toContain('animation: scale-in 250ms cubic-bezier(0.2, 0, 0, 1);');
+    // The law still applies, and it lands AFTER the shorthand so it wins on the
+    // duration and only on the duration -- which is what mechanism B is.
+    const block = /@utility animate-dialog-content-open \{[\s\S]*?\n\}/.exec(css)?.[0] ?? '';
+    expect(block.indexOf('prefers-reduced-motion')).toBeGreaterThan(block.indexOf('animation:'));
+    expect(block).toContain('animation-duration: 0s;');
+    // Its unpinned siblings are untouched -- a pin is one cell, not a mode.
+    expect(css).toContain('animation-duration: var(--rafters-duration-moderate);');
   });
 
   it('compiles a real rule for a member of each of the five namespaces', async () => {
@@ -334,11 +386,21 @@ describe('semantic motion utilities compile (#1902/#1903/#1904)', () => {
     expect(reduced, 'mechanism B did not compile -- the duration is not zeroed').toContain(
       'animation-duration:0s',
     );
-    // Mechanism A must not be in the sheet at all: no cell asks for it, and the
-    // three consuming classes files dropped motion-reduce:animate-none for it.
-    expect(css, 'mechanism A is present and will destructively override B').not.toContain(
-      'animation:none',
-    );
+    // Mechanism A must not touch a CELL. Scoped to the cell rules on purpose --
+    // `animation:none` is legitimately elsewhere in a real app sheet, because
+    // several loop consumers (skeleton, spinner, progress) still carry
+    // motion-reduce:animate-none. A whole-sheet assertion would pass here only
+    // because this fixture omits them, and would then fail for the wrong reason
+    // the moment a loop entered the fixture. What must hold is narrower and
+    // true: no cell rule carries A, so nothing can reset the shorthand out from
+    // under B. (Those loop consumers are a separate, pre-existing violation of
+    // "loops slow, they never stop" -- out of scope for a conformance fix.)
+    for (const [cell] of CELLS) {
+      const rules = css.match(new RegExp(`\\.animate-${cell}\\{[^}]*\\}`, 'g')) ?? [];
+      expect(rules.join(''), `${cell} carries mechanism A and will destroy B`).not.toContain(
+        'animation:none',
+      );
+    }
   });
 
   it('the period exemption survives -- loops slow, they never stop', async () => {
