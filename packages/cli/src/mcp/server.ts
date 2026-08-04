@@ -9,6 +9,7 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import type { Workspace } from '../utils/workspaces.js';
+import { VERSION } from '../version.js';
 import { RaftersToolHandler, TOOL_DEFINITIONS } from './tools.js';
 
 /**
@@ -31,7 +32,7 @@ export async function startMcpServer(
   const server = new Server(
     {
       name: 'rafters',
-      version: '0.0.1',
+      version: VERSION,
     },
     {
       capabilities: {

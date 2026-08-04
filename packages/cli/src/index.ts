@@ -11,13 +11,14 @@ import { init } from './commands/init.js';
 import { mcp } from './commands/mcp.js';
 import { studio } from './commands/studio.js';
 import { withErrorHandler } from './utils/ui.js';
+import { VERSION } from './version.js';
 
 const program = new Command();
 
 program
   .name('rafters')
   .description('Design system CLI - scaffold tokens and serve MCP')
-  .version('0.0.1');
+  .version(VERSION);
 
 program
   .command('init')
