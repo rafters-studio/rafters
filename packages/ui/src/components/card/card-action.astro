@@ -1,0 +1,20 @@
+---
+/**
+ * CardAction -- trailing control slot (dismiss, overflow menu). Place it as a
+ * DIRECT CHILD of CardHeader: the header's `has-data-[slot=card-action]`
+ * variant is what opens the second grid column these placement utilities need.
+ * Outside a CardHeader they resolve against no grid and do nothing.
+ *
+ * `class` is NOT a prop; design travels through token props only.
+ */
+import type { HTMLAttributes } from 'astro/types';
+import { cardActionClasses } from './card.classes';
+
+type Props = Omit<HTMLAttributes<'div'>, 'class'>;
+
+const { class: _discardedClass, ...attrs } = Astro.props as Props & { class?: string };
+---
+
+<div data-slot="card-action" class={cardActionClasses} {...attrs}>
+  <slot />
+</div>

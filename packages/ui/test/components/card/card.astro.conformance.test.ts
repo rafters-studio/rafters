@@ -34,8 +34,13 @@ describe('card conformance [astro]', () => {
     const root = partElement(body, 'root') as HTMLElement;
     expect(root).not.toBeNull();
     expect(root.className).toContain('bg-card');
-    expect(root.className).toContain('rounded-lg');
+    expect(root.className).toContain('rounded-xl');
     expect(root.className).toContain('border border-card-border');
+  });
+
+  it('root carries the data-slot swap contract alongside its data-part', async () => {
+    const body = await render();
+    expect((partElement(body, 'root') as HTMLElement).getAttribute('data-slot')).toBe('card');
   });
 
   it('projects NO ARIA: the root is a pure static surface (no role)', async () => {
@@ -51,7 +56,17 @@ describe('card conformance [astro]', () => {
   });
 
   it('exposes the full named-slot region: header nests title/description/action', async () => {
-    const body = await render();
+    const body = await render(
+      {},
+      {
+        header: 'h',
+        title: 'T',
+        description: 'D',
+        action: '<button type="button">A</button>',
+        content: 'C',
+        footer: 'F',
+      },
+    );
     const header = body.querySelector('[data-slot="card-header"]') as HTMLElement;
     expect(header).not.toBeNull();
     expect(header.querySelector('[data-slot="card-title"]')).not.toBeNull();
@@ -87,6 +102,27 @@ describe('card conformance [astro]', () => {
     expect(root.className).toContain('bg-primary');
     expect(root.className).not.toContain('bg-card');
     expect(root.getAttribute('data-fill')).toBe('primary');
+  });
+
+  it('an unfilled named slot renders NO region -- composition is not wrapped in phantoms', async () => {
+    // The monolith is a convenience; the sub-component files are the parity
+    // surface. A consumer composing <Card><CardHeader/>...</Card> must get the
+    // React tree exactly, with no empty header/content/footer boxes around it.
+    const body = await render({}, { default: '<p>Just a body</p>' });
+    for (const slot of ['card-header', 'card-title', 'card-description', 'card-action']) {
+      expect(body.querySelector(`[data-slot="${slot}"]`), slot).toBeNull();
+    }
+    expect(body.querySelector('[data-slot="card-content"]')).toBeNull();
+    expect(body.querySelector('[data-slot="card-footer"]')).toBeNull();
+    expect(body.textContent).toContain('Just a body');
+  });
+
+  it('the header region appears when ANY of its slots is filled, not only "header"', async () => {
+    const body = await render({}, { title: 'T' });
+    expect(body.querySelector('[data-slot="card-header"]')).not.toBeNull();
+    expect(body.querySelector('[data-slot="card-title"]')).not.toBeNull();
+    // Description and action stay absent, so the header keeps one column.
+    expect(body.querySelector('[data-slot="card-action"]')).toBeNull();
   });
 
   it('is axe-clean rendered inside a landmark', async () => {

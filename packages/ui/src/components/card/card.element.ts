@@ -66,6 +66,10 @@ export class RaftersCard extends RaftersElement {
 
     const root = document.createElement('div');
     root.setAttribute('data-part', 'root');
+    // data-slot is the swap contract; data-part is the internal binding
+    // contract. Only the root carries a part (boundary 5), so only the root
+    // carries both.
+    root.setAttribute('data-slot', 'card');
     root.className = cardClasses({ fill }, {}).root;
 
     // Header nests header/title/description/action so title and description

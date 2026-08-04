@@ -37,8 +37,13 @@ describe('card conformance [wc]', () => {
     const root = shadowRoot(host);
     expect(root).not.toBeNull();
     expect(root.className).toContain('bg-card');
-    expect(root.className).toContain('rounded-lg');
+    expect(root.className).toContain('rounded-xl');
     expect(root.className).toContain('border border-card-border');
+  });
+
+  it('root carries the data-slot swap contract alongside its data-part', () => {
+    const host = mount();
+    expect(shadowRoot(host).getAttribute('data-slot')).toBe('card');
   });
 
   it('fulfills the contract: root projects NO ARIA (empty, like React)', () => {

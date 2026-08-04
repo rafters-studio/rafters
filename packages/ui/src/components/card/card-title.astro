@@ -1,0 +1,29 @@
+---
+/**
+ * CardTitle -- a REAL heading (default h3), where shadcn renders a div. The
+ * accepted AAA divergence: behavior-additive (the title enters the document
+ * outline and the screen reader's heading list) and invisible to a swap. `as`
+ * places the heading at the correct outline level for the surrounding page --
+ * never skip levels.
+ *
+ * `class` is NOT a prop; design travels through token props only.
+ */
+import type { HTMLAttributes } from 'astro/types';
+import { cardTitleClasses } from './card.classes';
+
+type HeadingLevel = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
+
+interface Props extends Omit<HTMLAttributes<'h3'>, 'class'> {
+  as?: HeadingLevel;
+}
+
+const {
+  as: Tag = 'h3',
+  class: _discardedClass,
+  ...attrs
+} = Astro.props as Props & { class?: string };
+---
+
+<Tag data-slot="card-title" class={cardTitleClasses} {...attrs}>
+  <slot />
+</Tag>
