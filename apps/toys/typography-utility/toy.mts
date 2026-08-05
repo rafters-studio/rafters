@@ -132,9 +132,27 @@ function probeUtility(): string {
   ].join('\n');
 }
 
-/** Path B: the article base layer, selector shape copied from the shipped one. */
+/**
+ * Path B: the article base layer, selector shape copied from the shipped one.
+ *
+ * The h2 rule is the REAL production shape. The shipped h1 entry is
+ * `text-4xl font-bold tracking-tight mb-4 mt-0 text-accent-foreground` -- the
+ * type bundle covers only the first three. The block spacing and the color are
+ * NOT in the bundle, so the real entry is a MIXED @apply of the custom utility
+ * plus built-ins. h1 stays bare so question 2 compares like with like; h2
+ * carries the mix.
+ */
 function articleLayer(): string {
-  return ['@layer base {', '  article h1 {', `    @apply ${UTILITY};`, '  }', '}'].join('\n');
+  return [
+    '@layer base {',
+    '  article h1 {',
+    `    @apply ${UTILITY};`,
+    '  }',
+    '  article h2 {',
+    `    @apply ${UTILITY} mb-4 mt-0 text-accent-foreground;`,
+    '  }',
+    '}',
+  ].join('\n');
 }
 
 function buildSheet(bundle: TypeBundle): string {
@@ -386,6 +404,40 @@ async function main(): Promise<void> {
         declsA.length > 0 && onlyA.length === 0 && onlyB.length === 0,
         `${declsA.length} declarations each`,
       ),
+    );
+
+    // The production call site is a MIXED @apply -- the custom utility plus the
+    // built-ins the bundle does not cover.
+    console.log('\n  the REAL production shape -- mixed custom + built-in @apply:');
+    const mixed = ruleBodies(css, /article h2(?=\s*\{)/).find((b) => b.includes('--typography-'));
+    console.log('  article h2 {');
+    console.log(indent(mixed ?? '<ABSENT>'));
+    console.log('  }');
+    const mixedDecls = declarations(mixed ?? '');
+    results.push(
+      assert(
+        'mixed @apply keeps every declaration of the custom utility intact',
+        declsA.every((d) => mixedDecls.includes(d)),
+        'custom + built-in in one @apply',
+      ),
+      assert(
+        'the built-ins the bundle does NOT cover also land',
+        mixedDecls.some((d) => d.startsWith('margin-bottom')) &&
+          mixedDecls.some((d) => d.startsWith('color')),
+        'margins and color are outside the type bundle',
+      ),
+    );
+    console.log(
+      '\n  BUNDLE INSUFFICIENCY (the answer-shaping finding):\n' +
+        '    the shipped h1 entry is `text-4xl font-bold tracking-tight mb-4 mt-0\n' +
+        '    text-accent-foreground`. The type bundle carries the first three. It does\n' +
+        '    NOT carry mb-4 / mt-0 / text-accent-foreground. So a component writing\n' +
+        '    class="typography-title" renders with DIFFERENT margins and color than a\n' +
+        '    bare h1 inside article -- which is exactly the requirement. One handle is\n' +
+        '    mechanically proven; one handle is NOT sufficient for the requirement\n' +
+        '    unless the bundle grows to carry block spacing and color, or the\n' +
+        '    components carry a second handle. That is a design decision, not a\n' +
+        '    compiler fact, and this toy does not make it.',
     );
 
     // Identical declarations is not identical CASCADE. Reported, not asserted:

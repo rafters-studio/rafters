@@ -65,8 +65,33 @@ asked for it.
    through the theme leaf, never through regenerated rules -- the toy-9
    invariant.
 
+## The finding that shapes the rework: one handle is not enough
+
+The mechanism works. The BUNDLE does not cover the requirement.
+
+The shipped h1 entry is `text-4xl font-bold tracking-tight mb-4 mt-0
+text-accent-foreground`. The proposed type bundle carries the first three. It
+does not carry `mb-4`, `mt-0`, or `text-accent-foreground`. So the real article
+entry is a MIXED `@apply typography-title mb-4 mt-0 text-accent-foreground` --
+compiled here on `article h2`, and it works: every declaration of the custom
+utility survives beside the built-ins, `@container` included.
+
+But that means a component writing `class="typography-title"` renders with
+DIFFERENT margins and color than a bare `h1` inside article, which is precisely
+the requirement it was supposed to satisfy. One definition, two consumers is
+mechanically proven and behaviourally incomplete. Either the bundle grows to
+carry block spacing and color, or the components carry a second handle. That is
+a design decision, not a compiler fact, and this toy does not make it.
+
 ## Reported, not resolved
 
+- The custom utility does not speak Tailwind's guard-var protocol. The shipped
+  h1 rule emits `--tw-font-weight` and `--tw-tracking` and reads
+  `var(--tw-leading, var(--text-4xl--line-height))`; the probe emits plain
+  longhands and reads none of them. So `typography-title leading-tight` on a
+  component resolves by utility source order, where built-in
+  `text-4xl leading-tight` is order-independent. A real difference between the
+  two vocabularies, outside the four questions.
 - Identical declarations is not identical CASCADE. Path (a) lands in
   `@layer utilities`, path (b) in `@layer base`. In this probe the shipped
   `ARTICLE_ELEMENT_STYLES` `h1` entry is still present, so the compiled sheet
