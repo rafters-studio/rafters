@@ -24,9 +24,15 @@ import { generateTypographyTokens } from '../src/generators/typography.js';
  *
  * Where a generator declares the progression and does not use it, the
  * disagreement is asserted explicitly rather than smoothed over, following
- * motion-derivation.test.ts. RATIO_INERT is the regression, named, with a
- * failing-on-purpose flip waiting in #2031: when spacing and shadow derive,
- * they move to RATIO_RESPONSIVE and this file stops describing a defect.
+ * motion-derivation.test.ts. Three states are named here, not two:
+ *
+ *   RATIO_RESPONSIVE  the values are a function of the ratio
+ *   RATIO_INERT       declares the progression, computes linear multiples
+ *   shadow            its own block -- measurements linear, ratio applied to
+ *                     an opacity, so "does anything move" answers yes and lies
+ *
+ * When #2031 lands, the inert entries move to RATIO_RESPONSIVE, the shadow
+ * block's assertions flip, and this file stops describing a defect.
  */
 
 /** Generators whose emitted values are a function of the progression ratio. */
