@@ -656,6 +656,54 @@ describe('getInstalledNames', () => {
     };
     expect(getInstalledNames(config)).toEqual(['button', 'classy', 'hero-banner']);
   });
+
+  // The rules and substrate buckets were silently dropped, so any name living
+  // only in one of them was a name `--update-all` could never refresh. Mirrors
+  // the composites case above; the expectation is sorted because the function
+  // sorts.
+  it('includes rules in installed names', () => {
+    const config: RaftersConfig = {
+      ...baseConfig,
+      installed: {
+        components: ['button'],
+        primitives: ['classy'],
+        rules: ['spacing'],
+      },
+    };
+    expect(getInstalledNames(config)).toEqual(['button', 'classy', 'spacing']);
+  });
+
+  it('includes substrate in installed names', () => {
+    const config: RaftersConfig = {
+      ...baseConfig,
+      installed: {
+        components: ['button'],
+        primitives: ['classy'],
+        substrate: ['motion'],
+      },
+    };
+    expect(getInstalledNames(config)).toEqual(['button', 'classy', 'motion']);
+  });
+
+  it('includes every bucket at once', () => {
+    const config: RaftersConfig = {
+      ...baseConfig,
+      installed: {
+        components: ['button'],
+        primitives: ['classy'],
+        composites: ['hero-banner'],
+        rules: ['spacing'],
+        substrate: ['motion'],
+      },
+    };
+    expect(getInstalledNames(config)).toEqual([
+      'button',
+      'classy',
+      'hero-banner',
+      'motion',
+      'spacing',
+    ]);
+  });
 });
 
 describe('composites support', () => {

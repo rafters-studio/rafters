@@ -30,6 +30,7 @@ import {
   installRegistryDependencies,
 } from '../utils/install-registry-deps.js';
 import { getRaftersPaths, type PathField, resolveRoot } from '../utils/paths.js';
+import { buildUpdateCandidates, readInstallRoots } from '../utils/reconcile.js';
 import { error, log, setAgentMode } from '../utils/ui.js';
 import type { RaftersConfig } from './init.js';
 
@@ -127,8 +128,12 @@ async function saveConfig(cwd: string, config: RaftersConfig): Promise<void> {
 }
 
 /**
- * Get all installed component, primitive, and composite names from config.
- * Returns a combined, deduplicated list.
+ * Get every tracked item name from config -- components, primitives,
+ * composites, rules, and substrate. Returns a combined, deduplicated list.
+ *
+ * All five buckets count: anything omitted here is a name `--update-all` would
+ * never refresh, which is the same class of silent staleness this command
+ * exists to prevent.
  */
 export function getInstalledNames(config: RaftersConfig | null): string[] {
   if (!config?.installed) return [];
@@ -136,8 +141,36 @@ export function getInstalledNames(config: RaftersConfig | null): string[] {
     ...config.installed.components,
     ...config.installed.primitives,
     ...(config.installed.composites ?? []),
+    ...(config.installed.rules ?? []),
+    ...(config.installed.substrate ?? []),
   ]);
   return [...names].sort();
+}
+
+/**
+ * Names present on disk that the config never tracked. Asks the registry index
+ * what exists, then asks the disk which of those names are there. A registry
+ * that cannot be reached degrades to "no discoveries" with a warning rather
+ * than aborting the update.
+ */
+async function discoverUntrackedNames(
+  cwd: string,
+  config: RaftersConfig | null,
+  client: RegistryClient,
+  tracked: string[],
+): Promise<string[]> {
+  let index: Awaited<ReturnType<RegistryClient['fetchIndex']>> | null = null;
+  try {
+    index = await client.fetchIndex();
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    log({
+      event: 'add:warning',
+      message: `Could not read the registry index to reconcile on-disk components (${message}). Updating tracked components only.`,
+    });
+  }
+  const { untracked } = buildUpdateCandidates(tracked, index, readInstallRoots(cwd, config));
+  return untracked;
 }
 
 /**
@@ -679,7 +712,12 @@ export async function add(componentArgs: string[], options: AddOptions): Promise
     options.overwrite = true;
   }
 
-  // --update-all: re-fetch all installed components (takes precedence over --update)
+  // --update-all: re-fetch everything this project has, whether the config
+  // knows about it or not. The candidate set is the union of the tracked names
+  // and the names reconciliation finds on disk; each one is then resolved
+  // through resolveDependencies, so a parent re-walks its dependency closure
+  // and re-tracks any dependency the config had lost.
+  let untrackedNames: string[] = [];
   if (options.updateAll) {
     options.overwrite = true;
 
@@ -689,15 +727,26 @@ export async function add(componentArgs: string[], options: AddOptions): Promise
       return;
     }
 
-    const installedNames = getInstalledNames(config);
-    if (installedNames.length === 0) {
+    const trackedNames = getInstalledNames(config);
+    untrackedNames = await discoverUntrackedNames(cwd, config, client, trackedNames);
+    const candidates = [...new Set([...trackedNames, ...untrackedNames])].sort();
+
+    if (candidates.length === 0) {
       error("No installed components found. Use 'rafters add <component>' to install first.");
       process.exitCode = 1;
       return;
     }
 
-    // Replace CLI args with installed list
-    components = installedNames;
+    if (untrackedNames.length > 0) {
+      log({
+        event: 'add:untracked',
+        components: untrackedNames,
+        message: `Found ${untrackedNames.length} component(s) on disk the config never tracked: ${untrackedNames.join(', ')}. Refreshing and tracking them.`,
+      });
+    }
+
+    // Replace CLI args with the reconciled candidate set
+    components = candidates;
   }
 
   // `rafters add composites` with no names installs the composites runtime
@@ -764,9 +813,12 @@ export async function add(componentArgs: string[], options: AddOptions): Promise
     ),
   ];
 
-  // Install all resolved items, tracking framework-filtered versions for dep collection
-  const installed: string[] = [];
+  // Install all resolved items, tracking framework-filtered versions for dep
+  // collection. The three outcome lists are kept apart so the summary can say
+  // what actually happened per item instead of a blanket count.
+  const written: string[] = [];
   const skipped: string[] = [];
+  const failed: string[] = [];
   const installedItems: RegistryItem[] = [];
   const filteredItems: RegistryItem[] = [];
   const target = getComponentTarget(config);
@@ -797,7 +849,7 @@ export async function add(componentArgs: string[], options: AddOptions): Promise
       const result = await installItem(cwd, item, options, config, substrateKinds);
 
       if (result.installed) {
-        installed.push(item.name);
+        written.push(item.name);
         installedItems.push(item);
 
         // Create a filtered copy with only the framework-selected files
@@ -820,7 +872,8 @@ export async function add(componentArgs: string[], options: AddOptions): Promise
       if (result.skipped && !result.installed) {
         skipped.push(item.name);
         // The files are already on disk but the config did not track this
-        // item -- reaching here means line 600's "tracked + on disk" guard
+        // item -- reaching here means the "tracked in config AND present on
+        // disk" skip guard above (isAlreadyInstalled + isInstalledOnDisk)
         // did not fire, so the install list is out of sync with reality
         // (a pre-tracking install, a hand-copied file, or a config reset).
         // Record it so `installed` reflects what is actually present; this
@@ -828,7 +881,9 @@ export async function add(componentArgs: string[], options: AddOptions): Promise
         installedItems.push(item);
       }
     } catch (err) {
-      // Warn but continue on peer component failures
+      // Warn but continue on peer component failures. The name is recorded so
+      // the summary reports the failure instead of quietly dropping it.
+      failed.push(item.name);
       if (err instanceof Error) {
         log({
           event: 'add:warning',
@@ -892,15 +947,33 @@ export async function add(componentArgs: string[], options: AddOptions): Promise
     await regenerateAfterInstall(cwd, newConfig);
   }
 
-  // Summary
+  // Summary. Written, skipped, untracked and failed are reported separately:
+  // a single "Added N components" over a mixed-state tree is what let a stale
+  // install look like a successful one.
   log({
     event: 'add:complete',
-    installed: installed.length,
+    written: written.length,
     skipped: skipped.length,
-    components: installed,
+    untracked: untrackedNames.length,
+    failed: failed.length,
+    components: written,
+    skippedComponents: skipped,
+    untrackedComponents: untrackedNames,
+    failedComponents: failed,
   });
 
-  if (skipped.length > 0 && installed.length === 0) {
+  // An item that could not be installed is a failed run, not a partial success.
+  // Exiting 0 here is what lets a scripted install (CI, a postinstall step, an
+  // agent shelling out) treat a half-written tree as done. `add` is only called
+  // from the CLI entry point, so nothing long-lived is poisoned by this.
+  if (failed.length > 0) {
+    process.exitCode = 1;
+  }
+
+  // Under --update-all every file is overwritten, so a skip is never the
+  // "already exists, use --update" case -- telling the user to re-run with
+  // --update would be a fresh lie.
+  if (!options.updateAll && skipped.length > 0 && written.length === 0) {
     log({
       event: 'add:hint',
       message:

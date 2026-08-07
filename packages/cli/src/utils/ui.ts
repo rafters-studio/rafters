@@ -251,14 +251,44 @@ export function log(event: Record<string, unknown>): void {
       }
       break;
 
-    case 'add:complete':
-      context.spinner?.succeed(
-        `Added ${event.installed} component${(event.installed as number) !== 1 ? 's' : ''}`,
-      );
-      if ((event.skipped as number) > 0) {
-        console.log(`  Skipped: ${event.skipped} (use --overwrite to replace)`);
+    case 'add:complete': {
+      // Every outcome gets its own line. A run that wrote nothing must not read
+      // like a run that wrote everything.
+      const written = event.written as number;
+      const skippedCount = event.skipped as number;
+      const untrackedCount = event.untracked as number;
+      const failedCount = event.failed as number;
+      // The headline is the only thing a scrolling reader takes in. Succeeding
+      // unconditionally is the same defect the per-outcome lines below exist to
+      // fix: honest counts under a green tick still read as a clean run.
+      const headline = `Wrote ${written} item${written !== 1 ? 's' : ''}`;
+      if (failedCount > 0) {
+        // No claim about the exit code here -- the renderer does not set it and
+        // must not assert what it cannot see. add() owns that.
+        context.spinner?.fail(`${headline}, ${failedCount} failed -- see below`);
+      } else {
+        context.spinner?.succeed(headline);
+      }
+      if (skippedCount > 0) {
+        const names = (event.skippedComponents as string[] | undefined) ?? [];
+        console.log(
+          `  Skipped: ${skippedCount} (already present; use --update to re-fetch)${names.length > 0 ? ` -- ${names.join(', ')}` : ''}`,
+        );
+      }
+      if (untrackedCount > 0) {
+        const names = (event.untrackedComponents as string[] | undefined) ?? [];
+        console.log(`  Untracked on disk, now tracked: ${untrackedCount} -- ${names.join(', ')}`);
+      }
+      if (failedCount > 0) {
+        const names = (event.failedComponents as string[] | undefined) ?? [];
+        console.log(`  Failed: ${failedCount} -- ${names.join(', ')}`);
       }
       console.log('');
+      break;
+    }
+
+    case 'add:untracked':
+      console.log(`  ${event.message}`);
       break;
 
     case 'add:hint':
