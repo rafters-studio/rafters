@@ -1,6 +1,15 @@
 import { ratioValue, resolveRatio } from '@rafters/math-utils';
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_SHADOW_BOUNDS, DEFAULT_SPACING_BOUNDS } from '../src/generators/defaults.js';
+import {
+  DEFAULT_FONT_WEIGHTS,
+  DEFAULT_RADIUS_DEFINITIONS,
+  DEFAULT_SHADOW_BOUNDS,
+  DEFAULT_SPACING_BOUNDS,
+  DEFAULT_TYPOGRAPHY_SCALE,
+} from '../src/generators/defaults.js';
+import { generateRadiusTokens } from '../src/generators/radius.js';
+import { DEFAULT_SYSTEM_CONFIG, PURE_MATH_CONFIG, resolveConfig } from '../src/generators/types.js';
+import { generateTypographyTokens } from '../src/generators/typography.js';
 import { shadowScale } from '../src/generators/shadow.js';
 import { spacingMultipliers } from '../src/generators/spacing.js';
 
@@ -122,5 +131,60 @@ describe('shadow scale construction', () => {
 
   it('survives a degenerate ratio instead of hanging', () => {
     expect(shadowScale(1, DEFAULT_SHADOW_BOUNDS)).toEqual([1]);
+  });
+});
+
+/**
+ * PURE_MATH_CONFIG has to be observable, or it is decoration.
+ *
+ * It differs from DEFAULT_SYSTEM_CONFIG only by omitting the four `*Override`
+ * pins, so it can only show up in namespaces whose ANCHOR is one of those four.
+ * Spacing is not one of them -- it reads `baseSpacingUnit` and
+ * `progressionRatio`, which both configs carry identically -- so asserting that
+ * spacing moves under pure math would be asserting that spacing depends on a
+ * value it has no reason to read. The honest test is that the config is live
+ * where it applies, and inert where it does not.
+ */
+describe('PURE_MATH_CONFIG is not decorative', () => {
+  const pure = resolveConfig(PURE_MATH_CONFIG);
+  const pinned = resolveConfig(DEFAULT_SYSTEM_CONFIG);
+
+  const flatten = (tokens: readonly { name: string; value: unknown }[]) =>
+    tokens.map((t) => `${t.name}=${JSON.stringify(t.value)}`).sort();
+
+  it('resolves different anchors from the same base', () => {
+    // The four pins are what pure math drops. At baseSpacingUnit 4 they were
+    // CHOSEN to coincide with the derivation, so this proves the mechanism
+    // rather than a numeric difference: move the base and they diverge.
+    const movedPure = resolveConfig({ ...PURE_MATH_CONFIG, baseSpacingUnit: 6 });
+    const movedPinned = resolveConfig({ ...DEFAULT_SYSTEM_CONFIG, baseSpacingUnit: 6 });
+
+    expect(movedPure.baseFontSize).not.toBe(movedPinned.baseFontSize);
+    expect(movedPure.baseRadius).not.toBe(movedPinned.baseRadius);
+    expect(movedPure.focusRingWidth).not.toBe(movedPinned.focusRingWidth);
+    expect(movedPure.baseTransitionDuration).not.toBe(movedPinned.baseTransitionDuration);
+  });
+
+  it('changes typography and radius output once the base moves', () => {
+    const pureAt6 = resolveConfig({ ...PURE_MATH_CONFIG, baseSpacingUnit: 6 });
+    const pinnedAt6 = resolveConfig({ ...DEFAULT_SYSTEM_CONFIG, baseSpacingUnit: 6 });
+
+    expect(
+      flatten(
+        generateTypographyTokens(pureAt6, DEFAULT_TYPOGRAPHY_SCALE, DEFAULT_FONT_WEIGHTS).tokens,
+      ),
+    ).not.toEqual(
+      flatten(
+        generateTypographyTokens(pinnedAt6, DEFAULT_TYPOGRAPHY_SCALE, DEFAULT_FONT_WEIGHTS).tokens,
+      ),
+    );
+    expect(flatten(generateRadiusTokens(pureAt6, DEFAULT_RADIUS_DEFINITIONS).tokens)).not.toEqual(
+      flatten(generateRadiusTokens(pinnedAt6, DEFAULT_RADIUS_DEFINITIONS).tokens),
+    );
+  });
+
+  it('leaves spacing alone, because spacing reads neither pin', () => {
+    expect(pure.baseSpacingUnit).toBe(pinned.baseSpacingUnit);
+    expect(pure.progressionRatio).toBe(pinned.progressionRatio);
   });
 });
