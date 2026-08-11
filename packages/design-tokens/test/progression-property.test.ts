@@ -3,7 +3,6 @@ import {
   DEFAULT_FONT_WEIGHTS,
   DEFAULT_RADIUS_DEFINITIONS,
   DEFAULT_SHADOW_DEFINITIONS,
-  DEFAULT_SPACING_MULTIPLIERS,
   DEFAULT_TYPOGRAPHY_SCALE,
 } from '../src/generators/defaults.js';
 import { generateRadiusTokens } from '../src/generators/radius.js';
@@ -36,14 +35,10 @@ import { generateTypographyTokens } from '../src/generators/typography.js';
  */
 
 /** Generators whose emitted values are a function of the progression ratio. */
-const RATIO_RESPONSIVE = ['typography', 'radius'] as const;
+const RATIO_RESPONSIVE = ['typography', 'radius', 'spacing'] as const;
 
-/**
- * Declares `progressionSystem` on every token, computes `baseSpacingUnit *
- * multiplier`. The geometric sequence at spacing.ts:29 is computed and used only
- * to fill a metadata `sample` field. Regression, tracked by #2031.
- */
-const RATIO_INERT = ['spacing'] as const;
+/** Generators that declare a progression they do not use. None remain. */
+const RATIO_INERT = [] as const;
 
 type GeneratorName = (typeof RATIO_RESPONSIVE)[number] | (typeof RATIO_INERT)[number] | 'shadow';
 
@@ -58,7 +53,7 @@ function valuesUnder(ratio: string): Record<GeneratorName, string[]> {
       generateTypographyTokens(config, DEFAULT_TYPOGRAPHY_SCALE, DEFAULT_FONT_WEIGHTS).tokens,
     ),
     radius: flatten(generateRadiusTokens(config, DEFAULT_RADIUS_DEFINITIONS).tokens),
-    spacing: flatten(generateSpacingTokens(config, DEFAULT_SPACING_MULTIPLIERS).tokens),
+    spacing: flatten(generateSpacingTokens(config).tokens),
     shadow: flatten(generateShadowTokens(config, DEFAULT_SHADOW_DEFINITIONS).tokens),
   };
 }
@@ -108,7 +103,7 @@ describe('REGRESSION #2031 -- generators that declare the progression and ignore
   it('every inert generator still advertises a progressionSystem on its tokens', () => {
     const config = resolveConfig(DEFAULT_SYSTEM_CONFIG);
     const declaring = [
-      ...generateSpacingTokens(config, DEFAULT_SPACING_MULTIPLIERS).tokens,
+      ...generateSpacingTokens(config).tokens,
       ...generateShadowTokens(config, DEFAULT_SHADOW_DEFINITIONS).tokens,
     ].filter((t) => t.progressionSystem !== undefined);
 

@@ -34,7 +34,6 @@ import {
   DEFAULT_RADIUS_DEFINITIONS,
   DEFAULT_SEMANTIC_COLOR_BASES,
   DEFAULT_SHADOW_DEFINITIONS,
-  DEFAULT_SPACING_MULTIPLIERS,
   DEFAULT_TYPOGRAPHY_SCALE,
 } from './defaults.js';
 import { generateDepthTokens } from './depth.js';
@@ -100,7 +99,7 @@ function createGeneratorDefs(colorPaletteBases?: Record<string, ColorPaletteBase
     },
     {
       name: 'spacing',
-      generate: (config) => generateSpacingTokens(config, DEFAULT_SPACING_MULTIPLIERS),
+      generate: (config) => generateSpacingTokens(config),
     },
     {
       name: 'typography',

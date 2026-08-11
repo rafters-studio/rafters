@@ -97,7 +97,10 @@ describe('studio prerequisites', () => {
       }
 
       expect(counts.color).toBeGreaterThanOrEqual(80);
-      expect(counts.spacing).toBe(36);
+      // A lower bound, like every sibling assertion here. Spacing was the only
+      // exact count in this list, which pinned it to the shape of the linear
+      // ladder rather than to "the namespace generated" (#2031).
+      expect(counts.spacing).toBeGreaterThanOrEqual(20);
       expect(counts.typography).toBeGreaterThanOrEqual(50);
       expect(counts.semantic).toBeGreaterThanOrEqual(190);
       expect(counts.radius).toBeGreaterThanOrEqual(9);
@@ -119,7 +122,9 @@ describe('studio prerequisites', () => {
       const reloaded = loadRegistryFromDir(tokensDir, PLUGINS);
       expect(reloaded.size()).toBe(expectedCount);
 
-      const spacing = reloaded.get('spacing-4');
+      // Any spacing token proves the round-trip. Naming one tied this to the
+      // rungs the scale happened to have.
+      const spacing = [...reloaded.list()].find((t) => t.namespace === 'spacing');
       expect(spacing).toBeTruthy();
       expect(spacing?.namespace).toBe('spacing');
       expect(spacing?.value).toBeTruthy();
