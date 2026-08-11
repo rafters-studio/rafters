@@ -20,7 +20,8 @@
 
 import { ratioValue, resolveRatio } from '@rafters/math-utils';
 import type { Token } from '@rafters/shared';
-import type { ShadowDef } from './defaults.js';
+import { nearestRung, progressionFrom } from './progression.js';
+import type { ScaleBounds, ShadowDef } from './defaults.js';
 import type { GeneratorResult, ResolvedSystemConfig } from './types.js';
 import { SHADOW_SCALE } from './types.js';
 
@@ -34,31 +35,14 @@ function pxToRem(px: number): string {
 
 const SHADOW_PARTS = ['offset-x', 'offset-y', 'blur', 'spread', 'color'] as const;
 
-/** A shadow blur below one device pixel does not render. */
-const SHADOW_FLOOR_PX = 1;
-
-/** Past this, an offset or blur is a layout decision rather than elevation. */
-const SHADOW_MAX_PX = 96;
-
 /**
  * The progression shadow geometry sits on: whole pixels from a 1px floor,
  * counting up, colliding positions dropped -- the same construction spacing
  * uses, anchored lower because the medium allows a 1px shadow and does not
  * allow a 1px gap to mean anything.
  */
-export function shadowScale(ratioVal: number): number[] {
-  if (!(ratioVal > 1.001)) return [SHADOW_FLOOR_PX];
-  const out: number[] = [];
-  const seen = new Set<number>();
-  for (let n = 0; ; n++) {
-    const px = Math.round(SHADOW_FLOOR_PX * ratioVal ** n);
-    if (px > SHADOW_MAX_PX) break;
-    if (!seen.has(px)) {
-      seen.add(px);
-      out.push(px);
-    }
-  }
-  return out;
+export function shadowScale(ratioVal: number, bounds: ScaleBounds): number[] {
+  return progressionFrom(bounds.floor, ratioVal, bounds.ceiling);
 }
 
 /**
@@ -68,12 +52,7 @@ export function shadowScale(ratioVal: number): number[] {
  */
 function scalePx(multiplier: number, baseSpacing: number, scale: number[]): number {
   if (multiplier === 0) return 0;
-  const target = multiplier * baseSpacing;
-  let best = scale[0] ?? target;
-  for (const v of scale) {
-    if (Math.abs(v - target) < Math.abs(best - target)) best = v;
-  }
-  return best;
+  return nearestRung(multiplier * baseSpacing, scale);
 }
 
 /**
@@ -124,12 +103,13 @@ function buildCompositeFromVars(prefix: string, innerValue: string | null): stri
 export function generateShadowTokens(
   config: ResolvedSystemConfig,
   shadowDefs: Record<string, ShadowDef>,
+  bounds: ScaleBounds,
 ): GeneratorResult {
   const tokens: Token[] = [];
   const timestamp = new Date().toISOString();
   const { baseSpacingUnit, progressionRatio } = config;
   const ratioVal = ratioValue(resolveRatio(progressionRatio));
-  const geometry = shadowScale(ratioVal);
+  const geometry = shadowScale(ratioVal, bounds);
 
   // Shadow reference token - use rem
   const baseSpacingRem = baseSpacingUnit / 16;

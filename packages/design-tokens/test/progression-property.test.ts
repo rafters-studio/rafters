@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_FONT_WEIGHTS,
   DEFAULT_RADIUS_DEFINITIONS,
+  DEFAULT_SHADOW_BOUNDS,
   DEFAULT_SHADOW_DEFINITIONS,
+  DEFAULT_SPACING_BOUNDS,
   DEFAULT_TYPOGRAPHY_SCALE,
 } from '../src/generators/defaults.js';
 import { generateRadiusTokens } from '../src/generators/radius.js';
@@ -50,8 +52,10 @@ function valuesUnder(ratio: string): Record<GeneratorName, string[]> {
       generateTypographyTokens(config, DEFAULT_TYPOGRAPHY_SCALE, DEFAULT_FONT_WEIGHTS).tokens,
     ),
     radius: flatten(generateRadiusTokens(config, DEFAULT_RADIUS_DEFINITIONS).tokens),
-    spacing: flatten(generateSpacingTokens(config).tokens),
-    shadow: flatten(generateShadowTokens(config, DEFAULT_SHADOW_DEFINITIONS).tokens),
+    spacing: flatten(generateSpacingTokens(config, DEFAULT_SPACING_BOUNDS).tokens),
+    shadow: flatten(
+      generateShadowTokens(config, DEFAULT_SHADOW_DEFINITIONS, DEFAULT_SHADOW_BOUNDS).tokens,
+    ),
   };
 }
 
@@ -89,8 +93,8 @@ describe('a generator that declares a progression must still declare one', () =>
   it('spacing and shadow advertise progressionSystem, and now mean it', () => {
     const config = resolveConfig(DEFAULT_SYSTEM_CONFIG);
     const declaring = [
-      ...generateSpacingTokens(config).tokens,
-      ...generateShadowTokens(config, DEFAULT_SHADOW_DEFINITIONS).tokens,
+      ...generateSpacingTokens(config, DEFAULT_SPACING_BOUNDS).tokens,
+      ...generateShadowTokens(config, DEFAULT_SHADOW_DEFINITIONS, DEFAULT_SHADOW_BOUNDS).tokens,
     ].filter((t) => t.progressionSystem !== undefined);
 
     // This assertion predates #2031, where it proved the claim was a LIE: both

@@ -23,13 +23,9 @@
 
 import { ratioValue, resolveRatio } from '@rafters/math-utils';
 import type { Token } from '@rafters/shared';
+import type { ScaleBounds } from './defaults.js';
+import { progressionFrom } from './progression.js';
 import type { GeneratorResult, ResolvedSystemConfig } from './types.js';
-
-/** Ceiling in px. Above this a spacing token is a layout decision, not a scale position. */
-const MAX_PX = 384;
-
-/** Guard against a ratio at or below 1, which would never terminate. */
-const MIN_RATIO = 1.001;
 
 /**
  * The emitted scale, as multipliers of the base.
@@ -38,24 +34,13 @@ const MIN_RATIO = 1.001;
  * so a tight ratio on a small base yields FEWER rungs than positions -- that
  * loss is real and visible in the token count, not silently papered over.
  */
-export function spacingMultipliers(baseSpacingUnit: number, ratioVal: number): number[] {
-  if (!(ratioVal >= MIN_RATIO) || !(baseSpacingUnit > 0)) return [1];
-  const out: number[] = [];
-  const seen = new Set<number>();
-  for (let n = 0; ; n++) {
-    // Round the MULTIPLIER, not the pixel. Rounding the pixel and dividing back
-    // out manufactures quarters -- 17px on a 4px base is multiplier 4.25, and a
-    // token named `spacing-4.25` breaks anything that reads the name as a
-    // number. An integer multiplier keeps every emitted value a clean multiple
-    // of the base and keeps the name the multiplier, as it has always been.
-    const multiplier = Math.round(ratioVal ** n);
-    if (multiplier * baseSpacingUnit > MAX_PX) break;
-    if (!seen.has(multiplier)) {
-      seen.add(multiplier);
-      out.push(multiplier);
-    }
-  }
-  return out;
+export function spacingMultipliers(ratioVal: number, bounds: ScaleBounds): number[] {
+  // The multiplier is what steps, not the pixel. Rounding the pixel and
+  // dividing back out manufactures quarters -- 17px on a 4px base is multiplier
+  // 4.25, and `spacing-4.25` breaks anything reading a token name as a number.
+  // Stepping the multiplier keeps every name an integer and every emitted value
+  // a clean multiple of the base.
+  return progressionFrom(bounds.floor, ratioVal, bounds.ceiling);
 }
 
 /**
@@ -70,14 +55,17 @@ function scaleName(multiplier: number): string {
 /**
  * Generate spacing tokens from provided multipliers
  */
-export function generateSpacingTokens(config: ResolvedSystemConfig): GeneratorResult {
+export function generateSpacingTokens(
+  config: ResolvedSystemConfig,
+  bounds: ScaleBounds,
+): GeneratorResult {
   const tokens: Token[] = [];
   const timestamp = new Date().toISOString();
   const { baseSpacingUnit, progressionRatio } = config;
 
   const ratio = resolveRatio(progressionRatio);
   const ratioVal = ratioValue(ratio);
-  const multipliers = spacingMultipliers(baseSpacingUnit, ratioVal);
+  const multipliers = spacingMultipliers(ratioVal, bounds);
 
   // Base unit token - the foundation everything else derives from
   // Convert px to rem (assuming 16px root font size)

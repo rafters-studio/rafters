@@ -33,7 +33,9 @@ import {
   DEFAULT_PERIOD_NAMESPACE,
   DEFAULT_RADIUS_DEFINITIONS,
   DEFAULT_SEMANTIC_COLOR_BASES,
+  DEFAULT_SHADOW_BOUNDS,
   DEFAULT_SHADOW_DEFINITIONS,
+  DEFAULT_SPACING_BOUNDS,
   DEFAULT_TYPOGRAPHY_SCALE,
 } from './defaults.js';
 import { generateDepthTokens } from './depth.js';
@@ -99,7 +101,7 @@ function createGeneratorDefs(colorPaletteBases?: Record<string, ColorPaletteBase
     },
     {
       name: 'spacing',
-      generate: (config) => generateSpacingTokens(config),
+      generate: (config) => generateSpacingTokens(config, DEFAULT_SPACING_BOUNDS),
     },
     {
       name: 'typography',
@@ -122,7 +124,8 @@ function createGeneratorDefs(colorPaletteBases?: Record<string, ColorPaletteBase
     },
     {
       name: 'shadow',
-      generate: (config) => generateShadowTokens(config, DEFAULT_SHADOW_DEFINITIONS),
+      generate: (config) =>
+        generateShadowTokens(config, DEFAULT_SHADOW_DEFINITIONS, DEFAULT_SHADOW_BOUNDS),
     },
     {
       name: 'depth',
