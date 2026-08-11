@@ -37,10 +37,7 @@ import { generateTypographyTokens } from '../src/generators/typography.js';
 /** Generators whose emitted values are a function of the progression ratio. */
 const RATIO_RESPONSIVE = ['typography', 'radius', 'spacing'] as const;
 
-/** Generators that declare a progression they do not use. None remain. */
-const RATIO_INERT = [] as const;
-
-type GeneratorName = (typeof RATIO_RESPONSIVE)[number] | (typeof RATIO_INERT)[number] | 'shadow';
+type GeneratorName = (typeof RATIO_RESPONSIVE)[number] | 'shadow';
 
 /** Emit each generator's token values under a given progression ratio. */
 function valuesUnder(ratio: string): Record<GeneratorName, string[]> {
@@ -88,29 +85,19 @@ describe('the progression ratio drives the values that claim it', () => {
   }
 });
 
-describe('REGRESSION #2031 -- generators that declare the progression and ignore it', () => {
-  for (const name of RATIO_INERT) {
-    it(`${name}: swapping the ratio changes nothing (this is the defect)`, () => {
-      const before = measurements(baseline[name]);
-      const after = measurements(swapped[name]);
-
-      expect(before.length, `${name} emitted no measurements`).toBeGreaterThan(0);
-      // Flip to .not.toEqual when #2031 lands and move `name` to RATIO_RESPONSIVE.
-      expect(after).toEqual(before);
-    });
-  }
-
-  it('every inert generator still advertises a progressionSystem on its tokens', () => {
+describe('a generator that declares a progression must still declare one', () => {
+  it('spacing and shadow advertise progressionSystem, and now mean it', () => {
     const config = resolveConfig(DEFAULT_SYSTEM_CONFIG);
     const declaring = [
       ...generateSpacingTokens(config).tokens,
       ...generateShadowTokens(config, DEFAULT_SHADOW_DEFINITIONS).tokens,
     ].filter((t) => t.progressionSystem !== undefined);
 
-    // The claim is what makes the inertness a lie rather than a design choice.
-    // When #2031 lands this stays true and becomes honest; if instead the claim
-    // is retired (motion's route), this assertion is what forces the decision to
-    // be explicit rather than silent.
+    // This assertion predates #2031, where it proved the claim was a LIE: both
+    // generators stamped `progressionSystem` on values computed linearly. The
+    // claim is now honest, and the assertion is worth keeping pointed the other
+    // way -- if either generator ever stops deriving from the ratio, it must
+    // drop the stamp in the same change rather than leave the lie behind.
     expect(declaring.length).toBeGreaterThan(0);
   });
 });
