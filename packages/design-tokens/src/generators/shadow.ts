@@ -1,11 +1,21 @@
 /**
  * Shadow Generator
  *
- * Generates shadow tokens derived from the spacing progression.
- * Uses minor-third (1.2) ratio for harmonious shadow scale.
+ * Shadow geometry lands on the shared progression. A definition states the
+ * RELATIVE WEIGHT of an offset, blur or spread as a multiple of the base; the
+ * generator resolves that weight onto the ratio-driven scale, so changing
+ * `progressionRatio` moves shadow geometry the way it moves spacing, type and
+ * radius.
  *
- * This generator is a pure function - it receives shadow definitions as input.
- * Default shadow values are provided by the orchestrator from defaults.ts.
+ * Before #2031 this file claimed exactly that in its header and did not do it:
+ * every part was `multiplier * baseSpacing`, purely linear, while every emitted
+ * token still stamped `progressionSystem`. The ratio reached one value in the
+ * whole namespace -- a colored variant's alpha channel.
+ *
+ * SHADOW HAS ITS OWN FLOOR, at 1px. It is not spacing and does not start where
+ * spacing starts: a blur thinner than a device pixel does not render, and a
+ * 4px minimum blur would make `xs` heavier than `DEFAULT` is today. Same shape
+ * as focus ring and hairline -- one shared ratio, a floor set by the medium.
  */
 
 import { ratioValue, resolveRatio } from '@rafters/math-utils';
@@ -24,9 +34,46 @@ function pxToRem(px: number): string {
 
 const SHADOW_PARTS = ['offset-x', 'offset-y', 'blur', 'spread', 'color'] as const;
 
-/** Scale a multiplier by base spacing, rounded to 2 decimal places */
-function scalePx(multiplier: number, baseSpacing: number): number {
-  return Math.round(multiplier * baseSpacing * 100) / 100;
+/** A shadow blur below one device pixel does not render. */
+const SHADOW_FLOOR_PX = 1;
+
+/** Past this, an offset or blur is a layout decision rather than elevation. */
+const SHADOW_MAX_PX = 96;
+
+/**
+ * The progression shadow geometry sits on: whole pixels from a 1px floor,
+ * counting up, colliding positions dropped -- the same construction spacing
+ * uses, anchored lower because the medium allows a 1px shadow and does not
+ * allow a 1px gap to mean anything.
+ */
+export function shadowScale(ratioVal: number): number[] {
+  if (!(ratioVal > 1.001)) return [SHADOW_FLOOR_PX];
+  const out: number[] = [];
+  const seen = new Set<number>();
+  for (let n = 0; ; n++) {
+    const px = Math.round(SHADOW_FLOOR_PX * ratioVal ** n);
+    if (px > SHADOW_MAX_PX) break;
+    if (!seen.has(px)) {
+      seen.add(px);
+      out.push(px);
+    }
+  }
+  return out;
+}
+
+/**
+ * Resolve a definition's relative weight onto the progression.
+ *
+ * Zero stays zero -- `none` is the absence of a shadow, not the smallest one.
+ */
+function scalePx(multiplier: number, baseSpacing: number, scale: number[]): number {
+  if (multiplier === 0) return 0;
+  const target = multiplier * baseSpacing;
+  let best = scale[0] ?? target;
+  for (const v of scale) {
+    if (Math.abs(v - target) < Math.abs(best - target)) best = v;
+  }
+  return best;
 }
 
 /**
@@ -36,13 +83,14 @@ function scalePx(multiplier: number, baseSpacing: number): number {
 function resolveShadowParts(
   def: ShadowDef,
   baseSpacing: number,
+  scale: number[],
 ): Record<(typeof SHADOW_PARTS)[number], string> {
   return {
     // Shadows are vertical-only by design (material elevation model)
     'offset-x': '0rem',
-    'offset-y': pxToRem(scalePx(def.yOffset, baseSpacing)),
-    blur: pxToRem(scalePx(def.blur, baseSpacing)),
-    spread: pxToRem(scalePx(def.spread, baseSpacing)),
+    'offset-y': pxToRem(scalePx(def.yOffset, baseSpacing, scale)),
+    blur: pxToRem(scalePx(def.blur, baseSpacing, scale)),
+    spread: pxToRem(scalePx(def.spread, baseSpacing, scale)),
     color: `rgb(0 0 0 / ${def.opacity})`,
   };
 }
@@ -53,10 +101,11 @@ function resolveShadowParts(
 function generateInnerShadowValue(
   inner: NonNullable<ShadowDef['innerShadow']>,
   baseSpacing: number,
+  scale: number[],
 ): string {
-  const y = pxToRem(scalePx(inner.yOffset, baseSpacing));
-  const blur = pxToRem(scalePx(inner.blur, baseSpacing));
-  const spread = pxToRem(scalePx(inner.spread, baseSpacing));
+  const y = pxToRem(scalePx(inner.yOffset, baseSpacing, scale));
+  const blur = pxToRem(scalePx(inner.blur, baseSpacing, scale));
+  const spread = pxToRem(scalePx(inner.spread, baseSpacing, scale));
   return `0 ${y} ${blur} ${spread} rgb(0 0 0 / ${inner.opacity})`;
 }
 
@@ -80,6 +129,7 @@ export function generateShadowTokens(
   const timestamp = new Date().toISOString();
   const { baseSpacingUnit, progressionRatio } = config;
   const ratioVal = ratioValue(resolveRatio(progressionRatio));
+  const geometry = shadowScale(ratioVal);
 
   // Shadow reference token - use rem
   const baseSpacingRem = baseSpacingUnit / 16;
@@ -131,7 +181,7 @@ export function generateShadowTokens(
     }
 
     // Decomposed tokens for this scale
-    const parts = resolveShadowParts(def, baseSpacingUnit);
+    const parts = resolveShadowParts(def, baseSpacingUnit, geometry);
     const partDeps: string[] = [];
 
     for (const part of SHADOW_PARTS) {
@@ -157,7 +207,7 @@ export function generateShadowTokens(
     // Composite token referencing decomposed parts via var()
     const innerValue =
       def.innerShadow && def.innerShadow.opacity > 0
-        ? generateInnerShadowValue(def.innerShadow, baseSpacingUnit)
+        ? generateInnerShadowValue(def.innerShadow, baseSpacingUnit, geometry)
         : null;
     const compositeValue = buildCompositeFromVars(scaleName, innerValue);
 

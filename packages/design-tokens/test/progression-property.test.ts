@@ -116,32 +116,35 @@ describe('REGRESSION #2031 -- generators that declare the progression and ignore
 });
 
 /**
- * Shadow is neither responsive nor inert -- it is a false positive waiting to
- * happen, and the reason this file compares generators one at a time instead of
- * asking "does anything move".
+ * Shadow's two halves still answer to the ratio for different reasons, which is
+ * why this file compares generators one at a time instead of asking "does
+ * anything move".
  *
- * Every shadow MEASUREMENT is linear: `multiplier * baseSpacing` via scalePx.
- * The ratio reaches exactly one value, `shadow.ts:193`:
+ * GEOMETRY is now genuinely ratio-driven (#2031): offsets, blur and spread
+ * resolve onto a progression anchored at a 1px floor, so swapping the ratio
+ * moves them the way it moves spacing, type and radius. Before #2031 every
+ * measurement was `multiplier * baseSpacing`, purely linear.
+ *
+ * COLOR is a defect that survives. `shadow.ts` still computes:
  *
  *     const coloredOpacity = baseDef.opacity * ratioVal;
  *
  * An ALPHA CHANNEL multiplied by a musical interval. 0.1 * 1.2 = 12%; under
  * perfect-fourth the same shadow is 13.3%. Nothing about a progression ratio
- * carries meaning applied to opacity -- it was a number in scope. So a naive
- * "swapping the ratio changes something" test passes shadow and hides that all
- * of its geometry is linear, which is why the assertions below are split.
+ * carries meaning applied to opacity -- it was a number in scope. The split
+ * assertions keep that visible rather than letting a green "something moved"
+ * hide it.
  */
-describe('REGRESSION #2031 -- shadow geometry is linear; the ratio only tints', () => {
+describe('shadow geometry follows the ratio; the coloured opacity is a defect', () => {
   const geometry = (v: string) => /-(offset-x|offset-y|blur|spread)=/.test(v);
   const colored = (v: string) => /^shadow-(primary|destructive)=/.test(v);
 
-  it('no shadow measurement responds to the ratio', () => {
+  it('shadow measurements respond to the ratio', () => {
     const before = measurements(baseline.shadow).filter(geometry);
     const after = measurements(swapped.shadow).filter(geometry);
 
     expect(before.length).toBeGreaterThan(0);
-    // Flip to .not.toEqual when #2031 lands.
-    expect(after).toEqual(before);
+    expect(after).not.toEqual(before);
   });
 
   it('the ratio reaches only the colored-variant opacity', () => {
@@ -149,8 +152,9 @@ describe('REGRESSION #2031 -- shadow geometry is linear; the ratio only tints', 
     const after = measurements(swapped.shadow).filter(colored);
 
     expect(before.length).toBeGreaterThan(0);
-    // Documents the misapplication, not an endorsement of it. #2031 decides
-    // whether coloredOpacity keeps the ratio or gets a reason of its own.
+    // Documents the misapplication, not an endorsement of it. Geometry was
+    // fixed in #2031; whether coloredOpacity keeps the ratio or gets a reason
+    // of its own is still open.
     expect(after).not.toEqual(before);
   });
 });
