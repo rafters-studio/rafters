@@ -3,9 +3,36 @@ import { generateBaseSystem } from '@rafters/design-tokens';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { initializeRegistry } from '../../../src/routes/tokens/tokens.handlers';
 
+/**
+ * Real spacing token names, read out of the generated system rather than
+ * hardcoded.
+ *
+ * These tests exercise ROUTES -- get, set, clear, reset, the why-gate -- and do
+ * not care which token they operate on. Naming specific rungs (`spacing-4`,
+ * `spacing-6`) coupled them to the shape of the spacing ladder, so they broke
+ * when the ladder stopped being a linear multiplier table (#2031). Any distinct
+ * spacing tokens serve equally well, and taking them from the system means the
+ * suite survives the next scale change too.
+ *
+ * Indices are handed out deliberately: some of these tests mutate their token
+ * and one asserts the ABSENCE of an override, so they must not share.
+ */
+let SPACING: string[] = [];
+let SPACING_TOKEN_COUNT = 0;
+
 beforeAll(() => {
   const system = generateBaseSystem();
   initializeRegistry(system.allTokens);
+
+  const spacing = system.byNamespace.get('spacing') ?? [];
+  SPACING_TOKEN_COUNT = spacing.length;
+  SPACING = spacing
+    .map((t) => t.name)
+    .filter((n) => n !== 'spacing-base' && n !== 'spacing-progression');
+
+  if (SPACING.length < 5) {
+    throw new Error(`these tests need 5 distinct spacing tokens, got ${SPACING.length}`);
+  }
 });
 
 // =============================================================================
@@ -53,7 +80,7 @@ describe('GET /tokens/:namespace', () => {
     const res = await SELF.fetch('http://localhost/tokens/spacing');
     expect(res.status).toBe(200);
     const json = (await res.json()) as Record<string, unknown>;
-    expect(json.count).toBeGreaterThan(30);
+    expect(json.count).toBe(SPACING_TOKEN_COUNT);
   });
 
   it('404 for invalid namespace', async () => {
@@ -74,7 +101,7 @@ describe('GET /tokens/:namespace/:name', () => {
   });
 
   it('404 for wrong namespace', async () => {
-    const res = await SELF.fetch('http://localhost/tokens/color/spacing-1');
+    const res = await SELF.fetch(`http://localhost/tokens/color/${SPACING[0]}`);
     expect(res.status).toBe(404);
   });
 });
@@ -85,7 +112,7 @@ describe('GET /tokens/:namespace/:name', () => {
 
 describe('PUT /tokens/:namespace/:name', () => {
   it('sets value with reason, returns ok', async () => {
-    const res = await SELF.fetch('http://localhost/tokens/spacing/spacing-4', {
+    const res = await SELF.fetch(`http://localhost/tokens/spacing/${SPACING[0]}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ value: '2rem', reason: 'Huttspawn compact UI' }),
@@ -95,7 +122,7 @@ describe('PUT /tokens/:namespace/:name', () => {
     expect(json.ok).toBe(true);
 
     // Verify the change persisted via GET
-    const check = await SELF.fetch('http://localhost/tokens/spacing/spacing-4');
+    const check = await SELF.fetch(`http://localhost/tokens/spacing/${SPACING[0]}`);
     const detail = (await check.json()) as Record<string, unknown>;
     const token = detail.token as Record<string, unknown>;
     expect(token.value).toBe('2rem');
@@ -103,7 +130,7 @@ describe('PUT /tokens/:namespace/:name', () => {
   });
 
   it('rejects empty reason', async () => {
-    const res = await SELF.fetch('http://localhost/tokens/spacing/spacing-5', {
+    const res = await SELF.fetch(`http://localhost/tokens/spacing/${SPACING[1]}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ value: '3rem', reason: '' }),
@@ -112,7 +139,7 @@ describe('PUT /tokens/:namespace/:name', () => {
   });
 
   it('rejects missing reason', async () => {
-    const res = await SELF.fetch('http://localhost/tokens/spacing/spacing-5', {
+    const res = await SELF.fetch(`http://localhost/tokens/spacing/${SPACING[1]}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ value: '3rem' }),
@@ -133,13 +160,13 @@ describe('PUT /tokens/:namespace/:name', () => {
 describe('DELETE /tokens/:namespace/:name/override', () => {
   it('clears override, returns ok', async () => {
     // Set an override first
-    await SELF.fetch('http://localhost/tokens/spacing/spacing-6', {
+    await SELF.fetch(`http://localhost/tokens/spacing/${SPACING[2]}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ value: '99rem', reason: 'to be cleared' }),
     });
 
-    const res = await SELF.fetch('http://localhost/tokens/spacing/spacing-6/override', {
+    const res = await SELF.fetch(`http://localhost/tokens/spacing/${SPACING[2]}/override`, {
       method: 'DELETE',
     });
     expect(res.status).toBe(200);
@@ -147,13 +174,13 @@ describe('DELETE /tokens/:namespace/:name/override', () => {
     expect(json.ok).toBe(true);
 
     // Verify override is gone
-    const check = await SELF.fetch('http://localhost/tokens/spacing/spacing-6');
+    const check = await SELF.fetch(`http://localhost/tokens/spacing/${SPACING[2]}`);
     const detail = (await check.json()) as Record<string, unknown>;
     expect(detail.hasOverride).toBe(false);
   });
 
   it('404 for token without override', async () => {
-    const res = await SELF.fetch('http://localhost/tokens/spacing/spacing-7/override', {
+    const res = await SELF.fetch(`http://localhost/tokens/spacing/${SPACING[3]}/override`, {
       method: 'DELETE',
     });
     expect(res.status).toBe(404);
@@ -174,7 +201,7 @@ describe('POST /tokens/:namespace/reset', () => {
     expect(res.status).toBe(200);
     const json = (await res.json()) as Record<string, unknown>;
     expect(json.namespace).toBe('spacing');
-    expect(json.tokenCount).toBe(36);
+    expect(json.tokenCount).toBe(SPACING_TOKEN_COUNT);
   });
 
   it('404 for invalid namespace', async () => {
@@ -193,13 +220,13 @@ describe('POST /tokens/:namespace/reset', () => {
 
 describe('why-gate enforcement', () => {
   it('reason is recorded on the token', async () => {
-    await SELF.fetch('http://localhost/tokens/spacing/spacing-8', {
+    await SELF.fetch(`http://localhost/tokens/spacing/${SPACING[4]}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ value: '4rem', reason: 'Accessibility audit finding' }),
     });
 
-    const res = await SELF.fetch('http://localhost/tokens/spacing/spacing-8');
+    const res = await SELF.fetch(`http://localhost/tokens/spacing/${SPACING[4]}`);
     const json = (await res.json()) as Record<string, unknown>;
     const token = json.token as Record<string, unknown>;
     const override = token.userOverride as Record<string, unknown>;

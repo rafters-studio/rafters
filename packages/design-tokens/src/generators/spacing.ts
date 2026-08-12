@@ -1,24 +1,63 @@
 /**
  * Spacing Generator
  *
- * Generates spacing tokens using mathematical progressions from @rafters/math-utils.
- * Default uses minor-third (1.2) ratio for harmonious, connected feel.
+ * The scale is `baseSpacingUnit * progressionRatio^n`, counting UP from position
+ * 0. Before #2031 the ratio was resolved, a sequence computed, and then thrown
+ * away -- values came from a literal multiplier table copied from Tailwind
+ * while every token still advertised `progressionSystem: minor-third`. That was
+ * the #384 regression, and it made spacing the only namespace off the shared
+ * curve that every other anchor derives from.
  *
- * This generator is a pure function - it receives spacing multipliers as input.
- * Default spacing values are provided by the orchestrator from defaults.ts.
+ * TWO RULES THE MATH DOES NOT SUPPLY, both operator rulings:
+ *
+ * 1. NO NEGATIVE POSITIONS. The base is the floor, not the middle of a range.
+ *    A step below it is a value smaller than the unit everything is built from.
+ *    Hairlines and focus rings are not small spacing -- they belong to their own
+ *    namespaces, which carry their own floors.
+ * 2. ROUNDING IS THE DEFAULT, AND IT ROUNDS THE MULTIPLIER. Raw progression
+ *    values are fractional almost everywhere (1.2, 1.44, 1.73), a raster has no
+ *    half pixel to render into, and a fractional multiplier would put a `.25`
+ *    in a token name. Positions that collide after rounding are dropped rather
+ *    than shipped twice, so a tight ratio yields fewer rungs than positions.
  */
 
-import { generateSequence, ratioValue, resolveRatio } from '@rafters/math-utils';
+import { ratioValue, resolveRatio } from '@rafters/math-utils';
 import type { Token } from '@rafters/shared';
+import type { ScaleBounds } from './defaults.js';
+import { progressionFrom } from './progression.js';
 import type { GeneratorResult, ResolvedSystemConfig } from './types.js';
-import { SPACING_SCALE } from './types.js';
+
+/**
+ * The emitted scale, as multipliers of the base.
+ *
+ * Position 0 IS the base. Values round to whole pixels and duplicates collapse,
+ * so a tight ratio on a small base yields FEWER rungs than positions -- that
+ * loss is real and visible in the token count, not silently papered over.
+ */
+export function spacingMultipliers(ratioVal: number, bounds: ScaleBounds): number[] {
+  // The multiplier is what steps, not the pixel. Rounding the pixel and
+  // dividing back out manufactures quarters -- 17px on a 4px base is multiplier
+  // 4.25, and `spacing-4.25` breaks anything reading a token name as a number.
+  // Stepping the multiplier keeps every name an integer and every emitted value
+  // a clean multiple of the base.
+  return progressionFrom(bounds.floor, ratioVal, bounds.ceiling);
+}
+
+/**
+ * Token name for a multiplier. The name IS the multiplier, unchanged from
+ * before #2031 -- `spacing-4` still means `base * 4`, and every name is an
+ * integer because the multiplier is.
+ */
+function scaleName(multiplier: number): string {
+  return String(multiplier);
+}
 
 /**
  * Generate spacing tokens from provided multipliers
  */
 export function generateSpacingTokens(
   config: ResolvedSystemConfig,
-  spacingMultipliers: Record<string, number>,
+  bounds: ScaleBounds,
 ): GeneratorResult {
   const tokens: Token[] = [];
   const timestamp = new Date().toISOString();
@@ -26,7 +65,7 @@ export function generateSpacingTokens(
 
   const ratio = resolveRatio(progressionRatio);
   const ratioVal = ratioValue(ratio);
-  const progression = generateSequence(ratio, baseSpacingUnit, 10, { includeZero: true });
+  const multipliers = spacingMultipliers(ratioVal, bounds);
 
   // Base unit token - the foundation everything else derives from
   // Convert px to rem (assuming 16px root font size)
@@ -56,12 +95,12 @@ export function generateSpacingTokens(
     },
   });
 
-  // Generate tokens for each scale position
-  for (const scale of SPACING_SCALE) {
-    const multiplier = spacingMultipliers[scale];
-    if (multiplier === undefined) continue;
+  // Position 0 is the base. `0` is prepended as the null value -- not a scale
+  // position, the absence of one.
+  for (const multiplier of [0, ...multipliers]) {
+    const scale = scaleName(multiplier);
     const value = baseSpacingUnit * multiplier;
-    const scaleIndex = SPACING_SCALE.indexOf(scale);
+    const scaleIndex = multipliers.indexOf(multiplier) + 1;
 
     // Determine semantic meaning based on value
     let meaning: string;
@@ -120,19 +159,19 @@ export function generateSpacingTokens(
   // Add progression metadata token for reference
   tokens.push({
     name: 'spacing-progression',
+    // The scale that actually shipped. Before #2031 this carried a `sample`
+    // computed straight off the ratio while the tokens came from a table --
+    // metadata describing a scale that did not exist.
     value: JSON.stringify({
       ratio: progressionRatio,
       ratioValue: ratioVal,
       baseUnit: baseSpacingUnit,
-      sample: progression.map((v) => Math.round(v * 100) / 100),
+      multipliers,
     }),
     category: 'spacing',
     namespace: 'spacing',
     semanticMeaning: 'Metadata about the spacing progression system',
-    description: `Spacing uses ${progressionRatio} progression (ratio ${ratioVal}) from base ${baseRem}rem. Sample values: ${progression
-      .slice(0, 5)
-      .map((v) => Math.round(v))
-      .join(', ')}...`,
+    description: `Spacing is ${baseSpacingUnit}px x ${progressionRatio} (${ratioVal})^n from position 0, rounded to whole pixels: ${multipliers.length} rungs, ${baseSpacingUnit}px to ${Math.round(baseSpacingUnit * (multipliers[multipliers.length - 1] ?? 1))}px.`,
     generatedAt: timestamp,
     containerQueryAware: false,
     userOverride: null,

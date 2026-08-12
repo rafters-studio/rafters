@@ -1538,44 +1538,38 @@ export const DEFAULT_RADIUS_DEFINITIONS: Record<string, RadiusDef> = {
 // =============================================================================
 
 /**
- * Spacing scale multipliers for Tailwind-compatible output
- * Maps scale names to their multiplier of the base unit
+ * Bounds for a generated scale.
+ *
+ * A progression needs somewhere to start and somewhere to stop, and neither is
+ * arithmetic -- both are decisions. They live here with every other default
+ * rather than inside a generator, because the generators are pure functions
+ * that receive their data, and a value buried in one is a value no designer
+ * can reach.
  */
-export const DEFAULT_SPACING_MULTIPLIERS: Record<string, number> = {
-  '0': 0,
-  '0.5': 0.5,
-  '1': 1,
-  '1.5': 1.5,
-  '2': 2,
-  '2.5': 2.5,
-  '3': 3,
-  '3.5': 3.5,
-  '4': 4,
-  '5': 5,
-  '6': 6,
-  '7': 7,
-  '8': 8,
-  '9': 9,
-  '10': 10,
-  '11': 11,
-  '12': 12,
-  '14': 14,
-  '16': 16,
-  '20': 20,
-  '24': 24,
-  '28': 28,
-  '32': 32,
-  '36': 36,
-  '40': 40,
-  '44': 44,
-  '48': 48,
-  '52': 52,
-  '56': 56,
-  '60': 60,
-  '64': 64,
-  '72': 72,
-  '80': 80,
-  '96': 96,
+export interface ScaleBounds {
+  /** Position 0. Nothing below it exists. */
+  floor: number;
+  /** Past this, a value is a layout decision rather than a scale position. */
+  ceiling: number;
+}
+
+/**
+ * Spacing is measured in multipliers of `baseSpacingUnit`, so its floor is 1 --
+ * position 0 IS the base. The ceiling is in the same unit.
+ */
+export const DEFAULT_SPACING_BOUNDS: ScaleBounds = {
+  floor: 1,
+  ceiling: 96,
+};
+
+/**
+ * Shadow is measured in pixels and starts BELOW the spacing floor, deliberately:
+ * a blur thinner than a device pixel does not render, and anchoring shadow where
+ * spacing starts would make the smallest shadow heavier than the default one.
+ */
+export const DEFAULT_SHADOW_BOUNDS: ScaleBounds = {
+  floor: 1,
+  ceiling: 96,
 };
 
 // =============================================================================
