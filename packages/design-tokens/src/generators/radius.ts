@@ -1,16 +1,11 @@
 /**
  * Border Radius Generator
  *
- * Generates border radius tokens using mathematical progressions from @rafters/math-utils.
- * Uses minor-third (1.2) ratio by default for harmonious radius scale.
- *
- * This generator uses step-based progression: value = base * ratio^step
- * - step 0 = base value
- * - step 1 = base * ratio (larger)
- * - step -1 = base / ratio (smaller)
- *
- * This generator is a pure function - it receives radius definitions as input.
- * Default radius values are provided by the orchestrator from defaults.ts.
+ * Radius derives FROM spacing. `radius-base` is
+ * `calc(var(--rafters-spacing-base) * 1.5)`, so changing the spacing base
+ * cascades into every radius token at runtime. The ratio steps on top of that
+ * anchor are radius's own -- step -1 exists here even though spacing has no
+ * negative positions -- because the anchor changed, not the step rule.
  */
 
 import { ratioValue, resolveRatio } from '@rafters/math-utils';
@@ -43,19 +38,23 @@ export function generateRadiusTokens(
 
   const ratioVal = ratioValue(resolveRatio(progressionRatio));
 
-  // Convert px to rem (assuming 16px root font size)
-  const baseRadiusRem = baseRadius / 16;
+  // The multiplier that anchors radius to spacing. `baseRadius` is already
+  // `baseSpacingUnit * 1.5` from resolveConfig, so the multiplier is stable
+  // across base changes. The CSS emission references the spacing var directly.
+  // Rounded to 3 decimals, matching the convention at line 103.
+  const radiusMultiplier = Math.round((baseRadius / config.baseSpacingUnit) * 1000) / 1000;
 
-  // Base radius token
+  // Base radius token -- derives from spacing
   tokens.push({
     name: 'radius-base',
-    value: `${baseRadiusRem}rem`,
+    value: `calc(var(--rafters-spacing-base) * ${radiusMultiplier})`,
     category: 'radius',
     namespace: 'radius',
-    semanticMeaning: 'Base border radius - all other radii derive from this value',
+    semanticMeaning: 'Base border radius - derives from spacing base',
     usageContext: ['calculation-reference'],
     progressionSystem: progressionRatio as 'minor-third',
-    description: `Base radius (${baseRadiusRem}rem / ${baseRadius}px). Scale uses ${progressionRatio} progression (ratio ${ratioVal}).`,
+    dependsOn: ['spacing-base'],
+    description: `Base radius = spacing-base * ${radiusMultiplier} (${baseRadius}px at base ${config.baseSpacingUnit}). Scale uses ${progressionRatio} progression (ratio ${ratioVal}).`,
     generatedAt: timestamp,
     containerQueryAware: false,
     userOverride: null,
@@ -97,9 +96,8 @@ export function generateRadiusTokens(
       value = '9999px'; // Full radius stays in px as it's a special case
       mathRelationship = 'infinite (9999px)';
     } else if (def.step === 0) {
-      // Step 0 = base value, reference the custom property directly
       value = 'var(--rafters-radius-base)';
-      mathRelationship = `${baseRadiusRem}rem (base)`;
+      mathRelationship = `spacing-base * ${radiusMultiplier} (base)`;
     } else {
       // Use calc() with var() so changing radius-base cascades via CSS
       const multiplier = Math.round(ratioVal ** def.step * 1000) / 1000;

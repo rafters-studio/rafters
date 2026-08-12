@@ -41,10 +41,21 @@ export interface BaseSystemConfig {
   /** Base font size override. System default: baseSpacingUnit * 4 = 16px */
   baseFontSizeOverride?: number;
 
-  /** Border radius override. System default: baseSpacingUnit * 1.5 = 6px */
+  /**
+   * Base radius override in pixels.
+   * System default: baseSpacingUnit * 1.5 (6px at base 4).
+   * Radius derives from spacing -- `radius-base` emits
+   * `calc(var(--rafters-spacing-base) * 1.5)` so changing the spacing base
+   * cascades into every radius token at runtime.
+   */
   baseRadiusOverride?: number;
 
-  /** Focus ring width override. System default: baseSpacingUnit / 2 = 2px */
+  /**
+   * Focus ring width override in pixels.
+   * System default: baseSpacingUnit / 2 (2px at base 4).
+   * Focus derives from spacing -- `focus-ring-width` emits
+   * `calc(var(--rafters-spacing-base) / 2)` so the ring scales with the base.
+   */
   focusRingWidthOverride?: number;
 
   /** Base transition duration override (ms). System default: baseSpacingUnit * 37.5 = 150ms */
@@ -92,14 +103,11 @@ export function resolveConfig(config: BaseSystemConfig): ResolvedSystemConfig {
 /**
  * Default configuration - Rafters aesthetic defaults (shadcn-inspired)
  *
- * These are our CHOSEN values. If you want pure mathematical defaults,
- * omit the overrides and let the system compute from baseSpacingUnit.
- *
- * Pure math example (no overrides):
- * - baseFontSize = 4 * 4 = 16px
- * - baseRadius = 4 * 1.5 = 6px
- * - focusRingWidth = 4 / 2 = 2px
- * - baseTransitionDuration = 4 * 37.5 = 150ms
+ * Radius and focus have no override pin because they derive from
+ * baseSpacingUnit (×1.5 and ÷2) and the derivation at base 4 already
+ * produces the values a pin would hold. The CSS emission references
+ * `var(--rafters-spacing-base)`, so changing the spacing base cascades
+ * into radius and focus at runtime.
  */
 export const DEFAULT_SYSTEM_CONFIG: BaseSystemConfig = {
   baseSpacingUnit: 4,
@@ -107,10 +115,12 @@ export const DEFAULT_SYSTEM_CONFIG: BaseSystemConfig = {
   fontFamily: "'Noto Sans Variable', sans-serif",
   monoFontFamily:
     "ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace",
-  // Rafters aesthetic overrides (happen to match pure math at baseSpacingUnit=4)
+  // Rafters aesthetic overrides.
+  // baseRadius and focusRingWidth have NO pin here -- they derive from
+  // baseSpacingUnit (×1.5 and ÷2), and at base 4 the derivation already
+  // produces 6 and 2. A pin would hide the derivation, which is the #2031
+  // defect one layer down.
   baseFontSizeOverride: 16,
-  baseRadiusOverride: 6,
-  focusRingWidthOverride: 2,
   baseTransitionDurationOverride: 150,
 };
 

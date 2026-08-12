@@ -393,13 +393,15 @@ function generateThemeBlock(groups: GroupedTokens): string {
   }
 
   // Radius tokens -- Tailwind v4 reads --radius-* for rounded-*
-  // Rewrite var(--rafters-radius-base) to var(--radius-base) for @theme context
+  // Rewrite internal var names to @theme names: radius-base derives from
+  // spacing-base (#2035), so the spacing reference must also be rewritten.
   if (groups.radius.length > 0) {
     for (const token of groups.radius) {
       const value = tokenValueToCSS(token);
       if (value === null) continue;
       const key = token.name.replace(/^radius-/, '');
       const themeValue = value
+        .replaceAll('var(--rafters-spacing-base)', 'var(--spacing-base)')
         .replaceAll('var(--rafters-radius-base)', 'var(--radius-base)')
         .replaceAll('var(--rafters-radius-tl)', 'var(--radius-tl)')
         .replaceAll('var(--rafters-radius-tr)', 'var(--radius-tr)')
@@ -481,12 +483,16 @@ function generateThemeBlock(groups: GroupedTokens): string {
     lines.push('');
   }
 
-  // Focus tokens
+  // Focus tokens -- focus-ring-width derives from spacing-base (#2035),
+  // and per-config tokens chain through focus-ring-width.
   if (groups.focus.length > 0) {
     for (const token of groups.focus) {
       const value = tokenValueToCSS(token);
       if (value === null) continue;
-      lines.push(`  --${token.name}: ${value};`);
+      const themeValue = value
+        .replaceAll('var(--rafters-spacing-base)', 'var(--spacing-base)')
+        .replaceAll('var(--rafters-focus-ring-width)', 'var(--focus-ring-width)');
+      lines.push(`  --${token.name}: ${themeValue};`);
     }
     lines.push('');
   }

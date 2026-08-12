@@ -2031,6 +2031,10 @@ describe('studioApiPlugin', () => {
               middlewares.push(fn);
             },
           },
+          watcher: {
+            add(_paths: unknown) {},
+            on(_event: string, _handler: (...args: unknown[]) => void) {},
+          },
         },
         wsSent,
         wsHandlers,
