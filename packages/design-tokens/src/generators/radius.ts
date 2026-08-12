@@ -41,7 +41,8 @@ export function generateRadiusTokens(
   // The multiplier that anchors radius to spacing. `baseRadius` is already
   // `baseSpacingUnit * 1.5` from resolveConfig, so the multiplier is stable
   // across base changes. The CSS emission references the spacing var directly.
-  const radiusMultiplier = baseRadius / config.baseSpacingUnit;
+  // Rounded to 3 decimals, matching the convention at line 103.
+  const radiusMultiplier = Math.round((baseRadius / config.baseSpacingUnit) * 1000) / 1000;
 
   // Base radius token -- derives from spacing
   tokens.push({

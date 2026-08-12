@@ -8,6 +8,8 @@ import {
   DEFAULT_SPACING_BOUNDS,
   DEFAULT_TYPOGRAPHY_SCALE,
 } from '../src/generators/defaults.js';
+import { tokensToTailwind } from '../src/exporters/tailwind.js';
+import { generateBaseSystem } from '../src/generators/index.js';
 import { generateFocusTokens } from '../src/generators/focus.js';
 import { generateRadiusTokens } from '../src/generators/radius.js';
 import { generateShadowTokens } from '../src/generators/shadow.js';
@@ -194,5 +196,31 @@ describe('radius and focus derive from spacing', () => {
     const fBase = focusTokens.find((t) => t.name === 'focus-ring-width');
     expect(rBase?.value).not.toMatch(/rem$/);
     expect(fBase?.value).not.toMatch(/rem$/);
+  });
+
+  it('the exporter rewrites spacing refs so no dangling --rafters- vars remain', () => {
+    const system = generateBaseSystem({});
+    const css = tokensToTailwind(system.allTokens, { includeImport: false }, []);
+    const lines = css.split('\n');
+
+    const radiusLines = lines.filter((l) => /--radius-/.test(l));
+    const focusLines = lines.filter((l) => /--focus-/.test(l));
+
+    expect(radiusLines.length).toBeGreaterThan(0);
+    expect(focusLines.length).toBeGreaterThan(0);
+
+    for (const line of radiusLines) {
+      expect(line, `dangling in radius: ${line.trim()}`).not.toContain(
+        'var(--rafters-spacing-base)',
+      );
+    }
+    for (const line of focusLines) {
+      expect(line, `dangling in focus: ${line.trim()}`).not.toContain(
+        'var(--rafters-spacing-base)',
+      );
+      expect(line, `dangling in focus: ${line.trim()}`).not.toContain(
+        'var(--rafters-focus-ring-width)',
+      );
+    }
   });
 });

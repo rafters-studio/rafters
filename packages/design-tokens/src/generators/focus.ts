@@ -21,7 +21,9 @@ export function generateFocusTokens(
 
   // The divisor that anchors focus to spacing. `focusRingWidth` is already
   // `baseSpacingUnit / 2` from resolveConfig, so this is stable across bases.
-  const focusDivisor = baseSpacingUnit / focusRingWidth;
+  // Guard: a zero override would produce Infinity in the calc() string.
+  const focusDivisor =
+    focusRingWidth > 0 ? Math.round((baseSpacingUnit / focusRingWidth) * 1000) / 1000 : 2;
 
   const focusWidthValue = `calc(var(--rafters-spacing-base) / ${focusDivisor})`;
 
