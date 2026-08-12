@@ -67,7 +67,25 @@ export const tokens = {
     /** Media query for forced colors mode (Windows High Contrast) */
     'breakpoint-forced-colors': '(forced-colors: active)',
     /** Breakpoint scale reference */
-    'breakpoint-scale': {"viewport":{"sm":640,"md":768,"lg":1024,"xl":1280,"2xl":1536},"container":{"3xs":"16rem","2xs":"18rem","xs":"20rem","sm":"24rem","md":"28rem","lg":"32rem","xl":"36rem","2xl":"42rem","3xl":"48rem","4xl":"56rem","5xl":"64rem","6xl":"72rem","7xl":"80rem"},"note":"Container queries use --container-* theme variables with rem values. Use @xs:, @sm:, @md:, etc. variants."},
+    'breakpoint-scale': {
+      viewport: { sm: 640, md: 768, lg: 1024, xl: 1280, '2xl': 1536 },
+      container: {
+        '3xs': '16rem',
+        '2xs': '18rem',
+        xs: '20rem',
+        sm: '24rem',
+        md: '28rem',
+        lg: '32rem',
+        xl: '36rem',
+        '2xl': '42rem',
+        '3xl': '48rem',
+        '4xl': '56rem',
+        '5xl': '64rem',
+        '6xl': '72rem',
+        '7xl': '80rem',
+      },
+      note: 'Container queries use --container-* theme variables with rem values. Use @xs:, @sm:, @md:, etc. variants.',
+    },
   },
   color: {
     /** zinc shade at 50 level - light background range */
@@ -93,7 +111,7 @@ export const tokens = {
     /** zinc shade at 950 level - dark foreground range */
     'zinc-950': 'oklch(0.141 0 0)',
     /** Complete zinc color family with 11-position scale */
-    'zinc': 'oklch(0.552 0.000 0.0)',
+    zinc: 'oklch(0.552 0.000 0.0)',
     /** silver-true-glacier shade at 50 level - light background range */
     'silver-true-glacier-50': 'oklch(0.95 0.036 180)',
     /** silver-true-glacier shade at 100 level - light background range */
@@ -263,7 +281,21 @@ export const tokens = {
     /** Maximum layer - emergency overlay (e.g., dev tools) */
     'depth-max': '9999',
     /** Depth scale reference */
-    'depth-scale': {"gap":10,"note":"Each level has 10-unit gaps for intermediate values","levels":{"base":0,"dropdown":50,"sticky":20,"navigation":25,"fixed":30,"modal":40,"popover":50,"tooltip":60,"overlay":35}},
+    'depth-scale': {
+      gap: 10,
+      note: 'Each level has 10-unit gaps for intermediate values',
+      levels: {
+        base: 0,
+        dropdown: 50,
+        sticky: 20,
+        navigation: 25,
+        fixed: 30,
+        modal: 40,
+        popover: 50,
+        tooltip: 60,
+        overlay: 35,
+      },
+    },
   },
   focus: {
     /** Default focus ring width - WCAG 2.2 requires minimum 2px */
@@ -271,33 +303,53 @@ export const tokens = {
     /** Focus ring color - inherits from semantic ring token */
     'focus-ring-color': 'var(--ring)',
     /** Default focus ring - suitable for most interactive elements */
-    'focus-ring': {"width":"0.125rem","offset":"0.125rem","style":"solid","color":"var(--ring)"},
+    'focus-ring': { width: '0.125rem', offset: '0.125rem', style: 'solid', color: 'var(--ring)' },
     /** CSS outline shorthand for default focus ring */
     'focus-outline': '0.125rem solid var(--ring)',
     /** Focus ring offset for default style */
     'focus-offset': '0.125rem',
     /** Inset focus ring - for elements where external ring would be cut off */
-    'focus-ring-inset': {"width":"0.125rem","offset":"-0.125rem","style":"solid","color":"var(--ring)"},
+    'focus-ring-inset': {
+      width: '0.125rem',
+      offset: '-0.125rem',
+      style: 'solid',
+      color: 'var(--ring)',
+    },
     /** CSS outline shorthand for inset focus ring */
     'focus-outline-inset': '0.125rem solid var(--ring)',
     /** Focus ring offset for inset style */
     'focus-offset-inset': '-0.125rem',
     /** Thick focus ring - for high-visibility needs */
-    'focus-ring-thick': {"width":"0.188rem","offset":"0.125rem","style":"solid","color":"var(--ring)"},
+    'focus-ring-thick': {
+      width: '0.188rem',
+      offset: '0.125rem',
+      style: 'solid',
+      color: 'var(--ring)',
+    },
     /** CSS outline shorthand for thick focus ring */
     'focus-outline-thick': '0.188rem solid var(--ring)',
     /** Focus ring offset for thick style */
     'focus-offset-thick': '0.125rem',
     /** Subtle focus ring - for dense UIs with many focusable elements */
-    'focus-ring-subtle': {"width":"0.063rem","offset":"0.125rem","style":"solid","color":"var(--ring)"},
+    'focus-ring-subtle': {
+      width: '0.063rem',
+      offset: '0.125rem',
+      style: 'solid',
+      color: 'var(--ring)',
+    },
     /** CSS outline shorthand for subtle focus ring */
     'focus-outline-subtle': '0.063rem solid var(--ring)',
     /** Focus ring offset for subtle style */
     'focus-offset-subtle': '0.125rem',
     /** Focus ring for containers with focused descendants */
-    'focus-within-ring': {"width":"0.125rem","offset":"0","style":"solid","color":"var(--ring)"},
+    'focus-within-ring': { width: '0.125rem', offset: '0', style: 'solid', color: 'var(--ring)' },
     /** Focus ring for Windows High Contrast Mode */
-    'focus-high-contrast': {"width":"0.188rem","offset":"0.125rem","style":"solid","color":"Highlight"},
+    'focus-high-contrast': {
+      width: '0.188rem',
+      offset: '0.125rem',
+      style: 'solid',
+      color: 'Highlight',
+    },
   },
   motion: {
     /** Legacy base transition duration. The perceptual duration scale (motion-duration-*) no longer derives from this; retained only as a reference value and delay-progression base. */
@@ -339,25 +391,35 @@ export const tokens = {
     /** Fade from opaque to transparent */
     'motion-keyframe-fade-out': 'from { opacity: 1; } to { opacity: 0; }',
     /** Slide in from above */
-    'motion-keyframe-slide-in-from-top': 'from { transform: translateY(-100%); } to { transform: translateY(0); }',
+    'motion-keyframe-slide-in-from-top':
+      'from { transform: translateY(-100%); } to { transform: translateY(0); }',
     /** Slide in from below */
-    'motion-keyframe-slide-in-from-bottom': 'from { transform: translateY(100%); } to { transform: translateY(0); }',
+    'motion-keyframe-slide-in-from-bottom':
+      'from { transform: translateY(100%); } to { transform: translateY(0); }',
     /** Slide in from left */
-    'motion-keyframe-slide-in-from-left': 'from { transform: translateX(-100%); } to { transform: translateX(0); }',
+    'motion-keyframe-slide-in-from-left':
+      'from { transform: translateX(-100%); } to { transform: translateX(0); }',
     /** Slide in from right */
-    'motion-keyframe-slide-in-from-right': 'from { transform: translateX(100%); } to { transform: translateX(0); }',
+    'motion-keyframe-slide-in-from-right':
+      'from { transform: translateX(100%); } to { transform: translateX(0); }',
     /** Slide out upward */
-    'motion-keyframe-slide-out-to-top': 'from { transform: translateY(0); } to { transform: translateY(-100%); }',
+    'motion-keyframe-slide-out-to-top':
+      'from { transform: translateY(0); } to { transform: translateY(-100%); }',
     /** Slide out downward */
-    'motion-keyframe-slide-out-to-bottom': 'from { transform: translateY(0); } to { transform: translateY(100%); }',
+    'motion-keyframe-slide-out-to-bottom':
+      'from { transform: translateY(0); } to { transform: translateY(100%); }',
     /** Slide out to left */
-    'motion-keyframe-slide-out-to-left': 'from { transform: translateX(0); } to { transform: translateX(-100%); }',
+    'motion-keyframe-slide-out-to-left':
+      'from { transform: translateX(0); } to { transform: translateX(-100%); }',
     /** Slide out to right */
-    'motion-keyframe-slide-out-to-right': 'from { transform: translateX(0); } to { transform: translateX(100%); }',
+    'motion-keyframe-slide-out-to-right':
+      'from { transform: translateX(0); } to { transform: translateX(100%); }',
     /** Scale up while fading in */
-    'motion-keyframe-scale-in': 'from { transform: scale(0.96); opacity: 0; } to { transform: scale(1); opacity: 1; }',
+    'motion-keyframe-scale-in':
+      'from { transform: scale(0.96); opacity: 0; } to { transform: scale(1); opacity: 1; }',
     /** Scale down while fading out */
-    'motion-keyframe-scale-out': 'from { transform: scale(1); opacity: 1; } to { transform: scale(0.96); opacity: 0; }',
+    'motion-keyframe-scale-out':
+      'from { transform: scale(1); opacity: 1; } to { transform: scale(0.96); opacity: 0; }',
     /** Continuous rotation */
     'motion-keyframe-spin': 'from { transform: rotate(0deg); } to { transform: rotate(360deg); }',
     /** Expanding pulse that fades out */
@@ -365,11 +427,14 @@ export const tokens = {
     /** Gentle opacity pulse */
     'motion-keyframe-pulse': '0%, 100% { opacity: 1; } 50% { opacity: 0.48; }',
     /** Bouncing motion */
-    'motion-keyframe-bounce': '0%, 100% { transform: translateY(-33%); animation-timing-function: cubic-bezier(0.8, 0, 1, 1); } 50% { transform: translateY(0); animation-timing-function: cubic-bezier(0, 0, 0.2, 1); }',
+    'motion-keyframe-bounce':
+      '0%, 100% { transform: translateY(-33%); animation-timing-function: cubic-bezier(0.8, 0, 1, 1); } 50% { transform: translateY(0); animation-timing-function: cubic-bezier(0, 0, 0.2, 1); }',
     /** Expand accordion content */
-    'motion-keyframe-accordion-down': 'from { height: 0; } to { height: var(--radix-accordion-content-height); }',
+    'motion-keyframe-accordion-down':
+      'from { height: 0; } to { height: var(--radix-accordion-content-height); }',
     /** Collapse accordion content */
-    'motion-keyframe-accordion-up': 'from { height: var(--radix-accordion-content-height); } to { height: 0; }',
+    'motion-keyframe-accordion-up':
+      'from { height: var(--radix-accordion-content-height); } to { height: 0; }',
     /** Text cursor blinking */
     'motion-keyframe-caret-blink': '0%, 70%, 100% { opacity: 1; } 20%, 50% { opacity: 0; }',
     /** Fade in animation */
@@ -377,23 +442,32 @@ export const tokens = {
     /** Fade out animation */
     'motion-animation-fade-out': 'fade-out var(--motion-duration-fast) var(--motion-easing-exit)',
     /** Slide in from top */
-    'motion-animation-slide-in-from-top': 'slide-in-from-top var(--motion-duration-normal) var(--motion-easing-enter)',
+    'motion-animation-slide-in-from-top':
+      'slide-in-from-top var(--motion-duration-normal) var(--motion-easing-enter)',
     /** Slide in from bottom */
-    'motion-animation-slide-in-from-bottom': 'slide-in-from-bottom var(--motion-duration-normal) var(--motion-easing-enter)',
+    'motion-animation-slide-in-from-bottom':
+      'slide-in-from-bottom var(--motion-duration-normal) var(--motion-easing-enter)',
     /** Slide in from left */
-    'motion-animation-slide-in-from-left': 'slide-in-from-left var(--motion-duration-normal) var(--motion-easing-enter)',
+    'motion-animation-slide-in-from-left':
+      'slide-in-from-left var(--motion-duration-normal) var(--motion-easing-enter)',
     /** Slide in from right */
-    'motion-animation-slide-in-from-right': 'slide-in-from-right var(--motion-duration-normal) var(--motion-easing-enter)',
+    'motion-animation-slide-in-from-right':
+      'slide-in-from-right var(--motion-duration-normal) var(--motion-easing-enter)',
     /** Slide out to top */
-    'motion-animation-slide-out-to-top': 'slide-out-to-top var(--motion-duration-fast) var(--motion-easing-exit)',
+    'motion-animation-slide-out-to-top':
+      'slide-out-to-top var(--motion-duration-fast) var(--motion-easing-exit)',
     /** Slide out to bottom */
-    'motion-animation-slide-out-to-bottom': 'slide-out-to-bottom var(--motion-duration-fast) var(--motion-easing-exit)',
+    'motion-animation-slide-out-to-bottom':
+      'slide-out-to-bottom var(--motion-duration-fast) var(--motion-easing-exit)',
     /** Slide out to left */
-    'motion-animation-slide-out-to-left': 'slide-out-to-left var(--motion-duration-fast) var(--motion-easing-exit)',
+    'motion-animation-slide-out-to-left':
+      'slide-out-to-left var(--motion-duration-fast) var(--motion-easing-exit)',
     /** Slide out to right */
-    'motion-animation-slide-out-to-right': 'slide-out-to-right var(--motion-duration-fast) var(--motion-easing-exit)',
+    'motion-animation-slide-out-to-right':
+      'slide-out-to-right var(--motion-duration-fast) var(--motion-easing-exit)',
     /** Scale in with spring */
-    'motion-animation-scale-in': 'scale-in var(--motion-duration-normal) var(--motion-easing-spring-snappy)',
+    'motion-animation-scale-in':
+      'scale-in var(--motion-duration-normal) var(--motion-easing-spring-snappy)',
     /** Scale out */
     'motion-animation-scale-out': 'scale-out var(--motion-duration-fast) var(--motion-easing-exit)',
     /** Continuous spin */
@@ -405,9 +479,11 @@ export const tokens = {
     /** Bouncing */
     'motion-animation-bounce': 'bounce 1s var(--motion-easing-standard) infinite',
     /** Accordion expand */
-    'motion-animation-accordion-down': 'accordion-down var(--motion-duration-normal) var(--motion-easing-enter)',
+    'motion-animation-accordion-down':
+      'accordion-down var(--motion-duration-normal) var(--motion-easing-enter)',
     /** Accordion collapse */
-    'motion-animation-accordion-up': 'accordion-up var(--motion-duration-normal) var(--motion-easing-enter)',
+    'motion-animation-accordion-up':
+      'accordion-up var(--motion-duration-normal) var(--motion-easing-enter)',
     /** Caret blinking */
     'motion-animation-caret-blink': 'caret-blink 1.25s var(--motion-easing-enter) infinite',
     /** Fade in animation preset */
@@ -421,33 +497,103 @@ export const tokens = {
     /** Scale in with spring animation */
     'motion-scale-in': '350ms cubic-bezier(0.2, 0.8, 0.2, 1)',
     /** Hover-state colour transition. Acknowledges pointer presence. Colour only, no movement -- the cursor is already on target, so the response matches its speed at the fast tier. */
-    'motion-semantic-hover': {"properties":["color","background-color","border-color"],"durationTier":"fast","curve":"standard","reducedMotion":null},
+    'motion-semantic-hover': {
+      properties: ['color', 'background-color', 'border-color'],
+      durationTier: 'fast',
+      curve: 'standard',
+      reducedMotion: null,
+    },
     /** Focus-ring transition. Marks the focused element. A ring appearing, not moving -- micro tier at linear velocity reads as the system marking focus, not a gesture. (Tailwind ring is box-shadow.) */
-    'motion-semantic-focus': {"properties":["box-shadow","outline-color"],"durationTier":"micro","curve":"linear","reducedMotion":null},
+    'motion-semantic-focus': {
+      properties: ['box-shadow', 'outline-color'],
+      durationTier: 'micro',
+      curve: 'linear',
+      reducedMotion: null,
+    },
     /** Press/active feedback. Confirms the input was received. The fastest, tightest feedback -- micro tier with a snappy spring follows the finger. Under reduced motion the transform drops; the colour change survives. */
-    'motion-semantic-press': {"properties":["transform","color","background-color"],"durationTier":"micro","curve":"spring-snappy","reducedMotion":{"properties":["color","background-color"]}},
+    'motion-semantic-press': {
+      properties: ['transform', 'color', 'background-color'],
+      durationTier: 'micro',
+      curve: 'spring-snappy',
+      reducedMotion: { properties: ['color', 'background-color'] },
+    },
     /** Toggle/switch state change. Shows the new state. A thumb travelling a track is a small, tracked movement -- moderate tier, snappy spring. Reduced motion drops the transform to a colour cross-fade. */
-    'motion-semantic-toggle': {"properties":["color","background-color","transform"],"durationTier":"moderate","curve":"spring-snappy","reducedMotion":{"properties":["color","background-color"]}},
+    'motion-semantic-toggle': {
+      properties: ['color', 'background-color', 'transform'],
+      durationTier: 'moderate',
+      curve: 'spring-snappy',
+      reducedMotion: { properties: ['color', 'background-color'] },
+    },
     /** Dropdown/menu entrance. A dropdown is small and travels a short distance -- moderate tier, one step below the modal, with the arrival curve. */
-    'motion-semantic-dropdown-in': {"properties":["opacity","transform"],"durationTier":"moderate","curve":"enter","reducedMotion":{"properties":["opacity"],"ms":100}},
+    'motion-semantic-dropdown-in': {
+      properties: ['opacity', 'transform'],
+      durationTier: 'moderate',
+      curve: 'enter',
+      reducedMotion: { properties: ['opacity'], ms: 100 },
+    },
     /** Dropdown/menu exit. The exit of a small element -- fast tier (shorter than its moderate entrance) with the departure curve. The user already chose to dismiss it. */
-    'motion-semantic-dropdown-out': {"properties":["opacity","transform"],"durationTier":"fast","curve":"exit","reducedMotion":{"properties":["opacity"],"ms":100}},
+    'motion-semantic-dropdown-out': {
+      properties: ['opacity', 'transform'],
+      durationTier: 'fast',
+      curve: 'exit',
+      reducedMotion: { properties: ['opacity'], ms: 100 },
+    },
     /** Modal/dialog entrance. A modal is larger and travels farther than a dropdown -- normal tier, one step up, with the arrival curve. Size and distance produce the longer duration. */
-    'motion-semantic-modal-in': {"properties":["opacity","transform"],"durationTier":"normal","curve":"enter","reducedMotion":{"properties":["opacity"],"ms":150}},
+    'motion-semantic-modal-in': {
+      properties: ['opacity', 'transform'],
+      durationTier: 'normal',
+      curve: 'enter',
+      reducedMotion: { properties: ['opacity'], ms: 150 },
+    },
     /** Modal/dialog exit. The modal exit -- moderate tier (shorter than its normal entrance) with the departure curve. */
-    'motion-semantic-modal-out': {"properties":["opacity","transform"],"durationTier":"moderate","curve":"exit","reducedMotion":{"properties":["opacity"],"ms":150}},
+    'motion-semantic-modal-out': {
+      properties: ['opacity', 'transform'],
+      durationTier: 'moderate',
+      curve: 'exit',
+      reducedMotion: { properties: ['opacity'], ms: 150 },
+    },
     /** Sheet/drawer entrance. A sheet is the largest spatial movement -- slow tier with the physical settle of a smooth spring, because the user must track it into place. Reduced motion becomes a cross-fade. */
-    'motion-semantic-sheet-in': {"properties":["transform"],"durationTier":"slow","curve":"spring-smooth","reducedMotion":{"properties":["opacity"],"ms":250}},
+    'motion-semantic-sheet-in': {
+      properties: ['transform'],
+      durationTier: 'slow',
+      curve: 'spring-smooth',
+      reducedMotion: { properties: ['opacity'], ms: 250 },
+    },
     /** Sheet/drawer exit. The sheet exit -- normal tier (shorter than its slow entrance) with the departure curve. */
-    'motion-semantic-sheet-out': {"properties":["transform"],"durationTier":"normal","curve":"exit","reducedMotion":{"properties":["opacity"],"ms":250}},
+    'motion-semantic-sheet-out': {
+      properties: ['transform'],
+      durationTier: 'normal',
+      curve: 'exit',
+      reducedMotion: { properties: ['opacity'], ms: 250 },
+    },
     /** Expand/reveal collapsible content (accordion, disclosure). Content unfolding to its natural height -- normal tier with the arrival curve. Transitions grid-template-rows (0fr->1fr), the transitionable stand-in for height:auto. Reduced motion snaps the rows and fades opacity. */
-    'motion-semantic-expand': {"properties":["grid-template-rows","opacity"],"durationTier":"normal","curve":"enter","reducedMotion":{"properties":["opacity"]}},
+    'motion-semantic-expand': {
+      properties: ['grid-template-rows', 'opacity'],
+      durationTier: 'normal',
+      curve: 'enter',
+      reducedMotion: { properties: ['opacity'] },
+    },
     /** Collapse/hide collapsible content (accordion, disclosure). Content folding away -- moderate tier (shorter than its normal expansion) with the departure curve. Reduced motion snaps the rows. */
-    'motion-semantic-collapse': {"properties":["grid-template-rows","opacity"],"durationTier":"moderate","curve":"exit","reducedMotion":{"properties":["opacity"]}},
+    'motion-semantic-collapse': {
+      properties: ['grid-template-rows', 'opacity'],
+      durationTier: 'moderate',
+      curve: 'exit',
+      reducedMotion: { properties: ['opacity'] },
+    },
     /** Page/route transition. A whole-view transition -- slow tier with the physical settle of a smooth spring, because the user reorients across the largest possible distance. */
-    'motion-semantic-page': {"properties":["opacity","transform"],"durationTier":"slow","curve":"spring-smooth","reducedMotion":{"properties":["opacity"],"ms":200}},
+    'motion-semantic-page': {
+      properties: ['opacity', 'transform'],
+      durationTier: 'slow',
+      curve: 'spring-smooth',
+      reducedMotion: { properties: ['opacity'], ms: 200 },
+    },
     /** Metadata about the motion system */
-    'motion-progression': {"ratio":"minor-third","ratioValue":1.2,"baseDuration":150,"note":"Duration tiers are perceptually derived literals (docs/MOTION.md); delay tokens use the workspace progression ratio from the base duration."},
+    'motion-progression': {
+      ratio: 'minor-third',
+      ratioValue: 1.2,
+      baseDuration: 150,
+      note: 'Duration tiers are perceptually derived literals (docs/MOTION.md); delay tokens use the workspace progression ratio from the base duration.',
+    },
   },
   radius: {
     /** Base border radius - all other radii derive from this value */
@@ -473,7 +619,7 @@ export const tokens = {
     /** bottom-right radius at sm scale */
     'radius-sm-br': 'calc(var(--rafters-radius-br) * 0.833)',
     /** Default radius - primary UI elements */
-    'radius': 'var(--rafters-radius-base)',
+    radius: 'var(--rafters-radius-base)',
     /** Medium radius for containers */
     'radius-md': 'calc(var(--rafters-radius-base) * 1.2)',
     /** top-left radius at md scale */
@@ -529,16 +675,16 @@ export const tokens = {
   },
   semantic: {
     /** Neutral base family for surfaces, text, and borders */
-    'neutral': 'var(--color-zinc-500)',
+    neutral: 'var(--color-zinc-500)',
     'neutral--dark': 'var(--color-zinc-400)',
     /** Primary page background color */
-    'background': 'var(--color-zinc-50)',
+    background: 'var(--color-zinc-50)',
     'background--dark': 'var(--color-zinc-950)',
     /** Primary text color */
-    'foreground': 'var(--color-zinc-950)',
+    foreground: 'var(--color-zinc-950)',
     'foreground--dark': 'var(--color-zinc-50)',
     /** Card and contained surface background */
-    'card': 'var(--color-zinc-50)',
+    card: 'var(--color-zinc-50)',
     'card--dark': 'var(--color-zinc-700)',
     /** Text on card surfaces */
     'card-foreground': 'var(--color-zinc-600)',
@@ -550,7 +696,7 @@ export const tokens = {
     'card-border': 'var(--color-zinc-200)',
     'card-border--dark': 'var(--color-zinc-400)',
     /** Persistent elevated chrome -- headers, docks, fixed toolbars */
-    'panel': 'var(--color-zinc-200)',
+    panel: 'var(--color-zinc-200)',
     'panel--dark': 'var(--color-zinc-800)',
     /** Text and icons on panel surfaces */
     'panel-foreground': 'var(--color-zinc-700)',
@@ -562,7 +708,7 @@ export const tokens = {
     'panel-border': 'var(--color-zinc-400)',
     'panel-border--dark': 'var(--color-zinc-600)',
     /** Popover and dropdown background */
-    'popover': 'var(--color-zinc-50)',
+    popover: 'var(--color-zinc-50)',
     'popover--dark': 'var(--color-zinc-700)',
     /** Text in popovers */
     'popover-foreground': 'var(--color-zinc-600)',
@@ -571,7 +717,7 @@ export const tokens = {
     'popover-border': 'var(--color-zinc-200)',
     'popover-border--dark': 'var(--color-zinc-400)',
     /** Base chrome surface -- toolbars, app shell, UI frame */
-    'surface': 'var(--color-zinc-100)',
+    surface: 'var(--color-zinc-100)',
     'surface--dark': 'var(--color-zinc-900)',
     /** Text on surface backgrounds */
     'surface-foreground': 'var(--color-zinc-700)',
@@ -586,7 +732,7 @@ export const tokens = {
     'surface-border': 'var(--color-zinc-300)',
     'surface-border--dark': 'var(--color-zinc-700)',
     /** Primary interactive elements - buttons, links, focus states */
-    'primary': 'var(--color-zinc-900)',
+    primary: 'var(--color-zinc-900)',
     'primary--dark': 'var(--color-zinc-50)',
     /** Text on primary color backgrounds */
     'primary-foreground': 'var(--color-zinc-50)',
@@ -619,7 +765,7 @@ export const tokens = {
     'primary-subtle-foreground': 'var(--color-zinc-50)',
     'primary-subtle-foreground--dark': 'var(--color-zinc-700)',
     /** Secondary interactive elements - less prominent actions */
-    'secondary': 'var(--color-zinc-100)',
+    secondary: 'var(--color-zinc-100)',
     'secondary--dark': 'var(--color-zinc-800)',
     /** Text on secondary color backgrounds */
     'secondary-foreground': 'var(--color-zinc-700)',
@@ -652,7 +798,7 @@ export const tokens = {
     'secondary-subtle-foreground': 'var(--color-zinc-600)',
     'secondary-subtle-foreground--dark': 'var(--color-zinc-50)',
     /** Muted backgrounds for subtle emphasis */
-    'muted': 'var(--color-zinc-100)',
+    muted: 'var(--color-zinc-100)',
     'muted--dark': 'var(--color-zinc-800)',
     /** Muted text for secondary information */
     'muted-foreground': 'var(--color-zinc-700)',
@@ -670,7 +816,7 @@ export const tokens = {
     'muted-border': 'var(--color-zinc-300)',
     'muted-border--dark': 'var(--color-zinc-600)',
     /** Accent for hover states and highlights */
-    'accent': 'var(--color-zinc-100)',
+    accent: 'var(--color-zinc-100)',
     'accent--dark': 'var(--color-zinc-800)',
     /** Text on accent backgrounds */
     'accent-foreground': 'var(--color-zinc-700)',
@@ -700,7 +846,7 @@ export const tokens = {
     'accent-subtle-foreground': 'var(--color-zinc-600)',
     'accent-subtle-foreground--dark': 'var(--color-zinc-50)',
     /** Destructive actions - delete, remove, critical warnings */
-    'destructive': 'var(--color-silver-bold-fire-truck-600)',
+    destructive: 'var(--color-silver-bold-fire-truck-600)',
     'destructive--dark': 'var(--color-silver-bold-fire-truck-500)',
     /** Text on destructive backgrounds */
     'destructive-foreground': 'var(--color-silver-bold-fire-truck-50)',
@@ -733,7 +879,7 @@ export const tokens = {
     'destructive-subtle-foreground': 'var(--color-silver-bold-fire-truck-900)',
     'destructive-subtle-foreground--dark': 'var(--color-silver-bold-fire-truck-50)',
     /** Success states - confirmations, completions, positive feedback */
-    'success': 'var(--color-silver-true-citrine-600)',
+    success: 'var(--color-silver-true-citrine-600)',
     'success--dark': 'var(--color-silver-true-citrine-500)',
     /** Text on success backgrounds */
     'success-foreground': 'var(--color-silver-true-citrine-50)',
@@ -766,7 +912,7 @@ export const tokens = {
     'success-subtle-foreground': 'var(--color-silver-true-citrine-900)',
     'success-subtle-foreground--dark': 'var(--color-silver-true-citrine-50)',
     /** Warning states - caution, potential issues, important notices */
-    'warning': 'var(--color-silver-true-honey-500)',
+    warning: 'var(--color-silver-true-honey-500)',
     'warning--dark': 'var(--color-silver-true-honey-500)',
     /** Text on warning backgrounds */
     'warning-foreground': 'var(--color-silver-true-honey-900)',
@@ -799,7 +945,7 @@ export const tokens = {
     'warning-subtle-foreground': 'var(--color-silver-true-honey-800)',
     'warning-subtle-foreground--dark': 'var(--color-silver-true-honey-50)',
     /** Informational states - tips, help, neutral information */
-    'info': 'var(--color-silver-true-sky-600)',
+    info: 'var(--color-silver-true-sky-600)',
     'info--dark': 'var(--color-silver-true-sky-500)',
     /** Text on info backgrounds */
     'info-foreground': 'var(--color-silver-true-sky-50)',
@@ -832,7 +978,7 @@ export const tokens = {
     'info-subtle-foreground': 'var(--color-silver-true-sky-800)',
     'info-subtle-foreground--dark': 'var(--color-silver-true-sky-50)',
     /** Critical alert states */
-    'alert': 'var(--color-silver-bold-fire-truck-600)',
+    alert: 'var(--color-silver-bold-fire-truck-600)',
     'alert--dark': 'var(--color-silver-bold-fire-truck-500)',
     /** Text on alert backgrounds */
     'alert-foreground': 'var(--color-silver-bold-fire-truck-50)',
@@ -862,7 +1008,7 @@ export const tokens = {
     'alert-subtle-foreground': 'var(--color-silver-bold-fire-truck-900)',
     'alert-subtle-foreground--dark': 'var(--color-silver-bold-fire-truck-50)',
     /** Highlight for search results, selected text, emphasis */
-    'highlight': 'var(--color-silver-true-violet-200)',
+    highlight: 'var(--color-silver-true-violet-200)',
     'highlight--dark': 'var(--color-silver-true-violet-800)',
     /** Text on highlight backgrounds */
     'highlight-foreground': 'var(--color-silver-true-violet-800)',
@@ -880,7 +1026,7 @@ export const tokens = {
     'highlight-active-foreground': 'var(--color-silver-true-violet-900)',
     'highlight-active-foreground--dark': 'var(--color-silver-true-violet-900)',
     /** Default border color */
-    'border': 'var(--color-zinc-200)',
+    border: 'var(--color-zinc-200)',
     'border--dark': 'var(--color-zinc-800)',
     /** Border hover state */
     'border-hover': 'var(--color-zinc-300)',
@@ -892,7 +1038,7 @@ export const tokens = {
     'border-active': 'var(--color-zinc-400)',
     'border-active--dark': 'var(--color-zinc-600)',
     /** Input field border color */
-    'input': 'var(--color-zinc-200)',
+    input: 'var(--color-zinc-200)',
     'input--dark': 'var(--color-zinc-800)',
     /** Input text color */
     'input-foreground': 'var(--color-zinc-700)',
@@ -925,7 +1071,7 @@ export const tokens = {
     'input-valid-foreground': 'var(--color-silver-true-citrine-900)',
     'input-valid-foreground--dark': 'var(--color-silver-true-citrine-900)',
     /** Focus ring color */
-    'ring': 'var(--color-zinc-950)',
+    ring: 'var(--color-zinc-950)',
     'ring--dark': 'var(--color-zinc-300)',
     /** Focus ring offset color */
     'ring-offset': 'var(--color-zinc-50)',
@@ -946,7 +1092,7 @@ export const tokens = {
     'ring-info': 'var(--color-silver-true-sky-600)',
     'ring-info--dark': 'var(--color-silver-true-sky-400)',
     /** Link color */
-    'link': 'var(--color-silver-true-sky-700)',
+    link: 'var(--color-silver-true-sky-700)',
     'link--dark': 'var(--color-silver-true-sky-400)',
     /** Link hover color */
     'link-hover': 'var(--color-silver-true-sky-900)',
@@ -961,13 +1107,13 @@ export const tokens = {
     'link-focus': 'var(--color-silver-true-sky-900)',
     'link-focus--dark': 'var(--color-silver-true-sky-300)',
     /** Text selection background */
-    'selection': 'var(--color-silver-true-sky-200)',
+    selection: 'var(--color-silver-true-sky-200)',
     'selection--dark': 'var(--color-silver-true-sky-800)',
     /** Text selection foreground */
     'selection-foreground': 'var(--color-silver-true-sky-800)',
     'selection-foreground--dark': 'var(--color-silver-true-sky-50)',
     /** Sidebar background -- almost on the surface */
-    'sidebar': 'var(--color-zinc-100)',
+    sidebar: 'var(--color-zinc-100)',
     'sidebar--dark': 'var(--color-zinc-900)',
     /** Sidebar text color */
     'sidebar-foreground': 'var(--color-zinc-700)',
@@ -1030,7 +1176,7 @@ export const tokens = {
     'sidebar-ring': 'var(--color-zinc-100)',
     'sidebar-ring--dark': 'var(--color-zinc-900)',
     /** Navigation background */
-    'nav': 'var(--color-zinc-50)',
+    nav: 'var(--color-zinc-50)',
     'nav--dark': 'var(--color-zinc-900)',
     /** Navigation text */
     'nav-foreground': 'var(--color-zinc-600)',
@@ -1060,7 +1206,7 @@ export const tokens = {
     'nav-disabled-foreground': 'var(--color-zinc-950)',
     'nav-disabled-foreground--dark': 'var(--color-zinc-950)',
     /** Table background */
-    'table': 'var(--color-zinc-50)',
+    table: 'var(--color-zinc-50)',
     'table--dark': 'var(--color-zinc-950)',
     /** Table text */
     'table-foreground': 'var(--color-zinc-600)',
@@ -1084,19 +1230,19 @@ export const tokens = {
     'table-border': 'var(--color-zinc-200)',
     'table-border--dark': 'var(--color-zinc-800)',
     /** Tooltip background */
-    'tooltip': 'var(--color-zinc-900)',
+    tooltip: 'var(--color-zinc-900)',
     'tooltip--dark': 'var(--color-zinc-50)',
     /** Tooltip text */
     'tooltip-foreground': 'var(--color-zinc-50)',
     'tooltip-foreground--dark': 'var(--color-zinc-600)',
     /** Overlay background */
-    'overlay': 'var(--color-zinc-950)',
+    overlay: 'var(--color-zinc-950)',
     'overlay--dark': 'var(--color-zinc-950)',
     /** Overlay text */
     'overlay-foreground': 'var(--color-zinc-50)',
     'overlay-foreground--dark': 'var(--color-zinc-50)',
     /** Skeleton loader background */
-    'skeleton': 'var(--color-zinc-200)',
+    skeleton: 'var(--color-zinc-200)',
     'skeleton--dark': 'var(--color-zinc-800)',
     /** Skeleton loader highlight */
     'skeleton-highlight': 'var(--color-zinc-300)',
@@ -1117,7 +1263,7 @@ export const tokens = {
     'chart-5': 'var(--color-silver-true-violet-500)',
     'chart-5--dark': 'var(--color-silver-true-violet-400)',
     /** Scrollbar thumb color */
-    'scrollbar': 'var(--color-zinc-300)',
+    scrollbar: 'var(--color-zinc-300)',
     'scrollbar--dark': 'var(--color-zinc-700)',
     /** Scrollbar thumb hover */
     'scrollbar-hover': 'var(--color-zinc-400)',
@@ -1126,7 +1272,7 @@ export const tokens = {
     'scrollbar-track': 'var(--color-zinc-100)',
     'scrollbar-track--dark': 'var(--color-zinc-900)',
     /** Code block background */
-    'code': 'var(--color-zinc-100)',
+    code: 'var(--color-zinc-100)',
     'code--dark': 'var(--color-zinc-900)',
     /** Code text color */
     'code-foreground': 'var(--color-zinc-700)',
@@ -1135,7 +1281,7 @@ export const tokens = {
     'code-border': 'var(--color-zinc-300)',
     'code-border--dark': 'var(--color-zinc-700)',
     /** Badge background */
-    'badge': 'var(--color-zinc-100)',
+    badge: 'var(--color-zinc-100)',
     'badge--dark': 'var(--color-zinc-800)',
     /** Badge text color */
     'badge-foreground': 'var(--color-zinc-700)',
@@ -1144,7 +1290,7 @@ export const tokens = {
     'badge-border': 'var(--color-zinc-300)',
     'badge-border--dark': 'var(--color-zinc-600)',
     /** Avatar fallback background */
-    'avatar': 'var(--color-zinc-200)',
+    avatar: 'var(--color-zinc-200)',
     'avatar--dark': 'var(--color-zinc-800)',
     /** Avatar fallback text/icon color */
     'avatar-foreground': 'var(--color-zinc-700)',
@@ -1166,7 +1312,8 @@ export const tokens = {
     /** color component of xs shadow */
     'shadow-xs-color': 'rgb(0 0 0 / 0.05)',
     /** Extra small shadow - subtle depth hint */
-    'shadow-xs': 'var(--rafters-shadow-xs-offset-x) var(--rafters-shadow-xs-offset-y) var(--rafters-shadow-xs-blur) var(--rafters-shadow-xs-spread) var(--rafters-shadow-xs-color)',
+    'shadow-xs':
+      'var(--rafters-shadow-xs-offset-x) var(--rafters-shadow-xs-offset-y) var(--rafters-shadow-xs-blur) var(--rafters-shadow-xs-spread) var(--rafters-shadow-xs-color)',
     /** offset-x component of sm shadow */
     'shadow-sm-offset-x': '0rem',
     /** offset-y component of sm shadow */
@@ -1178,7 +1325,8 @@ export const tokens = {
     /** color component of sm shadow */
     'shadow-sm-color': 'rgb(0 0 0 / 0.06)',
     /** Small shadow - slight elevation */
-    'shadow-sm': 'var(--rafters-shadow-sm-offset-x) var(--rafters-shadow-sm-offset-y) var(--rafters-shadow-sm-blur) var(--rafters-shadow-sm-spread) var(--rafters-shadow-sm-color), 0 0.063rem 0.125rem 0rem rgb(0 0 0 / 0.1)',
+    'shadow-sm':
+      'var(--rafters-shadow-sm-offset-x) var(--rafters-shadow-sm-offset-y) var(--rafters-shadow-sm-blur) var(--rafters-shadow-sm-spread) var(--rafters-shadow-sm-color), 0 0.063rem 0.125rem 0rem rgb(0 0 0 / 0.1)',
     /** offset-x component of DEFAULT shadow */
     'shadow-offset-x': '0rem',
     /** offset-y component of DEFAULT shadow */
@@ -1190,7 +1338,8 @@ export const tokens = {
     /** color component of DEFAULT shadow */
     'shadow-color': 'rgb(0 0 0 / 0.1)',
     /** Default shadow - standard elevation */
-    'shadow': 'var(--rafters-shadow-offset-x) var(--rafters-shadow-offset-y) var(--rafters-shadow-blur) var(--rafters-shadow-spread) var(--rafters-shadow-color), 0 0.063rem 0.125rem 0rem rgb(0 0 0 / 0.1)',
+    shadow:
+      'var(--rafters-shadow-offset-x) var(--rafters-shadow-offset-y) var(--rafters-shadow-blur) var(--rafters-shadow-spread) var(--rafters-shadow-color), 0 0.063rem 0.125rem 0rem rgb(0 0 0 / 0.1)',
     /** offset-x component of md shadow */
     'shadow-md-offset-x': '0rem',
     /** offset-y component of md shadow */
@@ -1202,7 +1351,8 @@ export const tokens = {
     /** color component of md shadow */
     'shadow-md-color': 'rgb(0 0 0 / 0.1)',
     /** Medium shadow - noticeable elevation */
-    'shadow-md': 'var(--rafters-shadow-md-offset-x) var(--rafters-shadow-md-offset-y) var(--rafters-shadow-md-blur) var(--rafters-shadow-md-spread) var(--rafters-shadow-md-color), 0 0.125rem 0.25rem -0.062rem rgb(0 0 0 / 0.1)',
+    'shadow-md':
+      'var(--rafters-shadow-md-offset-x) var(--rafters-shadow-md-offset-y) var(--rafters-shadow-md-blur) var(--rafters-shadow-md-spread) var(--rafters-shadow-md-color), 0 0.125rem 0.25rem -0.062rem rgb(0 0 0 / 0.1)',
     /** offset-x component of lg shadow */
     'shadow-lg-offset-x': '0rem',
     /** offset-y component of lg shadow */
@@ -1214,7 +1364,8 @@ export const tokens = {
     /** color component of lg shadow */
     'shadow-lg-color': 'rgb(0 0 0 / 0.1)',
     /** Large shadow - significant elevation */
-    'shadow-lg': 'var(--rafters-shadow-lg-offset-x) var(--rafters-shadow-lg-offset-y) var(--rafters-shadow-lg-blur) var(--rafters-shadow-lg-spread) var(--rafters-shadow-lg-color), 0 0.25rem 0.5rem -0.125rem rgb(0 0 0 / 0.1)',
+    'shadow-lg':
+      'var(--rafters-shadow-lg-offset-x) var(--rafters-shadow-lg-offset-y) var(--rafters-shadow-lg-blur) var(--rafters-shadow-lg-spread) var(--rafters-shadow-lg-color), 0 0.25rem 0.5rem -0.125rem rgb(0 0 0 / 0.1)',
     /** offset-x component of xl shadow */
     'shadow-xl-offset-x': '0rem',
     /** offset-y component of xl shadow */
@@ -1226,7 +1377,8 @@ export const tokens = {
     /** color component of xl shadow */
     'shadow-xl-color': 'rgb(0 0 0 / 0.1)',
     /** Extra large shadow - high elevation */
-    'shadow-xl': 'var(--rafters-shadow-xl-offset-x) var(--rafters-shadow-xl-offset-y) var(--rafters-shadow-xl-blur) var(--rafters-shadow-xl-spread) var(--rafters-shadow-xl-color), 0 0.5rem 1rem -0.187rem rgb(0 0 0 / 0.1)',
+    'shadow-xl':
+      'var(--rafters-shadow-xl-offset-x) var(--rafters-shadow-xl-offset-y) var(--rafters-shadow-xl-blur) var(--rafters-shadow-xl-spread) var(--rafters-shadow-xl-color), 0 0.5rem 1rem -0.187rem rgb(0 0 0 / 0.1)',
     /** offset-x component of 2xl shadow */
     'shadow-2xl-offset-x': '0rem',
     /** offset-y component of 2xl shadow */
@@ -1238,13 +1390,21 @@ export const tokens = {
     /** color component of 2xl shadow */
     'shadow-2xl-color': 'rgb(0 0 0 / 0.25)',
     /** Maximum shadow - highest elevation */
-    'shadow-2xl': 'var(--rafters-shadow-2xl-offset-x) var(--rafters-shadow-2xl-offset-y) var(--rafters-shadow-2xl-blur) var(--rafters-shadow-2xl-spread) var(--rafters-shadow-2xl-color)',
+    'shadow-2xl':
+      'var(--rafters-shadow-2xl-offset-x) var(--rafters-shadow-2xl-offset-y) var(--rafters-shadow-2xl-blur) var(--rafters-shadow-2xl-spread) var(--rafters-shadow-2xl-color)',
     /** Primary colored shadow for emphasis */
-    'shadow-primary': 'var(--rafters-shadow-offset-x) var(--rafters-shadow-offset-y) var(--rafters-shadow-blur) var(--rafters-shadow-spread) color-mix(in oklch, var(--primary) 12%, transparent)',
+    'shadow-primary':
+      'var(--rafters-shadow-offset-x) var(--rafters-shadow-offset-y) var(--rafters-shadow-blur) var(--rafters-shadow-spread) color-mix(in oklch, var(--primary) 12%, transparent)',
     /** Destructive colored shadow for warnings */
-    'shadow-destructive': 'var(--rafters-shadow-offset-x) var(--rafters-shadow-offset-y) var(--rafters-shadow-blur) var(--rafters-shadow-spread) color-mix(in oklch, var(--destructive) 12%, transparent)',
+    'shadow-destructive':
+      'var(--rafters-shadow-offset-x) var(--rafters-shadow-offset-y) var(--rafters-shadow-blur) var(--rafters-shadow-spread) color-mix(in oklch, var(--destructive) 12%, transparent)',
     /** Metadata about the shadow progression system */
-    'shadow-progression': {"ratio":"minor-third","ratioValue":1.2,"baseUnit":4,"note":"Shadow values derived from spacing progression for visual harmony"},
+    'shadow-progression': {
+      ratio: 'minor-third',
+      ratioValue: 1.2,
+      baseUnit: 4,
+      note: 'Shadow values derived from spacing progression for visual harmony',
+    },
   },
   spacing: {
     /** Foundation spacing unit - all spacing derives from this value */
@@ -1318,13 +1478,19 @@ export const tokens = {
     /** Extra large spacing for page-level layout and hero sections */
     'spacing-96': 'calc(var(--rafters-spacing-base) * 96)',
     /** Metadata about the spacing progression system */
-    'spacing-progression': {"ratio":"minor-third","ratioValue":1.2,"baseUnit":4,"sample":[0,4,4.8,5.76,6.91,8.29,9.95,11.94,14.33,17.2]},
+    'spacing-progression': {
+      ratio: 'minor-third',
+      ratioValue: 1.2,
+      baseUnit: 4,
+      sample: [0, 4, 4.8, 5.76, 6.91, 8.29, 9.95, 11.94, 14.33, 17.2],
+    },
   },
   typography: {
     /** Primary font family for UI text */
     'font-sans': "'Noto Sans Variable', sans-serif",
     /** Monospace font family for code */
-    'font-mono': "ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace",
+    'font-mono':
+      "ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace",
     /** Serif font family for editorial and long-form content */
     'font-serif': 'Georgia, "Times New Roman", Times, serif',
     /** Font family for headings and display text */
@@ -1430,53 +1596,158 @@ export const tokens = {
     /** Black weight */
     'font-weight-black': '900',
     /** Metadata about the typography progression system */
-    'typography-progression': {"ratio":"minor-third","ratioValue":1.2,"baseFontSize":16,"scale":{"xs":11.11,"sm":13.33,"base":16,"lg":19.2,"xl":23.04,"2xl":27.65,"3xl":33.18,"4xl":39.81,"5xl":47.78,"6xl":57.33,"7xl":68.8,"8xl":82.56,"9xl":99.07}},
+    'typography-progression': {
+      ratio: 'minor-third',
+      ratioValue: 1.2,
+      baseFontSize: 16,
+      scale: {
+        xs: 11.11,
+        sm: 13.33,
+        base: 16,
+        lg: 19.2,
+        xl: 23.04,
+        '2xl': 27.65,
+        '3xl': 33.18,
+        '4xl': 39.81,
+        '5xl': 47.78,
+        '6xl': 57.33,
+        '7xl': 68.8,
+        '8xl': 82.56,
+        '9xl': 99.07,
+      },
+    },
   },
   'typography-composite': {
     /** Largest display text for hero sections and landing pages */
-    'display-large': {"fontFamily":"heading","fontSize":"5xl","fontWeight":"bold","lineHeight":"5xl","letterSpacing":"5xl","responsive":{"lg":{"fontSize":"6xl"}}},
+    'display-large': {
+      fontFamily: 'heading',
+      fontSize: '5xl',
+      fontWeight: 'bold',
+      lineHeight: '5xl',
+      letterSpacing: '5xl',
+      responsive: { lg: { fontSize: '6xl' } },
+    },
     /** Primary page heading -- one per page */
-    'display-medium': {"fontFamily":"heading","fontSize":"4xl","fontWeight":"bold","lineHeight":"4xl","letterSpacing":"4xl","responsive":{"lg":{"fontSize":"5xl"}}},
+    'display-medium': {
+      fontFamily: 'heading',
+      fontSize: '4xl',
+      fontWeight: 'bold',
+      lineHeight: '4xl',
+      letterSpacing: '4xl',
+      responsive: { lg: { fontSize: '5xl' } },
+    },
     /** Major section heading */
-    'title-large': {"fontFamily":"heading","fontSize":"3xl","fontWeight":"semibold","lineHeight":"3xl","letterSpacing":"3xl"},
+    'title-large': {
+      fontFamily: 'heading',
+      fontSize: '3xl',
+      fontWeight: 'semibold',
+      lineHeight: '3xl',
+      letterSpacing: '3xl',
+    },
     /** Component and subsection title -- shared by card, dialog, sheet, drawer, empty state */
-    'title-medium': {"fontFamily":"heading","fontSize":"lg","fontWeight":"semibold","lineHeight":"lg","letterSpacing":"lg"},
+    'title-medium': {
+      fontFamily: 'heading',
+      fontSize: 'lg',
+      fontWeight: 'semibold',
+      lineHeight: 'lg',
+      letterSpacing: 'lg',
+    },
     /** Minor heading and alert title */
-    'title-small': {"fontFamily":"heading","fontSize":"base","fontWeight":"semibold","lineHeight":"base","letterSpacing":"base"},
+    'title-small': {
+      fontFamily: 'heading',
+      fontSize: 'base',
+      fontWeight: 'semibold',
+      lineHeight: 'base',
+      letterSpacing: 'base',
+    },
     /** Lead paragraph and introductory text */
-    'body-large': {"fontFamily":"body","fontSize":"xl","fontWeight":"normal","lineHeight":"xl","letterSpacing":"xl"},
+    'body-large': {
+      fontFamily: 'body',
+      fontSize: 'xl',
+      fontWeight: 'normal',
+      lineHeight: 'xl',
+      letterSpacing: 'xl',
+    },
     /** Default body text for paragraphs and content */
-    'body-medium': {"fontFamily":"body","fontSize":"base","fontWeight":"normal","lineHeight":"base","letterSpacing":"base"},
+    'body-medium': {
+      fontFamily: 'body',
+      fontSize: 'base',
+      fontWeight: 'normal',
+      lineHeight: 'base',
+      letterSpacing: 'base',
+    },
     /** Secondary text -- descriptions, tooltips, menu items, table cells */
-    'body-small': {"fontFamily":"body","fontSize":"sm","fontWeight":"normal","lineHeight":"sm","letterSpacing":"sm"},
+    'body-small': {
+      fontFamily: 'body',
+      fontSize: 'sm',
+      fontWeight: 'normal',
+      lineHeight: 'sm',
+      letterSpacing: 'sm',
+    },
     /** Interactive element text -- buttons, tabs, nav triggers, toggles */
-    'label-large': {"fontFamily":"body","fontSize":"base","fontWeight":"medium","lineHeight":"base","letterSpacing":"base"},
+    'label-large': {
+      fontFamily: 'body',
+      fontSize: 'base',
+      fontWeight: 'medium',
+      lineHeight: 'base',
+      letterSpacing: 'base',
+    },
     /** Form labels, breadcrumbs, small buttons, sidebar items */
-    'label-medium': {"fontFamily":"body","fontSize":"sm","fontWeight":"medium","lineHeight":"sm","letterSpacing":"sm"},
+    'label-medium': {
+      fontFamily: 'body',
+      fontSize: 'sm',
+      fontWeight: 'medium',
+      lineHeight: 'sm',
+      letterSpacing: 'sm',
+    },
     /** Smallest label text -- badges, sidebar labels, captions */
-    'label-small': {"fontFamily":"body","fontSize":"xs","fontWeight":"medium","lineHeight":"xs","letterSpacing":"xs"},
+    'label-small': {
+      fontFamily: 'body',
+      fontSize: 'xs',
+      fontWeight: 'medium',
+      lineHeight: 'xs',
+      letterSpacing: 'xs',
+    },
     /** Code blocks and pre-formatted text */
-    'code-large': {"fontFamily":"code","fontSize":"base","fontWeight":"normal","lineHeight":"base","letterSpacing":"base"},
+    'code-large': {
+      fontFamily: 'code',
+      fontSize: 'base',
+      fontWeight: 'normal',
+      lineHeight: 'base',
+      letterSpacing: 'base',
+    },
     /** Inline code and keyboard key indicators */
-    'code-small': {"fontFamily":"code","fontSize":"sm","fontWeight":"normal","lineHeight":"sm","letterSpacing":"sm"},
+    'code-small': {
+      fontFamily: 'code',
+      fontSize: 'sm',
+      fontWeight: 'normal',
+      lineHeight: 'sm',
+      letterSpacing: 'sm',
+    },
     /** Keyboard shortcut indicators in menus */
-    'shortcut': {"fontFamily":"code","fontSize":"xs","fontWeight":"normal","lineHeight":"xs","letterSpacing":"widest"},
+    shortcut: {
+      fontFamily: 'code',
+      fontSize: 'xs',
+      fontWeight: 'normal',
+      lineHeight: 'xs',
+      letterSpacing: 'widest',
+    },
   },
 } as const;
 
 export type TokenNamespace = keyof typeof tokens;
 
-export type BreakpointToken = keyof (typeof tokens.breakpoint);
-export type ColorToken = keyof (typeof tokens.color);
-export type DepthToken = keyof (typeof tokens.depth);
-export type FocusToken = keyof (typeof tokens.focus);
-export type MotionToken = keyof (typeof tokens.motion);
-export type RadiusToken = keyof (typeof tokens.radius);
-export type SemanticToken = keyof (typeof tokens.semantic);
-export type ShadowToken = keyof (typeof tokens.shadow);
-export type SpacingToken = keyof (typeof tokens.spacing);
-export type TypographyToken = keyof (typeof tokens.typography);
-export type TypographyCompositeToken = keyof (typeof tokens['typography-composite']);
+export type BreakpointToken = keyof typeof tokens.breakpoint;
+export type ColorToken = keyof typeof tokens.color;
+export type DepthToken = keyof typeof tokens.depth;
+export type FocusToken = keyof typeof tokens.focus;
+export type MotionToken = keyof typeof tokens.motion;
+export type RadiusToken = keyof typeof tokens.radius;
+export type SemanticToken = keyof typeof tokens.semantic;
+export type ShadowToken = keyof typeof tokens.shadow;
+export type SpacingToken = keyof typeof tokens.spacing;
+export type TypographyToken = keyof typeof tokens.typography;
+export type TypographyCompositeToken = keyof (typeof tokens)['typography-composite'];
 
 export type TokenName =
   | BreakpointToken
@@ -1494,7 +1765,7 @@ export type TokenName =
 /** Get a token value by namespace and name */
 export function getToken<N extends TokenNamespace>(
   namespace: N,
-  name: keyof typeof tokens[N]
+  name: keyof (typeof tokens)[N],
 ): (typeof tokens)[N][typeof name] {
   return tokens[namespace][name];
 }

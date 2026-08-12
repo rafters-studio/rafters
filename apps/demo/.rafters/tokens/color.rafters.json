@@ -1,6 +1,6 @@
 {
   "namespace": "color",
-  "generatedAt": "2026-07-25T00:55:52.658Z",
+  "generatedAt": "2026-08-12T02:53:40.759Z",
   "tokens": [
     {
       "name": "zinc-50",
@@ -8,18 +8,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "zinc shade at 50 level - light background range",
-      "usageContext": [
-        "backgrounds",
-        "cards",
-        "surfaces",
-        "light-mode-bg"
-      ],
+      "usageContext": ["backgrounds", "cards", "surfaces", "light-mode-bg"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 0,
       "containerQueryAware": true,
       "description": "zinc color at 50 position (OKLCH L=0.985)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "zinc-100",
@@ -27,18 +22,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "zinc shade at 100 level - light background range",
-      "usageContext": [
-        "backgrounds",
-        "cards",
-        "surfaces",
-        "light-mode-bg"
-      ],
+      "usageContext": ["backgrounds", "cards", "surfaces", "light-mode-bg"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 1,
       "containerQueryAware": true,
       "description": "zinc color at 100 position (OKLCH L=0.967)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "zinc-200",
@@ -46,17 +36,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "zinc shade at 200 level - light background range",
-      "usageContext": [
-        "secondary-backgrounds",
-        "hover-states",
-        "subtle-borders"
-      ],
+      "usageContext": ["secondary-backgrounds", "hover-states", "subtle-borders"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 2,
       "containerQueryAware": true,
       "description": "zinc color at 200 position (OKLCH L=0.92)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "zinc-300",
@@ -64,17 +50,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "zinc shade at 300 level - light background range",
-      "usageContext": [
-        "secondary-backgrounds",
-        "hover-states",
-        "subtle-borders"
-      ],
+      "usageContext": ["secondary-backgrounds", "hover-states", "subtle-borders"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 3,
       "containerQueryAware": true,
       "description": "zinc color at 300 position (OKLCH L=0.869)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "zinc-400",
@@ -82,18 +64,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "zinc shade at 400 level - mid-tone for borders and secondary text",
-      "usageContext": [
-        "borders",
-        "dividers",
-        "disabled-states",
-        "placeholder-text"
-      ],
+      "usageContext": ["borders", "dividers", "disabled-states", "placeholder-text"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 4,
       "containerQueryAware": true,
       "description": "zinc color at 400 position (OKLCH L=0.707)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "zinc-500",
@@ -101,18 +78,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "zinc shade at 500 level - mid-tone for borders and secondary text",
-      "usageContext": [
-        "borders",
-        "dividers",
-        "disabled-states",
-        "placeholder-text"
-      ],
+      "usageContext": ["borders", "dividers", "disabled-states", "placeholder-text"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 5,
       "containerQueryAware": true,
       "description": "zinc color at 500 position (OKLCH L=0.552)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "zinc-600",
@@ -120,17 +92,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "zinc shade at 600 level - mid-tone for borders and secondary text",
-      "usageContext": [
-        "secondary-text",
-        "icons",
-        "input-borders"
-      ],
+      "usageContext": ["secondary-text", "icons", "input-borders"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 6,
       "containerQueryAware": true,
       "description": "zinc color at 600 position (OKLCH L=0.442)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "zinc-700",
@@ -138,17 +106,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "zinc shade at 700 level - dark foreground range",
-      "usageContext": [
-        "secondary-text",
-        "icons",
-        "input-borders"
-      ],
+      "usageContext": ["secondary-text", "icons", "input-borders"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 7,
       "containerQueryAware": true,
       "description": "zinc color at 700 position (OKLCH L=0.37)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "zinc-800",
@@ -156,18 +120,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "zinc shade at 800 level - dark foreground range",
-      "usageContext": [
-        "primary-text",
-        "headings",
-        "dark-mode-bg",
-        "high-contrast-elements"
-      ],
+      "usageContext": ["primary-text", "headings", "dark-mode-bg", "high-contrast-elements"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 8,
       "containerQueryAware": true,
       "description": "zinc color at 800 position (OKLCH L=0.269)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "zinc-900",
@@ -175,18 +134,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "zinc shade at 900 level - dark foreground range",
-      "usageContext": [
-        "primary-text",
-        "headings",
-        "dark-mode-bg",
-        "high-contrast-elements"
-      ],
+      "usageContext": ["primary-text", "headings", "dark-mode-bg", "high-contrast-elements"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 9,
       "containerQueryAware": true,
       "description": "zinc color at 900 position (OKLCH L=0.2)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "zinc-950",
@@ -194,18 +148,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "zinc shade at 950 level - dark foreground range",
-      "usageContext": [
-        "primary-text",
-        "headings",
-        "dark-mode-bg",
-        "high-contrast-elements"
-      ],
+      "usageContext": ["primary-text", "headings", "dark-mode-bg", "high-contrast-elements"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 10,
       "containerQueryAware": true,
       "description": "zinc color at 950 position (OKLCH L=0.141)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "zinc",
@@ -284,844 +233,230 @@
         "accessibility": {
           "wcagAA": {
             "normal": [
-              [
-                0,
-                5
-              ],
-              [
-                0,
-                6
-              ],
-              [
-                0,
-                7
-              ],
-              [
-                0,
-                8
-              ],
-              [
-                0,
-                9
-              ],
-              [
-                0,
-                10
-              ],
-              [
-                1,
-                6
-              ],
-              [
-                1,
-                7
-              ],
-              [
-                1,
-                8
-              ],
-              [
-                1,
-                9
-              ],
-              [
-                1,
-                10
-              ],
-              [
-                2,
-                6
-              ],
-              [
-                2,
-                7
-              ],
-              [
-                2,
-                8
-              ],
-              [
-                2,
-                9
-              ],
-              [
-                2,
-                10
-              ],
-              [
-                3,
-                6
-              ],
-              [
-                3,
-                7
-              ],
-              [
-                3,
-                8
-              ],
-              [
-                3,
-                9
-              ],
-              [
-                3,
-                10
-              ],
-              [
-                4,
-                8
-              ],
-              [
-                4,
-                9
-              ],
-              [
-                4,
-                10
-              ],
-              [
-                5,
-                0
-              ],
-              [
-                6,
-                0
-              ],
-              [
-                6,
-                1
-              ],
-              [
-                6,
-                2
-              ],
-              [
-                6,
-                3
-              ],
-              [
-                7,
-                0
-              ],
-              [
-                7,
-                1
-              ],
-              [
-                7,
-                2
-              ],
-              [
-                7,
-                3
-              ],
-              [
-                8,
-                0
-              ],
-              [
-                8,
-                1
-              ],
-              [
-                8,
-                2
-              ],
-              [
-                8,
-                3
-              ],
-              [
-                8,
-                4
-              ],
-              [
-                9,
-                0
-              ],
-              [
-                9,
-                1
-              ],
-              [
-                9,
-                2
-              ],
-              [
-                9,
-                3
-              ],
-              [
-                9,
-                4
-              ],
-              [
-                10,
-                0
-              ],
-              [
-                10,
-                1
-              ],
-              [
-                10,
-                2
-              ],
-              [
-                10,
-                3
-              ],
-              [
-                10,
-                4
-              ]
+              [0, 5],
+              [0, 6],
+              [0, 7],
+              [0, 8],
+              [0, 9],
+              [0, 10],
+              [1, 6],
+              [1, 7],
+              [1, 8],
+              [1, 9],
+              [1, 10],
+              [2, 6],
+              [2, 7],
+              [2, 8],
+              [2, 9],
+              [2, 10],
+              [3, 6],
+              [3, 7],
+              [3, 8],
+              [3, 9],
+              [3, 10],
+              [4, 8],
+              [4, 9],
+              [4, 10],
+              [5, 0],
+              [6, 0],
+              [6, 1],
+              [6, 2],
+              [6, 3],
+              [7, 0],
+              [7, 1],
+              [7, 2],
+              [7, 3],
+              [8, 0],
+              [8, 1],
+              [8, 2],
+              [8, 3],
+              [8, 4],
+              [9, 0],
+              [9, 1],
+              [9, 2],
+              [9, 3],
+              [9, 4],
+              [10, 0],
+              [10, 1],
+              [10, 2],
+              [10, 3],
+              [10, 4]
             ],
             "large": [
-              [
-                0,
-                5
-              ],
-              [
-                0,
-                6
-              ],
-              [
-                0,
-                7
-              ],
-              [
-                0,
-                8
-              ],
-              [
-                0,
-                9
-              ],
-              [
-                0,
-                10
-              ],
-              [
-                1,
-                5
-              ],
-              [
-                1,
-                6
-              ],
-              [
-                1,
-                7
-              ],
-              [
-                1,
-                8
-              ],
-              [
-                1,
-                9
-              ],
-              [
-                1,
-                10
-              ],
-              [
-                2,
-                5
-              ],
-              [
-                2,
-                6
-              ],
-              [
-                2,
-                7
-              ],
-              [
-                2,
-                8
-              ],
-              [
-                2,
-                9
-              ],
-              [
-                2,
-                10
-              ],
-              [
-                3,
-                5
-              ],
-              [
-                3,
-                6
-              ],
-              [
-                3,
-                7
-              ],
-              [
-                3,
-                8
-              ],
-              [
-                3,
-                9
-              ],
-              [
-                3,
-                10
-              ],
-              [
-                4,
-                7
-              ],
-              [
-                4,
-                8
-              ],
-              [
-                4,
-                9
-              ],
-              [
-                4,
-                10
-              ],
-              [
-                5,
-                0
-              ],
-              [
-                5,
-                1
-              ],
-              [
-                5,
-                2
-              ],
-              [
-                5,
-                3
-              ],
-              [
-                5,
-                8
-              ],
-              [
-                5,
-                9
-              ],
-              [
-                5,
-                10
-              ],
-              [
-                6,
-                0
-              ],
-              [
-                6,
-                1
-              ],
-              [
-                6,
-                2
-              ],
-              [
-                6,
-                3
-              ],
-              [
-                7,
-                0
-              ],
-              [
-                7,
-                1
-              ],
-              [
-                7,
-                2
-              ],
-              [
-                7,
-                3
-              ],
-              [
-                7,
-                4
-              ],
-              [
-                8,
-                0
-              ],
-              [
-                8,
-                1
-              ],
-              [
-                8,
-                2
-              ],
-              [
-                8,
-                3
-              ],
-              [
-                8,
-                4
-              ],
-              [
-                8,
-                5
-              ],
-              [
-                9,
-                0
-              ],
-              [
-                9,
-                1
-              ],
-              [
-                9,
-                2
-              ],
-              [
-                9,
-                3
-              ],
-              [
-                9,
-                4
-              ],
-              [
-                9,
-                5
-              ],
-              [
-                10,
-                0
-              ],
-              [
-                10,
-                1
-              ],
-              [
-                10,
-                2
-              ],
-              [
-                10,
-                3
-              ],
-              [
-                10,
-                4
-              ],
-              [
-                10,
-                5
-              ]
+              [0, 5],
+              [0, 6],
+              [0, 7],
+              [0, 8],
+              [0, 9],
+              [0, 10],
+              [1, 5],
+              [1, 6],
+              [1, 7],
+              [1, 8],
+              [1, 9],
+              [1, 10],
+              [2, 5],
+              [2, 6],
+              [2, 7],
+              [2, 8],
+              [2, 9],
+              [2, 10],
+              [3, 5],
+              [3, 6],
+              [3, 7],
+              [3, 8],
+              [3, 9],
+              [3, 10],
+              [4, 7],
+              [4, 8],
+              [4, 9],
+              [4, 10],
+              [5, 0],
+              [5, 1],
+              [5, 2],
+              [5, 3],
+              [5, 8],
+              [5, 9],
+              [5, 10],
+              [6, 0],
+              [6, 1],
+              [6, 2],
+              [6, 3],
+              [7, 0],
+              [7, 1],
+              [7, 2],
+              [7, 3],
+              [7, 4],
+              [8, 0],
+              [8, 1],
+              [8, 2],
+              [8, 3],
+              [8, 4],
+              [8, 5],
+              [9, 0],
+              [9, 1],
+              [9, 2],
+              [9, 3],
+              [9, 4],
+              [9, 5],
+              [10, 0],
+              [10, 1],
+              [10, 2],
+              [10, 3],
+              [10, 4],
+              [10, 5]
             ]
           },
           "wcagAAA": {
             "normal": [
-              [
-                0,
-                6
-              ],
-              [
-                0,
-                7
-              ],
-              [
-                0,
-                8
-              ],
-              [
-                0,
-                9
-              ],
-              [
-                0,
-                10
-              ],
-              [
-                1,
-                7
-              ],
-              [
-                1,
-                8
-              ],
-              [
-                1,
-                9
-              ],
-              [
-                1,
-                10
-              ],
-              [
-                2,
-                7
-              ],
-              [
-                2,
-                8
-              ],
-              [
-                2,
-                9
-              ],
-              [
-                2,
-                10
-              ],
-              [
-                3,
-                7
-              ],
-              [
-                3,
-                8
-              ],
-              [
-                3,
-                9
-              ],
-              [
-                3,
-                10
-              ],
-              [
-                4,
-                10
-              ],
-              [
-                6,
-                0
-              ],
-              [
-                7,
-                0
-              ],
-              [
-                7,
-                1
-              ],
-              [
-                7,
-                2
-              ],
-              [
-                7,
-                3
-              ],
-              [
-                8,
-                0
-              ],
-              [
-                8,
-                1
-              ],
-              [
-                8,
-                2
-              ],
-              [
-                8,
-                3
-              ],
-              [
-                9,
-                0
-              ],
-              [
-                9,
-                1
-              ],
-              [
-                9,
-                2
-              ],
-              [
-                9,
-                3
-              ],
-              [
-                10,
-                0
-              ],
-              [
-                10,
-                1
-              ],
-              [
-                10,
-                2
-              ],
-              [
-                10,
-                3
-              ],
-              [
-                10,
-                4
-              ]
+              [0, 6],
+              [0, 7],
+              [0, 8],
+              [0, 9],
+              [0, 10],
+              [1, 7],
+              [1, 8],
+              [1, 9],
+              [1, 10],
+              [2, 7],
+              [2, 8],
+              [2, 9],
+              [2, 10],
+              [3, 7],
+              [3, 8],
+              [3, 9],
+              [3, 10],
+              [4, 10],
+              [6, 0],
+              [7, 0],
+              [7, 1],
+              [7, 2],
+              [7, 3],
+              [8, 0],
+              [8, 1],
+              [8, 2],
+              [8, 3],
+              [9, 0],
+              [9, 1],
+              [9, 2],
+              [9, 3],
+              [10, 0],
+              [10, 1],
+              [10, 2],
+              [10, 3],
+              [10, 4]
             ],
             "large": [
-              [
-                0,
-                5
-              ],
-              [
-                0,
-                6
-              ],
-              [
-                0,
-                7
-              ],
-              [
-                0,
-                8
-              ],
-              [
-                0,
-                9
-              ],
-              [
-                0,
-                10
-              ],
-              [
-                1,
-                6
-              ],
-              [
-                1,
-                7
-              ],
-              [
-                1,
-                8
-              ],
-              [
-                1,
-                9
-              ],
-              [
-                1,
-                10
-              ],
-              [
-                2,
-                6
-              ],
-              [
-                2,
-                7
-              ],
-              [
-                2,
-                8
-              ],
-              [
-                2,
-                9
-              ],
-              [
-                2,
-                10
-              ],
-              [
-                3,
-                6
-              ],
-              [
-                3,
-                7
-              ],
-              [
-                3,
-                8
-              ],
-              [
-                3,
-                9
-              ],
-              [
-                3,
-                10
-              ],
-              [
-                4,
-                8
-              ],
-              [
-                4,
-                9
-              ],
-              [
-                4,
-                10
-              ],
-              [
-                5,
-                0
-              ],
-              [
-                6,
-                0
-              ],
-              [
-                6,
-                1
-              ],
-              [
-                6,
-                2
-              ],
-              [
-                6,
-                3
-              ],
-              [
-                7,
-                0
-              ],
-              [
-                7,
-                1
-              ],
-              [
-                7,
-                2
-              ],
-              [
-                7,
-                3
-              ],
-              [
-                8,
-                0
-              ],
-              [
-                8,
-                1
-              ],
-              [
-                8,
-                2
-              ],
-              [
-                8,
-                3
-              ],
-              [
-                8,
-                4
-              ],
-              [
-                9,
-                0
-              ],
-              [
-                9,
-                1
-              ],
-              [
-                9,
-                2
-              ],
-              [
-                9,
-                3
-              ],
-              [
-                9,
-                4
-              ],
-              [
-                10,
-                0
-              ],
-              [
-                10,
-                1
-              ],
-              [
-                10,
-                2
-              ],
-              [
-                10,
-                3
-              ],
-              [
-                10,
-                4
-              ]
+              [0, 5],
+              [0, 6],
+              [0, 7],
+              [0, 8],
+              [0, 9],
+              [0, 10],
+              [1, 6],
+              [1, 7],
+              [1, 8],
+              [1, 9],
+              [1, 10],
+              [2, 6],
+              [2, 7],
+              [2, 8],
+              [2, 9],
+              [2, 10],
+              [3, 6],
+              [3, 7],
+              [3, 8],
+              [3, 9],
+              [3, 10],
+              [4, 8],
+              [4, 9],
+              [4, 10],
+              [5, 0],
+              [6, 0],
+              [6, 1],
+              [6, 2],
+              [6, 3],
+              [7, 0],
+              [7, 1],
+              [7, 2],
+              [7, 3],
+              [8, 0],
+              [8, 1],
+              [8, 2],
+              [8, 3],
+              [8, 4],
+              [9, 0],
+              [9, 1],
+              [9, 2],
+              [9, 3],
+              [9, 4],
+              [10, 0],
+              [10, 1],
+              [10, 2],
+              [10, 3],
+              [10, 4]
             ]
           },
           "onWhite": {
             "wcagAA": true,
             "wcagAAA": false,
             "contrastRatio": 4.812173798778758,
-            "aa": [
-              5,
-              6,
-              7,
-              8,
-              9,
-              10
-            ],
-            "aaa": [
-              6,
-              7,
-              8,
-              9,
-              10
-            ]
+            "aa": [5, 6, 7, 8, 9, 10],
+            "aaa": [6, 7, 8, 9, 10]
           },
           "onBlack": {
             "wcagAA": false,
             "wcagAAA": false,
             "contrastRatio": 4.36393216,
-            "aa": [
-              0,
-              1,
-              2,
-              3,
-              4
-            ],
-            "aaa": [
-              0,
-              1,
-              2,
-              3,
-              4
-            ]
+            "aa": [0, 1, 2, 3, 4],
+            "aaa": [0, 1, 2, 3, 4]
           }
         }
       },
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "Complete zinc color family with 11-position scale",
-      "usageContext": [
-        "backgrounds",
-        "borders",
-        "text",
-        "dividers",
-        "shadows",
-        "overlays"
-      ],
+      "usageContext": ["backgrounds", "borders", "text", "dividers", "shadows", "overlays"],
       "usagePatterns": {
         "do": [
           "Use 50-200 for light mode backgrounds",
@@ -1138,7 +473,7 @@
       "userOverride": null,
       "containerQueryAware": true,
       "description": "Achromatic zinc palette. Default backing family for the neutral semantic role.",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-glacier-50",
@@ -1146,18 +481,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-glacier shade at 50 level - light background range",
-      "usageContext": [
-        "backgrounds",
-        "cards",
-        "surfaces",
-        "light-mode-bg"
-      ],
+      "usageContext": ["backgrounds", "cards", "surfaces", "light-mode-bg"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 0,
       "containerQueryAware": true,
       "description": "silver-true-glacier color at 50 position (OKLCH L=0.95)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-glacier-100",
@@ -1165,18 +495,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-glacier shade at 100 level - light background range",
-      "usageContext": [
-        "backgrounds",
-        "cards",
-        "surfaces",
-        "light-mode-bg"
-      ],
+      "usageContext": ["backgrounds", "cards", "surfaces", "light-mode-bg"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 1,
       "containerQueryAware": true,
       "description": "silver-true-glacier color at 100 position (OKLCH L=0.896)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-glacier-200",
@@ -1184,17 +509,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-glacier shade at 200 level - light background range",
-      "usageContext": [
-        "secondary-backgrounds",
-        "hover-states",
-        "subtle-borders"
-      ],
+      "usageContext": ["secondary-backgrounds", "hover-states", "subtle-borders"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 2,
       "containerQueryAware": true,
       "description": "silver-true-glacier color at 200 position (OKLCH L=0.839)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-glacier-300",
@@ -1202,17 +523,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-glacier shade at 300 level - light background range",
-      "usageContext": [
-        "secondary-backgrounds",
-        "hover-states",
-        "subtle-borders"
-      ],
+      "usageContext": ["secondary-backgrounds", "hover-states", "subtle-borders"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 3,
       "containerQueryAware": true,
       "description": "silver-true-glacier color at 300 position (OKLCH L=0.78)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-glacier-400",
@@ -1220,18 +537,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-glacier shade at 400 level - mid-tone for borders and secondary text",
-      "usageContext": [
-        "borders",
-        "dividers",
-        "disabled-states",
-        "placeholder-text"
-      ],
+      "usageContext": ["borders", "dividers", "disabled-states", "placeholder-text"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 4,
       "containerQueryAware": true,
       "description": "silver-true-glacier color at 400 position (OKLCH L=0.716)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-glacier-500",
@@ -1239,18 +551,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-glacier shade at 500 level - mid-tone for borders and secondary text",
-      "usageContext": [
-        "borders",
-        "dividers",
-        "disabled-states",
-        "placeholder-text"
-      ],
+      "usageContext": ["borders", "dividers", "disabled-states", "placeholder-text"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 5,
       "containerQueryAware": true,
       "description": "silver-true-glacier color at 500 position (OKLCH L=0.645)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-glacier-600",
@@ -1258,17 +565,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-glacier shade at 600 level - mid-tone for borders and secondary text",
-      "usageContext": [
-        "secondary-text",
-        "icons",
-        "input-borders"
-      ],
+      "usageContext": ["secondary-text", "icons", "input-borders"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 6,
       "containerQueryAware": true,
       "description": "silver-true-glacier color at 600 position (OKLCH L=0.55)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-glacier-700",
@@ -1276,17 +579,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-glacier shade at 700 level - dark foreground range",
-      "usageContext": [
-        "secondary-text",
-        "icons",
-        "input-borders"
-      ],
+      "usageContext": ["secondary-text", "icons", "input-borders"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 7,
       "containerQueryAware": true,
       "description": "silver-true-glacier color at 700 position (OKLCH L=0.425)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-glacier-800",
@@ -1294,18 +593,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-glacier shade at 800 level - dark foreground range",
-      "usageContext": [
-        "primary-text",
-        "headings",
-        "dark-mode-bg",
-        "high-contrast-elements"
-      ],
+      "usageContext": ["primary-text", "headings", "dark-mode-bg", "high-contrast-elements"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 8,
       "containerQueryAware": true,
       "description": "silver-true-glacier color at 800 position (OKLCH L=0.3)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-glacier-900",
@@ -1313,18 +607,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-glacier shade at 900 level - dark foreground range",
-      "usageContext": [
-        "primary-text",
-        "headings",
-        "dark-mode-bg",
-        "high-contrast-elements"
-      ],
+      "usageContext": ["primary-text", "headings", "dark-mode-bg", "high-contrast-elements"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 9,
       "containerQueryAware": true,
       "description": "silver-true-glacier color at 900 position (OKLCH L=0.175)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-glacier-950",
@@ -1332,18 +621,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-glacier shade at 950 level - dark foreground range",
-      "usageContext": [
-        "primary-text",
-        "headings",
-        "dark-mode-bg",
-        "high-contrast-elements"
-      ],
+      "usageContext": ["primary-text", "headings", "dark-mode-bg", "high-contrast-elements"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 10,
       "containerQueryAware": true,
       "description": "silver-true-glacier color at 950 position (OKLCH L=0.05)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-glacier",
@@ -1422,723 +706,200 @@
         "accessibility": {
           "wcagAA": {
             "normal": [
-              [
-                0,
-                7
-              ],
-              [
-                0,
-                8
-              ],
-              [
-                0,
-                9
-              ],
-              [
-                0,
-                10
-              ],
-              [
-                1,
-                7
-              ],
-              [
-                1,
-                8
-              ],
-              [
-                1,
-                9
-              ],
-              [
-                1,
-                10
-              ],
-              [
-                2,
-                7
-              ],
-              [
-                2,
-                8
-              ],
-              [
-                2,
-                9
-              ],
-              [
-                2,
-                10
-              ],
-              [
-                3,
-                8
-              ],
-              [
-                3,
-                9
-              ],
-              [
-                3,
-                10
-              ],
-              [
-                4,
-                8
-              ],
-              [
-                4,
-                9
-              ],
-              [
-                4,
-                10
-              ],
-              [
-                5,
-                9
-              ],
-              [
-                5,
-                10
-              ],
-              [
-                6,
-                10
-              ],
-              [
-                7,
-                0
-              ],
-              [
-                7,
-                1
-              ],
-              [
-                7,
-                2
-              ],
-              [
-                8,
-                0
-              ],
-              [
-                8,
-                1
-              ],
-              [
-                8,
-                2
-              ],
-              [
-                8,
-                3
-              ],
-              [
-                8,
-                4
-              ],
-              [
-                9,
-                0
-              ],
-              [
-                9,
-                1
-              ],
-              [
-                9,
-                2
-              ],
-              [
-                9,
-                3
-              ],
-              [
-                9,
-                4
-              ],
-              [
-                9,
-                5
-              ],
-              [
-                10,
-                0
-              ],
-              [
-                10,
-                1
-              ],
-              [
-                10,
-                2
-              ],
-              [
-                10,
-                3
-              ],
-              [
-                10,
-                4
-              ],
-              [
-                10,
-                5
-              ],
-              [
-                10,
-                6
-              ]
+              [0, 7],
+              [0, 8],
+              [0, 9],
+              [0, 10],
+              [1, 7],
+              [1, 8],
+              [1, 9],
+              [1, 10],
+              [2, 7],
+              [2, 8],
+              [2, 9],
+              [2, 10],
+              [3, 8],
+              [3, 9],
+              [3, 10],
+              [4, 8],
+              [4, 9],
+              [4, 10],
+              [5, 9],
+              [5, 10],
+              [6, 10],
+              [7, 0],
+              [7, 1],
+              [7, 2],
+              [8, 0],
+              [8, 1],
+              [8, 2],
+              [8, 3],
+              [8, 4],
+              [9, 0],
+              [9, 1],
+              [9, 2],
+              [9, 3],
+              [9, 4],
+              [9, 5],
+              [10, 0],
+              [10, 1],
+              [10, 2],
+              [10, 3],
+              [10, 4],
+              [10, 5],
+              [10, 6]
             ],
             "large": [
-              [
-                0,
-                6
-              ],
-              [
-                0,
-                7
-              ],
-              [
-                0,
-                8
-              ],
-              [
-                0,
-                9
-              ],
-              [
-                0,
-                10
-              ],
-              [
-                1,
-                6
-              ],
-              [
-                1,
-                7
-              ],
-              [
-                1,
-                8
-              ],
-              [
-                1,
-                9
-              ],
-              [
-                1,
-                10
-              ],
-              [
-                2,
-                7
-              ],
-              [
-                2,
-                8
-              ],
-              [
-                2,
-                9
-              ],
-              [
-                2,
-                10
-              ],
-              [
-                3,
-                7
-              ],
-              [
-                3,
-                8
-              ],
-              [
-                3,
-                9
-              ],
-              [
-                3,
-                10
-              ],
-              [
-                4,
-                7
-              ],
-              [
-                4,
-                8
-              ],
-              [
-                4,
-                9
-              ],
-              [
-                4,
-                10
-              ],
-              [
-                5,
-                8
-              ],
-              [
-                5,
-                9
-              ],
-              [
-                5,
-                10
-              ],
-              [
-                6,
-                0
-              ],
-              [
-                6,
-                1
-              ],
-              [
-                6,
-                9
-              ],
-              [
-                6,
-                10
-              ],
-              [
-                7,
-                0
-              ],
-              [
-                7,
-                1
-              ],
-              [
-                7,
-                2
-              ],
-              [
-                7,
-                3
-              ],
-              [
-                7,
-                4
-              ],
-              [
-                8,
-                0
-              ],
-              [
-                8,
-                1
-              ],
-              [
-                8,
-                2
-              ],
-              [
-                8,
-                3
-              ],
-              [
-                8,
-                4
-              ],
-              [
-                8,
-                5
-              ],
-              [
-                9,
-                0
-              ],
-              [
-                9,
-                1
-              ],
-              [
-                9,
-                2
-              ],
-              [
-                9,
-                3
-              ],
-              [
-                9,
-                4
-              ],
-              [
-                9,
-                5
-              ],
-              [
-                9,
-                6
-              ],
-              [
-                10,
-                0
-              ],
-              [
-                10,
-                1
-              ],
-              [
-                10,
-                2
-              ],
-              [
-                10,
-                3
-              ],
-              [
-                10,
-                4
-              ],
-              [
-                10,
-                5
-              ],
-              [
-                10,
-                6
-              ]
+              [0, 6],
+              [0, 7],
+              [0, 8],
+              [0, 9],
+              [0, 10],
+              [1, 6],
+              [1, 7],
+              [1, 8],
+              [1, 9],
+              [1, 10],
+              [2, 7],
+              [2, 8],
+              [2, 9],
+              [2, 10],
+              [3, 7],
+              [3, 8],
+              [3, 9],
+              [3, 10],
+              [4, 7],
+              [4, 8],
+              [4, 9],
+              [4, 10],
+              [5, 8],
+              [5, 9],
+              [5, 10],
+              [6, 0],
+              [6, 1],
+              [6, 9],
+              [6, 10],
+              [7, 0],
+              [7, 1],
+              [7, 2],
+              [7, 3],
+              [7, 4],
+              [8, 0],
+              [8, 1],
+              [8, 2],
+              [8, 3],
+              [8, 4],
+              [8, 5],
+              [9, 0],
+              [9, 1],
+              [9, 2],
+              [9, 3],
+              [9, 4],
+              [9, 5],
+              [9, 6],
+              [10, 0],
+              [10, 1],
+              [10, 2],
+              [10, 3],
+              [10, 4],
+              [10, 5],
+              [10, 6]
             ]
           },
           "wcagAAA": {
             "normal": [
-              [
-                0,
-                8
-              ],
-              [
-                0,
-                9
-              ],
-              [
-                0,
-                10
-              ],
-              [
-                1,
-                8
-              ],
-              [
-                1,
-                9
-              ],
-              [
-                1,
-                10
-              ],
-              [
-                2,
-                8
-              ],
-              [
-                2,
-                9
-              ],
-              [
-                2,
-                10
-              ],
-              [
-                3,
-                9
-              ],
-              [
-                3,
-                10
-              ],
-              [
-                4,
-                9
-              ],
-              [
-                4,
-                10
-              ],
-              [
-                8,
-                0
-              ],
-              [
-                8,
-                1
-              ],
-              [
-                8,
-                2
-              ],
-              [
-                9,
-                0
-              ],
-              [
-                9,
-                1
-              ],
-              [
-                9,
-                2
-              ],
-              [
-                9,
-                3
-              ],
-              [
-                9,
-                4
-              ],
-              [
-                10,
-                0
-              ],
-              [
-                10,
-                1
-              ],
-              [
-                10,
-                2
-              ],
-              [
-                10,
-                3
-              ],
-              [
-                10,
-                4
-              ]
+              [0, 8],
+              [0, 9],
+              [0, 10],
+              [1, 8],
+              [1, 9],
+              [1, 10],
+              [2, 8],
+              [2, 9],
+              [2, 10],
+              [3, 9],
+              [3, 10],
+              [4, 9],
+              [4, 10],
+              [8, 0],
+              [8, 1],
+              [8, 2],
+              [9, 0],
+              [9, 1],
+              [9, 2],
+              [9, 3],
+              [9, 4],
+              [10, 0],
+              [10, 1],
+              [10, 2],
+              [10, 3],
+              [10, 4]
             ],
             "large": [
-              [
-                0,
-                7
-              ],
-              [
-                0,
-                8
-              ],
-              [
-                0,
-                9
-              ],
-              [
-                0,
-                10
-              ],
-              [
-                1,
-                7
-              ],
-              [
-                1,
-                8
-              ],
-              [
-                1,
-                9
-              ],
-              [
-                1,
-                10
-              ],
-              [
-                2,
-                7
-              ],
-              [
-                2,
-                8
-              ],
-              [
-                2,
-                9
-              ],
-              [
-                2,
-                10
-              ],
-              [
-                3,
-                8
-              ],
-              [
-                3,
-                9
-              ],
-              [
-                3,
-                10
-              ],
-              [
-                4,
-                8
-              ],
-              [
-                4,
-                9
-              ],
-              [
-                4,
-                10
-              ],
-              [
-                5,
-                9
-              ],
-              [
-                5,
-                10
-              ],
-              [
-                6,
-                10
-              ],
-              [
-                7,
-                0
-              ],
-              [
-                7,
-                1
-              ],
-              [
-                7,
-                2
-              ],
-              [
-                8,
-                0
-              ],
-              [
-                8,
-                1
-              ],
-              [
-                8,
-                2
-              ],
-              [
-                8,
-                3
-              ],
-              [
-                8,
-                4
-              ],
-              [
-                9,
-                0
-              ],
-              [
-                9,
-                1
-              ],
-              [
-                9,
-                2
-              ],
-              [
-                9,
-                3
-              ],
-              [
-                9,
-                4
-              ],
-              [
-                9,
-                5
-              ],
-              [
-                10,
-                0
-              ],
-              [
-                10,
-                1
-              ],
-              [
-                10,
-                2
-              ],
-              [
-                10,
-                3
-              ],
-              [
-                10,
-                4
-              ],
-              [
-                10,
-                5
-              ],
-              [
-                10,
-                6
-              ]
+              [0, 7],
+              [0, 8],
+              [0, 9],
+              [0, 10],
+              [1, 7],
+              [1, 8],
+              [1, 9],
+              [1, 10],
+              [2, 7],
+              [2, 8],
+              [2, 9],
+              [2, 10],
+              [3, 8],
+              [3, 9],
+              [3, 10],
+              [4, 8],
+              [4, 9],
+              [4, 10],
+              [5, 9],
+              [5, 10],
+              [6, 10],
+              [7, 0],
+              [7, 1],
+              [7, 2],
+              [8, 0],
+              [8, 1],
+              [8, 2],
+              [8, 3],
+              [8, 4],
+              [9, 0],
+              [9, 1],
+              [9, 2],
+              [9, 3],
+              [9, 4],
+              [9, 5],
+              [10, 0],
+              [10, 1],
+              [10, 2],
+              [10, 3],
+              [10, 4],
+              [10, 5],
+              [10, 6]
             ]
           },
           "onWhite": {
             "wcagAA": false,
             "wcagAAA": false,
             "contrastRatio": 3.1093294123196324,
-            "aa": [
-              7,
-              8,
-              9,
-              10
-            ],
-            "aaa": [
-              7,
-              8,
-              9,
-              10
-            ]
+            "aa": [7, 8, 9, 10],
+            "aaa": [7, 8, 9, 10]
           },
           "onBlack": {
             "wcagAA": true,
             "wcagAAA": false,
             "contrastRatio": 6.753867865139931,
-            "aa": [
-              0,
-              1,
-              2,
-              3,
-              4,
-              5,
-              6
-            ],
-            "aaa": [
-              0,
-              1,
-              2,
-              3,
-              4
-            ]
+            "aa": [0, 1, 2, 3, 4, 5, 6],
+            "aaa": [0, 1, 2, 3, 4]
           }
         }
       },
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "Complete silver-true-glacier color family with 11-position scale",
-      "usageContext": [
-        "backgrounds",
-        "borders",
-        "text",
-        "dividers",
-        "shadows",
-        "overlays"
-      ],
+      "usageContext": ["backgrounds", "borders", "text", "dividers", "shadows", "overlays"],
       "usagePatterns": {
         "do": [
           "Use 50-200 for light mode backgrounds",
@@ -2155,7 +916,7 @@
       "userOverride": null,
       "containerQueryAware": true,
       "description": "Cool cyan/teal palette - serene, balanced, calming.",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-bold-fire-truck-50",
@@ -2163,18 +924,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-bold-fire-truck shade at 50 level - light background range",
-      "usageContext": [
-        "backgrounds",
-        "cards",
-        "surfaces",
-        "light-mode-bg"
-      ],
+      "usageContext": ["backgrounds", "cards", "surfaces", "light-mode-bg"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 0,
       "containerQueryAware": true,
       "description": "silver-bold-fire-truck color at 50 position (OKLCH L=0.95)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-bold-fire-truck-100",
@@ -2182,18 +938,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-bold-fire-truck shade at 100 level - light background range",
-      "usageContext": [
-        "backgrounds",
-        "cards",
-        "surfaces",
-        "light-mode-bg"
-      ],
+      "usageContext": ["backgrounds", "cards", "surfaces", "light-mode-bg"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 1,
       "containerQueryAware": true,
       "description": "silver-bold-fire-truck color at 100 position (OKLCH L=0.896)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-bold-fire-truck-200",
@@ -2201,17 +952,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-bold-fire-truck shade at 200 level - light background range",
-      "usageContext": [
-        "secondary-backgrounds",
-        "hover-states",
-        "subtle-borders"
-      ],
+      "usageContext": ["secondary-backgrounds", "hover-states", "subtle-borders"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 2,
       "containerQueryAware": true,
       "description": "silver-bold-fire-truck color at 200 position (OKLCH L=0.839)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-bold-fire-truck-300",
@@ -2219,17 +966,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-bold-fire-truck shade at 300 level - light background range",
-      "usageContext": [
-        "secondary-backgrounds",
-        "hover-states",
-        "subtle-borders"
-      ],
+      "usageContext": ["secondary-backgrounds", "hover-states", "subtle-borders"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 3,
       "containerQueryAware": true,
       "description": "silver-bold-fire-truck color at 300 position (OKLCH L=0.78)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-bold-fire-truck-400",
@@ -2237,18 +980,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-bold-fire-truck shade at 400 level - mid-tone for borders and secondary text",
-      "usageContext": [
-        "borders",
-        "dividers",
-        "disabled-states",
-        "placeholder-text"
-      ],
+      "usageContext": ["borders", "dividers", "disabled-states", "placeholder-text"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 4,
       "containerQueryAware": true,
       "description": "silver-bold-fire-truck color at 400 position (OKLCH L=0.716)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-bold-fire-truck-500",
@@ -2256,18 +994,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-bold-fire-truck shade at 500 level - mid-tone for borders and secondary text",
-      "usageContext": [
-        "borders",
-        "dividers",
-        "disabled-states",
-        "placeholder-text"
-      ],
+      "usageContext": ["borders", "dividers", "disabled-states", "placeholder-text"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 5,
       "containerQueryAware": true,
       "description": "silver-bold-fire-truck color at 500 position (OKLCH L=0.645)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-bold-fire-truck-600",
@@ -2275,17 +1008,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-bold-fire-truck shade at 600 level - mid-tone for borders and secondary text",
-      "usageContext": [
-        "secondary-text",
-        "icons",
-        "input-borders"
-      ],
+      "usageContext": ["secondary-text", "icons", "input-borders"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 6,
       "containerQueryAware": true,
       "description": "silver-bold-fire-truck color at 600 position (OKLCH L=0.55)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-bold-fire-truck-700",
@@ -2293,17 +1022,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-bold-fire-truck shade at 700 level - dark foreground range",
-      "usageContext": [
-        "secondary-text",
-        "icons",
-        "input-borders"
-      ],
+      "usageContext": ["secondary-text", "icons", "input-borders"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 7,
       "containerQueryAware": true,
       "description": "silver-bold-fire-truck color at 700 position (OKLCH L=0.425)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-bold-fire-truck-800",
@@ -2311,18 +1036,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-bold-fire-truck shade at 800 level - dark foreground range",
-      "usageContext": [
-        "primary-text",
-        "headings",
-        "dark-mode-bg",
-        "high-contrast-elements"
-      ],
+      "usageContext": ["primary-text", "headings", "dark-mode-bg", "high-contrast-elements"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 8,
       "containerQueryAware": true,
       "description": "silver-bold-fire-truck color at 800 position (OKLCH L=0.3)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-bold-fire-truck-900",
@@ -2330,18 +1050,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-bold-fire-truck shade at 900 level - dark foreground range",
-      "usageContext": [
-        "primary-text",
-        "headings",
-        "dark-mode-bg",
-        "high-contrast-elements"
-      ],
+      "usageContext": ["primary-text", "headings", "dark-mode-bg", "high-contrast-elements"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 9,
       "containerQueryAware": true,
       "description": "silver-bold-fire-truck color at 900 position (OKLCH L=0.175)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-bold-fire-truck-950",
@@ -2349,18 +1064,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-bold-fire-truck shade at 950 level - dark foreground range",
-      "usageContext": [
-        "primary-text",
-        "headings",
-        "dark-mode-bg",
-        "high-contrast-elements"
-      ],
+      "usageContext": ["primary-text", "headings", "dark-mode-bg", "high-contrast-elements"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 10,
       "containerQueryAware": true,
       "description": "silver-bold-fire-truck color at 950 position (OKLCH L=0.05)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-bold-fire-truck",
@@ -2439,739 +1149,204 @@
         "accessibility": {
           "wcagAA": {
             "normal": [
-              [
-                0,
-                6
-              ],
-              [
-                0,
-                7
-              ],
-              [
-                0,
-                8
-              ],
-              [
-                0,
-                9
-              ],
-              [
-                0,
-                10
-              ],
-              [
-                1,
-                7
-              ],
-              [
-                1,
-                8
-              ],
-              [
-                1,
-                9
-              ],
-              [
-                1,
-                10
-              ],
-              [
-                2,
-                7
-              ],
-              [
-                2,
-                8
-              ],
-              [
-                2,
-                9
-              ],
-              [
-                2,
-                10
-              ],
-              [
-                3,
-                8
-              ],
-              [
-                3,
-                9
-              ],
-              [
-                3,
-                10
-              ],
-              [
-                4,
-                8
-              ],
-              [
-                4,
-                9
-              ],
-              [
-                4,
-                10
-              ],
-              [
-                5,
-                9
-              ],
-              [
-                5,
-                10
-              ],
-              [
-                6,
-                0
-              ],
-              [
-                7,
-                0
-              ],
-              [
-                7,
-                1
-              ],
-              [
-                7,
-                2
-              ],
-              [
-                8,
-                0
-              ],
-              [
-                8,
-                1
-              ],
-              [
-                8,
-                2
-              ],
-              [
-                8,
-                3
-              ],
-              [
-                8,
-                4
-              ],
-              [
-                9,
-                0
-              ],
-              [
-                9,
-                1
-              ],
-              [
-                9,
-                2
-              ],
-              [
-                9,
-                3
-              ],
-              [
-                9,
-                4
-              ],
-              [
-                9,
-                5
-              ],
-              [
-                10,
-                0
-              ],
-              [
-                10,
-                1
-              ],
-              [
-                10,
-                2
-              ],
-              [
-                10,
-                3
-              ],
-              [
-                10,
-                4
-              ],
-              [
-                10,
-                5
-              ]
+              [0, 6],
+              [0, 7],
+              [0, 8],
+              [0, 9],
+              [0, 10],
+              [1, 7],
+              [1, 8],
+              [1, 9],
+              [1, 10],
+              [2, 7],
+              [2, 8],
+              [2, 9],
+              [2, 10],
+              [3, 8],
+              [3, 9],
+              [3, 10],
+              [4, 8],
+              [4, 9],
+              [4, 10],
+              [5, 9],
+              [5, 10],
+              [6, 0],
+              [7, 0],
+              [7, 1],
+              [7, 2],
+              [8, 0],
+              [8, 1],
+              [8, 2],
+              [8, 3],
+              [8, 4],
+              [9, 0],
+              [9, 1],
+              [9, 2],
+              [9, 3],
+              [9, 4],
+              [9, 5],
+              [10, 0],
+              [10, 1],
+              [10, 2],
+              [10, 3],
+              [10, 4],
+              [10, 5]
             ],
             "large": [
-              [
-                0,
-                5
-              ],
-              [
-                0,
-                6
-              ],
-              [
-                0,
-                7
-              ],
-              [
-                0,
-                8
-              ],
-              [
-                0,
-                9
-              ],
-              [
-                0,
-                10
-              ],
-              [
-                1,
-                6
-              ],
-              [
-                1,
-                7
-              ],
-              [
-                1,
-                8
-              ],
-              [
-                1,
-                9
-              ],
-              [
-                1,
-                10
-              ],
-              [
-                2,
-                6
-              ],
-              [
-                2,
-                7
-              ],
-              [
-                2,
-                8
-              ],
-              [
-                2,
-                9
-              ],
-              [
-                2,
-                10
-              ],
-              [
-                3,
-                7
-              ],
-              [
-                3,
-                8
-              ],
-              [
-                3,
-                9
-              ],
-              [
-                3,
-                10
-              ],
-              [
-                4,
-                7
-              ],
-              [
-                4,
-                8
-              ],
-              [
-                4,
-                9
-              ],
-              [
-                4,
-                10
-              ],
-              [
-                5,
-                0
-              ],
-              [
-                5,
-                8
-              ],
-              [
-                5,
-                9
-              ],
-              [
-                5,
-                10
-              ],
-              [
-                6,
-                0
-              ],
-              [
-                6,
-                1
-              ],
-              [
-                6,
-                2
-              ],
-              [
-                6,
-                9
-              ],
-              [
-                6,
-                10
-              ],
-              [
-                7,
-                0
-              ],
-              [
-                7,
-                1
-              ],
-              [
-                7,
-                2
-              ],
-              [
-                7,
-                3
-              ],
-              [
-                7,
-                4
-              ],
-              [
-                8,
-                0
-              ],
-              [
-                8,
-                1
-              ],
-              [
-                8,
-                2
-              ],
-              [
-                8,
-                3
-              ],
-              [
-                8,
-                4
-              ],
-              [
-                8,
-                5
-              ],
-              [
-                9,
-                0
-              ],
-              [
-                9,
-                1
-              ],
-              [
-                9,
-                2
-              ],
-              [
-                9,
-                3
-              ],
-              [
-                9,
-                4
-              ],
-              [
-                9,
-                5
-              ],
-              [
-                9,
-                6
-              ],
-              [
-                10,
-                0
-              ],
-              [
-                10,
-                1
-              ],
-              [
-                10,
-                2
-              ],
-              [
-                10,
-                3
-              ],
-              [
-                10,
-                4
-              ],
-              [
-                10,
-                5
-              ],
-              [
-                10,
-                6
-              ]
+              [0, 5],
+              [0, 6],
+              [0, 7],
+              [0, 8],
+              [0, 9],
+              [0, 10],
+              [1, 6],
+              [1, 7],
+              [1, 8],
+              [1, 9],
+              [1, 10],
+              [2, 6],
+              [2, 7],
+              [2, 8],
+              [2, 9],
+              [2, 10],
+              [3, 7],
+              [3, 8],
+              [3, 9],
+              [3, 10],
+              [4, 7],
+              [4, 8],
+              [4, 9],
+              [4, 10],
+              [5, 0],
+              [5, 8],
+              [5, 9],
+              [5, 10],
+              [6, 0],
+              [6, 1],
+              [6, 2],
+              [6, 9],
+              [6, 10],
+              [7, 0],
+              [7, 1],
+              [7, 2],
+              [7, 3],
+              [7, 4],
+              [8, 0],
+              [8, 1],
+              [8, 2],
+              [8, 3],
+              [8, 4],
+              [8, 5],
+              [9, 0],
+              [9, 1],
+              [9, 2],
+              [9, 3],
+              [9, 4],
+              [9, 5],
+              [9, 6],
+              [10, 0],
+              [10, 1],
+              [10, 2],
+              [10, 3],
+              [10, 4],
+              [10, 5],
+              [10, 6]
             ]
           },
           "wcagAAA": {
             "normal": [
-              [
-                0,
-                7
-              ],
-              [
-                0,
-                8
-              ],
-              [
-                0,
-                9
-              ],
-              [
-                0,
-                10
-              ],
-              [
-                1,
-                8
-              ],
-              [
-                1,
-                9
-              ],
-              [
-                1,
-                10
-              ],
-              [
-                2,
-                8
-              ],
-              [
-                2,
-                9
-              ],
-              [
-                2,
-                10
-              ],
-              [
-                3,
-                9
-              ],
-              [
-                3,
-                10
-              ],
-              [
-                4,
-                10
-              ],
-              [
-                7,
-                0
-              ],
-              [
-                8,
-                0
-              ],
-              [
-                8,
-                1
-              ],
-              [
-                8,
-                2
-              ],
-              [
-                9,
-                0
-              ],
-              [
-                9,
-                1
-              ],
-              [
-                9,
-                2
-              ],
-              [
-                9,
-                3
-              ],
-              [
-                10,
-                0
-              ],
-              [
-                10,
-                1
-              ],
-              [
-                10,
-                2
-              ],
-              [
-                10,
-                3
-              ],
-              [
-                10,
-                4
-              ]
+              [0, 7],
+              [0, 8],
+              [0, 9],
+              [0, 10],
+              [1, 8],
+              [1, 9],
+              [1, 10],
+              [2, 8],
+              [2, 9],
+              [2, 10],
+              [3, 9],
+              [3, 10],
+              [4, 10],
+              [7, 0],
+              [8, 0],
+              [8, 1],
+              [8, 2],
+              [9, 0],
+              [9, 1],
+              [9, 2],
+              [9, 3],
+              [10, 0],
+              [10, 1],
+              [10, 2],
+              [10, 3],
+              [10, 4]
             ],
             "large": [
-              [
-                0,
-                6
-              ],
-              [
-                0,
-                7
-              ],
-              [
-                0,
-                8
-              ],
-              [
-                0,
-                9
-              ],
-              [
-                0,
-                10
-              ],
-              [
-                1,
-                7
-              ],
-              [
-                1,
-                8
-              ],
-              [
-                1,
-                9
-              ],
-              [
-                1,
-                10
-              ],
-              [
-                2,
-                7
-              ],
-              [
-                2,
-                8
-              ],
-              [
-                2,
-                9
-              ],
-              [
-                2,
-                10
-              ],
-              [
-                3,
-                8
-              ],
-              [
-                3,
-                9
-              ],
-              [
-                3,
-                10
-              ],
-              [
-                4,
-                8
-              ],
-              [
-                4,
-                9
-              ],
-              [
-                4,
-                10
-              ],
-              [
-                5,
-                9
-              ],
-              [
-                5,
-                10
-              ],
-              [
-                6,
-                0
-              ],
-              [
-                7,
-                0
-              ],
-              [
-                7,
-                1
-              ],
-              [
-                7,
-                2
-              ],
-              [
-                8,
-                0
-              ],
-              [
-                8,
-                1
-              ],
-              [
-                8,
-                2
-              ],
-              [
-                8,
-                3
-              ],
-              [
-                8,
-                4
-              ],
-              [
-                9,
-                0
-              ],
-              [
-                9,
-                1
-              ],
-              [
-                9,
-                2
-              ],
-              [
-                9,
-                3
-              ],
-              [
-                9,
-                4
-              ],
-              [
-                9,
-                5
-              ],
-              [
-                10,
-                0
-              ],
-              [
-                10,
-                1
-              ],
-              [
-                10,
-                2
-              ],
-              [
-                10,
-                3
-              ],
-              [
-                10,
-                4
-              ],
-              [
-                10,
-                5
-              ]
+              [0, 6],
+              [0, 7],
+              [0, 8],
+              [0, 9],
+              [0, 10],
+              [1, 7],
+              [1, 8],
+              [1, 9],
+              [1, 10],
+              [2, 7],
+              [2, 8],
+              [2, 9],
+              [2, 10],
+              [3, 8],
+              [3, 9],
+              [3, 10],
+              [4, 8],
+              [4, 9],
+              [4, 10],
+              [5, 9],
+              [5, 10],
+              [6, 0],
+              [7, 0],
+              [7, 1],
+              [7, 2],
+              [8, 0],
+              [8, 1],
+              [8, 2],
+              [8, 3],
+              [8, 4],
+              [9, 0],
+              [9, 1],
+              [9, 2],
+              [9, 3],
+              [9, 4],
+              [9, 5],
+              [10, 0],
+              [10, 1],
+              [10, 2],
+              [10, 3],
+              [10, 4],
+              [10, 5]
             ]
           },
           "onWhite": {
             "wcagAA": false,
             "wcagAAA": false,
             "contrastRatio": 3.6588008936661223,
-            "aa": [
-              6,
-              7,
-              8,
-              9,
-              10
-            ],
-            "aaa": [
-              7,
-              8,
-              9,
-              10
-            ]
+            "aa": [6, 7, 8, 9, 10],
+            "aaa": [7, 8, 9, 10]
           },
           "onBlack": {
             "wcagAA": true,
             "wcagAAA": false,
             "contrastRatio": 5.73958534785367,
-            "aa": [
-              0,
-              1,
-              2,
-              3,
-              4,
-              5
-            ],
-            "aaa": [
-              0,
-              1,
-              2,
-              3,
-              4
-            ]
+            "aa": [0, 1, 2, 3, 4, 5],
+            "aaa": [0, 1, 2, 3, 4]
           }
         }
       },
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "Complete silver-bold-fire-truck color family with 11-position scale",
-      "usageContext": [
-        "backgrounds",
-        "borders",
-        "text",
-        "dividers",
-        "shadows",
-        "overlays"
-      ],
+      "usageContext": ["backgrounds", "borders", "text", "dividers", "shadows", "overlays"],
       "usagePatterns": {
         "do": [
           "Use 50-200 for light mode backgrounds",
@@ -3188,7 +1363,7 @@
       "userOverride": null,
       "containerQueryAware": true,
       "description": "Bold fire-truck red palette - warm, energetic, attention-grabbing.",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-honey-50",
@@ -3196,18 +1371,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-honey shade at 50 level - light background range",
-      "usageContext": [
-        "backgrounds",
-        "cards",
-        "surfaces",
-        "light-mode-bg"
-      ],
+      "usageContext": ["backgrounds", "cards", "surfaces", "light-mode-bg"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 0,
       "containerQueryAware": true,
       "description": "silver-true-honey color at 50 position (OKLCH L=0.95)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-honey-100",
@@ -3215,18 +1385,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-honey shade at 100 level - light background range",
-      "usageContext": [
-        "backgrounds",
-        "cards",
-        "surfaces",
-        "light-mode-bg"
-      ],
+      "usageContext": ["backgrounds", "cards", "surfaces", "light-mode-bg"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 1,
       "containerQueryAware": true,
       "description": "silver-true-honey color at 100 position (OKLCH L=0.896)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-honey-200",
@@ -3234,17 +1399,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-honey shade at 200 level - light background range",
-      "usageContext": [
-        "secondary-backgrounds",
-        "hover-states",
-        "subtle-borders"
-      ],
+      "usageContext": ["secondary-backgrounds", "hover-states", "subtle-borders"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 2,
       "containerQueryAware": true,
       "description": "silver-true-honey color at 200 position (OKLCH L=0.839)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-honey-300",
@@ -3252,17 +1413,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-honey shade at 300 level - light background range",
-      "usageContext": [
-        "secondary-backgrounds",
-        "hover-states",
-        "subtle-borders"
-      ],
+      "usageContext": ["secondary-backgrounds", "hover-states", "subtle-borders"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 3,
       "containerQueryAware": true,
       "description": "silver-true-honey color at 300 position (OKLCH L=0.78)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-honey-400",
@@ -3270,18 +1427,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-honey shade at 400 level - mid-tone for borders and secondary text",
-      "usageContext": [
-        "borders",
-        "dividers",
-        "disabled-states",
-        "placeholder-text"
-      ],
+      "usageContext": ["borders", "dividers", "disabled-states", "placeholder-text"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 4,
       "containerQueryAware": true,
       "description": "silver-true-honey color at 400 position (OKLCH L=0.716)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-honey-500",
@@ -3289,18 +1441,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-honey shade at 500 level - mid-tone for borders and secondary text",
-      "usageContext": [
-        "borders",
-        "dividers",
-        "disabled-states",
-        "placeholder-text"
-      ],
+      "usageContext": ["borders", "dividers", "disabled-states", "placeholder-text"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 5,
       "containerQueryAware": true,
       "description": "silver-true-honey color at 500 position (OKLCH L=0.645)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-honey-600",
@@ -3308,17 +1455,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-honey shade at 600 level - mid-tone for borders and secondary text",
-      "usageContext": [
-        "secondary-text",
-        "icons",
-        "input-borders"
-      ],
+      "usageContext": ["secondary-text", "icons", "input-borders"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 6,
       "containerQueryAware": true,
       "description": "silver-true-honey color at 600 position (OKLCH L=0.55)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-honey-700",
@@ -3326,17 +1469,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-honey shade at 700 level - dark foreground range",
-      "usageContext": [
-        "secondary-text",
-        "icons",
-        "input-borders"
-      ],
+      "usageContext": ["secondary-text", "icons", "input-borders"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 7,
       "containerQueryAware": true,
       "description": "silver-true-honey color at 700 position (OKLCH L=0.425)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-honey-800",
@@ -3344,18 +1483,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-honey shade at 800 level - dark foreground range",
-      "usageContext": [
-        "primary-text",
-        "headings",
-        "dark-mode-bg",
-        "high-contrast-elements"
-      ],
+      "usageContext": ["primary-text", "headings", "dark-mode-bg", "high-contrast-elements"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 8,
       "containerQueryAware": true,
       "description": "silver-true-honey color at 800 position (OKLCH L=0.3)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-honey-900",
@@ -3363,18 +1497,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-honey shade at 900 level - dark foreground range",
-      "usageContext": [
-        "primary-text",
-        "headings",
-        "dark-mode-bg",
-        "high-contrast-elements"
-      ],
+      "usageContext": ["primary-text", "headings", "dark-mode-bg", "high-contrast-elements"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 9,
       "containerQueryAware": true,
       "description": "silver-true-honey color at 900 position (OKLCH L=0.175)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-honey-950",
@@ -3382,18 +1511,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-honey shade at 950 level - dark foreground range",
-      "usageContext": [
-        "primary-text",
-        "headings",
-        "dark-mode-bg",
-        "high-contrast-elements"
-      ],
+      "usageContext": ["primary-text", "headings", "dark-mode-bg", "high-contrast-elements"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 10,
       "containerQueryAware": true,
       "description": "silver-true-honey color at 950 position (OKLCH L=0.05)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-honey",
@@ -3472,715 +1596,198 @@
         "accessibility": {
           "wcagAA": {
             "normal": [
-              [
-                0,
-                7
-              ],
-              [
-                0,
-                8
-              ],
-              [
-                0,
-                9
-              ],
-              [
-                0,
-                10
-              ],
-              [
-                1,
-                7
-              ],
-              [
-                1,
-                8
-              ],
-              [
-                1,
-                9
-              ],
-              [
-                1,
-                10
-              ],
-              [
-                2,
-                7
-              ],
-              [
-                2,
-                8
-              ],
-              [
-                2,
-                9
-              ],
-              [
-                2,
-                10
-              ],
-              [
-                3,
-                8
-              ],
-              [
-                3,
-                9
-              ],
-              [
-                3,
-                10
-              ],
-              [
-                4,
-                8
-              ],
-              [
-                4,
-                9
-              ],
-              [
-                4,
-                10
-              ],
-              [
-                5,
-                9
-              ],
-              [
-                5,
-                10
-              ],
-              [
-                7,
-                0
-              ],
-              [
-                7,
-                1
-              ],
-              [
-                7,
-                2
-              ],
-              [
-                8,
-                0
-              ],
-              [
-                8,
-                1
-              ],
-              [
-                8,
-                2
-              ],
-              [
-                8,
-                3
-              ],
-              [
-                8,
-                4
-              ],
-              [
-                9,
-                0
-              ],
-              [
-                9,
-                1
-              ],
-              [
-                9,
-                2
-              ],
-              [
-                9,
-                3
-              ],
-              [
-                9,
-                4
-              ],
-              [
-                9,
-                5
-              ],
-              [
-                10,
-                0
-              ],
-              [
-                10,
-                1
-              ],
-              [
-                10,
-                2
-              ],
-              [
-                10,
-                3
-              ],
-              [
-                10,
-                4
-              ],
-              [
-                10,
-                5
-              ]
+              [0, 7],
+              [0, 8],
+              [0, 9],
+              [0, 10],
+              [1, 7],
+              [1, 8],
+              [1, 9],
+              [1, 10],
+              [2, 7],
+              [2, 8],
+              [2, 9],
+              [2, 10],
+              [3, 8],
+              [3, 9],
+              [3, 10],
+              [4, 8],
+              [4, 9],
+              [4, 10],
+              [5, 9],
+              [5, 10],
+              [7, 0],
+              [7, 1],
+              [7, 2],
+              [8, 0],
+              [8, 1],
+              [8, 2],
+              [8, 3],
+              [8, 4],
+              [9, 0],
+              [9, 1],
+              [9, 2],
+              [9, 3],
+              [9, 4],
+              [9, 5],
+              [10, 0],
+              [10, 1],
+              [10, 2],
+              [10, 3],
+              [10, 4],
+              [10, 5]
             ],
             "large": [
-              [
-                0,
-                6
-              ],
-              [
-                0,
-                7
-              ],
-              [
-                0,
-                8
-              ],
-              [
-                0,
-                9
-              ],
-              [
-                0,
-                10
-              ],
-              [
-                1,
-                6
-              ],
-              [
-                1,
-                7
-              ],
-              [
-                1,
-                8
-              ],
-              [
-                1,
-                9
-              ],
-              [
-                1,
-                10
-              ],
-              [
-                2,
-                7
-              ],
-              [
-                2,
-                8
-              ],
-              [
-                2,
-                9
-              ],
-              [
-                2,
-                10
-              ],
-              [
-                3,
-                7
-              ],
-              [
-                3,
-                8
-              ],
-              [
-                3,
-                9
-              ],
-              [
-                3,
-                10
-              ],
-              [
-                4,
-                7
-              ],
-              [
-                4,
-                8
-              ],
-              [
-                4,
-                9
-              ],
-              [
-                4,
-                10
-              ],
-              [
-                5,
-                8
-              ],
-              [
-                5,
-                9
-              ],
-              [
-                5,
-                10
-              ],
-              [
-                6,
-                0
-              ],
-              [
-                6,
-                1
-              ],
-              [
-                6,
-                9
-              ],
-              [
-                6,
-                10
-              ],
-              [
-                7,
-                0
-              ],
-              [
-                7,
-                1
-              ],
-              [
-                7,
-                2
-              ],
-              [
-                7,
-                3
-              ],
-              [
-                7,
-                4
-              ],
-              [
-                8,
-                0
-              ],
-              [
-                8,
-                1
-              ],
-              [
-                8,
-                2
-              ],
-              [
-                8,
-                3
-              ],
-              [
-                8,
-                4
-              ],
-              [
-                8,
-                5
-              ],
-              [
-                9,
-                0
-              ],
-              [
-                9,
-                1
-              ],
-              [
-                9,
-                2
-              ],
-              [
-                9,
-                3
-              ],
-              [
-                9,
-                4
-              ],
-              [
-                9,
-                5
-              ],
-              [
-                9,
-                6
-              ],
-              [
-                10,
-                0
-              ],
-              [
-                10,
-                1
-              ],
-              [
-                10,
-                2
-              ],
-              [
-                10,
-                3
-              ],
-              [
-                10,
-                4
-              ],
-              [
-                10,
-                5
-              ],
-              [
-                10,
-                6
-              ]
+              [0, 6],
+              [0, 7],
+              [0, 8],
+              [0, 9],
+              [0, 10],
+              [1, 6],
+              [1, 7],
+              [1, 8],
+              [1, 9],
+              [1, 10],
+              [2, 7],
+              [2, 8],
+              [2, 9],
+              [2, 10],
+              [3, 7],
+              [3, 8],
+              [3, 9],
+              [3, 10],
+              [4, 7],
+              [4, 8],
+              [4, 9],
+              [4, 10],
+              [5, 8],
+              [5, 9],
+              [5, 10],
+              [6, 0],
+              [6, 1],
+              [6, 9],
+              [6, 10],
+              [7, 0],
+              [7, 1],
+              [7, 2],
+              [7, 3],
+              [7, 4],
+              [8, 0],
+              [8, 1],
+              [8, 2],
+              [8, 3],
+              [8, 4],
+              [8, 5],
+              [9, 0],
+              [9, 1],
+              [9, 2],
+              [9, 3],
+              [9, 4],
+              [9, 5],
+              [9, 6],
+              [10, 0],
+              [10, 1],
+              [10, 2],
+              [10, 3],
+              [10, 4],
+              [10, 5],
+              [10, 6]
             ]
           },
           "wcagAAA": {
             "normal": [
-              [
-                0,
-                7
-              ],
-              [
-                0,
-                8
-              ],
-              [
-                0,
-                9
-              ],
-              [
-                0,
-                10
-              ],
-              [
-                1,
-                8
-              ],
-              [
-                1,
-                9
-              ],
-              [
-                1,
-                10
-              ],
-              [
-                2,
-                8
-              ],
-              [
-                2,
-                9
-              ],
-              [
-                2,
-                10
-              ],
-              [
-                3,
-                9
-              ],
-              [
-                3,
-                10
-              ],
-              [
-                4,
-                9
-              ],
-              [
-                4,
-                10
-              ],
-              [
-                7,
-                0
-              ],
-              [
-                8,
-                0
-              ],
-              [
-                8,
-                1
-              ],
-              [
-                8,
-                2
-              ],
-              [
-                9,
-                0
-              ],
-              [
-                9,
-                1
-              ],
-              [
-                9,
-                2
-              ],
-              [
-                9,
-                3
-              ],
-              [
-                9,
-                4
-              ],
-              [
-                10,
-                0
-              ],
-              [
-                10,
-                1
-              ],
-              [
-                10,
-                2
-              ],
-              [
-                10,
-                3
-              ],
-              [
-                10,
-                4
-              ]
+              [0, 7],
+              [0, 8],
+              [0, 9],
+              [0, 10],
+              [1, 8],
+              [1, 9],
+              [1, 10],
+              [2, 8],
+              [2, 9],
+              [2, 10],
+              [3, 9],
+              [3, 10],
+              [4, 9],
+              [4, 10],
+              [7, 0],
+              [8, 0],
+              [8, 1],
+              [8, 2],
+              [9, 0],
+              [9, 1],
+              [9, 2],
+              [9, 3],
+              [9, 4],
+              [10, 0],
+              [10, 1],
+              [10, 2],
+              [10, 3],
+              [10, 4]
             ],
             "large": [
-              [
-                0,
-                7
-              ],
-              [
-                0,
-                8
-              ],
-              [
-                0,
-                9
-              ],
-              [
-                0,
-                10
-              ],
-              [
-                1,
-                7
-              ],
-              [
-                1,
-                8
-              ],
-              [
-                1,
-                9
-              ],
-              [
-                1,
-                10
-              ],
-              [
-                2,
-                7
-              ],
-              [
-                2,
-                8
-              ],
-              [
-                2,
-                9
-              ],
-              [
-                2,
-                10
-              ],
-              [
-                3,
-                8
-              ],
-              [
-                3,
-                9
-              ],
-              [
-                3,
-                10
-              ],
-              [
-                4,
-                8
-              ],
-              [
-                4,
-                9
-              ],
-              [
-                4,
-                10
-              ],
-              [
-                5,
-                9
-              ],
-              [
-                5,
-                10
-              ],
-              [
-                7,
-                0
-              ],
-              [
-                7,
-                1
-              ],
-              [
-                7,
-                2
-              ],
-              [
-                8,
-                0
-              ],
-              [
-                8,
-                1
-              ],
-              [
-                8,
-                2
-              ],
-              [
-                8,
-                3
-              ],
-              [
-                8,
-                4
-              ],
-              [
-                9,
-                0
-              ],
-              [
-                9,
-                1
-              ],
-              [
-                9,
-                2
-              ],
-              [
-                9,
-                3
-              ],
-              [
-                9,
-                4
-              ],
-              [
-                9,
-                5
-              ],
-              [
-                10,
-                0
-              ],
-              [
-                10,
-                1
-              ],
-              [
-                10,
-                2
-              ],
-              [
-                10,
-                3
-              ],
-              [
-                10,
-                4
-              ],
-              [
-                10,
-                5
-              ]
+              [0, 7],
+              [0, 8],
+              [0, 9],
+              [0, 10],
+              [1, 7],
+              [1, 8],
+              [1, 9],
+              [1, 10],
+              [2, 7],
+              [2, 8],
+              [2, 9],
+              [2, 10],
+              [3, 8],
+              [3, 9],
+              [3, 10],
+              [4, 8],
+              [4, 9],
+              [4, 10],
+              [5, 9],
+              [5, 10],
+              [7, 0],
+              [7, 1],
+              [7, 2],
+              [8, 0],
+              [8, 1],
+              [8, 2],
+              [8, 3],
+              [8, 4],
+              [9, 0],
+              [9, 1],
+              [9, 2],
+              [9, 3],
+              [9, 4],
+              [9, 5],
+              [10, 0],
+              [10, 1],
+              [10, 2],
+              [10, 3],
+              [10, 4],
+              [10, 5]
             ]
           },
           "onWhite": {
             "wcagAA": false,
             "wcagAAA": false,
             "contrastRatio": 3.4074408186480576,
-            "aa": [
-              6,
-              7,
-              8,
-              9,
-              10
-            ],
-            "aaa": [
-              7,
-              8,
-              9,
-              10
-            ]
+            "aa": [6, 7, 8, 9, 10],
+            "aaa": [7, 8, 9, 10]
           },
           "onBlack": {
             "wcagAA": true,
             "wcagAAA": false,
             "contrastRatio": 6.1629830472982325,
-            "aa": [
-              0,
-              1,
-              2,
-              3,
-              4,
-              5
-            ],
-            "aaa": [
-              0,
-              1,
-              2,
-              3,
-              4
-            ]
+            "aa": [0, 1, 2, 3, 4, 5],
+            "aaa": [0, 1, 2, 3, 4]
           }
         }
       },
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "Complete silver-true-honey color family with 11-position scale",
-      "usageContext": [
-        "backgrounds",
-        "borders",
-        "text",
-        "dividers",
-        "shadows",
-        "overlays"
-      ],
+      "usageContext": ["backgrounds", "borders", "text", "dividers", "shadows", "overlays"],
       "usagePatterns": {
         "do": [
           "Use 50-200 for light mode backgrounds",
@@ -4197,7 +1804,7 @@
       "userOverride": null,
       "containerQueryAware": true,
       "description": "Warm honey gold palette - inviting, refined, subtle warmth.",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-citrine-50",
@@ -4205,18 +1812,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-citrine shade at 50 level - light background range",
-      "usageContext": [
-        "backgrounds",
-        "cards",
-        "surfaces",
-        "light-mode-bg"
-      ],
+      "usageContext": ["backgrounds", "cards", "surfaces", "light-mode-bg"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 0,
       "containerQueryAware": true,
       "description": "silver-true-citrine color at 50 position (OKLCH L=0.95)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-citrine-100",
@@ -4224,18 +1826,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-citrine shade at 100 level - light background range",
-      "usageContext": [
-        "backgrounds",
-        "cards",
-        "surfaces",
-        "light-mode-bg"
-      ],
+      "usageContext": ["backgrounds", "cards", "surfaces", "light-mode-bg"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 1,
       "containerQueryAware": true,
       "description": "silver-true-citrine color at 100 position (OKLCH L=0.896)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-citrine-200",
@@ -4243,17 +1840,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-citrine shade at 200 level - light background range",
-      "usageContext": [
-        "secondary-backgrounds",
-        "hover-states",
-        "subtle-borders"
-      ],
+      "usageContext": ["secondary-backgrounds", "hover-states", "subtle-borders"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 2,
       "containerQueryAware": true,
       "description": "silver-true-citrine color at 200 position (OKLCH L=0.839)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-citrine-300",
@@ -4261,17 +1854,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-citrine shade at 300 level - light background range",
-      "usageContext": [
-        "secondary-backgrounds",
-        "hover-states",
-        "subtle-borders"
-      ],
+      "usageContext": ["secondary-backgrounds", "hover-states", "subtle-borders"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 3,
       "containerQueryAware": true,
       "description": "silver-true-citrine color at 300 position (OKLCH L=0.78)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-citrine-400",
@@ -4279,18 +1868,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-citrine shade at 400 level - mid-tone for borders and secondary text",
-      "usageContext": [
-        "borders",
-        "dividers",
-        "disabled-states",
-        "placeholder-text"
-      ],
+      "usageContext": ["borders", "dividers", "disabled-states", "placeholder-text"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 4,
       "containerQueryAware": true,
       "description": "silver-true-citrine color at 400 position (OKLCH L=0.716)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-citrine-500",
@@ -4298,18 +1882,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-citrine shade at 500 level - mid-tone for borders and secondary text",
-      "usageContext": [
-        "borders",
-        "dividers",
-        "disabled-states",
-        "placeholder-text"
-      ],
+      "usageContext": ["borders", "dividers", "disabled-states", "placeholder-text"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 5,
       "containerQueryAware": true,
       "description": "silver-true-citrine color at 500 position (OKLCH L=0.645)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-citrine-600",
@@ -4317,17 +1896,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-citrine shade at 600 level - mid-tone for borders and secondary text",
-      "usageContext": [
-        "secondary-text",
-        "icons",
-        "input-borders"
-      ],
+      "usageContext": ["secondary-text", "icons", "input-borders"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 6,
       "containerQueryAware": true,
       "description": "silver-true-citrine color at 600 position (OKLCH L=0.55)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-citrine-700",
@@ -4335,17 +1910,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-citrine shade at 700 level - dark foreground range",
-      "usageContext": [
-        "secondary-text",
-        "icons",
-        "input-borders"
-      ],
+      "usageContext": ["secondary-text", "icons", "input-borders"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 7,
       "containerQueryAware": true,
       "description": "silver-true-citrine color at 700 position (OKLCH L=0.425)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-citrine-800",
@@ -4353,18 +1924,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-citrine shade at 800 level - dark foreground range",
-      "usageContext": [
-        "primary-text",
-        "headings",
-        "dark-mode-bg",
-        "high-contrast-elements"
-      ],
+      "usageContext": ["primary-text", "headings", "dark-mode-bg", "high-contrast-elements"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 8,
       "containerQueryAware": true,
       "description": "silver-true-citrine color at 800 position (OKLCH L=0.3)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-citrine-900",
@@ -4372,18 +1938,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-citrine shade at 900 level - dark foreground range",
-      "usageContext": [
-        "primary-text",
-        "headings",
-        "dark-mode-bg",
-        "high-contrast-elements"
-      ],
+      "usageContext": ["primary-text", "headings", "dark-mode-bg", "high-contrast-elements"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 9,
       "containerQueryAware": true,
       "description": "silver-true-citrine color at 900 position (OKLCH L=0.175)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-citrine-950",
@@ -4391,18 +1952,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-citrine shade at 950 level - dark foreground range",
-      "usageContext": [
-        "primary-text",
-        "headings",
-        "dark-mode-bg",
-        "high-contrast-elements"
-      ],
+      "usageContext": ["primary-text", "headings", "dark-mode-bg", "high-contrast-elements"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 10,
       "containerQueryAware": true,
       "description": "silver-true-citrine color at 950 position (OKLCH L=0.05)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-citrine",
@@ -4481,715 +2037,198 @@
         "accessibility": {
           "wcagAA": {
             "normal": [
-              [
-                0,
-                7
-              ],
-              [
-                0,
-                8
-              ],
-              [
-                0,
-                9
-              ],
-              [
-                0,
-                10
-              ],
-              [
-                1,
-                7
-              ],
-              [
-                1,
-                8
-              ],
-              [
-                1,
-                9
-              ],
-              [
-                1,
-                10
-              ],
-              [
-                2,
-                7
-              ],
-              [
-                2,
-                8
-              ],
-              [
-                2,
-                9
-              ],
-              [
-                2,
-                10
-              ],
-              [
-                3,
-                8
-              ],
-              [
-                3,
-                9
-              ],
-              [
-                3,
-                10
-              ],
-              [
-                4,
-                8
-              ],
-              [
-                4,
-                9
-              ],
-              [
-                4,
-                10
-              ],
-              [
-                5,
-                9
-              ],
-              [
-                5,
-                10
-              ],
-              [
-                7,
-                0
-              ],
-              [
-                7,
-                1
-              ],
-              [
-                7,
-                2
-              ],
-              [
-                8,
-                0
-              ],
-              [
-                8,
-                1
-              ],
-              [
-                8,
-                2
-              ],
-              [
-                8,
-                3
-              ],
-              [
-                8,
-                4
-              ],
-              [
-                9,
-                0
-              ],
-              [
-                9,
-                1
-              ],
-              [
-                9,
-                2
-              ],
-              [
-                9,
-                3
-              ],
-              [
-                9,
-                4
-              ],
-              [
-                9,
-                5
-              ],
-              [
-                10,
-                0
-              ],
-              [
-                10,
-                1
-              ],
-              [
-                10,
-                2
-              ],
-              [
-                10,
-                3
-              ],
-              [
-                10,
-                4
-              ],
-              [
-                10,
-                5
-              ]
+              [0, 7],
+              [0, 8],
+              [0, 9],
+              [0, 10],
+              [1, 7],
+              [1, 8],
+              [1, 9],
+              [1, 10],
+              [2, 7],
+              [2, 8],
+              [2, 9],
+              [2, 10],
+              [3, 8],
+              [3, 9],
+              [3, 10],
+              [4, 8],
+              [4, 9],
+              [4, 10],
+              [5, 9],
+              [5, 10],
+              [7, 0],
+              [7, 1],
+              [7, 2],
+              [8, 0],
+              [8, 1],
+              [8, 2],
+              [8, 3],
+              [8, 4],
+              [9, 0],
+              [9, 1],
+              [9, 2],
+              [9, 3],
+              [9, 4],
+              [9, 5],
+              [10, 0],
+              [10, 1],
+              [10, 2],
+              [10, 3],
+              [10, 4],
+              [10, 5]
             ],
             "large": [
-              [
-                0,
-                6
-              ],
-              [
-                0,
-                7
-              ],
-              [
-                0,
-                8
-              ],
-              [
-                0,
-                9
-              ],
-              [
-                0,
-                10
-              ],
-              [
-                1,
-                6
-              ],
-              [
-                1,
-                7
-              ],
-              [
-                1,
-                8
-              ],
-              [
-                1,
-                9
-              ],
-              [
-                1,
-                10
-              ],
-              [
-                2,
-                7
-              ],
-              [
-                2,
-                8
-              ],
-              [
-                2,
-                9
-              ],
-              [
-                2,
-                10
-              ],
-              [
-                3,
-                7
-              ],
-              [
-                3,
-                8
-              ],
-              [
-                3,
-                9
-              ],
-              [
-                3,
-                10
-              ],
-              [
-                4,
-                7
-              ],
-              [
-                4,
-                8
-              ],
-              [
-                4,
-                9
-              ],
-              [
-                4,
-                10
-              ],
-              [
-                5,
-                8
-              ],
-              [
-                5,
-                9
-              ],
-              [
-                5,
-                10
-              ],
-              [
-                6,
-                0
-              ],
-              [
-                6,
-                1
-              ],
-              [
-                6,
-                9
-              ],
-              [
-                6,
-                10
-              ],
-              [
-                7,
-                0
-              ],
-              [
-                7,
-                1
-              ],
-              [
-                7,
-                2
-              ],
-              [
-                7,
-                3
-              ],
-              [
-                7,
-                4
-              ],
-              [
-                8,
-                0
-              ],
-              [
-                8,
-                1
-              ],
-              [
-                8,
-                2
-              ],
-              [
-                8,
-                3
-              ],
-              [
-                8,
-                4
-              ],
-              [
-                8,
-                5
-              ],
-              [
-                9,
-                0
-              ],
-              [
-                9,
-                1
-              ],
-              [
-                9,
-                2
-              ],
-              [
-                9,
-                3
-              ],
-              [
-                9,
-                4
-              ],
-              [
-                9,
-                5
-              ],
-              [
-                9,
-                6
-              ],
-              [
-                10,
-                0
-              ],
-              [
-                10,
-                1
-              ],
-              [
-                10,
-                2
-              ],
-              [
-                10,
-                3
-              ],
-              [
-                10,
-                4
-              ],
-              [
-                10,
-                5
-              ],
-              [
-                10,
-                6
-              ]
+              [0, 6],
+              [0, 7],
+              [0, 8],
+              [0, 9],
+              [0, 10],
+              [1, 6],
+              [1, 7],
+              [1, 8],
+              [1, 9],
+              [1, 10],
+              [2, 7],
+              [2, 8],
+              [2, 9],
+              [2, 10],
+              [3, 7],
+              [3, 8],
+              [3, 9],
+              [3, 10],
+              [4, 7],
+              [4, 8],
+              [4, 9],
+              [4, 10],
+              [5, 8],
+              [5, 9],
+              [5, 10],
+              [6, 0],
+              [6, 1],
+              [6, 9],
+              [6, 10],
+              [7, 0],
+              [7, 1],
+              [7, 2],
+              [7, 3],
+              [7, 4],
+              [8, 0],
+              [8, 1],
+              [8, 2],
+              [8, 3],
+              [8, 4],
+              [8, 5],
+              [9, 0],
+              [9, 1],
+              [9, 2],
+              [9, 3],
+              [9, 4],
+              [9, 5],
+              [9, 6],
+              [10, 0],
+              [10, 1],
+              [10, 2],
+              [10, 3],
+              [10, 4],
+              [10, 5],
+              [10, 6]
             ]
           },
           "wcagAAA": {
             "normal": [
-              [
-                0,
-                7
-              ],
-              [
-                0,
-                8
-              ],
-              [
-                0,
-                9
-              ],
-              [
-                0,
-                10
-              ],
-              [
-                1,
-                8
-              ],
-              [
-                1,
-                9
-              ],
-              [
-                1,
-                10
-              ],
-              [
-                2,
-                8
-              ],
-              [
-                2,
-                9
-              ],
-              [
-                2,
-                10
-              ],
-              [
-                3,
-                9
-              ],
-              [
-                3,
-                10
-              ],
-              [
-                4,
-                9
-              ],
-              [
-                4,
-                10
-              ],
-              [
-                7,
-                0
-              ],
-              [
-                8,
-                0
-              ],
-              [
-                8,
-                1
-              ],
-              [
-                8,
-                2
-              ],
-              [
-                9,
-                0
-              ],
-              [
-                9,
-                1
-              ],
-              [
-                9,
-                2
-              ],
-              [
-                9,
-                3
-              ],
-              [
-                9,
-                4
-              ],
-              [
-                10,
-                0
-              ],
-              [
-                10,
-                1
-              ],
-              [
-                10,
-                2
-              ],
-              [
-                10,
-                3
-              ],
-              [
-                10,
-                4
-              ]
+              [0, 7],
+              [0, 8],
+              [0, 9],
+              [0, 10],
+              [1, 8],
+              [1, 9],
+              [1, 10],
+              [2, 8],
+              [2, 9],
+              [2, 10],
+              [3, 9],
+              [3, 10],
+              [4, 9],
+              [4, 10],
+              [7, 0],
+              [8, 0],
+              [8, 1],
+              [8, 2],
+              [9, 0],
+              [9, 1],
+              [9, 2],
+              [9, 3],
+              [9, 4],
+              [10, 0],
+              [10, 1],
+              [10, 2],
+              [10, 3],
+              [10, 4]
             ],
             "large": [
-              [
-                0,
-                7
-              ],
-              [
-                0,
-                8
-              ],
-              [
-                0,
-                9
-              ],
-              [
-                0,
-                10
-              ],
-              [
-                1,
-                7
-              ],
-              [
-                1,
-                8
-              ],
-              [
-                1,
-                9
-              ],
-              [
-                1,
-                10
-              ],
-              [
-                2,
-                7
-              ],
-              [
-                2,
-                8
-              ],
-              [
-                2,
-                9
-              ],
-              [
-                2,
-                10
-              ],
-              [
-                3,
-                8
-              ],
-              [
-                3,
-                9
-              ],
-              [
-                3,
-                10
-              ],
-              [
-                4,
-                8
-              ],
-              [
-                4,
-                9
-              ],
-              [
-                4,
-                10
-              ],
-              [
-                5,
-                9
-              ],
-              [
-                5,
-                10
-              ],
-              [
-                7,
-                0
-              ],
-              [
-                7,
-                1
-              ],
-              [
-                7,
-                2
-              ],
-              [
-                8,
-                0
-              ],
-              [
-                8,
-                1
-              ],
-              [
-                8,
-                2
-              ],
-              [
-                8,
-                3
-              ],
-              [
-                8,
-                4
-              ],
-              [
-                9,
-                0
-              ],
-              [
-                9,
-                1
-              ],
-              [
-                9,
-                2
-              ],
-              [
-                9,
-                3
-              ],
-              [
-                9,
-                4
-              ],
-              [
-                9,
-                5
-              ],
-              [
-                10,
-                0
-              ],
-              [
-                10,
-                1
-              ],
-              [
-                10,
-                2
-              ],
-              [
-                10,
-                3
-              ],
-              [
-                10,
-                4
-              ],
-              [
-                10,
-                5
-              ]
+              [0, 7],
+              [0, 8],
+              [0, 9],
+              [0, 10],
+              [1, 7],
+              [1, 8],
+              [1, 9],
+              [1, 10],
+              [2, 7],
+              [2, 8],
+              [2, 9],
+              [2, 10],
+              [3, 8],
+              [3, 9],
+              [3, 10],
+              [4, 8],
+              [4, 9],
+              [4, 10],
+              [5, 9],
+              [5, 10],
+              [7, 0],
+              [7, 1],
+              [7, 2],
+              [8, 0],
+              [8, 1],
+              [8, 2],
+              [8, 3],
+              [8, 4],
+              [9, 0],
+              [9, 1],
+              [9, 2],
+              [9, 3],
+              [9, 4],
+              [9, 5],
+              [10, 0],
+              [10, 1],
+              [10, 2],
+              [10, 3],
+              [10, 4],
+              [10, 5]
             ]
           },
           "onWhite": {
             "wcagAA": false,
             "wcagAAA": false,
             "contrastRatio": 3.3096180174029666,
-            "aa": [
-              6,
-              7,
-              8,
-              9,
-              10
-            ],
-            "aaa": [
-              7,
-              8,
-              9,
-              10
-            ]
+            "aa": [6, 7, 8, 9, 10],
+            "aaa": [7, 8, 9, 10]
           },
           "onBlack": {
             "wcagAA": true,
             "wcagAAA": false,
             "contrastRatio": 6.345143122129405,
-            "aa": [
-              0,
-              1,
-              2,
-              3,
-              4,
-              5
-            ],
-            "aaa": [
-              0,
-              1,
-              2,
-              3,
-              4
-            ]
+            "aa": [0, 1, 2, 3, 4, 5],
+            "aaa": [0, 1, 2, 3, 4]
           }
         }
       },
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "Complete silver-true-citrine color family with 11-position scale",
-      "usageContext": [
-        "backgrounds",
-        "borders",
-        "text",
-        "dividers",
-        "shadows",
-        "overlays"
-      ],
+      "usageContext": ["backgrounds", "borders", "text", "dividers", "shadows", "overlays"],
       "usagePatterns": {
         "do": [
           "Use 50-200 for light mode backgrounds",
@@ -5206,7 +2245,7 @@
       "userOverride": null,
       "containerQueryAware": true,
       "description": "Fresh citrine green palette - natural, growth, harmony.",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-sky-50",
@@ -5214,18 +2253,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-sky shade at 50 level - light background range",
-      "usageContext": [
-        "backgrounds",
-        "cards",
-        "surfaces",
-        "light-mode-bg"
-      ],
+      "usageContext": ["backgrounds", "cards", "surfaces", "light-mode-bg"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 0,
       "containerQueryAware": true,
       "description": "silver-true-sky color at 50 position (OKLCH L=0.95)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-sky-100",
@@ -5233,18 +2267,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-sky shade at 100 level - light background range",
-      "usageContext": [
-        "backgrounds",
-        "cards",
-        "surfaces",
-        "light-mode-bg"
-      ],
+      "usageContext": ["backgrounds", "cards", "surfaces", "light-mode-bg"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 1,
       "containerQueryAware": true,
       "description": "silver-true-sky color at 100 position (OKLCH L=0.896)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-sky-200",
@@ -5252,17 +2281,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-sky shade at 200 level - light background range",
-      "usageContext": [
-        "secondary-backgrounds",
-        "hover-states",
-        "subtle-borders"
-      ],
+      "usageContext": ["secondary-backgrounds", "hover-states", "subtle-borders"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 2,
       "containerQueryAware": true,
       "description": "silver-true-sky color at 200 position (OKLCH L=0.839)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-sky-300",
@@ -5270,17 +2295,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-sky shade at 300 level - light background range",
-      "usageContext": [
-        "secondary-backgrounds",
-        "hover-states",
-        "subtle-borders"
-      ],
+      "usageContext": ["secondary-backgrounds", "hover-states", "subtle-borders"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 3,
       "containerQueryAware": true,
       "description": "silver-true-sky color at 300 position (OKLCH L=0.78)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-sky-400",
@@ -5288,18 +2309,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-sky shade at 400 level - mid-tone for borders and secondary text",
-      "usageContext": [
-        "borders",
-        "dividers",
-        "disabled-states",
-        "placeholder-text"
-      ],
+      "usageContext": ["borders", "dividers", "disabled-states", "placeholder-text"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 4,
       "containerQueryAware": true,
       "description": "silver-true-sky color at 400 position (OKLCH L=0.716)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-sky-500",
@@ -5307,18 +2323,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-sky shade at 500 level - mid-tone for borders and secondary text",
-      "usageContext": [
-        "borders",
-        "dividers",
-        "disabled-states",
-        "placeholder-text"
-      ],
+      "usageContext": ["borders", "dividers", "disabled-states", "placeholder-text"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 5,
       "containerQueryAware": true,
       "description": "silver-true-sky color at 500 position (OKLCH L=0.645)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-sky-600",
@@ -5326,17 +2337,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-sky shade at 600 level - mid-tone for borders and secondary text",
-      "usageContext": [
-        "secondary-text",
-        "icons",
-        "input-borders"
-      ],
+      "usageContext": ["secondary-text", "icons", "input-borders"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 6,
       "containerQueryAware": true,
       "description": "silver-true-sky color at 600 position (OKLCH L=0.55)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-sky-700",
@@ -5344,17 +2351,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-sky shade at 700 level - dark foreground range",
-      "usageContext": [
-        "secondary-text",
-        "icons",
-        "input-borders"
-      ],
+      "usageContext": ["secondary-text", "icons", "input-borders"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 7,
       "containerQueryAware": true,
       "description": "silver-true-sky color at 700 position (OKLCH L=0.425)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-sky-800",
@@ -5362,18 +2365,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-sky shade at 800 level - dark foreground range",
-      "usageContext": [
-        "primary-text",
-        "headings",
-        "dark-mode-bg",
-        "high-contrast-elements"
-      ],
+      "usageContext": ["primary-text", "headings", "dark-mode-bg", "high-contrast-elements"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 8,
       "containerQueryAware": true,
       "description": "silver-true-sky color at 800 position (OKLCH L=0.3)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-sky-900",
@@ -5381,18 +2379,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-sky shade at 900 level - dark foreground range",
-      "usageContext": [
-        "primary-text",
-        "headings",
-        "dark-mode-bg",
-        "high-contrast-elements"
-      ],
+      "usageContext": ["primary-text", "headings", "dark-mode-bg", "high-contrast-elements"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 9,
       "containerQueryAware": true,
       "description": "silver-true-sky color at 900 position (OKLCH L=0.175)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-sky-950",
@@ -5400,18 +2393,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-sky shade at 950 level - dark foreground range",
-      "usageContext": [
-        "primary-text",
-        "headings",
-        "dark-mode-bg",
-        "high-contrast-elements"
-      ],
+      "usageContext": ["primary-text", "headings", "dark-mode-bg", "high-contrast-elements"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 10,
       "containerQueryAware": true,
       "description": "silver-true-sky color at 950 position (OKLCH L=0.05)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-sky",
@@ -5490,724 +2478,200 @@
         "accessibility": {
           "wcagAA": {
             "normal": [
-              [
-                0,
-                7
-              ],
-              [
-                0,
-                8
-              ],
-              [
-                0,
-                9
-              ],
-              [
-                0,
-                10
-              ],
-              [
-                1,
-                7
-              ],
-              [
-                1,
-                8
-              ],
-              [
-                1,
-                9
-              ],
-              [
-                1,
-                10
-              ],
-              [
-                2,
-                7
-              ],
-              [
-                2,
-                8
-              ],
-              [
-                2,
-                9
-              ],
-              [
-                2,
-                10
-              ],
-              [
-                3,
-                8
-              ],
-              [
-                3,
-                9
-              ],
-              [
-                3,
-                10
-              ],
-              [
-                4,
-                8
-              ],
-              [
-                4,
-                9
-              ],
-              [
-                4,
-                10
-              ],
-              [
-                5,
-                9
-              ],
-              [
-                5,
-                10
-              ],
-              [
-                6,
-                10
-              ],
-              [
-                7,
-                0
-              ],
-              [
-                7,
-                1
-              ],
-              [
-                7,
-                2
-              ],
-              [
-                8,
-                0
-              ],
-              [
-                8,
-                1
-              ],
-              [
-                8,
-                2
-              ],
-              [
-                8,
-                3
-              ],
-              [
-                8,
-                4
-              ],
-              [
-                9,
-                0
-              ],
-              [
-                9,
-                1
-              ],
-              [
-                9,
-                2
-              ],
-              [
-                9,
-                3
-              ],
-              [
-                9,
-                4
-              ],
-              [
-                9,
-                5
-              ],
-              [
-                10,
-                0
-              ],
-              [
-                10,
-                1
-              ],
-              [
-                10,
-                2
-              ],
-              [
-                10,
-                3
-              ],
-              [
-                10,
-                4
-              ],
-              [
-                10,
-                5
-              ],
-              [
-                10,
-                6
-              ]
+              [0, 7],
+              [0, 8],
+              [0, 9],
+              [0, 10],
+              [1, 7],
+              [1, 8],
+              [1, 9],
+              [1, 10],
+              [2, 7],
+              [2, 8],
+              [2, 9],
+              [2, 10],
+              [3, 8],
+              [3, 9],
+              [3, 10],
+              [4, 8],
+              [4, 9],
+              [4, 10],
+              [5, 9],
+              [5, 10],
+              [6, 10],
+              [7, 0],
+              [7, 1],
+              [7, 2],
+              [8, 0],
+              [8, 1],
+              [8, 2],
+              [8, 3],
+              [8, 4],
+              [9, 0],
+              [9, 1],
+              [9, 2],
+              [9, 3],
+              [9, 4],
+              [9, 5],
+              [10, 0],
+              [10, 1],
+              [10, 2],
+              [10, 3],
+              [10, 4],
+              [10, 5],
+              [10, 6]
             ],
             "large": [
-              [
-                0,
-                6
-              ],
-              [
-                0,
-                7
-              ],
-              [
-                0,
-                8
-              ],
-              [
-                0,
-                9
-              ],
-              [
-                0,
-                10
-              ],
-              [
-                1,
-                6
-              ],
-              [
-                1,
-                7
-              ],
-              [
-                1,
-                8
-              ],
-              [
-                1,
-                9
-              ],
-              [
-                1,
-                10
-              ],
-              [
-                2,
-                7
-              ],
-              [
-                2,
-                8
-              ],
-              [
-                2,
-                9
-              ],
-              [
-                2,
-                10
-              ],
-              [
-                3,
-                7
-              ],
-              [
-                3,
-                8
-              ],
-              [
-                3,
-                9
-              ],
-              [
-                3,
-                10
-              ],
-              [
-                4,
-                7
-              ],
-              [
-                4,
-                8
-              ],
-              [
-                4,
-                9
-              ],
-              [
-                4,
-                10
-              ],
-              [
-                5,
-                8
-              ],
-              [
-                5,
-                9
-              ],
-              [
-                5,
-                10
-              ],
-              [
-                6,
-                0
-              ],
-              [
-                6,
-                1
-              ],
-              [
-                6,
-                9
-              ],
-              [
-                6,
-                10
-              ],
-              [
-                7,
-                0
-              ],
-              [
-                7,
-                1
-              ],
-              [
-                7,
-                2
-              ],
-              [
-                7,
-                3
-              ],
-              [
-                7,
-                4
-              ],
-              [
-                8,
-                0
-              ],
-              [
-                8,
-                1
-              ],
-              [
-                8,
-                2
-              ],
-              [
-                8,
-                3
-              ],
-              [
-                8,
-                4
-              ],
-              [
-                8,
-                5
-              ],
-              [
-                9,
-                0
-              ],
-              [
-                9,
-                1
-              ],
-              [
-                9,
-                2
-              ],
-              [
-                9,
-                3
-              ],
-              [
-                9,
-                4
-              ],
-              [
-                9,
-                5
-              ],
-              [
-                9,
-                6
-              ],
-              [
-                10,
-                0
-              ],
-              [
-                10,
-                1
-              ],
-              [
-                10,
-                2
-              ],
-              [
-                10,
-                3
-              ],
-              [
-                10,
-                4
-              ],
-              [
-                10,
-                5
-              ],
-              [
-                10,
-                6
-              ]
+              [0, 6],
+              [0, 7],
+              [0, 8],
+              [0, 9],
+              [0, 10],
+              [1, 6],
+              [1, 7],
+              [1, 8],
+              [1, 9],
+              [1, 10],
+              [2, 7],
+              [2, 8],
+              [2, 9],
+              [2, 10],
+              [3, 7],
+              [3, 8],
+              [3, 9],
+              [3, 10],
+              [4, 7],
+              [4, 8],
+              [4, 9],
+              [4, 10],
+              [5, 8],
+              [5, 9],
+              [5, 10],
+              [6, 0],
+              [6, 1],
+              [6, 9],
+              [6, 10],
+              [7, 0],
+              [7, 1],
+              [7, 2],
+              [7, 3],
+              [7, 4],
+              [8, 0],
+              [8, 1],
+              [8, 2],
+              [8, 3],
+              [8, 4],
+              [8, 5],
+              [9, 0],
+              [9, 1],
+              [9, 2],
+              [9, 3],
+              [9, 4],
+              [9, 5],
+              [9, 6],
+              [10, 0],
+              [10, 1],
+              [10, 2],
+              [10, 3],
+              [10, 4],
+              [10, 5],
+              [10, 6]
             ]
           },
           "wcagAAA": {
             "normal": [
-              [
-                0,
-                8
-              ],
-              [
-                0,
-                9
-              ],
-              [
-                0,
-                10
-              ],
-              [
-                1,
-                8
-              ],
-              [
-                1,
-                9
-              ],
-              [
-                1,
-                10
-              ],
-              [
-                2,
-                8
-              ],
-              [
-                2,
-                9
-              ],
-              [
-                2,
-                10
-              ],
-              [
-                3,
-                9
-              ],
-              [
-                3,
-                10
-              ],
-              [
-                4,
-                9
-              ],
-              [
-                4,
-                10
-              ],
-              [
-                8,
-                0
-              ],
-              [
-                8,
-                1
-              ],
-              [
-                8,
-                2
-              ],
-              [
-                9,
-                0
-              ],
-              [
-                9,
-                1
-              ],
-              [
-                9,
-                2
-              ],
-              [
-                9,
-                3
-              ],
-              [
-                9,
-                4
-              ],
-              [
-                10,
-                0
-              ],
-              [
-                10,
-                1
-              ],
-              [
-                10,
-                2
-              ],
-              [
-                10,
-                3
-              ],
-              [
-                10,
-                4
-              ]
+              [0, 8],
+              [0, 9],
+              [0, 10],
+              [1, 8],
+              [1, 9],
+              [1, 10],
+              [2, 8],
+              [2, 9],
+              [2, 10],
+              [3, 9],
+              [3, 10],
+              [4, 9],
+              [4, 10],
+              [8, 0],
+              [8, 1],
+              [8, 2],
+              [9, 0],
+              [9, 1],
+              [9, 2],
+              [9, 3],
+              [9, 4],
+              [10, 0],
+              [10, 1],
+              [10, 2],
+              [10, 3],
+              [10, 4]
             ],
             "large": [
-              [
-                0,
-                7
-              ],
-              [
-                0,
-                8
-              ],
-              [
-                0,
-                9
-              ],
-              [
-                0,
-                10
-              ],
-              [
-                1,
-                7
-              ],
-              [
-                1,
-                8
-              ],
-              [
-                1,
-                9
-              ],
-              [
-                1,
-                10
-              ],
-              [
-                2,
-                7
-              ],
-              [
-                2,
-                8
-              ],
-              [
-                2,
-                9
-              ],
-              [
-                2,
-                10
-              ],
-              [
-                3,
-                8
-              ],
-              [
-                3,
-                9
-              ],
-              [
-                3,
-                10
-              ],
-              [
-                4,
-                8
-              ],
-              [
-                4,
-                9
-              ],
-              [
-                4,
-                10
-              ],
-              [
-                5,
-                9
-              ],
-              [
-                5,
-                10
-              ],
-              [
-                6,
-                10
-              ],
-              [
-                7,
-                0
-              ],
-              [
-                7,
-                1
-              ],
-              [
-                7,
-                2
-              ],
-              [
-                8,
-                0
-              ],
-              [
-                8,
-                1
-              ],
-              [
-                8,
-                2
-              ],
-              [
-                8,
-                3
-              ],
-              [
-                8,
-                4
-              ],
-              [
-                9,
-                0
-              ],
-              [
-                9,
-                1
-              ],
-              [
-                9,
-                2
-              ],
-              [
-                9,
-                3
-              ],
-              [
-                9,
-                4
-              ],
-              [
-                9,
-                5
-              ],
-              [
-                10,
-                0
-              ],
-              [
-                10,
-                1
-              ],
-              [
-                10,
-                2
-              ],
-              [
-                10,
-                3
-              ],
-              [
-                10,
-                4
-              ],
-              [
-                10,
-                5
-              ],
-              [
-                10,
-                6
-              ]
+              [0, 7],
+              [0, 8],
+              [0, 9],
+              [0, 10],
+              [1, 7],
+              [1, 8],
+              [1, 9],
+              [1, 10],
+              [2, 7],
+              [2, 8],
+              [2, 9],
+              [2, 10],
+              [3, 8],
+              [3, 9],
+              [3, 10],
+              [4, 8],
+              [4, 9],
+              [4, 10],
+              [5, 9],
+              [5, 10],
+              [6, 10],
+              [7, 0],
+              [7, 1],
+              [7, 2],
+              [8, 0],
+              [8, 1],
+              [8, 2],
+              [8, 3],
+              [8, 4],
+              [9, 0],
+              [9, 1],
+              [9, 2],
+              [9, 3],
+              [9, 4],
+              [9, 5],
+              [10, 0],
+              [10, 1],
+              [10, 2],
+              [10, 3],
+              [10, 4],
+              [10, 5],
+              [10, 6]
             ]
           },
           "onWhite": {
             "wcagAA": false,
             "wcagAAA": false,
             "contrastRatio": 3.1381175857708645,
-            "aa": [
-              6,
-              7,
-              8,
-              9,
-              10
-            ],
-            "aaa": [
-              7,
-              8,
-              9,
-              10
-            ]
+            "aa": [6, 7, 8, 9, 10],
+            "aaa": [7, 8, 9, 10]
           },
           "onBlack": {
             "wcagAA": true,
             "wcagAAA": false,
             "contrastRatio": 6.691909855519782,
-            "aa": [
-              0,
-              1,
-              2,
-              3,
-              4,
-              5,
-              6
-            ],
-            "aaa": [
-              0,
-              1,
-              2,
-              3,
-              4
-            ]
+            "aa": [0, 1, 2, 3, 4, 5, 6],
+            "aaa": [0, 1, 2, 3, 4]
           }
         }
       },
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "Complete silver-true-sky color family with 11-position scale",
-      "usageContext": [
-        "backgrounds",
-        "borders",
-        "text",
-        "dividers",
-        "shadows",
-        "overlays"
-      ],
+      "usageContext": ["backgrounds", "borders", "text", "dividers", "shadows", "overlays"],
       "usagePatterns": {
         "do": [
           "Use 50-200 for light mode backgrounds",
@@ -6224,7 +2688,7 @@
       "userOverride": null,
       "containerQueryAware": true,
       "description": "Calm sky blue palette - trustworthy, serene, reliable.",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-violet-50",
@@ -6232,18 +2696,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-violet shade at 50 level - light background range",
-      "usageContext": [
-        "backgrounds",
-        "cards",
-        "surfaces",
-        "light-mode-bg"
-      ],
+      "usageContext": ["backgrounds", "cards", "surfaces", "light-mode-bg"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 0,
       "containerQueryAware": true,
       "description": "silver-true-violet color at 50 position (OKLCH L=0.95)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-violet-100",
@@ -6251,18 +2710,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-violet shade at 100 level - light background range",
-      "usageContext": [
-        "backgrounds",
-        "cards",
-        "surfaces",
-        "light-mode-bg"
-      ],
+      "usageContext": ["backgrounds", "cards", "surfaces", "light-mode-bg"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 1,
       "containerQueryAware": true,
       "description": "silver-true-violet color at 100 position (OKLCH L=0.896)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-violet-200",
@@ -6270,17 +2724,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-violet shade at 200 level - light background range",
-      "usageContext": [
-        "secondary-backgrounds",
-        "hover-states",
-        "subtle-borders"
-      ],
+      "usageContext": ["secondary-backgrounds", "hover-states", "subtle-borders"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 2,
       "containerQueryAware": true,
       "description": "silver-true-violet color at 200 position (OKLCH L=0.839)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-violet-300",
@@ -6288,17 +2738,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-violet shade at 300 level - light background range",
-      "usageContext": [
-        "secondary-backgrounds",
-        "hover-states",
-        "subtle-borders"
-      ],
+      "usageContext": ["secondary-backgrounds", "hover-states", "subtle-borders"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 3,
       "containerQueryAware": true,
       "description": "silver-true-violet color at 300 position (OKLCH L=0.78)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-violet-400",
@@ -6306,18 +2752,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-violet shade at 400 level - mid-tone for borders and secondary text",
-      "usageContext": [
-        "borders",
-        "dividers",
-        "disabled-states",
-        "placeholder-text"
-      ],
+      "usageContext": ["borders", "dividers", "disabled-states", "placeholder-text"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 4,
       "containerQueryAware": true,
       "description": "silver-true-violet color at 400 position (OKLCH L=0.716)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-violet-500",
@@ -6325,18 +2766,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-violet shade at 500 level - mid-tone for borders and secondary text",
-      "usageContext": [
-        "borders",
-        "dividers",
-        "disabled-states",
-        "placeholder-text"
-      ],
+      "usageContext": ["borders", "dividers", "disabled-states", "placeholder-text"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 5,
       "containerQueryAware": true,
       "description": "silver-true-violet color at 500 position (OKLCH L=0.645)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-violet-600",
@@ -6344,17 +2780,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-violet shade at 600 level - mid-tone for borders and secondary text",
-      "usageContext": [
-        "secondary-text",
-        "icons",
-        "input-borders"
-      ],
+      "usageContext": ["secondary-text", "icons", "input-borders"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 6,
       "containerQueryAware": true,
       "description": "silver-true-violet color at 600 position (OKLCH L=0.55)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-violet-700",
@@ -6362,17 +2794,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-violet shade at 700 level - dark foreground range",
-      "usageContext": [
-        "secondary-text",
-        "icons",
-        "input-borders"
-      ],
+      "usageContext": ["secondary-text", "icons", "input-borders"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 7,
       "containerQueryAware": true,
       "description": "silver-true-violet color at 700 position (OKLCH L=0.425)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-violet-800",
@@ -6380,18 +2808,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-violet shade at 800 level - dark foreground range",
-      "usageContext": [
-        "primary-text",
-        "headings",
-        "dark-mode-bg",
-        "high-contrast-elements"
-      ],
+      "usageContext": ["primary-text", "headings", "dark-mode-bg", "high-contrast-elements"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 8,
       "containerQueryAware": true,
       "description": "silver-true-violet color at 800 position (OKLCH L=0.3)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-violet-900",
@@ -6399,18 +2822,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-violet shade at 900 level - dark foreground range",
-      "usageContext": [
-        "primary-text",
-        "headings",
-        "dark-mode-bg",
-        "high-contrast-elements"
-      ],
+      "usageContext": ["primary-text", "headings", "dark-mode-bg", "high-contrast-elements"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 9,
       "containerQueryAware": true,
       "description": "silver-true-violet color at 900 position (OKLCH L=0.175)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-violet-950",
@@ -6418,18 +2836,13 @@
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "silver-true-violet shade at 950 level - dark foreground range",
-      "usageContext": [
-        "primary-text",
-        "headings",
-        "dark-mode-bg",
-        "high-contrast-elements"
-      ],
+      "usageContext": ["primary-text", "headings", "dark-mode-bg", "high-contrast-elements"],
       "userOverride": null,
       "progressionSystem": "custom",
       "scalePosition": 10,
       "containerQueryAware": true,
       "description": "silver-true-violet color at 950 position (OKLCH L=0.05)",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     },
     {
       "name": "silver-true-violet",
@@ -6508,715 +2921,198 @@
         "accessibility": {
           "wcagAA": {
             "normal": [
-              [
-                0,
-                7
-              ],
-              [
-                0,
-                8
-              ],
-              [
-                0,
-                9
-              ],
-              [
-                0,
-                10
-              ],
-              [
-                1,
-                7
-              ],
-              [
-                1,
-                8
-              ],
-              [
-                1,
-                9
-              ],
-              [
-                1,
-                10
-              ],
-              [
-                2,
-                7
-              ],
-              [
-                2,
-                8
-              ],
-              [
-                2,
-                9
-              ],
-              [
-                2,
-                10
-              ],
-              [
-                3,
-                8
-              ],
-              [
-                3,
-                9
-              ],
-              [
-                3,
-                10
-              ],
-              [
-                4,
-                8
-              ],
-              [
-                4,
-                9
-              ],
-              [
-                4,
-                10
-              ],
-              [
-                5,
-                9
-              ],
-              [
-                5,
-                10
-              ],
-              [
-                7,
-                0
-              ],
-              [
-                7,
-                1
-              ],
-              [
-                7,
-                2
-              ],
-              [
-                8,
-                0
-              ],
-              [
-                8,
-                1
-              ],
-              [
-                8,
-                2
-              ],
-              [
-                8,
-                3
-              ],
-              [
-                8,
-                4
-              ],
-              [
-                9,
-                0
-              ],
-              [
-                9,
-                1
-              ],
-              [
-                9,
-                2
-              ],
-              [
-                9,
-                3
-              ],
-              [
-                9,
-                4
-              ],
-              [
-                9,
-                5
-              ],
-              [
-                10,
-                0
-              ],
-              [
-                10,
-                1
-              ],
-              [
-                10,
-                2
-              ],
-              [
-                10,
-                3
-              ],
-              [
-                10,
-                4
-              ],
-              [
-                10,
-                5
-              ]
+              [0, 7],
+              [0, 8],
+              [0, 9],
+              [0, 10],
+              [1, 7],
+              [1, 8],
+              [1, 9],
+              [1, 10],
+              [2, 7],
+              [2, 8],
+              [2, 9],
+              [2, 10],
+              [3, 8],
+              [3, 9],
+              [3, 10],
+              [4, 8],
+              [4, 9],
+              [4, 10],
+              [5, 9],
+              [5, 10],
+              [7, 0],
+              [7, 1],
+              [7, 2],
+              [8, 0],
+              [8, 1],
+              [8, 2],
+              [8, 3],
+              [8, 4],
+              [9, 0],
+              [9, 1],
+              [9, 2],
+              [9, 3],
+              [9, 4],
+              [9, 5],
+              [10, 0],
+              [10, 1],
+              [10, 2],
+              [10, 3],
+              [10, 4],
+              [10, 5]
             ],
             "large": [
-              [
-                0,
-                6
-              ],
-              [
-                0,
-                7
-              ],
-              [
-                0,
-                8
-              ],
-              [
-                0,
-                9
-              ],
-              [
-                0,
-                10
-              ],
-              [
-                1,
-                6
-              ],
-              [
-                1,
-                7
-              ],
-              [
-                1,
-                8
-              ],
-              [
-                1,
-                9
-              ],
-              [
-                1,
-                10
-              ],
-              [
-                2,
-                7
-              ],
-              [
-                2,
-                8
-              ],
-              [
-                2,
-                9
-              ],
-              [
-                2,
-                10
-              ],
-              [
-                3,
-                7
-              ],
-              [
-                3,
-                8
-              ],
-              [
-                3,
-                9
-              ],
-              [
-                3,
-                10
-              ],
-              [
-                4,
-                7
-              ],
-              [
-                4,
-                8
-              ],
-              [
-                4,
-                9
-              ],
-              [
-                4,
-                10
-              ],
-              [
-                5,
-                8
-              ],
-              [
-                5,
-                9
-              ],
-              [
-                5,
-                10
-              ],
-              [
-                6,
-                0
-              ],
-              [
-                6,
-                1
-              ],
-              [
-                6,
-                9
-              ],
-              [
-                6,
-                10
-              ],
-              [
-                7,
-                0
-              ],
-              [
-                7,
-                1
-              ],
-              [
-                7,
-                2
-              ],
-              [
-                7,
-                3
-              ],
-              [
-                7,
-                4
-              ],
-              [
-                8,
-                0
-              ],
-              [
-                8,
-                1
-              ],
-              [
-                8,
-                2
-              ],
-              [
-                8,
-                3
-              ],
-              [
-                8,
-                4
-              ],
-              [
-                8,
-                5
-              ],
-              [
-                9,
-                0
-              ],
-              [
-                9,
-                1
-              ],
-              [
-                9,
-                2
-              ],
-              [
-                9,
-                3
-              ],
-              [
-                9,
-                4
-              ],
-              [
-                9,
-                5
-              ],
-              [
-                9,
-                6
-              ],
-              [
-                10,
-                0
-              ],
-              [
-                10,
-                1
-              ],
-              [
-                10,
-                2
-              ],
-              [
-                10,
-                3
-              ],
-              [
-                10,
-                4
-              ],
-              [
-                10,
-                5
-              ],
-              [
-                10,
-                6
-              ]
+              [0, 6],
+              [0, 7],
+              [0, 8],
+              [0, 9],
+              [0, 10],
+              [1, 6],
+              [1, 7],
+              [1, 8],
+              [1, 9],
+              [1, 10],
+              [2, 7],
+              [2, 8],
+              [2, 9],
+              [2, 10],
+              [3, 7],
+              [3, 8],
+              [3, 9],
+              [3, 10],
+              [4, 7],
+              [4, 8],
+              [4, 9],
+              [4, 10],
+              [5, 8],
+              [5, 9],
+              [5, 10],
+              [6, 0],
+              [6, 1],
+              [6, 9],
+              [6, 10],
+              [7, 0],
+              [7, 1],
+              [7, 2],
+              [7, 3],
+              [7, 4],
+              [8, 0],
+              [8, 1],
+              [8, 2],
+              [8, 3],
+              [8, 4],
+              [8, 5],
+              [9, 0],
+              [9, 1],
+              [9, 2],
+              [9, 3],
+              [9, 4],
+              [9, 5],
+              [9, 6],
+              [10, 0],
+              [10, 1],
+              [10, 2],
+              [10, 3],
+              [10, 4],
+              [10, 5],
+              [10, 6]
             ]
           },
           "wcagAAA": {
             "normal": [
-              [
-                0,
-                7
-              ],
-              [
-                0,
-                8
-              ],
-              [
-                0,
-                9
-              ],
-              [
-                0,
-                10
-              ],
-              [
-                1,
-                8
-              ],
-              [
-                1,
-                9
-              ],
-              [
-                1,
-                10
-              ],
-              [
-                2,
-                8
-              ],
-              [
-                2,
-                9
-              ],
-              [
-                2,
-                10
-              ],
-              [
-                3,
-                9
-              ],
-              [
-                3,
-                10
-              ],
-              [
-                4,
-                9
-              ],
-              [
-                4,
-                10
-              ],
-              [
-                7,
-                0
-              ],
-              [
-                8,
-                0
-              ],
-              [
-                8,
-                1
-              ],
-              [
-                8,
-                2
-              ],
-              [
-                9,
-                0
-              ],
-              [
-                9,
-                1
-              ],
-              [
-                9,
-                2
-              ],
-              [
-                9,
-                3
-              ],
-              [
-                9,
-                4
-              ],
-              [
-                10,
-                0
-              ],
-              [
-                10,
-                1
-              ],
-              [
-                10,
-                2
-              ],
-              [
-                10,
-                3
-              ],
-              [
-                10,
-                4
-              ]
+              [0, 7],
+              [0, 8],
+              [0, 9],
+              [0, 10],
+              [1, 8],
+              [1, 9],
+              [1, 10],
+              [2, 8],
+              [2, 9],
+              [2, 10],
+              [3, 9],
+              [3, 10],
+              [4, 9],
+              [4, 10],
+              [7, 0],
+              [8, 0],
+              [8, 1],
+              [8, 2],
+              [9, 0],
+              [9, 1],
+              [9, 2],
+              [9, 3],
+              [9, 4],
+              [10, 0],
+              [10, 1],
+              [10, 2],
+              [10, 3],
+              [10, 4]
             ],
             "large": [
-              [
-                0,
-                7
-              ],
-              [
-                0,
-                8
-              ],
-              [
-                0,
-                9
-              ],
-              [
-                0,
-                10
-              ],
-              [
-                1,
-                7
-              ],
-              [
-                1,
-                8
-              ],
-              [
-                1,
-                9
-              ],
-              [
-                1,
-                10
-              ],
-              [
-                2,
-                7
-              ],
-              [
-                2,
-                8
-              ],
-              [
-                2,
-                9
-              ],
-              [
-                2,
-                10
-              ],
-              [
-                3,
-                8
-              ],
-              [
-                3,
-                9
-              ],
-              [
-                3,
-                10
-              ],
-              [
-                4,
-                8
-              ],
-              [
-                4,
-                9
-              ],
-              [
-                4,
-                10
-              ],
-              [
-                5,
-                9
-              ],
-              [
-                5,
-                10
-              ],
-              [
-                7,
-                0
-              ],
-              [
-                7,
-                1
-              ],
-              [
-                7,
-                2
-              ],
-              [
-                8,
-                0
-              ],
-              [
-                8,
-                1
-              ],
-              [
-                8,
-                2
-              ],
-              [
-                8,
-                3
-              ],
-              [
-                8,
-                4
-              ],
-              [
-                9,
-                0
-              ],
-              [
-                9,
-                1
-              ],
-              [
-                9,
-                2
-              ],
-              [
-                9,
-                3
-              ],
-              [
-                9,
-                4
-              ],
-              [
-                9,
-                5
-              ],
-              [
-                10,
-                0
-              ],
-              [
-                10,
-                1
-              ],
-              [
-                10,
-                2
-              ],
-              [
-                10,
-                3
-              ],
-              [
-                10,
-                4
-              ],
-              [
-                10,
-                5
-              ]
+              [0, 7],
+              [0, 8],
+              [0, 9],
+              [0, 10],
+              [1, 7],
+              [1, 8],
+              [1, 9],
+              [1, 10],
+              [2, 7],
+              [2, 8],
+              [2, 9],
+              [2, 10],
+              [3, 8],
+              [3, 9],
+              [3, 10],
+              [4, 8],
+              [4, 9],
+              [4, 10],
+              [5, 9],
+              [5, 10],
+              [7, 0],
+              [7, 1],
+              [7, 2],
+              [8, 0],
+              [8, 1],
+              [8, 2],
+              [8, 3],
+              [8, 4],
+              [9, 0],
+              [9, 1],
+              [9, 2],
+              [9, 3],
+              [9, 4],
+              [9, 5],
+              [10, 0],
+              [10, 1],
+              [10, 2],
+              [10, 3],
+              [10, 4],
+              [10, 5]
             ]
           },
           "onWhite": {
             "wcagAA": false,
             "wcagAAA": false,
             "contrastRatio": 3.3557491871952387,
-            "aa": [
-              6,
-              7,
-              8,
-              9,
-              10
-            ],
-            "aaa": [
-              7,
-              8,
-              9,
-              10
-            ]
+            "aa": [6, 7, 8, 9, 10],
+            "aaa": [7, 8, 9, 10]
           },
           "onBlack": {
             "wcagAA": true,
             "wcagAAA": false,
             "contrastRatio": 6.257917033886538,
-            "aa": [
-              0,
-              1,
-              2,
-              3,
-              4,
-              5
-            ],
-            "aaa": [
-              0,
-              1,
-              2,
-              3,
-              4
-            ]
+            "aa": [0, 1, 2, 3, 4, 5],
+            "aaa": [0, 1, 2, 3, 4]
           }
         }
       },
       "category": "color",
       "namespace": "color",
       "semanticMeaning": "Complete silver-true-violet color family with 11-position scale",
-      "usageContext": [
-        "backgrounds",
-        "borders",
-        "text",
-        "dividers",
-        "shadows",
-        "overlays"
-      ],
+      "usageContext": ["backgrounds", "borders", "text", "dividers", "shadows", "overlays"],
       "usagePatterns": {
         "do": [
           "Use 50-200 for light mode backgrounds",
@@ -7233,7 +3129,7 @@
       "userOverride": null,
       "containerQueryAware": true,
       "description": "Creative violet palette - luxurious, imaginative, refined.",
-      "generatedAt": "2026-07-25T00:55:52.265Z"
+      "generatedAt": "2026-08-12T02:53:40.368Z"
     }
   ]
 }

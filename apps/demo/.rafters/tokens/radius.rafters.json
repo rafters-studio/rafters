@@ -1,29 +1,24 @@
 {
   "namespace": "radius",
-  "generatedAt": "2026-07-25T00:55:52.659Z",
+  "generatedAt": "2026-08-12T02:53:40.760Z",
   "tokens": [
     {
       "name": "radius-base",
-      "value": "0.375rem",
+      "value": "calc(var(--rafters-spacing-base) * 1.5)",
       "category": "radius",
       "namespace": "radius",
-      "semanticMeaning": "Base border radius - all other radii derive from this value",
-      "usageContext": [
-        "calculation-reference"
-      ],
+      "semanticMeaning": "Base border radius - derives from spacing base",
+      "usageContext": ["calculation-reference"],
       "usagePatterns": {
-        "do": [
-          "Reference as the calculation base"
-        ],
-        "never": [
-          "Change without understanding scale impact"
-        ]
+        "do": ["Reference as the calculation base"],
+        "never": ["Change without understanding scale impact"]
       },
       "userOverride": null,
+      "dependsOn": ["spacing-base"],
       "progressionSystem": "minor-third",
       "containerQueryAware": false,
-      "description": "Base radius (0.375rem / 6px). Scale uses minor-third progression (ratio 1.2).",
-      "generatedAt": "2026-07-25T00:55:52.297Z"
+      "description": "Base radius = spacing-base * 1.5 (6px at base 4). Scale uses minor-third progression (ratio 1.2).",
+      "generatedAt": "2026-08-12T02:53:40.402Z"
     },
     {
       "name": "radius-tl",
@@ -31,16 +26,12 @@
       "category": "radius",
       "namespace": "radius",
       "semanticMeaning": "Base top-left radius - override to affect all scales for this corner",
-      "usageContext": [
-        "designer-override"
-      ],
+      "usageContext": ["designer-override"],
       "userOverride": null,
-      "dependsOn": [
-        "radius-base"
-      ],
+      "dependsOn": ["radius-base"],
       "containerQueryAware": false,
       "description": "top-left radius. Defaults to radius-base. Set to 0 for a sharp corner on every component.",
-      "generatedAt": "2026-07-25T00:55:52.297Z"
+      "generatedAt": "2026-08-12T02:53:40.402Z"
     },
     {
       "name": "radius-tr",
@@ -48,16 +39,12 @@
       "category": "radius",
       "namespace": "radius",
       "semanticMeaning": "Base top-right radius - override to affect all scales for this corner",
-      "usageContext": [
-        "designer-override"
-      ],
+      "usageContext": ["designer-override"],
       "userOverride": null,
-      "dependsOn": [
-        "radius-base"
-      ],
+      "dependsOn": ["radius-base"],
       "containerQueryAware": false,
       "description": "top-right radius. Defaults to radius-base. Set to 0 for a sharp corner on every component.",
-      "generatedAt": "2026-07-25T00:55:52.297Z"
+      "generatedAt": "2026-08-12T02:53:40.402Z"
     },
     {
       "name": "radius-bl",
@@ -65,16 +52,12 @@
       "category": "radius",
       "namespace": "radius",
       "semanticMeaning": "Base bottom-left radius - override to affect all scales for this corner",
-      "usageContext": [
-        "designer-override"
-      ],
+      "usageContext": ["designer-override"],
       "userOverride": null,
-      "dependsOn": [
-        "radius-base"
-      ],
+      "dependsOn": ["radius-base"],
       "containerQueryAware": false,
       "description": "bottom-left radius. Defaults to radius-base. Set to 0 for a sharp corner on every component.",
-      "generatedAt": "2026-07-25T00:55:52.297Z"
+      "generatedAt": "2026-08-12T02:53:40.402Z"
     },
     {
       "name": "radius-br",
@@ -82,16 +65,12 @@
       "category": "radius",
       "namespace": "radius",
       "semanticMeaning": "Base bottom-right radius - override to affect all scales for this corner",
-      "usageContext": [
-        "designer-override"
-      ],
+      "usageContext": ["designer-override"],
       "userOverride": null,
-      "dependsOn": [
-        "radius-base"
-      ],
+      "dependsOn": ["radius-base"],
       "containerQueryAware": false,
       "description": "bottom-right radius. Defaults to radius-base. Set to 0 for a sharp corner on every component.",
-      "generatedAt": "2026-07-25T00:55:52.297Z"
+      "generatedAt": "2026-08-12T02:53:40.402Z"
     },
     {
       "name": "radius-none",
@@ -99,11 +78,7 @@
       "category": "radius",
       "namespace": "radius",
       "semanticMeaning": "No border radius - sharp corners",
-      "usageContext": [
-        "sharp-corners",
-        "table-cells",
-        "inline-elements"
-      ],
+      "usageContext": ["sharp-corners", "table-cells", "inline-elements"],
       "userOverride": null,
       "dependsOn": [],
       "progressionSystem": "minor-third",
@@ -111,7 +86,7 @@
       "mathRelationship": "0",
       "containerQueryAware": false,
       "description": "Border radius none: 0 (0)",
-      "generatedAt": "2026-07-25T00:55:52.297Z"
+      "generatedAt": "2026-08-12T02:53:40.402Z"
     },
     {
       "name": "radius-sm",
@@ -119,22 +94,15 @@
       "category": "radius",
       "namespace": "radius",
       "semanticMeaning": "Small radius for subtle rounding",
-      "usageContext": [
-        "badges",
-        "tags",
-        "small-elements",
-        "inline-blocks"
-      ],
+      "usageContext": ["badges", "tags", "small-elements", "inline-blocks"],
       "userOverride": null,
-      "dependsOn": [
-        "radius-base"
-      ],
+      "dependsOn": ["radius-base"],
       "progressionSystem": "minor-third",
       "scalePosition": 1,
       "mathRelationship": "base × 1.2^-1 (×0.833)",
       "containerQueryAware": false,
       "description": "Border radius sm: calc(var(--rafters-radius-base) * 0.833) (base × 1.2^-1 (×0.833))",
-      "generatedAt": "2026-07-25T00:55:52.297Z"
+      "generatedAt": "2026-08-12T02:53:40.402Z"
     },
     {
       "name": "radius-sm-tl",
@@ -142,20 +110,13 @@
       "category": "radius",
       "namespace": "radius",
       "semanticMeaning": "top-left radius at sm scale",
-      "usageContext": [
-        "badges",
-        "tags",
-        "small-elements",
-        "inline-blocks"
-      ],
+      "usageContext": ["badges", "tags", "small-elements", "inline-blocks"],
       "userOverride": null,
-      "dependsOn": [
-        "radius-tl"
-      ],
+      "dependsOn": ["radius-tl"],
       "scalePosition": 1,
       "containerQueryAware": false,
       "description": "top-left radius sm: derives from radius-tl base",
-      "generatedAt": "2026-07-25T00:55:52.297Z"
+      "generatedAt": "2026-08-12T02:53:40.402Z"
     },
     {
       "name": "radius-sm-tr",
@@ -163,20 +124,13 @@
       "category": "radius",
       "namespace": "radius",
       "semanticMeaning": "top-right radius at sm scale",
-      "usageContext": [
-        "badges",
-        "tags",
-        "small-elements",
-        "inline-blocks"
-      ],
+      "usageContext": ["badges", "tags", "small-elements", "inline-blocks"],
       "userOverride": null,
-      "dependsOn": [
-        "radius-tr"
-      ],
+      "dependsOn": ["radius-tr"],
       "scalePosition": 1,
       "containerQueryAware": false,
       "description": "top-right radius sm: derives from radius-tr base",
-      "generatedAt": "2026-07-25T00:55:52.297Z"
+      "generatedAt": "2026-08-12T02:53:40.402Z"
     },
     {
       "name": "radius-sm-bl",
@@ -184,20 +138,13 @@
       "category": "radius",
       "namespace": "radius",
       "semanticMeaning": "bottom-left radius at sm scale",
-      "usageContext": [
-        "badges",
-        "tags",
-        "small-elements",
-        "inline-blocks"
-      ],
+      "usageContext": ["badges", "tags", "small-elements", "inline-blocks"],
       "userOverride": null,
-      "dependsOn": [
-        "radius-bl"
-      ],
+      "dependsOn": ["radius-bl"],
       "scalePosition": 1,
       "containerQueryAware": false,
       "description": "bottom-left radius sm: derives from radius-bl base",
-      "generatedAt": "2026-07-25T00:55:52.297Z"
+      "generatedAt": "2026-08-12T02:53:40.402Z"
     },
     {
       "name": "radius-sm-br",
@@ -205,20 +152,13 @@
       "category": "radius",
       "namespace": "radius",
       "semanticMeaning": "bottom-right radius at sm scale",
-      "usageContext": [
-        "badges",
-        "tags",
-        "small-elements",
-        "inline-blocks"
-      ],
+      "usageContext": ["badges", "tags", "small-elements", "inline-blocks"],
       "userOverride": null,
-      "dependsOn": [
-        "radius-br"
-      ],
+      "dependsOn": ["radius-br"],
       "scalePosition": 1,
       "containerQueryAware": false,
       "description": "bottom-right radius sm: derives from radius-br base",
-      "generatedAt": "2026-07-25T00:55:52.297Z"
+      "generatedAt": "2026-08-12T02:53:40.402Z"
     },
     {
       "name": "radius",
@@ -226,22 +166,15 @@
       "category": "radius",
       "namespace": "radius",
       "semanticMeaning": "Default radius - primary UI elements",
-      "usageContext": [
-        "buttons",
-        "inputs",
-        "cards",
-        "dropdowns"
-      ],
+      "usageContext": ["buttons", "inputs", "cards", "dropdowns"],
       "userOverride": null,
-      "dependsOn": [
-        "radius-base"
-      ],
+      "dependsOn": ["radius-base"],
       "progressionSystem": "minor-third",
       "scalePosition": 2,
-      "mathRelationship": "0.375rem (base)",
+      "mathRelationship": "spacing-base * 1.5 (base)",
       "containerQueryAware": false,
-      "description": "Border radius DEFAULT: var(--rafters-radius-base) (0.375rem (base))",
-      "generatedAt": "2026-07-25T00:55:52.297Z"
+      "description": "Border radius DEFAULT: var(--rafters-radius-base) (spacing-base * 1.5 (base))",
+      "generatedAt": "2026-08-12T02:53:40.402Z"
     },
     {
       "name": "radius-md",
@@ -249,21 +182,15 @@
       "category": "radius",
       "namespace": "radius",
       "semanticMeaning": "Medium radius for containers",
-      "usageContext": [
-        "cards",
-        "panels",
-        "dialogs"
-      ],
+      "usageContext": ["cards", "panels", "dialogs"],
       "userOverride": null,
-      "dependsOn": [
-        "radius-base"
-      ],
+      "dependsOn": ["radius-base"],
       "progressionSystem": "minor-third",
       "scalePosition": 3,
       "mathRelationship": "base × 1.2^1 (×1.2)",
       "containerQueryAware": false,
       "description": "Border radius md: calc(var(--rafters-radius-base) * 1.2) (base × 1.2^1 (×1.2))",
-      "generatedAt": "2026-07-25T00:55:52.297Z"
+      "generatedAt": "2026-08-12T02:53:40.402Z"
     },
     {
       "name": "radius-md-tl",
@@ -271,19 +198,13 @@
       "category": "radius",
       "namespace": "radius",
       "semanticMeaning": "top-left radius at md scale",
-      "usageContext": [
-        "cards",
-        "panels",
-        "dialogs"
-      ],
+      "usageContext": ["cards", "panels", "dialogs"],
       "userOverride": null,
-      "dependsOn": [
-        "radius-tl"
-      ],
+      "dependsOn": ["radius-tl"],
       "scalePosition": 3,
       "containerQueryAware": false,
       "description": "top-left radius md: derives from radius-tl base",
-      "generatedAt": "2026-07-25T00:55:52.297Z"
+      "generatedAt": "2026-08-12T02:53:40.402Z"
     },
     {
       "name": "radius-md-tr",
@@ -291,19 +212,13 @@
       "category": "radius",
       "namespace": "radius",
       "semanticMeaning": "top-right radius at md scale",
-      "usageContext": [
-        "cards",
-        "panels",
-        "dialogs"
-      ],
+      "usageContext": ["cards", "panels", "dialogs"],
       "userOverride": null,
-      "dependsOn": [
-        "radius-tr"
-      ],
+      "dependsOn": ["radius-tr"],
       "scalePosition": 3,
       "containerQueryAware": false,
       "description": "top-right radius md: derives from radius-tr base",
-      "generatedAt": "2026-07-25T00:55:52.297Z"
+      "generatedAt": "2026-08-12T02:53:40.402Z"
     },
     {
       "name": "radius-md-bl",
@@ -311,19 +226,13 @@
       "category": "radius",
       "namespace": "radius",
       "semanticMeaning": "bottom-left radius at md scale",
-      "usageContext": [
-        "cards",
-        "panels",
-        "dialogs"
-      ],
+      "usageContext": ["cards", "panels", "dialogs"],
       "userOverride": null,
-      "dependsOn": [
-        "radius-bl"
-      ],
+      "dependsOn": ["radius-bl"],
       "scalePosition": 3,
       "containerQueryAware": false,
       "description": "bottom-left radius md: derives from radius-bl base",
-      "generatedAt": "2026-07-25T00:55:52.297Z"
+      "generatedAt": "2026-08-12T02:53:40.402Z"
     },
     {
       "name": "radius-md-br",
@@ -331,19 +240,13 @@
       "category": "radius",
       "namespace": "radius",
       "semanticMeaning": "bottom-right radius at md scale",
-      "usageContext": [
-        "cards",
-        "panels",
-        "dialogs"
-      ],
+      "usageContext": ["cards", "panels", "dialogs"],
       "userOverride": null,
-      "dependsOn": [
-        "radius-br"
-      ],
+      "dependsOn": ["radius-br"],
       "scalePosition": 3,
       "containerQueryAware": false,
       "description": "bottom-right radius md: derives from radius-br base",
-      "generatedAt": "2026-07-25T00:55:52.297Z"
+      "generatedAt": "2026-08-12T02:53:40.402Z"
     },
     {
       "name": "radius-lg",
@@ -351,21 +254,15 @@
       "category": "radius",
       "namespace": "radius",
       "semanticMeaning": "Large radius for prominent containers",
-      "usageContext": [
-        "modals",
-        "large-cards",
-        "feature-panels"
-      ],
+      "usageContext": ["modals", "large-cards", "feature-panels"],
       "userOverride": null,
-      "dependsOn": [
-        "radius-base"
-      ],
+      "dependsOn": ["radius-base"],
       "progressionSystem": "minor-third",
       "scalePosition": 4,
       "mathRelationship": "base × 1.2^2 (×1.44)",
       "containerQueryAware": false,
       "description": "Border radius lg: calc(var(--rafters-radius-base) * 1.44) (base × 1.2^2 (×1.44))",
-      "generatedAt": "2026-07-25T00:55:52.297Z"
+      "generatedAt": "2026-08-12T02:53:40.402Z"
     },
     {
       "name": "radius-lg-tl",
@@ -373,19 +270,13 @@
       "category": "radius",
       "namespace": "radius",
       "semanticMeaning": "top-left radius at lg scale",
-      "usageContext": [
-        "modals",
-        "large-cards",
-        "feature-panels"
-      ],
+      "usageContext": ["modals", "large-cards", "feature-panels"],
       "userOverride": null,
-      "dependsOn": [
-        "radius-tl"
-      ],
+      "dependsOn": ["radius-tl"],
       "scalePosition": 4,
       "containerQueryAware": false,
       "description": "top-left radius lg: derives from radius-tl base",
-      "generatedAt": "2026-07-25T00:55:52.297Z"
+      "generatedAt": "2026-08-12T02:53:40.402Z"
     },
     {
       "name": "radius-lg-tr",
@@ -393,19 +284,13 @@
       "category": "radius",
       "namespace": "radius",
       "semanticMeaning": "top-right radius at lg scale",
-      "usageContext": [
-        "modals",
-        "large-cards",
-        "feature-panels"
-      ],
+      "usageContext": ["modals", "large-cards", "feature-panels"],
       "userOverride": null,
-      "dependsOn": [
-        "radius-tr"
-      ],
+      "dependsOn": ["radius-tr"],
       "scalePosition": 4,
       "containerQueryAware": false,
       "description": "top-right radius lg: derives from radius-tr base",
-      "generatedAt": "2026-07-25T00:55:52.297Z"
+      "generatedAt": "2026-08-12T02:53:40.402Z"
     },
     {
       "name": "radius-lg-bl",
@@ -413,19 +298,13 @@
       "category": "radius",
       "namespace": "radius",
       "semanticMeaning": "bottom-left radius at lg scale",
-      "usageContext": [
-        "modals",
-        "large-cards",
-        "feature-panels"
-      ],
+      "usageContext": ["modals", "large-cards", "feature-panels"],
       "userOverride": null,
-      "dependsOn": [
-        "radius-bl"
-      ],
+      "dependsOn": ["radius-bl"],
       "scalePosition": 4,
       "containerQueryAware": false,
       "description": "bottom-left radius lg: derives from radius-bl base",
-      "generatedAt": "2026-07-25T00:55:52.297Z"
+      "generatedAt": "2026-08-12T02:53:40.402Z"
     },
     {
       "name": "radius-lg-br",
@@ -433,19 +312,13 @@
       "category": "radius",
       "namespace": "radius",
       "semanticMeaning": "bottom-right radius at lg scale",
-      "usageContext": [
-        "modals",
-        "large-cards",
-        "feature-panels"
-      ],
+      "usageContext": ["modals", "large-cards", "feature-panels"],
       "userOverride": null,
-      "dependsOn": [
-        "radius-br"
-      ],
+      "dependsOn": ["radius-br"],
       "scalePosition": 4,
       "containerQueryAware": false,
       "description": "bottom-right radius lg: derives from radius-br base",
-      "generatedAt": "2026-07-25T00:55:52.297Z"
+      "generatedAt": "2026-08-12T02:53:40.402Z"
     },
     {
       "name": "radius-xl",
@@ -453,20 +326,15 @@
       "category": "radius",
       "namespace": "radius",
       "semanticMeaning": "Extra large radius for emphasized elements",
-      "usageContext": [
-        "hero-cards",
-        "featured-sections"
-      ],
+      "usageContext": ["hero-cards", "featured-sections"],
       "userOverride": null,
-      "dependsOn": [
-        "radius-base"
-      ],
+      "dependsOn": ["radius-base"],
       "progressionSystem": "minor-third",
       "scalePosition": 5,
       "mathRelationship": "base × 1.2^3 (×1.728)",
       "containerQueryAware": false,
       "description": "Border radius xl: calc(var(--rafters-radius-base) * 1.728) (base × 1.2^3 (×1.728))",
-      "generatedAt": "2026-07-25T00:55:52.297Z"
+      "generatedAt": "2026-08-12T02:53:40.402Z"
     },
     {
       "name": "radius-xl-tl",
@@ -474,18 +342,13 @@
       "category": "radius",
       "namespace": "radius",
       "semanticMeaning": "top-left radius at xl scale",
-      "usageContext": [
-        "hero-cards",
-        "featured-sections"
-      ],
+      "usageContext": ["hero-cards", "featured-sections"],
       "userOverride": null,
-      "dependsOn": [
-        "radius-tl"
-      ],
+      "dependsOn": ["radius-tl"],
       "scalePosition": 5,
       "containerQueryAware": false,
       "description": "top-left radius xl: derives from radius-tl base",
-      "generatedAt": "2026-07-25T00:55:52.297Z"
+      "generatedAt": "2026-08-12T02:53:40.402Z"
     },
     {
       "name": "radius-xl-tr",
@@ -493,18 +356,13 @@
       "category": "radius",
       "namespace": "radius",
       "semanticMeaning": "top-right radius at xl scale",
-      "usageContext": [
-        "hero-cards",
-        "featured-sections"
-      ],
+      "usageContext": ["hero-cards", "featured-sections"],
       "userOverride": null,
-      "dependsOn": [
-        "radius-tr"
-      ],
+      "dependsOn": ["radius-tr"],
       "scalePosition": 5,
       "containerQueryAware": false,
       "description": "top-right radius xl: derives from radius-tr base",
-      "generatedAt": "2026-07-25T00:55:52.297Z"
+      "generatedAt": "2026-08-12T02:53:40.402Z"
     },
     {
       "name": "radius-xl-bl",
@@ -512,18 +370,13 @@
       "category": "radius",
       "namespace": "radius",
       "semanticMeaning": "bottom-left radius at xl scale",
-      "usageContext": [
-        "hero-cards",
-        "featured-sections"
-      ],
+      "usageContext": ["hero-cards", "featured-sections"],
       "userOverride": null,
-      "dependsOn": [
-        "radius-bl"
-      ],
+      "dependsOn": ["radius-bl"],
       "scalePosition": 5,
       "containerQueryAware": false,
       "description": "bottom-left radius xl: derives from radius-bl base",
-      "generatedAt": "2026-07-25T00:55:52.297Z"
+      "generatedAt": "2026-08-12T02:53:40.402Z"
     },
     {
       "name": "radius-xl-br",
@@ -531,18 +384,13 @@
       "category": "radius",
       "namespace": "radius",
       "semanticMeaning": "bottom-right radius at xl scale",
-      "usageContext": [
-        "hero-cards",
-        "featured-sections"
-      ],
+      "usageContext": ["hero-cards", "featured-sections"],
       "userOverride": null,
-      "dependsOn": [
-        "radius-br"
-      ],
+      "dependsOn": ["radius-br"],
       "scalePosition": 5,
       "containerQueryAware": false,
       "description": "bottom-right radius xl: derives from radius-br base",
-      "generatedAt": "2026-07-25T00:55:52.297Z"
+      "generatedAt": "2026-08-12T02:53:40.402Z"
     },
     {
       "name": "radius-2xl",
@@ -550,21 +398,15 @@
       "category": "radius",
       "namespace": "radius",
       "semanticMeaning": "Maximum meaningful radius",
-      "usageContext": [
-        "pills",
-        "large-avatars",
-        "emphasized-buttons"
-      ],
+      "usageContext": ["pills", "large-avatars", "emphasized-buttons"],
       "userOverride": null,
-      "dependsOn": [
-        "radius-base"
-      ],
+      "dependsOn": ["radius-base"],
       "progressionSystem": "minor-third",
       "scalePosition": 6,
       "mathRelationship": "base × 1.2^4 (×2.074)",
       "containerQueryAware": false,
       "description": "Border radius 2xl: calc(var(--rafters-radius-base) * 2.074) (base × 1.2^4 (×2.074))",
-      "generatedAt": "2026-07-25T00:55:52.297Z"
+      "generatedAt": "2026-08-12T02:53:40.402Z"
     },
     {
       "name": "radius-2xl-tl",
@@ -572,19 +414,13 @@
       "category": "radius",
       "namespace": "radius",
       "semanticMeaning": "top-left radius at 2xl scale",
-      "usageContext": [
-        "pills",
-        "large-avatars",
-        "emphasized-buttons"
-      ],
+      "usageContext": ["pills", "large-avatars", "emphasized-buttons"],
       "userOverride": null,
-      "dependsOn": [
-        "radius-tl"
-      ],
+      "dependsOn": ["radius-tl"],
       "scalePosition": 6,
       "containerQueryAware": false,
       "description": "top-left radius 2xl: derives from radius-tl base",
-      "generatedAt": "2026-07-25T00:55:52.297Z"
+      "generatedAt": "2026-08-12T02:53:40.402Z"
     },
     {
       "name": "radius-2xl-tr",
@@ -592,19 +428,13 @@
       "category": "radius",
       "namespace": "radius",
       "semanticMeaning": "top-right radius at 2xl scale",
-      "usageContext": [
-        "pills",
-        "large-avatars",
-        "emphasized-buttons"
-      ],
+      "usageContext": ["pills", "large-avatars", "emphasized-buttons"],
       "userOverride": null,
-      "dependsOn": [
-        "radius-tr"
-      ],
+      "dependsOn": ["radius-tr"],
       "scalePosition": 6,
       "containerQueryAware": false,
       "description": "top-right radius 2xl: derives from radius-tr base",
-      "generatedAt": "2026-07-25T00:55:52.297Z"
+      "generatedAt": "2026-08-12T02:53:40.402Z"
     },
     {
       "name": "radius-2xl-bl",
@@ -612,19 +442,13 @@
       "category": "radius",
       "namespace": "radius",
       "semanticMeaning": "bottom-left radius at 2xl scale",
-      "usageContext": [
-        "pills",
-        "large-avatars",
-        "emphasized-buttons"
-      ],
+      "usageContext": ["pills", "large-avatars", "emphasized-buttons"],
       "userOverride": null,
-      "dependsOn": [
-        "radius-bl"
-      ],
+      "dependsOn": ["radius-bl"],
       "scalePosition": 6,
       "containerQueryAware": false,
       "description": "bottom-left radius 2xl: derives from radius-bl base",
-      "generatedAt": "2026-07-25T00:55:52.297Z"
+      "generatedAt": "2026-08-12T02:53:40.402Z"
     },
     {
       "name": "radius-2xl-br",
@@ -632,19 +456,13 @@
       "category": "radius",
       "namespace": "radius",
       "semanticMeaning": "bottom-right radius at 2xl scale",
-      "usageContext": [
-        "pills",
-        "large-avatars",
-        "emphasized-buttons"
-      ],
+      "usageContext": ["pills", "large-avatars", "emphasized-buttons"],
       "userOverride": null,
-      "dependsOn": [
-        "radius-br"
-      ],
+      "dependsOn": ["radius-br"],
       "scalePosition": 6,
       "containerQueryAware": false,
       "description": "bottom-right radius 2xl: derives from radius-br base",
-      "generatedAt": "2026-07-25T00:55:52.297Z"
+      "generatedAt": "2026-08-12T02:53:40.402Z"
     },
     {
       "name": "radius-3xl",
@@ -652,20 +470,15 @@
       "category": "radius",
       "namespace": "radius",
       "semanticMeaning": "Very large radius for special cases",
-      "usageContext": [
-        "stadium-shapes",
-        "special-emphasis"
-      ],
+      "usageContext": ["stadium-shapes", "special-emphasis"],
       "userOverride": null,
-      "dependsOn": [
-        "radius-base"
-      ],
+      "dependsOn": ["radius-base"],
       "progressionSystem": "minor-third",
       "scalePosition": 7,
       "mathRelationship": "base × 1.2^5 (×2.488)",
       "containerQueryAware": false,
       "description": "Border radius 3xl: calc(var(--rafters-radius-base) * 2.488) (base × 1.2^5 (×2.488))",
-      "generatedAt": "2026-07-25T00:55:52.297Z"
+      "generatedAt": "2026-08-12T02:53:40.402Z"
     },
     {
       "name": "radius-3xl-tl",
@@ -673,18 +486,13 @@
       "category": "radius",
       "namespace": "radius",
       "semanticMeaning": "top-left radius at 3xl scale",
-      "usageContext": [
-        "stadium-shapes",
-        "special-emphasis"
-      ],
+      "usageContext": ["stadium-shapes", "special-emphasis"],
       "userOverride": null,
-      "dependsOn": [
-        "radius-tl"
-      ],
+      "dependsOn": ["radius-tl"],
       "scalePosition": 7,
       "containerQueryAware": false,
       "description": "top-left radius 3xl: derives from radius-tl base",
-      "generatedAt": "2026-07-25T00:55:52.297Z"
+      "generatedAt": "2026-08-12T02:53:40.402Z"
     },
     {
       "name": "radius-3xl-tr",
@@ -692,18 +500,13 @@
       "category": "radius",
       "namespace": "radius",
       "semanticMeaning": "top-right radius at 3xl scale",
-      "usageContext": [
-        "stadium-shapes",
-        "special-emphasis"
-      ],
+      "usageContext": ["stadium-shapes", "special-emphasis"],
       "userOverride": null,
-      "dependsOn": [
-        "radius-tr"
-      ],
+      "dependsOn": ["radius-tr"],
       "scalePosition": 7,
       "containerQueryAware": false,
       "description": "top-right radius 3xl: derives from radius-tr base",
-      "generatedAt": "2026-07-25T00:55:52.297Z"
+      "generatedAt": "2026-08-12T02:53:40.402Z"
     },
     {
       "name": "radius-3xl-bl",
@@ -711,18 +514,13 @@
       "category": "radius",
       "namespace": "radius",
       "semanticMeaning": "bottom-left radius at 3xl scale",
-      "usageContext": [
-        "stadium-shapes",
-        "special-emphasis"
-      ],
+      "usageContext": ["stadium-shapes", "special-emphasis"],
       "userOverride": null,
-      "dependsOn": [
-        "radius-bl"
-      ],
+      "dependsOn": ["radius-bl"],
       "scalePosition": 7,
       "containerQueryAware": false,
       "description": "bottom-left radius 3xl: derives from radius-bl base",
-      "generatedAt": "2026-07-25T00:55:52.297Z"
+      "generatedAt": "2026-08-12T02:53:40.402Z"
     },
     {
       "name": "radius-3xl-br",
@@ -730,18 +528,13 @@
       "category": "radius",
       "namespace": "radius",
       "semanticMeaning": "bottom-right radius at 3xl scale",
-      "usageContext": [
-        "stadium-shapes",
-        "special-emphasis"
-      ],
+      "usageContext": ["stadium-shapes", "special-emphasis"],
       "userOverride": null,
-      "dependsOn": [
-        "radius-br"
-      ],
+      "dependsOn": ["radius-br"],
       "scalePosition": 7,
       "containerQueryAware": false,
       "description": "bottom-right radius 3xl: derives from radius-br base",
-      "generatedAt": "2026-07-25T00:55:52.297Z"
+      "generatedAt": "2026-08-12T02:53:40.402Z"
     },
     {
       "name": "radius-full",
@@ -749,11 +542,7 @@
       "category": "radius",
       "namespace": "radius",
       "semanticMeaning": "Fully rounded - circles and pills",
-      "usageContext": [
-        "avatars",
-        "pill-buttons",
-        "circular-elements"
-      ],
+      "usageContext": ["avatars", "pill-buttons", "circular-elements"],
       "userOverride": null,
       "dependsOn": [],
       "progressionSystem": "minor-third",
@@ -761,7 +550,7 @@
       "mathRelationship": "infinite (9999px)",
       "containerQueryAware": false,
       "description": "Border radius full: 9999px (infinite (9999px))",
-      "generatedAt": "2026-07-25T00:55:52.297Z"
+      "generatedAt": "2026-08-12T02:53:40.402Z"
     }
   ]
 }

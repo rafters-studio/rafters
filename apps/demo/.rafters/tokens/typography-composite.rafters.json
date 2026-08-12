@@ -1,6 +1,6 @@
 {
   "namespace": "typography-composite",
-  "generatedAt": "2026-07-25T00:55:52.659Z",
+  "generatedAt": "2026-08-12T02:53:40.760Z",
   "tokens": [
     {
       "name": "display-large",
@@ -8,21 +8,12 @@
       "category": "typography",
       "namespace": "typography-composite",
       "semanticMeaning": "Largest display text for hero sections and landing pages",
-      "usageContext": [
-        "hero-heading",
-        "landing-page"
-      ],
+      "usageContext": ["hero-heading", "landing-page"],
       "trustLevel": "high",
       "consequence": "reversible",
       "usagePatterns": {
-        "do": [
-          "Use sparingly for maximum visual impact",
-          "Pair with ample whitespace"
-        ],
-        "never": [
-          "Use more than once per page",
-          "Use in constrained containers like cards"
-        ]
+        "do": ["Use sparingly for maximum visual impact", "Pair with ample whitespace"],
+        "never": ["Use more than once per page", "Use in constrained containers like cards"]
       },
       "userOverride": null,
       "dependsOn": [
@@ -33,12 +24,10 @@
         "letter-spacing-5xl"
       ],
       "containerQueryAware": true,
-      "applicableComponents": [
-        "hero"
-      ],
+      "applicableComponents": ["hero"],
       "generateUtilityClass": true,
       "description": "Typography composite: font-heading text-5xl font-bold. Largest display text for hero sections and landing pages",
-      "generatedAt": "2026-07-25T00:55:52.297Z"
+      "generatedAt": "2026-08-12T02:53:40.402Z"
     },
     {
       "name": "display-medium",
@@ -46,21 +35,12 @@
       "category": "typography",
       "namespace": "typography-composite",
       "semanticMeaning": "Primary page heading -- one per page",
-      "usageContext": [
-        "page-title",
-        "h1"
-      ],
+      "usageContext": ["page-title", "h1"],
       "trustLevel": "high",
       "consequence": "reversible",
       "usagePatterns": {
-        "do": [
-          "Use once per page for the main title",
-          "Place at the top of the content area"
-        ],
-        "never": [
-          "Use multiple times on a single page",
-          "Use inside cards or dialogs"
-        ]
+        "do": ["Use once per page for the main title", "Place at the top of the content area"],
+        "never": ["Use multiple times on a single page", "Use inside cards or dialogs"]
       },
       "userOverride": null,
       "dependsOn": [
@@ -71,12 +51,10 @@
         "letter-spacing-4xl"
       ],
       "containerQueryAware": true,
-      "applicableComponents": [
-        "h1"
-      ],
+      "applicableComponents": ["h1"],
       "generateUtilityClass": true,
       "description": "Typography composite: font-heading text-4xl font-bold. Primary page heading -- one per page",
-      "generatedAt": "2026-07-25T00:55:52.297Z"
+      "generatedAt": "2026-08-12T02:53:40.402Z"
     },
     {
       "name": "title-large",
@@ -84,21 +62,12 @@
       "category": "typography",
       "namespace": "typography-composite",
       "semanticMeaning": "Major section heading",
-      "usageContext": [
-        "section-title",
-        "h2"
-      ],
+      "usageContext": ["section-title", "h2"],
       "trustLevel": "medium",
       "consequence": "reversible",
       "usagePatterns": {
-        "do": [
-          "Use to divide major content sections",
-          "Maintain heading hierarchy (h1 > h2 > h3)"
-        ],
-        "never": [
-          "Skip heading levels (h1 then h3)",
-          "Use for decorative emphasis"
-        ]
+        "do": ["Use to divide major content sections", "Maintain heading hierarchy (h1 > h2 > h3)"],
+        "never": ["Skip heading levels (h1 then h3)", "Use for decorative emphasis"]
       },
       "userOverride": null,
       "dependsOn": [
@@ -109,12 +78,10 @@
         "letter-spacing-3xl"
       ],
       "containerQueryAware": true,
-      "applicableComponents": [
-        "h2"
-      ],
+      "applicableComponents": ["h2"],
       "generateUtilityClass": true,
       "description": "Typography composite: font-heading text-3xl font-semibold. Major section heading",
-      "generatedAt": "2026-07-25T00:55:52.297Z"
+      "generatedAt": "2026-08-12T02:53:40.402Z"
     },
     {
       "name": "title-medium",
@@ -137,10 +104,7 @@
           "Use for component-level headings",
           "Use consistently across all overlay and card titles"
         ],
-        "never": [
-          "Mix with other title sizes in the same component",
-          "Override without why-gate"
-        ]
+        "never": ["Mix with other title sizes in the same component", "Override without why-gate"]
       },
       "userOverride": null,
       "dependsOn": [
@@ -162,7 +126,7 @@
       ],
       "generateUtilityClass": true,
       "description": "Typography composite: font-heading text-lg font-semibold. Component and subsection title -- shared by card, dialog, sheet, drawer, empty state",
-      "generatedAt": "2026-07-25T00:55:52.297Z"
+      "generatedAt": "2026-08-12T02:53:40.402Z"
     },
     {
       "name": "title-small",
@@ -170,11 +134,7 @@
       "category": "typography",
       "namespace": "typography-composite",
       "semanticMeaning": "Minor heading and alert title",
-      "usageContext": [
-        "h4",
-        "alert-title",
-        "accordion-trigger"
-      ],
+      "usageContext": ["h4", "alert-title", "accordion-trigger"],
       "trustLevel": "medium",
       "consequence": "reversible",
       "usagePatterns": {
@@ -182,9 +142,7 @@
           "Use for subsections within a card or panel",
           "Use for alert and accordion headings"
         ],
-        "never": [
-          "Use as the primary heading on a page"
-        ]
+        "never": ["Use as the primary heading on a page"]
       },
       "userOverride": null,
       "dependsOn": [
@@ -195,14 +153,10 @@
         "letter-spacing-base"
       ],
       "containerQueryAware": true,
-      "applicableComponents": [
-        "h4",
-        "alert-title",
-        "accordion-trigger"
-      ],
+      "applicableComponents": ["h4", "alert-title", "accordion-trigger"],
       "generateUtilityClass": true,
       "description": "Typography composite: font-heading text-base font-semibold. Minor heading and alert title",
-      "generatedAt": "2026-07-25T00:55:52.297Z"
+      "generatedAt": "2026-08-12T02:53:40.402Z"
     },
     {
       "name": "body-large",
@@ -210,22 +164,12 @@
       "category": "typography",
       "namespace": "typography-composite",
       "semanticMeaning": "Lead paragraph and introductory text",
-      "usageContext": [
-        "lead",
-        "introduction",
-        "hero-body"
-      ],
+      "usageContext": ["lead", "introduction", "hero-body"],
       "trustLevel": "low",
       "consequence": "reversible",
       "usagePatterns": {
-        "do": [
-          "Use for the first paragraph of a section",
-          "Use for hero body copy"
-        ],
-        "never": [
-          "Use for all body text",
-          "Use in compact UI like sidebars"
-        ]
+        "do": ["Use for the first paragraph of a section", "Use for hero body copy"],
+        "never": ["Use for all body text", "Use in compact UI like sidebars"]
       },
       "userOverride": null,
       "dependsOn": [
@@ -236,12 +180,10 @@
         "letter-spacing-xl"
       ],
       "containerQueryAware": true,
-      "applicableComponents": [
-        "lead"
-      ],
+      "applicableComponents": ["lead"],
       "generateUtilityClass": true,
       "description": "Typography composite: font-body text-xl font-normal. Lead paragraph and introductory text",
-      "generatedAt": "2026-07-25T00:55:52.297Z"
+      "generatedAt": "2026-08-12T02:53:40.402Z"
     },
     {
       "name": "body-medium",
@@ -249,13 +191,7 @@
       "category": "typography",
       "namespace": "typography-composite",
       "semanticMeaning": "Default body text for paragraphs and content",
-      "usageContext": [
-        "paragraph",
-        "body-text",
-        "list-item",
-        "blockquote",
-        "accordion-content"
-      ],
+      "usageContext": ["paragraph", "body-text", "list-item", "blockquote", "accordion-content"],
       "trustLevel": "low",
       "consequence": "reversible",
       "usagePatterns": {
@@ -263,10 +199,7 @@
           "Use for all standard body content",
           "Ensure sufficient contrast against background"
         ],
-        "never": [
-          "Use for labels or UI chrome",
-          "Set below 1rem"
-        ]
+        "never": ["Use for labels or UI chrome", "Set below 1rem"]
       },
       "userOverride": null,
       "dependsOn": [
@@ -277,15 +210,10 @@
         "letter-spacing-base"
       ],
       "containerQueryAware": true,
-      "applicableComponents": [
-        "p",
-        "list-item",
-        "blockquote",
-        "accordion-content"
-      ],
+      "applicableComponents": ["p", "list-item", "blockquote", "accordion-content"],
       "generateUtilityClass": true,
       "description": "Typography composite: font-body text-base font-normal. Default body text for paragraphs and content",
-      "generatedAt": "2026-07-25T00:55:52.297Z"
+      "generatedAt": "2026-08-12T02:53:40.402Z"
     },
     {
       "name": "body-small",
@@ -337,7 +265,7 @@
       ],
       "generateUtilityClass": true,
       "description": "Typography composite: font-body text-sm font-normal. Secondary text -- descriptions, tooltips, menu items, table cells",
-      "generatedAt": "2026-07-25T00:55:52.297Z"
+      "generatedAt": "2026-08-12T02:53:40.402Z"
     },
     {
       "name": "label-large",
@@ -345,24 +273,12 @@
       "category": "typography",
       "namespace": "typography-composite",
       "semanticMeaning": "Interactive element text -- buttons, tabs, nav triggers, toggles",
-      "usageContext": [
-        "button",
-        "tab-trigger",
-        "nav-trigger",
-        "toggle",
-        "pagination"
-      ],
+      "usageContext": ["button", "tab-trigger", "nav-trigger", "toggle", "pagination"],
       "trustLevel": "medium",
       "consequence": "reversible",
       "usagePatterns": {
-        "do": [
-          "Use for primary interactive controls",
-          "Ensure touch target meets 24px minimum"
-        ],
-        "never": [
-          "Use for passive content",
-          "Mix with body text styling"
-        ]
+        "do": ["Use for primary interactive controls", "Ensure touch target meets 24px minimum"],
+        "never": ["Use for passive content", "Mix with body text styling"]
       },
       "userOverride": null,
       "dependsOn": [
@@ -373,16 +289,10 @@
         "letter-spacing-base"
       ],
       "containerQueryAware": true,
-      "applicableComponents": [
-        "button",
-        "tab-trigger",
-        "nav-trigger",
-        "toggle",
-        "pagination-link"
-      ],
+      "applicableComponents": ["button", "tab-trigger", "nav-trigger", "toggle", "pagination-link"],
       "generateUtilityClass": true,
       "description": "Typography composite: font-body text-base font-medium. Interactive element text -- buttons, tabs, nav triggers, toggles",
-      "generatedAt": "2026-07-25T00:55:52.297Z"
+      "generatedAt": "2026-08-12T02:53:40.402Z"
     },
     {
       "name": "label-medium",
@@ -390,23 +300,12 @@
       "category": "typography",
       "namespace": "typography-composite",
       "semanticMeaning": "Form labels, breadcrumbs, small buttons, sidebar items",
-      "usageContext": [
-        "label",
-        "breadcrumb",
-        "small-button",
-        "sidebar-item"
-      ],
+      "usageContext": ["label", "breadcrumb", "small-button", "sidebar-item"],
       "trustLevel": "low",
       "consequence": "reversible",
       "usagePatterns": {
-        "do": [
-          "Use for form field labels",
-          "Use for secondary navigation"
-        ],
-        "never": [
-          "Use for headings",
-          "Use for primary call-to-action buttons"
-        ]
+        "do": ["Use for form field labels", "Use for secondary navigation"],
+        "never": ["Use for headings", "Use for primary call-to-action buttons"]
       },
       "userOverride": null,
       "dependsOn": [
@@ -417,15 +316,10 @@
         "letter-spacing-sm"
       ],
       "containerQueryAware": true,
-      "applicableComponents": [
-        "label",
-        "breadcrumb",
-        "button-sm",
-        "sidebar-item"
-      ],
+      "applicableComponents": ["label", "breadcrumb", "button-sm", "sidebar-item"],
       "generateUtilityClass": true,
       "description": "Typography composite: font-body text-sm font-medium. Form labels, breadcrumbs, small buttons, sidebar items",
-      "generatedAt": "2026-07-25T00:55:52.297Z"
+      "generatedAt": "2026-08-12T02:53:40.402Z"
     },
     {
       "name": "label-small",
@@ -433,23 +327,12 @@
       "category": "typography",
       "namespace": "typography-composite",
       "semanticMeaning": "Smallest label text -- badges, sidebar labels, captions",
-      "usageContext": [
-        "badge",
-        "sidebar-label",
-        "caption",
-        "command-group-heading"
-      ],
+      "usageContext": ["badge", "sidebar-label", "caption", "command-group-heading"],
       "trustLevel": "low",
       "consequence": "reversible",
       "usagePatterns": {
-        "do": [
-          "Use only for tertiary UI information",
-          "Ensure adequate contrast at small size"
-        ],
-        "never": [
-          "Use for content users must read to complete a task",
-          "Set below 0.75rem"
-        ]
+        "do": ["Use only for tertiary UI information", "Ensure adequate contrast at small size"],
+        "never": ["Use for content users must read to complete a task", "Set below 0.75rem"]
       },
       "userOverride": null,
       "dependsOn": [
@@ -460,15 +343,10 @@
         "letter-spacing-xs"
       ],
       "containerQueryAware": true,
-      "applicableComponents": [
-        "badge",
-        "sidebar-label",
-        "caption",
-        "command-group-heading"
-      ],
+      "applicableComponents": ["badge", "sidebar-label", "caption", "command-group-heading"],
       "generateUtilityClass": true,
       "description": "Typography composite: font-body text-xs font-medium. Smallest label text -- badges, sidebar labels, captions",
-      "generatedAt": "2026-07-25T00:55:52.297Z"
+      "generatedAt": "2026-08-12T02:53:40.402Z"
     },
     {
       "name": "code-large",
@@ -476,22 +354,12 @@
       "category": "typography",
       "namespace": "typography-composite",
       "semanticMeaning": "Code blocks and pre-formatted text",
-      "usageContext": [
-        "code-block",
-        "pre",
-        "terminal-output"
-      ],
+      "usageContext": ["code-block", "pre", "terminal-output"],
       "trustLevel": "low",
       "consequence": "reversible",
       "usagePatterns": {
-        "do": [
-          "Use for multi-line code content",
-          "Pair with syntax highlighting"
-        ],
-        "never": [
-          "Use for inline code snippets",
-          "Use for non-code content"
-        ]
+        "do": ["Use for multi-line code content", "Pair with syntax highlighting"],
+        "never": ["Use for inline code snippets", "Use for non-code content"]
       },
       "userOverride": null,
       "dependsOn": [
@@ -502,12 +370,10 @@
         "letter-spacing-base"
       ],
       "containerQueryAware": true,
-      "applicableComponents": [
-        "code-block"
-      ],
+      "applicableComponents": ["code-block"],
       "generateUtilityClass": true,
       "description": "Typography composite: font-code text-base font-normal. Code blocks and pre-formatted text",
-      "generatedAt": "2026-07-25T00:55:52.297Z"
+      "generatedAt": "2026-08-12T02:53:40.402Z"
     },
     {
       "name": "code-small",
@@ -515,22 +381,12 @@
       "category": "typography",
       "namespace": "typography-composite",
       "semanticMeaning": "Inline code and keyboard key indicators",
-      "usageContext": [
-        "code-inline",
-        "kbd",
-        "technical-term"
-      ],
+      "usageContext": ["code-inline", "kbd", "technical-term"],
       "trustLevel": "low",
       "consequence": "reversible",
       "usagePatterns": {
-        "do": [
-          "Use for code references within prose",
-          "Use for keyboard shortcut labels"
-        ],
-        "never": [
-          "Use for multi-line code blocks",
-          "Use for body text"
-        ]
+        "do": ["Use for code references within prose", "Use for keyboard shortcut labels"],
+        "never": ["Use for multi-line code blocks", "Use for body text"]
       },
       "userOverride": null,
       "dependsOn": [
@@ -541,13 +397,10 @@
         "letter-spacing-sm"
       ],
       "containerQueryAware": true,
-      "applicableComponents": [
-        "code-inline",
-        "kbd"
-      ],
+      "applicableComponents": ["code-inline", "kbd"],
       "generateUtilityClass": true,
       "description": "Typography composite: font-code text-sm font-normal. Inline code and keyboard key indicators",
-      "generatedAt": "2026-07-25T00:55:52.297Z"
+      "generatedAt": "2026-08-12T02:53:40.402Z"
     },
     {
       "name": "shortcut",
@@ -555,21 +408,12 @@
       "category": "typography",
       "namespace": "typography-composite",
       "semanticMeaning": "Keyboard shortcut indicators in menus",
-      "usageContext": [
-        "keyboard-shortcut",
-        "command-shortcut",
-        "menu-shortcut"
-      ],
+      "usageContext": ["keyboard-shortcut", "command-shortcut", "menu-shortcut"],
       "trustLevel": "low",
       "consequence": "reversible",
       "usagePatterns": {
-        "do": [
-          "Use for keyboard shortcut text in menus and command palettes"
-        ],
-        "never": [
-          "Use for regular text content",
-          "Use outside of menu/command contexts"
-        ]
+        "do": ["Use for keyboard shortcut text in menus and command palettes"],
+        "never": ["Use for regular text content", "Use outside of menu/command contexts"]
       },
       "userOverride": null,
       "dependsOn": [
@@ -580,12 +424,10 @@
         "letter-spacing-widest"
       ],
       "containerQueryAware": true,
-      "applicableComponents": [
-        "keyboard-shortcut"
-      ],
+      "applicableComponents": ["keyboard-shortcut"],
       "generateUtilityClass": true,
       "description": "Typography composite: font-code text-xs font-normal. Keyboard shortcut indicators in menus",
-      "generatedAt": "2026-07-25T00:55:52.297Z"
+      "generatedAt": "2026-08-12T02:53:40.402Z"
     }
   ]
 }
