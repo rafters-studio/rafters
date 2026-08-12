@@ -2,12 +2,10 @@ import { ratioValue, resolveRatio } from '@rafters/math-utils';
 import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_FONT_WEIGHTS,
-  DEFAULT_RADIUS_DEFINITIONS,
   DEFAULT_SHADOW_BOUNDS,
   DEFAULT_SPACING_BOUNDS,
   DEFAULT_TYPOGRAPHY_SCALE,
 } from '../src/generators/defaults.js';
-import { generateRadiusTokens } from '../src/generators/radius.js';
 import { DEFAULT_SYSTEM_CONFIG, PURE_MATH_CONFIG, resolveConfig } from '../src/generators/types.js';
 import { generateTypographyTokens } from '../src/generators/typography.js';
 import { shadowScale } from '../src/generators/shadow.js';
@@ -137,13 +135,9 @@ describe('shadow scale construction', () => {
 /**
  * PURE_MATH_CONFIG has to be observable, or it is decoration.
  *
- * It differs from DEFAULT_SYSTEM_CONFIG only by omitting the four `*Override`
- * pins, so it can only show up in namespaces whose ANCHOR is one of those four.
- * Spacing is not one of them -- it reads `baseSpacingUnit` and
- * `progressionRatio`, which both configs carry identically -- so asserting that
- * spacing moves under pure math would be asserting that spacing depends on a
- * value it has no reason to read. The honest test is that the config is live
- * where it applies, and inert where it does not.
+ * After #2035 only TWO pins remain: baseFontSize and baseTransitionDuration.
+ * Radius and focus derive from baseSpacingUnit unconditionally in both configs,
+ * so their pins were removed -- they hid the derivation at base 4.
  */
 describe('PURE_MATH_CONFIG is not decorative', () => {
   const pure = resolveConfig(PURE_MATH_CONFIG);
@@ -153,19 +147,19 @@ describe('PURE_MATH_CONFIG is not decorative', () => {
     tokens.map((t) => `${t.name}=${JSON.stringify(t.value)}`).sort();
 
   it('resolves different anchors from the same base', () => {
-    // The four pins are what pure math drops. At baseSpacingUnit 4 they were
-    // CHOSEN to coincide with the derivation, so this proves the mechanism
-    // rather than a numeric difference: move the base and they diverge.
+    // Two pins remain: baseFontSize and baseTransitionDuration. Radius and
+    // focus derive from baseSpacingUnit in both configs (#2035).
     const movedPure = resolveConfig({ ...PURE_MATH_CONFIG, baseSpacingUnit: 6 });
     const movedPinned = resolveConfig({ ...DEFAULT_SYSTEM_CONFIG, baseSpacingUnit: 6 });
 
     expect(movedPure.baseFontSize).not.toBe(movedPinned.baseFontSize);
-    expect(movedPure.baseRadius).not.toBe(movedPinned.baseRadius);
-    expect(movedPure.focusRingWidth).not.toBe(movedPinned.focusRingWidth);
     expect(movedPure.baseTransitionDuration).not.toBe(movedPinned.baseTransitionDuration);
+    // Radius and focus agree because neither config pins them anymore.
+    expect(movedPure.baseRadius).toBe(movedPinned.baseRadius);
+    expect(movedPure.focusRingWidth).toBe(movedPinned.focusRingWidth);
   });
 
-  it('changes typography and radius output once the base moves', () => {
+  it('changes typography output once the base moves', () => {
     const pureAt6 = resolveConfig({ ...PURE_MATH_CONFIG, baseSpacingUnit: 6 });
     const pinnedAt6 = resolveConfig({ ...DEFAULT_SYSTEM_CONFIG, baseSpacingUnit: 6 });
 
@@ -178,9 +172,16 @@ describe('PURE_MATH_CONFIG is not decorative', () => {
         generateTypographyTokens(pinnedAt6, DEFAULT_TYPOGRAPHY_SCALE, DEFAULT_FONT_WEIGHTS).tokens,
       ),
     );
-    expect(flatten(generateRadiusTokens(pureAt6, DEFAULT_RADIUS_DEFINITIONS).tokens)).not.toEqual(
-      flatten(generateRadiusTokens(pinnedAt6, DEFAULT_RADIUS_DEFINITIONS).tokens),
-    );
+  });
+
+  it('radius and focus move together with the base in both configs', () => {
+    const at4 = resolveConfig({ ...DEFAULT_SYSTEM_CONFIG, baseSpacingUnit: 4 });
+    const at6 = resolveConfig({ ...DEFAULT_SYSTEM_CONFIG, baseSpacingUnit: 6 });
+
+    expect(at4.baseRadius).not.toBe(at6.baseRadius);
+    expect(at4.focusRingWidth).not.toBe(at6.focusRingWidth);
+    expect(at6.baseRadius).toBe(6 * 1.5);
+    expect(at6.focusRingWidth).toBe(6 / 2);
   });
 
   it('leaves spacing alone, because spacing reads neither pin', () => {

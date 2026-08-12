@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  DEFAULT_FOCUS_CONFIGS,
   DEFAULT_FONT_WEIGHTS,
   DEFAULT_RADIUS_DEFINITIONS,
   DEFAULT_SHADOW_BOUNDS,
@@ -7,6 +8,7 @@ import {
   DEFAULT_SPACING_BOUNDS,
   DEFAULT_TYPOGRAPHY_SCALE,
 } from '../src/generators/defaults.js';
+import { generateFocusTokens } from '../src/generators/focus.js';
 import { generateRadiusTokens } from '../src/generators/radius.js';
 import { generateShadowTokens } from '../src/generators/shadow.js';
 import { generateSpacingTokens } from '../src/generators/spacing.js';
@@ -147,5 +149,50 @@ describe('shadow geometry follows the ratio; the coloured opacity is a defect', 
     // fixed in #2031; whether coloredOpacity keeps the ratio or gets a reason
     // of its own is still open.
     expect(after).not.toEqual(before);
+  });
+});
+
+/**
+ * Radius and focus derive from spacing (#2035). The CSS values are expressions
+ * like `calc(var(--rafters-spacing-base) * 1.5)` -- the string is the same at
+ * every base because the CASCADE resolves it at runtime. The property under
+ * test is the reference, not a numeric diff.
+ */
+describe('radius and focus derive from spacing', () => {
+  const config = resolveConfig(DEFAULT_SYSTEM_CONFIG);
+
+  it('radius-base references spacing-base, not a literal rem', () => {
+    const tokens = generateRadiusTokens(config, DEFAULT_RADIUS_DEFINITIONS).tokens;
+    const base = tokens.find((t) => t.name === 'radius-base');
+    expect(base?.value).toContain('var(--rafters-spacing-base)');
+    expect(base?.value).not.toMatch(/^\d/);
+    expect(base?.dependsOn).toContain('spacing-base');
+  });
+
+  it('focus-ring-width references spacing-base, not a literal rem', () => {
+    const tokens = generateFocusTokens(config, DEFAULT_FOCUS_CONFIGS).tokens;
+    const base = tokens.find((t) => t.name === 'focus-ring-width');
+    expect(base?.value).toContain('var(--rafters-spacing-base)');
+    expect(base?.value).not.toMatch(/^\d/);
+    expect(base?.dependsOn).toContain('spacing-base');
+  });
+
+  it('focus configs chain through focus-ring-width, not literal px', () => {
+    const tokens = generateFocusTokens(config, DEFAULT_FOCUS_CONFIGS).tokens;
+    const ring = tokens.find((t) => t.name === 'focus-ring');
+    expect(ring?.value).toContain('var(--rafters-focus-ring-width)');
+    const outline = tokens.find((t) => t.name === 'focus-outline');
+    expect(outline?.value).toContain('var(--rafters-focus-ring-width)');
+    const hc = tokens.find((t) => t.name === 'focus-high-contrast');
+    expect(hc?.value).toContain('var(--rafters-focus-ring-width)');
+  });
+
+  it('no literal rem value in radius-base or focus-ring-width', () => {
+    const radiusTokens = generateRadiusTokens(config, DEFAULT_RADIUS_DEFINITIONS).tokens;
+    const focusTokens = generateFocusTokens(config, DEFAULT_FOCUS_CONFIGS).tokens;
+    const rBase = radiusTokens.find((t) => t.name === 'radius-base');
+    const fBase = focusTokens.find((t) => t.name === 'focus-ring-width');
+    expect(rBase?.value).not.toMatch(/rem$/);
+    expect(fBase?.value).not.toMatch(/rem$/);
   });
 });
