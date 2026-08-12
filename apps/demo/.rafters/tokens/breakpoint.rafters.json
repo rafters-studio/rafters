@@ -1,6 +1,6 @@
 {
   "namespace": "breakpoint",
-  "generatedAt": "2026-07-25T00:55:52.659Z",
+  "generatedAt": "2026-08-12T02:53:40.760Z",
   "tokens": [
     {
       "name": "breakpoint-sm",
@@ -8,10 +8,7 @@
       "category": "breakpoint",
       "namespace": "breakpoint",
       "semanticMeaning": "Small screens - landscape phones, small tablets",
-      "usageContext": [
-        "mobile-first",
-        "compact-layouts"
-      ],
+      "usageContext": ["mobile-first", "compact-layouts"],
       "usagePatterns": {
         "do": [
           "Use for page-level layout changes",
@@ -27,7 +24,7 @@
       "containerQueryAware": false,
       "viewportAware": true,
       "description": "Viewport breakpoint at 640px. Targets: phone-landscape, small-tablet.",
-      "generatedAt": "2026-07-25T00:55:52.296Z"
+      "generatedAt": "2026-08-12T02:53:40.401Z"
     },
     {
       "name": "screen-sm",
@@ -36,13 +33,11 @@
       "namespace": "breakpoint",
       "semanticMeaning": "Media query for sm breakpoint",
       "userOverride": null,
-      "dependsOn": [
-        "breakpoint-sm"
-      ],
+      "dependsOn": ["breakpoint-sm"],
       "containerQueryAware": false,
       "viewportAware": true,
       "description": "Media query: @media (min-width: 640px)",
-      "generatedAt": "2026-07-25T00:55:52.296Z"
+      "generatedAt": "2026-08-12T02:53:40.401Z"
     },
     {
       "name": "breakpoint-md",
@@ -50,10 +45,7 @@
       "category": "breakpoint",
       "namespace": "breakpoint",
       "semanticMeaning": "Medium screens - tablets, small laptops",
-      "usageContext": [
-        "tablet-layouts",
-        "sidebar-visible"
-      ],
+      "usageContext": ["tablet-layouts", "sidebar-visible"],
       "usagePatterns": {
         "do": [
           "Use for page-level layout changes",
@@ -69,7 +61,7 @@
       "containerQueryAware": false,
       "viewportAware": true,
       "description": "Viewport breakpoint at 768px. Targets: tablet-portrait, small-laptop.",
-      "generatedAt": "2026-07-25T00:55:52.296Z"
+      "generatedAt": "2026-08-12T02:53:40.401Z"
     },
     {
       "name": "screen-md",
@@ -78,13 +70,11 @@
       "namespace": "breakpoint",
       "semanticMeaning": "Media query for md breakpoint",
       "userOverride": null,
-      "dependsOn": [
-        "breakpoint-md"
-      ],
+      "dependsOn": ["breakpoint-md"],
       "containerQueryAware": false,
       "viewportAware": true,
       "description": "Media query: @media (min-width: 768px)",
-      "generatedAt": "2026-07-25T00:55:52.296Z"
+      "generatedAt": "2026-08-12T02:53:40.401Z"
     },
     {
       "name": "breakpoint-lg",
@@ -92,10 +82,7 @@
       "category": "breakpoint",
       "namespace": "breakpoint",
       "semanticMeaning": "Large screens - laptops, small desktops",
-      "usageContext": [
-        "desktop-layouts",
-        "multi-column"
-      ],
+      "usageContext": ["desktop-layouts", "multi-column"],
       "usagePatterns": {
         "do": [
           "Use for page-level layout changes",
@@ -111,7 +98,7 @@
       "containerQueryAware": false,
       "viewportAware": true,
       "description": "Viewport breakpoint at 1024px. Targets: tablet-landscape, laptop, small-desktop.",
-      "generatedAt": "2026-07-25T00:55:52.296Z"
+      "generatedAt": "2026-08-12T02:53:40.401Z"
     },
     {
       "name": "screen-lg",
@@ -120,13 +107,11 @@
       "namespace": "breakpoint",
       "semanticMeaning": "Media query for lg breakpoint",
       "userOverride": null,
-      "dependsOn": [
-        "breakpoint-lg"
-      ],
+      "dependsOn": ["breakpoint-lg"],
       "containerQueryAware": false,
       "viewportAware": true,
       "description": "Media query: @media (min-width: 1024px)",
-      "generatedAt": "2026-07-25T00:55:52.296Z"
+      "generatedAt": "2026-08-12T02:53:40.401Z"
     },
     {
       "name": "breakpoint-xl",
@@ -134,10 +119,7 @@
       "category": "breakpoint",
       "namespace": "breakpoint",
       "semanticMeaning": "Extra large screens - desktops",
-      "usageContext": [
-        "wide-layouts",
-        "dashboard"
-      ],
+      "usageContext": ["wide-layouts", "dashboard"],
       "usagePatterns": {
         "do": [
           "Use for page-level layout changes",
@@ -153,7 +135,7 @@
       "containerQueryAware": false,
       "viewportAware": true,
       "description": "Viewport breakpoint at 1280px. Targets: desktop, large-laptop.",
-      "generatedAt": "2026-07-25T00:55:52.296Z"
+      "generatedAt": "2026-08-12T02:53:40.401Z"
     },
     {
       "name": "screen-xl",
@@ -162,13 +144,11 @@
       "namespace": "breakpoint",
       "semanticMeaning": "Media query for xl breakpoint",
       "userOverride": null,
-      "dependsOn": [
-        "breakpoint-xl"
-      ],
+      "dependsOn": ["breakpoint-xl"],
       "containerQueryAware": false,
       "viewportAware": true,
       "description": "Media query: @media (min-width: 1280px)",
-      "generatedAt": "2026-07-25T00:55:52.296Z"
+      "generatedAt": "2026-08-12T02:53:40.401Z"
     },
     {
       "name": "breakpoint-2xl",
@@ -176,10 +156,7 @@
       "category": "breakpoint",
       "namespace": "breakpoint",
       "semanticMeaning": "Extra extra large screens - large desktops, monitors",
-      "usageContext": [
-        "ultra-wide",
-        "data-dense"
-      ],
+      "usageContext": ["ultra-wide", "data-dense"],
       "usagePatterns": {
         "do": [
           "Use for page-level layout changes",
@@ -195,7 +172,7 @@
       "containerQueryAware": false,
       "viewportAware": true,
       "description": "Viewport breakpoint at 1536px. Targets: large-desktop, external-monitor.",
-      "generatedAt": "2026-07-25T00:55:52.296Z"
+      "generatedAt": "2026-08-12T02:53:40.401Z"
     },
     {
       "name": "screen-2xl",
@@ -204,13 +181,11 @@
       "namespace": "breakpoint",
       "semanticMeaning": "Media query for 2xl breakpoint",
       "userOverride": null,
-      "dependsOn": [
-        "breakpoint-2xl"
-      ],
+      "dependsOn": ["breakpoint-2xl"],
       "containerQueryAware": false,
       "viewportAware": true,
       "description": "Media query: @media (min-width: 1536px)",
-      "generatedAt": "2026-07-25T00:55:52.296Z"
+      "generatedAt": "2026-08-12T02:53:40.401Z"
     },
     {
       "name": "container-3xs",
@@ -218,10 +193,7 @@
       "category": "breakpoint",
       "namespace": "breakpoint",
       "semanticMeaning": "Smallest container (256px) - icons, badges",
-      "usageContext": [
-        "component-responsive",
-        "container-queries"
-      ],
+      "usageContext": ["component-responsive", "container-queries"],
       "usagePatterns": {
         "do": [
           "Use @3xs: variant for component responsiveness",
@@ -237,7 +209,7 @@
       "containerQueryAware": true,
       "viewportAware": false,
       "description": "Container query size @3xs = 16rem (256px). Smallest container (256px) - icons, badges.",
-      "generatedAt": "2026-07-25T00:55:52.296Z"
+      "generatedAt": "2026-08-12T02:53:40.401Z"
     },
     {
       "name": "container-2xs",
@@ -245,10 +217,7 @@
       "category": "breakpoint",
       "namespace": "breakpoint",
       "semanticMeaning": "Extra extra small (288px) - compact cards",
-      "usageContext": [
-        "component-responsive",
-        "container-queries"
-      ],
+      "usageContext": ["component-responsive", "container-queries"],
       "usagePatterns": {
         "do": [
           "Use @2xs: variant for component responsiveness",
@@ -264,7 +233,7 @@
       "containerQueryAware": true,
       "viewportAware": false,
       "description": "Container query size @2xs = 18rem (288px). Extra extra small (288px) - compact cards.",
-      "generatedAt": "2026-07-25T00:55:52.296Z"
+      "generatedAt": "2026-08-12T02:53:40.401Z"
     },
     {
       "name": "container-xs",
@@ -272,10 +241,7 @@
       "category": "breakpoint",
       "namespace": "breakpoint",
       "semanticMeaning": "Extra small (320px) - mobile-width cards",
-      "usageContext": [
-        "component-responsive",
-        "container-queries"
-      ],
+      "usageContext": ["component-responsive", "container-queries"],
       "usagePatterns": {
         "do": [
           "Use @xs: variant for component responsiveness",
@@ -291,7 +257,7 @@
       "containerQueryAware": true,
       "viewportAware": false,
       "description": "Container query size @xs = 20rem (320px). Extra small (320px) - mobile-width cards.",
-      "generatedAt": "2026-07-25T00:55:52.296Z"
+      "generatedAt": "2026-08-12T02:53:40.401Z"
     },
     {
       "name": "container-sm",
@@ -299,10 +265,7 @@
       "category": "breakpoint",
       "namespace": "breakpoint",
       "semanticMeaning": "Small (384px) - standard cards",
-      "usageContext": [
-        "component-responsive",
-        "container-queries"
-      ],
+      "usageContext": ["component-responsive", "container-queries"],
       "usagePatterns": {
         "do": [
           "Use @sm: variant for component responsiveness",
@@ -318,7 +281,7 @@
       "containerQueryAware": true,
       "viewportAware": false,
       "description": "Container query size @sm = 24rem (384px). Small (384px) - standard cards.",
-      "generatedAt": "2026-07-25T00:55:52.296Z"
+      "generatedAt": "2026-08-12T02:53:40.401Z"
     },
     {
       "name": "container-md",
@@ -326,10 +289,7 @@
       "category": "breakpoint",
       "namespace": "breakpoint",
       "semanticMeaning": "Medium (448px) - wide cards, panels",
-      "usageContext": [
-        "component-responsive",
-        "container-queries"
-      ],
+      "usageContext": ["component-responsive", "container-queries"],
       "usagePatterns": {
         "do": [
           "Use @md: variant for component responsiveness",
@@ -345,7 +305,7 @@
       "containerQueryAware": true,
       "viewportAware": false,
       "description": "Container query size @md = 28rem (448px). Medium (448px) - wide cards, panels.",
-      "generatedAt": "2026-07-25T00:55:52.296Z"
+      "generatedAt": "2026-08-12T02:53:40.401Z"
     },
     {
       "name": "container-lg",
@@ -353,10 +313,7 @@
       "category": "breakpoint",
       "namespace": "breakpoint",
       "semanticMeaning": "Large (512px) - sidebars, dialog content",
-      "usageContext": [
-        "component-responsive",
-        "container-queries"
-      ],
+      "usageContext": ["component-responsive", "container-queries"],
       "usagePatterns": {
         "do": [
           "Use @lg: variant for component responsiveness",
@@ -372,7 +329,7 @@
       "containerQueryAware": true,
       "viewportAware": false,
       "description": "Container query size @lg = 32rem (512px). Large (512px) - sidebars, dialog content.",
-      "generatedAt": "2026-07-25T00:55:52.296Z"
+      "generatedAt": "2026-08-12T02:53:40.401Z"
     },
     {
       "name": "container-xl",
@@ -380,10 +337,7 @@
       "category": "breakpoint",
       "namespace": "breakpoint",
       "semanticMeaning": "Extra large (576px) - main content panels",
-      "usageContext": [
-        "component-responsive",
-        "container-queries"
-      ],
+      "usageContext": ["component-responsive", "container-queries"],
       "usagePatterns": {
         "do": [
           "Use @xl: variant for component responsiveness",
@@ -399,7 +353,7 @@
       "containerQueryAware": true,
       "viewportAware": false,
       "description": "Container query size @xl = 36rem (576px). Extra large (576px) - main content panels.",
-      "generatedAt": "2026-07-25T00:55:52.296Z"
+      "generatedAt": "2026-08-12T02:53:40.401Z"
     },
     {
       "name": "container-2xl",
@@ -407,10 +361,7 @@
       "category": "breakpoint",
       "namespace": "breakpoint",
       "semanticMeaning": "2XL (672px) - wide content areas",
-      "usageContext": [
-        "component-responsive",
-        "container-queries"
-      ],
+      "usageContext": ["component-responsive", "container-queries"],
       "usagePatterns": {
         "do": [
           "Use @2xl: variant for component responsiveness",
@@ -426,7 +377,7 @@
       "containerQueryAware": true,
       "viewportAware": false,
       "description": "Container query size @2xl = 42rem (672px). 2XL (672px) - wide content areas.",
-      "generatedAt": "2026-07-25T00:55:52.296Z"
+      "generatedAt": "2026-08-12T02:53:40.401Z"
     },
     {
       "name": "container-3xl",
@@ -434,10 +385,7 @@
       "category": "breakpoint",
       "namespace": "breakpoint",
       "semanticMeaning": "3XL (768px) - tablet-width containers",
-      "usageContext": [
-        "component-responsive",
-        "container-queries"
-      ],
+      "usageContext": ["component-responsive", "container-queries"],
       "usagePatterns": {
         "do": [
           "Use @3xl: variant for component responsiveness",
@@ -453,7 +401,7 @@
       "containerQueryAware": true,
       "viewportAware": false,
       "description": "Container query size @3xl = 48rem (768px). 3XL (768px) - tablet-width containers.",
-      "generatedAt": "2026-07-25T00:55:52.296Z"
+      "generatedAt": "2026-08-12T02:53:40.401Z"
     },
     {
       "name": "container-4xl",
@@ -461,10 +409,7 @@
       "category": "breakpoint",
       "namespace": "breakpoint",
       "semanticMeaning": "4XL (896px) - wide panels",
-      "usageContext": [
-        "component-responsive",
-        "container-queries"
-      ],
+      "usageContext": ["component-responsive", "container-queries"],
       "usagePatterns": {
         "do": [
           "Use @4xl: variant for component responsiveness",
@@ -480,7 +425,7 @@
       "containerQueryAware": true,
       "viewportAware": false,
       "description": "Container query size @4xl = 56rem (896px). 4XL (896px) - wide panels.",
-      "generatedAt": "2026-07-25T00:55:52.296Z"
+      "generatedAt": "2026-08-12T02:53:40.401Z"
     },
     {
       "name": "container-5xl",
@@ -488,10 +433,7 @@
       "category": "breakpoint",
       "namespace": "breakpoint",
       "semanticMeaning": "5XL (1024px) - desktop content",
-      "usageContext": [
-        "component-responsive",
-        "container-queries"
-      ],
+      "usageContext": ["component-responsive", "container-queries"],
       "usagePatterns": {
         "do": [
           "Use @5xl: variant for component responsiveness",
@@ -507,7 +449,7 @@
       "containerQueryAware": true,
       "viewportAware": false,
       "description": "Container query size @5xl = 64rem (1024px). 5XL (1024px) - desktop content.",
-      "generatedAt": "2026-07-25T00:55:52.296Z"
+      "generatedAt": "2026-08-12T02:53:40.401Z"
     },
     {
       "name": "container-6xl",
@@ -515,10 +457,7 @@
       "category": "breakpoint",
       "namespace": "breakpoint",
       "semanticMeaning": "6XL (1152px) - wide desktop content",
-      "usageContext": [
-        "component-responsive",
-        "container-queries"
-      ],
+      "usageContext": ["component-responsive", "container-queries"],
       "usagePatterns": {
         "do": [
           "Use @6xl: variant for component responsiveness",
@@ -534,7 +473,7 @@
       "containerQueryAware": true,
       "viewportAware": false,
       "description": "Container query size @6xl = 72rem (1152px). 6XL (1152px) - wide desktop content.",
-      "generatedAt": "2026-07-25T00:55:52.296Z"
+      "generatedAt": "2026-08-12T02:53:40.401Z"
     },
     {
       "name": "container-7xl",
@@ -542,10 +481,7 @@
       "category": "breakpoint",
       "namespace": "breakpoint",
       "semanticMeaning": "7XL (1280px) - maximum content width",
-      "usageContext": [
-        "component-responsive",
-        "container-queries"
-      ],
+      "usageContext": ["component-responsive", "container-queries"],
       "usagePatterns": {
         "do": [
           "Use @7xl: variant for component responsiveness",
@@ -561,7 +497,7 @@
       "containerQueryAware": true,
       "viewportAware": false,
       "description": "Container query size @7xl = 80rem (1280px). 7XL (1280px) - maximum content width.",
-      "generatedAt": "2026-07-25T00:55:52.296Z"
+      "generatedAt": "2026-08-12T02:53:40.401Z"
     },
     {
       "name": "breakpoint-sm-max",
@@ -570,13 +506,11 @@
       "namespace": "breakpoint",
       "semanticMeaning": "Maximum width before sm breakpoint",
       "userOverride": null,
-      "dependsOn": [
-        "breakpoint-sm"
-      ],
+      "dependsOn": ["breakpoint-sm"],
       "containerQueryAware": false,
       "viewportAware": true,
       "description": "Max-width 639px (just before sm breakpoint).",
-      "generatedAt": "2026-07-25T00:55:52.296Z"
+      "generatedAt": "2026-08-12T02:53:40.401Z"
     },
     {
       "name": "breakpoint-md-max",
@@ -585,13 +519,11 @@
       "namespace": "breakpoint",
       "semanticMeaning": "Maximum width before md breakpoint",
       "userOverride": null,
-      "dependsOn": [
-        "breakpoint-md"
-      ],
+      "dependsOn": ["breakpoint-md"],
       "containerQueryAware": false,
       "viewportAware": true,
       "description": "Max-width 767px (just before md breakpoint).",
-      "generatedAt": "2026-07-25T00:55:52.296Z"
+      "generatedAt": "2026-08-12T02:53:40.401Z"
     },
     {
       "name": "breakpoint-lg-max",
@@ -600,13 +532,11 @@
       "namespace": "breakpoint",
       "semanticMeaning": "Maximum width before lg breakpoint",
       "userOverride": null,
-      "dependsOn": [
-        "breakpoint-lg"
-      ],
+      "dependsOn": ["breakpoint-lg"],
       "containerQueryAware": false,
       "viewportAware": true,
       "description": "Max-width 1023px (just before lg breakpoint).",
-      "generatedAt": "2026-07-25T00:55:52.296Z"
+      "generatedAt": "2026-08-12T02:53:40.401Z"
     },
     {
       "name": "breakpoint-xl-max",
@@ -615,13 +545,11 @@
       "namespace": "breakpoint",
       "semanticMeaning": "Maximum width before xl breakpoint",
       "userOverride": null,
-      "dependsOn": [
-        "breakpoint-xl"
-      ],
+      "dependsOn": ["breakpoint-xl"],
       "containerQueryAware": false,
       "viewportAware": true,
       "description": "Max-width 1279px (just before xl breakpoint).",
-      "generatedAt": "2026-07-25T00:55:52.296Z"
+      "generatedAt": "2026-08-12T02:53:40.401Z"
     },
     {
       "name": "breakpoint-2xl-max",
@@ -630,13 +558,11 @@
       "namespace": "breakpoint",
       "semanticMeaning": "Maximum width before 2xl breakpoint",
       "userOverride": null,
-      "dependsOn": [
-        "breakpoint-2xl"
-      ],
+      "dependsOn": ["breakpoint-2xl"],
       "containerQueryAware": false,
       "viewportAware": true,
       "description": "Max-width 1535px (just before 2xl breakpoint).",
-      "generatedAt": "2026-07-25T00:55:52.296Z"
+      "generatedAt": "2026-08-12T02:53:40.401Z"
     },
     {
       "name": "breakpoint-motion-reduce",
@@ -644,26 +570,17 @@
       "category": "breakpoint",
       "namespace": "breakpoint",
       "semanticMeaning": "Media query for reduced motion preference",
-      "usageContext": [
-        "accessibility",
-        "vestibular-safe"
-      ],
+      "usageContext": ["accessibility", "vestibular-safe"],
       "usagePatterns": {
-        "do": [
-          "Use to disable or reduce animations",
-          "Provide alternative non-motion feedback"
-        ],
-        "never": [
-          "Ignore reduced motion preference",
-          "Remove all visual feedback"
-        ]
+        "do": ["Use to disable or reduce animations", "Provide alternative non-motion feedback"],
+        "never": ["Ignore reduced motion preference", "Remove all visual feedback"]
       },
       "userOverride": null,
       "containerQueryAware": false,
       "reducedMotionAware": true,
       "animationSafe": true,
       "description": "Media query for users preferring reduced motion.",
-      "generatedAt": "2026-07-25T00:55:52.296Z"
+      "generatedAt": "2026-08-12T02:53:40.401Z"
     },
     {
       "name": "breakpoint-dark",
@@ -671,14 +588,11 @@
       "category": "breakpoint",
       "namespace": "breakpoint",
       "semanticMeaning": "Media query for dark mode preference",
-      "usageContext": [
-        "theming",
-        "dark-mode"
-      ],
+      "usageContext": ["theming", "dark-mode"],
       "userOverride": null,
       "containerQueryAware": false,
       "description": "Media query for users preferring dark color scheme.",
-      "generatedAt": "2026-07-25T00:55:52.296Z"
+      "generatedAt": "2026-08-12T02:53:40.401Z"
     },
     {
       "name": "breakpoint-high-contrast",
@@ -686,15 +600,12 @@
       "category": "breakpoint",
       "namespace": "breakpoint",
       "semanticMeaning": "Media query for high contrast preference",
-      "usageContext": [
-        "accessibility",
-        "high-contrast"
-      ],
+      "usageContext": ["accessibility", "high-contrast"],
       "accessibilityLevel": "AAA",
       "userOverride": null,
       "containerQueryAware": false,
       "description": "Media query for users preferring increased contrast.",
-      "generatedAt": "2026-07-25T00:55:52.296Z"
+      "generatedAt": "2026-08-12T02:53:40.401Z"
     },
     {
       "name": "breakpoint-forced-colors",
@@ -702,26 +613,16 @@
       "category": "breakpoint",
       "namespace": "breakpoint",
       "semanticMeaning": "Media query for forced colors mode (Windows High Contrast)",
-      "usageContext": [
-        "accessibility",
-        "high-contrast",
-        "windows"
-      ],
+      "usageContext": ["accessibility", "high-contrast", "windows"],
       "accessibilityLevel": "AAA",
       "usagePatterns": {
-        "do": [
-          "Use system color keywords",
-          "Ensure visible focus indicators"
-        ],
-        "never": [
-          "Override with custom colors",
-          "Hide important visual information"
-        ]
+        "do": ["Use system color keywords", "Ensure visible focus indicators"],
+        "never": ["Override with custom colors", "Hide important visual information"]
       },
       "userOverride": null,
       "containerQueryAware": false,
       "description": "Media query for Windows High Contrast Mode.",
-      "generatedAt": "2026-07-25T00:55:52.296Z"
+      "generatedAt": "2026-08-12T02:53:40.401Z"
     },
     {
       "name": "breakpoint-scale",
@@ -732,7 +633,7 @@
       "userOverride": null,
       "containerQueryAware": true,
       "description": "Complete breakpoint scale for viewport (px) and container queries (rem).",
-      "generatedAt": "2026-07-25T00:55:52.296Z"
+      "generatedAt": "2026-08-12T02:53:40.401Z"
     }
   ]
 }
