@@ -564,11 +564,11 @@ describe('rafters init - source CSS sensing', () => {
     expect(applied).toBeDefined();
     expect(applied?.baseRadius).toBe(10);
 
-    // radius-base lands at the detected value (0.625rem = 10px).
+    // radius-base lands as a spacing-ref expression after #2035 exporter rewrite.
     const radiusRaw = await readFixtureFile(fixturePath, '.rafters/tokens/radius.rafters.json');
     const radius = JSON.parse(radiusRaw) as { tokens: Array<{ name: string; value: unknown }> };
     const radiusBase = radius.tokens.find((t) => t.name === 'radius-base');
-    expect(radiusBase?.value).toBe('0.625rem');
+    expect(radiusBase?.value).toBe('calc(var(--rafters-spacing-base) * 2.5)');
 
     // Per-corner tokens cascade via var() ref to the (now reseated) base.
     const radiusTl = radius.tokens.find((t) => t.name === 'radius-tl');
@@ -613,10 +613,12 @@ describe('rafters init - source CSS sensing', () => {
     const typo = JSON.parse(typoRaw) as { tokens: Array<{ name: string; value: unknown }> };
     expect(typo.tokens.find((t) => t.name === 'font-size-base')?.value).toBe('1.125rem');
 
-    // Focus ring width threaded through the focus generator.
+    // Focus ring width as spacing-ref expression after #2035 exporter rewrite.
     const focusRaw = await readFixtureFile(fixturePath, '.rafters/tokens/focus.rafters.json');
     const focus = JSON.parse(focusRaw) as { tokens: Array<{ name: string; value: unknown }> };
-    expect(focus.tokens.find((t) => t.name === 'focus-ring-width')?.value).toBe('0.25rem');
+    expect(focus.tokens.find((t) => t.name === 'focus-ring-width')?.value).toBe(
+      'calc(var(--rafters-spacing-base) / 1)',
+    );
 
     // Motion stays at rafters' curated default (150ms), NOT the absurd 5s
     // the source declared. The detector deliberately doesn't exist for
