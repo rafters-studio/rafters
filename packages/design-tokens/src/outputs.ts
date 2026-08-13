@@ -157,7 +157,7 @@ export async function regenerateOutputs(
   }
 
   if (exports.documentation) {
-    const doc = await registryToDocumentation(registry);
+    const doc = await registryToDocumentation(registry, { contentSources });
     await writeFile(join(outputDir, 'rafters.documentation.css'), doc);
     written.push('rafters.documentation.css');
   }
