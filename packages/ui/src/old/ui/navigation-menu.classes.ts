@@ -13,7 +13,7 @@ export const navigationMenuItemClasses = 'relative';
 export const navigationMenuViewportWrapperClasses = 'absolute left-0 top-full';
 
 export const navigationMenuTriggerClasses =
-  'group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-label-medium transition-colors duration-150 motion-reduce:transition-none hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=open]:bg-accent-subtle';
+  'group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 ts-label-medium transition-colors duration-150 motion-reduce:transition-none hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=open]:bg-accent-subtle';
 
 export const navigationMenuTriggerChevronClasses =
   'ml-1 h-3 w-3 transition-transform duration-200 motion-reduce:transition-none group-data-[state=open]:rotate-180';

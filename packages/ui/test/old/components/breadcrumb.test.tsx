@@ -97,7 +97,7 @@ describe('BreadcrumbList', () => {
     expect(list).toHaveClass('flex');
     expect(list).toHaveClass('flex-wrap');
     expect(list).toHaveClass('items-center');
-    expect(list).toHaveClass('text-label-medium');
+    expect(list).toHaveClass('ts-label-medium');
     expect(list).toHaveClass('text-muted-foreground');
   });
 

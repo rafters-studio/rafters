@@ -64,8 +64,8 @@ describe('card classes', () => {
     expect(cardHeaderClasses).toBe(
       'grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 has-data-[slot=card-action]:grid-cols-[1fr_auto]',
     );
-    expect(cardTitleClasses).toBe('text-title-medium leading-none');
-    expect(cardDescriptionClasses).toBe('text-body-small text-muted-foreground');
+    expect(cardTitleClasses).toBe('ts-title-medium leading-none');
+    expect(cardDescriptionClasses).toBe('ts-body-small text-muted-foreground');
     expect(cardContentClasses).toBe('px-6');
     expect(cardFooterClasses).toBe('flex items-center px-6');
     expect(cardActionClasses).toBe(
@@ -96,8 +96,8 @@ describe('card classes', () => {
   it('semantic typography role tokens survive the v4 alignment', () => {
     // shadcn v4 uses raw `font-semibold` / `text-sm` here. The role tokens are
     // the product and they are invisible to a swap, so they stay.
-    expect(cardTitleClasses).toContain('text-title-medium');
-    expect(cardDescriptionClasses).toContain('text-body-small');
+    expect(cardTitleClasses).toContain('ts-title-medium');
+    expect(cardDescriptionClasses).toContain('ts-body-small');
     expect(cardTitleClasses).not.toContain('font-semibold');
     expect(cardDescriptionClasses).not.toContain('text-sm');
   });

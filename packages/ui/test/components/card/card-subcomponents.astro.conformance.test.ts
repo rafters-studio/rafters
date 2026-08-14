@@ -53,7 +53,7 @@ describe('card astro sub-components [parity surface]', () => {
     const asH3 = await renderOne(CardTitle, {}, { default: 'Report' });
     const title = asH3.querySelector('[data-slot="card-title"]') as HTMLElement;
     expect(title.tagName).toBe('H3');
-    expect(title.className).toContain('text-title-medium');
+    expect(title.className).toContain('ts-title-medium');
 
     const asH2 = await renderOne(CardTitle, { as: 'h2' }, { default: 'Report' });
     expect((asH2.querySelector('[data-slot="card-title"]') as HTMLElement).tagName).toBe('H2');

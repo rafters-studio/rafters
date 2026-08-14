@@ -21,7 +21,7 @@ const listVerticalClasses = 'h-auto flex-col';
 
 const triggerBaseClasses = [
   'inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5',
-  'text-label-medium ring-offset-background cursor-pointer',
+  'ts-label-medium ring-offset-background cursor-pointer',
   // Motion intent indicator-move: the active pill travels along the rail's main
   // axis. Duration and easing come from tokens; motion-reduce opts out entirely.
   'transition-all duration-200 motion-reduce:transition-none',

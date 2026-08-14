@@ -42,7 +42,7 @@ describe('label conformance [wc]', () => {
     const root = shadowRoot(mount());
     expect(root).not.toBeNull();
     expect(root.tagName.toLowerCase()).toBe('label');
-    expect(root.className).toContain('text-label-medium');
+    expect(root.className).toContain('ts-label-medium');
     expect(root.className).toContain('text-foreground');
   });
 

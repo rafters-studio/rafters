@@ -12,7 +12,7 @@ import type {
  * inversion is the point of the component: one box, several occupants.
  *
  * Token and semantic classes only. Heights come from the shared size
- * vocabulary, type from the `text-body-small` role token (never a raw
+ * vocabulary, type from the `ts-body-small` role token (never a raw
  * `text-sm`), colours from the frozen semantic tokens.
  */
 
@@ -46,9 +46,9 @@ const rootClasses =
   'data-[disabled]:opacity-50 data-[disabled]:cursor-not-allowed';
 
 /** Per-size heights, ported from the oracle. `text-sm` becomes the
- *  `text-body-small` typography role token. */
+ *  `ts-body-small` typography role token. */
 const sizeClasses: Record<InputGroupSize, string> = {
-  sm: 'h-9 text-body-small',
+  sm: 'h-9 ts-body-small',
   default: 'h-10',
   lg: 'h-11',
 };
@@ -59,7 +59,7 @@ const sizeClasses: Record<InputGroupSize, string> = {
  * makes the group read as one control rather than a box around a box.
  */
 const controlClasses =
-  'flex-1 h-full w-full min-w-0 bg-transparent px-3 py-2 text-body-small ' +
+  'flex-1 h-full w-full min-w-0 bg-transparent px-3 py-2 ts-body-small ' +
   'text-foreground placeholder:text-muted-foreground ' +
   'border-0 rounded-[inherit] ' +
   'focus:outline-none focus-visible:outline-none ' +

@@ -19,6 +19,6 @@ export const dialogHeaderClasses = 'flex flex-col space-y-1.5 text-center sm:tex
 
 export const dialogFooterClasses = 'flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2';
 
-export const dialogTitleClasses = 'text-title-medium leading-none';
+export const dialogTitleClasses = 'ts-title-medium leading-none';
 
-export const dialogDescriptionClasses = 'text-body-small text-muted-foreground';
+export const dialogDescriptionClasses = 'ts-body-small text-muted-foreground';

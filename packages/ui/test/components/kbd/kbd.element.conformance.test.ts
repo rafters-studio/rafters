@@ -38,7 +38,7 @@ describe('kbd conformance [wc]', () => {
     expect(root).not.toBeNull();
     expect(root.tagName.toLowerCase()).toBe('kbd');
     expect(root.className).toContain('bg-muted');
-    expect(root.className).toContain('text-code-small');
+    expect(root.className).toContain('ts-code-small');
   });
 
   it('fulfills the contract: root projects NO ARIA (empty, like React)', () => {

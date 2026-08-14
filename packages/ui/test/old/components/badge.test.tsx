@@ -66,7 +66,7 @@ describe('Badge', () => {
     expect(badge).toHaveClass('rounded-full');
     expect(badge).toHaveClass('px-2.5');
     expect(badge).toHaveClass('py-0.5');
-    expect(badge).toHaveClass('text-label-small');
+    expect(badge).toHaveClass('ts-label-small');
     expect(badge).toHaveClass('transition-colors');
   });
 

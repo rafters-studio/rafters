@@ -44,7 +44,7 @@ describe('input-group size vocabulary', () => {
 
   it('the small size uses the typography role token, never a raw text-sm', () => {
     const small = inputGroupClassSet({ size: 'sm' }, {}).root;
-    expect(small).toContain('text-body-small');
+    expect(small).toContain('ts-body-small');
     expect(small).not.toContain('text-sm');
   });
 });
@@ -60,7 +60,7 @@ describe('input-group control decoration', () => {
 
   it('fills transparently and uses the typography role token', () => {
     expect(classes.control).toContain('bg-transparent');
-    expect(classes.control).toContain('text-body-small');
+    expect(classes.control).toContain('ts-body-small');
   });
 
   it('honors the disabled affordance', () => {

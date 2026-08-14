@@ -26,7 +26,7 @@ describe('kbd conformance [react]', () => {
     const { container } = render(<Kbd>Cmd</Kbd>);
     const root = partElement(container, 'root') as HTMLElement;
     expect(root.className).toContain('bg-muted');
-    expect(root.className).toContain('text-code-small');
+    expect(root.className).toContain('ts-code-small');
     expect(root.textContent).toBe('Cmd');
   });
 

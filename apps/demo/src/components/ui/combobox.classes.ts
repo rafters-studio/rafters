@@ -26,7 +26,7 @@ const fieldClasses = 'relative w-full';
 // convention). Right padding leaves room for the chevron. Fill, not background.
 const inputClasses =
   'flex h-11 @md:h-9 w-full rounded-md border border-input bg-background px-3 py-1 pr-9 ' +
-  'text-body-small shadow-sm ring-offset-background transition-shadow motion-reduce:transition-none ' +
+  'ts-body-small shadow-sm ring-offset-background transition-shadow motion-reduce:transition-none ' +
   'placeholder:text-muted-foreground hover:border-input-hover ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ' +
   'disabled:cursor-not-allowed disabled:opacity-50 ' +
@@ -50,7 +50,7 @@ const contentClasses =
 
 const itemClasses =
   'relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 ' +
-  'text-body-small outline-none ' +
+  'ts-body-small outline-none ' +
   'data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground ' +
   'data-[disabled]:pointer-events-none data-[disabled]:opacity-50';
 
@@ -58,11 +58,11 @@ const itemIndicatorClasses = 'absolute left-2 flex size-3.5 items-center justify
 
 const itemTextClasses = 'truncate';
 
-const emptyClasses = 'py-6 text-center text-body-small text-muted-foreground';
+const emptyClasses = 'py-6 text-center ts-body-small text-muted-foreground';
 
 const groupClasses = 'overflow-hidden p-1';
 
-const groupLabelClasses = 'px-2 py-1.5 text-label-medium text-muted-foreground';
+const groupLabelClasses = 'px-2 py-1.5 ts-label-medium text-muted-foreground';
 
 const separatorClasses = '-mx-1 my-1 h-px bg-muted';
 

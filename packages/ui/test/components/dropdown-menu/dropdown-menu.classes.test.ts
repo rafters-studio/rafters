@@ -25,7 +25,7 @@ describe('dropdown-menu classes', () => {
 
   it('the separator fills muted, the label uses a semantic text token', () => {
     expect(classes.separator).toContain('bg-muted');
-    expect(classes.label).toContain('text-label-medium');
+    expect(classes.label).toContain('ts-label-medium');
   });
 
   it('enter/exit are the dropdown-menu CELLS, keyed off data-state (#1996 / #2017)', () => {

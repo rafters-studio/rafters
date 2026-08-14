@@ -52,8 +52,8 @@ describe('badge classes', () => {
   });
 
   it('size walks the label-text scale, not raw font sizes', () => {
-    expect(root('default', 'sm')).toContain('text-label-small');
-    expect(root('default', 'lg')).toContain('text-label-medium');
+    expect(root('default', 'sm')).toContain('ts-label-small');
+    expect(root('default', 'lg')).toContain('ts-label-medium');
   });
 
   it('base shape is a pill: inline-flex, centered, fully rounded', () => {

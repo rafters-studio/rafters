@@ -72,7 +72,7 @@ describe('badge conformance [wc]', () => {
 
   it('size selects the label-text scale', () => {
     const root = rootPart(mount('size="lg"', 'Large'));
-    expect(root.className).toContain('text-label-medium');
+    expect(root.className).toContain('ts-label-medium');
   });
 
   it('an unrecognised attribute value falls back through the shared class projection', () => {

@@ -31,7 +31,7 @@ describe('label conformance [astro]', () => {
     const root = partElement(body, 'root') as HTMLElement;
     expect(root).not.toBeNull();
     expect(root.tagName.toLowerCase()).toBe('label');
-    expect(root.className).toContain('text-label-medium');
+    expect(root.className).toContain('ts-label-medium');
     expect(root.className).toContain('text-foreground');
   });
 

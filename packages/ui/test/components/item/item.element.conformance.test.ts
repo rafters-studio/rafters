@@ -77,9 +77,9 @@ describe('item conformance [wc]', () => {
   it('reflects size changes to the inner class string', () => {
     const host = mount();
     host.setAttribute('size', 'lg');
-    expect(shadowRoot(host).className).toContain('text-body-medium');
+    expect(shadowRoot(host).className).toContain('ts-body-medium');
     host.setAttribute('size', 'sm');
-    expect(shadowRoot(host).className).toContain('text-label-small');
+    expect(shadowRoot(host).className).toContain('ts-label-small');
   });
 
   it('exposes the icon / default / description slots', () => {

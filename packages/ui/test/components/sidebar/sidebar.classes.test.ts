@@ -85,13 +85,13 @@ describe('sidebar menu button variants', () => {
   });
 
   it('size and outline variants layer onto the base', () => {
-    expect(sidebarMenuButtonClasses('default', 'sm')).toContain('text-label-small');
+    expect(sidebarMenuButtonClasses('default', 'sm')).toContain('ts-label-small');
     expect(sidebarMenuButtonClasses('outline', 'default')).toContain('bg-background');
     expect(sidebarMenuButtonClasses('default', 'default')).not.toContain('bg-background');
   });
 
   it('submenu button sizes layer onto its base', () => {
-    expect(sidebarMenuSubButtonClasses('sm')).toContain('text-label-small');
-    expect(sidebarMenuSubButtonClasses('md')).toContain('text-label-medium');
+    expect(sidebarMenuSubButtonClasses('sm')).toContain('ts-label-small');
+    expect(sidebarMenuSubButtonClasses('md')).toContain('ts-label-medium');
   });
 });

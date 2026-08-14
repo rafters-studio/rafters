@@ -12,7 +12,7 @@ describe('kbd classes', () => {
     expect(classes).toContain('rounded');
     expect(classes).toContain('border border-border');
     expect(classes).toContain('bg-muted');
-    expect(classes).toContain('text-code-small');
+    expect(classes).toContain('ts-code-small');
     expect(classes).toContain('text-muted-foreground');
     expect(classes).toContain('shadow-sm');
   });

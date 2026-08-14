@@ -15,15 +15,15 @@ const emptyStructureClasses = 'flex flex-col items-center justify-center gap-4 p
 /**
  * Sub-part classes are config-independent literals, so the framework files
  * import them directly (no context/provider needed for a flat static). Ported
- * verbatim from the oracle; `text-title-medium` / `text-body-small` are the
+ * verbatim from the oracle; `ts-title-medium` / `ts-body-small` are the
  * semantic typography role tokens, and the muted-foreground pairing keeps the
  * placeholder supportive rather than alarming.
  */
 export const emptyIconClasses = 'text-muted-foreground [&>svg]:h-12 [&>svg]:w-12';
 
-export const emptyTitleClasses = 'text-title-medium text-foreground';
+export const emptyTitleClasses = 'ts-title-medium text-foreground';
 
-export const emptyDescriptionClasses = 'max-w-sm text-body-small text-muted-foreground';
+export const emptyDescriptionClasses = 'max-w-sm ts-body-small text-muted-foreground';
 
 /** The action row carries no layout of its own -- the parent column centers it. */
 export const emptyActionClasses = '';

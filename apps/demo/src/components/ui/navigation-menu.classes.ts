@@ -25,7 +25,7 @@ const itemClasses = 'relative';
 
 const triggerClasses =
   'group inline-flex h-11 @md:h-10 w-max items-center justify-center rounded-md ' +
-  'bg-background px-4 py-2 text-label-medium cursor-pointer ' +
+  'bg-background px-4 py-2 ts-label-medium cursor-pointer ' +
   'transition-colors duration-150 motion-reduce:transition-none ' +
   'hover:bg-accent hover:text-accent-foreground ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ' +

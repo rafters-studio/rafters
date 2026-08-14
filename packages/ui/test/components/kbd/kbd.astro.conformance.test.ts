@@ -32,7 +32,7 @@ describe('kbd conformance [astro]', () => {
     expect(root).not.toBeNull();
     expect(root.tagName.toLowerCase()).toBe('kbd');
     expect(root.className).toContain('bg-muted');
-    expect(root.className).toContain('text-code-small');
+    expect(root.className).toContain('ts-code-small');
   });
 
   it('projects NO ARIA: the root is a pure static cap (no role)', async () => {

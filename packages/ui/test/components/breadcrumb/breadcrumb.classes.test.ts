@@ -11,7 +11,7 @@ import {
 describe('breadcrumb classes', () => {
   it('the list uses the muted label-text token pairing and wraps', () => {
     expect(breadcrumbListClasses).toBe(
-      'flex flex-wrap items-center gap-1.5 break-words text-label-medium text-muted-foreground @sm:gap-2.5',
+      'flex flex-wrap items-center gap-1.5 break-words ts-label-medium text-muted-foreground @sm:gap-2.5',
     );
   });
 

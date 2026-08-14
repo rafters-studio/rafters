@@ -39,7 +39,7 @@ const content =
   'motion-dropdown-in opacity-0 scale-95 data-[state=open]:opacity-100 data-[state=open]:scale-100';
 
 const itemBase =
-  'relative flex cursor-default select-none items-center rounded-sm text-body-small outline-none ' +
+  'relative flex cursor-default select-none items-center rounded-sm ts-body-small outline-none ' +
   'motion-focus focus:bg-accent focus:text-accent-foreground ' +
   'data-[disabled]:pointer-events-none data-[disabled]:opacity-50';
 
@@ -61,11 +61,11 @@ const checkIcon = 'h-4 w-4';
 
 const radioDot = 'h-2 w-2 rounded-full bg-current';
 
-const label = 'px-2 py-1.5 text-label-medium';
+const label = 'px-2 py-1.5 ts-label-medium';
 
 const separator = '-mx-1 my-1 h-px border-0 bg-muted';
 
-const shortcut = 'ml-auto text-shortcut opacity-60';
+const shortcut = 'ml-auto ts-shortcut opacity-60';
 
 const group = '';
 

@@ -8,7 +8,7 @@ function root(config: Parameters<typeof labelClasses>[0]): string {
 describe('label classes', () => {
   it('carries the label typography role token and the peer-disabled affordance', () => {
     const classes = root({});
-    expect(classes).toContain('text-label-medium');
+    expect(classes).toContain('ts-label-medium');
     expect(classes).toContain('leading-none');
     expect(classes).toContain('peer-disabled:cursor-not-allowed');
     expect(classes).toContain('peer-disabled:opacity-70');

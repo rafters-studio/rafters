@@ -13,7 +13,7 @@ import {
 
 describe('table classes', () => {
   it('the root carries full width and semantic body typography', () => {
-    expect(tableRootClasses).toBe('w-full caption-bottom text-body-small');
+    expect(tableRootClasses).toBe('w-full caption-bottom ts-body-small');
   });
 
   it('the wrapper scrolls wide data horizontally', () => {
@@ -22,9 +22,7 @@ describe('table classes', () => {
 
   it('the header underlines its row and the footer tops-borders on a muted surface', () => {
     expect(tableHeaderClasses).toBe('[&_tr]:border-b');
-    expect(tableFooterClasses).toBe(
-      'border-t bg-muted/50 text-label-medium [&>tr]:last:border-b-0',
-    );
+    expect(tableFooterClasses).toBe('border-t bg-muted/50 ts-label-medium [&>tr]:last:border-b-0');
   });
 
   it('the body drops the last row border', () => {
@@ -40,7 +38,7 @@ describe('table classes', () => {
   });
 
   it('header and data cells carry muted label typography and the checkbox flush', () => {
-    expect(tableHeadClasses).toContain('text-label-medium');
+    expect(tableHeadClasses).toContain('ts-label-medium');
     expect(tableHeadClasses).toContain('text-muted-foreground');
     expect(tableHeadClasses).toContain('text-left');
     expect(tableCellClasses).toContain('align-middle');
@@ -48,7 +46,7 @@ describe('table classes', () => {
   });
 
   it('the caption is muted small text', () => {
-    expect(tableCaptionClasses).toBe('text-body-small text-muted-foreground');
+    expect(tableCaptionClasses).toBe('ts-body-small text-muted-foreground');
   });
 
   it('never emits a raw arbitrary colour or spacing value', () => {

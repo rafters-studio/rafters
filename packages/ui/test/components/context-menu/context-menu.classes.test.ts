@@ -42,7 +42,7 @@ describe('context-menu classes', () => {
 
   it('separator, label, and shortcut carry their chrome', () => {
     expect(classes.separator).toContain('bg-muted');
-    expect(classes.label).toContain('text-label-medium');
+    expect(classes.label).toContain('ts-label-medium');
     expect(classes.shortcut).toContain('ml-auto');
   });
 

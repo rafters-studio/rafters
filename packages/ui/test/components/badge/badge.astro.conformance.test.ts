@@ -59,7 +59,7 @@ describe('badge conformance [astro]', () => {
   it('size selects the label-text scale', async () => {
     const body = await render({ size: 'lg' }, { default: 'Large' });
     const root = partElement(body, 'root') as HTMLElement;
-    expect(root.className).toContain('text-label-medium');
+    expect(root.className).toContain('ts-label-medium');
   });
 
   it('carries the shadcn data-slot for drop-in parity', async () => {

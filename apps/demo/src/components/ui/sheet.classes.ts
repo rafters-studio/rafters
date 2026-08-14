@@ -37,9 +37,9 @@ const headerClasses = 'flex flex-col space-y-2 text-center @md:text-left';
 
 const footerClasses = 'flex flex-col-reverse @md:flex-row @md:justify-end @md:space-x-2';
 
-const titleClasses = 'text-title-medium leading-none text-foreground';
+const titleClasses = 'ts-title-medium leading-none text-foreground';
 
-const descriptionClasses = 'text-body-small text-muted-foreground';
+const descriptionClasses = 'ts-body-small text-muted-foreground';
 
 const closeClasses =
   'absolute right-2 top-2 inline-flex h-11 w-11 items-center justify-center ' +

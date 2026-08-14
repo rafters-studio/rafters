@@ -525,20 +525,20 @@ function generateThemeBlock(groups: GroupedTokens): string {
  * The exporter composes them here; the tokens are the atomic values.
  */
 const ARTICLE_ELEMENT_STYLES: Array<[string, string]> = [
-  // Paragraphs
-  ['p', 'leading-relaxed mb-4'],
+  // Paragraphs -- composition for metrics, structural for spacing
+  ['p', 'text-body-medium ts-body-medium leading-relaxed mb-4'],
   ['p:last-child', 'mb-0'],
 
-  // Headings
-  ['h1', 'text-4xl font-bold tracking-tight mb-4 mt-0 text-accent-foreground'],
-  ['h2', 'text-3xl font-semibold tracking-tight mb-3 mt-8 text-accent-foreground'],
+  // Headings -- compositions carry size/weight/tracking/leading/family
+  ['h1', 'text-display-medium ts-display-medium mb-4 mt-0 text-accent-foreground'],
+  ['h2', 'text-title-large ts-title-large mb-3 mt-8 text-accent-foreground'],
   ['h2:first-child', 'mt-0'],
-  ['h3', 'text-2xl font-semibold mb-2 mt-6 text-accent-foreground'],
-  ['h4', 'text-xl font-semibold mb-2 mt-4 text-accent-foreground'],
-  ['h5', 'text-lg font-semibold mb-2 mt-4 text-accent-foreground'],
-  ['h6', 'text-base font-semibold mb-2 mt-4 text-accent-foreground'],
+  ['h3', 'text-title-medium ts-title-medium mb-2 mt-6 text-accent-foreground'],
+  ['h4', 'text-title-small ts-title-small mb-2 mt-4 text-accent-foreground'],
+  ['h5', 'text-title-small ts-title-small mb-2 mt-4 text-accent-foreground'],
+  ['h6', 'text-title-small ts-title-small mb-2 mt-4 text-accent-foreground'],
 
-  // Lists
+  // Lists -- structural only (type metrics cascade from parent)
   ['ul', 'list-disc pl-6 mb-4'],
   ['ol', 'list-decimal pl-6 mb-4'],
   ['li', 'mb-1'],
@@ -551,11 +551,11 @@ const ARTICLE_ELEMENT_STYLES: Array<[string, string]> = [
   // Blockquotes
   ['blockquote', 'border-l-4 border-muted pl-4 italic my-4'],
 
-  // Code
-  ['code', 'bg-muted px-1.5 py-0.5 rounded text-sm font-mono'],
-  ['pre', 'bg-muted p-4 rounded-lg overflow-x-auto my-4 text-sm font-mono'],
+  // Code -- composition for metrics + family, structural for bg/padding/radius
+  ['code', 'text-code-small ts-code-small bg-muted px-1.5 py-0.5 rounded'],
+  ['pre', 'text-code-large ts-code-large bg-muted p-4 rounded-lg overflow-x-auto my-4'],
   ['pre code', 'bg-transparent p-0 rounded-none text-[inherit]'],
-  ['kbd', 'bg-muted border border-border rounded px-1.5 py-0.5 text-sm font-mono'],
+  ['kbd', 'text-code-small ts-code-small bg-muted border border-border rounded px-1.5 py-0.5'],
 
   // Horizontal rules
   ['hr', 'border-border my-8'],
@@ -566,13 +566,13 @@ const ARTICLE_ELEMENT_STYLES: Array<[string, string]> = [
 
   // Tables
   ['table', 'w-full my-4 border-collapse'],
-  ['caption', 'mt-2 text-sm text-muted-foreground text-left'],
+  ['caption', 'text-label-small ts-label-small mt-2 text-muted-foreground text-left'],
   ['th', 'border border-border px-3 py-2 text-left font-semibold'],
   ['td', 'border border-border px-3 py-2'],
 
   // Figures
   ['figure', 'my-4'],
-  ['figcaption', 'mt-2 text-sm text-muted-foreground'],
+  ['figcaption', 'text-label-small ts-label-small mt-2 text-muted-foreground'],
 
   // Definition lists
   ['dl', 'my-4'],
@@ -586,7 +586,7 @@ const ARTICLE_ELEMENT_STYLES: Array<[string, string]> = [
   // Inline formatting
   ['strong,\n  article b', 'font-semibold'],
   ['mark', 'bg-accent text-accent-foreground px-1 rounded'],
-  ['small', 'text-sm'],
+  ['small', 'text-label-small ts-label-small'],
   ['sub', 'text-xs align-sub'],
   ['sup', 'text-xs align-super'],
   ['abbr[title]', 'underline decoration-dotted underline-offset-4 cursor-help'],
@@ -693,70 +693,99 @@ function generateDepthUtilities(depthTokens: Token[]): string {
  * var() is correct HERE because this is the exporter layer -- the boundary between
  * tokens and CSS. Components reference `text-display-medium` and never see var().
  */
-function generateTypographyCompositeUtilities(compositeTokens: Token[]): string {
-  if (compositeTokens.length === 0) {
-    return '';
-  }
+/**
+ * Named Tailwind tracking values -- used when a composite specifies a named
+ * letter-spacing key rather than a scale position.
+ */
+const NAMED_TRACKING: Record<string, string> = {
+  tighter: '-0.05em',
+  tight: '-0.025em',
+  normal: '0em',
+  wide: '0.025em',
+  wider: '0.05em',
+  widest: '0.1em',
+};
 
-  const lines: string[] = [];
+function trackingRef(key: string): string {
+  const named = NAMED_TRACKING[key];
+  if (named !== undefined) return named;
+  return `var(--letter-spacing-${key})`;
+}
 
-  const mappings = compositeTokens
+interface ParsedComposite {
+  name: string;
+  fontFamily: string;
+  fontSize: string;
+  fontWeight: string;
+  lineHeight: string;
+  letterSpacing: string;
+  responsive?: Record<string, { fontSize?: string }>;
+}
+
+function parseComposites(compositeTokens: Token[]): ParsedComposite[] {
+  return compositeTokens
     .map((t) => {
       try {
-        const parsed = JSON.parse(t.value as string) as {
-          fontFamily: string;
-          fontSize: string;
-          fontWeight: string;
-          lineHeight: string;
-          letterSpacing: string;
-          responsive?: Record<string, { fontSize?: string }>;
-        };
+        const parsed = JSON.parse(t.value as string) as Omit<ParsedComposite, 'name'>;
         return { name: t.name, ...parsed };
       } catch {
         return null;
       }
     })
     .filter((m): m is NonNullable<typeof m> => m !== null);
+}
 
-  for (const mapping of mappings) {
-    lines.push(`@utility text-${mapping.name} {`);
-    lines.push(`  font-family: var(--font-${mapping.fontFamily});`);
-    lines.push(`  font-size: var(--font-size-${mapping.fontSize});`);
-    lines.push(`  font-weight: var(--font-weight-${mapping.fontWeight});`);
-    lines.push(`  line-height: var(--line-height-${mapping.lineHeight});`);
+/**
+ * Generate the @theme inline block for typography composition assignments.
+ * Each composition becomes --text-{name} entries selecting scale positions
+ * via var(), plus --rafters-ts-{name} entries for font-family (which
+ * --text-* cannot carry). Zero new values -- pure references.
+ */
+function generateTypographyCompositeThemeInline(compositeTokens: Token[]): string {
+  const mappings = parseComposites(compositeTokens);
+  if (mappings.length === 0) return '';
 
-    // Letter spacing -- named Tailwind values get hardcoded, scale keys use token vars
-    const namedTrackingValues: Record<string, string> = {
-      tighter: '-0.05em',
-      tight: '-0.025em',
-      normal: '0em',
-      wide: '0.025em',
-      wider: '0.05em',
-      widest: '0.1em',
-    };
-    if (mapping.letterSpacing in namedTrackingValues) {
-      lines.push(`  letter-spacing: ${namedTrackingValues[mapping.letterSpacing]};`);
-    } else {
-      lines.push(`  letter-spacing: var(--letter-spacing-${mapping.letterSpacing});`);
-    }
+  const lines: string[] = [];
+  lines.push('@theme inline {');
 
-    // CQ-responsive overrides
-    if (mapping.responsive) {
-      for (const [breakpoint, overrides] of Object.entries(mapping.responsive)) {
+  for (const m of mappings) {
+    lines.push(`  --text-${m.name}: var(--font-size-${m.fontSize});`);
+    lines.push(`  --text-${m.name}--line-height: var(--font-size-${m.lineHeight}--line-height);`);
+    lines.push(`  --text-${m.name}--letter-spacing: ${trackingRef(m.letterSpacing)};`);
+    lines.push(`  --text-${m.name}--font-weight: var(--font-weight-${m.fontWeight});`);
+
+    if (m.responsive) {
+      for (const [bp, overrides] of Object.entries(m.responsive)) {
         if (overrides.fontSize) {
-          const bpWidth = breakpoint === 'sm' ? '480px' : breakpoint === 'md' ? '640px' : '1024px';
-          lines.push(`  @container (min-width: ${bpWidth}) {`);
-          lines.push(`    font-size: var(--font-size-${overrides.fontSize});`);
-          lines.push(`    line-height: var(--line-height-${overrides.fontSize});`);
-          lines.push('  }');
+          lines.push(`  --text-${m.name}--${bp}: var(--font-size-${overrides.fontSize});`);
+          lines.push(
+            `  --text-${m.name}--${bp}--line-height: var(--font-size-${overrides.fontSize}--line-height);`,
+          );
         }
       }
     }
 
-    lines.push('}');
+    lines.push(`  --rafters-ts-${m.name}: var(--font-${m.fontFamily});`);
+    lines.push('');
   }
 
+  lines.push('}');
   return lines.join('\n');
+}
+
+/**
+ * Emit the single @utility ts-* wildcard. Carries font-family and
+ * text-transform -- everything --text-* cannot.
+ */
+function generateTypographyCompositeUtility(compositeTokens: Token[]): string {
+  if (compositeTokens.length === 0) return '';
+
+  return [
+    '@utility ts-* {',
+    '  font-family: --value(--rafters-ts-*);',
+    '  text-transform: --value(--rafters-ts-*-transform);',
+    '}',
+  ].join('\n');
 }
 
 /**
@@ -1113,11 +1142,18 @@ export function tokensToTailwind(
     sections.push(keyframes);
   }
 
-  // Typography composite @utility classes
-  const typographyUtilities = generateTypographyCompositeUtilities(groups['typography-composite']);
-  if (typographyUtilities) {
+  // Typography composition assignments (@theme inline + ts-* utility)
+  const typographyThemeInline = generateTypographyCompositeThemeInline(
+    groups['typography-composite'],
+  );
+  if (typographyThemeInline) {
     sections.push('');
-    sections.push(typographyUtilities);
+    sections.push(typographyThemeInline);
+  }
+  const typographyTsUtility = generateTypographyCompositeUtility(groups['typography-composite']);
+  if (typographyTsUtility) {
+    sections.push('');
+    sections.push(typographyTsUtility);
   }
 
   // Depth (z-index) @utility words
@@ -1405,6 +1441,18 @@ export function registryToTailwindStatic(registry: TokenRegistry): string {
     sections.push(cellUtilities);
   }
 
+  // Typography composition assignments + ts-* utility
+  const staticTypoTheme = generateTypographyCompositeThemeInline(groups['typography-composite']);
+  if (staticTypoTheme) {
+    sections.push('');
+    sections.push(staticTypoTheme);
+  }
+  const staticTypoUtility = generateTypographyCompositeUtility(groups['typography-composite']);
+  if (staticTypoUtility) {
+    sections.push('');
+    sections.push(staticTypoUtility);
+  }
+
   // Article type system - @layer base with @apply compositions
   sections.push('');
   sections.push(generateArticleBaseLayer());
@@ -1666,6 +1714,10 @@ function deriveCandidates(themeCSS: string): string[] {
       candidates.add(name);
     } else if (name.startsWith('animate-')) {
       candidates.add(name);
+    } else if (name.startsWith('text-') && !name.includes('--')) {
+      candidates.add(`text-${name.slice(5)}`);
+    } else if (name.startsWith('rafters-ts-') && !name.includes('-transform')) {
+      candidates.add(`ts-${name.slice(11)}`);
     }
   }
 

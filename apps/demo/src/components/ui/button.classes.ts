@@ -63,9 +63,9 @@ const variantClasses: Record<ButtonVariant, string> = {
 
 const sizeClasses: Record<ButtonSize, string> = {
   default: 'h-11 px-4 py-2.5 @md:h-10 @md:py-2',
-  xs: 'h-11 px-3 text-label-small @md:h-6 @md:px-2',
-  sm: 'h-11 px-4 text-label-small @md:h-8 @md:px-3',
-  lg: 'h-12 px-6 text-label-large',
+  xs: 'h-11 px-3 ts-label-small @md:h-6 @md:px-2',
+  sm: 'h-11 px-4 ts-label-small @md:h-8 @md:px-3',
+  lg: 'h-12 px-6 ts-label-large',
   icon: 'h-11 w-11 @md:h-10 @md:w-10',
   'icon-xs': 'h-11 w-11 @md:h-6 @md:w-6',
   'icon-sm': 'h-11 w-11 @md:h-8 @md:w-8',
@@ -73,7 +73,7 @@ const sizeClasses: Record<ButtonSize, string> = {
 };
 
 const baseClasses =
-  'inline-flex items-center justify-center gap-2 rounded-md text-label-large cursor-pointer ' +
+  'inline-flex items-center justify-center gap-2 rounded-md ts-label-large cursor-pointer ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ' +
   'transition-colors duration-150 motion-reduce:transition-none ' +
   'disabled:opacity-50 disabled:cursor-not-allowed ' +

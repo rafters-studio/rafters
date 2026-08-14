@@ -34,7 +34,7 @@ describe('label conformance [react]', () => {
     render(<Label variant="destructive">Name is required</Label>);
     const root = body().querySelector('[data-part="root"]') as HTMLElement;
     expect(root.className).toContain('text-destructive');
-    expect(root.className).toContain('text-label-medium');
+    expect(root.className).toContain('ts-label-medium');
   });
 
   it('defaults to the foreground variant when none is given', () => {

@@ -32,14 +32,13 @@ export const embedFallbackClasses =
 /**
  * Fallback message text styling.
  */
-export const embedFallbackMessageClasses =
-  'mb-2 text-label-small font-medium text-muted-foreground';
+export const embedFallbackMessageClasses = 'mb-2 ts-label-small font-medium text-muted-foreground';
 
 /**
  * Fallback external link styling (Open in new tab).
  */
 export const embedFallbackLinkClasses =
-  'text-label-small text-primary underline underline-offset-4 hover:text-primary/80';
+  'ts-label-small text-primary underline underline-offset-4 hover:text-primary/80';
 
 /**
  * Accepted aspect-ratio keys shared across framework targets. Mirrors the

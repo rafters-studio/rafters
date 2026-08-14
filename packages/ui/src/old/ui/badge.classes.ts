@@ -21,9 +21,9 @@ export const badgeVariantClasses: Record<string, string> = {
 };
 
 export const badgeSizeClasses: Record<string, string> = {
-  sm: 'px-2 py-0.5 text-label-small',
-  default: 'px-2.5 py-0.5 text-label-small',
-  lg: 'px-3 py-1 text-label-medium',
+  sm: 'px-2 py-0.5 ts-label-small',
+  default: 'px-2.5 py-0.5 ts-label-small',
+  lg: 'px-3 py-1 ts-label-medium',
 };
 
 export const badgeBaseClasses =

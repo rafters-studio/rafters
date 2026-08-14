@@ -28,7 +28,7 @@ const groupClasses = 'flex items-center';
 // active from data-active, filled from data-filled, disabled from the root.
 const slotClasses =
   'relative flex h-9 w-9 items-center justify-center ' +
-  'border-y border-r border-input text-body-small shadow-sm ' +
+  'border-y border-r border-input ts-body-small shadow-sm ' +
   'transition-all duration-150 motion-reduce:transition-none ' +
   'first:rounded-l-md first:border-l last:rounded-r-md ' +
   'data-[active=true]:z-10 data-[active=true]:ring-1 data-[active=true]:ring-ring ' +

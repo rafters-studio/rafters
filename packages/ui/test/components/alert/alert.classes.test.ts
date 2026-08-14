@@ -55,8 +55,8 @@ describe('alert classes', () => {
   });
 
   it('title/description/action are config-independent literals', () => {
-    expect(alertTitleClasses).toBe('mb-1 text-title-small leading-none');
-    expect(alertDescriptionClasses).toBe('text-body-small [&_p]:leading-relaxed');
+    expect(alertTitleClasses).toBe('mb-1 ts-title-small leading-none');
+    expect(alertDescriptionClasses).toBe('ts-body-small [&_p]:leading-relaxed');
     expect(alertActionClasses).toBe('ml-auto shrink-0');
   });
 });

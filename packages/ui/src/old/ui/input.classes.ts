@@ -25,7 +25,7 @@ export const inputVariantClasses: Record<string, string> = {
 };
 
 export const inputSizeClasses: Record<string, string> = {
-  sm: 'h-8 px-2 text-label-small',
-  default: 'h-10 px-3 text-body-small',
-  lg: 'h-12 px-4 text-body-medium',
+  sm: 'h-8 px-2 ts-label-small',
+  default: 'h-10 px-3 ts-body-small',
+  lg: 'h-12 px-4 ts-body-medium',
 };

@@ -62,13 +62,13 @@ describe('Item', () => {
     );
 
     expect(screen.getByText('Small').parentElement?.parentElement?.className).toContain(
-      'text-label-small',
+      'ts-label-small',
     );
     expect(screen.getByText('Default').parentElement?.parentElement?.className).toContain(
-      'text-body-small',
+      'ts-body-small',
     );
     expect(screen.getByText('Large').parentElement?.parentElement?.className).toContain(
-      'text-body-medium',
+      'ts-body-medium',
     );
   });
 
