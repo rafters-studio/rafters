@@ -1,8 +1,12 @@
 # rafters
 
-## Unreleased
+## 0.0.79
 
 ### Features
+
+- feat(design-tokens): typography system -- `@theme inline` assignments + `ts-*` utility (#2038). Replace 14 hardcoded `@utility text-{role}` blocks with `@theme inline` entries selecting scale positions via `var()`. Tailwind generates `.text-{name}` utilities natively from `--text-{name}` entries with sub-keys for line-height, letter-spacing, and font-weight. A single `@utility ts-*` wildcard carries font-family and text-transform via `--value()`, with `@container` blocks for CQ-responsive overrides. Components use dual classes (`text-body-small ts-body-small`) -- `text-*` carries type metrics, `ts-*` carries extras. Article layer rewired from raw Tailwind to composition references. Type component added to the demo with `as` prop for designer-authored compositions.
+
+- fix(design-tokens): documentation CSS export receives `contentSources` (#2039). The call site was not threading `contentSources` to `registryToDocumentation()`, so the documentation sheet contained only token-derived candidates and no structural utilities (`.flex`, `.w-full`, `.items-center`, etc.). Regression tests guard both the with/without paths.
 
 - feat(registry): sub-components are addressable by name -- `rafters add card-header` now serves instead of 404ing (#2019). Resolution assumed every component owns a directory (`<components>/<name>/<name>.ext`), so any part living beside its parent -- `card/card-header.astro`, and the same shape wherever a sub-component shares the parent's `.classes.ts` -- had no name of its own. A consumer who wrote `import CardHeader from '@/components/ui/card-header.astro'` (the shadcn-shaped import, and what four live call sites already write) could install `card` but could not install or resolve `card-header`, and the 404 read as an intentional API rather than the defect it was. Resolution now trims trailing `-segment`s off the name to find the owning parent directory, and a directory of the component's own always wins, so `alert-dialog` and `hover-card` keep resolving to themselves rather than to `alert`/`hover`. A served sub-component bundles the parent shared file it imports at the same install path, so its `./card.classes` import resolves on install rather than dangling. The registry index lists these names, and the parent still ships whole. The mechanism is general: a sub-component becomes addressable the moment its file lands beside its parent -- no directory and no registry change. It does not invent files, so a name with no file behind it (`typography-h1`, which does not exist in this tree) still returns null.
 
