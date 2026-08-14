@@ -117,9 +117,11 @@ export function focusFirst(content: HTMLElement | null): void {
   focusable?.focus();
 }
 
-function numberAttribute(root: HTMLElement, name: string): number | undefined {
-  const raw = root.getAttribute(name);
-  if (raw === null) return undefined;
+/** Config travels as `data-*` and nothing else (#2001/#2004), so the read is
+ *  `dataset` by camelCase key -- `data-side-offset` is dataset.sideOffset. */
+function numberData(root: HTMLElement, key: string): number | undefined {
+  const raw = root.dataset[key];
+  if (raw === undefined) return undefined;
   const value = Number(raw);
   return Number.isNaN(value) ? undefined : value;
 }
@@ -138,15 +140,15 @@ function numberAttribute(root: HTMLElement, name: string): number | undefined {
  */
 export function bindPopover(root: HTMLElement): () => void {
   const contentEl = root.querySelector<HTMLElement>('[data-part="content"]');
+  const data = root.dataset;
   const config: PopoverConfig = {
-    defaultOpen:
-      root.getAttribute('default-open') === 'true' || contentEl?.dataset['state'] === 'open',
+    defaultOpen: data['defaultOpen'] === 'true' || contentEl?.dataset['state'] === 'open',
   };
   const positionOptions: PopoverPositionOptions = {
-    side: (root.getAttribute('side') as Side | null) ?? undefined,
-    align: (root.getAttribute('align') as Align | null) ?? undefined,
-    sideOffset: numberAttribute(root, 'side-offset'),
-    alignOffset: numberAttribute(root, 'align-offset'),
+    side: (data['side'] as Side | undefined) ?? undefined,
+    align: (data['align'] as Align | undefined) ?? undefined,
+    sideOffset: numberData(root, 'sideOffset'),
+    alignOffset: numberData(root, 'alignOffset'),
   };
 
   const getPart = (part: string): HTMLElement | null =>

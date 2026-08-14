@@ -47,6 +47,7 @@ import * as React from 'react';
 import { createBehavior, type AriaAttrs, type PartIds } from '@/lib/contract';
 import { keyInputOf } from '@/hooks/key-input';
 import { useMemory } from '@/hooks/use-memory';
+import { usePresence } from '@/hooks/use-presence';
 import classy from '@/lib/primitives/classy';
 import { mergeProps } from '@/lib/primitives/slot';
 import {
@@ -281,11 +282,28 @@ export function DropdownMenuContent({
   ...props
 }: DropdownMenuContentProps) {
   const { ids, aria, effectiveOpen, classes } = useDropdownMenuContext('DropdownMenuContent');
+  // The menu lives in light DOM, so presence here gates `hidden` rather than a
+  // mount -- but the mechanism is identical. `hidden` is `display: none`, and an
+  // element LEAVING display:none starts its animation exactly as a mounting one
+  // does, so enter needs no @starting-style; exit needs `hidden` withheld until
+  // the keyframe has run, which is what holding `present` buys.
+  const { present, ref: presenceRef } = usePresence(effectiveOpen);
 
+  // `ref` rides partProps so the asChild branch gets it: presence waiting on a
+  // node that never received the exit classes is a wedge, and asChild is the
+  // path where that silently happens. `data-state` does NOT ride it -- it comes
+  // from disclosable via `aria.content`, spread below, off the same effective-
+  // open value presence is given. One writer per attribute.
   const partProps = {
     'data-part': 'content',
     id: ids.content,
-    hidden: effectiveOpen ? undefined : true,
+    ref: presenceRef,
+    // Inert, not hidden, for the exit window (the ratified ruling). `hidden` is
+    // display:none and would kill the exit keyframe outright; inert leaves the
+    // menu rendering while removing it from the a11y tree, the tab order, and
+    // hit-testing. `hidden` still lands, but only AFTER the exit has run.
+    inert: effectiveOpen ? undefined : true,
+    hidden: present ? undefined : true,
     ...aria.content,
   };
 

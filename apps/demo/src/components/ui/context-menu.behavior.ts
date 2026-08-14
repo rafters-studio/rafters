@@ -356,9 +356,12 @@ export function bindContextSubMenu(
   const subContent = subEl.querySelector<HTMLElement>('[data-part="sub-content"]');
   if (!subTrigger || !subContent) return { teardown: () => {}, close: () => {} };
 
+  // Config travels as `data-*` and nothing else (#2001) -- `loop` and
+  // `avoid-collisions` are not valid attributes on a <div>, and only `data-*`
+  // reaches `dataset`.
   const config: ContextSubMenuConfig = {
-    loop: subEl.getAttribute('loop') !== 'false',
-    avoidCollisions: subEl.getAttribute('avoid-collisions') !== 'false',
+    loop: subEl.dataset['loop'] !== 'false',
+    avoidCollisions: subEl.dataset['avoidCollisions'] !== 'false',
   };
 
   // Move the sub-content out of the parent menu (see doc above). The original
@@ -532,11 +535,11 @@ export function bindContextMenu(root: HTMLElement): () => void {
     part === 'root' ? root : root.querySelector<HTMLElement>(`[data-part="${part}"]`);
 
   const content = getPart('content');
+  // Config travels as `data-*` and nothing else (#2001) -- see bindContextSubMenu.
   const config: ContextMenuConfig = {
-    defaultOpen:
-      root.getAttribute('default-open') === 'true' || content?.dataset['state'] === 'open',
-    loop: root.getAttribute('loop') !== 'false',
-    avoidCollisions: root.getAttribute('avoid-collisions') !== 'false',
+    defaultOpen: root.dataset['defaultOpen'] === 'true' || content?.dataset['state'] === 'open',
+    loop: root.dataset['loop'] !== 'false',
+    avoidCollisions: root.dataset['avoidCollisions'] !== 'false',
   };
 
   const { memory, dispatch } = createBehavior(contextMenu, config);

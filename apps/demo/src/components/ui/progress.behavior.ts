@@ -122,40 +122,45 @@ export const progress: BehaviorSpec<ProgressConfig, ProgressState, ProgressActio
     keymap: () => null,
   };
 
-function parseVariant(raw: string | null): ProgressVariant {
+function parseVariant(raw: string | undefined): ProgressVariant {
   if (raw && (ALLOWED_VARIANTS as ReadonlyArray<string>).includes(raw)) {
     return raw as ProgressVariant;
   }
   return 'default';
 }
 
-function parseSize(raw: string | null): ProgressSize {
+function parseSize(raw: string | undefined): ProgressSize {
   if (raw && (ALLOWED_SIZES as ReadonlyArray<string>).includes(raw)) {
     return raw as ProgressSize;
   }
   return 'default';
 }
 
-function parseNumber(raw: string | null): number | undefined {
-  if (raw === null) return undefined;
+function parseNumber(raw: string | undefined): number | undefined {
+  if (raw === undefined) return undefined;
   const n = Number(raw);
   return Number.isFinite(n) ? n : undefined;
 }
 
 /**
- * Reconstruct the score's config from a root element's attributes -- the
- * inverse of the SSR/WC markup. Shared by bindProgress and the Web Component
- * so the two never drift on how an attribute maps to config. `aria-label` is
- * NOT read here: it is a native passthrough attribute on the progressbar
- * (host === root), left untouched by the projection.
+ * Reconstruct the score's config from a root element's `data-*` attributes --
+ * the inverse of the SSR/WC markup. Shared by bindProgress and the Web
+ * Component so the two never drift on how an attribute maps to config.
+ *
+ * Config travels as `data-*` and nothing else (#2001). `value`/`max` are real
+ * attributes on <progress>, not on the <div> this root actually is, and `size`
+ * is real on input/select -- borrowing them here was invalid markup that never
+ * reached `dataset`. `aria-label` is NOT read here: it is a native passthrough
+ * on the progressbar (host === root), left untouched by the projection.
  */
 export function readProgressConfig(root: HTMLElement): ProgressConfig {
+  const data = root.dataset;
   return {
-    value: parseNumber(root.getAttribute('value')),
-    max: parseNumber(root.getAttribute('max')),
-    valueText: root.getAttribute('value-text') ?? undefined,
-    variant: parseVariant(root.getAttribute('variant')),
-    size: parseSize(root.getAttribute('size')),
+    value: parseNumber(data['value']),
+    max: parseNumber(data['max']),
+    valueText: data['valueText'],
+    variant: parseVariant(data['variant']),
+    size: parseSize(data['size']),
   };
 }
 

@@ -1,0 +1,18 @@
+---
+/**
+ * CardFooter -- trailing controls row. Horizontal inset only (`px-6`); the
+ * root owns the vertical rhythm.
+ *
+ * `class` is NOT a prop; design travels through token props only.
+ */
+import type { HTMLAttributes } from 'astro/types';
+import { cardFooterClasses } from '@/components/ui/card.classes';
+
+type Props = Omit<HTMLAttributes<'div'>, 'class'>;
+
+const { class: _discardedClass, ...attrs } = Astro.props as Props & { class?: string };
+---
+
+<div data-slot="card-footer" class={cardFooterClasses} {...attrs}>
+  <slot />
+</div>

@@ -5,8 +5,16 @@ export interface HoverCardClassSet {
   content: string;
 }
 
-// The trigger is a bare inline anchor: the consumer's link keeps its own type,
-// underline, and focus affordances. Hover-card adds no chrome to it.
+// The DOM-native root is a binding host, not a box: it carries data-part="root"
+// and the config, and NO class -- a behavior root never styles itself; layout
+// belongs to the consumer's Container/Grid (operator ruling, 2026-08-02). With
+// no class the unclassed <div> root is a BLOCK box, so a hover-card is composed
+// by Container like any other component -- it is not dropped mid-sentence into
+// running text.
+
+// Inside that root the trigger is still an inline-flex anchor: the consumer's
+// link keeps its own type, underline, and focus affordances, and hover-card
+// adds no chrome to it.
 const triggerClasses = 'inline-flex';
 
 // The preview panel sits on the popover depth token (not a raw z-index), fills

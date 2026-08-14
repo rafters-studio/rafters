@@ -22,13 +22,27 @@ const triggerClasses =
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
 
 // z-depth-dropdown is the semantic depth token; fill (bg-popover), not a raw
-// color. Enter/exit motion is intentionally UNDECLARED -- see the component doc:
-// the semantic motion-dropdown-in/-out utilities are not yet emitted by the
-// token layer (#1899/#1902-1904), and the oracle's animate-in/zoom/fade/slide
-// string is the prohibited hand-rolled form (05-authoring, MOTION.md).
+// color. Enter/exit is PRESENCE (#1996): the menu is present-but-hidden, so the
+// keyframe starts as the node leaves display:none -- no @starting-style -- and
+// usePresence withholds `hidden` until the exit keyframe ends.
+//
+// THE CELL IS THE SPEC (#2017). These two utilities are the generated
+// consumption of two rows of packages/ui/docs/spec/matrix/motion.jsonl --
+// dropdown-menu / content / closed -> open (moderate, enter, extent pop) and
+// dropdown-menu / content / open -> closed (fast, exit, extent pop). The
+// assignments match popover's today and the cells stay SEPARATE anyway: the
+// matrix declares two moments, and the day one is retuned a shared name would
+// drag the other with it. Collapsing distinct cells is the #2012 defect.
+//
+// NO motion-reduce:animate-none -- the generated utility zeroes
+// animation-duration under the media query instead, which keeps the end state
+// and keeps animationend firing for presence.
 const contentClasses =
   'z-depth-dropdown min-w-32 overflow-hidden rounded-md border bg-popover p-1 ' +
-  'text-popover-foreground shadow-lg';
+  'text-popover-foreground shadow-lg ' +
+  'data-[state=open]:animate-dropdown-menu-content-open ' +
+  'data-[state=closed]:animate-dropdown-menu-content-close ' +
+  'data-[state=closed]:pointer-events-none';
 
 // The active item is the roving-focus current item, styled via :focus. No
 // data-highlighted axis (the highlight is ephemeral DOM focus, not score state).

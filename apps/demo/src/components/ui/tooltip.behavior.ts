@@ -10,18 +10,46 @@ import {
 } from '@/lib/disclosable';
 import { computePosition } from '@/lib/primitives/collision-detector';
 import { createControlledHoverDelay } from '@/lib/primitives/hover-delay';
+import { motionDelayMs } from '@/lib/primitives/motion-tokens';
 import { updateAriaAttribute } from '@/lib/primitives/aria-manager';
 import type { Align, Side } from '@/lib/primitives/types';
 
-/** The default hover-open delay, ms (matches the oracle's 700ms). */
-export const DEFAULT_DELAY_DURATION = 700;
-/** The default hover-close delay, ms (matches the oracle's 300ms). */
-export const DEFAULT_SKIP_DELAY_DURATION = 300;
+/**
+ * The hover-open delay, read from `--rafters-delay-hover-intent`.
+ *
+ * The tooltip used to carry its own 700ms literal. The motion matrix assigns
+ * this cell the `hover-intent` delay generic (motion.jsonl, tooltip/content/
+ * "closed -> open"), so the value now comes from the system token like every
+ * other motion decision -- one fast, everywhere, always. Under reduced motion
+ * the accessor resolves it to zero.
+ */
+export function tooltipOpenDelay(element?: Element | null): number {
+  return motionDelayMs('hover-intent', { element });
+}
+
+/**
+ * The close delay, read from `--rafters-delay-linger`.
+ *
+ * NOT `delay-skip`, despite the prop being named `skipDelayDuration` after the
+ * oracle. What this delay actually governs is how long the tip stays after the
+ * pointer leaves, so a near-miss on the way to the content is forgiven -- which
+ * is `linger`, verbatim. `skip` is the warm-reopen grace: reopen inside it and
+ * the ENTRANCE delay is skipped. `hover-delay` has no warm-reopen mechanism to
+ * hang that on (`skipDelays` there is an unconditional boolean, not a window),
+ * so `delay-skip` stays without a consumer rather than being mislabelled onto
+ * this one. Both members happen to sit at 300ms today, which is exactly why the
+ * confusion would have gone unnoticed.
+ */
+export function tooltipCloseDelay(element?: Element | null): number {
+  return motionDelayMs('linger', { element });
+}
 
 export interface TooltipConfig extends DisclosableConfig {
-  /** Delay before a hovered/focused trigger opens the tip. Default 700ms. */
+  /** Delay before a hovered/focused trigger opens the tip. Unset reads
+   *  `--rafters-delay-hover-intent` via {@link tooltipOpenDelay}. */
   delayDuration?: number | undefined;
-  /** Delay before an un-hovered trigger closes the tip. Default 300ms. */
+  /** Delay before an un-hovered trigger closes the tip. Unset reads
+   *  `--rafters-delay-linger` via {@link tooltipCloseDelay}. */
   skipDelayDuration?: number | undefined;
   /** When true, moving the pointer onto the content does NOT hold it open.
    *  Default false (content is hoverable). */
@@ -138,23 +166,46 @@ export function bindTooltip(root: HTMLElement): () => void {
   const getPart = (part: string): HTMLElement | null =>
     part === 'root' ? root : root.querySelector<HTMLElement>(`[data-part="${part}"]`);
 
-  const numAttr = (name: string, fallback: number): number => {
-    const raw = root.getAttribute(name);
-    if (raw === null) return fallback;
+  // Config travels as `data-*` and nothing else (#2001/#2004), so the read is
+  // `dataset` by camelCase key -- `data-delay-duration` is dataset.delayDuration.
+  // The fallback is a THUNK, not a value: an attribute that IS present must not
+  // pay for -- or be broken by -- a token read it will discard. A malformed
+  // unrelated custom property makes the accessor throw by design (#1995 fail
+  // loud), and an eager argument would have made that throw reach an element
+  // that never asked for the token. Same lazy convention as
+  // navigation-menu.behavior.ts, and the same `Number()` parse.
+  //
+  // Absence is `undefined` OR the empty string (#2011): a present-but-blank
+  // `data-delay-duration=""` carries no number, and `Number('')` is 0, so
+  // without the explicit check a blank attribute would become a silent 0ms
+  // delay instead of falling back to the token. An explicit `"0"` still means
+  // a real zero.
+  const data = root.dataset;
+  const numData = (key: string, fallback: () => number): number => {
+    const raw = data[key];
+    if (raw === undefined || raw === '') return fallback();
     const parsed = Number(raw);
-    return Number.isFinite(parsed) ? parsed : fallback;
+    return Number.isFinite(parsed) ? parsed : fallback();
   };
+
+  // Hoisted: the score's config and the hover-delay primitive read the SAME
+  // resolved number, so there is no second read to disagree with the first.
+  const openDelayMs = numData('delayDuration', () => tooltipOpenDelay(root));
+  const closeDelayMs = numData('skipDelayDuration', () => tooltipCloseDelay(root));
 
   const content = getPart('content');
   const config: TooltipConfig = {
-    delayDuration: numAttr('delay-duration', DEFAULT_DELAY_DURATION),
-    skipDelayDuration: numAttr('skip-delay-duration', DEFAULT_SKIP_DELAY_DURATION),
-    disableHoverableContent: root.getAttribute('disable-hoverable-content') === 'true',
-    defaultOpen:
-      root.getAttribute('default-open') === 'true' || content?.dataset['state'] === 'open',
-    side: (root.getAttribute('side') as Side | null) ?? undefined,
-    align: (root.getAttribute('align') as Align | null) ?? undefined,
-    sideOffset: root.hasAttribute('side-offset') ? numAttr('side-offset', 4) : undefined,
+    delayDuration: openDelayMs,
+    skipDelayDuration: closeDelayMs,
+    disableHoverableContent: data['disableHoverableContent'] === 'true',
+    defaultOpen: data['defaultOpen'] === 'true' || content?.dataset['state'] === 'open',
+    side: (data['side'] as Side | undefined) ?? undefined,
+    align: (data['align'] as Align | undefined) ?? undefined,
+    // Non-empty presence, not truthiness: `data-side-offset="0"` is a real 0px
+    // offset, while a blank `data-side-offset=""` is absence and takes the 4px
+    // default -- `numData` rejects the empty string, so both the blank and the
+    // wholly absent attribute land on the same 4.
+    sideOffset: 'sideOffset' in data ? numData('sideOffset', () => 4) : undefined,
   };
 
   const { memory, dispatch } = createBehavior(tooltip, config);
@@ -186,8 +237,8 @@ export function bindTooltip(root: HTMLElement): () => void {
   // Hover-intent timing composed from the primitive. onOpen/onClose flow
   // through the idempotent dispatch, so the score stays the single truth.
   const hover = createControlledHoverDelay({
-    openDelay: config.delayDuration ?? DEFAULT_DELAY_DURATION,
-    closeDelay: config.skipDelayDuration ?? DEFAULT_SKIP_DELAY_DURATION,
+    openDelay: openDelayMs,
+    closeDelay: closeDelayMs,
     onOpen: () => request('open'),
     onClose: () => request('close'),
   });
