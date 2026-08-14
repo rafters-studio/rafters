@@ -8,11 +8,11 @@ export interface KbdClassSet {
  * The whole cap: an inline, bordered, muted chip carrying the key text at the
  * code-small type scale. Ported verbatim from the oracle
  * (`src/old/ui/kbd.classes.ts`). Every token is a semantic role utility
- * (`border-border`, `bg-muted`, `ts-code-small`, `text-muted-foreground`) --
+ * (`border-border`, `bg-muted`, `text-code-small ts-code-small`, `text-muted-foreground`) --
  * no raw spacing, color, or z-index utility.
  */
 export const kbdBaseClasses =
-  'inline-flex items-center justify-center rounded border border-border bg-muted px-1.5 py-0.5 ts-code-small text-muted-foreground shadow-sm';
+  'inline-flex items-center justify-center rounded border border-border bg-muted px-1.5 py-0.5 text-code-small ts-code-small text-muted-foreground shadow-sm';
 
 /**
  * Shape per Spec 01: `kbdClasses(config, state) => { root }`. Kbd carries no

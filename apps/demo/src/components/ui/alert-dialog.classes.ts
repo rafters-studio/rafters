@@ -28,22 +28,22 @@ const headerClasses = 'flex flex-col space-y-2 text-center @md:text-left';
 
 const footerClasses = 'flex flex-col-reverse @md:flex-row @md:justify-end @md:space-x-2';
 
-const titleClasses = 'ts-title-medium leading-none';
+const titleClasses = 'text-title-medium ts-title-medium leading-none';
 
-const descriptionClasses = 'ts-body-small text-muted-foreground';
+const descriptionClasses = 'text-body-small ts-body-small text-muted-foreground';
 
 // Interaction motion (hover/focus color transition) is deliberately undeclared:
 // the semantic motion token for it does not exist yet (#1902) and a raw numeric
 // duration is drift. Colour, ring and disabled states are token-based.
 const actionClasses =
   'inline-flex h-11 items-center justify-center rounded-md bg-destructive px-4 py-2 ' +
-  'ts-label-medium text-destructive-foreground ring-offset-background ' +
+  'text-label-medium ts-label-medium text-destructive-foreground ring-offset-background ' +
   'hover:bg-destructive/90 focus-visible:outline-none focus-visible:ring-2 ' +
   'focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50';
 
 const cancelClasses =
   'mt-2 inline-flex h-11 items-center justify-center rounded-md border border-input bg-card px-4 py-2 ' +
-  'ts-label-medium ring-offset-background hover:bg-accent hover:text-accent-foreground ' +
+  'text-label-medium ts-label-medium ring-offset-background hover:bg-accent hover:text-accent-foreground ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ' +
   'disabled:pointer-events-none disabled:opacity-50 @md:mt-0';
 

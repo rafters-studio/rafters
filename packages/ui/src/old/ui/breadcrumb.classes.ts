@@ -4,7 +4,7 @@
  */
 
 export const breadcrumbListClasses =
-  'flex flex-wrap items-center gap-1.5 break-words ts-label-medium text-muted-foreground @sm:gap-2.5';
+  'flex flex-wrap items-center gap-1.5 break-words text-label-medium ts-label-medium text-muted-foreground @sm:gap-2.5';
 
 export const breadcrumbItemClasses = 'inline-flex items-center gap-1.5';
 

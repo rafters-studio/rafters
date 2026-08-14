@@ -18,14 +18,14 @@ const cardSurfaceClasses = 'bg-card text-card-foreground';
 /**
  * Sub-part classes are config-independent literals, so the framework files
  * import them directly (no context/provider needed for a flat static). Ported
- * verbatim from the oracle's settled composition; `ts-title-medium` /
- * `ts-body-small` are the semantic typography role tokens.
+ * verbatim from the oracle's settled composition; `text-title-medium ts-title-medium` /
+ * `text-body-small ts-body-small` are the semantic typography role tokens.
  */
 export const cardHeaderClasses = 'flex flex-col gap-1.5 p-6';
 
-export const cardTitleClasses = 'ts-title-medium leading-none';
+export const cardTitleClasses = 'text-title-medium ts-title-medium leading-none';
 
-export const cardDescriptionClasses = 'ts-body-small text-muted-foreground';
+export const cardDescriptionClasses = 'text-body-small ts-body-small text-muted-foreground';
 
 export const cardContentClasses = 'p-6 pt-0';
 

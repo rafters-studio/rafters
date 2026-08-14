@@ -754,18 +754,18 @@ function generateTypographyCompositeThemeInline(compositeTokens: Token[]): strin
     lines.push(`  --text-${m.name}--letter-spacing: ${trackingRef(m.letterSpacing)};`);
     lines.push(`  --text-${m.name}--font-weight: var(--font-weight-${m.fontWeight});`);
 
+    lines.push(`  --rafters-ts-${m.name}: var(--font-${m.fontFamily});`);
+
     if (m.responsive) {
       for (const [bp, overrides] of Object.entries(m.responsive)) {
         if (overrides.fontSize) {
-          lines.push(`  --text-${m.name}--${bp}: var(--font-size-${overrides.fontSize});`);
+          lines.push(`  --rafters-ts-${m.name}-${bp}: var(--font-size-${overrides.fontSize});`);
           lines.push(
-            `  --text-${m.name}--${bp}--line-height: var(--font-size-${overrides.fontSize}--line-height);`,
+            `  --rafters-ts-${m.name}-${bp}-leading: var(--font-size-${overrides.fontSize}--line-height);`,
           );
         }
       }
     }
-
-    lines.push(`  --rafters-ts-${m.name}: var(--font-${m.fontFamily});`);
     lines.push('');
   }
 
@@ -784,6 +784,14 @@ function generateTypographyCompositeUtility(compositeTokens: Token[]): string {
     '@utility ts-* {',
     '  font-family: --value(--rafters-ts-*);',
     '  text-transform: --value(--rafters-ts-*-transform);',
+    '  @container (min-width: 640px) {',
+    '    font-size: --value(--rafters-ts-*-md);',
+    '    line-height: --value(--rafters-ts-*-md-leading);',
+    '  }',
+    '  @container (min-width: 1024px) {',
+    '    font-size: --value(--rafters-ts-*-lg);',
+    '    line-height: --value(--rafters-ts-*-lg-leading);',
+    '  }',
     '}',
   ].join('\n');
 }
@@ -1716,7 +1724,7 @@ function deriveCandidates(themeCSS: string): string[] {
       candidates.add(name);
     } else if (name.startsWith('text-') && !name.includes('--')) {
       candidates.add(`text-${name.slice(5)}`);
-    } else if (name.startsWith('rafters-ts-') && !name.includes('-transform')) {
+    } else if (name.startsWith('rafters-ts-') && !name.endsWith('-transform')) {
       candidates.add(`ts-${name.slice(11)}`);
     }
   }

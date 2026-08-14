@@ -35,7 +35,7 @@ const headingClasses = 'flex';
 // duration-300`, which was both off the perceptual scale and untethered to a
 // token. The header's interactive feedback declares its intent by name.
 const triggerClasses =
-  'group flex flex-1 items-center justify-between py-4 ts-title-small motion-hover ' +
+  'group flex flex-1 items-center justify-between py-4 text-title-small ts-title-small motion-hover ' +
   'hover:underline ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ' +
   'disabled:pointer-events-none disabled:opacity-50';
@@ -60,7 +60,7 @@ const triggerIconClasses = 'h-4 w-4 shrink-0 motion-toggle group-data-[state=ope
 // pins the floor to 0 so the row truly collapses. Verified in a browser --
 // happy-dom does no layout and cannot catch this.
 const contentClasses =
-  'grid ts-body-small ' +
+  'grid text-body-small ts-body-small ' +
   'data-[state=closed]:grid-rows-[minmax(0,0fr)] data-[state=open]:grid-rows-[minmax(0,1fr)] ' +
   'data-[state=closed]:opacity-0 data-[state=open]:opacity-100 ' +
   'data-[state=open]:motion-expand data-[state=closed]:motion-collapse';

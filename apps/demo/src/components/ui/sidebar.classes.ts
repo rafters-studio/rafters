@@ -102,7 +102,7 @@ const contentClasses =
 const groupClasses = 'relative flex w-full min-w-0 flex-col p-2';
 
 const groupLabelClasses =
-  'flex h-8 shrink-0 items-center rounded-md px-2 ts-label-small text-sidebar-foreground/70 ' +
+  'flex h-8 shrink-0 items-center rounded-md px-2 text-label-small ts-label-small text-sidebar-foreground/70 ' +
   'outline-none ring-sidebar-ring focus-visible:ring-2 ' +
   'group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0';
 
@@ -121,7 +121,7 @@ const menuItemClasses = 'group/menu-item relative';
 
 const menuButtonBaseClasses =
   'peer/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left ' +
-  'ts-label-medium outline-none ring-sidebar-ring transition-colors duration-150 ' +
+  'text-label-medium ts-label-medium outline-none ring-sidebar-ring transition-colors duration-150 ' +
   'motion-reduce:transition-none hover:bg-sidebar-accent hover:text-sidebar-accent-foreground ' +
   'focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground ' +
   'disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none ' +
@@ -131,8 +131,8 @@ const menuButtonBaseClasses =
 
 const menuButtonSizeClasses: Record<'default' | 'sm' | 'lg', string> = {
   default: '',
-  sm: 'ts-label-small',
-  lg: 'ts-label-medium group-data-[collapsible=icon]:p-0',
+  sm: 'text-label-small ts-label-small',
+  lg: 'text-label-medium ts-label-medium group-data-[collapsible=icon]:p-0',
 };
 
 const menuButtonOutlineClasses =
@@ -167,7 +167,7 @@ const menuActionShowOnHoverClasses =
 
 const menuBadgeClasses =
   'pointer-events-none absolute right-1 flex h-5 min-w-5 select-none items-center justify-center ' +
-  'rounded-md px-1 ts-label-small tabular-nums text-sidebar-foreground ' +
+  'rounded-md px-1 text-label-small ts-label-small tabular-nums text-sidebar-foreground ' +
   'peer-hover/menu-button:text-sidebar-accent-foreground ' +
   'peer-data-[active=true]/menu-button:text-sidebar-accent-foreground ' +
   'group-data-[collapsible=icon]:hidden';
@@ -194,8 +194,8 @@ const menuSubButtonBaseClasses =
   'data-[active=true]:text-sidebar-accent-foreground';
 
 const menuSubButtonSizeClasses: Record<'sm' | 'md', string> = {
-  sm: 'ts-label-small',
-  md: 'ts-label-medium',
+  sm: 'text-label-small ts-label-small',
+  md: 'text-label-medium ts-label-medium',
 };
 
 /** The submenu button class: base signature plus size. */

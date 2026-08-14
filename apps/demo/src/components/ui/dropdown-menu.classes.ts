@@ -33,7 +33,7 @@ const contentClasses =
 // The active item is the roving-focus current item, styled via :focus. No
 // data-highlighted axis (the highlight is ephemeral DOM focus, not score state).
 const itemBase =
-  'relative flex cursor-default select-none items-center rounded-sm ts-body-small outline-none ' +
+  'relative flex cursor-default select-none items-center rounded-sm text-body-small ts-body-small outline-none ' +
   'focus:bg-accent focus:text-accent-foreground ' +
   'data-[disabled]:pointer-events-none data-[disabled]:opacity-50';
 
@@ -51,9 +51,9 @@ const radioDotClasses = 'h-2 w-2 rounded-full bg-current';
 
 const separatorClasses = '-mx-1 my-1 h-px border-0 bg-muted';
 
-const shortcutClasses = 'ml-auto ts-shortcut opacity-60';
+const shortcutClasses = 'ml-auto text-shortcut ts-shortcut opacity-60';
 
-const labelClasses = 'px-2 py-1.5 ts-label-medium';
+const labelClasses = 'px-2 py-1.5 text-label-medium ts-label-medium';
 
 const groupClasses = '';
 

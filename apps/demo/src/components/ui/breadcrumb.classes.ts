@@ -4,13 +4,13 @@
  * lives on the consumer-composed sub-parts. These are config-independent
  * literals, so the framework files import them directly (no context/provider
  * needed for a flat static) -- ported verbatim from the oracle's settled
- * composition. `ts-label-medium` / `text-foreground` / `text-muted-foreground`
+ * composition. `text-label-medium ts-label-medium` / `text-foreground` / `text-muted-foreground`
  * are the semantic role tokens; `transition-colors` is the sole motion intent
  * (link hover colour), recorded in the matrix as `motion.current`.
  */
 
 export const breadcrumbListClasses =
-  'flex flex-wrap items-center gap-1.5 break-words ts-label-medium text-muted-foreground @sm:gap-2.5';
+  'flex flex-wrap items-center gap-1.5 break-words text-label-medium ts-label-medium text-muted-foreground @sm:gap-2.5';
 
 export const breadcrumbItemClasses = 'inline-flex items-center gap-1.5';
 

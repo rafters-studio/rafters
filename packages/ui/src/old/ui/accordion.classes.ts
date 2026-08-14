@@ -10,7 +10,7 @@ export const accordionItemClasses = 'border-b';
 export const accordionTriggerHeadingClasses = 'flex';
 
 export const accordionTriggerClasses =
-  'group flex flex-1 items-center justify-between py-4 ts-title-small transition-all duration-300 motion-reduce:transition-none ' +
+  'group flex flex-1 items-center justify-between py-4 text-title-small ts-title-small transition-all duration-300 motion-reduce:transition-none ' +
   'hover:underline ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ' +
   'disabled:pointer-events-none disabled:opacity-50';
@@ -22,7 +22,7 @@ export const accordionTriggerIconClasses =
   'group-data-[state=open]:rotate-180';
 
 export const accordionContentClasses =
-  'overflow-hidden ts-body-small transition-all duration-300 motion-reduce:transition-none ' +
+  'overflow-hidden text-body-small ts-body-small transition-all duration-300 motion-reduce:transition-none ' +
   'data-[state=closed]:animate-accordion-up ' +
   'data-[state=open]:animate-accordion-down';
 

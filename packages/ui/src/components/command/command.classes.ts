@@ -24,26 +24,26 @@ const inputWrapperClasses = 'flex items-center gap-2 border-b px-3';
 const inputIconClasses = 'size-4 shrink-0 opacity-50';
 
 const inputClasses =
-  'flex h-11 @md:h-10 w-full rounded-md bg-transparent py-3 ts-body-small outline-none ' +
+  'flex h-11 @md:h-10 w-full rounded-md bg-transparent py-3 text-body-small ts-body-small outline-none ' +
   'placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50';
 
 const listClasses = 'max-h-80 overflow-y-auto overflow-x-hidden p-1';
 
-const emptyClasses = 'py-6 text-center ts-body-small';
+const emptyClasses = 'py-6 text-center text-body-small ts-body-small';
 
 const groupClasses = 'overflow-hidden p-1 text-foreground';
 
-const groupHeadingClasses = 'px-2 py-1.5 ts-label-small text-muted-foreground';
+const groupHeadingClasses = 'px-2 py-1.5 text-label-small ts-label-small text-muted-foreground';
 
 const itemClasses =
   'relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 ' +
-  'ts-body-small outline-none transition-colors motion-reduce:transition-none ' +
+  'text-body-small ts-body-small outline-none transition-colors motion-reduce:transition-none ' +
   'data-[selected]:bg-accent data-[selected]:text-accent-foreground ' +
   'data-[disabled]:pointer-events-none data-[disabled]:opacity-50';
 
 const separatorClasses = '-mx-1 h-px bg-border';
 
-const shortcutClasses = 'ml-auto ts-shortcut tracking-widest text-muted-foreground';
+const shortcutClasses = 'ml-auto text-shortcut ts-shortcut tracking-widest text-muted-foreground';
 
 // The dialog wrapper is the overlay variant. Enter/exit motion is intentionally
 // left undeclared: the semantic motion tokens (motion-modal-in/-out, #1899) do

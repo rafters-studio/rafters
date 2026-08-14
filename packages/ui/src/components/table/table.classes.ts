@@ -6,7 +6,7 @@
  * them directly (no context/provider needed for a flat static).
  *
  * All colour and typography come through semantic role tokens
- * (`ts-body-small`, `ts-label-medium`, `text-muted-foreground`, `bg-muted`,
+ * (`text-body-small ts-body-small`, `text-label-medium ts-label-medium`, `text-muted-foreground`, `bg-muted`,
  * `border-b`/`border-t`) -- no raw colour or arbitrary values. The only delta
  * from the oracle: the redundant `duration-150` is dropped, since Tailwind's
  * `transition-colors` already carries the default duration/easing (motion
@@ -14,7 +14,7 @@
  */
 
 /** The `<table>` root: full width, bottom-anchored caption, small body text. */
-export const tableRootClasses = 'w-full caption-bottom ts-body-small';
+export const tableRootClasses = 'w-full caption-bottom text-body-small ts-body-small';
 
 /** The overflow wrapper around the table -- horizontal scroll for wide data. */
 export const tableWrapperClasses = 'relative w-full overflow-auto';
@@ -26,7 +26,8 @@ export const tableHeaderClasses = '[&_tr]:border-b';
 export const tableBodyClasses = '[&_tr:last-child]:border-0';
 
 /** `<tfoot>`: a top border, muted surface, label typography. */
-export const tableFooterClasses = 'border-t bg-muted/50 ts-label-medium [&>tr]:last:border-b-0';
+export const tableFooterClasses =
+  'border-t bg-muted/50 text-label-medium ts-label-medium [&>tr]:last:border-b-0';
 
 /**
  * `<tr>`: a bottom border, a colour transition on hover, and the selected
@@ -44,11 +45,11 @@ export const tableRowClasses =
  * selection checkbox flush in the cell (shadcn v4 surface).
  */
 export const tableHeadClasses =
-  'h-10 px-2 text-left align-middle ts-label-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-0.5';
+  'h-10 px-2 text-left align-middle text-label-medium ts-label-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-0.5';
 
 /** `<td>`: data cell -- padded, middle-aligned, with the same checkbox flush. */
 export const tableCellClasses =
   'p-2 align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-0.5';
 
 /** `<caption>`: muted small text, anchored to the bottom by the root. */
-export const tableCaptionClasses = 'ts-body-small text-muted-foreground';
+export const tableCaptionClasses = 'text-body-small ts-body-small text-muted-foreground';
