@@ -1,7 +1,7 @@
 import { Container } from '@/components/ui/container';
 import { Grid } from '@/components/ui/grid';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { H1, H2, H3, P, Code, Small, Blockquote, UL, OL, LI, Mark } from '@/components/type';
+import { H1, H2, H3, P, Code, Small } from '@/components/type';
 
 function SpecimenRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (

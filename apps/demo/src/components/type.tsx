@@ -38,13 +38,13 @@ const DEFAULT_COMPOSITIONS: Record<string, string> = {
   li: 'body-medium',
 };
 
-function createTypeComponent(tag: keyof JSX.IntrinsicElements, displayName: string) {
+function createTypeComponent(tag: keyof React.JSX.IntrinsicElements, displayName: string) {
   const Component = React.forwardRef<HTMLElement, TypeProps>(
     ({ as: composition, className, children, ...props }, ref) => {
       const name = composition ?? DEFAULT_COMPOSITIONS[tag] ?? tag;
       const classes = classy(`text-${name}`, `ts-${name}`, className);
       return React.createElement(
-        tag,
+        tag as string,
         { ref, 'data-part': 'root', className: classes || undefined, ...props },
         children,
       );
