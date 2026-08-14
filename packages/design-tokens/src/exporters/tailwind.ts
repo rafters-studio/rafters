@@ -809,8 +809,8 @@ function generateTypographyCompositeUtility(compositeTokens: Token[]): string {
  *
  * @utility lands in @layer utilities, so `transition-none` / `motion-reduce:`
  * overrides still win normally, and a NEW namespace means no @theme-generated
- * built-in shadows it. The @media-inside-@utility mirrors the existing
- * @container-inside-@utility nesting in generateTypographyCompositeUtilities.
+ * built-in shadows it. The @media-inside-@utility mirrors the
+ * @container-inside-@utility nesting in generateTypographyCompositeUtility.
  */
 function generateMotionUtilities(motionTokens: Token[]): string {
   const semanticTokens = motionTokens.filter((t) => t.name.startsWith('motion-semantic-'));
