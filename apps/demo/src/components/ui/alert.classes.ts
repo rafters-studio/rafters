@@ -30,9 +30,9 @@ const variantClasses: Record<AlertVariant, string> = {
 
 /** Sub-parts are config-independent, so the framework file imports these
  *  literals directly (no context/provider needed for a flat static). */
-export const alertTitleClasses = 'mb-1 text-title-small leading-none';
+export const alertTitleClasses = 'mb-1 text-title-small ts-title-small leading-none';
 
-export const alertDescriptionClasses = 'text-body-small [&_p]:leading-relaxed';
+export const alertDescriptionClasses = 'text-body-small ts-body-small [&_p]:leading-relaxed';
 
 export const alertActionClasses = 'ml-auto shrink-0';
 

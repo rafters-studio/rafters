@@ -45,9 +45,9 @@ const headerClasses = 'flex flex-col gap-1.5 text-center @md:text-left';
 
 const footerClasses = 'mt-auto flex flex-col gap-2 pt-4';
 
-const titleClasses = 'text-title-medium leading-none text-foreground';
+const titleClasses = 'text-title-medium ts-title-medium leading-none text-foreground';
 
-const descriptionClasses = 'text-body-small text-muted-foreground';
+const descriptionClasses = 'text-body-small ts-body-small text-muted-foreground';
 
 const closeClasses =
   'absolute right-2 top-2 inline-flex h-11 w-11 items-center justify-center ' +

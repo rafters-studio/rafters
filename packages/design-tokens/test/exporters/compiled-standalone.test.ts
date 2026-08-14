@@ -29,7 +29,7 @@ import {
 // as literal strings in *.classes.ts, none of them registry-derivable.
 const FIXTURE_CLASSES =
   'bg-surface text-surface-foreground border-card-border hover:bg-accent ' +
-  'data-[state=open]:bg-accent bg-foreground/80 inline-flex px-2.5 text-label-small';
+  'data-[state=open]:bg-accent bg-foreground/80 inline-flex px-2.5 text-label-small ts-label-small';
 
 const EXPECTED_RULES = [
   'bg-surface',

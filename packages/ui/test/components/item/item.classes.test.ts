@@ -41,9 +41,9 @@ describe('item classes', () => {
   it('resolves each size to its padding + typography role token', () => {
     expect(root({ size: 'sm' })).toContain(itemSizeClasses.sm);
     expect(root({ size: 'lg' })).toContain(itemSizeClasses.lg);
-    expect(itemSizeClasses.default).toBe('px-3 py-2 text-body-small');
-    expect(itemSizeClasses.sm).toBe('px-2 py-1.5 text-label-small');
-    expect(itemSizeClasses.lg).toBe('px-4 py-3 text-body-medium');
+    expect(itemSizeClasses.default).toBe('px-3 py-2 text-body-small ts-body-small');
+    expect(itemSizeClasses.sm).toBe('px-2 py-1.5 text-label-small ts-label-small');
+    expect(itemSizeClasses.lg).toBe('px-4 py-3 text-body-medium ts-body-medium');
   });
 
   it('falls back to the default size for an unknown value', () => {
@@ -60,7 +60,9 @@ describe('item classes', () => {
     expect(itemIconClasses).toBe('shrink-0 text-current');
     expect(itemContentClasses).toBe('flex min-w-0 flex-1 flex-col');
     expect(itemLabelClasses).toBe('truncate');
-    expect(itemDescriptionClasses).toBe('truncate text-muted-foreground text-label-small mt-0.5');
+    expect(itemDescriptionClasses).toBe(
+      'truncate text-muted-foreground text-label-small ts-label-small mt-0.5',
+    );
   });
 
   it('never emits a raw arbitrary value', () => {

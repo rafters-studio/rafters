@@ -5,7 +5,7 @@ import type { FieldConfig, FieldState } from '@/components/ui/field.behavior';
  * Field decoration. The field is a layout-composition wrapper: the container
  * stacks label + control + helper/error with consistent spacing; the helper and
  * error share the small body-text role token and flip only their semantic
- * colour. Token/semantic classes only -- `text-body-small` is the typography
+ * colour. Token/semantic classes only -- `text-body-small ts-body-small` is the typography
  * role token (never a raw `text-sm`), colours are the frozen semantic tokens.
  */
 export interface FieldClassSet {
@@ -21,8 +21,8 @@ export interface FieldClassSet {
 const fieldContainerClasses = 'flex flex-col gap-2';
 const fieldLabelDisabledClasses = 'opacity-50';
 const fieldRequiredMarkerClasses = 'text-destructive ml-1';
-const fieldDescriptionClasses = 'text-body-small text-muted-foreground';
-const fieldErrorClasses = 'text-body-small text-destructive';
+const fieldDescriptionClasses = 'text-body-small ts-body-small text-muted-foreground';
+const fieldErrorClasses = 'text-body-small ts-body-small text-destructive';
 
 /**
  * Compose the label's class string. Reuses the Label score's own decoration

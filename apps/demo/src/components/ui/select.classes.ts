@@ -20,7 +20,7 @@ export interface SelectClassSet {
 // convention) rather than the viewport. Fill, not background.
 const triggerClasses =
   'group flex h-11 @md:h-9 w-full items-center justify-between gap-2 rounded-md ' +
-  'border border-input bg-background px-3 py-2 text-body-small shadow-sm ring-offset-background ' +
+  'border border-input bg-background px-3 py-2 text-body-small ts-body-small shadow-sm ring-offset-background ' +
   'transition-shadow duration-100 motion-reduce:transition-none ' +
   'hover:border-input-hover ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ' +
@@ -46,7 +46,7 @@ const viewportClasses = 'p-1';
 
 const itemClasses =
   'relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 ' +
-  'text-body-small outline-none ' +
+  'text-body-small ts-body-small outline-none ' +
   'focus:bg-accent focus:text-accent-foreground ' +
   'data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground ' +
   'data-[disabled]:pointer-events-none data-[disabled]:opacity-50';
@@ -57,7 +57,7 @@ const itemTextClasses = 'truncate';
 
 const groupClasses = 'p-1';
 
-const labelClasses = 'py-1.5 pl-8 pr-2 text-label-medium text-muted-foreground';
+const labelClasses = 'py-1.5 pl-8 pr-2 text-label-medium ts-label-medium text-muted-foreground';
 
 const separatorClasses = '-mx-1 my-1 h-px bg-muted';
 

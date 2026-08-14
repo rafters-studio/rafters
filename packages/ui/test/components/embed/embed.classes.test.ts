@@ -24,13 +24,13 @@ describe('embed classes', () => {
 
   it('the fallback message uses the semantic label typography token', () => {
     expect(embedFallbackMessageClasses).toBe(
-      'mb-2 text-label-small font-medium text-muted-foreground',
+      'mb-2 text-label-small ts-label-small font-medium text-muted-foreground',
     );
   });
 
   it('the fallback link uses the primary role token', () => {
     expect(embedFallbackLinkClasses).toBe(
-      'text-label-small text-primary underline underline-offset-4 hover:text-primary/80',
+      'text-label-small ts-label-small text-primary underline underline-offset-4 hover:text-primary/80',
     );
   });
 

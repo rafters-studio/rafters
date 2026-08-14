@@ -12,7 +12,7 @@ export const toggleGroupDefaultVariantClasses = 'bg-muted p-1';
 export const toggleGroupItemBaseClasses =
   'inline-flex items-center justify-center ' +
   'rounded-md ' +
-  'text-label-large ' +
+  'text-label-large ts-label-large ' +
   'transition-all duration-200 motion-reduce:transition-none ' +
   'active:scale-[0.98] ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ' +

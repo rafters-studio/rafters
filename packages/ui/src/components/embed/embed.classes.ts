@@ -1,7 +1,7 @@
 /**
  * Embed class strings -- the view. No logic: the resolver (embed.behavior.ts)
  * decides iframe vs fallback; these literals decorate whichever branch renders.
- * Every class is a token/semantic utility (bg-muted, text-label-small,
+ * Every class is a token/semantic utility (bg-muted, text-label-small ts-label-small,
  * text-primary), never a raw colour or spacing value. Shared verbatim across
  * the React, Web Component, and Astro performances so visual parity holds.
  */
@@ -29,10 +29,10 @@ export const embedFallbackClasses =
  * Fallback message text.
  */
 export const embedFallbackMessageClasses =
-  'mb-2 text-label-small font-medium text-muted-foreground';
+  'mb-2 text-label-small ts-label-small font-medium text-muted-foreground';
 
 /**
  * Fallback recovery link (Open in new tab).
  */
 export const embedFallbackLinkClasses =
-  'text-label-small text-primary underline underline-offset-4 hover:text-primary/80';
+  'text-label-small ts-label-small text-primary underline underline-offset-4 hover:text-primary/80';

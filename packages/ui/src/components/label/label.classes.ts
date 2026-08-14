@@ -8,11 +8,11 @@ export interface LabelClassSet {
  * Structure every label carries: the label typography role token, tight
  * leading, and the peer-disabled affordance (dim + not-allowed cursor when a
  * sibling `.peer` control is disabled). Ported verbatim from the oracle's
- * settled decoration -- `text-label-medium` is the semantic typography role
+ * settled decoration -- `text-label-medium ts-label-medium` is the semantic typography role
  * token, never a raw font size.
  */
 const labelBaseClasses =
-  'text-label-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70';
+  'text-label-medium ts-label-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70';
 
 /**
  * Semantic colour variants (rafters extension). Each is a `text-{role}` token

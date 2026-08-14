@@ -16,8 +16,8 @@ describe('field classes', () => {
   });
 
   it('helper and error share the body-text role token, never a raw text size', () => {
-    expect(classes.description).toContain('text-body-small');
-    expect(classes.error).toContain('text-body-small');
+    expect(classes.description).toContain('ts-body-small');
+    expect(classes.error).toContain('ts-body-small');
     expect(classes.description).not.toContain('text-sm');
     expect(classes.error).not.toContain('text-sm');
   });

@@ -31,9 +31,9 @@ const itemMotionClasses = 'transition-colors duration-150 motion-reduce:transiti
 
 /** Size variants: padding + the semantic typography role token per scale. */
 export const itemSizeClasses: Record<ItemSize, string> = {
-  default: 'px-3 py-2 text-body-small',
-  sm: 'px-2 py-1.5 text-label-small',
-  lg: 'px-4 py-3 text-body-medium',
+  default: 'px-3 py-2 text-body-small ts-body-small',
+  sm: 'px-2 py-1.5 text-label-small ts-label-small',
+  lg: 'px-4 py-3 text-body-medium ts-body-medium',
 };
 
 /**
@@ -47,7 +47,8 @@ export const itemContentClasses = 'flex min-w-0 flex-1 flex-col';
 
 export const itemLabelClasses = 'truncate';
 
-export const itemDescriptionClasses = 'truncate text-muted-foreground text-label-small mt-0.5';
+export const itemDescriptionClasses =
+  'truncate text-muted-foreground text-label-small ts-label-small mt-0.5';
 
 /**
  * The row class string. Only `size` varies with config; the state visuals ride

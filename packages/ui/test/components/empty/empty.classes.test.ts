@@ -32,8 +32,10 @@ describe('empty classes', () => {
 
   it('sub-part classes are config-independent literals', () => {
     expect(emptyIconClasses).toBe('text-muted-foreground [&>svg]:h-12 [&>svg]:w-12');
-    expect(emptyTitleClasses).toBe('text-title-medium text-foreground');
-    expect(emptyDescriptionClasses).toBe('max-w-sm text-body-small text-muted-foreground');
+    expect(emptyTitleClasses).toBe('text-title-medium ts-title-medium text-foreground');
+    expect(emptyDescriptionClasses).toBe(
+      'max-w-sm text-body-small ts-body-small text-muted-foreground',
+    );
     expect(emptyActionClasses).toBe('');
   });
 });

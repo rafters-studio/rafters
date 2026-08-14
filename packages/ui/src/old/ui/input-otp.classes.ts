@@ -12,7 +12,7 @@ export const inputOtpGroupClasses = 'flex items-center';
 
 export const inputOtpSlotBaseClasses =
   'relative flex h-9 w-9 items-center justify-center ' +
-  'border-y border-r border-input text-body-small shadow-sm ' +
+  'border-y border-r border-input text-body-small ts-body-small shadow-sm ' +
   'transition-all duration-150 motion-reduce:transition-none ' +
   'first:rounded-l-md first:border-l last:rounded-r-md';
 

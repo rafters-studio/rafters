@@ -71,7 +71,7 @@ describe('badge conformance [react]', () => {
   it('size selects the label-text scale', () => {
     const { container } = render(<Badge size="lg">Large</Badge>);
     const root = container.querySelector('[data-part="root"]') as HTMLElement;
-    expect(root.className).toContain('text-label-medium');
+    expect(root.className).toContain('ts-label-medium');
   });
 
   it('consumer className merges via classy', () => {

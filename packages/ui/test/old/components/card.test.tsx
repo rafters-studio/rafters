@@ -166,14 +166,14 @@ describe('CardTitle', () => {
   it('applies default styles', () => {
     const { container } = render(<CardTitle>Title</CardTitle>);
     const title = container.firstChild;
-    expect(title).toHaveClass('text-title-medium');
+    expect(title).toHaveClass('ts-title-medium');
     expect(title).toHaveClass('leading-none');
   });
 
   it('merges custom className', () => {
     const { container } = render(<CardTitle className="custom">Title</CardTitle>);
     expect(container.firstChild).toHaveClass('custom');
-    expect(container.firstChild).toHaveClass('text-title-medium');
+    expect(container.firstChild).toHaveClass('ts-title-medium');
   });
 
   it('forwards ref', () => {
@@ -193,14 +193,14 @@ describe('CardDescription', () => {
   it('applies default styles', () => {
     const { container } = render(<CardDescription>Description</CardDescription>);
     const desc = container.firstChild;
-    expect(desc).toHaveClass('text-body-small');
+    expect(desc).toHaveClass('ts-body-small');
     expect(desc).toHaveClass('text-muted-foreground');
   });
 
   it('merges custom className', () => {
     const { container } = render(<CardDescription className="custom">Desc</CardDescription>);
     expect(container.firstChild).toHaveClass('custom');
-    expect(container.firstChild).toHaveClass('text-body-small');
+    expect(container.firstChild).toHaveClass('ts-body-small');
   });
 
   it('forwards ref', () => {

@@ -76,7 +76,7 @@ describe('table conformance [astro]', () => {
     expect(root).not.toBeNull();
     expect(root.tagName).toBe('TABLE');
     expect(root.className).toContain('w-full');
-    expect(root.className).toContain('text-body-small');
+    expect(root.className).toContain('ts-body-small');
     expect((root.parentElement as HTMLElement).className).toContain('overflow-auto');
   });
 

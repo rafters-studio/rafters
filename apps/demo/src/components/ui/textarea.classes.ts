@@ -11,7 +11,7 @@ export interface TextareaClassSet {
 // projected aria-invalid, so light-DOM markup, the WC, and React all pick up
 // the destructive border with no extra class.
 const textareaClasses =
-  'flex min-h-20 w-full rounded-md border border-input bg-transparent px-3 py-2 text-body-small ' +
+  'flex min-h-20 w-full rounded-md border border-input bg-transparent px-3 py-2 text-body-small ts-body-small ' +
   'text-foreground placeholder:text-muted-foreground ' +
   'ring-offset-background ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ' +
@@ -20,7 +20,7 @@ const textareaClasses =
   'read-only:cursor-default ' +
   'aria-invalid:border-destructive aria-invalid:focus-visible:ring-destructive-ring';
 
-const errorClasses = 'text-body-small text-destructive';
+const errorClasses = 'text-body-small ts-body-small text-destructive';
 
 export function textareaClassSet(_config: TextareaConfig, _state: TextareaState): TextareaClassSet {
   return {

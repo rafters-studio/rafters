@@ -26,7 +26,7 @@ const cardSurfaceClasses = 'bg-card text-card-foreground';
  * CardContent -- pick up the same rhythm as the declared parts, which the old
  * per-part `p-6 pt-0` could not do.
  *
- * `text-title-medium` / `text-body-small` are OURS, not shadcn's raw
+ * `text-title-medium ts-title-medium` / `text-body-small ts-body-small` are OURS, not shadcn's raw
  * `font-semibold` / `text-sm`: the semantic typography role tokens are the
  * product, and they are invisible to a swap (same element, same slot, same
  * rendered role).
@@ -42,9 +42,9 @@ const cardSurfaceClasses = 'bg-card text-card-foreground';
 export const cardHeaderClasses =
   'grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 has-data-[slot=card-action]:grid-cols-[1fr_auto]';
 
-export const cardTitleClasses = 'text-title-medium leading-none';
+export const cardTitleClasses = 'text-title-medium ts-title-medium leading-none';
 
-export const cardDescriptionClasses = 'text-body-small text-muted-foreground';
+export const cardDescriptionClasses = 'text-body-small ts-body-small text-muted-foreground';
 
 export const cardContentClasses = 'px-6';
 

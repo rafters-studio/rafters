@@ -700,7 +700,7 @@ describe('Sheet - Title and Description styling', () => {
 
     await waitFor(() => {
       const title = screen.getByTestId('title');
-      expect(title).toHaveClass('text-title-medium');
+      expect(title).toHaveClass('ts-title-medium');
     });
   });
 
@@ -718,7 +718,7 @@ describe('Sheet - Title and Description styling', () => {
 
     await waitFor(() => {
       const description = screen.getByTestId('description');
-      expect(description).toHaveClass('text-body-small');
+      expect(description).toHaveClass('ts-body-small');
     });
   });
 
