@@ -155,10 +155,13 @@ export const drawer: BehaviorSpec<DrawerConfig, DrawerState, DrawerActions, Draw
  * Enter-only; exit/drag animation waits on Presence (wave 0-B).
  */
 export function bindDrawer(root: HTMLElement): () => void {
+  // Config travels as `data-*` and nothing else (#2001/#2004), so the read is
+  // `dataset` by camelCase key -- `data-default-open` is dataset.defaultOpen.
+  const data = root.dataset;
   const config: DrawerConfig = {
-    modal: root.getAttribute('modal') !== 'false',
+    modal: data['modal'] !== 'false',
     defaultOpen:
-      root.getAttribute('default-open') === 'true' ||
+      data['defaultOpen'] === 'true' ||
       root.querySelector<HTMLElement>('[data-part="content"]')?.dataset['state'] === 'open',
   };
 

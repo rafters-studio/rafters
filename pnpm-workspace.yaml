@@ -40,4 +40,4 @@ catalog:
   vitest: ^4.1.0
   vitest-axe: ^1.0.0-pre.3
   zocker: 3.0.0
-  zod: ^4.0.0
+  zod: ^4.1.12

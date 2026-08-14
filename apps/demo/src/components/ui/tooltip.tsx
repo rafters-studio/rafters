@@ -34,11 +34,11 @@ import { mergeProps } from '@/lib/primitives/slot';
 import type { Align, Side } from '@/lib/primitives/types';
 import { createBehavior, type AriaAttrs, type PartIds } from '@/lib/contract';
 import {
-  DEFAULT_DELAY_DURATION,
-  DEFAULT_SKIP_DELAY_DURATION,
   isOpen,
   positionTooltipContent,
   tooltip,
+  tooltipOpenDelay,
+  tooltipCloseDelay,
   type TooltipActions,
   type TooltipConfig,
   type TooltipPart,
@@ -50,15 +50,22 @@ type HoverDelay = ReturnType<typeof createControlledHoverDelay>;
 
 // ==================== Provider (delay defaults) ====================
 
+/**
+ * The delays are OPTIONAL here, and deliberately so: an unset delay means "read
+ * the token", and the token can only be read once there is a document. Baking a
+ * number into the context default at module scope would be a second source for
+ * a value the accessor already owns -- so absence travels, and the resolution
+ * happens where the DOM exists.
+ */
 interface TooltipProviderContextValue {
-  delayDuration: number;
-  skipDelayDuration: number;
+  delayDuration: number | undefined;
+  skipDelayDuration: number | undefined;
   disableHoverableContent: boolean;
 }
 
 const TooltipProviderContext = React.createContext<TooltipProviderContextValue>({
-  delayDuration: DEFAULT_DELAY_DURATION,
-  skipDelayDuration: DEFAULT_SKIP_DELAY_DURATION,
+  delayDuration: undefined,
+  skipDelayDuration: undefined,
   disableHoverableContent: false,
 });
 
@@ -70,8 +77,8 @@ export interface TooltipProviderProps {
 }
 
 export function TooltipProvider({
-  delayDuration = DEFAULT_DELAY_DURATION,
-  skipDelayDuration = DEFAULT_SKIP_DELAY_DURATION,
+  delayDuration,
+  skipDelayDuration,
   disableHoverableContent = false,
   children,
 }: TooltipProviderProps) {
@@ -176,8 +183,8 @@ export function TooltipRoot({
   const hover = React.useMemo<HoverDelay>(
     () =>
       createControlledHoverDelay({
-        openDelay: config.delayDuration ?? DEFAULT_DELAY_DURATION,
-        closeDelay: config.skipDelayDuration ?? DEFAULT_SKIP_DELAY_DURATION,
+        openDelay: config.delayDuration ?? tooltipOpenDelay(triggerRef.current),
+        closeDelay: config.skipDelayDuration ?? tooltipCloseDelay(triggerRef.current),
         onOpen: () => request('open'),
         onClose: () => request('close'),
       }),
