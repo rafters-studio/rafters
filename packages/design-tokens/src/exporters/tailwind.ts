@@ -1821,7 +1821,10 @@ export async function registryToDocumentation(
  * Post-process the compiled documentation sheet for shadow-DOM adoption:
  * - Extract theme vars from `@layer theme`, rewrite `:root,:host` to `:host`
  *   with `container-type: inline-size` added
- * - Strip `@layer properties` (Tailwind internal fallback vars)
+ * - Keep `@layer properties` (Tailwind fallback initial values for --tw-* vars)
+ *   with its universal selector rewritten for shadow-DOM scope
+ * - Keep top-level `@property` declarations (modern initial-value registrations)
+ * - Keep top-level `@keyframes` blocks (animation definitions)
  * - Strip `@layer theme` (replaced by the `:host` block)
  * - Strip the Tailwind banner comment
  * - Keep `@layer base`, `@layer components`, `@layer utilities` intact
@@ -1838,8 +1841,45 @@ function postProcessDocSheet(css: string): string {
     parts.push(`:host{container-type:inline-size}${themeContent}`);
   }
 
-  // Keep base, components, utilities layers
-  const layerRe = /@layer (base|components|utilities)\{/g;
+  // Keep top-level @property declarations (outside all @layer blocks).
+  // Tailwind v4 emits these for --tw-shadow, --tw-translate-*, --tw-ring-*
+  // etc. Without them, declarations referencing unset --tw-* vars are
+  // guaranteed-invalid and silently dropped (shadows, transforms, rings
+  // all inert).
+  const propertyRe = /@property\s+--[\w-]+\s*\{[^}]*\}/g;
+  let propMatch: RegExpExecArray | null;
+  while ((propMatch = propertyRe.exec(css)) !== null) {
+    parts.push(propMatch[0]);
+  }
+
+  // Keep top-level @keyframes blocks. Tailwind emits these outside @layer
+  // for built-in animations (spin, pulse) and custom keyframes from @theme.
+  const keyframesRe = /@keyframes\s+[\w-]+\s*\{/g;
+  let kfMatch: RegExpExecArray | null;
+  while ((kfMatch = keyframesRe.exec(css)) !== null) {
+    const start = kfMatch.index;
+    let depth = 0;
+    let end = start;
+    for (let i = start; i < css.length; i++) {
+      if (css[i] === '{') depth++;
+      if (css[i] === '}') {
+        depth--;
+        if (depth === 0) {
+          end = i + 1;
+          break;
+        }
+      }
+    }
+    parts.push(css.slice(start, end));
+  }
+
+  // Keep base, components, utilities, AND properties layers.
+  // The properties layer wraps a @supports fallback that sets --tw-* initial
+  // values on *, ::before, ::after, ::backdrop for browsers without @property
+  // support. Rewrite to add :host (not matched by * from inside its own
+  // shadow root) and drop ::backdrop (not relevant in shadow DOM). The bare *
+  // stays -- adoptedStyleSheets scopes it to the shadow tree automatically.
+  const layerRe = /@layer (base|components|utilities|properties)\{/g;
   let match: RegExpExecArray | null;
   while ((match = layerRe.exec(css)) !== null) {
     const start = match.index;
@@ -1855,7 +1895,14 @@ function postProcessDocSheet(css: string): string {
         }
       }
     }
-    parts.push(css.slice(start, end));
+    let block = css.slice(start, end);
+    if (match[1] === 'properties') {
+      block = block.replace(
+        /\*\s*,\s*:?:?before\s*,\s*:?:?after\s*,\s*:?:?backdrop/g,
+        ':host,*,::before,::after',
+      );
+    }
+    parts.push(block);
   }
 
   return parts.join('');
