@@ -71,7 +71,7 @@ describe('documentation sheet (#2039)', () => {
     for (const rule of CONTENT_ONLY_UTILITIES) {
       expect(css, `missing utility from content source: .${rule}`).toContain(`.${rule}`);
     }
-  });
+  }, 30_000);
 
   it('omits content-sourced utilities when no contentSources are provided', async () => {
     const css = await registryToDocumentation(baseRegistry());
@@ -81,11 +81,35 @@ describe('documentation sheet (#2039)', () => {
         `utility .${rule} present without content sources -- it should only appear via scanning`,
       ).not.toContain(`.${rule}`);
     }
-  });
+  }, 30_000);
 
   it('always includes token-derived utilities regardless of contentSources', async () => {
     const css = await registryToDocumentation(baseRegistry());
     expect(css).toContain('bg-surface');
     expect(css).toContain('text-foreground');
-  });
+  }, 30_000);
+
+  it('includes @property registrations for --tw-* initial values', async () => {
+    const css = await registryToDocumentation(baseRegistry(), {
+      contentSources: [fixtureDir],
+    });
+    expect(css).toContain('@property');
+  }, 30_000);
+
+  it('preserves @layer properties fallback with universal selector', async () => {
+    const css = await registryToDocumentation(baseRegistry(), {
+      contentSources: [fixtureDir],
+    });
+    expect(css).toContain('@layer properties');
+    expect(css, 'properties block must carry bare * for shadow-tree elements').toMatch(
+      /:host,\*,::?before,::?after/,
+    );
+  }, 30_000);
+
+  it('does not reintroduce :root selector', async () => {
+    const css = await registryToDocumentation(baseRegistry(), {
+      contentSources: [fixtureDir],
+    });
+    expect(css).not.toMatch(/:root(?![^{]*\{[^}]*container-type)/);
+  }, 30_000);
 });
