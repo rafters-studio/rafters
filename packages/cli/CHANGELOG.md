@@ -1,5 +1,11 @@
 # rafters
 
+## 0.0.82
+
+### Bug Fixes
+
+- fix(design-tokens): documentation CSS generation unreachable in 0.0.81 (#2060). `postProcessDocSheet` used `require('css-tree')` inside the function body. When the CLI is bundled by tsup and run via `pnpm dlx`, the runtime require cannot resolve the module, so `registryToDocumentation` throws silently and the sheet is never written. Moved to a top-level ESM import.
+
 ## 0.0.81
 
 ### Features
