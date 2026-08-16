@@ -50,6 +50,23 @@ const GENERIC_KEYWORDS: ReadonlySet<string> = new Set([
   'revert-layer',
 ]);
 
+/**
+ * How a font family was detected. The build uses this to decide emission
+ * strategy: `@import` for web URLs, `@font-face` for local files, nothing
+ * for system/declaration-only fonts.
+ *
+ * Priority order for merge conflicts (same family from multiple sources):
+ *   font-face (2) > google (1) > declaration (0)
+ */
+export type FontSource = 'google' | 'font-face' | 'declaration';
+
+/** Numeric priority for FontSource merge -- higher wins. */
+const SOURCE_PRIORITY: Readonly<Record<FontSource, number>> = {
+  declaration: 0,
+  google: 1,
+  'font-face': 2,
+};
+
 export interface DetectedFont {
   /** Canonical family name, unquoted, single-spaced. e.g. `Inter`, `JetBrains Mono`. */
   readonly name: string;
@@ -67,6 +84,12 @@ export interface DetectedFont {
    * canonical-base list lives in the registry, not in this module.
    */
   readonly sourceDeclName?: string;
+  /**
+   * Which detection path found this font. When the same family appears
+   * from multiple sources, the merge keeps the most specific one:
+   * `font-face` > `google` > `declaration`.
+   */
+  readonly source: FontSource;
 }
 
 /**
@@ -76,7 +99,12 @@ export interface DetectedFont {
 export function detectFonts(css: string): readonly DetectedFont[] {
   const found = new Map<string, DetectedFont>();
 
-  const accept = (name: string | null, stack: string, sourceDeclName?: string): void => {
+  const accept = (
+    name: string | null,
+    stack: string,
+    source: FontSource,
+    sourceDeclName?: string,
+  ): void => {
     if (name === null) return;
     const canonical = normalizeFamilyName(name);
     if (canonical === '' || GENERIC_KEYWORDS.has(canonical.toLowerCase())) return;
@@ -86,26 +114,31 @@ export function detectFonts(css: string): readonly DetectedFont[] {
       found.set(key, {
         name: canonical,
         stack,
+        source,
         ...(sourceDeclName && { sourceDeclName }),
       });
       return;
     }
-    // Merge: prefer the fuller stack and the first source declaration name.
+    // Merge: prefer the more specific source (font-face > google > declaration),
+    // the fuller stack, and the first source declaration name.
+    const mergedSource =
+      SOURCE_PRIORITY[source] > SOURCE_PRIORITY[existing.source] ? source : existing.source;
     const mergedStack = stack.length > existing.stack.length ? stack : existing.stack;
     const mergedDeclName = existing.sourceDeclName ?? sourceDeclName;
     found.set(key, {
       name: existing.name,
       stack: mergedStack,
+      source: mergedSource,
       ...(mergedDeclName && { sourceDeclName: mergedDeclName }),
     });
   };
 
   for (const family of extractGoogleFontFamilies(css)) {
-    accept(family, quoteIfNeeded(family));
+    accept(family, quoteIfNeeded(family), 'google');
   }
 
   for (const family of extractFontFaceFamilies(css)) {
-    accept(family, quoteIfNeeded(family));
+    accept(family, quoteIfNeeded(family), 'font-face');
   }
 
   const rootDecls = extractShadcnRoot(css);
@@ -113,7 +146,7 @@ export function detectFonts(css: string): readonly DetectedFont[] {
   for (const decl of [...rootDecls, ...themeDecls]) {
     if (!decl.name.startsWith('font-')) continue;
     const first = firstFamilyFromStack(decl.value);
-    accept(first, decl.value.trim(), decl.name);
+    accept(first, decl.value.trim(), 'declaration', decl.name);
   }
 
   return Array.from(found.values());
