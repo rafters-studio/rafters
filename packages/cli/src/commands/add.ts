@@ -951,6 +951,8 @@ export async function add(componentArgs: string[], options: AddOptions): Promise
       compositesPath: 'composites',
       rulesPath: 'lib/rules',
       cssPath: null,
+      intent: 'efficient',
+      fonts: { path: null, imports: [] },
       exports: DEFAULT_EXPORTS,
       installed: { components: [], primitives: [], composites: [], rules: [] },
     };

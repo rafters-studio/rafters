@@ -608,6 +608,8 @@ async function regenerateFromExisting(
       rulesPath: frameworkPaths.rules,
       cssPath: null,
       ...(source ? { source } : {}),
+      intent: 'efficient',
+      fonts: { path: null, imports: [] },
       exports,
       installed: { components: [], primitives: [], composites: [], rules: [] },
     };
@@ -743,6 +745,7 @@ async function resetToDefaults(
       cssPath: null,
       ...(source ? { source } : {}),
       intent: 'efficient',
+      fonts: { path: null, imports: [] },
       exports,
       installed: { components: [], primitives: [], composites: [], rules: [] },
     };

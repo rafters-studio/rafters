@@ -226,13 +226,13 @@ Then('the detected framework should be {string}', async ({}, framework: string) 
 Then('shadcn should be detected as true', async () => {
   const configPath = join(context.fixturePath, '.rafters', 'config.rafters.json');
   const config = JSON.parse(await readFile(configPath, 'utf-8'));
-  expect(config.shadcn).toBe(true);
+  expect(config.source).toBe('shadcn');
 });
 
 Then('shadcn should be detected as false', async () => {
   const configPath = join(context.fixturePath, '.rafters', 'config.rafters.json');
   const config = JSON.parse(await readFile(configPath, 'utf-8'));
-  expect(config.shadcn).toBe(false);
+  expect(config.source).toBeUndefined();
 });
 
 // Dependency assertions
