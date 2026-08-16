@@ -1,5 +1,21 @@
 # rafters
 
+## 0.0.81
+
+### Features
+
+- feat(cli): config schema gains `intent`, `fonts`, and `source` fields; `shadcn` boolean dropped (#2049). `intent` is the aesthetic starting point and rollback target (default "efficient"). `fonts` carries a local font path and web import URLs. `source` replaces the boolean with a design-system-origin string ("shadcn", "tailwind", etc.) that selects the import adapter. Existing configs with `shadcn: true` are silently migrated to `source: "shadcn"` on read.
+
+- feat(design-tokens): `DesignSystemAdapter` interface + `ShadcnAdapter` / `TailwindAdapter` (#2050). Import detection routed through adapters so adding a new design system source is one file implementing the interface, not editing every importer. Init reads `config.source` to select the adapter.
+
+- feat(design-tokens): `DetectedFont` carries `source` field for font origin (#2051). Fonts detected from Google `@import` carry `source: "google"`, from `@font-face` carry `"font-face"`, from `--font-*` declarations carry `"declaration"`. Merge logic prefers local over web over declaration.
+
+- feat(studio): intent and fonts HMR endpoints (#2052). Three new WebSocket channels: `get-config`, `set-intent`, `set-fonts`. Studio can read and write config through the Vite plugin's HMR bridge.
+
+### Bug Fixes
+
+- fix(design-tokens): documentation CSS is self-contained (#2053). Rewrote `postProcessDocSheet` from regex extraction to css-tree AST walking. The semantic color layer (`:root,:host` block with `--primary`, `--foreground`, etc.) was being dropped because it lives outside all `@layer` blocks. Now every top-level construct is kept. Zero unresolved custom property references, verified by a set-operation test.
+
 ## 0.0.80
 
 ### Bug Fixes
