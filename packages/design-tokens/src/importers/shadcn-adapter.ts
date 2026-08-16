@@ -6,6 +6,10 @@
  * detection method delegates to the same underlying parsers that init
  * called directly before the adapter pattern. Output is identical to
  * the bare-function composition -- no new detection behavior.
+ *
+ * The detection method implementations are exported as `sharedDetection`
+ * so TailwindAdapter (and any future adapter whose detection logic
+ * overlaps) can reuse them without duplication.
  */
 
 import type { DesignSystemAdapter } from './adapter.js';
@@ -21,9 +25,12 @@ import { colorsFromClassification } from './colors.js';
 import { detectFonts } from './fonts.js';
 import { extractShadcnRoot } from './shadcn.js';
 
-const shadcnAdapter: DesignSystemAdapter = {
-  name: 'shadcn',
-
+/**
+ * Shared detection method implementations. Both ShadcnAdapter and
+ * TailwindAdapter delegate to the same underlying parsers today;
+ * the separation exists so future divergence has a seam.
+ */
+export const sharedDetection: Omit<DesignSystemAdapter, 'name'> = {
   detectFonts(css: string) {
     return [...detectFonts(css)];
   },
@@ -54,6 +61,8 @@ const shadcnAdapter: DesignSystemAdapter = {
     return value !== null ? { base: value } : {};
   },
 };
+
+const shadcnAdapter: DesignSystemAdapter = { name: 'shadcn', ...sharedDetection };
 
 register(shadcnAdapter);
 
