@@ -1,5 +1,10 @@
 export * from './exporters/index.js';
 export * from './generators/index.js';
+export type { DesignSystemAdapter } from './importers/adapter.js';
+export { getAdapter, getAvailableAdapters } from './importers/adapter.js';
+// Side-effect imports: register built-in adapters at module load.
+import './importers/shadcn-adapter.js';
+import './importers/tailwind-adapter.js';
 export type { Binding, Node, Plugin, SetOptions, UserOverride } from './graph.js';
 export {
   BindingSchema,

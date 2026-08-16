@@ -16,17 +16,12 @@ import {
   type BaseSystemConfig,
   type ColorDeclaration,
   classifyDeclarations,
-  colorsFromClassification,
   contrastPlugin,
   type DetectedFont,
-  detectFocusRingWidth,
-  detectFontSizeBase,
-  detectFonts,
-  detectRadiusBase,
-  detectSpacingBase,
   extractShadcnRoot,
   extractThemeBlocks,
   generateBaseSystem,
+  getAdapter,
   importColorFamily,
   invertPlugin,
   loadRegistryFromDir,
@@ -848,6 +843,7 @@ export async function init(options: InitOptions): Promise<void> {
   // tokens via CSS `calc()`; shadow/typography/radius/focus/motion
   // bake values numerically at generation time and would not update.
   // See legion reflection 019e57d8 for the full invariant.
+  const adapter = getAdapter(source ?? 'tailwind');
   const baseConfig: Partial<BaseSystemConfig> = {};
   // Source CSS resolution priority for both pre-generation base detection
   // AND the later sense/apply flow:
@@ -868,31 +864,31 @@ export async function init(options: InitOptions): Promise<void> {
   if (sourceCssPathForBase !== null) {
     try {
       const cssForBase = await readFile(join(cwd, sourceCssPathForBase), 'utf-8');
-      // Per-detector wiring: each detector returns a number or null; if a
-      // value is found, it lands on the matching BaseSystemConfig override
-      // and fires its own `init:import_*_applied` event for telemetry.
-      // detectors map to BaseSystemConfig field + event payload key.
+      // Per-detector wiring: each adapter method returns an object with
+      // an optional key; if the value is present, it lands on the matching
+      // BaseSystemConfig override and fires its own `init:import_*_applied`
+      // event for telemetry.
       const baseSlots = [
         {
-          detect: detectSpacingBase,
+          detect: () => adapter.detectSpacing(cssForBase).base,
           field: 'baseSpacingUnit',
           event: 'init:import_spacing_applied',
           eventKey: 'baseSpacingUnit',
         },
         {
-          detect: detectRadiusBase,
+          detect: () => adapter.detectRadius(cssForBase).base,
           field: 'baseRadiusOverride',
           event: 'init:import_radius_applied',
           eventKey: 'baseRadius',
         },
         {
-          detect: detectFontSizeBase,
+          detect: () => adapter.detectFontSize(cssForBase).base,
           field: 'baseFontSizeOverride',
           event: 'init:import_font_size_applied',
           eventKey: 'baseFontSize',
         },
         {
-          detect: detectFocusRingWidth,
+          detect: () => adapter.detectFocusRing(cssForBase).width,
           field: 'focusRingWidthOverride',
           event: 'init:import_focus_ring_applied',
           eventKey: 'focusRingWidth',
@@ -904,8 +900,8 @@ export async function init(options: InitOptions): Promise<void> {
         // after init to override explicitly.
       ] as const;
       for (const slot of baseSlots) {
-        const value = slot.detect(cssForBase);
-        if (value === null) continue;
+        const value = slot.detect();
+        if (value === undefined) continue;
         baseConfig[slot.field] = value;
         log({
           event: slot.event,
@@ -1042,7 +1038,7 @@ export async function init(options: InitOptions): Promise<void> {
         });
 
         const classification = classifyDeclarations(extractShadcnRoot(sourceCss));
-        const colorDecls = colorsFromClassification(classification);
+        const colorDecls = adapter.detectColors(sourceCss);
         const nonColorDecls = [
           ...classification.byNamespace.typography,
           ...classification.byNamespace.spacing,
@@ -1291,7 +1287,7 @@ export async function init(options: InitOptions): Promise<void> {
     // different fonts -- explicit trade-off for the 3-prompt UX, designer
     // can `rafters set` individually if they want heading != body.
     if (sourceCss !== null) {
-      const detectedFonts = detectFonts(sourceCss);
+      const detectedFonts = adapter.detectFonts(sourceCss);
       if (detectedFonts.length > 0) {
         // Derive the role/base mapping from the registry's typography
         // graph instead of hardcoding it here. Base families are typography
