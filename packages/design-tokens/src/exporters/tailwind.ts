@@ -13,6 +13,7 @@
  * @see https://ui.shadcn.com/docs/theming
  */
 
+import * as csstree from 'css-tree';
 import type { ColorReference, ColorValue, Token, TypographyElementOverride } from '@rafters/shared';
 import type { MotionNamespace } from '../generators/motion.js';
 import type { TokenRegistry } from '../registry.js';
@@ -1830,7 +1831,6 @@ export async function registryToDocumentation(
  * output is a real stylesheet and should be processed as one.
  */
 function postProcessDocSheet(css: string): string {
-  const csstree = require('css-tree') as typeof import('css-tree');
   const ast = csstree.parse(css);
   const parts: string[] = [];
   let hasHostContainer = false;
