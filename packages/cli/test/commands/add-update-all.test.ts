@@ -92,7 +92,6 @@ function baseConfig(installed: Partial<NonNullable<RaftersConfig['installed']>>)
     compositesPath: 'composites',
     rulesPath: 'lib/rules',
     cssPath: null,
-    shadcn: false,
     exports: { tailwind: true, typescript: true, dtcg: false, compiled: false },
     installed: { components: [], primitives: [], composites: [], rules: [], ...installed },
   };

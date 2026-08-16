@@ -6,7 +6,6 @@
   "compositesPath": "src/composites",
   "rulesPath": "src/lib/rules",
   "cssPath": "src/index.css",
-  "shadcn": false,
   "exports": {
     "tailwind": true,
     "typescript": false,

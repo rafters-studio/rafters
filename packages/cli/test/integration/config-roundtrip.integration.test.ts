@@ -34,7 +34,7 @@ describe('config persistence', () => {
     expect(config2.framework).toBe(config1.framework);
     expect(config2.componentsPath).toBe(config1.componentsPath);
     expect(config2.primitivesPath).toBe(config1.primitivesPath);
-    expect(config2.shadcn).toBe(config1.shadcn);
+    expect(config2.source).toBe(config1.source);
   }, 30000);
 
   it('preserves installed list across rebuild', async () => {
@@ -85,8 +85,9 @@ describe('config persistence', () => {
     expect(config).toHaveProperty('primitivesPath');
     expect(config).toHaveProperty('compositesPath');
     expect(config).toHaveProperty('cssPath');
-    expect(config).toHaveProperty('shadcn');
     expect(config).toHaveProperty('exports');
+    expect(config).toHaveProperty('intent');
+    expect(config).toHaveProperty('fonts');
     expect(config).toHaveProperty('installed');
 
     // Exports sub-fields

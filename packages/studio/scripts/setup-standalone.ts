@@ -56,7 +56,6 @@ async function main(): Promise<void> {
     componentsPath: 'src/components/ui',
     primitivesPath: 'src/lib/primitives',
     cssPath: null,
-    shadcn: false,
     exports: {
       tailwind: true,
       typescript: false,

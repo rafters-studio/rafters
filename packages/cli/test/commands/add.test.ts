@@ -70,7 +70,7 @@ describe('transformFileContent', () => {
       primitivesPath: 'src/lib/primitives',
       compositesPath: 'src/composites',
       cssPath: null,
-      shadcn: false,
+
       exports: { tailwind: true, typescript: true, dtcg: false, compiled: false },
     };
     const input = `import type { BlockType } from './types';`;
@@ -214,7 +214,6 @@ describe('substrate install-path routing', () => {
     compositesPath: 'src/composites',
     rulesPath: 'src/lib/rules',
     cssPath: null,
-    shadcn: false,
     exports: { tailwind: true, typescript: true, dtcg: false, compiled: false },
   };
 
@@ -302,7 +301,6 @@ describe('isAlreadyInstalled', () => {
     primitivesPath: 'lib/primitives',
     compositesPath: 'composites',
     cssPath: null,
-    shadcn: false,
     exports: { tailwind: true, typescript: true, dtcg: false, compiled: false },
     installed: {
       components: ['button', 'card'],
@@ -394,7 +392,7 @@ describe('trackInstalled', () => {
       primitivesPath: 'lib/primitives',
       compositesPath: 'composites',
       cssPath: null,
-      shadcn: false,
+
       exports: { tailwind: true, typescript: true, dtcg: false, compiled: false },
       installed: { components: [], primitives: [] },
     };
@@ -413,7 +411,7 @@ describe('trackInstalled', () => {
       primitivesPath: 'lib/primitives',
       compositesPath: 'composites',
       cssPath: null,
-      shadcn: false,
+
       exports: { tailwind: true, typescript: true, dtcg: false, compiled: false },
       installed: { components: [], primitives: [] },
     };
@@ -432,7 +430,7 @@ describe('trackInstalled', () => {
       primitivesPath: 'lib/primitives',
       compositesPath: 'composites',
       cssPath: null,
-      shadcn: false,
+
       exports: { tailwind: true, typescript: true, dtcg: false, compiled: false },
       installed: { components: [], primitives: [] },
     };
@@ -452,7 +450,7 @@ describe('trackInstalled', () => {
       primitivesPath: 'lib/primitives',
       compositesPath: 'composites',
       cssPath: null,
-      shadcn: false,
+
       exports: { tailwind: true, typescript: true, dtcg: false, compiled: false },
       installed: { components: ['button'], primitives: ['classy'] },
     };
@@ -475,7 +473,7 @@ describe('trackInstalled', () => {
       primitivesPath: 'lib/primitives',
       compositesPath: 'composites',
       cssPath: null,
-      shadcn: false,
+
       exports: { tailwind: true, typescript: true, dtcg: false, compiled: false },
       installed: { components: [], primitives: [] },
     };
@@ -498,7 +496,7 @@ describe('trackInstalled', () => {
       primitivesPath: 'lib/primitives',
       compositesPath: 'composites',
       cssPath: null,
-      shadcn: false,
+
       exports: { tailwind: true, typescript: true, dtcg: false, compiled: false },
     };
 
@@ -594,7 +592,6 @@ describe('getInstalledNames', () => {
     primitivesPath: 'lib/primitives',
     compositesPath: 'composites',
     cssPath: null,
-    shadcn: false,
     exports: { tailwind: true, typescript: true, dtcg: false, compiled: false },
     installed: {
       components: ['button', 'card'],
@@ -713,7 +710,6 @@ describe('composites support', () => {
     primitivesPath: 'src/lib/primitives',
     compositesPath: 'src/composites',
     cssPath: null,
-    shadcn: false,
     exports: { tailwind: true, typescript: true, dtcg: false, compiled: false },
     installed: {
       components: [],

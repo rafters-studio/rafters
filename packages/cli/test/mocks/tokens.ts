@@ -142,14 +142,14 @@ export function mockSemanticColors(): Record<string, Record<string, DTCGColorTok
 export function mockRaftersConfig(): {
   version: string;
   framework: string;
-  shadcn: boolean;
+  source: string;
   tailwindVersion: string;
   outputDir: string;
 } {
   return {
     version: '1.0.0',
     framework: 'next',
-    shadcn: true,
+    source: 'shadcn',
     tailwindVersion: '4.0.0',
     outputDir: '.rafters/output',
   };

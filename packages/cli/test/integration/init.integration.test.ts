@@ -35,7 +35,7 @@ describe('rafters init - fresh initialization', () => {
 
     const config = await readConfig(fixturePath);
     expect(config.framework).toBe('next');
-    expect(config.shadcn).toBe(true);
+    expect(config.source).toBe('shadcn');
     expect(config.componentsPath).toBe('components/ui');
     expect(config.primitivesPath).toBe('lib/primitives');
     expect(config.exports).toEqual({
@@ -61,7 +61,7 @@ describe('rafters init - fresh initialization', () => {
 
     const config = await readConfig(fixturePath);
     expect(config.framework).toBe('vite');
-    expect(config.shadcn).toBe(true);
+    expect(config.source).toBe('shadcn');
     expect(config.componentsPath).toBe('src/components/ui');
   }, 30000);
 
@@ -73,7 +73,7 @@ describe('rafters init - fresh initialization', () => {
 
     const config = await readConfig(fixturePath);
     expect(config.framework).toBe('vite');
-    expect(config.shadcn).toBe(false);
+    expect(config.source).toBeUndefined();
   }, 30000);
 
   it('initializes a Remix project with shadcn', async () => {
@@ -191,7 +191,7 @@ describe('rafters init --rebuild', () => {
     // Config should be preserved
     const rebuiltConfig = await readConfig(fixturePath);
     expect(rebuiltConfig.framework).toBe(initialConfig.framework);
-    expect(rebuiltConfig.shadcn).toBe(initialConfig.shadcn);
+    expect(rebuiltConfig.source).toBe(initialConfig.source);
   }, 30000);
 });
 

@@ -91,13 +91,18 @@ interface StudioConfig {
   componentsPath?: string | Array<string | { path: string }>;
   primitivesPath?: string | Array<string | { path: string }>;
   compositesPath?: string | Array<string | { path: string }>;
-  shadcn?: boolean;
+  source?: string;
   darkMode?: 'class' | 'media';
 }
 
 async function loadStudioConfig(): Promise<StudioConfig | null> {
   try {
-    return JSON.parse(await readFile(configPath, 'utf8')) as StudioConfig;
+    const raw = JSON.parse(await readFile(configPath, 'utf8')) as Record<string, unknown>;
+    if ('shadcn' in raw && !('source' in raw)) {
+      if (raw.shadcn === true) raw.source = 'shadcn';
+      delete raw.shadcn;
+    }
+    return raw as unknown as StudioConfig;
   } catch {
     return null;
   }
@@ -660,7 +665,7 @@ export function studioApiPlugin(): Plugin {
             exports,
             contentSources: config ? resolveContentSources(projectPath, config) : [],
             darkMode: config?.darkMode ?? 'class',
-            includeImport: !config?.shadcn,
+            includeImport: config?.source !== 'shadcn',
           },
           { notify: () => server.ws.send({ type: 'custom', event: 'rafters:css-updated' }) },
         );

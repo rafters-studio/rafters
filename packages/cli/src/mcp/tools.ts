@@ -25,7 +25,7 @@ import {
 } from '@rafters/composites';
 // node-fs adapter lives behind the server-only subpath (it imports node:fs).
 import { discoverFromDirs } from '@rafters/composites/node';
-import type { RaftersConfig } from '../commands/init.js';
+import { migrateConfig, type RaftersConfig } from '../commands/init.js';
 import { registryClient } from '../registry/client.js';
 import { getRaftersPaths, resolveReadSet } from '../utils/paths.js';
 import { resolveWorkspace, type Workspace } from '../utils/workspaces.js';
@@ -168,7 +168,10 @@ export class RaftersToolHandler {
             error: 'workspace parameter required',
             suggestion:
               'Multiple workspaces are available. Pass `workspace` with one of the names below.',
-            workspaces: this.workspaces.map((w) => ({ name: w.name, root: w.root })),
+            workspaces: this.workspaces.map((w) => ({
+              name: w.name,
+              root: w.root,
+            })),
           }),
         },
       ],
@@ -239,7 +242,9 @@ export class RaftersToolHandler {
     const paths = getRaftersPaths(workspaceRoot);
     let config: RaftersConfig | null = null;
     try {
-      config = JSON.parse(await readFile(paths.config, 'utf-8')) as RaftersConfig;
+      config = migrateConfig(
+        JSON.parse(await readFile(paths.config, 'utf-8')) as Record<string, unknown>,
+      ) as unknown as RaftersConfig;
     } catch {
       // No config -- fall through to default
     }
@@ -298,7 +303,9 @@ export class RaftersToolHandler {
         .map((b) => ({ id: b.id, type: b.type, rules: b.rules })),
     }));
 
-    return { content: [{ type: 'text', text: JSON.stringify({ composites: result }, null, 2) }] };
+    return {
+      content: [{ type: 'text', text: JSON.stringify({ composites: result }, null, 2) }],
+    };
   }
 
   private async handlePattern(args: {
@@ -364,7 +371,9 @@ export class RaftersToolHandler {
       usagePatterns: c.manifest.usagePatterns,
     }));
 
-    return { content: [{ type: 'text', text: JSON.stringify({ patterns }, null, 2) }] };
+    return {
+      content: [{ type: 'text', text: JSON.stringify({ patterns }, null, 2) }],
+    };
   }
 
   private async handleComponent(componentName: string): Promise<CallToolResult> {

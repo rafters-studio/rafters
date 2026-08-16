@@ -32,7 +32,7 @@ import {
 import { getRaftersPaths, type PathField, resolveRoot } from '../utils/paths.js';
 import { buildUpdateCandidates, readInstallRoots } from '../utils/reconcile.js';
 import { error, log, setAgentMode } from '../utils/ui.js';
-import type { RaftersConfig } from './init.js';
+import { migrateConfig, type RaftersConfig } from './init.js';
 
 export interface AddOptions {
   list?: boolean;
@@ -67,7 +67,7 @@ async function regenerateAfterInstall(cwd: string, config: RaftersConfig): Promi
       exports: config.exports,
       contentSources: resolveContentSources(cwd, config),
       darkMode: config.darkMode ?? 'class',
-      includeImport: !config.shadcn,
+      includeImport: config.source !== 'shadcn',
     });
   } catch (err) {
     log({
@@ -97,12 +97,17 @@ async function loadConfig(cwd: string): Promise<RaftersConfig | null> {
   const paths = getRaftersPaths(cwd);
   try {
     const content = await readFile(paths.config, 'utf-8');
-    return JSON.parse(content) as RaftersConfig;
+    return migrateConfig(
+      JSON.parse(content) as Record<string, unknown>,
+    ) as unknown as RaftersConfig;
   } catch (err) {
     // Log warning if file exists but failed to parse
     if (existsSync(paths.config)) {
       const message = err instanceof Error ? err.message : String(err);
-      log({ event: 'add:warning', message: `Failed to load config: ${message}` });
+      log({
+        event: 'add:warning',
+        message: `Failed to load config: ${message}`,
+      });
     }
     return null;
   }
@@ -253,9 +258,10 @@ export function selectFilesForFramework(
  * project, so it installs only when the target is `astro`. Every other runtime
  * file is framework-agnostic and always installs.
  */
-const TARGET_GATED_COMPOSITE_FILES: ReadonlyArray<{ suffix: string; target: ComponentTarget }> = [
-  { suffix: 'Composite.astro', target: 'astro' },
-];
+const TARGET_GATED_COMPOSITE_FILES: ReadonlyArray<{
+  suffix: string;
+  target: ComponentTarget;
+}> = [{ suffix: 'Composite.astro', target: 'astro' }];
 
 /**
  * Filter a composite item's runtime files by the project's component target.
@@ -325,7 +331,12 @@ export function isInstalledOnDisk(
  */
 export function trackInstalled(config: RaftersConfig, items: RegistryItem[]): void {
   if (!config.installed) {
-    config.installed = { components: [], primitives: [], composites: [], rules: [] };
+    config.installed = {
+      components: [],
+      primitives: [],
+      composites: [],
+      rules: [],
+    };
   }
   const installed = config.installed;
   if (!installed.composites) installed.composites = [];
@@ -903,7 +914,9 @@ export async function add(componentArgs: string[], options: AddOptions): Promise
   };
   let depsResult = emptyDeps;
   try {
-    depsResult = await installRegistryDependencies(filteredItems, cwd, { target });
+    depsResult = await installRegistryDependencies(filteredItems, cwd, {
+      target,
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     log({
@@ -938,7 +951,8 @@ export async function add(componentArgs: string[], options: AddOptions): Promise
       compositesPath: 'composites',
       rulesPath: 'lib/rules',
       cssPath: null,
-      shadcn: false,
+      intent: 'efficient',
+      fonts: { path: null, imports: [] },
       exports: DEFAULT_EXPORTS,
       installed: { components: [], primitives: [], composites: [], rules: [] },
     };
