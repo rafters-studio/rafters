@@ -25,8 +25,11 @@ import {
   handleGetTokens,
   handlePostToken,
   handlePostTokens,
+  KNOWN_INTENTS,
   studioApiPlugin,
   TokenPatchSchema,
+  validateFontsPath,
+  validateIntent,
 } from '../../src/api/vite-plugin';
 
 // Replicate schemas from vite-plugin.ts to test validation logic
@@ -2092,5 +2095,48 @@ describe('studioApiPlugin', () => {
       expect(readFileSync(varsPath, 'utf-8')).toBe('original');
       expect(wsSent).not.toContainEqual({ type: 'custom', event: 'rafters:css-updated' });
     });
+  });
+});
+
+describe('Intent validation', () => {
+  it('accepts known intent "efficient"', () => {
+    expect(validateIntent('efficient')).toBeNull();
+  });
+
+  it('rejects unknown intent with descriptive error', () => {
+    const error = validateIntent('fancy');
+    expect(error).toBe('unknown intent "fancy". Known: efficient');
+  });
+
+  it('rejects empty string', () => {
+    const error = validateIntent('');
+    expect(error).toContain('unknown intent');
+  });
+
+  it('KNOWN_INTENTS contains efficient', () => {
+    expect(KNOWN_INTENTS).toContain('efficient');
+  });
+});
+
+describe('Fonts path validation', () => {
+  it('accepts relative path', () => {
+    expect(validateFontsPath('./fonts')).toBeNull();
+  });
+
+  it('accepts relative path without dot prefix', () => {
+    expect(validateFontsPath('fonts/inter')).toBeNull();
+  });
+
+  it('accepts null (explicit clear)', () => {
+    expect(validateFontsPath(null)).toBeNull();
+  });
+
+  it('accepts undefined', () => {
+    expect(validateFontsPath(undefined)).toBeNull();
+  });
+
+  it('rejects absolute path', () => {
+    const error = validateFontsPath('/usr/share/fonts');
+    expect(error).toBe('fonts path must be relative');
   });
 });
