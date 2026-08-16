@@ -76,42 +76,45 @@ const outputDir = join(projectPath, '.rafters', 'output');
 const configPath = join(projectPath, '.rafters', 'config.rafters.json');
 
 // ============================================================================
-// Config types (local mirrors -- studio does not import from @rafters/cli)
+// Config schemas and types (local mirrors -- studio does not import from @rafters/cli)
+// Zod validates external data from config.rafters.json per repo invariant.
 // ============================================================================
 
-/** Font file locations and web font imports. */
-export interface FontsConfig {
-  path?: string | null;
-  imports?: string[];
-}
+/** Zod schema for font file locations and web font imports. */
+export const FontsConfigSchema = z.object({
+  path: z.union([z.string(), z.null()]).optional(),
+  imports: z.array(z.string()).optional(),
+});
+export type FontsConfig = z.infer<typeof FontsConfigSchema>;
 
-/** Full config.rafters.json shape. Only the fields Studio reads/writes. */
-export interface RaftersConfig {
-  framework?: string;
-  registryUrl?: string;
-  componentTarget?: string;
-  componentsPath?: string | string[];
-  primitivesPath?: string | string[];
-  compositesPath?: string | string[];
-  rulesPath?: string | string[];
-  cssPath?: string | null;
-  source?: string;
-  exports?: Record<string, boolean>;
-  darkMode?: 'class' | 'media';
-  intent?: string;
-  fonts?: FontsConfig;
-  installed?: Record<string, string[]>;
-}
+/**
+ * Permissive schema for config.rafters.json. Uses passthrough so unknown
+ * fields (framework, installed, etc.) survive the parse and are returned
+ * to the client by getConfig.
+ */
+export const RaftersConfigSchema = z
+  .object({
+    intent: z.string().optional(),
+    fonts: FontsConfigSchema.optional(),
+    source: z.string().optional(),
+    darkMode: z.enum(['class', 'media']).optional(),
+    framework: z.string().optional(),
+    cssPath: z.union([z.string(), z.null()]).optional(),
+    exports: z.record(z.string(), z.boolean()).optional(),
+  })
+  .passthrough();
+export type RaftersConfig = z.infer<typeof RaftersConfigSchema>;
 
 /** Intent names Studio knows how to resolve. */
 export const KNOWN_INTENTS = ['efficient'] as const;
 export type KnownIntent = (typeof KNOWN_INTENTS)[number];
 
 /**
- * Read config.rafters.json with shadcn->source migration applied.
- * Returns null when the file cannot be read.
+ * Read config.rafters.json with shadcn->source migration and Zod
+ * validation applied. Returns null when the file cannot be read or
+ * fails validation.
  */
-export async function readRaftersConfig(): Promise<Record<string, unknown> | null> {
+export async function readRaftersConfig(): Promise<RaftersConfig | null> {
   try {
     const raw = JSON.parse(await readFile(configPath, 'utf8')) as Record<string, unknown>;
     // shadcn -> source migration (#2049)
@@ -119,7 +122,12 @@ export async function readRaftersConfig(): Promise<Record<string, unknown> | nul
       if (raw.shadcn === true) raw.source = 'shadcn';
       delete raw.shadcn;
     }
-    return raw;
+    const result = RaftersConfigSchema.safeParse(raw);
+    if (!result.success) {
+      console.log(`[rafters] Config validation failed: ${result.error.message}`);
+      return null;
+    }
+    return result.data;
   } catch {
     return null;
   }
@@ -890,18 +898,15 @@ export function studioApiPlugin(): Plugin {
 
       // Listen for config reads from client
       server.ws.on('rafters:get-config', async (_rawData: unknown, client) => {
-        const raw = await readRaftersConfig();
-        if (!raw) {
+        const config = await readRaftersConfig();
+        if (!config) {
           client.send('rafters:config', {
             ok: false,
             error: `config not found at ${configPath}`,
           });
           return;
         }
-        client.send('rafters:config', {
-          ok: true,
-          config: raw as RaftersConfig,
-        });
+        client.send('rafters:config', { ok: true, config });
       });
 
       // Listen for intent updates from client
@@ -922,8 +927,8 @@ export function studioApiPlugin(): Plugin {
           return;
         }
 
-        const raw = await readRaftersConfig();
-        if (!raw) {
+        const config = await readRaftersConfig();
+        if (!config) {
           client.send('rafters:intent-updated', {
             ok: false,
             error: `config not found at ${configPath}`,
@@ -931,9 +936,9 @@ export function studioApiPlugin(): Plugin {
           return;
         }
 
-        raw.intent = intent;
+        const updated = { ...config, intent };
         try {
-          await writeFile(configPath, JSON.stringify(raw, null, 2));
+          await writeFile(configPath, JSON.stringify(updated, null, 2));
           client.send('rafters:intent-updated', { ok: true, intent });
         } catch (error) {
           console.log(`[rafters] Intent update failed: ${error}`);
@@ -943,12 +948,7 @@ export function studioApiPlugin(): Plugin {
 
       // Listen for fonts config updates from client
       server.ws.on('rafters:set-fonts', async (rawData: unknown, client) => {
-        const parsed = z
-          .object({
-            path: z.union([z.string(), z.null()]).optional(),
-            imports: z.array(z.string()).optional(),
-          })
-          .safeParse(rawData);
+        const parsed = FontsConfigSchema.safeParse(rawData);
         if (!parsed.success) {
           client.send('rafters:fonts-updated', {
             ok: false,
@@ -964,8 +964,8 @@ export function studioApiPlugin(): Plugin {
           return;
         }
 
-        const raw = await readRaftersConfig();
-        if (!raw) {
+        const config = await readRaftersConfig();
+        if (!config) {
           client.send('rafters:fonts-updated', {
             ok: false,
             error: `config not found at ${configPath}`,
@@ -973,22 +973,17 @@ export function studioApiPlugin(): Plugin {
           return;
         }
 
-        // Build the fonts object, avoiding undefined values (exactOptionalPropertyTypes)
-        const fonts: Record<string, unknown> = {};
+        // Merge incoming fonts over existing, preserving fields not in the patch.
+        // undefined means "leave alone"; explicit null or value means "set".
+        const existing = config.fonts ?? {};
+        const fonts: FontsConfig = { ...existing };
         if (fontsData.path !== undefined) fonts.path = fontsData.path;
-        else if ((raw.fonts as Record<string, unknown> | undefined)?.path !== undefined)
-          fonts.path = (raw.fonts as Record<string, unknown>).path;
         if (fontsData.imports !== undefined) fonts.imports = fontsData.imports;
-        else if ((raw.fonts as Record<string, unknown> | undefined)?.imports !== undefined)
-          fonts.imports = (raw.fonts as Record<string, unknown>).imports;
 
-        raw.fonts = fonts;
+        const updated = { ...config, fonts };
         try {
-          await writeFile(configPath, JSON.stringify(raw, null, 2));
-          client.send('rafters:fonts-updated', {
-            ok: true,
-            fonts: fonts as FontsConfig,
-          });
+          await writeFile(configPath, JSON.stringify(updated, null, 2));
+          client.send('rafters:fonts-updated', { ok: true, fonts });
         } catch (error) {
           console.log(`[rafters] Fonts update failed: ${error}`);
           client.send('rafters:fonts-updated', { ok: false, error: String(error) });
