@@ -1,5 +1,13 @@
 # rafters
 
+## 0.0.80
+
+### Bug Fixes
+
+- fix(design-tokens): documentation CSS preserves @property, @keyframes, and @layer properties (#2046). `postProcessDocSheet` was stripping top-level `@property` declarations, `@keyframes` blocks, and the `@layer properties` fallback from Tailwind v4 compiled output. This made shadows, transforms, rings, gradients, and animations inert in the documentation sheet -- declarations referencing unset `--tw-*` vars are guaranteed-invalid per CSS spec and silently dropped. The universal selector in the properties fallback is rewritten to add `:host` and drop `::backdrop` for shadow-DOM adoption while keeping the bare `*` scoped by `adoptedStyleSheets`.
+
+- fix(demo): add @rafters/design-tokens as workspace dependency (#2045).
+
 ## 0.0.79
 
 ### Features
