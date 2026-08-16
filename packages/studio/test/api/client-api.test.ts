@@ -83,4 +83,81 @@ describe('Client API', () => {
       expect(error.error).toBe('Something went wrong');
     });
   });
+
+  describe('getConfig without HMR', () => {
+    it('exports getConfig function', async () => {
+      const module = await import('../../src/api/index');
+      expect(typeof module.getConfig).toBe('function');
+    });
+
+    it('returns error result when HMR not available', async () => {
+      const { getConfig } = await import('../../src/api/index');
+      const result = await getConfig();
+      expect(result).toEqual({ ok: false, error: 'HMR not available' });
+    });
+  });
+
+  describe('setIntent without HMR', () => {
+    it('exports setIntent function', async () => {
+      const module = await import('../../src/api/index');
+      expect(typeof module.setIntent).toBe('function');
+    });
+
+    it('returns error result when HMR not available', async () => {
+      const { setIntent } = await import('../../src/api/index');
+      const result = await setIntent({ intent: 'efficient' });
+      expect(result).toEqual({ ok: false, error: 'HMR not available' });
+    });
+  });
+
+  describe('setFonts without HMR', () => {
+    it('exports setFonts function', async () => {
+      const module = await import('../../src/api/index');
+      expect(typeof module.setFonts).toBe('function');
+    });
+
+    it('returns error result when HMR not available', async () => {
+      const { setFonts } = await import('../../src/api/index');
+      const result = await setFonts({ path: './fonts' });
+      expect(result).toEqual({ ok: false, error: 'HMR not available' });
+    });
+
+    it('accepts null path', async () => {
+      const { setFonts } = await import('../../src/api/index');
+      const result = await setFonts({ path: null });
+      expect(result.ok).toBe(false);
+    });
+
+    it('accepts imports array', async () => {
+      const { setFonts } = await import('../../src/api/index');
+      const result = await setFonts({
+        imports: ['https://fonts.googleapis.com/css2?family=Inter'],
+      });
+      expect(result.ok).toBe(false);
+    });
+  });
+
+  describe('ConfigResult type', () => {
+    it('success result has config field', () => {
+      const success = { ok: true as const, config: { intent: 'efficient' } };
+      expect(success.ok).toBe(true);
+      expect(success.config.intent).toBe('efficient');
+    });
+  });
+
+  describe('IntentResult type', () => {
+    it('success result has intent field', () => {
+      const success = { ok: true as const, intent: 'efficient' };
+      expect(success.ok).toBe(true);
+      expect(success.intent).toBe('efficient');
+    });
+  });
+
+  describe('FontsResult type', () => {
+    it('success result has fonts field', () => {
+      const success = { ok: true as const, fonts: { path: './fonts', imports: [] } };
+      expect(success.ok).toBe(true);
+      expect(success.fonts.path).toBe('./fonts');
+    });
+  });
 });
