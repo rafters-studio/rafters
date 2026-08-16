@@ -52,7 +52,6 @@ import {
   isSelectableFramework,
   isTailwindV3,
   SELECTABLE_FRAMEWORKS,
-  type ShadcnConfig,
 } from '../utils/detect.js';
 import {
   DEFAULT_EXPORTS,
@@ -100,7 +99,12 @@ async function backupCss(cssPath: string): Promise<string> {
  * string values are not handled (acceptable for token layers).
  */
 export function cleanSourceCssBlocks(content: string): string {
-  type Block = { headerStart: number; bodyStart: number; end: number; header: string };
+  type Block = {
+    headerStart: number;
+    bodyStart: number;
+    end: number;
+    header: string;
+  };
 
   function parseBlocks(src: string): Block[] {
     const blocks: Block[] = [];
@@ -207,6 +211,11 @@ async function stripImportedDeclarations(
  * `{ root: true }`, otherwise the first entry whose realpath resolves inside
  * cwd. Local entries always win on collision.
  */
+export interface FontsConfig {
+  path?: string | null;
+  imports?: string[];
+}
+
 export interface RaftersConfig {
   framework: Framework;
   /** Registry to install from / query. Set this to host your own internal registry. */
@@ -217,9 +226,14 @@ export interface RaftersConfig {
   compositesPath: PathField;
   rulesPath: PathField;
   cssPath: string | null;
-  shadcn: boolean;
+  /** Which design system this project was imported from. Replaces the old `shadcn` boolean. */
+  source?: string;
   exports: ExportConfig;
   darkMode?: 'class' | 'media';
+  /** Aesthetic starting point and rollback target. Default "efficient". */
+  intent?: string;
+  /** Font file locations and web font imports. */
+  fonts?: FontsConfig;
   installed?: {
     components: string[];
     primitives: string[];
@@ -227,6 +241,20 @@ export interface RaftersConfig {
     rules: string[];
     substrate?: string[];
   };
+}
+
+/**
+ * Migrate legacy configs that carry `shadcn: boolean` to the new `source`
+ * field. Called on every config read so existing projects upgrade silently.
+ */
+export function migrateConfig(raw: Record<string, unknown>): Record<string, unknown> {
+  if ('shadcn' in raw && !('source' in raw)) {
+    if (raw.shadcn === true) {
+      raw.source = 'shadcn';
+    }
+    delete raw.shadcn;
+  }
+  return raw;
 }
 
 async function updateMainCss(cwd: string, cssPath: string, themePath: string): Promise<void> {
@@ -468,19 +496,14 @@ export async function generateOutputs(
   paths: ReturnType<typeof getRaftersPaths>,
   registry: TokenRegistry,
   exports: ExportConfig,
-  shadcn: ShadcnConfig | null,
+  source: string | undefined,
   darkMode: 'class' | 'media' = 'class',
   config?: RaftersConfig | null,
 ): Promise<string[]> {
-  // The compiled (standalone) sheet scans the configured component vocabulary.
-  // When no config is available yet (fresh init, nothing installed), the source
-  // set is empty and the sheet is theme-only -- it fills in once components land.
   const contentSources = config ? resolveContentSources(cwd, config) : [];
 
-  // CLI-only concern: the compiled export needs @tailwindcss/cli present. Prompt
-  // (or throw in agent mode) before delegating to the shared regen path.
   if (exports.compiled && !isTailwindCliInstalled()) {
-    log({ event: 'init:prompting_exports' }); // stop spinner before prompt
+    log({ event: 'init:prompting_exports' });
     await ensureTailwindCli(cwd);
   }
   if (exports.compiled) {
@@ -492,29 +515,29 @@ export async function generateOutputs(
     exports,
     contentSources,
     darkMode,
-    includeImport: !shadcn,
+    includeImport: source !== 'shadcn',
   });
 }
 
 async function regenerateFromExisting(
   cwd: string,
   paths: ReturnType<typeof getRaftersPaths>,
-  shadcn: ShadcnConfig | null,
+  source: string | undefined,
   isAgentMode: boolean,
   framework: Framework,
 ): Promise<void> {
   log({ event: 'init:regenerate', cwd });
 
-  // Load existing config for export settings
   let existingConfig: RaftersConfig | null = null;
   try {
     const configContent = await readFile(paths.config, 'utf-8');
-    existingConfig = JSON.parse(configContent) as RaftersConfig;
+    existingConfig = migrateConfig(
+      JSON.parse(configContent) as Record<string, unknown>,
+    ) as unknown as RaftersConfig;
   } catch {
     // No config file, will use defaults
   }
 
-  // Refresh framework and paths from fresh detection
   if (framework !== 'unknown' && existingConfig) {
     const frameworkPaths = FRAMEWORK_SPECS[framework].components;
     existingConfig.framework = framework;
@@ -562,19 +585,16 @@ async function regenerateFromExisting(
   // Ensure output directory exists
   await mkdir(paths.output, { recursive: true });
 
-  // Generate outputs (existingConfig carries the component paths the compiled
-  // sheet scans; null -> theme-only compiled until components are installed)
   const outputs = await generateOutputs(
     cwd,
     paths,
     registry,
     exports,
-    shadcn,
+    source,
     'class',
     existingConfig,
   );
 
-  // Update config with new export settings (create if missing)
   if (existingConfig) {
     existingConfig.exports = exports;
     await writeFile(paths.config, JSON.stringify(existingConfig, null, 2));
@@ -587,7 +607,7 @@ async function regenerateFromExisting(
       compositesPath: frameworkPaths.composites,
       rulesPath: frameworkPaths.rules,
       cssPath: null,
-      shadcn: !!shadcn,
+      ...(source ? { source } : {}),
       exports,
       installed: { components: [], primitives: [], composites: [], rules: [] },
     };
@@ -604,22 +624,22 @@ async function regenerateFromExisting(
 async function resetToDefaults(
   cwd: string,
   paths: ReturnType<typeof getRaftersPaths>,
-  shadcn: ShadcnConfig | null,
+  source: string | undefined,
   isAgentMode: boolean,
   framework: Framework,
 ): Promise<void> {
   log({ event: 'init:reset', cwd });
 
-  // Load existing config for export settings + shadcn flag
   let existingConfig: RaftersConfig | null = null;
   try {
     const configContent = await readFile(paths.config, 'utf-8');
-    existingConfig = JSON.parse(configContent) as RaftersConfig;
+    existingConfig = migrateConfig(
+      JSON.parse(configContent) as Record<string, unknown>,
+    ) as unknown as RaftersConfig;
   } catch {
     // No config file, will use defaults
   }
 
-  // Refresh framework and paths from fresh detection
   if (framework !== 'unknown' && existingConfig) {
     const frameworkPaths = FRAMEWORK_SPECS[framework].components;
     existingConfig.framework = framework;
@@ -697,22 +717,18 @@ async function resetToDefaults(
     namespaceCount,
   });
 
-  // Ensure output directory exists
   await mkdir(paths.output, { recursive: true });
 
-  // Generate outputs (existingConfig carries the component paths the compiled
-  // sheet scans; null -> theme-only compiled until components are installed)
   const outputs = await generateOutputs(
     cwd,
     paths,
     registry,
     exports,
-    shadcn,
+    source,
     'class',
     existingConfig,
   );
 
-  // Update config with new export settings (create if missing)
   if (existingConfig) {
     existingConfig.exports = exports;
     await writeFile(paths.config, JSON.stringify(existingConfig, null, 2));
@@ -725,7 +741,8 @@ async function resetToDefaults(
       compositesPath: frameworkPaths.composites,
       rulesPath: frameworkPaths.rules,
       cssPath: null,
-      shadcn: !!shadcn,
+      ...(source ? { source } : {}),
+      intent: 'efficient',
       exports,
       installed: { components: [], primitives: [], composites: [], rules: [] },
     };
@@ -751,6 +768,7 @@ export async function init(options: InitOptions): Promise<void> {
   // Detect project configuration
   const project = await detectProject(cwd);
   const { framework: detectedFramework, shadcn, tailwindVersion, astroHasReact } = project;
+  const source: string | undefined = shadcn ? 'shadcn' : undefined;
 
   log({
     event: 'init:detected',
@@ -786,7 +804,7 @@ export async function init(options: InitOptions): Promise<void> {
 
   // --reset takes precedence over --rebuild
   if (raftersExists && options.reset) {
-    await resetToDefaults(cwd, paths, shadcn, isAgentMode, framework);
+    await resetToDefaults(cwd, paths, source, isAgentMode, framework);
     return;
   }
 
@@ -798,7 +816,7 @@ export async function init(options: InitOptions): Promise<void> {
 
   // If --rebuild and rafters exists, regenerate from existing config
   if (raftersExists && options.rebuild) {
-    await regenerateFromExisting(cwd, paths, shadcn, isAgentMode, framework);
+    await regenerateFromExisting(cwd, paths, source, isAgentMode, framework);
     return;
   }
 
@@ -886,7 +904,11 @@ export async function init(options: InitOptions): Promise<void> {
         const value = slot.detect(cssForBase);
         if (value === null) continue;
         baseConfig[slot.field] = value;
-        log({ event: slot.event, cssPath: sourceCssPathForBase, [slot.eventKey]: value });
+        log({
+          event: slot.event,
+          cssPath: sourceCssPathForBase,
+          [slot.eventKey]: value,
+        });
       }
     } catch (err) {
       // ENOENT is a soft skip -- the later sensing pass will surface the
@@ -920,7 +942,7 @@ export async function init(options: InitOptions): Promise<void> {
   });
 
   // Generate outputs based on export config
-  const outputs = await generateOutputs(cwd, paths, registry, exports, shadcn);
+  const outputs = await generateOutputs(cwd, paths, registry, exports, source);
 
   // Find and update the main CSS file (if not using shadcn which has its own CSS path).
   // `project.cssPath` is computed against the auto-detected framework; if the
@@ -938,7 +960,7 @@ export async function init(options: InitOptions): Promise<void> {
     shadcn?.tailwind?.css,
     log,
   );
-  if (!shadcn && exports.tailwind) {
+  if (source !== 'shadcn' && exports.tailwind) {
     if (detectedCssPath) {
       await updateMainCss(cwd, detectedCssPath, '.rafters/output/rafters.css');
     } else {
@@ -973,14 +995,16 @@ export async function init(options: InitOptions): Promise<void> {
   const frameworkPaths = FRAMEWORK_SPECS[framework].components;
   const config: RaftersConfig = {
     framework: framework,
+    ...(source ? { source } : {}),
     componentTarget,
     componentsPath: frameworkPaths.components,
     primitivesPath: frameworkPaths.primitives,
     compositesPath: frameworkPaths.composites,
     rulesPath: frameworkPaths.rules,
     cssPath: detectedCssPath,
-    shadcn: !!shadcn,
     exports,
+    intent: 'efficient',
+    fonts: { path: null, imports: [] },
     installed: {
       components: [],
       primitives: [],
@@ -1092,7 +1116,7 @@ export async function init(options: InitOptions): Promise<void> {
           // produced the defaults; this pass overwrites with the imported
           // overrides cascaded through their dependents.
           saveRegistryToDir(paths.tokens, registry);
-          await generateOutputs(cwd, paths, registry, exports, shadcn);
+          await generateOutputs(cwd, paths, registry, exports, source);
           const importedNames = [
             ...toImportColors.map((c) => c.name),
             ...toImportNonColors.map((d) => d.name),
@@ -1154,7 +1178,10 @@ export async function init(options: InitOptions): Promise<void> {
               familySeeds.set(baseName, { seed: oklch, seedPosition });
             }
           }
-          const families = Array.from(familySeeds, ([name, info]) => ({ name, ...info }));
+          const families = Array.from(familySeeds, ([name, info]) => ({
+            name,
+            ...info,
+          }));
           if (families.length > 0) {
             // Define every detected palette via `importColorFamily` --
             // returns the family Token + 11 per-position primitive Tokens,
@@ -1218,7 +1245,10 @@ export async function init(options: InitOptions): Promise<void> {
                 ? family.seedPosition
                 : await select({
                     message: `Which position in "${familyChoice}" for "${role}"?`,
-                    choices: SCALE_POSITIONS.map((p) => ({ name: p, value: p })),
+                    choices: SCALE_POSITIONS.map((p) => ({
+                      name: p,
+                      value: p,
+                    })),
                     default: family.seedPosition,
                   });
               registry.set(
@@ -1232,7 +1262,7 @@ export async function init(options: InitOptions): Promise<void> {
             }
 
             saveRegistryToDir(paths.tokens, registry);
-            await generateOutputs(cwd, paths, registry, exports, shadcn);
+            await generateOutputs(cwd, paths, registry, exports, source);
             const themeImportedNames = families.flatMap((f) =>
               SCALE_POSITIONS.map((p) => `color-${f.name}-${p}`).concat([`color-${f.name}`]),
             );
@@ -1372,7 +1402,7 @@ export async function init(options: InitOptions): Promise<void> {
         }
         if (fontAssignments.length > 0 || definedFonts.length > 0) {
           saveRegistryToDir(paths.tokens, registry);
-          await generateOutputs(cwd, paths, registry, exports, shadcn);
+          await generateOutputs(cwd, paths, registry, exports, source);
           log({
             event: 'init:import_fonts_applied',
             cssPath: detectedCssPath,
