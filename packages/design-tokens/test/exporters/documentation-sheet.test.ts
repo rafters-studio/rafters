@@ -106,10 +106,62 @@ describe('documentation sheet (#2039)', () => {
     );
   }, 30_000);
 
-  it('does not reintroduce :root selector', async () => {
+  it('does not contain :root selector (rewritten to :host)', async () => {
     const css = await registryToDocumentation(baseRegistry(), {
       contentSources: [fixtureDir],
     });
-    expect(css).not.toMatch(/:root(?![^{]*\{[^}]*container-type)/);
+    expect(css).not.toContain(':root');
+  }, 30_000);
+
+  it('carries the semantic color layer (--primary, --foreground, etc.)', async () => {
+    const css = await registryToDocumentation(baseRegistry(), {
+      contentSources: [fixtureDir],
+    });
+    for (const name of [
+      '--primary',
+      '--foreground',
+      '--background',
+      '--muted',
+      '--accent',
+      '--border',
+    ]) {
+      expect(css, `missing semantic declaration: ${name}`).toMatch(new RegExp(`${name}\\s*:`));
+    }
+  }, 30_000);
+
+  it('is self-contained: no unresolved custom property references', async () => {
+    const css = await registryToDocumentation(baseRegistry(), {
+      contentSources: [fixtureDir],
+    });
+    const referenced = new Set<string>();
+    for (const m of css.matchAll(/var\(\s*(--[-\w]+)/g)) {
+      if (m[1]) referenced.add(m[1]);
+    }
+    const declared = new Set<string>();
+    for (const m of css.matchAll(/(--[-\w]+)\s*:/g)) {
+      if (m[1]) declared.add(m[1]);
+    }
+    for (const m of css.matchAll(/@property\s+(--[-\w]+)/g)) {
+      if (m[1]) declared.add(m[1]);
+    }
+    const KNOWN_TW_INTERNALS = new Set([
+      '--default-font-family',
+      '--default-mono-font-family',
+      '--default-font-feature-settings',
+      '--default-font-variation-settings',
+      '--default-mono-font-feature-settings',
+      '--default-mono-font-variation-settings',
+      '--tw-tracking',
+    ]);
+    const unresolved = new Set<string>();
+    for (const name of referenced) {
+      if (!declared.has(name) && !KNOWN_TW_INTERNALS.has(name)) {
+        unresolved.add(name);
+      }
+    }
+    expect(
+      [...unresolved].sort(),
+      `${unresolved.size} custom properties referenced but never declared`,
+    ).toEqual([]);
   }, 30_000);
 });

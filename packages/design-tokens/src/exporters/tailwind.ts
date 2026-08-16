@@ -1818,92 +1818,80 @@ export async function registryToDocumentation(
 }
 
 /**
- * Post-process the compiled documentation sheet for shadow-DOM adoption:
- * - Extract theme vars from `@layer theme`, rewrite `:root,:host` to `:host`
- *   with `container-type: inline-size` added
- * - Keep `@layer properties` (Tailwind fallback initial values for --tw-* vars)
- *   with its universal selector rewritten for shadow-DOM scope
- * - Keep top-level `@property` declarations (modern initial-value registrations)
- * - Keep top-level `@keyframes` blocks (animation definitions)
- * - Strip `@layer theme` (replaced by the `:host` block)
- * - Strip the Tailwind banner comment
- * - Keep `@layer base`, `@layer components`, `@layer utilities` intact
+ * Post-process the compiled documentation sheet for shadow-DOM adoption.
+ *
+ * The sheet is SELF-CONTAINED: adopt it, get a correct render, need nothing
+ * else on the page. Every top-level construct Tailwind v4 emits is kept;
+ * selectors are rewritten for shadow-DOM scope (:root -> :host, universal
+ * selector gains :host). The Tailwind banner comment and the bare @layer
+ * order declaration are the only things dropped.
+ *
+ * Uses css-tree for AST walking instead of regex extraction -- the compiled
+ * output is a real stylesheet and should be processed as one.
  */
 function postProcessDocSheet(css: string): string {
+  const csstree = require('css-tree') as typeof import('css-tree');
+  const ast = csstree.parse(css);
   const parts: string[] = [];
+  let hasHostContainer = false;
 
-  // Extract the theme layer's var declarations, rewrite to :host-only
-  const themeLayerRe = /@layer theme\{(.*?)\}(?=@layer|$)/s;
-  const themeMatch = themeLayerRe.exec(css);
-  if (themeMatch) {
-    let themeContent = themeMatch[1] ?? '';
-    themeContent = themeContent.replace(/:root,:host/g, ':host');
-    parts.push(`:host{container-type:inline-size}${themeContent}`);
-  }
+  const atruleNames = new Set(['layer', 'property', 'keyframes']);
+  csstree.walk(ast, {
+    visit: 'Atrule',
+    enter(node) {
+      if (!atruleNames.has(node.name)) return;
 
-  // Keep top-level @property declarations (outside all @layer blocks).
-  // Tailwind v4 emits these for --tw-shadow, --tw-translate-*, --tw-ring-*
-  // etc. Without them, declarations referencing unset --tw-* vars are
-  // guaranteed-invalid and silently dropped (shadows, transforms, rings
-  // all inert).
-  const propertyRe = /@property\s+--[\w-]+\s*\{[^}]*\}/g;
-  let propMatch: RegExpExecArray | null;
-  while ((propMatch = propertyRe.exec(css)) !== null) {
-    parts.push(propMatch[0]);
-  }
-
-  // Keep top-level @keyframes blocks. Tailwind emits these outside @layer
-  // for built-in animations (spin, pulse) and custom keyframes from @theme.
-  const keyframesRe = /@keyframes\s+[\w-]+\s*\{/g;
-  let kfMatch: RegExpExecArray | null;
-  while ((kfMatch = keyframesRe.exec(css)) !== null) {
-    const start = kfMatch.index;
-    let depth = 0;
-    let end = start;
-    for (let i = start; i < css.length; i++) {
-      if (css[i] === '{') depth++;
-      if (css[i] === '}') {
-        depth--;
-        if (depth === 0) {
-          end = i + 1;
-          break;
+      if (node.name === 'layer') {
+        const prelude = node.prelude ? csstree.generate(node.prelude) : '';
+        if (prelude === 'theme' && node.block) {
+          let content = csstree.generate(node.block);
+          content = content.replace(/^\{/, '').replace(/\}$/, '');
+          content = rewriteRootToHost(content);
+          if (!hasHostContainer) {
+            parts.push(`:host{container-type:inline-size}${content}`);
+            hasHostContainer = true;
+          } else {
+            parts.push(content);
+          }
+        } else if (/^(base|components|utilities)/.test(prelude) && node.block) {
+          parts.push(csstree.generate(node));
+        } else if (prelude.startsWith('properties') && node.block) {
+          let block = csstree.generate(node);
+          block = rewritePropertiesSelector(block);
+          parts.push(block);
         }
+      } else {
+        parts.push(csstree.generate(node));
       }
-    }
-    parts.push(css.slice(start, end));
-  }
+    },
+  });
 
-  // Keep base, components, utilities, AND properties layers.
-  // The properties layer wraps a @supports fallback that sets --tw-* initial
-  // values on *, ::before, ::after, ::backdrop for browsers without @property
-  // support. Rewrite to add :host (not matched by * from inside its own
-  // shadow root) and drop ::backdrop (not relevant in shadow DOM). The bare *
-  // stays -- adoptedStyleSheets scopes it to the shadow tree automatically.
-  const layerRe = /@layer (base|components|utilities|properties)\{/g;
-  let match: RegExpExecArray | null;
-  while ((match = layerRe.exec(css)) !== null) {
-    const start = match.index;
-    let depth = 0;
-    let end = start;
-    for (let i = start; i < css.length; i++) {
-      if (css[i] === '{') depth++;
-      if (css[i] === '}') {
-        depth--;
-        if (depth === 0) {
-          end = i + 1;
-          break;
-        }
-      }
-    }
-    let block = css.slice(start, end);
-    if (match[1] === 'properties') {
-      block = block.replace(
-        /\*\s*,\s*:?:?before\s*,\s*:?:?after\s*,\s*:?:?backdrop/g,
-        ':host,*,::before,::after',
-      );
-    }
-    parts.push(block);
-  }
+  // Top-level rules (not inside @layer): semantic color layer, dark mode,
+  // data-theme selectors. These carry --primary, --foreground, etc.
+  csstree.walk(ast, {
+    visit: 'Rule',
+    enter(node, _item, list) {
+      if (list !== (ast as import('css-tree').StyleSheet).children) return;
+
+      let block = csstree.generate(node);
+      block = rewriteRootToHost(block);
+      parts.push(block);
+    },
+  });
 
   return parts.join('');
+}
+
+function rewriteRootToHost(css: string): string {
+  return css
+    .replace(/:root\s*,\s*:host/g, ':host')
+    .replace(/:root\[data-theme/g, ':host[data-theme')
+    .replace(/:root(?=[{\s,[])/g, ':host');
+}
+
+function rewritePropertiesSelector(css: string): string {
+  return css.replace(
+    /\*\s*,\s*:?:?before\s*,\s*:?:?after\s*,\s*:?:?backdrop/g,
+    ':host,*,::before,::after',
+  );
 }
