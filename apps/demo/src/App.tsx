@@ -7,7 +7,6 @@ import {
   SidebarProvider,
 } from '@/components/ui/sidebar';
 import { useState } from 'react';
-import { TypographySpecimen } from '@/components/typography-specimen';
 
 type Page = 'workspace' | 'typography';
 
@@ -44,7 +43,11 @@ export default function App() {
             workspace
           </Container>
         )}
-        {page === 'typography' && <TypographySpecimen />}
+        {page === 'typography' && (
+          <Container as="section" gap="6">
+            typography
+          </Container>
+        )}
       </Container>
     </SidebarProvider>
   );
