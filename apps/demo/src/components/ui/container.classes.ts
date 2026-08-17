@@ -112,7 +112,7 @@ const depthClasses: Record<ContainerDepth, string> = {
  * not an agent decision.
  */
 const articleTypography = [
-  '[&_p]:leading-relaxed',
+  '[&_p]:leading-normal',
   '[&_p]:mb-4',
   '[&_p:last-child]:mb-0',
   '[&_h1]:text-4xl [&_h1]:font-bold [&_h1]:tracking-tight [&_h1]:mb-4 [&_h1]:mt-0 [&_h1]:text-accent-foreground',

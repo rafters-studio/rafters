@@ -124,7 +124,7 @@ const leadingClasses: Record<string, string> = {
   tight: 'leading-tight',
   snug: 'leading-snug',
   normal: 'leading-normal',
-  relaxed: 'leading-relaxed',
+  relaxed: 'leading-normal',
   loose: 'leading-loose',
 };
 
