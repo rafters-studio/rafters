@@ -24,8 +24,8 @@
  */
 import * as React from 'react';
 import classy from '../../primitives/classy';
-import type { ColorPickerStateControls } from '../../primitives/color-picker';
-import { createColorPickerState, getGamutTier } from '../../primitives/color-picker';
+import type { ColorPickerStateControls } from '../../primitives/color-picker-state';
+import { createColorPickerState, getGamutTier } from '../../primitives/color-picker-state';
 import { barPosFromHue } from '../../primitives/oklch-gamut';
 import type { Direction, GamutTier, OklchColor } from '../../primitives/types';
 
