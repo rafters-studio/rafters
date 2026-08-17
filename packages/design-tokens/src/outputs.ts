@@ -122,12 +122,18 @@ export async function regenerateOutputs(
   input: RegenerateOutputsInput,
   hooks: RegenerateOutputsHooks = {},
 ): Promise<string[]> {
-  const { outputDir, exports, contentSources = [], darkMode = 'class' } = input;
+  const {
+    outputDir,
+    exports,
+    contentSources = [],
+    darkMode = 'class',
+    includeImport = true,
+  } = input;
   await mkdir(outputDir, { recursive: true });
   const written: string[] = [];
 
   if (exports.tailwind) {
-    const css = registryToTailwind(registry, { includeImport: false, darkMode });
+    const css = registryToTailwind(registry, { includeImport, darkMode });
     await writeFile(join(outputDir, 'rafters.css'), css);
     written.push('rafters.css');
   }
