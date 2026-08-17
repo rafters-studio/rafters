@@ -2,8 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   ColorPickerStateControls,
   ColorPickerStateOptions,
-} from '../../src/primitives/color-picker';
-import { createColorPickerState } from '../../src/primitives/color-picker';
+} from '../../src/primitives/color-picker-state';
+import { createColorPickerState } from '../../src/primitives/color-picker-state';
 import type { OklchColor } from '../../src/primitives/types';
 
 let areaCanvas: HTMLCanvasElement;
