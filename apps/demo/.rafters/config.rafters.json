@@ -8,10 +8,15 @@
   "cssPath": "src/index.css",
   "exports": {
     "tailwind": true,
-    "typescript": false,
+    "typescript": true,
     "dtcg": false,
     "compiled": false,
     "documentation": true
+  },
+  "intent": "efficient",
+  "fonts": {
+    "path": null,
+    "imports": []
   },
   "installed": {
     "components": [
@@ -26,11 +31,6 @@
       "button-group",
       "calendar",
       "card",
-      "card-action",
-      "card-content",
-      "card-footer",
-      "card-header",
-      "card-title",
       "carousel",
       "checkbox",
       "collapsible",
@@ -38,7 +38,6 @@
       "command",
       "container",
       "context-menu",
-      "context-menu-sub",
       "dialog",
       "drawer",
       "dropdown-menu",

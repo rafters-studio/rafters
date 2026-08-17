@@ -1,7 +1,9 @@
 import * as React from 'react';
 import { useMemory } from '@/hooks/use-memory';
 import { createBehavior, type PartIds } from '@/lib/contract';
-import classy from '@/lib/primitives/classy';
+import { createClassy } from '@/lib/primitives/classy';
+
+const classy = createClassy({ allowArbitrary: true });
 import { createRovingFocus } from '@/lib/primitives/roving-focus';
 import {
   accordion,

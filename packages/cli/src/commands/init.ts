@@ -252,7 +252,12 @@ export function migrateConfig(raw: Record<string, unknown>): Record<string, unkn
   return raw;
 }
 
-async function updateMainCss(cwd: string, cssPath: string, themePath: string): Promise<void> {
+async function updateMainCss(
+  cwd: string,
+  cssPath: string,
+  themePath: string,
+  contentSources: string[] = [],
+): Promise<void> {
   const fullCssPath = join(cwd, cssPath);
   const cssContent = await readFile(fullCssPath, 'utf-8');
 
@@ -270,16 +275,23 @@ async function updateMainCss(cwd: string, cssPath: string, themePath: string): P
   // Backup the original
   await backupCss(fullCssPath);
 
-  // The theme.css already includes @import "tailwindcss", so we just need to import it
-  // Replace the tailwindcss import with our theme import
+  // Keep @import "tailwindcss" at the top level so @source directives work.
+  // Add @source for installed component paths, then import rafters.css.
+  const sourceLines = contentSources.map((src) => `@source "${src}";`).join('\n');
+  const raftersBlock = sourceLines
+    ? `@import "tailwindcss";\n${sourceLines}\n@import "${relativeThemePath}";`
+    : `@import "tailwindcss";\n@import "${relativeThemePath}";`;
+
   let newContent: string;
   if (cssContent.includes('@import "tailwindcss"')) {
-    newContent = cssContent.replace('@import "tailwindcss";', `@import "${relativeThemePath}";`);
+    newContent = cssContent.replace('@import "tailwindcss";', raftersBlock);
   } else if (cssContent.includes("@import 'tailwindcss'")) {
-    newContent = cssContent.replace("@import 'tailwindcss';", `@import "${relativeThemePath}";`);
+    newContent = cssContent.replace("@import 'tailwindcss';", raftersBlock);
+  } else if (cssContent.includes('.rafters/output/rafters.css')) {
+    // Already has rafters import, update source directives
+    return;
   } else {
-    // No tailwind import found, prepend the theme import
-    newContent = `@import "${relativeThemePath}";\n\n${cssContent}`;
+    newContent = `${raftersBlock}\n\n${cssContent}`;
   }
 
   await writeFile(fullCssPath, newContent);

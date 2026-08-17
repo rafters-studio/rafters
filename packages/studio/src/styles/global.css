@@ -1,7 +1,13 @@
 @import 'tailwindcss';
+@import '@fontsource-variable/ibm-plex-sans';
+@import '@fontsource/ibm-plex-mono';
+@source "/Volumes/store/projects/rafters-studio/rafters/apps/demo/src/components/ui";
+@source "/Volumes/store/projects/rafters-studio/rafters/apps/demo/src/lib/primitives";
+@import '@rafters-output/rafters.css';
 
-/*
- * Studio self-consumption pattern:
- * Dynamic vars from project (HMR updates when tokens change)
- */
-@import '@rafters-output/rafters.vars.css';
+@theme {
+  --font-sans: 'IBM Plex Sans Variable', 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --font-body: 'IBM Plex Sans Variable', 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-heading: 'IBM Plex Sans Variable', 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+}

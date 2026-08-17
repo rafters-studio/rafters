@@ -28,6 +28,8 @@ export interface TailwindExportOptions {
   includeImport?: boolean;
   /** Dark mode strategy: 'class' (.dark class toggle) or 'media' (OS preference). Default: 'class' */
   darkMode?: 'class' | 'media';
+  /** Absolute paths Tailwind should scan for class candidates. Emitted as @source directives. */
+  contentSources?: string[];
 }
 
 const SHADOW_PART_SUFFIX = /-(offset-x|offset-y|blur|spread|color)$/;
@@ -1127,6 +1129,11 @@ export function tokensToTailwind(
   // Tailwind import
   if (includeImport) {
     sections.push('@import "tailwindcss";');
+    if (options.contentSources && options.contentSources.length > 0) {
+      for (const src of options.contentSources) {
+        sections.push(`@source "${src}";`);
+      }
+    }
     sections.push('');
   }
 

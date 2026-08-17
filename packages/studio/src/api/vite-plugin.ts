@@ -706,6 +706,7 @@ export function studioApiPlugin(): Plugin {
       try {
         registry = loadRegistryFromDir(tokensDir, REGISTRY_PLUGINS);
         initialized = true;
+        console.log(`[rafters] Registry loaded: ${registry.size()} tokens from ${tokensDir}`);
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         console.log(`[rafters] Failed to initialize: ${message}`);
@@ -894,6 +895,16 @@ export function studioApiPlugin(): Plugin {
           console.log(`[rafters] Token update failed for "${data.name}": ${error}`);
           client.send('rafters:token-updated', { ok: false, error: String(error) });
         }
+      });
+
+      server.ws.on('rafters:get-tokens', (rawData: unknown, client) => {
+        const parsed = z.object({ namespace: z.string().optional() }).safeParse(rawData);
+        const namespace = parsed.success ? parsed.data.namespace : undefined;
+        const tokens = namespace ? registry.list({ namespace }) : registry.list();
+        console.log(
+          `[rafters] get-tokens: namespace=${namespace ?? 'all'}, count=${tokens.length}`,
+        );
+        client.send('rafters:tokens', { ok: true, tokens });
       });
 
       // Listen for config reads from client

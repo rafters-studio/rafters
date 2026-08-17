@@ -1,10 +1,11 @@
-import { resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
-import { studioApiPlugin } from './src/api/vite-plugin';
+import { studioApiPlugin } from './src/api/vite-plugin.ts';
 
-// Project path is set by the CLI command `rafters studio`
+const __dirname = dirname(fileURLToPath(import.meta.url));
 const projectPath = process.env.RAFTERS_PROJECT_PATH || process.cwd();
 
 export default defineConfig({
@@ -14,8 +15,6 @@ export default defineConfig({
       '@': resolve(__dirname, './src'),
       '@rafters-output': resolve(projectPath, '.rafters', 'output'),
     },
-    // Resolve .js imports to .ts files (workspace packages use .js extensions in TS source)
-    extensions: ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json'],
   },
   optimizeDeps: {
     include: ['@rafters/color-utils', '@rafters/design-tokens', '@rafters/shared'],
@@ -31,6 +30,13 @@ export default defineConfig({
   server: {
     port: 7777,
     strictPort: true,
+    proxy: {
+      '/api/color': {
+        target: 'https://api.rafters.studio',
+        changeOrigin: true,
+        rewrite: (path: string) => path.replace(/^\/api\/color/, '/color'),
+      },
+    },
   },
   build: {
     outDir: 'dist',

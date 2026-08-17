@@ -7,7 +7,6 @@
 
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { studioApiPlugin } from '@rafters/studio/api/vite-plugin';
 import { createServer } from 'vite';
 import { getRaftersPaths } from '../utils/paths.js';
 
@@ -28,16 +27,13 @@ export async function studio(): Promise<void> {
   process.env.RAFTERS_PROJECT_PATH = cwd;
   process.env.RAFTERS_TOKENS_PATH = paths.tokens;
 
+  const studioApiPath = import.meta.resolve('@rafters/studio/api/vite-plugin');
+  const studioRoot = resolve(new URL(studioApiPath).pathname, '..', '..', '..');
+
   const server = await createServer({
-    plugins: [studioApiPlugin()],
-    server: {
-      port: 7777,
-    },
-    resolve: {
-      alias: {
-        '@rafters-output': resolve(cwd, '.rafters', 'output'),
-      },
-    },
+    configFile: resolve(studioRoot, 'vite.config.ts'),
+    configLoader: 'runner',
+    root: studioRoot,
   });
 
   await server.listen();

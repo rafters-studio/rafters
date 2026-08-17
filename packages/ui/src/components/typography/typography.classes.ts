@@ -83,17 +83,90 @@ const VARIANTS: Record<TypographyVariant, VariantDefaults> = {
   li: { line: '7' },
 };
 
+const sizeClasses: Record<string, string> = {
+  xs: 'text-xs',
+  sm: 'text-sm',
+  base: 'text-base',
+  lg: 'text-lg',
+  xl: 'text-xl',
+  '2xl': 'text-2xl',
+  '3xl': 'text-3xl',
+  '4xl': 'text-4xl',
+  '5xl': 'text-5xl',
+  '6xl': 'text-6xl',
+  '7xl': 'text-7xl',
+  '8xl': 'text-8xl',
+  '9xl': 'text-9xl',
+};
+
+const weightClasses: Record<string, string> = {
+  thin: 'font-thin',
+  extralight: 'font-extralight',
+  light: 'font-light',
+  normal: 'font-normal',
+  medium: 'font-medium',
+  semibold: 'font-semibold',
+  bold: 'font-bold',
+  extrabold: 'font-extrabold',
+  black: 'font-black',
+};
+
+const leadingClasses: Record<string, string> = {
+  none: 'leading-none',
+  '3': 'leading-3',
+  '4': 'leading-4',
+  '5': 'leading-5',
+  '6': 'leading-6',
+  '7': 'leading-7',
+  '8': 'leading-8',
+  '9': 'leading-9',
+  '10': 'leading-10',
+  tight: 'leading-tight',
+  snug: 'leading-snug',
+  normal: 'leading-normal',
+  relaxed: 'leading-relaxed',
+  loose: 'leading-loose',
+};
+
+const trackingClasses: Record<string, string> = {
+  tighter: 'tracking-tighter',
+  tight: 'tracking-tight',
+  normal: 'tracking-normal',
+  wide: 'tracking-wide',
+  wider: 'tracking-wider',
+  widest: 'tracking-widest',
+};
+
+const familyClasses: Record<string, string> = {
+  sans: 'font-sans',
+  serif: 'font-serif',
+  mono: 'font-mono',
+};
+
+const alignClasses: Record<string, string> = {
+  left: 'text-left',
+  center: 'text-center',
+  right: 'text-right',
+  justify: 'text-justify',
+  start: 'text-start',
+  end: 'text-end',
+};
+
+const transformClasses: Record<string, string> = {
+  uppercase: 'uppercase',
+  lowercase: 'lowercase',
+  capitalize: 'capitalize',
+  'normal-case': 'normal-case',
+};
+
 const DIM_TO_UTIL: Record<keyof TypographyTokenProps, (v: string) => string> = {
-  size: (v) => `text-${v}`,
-  weight: (v) => `font-${v}`,
-  line: (v) => `leading-${v}`,
-  tracking: (v) => `tracking-${v}`,
-  family: (v) => `font-${v}`,
-  align: (v) => `text-${v}`,
-  transform: (v) => v,
-  // Fill signature in text context: plain words emit text-{word}; a
-  // word-to-word signature emits gradient text via bg-clip-text. Invalid
-  // signatures emit nothing -- same contract as Container/Card (#1637).
+  size: (v) => sizeClasses[v] ?? '',
+  weight: (v) => weightClasses[v] ?? '',
+  line: (v) => leadingClasses[v] ?? '',
+  tracking: (v) => trackingClasses[v] ?? '',
+  family: (v) => familyClasses[v] ?? '',
+  align: (v) => alignClasses[v] ?? '',
+  transform: (v) => transformClasses[v] ?? '',
   color: (v) => resolveFillName(v, 'text'),
 };
 

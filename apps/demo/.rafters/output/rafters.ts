@@ -298,61 +298,71 @@ export const tokens = {
     },
   },
   focus: {
-    /** Default focus ring width - WCAG 2.2 requires minimum 2px */
-    'focus-ring-width': '0.125rem',
+    /** Default focus ring width - derives from spacing base */
+    'focus-ring-width': 'calc(var(--rafters-spacing-base) / 2)',
     /** Focus ring color - inherits from semantic ring token */
     'focus-ring-color': 'var(--ring)',
     /** Default focus ring - suitable for most interactive elements */
-    'focus-ring': { width: '0.125rem', offset: '0.125rem', style: 'solid', color: 'var(--ring)' },
+    'focus-ring': {
+      width: 'var(--rafters-focus-ring-width)',
+      offset: 'var(--rafters-focus-ring-width)',
+      style: 'solid',
+      color: 'var(--ring)',
+    },
     /** CSS outline shorthand for default focus ring */
-    'focus-outline': '0.125rem solid var(--ring)',
+    'focus-outline': 'var(--rafters-focus-ring-width) solid var(--ring)',
     /** Focus ring offset for default style */
-    'focus-offset': '0.125rem',
+    'focus-offset': 'var(--rafters-focus-ring-width)',
     /** Inset focus ring - for elements where external ring would be cut off */
     'focus-ring-inset': {
-      width: '0.125rem',
-      offset: '-0.125rem',
+      width: 'var(--rafters-focus-ring-width)',
+      offset: 'calc(var(--rafters-focus-ring-width) * -1)',
       style: 'solid',
       color: 'var(--ring)',
     },
     /** CSS outline shorthand for inset focus ring */
-    'focus-outline-inset': '0.125rem solid var(--ring)',
+    'focus-outline-inset': 'var(--rafters-focus-ring-width) solid var(--ring)',
     /** Focus ring offset for inset style */
-    'focus-offset-inset': '-0.125rem',
+    'focus-offset-inset': 'calc(var(--rafters-focus-ring-width) * -1)',
     /** Thick focus ring - for high-visibility needs */
     'focus-ring-thick': {
-      width: '0.188rem',
-      offset: '0.125rem',
+      width: 'calc(var(--rafters-focus-ring-width) * 1.5)',
+      offset: 'var(--rafters-focus-ring-width)',
       style: 'solid',
       color: 'var(--ring)',
     },
     /** CSS outline shorthand for thick focus ring */
-    'focus-outline-thick': '0.188rem solid var(--ring)',
+    'focus-outline-thick': 'calc(var(--rafters-focus-ring-width) * 1.5) solid var(--ring)',
     /** Focus ring offset for thick style */
-    'focus-offset-thick': '0.125rem',
+    'focus-offset-thick': 'var(--rafters-focus-ring-width)',
     /** Subtle focus ring - for dense UIs with many focusable elements */
     'focus-ring-subtle': {
-      width: '0.063rem',
-      offset: '0.125rem',
+      width: 'calc(var(--rafters-focus-ring-width) * 0.5)',
+      offset: 'var(--rafters-focus-ring-width)',
       style: 'solid',
       color: 'var(--ring)',
     },
     /** CSS outline shorthand for subtle focus ring */
-    'focus-outline-subtle': '0.063rem solid var(--ring)',
+    'focus-outline-subtle': 'calc(var(--rafters-focus-ring-width) * 0.5) solid var(--ring)',
     /** Focus ring offset for subtle style */
-    'focus-offset-subtle': '0.125rem',
+    'focus-offset-subtle': 'var(--rafters-focus-ring-width)',
     /** Focus ring for containers with focused descendants */
-    'focus-within-ring': { width: '0.125rem', offset: '0', style: 'solid', color: 'var(--ring)' },
+    'focus-within-ring': {
+      width: 'var(--rafters-focus-ring-width)',
+      offset: '0',
+      style: 'solid',
+      color: 'var(--ring)',
+    },
     /** Focus ring for Windows High Contrast Mode */
     'focus-high-contrast': {
-      width: '0.188rem',
-      offset: '0.125rem',
+      width: 'calc(var(--rafters-focus-ring-width) * 1.5)',
+      offset: 'var(--rafters-focus-ring-width)',
       style: 'solid',
       color: 'Highlight',
     },
   },
   motion: {
-    /** Legacy base transition duration. The perceptual duration scale (motion-duration-*) no longer derives from this; retained only as a reference value and delay-progression base. */
+    /** Legacy base transition duration. Nothing derives from this any more: the perceptual duration scale never did, and the ratio-stepped delay tokens that did were removed in #1991. Retained as a reference value only. */
     'motion-duration-base': '150ms',
     /** No perceptible transition. Cursor changes, text selection, badge counts. Below all perception -- there is nothing to track, so nothing is communicated. */
     'motion-duration-instant': '0ms',
@@ -366,8 +376,8 @@ export const tokens = {
     'motion-duration-normal': '350ms',
     /** Sheets, page transitions, large spatial movement where the user needs orientation. At the sluggish boundary -- the ceiling for anything but full-screen spatial transitions. Band: at the sluggish boundary. */
     'motion-duration-slow': '500ms',
-    /** Precision -- arrives exactly where it should, engineered rather than thrown. Decelerates into its final position. General-purpose state transitions and hover. */
-    'motion-easing-standard': 'cubic-bezier(0.25, 0.1, 0.25, 1)',
+    /** Precision -- a responsive start that decelerates into place, engineered rather than thrown. The general-purpose workhorse for state transitions and hover: the fast start matches a cursor already on target, where a symmetric ease would drag. */
+    'motion-easing-standard': 'cubic-bezier(0.4, 0, 0.2, 1)',
     /** Arrival, welcome, settling into place. The fast start communicates responsiveness; the slow finish communicates care. Anything entering the viewport. Paired with `exit` as a deliberately asymmetric couple. (Dragicevic 2011: slow-in/slow-out outperforms constant speed for tracking.) */
     'motion-easing-enter': 'cubic-bezier(0, 0, 0.2, 1)',
     /** Withdrawal, giving space. The brief hesitation acknowledges the user; the fast departure avoids lingering. Anything leaving the viewport. Paired with `enter` as a deliberately asymmetric couple -- exits are faster than entrances by design. */
@@ -378,14 +388,54 @@ export const tokens = {
     'motion-easing-spring-smooth': 'cubic-bezier(0.2, 0.9, 0.3, 1)',
     /** Alive, tight, following input closely -- a tighter spring with less settle and no overshoot. Toggles, presses, interactions that track input. */
     'motion-easing-spring-snappy': 'cubic-bezier(0.2, 0.8, 0.2, 1)',
-    /** None animation delay */
-    'motion-delay-none': '0ms',
-    /** Short animation delay */
-    'motion-delay-short': '125ms',
-    /** Medium animation delay */
-    'motion-delay-medium': '150ms',
-    /** Long animation delay */
-    'motion-delay-long': '180ms',
+    /** No perceptible transition. Cursor changes, text selection, badge counts. Below all perception -- there is nothing to track, so nothing is communicated. */
+    'rafters-duration-instant': '0ms',
+    /** Immediate but visible. Focus rings and press feedback. At the instantaneous threshold -- acknowledgment that input landed, not communication of a change. */
+    'rafters-duration-micro': '100ms',
+    /** Hover states. The cursor is already there, so the response must match its speed. Below the communicative window -- acknowledgment, not communication. */
+    'rafters-duration-fast': '150ms',
+    /** Dropdowns, tab switches, small reveals. The communicative window: fast enough to feel responsive, slow enough for the eye to track a trajectory and build a spatial model. */
+    'rafters-duration-moderate': '250ms',
+    /** The workhorse -- modal entrances, toggles, standard state transitions. The communicative window for larger movement. */
+    'rafters-duration-normal': '350ms',
+    /** Sheets, page transitions, large spatial movement where the user needs orientation. At the sluggish boundary -- the ceiling for anything but full-screen spatial transitions. */
+    'rafters-duration-slow': '500ms',
+    /** Precision -- a responsive start that decelerates into place, engineered rather than thrown. The general-purpose workhorse for state transitions and hover: the fast start matches a cursor already on target, where a symmetric ease would drag. */
+    'rafters-ease-standard': 'cubic-bezier(0.4, 0, 0.2, 1)',
+    /** Arrival, welcome, settling into place. The fast start communicates responsiveness; the slow finish communicates care. Anything entering the viewport. Paired with `exit` as a deliberately asymmetric couple. (Dragicevic 2011: slow-in/slow-out outperforms constant speed for tracking.) */
+    'rafters-ease-enter': 'cubic-bezier(0, 0, 0.2, 1)',
+    /** Withdrawal, giving space. The brief hesitation acknowledges the user; the fast departure avoids lingering. Anything leaving the viewport. Paired with `enter` as a deliberately asymmetric couple -- exits are faster than entrances by design. */
+    'rafters-ease-exit': 'cubic-bezier(0.4, 0, 1, 1)',
+    /** Mechanical, procedural, without personality -- a process, not a gesture. Progress and loading, where the system is working rather than interacting. Never for interactive spatial transitions. */
+    'rafters-ease-linear': 'linear',
+    /** Alive, coming physically to rest -- a critically-damped spring with no overshoot. Page transitions, sheets, large tracked spatial movement. (Johansson 1973 / Pratt 2010: animate motion is perceived as alive and captures attention.) */
+    'rafters-ease-spring-smooth': 'cubic-bezier(0.2, 0.9, 0.3, 1)',
+    /** Alive, tight, following input closely -- a tighter spring with less settle and no overshoot. Toggles, presses, interactions that track input. */
+    'rafters-ease-spring-snappy': 'cubic-bezier(0.2, 0.8, 0.2, 1)',
+    /** How long a pointer must rest before the system believes the hover was meant. Long enough to survive a pass-through, short enough that a deliberate hover does not feel ignored. */
+    'rafters-delay-hover-intent': '200ms',
+    /** How long a surface stays after the pointer leaves, so a near-miss is forgiven. */
+    'rafters-delay-linger': '300ms',
+    /** The beat between choreographed parts of a single surface. */
+    'rafters-delay-choreo-step': '50ms',
+    /** The per-item offset when a list animates in. */
+    'rafters-delay-stagger-step': '0ms',
+    /** How long a just-closed surface stays warm enough to reopen without ceremony. */
+    'rafters-delay-skip': '300ms',
+    /** How far a surface scales up as it arrives. */
+    'rafters-extent-pop': '0.95',
+    /** How far a control depresses when pressed. */
+    'rafters-extent-press': '0.97',
+    /** How far an indicator draws along its track. */
+    'rafters-extent-draw': '1',
+    /** One full rotation of a working indicator. */
+    'rafters-period-spin': '1s',
+    /** One breath of a skeleton or placeholder. */
+    'rafters-period-pulse': '2s',
+    /** One blink of a text caret. */
+    'rafters-period-blink': '1.25s',
+    /** One sweep of a shimmer across a loading surface. */
+    'rafters-period-shimmer': '2s',
     /** Fade from transparent to opaque */
     'motion-keyframe-fade-in': 'from { opacity: 0; } to { opacity: 1; }',
     /** Fade from opaque to transparent */
@@ -416,10 +466,10 @@ export const tokens = {
       'from { transform: translateX(0); } to { transform: translateX(100%); }',
     /** Scale up while fading in */
     'motion-keyframe-scale-in':
-      'from { transform: scale(0.96); opacity: 0; } to { transform: scale(1); opacity: 1; }',
+      'from { transform: scale(var(--rafters-extent-pop)); opacity: 0; } to { transform: scale(1); opacity: 1; }',
     /** Scale down while fading out */
     'motion-keyframe-scale-out':
-      'from { transform: scale(1); opacity: 1; } to { transform: scale(0.96); opacity: 0; }',
+      'from { transform: scale(1); opacity: 1; } to { transform: scale(var(--rafters-extent-pop)); opacity: 0; }',
     /** Continuous rotation */
     'motion-keyframe-spin': 'from { transform: rotate(0deg); } to { transform: rotate(360deg); }',
     /** Expanding pulse that fades out */
@@ -429,63 +479,87 @@ export const tokens = {
     /** Bouncing motion */
     'motion-keyframe-bounce':
       '0%, 100% { transform: translateY(-33%); animation-timing-function: cubic-bezier(0.8, 0, 1, 1); } 50% { transform: translateY(0); animation-timing-function: cubic-bezier(0, 0, 0.2, 1); }',
-    /** Expand accordion content */
-    'motion-keyframe-accordion-down':
-      'from { height: 0; } to { height: var(--radix-accordion-content-height); }',
-    /** Collapse accordion content */
-    'motion-keyframe-accordion-up':
-      'from { height: var(--radix-accordion-content-height); } to { height: 0; }',
     /** Text cursor blinking */
     'motion-keyframe-caret-blink': '0%, 70%, 100% { opacity: 1; } 20%, 50% { opacity: 0; }',
     /** Fade in animation */
-    'motion-animation-fade-in': 'fade-in var(--motion-duration-fast) var(--motion-easing-enter)',
+    'motion-animation-fade-in': 'fade-in var(--rafters-duration-fast) var(--rafters-ease-enter)',
     /** Fade out animation */
-    'motion-animation-fade-out': 'fade-out var(--motion-duration-fast) var(--motion-easing-exit)',
+    'motion-animation-fade-out': 'fade-out var(--rafters-duration-fast) var(--rafters-ease-exit)',
     /** Slide in from top */
     'motion-animation-slide-in-from-top':
-      'slide-in-from-top var(--motion-duration-normal) var(--motion-easing-enter)',
+      'slide-in-from-top var(--rafters-duration-normal) var(--rafters-ease-enter)',
     /** Slide in from bottom */
     'motion-animation-slide-in-from-bottom':
-      'slide-in-from-bottom var(--motion-duration-normal) var(--motion-easing-enter)',
+      'slide-in-from-bottom var(--rafters-duration-normal) var(--rafters-ease-enter)',
     /** Slide in from left */
     'motion-animation-slide-in-from-left':
-      'slide-in-from-left var(--motion-duration-normal) var(--motion-easing-enter)',
+      'slide-in-from-left var(--rafters-duration-normal) var(--rafters-ease-enter)',
     /** Slide in from right */
     'motion-animation-slide-in-from-right':
-      'slide-in-from-right var(--motion-duration-normal) var(--motion-easing-enter)',
+      'slide-in-from-right var(--rafters-duration-normal) var(--rafters-ease-enter)',
     /** Slide out to top */
     'motion-animation-slide-out-to-top':
-      'slide-out-to-top var(--motion-duration-fast) var(--motion-easing-exit)',
+      'slide-out-to-top var(--rafters-duration-fast) var(--rafters-ease-exit)',
     /** Slide out to bottom */
     'motion-animation-slide-out-to-bottom':
-      'slide-out-to-bottom var(--motion-duration-fast) var(--motion-easing-exit)',
+      'slide-out-to-bottom var(--rafters-duration-fast) var(--rafters-ease-exit)',
     /** Slide out to left */
     'motion-animation-slide-out-to-left':
-      'slide-out-to-left var(--motion-duration-fast) var(--motion-easing-exit)',
+      'slide-out-to-left var(--rafters-duration-fast) var(--rafters-ease-exit)',
     /** Slide out to right */
     'motion-animation-slide-out-to-right':
-      'slide-out-to-right var(--motion-duration-fast) var(--motion-easing-exit)',
+      'slide-out-to-right var(--rafters-duration-fast) var(--rafters-ease-exit)',
     /** Scale in with spring */
     'motion-animation-scale-in':
-      'scale-in var(--motion-duration-normal) var(--motion-easing-spring-snappy)',
+      'scale-in var(--rafters-duration-normal) var(--rafters-ease-spring-snappy)',
     /** Scale out */
-    'motion-animation-scale-out': 'scale-out var(--motion-duration-fast) var(--motion-easing-exit)',
+    'motion-animation-scale-out': 'scale-out var(--rafters-duration-fast) var(--rafters-ease-exit)',
     /** Continuous spin */
-    'motion-animation-spin': 'spin 1s var(--motion-easing-linear) infinite',
+    'motion-animation-spin': 'spin 1s var(--rafters-ease-linear) infinite',
     /** Pinging pulse */
-    'motion-animation-ping': 'ping 1s var(--motion-easing-enter) infinite',
+    'motion-animation-ping': 'ping 1s var(--rafters-ease-enter) infinite',
     /** Gentle pulse */
-    'motion-animation-pulse': 'pulse 2s var(--motion-easing-standard) infinite',
+    'motion-animation-pulse': 'pulse 2s var(--rafters-ease-standard) infinite',
     /** Bouncing */
-    'motion-animation-bounce': 'bounce 1s var(--motion-easing-standard) infinite',
-    /** Accordion expand */
-    'motion-animation-accordion-down':
-      'accordion-down var(--motion-duration-normal) var(--motion-easing-enter)',
-    /** Accordion collapse */
-    'motion-animation-accordion-up':
-      'accordion-up var(--motion-duration-normal) var(--motion-easing-enter)',
+    'motion-animation-bounce': 'bounce 1s var(--rafters-ease-standard) infinite',
     /** Caret blinking */
-    'motion-animation-caret-blink': 'caret-blink 1.25s var(--motion-easing-enter) infinite',
+    'motion-animation-caret-blink': 'caret-blink 1.25s var(--rafters-ease-enter) infinite',
+    /** A dialog arriving: fade + zoom from the pop extent, on the arrival curve. */
+    'motion-cell-dialog-content-open': {
+      keyframe: 'scale-in',
+      durationTier: 'normal',
+      curve: 'enter',
+    },
+    /** A dialog leaving: fade + zoom back to the pop extent, on the departure curve. */
+    'motion-cell-dialog-content-close': {
+      keyframe: 'scale-out',
+      durationTier: 'moderate',
+      curve: 'exit',
+    },
+    /** A popover arriving: smaller and nearer than a dialog, so one tier quicker. */
+    'motion-cell-popover-content-open': {
+      keyframe: 'scale-in',
+      durationTier: 'moderate',
+      curve: 'enter',
+    },
+    /** A popover leaving: the user already chose to dismiss it. */
+    'motion-cell-popover-content-close': {
+      keyframe: 'scale-out',
+      durationTier: 'fast',
+      curve: 'exit',
+    },
+    /** A menu arriving: same anchored-popup moment as popover, declared separately. */
+    'motion-cell-dropdown-menu-content-open': {
+      keyframe: 'scale-in',
+      durationTier: 'moderate',
+      curve: 'enter',
+    },
+    /** A menu leaving, after a choice or a dismissal. */
+    'motion-cell-dropdown-menu-content-close': {
+      keyframe: 'scale-out',
+      durationTier: 'fast',
+      curve: 'exit',
+    },
     /** Fade in animation preset */
     'motion-fade-in': '150ms cubic-bezier(0, 0, 0.2, 1)',
     /** Fade out animation preset */
@@ -517,11 +591,11 @@ export const tokens = {
       curve: 'spring-snappy',
       reducedMotion: { properties: ['color', 'background-color'] },
     },
-    /** Toggle/switch state change. Shows the new state. A thumb travelling a track is a small, tracked movement -- moderate tier, snappy spring. Reduced motion drops the transform to a colour cross-fade. */
+    /** Toggle/switch state change. Shows the new state. A thumb travelling a track is a small, tracked movement -- moderate tier at the standard curve. Reduced motion drops the transform to a colour cross-fade. */
     'motion-semantic-toggle': {
       properties: ['color', 'background-color', 'transform'],
       durationTier: 'moderate',
-      curve: 'spring-snappy',
+      curve: 'standard',
       reducedMotion: { properties: ['color', 'background-color'] },
     },
     /** Dropdown/menu entrance. A dropdown is small and travels a short distance -- moderate tier, one step below the modal, with the arrival curve. */
@@ -552,10 +626,10 @@ export const tokens = {
       curve: 'exit',
       reducedMotion: { properties: ['opacity'], ms: 150 },
     },
-    /** Sheet/drawer entrance. A sheet is the largest spatial movement -- slow tier with the physical settle of a smooth spring, because the user must track it into place. Reduced motion becomes a cross-fade. */
+    /** Sheet/drawer entrance. A sheet is a large spatial movement -- normal tier with the physical settle of a smooth spring, because the user must track it into place. Reduced motion becomes a cross-fade. */
     'motion-semantic-sheet-in': {
       properties: ['transform'],
-      durationTier: 'slow',
+      durationTier: 'normal',
       curve: 'spring-smooth',
       reducedMotion: { properties: ['opacity'], ms: 250 },
     },
@@ -580,10 +654,10 @@ export const tokens = {
       curve: 'exit',
       reducedMotion: { properties: ['opacity'] },
     },
-    /** Page/route transition. A whole-view transition -- slow tier with the physical settle of a smooth spring, because the user reorients across the largest possible distance. */
+    /** Page/route transition. A whole-view transition -- normal tier with the physical settle of a smooth spring, because the user reorients across a large distance. */
     'motion-semantic-page': {
       properties: ['opacity', 'transform'],
-      durationTier: 'slow',
+      durationTier: 'normal',
       curve: 'spring-smooth',
       reducedMotion: { properties: ['opacity'], ms: 200 },
     },
@@ -592,12 +666,13 @@ export const tokens = {
       ratio: 'minor-third',
       ratioValue: 1.2,
       baseDuration: 150,
-      note: 'Duration tiers are perceptually derived literals (docs/MOTION.md); delay tokens use the workspace progression ratio from the base duration.',
+      note: 'Duration tiers are perceptually derived literals (docs/MOTION.md) and the five motion namespaces are authored leaves. The ratio reaches exactly one place: the loop keyframes ping, pulse and bounce, whose shapes are computed from it.',
+      ratioDrivenKeyframes: ['ping', 'pulse', 'bounce'],
     },
   },
   radius: {
-    /** Base border radius - all other radii derive from this value */
-    'radius-base': '0.375rem',
+    /** Base border radius - derives from spacing base */
+    'radius-base': 'calc(var(--rafters-spacing-base) * 1.5)',
     /** Base top-left radius - override to affect all scales for this corner */
     'radius-tl': 'var(--rafters-radius-base)',
     /** Base top-right radius - override to affect all scales for this corner */
@@ -1334,7 +1409,7 @@ export const tokens = {
     /** blur component of DEFAULT shadow */
     'shadow-blur': '0.375rem',
     /** spread component of DEFAULT shadow */
-    'shadow-spread': '-0.062rem',
+    'shadow-spread': '0.063rem',
     /** color component of DEFAULT shadow */
     'shadow-color': 'rgb(0 0 0 / 0.1)',
     /** Default shadow - standard elevation */
@@ -1345,48 +1420,48 @@ export const tokens = {
     /** offset-y component of md shadow */
     'shadow-md-offset-y': '0.25rem',
     /** blur component of md shadow */
-    'shadow-md-blur': '0.5rem',
+    'shadow-md-blur': '0.438rem',
     /** spread component of md shadow */
-    'shadow-md-spread': '-0.125rem',
+    'shadow-md-spread': '0.063rem',
     /** color component of md shadow */
     'shadow-md-color': 'rgb(0 0 0 / 0.1)',
     /** Medium shadow - noticeable elevation */
     'shadow-md':
-      'var(--rafters-shadow-md-offset-x) var(--rafters-shadow-md-offset-y) var(--rafters-shadow-md-blur) var(--rafters-shadow-md-spread) var(--rafters-shadow-md-color), 0 0.125rem 0.25rem -0.062rem rgb(0 0 0 / 0.1)',
+      'var(--rafters-shadow-md-offset-x) var(--rafters-shadow-md-offset-y) var(--rafters-shadow-md-blur) var(--rafters-shadow-md-spread) var(--rafters-shadow-md-color), 0 0.125rem 0.25rem 0.063rem rgb(0 0 0 / 0.1)',
     /** offset-x component of lg shadow */
     'shadow-lg-offset-x': '0rem',
     /** offset-y component of lg shadow */
-    'shadow-lg-offset-y': '0.5rem',
+    'shadow-lg-offset-y': '0.438rem',
     /** blur component of lg shadow */
-    'shadow-lg-blur': '1rem',
+    'shadow-lg-blur': '0.938rem',
     /** spread component of lg shadow */
-    'shadow-lg-spread': '-0.187rem',
+    'shadow-lg-spread': '0.063rem',
     /** color component of lg shadow */
     'shadow-lg-color': 'rgb(0 0 0 / 0.1)',
     /** Large shadow - significant elevation */
     'shadow-lg':
-      'var(--rafters-shadow-lg-offset-x) var(--rafters-shadow-lg-offset-y) var(--rafters-shadow-lg-blur) var(--rafters-shadow-lg-spread) var(--rafters-shadow-lg-color), 0 0.25rem 0.5rem -0.125rem rgb(0 0 0 / 0.1)',
+      'var(--rafters-shadow-lg-offset-x) var(--rafters-shadow-lg-offset-y) var(--rafters-shadow-lg-blur) var(--rafters-shadow-lg-spread) var(--rafters-shadow-lg-color), 0 0.25rem 0.438rem 0.063rem rgb(0 0 0 / 0.1)',
     /** offset-x component of xl shadow */
     'shadow-xl-offset-x': '0rem',
     /** offset-y component of xl shadow */
-    'shadow-xl-offset-y': '1.25rem',
+    'shadow-xl-offset-y': '1.125rem',
     /** blur component of xl shadow */
-    'shadow-xl-blur': '1.5rem',
+    'shadow-xl-blur': '1.375rem',
     /** spread component of xl shadow */
-    'shadow-xl-spread': '-0.25rem',
+    'shadow-xl-spread': '0.063rem',
     /** color component of xl shadow */
     'shadow-xl-color': 'rgb(0 0 0 / 0.1)',
     /** Extra large shadow - high elevation */
     'shadow-xl':
-      'var(--rafters-shadow-xl-offset-x) var(--rafters-shadow-xl-offset-y) var(--rafters-shadow-xl-blur) var(--rafters-shadow-xl-spread) var(--rafters-shadow-xl-color), 0 0.5rem 1rem -0.187rem rgb(0 0 0 / 0.1)',
+      'var(--rafters-shadow-xl-offset-x) var(--rafters-shadow-xl-offset-y) var(--rafters-shadow-xl-blur) var(--rafters-shadow-xl-spread) var(--rafters-shadow-xl-color), 0 0.438rem 0.938rem 0.063rem rgb(0 0 0 / 0.1)',
     /** offset-x component of 2xl shadow */
     'shadow-2xl-offset-x': '0rem',
     /** offset-y component of 2xl shadow */
-    'shadow-2xl-offset-y': '1.5rem',
+    'shadow-2xl-offset-y': '1.375rem',
     /** blur component of 2xl shadow */
-    'shadow-2xl-blur': '3rem',
+    'shadow-2xl-blur': '2.875rem',
     /** spread component of 2xl shadow */
-    'shadow-2xl-spread': '-0.5rem',
+    'shadow-2xl-spread': '0.063rem',
     /** color component of 2xl shadow */
     'shadow-2xl-color': 'rgb(0 0 0 / 0.25)',
     /** Maximum shadow - highest elevation */
@@ -1412,19 +1487,11 @@ export const tokens = {
     /** Zero spacing - remove all spacing */
     'spacing-0': '0',
     /** Micro spacing for tight layouts and inline elements */
-    'spacing-0.5': 'calc(var(--rafters-spacing-base) * 0.5)',
-    /** Micro spacing for tight layouts and inline elements */
     'spacing-1': 'var(--rafters-spacing-base)',
-    /** Small spacing for component internals and related elements */
-    'spacing-1.5': 'calc(var(--rafters-spacing-base) * 1.5)',
     /** Small spacing for component internals and related elements */
     'spacing-2': 'calc(var(--rafters-spacing-base) * 2)',
     /** Small spacing for component internals and related elements */
-    'spacing-2.5': 'calc(var(--rafters-spacing-base) * 2.5)',
-    /** Small spacing for component internals and related elements */
     'spacing-3': 'calc(var(--rafters-spacing-base) * 3)',
-    /** Small spacing for component internals and related elements */
-    'spacing-3.5': 'calc(var(--rafters-spacing-base) * 3.5)',
     /** Small spacing for component internals and related elements */
     'spacing-4': 'calc(var(--rafters-spacing-base) * 4)',
     /** Medium spacing for section separation and breathing room */
@@ -1434,69 +1501,53 @@ export const tokens = {
     /** Medium spacing for section separation and breathing room */
     'spacing-7': 'calc(var(--rafters-spacing-base) * 7)',
     /** Medium spacing for section separation and breathing room */
-    'spacing-8': 'calc(var(--rafters-spacing-base) * 8)',
-    /** Medium spacing for section separation and breathing room */
     'spacing-9': 'calc(var(--rafters-spacing-base) * 9)',
     /** Medium spacing for section separation and breathing room */
-    'spacing-10': 'calc(var(--rafters-spacing-base) * 10)',
-    /** Medium spacing for section separation and breathing room */
     'spacing-11': 'calc(var(--rafters-spacing-base) * 11)',
-    /** Medium spacing for section separation and breathing room */
-    'spacing-12': 'calc(var(--rafters-spacing-base) * 12)',
     /** Large spacing for major section breaks and layout gaps */
-    'spacing-14': 'calc(var(--rafters-spacing-base) * 14)',
+    'spacing-13': 'calc(var(--rafters-spacing-base) * 13)',
     /** Large spacing for major section breaks and layout gaps */
-    'spacing-16': 'calc(var(--rafters-spacing-base) * 16)',
+    'spacing-15': 'calc(var(--rafters-spacing-base) * 15)',
     /** Large spacing for major section breaks and layout gaps */
-    'spacing-20': 'calc(var(--rafters-spacing-base) * 20)',
+    'spacing-18': 'calc(var(--rafters-spacing-base) * 18)',
     /** Large spacing for major section breaks and layout gaps */
-    'spacing-24': 'calc(var(--rafters-spacing-base) * 24)',
+    'spacing-22': 'calc(var(--rafters-spacing-base) * 22)',
     /** Large spacing for major section breaks and layout gaps */
-    'spacing-28': 'calc(var(--rafters-spacing-base) * 28)',
+    'spacing-27': 'calc(var(--rafters-spacing-base) * 27)',
     /** Large spacing for major section breaks and layout gaps */
     'spacing-32': 'calc(var(--rafters-spacing-base) * 32)',
     /** Extra large spacing for page-level layout and hero sections */
-    'spacing-36': 'calc(var(--rafters-spacing-base) * 36)',
+    'spacing-38': 'calc(var(--rafters-spacing-base) * 38)',
     /** Extra large spacing for page-level layout and hero sections */
-    'spacing-40': 'calc(var(--rafters-spacing-base) * 40)',
+    'spacing-46': 'calc(var(--rafters-spacing-base) * 46)',
     /** Extra large spacing for page-level layout and hero sections */
-    'spacing-44': 'calc(var(--rafters-spacing-base) * 44)',
+    'spacing-55': 'calc(var(--rafters-spacing-base) * 55)',
     /** Extra large spacing for page-level layout and hero sections */
-    'spacing-48': 'calc(var(--rafters-spacing-base) * 48)',
+    'spacing-66': 'calc(var(--rafters-spacing-base) * 66)',
     /** Extra large spacing for page-level layout and hero sections */
-    'spacing-52': 'calc(var(--rafters-spacing-base) * 52)',
+    'spacing-79': 'calc(var(--rafters-spacing-base) * 79)',
     /** Extra large spacing for page-level layout and hero sections */
-    'spacing-56': 'calc(var(--rafters-spacing-base) * 56)',
-    /** Extra large spacing for page-level layout and hero sections */
-    'spacing-60': 'calc(var(--rafters-spacing-base) * 60)',
-    /** Extra large spacing for page-level layout and hero sections */
-    'spacing-64': 'calc(var(--rafters-spacing-base) * 64)',
-    /** Extra large spacing for page-level layout and hero sections */
-    'spacing-72': 'calc(var(--rafters-spacing-base) * 72)',
-    /** Extra large spacing for page-level layout and hero sections */
-    'spacing-80': 'calc(var(--rafters-spacing-base) * 80)',
-    /** Extra large spacing for page-level layout and hero sections */
-    'spacing-96': 'calc(var(--rafters-spacing-base) * 96)',
+    'spacing-95': 'calc(var(--rafters-spacing-base) * 95)',
     /** Metadata about the spacing progression system */
     'spacing-progression': {
       ratio: 'minor-third',
       ratioValue: 1.2,
       baseUnit: 4,
-      sample: [0, 4, 4.8, 5.76, 6.91, 8.29, 9.95, 11.94, 14.33, 17.2],
+      multipliers: [1, 2, 3, 4, 5, 6, 7, 9, 11, 13, 15, 18, 22, 27, 32, 38, 46, 55, 66, 79, 95],
     },
   },
   typography: {
     /** Primary font family for UI text */
-    'font-sans': "'Noto Sans Variable', sans-serif",
+    'font-sans': '"Noto Sans"',
     /** Monospace font family for code */
     'font-mono':
       "ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace",
     /** Serif font family for editorial and long-form content */
     'font-serif': 'Georgia, "Times New Roman", Times, serif',
     /** Font family for headings and display text */
-    'font-heading': 'var(--font-sans)',
+    'font-heading': '"Noto Sans"',
     /** Font family for body text and UI elements */
-    'font-body': 'var(--font-sans)',
+    'font-body': '"Noto Sans"',
     /** Font family for code, keyboard shortcuts, and technical content */
     'font-code': 'var(--font-mono)',
     /** Body text range for primary content */
@@ -1616,6 +1667,7 @@ export const tokens = {
         '9xl': 99.07,
       },
     },
+    'font-noto-sans': '"Noto Sans"',
   },
   'typography-composite': {
     /** Largest display text for hero sections and landing pages */
