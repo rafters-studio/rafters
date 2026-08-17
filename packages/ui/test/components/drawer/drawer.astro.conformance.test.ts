@@ -27,8 +27,8 @@ async function mount(
   return root;
 }
 
-const trigger = () => document.body.querySelector<HTMLElement>('[data-part="trigger"]')!;
-const content = () => document.body.querySelector<HTMLElement>('[data-part="content"]')!;
+const trigger = () => document.body.querySelector<HTMLElement>('[data-part="trigger"]');
+const content = () => document.body.querySelector<HTMLElement>('[data-part="content"]');
 
 describe('drawer conformance [astro]', () => {
   it('SSR closed: content hidden and crawlable, trigger collapsed', async () => {
@@ -57,7 +57,7 @@ describe('drawer conformance [astro]', () => {
     const user = userEvent.setup();
     await mount({ title: 'Actions' });
     await user.click(trigger());
-    const close = document.body.querySelector<HTMLElement>('[data-part="close"]')!;
+    const close = document.body.querySelector<HTMLElement>('[data-part="close"]');
     expect(document.activeElement).toBe(close);
     await user.keyboard('{Escape}');
     expect(content().hidden).toBe(true);

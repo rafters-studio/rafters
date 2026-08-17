@@ -149,6 +149,34 @@ export function onCssUpdated(callback: () => void): () => void {
   return () => hot.off('rafters:css-updated', callback);
 }
 
+export type TokensResult = { ok: true; tokens: unknown[] } | { ok: false; error: string };
+
+export function getTokens(namespace?: string): Promise<TokensResult> {
+  return new Promise((resolve) => {
+    if (!isHmrAvailable()) {
+      resolve({ ok: false, error: 'HMR not available' });
+      return;
+    }
+
+    // biome-ignore lint/style/noNonNullAssertion: checked by isHmrAvailable
+    const hot = import.meta.hot!;
+
+    const handler = (result: TokensResult) => {
+      clearTimeout(timeoutId);
+      hot.off('rafters:tokens', handler);
+      resolve(result);
+    };
+
+    const timeoutId = setTimeout(() => {
+      hot.off('rafters:tokens', handler);
+      resolve({ ok: false, error: `Token read timed out after ${TOKEN_UPDATE_TIMEOUT_MS}ms` });
+    }, TOKEN_UPDATE_TIMEOUT_MS);
+
+    hot.on('rafters:tokens', handler);
+    hot.send('rafters:get-tokens', { namespace });
+  });
+}
+
 /**
  * Read the current config.rafters.json from the Vite plugin.
  */
