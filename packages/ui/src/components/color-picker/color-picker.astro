@@ -1,0 +1,113 @@
+---
+/**
+ * Astro performance (controller) for color-picker.
+ *
+ * Server-renders the full LIGHT-DOM container -- area canvas + thumb, hue
+ * canvas + thumb, three numeric inputs, and preview swatch -- with classes and
+ * the score's initial projection already applied, so the structure is correct
+ * and accessible before any JS. The <script> then hands each server-rendered
+ * root to bindColorPicker -- the SAME DOM-native controller the Web Component
+ * uses. One score, three performances, zero drift.
+ */
+import {
+  colorPickerBehavior,
+  effectiveColor,
+  gamutLabel,
+  getGamutTier,
+  barPosFromHue,
+  DEFAULT_COLOR,
+  DEFAULT_MAX_CHROMA,
+  type ColorPickerConfig,
+  type ColorPickerPart,
+  type Direction,
+  type OklchColor,
+} from './color-picker.behavior';
+import { colorPickerClasses } from './color-picker.classes';
+import type { PartIds } from '../../lib/contract';
+
+interface Props {
+  id: string;
+  defaultValue?: OklchColor;
+  maxChroma?: number;
+  disabled?: boolean;
+  dir?: Direction;
+}
+
+const {
+  id,
+  defaultValue = DEFAULT_COLOR,
+  maxChroma = DEFAULT_MAX_CHROMA,
+  disabled = false,
+  dir,
+} = Astro.props;
+
+const config: ColorPickerConfig = {
+  defaultValue,
+  maxChroma,
+  disabled,
+  ...(dir !== undefined ? { dir } : {}),
+};
+const state = colorPickerBehavior.initialState(config);
+const classes = colorPickerClasses(config, state);
+
+const ids = {} as PartIds<ColorPickerPart>;
+for (const part of Object.keys(colorPickerBehavior.parts) as ColorPickerPart[]) {
+  ids[part] = `${id}-${part}`;
+}
+const aria = colorPickerBehavior.aria(state, config, ids);
+
+const color = effectiveColor(state, config);
+const safeMaxChroma = Math.max(maxChroma, 1e-6);
+const tier = getGamutTier(color.l, color.c, color.h);
+
+const areaThumbStyle = `left:${color.l * 100}%;top:${(1 - color.c / safeMaxChroma) * 100}%`;
+const hueThumbStyle = `left:${barPosFromHue(color.h) * 100}%`;
+---
+
+<div
+  data-part="root"
+  id={ids.root}
+  data-max-chroma={maxChroma}
+  data-default-l={defaultValue.l}
+  data-default-c={defaultValue.c}
+  data-default-h={defaultValue.h}
+  class={classes.root}
+  {...aria.root}
+  {...(dir ? { dir } : {})}
+>
+  <div data-part="area" id={ids.area} class={classes.area} {...aria.area}>
+    <canvas class="absolute inset-0 h-full w-full"></canvas>
+    <div data-role="thumb" aria-hidden="true" class={classes.areaThumb} style={areaThumbStyle}></div>
+  </div>
+
+  <div data-part="hue" id={ids.hue} class={classes.hue} {...aria.hue}>
+    <canvas class="absolute inset-0 h-full w-full"></canvas>
+    <div data-role="thumb" aria-hidden="true" class={classes.hueThumb} style={hueThumbStyle}></div>
+  </div>
+
+  <div class={classes.inputs}>
+    <input data-channel="l" class={classes.input} disabled={disabled} />
+    <input data-channel="c" class={classes.input} disabled={disabled} />
+    <input data-channel="h" class={classes.input} disabled={disabled} />
+  </div>
+
+  <div class="mt-3 flex items-center gap-2">
+    <div data-part="preview" id={ids.preview} class={classes.preview} {...aria.preview}></div>
+    <span data-part="gamut-label" class={classes.gamutLabel} aria-hidden="true">
+      {gamutLabel(tier)}
+    </span>
+  </div>
+</div>
+
+<script>
+  import { bindColorPicker } from './color-picker.behavior';
+
+  const roots = document.querySelectorAll<HTMLElement>(
+    'div[data-part="root"][data-max-chroma]',
+  );
+  for (const root of roots) {
+    if (root.dataset['bound'] === 'true') continue;
+    root.dataset['bound'] = 'true';
+    bindColorPicker(root);
+  }
+</script>
