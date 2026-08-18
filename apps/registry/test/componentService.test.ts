@@ -1,4 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   getRegistryIndex,
   listComponentNames,
@@ -8,8 +10,10 @@ import {
   loadComponent,
   loadPrimitive,
   loadSubstrate,
+  parseJSDocFromSource,
   type RegistryItem,
 } from '../src/lib/registry/componentService';
+import { RegistryItemSchema } from '../../../packages/cli/src/registry/types';
 
 /**
  * Registry cutover guard (#1896). The registry serves behavior-layer sources
@@ -278,5 +282,120 @@ describe('every served component resolves a COMPLETE dependency closure', () => 
       if (missing.length > 0) offenders[name] = missing;
     }
     expect(offenders).toEqual({});
+  });
+});
+
+/**
+ * Per-target facet + reverse-composites extraction (#2073). loadComponent now
+ * emits a `facets` field (verbatim literal-union props, per target) and a
+ * populated `composites` reverse index. The composites scan is pointed at the
+ * test fixtures dir via RAFTERS_COMPOSITES_DIR so the fixture composite
+ * (uses-button, whose block type is `button`) is discoverable as a real
+ * composite node -- keeping #2072's assembleGraph invariant satisfiable.
+ */
+describe('per-target facet + reverse-composites extraction (#2073)', () => {
+  const fixturesDir = join(fileURLToPath(new URL('.', import.meta.url)), 'fixtures');
+  let prevCompositesDir: string | undefined;
+  let buttonItem: RegistryItem | null;
+
+  beforeAll(() => {
+    prevCompositesDir = process.env['RAFTERS_COMPOSITES_DIR'];
+    process.env['RAFTERS_COMPOSITES_DIR'] = fixturesDir;
+    buttonItem = loadComponent('button');
+  });
+
+  afterAll(() => {
+    if (prevCompositesDir === undefined) delete process.env['RAFTERS_COMPOSITES_DIR'];
+    else process.env['RAFTERS_COMPOSITES_DIR'] = prevCompositesDir;
+  });
+
+  it("extracts react's variant as a verbatim literal union with its destructured default", () => {
+    expect(buttonItem?.facets?.react?.props['variant']).toEqual({
+      type: 'enum',
+      values: [
+        'default',
+        'primary',
+        'secondary',
+        'destructive',
+        'success',
+        'warning',
+        'info',
+        'muted',
+        'accent',
+        'outline',
+        'ghost',
+        'link',
+      ],
+      // button.tsx:90 destructures `variant = 'default'` -- extractable, not left undefined.
+      default: 'default',
+    });
+  });
+
+  it('never collapses a styling prop to a bare string type', () => {
+    expect(buttonItem?.facets?.react?.props['variant']?.type).not.toBe('string');
+  });
+
+  it('preserves the astro/react required/optional asymmetry for `id`', () => {
+    // astro's `id: string` is required; react has no `id` prop of its own.
+    expect(buttonItem?.facets?.astro?.props['id']).toMatchObject({ required: true });
+    expect(buttonItem?.facets?.react?.props['id']).toBeUndefined();
+  });
+
+  it('sources react `size` (which lives in the ButtonProps intersection, not the interface body)', () => {
+    // Proves the destructuring-driven name source catches `size`; an interface-body
+    // scan would miss it. Its 8 members come verbatim from ButtonSize.
+    const size = buttonItem?.facets?.react?.props['size'];
+    expect(size?.type).toBe('enum');
+    expect(size).toMatchObject({
+      values: ['default', 'xs', 'sm', 'lg', 'icon', 'icon-xs', 'icon-sm', 'icon-lg'],
+    });
+  });
+
+  it('emits an honest empty wc facet -- no functional attribute-driven props today', () => {
+    expect(buttonItem?.facets?.wc?.props).toEqual({});
+    // Never a fabricated `<rafters-button variant="primary">` attribute surface.
+    expect(buttonItem?.facets?.wc?.snippet).not.toContain('variant="primary"');
+  });
+
+  it('populates the reverse composites index against a fixture that references button', () => {
+    expect(buttonItem?.composites).toContain('uses-button');
+  });
+
+  it('parses cleanly against the CLI RegistryItemSchema (the hand-synced shapes agree)', () => {
+    expect(() => RegistryItemSchema.parse(buttonItem)).not.toThrow();
+  });
+});
+
+/**
+ * The `@constraint` JSDoc tag (#2073). button.tsx carries no `@constraint` tag
+ * today, and packages/ui/src/components/** is out of this issue's blast surface
+ * (read-only), so the FACET-level assertion
+ * `facets.react.props.size.constraint` cannot be satisfied without a source edit
+ * -- reported to the team lead, not forced. These tests exercise the parser case
+ * added to parseJSDocFromSource directly, against inline source; the facet wiring
+ * (extractConstraints -> makeEnum) lights up the moment a component gains the tag.
+ */
+describe('@constraint JSDoc tag parsing (#2073)', () => {
+  const wellFormed =
+    '/**\n * @cognitive-load 3\n * @constraint when prop=size matches=icon* requires prop=aria-label\n */';
+  const malformed = '/**\n * @cognitive-load 3\n * @constraint when prop=size\n */';
+
+  it('accepts a well-formed @constraint body under strict intel', () => {
+    expect(() =>
+      parseJSDocFromSource(wellFormed, { strict: true, componentName: 'button' }),
+    ).not.toThrow();
+  });
+
+  it('throws under strict intel on a malformed @constraint body, naming the component', () => {
+    expect(() =>
+      parseJSDocFromSource(malformed, { strict: true, componentName: 'button' }),
+    ).toThrow(/Malformed @constraint in button/);
+  });
+
+  it('ignores a malformed @constraint body when not in strict mode', () => {
+    // Non-strict: the tag is not an intelligence field, so it neither throws nor
+    // contributes -- the component still yields its other intelligence.
+    const intel = parseJSDocFromSource(malformed, { componentName: 'button' });
+    expect(intel?.cognitiveLoad).toBe(3);
   });
 });
