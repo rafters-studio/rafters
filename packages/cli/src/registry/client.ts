@@ -4,6 +4,7 @@
  * Fetches items (components, primitives, composites, rules) from the rafters registry.
  */
 
+import { z } from 'zod';
 import {
   type RegistryIndex,
   RegistryIndexSchema,
@@ -108,6 +109,48 @@ export class RegistryClient {
       }
     }
     throw new Error(`"${name}" not found in registry (component, primitive, composite, or rule)`);
+  }
+
+  /**
+   * Fetch every registry item in one call, for the whole-catalog load the MCP
+   * intel graph needs at startup.
+   *
+   * Prefers a single bulk round-trip against `/registry/items.json`. A registry
+   * that does not serve that route -- an older deploy, or a third-party
+   * `registryUrl` (which is user-configurable, see ConfigWiringSchema) -- returns
+   * a non-2xx, and this falls back to looping `fetchItem` over `fetchIndex()`'s
+   * name list, retaining today's per-item cost so no workspace's `describe` ever
+   * hard-fails on a registry that predates the bulk endpoint.
+   */
+  async fetchAllItems(): Promise<RegistryItem[]> {
+    const response = await fetch(`${this.baseUrl}/registry/items.json`);
+    if (response.ok) {
+      return z.array(RegistryItemSchema).parse(await response.json());
+    }
+    return this.fetchAllItemsByIndex();
+  }
+
+  /**
+   * The fallback whole-catalog load: one `fetchItem` per name in the index,
+   * across every describe-relevant kind. Deduped so a name appearing in more
+   * than one index list is fetched once.
+   */
+  private async fetchAllItemsByIndex(): Promise<RegistryItem[]> {
+    const index = await this.fetchIndex();
+    const names = [
+      ...index.components,
+      ...index.primitives,
+      ...index.composites,
+      ...index.substrate,
+    ];
+    const seen = new Set<string>();
+    const items: RegistryItem[] = [];
+    for (const name of names) {
+      if (seen.has(name)) continue;
+      seen.add(name);
+      items.push(await this.fetchItem(name));
+    }
+    return items;
   }
 
   /**

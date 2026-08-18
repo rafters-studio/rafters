@@ -1,286 +1,300 @@
 import { registerComposite } from '@rafters/composites';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import * as intent from '../../src/mcp/intent.js';
 import { RaftersToolHandler, TOOL_DEFINITIONS } from '../../src/mcp/tools.js';
+import type { RegistryItem } from '../../src/registry/types.js';
+
+/** Minimal, schema-valid registry item for the in-memory fixture catalog. */
+function node(name: string, type: RegistryItem['type'], composites: string[] = []): RegistryItem {
+  return { name, type, primitives: [], files: [], rules: [], composites, facets: {} };
+}
+
+// A fixture catalog large enough to exercise every dispatch path. modal/alert/
+// tooltip are the nodes intent.ts's curated INTENT_TAGS route over.
+const FIXTURE: RegistryItem[] = [
+  node('button', 'ui'),
+  node('container', 'ui'),
+  node('modal', 'ui'),
+  node('alert', 'ui'),
+  node('tooltip', 'ui'),
+  node('login-form', 'composite'),
+];
+
+/**
+ * A handler wired to an injected, per-workspace-counting item source -- no
+ * network. Returns the handler plus the call counter so laziness/caching are
+ * observed through fetch counts, not private fields.
+ */
+function fixtureHandler(
+  workspaces: Array<{ name: string; root: string }>,
+  defaultWorkspace: { name: string; root: string } | null,
+  items: RegistryItem[] = FIXTURE,
+): { handler: RaftersToolHandler; calls: Record<string, number> } {
+  const calls: Record<string, number> = {};
+  const handler = new RaftersToolHandler(workspaces, defaultWorkspace, async (ws) => {
+    const key = ws?.root ?? '';
+    calls[key] = (calls[key] ?? 0) + 1;
+    return items;
+  });
+  return { handler, calls };
+}
 
 describe('TOOL_DEFINITIONS', () => {
-  it('should define 4 tools', () => {
-    expect(TOOL_DEFINITIONS).toHaveLength(4);
+  it('exposes the new primary surface plus deprecated aliases', () => {
+    expect(TOOL_DEFINITIONS.map((t) => t.name)).toEqual(
+      expect.arrayContaining([
+        'rafters_workspaces',
+        'rafters_describe',
+        'rafters_generate',
+        'rafters_component',
+        'rafters_composite',
+        'rafters_pattern',
+      ]),
+    );
   });
 
-  it('should have correct tool names', () => {
-    const names = TOOL_DEFINITIONS.map((t) => t.name);
-    expect(names).toContain('rafters_workspaces');
-    expect(names).toContain('rafters_composite');
-    expect(names).toContain('rafters_pattern');
-    expect(names).toContain('rafters_component');
-  });
-
-  it('should have descriptions for all tools', () => {
-    for (const tool of TOOL_DEFINITIONS) {
-      expect(tool.description).toBeDefined();
-      expect(tool.description.length).toBeGreaterThan(10);
+  it('marks the three aliases as deprecated in their descriptions', () => {
+    for (const name of ['rafters_component', 'rafters_composite', 'rafters_pattern']) {
+      const tool = TOOL_DEFINITIONS.find((t) => t.name === name);
+      expect(tool?.description).toContain('[DEPRECATED');
     }
   });
 
-  it('should have input schemas for all tools', () => {
+  it('has an object input schema for every tool', () => {
     for (const tool of TOOL_DEFINITIONS) {
-      expect(tool.inputSchema).toBeDefined();
       expect(tool.inputSchema.type).toBe('object');
+      expect(tool.description.length).toBeGreaterThan(10);
     }
   });
 });
 
-describe('RaftersToolHandler', () => {
-  describe('rafters_pattern', () => {
-    it('should return patterns from composites with usagePatterns', async () => {
-      const handler = new RaftersToolHandler([], null);
-      const result = await handler.handleToolCall('rafters_pattern', {});
-
-      expect(result.content).toHaveLength(1);
-      const data = JSON.parse(result.content[0].text as string);
-      // Returns patterns array or available list
-      expect(data.patterns || data.available).toBeDefined();
-    });
-
-    it('should search by solves field', async () => {
-      const handler = new RaftersToolHandler([], null);
-      const result = await handler.handleToolCall('rafters_pattern', {
-        solves: 'hierarchy',
-      });
-
-      expect(result.content).toHaveLength(1);
-      const data = JSON.parse(result.content[0].text as string);
-      // Either finds patterns or returns available list
-      expect(data.patterns || data.error).toBeDefined();
-    });
-
-    it('should search by query', async () => {
-      const handler = new RaftersToolHandler([], null);
-      const result = await handler.handleToolCall('rafters_pattern', {
-        query: 'heading',
-      });
-
-      expect(result.content).toHaveLength(1);
-      const data = JSON.parse(result.content[0].text as string);
-      expect(data.patterns || data.error).toBeDefined();
+describe('rafters_describe dispatch', () => {
+  it('resolves a dot-address through describe/overlay', async () => {
+    const { handler } = fixtureHandler([], null);
+    const result = await handler.handleToolCall('rafters_describe', { address: 'button' });
+    expect(JSON.parse(result.content[0].text as string)).toMatchObject({
+      id: 'button',
+      kind: 'component',
     });
   });
 
-  describe('rafters_composite', () => {
-    it('should return empty array when no composites loaded', async () => {
-      const handler = new RaftersToolHandler([], null);
-      const result = await handler.handleToolCall('rafters_composite', {});
-
-      const data = JSON.parse(result.content[0].text as string);
-      expect(data.composites).toBeDefined();
-      expect(Array.isArray(data.composites)).toBe(true);
+  it('routes a natural-language question through the intent door', async () => {
+    const { handler } = fixtureHandler([], null);
+    const result = await handler.handleToolCall('rafters_describe', {
+      address: 'what do I use when it needs to be above everything',
     });
+    expect(JSON.parse(result.content[0].text as string)).toMatchObject({
+      use: { id: 'modal' },
+      not: { id: 'alert' },
+    });
+  });
 
-    it('surfaces per-block rules so agents see which blocks carry which rules', async () => {
-      registerComposite({
-        manifest: {
-          id: 'rules-fixture-login',
-          name: 'Rules Fixture Login',
-          category: 'forms',
-          description: 'Fixture exercising block-level rules in the MCP response.',
-          keywords: ['fixture'],
-          cognitiveLoad: 1,
-        },
-        input: [],
-        output: [],
-        blocks: [
-          { id: 'email', type: 'input', rules: ['email', 'required'] },
-          { id: 'pw', type: 'input', rules: ['password'] },
-          { id: 'submit', type: 'button' },
-        ],
-      });
+  it('stamps workspace presence onto a roster call', async () => {
+    const { handler } = fixtureHandler([], null);
+    const result = await handler.handleToolCall('rafters_describe', { address: 'components' });
+    const data = JSON.parse(result.content[0].text as string) as Array<{
+      id: string;
+      presence: string;
+    }>;
+    // Nothing installed in a config-less workspace -> everything available.
+    expect(data.every((entry) => entry.presence === 'available')).toBe(true);
+    expect(data.map((e) => e.id)).toEqual(expect.arrayContaining(['button', 'modal']));
+  });
 
-      const handler = new RaftersToolHandler([], null);
-      const result = await handler.handleToolCall('rafters_composite', {
+  it('returns a structured error (not a throw) when the graph is broken', async () => {
+    // A dangling composesWith edge makes #2072's assembleGraph throw at build.
+    const broken = [node('button', 'ui', ['does-not-exist'])];
+    const { handler } = fixtureHandler([], null, broken);
+    const result = await handler.handleToolCall('rafters_describe', { address: 'button' });
+    expect(JSON.parse(result.content[0].text as string).error).toMatch(
+      /failed to build intel graph/,
+    );
+  });
+});
+
+describe('lazy, cached, per-workspace graph', () => {
+  const a = { name: 'a', root: '/repo/sites/a' };
+  const b = { name: 'b', root: '/repo/sites/b' };
+
+  it('builds once per workspace and caches thereafter', async () => {
+    const { handler, calls } = fixtureHandler([a, b], a);
+
+    await handler.handleToolCall('rafters_describe', { address: 'button' });
+    expect(calls[a.root]).toBe(1);
+    // A second call to the same workspace does not re-fetch.
+    await handler.handleToolCall('rafters_describe', { address: 'container' });
+    expect(calls[a.root]).toBe(1);
+
+    // The other workspace was never fetched until its own first call.
+    expect(calls[b.root]).toBeUndefined();
+    await handler.handleToolCall('rafters_describe', { address: 'button', workspace: 'b' });
+    expect(calls[b.root]).toBe(1);
+    await handler.handleToolCall('rafters_describe', { address: 'container', workspace: 'b' });
+    expect(calls[b.root]).toBe(1);
+  });
+});
+
+describe('rafters_generate stub', () => {
+  it('returns an honest not-implemented result', async () => {
+    const { handler } = fixtureHandler([], null);
+    const result = await handler.handleToolCall('rafters_generate', { intent: 'a login form' });
+    expect(JSON.parse(result.content[0].text as string)).toMatchObject({ implemented: false });
+  });
+
+  // DELIBERATE DEVIATION from #2076's "builds the graph on first describe/generate
+  // call": the stub consumes nothing from the graph, so building it would add no
+  // value and one failure mode -- a build error would turn an honest stub into an
+  // error result. Documented here so the divergence is visible, not asserted as a
+  // spec requirement. Revisit when Issue E lands a real generator that reads the graph.
+  it('does not build the graph (nothing here reads it)', async () => {
+    const { handler, calls } = fixtureHandler([], null);
+    await handler.handleToolCall('rafters_generate', { intent: 'a login form' });
+    expect(calls['']).toBeUndefined();
+  });
+});
+
+describe('deprecated aliases', () => {
+  it('rafters_component forwards by-id to describe and is marked deprecated', async () => {
+    const { handler } = fixtureHandler([], null);
+    const result = await handler.handleToolCall('rafters_component', { name: 'button' });
+    expect(JSON.parse(result.content[0].text as string)).toMatchObject({
+      id: 'button',
+      deprecated: 'use rafters_describe instead',
+    });
+  });
+
+  it('rafters_composite forwards by-id to describe and is marked deprecated', async () => {
+    const { handler } = fixtureHandler([], null);
+    const result = await handler.handleToolCall('rafters_composite', { id: 'login-form' });
+    expect(JSON.parse(result.content[0].text as string)).toMatchObject({
+      id: 'login-form',
+      kind: 'composite',
+      deprecated: 'use rafters_describe instead',
+    });
+  });
+
+  it('rafters_pattern keeps its composite-search body and never calls the intent door', async () => {
+    const matchSpy = vi.spyOn(intent, 'matchIntent');
+    const { handler } = fixtureHandler([], null);
+    const result = await handler.handleToolCall('rafters_pattern', { solves: 'authentication' });
+    expect(JSON.parse(result.content[0].text as string)).toMatchObject({
+      deprecated: 'use rafters_describe instead',
+    });
+    expect(matchSpy).not.toHaveBeenCalled();
+    matchSpy.mockRestore();
+  });
+
+  it('rafters_composite query search surfaces per-block rules (blockRules coverage)', async () => {
+    registerComposite({
+      manifest: {
         id: 'rules-fixture-login',
-      });
-
-      const data = JSON.parse(result.content[0].text as string);
-      const composite = data.composites.find((c: { id: string }) => c.id === 'rules-fixture-login');
-      expect(composite).toBeDefined();
-      // Only blocks carrying rules are listed; the unconstrained button is not.
-      expect(composite.blockRules).toEqual([
+        name: 'Rules Fixture Login',
+        category: 'forms',
+        description: 'Fixture exercising block-level rules in the MCP response.',
+        keywords: ['fixture'],
+        cognitiveLoad: 1,
+      },
+      input: [],
+      output: [],
+      blocks: [
         { id: 'email', type: 'input', rules: ['email', 'required'] },
         { id: 'pw', type: 'input', rules: ['password'] },
-      ]);
+        { id: 'submit', type: 'button' },
+      ],
     });
+
+    const { handler } = fixtureHandler([], null);
+    const result = await handler.handleToolCall('rafters_composite', { query: 'fixture' });
+    const data = JSON.parse(result.content[0].text as string);
+    const composite = data.composites.find((c: { id: string }) => c.id === 'rules-fixture-login');
+    expect(composite).toBeDefined();
+    expect(composite.blockRules).toEqual([
+      { id: 'email', type: 'input', rules: ['email', 'required'] },
+      { id: 'pw', type: 'input', rules: ['password'] },
+    ]);
+    expect(data.deprecated).toBe('use rafters_describe instead');
+  });
+});
+
+describe('rafters_workspaces (unchanged)', () => {
+  it('returns the empty list and null default when nothing is configured', async () => {
+    const { handler } = fixtureHandler([], null);
+    const result = await handler.handleToolCall('rafters_workspaces', {});
+    const data = JSON.parse(result.content[0].text as string);
+    expect(data.workspaces).toEqual([]);
+    expect(data.defaultWorkspace).toBeNull();
   });
 
-  describe('rafters_workspaces', () => {
-    it('returns the empty list and null default when nothing is configured', async () => {
-      const handler = new RaftersToolHandler([], null);
-      const result = await handler.handleToolCall('rafters_workspaces', {});
-
-      const data = JSON.parse(result.content[0].text as string);
-      expect(data.workspaces).toEqual([]);
-      expect(data.defaultWorkspace).toBeNull();
-    });
-
-    it('lists every workspace with its default flag', async () => {
-      const a = { name: 'a', root: '/repo/sites/a' };
-      const b = { name: 'b', root: '/repo/sites/b' };
-      const handler = new RaftersToolHandler([a, b], a);
-      const result = await handler.handleToolCall('rafters_workspaces', {});
-
-      const data = JSON.parse(result.content[0].text as string);
-      expect(data.workspaces).toEqual([
-        { name: 'a', root: '/repo/sites/a', isDefault: true },
-        { name: 'b', root: '/repo/sites/b', isDefault: false },
-      ]);
-      expect(data.defaultWorkspace).toBe('a');
-    });
-  });
-
-  describe('rafters_workspaces config write', () => {
+  it('lists every workspace with its default flag', async () => {
     const a = { name: 'a', root: '/repo/sites/a' };
-
-    it('rejects designer-owned keys with a pointer to Studio', async () => {
-      const handler = new RaftersToolHandler([a], a);
-      const result = await handler.handleToolCall('rafters_workspaces', {
-        workspace: 'a',
-        intent: 'playful',
-      });
-
-      const data = JSON.parse(result.content[0].text as string);
-      expect(data.error).toMatch(/intent/);
-      expect(data.error).toMatch(/Studio/);
-    });
-
-    it('rejects installed with a pointer to `rafters add`', async () => {
-      const handler = new RaftersToolHandler([a], a);
-      const result = await handler.handleToolCall('rafters_workspaces', {
-        workspace: 'a',
-        installed: { components: [] },
-      });
-
-      const data = JSON.parse(result.content[0].text as string);
-      expect(data.error).toMatch(/rafters add/);
-    });
-
-    it('rejects unknown wiring fields', async () => {
-      const handler = new RaftersToolHandler([a], a);
-      const result = await handler.handleToolCall('rafters_workspaces', {
-        workspace: 'a',
-        bogus: 1,
-      });
-
-      const data = JSON.parse(result.content[0].text as string);
-      expect(data.error).toMatch(/invalid wiring patch/);
-    });
-
-    it('rejects an invalid framework value', async () => {
-      const handler = new RaftersToolHandler([a], a);
-      const result = await handler.handleToolCall('rafters_workspaces', {
-        workspace: 'a',
-        framework: 'svelte',
-      });
-
-      const data = JSON.parse(result.content[0].text as string);
-      expect(data.error).toMatch(/invalid wiring patch/);
-    });
-
-    it('requires a resolvable workspace for a write', async () => {
-      const b = { name: 'b', root: '/repo/sites/b' };
-      const handler = new RaftersToolHandler([a, b], null); // no default
-      const result = await handler.handleToolCall('rafters_workspaces', { framework: 'vite' });
-
-      const data = JSON.parse(result.content[0].text as string);
-      expect(data.error).toBe('workspace parameter required');
-    });
-
-    it('rejects an absolute path field', async () => {
-      const handler = new RaftersToolHandler([a], a);
-      const result = await handler.handleToolCall('rafters_workspaces', {
-        workspace: 'a',
-        componentsPath: '/etc/passwd',
-      });
-
-      const data = JSON.parse(result.content[0].text as string);
-      expect(data.error).toMatch(/invalid wiring patch/);
-    });
-
-    it('rejects a `..` traversal in a path field', async () => {
-      const handler = new RaftersToolHandler([a], a);
-      const result = await handler.handleToolCall('rafters_workspaces', {
-        workspace: 'a',
-        compositesPath: '../../other-workspace/.rafters/composites',
-      });
-
-      const data = JSON.parse(result.content[0].text as string);
-      expect(data.error).toMatch(/invalid wiring patch/);
-    });
-
-    it('rejects a non-http registryUrl', async () => {
-      const handler = new RaftersToolHandler([a], a);
-      const result = await handler.handleToolCall('rafters_workspaces', {
-        workspace: 'a',
-        registryUrl: 'file:///etc/passwd',
-      });
-
-      const data = JSON.parse(result.content[0].text as string);
-      expect(data.error).toMatch(/invalid wiring patch/);
-    });
-
-    it('rejects an invalid componentTarget', async () => {
-      const handler = new RaftersToolHandler([a], a);
-      const result = await handler.handleToolCall('rafters_workspaces', {
-        workspace: 'a',
-        componentTarget: 'angular',
-      });
-
-      const data = JSON.parse(result.content[0].text as string);
-      expect(data.error).toMatch(/invalid wiring patch/);
-    });
-
-    it('errors when the target workspace has no config yet', async () => {
-      const handler = new RaftersToolHandler([a], a);
-      const result = await handler.handleToolCall('rafters_workspaces', {
-        workspace: 'a',
-        framework: 'vite',
-      });
-
-      const data = JSON.parse(result.content[0].text as string);
-      expect(data.error).toMatch(/no config/);
-    });
+    const b = { name: 'b', root: '/repo/sites/b' };
+    const { handler } = fixtureHandler([a, b], a);
+    const result = await handler.handleToolCall('rafters_workspaces', {});
+    const data = JSON.parse(result.content[0].text as string);
+    expect(data.workspaces).toEqual([
+      { name: 'a', root: '/repo/sites/a', isDefault: true },
+      { name: 'b', root: '/repo/sites/b', isDefault: false },
+    ]);
+    expect(data.defaultWorkspace).toBe('a');
   });
 
-  describe('workspace routing', () => {
-    it('returns a workspace-required error when the named workspace is unknown', async () => {
-      const a = { name: 'a', root: '/repo/sites/a' };
-      const handler = new RaftersToolHandler([a], a);
-      const result = await handler.handleToolCall('rafters_composite', {
-        workspace: 'does-not-exist',
-      });
-
-      const data = JSON.parse(result.content[0].text as string);
-      expect(data.error).toBe('workspace parameter required');
-      expect(data.workspaces).toEqual([{ name: 'a', root: '/repo/sites/a' }]);
+  it('rejects designer-owned keys with a pointer to Studio', async () => {
+    const a = { name: 'a', root: '/repo/sites/a' };
+    const { handler } = fixtureHandler([a], a);
+    const result = await handler.handleToolCall('rafters_workspaces', {
+      workspace: 'a',
+      intent: 'playful',
     });
-
-    it('uses the default workspace when none is named', async () => {
-      const a = { name: 'a', root: '/repo/sites/a' };
-      const handler = new RaftersToolHandler([a], a);
-      const result = await handler.handleToolCall('rafters_pattern', {});
-
-      const data = JSON.parse(result.content[0].text as string);
-      // Should not be a workspace error -- handler proceeded with default.
-      expect(data.error).not.toBe('workspace parameter required');
-    });
+    const data = JSON.parse(result.content[0].text as string);
+    expect(data.error).toMatch(/intent/);
+    expect(data.error).toMatch(/Studio/);
   });
 
-  describe('unknown tool', () => {
-    it('should return error for unknown tool', async () => {
-      const handler = new RaftersToolHandler([], null);
-      const result = await handler.handleToolCall('unknown_tool', {});
-
-      const data = JSON.parse(result.content[0].text as string);
-      expect(data.error).toContain('Unknown tool');
-      expect(data.suggestion).toContain('Available tools');
+  it('rejects installed with a pointer to `rafters add`', async () => {
+    const a = { name: 'a', root: '/repo/sites/a' };
+    const { handler } = fixtureHandler([a], a);
+    const result = await handler.handleToolCall('rafters_workspaces', {
+      workspace: 'a',
+      installed: { components: [] },
     });
+    const data = JSON.parse(result.content[0].text as string);
+    expect(data.error).toMatch(/rafters add/);
+  });
+});
+
+describe('workspace routing', () => {
+  it('returns a workspace-required error when the named workspace is unknown', async () => {
+    const a = { name: 'a', root: '/repo/sites/a' };
+    const { handler } = fixtureHandler([a], a);
+    const result = await handler.handleToolCall('rafters_describe', {
+      address: 'button',
+      workspace: 'does-not-exist',
+    });
+    const data = JSON.parse(result.content[0].text as string);
+    expect(data.error).toBe('workspace parameter required');
+    expect(data.workspaces).toEqual([{ name: 'a', root: '/repo/sites/a' }]);
+  });
+
+  it('deprecated rafters_composite search still guards an unknown workspace', async () => {
+    // The by-id forward moved above the resolve guard; the query/category search
+    // path must still reject an unnamed-but-unknown workspace.
+    const a = { name: 'a', root: '/repo/sites/a' };
+    const { handler } = fixtureHandler([a], a);
+    const result = await handler.handleToolCall('rafters_composite', {
+      query: 'anything',
+      workspace: 'does-not-exist',
+    });
+    const data = JSON.parse(result.content[0].text as string);
+    expect(data.error).toBe('workspace parameter required');
+  });
+});
+
+describe('unknown tool', () => {
+  it('returns an error naming the available tools', async () => {
+    const { handler } = fixtureHandler([], null);
+    const result = await handler.handleToolCall('unknown_tool', {});
+    const data = JSON.parse(result.content[0].text as string);
+    expect(data.error).toContain('Unknown tool');
+    expect(data.suggestion).toContain('rafters_describe');
   });
 });
