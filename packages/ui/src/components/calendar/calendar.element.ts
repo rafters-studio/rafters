@@ -1,4 +1,34 @@
 /**
+ * Calendar component for date selection with month/year navigation
+ *
+ * @cognitive-load 5/10 - Familiar calendar grid pattern; requires spatial reasoning for date selection
+ * @attention-economics Medium attention cost: visual scanning of date grid, navigation between months
+ * @trust-building Clear today indicator, disabled date styling, keyboard navigation
+ * @accessibility Full keyboard navigation, ARIA grid pattern, screen reader announcements
+ * @semantic-meaning Date selection: scheduling, booking, date range picking
+ *
+ * @usage-patterns
+ * DO: Use for single date or date range selection
+ * DO: Clearly indicate today, selected dates, and disabled dates
+ * DO: Support keyboard navigation (arrows, home, end, page up/down)
+ * DO: Provide month/year navigation controls
+ * DO: Disable dates outside valid range
+ * NEVER: Use for time selection (use TimePicker)
+ * NEVER: Hide navigation controls
+ * NEVER: Allow selection of disabled dates
+ *
+ * @example
+ * ```tsx
+ * <Calendar
+ *   mode="single"
+ *   selected={date}
+ *   onSelect={setDate}
+ *   disabled={(date) => date < new Date()}
+ * />
+ * ```
+ */
+
+/**
  * WC performance for calendar. The score AND the DOM-native binding
  * (bindCalendar) live in calendar.behavior.ts, shared with the Astro
  * performance; this file only adapts that binding to the custom-element

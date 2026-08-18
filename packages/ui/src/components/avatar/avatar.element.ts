@@ -1,4 +1,46 @@
 /**
+ * User representation component with image and fallback support
+ *
+ * @cognitive-load 2/10 - Simple display element with predictable behavior
+ * @attention-economics Peripheral element: Supports content identification without demanding focus
+ * @trust-building Consistent representation builds user recognition; fallbacks prevent broken states
+ * @accessibility Alt text required for images; decorative avatars use aria-hidden
+ * @semantic-meaning Size hierarchy: xs/sm=inline mentions, md=lists, lg/xl=profiles
+ *
+ * @usage-patterns
+ * DO: Always provide alt text for meaningful avatars
+ * DO: Use AvatarFallback for graceful degradation
+ * DO: Match size to context (small in lists, large in profiles)
+ * DO: Use delayMs on fallback to prevent loading flash
+ * NEVER: Use without fallback - images fail
+ * NEVER: Rely solely on avatar for identification - pair with name
+ * NEVER: Use inconsistent sizes within the same context
+ *
+ * @example
+ * ```tsx
+ * // Basic avatar with fallback
+ * <Avatar>
+ *   <AvatarImage src="/user.jpg" alt="Jane Doe" />
+ *   <AvatarFallback>JD</AvatarFallback>
+ * </Avatar>
+ *
+ * // Large profile avatar
+ * <Avatar size="xl">
+ *   <AvatarImage src="/profile.jpg" alt="User profile" />
+ *   <AvatarFallback delayMs={600}>
+ *     <UserIcon className="h-8 w-8" />
+ *   </AvatarFallback>
+ * </Avatar>
+ *
+ * // Decorative avatar (aria-hidden)
+ * <Avatar aria-hidden="true">
+ *   <AvatarImage src="/bot.png" alt="" />
+ *   <AvatarFallback>AI</AvatarFallback>
+ * </Avatar>
+ * ```
+ */
+
+/**
  * <rafters-avatar> -- the Web Component performance of the Avatar score.
  *
  * A caller-decides static, like the oracle: the old `avatar.element.ts`

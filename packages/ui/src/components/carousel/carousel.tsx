@@ -1,3 +1,35 @@
+/**
+ * Carousel component for cycling through content slides
+ *
+ * @cognitive-load 4/10 - Familiar slideshow pattern; left/right navigation intuitive
+ * @attention-economics Medium attention: viewing content, navigating between slides
+ * @trust-building Clear navigation affordances, visible progress indicators, keyboard accessible
+ * @accessibility Keyboard navigation (arrows), ARIA live region for announcements, focus management
+ * @semantic-meaning Content showcase: image galleries, testimonials, feature tours
+ *
+ * @usage-patterns
+ * DO: Provide clear navigation controls (arrows, dots)
+ * DO: Show current position indicator
+ * DO: Support keyboard navigation
+ * DO: Pause auto-play on hover/focus
+ * DO: Support touch/swipe gestures
+ * NEVER: Auto-advance too quickly (allow content consumption)
+ * NEVER: Hide all navigation controls
+ * NEVER: Loop without clear indication
+ *
+ * @example
+ * ```tsx
+ * <Carousel>
+ *   <Carousel.Content>
+ *     <Carousel.Item>Slide 1</Carousel.Item>
+ *     <Carousel.Item>Slide 2</Carousel.Item>
+ *     <Carousel.Item>Slide 3</Carousel.Item>
+ *   </Carousel.Content>
+ *   <Carousel.Previous />
+ *   <Carousel.Next />
+ * </Carousel>
+ * ```
+ */
 import * as React from 'react';
 import { createBehavior, type AriaAttrs, type PartIds, type PayloadArgs } from '../../lib/contract';
 import { useMemory } from '../../hooks/use-memory';

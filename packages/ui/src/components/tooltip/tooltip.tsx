@@ -1,26 +1,31 @@
 /**
- * Contextual tooltip: a hover/focus hint that shows a label after a delay and
- * is never itself focusable.
+ * Contextual tooltip component with smart timing and accessibility
  *
  * @cognitive-load 2/10 - Contextual help without interrupting user workflow
- * @attention-economics Non-intrusive assistance: smart delays prevent accidental triggers while ensuring help availability
+ * @attention-economics Non-intrusive assistance: Smart delays prevent accidental triggers while ensuring help availability
  * @trust-building Reliable contextual guidance that builds user confidence through progressive disclosure
- * @accessibility role=tooltip content, aria-describedby link from the trigger, keyboard-triggerable via focus, Escape dismiss; the tip itself never takes focus
+ * @accessibility Keyboard navigation, screen reader support, focus management, escape key handling
+ * @semantic-meaning Contextual assistance: help=functionality explanation, definition=terminology clarification, action=shortcuts and outcomes, status=system state
  *
- * The React performance decorates the tooltip score (tooltip.behavior.ts) with
- * the view (tooltip.classes.ts) and the framework wiring only: hover-intent
- * timing via the shared hover-delay primitive, and anchored positioning via the
- * shared positionTooltipContent composer. Every decision -- reducers, aria,
- * keymap -- stays in the score.
+ * @usage-patterns
+ * DO: Explain functionality without overwhelming users
+ * DO: Clarify terminology contextually when needed
+ * DO: Show shortcuts and expected action outcomes
+ * DO: Provide feedback on system state changes
+ * NEVER: Include essential information that should be visible by default
  *
  * @example
  * ```tsx
- * <Tooltip>
- *   <TooltipTrigger asChild>
- *     <button type="button">Hover me</button>
- *   </TooltipTrigger>
- *   <TooltipContent>Helpful tooltip text</TooltipContent>
- * </Tooltip>
+ * <Tooltip.Provider>
+ *   <Tooltip>
+ *     <Tooltip.Trigger asChild>
+ *       <Button>Hover me</Button>
+ *     </Tooltip.Trigger>
+ *     <Tooltip.Content>
+ *       Helpful tooltip text
+ *     </Tooltip.Content>
+ *   </Tooltip>
+ * </Tooltip.Provider>
  * ```
  */
 import * as React from 'react';

@@ -1,5 +1,66 @@
 ---
 /**
+ * Hierarchical navigation component for wayfinding
+ *
+ * @cognitive-load 2/10 - Optimized for peripheral navigation aid with minimal cognitive overhead
+ * @attention-economics Tertiary support: Never competes with primary content, provides spatial context only
+ * @trust-building Low trust routine navigation with predictable, reliable wayfinding patterns
+ * @accessibility Complete ARIA support with aria-current="page", aria-hidden separators, and keyboard navigation
+ * @semantic-meaning Wayfinding system with spatial context and navigation hierarchy indication
+ *
+ * @usage-patterns
+ * DO: Provide spatial context and navigation hierarchy
+ * DO: Use clear current page indication with aria-current="page"
+ * DO: Implement truncation strategies for long paths (Miller's Law: 7+/-2 items)
+ * DO: Configure separators with proper accessibility attributes
+ * NEVER: Use for primary actions or main navigation
+ * NEVER: Show breadcrumbs on homepage (nothing to navigate back to)
+ * NEVER: Make current page clickable
+ *
+ * @example
+ * ```tsx
+ * // Basic breadcrumb
+ * <Breadcrumb>
+ *   <BreadcrumbList>
+ *     <BreadcrumbItem>
+ *       <BreadcrumbLink href="/">Home</BreadcrumbLink>
+ *     </BreadcrumbItem>
+ *     <BreadcrumbSeparator />
+ *     <BreadcrumbItem>
+ *       <BreadcrumbLink href="/products">Products</BreadcrumbLink>
+ *     </BreadcrumbItem>
+ *     <BreadcrumbSeparator />
+ *     <BreadcrumbItem>
+ *       <BreadcrumbPage>Widget</BreadcrumbPage>
+ *     </BreadcrumbItem>
+ *   </BreadcrumbList>
+ * </Breadcrumb>
+ *
+ * // With truncation for deep paths
+ * <Breadcrumb>
+ *   <BreadcrumbList>
+ *     <BreadcrumbItem>
+ *       <BreadcrumbLink href="/">Home</BreadcrumbLink>
+ *     </BreadcrumbItem>
+ *     <BreadcrumbSeparator />
+ *     <BreadcrumbItem>
+ *       <BreadcrumbEllipsis />
+ *     </BreadcrumbItem>
+ *     <BreadcrumbSeparator />
+ *     <BreadcrumbItem>
+ *       <BreadcrumbPage>Current Page</BreadcrumbPage>
+ *     </BreadcrumbItem>
+ *   </BreadcrumbList>
+ * </Breadcrumb>
+ *
+ * // With router Link (asChild)
+ * <BreadcrumbLink asChild>
+ *   <Link to="/products">Products</Link>
+ * </BreadcrumbLink>
+ * ```
+ */
+
+/**
  * Breadcrumb -- the Astro performance of the static score
  * (breadcrumb.behavior.ts).
  *

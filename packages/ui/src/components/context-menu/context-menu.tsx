@@ -1,29 +1,18 @@
 /**
- * Context menu: the right-click contextual action popup. A role="menu" surface
- * summoned at the pointer point, with roving focus, typeahead, and dismissal.
+ * Context menu component for right-click contextual actions
  *
- * @cognitive-load 4/10 - Five dimensions: decision-count moderate (a scannable
- *   action list, Miller's Law caps it at 7 plus/minus 2); visual-complexity low
- *   (flat rows, separators, optional check/radio marks); interaction-cost low
- *   (one right-click summons, one click selects); memory-burden low (nothing to
- *   recall -- the actions are the current selection's own verbs); novelty low
- *   (the universally learned right-click gesture).
- * @attention-economics Contextual and on-demand: it costs zero attention until
- *   summoned, then presents exactly the actions relevant to what was clicked,
- *   grouped with separators so related verbs read as a unit.
- * @trust-building Predictable summon-at-cursor placement, keyboard parity
- *   (arrows, typeahead, Enter/Escape), and clear focus/disabled affordances make
- *   the menu feel reliable rather than surprising.
- * @accessibility role="menu" with aria-orientation=vertical; items are
- *   menuitem/menuitemcheckbox/menuitemradio; roving tabindex moves focus, Escape
- *   dismisses and restores focus to the trigger, an outside pointerdown closes,
- *   and disabled items are skipped by navigation.
+ * @cognitive-load 4/10 - Menu navigation with multiple options requires scanning and selection
+ * @attention-economics Contextual actions: appears on right-click at cursor position, groups related actions logically
+ * @trust-building Typeahead search for quick access, clear hover states, keyboard navigation
+ * @accessibility Full keyboard support (arrows, typeahead), proper ARIA menu role, roving focus
+ * @semantic-meaning Context menu: Item=action, CheckboxItem=toggle, RadioItem=exclusive selection, Sub=nested group
  *
- * The React performance decorates the context-menu score
- * (context-menu.behavior.ts) with the view (context-menu.classes.ts) and the
- * framework wiring only: the roving/typeahead/dismiss trio via
- * startContextMenuEffects and cursor placement via positionContextMenuContent.
- * Every decision -- reducers, aria, keymap -- stays in the score.
+ * @usage-patterns
+ * DO: Group related actions logically with separators
+ * DO: Use keyboard shortcuts with Kbd component for common actions
+ * DO: Limit to 7 plus-minus 2 items per menu level (Miller's Law)
+ * DO: Use submenus sparingly for complex action hierarchies
+ * NEVER: Primary actions, navigation, more than 2 levels of nesting
  *
  * @example
  * ```tsx
@@ -32,9 +21,10 @@
  *     <div>Right-click me</div>
  *   </ContextMenu.Trigger>
  *   <ContextMenu.Content>
- *     <ContextMenu.Item onSelect={edit}>Edit</ContextMenu.Item>
+ *     <ContextMenu.Item>Edit</ContextMenu.Item>
+ *     <ContextMenu.Item>Duplicate</ContextMenu.Item>
  *     <ContextMenu.Separator />
- *     <ContextMenu.Item onSelect={remove}>Delete</ContextMenu.Item>
+ *     <ContextMenu.Item>Delete</ContextMenu.Item>
  *   </ContextMenu.Content>
  * </ContextMenu>
  * ```

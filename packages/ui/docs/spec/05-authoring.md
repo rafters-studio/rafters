@@ -26,6 +26,29 @@ Per component, three kinds of file and nothing else:
   behavior, three decorators, zero drift, because there is only one behavior
   file.
 
+  **Every decorator carries the complete intelligence JSDoc block.** All three
+  framework files must open with the same 6-tag intelligence block, parsed by
+  `component-intelligence.ts`:
+
+  - `@cognitive-load N/10` -- scored across 5 dimensions (decision, information,
+    interaction, disruption, learning) with prose explaining the score.
+  - `@attention-economics` -- how the component spends or saves user attention;
+    where it sits in a view's attention hierarchy.
+  - `@trust-building` -- what makes the control feel safe and predictable
+    (reversibility, feedback, confirmation patterns).
+  - `@accessibility` -- concrete ARIA roles, keyboard interactions, focus
+    behavior, screen reader announcements.
+  - `@semantic-meaning` -- the component's purpose and how its variants or
+    modes map to meaning.
+  - `@usage-patterns` -- `DO:` and `NEVER:` lines encoding design guidance.
+
+  The registry generator, the `rafters_component` MCP tool, and the
+  cognitive-load budget system all extract from these tags. A decorator
+  without them is invisible to the intelligence layer -- agents get
+  `intelligence: undefined` and guess at design decisions the tags exist to
+  encode. The block must be identical across all three decorators for a
+  component; write it once and carry it to all three files.
+
   Decorator in *spirit*, not GoF-strict -- read the word as the shape, not the
   taxonomy. The framework file **adapts one runtime to the one behavior** and
   paints on the classes; it does NOT re-implement the behavior's interface, and

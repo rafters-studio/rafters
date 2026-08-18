@@ -1,4 +1,37 @@
 /**
+ * Image component with upload, editing, and responsive display support
+ *
+ * @cognitive-load 3/10 - Familiar image pattern with clear interaction points
+ * @attention-economics Content-driven: Image is primary focus, controls secondary
+ * @trust-building Predictable resize handles, clear loading/error states
+ * @accessibility Alt text required, focus indicators for editable mode
+ * @semantic-meaning figure/figcaption for proper image semantics
+ *
+ * @usage-patterns
+ * DO: Always provide meaningful alt text
+ * DO: Use alignment to create visual rhythm with text
+ * DO: Size images appropriately for their context
+ * NEVER: Use images without alt text
+ * NEVER: Use decorative alignment that breaks reading flow
+ *
+ * @example
+ * ```tsx
+ * // Static image
+ * <Image src="/photo.jpg" alt="A sunset over the ocean" />
+ *
+ * // Editable image with caption
+ * <Image
+ *   src={imageUrl}
+ *   alt={altText}
+ *   caption="Photo by John Doe"
+ *   editable
+ *   onChange={(props) => updateImage(props)}
+ *   onUpload={async (file) => uploadFile(file)}
+ * />
+ * ```
+ */
+
+/**
  * <rafters-image> -- the Web Component decorator of the Image score.
  *
  * Image has a LIVE ARIA projection (aria-busy while loading, an alert/status

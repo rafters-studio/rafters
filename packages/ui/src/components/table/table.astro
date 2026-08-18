@@ -1,5 +1,43 @@
 ---
 /**
+ * Table component for displaying structured data in rows and columns
+ *
+ * @cognitive-load 3/10 - Familiar grid pattern; visual scanning is natural
+ * @attention-economics Low attention cost: structured data is easy to scan
+ * @trust-building Clear headers, consistent alignment, visible row separation
+ * @accessibility Semantic table elements, proper scope attributes, keyboard navigable
+ * @semantic-meaning Data presentation: lists, comparisons, structured information
+ *
+ * @usage-patterns
+ * DO: Use for structured, comparable data
+ * DO: Provide clear column headers
+ * DO: Use consistent alignment (left for text, right for numbers)
+ * DO: Support sorting and filtering for large datasets
+ * DO: Consider sticky headers for long tables
+ * NEVER: Use for layout purposes (use CSS Grid instead)
+ * NEVER: Nest tables within tables
+ * NEVER: Hide header row
+ *
+ * @example
+ * ```tsx
+ * <Table>
+ *   <Table.Header>
+ *     <Table.Row>
+ *       <Table.Head>Name</Table.Head>
+ *       <Table.Head>Status</Table.Head>
+ *     </Table.Row>
+ *   </Table.Header>
+ *   <Table.Body>
+ *     <Table.Row>
+ *       <Table.Cell>John</Table.Cell>
+ *       <Table.Cell>Active</Table.Cell>
+ *     </Table.Row>
+ *   </Table.Body>
+ * </Table>
+ * ```
+ */
+
+/**
  * Astro performance of the Table score. Table is a PURE STATIC -- the score
  * projects no ARIA onto the root, holds no state, and runs no effects -- so
  * this file ships NO `<script>` and there is NO bindTable. It is server-

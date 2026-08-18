@@ -1,4 +1,50 @@
 /**
+ * Semantic container component for layout structure and content boundaries
+ *
+ * @cognitive-load 0/10 - Invisible structure that reduces visual complexity
+ * @attention-economics Neutral structural element: Controls content width and breathing room without competing for attention
+ * @trust-building Predictable boundaries and consistent spacing patterns
+ * @accessibility Semantic HTML elements with proper landmark roles for screen readers
+ * @semantic-meaning Element-driven behavior: main=primary landmark, header=page/section header, footer=page/section footer, section=structural grouping, article=readable content with typography, aside=supplementary, div=no semantics
+ *
+ * @usage-patterns
+ * DO: Use main for the primary content area (once per page)
+ * DO: Use header with position="sticky" and depth="navigation" for site headers
+ * DO: Use footer for page or section footers
+ * DO: Use section for structural grouping within grids
+ * DO: Use article for readable content - typography is automatic
+ * DO: Use aside for supplementary content, add surface classes for depth
+ * DO: Spacing happens inside (padding), not outside (no margins)
+ * DO: Place a Container directly in a Grid and give it colSpan/rowSpan -- no Grid.Item wrapper needed
+ * NEVER: Nest containers unnecessarily
+ * NEVER: Use margins for spacing - let parent Grid handle gaps
+ * NEVER: Use @container without w-full in flex/grid contexts (causes width collapse in Tailwind v4)
+ * NEVER: Write raw sticky/fixed/z-* utilities -- use position and depth props
+ *
+ * @example
+ * ```tsx
+ * <Container as="header" position="sticky" depth="navigation" fill="background" size="full" padding="4">
+ *   <nav>Site navigation</nav>
+ * </Container>
+ * <Container as="main" size="6xl" padding="6">
+ *   <Container as="article">
+ *     <h1>Title</h1>
+ *     <p>Typography just works.</p>
+ *   </Container>
+ * </Container>
+ * <Container as="footer" padding="6">
+ *   <p>Footer content</p>
+ * </Container>
+ *
+ * // Self-placing grid children -- no Grid.Item wrappers
+ * <Grid columns={3} gap="6">
+ *   <Container as="article" size="5xl" colSpan={2} queryName="main">…</Container>
+ *   <Container as="aside" colSpan={1} queryName="rail">…</Container>
+ * </Grid>
+ * ```
+ */
+
+/**
  * <rafters-container> -- the Web Component performance of the Container score.
  *
  * Container is a PURE STATIC (empty ARIA projection, no state, no effects), so

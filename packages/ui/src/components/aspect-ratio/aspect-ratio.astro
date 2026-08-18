@@ -1,5 +1,42 @@
 ---
 /**
+ * Proportional container that maintains aspect ratio regardless of width
+ *
+ * @cognitive-load 1/10 - Invisible layout utility with no cognitive overhead
+ * @attention-economics Structural element: Prevents layout shift, maintains visual consistency
+ * @trust-building Consistent proportions prevent jarring layout shifts during loading
+ * @accessibility Layout utility - content inside maintains its own accessibility
+ * @semantic-meaning Ratio contexts: 1=avatars/icons, 4/3=photos, 16/9=video, custom=brand-specific
+ *
+ * @usage-patterns
+ * DO: Use for images/videos to prevent layout shift
+ * DO: Use for card thumbnails for consistent grids
+ * DO: Use 16/9 for video embeds
+ * DO: Use 1 (square) for avatar containers
+ * NEVER: Use for text content
+ * NEVER: Use when natural dimensions are acceptable
+ * NEVER: Force awkward ratios on content
+ *
+ * @example
+ * ```tsx
+ * // 16:9 video container
+ * <AspectRatio ratio={16 / 9}>
+ *   <iframe src="https://youtube.com/embed/..." />
+ * </AspectRatio>
+ *
+ * // Square image
+ * <AspectRatio ratio={1}>
+ *   <img src="/photo.jpg" alt="Photo" className="object-cover" />
+ * </AspectRatio>
+ *
+ * // 4:3 thumbnail
+ * <AspectRatio ratio={4 / 3}>
+ *   <img src="/thumb.jpg" alt="Thumbnail" className="object-cover" />
+ * </AspectRatio>
+ * ```
+ */
+
+/**
  * AspectRatio -- the Astro performance of the static score
  * (aspect-ratio.behavior.ts).
  *

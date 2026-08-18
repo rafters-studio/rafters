@@ -1,5 +1,36 @@
 ---
 /**
+ * Embed component for external content (YouTube, Vimeo, Twitch, Twitter)
+ *
+ * @cognitive-load 3/10 - Familiar video/embed pattern with clear boundaries
+ * @attention-economics Content container: Video/embed is primary focus
+ * @trust-building Secure URL validation, clear provider indicators
+ * @accessibility Title for iframe, proper aspect ratios
+ * @semantic-meaning iframe with security attributes for embedded content
+ *
+ * @usage-patterns
+ * DO: Always provide a title for accessibility
+ * DO: Use appropriate aspect ratios for content type
+ * DO: Let users know the content source
+ * NEVER: Embed from untrusted sources
+ * NEVER: Use without URL validation
+ *
+ * @example
+ * ```tsx
+ * // Auto-detected YouTube embed
+ * <Embed url="https://www.youtube.com/watch?v=dQw4w9WgXcQ" />
+ *
+ * // Explicit provider with custom aspect ratio
+ * <Embed
+ *   url="https://vimeo.com/123456789"
+ *   provider="vimeo"
+ *   aspectRatio="4:3"
+ *   title="My Vimeo Video"
+ * />
+ * ```
+ */
+
+/**
  * Astro performance of the Embed score.
  *
  * Embed is a PURE STATIC: the score projects no ARIA, holds no state, and runs

@@ -1,19 +1,38 @@
 /**
- * AspectRatio -- the React performance of the static AspectRatio score.
+ * Proportional container that maintains aspect ratio regardless of width
  *
- * A static score has nothing to subscribe to: this performance is pure
- * decoration application. No useBehavior, no memory -- config in, classes out,
- * and the resolved `ratio` painted through the one inline style channel (an
- * arbitrary aspect-ratio value cannot be a literal utility class).
+ * @cognitive-load 1/10 - Invisible layout utility with no cognitive overhead
+ * @attention-economics Structural element: Prevents layout shift, maintains visual consistency
+ * @trust-building Consistent proportions prevent jarring layout shifts during loading
+ * @accessibility Layout utility - content inside maintains its own accessibility
+ * @semantic-meaning Ratio contexts: 1=avatars/icons, 4/3=photos, 16/9=video, custom=brand-specific
  *
- * @cognitive-load 1/10 -- Invisible layout utility with no cognitive overhead;
- * an author sets a proportion and forgets it. (matrix: score 1)
- * @attention-economics Structural element. Reserves space before content loads,
- * so nothing competes for attention by shifting the layout out from under it.
- * @trust-building Consistent proportions prevent jarring layout shifts during
- * loading -- the box holds while an image or embed streams in.
- * @accessibility Layout utility only; it projects no ARIA. The content inside
- * (image, iframe, video) carries its own accessible name and role.
+ * @usage-patterns
+ * DO: Use for images/videos to prevent layout shift
+ * DO: Use for card thumbnails for consistent grids
+ * DO: Use 16/9 for video embeds
+ * DO: Use 1 (square) for avatar containers
+ * NEVER: Use for text content
+ * NEVER: Use when natural dimensions are acceptable
+ * NEVER: Force awkward ratios on content
+ *
+ * @example
+ * ```tsx
+ * // 16:9 video container
+ * <AspectRatio ratio={16 / 9}>
+ *   <iframe src="https://youtube.com/embed/..." />
+ * </AspectRatio>
+ *
+ * // Square image
+ * <AspectRatio ratio={1}>
+ *   <img src="/photo.jpg" alt="Photo" className="object-cover" />
+ * </AspectRatio>
+ *
+ * // 4:3 thumbnail
+ * <AspectRatio ratio={4 / 3}>
+ *   <img src="/thumb.jpg" alt="Thumbnail" className="object-cover" />
+ * </AspectRatio>
+ * ```
  */
 import * as React from 'react';
 import classy from '../../primitives/classy';

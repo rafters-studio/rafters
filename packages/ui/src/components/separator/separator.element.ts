@@ -1,4 +1,30 @@
 /**
+ * Visual separator component for dividing content sections
+ *
+ * @cognitive-load 0/10 - Passive visual element, no cognitive processing required
+ * @attention-economics Neutral structure: creates visual boundaries without demanding attention
+ * @trust-building Consistent spacing, clear content grouping, predictable visual hierarchy
+ * @accessibility role="separator" or role="none" for decorative, orientation for screen readers
+ * @semantic-meaning Visual division: horizontal=between sections, vertical=between inline items
+ *
+ * @usage-patterns
+ * DO: Use to group related content visually
+ * DO: Use horizontal for section breaks
+ * DO: Use vertical for inline item separation (toolbars, menus)
+ * DO: Set decorative=true when purely visual
+ * NEVER: Overuse separators, use when whitespace alone suffices
+ *
+ * @example
+ * ```tsx
+ * // Horizontal section divider
+ * <Separator />
+ *
+ * // Vertical toolbar divider
+ * <Separator orientation="vertical" className="h-4" />
+ * ```
+ */
+
+/**
  * <rafters-separator> -- the Web Component performance of the Separator score.
  *
  * Separator is a static score: role and aria-orientation are a pure function
