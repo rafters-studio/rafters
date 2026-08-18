@@ -187,6 +187,22 @@ const SetTokenMessageSchema = z.object({
   reason: z.string().optional(),
 });
 
+/**
+ * The designer-owned config fields Studio may patch over `rafters:set-config`.
+ * Every key is optional -- absent keys are left untouched; `fonts` merges over
+ * the existing object. Intent/font values are further checked by
+ * validateIntent / validateFontsPath before the write.
+ */
+const ConfigPatchSchema = z
+  .object({
+    intent: z.string().min(1).optional(),
+    darkMode: z.enum(['class', 'media']).optional(),
+    fonts: FontsConfigSchema.optional(),
+  })
+  .refine((patch) => Object.keys(patch).length > 0, {
+    message: 'patch must set at least one of: intent, darkMode, fonts',
+  });
+
 // Schema for POST /api/tokens/:name - partial token update
 // Derived from TokenSchema: value required, patchable fields optional.
 // userOverride is nullable on Token (required, null = baseline) but optional in
@@ -909,84 +925,63 @@ export function studioApiPlugin(): Plugin {
         client.send('rafters:config', { ok: true, config });
       });
 
-      // Listen for intent updates from client
-      server.ws.on('rafters:set-intent', async (rawData: unknown, client) => {
-        const parsed = z.object({ intent: z.string().min(1) }).safeParse(rawData);
+      // Listen for config patches from client. One setter for every
+      // designer-owned field (intent, darkMode, fonts); absent keys are left
+      // untouched. Replies on the same `rafters:config` event as get-config.
+      server.ws.on('rafters:set-config', async (rawData: unknown, client) => {
+        const parsed = ConfigPatchSchema.safeParse(rawData);
         if (!parsed.success) {
-          client.send('rafters:intent-updated', {
+          client.send('rafters:config', {
             ok: false,
-            error: `Invalid message: ${parsed.error.message}`,
+            error: `Invalid patch: ${parsed.error.message}`,
           });
           return;
         }
+        const patch = parsed.data;
 
-        const { intent } = parsed.data;
-        const intentError = validateIntent(intent);
-        if (intentError) {
-          client.send('rafters:intent-updated', { ok: false, error: intentError });
-          return;
+        // Per-field validation, gathered in one place. Rules unchanged.
+        if (patch.intent !== undefined) {
+          const intentError = validateIntent(patch.intent);
+          if (intentError) {
+            client.send('rafters:config', { ok: false, error: intentError });
+            return;
+          }
+        }
+        if (patch.fonts?.path !== undefined) {
+          const pathError = validateFontsPath(patch.fonts.path);
+          if (pathError) {
+            client.send('rafters:config', { ok: false, error: pathError });
+            return;
+          }
         }
 
         const config = await readRaftersConfig();
         if (!config) {
-          client.send('rafters:intent-updated', {
+          client.send('rafters:config', {
             ok: false,
             error: `config not found at ${configPath}`,
           });
           return;
         }
 
-        const updated = { ...config, intent };
+        const updated: RaftersConfig = { ...config };
+        if (patch.intent !== undefined) updated.intent = patch.intent;
+        if (patch.darkMode !== undefined) updated.darkMode = patch.darkMode;
+        if (patch.fonts !== undefined) {
+          // Merge incoming fonts over existing, field-by-field. undefined means
+          // "leave alone"; explicit null or value means "set".
+          const merged: FontsConfig = { ...config.fonts };
+          if (patch.fonts.path !== undefined) merged.path = patch.fonts.path;
+          if (patch.fonts.imports !== undefined) merged.imports = patch.fonts.imports;
+          updated.fonts = merged;
+        }
+
         try {
           await writeFile(configPath, JSON.stringify(updated, null, 2));
-          client.send('rafters:intent-updated', { ok: true, intent });
+          client.send('rafters:config', { ok: true, config: updated });
         } catch (error) {
-          console.log(`[rafters] Intent update failed: ${error}`);
-          client.send('rafters:intent-updated', { ok: false, error: String(error) });
-        }
-      });
-
-      // Listen for fonts config updates from client
-      server.ws.on('rafters:set-fonts', async (rawData: unknown, client) => {
-        const parsed = FontsConfigSchema.safeParse(rawData);
-        if (!parsed.success) {
-          client.send('rafters:fonts-updated', {
-            ok: false,
-            error: `Invalid message: ${parsed.error.message}`,
-          });
-          return;
-        }
-
-        const fontsData = parsed.data;
-        const pathError = validateFontsPath(fontsData.path);
-        if (pathError) {
-          client.send('rafters:fonts-updated', { ok: false, error: pathError });
-          return;
-        }
-
-        const config = await readRaftersConfig();
-        if (!config) {
-          client.send('rafters:fonts-updated', {
-            ok: false,
-            error: `config not found at ${configPath}`,
-          });
-          return;
-        }
-
-        // Merge incoming fonts over existing, preserving fields not in the patch.
-        // undefined means "leave alone"; explicit null or value means "set".
-        const existing = config.fonts ?? {};
-        const fonts: FontsConfig = { ...existing };
-        if (fontsData.path !== undefined) fonts.path = fontsData.path;
-        if (fontsData.imports !== undefined) fonts.imports = fontsData.imports;
-
-        const updated = { ...config, fonts };
-        try {
-          await writeFile(configPath, JSON.stringify(updated, null, 2));
-          client.send('rafters:fonts-updated', { ok: true, fonts });
-        } catch (error) {
-          console.log(`[rafters] Fonts update failed: ${error}`);
-          client.send('rafters:fonts-updated', { ok: false, error: String(error) });
+          console.log(`[rafters] Config update failed: ${error}`);
+          client.send('rafters:config', { ok: false, error: String(error) });
         }
       });
 

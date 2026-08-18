@@ -97,42 +97,41 @@ describe('Client API', () => {
     });
   });
 
-  describe('setIntent without HMR', () => {
-    it('exports setIntent function', async () => {
+  describe('setConfig without HMR', () => {
+    it('exports setConfig function', async () => {
       const module = await import('../../src/api/index');
-      expect(typeof module.setIntent).toBe('function');
+      expect(typeof module.setConfig).toBe('function');
     });
 
     it('returns error result when HMR not available', async () => {
-      const { setIntent } = await import('../../src/api/index');
-      const result = await setIntent({ intent: 'efficient' });
-      expect(result).toEqual({ ok: false, error: 'HMR not available' });
-    });
-  });
-
-  describe('setFonts without HMR', () => {
-    it('exports setFonts function', async () => {
-      const module = await import('../../src/api/index');
-      expect(typeof module.setFonts).toBe('function');
-    });
-
-    it('returns error result when HMR not available', async () => {
-      const { setFonts } = await import('../../src/api/index');
-      const result = await setFonts({ path: './fonts' });
+      const { setConfig } = await import('../../src/api/index');
+      const result = await setConfig({ intent: 'efficient' });
       expect(result).toEqual({ ok: false, error: 'HMR not available' });
     });
 
-    it('accepts null path', async () => {
-      const { setFonts } = await import('../../src/api/index');
-      const result = await setFonts({ path: null });
+    it('accepts a darkMode patch', async () => {
+      const { setConfig } = await import('../../src/api/index');
+      const result = await setConfig({ darkMode: 'media' });
       expect(result.ok).toBe(false);
     });
 
-    it('accepts imports array', async () => {
-      const { setFonts } = await import('../../src/api/index');
-      const result = await setFonts({
-        imports: ['https://fonts.googleapis.com/css2?family=Inter'],
+    it('accepts a fonts patch with null path', async () => {
+      const { setConfig } = await import('../../src/api/index');
+      const result = await setConfig({ fonts: { path: null } });
+      expect(result.ok).toBe(false);
+    });
+
+    it('accepts a fonts patch with imports array', async () => {
+      const { setConfig } = await import('../../src/api/index');
+      const result = await setConfig({
+        fonts: { imports: ['https://fonts.googleapis.com/css2?family=Inter'] },
       });
+      expect(result.ok).toBe(false);
+    });
+
+    it('accepts a combined patch', async () => {
+      const { setConfig } = await import('../../src/api/index');
+      const result = await setConfig({ intent: 'efficient', darkMode: 'class' });
       expect(result.ok).toBe(false);
     });
   });
@@ -142,22 +141,6 @@ describe('Client API', () => {
       const success = { ok: true as const, config: { intent: 'efficient' } };
       expect(success.ok).toBe(true);
       expect(success.config.intent).toBe('efficient');
-    });
-  });
-
-  describe('IntentResult type', () => {
-    it('success result has intent field', () => {
-      const success = { ok: true as const, intent: 'efficient' };
-      expect(success.ok).toBe(true);
-      expect(success.intent).toBe('efficient');
-    });
-  });
-
-  describe('FontsResult type', () => {
-    it('success result has fonts field', () => {
-      const success = { ok: true as const, fonts: { path: './fonts', imports: [] } };
-      expect(success.ok).toBe(true);
-      expect(success.fonts.path).toBe('./fonts');
     });
   });
 });

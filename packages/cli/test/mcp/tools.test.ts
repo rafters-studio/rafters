@@ -136,6 +136,75 @@ describe('RaftersToolHandler', () => {
     });
   });
 
+  describe('rafters_workspaces config write', () => {
+    const a = { name: 'a', root: '/repo/sites/a' };
+
+    it('rejects designer-owned keys with a pointer to Studio', async () => {
+      const handler = new RaftersToolHandler([a], a);
+      const result = await handler.handleToolCall('rafters_workspaces', {
+        workspace: 'a',
+        intent: 'playful',
+      });
+
+      const data = JSON.parse(result.content[0].text as string);
+      expect(data.error).toMatch(/intent/);
+      expect(data.error).toMatch(/Studio/);
+    });
+
+    it('rejects installed with a pointer to `rafters add`', async () => {
+      const handler = new RaftersToolHandler([a], a);
+      const result = await handler.handleToolCall('rafters_workspaces', {
+        workspace: 'a',
+        installed: { components: [] },
+      });
+
+      const data = JSON.parse(result.content[0].text as string);
+      expect(data.error).toMatch(/rafters add/);
+    });
+
+    it('rejects unknown wiring fields', async () => {
+      const handler = new RaftersToolHandler([a], a);
+      const result = await handler.handleToolCall('rafters_workspaces', {
+        workspace: 'a',
+        bogus: 1,
+      });
+
+      const data = JSON.parse(result.content[0].text as string);
+      expect(data.error).toMatch(/invalid wiring patch/);
+    });
+
+    it('rejects an invalid framework value', async () => {
+      const handler = new RaftersToolHandler([a], a);
+      const result = await handler.handleToolCall('rafters_workspaces', {
+        workspace: 'a',
+        framework: 'svelte',
+      });
+
+      const data = JSON.parse(result.content[0].text as string);
+      expect(data.error).toMatch(/invalid wiring patch/);
+    });
+
+    it('requires a resolvable workspace for a write', async () => {
+      const b = { name: 'b', root: '/repo/sites/b' };
+      const handler = new RaftersToolHandler([a, b], null); // no default
+      const result = await handler.handleToolCall('rafters_workspaces', { framework: 'vite' });
+
+      const data = JSON.parse(result.content[0].text as string);
+      expect(data.error).toBe('workspace parameter required');
+    });
+
+    it('errors when the target workspace has no config yet', async () => {
+      const handler = new RaftersToolHandler([a], a);
+      const result = await handler.handleToolCall('rafters_workspaces', {
+        workspace: 'a',
+        framework: 'vite',
+      });
+
+      const data = JSON.parse(result.content[0].text as string);
+      expect(data.error).toMatch(/no config/);
+    });
+  });
+
   describe('workspace routing', () => {
     it('returns a workspace-required error when the named workspace is unknown', async () => {
       const a = { name: 'a', root: '/repo/sites/a' };

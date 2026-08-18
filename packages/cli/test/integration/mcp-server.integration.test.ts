@@ -8,7 +8,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { RaftersToolHandler } from '../../src/mcp/tools.js';
 import { cleanupFixture } from '../fixtures/projects.js';
-import { createInitializedFixture } from './helpers.js';
+import { createInitializedFixture, readConfig } from './helpers.js';
 
 let fixturePath = '';
 
@@ -84,6 +84,52 @@ describe('MCP tools against initialized project', () => {
     const data = JSON.parse(result.content[0].text as string);
     // Component may or may not be found depending on registry state
     expect(data.name === 'button' || data.error).toBeTruthy();
+  }, 30000);
+
+  it('rafters_workspaces writes a wiring patch to the config', async () => {
+    fixturePath = await createInitializedFixture('vite-no-shadcn');
+    const handler = new RaftersToolHandler([{ name: 'fixture', root: fixturePath }], {
+      name: 'fixture',
+      root: fixturePath,
+    });
+
+    const result = await handler.handleToolCall('rafters_workspaces', {
+      registryUrl: 'https://registry.example.test',
+      cssPath: 'src/styles/app.css',
+    });
+
+    const data = JSON.parse(result.content[0].text as string);
+    expect(data.ok).toBe(true);
+    expect(data.updated).toEqual({
+      registryUrl: 'https://registry.example.test',
+      cssPath: 'src/styles/app.css',
+    });
+
+    // The change is persisted, and unrelated fields are preserved.
+    const config = await readConfig(fixturePath);
+    expect(config.registryUrl).toBe('https://registry.example.test');
+    expect(config.cssPath).toBe('src/styles/app.css');
+    expect(config.framework).toBeDefined();
+  }, 30000);
+
+  it('rafters_workspaces refuses to write a designer-owned field', async () => {
+    fixturePath = await createInitializedFixture('vite-no-shadcn');
+    const handler = new RaftersToolHandler([{ name: 'fixture', root: fixturePath }], {
+      name: 'fixture',
+      root: fixturePath,
+    });
+
+    const before = await readConfig(fixturePath);
+    const result = await handler.handleToolCall('rafters_workspaces', {
+      darkMode: 'media',
+    });
+
+    const data = JSON.parse(result.content[0].text as string);
+    expect(data.error).toMatch(/Studio/);
+
+    // Config is untouched -- the reject happens before any write.
+    const after = await readConfig(fixturePath);
+    expect(after.darkMode).toBe(before.darkMode);
   }, 30000);
 });
 

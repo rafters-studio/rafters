@@ -46,22 +46,19 @@ export interface RaftersConfig {
   installed?: Record<string, string[]>;
 }
 
-export interface SetIntentOptions {
-  intent: string;
-}
-
-export interface SetFontsOptions {
-  path?: string | null;
-  imports?: string[];
+/**
+ * The designer-owned slice of the config Studio may write. Absent keys are
+ * left untouched; `fonts` merges over the existing object field-by-field.
+ */
+export interface ConfigPatch {
+  intent?: string;
+  darkMode?: 'class' | 'media';
+  fonts?: FontsConfig;
 }
 
 export type ConfigResult = { ok: true; config: RaftersConfig } | { ok: false; error: string };
 
-export type IntentResult = { ok: true; intent: string } | { ok: false; error: string };
-
-export type FontsResult = { ok: true; fonts: FontsConfig } | { ok: false; error: string };
-
-const TOKEN_UPDATE_TIMEOUT_MS = 10_000;
+const ROUNDTRIP_TIMEOUT_MS = 10_000;
 
 /**
  * Check if HMR is fully available (not just partially defined)
@@ -76,15 +73,20 @@ function isHmrAvailable(): boolean {
 }
 
 /**
- * Send a token update to the Vite plugin.
- *
- * @param options.persist - Set to false for instant feedback without disk write.
- *                          Default true persists to .rafters/tokens/*.json
+ * One request/response round-trip over the HMR socket. Every get/set below is
+ * this shape: send `sendEvent` with `payload`, resolve on the first `recvEvent`
+ * the `match` predicate accepts (default: the first reply). Resolves to a
+ * structured error when HMR is unavailable or the reply times out.
  */
-export function setToken(options: SetTokenOptions): Promise<UpdateResult> {
+function roundtrip<T extends { ok: boolean }>(
+  sendEvent: string,
+  recvEvent: string,
+  payload: unknown,
+  match: (result: T) => boolean = () => true,
+): Promise<T | { ok: false; error: string }> {
   return new Promise((resolve) => {
     if (!isHmrAvailable()) {
-      console.warn('[rafters] setToken called but HMR is not available');
+      console.warn(`[rafters] ${sendEvent} called but HMR is not available`);
       resolve({ ok: false, error: 'HMR not available' });
       return;
     }
@@ -96,26 +98,40 @@ export function setToken(options: SetTokenOptions): Promise<UpdateResult> {
 
     const cleanup = () => {
       clearTimeout(timeoutId);
-      hot.off('rafters:token-updated', handler);
+      hot.off(recvEvent, handler);
     };
 
-    const handler = (result: UpdateResult) => {
-      // Match response to our request by name, or accept any error
-      if ((result.ok && result.name === options.name) || !result.ok) {
+    const handler = (result: T) => {
+      // Accept any error, or a success the caller's predicate matches.
+      if (!result.ok || match(result)) {
         cleanup();
         resolve(result);
       }
     };
 
-    // Timeout after 10 seconds
     timeoutId = setTimeout(() => {
       cleanup();
-      resolve({ ok: false, error: `Token update timed out after ${TOKEN_UPDATE_TIMEOUT_MS}ms` });
-    }, TOKEN_UPDATE_TIMEOUT_MS);
+      resolve({ ok: false, error: `${sendEvent} timed out after ${ROUNDTRIP_TIMEOUT_MS}ms` });
+    }, ROUNDTRIP_TIMEOUT_MS);
 
-    hot.on('rafters:token-updated', handler);
-    hot.send('rafters:set-token', options);
+    hot.on(recvEvent, handler);
+    hot.send(sendEvent, payload);
   });
+}
+
+/**
+ * Send a token update to the Vite plugin.
+ *
+ * @param options.persist - Set to false for instant feedback without disk write.
+ *                          Default true persists to .rafters/tokens/*.json
+ */
+export function setToken(options: SetTokenOptions): Promise<UpdateResult> {
+  return roundtrip<Extract<UpdateResult, { ok: true }>>(
+    'rafters:set-token',
+    'rafters:token-updated',
+    options,
+    (result) => result.name === options.name,
+  );
 }
 
 /**
@@ -153,122 +169,22 @@ export function onCssUpdated(callback: () => void): () => void {
  * Read the current config.rafters.json from the Vite plugin.
  */
 export function getConfig(): Promise<ConfigResult> {
-  return new Promise((resolve) => {
-    if (!isHmrAvailable()) {
-      console.warn('[rafters] getConfig called but HMR is not available');
-      resolve({ ok: false, error: 'HMR not available' });
-      return;
-    }
-
-    // biome-ignore lint/style/noNonNullAssertion: checked by isHmrAvailable
-    const hot = import.meta.hot!;
-    // oxlint-disable-next-line prefer-const -- assigned below but captured by the cleanup closure first (forward reference)
-    let timeoutId: ReturnType<typeof setTimeout>;
-
-    const cleanup = () => {
-      clearTimeout(timeoutId);
-      hot.off('rafters:config', handler);
-    };
-
-    const handler = (result: ConfigResult) => {
-      cleanup();
-      resolve(result);
-    };
-
-    timeoutId = setTimeout(() => {
-      cleanup();
-      resolve({ ok: false, error: `Config read timed out after ${TOKEN_UPDATE_TIMEOUT_MS}ms` });
-    }, TOKEN_UPDATE_TIMEOUT_MS);
-
-    hot.on('rafters:config', handler);
-    hot.send('rafters:get-config', {});
-  });
+  return roundtrip<Extract<ConfigResult, { ok: true }>>('rafters:get-config', 'rafters:config', {});
 }
 
 /**
- * Write an intent name to config.rafters.json.
+ * Patch the designer-owned config fields (`intent`, `darkMode`, `fonts`) in
+ * config.rafters.json. Absent keys are left untouched; `fonts` merges over the
+ * existing object. Only known intent names and valid font paths are accepted;
+ * invalid patches are rejected with an error.
  *
- * Only known intent names are accepted; unknown names are rejected with the
- * known list. The caller (Studio UI) sequences token writes after the config
- * write -- this channel does not regenerate tokens.
+ * Does NOT regenerate tokens -- these are build config, not token values. The
+ * caller (Studio UI) sequences any token writes after the config write.
  */
-export function setIntent(options: SetIntentOptions): Promise<IntentResult> {
-  return new Promise((resolve) => {
-    if (!isHmrAvailable()) {
-      console.warn('[rafters] setIntent called but HMR is not available');
-      resolve({ ok: false, error: 'HMR not available' });
-      return;
-    }
-
-    // biome-ignore lint/style/noNonNullAssertion: checked by isHmrAvailable
-    const hot = import.meta.hot!;
-    // oxlint-disable-next-line prefer-const -- assigned below but captured by the cleanup closure first (forward reference)
-    let timeoutId: ReturnType<typeof setTimeout>;
-
-    const cleanup = () => {
-      clearTimeout(timeoutId);
-      hot.off('rafters:intent-updated', handler);
-    };
-
-    const handler = (result: IntentResult) => {
-      // Match response to our request by intent, or accept any error
-      if ((result.ok && result.intent === options.intent) || !result.ok) {
-        cleanup();
-        resolve(result);
-      }
-    };
-
-    timeoutId = setTimeout(() => {
-      cleanup();
-      resolve({
-        ok: false,
-        error: `Intent update timed out after ${TOKEN_UPDATE_TIMEOUT_MS}ms`,
-      });
-    }, TOKEN_UPDATE_TIMEOUT_MS);
-
-    hot.on('rafters:intent-updated', handler);
-    hot.send('rafters:set-intent', options);
-  });
-}
-
-/**
- * Update the fonts config in config.rafters.json.
- *
- * Does NOT regenerate tokens -- fonts path/imports are build config, not token
- * values. Font role assignments are handled separately via setToken.
- */
-export function setFonts(options: SetFontsOptions): Promise<FontsResult> {
-  return new Promise((resolve) => {
-    if (!isHmrAvailable()) {
-      console.warn('[rafters] setFonts called but HMR is not available');
-      resolve({ ok: false, error: 'HMR not available' });
-      return;
-    }
-
-    // biome-ignore lint/style/noNonNullAssertion: checked by isHmrAvailable
-    const hot = import.meta.hot!;
-    // oxlint-disable-next-line prefer-const -- assigned below but captured by the cleanup closure first (forward reference)
-    let timeoutId: ReturnType<typeof setTimeout>;
-
-    const cleanup = () => {
-      clearTimeout(timeoutId);
-      hot.off('rafters:fonts-updated', handler);
-    };
-
-    const handler = (result: FontsResult) => {
-      cleanup();
-      resolve(result);
-    };
-
-    timeoutId = setTimeout(() => {
-      cleanup();
-      resolve({
-        ok: false,
-        error: `Fonts update timed out after ${TOKEN_UPDATE_TIMEOUT_MS}ms`,
-      });
-    }, TOKEN_UPDATE_TIMEOUT_MS);
-
-    hot.on('rafters:fonts-updated', handler);
-    hot.send('rafters:set-fonts', options);
-  });
+export function setConfig(patch: ConfigPatch): Promise<ConfigResult> {
+  return roundtrip<Extract<ConfigResult, { ok: true }>>(
+    'rafters:set-config',
+    'rafters:config',
+    patch,
+  );
 }
