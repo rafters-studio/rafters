@@ -6,6 +6,19 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'happy-dom',
+    // Stop happy-dom from fetching iframe `src`s (and other subresources) over
+    // the live network during component tests. Without this, rendering a
+    // component that emits an iframe -- e.g. Embed with a YouTube URL -- makes
+    // happy-dom fetch https://www.youtube-nocookie.com/... for real, which
+    // hangs preflight whenever that host is slow or unreachable. Tests must
+    // never depend on network access.
+    environmentOptions: {
+      happyDOM: {
+        settings: {
+          disableIframePageLoading: true,
+        },
+      },
+    },
     setupFiles: ['./vitest.setup.ts'],
     include: [
       'src/**/*.test.{ts,tsx}',
