@@ -110,6 +110,32 @@ describe('rafters_describe dispatch', () => {
       /failed to build intel graph/,
     );
   });
+
+  it('passes the workspace target (here: none) into describe -- degraded, no prop children', async () => {
+    // A config-less workspace has no componentTarget, so the dispatch hands
+    // describe an undefined target. A facet-bearing node then resolves to its
+    // manifest-gap shape: no prop children, no snippet, rendersForTarget false --
+    // proving the target flows through the dispatch rather than being ignored.
+    const faceted: RegistryItem = {
+      name: 'button',
+      type: 'ui',
+      primitives: [],
+      files: [],
+      rules: [],
+      composites: [],
+      facets: {
+        astro: { props: { variant: { type: 'enum', values: ['solid'] } }, snippet: '<b/>' },
+      },
+    };
+    const { handler } = fixtureHandler([], null, [faceted]);
+    const node = JSON.parse(
+      (await handler.handleToolCall('rafters_describe', { address: 'button' })).content[0]
+        .text as string,
+    );
+    expect(node.children).not.toContainEqual({ addr: 'button.props.variant', type: 'enum' });
+    expect(node.snippet).toBeUndefined();
+    expect(node.rendersForTarget).toBe(false);
+  });
 });
 
 describe('lazy, cached, per-workspace graph', () => {

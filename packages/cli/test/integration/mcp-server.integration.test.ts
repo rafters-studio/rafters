@@ -110,6 +110,60 @@ describe('MCP describe/generate against an initialized project', () => {
     // is targeted, not a blanket "everything installed".
     expect(byId.get('button')).toBe('available');
   }, 30000);
+
+  it('threads the workspace componentTarget through the dispatch into describe', async () => {
+    fixturePath = await createInitializedFixture('nextjs-shadcn-v4');
+
+    // Configure the workspace target on disk, then inject a catalog whose button
+    // carries two differing per-target facets. The full chain -- config
+    // componentTarget -> overlayContext -> describeWithOverlay -> describe -- must
+    // apply the astro facet, not react's.
+    const config = await readConfig(fixturePath);
+    config.componentTarget = 'astro';
+    await writeFixtureFile(fixturePath, '.rafters/config.rafters.json', JSON.stringify(config));
+
+    const button: RegistryItem = {
+      name: 'button',
+      type: 'ui',
+      primitives: [],
+      files: [],
+      rules: [],
+      composites: [],
+      facets: {
+        astro: {
+          props: { variant: { type: 'enum', values: ['solid', 'ghost'] } },
+          snippet: '<Button variant="solid" />',
+        },
+        react: {
+          props: { intent: { type: 'enum', values: ['primary', 'danger'] } },
+          snippet: '<Button intent="primary" />',
+        },
+      },
+    };
+    const handler = new RaftersToolHandler(
+      [{ name: 'fixture', root: fixturePath }],
+      { name: 'fixture', root: fixturePath },
+      async () => [button],
+    );
+
+    const node = JSON.parse(
+      (await handler.handleToolCall('rafters_describe', { address: 'button' })).content[0]
+        .text as string,
+    );
+    // The astro facet is applied: its prop child + snippet, never react's.
+    expect(node.children).toContainEqual({ addr: 'button.props.variant', type: 'enum' });
+    expect(node.children).not.toContainEqual({ addr: 'button.props.intent', type: 'enum' });
+    expect(node.snippet).toBe('<Button variant="solid" />');
+    expect(node.target).toBe('astro');
+    expect(node.rendersForTarget).toBe(true);
+
+    // The prop drill also resolves through the astro facet.
+    const variant = JSON.parse(
+      (await handler.handleToolCall('rafters_describe', { address: 'button.props.variant' }))
+        .content[0].text as string,
+    );
+    expect(variant).toMatchObject({ type: 'enum', values: ['solid', 'ghost'] });
+  }, 30000);
 });
 
 describe('MCP rafters_workspaces config pipeline (unchanged)', () => {
