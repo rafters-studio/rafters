@@ -203,6 +203,18 @@ const ConfigPatchSchema = z
     message: 'patch must set at least one of: intent, darkMode, fonts',
   });
 
+/**
+ * The correlation id the client attaches to a request so it can match the reply
+ * to the right in-flight call (get-config and set-config share the
+ * `rafters:config` reply event). Echoed back verbatim on every reply. `__rid`
+ * is stripped by the config schemas' object parse, so it never lands in the
+ * written config.
+ */
+function ridOf(rawData: unknown): string | undefined {
+  const rid = (rawData as { __rid?: unknown } | null)?.__rid;
+  return typeof rid === 'string' ? rid : undefined;
+}
+
 // Schema for POST /api/tokens/:name - partial token update
 // Derived from TokenSchema: value required, patchable fields optional.
 // userOverride is nullable on Token (required, null = baseline) but optional in
@@ -913,28 +925,30 @@ export function studioApiPlugin(): Plugin {
       });
 
       // Listen for config reads from client
-      server.ws.on('rafters:get-config', async (_rawData: unknown, client) => {
+      server.ws.on('rafters:get-config', async (rawData: unknown, client) => {
+        const __rid = ridOf(rawData);
+        const reply = (msg: Record<string, unknown>): void =>
+          client.send('rafters:config', { ...msg, __rid });
         const config = await readRaftersConfig();
         if (!config) {
-          client.send('rafters:config', {
-            ok: false,
-            error: `config not found at ${configPath}`,
-          });
+          reply({ ok: false, error: `config not found at ${configPath}` });
           return;
         }
-        client.send('rafters:config', { ok: true, config });
+        reply({ ok: true, config });
       });
 
       // Listen for config patches from client. One setter for every
       // designer-owned field (intent, darkMode, fonts); absent keys are left
-      // untouched. Replies on the same `rafters:config` event as get-config.
+      // untouched. Replies on the same `rafters:config` event as get-config,
+      // tagged with the request's correlation id.
       server.ws.on('rafters:set-config', async (rawData: unknown, client) => {
+        const __rid = ridOf(rawData);
+        const reply = (msg: Record<string, unknown>): void =>
+          client.send('rafters:config', { ...msg, __rid });
+
         const parsed = ConfigPatchSchema.safeParse(rawData);
         if (!parsed.success) {
-          client.send('rafters:config', {
-            ok: false,
-            error: `Invalid patch: ${parsed.error.message}`,
-          });
+          reply({ ok: false, error: `Invalid patch: ${parsed.error.message}` });
           return;
         }
         const patch = parsed.data;
@@ -943,24 +957,21 @@ export function studioApiPlugin(): Plugin {
         if (patch.intent !== undefined) {
           const intentError = validateIntent(patch.intent);
           if (intentError) {
-            client.send('rafters:config', { ok: false, error: intentError });
+            reply({ ok: false, error: intentError });
             return;
           }
         }
         if (patch.fonts?.path !== undefined) {
           const pathError = validateFontsPath(patch.fonts.path);
           if (pathError) {
-            client.send('rafters:config', { ok: false, error: pathError });
+            reply({ ok: false, error: pathError });
             return;
           }
         }
 
         const config = await readRaftersConfig();
         if (!config) {
-          client.send('rafters:config', {
-            ok: false,
-            error: `config not found at ${configPath}`,
-          });
+          reply({ ok: false, error: `config not found at ${configPath}` });
           return;
         }
 
@@ -977,11 +988,11 @@ export function studioApiPlugin(): Plugin {
         }
 
         try {
-          await writeFile(configPath, JSON.stringify(updated, null, 2));
-          client.send('rafters:config', { ok: true, config: updated });
+          await writeFile(configPath, `${JSON.stringify(updated, null, 2)}\n`);
+          reply({ ok: true, config: updated });
         } catch (error) {
           console.log(`[rafters] Config update failed: ${error}`);
-          client.send('rafters:config', { ok: false, error: String(error) });
+          reply({ ok: false, error: String(error) });
         }
       });
 

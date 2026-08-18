@@ -13,7 +13,7 @@
  */
 
 import { readFile, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { isAbsolute, join } from 'node:path';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import {
   type CompositeFile,
@@ -32,25 +32,58 @@ import { getRaftersPaths, PathFieldSchema, resolveReadSet } from '../utils/paths
 import { resolveWorkspace, type Workspace } from '../utils/workspaces.js';
 
 /**
+ * True when a path is safe to accept from an agent: relative, and with no `..`
+ * segment that would escape the workspace. Absolute paths and traversal are
+ * rejected because these fields drive on-disk reads (composite discovery) and
+ * writes for out-of-diff commands -- an agent-supplied path must stay inside the
+ * workspace. Mirrors Studio's `validateFontsPath`.
+ */
+function isSafeRelPath(p: string): boolean {
+  if (isAbsolute(p)) return false;
+  return !p.split(/[/\\]/).includes('..');
+}
+
+/** Apply {@link isSafeRelPath} across a PathField (string or array of entries). */
+const SafePathFieldSchema = PathFieldSchema.refine(
+  (field) => {
+    const entries = typeof field === 'string' ? [field] : field;
+    return entries.every((e) => isSafeRelPath(typeof e === 'string' ? e : e.path));
+  },
+  { message: 'path must be relative and stay inside the workspace (no absolute or `..` paths)' },
+);
+
+/**
  * The config fields the MCP may write -- the WIRING, everything that is not a
  * designer decision. The three designer-owned fields (intent, darkMode, fonts)
  * belong to Studio; `installed` is managed by `rafters add`. Those are rejected
- * by handleConfigure with a pointer to the right surface, so this write path
- * structurally cannot remove designer choice.
+ * by updateWorkspaceConfig with a pointer to the right surface, so this write
+ * path structurally cannot remove designer choice. Path and URL fields are
+ * bounded (relative-in-workspace, http(s)) so an agent-driven write -- including
+ * one steered by prompt injection -- cannot repoint reads/fetches out of bounds.
  */
 const ConfigWiringSchema = z
   .object({
     // Closed set -- excludes 'unknown', which is a detection sentinel, not a
     // valid target a caller may set.
     framework: z.enum(['next', 'vite', 'remix', 'react-router', 'astro', 'wc', 'vanilla']),
-    registryUrl: z.string().min(1),
-    componentTarget: z.string().min(1),
+    // Must be a valid http(s) URL. (Blocking private/link-local/metadata hosts
+    // is tracked as a follow-up -- see the registryUrl SSRF issue.)
+    registryUrl: z
+      .string()
+      .url()
+      .refine((u) => /^https?:$/.test(new URL(u).protocol), {
+        message: 'registryUrl must be an http(s) URL',
+      }),
+    // Closed set derived from the framework (see ComponentTarget in detect.ts).
+    componentTarget: z.enum(['react', 'astro', 'vue', 'svelte', 'wc']),
     source: z.string().min(1),
-    cssPath: z.union([z.string(), z.null()]),
-    componentsPath: PathFieldSchema,
-    primitivesPath: PathFieldSchema,
-    compositesPath: PathFieldSchema,
-    rulesPath: PathFieldSchema,
+    cssPath: z.union([z.string(), z.null()]).refine((v) => v === null || isSafeRelPath(v), {
+      message: 'cssPath must be relative and stay inside the workspace',
+    }),
+    componentsPath: SafePathFieldSchema,
+    primitivesPath: SafePathFieldSchema,
+    compositesPath: SafePathFieldSchema,
+    rulesPath: SafePathFieldSchema,
     exports: z
       .object({
         tailwind: z.boolean(),
@@ -315,14 +348,27 @@ export class RaftersToolHandler {
     // (Framework, ComponentTarget, PathField) that the merge widens under
     // exactOptionalPropertyTypes.
     const updated = { ...config, ...result.data } as RaftersConfig;
-    await this.writeConfig(resolved.root, updated);
-
-    // Invalidate cache derived from config so subsequent reads see the change.
-    // registryUrl is picked up fresh by registryClientFor; a changed
-    // compositesPath needs the per-workspace composite load to re-run.
-    if ('compositesPath' in result.data) {
-      this.compositesLoadedFor.delete(resolved.root);
+    // `exports` is a partial patch -- merge it over the existing object rather
+    // than replacing wholesale, matching the tool's "only fields you pass
+    // change" contract (the top-level spread would drop the unlisted keys).
+    if (result.data.exports !== undefined) {
+      updated.exports = { ...config.exports, ...result.data.exports } as RaftersConfig['exports'];
     }
+
+    try {
+      await this.writeConfig(resolved.root, updated);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      return this.errorResult(`failed to write config: ${message}`);
+    }
+
+    // NOTE: the written config takes effect for reads on the next MCP server
+    // start. We deliberately do NOT hot-reload composites on a compositesPath
+    // change here: the composite registry is process-global and first-write-
+    // wins, so a mid-session reload would leave old-path composites registered
+    // alongside new ones (inconsistent), and same-id composites in the new path
+    // would silently fail to register. In the normal setup flow -- configure
+    // paths, then read -- nothing is loaded yet, so this costs nothing.
 
     return this.jsonResult({ ok: true, workspace: resolved.name, updated: result.data });
   }

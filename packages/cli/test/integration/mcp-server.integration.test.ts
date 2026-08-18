@@ -112,6 +112,30 @@ describe('MCP tools against initialized project', () => {
     expect(config.framework).toBeDefined();
   }, 30000);
 
+  it('rafters_workspaces merges the exports field instead of overwriting it', async () => {
+    fixturePath = await createInitializedFixture('vite-no-shadcn');
+    const handler = new RaftersToolHandler([{ name: 'fixture', root: fixturePath }], {
+      name: 'fixture',
+      root: fixturePath,
+    });
+
+    const before = await readConfig(fixturePath);
+    const beforeExports = before.exports as Record<string, boolean>;
+
+    // Patch only one export key; the rest must survive.
+    const result = await handler.handleToolCall('rafters_workspaces', {
+      exports: { dtcg: true },
+    });
+    expect(JSON.parse(result.content[0].text as string).ok).toBe(true);
+
+    const after = await readConfig(fixturePath);
+    const afterExports = after.exports as Record<string, boolean>;
+    expect(afterExports.dtcg).toBe(true);
+    // Keys not in the patch keep their prior values (merge, not replace).
+    expect(afterExports.tailwind).toBe(beforeExports.tailwind);
+    expect(afterExports.typescript).toBe(beforeExports.typescript);
+  }, 30000);
+
   it('rafters_workspaces refuses to write a designer-owned field', async () => {
     fixturePath = await createInitializedFixture('vite-no-shadcn');
     const handler = new RaftersToolHandler([{ name: 'fixture', root: fixturePath }], {

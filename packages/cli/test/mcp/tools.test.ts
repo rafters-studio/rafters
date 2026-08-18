@@ -193,6 +193,50 @@ describe('RaftersToolHandler', () => {
       expect(data.error).toBe('workspace parameter required');
     });
 
+    it('rejects an absolute path field', async () => {
+      const handler = new RaftersToolHandler([a], a);
+      const result = await handler.handleToolCall('rafters_workspaces', {
+        workspace: 'a',
+        componentsPath: '/etc/passwd',
+      });
+
+      const data = JSON.parse(result.content[0].text as string);
+      expect(data.error).toMatch(/invalid wiring patch/);
+    });
+
+    it('rejects a `..` traversal in a path field', async () => {
+      const handler = new RaftersToolHandler([a], a);
+      const result = await handler.handleToolCall('rafters_workspaces', {
+        workspace: 'a',
+        compositesPath: '../../other-workspace/.rafters/composites',
+      });
+
+      const data = JSON.parse(result.content[0].text as string);
+      expect(data.error).toMatch(/invalid wiring patch/);
+    });
+
+    it('rejects a non-http registryUrl', async () => {
+      const handler = new RaftersToolHandler([a], a);
+      const result = await handler.handleToolCall('rafters_workspaces', {
+        workspace: 'a',
+        registryUrl: 'file:///etc/passwd',
+      });
+
+      const data = JSON.parse(result.content[0].text as string);
+      expect(data.error).toMatch(/invalid wiring patch/);
+    });
+
+    it('rejects an invalid componentTarget', async () => {
+      const handler = new RaftersToolHandler([a], a);
+      const result = await handler.handleToolCall('rafters_workspaces', {
+        workspace: 'a',
+        componentTarget: 'angular',
+      });
+
+      const data = JSON.parse(result.content[0].text as string);
+      expect(data.error).toMatch(/invalid wiring patch/);
+    });
+
     it('errors when the target workspace has no config yet', async () => {
       const handler = new RaftersToolHandler([a], a);
       const result = await handler.handleToolCall('rafters_workspaces', {

@@ -60,6 +60,9 @@ export type ConfigResult = { ok: true; config: RaftersConfig } | { ok: false; er
 
 const ROUNDTRIP_TIMEOUT_MS = 10_000;
 
+/** Monotonic per-page counter used to correlate a request with its reply. */
+let requestSeq = 0;
+
 /**
  * Check if HMR is fully available (not just partially defined)
  */
@@ -77,6 +80,13 @@ function isHmrAvailable(): boolean {
  * this shape: send `sendEvent` with `payload`, resolve on the first `recvEvent`
  * the `match` predicate accepts (default: the first reply). Resolves to a
  * structured error when HMR is unavailable or the reply times out.
+ *
+ * Each call carries a correlation id (`__rid`) that the server echoes back.
+ * `getConfig` and `setConfig` share the `rafters:config` reply event, so
+ * without the id a reply meant for one in-flight call could resolve another
+ * (a get racing a set, or two rapid sets). The handler ignores any reply whose
+ * id is not ours; a reply with no id (older server) falls through to the
+ * predicate for backward compatibility.
  */
 function roundtrip<T extends { ok: boolean }>(
   sendEvent: string,
@@ -93,6 +103,7 @@ function roundtrip<T extends { ok: boolean }>(
 
     // biome-ignore lint/style/noNonNullAssertion: checked by isHmrAvailable
     const hot = import.meta.hot!;
+    const rid = `${sendEvent}#${(requestSeq += 1)}`;
     // oxlint-disable-next-line prefer-const -- assigned below but captured by the cleanup closure first (forward reference)
     let timeoutId: ReturnType<typeof setTimeout>;
 
@@ -101,7 +112,10 @@ function roundtrip<T extends { ok: boolean }>(
       hot.off(recvEvent, handler);
     };
 
-    const handler = (result: T) => {
+    const handler = (result: T & { __rid?: string }) => {
+      // A reply tagged for a different request belongs to another in-flight
+      // call on the same event -- ignore it. Untagged replies fall through.
+      if (result.__rid !== undefined && result.__rid !== rid) return;
       // Accept any error, or a success the caller's predicate matches.
       if (!result.ok || match(result)) {
         cleanup();
@@ -115,7 +129,7 @@ function roundtrip<T extends { ok: boolean }>(
     }, ROUNDTRIP_TIMEOUT_MS);
 
     hot.on(recvEvent, handler);
-    hot.send(sendEvent, payload);
+    hot.send(sendEvent, { ...(payload as Record<string, unknown>), __rid: rid });
   });
 }
 
