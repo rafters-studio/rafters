@@ -40,7 +40,7 @@ import { discoverFromDirs } from '@rafters/composites/node';
 import { z } from 'zod';
 import { migrateConfig, type RaftersConfig } from '../commands/init.js';
 import { RegistryClient, registryClient } from '../registry/client.js';
-import type { RegistryItem } from '../registry/types.js';
+import { ComponentTargetSchema, type RegistryItem } from '../registry/types.js';
 import { getRaftersPaths, PathFieldSchema, resolveReadSet } from '../utils/paths.js';
 import { resolveWorkspace, type Workspace } from '../utils/workspaces.js';
 import { assembleGraph, type Graph } from './graph.js';
@@ -566,13 +566,20 @@ export class RaftersToolHandler {
    * fold every installed primitive would misreport as `available`. Built here
    * rather than by mutating `buildInstalledSet`'s output, leaving overlay.ts
    * untouched.
+   *
+   * `componentTarget` comes off unvalidated on-disk config (`readConfig` is a raw
+   * `JSON.parse`), so it is run through `ComponentTargetSchema` here rather than
+   * trusted as a `ComponentTarget` -- a stale or typo'd value falls back to
+   * degraded mode (`undefined` target) instead of silently forcing
+   * `rendersForTarget` false for every node.
    */
   private async overlayContext(workspace: Workspace | null): Promise<OverlayContext> {
     const config = workspace ? await this.readConfig(workspace.root) : null;
     const base = buildInstalledSet(config ?? {});
     const components = new Set([...base.components, ...(config?.installed?.primitives ?? [])]);
+    const parsedTarget = ComponentTargetSchema.safeParse(config?.componentTarget);
     return {
-      target: config?.componentTarget,
+      target: parsedTarget.success ? parsedTarget.data : undefined,
       installed: { components, composites: base.composites },
     };
   }

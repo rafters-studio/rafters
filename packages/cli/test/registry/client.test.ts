@@ -117,11 +117,15 @@ describe('RegistryClient.fetchAllItems', () => {
   let bulkAvailable = true;
   let bulkCalls = 0;
   let itemCalls = 0;
+  // When set, `button` also appears in the composites index list, so the same
+  // name spans two lists -- the case the fallback's dedup `Set` guards.
+  let repeatAcrossLists = false;
 
   beforeEach(() => {
     bulkAvailable = true;
     bulkCalls = 0;
     itemCalls = 0;
+    repeatAcrossLists = false;
     // Overrides the file-level stub: serves the bulk endpoint, the index, and
     // folder-aware per-item routes so both fetchAllItems paths are exercised.
     vi.stubGlobal('fetch', (url: string) => {
@@ -138,7 +142,7 @@ describe('RegistryClient.fetchAllItems', () => {
           homepage: 'https://rafters.test',
           components: ['button'],
           primitives: ['classy'],
-          composites: ['login-form'],
+          composites: repeatAcrossLists ? ['login-form', 'button'] : ['login-form'],
           rules: [],
           substrate: [],
         };
@@ -175,5 +179,17 @@ describe('RegistryClient.fetchAllItems', () => {
     // Bulk was attempted once, then the fallback fetched each item.
     expect(bulkCalls).toBe(1);
     expect(itemCalls).toBeGreaterThan(0);
+  });
+
+  it('dedupes a name that appears in more than one index list (fetched once)', async () => {
+    bulkAvailable = false;
+    repeatAcrossLists = true;
+    const client = new RegistryClient(BASE);
+    const items = await client.fetchAllItems();
+
+    // `button` spans both the components and composites index lists; the dedup
+    // Set collapses it to a single fetch, so it appears exactly once, not twice.
+    expect(items.filter((i) => i.name === 'button')).toHaveLength(1);
+    expect(items.map((i) => i.name).sort()).toEqual(['button', 'classy', 'login-form']);
   });
 });

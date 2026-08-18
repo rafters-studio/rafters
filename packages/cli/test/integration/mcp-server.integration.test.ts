@@ -16,7 +16,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { RaftersToolHandler } from '../../src/mcp/tools.js';
 import type { RegistryItem } from '../../src/registry/types.js';
 import { cleanupFixture } from '../fixtures/projects.js';
-import { createInitializedFixture, readConfig } from './helpers.js';
+import { createInitializedFixture, readConfig, writeFixtureFile } from './helpers.js';
 
 let fixturePath = '';
 
@@ -79,6 +79,36 @@ describe('MCP describe/generate against an initialized project', () => {
     const result = await handler.handleToolCall('rafters_component', { name: 'button' });
     const data = JSON.parse(result.content[0].text as string);
     expect(data).toMatchObject({ id: 'button', deprecated: 'use rafters_describe instead' });
+  }, 30000);
+
+  it('folds installed.primitives into the component set for presence', async () => {
+    fixturePath = await createInitializedFixture('nextjs-shadcn-v4');
+
+    // Install `classy` (a primitive) via installed.primitives. A primitive-kind
+    // item resolves to graph kind `component`, so without the fold it would
+    // misreport as `available`; the fold makes it read `installed`.
+    const config = await readConfig(fixturePath);
+    const installed = (config.installed as Record<string, string[]>) ?? {};
+    config.installed = { ...installed, primitives: ['classy'] };
+    await writeFixtureFile(fixturePath, '.rafters/config.rafters.json', JSON.stringify(config));
+
+    // A catalog with a primitive (classy) and a ui component (button).
+    const handler = new RaftersToolHandler(
+      [{ name: 'fixture', root: fixturePath }],
+      { name: 'fixture', root: fixturePath },
+      async () => [node('classy', 'primitive'), node('button', 'ui')],
+    );
+
+    const result = await handler.handleToolCall('rafters_describe', { address: 'components' });
+    const roster = JSON.parse(result.content[0].text as string) as Array<{
+      id: string;
+      presence: string;
+    }>;
+    const byId = new Map(roster.map((e) => [e.id, e.presence]));
+    expect(byId.get('classy')).toBe('installed');
+    // A component not in any installed list stays available -- proving the fold
+    // is targeted, not a blanket "everything installed".
+    expect(byId.get('button')).toBe('available');
   }, 30000);
 });
 
