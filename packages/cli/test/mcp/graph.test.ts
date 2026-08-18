@@ -141,12 +141,21 @@ vdescribe('describe(addr, graph, target)', () => {
     });
   });
 
-  it('a grammar prop exposes vocab as a drillable address; the leaf is honest and empty', () => {
-    const fill = describe('container.props.fill', graph, T) as { type: string; vocab: string };
-    expect(fill).toMatchObject({ type: 'grammar', vocab: 'container.props.fill.vocab' });
-    // Token VALUES live in the separate token DAG, never on the graph -- the leaf
-    // is an honest empty here; sourcing values is a named follow-up.
-    expect(describe(fill.vocab, graph, T)).toEqual({ type: 'leaf', values: [] });
+  it('a grammar prop exposes its composition rules but never its vocab (tokens)', () => {
+    const fill = describe('container.props.fill', graph, T);
+    // The agent gets the grammar RULES it needs to compose a value...
+    expect(fill).toMatchObject({
+      type: 'grammar',
+      grammar: ['word', 'word/alpha', 'word-to-word'],
+      onInvalid: 'silent-noop',
+    });
+    // ...but the token vocabulary is stripped -- never surfaced, or it lands in
+    // className. The vocab address stays internal on the node, off the response.
+    expect(fill).not.toHaveProperty('vocab');
+    // And the vocab drill is unreachable: the token layer stays behind the curtain.
+    expect(describe('container.props.fill.vocab', graph, T)).toEqual({
+      error: expect.stringContaining('container.props.fill.vocab'),
+    });
   });
 
   it('edges resolve to target layer-0 only, one level, and dedup exact duplicates', () => {
@@ -170,7 +179,7 @@ vdescribe('describe(addr, graph, target)', () => {
       error: expect.stringContaining('button.props.color'),
     });
     expect(describe('button.props.variant.vocab', graph, T)).toEqual({
-      error: expect.stringContaining('cannot drill'),
+      error: expect.stringContaining('button.props.variant.vocab'),
     });
   });
 
