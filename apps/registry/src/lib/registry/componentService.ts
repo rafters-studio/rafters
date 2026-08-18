@@ -37,6 +37,45 @@ export interface RegistryFile {
   devDependencies: string[]; // e.g., ["vitest"] - from @devDependencies JSDoc
 }
 
+/**
+ * Per-target extraction types. Hand-mirrored from the CLI's zod source of truth
+ * (packages/cli/src/registry/types.ts: ComponentTargetSchema / PropFieldSchema /
+ * FacetSchema) for the same reason RegistryItem is -- the registry never imports
+ * the CLI's built dist. The componentService.test.ts parses generator output
+ * through the real zod schema, so the two declarations must agree.
+ */
+export type ComponentTarget = 'react' | 'astro' | 'vue' | 'svelte' | 'wc';
+
+/** A structured, machine-actionable cross-prop rule -- never a prose string. */
+export interface Constraint {
+  when: { prop: string; matches: string };
+  requires: { prop: string };
+}
+
+export type PropField =
+  | {
+      type: 'enum';
+      values: string[]; // verbatim literal union members ([] only for a required non-union prop)
+      default?: string;
+      required?: boolean;
+      constraint?: Constraint;
+    }
+  | {
+      type: 'grammar';
+      grammar: string[];
+      vocab: string;
+      onInvalid: 'silent-noop';
+      default?: string;
+    }
+  | { type: 'deprecated'; deprecatedFor: string };
+
+export interface Facet {
+  props: Record<string, PropField>;
+  slots?: string[];
+  events?: string[];
+  snippet: string;
+}
+
 export interface RegistryItem {
   name: string;
   type: RegistryItemType;
@@ -46,7 +85,17 @@ export interface RegistryItem {
   rules?: string[];
   composites?: string[];
   intelligence?: ComponentIntelligence;
+  facets?: Partial<Record<ComponentTarget, Facet>>;
 }
+
+/** Source file extension -> framework target. Parallel to COMPONENT_EXTENSIONS. */
+const EXT_TO_TARGET: Record<string, ComponentTarget> = {
+  '.tsx': 'react',
+  '.astro': 'astro',
+  '.vue': 'vue',
+  '.svelte': 'svelte',
+  '.element.ts': 'wc',
+};
 
 export interface RegistryIndex {
   name: string;
@@ -76,6 +125,13 @@ function getPrimitivesPath(): string {
  * Get path to composites
  */
 function getCompositesPath(): string {
+  // RAFTERS_COMPOSITES_DIR lets a test point composite discovery at a fixtures
+  // dir. It feeds BOTH listCompositeNames (the composite node set) and the
+  // reverse index below, so #2072's assembleGraph invariant (every composesWith
+  // edge names a real composite node) holds by construction. Unset in
+  // production -> the real dir, which today does not exist -> ENOENT -> [].
+  const override = process.env['RAFTERS_COMPOSITES_DIR'];
+  if (override) return override;
   return join(process.cwd(), '../../packages/ui/src/composites');
 }
 
@@ -565,6 +621,22 @@ export function parseJSDocFromSource(
           }
           break;
         }
+        case 'constraint': {
+          // Structured cross-prop rule, e.g.
+          //   @constraint when prop=size matches=icon* requires prop=aria-label
+          // The parsed value is consumed by extractFacet (via extractConstraints)
+          // and attached to the facet prop named in `when.prop`; ComponentIntelligence
+          // itself carries no constraint field, so this case does not set hasAnyField.
+          // Under strict intel, a malformed body is a hard error naming the component,
+          // matching the missing-field strict behavior below.
+          if (options?.strict && !parseConstraintBody(value)) {
+            throw new Error(
+              `[parseJSDocFromSource] Malformed @constraint in ${options.componentName ?? 'component'}: ` +
+                `"${value}". Expected: when prop=<name> matches=<glob> requires prop=<name>.`,
+            );
+          }
+          break;
+        }
       }
     }
   }
@@ -691,6 +763,231 @@ function analyzeSource(
   };
 }
 
+/** PascalCase a component/prop name: `card-header` -> `CardHeader`. */
+function pascalCase(input: string): string {
+  return input
+    .split(/[-_]/)
+    .filter((part) => part.length > 0)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join('');
+}
+
+/**
+ * Every exported literal-union type alias in a source, name -> members, verbatim
+ * and in declaration order. Only `export type X = | 'a' | 'b' ...` matches;
+ * `export type X = string` or a template type never does, so a styling prop can
+ * never be collapsed to a bare-string type -- it is simply absent from the map.
+ */
+function extractLiteralUnions(source: string): Map<string, string[]> {
+  const unions = new Map<string, string[]>();
+  const typeRe = /export\s+type\s+(\w+)\s*=\s*((?:\s*\|\s*'[^']*')+)\s*;/g;
+  for (const match of source.matchAll(typeRe)) {
+    const values = [...match[2].matchAll(/'([^']*)'/g)].map((m) => m[1]);
+    if (values.length > 0) unions.set(match[1], values);
+  }
+  return unions;
+}
+
+/**
+ * Members of an INLINE literal union type expression (`'button' | 'submit'`),
+ * or [] when the expression contains any non-literal part (`string`, `boolean`,
+ * a named type). Never collapses a mixed expression to a bare string.
+ */
+function inlineUnionValues(typeExpr: string): string[] {
+  if (!typeExpr.includes("'")) return [];
+  const residue = typeExpr
+    .replace(/'[^']*'/g, '')
+    .replace(/\|/g, '')
+    .trim();
+  if (residue.length > 0) return [];
+  return [...typeExpr.matchAll(/'([^']*)'/g)].map((m) => m[1]);
+}
+
+/** Defaults from the target's own destructuring: `variant = 'default'` -> default. */
+function extractDestructuredDefaults(source: string): Map<string, string> {
+  const defaults = new Map<string, string>();
+  const block = source.match(/const\s*\{([\s\S]*?)\}\s*=\s*(?:props|Astro\.props)/);
+  if (!block) return defaults;
+  for (const match of block[1].matchAll(/([A-Za-z_$][\w$]*)\s*=\s*'([^']*)'/g)) {
+    defaults.set(match[1], match[2]);
+  }
+  return defaults;
+}
+
+/** Prop names a target destructures from its props (React has no interface for `size`). */
+function extractDestructuredNames(source: string): string[] {
+  const block = source.match(/const\s*\{([\s\S]*?)\}\s*=\s*(?:props|Astro\.props)/);
+  if (!block) return [];
+  const names: string[] = [];
+  for (const part of block[1].split(',')) {
+    const match = part.match(/^\s*(?:'([^']+)'|([A-Za-z_$][\w$]*))/);
+    const name = match?.[1] ?? match?.[2];
+    if (name) names.push(name);
+  }
+  return names;
+}
+
+/** Fields of a target's own `interface Props`/`*Props` body: name, optionality, type. */
+function extractInterfaceProps(
+  source: string,
+): Array<{ name: string; optional: boolean; typeExpr: string }> {
+  const body = source.match(/interface\s+\w*Props\b[^{]*\{([\s\S]*?)\n\}/);
+  if (!body) return [];
+  const props: Array<{ name: string; optional: boolean; typeExpr: string }> = [];
+  for (const line of body[1].split('\n')) {
+    const match = line.match(/^\s*(?:'([^']+)'|([A-Za-z_$][\w$-]*))(\?)?\s*:\s*(.+?);?\s*$/);
+    if (!match) continue;
+    const name = match[1] ?? match[2];
+    if (!name) continue;
+    props.push({ name, optional: match[3] === '?', typeExpr: match[4].trim() });
+  }
+  return props;
+}
+
+/** The named slots a target renders (`<slot>` -> default, `<slot name="x">` -> x). */
+function extractSlots(source: string): string[] {
+  const slots = new Set<string>();
+  for (const match of source.matchAll(/<slot\s+name="([^"]+)"/g)) slots.add(match[1]);
+  // A bare `<slot>` / `<slot />` (no name= before its `>`) is the default slot.
+  if (/<slot(?![^>]*\bname=)[\s/>]/.test(source)) slots.add('default');
+  return [...slots];
+}
+
+/** Parse a `@constraint` body into a structured Constraint, or null if malformed. */
+function parseConstraintBody(body: string): Constraint | null {
+  const whenProp = body.match(/when\s+prop=(\S+)/)?.[1];
+  const matches = body.match(/matches=(\S+)/)?.[1];
+  const requiresProp = body.match(/requires\s+prop=(\S+)/)?.[1];
+  if (!whenProp || !matches || !requiresProp) return null;
+  return { when: { prop: whenProp, matches }, requires: { prop: requiresProp } };
+}
+
+/** Structured constraints from a source's `@constraint` tags, keyed by `when.prop`. */
+function extractConstraints(source: string): Map<string, Constraint> {
+  const constraints = new Map<string, Constraint>();
+  let blocks: ReturnType<typeof parse>;
+  try {
+    blocks = parse(source);
+  } catch {
+    return constraints;
+  }
+  for (const block of blocks) {
+    for (const tag of block.tags) {
+      if (tag.tag.toLowerCase() !== 'constraint') continue;
+      const parsed = parseConstraintBody(getTagValue(tag));
+      if (parsed) constraints.set(parsed.when.prop, parsed);
+    }
+  }
+  return constraints;
+}
+
+/**
+ * Extract one target's facet from its already-read source.
+ *
+ * The declared issue signature took `(componentDir, name, ext, behaviorSource)`
+ * and re-read the file; this takes the loop's already-read `targetSource`
+ * instead, so extraction adds a regex pass and NO extra file read (the perf
+ * requirement). `behaviorSource` is the shared `.behavior.ts`, the source of
+ * truth for verbatim literal-union prop vocabularies.
+ */
+function extractFacet(
+  name: string,
+  ext: string,
+  targetSource: string,
+  behaviorSource: string | null,
+): Facet | null {
+  const target = EXT_TO_TARGET[ext];
+  if (!target) return null;
+
+  // wc has no functional attribute-driven props today: button.element.ts is a
+  // bare HTMLElement subclass with no observedAttributes, and bindButton reads
+  // only aria-* off the light-DOM root. Emit honest empty props and a light-DOM
+  // enhancement snippet -- never a fabricated `variant="..."` attribute surface.
+  if (target === 'wc') {
+    return {
+      props: {},
+      snippet: `<rafters-${name}><button data-part="root" class="...">Save</button></rafters-${name}>`,
+    };
+  }
+
+  const unions = behaviorSource
+    ? extractLiteralUnions(behaviorSource)
+    : new Map<string, string[]>();
+  const defaults = extractDestructuredDefaults(targetSource);
+  const constraints = extractConstraints(targetSource);
+  const props: Record<string, PropField> = {};
+
+  // A prop's literal-union members: a named alias by the <Component><Prop>
+  // convention (button + variant -> ButtonVariant), the type annotation naming
+  // an alias directly, or an inline literal union. Otherwise null.
+  const resolveUnion = (propName: string, typeExpr?: string): string[] | null => {
+    const byConvention = unions.get(pascalCase(name) + pascalCase(propName));
+    if (byConvention) return byConvention;
+    if (typeExpr) {
+      const byAnnotation = unions.get(typeExpr);
+      if (byAnnotation) return byAnnotation;
+      const inline = inlineUnionValues(typeExpr);
+      if (inline.length > 0) return inline;
+    }
+    return null;
+  };
+
+  const makeEnum = (propName: string, values: string[], required: boolean): PropField => {
+    const field: PropField = { type: 'enum', values };
+    const def = defaults.get(propName);
+    if (def !== undefined) field.default = def;
+    if (required) field.required = true;
+    const constraint = constraints.get(propName);
+    if (constraint) field.constraint = constraint;
+    return field;
+  };
+
+  if (target === 'react') {
+    // React's destructuring is the prop-name source: `size` lives in the
+    // ButtonProps intersection, not the ButtonBaseProps body, so an interface
+    // scan would miss it. Destructuring carries no requiredness, so only props
+    // whose type resolves to a verbatim literal union are emitted.
+    for (const propName of extractDestructuredNames(targetSource)) {
+      const values = resolveUnion(propName);
+      if (values) props[propName] = makeEnum(propName, values, false);
+    }
+  } else {
+    // Interface-declared targets (astro/vue/svelte) carry requiredness. Emit a
+    // prop when its type resolves to a literal union, OR it is required -- so a
+    // required non-union structural prop (astro's `id: string`) is kept as an
+    // empty-values enum with `required: true`, preserving the required/optional
+    // asymmetry rather than fabricating a domain for it.
+    for (const prop of extractInterfaceProps(targetSource)) {
+      const values = resolveUnion(prop.name, prop.typeExpr);
+      if (values) props[prop.name] = makeEnum(prop.name, values, !prop.optional);
+      else if (!prop.optional) props[prop.name] = makeEnum(prop.name, [], true);
+    }
+  }
+
+  const facet: Facet = { props, snippet: `<${pascalCase(name)}>Save</${pascalCase(name)}>` };
+  // React exposes content via `children`, not slots -- omit slots for react
+  // entirely (never scan its source, which could carry `<slot` in a JSDoc example).
+  const slots = target === 'react' ? [] : extractSlots(targetSource);
+  if (slots.length > 0) facet.slots = slots;
+  return facet;
+}
+
+/**
+ * Reverse index: the composite names that reference `componentName`. Iterates
+ * the composite NODE set (listCompositeNames) and reuses loadComposite, whose
+ * `primitives` field already holds the block component names (extractComponentDeps).
+ * Because the discovery is identical to the node set's, every name returned is a
+ * real composite node -- #2072's assembleGraph never sees a dangling edge.
+ */
+function findReferencingComposites(componentName: string): string[] {
+  const referencing: string[] = [];
+  for (const compositeName of listCompositeNames()) {
+    const item = loadComposite(compositeName);
+    if (item?.primitives.includes(componentName)) referencing.push(compositeName);
+  }
+  return referencing.sort();
+}
+
 /**
  * Load a single component by name.
  * Discovers all framework variants (.tsx, .astro, .vue, .svelte) and
@@ -706,6 +1003,9 @@ export function loadComponent(name: string): RegistryItem | null {
   if (!resolved) return null;
   const componentDir = resolved.dir;
   const files: RegistryFile[] = [];
+  // Each existing framework variant's already-read source, for per-target facet
+  // extraction after the shared .behavior.ts is loaded (no extra file reads).
+  const targetSources: Array<{ ext: string; content: string }> = [];
   let primitivesAll: string[] = [];
   let intelligence: ReturnType<typeof parseJSDocFromSource> | undefined;
 
@@ -725,6 +1025,7 @@ export function loadComponent(name: string): RegistryItem | null {
         dependencies: analysis.allExternalDeps,
         devDependencies: analysis.devDependencies,
       });
+      if (EXT_TO_TARGET[ext]) targetSources.push({ ext, content });
 
       // Merge primitive/internal deps from all variants.
       // Filter out shared auxiliary files -- they are bundled with the
@@ -878,11 +1179,27 @@ export function loadComponent(name: string): RegistryItem | null {
   const ownBasenames = new Set(readdirSync(componentDir).map(stripExt));
   primitivesAll = primitivesAll.filter((dep) => !ownBasenames.has(stripExt(dep)));
 
+  // Per-target facets. The shared .behavior.ts (now in `files` from the
+  // shared-suffix loop above) is the verbatim literal-union source of truth;
+  // each already-read variant source is extracted once. Always set `facets` and
+  // `composites` (even empty) so RegistryItemSchema.parse is stable.
+  const behaviorSource =
+    files.find((f) => f.path === `components/ui/${name}.behavior.ts`)?.content ?? null;
+  const facets: Partial<Record<ComponentTarget, Facet>> = {};
+  for (const { ext, content } of targetSources) {
+    const target = EXT_TO_TARGET[ext];
+    if (!target) continue;
+    const facet = extractFacet(name, ext, content, behaviorSource);
+    if (facet) facets[target] = facet;
+  }
+
   const result: RegistryItem = {
     name,
     type: 'ui',
     primitives: primitivesAll,
     files,
+    composites: findReferencingComposites(name),
+    facets,
   };
 
   if (intelligence) {

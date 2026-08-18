@@ -1,0 +1,19 @@
+{
+  "manifest": {
+    "id": "uses-button",
+    "name": "Uses Button",
+    "category": "test-fixture",
+    "description": "Fixture composite whose block references the real `button` component, to prove the reverse-index (findReferencingComposites) connects a component to the composites that use it. No such composite exists in the real tree today.",
+    "keywords": ["button", "fixture"],
+    "cognitiveLoad": 1
+  },
+  "input": [],
+  "output": [],
+  "blocks": [
+    {
+      "id": "1",
+      "type": "button",
+      "content": "Save"
+    }
+  ]
+}
