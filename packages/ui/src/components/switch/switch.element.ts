@@ -1,4 +1,29 @@
 /**
+ * Toggle switch component for on/off binary states
+ *
+ * @cognitive-load 2/10 - Clear binary state with immediate visual feedback
+ * @attention-economics Low attention: thumb position communicates state instantly
+ * @trust-building Immediate state change, reversible action, physical metaphor (light switch)
+ * @accessibility Keyboard toggle (Space), proper ARIA checked state, motion for state transition
+ * @semantic-meaning Binary toggle: on=enabled/active, off=disabled/inactive. Use for settings with immediate effect
+ *
+ * @usage-patterns
+ * DO: Use for settings that take effect immediately
+ * DO: Pair with descriptive label explaining what the switch controls
+ * DO: Use when action is reversible without consequence
+ * DO: Position consistently (left of label or right-aligned)
+ * NEVER: Use for form submissions, use for actions requiring confirmation
+ *
+ * @example
+ * ```tsx
+ * <div className="flex items-center gap-2">
+ *   <Switch id="notifications" />
+ *   <Label htmlFor="notifications">Enable notifications</Label>
+ * </div>
+ * ```
+ */
+
+/**
  * WC performance for switch: the thinnest wrapper. The score AND the DOM-native
  * binding (bindSwitch) live in switch.behavior.ts, shared with the Astro
  * performance. This file only adapts that binding to the custom-element

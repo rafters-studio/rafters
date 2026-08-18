@@ -1,34 +1,27 @@
 /**
- * ScrollArea -- a custom-styled scroll container with consistent cross-browser
- * scrollbar appearance over native overflow. Compose content directly inside;
- * an optional decorative ScrollBar is available for cases where CSS-only
- * scrollbar styling is insufficient. Native scroll (momentum, keyboard, focus
- * order) is never hijacked -- the score only decorates.
+ * Custom-styled scrollable container with consistent cross-browser appearance
  *
- * @cognitive-load 2/10 - decision 0, info 1, interaction 0, disruption 0, learning 1
- * @attention-economics Invisible enhancement: the scrollbar guides without
- * distracting. A scroll surface never announces itself; the content it frames
- * drives attention. Never hijack the expected scroll pattern.
- * @trust-building Consistent, native scroll behaviour builds familiarity --
- * momentum, keyboard scrolling, and focus order stay the browser's. Predictable
- * boundaries, no surprise interactivity: a scroll surface is a viewport, not a
- * control.
- * @accessibility Native keyboard scrolling is preserved untouched; scrollbars
- * are styled, never hidden (hiding them entirely is an accessibility defect).
- * The surface projects no ARIA -- semantics come from the content inside.
- * @semantic-meaning Constrained viewport for overflow content: use when content
- * exceeds a fixed-size container (sidebars, dropdowns, modal bodies).
+ * @cognitive-load 2/10 - Transparent utility that enhances without demanding attention
+ * @attention-economics Invisible enhancement: Scrollbars should guide without distracting
+ * @trust-building Consistent scroll behavior builds familiarity; never hijack expected scroll patterns
+ * @accessibility Preserve native keyboard scrolling; don't hide scrollbars entirely
+ * @semantic-meaning Constrained viewport for overflow content; use when content exceeds container
  *
- * A pure static score has nothing to subscribe to: this performance is pure
- * decoration application. No useBehavior, no memory, no bind -- config in,
- * classes out, children through.
+ * @usage-patterns
+ * DO: Use for fixed-height containers with overflow content
+ * DO: Use for sidebars, dropdowns, and modal content
+ * DO: Preserve native scroll feel (momentum, keyboard)
+ * DO: Make scrollbar visible when content overflows
+ * NEVER: Use JavaScript scroll hijacking
+ * NEVER: Hide scrollbars completely (a11y issue)
+ * NEVER: Override native scroll physics
  *
  * @example
  * ```tsx
  * // Vertical scroll area
  * <ScrollArea className="h-72 w-48 rounded-md border">
  *   <div className="p-4">
- *     {items.map((item) => (
+ *     {items.map(item => (
  *       <div key={item.id}>{item.name}</div>
  *     ))}
  *   </div>
@@ -37,8 +30,8 @@
  * // Horizontal scroll area
  * <ScrollArea orientation="horizontal" className="w-96 whitespace-nowrap">
  *   <div className="flex gap-4 p-4">
- *     {images.map((img) => (
- *       <img key={img.id} src={img.src} className="w-40" alt={img.alt} />
+ *     {images.map(img => (
+ *       <img key={img.id} src={img.src} className="w-40" />
  *     ))}
  *   </div>
  * </ScrollArea>

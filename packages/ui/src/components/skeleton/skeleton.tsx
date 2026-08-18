@@ -1,35 +1,25 @@
 /**
- * Skeleton -- a loading placeholder that reserves layout while content loads.
- * A shimmer in the shape of the content to come; sized and shaped by the
- * consumer through `className` (`h-4 w-48`, `h-12 w-12 rounded-full`, ...), the
- * shadcn drop-in surface. Decorative by contract: it is hidden from assistive
- * technology, so a screen reader hears the real content, never the placeholder.
+ * Skeleton loading placeholder component for content that is loading
  *
- * @cognitive-load 1/10 - decision 0, info 1, interaction 0, disruption 0, learning 0
- * @attention-economics A loading indicator that reduces perceived wait by
- * holding the layout stable: the eye stays where the content will land instead
- * of watching it reflow in. It must never demand attention -- it is a quiet
- * promise that content is coming, not an event. Reserve it for genuinely
- * pending content; a skeleton over an empty state reads as a broken load.
- * @trust-building Honest feedback that content is loading reduces uncertainty
- * anxiety; matching the skeleton's shape to the real content keeps the promise,
- * and holding the layout means nothing jumps when the content arrives.
- * @accessibility Purely decorative: the root carries a constant
- * `aria-hidden="true"` so the placeholder is absent from the accessibility tree
- * (a screen reader reads the real content, not the shimmer). The pulse honours
- * `prefers-reduced-motion` via `motion-reduce:animate-none`.
+ * @cognitive-load 1/10 - Passive placeholder, reduces uncertainty during loading
+ * @attention-economics Loading indicator: maintains layout stability, reduces perceived wait time
+ * @trust-building Visual feedback that content is loading, reduces uncertainty anxiety
+ * @accessibility motion-reduce respects prefers-reduced-motion, aria-hidden since decorative
+ * @semantic-meaning Loading state: represents content shape while data is being fetched
  *
- * A static score has nothing to subscribe to: this performance is pure
- * decoration application. No useBehavior, no memory, no bind -- classes and the
- * constant aria projection out, and -- because Skeleton is a decorative LEAF --
- * no slot and no children.
+ * @usage-patterns
+ * DO: Match skeleton shape to expected content (text lines, images, cards)
+ * DO: Use multiple skeletons to represent list items
+ * DO: Maintain consistent sizing with actual content
+ * DO: Respect prefers-reduced-motion for animation
+ * NEVER: Use for interactive elements, use for indefinite loading states
  *
  * @example
  * ```tsx
- * // Text line placeholder
+ * // Text skeleton
  * <Skeleton className="h-4 w-48" />
  *
- * // Avatar placeholder
+ * // Avatar skeleton
  * <Skeleton className="h-12 w-12 rounded-full" />
  * ```
  */

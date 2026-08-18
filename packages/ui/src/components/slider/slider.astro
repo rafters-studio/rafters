@@ -1,5 +1,31 @@
 ---
 /**
+ * Range slider component with precise value selection and accessibility features
+ *
+ * @cognitive-load 3/10 - Value selection with immediate visual feedback
+ * @attention-economics Value communication: visual track, precise labels, immediate feedback
+ * @trust-building Immediate visual feedback, undo capability, clear value indication
+ * @accessibility Keyboard increment/decrement, screen reader value announcements, touch-friendly handles
+ * @semantic-meaning Range contexts: settings=configuration, filters=data selection, controls=media/volume
+ *
+ * @usage-patterns
+ * DO: Show current value and units for clarity
+ * DO: Use large thumb size for mobile and accessibility
+ * DO: Provide visual markers for discrete value ranges
+ * DO: Give immediate feedback with real-time updates
+ * NEVER: Invisible ranges, unclear min/max values, tiny touch targets
+ *
+ * @example
+ * ```tsx
+ * // Basic slider
+ * <Slider defaultValue={[50]} max={100} step={1} />
+ *
+ * // Range slider with multiple handles
+ * <Slider defaultValue={[25, 75]} max={100} step={5} />
+ * ```
+ */
+
+/**
  * Astro performance (controller) for slider.
  *
  * Server-renders the full LIGHT-DOM container -- track, range, and one

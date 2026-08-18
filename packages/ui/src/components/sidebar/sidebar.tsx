@@ -1,52 +1,49 @@
 /**
- * Collapsible application navigation rail. On desktop it expands to a full rail
- * or collapses to an icon strip (or fully off-canvas), persisting that choice;
- * below the md breakpoint it becomes a modal overlay (the merged Sheet). The
- * primary, always-present chrome a user orients by.
+ * Responsive sidebar component for app navigation with collapsible states
  *
- * @cognitive-load 3/10 - A familiar, persistent navigation pattern in a fixed
- *   location: the user never hunts for it, and the two states (expanded rail,
- *   collapsed icons) are both legible. The mobile overlay narrows the surface to
- *   one focused choice set without hiding where the user was.
- * @attention-economics Near-zero standing cost: the rail sits at the edge and is
- *   scanned only when navigating. The mobile overlay is a brief, reversible
- *   detour -- the modal scrim dims the page but keeps it in view, so orientation
- *   is never lost.
- * @trust-building One consistent edge and toggle direction, a Cmd/Ctrl+B
- *   shortcut, state remembered across loads, and a mobile overlay whose scrim,
- *   Escape, and close all read as obvious, reversible exits -- so collapsing or
- *   opening always feels safe.
- * @accessibility The rail stays navigable while collapsed (never removed from the
- *   a11y tree); the trigger is a labelled control wired by real id to the desktop
- *   panel; the mobile overlay is a modal dialog (focus trapped, scroll locked,
- *   Escape dismisses and restores focus, and its content is unreachable while
- *   closed) via the composed Sheet.
+ * @cognitive-load 3/10 - Familiar navigation pattern; always visible, predictable location
+ * @attention-economics Low attention cost: persistent navigation allows quick orientation
+ * @trust-building Consistent location, keyboard toggle (Cmd+B), state persistence
+ * @accessibility Keyboard navigation, proper landmarks (nav role), focus management
+ * @semantic-meaning Primary navigation: main app sections, user actions, branding
  *
- * The React performance is a DECORATOR over sidebar.behavior.ts: it adds only the
- * view (sidebar.classes.ts) and React wiring (useMemory + effects that read the
- * viewport, persist the cookie, and bind Cmd/Ctrl+B), and composes the merged
- * Sheet for the mobile overlay. Every decision -- reducers, the aria projection,
- * the Escape keymap, the toggle routing -- lives in the score, shared with the WC
- * and Astro performances via bindSidebar.
+ * @usage-patterns
+ * DO: Use for primary app navigation with 4-8 main sections
+ * DO: Collapse to icons on mobile/narrow viewports
+ * DO: Persist collapsed state in user preferences
+ * DO: Include keyboard shortcut for toggle (Cmd+B)
+ * DO: Group related items with sections and separators
+ * NEVER: Secondary navigation (use tabs or breadcrumbs)
+ * NEVER: Temporary content (use Sheet or Drawer)
+ * NEVER: More than 2 levels of nesting
  *
  * @example
  * ```tsx
- * <SidebarProvider>
+ * <Sidebar.Provider>
  *   <Sidebar>
- *     <SidebarHeader>Brand</SidebarHeader>
- *     <SidebarContent>
- *       <SidebarMenu>
- *         <SidebarMenuItem>
- *           <SidebarMenuButton>Dashboard</SidebarMenuButton>
- *         </SidebarMenuItem>
- *       </SidebarMenu>
- *     </SidebarContent>
+ *     <Sidebar.Header>
+ *       <Logo />
+ *     </Sidebar.Header>
+ *     <Sidebar.Content>
+ *       <Sidebar.Group>
+ *         <Sidebar.GroupLabel>Main</Sidebar.GroupLabel>
+ *         <Sidebar.Menu>
+ *           <Sidebar.MenuItem>
+ *             <Sidebar.MenuButton asChild>
+ *               <a href="/dashboard">Dashboard</a>
+ *             </Sidebar.MenuButton>
+ *           </Sidebar.MenuItem>
+ *         </Sidebar.Menu>
+ *       </Sidebar.Group>
+ *     </Sidebar.Content>
+ *     <Sidebar.Footer>
+ *       <UserMenu />
+ *     </Sidebar.Footer>
  *   </Sidebar>
- *   <SidebarInset>
- *     <SidebarTrigger />
- *     <main>Page</main>
- *   </SidebarInset>
- * </SidebarProvider>
+ *   <Sidebar.Inset>
+ *     <main>Content here</main>
+ *   </Sidebar.Inset>
+ * </Sidebar.Provider>
  * ```
  */
 import * as React from 'react';

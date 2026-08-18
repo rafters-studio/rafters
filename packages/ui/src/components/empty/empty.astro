@@ -1,5 +1,68 @@
 ---
 /**
+ * Empty state display for when there's no content to show
+ *
+ * @cognitive-load 2/10 - Simple informational display with clear next steps
+ * @attention-economics Supportive element: Fills void without demanding attention, guides to action
+ * @trust-building Honest communication about empty state builds trust; actionable guidance reduces frustration
+ * @accessibility Clear heading hierarchy; actionable elements are keyboard accessible
+ * @semantic-meaning State communication: empty search results, no items yet, cleared list, filtered to nothing
+ *
+ * @usage-patterns
+ * DO: Provide actionable next steps when possible
+ * DO: Explain why the state is empty (no results, no items yet, etc.)
+ * DO: Use appropriate illustrations to soften the empty state
+ * DO: Match tone to context (playful for personal apps, professional for business)
+ * NEVER: Leave empty states blank
+ * NEVER: Use generic "No data" without context
+ * NEVER: Make users feel like something is broken
+ *
+ * @example
+ * ```tsx
+ * // Empty search results
+ * <Empty>
+ *   <EmptyIcon>
+ *     <SearchIcon />
+ *   </EmptyIcon>
+ *   <EmptyTitle>No results found</EmptyTitle>
+ *   <EmptyDescription>
+ *     Try adjusting your search terms or filters.
+ *   </EmptyDescription>
+ *   <EmptyAction>
+ *     <Button variant="outline" onClick={clearFilters}>
+ *       Clear filters
+ *     </Button>
+ *   </EmptyAction>
+ * </Empty>
+ *
+ * // Empty list (first time)
+ * <Empty>
+ *   <EmptyIcon>
+ *     <FolderIcon />
+ *   </EmptyIcon>
+ *   <EmptyTitle>No projects yet</EmptyTitle>
+ *   <EmptyDescription>
+ *     Create your first project to get started.
+ *   </EmptyDescription>
+ *   <EmptyAction>
+ *     <Button>Create project</Button>
+ *   </EmptyAction>
+ * </Empty>
+ *
+ * // Informational only (no action)
+ * <Empty>
+ *   <EmptyIcon>
+ *     <InboxIcon />
+ *   </EmptyIcon>
+ *   <EmptyTitle>All caught up!</EmptyTitle>
+ *   <EmptyDescription>
+ *     No new notifications.
+ *   </EmptyDescription>
+ * </Empty>
+ * ```
+ */
+
+/**
  * Astro performance of the Empty score.
  *
  * Empty is a PURE STATIC: the score projects no ARIA, holds no state, and runs

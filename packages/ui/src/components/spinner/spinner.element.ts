@@ -1,4 +1,30 @@
 /**
+ * Spinning loading indicator for active operations
+ *
+ * @cognitive-load 2/10 - Simple activity indicator, brief attention capture
+ * @attention-economics Activity feedback: indicates system is working, maintains user confidence
+ * @trust-building Immediate feedback that action is processing, prevents double-submission anxiety
+ * @accessibility aria-label for screen readers, motion-reduce respects preferences, sr-only text
+ * @semantic-meaning Processing state: indeterminate loading for actions without progress measurement
+ *
+ * @usage-patterns
+ * DO: Use for button loading states
+ * DO: Use for inline loading indicators
+ * DO: Size appropriately for context (sm for buttons, lg for page loading)
+ * DO: Combine with text feedback for longer operations
+ * NEVER: Use for content loading (use Skeleton instead), use without accessible label
+ *
+ * @example
+ * ```tsx
+ * // Button loading state
+ * <Button disabled>
+ *   <Spinner size="sm" />
+ *   Saving...
+ * </Button>
+ * ```
+ */
+
+/**
  * <rafters-spinner> -- the Web Component performance of the Spinner score.
  *
  * Spinner is a PURE STATIC: the score projects a single constant ARIA

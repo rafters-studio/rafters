@@ -1,36 +1,33 @@
 /**
- * Command palette: a keyboard-first, fuzzy-filtered command list.
+ * Command component for keyboard-driven command palettes and search interfaces
  *
- * @cognitive-load 6/10 - A search box plus a virtual-focus option list: the
- *   user holds the query and the active option in working memory; fast once the
- *   shortcut is learned, heavier on first encounter than a plain menu.
- * @attention-economics High initial attention (learn the palette), low ongoing:
- *   power users invoke from muscle memory; the filter narrows attention to the
- *   matches and the active option is always singular.
- * @trust-building Instant fuzzy feedback, a clear empty state, keyboard and
- *   pointer commit identically, and the invoked action is announced by name.
- * @accessibility Combobox/listbox APG pattern: role combobox input with
- *   aria-autocomplete=list, aria-controls and aria-activedescendant onto a
- *   listbox of role=option items; focus stays on the input (virtual focus).
+ * @cognitive-load 6/10 - Command-based interface; requires learning shortcuts but fast once known
+ * @attention-economics High initial attention, low ongoing: power users benefit from muscle memory
+ * @trust-building Immediate search feedback, keyboard navigable, clear action consequences
+ * @accessibility Full keyboard navigation, ARIA combobox pattern, screen reader announcements
+ * @semantic-meaning Command execution: quick actions, navigation, search, command palettes
  *
- * The React performance is a DECORATOR over command.behavior.ts: it adds only
- * the view (command.classes.ts) and React wiring (useMemory + the dispatch
- * protocol). Every decision -- the query/highlight reducers, the aria projection,
- * the keymap, the fuzzy filter and the modal-dialog trio -- lives in the score.
- * The shadcn drop-in surface (Command, CommandDialog, Input, List, Empty, Group,
- * Item, Separator, Shortcut) plus the `Command.*` namespace is preserved.
+ * @usage-patterns
+ * DO: Use for power-user features and keyboard shortcuts
+ * DO: Provide instant search/filter feedback
+ * DO: Group related commands logically
+ * DO: Support both mouse and keyboard navigation
+ * DO: Show keyboard shortcut hints
+ * NEVER: Use for simple forms or data entry
+ * NEVER: Require mouse-only interaction
+ * NEVER: Hide without clear dismissal method
  *
  * @example
  * ```tsx
- * <Command label="Actions">
- *   <CommandInput placeholder="Type a command..." aria-label="Command" />
- *   <CommandList>
- *     <CommandEmpty>No results found.</CommandEmpty>
- *     <CommandGroup heading="Suggestions">
- *       <CommandItem value="calendar" onSelect={openCalendar}>Calendar</CommandItem>
- *       <CommandItem value="search" onSelect={openSearch}>Search</CommandItem>
- *     </CommandGroup>
- *   </CommandList>
+ * <Command>
+ *   <Command.Input placeholder="Type a command or search..." />
+ *   <Command.List>
+ *     <Command.Empty>No results found.</Command.Empty>
+ *     <Command.Group heading="Suggestions">
+ *       <Command.Item onSelect={() => {}}>Calendar</Command.Item>
+ *       <Command.Item onSelect={() => {}}>Search</Command.Item>
+ *     </Command.Group>
+ *   </Command.List>
  * </Command>
  * ```
  */

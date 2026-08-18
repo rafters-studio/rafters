@@ -1,20 +1,50 @@
 /**
- * Inline status banner for important user feedback. Announces itself to
- * assistive tech the moment it appears -- no dismissal, no timer, no
- * decision. Compose Alert with AlertTitle and AlertDescription; AlertAction
- * is an optional trailing slot for a single dismiss/undo control.
+ * Status message component for important user feedback
  *
- * @cognitive-load 2/10 - decision 0, info 1, interaction 0, disruption 0, learning 1
- * @attention-economics Severity hierarchy: destructive/warning demand immediate
- * attention, success confirms, default/info/muted/accent are supplementary.
- * Never stack multiple alerts -- surface the single most important one.
- * @trust-building Plain, honest feedback over alarming language; the severity
- * variant must match the message's actual stakes (never dress a minor notice
- * as destructive, never soften a real error to default).
- * @accessibility role="alert" is an assertive live region -- it announces on
- * mount with no user action required, so reserve it for feedback that needs
- * immediate notice. Severity is never color-only: pair the variant with an
- * icon or the text itself carrying the meaning.
+ * @cognitive-load 3/10 - Simple message display with clear visual hierarchy
+ * @attention-economics Variant hierarchy: destructive=immediate attention, warning=caution, success=confirmation, info=supplementary
+ * @trust-building Clear, honest feedback builds confidence; destructive alerts require careful wording
+ * @accessibility role="alert" for urgent messages; role="status" for informational; never color-only
+ * @semantic-meaning Variant mapping: default=neutral, info=helpful context, success=positive confirmation, warning=proceed with caution, destructive=error or danger
+ *
+ * @usage-patterns
+ * DO: Use destructive for errors that need user action
+ * DO: Use success to confirm completed actions
+ * DO: Use warning for potential issues before they happen
+ * DO: Include icons to reinforce meaning beyond color
+ * NEVER: Use alerts for transient feedback (use contextual feedback instead)
+ * NEVER: Stack multiple alerts - prioritize the most important
+ * NEVER: Use destructive for warnings or warnings for info
+ *
+ * @example
+ * ```tsx
+ * // Error alert
+ * <Alert variant="destructive">
+ *   <AlertCircle className="h-4 w-4" />
+ *   <AlertTitle>Error</AlertTitle>
+ *   <AlertDescription>
+ *     Your session has expired. Please log in again.
+ *   </AlertDescription>
+ * </Alert>
+ *
+ * // Success alert
+ * <Alert variant="success">
+ *   <CheckCircle className="h-4 w-4" />
+ *   <AlertTitle>Success</AlertTitle>
+ *   <AlertDescription>
+ *     Your changes have been saved.
+ *   </AlertDescription>
+ * </Alert>
+ *
+ * // Informational alert
+ * <Alert variant="info">
+ *   <Info className="h-4 w-4" />
+ *   <AlertTitle>Note</AlertTitle>
+ *   <AlertDescription>
+ *     This feature is in beta.
+ *   </AlertDescription>
+ * </Alert>
+ * ```
  */
 import * as React from 'react';
 import classy from '../../primitives/classy';

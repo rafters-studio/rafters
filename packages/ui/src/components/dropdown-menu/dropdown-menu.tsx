@@ -1,45 +1,31 @@
 /**
- * Dropdown menu: an anchored action menu disclosed by a trigger.
+ * Dropdown menu component for contextual action menus
  *
- * @cognitive-load 4/10 - familiarity low (universal menu pattern), choice count
- *   moderate (7 plus/minus 2 items per level), visual complexity low (a single
- *   list), interaction depth low (open, arrow/type, activate), recovery high
- *   (Escape closes, focus returns to the trigger).
- * @attention-economics Contextual actions on demand: the menu is compact when
- *   closed and reveals a focused option list only when summoned; typeahead
- *   narrows attention to the matching item.
- * @trust-building Keyboard-first navigation, a visible focus ring on the active
- *   item, and focus returned to the trigger on activate or dismiss keep the
- *   user oriented and in control.
- * @accessibility Menu-button APG pattern: trigger aria-haspopup="menu" +
- *   aria-expanded + aria-controls, content role="menu" aria-orientation, roving
- *   focus across menuitem/menuitemcheckbox/menuitemradio, type-to-search,
- *   Escape closes and restores focus.
+ * @cognitive-load 4/10 - Menu navigation with multiple options requires scanning and selection
+ * @attention-economics Contextual actions: appears on demand, groups related actions logically
+ * @trust-building Typeahead search for quick access, clear hover states, keyboard navigation
+ * @accessibility Full keyboard support (arrows, typeahead), proper ARIA menu role, roving focus
+ * @semantic-meaning Action menu: Item=action, CheckboxItem=toggle, RadioItem=exclusive selection, Sub=nested group
  *
- * The React performance is a DECORATOR over dropdown-menu.behavior.ts: it adds
- * only the view (dropdown-menu.classes.ts) and React wiring (useMemory + a
- * useEffect that composes startDropdownMenuEffects + the dispatch protocol).
- * Every decision -- the open/close reducer, aria, keymap, the open-menu effect
- * trio -- lives in the score. The shadcn drop-in surface (Trigger, Portal,
- * Content, Group, Label, Item, CheckboxItem, RadioGroup, RadioItem, Separator,
- * Shortcut) plus the `DropdownMenu.*` namespace is preserved; each extra is a
- * thin view wrapper. Submenus (Sub/SubTrigger/SubContent) are dropped -- see the
- * component doc's oracle dispositions.
- *
- * Indicator/shortcut inline spans are built with React.createElement, the same
- * documented escape hatch card/alert/select use for raw inline tags.
+ * @usage-patterns
+ * DO: Group related actions logically with separators
+ * DO: Use keyboard shortcuts with Kbd component for common actions
+ * DO: Limit to 7±2 items per menu level (Miller's Law)
+ * DO: Use submenus sparingly for complex action hierarchies
+ * NEVER: Primary actions, navigation, more than 2 levels of nesting
  *
  * @example
  * ```tsx
- * import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@rafters/ui';
- *
  * <DropdownMenu>
- *   <DropdownMenuTrigger>Options</DropdownMenuTrigger>
- *   <DropdownMenuContent>
- *     <DropdownMenuItem onSelect={edit}>Edit</DropdownMenuItem>
- *     <DropdownMenuSeparator />
- *     <DropdownMenuItem onSelect={remove}>Delete</DropdownMenuItem>
- *   </DropdownMenuContent>
+ *   <DropdownMenu.Trigger asChild>
+ *     <Button variant="ghost">Options</Button>
+ *   </DropdownMenu.Trigger>
+ *   <DropdownMenu.Content>
+ *     <DropdownMenu.Item>Edit</DropdownMenu.Item>
+ *     <DropdownMenu.Item>Duplicate</DropdownMenu.Item>
+ *     <DropdownMenu.Separator />
+ *     <DropdownMenu.Item variant="destructive">Delete</DropdownMenu.Item>
+ *   </DropdownMenu.Content>
  * </DropdownMenu>
  * ```
  */

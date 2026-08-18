@@ -1,54 +1,49 @@
 /**
- * Card -- a content surface for grouping related information on an elevated,
- * bordered panel. Compose Card with CardHeader, CardTitle, CardDescription,
- * CardContent, CardFooter, and CardAction; the surface is the contract, the
- * slots are the composition. The default `bg-card` surface can be replaced
- * with a `fill` signature over the colour vocabulary (never a raw background).
+ * Flexible container component for grouping related content with semantic structure
  *
- * `className` IS NOT SUPPORTED, here or on any sub-component. Design travels
- * through token props only; a class escape hatch is how design gets re-decided
- * at call sites, and agents do not do design. See docs/spec/components/card.md.
+ * @cognitive-load 2/10 - Simple container with clear boundaries and minimal cognitive overhead
+ * @attention-economics Neutral container: Content drives attention, elevation hierarchy for interactive states
+ * @trust-building Consistent spacing, predictable interaction patterns, clear content boundaries
+ * @accessibility Proper heading structure, landmark roles, keyboard navigation for interactive cards
+ * @semantic-meaning Structural roles: article=standalone content, section=grouped content, aside=supplementary information
  *
- * @cognitive-load 2/10 - decision 0, info 1, interaction 0, disruption 0, learning 1
- * @attention-economics Neutral surface: the content drives attention, never
- * the container. A card groups; it does not announce. Reserve high-chroma
- * fills for cards that genuinely lead a view, or the elevation hierarchy
- * flattens into noise.
- * @trust-building Consistent rhythm -- the ROOT owns the vertical spacing
- * (gap-6, py-6) and each part its horizontal inset, so even an arbitrary child
- * dropped straight into a Card is spaced like the declared parts. Predictable
- * boundaries, no surprise interactivity -- a card is a surface, not a button;
- * wrap it in a link or place a Button inside when a whole-card action is
- * wanted.
- * @accessibility WCAG 2.2 AAA. The surface projects no ARIA -- semantics come
- * from the element (`as`) and from real headings inside. In this React
- * performance CardTitle is a REAL heading and CardDescription a REAL p (where
- * shadcn renders div/div): the accepted, behavior-additive AAA divergence,
- * satisfying 1.3.1 and 2.4.10 Section Headings. (The named-slot performances --
- * card.astro's slots and the web component -- wrap slotted content in class-only
- * divs, so there the CONSUMER supplies the element; pass a real heading.) Use
- * CardTitle's `as` to place the heading at the correct outline level for the
- * page; never skip levels. The bg-card / text-card-foreground pairing clears
- * 1.4.6 Contrast (Enhanced) 7:1 in both themes.
- * @semantic-meaning Structural element via `as`: article = standalone
- * syndicatable content, section = a grouped region, aside = supplementary
- * content, div = a presentational grouping with no landmark.
- *
- * A pure static score has nothing to subscribe to: the performance is pure
- * decoration application. No useBehavior, no memory, no bind -- config in,
- * classes out, slots through, semantic element chosen by `as`.
+ * @usage-patterns
+ * DO: Group related information with clear visual boundaries
+ * DO: Create interactive cards with hover states and focus management
+ * DO: Establish information hierarchy with header, content, actions
+ * DO: Implement responsive scaling with consistent proportions
+ * NEVER: Use decorative containers without semantic purpose
+ * NEVER: Nest cards within cards
+ * NEVER: Use Card for layout (use Grid/Container instead)
  *
  * @example
  * ```tsx
+ * // Standalone content - use article
  * <Card as="article">
  *   <CardHeader>
  *     <CardTitle>Blog Post Title</CardTitle>
- *     <CardDescription>Published Jan 2026</CardDescription>
+ *     <CardDescription>Published Jan 2025</CardDescription>
  *   </CardHeader>
  *   <CardContent>Post excerpt...</CardContent>
+ * </Card>
+ *
+ * // Interactive card - product listing
+ * <Card interactive>
+ *   <CardHeader>
+ *     <CardTitle>Product Name</CardTitle>
+ *   </CardHeader>
+ *   <CardContent>$99.00</CardContent>
  *   <CardFooter>
- *     <Button>Read more</Button>
+ *     <Button>Add to Cart</Button>
  *   </CardFooter>
+ * </Card>
+ *
+ * // Supplementary content - use aside
+ * <Card as="aside">
+ *   <CardHeader>
+ *     <CardTitle>Related Links</CardTitle>
+ *   </CardHeader>
+ *   <CardContent>...</CardContent>
  * </Card>
  * ```
  */

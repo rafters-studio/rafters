@@ -1,4 +1,53 @@
 /**
+ * Generic list item component for menus, lists, and selection interfaces
+ *
+ * @cognitive-load 3/10 - Familiar list pattern with clear visual states and predictable behavior
+ * @attention-economics Secondary selection: Selected state draws focus, disabled reduces prominence. Icon slot provides visual anchoring for quick scanning.
+ * @trust-building Consistent hover/focus/selected states build predictable interaction patterns. Clear disabled state prevents user confusion.
+ * @accessibility Proper aria-selected for selection, aria-disabled for disabled state, keyboard navigation support, focus-visible for keyboard users
+ * @semantic-meaning Building block for: menu items (navigation/actions), list items (content/data), option items (selection interfaces)
+ *
+ * @usage-patterns
+ * DO: Use as building block for menu items, list items, selection options
+ * DO: Include icons on the left for quick visual scanning
+ * DO: Add description for secondary information or context
+ * DO: Use selected state for current/active items in navigation
+ * DO: Use disabled state for unavailable options with clear visual feedback
+ * NEVER: Use for primary actions (use Button instead)
+ * NEVER: Nest interactive elements within Item
+ * NEVER: Use Item without a container (list, menu, etc.)
+ *
+ * @example
+ * ```tsx
+ * // Basic list item
+ * <Item>Settings</Item>
+ *
+ * // With icon and description
+ * <Item
+ *   icon={<UserIcon className="h-4 w-4" />}
+ *   description="Manage your account settings"
+ * >
+ *   Profile
+ * </Item>
+ *
+ * // Selected state for navigation
+ * <Item selected icon={<HomeIcon className="h-4 w-4" />}>
+ *   Dashboard
+ * </Item>
+ *
+ * // Disabled option
+ * <Item disabled icon={<LockIcon className="h-4 w-4" />}>
+ *   Admin Panel
+ * </Item>
+ *
+ * // Interactive item with handler
+ * <Item onClick={handleSelect} icon={<SettingsIcon className="h-4 w-4" />}>
+ *   Settings
+ * </Item>
+ * ```
+ */
+
+/**
  * <rafters-item> -- the Web Component performance of the Item score.
  *
  * Item is a static score with a CONFIG-DRIVEN projection: no state, no

@@ -1,4 +1,41 @@
 /**
+ * HoverCard component for rich preview content on hover
+ *
+ * @cognitive-load 3/10 - Contextual preview that supplements rather than replaces visible content
+ * @attention-economics Glanceable enrichment: provides additional context without requiring action
+ * @trust-building Predictable reveal timing, stable positioning, non-disruptive appearance
+ * @accessibility Focus management, keyboard triggerable via focus, escape to dismiss, role="dialog" with aria-describedby
+ * @semantic-meaning Rich preview: profile cards, link previews, contextual details that enhance understanding
+ *
+ * @usage-patterns
+ * DO: Show supplementary information like user profiles, link previews, or contextual details
+ * DO: Use appropriate delays to prevent accidental triggers (openDelay >= 500ms recommended)
+ * DO: Keep content focused and scannable - users glance, not read
+ * DO: Position intelligently to avoid viewport edges
+ * NEVER: Essential information that should always be visible
+ * NEVER: Interactive forms or multi-step workflows (use Popover instead)
+ * NEVER: Time-sensitive content that disappears before user can read it
+ *
+ * @example
+ * ```tsx
+ * <HoverCard>
+ *   <HoverCard.Trigger asChild>
+ *     <a href="/user/john">@john</a>
+ *   </HoverCard.Trigger>
+ *   <HoverCard.Content>
+ *     <div className="flex gap-4">
+ *       <Avatar src="/john.jpg" />
+ *       <div>
+ *         <h4>John Doe</h4>
+ *         <p>Software Engineer</p>
+ *       </div>
+ *     </div>
+ *   </HoverCard.Content>
+ * </HoverCard>
+ * ```
+ */
+
+/**
  * WC performance for hover-card: the thinnest wrapper. The score AND the
  * DOM-native binding (bindHoverCard) live in hover-card.behavior.ts, shared with
  * the Astro performance. This file only adapts that binding to the custom-element

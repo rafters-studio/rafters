@@ -1,37 +1,33 @@
 /**
- * Combobox: a filtering autocomplete input paired with a listbox of options.
+ * Combobox component for searchable selection with typeahead filtering
  *
- * @cognitive-load 6/10 - Holds three things at once: the free-text query, the
- *   filtered option set, and the current highlight; typing and scanning run in
- *   parallel, heavier than a plain Select.
- * @attention-economics Closed it reads as a single input; typing narrows the
- *   option list so attention collapses onto the matches, and the highlight plus
- *   aria-activedescendant keep one focal option at a time.
- * @trust-building Immediate filter feedback, an explicit empty state when nothing
- *   matches, a visible checkmark on the committed option, and keyboard-first
- *   navigation that never moves focus off the field.
- * @accessibility Editable combobox APG pattern: role="combobox" with
- *   aria-autocomplete="list" on the input, aria-expanded/aria-controls to the
- *   listbox, and aria-activedescendant tracking the highlighted option so screen
- *   readers announce it without stealing DOM focus.
+ * @cognitive-load 6/10 - Combines input + dropdown; requires typing and visual scanning
+ * @attention-economics Medium-high attention: keyboard input, list scanning, selection confirmation
+ * @trust-building Immediate filtering feedback, clear match highlighting, keyboard accessible
+ * @accessibility Full ARIA combobox pattern, listbox role, option roles, live region announcements
+ * @semantic-meaning Filtered selection: choosing from large datasets, typeahead search
  *
- * The React performance is a DECORATOR over combobox.behavior.ts: it adds only
- * the view (combobox.classes.ts) and React wiring (useMemory + a useEffect that
- * positions and light-dismisses, plus the dispatch protocol). Every decision --
- * reducers, aria, keymap, the filter predicate -- lives in the score. The shadcn
- * drop-in surface (Input, Content, Empty, Group, Item, Separator) plus the
- * `Combobox.*` namespace is preserved as thin view wrappers.
+ * @usage-patterns
+ * DO: Use for selection from large option sets (>10 items)
+ * DO: Provide clear empty state and no-results messaging
+ * DO: Support both mouse and keyboard selection
+ * DO: Highlight matching text in filtered results
+ * DO: Allow clearing the selection
+ * NEVER: Use for small option sets (<5 items) - use Select instead
+ * NEVER: Require exact match when approximate would help
+ * NEVER: Hide the clear button when a selection exists
  *
  * @example
  * ```tsx
- * import { Combobox } from '@rafters/ui';
- *
- * <Combobox onValueChange={save}>
+ * <Combobox value={value} onValueChange={setValue}>
  *   <Combobox.Input placeholder="Select framework..." />
  *   <Combobox.Content>
  *     <Combobox.Empty>No framework found.</Combobox.Empty>
- *     <Combobox.Item value="react">React</Combobox.Item>
- *     <Combobox.Item value="vue">Vue</Combobox.Item>
+ *     <Combobox.Group>
+ *       <Combobox.Item value="react">React</Combobox.Item>
+ *       <Combobox.Item value="vue">Vue</Combobox.Item>
+ *       <Combobox.Item value="angular">Angular</Combobox.Item>
+ *     </Combobox.Group>
  *   </Combobox.Content>
  * </Combobox>
  * ```

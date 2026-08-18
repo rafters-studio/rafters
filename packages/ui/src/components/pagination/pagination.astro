@@ -1,5 +1,63 @@
 ---
 /**
+ * Navigation component for paginated content
+ *
+ * @cognitive-load 4/10 - Moderate complexity with page calculations, but clear visual patterns
+ * @attention-economics Secondary navigation: Supports content discovery without competing with primary content. Use sparingly at bottom of paginated lists.
+ * @trust-building Predictable navigation patterns build user confidence. Clear current page indication prevents disorientation. Disabled states prevent invalid actions.
+ * @accessibility Complete ARIA support with nav landmark, aria-current="page", aria-label descriptions, and keyboard navigation
+ * @semantic-meaning Page-based navigation system for large data sets. Ellipsis indicates hidden pages. Visual distinction between active and inactive states.
+ *
+ * @usage-patterns
+ * DO: Place at bottom of paginated content for natural flow
+ * DO: Show current page clearly with aria-current="page"
+ * DO: Use ellipsis to truncate large page ranges (7+/-2 items visible)
+ * DO: Disable Previous/Next at boundaries
+ * NEVER: Use pagination for small datasets (prefer infinite scroll or full display)
+ * NEVER: Hide the current page number from users
+ * NEVER: Allow navigation to invalid page numbers
+ *
+ * @example
+ * ```tsx
+ * // Basic composable pagination
+ * <Pagination>
+ *   <PaginationContent>
+ *     <PaginationItem>
+ *       <PaginationPrevious href="/page/1" />
+ *     </PaginationItem>
+ *     <PaginationItem>
+ *       <PaginationLink href="/page/1">1</PaginationLink>
+ *     </PaginationItem>
+ *     <PaginationItem>
+ *       <PaginationLink href="/page/2" isActive>2</PaginationLink>
+ *     </PaginationItem>
+ *     <PaginationItem>
+ *       <PaginationEllipsis />
+ *     </PaginationItem>
+ *     <PaginationItem>
+ *       <PaginationNext href="/page/3" />
+ *     </PaginationItem>
+ *   </PaginationContent>
+ * </Pagination>
+ *
+ * // Button-style pagination (onClick handlers)
+ * <Pagination>
+ *   <PaginationContent>
+ *     <PaginationItem>
+ *       <PaginationPrevious onClick={() => setPage(page - 1)} disabled={page === 1} />
+ *     </PaginationItem>
+ *     <PaginationItem>
+ *       <PaginationLink onClick={() => setPage(1)} isActive={page === 1}>1</PaginationLink>
+ *     </PaginationItem>
+ *     <PaginationItem>
+ *       <PaginationNext onClick={() => setPage(page + 1)} disabled={page === totalPages} />
+ *     </PaginationItem>
+ *   </PaginationContent>
+ * </Pagination>
+ * ```
+ */
+
+/**
  * Pagination -- the Astro performance of the static score
  * (pagination.behavior.ts).
  *
