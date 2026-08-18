@@ -8,114 +8,78 @@ assignees: ''
 
 ## Goal
 
-**Single, focused objective this task achieves.**
+Single, focused objective this task achieves.
 
 ## Exact Implementation Requirements
 
-NO emoji anywhere
+NO emoji anywhere.
 
-### Required Interface/Class Structure
+### Interface
+
 ```typescript
-// Exact method signatures, class structure, or API expected
+// Exact method signatures / types / API expected, with real file paths.
 ```
 
-### Behavior Requirements
-- Specific requirement 1 with clear success criteria
-- Specific requirement 2 with measurable outcome
-- Specific requirement 3 with validation method
+### Behavior
+
+- Specific behavior with its rule and the assertion that will prove it
+- Another specific, measurable behavior
+- ...
 
 ### Error Handling
-- What errors to throw and when
-- Required error message format
-- Recovery strategies if applicable
+
+- What errors to throw or return, and when
+- Required error message / shape
 
 ## Acceptance Criteria
 
-### Functional Tests Required
+One verifiable outcome per line. Each must be independently checkable by a test
+or an observable behavior. This is the list the `pr-write` and `verify` gates
+map against, so every line is a real, issue-specific outcome -- never a
+coding-standard (those live under Code Standards below and are not criteria).
+
+- [ ] Specific behavior 1, with the test or observable behavior that proves it
+- [ ] Specific behavior 2, measurable
+- [ ] Specific behavior 3, with its validation
+- [ ] Unit tests for the above pass; `pnpm preflight` is green
+
+### Functional Tests
+
 ```typescript
-// Exact test cases that must pass
-// Include setup, execution, and assertions
+// Exact assertions that must pass. Include setup, execution, assertions.
 expect(result).toBe(expectedValue);
 expect(() => invalidOperation()).toThrow('Specific error message');
 ```
 
-### Performance Requirements
-- Specific performance metrics if applicable
-- Memory usage constraints if relevant
-- Algorithmic complexity requirements if needed
-
-### TypeScript Requirements
-- TypeScript 5.9.3 strict mode enabled
-- All strict flags: `strictNullChecks`, `strictFunctionTypes`, `noImplicitAny`, `strictBindCallApply`, `strictPropertyInitialization`, `noImplicitThis`, `alwaysStrict`, `noUnusedLocals`, `noUnusedParameters`, `noImplicitReturns`, `noFallthroughCasesInSwitch`, `noUncheckedIndexedAccess`, `noImplicitOverride`, `noPropertyAccessFromIndexSignature`
-- No `any` types anywhere (Biome enforced)
-- No `.forEach()` - use `for...of` loops instead
-- No `.then()` chains - use `async/await` only
-- No `var` - use `const` or `let` only
-- No implicit returns in arrow functions with blocks
-- No unused variables or parameters
-- No non-null assertions (`!`) without explicit justification
-- All external data validated with Zod schemas
-- Types inferred from Zod schemas where possible
-
-### Build Requirements
-- Biome 2.3.2 for linting and formatting
-- Biome rules enforced:
-  - `noExplicitAny`: error - Disallow `any` type
-  - `noForEach`: error - Disallow `.forEach()`, use `for...of` instead
-  - `noThenProperty`: error - Disallow `.then()` chains, use `async/await`
-  - `noVar`: error - Disallow `var`, use `const` or `let`
-  - `useArrowFunction`: warn - Enforce arrow functions over function expressions
-  - `useConst`: error - Prefer `const` over `let` when possible
-  - `noUnusedVariables`: error - Error on unused variables
-  - `noConsoleLog`: error - Disallow `console.log` (use proper logging)
-  - `useExhaustiveDependencies`: error - Enforce exhaustive React hook dependencies
-  - `noUndeclaredVariables`: error - Error on undeclared variables
-  - `noUnusedImports`: error - Error on unused imports
-
 ## What NOT to Include
 
-- Feature 1 that's out of scope (separate issue)
-- Feature 2 that's not needed yet (future consideration)
-- Complex feature that should be broken down further
+- Out-of-scope concern (separate issue)
+- Not-needed-yet feature (future consideration)
 
 ## File Locations
 
-- Implementation: `path/to/implementation.ts`
-- Unit Tests: `path/to/tests.test.ts`
-- Integration tests: `path/to/tests.spec.ts` (as needed)
-- Playwright component test: `path/to/tests.spec.tsx` (as needed)
-- Accessibility test: `path/to/tests.a11y.tsx` (MANDATORY for UI components)
-- E2E test: `path/to/tests.e2e.ts` (as needed)
+- Implementation: `path/to/impl.ts`
+- Unit tests: `path/to/impl.test.ts` (tests live under `test/**` -- the vitest include)
 - Types: `path/to/types.ts` (if needed)
 - Export from: `path/to/index.ts`
 
 ## Integration Requirements
 
-### Dependencies
-- Required packages or modules
-- Integration points with existing code
-- Compatibility requirements
+- Dependencies / integration points with existing code
+- Usage example, if it clarifies the interface
 
-### Usage Examples
-```typescript
-// Concrete examples of how this will be used
-const example = new Implementation();
-const result = example.method(parameters);
-```
+## Code Standards
 
-## Success Criteria
+Repo invariants (see `CLAUDE.md`) apply to every issue and are enforced by
+`pnpm preflight` (typecheck, oxlint, oxfmt, tests, build). They are NOT
+per-issue acceptance criteria:
 
-- [ ] All functional tests pass
-- [ ] TypeScript compiles without errors (no `any` types)
-- [ ] Performance requirements met
-- [ ] Integration tests pass
-- [ ] Documentation updated if required
-- [ ] Exports added to index files
-
-**This issue is complete when:** [Specific, measurable completion condition]
+- TypeScript strict; no `any` (narrow from `unknown`)
+- No `.then()` chains -- async/await only
+- Zod for all external data; types inferred from the Zod schema where possible
+- No emoji in code, comments, or docs
 
 ## Context & References
 
-- Related issues: #123, #456
-- Architectural documentation: Link to relevant specs
-- External dependencies: Links to library docs if needed
+- Related issues:
+- Design record (legion reflection id):
