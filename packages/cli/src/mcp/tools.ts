@@ -45,13 +45,7 @@ import { getRaftersPaths, PathFieldSchema, resolveReadSet } from '../utils/paths
 import { resolveWorkspace, type Workspace } from '../utils/workspaces.js';
 import { assembleGraph, type Graph } from './graph.js';
 import { isNaturalLanguageQuery, matchIntent } from './intent.js';
-import {
-  buildFacetTargetIndex,
-  buildInstalledSet,
-  describeWithOverlay,
-  type FacetTargetIndex,
-  type OverlayContext,
-} from './overlay.js';
+import { buildInstalledSet, describeWithOverlay, type OverlayContext } from './overlay.js';
 
 /**
  * True when a path is safe to accept from an agent: relative, and with no `..`
@@ -291,13 +285,15 @@ export class RaftersToolHandler {
    */
   private registryClients = new Map<string, RegistryClient>();
   /**
-   * Per-workspace-root cache: the intel graph plus its facet-target index, built
-   * once, lazily, on the first describe/generate call that touches that root.
-   * Same per-workspace caching shape as `compositesLoadedFor`/`registryClients`.
-   * A failed build is never inserted, so the next call retries rather than
+   * Per-workspace-root cache: the intel graph, built once, lazily, on the first
+   * describe/generate call that touches that root. The graph is universal and
+   * target-free (a node carries all its per-target facets); the workspace's
+   * target is applied per query by the overlay, not baked into the cache. Same
+   * per-workspace caching shape as `compositesLoadedFor`/`registryClients`. A
+   * failed build is never inserted, so the next call retries rather than
    * permanently wedging that workspace.
    */
-  private graphsByWorkspace = new Map<string, { graph: Graph; facetIndex: FacetTargetIndex }>();
+  private graphsByWorkspace = new Map<string, Graph>();
   /**
    * The whole-catalog item source `ensureGraph` builds from. Defaults to the
    * workspace's registry client `fetchAllItems()` (bulk endpoint with per-item
@@ -537,25 +533,23 @@ export class RaftersToolHandler {
   }
 
   /**
-   * Build (once, lazily) and cache the intel graph + facet-target index for a
-   * workspace root. `assembleGraph` (#2072) and `buildFacetTargetIndex` (#2074)
-   * both consume the SAME whole-catalog `RegistryItem[]`. Throws when the catalog
-   * can't be loaded (both the bulk endpoint and the per-item fallback failed) or
-   * the graph is structurally broken (a dangling `composesWith` edge -- #2072's
-   * deliberate fail-fast); the caller converts that into a structured error
-   * result. A failed build is never cached, so the next call retries.
+   * Build (once, lazily) and cache the intel graph for a workspace root.
+   * `assembleGraph` (#2072/#2090) consumes the whole-catalog `RegistryItem[]` and
+   * carries each node's complete intelligence and all per-target facets onto the
+   * universal graph. Throws when the catalog can't be loaded (both the bulk
+   * endpoint and the per-item fallback failed) or the graph is structurally
+   * broken (a dangling `composesWith` edge -- #2072's deliberate fail-fast); the
+   * caller converts that into a structured error result. A failed build is never
+   * cached, so the next call retries.
    */
-  private async ensureGraph(
-    workspace: Workspace | null,
-  ): Promise<{ graph: Graph; facetIndex: FacetTargetIndex }> {
+  private async ensureGraph(workspace: Workspace | null): Promise<Graph> {
     const key = workspace?.root ?? '';
     const cached = this.graphsByWorkspace.get(key);
     if (cached) return cached;
 
-    const items = await this.itemsSource(workspace);
-    const built = { graph: assembleGraph(items), facetIndex: buildFacetTargetIndex(items) };
-    this.graphsByWorkspace.set(key, built);
-    return built;
+    const graph = assembleGraph(await this.itemsSource(workspace));
+    this.graphsByWorkspace.set(key, graph);
+    return graph;
   }
 
   /**
@@ -596,19 +590,19 @@ export class RaftersToolHandler {
       return this.workspaceRequiredError();
     }
 
-    let built: { graph: Graph; facetIndex: FacetTargetIndex };
+    let graph: Graph;
     try {
-      built = await this.ensureGraph(resolved);
+      graph = await this.ensureGraph(resolved);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
       return this.errorResult(`failed to build intel graph: ${message}`);
     }
 
     if (isNaturalLanguageQuery(address)) {
-      return this.jsonResult(matchIntent(address, built.graph));
+      return this.jsonResult(matchIntent(address, graph));
     }
     const ctx = await this.overlayContext(resolved);
-    return this.jsonResult(describeWithOverlay(address, built.graph, built.facetIndex, ctx));
+    return this.jsonResult(describeWithOverlay(address, graph, ctx));
   }
 
   /**
@@ -796,9 +790,9 @@ export class RaftersToolHandler {
       return this.workspaceRequiredError();
     }
 
-    let built: { graph: Graph; facetIndex: FacetTargetIndex };
+    let graph: Graph;
     try {
-      built = await this.ensureGraph(resolved);
+      graph = await this.ensureGraph(resolved);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
       return this.errorResult(`failed to build intel graph: ${message}`, {
@@ -807,7 +801,7 @@ export class RaftersToolHandler {
     }
 
     const ctx = await this.overlayContext(resolved);
-    const out = describeWithOverlay(id, built.graph, built.facetIndex, ctx);
+    const out = describeWithOverlay(id, graph, ctx);
     return this.jsonResult(this.withDeprecated(out));
   }
 }

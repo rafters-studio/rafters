@@ -8,19 +8,22 @@
  *     target exist for this node;
  *   - the resolved target, echoed as-is so a misresolve is catchable.
  *
- * The overlay is a WRAPPER, not a replacement. `describe()` stays presence-free
- * and target-free; a caller opts into the overlay by also passing a
- * `FacetTargetIndex` and an `OverlayContext`. Two calls with different contexts
- * against the SAME `Graph` and `FacetTargetIndex` produce different stamps with
- * no shared mutable state -- one graph serves all workspaces.
+ * The overlay is a WRAPPER, not a replacement. `describe()` stays presence-free;
+ * the workspace's ONE target is the reader's lens, which the overlay hands to
+ * `describe` so the prop surface / snippet resolve through that target's facet
+ * (#2090). A caller opts into the overlay by passing an `OverlayContext`. Two
+ * calls with different contexts against the SAME `Graph` produce different
+ * stamps with no shared mutable state -- one universal graph serves all
+ * workspaces.
  *
- * Scope (per the brief): only `describe(<id>)` (single node) and the two roster
- * calls (`describe(components)` / `describe(composites)`) are enriched. Every
- * other shape -- the empty-address surface, props, vocab, `composesWith` edges,
- * and structured errors -- passes through unchanged.
+ * Scope: only `describe(<id>)` (single node) and the two roster calls
+ * (`describe(components)` / `describe(composites)`) are STAMPED here (presence,
+ * echoed target, rendersForTarget). Every other shape -- the empty-address
+ * surface, props, vocab, `composesWith` edges, and structured errors -- passes
+ * through as `describe` returned it (already target-lensed).
  */
 
-import { type ComponentTarget, ComponentTargetSchema } from '../registry/types.js';
+import type { ComponentTarget } from '../registry/types.js';
 import { type DescribeResult, describe, type Graph, type NodeResult } from './graph.js';
 
 export type Presence = 'installed' | 'available';
@@ -44,14 +47,6 @@ export interface OverlayContext {
   target: ComponentTarget | undefined;
   installed: InstalledSet;
 }
-
-/**
- * Per-node facet-target availability, independent of `Graph`/`GraphNode`.
- * `GraphNode` (#2072) is deliberately flat and carries no per-target data, so
- * the overlay builds its own side-index directly from each item's `facets`
- * keys (#2073) at construction time rather than changing graph.ts's node shape.
- */
-export type FacetTargetIndex = ReadonlyMap<string, ReadonlySet<ComponentTarget>>;
 
 /** A single node's describe result, enriched with the workspace stamp. */
 export type OverlayNodeResult = NodeResult & {
@@ -86,42 +81,17 @@ export function buildInstalledSet(config: {
 }
 
 /**
- * Build the node -> facet-target side-index from the SAME `RegistryItem[]`
- * array `assembleGraph` (#2072) consumes, once, at construction time. An item's
- * per-target manifest IS the set of keys on its `facets` record (#2073). An
- * absent `facets`, or a key that is not a recognized target, contributes no
- * target -- never a crash.
- */
-export function buildFacetTargetIndex(
-  items: Array<{ name: string; facets?: Partial<Record<ComponentTarget, unknown>> }>,
-): FacetTargetIndex {
-  const index = new Map<string, ReadonlySet<ComponentTarget>>();
-  for (const item of items) {
-    const targets = new Set<ComponentTarget>();
-    if (item.facets) {
-      for (const key of Object.keys(item.facets)) {
-        const parsed = ComponentTargetSchema.safeParse(key);
-        if (parsed.success) targets.add(parsed.data);
-      }
-    }
-    index.set(item.name, targets);
-  }
-  return index;
-}
-
-/**
- * Resolve one dot-address through `describe` (#2072, unmodified) and stamp the
- * workspace overlay onto the two enriched shapes -- the roster calls and a
- * single-node query. Never throws for a bad address: `describe`'s structured
- * `{ error }` passes straight through.
+ * Resolve one dot-address through `describe`, handing it the workspace's target
+ * as the reader's lens, and stamp the workspace overlay onto the two enriched
+ * shapes -- the roster calls and a single-node query. Never throws for a bad
+ * address: `describe`'s structured `{ error }` passes straight through.
  */
 export function describeWithOverlay(
   addr: string,
   graph: Graph,
-  facetIndex: FacetTargetIndex,
   ctx: OverlayContext,
 ): OverlayResult {
-  const result = describe(addr, graph);
+  const result = describe(addr, graph, ctx.target);
 
   // Roster: tag every entry with per-kind presence. `describe` never returns an
   // error arm for these two addresses (graph.ts always yields a roster array).
@@ -133,6 +103,8 @@ export function describeWithOverlay(
 
   // Single node: a bare id that resolved to a node gets the full stamp. A bad id
   // resolves to `{ error }`, which fails the guard and passes through unchanged.
+  // rendersForTarget reads the node's own facets (now on the universal graph):
+  // does a facet for the resolved target exist?
   if (addr !== '' && !addr.includes('.') && isNodeResult(result)) {
     const set = result.kind === 'component' ? ctx.installed.components : ctx.installed.composites;
     return {
@@ -140,11 +112,11 @@ export function describeWithOverlay(
       presence: presenceOf(set, result.id),
       target: ctx.target,
       rendersForTarget:
-        ctx.target !== undefined && facetIndex.get(result.id)?.has(ctx.target) === true,
+        ctx.target !== undefined && graph.nodes.get(result.id)?.facets[ctx.target] !== undefined,
     };
   }
 
-  // Surface, props, vocab, edges, errors: unchanged.
+  // Surface, props, vocab, edges, errors: pass through as describe lensed them.
   return result;
 }
 
