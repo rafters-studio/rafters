@@ -1,15 +1,28 @@
 /**
  * MCP Tools for Rafters Design System
  *
- * 4 focused tools for agent ASSEMBLY (not design):
+ * The primary surface for agent ASSEMBLY (not design):
  *
- * 1. rafters_composite - Query composites with designer intent
- * 2. rafters_pattern - Design pattern guidance (do/never)
- * 3. rafters_component - Component intelligence
- * 4. rafters_workspaces - List available workspaces
+ * 1. rafters_workspaces - List workspaces, or update a workspace's WIRING config.
+ * 2. rafters_describe   - Recursively introspect the component/composite intel
+ *                         graph. Dispatches: a natural-language question routes
+ *                         through the intent door (matchIntent); a dot-address
+ *                         resolves through the workspace overlay (describeWithOverlay
+ *                         -> describe). This dispatcher is the ONLY seam that
+ *                         composes graph.ts (#2072), overlay.ts (#2074), and
+ *                         intent.ts (#2075); none of the three call each other.
+ * 3. rafters_generate   - STUB (issue E). Returns an honest not-implemented result.
  *
- * Agents assemble from pre-made decisions. Token design lives in Studio.
- * Token import lives in `rafters init` / `rafters import`, not MCP.
+ * Deprecated aliases kept for one minor release (removal tracked as a follow-up):
+ *   - rafters_component -> describe(<id>) via the overlay.
+ *   - rafters_composite -> describe(<id>) by id; existing composite search otherwise.
+ *   - rafters_pattern   -> existing composite search (NOT the intent door, whose
+ *                          curated tags cannot answer most real queries yet).
+ *
+ * The graph is populated lazily, per workspace, on the first describe/generate
+ * call that touches it (fetchAllItems + assembleGraph + buildFacetTargetIndex),
+ * and cached by workspace root. Agents assemble from pre-made decisions. Token
+ * design lives in Studio; token import lives in `rafters init` / `rafters import`.
  */
 
 import { readFile, writeFile } from 'node:fs/promises';
@@ -18,7 +31,6 @@ import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import {
   type CompositeFile,
   getAllComposites,
-  getComposite,
   getCompositesByCategory,
   registerComposite,
   searchComposites,
@@ -28,8 +40,18 @@ import { discoverFromDirs } from '@rafters/composites/node';
 import { z } from 'zod';
 import { migrateConfig, type RaftersConfig } from '../commands/init.js';
 import { RegistryClient, registryClient } from '../registry/client.js';
+import { ComponentTargetSchema, type RegistryItem } from '../registry/types.js';
 import { getRaftersPaths, PathFieldSchema, resolveReadSet } from '../utils/paths.js';
 import { resolveWorkspace, type Workspace } from '../utils/workspaces.js';
+import { assembleGraph, type Graph } from './graph.js';
+import { isNaturalLanguageQuery, matchIntent } from './intent.js';
+import {
+  buildFacetTargetIndex,
+  buildInstalledSet,
+  describeWithOverlay,
+  type FacetTargetIndex,
+  type OverlayContext,
+} from './overlay.js';
 
 /**
  * True when a path is safe to accept from an agent: relative, and with no `..`
@@ -155,9 +177,49 @@ export const TOOL_DEFINITIONS = [
     },
   },
   {
+    name: 'rafters_describe',
+    description:
+      'Recursively introspect the component/composite intel graph. describe() returns the ' +
+      'installed surface; describe(components)/describe(composites) list the kind roster; ' +
+      'describe(button) returns a node -- intel plus type-marked, drillable children; ' +
+      'describe(button.props.fill) drills into a prop; describe(button.props.fill.vocab) ' +
+      'returns the real token values. A natural-language question (e.g. "what do I use when ' +
+      'it needs to be above everything") routes to the best-matching node plus a near-miss ' +
+      'counter-example instead of an address.',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        ...WORKSPACE_PARAM,
+        address: {
+          type: 'string',
+          description: 'A dot-address ("button.props.variant") or a natural-language question.',
+        },
+      },
+      required: ['address'],
+    },
+  },
+  {
+    name: 'rafters_generate',
+    description:
+      'STUB (Issue E). Will produce a rafters-correct composition with visible placeholders ' +
+      'for app-specific fields/actions/copy. Currently returns a structured not-implemented result.',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        ...WORKSPACE_PARAM,
+        intent: { type: 'string', description: 'What to generate' },
+      },
+      required: ['intent'],
+    },
+  },
+  // Deprecated aliases -- kept for one minor release, then removed (tracked as a
+  // follow-up). Input schemas unchanged; every response carries a `deprecated`
+  // field pointing at rafters_describe.
+  {
     name: 'rafters_composite',
     description:
-      'Query composites by ID, search term, or category. Returns designer intent (solves, appliesWhen, do/never), I/O rules for chaining, and block structure.',
+      '[DEPRECATED -- use rafters_describe] Query composites by ID, search term, or category. ' +
+      'Returns designer intent (solves, appliesWhen, do/never), I/O rules for chaining, and block structure.',
     inputSchema: {
       type: 'object' as const,
       properties: {
@@ -172,7 +234,9 @@ export const TOOL_DEFINITIONS = [
   {
     name: 'rafters_pattern',
     description:
-      'Get design pattern guidance by querying composites. Search by what the pattern solves (e.g., "authentication", "data entry", "navigation") to get do/never rules, cognitive load, and designer intent.',
+      '[DEPRECATED -- use rafters_describe] Get design pattern guidance by querying composites. ' +
+      'Search by what the pattern solves (e.g., "authentication", "data entry", "navigation") to ' +
+      'get do/never rules, cognitive load, and designer intent.',
     inputSchema: {
       type: 'object' as const,
       properties: {
@@ -192,7 +256,8 @@ export const TOOL_DEFINITIONS = [
   {
     name: 'rafters_component',
     description:
-      'Get component intelligence: cognitive load, accessibility, do/never guidance, variants, sizes.',
+      '[DEPRECATED -- use rafters_describe] Get component intelligence: cognitive load, ' +
+      'accessibility, do/never guidance, variants, sizes.',
     inputSchema: {
       type: 'object' as const,
       properties: {
@@ -206,6 +271,9 @@ export const TOOL_DEFINITIONS = [
     },
   },
 ] as const;
+
+/** Stamped onto every deprecated-alias response. */
+const DEPRECATED_MSG = 'use rafters_describe instead';
 
 // ==================== Tool Handler ====================
 
@@ -222,16 +290,41 @@ export class RaftersToolHandler {
    * singleton (which points at the public registry).
    */
   private registryClients = new Map<string, RegistryClient>();
+  /**
+   * Per-workspace-root cache: the intel graph plus its facet-target index, built
+   * once, lazily, on the first describe/generate call that touches that root.
+   * Same per-workspace caching shape as `compositesLoadedFor`/`registryClients`.
+   * A failed build is never inserted, so the next call retries rather than
+   * permanently wedging that workspace.
+   */
+  private graphsByWorkspace = new Map<string, { graph: Graph; facetIndex: FacetTargetIndex }>();
+  /**
+   * The whole-catalog item source `ensureGraph` builds from. Defaults to the
+   * workspace's registry client `fetchAllItems()` (bulk endpoint with per-item
+   * fallback). Injectable so the dispatch can be unit-tested against a fixture
+   * catalog without a network round-trip.
+   */
+  private readonly itemsSource: (workspace: Workspace | null) => Promise<RegistryItem[]>;
 
-  constructor(workspaces: Workspace[], defaultWorkspace: Workspace | null) {
+  constructor(
+    workspaces: Workspace[],
+    defaultWorkspace: Workspace | null,
+    itemsSource?: (workspace: Workspace | null) => Promise<RegistryItem[]>,
+  ) {
     this.workspaces = workspaces;
     this.defaultWorkspace = defaultWorkspace;
+    this.itemsSource =
+      itemsSource ?? (async (ws) => (await this.registryClientFor(ws)).fetchAllItems());
   }
 
   async handleToolCall(name: string, args: Record<string, unknown>): Promise<CallToolResult> {
     switch (name) {
       case 'rafters_workspaces':
         return this.handleWorkspaces(args);
+      case 'rafters_describe':
+        return this.handleDescribe(args.address as string, args.workspace as string | undefined);
+      case 'rafters_generate':
+        return this.handleGenerate(args.intent as string, args.workspace as string | undefined);
       case 'rafters_composite':
         return this.handleComposite(args);
       case 'rafters_pattern':
@@ -241,7 +334,7 @@ export class RaftersToolHandler {
       default:
         return this.errorResult(`Unknown tool: ${name}`, {
           suggestion:
-            'Available tools: rafters_workspaces, rafters_composite, rafters_pattern, rafters_component.',
+            'Available tools: rafters_workspaces, rafters_describe, rafters_generate. Deprecated: rafters_composite, rafters_pattern, rafters_component.',
         });
     }
   }
@@ -444,6 +537,111 @@ export class RaftersToolHandler {
   }
 
   /**
+   * Build (once, lazily) and cache the intel graph + facet-target index for a
+   * workspace root. `assembleGraph` (#2072) and `buildFacetTargetIndex` (#2074)
+   * both consume the SAME whole-catalog `RegistryItem[]`. Throws when the catalog
+   * can't be loaded (both the bulk endpoint and the per-item fallback failed) or
+   * the graph is structurally broken (a dangling `composesWith` edge -- #2072's
+   * deliberate fail-fast); the caller converts that into a structured error
+   * result. A failed build is never cached, so the next call retries.
+   */
+  private async ensureGraph(
+    workspace: Workspace | null,
+  ): Promise<{ graph: Graph; facetIndex: FacetTargetIndex }> {
+    const key = workspace?.root ?? '';
+    const cached = this.graphsByWorkspace.get(key);
+    if (cached) return cached;
+
+    const items = await this.itemsSource(workspace);
+    const built = { graph: assembleGraph(items), facetIndex: buildFacetTargetIndex(items) };
+    this.graphsByWorkspace.set(key, built);
+    return built;
+  }
+
+  /**
+   * Resolve a workspace's overlay context: the configured `componentTarget`
+   * (echoed as-is, `undefined` in degraded mode) and its installed set. Per the
+   * integration note on #2074, `installed.primitives` folds into the components
+   * set -- a `primitive`-kind item maps to graph kind `component`, so without the
+   * fold every installed primitive would misreport as `available`. Built here
+   * rather than by mutating `buildInstalledSet`'s output, leaving overlay.ts
+   * untouched.
+   *
+   * `componentTarget` comes off unvalidated on-disk config (`readConfig` is a raw
+   * `JSON.parse`), so it is run through `ComponentTargetSchema` here rather than
+   * trusted as a `ComponentTarget` -- a stale or typo'd value falls back to
+   * degraded mode (`undefined` target) instead of silently forcing
+   * `rendersForTarget` false for every node.
+   */
+  private async overlayContext(workspace: Workspace | null): Promise<OverlayContext> {
+    const config = workspace ? await this.readConfig(workspace.root) : null;
+    const base = buildInstalledSet(config ?? {});
+    const components = new Set([...base.components, ...(config?.installed?.primitives ?? [])]);
+    const parsedTarget = ComponentTargetSchema.safeParse(config?.componentTarget);
+    return {
+      target: parsedTarget.success ? parsedTarget.data : undefined,
+      installed: { components, composites: base.composites },
+    };
+  }
+
+  /**
+   * The `rafters_describe` dispatcher -- the one seam that composes #2072/#2074/
+   * #2075. A natural-language question routes through the intent door
+   * (`matchIntent`); a dot-address resolves through the workspace overlay
+   * (`describeWithOverlay`, which delegates to #2072's `describe`).
+   */
+  private async handleDescribe(address: string, workspaceName?: string): Promise<CallToolResult> {
+    const resolved = this.resolve(workspaceName);
+    if (workspaceName && !resolved) {
+      return this.workspaceRequiredError();
+    }
+
+    let built: { graph: Graph; facetIndex: FacetTargetIndex };
+    try {
+      built = await this.ensureGraph(resolved);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      return this.errorResult(`failed to build intel graph: ${message}`);
+    }
+
+    if (isNaturalLanguageQuery(address)) {
+      return this.jsonResult(matchIntent(address, built.graph));
+    }
+    const ctx = await this.overlayContext(resolved);
+    return this.jsonResult(describeWithOverlay(address, built.graph, built.facetIndex, ctx));
+  }
+
+  /**
+   * The `rafters_generate` stub (Issue E). Registered now so the surface shape
+   * (name, input schema) stabilizes before the generator lands; it never
+   * attempts real composition. Deliberately does NOT build the graph: nothing
+   * here reads it, and a build failure must not turn an honest stub into an
+   * error result.
+   */
+  private async handleGenerate(intent: string, workspaceName?: string): Promise<CallToolResult> {
+    const resolved = this.resolve(workspaceName);
+    if (workspaceName && !resolved) {
+      return this.workspaceRequiredError();
+    }
+    return this.jsonResult({
+      implemented: false,
+      note: `generate is a spike -- see issue E; not yet implemented (requested: ${intent})`,
+    });
+  }
+
+  /**
+   * Stamp the deprecated marker as a top-level field. Objects gain a sibling
+   * `deprecated` key; the rare array/leaf result is wrapped so the marker still
+   * rides at top level.
+   */
+  private withDeprecated(payload: unknown): Record<string, unknown> {
+    if (typeof payload === 'object' && payload !== null && !Array.isArray(payload)) {
+      return { ...(payload as Record<string, unknown>), deprecated: DEPRECATED_MSG };
+    }
+    return { result: payload, deprecated: DEPRECATED_MSG };
+  }
+
+  /**
    * Resolve the set of folders to scan for composite manifests in a workspace.
    * Reads `.rafters/config.rafters.json` and applies the workspace's
    * `compositesPath` (which may be a string or an array of entries to support
@@ -467,6 +665,14 @@ export class RaftersToolHandler {
       workspace?: string;
     };
 
+    // By-id forwards to describe (via the overlay) -- there is no `'composites.'
+    // + id` address form in #2072, so a single id resolves the same node either
+    // kind. Free-text/category search keeps the existing composite-registry body
+    // below (the intent door's curated tags cannot answer most real queries yet).
+    if (id) {
+      return this.describeById(id, workspace);
+    }
+
     const resolved = this.resolve(workspace);
     if (workspace && !resolved) {
       return this.workspaceRequiredError();
@@ -476,10 +682,7 @@ export class RaftersToolHandler {
 
     let composites: CompositeFile[];
 
-    if (id) {
-      const c = getComposite(id);
-      composites = c ? [c] : [];
-    } else if (query) {
+    if (query) {
       composites = searchComposites(query);
     } else if (category) {
       composites = getCompositesByCategory(category);
@@ -508,7 +711,7 @@ export class RaftersToolHandler {
         .map((b) => ({ id: b.id, type: b.type, rules: b.rules })),
     }));
 
-    return this.jsonResult({ composites: result });
+    return this.jsonResult({ composites: result, deprecated: DEPRECATED_MSG });
   }
 
   private async handlePattern(args: {
@@ -551,7 +754,10 @@ export class RaftersToolHandler {
           solves: c.manifest.solves,
         }));
 
-      return this.errorResult('No patterns found matching query', { available });
+      return this.errorResult('No patterns found matching query', {
+        available,
+        deprecated: DEPRECATED_MSG,
+      });
     }
 
     // Return pattern-focused view of composites
@@ -564,40 +770,44 @@ export class RaftersToolHandler {
       usagePatterns: c.manifest.usagePatterns,
     }));
 
-    return this.jsonResult({ patterns });
+    return this.jsonResult({ patterns, deprecated: DEPRECATED_MSG });
   }
 
+  /**
+   * DEPRECATED alias for `rafters_describe`. A component resolves by id through
+   * the overlay exactly as `describe(<id>)` does (#2072's resolver has no
+   * separate component/composite address form -- `describe(<id>)` resolves either
+   * kind), so this is a direct, lossless forward with the deprecated marker added.
+   */
   private async handleComponent(
     componentName: string,
     workspaceName?: string,
   ): Promise<CallToolResult> {
+    return this.describeById(componentName, workspaceName);
+  }
+
+  /**
+   * Shared by the deprecated `rafters_component` and `rafters_composite({id})`
+   * paths: resolve one id through the overlay, stamp the deprecated marker.
+   */
+  private async describeById(id: string, workspaceName?: string): Promise<CallToolResult> {
     const resolved = this.resolve(workspaceName);
     if (workspaceName && !resolved) {
       return this.workspaceRequiredError();
     }
 
+    let built: { graph: Graph; facetIndex: FacetTargetIndex };
     try {
-      const client = await this.registryClientFor(resolved);
-      const item = await client.fetchComponent(componentName);
-
-      return this.jsonResult({
-        name: item.name,
-        type: item.type,
-        description: item.description,
-        primitives: item.primitives,
-        rules: item.rules,
-        composites: item.composites,
-        files: item.files,
-        // The intelligence field carries the WHY of the component: cognitive
-        // load, accessibility, do/never, semantic meaning. Extracted from JSDoc
-        // by the registry generator and present on every component JSON.
-        // Previously stripped by the schema (not declared) and not referenced by
-        // the handler -- the tool's whole reason for existing went missing.
-        intelligence: item.intelligence,
-      });
+      built = await this.ensureGraph(resolved);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
-      return this.errorResult(message);
+      return this.errorResult(`failed to build intel graph: ${message}`, {
+        deprecated: DEPRECATED_MSG,
+      });
     }
+
+    const ctx = await this.overlayContext(resolved);
+    const out = describeWithOverlay(id, built.graph, built.facetIndex, ctx);
+    return this.jsonResult(this.withDeprecated(out));
   }
 }

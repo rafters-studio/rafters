@@ -99,3 +99,97 @@ describe('RegistryClient resolves the substrate closure', () => {
     expect(contract.type).toBe('substrate');
   });
 });
+
+describe('RegistryClient.fetchAllItems', () => {
+  const CATALOG: RegistryItem[] = [
+    item('button', 'ui', [], 'components/ui/button.tsx'),
+    item('classy', 'primitive', [], 'lib/primitives/classy.ts'),
+    item('login-form', 'composite', [], 'composites/login-form.composite.json'),
+  ];
+  const FOLDER_TYPE: Record<string, RegistryItem['type']> = {
+    components: 'ui',
+    primitives: 'primitive',
+    composites: 'composite',
+    rules: 'rule',
+    substrate: 'substrate',
+  };
+
+  let bulkAvailable = true;
+  let bulkCalls = 0;
+  let itemCalls = 0;
+  // When set, `button` also appears in the composites index list, so the same
+  // name spans two lists -- the case the fallback's dedup `Set` guards.
+  let repeatAcrossLists = false;
+
+  beforeEach(() => {
+    bulkAvailable = true;
+    bulkCalls = 0;
+    itemCalls = 0;
+    repeatAcrossLists = false;
+    // Overrides the file-level stub: serves the bulk endpoint, the index, and
+    // folder-aware per-item routes so both fetchAllItems paths are exercised.
+    vi.stubGlobal('fetch', (url: string) => {
+      if (url.endsWith('/registry/items.json')) {
+        bulkCalls++;
+        if (!bulkAvailable) {
+          return Promise.resolve(new Response('no bulk route', { status: 404 }));
+        }
+        return Promise.resolve(new Response(JSON.stringify(CATALOG), { status: 200 }));
+      }
+      if (url.endsWith('/registry/index.json')) {
+        const index = {
+          name: 'rafters',
+          homepage: 'https://rafters.test',
+          components: ['button'],
+          primitives: ['classy'],
+          composites: repeatAcrossLists ? ['login-form', 'button'] : ['login-form'],
+          rules: [],
+          substrate: [],
+        };
+        return Promise.resolve(new Response(JSON.stringify(index), { status: 200 }));
+      }
+      const match = url.match(/\/registry\/([^/]+)\/([^/]+)\.json$/);
+      if (match) {
+        const [, folder, name] = match;
+        const found = CATALOG.find((c) => c.name === name && c.type === FOLDER_TYPE[folder]);
+        if (found) {
+          itemCalls++;
+          return Promise.resolve(new Response(JSON.stringify(found), { status: 200 }));
+        }
+      }
+      return Promise.resolve(new Response('not found', { status: 404 }));
+    });
+  });
+
+  it('loads the whole catalog in a single bulk round-trip, no per-item fetch', async () => {
+    const client = new RegistryClient(BASE);
+    const items = await client.fetchAllItems();
+
+    expect(items.map((i) => i.name)).toEqual(['button', 'classy', 'login-form']);
+    expect(bulkCalls).toBe(1);
+    expect(itemCalls).toBe(0);
+  });
+
+  it('falls back to the per-item loop when the bulk endpoint is absent (404)', async () => {
+    bulkAvailable = false;
+    const client = new RegistryClient(BASE);
+    const items = await client.fetchAllItems();
+
+    expect(new Set(items.map((i) => i.name))).toEqual(new Set(['button', 'classy', 'login-form']));
+    // Bulk was attempted once, then the fallback fetched each item.
+    expect(bulkCalls).toBe(1);
+    expect(itemCalls).toBeGreaterThan(0);
+  });
+
+  it('dedupes a name that appears in more than one index list (fetched once)', async () => {
+    bulkAvailable = false;
+    repeatAcrossLists = true;
+    const client = new RegistryClient(BASE);
+    const items = await client.fetchAllItems();
+
+    // `button` spans both the components and composites index lists; the dedup
+    // Set collapses it to a single fetch, so it appears exactly once, not twice.
+    expect(items.filter((i) => i.name === 'button')).toHaveLength(1);
+    expect(items.map((i) => i.name).sort()).toEqual(['button', 'classy', 'login-form']);
+  });
+});

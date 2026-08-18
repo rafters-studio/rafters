@@ -1,5 +1,16 @@
 # rafters
 
+## Unreleased
+
+### Features
+
+- feat(mcp): restructure the tool surface to `rafters_describe` / `rafters_workspaces` / `rafters_generate` (#2076). `rafters_describe` is the single introspection verb over the component/composite intel graph: a dot-address (`button`, `button.props.fill`, `button.props.fill.vocab`) resolves through the workspace overlay (presence, per-target manifest, echoed target) down to `describe`; a natural-language question ("what do I use when it needs to be above everything") routes through the intent door to a best-match node plus its near-miss counter-example. `component`/`composite` are no longer standalone concepts -- they are `describe(components)` / `describe(composites)`. `rafters_generate` is registered as an honest stub (returns `{ implemented: false }`) so the surface shape stabilizes before the generator lands. The graph is populated lazily per workspace on first use (whole-catalog fetch, then in-memory assembly) and cached by workspace root.
+- feat(registry): `RegistryClient.fetchAllItems()` -- one whole-catalog load with a graceful fallback. Prefers a single bulk round-trip against `/registry/items.json`; a registry that does not serve that route (an older deploy, or a third-party `registryUrl`) returns a non-2xx and the client falls back to looping `fetchItem` over the index, so `describe` never hard-fails on a registry that predates the bulk endpoint.
+
+### Deprecations
+
+- `rafters_component`, `rafters_composite`, and `rafters_pattern` remain registered and functional as deprecated aliases for one minor release (each response now carries `deprecated: 'use rafters_describe instead'`). By-id lookups forward to `rafters_describe`; composite/pattern free-text and category search keep their existing composite-registry behavior. Removal is tracked as a follow-up.
+
 ## 0.0.82
 
 ### Bug Fixes
