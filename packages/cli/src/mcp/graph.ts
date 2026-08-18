@@ -39,6 +39,17 @@ export interface DrillableChild {
 // of the resolver keep a graph-local name.
 export type PropNode = PropField;
 
+// The AGENT-FACING view of a grammar prop: identical to the registry grammar
+// arm EXCEPT `vocab` (the token address) is stripped. The token layer -- the
+// color words a grammar prop like `fill` accepts, learned per-project from what
+// is installed -- is NEVER surfaced to an agent, or it lands in className and
+// routes around every decision rafters encodes. The agent gets the composition
+// RULES (`grammar`) so it can form a value (`fill` can be complex on a
+// container); rafters validates that value against the internal vocab with
+// `onInvalid: 'silent-noop'` behind the curtain.
+export type AgentGrammarProp = Omit<Extract<PropField, { type: 'grammar' }>, 'vocab'>;
+export type AgentPropField = Extract<PropField, { type: 'enum' | 'deprecated' }> | AgentGrammarProp;
+
 export interface GraphIntel {
   cognitiveLoad?: number;
   dos: string[];
@@ -80,8 +91,7 @@ export type DescribeResult =
   | { kinds: DrillableChild[]; nodeCount: number } // describe('')
   | Array<{ id: string }> // describe('components' | 'composites')
   | NodeResult // describe('<id>')
-  | PropNode // describe('<id>.props.<name>')
-  | { type: 'leaf'; values: string[] } // describe('<id>.props.<name>.vocab')
+  | AgentPropField // describe('<id>.props.<name>') -- a grammar prop with its vocab stripped
   | NodeResult[] // describe('<id>.composesWith') -- each entry a target's layer-0, one level
   | { error: string };
 
@@ -189,23 +199,34 @@ export function describe(addr: string, graph: Graph, target?: ComponentTarget): 
     return resolveEdges(node, graph, target);
   }
 
-  // describe('<id>.props.<name>[.vocab]') -- resolved through the target's facet.
+  // describe('<id>.props.<name>') -- resolved through the target's facet. A
+  // grammar prop is returned with its `vocab` (the token address) stripped: the
+  // agent gets the composition rules, never the token vocabulary. There is no
+  // deeper drill -- `.vocab` and anything below resolve to a structured error,
+  // so the token layer is unreachable from the agent surface.
   if (rest[0] === 'props') {
     const facet = target === undefined ? undefined : node.facets[target];
     const propName = rest[1];
     const prop = facet && propName !== undefined ? facet.props[propName] : undefined;
     if (!prop) return { error: `cannot resolve: ${addr}` };
-    if (rest.length === 2) return prop;
-    if (rest.length === 3 && rest[2] === 'vocab') {
-      if (prop.type !== 'grammar') return { error: `cannot drill: ${addr}` };
-      // Honest empty leaf: token values live in the separate token DAG, never on
-      // the graph. The drillable address is already on the grammar prop above.
-      return { type: 'leaf', values: [] };
-    }
+    if (rest.length === 2) return toAgentProp(prop);
     return { error: `cannot resolve: ${addr}` };
   }
 
   return { error: `cannot resolve: ${addr}` };
+}
+
+/**
+ * Project a stored `PropField` to its agent-facing view. A grammar prop's
+ * `vocab` (the token address) is dropped so the token layer never leaves the
+ * curtain; enum and deprecated props pass through unchanged.
+ */
+function toAgentProp(prop: PropField): AgentPropField {
+  if (prop.type === 'grammar') {
+    const { vocab: _vocab, ...agentView } = prop;
+    return agentView;
+  }
+  return prop;
 }
 
 /**
