@@ -1,5 +1,14 @@
 # rafters
 
+## 0.0.84
+
+### Features
+
+- feat(mcp): `*` (expand) and `?` (probe) address operators on `rafters_describe` (#2097). `describe(button.*)` returns an `ExpandedNodeResult` -- the full node with every prop resolved inline in one call, eliminating a drill-per-prop round trip. `describe(button.props.*)` returns the props alone (`ExpandedPropsResult`). `describe(button.props.fill.?)` is a safe probe: it resolves the address before the `?` and returns `null` on a miss instead of a structured error -- optional chaining on the address space. Operators on catalog addresses (`describe(components.*)`) are rejected; the catalog is an index, not an expandable node. The `rafters_describe` tool description now documents both operators (#2100).
+- feat(mcp): `describe(<id>.*)` carries the workspace stamp -- presence, echoed target, `rendersForTarget` (#2101). The expanded-node shape (`ExpandedNodeResult`) previously left the overlay unstamped, so an agent expanding a node in one round trip lost the installed/target signal it gets from `describe(<id>)`. `describeWithOverlay` now detects an expanded node structurally (has `id`/`kind`/`props`, no `children`) rather than by address suffix, so `describe(<id>.*.?)` (a probe over an expand) is stamped too. `describe(<id>.props.*)` and the probe miss (`null`) carry no node identity and stay unstamped, unchanged.
+- feat(mcp): `@parent` compound component part-linking on the intel graph (#2098, #2102). An explicit `@parent <id>` JSDoc tag on a child component (e.g. `@parent card` on `card-header`) links that child as a part of its parent node. `assembleGraph` validates every `@parent` reference -- self-parent, unknown parent id, and circular parent chains all throw at graph-build time rather than producing a silently broken graph. `describe(card)` now advertises each part as a `type: 'part'` drillable child; `describe(card-header)` carries `parent` and `siblings` so an agent sees the compound structure from either direction. Convention inference (guessing parentage from name prefixes) was considered and deliberately removed -- `@parent` is explicit-only, no prefix guessing.
+- feat(registry): `extractParentFromSource` parses the `@parent` tag from JSDoc via comment-parser and `loadComponent` threads it onto the `RegistryItem` (#2102). The card sub-components (`card-header`, `card-title`, `card-content`, `card-footer`, `card-action`) carry `@parent card` in both their `.astro` and `.tsx` variants. A component cannot be its own parent -- the self-reference guard in `loadComponent` prevents a `@parent card` tag on `card.tsx`'s own JSDoc from marking card as its own child.
+
 ## 0.0.83
 
 ### Features
