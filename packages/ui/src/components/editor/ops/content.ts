@@ -8,9 +8,10 @@
  *
  * splitRuns/marksEqual/mergeRuns delegate to block-operations.ts's
  * splitInlineContent/inlineMarksEqual/mergeAdjacentRuns rather than carrying
- * a second copy -- two independently-maintained copies of the same
- * run-canonicalization logic is exactly what let structural.ts's merge
- * inverse and text.ts's removeText drift apart (mergePrev/mergeNext bug).
+ * a second copy -- structural.ts's merge inverse and text.ts's removeText
+ * both depend on this canonicalization staying identical to
+ * block-operations', so a second copy here would risk the two drifting
+ * apart.
  */
 import {
   inlineMarksEqual,

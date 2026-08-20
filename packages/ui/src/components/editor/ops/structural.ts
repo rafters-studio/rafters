@@ -1,7 +1,7 @@
 /**
  * Structural ops (FR-EDITOR-003) -- wrap block-operations, capturing what its
  * return shape omits, and deriving each op's inverse as an EditorOp[]
- * sequence (AMENDMENT 2, RULING-EDITOR-HISTORY).
+ * sequence, per RULING-EDITOR-HISTORY's Editor interface contract.
  *
  * Ops carry PRE-ASSIGNED ids for any block they create; these wrappers inject
  * those ids into the primitives -- they never mint ids themselves, so redo
