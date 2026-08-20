@@ -26,9 +26,96 @@ export function blockContentToText(content: string | InlineContent[] | undefined
   return content.map((s) => s.text).join('');
 }
 
-/** Create a new block ID */
-function newId(): string {
-  return crypto.randomUUID();
+/**
+ * Split run-array content at a character offset, preserving marks/href on
+ * each half (a run straddling the offset is itself split in two).
+ *
+ * Exported so ops/content.ts (components/editor/ops) can delegate to this
+ * single copy instead of carrying its own -- see marksEqual/mergeRuns below
+ * for the same rationale.
+ */
+export function splitInlineContent(
+  content: InlineContent[],
+  offset: number,
+): [InlineContent[], InlineContent[]] {
+  const before: InlineContent[] = [];
+  const after: InlineContent[] = [];
+  let pos = 0;
+  for (const run of content) {
+    const runLen = run.text.length;
+    if (pos + runLen <= offset) {
+      before.push(run);
+    } else if (pos >= offset) {
+      after.push(run);
+    } else {
+      const splitAt = offset - pos;
+      before.push({ ...run, text: run.text.slice(0, splitAt) });
+      after.push({ ...run, text: run.text.slice(splitAt) });
+    }
+    pos += runLen;
+  }
+  return [before, after];
+}
+
+/**
+ * Split a block's content at a character offset, mark-aware: string content
+ * splits as a string (unchanged behavior), InlineContent[] content splits by
+ * run so marks are preserved on both halves -- never coerced through
+ * blockContentToText.
+ */
+function splitContent(
+  content: string | InlineContent[] | undefined,
+  offset: number,
+): [string | InlineContent[], string | InlineContent[]] {
+  if (Array.isArray(content)) return splitInlineContent(content, offset);
+  const text = content ?? '';
+  return [text.slice(0, offset), text.slice(offset)];
+}
+
+export function inlineMarksEqual(a: InlineContent['marks'], b: InlineContent['marks']): boolean {
+  const as = [...(a ?? [])].sort();
+  const bs = [...(b ?? [])].sort();
+  if (as.length !== bs.length) return false;
+  return as.every((m, i) => m === bs[i]);
+}
+
+/**
+ * Merge adjacent runs with identical mark sets and href, so a merge point
+ * that falls between two same-mark runs (e.g. splitting, then merging back)
+ * reconstructs the original run boundaries instead of leaving a spurious
+ * extra split.
+ */
+export function mergeAdjacentRuns(runs: InlineContent[]): InlineContent[] {
+  const result: InlineContent[] = [];
+  for (const run of runs) {
+    if (run.text.length === 0) continue;
+    const last = result[result.length - 1];
+    if (last && inlineMarksEqual(last.marks, run.marks) && last.href === run.href) {
+      result[result.length - 1] = { ...last, text: last.text + run.text };
+    } else {
+      result.push({ ...run });
+    }
+  }
+  return result;
+}
+
+/**
+ * Concatenate two blocks' content for a merge, mark-aware: two plain-string
+ * (or undefined) sides concatenate as a string (unchanged behavior); if
+ * either side carries InlineContent[], both sides are normalized to runs,
+ * concatenated, and adjacent identical-mark runs are merged so marks survive
+ * the merge point in canonical form.
+ */
+function concatContent(
+  a: string | InlineContent[] | undefined,
+  b: string | InlineContent[] | undefined,
+): string | InlineContent[] {
+  if (!Array.isArray(a) && !Array.isArray(b)) {
+    return (typeof a === 'string' ? a : '') + (typeof b === 'string' ? b : '');
+  }
+  const runsA = Array.isArray(a) ? a : typeof a === 'string' && a.length > 0 ? [{ text: a }] : [];
+  const runsB = Array.isArray(b) ? b : typeof b === 'string' && b.length > 0 ? [{ text: b }] : [];
+  return mergeAdjacentRuns([...runsA, ...runsB]);
 }
 
 // =============================================================================
@@ -50,18 +137,19 @@ export interface SplitResult {
  * If offset is at end: current block keeps all content, new empty block created.
  * Headings always create a text block after (not another heading).
  */
-export function splitBlock(blocks: BaseBlock[], blockId: string, offset: number): SplitResult {
+export function splitBlock(
+  blocks: BaseBlock[],
+  blockId: string,
+  offset: number,
+  newBlockId: string,
+): SplitResult {
   const index = blocks.findIndex((b) => b.id === blockId);
   if (index === -1) return { blocks, newBlockId: '' };
 
   const block = blocks[index];
   if (!block) return { blocks, newBlockId: '' };
 
-  const text = blockContentToText(block.content);
-  const before = text.slice(0, offset);
-  const after = text.slice(offset);
-
-  const newBlockId = newId();
+  const [before, after] = splitContent(block.content, offset);
 
   // The new block is always a text block (even after headings)
   const newBlock: BaseBlock = {
@@ -107,13 +195,11 @@ export function mergeWithPrevious(blocks: BaseBlock[], blockId: string): MergeRe
   const currentBlock = blocks[index];
   if (!prevBlock || !currentBlock) return { blocks, survivorId: blockId, cursorOffset: 0 };
 
-  const prevText = blockContentToText(prevBlock.content);
-  const currentText = blockContentToText(currentBlock.content);
-  const cursorOffset = prevText.length;
+  const cursorOffset = blockContentToText(prevBlock.content).length;
 
   const merged: BaseBlock = {
     ...prevBlock,
-    content: prevText + currentText,
+    content: concatContent(prevBlock.content, currentBlock.content),
   };
 
   const next = [...blocks];
@@ -139,13 +225,11 @@ export function mergeWithNext(blocks: BaseBlock[], blockId: string): MergeResult
     return { blocks, survivorId: blockId, cursorOffset: 0 };
   }
 
-  const currentText = blockContentToText(currentBlock.content);
-  const nextText = blockContentToText(nextBlock.content);
-  const cursorOffset = currentText.length;
+  const cursorOffset = blockContentToText(currentBlock.content).length;
 
   const merged: BaseBlock = {
     ...currentBlock,
-    content: currentText + nextText,
+    content: concatContent(currentBlock.content, nextBlock.content),
   };
 
   const next = [...blocks];
@@ -257,6 +341,7 @@ export function insertBlocksAt(
   newBlocks: BaseBlock[],
   atBlockId: string,
   atOffset: number,
+  splitBlockId?: string,
 ): InsertResult {
   if (newBlocks.length === 0) return { blocks, lastInsertedId: atBlockId };
 
@@ -286,7 +371,12 @@ export function insertBlocksAt(
   }
 
   // In the middle: split the block and insert between halves
-  const { blocks: splitBlocks, newBlockId } = splitBlock(blocks, atBlockId, atOffset);
+  if (!splitBlockId) {
+    throw new Error(
+      `insertBlocksAt: splitBlockId required to split block "${atBlockId}" at offset ${atOffset}`,
+    );
+  }
+  const { blocks: splitBlocks, newBlockId } = splitBlock(blocks, atBlockId, atOffset, splitBlockId);
   const splitIndex = splitBlocks.findIndex((b) => b.id === newBlockId);
   if (splitIndex === -1) return { blocks: splitBlocks, lastInsertedId: lastInserted.id };
 
