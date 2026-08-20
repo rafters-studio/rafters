@@ -20,7 +20,7 @@ import {
 } from '../../../src/components/editor/editor.behavior';
 import { applyOp } from '../../../src/components/editor/ops';
 import type { BaseBlock } from '../../../src/primitives/types';
-import { given, thenAssert as then, when } from '../../harness/caret';
+import { formatCaret, given, parseCaret, thenAssert as then, when } from '../../harness/caret';
 import { EDITOR_SCENARIOS } from '../../harness/editor-scenarios';
 
 describe('translateBeforeInput', () => {
@@ -251,6 +251,29 @@ describe('editorKeymap', () => {
 // contenteditable in test/editor/editor-capture.e2e.ts (Playwright); this is
 // the one authored list, not a re-authored duplicate.
 // -----------------------------------------------------------------------------
+
+describe('parseCaret/formatCaret', () => {
+  it('round-trips a collapsed caret and a selection', () => {
+    expect(formatCaret(parseCaret('hel|lo'))).toBe('hel|lo');
+    expect(formatCaret(parseCaret('he[llo]'))).toBe('he[llo]');
+  });
+
+  it('throws a descriptive error on an unclosed selection bracket', () => {
+    expect(() => parseCaret('he[llo')).toThrow(/unbalanced selection brackets/);
+  });
+
+  it('throws a descriptive error when both a caret and a selection marker are present', () => {
+    expect(() => parseCaret('he[l|lo]')).toThrow(/expected exactly one caret or selection marker/);
+  });
+
+  it('throws a descriptive error with no marker at all', () => {
+    expect(() => parseCaret('hello')).toThrow(/expected exactly one caret or selection marker/);
+  });
+
+  it('throws a descriptive error on more than one caret marker', () => {
+    expect(() => parseCaret('he||llo')).toThrow(/expected exactly one caret or selection marker/);
+  });
+});
 
 describe('caret-notation BDD scenarios', () => {
   for (const scenario of EDITOR_SCENARIOS) {
