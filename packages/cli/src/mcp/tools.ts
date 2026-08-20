@@ -11,7 +11,13 @@
  *                         -> describe). This dispatcher is the ONLY seam that
  *                         composes graph.ts (#2072), overlay.ts (#2074), and
  *                         intent.ts (#2075); none of the three call each other.
- * 3. rafters_generate   - STUB (issue E). Returns an honest not-implemented result.
+ * 3. rafters_generate   - Resolve a prose query to ONE registry component and
+ *                         return its authoritative, target-correct snippet
+ *                         verbatim, with its content slots marked open for the
+ *                         caller. A light, deterministic direct-name lookup is
+ *                         tried first; on a miss it falls back to the same intent
+ *                         door (matchIntent) describe uses. No parameterization,
+ *                         no composition, no writes, no MCP-side validation.
  *
  * Deprecated aliases kept for one minor release (removal tracked as a follow-up):
  *   - rafters_component -> describe(<id>) via the overlay.
@@ -40,10 +46,14 @@ import { discoverFromDirs } from '@rafters/composites/node';
 import { z } from 'zod';
 import { migrateConfig, type RaftersConfig } from '../commands/init.js';
 import { RegistryClient, registryClient } from '../registry/client.js';
-import { ComponentTargetSchema, type RegistryItem } from '../registry/types.js';
+import {
+  type ComponentTarget,
+  ComponentTargetSchema,
+  type RegistryItem,
+} from '../registry/types.js';
 import { getRaftersPaths, PathFieldSchema, resolveReadSet } from '../utils/paths.js';
 import { resolveWorkspace, type Workspace } from '../utils/workspaces.js';
-import { assembleGraph, type Graph } from './graph.js';
+import { assembleGraph, describe, type Graph, type NodeResult } from './graph.js';
 import { isNaturalLanguageQuery, matchIntent } from './intent.js';
 import { buildInstalledSet, describeWithOverlay, type OverlayContext } from './overlay.js';
 
@@ -126,6 +136,84 @@ const WORKSPACE_PARAM = {
   },
 } as const;
 
+/**
+ * Leading filler phrases `rafters_generate` strips before trying a direct
+ * component-id lookup (tier (b) in handleGenerate). Longest-phrase-per-family
+ * FIRST, so "i need a " strips before the shorter "i need " when both would
+ * match a query like "i need a button" -- a SINGLE strip only, never iterative
+ * peeling. This literal, closed list is normalization, not an alias table or an
+ * NLP pass.
+ */
+const GENERATE_LEADING_FILLER = [
+  'give me a ',
+  'give me an ',
+  'give me ',
+  'i need a ',
+  'i need an ',
+  'i need ',
+  'i want a ',
+  'i want an ',
+  'i want ',
+  'create a ',
+  'create an ',
+  'create ',
+  'make me a ',
+  'make me an ',
+  'make a ',
+  'make an ',
+  'make ',
+  'a ',
+  'an ',
+  'the ',
+] as const;
+
+/**
+ * Deterministic, LIGHT normalization of a generate() query into a candidate
+ * lookup key: lowercase, trim, strip AT MOST ONE leading filler phrase (first
+ * match in `GENERATE_LEADING_FILLER`'s order), then strip trailing punctuation.
+ * NOT a fuzzy match -- the result is compared for exact string equality against
+ * a real graph node id (`graph.nodes.get(candidate)`), nothing more. No alias
+ * table: only the graph's own node ids are ever matched. The ORIGINAL `intent`
+ * argument -- never this candidate -- is what gets passed to `matchIntent` (tier
+ * (c)), so stripping never touches the intent door's own keyword matching.
+ */
+function normalizeGenerateQuery(intent: string): string {
+  const lowered = intent.trim().toLowerCase();
+  let candidate = lowered;
+  for (const filler of GENERATE_LEADING_FILLER) {
+    if (candidate.startsWith(filler)) {
+      candidate = candidate.slice(filler.length);
+      break;
+    }
+  }
+  return candidate.trim().replace(/[.,!?]+$/, '');
+}
+
+/**
+ * One open content slot in a rafters_generate response. `ownedBy`/`status` are
+ * fixed literals (never inferred) -- generate never sources content, it only
+ * reports which slots the returned snippet leaves for the caller to fill.
+ */
+interface GenerateSlot {
+  slot: string;
+  ownedBy: 'caller';
+  status: 'open';
+}
+
+/**
+ * rafters_generate's success payload: one resolved component's verbatim,
+ * target-correct snippet plus its open content slots. Built by EXPLICIT FIELD
+ * CONSTRUCTION -- never by spreading a graph.ts `NodeResult` -- so `intel`,
+ * `children`, `parent`, `siblings` (describe's teaching payload) never leak into
+ * generate's authority payload.
+ */
+interface GenerateResult {
+  component: string;
+  target: ComponentTarget;
+  snippet: string;
+  slots: GenerateSlot[];
+}
+
 // ==================== Tool Definitions ====================
 
 export const TOOL_DEFINITIONS = [
@@ -197,13 +285,17 @@ export const TOOL_DEFINITIONS = [
   {
     name: 'rafters_generate',
     description:
-      'STUB (Issue E). Will produce a rafters-correct composition with visible placeholders ' +
-      'for app-specific fields/actions/copy. Currently returns a structured not-implemented result.',
+      'Resolve a prose query to ONE registry component and return its verbatim, target-correct ' +
+      'snippet with open content slots. A bare component name (e.g. "button", "give me a modal") ' +
+      'resolves directly; a semantic question (e.g. "what do I use when it needs to be above ' +
+      'everything") falls back to the intent door. Returns { component, target, snippet, slots } ' +
+      'where snippet is the registry facet verbatim and each slot is left for the caller to fill. ' +
+      'v1 serves single components only -- no parameterization, no composites, no writes.',
     inputSchema: {
       type: 'object' as const,
       properties: {
         ...WORKSPACE_PARAM,
-        intent: { type: 'string', description: 'What to generate' },
+        intent: { type: 'string', description: 'A component name or a natural-language request' },
       },
       required: ['intent'],
     },
@@ -270,6 +362,35 @@ export const TOOL_DEFINITIONS = [
 
 /** Stamped onto every deprecated-alias response. */
 const DEPRECATED_MSG = 'use rafters_describe instead';
+
+/**
+ * Validates only the three `installed` fields `overlayContext` actually
+ * consumes (components, primitives, composites). `installed.rules` and
+ * `installed.substrate` are deliberately NOT validated here -- overlayContext
+ * never reads them. Every field is `.optional()`: buildInstalledSet's own
+ * contract ("Absent or partial `installed` is treated as nothing installed --
+ * never a crash, never 'everything installed'", overlay.ts) must still hold for
+ * a config that omits some or all of these keys.
+ */
+const OverlayInstalledSchema = z.object({
+  components: z.array(z.string()).optional(),
+  primitives: z.array(z.string()).optional(),
+  composites: z.array(z.string()).optional(),
+});
+
+/**
+ * overlayContext's failure case: the workspace's config.rafters.json exists and
+ * parsed as JSON (readConfig returned non-null), but its `installed` block does
+ * not match OverlayInstalledSchema -- e.g. `installed.components` is a string
+ * instead of a string array. `configError` names the config file path and the
+ * offending field/expectation, the same recovery shape every other errorResult
+ * in this file already carries. Distinct from "no config at all" (readConfig
+ * returns null; overlayContext degrades to no-target/nothing-installed exactly
+ * as it does today -- unchanged).
+ */
+interface OverlayConfigError {
+  configError: string;
+}
 
 // ==================== Tool Handler ====================
 
@@ -569,10 +690,35 @@ export class RaftersToolHandler {
    * degraded mode (`undefined` target) instead of silently forcing
    * `rendersForTarget` false for every node.
    */
-  private async overlayContext(workspace: Workspace | null): Promise<OverlayContext> {
+  private async overlayContext(
+    workspace: Workspace | null,
+  ): Promise<OverlayContext | OverlayConfigError> {
     const config = workspace ? await this.readConfig(workspace.root) : null;
-    const base = buildInstalledSet(config ?? {});
-    const components = new Set([...base.components, ...(config?.installed?.primitives ?? [])]);
+
+    // Validate BEFORE anything downstream touches `installed`. `readConfig`
+    // already returns null (not a throw) for a missing file or JSON that fails
+    // to parse/migrate; this guard closes the OTHER gap -- config that parses
+    // fine but has a wrong-shaped `installed` block. The union return type is
+    // the guard all three call sites inherit: skipping the `'configError' in
+    // ctx` narrowing fails to typecheck, not just at runtime.
+    const parsedInstalled = OverlayInstalledSchema.safeParse(config?.installed ?? {});
+    if (!parsedInstalled.success) {
+      const issue = parsedInstalled.error.issues[0];
+      const field =
+        issue && issue.path.length > 0 ? `installed.${issue.path.join('.')}` : 'installed';
+      const configPath = workspace ? getRaftersPaths(workspace.root).config : 'config.rafters.json';
+      return {
+        configError: `malformed config at ${configPath}: ${field} ${issue?.message ?? 'is invalid'}`,
+      };
+    }
+
+    const base = buildInstalledSet({
+      installed: {
+        components: parsedInstalled.data.components ?? [],
+        composites: parsedInstalled.data.composites ?? [],
+      },
+    });
+    const components = new Set([...base.components, ...(parsedInstalled.data.primitives ?? [])]);
     const parsedTarget = ComponentTargetSchema.safeParse(config?.componentTarget);
     return {
       target: parsedTarget.success ? parsedTarget.data : undefined,
@@ -604,25 +750,110 @@ export class RaftersToolHandler {
       return this.jsonResult(matchIntent(address, graph));
     }
     const ctx = await this.overlayContext(resolved);
+    if ('configError' in ctx) {
+      return this.errorResult(ctx.configError);
+    }
     return this.jsonResult(describeWithOverlay(address, graph, ctx));
   }
 
   /**
-   * The `rafters_generate` stub (Issue E). Registered now so the surface shape
-   * (name, input schema) stabilizes before the generator lands; it never
-   * attempts real composition. Deliberately does NOT build the graph: nothing
-   * here reads it, and a build failure must not turn an honest stub into an
-   * error result.
+   * The `rafters_generate` handler. A prose query resolves -- first through a
+   * light, deterministic direct-name lookup (tier b), then through the existing
+   * intent door (tier c) -- to a single registry component, and the tool returns
+   * that component's authoritative, target-correct snippet verbatim with its
+   * content slots marked open for the caller. Both tiers re-resolve the winning
+   * id through `describe(id, graph, ctx.target)`, so the response always carries
+   * the workspace target's facet, never the intent door's untargeted fields.
+   * v1 serves components only: composites, parameterization, composition,
+   * writes, and MCP-side validation are all out of scope.
    */
   private async handleGenerate(intent: string, workspaceName?: string): Promise<CallToolResult> {
     const resolved = this.resolve(workspaceName);
     if (workspaceName && !resolved) {
       return this.workspaceRequiredError();
     }
+
+    let graph: Graph;
+    try {
+      graph = await this.ensureGraph(resolved);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      return this.errorResult(`failed to build intel graph: ${message}`);
+    }
+
+    const ctx = await this.overlayContext(resolved);
+    if ('configError' in ctx) {
+      return this.errorResult(ctx.configError);
+    }
+
+    // Tier (b): direct component-id lookup, BEFORE the intent door. Exact string
+    // equality only, against the same `graph.nodes` map `describe` itself
+    // indexes -- no fuzzy/substring search, no alias table.
+    const candidate = normalizeGenerateQuery(intent);
+    const directHit = graph.nodes.get(candidate);
+    let nodeId: string | undefined;
+    if (directHit && directHit.kind === 'component') {
+      nodeId = candidate;
+    } else {
+      // Tier (c): fall back to the EXISTING intent door, called with the
+      // ORIGINAL, unmodified `intent` string -- never the normalized candidate.
+      const match = matchIntent(intent, graph);
+      if ('use' in match) nodeId = match.use.id;
+    }
+
+    // Tier (d): both tiers missed -- the flat refusal.
+    if (nodeId === undefined) {
+      return this.errorResult('no registry component matches this query');
+    }
+
+    // One `describe` call resolves the winning id through the workspace's target
+    // lens. Narrow with the same pattern intent.ts uses; `nodeId` was already
+    // validated as a real graph node, so this branch is always taken in
+    // practice -- the guard exists so the code is honestly typed.
+    const result = describe(nodeId, graph, ctx.target);
+    if (result === null || Array.isArray(result) || !('children' in result)) {
+      return this.errorResult('no registry component matches this query');
+    }
+    const node: NodeResult = result;
+
+    // v1 serves components only (composites are explicitly out of scope).
+    // Reachable via tier (c) only: a composite id typed directly never becomes a
+    // tier-(b) nodeId (the kind check excludes it), so it ends at tier (d)'s
+    // generic refusal instead of this named one.
+    if (node.kind !== 'component') {
+      return this.errorResult(
+        `${node.id} resolved, but is a composite -- rafters_generate v1 returns single components only`,
+      );
+    }
+
+    // Branch the ERROR MESSAGE on whether a target is configured at all; branch
+    // the CHECK on `node.snippet === undefined` (layer0 only sets `snippet` when
+    // a facet resolved for `target`, and FacetSchema.snippet is required, so this
+    // one check covers both "no target configured" and "target configured but no
+    // facet for it"). The graph never guesses a target.
+    if (ctx.target === undefined) {
+      return this.errorResult(
+        `${node.id} resolved, but no componentTarget is configured for this workspace -- generate cannot choose a snippet without one`,
+      );
+    }
+    if (node.snippet === undefined) {
+      return this.errorResult(
+        `${node.id} resolved, but has no ${ctx.target} facet -- nothing to generate for this target`,
+      );
+    }
+
+    // Success: verbatim snippet, no synthesis, no quality check. Every
+    // facet.slots entry becomes one open marker, in order.
     return this.jsonResult({
-      implemented: false,
-      note: `generate is a spike -- see issue E; not yet implemented (requested: ${intent})`,
-    });
+      component: node.id,
+      target: ctx.target,
+      snippet: node.snippet,
+      slots: (node.slots ?? []).map((slot) => ({
+        slot,
+        ownedBy: 'caller' as const,
+        status: 'open' as const,
+      })),
+    } satisfies GenerateResult);
   }
 
   /**
@@ -803,6 +1034,9 @@ export class RaftersToolHandler {
     }
 
     const ctx = await this.overlayContext(resolved);
+    if ('configError' in ctx) {
+      return this.errorResult(ctx.configError, { deprecated: DEPRECATED_MSG });
+    }
     const out = describeWithOverlay(id, graph, ctx);
     return this.jsonResult(this.withDeprecated(out));
   }

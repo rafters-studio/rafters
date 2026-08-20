@@ -3,9 +3,9 @@
  *
  * applyOp dispatches on op.kind to the matching wrapper and returns its
  * OpResult unchanged -- no logic of its own beyond dispatch. applyOpSequence
- * folds applyOp over an ordered EditorOp[] (an inverse sequence, per
- * AMENDMENT 2), threading `blocks` from each call into the next; this is how
- * FR-EDITOR-002's undo applies a stored `inverse`.
+ * folds applyOp over an ordered EditorOp[] (an inverse sequence), threading
+ * `blocks` from each call into the next; this is how FR-EDITOR-002's undo
+ * applies a stored `inverse`.
  *
  * Plain functions, no compose()/createBehavior/BehaviorSpec/slice dependency
  * -- per RULING-EDITOR-HISTORY's Editor interface contract the editor stays

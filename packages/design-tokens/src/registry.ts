@@ -1,6 +1,13 @@
 import { type Token, TokenSchema } from '@rafters/shared';
 import type { z } from 'zod';
-import { type Node, type Plugin, type SetOptions, TokenGraph, type UserOverride } from './graph.js';
+import {
+  CircularDependencyError,
+  type Node,
+  type Plugin,
+  type SetOptions,
+  TokenGraph,
+  type UserOverride,
+} from './graph.js';
 
 type TokenValue = z.infer<typeof TokenSchema>['value'];
 type UserOverrideField = NonNullable<z.infer<typeof TokenSchema>['userOverride']>;
@@ -18,7 +25,9 @@ export class TokenRegistry {
   constructor(initialTokens: readonly unknown[] = [], plugins: readonly Plugin[] = []) {
     this.graph = new TokenGraph(plugins);
     for (const plugin of plugins) this.plugins.set(plugin.name, plugin);
-    // Two passes so bindings can reference family tokens regardless of source order.
+    // Two passes: pass 1 seeds leaves and overridden tokens (order-independent);
+    // pass 2 binds derived tokens in dependency order so each transform sees
+    // its upstream values. Array order alone was not enough (#1634).
     const parsed: Token[] = [];
     for (const raw of initialTokens) {
       const result = TokenSchema.safeParse(raw);
@@ -42,11 +51,15 @@ export class TokenRegistry {
       });
     }
     // Pass 2: bound tokens without a userOverride re-derive against the
-    // leaves seeded in pass 1.
-    for (const t of parsed) {
-      if (!t.binding) continue;
-      if (t.userOverride) continue;
-      this.graph.bind(t.name, t.binding.plugin, t.binding.input);
+    // leaves seeded in pass 1, sorted by dependency edges so upstream
+    // tokens are bound before their dependents.
+    //
+    // TokenGraph.topoSort cannot be reused here: it discovers edges via
+    // this.nodes, but pass-2 tokens have not been added to the graph yet.
+    // A local sort over the parsed data is required.
+    const ordered = topoSortPass2(parsed, this.plugins);
+    for (const entry of ordered) {
+      this.graph.bind(entry.name, entry.binding.plugin, entry.binding.input);
     }
   }
 
@@ -181,4 +194,57 @@ function toUserOverrideField(
   if (override.context) result.context = override.context;
   if (override.kind) result.kind = override.kind;
   return result;
+}
+
+type Pass2Entry = { name: string; binding: NonNullable<Token['binding']> };
+
+/**
+ * Topologically sort the pass-2 tokens (bound, no userOverride) so each
+ * token is bound after all pass-2 tokens it depends on. Dependencies on
+ * pass-1 tokens (leaves, overrides) are already satisfied and ignored.
+ *
+ * Source order is the tiebreaker for independent tokens so list() output
+ * stays deterministic.
+ */
+function topoSortPass2(
+  parsed: readonly Token[],
+  plugins: ReadonlyMap<string, Plugin>,
+): readonly Pass2Entry[] {
+  const entries: Pass2Entry[] = [];
+  for (const t of parsed) {
+    if (!t.binding || t.userOverride) continue;
+    entries.push({ name: t.name, binding: t.binding });
+  }
+
+  const entryByName = new Map<string, Pass2Entry>();
+  for (const e of entries) entryByName.set(e.name, e);
+
+  const sorted: Pass2Entry[] = [];
+  const visited = new Set<string>();
+  const visiting = new Set<string>();
+
+  const visit = (name: string, path: readonly string[]): void => {
+    if (visited.has(name)) return;
+    if (visiting.has(name)) {
+      throw new CircularDependencyError([...path, name]);
+    }
+    visiting.add(name);
+    const entry = entryByName.get(name);
+    if (entry) {
+      const plugin = plugins.get(entry.binding.plugin);
+      // Skip edge discovery for unknown plugins; graph.bind() will throw
+      // UnknownPluginError when it processes the entry.
+      if (plugin) {
+        for (const dep of plugin.dependsOn(entry.binding.input)) {
+          if (entryByName.has(dep)) visit(dep, [...path, name]);
+        }
+      }
+    }
+    visiting.delete(name);
+    visited.add(name);
+    if (entry) sorted.push(entry);
+  };
+
+  for (const e of entries) visit(e.name, []);
+  return sorted;
 }

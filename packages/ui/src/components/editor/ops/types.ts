@@ -56,14 +56,15 @@ export interface OpResult {
    *  blocks keep referential identity). FR-EDITOR-002 stores this as its memory
    *  cell's `doc` field -- this issue does not touch the cell. */
   blocks: BaseBlock[];
-  /** AMENDMENT 2 (RULING-EDITOR-HISTORY, prime-resolved 2026-08-20): the inverse
-   *  is an ORDERED SEQUENCE of ops, not a single op -- mergePrev/mergeNext cannot
-   *  be undone by any single op (it must both truncate the survivor's content
-   *  back to its pre-merge boundary AND reinstate the absorbed block with its
-   *  original type/meta/content; no single op does both). Applying the sequence
-   *  IN ORDER via applyOp (or the applyOpSequence convenience below) on
-   *  `result.blocks` SHALL return a document deep-equal to the ORIGINAL input
-   *  blocks, including marks. Most ops produce a one-element sequence; mergePrev,
-   *  mergeNext, and insert-with-implicit-split produce multi-element sequences. */
+  /** An ORDERED SEQUENCE of ops (per RULING-EDITOR-HISTORY's Editor interface
+   *  contract) that undoes this op's effect on `blocks`. mergePrev/mergeNext
+   *  need more than one op to undo: reversing a merge must both truncate the
+   *  survivor's content back to its pre-merge boundary AND reinstate the
+   *  absorbed block with its original type/meta/content. Applying the
+   *  sequence IN ORDER via applyOp (or the applyOpSequence convenience below)
+   *  on `result.blocks` SHALL return a document deep-equal to the ORIGINAL
+   *  input blocks, including marks. Most ops produce a one-element sequence;
+   *  mergePrev, mergeNext, and insert-with-implicit-split produce
+   *  multi-element sequences. */
   inverse: EditorOp[];
 }

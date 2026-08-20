@@ -202,6 +202,98 @@ describe('TokenGraph', () => {
     });
   });
 
+  describe('cascade atomicity (issue #1626)', () => {
+    it('rolls back the whole set when a mid-cascade plugin throws', () => {
+      let armed = false;
+      const explodingPlugin: Plugin = {
+        name: 'exploding',
+        inputSchema: z.object({ source: z.string() }),
+        outputSchema: z.number(),
+        dependsOn: (input) => [(input as { source: string }).source],
+        transform: (input, get) => {
+          if (armed) throw new Error('plugin blew up');
+          return (get((input as { source: string }).source) as number) + 1;
+        },
+      };
+      // a -> b (double, succeeds) -> c (exploding, throws once armed).
+      // topoSort recomputes b before c, so b is the "already applied"
+      // half of the partial state we're asserting gets rolled back.
+      const g = new TokenGraph([doublePlugin, explodingPlugin]);
+      g.seed('a', 1);
+      g.bind('b', 'double', { source: 'a' });
+      g.bind('c', 'exploding', { source: 'b' });
+      expect(g.get('a')).toBe(1);
+      expect(g.get('b')).toBe(2);
+      expect(g.get('c')).toBe(3);
+
+      armed = true;
+      expect(() => g.set('a', 5, R)).toThrow('plugin blew up');
+
+      // Nothing half-applied: the direct set on 'a' and the successful
+      // recompute of 'b' are both reverted, not just 'c' left stale.
+      expect(g.get('a')).toBe(1);
+      expect(g.get('b')).toBe(2);
+      expect(g.get('c')).toBe(3);
+
+      // The automatic rollback already consumed the snapshot, so a
+      // caller-invoked undo() after catching the error is a no-op.
+      g.undo();
+      expect(g.get('a')).toBe(1);
+    });
+
+    it('rolls back a bind whose own cascade throws', () => {
+      let armed = false;
+      const explodingPlugin: Plugin = {
+        name: 'exploding2',
+        inputSchema: z.object({ source: z.string() }),
+        outputSchema: z.number(),
+        dependsOn: (input) => [(input as { source: string }).source],
+        transform: (input, get) => {
+          if (armed) throw new Error('boom');
+          return (get((input as { source: string }).source) as number) + 1;
+        },
+      };
+      const g = new TokenGraph([doublePlugin, explodingPlugin]);
+      g.seed('a', 1);
+      g.bind('b', 'double', { source: 'a' });
+      g.bind('c', 'exploding2', { source: 'b' });
+
+      armed = true;
+      // Rebinding 'b' recomputes 'b' itself fine, but cascades into 'c',
+      // which throws. The bind of 'b' should not stick.
+      expect(() => g.bind('b', 'double', { source: 'a' })).toThrow('boom');
+      expect(g.get('b')).toBe(2);
+      expect(g.get('c')).toBe(3);
+    });
+
+    it('still succeeds normally after a rolled-back cascade failure', () => {
+      let armed = false;
+      const explodingPlugin: Plugin = {
+        name: 'exploding3',
+        inputSchema: z.object({ source: z.string() }),
+        outputSchema: z.number(),
+        dependsOn: (input) => [(input as { source: string }).source],
+        transform: (input, get) => {
+          if (armed) throw new Error('boom');
+          return (get((input as { source: string }).source) as number) + 1;
+        },
+      };
+      const g = new TokenGraph([doublePlugin, explodingPlugin]);
+      g.seed('a', 1);
+      g.bind('b', 'double', { source: 'a' });
+      g.bind('c', 'exploding3', { source: 'b' });
+
+      armed = true;
+      expect(() => g.set('a', 5, R)).toThrow('boom');
+
+      armed = false;
+      g.set('a', 5, R);
+      expect(g.get('a')).toBe(5);
+      expect(g.get('b')).toBe(10);
+      expect(g.get('c')).toBe(11);
+    });
+  });
+
   describe('cycle detection', () => {
     it('throws CircularDependencyError on direct cycle', () => {
       const g = new TokenGraph([identityPlugin]);
