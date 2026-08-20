@@ -160,22 +160,84 @@ describe('lazy, cached, per-workspace graph', () => {
   });
 });
 
-describe('rafters_generate stub', () => {
-  it('returns an honest not-implemented result', async () => {
-    const { handler } = fixtureHandler([], null);
-    const result = await handler.handleToolCall('rafters_generate', { intent: 'a login form' });
-    expect(JSON.parse(result.content[0].text as string)).toMatchObject({ implemented: false });
+describe('rafters_generate', () => {
+  it('resolves a bare component id directly, bypassing the intent door entirely', async () => {
+    const { handler } = fixtureHandler([], null); // no config -> ctx.target undefined
+    const result = await handler.handleToolCall('rafters_generate', { intent: 'button' });
+    const data = JSON.parse(result.content[0].text as string);
+    expect(data.error).toContain('button');
+    expect(data.error).toContain('no componentTarget is configured');
   });
 
-  // DELIBERATE DEVIATION from #2076's "builds the graph on first describe/generate
-  // call": the stub consumes nothing from the graph, so building it would add no
-  // value and one failure mode -- a build error would turn an honest stub into an
-  // error result. Documented here so the divergence is visible, not asserted as a
-  // spec requirement. Revisit when Issue E lands a real generator that reads the graph.
-  it('does not build the graph (nothing here reads it)', async () => {
+  it('strips leading filler before the direct lookup ("give me a button" / "a container")', async () => {
+    const { handler } = fixtureHandler([], null);
+    const a = await handler.handleToolCall('rafters_generate', { intent: 'give me a button' });
+    const b = await handler.handleToolCall('rafters_generate', { intent: 'a container' });
+    expect(JSON.parse(a.content[0].text as string).error).toContain('button');
+    expect(JSON.parse(b.content[0].text as string).error).toContain('container');
+  });
+
+  it('falls back to the intent door for a semantic query with no direct id match', async () => {
+    const { handler } = fixtureHandler([], null);
+    const result = await handler.handleToolCall('rafters_generate', {
+      intent: 'what do I use when it needs to be above everything',
+    });
+    const data = JSON.parse(result.content[0].text as string);
+    expect(data.error).toContain('modal');
+  });
+
+  it('a filler-stripping phrasing on the same semantic axis still routes via matchIntent using the ORIGINAL string, not the stripped candidate', async () => {
+    const { handler } = fixtureHandler([], null);
+    // "i need " strips to "something that sits on top of everything else" --
+    // not a real node id, so this MUST fall to matchIntent, which is called
+    // with the untouched original sentence.
+    const result = await handler.handleToolCall('rafters_generate', {
+      intent: 'I need something that sits on top of everything else',
+    });
+    const data = JSON.parse(result.content[0].text as string);
+    expect(data.error).toContain('modal');
+  });
+
+  it('flat-refuses a query matching neither tier', async () => {
+    const { handler } = fixtureHandler([], null);
+    for (const intent of ['something that does not exist', 'a login form']) {
+      const result = await handler.handleToolCall('rafters_generate', { intent });
+      const data = JSON.parse(result.content[0].text as string);
+      expect(data).toEqual({ error: 'no registry component matches this query' });
+    }
+  });
+
+  it('a real composite id typed directly is excluded from the direct tier and falls to the generic refusal', async () => {
+    const { handler } = fixtureHandler([], null); // FIXTURE includes node('login-form', 'composite')
+    const result = await handler.handleToolCall('rafters_generate', { intent: 'login-form' });
+    const data = JSON.parse(result.content[0].text as string);
+    expect(data).toEqual({ error: 'no registry component matches this query' });
+  });
+
+  it('refuses a matchIntent-routed composite by name -- v1 serves components only', async () => {
+    const items = [node('modal', 'composite'), node('alert', 'ui'), node('tooltip', 'ui')];
+    const { handler } = fixtureHandler([], null, items);
+    const result = await handler.handleToolCall('rafters_generate', {
+      intent: 'what do I use when it needs to be above everything',
+    });
+    const data = JSON.parse(result.content[0].text as string);
+    expect(data.error).toContain('modal');
+    expect(data.error).toContain('composite');
+  });
+
+  it('builds the graph on first call (unlike the prior stub)', async () => {
     const { handler, calls } = fixtureHandler([], null);
-    await handler.handleToolCall('rafters_generate', { intent: 'a login form' });
-    expect(calls['']).toBeUndefined();
+    await handler.handleToolCall('rafters_generate', { intent: 'something that does not exist' });
+    expect(calls['']).toBe(1);
+  });
+
+  it('surfaces a structured error (not a throw) when the graph is broken', async () => {
+    const broken = [node('modal', 'ui', ['does-not-exist'])];
+    const { handler } = fixtureHandler([], null, broken);
+    const result = await handler.handleToolCall('rafters_generate', { intent: 'modal' });
+    expect(JSON.parse(result.content[0].text as string).error).toMatch(
+      /failed to build intel graph/,
+    );
   });
 });
 
