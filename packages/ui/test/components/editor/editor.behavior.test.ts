@@ -11,8 +11,12 @@
 import { describe, expect, it } from 'vitest';
 import { createEditorHistory } from '../../../src/components/editor/editor-history';
 import {
+  editorAria,
+  editorKeymap,
+  parts,
   projectDocument,
   translateBeforeInput,
+  type EditorConfig,
 } from '../../../src/components/editor/editor.behavior';
 import { applyOp } from '../../../src/components/editor/ops';
 import type { BaseBlock } from '../../../src/primitives/types';
@@ -164,5 +168,76 @@ describe('capture-side coalescing shape (translateBeforeInput -> controls)', () 
     // The doc reflects every op (sanity that the shape actually applied).
     const block = history.memory.get().doc.find((b) => b.id === 'b1');
     expect(block?.content).toBe('hey!');
+  });
+});
+
+// -----------------------------------------------------------------------------
+// The editor score (FR-EDITOR-005) -- parts, editorAria, editorKeymap.
+// -----------------------------------------------------------------------------
+
+describe('parts', () => {
+  it('declares exactly one part, root, with role: textbox', () => {
+    expect(Object.keys(parts)).toEqual(['root']);
+    expect(parts.root.role).toBe('textbox');
+  });
+});
+
+describe('editorAria', () => {
+  const config: EditorConfig = { label: 'Document' };
+  const { memory } = createEditorHistory();
+  const state = memory.get();
+
+  it('projects role, aria-multiline, and aria-label from config.label', () => {
+    expect(editorAria(state, config, { root: 'doc-1' }).root).toMatchObject({
+      role: 'textbox',
+      'aria-multiline': 'true',
+      'aria-label': 'Document',
+    });
+  });
+
+  it('projects aria-labelledby instead when config.labelledBy is set', () => {
+    const byId: EditorConfig = { labelledBy: 'external-heading' };
+    const projection = editorAria(state, byId, { root: 'doc-1' }).root;
+    expect(projection).toMatchObject({
+      role: 'textbox',
+      'aria-multiline': 'true',
+      'aria-labelledby': 'external-heading',
+    });
+    expect(projection?.['aria-label']).toBeUndefined();
+  });
+});
+
+describe('editorKeymap', () => {
+  const config: EditorConfig = { label: 'Document' };
+  const { memory } = createEditorHistory();
+  const state = memory.get();
+
+  it('claims Cmd+Z and Ctrl+Z as undo', () => {
+    expect(editorKeymap({ key: 'z', metaKey: true }, state, 'root', config)).toBe('undo');
+    expect(editorKeymap({ key: 'z', ctrlKey: true }, state, 'root', config)).toBe('undo');
+  });
+
+  it('claims Cmd+Shift+Z and Ctrl+Shift+Z as redo', () => {
+    expect(editorKeymap({ key: 'z', metaKey: true, shiftKey: true }, state, 'root', config)).toBe(
+      'redo',
+    );
+    expect(editorKeymap({ key: 'z', ctrlKey: true, shiftKey: true }, state, 'root', config)).toBe(
+      'redo',
+    );
+  });
+
+  it('claims the shifted-character chord a real browser sends for Shift', () => {
+    // KeyboardEvent.key reports the shifted character ('Z', not 'z') when
+    // Shift is held -- a strict `key === 'z'` check would pass the fixture
+    // above and still silently fail in a real browser.
+    expect(editorKeymap({ key: 'Z', metaKey: true, shiftKey: true }, state, 'root', config)).toBe(
+      'redo',
+    );
+  });
+
+  it('leaves every other key unclaimed, including plain character input', () => {
+    expect(editorKeymap({ key: 'a' }, state, 'root', config)).toBeNull();
+    expect(editorKeymap({ key: 'z' }, state, 'root', config)).toBeNull(); // no modifier
+    expect(editorKeymap({ key: 'y', metaKey: true }, state, 'root', config)).toBeNull();
   });
 });

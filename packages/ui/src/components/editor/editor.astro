@@ -1,0 +1,106 @@
+---
+/**
+ * Block-based document editor with op-based undo/redo history
+ *
+ * @cognitive-load 5/10 - Sustained composition attention; undo/redo gives a safety net
+ * @attention-economics Full attention while composing -- the caret is the sole focus anchor
+ * @trust-building Every edit is reversible (Cmd/Ctrl+Z, Cmd/Ctrl+Shift+Z), so mistakes cost nothing
+ * @accessibility role=textbox, aria-multiline, a required accessible name (label or labelledBy)
+ * @semantic-meaning Primary authoring surface: prose and structured blocks, not a form field
+ *
+ * @usage-patterns
+ * DO: Always supply a real accessible name (label or labelledBy) -- axe fails an unnamed textbox
+ * DO: Seed initial content via the decorator's own data, not a post-mount DOM write
+ * NEVER: Mutate the contenteditable's DOM directly -- the model owns every edit
+ *
+ * @example
+ * ```tsx
+ * <Editor label="Document" />
+ * ```
+ */
+
+/**
+ * Astro performance for editor. Server-renders the empty contenteditable
+ * root with the closed... rather, the SEEDED-state aria projection already
+ * applied (correct before any JS), plus the seed doc/caret as data-*; the
+ * <script> then hands each instance to bindEditor -- the SAME DOM-native
+ * client the Web Component uses. Block content itself is DOM-native (built by
+ * bindEditor's own projectDocument on bind, which fires immediately off the
+ * memory cell's first paint), so this file renders no block markup itself --
+ * "SSR markup (contenteditable root, data-part=root) + a script that calls
+ * bindEditor(root) client-side", same shape as dialog.astro.
+ */
+import {
+  editorAria,
+  type EditorConfig,
+  type EditorPart,
+  type EditorState,
+} from './editor.behavior';
+import { editorClasses } from './editor.classes';
+import type { BaseBlock } from '../../primitives/types';
+import type { PartIds } from '../../lib/contract';
+
+interface Props {
+  id: string;
+  label?: string;
+  labelledBy?: string;
+  disabled?: boolean;
+  readonly?: boolean;
+  initialDoc?: BaseBlock[];
+  caret?: { blockId: string; offset: number };
+}
+
+const {
+  id,
+  label,
+  labelledBy,
+  disabled = false,
+  readonly = false,
+  initialDoc = [],
+  caret,
+} = Astro.props;
+
+const config = (
+  labelledBy ? { labelledBy, disabled, readonly } : { label, disabled, readonly }
+) as EditorConfig;
+
+const seedCaret = caret ?? { blockId: initialDoc[0]?.id ?? '', offset: 0 };
+const seedSel = { anchor: seedCaret, focus: seedCaret };
+// editorAria's state parameter is unused (the projection only reads
+// config) -- a literal in the seeded shape avoids allocating a whole
+// createEditorHistory (a nanostores atom) per server render just to throw
+// it away.
+const state = { doc: initialDoc, sel: seedSel, done: [], undone: [] } as EditorState;
+
+const ids = { root: id } as PartIds<EditorPart>;
+const aria = editorAria(state, config, ids).root;
+const classes = editorClasses(config, state);
+---
+
+<rafters-editor
+  id={id}
+  data-part="root"
+  contenteditable={disabled || readonly ? 'false' : 'true'}
+  data-label={label}
+  data-labelledby={labelledBy}
+  data-disabled={String(disabled)}
+  data-readonly={String(readonly)}
+  data-initial-doc={JSON.stringify(initialDoc)}
+  data-caret={JSON.stringify(seedCaret)}
+  class={classes.root}
+  {...aria}
+></rafters-editor>
+
+<script>
+  import { bindEditor } from './editor.behavior';
+
+  // The <script> is bundled and runs once per page; bind every instance's
+  // server-rendered markup. Same controller as the Web Component (this file
+  // does not import editor.element.ts / customElements.define -- the tag is
+  // used purely as a scoped selector, same shape as rafters-dialog).
+  for (const root of document.querySelectorAll<HTMLElement>('rafters-editor[data-part="root"]')) {
+    if (root.dataset['editorBound'] === 'true') continue;
+    root.dataset['editorBound'] = 'true';
+    bindEditor(root);
+  }
+</script>

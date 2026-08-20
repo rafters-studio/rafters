@@ -8,7 +8,7 @@
  * - cursor-tracker: cursor position relative to blocks
  * - block-operations: split/merge/delete/convert (pure functions)
  * - inline-formatter: bold/italic/code/etc
- * - history: undo/redo
+ * - editor-history (FR-EDITOR-002): undo/redo, op-based
  * - serializer-html/text: paste deserialization, copy serialization
  *
  * The React component layer is a thin wrapper: state + render. This primitive
@@ -23,17 +23,14 @@
  * @dependencies nanostores
  * @internal-dependencies primitives/input-events.ts, primitives/clipboard.ts,
  *   primitives/keyboard-handler.ts, primitives/cursor-tracker.ts,
- *   primitives/block-operations.ts, primitives/history.ts,
- *   primitives/serializer-html.ts, primitives/serializer-text.ts
+ *   primitives/block-operations.ts, components/editor/editor-history.ts,
+ *   components/editor/ops, primitives/serializer-html.ts, primitives/serializer-text.ts
  */
 import {
   blockContentToText,
-  convertBlockType,
   deleteBlock,
-  insertBlocksAt,
   mergeWithNext,
   mergeWithPrevious,
-  splitBlock,
 } from './block-operations';
 import { createClipboard } from './clipboard';
 import {
@@ -45,7 +42,9 @@ import {
   setCursorAtBlockStart,
   setCursorInBlock,
 } from './cursor-tracker';
-import { createHistory } from './history';
+import { createEditorHistory } from '../components/editor/editor-history';
+import { normalizeRuns } from '../components/editor/ops/content';
+import type { EditorOp } from '../components/editor/ops';
 import { createInputHandler } from './input-events';
 import { createKeyboardHandler } from './keyboard-handler';
 import { createMemory } from './memory';
@@ -123,10 +122,18 @@ export function createDocumentEditor(options: DocumentEditorOptions): DocumentEd
   const cleanups: CleanupFunction[] = [];
 
   // -- Shared state --
-  const history = createHistory<BaseBlock[]>({
-    initialState: initialBlocks,
-    limit: 100,
-  });
+  // FR-EDITOR-002's op-based history (RULING-EDITOR-HISTORY): the OLD
+  // primitives/history.ts (snapshot push/pop) is gone from this file's
+  // dependency path. `history.memory`'s own `doc` field is this editor's
+  // canonical block array; `state` below mirrors it into the
+  // DocumentEditorState shape this primitive's public API already commits to
+  // (blocks/canUndo/canRedo), via `syncFromHistory`.
+  const firstId = initialBlocks[0]?.id ?? '';
+  const initialPos = { blockId: firstId, offset: 0 };
+  const history = createEditorHistory(
+    { doc: initialBlocks, sel: { anchor: initialPos, focus: initialPos } },
+    { cap: 100 },
+  );
 
   const state = createMemory<DocumentEditorState>({
     blocks: initialBlocks,
@@ -134,14 +141,95 @@ export function createDocumentEditor(options: DocumentEditorOptions): DocumentEd
     canRedo: false,
   });
 
-  function updateBlocks(next: BaseBlock[]): void {
-    history.push(next);
+  function syncFromHistory(): void {
+    const next = history.memory.get().doc;
     state.set({
       blocks: next,
-      canUndo: history.canUndo(),
-      canRedo: history.canRedo(),
+      canUndo: history.canUndo,
+      canRedo: history.canRedo,
     });
     onBlocksChange?.(next);
+  }
+
+  /** Apply one EditorOp through FR-EDITOR-002's history (one `done` entry),
+   *  WITHOUT publishing -- the caller decides when to call `syncFromHistory`.
+   *  `applyOp` (FR-EDITOR-003) throws on an unresolvable op -- a stale
+   *  blockId or an out-of-bounds offset, which can happen when the DOM has
+   *  drifted from the model between reconciles. Mirrors editor.behavior.ts's
+   *  `applyOps` discipline: skip, leave the cell at its last valid state, let
+   *  the next reconcile re-sync from the DOM. Typing must never throw.
+   *  Returns whether the op actually applied. */
+  function commitOpSilent(op: EditorOp): boolean {
+    try {
+      history.controls.apply(op);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /** Apply one EditorOp and publish immediately -- the single-op call sites
+   *  below (Enter, Backspace, Delete, block-type shortcuts, paste) each
+   *  represent one user action, one `done` entry, one `onBlocksChange`. */
+  function commitOp(op: EditorOp): void {
+    if (commitOpSilent(op)) syncFromHistory();
+  }
+
+  /** Diff `nextBlocks` (freshly read off the DOM by `reconcileDOM`) against
+   *  the history's current `doc` and commit the difference as EditorOps: a
+   *  `delete` per removed block, a whole-block `removeText` + `insertText`
+   *  pair per content-changed block. `reconcileDOM` only ever drops or
+   *  edits blocks already in the model (never introduces a new id -- see its
+   *  own comment), so no `insert` case is needed here.
+   *
+   *  This is a coarser undo grain than a real keystroke-level diff (two
+   *  `done` entries per changed block instead of one), because
+   *  FR-EDITOR-003's vocabulary has no "replace this block's content"
+   *  primitive -- but every commit still lands on FR-EDITOR-002's op-log, so
+   *  typing driven through this DOM-first reconciliation path stays
+   *  undoable, which a raw `memory.set` bypass would not preserve.
+   *
+   *  Every op in one reconcile is applied via `commitOpSilent` (no publish),
+   *  then `syncFromHistory` runs ONCE at the end, iff anything actually
+   *  applied. Publishing after each op would expose the cell's INTERMEDIATE
+   *  state to `onBlocksChange` -- a changed block sits with empty content
+   *  between its `removeText` and `insertText` -- which a persisting
+   *  consumer (`onBlocksChange={(blocks) => save(blocks)}`, per
+   *  `old/ui/editor.tsx`'s own doc comment) would write on every keystroke.
+   *  The original snapshot-push `updateBlocks` fired the callback exactly
+   *  once per reconcile; this preserves that. */
+  function commitReconciled(nextBlocks: BaseBlock[]): void {
+    const prevBlocks = history.memory.get().doc;
+    const nextIds = new Set(nextBlocks.map((b) => b.id));
+    let changed = false;
+
+    for (const prev of prevBlocks) {
+      if (!nextIds.has(prev.id)) {
+        if (commitOpSilent({ kind: 'delete', blockId: prev.id })) changed = true;
+      }
+    }
+
+    const prevById = new Map(prevBlocks.map((b) => [b.id, b]));
+    for (const next of nextBlocks) {
+      const prev = prevById.get(next.id);
+      if (!prev) continue;
+      if (blockContentToText(prev.content) === blockContentToText(next.content)) continue;
+
+      const removed = normalizeRuns(prev.content);
+      if (removed.length > 0) {
+        if (commitOpSilent({ kind: 'removeText', blockId: next.id, offset: 0, text: removed })) {
+          changed = true;
+        }
+      }
+      const inserted = normalizeRuns(next.content);
+      if (inserted.length > 0) {
+        if (commitOpSilent({ kind: 'insertText', blockId: next.id, offset: 0, text: inserted })) {
+          changed = true;
+        }
+      }
+    }
+
+    if (changed) syncFromHistory();
   }
 
   // -- Make container contentEditable --
@@ -197,7 +285,7 @@ export function createDocumentEditor(options: DocumentEditorOptions): DocumentEd
         );
       })
     ) {
-      updateBlocks(reconciled);
+      commitReconciled(reconciled);
     }
   }
 
@@ -212,11 +300,11 @@ export function createDocumentEditor(options: DocumentEditorOptions): DocumentEd
 
       // insertParagraph = Enter key (browser already split the DOM)
       if (data.inputType === 'insertParagraph') {
-        const result = splitBlock(state.get().blocks, pos.blockId, pos.offset, crypto.randomUUID());
-        updateBlocks(result.blocks);
+        const newBlockId = crypto.randomUUID();
+        commitOp({ kind: 'split', blockId: pos.blockId, offset: pos.offset, newBlockId });
         // Focus the new block after React re-renders
         requestAnimationFrame(() => {
-          setCursorAtBlockStart(container, result.newBlockId);
+          setCursorAtBlockStart(container, newBlockId);
         });
         return;
       }
@@ -242,10 +330,26 @@ export function createDocumentEditor(options: DocumentEditorOptions): DocumentEd
             // Prevent the space from being inserted
             // Note: we return here, the beforeinput handler in input-events
             // will check the preventDefault array
-            const next = convertBlockType(blocks, pos.blockId, shortcut.type, shortcut.meta);
-            // Clear the prefix content
-            const converted = next.map((b) => (b.id === pos.blockId ? { ...b, content: '' } : b));
-            updateBlocks(converted);
+            commitOp({
+              kind: 'convert',
+              blockId: pos.blockId,
+              newType: shortcut.type,
+              ...(shortcut.meta ? { meta: shortcut.meta } : {}),
+            });
+            // Clear the prefix content -- read the CONVERTED block back (not
+            // the pre-convert one) since convertBlockType may itself have
+            // transformed content (e.g. code blocks flatten marks); this must
+            // match what's actually in the cell or removeText throws.
+            const converted = state.get().blocks.find((b) => b.id === pos.blockId);
+            const prefixRuns = normalizeRuns(converted?.content);
+            if (prefixRuns.length > 0) {
+              commitOp({
+                kind: 'removeText',
+                blockId: pos.blockId,
+                offset: 0,
+                text: prefixRuns,
+              });
+            }
             requestAnimationFrame(() => {
               setCursorAtBlockStart(container, pos.blockId);
             });
@@ -278,7 +382,7 @@ export function createDocumentEditor(options: DocumentEditorOptions): DocumentEd
       // Empty block: delete it
       if (pos.blockLength === 0 && index > 0) {
         const result = deleteBlock(blocks, pos.blockId);
-        updateBlocks(result.blocks);
+        commitOp({ kind: 'delete', blockId: pos.blockId });
         if (result.focusBlockId) {
           requestAnimationFrame(() => {
             if (result.focusAtEnd) {
@@ -293,8 +397,7 @@ export function createDocumentEditor(options: DocumentEditorOptions): DocumentEd
 
       // Heading/quote at start: convert to text
       if (block.type === 'heading' || block.type === 'quote') {
-        const next = convertBlockType(blocks, pos.blockId, 'text');
-        updateBlocks(next);
+        commitOp({ kind: 'convert', blockId: pos.blockId, newType: 'text' });
         requestAnimationFrame(() => {
           setCursorAtBlockStart(container, pos.blockId);
         });
@@ -304,7 +407,7 @@ export function createDocumentEditor(options: DocumentEditorOptions): DocumentEd
       // Merge with previous
       if (index > 0) {
         const result = mergeWithPrevious(blocks, pos.blockId);
-        updateBlocks(result.blocks);
+        commitOp({ kind: 'mergePrev', blockId: pos.blockId });
         requestAnimationFrame(() => {
           setCursorInBlock(container, result.survivorId, result.cursorOffset);
         });
@@ -325,7 +428,7 @@ export function createDocumentEditor(options: DocumentEditorOptions): DocumentEd
 
       const blocks = state.get().blocks;
       const result = mergeWithNext(blocks, pos.blockId);
-      updateBlocks(result.blocks);
+      commitOp({ kind: 'mergeNext', blockId: pos.blockId });
       requestAnimationFrame(() => {
         setCursorInBlock(container, result.survivorId, result.cursorOffset);
       });
@@ -344,30 +447,29 @@ export function createDocumentEditor(options: DocumentEditorOptions): DocumentEd
     const pos = getCursorPosition();
     if (!pos) return;
 
-    const blocks = state.get().blocks;
-    let next: BaseBlock[] | null = null;
+    let op: EditorOp | null = null;
 
     switch (event.key) {
       case '0':
-        next = convertBlockType(blocks, pos.blockId, 'text');
+        op = { kind: 'convert', blockId: pos.blockId, newType: 'text' };
         break;
       case '1':
-        next = convertBlockType(blocks, pos.blockId, 'heading', { level: 1 });
+        op = { kind: 'convert', blockId: pos.blockId, newType: 'heading', meta: { level: 1 } };
         break;
       case '2':
-        next = convertBlockType(blocks, pos.blockId, 'heading', { level: 2 });
+        op = { kind: 'convert', blockId: pos.blockId, newType: 'heading', meta: { level: 2 } };
         break;
       case '3':
-        next = convertBlockType(blocks, pos.blockId, 'heading', { level: 3 });
+        op = { kind: 'convert', blockId: pos.blockId, newType: 'heading', meta: { level: 3 } };
         break;
       case '4':
-        next = convertBlockType(blocks, pos.blockId, 'heading', { level: 4 });
+        op = { kind: 'convert', blockId: pos.blockId, newType: 'heading', meta: { level: 4 } };
         break;
     }
 
-    if (next) {
+    if (op) {
       event.preventDefault();
-      updateBlocks(next);
+      commitOp(op);
     }
   }
 
@@ -410,17 +512,20 @@ export function createDocumentEditor(options: DocumentEditorOptions): DocumentEd
         }
       }
 
-      // Multiple blocks: insert at cursor position
-      const result = insertBlocksAt(
-        blocks,
-        pastedBlocks,
-        pos.blockId,
-        pos.offset,
-        crypto.randomUUID(),
-      );
-      updateBlocks(result.blocks);
+      // Multiple blocks: insert at cursor position. `lastInsertedId` is
+      // always the last element of `pastedBlocks` (insertBlocksAt's own
+      // convention -- see block-operations.ts) regardless of whether a
+      // mid-block split occurs, so no extra call is needed to learn it.
+      const lastInsertedId = pastedBlocks[pastedBlocks.length - 1]?.id ?? pos.blockId;
+      commitOp({
+        kind: 'insert',
+        blocks: pastedBlocks,
+        atBlockId: pos.blockId,
+        atOffset: pos.offset,
+        splitBlockId: crypto.randomUUID(),
+      });
       requestAnimationFrame(() => {
-        setCursorAtBlockEnd(container, result.lastInsertedId);
+        setCursorAtBlockEnd(container, lastInsertedId);
       });
     },
     onCopy: () => {
@@ -468,42 +573,46 @@ export function createDocumentEditor(options: DocumentEditorOptions): DocumentEd
 
   // -- Public API --
   function setBlocks(blocks: BaseBlock[]): void {
-    updateBlocks(blocks);
+    // A wholesale replace (external load/import) has no natural EditorOp:
+    // every op in FR-EDITOR-003's vocabulary anchors on an EXISTING block,
+    // which an arbitrary externally-supplied document may not share with the
+    // current one at all. Reset the cell directly through its public
+    // `memory` -- editor-history.ts exposes a Memory<EditorHistoryState> for
+    // exactly this kind of non-incremental write -- and clear the op-log:
+    // there is no derived op sequence back to the replaced document, so it
+    // is not meaningfully "undoable" through this history.
+    const firstBlockId = blocks[0]?.id ?? '';
+    const pos = { blockId: firstBlockId, offset: 0 };
+    history.memory.set({ doc: blocks, sel: { anchor: pos, focus: pos }, done: [], undone: [] });
+    syncFromHistory();
   }
 
   function addBlocks(newBlocks: BaseBlock[], index?: number): void {
-    const current = state.get().blocks;
-    const next = [...current];
+    // Same rationale as setBlocks: the target document may currently be
+    // empty (no anchor block for FR-EDITOR-003's `insert` op) or the insert
+    // may span a position `insert` doesn't address (append past the end);
+    // expressed directly on the memory cell rather than fabricated as ops.
+    const current = history.memory.get();
+    const next = [...current.doc];
     if (index !== undefined && index >= 0 && index <= next.length) {
       next.splice(index, 0, ...newBlocks);
     } else {
       next.push(...newBlocks);
     }
-    updateBlocks(next);
+    history.memory.set({ ...current, doc: next });
+    syncFromHistory();
   }
 
   function undo(): void {
-    const prev = history.undo();
-    if (prev) {
-      state.set({
-        blocks: prev,
-        canUndo: history.canUndo(),
-        canRedo: history.canRedo(),
-      });
-      onBlocksChange?.(prev);
-    }
+    if (!history.canUndo) return;
+    history.controls.undo();
+    syncFromHistory();
   }
 
   function redo(): void {
-    const next = history.redo();
-    if (next) {
-      state.set({
-        blocks: next,
-        canUndo: history.canUndo(),
-        canRedo: history.canRedo(),
-      });
-      onBlocksChange?.(next);
-    }
+    if (!history.canRedo) return;
+    history.controls.redo();
+    syncFromHistory();
   }
 
   function focusBlock(blockId: string, offset?: number): void {
