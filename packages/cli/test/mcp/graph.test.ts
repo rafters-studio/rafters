@@ -2,6 +2,7 @@ import { describe as vdescribe, expect, it } from 'vitest';
 import {
   assembleGraph,
   describe,
+  type ExpandedNodeResult,
   type Graph,
   type GraphNode,
   type NodeResult,
@@ -42,6 +43,7 @@ function fixture(): Graph {
           },
         },
         composesWith: ['page-header', 'page-header'],
+        parts: [], // populated by assembleGraph; manual fixtures need it explicit
       },
     ],
     [
@@ -52,6 +54,7 @@ function fixture(): Graph {
         intel: { dos: [], nevers: [] },
         facets: {},
         composesWith: ['button'],
+        parts: [],
       },
     ],
     [
@@ -75,6 +78,7 @@ function fixture(): Graph {
           },
         },
         composesWith: [],
+        parts: [],
       },
     ],
     [
@@ -85,6 +89,7 @@ function fixture(): Graph {
         intel: { dos: [], nevers: [] },
         facets: {},
         composesWith: ['modal'],
+        parts: [],
       },
     ],
   ]);
@@ -111,6 +116,16 @@ vdescribe('describe(addr, graph, target)', () => {
       expect.arrayContaining([{ id: 'button' }, { id: 'container' }, { id: 'modal' }]),
     );
     expect(roster).not.toContainEqual({ id: 'page-header' });
+  });
+
+  it('operators are not supported on the catalog -- structured error, never the roster', () => {
+    const components = describe('components.*', graph, T);
+    expect(Array.isArray(components)).toBe(false);
+    expect(components).toMatchObject({ error: expect.stringContaining('components.*') });
+
+    const composites = describe('composites.*', graph, T);
+    expect(Array.isArray(composites)).toBe(false);
+    expect(composites).toMatchObject({ error: expect.stringContaining('composites.*') });
   });
 
   it('describe(<id>) returns layer 0 with type-marked children + target-correct usage', () => {
@@ -181,6 +196,55 @@ vdescribe('describe(addr, graph, target)', () => {
     expect(describe('button.props.variant.vocab', graph, T)).toEqual({
       error: expect.stringContaining('button.props.variant.vocab'),
     });
+  });
+
+  it('describe(<id>.*) expands all props inline with full values', () => {
+    const expanded = describe('button.*', graph, T) as ExpandedNodeResult;
+    expect(expanded.id).toBe('button');
+    expect(expanded.kind).toBe('component');
+    expect(expanded.intel).toBeDefined();
+    expect(expanded.props.variant).toMatchObject({
+      type: 'enum',
+      values: ['default', 'primary'],
+      default: 'default',
+    });
+    expect(expanded.props.size).toMatchObject({
+      type: 'enum',
+      values: ['default', 'icon'],
+    });
+    expect(expanded.snippet).toBe('<Button variant="primary">Save</Button>');
+    expect(expanded.composesWith).toEqual(['page-header', 'page-header']);
+    expect(expanded).not.toHaveProperty('children');
+  });
+
+  it('describe(<addr>.?) probes safely -- returns the result on hit, null on miss', () => {
+    const hit = describe('button.props.variant.?', graph, T);
+    expect(hit).toMatchObject({ type: 'enum', values: ['default', 'primary'] });
+
+    const miss = describe('button.props.color.?', graph, T);
+    expect(miss).toBeNull();
+
+    const nodeMiss = describe('nonexistent.?', graph, T);
+    expect(nodeMiss).toBeNull();
+  });
+
+  it('describe(<id>.props.*) returns all props tagged with full values', () => {
+    const result = describe('button.props.*', graph, T) as {
+      expanded: true;
+      props: Record<string, unknown>;
+    };
+    expect(result.expanded).toBe(true);
+    expect(result.props.variant).toMatchObject({ type: 'enum', values: ['default', 'primary'] });
+    expect(result.props.size).toMatchObject({ type: 'enum', values: ['default', 'icon'] });
+  });
+
+  it('* expansion strips vocab from grammar props', () => {
+    const expanded = describe('container.*', graph, T) as ExpandedNodeResult;
+    expect(expanded.props.fill).toMatchObject({
+      type: 'grammar',
+      grammar: ['word', 'word/alpha', 'word-to-word'],
+    });
+    expect(expanded.props.fill).not.toHaveProperty('vocab');
   });
 
   it('degraded mode (no target) resolves intel + edges but advertises no prop children', () => {
@@ -280,5 +344,122 @@ vdescribe('assembleGraph(items)', () => {
 
   it('throws when a composesWith edge names an id that appears in no item', () => {
     expect(() => assembleGraph([{ ...validItem, composites: ['nonexistent-id'] }])).toThrow();
+  });
+});
+
+vdescribe('assembleGraph: @parent linking', () => {
+  const validItem: RegistryItem = {
+    name: 'button',
+    type: 'ui',
+    primitives: [],
+    files: [],
+    rules: [],
+    composites: [],
+    facets: {},
+  };
+
+  it('explicit @parent links child to parent, both directions', () => {
+    const graph = assembleGraph([
+      { ...validItem, name: 'card' },
+      { ...validItem, name: 'card-header', parent: 'card' },
+    ]);
+    const headerNode = graph.nodes.get('card-header');
+    expect(headerNode?.parent).toBe('card');
+    const cardNode = graph.nodes.get('card');
+    expect(cardNode?.parts).toEqual(['card-header']);
+  });
+
+  it('nodes without @parent stay parentless regardless of naming', () => {
+    const graph = assembleGraph([
+      { ...validItem, name: 'alert' },
+      { ...validItem, name: 'alert-dialog' },
+    ]);
+    expect(graph.nodes.get('alert-dialog')?.parent).toBeUndefined();
+    expect(graph.nodes.get('alert')?.parts).toEqual([]);
+  });
+
+  it('a composite can be a parent', () => {
+    const graph = assembleGraph([
+      { ...validItem, name: 'layout', type: 'composite' },
+      { ...validItem, name: 'layout-sidebar', parent: 'layout' },
+    ]);
+    const sidebarNode = graph.nodes.get('layout-sidebar');
+    expect(sidebarNode?.parent).toBe('layout');
+    const layoutNode = graph.nodes.get('layout');
+    expect(layoutNode?.parts).toEqual(['layout-sidebar']);
+    expect(layoutNode?.kind).toBe('composite');
+  });
+
+  it('throws on self-referential @parent', () => {
+    expect(() => assembleGraph([{ ...validItem, name: 'loop', parent: 'loop' }])).toThrow(
+      'parent references itself',
+    );
+  });
+
+  it('throws on circular @parent chain', () => {
+    expect(() =>
+      assembleGraph([
+        { ...validItem, name: 'alpha', parent: 'beta' },
+        { ...validItem, name: 'beta', parent: 'alpha' },
+      ]),
+    ).toThrow('circular parent chain');
+  });
+
+  it('throws when @parent names an absent id', () => {
+    expect(() => assembleGraph([{ ...validItem, name: 'orphan', parent: 'ghost' }])).toThrow(
+      'unknown id',
+    );
+  });
+});
+
+vdescribe('describe(): parts, parent, siblings', () => {
+  const validItem: RegistryItem = {
+    name: 'button',
+    type: 'ui',
+    primitives: [],
+    files: [],
+    rules: [],
+    composites: [],
+    facets: {},
+  };
+
+  it('describe(card) includes part children typed "part"', () => {
+    const graph = assembleGraph([
+      { ...validItem, name: 'card' },
+      { ...validItem, name: 'card-header', parent: 'card' },
+      { ...validItem, name: 'card-footer', parent: 'card' },
+    ]);
+    const result = describe('card', graph) as NodeResult;
+    expect(result.children).toContainEqual({ addr: 'card-header', type: 'part' });
+    expect(result.children).toContainEqual({ addr: 'card-footer', type: 'part' });
+  });
+
+  it('describe(card-header) returns NodeResult with parent and siblings', () => {
+    const graph = assembleGraph([
+      { ...validItem, name: 'card' },
+      { ...validItem, name: 'card-header', parent: 'card' },
+      { ...validItem, name: 'card-footer', parent: 'card' },
+    ]);
+    const result = describe('card-header', graph) as NodeResult;
+    expect(result.parent).toBe('card');
+    expect(result.siblings).toEqual(['card-footer']);
+  });
+
+  it('describe(card.*) includes parts in expanded result', () => {
+    const graph = assembleGraph([
+      { ...validItem, name: 'card' },
+      { ...validItem, name: 'card-header', parent: 'card' },
+      { ...validItem, name: 'card-footer', parent: 'card' },
+    ]);
+    const result = describe('card.*', graph) as ExpandedNodeResult;
+    expect(result.parts).toEqual(['card-header', 'card-footer']);
+  });
+
+  it('a node with no parts carries no parent/siblings keys', () => {
+    const graph = assembleGraph([{ ...validItem, name: 'standalone' }]);
+    const result = describe('standalone', graph) as NodeResult;
+    expect(result).not.toHaveProperty('parent');
+    expect(result).not.toHaveProperty('siblings');
+    expect(result.children).toEqual([]);
   });
 });

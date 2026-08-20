@@ -240,7 +240,7 @@ function selectNearMiss(
 /** Resolve an id to its #2072 layer-0 NodeResult, or undefined if not a node. */
 function describeNode(id: string, graph: Graph): NodeResult | undefined {
   const result = describe(id, graph);
-  if (!Array.isArray(result) && 'children' in result) return result;
+  if (result !== null && !Array.isArray(result) && 'children' in result) return result;
   return undefined;
 }
 
