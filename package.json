@@ -38,7 +38,7 @@
     "@vitejs/plugin-react": "catalog:",
     "@vitest/coverage-v8": "catalog:",
     "@vitest/ui": "catalog:",
-    "esbuild": "^0.27.3",
+    "esbuild": "catalog:",
     "happy-dom": "catalog:",
     "lefthook": "catalog:",
     "msw": "catalog:",

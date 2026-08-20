@@ -285,6 +285,30 @@ function locatePosition(
   return { node: last, offset: last.data.length };
 }
 
+/** Inverse of `locatePosition`: map a DOM (node, offset) boundary -- from a
+ *  native `beforeinput` target range -- to the model text offset within
+ *  `blockEl`. Measures with `Range.toString().length`, the same UTF-16
+ *  code-unit count `sliceContent`/`removeText` use, so it agrees exactly with
+ *  the model even when the boundary lands on an element (not just a text
+ *  node) or inside a mark wrapper. Returns `null` when `node` isn't inside
+ *  `blockEl` at all. */
+function domOffsetInBlock(blockEl: Element, node: Node, offset: number): number | null {
+  if (!blockEl.contains(node)) return null;
+  try {
+    const range = blockEl.ownerDocument.createRange();
+    range.setStart(blockEl, 0);
+    range.setEnd(node, offset);
+    return range.toString().length;
+  } catch {
+    // A target range whose (node, offset) `Range.setStart`/`setEnd` rejects
+    // (bad container/offset) must never escape into the `beforeinput`
+    // listener -- per this file's own rule, typing must never break.
+    // `deletionRange`'s caller already falls back to the UTF-16 arithmetic
+    // for a `null` result.
+    return null;
+  }
+}
+
 function restoreSelection(root: HTMLElement, sel: EditorHistoryState['sel']): void {
   const view = root.ownerDocument.defaultView;
   const selection = view?.getSelection?.() ?? null;
@@ -336,61 +360,148 @@ export function bindEditor(root: HTMLElement): () => void {
 
   // -- op construction for the doc-dependent inputs (deletes / structural) --
 
-  function deleteBackwardOp(state: EditorHistoryState): EditorOp | null {
+  /** A range selection spanning two OR MORE blocks (`anchor.blockId !==
+   *  focus.blockId`, not collapsed): truncate the earlier block from its
+   *  offset to its end, truncate the later block from its start to its
+   *  offset, `delete` any block strictly between them, then `mergeNext` the
+   *  (now-truncated) earlier block into the (now-truncated) later one --
+   *  landing the caret at the earlier block's offset, same as a same-block
+   *  range delete. Built entirely from the existing op vocabulary (no new op
+   *  kind), the same compound-ops-for-one-user-action shape `splitOps` below
+   *  already uses for a range-remove-then-split. */
+  function deleteRangeAcrossBlocksOps(
+    doc: EditorHistoryState['doc'],
+    sel: EditorHistoryState['sel'],
+  ): EditorOp[] {
+    const anchorIndex = doc.findIndex((b) => b.id === sel.anchor.blockId);
+    const focusIndex = doc.findIndex((b) => b.id === sel.focus.blockId);
+    if (anchorIndex === -1 || focusIndex === -1) return [];
+    const anchorFirst = anchorIndex <= focusIndex;
+    const startIndex = anchorFirst ? anchorIndex : focusIndex;
+    const endIndex = anchorFirst ? focusIndex : anchorIndex;
+    const startOffset = anchorFirst ? sel.anchor.offset : sel.focus.offset;
+    const endOffset = anchorFirst ? sel.focus.offset : sel.anchor.offset;
+
+    const startBlock = doc[startIndex] as BaseBlock;
+    const endBlock = doc[endIndex] as BaseBlock;
+    const startTotal = totalTextLength(normalizeRuns(startBlock.content));
+
+    const ops: EditorOp[] = [
+      {
+        kind: 'removeText',
+        blockId: startBlock.id,
+        offset: startOffset,
+        text: sliceContent(startBlock.content, startOffset, startTotal),
+      },
+      {
+        kind: 'removeText',
+        blockId: endBlock.id,
+        offset: 0,
+        text: sliceContent(endBlock.content, 0, endOffset),
+      },
+    ];
+    for (let i = startIndex + 1; i < endIndex; i++) {
+      ops.push({ kind: 'delete', blockId: (doc[i] as BaseBlock).id });
+    }
+    ops.push({ kind: 'mergeNext', blockId: startBlock.id });
+    return ops;
+  }
+
+  /** The [start, end) model-offset range a native `deleteContentBackward`/
+   *  `Forward` actually removes, per the browser's own `beforeinput`
+   *  `targetRanges` (`InputData.targetRanges`, from `getTargetRanges()`) --
+   *  grapheme- and surrogate-pair-aware, unlike the UTF-16 code-unit `offset
+   *  +/- 1` arithmetic `fallback` carries. Falls back to that arithmetic when
+   *  no usable target range is available: no browser support, or a driver
+   *  that never dispatches a real `beforeinput` (vitest/happy-dom -- see this
+   *  file's test's own note that capture is Playwright-only). */
+  function deletionRange(
+    blockId: string,
+    fallback: { start: number; end: number },
+    targetRanges: readonly StaticRange[],
+  ): { start: number; end: number } {
+    const range = targetRanges[0];
+    const blockEl = root.querySelector(`[data-block-id="${CSS.escape(blockId)}"]`);
+    if (range === undefined || blockEl === null) return fallback;
+    const start = domOffsetInBlock(blockEl, range.startContainer, range.startOffset);
+    const end = domOffsetInBlock(blockEl, range.endContainer, range.endOffset);
+    if (start === null || end === null) return fallback;
+    return { start: Math.min(start, end), end: Math.max(start, end) };
+  }
+
+  function deleteBackwardOp(
+    state: EditorHistoryState,
+    targetRanges: readonly StaticRange[],
+  ): EditorOp[] {
     const { sel, doc } = state;
-    if (!isCollapsed(sel) && sel.anchor.blockId === sel.focus.blockId) {
+    if (!isCollapsed(sel)) {
+      if (sel.anchor.blockId !== sel.focus.blockId) return deleteRangeAcrossBlocksOps(doc, sel);
       const start = Math.min(sel.anchor.offset, sel.focus.offset);
       const end = Math.max(sel.anchor.offset, sel.focus.offset);
       const block = doc.find((b) => b.id === sel.focus.blockId);
-      return {
-        kind: 'removeText',
-        blockId: sel.focus.blockId,
-        offset: start,
-        text: sliceContent(block?.content, start, end),
-      };
+      return [
+        {
+          kind: 'removeText',
+          blockId: sel.focus.blockId,
+          offset: start,
+          text: sliceContent(block?.content, start, end),
+        },
+      ];
     }
     const { blockId, offset } = sel.focus;
     if (offset === 0) {
       const index = doc.findIndex((b) => b.id === blockId);
-      if (index <= 0) return null; // first block: nothing to merge into
-      return { kind: 'mergePrev', blockId };
+      if (index <= 0) return []; // first block: nothing to merge into
+      return [{ kind: 'mergePrev', blockId }];
     }
     const block = doc.find((b) => b.id === blockId);
-    return {
-      kind: 'removeText',
-      blockId,
-      offset: offset - 1,
-      text: sliceContent(block?.content, offset - 1, offset),
-    };
+    const { start, end } = deletionRange(blockId, { start: offset - 1, end: offset }, targetRanges);
+    return [
+      {
+        kind: 'removeText',
+        blockId,
+        offset: start,
+        text: sliceContent(block?.content, start, end),
+      },
+    ];
   }
 
-  function deleteForwardOp(state: EditorHistoryState): EditorOp | null {
+  function deleteForwardOp(
+    state: EditorHistoryState,
+    targetRanges: readonly StaticRange[],
+  ): EditorOp[] {
     const { sel, doc } = state;
-    if (!isCollapsed(sel) && sel.anchor.blockId === sel.focus.blockId) {
+    if (!isCollapsed(sel)) {
+      if (sel.anchor.blockId !== sel.focus.blockId) return deleteRangeAcrossBlocksOps(doc, sel);
       const start = Math.min(sel.anchor.offset, sel.focus.offset);
       const end = Math.max(sel.anchor.offset, sel.focus.offset);
       const block = doc.find((b) => b.id === sel.focus.blockId);
-      return {
-        kind: 'removeText',
-        blockId: sel.focus.blockId,
-        offset: start,
-        text: sliceContent(block?.content, start, end),
-      };
+      return [
+        {
+          kind: 'removeText',
+          blockId: sel.focus.blockId,
+          offset: start,
+          text: sliceContent(block?.content, start, end),
+        },
+      ];
     }
     const { blockId, offset } = sel.focus;
     const block = doc.find((b) => b.id === blockId);
     const total = totalTextLength(normalizeRuns(block?.content));
     if (offset >= total) {
       const index = doc.findIndex((b) => b.id === blockId);
-      if (index === -1 || index >= doc.length - 1) return null; // last block: nothing to merge
-      return { kind: 'mergeNext', blockId };
+      if (index === -1 || index >= doc.length - 1) return []; // last block: nothing to merge
+      return [{ kind: 'mergeNext', blockId }];
     }
-    return {
-      kind: 'removeText',
-      blockId,
-      offset,
-      text: sliceContent(block?.content, offset, offset + 1),
-    };
+    const { start, end } = deletionRange(blockId, { start: offset, end: offset + 1 }, targetRanges);
+    return [
+      {
+        kind: 'removeText',
+        blockId,
+        offset: start,
+        text: sliceContent(block?.content, start, end),
+      },
+    ];
   }
 
   /** Enter -> split. With a range selection, remove the range first (as a
@@ -506,13 +617,11 @@ export function bindEditor(root: HTMLElement): () => void {
           return;
         }
         case 'deleteContentBackward': {
-          const op = deleteBackwardOp(state);
-          if (op) applyOps([op]);
+          applyOps(deleteBackwardOp(state, data.targetRanges));
           return;
         }
         case 'deleteContentForward': {
-          const op = deleteForwardOp(state);
-          if (op) applyOps([op]);
+          applyOps(deleteForwardOp(state, data.targetRanges));
           return;
         }
         case 'insertParagraph':

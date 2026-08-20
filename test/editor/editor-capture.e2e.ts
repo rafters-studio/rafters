@@ -40,6 +40,23 @@ test('backspace at block start merges with the previous block', async ({ page })
   await expect(page.locator('[data-part="root"]')).toHaveText('firstsecond');
 });
 
+test('backspace removes a whole emoji grapheme, not half a surrogate pair', async ({ page }) => {
+  // Canary for the targetRanges fix: raw UTF-16 `offset - 1` arithmetic would
+  // remove only the low surrogate of the astral emoji, leaving a lone
+  // surrogate (`'a\uD83D'`) instead of `'a'`. Only the browser's own
+  // `getTargetRanges()` knows the grapheme spans 2 code units.
+  await page.goto('about:blank');
+  await page.setContent(
+    await buildEditorHarness({
+      blocks: [{ id: 'b1', type: 'text', content: `a${String.fromCodePoint(0x1f600)}` }],
+      caret: { blockId: 'b1', offset: 3 },
+    }),
+  );
+  await page.locator('[data-part="root"]').click();
+  await page.keyboard.press('Backspace');
+  await expect(page.locator('[data-block-id="b1"]')).toHaveText('a');
+});
+
 test('delete at intra-text position removes the following character', async ({ page }) => {
   await page.goto('about:blank');
   await page.setContent(
@@ -59,15 +76,45 @@ test('pasting plain text produces insert ops and the resulting doc matches', asy
   );
   const surface = page.locator('[data-part="root"]');
   await surface.click();
-  // Drive paste through a real ClipboardEvent carrying text/plain.
+  // Drive paste through a real ClipboardEvent carrying text/plain. Gecko does
+  // NOT populate `event.clipboardData` from the `ClipboardEvent` constructor's
+  // init dict for a synthetic (untrusted) event -- only Chromium/WebKit honor
+  // it that way -- so the constructor-injected `clipboardData` is invisible to
+  // `createClipboard`'s `getData('text/plain')` there. `clipboardData` is
+  // otherwise an ordinary configurable accessor on the event instance, so
+  // shadowing it with `Object.defineProperty` after construction sidesteps
+  // that native getter entirely (in every engine) instead of depending on the
+  // constructor init dict being honored.
   await surface.evaluate((el) => {
     const dt = new DataTransfer();
     dt.setData('text/plain', 'pasted');
-    el.dispatchEvent(
-      new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }),
-    );
+    const event = new ClipboardEvent('paste', { bubbles: true, cancelable: true });
+    Object.defineProperty(event, 'clipboardData', { value: dt, configurable: true });
+    el.dispatchEvent(event);
   });
   await expect(surface).toHaveText('pasted');
+});
+
+test('IME composition commits as one insertText op on compositionend', async ({ page }) => {
+  await page.goto('about:blank');
+  await page.setContent(
+    await buildEditorHarness({ blocks: [{ id: 'b1', type: 'text', content: '' }] }),
+  );
+  const surface = page.locator('[data-part="root"]');
+  await surface.click();
+  // Real OS-level IME automation isn't available through Playwright, so drive
+  // the composition lifecycle with the same synthetic-dispatch technique the
+  // paste test uses. `bindEditor` never inspects the DOM the browser rendered
+  // mid-composition -- `onCompositionEnd` commits `event.data` as one
+  // `insertText` and force-reprojects (`prevDoc = null`) -- so this proves the
+  // commit path (the one this issue's AC actually covers) regardless of
+  // whether a real IME painted intermediate glyphs.
+  await surface.evaluate((el) => {
+    el.dispatchEvent(new CompositionEvent('compositionstart', { data: '', bubbles: true }));
+    el.dispatchEvent(new CompositionEvent('compositionupdate', { data: 'nihongo', bubbles: true }));
+    el.dispatchEvent(new CompositionEvent('compositionend', { data: '日本語', bubbles: true }));
+  });
+  await expect(surface).toHaveText('日本語');
 });
 
 test('selection is restored from state.sel after every edit', async ({ page }) => {
