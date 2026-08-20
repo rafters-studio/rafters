@@ -35,28 +35,29 @@ describe('blockContentToText', () => {
 
 describe('splitBlock', () => {
   it('splits in the middle', () => {
-    const result = splitBlock(blocks, 'p1', 5);
+    const result = splitBlock(blocks, 'p1', 5, 'new-1');
     expect(result.blocks).toHaveLength(5);
     expect(result.blocks[1].content).toBe('Hello');
     expect(result.blocks[2].content).toBe(' world');
     expect(result.blocks[2].type).toBe('text');
-    expect(result.newBlockId).toBe(result.blocks[2].id);
+    expect(result.newBlockId).toBe('new-1');
+    expect(result.blocks[2].id).toBe('new-1');
   });
 
   it('splits at the start (offset 0)', () => {
-    const result = splitBlock(blocks, 'p1', 0);
+    const result = splitBlock(blocks, 'p1', 0, 'new-2');
     expect(result.blocks[1].content).toBe('');
     expect(result.blocks[2].content).toBe('Hello world');
   });
 
   it('splits at the end', () => {
-    const result = splitBlock(blocks, 'p1', 11);
+    const result = splitBlock(blocks, 'p1', 11, 'new-3');
     expect(result.blocks[1].content).toBe('Hello world');
     expect(result.blocks[2].content).toBe('');
   });
 
   it('heading split creates text block', () => {
-    const result = splitBlock(blocks, 'h1', 2);
+    const result = splitBlock(blocks, 'h1', 2, 'new-4');
     expect(result.blocks[0].type).toBe('heading');
     expect(result.blocks[0].content).toBe('Ti');
     expect(result.blocks[1].type).toBe('text');
@@ -64,8 +65,35 @@ describe('splitBlock', () => {
   });
 
   it('returns unchanged if block not found', () => {
-    const result = splitBlock(blocks, 'nonexistent', 0);
+    const result = splitBlock(blocks, 'nonexistent', 0, 'new-5');
     expect(result.blocks).toBe(blocks);
+  });
+
+  it('splits marked InlineContent[] at a run boundary, preserving marks on both halves', () => {
+    const marked: BaseBlock[] = [
+      {
+        id: 'm1',
+        type: 'text',
+        content: [{ text: 'hello ', marks: ['bold'] }, { text: 'world' }],
+      },
+    ];
+    const result = splitBlock(marked, 'm1', 6, 'new-6');
+    expect(result.blocks[0].content).toEqual([{ text: 'hello ', marks: ['bold'] }]);
+    expect(result.blocks[1].content).toEqual([{ text: 'world' }]);
+  });
+
+  it('splits marked InlineContent[] mid-run, splitting the straddled run', () => {
+    const marked: BaseBlock[] = [
+      { id: 'm1', type: 'text', content: [{ text: 'hello world', marks: ['bold'] }] },
+    ];
+    const result = splitBlock(marked, 'm1', 5, 'new-7');
+    expect(result.blocks[0].content).toEqual([{ text: 'hello', marks: ['bold'] }]);
+    expect(result.blocks[1].content).toEqual([{ text: ' world', marks: ['bold'] }]);
+  });
+
+  it('does not mint a crypto.randomUUID internally -- caller-supplied id passes through', () => {
+    const result = splitBlock(blocks, 'p1', 5, 'caller-assigned-id');
+    expect(result.newBlockId).toBe('caller-assigned-id');
   });
 });
 
@@ -88,6 +116,27 @@ describe('mergeWithPrevious', () => {
     const result = mergeWithPrevious(blocks, 'nonexistent');
     expect(result.blocks).toBe(blocks);
   });
+
+  it('preserves marks across the merge point when either side has InlineContent[]', () => {
+    const marked: BaseBlock[] = [
+      { id: 'm1', type: 'text', content: [{ text: 'hello ', marks: ['bold'] }] },
+      { id: 'm2', type: 'text', content: [{ text: 'world' }] },
+    ];
+    const result = mergeWithPrevious(marked, 'm2');
+    expect(result.blocks[0].content).toEqual([
+      { text: 'hello ', marks: ['bold'] },
+      { text: 'world' },
+    ]);
+  });
+
+  it('merges adjacent runs with identical marks into one canonical run', () => {
+    const marked: BaseBlock[] = [
+      { id: 'm1', type: 'text', content: [{ text: 'hello', marks: ['bold'] }] },
+      { id: 'm2', type: 'text', content: [{ text: ' world', marks: ['bold'] }] },
+    ];
+    const result = mergeWithPrevious(marked, 'm2');
+    expect(result.blocks[0].content).toEqual([{ text: 'hello world', marks: ['bold'] }]);
+  });
 });
 
 describe('mergeWithNext', () => {
@@ -102,6 +151,18 @@ describe('mergeWithNext', () => {
   it('no-ops for last block', () => {
     const result = mergeWithNext(blocks, 'q1');
     expect(result.blocks).toBe(blocks);
+  });
+
+  it('preserves marks across the merge point when either side has InlineContent[]', () => {
+    const marked: BaseBlock[] = [
+      { id: 'm1', type: 'text', content: [{ text: 'hello ', marks: ['bold'] }] },
+      { id: 'm2', type: 'text', content: [{ text: 'world' }] },
+    ];
+    const result = mergeWithNext(marked, 'm1');
+    expect(result.blocks[0].content).toEqual([
+      { text: 'hello ', marks: ['bold'] },
+      { text: 'world' },
+    ]);
   });
 });
 
@@ -186,10 +247,15 @@ describe('insertBlocksAt', () => {
   });
 
   it('splits block and inserts in the middle', () => {
-    const result = insertBlocksAt(blocks, newBlocks, 'p1', 5);
+    const result = insertBlocksAt(blocks, newBlocks, 'p1', 5, 'p1-split');
     // Original p1 is split: "Hello" | n1 | n2 | " world"
     expect(result.blocks.length).toBeGreaterThan(blocks.length + newBlocks.length - 1);
     expect(result.lastInsertedId).toBe('n2');
+    expect(result.blocks.some((b) => b.id === 'p1-split')).toBe(true);
+  });
+
+  it('throws when the middle-of-block branch is reached without a splitBlockId', () => {
+    expect(() => insertBlocksAt(blocks, newBlocks, 'p1', 5)).toThrow(/splitBlockId/);
   });
 
   it('handles empty insert', () => {

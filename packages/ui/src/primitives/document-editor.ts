@@ -212,7 +212,7 @@ export function createDocumentEditor(options: DocumentEditorOptions): DocumentEd
 
       // insertParagraph = Enter key (browser already split the DOM)
       if (data.inputType === 'insertParagraph') {
-        const result = splitBlock(state.get().blocks, pos.blockId, pos.offset);
+        const result = splitBlock(state.get().blocks, pos.blockId, pos.offset, crypto.randomUUID());
         updateBlocks(result.blocks);
         // Focus the new block after React re-renders
         requestAnimationFrame(() => {
@@ -411,7 +411,13 @@ export function createDocumentEditor(options: DocumentEditorOptions): DocumentEd
       }
 
       // Multiple blocks: insert at cursor position
-      const result = insertBlocksAt(blocks, pastedBlocks, pos.blockId, pos.offset);
+      const result = insertBlocksAt(
+        blocks,
+        pastedBlocks,
+        pos.blockId,
+        pos.offset,
+        crypto.randomUUID(),
+      );
       updateBlocks(result.blocks);
       requestAnimationFrame(() => {
         setCursorAtBlockEnd(container, result.lastInsertedId);
