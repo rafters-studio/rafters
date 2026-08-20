@@ -177,7 +177,9 @@ export const TOOL_DEFINITIONS = [
       'installed surface; describe(components)/describe(composites) list the kind roster; ' +
       'describe(button) returns a node -- intel plus type-marked, drillable children; ' +
       'describe(button.props.fill) drills into a prop; describe(button.props.fill.vocab) ' +
-      'returns the real token values. A natural-language question (e.g. "what do I use when ' +
+      'returns the real token values. describe(button.*) expands all props inline in one ' +
+      'call (no more drill-per-prop round trips); describe(button.props.fill.?) probes ' +
+      'safely (null on miss, not an error). A natural-language question (e.g. "what do I use when ' +
       'it needs to be above everything") routes to the best-matching node plus a near-miss ' +
       'counter-example instead of an address.',
     inputSchema: {
