@@ -161,17 +161,26 @@ export class TokenGraph {
     for (const [k, v] of this.nodes) this.snapshot.set(k, structuredClone(v));
   }
 
+  // The caller (set/bind) takes a snapshot before invoking this. If any
+  // dependent's transform throws partway through, we roll the whole graph
+  // back to that snapshot and re-throw -- cascade is all-or-nothing, never
+  // half-applied.
   private cascadeFrom(changed: string): void {
-    const dependents = this.collectDependents(changed);
-    if (dependents.size === 0) return;
-    const ordered = this.topoSort(dependents);
-    for (const name of ordered) {
-      const node = this.nodes.get(name);
-      if (!node || node.userOverride || !node.binding) continue;
-      const plugin = this.requirePlugin(node.binding.plugin);
-      const value = plugin.transform(node.binding.input, (n) => this.get(n));
-      plugin.outputSchema.parse(value);
-      this.nodes.set(name, { ...node, value });
+    try {
+      const dependents = this.collectDependents(changed);
+      if (dependents.size === 0) return;
+      const ordered = this.topoSort(dependents);
+      for (const name of ordered) {
+        const node = this.nodes.get(name);
+        if (!node || node.userOverride || !node.binding) continue;
+        const plugin = this.requirePlugin(node.binding.plugin);
+        const value = plugin.transform(node.binding.input, (n) => this.get(n));
+        plugin.outputSchema.parse(value);
+        this.nodes.set(name, { ...node, value });
+      }
+    } catch (error) {
+      this.undo();
+      throw error;
     }
   }
 

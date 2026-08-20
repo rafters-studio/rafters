@@ -389,6 +389,16 @@ function generateThemeBlock(groups: GroupedTokens): string {
       if (token.lineHeight) {
         lines.push(`  --${token.name}--line-height: ${token.lineHeight};`);
       }
+      // Tailwind v4 reads --leading-* as a NAMED theme namespace for the
+      // leading-* utility (leading-tight, leading-relaxed, ...). The registry
+      // names these tokens line-height-*, so bridge to the Tailwind-native
+      // name here -- same stripped-prefix pattern as --spacing-* / --radius-*
+      // below. Additive: --line-height-* keeps carrying its existing meaning
+      // (the font-size-*--line-height pairing) for whatever already reads it.
+      if (token.name.startsWith('line-height-')) {
+        const key = token.name.replace(/^line-height-/, '');
+        lines.push(`  --leading-${key}: ${value};`);
+      }
     }
     lines.push('');
   }
@@ -1267,6 +1277,13 @@ function generateThemeBlockWithVarRefs(groups: GroupedTokens): string {
       if (token.lineHeight) {
         lines.push(`  --${token.name}--line-height: var(--rafters-${token.name}--line-height);`);
       }
+      // Same --leading-* bridge as the dynamic path (generateThemeBlock) --
+      // the two must stay in parity or Studio's leading-* utilities compile
+      // to nothing while the consumer sheet's work.
+      if (token.name.startsWith('line-height-')) {
+        const key = token.name.replace(/^line-height-/, '');
+        lines.push(`  --leading-${key}: var(--rafters-${token.name});`);
+      }
     }
     lines.push('');
   }
@@ -1720,6 +1737,8 @@ function deriveCandidates(themeCSS: string): string[] {
     } else if (name.startsWith('font-weight-')) {
       candidates.add(`font-${name.slice(12)}`);
     } else if (name.startsWith('ease-')) {
+      candidates.add(name);
+    } else if (name.startsWith('leading-')) {
       candidates.add(name);
     } else if (name.startsWith('animate-')) {
       candidates.add(name);

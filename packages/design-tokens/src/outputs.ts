@@ -5,7 +5,8 @@
  * Every trigger (CLI init, CLI add/update, studio token mutation, the file
  * watch) funnels through {@link regenerateOutputs}. There is exactly one
  * function that writes `rafters.css` / `rafters.ts` / `rafters.json` /
- * `rafters.standalone.css` / `rafters.documentation.css` and fires the HMR
+ * `rafters.standalone.css` / `rafters.documentation.css`, prunes any of those
+ * files left behind by a now-disabled export, and fires the HMR
  * notification, so the emitted set
  * can never drift between callers and there is no second regen/HMR mechanism.
  *
@@ -14,7 +15,7 @@
  */
 
 import { existsSync, realpathSync } from 'node:fs';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, unlink, writeFile } from 'node:fs/promises';
 import { isAbsolute, join, resolve } from 'node:path';
 import { toDTCG } from './exporters/dtcg.js';
 import {
@@ -58,6 +59,20 @@ export interface RegenerateOutputsHooks {
   /** Fired once after all outputs are written (e.g. studio HMR signal). */
   notify?: () => void;
 }
+
+/**
+ * Every filename {@link regenerateOutputs} can ever write. Fixed and
+ * exhaustive -- used to sweep away a format's artifact when its export is
+ * disabled, so a toggled-off format doesn't leave a stale file behind for
+ * consumers to keep picking up.
+ */
+const KNOWN_OUTPUT_FILENAMES = [
+  'rafters.css',
+  'rafters.ts',
+  'rafters.json',
+  'rafters.standalone.css',
+  'rafters.documentation.css',
+] as const;
 
 /**
  * A path-field value as stored in config: a single path, or an array of
@@ -113,9 +128,10 @@ export function resolveContentSources(
 }
 
 /**
- * Write every configured output for `registry` into `input.outputDir`, then
- * fire `hooks.notify`. Returns the filenames written. The ONLY code that writes
- * rafters output files or triggers HMR.
+ * Write every configured output for `registry` into `input.outputDir`, prune
+ * any known output file whose export is disabled, then fire `hooks.notify`.
+ * Returns the filenames written. The ONLY code that writes rafters output
+ * files or triggers HMR.
  */
 export async function regenerateOutputs(
   registry: TokenRegistry,
@@ -160,6 +176,22 @@ export async function regenerateOutputs(
     const doc = await registryToDocumentation(registry, { contentSources });
     await writeFile(join(outputDir, 'rafters.documentation.css'), doc);
     written.push('rafters.documentation.css');
+  }
+
+  // Sweep any known artifact whose export is now disabled -- a format toggled
+  // off must not leave its last-written file on disk for a consumer to keep
+  // reading stale output. Best-effort: a stale artifact that fails to delete
+  // must not fail a regen whose writes all succeeded.
+  const writtenSet = new Set(written);
+  for (const filename of KNOWN_OUTPUT_FILENAMES) {
+    if (writtenSet.has(filename)) continue;
+    const filePath = join(outputDir, filename);
+    if (!existsSync(filePath)) continue;
+    try {
+      await unlink(filePath);
+    } catch {
+      // Best-effort cleanup -- see comment above.
+    }
   }
 
   hooks.notify?.();
