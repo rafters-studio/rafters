@@ -429,6 +429,27 @@ export function bindEditor(root: HTMLElement): () => void {
     return { start: Math.min(start, end), end: Math.max(start, end) };
   }
 
+  /** A range selection on a SINGLE block (`anchor.blockId === focus.blockId`,
+   *  not collapsed): remove [start, end) as one `removeText` op. Shared by
+   *  `deleteBackwardOp` and `deleteForwardOp` -- a range delete removes the
+   *  same span regardless of which key triggered it. */
+  function sameBlockRangeRemoveOp(
+    doc: EditorHistoryState['doc'],
+    sel: EditorHistoryState['sel'],
+  ): EditorOp[] {
+    const start = Math.min(sel.anchor.offset, sel.focus.offset);
+    const end = Math.max(sel.anchor.offset, sel.focus.offset);
+    const block = doc.find((b) => b.id === sel.focus.blockId);
+    return [
+      {
+        kind: 'removeText',
+        blockId: sel.focus.blockId,
+        offset: start,
+        text: sliceContent(block?.content, start, end),
+      },
+    ];
+  }
+
   function deleteBackwardOp(
     state: EditorHistoryState,
     targetRanges: readonly StaticRange[],
@@ -436,17 +457,7 @@ export function bindEditor(root: HTMLElement): () => void {
     const { sel, doc } = state;
     if (!isCollapsed(sel)) {
       if (sel.anchor.blockId !== sel.focus.blockId) return deleteRangeAcrossBlocksOps(doc, sel);
-      const start = Math.min(sel.anchor.offset, sel.focus.offset);
-      const end = Math.max(sel.anchor.offset, sel.focus.offset);
-      const block = doc.find((b) => b.id === sel.focus.blockId);
-      return [
-        {
-          kind: 'removeText',
-          blockId: sel.focus.blockId,
-          offset: start,
-          text: sliceContent(block?.content, start, end),
-        },
-      ];
+      return sameBlockRangeRemoveOp(doc, sel);
     }
     const { blockId, offset } = sel.focus;
     if (offset === 0) {
@@ -473,17 +484,7 @@ export function bindEditor(root: HTMLElement): () => void {
     const { sel, doc } = state;
     if (!isCollapsed(sel)) {
       if (sel.anchor.blockId !== sel.focus.blockId) return deleteRangeAcrossBlocksOps(doc, sel);
-      const start = Math.min(sel.anchor.offset, sel.focus.offset);
-      const end = Math.max(sel.anchor.offset, sel.focus.offset);
-      const block = doc.find((b) => b.id === sel.focus.blockId);
-      return [
-        {
-          kind: 'removeText',
-          blockId: sel.focus.blockId,
-          offset: start,
-          text: sliceContent(block?.content, start, end),
-        },
-      ];
+      return sameBlockRangeRemoveOp(doc, sel);
     }
     const { blockId, offset } = sel.focus;
     const block = doc.find((b) => b.id === blockId);
