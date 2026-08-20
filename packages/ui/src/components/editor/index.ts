@@ -8,6 +8,7 @@
 export { applyOp, applyOpSequence } from './ops';
 export type { EditorOp, FormatOp, OpResult, StructuralOp, TextOp } from './ops';
 export { createEditorHistory } from './editor-history';
+export { bindEditor, projectDocument, translateBeforeInput } from './editor.behavior';
 export type {
   EditorHistory,
   EditorHistoryConfig,

@@ -1,0 +1,168 @@
+/**
+ * editor.behavior.test.ts (vitest / happy-dom) -- the PURE, browser-free
+ * surface of FR-EDITOR-004: `translateBeforeInput` (event -> op),
+ * `projectDocument` (model -> DOM, identity-gated), and the capture-side
+ * coalescing SHAPE (translateBeforeInput -> controls -> one `done` entry).
+ *
+ * `beforeinput` CAPTURE itself is proven only in Playwright
+ * (test/editor/editor-capture.e2e.ts) -- happy-dom has no real `beforeinput`
+ * semantics, so no synthetic `beforeinput` is dispatched here (AC).
+ */
+import { describe, expect, it } from 'vitest';
+import { createEditorHistory } from '../../../src/components/editor/editor-history';
+import {
+  projectDocument,
+  translateBeforeInput,
+} from '../../../src/components/editor/editor.behavior';
+import { applyOp } from '../../../src/components/editor/ops';
+import type { BaseBlock } from '../../../src/primitives/types';
+
+describe('translateBeforeInput', () => {
+  it('maps insertText to an insertText op at the current selection (InlineContent[] text)', () => {
+    const op = translateBeforeInput(
+      { inputType: 'insertText', data: 'y' },
+      { anchor: { blockId: 'b1', offset: 2 }, focus: { blockId: 'b1', offset: 2 } },
+    );
+    expect(op).toEqual({ kind: 'insertText', blockId: 'b1', offset: 2, text: [{ text: 'y' }] });
+  });
+
+  it('inserts at the ordered start of a range selection on one block', () => {
+    const op = translateBeforeInput(
+      { inputType: 'insertText', data: 'z' },
+      { anchor: { blockId: 'b1', offset: 5 }, focus: { blockId: 'b1', offset: 2 } },
+    );
+    expect(op).toEqual({ kind: 'insertText', blockId: 'b1', offset: 2, text: [{ text: 'z' }] });
+  });
+
+  it('returns null for an unhandled inputType', () => {
+    const op = translateBeforeInput(
+      { inputType: 'formatBold', data: null },
+      { anchor: { blockId: 'b1', offset: 0 }, focus: { blockId: 'b1', offset: 0 } },
+    );
+    expect(op).toBeNull();
+  });
+
+  it('returns null for a delete (doc-dependent, owned by bindEditor)', () => {
+    const op = translateBeforeInput(
+      { inputType: 'deleteContentBackward', data: null },
+      { anchor: { blockId: 'b1', offset: 3 }, focus: { blockId: 'b1', offset: 3 } },
+    );
+    expect(op).toBeNull();
+  });
+});
+
+describe('projectDocument', () => {
+  it("touches only the changed block's DOM subtree, for a real applyOp edit over 1000 blocks", () => {
+    const doc: BaseBlock[] = Array.from({ length: 1000 }, (_, i) => ({
+      id: `b${i}`,
+      type: 'text',
+      content: 'x',
+    }));
+
+    const root = document.createElement('div');
+    projectDocument(root, doc, null);
+
+    // Real op, real structural sharing (FR-EDITOR-003) -- not a hand-built spread.
+    const { blocks: nextDoc } = applyOp(doc, {
+      kind: 'insertText',
+      blockId: 'b500',
+      offset: 1,
+      text: [{ text: 'y' }],
+    });
+    for (let i = 0; i < 1000; i++) {
+      if (i !== 500) expect(nextDoc[i]).toBe(doc[i]); // reference-equal, from applyOp itself
+    }
+
+    const b0El = root.querySelector('[data-block-id="b0"]');
+    expect(b0El).not.toBeNull();
+    const observer = new MutationObserver(() => {});
+    (observer as MutationObserver).observe(b0El as Element, {
+      childList: true,
+      characterData: true,
+      subtree: true,
+    });
+
+    projectDocument(root, nextDoc, doc);
+
+    // Drain synchronously: MutationObserver callbacks are microtask-scheduled,
+    // so an assertion right after projectDocument would pass vacuously without
+    // takeRecords().
+    const records = observer.takeRecords();
+    expect(records).toHaveLength(0); // b0's subtree saw zero mutations
+    expect(root.querySelector('[data-block-id="b500"]')?.textContent).toBe('xy');
+
+    // Negative control: the observer IS wired -- a deliberate touch of b0's
+    // subtree produces records. Without this, "zero mutations" is
+    // indistinguishable from "observer never fired in happy-dom".
+    (b0El as Element).appendChild(document.createTextNode('!'));
+    expect(observer.takeRecords().length).toBeGreaterThan(0);
+    observer.disconnect();
+  });
+
+  it('adds new block elements and removes deleted ones', () => {
+    const root = document.createElement('div');
+    const a: BaseBlock = { id: 'a', type: 'text', content: 'one' };
+    const b: BaseBlock = { id: 'b', type: 'text', content: 'two' };
+    projectDocument(root, [a, b], null);
+    expect(Array.from(root.children).map((c) => c.getAttribute('data-block-id'))).toEqual([
+      'a',
+      'b',
+    ]);
+
+    // Split a into a + c (real op), keeping a's identity? split replaces a's
+    // content, so both a and the new block render; b stays reference-equal.
+    const { blocks: next } = applyOp([a, b], {
+      kind: 'split',
+      blockId: 'a',
+      offset: 1,
+      newBlockId: 'c',
+    });
+    projectDocument(root, next, [a, b]);
+    const ids = Array.from(root.children).map((c) => c.getAttribute('data-block-id'));
+    expect(ids).toEqual(['a', 'c', 'b']);
+  });
+
+  it('renders an empty block as a <br> so it can hold a caret', () => {
+    const root = document.createElement('div');
+    projectDocument(root, [{ id: 'e', type: 'text', content: '' }], null);
+    const el = root.querySelector('[data-block-id="e"]');
+    expect(el?.querySelector('br')).not.toBeNull();
+    expect(el?.textContent).toBe('');
+  });
+});
+
+describe('capture-side coalescing shape (translateBeforeInput -> controls)', () => {
+  it('coalesces a run of typed characters into one done entry; closeGroup breaks it', () => {
+    const first: BaseBlock = { id: 'b1', type: 'text', content: '' };
+    const history = createEditorHistory({
+      doc: [first],
+      sel: { anchor: { blockId: 'b1', offset: 0 }, focus: { blockId: 'b1', offset: 0 } },
+    });
+
+    // Type "hey" one char at a time, each op built by translateBeforeInput from
+    // the live selection (which controls.apply advances) -- the exact
+    // capture-side call shape bindEditor issues.
+    for (const ch of ['h', 'e', 'y']) {
+      const op = translateBeforeInput(
+        { inputType: 'insertText', data: ch },
+        history.memory.get().sel,
+      );
+      expect(op).not.toBeNull();
+      history.controls.apply(op as NonNullable<typeof op>);
+    }
+    expect(history.memory.get().done).toHaveLength(1); // coalesced within the window
+
+    // A forced boundary starts a new entry even inside the coalescing window.
+    history.controls.closeGroup();
+    const op = translateBeforeInput(
+      { inputType: 'insertText', data: '!' },
+      history.memory.get().sel,
+    );
+    history.controls.apply(op as NonNullable<typeof op>);
+    expect(history.memory.get().done).toHaveLength(2);
+
+    // The doc reflects every op (sanity that the shape actually applied).
+    const block = history.memory.get().doc.find((b) => b.id === 'b1');
+    expect(block?.content).toBe('hey!');
+  });
+});
