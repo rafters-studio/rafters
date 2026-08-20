@@ -3,8 +3,9 @@
  *
  * Assembles the component/composite intel graph in-memory from registry items,
  * and answers a single recursive verb: `describe(addr, graph, target?)`. One
- * verb, a narrowing dot-address argument, no `?`/`*` operators -- the depth of
- * the argument IS the request. Every node response advertises its own drillable,
+ * verb, a narrowing dot-address argument, with `*` and `?` expansion operators.
+ * `*` resolves all children inline (props with full values); `?` resolves one
+ * level (types only). Every node response advertises its own drillable,
  * type-marked children; cross-kind `composesWith` edges resolve to the target's
  * layer-0 only, cycle-safe.
  *
@@ -26,7 +27,7 @@
 import type { ComponentTarget, Facet, PropField, RegistryItem } from '../registry/types.js';
 
 // A child a caller can drill into next. `type` says whether to drill and what returns.
-export type ChildType = 'enum' | 'grammar' | 'leaf' | 'edge' | 'deprecated';
+export type ChildType = 'enum' | 'grammar' | 'leaf' | 'edge' | 'deprecated' | 'part';
 
 export interface DrillableChild {
   addr: string;
@@ -69,6 +70,8 @@ export interface GraphNode {
   // extracted facets (a manifest gap for every target).
   facets: Partial<Record<ComponentTarget, Facet>>;
   composesWith: string[]; // edges; the only edge-bearing field the registry schema provides
+  parts: string[]; // child node ids, populated by assembleGraph
+  parent?: string; // parent node id, from annotation or inference
 }
 
 export interface Graph {
@@ -85,6 +88,25 @@ export interface NodeResult {
   snippet?: string;
   slots?: string[];
   events?: string[];
+  parent?: string;
+  siblings?: string[];
+}
+
+export interface ExpandedNodeResult {
+  id: string;
+  kind: 'component' | 'composite';
+  intel: GraphIntel;
+  props: Record<string, AgentPropField>;
+  composesWith?: string[];
+  parts?: string[];
+  snippet?: string;
+  slots?: string[];
+  events?: string[];
+}
+
+export interface ExpandedPropsResult {
+  expanded: true;
+  props: Record<string, AgentPropField>;
 }
 
 export type DescribeResult =
@@ -93,7 +115,17 @@ export type DescribeResult =
   | NodeResult // describe('<id>')
   | AgentPropField // describe('<id>.props.<name>') -- a grammar prop with its vocab stripped
   | NodeResult[] // describe('<id>.composesWith') -- each entry a target's layer-0, one level
+  | ExpandedNodeResult // describe('<id>.*') -- node with all props resolved inline
+  | ExpandedPropsResult // describe('<id>.props.*') -- all props tagged
+  | null // describe('<addr>.?') -- probe miss
   | { error: string };
+
+// Address operators. '*' expands all children inline with full values.
+// '?' is a safe probe: resolves the address before it, returning null
+// instead of an error when the target doesn't exist -- optional chaining
+// on the address space.
+const EXPAND_OP = '*';
+const PROBE_OP = '?';
 
 /**
  * Build the graph once, in-memory, from registry items already validated by
@@ -125,13 +157,66 @@ export function assembleGraph(items: RegistryItem[]): Graph {
     if (src?.attentionEconomics !== undefined) intel.attentionEconomics = src.attentionEconomics;
     if (src?.trustBuilding !== undefined) intel.trustBuilding = src.trustBuilding;
 
-    nodes.set(item.name, {
+    const gn: GraphNode = {
       id: item.name,
       kind,
       intel,
       facets: item.facets ?? {},
       composesWith: item.composites,
-    });
+      parts: [],
+    };
+    if (item.parent !== undefined) gn.parent = item.parent;
+    nodes.set(item.name, gn);
+  }
+
+  // Convention inference: nodes with no explicit parent get one by prefix match.
+  // Split the node id on '-' and try progressively shorter prefixes (longest
+  // first). First prefix that matches an existing node id wins.
+  for (const node of nodes.values()) {
+    if (node.parent !== undefined) continue;
+    const segments = node.id.split('-');
+    for (let i = segments.length - 1; i >= 1; i--) {
+      const candidate = segments.slice(0, i).join('-');
+      if (nodes.has(candidate)) {
+        node.parent = candidate;
+        break;
+      }
+    }
+  }
+
+  // Validate parent references before populating parts arrays.
+  for (const node of nodes.values()) {
+    if (node.parent === undefined) continue;
+    if (node.parent === node.id) {
+      throw new Error(`graph: node "${node.id}" parent references itself`);
+    }
+    if (!nodes.has(node.parent)) {
+      throw new Error(`graph: node "${node.id}" parent names unknown id "${node.parent}"`);
+    }
+  }
+
+  // Detect circular parent chains.
+  for (const node of nodes.values()) {
+    if (node.parent === undefined) continue;
+    const visited = new Set<string>();
+    visited.add(node.id);
+    let current: string | undefined = node.parent;
+    while (current !== undefined) {
+      if (visited.has(current)) {
+        throw new Error(
+          `graph: node "${node.id}" has a circular parent chain through "${current}"`,
+        );
+      }
+      visited.add(current);
+      current = nodes.get(current)?.parent;
+    }
+  }
+
+  // Populate parts arrays from resolved parents.
+  for (const node of nodes.values()) {
+    if (node.parent === undefined) continue;
+    const parentNode = nodes.get(node.parent);
+    if (parentNode) parentNode.parts.push(node.id);
   }
 
   for (const node of nodes.values()) {
@@ -179,7 +264,9 @@ export function describe(addr: string, graph: Graph, target?: ComponentTarget): 
   if (head === undefined) return { error: `cannot resolve: ${addr}` };
 
   // describe('components' | 'composites') -> the kind roster (untagged here).
+  // Operators on catalog addresses are not supported -- the catalog is an index.
   if (head === 'components' || head === 'composites') {
+    if (rest.length > 0) return { error: `cannot expand: ${addr}` };
     const kind: GraphNode['kind'] = head === 'components' ? 'component' : 'composite';
     const roster: Array<{ id: string }> = [];
     for (const node of graph.nodes.values()) {
@@ -188,11 +275,32 @@ export function describe(addr: string, graph: Graph, target?: ComponentTarget): 
     return roster;
   }
 
+  // Probe operator: trailing '?' makes the lookup safe -- null on miss
+  // instead of a structured error. Peel it off and re-resolve the base address.
+  if (parts[parts.length - 1] === PROBE_OP) {
+    const baseAddr = parts.slice(0, -1).join('.');
+    const result = describe(baseAddr, graph, target);
+    if (typeof result === 'object' && result !== null && 'error' in result) return null;
+    return result;
+  }
+
+  if (head === EXPAND_OP || head === PROBE_OP) {
+    return { error: `cannot expand at root: use 'components' or 'composites'` };
+  }
+
   const node = graph.nodes.get(head);
   if (!node) return { error: `unknown node: ${head}` };
 
   // describe('<id>') -> layer 0.
-  if (rest.length === 0) return layer0(node, target);
+  if (rest.length === 0) return layer0(node, graph, target);
+
+  // Expand operator: trailing '*' resolves all children inline with values.
+  if (rest[rest.length - 1] === EXPAND_OP) {
+    const prefix = rest.slice(0, -1);
+    if (prefix.length === 0) return expandNode(node, target);
+    if (prefix.length === 1 && prefix[0] === 'props') return expandProps(node, target);
+    return { error: `cannot expand: ${addr}` };
+  }
 
   // describe('<id>.composesWith') -> edges resolved to target layer-0, one level.
   if (rest.length === 1 && rest[0] === 'composesWith') {
@@ -237,7 +345,7 @@ function toAgentProp(prop: PropField): AgentPropField {
  * target or a manifest gap) advertises only the `composesWith` edge. Never
  * expands an edge.
  */
-function layer0(node: GraphNode, target?: ComponentTarget): NodeResult {
+function layer0(node: GraphNode, graph: Graph, target?: ComponentTarget): NodeResult {
   const facet = target === undefined ? undefined : node.facets[target];
   const children: DrillableChild[] = [];
   if (facet) {
@@ -250,12 +358,23 @@ function layer0(node: GraphNode, target?: ComponentTarget): NodeResult {
   if (node.composesWith.length > 0) {
     children.push({ addr: `${node.id}.composesWith`, type: 'edge' });
   }
+  for (const partId of node.parts) {
+    children.push({ addr: partId, type: 'part' });
+  }
 
   const result: NodeResult = { id: node.id, kind: node.kind, intel: node.intel, children };
   if (facet) {
     result.snippet = facet.snippet;
     if (facet.slots !== undefined) result.slots = facet.slots;
     if (facet.events !== undefined) result.events = facet.events;
+  }
+  if (node.parent !== undefined) {
+    result.parent = node.parent;
+    const parentNode = graph.nodes.get(node.parent);
+    if (parentNode) {
+      const siblings = parentNode.parts.filter((id) => id !== node.id);
+      if (siblings.length > 0) result.siblings = siblings;
+    }
   }
   return result;
 }
@@ -275,7 +394,42 @@ function resolveEdges(node: GraphNode, graph: Graph, target?: ComponentTarget): 
     if (seen.has(edgeId)) continue;
     seen.add(edgeId);
     const edgeNode = graph.nodes.get(edgeId);
-    if (edgeNode) results.push(layer0(edgeNode, target));
+    if (edgeNode) results.push(layer0(edgeNode, graph, target));
   }
   return results;
+}
+
+function expandProps(node: GraphNode, target: ComponentTarget | undefined): ExpandedPropsResult {
+  const facet = target === undefined ? undefined : node.facets[target];
+  const props: Record<string, AgentPropField> = {};
+  if (facet) {
+    for (const [name, prop] of Object.entries(facet.props)) {
+      props[name] = toAgentProp(prop);
+    }
+  }
+  return { expanded: true, props };
+}
+
+function expandNode(node: GraphNode, target: ComponentTarget | undefined): ExpandedNodeResult {
+  const facet = target === undefined ? undefined : node.facets[target];
+  const props: Record<string, AgentPropField> = {};
+  if (facet) {
+    for (const [name, prop] of Object.entries(facet.props)) {
+      props[name] = toAgentProp(prop);
+    }
+  }
+  const result: ExpandedNodeResult = {
+    id: node.id,
+    kind: node.kind,
+    intel: node.intel,
+    props,
+  };
+  if (node.composesWith.length > 0) result.composesWith = node.composesWith;
+  if (node.parts.length > 0) result.parts = node.parts;
+  if (facet) {
+    result.snippet = facet.snippet;
+    if (facet.slots !== undefined) result.slots = facet.slots;
+    if (facet.events !== undefined) result.events = facet.events;
+  }
+  return result;
 }

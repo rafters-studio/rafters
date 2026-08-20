@@ -136,6 +136,7 @@ export const RegistryItemSchema = z.object({
   // present; a component built for only some targets must parse, so this is a
   // partial record (only the built targets appear).
   facets: z.partialRecord(ComponentTargetSchema, FacetSchema).default({}),
+  parent: z.string().optional(),
 });
 
 export type RegistryItem = z.infer<typeof RegistryItemSchema>;
