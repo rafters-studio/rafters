@@ -63,13 +63,115 @@ describe('MCP describe/generate against an initialized project', () => {
     expect(data).toMatchObject({ use: { id: 'modal' }, not: { id: 'alert' } });
   }, 30000);
 
-  it('rafters_generate returns an honest stub', async () => {
+  it('rafters_generate resolves a direct component name and returns its verbatim snippet with open slots', async () => {
     fixturePath = await createInitializedFixture('nextjs-shadcn-v4');
-    const handler = handlerFor(fixturePath);
+    const config = await readConfig(fixturePath);
+    config.componentTarget = 'react';
+    await writeFixtureFile(fixturePath, '.rafters/config.rafters.json', JSON.stringify(config));
 
-    const result = await handler.handleToolCall('rafters_generate', { intent: 'a login form' });
+    const modal: RegistryItem = {
+      name: 'modal',
+      type: 'ui',
+      primitives: [],
+      files: [],
+      rules: [],
+      composites: [],
+      facets: {
+        react: {
+          props: {},
+          slots: ['title', 'body'],
+          snippet: '<Modal><Modal.Title /><Modal.Body /></Modal>',
+        },
+      },
+    };
+    const handler = new RaftersToolHandler(
+      [{ name: 'fixture', root: fixturePath }],
+      { name: 'fixture', root: fixturePath },
+      async () => [modal, node('alert', 'ui'), node('tooltip', 'ui')],
+    );
+
+    // Direct tier: bare id, no curated-axis phrasing needed.
+    const direct = await handler.handleToolCall('rafters_generate', { intent: 'give me a modal' });
+    expect(JSON.parse(direct.content[0].text as string)).toEqual({
+      component: 'modal',
+      target: 'react',
+      snippet: '<Modal><Modal.Title /><Modal.Body /></Modal>',
+      slots: [
+        { slot: 'title', ownedBy: 'caller', status: 'open' },
+        { slot: 'body', ownedBy: 'caller', status: 'open' },
+      ],
+    });
+
+    // Intent-door fallback: same component, reached via the semantic axis.
+    const viaIntent = await handler.handleToolCall('rafters_generate', {
+      intent: 'what do I use when it needs to be above everything',
+    });
+    expect(JSON.parse(viaIntent.content[0].text as string)).toEqual({
+      component: 'modal',
+      target: 'react',
+      snippet: '<Modal><Modal.Title /><Modal.Body /></Modal>',
+      slots: [
+        { slot: 'title', ownedBy: 'caller', status: 'open' },
+        { slot: 'body', ownedBy: 'caller', status: 'open' },
+      ],
+    });
+  }, 30000);
+
+  it('names the component and the target when the resolved component has no facet for it', async () => {
+    fixturePath = await createInitializedFixture('nextjs-shadcn-v4');
+    const config = await readConfig(fixturePath);
+    config.componentTarget = 'astro';
+    await writeFixtureFile(fixturePath, '.rafters/config.rafters.json', JSON.stringify(config));
+
+    const modal: RegistryItem = {
+      name: 'modal',
+      type: 'ui',
+      primitives: [],
+      files: [],
+      rules: [],
+      composites: [],
+      facets: { react: { props: {}, snippet: '<Modal />' } }, // no astro facet
+    };
+    const handler = new RaftersToolHandler(
+      [{ name: 'fixture', root: fixturePath }],
+      { name: 'fixture', root: fixturePath },
+      async () => [modal, node('alert', 'ui'), node('tooltip', 'ui')],
+    );
+
+    const result = await handler.handleToolCall('rafters_generate', { intent: 'modal' });
     const data = JSON.parse(result.content[0].text as string);
-    expect(data).toMatchObject({ implemented: false });
+    expect(data.error).toContain('modal');
+    expect(data.error).toContain('astro');
+  }, 30000);
+
+  it('returns slots: [] when the resolved facet declares no content slots', async () => {
+    fixturePath = await createInitializedFixture('nextjs-shadcn-v4');
+    const config = await readConfig(fixturePath);
+    config.componentTarget = 'react';
+    await writeFixtureFile(fixturePath, '.rafters/config.rafters.json', JSON.stringify(config));
+
+    const button: RegistryItem = {
+      name: 'button',
+      type: 'ui',
+      primitives: [],
+      files: [],
+      rules: [],
+      composites: [],
+      facets: { react: { props: {}, snippet: '<Button />' } }, // no slots on the facet
+    };
+    const handler = new RaftersToolHandler(
+      [{ name: 'fixture', root: fixturePath }],
+      { name: 'fixture', root: fixturePath },
+      async () => [button],
+    );
+
+    const result = await handler.handleToolCall('rafters_generate', { intent: 'button' });
+    expect(JSON.parse(result.content[0].text as string)).toEqual({
+      component: 'button',
+      target: 'react',
+      snippet: '<Button />',
+      slots: [],
+    });
   }, 30000);
 
   it('deprecated rafters_component forwards by-id and is marked', async () => {
