@@ -12,6 +12,12 @@
  * compiled `bindEditor` bundled by `buildEditorHarness`.
  */
 import { expect, test } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
+import { parseCaret } from '../../packages/ui/test/harness/caret';
+import {
+  EDITOR_SCENARIOS,
+  type EditorScenario,
+} from '../../packages/ui/test/harness/editor-scenarios';
 import { buildEditorHarness } from './support/build-editor-harness';
 
 test('typing dispatches insertText ops and projects them', async ({ page }) => {
@@ -129,3 +135,110 @@ test('selection is restored from state.sel after every edit', async ({ page }) =
   const focusOffset = await page.evaluate(() => window.getSelection()?.focusOffset);
   expect(focusOffset).toBe(3);
 });
+
+// -----------------------------------------------------------------------------
+// Caret-notation scenario table (FR-EDITOR-006) -- the SAME EDITOR_SCENARIOS
+// the model-level BDD (editor.behavior.test.ts) replays via
+// caret.ts's given/when/then, replayed HERE through real keyboard/paste input
+// into the real bound contenteditable. One authored list, two runners -- not
+// a re-authored, drifting second set of cases (issue AC).
+//
+// FILTERED to scenarios whose `given` seeds a COLLAPSED caret only: this
+// repo's Playwright harness (buildEditorHarness's SeedCaret) can only seed a
+// collapsed position, and bindEditor never reads the live DOM Selection back
+// into the model (RULING-EDITOR-HISTORY's pinned amendment: "fable's #1 (no
+// DOM->model selection) is OUT of scope here"), so a scenario that starts
+// from a RANGE selection (`he[llo]`) cannot be driven through real input --
+// it stays proven at the model level only (editor.behavior.test.ts), which
+// is where the canonical "undo restores document AND selection" scenario
+// (itself range-seeded) already runs. The filtered set still covers every
+// named category the issue's Interface section asks Playwright to cover:
+// typing, backspace, delete, paste, undo, redo.
+// -----------------------------------------------------------------------------
+
+const PLAYWRIGHT_SCENARIOS = EDITOR_SCENARIOS.filter((s) => !s.given.includes('['));
+
+async function performScenarioAction(
+  page: Page,
+  surface: Locator,
+  action: EditorScenario['steps'][number]['action'],
+): Promise<void> {
+  switch (action.kind) {
+    case 'type':
+      // Clears NFR-EDITOR-003's coalescing window (500ms) so this step
+      // commits its OWN HistoryEntry -- matching the model-level `when()`,
+      // which binds a fresh history per call for exactly this reason. Without
+      // it, two consecutive `type` steps on adjacent offsets would coalesce
+      // into one real HistoryEntry and one undo would unwind both at once.
+      await page.waitForTimeout(600);
+      await page.keyboard.type(action.text);
+      return;
+    case 'paste':
+      await page.waitForTimeout(600);
+      // Same synthetic-ClipboardEvent technique as the hand-written paste
+      // test above (see its comment for why `clipboardData` is shadowed via
+      // defineProperty rather than relying on the constructor's init dict).
+      await surface.evaluate((el, text) => {
+        const dt = new DataTransfer();
+        dt.setData('text/plain', text);
+        const event = new ClipboardEvent('paste', { bubbles: true, cancelable: true });
+        Object.defineProperty(event, 'clipboardData', { value: dt, configurable: true });
+        el.dispatchEvent(event);
+      }, action.text);
+      return;
+    case 'backspace':
+      await page.keyboard.press('Backspace');
+      return;
+    case 'delete':
+      await page.keyboard.press('Delete');
+      return;
+    case 'undo':
+      // ctrlKey, not metaKey: editorKeymap claims BOTH chords (FR-EDITOR-005),
+      // and Control+z is the one chord Playwright drives identically across
+      // chromium/firefox/webkit without a per-OS branch.
+      await page.keyboard.press('Control+z');
+      return;
+    case 'redo':
+      await page.keyboard.press('Control+Shift+z');
+      return;
+  }
+}
+
+for (const scenario of PLAYWRIGHT_SCENARIOS) {
+  test(`caret-notation scenario: ${scenario.name}`, async ({ page }) => {
+    const seed = parseCaret(scenario.given);
+    await page.goto('about:blank');
+    await page.setContent(
+      await buildEditorHarness({
+        blocks: [{ id: 'b1', type: 'text', content: seed.doc }],
+        caret: { blockId: 'b1', offset: seed.sel.anchor },
+      }),
+    );
+    const surface = page.locator('[data-part="root"]');
+    // No click: buildEditorHarness's own inline script already calls
+    // `root.focus()` right after `bindEditor`, whose first `render()` already
+    // restored the DOM selection from the SEEDED `state.sel` -- clicking the
+    // (unconstrained-width) root here would instead re-place the caret at the
+    // browser's own click-derived offset, silently overriding the very seed
+    // offset each scenario's `given` pins.
+    for (const step of scenario.steps) {
+      await performScenarioAction(page, surface, step.action);
+
+      const expected = parseCaret(step.expected);
+      await expect(surface, `after ${JSON.stringify(step.action)}`).toHaveText(expected.doc);
+
+      // Every filtered scenario's steps land on a collapsed caret (no `[`
+      // survives the filter above, and insertText/removeText/undo/redo all
+      // resolve to a collapsed selection) -- the produced ops are asserted
+      // indirectly through the projected text above; this is the DOM
+      // Selection half of the AC ("DOM selection matches state.sel after
+      // every edit").
+      const sel = await page.evaluate(() => {
+        const s = window.getSelection();
+        return { focusOffset: s?.focusOffset ?? -1, collapsed: s?.isCollapsed ?? false };
+      });
+      expect(sel.collapsed, `after ${JSON.stringify(step.action)}`).toBe(true);
+      expect(sel.focusOffset, `after ${JSON.stringify(step.action)}`).toBe(expected.sel.head);
+    }
+  });
+}
