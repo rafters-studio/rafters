@@ -24,6 +24,15 @@
  * Astro performance. This file only adapts that binding to the custom-element
  * lifecycle -- deferring the bind one microtask because connectedCallback can
  * fire before `data-initial-doc`/`data-caret`/`data-label` are parsed.
+ *
+ * `data-editor-bound` is the SAME guard editor.astro's own <script> checks
+ * before calling `bindEditor(root)` there. A page that both renders the
+ * Astro markup and ships this file in its bundle upgrades ONE
+ * `<rafters-editor>` through both paths; without a shared guard each would
+ * bind independently (two histories, two keydown listeners, one Cmd+Z firing
+ * undo twice). Whichever runs first sets the flag synchronously between its
+ * own check and set, so there is no race between this microtask and the
+ * script's own (synchronous) loop.
  */
 import { bindEditor } from './editor.behavior';
 
@@ -32,13 +41,24 @@ export class RaftersEditorElement extends HTMLElement {
 
   connectedCallback(): void {
     queueMicrotask(() => {
-      if (this.isConnected && !this.teardown) this.teardown = bindEditor(this);
+      if (!this.isConnected || this.teardown) return;
+      if (this.dataset['editorBound'] === 'true') return;
+      this.dataset['editorBound'] = 'true';
+      this.teardown = bindEditor(this);
     });
   }
 
   disconnectedCallback(): void {
-    this.teardown?.();
+    // Only tear down (and clear the shared guard) when THIS instance is the
+    // one that bound: `data-editor-bound` may have been set by editor.astro's
+    // <script> instead, with THAT closure holding the live teardown -- if
+    // this callback cleared the guard unconditionally, a later reconnect
+    // would see no flag and bind a SECOND time over the script's still-live
+    // binding (the exact double-bind the shared guard exists to prevent).
+    if (!this.teardown) return;
+    this.teardown();
     this.teardown = null;
+    delete this.dataset['editorBound'];
   }
 }
 

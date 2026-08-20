@@ -452,21 +452,39 @@ function restoreSelection(root: HTMLElement, sel: EditorHistoryState['sel']): vo
  * aria-manager, like every other DOM-native binder in this codebase) and the
  * undo/redo keymap wiring, gated on `history.canUndo`/`canRedo` -- there is no
  * `canDispatch` in this architecture.
+ *
+ * NOTE (deviates from RULING-EDITOR-HISTORY's pinned sketch
+ * `bindEditor(root: HTMLElement): () => void`, recorded deliberately): the
+ * second, optional `injectedHistory` parameter exists ONLY so React's own
+ * `createEditorHistory` cell (read via `useMemory` in editor.tsx) and this
+ * binder's imperative DOM projection stay the SAME cell rather than two
+ * divergent ones. It is additive and optional -- every call site the pinned
+ * signature covers (`bindEditor(root)`, the WC and Astro decorators) is
+ * unaffected -- so it is not a second binder or a wrapper (Spec 05), just a
+ * documented widening of the one export.
  */
 export function bindEditor(root: HTMLElement, injectedHistory?: EditorHistory): () => void {
   root.setAttribute('data-part', 'root');
-
-  const config = parseEditorConfig(root);
-  root.setAttribute('contenteditable', config.disabled || config.readonly ? 'false' : 'true');
 
   const history = injectedHistory ?? createEditorHistory(parseSeed(root));
   const { controls, memory } = history;
 
   const ids = { root: root.id } as PartIds<EditorPart>;
 
+  // Config is read fresh from `root`'s data-* on every render, NOT closed
+  // over once at bind time: disabled/readonly/label/labelledby can change
+  // post-mount (a React re-render commits new data-* attributes to the DOM
+  // declaratively, with no doc/sel change and therefore no memory
+  // notification of its own). Re-reading here, plus the attribute observer
+  // below forcing a render when only those data-* change, is what makes a
+  // toggled `disabled` actually flip `contenteditable` and keeps this
+  // binder's own aria write from reverting a label change made between
+  // renders back to a stale value.
   let prevDoc: BaseBlock[] | null = null;
   function render(): void {
     const state = memory.get();
+    const config = parseEditorConfig(root);
+    root.setAttribute('contenteditable', config.disabled || config.readonly ? 'false' : 'true');
     projectDocument(root, state.doc, prevDoc);
     prevDoc = state.doc;
     restoreSelection(root, state.sel);
@@ -477,6 +495,20 @@ export function bindEditor(root: HTMLElement, injectedHistory?: EditorHistory): 
         updateAriaAttribute(root, name as never, value as never, { validate: false });
       }
     }
+  }
+
+  // Re-render on a data-* config change alone (no doc/sel change, so no
+  // memory notification) -- e.g. a React prop toggling `disabled` with no
+  // edit in between. Deliberately excludes aria-label/aria-labelledby:
+  // render() itself writes those, and observing them would requeue a render
+  // on every render.
+  let attrObserver: MutationObserver | undefined;
+  if (typeof MutationObserver !== 'undefined') {
+    attrObserver = new MutationObserver(() => render());
+    attrObserver.observe(root, {
+      attributes: true,
+      attributeFilter: ['data-disabled', 'data-readonly', 'data-label', 'data-labelledby'],
+    });
   }
 
   // -- op construction for the doc-dependent inputs (deletes / structural) --
@@ -796,7 +828,7 @@ export function bindEditor(root: HTMLElement, injectedHistory?: EditorHistory): 
       },
       memory.get(),
       'root',
-      config,
+      parseEditorConfig(root),
     );
     if (!action) return;
     // preventDefault UNCONDITIONALLY: the model owns the edit, so the native
@@ -812,6 +844,7 @@ export function bindEditor(root: HTMLElement, injectedHistory?: EditorHistory): 
 
   return () => {
     unsubscribe();
+    attrObserver?.disconnect();
     inputHandler.cleanup();
     clipboard.cleanup();
     root.removeEventListener('paste', onPasteRaw);

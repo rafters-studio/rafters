@@ -18,4 +18,13 @@ describe('editorClasses', () => {
     expect(typeof classes.root).toBe('string');
     expect(classes.root.length).toBeGreaterThan(0);
   });
+
+  it('styles disabled/readonly off data-disabled/data-readonly, not aria-disabled', () => {
+    // editorAria never projects aria-disabled (spec: role/aria-multiline/label
+    // only) -- an aria-disabled: variant here would be permanently dead.
+    const classes = editorClasses(config, state);
+    expect(classes.root).not.toContain('aria-disabled:');
+    expect(classes.root).toContain('data-[disabled=true]:');
+    expect(classes.root).toContain('data-[readonly=true]:');
+  });
 });
