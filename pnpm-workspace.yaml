@@ -27,6 +27,7 @@ catalog:
   '@vitest/coverage-v8': ^4.1.0
   '@vitest/ui': ^4.1.0
   comment-parser: ^1.4.1
+  esbuild: ^0.27.3
   happy-dom: ^20.0.10
   hono: 4.11.0
   lefthook: ^1.10.0
