@@ -223,4 +223,26 @@ describe('radius and focus derive from spacing', () => {
       );
     }
   });
+
+  it('the @theme block registers --leading-* for Tailwind v4 leading-* utility generation (#2065)', () => {
+    const system = generateBaseSystem({});
+    const css = tokensToTailwind(system.allTokens, { includeImport: false }, []);
+
+    const lineHeightTokens = system.allTokens.filter((t) => t.name.startsWith('line-height-'));
+    expect(lineHeightTokens.length).toBeGreaterThan(0);
+
+    for (const token of lineHeightTokens) {
+      const key = token.name.replace(/^line-height-/, '');
+      // --leading-* is a Tailwind v4 NAMED theme namespace (leading-tight,
+      // leading-relaxed, ...); --line-height-* is not, so the leading-*
+      // utility compiles to nothing without this bridge. Additive: the
+      // existing --line-height-* declaration must still be present too.
+      expect(css, `missing --leading-${key} theme var`).toContain(
+        `  --leading-${key}: ${token.value};`,
+      );
+      expect(css, `--line-height-${key} should still be emitted`).toContain(
+        `  --${token.name}: ${token.value};`,
+      );
+    }
+  });
 });
