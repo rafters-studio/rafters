@@ -3,9 +3,10 @@
  *
  * Assembles the component/composite intel graph in-memory from registry items,
  * and answers a single recursive verb: `describe(addr, graph, target?)`. One
- * verb, a narrowing dot-address argument, with `*` and `?` expansion operators.
- * `*` resolves all children inline (props with full values); `?` resolves one
- * level (types only). Every node response advertises its own drillable,
+ * verb, a narrowing dot-address argument, with `*` and `?` operators.
+ * `*` expands all children inline (props with full values); `?` is a safe
+ * probe (null on miss, not an error -- optional chaining on the address
+ * space). Every node response advertises its own drillable,
  * type-marked children; cross-kind `composesWith` edges resolve to the target's
  * layer-0 only, cycle-safe.
  *
