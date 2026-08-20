@@ -86,6 +86,7 @@ export interface RegistryItem {
   composites?: string[];
   intelligence?: ComponentIntelligence;
   facets?: Partial<Record<ComponentTarget, Facet>>;
+  parent?: string;
 }
 
 /** Source file extension -> framework target. Parallel to COMPONENT_EXTENSIONS. */
@@ -717,6 +718,33 @@ export function extractDepsFromSource(content: string): {
 }
 
 /**
+ * Extract the @parent tag from JSDoc comments in source content.
+ *
+ * Uses comment-parser (like extractDepsFromSource) so that @parent appearing
+ * in string literals or line comments is not matched. Returns the first
+ * match, or undefined when no @parent tag is present.
+ */
+export function extractParentFromSource(content: string): string | undefined {
+  let blocks: ReturnType<typeof parse>;
+  try {
+    blocks = parse(content);
+  } catch {
+    return undefined;
+  }
+
+  for (const block of blocks) {
+    for (const tag of block.tags) {
+      if (tag.tag.toLowerCase() === 'parent') {
+        const value = getTagValue(tag).trim();
+        if (value) return value;
+      }
+    }
+  }
+
+  return undefined;
+}
+
+/**
  * Analyze source content to extract merged dependencies and intelligence metadata.
  * Shared by loadComponent and loadPrimitive.
  */
@@ -1008,6 +1036,7 @@ export function loadComponent(name: string): RegistryItem | null {
   const targetSources: Array<{ ext: string; content: string }> = [];
   let primitivesAll: string[] = [];
   let intelligence: ReturnType<typeof parseJSDocFromSource> | undefined;
+  let parent: string | undefined;
 
   // Load framework-specific variants
   // Strict intel is enforced only on the primary .tsx file. Other extensions
@@ -1045,6 +1074,12 @@ export function loadComponent(name: string): RegistryItem | null {
       // Use intelligence from first variant that has it (typically .tsx)
       if (!intelligence && analysis.intelligence) {
         intelligence = analysis.intelligence;
+      }
+
+      // Use parent from first variant that declares it
+      if (!parent) {
+        const p = extractParentFromSource(content);
+        if (p) parent = p;
       }
     } catch {
       // Variant doesn't exist for this extension -- skip
@@ -1204,6 +1239,13 @@ export function loadComponent(name: string): RegistryItem | null {
 
   if (intelligence) {
     result.intelligence = intelligence;
+  }
+
+  // A component cannot be its own parent -- guard against @parent tags on
+  // sub-component JSDoc blocks inside the primary file (e.g. card.tsx carries
+  // @parent card on CardHeader et al., but card itself has no parent).
+  if (parent && parent !== name) {
+    result.parent = parent;
   }
 
   return result;

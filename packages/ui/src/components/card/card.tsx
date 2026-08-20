@@ -128,6 +128,8 @@ export type CardHeaderProps = NoClassName<React.HTMLAttributes<HTMLDivElement>>;
 /**
  * The header is a grid (shadcn v4), not a flex column: that is the parent
  * CardAction's placement utilities need in order to place at all.
+ *
+ * @parent card
  */
 export const CardHeader = React.forwardRef<HTMLDivElement, CardHeaderProps>((props, ref) => (
   <div
@@ -151,6 +153,8 @@ export interface CardTitleProps extends NoClassName<React.HTMLAttributes<HTMLHea
  * 2.4.10 Section Headings at AAA) and invisible to a swap -- same component
  * name, same children, same data-slot, one added prop. `as` places the heading
  * at the correct outline level for the surrounding page. See card.md.
+ *
+ * @parent card
  */
 export const CardTitle = React.forwardRef<HTMLHeadingElement, CardTitleProps>(
   ({ as: Element = 'h3', children, ...rest }, ref) =>
@@ -174,6 +178,8 @@ export type CardDescriptionProps = NoClassName<React.HTMLAttributes<HTMLParagrap
  * A real `p`, where shadcn renders a div -- the same accepted AAA divergence as
  * the title, and behavior-additive for the same reason: prose in a paragraph is
  * navigable and correctly announced, and the swap sees no API change.
+ *
+ * @parent card
  */
 export const CardDescription = React.forwardRef<HTMLParagraphElement, CardDescriptionProps>(
   ({ children, ...rest }, ref) =>
@@ -197,6 +203,8 @@ export type CardActionProps = NoClassName<React.HTMLAttributes<HTMLDivElement>>;
  * Trailing control slot (dismiss/menu). Its placement utilities only resolve as
  * a DIRECT CHILD of CardHeader -- the header's `has-data-[slot=card-action]`
  * variant is what opens the second column for it.
+ *
+ * @parent card
  */
 export const CardAction = React.forwardRef<HTMLDivElement, CardActionProps>((props, ref) => (
   <div
@@ -211,6 +219,7 @@ CardAction.displayName = 'CardAction';
 
 export type CardContentProps = NoClassName<React.HTMLAttributes<HTMLDivElement>>;
 
+/** @parent card */
 export const CardContent = React.forwardRef<HTMLDivElement, CardContentProps>((props, ref) => (
   <div
     ref={ref}
@@ -224,6 +233,7 @@ CardContent.displayName = 'CardContent';
 
 export type CardFooterProps = NoClassName<React.HTMLAttributes<HTMLDivElement>>;
 
+/** @parent card */
 export const CardFooter = React.forwardRef<HTMLDivElement, CardFooterProps>((props, ref) => (
   <div
     ref={ref}
