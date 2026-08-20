@@ -29,3 +29,18 @@ export { createHtmlSerializer, htmlSerializer } from './primitives/serializer-ht
 export { createMdxSerializer, mdxSerializer } from './primitives/serializer-mdx.js';
 export { createTextSerializer, textSerializer } from './primitives/serializer-text.js';
 export type { BaseBlock } from './primitives/types.js';
+export { applyOp, applyOpSequence, createEditorHistory } from './components/editor/index.js';
+export type {
+  EditorHistory,
+  EditorHistoryConfig,
+  EditorHistoryControls,
+  EditorHistoryState,
+  EditorOp,
+  EditorPosition,
+  EditorSelection,
+  FormatOp,
+  HistoryEntry,
+  OpResult,
+  StructuralOp,
+  TextOp,
+} from './components/editor/index.js';
