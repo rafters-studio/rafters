@@ -17,7 +17,7 @@ import {
   splitBlock,
 } from '../../../primitives/block-operations';
 import type { BaseBlock } from '../../../primitives/types';
-import { normalizeRuns } from './content';
+import { mergeRuns, normalizeRuns } from './content';
 import type { EditorOp, OpResult, StructuralOp } from './types';
 
 export function applySplit(
@@ -61,7 +61,15 @@ export function applyMergePrev(
       kind: 'removeText',
       blockId: result.survivorId,
       offset: result.cursorOffset,
-      text: normalizeRuns(absorbed.content),
+      // Canonicalized (mergeRuns), not the raw captured content: the
+      // survivor's post-merge content went through concatContent's own
+      // mergeAdjacentRuns pass, so adjacent same-mark runs in `absorbed`
+      // (a normal shape for pasted/deserialized content) are already
+      // coalesced there. removeText does an exact runsEqual check against
+      // this `text`, so it must match that canonical form or it throws
+      // instead of undoing. The reinstated block below still gets the RAW
+      // `absorbed` -- only this equality-check copy is canonicalized.
+      text: mergeRuns(normalizeRuns(absorbed.content)),
     },
     {
       kind: 'insert',
@@ -92,7 +100,15 @@ export function applyMergeNext(
       kind: 'removeText',
       blockId: result.survivorId,
       offset: result.cursorOffset,
-      text: normalizeRuns(absorbed.content),
+      // Canonicalized (mergeRuns), not the raw captured content: the
+      // survivor's post-merge content went through concatContent's own
+      // mergeAdjacentRuns pass, so adjacent same-mark runs in `absorbed`
+      // (a normal shape for pasted/deserialized content) are already
+      // coalesced there. removeText does an exact runsEqual check against
+      // this `text`, so it must match that canonical form or it throws
+      // instead of undoing. The reinstated block below still gets the RAW
+      // `absorbed` -- only this equality-check copy is canonicalized.
+      text: mergeRuns(normalizeRuns(absorbed.content)),
     },
     {
       kind: 'insert',

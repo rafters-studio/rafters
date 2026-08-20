@@ -73,19 +73,71 @@ export function applyMark(
   }
   if (gapStart !== null) gaps.push({ start: gapStart, end: pos });
 
+  // For the 'link' mark specifically, a run that already carries the mark
+  // but with a DIFFERENT href has that href silently overwritten by
+  // withMark below. Capture those sub-ranges (grouped by their prior href)
+  // so the inverse can restore the original href instead of merely
+  // stripping the mark (which is all `gaps` above accounts for -- gaps only
+  // covers ranges that did NOT already have the mark).
+  const hrefChanges: Array<{ start: number; end: number; href: string | undefined }> = [];
+  if (mark === 'link' && href !== undefined) {
+    pos = start;
+    let segStart: number | null = null;
+    let segHref: string | undefined;
+    for (const run of middle) {
+      const changes = hasMark(run, mark) && run.href !== href;
+      if (changes && segStart !== null && run.href === segHref) {
+        // continue the current segment
+      } else {
+        if (segStart !== null) {
+          hrefChanges.push({ start: segStart, end: pos, href: segHref });
+          segStart = null;
+          segHref = undefined;
+        }
+        if (changes) {
+          segStart = pos;
+          segHref = run.href;
+        }
+      }
+      pos += run.text.length;
+    }
+    if (segStart !== null) {
+      hrefChanges.push({ start: segStart, end: pos, href: segHref });
+    }
+  }
+
   const newMiddle = middle.map((run) => withMark(run, mark, href));
   const content = mergeRuns([...before, ...newMiddle, ...after]);
 
   const newBlocks = [...blocks];
   newBlocks[index] = { ...block, content };
 
-  const inverse: EditorOp[] = gaps.map((gap) => ({
-    kind: 'removeMark',
-    blockId,
-    start: gap.start,
-    end: gap.end,
-    mark,
-  }));
+  const inverse: EditorOp[] = [
+    ...gaps.map(
+      (gap): EditorOp => ({
+        kind: 'removeMark',
+        blockId,
+        start: gap.start,
+        end: gap.end,
+        mark,
+      }),
+    ),
+    // Two-op pair per href change: strip the mark (clearing the overwritten
+    // href) then reapply with the original href -- a single applyMark op
+    // can't express "restore to no href" since an omitted `href` field
+    // means "keep the run's current href" (see withMark), not "clear it".
+    ...hrefChanges.flatMap((seg): EditorOp[] => [
+      { kind: 'removeMark', blockId, start: seg.start, end: seg.end, mark },
+      {
+        kind: 'applyMark',
+        blockId,
+        start: seg.start,
+        end: seg.end,
+        mark,
+        ...(seg.href !== undefined ? { href: seg.href } : {}),
+      },
+    ]),
+  ];
 
   return { blocks: newBlocks, inverse };
 }
@@ -108,24 +160,32 @@ export function removeMark(
 
   // Capture the maximal contiguous sub-ranges of [start, end) that DID carry
   // `mark` (with its href, for the 'link' mark) -- what applyMark must redo.
+  // A run boundary between two marked runs with DIFFERENT hrefs also closes
+  // a segment (not just a run lacking the mark) -- otherwise two adjacent
+  // links with different hrefs collapse into one segment carrying only the
+  // first href, and the second href is lost on undo.
   const segments: Array<{ start: number; end: number; href?: string }> = [];
   let pos = start;
   let segStart: number | null = null;
   let segHref: string | undefined;
   for (const run of middle) {
-    if (hasMark(run, mark)) {
-      if (segStart === null) {
+    const marked = hasMark(run, mark);
+    if (marked && segStart !== null && run.href === segHref) {
+      // continue the current segment
+    } else {
+      if (segStart !== null) {
+        segments.push({
+          start: segStart,
+          end: pos,
+          ...(segHref !== undefined ? { href: segHref } : {}),
+        });
+        segStart = null;
+        segHref = undefined;
+      }
+      if (marked) {
         segStart = pos;
         segHref = run.href;
       }
-    } else if (segStart !== null) {
-      segments.push({
-        start: segStart,
-        end: pos,
-        ...(segHref !== undefined ? { href: segHref } : {}),
-      });
-      segStart = null;
-      segHref = undefined;
     }
     pos += run.text.length;
   }

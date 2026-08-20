@@ -94,6 +94,75 @@ describe('structural ops', () => {
     );
   });
 
+  it('mergePrev round-trip does not throw when the absorbed block has adjacent same-mark runs', () => {
+    const withAdjacentRuns: BaseBlock[] = [
+      { id: 'a', type: 'text', content: 'AB' },
+      {
+        id: 'b',
+        type: 'text',
+        content: [
+          { text: 'C', marks: ['bold'] },
+          { text: 'D', marks: ['bold'] },
+        ],
+      },
+    ];
+    // The merged survivor coalesces C+D into one run ("CD", bold); the
+    // inverse must canonicalize the same way or removeText's equality
+    // check throws instead of undoing.
+    expect(() =>
+      applyThenInverse(withAdjacentRuns, { kind: 'mergePrev', blockId: 'b' }),
+    ).not.toThrow();
+    expect(applyThenInverse(withAdjacentRuns, { kind: 'mergePrev', blockId: 'b' })).toEqual(
+      withAdjacentRuns,
+    );
+  });
+
+  it('mergeNext round-trip does not throw when the absorbed block has adjacent same-mark runs', () => {
+    const withAdjacentRuns: BaseBlock[] = [
+      { id: 'a', type: 'text', content: 'AB' },
+      {
+        id: 'b',
+        type: 'text',
+        content: [
+          { text: 'C', marks: ['bold'] },
+          { text: 'D', marks: ['bold'] },
+        ],
+      },
+    ];
+    expect(() =>
+      applyThenInverse(withAdjacentRuns, { kind: 'mergeNext', blockId: 'a' }),
+    ).not.toThrow();
+    expect(applyThenInverse(withAdjacentRuns, { kind: 'mergeNext', blockId: 'a' })).toEqual(
+      withAdjacentRuns,
+    );
+  });
+
+  it('a reused split id still resolves for later stack entries after a split -> inverse -> split -> insertText replay', () => {
+    const blocks: BaseBlock[] = [{ id: 'a', type: 'text', content: 'hello world' }];
+    const splitOp: StructuralOp = { kind: 'split', blockId: 'a', offset: 5, newBlockId: 'b' };
+
+    const first = applyOp(blocks, splitOp);
+    expect(first.blocks.map((b) => b.id)).toEqual(['a', 'b']);
+
+    // Undo the split (mergeNext), then redo it -- 'b' is minted again from
+    // the SAME pre-assigned id, not a fresh one.
+    const undone = applyOpSequence(first.blocks, first.inverse);
+    expect(undone).toEqual(blocks);
+    const redone = applyOp(undone, splitOp);
+    expect(redone.blocks.map((b) => b.id)).toEqual(['a', 'b']);
+
+    // A later stack entry referencing the reused id ('b') must still
+    // resolve against the replayed document.
+    const insertOp: EditorOp = {
+      kind: 'insertText',
+      blockId: 'b',
+      offset: 0,
+      text: [{ text: 'X' }],
+    };
+    const withInsert = applyOp(redone.blocks, insertOp);
+    expect(withInsert.blocks.find((b) => b.id === 'b')?.content).toBe('X world');
+  });
+
   it('delete/insert round-trip preserves type + meta', () => {
     const withHeading: BaseBlock[] = [
       { id: 'a', type: 'text', content: 'before ' },
@@ -238,6 +307,54 @@ describe('format ops', () => {
       mark: 'link',
     });
     expect(applyOpSequence(removed.blocks, removed.inverse)).toEqual(applied.blocks);
+  });
+
+  it('removeMark/applyMark round-trip over a partially-marked range', () => {
+    const partial: BaseBlock[] = [
+      { id: 'a', type: 'text', content: [{ text: 'foo', marks: ['bold'] }, { text: 'bar' }] },
+    ];
+    const removeOp: FormatOp = { kind: 'removeMark', blockId: 'a', start: 0, end: 6, mark: 'bold' };
+    expect(applyThenInverse(partial, removeOp)).toEqual(partial);
+  });
+
+  it('applyMark round-trip when re-linking already-linked text with a NEW href', () => {
+    const linked: BaseBlock[] = [
+      {
+        id: 'a',
+        type: 'text',
+        content: [{ text: 'foo', marks: ['link'], href: 'https://one.example' }, { text: 'bar' }],
+      },
+    ];
+    const relinkOp: FormatOp = {
+      kind: 'applyMark',
+      blockId: 'a',
+      start: 0,
+      end: 6,
+      mark: 'link',
+      href: 'https://two.example',
+    };
+    const applied = applyOp(linked, relinkOp);
+    expect(applied.blocks[0]?.content).toEqual([
+      { text: 'foobar', marks: ['link'], href: 'https://two.example' },
+    ]);
+    expect(applyOpSequence(applied.blocks, applied.inverse)).toEqual(linked);
+  });
+
+  it('removeMark round-trip preserves distinct hrefs across two adjacent link runs', () => {
+    const twoLinks: BaseBlock[] = [
+      {
+        id: 'a',
+        type: 'text',
+        content: [
+          { text: 'ab', marks: ['link'], href: 'https://one.example' },
+          { text: 'cd', marks: ['link'], href: 'https://two.example' },
+        ],
+      },
+    ];
+    const removeOp: FormatOp = { kind: 'removeMark', blockId: 'a', start: 0, end: 4, mark: 'link' };
+    const removed = applyOp(twoLinks, removeOp);
+    expect(removed.blocks[0]?.content).toEqual([{ text: 'abcd' }]);
+    expect(applyOpSequence(removed.blocks, removed.inverse)).toEqual(twoLinks);
   });
 
   it('applyMark on an already-fully-marked range produces an empty inverse (no-op undo)', () => {

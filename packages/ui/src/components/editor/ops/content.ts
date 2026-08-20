@@ -5,7 +5,18 @@
  * utilities (slice-at-offset, merge-adjacent-identical-runs), not a
  * reimplementation of block-operations' structural logic or
  * inline-formatter's mark vocabulary/DOM controller.
+ *
+ * splitRuns/marksEqual/mergeRuns delegate to block-operations.ts's
+ * splitInlineContent/inlineMarksEqual/mergeAdjacentRuns rather than carrying
+ * a second copy -- two independently-maintained copies of the same
+ * run-canonicalization logic is exactly what let structural.ts's merge
+ * inverse and text.ts's removeText drift apart (mergePrev/mergeNext bug).
  */
+import {
+  inlineMarksEqual,
+  mergeAdjacentRuns,
+  splitInlineContent,
+} from '../../../primitives/block-operations';
 import type { InlineContent, InlineMark } from '../../../primitives/types';
 
 /** Normalize string/undefined/array content into a run array for splicing. */
@@ -20,35 +31,13 @@ export function totalTextLength(runs: InlineContent[]): number {
 }
 
 /** Split a run array at a character offset, preserving marks/href on each half. */
-export function splitRuns(
+export const splitRuns: (
   runs: InlineContent[],
   offset: number,
-): [InlineContent[], InlineContent[]] {
-  const before: InlineContent[] = [];
-  const after: InlineContent[] = [];
-  let pos = 0;
-  for (const run of runs) {
-    const runLen = run.text.length;
-    if (pos + runLen <= offset) {
-      before.push(run);
-    } else if (pos >= offset) {
-      after.push(run);
-    } else {
-      const splitAt = offset - pos;
-      before.push({ ...run, text: run.text.slice(0, splitAt) });
-      after.push({ ...run, text: run.text.slice(splitAt) });
-    }
-    pos += runLen;
-  }
-  return [before, after];
-}
+) => [InlineContent[], InlineContent[]] = splitInlineContent;
 
-export function marksEqual(a: InlineMark[] | undefined, b: InlineMark[] | undefined): boolean {
-  const as = [...(a ?? [])].sort();
-  const bs = [...(b ?? [])].sort();
-  if (as.length !== bs.length) return false;
-  return as.every((m, i) => m === bs[i]);
-}
+export const marksEqual: (a: InlineMark[] | undefined, b: InlineMark[] | undefined) => boolean =
+  inlineMarksEqual;
 
 export function runsEqual(a: InlineContent[], b: InlineContent[]): boolean {
   if (a.length !== b.length) return false;
@@ -106,16 +95,4 @@ export function collapseIfPlain(runs: InlineContent[]): string | InlineContent[]
 }
 
 /** Merge adjacent runs with identical mark sets and href; drop empty runs. */
-export function mergeRuns(runs: InlineContent[]): InlineContent[] {
-  const result: InlineContent[] = [];
-  for (const run of runs) {
-    if (run.text.length === 0) continue;
-    const last = result[result.length - 1];
-    if (last && marksEqual(last.marks, run.marks) && last.href === run.href) {
-      result[result.length - 1] = { ...last, text: last.text + run.text };
-    } else {
-      result.push({ ...run });
-    }
-  }
-  return result;
-}
+export const mergeRuns: (runs: InlineContent[]) => InlineContent[] = mergeAdjacentRuns;

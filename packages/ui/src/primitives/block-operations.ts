@@ -29,8 +29,12 @@ export function blockContentToText(content: string | InlineContent[] | undefined
 /**
  * Split run-array content at a character offset, preserving marks/href on
  * each half (a run straddling the offset is itself split in two).
+ *
+ * Exported so ops/content.ts (components/editor/ops) can delegate to this
+ * single copy instead of carrying its own -- see marksEqual/mergeRuns below
+ * for the same rationale.
  */
-function splitInlineContent(
+export function splitInlineContent(
   content: InlineContent[],
   offset: number,
 ): [InlineContent[], InlineContent[]] {
@@ -68,7 +72,7 @@ function splitContent(
   return [text.slice(0, offset), text.slice(offset)];
 }
 
-function inlineMarksEqual(a: InlineContent['marks'], b: InlineContent['marks']): boolean {
+export function inlineMarksEqual(a: InlineContent['marks'], b: InlineContent['marks']): boolean {
   const as = [...(a ?? [])].sort();
   const bs = [...(b ?? [])].sort();
   if (as.length !== bs.length) return false;
@@ -81,7 +85,7 @@ function inlineMarksEqual(a: InlineContent['marks'], b: InlineContent['marks']):
  * reconstructs the original run boundaries instead of leaving a spurious
  * extra split.
  */
-function mergeAdjacentRuns(runs: InlineContent[]): InlineContent[] {
+export function mergeAdjacentRuns(runs: InlineContent[]): InlineContent[] {
   const result: InlineContent[] = [];
   for (const run of runs) {
     if (run.text.length === 0) continue;
