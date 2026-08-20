@@ -347,7 +347,7 @@ vdescribe('assembleGraph(items)', () => {
   });
 });
 
-vdescribe('assembleGraph: @parent and convention inference', () => {
+vdescribe('assembleGraph: @parent linking', () => {
   const validItem: RegistryItem = {
     name: 'button',
     type: 'ui',
@@ -369,50 +369,13 @@ vdescribe('assembleGraph: @parent and convention inference', () => {
     expect(cardNode?.parts).toEqual(['card-header']);
   });
 
-  it('convention inference when no @parent tag present (card + card-header -> parent is card)', () => {
+  it('nodes without @parent stay parentless regardless of naming', () => {
     const graph = assembleGraph([
-      { ...validItem, name: 'card' },
-      { ...validItem, name: 'card-header' },
+      { ...validItem, name: 'alert' },
+      { ...validItem, name: 'alert-dialog' },
     ]);
-    const headerNode = graph.nodes.get('card-header');
-    expect(headerNode?.parent).toBe('card');
-    const cardNode = graph.nodes.get('card');
-    expect(cardNode?.parts).toEqual(['card-header']);
-  });
-
-  it('longest-prefix matching (input, input-group, input-group-addon -> addon parent is input-group)', () => {
-    const graph = assembleGraph([
-      { ...validItem, name: 'input' },
-      { ...validItem, name: 'input-group' },
-      { ...validItem, name: 'input-group-addon' },
-    ]);
-    const addonNode = graph.nodes.get('input-group-addon');
-    expect(addonNode?.parent).toBe('input-group');
-    // input-group itself infers parent input
-    const groupNode = graph.nodes.get('input-group');
-    expect(groupNode?.parent).toBe('input');
-  });
-
-  it('@parent overrides convention (card-header with @parent report -> parent is report)', () => {
-    const graph = assembleGraph([
-      { ...validItem, name: 'card' },
-      { ...validItem, name: 'report' },
-      { ...validItem, name: 'card-header', parent: 'report' },
-    ]);
-    const headerNode = graph.nodes.get('card-header');
-    expect(headerNode?.parent).toBe('report');
-    // report gets the part, not card
-    expect(graph.nodes.get('report')?.parts).toEqual(['card-header']);
-    expect(graph.nodes.get('card')?.parts).toEqual([]);
-  });
-
-  it('does not infer parent when candidate prefix names no real node', () => {
-    const graph = assembleGraph([{ ...validItem, name: 'foo-bar' }]);
-    const node = graph.nodes.get('foo-bar');
-    expect(node?.parent).toBeUndefined();
-    // single-segment names never infer (loop starts at i >= 1 with segments.length === 1)
-    const graph2 = assembleGraph([{ ...validItem, name: 'standalone' }]);
-    expect(graph2.nodes.get('standalone')?.parent).toBeUndefined();
+    expect(graph.nodes.get('alert-dialog')?.parent).toBeUndefined();
+    expect(graph.nodes.get('alert')?.parts).toEqual([]);
   });
 
   it('a composite can be a parent', () => {
@@ -463,8 +426,8 @@ vdescribe('describe(): parts, parent, siblings', () => {
   it('describe(card) includes part children typed "part"', () => {
     const graph = assembleGraph([
       { ...validItem, name: 'card' },
-      { ...validItem, name: 'card-header' },
-      { ...validItem, name: 'card-footer' },
+      { ...validItem, name: 'card-header', parent: 'card' },
+      { ...validItem, name: 'card-footer', parent: 'card' },
     ]);
     const result = describe('card', graph) as NodeResult;
     expect(result.children).toContainEqual({ addr: 'card-header', type: 'part' });
@@ -474,8 +437,8 @@ vdescribe('describe(): parts, parent, siblings', () => {
   it('describe(card-header) returns NodeResult with parent and siblings', () => {
     const graph = assembleGraph([
       { ...validItem, name: 'card' },
-      { ...validItem, name: 'card-header' },
-      { ...validItem, name: 'card-footer' },
+      { ...validItem, name: 'card-header', parent: 'card' },
+      { ...validItem, name: 'card-footer', parent: 'card' },
     ]);
     const result = describe('card-header', graph) as NodeResult;
     expect(result.parent).toBe('card');
@@ -485,8 +448,8 @@ vdescribe('describe(): parts, parent, siblings', () => {
   it('describe(card.*) includes parts in expanded result', () => {
     const graph = assembleGraph([
       { ...validItem, name: 'card' },
-      { ...validItem, name: 'card-header' },
-      { ...validItem, name: 'card-footer' },
+      { ...validItem, name: 'card-header', parent: 'card' },
+      { ...validItem, name: 'card-footer', parent: 'card' },
     ]);
     const result = describe('card.*', graph) as ExpandedNodeResult;
     expect(result.parts).toEqual(['card-header', 'card-footer']);

@@ -170,21 +170,6 @@ export function assembleGraph(items: RegistryItem[]): Graph {
     nodes.set(item.name, gn);
   }
 
-  // Convention inference: nodes with no explicit parent get one by prefix match.
-  // Split the node id on '-' and try progressively shorter prefixes (longest
-  // first). First prefix that matches an existing node id wins.
-  for (const node of nodes.values()) {
-    if (node.parent !== undefined) continue;
-    const segments = node.id.split('-');
-    for (let i = segments.length - 1; i >= 1; i--) {
-      const candidate = segments.slice(0, i).join('-');
-      if (nodes.has(candidate)) {
-        node.parent = candidate;
-        break;
-      }
-    }
-  }
-
   // Validate parent references before populating parts arrays.
   for (const node of nodes.values()) {
     if (node.parent === undefined) continue;
