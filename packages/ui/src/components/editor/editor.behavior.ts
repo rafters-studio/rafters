@@ -14,15 +14,93 @@
  * Spec 00). It borrows only the Spec 05 `bindX` LIFECYCLE (read config off
  * `root`'s `data-*`, subscribe to the memory cell, render on change, restore
  * selection, return a teardown).
+ *
+ * FR-EDITOR-005 adds the editor SCORE below (`parts`, `editorAria`,
+ * `editorKeymap`) -- hand-written, not produced by `compose()` -- and extends
+ * `bindEditor` with the aria projection and the undo/redo keymap wiring.
  */
 import { z } from 'zod';
+import type { AriaAttrs, KeyInput, PartDecl, PartIds } from '../../lib/contract';
+import { updateAriaAttribute } from '../../primitives/aria-manager';
 import { createClipboard } from '../../primitives/clipboard';
 import { createInputHandler } from '../../primitives/input-events';
 import type { BaseBlock, InlineContent } from '../../primitives/types';
-import type { EditorHistoryState } from './editor-history';
+import type { EditorHistory, EditorHistoryState } from './editor-history';
 import { createEditorHistory } from './editor-history';
 import { normalizeRuns, splitRuns, totalTextLength } from './ops/content';
 import type { EditorOp } from './ops';
+
+// ---------------------------------------------------------------------------
+// The editor score (FR-EDITOR-005): parts, editorAria, editorKeymap. Root-only
+// (settled) -- the contenteditable owns block DOM internally, no per-block
+// parts. Composed directly by `bindEditor` below; this is NOT a
+// compose()/BehaviorSpec (frozen Spec 00 line 132) -- this file imports
+// neither `compose` nor `createBehavior` and declares no `Slice`.
+// ---------------------------------------------------------------------------
+
+export type EditorPart = 'root';
+
+/** The one memory cell's shape (RULING-EDITOR-HISTORY interface contract,
+ *  point 2): `doc: BaseBlock[]`, plus FR-EDITOR-002's `sel`/`done`/`undone` --
+ *  re-exported from `editor-history.ts`'s own type rather than retyped. */
+export type EditorState = EditorHistoryState;
+
+/** Accessible-name is REQUIRED, not optional: axe fails a role=textbox with
+ *  no name, so the type forces one of the two rather than leaving it to
+ *  review. */
+export type EditorLabelConfig =
+  | { label: string; labelledBy?: undefined }
+  | { label?: undefined; labelledBy: string };
+
+export type EditorConfig = EditorLabelConfig & {
+  disabled?: boolean | undefined;
+  readonly?: boolean | undefined;
+};
+
+/** Root-only (settled): the contenteditable owns block DOM internally -- no
+ *  per-block parts. */
+export const parts: Record<EditorPart, PartDecl> = {
+  root: { role: 'textbox' },
+};
+
+/** Pure ARIA projection, same signature shape as every other score's `aria`
+ *  field but hand-written -- not produced by compose(). `ids` completes the
+ *  shared signature; unused here because the editor's root never
+ *  cross-references another part's id. */
+export function editorAria(
+  _state: EditorState,
+  config: EditorConfig,
+  _ids: PartIds<EditorPart>,
+): Partial<Record<EditorPart, AriaAttrs>> {
+  return {
+    root: {
+      role: 'textbox',
+      'aria-multiline': 'true',
+      'aria-label': config.label,
+      'aria-labelledby': config.labelledBy,
+    },
+  };
+}
+
+/**
+ * Pure keymap projection. Claims undo/redo on BOTH the Mac chord and the
+ * Windows/Linux chord. `KeyboardEvent.key` reports the shifted character
+ * (`'Z'`, not `'z'`) when Shift is held, so the comparison lowercases first --
+ * otherwise the redo chord silently never matches in a real browser. Every
+ * other key -- including plain character input -- returns null: content
+ * edits are NOT routed through keymap, they arrive via beforeinput
+ * (FR-EDITOR-004), composed by bindEditor.
+ */
+export function editorKeymap(
+  event: KeyInput,
+  _state: EditorState,
+  _part: EditorPart,
+  _config: EditorConfig,
+): 'undo' | 'redo' | null {
+  if (event.key.toLowerCase() !== 'z') return null;
+  if (!(event.metaKey || event.ctrlKey)) return null;
+  return event.shiftKey ? 'redo' : 'undo';
+}
 
 // ---------------------------------------------------------------------------
 // Config parsing (external data off `root`'s data-* attributes -> Zod).
@@ -92,6 +170,29 @@ function sliceContent(
   const [, fromStart] = splitRuns(runs, start);
   const [middle] = splitRuns(fromStart, end - start);
   return middle;
+}
+
+/**
+ * DOM-attribute config read for the score's aria/keymap projections --
+ * label/labelledBy/disabled/readonly off `root`'s `data-*`, falling back to
+ * an already-present `aria-label`/`aria-labelledby` (the Astro performance
+ * sets these server-side; the Web Component's light-DOM markup can too).
+ * Neither present projects no accessible name rather than inventing one --
+ * the three decorators are the enforcement point for a required name
+ * (`EditorLabelConfig`'s type-level union), not this runtime fallback, so an
+ * unnamed root here means the decorator that rendered it didn't pass one.
+ */
+function parseEditorConfig(root: HTMLElement): EditorConfig {
+  const labelledBy = root.dataset.labelledby ?? root.getAttribute('aria-labelledby') ?? undefined;
+  const label = labelledBy
+    ? undefined
+    : (root.dataset.label ?? root.getAttribute('aria-label') ?? undefined);
+  return {
+    label,
+    labelledBy,
+    disabled: root.dataset.disabled === 'true',
+    readonly: root.dataset.readonly === 'true',
+  } as EditorConfig;
 }
 
 function mintBlockId(): string {
@@ -335,20 +436,33 @@ function restoreSelection(root: HTMLElement, sel: EditorHistoryState['sel']): vo
 // ---------------------------------------------------------------------------
 
 /**
- * Bind a controlled contenteditable to a fresh editor history seeded from
- * `root`'s `data-initial-doc` / `data-caret`. Returns a teardown that removes
- * every listener and the history subscription.
+ * Bind a controlled contenteditable to an editor history seeded from `root`'s
+ * `data-initial-doc` / `data-caret`. Returns a teardown that removes every
+ * listener and the history subscription.
  *
- * FR-EDITOR-005 EXTENDS this same export with aria/keymap wiring for
- * undo/redo; it does not add a second binder. Nothing undo/redo-keymap-shaped
- * lives here.
+ * `history` is normally omitted: the WC and Astro decorators call
+ * `bindEditor(root)` and get a fresh `createEditorHistory` built from `root`'s
+ * seed data. React injects the SAME `EditorHistory` it reads via `useMemory`
+ * (own `createEditorHistory` call in `editor.tsx`) so the declarative aria
+ * projection and this binder's imperative DOM projection read one cell, not
+ * two divergent ones -- still the ONE `bindEditor` export, no second binder,
+ * no wrapper around it (Spec 05).
+ *
+ * FR-EDITOR-005 EXTENDS this same export with the aria projection (applied via
+ * aria-manager, like every other DOM-native binder in this codebase) and the
+ * undo/redo keymap wiring, gated on `history.canUndo`/`canRedo` -- there is no
+ * `canDispatch` in this architecture.
  */
-export function bindEditor(root: HTMLElement): () => void {
+export function bindEditor(root: HTMLElement, injectedHistory?: EditorHistory): () => void {
   root.setAttribute('data-part', 'root');
-  root.setAttribute('contenteditable', 'true');
 
-  const history = createEditorHistory(parseSeed(root));
+  const config = parseEditorConfig(root);
+  root.setAttribute('contenteditable', config.disabled || config.readonly ? 'false' : 'true');
+
+  const history = injectedHistory ?? createEditorHistory(parseSeed(root));
   const { controls, memory } = history;
+
+  const ids = { root: root.id } as PartIds<EditorPart>;
 
   let prevDoc: BaseBlock[] | null = null;
   function render(): void {
@@ -356,6 +470,13 @@ export function bindEditor(root: HTMLElement): () => void {
     projectDocument(root, state.doc, prevDoc);
     prevDoc = state.doc;
     restoreSelection(root, state.sel);
+
+    const projection = editorAria(state, config, ids).root;
+    if (projection) {
+      for (const [name, value] of Object.entries(projection)) {
+        updateAriaAttribute(root, name as never, value as never, { validate: false });
+      }
+    }
   }
 
   // -- op construction for the doc-dependent inputs (deletes / structural) --
@@ -662,6 +783,31 @@ export function bindEditor(root: HTMLElement): () => void {
     },
   });
 
+  // -- keydown: undo/redo (FR-EDITOR-005) --
+
+  const onKeydown = (event: KeyboardEvent): void => {
+    const action = editorKeymap(
+      {
+        key: event.key,
+        shiftKey: event.shiftKey,
+        ctrlKey: event.ctrlKey,
+        altKey: event.altKey,
+        metaKey: event.metaKey,
+      },
+      memory.get(),
+      'root',
+      config,
+    );
+    if (!action) return;
+    // preventDefault UNCONDITIONALLY: the model owns the edit, so the native
+    // contenteditable undo/redo must never run even when the gate below turns
+    // this into a no-op (an empty done/undone log).
+    event.preventDefault();
+    if (action === 'undo' && history.canUndo) controls.undo();
+    else if (action === 'redo' && history.canRedo) controls.redo();
+  };
+  root.addEventListener('keydown', onKeydown);
+
   const unsubscribe = memory.subscribe(() => render());
 
   return () => {
@@ -670,5 +816,6 @@ export function bindEditor(root: HTMLElement): () => void {
     clipboard.cleanup();
     root.removeEventListener('paste', onPasteRaw);
     root.removeEventListener('beforeinput', onBeforeInputRaw);
+    root.removeEventListener('keydown', onKeydown);
   };
 }
