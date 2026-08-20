@@ -1,3 +1,6 @@
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { registerComposite } from '@rafters/composites';
 import { describe, expect, it, vi } from 'vitest';
 import * as intent from '../../src/mcp/intent.js';
@@ -384,5 +387,68 @@ describe('unknown tool', () => {
     const data = JSON.parse(result.content[0].text as string);
     expect(data.error).toContain('Unknown tool');
     expect(data.suggestion).toContain('rafters_describe');
+  });
+});
+
+async function malformedConfigWorkspace(installed: Record<string, unknown>): Promise<{
+  root: string;
+  cleanup: () => Promise<void>;
+}> {
+  const root = await mkdtemp(join(tmpdir(), 'rafters-mcp-'));
+  await mkdir(join(root, '.rafters'), { recursive: true });
+  await writeFile(
+    join(root, '.rafters', 'config.rafters.json'),
+    JSON.stringify({ framework: 'next', installed }),
+  );
+  return { root, cleanup: () => rm(root, { recursive: true, force: true }) };
+}
+
+describe('overlayContext malformed config guard', () => {
+  it('rafters_describe returns a structured error (not a throw) when installed.components is not an array', async () => {
+    const { root, cleanup } = await malformedConfigWorkspace({ components: 'button' });
+    const { handler } = fixtureHandler([{ name: 'fixture', root }], { name: 'fixture', root });
+    const result = await handler.handleToolCall('rafters_describe', { address: 'button' });
+    const data = JSON.parse(result.content[0].text as string);
+    expect(data.error).toContain('config.rafters.json');
+    expect(data.error).toContain('installed.components');
+    await cleanup();
+  });
+
+  it('rafters_generate returns the same structured error when installed.primitives is not an array', async () => {
+    const { root, cleanup } = await malformedConfigWorkspace({ primitives: { bad: true } });
+    const { handler } = fixtureHandler([{ name: 'fixture', root }], { name: 'fixture', root });
+    const result = await handler.handleToolCall('rafters_generate', { intent: 'button' });
+    const data = JSON.parse(result.content[0].text as string);
+    expect(data.error).toContain('config.rafters.json');
+    expect(data.error).toContain('installed.primitives');
+    await cleanup();
+  });
+
+  it('the deprecated rafters_component alias returns the same structured error, still marked deprecated, when installed.composites is not an array', async () => {
+    const { root, cleanup } = await malformedConfigWorkspace({ composites: 42 });
+    const { handler } = fixtureHandler([{ name: 'fixture', root }], { name: 'fixture', root });
+    const result = await handler.handleToolCall('rafters_component', { name: 'button' });
+    const data = JSON.parse(result.content[0].text as string);
+    expect(data.error).toContain('installed.composites');
+    expect(data.deprecated).toBeDefined();
+    await cleanup();
+  });
+
+  it('a config with valid installed arrays is unaffected', async () => {
+    const { root, cleanup } = await malformedConfigWorkspace({ components: ['button'] });
+    const { handler } = fixtureHandler([{ name: 'fixture', root }], { name: 'fixture', root });
+    const result = await handler.handleToolCall('rafters_describe', { address: 'button' });
+    const data = JSON.parse(result.content[0].text as string);
+    expect(data).toMatchObject({ id: 'button', presence: 'installed' });
+    await cleanup();
+  });
+
+  it('a workspace with no config file at all is unaffected -- degrades to nothing-installed, not an error', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'rafters-mcp-'));
+    const { handler } = fixtureHandler([{ name: 'fixture', root }], { name: 'fixture', root });
+    const result = await handler.handleToolCall('rafters_describe', { address: 'button' });
+    const data = JSON.parse(result.content[0].text as string);
+    expect(data).toMatchObject({ id: 'button', presence: 'available' });
+    await rm(root, { recursive: true, force: true });
   });
 });

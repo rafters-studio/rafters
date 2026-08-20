@@ -363,6 +363,35 @@ export const TOOL_DEFINITIONS = [
 /** Stamped onto every deprecated-alias response. */
 const DEPRECATED_MSG = 'use rafters_describe instead';
 
+/**
+ * Validates only the three `installed` fields `overlayContext` actually
+ * consumes (components, primitives, composites). `installed.rules` and
+ * `installed.substrate` are deliberately NOT validated here -- overlayContext
+ * never reads them. Every field is `.optional()`: buildInstalledSet's own
+ * contract ("Absent or partial `installed` is treated as nothing installed --
+ * never a crash, never 'everything installed'", overlay.ts) must still hold for
+ * a config that omits some or all of these keys.
+ */
+const OverlayInstalledSchema = z.object({
+  components: z.array(z.string()).optional(),
+  primitives: z.array(z.string()).optional(),
+  composites: z.array(z.string()).optional(),
+});
+
+/**
+ * overlayContext's failure case: the workspace's config.rafters.json exists and
+ * parsed as JSON (readConfig returned non-null), but its `installed` block does
+ * not match OverlayInstalledSchema -- e.g. `installed.components` is a string
+ * instead of a string array. `configError` names the config file path and the
+ * offending field/expectation, the same recovery shape every other errorResult
+ * in this file already carries. Distinct from "no config at all" (readConfig
+ * returns null; overlayContext degrades to no-target/nothing-installed exactly
+ * as it does today -- unchanged).
+ */
+interface OverlayConfigError {
+  configError: string;
+}
+
 // ==================== Tool Handler ====================
 
 export class RaftersToolHandler {
@@ -661,10 +690,35 @@ export class RaftersToolHandler {
    * degraded mode (`undefined` target) instead of silently forcing
    * `rendersForTarget` false for every node.
    */
-  private async overlayContext(workspace: Workspace | null): Promise<OverlayContext> {
+  private async overlayContext(
+    workspace: Workspace | null,
+  ): Promise<OverlayContext | OverlayConfigError> {
     const config = workspace ? await this.readConfig(workspace.root) : null;
-    const base = buildInstalledSet(config ?? {});
-    const components = new Set([...base.components, ...(config?.installed?.primitives ?? [])]);
+
+    // Validate BEFORE anything downstream touches `installed`. `readConfig`
+    // already returns null (not a throw) for a missing file or JSON that fails
+    // to parse/migrate; this guard closes the OTHER gap -- config that parses
+    // fine but has a wrong-shaped `installed` block. The union return type is
+    // the guard all three call sites inherit: skipping the `'configError' in
+    // ctx` narrowing fails to typecheck, not just at runtime.
+    const parsedInstalled = OverlayInstalledSchema.safeParse(config?.installed ?? {});
+    if (!parsedInstalled.success) {
+      const issue = parsedInstalled.error.issues[0];
+      const field =
+        issue && issue.path.length > 0 ? `installed.${issue.path.join('.')}` : 'installed';
+      const configPath = workspace ? getRaftersPaths(workspace.root).config : 'config.rafters.json';
+      return {
+        configError: `malformed config at ${configPath}: ${field} ${issue?.message ?? 'is invalid'}`,
+      };
+    }
+
+    const base = buildInstalledSet({
+      installed: {
+        components: parsedInstalled.data.components ?? [],
+        composites: parsedInstalled.data.composites ?? [],
+      },
+    });
+    const components = new Set([...base.components, ...(parsedInstalled.data.primitives ?? [])]);
     const parsedTarget = ComponentTargetSchema.safeParse(config?.componentTarget);
     return {
       target: parsedTarget.success ? parsedTarget.data : undefined,
@@ -696,6 +750,9 @@ export class RaftersToolHandler {
       return this.jsonResult(matchIntent(address, graph));
     }
     const ctx = await this.overlayContext(resolved);
+    if ('configError' in ctx) {
+      return this.errorResult(ctx.configError);
+    }
     return this.jsonResult(describeWithOverlay(address, graph, ctx));
   }
 
@@ -725,6 +782,9 @@ export class RaftersToolHandler {
     }
 
     const ctx = await this.overlayContext(resolved);
+    if ('configError' in ctx) {
+      return this.errorResult(ctx.configError);
+    }
 
     // Tier (b): direct component-id lookup, BEFORE the intent door. Exact string
     // equality only, against the same `graph.nodes` map `describe` itself
@@ -974,6 +1034,9 @@ export class RaftersToolHandler {
     }
 
     const ctx = await this.overlayContext(resolved);
+    if ('configError' in ctx) {
+      return this.errorResult(ctx.configError, { deprecated: DEPRECATED_MSG });
+    }
     const out = describeWithOverlay(id, graph, ctx);
     return this.jsonResult(this.withDeprecated(out));
   }
