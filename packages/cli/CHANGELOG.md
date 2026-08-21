@@ -1,10 +1,10 @@
 # rafters
 
-## 0.2.2
+## 0.2.3
 
 ### Versioning
 
-- The CLI, the Claude Code plugin, and the marketplace entry are now a single version pinned to the CLI. They had drifted apart: the plugin was independently versioned and had reached `0.2.1`, while #2124 wired the plugin's MCP at the CLI's then-current `0.0.85` and set `plugin.json`/`marketplace.json` to match -- a number below where the plugin already was, so an installed plugin would read the unified release as a downgrade and stop offering the update. `0.2.2` is the first unified number that climbs past the plugin's last independent `0.2.1`, so the update prompt fires and every artifact moves forward together from here. This is why the release jumps from `0.0.85` to `0.2.2` rather than `0.0.86`.
+- The CLI, the Claude Code plugin, and the marketplace entry are now a single version pinned to the CLI. They had drifted apart: the plugin was independently versioned and had reached `0.2.1`, while #2124 wired the plugin's MCP at the CLI's then-current `0.0.85` and set `plugin.json`/`marketplace.json` to match -- a number below where the plugin already was, so an installed plugin would read the unified release as a downgrade and stop offering the update. `0.2.3` is the first unified number that clears both the plugin's last independent `0.2.1` and the npm-burned `0.2.0`/`0.2.2` (version numbers npm permanently reserves once published, even after an unpublish), so the update prompt fires and every artifact moves forward together from here. This is why the release jumps from `0.0.85` to `0.2.3`.
 
 ### Features
 
