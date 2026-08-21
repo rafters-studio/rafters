@@ -7,6 +7,7 @@
 
 import { Command } from 'commander';
 import { add } from './commands/add.js';
+import { agents } from './commands/agents.js';
 import { init } from './commands/init.js';
 import { mcp } from './commands/mcp.js';
 import { studio } from './commands/studio.js';
@@ -51,5 +52,12 @@ program
   .action(mcp);
 
 program.command('studio').description('Open Studio UI for visual token editing').action(studio);
+
+program
+  .command('agents')
+  .description(
+    'Write or update the rafters contract block in AGENTS.md for non-Claude-Code agent hosts',
+  )
+  .action(withErrorHandler(agents));
 
 program.parse();

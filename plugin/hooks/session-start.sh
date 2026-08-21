@@ -13,21 +13,14 @@ CWD=$(echo "$INPUT" | jq -r '.cwd // empty')
 # the .rafters/config.rafters.json marker; exit silently if not found.
 find_rafters_root "$CWD" >/dev/null || exit 0
 
-jq -n --arg ctx "[Rafters] You are working in a Rafters-powered frontend project. MANDATORY rules:
+# The injected contract is generated from the live MCP tool surface and
+# committed alongside this hook. If it is missing or unreadable, skip context
+# injection rather than crashing session start (matches version-check.sh).
+CONTRACT="$(dirname "${BASH_SOURCE[0]}")/agent-contract.md"
+[ -r "$CONTRACT" ] || exit 0
+CONTEXT="$(cat "$CONTRACT")" || exit 0
 
-1. Before writing ANY UI code, use the rafters MCP tools: rafters_pattern (how to implement a pattern), rafters_component (component intelligence), rafters_vocabulary (what exists in the design system).
-
-2. If you do not know what to build or how it should look, invoke the frontend-design skill FIRST to get a design direction before writing code.
-
-3. Container and Grid handle ALL layout. Never write flex, grid, gap, padding, or margin utilities directly.
-
-4. Use typography components (H1, H2, P, Code, Small) with token props (size, weight, color). Never use raw <h1>/<p>/<span> with class attributes.
-
-5. Use semantic color tokens (bg-primary, text-accent). Never use arbitrary values, hex colors, or var().
-
-6. Never pass class/className to Rafters components. Use token props for overrides.
-
-The pre-edit hook WILL block violations. Consult the design system BEFORE writing, not after." '{
+jq -n --arg ctx "$CONTEXT" '{
   "hookSpecificOutput": {
     "hookEventName": "SessionStart",
     "additionalContext": $ctx
