@@ -55,9 +55,17 @@ import {
   FUTURE_EXPORTS,
   selectionsToConfig,
 } from '../utils/exports.js';
-import { getRaftersPaths, type PathField } from '../utils/paths.js';
+import { getRaftersPaths } from '../utils/paths.js';
 import { isAgentMode, log, setAgentMode } from '../utils/ui.js';
 import { updateDependencies } from '../utils/update-dependencies.js';
+// The config shape and its migration now live in a leaf module with no
+// `@rafters/design-tokens` edge, so the MCP plugin bundle can reach them
+// without dragging css-tree into a single-file build. Re-exported here so
+// existing importers of `./init.js` (reconcile.ts, tests) keep resolving.
+import { migrateConfig } from '../config/rafters-config.js';
+import type { FontsConfig, RaftersConfig } from '../config/rafters-config.js';
+export { migrateConfig };
+export type { FontsConfig, RaftersConfig };
 
 interface InitOptions {
   rebuild?: boolean;
@@ -195,61 +203,6 @@ async function stripImportedDeclarations(
   const cleaned = cleanSourceCssBlocks(content.replace(pattern, ''));
   const collapsed = cleaned.replace(/\n{3,}/g, '\n\n');
   await writeFile(fullPath, collapsed);
-}
-
-/**
- * Configuration persisted in `.rafters/config.rafters.json`.
- *
- * Path fields accept either a single string (status quo) or an array of
- * entries to support multi-folder layouts (e.g. project + `@shingle/shared`).
- * When multiple entries are provided, the install root is the entry tagged
- * `{ root: true }`, otherwise the first entry whose realpath resolves inside
- * cwd. Local entries always win on collision.
- */
-export interface FontsConfig {
-  path?: string | null;
-  imports?: string[];
-}
-
-export interface RaftersConfig {
-  framework: Framework;
-  /** Registry to install from / query. Set this to host your own internal registry. */
-  registryUrl?: string;
-  componentTarget?: ComponentTarget;
-  componentsPath: PathField;
-  primitivesPath: PathField;
-  compositesPath: PathField;
-  rulesPath: PathField;
-  cssPath: string | null;
-  /** Which design system this project was imported from. Replaces the old `shadcn` boolean. */
-  source?: string;
-  exports: ExportConfig;
-  darkMode?: 'class' | 'media';
-  /** Aesthetic starting point and rollback target. Default "efficient". */
-  intent?: string;
-  /** Font file locations and web font imports. */
-  fonts?: FontsConfig;
-  installed?: {
-    components: string[];
-    primitives: string[];
-    composites: string[];
-    rules: string[];
-    substrate?: string[];
-  };
-}
-
-/**
- * Migrate legacy configs that carry `shadcn: boolean` to the new `source`
- * field. Called on every config read so existing projects upgrade silently.
- */
-export function migrateConfig(raw: Record<string, unknown>): Record<string, unknown> {
-  if ('shadcn' in raw && !('source' in raw)) {
-    if (raw.shadcn === true) {
-      raw.source = 'shadcn';
-    }
-    delete raw.shadcn;
-  }
-  return raw;
 }
 
 async function updateMainCss(cwd: string, cssPath: string, themePath: string): Promise<void> {

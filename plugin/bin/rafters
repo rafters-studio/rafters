@@ -1,0 +1,2 @@
+#!/bin/bash
+exec node "$(dirname "${BASH_SOURCE[0]}")/rafters-mcp.bundle.mjs" "$@"

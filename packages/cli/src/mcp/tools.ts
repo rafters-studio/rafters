@@ -44,7 +44,7 @@ import {
 // node-fs adapter lives behind the server-only subpath (it imports node:fs).
 import { discoverFromDirs } from '@rafters/composites/node';
 import { z } from 'zod';
-import { migrateConfig, type RaftersConfig } from '../commands/init.js';
+import { migrateConfig, type RaftersConfig } from '../config/rafters-config.js';
 import { RegistryClient, registryClient } from '../registry/client.js';
 import {
   type ComponentTarget,

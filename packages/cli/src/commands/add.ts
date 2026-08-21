@@ -32,7 +32,7 @@ import {
 import { getRaftersPaths, type PathField, resolveRoot } from '../utils/paths.js';
 import { buildUpdateCandidates, readInstallRoots } from '../utils/reconcile.js';
 import { error, log, setAgentMode } from '../utils/ui.js';
-import { migrateConfig, type RaftersConfig } from './init.js';
+import { migrateConfig, type RaftersConfig } from '../config/rafters-config.js';
 
 export interface AddOptions {
   list?: boolean;
