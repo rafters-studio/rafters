@@ -83,9 +83,9 @@ is installed in your project, through your package manager:
 - \`npx rafters mcp\`
 - \`yarn rafters mcp\`
 
-Run the copy pinned in your own lockfile. Do not fetch a fresh copy at invocation
-time -- avoid \`pnpx rafters\`, \`pnpm dlx rafters\`, and \`@latest\` pins, which
-resolve outside your lockfile and can drift from the version your project
-installed.
+Run the copy pinned in your own lockfile. Do NOT use \`pnpx rafters@latest\`,
+\`npx rafters@latest\`, \`pnpm dlx rafters\`, or any \`@latest\` pin: these resolve
+outside your lockfile and can drift from the version your project installed --
+the exact staleness that strands you on an old rafters after a new one ships.
 `;
 }

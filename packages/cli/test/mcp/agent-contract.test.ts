@@ -34,10 +34,15 @@ describe('generateAgentContract', () => {
     }
   });
 
-  it('instructs pinned local-bin invocation, not @latest', () => {
+  it('recommends the lockfile-pinned local bin and names @latest as what NOT to use', () => {
     const contract = generateAgentContract();
+    // Behavior: recommend the local, lockfile-pinned invocation...
     expect(contract).toContain('pnpm exec rafters mcp');
-    expect(contract).not.toMatch(/rafters@latest/);
+    // ...and explicitly NAME the @latest/pnpx forms as forbidden -- warning
+    // against them is the behavior the spec requires, not merely omitting the
+    // string. Assert the prohibition sentence actually names rafters@latest.
+    expect(contract).toMatch(/Do NOT use[\s\S]*?pnpx rafters@latest/);
+    expect(contract).toContain('npx rafters@latest');
   });
 });
 
