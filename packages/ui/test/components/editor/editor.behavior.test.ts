@@ -20,6 +20,8 @@ import {
 } from '../../../src/components/editor/editor.behavior';
 import { applyOp } from '../../../src/components/editor/ops';
 import type { BaseBlock } from '../../../src/primitives/types';
+import { formatCaret, given, parseCaret, thenAssert as then, when } from '../../harness/caret';
+import { EDITOR_SCENARIOS } from '../../harness/editor-scenarios';
 
 describe('translateBeforeInput', () => {
   it('maps insertText to an insertText op at the current selection (InlineContent[] text)', () => {
@@ -239,5 +241,67 @@ describe('editorKeymap', () => {
     expect(editorKeymap({ key: 'a' }, state, 'root', config)).toBeNull();
     expect(editorKeymap({ key: 'z' }, state, 'root', config)).toBeNull(); // no modifier
     expect(editorKeymap({ key: 'y', metaKey: true }, state, 'root', config)).toBeNull();
+  });
+});
+
+// -----------------------------------------------------------------------------
+// Caret-notation BDD (FR-EDITOR-006) -- DOM-free, model-level scenarios over
+// editor.behavior.ts's EditorState via the caret.ts Given/When/Then. The
+// IDENTICAL named scenarios (EDITOR_SCENARIOS) replay through a real
+// contenteditable in test/editor/editor-capture.e2e.ts (Playwright); this is
+// the one authored list, not a re-authored duplicate.
+// -----------------------------------------------------------------------------
+
+describe('parseCaret/formatCaret', () => {
+  it('round-trips a collapsed caret and a selection', () => {
+    expect(formatCaret(parseCaret('hel|lo'))).toBe('hel|lo');
+    expect(formatCaret(parseCaret('he[llo]'))).toBe('he[llo]');
+  });
+
+  it('throws a descriptive error on an unclosed selection bracket', () => {
+    expect(() => parseCaret('he[llo')).toThrow(/unbalanced selection brackets/);
+  });
+
+  it('throws a descriptive error when both a caret and a selection marker are present', () => {
+    expect(() => parseCaret('he[l|lo]')).toThrow(/expected exactly one caret or selection marker/);
+  });
+
+  it('throws a descriptive error with no marker at all', () => {
+    expect(() => parseCaret('hello')).toThrow(/expected exactly one caret or selection marker/);
+  });
+
+  it('throws a descriptive error on more than one caret marker', () => {
+    expect(() => parseCaret('he||llo')).toThrow(/expected exactly one caret or selection marker/);
+  });
+});
+
+describe('caret-notation BDD scenarios', () => {
+  for (const scenario of EDITOR_SCENARIOS) {
+    it(scenario.name, () => {
+      let state = given(scenario.given);
+      for (const step of scenario.steps) {
+        state = when(state, step.action);
+        then(state, step.expected);
+      }
+    });
+  }
+});
+
+describe('caret-notation BDD: canUndo/canRedo (FR-EDITOR-006 functional test, verbatim)', () => {
+  it('undo restores document AND selection (the canonical scenario)', () => {
+    const typed = when(given('he[llo]'), { kind: 'type', text: 'y' });
+    then(typed, 'hey|');
+    then(when(typed, { kind: 'undo' }), 'he[llo]');
+  });
+
+  it('canUndo/canRedo are derived, never stored', () => {
+    const initial = given('hello|');
+    expect(initial.done.length === 0).toBe(true); // canUndo false
+    const edited = when(initial, { kind: 'type', text: '!' });
+    expect(edited.done.length > 0).toBe(true); // canUndo true
+    expect(edited.undone.length === 0).toBe(true); // canRedo false, nothing undone yet
+    const undone = when(edited, { kind: 'undo' });
+    expect(undone.done.length === 0).toBe(true); // canUndo false again
+    expect(undone.undone.length > 0).toBe(true); // canRedo true
   });
 });
