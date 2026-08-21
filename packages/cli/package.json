@@ -28,7 +28,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsup",
+    "build": "tsup && tsx scripts/generate-agent-contract.ts",
     "dev": "tsup --watch",
     "test": "pnpm run test:bdd && pnpm run test:unit",
     "test:bdd": "bddgen && playwright test",
