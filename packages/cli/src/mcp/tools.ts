@@ -5,19 +5,18 @@
  *
  * 1. rafters_workspaces - List workspaces, or update a workspace's WIRING config.
  * 2. rafters_describe   - Recursively introspect the component/composite intel
- *                         graph. Dispatches: a natural-language question routes
- *                         through the intent door (matchIntent); a dot-address
- *                         resolves through the workspace overlay (describeWithOverlay
- *                         -> describe). This dispatcher is the ONLY seam that
- *                         composes graph.ts (#2072), overlay.ts (#2074), and
- *                         intent.ts (#2075); none of the three call each other.
- * 3. rafters_generate   - Resolve a prose query to ONE registry component and
- *                         return its authoritative, target-correct snippet
+ *                         graph. A dot-address resolves through the workspace
+ *                         overlay (describeWithOverlay -> describe). This
+ *                         dispatcher is the ONLY seam that composes graph.ts
+ *                         (#2072), overlay.ts (#2074), and intent.ts (#2075);
+ *                         none of the three call each other. (The NL intent door
+ *                         via matchIntent is descoped for v1 -- see #2075.)
+ * 3. rafters_generate   - Resolve a bare component name to ONE registry component
+ *                         and return its authoritative, target-correct snippet
  *                         verbatim, with its content slots marked open for the
- *                         caller. A light, deterministic direct-name lookup is
- *                         tried first; on a miss it falls back to the same intent
- *                         door (matchIntent) describe uses. No parameterization,
- *                         no composition, no writes, no MCP-side validation.
+ *                         caller. Direct-name lookup only for v1. No
+ *                         parameterization, no composition, no writes, no
+ *                         MCP-side validation.
  *
  * Deprecated aliases kept for one minor release (removal tracked as a follow-up):
  *   - rafters_component -> describe(<id>) via the overlay.
@@ -55,7 +54,12 @@ import { getRaftersPaths, PathFieldSchema, resolveReadSet } from '../utils/paths
 import { resolveWorkspace, type Workspace } from '../utils/workspaces.js';
 import { assembleGraph, describe, type Graph, type NodeResult } from './graph.js';
 import { isNaturalLanguageQuery, matchIntent } from './intent.js';
-import { buildInstalledSet, describeWithOverlay, type OverlayContext } from './overlay.js';
+import {
+  buildInstalledSet,
+  describeWithOverlay,
+  type OverlayContext,
+  type Presence,
+} from './overlay.js';
 
 /**
  * True when a path is safe to accept from an agent: relative, and with no `..`
@@ -210,8 +214,16 @@ interface GenerateSlot {
 interface GenerateResult {
   component: string;
   target: ComponentTarget;
+  presence: Presence;
   snippet: string;
   slots: GenerateSlot[];
+  /**
+   * The command that makes the snippet usable, present ONLY when `presence` is
+   * `available`. generate is the authority on the artifact, not a gatekeeper:
+   * it always hands back the code, and when the component is not yet in the
+   * workspace it says so and names the one command that fixes it.
+   */
+  install?: string;
 }
 
 // ==================== Tool Definitions ====================
@@ -264,12 +276,11 @@ export const TOOL_DEFINITIONS = [
       'Recursively introspect the component/composite intel graph. describe() returns the ' +
       'installed surface; describe(components)/describe(composites) list the kind roster; ' +
       'describe(button) returns a node -- intel plus type-marked, drillable children; ' +
-      'describe(button.props.fill) drills into a prop; describe(button.props.fill.vocab) ' +
-      'returns the real token values. describe(button.*) expands all props inline in one ' +
-      'call (no more drill-per-prop round trips); describe(button.props.fill.?) probes ' +
-      'safely (null on miss, not an error). A natural-language question (e.g. "what do I use when ' +
-      'it needs to be above everything") routes to the best-matching node plus a near-miss ' +
-      'counter-example instead of an address.',
+      'describe(button.props.fill) drills into a prop and returns the real token values. ' +
+      'describe(button.*) expands all props inline in one call (no more drill-per-prop ' +
+      'round trips); describe(button.props.fill.?) probes safely (null on miss, not an ' +
+      'error). Every node carries parent and siblings for upward/sideways navigation, and ' +
+      'children are typed pointers (enum for props, part for sub-components) you feed back in.',
     inputSchema: {
       type: 'object' as const,
       properties: {
@@ -285,12 +296,16 @@ export const TOOL_DEFINITIONS = [
   {
     name: 'rafters_generate',
     description:
-      'Resolve a prose query to ONE registry component and return its verbatim, target-correct ' +
-      'snippet with open content slots. A bare component name (e.g. "button", "give me a modal") ' +
-      'resolves directly; a semantic question (e.g. "what do I use when it needs to be above ' +
-      'everything") falls back to the intent door. Returns { component, target, snippet, slots } ' +
-      'where snippet is the registry facet verbatim and each slot is left for the caller to fill. ' +
-      'v1 serves single components only -- no parameterization, no composites, no writes.',
+      'Resolve a bare component name to ONE registry component and return its verbatim, ' +
+      'target-correct snippet with open content slots. A component name (e.g. "button", ' +
+      '"separator", "badge") resolves directly. Returns { component, target, presence, ' +
+      'snippet, slots } where snippet is the registry facet verbatim and each slot is left ' +
+      'for the caller to fill. READ `presence` BEFORE PASTING: `installed` means the import ' +
+      'resolves in this workspace; `available` means the component exists in the registry but ' +
+      'is NOT in this project yet -- the snippet is still correct, but you must run the ' +
+      'command in `install` first or the build fails on a missing import. If slots is empty, ' +
+      'the component takes no children -- do not wrap it with content. v1 serves single ' +
+      'components only -- no parameterization, no composites, no writes.',
     inputSchema: {
       type: 'object' as const,
       properties: {
@@ -844,15 +859,29 @@ export class RaftersToolHandler {
 
     // Success: verbatim snippet, no synthesis, no quality check. Every
     // facet.slots entry becomes one open marker, in order.
+    //
+    // `presence` rides on EVERY response, never only the bad case. A payload
+    // that carries the field sometimes teaches the caller to read it never;
+    // the agent pasting this has no other way to know whether the import it is
+    // about to write resolves. Sourced from the same installed set the overlay
+    // stamps describe with, so the two tools cannot disagree about one
+    // workspace.
+    const presence: Presence = ctx.installed.components.has(node.id) ? 'installed' : 'available';
+
     return this.jsonResult({
       component: node.id,
       target: ctx.target,
+      presence,
       snippet: node.snippet,
       slots: (node.slots ?? []).map((slot) => ({
         slot,
         ownedBy: 'caller' as const,
         status: 'open' as const,
       })),
+      // Spread rather than assign: `exactOptionalPropertyTypes` distinguishes
+      // an absent key from an explicit `undefined`, and an installed component
+      // has no install step to name.
+      ...(presence === 'available' ? { install: `rafters add ${node.id}` } : {}),
     } satisfies GenerateResult);
   }
 

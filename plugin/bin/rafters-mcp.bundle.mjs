@@ -37779,7 +37779,7 @@ var TOOL_DEFINITIONS = [
   },
   {
     name: "rafters_describe",
-    description: 'Recursively introspect the component/composite intel graph. describe() returns the installed surface; describe(components)/describe(composites) list the kind roster; describe(button) returns a node -- intel plus type-marked, drillable children; describe(button.props.fill) drills into a prop; describe(button.props.fill.vocab) returns the real token values. describe(button.*) expands all props inline in one call (no more drill-per-prop round trips); describe(button.props.fill.?) probes safely (null on miss, not an error). A natural-language question (e.g. "what do I use when it needs to be above everything") routes to the best-matching node plus a near-miss counter-example instead of an address.',
+    description: "Recursively introspect the component/composite intel graph. describe() returns the installed surface; describe(components)/describe(composites) list the kind roster; describe(button) returns a node -- intel plus type-marked, drillable children; describe(button.props.fill) drills into a prop and returns the real token values. describe(button.*) expands all props inline in one call (no more drill-per-prop round trips); describe(button.props.fill.?) probes safely (null on miss, not an error). Every node carries parent and siblings for upward/sideways navigation, and children are typed pointers (enum for props, part for sub-components) you feed back in.",
     inputSchema: {
       type: "object",
       properties: {
@@ -37794,7 +37794,7 @@ var TOOL_DEFINITIONS = [
   },
   {
     name: "rafters_generate",
-    description: 'Resolve a prose query to ONE registry component and return its verbatim, target-correct snippet with open content slots. A bare component name (e.g. "button", "give me a modal") resolves directly; a semantic question (e.g. "what do I use when it needs to be above everything") falls back to the intent door. Returns { component, target, snippet, slots } where snippet is the registry facet verbatim and each slot is left for the caller to fill. v1 serves single components only -- no parameterization, no composites, no writes.',
+    description: 'Resolve a bare component name to ONE registry component and return its verbatim, target-correct snippet with open content slots. A component name (e.g. "button", "separator", "badge") resolves directly. Returns { component, target, presence, snippet, slots } where snippet is the registry facet verbatim and each slot is left for the caller to fill. READ `presence` BEFORE PASTING: `installed` means the import resolves in this workspace; `available` means the component exists in the registry but is NOT in this project yet -- the snippet is still correct, but you must run the command in `install` first or the build fails on a missing import. If slots is empty, the component takes no children -- do not wrap it with content. v1 serves single components only -- no parameterization, no composites, no writes.',
     inputSchema: {
       type: "object",
       properties: {
@@ -38217,15 +38217,21 @@ var RaftersToolHandler = class {
         `${node.id} resolved, but has no ${ctx.target} facet -- nothing to generate for this target`
       );
     }
+    const presence = ctx.installed.components.has(node.id) ? "installed" : "available";
     return this.jsonResult({
       component: node.id,
       target: ctx.target,
+      presence,
       snippet: node.snippet,
       slots: (node.slots ?? []).map((slot) => ({
         slot,
         ownedBy: "caller",
         status: "open"
-      }))
+      })),
+      // Spread rather than assign: `exactOptionalPropertyTypes` distinguishes
+      // an absent key from an explicit `undefined`, and an installed component
+      // has no install step to name.
+      ...presence === "available" ? { install: `rafters add ${node.id}` } : {}
     });
   }
   /**
