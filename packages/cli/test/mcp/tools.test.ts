@@ -390,52 +390,37 @@ describe('unknown tool', () => {
   });
 });
 
-async function malformedConfigWorkspace(installed: Record<string, unknown>): Promise<{
-  root: string;
-  cleanup: () => Promise<void>;
-}> {
+/**
+ * A workspace with a written config and, optionally, component files on disk.
+ * `onDisk` names files created under the default componentsPath -- presence is
+ * read from these, never from `config.installed`.
+ */
+async function configWorkspace(
+  config: Record<string, unknown>,
+  onDisk: string[] = [],
+): Promise<{ root: string; cleanup: () => Promise<void> }> {
   const root = await mkdtemp(join(tmpdir(), 'rafters-mcp-'));
   await mkdir(join(root, '.rafters'), { recursive: true });
   await writeFile(
     join(root, '.rafters', 'config.rafters.json'),
-    JSON.stringify({ framework: 'next', installed }),
+    JSON.stringify({ framework: 'next', ...config }),
   );
+  if (onDisk.length > 0) {
+    const dir = join(root, 'components', 'ui');
+    await mkdir(dir, { recursive: true });
+    for (const name of onDisk) await writeFile(join(dir, name), '');
+  }
   return { root, cleanup: () => rm(root, { recursive: true, force: true }) };
 }
 
-describe('overlayContext malformed config guard', () => {
-  it('rafters_describe returns a structured error (not a throw) when installed.components is not an array', async () => {
-    const { root, cleanup } = await malformedConfigWorkspace({ components: 'button' });
-    const { handler } = fixtureHandler([{ name: 'fixture', root }], { name: 'fixture', root });
-    const result = await handler.handleToolCall('rafters_describe', { address: 'button' });
-    const data = JSON.parse(result.content[0].text as string);
-    expect(data.error).toContain('config.rafters.json');
-    expect(data.error).toContain('installed.components');
-    await cleanup();
-  });
-
-  it('rafters_generate returns the same structured error when installed.primitives is not an array', async () => {
-    const { root, cleanup } = await malformedConfigWorkspace({ primitives: { bad: true } });
-    const { handler } = fixtureHandler([{ name: 'fixture', root }], { name: 'fixture', root });
-    const result = await handler.handleToolCall('rafters_generate', { intent: 'button' });
-    const data = JSON.parse(result.content[0].text as string);
-    expect(data.error).toContain('config.rafters.json');
-    expect(data.error).toContain('installed.primitives');
-    await cleanup();
-  });
-
-  it('the deprecated rafters_component alias returns the same structured error, still marked deprecated, when installed.composites is not an array', async () => {
-    const { root, cleanup } = await malformedConfigWorkspace({ composites: 42 });
-    const { handler } = fixtureHandler([{ name: 'fixture', root }], { name: 'fixture', root });
-    const result = await handler.handleToolCall('rafters_component', { name: 'button' });
-    const data = JSON.parse(result.content[0].text as string);
-    expect(data.error).toContain('installed.composites');
-    expect(data.deprecated).toBeDefined();
-    await cleanup();
-  });
-
-  it('a config with valid installed arrays is unaffected', async () => {
-    const { root, cleanup } = await malformedConfigWorkspace({ components: ['button'] });
+describe('presence is measured from disk, not read from config.installed', () => {
+  it('a component with a file on disk is installed even when config.installed omits it', async () => {
+    // The card-action case: a part pulled in as a dependency of its parent is
+    // on disk in every project that installed the parent, and `rafters add`
+    // never records it. Reported by shingle against a real workspace.
+    const { root, cleanup } = await configWorkspace({ installed: { components: [] } }, [
+      'button.tsx',
+    ]);
     const { handler } = fixtureHandler([{ name: 'fixture', root }], { name: 'fixture', root });
     const result = await handler.handleToolCall('rafters_describe', { address: 'button' });
     const data = JSON.parse(result.content[0].text as string);
@@ -443,7 +428,62 @@ describe('overlayContext malformed config guard', () => {
     await cleanup();
   });
 
-  it('a workspace with no config file at all is unaffected -- degrades to nothing-installed, not an error', async () => {
+  it('a component listed in config.installed but absent from disk is available', async () => {
+    // The other direction of the same drift: the record outlives a manual
+    // delete. Trusting it would tell an agent to import a file that is gone.
+    const { root, cleanup } = await configWorkspace({ installed: { components: ['button'] } });
+    const { handler } = fixtureHandler([{ name: 'fixture', root }], { name: 'fixture', root });
+    const result = await handler.handleToolCall('rafters_describe', { address: 'button' });
+    const data = JSON.parse(result.content[0].text as string);
+    expect(data).toMatchObject({ id: 'button', presence: 'available' });
+    await cleanup();
+  });
+
+  it('any file of a component proves presence, not just the target file', async () => {
+    // An id is the basename before the first dot, so the scan stays
+    // target-agnostic -- no extension table to keep in sync as targets grow.
+    const { root, cleanup } = await configWorkspace({}, ['button.behavior.ts']);
+    const { handler } = fixtureHandler([{ name: 'fixture', root }], { name: 'fixture', root });
+    const result = await handler.handleToolCall('rafters_describe', { address: 'button' });
+    const data = JSON.parse(result.content[0].text as string);
+    expect(data).toMatchObject({ id: 'button', presence: 'installed' });
+    await cleanup();
+  });
+
+  it('rafters_generate reports the same disk-measured presence', async () => {
+    const { root, cleanup } = await configWorkspace(
+      { componentTarget: 'react', installed: { components: [] } },
+      ['button.tsx'],
+    );
+    // generate needs a facet for the resolved target; the shared FIXTURE nodes
+    // carry none, and a missing facet errors before presence is reached.
+    const withFacet: RegistryItem = {
+      ...node('button', 'ui'),
+      facets: { react: { props: {}, snippet: '<Button />' } },
+    };
+    const { handler } = fixtureHandler([{ name: 'fixture', root }], { name: 'fixture', root }, [
+      withFacet,
+    ]);
+    const result = await handler.handleToolCall('rafters_generate', { intent: 'button' });
+    const data = JSON.parse(result.content[0].text as string);
+    expect(data).toMatchObject({ component: 'button', presence: 'installed' });
+    expect(data.install).toBeUndefined();
+    await cleanup();
+  });
+
+  it('a malformed path field returns a structured error naming it, not a throw', async () => {
+    // readConfig is a raw JSON.parse, so an unvalidated componentsPath reaches
+    // resolveReadSet and crashes the call.
+    const { root, cleanup } = await configWorkspace({ componentsPath: 42 });
+    const { handler } = fixtureHandler([{ name: 'fixture', root }], { name: 'fixture', root });
+    const result = await handler.handleToolCall('rafters_describe', { address: 'button' });
+    const data = JSON.parse(result.content[0].text as string);
+    expect(data.error).toContain('config.rafters.json');
+    expect(data.error).toContain('componentsPath');
+    await cleanup();
+  });
+
+  it('a workspace with no config file at all degrades to nothing-installed, not an error', async () => {
     const root = await mkdtemp(join(tmpdir(), 'rafters-mcp-'));
     const { handler } = fixtureHandler([{ name: 'fixture', root }], { name: 'fixture', root });
     const result = await handler.handleToolCall('rafters_describe', { address: 'button' });

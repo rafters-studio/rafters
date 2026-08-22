@@ -30,7 +30,8 @@
  * design lives in Studio; token import lives in `rafters init` / `rafters import`.
  */
 
-import { readFile, writeFile } from 'node:fs/promises';
+import type { Dirent } from 'node:fs';
+import { readdir, readFile, writeFile } from 'node:fs/promises';
 import { isAbsolute, join } from 'node:path';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import {
@@ -50,13 +51,18 @@ import {
   ComponentTargetSchema,
   type RegistryItem,
 } from '../registry/types.js';
-import { getRaftersPaths, PathFieldSchema, resolveReadSet } from '../utils/paths.js';
+import {
+  getRaftersPaths,
+  type PathField,
+  PathFieldSchema,
+  resolveReadSet,
+} from '../utils/paths.js';
 import { resolveWorkspace, type Workspace } from '../utils/workspaces.js';
 import { assembleGraph, describe, type Graph, type NodeResult } from './graph.js';
 import { isNaturalLanguageQuery, matchIntent } from './intent.js';
 import {
-  buildInstalledSet,
   describeWithOverlay,
+  type InstalledSet,
   type OverlayContext,
   type Presence,
 } from './overlay.js';
@@ -379,29 +385,27 @@ export const TOOL_DEFINITIONS = [
 const DEPRECATED_MSG = 'use rafters_describe instead';
 
 /**
- * Validates only the three `installed` fields `overlayContext` actually
- * consumes (components, primitives, composites). `installed.rules` and
- * `installed.substrate` are deliberately NOT validated here -- overlayContext
- * never reads them. Every field is `.optional()`: buildInstalledSet's own
- * contract ("Absent or partial `installed` is treated as nothing installed --
- * never a crash, never 'everything installed'", overlay.ts) must still hold for
- * a config that omits some or all of these keys.
+ * The path fields `scanInstalled` resolves to find what is on disk. Validated
+ * because `readConfig` is a raw `JSON.parse` -- an unvalidated `componentsPath`
+ * reaches `resolveReadSet`, which calls `.map()` on it and throws on a number
+ * or an object. Every field is optional: an absent path field falls back to the
+ * framework default, and a workspace with no config at all is "nothing
+ * installed", never a crash.
  */
-const OverlayInstalledSchema = z.object({
-  components: z.array(z.string()).optional(),
-  primitives: z.array(z.string()).optional(),
-  composites: z.array(z.string()).optional(),
+const OverlayPathsSchema = z.object({
+  componentsPath: PathFieldSchema.optional(),
+  primitivesPath: PathFieldSchema.optional(),
+  compositesPath: PathFieldSchema.optional(),
 });
 
 /**
  * overlayContext's failure case: the workspace's config.rafters.json exists and
- * parsed as JSON (readConfig returned non-null), but its `installed` block does
- * not match OverlayInstalledSchema -- e.g. `installed.components` is a string
- * instead of a string array. `configError` names the config file path and the
- * offending field/expectation, the same recovery shape every other errorResult
- * in this file already carries. Distinct from "no config at all" (readConfig
- * returns null; overlayContext degrades to no-target/nothing-installed exactly
- * as it does today -- unchanged).
+ * parsed as JSON (readConfig returned non-null), but a path field it needs to
+ * resolve is the wrong shape -- e.g. `componentsPath` is a number instead of a
+ * string or entry array. `configError` names the config file path and the
+ * offending field, the same recovery shape every other errorResult in this file
+ * already carries. Distinct from "no config at all" (readConfig returns null;
+ * overlayContext degrades to no-target/nothing-installed).
  */
 interface OverlayConfigError {
   configError: string;
@@ -716,28 +720,84 @@ export class RaftersToolHandler {
     // fine but has a wrong-shaped `installed` block. The union return type is
     // the guard all three call sites inherit: skipping the `'configError' in
     // ctx` narrowing fails to typecheck, not just at runtime.
-    const parsedInstalled = OverlayInstalledSchema.safeParse(config?.installed ?? {});
-    if (!parsedInstalled.success) {
-      const issue = parsedInstalled.error.issues[0];
-      const field =
-        issue && issue.path.length > 0 ? `installed.${issue.path.join('.')}` : 'installed';
+    const parsedPaths = OverlayPathsSchema.safeParse(config ?? {});
+    if (!parsedPaths.success) {
+      const issue = parsedPaths.error.issues[0];
+      const field = issue && issue.path.length > 0 ? issue.path.join('.') : 'a path field';
       const configPath = workspace ? getRaftersPaths(workspace.root).config : 'config.rafters.json';
       return {
         configError: `malformed config at ${configPath}: ${field} ${issue?.message ?? 'is invalid'}`,
       };
     }
 
-    const base = buildInstalledSet({
-      installed: {
-        components: parsedInstalled.data.components ?? [],
-        composites: parsedInstalled.data.composites ?? [],
-      },
-    });
-    const components = new Set([...base.components, ...(parsedInstalled.data.primitives ?? [])]);
     const parsedTarget = ComponentTargetSchema.safeParse(config?.componentTarget);
     return {
       target: parsedTarget.success ? parsedTarget.data : undefined,
-      installed: { components, composites: base.composites },
+      installed: workspace
+        ? await this.scanInstalled(workspace.root, parsedPaths.data)
+        : { components: new Set(), composites: new Set() },
+    };
+  }
+
+  /**
+   * The component and composite ids actually present on disk in a workspace.
+   *
+   * DISK IS THE TRUTH, not `config.installed`. That field is a record `rafters
+   * add` maintains, and a record drifts from the thing it records in both
+   * directions: a part pulled in as a dependency (card-action) never appears in
+   * it, and an entry survives a manual delete. Presence is the JOIN between the
+   * public catalog and this project, so it has to be MEASURED, not remembered.
+   *
+   * An id is the basename before the first dot, so every file a component ships
+   * (`input.tsx`, `input.behavior.ts`, `input.classes.ts`) maps to one id and
+   * any single one of them proves the component is there. Target-agnostic by
+   * construction -- no extension table to keep in sync as targets are added.
+   *
+   * NOT CACHED, deliberately. This is a readdir; the catalog behind it is a
+   * network fetch plus a graph build. Caching the cheap half is exactly what
+   * would make `rafters add` invisible until an MCP restart -- re-reading it per
+   * query means the next call simply sees the new file, with no invalidation,
+   * no IPC, and no watcher. `add` writes a file; the file IS the message.
+   */
+  private async scanInstalled(
+    workspaceRoot: string,
+    paths: z.infer<typeof OverlayPathsSchema>,
+  ): Promise<InstalledSet> {
+    const idsUnder = async (
+      field: PathField | undefined,
+      fallback: string,
+    ): Promise<Set<string>> => {
+      const roots = field ? resolveReadSet(field, workspaceRoot) : [join(workspaceRoot, fallback)];
+      const ids = new Set<string>();
+      for (const root of roots) {
+        let entries: Dirent[];
+        try {
+          entries = await readdir(root, { withFileTypes: true });
+        } catch {
+          // An absent folder is "nothing installed here", never an error: a
+          // project legitimately has no composites dir until it has composites.
+          continue;
+        }
+        for (const entry of entries) {
+          if (!entry.isFile() || entry.name.startsWith('.')) continue;
+          const id = entry.name.split('.')[0];
+          if (id) ids.add(id);
+        }
+      }
+      return ids;
+    };
+
+    // Primitives fold into components: a `primitive`-kind registry item maps to
+    // graph kind `component`, so without the fold every installed primitive
+    // would misreport as `available`.
+    const components = await idsUnder(paths.componentsPath, 'components/ui');
+    for (const id of await idsUnder(paths.primitivesPath, 'lib/primitives')) {
+      components.add(id);
+    }
+
+    return {
+      components,
+      composites: await idsUnder(paths.compositesPath, join('.rafters', 'composites')),
     };
   }
 

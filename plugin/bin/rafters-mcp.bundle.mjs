@@ -24039,7 +24039,7 @@ function readVersion() {
 var VERSION = readVersion();
 
 // src/mcp/tools.ts
-import { readFile as readFile2, writeFile } from "fs/promises";
+import { readdir as readdir2, readFile as readFile2, writeFile } from "fs/promises";
 import { isAbsolute as isAbsolute2, join as join5 } from "path";
 
 // ../../node_modules/.pnpm/zod@4.1.12/node_modules/zod/v4/classic/external.js
@@ -37616,12 +37616,6 @@ function noMatch() {
 }
 
 // src/mcp/overlay.ts
-function buildInstalledSet(config3) {
-  return {
-    components: new Set(config3.installed?.components ?? []),
-    composites: new Set(config3.installed?.composites ?? [])
-  };
-}
 function describeWithOverlay(addr, graph, ctx) {
   const result = describe3(addr, graph, ctx.target);
   if (addr === "components" || addr === "composites") {
@@ -37857,10 +37851,10 @@ var TOOL_DEFINITIONS = [
   }
 ];
 var DEPRECATED_MSG = "use rafters_describe instead";
-var OverlayInstalledSchema = external_exports4.object({
-  components: external_exports4.array(external_exports4.string()).optional(),
-  primitives: external_exports4.array(external_exports4.string()).optional(),
-  composites: external_exports4.array(external_exports4.string()).optional()
+var OverlayPathsSchema = external_exports4.object({
+  componentsPath: PathFieldSchema.optional(),
+  primitivesPath: PathFieldSchema.optional(),
+  compositesPath: PathFieldSchema.optional()
 });
 var RaftersToolHandler = class {
   workspaces;
@@ -38109,26 +38103,67 @@ var RaftersToolHandler = class {
    */
   async overlayContext(workspace) {
     const config3 = workspace ? await this.readConfig(workspace.root) : null;
-    const parsedInstalled = OverlayInstalledSchema.safeParse(config3?.installed ?? {});
-    if (!parsedInstalled.success) {
-      const issue3 = parsedInstalled.error.issues[0];
-      const field = issue3 && issue3.path.length > 0 ? `installed.${issue3.path.join(".")}` : "installed";
+    const parsedPaths = OverlayPathsSchema.safeParse(config3 ?? {});
+    if (!parsedPaths.success) {
+      const issue3 = parsedPaths.error.issues[0];
+      const field = issue3 && issue3.path.length > 0 ? issue3.path.join(".") : "a path field";
       const configPath = workspace ? getRaftersPaths(workspace.root).config : "config.rafters.json";
       return {
         configError: `malformed config at ${configPath}: ${field} ${issue3?.message ?? "is invalid"}`
       };
     }
-    const base = buildInstalledSet({
-      installed: {
-        components: parsedInstalled.data.components ?? [],
-        composites: parsedInstalled.data.composites ?? []
-      }
-    });
-    const components = /* @__PURE__ */ new Set([...base.components, ...parsedInstalled.data.primitives ?? []]);
     const parsedTarget = ComponentTargetSchema.safeParse(config3?.componentTarget);
     return {
       target: parsedTarget.success ? parsedTarget.data : void 0,
-      installed: { components, composites: base.composites }
+      installed: workspace ? await this.scanInstalled(workspace.root, parsedPaths.data) : { components: /* @__PURE__ */ new Set(), composites: /* @__PURE__ */ new Set() }
+    };
+  }
+  /**
+   * The component and composite ids actually present on disk in a workspace.
+   *
+   * DISK IS THE TRUTH, not `config.installed`. That field is a record `rafters
+   * add` maintains, and a record drifts from the thing it records in both
+   * directions: a part pulled in as a dependency (card-action) never appears in
+   * it, and an entry survives a manual delete. Presence is the JOIN between the
+   * public catalog and this project, so it has to be MEASURED, not remembered.
+   *
+   * An id is the basename before the first dot, so every file a component ships
+   * (`input.tsx`, `input.behavior.ts`, `input.classes.ts`) maps to one id and
+   * any single one of them proves the component is there. Target-agnostic by
+   * construction -- no extension table to keep in sync as targets are added.
+   *
+   * NOT CACHED, deliberately. This is a readdir; the catalog behind it is a
+   * network fetch plus a graph build. Caching the cheap half is exactly what
+   * would make `rafters add` invisible until an MCP restart -- re-reading it per
+   * query means the next call simply sees the new file, with no invalidation,
+   * no IPC, and no watcher. `add` writes a file; the file IS the message.
+   */
+  async scanInstalled(workspaceRoot, paths) {
+    const idsUnder = async (field, fallback) => {
+      const roots = field ? resolveReadSet(field, workspaceRoot) : [join5(workspaceRoot, fallback)];
+      const ids = /* @__PURE__ */ new Set();
+      for (const root of roots) {
+        let entries;
+        try {
+          entries = await readdir2(root, { withFileTypes: true });
+        } catch {
+          continue;
+        }
+        for (const entry of entries) {
+          if (!entry.isFile() || entry.name.startsWith(".")) continue;
+          const id = entry.name.split(".")[0];
+          if (id) ids.add(id);
+        }
+      }
+      return ids;
+    };
+    const components = await idsUnder(paths.componentsPath, "components/ui");
+    for (const id of await idsUnder(paths.primitivesPath, "lib/primitives")) {
+      components.add(id);
+    }
+    return {
+      components,
+      composites: await idsUnder(paths.compositesPath, join5(".rafters", "composites"))
     };
   }
   /**
