@@ -1,7 +1,6 @@
 {
   "name": "@rafters/shared",
   "version": "0.0.1",
-  "private": true,
   "description": "Shared W3C DTCG schemas, base types, and utilities for Rafters design system",
   "files": [
     "src"

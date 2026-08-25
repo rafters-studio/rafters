@@ -106,7 +106,7 @@ describe('installRegistryDependencies', () => {
     expect(result.installed).toHaveLength(0);
   });
 
-  it('skips @rafters/* workspace deps', async () => {
+  it('installs @rafters/* published deps instead of skipping them', async () => {
     mockPackageJson();
 
     const item = registryItemFactory.generate({
@@ -117,17 +117,18 @@ describe('installRegistryDependencies', () => {
         registryFileFactory.generate({
           path: 'components/ui/test.tsx',
           content: 'export const Test = () => null;',
-          dependencies: ['@rafters/shared@1.0.0', 'lodash@4.17.21'],
+          dependencies: ['@rafters/color-utils@0.1.0', 'lodash@4.17.21'],
         }),
       ],
     });
 
     const result = await installRegistryDependencies([item], '/fake/project');
 
-    expect(result.skipped).toContain('@rafters/shared@1.0.0');
+    expect(result.installed).toContain('@rafters/color-utils@0.1.0');
     expect(result.installed).toContain('lodash@4.17.21');
+    expect(result.skipped).toHaveLength(0);
     expect(updateDependenciesMock).toHaveBeenCalledWith(
-      ['lodash@4.17.21'],
+      ['@rafters/color-utils@0.1.0', 'lodash@4.17.21'],
       [],
       expect.objectContaining({ cwd: '/fake/project' }),
     );

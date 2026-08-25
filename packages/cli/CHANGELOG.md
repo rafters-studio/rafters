@@ -1,5 +1,11 @@
 # rafters
 
+## Unreleased
+
+### Features
+
+- feat(cli): `rafters add` now installs `@rafters/*` library dependencies a delivered file declares, instead of silently dropping them (#2135). `installRegistryDependencies` previously skipped every `@rafters/`-scoped dependency unconditionally on the assumption that nothing under that scope was ever npm-installable; that assumption no longer holds. `@rafters/color-utils` and `@rafters/shared` are now real, versioned packages published as SOURCE (no build step -- `files: ["src"]`, `exports["."]` points at `src/index.ts`), so a registry item whose file declares `@rafters/color-utils@<version>` flows through the exact same install path as `lodash` or any other external dependency: the same already-installed check against the consumer's `package.json`, the same `updateDependencies` call, the same non-throwing failure handling. The React-runtime drop for non-React targets (`react`, `react-dom`, `@types/react`, `@types/react-dom`) is unchanged. The release workflow publishes both foundational libraries via `pnpm publish` on the existing `v*` tag trigger (`pnpm`, not `npm`, so `workspace:*`/`catalog:` specifiers resolve to concrete versions before shipping). This is the enabler for the separate color-primitive-drift work; Boundary 8 of the frozen boundaries spec is amended to carve foundational libraries out of its no-npm clause (Sean ratifies at PR review per Boundary 10). A new clean-consumer integration test runs the real `rafters add` binary against a fresh fixture, serving freshly-packed tarballs from a local registry, and proves the declared `@rafters/color-utils` dependency installs and resolves under `tsc --noEmit` -- the in-repo gate the published install path never had (reflection 019fce10).
+
 ## 0.2.3
 
 ### Versioning
