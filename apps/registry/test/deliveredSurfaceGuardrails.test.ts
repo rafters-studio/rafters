@@ -131,3 +131,40 @@ describe('a fixture proves the allowlist path works, since no real file exercise
     expect(violations[0].message).toContain('@rafters/color-utils');
   });
 });
+
+describe('the block-comment strip is string-literal-aware', () => {
+  it('still catches a real internal import framed by strings that contain comment sequences', () => {
+    // A glob string containing a comment-open, then a REAL internal import, then a
+    // string beginning with a comment-close. A naive `/\\*...\\*/` strip splices the
+    // two strings together and eats the import -- a false negative. The strip must
+    // treat the comment characters inside the strings as data and still see the import.
+    const content = [
+      `const glob = "src/*";`,
+      `import { gen } from '@rafters/design-tokens';`,
+      `const end = "*/foo";`,
+    ].join('\n');
+    const violations = findInternalImportViolations('lib/primitives/fixture.ts', content);
+    expect(violations.map((v) => v.found)).toEqual(['@rafters/design-tokens']);
+  });
+
+  it('still strips a JSDoc @example so a documented consumer import is not flagged', () => {
+    const content = [
+      '/**',
+      ' * @example',
+      " * import { Select } from '@rafters/ui';",
+      ' */',
+      "import { cn } from './utils';",
+    ].join('\n');
+    expect(findInternalImportViolations('lib/components/fixture.ts', content)).toEqual([]);
+  });
+
+  it('does not treat a comment-open inside a template literal as a comment', () => {
+    const content = [
+      'const pattern = `glob:/*`;',
+      `import { gen } from '@rafters/design-tokens';`,
+      'const close = `*/`;',
+    ].join('\n');
+    const violations = findInternalImportViolations('lib/primitives/fixture.ts', content);
+    expect(violations.map((v) => v.found)).toEqual(['@rafters/design-tokens']);
+  });
+});

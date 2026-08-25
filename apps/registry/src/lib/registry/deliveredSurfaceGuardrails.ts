@@ -65,16 +65,72 @@ export function isDisallowedWorkspaceImport(specifier: string): boolean {
 }
 
 /**
+ * Strip block comments while leaving string literals intact.
+ *
+ * The import scan must ignore a JSDoc `@example import ... from '@rafters/ui'`
+ * block (documentation, not a delivered import), but a naive regex strip of
+ * everything between a comment-open and the next comment-close is unsafe: a
+ * source STRING that contains a comment-open sequence -- a glob like `"src/*"`,
+ * a URL, a regex-shaped literal -- paired with any later comment-close sequence
+ * swallows every import between them, silently hiding a real internal import.
+ * That is a false negative that defeats the whole guardrail (verified: a
+ * `"src/*"` glob string, then `import '@rafters/design-tokens'`, then a string
+ * beginning with a comment-close loses the import under the naive strip).
+ *
+ * This walk tracks string state (', ", and template `) with escape handling, so
+ * a comment-open inside a string is never read as a comment opener. Two deliberate,
+ * false-negative-averse choices: line comments are NOT stripped (mirrors
+ * componentService's IMPORT_REGEX usage, which strips nothing, so the scan sees
+ * what the registry sees and cannot corrupt a `://` in a `//` comment); and an
+ * unterminated `/*` is left intact rather than eating to end-of-input, so a
+ * trailing real import is still scanned.
+ */
+function stripBlockComments(source: string): string {
+  let out = '';
+  let quote: string | null = null;
+  for (let i = 0; i < source.length; i++) {
+    const ch = source[i];
+    if (quote !== null) {
+      out += ch;
+      if (ch === '\\' && i + 1 < source.length) {
+        out += source[i + 1];
+        i++;
+      } else if (ch === quote) {
+        quote = null;
+      }
+      continue;
+    }
+    if (ch === '"' || ch === "'" || ch === '`') {
+      quote = ch;
+      out += ch;
+      continue;
+    }
+    if (ch === '/' && source[i + 1] === '*') {
+      const end = source.indexOf('*/', i + 2);
+      if (end === -1) {
+        out += source.slice(i);
+        break;
+      }
+      out += ' ';
+      i = end + 1;
+      continue;
+    }
+    out += ch;
+  }
+  return out;
+}
+
+/**
  * Delivered-file scan for imports of an internal-only workspace package.
  * Extracts every non-relative import specifier from `content` and flags each one
  * `isDisallowedWorkspaceImport` rejects. Pure: returns an array (empty when
  * clean), never throws.
  *
- * Block comments are stripped first: a JSDoc `@example` may show a consumer-side
+ * Block comments are stripped first (string-literal-aware, see
+ * `stripBlockComments`): a JSDoc `@example` may show a consumer-side
  * `import ... from '@rafters/ui'` (select.tsx/.astro/.element.ts do exactly
  * this), which is documentation, not a delivered import, and must never be
- * flagged. Only block comments are stripped -- every such example lives in
- * JSDoc, and skipping line-comment stripping avoids corrupting `://` or strings.
+ * flagged.
  */
 export function findInternalImportViolations(
   filePath: string,
@@ -83,7 +139,7 @@ export function findInternalImportViolations(
   const violations: GuardrailViolation[] = [];
   const seen = new Set<string>();
   const sanctioned = DELIVERABLE_LIBRARY_PACKAGES.join(', ');
-  const code = content.replace(/\/\*[\s\S]*?\*\//g, '');
+  const code = stripBlockComments(content);
   for (const match of code.matchAll(IMPORT_REGEX)) {
     const specifier = match[1];
     if (specifier.startsWith('.')) continue;
