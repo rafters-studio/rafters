@@ -84,6 +84,13 @@ export function isDisallowedWorkspaceImport(specifier: string): boolean {
  * what the registry sees and cannot corrupt a `://` in a `//` comment); and an
  * unterminated `/*` is left intact rather than eating to end-of-input, so a
  * trailing real import is still scanned.
+ *
+ * Known, accepted residue: because line comments are not tracked, a comment-open
+ * inside a `//` line comment is still read as a real comment opener (it can eat
+ * forward to the next comment-close), exactly as the naive replace this succeeds
+ * did. Stripping line comments would fix that but diverge from the reference
+ * IMPORT_REGEX, which strips nothing -- out of scope here, and no delivered file
+ * exercises it today. The fix above targets the common, real case: strings.
  */
 function stripBlockComments(source: string): string {
   let out = '';
