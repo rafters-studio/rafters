@@ -1,11 +1,5 @@
-import {
-  DEFAULT_DELAY_NAMESPACE,
-  DEFAULT_EASING_DEFINITIONS,
-  DEFAULT_PERIOD_NAMESPACE,
-} from '@rafters/design-tokens/generators/defaults';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
-  MOTION_BASELINE,
   motionDelayMs,
   motionDurationMs,
   motionEase,
@@ -22,35 +16,28 @@ afterEach(() => {
   document.documentElement.removeAttribute('style');
 });
 
-describe('the baseline is derived from the generator definitions', () => {
-  it('takes delay values from DEFAULT_DELAY_NAMESPACE verbatim', () => {
-    for (const [member, def] of Object.entries(DEFAULT_DELAY_NAMESPACE)) {
-      expect(MOTION_BASELINE.delay[member]).toBe(def.value);
-    }
-  });
-
-  it('takes ease values from DEFAULT_EASING_DEFINITIONS verbatim', () => {
-    for (const [curve, def] of Object.entries(DEFAULT_EASING_DEFINITIONS)) {
-      expect(MOTION_BASELINE.ease[curve]).toBe(def.css);
-    }
-  });
-
-  it('covers all five namespaces', () => {
-    expect(Object.keys(MOTION_BASELINE).sort()).toEqual([
-      'delay',
-      'duration',
-      'ease',
-      'extent',
-      'period',
-    ]);
-  });
-});
-
 describe('resolution order', () => {
-  it('falls back to the baseline when the var is declared nowhere', () => {
-    const resolution = resolveMotionToken('delay', 'hover-intent', { motionPreference: 'normal' });
-    expect(resolution.source).toBe('baseline');
-    expect(resolution.value).toBe(DEFAULT_DELAY_NAMESPACE['hover-intent']?.value);
+  it('throws when the DOM is present but the token is declared nowhere', () => {
+    // happy-dom provides getComputedStyle, so this is the "DOM exists, property
+    // absent" case, not the true-no-environment case -- it must fail loud.
+    expect(() =>
+      resolveMotionToken('delay', 'hover-intent', { motionPreference: 'normal' }),
+    ).toThrow(/rafters-delay-hover-intent/);
+  });
+
+  it('does not throw when getComputedStyle is unavailable, and marks the source unavailable', () => {
+    const original = globalThis.getComputedStyle;
+    // @ts-expect-error -- simulating an environment with no computed-style API
+    globalThis.getComputedStyle = undefined;
+    try {
+      const resolution = resolveMotionToken('delay', 'hover-intent', {
+        motionPreference: 'normal',
+      });
+      expect(resolution.source).toBe('unavailable');
+      expect(() => motionDelayMs('hover-intent', { motionPreference: 'normal' })).not.toThrow();
+    } finally {
+      globalThis.getComputedStyle = original;
+    }
   });
 
   it('prefers the computed custom property when one is declared', () => {
@@ -77,6 +64,7 @@ describe('resolution order', () => {
   });
 
   it('converts seconds to milliseconds', () => {
+    declare('--rafters-period-blink', '1.25s');
     expect(motionPeriodMs('blink', { motionPreference: 'normal' })).toBe(1250);
   });
 });
@@ -94,14 +82,17 @@ describe('reduced motion resolves through the accessor', () => {
   });
 
   it('exempts period -- work loops slow, they never stop', () => {
+    declare('--rafters-period-spin', '4000ms');
     const period = resolveMotionToken('period', 'spin', { motionPreference: 'reduced' });
     expect(period.source).not.toBe('reduced-motion');
-    expect(period.value).toBe(DEFAULT_PERIOD_NAMESPACE['spin']?.value);
+    expect(period.value).toBe('4000ms');
   });
 
   it('leaves ease and extent alone -- they are shaped by a duration, not zeroed', () => {
+    declare('--rafters-ease-standard', 'cubic-bezier(0.2, 0, 0, 1)');
+    declare('--rafters-extent-pop', '1.05');
     expect(motionEase('standard', { motionPreference: 'reduced' })).toBe(
-      DEFAULT_EASING_DEFINITIONS['standard']?.css,
+      'cubic-bezier(0.2, 0, 0, 1)',
     );
     expect(resolveMotionToken('extent', 'pop', { motionPreference: 'reduced' }).source).not.toBe(
       'reduced-motion',
@@ -139,6 +130,7 @@ describe('fail loud', () => {
 
 describe('token naming mirrors the generator', () => {
   it('spells the system token name', () => {
+    declare('--rafters-delay-skip', '0ms');
     expect(motionTokenName('delay', 'skip')).toBe('rafters-delay-skip');
     expect(resolveMotionToken('delay', 'skip', { motionPreference: 'normal' }).customProperty).toBe(
       '--rafters-delay-skip',

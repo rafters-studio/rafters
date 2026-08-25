@@ -98,6 +98,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   survive as an inert surface (see `docs/spec/components/radio-group.md`
   dispositions).
 
+### Fixed
+
+- **`primitives/motion-tokens.ts` no longer imports `@rafters/design-tokens` at
+  runtime (#2132).** The copyable accessor pulled `defaults`,
+  `motion-derivation`, and `types` from the build-time generator package to
+  derive a no-DOM "baseline" value table. That package is a workspace internal a
+  registry consumer never receives, so every copied instance dangled a dead
+  import and took `tooltip.behavior.ts` / `navigation-menu.behavior.ts` down on
+  load. The imports are gone, and with them `MOTION_BASELINE`, `BASELINE_INTENT`,
+  `mapMemberValues`, `durationBaseline`, and `easeBaseline` -- everything that
+  existed only to feed the derivation. `MotionDurationMember` /
+  `MotionEaseMember` become literal unions declared in-file (the same
+  vocabulary-only pattern the other three namespaces already used), and member
+  validation moves to a names-only `MOTION_MEMBERS` table that cannot encode a
+  design number. There is no longer a third "default value" resolution step: a
+  DOM present but with the custom property declared nowhere now throws (a missing
+  token sheet is a build defect, and the module fails loud on it like every other
+  malformed input), while a true no-environment render (`getComputedStyle`
+  unavailable -- SSR, a worker) returns an inert `source: 'unavailable'`
+  placeholder, classified as an engineering failsafe outside the value system
+  (the `use-presence.ts` precedent) because both accessors run inside a
+  render-time `useMemo` that also executes during Astro SSR. `MotionTokenSource`
+  drops `'baseline'` and gains `'unavailable'`. No behavior change for the
+  normal DOM-present path; `tooltip.behavior.ts` and `navigation-menu.behavior.ts`
+  are untouched.
+
 ### Changed
 
 - **`alert` migrated to the static pattern; `useBehavior` deleted (#1827).**

@@ -10,6 +10,12 @@
  * and until now it did so by hardcoding numbers in behaviour files. That is a
  * second source of truth, and it drifts.
  *
+ * This file is COPYABLE. It ships to consumer projects through the registry
+ * (`rafters add`), so it must stay dependency-free -- it imports no `@rafters/*`
+ * workspace package, because a consumer does not have one. The vocabulary below
+ * is spelled out here as literal unions; the design VALUES live only in the
+ * emitted `--rafters-*` sheet and are read back through `getComputedStyle`.
+ *
  * RESOLUTION ORDER (documented, in this order, always):
  *
  *   1. REDUCED MOTION. When the user prefers reduced motion, `duration` and
@@ -19,16 +25,22 @@
  *      mirrors the exporter's REDUCED_MOTION_ZEROED set exactly (see
  *      `namespaceLeaf` in the motion generator).
  *   2. COMPUTED STYLE. `getComputedStyle(element).getPropertyValue('--rafters-...')`.
- *      A non-empty result is validated at the boundary and returned. PRESENCE,
- *      not truthiness: `0ms` is a real, resolved value and never falls through.
- *   3. BASELINE. No DOM (SSR, a worker, a test without a document) or a var
- *      that resolves to nothing: the generator's own default definitions.
+ *      A non-empty result is validated at the boundary and returned with
+ *      `source: 'computed'`. PRESENCE, not truthiness: `0ms` is a real,
+ *      resolved value and never falls through.
  *
- * The baseline is DERIVED, never restated. `MOTION_BASELINE` is built from the
- * very definition tables the emission reads, through the very function the
- * emission calls (`deriveDuration` at the neutral intent). There is no second
- * table of numbers in this package, and there must never be one: a number typed
- * here is a number that can disagree with the emitted sheet.
+ * There is no third "default value" step: this file holds NO table of numbers,
+ * and must never hold one, because a number typed here is a number that can
+ * disagree with the emitted sheet. What remains after the two outcomes above is
+ * two terminal conditions, not a fallback:
+ *
+ *   - A DOM exists (`getComputedStyle` is callable) but the custom property
+ *     resolves to nothing. The token sheet is missing or misauthored -- a
+ *     build/authoring defect. THROW, naming the token (FAIL LOUD, below).
+ *   - There is no environment to read from at all (`getComputedStyle` is not a
+ *     function: true SSR, a worker). Return an inert `source: 'unavailable'`
+ *     placeholder (see `UNAVAILABLE_VALUE`). This carries no design value; it
+ *     exists only so a render-time `useMemo` can type-check before a DOM exists.
  *
  * FAIL LOUD (#1977 posture). An unknown namespace or member throws, naming the
  * token and listing the vocabulary -- the failure is almost always a near-miss,
@@ -37,16 +49,6 @@
  * would turn a typo in someone's theme into a mystery timing bug.
  */
 
-import {
-  DEFAULT_DELAY_NAMESPACE,
-  DEFAULT_DURATION_DEFINITIONS,
-  DEFAULT_EASING_DEFINITIONS,
-  DEFAULT_EXTENT_NAMESPACE,
-  DEFAULT_PERIOD_NAMESPACE,
-} from '@rafters/design-tokens/generators/defaults';
-import { deriveDuration } from '@rafters/design-tokens/generators/motion-derivation';
-import type { MotionBand } from '@rafters/design-tokens/generators/motion-derivation';
-import { EASING_CURVES, MOTION_DURATION_SCALE } from '@rafters/design-tokens/generators/types';
 import { z } from 'zod';
 import { detectMotionPreference } from './intelligence-integration';
 
@@ -56,18 +58,25 @@ import { detectMotionPreference } from './intelligence-integration';
 export const MOTION_NAMESPACES = ['duration', 'ease', 'delay', 'extent', 'period'] as const;
 export type MotionNamespace = (typeof MOTION_NAMESPACES)[number];
 
-export type MotionDurationMember = (typeof MOTION_DURATION_SCALE)[number];
-export type MotionEaseMember = (typeof EASING_CURVES)[number];
+export type MotionDurationMember = 'instant' | 'micro' | 'fast' | 'moderate' | 'normal' | 'slow';
+export type MotionEaseMember =
+  | 'standard'
+  | 'enter'
+  | 'exit'
+  | 'linear'
+  | 'spring-smooth'
+  | 'spring-snappy';
 
 /**
- * Member names for the three authored namespaces.
+ * Member names for every namespace.
  *
- * These are NAMES, not values -- the values stay in the generator. The union is
- * spelled out because the definition tables are `Record<string, ...>` and carry
- * no literal keys, and a `string` member would give callers no typing at all.
- * `assertVocabulary` below checks each union against the real table in both
- * directions at module load, so a namespace change fails here rather than
- * drifting quietly.
+ * These are NAMES, not values -- the design values stay in the emitted sheet.
+ * Each union is spelled out here (not derived from a workspace package) so this
+ * file stays copyable and dependency-free; this is a source of VOCABULARY, not
+ * of design truth. `assertVocabulary` below checks each union against
+ * `MOTION_MEMBERS` at module load, catching an internal typo or duplication
+ * between the declarations. (Detecting the emitted sheet drifting out from under
+ * this file is a separate guardrail lint, deliberately not done here.)
  */
 export type MotionDelayMember = 'hover-intent' | 'linger' | 'choreo-step' | 'stagger-step' | 'skip';
 export type MotionExtentMember = 'pop' | 'press' | 'draw';
@@ -93,67 +102,41 @@ export type MotionTimeNamespace = (typeof MOTION_TIME_NAMESPACES)[number];
  */
 const REDUCED_MOTION_ZEROED: ReadonlySet<MotionNamespace> = new Set(['duration', 'delay']);
 
-// ==================== The baseline, derived ====================
+// ==================== The vocabulary table ====================
 
 /**
- * The intent the shipped system emits at. `deriveDuration` returns each tier's
- * authored default here, which is exactly what the generator writes into
- * `--rafters-duration-*` for a fresh install.
+ * The member names of each namespace -- NAMES only, never values. Nothing here
+ * can encode a design number, so nothing here can disagree with the emitted
+ * sheet. It exists to validate the member unions above and to name the known
+ * members when a lookup misses (`requireMember`).
  */
-const BASELINE_INTENT = 'efficient';
-
-function mapMemberValues(defs: Record<string, { value: string }>): Record<string, string> {
-  const out: Record<string, string> = {};
-  for (const [member, def] of Object.entries(defs)) out[member] = def.value;
-  return out;
-}
-
-function durationBaseline(): Record<string, string> {
-  const out: Record<string, string> = {};
-  for (const band of Object.keys(DEFAULT_DURATION_DEFINITIONS)) {
-    const ms = deriveDuration(band as MotionBand, BASELINE_INTENT, DEFAULT_DURATION_DEFINITIONS);
-    out[band] = `${ms}ms`;
-  }
-  return out;
-}
-
-function easeBaseline(): Record<string, string> {
-  const out: Record<string, string> = {};
-  for (const [curve, def] of Object.entries(DEFAULT_EASING_DEFINITIONS)) out[curve] = def.css;
-  return out;
-}
+const MOTION_MEMBERS: Readonly<Record<MotionNamespace, readonly string[]>> = {
+  duration: ['instant', 'micro', 'fast', 'moderate', 'normal', 'slow'],
+  ease: ['standard', 'enter', 'exit', 'linear', 'spring-smooth', 'spring-snappy'],
+  delay: ['hover-intent', 'linger', 'choreo-step', 'stagger-step', 'skip'],
+  extent: ['pop', 'press', 'draw'],
+  period: ['spin', 'pulse', 'blink', 'shimmer'],
+};
 
 /**
- * The no-DOM resolution, derived from the generator definitions. Every entry
- * here is computed from the same input the emission uses; nothing is typed.
- */
-export const MOTION_BASELINE: Readonly<Record<MotionNamespace, Readonly<Record<string, string>>>> =
-  {
-    duration: durationBaseline(),
-    ease: easeBaseline(),
-    delay: mapMemberValues(DEFAULT_DELAY_NAMESPACE),
-    extent: mapMemberValues(DEFAULT_EXTENT_NAMESPACE),
-    period: mapMemberValues(DEFAULT_PERIOD_NAMESPACE),
-  };
-
-/**
- * Cross-check a declared member union against the generator table, both ways.
- * A member the generator dropped, or one it grew that this file does not know
- * about, is a definition error and belongs at module-load time.
+ * Cross-check a declared member union against `MOTION_MEMBERS`, both ways. This
+ * catches an internal typo or duplication between the declaration and the table
+ * at module load. It cannot see the emitted sheet drifting out from under this
+ * file -- that gap is intentional and belongs to a separate guardrail lint.
  */
 function assertVocabulary(namespace: MotionNamespace, declared: readonly string[]): void {
-  const actual = Object.keys(MOTION_BASELINE[namespace]).sort();
+  const actual = [...MOTION_MEMBERS[namespace]].sort();
   const expected = [...declared].sort();
   if (actual.join(',') !== expected.join(',')) {
     throw new Error(
-      `motion accessor: the ${namespace} namespace has drifted. ` +
-        `Generator members: ${actual.join(', ')}. Accessor members: ${expected.join(', ')}.`,
+      `motion accessor: the ${namespace} namespace is inconsistent. ` +
+        `Table members: ${actual.join(', ')}. Accessor members: ${expected.join(', ')}.`,
     );
   }
 }
 
-assertVocabulary('duration', MOTION_DURATION_SCALE);
-assertVocabulary('ease', EASING_CURVES);
+assertVocabulary('duration', ['instant', 'micro', 'fast', 'moderate', 'normal', 'slow']);
+assertVocabulary('ease', ['standard', 'enter', 'exit', 'linear', 'spring-smooth', 'spring-snappy']);
 assertVocabulary('delay', ['hover-intent', 'linger', 'choreo-step', 'stagger-step', 'skip']);
 assertVocabulary('extent', ['pop', 'press', 'draw']);
 assertVocabulary('period', ['spin', 'pulse', 'blink', 'shimmer']);
@@ -200,8 +183,12 @@ export interface MotionTokenOptions {
   motionPreference?: 'reduced' | 'normal' | undefined;
 }
 
-/** Where a resolved value came from -- the three steps of the resolution order. */
-export type MotionTokenSource = 'reduced-motion' | 'computed' | 'baseline';
+/**
+ * Where a resolved value came from. `reduced-motion` and `computed` are the two
+ * real outcomes; `unavailable` marks the inert no-environment placeholder (see
+ * `UNAVAILABLE_VALUE`), which carries no design value at all.
+ */
+export type MotionTokenSource = 'reduced-motion' | 'computed' | 'unavailable';
 
 export interface MotionTokenResolution {
   /** The system token name, e.g. `rafters-delay-hover-intent`. */
@@ -219,17 +206,14 @@ export function motionTokenName(namespace: MotionNamespace, member: string): str
   return `rafters-${namespace}-${member}`;
 }
 
-function requireMember(namespace: MotionNamespace, member: string): string {
-  const table = MOTION_BASELINE[namespace];
-  const value = table[member];
-  if (value === undefined) {
+function requireMember(namespace: MotionNamespace, member: string): void {
+  if (!MOTION_MEMBERS[namespace].includes(member)) {
     throw new Error(
       `motion accessor: unknown motion token "${motionTokenName(namespace, member)}" -- ` +
         `no member "${member}" in the ${namespace} namespace. ` +
-        `Known ${namespace} members: ${Object.keys(table).sort().join(', ')}.`,
+        `Known ${namespace} members: ${[...MOTION_MEMBERS[namespace]].sort().join(', ')}.`,
     );
   }
-  return value;
 }
 
 function requireNamespace(namespace: string): MotionNamespace {
@@ -243,22 +227,50 @@ function requireNamespace(namespace: string): MotionNamespace {
 }
 
 /**
- * Read a custom property off the computed style.
+ * The result of reading a custom property, with the two empty cases kept apart
+ * because they mean different things now:
  *
- * Returns null for "no DOM" and for "declared nowhere" alike, because both mean
- * the same thing to the caller: fall through to the baseline. An empty string
- * is the browser's own answer for an undeclared property, so it is the only
- * emptiness this treats as absence -- `0ms` is a resolved value and survives.
+ *   - `value`: the property resolved to a non-empty string.
+ *   - `absent`: a DOM exists but the property resolves to nothing. A build or
+ *     authoring defect (the token sheet is missing) -- the caller throws.
+ *   - `unavailable`: there is no environment to read from at all (no
+ *     `getComputedStyle`, or no element to read off). True SSR -- the caller
+ *     returns an inert placeholder rather than throwing.
  */
+type CustomPropertyRead =
+  | { readonly kind: 'value'; readonly value: string }
+  | { readonly kind: 'absent' }
+  | { readonly kind: 'unavailable' };
+
+/**
+ * INERT PLACEHOLDER -- ENGINEERING FAILSAFE, OUTSIDE THE VALUE SYSTEM.
+ *
+ * State it plainly, the way `use-presence.ts` classifies its `fallbackMs`
+ * constants (its own doc comment there is the precedent). This value is NOT a
+ * design number: it is not a perceptual fact and not a designer's personality,
+ * so it does not belong in the five namespaces and must never be tuned. It is
+ * returned only from the no-environment (`source: 'unavailable'`) branch, which
+ * is reachable because `resolveMotionToken` runs inside a render-time
+ * `React.useMemo` (tooltip.tsx / navigation-menu.tsx) that also executes during
+ * Astro SSR, before any DOM exists. Nothing fires pointer events server-side,
+ * so this is never perceived as motion; the delay closures that capture it
+ * (`createControlledHoverDelay` in hover-delay.ts) are re-created the moment the
+ * client has a DOM and a real computed value. It exists ONLY so those closures
+ * can type-check before a DOM exists. It reads as an inert `0ms` -- do not
+ * promote it to a token, and do not read it as though it were one.
+ */
+const UNAVAILABLE_VALUE = '0ms';
+
+/** Read a custom property off the computed style. See {@link CustomPropertyRead}. */
 function readCustomProperty(
   customProperty: string,
   element: Element | null | undefined,
-): string | null {
-  if (typeof globalThis.getComputedStyle !== 'function') return null;
+): CustomPropertyRead {
+  if (typeof globalThis.getComputedStyle !== 'function') return { kind: 'unavailable' };
   const target = element ?? (typeof document === 'undefined' ? null : document.documentElement);
-  if (target === null) return null;
+  if (target === null) return { kind: 'unavailable' };
   const raw = globalThis.getComputedStyle(target).getPropertyValue(customProperty).trim();
-  return raw === '' ? null : raw;
+  return raw === '' ? { kind: 'absent' } : { kind: 'value', value: raw };
 }
 
 /**
@@ -274,7 +286,7 @@ export function resolveMotionToken<N extends MotionNamespace>(
   options: MotionTokenOptions = {},
 ): MotionTokenResolution {
   const ns = requireNamespace(namespace);
-  const baseline = requireMember(ns, member);
+  requireMember(ns, member);
   const token = motionTokenName(ns, member);
   const customProperty = `--${token}`;
 
@@ -283,17 +295,39 @@ export function resolveMotionToken<N extends MotionNamespace>(
     return { token, customProperty, namespace: ns, member, value: '0ms', source: 'reduced-motion' };
   }
 
-  const raw = readCustomProperty(customProperty, options.element);
-  if (raw === null) {
-    return { token, customProperty, namespace: ns, member, value: baseline, source: 'baseline' };
+  const read = readCustomProperty(customProperty, options.element);
+
+  if (read.kind === 'unavailable') {
+    // True SSR / no environment -- return the inert failsafe, never throw. A
+    // throw here would turn a server-rendered page into a 500 (see
+    // UNAVAILABLE_VALUE for why this path is reachable at render time).
+    return {
+      token,
+      customProperty,
+      namespace: ns,
+      member,
+      value: UNAVAILABLE_VALUE,
+      source: 'unavailable',
+    };
   }
 
-  const parsed = NAMESPACE_SCHEMA[ns].safeParse(raw);
+  if (read.kind === 'absent') {
+    // A DOM exists but the custom property is declared nowhere: the token sheet
+    // is missing or misauthored. FAIL LOUD -- a silent default would hide a
+    // real build/authoring defect.
+    throw new Error(
+      `motion accessor: motion token "${token}" (${customProperty}) is not declared on the ` +
+        `read element and no design-time default is available -- check that the token sheet ` +
+        `is loaded.`,
+    );
+  }
+
+  const parsed = NAMESPACE_SCHEMA[ns].safeParse(read.value);
   if (!parsed.success) {
     const reason = parsed.error.issues[0]?.message ?? 'invalid value';
     throw new Error(
-      `motion accessor: motion token "${token}" resolved to "${raw}", which is not a valid ` +
-        `${ns} value (${reason}).`,
+      `motion accessor: motion token "${token}" resolved to "${read.value}", which is not a ` +
+        `valid ${ns} value (${reason}).`,
     );
   }
 

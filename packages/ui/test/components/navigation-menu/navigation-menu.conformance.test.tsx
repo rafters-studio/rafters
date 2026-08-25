@@ -7,7 +7,8 @@
 import * as React from 'react';
 import { cleanup, render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { installMotionDelaySheet } from '../../harness/motion-sheet';
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -71,8 +72,17 @@ function contentFor(value: string): HTMLElement {
   return element;
 }
 
+// The emitted token sheet is what a real page loads; the menu reads its
+// hover-intent delay off it at mount. Without it, the accessor fails loud on
+// the missing sheet (#2132).
+let uninstallMotionSheet: () => void = () => {};
+beforeEach(() => {
+  uninstallMotionSheet = installMotionDelaySheet();
+});
+
 afterEach(() => {
   cleanup();
+  uninstallMotionSheet();
 });
 
 describe('navigation-menu conformance [react]', () => {

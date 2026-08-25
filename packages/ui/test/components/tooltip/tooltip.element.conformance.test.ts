@@ -7,14 +7,23 @@
  */
 import { cleanup, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { RaftersTooltip } from '../../../src/components/tooltip/tooltip.element';
 import { resetHoverDelayState } from '../../../src/primitives/hover-delay';
+import { installMotionDelaySheet } from '../../harness/motion-sheet';
 
 beforeAll(() => {
   if (!customElements.get('rafters-tooltip')) {
     customElements.define('rafters-tooltip', RaftersTooltip);
   }
+});
+
+// The emitted token sheet is what a real page loads; a defaultOpen tip with no
+// data-skip-delay-duration reads its close delay off it. Without it, the
+// accessor fails loud on the missing sheet (#2132).
+let uninstallMotionSheet: () => void = () => {};
+beforeEach(() => {
+  uninstallMotionSheet = installMotionDelaySheet();
 });
 
 async function mount(skipDelay = 0): Promise<HTMLElement> {
@@ -34,6 +43,7 @@ afterEach(() => {
   cleanup();
   document.body.innerHTML = '';
   resetHoverDelayState();
+  uninstallMotionSheet();
 });
 
 describe('tooltip conformance [wc]', () => {

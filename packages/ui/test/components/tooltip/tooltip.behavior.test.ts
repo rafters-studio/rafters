@@ -1,4 +1,5 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { installMotionDelaySheet } from '../../harness/motion-sheet';
 import { createBehavior, type PartIds } from '../../../src/lib/contract';
 import {
   bindTooltip,
@@ -17,6 +18,16 @@ const openUncontrolled: TooltipConfig = { defaultOpen: true };
 function ariaAt(config: TooltipConfig, partIds: PartIds<TooltipPart> = ids) {
   return tooltip.aria(tooltip.initialState(config), config, partIds);
 }
+
+// The emitted token sheet is what a real page loads; binding a tooltip reads the
+// delay off it. Without it, the accessor fails loud on the missing sheet (#2132).
+let uninstallMotionSheet: () => void = () => {};
+beforeEach(() => {
+  uninstallMotionSheet = installMotionDelaySheet();
+});
+afterEach(() => {
+  uninstallMotionSheet();
+});
 
 describe('tooltip parts', () => {
   it('declares only trigger and content', () => {
