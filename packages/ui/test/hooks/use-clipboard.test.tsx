@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { StrictMode, useEffect, useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useClipboard } from '../../src/hooks/use-clipboard';
-import type { ClipboardData } from '../../src/primitives/clipboard';
+import type { ClipboardData } from '../../src/primitives/editor/clipboard';
 
 // Store original clipboard for restoration
 const originalClipboard = navigator.clipboard;

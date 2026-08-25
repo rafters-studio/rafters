@@ -28,7 +28,7 @@
  */
 
 import { useCallback, useRef } from 'react';
-import { createHistory, type History, type HistoryState } from '../primitives/history';
+import { createHistory, type History, type HistoryState } from '../primitives/editor/history';
 import { useMemory } from './use-memory';
 
 export interface UseHistoryOptions<T> {

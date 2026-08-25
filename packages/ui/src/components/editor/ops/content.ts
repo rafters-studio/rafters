@@ -17,7 +17,7 @@ import {
   inlineMarksEqual,
   mergeAdjacentRuns,
   splitInlineContent,
-} from '../../../primitives/block-operations';
+} from '../../../primitives/editor/block-operations';
 import type { InlineContent, InlineMark } from '../../../primitives/types';
 
 /** Normalize string/undefined/array content into a run array for splicing. */

@@ -1,5 +1,6 @@
+import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   getRegistryIndex,
@@ -397,5 +398,113 @@ describe('@constraint JSDoc tag parsing (#2073)', () => {
     // contributes -- the component still yields its other intelligence.
     const intel = parseJSDocFromSource(malformed, { componentName: 'button' });
     expect(intel?.cognitiveLoad).toBe(3);
+  });
+});
+
+/**
+ * Editor-subsystem relocation (#2136). The 25 `subsystem:"editor"` primitives
+ * live under `packages/ui/src/primitives/editor/` on disk, but discovery must
+ * find them by bare name and serve them at the UNCHANGED flat consumer path
+ * (`lib/primitives/<name>.ts`). Source nesting and served layout are decoupled:
+ * a consumer sees zero path churn. These tests fail loudly if discovery drops
+ * the subdir (the #2018 silent-empty shape) or if the folder and the matrix tag
+ * drift apart.
+ */
+describe('editor primitive discovery after relocation (#2136)', () => {
+  const EDITOR_PRIMITIVES = [
+    'block-canvas',
+    'block-context-menu',
+    'block-handler',
+    'block-operations',
+    'block-palette',
+    'block-wrapper',
+    'canvas-drop-zone',
+    'clipboard',
+    'command-palette',
+    'cursor-tracker',
+    'document-editor',
+    'drag-drop',
+    'editor-toolbar',
+    'history',
+    'inline-formatter',
+    'inline-toolbar',
+    'input-events',
+    'rule-dialog',
+    'rule-drop-zone',
+    'rule-palette',
+    'selection',
+    'serializer',
+    'serializer-html',
+    'serializer-mdx',
+    'serializer-text',
+  ];
+
+  // Resolve source paths from THIS test file, never from process.cwd():
+  // apps/registry/test/ -> repo root is three levels up.
+  const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '../../..');
+  const primitivesDir = join(repoRoot, 'packages/ui/src/primitives');
+  const editorDir = join(primitivesDir, 'editor');
+  const matrixPath = join(repoRoot, 'packages/ui/docs/spec/matrix/primitives.jsonl');
+
+  const matrixEditorNames = new Set(
+    readFileSync(matrixPath, 'utf-8')
+      .split('\n')
+      .filter((l) => l.trim())
+      .map((l) => JSON.parse(l) as { name: string; subsystem: string })
+      .filter((d) => d.subsystem === 'editor')
+      .map((d) => d.name),
+  );
+
+  it('lists every editor primitive by bare name', () => {
+    const names = listPrimitiveNames();
+    for (const name of EDITOR_PRIMITIVES) {
+      expect(names).toContain(name);
+    }
+  });
+
+  it('loads each editor primitive with the served path unchanged (flat)', () => {
+    for (const name of EDITOR_PRIMITIVES) {
+      const item = loadPrimitive(name);
+      expect(item, `loadPrimitive('${name}') returned null`).not.toBeNull();
+      expect(item?.files[0]?.path).toBe(`lib/primitives/${name}.ts`);
+    }
+  });
+
+  it('served editor content never leaks the editor/ source nesting', () => {
+    // A nested `../memory` that survived into served content would resolve to
+    // `lib/memory` in the flat consumer tree -- a dangling import. It must be
+    // flattened back to `./memory` (a flat sibling) before serving.
+    const handler = loadPrimitive('block-handler');
+    const content = handler?.files[0]?.content ?? '';
+    expect(content).not.toMatch(/from\s+['"]\.\.\/(memory|types|keyboard-handler)['"]/);
+    expect(content).toMatch(/from\s+['"]\.\/memory['"]/);
+    // The transitive closure still names the flat behavior siblings.
+    expect(handler?.primitives).toContain('memory');
+    expect(handler?.primitives).toContain('types');
+  });
+
+  it('non-editor primitives are unaffected at the flat root', () => {
+    expect(loadPrimitive('aria-manager')?.files[0]?.path).toBe('lib/primitives/aria-manager.ts');
+    expect(loadPrimitive('memory')?.files[0]?.path).toBe('lib/primitives/memory.ts');
+  });
+
+  it('editor folder membership matches matrix subsystem:"editor" exactly', () => {
+    const onDisk = new Set(
+      readdirSync(editorDir)
+        .filter((f) => f.endsWith('.ts') || f.endsWith('.tsx'))
+        .map((f) => f.replace(/\.tsx?$/, '')),
+    );
+    expect(onDisk).toEqual(matrixEditorNames);
+  });
+
+  it('no flat-root primitive carries subsystem:"editor" (drift is a failure)', () => {
+    const flatNames = readdirSync(primitivesDir, { withFileTypes: true })
+      .filter((e) => e.isFile() && /\.tsx?$/.test(e.name))
+      .map((e) => e.name.replace(/\.tsx?$/, ''));
+    const misplaced = flatNames.filter((n) => matrixEditorNames.has(n));
+    expect(
+      misplaced,
+      `editor-tagged primitives still at flat root: ${misplaced.join(', ')}`,
+    ).toEqual([]);
   });
 });

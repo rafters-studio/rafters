@@ -1,5 +1,11 @@
 # rafters
 
+## Unreleased
+
+### Refactors
+
+- refactor(cli): the `add` import transform now serves every primitive at its flat consumer path regardless of where its SOURCE lives (#2136). The 25 `subsystem:"editor"` primitives moved from the flat `packages/ui/src/primitives/` into `packages/ui/src/primitives/editor/`, but the served/consumer layout is deliberately unchanged -- a consumer still gets `lib/primitives/<name>.ts`, never `lib/primitives/editor/<name>.ts`. `transformFileContent` collapses any `../../primitives/<subpath>` / `../primitives/<subpath>` import to its basename, so a behavior-layer component importing across the new folder boundary (`command` -> `command-palette`, `input-otp` -> `input-events`) resolves to the flat installed file. Already-installed consumers see zero path churn; a `rafters add block-canvas` into a clean project installs `block-canvas` plus its transitive closure (`keyboard-handler`, `types`, ...) flat, with no `Cannot find module` and no silent no-op.
+
 ## 0.2.3
 
 ### Versioning

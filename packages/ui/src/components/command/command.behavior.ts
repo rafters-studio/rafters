@@ -6,7 +6,7 @@ import {
   type PartIds,
 } from '../../lib/contract';
 import { updateAriaAttribute } from '../../primitives/aria-manager';
-import { fuzzyMatch } from '../../primitives/command-palette';
+import { fuzzyMatch } from '../../primitives/editor/command-palette';
 import { createFocusTrap, preventBodyScroll } from '../../primitives/focus-trap';
 import { onPointerDownOutside } from '../../primitives/outside-click';
 

@@ -7,7 +7,7 @@
 
 import { existsSync } from 'node:fs';
 import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import {
   contrastPlugin,
   invertPlugin,
@@ -456,17 +456,20 @@ export function transformFileContent(
   const aliasComponents = stripSourceRoot(componentsPath);
   const aliasPrimitives = stripSourceRoot(primitivesPath);
 
-  // Transform imports from ../../primitives/ to configured primitives path
+  // Transform imports from ../../primitives/ or ../primitives/ to the
+  // configured primitives path. Served primitives are ALWAYS flat
+  // (`lib/primitives/<name>`), even when their SOURCE lives in a subdir like
+  // `primitives/editor/<name>` -- source nesting is deliberately decoupled from
+  // the served/consumer layout (#2136). So collapse any subpath to its
+  // basename: `../../primitives/editor/command-palette` and
+  // `../../primitives/command-palette` both install as `@/lib/primitives/command-palette`.
+  const toFlatPrimitive = (_match: string, subpath: string): string =>
+    `from '@/${aliasPrimitives}/${basename(subpath)}'`;
   transformed = transformed.replace(
     /from\s+['"]\.\.\/\.\.\/primitives\/([^'"]+)['"]/g,
-    `from '@/${aliasPrimitives}/$1'`,
+    toFlatPrimitive,
   );
-
-  // Transform imports from ../primitives/ to configured primitives path
-  transformed = transformed.replace(
-    /from\s+['"]\.\.\/primitives\/([^'"]+)['"]/g,
-    `from '@/${aliasPrimitives}/$1'`,
-  );
+  transformed = transformed.replace(/from\s+['"]\.\.\/primitives\/([^'"]+)['"]/g, toFlatPrimitive);
 
   // Sibling imports (./foo) resolve to the dir THIS file installs into:
   // primitives -> primitivesPath, a substrate file -> its OWN install dir (from
