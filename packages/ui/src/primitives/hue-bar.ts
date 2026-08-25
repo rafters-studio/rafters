@@ -8,7 +8,8 @@
  * the primitive handles rendering and ARIA attributes.
  */
 
-import { findMaxChroma, hueFromBarPos, inP3, inSrgb } from './oklch-gamut';
+import { computeGamutBoundaries, isInP3Gamut, isInSRGBGamut } from '@rafters/color-utils';
+import { hueFromBarPos } from './hue-warp';
 import type { CleanupFunction } from './types';
 
 export interface HueBarOptions {
@@ -36,13 +37,9 @@ export interface HueBarOptions {
   vivid?: boolean;
 }
 
-/** Maximum chroma ceiling for peak-chroma probing */
-const MAX_C = 0.4;
-
 /** Lightness range to sweep when finding peak chroma (avoids near-black/white extremes) */
 const PROBE_L_MIN = 0.2;
 const PROBE_L_MAX = 0.85;
-const PROBE_L_STEP = 0.01;
 
 /**
  * Render vivid peak-chroma hue bar with perceptual warp and box blur smoothing.
@@ -66,11 +63,14 @@ function renderVivid(
     hues[i] = hue;
     let bestL = 0.5;
     let bestC = 0;
-    for (let probe = PROBE_L_MIN; probe <= PROBE_L_MAX; probe += PROBE_L_STEP) {
-      const probeC = findMaxChroma(probe, hue, MAX_C);
-      if (probeC > bestC) {
-        bestC = probeC;
-        bestL = probe;
+    // One computeGamutBoundaries sweep per column (default 101 steps ~= the old
+    // PROBE_L_STEP = 0.01 density); scan for the max maxC_p3 within the probe
+    // range. maxC_p3 preserves current rendered output (P3 superset of sRGB).
+    for (const point of computeGamutBoundaries(hue)) {
+      if (point.l < PROBE_L_MIN || point.l > PROBE_L_MAX) continue;
+      if (point.maxC_p3 > bestC) {
+        bestC = point.maxC_p3;
+        bestL = point.l;
       }
     }
     rawL[i] = bestL;
@@ -146,7 +146,10 @@ function renderHueBar(canvas: HTMLCanvasElement, options: HueBarOptions): void {
 
   for (let i = 0; i < steps; i++) {
     const h = (i / maxIndex) * 360;
-    if (inSrgb(lightness, chroma, h) || inP3(lightness, chroma, h)) {
+    if (
+      isInSRGBGamut({ l: lightness, c: chroma, h, alpha: 1 }) ||
+      isInP3Gamut({ l: lightness, c: chroma, h, alpha: 1 })
+    ) {
       ctx.fillStyle = `oklch(${lightness} ${chroma} ${h})`;
     } else {
       ctx.fillStyle = '#000';

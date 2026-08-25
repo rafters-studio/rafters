@@ -22,11 +22,12 @@
  * />
  * ```
  */
+import { getGamutTier } from '@rafters/color-utils';
 import * as React from 'react';
 import classy from '../../primitives/classy';
 import type { ColorPickerStateControls } from '../../primitives/color-picker-state';
-import { createColorPickerState, getGamutTier } from '../../primitives/color-picker-state';
-import { barPosFromHue } from '../../primitives/oklch-gamut';
+import { createColorPickerState } from '../../primitives/color-picker-state';
+import { barPosFromHue } from '../../primitives/hue-warp';
 import type { Direction, GamutTier, OklchColor } from '../../primitives/types';
 
 export interface ColorPickerProps extends Omit<
@@ -164,7 +165,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
       hueContainerRef.current?.setAttribute('aria-valuenow', String(Math.round(color.h)));
     }, [color.h]);
 
-    const gamutTier = getGamutTier(color.l, color.c, color.h);
+    const gamutTier = getGamutTier({ l: color.l, c: color.c, h: color.h, alpha: 1 });
 
     return (
       // biome-ignore lint/a11y/useSemanticElements: fieldset adds unwanted default styling; role="group" on div is standard for composite widgets

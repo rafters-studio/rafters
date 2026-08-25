@@ -5,7 +5,7 @@
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "types": ["node", "vitest/globals", "@testing-library/jest-dom"]
   },
-  "include": ["src/**/*", "test/components/dialog.test.tsx"],
+  "include": ["src/**/*", "../color-utils/src/**/*.d.ts", "test/components/dialog.test.tsx"],
   "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.test.tsx"],
   "files": ["test/components/editor/editor.conformance.test.tsx"]
 }
