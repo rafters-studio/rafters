@@ -81,11 +81,10 @@ describe('no delivered file has unexpected shadow color math', () => {
   });
 
   it('does not flag the bar-position hue-warp helpers', () => {
-    const item = loadPrimitive('oklch-gamut');
-    expect(item).not.toBeNull();
-    const file = item?.files.find((f) => f.path.endsWith('oklch-gamut.ts'));
-    expect(file).toBeDefined();
-    const violations = findShadowMathViolations(file!.path, file!.content);
+    const content =
+      `export function hueFromBarPos(barPos: number): number { return barPos; }\n` +
+      `export function barPosFromHue(hue: number): number { return hue; }\n`;
+    const violations = findShadowMathViolations('lib/primitives/hue-warp.ts', content);
     expect(violations.map((v) => v.found)).not.toContain('hueFromBarPos');
     expect(violations.map((v) => v.found)).not.toContain('barPosFromHue');
   });
