@@ -21,6 +21,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@rafters/color-utils": "workspace:*",
     "@rafters/design-tokens": "workspace:*",
     "css-tree": "^3.2.1",
     "mdast-util-from-markdown": "^2.0.3",

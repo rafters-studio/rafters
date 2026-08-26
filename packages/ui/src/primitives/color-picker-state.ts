@@ -1,6 +1,6 @@
 /**
  * Color picker composition primitive - orchestrates color-area, hue-bar,
- * color-input, color-swatch, interactive, and oklch-gamut into a unified
+ * color-input, color-swatch, and interactive into a unified
  * OKLCH color selection state machine
  *
  * Composition primitives use nanostores atoms to share reactive state between
@@ -48,22 +48,16 @@
  * state.destroy();
  * ```
  */
+import { getGamutTier } from '@rafters/color-utils';
 import { createColorArea, updateColorArea } from './color-area';
 import type { ColorInputField } from './color-input';
 import { createColorInput, updateColorInput } from './color-input';
 import { createSwatch, updateSwatch } from './color-swatch';
 import { createHueBar, updateHueBar } from './hue-bar';
+import { hueFromBarPos } from './hue-warp';
 import { createInteractive } from './interactive';
 import { createMemory } from './memory';
-import { hueFromBarPos, inP3, inSrgb } from './oklch-gamut';
-import type {
-  CleanupFunction,
-  Direction,
-  GamutTier,
-  MoveDelta,
-  NormalizedPoint,
-  OklchColor,
-} from './types';
+import type { CleanupFunction, Direction, MoveDelta, NormalizedPoint, OklchColor } from './types';
 
 // ============================================================================
 // Types
@@ -126,12 +120,6 @@ const DEFAULT_MAX_CHROMA = 0.4;
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
-}
-
-export function getGamutTier(l: number, c: number, h: number): GamutTier {
-  if (inSrgb(l, c, h)) return 'srgb';
-  if (inP3(l, c, h)) return 'p3';
-  return 'out';
 }
 
 function resolveKeyDelta(current: number, delta: number, scale: number, max: number): number {
@@ -243,7 +231,12 @@ export function createColorPickerState(options: ColorPickerStateOptions): ColorP
   );
 
   // Swatches
-  const tier = getGamutTier(initialColor.l, initialColor.c, initialColor.h);
+  const tier = getGamutTier({
+    l: initialColor.l,
+    c: initialColor.c,
+    h: initialColor.h,
+    alpha: 1,
+  });
   const swatchState = { l: initialColor.l, c: initialColor.c, h: initialColor.h, tier };
   const swatchElements = [preview, areaThumb, hueThumb].filter(
     (el): el is HTMLElement => el != null,
@@ -260,7 +253,7 @@ export function createColorPickerState(options: ColorPickerStateOptions): ColorP
       value: { l: color.l, c: color.c, h: color.h },
       onChange: () => {},
     });
-    const colorTier = getGamutTier(color.l, color.c, color.h);
+    const colorTier = getGamutTier({ l: color.l, c: color.c, h: color.h, alpha: 1 });
     const state = { l: color.l, c: color.c, h: color.h, tier: colorTier };
     for (const el of swatchElements) {
       updateSwatch(el, state);

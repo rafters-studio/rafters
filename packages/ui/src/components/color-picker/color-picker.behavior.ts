@@ -1,3 +1,4 @@
+import { getGamutTier as computeGamutTier } from '@rafters/color-utils';
 import { compose, type Slice } from '../../lib/compose';
 import {
   createBehavior,
@@ -12,7 +13,7 @@ import { createColorInput, updateColorInput } from '../../primitives/color-input
 import { createSwatch, updateSwatch } from '../../primitives/color-swatch';
 import { createHueBar, updateHueBar } from '../../primitives/hue-bar';
 import { createInteractive } from '../../primitives/interactive';
-import { barPosFromHue, hueFromBarPos, inP3, inSrgb } from '../../primitives/oklch-gamut';
+import { barPosFromHue, hueFromBarPos } from '../../primitives/hue-warp';
 import type {
   CleanupFunction,
   Direction,
@@ -52,9 +53,7 @@ export function effectiveColor(state: ColorPickerState, config: ColorPickerConfi
 }
 
 export function getGamutTier(l: number, c: number, h: number): GamutTier {
-  if (inSrgb(l, c, h)) return 'srgb';
-  if (inP3(l, c, h)) return 'p3';
-  return 'out';
+  return computeGamutTier({ l, c, h, alpha: 1 });
 }
 
 export { barPosFromHue, hueFromBarPos };

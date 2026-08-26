@@ -115,8 +115,18 @@ effect kind is a Spec 03 change request — stop the line.
 relative imports, into their own componentsPath. That is the product.
 
 **The monorepo uses:** @rafters/* workspace aliases — internal plumbing,
-never a public API, never in consumer-facing copy. There is no @rafters on
-npm; the only published package is the rafters CLI.
+never a public API, never in consumer-facing copy, for the design-system
+surface (components, primitives, composites). That half is unchanged.
+
+**Foundational libraries are the one exception:** `@rafters/color-utils`
+and `@rafters/shared` (and `@rafters/math-utils`, once delivered code
+needs it) are real, versioned npm packages, published as SOURCE (no build
+step; `exports["."]` points at `src/index.ts`) — not a public API in the
+sense of a stability promise, just a real npm-installable dependency that
+`rafters add` installs like any other external package when a delivered
+file declares it. The rafters CLI and these foundational libraries are the
+published packages; design-system source itself still never ships as an
+npm dependency.
 
 ## 9. Oracle / new grain — the migration line
 

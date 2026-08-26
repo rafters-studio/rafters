@@ -1,8 +1,8 @@
 /**
  * Registry Dependency Installation
  *
- * Collects dependencies from registry items, filters out internal
- * and already-installed packages, then installs via the consumer's
+ * Collects dependencies from registry items, filters out
+ * already-installed packages, then installs via the consumer's
  * package manager.
  */
 
@@ -37,7 +37,7 @@ const REACT_RUNTIME_PACKAGES = new Set(['react', 'react-dom', '@types/react', '@
 export interface InstallRegistryDepsResult {
   /** Dependencies that were installed */
   installed: string[];
-  /** Dependencies that were skipped (already installed or internal) */
+  /** Dependencies that were skipped (already installed or dropped for a non-React target) */
   skipped: string[];
   // TODO: devDependencies installation not yet implemented.
   // When registry items include devDependencies, pass them as the second
@@ -110,8 +110,7 @@ async function readInstalledDeps(targetDir: string): Promise<ReadDepsResult> {
 
 /**
  * Collect all dependencies from registry items, deduplicate,
- * filter out @rafters/* and already-installed packages,
- * then install the remainder.
+ * filter out already-installed packages, then install the remainder.
  */
 export async function installRegistryDependencies(
   items: RegistryItem[],
@@ -132,17 +131,17 @@ export async function installRegistryDependencies(
     return result;
   }
 
-  // 2. Partition into internal (@rafters/*) and external deps.
-  // Also drop React-family runtime packages when the target isn't React --
+  // 2. Collect deps to install. Foundational @rafters/* libraries
+  // (color-utils, shared) are published npm packages now, so they flow
+  // through the same install path as any other external dependency.
+  // Drop React-family runtime packages when the target isn't React --
   // those imports are type-only in shared primitives and aren't needed at
   // runtime on astro/vue/wc/vanilla projects.
   const externalDeps: string[] = [];
   const dropForTarget = options.target && options.target !== 'react';
   for (const dep of allDeps) {
     const { name } = parseDependency(dep);
-    if (name.startsWith('@rafters/')) {
-      result.skipped.push(dep);
-    } else if (dropForTarget && REACT_RUNTIME_PACKAGES.has(name)) {
+    if (dropForTarget && REACT_RUNTIME_PACKAGES.has(name)) {
       result.skipped.push(dep);
     } else {
       externalDeps.push(dep);

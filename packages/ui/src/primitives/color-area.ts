@@ -8,7 +8,7 @@
  * the primitive handles rendering and ARIA attributes.
  */
 
-import { findMaxChroma } from './oklch-gamut';
+import { computeGamutBoundaries } from '@rafters/color-utils';
 import type { CleanupFunction } from './types';
 
 export interface ColorAreaOptions {
@@ -61,17 +61,22 @@ function renderArea(canvas: HTMLCanvasElement, options: ColorAreaOptions): void 
   const maxX = cssWidth > 1 ? cssWidth - 1 : 1;
   const maxY = cssHeight > 1 ? cssHeight - 1 : 1;
 
-  // Precompute gamut boundary chroma per lightness column
-  const gamutBoundary = new Float32Array(cssWidth);
-  for (let x = 0; x < cssWidth; x++) {
-    gamutBoundary[x] = findMaxChroma(x / maxX, hue, maxChroma);
-  }
+  // Precompute gamut boundary chroma per lightness column.
+  // computeGamutBoundaries(hue, cssWidth) returns one point per column, with
+  // l = i / (cssWidth - 1), matching the old per-column l = x / maxX exactly.
+  // Guard cssWidth > 1: the function divides by (steps - 1) internally, so
+  // steps <= 1 yields NaN lightness (the L_EPS skip below already excludes the
+  // only column that could exist at cssWidth <= 1, so this just avoids NaN).
+  const boundaries = cssWidth > 1 ? computeGamutBoundaries(hue, cssWidth) : [];
 
   for (let x = 0; x < cssWidth; x++) {
     const l = x / maxX;
     if (l < L_EPS || l > 1 - L_EPS) continue;
 
-    const mc = gamutBoundary[x] ?? 0;
+    // Read maxC_p3: the old fused inSrgb || inP3 check always resolved to the
+    // P3 boundary (P3 is a superset of sRGB), so the area already painted up to
+    // P3. Reading maxC_p3 preserves that rendered output.
+    const mc = boundaries[x]?.maxC_p3 ?? 0;
 
     // Compute the first y where chroma enters the gamut boundary
     // c(y) = (1 - y/maxY) * maxChroma, so c <= mc when y >= (1 - mc/maxChroma) * maxY
