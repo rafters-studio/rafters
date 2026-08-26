@@ -15,6 +15,7 @@
  * NEVER: Display more than one selected family at a time
  */
 
+import { isInP3Gamut, isInSRGBGamut } from '@rafters/color-utils';
 import type {
   AtmosphericWeight,
   ColorAnalysis,
@@ -30,7 +31,6 @@ import { createColorWeight } from '../../primitives/color-weight';
 import type { ContrastMatrixOptions } from '../../primitives/contrast-matrix';
 import { createContrastMatrix } from '../../primitives/contrast-matrix';
 import { createCvdSimulation } from '../../primitives/cvd-simulation';
-import { inP3, inSrgb } from '../../primitives/oklch-gamut';
 import type { GamutTier, OklchColor } from '../../primitives/types';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './collapsible';
 import { Container } from './container';
@@ -797,7 +797,7 @@ function ColorDetail({ color, onClose }: ColorDetailProps) {
               ) : null}
             </>
           ) : null}
-          {inSrgb(baseColor.l, baseColor.c, baseColor.h) ? (
+          {isInSRGBGamut({ l: baseColor.l, c: baseColor.c, h: baseColor.h, alpha: 1 }) ? (
             <Small
               className={classy('rounded px-2 py-0.5')}
               style={{ backgroundColor: toOklchAlpha(overlayColor, 0.08), color: 'inherit' }}
@@ -805,7 +805,7 @@ function ColorDetail({ color, onClose }: ColorDetailProps) {
               sRGB
             </Small>
           ) : null}
-          {inP3(baseColor.l, baseColor.c, baseColor.h) ? (
+          {isInP3Gamut({ l: baseColor.l, c: baseColor.c, h: baseColor.h, alpha: 1 }) ? (
             <Small
               className={classy('rounded px-2 py-0.5')}
               style={{ backgroundColor: toOklchAlpha(overlayColor, 0.08), color: 'inherit' }}

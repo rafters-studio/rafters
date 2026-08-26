@@ -136,6 +136,14 @@ describe('createColorPickerState', () => {
     expect(state.$color.get()).toEqual(DEFAULT_COLOR);
   });
 
+  // Regression for the sRGB/P3 fusion bug: the gamut tier must distinguish P3
+  // from sRGB. { l: 0.7, c: 0.25, h: 150 } is the p3Green fixture from
+  // packages/color-utils/test/gamut.test.ts -- inside P3 but outside sRGB.
+  it('reports p3 tier (not srgb) for a color outside sRGB but inside P3', () => {
+    state = setup({ initialColor: { l: 0.7, c: 0.25, h: 150 } });
+    expect(preview.getAttribute('data-gamut-tier')).toBe('p3');
+  });
+
   describe('setColor', () => {
     it('updates the reactive atom', () => {
       state = setup();
