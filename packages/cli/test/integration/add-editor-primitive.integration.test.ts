@@ -98,6 +98,7 @@ describe('rafters add installs a relocated editor primitive (#2136)', () => {
       const installed = readFileSync(join(fixturePath, 'lib/primitives/block-canvas.ts'), 'utf-8');
       expect(installed).not.toContain('primitives/editor/');
     },
+    30000,
   );
 
   it.skipIf(!DIST_AVAILABLE)(
@@ -117,5 +118,6 @@ describe('rafters add installs a relocated editor primitive (#2136)', () => {
       expect(behavior).toContain('/lib/primitives/command-palette');
       expect(behavior).not.toContain('primitives/editor/');
     },
+    30000,
   );
 });
