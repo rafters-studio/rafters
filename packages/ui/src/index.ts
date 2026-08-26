@@ -18,16 +18,16 @@ export type {
   DeserializeResult,
   EditorSerializer,
   SerializerBlock,
-} from './primitives/serializer.js';
+} from './primitives/editor/serializer.js';
 export {
   contentHasMarks,
   contentToPlainText,
   createJsonSerializer,
   jsonSerializer,
-} from './primitives/serializer.js';
-export { createHtmlSerializer, htmlSerializer } from './primitives/serializer-html.js';
-export { createMdxSerializer, mdxSerializer } from './primitives/serializer-mdx.js';
-export { createTextSerializer, textSerializer } from './primitives/serializer-text.js';
+} from './primitives/editor/serializer.js';
+export { createHtmlSerializer, htmlSerializer } from './primitives/editor/serializer-html.js';
+export { createMdxSerializer, mdxSerializer } from './primitives/editor/serializer-mdx.js';
+export { createTextSerializer, textSerializer } from './primitives/editor/serializer-text.js';
 export type { BaseBlock } from './primitives/types.js';
 export {
   applyOp,

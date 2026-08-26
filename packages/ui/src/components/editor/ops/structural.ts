@@ -15,7 +15,7 @@ import {
   mergeWithNext,
   mergeWithPrevious,
   splitBlock,
-} from '../../../primitives/block-operations';
+} from '../../../primitives/editor/block-operations';
 import type { BaseBlock } from '../../../primitives/types';
 import { mergeRuns, normalizeRuns } from './content';
 import type { EditorOp, OpResult, StructuralOp } from './types';

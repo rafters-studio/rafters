@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { StrictMode, useEffect, useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useDraggable, useDropZone } from '../../src/hooks/use-drag-drop';
-import { resetDragDropState } from '../../src/primitives/drag-drop';
+import { resetDragDropState } from '../../src/primitives/editor/drag-drop';
 
 // Reset drag-drop state between tests to avoid cross-test pollution
 afterEach(() => {

@@ -16,13 +16,13 @@
 
 import { atom } from 'nanostores';
 import * as React from 'react';
-import { convertBlockType } from '../../primitives/block-operations';
+import { convertBlockType } from '../../primitives/editor/block-operations';
 import classy from '../../primitives/classy';
-import { findBlockElement } from '../../primitives/cursor-tracker';
+import { findBlockElement } from '../../primitives/editor/cursor-tracker';
 import {
   createDocumentEditor,
   type DocumentEditorControls,
-} from '../../primitives/document-editor';
+} from '../../primitives/editor/document-editor';
 import type { BaseBlock, CleanupFunction, Direction, InlineContent } from '../../primitives/types';
 import { Button } from './button';
 import { Container } from './container';

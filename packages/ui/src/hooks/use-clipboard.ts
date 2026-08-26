@@ -30,7 +30,7 @@ import {
   type ClipboardData,
   type ClipboardManager,
   createClipboard,
-} from '../primitives/clipboard';
+} from '../primitives/editor/clipboard';
 
 /**
  * Options for the useClipboard hook
@@ -245,4 +245,4 @@ export function useClipboard(options: UseClipboardOptions = {}): UseClipboardRet
 }
 
 // Re-export ClipboardData type for convenience
-export type { ClipboardData } from '../primitives/clipboard';
+export type { ClipboardData } from '../primitives/editor/clipboard';

@@ -6,7 +6,7 @@ import {
   type PartIds,
 } from '../../lib/contract';
 import { updateAriaAttribute } from '../../primitives/aria-manager';
-import { createInputHandler } from '../../primitives/input-events';
+import { createInputHandler } from '../../primitives/editor/input-events';
 import { createKeyboardHandler } from '../../primitives/keyboard-handler';
 
 /**

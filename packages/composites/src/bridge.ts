@@ -7,7 +7,7 @@
  * into CompositeFile format.
  */
 
-import type { BlockPaletteItem } from '@rafters/ui/primitives/block-palette';
+import type { BlockPaletteItem } from '@rafters/ui/primitives/editor/block-palette';
 import type {
   AppliedRule,
   CompositeBlock,

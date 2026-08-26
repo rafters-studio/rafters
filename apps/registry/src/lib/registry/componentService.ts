@@ -243,13 +243,40 @@ function resolveComponentDir(name: string): { dir: string; owner: string } | nul
 }
 
 /**
- * List all available primitive names
+ * The one primitive subsystem that lives in its own subdirectory rather than
+ * flat under `primitives/`. The editor cluster (Spec 00 boundary 9) is a
+ * structural boundary on disk: `primitives/editor/<name>.ts`. Discovery walks
+ * the flat root PLUS this single known subdir -- one level deep, not unbounded
+ * recursion. The served/consumer layout stays FLAT (`lib/primitives/<name>.ts`)
+ * regardless of source nesting; see `flattenNestedPrimitiveImports`.
+ */
+const PRIMITIVE_SUBDIRS = ['editor'];
+
+/** Read the `.ts`/`.tsx` basenames directly in `dir` (non-recursive). */
+function listTsBasenames(dir: string): string[] {
+  try {
+    return readdirSync(dir)
+      .filter((f) => f.endsWith('.ts') || f.endsWith('.tsx'))
+      .map((f) => basename(f, f.endsWith('.tsx') ? '.tsx' : '.ts'));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * List all available primitive names.
+ * Walks the flat `primitives/` root plus each known one-level subdir (`editor/`).
+ * Names are bare basenames (nesting is a source detail, invisible to consumers)
+ * and the list is sorted+deduped so the returned array is deterministic and its
+ * SET stays disjoint from every other kind's name list.
  */
 export function listPrimitiveNames(): string[] {
   const primitivesDir = getPrimitivesPath();
-  return readdirSync(primitivesDir)
-    .filter((f) => f.endsWith('.ts') || f.endsWith('.tsx'))
-    .map((f) => basename(f, f.endsWith('.tsx') ? '.tsx' : '.ts'));
+  const names = new Set<string>(listTsBasenames(primitivesDir));
+  for (const sub of PRIMITIVE_SUBDIRS) {
+    for (const name of listTsBasenames(join(primitivesDir, sub))) names.add(name);
+  }
+  return [...names].sort();
 }
 
 /** packages/ui/src -- the root every source kind lives under. */
@@ -1267,11 +1294,54 @@ function tryReadTs(dir: string, name: string): { content: string; ext: string } 
 }
 
 /**
+ * Collapse one level of parent-relative import so a primitive that lives in a
+ * source subdir (`primitives/editor/<name>.ts`) serves content identical to a
+ * flat primitive. In the source tree a nested editor primitive reaches its
+ * flat behavior-layer siblings via `../memory` and reaches `components/` via
+ * `../../components/...`; in the FLAT served/consumer layout (every primitive
+ * side by side under `lib/primitives/`) those must read `./memory` and
+ * `../components/...`. Stripping exactly one `../` does both:
+ *   `../memory`                 -> `./memory`
+ *   `../../components/editor/x`  -> `../components/editor/x`
+ * Editor-internal `./sibling` imports are already flat and untouched. This
+ * runs BEFORE dependency analysis, so `../memory` is seen as the sibling
+ * primitive `./memory` and is not silently dropped from the closure (#2018).
+ */
+function flattenNestedPrimitiveImports(content: string): string {
+  return content.replace(
+    /(from\s+['"])((?:\.\.\/)+)([^'"]*)(['"])/g,
+    (_m, pre: string, ups: string, rest: string, post: string) => {
+      const levels = ups.length / 3 - 1;
+      const prefix = levels <= 0 ? './' : '../'.repeat(levels);
+      return `${pre}${prefix}${rest}${post}`;
+    },
+  );
+}
+
+/**
+ * Read a primitive's source, flat root first then the known `editor/` subdir.
+ * Content read from a subdir is flattened so the served text matches the flat
+ * consumer layout. Returns null when the primitive exists in neither place.
+ */
+function readPrimitiveSource(
+  primitivesDir: string,
+  name: string,
+): { content: string; ext: string } | null {
+  const flat = tryReadTs(primitivesDir, name);
+  if (flat) return flat;
+  for (const sub of PRIMITIVE_SUBDIRS) {
+    const nested = tryReadTs(join(primitivesDir, sub), name);
+    if (nested) return { content: flattenNestedPrimitiveImports(nested.content), ext: nested.ext };
+  }
+  return null;
+}
+
+/**
  * Load a single primitive by name
  */
 export function loadPrimitive(name: string): RegistryItem | null {
   const primitivesDir = getPrimitivesPath();
-  const loaded = tryReadTs(primitivesDir, name);
+  const loaded = readPrimitiveSource(primitivesDir, name);
   if (!loaded) return null;
 
   try {
@@ -1295,7 +1365,7 @@ export function loadPrimitive(name: string): RegistryItem | null {
     for (const sibling of siblingImports) {
       if (primitiveDeps.includes(sibling)) continue;
 
-      const siblingLoaded = tryReadTs(primitivesDir, sibling);
+      const siblingLoaded = readPrimitiveSource(primitivesDir, sibling);
       if (siblingLoaded) {
         const siblingAnalysis = analyzeSource(siblingLoaded.content, true);
         files.push({
