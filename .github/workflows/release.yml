@@ -35,6 +35,14 @@ jobs:
         run: npm publish --access=public --provenance
         working-directory: packages/cli
 
+      - name: Publish @rafters/shared to npm
+        run: pnpm publish --access=public --provenance --no-git-checks
+        working-directory: packages/shared
+
+      - name: Publish @rafters/color-utils to npm
+        run: pnpm publish --access=public --provenance --no-git-checks
+        working-directory: packages/color-utils
+
       - name: Create GitHub Release
         run: gh release create "$GITHUB_REF_NAME" --generate-notes
         env:

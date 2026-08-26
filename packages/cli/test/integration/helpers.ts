@@ -23,13 +23,24 @@ interface CommandResult {
   stderr: string;
 }
 
+interface SpawnOptions {
+  /** Kill the child after this many ms. Defaults to EXEC_TIMEOUT_MS. */
+  timeoutMs?: number;
+}
+
 /**
- * Execute rafters CLI command and wait for completion.
- * Kills the process after EXEC_TIMEOUT_MS to prevent orphaned processes.
+ * Spawn a process, capture stdout/stderr, and resolve on close.
+ * Kills the process after `timeoutMs` to prevent orphaned processes.
  */
-export async function execCli(cwd: string, args: string[]): Promise<CommandResult> {
+function spawnCaptured(
+  command: string,
+  args: string[],
+  cwd: string,
+  options: SpawnOptions = {},
+): Promise<CommandResult> {
+  const timeoutMs = options.timeoutMs ?? EXEC_TIMEOUT_MS;
   return new Promise((resolve) => {
-    const child = spawn('node', [CLI_BIN, ...args], {
+    const child = spawn(command, args, {
       cwd,
       env: { ...process.env, NODE_ENV: 'test' },
     });
@@ -42,15 +53,15 @@ export async function execCli(cwd: string, args: string[]): Promise<CommandResul
       resolve({
         exitCode: 1,
         stdout,
-        stderr: `${stderr}\nProcess killed after ${EXEC_TIMEOUT_MS}ms timeout`,
+        stderr: `${stderr}\nProcess killed after ${timeoutMs}ms timeout`,
       });
-    }, EXEC_TIMEOUT_MS);
+    }, timeoutMs);
 
-    child.stdout.on('data', (data: Buffer) => {
+    child.stdout?.on('data', (data: Buffer) => {
       stdout += data.toString();
     });
 
-    child.stderr.on('data', (data: Buffer) => {
+    child.stderr?.on('data', (data: Buffer) => {
       stderr += data.toString();
     });
 
@@ -64,6 +75,32 @@ export async function execCli(cwd: string, args: string[]): Promise<CommandResul
       resolve({ exitCode: 1, stdout, stderr: stderr + err.message });
     });
   });
+}
+
+/**
+ * Execute rafters CLI command and wait for completion.
+ * Kills the process after `timeoutMs` (default 25s) to prevent orphaned processes.
+ * Pass a larger `timeoutMs` for commands that perform a real package-manager install.
+ */
+export async function execCli(
+  cwd: string,
+  args: string[],
+  options: SpawnOptions = {},
+): Promise<CommandResult> {
+  return spawnCaptured('node', [CLI_BIN, ...args], cwd, options);
+}
+
+/**
+ * Run the fixture's locally-installed TypeScript compiler (`node_modules/.bin/tsc`).
+ * Used to prove that an installed dependency's imports resolve in a fresh consumer.
+ */
+export async function execTsc(
+  cwd: string,
+  args: string[],
+  options: SpawnOptions = {},
+): Promise<CommandResult> {
+  const tscBin = join(cwd, 'node_modules', '.bin', 'tsc');
+  return spawnCaptured(tscBin, args, cwd, options);
 }
 
 /**
