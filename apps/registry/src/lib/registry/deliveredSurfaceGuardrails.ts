@@ -222,8 +222,4 @@ export const KNOWN_IMPORT_VIOLATIONS: ReadonlySet<string> = new Set([
   'lib/primitives/motion-tokens.ts',
 ]);
 
-export const KNOWN_SHADOW_MATH_VIOLATIONS: ReadonlySet<string> = new Set([
-  // oklch-gamut.ts hand-rolls inSrgb/inP3/findMaxChroma -- removed by the
-  // color-primitives companion issue (adopt @rafters/color-utils, #2133).
-  'lib/primitives/oklch-gamut.ts',
-]);
+export const KNOWN_SHADOW_MATH_VIOLATIONS: ReadonlySet<string> = new Set([]);
