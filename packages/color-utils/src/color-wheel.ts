@@ -9,6 +9,7 @@
 import type { ColorValue, OKLCH } from '@rafters/shared';
 import { buildColorValue } from './builder.js';
 import { roundOKLCH } from './conversion.js';
+import { clamp, VIVID_CHROMA_CAP } from './internal/math.js';
 import { adjustHue } from './manipulation.js';
 import { statusAnchor } from './semantic.js';
 
@@ -132,8 +133,8 @@ function complementaryWheel(seed: OKLCH, options: ColorWheelOptions): SemanticCo
 
   // tertiary: CTA from complement hue, chroma boosted but capped, mid lightness
   const tertiaryRaw: OKLCH = {
-    l: Math.max(0.45, Math.min(0.65, seed.l)),
-    c: Math.min(0.3, seed.c * 1.2),
+    l: clamp(seed.l, 0.45, 0.65),
+    c: Math.min(VIVID_CHROMA_CAP, seed.c * 1.2),
     h: accentOklch.h,
     alpha,
   };

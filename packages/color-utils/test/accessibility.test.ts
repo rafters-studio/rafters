@@ -6,7 +6,7 @@
 
 import type { ColorValue, OKLCH } from '@rafters/shared';
 import { describe, expect, it } from 'vitest';
-import { rebakeAccessibility } from '../src/accessibility.js';
+import { minFontSizeForAPCA, rebakeAccessibility } from '../src/accessibility.js';
 import { generateOKLCHScale } from '../src/harmony.js';
 import { SCALE_POSITIONS } from '../src/scale-positions.js';
 
@@ -46,5 +46,30 @@ describe('rebakeAccessibility', () => {
     const baked = rebakeAccessibility(value);
     expect(baked.accessibility?.onWhite.contrastRatio).toBeGreaterThan(0);
     expect(baked.accessibility?.wcagAAA?.normal).not.toEqual([[0, 0]]);
+  });
+});
+
+describe('minFontSizeForAPCA', () => {
+  // Pins the breakpoint table that builder.ts now derives
+  // ColorValue.accessibility.apca.minFontSize from, instead of re-encoding
+  // 60/45 inline. The boundaries are inclusive on the lower edge.
+  it('returns 16 at and above the 60 breakpoint', () => {
+    expect(minFontSizeForAPCA(60)).toBe(16);
+    expect(minFontSizeForAPCA(90)).toBe(16);
+  });
+
+  it('returns 24 between the 45 and 60 breakpoints', () => {
+    expect(minFontSizeForAPCA(59.999)).toBe(24);
+    expect(minFontSizeForAPCA(45)).toBe(24);
+  });
+
+  it('returns 32 below the 45 breakpoint', () => {
+    expect(minFontSizeForAPCA(44.999)).toBe(32);
+    expect(minFontSizeForAPCA(0)).toBe(32);
+  });
+
+  it('reads magnitude, not polarity', () => {
+    expect(minFontSizeForAPCA(-75)).toBe(16);
+    expect(minFontSizeForAPCA(-50)).toBe(24);
   });
 });
