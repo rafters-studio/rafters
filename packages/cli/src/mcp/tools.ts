@@ -715,12 +715,13 @@ export class RaftersToolHandler {
 
   /**
    * Resolve a workspace's overlay context: the configured `componentTarget`
-   * (echoed as-is, `undefined` in degraded mode) and its installed set. Per the
-   * integration note on #2074, `installed.primitives` folds into the components
-   * set -- a `primitive`-kind item maps to graph kind `component`, so without the
-   * fold every installed primitive would misreport as `available`. Built here
-   * rather than by mutating `buildInstalledSet`'s output, leaving overlay.ts
-   * untouched.
+   * (echoed as-is, `undefined` in degraded mode) and its installed set. The
+   * installed set is measured from disk via `scanInstalled`, not read off
+   * `config.installed` -- see that method's header for why. Per the
+   * integration note on #2074, a scanned primitive folds into the components
+   * set (`scanInstalled` does this itself) -- a `primitive`-kind item maps to
+   * graph kind `component`, so without the fold every installed primitive
+   * would misreport as `available`.
    *
    * `componentTarget` comes off unvalidated on-disk config (`readConfig` is a raw
    * `JSON.parse`), so it is run through `ComponentTargetSchema` here rather than
@@ -733,12 +734,13 @@ export class RaftersToolHandler {
   ): Promise<OverlayContext | OverlayConfigError> {
     const config = workspace ? await this.readConfig(workspace.root) : null;
 
-    // Validate BEFORE anything downstream touches `installed`. `readConfig`
+    // Validate BEFORE anything downstream touches a path field. `readConfig`
     // already returns null (not a throw) for a missing file or JSON that fails
     // to parse/migrate; this guard closes the OTHER gap -- config that parses
-    // fine but has a wrong-shaped `installed` block. The union return type is
-    // the guard all three call sites inherit: skipping the `'configError' in
-    // ctx` narrowing fails to typecheck, not just at runtime.
+    // fine but has a wrong-shaped path field (e.g. `componentsPath` as a
+    // number). The union return type is the guard all three call sites
+    // inherit: skipping the `'configError' in ctx` narrowing fails to
+    // typecheck, not just at runtime.
     const parsedPaths = OverlayPathsSchema.safeParse(config ?? {});
     if (!parsedPaths.success) {
       const issue = parsedPaths.error.issues[0];
