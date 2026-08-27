@@ -20,10 +20,13 @@ const WCAG_CONTRAST_THRESHOLDS = {
 } as const;
 
 /**
- * APCA contrast thresholds by minimum readable font size, most demanding
- * first. The single encoding of these breakpoints: minFontSizeForAPCA reads
- * down the table, and builder.ts derives ColorValue.accessibility.apca from it
- * rather than repeating the numbers.
+ * Breakpoints for ColorValue.accessibility.apca.minFontSize, most demanding
+ * first. This is builder.ts's own two-breakpoint ternary (16px at >=60,
+ * 24px at >=45, 32px otherwise), pulled out so it is encoded once instead of
+ * inline in buildColorValue. It is not a general APCA font-size table -- the
+ * finer-grained small/medium/large breakpoints that once lived in the now
+ * -deleted, uncalled `meetsAPCAStandard` do not appear here; that function
+ * had zero callers repo-wide and its table was never reconciled with this one.
  */
 const APCA_FONT_SIZE_THRESHOLDS: readonly { minFontSize: number; minContrast: number }[] = [
   { minFontSize: 16, minContrast: 60 },
@@ -32,9 +35,10 @@ const APCA_FONT_SIZE_THRESHOLDS: readonly { minFontSize: number; minContrast: nu
 ];
 
 /**
- * Smallest font size (in px) that stays readable at the given APCA contrast.
- * Contrast sign is irrelevant -- APCA reports polarity, magnitude is what
- * carries legibility.
+ * Smallest font size (in px) that stays readable at the given APCA contrast,
+ * per ColorValue.accessibility.apca.minFontSize's existing breakpoints (see
+ * APCA_FONT_SIZE_THRESHOLDS). Contrast sign is irrelevant -- APCA reports
+ * polarity, magnitude is what carries legibility.
  */
 export function minFontSizeForAPCA(contrast: number): number {
   const magnitude = Math.abs(contrast);
