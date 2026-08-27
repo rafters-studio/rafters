@@ -36,9 +36,11 @@
  * then the <script> hands each instance to bindTooltip -- the SAME DOM-native
  * client the Web Component uses. One score, three performances.
  *
- * The content stays in light DOM (present-but-hidden) so the hover-delay
- * primitive the bind composes can read it, and so it is crawlable before JS.
- * Positioning and hover timing are the bind's job; this is enter-only.
+ * The content stays in light DOM -- present, never `hidden`, revealed by the
+ * stylesheet's `:hover` / `:focus-visible` rule -- so the tip works with
+ * JavaScript turned off and is crawlable before JS. Hover-intent timing is
+ * `transition-delay` on a token (#2148), not a timer; positioning is the bind's
+ * job.
  *
  * The root is a semantic <div data-part="root">, not <rafters-tooltip> (#2004):
  * this target never registers the custom element, so the tag was an unknown
@@ -55,8 +57,6 @@ interface Props {
   id: string;
   /** Tooltip text content. */
   content: string;
-  delayDuration?: number;
-  skipDelayDuration?: number;
   disableHoverableContent?: boolean;
   defaultOpen?: boolean;
   side?: TooltipConfig['side'];
@@ -67,8 +67,6 @@ interface Props {
 const {
   id,
   content,
-  delayDuration,
-  skipDelayDuration,
   disableHoverableContent = false,
   defaultOpen = false,
   side,
@@ -78,8 +76,6 @@ const {
 
 const config: TooltipConfig = {
   defaultOpen,
-  delayDuration,
-  skipDelayDuration,
   disableHoverableContent,
   side,
   align,
@@ -98,10 +94,6 @@ const open = state.open;
 <div
   data-part="root"
   data-tooltip
-  data-delay-duration={delayDuration === undefined ? undefined : String(delayDuration)}
-  data-skip-delay-duration={skipDelayDuration === undefined
-    ? undefined
-    : String(skipDelayDuration)}
   data-disable-hoverable-content={String(disableHoverableContent)}
   data-default-open={String(defaultOpen)}
   data-side={placement.side}
@@ -124,7 +116,6 @@ const open = state.open;
     data-part="content"
     class={classes.content}
     data-state={open ? 'open' : 'closed'}
-    hidden={!open}
     {...aria.content}
   >
     {content}
