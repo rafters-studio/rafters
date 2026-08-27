@@ -9,7 +9,7 @@
  * the Astro and web-component wrappers use, so behavior cannot drift between frameworks.
  *
  * Trigger and Content render NO open-derived attributes that the controller owns once
- * mounted (it reflects aria-expanded / data-state / hidden before paint); they render
+ * mounted (it reflects aria-expanded / data-state before paint); they render
  * only a static, non-reactive initial state for SSR so the server HTML is correct and
  * re-renders cannot clobber the controller. The decorative Viewport and Indicator are
  * the exception: they subscribe to the controller's open value to size / position
@@ -67,6 +67,14 @@ export class RaftersNavigationMenu extends HTMLElement {
 
   connectedCallback(): void {
     if (!this.hasAttribute('role')) this.setAttribute('role', 'navigation');
+    // Target parity: the Astro and React roots are `<nav data-part="root">`, so
+    // the host carries the marker too and a generic part lookup -- the
+    // conformance harness's, or a consumer's own query -- resolves the root to
+    // the same element on all three performances. The dismissal does NOT depend
+    // on it: that flag is `data-dismissed` on the panel itself
+    // (navigation-menu.classes.ts), and the bind path finds the root without
+    // the attribute because getPart special-cases it.
+    if (!this.hasAttribute('data-part')) this.dataset['part'] = 'root';
     // connectedCallback can fire before the light-DOM children are parsed
     // (upgrade order), so bind on the next microtask when the parts exist.
     queueMicrotask(() => {

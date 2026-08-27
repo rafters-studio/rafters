@@ -69,9 +69,13 @@ describe('hover-card actions', () => {
 });
 
 describe('hover-card aria projection', () => {
-  it('closed: trigger is described-by nothing and never expanded', () => {
+  it('closed: STILL described-by the content, and never expanded', () => {
+    // UNCONDITIONAL (#2148). The preview is present in the DOM at all times and
+    // the reveal is CSS, so gating the description on `open` would mean the
+    // trigger has no description during the frames JavaScript considers it
+    // closed -- and, on a JS-off page, never.
     const aria = ariaAt(closed);
-    expect(aria.trigger?.['aria-describedby']).toBeUndefined();
+    expect(aria.trigger?.['aria-describedby']).toBe('c');
     // A hover-card trigger is described, not expanded: the disclosure
     // projection is suppressed.
     expect(aria.trigger?.['aria-expanded']).toBeUndefined();
@@ -86,7 +90,7 @@ describe('hover-card aria projection', () => {
     expect(aria.trigger?.['data-state']).toBe('open');
   });
 
-  it('open with an empty content id projects NO dangling describedby', () => {
+  it('an empty content id projects NO dangling describedby', () => {
     const aria = ariaAt(openUncontrolled, { trigger: 't', content: '' });
     expect(aria.trigger?.['aria-describedby']).toBeUndefined();
   });
