@@ -552,9 +552,6 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.90.20
         version: 5.90.20(react@19.2.0)
-      colorjs.io:
-        specifier: ^0.5.2
-        version: 0.5.2
       gsap:
         specifier: ^3.14.2
         version: 3.14.2

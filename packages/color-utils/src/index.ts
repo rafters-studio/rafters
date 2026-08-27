@@ -8,15 +8,17 @@ export {
   type AccessibilityMetadata,
   calculateAPCAContrast,
   calculateWCAGContrast,
-  findAccessibleColor,
   generateAccessibilityMetadata,
-  meetsAPCAStandard,
-  meetsWCAGStandard,
   rebakeAccessibility,
 } from './accessibility.js';
 
 // Analysis
-export { calculateColorDistance, getColorTemperature, isLightColor } from './analysis.js';
+export {
+  calculateAtmosphericWeight,
+  calculatePerceptualWeight,
+  getColorTemperature,
+  isLightColor,
+} from './analysis.js';
 
 // Builder
 export { type BuildColorValueOptions, buildColorValue } from './builder.js';
@@ -30,7 +32,13 @@ export {
 } from './color-wheel.js';
 
 // Conversion
-export { hexToOKLCH, oklchToCSS, oklchToHex, roundOKLCH, tryParseColor } from './conversion.js';
+export {
+  hexToOKLCH,
+  type OklchToCSSOptions,
+  oklchToCSS,
+  roundOKLCH,
+  tryParseColor,
+} from './conversion.js';
 
 // Gamut
 export {
@@ -44,24 +52,10 @@ export {
 } from './gamut.js';
 
 // Harmony
-export {
-  calculateAtmosphericWeight,
-  calculatePerceptualWeight,
-  generateHarmony,
-  generateOKLCHScale,
-} from './harmony.js';
+export { generateHarmony, generateOKLCHScale } from './harmony.js';
 
 // Manipulation
-export {
-  adjustChroma,
-  adjustHue,
-  adjustLightness,
-  blendColors,
-  darken,
-  generateNeutralColor,
-  generateSurfaceColor,
-  lighten,
-} from './manipulation.js';
+export { adjustHue } from './manipulation.js';
 // Naming
 export {
   BLUE_HUB,
@@ -114,10 +108,3 @@ export {
   semanticFor,
   statusAnchor,
 } from './semantic.js';
-
-// Validation
-export {
-  type AccessibilityAlert,
-  type SemanticMapping,
-  validateSemanticMappings,
-} from './validation-alerts.js';
