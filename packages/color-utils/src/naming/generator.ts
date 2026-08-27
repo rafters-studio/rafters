@@ -15,8 +15,7 @@
  */
 
 import type { OKLCH } from '@rafters/shared';
-import { getColorTemperature } from '../analysis.js';
-import { calculatePerceptualWeight } from '../harmony.js';
+import { calculatePerceptualWeight, getColorTemperature } from '../analysis.js';
 import { getExpandedMaterialWord, hasExpandedHub } from './hue-hubs.js';
 import { getCBucket, getHBucket, getLBucket } from './quantize.js';
 import { INTENSITY_WORDS, LUMINOSITY_WORDS, MATERIAL_WORDS } from './word-banks.js';

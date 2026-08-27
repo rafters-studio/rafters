@@ -3,13 +3,9 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_RATIOS, findRatio, type Ratio, RatioSchema, ratioValue } from '../src/ratios';
+import { DEFAULT_RATIOS, type Ratio, RatioSchema, ratioValue, resolveRatio } from '../src/ratios';
 
-const need = (name: string): Ratio => {
-  const r = findRatio(DEFAULT_RATIOS, name);
-  if (!r) throw new Error(`Default registry missing ${name}`);
-  return r;
-};
+const need = (name: string): Ratio => resolveRatio(name);
 
 describe('RatioSchema', () => {
   it('validates a well-formed ratio', () => {
@@ -45,7 +41,7 @@ describe('DEFAULT_RATIOS registry', () => {
       'perfect-fifth',
       'golden',
     ]) {
-      expect(findRatio(DEFAULT_RATIOS, name)).toBeDefined();
+      expect(DEFAULT_RATIOS.find((r) => r.name === name)).toBeDefined();
     }
   });
 
@@ -66,18 +62,6 @@ describe('ratioValue', () => {
     expect(ratioValue(need('perfect-fifth'))).toBeCloseTo(3 / 2, 6);
     expect(ratioValue(need('golden'))).toBeCloseTo((1 + Math.sqrt(5)) / 2, 6);
     expect(ratioValue(need('augmented-fourth'))).toBeCloseTo(Math.SQRT2, 10);
-  });
-});
-
-describe('findRatio', () => {
-  it('returns the matching item or undefined', () => {
-    expect(findRatio(DEFAULT_RATIOS, 'golden')?.name).toBe('golden');
-    expect(findRatio(DEFAULT_RATIOS, 'nonexistent-xyz')).toBeUndefined();
-  });
-
-  it('user-defined ratios are found in user-supplied registries', () => {
-    const custom: Ratio[] = [{ name: 'spice', a: 7, b: 4 }];
-    expect(findRatio(custom, 'spice')?.a).toBe(7);
   });
 });
 

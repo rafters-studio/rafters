@@ -1,90 +1,94 @@
 # @rafters/math-utils
 
-> Mathematical utilities for design token generation used across Rafters.
+> Ratio and unit registries plus the math operations Rafters design tokens are built from.
 
-Provides lightweight, well-documented helpers for expression evaluation,
-progressions, musical/mathematical ratios, and simple unit-aware arithmetic.
+This package ships two data registries -- named ratios (musical intervals,
+mathematical constants) and named CSS units -- and the operations that work
+on them: looking up a ratio or unit by name, computing a ratio's numeric
+value, parsing a CSS value string, generating a modular type scale, and
+evaluating an arithmetic expression with ratio and variable substitution.
+Built-in and user-supplied registry entries are treated identically; nothing
+in this package hard-codes a canonical list.
 
 ## Install
 
-This package is intended to be consumed via the monorepo workspace. From the
-monorepo root you can import it as a workspace package:
-
 ```bash
-pnpm install
+pnpm add @rafters/math-utils
 ```
 
-Or import in another package:
+This package publishes its TypeScript source directly (no compiled output),
+so it needs a bundler or a TypeScript-aware runtime to import -- `tsx`,
+`vite`, `tsup`, `esbuild`, or similar. Plain `node` cannot import it.
+
+## API
+
+### `resolveRatio(name, registry?)`
+
+Look up a ratio by name. Throws if the name isn't in the registry. Defaults
+to `DEFAULT_RATIOS`.
+
+```ts
+import { resolveRatio } from '@rafters/math-utils';
+
+const golden = resolveRatio('golden'); // { name: 'golden', a: 1.618033988749, b: 1 }
+```
+
+### `ratioValue(ratio)`
+
+Compute a ratio's numeric value: `a / b`.
+
+```ts
+import { ratioValue, resolveRatio } from '@rafters/math-utils';
+
+ratioValue(resolveRatio('perfect-fifth')); // 1.5
+```
+
+### `tryParseUnit(cssValue, registry?)`
+
+Parse a CSS value string like `"16px"` into `{ value, unit }`. Returns `null`
+on invalid input instead of throwing. Defaults to `DEFAULT_UNITS`.
+
+```ts
+import { tryParseUnit } from '@rafters/math-utils';
+
+tryParseUnit('16px'); // { value: 16, unit: { name: 'px', kind: 'length', toBase: 1 } }
+tryParseUnit('not-a-value'); // null
+```
+
+### `generateModularScale(ratio, base, steps?)`
+
+Build a typography-style modular scale from a ratio: `steps` sizes smaller
+than `base` and `steps` sizes larger (default 5 each side).
+
+```ts
+import { generateModularScale, resolveRatio } from '@rafters/math-utils';
+
+const scale = generateModularScale(resolveRatio('major-third'), 16, 3);
+// { smaller: [8.192, 10.24, 12.8], base: 16, larger: [20, 25, 31.25] }
+```
+
+### `evaluateExpression(expression, options?)`
+
+Evaluate an arithmetic expression, substituting `{name}`-braced variables and
+bare named ratios from a registry before evaluating.
 
 ```ts
 import { evaluateExpression } from '@rafters/math-utils';
+
+evaluateExpression('{base} * golden', { variables: { base: 16 } }); // ~25.888
+evaluateExpression('(2 + 3) * 4'); // 20
 ```
 
-## Key Features
+## Schemas and registries
 
-- Safe expression evaluation with ratio and variable substitution (`evaluateExpression`).
-- Progression and scale generators (`generateProgression`, `generateModularScale`, `generateMusicalScale`).
-- Helpers for interpolation, finding closest progression steps, and Fibonacci-like sequences.
-- Unit-aware parsing and simple operations for CSS values (`parseUnit`, `formatUnit`, `calculateWithUnits`, `convertUnit`, `evaluateWithUnits`).
-
-## Quick Examples
-
-```ts
-import {
-  evaluateExpression,
-  calculateProgressionStep,
-  generateProgression,
-  interpolate,
-  parseUnit,
-  calculateWithUnits,
-  evaluateWithUnits,
-} from '@rafters/math-utils';
-
-// Evaluate a math expression using named ratios
-evaluateExpression('16 * golden'); // ~25.888
-
-// Get a progression step using golden ratio
-calculateProgressionStep(16, 'golden', 2); // number
-
-// Generate a linear progression
-generateProgression('linear', { baseValue: 4, steps: 5, includeZero: true });
-
-// Interpolate between two values with easing
-interpolate(10, 20, 0.5, 'linear'); // 15
-
-// Work with units
-parseUnit('16px'); // { value: 16, unit: 'px' }
-calculateWithUnits('16px', '*', 1.5); // '24px'
-evaluateWithUnits('base * golden', { base: '16px' }); // '25.888px' (approx)
-```
-
-## API Reference (selected)
-
-- `evaluateExpression(expression: string, variables?: Record<string, number>): number` — Evaluate numeric expressions with ratio and variable substitution.
-- `calculateProgressionStep(baseValue: number, progressionType: string, step: number, multiplier?: number): number` — Compute a single step for a progression.
-- `findClosestProgressionStep(targetValue: number, baseValue: number, progressionType: string, maxSteps?: number)` — Find the nearest progression value.
-- `generateProgression(type: ProgressionType, options: ProgressionOptions): number[]` — Generate sequences.
-- `generateModularScale(ratio: ProgressionType, baseSize: number, steps?: number)` — Modular typography scale.
-- `parseUnit(cssValue: string): UnitValue` — Parse CSS value into numeric value + unit.
-- `calculateWithUnits(left: string, operator: '+' | '-' | '*' | '/', right: string | number): string` — Unit-aware operations.
-- `convertUnit(value: string, targetUnit: CSSUnit, context?): string` — Simplified unit conversion.
-- `evaluateWithUnits(expression: string, variables?: Record<string, string>): string` — Evaluate simple unit expressions.
+`RatioSchema` and `UnitSchema` are Zod schemas for the `Ratio` and `Unit`
+types; `DEFAULT_RATIOS` and `DEFAULT_UNITS` are the starter registries every
+function above defaults to when no registry is supplied.
 
 ## Testing
 
 Run tests from the monorepo root:
 
 ```bash
-pnpm -w test:unit
+pnpm --filter @rafters/math-utils test
 ```
-
-## Notes
-
-- The expression evaluator is intentionally conservative (no `eval`) and uses a
-  recursive-descent parser for safety.
-- Unit conversion is simplified and requires context for accurate conversions
-  (e.g., `rem`/`em` conversions depend on font-size context).
-
----
-
-Maintainers: Rafters core team
