@@ -1,12 +1,20 @@
 {
   "name": "@rafters/math-utils",
-  "version": "0.0.1",
-  "private": true,
+  "version": "0.2.3",
   "description": "Mathematical utilities for design token generation",
+  "homepage": "https://rafters.studio",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rafters-studio/rafters.git",
+    "directory": "packages/math-utils"
+  },
   "files": [
-    "src"
+    "src",
+    "LICENSE"
   ],
   "type": "module",
+  "sideEffects": false,
   "exports": {
     ".": "./src/index.ts"
   },
