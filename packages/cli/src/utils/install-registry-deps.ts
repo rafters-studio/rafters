@@ -9,9 +9,13 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { RegistryItem } from '../registry/types.js';
+import { VERSION } from '../version.js';
 import type { ComponentTarget } from './detect.js';
 import { log } from './ui.js';
 import { updateDependencies } from './update-dependencies.js';
+
+/** Prefix identifying a package this monorepo ships in lockstep with the CLI. */
+const RAFTERS_SCOPE_PREFIX = '@rafters/';
 
 export interface InstallRegistryDepsOptions {
   /** Suppress spinner and install output */
@@ -132,8 +136,11 @@ export async function installRegistryDependencies(
   }
 
   // 2. Collect deps to install. Foundational @rafters/* libraries
-  // (color-utils, shared) are published npm packages now, so they flow
-  // through the same install path as any other external dependency.
+  // (math-utils, shared, color-utils) are published npm packages now, so
+  // they flow through the same install path as any other external
+  // dependency -- but pinned to the CLI's own version, never whatever
+  // version the registry file declared, so a consumer's installed code
+  // always matches what this CLI was built against.
   // Drop React-family runtime packages when the target isn't React --
   // those imports are type-only in shared primitives and aren't needed at
   // runtime on astro/vue/wc/vanilla projects.
@@ -143,6 +150,8 @@ export async function installRegistryDependencies(
     const { name } = parseDependency(dep);
     if (dropForTarget && REACT_RUNTIME_PACKAGES.has(name)) {
       result.skipped.push(dep);
+    } else if (name.startsWith(RAFTERS_SCOPE_PREFIX)) {
+      externalDeps.push(`${name}@${VERSION}`);
     } else {
       externalDeps.push(dep);
     }

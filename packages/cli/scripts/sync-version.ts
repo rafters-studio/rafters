@@ -39,9 +39,21 @@ const JSON_TARGETS: ReadonlyArray<{ path: string; versions: number }> = [
   { path: 'plugin/.claude-plugin/plugin.json', versions: 1 },
   // Once for the marketplace itself, once on the rafters plugin entry.
   { path: '.claude-plugin/marketplace.json', versions: 2 },
+  { path: 'packages/math-utils/package.json', versions: 1 },
+  { path: 'packages/shared/package.json', versions: 1 },
+  { path: 'packages/color-utils/package.json', versions: 1 },
 ];
 
 const FRONTMATTER_TARGETS: readonly string[] = ['plugin/skills/rafters-frontend/SKILL.md'];
+
+/**
+ * A TS source file carrying a version constant rewritten textually. Like the
+ * JSON targets, this is a structural guard: the regex must match the
+ * declaration exactly once, or the sync is silently wrong.
+ */
+const CONSTANT_TARGETS: ReadonlyArray<{ path: string; name: string }> = [
+  { path: 'packages/shared/src/version.ts', name: 'RAFTERS_VERSION' },
+];
 
 function requireString(value: unknown, what: string): string {
   if (typeof value !== 'string') {
@@ -101,4 +113,22 @@ for (const relative of FRONTMATTER_TARGETS) {
 
   const synced = block.replace(/^version: .*$/m, `version: ${version}`);
   await writeFile(path, `---\n${synced}\n---\n${source.slice(frontmatter[0].length)}`);
+}
+
+/**
+ * Rewrite a `export const NAME = '...';` literal in a plain TS source file.
+ * Unlike the JSON targets there is no structural parse to validate against,
+ * so the match count is the only guard: zero or more than one is a failure.
+ */
+for (const { path: relative, name } of CONSTANT_TARGETS) {
+  const path = join(REPO_ROOT, relative);
+  const text = await readFile(path, 'utf-8');
+
+  const constantField = new RegExp(`(export const ${name} = )'[^']*'`, 'g');
+  const found = text.match(constantField)?.length ?? 0;
+  if (found !== 1) {
+    throw new Error(`${relative}: expected ${name} exactly once, found ${found}`);
+  }
+
+  await writeFile(path, text.replace(constantField, `$1'${version}'`));
 }
