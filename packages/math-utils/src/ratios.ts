@@ -22,7 +22,7 @@ export type Ratio = z.infer<typeof RatioSchema>;
 export const ratioValue = (r: Ratio): number => r.a / r.b;
 
 /** Look up a ratio by name in a registry. Returns undefined if not found. */
-export const findRatio = (registry: readonly Ratio[], name: string): Ratio | undefined =>
+const findRatio = (registry: readonly Ratio[], name: string): Ratio | undefined =>
   registry.find((r) => r.name === name);
 
 /**

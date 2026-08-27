@@ -9,23 +9,23 @@
  */
 
 import type { ColorValue, OKLCH } from '@rafters/shared';
-import { assembleWcagAccessibility, calculateAPCAContrast } from './accessibility.js';
-import { getColorTemperature, isLightColor } from './analysis.js';
+import {
+  assembleWcagAccessibility,
+  calculateAPCAContrast,
+  CONTRAST_BLACK,
+  CONTRAST_WHITE,
+  minFontSizeForAPCA,
+} from './accessibility.js';
 import {
   calculateAtmosphericWeight,
   calculatePerceptualWeight,
-  generateHarmony,
-  generateOKLCHScale,
-} from './harmony.js';
+  getColorTemperature,
+  isLightColor,
+} from './analysis.js';
+import { generateHarmony, generateOKLCHScale } from './harmony.js';
 import { generateColorName } from './naming/index.js';
 import { SCALE_POSITIONS } from './scale-positions.js';
 import { generateSemanticColorSuggestions } from './semantic.js';
-
-/** White reference color for contrast calculations */
-const WHITE: OKLCH = { l: 1, c: 0, h: 0, alpha: 1 };
-
-/** Black reference color for contrast calculations */
-const BLACK: OKLCH = { l: 0, c: 0, h: 0, alpha: 1 };
 
 /**
  * Options for building a ColorValue
@@ -94,8 +94,8 @@ export function buildColorValue(oklch: OKLCH, options: BuildColorValueOptions = 
   // WCAG accessibility (pair matrices + on-white/on-black) via the shared
   // assembler; APCA is layered on below, builder-only.
   const wcagAccessibility = assembleWcagAccessibility(scale, oklch);
-  const apcaOnWhite = calculateAPCAContrast(oklch, WHITE);
-  const apcaOnBlack = calculateAPCAContrast(oklch, BLACK);
+  const apcaOnWhite = calculateAPCAContrast(oklch, CONTRAST_WHITE);
+  const apcaOnBlack = calculateAPCAContrast(oklch, CONTRAST_BLACK);
 
   // Get color analysis
   const temperature = getColorTemperature(oklch);
@@ -139,7 +139,7 @@ export function buildColorValue(oklch: OKLCH, options: BuildColorValueOptions = 
       apca: {
         onWhite: apcaOnWhite,
         onBlack: apcaOnBlack,
-        minFontSize: Math.abs(apcaOnWhite) >= 60 ? 16 : Math.abs(apcaOnWhite) >= 45 ? 24 : 32,
+        minFontSize: minFontSizeForAPCA(apcaOnWhite),
       },
     },
 
