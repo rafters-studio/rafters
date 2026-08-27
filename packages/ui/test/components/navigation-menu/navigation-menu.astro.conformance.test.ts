@@ -1,10 +1,12 @@
 /**
  * Astro performance of the NavigationMenu score, driven end to end.
  * AstroContainer renders the SSR markup with the initial (closed) projection
- * already applied -- content present-but-hidden so links stay crawlable -- but
- * does NOT run the <script>, so the test calls bindNavigationMenu directly --
- * that IS the script's job -- then drives the same score the React and WC
- * performances drive. One score, three performances.
+ * already applied -- content present, never `hidden`, so links stay crawlable
+ * AND the stylesheet's :hover / :focus-within reveal can reach them on a JS-off
+ * page (#2148) -- but does NOT run the <script>, so the test calls
+ * bindNavigationMenu directly -- that IS the script's job -- then drives the
+ * same score the React and WC performances drive. One score, three
+ * performances.
  */
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import userEvent from '@testing-library/user-event';
@@ -39,12 +41,13 @@ afterEach(() => {
   document.body.innerHTML = '';
 });
 
-async function mount(props: Record<string, unknown> = {}): Promise<HTMLElement> {
+async function render(props: Record<string, unknown> = {}): Promise<string> {
   const container = await AstroContainer.create();
-  const html = await container.renderToString(NavigationMenu, {
-    props: { id: 'nav', items, ...props },
-  });
-  document.body.innerHTML = html;
+  return container.renderToString(NavigationMenu, { props: { id: 'nav', items, ...props } });
+}
+
+async function mount(props: Record<string, unknown> = {}): Promise<HTMLElement> {
+  document.body.innerHTML = await render(props);
   const root = document.body.querySelector('nav[data-part="root"]') as HTMLElement;
   bindNavigationMenu(root); // the <script> does this per instance on the real page
   return root;
@@ -54,15 +57,29 @@ const trigger = (value: string) =>
   document.body.querySelector<HTMLElement>(`[data-part="trigger"][data-value="${value}"]`)!;
 const content = (value: string) =>
   document.body.querySelector<HTMLElement>(`[data-part="content"][data-value="${value}"]`)!;
+/** The panel's open axis is `data-state` now; `hidden` is gone for good. */
+const state = (value: string) => content(value).getAttribute('data-state');
 
 describe('navigation-menu conformance [astro]', () => {
-  it('SSR closed: content hidden but present in the DOM (crawlable), triggers collapsed', async () => {
-    await mount();
-    expect(content('products').hidden).toBe(true);
-    expect(content('company').hidden).toBe(true);
+  it('SSR closed: content present, crawlable, and NEVER hidden', async () => {
+    document.body.innerHTML = await render();
+    expect(state('products')).toBe('closed');
+    expect(content('products').hasAttribute('hidden')).toBe(false);
+    expect(content('company').hasAttribute('hidden')).toBe(false);
     // Links are in the DOM even while closed -- SSR-stable and crawlable.
     expect(content('products').querySelector('a[href="/a"]')).not.toBeNull();
     expect(trigger('products').getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('SSR carries the panel open cell and NO delay on close', async () => {
+    const html = await render();
+    // The open cell's delay reaches the page as a class candidate...
+    expect(html).toMatch(/delay-hover-intent/);
+    // ...and the close cell carries no delay generic at all, per motion.jsonl.
+    expect(html).not.toMatch(/delay-linger/);
+    expect(html).not.toMatch(/delay-skip/);
+    // No delay config attribute survives either.
+    expect(html).not.toContain('data-delay-duration');
   });
 
   it('per-instance ARIA equals the score projection, closed (SSR) and open', async () => {
@@ -83,7 +100,7 @@ describe('navigation-menu conformance [astro]', () => {
     const user = userEvent.setup();
     await mount();
     await user.click(trigger('products'));
-    expect(content('products').hidden).toBe(false);
+    expect(state('products')).toBe('open');
     expect(trigger('products').getAttribute('aria-expanded')).toBe('true');
   });
 
@@ -92,43 +109,40 @@ describe('navigation-menu conformance [astro]', () => {
     await mount();
     await user.click(trigger('products'));
     await user.click(trigger('company'));
-    expect(content('company').hidden).toBe(false);
-    expect(content('products').hidden).toBe(true);
+    expect(state('company')).toBe('open');
+    expect(state('products')).toBe('closed');
     expect(trigger('company').getAttribute('aria-expanded')).toBe('true');
     expect(trigger('products').getAttribute('aria-expanded')).toBe('false');
   });
 
-  it('Escape closes the open panel', async () => {
+  it('Escape closes the open panel and raises the dismissal flag', async () => {
     const user = userEvent.setup();
-    await mount();
+    const root = await mount();
     await user.click(trigger('products'));
-    expect(content('products').hidden).toBe(false);
+    expect(state('products')).toBe('open');
     trigger('products').focus();
     await user.keyboard('{Escape}');
-    expect(content('products').hidden).toBe(true);
+    expect(state('products')).toBe('closed');
     expect(trigger('products').getAttribute('aria-expanded')).toBe('false');
+    // Focus is back on the trigger, so `:focus-within` still matches the item --
+    // only the flag can force the panel down (WCAG 1.4.13).
+    expect(root.dataset['dismissed']).toBe('true');
   });
 
   // The #2001 pairing: config is data-* in the markup AND read through dataset
-  // in the bind. Neither `orientation` nor `delay-duration` is valid on a <nav>.
+  // in the bind. `orientation` is not valid on a <nav>; timing is no longer
+  // config at all (#2148), so `orientation` is the only thing left to carry.
   it('config crosses the SSR/bind seam as data-* only, and rehydration still works', async () => {
     const user = userEvent.setup();
-    const root = await mount({ delayDuration: 120 });
+    const root = await mount();
 
-    assertConfigTravelsAsData(root, { orientation: 'horizontal', delayDuration: '120' });
+    assertConfigTravelsAsData(root, { orientation: 'horizontal' });
+    expect(root.hasAttribute('data-delay-duration')).toBe(false);
 
     // Rehydration: opening is wired only by bindNavigationMenu, which built its
     // config from dataset alone.
     await user.click(trigger('products'));
-    expect(content('products').hidden).toBe(false);
+    expect(state('products')).toBe('open');
     expect(trigger('products').getAttribute('aria-expanded')).toBe('true');
-  });
-
-  // #1995: an omitted delay must NOT be frozen into the markup. Absence is what
-  // lets the binding read `--rafters-delay-hover-intent` at mount time.
-  it('omits data-delay-duration when the author did not set one', async () => {
-    const root = await mount();
-    expect(root.dataset['delayDuration']).toBeUndefined();
-    expect(root.hasAttribute('data-delay-duration')).toBe(false);
   });
 });

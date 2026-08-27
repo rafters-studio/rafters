@@ -67,6 +67,10 @@ export class RaftersNavigationMenu extends HTMLElement {
 
   connectedCallback(): void {
     if (!this.hasAttribute('role')) this.setAttribute('role', 'navigation');
+    // Target parity (#2148): the Astro and React roots are `<nav data-part="root">`,
+    // and the panel's dismissal rule is scoped by that marker, so the host has
+    // to carry it too or an Escape could not force the panel back down.
+    if (!this.hasAttribute('data-part')) this.dataset['part'] = 'root';
     // connectedCallback can fire before the light-DOM children are parsed
     // (upgrade order), so bind on the next microtask when the parts exist.
     queueMicrotask(() => {

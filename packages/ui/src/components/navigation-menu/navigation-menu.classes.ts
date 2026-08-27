@@ -18,31 +18,86 @@ const rootClasses = 'relative z-10 flex max-w-max flex-1 items-center justify-ce
 
 const listClasses = 'group flex flex-1 list-none items-center justify-center gap-1';
 
-const itemClasses = 'relative';
+// The item is the hover/focus SCOPE for its own panel (#2148): trigger and
+// content are siblings inside it, and the panel is absolutely positioned flush
+// against the item's bottom edge, so the pointer never crosses a gap travelling
+// from trigger to panel -- which matters here, because navigation-menu's close
+// carries no linger to forgive a flicker. The named group is a marker, not a
+// style: `relative` is still the only declaration the item makes.
+const itemClasses = 'relative group/navigation-item';
 
+// `motion-hover` is the generated semantic utility for the interactive-surface
+// hover cell (color, fast, standard) -- motion.jsonl's navigation-menu /
+// trigger / "hover" row, verbatim, instead of a hand-written transition-colors
+// pair with a literal duration and a component-level reduced-motion escape.
 const triggerClasses =
   'group inline-flex h-11 @md:h-10 w-max items-center justify-center rounded-md ' +
   'bg-background px-4 py-2 text-label-medium ts-label-medium cursor-pointer ' +
-  'transition-colors duration-150 motion-reduce:transition-none ' +
+  'motion-hover ' +
   'hover:bg-accent hover:text-accent-foreground ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ' +
   'disabled:opacity-50 disabled:cursor-not-allowed ' +
   'data-[state=open]:bg-accent-subtle';
 
-const triggerChevronClasses =
-  'ml-1 h-3 w-3 transition-transform duration-200 motion-reduce:transition-none ' +
-  'group-data-[state=open]:rotate-180';
+// The chevron turns with the panel it announces, so it takes the panel's own
+// item-change tier through `motion-toggle` (transform, moderate, standard).
+const triggerChevronClasses = 'ml-1 h-3 w-3 motion-toggle group-data-[state=open]:rotate-180';
 
-// Animated enter/exit awaits the motion-utility wiring (#7): the rafters
-// sheet emits @keyframes + --ease/--duration vars but no ready animate-in
-// utilities, and the panel toggles `hidden` (a display:none node cannot
-// transition). Static until the presence-visible motion utilities land.
+// MOTION IS CSS AND TOKENS ONLY (#2148). The hover-intent delay that used to be
+// a JavaScript timer reading the `hover-intent` delay token through the DOM is
+// now `transition-delay` on the reveal rule, and the reveal itself is the item's
+// native `:hover` / `:focus-within` -- so the panel opens on a JS-off page.
+//
+// THE CELL IS THE SPEC. These utilities are the consumption of two rows of
+// packages/ui/docs/spec/matrix/motion.jsonl -- navigation-menu / panel /
+// "closed -> open" (moderate, enter, delay hover-intent) and navigation-menu /
+// panel / "open -> closed" (fast, exit, NO delay). The old
+// `createMenuHoverIntent` reused the hover-intent delay for its CLOSE timer as
+// well; that was drift against the matrix, and the close is now immediate --
+// still animated over the fast/exit cell, just not held back.
+//
+// The CLOSED cell is the base rule and the OPEN cell is the reveal rule, which
+// is how a CSS transition already works: whichever rule currently applies owns
+// the duration/curve/delay of the change into it.
+//
+// The `data-[state=open]` path is the JS-on half: keyboard opening (ArrowDown,
+// Enter/Space), a controlled `value`, and a tap on a device with no hover all
+// reach the panel through the score rather than through `:hover`. It carries the
+// same open cell, so the two paths cannot drift.
+//
+// `data-dismissed` on the root is the WCAG 1.4.13 dismissal flag, raised by an
+// Escape keydown and cleared by a deliberate reopen or by the pointer/focus
+// leaving the menu. It has to win against reveal rules that are one class-level
+// more specific, hence the important form: after Escape the focus returns to
+// the trigger, so `:focus-within` still matches and only a force-hide can put
+// the panel back down.
+//
+// NO `hidden` on the panel and no component-level reduced-motion escape.
+// `hidden` is UA-stylesheet `display: none` -- it pulls the panel out of the
+// accessibility tree and out of rendering, which both breaks the aria-labelledby
+// announcement and kills the transition. Reduced motion is the token sheet's own
+// responsibility (the exporter's REDUCED_MOTION_ZEROED set), never a
+// component-level media query.
 const contentClasses =
-  'absolute left-0 top-full w-max rounded-md border bg-popover p-2 text-popover-foreground shadow-lg';
+  'absolute left-0 top-full w-max rounded-md border bg-popover p-2 text-popover-foreground shadow-lg ' +
+  'opacity-0 pointer-events-none transition-opacity duration-fast ease-exit ' +
+  'group-hover/navigation-item:opacity-100 group-hover/navigation-item:pointer-events-auto ' +
+  'group-hover/navigation-item:duration-moderate group-hover/navigation-item:ease-enter ' +
+  'group-hover/navigation-item:delay-hover-intent ' +
+  'group-focus-within/navigation-item:opacity-100 ' +
+  'group-focus-within/navigation-item:pointer-events-auto ' +
+  'group-focus-within/navigation-item:duration-moderate ' +
+  'group-focus-within/navigation-item:ease-enter ' +
+  'group-focus-within/navigation-item:delay-hover-intent ' +
+  'data-[state=open]:opacity-100 data-[state=open]:pointer-events-auto ' +
+  'data-[state=open]:duration-moderate data-[state=open]:ease-enter ' +
+  'data-[state=open]:delay-hover-intent ' +
+  '[[data-part=root][data-dismissed=true]_&]:opacity-0! ' +
+  '[[data-part=root][data-dismissed=true]_&]:pointer-events-none!';
 
 const linkClasses =
   'block select-none space-y-1 rounded-md p-3 no-underline outline-none ' +
-  'transition-colors duration-150 motion-reduce:transition-none ' +
+  'motion-hover ' +
   'hover:bg-accent hover:text-accent-foreground ' +
   'active:bg-muted active:text-foreground ' +
   'focus-visible:bg-accent focus-visible:text-accent-foreground ' +
@@ -54,9 +109,12 @@ const viewportWrapperClasses = 'absolute left-0 top-full';
 const viewportClasses =
   'h-min w-full overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-lg';
 
+// The indicator slides between items as the open panel changes, which is
+// motion.jsonl's navigation-menu / panel / "open -> open (item change)" cell
+// (moderate, standard) -- `motion-toggle`, the generated utility for exactly
+// that tier and curve.
 const indicatorClasses =
-  'absolute bottom-0 z-10 flex h-2.5 items-end justify-center overflow-hidden ' +
-  'transition-transform duration-200 motion-reduce:transition-none';
+  'absolute bottom-0 z-10 flex h-2.5 items-end justify-center overflow-hidden motion-toggle';
 
 const indicatorArrowClasses = 'top-full h-2 w-2 rotate-45 rounded-tl-sm bg-border shadow-md';
 

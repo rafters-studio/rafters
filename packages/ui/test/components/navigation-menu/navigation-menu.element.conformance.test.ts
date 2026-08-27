@@ -2,8 +2,12 @@
  * WC performance of the navigation-menu score, driven end to end against
  * light-DOM markup. Same score as the React conformance test -- the only
  * difference is the controller applies the projection imperatively.
+ *
+ * WHAT CHANGED AT #2148: the panel is never `hidden` and there is no
+ * hover-intent timer. The open axis observable here is `data-state`; the visual
+ * half lives in navigation-menu.classes.ts and test/motion/hover-reveal.e2e.ts.
  */
-import { cleanup, waitFor } from '@testing-library/react';
+import { cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { navigationMenu } from '../../../src/components/navigation-menu/navigation-menu.behavior';
@@ -16,9 +20,9 @@ beforeAll(() => {
   }
 });
 
-async function mount(delayDuration = 1): Promise<HTMLElement> {
+async function mount(): Promise<HTMLElement> {
   document.body.innerHTML = `
-    <rafters-navigation-menu data-delay-duration="${delayDuration}">
+    <rafters-navigation-menu>
       <ul data-part="list">
         <li>
           <button type="button" data-part="trigger" data-value="products" data-roving-item id="t-products">Products</button>
@@ -38,6 +42,8 @@ const trigger = (value: string) =>
   document.body.querySelector<HTMLElement>(`[data-part="trigger"][data-value="${value}"]`)!;
 const content = (value: string) =>
   document.body.querySelector<HTMLElement>(`[data-part="content"][data-value="${value}"]`)!;
+/** The panel's open axis is `data-state` now; `hidden` is gone for good. */
+const state = (value: string) => content(value).getAttribute('data-state');
 
 afterEach(() => {
   cleanup();
@@ -45,20 +51,23 @@ afterEach(() => {
 });
 
 describe('navigation-menu conformance [wc]', () => {
-  it('closed: content hidden and crawlable, aria wired by real ids', async () => {
+  it('closed: content crawlable and NEVER hidden, aria wired by real ids', async () => {
     await mount();
-    expect(content('products').hidden).toBe(true);
-    expect(content('products').getAttribute('data-state')).toBe('closed');
+    expect(content('products').hasAttribute('hidden')).toBe(false);
+    expect(state('products')).toBe('closed');
     expect(trigger('products').getAttribute('aria-expanded')).toBe('false');
     expect(trigger('products').getAttribute('aria-controls')).toBe('c-products');
     expect(content('products').getAttribute('aria-labelledby')).toBe('t-products');
   });
 
+  it('host adopts the data-part=root marker the dismissal rule is scoped by', async () => {
+    const host = await mount();
+    expect(host.dataset['part']).toBe('root');
+  });
+
   it('per-instance ARIA equals the score projection, closed and open', async () => {
     const user = userEvent.setup();
     const root = await mount();
-    // The DOM-native binding writes hidden="true"; the harness asserts by
-    // presence, so the same driver holds across React/WC/Astro.
     assertInstanceAriaFulfillment(navigationMenu, root, { active: null, pointerOpened: false }, {});
     await user.click(trigger('products'));
     assertInstanceAriaFulfillment(
@@ -73,15 +82,15 @@ describe('navigation-menu conformance [wc]', () => {
     const user = userEvent.setup();
     await mount();
     await user.click(trigger('products'));
-    expect(content('products').hidden).toBe(false);
+    expect(state('products')).toBe('open');
     expect(trigger('products').getAttribute('aria-expanded')).toBe('true');
 
     await user.click(trigger('docs'));
-    expect(content('products').hidden).toBe(true);
-    expect(content('docs').hidden).toBe(false);
+    expect(state('products')).toBe('closed');
+    expect(state('docs')).toBe('open');
 
     await user.click(trigger('docs'));
-    expect(content('docs').hidden).toBe(true);
+    expect(state('docs')).toBe('closed');
   });
 
   it('arrow keys rove focus across triggers with wrap', async () => {
@@ -99,31 +108,42 @@ describe('navigation-menu conformance [wc]', () => {
     await mount();
     trigger('products').focus();
     await user.keyboard('{ArrowDown}');
-    expect(content('products').hidden).toBe(false);
+    expect(state('products')).toBe('open');
   });
 
-  it('Escape closes and returns focus to the open trigger', async () => {
+  it('Escape closes, returns focus to the trigger, and raises data-dismissed', async () => {
     const user = userEvent.setup();
-    await mount();
+    const host = await mount();
     await user.click(trigger('products'));
     (content('products').querySelector('a') as HTMLElement).focus();
     await user.keyboard('{Escape}');
-    expect(content('products').hidden).toBe(true);
+    expect(state('products')).toBe('closed');
     expect(document.activeElement).toBe(trigger('products'));
+    // The refocus puts focus back INSIDE the item, so `:focus-within` still
+    // matches -- only the dismissal flag can force the panel back down, and it
+    // is also what stops the refocus from reopening the score (WCAG 1.4.13).
+    expect(host.dataset['dismissed']).toBe('true');
   });
 
-  // The fixture's data-delay-duration is not decoration: it is the hover-intent
-  // window the binding composes. This is the only test that spends it -- hover
-  // must NOT open synchronously, and must open once the window elapses.
-  // Real timers plus waitFor over a short window, matching the hoverable-content
-  // test in the tooltip WC suite; this suite has no fake-timer precedent.
-  it('hover opens the panel only after the configured delay elapses', async () => {
+  it('a deliberate reopen clears the dismissal', async () => {
     const user = userEvent.setup();
-    await mount(60);
+    const host = await mount();
+    await user.click(trigger('products'));
+    trigger('products').focus();
+    await user.keyboard('{Escape}');
+    expect(host.dataset['dismissed']).toBe('true');
+    await user.keyboard('{ArrowDown}');
+    expect(host.dataset['dismissed']).toBeUndefined();
+    expect(state('products')).toBe('open');
+  });
+
+  it('hover opens the panel IMMEDIATELY -- the intent wait is the transition', async () => {
+    // The hover-intent delay is the panel's transition-delay now, so the score
+    // moves on the event and assistive tech is never behind the gesture.
+    const user = userEvent.setup();
+    await mount();
     await user.hover(trigger('products'));
-    // Still shut: the intent window has not elapsed, so hover is not a click.
-    expect(content('products').hidden).toBe(true);
-    await waitFor(() => expect(content('products').hidden).toBe(false));
+    expect(state('products')).toBe('open');
     expect(trigger('products').getAttribute('aria-expanded')).toBe('true');
   });
 
@@ -133,8 +153,8 @@ describe('navigation-menu conformance [wc]', () => {
     const outside = document.createElement('button');
     document.body.appendChild(outside);
     await user.click(trigger('products'));
-    expect(content('products').hidden).toBe(false);
+    expect(state('products')).toBe('open');
     await user.click(outside);
-    expect(content('products').hidden).toBe(true);
+    expect(state('products')).toBe('closed');
   });
 });

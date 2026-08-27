@@ -9,7 +9,7 @@
  *
  * @usage-patterns
  * DO: Show supplementary information like user profiles, link previews, or contextual details
- * DO: Use appropriate delays to prevent accidental triggers (openDelay >= 500ms recommended)
+ * DO: Trust the system hover-intent delay -- it is a token the stylesheet applies, not a per-instance tuning knob
  * DO: Keep content focused and scannable - users glance, not read
  * DO: Position intelligently to avoid viewport edges
  * NEVER: Essential information that should always be visible
@@ -39,14 +39,10 @@ import { createPortal } from 'react-dom';
 import { keyInputOf } from '../../hooks/key-input';
 import { useMemory } from '../../hooks/use-memory';
 import classy from '../../primitives/classy';
-import { createControlledHoverDelay } from '../../primitives/hover-delay';
-import { getPortalContainer } from '../../primitives/portal';
 import { mergeProps } from '../../primitives/slot';
 import type { Align, Side } from '../../primitives/types';
 import { createBehavior, type AriaAttrs, type PartIds } from '../../lib/contract';
 import {
-  DEFAULT_CLOSE_DELAY,
-  DEFAULT_OPEN_DELAY,
   hoverCard,
   isOpen,
   positionHoverCardContent,
@@ -56,8 +52,6 @@ import {
   type HoverCardState,
 } from './hover-card.behavior';
 import { hoverCardClasses, type HoverCardClassSet } from './hover-card.classes';
-
-type HoverDelay = ReturnType<typeof createControlledHoverDelay>;
 
 // ==================== Root context ====================
 
@@ -69,9 +63,10 @@ interface HoverCardContextValue {
   aria: Partial<Record<HoverCardPart, AriaAttrs>>;
   classes: HoverCardClassSet;
   request: (action: keyof HoverCardActions) => boolean;
-  hover: HoverDelay;
   triggerRef: React.RefObject<HTMLElement | null>;
   disableHoverableContent: boolean;
+  /** Escape sets it, a pointer leave or blur clears it (WCAG 1.4.13). */
+  setDismissed: (dismissed: boolean) => void;
 }
 
 const HoverCardContext = React.createContext<HoverCardContextValue | null>(null);
@@ -84,19 +79,11 @@ function useHoverCardContext(component: string): HoverCardContextValue {
   return context;
 }
 
-/** True when rendering inside an explicit <HoverCardPortal> (Radix-style
- *  composition); HoverCardContent then skips its automatic portal. */
-const HoverCardPortalContext = React.createContext(false);
-
 export interface HoverCardProps {
   children: React.ReactNode;
   open?: boolean;
   defaultOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
-  /** Delay before a hovered/focused trigger opens the card. Default 700ms. */
-  openDelay?: number;
-  /** Delay before an un-hovered trigger closes the card. Default 300ms. */
-  closeDelay?: number;
   /** When true, the pointer cannot travel onto the content to hold it open. */
   disableHoverableContent?: boolean;
   side?: Side;
@@ -104,13 +91,19 @@ export interface HoverCardProps {
   sideOffset?: number;
 }
 
+/**
+ * The root renders a REAL wrapper element (#2148), matching hover-card.astro's
+ * `<div data-part="root" data-hover-card>`, so trigger and content are DOM
+ * siblings under a hoverable root. That sibling shape is the whole CSS
+ * contract: the stylesheet reveals the preview through `[data-hover-card]:hover
+ * > [data-part=content]`, which a context-only root (rendering no node at all)
+ * gave it nowhere to attach.
+ */
 export function HoverCardRoot({
   children,
   open,
   defaultOpen = false,
   onOpenChange,
-  openDelay = DEFAULT_OPEN_DELAY,
-  closeDelay = DEFAULT_CLOSE_DELAY,
   disableHoverableContent = false,
   side,
   align,
@@ -119,8 +112,6 @@ export function HoverCardRoot({
   const config: HoverCardConfig = {
     open,
     defaultOpen,
-    openDelay,
-    closeDelay,
     disableHoverableContent,
     side,
     align,
@@ -130,6 +121,7 @@ export function HoverCardRoot({
   const { memory, dispatch } = React.useMemo(() => createBehavior(hoverCard, config), []);
   const state = useMemory(memory);
   const effectiveOpen = isOpen(state, config);
+  const [dismissed, setDismissed] = React.useState(false);
 
   const uid = React.useId();
   const ids = React.useMemo(() => {
@@ -153,21 +145,6 @@ export function HoverCardRoot({
     [dispatch],
   );
 
-  // The hover-intent primitive: one instance per card, its callbacks flow
-  // through the idempotent request so the score stays the single truth.
-  const hover = React.useMemo<HoverDelay>(
-    () =>
-      createControlledHoverDelay({
-        openDelay,
-        closeDelay,
-        onOpen: () => request('open'),
-        onClose: () => request('close'),
-      }),
-    // request is stable; delays are read at open time by the primitive.
-    [request, openDelay, closeDelay],
-  );
-  React.useEffect(() => () => hover.destroy(), [hover]);
-
   const aria = hoverCard.aria(state, config, ids);
 
   const contextValue: HoverCardContextValue = {
@@ -178,12 +155,39 @@ export function HoverCardRoot({
     aria,
     classes: hoverCardClasses(config, state),
     request,
-    hover,
     triggerRef,
     disableHoverableContent,
+    setDismissed,
   };
 
-  return <HoverCardContext.Provider value={contextValue}>{children}</HoverCardContext.Provider>;
+  // The hover SCOPE mirrors the CSS reveal rule: the root by default (so the
+  // pointer can travel onto the preview), the trigger alone when the content is
+  // declared un-hoverable. These handlers move `data-state`, `onOpenChange`,
+  // and positioning -- visibility belongs to the stylesheet, always, and there
+  // is no timer on either side of the transition.
+  const scopeHandlers = disableHoverableContent
+    ? {}
+    : {
+        onPointerEnter: () => request('open'),
+        onPointerLeave: () => {
+          setDismissed(false);
+          request('close');
+        },
+      };
+
+  return (
+    <HoverCardContext.Provider value={contextValue}>
+      <div
+        data-part="root"
+        data-hover-card
+        data-disable-hoverable-content={String(disableHoverableContent)}
+        data-dismissed={dismissed ? 'true' : undefined}
+        {...scopeHandlers}
+      >
+        {children}
+      </div>
+    </HoverCardContext.Provider>
+  );
 }
 
 // ==================== Trigger ====================
@@ -194,16 +198,25 @@ export interface HoverCardTriggerProps extends React.AnchorHTMLAttributes<HTMLAn
 
 export function HoverCardTrigger({
   asChild,
-  onMouseEnter,
-  onMouseLeave,
+  onPointerEnter,
+  onPointerLeave,
   onFocus,
   onBlur,
   onKeyDown,
   children,
   ...props
 }: HoverCardTriggerProps) {
-  const { config, effectiveOpen, ids, aria, classes, hover, triggerRef, request } =
-    useHoverCardContext('HoverCardTrigger');
+  const {
+    config,
+    effectiveOpen,
+    ids,
+    aria,
+    classes,
+    triggerRef,
+    request,
+    disableHoverableContent,
+    setDismissed,
+  } = useHoverCardContext('HoverCardTrigger');
 
   const setRef = React.useCallback(
     (element: HTMLElement | null) => {
@@ -212,35 +225,40 @@ export function HoverCardTrigger({
     [triggerRef],
   );
 
-  const handleMouseEnter = (event: React.MouseEvent<HTMLAnchorElement>) => {
-    onMouseEnter?.(event);
-    hover.onTriggerEnter();
+  const handlePointerEnter = (event: React.PointerEvent<HTMLAnchorElement>) => {
+    onPointerEnter?.(event);
+    // Only when the root is NOT the hover scope -- otherwise the root already
+    // covers the trigger and this would double-dispatch.
+    if (disableHoverableContent) request('open');
   };
-  const handleMouseLeave = (event: React.MouseEvent<HTMLAnchorElement>) => {
-    onMouseLeave?.(event);
-    hover.onTriggerLeave();
+  const handlePointerLeave = (event: React.PointerEvent<HTMLAnchorElement>) => {
+    onPointerLeave?.(event);
+    if (disableHoverableContent) {
+      setDismissed(false);
+      request('close');
+    }
   };
   const handleFocus = (event: React.FocusEvent<HTMLAnchorElement>) => {
     onFocus?.(event);
-    hover.onTriggerFocus();
+    request('open');
   };
   const handleBlur = (event: React.FocusEvent<HTMLAnchorElement>) => {
     onBlur?.(event);
-    hover.onTriggerBlur();
+    setDismissed(false);
+    request('close');
   };
   const handleKeyDown = (event: React.KeyboardEvent<HTMLAnchorElement>) => {
     onKeyDown?.(event);
     if (event.defaultPrevented) return;
-    // The score claims Escape. Dismiss through the score directly (see
-    // bindHoverCard): a defaultOpen card with no prior hover has no pending state
-    // in the hover primitive, so hover.close() alone would not close it. Dispatch
-    // close, then reset the primitive so a re-hover reopens.
+    // The score claims Escape. Dismissal is two moves: close the score (so
+    // data-state and onOpenChange agree) and raise `data-dismissed` on the root,
+    // which the stylesheet force-hides on even while `:hover` still matches.
     if (
       hoverCard.keymap(keyInputOf(event), { open: effectiveOpen }, 'trigger', config) === 'close'
     ) {
       event.preventDefault();
       request('close');
-      hover.close();
+      setDismissed(true);
     }
   };
 
@@ -248,8 +266,8 @@ export function HoverCardTrigger({
     'data-part': 'trigger',
     id: ids.trigger,
     ...aria.trigger,
-    onMouseEnter: handleMouseEnter,
-    onMouseLeave: handleMouseLeave,
+    onPointerEnter: handlePointerEnter,
+    onPointerLeave: handlePointerLeave,
     onFocus: handleFocus,
     onBlur: handleBlur,
     onKeyDown: handleKeyDown,
@@ -284,16 +302,19 @@ export interface HoverCardPortalProps {
   forceMount?: boolean;
 }
 
-/** Radix-style explicit portal. When present, the nested HoverCardContent skips
- *  its own automatic portal and the consumer owns placement in the tree. */
+/**
+ * The explicit escape hatch for a clipping ancestor. Reaching for it OPTS THAT
+ * INSTANCE OUT of the CSS sibling contract (#2148): a `document.body`-portaled
+ * content node is not a DOM sibling of its trigger, so `[data-hover-card]:hover
+ * > [data-part=content]` can never match it and the preview becomes JS-only,
+ * revealed through `data-state` alone. Un-portaled is the default for exactly
+ * that reason.
+ */
 export function HoverCardPortal({ children, container, forceMount }: HoverCardPortalProps) {
   const { effectiveOpen } = useHoverCardContext('HoverCardPortal');
   if (!(forceMount || effectiveOpen)) return null;
   if (typeof document === 'undefined') return null;
-  return createPortal(
-    <HoverCardPortalContext.Provider value={true}>{children}</HoverCardPortalContext.Provider>,
-    container ?? document.body,
-  );
+  return createPortal(children, container ?? document.body);
 }
 
 // ==================== Content ====================
@@ -302,26 +323,18 @@ export interface HoverCardContentProps extends React.HTMLAttributes<HTMLDivEleme
   side?: Side;
   align?: Align;
   sideOffset?: number;
-  forceMount?: boolean;
-  /** Portal target for the floating card; defaults to document.body. */
-  container?: HTMLElement | null;
 }
 
 export function HoverCardContent({
   side,
   align,
   sideOffset,
-  forceMount,
-  container,
   className,
-  onMouseEnter,
-  onMouseLeave,
   children,
   ...props
 }: HoverCardContentProps) {
-  const { config, effectiveOpen, ids, aria, classes, triggerRef, hover, disableHoverableContent } =
+  const { config, effectiveOpen, ids, aria, classes, triggerRef } =
     useHoverCardContext('HoverCardContent');
-  const isInsidePortal = React.useContext(HoverCardPortalContext);
   const contentRef = React.useRef<HTMLDivElement | null>(null);
 
   // Positioning is a DOM side-effect: wire it here, but the placement decision
@@ -346,20 +359,14 @@ export function HoverCardContent({
     };
   });
 
-  if (!(forceMount || effectiveOpen)) return null;
-  if (typeof document === 'undefined') return null;
-
-  const handleMouseEnter = (event: React.MouseEvent<HTMLDivElement>) => {
-    onMouseEnter?.(event);
-    if (!disableHoverableContent) hover.onContentEnter();
-  };
-  const handleMouseLeave = (event: React.MouseEvent<HTMLDivElement>) => {
-    onMouseLeave?.(event);
-    if (!disableHoverableContent) hover.onContentLeave();
-  };
-
+  // UNCONDITIONAL (#2148). A node that does not exist cannot be revealed by
+  // `:hover`, so there is no `forceMount || open` gate and no automatic portal:
+  // the preview renders as a DOM sibling of its trigger and the stylesheet
+  // decides whether it is visible. `hidden` is never applied for the same
+  // reason -- it is UA `display: none`, which kills both the transition and the
+  // reveal.
   const dataState = effectiveOpen ? 'open' : 'closed';
-  const node = (
+  return (
     <div
       data-part="content"
       id={ids.content}
@@ -367,21 +374,11 @@ export function HoverCardContent({
       data-state={dataState}
       className={classy(classes.content, className)}
       {...aria.content}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
       {...props}
     >
       {children}
     </div>
   );
-
-  // Inside an explicit <HoverCardPortal> the consumer owns the portal.
-  if (isInsidePortal) return node;
-
-  const portalTarget = getPortalContainer(
-    container !== undefined ? { container, enabled: true } : { enabled: true },
-  );
-  return portalTarget ? createPortal(node, portalTarget) : node;
 }
 
 // ==================== Display names + namespaced (shadcn) surface ====================

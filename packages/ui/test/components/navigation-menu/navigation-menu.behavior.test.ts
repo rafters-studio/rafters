@@ -2,7 +2,6 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createBehavior } from '../../../src/lib/contract';
 import {
   activeItem,
-  bindNavigationMenu,
   navInstanceAria,
   navigationMenu,
   startNavigationMenuEffects,
@@ -138,15 +137,19 @@ describe('navigation-menu aria', () => {
     expect(closed['data-state']).toBe('closed');
   });
 
-  it('content instances: labelled by their trigger, hidden when closed', () => {
+  it('content instances: labelled by their trigger, NEVER hidden', () => {
+    // #2148: `hidden` is UA `display: none` -- out of the accessibility tree,
+    // out of rendering, and out of reach of the `:hover` / `:focus-within`
+    // reveal. Visibility is opacity + pointer-events keyed off data-state.
     const open = navInstanceAria('content', 'a', { active: 'a', pointerOpened: false }, base, {
       trigger: 't-a',
     });
-    expect(open).toEqual({ 'aria-labelledby': 't-a', 'data-state': 'open', hidden: undefined });
+    expect(open).toEqual({ 'aria-labelledby': 't-a', 'data-state': 'open' });
     const closed = navInstanceAria('content', 'a', { active: null, pointerOpened: false }, base, {
       trigger: 't-a',
     });
-    expect(closed['hidden']).toBe(true);
+    expect(closed).toEqual({ 'aria-labelledby': 't-a', 'data-state': 'closed' });
+    expect('hidden' in closed).toBe(false);
   });
 
   it('instance projections read the CONTROLLED value', () => {
@@ -215,7 +218,7 @@ describe('navigation-menu effects composition', () => {
     return element;
   };
 
-  function start(delay = 200): Harness {
+  function start(): Harness {
     const root = mountMenu();
     const open = { value: null as string | null };
     const onHoverOpen = vi.fn((value: string) => {
@@ -228,8 +231,6 @@ describe('navigation-menu effects composition', () => {
       root,
       list: root.querySelector<HTMLElement>('[data-part="list"]'),
       orientation: 'horizontal',
-      delay,
-      isOpen: () => open.value !== null,
       onHoverOpen,
       onClose,
     });
@@ -243,38 +244,52 @@ describe('navigation-menu effects composition', () => {
     expect(triggerFor(h.root, 'b').getAttribute('tabindex')).toBe('-1');
   });
 
-  it('hover opens the trigger after the delay when nothing is open', () => {
+  // #2148: there is no timer left to advance. Hover-intent timing is the
+  // panel's transition-delay, and every dispatch here is synchronous so
+  // aria-expanded / data-state track the real gesture for assistive tech.
+  it('hovering a trigger opens it IMMEDIATELY -- no timer to advance', () => {
     vi.useFakeTimers();
-    const h = start(200);
+    const h = start();
     triggerFor(h.root, 'a').dispatchEvent(new Event('pointerenter'));
-    vi.advanceTimersByTime(199);
-    expect(h.onHoverOpen).not.toHaveBeenCalled();
-    vi.advanceTimersByTime(1);
     expect(h.onHoverOpen).toHaveBeenCalledWith('a');
+    // Nothing was scheduled: running every pending timer changes nothing.
+    vi.runAllTimers();
+    expect(h.onHoverOpen).toHaveBeenCalledTimes(1);
   });
 
   it('while a panel is open, hovering another trigger switches immediately', () => {
-    vi.useFakeTimers();
-    const h = start(200);
+    const h = start();
     h.open.value = 'a'; // a panel is already open
     triggerFor(h.root, 'b').dispatchEvent(new Event('pointerenter'));
-    // No timer advance: the menubar-style switch is synchronous.
     expect(h.onHoverOpen).toHaveBeenCalledWith('b');
   });
 
-  it('leaving schedules a close only while a panel is open', () => {
+  it('leaving the ROOT closes immediately; leaving a trigger for its own panel does not', () => {
     vi.useFakeTimers();
-    const h = start(200);
-    // Closed: a leave never closes.
-    triggerFor(h.root, 'a').dispatchEvent(new Event('pointerleave'));
-    vi.advanceTimersByTime(200);
-    expect(h.onClose).not.toHaveBeenCalled();
-    // Open: a leave closes after the delay.
+    const h = start();
     h.open.value = 'a';
+    // Travelling from the trigger down onto its own panel stays inside the
+    // root, and there is no linger on this component's close to forgive a
+    // flicker if it read as a leave.
     triggerFor(h.root, 'a').dispatchEvent(new Event('pointerleave'));
-    vi.advanceTimersByTime(199);
+    vi.runAllTimers();
     expect(h.onClose).not.toHaveBeenCalled();
-    vi.advanceTimersByTime(1);
+    // Leaving the menu entirely closes, with no delay of any kind.
+    h.root.dispatchEvent(new Event('pointerleave'));
+    expect(h.onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('focus into an item opens it; focus out of the menu closes', () => {
+    const h = start();
+    const trigger = triggerFor(h.root, 'a');
+    trigger.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+    expect(h.onHoverOpen).toHaveBeenCalledWith('a');
+    h.open.value = 'a';
+    // Focus moving to the panel's own link stays inside the menu.
+    const link = h.root.querySelector<HTMLElement>('[data-part="content"] a');
+    trigger.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: link }));
+    expect(h.onClose).not.toHaveBeenCalled();
+    trigger.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: null }));
     expect(h.onClose).toHaveBeenCalledTimes(1);
   });
 
@@ -291,64 +306,5 @@ describe('navigation-menu effects composition', () => {
     triggerFor(h.root, 'a').dispatchEvent(new Event('pointerenter'));
     expect(h.onClose).toHaveBeenCalledTimes(1);
     expect(h.onHoverOpen).not.toHaveBeenCalled();
-  });
-});
-
-/**
- * `data-delay-duration` resolution: NON-EMPTY presence, not truthiness (#2011).
- * A malformed `--rafters-delay-hover-intent` on the root is the discriminator --
- * the accessor fails loud (#1995), so reaching the token is observable as a
- * throw. `""` must reach it (blank is absence); `"0"` must not (zero is real).
- */
-describe('bindNavigationMenu: data-delay-duration presence', () => {
-  const teardowns: Array<() => void> = [];
-
-  afterEach(() => {
-    for (const teardown of teardowns.splice(0)) teardown();
-    document.body.innerHTML = '';
-  });
-
-  function mountMalformed(delayDuration?: string): HTMLElement {
-    const root = document.createElement('nav');
-    root.dataset['part'] = 'root';
-    root.id = 'nm-root';
-    root.style.setProperty('--rafters-delay-hover-intent', 'soon');
-    if (delayDuration !== undefined) root.dataset['delayDuration'] = delayDuration;
-
-    const list = document.createElement('ul');
-    list.dataset['part'] = 'list';
-    list.id = 'nm-list';
-
-    const item = document.createElement('li');
-    const trigger = document.createElement('button');
-    trigger.type = 'button';
-    trigger.dataset['part'] = 'trigger';
-    trigger.dataset['value'] = 'a';
-    trigger.id = 'nm-trigger-a';
-    item.appendChild(trigger);
-    list.appendChild(item);
-
-    const content = document.createElement('div');
-    content.dataset['part'] = 'content';
-    content.dataset['value'] = 'a';
-    content.id = 'nm-content-a';
-
-    root.append(list, content);
-    document.body.appendChild(root);
-    return root;
-  }
-
-  it('a blank data-delay-duration="" reads the token, exactly as absence does', () => {
-    expect(() => bindNavigationMenu(mountMalformed(''))).toThrow(
-      /rafters-delay-hover-intent" resolved to "soon"/,
-    );
-    expect(() => bindNavigationMenu(mountMalformed())).toThrow(
-      /rafters-delay-hover-intent" resolved to "soon"/,
-    );
-  });
-
-  it('an explicit data-delay-duration="0" is still a real zero, never the token', () => {
-    const root = mountMalformed('0');
-    expect(() => teardowns.push(bindNavigationMenu(root))).not.toThrow();
   });
 });

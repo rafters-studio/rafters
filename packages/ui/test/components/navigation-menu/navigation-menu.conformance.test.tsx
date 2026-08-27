@@ -1,11 +1,17 @@
 /**
  * React performance of the navigation-menu score, driven end to end.
  * Replaces the oracle's imperative controller: state moves only through
- * dispatched actions; roving focus, hover intent, and outside dismissal are
- * declarative effects.
+ * dispatched actions; roving focus, hover/focus tracking, and outside dismissal
+ * are declarative effects.
+ *
+ * WHAT CHANGED AT #2148: the panel is never `hidden` any more, and there is no
+ * hover-intent timer to wait on. Visibility is opacity + pointer-events keyed
+ * off the item's `:hover` / `:focus-within` and off `data-state` -- so the
+ * assertions here read data-state, and the visual half is pinned by
+ * navigation-menu.classes.test.ts and test/motion/hover-reveal.e2e.ts.
  */
 import * as React from 'react';
-import { cleanup, render, waitFor } from '@testing-library/react';
+import { cleanup, render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -32,7 +38,6 @@ interface SetupProps {
   defaultValue?: string;
   onValueChange?: (value: string) => void;
   orientation?: 'horizontal' | 'vertical';
-  delayDuration?: number;
 }
 
 function TestMenu(props: SetupProps) {
@@ -71,15 +76,20 @@ function contentFor(value: string): HTMLElement {
   return element;
 }
 
+/** The panel's open axis is `data-state` now; `hidden` is gone for good. */
+const stateFor = (value: string): string | null => contentFor(value).getAttribute('data-state');
+
 afterEach(() => {
   cleanup();
 });
 
 describe('navigation-menu conformance [react]', () => {
-  it('closed: content stays in the DOM, hidden -- crawlable navigation', async () => {
+  it('closed: content stays in the DOM and is NEVER hidden -- crawlable navigation', async () => {
     render(<TestMenu />);
-    expect(contentFor('products').hidden).toBe(true);
-    expect(contentFor('products').getAttribute('data-state')).toBe('closed');
+    // `hidden` is UA display:none: out of the a11y tree, out of rendering, and
+    // out of reach of the :hover / :focus-within reveal.
+    expect(contentFor('products').hasAttribute('hidden')).toBe(false);
+    expect(stateFor('products')).toBe('closed');
     expect(triggerFor('products').getAttribute('aria-expanded')).toBe('false');
     expect(partElement(body(), 'root')?.getAttribute('aria-label')).toBe('Main navigation');
     await assertAxeClean(body());
@@ -113,16 +123,16 @@ describe('navigation-menu conformance [react]', () => {
     render(<TestMenu />);
 
     await user.click(triggerFor('products'));
-    expect(contentFor('products').hidden).toBe(false);
+    expect(stateFor('products')).toBe('open');
     expect(triggerFor('products').getAttribute('aria-expanded')).toBe('true');
     await assertAxeClean(body());
 
     await user.click(triggerFor('docs'));
-    expect(contentFor('products').hidden).toBe(true);
-    expect(contentFor('docs').hidden).toBe(false);
+    expect(stateFor('products')).toBe('closed');
+    expect(stateFor('docs')).toBe('open');
 
     await user.click(triggerFor('docs'));
-    expect(contentFor('docs').hidden).toBe(true);
+    expect(stateFor('docs')).toBe('closed');
   });
 
   it('arrow keys rove focus across triggers with wrap', async () => {
@@ -144,7 +154,7 @@ describe('navigation-menu conformance [react]', () => {
     render(<TestMenu />);
     triggerFor('products').focus();
     await user.keyboard('{ArrowDown}');
-    expect(contentFor('products').hidden).toBe(false);
+    expect(stateFor('products')).toBe('open');
   });
 
   it('Escape closes and returns focus to the open trigger', async () => {
@@ -154,7 +164,7 @@ describe('navigation-menu conformance [react]', () => {
     const link = contentFor('products').querySelector('a') as HTMLElement;
     link.focus();
     await user.keyboard('{Escape}');
-    expect(contentFor('products').hidden).toBe(true);
+    expect(stateFor('products')).toBe('closed');
     expect(document.activeElement).toBe(triggerFor('products'));
   });
 
@@ -167,18 +177,22 @@ describe('navigation-menu conformance [react]', () => {
       </div>,
     );
     await user.click(triggerFor('products'));
-    expect(contentFor('products').hidden).toBe(false);
+    expect(stateFor('products')).toBe('open');
     await user.click(document.querySelector('button') as HTMLElement);
-    expect(contentFor('products').hidden).toBe(true);
+    expect(stateFor('products')).toBe('closed');
   });
 
-  it('hover opens after the delay and closes after leaving', async () => {
+  it('hover opens IMMEDIATELY; leaving the menu closes, with no timer either way', async () => {
     const user = userEvent.setup();
-    render(<TestMenu delayDuration={1} />);
+    render(<TestMenu />);
+    // The hover-intent wait is the panel's transition-delay now, so the score
+    // moves on the event itself and assistive tech is never behind the gesture.
     await user.hover(triggerFor('products'));
-    await waitFor(() => expect(contentFor('products').hidden).toBe(false));
-    await user.unhover(triggerFor('products'));
-    await waitFor(() => expect(contentFor('products').hidden).toBe(true));
+    expect(stateFor('products')).toBe('open');
+    // Leaving the ROOT closes -- travelling from trigger to its own panel does
+    // not, and there is no linger on this component's close to forgive it.
+    await user.unhover(partElement(body(), 'root') as HTMLElement);
+    expect(stateFor('products')).toBe('closed');
   });
 
   it('controlled: callbacks fire, state follows the prop', async () => {
@@ -188,10 +202,10 @@ describe('navigation-menu conformance [react]', () => {
 
     await user.click(triggerFor('products'));
     expect(onValueChange).toHaveBeenLastCalledWith('products');
-    expect(contentFor('products').hidden).toBe(true);
+    expect(stateFor('products')).toBe('closed');
 
     rerender(<TestMenu value="products" onValueChange={onValueChange} />);
-    expect(contentFor('products').hidden).toBe(false);
+    expect(stateFor('products')).toBe('open');
     expect(triggerFor('products').getAttribute('aria-expanded')).toBe('true');
 
     await user.click(triggerFor('products'));
