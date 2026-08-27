@@ -90,16 +90,20 @@ describe('MCP describe/generate against an initialized project', () => {
       async () => [modal, node('alert', 'ui'), node('tooltip', 'ui')],
     );
 
-    // Direct tier: bare id, no curated-axis phrasing needed.
+    // Direct tier: bare id, no curated-axis phrasing needed. `modal` has no
+    // file on disk in this fixture (init writes config, never components), so
+    // presence is 'available' and generate names the install command.
     const direct = await handler.handleToolCall('rafters_generate', { intent: 'give me a modal' });
     expect(JSON.parse(direct.content[0].text as string)).toEqual({
       component: 'modal',
       target: 'react',
+      presence: 'available',
       snippet: '<Modal><Modal.Title /><Modal.Body /></Modal>',
       slots: [
         { slot: 'title', ownedBy: 'caller', status: 'open' },
         { slot: 'body', ownedBy: 'caller', status: 'open' },
       ],
+      install: 'rafters add modal',
     });
 
     // Intent-door fallback: same component, reached via the semantic axis.
@@ -109,11 +113,13 @@ describe('MCP describe/generate against an initialized project', () => {
     expect(JSON.parse(viaIntent.content[0].text as string)).toEqual({
       component: 'modal',
       target: 'react',
+      presence: 'available',
       snippet: '<Modal><Modal.Title /><Modal.Body /></Modal>',
       slots: [
         { slot: 'title', ownedBy: 'caller', status: 'open' },
         { slot: 'body', ownedBy: 'caller', status: 'open' },
       ],
+      install: 'rafters add modal',
     });
   }, 30000);
 
@@ -169,8 +175,10 @@ describe('MCP describe/generate against an initialized project', () => {
     expect(JSON.parse(result.content[0].text as string)).toEqual({
       component: 'button',
       target: 'react',
+      presence: 'available',
       snippet: '<Button />',
       slots: [],
+      install: 'rafters add button',
     });
   }, 30000);
 
@@ -183,15 +191,22 @@ describe('MCP describe/generate against an initialized project', () => {
     expect(data).toMatchObject({ id: 'button', deprecated: 'use rafters_describe instead' });
   }, 30000);
 
-  it('folds installed.primitives into the component set for presence', async () => {
+  it('folds a primitive file on disk into the component set for presence, proving disk beats config', async () => {
     fixturePath = await createInitializedFixture('nextjs-shadcn-v4');
 
-    // Install `classy` (a primitive) via installed.primitives. A primitive-kind
-    // item resolves to graph kind `component`, so without the fold it would
-    // misreport as `available`; the fold makes it read `installed`.
+    // `classy` (a primitive) is present on disk under the framework's
+    // primitivesPath ('lib/primitives' for next) -- never recorded in
+    // config.installed. A primitive-kind item resolves to graph kind
+    // `component`, so without the fold it would misreport as `available`;
+    // the fold makes it read `installed` from the file alone, with no config
+    // entry at all.
+    await writeFixtureFile(fixturePath, 'lib/primitives/classy.ts', '');
+
+    // `button` is the OLD premise this change replaces: listed in
+    // config.installed but with no file on disk. Trusting the config record
+    // would report it installed; measuring disk must report it available.
     const config = await readConfig(fixturePath);
-    const installed = (config.installed as Record<string, string[]>) ?? {};
-    config.installed = { ...installed, primitives: ['classy'] };
+    config.installed = { components: ['button'] };
     await writeFixtureFile(fixturePath, '.rafters/config.rafters.json', JSON.stringify(config));
 
     // A catalog with a primitive (classy) and a ui component (button).
@@ -207,9 +222,11 @@ describe('MCP describe/generate against an initialized project', () => {
       presence: string;
     }>;
     const byId = new Map(roster.map((e) => [e.id, e.presence]));
+    // On disk, no config entry: installed. Proves the fold reads the primitive
+    // scan itself, not a config record.
     expect(byId.get('classy')).toBe('installed');
-    // A component not in any installed list stays available -- proving the fold
-    // is targeted, not a blanket "everything installed".
+    // In config.installed, no file on disk: available. Proves presence is
+    // measured from disk, not remembered from config.
     expect(byId.get('button')).toBe('available');
   }, 30000);
 
