@@ -146,7 +146,7 @@ then inverted as a unit for dark mode so the relationship survives.
   weight.
 
 ```ts
-generateColorName({ l: 0.65, c: 0.12, h: 230, alpha: 1 }); // 'luminous-true-cobalt'
+generateColorName({ l: 0.65, c: 0.12, h: 230, alpha: 1 }); // 'luminous-true-bay-blue'
 ```
 
 The bucket helpers and word lists (`getCBucket`, `getChromaBand`, `HUE_HUBS`,
@@ -164,5 +164,5 @@ pnpm --filter @rafters/color-utils test
 - OKLCH-first. Conversions exist for interoperability; the math stays in OKLCH.
 - Accessibility scoring is mathematical, and APCA is there for modern contrast
   evaluation alongside WCAG.
-- Published as source. It gains nothing from a build step, and Rafters is its
-  only consumer.
+- Published as source — it gains nothing from a build step, and consumers
+  import the TypeScript directly.
