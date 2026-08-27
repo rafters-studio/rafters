@@ -27,7 +27,8 @@ import type {
   SemanticStatusRole,
 } from '@rafters/shared';
 import { roundOKLCH } from './conversion.js';
-import { toNearestGamut } from './gamut.js';
+import { clampColor } from './harmony.js';
+import { clamp01, normalizeHue } from './internal/math.js';
 import { POSITION_TO_INDEX, SCALE_POSITIONS } from './scale-positions.js';
 
 export type StateUse = 'hover' | 'active' | 'focus' | 'disabled' | 'border' | 'ring' | 'subtle';
@@ -206,7 +207,7 @@ export function statusAnchor(role: SemanticStatusRole, seed: OKLCH): OKLCH {
 
 /** Clamp a hue into a band; [min > max] wraps through 0. */
 function clampHueToBand(hue: number, band: readonly [number, number]): number {
-  const h = ((hue % 360) + 360) % 360;
+  const h = normalizeHue(hue);
   const [min, max] = band;
   if (min <= max) return Math.max(min, Math.min(max, h));
   if (h >= min || h <= max) return h; // inside the wrapped band
@@ -238,12 +239,12 @@ export function generateSemanticColorSuggestions(baseColor: OKLCH): SemanticColo
     const { band } = STATUS_ROLE_ANCHORS[role];
     roles[role] = VARIANT_OFFSETS.map(({ dh, dl }) => {
       const raw = roundOKLCH({
-        l: Math.max(0, Math.min(1, anchor.l + dl)),
+        l: clamp01(anchor.l + dl),
         c: anchor.c,
         h: clampHueToBand(anchor.h + dh, band),
         alpha: anchor.alpha ?? 1,
       });
-      return roundOKLCH(toNearestGamut(raw).color);
+      return clampColor(raw);
     });
   }
   // 'danger' mirrors 'destructive' while apps/api still asserts the legacy key.

@@ -6,12 +6,13 @@
  */
 
 import type { ColorHarmonies, OKLCH } from '@rafters/shared';
-import { roundOKLCH } from './conversion';
-import { toNearestGamut } from './gamut';
-import { adjustHue } from './manipulation';
+import { roundOKLCH } from './conversion.js';
+import { toNearestGamut } from './gamut.js';
+import { adjustHue } from './manipulation.js';
+import { POSITION_TO_INDEX, SCALE_POSITIONS } from './scale-positions.js';
 
 /** Clamp an OKLCH to sRGB gamut and round. */
-function clampColor(color: OKLCH): OKLCH {
+export function clampColor(color: OKLCH): OKLCH {
   return roundOKLCH(toNearestGamut(color).color);
 }
 
@@ -125,8 +126,8 @@ function generateLightnessProgression(baseLightness: number): Record<string, num
   const MAX_LIGHT = 0.95;
   const MIN_DARK = 0.05;
 
-  const positions = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950];
-  const baseIndex = 6; // 600 position
+  const positions = SCALE_POSITIONS;
+  const baseIndex = POSITION_TO_INDEX['600'] ?? 6;
 
   const lightness: Record<string, number> = {};
 
@@ -138,7 +139,7 @@ function generateLightnessProgression(baseLightness: number): Record<string, num
     const calculatedL = baseLightness + (MAX_LIGHT - baseLightness) * t;
 
     const pos = positions[i];
-    if (pos !== undefined) lightness[pos.toString()] = Math.min(MAX_LIGHT, calculatedL);
+    if (pos !== undefined) lightness[pos] = Math.min(MAX_LIGHT, calculatedL);
   }
 
   lightness['600'] = baseLightness;
@@ -152,7 +153,7 @@ function generateLightnessProgression(baseLightness: number): Record<string, num
     const calculatedL = Math.max(MIN_DARK, baseLightness - darkenAmount);
 
     const pos = positions[i];
-    if (pos !== undefined) lightness[pos.toString()] = calculatedL;
+    if (pos !== undefined) lightness[pos] = calculatedL;
   }
 
   return lightness;
@@ -195,94 +196,4 @@ export function generateOKLCHScale(baseColor: OKLCH): Record<string, OKLCH> {
   }
 
   return scale;
-}
-
-/**
- * Colors get cooler and lighter with distance
- * Applied to UI: background colors should be cooler/lighter, foreground warmer/darker
- */
-export function calculateAtmosphericWeight(color: OKLCH): {
-  distanceWeight: number; // 0 = background, 1 = foreground
-  temperature: 'warm' | 'neutral' | 'cool';
-  atmosphericRole: 'background' | 'midground' | 'foreground';
-} {
-  const hue = color.h;
-  const warmHues = (hue >= 0 && hue <= 60) || (hue >= 300 && hue <= 360);
-  const coolHues = hue >= 180 && hue <= 270;
-
-  const lightnessWeight = color.l;
-
-  let distanceWeight = 0;
-
-  if (warmHues) {
-    distanceWeight += 0.3;
-  } else if (coolHues) {
-    distanceWeight -= 0.2;
-  }
-
-  distanceWeight += (1 - lightnessWeight) * 0.4;
-  distanceWeight += color.c * 1.5;
-
-  distanceWeight = Math.max(0, Math.min(1, distanceWeight));
-
-  const temperature = warmHues ? 'warm' : coolHues ? 'cool' : 'neutral';
-
-  let atmosphericRole: 'background' | 'midground' | 'foreground';
-  if (distanceWeight < 0.3) atmosphericRole = 'background';
-  else if (distanceWeight < 0.7) atmosphericRole = 'midground';
-  else atmosphericRole = 'foreground';
-
-  return { distanceWeight, temperature, atmosphericRole };
-}
-
-/**
- * some colors feel "heavier" than others
- * Used for visual balance in UI layouts
- */
-export function calculatePerceptualWeight(color: OKLCH): {
-  weight: number; // 0-1, higher = more visual weight
-  density: 'light' | 'medium' | 'heavy';
-  balancingRecommendation: string;
-} {
-  const hue = color.h;
-  let hueWeight = 0.5;
-
-  if (hue >= 345 || hue <= 15)
-    hueWeight = 0.9; // Red - heaviest
-  else if (hue <= 45)
-    hueWeight = 0.8; // Red-Orange
-  else if (hue <= 75)
-    hueWeight = 0.6; // Orange-Yellow
-  else if (hue <= 105)
-    hueWeight = 0.4; // Yellow-Green
-  else if (hue <= 165)
-    hueWeight = 0.3; // Green - lightest feeling
-  else if (hue <= 225)
-    hueWeight = 0.2; // Blue - very light feeling
-  else if (hue <= 285)
-    hueWeight = 0.35; // Blue-Purple
-  else hueWeight = 0.5; // Purple-Red
-
-  const lightnessWeight = 1 - color.l;
-  const chromaWeight = Math.min(1, color.c / 0.3);
-
-  const weight = lightnessWeight * 0.4 + chromaWeight * 0.35 + hueWeight * 0.25;
-
-  let density: 'light' | 'medium' | 'heavy';
-
-  if (weight < 0.3) {
-    density = 'light';
-  } else if (weight < 0.7) {
-    density = 'medium';
-  } else {
-    density = 'heavy';
-  }
-
-  const balancingRecommendation = 'Balanced weight';
-
-  return {
-    weight,
-    density,
-    balancingRecommendation,
-  };
 }

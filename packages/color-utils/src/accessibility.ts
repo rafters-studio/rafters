@@ -6,7 +6,44 @@ import type { ColorValue, OKLCH } from '@rafters/shared';
 import { APCAcontrast, sRGBtoY } from 'apca-w3';
 import Color from 'colorjs.io';
 import { z } from 'zod';
-import { roundOKLCH } from './conversion';
+
+/** White reference color for contrast calculations. */
+export const CONTRAST_WHITE: OKLCH = { l: 1, c: 0, h: 0, alpha: 1 };
+
+/** Black reference color for contrast calculations. */
+export const CONTRAST_BLACK: OKLCH = { l: 0, c: 0, h: 0, alpha: 1 };
+
+/** WCAG 2.1 minimum contrast ratios, by conformance level and text size. */
+const WCAG_CONTRAST_THRESHOLDS = {
+  AA: { normal: 4.5, large: 3.0 },
+  AAA: { normal: 7.0, large: 4.5 },
+} as const;
+
+/**
+ * APCA contrast thresholds by minimum readable font size, most demanding
+ * first. The single encoding of these breakpoints: minFontSizeForAPCA reads
+ * down the table, and builder.ts derives ColorValue.accessibility.apca from it
+ * rather than repeating the numbers.
+ */
+const APCA_FONT_SIZE_THRESHOLDS: readonly { minFontSize: number; minContrast: number }[] = [
+  { minFontSize: 16, minContrast: 60 },
+  { minFontSize: 24, minContrast: 45 },
+  { minFontSize: 32, minContrast: 0 },
+];
+
+/**
+ * Smallest font size (in px) that stays readable at the given APCA contrast.
+ * Contrast sign is irrelevant -- APCA reports polarity, magnitude is what
+ * carries legibility.
+ */
+export function minFontSizeForAPCA(contrast: number): number {
+  const magnitude = Math.abs(contrast);
+  for (const { minFontSize, minContrast } of APCA_FONT_SIZE_THRESHOLDS) {
+    if (magnitude >= minContrast) return minFontSize;
+  }
+  // Unreachable: the last row has minContrast 0. Kept for exhaustiveness.
+  return 32;
+}
 
 /**
  * Convert OKLCH to relative luminance for WCAG calculations
@@ -73,42 +110,17 @@ export function calculateAPCAContrast(foreground: OKLCH, background: OKLCH): num
 }
 
 /**
- * Check if color pair meets WCAG contrast standards
+ * Check if color pair meets WCAG contrast standards.
+ * Module-private: the pass/fail matrices below are its only consumers.
  */
-export function meetsWCAGStandard(
+function meetsWCAGStandard(
   foreground: OKLCH,
   background: OKLCH,
   level: 'AA' | 'AAA',
   textSize: 'normal' | 'large',
 ): boolean {
   const contrast = calculateWCAGContrast(foreground, background);
-
-  const thresholds = {
-    AA: { normal: 4.5, large: 3.0 },
-    AAA: { normal: 7.0, large: 4.5 },
-  };
-
-  return contrast >= thresholds[level][textSize];
-}
-
-/**
- * Check if color pair meets APCA contrast standards
- */
-export function meetsAPCAStandard(foreground: OKLCH, background: OKLCH, textSize: number): boolean {
-  const contrast = Math.abs(calculateAPCAContrast(foreground, background));
-
-  // APCA thresholds based on text size (simplified)
-  let threshold = 60; // Default for 16px text
-
-  if (textSize >= 24) {
-    threshold = 45; // Large text
-  } else if (textSize >= 18) {
-    threshold = 50; // Medium text
-  } else if (textSize < 14) {
-    threshold = 75; // Small text
-  }
-
-  return contrast >= threshold;
+  return contrast >= WCAG_CONTRAST_THRESHOLDS[level][textSize];
 }
 
 /** Pre-computed pairs of scale indices that pass a contrast standard. */
@@ -157,9 +169,8 @@ export function generateAccessibilityMetadata(scale: OKLCH[]): AccessibilityMeta
     onBlack: { aa: [], aaa: [] },
   };
 
-  // White and black reference colors
-  const white: OKLCH = { l: 1, c: 0, h: 0, alpha: 1 };
-  const black: OKLCH = { l: 0, c: 0, h: 0, alpha: 1 };
+  const white = CONTRAST_WHITE;
+  const black = CONTRAST_BLACK;
 
   // Check all pairs within the scale
   for (let i = 0; i < scale.length; i++) {
@@ -218,71 +229,6 @@ export function generateAccessibilityMetadata(scale: OKLCH[]): AccessibilityMeta
 }
 
 /**
- * Find the closest accessible color to target color
- */
-export function findAccessibleColor(
-  targetColor: OKLCH,
-  backgroundColor: OKLCH,
-  standard: 'WCAG-AA' | 'WCAG-AAA' | 'APCA',
-): OKLCH {
-  const result = { ...targetColor };
-
-  // Determine if we need to go lighter or darker
-  const bgLuminance = getRelativeLuminance(backgroundColor);
-
-  // Binary search for accessible lightness
-  let minL = 0;
-  let maxL = 1;
-  let iterations = 0;
-  const maxIterations = 50;
-
-  while (iterations < maxIterations) {
-    const testColor = { ...result };
-
-    let meetsStandard = false;
-
-    switch (standard) {
-      case 'WCAG-AA':
-        meetsStandard = meetsWCAGStandard(testColor, backgroundColor, 'AA', 'normal');
-        break;
-      case 'WCAG-AAA':
-        meetsStandard = meetsWCAGStandard(testColor, backgroundColor, 'AAA', 'normal');
-        break;
-      case 'APCA':
-        meetsStandard = meetsAPCAStandard(testColor, backgroundColor, 16);
-        break;
-    }
-
-    if (meetsStandard) {
-      return roundOKLCH(testColor);
-    }
-
-    // Adjust lightness based on which direction provides better contrast
-    if (bgLuminance > 0.5) {
-      // Light background - make text darker
-      maxL = result.l;
-      result.l = (minL + result.l) / 2;
-    } else {
-      // Dark background - make text lighter
-      minL = result.l;
-      result.l = (result.l + maxL) / 2;
-    }
-
-    // Clamp lightness
-    result.l = Math.max(0, Math.min(1, result.l));
-
-    iterations++;
-  }
-
-  return roundOKLCH(result);
-}
-
-const CONTRAST_WHITE: OKLCH = { l: 1, c: 0, h: 0, alpha: 1 };
-const CONTRAST_BLACK: OKLCH = { l: 0, c: 0, h: 0, alpha: 1 };
-const WCAG_AA_NORMAL = 4.5;
-const WCAG_AAA_NORMAL = 7;
-
-/**
  * Assemble the WCAG half of ColorValue.accessibility for a scale: pair
  * matrices plus on-white/on-black ratios and pass flags for a reference
  * color. Shared by buildColorValue (which adds APCA on top) and
@@ -299,15 +245,15 @@ export function assembleWcagAccessibility(
     wcagAA: meta.wcagAA,
     wcagAAA: meta.wcagAAA,
     onWhite: {
-      wcagAA: onWhiteRatio >= WCAG_AA_NORMAL,
-      wcagAAA: onWhiteRatio >= WCAG_AAA_NORMAL,
+      wcagAA: onWhiteRatio >= WCAG_CONTRAST_THRESHOLDS.AA.normal,
+      wcagAAA: onWhiteRatio >= WCAG_CONTRAST_THRESHOLDS.AAA.normal,
       contrastRatio: onWhiteRatio,
       aa: meta.onWhite.aa,
       aaa: meta.onWhite.aaa,
     },
     onBlack: {
-      wcagAA: onBlackRatio >= WCAG_AA_NORMAL,
-      wcagAAA: onBlackRatio >= WCAG_AAA_NORMAL,
+      wcagAA: onBlackRatio >= WCAG_CONTRAST_THRESHOLDS.AA.normal,
+      wcagAAA: onBlackRatio >= WCAG_CONTRAST_THRESHOLDS.AAA.normal,
       contrastRatio: onBlackRatio,
       aa: meta.onBlack.aa,
       aaa: meta.onBlack.aaa,

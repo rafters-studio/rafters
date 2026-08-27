@@ -5,20 +5,33 @@
 import type { OKLCH } from '@rafters/shared';
 import Color from 'colorjs.io';
 
-/**
- * Convert OKLCH color object to hex string
- */
-export function oklchToHex(oklch: OKLCH): string {
-  const color = new Color('oklch', [oklch.l, oklch.c, oklch.h], oklch.alpha);
-  const clamped = color.toGamut({ space: 'srgb' });
-  return clamped.toString({ format: 'hex', collapse: false });
+/** Options for formatting an OKLCH color as a CSS `oklch()` string. */
+export interface OklchToCSSOptions {
+  /**
+   * Decimal places applied to every emitted channel (L, C, H, and A when
+   * present). Omitted means no rounding: channels are stringified as-is.
+   */
+  precision?: number;
 }
 
 /**
- * Convert OKLCH to CSS oklch() function string
+ * Convert OKLCH to a CSS oklch() function string.
+ *
+ * Emits `oklch(L C H)`, or `oklch(L C H / A)` when alpha is defined and not 1.
+ * With no options and no alpha the output is byte-identical to the original
+ * three-channel formatter -- design-tokens callers depend on that exact string.
  */
-export function oklchToCSS(oklch: OKLCH): string {
-  return `oklch(${oklch.l} ${oklch.c} ${oklch.h})`;
+export function oklchToCSS(oklch: OKLCH, options?: OklchToCSSOptions): string {
+  const precision = options?.precision;
+  const format = (value: number): string =>
+    precision === undefined ? String(value) : value.toFixed(precision);
+
+  const base = `${format(oklch.l)} ${format(oklch.c)} ${format(oklch.h)}`;
+  const { alpha } = oklch;
+  if (alpha === undefined || alpha === 1) {
+    return `oklch(${base})`;
+  }
+  return `oklch(${base} / ${format(alpha)})`;
 }
 
 /**

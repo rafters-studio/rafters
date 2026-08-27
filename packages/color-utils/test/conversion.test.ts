@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { hexToOKLCH, roundOKLCH } from '../src/conversion.js';
+import { hexToOKLCH, oklchToCSS, roundOKLCH } from '../src/conversion.js';
 
 describe('hexToOKLCH', () => {
   it('converts a standard color', () => {
@@ -90,5 +90,42 @@ describe('roundOKLCH', () => {
     const result = roundOKLCH({ l: 0.5, c: 0, h: Number.NaN, alpha: 1 });
     expect(Number.isNaN(result.h)).toBe(false);
     expect(result.h).toBe(0);
+  });
+});
+
+describe('oklchToCSS', () => {
+  it('is byte-identical to the pre-options output with no options and no alpha', () => {
+    // design-tokens emits this string straight into CSS custom properties.
+    // The literal here is the pre-#2146 template output, pinned on purpose:
+    // any change to spacing, rounding, or channel order is a consumer break.
+    expect(oklchToCSS({ l: 0.7, c: 0.15, h: 250 })).toBe('oklch(0.7 0.15 250)');
+  });
+
+  it('omits alpha when it is exactly 1', () => {
+    // roundOKLCH always sets alpha to 1, so every rounded color still takes
+    // the three-channel path -- this is what keeps existing callers intact.
+    expect(oklchToCSS({ l: 0.7, c: 0.15, h: 250, alpha: 1 })).toBe('oklch(0.7 0.15 250)');
+  });
+
+  it('includes alpha when defined and not 1', () => {
+    const css = oklchToCSS({ l: 0.7, c: 0.15, h: 250, alpha: 0.5 });
+    expect(css).toContain('/ 0.5');
+    expect(css).toBe('oklch(0.7 0.15 250 / 0.5)');
+  });
+
+  it('includes a fully transparent alpha', () => {
+    expect(oklchToCSS({ l: 0.7, c: 0.15, h: 250, alpha: 0 })).toBe('oklch(0.7 0.15 250 / 0)');
+  });
+
+  it('applies precision to every channel', () => {
+    expect(oklchToCSS({ l: 0.70001, c: 0.15001, h: 250.001 }, { precision: 2 })).toBe(
+      'oklch(0.70 0.15 250.00)',
+    );
+  });
+
+  it('applies precision to alpha as well when both are in play', () => {
+    expect(
+      oklchToCSS({ l: 0.70001, c: 0.15001, h: 250.001, alpha: 0.5001 }, { precision: 3 }),
+    ).toBe('oklch(0.700 0.150 250.001 / 0.500)');
   });
 });

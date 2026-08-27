@@ -5,13 +5,15 @@
  * for deterministic word selection from the word banks.
  */
 
+import { clamp, clamp01, MAX_CHROMA, normalizeHue } from '../internal/math.js';
+
 /**
  * Get luminosity bucket index (0-9) from lightness value (0-1)
  * 10 buckets of 0.1 each
  */
 export function getLBucket(l: number): number {
   // Clamp to valid range
-  const clamped = Math.max(0, Math.min(1, l));
+  const clamped = clamp01(l);
   // Map to 0-9 bucket index
   const bucket = Math.floor(clamped * 10);
   // Handle edge case where l === 1.0
@@ -24,7 +26,7 @@ export function getLBucket(l: number): number {
  */
 export function getCBucket(c: number): number {
   // Clamp to valid range (OKLCH chroma rarely exceeds 0.37)
-  const clamped = Math.max(0, Math.min(0.4, c));
+  const clamped = clamp(c, 0, MAX_CHROMA);
 
   // Non-linear bucket boundaries optimized for perceptual differences
   // Lower chroma values get finer granularity
@@ -44,7 +46,7 @@ export function getCBucket(c: number): number {
  */
 export function getHBucket(h: number): number {
   // Normalize hue to 0-360 range (handle negative and > 360)
-  const normalized = ((h % 360) + 360) % 360;
+  const normalized = normalizeHue(h);
   // Map to 0-17 bucket index
   const bucket = Math.floor(normalized / 20);
   // Handle edge case where h === 360

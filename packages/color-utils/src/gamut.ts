@@ -10,6 +10,7 @@
 import type { OKLCH } from '@rafters/shared';
 import Color from 'colorjs.io';
 import { z } from 'zod';
+import { MAX_CHROMA } from './internal/math.js';
 
 export const GamutTierSchema = z.enum(['srgb', 'p3', 'out']);
 export type GamutTier = z.infer<typeof GamutTierSchema>;
@@ -67,7 +68,6 @@ export function toNearestGamut(oklch: OKLCH): { color: OKLCH; tier: GamutTier } 
 }
 
 const DEFAULT_STEPS = 101;
-const MAX_CHROMA = 0.4;
 const TOLERANCE = 0.001;
 
 function findMaxChroma(l: number, h: number, gamutSpace: string): number {
