@@ -14,50 +14,14 @@ import {
   type DisclosableState,
 } from '../../lib/disclosable';
 import { computePosition } from '../../primitives/collision-detector';
-import { createControlledHoverDelay } from '../../primitives/hover-delay';
-import { motionDelayMs } from '../../primitives/motion-tokens';
 import { updateAriaAttribute } from '../../primitives/aria-manager';
 import type { Align, Side } from '../../primitives/types';
 
-/**
- * The hover-open delay, read from `--rafters-delay-hover-intent`.
- *
- * The tooltip used to carry its own 700ms literal. The motion matrix assigns
- * this cell the `hover-intent` delay generic (motion.jsonl, tooltip/content/
- * "closed -> open"), so the value now comes from the system token like every
- * other motion decision -- one fast, everywhere, always. Under reduced motion
- * the accessor resolves it to zero.
- */
-export function tooltipOpenDelay(element?: Element | null): number {
-  return motionDelayMs('hover-intent', { element });
-}
-
-/**
- * The close delay, read from `--rafters-delay-linger`.
- *
- * NOT `delay-skip`, despite the prop being named `skipDelayDuration` after the
- * oracle. What this delay actually governs is how long the tip stays after the
- * pointer leaves, so a near-miss on the way to the content is forgiven -- which
- * is `linger`, verbatim. `skip` is the warm-reopen grace: reopen inside it and
- * the ENTRANCE delay is skipped. `hover-delay` has no warm-reopen mechanism to
- * hang that on (`skipDelays` there is an unconditional boolean, not a window),
- * so `delay-skip` stays without a consumer rather than being mislabelled onto
- * this one. Both members happen to sit at 300ms today, which is exactly why the
- * confusion would have gone unnoticed.
- */
-export function tooltipCloseDelay(element?: Element | null): number {
-  return motionDelayMs('linger', { element });
-}
-
 export interface TooltipConfig extends DisclosableConfig {
-  /** Delay before a hovered/focused trigger opens the tip. Unset reads
-   *  `--rafters-delay-hover-intent` via {@link tooltipOpenDelay}. */
-  delayDuration?: number | undefined;
-  /** Delay before an un-hovered trigger closes the tip. Unset reads
-   *  `--rafters-delay-linger` via {@link tooltipCloseDelay}. */
-  skipDelayDuration?: number | undefined;
   /** When true, moving the pointer onto the content does NOT hold it open.
-   *  Default false (content is hoverable). */
+   *  Default false (content is hoverable). Reflected as
+   *  `data-disable-hoverable-content` and read by the CSS reveal rule -- the
+   *  hover-intent delay itself is `transition-delay`, never a timer. */
   disableHoverableContent?: boolean | undefined;
   /** Preferred side of the anchor to float the content. Default 'top'. */
   side?: Side | undefined;
@@ -98,16 +62,18 @@ export function tooltipPlacement(config: TooltipConfig): {
 const tooltipGlue: GlueSlice<TooltipConfig, TooltipState, { close: undefined }, TooltipPart> = {
   kind: 'glue',
   name: 'tooltip',
-  aria: (state, config, ids) => {
-    const open = isOpen(state, config);
+  aria: (_state, _config, ids) => {
     return {
       trigger: {
         // Suppress the disclosure projection: a tooltip trigger is described,
         // not expanded. Projected undefined => the attribute is not rendered.
         'aria-expanded': undefined,
         'aria-controls': undefined,
-        // The tooltip's real link: only while open and only to a real id.
-        'aria-describedby': open && ids.content ? ids.content : undefined,
+        // UNCONDITIONAL (#2148). The content is present in the DOM at all times
+        // and reveal is a CSS concern now, so gating the link on `open` would
+        // mean the description only exists during the frames JavaScript happens
+        // to consider the tip open -- and on a JS-off page, never.
+        'aria-describedby': ids.content ? ids.content : undefined,
       },
       content: {
         role: 'tooltip',
@@ -116,8 +82,8 @@ const tooltipGlue: GlueSlice<TooltipConfig, TooltipState, { close: undefined }, 
   },
   // WAI-ARIA tooltip pattern: Escape dismisses the tip. The idempotence gate
   // makes this a no-op when already closed.
-  // Positioning and hover-intent timing are DOM concerns composed directly by
-  // the clients (collision-detector + hover-delay), not behavior state.
+  // Positioning is a DOM concern composed directly by the clients
+  // (collision-detector), not behavior state; hover-intent TIMING is CSS.
   keymap: (event) => (event.key === 'Escape' ? 'close' : null),
 };
 
@@ -162,46 +128,38 @@ export function positionTooltipContent(
  * and the Astro <script> both import. Only React reads the projections
  * declaratively.
  *
- * Two overlay concerns beyond the score: PRESENCE (the content is
- * present-but-hidden, toggled on the open axis, kept in light DOM so the
- * hover-delay primitive can read it) and the hover-intent TIMING, composed
- * from the hover-delay primitive rather than expressed as a vocabulary effect.
+ * MOTION IS NOT HERE (#2148). The hover-intent delay is `transition-delay` in
+ * tooltip.classes.ts and the reveal is native `:hover` / `:focus-visible`, so
+ * this binding contains no timer and reads no motion token. What it still does
+ * is the JS-ON ENHANCEMENT: track the open axis so `data-state`,
+ * `onOpenChange`, and the collision-detector's positioning follow real pointer
+ * and focus interaction, and honour the WCAG 1.4.13 Escape dismissal, which CSS
+ * alone cannot express. Every dispatch below is immediate -- there is no
+ * timer anywhere in this file.
+ *
+ * The content is present in the DOM unconditionally and NEVER carries `hidden`:
+ * `hidden` is UA-stylesheet `display: none`, which pulls the node out of the
+ * accessibility tree (breaking the unconditional aria-describedby) and out of
+ * rendering (killing the transition and the `:hover` reveal alike).
  */
 export function bindTooltip(root: HTMLElement): () => void {
   const getPart = (part: string): HTMLElement | null =>
     part === 'root' ? root : root.querySelector<HTMLElement>(`[data-part="${part}"]`);
 
   // Config travels as `data-*` and nothing else (#2001/#2004), so the read is
-  // `dataset` by camelCase key -- `data-delay-duration` is dataset.delayDuration.
-  // The fallback is a THUNK, not a value: an attribute that IS present must not
-  // pay for -- or be broken by -- a token read it will discard. A malformed
-  // unrelated custom property makes the accessor throw by design (#1995 fail
-  // loud), and an eager argument would have made that throw reach an element
-  // that never asked for the token. Same lazy convention as
-  // navigation-menu.behavior.ts, and the same `Number()` parse.
-  //
-  // Absence is `undefined` OR the empty string (#2011): a present-but-blank
-  // `data-delay-duration=""` carries no number, and `Number('')` is 0, so
-  // without the explicit check a blank attribute would become a silent 0ms
-  // delay instead of falling back to the token. An explicit `"0"` still means
-  // a real zero.
+  // `dataset` by camelCase key. No delay attributes remain to parse: the two
+  // that used to live here (`data-delay-duration` / `data-skip-delay-duration`)
+  // were the JS half of a timing decision that is now entirely CSS.
   const data = root.dataset;
-  const numData = (key: string, fallback: () => number): number => {
+  const numData = (key: string, fallback: number): number => {
     const raw = data[key];
-    if (raw === undefined || raw === '') return fallback();
+    if (raw === undefined || raw === '') return fallback;
     const parsed = Number(raw);
-    return Number.isFinite(parsed) ? parsed : fallback();
+    return Number.isFinite(parsed) ? parsed : fallback;
   };
-
-  // Hoisted: the score's config and the hover-delay primitive read the SAME
-  // resolved number, so there is no second read to disagree with the first.
-  const openDelayMs = numData('delayDuration', () => tooltipOpenDelay(root));
-  const closeDelayMs = numData('skipDelayDuration', () => tooltipCloseDelay(root));
 
   const content = getPart('content');
   const config: TooltipConfig = {
-    delayDuration: openDelayMs,
-    skipDelayDuration: closeDelayMs,
     disableHoverableContent: data['disableHoverableContent'] === 'true',
     defaultOpen: data['defaultOpen'] === 'true' || content?.dataset['state'] === 'open',
     side: (data['side'] as Side | undefined) ?? undefined,
@@ -210,7 +168,7 @@ export function bindTooltip(root: HTMLElement): () => void {
     // offset, while a blank `data-side-offset=""` is absence and takes the 4px
     // default -- `numData` rejects the empty string, so both the blank and the
     // wholly absent attribute land on the same 4.
-    sideOffset: 'sideOffset' in data ? numData('sideOffset', () => 4) : undefined,
+    sideOffset: 'sideOffset' in data ? numData('sideOffset', 4) : undefined,
   };
 
   const { memory, dispatch } = createBehavior(tooltip, config);
@@ -233,25 +191,25 @@ export function bindTooltip(root: HTMLElement): () => void {
       if (el && attrs) applyProjection(el, attrs);
     }
     if (content) {
-      content.hidden = !open;
+      // The SSR markup stamps data-state once; keep it in step afterwards so
+      // the `data-[state=open]` reveal path tracks a controlled/forced open.
+      content.dataset['state'] = open ? 'open' : 'closed';
       if (open && trigger) positionTooltipContent(trigger, content, config);
     }
   };
   const unsubscribe = memory.subscribe(render); // fires immediately: first paint
 
-  // Hover-intent timing composed from the primitive. onOpen/onClose flow
-  // through the idempotent dispatch, so the score stays the single truth.
-  const hover = createControlledHoverDelay({
-    openDelay: openDelayMs,
-    closeDelay: closeDelayMs,
-    onOpen: () => request('open'),
-    onClose: () => request('close'),
-  });
-
   const reposition = () => {
     if (content && trigger && isOpen(memory.get(), config)) {
       positionTooltipContent(trigger, content, config);
     }
+  };
+
+  // The dismissal flag the CSS force-hides on (WCAG 1.4.13 "dismissible"): a
+  // hovered tip that Escape dismissed must stay gone until the pointer leaves,
+  // and `:hover` alone cannot remember that a dismissal happened.
+  const clearDismissed = () => {
+    delete root.dataset['dismissed'];
   };
 
   const onKeydown = (event: KeyboardEvent) => {
@@ -272,41 +230,50 @@ export function bindTooltip(root: HTMLElement): () => void {
     );
     if (action !== 'close') return;
     event.preventDefault();
-    // Dismiss through the score directly. A defaultOpen tip that never received
-    // a hover/focus event has no pending state in the hover primitive, so
-    // hover.close() alone is a no-op and the tip would stay open. Dispatch close,
-    // then sync the primitive so a later re-hover can reopen the tip.
     request('close');
-    hover.close();
+    root.dataset['dismissed'] = 'true';
   };
 
-  if (trigger) {
-    trigger.addEventListener('mouseenter', hover.onTriggerEnter);
-    trigger.addEventListener('mouseleave', hover.onTriggerLeave);
-    trigger.addEventListener('focus', hover.onTriggerFocus);
-    trigger.addEventListener('blur', hover.onTriggerBlur);
-  }
-  if (content && !config.disableHoverableContent) {
-    content.addEventListener('mouseenter', hover.onContentEnter);
-    content.addEventListener('mouseleave', hover.onContentLeave);
-  }
+  // The hover scope mirrors the CSS reveal rule exactly: the root by default
+  // (so the pointer can travel onto the tip), the trigger alone when the
+  // content is declared un-hoverable. These dispatches move `data-state`,
+  // `onOpenChange`, and positioning -- visibility is the stylesheet's, always.
+  const hoverScope = config.disableHoverableContent ? trigger : root;
+
+  // A standing dismissal may only be dropped once NOTHING can still reveal the
+  // tip. The reveal rule has two independent halves -- the hover scope's
+  // `:hover` and the trigger's `:focus-visible` -- so clearing on one axis while
+  // the other is still matching brings the dismissed tip straight back at
+  // opacity 1 against `data-state="closed"` (WCAG 1.4.13). Each leave handler
+  // therefore checks the OTHER axis, and whichever leaves last does the clear.
+  const triggerFocused = () => trigger !== null && trigger === document.activeElement;
+  const scopeHovered = () => hoverScope?.matches(':hover') === true;
+
+  const onPointerEnter = () => void request('open');
+  const onPointerLeave = () => {
+    if (!triggerFocused()) clearDismissed();
+    request('close');
+  };
+  const onFocus = () => void request('open');
+  const onBlur = () => {
+    if (!scopeHovered()) clearDismissed();
+    request('close');
+  };
+
+  hoverScope?.addEventListener('pointerenter', onPointerEnter);
+  hoverScope?.addEventListener('pointerleave', onPointerLeave);
+  trigger?.addEventListener('focus', onFocus);
+  trigger?.addEventListener('blur', onBlur);
   root.addEventListener('keydown', onKeydown);
   window.addEventListener('scroll', reposition, { capture: true, passive: true });
   window.addEventListener('resize', reposition, { passive: true });
 
   return () => {
     unsubscribe();
-    hover.destroy();
-    if (trigger) {
-      trigger.removeEventListener('mouseenter', hover.onTriggerEnter);
-      trigger.removeEventListener('mouseleave', hover.onTriggerLeave);
-      trigger.removeEventListener('focus', hover.onTriggerFocus);
-      trigger.removeEventListener('blur', hover.onTriggerBlur);
-    }
-    if (content && !config.disableHoverableContent) {
-      content.removeEventListener('mouseenter', hover.onContentEnter);
-      content.removeEventListener('mouseleave', hover.onContentLeave);
-    }
+    hoverScope?.removeEventListener('pointerenter', onPointerEnter);
+    hoverScope?.removeEventListener('pointerleave', onPointerLeave);
+    trigger?.removeEventListener('focus', onFocus);
+    trigger?.removeEventListener('blur', onBlur);
     root.removeEventListener('keydown', onKeydown);
     window.removeEventListener('scroll', reposition, { capture: true });
     window.removeEventListener('resize', reposition);

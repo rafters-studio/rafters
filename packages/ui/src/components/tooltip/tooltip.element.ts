@@ -46,6 +46,10 @@ export class RaftersTooltip extends HTMLElement {
     // custom element defaults to display:inline. Pin block so the WC host lays
     // out identically to the other two performances (#2004).
     this.style.display = 'block';
+    // Target parity, second half (#2148): the CSS reveal rule is scoped by the
+    // `data-tooltip` marker the Astro and React roots carry, so the host has to
+    // carry it too or the stylesheet has no root to hang `:hover` off.
+    this.dataset['tooltip'] = '';
     queueMicrotask(() => {
       if (this.isConnected && !this.teardown) this.teardown = bindTooltip(this);
     });
