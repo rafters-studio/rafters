@@ -207,14 +207,38 @@ const ITEM_SELECTOR = '[data-part="trigger"], [data-part="content"]';
  * returns focus to the trigger, so the item's `:focus-within` still matches --
  * and `:hover` still matches too, if the pointer never moved. A CSS reveal
  * cannot remember that a dismissal happened; this attribute is that memory.
+ *
+ * IT IS ONE PANEL'S MEMORY, NOT THE BAR'S. Raised on the root it blanked every
+ * panel at once (the force-hide was a descendant rule) and the hover guard below
+ * refused every trigger, so after an Escape the whole nav went inert until the
+ * pointer left it -- hovering a SIBLING trigger opened nothing, in CSS and in
+ * JavaScript alike. The dismissed panel is the thing that was dismissed, so the
+ * dismissed panel is where the flag lives.
  */
-export function setNavigationMenuDismissed(root: HTMLElement | null, dismissed: boolean): void {
-  if (!root) return;
-  if (dismissed) root.dataset['dismissed'] = 'true';
-  else delete root.dataset['dismissed'];
+export function setNavigationMenuDismissed(panel: HTMLElement | null, dismissed: boolean): void {
+  if (!panel) return;
+  if (dismissed) panel.dataset['dismissed'] = 'true';
+  else delete panel.dataset['dismissed'];
 }
 
-const isDismissed = (root: HTMLElement): boolean => root.dataset['dismissed'] === 'true';
+/** The panel belonging to one item value -- where that item's dismissal lives. */
+export function navigationMenuPanel(root: HTMLElement | null, value: string): HTMLElement | null {
+  return root?.querySelector<HTMLElement>(`[data-part="content"][data-value="${value}"]`) ?? null;
+}
+
+/** Clear every standing dismissal under a root: the pointer or focus left the
+ *  menu, or a deliberate intent (click, ArrowDown, hovering a different item)
+ *  superseded it. Sweeping is not a shortcut for tracking which panel is
+ *  flagged -- at most one ever is, and a stale flag on another would be exactly
+ *  the dead zone the per-panel scope exists to prevent. */
+export function clearNavigationMenuDismissed(root: HTMLElement | null): void {
+  if (!root) return;
+  for (const panel of root.querySelectorAll<HTMLElement>('[data-part="content"][data-dismissed]')) {
+    delete panel.dataset['dismissed'];
+  }
+}
+
+const isDismissed = (panel: HTMLElement | null): boolean => panel?.dataset['dismissed'] === 'true';
 
 /**
  * The navigation-menu DOM trio, composed directly from the primitives: roving
@@ -248,15 +272,24 @@ export function startNavigationMenuEffects({
 }: NavigationMenuEffectPorts): () => void {
   const releaseRoving = list ? createRovingFocus(list, { orientation }) : () => {};
 
+  // One entry point for both hover and focus: the item that was dismissed stays
+  // dismissed while the pointer/focus sits on it, and reaching any OTHER item is
+  // a fresh intent that clears the standing flag. Guarding per item is what
+  // keeps a dismissal from making the rest of the bar inert.
+  const enterItem = (value: string) => {
+    if (isDismissed(navigationMenuPanel(root, value))) return;
+    clearNavigationMenuDismissed(root);
+    onHoverOpen(value);
+  };
+
   const onPointerEnter = (event: Event) => {
-    if (isDismissed(root)) return;
     const value = (event.target as HTMLElement).closest<HTMLElement>(TRIGGER_SELECTOR)?.dataset[
       'value'
     ];
-    if (value) onHoverOpen(value);
+    if (value) enterItem(value);
   };
   const onPointerLeave = () => {
-    setNavigationMenuDismissed(root, false);
+    clearNavigationMenuDismissed(root);
     onClose();
   };
   // focusin/focusout rather than focus/blur: they carry a relatedTarget, which
@@ -264,17 +297,17 @@ export function startNavigationMenuEffects({
   // apart from "focus left the menu" (close).
   const onFocusIn = (event: FocusEvent) => {
     // Escape returns focus to the trigger, which fires focusin. Reopening there
-    // would undo the dismissal the user just asked for.
-    if (isDismissed(root)) return;
+    // would undo the dismissal the user just asked for -- hence the per-item
+    // guard inside enterItem.
     const value = (event.target as HTMLElement).closest<HTMLElement>(ITEM_SELECTOR)?.dataset[
       'value'
     ];
-    if (value) onHoverOpen(value);
+    if (value) enterItem(value);
   };
   const onFocusOut = (event: FocusEvent) => {
     const next = event.relatedTarget;
     if (next instanceof Node && root.contains(next)) return;
-    setNavigationMenuDismissed(root, false);
+    clearNavigationMenuDismissed(root);
     onClose();
   };
 
@@ -395,14 +428,16 @@ export function bindNavigationMenu(root: HTMLElement): () => void {
     const value = trigger?.dataset['value'];
     if (!value || !root.contains(trigger)) return;
     // A deliberate click is a fresh intent: it clears any standing dismissal.
-    setNavigationMenuDismissed(root, false);
+    clearNavigationMenuDismissed(root);
     request('toggle', value);
     // ...but a click (or Enter/Space, which a native button fulfils as a click)
     // that CLOSED the panel leaves focus on the trigger, so the item still
     // matches `:focus-within` and the reveal rule would keep the panel visible
     // against a `data-state="closed"`. Same dismissal the Escape path raises,
-    // for the same reason.
-    if (memory.get().active === null) setNavigationMenuDismissed(root, true);
+    // for the same reason -- and on the same one panel.
+    if (memory.get().active === null) {
+      setNavigationMenuDismissed(navigationMenuPanel(root, value), true);
+    }
   };
   root.addEventListener('click', onClick);
 
@@ -426,7 +461,7 @@ export function bindNavigationMenu(root: HTMLElement): () => void {
       if (!value) return;
       event.preventDefault();
       // A deliberate open is a fresh intent: it clears any standing dismissal.
-      setNavigationMenuDismissed(root, false);
+      clearNavigationMenuDismissed(root);
       request('open', value);
       return;
     }
@@ -438,9 +473,10 @@ export function bindNavigationMenu(root: HTMLElement): () => void {
         `[data-part="trigger"][data-value="${active}"]`,
       );
       request('close');
-      // Raise the flag BEFORE returning focus: the refocus fires focusin, and
-      // the guard there reads this attribute to know not to reopen.
-      setNavigationMenuDismissed(root, true);
+      // Raise the flag on the dismissed panel BEFORE returning focus: the
+      // refocus fires focusin, and the guard there reads this attribute to know
+      // not to reopen THIS item -- while its siblings stay live.
+      setNavigationMenuDismissed(navigationMenuPanel(root, active), true);
       openTrigger?.focus();
     }
   };

@@ -44,6 +44,8 @@ const content = (value: string) =>
   document.body.querySelector<HTMLElement>(`[data-part="content"][data-value="${value}"]`)!;
 /** The panel's open axis is `data-state` now; `hidden` is gone for good. */
 const state = (value: string) => content(value).getAttribute('data-state');
+/** The WCAG dismissal flag lives on the dismissed PANEL, not on the root. */
+const dismissed = (value: string) => content(value).dataset['dismissed'];
 
 afterEach(() => {
   cleanup();
@@ -60,7 +62,7 @@ describe('navigation-menu conformance [wc]', () => {
     expect(content('products').getAttribute('aria-labelledby')).toBe('t-products');
   });
 
-  it('host adopts the data-part=root marker the dismissal rule is scoped by', async () => {
+  it('host adopts the data-part=root marker the score projects onto', async () => {
     const host = await mount();
     expect(host.dataset['part']).toBe('root');
   });
@@ -113,7 +115,7 @@ describe('navigation-menu conformance [wc]', () => {
 
   it('Escape closes, returns focus to the trigger, and raises data-dismissed', async () => {
     const user = userEvent.setup();
-    const host = await mount();
+    await mount();
     await user.click(trigger('products'));
     (content('products').querySelector('a') as HTMLElement).focus();
     await user.keyboard('{Escape}');
@@ -122,7 +124,9 @@ describe('navigation-menu conformance [wc]', () => {
     // The refocus puts focus back INSIDE the item, so `:focus-within` still
     // matches -- only the dismissal flag can force the panel back down, and it
     // is also what stops the refocus from reopening the score (WCAG 1.4.13).
-    expect(host.dataset['dismissed']).toBe('true');
+    expect(dismissed('products')).toBe('true');
+    // ...on THAT panel alone. Root-scoped it blanked the whole bar.
+    expect(dismissed('docs')).toBeUndefined();
   });
 
   it('a click that CLOSES raises the dismissal too -- focus is still on the trigger', async () => {
@@ -131,31 +135,56 @@ describe('navigation-menu conformance [wc]', () => {
     // item still matches `:focus-within` and the panel would stay visible with
     // data-state="closed".
     const user = userEvent.setup();
-    const host = await mount();
+    await mount();
     await user.click(trigger('products'));
     expect(state('products')).toBe('open');
-    expect(host.dataset['dismissed']).toBeUndefined();
+    expect(dismissed('products')).toBeUndefined();
 
     await user.click(trigger('products'));
     expect(state('products')).toBe('closed');
-    expect(host.dataset['dismissed']).toBe('true');
+    expect(dismissed('products')).toBe('true');
 
     // ...and a third click reopens, clearing it again.
     await user.click(trigger('products'));
     expect(state('products')).toBe('open');
-    expect(host.dataset['dismissed']).toBeUndefined();
+    expect(dismissed('products')).toBeUndefined();
   });
 
   it('a deliberate reopen clears the dismissal', async () => {
     const user = userEvent.setup();
-    const host = await mount();
+    await mount();
     await user.click(trigger('products'));
     trigger('products').focus();
     await user.keyboard('{Escape}');
-    expect(host.dataset['dismissed']).toBe('true');
+    expect(dismissed('products')).toBe('true');
     await user.keyboard('{ArrowDown}');
-    expect(host.dataset['dismissed']).toBeUndefined();
+    expect(dismissed('products')).toBeUndefined();
     expect(state('products')).toBe('open');
+  });
+
+  it('a dismissal leaves the SIBLING item live, and itself dismissed', async () => {
+    // The dead zone the root-scoped flag created: after Escape the hover guard
+    // refused every trigger and the CSS force-hide covered every panel, so the
+    // whole bar was inert until the pointer left it.
+    const user = userEvent.setup();
+    await mount();
+    await user.click(trigger('products'));
+    trigger('products').focus();
+    await user.keyboard('{Escape}');
+
+    await user.hover(trigger('docs'));
+    expect(state('docs')).toBe('open');
+    expect(dismissed('products')).toBeUndefined();
+
+    // And re-entering the dismissed item does NOT undo the dismissal while it
+    // still stands: scoping the flag must not weaken it.
+    await mount();
+    await user.click(trigger('products'));
+    trigger('products').focus();
+    await user.keyboard('{Escape}');
+    await user.hover(trigger('products'));
+    expect(state('products')).toBe('closed');
+    expect(dismissed('products')).toBe('true');
   });
 
   it('hover opens the panel IMMEDIATELY -- the intent wait is the transition', async () => {

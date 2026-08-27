@@ -60,18 +60,47 @@ const triggerClasses = 'inline-flex';
 // `data-dismissed` is the WCAG 1.4.13 dismiss escape hatch, set by an Escape
 // keydown and cleared on pointerleave/blur; it has to win against a reveal rule
 // one class-level more specific, hence the important form.
+//
+// THE REVEAL RULE MUST NOT OWN `pointer-events` -- doubly so here. A rule that
+// switches hit-testing on `:hover` makes the panel click-through for its whole
+// linger: fully opaque, fully transparent to the pointer, for 300ms. That
+// destroys the very thing the linger exists for, which is forgiving the pointer
+// its near-miss on the way from a small inline anchor to a wide preview panel;
+// a panel it cannot re-enter is not forgiven anything. So pointer-events rides
+// the transition instead (`transition-[opacity,pointer-events]` +
+// `transition-discrete`) and flips only once the fade passes its halfway point
+// -- measured at ~413ms into hover-card's 300ms linger + 150ms fade in Chromium,
+// Firefox, and WebKit alike, so the panel stays hit-testable for the entire
+// linger and the resting panel is still inert. The reveal rule re-states
+// `transition-property: opacity` so the flip back to `auto` on OPEN is
+// immediate. Browsers without `transition-behavior` do not transition a
+// discrete property at all and land back on the immediate flip -- degraded,
+// never broken.
+//
+// The close delay is scoped `:not([data-state=open])` rather than stated
+// unconditionally, and that scope is load-bearing: `delay-linger` on the naked
+// base rule is the delay a CONTROLLED open would inherit, since the data-state
+// path deliberately carries no delay of its own (hover-intent filters accidental
+// pointer transit; a consumer forcing `open` true has declared intent, and the
+// issue says the data-state path reveals "immediately (no delay)"). Unscoped,
+// dropping hover-intent from that path would have handed a forced-open card the
+// 300ms LINGER instead -- slower than what it replaced. The hover path is
+// unaffected either way: its reveal selector computes at (0,4,0) against this
+// rule's (0,2,0).
 const contentClasses =
   'fixed z-depth-popover w-64 rounded-md border bg-popover p-4 text-popover-foreground ' +
   'shadow-lg outline-none ' +
-  'opacity-0 pointer-events-none transition-opacity duration-fast ease-exit delay-linger ' +
+  'opacity-0 pointer-events-none transition-[opacity,pointer-events] transition-discrete ' +
+  'duration-fast ease-exit [&:not([data-state=open])]:delay-linger ' +
   '[:is([data-hover-card]:has(>[data-part=trigger]:is(:hover,:focus-visible)),[data-hover-card]:not([data-disable-hoverable-content=true]):hover)>&]:opacity-100 ' +
   '[:is([data-hover-card]:has(>[data-part=trigger]:is(:hover,:focus-visible)),[data-hover-card]:not([data-disable-hoverable-content=true]):hover)>&]:pointer-events-auto ' +
+  '[:is([data-hover-card]:has(>[data-part=trigger]:is(:hover,:focus-visible)),[data-hover-card]:not([data-disable-hoverable-content=true]):hover)>&]:transition-opacity ' +
   '[:is([data-hover-card]:has(>[data-part=trigger]:is(:hover,:focus-visible)),[data-hover-card]:not([data-disable-hoverable-content=true]):hover)>&]:duration-moderate ' +
   '[:is([data-hover-card]:has(>[data-part=trigger]:is(:hover,:focus-visible)),[data-hover-card]:not([data-disable-hoverable-content=true]):hover)>&]:ease-enter ' +
   '[:is([data-hover-card]:has(>[data-part=trigger]:is(:hover,:focus-visible)),[data-hover-card]:not([data-disable-hoverable-content=true]):hover)>&]:delay-hover-intent ' +
   'data-[state=open]:opacity-100 data-[state=open]:pointer-events-auto ' +
+  'data-[state=open]:transition-opacity ' +
   'data-[state=open]:duration-moderate data-[state=open]:ease-enter ' +
-  'data-[state=open]:delay-hover-intent ' +
   '[[data-hover-card][data-dismissed=true]>&]:opacity-0! ' +
   '[[data-hover-card][data-dismissed=true]>&]:pointer-events-none!';
 

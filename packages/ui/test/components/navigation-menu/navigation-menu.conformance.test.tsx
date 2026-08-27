@@ -79,6 +79,9 @@ function contentFor(value: string): HTMLElement {
 /** The panel's open axis is `data-state` now; `hidden` is gone for good. */
 const stateFor = (value: string): string | null => contentFor(value).getAttribute('data-state');
 
+/** The WCAG dismissal flag lives on the dismissed PANEL, not on the root. */
+const dismissedFor = (value: string): string | undefined => contentFor(value).dataset['dismissed'];
+
 afterEach(() => {
   cleanup();
 });
@@ -142,33 +145,65 @@ describe('navigation-menu conformance [react]', () => {
     // the flag can put the panel back down.
     const user = userEvent.setup();
     render(<TestMenu />);
-    const root = partElement(body(), 'root') as HTMLElement;
 
     await user.click(triggerFor('products'));
     expect(stateFor('products')).toBe('open');
-    expect(root.dataset['dismissed']).toBeUndefined();
+    expect(dismissedFor('products')).toBeUndefined();
 
     await user.click(triggerFor('products'));
     expect(stateFor('products')).toBe('closed');
-    expect(root.dataset['dismissed']).toBe('true');
+    expect(dismissedFor('products')).toBe('true');
 
     await user.click(triggerFor('products'));
     expect(stateFor('products')).toBe('open');
-    expect(root.dataset['dismissed']).toBeUndefined();
+    expect(dismissedFor('products')).toBeUndefined();
   });
 
   it('Escape raises the dismissal, and a deliberate reopen clears it', async () => {
     const user = userEvent.setup();
     render(<TestMenu />);
-    const root = partElement(body(), 'root') as HTMLElement;
     await user.click(triggerFor('products'));
     triggerFor('products').focus();
     await user.keyboard('{Escape}');
     expect(stateFor('products')).toBe('closed');
-    expect(root.dataset['dismissed']).toBe('true');
+    expect(dismissedFor('products')).toBe('true');
     await user.keyboard('{ArrowDown}');
     expect(stateFor('products')).toBe('open');
-    expect(root.dataset['dismissed']).toBeUndefined();
+    expect(dismissedFor('products')).toBeUndefined();
+  });
+
+  it('a dismissal is ONE panel: the sibling item still opens on hover', async () => {
+    // Raised on the root, the flag made the whole bar inert -- the CSS
+    // force-hide was a descendant rule over every panel, and the hover guard
+    // refused every trigger -- until the pointer left the nav entirely. After a
+    // dismissal the OTHER items must still answer the pointer.
+    const user = userEvent.setup();
+    render(<TestMenu />);
+    await user.click(triggerFor('products'));
+    triggerFor('products').focus();
+    await user.keyboard('{Escape}');
+    expect(dismissedFor('products')).toBe('true');
+
+    await user.hover(triggerFor('docs'));
+    expect(stateFor('docs')).toBe('open');
+    // ...and reaching the sibling is a fresh intent, so nothing is left flagged.
+    expect(dismissedFor('products')).toBeUndefined();
+    expect(dismissedFor('docs')).toBeUndefined();
+  });
+
+  it('the dismissed item stays dismissed while the pointer sits on it', async () => {
+    // The other half of the same property: scoping the flag must not weaken it.
+    // Escape returns focus to the trigger, so `:focus-within` still matches --
+    // re-entering THAT item may not undo the dismissal the user just asked for.
+    const user = userEvent.setup();
+    render(<TestMenu />);
+    await user.click(triggerFor('products'));
+    triggerFor('products').focus();
+    await user.keyboard('{Escape}');
+
+    await user.hover(triggerFor('products'));
+    expect(stateFor('products')).toBe('closed');
+    expect(dismissedFor('products')).toBe('true');
   });
 
   it('arrow keys rove focus across triggers with wrap', async () => {

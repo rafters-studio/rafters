@@ -63,14 +63,30 @@ const triggerChevronClasses = 'ml-1 h-3 w-3 motion-toggle group-data-[state=open
 // The `data-[state=open]` path is the JS-on half: keyboard opening (ArrowDown,
 // Enter/Space), a controlled `value`, and a tap on a device with no hover all
 // reach the panel through the score rather than through `:hover`. It carries the
-// same open cell, so the two paths cannot drift.
+// open cell's duration and curve, but NOT the hover-intent delay: that delay
+// filters accidental pointer transit, and there is no accidental ArrowDown. The
+// hover path keeps its delay regardless, because `group-hover` is the rule that
+// declares it and nothing in the data-state group competes for transition-delay.
 //
-// `data-dismissed` on the root is the WCAG 1.4.13 dismissal flag, raised by an
-// Escape keydown and cleared by a deliberate reopen or by the pointer/focus
-// leaving the menu. It has to win against reveal rules that are one class-level
-// more specific, hence the important form: after Escape the focus returns to
-// the trigger, so `:focus-within` still matches and only a force-hide can put
-// the panel back down.
+// `data-dismissed` is the WCAG 1.4.13 dismissal flag, raised by an Escape
+// keydown (or by a click that closed the panel) and cleared by a deliberate
+// reopen or by the pointer/focus leaving the menu. It is raised on THE DISMISSED
+// PANEL, never on the root: a root-scoped force-hide blanked every panel in the
+// bar at once, so after Escape a hover onto a SIBLING trigger revealed nothing
+// until the pointer left the whole nav -- a dead zone the retired hover-intent
+// never had. It has to win against reveal rules that are one class-level more
+// specific, hence the important form: after Escape the focus returns to the
+// trigger, so `:focus-within` still matches and only a force-hide can put the
+// panel back down.
+//
+// `pointer-events` rides the transition (`transition-[opacity,pointer-events]` +
+// `transition-discrete`) instead of being switched by the reveal rule, the same
+// way tooltip's and hover-card's do and for the same reason: a rule that owns
+// both makes the panel click-through the instant `:hover` drops, while it is
+// still most of the way opaque. On the transition it flips only once the fade
+// passes its halfway point, so what is visible is what is clickable. The reveal
+// rules re-state `transition-property: opacity` so the flip back to `auto` on
+// OPEN is immediate rather than half a fade late.
 //
 // NO `hidden` on the panel and no component-level reduced-motion escape.
 // `hidden` is UA-stylesheet `display: none` -- it pulls the panel out of the
@@ -80,20 +96,23 @@ const triggerChevronClasses = 'ml-1 h-3 w-3 motion-toggle group-data-[state=open
 // component-level media query.
 const contentClasses =
   'absolute left-0 top-full w-max rounded-md border bg-popover p-2 text-popover-foreground shadow-lg ' +
-  'opacity-0 pointer-events-none transition-opacity duration-fast ease-exit ' +
+  'opacity-0 pointer-events-none transition-[opacity,pointer-events] transition-discrete ' +
+  'duration-fast ease-exit ' +
   'group-hover/navigation-item:opacity-100 group-hover/navigation-item:pointer-events-auto ' +
+  'group-hover/navigation-item:transition-opacity ' +
   'group-hover/navigation-item:duration-moderate group-hover/navigation-item:ease-enter ' +
   'group-hover/navigation-item:delay-hover-intent ' +
   'group-focus-within/navigation-item:opacity-100 ' +
   'group-focus-within/navigation-item:pointer-events-auto ' +
+  'group-focus-within/navigation-item:transition-opacity ' +
   'group-focus-within/navigation-item:duration-moderate ' +
   'group-focus-within/navigation-item:ease-enter ' +
   'group-focus-within/navigation-item:delay-hover-intent ' +
   'data-[state=open]:opacity-100 data-[state=open]:pointer-events-auto ' +
+  'data-[state=open]:transition-opacity ' +
   'data-[state=open]:duration-moderate data-[state=open]:ease-enter ' +
-  'data-[state=open]:delay-hover-intent ' +
-  '[[data-part=root][data-dismissed=true]_&]:opacity-0! ' +
-  '[[data-part=root][data-dismissed=true]_&]:pointer-events-none!';
+  'data-[dismissed=true]:opacity-0! ' +
+  'data-[dismissed=true]:pointer-events-none!';
 
 const linkClasses =
   'block select-none space-y-1 rounded-md p-3 no-underline outline-none ' +

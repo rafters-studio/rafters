@@ -38,13 +38,26 @@ describe('navigation-menu classes', () => {
     // motion.jsonl gives navigation-menu / panel / "open -> closed" fast + exit
     // and an empty `delays` array. The old hover-intent timer reused its OPEN
     // delay for the close; that was drift, and closing is immediate now.
-    expect(classes.content).toContain('transition-opacity');
     expect(classes.content).toContain('opacity-0');
     expect(classes.content).toContain('pointer-events-none');
     expect(classes.content).toContain('duration-fast');
     expect(classes.content).toContain('ease-exit');
     expect(classes.content).not.toContain('delay-linger');
     expect(classes.content).not.toContain('delay-skip');
+  });
+
+  it('pointer-events rides the transition rather than the reveal rule', () => {
+    // A reveal rule that owns both opacity and pointer-events makes the panel
+    // click-through the instant `:hover` drops, while it is still most of the
+    // way opaque. On the transition (discrete, so it flips at the fade's
+    // halfway point) what is visible is what is clickable.
+    expect(classes.content).toContain('transition-[opacity,pointer-events]');
+    expect(classes.content).toContain('transition-discrete');
+    // ...and every reveal path re-states the property so the flip back to
+    // `auto` on OPEN is immediate rather than half a fade late.
+    expect(classes.content).toContain('group-hover/navigation-item:transition-opacity');
+    expect(classes.content).toContain('group-focus-within/navigation-item:transition-opacity');
+    expect(classes.content).toContain('data-[state=open]:transition-opacity');
   });
 
   it('the panel opens on the moderate/enter cell with the hover-intent delay', () => {
@@ -57,10 +70,26 @@ describe('navigation-menu classes', () => {
     ]) {
       expect(classes.content).toContain(`group-hover/navigation-item:${utility}`);
       expect(classes.content).toContain(`group-focus-within/navigation-item:${utility}`);
-      // The score-driven path: keyboard opening, a controlled `value`, and a tap
-      // on a device with no hover all reach the panel through `data-state`.
-      expect(classes.content).toContain(`data-[state=open]:${utility}`);
     }
+  });
+
+  it('the score-driven path opens on the same cell but WITHOUT the delay', () => {
+    // Keyboard opening, a controlled `value`, and a tap on a device with no
+    // hover all reach the panel through `data-state`. Hover-intent filters
+    // accidental pointer transit, and there is no accidental ArrowDown -- so
+    // that path carries the tier and the curve and no delay at all.
+    for (const utility of ['opacity-100', 'pointer-events-auto', 'duration-moderate', 'ease-enter'])
+      expect(classes.content).toContain(`data-[state=open]:${utility}`);
+    expect(classes.content).not.toContain('data-[state=open]:delay-hover-intent');
+  });
+
+  it('the dismissal flag belongs to the PANEL, never to the whole bar', () => {
+    // Root-scoped, the WCAG force-hide blanked every panel at once: after an
+    // Escape, hovering a sibling trigger revealed nothing until the pointer
+    // left the nav entirely. The flag belongs to the panel that was dismissed.
+    expect(classes.content).toContain('data-[dismissed=true]:opacity-0!');
+    expect(classes.content).toContain('data-[dismissed=true]:pointer-events-none!');
+    expect(classes.content).not.toContain('[data-part=root][data-dismissed=true]');
   });
 
   it('states no timing as a literal and queries reduced motion nowhere', () => {

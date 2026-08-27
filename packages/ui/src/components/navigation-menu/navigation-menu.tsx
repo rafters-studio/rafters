@@ -64,8 +64,10 @@ import classy from '../../primitives/classy';
 import { mergeProps } from '../../primitives/slot';
 import {
   activeItem,
+  clearNavigationMenuDismissed,
   navInstanceAria,
   navigationMenu,
+  navigationMenuPanel,
   setNavigationMenuDismissed,
   startNavigationMenuEffects,
   type NavigationMenuActions,
@@ -215,9 +217,11 @@ export function NavigationMenu({
   // `data-state="closed"`. Raise the same flag the Escape path raises.
   const toggleItem = React.useCallback(
     (value: string) => {
-      setNavigationMenuDismissed(rootRef.current, false);
+      clearNavigationMenuDismissed(rootRef.current);
       request('toggle', value);
-      if (memory.get().active === null) setNavigationMenuDismissed(rootRef.current, true);
+      if (memory.get().active === null) {
+        setNavigationMenuDismissed(navigationMenuPanel(rootRef.current, value), true);
+      }
     },
     [memory, request],
   );
@@ -240,7 +244,7 @@ export function NavigationMenu({
       if (!itemValue) return;
       event.preventDefault();
       // A deliberate open is a fresh intent: it clears any standing dismissal.
-      setNavigationMenuDismissed(rootRef.current, false);
+      clearNavigationMenuDismissed(rootRef.current);
       request('open', itemValue);
       return;
     }
@@ -250,11 +254,12 @@ export function NavigationMenu({
         `[data-part="trigger"][data-value="${active}"]`,
       );
       request('close');
-      // Raise the WCAG dismissal flag BEFORE returning focus: the refocus fires
-      // focusin, and the effects' guard reads this attribute to know not to
-      // reopen. It is written imperatively, never rendered, so React's next
-      // render cannot clobber what the effects clear.
-      setNavigationMenuDismissed(rootRef.current, true);
+      // Raise the WCAG dismissal flag on the dismissed PANEL before returning
+      // focus: the refocus fires focusin, and the effects' guard reads this
+      // attribute to know not to reopen this item (its siblings stay live). It
+      // is written imperatively, never rendered, so React's next render cannot
+      // clobber what the effects clear.
+      setNavigationMenuDismissed(navigationMenuPanel(rootRef.current, active), true);
       openTrigger?.focus();
     }
   };

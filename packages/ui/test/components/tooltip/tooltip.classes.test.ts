@@ -33,7 +33,6 @@ describe('tooltip classes', () => {
   it('closes on the fast/exit cell with NO delay reference of any kind', () => {
     // The base (unqualified) rule IS the open -> closed cell: motion.jsonl gives
     // tooltip's close `fast` + `exit` and an empty `delays` array.
-    expect(classes.content).toContain('transition-opacity');
     expect(classes.content).toContain('opacity-0');
     expect(classes.content).toContain('pointer-events-none');
     expect(classes.content).toContain('duration-fast');
@@ -41,6 +40,20 @@ describe('tooltip classes', () => {
     // A tooltip does not linger. That generic belongs to hover-card's close.
     expect(classes.content).not.toContain('delay-linger');
     expect(classes.content).not.toContain('delay-skip');
+  });
+
+  it('pointer-events rides the transition, so hoverable content cannot latch', () => {
+    // The reveal rule must not own pointer-events. If it did, the tip would stop
+    // being hit-testable the instant `:hover` dropped -- which is what happens
+    // while the pointer crosses the default 4px sideOffset gap -- and `:hover`
+    // could never come back. Handing pointer-events to a discrete transition
+    // keeps the tip hit-testable until the fade is halfway done.
+    expect(classes.content).toContain('transition-[opacity,pointer-events]');
+    expect(classes.content).toContain('transition-discrete');
+    expect(classes.content).toContain(
+      '[:is([data-tooltip]:has(>[data-part=trigger]:is(:hover,:focus-visible)),[data-tooltip]:not([data-disable-hoverable-content=true]):hover)>&]:transition-opacity',
+    );
+    expect(classes.content).toContain('data-[state=open]:transition-opacity');
   });
 
   it('opens on the moderate/enter cell with the hover-intent delay', () => {
@@ -51,13 +64,21 @@ describe('tooltip classes', () => {
       'ease-enter',
       'delay-hover-intent',
     ]) {
-      // Once through the native hover/focus-visible reveal...
       expect(classes.content).toContain(
         `[:is([data-tooltip]:has(>[data-part=trigger]:is(:hover,:focus-visible)),[data-tooltip]:not([data-disable-hoverable-content=true]):hover)>&]:${utility}`,
       );
-      // ...and once through the score-driven, controlled-open path.
-      expect(classes.content).toContain(`data-[state=open]:${utility}`);
     }
+  });
+
+  it('a forced-open tip reveals on the same cell but WITHOUT the delay', () => {
+    // "The [data-state=open] CSS path reveals the tooltip immediately (no
+    // delay) when a consumer forces open true" -- #2148, verbatim. Hover-intent
+    // filters accidental pointer transit; a consumer that sets `open` has
+    // already declared intent. The hover path keeps its delay regardless: its
+    // reveal selector computes at (0,4,0) against this rule's (0,2,0).
+    for (const utility of ['opacity-100', 'pointer-events-auto', 'duration-moderate', 'ease-enter'])
+      expect(classes.content).toContain(`data-[state=open]:${utility}`);
+    expect(classes.content).not.toContain('data-[state=open]:delay-hover-intent');
   });
 
   it('an Escape dismissal force-hides the tip even while the pointer stays', () => {

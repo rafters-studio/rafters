@@ -9,7 +9,7 @@
  * the Astro and web-component wrappers use, so behavior cannot drift between frameworks.
  *
  * Trigger and Content render NO open-derived attributes that the controller owns once
- * mounted (it reflects aria-expanded / data-state / hidden before paint); they render
+ * mounted (it reflects aria-expanded / data-state before paint); they render
  * only a static, non-reactive initial state for SSR so the server HTML is correct and
  * re-renders cannot clobber the controller. The decorative Viewport and Indicator are
  * the exception: they subscribe to the controller's open value to size / position

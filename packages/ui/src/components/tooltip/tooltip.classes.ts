@@ -53,21 +53,53 @@ const triggerClasses = 'inline-flex';
 // and hold it open), and the disabled variant narrows it to `:hover` on the
 // trigger specifically via `:has()`.
 //
+// THE REVEAL RULE MUST NOT OWN `pointer-events`. That is the whole reason
+// `transition-[opacity,pointer-events]` + `transition-discrete` sit on the base
+// rule. Hoverable content -- the DEFAULT -- only works if the tip is still
+// hit-testable while the pointer is crossing the `sideOffset` gap that belongs
+// to neither box (4px by default, tooltip.behavior.ts's tooltipPlacement). If
+// `pointer-events: none` landed the instant `:hover` dropped, the tip would stop
+// being hit-testable mid-traverse and `:hover` could never come back: the tip
+// LATCHES closed and `disableHoverableContent`'s two branches become
+// behaviourally identical. Handing pointer-events to the transition instead
+// (`transition-behavior: allow-discrete`) makes it flip only when the fade
+// passes its halfway point -- measured at ~115ms into tooltip's 150ms close in
+// Chromium, Firefox, and WebKit alike, which is ample for a traverse and still
+// leaves the resting tip inert so an invisible fixed box never eats a click.
+// The reveal rule re-states `transition-property: opacity` so the flip back to
+// `auto` on OPEN is immediate rather than half a fade late.
+// Honest limit: this is a fade-relative window, not a bridge. A traverse slower
+// than the fade's own half-life (~35px/s across the default 4px) still latches;
+// the fix for that would be geometry (a hit-testable bridge spanning the
+// offset), not timing.
+//
+// Browsers without `transition-behavior` simply do not transition a discrete
+// property, so they land back on the immediate flip -- degraded, never broken.
+//
 // `data-dismissed` is the WCAG 1.4.13 dismiss escape hatch, set by an Escape
 // keydown and cleared on pointerleave/blur. It has to win against a reveal rule
 // that is one class-level more specific, hence the important form.
+//
+// NO `delay-hover-intent` on the `data-[state=open]` path. Hover-intent filters
+// accidental pointer transit; a consumer forcing `open` true -- or a keyboard
+// user -- has already declared intent, and the issue says so in as many words:
+// the data-state path "reveals the tooltip immediately (no delay)". The hover
+// path keeps its delay regardless of which rule opened the tip, because the
+// reveal selector computes at (0,4,0) against the data-state rule's (0,2,0).
 const contentClasses =
   'fixed z-depth-tooltip w-fit overflow-hidden rounded-md bg-foreground px-3 py-1.5 ' +
   'text-body-small ts-body-small text-background shadow-lg ' +
-  'opacity-0 pointer-events-none transition-opacity duration-fast ease-exit ' +
+  'opacity-0 pointer-events-none transition-[opacity,pointer-events] transition-discrete ' +
+  'duration-fast ease-exit ' +
   '[:is([data-tooltip]:has(>[data-part=trigger]:is(:hover,:focus-visible)),[data-tooltip]:not([data-disable-hoverable-content=true]):hover)>&]:opacity-100 ' +
   '[:is([data-tooltip]:has(>[data-part=trigger]:is(:hover,:focus-visible)),[data-tooltip]:not([data-disable-hoverable-content=true]):hover)>&]:pointer-events-auto ' +
+  '[:is([data-tooltip]:has(>[data-part=trigger]:is(:hover,:focus-visible)),[data-tooltip]:not([data-disable-hoverable-content=true]):hover)>&]:transition-opacity ' +
   '[:is([data-tooltip]:has(>[data-part=trigger]:is(:hover,:focus-visible)),[data-tooltip]:not([data-disable-hoverable-content=true]):hover)>&]:duration-moderate ' +
   '[:is([data-tooltip]:has(>[data-part=trigger]:is(:hover,:focus-visible)),[data-tooltip]:not([data-disable-hoverable-content=true]):hover)>&]:ease-enter ' +
   '[:is([data-tooltip]:has(>[data-part=trigger]:is(:hover,:focus-visible)),[data-tooltip]:not([data-disable-hoverable-content=true]):hover)>&]:delay-hover-intent ' +
   'data-[state=open]:opacity-100 data-[state=open]:pointer-events-auto ' +
+  'data-[state=open]:transition-opacity ' +
   'data-[state=open]:duration-moderate data-[state=open]:ease-enter ' +
-  'data-[state=open]:delay-hover-intent ' +
   '[[data-tooltip][data-dismissed=true]>&]:opacity-0! ' +
   '[[data-tooltip][data-dismissed=true]>&]:pointer-events-none!';
 

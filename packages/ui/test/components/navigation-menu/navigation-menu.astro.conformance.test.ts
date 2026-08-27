@@ -117,7 +117,7 @@ describe('navigation-menu conformance [astro]', () => {
 
   it('Escape closes the open panel and raises the dismissal flag', async () => {
     const user = userEvent.setup();
-    const root = await mount();
+    await mount();
     await user.click(trigger('products'));
     expect(state('products')).toBe('open');
     trigger('products').focus();
@@ -125,8 +125,14 @@ describe('navigation-menu conformance [astro]', () => {
     expect(state('products')).toBe('closed');
     expect(trigger('products').getAttribute('aria-expanded')).toBe('false');
     // Focus is back on the trigger, so `:focus-within` still matches the item --
-    // only the flag can force the panel down (WCAG 1.4.13).
-    expect(root.dataset['dismissed']).toBe('true');
+    // only the flag can force the panel down (WCAG 1.4.13). It is raised on the
+    // dismissed PANEL: root-scoped it blanked every panel in the bar at once.
+    expect(content('products').dataset['dismissed']).toBe('true');
+    expect(content('company').dataset['dismissed']).toBeUndefined();
+
+    // ...so the sibling still answers a hover while the dismissal stands.
+    await user.hover(trigger('company'));
+    expect(state('company')).toBe('open');
   });
 
   // The #2001 pairing: config is data-* in the markup AND read through dataset
