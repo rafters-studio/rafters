@@ -12,12 +12,7 @@
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/radio/
  */
 
-import type {
-  CleanupFunction,
-  Direction,
-  NavigationCallback,
-  Orientation,
-} from '@/lib/primitives/types';
+import type { CleanupFunction, Direction, NavigationCallback, Orientation } from '@/lib/primitives/types';
 
 export interface RovingFocusOptions {
   /**

@@ -1,27 +1,36 @@
 /**
- * Rich hover preview: a card of supplementary content that appears on hover or
- * focus intent, anchored to its trigger, and dismisses on leave or Escape.
+ * HoverCard component for rich preview content on hover
  *
  * @cognitive-load 3/10 - Contextual preview that supplements rather than replaces visible content
- * @attention-economics Glanceable enrichment: additional context without requiring action; delayed reveal prevents accidental triggers
- * @trust-building Predictable reveal timing, stable anchored positioning, non-disruptive appearance and dismissal
- * @accessibility role=dialog preview named by the consumer, aria-describedby link from the trigger, keyboard-triggerable via focus, Escape dismiss; the card is hoverable so the pointer can travel onto it
+ * @attention-economics Glanceable enrichment: provides additional context without requiring action
+ * @trust-building Predictable reveal timing, stable positioning, non-disruptive appearance
+ * @accessibility Focus management, keyboard triggerable via focus, escape to dismiss, role="dialog" with aria-describedby
  * @semantic-meaning Rich preview: profile cards, link previews, contextual details that enhance understanding
  *
- * The React performance decorates the hover-card score (hover-card.behavior.ts)
- * with the view (hover-card.classes.ts) and the framework wiring only:
- * hover-intent timing via the shared hover-delay primitive, and anchored
- * positioning via the shared positionHoverCardContent composer. Every decision --
- * reducers, aria, keymap -- stays in the score.
+ * @usage-patterns
+ * DO: Show supplementary information like user profiles, link previews, or contextual details
+ * DO: Use appropriate delays to prevent accidental triggers (openDelay >= 500ms recommended)
+ * DO: Keep content focused and scannable - users glance, not read
+ * DO: Position intelligently to avoid viewport edges
+ * NEVER: Essential information that should always be visible
+ * NEVER: Interactive forms or multi-step workflows (use Popover instead)
+ * NEVER: Time-sensitive content that disappears before user can read it
  *
  * @example
  * ```tsx
  * <HoverCard>
- *   <HoverCardTrigger href="/user/john">@john</HoverCardTrigger>
- *   <HoverCardContent aria-label="John Doe">
- *     <h4>John Doe</h4>
- *     <p>Software Engineer</p>
- *   </HoverCardContent>
+ *   <HoverCard.Trigger asChild>
+ *     <a href="/user/john">@john</a>
+ *   </HoverCard.Trigger>
+ *   <HoverCard.Content>
+ *     <div className="flex gap-4">
+ *       <Avatar src="/john.jpg" />
+ *       <div>
+ *         <h4>John Doe</h4>
+ *         <p>Software Engineer</p>
+ *       </div>
+ *     </div>
+ *   </HoverCard.Content>
  * </HoverCard>
  * ```
  */
