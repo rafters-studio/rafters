@@ -226,15 +226,56 @@ export function navigationMenuPanel(root: HTMLElement | null, value: string): HT
   return root?.querySelector<HTMLElement>(`[data-part="content"][data-value="${value}"]`) ?? null;
 }
 
-/** Clear every standing dismissal under a root: the pointer or focus left the
- *  menu, or a deliberate intent (click, ArrowDown, hovering a different item)
- *  superseded it. Sweeping is not a shortcut for tracking which panel is
- *  flagged -- at most one ever is, and a stale flag on another would be exactly
- *  the dead zone the per-panel scope exists to prevent. */
-export function clearNavigationMenuDismissed(root: HTMLElement | null): void {
+/**
+ * The item that scopes one panel's reveal: trigger and content are siblings
+ * inside it (navigation-menu.classes.ts's `group/navigation-item`), so the
+ * item's `:hover` and `:focus-within` are exactly the two conditions the
+ * stylesheet reveals the panel on.
+ */
+const itemScopeOf = (panel: HTMLElement): HTMLElement => panel.parentElement ?? panel;
+
+/**
+ * Can this panel still be revealed by CSS alone -- is its item hovered, or does
+ * it hold the focus? A dismissal may only be dropped once the answer is no.
+ *
+ * `focusTarget` is where focus is COMING TO REST, which is not always
+ * `document.activeElement`: inside a focusout handler the browser has not moved
+ * it yet, so the caller passes the event's relatedTarget instead. Reading
+ * activeElement there would call a panel settled at the exact moment Escape is
+ * handing focus back to its own trigger.
+ */
+function canStillReveal(panel: HTMLElement, focusTarget: Node | null): boolean {
+  const item = itemScopeOf(panel);
+  return item.matches(':hover') || (focusTarget !== null && item.contains(focusTarget));
+}
+
+/**
+ * Drop every dismissal that has SETTLED -- every flagged panel whose item is
+ * neither hovered nor holding focus any more.
+ *
+ * The condition is the whole point. Clearing a dismissal unconditionally when
+ * the pointer left the bar re-revealed the panel the user had just dismissed:
+ * a click-to-close or an Escape leaves focus on the trigger (Escape returns it
+ * there deliberately), so `group-focus-within/navigation-item:opacity-100` was
+ * still matching, and deleting `data-dismissed` brought the panel back at
+ * opacity 1 and hit-testable against `data-state="closed"` and
+ * `aria-expanded="false"` -- a WCAG 1.4.13 dismissibility failure the `hidden`
+ * panel of the old design could not have. The mirror case is focus leaving
+ * while the pointer still rests on the item.
+ *
+ * Because the pointer axis and the focus axis are checked per panel rather than
+ * per menu, the two leave handlers hand off to each other: whichever leaves
+ * LAST is the one whose sweep finds the panel settled and clears it. Nothing
+ * stays flagged once nothing can reveal it, so there is no dead item left
+ * behind either.
+ */
+export function clearSettledNavigationMenuDismissals(
+  root: HTMLElement | null,
+  focusTarget: Node | null = document.activeElement,
+): void {
   if (!root) return;
   for (const panel of root.querySelectorAll<HTMLElement>('[data-part="content"][data-dismissed]')) {
-    delete panel.dataset['dismissed'];
+    if (!canStillReveal(panel, focusTarget)) delete panel.dataset['dismissed'];
   }
 }
 
@@ -273,12 +314,16 @@ export function startNavigationMenuEffects({
   const releaseRoving = list ? createRovingFocus(list, { orientation }) : () => {};
 
   // One entry point for both hover and focus: the item that was dismissed stays
-  // dismissed while the pointer/focus sits on it, and reaching any OTHER item is
-  // a fresh intent that clears the standing flag. Guarding per item is what
-  // keeps a dismissal from making the rest of the bar inert.
+  // dismissed while the pointer/focus sits on it, and reaching any OTHER item
+  // opens that one. Reaching a sibling does NOT force the standing flag off the
+  // dismissed panel -- Escape left focus on ITS trigger, so its
+  // `:focus-within` is still matching and an unconditional clear would bring
+  // the dismissed panel back alongside the one being hovered. The sweep drops
+  // it the moment it has settled instead. Guarding per item is what keeps a
+  // dismissal from making the rest of the bar inert.
   const enterItem = (value: string) => {
     if (isDismissed(navigationMenuPanel(root, value))) return;
-    clearNavigationMenuDismissed(root);
+    clearSettledNavigationMenuDismissals(root);
     onHoverOpen(value);
   };
 
@@ -289,7 +334,7 @@ export function startNavigationMenuEffects({
     if (value) enterItem(value);
   };
   const onPointerLeave = () => {
-    clearNavigationMenuDismissed(root);
+    clearSettledNavigationMenuDismissals(root);
     onClose();
   };
   // focusin/focusout rather than focus/blur: they carry a relatedTarget, which
@@ -305,9 +350,15 @@ export function startNavigationMenuEffects({
     if (value) enterItem(value);
   };
   const onFocusOut = (event: FocusEvent) => {
+    // Focus moving off an item settles that item whatever the destination --
+    // including a rove to a SIBLING trigger, which never reaches the close
+    // below. A flag left standing on a panel nothing can reveal any more is a
+    // dead item: the guard in enterItem would keep refusing to open it. The
+    // destination is read from relatedTarget, not activeElement, because the
+    // browser has not moved focus yet when focusout fires.
     const next = event.relatedTarget;
+    clearSettledNavigationMenuDismissals(root, next instanceof Node ? next : null);
     if (next instanceof Node && root.contains(next)) return;
-    clearNavigationMenuDismissed(root);
     onClose();
   };
 
@@ -427,8 +478,11 @@ export function bindNavigationMenu(root: HTMLElement): () => void {
     const trigger = (event.target as HTMLElement).closest<HTMLElement>('[data-part="trigger"]');
     const value = trigger?.dataset['value'];
     if (!value || !root.contains(trigger)) return;
-    // A deliberate click is a fresh intent: it clears any standing dismissal.
-    clearNavigationMenuDismissed(root);
+    // A deliberate click is a fresh intent for THIS item, so it drops THIS
+    // panel's flag unconditionally -- the settling sweep would refuse to,
+    // because the item the user just clicked is both hovered and focused.
+    // Siblings keep their own flags; the sweep drops those when they settle.
+    setNavigationMenuDismissed(navigationMenuPanel(root, value), false);
     request('toggle', value);
     // ...but a click (or Enter/Space, which a native button fulfils as a click)
     // that CLOSED the panel leaves focus on the trigger, so the item still
@@ -460,8 +514,10 @@ export function bindNavigationMenu(root: HTMLElement): () => void {
       const value = trigger?.dataset['value'];
       if (!value) return;
       event.preventDefault();
-      // A deliberate open is a fresh intent: it clears any standing dismissal.
-      clearNavigationMenuDismissed(root);
+      // A deliberate open is a fresh intent for THIS item -- same reason as the
+      // click path: the trigger holds focus, so only an unconditional drop gets
+      // the panel back up.
+      setNavigationMenuDismissed(navigationMenuPanel(root, value), false);
       request('open', value);
       return;
     }

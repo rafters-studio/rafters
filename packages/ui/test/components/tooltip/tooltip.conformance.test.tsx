@@ -160,7 +160,43 @@ describe('tooltip conformance [react]', () => {
     expect(rootEl()?.getAttribute('data-dismissed')).toBe('true');
     await user.unhover(trigger);
     expect(stateOf('content')).toBe('closed');
-    // Cleared, so a fresh hover reopens normally.
+    // Cleared, so a fresh hover reopens normally. Nothing held the focus here,
+    // so the pointer was the LAST reveal condition to go.
+    expect(rootEl()?.hasAttribute('data-dismissed')).toBe(false);
+  });
+
+  it('the dismissal survives a pointer leave while the trigger still holds focus', async () => {
+    // The reveal rule has a focus half of its own
+    // (`[data-tooltip]:has(> [data-part=trigger]:focus-visible)`), so a
+    // pointerleave that cleared the flag put the dismissed tip straight back up
+    // -- visible against `data-state="closed"` (WCAG 1.4.13).
+    const user = userEvent.setup();
+    renderInLandmark(<TestTooltip />);
+    const trigger = partElement(body(), 'trigger') as HTMLElement;
+    trigger.focus();
+    await user.hover(trigger);
+    fireEvent.keyDown(trigger, { key: 'Escape' });
+    expect(rootEl()?.getAttribute('data-dismissed')).toBe('true');
+
+    await user.unhover(trigger);
+    expect(stateOf('content')).toBe('closed');
+    expect(document.activeElement).toBe(trigger);
+    expect(rootEl()?.getAttribute('data-dismissed')).toBe('true');
+  });
+
+  it('the dismissal settles once the trigger blurs too', async () => {
+    // The handoff: whichever of pointer/focus leaves LAST does the clear, so a
+    // flag never outlives every reveal condition and blocks the next hover.
+    const user = userEvent.setup();
+    renderInLandmark(<TestTooltip />);
+    const trigger = partElement(body(), 'trigger') as HTMLElement;
+    trigger.focus();
+    await user.hover(trigger);
+    fireEvent.keyDown(trigger, { key: 'Escape' });
+    await user.unhover(trigger);
+    expect(rootEl()?.getAttribute('data-dismissed')).toBe('true');
+
+    fireEvent.blur(trigger);
     expect(rootEl()?.hasAttribute('data-dismissed')).toBe(false);
   });
 

@@ -89,6 +89,37 @@ describe('tooltip conformance [wc]', () => {
     expect(host().dataset['dismissed']).toBe('true');
   });
 
+  it('the dismissal survives a pointer leave while the trigger still holds focus', async () => {
+    // The reveal rule has a focus half of its own
+    // (`[data-tooltip]:has(> [data-part=trigger]:focus-visible)`), so a
+    // pointerleave that cleared the flag put the dismissed tip straight back up
+    // -- visible against `data-state="closed"` (WCAG 1.4.13).
+    const user = userEvent.setup();
+    await mount();
+    trigger().focus();
+    await user.keyboard('{Escape}');
+    expect(host().dataset['dismissed']).toBe('true');
+
+    await user.unhover(host());
+    expect(state()).toBe('closed');
+    expect(document.activeElement).toBe(trigger());
+    expect(host().dataset['dismissed']).toBe('true');
+  });
+
+  it('the dismissal settles once the trigger blurs too', async () => {
+    // The handoff: whichever of pointer/focus leaves LAST does the clear, so a
+    // flag never outlives every reveal condition and blocks the next hover.
+    const user = userEvent.setup();
+    await mount();
+    trigger().focus();
+    await user.keyboard('{Escape}');
+    await user.unhover(host());
+    expect(host().dataset['dismissed']).toBe('true');
+
+    trigger().blur();
+    expect(host().dataset['dismissed']).toBeUndefined();
+  });
+
   it('hoverable content holds the tip open: the root is the hover scope', async () => {
     const user = userEvent.setup();
     await mount();

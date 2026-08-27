@@ -67,9 +67,13 @@ export class RaftersNavigationMenu extends HTMLElement {
 
   connectedCallback(): void {
     if (!this.hasAttribute('role')) this.setAttribute('role', 'navigation');
-    // Target parity (#2148): the Astro and React roots are `<nav data-part="root">`,
-    // and the panel's dismissal rule is scoped by that marker, so the host has
-    // to carry it too or an Escape could not force the panel back down.
+    // Target parity: the Astro and React roots are `<nav data-part="root">`, so
+    // the host carries the marker too and a generic part lookup -- the
+    // conformance harness's, or a consumer's own query -- resolves the root to
+    // the same element on all three performances. The dismissal does NOT depend
+    // on it: that flag is `data-dismissed` on the panel itself
+    // (navigation-menu.classes.ts), and the bind path finds the root without
+    // the attribute because getPart special-cases it.
     if (!this.hasAttribute('data-part')) this.dataset['part'] = 'root';
     // connectedCallback can fire before the light-DOM children are parsed
     // (upgrade order), so bind on the next microtask when the parts exist.

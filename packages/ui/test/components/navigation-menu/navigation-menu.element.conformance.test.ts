@@ -174,7 +174,11 @@ describe('navigation-menu conformance [wc]', () => {
 
     await user.hover(trigger('docs'));
     expect(state('docs')).toBe('open');
-    expect(dismissed('products')).toBeUndefined();
+    // ...and the dismissed panel keeps its own flag, because Escape left focus
+    // on ITS trigger: `:focus-within` is still matching there, so dropping the
+    // flag would bring the dismissed panel back up beside the hovered one.
+    expect(dismissed('products')).toBe('true');
+    expect(state('products')).toBe('closed');
 
     // And re-entering the dismissed item does NOT undo the dismissal while it
     // still stands: scoping the flag must not weaken it.
@@ -185,6 +189,45 @@ describe('navigation-menu conformance [wc]', () => {
     await user.hover(trigger('products'));
     expect(state('products')).toBe('closed');
     expect(dismissed('products')).toBe('true');
+  });
+
+  it('the dismissal survives a pointer leave while the trigger still holds focus', async () => {
+    // The WCAG 1.4.13 regression. Clearing the flag unconditionally when the
+    // pointer left the bar re-revealed the panel the user had just dismissed:
+    // Escape returns focus to the trigger, so `:focus-within` was still
+    // matching and the unflagged panel came back at opacity 1 and hit-testable
+    // against `data-state="closed"` / `aria-expanded="false"`.
+    const user = userEvent.setup();
+    const host = await mount();
+    await user.click(trigger('products'));
+    trigger('products').focus();
+    await user.keyboard('{Escape}');
+    expect(dismissed('products')).toBe('true');
+    expect(document.activeElement).toBe(trigger('products'));
+
+    host.dispatchEvent(new Event('pointerleave'));
+    expect(dismissed('products')).toBe('true');
+    expect(state('products')).toBe('closed');
+    expect(trigger('products').getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('the dismissal settles once focus leaves too -- no dead item left behind', async () => {
+    // The other side of the guard: a flag outliving every reveal condition
+    // would leave the item refusing to open on the next hover.
+    const user = userEvent.setup();
+    const host = await mount();
+    const outside = document.createElement('button');
+    outside.type = 'button';
+    document.body.appendChild(outside);
+
+    await user.click(trigger('products'));
+    trigger('products').focus();
+    await user.keyboard('{Escape}');
+    expect(dismissed('products')).toBe('true');
+
+    host.dispatchEvent(new Event('pointerleave'));
+    outside.focus();
+    expect(dismissed('products')).toBeUndefined();
   });
 
   it('hover opens the panel IMMEDIATELY -- the intent wait is the transition', async () => {

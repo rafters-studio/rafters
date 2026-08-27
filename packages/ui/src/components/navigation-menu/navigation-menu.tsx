@@ -64,7 +64,6 @@ import classy from '../../primitives/classy';
 import { mergeProps } from '../../primitives/slot';
 import {
   activeItem,
-  clearNavigationMenuDismissed,
   navInstanceAria,
   navigationMenu,
   navigationMenuPanel,
@@ -210,14 +209,16 @@ export function NavigationMenu({
     });
   }, [orientation, getPart, request]);
 
-  // A deliberate click is a fresh intent, so it clears any standing dismissal --
-  // but a click (or Enter/Space, which a native button fulfils as a click) that
-  // CLOSED the panel leaves focus on the trigger, so the item still matches
-  // `:focus-within` and the reveal rule would keep the panel visible against a
+  // A deliberate click is a fresh intent for THIS item, so it drops THIS
+  // panel's flag unconditionally (the clicked item is hovered and focused, so
+  // the settling sweep in the effects would keep it) -- but a click (or
+  // Enter/Space, which a native button fulfils as a click) that CLOSED the panel
+  // leaves focus on the trigger, so the item still matches `:focus-within` and
+  // the reveal rule would keep the panel visible against a
   // `data-state="closed"`. Raise the same flag the Escape path raises.
   const toggleItem = React.useCallback(
     (value: string) => {
-      clearNavigationMenuDismissed(rootRef.current);
+      setNavigationMenuDismissed(navigationMenuPanel(rootRef.current, value), false);
       request('toggle', value);
       if (memory.get().active === null) {
         setNavigationMenuDismissed(navigationMenuPanel(rootRef.current, value), true);
@@ -243,8 +244,10 @@ export function NavigationMenu({
       const itemValue = trigger?.dataset['value'];
       if (!itemValue) return;
       event.preventDefault();
-      // A deliberate open is a fresh intent: it clears any standing dismissal.
-      clearNavigationMenuDismissed(rootRef.current);
+      // A deliberate open is a fresh intent for THIS item -- same reason as the
+      // click path: the trigger holds focus, so only an unconditional drop gets
+      // the panel back up.
+      setNavigationMenuDismissed(navigationMenuPanel(rootRef.current, itemValue), false);
       request('open', itemValue);
       return;
     }

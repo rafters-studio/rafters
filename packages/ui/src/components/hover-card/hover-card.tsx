@@ -165,12 +165,18 @@ export function HoverCardRoot({
   // declared un-hoverable. These handlers move `data-state`, `onOpenChange`,
   // and positioning -- visibility belongs to the stylesheet, always, and there
   // is no timer on either side of the transition.
+  //
+  // The dismissal is dropped only once nothing can still reveal the card: the
+  // trigger's `:focus-visible` is a reveal half of its own, so a pointerleave
+  // that cleared the flag while the trigger still held focus would put the
+  // dismissed card straight back up (WCAG 1.4.13). The trigger's own blur checks
+  // the hover axis in the same way -- whichever leaves last does the clear.
   const scopeHandlers = disableHoverableContent
     ? {}
     : {
         onPointerEnter: () => request('open'),
-        onPointerLeave: () => {
-          setDismissed(false);
+        onPointerLeave: (event: React.PointerEvent<HTMLDivElement>) => {
+          if (!event.currentTarget.contains(document.activeElement)) setDismissed(false);
           request('close');
         },
       };
@@ -234,7 +240,9 @@ export function HoverCardTrigger({
   const handlePointerLeave = (event: React.PointerEvent<HTMLAnchorElement>) => {
     onPointerLeave?.(event);
     if (disableHoverableContent) {
-      setDismissed(false);
+      // Same handoff as the root scope: the focus half of the reveal rule may
+      // still be matching, and clearing under it re-reveals the dismissed card.
+      if (!event.currentTarget.contains(document.activeElement)) setDismissed(false);
       request('close');
     }
   };
@@ -244,7 +252,13 @@ export function HoverCardTrigger({
   };
   const handleBlur = (event: React.FocusEvent<HTMLAnchorElement>) => {
     onBlur?.(event);
-    setDismissed(false);
+    // The other half of the handoff: the hover scope -- the root, or the trigger
+    // alone when the content is un-hoverable -- may still be `:hover`, and the
+    // reveal rule does not care that focus has gone.
+    const scope = disableHoverableContent
+      ? event.currentTarget
+      : event.currentTarget.closest('[data-part="root"]');
+    if (scope?.matches(':hover') !== true) setDismissed(false);
     request('close');
   };
   const handleKeyDown = (event: React.KeyboardEvent<HTMLAnchorElement>) => {

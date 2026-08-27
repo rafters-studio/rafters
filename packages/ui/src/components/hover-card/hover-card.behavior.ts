@@ -250,14 +250,24 @@ export function bindHoverCard(root: HTMLElement): () => void {
   // content is declared un-hoverable. These dispatches move `data-state`,
   // `onOpenChange`, and positioning -- visibility is the stylesheet's, always.
   const hoverScope = config.disableHoverableContent ? trigger : root;
+
+  // A standing dismissal may only be dropped once NOTHING can still reveal the
+  // card. The reveal rule has two independent halves -- the hover scope's
+  // `:hover` and the trigger's `:focus-visible` -- so clearing on one axis while
+  // the other is still matching brings the dismissed card straight back at
+  // opacity 1 against `data-state="closed"` (WCAG 1.4.13). Each leave handler
+  // therefore checks the OTHER axis, and whichever leaves last does the clear.
+  const triggerFocused = () => trigger !== null && trigger === document.activeElement;
+  const scopeHovered = () => hoverScope?.matches(':hover') === true;
+
   const onPointerEnter = () => void request('open');
   const onPointerLeave = () => {
-    clearDismissed();
+    if (!triggerFocused()) clearDismissed();
     request('close');
   };
   const onFocus = () => void request('open');
   const onBlur = () => {
-    clearDismissed();
+    if (!scopeHovered()) clearDismissed();
     request('close');
   };
 

@@ -11,7 +11,7 @@
  * navigation-menu.classes.test.ts and test/motion/hover-reveal.e2e.ts.
  */
 import * as React from 'react';
-import { cleanup, render } from '@testing-library/react';
+import { cleanup, fireEvent, render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -186,9 +186,64 @@ describe('navigation-menu conformance [react]', () => {
 
     await user.hover(triggerFor('docs'));
     expect(stateFor('docs')).toBe('open');
-    // ...and reaching the sibling is a fresh intent, so nothing is left flagged.
-    expect(dismissedFor('products')).toBeUndefined();
     expect(dismissedFor('docs')).toBeUndefined();
+    // ...and the dismissed panel keeps its flag while ITS trigger still holds
+    // the focus. Dropping it here would be the re-reveal: Escape left focus on
+    // trigger `products`, so `group-focus-within/navigation-item` is still
+    // matching and an unflagged panel comes back at opacity 1 against
+    // `data-state="closed"` and `aria-expanded="false"`.
+    expect(dismissedFor('products')).toBe('true');
+    expect(stateFor('products')).toBe('closed');
+    expect(triggerFor('products').getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('the dismissal survives a pointer leave while the trigger still holds focus', async () => {
+    // The WCAG 1.4.13 regression. Clearing the flag unconditionally when the
+    // pointer left the bar re-revealed the panel the user had just dismissed:
+    // the other reveal half (`:focus-within`, via the focus Escape returns to
+    // the trigger) was still matching, so the panel came back visible and
+    // hit-testable while the score said closed.
+    const user = userEvent.setup();
+    render(<TestMenu />);
+    await user.click(triggerFor('products'));
+    triggerFor('products').focus();
+    await user.keyboard('{Escape}');
+    expect(dismissedFor('products')).toBe('true');
+    expect(document.activeElement).toBe(triggerFor('products'));
+
+    fireEvent.pointerLeave(partElement(body(), 'root') as HTMLElement);
+    expect(dismissedFor('products')).toBe('true');
+    expect(stateFor('products')).toBe('closed');
+    expect(triggerFor('products').getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('the dismissal settles once focus leaves too -- no dead item left behind', async () => {
+    // The other side of the guard: a flag that outlived every reveal condition
+    // would make the item refuse to open on the next hover. Once the trigger
+    // has given up focus and the pointer is elsewhere, nothing can reveal the
+    // panel, so the flag goes.
+    const user = userEvent.setup();
+    render(
+      <main>
+        <TestMenu />
+        <button type="button" id="after-the-menu">
+          after
+        </button>
+      </main>,
+    );
+    await user.click(triggerFor('products'));
+    triggerFor('products').focus();
+    await user.keyboard('{Escape}');
+    expect(dismissedFor('products')).toBe('true');
+
+    (body().querySelector('#after-the-menu') as HTMLElement).focus();
+    expect(dismissedFor('products')).toBeUndefined();
+
+    // ...and the item answers the pointer again -- via the sibling, because
+    // userEvent only emits pointerenter when the pointer actually moves.
+    await user.hover(triggerFor('docs'));
+    await user.hover(triggerFor('products'));
+    expect(stateFor('products')).toBe('open');
   });
 
   it('the dismissed item stays dismissed while the pointer sits on it', async () => {
