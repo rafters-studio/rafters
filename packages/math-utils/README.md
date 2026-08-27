@@ -13,7 +13,7 @@ in this package hard-codes a canonical list.
 ## Install
 
 ```bash
-npm install @rafters/math-utils
+pnpm add @rafters/math-utils
 ```
 
 This package publishes its TypeScript source directly (no compiled output),

@@ -23,7 +23,7 @@ export interface UnitValue {
 
 /**
  * Default unit registry. Starter data, not authoritative -- pass your own
- * `Unit[]` registry into `parseUnitString` to override or extend.
+ * `Unit[]` registry into `tryParseUnit` to override or extend.
  *
  * Length units carry `toBase` relative to px (the base of the length kind).
  * Other kinds don't have a meaningful single-base scale (% needs parent
@@ -47,7 +47,7 @@ export const DEFAULT_UNITS: Unit[] = [
   { name: 'vmax', kind: 'viewport-relative' },
 ];
 
-/** A pseudo-unit representing a unitless number, used as the right-hand side of * and / operations. */
+/** A pseudo-unit representing a unitless number, returned by `parseUnitString` for a bare, suffix-less number. */
 const UNITLESS: Unit = { name: '', kind: 'length' };
 
 /** Look up a unit by name in a registry. Returns undefined if not found. */
