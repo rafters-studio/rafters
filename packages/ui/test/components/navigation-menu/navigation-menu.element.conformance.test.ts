@@ -125,6 +125,27 @@ describe('navigation-menu conformance [wc]', () => {
     expect(host.dataset['dismissed']).toBe('true');
   });
 
+  it('a click that CLOSES raises the dismissal too -- focus is still on the trigger', async () => {
+    // Enter/Space reach the same handler (a native button fulfils them as a
+    // click), so this is the keyboard close path as well. Without the flag the
+    // item still matches `:focus-within` and the panel would stay visible with
+    // data-state="closed".
+    const user = userEvent.setup();
+    const host = await mount();
+    await user.click(trigger('products'));
+    expect(state('products')).toBe('open');
+    expect(host.dataset['dismissed']).toBeUndefined();
+
+    await user.click(trigger('products'));
+    expect(state('products')).toBe('closed');
+    expect(host.dataset['dismissed']).toBe('true');
+
+    // ...and a third click reopens, clearing it again.
+    await user.click(trigger('products'));
+    expect(state('products')).toBe('open');
+    expect(host.dataset['dismissed']).toBeUndefined();
+  });
+
   it('a deliberate reopen clears the dismissal', async () => {
     const user = userEvent.setup();
     const host = await mount();

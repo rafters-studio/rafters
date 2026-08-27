@@ -135,6 +135,42 @@ describe('navigation-menu conformance [react]', () => {
     expect(stateFor('docs')).toBe('closed');
   });
 
+  it('a click that CLOSES raises the dismissal; a click that opens clears it', async () => {
+    // Enter/Space reach the same handler (a native button fulfils them as a
+    // click), so this is the keyboard close path as well. Focus stays on the
+    // trigger after the click, so the item still matches `:focus-within` -- only
+    // the flag can put the panel back down.
+    const user = userEvent.setup();
+    render(<TestMenu />);
+    const root = partElement(body(), 'root') as HTMLElement;
+
+    await user.click(triggerFor('products'));
+    expect(stateFor('products')).toBe('open');
+    expect(root.dataset['dismissed']).toBeUndefined();
+
+    await user.click(triggerFor('products'));
+    expect(stateFor('products')).toBe('closed');
+    expect(root.dataset['dismissed']).toBe('true');
+
+    await user.click(triggerFor('products'));
+    expect(stateFor('products')).toBe('open');
+    expect(root.dataset['dismissed']).toBeUndefined();
+  });
+
+  it('Escape raises the dismissal, and a deliberate reopen clears it', async () => {
+    const user = userEvent.setup();
+    render(<TestMenu />);
+    const root = partElement(body(), 'root') as HTMLElement;
+    await user.click(triggerFor('products'));
+    triggerFor('products').focus();
+    await user.keyboard('{Escape}');
+    expect(stateFor('products')).toBe('closed');
+    expect(root.dataset['dismissed']).toBe('true');
+    await user.keyboard('{ArrowDown}');
+    expect(stateFor('products')).toBe('open');
+    expect(root.dataset['dismissed']).toBeUndefined();
+  });
+
   it('arrow keys rove focus across triggers with wrap', async () => {
     const user = userEvent.setup();
     render(<TestMenu />);

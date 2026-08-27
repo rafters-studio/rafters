@@ -86,8 +86,8 @@ interface NavigationMenuContextValue {
     ...payload: PayloadArgs<NavigationMenuActions[K]>
   ) => boolean;
   getPart: (part: string) => HTMLElement | null;
-  /** Raise or clear the WCAG 1.4.13 dismissal flag on the root. */
-  setDismissed: (dismissed: boolean) => void;
+  /** Toggle an item AND keep the WCAG 1.4.13 dismissal flag in step. */
+  toggleItem: (value: string) => void;
   instanceId: (part: NavigationMenuPart, key: string) => string;
   config: NavigationMenuConfig;
   active: string | null;
@@ -208,6 +208,20 @@ export function NavigationMenu({
     });
   }, [orientation, getPart, request]);
 
+  // A deliberate click is a fresh intent, so it clears any standing dismissal --
+  // but a click (or Enter/Space, which a native button fulfils as a click) that
+  // CLOSED the panel leaves focus on the trigger, so the item still matches
+  // `:focus-within` and the reveal rule would keep the panel visible against a
+  // `data-state="closed"`. Raise the same flag the Escape path raises.
+  const toggleItem = React.useCallback(
+    (value: string) => {
+      setNavigationMenuDismissed(rootRef.current, false);
+      request('toggle', value);
+      if (memory.get().active === null) setNavigationMenuDismissed(rootRef.current, true);
+    },
+    [memory, request],
+  );
+
   const aria = navigationMenu.aria(state, config, ids);
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
@@ -251,7 +265,7 @@ export function NavigationMenu({
     aria,
     request,
     getPart,
-    setDismissed: (dismissed: boolean) => setNavigationMenuDismissed(rootRef.current, dismissed),
+    toggleItem,
     instanceId,
     config,
     active,
@@ -317,8 +331,7 @@ export function NavigationMenuTrigger({
   onClick,
   ...props
 }: NavigationMenuTriggerProps) {
-  const { config, state, classes, request, setDismissed } =
-    useNavigationMenuContext('NavigationMenuTrigger');
+  const { config, state, classes, toggleItem } = useNavigationMenuContext('NavigationMenuTrigger');
   const { value, triggerId, contentId } = useItemContext('NavigationMenuTrigger');
   const aria = navInstanceAria('trigger', value, state, config, {
     trigger: triggerId,
@@ -337,9 +350,7 @@ export function NavigationMenuTrigger({
       onClick={(event) => {
         onClick?.(event);
         if (event.defaultPrevented) return;
-        // A deliberate click is a fresh intent: it clears any standing dismissal.
-        setDismissed(false);
-        request('toggle', value);
+        toggleItem(value);
       }}
       {...props}
     >

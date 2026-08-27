@@ -397,6 +397,12 @@ export function bindNavigationMenu(root: HTMLElement): () => void {
     // A deliberate click is a fresh intent: it clears any standing dismissal.
     setNavigationMenuDismissed(root, false);
     request('toggle', value);
+    // ...but a click (or Enter/Space, which a native button fulfils as a click)
+    // that CLOSED the panel leaves focus on the trigger, so the item still
+    // matches `:focus-within` and the reveal rule would keep the panel visible
+    // against a `data-state="closed"`. Same dismissal the Escape path raises,
+    // for the same reason.
+    if (memory.get().active === null) setNavigationMenuDismissed(root, true);
   };
   root.addEventListener('click', onClick);
 
