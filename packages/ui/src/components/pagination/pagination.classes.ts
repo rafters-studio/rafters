@@ -16,7 +16,7 @@ export const paginationContentClasses = 'flex flex-row items-center gap-1';
 
 export const paginationLinkBaseClasses =
   'inline-flex items-center justify-center rounded-md text-label-medium ts-label-medium ' +
-  'transition-colors duration-150 motion-reduce:transition-none ' +
+  'transition-colors duration-fast motion-reduce:transition-none ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ' +
   'disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none ' +
   'aria-disabled:opacity-50 aria-disabled:cursor-not-allowed aria-disabled:pointer-events-none';

@@ -41,7 +41,7 @@ describe('sheet classes', () => {
 
   it('drops the oracle slide utilities and its raw slide durations (motion tokens pending)', () => {
     // The overlay and the per-side content carry the motion the oracle animated;
-    // the close button's duration-150 is a hover acknowledgment (Spec 04 keeps
+    // the close button's duration-fast is a hover acknowledgment (Spec 04 keeps
     // those), so it is excluded from this scan.
     const motionSurfaces = `${classes.overlay} ${sheetContentClasses('right')}`;
     expect(motionSurfaces).not.toContain('animate-in');

@@ -58,7 +58,7 @@ const rangeFillClasses: Record<SliderVariant, string> = {
 
 const baseThumbClasses =
   'absolute block rounded-full border-2 bg-background ' +
-  'ring-offset-background transition-all duration-150 motion-reduce:transition-none ' +
+  'ring-offset-background transition-all duration-fast motion-reduce:transition-none ' +
   'hover:scale-110 active:scale-105 ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ' +
   'disabled:cursor-not-allowed';

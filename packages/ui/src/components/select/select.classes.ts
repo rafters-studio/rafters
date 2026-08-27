@@ -21,7 +21,7 @@ export interface SelectClassSet {
 const triggerClasses =
   'group flex h-11 @md:h-9 w-full items-center justify-between gap-2 rounded-md ' +
   'border border-input bg-background px-3 py-2 text-body-small ts-body-small shadow-sm ring-offset-background ' +
-  'transition-shadow duration-100 motion-reduce:transition-none ' +
+  'transition-shadow duration-fast motion-reduce:transition-none ' +
   'hover:border-input-hover ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ' +
   'disabled:cursor-not-allowed disabled:opacity-50 ' +
@@ -32,7 +32,7 @@ const triggerClasses =
 const valueClasses = 'pointer-events-none truncate text-left data-[empty]:text-muted-foreground';
 
 const chevronClasses =
-  'size-4 shrink-0 opacity-50 transition-transform duration-200 motion-reduce:transition-none ' +
+  'size-4 shrink-0 opacity-50 transition-transform duration-moderate motion-reduce:transition-none ' +
   'group-data-[state=open]:rotate-180';
 
 const contentClasses =
