@@ -6,16 +6,25 @@
  * 1. rafters_workspaces - List workspaces, or update a workspace's WIRING config.
  * 2. rafters_describe   - Recursively introspect the component/composite intel
  *                         graph. A dot-address resolves through the workspace
- *                         overlay (describeWithOverlay -> describe). This
- *                         dispatcher is the ONLY seam that composes graph.ts
- *                         (#2072), overlay.ts (#2074), and intent.ts (#2075);
- *                         none of the three call each other. (The NL intent door
- *                         via matchIntent is descoped for v1 -- see #2075.)
+ *                         overlay (describeWithOverlay -> describe); a
+ *                         natural-language address is handed to the intent
+ *                         door instead (isNaturalLanguageQuery -> matchIntent,
+ *                         #2075). This dispatcher is the ONLY seam that
+ *                         composes graph.ts (#2072), overlay.ts (#2074), and
+ *                         intent.ts (#2075); none of the three call each
+ *                         other. The intent door is WIRED: it is
+ *                         deterministic keyword matching over a small,
+ *                         hand-curated tag axis, and it refuses below its
+ *                         match threshold rather than guessing. #2166 (open)
+ *                         is the follow-up that scores it against the intel
+ *                         this tool already owns.
  * 3. rafters_generate   - Resolve a bare component name to ONE registry component
  *                         and return its authoritative, target-correct snippet
  *                         verbatim, with its content slots marked open for the
- *                         caller. Direct-name lookup only for v1. No
- *                         parameterization, no composition, no writes, no
+ *                         caller. A direct-name lookup runs first (tier b); on
+ *                         a miss it falls back to the same intent door
+ *                         rafters_describe uses (tier c, matchIntent, #2075).
+ *                         No parameterization, no composition, no writes, no
  *                         MCP-side validation.
  *
  * Deprecated aliases kept for one minor release (removal tracked as a follow-up):
@@ -285,8 +294,14 @@ export const TOOL_DEFINITIONS = [
       'describe(button.props.fill) drills into a prop and returns the real token values. ' +
       'describe(button.*) expands all props inline in one call (no more drill-per-prop ' +
       'round trips); describe(button.props.fill.?) probes safely (null on miss, not an ' +
-      'error). Every node carries parent and siblings for upward/sideways navigation, and ' +
-      'children are typed pointers (enum for props, part for sub-components) you feed back in.',
+      'error). A natural-language address (e.g. "what do I use when it needs to be above ' +
+      'everything") routes through a separate intent door instead: deterministic keyword ' +
+      'matching over a small, curated tag axis, returning a best-match node plus its ' +
+      'near-miss counter-example. Below its match threshold it refuses rather than guessing, ' +
+      'with a note pointing you at describe(components)/describe(composites) to browse; ' +
+      '#2166 (open) is the follow-up that scores it against the intel this tool already owns. Every ' +
+      'node carries parent and siblings for upward/sideways navigation, and children are ' +
+      'typed pointers (enum for props, part for sub-components) you feed back in.',
     inputSchema: {
       type: 'object' as const,
       properties: {
@@ -304,7 +319,11 @@ export const TOOL_DEFINITIONS = [
     description:
       'Resolve a bare component name to ONE registry component and return its verbatim, ' +
       'target-correct snippet with open content slots. A component name (e.g. "button", ' +
-      '"separator", "badge") resolves directly. Returns { component, target, presence, ' +
+      '"separator", "badge") resolves directly; on a miss it falls back to the same intent ' +
+      'door rafters_describe uses -- deterministic keyword matching over a small, curated ' +
+      'tag axis, refusing below its match threshold with a note pointing you at ' +
+      'describe(components) rather than guessing (#2166, open, is the follow-up that scores ' +
+      'it against the intel this tool already owns). Returns { component, target, presence, ' +
       'snippet, slots } where snippet is the registry facet verbatim and each slot is left ' +
       'for the caller to fill. READ `presence` BEFORE PASTING: `installed` means the import ' +
       'resolves in this workspace; `available` means the component exists in the registry but ' +
