@@ -150,6 +150,13 @@ describe('navigation-menu aria', () => {
     });
     expect(closed).toEqual({ 'aria-labelledby': 't-a', 'data-state': 'closed' });
     expect('hidden' in closed).toBe(false);
+    // ...and the projection has NO opinion about `data-dismissed`. The WCAG flag
+    // now lives on this same element, written imperatively by the effects, and
+    // every render re-projects every content instance -- so a projection that
+    // named the attribute (in either direction) would clobber a standing
+    // dismissal on the next unrelated dispatch.
+    expect('data-dismissed' in open).toBe(false);
+    expect('data-dismissed' in closed).toBe(false);
   });
 
   it('instance projections read the CONTROLLED value', () => {

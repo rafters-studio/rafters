@@ -205,7 +205,7 @@ ${HOVER_CARD_CSS}
  * against a reveal rule that owned pointer-events, 0px and 1px held and 4px and
  * 8px latched closed forever.
  */
-const travelFixture = (css: string, marker: string, gap: number) => `
+const travelFixture = (css: string, marker: string, role: string, gap: number) => `
 <style>
 ${css}
 body { margin: 0; }
@@ -215,7 +215,7 @@ body { margin: 0; }
 <div data-part="root" ${marker} data-disable-hoverable-content="false">
   <button type="button" id="travel-trigger" data-part="trigger" data-state="closed"
           aria-describedby="travel-content">Help</button>
-  <div id="travel-content" data-part="content" role="tooltip" data-state="closed">More info</div>
+  <div id="travel-content" data-part="content" role="${role}" data-state="closed">More info</div>
 </div>
 `;
 
@@ -469,7 +469,7 @@ test.describe('hover reveal with JavaScript disabled', () => {
     test(`tooltip: the pointer travels across a ${gap}px sideOffset gap and the tip holds`, async ({
       page,
     }) => {
-      await page.setContent(travelFixture(TOOLTIP_CSS, 'data-tooltip', gap));
+      await page.setContent(travelFixture(TOOLTIP_CSS, 'data-tooltip', 'tooltip', gap));
       await page.mouse.move(TRIGGER_POINT.x, TRIGGER_POINT.y);
       await expect(page.locator('#travel-content')).toHaveCSS('opacity', '1');
 
@@ -495,7 +495,7 @@ test.describe('hover reveal with JavaScript disabled', () => {
     // be re-entered, so it forgives nothing -- ~300ms of a fully opaque,
     // fully click-through preview. The invariant is the one a reader can check
     // by eye: what is visible is what accepts the pointer.
-    await page.setContent(travelFixture(HOVER_CARD_CSS, 'data-hover-card', 4));
+    await page.setContent(travelFixture(HOVER_CARD_CSS, 'data-hover-card', 'dialog', 4));
     await page.mouse.move(TRIGGER_POINT.x, TRIGGER_POINT.y);
     await expect(page.locator('#travel-content')).toHaveCSS('opacity', '1');
 
