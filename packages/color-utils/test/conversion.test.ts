@@ -102,8 +102,12 @@ describe('oklchToCSS', () => {
   });
 
   it('omits alpha when it is exactly 1', () => {
-    // roundOKLCH always sets alpha to 1, so every rounded color still takes
-    // the three-channel path -- this is what keeps existing callers intact.
+    // oklchToCSS omits alpha when it is undefined or exactly 1. roundOKLCH
+    // preserves any other defined alpha (see conversion.ts), so a rounded
+    // color only lands on this three-channel path when its alpha was
+    // undefined or already rounds to 1 -- an alpha-carrying seed still
+    // reaches the four-channel path below. See the CHANGELOG entry for the
+    // consumer-visible effect.
     expect(oklchToCSS({ l: 0.7, c: 0.15, h: 250, alpha: 1 })).toBe('oklch(0.7 0.15 250)');
   });
 
