@@ -14,8 +14,16 @@
  *  - both disposal shapes: unmount (dialog, popover) and re-`hidden`
  *    (dropdown-menu, which lives in light DOM);
  *  - that a REDUCED-MOTION exit -- animation attached, duration zeroed, which is
- *    mechanism B (#2017) -- still fires `animationend` and still releases
- *    presence through the event rather than the timeout failsafe.
+ *    mechanism B (#2017) -- still fires `animationend`, which is what this
+ *    file's own harness disposes on.
+ *
+ * The MECHANISM the shipped hook uses is no longer this one: #2157 moved
+ * `usePresence` onto `getAnimations()` and `Animation.finished`, and deleted the
+ * timeout failsafe the reduced-motion argument below was originally weighed
+ * against. What is asserted here is the CSS contract -- the generated cell
+ * produces a real, running, correctly-tiered animation, and a zeroed one still
+ * completes -- which holds either way. The hook's own behaviour lives in
+ * `presence-race.e2e.ts`.
  *
  * The rules below are the DIALOG CELL: dialog / content / closed -> open is
  * normal + enter, open -> closed is moderate + exit, read off
