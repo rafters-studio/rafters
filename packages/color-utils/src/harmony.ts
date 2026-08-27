@@ -7,14 +7,9 @@
 
 import type { ColorHarmonies, OKLCH } from '@rafters/shared';
 import { roundOKLCH } from './conversion.js';
-import { toNearestGamut } from './gamut.js';
+import { clampColor } from './gamut.js';
 import { adjustHue } from './manipulation.js';
 import { POSITION_TO_INDEX, SCALE_POSITIONS } from './scale-positions.js';
-
-/** Clamp an OKLCH to sRGB gamut and round. */
-export function clampColor(color: OKLCH): OKLCH {
-  return roundOKLCH(toNearestGamut(color).color);
-}
 
 /**
  * Generate pure OKLCH harmony arrays from a base color.

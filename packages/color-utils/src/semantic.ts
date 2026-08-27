@@ -27,7 +27,7 @@ import type {
   SemanticStatusRole,
 } from '@rafters/shared';
 import { roundOKLCH } from './conversion.js';
-import { clampColor } from './harmony.js';
+import { clampColor } from './gamut.js';
 import { clamp01, normalizeHue } from './internal/math.js';
 import { POSITION_TO_INDEX, SCALE_POSITIONS } from './scale-positions.js';
 

@@ -10,6 +10,7 @@
 import type { OKLCH } from '@rafters/shared';
 import Color from 'colorjs.io';
 import { z } from 'zod';
+import { roundOKLCH } from './conversion.js';
 import { MAX_CHROMA } from './internal/math.js';
 
 export const GamutTierSchema = z.enum(['srgb', 'p3', 'out']);
@@ -65,6 +66,15 @@ export function toNearestGamut(oklch: OKLCH): { color: OKLCH; tier: GamutTier } 
     },
     tier: 'srgb',
   };
+}
+
+/**
+ * Snap an OKLCH into sRGB and round it -- the shape every generated color is
+ * emitted in. Lives here because both halves are gamut/conversion concerns;
+ * harmony.ts and semantic.ts are callers, not owners.
+ */
+export function clampColor(color: OKLCH): OKLCH {
+  return roundOKLCH(toNearestGamut(color).color);
 }
 
 const DEFAULT_STEPS = 101;
