@@ -1,7 +1,6 @@
 import { describe as vdescribe, expect, it } from 'vitest';
 import { assembleGraph, describe } from '../../src/mcp/graph.js';
 import {
-  buildInstalledSet,
   describeWithOverlay,
   type OverlayContext,
   type OverlayExpandedNodeResult,
@@ -233,19 +232,5 @@ vdescribe('describeWithOverlay -- passthrough shapes', () => {
     expect(describeWithOverlay('unknown-node', graph, ctxAstroInstalled)).toEqual({
       error: 'unknown node: unknown-node',
     });
-  });
-});
-
-vdescribe('buildInstalledSet', () => {
-  it('reads per-kind arrays from config.installed', () => {
-    const set = buildInstalledSet({ installed: { components: ['button'], composites: ['stack'] } });
-    expect(set.components.has('button')).toBe(true);
-    expect(set.composites.has('stack')).toBe(true);
-  });
-
-  it('absent installed means nothing installed, never a crash', () => {
-    const set = buildInstalledSet({});
-    expect(set.components.size).toBe(0);
-    expect(set.composites.size).toBe(0);
   });
 });

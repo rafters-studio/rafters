@@ -48,8 +48,11 @@ export type Presence = 'installed' | 'available';
 
 /**
  * The workspace's installed set, split per kind. A `component`-kind node checks
- * `components`; a `composite`-kind node checks `composites`. Sourced from
- * `RaftersConfig.installed` (see `buildInstalledSet`).
+ * `components`; a `composite`-kind node checks `composites`. Sourced from an
+ * on-disk scan of the workspace's component/composite folders (`scanInstalled`
+ * in tools.ts), never from `RaftersConfig.installed` -- that config field can
+ * drift from disk (a manually deleted file, a dependency pulled in without a
+ * recorded install) and presence must reflect what will actually resolve.
  */
 export interface InstalledSet {
   components: ReadonlySet<string>;
@@ -92,23 +95,6 @@ export type OverlayResult =
   | OverlayNodeResult // describe(<id>)
   | OverlayExpandedNodeResult // describe(<id>.*)
   | DescribeResult; // every other shape passes through unchanged
-
-/**
- * Build the per-kind installed set from a config's `installed` block. Absent or
- * partial `installed` is treated as "nothing installed" -- never a crash, never
- * "everything installed". Only the two kinds the overlay stamps are read;
- * `primitives`/`rules`/`substrate` are intentionally not folded in here (a
- * `primitive`-kind item maps to graph kind `component`, but its presence wiring
- * is Issue D's concern, not this query-time lens).
- */
-export function buildInstalledSet(config: {
-  installed?: { components?: string[]; composites?: string[] };
-}): InstalledSet {
-  return {
-    components: new Set(config.installed?.components ?? []),
-    composites: new Set(config.installed?.composites ?? []),
-  };
-}
 
 /**
  * Resolve one dot-address through `describe`, handing it the workspace's target

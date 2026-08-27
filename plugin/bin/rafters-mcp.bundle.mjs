@@ -37773,7 +37773,7 @@ var TOOL_DEFINITIONS = [
   },
   {
     name: "rafters_describe",
-    description: 'Recursively introspect the component/composite intel graph. describe() returns the installed surface; describe(components)/describe(composites) list the kind roster; describe(button) returns a node -- intel plus type-marked, drillable children; describe(button.props.fill) drills into a prop and returns the real token values. describe(button.*) expands all props inline in one call (no more drill-per-prop round trips); describe(button.props.fill.?) probes safely (null on miss, not an error). A natural-language address (e.g. "what do I use when it needs to be above everything") routes through a separate intent door instead: deterministic keyword matching over a small, curated tag axis, returning a best-match node plus its near-miss counter-example. Below its match threshold it refuses rather than guessing, with a note pointing you at describe(components)/describe(composites) to browse; #2166 (open) is the follow-up that scores it against the intel this tool already owns. Every node carries parent and siblings for upward/sideways navigation, and children are typed pointers (enum for props, part for sub-components) you feed back in.',
+    description: `Recursively introspect the component/composite intel graph. describe() returns the installed surface; describe(components)/describe(composites) list the kind roster; describe(button) returns a node -- intel plus type-marked, drillable children; describe(button.props.fill) drills into a prop and returns the real token values. describe(button.*) expands all props inline in one call (no more drill-per-prop round trips); describe(button.props.fill.?) probes safely (null on miss, not an error). A natural-language address (e.g. "what do I use when it needs to be above everything") routes through a separate intent door instead: deterministic keyword matching over a small, curated tag axis, returning a best-match node plus its near-miss counter-example. Below its match threshold it refuses rather than guessing, with a note pointing you at describe(components)/describe(composites) to browse; #2166 (open) is the follow-up that scores it against the intel this tool already owns. A part node carries parent, plus siblings when its parent has other parts; children are typed pointers you feed back in (the prop's own type for props, part for sub-components, edge for composesWith).`,
     inputSchema: {
       type: "object",
       properties: {
@@ -37788,7 +37788,7 @@ var TOOL_DEFINITIONS = [
   },
   {
     name: "rafters_generate",
-    description: 'Resolve a bare component name to ONE registry component and return its verbatim, target-correct snippet with open content slots. A component name (e.g. "button", "separator", "badge") resolves directly; on a miss it falls back to the same intent door rafters_describe uses -- deterministic keyword matching over a small, curated tag axis, refusing below its match threshold with a note pointing you at describe(components) rather than guessing (#2166, open, is the follow-up that scores it against the intel this tool already owns). Returns { component, target, presence, snippet, slots } where snippet is the registry facet verbatim and each slot is left for the caller to fill. READ `presence` BEFORE PASTING: `installed` means the import resolves in this workspace; `available` means the component exists in the registry but is NOT in this project yet -- the snippet is still correct, but you must run the command in `install` first or the build fails on a missing import. If slots is empty, the component takes no children -- do not wrap it with content. v1 serves single components only -- no parameterization, no composites, no writes.',
+    description: 'Resolve a bare component name to ONE registry component and return its verbatim, target-correct snippet with open content slots. A component name (e.g. "button", "separator", "badge") resolves directly; on a miss it falls back to the same intent door rafters_describe uses -- deterministic keyword matching over a small, curated tag axis, refusing below its match threshold with a note pointing you at describe(components) rather than guessing (#2166, open, is the follow-up that scores it against the intel this tool already owns). Returns { component, target, presence, snippet, slots } where snippet is the registry facet verbatim and each slot is left for the caller to fill. READ `presence` BEFORE PASTING: `installed` means the import resolves in this workspace; `available` means the component exists in the registry but is NOT in this project yet -- the snippet is still correct, but you must run the command in `install` first or the build fails on a missing import. v1 serves single components only -- no parameterization, no composites, no writes.',
     inputSchema: {
       type: "object",
       properties: {
@@ -38224,14 +38224,22 @@ var RaftersToolHandler = class {
     const candidate = normalizeGenerateQuery(intent);
     const directHit = graph.nodes.get(candidate);
     let nodeId;
+    let noMatchNote;
     if (directHit && directHit.kind === "component") {
       nodeId = candidate;
     } else {
       const match = matchIntent(intent, graph);
-      if ("use" in match) nodeId = match.use.id;
+      if ("use" in match) {
+        nodeId = match.use.id;
+      } else {
+        noMatchNote = match.note;
+      }
     }
     if (nodeId === void 0) {
-      return this.errorResult("no registry component matches this query");
+      return this.errorResult(
+        "no registry component matches this query",
+        noMatchNote === void 0 ? void 0 : { note: noMatchNote }
+      );
     }
     const result = describe3(nodeId, graph, ctx.target);
     if (result === null || Array.isArray(result) || !("children" in result)) {

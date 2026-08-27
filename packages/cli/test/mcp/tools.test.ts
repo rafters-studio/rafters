@@ -201,12 +201,18 @@ describe('rafters_generate', () => {
     expect(data.error).toContain('modal');
   });
 
-  it('flat-refuses a query matching neither tier', async () => {
+  it('flat-refuses a query matching neither tier, carrying the intent door note', async () => {
     const { handler } = fixtureHandler([], null);
     for (const intent of ['something that does not exist', 'a login form']) {
       const result = await handler.handleToolCall('rafters_generate', { intent });
       const data = JSON.parse(result.content[0].text as string);
-      expect(data).toEqual({ error: 'no registry component matches this query' });
+      // Neither tier hit, so tier (c) ran the intent door, which returned
+      // IntentNoMatch -- its `note` rides on the refusal, matching the tool
+      // description's promise of "a note pointing you at describe(components)".
+      expect(data).toEqual({
+        error: 'no registry component matches this query',
+        note: expect.stringContaining('describe(components)'),
+      });
     }
   });
 
@@ -214,7 +220,10 @@ describe('rafters_generate', () => {
     const { handler } = fixtureHandler([], null); // FIXTURE includes node('login-form', 'composite')
     const result = await handler.handleToolCall('rafters_generate', { intent: 'login-form' });
     const data = JSON.parse(result.content[0].text as string);
-    expect(data).toEqual({ error: 'no registry component matches this query' });
+    expect(data).toEqual({
+      error: 'no registry component matches this query',
+      note: expect.stringContaining('describe(components)'),
+    });
   });
 
   it('refuses a matchIntent-routed composite by name -- v1 serves components only', async () => {
@@ -480,6 +489,31 @@ describe('presence is measured from disk, not read from config.installed', () =>
     const data = JSON.parse(result.content[0].text as string);
     expect(data.error).toContain('config.rafters.json');
     expect(data.error).toContain('componentsPath');
+    await cleanup();
+  });
+
+  it('rafters_generate returns the same structured error, not a throw, on a malformed path field', async () => {
+    // overlayContext's guard is shared across the three call sites (describe,
+    // generate, the deprecated aliases) -- this covers the generate one.
+    const { root, cleanup } = await configWorkspace({ componentsPath: 42 });
+    const { handler } = fixtureHandler([{ name: 'fixture', root }], { name: 'fixture', root });
+    const result = await handler.handleToolCall('rafters_generate', { intent: 'button' });
+    const data = JSON.parse(result.content[0].text as string);
+    expect(data.error).toContain('config.rafters.json');
+    expect(data.error).toContain('componentsPath');
+    await cleanup();
+  });
+
+  it('the deprecated rafters_component alias returns the same structured error, still marked deprecated, on a malformed path field', async () => {
+    // Covers the third overlayContext call site: describeById, shared by the
+    // deprecated rafters_component and rafters_composite({id}) paths.
+    const { root, cleanup } = await configWorkspace({ componentsPath: 42 });
+    const { handler } = fixtureHandler([{ name: 'fixture', root }], { name: 'fixture', root });
+    const result = await handler.handleToolCall('rafters_component', { name: 'button' });
+    const data = JSON.parse(result.content[0].text as string);
+    expect(data.error).toContain('config.rafters.json');
+    expect(data.error).toContain('componentsPath');
+    expect(data.deprecated).toBeDefined();
     await cleanup();
   });
 
