@@ -334,19 +334,16 @@ describe('semantic motion utilities compile (#1902/#1903/#1904)', () => {
     const css = await registryToCompiled(baseRegistry(), { contentSources: [fixtureDir] });
 
     for (const [cell, keyframe, tier, curve] of CELLS) {
-      // The BASE rule only -- `.animate-<cell>{...}` unescaped (so not the
-      // `.data-\[state\=open\]\:animate-<cell>` variants) and outside the
-      // reduced-motion @media, which legitimately repeats the same selector.
+      // The BASE rule only -- the leading `.` excludes the escaped
+      // `.data-\[state\=open\]\:animate-<cell>` variants, and the reduced-motion
+      // @media, which legitimately repeats the same selector, is filtered out.
       //
-      // EXACTLY ONE. A second base rule would mean Tailwind theme-inferred a
-      // competing `.animate-<cell>` from an `--animate-*` entry, and that rule
-      // sets the animation SHORTHAND -- which resets animation-duration and
-      // would silently discard the reduced-motion zero (toy 14's A-beats-B
-      // destruction, arriving from inside our own emission).
-      const allRules = css.match(new RegExp(`(^|[^\\\\])\\.animate-${cell}\\{[^}]*\\}`, 'g')) ?? [];
-      const baseRules = allRules.filter((r) => !r.includes('animation-duration:0s'));
-      expect(baseRules.length, `.animate-${cell} did not compile to exactly one base rule`).toBe(1);
-      const body = baseRules.join('');
+      // EXACTLY ONE, and read through `baseRuleFor` so a MERGED selector list
+      // counts. lightningcss folds rules with identical bodies together, and
+      // several of these cells share `scale-in / moderate / enter` -- a matcher
+      // that demanded `.animate-<cell>{` would read that merge as a missing rule
+      // and fail on correct emission the day the fixture gains one more class.
+      const body = baseRuleFor(css, cell);
       // Longhand, never the shorthand: only longhand lets the nested media
       // query re-set one property, and a shorthand anywhere would reset it.
       expect(body, `${cell} emitted the animation shorthand`).not.toMatch(/[^-]animation:/);
@@ -418,10 +415,10 @@ describe('semantic motion utilities compile (#1902/#1903/#1904)', () => {
     // under B. (Those loop consumers are a separate, pre-existing violation of
     // "loops slow, they never stop" -- out of scope for a conformance fix.)
     for (const [cell] of CELLS) {
-      const rules = css.match(new RegExp(`\\.animate-${cell}\\{[^}]*\\}`, 'g')) ?? [];
-      expect(rules.join(''), `${cell} carries mechanism A and will destroy B`).not.toContain(
-        'animation:none',
-      );
+      expect(
+        rulesFor(css, cell).join(''),
+        `${cell} carries mechanism A and will destroy B`,
+      ).not.toContain('animation:none');
     }
   });
 
