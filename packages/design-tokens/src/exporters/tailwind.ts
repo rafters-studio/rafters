@@ -868,47 +868,6 @@ function generateMotionUtilities(motionTokens: Token[]): string {
   return lines.join('\n');
 }
 
-/**
- * Emit one `@utility animate-<cell>` block per animated matrix cell (#2017).
- *
- * The cell composite is emitted as LONGHAND -- animation-name, -duration,
- * -timing-function -- for the same reason `generateMotionUtilities` emits
- * transition longhand: a nested `@media (prefers-reduced-motion: reduce)` can
- * then re-set ONE property without restating the rule.
- *
- * REDUCED MOTION IS MECHANISM B: zero `animation-duration` in the emission. The
- * alternative, `motion-reduce:animate-none` on the consuming class, was measured
- * against this one (toy 14) and loses on three counts:
- *   - `animation: none` removes the animation, so the element never reaches the
- *     keyframe's END STATE. Zeroing the duration completes it instantly and
- *     keeps the end state;
- *   - a zero duration still FIRES `animationend`, which is what the presence
- *     contract releases the unmount on. `animate-none` fires nothing, so a
- *     closing dialog would be released by the backstop timer instead;
- *   - the period exemption (loops slow, they never stop) is expressible here as
- *     SET MEMBERSHIP -- this function emits the block, the period utilities do
- *     not -- while `animate-none` compiles to one cell-blind rule whose
- *     exemption exists only if the author remembers not to type it on a spinner.
- *
- * THE TWO MECHANISMS MUST NOT BOTH APPLY. Wherever `animate-none` wins it wins
- * DESTRUCTIVELY: `animation: none` resets the whole shorthand and discards the
- * zeroed duration with it. That is why the three consuming classes files dropped
- * `motion-reduce:animate-none` when they took up these utilities.
- *
- * No value appears in any UNPINNED block -- duration and curve are var()s onto
- * the leaves -- so the derived set is byte-identical across a retune, the toy-9
- * invariant.
- *
- * A PINNED CELL IS STILL A CELL. `registry.set` on one of these writes a plain
- * animation shorthand over the JSON spec, which is the sanctioned way an
- * operator hand-tunes a single moment (toy 13 measures it, and an explicit
- * `registry.bind()` is the one exit that clears the pin). The pin therefore
- * emits as the shorthand it is, with the SAME reduced-motion block attached --
- * dropping the block on a non-JSON value would silently take a hand-tuned cell
- * out of the reduced-motion law, and skipping the token entirely would delete
- * the utility and stop the component animating with no error at all. Both are
- * the 019fb063 silent-resolution failure arriving from inside our own emission.
- */
 /** The duration form a cell spec carries -- the matrix's own tagged union. */
 type CellDurationSpec = { kind: 'tier'; tier: string } | { kind: 'period'; period: string };
 
@@ -983,6 +942,51 @@ function parseCellSpec(tokenName: string, raw: string): CellSpec | null {
   );
 }
 
+/**
+ * Emit one `@utility animate-<cell>` block per animated matrix cell (#2017).
+ *
+ * The cell composite is emitted as LONGHAND -- animation-name, -duration,
+ * -timing-function -- for the same reason `generateMotionUtilities` emits
+ * transition longhand: a nested `@media (prefers-reduced-motion: reduce)` can
+ * then re-set ONE property without restating the rule.
+ *
+ * REDUCED MOTION IS MECHANISM B: zero `animation-duration` in the emission. The
+ * alternative, `motion-reduce:animate-none` on the consuming class, was measured
+ * against this one (toy 14) and loses on three counts:
+ *   - `animation: none` removes the animation, so the element never reaches the
+ *     keyframe's END STATE. Zeroing the duration completes it instantly and
+ *     keeps the end state;
+ *   - a zero duration still FIRES `animationend`, which is what the presence
+ *     contract releases the unmount on. `animate-none` fires nothing, so a
+ *     closing dialog would be released by the backstop timer instead;
+ *   - the period exemption (loops slow, they never stop) is expressible here as
+ *     SET MEMBERSHIP -- this function emits the block for the tier-kind cells
+ *     and withholds it from the period-kind ones, and the period utilities do
+ *     not carry it either -- while `animate-none` compiles to one cell-blind
+ *     rule whose exemption exists only if the author remembers not to type it
+ *     on a spinner.
+ *
+ * THE TWO MECHANISMS MUST NOT BOTH APPLY. Wherever `animate-none` wins it wins
+ * DESTRUCTIVELY: `animation: none` resets the whole shorthand and discards the
+ * zeroed duration with it. That is why the three consuming classes files dropped
+ * `motion-reduce:animate-none` when they took up these utilities.
+ *
+ * No value appears in any UNPINNED block -- duration and curve are var()s onto
+ * the leaves -- so the derived set is byte-identical across a retune, the toy-9
+ * invariant.
+ *
+ * A PINNED CELL IS STILL A CELL. `registry.set` on one of these writes a plain
+ * animation shorthand over the JSON spec, which is the sanctioned way an
+ * operator hand-tunes a single moment (toy 13 measures it, and an explicit
+ * `registry.bind()` is the one exit that clears the pin). The pin therefore
+ * emits as the shorthand it is, and keeps whatever reduced-motion treatment its
+ * cell already had -- read from the token's `reducedMotionAware`, not from the
+ * overwritten value, as the emission site explains. Deciding from the value
+ * would silently take a hand-tuned cell out of the reduced-motion law or drag a
+ * hand-tuned loop into it, and skipping the token entirely would delete the
+ * utility and stop the component animating with no error at all. All are the
+ * 019fb063 silent-resolution failure arriving from inside our own emission.
+ */
 function generateMotionCellUtilities(motionTokens: Token[]): string {
   const cellTokens = motionTokens.filter((t) => t.name.startsWith('motion-cell-'));
   if (cellTokens.length === 0) return '';
