@@ -6,13 +6,13 @@
  * timing them, and the test DOM has no Web Animations API whatsoever -- no
  * `Element.prototype.getAnimations`, no `Animation` constructor, no timeline.
  * So every case here that involves a running exit installs a FAKE
- * `getAnimations` on the node returning promises this file settles by hand. That
- * is enough to pin the wiring -- held until settled, released once, never
- * released against a reopened node -- and it is NOT enough to pin the browser
- * semantics underneath it: whether a cancelled enter is still returned, whether
- * `getAnimations()` flushes the pending exit rule into view, whether a
- * zero-duration animation really settles. Those live in
- * `test/presence/presence-race.e2e.ts`, in three real engines.
+ * `getAnimations` on the node (`../harness/presence-animations`) returning
+ * promises this file settles by hand. That is enough to pin the wiring -- held
+ * until settled, released once, never released against a reopened node -- and it
+ * is NOT enough to pin the browser semantics underneath it: whether a cancelled
+ * enter is still returned, whether `getAnimations()` flushes the pending exit
+ * rule into view, whether a zero-duration animation really settles. Those live
+ * in `test/presence/presence-race.e2e.ts`, in three real engines.
  */
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -20,46 +20,13 @@ import { fileURLToPath } from 'node:url';
 import * as React from 'react';
 import { act, cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
+import { attachAnimation, attachAnimations } from '../harness/presence-animations';
 import { usePresence } from '../../src/hooks/use-presence';
 
 function Overlay({ open }: { open: boolean }) {
   const { present, ref, state } = usePresence(open);
   if (!present) return <span data-testid="gone" />;
   return <div ref={ref} data-testid="node" data-state={state} />;
-}
-
-/** One pending animation, plus the handles this file settles it with. */
-interface FakeAnimation {
-  animation: Animation;
-  /** Complete it, the way a healthy exit ends. */
-  finish: () => void;
-  /** Reject it, the way a cancelled or replaced animation ends. */
-  cancel: () => void;
-}
-
-function fakeAnimation(): FakeAnimation {
-  let finish = (): void => {};
-  let cancel = (): void => {};
-  const finished = new Promise<Animation>((resolve, reject) => {
-    finish = () => resolve(animation);
-    cancel = () => reject(new Error('cancelled'));
-  });
-  const animation = { finished } as unknown as Animation;
-  return { animation, finish, cancel };
-}
-
-/**
- * Give the node a Web Animations surface the hook can read. `count: 0` is the
- * "nothing is attached" shape -- a transition declared on a property that never
- * changed, which creates no animation object at all.
- */
-function attachAnimations(node: HTMLElement, count: number): FakeAnimation[] {
-  const fakes = Array.from({ length: count }, () => fakeAnimation());
-  Object.defineProperty(node, 'getAnimations', {
-    configurable: true,
-    value: () => fakes.map((fake) => fake.animation),
-  });
-  return fakes;
 }
 
 /** Let the hook's `await Promise.allSettled(...)` chain run to completion. */
@@ -117,8 +84,7 @@ describe('usePresence', () => {
   describe('an attached exit', () => {
     it('holds the unmount until the exit animation settles', async () => {
       const { getByTestId, rerender, queryByTestId } = render(<Overlay open />);
-      const exit = attachAnimations(getByTestId('node'), 1)[0];
-      if (exit === undefined) throw new Error('no fake animation');
+      const exit = attachAnimation(getByTestId('node'));
 
       rerender(<Overlay open={false} />);
       // Still present, now closed -- the exit keyframe is running, and the node
@@ -163,8 +129,7 @@ describe('usePresence', () => {
       // `Promise.all`, where one rejection would resolve the wait early and, on
       // an interrupted enter, unmount before the exit's first frame.
       const { getByTestId, rerender, queryByTestId } = render(<Overlay open />);
-      const exit = attachAnimations(getByTestId('node'), 1)[0];
-      if (exit === undefined) throw new Error('no fake animation');
+      const exit = attachAnimation(getByTestId('node'));
 
       rerender(<Overlay open={false} />);
       await act(async () => {
@@ -191,8 +156,7 @@ describe('usePresence', () => {
       // reduced motion presence therefore takes the empty-list path above, which
       // is why nothing here can be reached by zeroing a duration.
       const { getByTestId, rerender, queryByTestId } = render(<Overlay open />);
-      const exit = attachAnimations(getByTestId('node'), 1)[0];
-      if (exit === undefined) throw new Error('no fake animation');
+      const exit = attachAnimation(getByTestId('node'));
 
       rerender(<Overlay open={false} />);
       expect(getByTestId('node').getAttribute('data-state')).toBe('closed');
@@ -216,8 +180,7 @@ describe('usePresence', () => {
       // which lands on a node that is now legitimately open and yanks it out
       // from under the user.
       const { getByTestId, rerender } = render(<Overlay open />);
-      const exit = attachAnimations(getByTestId('node'), 1)[0];
-      if (exit === undefined) throw new Error('no fake animation');
+      const exit = attachAnimation(getByTestId('node'));
 
       rerender(<Overlay open={false} />);
       rerender(<Overlay open />);
@@ -231,15 +194,13 @@ describe('usePresence', () => {
 
     it('still unmounts after open -> close -> open -> close', async () => {
       const { getByTestId, rerender, queryByTestId } = render(<Overlay open />);
-      const first = attachAnimations(getByTestId('node'), 1)[0];
-      if (first === undefined) throw new Error('no fake animation');
+      const first = attachAnimation(getByTestId('node'));
 
       rerender(<Overlay open={false} />);
       rerender(<Overlay open />);
       // The reopen replaces the exit with a fresh enter; the next close observes
       // whatever is on the node THEN, not the animation the first close saw.
-      const second = attachAnimations(getByTestId('node'), 1)[0];
-      if (second === undefined) throw new Error('no fake animation');
+      const second = attachAnimation(getByTestId('node'));
       rerender(<Overlay open={false} />);
       expect(getByTestId('node').getAttribute('data-state')).toBe('closed');
 

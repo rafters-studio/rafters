@@ -32,6 +32,7 @@ import {
   DropdownMenuTrigger,
 } from '../../src/components/dropdown-menu/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '../../src/components/popover/popover';
+import { attachAnimation, type FakeAnimation } from '../harness/presence-animations';
 
 /**
  * Put a running exit animation on the content node, the way the compiled sheet
@@ -43,19 +44,10 @@ import { Popover, PopoverContent, PopoverTrigger } from '../../src/components/po
  * by hand. Call this while the node is still open, before the rerender that
  * closes it -- that is the moment the real sheet's exit rule would attach.
  */
-function runningExitKeyframe(): { finish: () => void } {
+function runningExitKeyframe(): FakeAnimation {
   const node = content();
   if (node === null) throw new Error('runningExitKeyframe: no content node to animate');
-  let finish = (): void => {};
-  const finished = new Promise<Animation>((resolve) => {
-    finish = () => resolve(animation);
-  });
-  const animation = { finished } as unknown as Animation;
-  Object.defineProperty(node, 'getAnimations', {
-    configurable: true,
-    value: () => [animation],
-  });
-  return { finish: () => finish() };
+  return attachAnimation(node);
 }
 
 function content(): HTMLElement | null {
