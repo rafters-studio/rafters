@@ -292,9 +292,11 @@ export const TOOL_DEFINITIONS = [
       'Recursively introspect the component/composite intel graph. describe() returns the ' +
       'installed surface; describe(components)/describe(composites) list the kind roster; ' +
       'describe(button) returns a node -- intel plus type-marked, drillable children; ' +
-      'describe(button.props.fill) drills into a prop and returns the real token values. ' +
+      'describe(button.props.variant) drills into a prop -- an enum prop returns its literal ' +
+      'union members; a grammar prop returns its composition rules, with the token ' +
+      'vocabulary deliberately withheld. ' +
       'describe(button.*) expands all props inline in one call (no more drill-per-prop ' +
-      'round trips); describe(button.props.fill.?) probes safely (null on miss, not an ' +
+      'round trips); describe(button.props.color.?) probes safely (null on miss, not an ' +
       'error). A natural-language address (e.g. "what do I use when it needs to be above ' +
       'everything") routes through a separate intent door instead: deterministic keyword ' +
       'matching over a small, curated tag axis, returning a best-match node plus its ' +
