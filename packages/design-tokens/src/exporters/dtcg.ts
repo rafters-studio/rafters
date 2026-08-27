@@ -13,6 +13,7 @@
  * @see https://design-tokens.github.io/community-group/format/
  */
 
+import { oklchToCSS } from '@rafters/color-utils';
 import type { ColorReference, ColorValue, DTCGFile, DTCGGroup, Token } from '@rafters/shared';
 
 /**
@@ -90,7 +91,7 @@ function convertValue(token: Token): unknown {
       // Return OKLCH string for the base color (position 500 = index 5)
       const baseColor = colorValue.scale[5];
       if (baseColor) {
-        return `oklch(${baseColor.l} ${baseColor.c} ${baseColor.h})`;
+        return oklchToCSS(baseColor);
       }
     }
     // ColorReference - return as DTCG reference

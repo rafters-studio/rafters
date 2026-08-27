@@ -50,4 +50,29 @@ describe('tokensToTypeScript', () => {
     const system = generateBaseSystem({});
     assertParses(tokensToTypeScript(system.allTokens, { includeJSDoc: true }));
   });
+
+  /**
+   * Pins the family-summary `oklch()` literal (colorValue.scale[5], the
+   * exporter's "base color") emitted for a ColorValue token, through the
+   * #2147 migration from a hand-rolled `toFixed(3)/toFixed(3)/toFixed(1)`
+   * template literal to `oklchToCSS(baseColor, { precision: 3 })`.
+   *
+   * L and C are byte-identical to before (both were already toFixed(3)).
+   * H is NOT byte-identical: oklchToCSS applies one `precision` to every
+   * channel, so H moves from 1 decimal place to 3 ("180.0" -> "180.000",
+   * "0.0" -> "0.000"). The color VALUE is unchanged -- only the trailing
+   * zeros in H's string differ. There is no single `oklchToCSS` call that
+   * reproduces the old mixed per-channel precision; see issue #2147.
+   *
+   * `zinc` is anchored to the hardcoded `DEFAULT_NEUTRAL_SCALE`; the
+   * `silver-true-glacier` assertion additionally exercises a non-zero
+   * chroma and tracks `DEFAULT_COLOR_PALETTE_BASES` -- retuning that
+   * palette's hue/chroma is expected to move this literal too.
+   */
+  it('produces byte-identical L/C precision after the oklchToCSS migration (H gains trailing zeros)', () => {
+    const system = generateBaseSystem({});
+    const source = tokensToTypeScript(system.allTokens);
+    expect(source).toContain("'zinc': 'oklch(0.552 0.000 0.000)'");
+    expect(source).toContain("'silver-true-glacier': 'oklch(0.645 0.120 180.000)'");
+  });
 });

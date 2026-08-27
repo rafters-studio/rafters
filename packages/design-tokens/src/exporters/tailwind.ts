@@ -13,6 +13,7 @@
  * @see https://ui.shadcn.com/docs/theming
  */
 
+import { oklchToCSS } from '@rafters/color-utils';
 import * as csstree from 'css-tree';
 import type { ColorReference, ColorValue, Token, TypographyElementOverride } from '@rafters/shared';
 import type { MotionNamespace } from '../generators/motion.js';
@@ -190,7 +191,14 @@ function tokenValueToCSS(token: Token): string | null {
       // Return OKLCH string for the base color (position 500 = index 5)
       const baseColor = colorValue.scale[5];
       if (baseColor) {
-        return `oklch(${formatNumber(baseColor.l)} ${formatNumber(baseColor.c)} ${formatNumber(baseColor.h)})`;
+        // No precision option: every OKLCH value reaching this exporter has
+        // already been rounded to <=3 decimals upstream (roundOKLCH via
+        // generateOKLCHScale, or hardcoded defaults), so oklchToCSS's
+        // no-rounding String() formatting is byte-identical to the old
+        // formatNumber's round-then-strip-trailing-zeros behavior. Passing
+        // an explicit precision here would instead pad back trailing zeros
+        // (0.92 -> "0.920") that formatNumber stripped.
+        return oklchToCSS(baseColor);
       }
     }
     // ColorReference - return as var() reference
@@ -201,13 +209,6 @@ function tokenValueToCSS(token: Token): string | null {
   }
 
   return String(value);
-}
-
-/**
- * Format a number for CSS output
- */
-function formatNumber(value: number, decimals = 3): string {
-  return Number(value.toFixed(decimals)).toString();
 }
 
 /**

@@ -26,8 +26,11 @@
  * // teardown
  * cleanup();
  * ```
+ *
+ * @internal-dependencies @rafters/color-utils
  */
 
+import { oklchToCSS } from '@rafters/color-utils';
 import type { CleanupFunction, OklchColor } from './types';
 
 export type CvdType = 'deuteranopia' | 'protanopia' | 'tritanopia';
@@ -52,13 +55,6 @@ const CVD_DESCRIPTIONS: Record<CvdType, string> = {
   protanopia: 'red-green color blindness',
   tritanopia: 'blue-yellow color blindness',
 };
-
-/**
- * Build an oklch() CSS string from an OklchColor
- */
-function toOklchString(v: OklchColor): string {
-  return `oklch(${v.l} ${v.c} ${v.h})`;
-}
 
 /**
  * Compute the simulated scale for a given CVD type.
@@ -97,7 +93,10 @@ function createStrip(
   for (const color of swatchColors) {
     const swatch = document.createElement('div');
     swatch.setAttribute('data-swatch', '');
-    const colorStr = toOklchString(color);
+    // alpha: 1 last -- the old formatter ignored alpha entirely (OklchColor
+    // has no alpha field); this override preserves that even if a caller
+    // hands us a value that happens to carry one at runtime.
+    const colorStr = oklchToCSS({ ...color, alpha: 1 });
     swatch.style.backgroundColor = colorStr;
     swatch.setAttribute('data-color', colorStr);
     strip.appendChild(swatch);

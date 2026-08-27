@@ -12,6 +12,7 @@
  * - JSDoc comments from semanticMeaning
  */
 
+import { oklchToCSS } from '@rafters/color-utils';
 import type { ColorReference, ColorValue, Token } from '@rafters/shared';
 import type { TokenRegistry } from '../registry.js';
 
@@ -46,8 +47,7 @@ function tokenValueToTS(token: Token): string {
       // Return OKLCH string for the base color (position 500 = index 5)
       const baseColor = colorValue.scale[5];
       if (baseColor) {
-        const oklch = `oklch(${baseColor.l.toFixed(3)} ${baseColor.c.toFixed(3)} ${baseColor.h.toFixed(1)})`;
-        return escapeStringValue(oklch);
+        return escapeStringValue(oklchToCSS(baseColor, { precision: 3 }));
       }
       // Fallback: stringify the whole object
       return JSON.stringify(value);
