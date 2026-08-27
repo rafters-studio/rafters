@@ -206,6 +206,151 @@ function matrixRows(): z.infer<typeof MatrixRowSchema>[] {
 const rowKey = (row: { component: string; part: string; transition: string }) =>
   `${row.component} | ${row.part} | ${row.transition}`;
 
+/**
+ * Why a row that motion.jsonl assigns has no cell here. One of these six, and
+ * the categories are the predicate written above DEFAULT_MOTION_CELL_ANIMATIONS
+ * -- this is where the rows in each category are named.
+ */
+type ExclusionReason =
+  /** duration.kind is pointer-rule / follows / none: the row assigns no animation. */
+  | 'notAnimated'
+  /** A state change on a part that stays mounted. `motion-semantic-*` owns it. */
+  | 'notAPresenceChange'
+  /** Declared properties intersect neither `opacity` nor `transform: scale`. */
+  | 'noIntersectingProperty'
+  /** Movement that needs a side or a DOM-relative distance no keyframe or extent names. */
+  | 'noExistingShape'
+  /** The whole property set is already carried end to end by one semantic token. */
+  | 'carriedBySemanticToken'
+  /** The matrix runs ahead of packages/ui/src/components -- there is no component to style. */
+  | 'noComponentDirectory';
+
+/**
+ * EVERY ROW motion.jsonl ASSIGNS THAT THIS PACKAGE DOES NOT CONSUME, enumerated
+ * rather than derived.
+ *
+ * Derived would be worse: a rule that recomputes "no intersecting property" from
+ * the row would let a new matrix row classify itself and pass silently, which is
+ * exactly the gate this list exists to hold. Enumerated, a new row fails CI until
+ * somebody either writes a cell for it or writes it down here with a reason, and
+ * a row that leaves the matrix fails until its line here goes too.
+ */
+const EXCLUDED_ROWS: Record<ExclusionReason, readonly string[]> = {
+  notAnimated: [
+    'drawer | content | dragging',
+    'dropdown-menu | items | enter',
+    'context-menu | items | enter',
+    'select | items | enter',
+    'combobox | items | enter',
+    'command | items | enter',
+    'checkbox | root/indicator | check sequence',
+    'scroll-area | thumb | drag',
+    'resizable | panels | dragging',
+    'slider | thumb | dragging',
+    'slider | range fill | follows thumb',
+    'carousel | track | swipe',
+  ],
+  notAPresenceChange: [
+    'dialog | close button | hover',
+    'sheet | close button | hover',
+    'drawer | close button | hover',
+    'popover | close button | hover',
+    // The list container stays mounted; per-item entrance is the stagger axis (#2156).
+    'command | items | filter change',
+    'checkbox | indicator | unchecked <-> checked',
+    'radio-group | indicator | unchecked <-> checked',
+    'checkbox | root | press',
+    'switch | root | press',
+    'toggle | root | press',
+    'toggle-group | item | press',
+    'button | root | press',
+    'button | content | idle <-> busy',
+    'slider | thumb | grab',
+  ],
+  noIntersectingProperty: [
+    'accordion | chevron | open <-> closed',
+    'dropdown-menu | items | highlight move',
+    'context-menu | items | highlight move',
+    // Declares no properties at all, so there is nothing to intersect.
+    'navigation-menu | panel | open -> open (item change)',
+    'select | items | highlight move',
+    'select | items | selected check',
+    'select | chevron | open <-> closed',
+    'combobox | items | highlight move',
+    'combobox | items | selected check',
+    'command | items | highlight move',
+    'checkbox | root | unchecked <-> checked',
+    'radio-group | item | unchecked <-> checked',
+    'switch | track | off <-> on',
+    'toggle | root | off <-> on',
+    'toggle-group | item | off <-> on',
+    'button | root | hover',
+    'pagination | link | current change',
+    'sidebar | item | active change',
+    'breadcrumb | link | hover',
+    'pagination | link | hover',
+    'item | root | hover',
+    'table | row | hover',
+    'table | row | selected <-> unselected',
+    'card | root | hover (when interactive)',
+    'scroll-area | scrollbar | hover',
+    'resizable | handle | hover / active',
+    'accordion | trigger | hover',
+    'collapsible | trigger | hover',
+    'tabs | trigger | hover',
+    'select | trigger | hover',
+    'navigation-menu | trigger | hover',
+    'sidebar | item | hover',
+    'slider | thumb | hover',
+    'input | root | focus',
+    'input | root | valid <-> invalid',
+    'textarea | root | focus',
+    'textarea | root | valid <-> invalid',
+    'input-group | root | focus',
+    'input-otp | slot | focus',
+    'input-otp | active slot | advance',
+    'progress | fill | value change',
+    'calendar | day cell | hover',
+    'calendar | day cell | selected <-> unselected',
+    'calendar | range | range change',
+    'avatar | image -> fallback | error',
+  ],
+  noExistingShape: [
+    'tabs | indicator | active change',
+    'drawer | content | closed -> open',
+    'drawer | content | open -> closed',
+    'drawer | content | settle on release',
+    'switch | thumb | off <-> on',
+    'resizable | panels | keyboard step',
+    'slider | thumb | keyboard step',
+    'carousel | track | index change',
+    'carousel | track | settle on release',
+    'sidebar | root | expand',
+    'sidebar | root | collapse',
+  ],
+  // `expand` and `collapse` declare exactly ['grid-template-rows', 'opacity'],
+  // which is exactly what these six rows declare. A cell for the opacity half
+  // would be a second mechanism for one moment.
+  carriedBySemanticToken: [
+    'accordion | content | closed -> open',
+    'accordion | content | open -> closed',
+    'collapsible | content | closed -> open',
+    'collapsible | content | open -> closed',
+    'field | message | appear',
+    'field | message | disappear',
+  ],
+  // Verified against packages/ui/src/components: no menubar, no date-picker.
+  noComponentDirectory: [
+    'menubar | content | closed -> open',
+    'menubar | content | open -> closed',
+    'menubar | items | enter',
+    'menubar | items | highlight move',
+    'menubar | trigger | hover',
+    'date-picker | content | closed -> open',
+    'date-picker | content | open -> closed',
+  ],
+};
+
 describe('motion cells: matrix conformance', () => {
   it('every consumed cell names a row that exists in motion.jsonl', () => {
     // The direction that catches a transcription error: a cell invented here,
@@ -219,11 +364,9 @@ describe('motion cells: matrix conformance', () => {
   });
 
   it('every period-kind row in motion.jsonl is consumed', () => {
-    // The other direction, closed for the loop set: four rows, four cells. The
-    // tier-kind set is deliberately not closed here -- rows whose movement has
-    // no existing keyframe shape (drawer's per-side slide, carousel travel, the
-    // discrete swaps) are left uncovered rather than approximated, and the
-    // predicate that decides is stated over DEFAULT_MOTION_CELL_ANIMATIONS.
+    // The loop set on its own: four rows, four cells. The exclusion allowlist
+    // below closes the same direction for every other row, but a loop with no
+    // cell has no compiled CSS at all, so it gets its own named failure.
     const consumed = new Set(
       Object.values(DEFAULT_MOTION_CELL_ANIMATIONS).map((cell) => rowKey(cell.cell)),
     );
@@ -232,6 +375,32 @@ describe('motion cells: matrix conformance', () => {
       .map(rowKey)
       .filter((key) => !consumed.has(key));
     expect(missing).toEqual([]);
+  });
+
+  it('the rows left uncovered are EXACTLY the enumerated exclusions', () => {
+    // The tier direction of the both-directions diff, closed in code rather than
+    // left to the doc comment. Both failure modes land here: a matrix row with
+    // neither a cell nor a written reason, and an exclusion line that outlived
+    // the row or the cell it was written for.
+    const consumed = new Set(
+      Object.values(DEFAULT_MOTION_CELL_ANIMATIONS)
+        .map((cell) => cell.cell)
+        .map(rowKey),
+    );
+    const uncovered = matrixRows()
+      .map(rowKey)
+      .filter((key) => !consumed.has(key))
+      .sort();
+    const excluded = Object.values(EXCLUDED_ROWS).flat().toSorted();
+    expect(uncovered).toEqual(excluded);
+  });
+
+  it('no row is written down twice, in one reason or across two', () => {
+    // A duplicate would make the set-equality above pass or fail for the wrong
+    // reason, and two reasons for one row is two stories.
+    const excluded = Object.values(EXCLUDED_ROWS).flat();
+    const duplicates = excluded.filter((key, index) => excluded.indexOf(key) !== index);
+    expect(duplicates).toEqual([]);
   });
 
   it('every consumed cell carries the assignment its row declares, member for member', () => {

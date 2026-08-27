@@ -980,6 +980,24 @@ export interface MotionCellAnimation {
  *      `none` rows are not animated at all -- the pointer rule is a law, and a
  *      `none` row (every `items / enter` stagger row) is waiting on the
  *      stagger-step work, not on a shape.
+ *   4. The component the row names EXISTS in `packages/ui/src/components`. The
+ *      matrix runs ahead of the library in two places (menubar, date-picker),
+ *      and a utility for a component nobody can import is a token with no
+ *      consumer.
+ *   5. The row's whole property set is not already carried END TO END by a
+ *      `motion-semantic-*` token. `expand`/`collapse` declare exactly
+ *      `grid-template-rows` + `opacity`, which is exactly what accordion
+ *      content, collapsible content and a field message declare -- emitting a
+ *      cell for the opacity half would be a second mechanism for one moment,
+ *      and the day one is retuned they would disagree.
+ *
+ * EVERY ROW THIS PREDICATE EXCLUDES IS ENUMERATED, one line each with its
+ * reason, in `EXCLUDED_ROWS` in `test/motion-cells.test.ts`, and the suite there
+ * asserts that (cells-assigned - cells-consumed) equals that list EXACTLY. So a
+ * new matrix row lands in CI as a failure until somebody either transcribes it
+ * here or writes down why not, and a stale exclusion fails the same way. The
+ * prose above says why the categories exist; the list says which rows are in
+ * them.
  *
  * NO NEW KEYFRAME IS AUTHORED HERE, and that is the point rather than an
  * omission. Every entry below names a shape that already exists, so no geometry
@@ -1019,6 +1037,22 @@ export const DEFAULT_MOTION_CELL_ANIMATIONS: Record<string, MotionCellAnimation>
     cell: { component: 'dialog', part: 'content', transition: 'open -> closed' },
     meaning: 'A dialog leaving: fade + zoom back to the pop extent, on the departure curve.',
     contexts: ['dialog', 'modal', 'alert-dialog'],
+  },
+  'dialog-overlay-open': {
+    keyframe: 'fade-in',
+    duration: { kind: 'tier', tier: 'normal' },
+    curve: 'enter',
+    cell: { component: 'dialog', part: 'overlay', transition: 'closed -> open' },
+    meaning: 'The scrim behind a dialog, arriving with the surface it dims for.',
+    contexts: ['dialog', 'overlay', 'scrim'],
+  },
+  'dialog-overlay-close': {
+    keyframe: 'fade-out',
+    duration: { kind: 'tier', tier: 'moderate' },
+    curve: 'exit',
+    cell: { component: 'dialog', part: 'overlay', transition: 'open -> closed' },
+    meaning: 'The scrim behind a dialog, leaving with it.',
+    contexts: ['dialog', 'overlay', 'scrim'],
   },
   'alert-dialog-content-open': {
     keyframe: 'scale-in',
@@ -1100,6 +1134,24 @@ export const DEFAULT_MOTION_CELL_ANIMATIONS: Record<string, MotionCellAnimation>
     cell: { component: 'drawer', part: 'overlay', transition: 'open -> closed' },
     meaning: 'The scrim behind a drawer, leaving with it.',
     contexts: ['drawer', 'overlay', 'scrim'],
+  },
+  'sidebar-overlay-mobile-open': {
+    keyframe: 'fade-in',
+    duration: { kind: 'tier', tier: 'normal' },
+    curve: 'spring-smooth',
+    cell: { component: 'sidebar', part: 'overlay (mobile)', transition: 'open' },
+    meaning:
+      'A sidebar arriving as a mobile overlay. The row declares fade + slide; the fade is emitted and the slide is not, for the reason the sheet row gives -- no side-agnostic slide shape.',
+    contexts: ['sidebar', 'overlay', 'mobile'],
+  },
+  'sidebar-overlay-mobile-close': {
+    keyframe: 'fade-out',
+    duration: { kind: 'tier', tier: 'moderate' },
+    curve: 'exit',
+    cell: { component: 'sidebar', part: 'overlay (mobile)', transition: 'close' },
+    meaning:
+      'A mobile sidebar overlay leaving. The fade half of fade + slide, on the departure curve.',
+    contexts: ['sidebar', 'overlay', 'mobile'],
   },
   // --------------------------------------------------------------- anchored popup
   'popover-content-open': {
@@ -1258,6 +1310,15 @@ export const DEFAULT_MOTION_CELL_ANIMATIONS: Record<string, MotionCellAnimation>
       'The incoming month grid. The row declares fade or slide (x) crossfade; the fade is emitted, the optional slide is not, because its distance is a grid width nothing names.',
     contexts: ['calendar', 'date-picker'],
   },
+  'tabs-panel-active-change': {
+    keyframe: 'fade-in',
+    duration: { kind: 'tier', tier: 'fast' },
+    curve: 'standard',
+    cell: { component: 'tabs', part: 'panel', transition: 'active change' },
+    meaning:
+      'The incoming tab panel as the selection moves: the calendar month-change moment on a panel instead of a grid, one tier quicker because a panel swap covers no distance.',
+    contexts: ['tabs', 'panel', 'crossfade'],
+  },
   // ------------------------------------------------------------- load / appearance
   'avatar-image-load': {
     keyframe: 'fade-in',
@@ -1266,6 +1327,47 @@ export const DEFAULT_MOTION_CELL_ANIMATIONS: Record<string, MotionCellAnimation>
     cell: { component: 'avatar', part: 'image', transition: 'load' },
     meaning: 'An avatar image arriving once it has decoded, rather than snapping in.',
     contexts: ['avatar', 'image', 'load'],
+  },
+  'image-img-load': {
+    keyframe: 'fade-in',
+    duration: { kind: 'tier', tier: 'moderate' },
+    curve: 'enter',
+    cell: { component: 'image', part: 'img', transition: 'load' },
+    meaning: 'An image arriving once it has decoded: the avatar moment, declared on its own row.',
+    contexts: ['image', 'load'],
+  },
+  'embed-frame-load': {
+    keyframe: 'fade-in',
+    duration: { kind: 'tier', tier: 'moderate' },
+    curve: 'enter',
+    cell: { component: 'embed', part: 'frame', transition: 'load' },
+    meaning: 'An embedded frame arriving once the thing inside it has loaded.',
+    contexts: ['embed', 'iframe', 'load'],
+  },
+  'alert-root-appear': {
+    keyframe: 'fade-in',
+    duration: { kind: 'tier', tier: 'normal' },
+    curve: 'enter',
+    cell: { component: 'alert', part: 'root', transition: 'appear' },
+    meaning:
+      'An alert arriving in the flow. The row declares fade + a short translate; the fade is emitted and the translate is not, for the reason the sheet row gives.',
+    contexts: ['alert', 'notice', 'appear'],
+  },
+  'scroll-area-scrollbar-show': {
+    keyframe: 'fade-in',
+    duration: { kind: 'tier', tier: 'fast' },
+    curve: 'standard',
+    cell: { component: 'scroll-area', part: 'scrollbar', transition: 'show' },
+    meaning: 'A scrollbar surfacing when the pointer or a scroll says it is wanted.',
+    contexts: ['scroll-area', 'scrollbar'],
+  },
+  'scroll-area-scrollbar-hide': {
+    keyframe: 'fade-out',
+    duration: { kind: 'tier', tier: 'fast' },
+    curve: 'standard',
+    cell: { component: 'scroll-area', part: 'scrollbar', transition: 'hide' },
+    meaning: 'A scrollbar standing down once the scrolling that summoned it stops.',
+    contexts: ['scroll-area', 'scrollbar'],
   },
   'skeleton-root-waiting': {
     keyframe: 'pulse',
