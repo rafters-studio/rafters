@@ -57,6 +57,10 @@ function Overlay({ probe }: { probe: PresenceProbe }): React.ReactElement {
   const [open, setOpen] = React.useState(false);
   const { present, ref, state } = usePresence(open);
   const nodeRef = React.useRef<HTMLElement | null>(null);
+  // The node's UNWRAPPED `getAnimations`, kept so the harness can read the
+  // timeline without pretending to be the hook. Everything that is not the hook
+  // reads through this.
+  const nativeRef = React.useRef<(() => Animation[]) | null>(null);
 
   // Compose our own recorder over presence's ref, and wrap the node's
   // `getAnimations` so every call the HOOK makes is recorded. The wrapper
@@ -67,6 +71,7 @@ function Overlay({ probe }: { probe: PresenceProbe }): React.ReactElement {
       nodeRef.current = element;
       if (element !== null && !Object.hasOwn(element, 'getAnimations')) {
         const native = element.getAnimations.bind(element);
+        nativeRef.current = native;
         Object.defineProperty(element, 'getAnimations', {
           configurable: true,
           value: (...args: Parameters<Element['getAnimations']>) => {
@@ -84,7 +89,14 @@ function Overlay({ probe }: { probe: PresenceProbe }): React.ReactElement {
 
   const close = React.useCallback(() => {
     const node = nodeRef.current;
-    probe.runningAtClose = node === null ? [] : names(node.getAnimations());
+    // Through the NATIVE method, never the wrapper. Reading the wrapper here
+    // would stamp `observedByHook` with the harness's own read before the hook's
+    // effect ever runs -- and under reduced motion, where both lists are empty,
+    // that made `expect(observedByHook).toEqual([])` a tautology that passed
+    // whether or not the hook called `getAnimations()` at all. `observedByHook`
+    // stays `null` until presence itself asks.
+    const native = nativeRef.current;
+    probe.runningAtClose = node === null || native === null ? [] : names(native());
     probe.closedAt = performance.now();
     setOpen(false);
   }, [probe]);

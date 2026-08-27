@@ -32,7 +32,11 @@ import {
   DropdownMenuTrigger,
 } from '../../src/components/dropdown-menu/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '../../src/components/popover/popover';
-import { attachAnimation, type FakeAnimation } from '../harness/presence-animations';
+import {
+  attachAnimation,
+  attachAnimations,
+  type FakeAnimation,
+} from '../harness/presence-animations';
 
 /**
  * Put a running exit animation on the content node, the way the compiled sheet
@@ -208,11 +212,20 @@ describe.each(cases)('presence contract: $name', ({ render: renderAt, absent }) 
   });
 
   it('closes without waiting when no animation is attached at all', () => {
-    // Nothing installs an animation here, so `getAnimations()` has nothing to
-    // report -- the shape of a node whose exit rule declares a transition on a
-    // property that never changes. Presence must release in the same tick
-    // rather than await a promise that will never exist.
+    // The EMPTY-LIST branch, and it has to be installed to be reached. happy-dom
+    // ships no `Element.prototype.getAnimations` at all, so a node left alone
+    // here would take the hook's DOM-shim guard instead and this case would
+    // silently stop covering what it names. `attachAnimations(node, 0)` gives
+    // the node a real `getAnimations` that answers with an empty list -- the
+    // shape of an exit rule declaring a transition on a property that never
+    // changes, which creates no CSSTransition object. Presence must release in
+    // the same tick rather than await a promise that will never exist. (The shim
+    // path is covered separately, by use-presence.test.tsx's 'releases when the
+    // DOM has no Web Animations API at all'.)
     const { rerender } = render(renderAt(true));
+    const node = content();
+    if (node === null) throw new Error('no content node to leave unanimated');
+    attachAnimations(node, 0);
 
     rerender(renderAt(false));
 

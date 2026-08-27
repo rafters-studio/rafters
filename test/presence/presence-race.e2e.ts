@@ -150,6 +150,12 @@ test('a reduced-motion exit releases at once, with nothing left to wait for (#20
   // `animationend` and an event that had already fired would have wedged the
   // node until the backstop timer. Observing rather than listening removes the
   // special case instead of getting it right a second time.
+  //
+  // `observedByHook` starts as `null` and only the HOOK's own `getAnimations`
+  // call writes it (the harness reads the timeline through the unwrapped native
+  // method), so `toEqual([])` below fails on any path that releases without
+  // consulting the node -- verified by detaching the hook's ref and watching it
+  // report `null`. It is an assertion about which branch ran, not a tautology.
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await openHarness(page);
 

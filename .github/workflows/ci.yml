@@ -19,5 +19,9 @@ jobs:
           node-version: 24.12
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
-      - run: pnpm exec playwright install --with-deps chromium firefox
+      # All three engines the root playwright.config.ts declares projects for.
+      # webkit is not optional: test/presence/presence-race.e2e.ts is the only
+      # place the browser semantics usePresence rests on are measured, and it is
+      # measured in every engine the project ships against.
+      - run: pnpm exec playwright install --with-deps chromium firefox webkit
       - run: pnpm test:all
