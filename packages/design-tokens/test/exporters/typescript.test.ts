@@ -4,10 +4,12 @@
  * (typography-composite), which broke the demo's generated rafters.ts as an
  * unquoted object key.
  */
+import { hexToOKLCH } from '@rafters/color-utils';
 import { describe, expect, it } from 'vitest';
 import ts from 'typescript';
 import { tokensToTypeScript } from '../../src/exporters/typescript.js';
 import { generateBaseSystem } from '../../src/generators/index.js';
+import { importColorFamily } from '../../src/importers/color.js';
 import type { Token } from '@rafters/shared';
 
 function assertParses(source: string): void {
@@ -64,6 +66,13 @@ describe('tokensToTypeScript', () => {
    * zeros in H's string differ. There is no single `oklchToCSS` call that
    * reproduces the old mixed per-channel precision; see issue #2147.
    *
+   * A second, independent divergence: the old formatter never emitted
+   * alpha at all, while `{ precision: 3 }` still appends `/ A` (also
+   * toFixed(3)'d) whenever `alpha !== 1`. The fixtures above never carry
+   * alpha, so they don't exercise it; the `imported-primary` case below
+   * does, and pins the new (disclosed, see packages/cli/CHANGELOG.md)
+   * alpha-emitting behavior.
+   *
    * `zinc` is anchored to the hardcoded `DEFAULT_NEUTRAL_SCALE`; the
    * `silver-true-glacier` assertion additionally exercises a non-zero
    * chroma and tracks `DEFAULT_COLOR_PALETTE_BASES` -- retuning that
@@ -74,5 +83,12 @@ describe('tokensToTypeScript', () => {
     const source = tokensToTypeScript(system.allTokens);
     expect(source).toContain("'zinc': 'oklch(0.552 0.000 0.000)'");
     expect(source).toContain("'silver-true-glacier': 'oklch(0.645 0.120 180.000)'");
+  });
+
+  it('emits the alpha channel for a full-precision, alpha-carrying imported seed (disclosed behavior change)', () => {
+    const seed = hexToOKLCH('rgba(59, 130, 246, 0.5)');
+    const tokens = importColorFamily('imported-primary', '500', seed);
+    const source = tokensToTypeScript(tokens);
+    expect(source).toContain("'imported-primary': 'oklch(0.623 0.188 259.815 / 0.500)'");
   });
 });
