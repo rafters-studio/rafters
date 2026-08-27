@@ -984,12 +984,22 @@ export interface MotionCellAnimation {
  *      matrix runs ahead of the library in two places (menubar, date-picker),
  *      and a utility for a component nobody can import is a token with no
  *      consumer.
- *   5. The row's whole property set is not already carried END TO END by a
- *      `motion-semantic-*` token. `expand`/`collapse` declare exactly
- *      `grid-template-rows` + `opacity`, which is exactly what accordion
- *      content, collapsible content and a field message declare -- emitting a
- *      cell for the opacity half would be a second mechanism for one moment,
- *      and the day one is retuned they would disagree.
+ *   5. A cell here would not DOUBLE-DRIVE a property a transition is already
+ *      driving. This bites exactly one shape of row: `opacity` +
+ *      `grid-rows / height` (accordion content, collapsible content, a field
+ *      message). No keyframe expresses `grid-template-rows`, so that moment can
+ *      only run as a transition, and `motion-expand`/`motion-collapse` already
+ *      transition `grid-template-rows` AND `opacity` together. A cell for the
+ *      opacity half would put an animation and a transition on the same
+ *      property at once -- the animation wins, and the transition's opacity is
+ *      overridden mid-flight.
+ *
+ *      This is NOT the broader claim that an overlapping semantic property list
+ *      excludes a row: `modal-in` also declares `opacity` + `transform`, and
+ *      `dialog / content / closed -> open` is covered here all the same. The
+ *      difference is that its non-opacity half IS a shape (`transform: scale`
+ *      -> `scale-in`), so the whole moment runs as one animation and no
+ *      transition is competing for opacity.
  *
  * EVERY ROW THIS PREDICATE EXCLUDES IS ENUMERATED, one line each with its
  * reason, in `EXCLUDED_ROWS` in `test/motion-cells.test.ts`, and the suite there

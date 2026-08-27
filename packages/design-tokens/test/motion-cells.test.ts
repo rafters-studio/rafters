@@ -155,7 +155,9 @@ describe('motion cells: a cell that cannot be represented fails the build', () =
       curveless: {
         keyframe: 'fade-in',
         duration: { kind: 'tier', tier: 'fast' },
-        cell: { component: 'alert', part: 'root', transition: 'appear' },
+        // Deliberately not a real matrix row -- this fixture is about the
+        // generator's refusal, not about any moment the matrix declares.
+        cell: { component: 'test-component', part: 'root', transition: 'appear' },
         meaning: 'test',
         contexts: ['test'],
       },
@@ -220,8 +222,8 @@ type ExclusionReason =
   | 'noIntersectingProperty'
   /** Movement that needs a side or a DOM-relative distance no keyframe or extent names. */
   | 'noExistingShape'
-  /** The whole property set is already carried end to end by one semantic token. */
-  | 'carriedBySemanticToken'
+  /** `opacity` + `grid-rows / height`: a cell would double-drive opacity against motion-expand/collapse. */
+  | 'carriedByExpandCollapse'
   /** The matrix runs ahead of packages/ui/src/components -- there is no component to style. */
   | 'noComponentDirectory';
 
@@ -328,10 +330,14 @@ const EXCLUDED_ROWS: Record<ExclusionReason, readonly string[]> = {
     'sidebar | root | expand',
     'sidebar | root | collapse',
   ],
-  // `expand` and `collapse` declare exactly ['grid-template-rows', 'opacity'],
-  // which is exactly what these six rows declare. A cell for the opacity half
-  // would be a second mechanism for one moment.
-  carriedBySemanticToken: [
+  // These six declare ['opacity', 'grid-rows / height']. No keyframe expresses
+  // grid-template-rows, so the moment runs as a transition, and
+  // motion-expand/motion-collapse already transition BOTH properties. A cell for
+  // the opacity half would put an animation and a transition on one property at
+  // once, and the animation wins. Not a claim about overlapping property lists
+  // generally -- modal-in overlaps dialog-content-open and that row is covered,
+  // because its other half is a shape.
+  carriedByExpandCollapse: [
     'accordion | content | closed -> open',
     'accordion | content | open -> closed',
     'collapsible | content | closed -> open',
