@@ -23,7 +23,7 @@ export interface UnitValue {
 
 /**
  * Default unit registry. Starter data, not authoritative -- pass your own
- * `Unit[]` registry into `parseUnitString` to override or extend.
+ * `Unit[]` registry into `tryParseUnit` to override or extend.
  *
  * Length units carry `toBase` relative to px (the base of the length kind).
  * Other kinds don't have a meaningful single-base scale (% needs parent
@@ -47,11 +47,11 @@ export const DEFAULT_UNITS: Unit[] = [
   { name: 'vmax', kind: 'viewport-relative' },
 ];
 
-/** A pseudo-unit representing a unitless number, used as the right-hand side of * and / operations. */
+/** A pseudo-unit representing a unitless number, returned by `parseUnitString` for a bare, suffix-less number. */
 const UNITLESS: Unit = { name: '', kind: 'length' };
 
 /** Look up a unit by name in a registry. Returns undefined if not found. */
-export const findUnit = (registry: readonly Unit[], name: string): Unit | undefined =>
+const findUnit = (registry: readonly Unit[], name: string): Unit | undefined =>
   registry.find((u) => u.name === name);
 
 /**
@@ -59,10 +59,7 @@ export const findUnit = (registry: readonly Unit[], name: string): Unit | undefi
  * Throws if the suffix isn't found in the registry. A bare number returns
  * UNITLESS.
  */
-export function parseUnitString(
-  cssValue: string,
-  registry: readonly Unit[] = DEFAULT_UNITS,
-): UnitValue {
+function parseUnitString(cssValue: string, registry: readonly Unit[] = DEFAULT_UNITS): UnitValue {
   const trimmed = cssValue.trim();
   const match = trimmed.match(/^(-?\d*\.?\d+)([a-z%]*)$/i);
   if (!match || match[1] === undefined) {
@@ -95,126 +92,4 @@ export function tryParseUnit(
   } catch {
     return null;
   }
-}
-
-/** Format a `UnitValue` back to a CSS string. */
-export const formatUnit = (uv: UnitValue): string => `${uv.value}${uv.unit.name}`;
-
-/**
- * Mathematical operations on unit values. Addition/subtraction require
- * matching units; multiplication/division accept a unitless right operand.
- */
-export function calculateWithUnits(
-  left: UnitValue,
-  operator: '+' | '-' | '*' | '/',
-  right: UnitValue | number,
-): UnitValue {
-  const rightValue: UnitValue =
-    typeof right === 'number' ? { value: right, unit: UNITLESS } : right;
-
-  if (operator === '+' || operator === '-') {
-    if (left.unit.name !== rightValue.unit.name && rightValue.unit.name !== '') {
-      throw new Error(
-        `Cannot ${operator === '+' ? 'add' : 'subtract'} different units: ${left.unit.name} and ${rightValue.unit.name}`,
-      );
-    }
-  }
-
-  let result: number;
-  switch (operator) {
-    case '+':
-      result = left.value + rightValue.value;
-      break;
-    case '-':
-      result = left.value - rightValue.value;
-      break;
-    case '*':
-      result = left.value * rightValue.value;
-      break;
-    case '/':
-      if (rightValue.value === 0) {
-        throw new Error('Division by zero');
-      }
-      result = left.value / rightValue.value;
-      break;
-  }
-
-  const resultUnit: Unit =
-    operator === '*' || operator === '/'
-      ? rightValue.unit.name === ''
-        ? left.unit
-        : rightValue.unit
-      : left.unit;
-
-  return { value: result, unit: resultUnit };
-}
-
-/**
- * Convert a length-kind unit value to a different unit. Both source and
- * target must be `kind: 'length'` with `toBase` defined. Other kinds are
- * not convertible without external context.
- */
-export function convertUnit(
-  source: UnitValue,
-  target: Unit,
-  ctx: { baseFontSize?: number; viewportWidth?: number; viewportHeight?: number } = {},
-): UnitValue {
-  if (source.unit.name === target.name) {
-    return source;
-  }
-
-  // Length conversion via toBase scale (px is the base).
-  if (source.unit.kind === 'length' && target.kind === 'length') {
-    const sourceToBase = source.unit.toBase;
-    const targetToBase = target.toBase;
-    if (sourceToBase === undefined || targetToBase === undefined) {
-      throw new Error(
-        `Cannot convert length unit without toBase: ${source.unit.name} -> ${target.name}`,
-      );
-    }
-
-    // Apply ctx baseFontSize override for rem/em if provided.
-    const baseFont = ctx.baseFontSize ?? 16;
-    const adjust = (u: Unit, v: number): number => {
-      if (u.name === 'rem' || u.name === 'em') return v * (baseFont / 16);
-      return v;
-    };
-
-    const pxValue = adjust(source.unit, source.value * sourceToBase);
-    const targetPxScale = adjust(target, targetToBase);
-    return { value: pxValue / targetPxScale, unit: target };
-  }
-
-  // Viewport-relative conversion to/from length.
-  if (source.unit.kind === 'viewport-relative' && target.kind === 'length' && target.toBase) {
-    const { viewportWidth = 1920, viewportHeight = 1080 } = ctx;
-    const dim =
-      source.unit.name === 'vw'
-        ? viewportWidth
-        : source.unit.name === 'vh'
-          ? viewportHeight
-          : source.unit.name === 'vmin'
-            ? Math.min(viewportWidth, viewportHeight)
-            : Math.max(viewportWidth, viewportHeight);
-    const pxValue = (source.value / 100) * dim;
-    return { value: pxValue / target.toBase, unit: target };
-  }
-  if (source.unit.kind === 'length' && target.kind === 'viewport-relative' && source.unit.toBase) {
-    const { viewportWidth = 1920, viewportHeight = 1080 } = ctx;
-    const dim =
-      target.name === 'vw'
-        ? viewportWidth
-        : target.name === 'vh'
-          ? viewportHeight
-          : target.name === 'vmin'
-            ? Math.min(viewportWidth, viewportHeight)
-            : Math.max(viewportWidth, viewportHeight);
-    const pxValue = source.value * source.unit.toBase;
-    return { value: (pxValue / dim) * 100, unit: target };
-  }
-
-  if (source.unit.kind === 'percentage' || target.kind === 'percentage') {
-    throw new Error('Cannot convert percentage without parent context');
-  }
-  throw new Error(`Unsupported unit conversion: ${source.unit.name} -> ${target.name}`);
 }
