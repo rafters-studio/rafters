@@ -452,9 +452,9 @@ export function generateMotionTokens(
     });
   }
 
-  // PER-CELL ANIMATION COMPOSITES (#2017). One token per animated matrix cell,
-  // carrying its three assignments -- shape, tier, curve -- as a JSON spec the
-  // exporter turns into one `animate-<cell>` @utility.
+  // PER-CELL ANIMATION COMPOSITES (#2017, extended #2154). One token per animated
+  // matrix cell, carrying its assignments -- shape, duration, curve -- as a JSON
+  // spec the exporter turns into one `animate-<cell>` @utility.
   //
   // JSON rather than a shorthand string, for the reason the semantic motion
   // tokens are JSON: the utility is emitted as LONGHAND (animation-name /
@@ -462,23 +462,83 @@ export function generateMotionTokens(
   // re-set the duration alone. A shorthand would have to be restated, and a
   // restated shorthand is what destroys mechanism B (see the exporter).
   //
-  // Nothing is resolved here. The tier and curve are NAMES, they become var()s
-  // onto the leaves at emission, and that is what keeps this a reference rather
-  // than a second value: retune `rafters-duration-moderate` and both anchored
-  // popups follow without this file being touched.
+  // Nothing is resolved here. The tier, period and curve are NAMES, they become
+  // var()s onto the leaves at emission, and that is what keeps this a reference
+  // rather than a second value: retune `rafters-duration-moderate` and both
+  // anchored popups follow without this file being touched.
+  //
+  // TWO DURATION FORMS, because the matrix has two (#2154). A transition names a
+  // perceptual TIER and runs once; a loop names a PERIOD and runs forever. The
+  // difference is carried as a tagged union rather than sniffed downstream,
+  // because the reduced-motion law treats the two OPPOSITELY -- the tier is
+  // zeroed, the period is exempt -- and a form the data cannot state is a form
+  // the law cannot be applied to.
   for (const [name, cell] of Object.entries(cellAnimations)) {
     requireDef(keyframeDefs, cell.keyframe, 'keyframe', `motion cell "${name}"`);
-    requireDef(durationDefs, cell.tier, 'duration tier', `motion cell "${name}"`);
-    requireDef(easingDefs, cell.curve, 'easing curve', `motion cell "${name}"`);
 
     const { component, part, transition } = cell.cell;
+    const owner = `motion cell "${name}"`;
+    const coordinates = `(${component}, ${part}, ${transition})`;
+
+    let spec: { keyframe: string; duration: unknown; curve?: string };
+    let timingDependencies: string[];
+    let timingNote: string;
+    // The period namespace is exempt from the reduced-motion zeroing, so a
+    // looping cell is NOT reduced-motion aware. Hardcoding `true` here would put
+    // the token metadata in contradiction with the CSS the exporter emits for
+    // the same cell -- and the exporter reads this field to decide whether the
+    // zeroing block is attached, including on an operator-pinned cell whose JSON
+    // spec has been overwritten with a shorthand.
+    let reducedMotionAware: boolean;
+
+    if (cell.duration.kind === 'tier') {
+      const { tier } = cell.duration;
+      requireDef(durationDefs, tier, 'duration tier', owner);
+      if (cell.curve === undefined) {
+        throw new Error(
+          `motion generator: ${owner} ${coordinates} is a tier-kind cell with no curve. ` +
+            `Only a period-kind cell may omit the curve, and only because every ` +
+            `period row in the matrix declares curve: {"kind":"none"}.`,
+        );
+      }
+      requireDef(easingDefs, cell.curve, 'easing curve', owner);
+      spec = {
+        keyframe: cell.keyframe,
+        duration: { kind: 'tier', tier },
+        curve: cell.curve,
+      };
+      timingDependencies = [`rafters-duration-${tier}`, `rafters-ease-${cell.curve}`];
+      timingNote = `over ${tier} with ${cell.curve}`;
+      reducedMotionAware = true;
+    } else if (cell.duration.kind === 'period') {
+      const { period } = cell.duration;
+      requireDef(periodDefs, period, 'period', owner);
+      // No curve, deliberately. Every period row declares curve: {"kind":"none"},
+      // and naming one here would be inventing an assignment no cell made.
+      spec = {
+        keyframe: cell.keyframe,
+        duration: { kind: 'period', period },
+      };
+      timingDependencies = [`rafters-period-${period}`];
+      timingNote = `looping on period ${period}`;
+      reducedMotionAware = false;
+    } else {
+      // A malformed or future-schema cell. Silent fallback to a default duration
+      // is not acceptable: an unrepresented cell would compile as if it had a
+      // value, which is the 019fb063 silent-resolution failure arriving from
+      // inside our own definitions.
+      const unrecognized: string = JSON.stringify(
+        (cell.duration as { kind?: unknown }).kind ?? null,
+      );
+      throw new Error(
+        `motion generator: ${owner} ${coordinates} has an unrecognized duration.kind ` +
+          `${unrecognized}. Known duration.kind values: period, tier.`,
+      );
+    }
+
     tokens.push({
       name: `motion-cell-${name}`,
-      value: JSON.stringify({
-        keyframe: cell.keyframe,
-        durationTier: cell.tier,
-        curve: cell.curve,
-      }),
+      value: JSON.stringify(spec),
       category: 'motion',
       namespace: 'motion',
       semanticMeaning: cell.meaning,
@@ -486,21 +546,19 @@ export function generateMotionTokens(
       animationName: name,
       keyframeName: cell.keyframe,
       generateUtilityClass: true,
-      dependsOn: [
-        `motion-keyframe-${cell.keyframe}`,
-        `rafters-duration-${cell.tier}`,
-        `rafters-ease-${cell.curve}`,
-      ],
-      description: `Motion cell ${component} / ${part} / ${transition}: ${cell.keyframe} over ${cell.tier} with ${cell.curve}. ${cell.meaning}`,
+      dependsOn: [`motion-keyframe-${cell.keyframe}`, ...timingDependencies],
+      description: `Motion cell ${component} / ${part} / ${transition}: ${cell.keyframe} ${timingNote}. ${cell.meaning}`,
       generatedAt: timestamp,
       containerQueryAware: false,
-      reducedMotionAware: true,
+      reducedMotionAware,
       userOverride: null,
       usagePatterns: {
         do: [`Apply class animate-${name} on the ${component} ${part} for "${transition}"`],
         never: [
           'Reuse this cell on a different component -- assignments come from motion.jsonl, one cell at a time',
-          'Add motion-reduce:animate-none alongside it -- animation:none resets the shorthand and discards the zeroed duration',
+          reducedMotionAware
+            ? 'Add motion-reduce:animate-none alongside it -- animation:none resets the shorthand and discards the zeroed duration'
+            : 'Stop this loop under prefers-reduced-motion -- loops slow, they never stop, and a stopped spinner says the work stopped',
         ],
       },
     });

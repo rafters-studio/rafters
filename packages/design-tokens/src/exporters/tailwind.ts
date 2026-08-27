@@ -909,14 +909,94 @@ function generateMotionUtilities(motionTokens: Token[]): string {
  * the utility and stop the component animating with no error at all. Both are
  * the 019fb063 silent-resolution failure arriving from inside our own emission.
  */
+/** The duration form a cell spec carries -- the matrix's own tagged union. */
+type CellDurationSpec = { kind: 'tier'; tier: string } | { kind: 'period'; period: string };
+
+interface CellSpec {
+  keyframe: string;
+  duration: CellDurationSpec;
+  /** Absent on a period-kind cell: every period row declares curve "none". */
+  curve?: string;
+}
+
+/**
+ * Read one cell token's value.
+ *
+ * `null` means A PINNED CELL -- the operator wrote an animation shorthand over
+ * the JSON spec, and the exporter emits it verbatim. That is the ONLY reason
+ * this returns null. A value that parses as a JSON object but is not a valid
+ * spec THROWS: emitting `animation: {"keyframe":...}` would be a silently broken
+ * rule, and skipping the token would delete the utility and stop the component
+ * animating with no error at all.
+ */
+function parseCellSpec(tokenName: string, raw: string): CellSpec | null {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+  if (typeof parsed !== 'object' || parsed === null) return null;
+
+  const candidate = parsed as { keyframe?: unknown; duration?: unknown; curve?: unknown };
+  if (typeof candidate.keyframe !== 'string') {
+    throw new Error(`tailwind exporter: motion cell token "${tokenName}" has no keyframe name.`);
+  }
+  const duration: unknown = candidate.duration;
+  const kind: unknown =
+    typeof duration === 'object' && duration !== null
+      ? (duration as { kind?: unknown }).kind
+      : undefined;
+
+  if (kind === 'tier') {
+    const tier: unknown = (duration as { tier?: unknown }).tier;
+    if (typeof tier !== 'string') {
+      throw new Error(
+        `tailwind exporter: motion cell token "${tokenName}" names no duration tier.`,
+      );
+    }
+    if (typeof candidate.curve !== 'string') {
+      throw new Error(
+        `tailwind exporter: motion cell token "${tokenName}" is tier-kind and names no curve.`,
+      );
+    }
+    return {
+      keyframe: candidate.keyframe,
+      duration: { kind: 'tier', tier },
+      curve: candidate.curve,
+    };
+  }
+
+  if (kind === 'period') {
+    const period: unknown = (duration as { period?: unknown }).period;
+    if (typeof period !== 'string') {
+      throw new Error(`tailwind exporter: motion cell token "${tokenName}" names no loop period.`);
+    }
+    return { keyframe: candidate.keyframe, duration: { kind: 'period', period } };
+  }
+
+  // Neither form. A silent fallback to a default duration would let an
+  // unrepresented cell compile as if it had a value.
+  throw new Error(
+    `tailwind exporter: motion cell token "${tokenName}" has an unrecognized ` +
+      `duration.kind ${JSON.stringify(kind ?? null)}. Known duration.kind values: period, tier.`,
+  );
+}
+
 function generateMotionCellUtilities(motionTokens: Token[]): string {
   const cellTokens = motionTokens.filter((t) => t.name.startsWith('motion-cell-'));
   if (cellTokens.length === 0) return '';
 
-  interface CellSpec {
-    keyframe: string;
-    durationTier: string;
-    curve: string;
+  // The period members this sheet actually declares. The exporter holds no
+  // definition tables, so the leaves already in the token list ARE the
+  // vocabulary -- and checking against them is the exporter-side mirror of the
+  // generator's `requireDef`. Without it a mistyped period emits
+  // `var(--rafters-period-shimmr)`, which compiles clean, resolves to nothing
+  // and leaves the loop standing still (reflection 019fb063).
+  const periodMembers = new Set<string>();
+  for (const token of motionTokens) {
+    const parts = motionNamespaceParts(token.name);
+    if (parts?.namespace === 'period') periodMembers.add(parts.member);
   }
 
   const lines: string[] = [
@@ -925,28 +1005,50 @@ function generateMotionCellUtilities(motionTokens: Token[]): string {
 
   for (const token of cellTokens) {
     if (typeof token.value !== 'string') continue;
-    let spec: CellSpec | null = null;
-    try {
-      spec = JSON.parse(token.value) as CellSpec;
-    } catch {
-      spec = null;
-    }
+    const spec = parseCellSpec(token.name, token.value);
 
     lines.push(`@utility ${token.name.replace('motion-cell-', 'animate-')} {`);
     if (spec === null) {
       // A user-pinned cell: the value is an animation shorthand, verbatim.
       lines.push(`  animation: ${token.value};`);
-    } else {
+    } else if (spec.duration.kind === 'period') {
+      const { period } = spec.duration;
+      if (!periodMembers.has(period)) {
+        throw new Error(
+          `tailwind exporter: motion cell token "${token.name}" references unknown period ` +
+            `"${period}". Known periods: ${[...periodMembers].sort().join(', ')}.`,
+        );
+      }
+      // A LOOP. It takes a period, it repeats forever, and it names no curve --
+      // every period row in the matrix declares curve "none", and supplying one
+      // here would be inventing an assignment no cell made.
       lines.push(`  animation-name: ${spec.keyframe};`);
-      lines.push(`  animation-duration: var(--rafters-duration-${spec.durationTier});`);
+      lines.push(`  animation-duration: var(--rafters-period-${period});`);
+      lines.push('  animation-iteration-count: infinite;');
+    } else {
+      // A TRANSITION. It runs ONCE, so no iteration count is written: the CSS
+      // initial value is already 1, and writing it would be a literal standing
+      // where the absence of one says the same thing.
+      lines.push(`  animation-name: ${spec.keyframe};`);
+      lines.push(`  animation-duration: var(--rafters-duration-${spec.duration.tier});`);
       lines.push(`  animation-timing-function: var(--rafters-ease-${spec.curve});`);
     }
     // The reduced-motion law reaches derived and pinned cells alike. It lands
     // AFTER the shorthand in the pinned case, so it wins on the duration and
     // only on the duration -- exactly what mechanism B is.
-    lines.push('  @media (prefers-reduced-motion: reduce) {');
-    lines.push('    animation-duration: 0s;');
-    lines.push('  }');
+    //
+    // THE PERIOD EXEMPTION IS SET MEMBERSHIP HERE TOO. `reducedMotionAware` is
+    // false on exactly the period-kind cells (the generator sets it from the
+    // same tagged union `REDUCED_MOTION_ZEROED` encodes for the namespaces), so
+    // a loop simply gets no block -- loops slow, they never stop. Reading the
+    // token field rather than `spec` is deliberate: a PINNED loop has no spec
+    // left to read, and gating on the spec would silently zero a hand-tuned
+    // spinner.
+    if (token.reducedMotionAware !== false) {
+      lines.push('  @media (prefers-reduced-motion: reduce) {');
+      lines.push('    animation-duration: 0s;');
+      lines.push('  }');
+    }
     lines.push('}');
   }
 

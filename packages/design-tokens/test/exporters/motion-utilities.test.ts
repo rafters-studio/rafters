@@ -16,6 +16,8 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import type { Token } from '@rafters/shared';
+import { tokensToTailwind } from '../../src/exporters/tailwind.js';
 import { generateBaseSystem } from '../../src/generators/index.js';
 import {
   contrastPlugin,
@@ -55,7 +57,15 @@ const FIXTURE_CLASSES =
   'data-[state=open]:animate-popover-content-open ' +
   'data-[state=closed]:animate-popover-content-close ' +
   'data-[state=open]:animate-dropdown-menu-content-open ' +
-  'data-[state=closed]:animate-dropdown-menu-content-close';
+  'data-[state=closed]:animate-dropdown-menu-content-close ' +
+  // The period-kind cells (#2154) -- the four loops. These are the cells the
+  // reduced-motion law must NOT reach, so they have to be real compiled rules
+  // before the exemption can be asserted at the compiled layer.
+  'animate-skeleton-root-waiting animate-spinner-root-busy ' +
+  'animate-progress-root-indeterminate animate-input-otp-caret-idle ' +
+  // Two of the tier-kind cells the same issue adds, one fade and one zoom, so
+  // the "a transition runs once" assertions read a rule rather than nothing.
+  'animate-sheet-overlay-open animate-tooltip-content-open';
 
 function baseRegistry(): TokenRegistry {
   const system = generateBaseSystem({});
@@ -65,6 +75,18 @@ function baseRegistry(): TokenRegistry {
     statePlugin,
     invertPlugin,
   ]);
+}
+
+/** The base token list with ONE cell token's value replaced, for the failure paths. */
+function tokensWithCellValue(name: string, value: string): Token[] {
+  let found = false;
+  const tokens = generateBaseSystem({}).allTokens.map((token) => {
+    if (token.name !== name) return token;
+    found = true;
+    return { ...token, value };
+  });
+  if (!found) throw new Error(`no token named "${name}"`);
+  return tokens;
 }
 
 describe('semantic motion utilities compile (#1902/#1903/#1904)', () => {
@@ -417,6 +439,178 @@ describe('semantic motion utilities compile (#1902/#1903/#1904)', () => {
       reducedBlocks.join(''),
       'a loop period was zeroed -- a stopped spinner says the work stopped',
     ).not.toContain('.period-spin');
+  });
+
+  // ==========================================================================
+  // PERIOD-KIND CELLS (#2154). The namespace-level exemption above proves the
+  // `period-*` UTILITIES are exempt. It says nothing about a CELL that consumes
+  // a period, which is where the four loops actually live -- so everything
+  // below asserts the exemption on the cells themselves.
+  // ==========================================================================
+
+  /** Every period-kind cell, with the period its motion.jsonl row declares. */
+  const PERIOD_CELLS = [
+    ['skeleton-root-waiting', 'pulse', 'shimmer'],
+    ['spinner-root-busy', 'spin', 'spin'],
+    ['progress-root-indeterminate', 'pulse', 'shimmer'],
+    ['input-otp-caret-idle', 'caret-blink', 'blink'],
+  ] as const;
+
+  /** Tier-kind cells whose classes the fixture types, so they compile to rules. */
+  const TIER_CELLS = [
+    ...CELLS.map(([cell]) => cell),
+    'sheet-overlay-open',
+    'tooltip-content-open',
+  ] as const;
+
+  /**
+   * Every compiled rule whose SELECTOR LIST carries `.animate-<cell>`.
+   *
+   * A selector list, not a lone selector: lightningcss merges rules with
+   * identical bodies, and two cells with the same shape, tier and curve
+   * legitimately land in one `.animate-a,.animate-b{...}`. Matching only
+   * `.animate-<cell>{` would read that merge as a MISSING rule -- which is a
+   * test that fails when the emission is correct.
+   */
+  function rulesFor(css: string, cell: string): string[] {
+    const needle = `.animate-${cell}`;
+    const found: string[] = [];
+    for (let at = css.indexOf(needle); at !== -1; at = css.indexOf(needle, at + 1)) {
+      const after = css[at + needle.length];
+      // A selector ends at `{` (last in the list) or `,` (more to come). Anything
+      // else is a longer class name that merely starts the same way.
+      if (after !== '{' && after !== ',') continue;
+      let start = at;
+      while (start > 0 && css[start - 1] !== '{' && css[start - 1] !== '}') start--;
+      const open = css.indexOf('{', at);
+      const close = css.indexOf('}', open);
+      if (open === -1 || close === -1) continue;
+      found.push(css.slice(start, close + 1));
+    }
+    return found;
+  }
+
+  function baseRuleFor(css: string, cell: string): string {
+    // EXACTLY ONE base rule. A second would mean Tailwind theme-inferred a
+    // competing `.animate-<cell>` that sets the animation SHORTHAND, which
+    // resets animation-duration and would discard the reduced-motion zero.
+    const base = rulesFor(css, cell).filter((r) => !r.includes('animation-duration:0s'));
+    expect(base.length, `.animate-${cell} did not compile to exactly one base rule`).toBe(1);
+    return base.join('');
+  }
+
+  it('a period-kind cell compiles to an infinite loop on its period leaf', async () => {
+    // The gap this closes: a looping cell had no representable duration form, so
+    // skeleton, spinner, progress-indeterminate and the OTP caret had no CSS at
+    // all. The period is a reference like every other value in a cell body.
+    const css = await registryToCompiled(baseRegistry(), { contentSources: [fixtureDir] });
+
+    for (const [cell, keyframe, period] of PERIOD_CELLS) {
+      const body = baseRuleFor(css, cell);
+      expect(body, `${cell} lost its keyframe`).toContain(`animation-name:${keyframe}`);
+      expect(body, `${cell} is not on its assigned period`).toContain(
+        `animation-duration:var(--rafters-period-${period})`,
+      );
+      expect(body, `${cell} does not repeat -- a loop that runs once is not a loop`).toContain(
+        'animation-iteration-count:infinite',
+      );
+      // No curve: every period row declares curve "none", so naming one would be
+      // an assignment no cell made.
+      expect(body, `${cell} invented a curve`).not.toContain('animation-timing-function');
+      // References only, never a literal -- the same law the tier cells obey.
+      expect(body, `${cell} carries a period literal`).not.toMatch(/\d+m?s\b/);
+    }
+
+    // And the leaves the loops point at are declared in the same sheet, or the
+    // var() resolves to nothing and the loop stands still (019fb063).
+    expect(css).toMatch(/--rafters-period-shimmer:\s*2s/);
+    expect(css).toMatch(/--rafters-period-spin:\s*1s/);
+    expect(css).toMatch(/--rafters-period-blink:\s*1\.25s/);
+  });
+
+  it('a tier-kind cell writes no iteration count -- a transition runs once', async () => {
+    // The CSS initial value is already 1. Writing it would be a literal standing
+    // where its absence says the same thing, and it would blur the one
+    // distinction the two duration forms exist to keep.
+    const css = await registryToCompiled(baseRegistry(), { contentSources: [fixtureDir] });
+    for (const cell of TIER_CELLS) {
+      expect(baseRuleFor(css, cell), `${cell} declared an iteration count`).not.toContain(
+        'animation-iteration-count',
+      );
+    }
+  });
+
+  it('reduced motion zeroes every tier-kind cell and no period-kind cell', async () => {
+    // The acceptance criterion, at the compiled layer and per cell. Mechanism B
+    // zeroes the duration so the keyframe still reaches its end state and still
+    // fires `animationend` -- which is what presence releases the unmount on --
+    // while a loop is exempt by law, because a stopped spinner says the work
+    // stopped.
+    const css = await registryToCompiled(baseRegistry(), { contentSources: [fixtureDir] });
+    const reduced = (
+      css.match(/@media\s*\(prefers-reduced-motion:\s*reduce\)\{.*?\}\}/g) ?? []
+    ).join('');
+
+    for (const cell of TIER_CELLS) {
+      expect(reduced, `${cell} has no reduced-motion path`).toContain(`animate-${cell}`);
+    }
+    for (const [cell] of PERIOD_CELLS) {
+      expect(reduced, `${cell} was zeroed -- loops slow, they never stop`).not.toContain(
+        `animate-${cell}`,
+      );
+    }
+    // Mechanism A must not reach a loop either: `animation:none` would stop it
+    // outright, which is the same violation by another route.
+    for (const [cell] of PERIOD_CELLS) {
+      expect(baseRuleFor(css, cell), `${cell} carries mechanism A`).not.toContain('animation:none');
+    }
+  });
+
+  it('an operator PIN on a loop keeps the exemption', async () => {
+    // A pinned cell's JSON spec is replaced by a shorthand, so the exporter can
+    // no longer read the duration form off the value. It reads the token's
+    // `reducedMotionAware` instead, which survives the pin -- otherwise a
+    // hand-tuned spinner would silently fall under the zeroing law.
+    const registry = baseRegistry();
+    registry.set('motion-cell-spinner-root-busy', 'spin 900ms linear infinite', {
+      reason: 'test: operator hand-tunes one loop',
+      kind: 'preference',
+    });
+    const css = registryToTailwind(registry);
+
+    const block = /@utility animate-spinner-root-busy \{[\s\S]*?\n\}/.exec(css)?.[0] ?? '';
+    expect(block, 'the pin deleted the utility').toContain(
+      'animation: spin 900ms linear infinite;',
+    );
+    expect(block, 'a pinned loop fell under the zeroing law').not.toContain(
+      'prefers-reduced-motion',
+    );
+    // A pinned TRANSITION still gets the block -- the pin is one cell, not a mode.
+    const tier = /@utility animate-dialog-content-open \{[\s\S]*?\n\}/.exec(css)?.[0] ?? '';
+    expect(tier).toContain('prefers-reduced-motion');
+  });
+
+  it('a cell the exporter cannot represent fails the export, loudly', () => {
+    // Never a silent skip and never a silent default: a skipped token deletes
+    // the utility and stops the component animating with no error, and a
+    // defaulted duration lets an unrepresented cell compile as if it had a
+    // value. Both are the 019fb063 failure arriving from inside our own
+    // emission.
+    const unknownKind = tokensWithCellValue(
+      'motion-cell-spinner-root-busy',
+      JSON.stringify({ keyframe: 'spin', duration: { kind: 'ratio', ratio: 1.2 } }),
+    );
+    expect(() => tokensToTailwind(unknownKind, { includeImport: false }, [])).toThrowError(
+      /duration\.kind/,
+    );
+
+    const unknownPeriod = tokensWithCellValue(
+      'motion-cell-spinner-root-busy',
+      JSON.stringify({ keyframe: 'spin', duration: { kind: 'period', period: 'shimmr' } }),
+    );
+    expect(() => tokensToTailwind(unknownPeriod, { includeImport: false }, [])).toThrowError(
+      /unknown period "shimmr"/,
+    );
   });
 
   it('a leaf retune moves the cells that reference it, and nothing else', async () => {
