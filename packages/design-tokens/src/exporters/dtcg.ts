@@ -91,7 +91,10 @@ function convertValue(token: Token): unknown {
       // Return OKLCH string for the base color (position 500 = index 5)
       const baseColor = colorValue.scale[5];
       if (baseColor) {
-        return oklchToCSS(baseColor);
+        // alpha is forced to 1 because the old template literal never
+        // emitted a fourth channel, even for an imported color carrying
+        // alpha < 1 -- same treatment as the other plain-formatting sites.
+        return oklchToCSS({ ...baseColor, alpha: 1 });
       }
     }
     // ColorReference - return as DTCG reference

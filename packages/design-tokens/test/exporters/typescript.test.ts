@@ -66,12 +66,13 @@ describe('tokensToTypeScript', () => {
    * zeros in H's string differ. There is no single `oklchToCSS` call that
    * reproduces the old mixed per-channel precision; see issue #2147.
    *
-   * A second, independent divergence: the old formatter never emitted
-   * alpha at all, while `{ precision: 3 }` still appends `/ A` (also
-   * toFixed(3)'d) whenever `alpha !== 1`. The fixtures above never carry
-   * alpha, so they don't exercise it; the `imported-primary` case below
-   * does, and pins the new (disclosed, see packages/cli/CHANGELOG.md)
-   * alpha-emitting behavior.
+   * Alpha is byte-identical too: the old formatter never emitted a fourth
+   * channel at all, so the exporter forces `alpha: 1` before calling
+   * `oklchToCSS` -- the same trick `tailwind.ts` already uses -- rather
+   * than letting an imported color's alpha < 1 flow through. The fixtures
+   * above never carry alpha, so they don't exercise it; the
+   * `imported-primary` case below does, and pins the alpha-dropping
+   * behavior.
    *
    * `zinc` is anchored to the hardcoded `DEFAULT_NEUTRAL_SCALE`; the
    * `silver-true-glacier` assertion additionally exercises a non-zero
@@ -85,10 +86,10 @@ describe('tokensToTypeScript', () => {
     expect(source).toContain("'silver-true-glacier': 'oklch(0.645 0.120 180.000)'");
   });
 
-  it('emits the alpha channel for a full-precision, alpha-carrying imported seed (disclosed behavior change)', () => {
+  it('drops alpha for a full-precision, alpha-carrying imported seed, exactly as the old formatter did', () => {
     const seed = hexToOKLCH('rgba(59, 130, 246, 0.5)');
     const tokens = importColorFamily('imported-primary', '500', seed);
     const source = tokensToTypeScript(tokens);
-    expect(source).toContain("'imported-primary': 'oklch(0.623 0.188 259.815 / 0.500)'");
+    expect(source).toContain("'imported-primary': 'oklch(0.623 0.188 259.815)'");
   });
 });
