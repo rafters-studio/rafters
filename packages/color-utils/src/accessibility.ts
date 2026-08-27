@@ -169,9 +169,6 @@ export function generateAccessibilityMetadata(scale: OKLCH[]): AccessibilityMeta
     onBlack: { aa: [], aaa: [] },
   };
 
-  const white = CONTRAST_WHITE;
-  const black = CONTRAST_BLACK;
-
   // Check all pairs within the scale
   for (let i = 0; i < scale.length; i++) {
     for (let j = 0; j < scale.length; j++) {
@@ -205,10 +202,10 @@ export function generateAccessibilityMetadata(scale: OKLCH[]): AccessibilityMeta
     // Check against white background
     const colorForWhite = scale[i];
     if (colorForWhite && typeof colorForWhite.l === 'number') {
-      if (meetsWCAGStandard(colorForWhite, white, 'AA', 'normal')) {
+      if (meetsWCAGStandard(colorForWhite, CONTRAST_WHITE, 'AA', 'normal')) {
         metadata.onWhite.aa.push(i);
       }
-      if (meetsWCAGStandard(colorForWhite, white, 'AAA', 'normal')) {
+      if (meetsWCAGStandard(colorForWhite, CONTRAST_WHITE, 'AAA', 'normal')) {
         metadata.onWhite.aaa.push(i);
       }
     }
@@ -216,10 +213,10 @@ export function generateAccessibilityMetadata(scale: OKLCH[]): AccessibilityMeta
     // Check against black background
     const colorForBlack = scale[i];
     if (colorForBlack && typeof colorForBlack.l === 'number') {
-      if (meetsWCAGStandard(colorForBlack, black, 'AA', 'normal')) {
+      if (meetsWCAGStandard(colorForBlack, CONTRAST_BLACK, 'AA', 'normal')) {
         metadata.onBlack.aa.push(i);
       }
-      if (meetsWCAGStandard(colorForBlack, black, 'AAA', 'normal')) {
+      if (meetsWCAGStandard(colorForBlack, CONTRAST_BLACK, 'AAA', 'normal')) {
         metadata.onBlack.aaa.push(i);
       }
     }

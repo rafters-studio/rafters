@@ -23,6 +23,7 @@ Import from another package:
 import {
   hexToOKLCH,
   oklchToCSS,
+  roundOKLCH,
   buildColorValue,
   getGamutTier,
   generateHarmony,

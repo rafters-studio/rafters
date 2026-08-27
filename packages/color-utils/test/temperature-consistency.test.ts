@@ -16,6 +16,10 @@ describe('temperature classifier consistency', () => {
   it('agrees between analysis.temperature and atmosphericWeight.temperature for every hue', () => {
     for (let h = 0; h < 360; h++) {
       const value = buildColorValue({ l: 0.6, c: 0.15, h });
+      // Both fields are optional on ColorValue: assert presence so the
+      // equality below can never pass as undefined === undefined.
+      expect(value.analysis?.temperature).toBeDefined();
+      expect(value.atmosphericWeight?.temperature).toBeDefined();
       expect(value.atmosphericWeight?.temperature).toBe(value.analysis?.temperature);
     }
   });
