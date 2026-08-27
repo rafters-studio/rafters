@@ -18,6 +18,7 @@ import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Token } from '@rafters/shared';
 import { tokensToTailwind } from '../../src/exporters/tailwind.js';
+import { DEFAULT_MOTION_CELL_ANIMATIONS } from '../../src/generators/defaults.js';
 import { generateBaseSystem } from '../../src/generators/index.js';
 import {
   contrastPlugin,
@@ -29,6 +30,27 @@ import {
   statePlugin,
   TokenRegistry,
 } from '../../src/index.js';
+
+/**
+ * Every cell name the generator assigns, in one place, DERIVED.
+ *
+ * A hand-typed list here was the review finding: the fixture named a dozen of
+ * the cells, so the per-cell assertions below read a dozen compiled rules and
+ * silently covered nothing for the rest. A cell absent from the fixture emits no
+ * candidate, compiles to no rule, and every `toContain` written about it passes
+ * on an empty string. Deriving the membership means a cell added to
+ * `DEFAULT_MOTION_CELL_ANIMATIONS` is under these assertions the moment it
+ * lands, with no edit here -- which is the property the ACs actually claim.
+ *
+ * Only MEMBERSHIP is derived. The expectation tables (`CELLS`, `PERIOD_CELLS`)
+ * stay hand-transcribed off `motion.jsonl`, because reading the keyframe, tier
+ * and curve out of the same record that drives the exporter would make those
+ * assertions compare the emission to itself.
+ */
+const CELL_NAMES = Object.keys(DEFAULT_MOTION_CELL_ANIMATIONS);
+
+/** The bare `animate-<cell>` candidate for every one of them. */
+const CELL_CLASSES = CELL_NAMES.map((cell) => `animate-${cell}`).join(' ');
 
 // motion-modal-in carries a reduced-motion override (opacity, 150ms); motion-hover
 // is preserved unchanged (no @media block). Both exercised as literal classes.
@@ -44,28 +66,18 @@ const FIXTURE_CLASSES =
   // scale-out is the presence exit keyframe (#1996), which is the animation the
   // #2000 bug silently zeroed.
   'animate-scale-out ' +
-  // The per-cell animation composites (#2017). BOTH candidate forms: the bare
-  // class, so the rule can be read without variant escaping, and the data-state
-  // variant the three classes files actually type, because a bare candidate
-  // alone would not prove a variant can wrap a utility whose body contains a
-  // nested @media.
-  'animate-dialog-content-open animate-dialog-content-close ' +
-  'animate-popover-content-open animate-popover-content-close ' +
-  'animate-dropdown-menu-content-open animate-dropdown-menu-content-close ' +
+  // The per-cell animation composites (#2017 / #2154). BOTH candidate forms: the
+  // bare class for EVERY assigned cell, derived above so no cell can drop out of
+  // the compiled sheet by omission, and the data-state variant the three classes
+  // files actually type, because a bare candidate alone would not prove a
+  // variant can wrap a utility whose body contains a nested @media.
+  `${CELL_CLASSES} ` +
   'data-[state=open]:animate-dialog-content-open ' +
   'data-[state=closed]:animate-dialog-content-close ' +
   'data-[state=open]:animate-popover-content-open ' +
   'data-[state=closed]:animate-popover-content-close ' +
   'data-[state=open]:animate-dropdown-menu-content-open ' +
-  'data-[state=closed]:animate-dropdown-menu-content-close ' +
-  // The period-kind cells (#2154) -- the four loops. These are the cells the
-  // reduced-motion law must NOT reach, so they have to be real compiled rules
-  // before the exemption can be asserted at the compiled layer.
-  'animate-skeleton-root-waiting animate-spinner-root-busy ' +
-  'animate-progress-root-indeterminate animate-input-otp-caret-idle ' +
-  // Two of the tier-kind cells the same issue adds, one fade and one zoom, so
-  // the "a transition runs once" assertions read a rule rather than nothing.
-  'animate-sheet-overlay-open animate-tooltip-content-open';
+  'data-[state=closed]:animate-dropdown-menu-content-close';
 
 function baseRegistry(): TokenRegistry {
   const system = generateBaseSystem({});
@@ -453,12 +465,38 @@ describe('semantic motion utilities compile (#1902/#1903/#1904)', () => {
     ['input-otp-caret-idle', 'caret-blink', 'blink'],
   ] as const;
 
-  /** Tier-kind cells whose classes the fixture types, so they compile to rules. */
-  const TIER_CELLS = [
-    ...CELLS.map(([cell]) => cell),
-    'sheet-overlay-open',
-    'tooltip-content-open',
-  ] as const;
+  it('PERIOD_CELLS names every period-kind cell the generator assigns', () => {
+    // The expectation table above is hand-transcribed on purpose, so this holds
+    // it COMPLETE without making it derived. Otherwise a fifth loop would be
+    // absent from the negative set below and its exemption -- the whole point of
+    // #2154 -- would go unasserted while the suite stayed green.
+    const assigned = Object.entries(DEFAULT_MOTION_CELL_ANIMATIONS)
+      .filter(([, animation]) => animation.duration.kind === 'period')
+      .map(([cell]) => cell)
+      .sort();
+    expect(PERIOD_CELLS.map(([cell]) => cell).toSorted()).toEqual(assigned);
+  });
+
+  /**
+   * Every tier-kind cell, derived. MEMBERSHIP only -- the assignment each one
+   * carries is checked against `motion.jsonl` in `motion-cells.test.ts`, not
+   * here, so nothing below compares the emission to the record that produced it.
+   *
+   * This was the list that had to be edited by hand for a new cell to be
+   * covered, which meant it never was: the ten cells added in this issue's fix
+   * round were absent from it and from the fixture, so the two assertions that
+   * cite it read nothing about them at all.
+   */
+  const TIER_CELLS = Object.entries(DEFAULT_MOTION_CELL_ANIMATIONS)
+    .filter(([, animation]) => animation.duration.kind === 'tier')
+    .map(([cell]) => cell);
+
+  it('there are tier-kind cells to assert on at all', () => {
+    // A derived list that silently emptied would make every loop below a no-op,
+    // which is the failure this whole change is about.
+    expect(TIER_CELLS.length).toBeGreaterThan(PERIOD_CELLS.length);
+    expect(TIER_CELLS.length + PERIOD_CELLS.length).toBe(CELL_NAMES.length);
+  });
 
   /**
    * Every compiled rule whose SELECTOR LIST carries `.animate-<cell>`.
