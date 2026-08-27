@@ -35,6 +35,7 @@ import type {
   KeyframeContext,
   KeyframeDef,
   MotionCellAnimation,
+  MotionCellDuration,
   MotionCompositePreset,
   MotionNamespaceMemberDef,
   MotionSemanticMapping,
@@ -480,7 +481,7 @@ export function generateMotionTokens(
     const owner = `motion cell "${name}"`;
     const coordinates = `(${component}, ${part}, ${transition})`;
 
-    let spec: { keyframe: string; duration: unknown; curve?: string };
+    let spec: { keyframe: string; duration: MotionCellDuration; curve?: string };
     let timingDependencies: string[];
     let timingNote: string;
     // The period namespace is exempt from the reduced-motion zeroing, so a
