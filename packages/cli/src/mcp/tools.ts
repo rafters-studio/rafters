@@ -66,6 +66,7 @@ import {
   PathFieldSchema,
   resolveReadSet,
 } from '../utils/paths.js';
+import { KIND_PATHS } from '../utils/reconcile.js';
 import { resolveWorkspace, type Workspace } from '../utils/workspaces.js';
 import { assembleGraph, describe, type Graph, type NodeResult } from './graph.js';
 import { isNaturalLanguageQuery, matchIntent } from './intent.js';
@@ -810,15 +811,20 @@ export class RaftersToolHandler {
 
     // Primitives fold into components: a `primitive`-kind registry item maps to
     // graph kind `component`, so without the fold every installed primitive
-    // would misreport as `available`.
-    const components = await idsUnder(paths.componentsPath, 'components/ui');
-    for (const id of await idsUnder(paths.primitivesPath, 'lib/primitives')) {
+    // would misreport as `available`. Fallbacks come from `KIND_PATHS`
+    // (reconcile.ts) -- the same defaults `rafters init` writes into a fresh
+    // config (`FRAMEWORK_SPECS.next`) -- rather than a second, independently
+    // maintained copy that can drift from it (an earlier version of this scan
+    // fell back to `.rafters/composites`, which does not match any framework's
+    // actual default).
+    const components = await idsUnder(paths.componentsPath, KIND_PATHS.components.fallback);
+    for (const id of await idsUnder(paths.primitivesPath, KIND_PATHS.primitives.fallback)) {
       components.add(id);
     }
 
     return {
       components,
-      composites: await idsUnder(paths.compositesPath, join('.rafters', 'composites')),
+      composites: await idsUnder(paths.compositesPath, KIND_PATHS.composites.fallback),
     };
   }
 

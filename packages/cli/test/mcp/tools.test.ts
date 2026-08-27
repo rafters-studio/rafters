@@ -400,13 +400,15 @@ describe('unknown tool', () => {
 });
 
 /**
- * A workspace with a written config and, optionally, component files on disk.
- * `onDisk` names files created under the default componentsPath -- presence is
- * read from these, never from `config.installed`.
+ * A workspace with a written config and, optionally, component/composite
+ * files on disk. `onDisk` names files created under the default
+ * componentsPath, `compositesOnDisk` under the default compositesPath --
+ * presence is read from these, never from `config.installed`.
  */
 async function configWorkspace(
   config: Record<string, unknown>,
   onDisk: string[] = [],
+  compositesOnDisk: string[] = [],
 ): Promise<{ root: string; cleanup: () => Promise<void> }> {
   const root = await mkdtemp(join(tmpdir(), 'rafters-mcp-'));
   await mkdir(join(root, '.rafters'), { recursive: true });
@@ -418,6 +420,11 @@ async function configWorkspace(
     const dir = join(root, 'components', 'ui');
     await mkdir(dir, { recursive: true });
     for (const name of onDisk) await writeFile(join(dir, name), '');
+  }
+  if (compositesOnDisk.length > 0) {
+    const dir = join(root, 'composites');
+    await mkdir(dir, { recursive: true });
+    for (const name of compositesOnDisk) await writeFile(join(dir, name), '');
   }
   return { root, cleanup: () => rm(root, { recursive: true, force: true }) };
 }
@@ -456,6 +463,19 @@ describe('presence is measured from disk, not read from config.installed', () =>
     const result = await handler.handleToolCall('rafters_describe', { address: 'button' });
     const data = JSON.parse(result.content[0].text as string);
     expect(data).toMatchObject({ id: 'button', presence: 'installed' });
+    await cleanup();
+  });
+
+  it('a composite file on disk is installed even with no compositesPath configured', async () => {
+    // Exercises scanInstalled's compositesPath fallback specifically: an
+    // earlier version fell back to `.rafters/composites`, a path no framework
+    // default ever writes, so a composite sitting at the real default
+    // ('composites/', FRAMEWORK_SPECS.next) always misreported as available.
+    const { root, cleanup } = await configWorkspace({}, [], ['login-form.composite.json']);
+    const { handler } = fixtureHandler([{ name: 'fixture', root }], { name: 'fixture', root });
+    const result = await handler.handleToolCall('rafters_describe', { address: 'login-form' });
+    const data = JSON.parse(result.content[0].text as string);
+    expect(data).toMatchObject({ id: 'login-form', presence: 'installed' });
     await cleanup();
   });
 

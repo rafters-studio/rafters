@@ -37126,8 +37126,16 @@ function resolveReadSet(field, cwd, fallback) {
   return out;
 }
 
+// src/utils/reconcile.ts
+import { readdirSync } from "fs";
+var KIND_PATHS = {
+  components: { field: "componentsPath", fallback: "components/ui" },
+  primitives: { field: "primitivesPath", fallback: "lib/primitives" },
+  composites: { field: "compositesPath", fallback: "composites" }
+};
+
 // src/utils/workspaces.ts
-import { existsSync as existsSync2, readdirSync, readFileSync as readFileSync2, statSync } from "fs";
+import { existsSync as existsSync2, readdirSync as readdirSync2, readFileSync as readFileSync2, statSync } from "fs";
 import { basename, dirname as dirname2, join as join4, resolve as resolve3 } from "path";
 
 // src/utils/discover.ts
@@ -37218,7 +37226,7 @@ function expandPattern(monorepoRoot, pattern) {
     const parentRel = trimmed.slice(0, -2);
     const parent = join4(monorepoRoot, parentRel);
     if (!existsSync2(parent)) return [];
-    return readdirSync(parent).map((entry) => join4(parent, entry)).filter((path) => {
+    return readdirSync2(parent).map((entry) => join4(parent, entry)).filter((path) => {
       try {
         return statSync(path).isDirectory();
       } catch {
@@ -38158,13 +38166,13 @@ var RaftersToolHandler = class {
       }
       return ids;
     };
-    const components = await idsUnder(paths.componentsPath, "components/ui");
-    for (const id of await idsUnder(paths.primitivesPath, "lib/primitives")) {
+    const components = await idsUnder(paths.componentsPath, KIND_PATHS.components.fallback);
+    for (const id of await idsUnder(paths.primitivesPath, KIND_PATHS.primitives.fallback)) {
       components.add(id);
     }
     return {
       components,
-      composites: await idsUnder(paths.compositesPath, join5(".rafters", "composites"))
+      composites: await idsUnder(paths.compositesPath, KIND_PATHS.composites.fallback)
     };
   }
   /**
