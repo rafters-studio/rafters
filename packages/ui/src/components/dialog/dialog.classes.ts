@@ -35,8 +35,9 @@ const containerClasses = 'fixed inset-0 z-depth-modal flex items-center justify-
 // NO motion-reduce:animate-none. Reduced motion is handled INSIDE the generated
 // utility, which zeroes animation-duration under the media query. Adding
 // animate-none here would win destructively -- `animation: none` resets the
-// shorthand -- and would also stop animationend from firing, which is the event
-// presence releases the unmount on.
+// shorthand and discards the zeroed duration with it -- and would also drop the
+// element short of the keyframe's end state, which a zeroed duration reaches
+// instantly.
 const contentClasses =
   'relative w-full max-w-lg rounded-lg border border-card-border bg-card p-6 text-card-foreground shadow-lg ' +
   'data-[state=open]:animate-dialog-content-open data-[state=closed]:animate-dialog-content-close ' +

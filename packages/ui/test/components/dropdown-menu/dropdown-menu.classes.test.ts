@@ -41,7 +41,8 @@ describe('dropdown-menu classes', () => {
 
   it('motion respects reduced-motion, and does NOT do it with animate-none', () => {
     // Mechanism B (#2017): zeroed inside the generated utility. animate-none
-    // would reset the shorthand and kill the animationend presence waits on.
+    // would reset the shorthand, discard the zeroed duration, and leave the
+    // element short of the keyframe's end state.
     expect(classes.content).not.toContain('motion-reduce:animate-none');
   });
 

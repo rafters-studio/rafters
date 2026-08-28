@@ -79,9 +79,10 @@ popup wandering. Only presence (open/close) animates; position while open is tra
 same family as the pointer rule.
 
 **Presence:** enter/exit cells assume keyframes on mount and behaviour-owned unmount --
-the behaviour layer holds removal until `animationend` (`use-presence` is the
-mechanism). No `@starting-style` dependency; it is not trusted outside Tailwind's
-pipeline.
+the behaviour layer holds removal until the node's own animations have settled
+(`use-presence` is the mechanism: it asks the node what is running and waits on that,
+rather than timing the cell itself). No `@starting-style` dependency; it is not trusted
+outside Tailwind's pipeline.
 
 **Choreography:** parts sequence via `delay-choreo-step` between their rows. Collection
 popups (marked C) carry an items row with `delay-stagger-step`; zero (all items

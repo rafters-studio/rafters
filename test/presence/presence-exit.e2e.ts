@@ -191,8 +191,10 @@ for (const mode of ['unmount', 'hidden'] as const) {
     expect(midExit?.running.length, 'no animation on the exiting node').toBeGreaterThan(0);
     // Found by NAME, not by index. Closing interrupts the enter, and whether the
     // dying scale-in is still on the timeline alongside scale-out is exactly the
-    // sort of browser-specific ordering this spec must not depend on -- it is
-    // also the race the exit-name filter in usePresence exists for.
+    // sort of browser-specific ordering this spec must not depend on. The filter
+    // is this harness picking one animation out of the list; the hook has no
+    // such filter any more -- since #2157 it awaits every animation the node
+    // reports, and a cancelled enter's rejection is absorbed by allSettled.
     const exit = midExit?.running.find((a) => a.name === 'scale-out');
     expect(exit, 'the exit keyframe is not on the timeline').toBeDefined();
     // 250, not 150: the dialog / content / open -> closed cell is `moderate`.
@@ -214,21 +216,24 @@ for (const mode of ['unmount', 'hidden'] as const) {
   });
 }
 
-test('#2017: a REDUCED-MOTION exit still releases via animationend, not the backstop', async ({
+test('#2017: a REDUCED-MOTION exit still completes and still fires animationend (the CSS contract, not presence)', async ({
   page,
 }) => {
   // THE MECHANISM-B CONTRACT, in the only place it can actually be observed.
   // The generated cell utility zeroes `animation-duration` under
-  // prefers-reduced-motion rather than setting `animation: none`, and the whole
-  // argument for that choice is this: a zero-duration animation still COMPLETES
-  // and still FIRES `animationend`, so presence releases on the event exactly as
-  // it does at full duration. `animate-none` fires nothing, and every
-  // reduced-motion close would fall through to the timeout failsafe.
+  // prefers-reduced-motion rather than setting `animation: none`, and what that
+  // buys is asserted here: the animation is still ATTACHED, so it still runs to
+  // its keyframe's end state and still fires `animationend`. Under mechanism A
+  // there would be no animation at all and nothing would ever fire.
   //
-  // The harness disposes ONLY inside an `animationend` listener, so a disposal
-  // arriving at all is the proof. jsdom cannot make this assertion -- it has no
-  // animation timeline, so it cannot distinguish "fired instantly" from "never
-  // fired".
+  // This is the CSS contract, not the hook. Since #2157 `usePresence` releases
+  // off `getAnimations()` and `Animation.finished`, and a zero-duration
+  // animation is never in that list -- so under reduced motion presence releases
+  // immediately, on the empty-list path, whether or not `animationend` follows.
+  // That path is measured in `presence-race.e2e.ts`; this file's own harness
+  // disposes inside an `animationend` listener because that is the CSS fact it
+  // is here to pin. jsdom can make neither assertion -- it has no animation
+  // timeline, so it cannot distinguish "fired instantly" from "never fired".
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('about:blank');
   await page.setContent(harness('unmount'));

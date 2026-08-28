@@ -38,8 +38,8 @@ describe('dialog classes', () => {
   it('motion respects reduced-motion, and does NOT do it with animate-none', () => {
     // Mechanism B (#2017): the cell utility zeroes animation-duration under the
     // media query. animate-none here would win destructively -- `animation:
-    // none` resets the shorthand -- and would stop the animationend that
-    // presence releases the unmount on.
+    // none` resets the shorthand and discards the zeroed duration -- and would
+    // leave the element short of the keyframe's end state.
     expect(classes.content).not.toContain('motion-reduce:animate-none');
     expect(classes.close).toContain('motion-reduce:transition-none');
   });

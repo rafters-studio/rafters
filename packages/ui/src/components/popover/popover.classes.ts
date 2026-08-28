@@ -28,10 +28,9 @@ export interface PopoverClassSet {
 //
 // NO motion-reduce:animate-none. The generated utility zeroes animation-duration
 // under prefers-reduced-motion instead (mechanism B). That preserves the
-// keyframe's end state AND still fires animationend, which is what presence
-// releases the unmount on -- animate-none fires nothing, so every reduced-motion
-// close would fall through to the backstop timer. The two mechanisms never
-// compose: `animation: none` resets the shorthand and discards the zeroed
+// keyframe's end state, which animate-none never reaches -- it removes the
+// animation rather than completing it instantly. The two mechanisms never
+// compose either: `animation: none` resets the shorthand and discards the zeroed
 // duration wherever it wins.
 const contentClasses =
   'z-depth-popover w-72 rounded-md border bg-popover p-4 text-popover-foreground shadow-lg outline-none ' +
