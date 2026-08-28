@@ -1,5 +1,11 @@
 # rafters
 
+## Unreleased
+
+### Features
+
+- feat(ui): the five `items | enter` collections that declare the `stagger-step` delay generic now consume it (#2156). `dropdown-menu`, `context-menu`, `select`, `combobox`, and `command` (`motion.jsonl:38,42,55,61,66`) each apply the generated `delay-stagger-step` utility to their item collection, moving those five rows from unconsumed to consumed. Applied FLAT, not multiplied per position: `delay-stagger-step` compiles to a single `transition-delay: var(--rafters-delay-stagger-step)` (`MOTION_NAMESPACE_PROPERTY`, `exporters/tailwind.ts`), which is the only form this generic emits today, and every item in a collection currently receives the same delay rather than an increasing one keyed to its `:nth-child` position. A real per-position multiplier (`calc(n * <token>)`, scoped per `:nth-child`) is NOT implemented: it would require constructing that CSS function directly in a `.classes.ts` file, which the repo's component-authoring guardrail denies outright (`packages/ui/docs/spec/00-boundaries.md` Sec 6 -- `.classes.ts` selects among literal generated strings, never arbitrary values, and never references a `--rafters-*` custom property directly), and no multiplier-aware utility exists in `packages/design-tokens` to select instead. That gap is tracked as follow-up work against `packages/design-tokens` (a numbered utility set or the CSS-counter form the issue itself proposed). `--rafters-delay-stagger-step` defaults to `0ms` ("efficient does not stagger lists"), so this change is behaviorally invisible until the token is tuned nonzero. Menubar's `items | enter` cell also declares `stagger-step` but has no component directory under `packages/ui/src/components/` and is skipped here, deferred to the matrix-hygiene issue (already recorded at `motion-cells.test.ts`'s `EXCLUDED_ROWS.noComponentDirectory`). No JavaScript computes or assigns a per-item index anywhere in this change. `apps/demo`'s installed copies are unchanged (re-synced separately).
+
 ## 0.3.0
 
 ### Breaking changes
