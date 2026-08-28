@@ -1,3 +1,30 @@
+/**
+ * Interactive button component for user actions
+ *
+ * @cognitive-load 3/10 - Simple action trigger with clear visual hierarchy
+ * @attention-economics Size hierarchy: sm=tertiary actions, default=secondary interactions, lg=primary calls-to-action. Primary variant commands highest attention - use sparingly (maximum 1 per section)
+ * @trust-building Destructive actions require confirmation patterns. Loading states prevent double-submission. Visual feedback reinforces user actions.
+ * @accessibility WCAG AAA compliant with 44px minimum touch targets, high contrast ratios, and screen reader optimization
+ * @semantic-meaning Variant mapping: default=main actions, secondary=supporting actions, destructive=irreversible actions with safety patterns
+ *
+ * @usage-patterns
+ * DO: Primary: Main user goal, maximum 1 per section
+ * DO: Secondary: Alternative paths, supporting actions
+ * DO: Destructive: Permanent actions, requires confirmation patterns
+ * NEVER: Multiple primary buttons competing for attention
+ *
+ * @example
+ * ```tsx
+ * // Primary action - highest attention, use once per section
+ * <Button variant="default">Save Changes</Button>
+ *
+ * // Destructive action - requires confirmation UX
+ * <Button variant="destructive">Delete Account</Button>
+ *
+ * // Loading state - prevents double submission
+ * <Button loading>Processing...</Button>
+ * ```
+ */
 import * as React from 'react';
 import { createBehavior, type PartIds } from '@/lib/contract';
 import { useMemory } from '@/hooks/use-memory';

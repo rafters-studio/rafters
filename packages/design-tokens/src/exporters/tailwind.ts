@@ -13,6 +13,7 @@
  * @see https://ui.shadcn.com/docs/theming
  */
 
+import { oklchToCSS } from '@rafters/color-utils';
 import * as csstree from 'css-tree';
 import type { ColorReference, ColorValue, Token, TypographyElementOverride } from '@rafters/shared';
 import type { MotionNamespace } from '../generators/motion.js';
@@ -190,7 +191,23 @@ function tokenValueToCSS(token: Token): string | null {
       // Return OKLCH string for the base color (position 500 = index 5)
       const baseColor = colorValue.scale[5];
       if (baseColor) {
-        return `oklch(${formatNumber(baseColor.l)} ${formatNumber(baseColor.c)} ${formatNumber(baseColor.h)})`;
+        // Reproduce the old formatNumber exactly: round each channel to 3
+        // decimals via toFixed, then re-widen through Number() so the
+        // no-precision oklchToCSS format path (plain String()) strips
+        // trailing zeros the same way `Number(v.toFixed(3)).toString()`
+        // did. `oklchToCSS(baseColor, { precision: 3 })` would NOT match --
+        // toFixed pads trailing zeros back in (0.92 -> "0.920"). alpha is
+        // forced to 1 because the old formatter never emitted a fourth
+        // channel at all, even for an imported color carrying alpha < 1.
+        // This holds for every OKLCH this exporter can receive, not only
+        // the already-rounded output of generateOKLCHScale/hardcoded
+        // defaults -- see the imported-primary fixture test below.
+        return oklchToCSS({
+          l: Number(baseColor.l.toFixed(3)),
+          c: Number(baseColor.c.toFixed(3)),
+          h: Number(baseColor.h.toFixed(3)),
+          alpha: 1,
+        });
       }
     }
     // ColorReference - return as var() reference
@@ -201,13 +218,6 @@ function tokenValueToCSS(token: Token): string | null {
   }
 
   return String(value);
-}
-
-/**
- * Format a number for CSS output
- */
-function formatNumber(value: number, decimals = 3): string {
-  return Number(value.toFixed(decimals)).toString();
 }
 
 /**

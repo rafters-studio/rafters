@@ -1,3 +1,35 @@
+/**
+ * Resizable panel component for split-pane layouts with drag handles
+ *
+ * @cognitive-load 3/10 - Familiar split-pane pattern; drag affordance is intuitive
+ * @attention-economics Low attention cost: panels remain visible, resize is reversible
+ * @trust-building Immediate visual feedback, keyboard accessible, maintains ratios
+ * @accessibility Keyboard resizing via arrow keys, proper focus indicators, ARIA attributes
+ * @semantic-meaning Layout control: code editors, settings panels, comparison views
+ *
+ * @usage-patterns
+ * DO: Use for content that benefits from adjustable space allocation
+ * DO: Provide sensible default sizes and min/max constraints
+ * DO: Persist user preferences for panel sizes
+ * DO: Support both horizontal and vertical orientations
+ * DO: Make handles keyboard accessible
+ * NEVER: Nested resizable panels more than 2 levels deep
+ * NEVER: Panels smaller than usable minimums
+ * NEVER: Resize handles that are too small to target
+ *
+ * @example
+ * ```tsx
+ * <Resizable.PanelGroup direction="horizontal">
+ *   <Resizable.Panel defaultSize={25} minSize={10}>
+ *     <Sidebar />
+ *   </Resizable.Panel>
+ *   <Resizable.Handle />
+ *   <Resizable.Panel defaultSize={75}>
+ *     <MainContent />
+ *   </Resizable.Panel>
+ * </Resizable.PanelGroup>
+ * ```
+ */
 import * as React from 'react';
 import { createBehavior, type PartIds } from '@/lib/contract';
 import { useMemory } from '@/hooks/use-memory';

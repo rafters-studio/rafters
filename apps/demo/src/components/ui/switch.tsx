@@ -1,3 +1,27 @@
+/**
+ * Toggle switch component for on/off binary states
+ *
+ * @cognitive-load 2/10 - Clear binary state with immediate visual feedback
+ * @attention-economics Low attention: thumb position communicates state instantly
+ * @trust-building Immediate state change, reversible action, physical metaphor (light switch)
+ * @accessibility Keyboard toggle (Space), proper ARIA checked state, motion for state transition
+ * @semantic-meaning Binary toggle: on=enabled/active, off=disabled/inactive. Use for settings with immediate effect
+ *
+ * @usage-patterns
+ * DO: Use for settings that take effect immediately
+ * DO: Pair with descriptive label explaining what the switch controls
+ * DO: Use when action is reversible without consequence
+ * DO: Position consistently (left of label or right-aligned)
+ * NEVER: Use for form submissions, use for actions requiring confirmation
+ *
+ * @example
+ * ```tsx
+ * <div className="flex items-center gap-2">
+ *   <Switch id="notifications" />
+ *   <Label htmlFor="notifications">Enable notifications</Label>
+ * </div>
+ * ```
+ */
 import * as React from 'react';
 import { createBehavior, type PartIds } from '@/lib/contract';
 import { useMemory } from '@/hooks/use-memory';

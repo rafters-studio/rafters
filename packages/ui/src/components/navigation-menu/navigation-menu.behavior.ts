@@ -7,8 +7,6 @@ import {
   type PartIds,
 } from '../../lib/contract';
 import { updateAriaAttribute } from '../../primitives/aria-manager';
-import { createMenuHoverIntent } from '../../primitives/hover-delay';
-import { motionDelayMs } from '../../primitives/motion-tokens';
 import { onPointerDownOutside } from '../../primitives/outside-click';
 import { createRovingFocus } from '../../primitives/roving-focus';
 
@@ -27,9 +25,6 @@ export interface NavigationMenuConfig {
   /** Uncontrolled seed. */
   defaultValue?: string | undefined;
   orientation?: 'horizontal' | 'vertical' | undefined;
-  /** Hover-intent delay in ms. Unset reads `--rafters-delay-hover-intent` via
-   *  {@link navigationMenuHoverDelay}. */
-  delayDuration?: number | undefined;
 }
 
 export interface NavigationMenuState {
@@ -162,10 +157,14 @@ export function navInstanceAria(
     };
   }
   if (part === 'content') {
+    // NO `hidden` (#2148). `hidden` is UA-stylesheet `display: none`: it pulls
+    // the panel out of the accessibility tree, out of rendering, and out of
+    // reach of the `:hover` / `:focus-within` reveal the stylesheet now owns.
+    // Visibility is opacity + pointer-events, keyed off this same `data-state`
+    // and off the item's hover -- see navigation-menu.classes.ts.
     return {
       'aria-labelledby': ids.trigger ?? '',
       'data-state': open ? 'open' : 'closed',
-      hidden: open ? undefined : true,
     };
   }
   return {};
@@ -178,73 +177,205 @@ export const navigationMenu: BehaviorSpec<
   NavigationMenuPart
 > = { ...compose('navigation-menu', navigation), instanceAria: navInstanceAria };
 
-/**
- * The hover-intent delay, read from `--rafters-delay-hover-intent`.
- *
- * This replaces the 200ms literal the binding carried in two places. The motion
- * matrix assigns this cell the `hover-intent` delay generic (motion.jsonl,
- * navigation-menu/panel/"closed -> open"), and the accessor resolves it to zero
- * under reduced motion.
- */
-export function navigationMenuHoverDelay(element?: Element | null): number {
-  return motionDelayMs('hover-intent', { element });
-}
-
-/** The parts, orientation, delay, and dispatch the roving/hover/dismiss trio
- *  composes against. */
+/** The parts, orientation, and dispatch the roving/hover/dismiss trio composes
+ *  against. There is no `delay` port any more (#2148): hover-intent timing is
+ *  `transition-delay` in navigation-menu.classes.ts, not a number JavaScript
+ *  carries. */
 export interface NavigationMenuEffectPorts {
-  /** The composite root: menubar hover intent listens here and an outside
-   *  pointerdown landing beyond it dismisses. */
+  /** The composite root: menubar hover/focus tracking listens here and an
+   *  outside pointerdown landing beyond it dismisses. */
   root: HTMLElement;
   /** The trigger list: roving tabindex moves focus across its items. Absent
    *  markup simply skips roving. */
   list: HTMLElement | null;
   orientation: 'horizontal' | 'vertical';
-  /** Hover-intent open/close delay in ms. */
-  delay: number;
-  /** Whether a panel is currently open, read live -- see createMenuHoverIntent. */
-  isOpen: () => boolean;
   /** Open (or hover-switch to) the trigger carrying this value. */
   onHoverOpen: (value: string) => void;
   /** Close whatever is open. */
   onClose: () => void;
 }
 
+const TRIGGER_SELECTOR = '[data-part="trigger"]:not([disabled])';
+const ITEM_SELECTOR = '[data-part="trigger"], [data-part="content"]';
+
 /**
- * The navigation-menu DOM trio, composed directly from the primitives
- * (replacing the retired effects runner): roving tabindex across the trigger
- * list, menubar hover intent over the root, and outside-pointerdown dismissal.
- * Level-triggered whenever the menu is mounted -- BOTH the DOM-native
- * bindNavigationMenu and the React NavigationMenu start this once and call the
- * returned cleanup on unmount. The outside-dismiss listener stays attached
- * throughout; `close` is idempotence-gated (canDispatch rejects it when
- * nothing is open), so onClose acts only while a panel is open -- no per-open
- * re-composition. Cleanup releases LIFO.
+ * The WCAG 1.4.13 dismissal flag, shared by every performance (#2148).
+ *
+ * Escape raises it and the stylesheet force-hides the panel on it; a deliberate
+ * reopen (click, Enter/Space, ArrowDown) and the pointer or focus leaving the
+ * menu clear it. Without it Escape would not visually close anything: dismissal
+ * returns focus to the trigger, so the item's `:focus-within` still matches --
+ * and `:hover` still matches too, if the pointer never moved. A CSS reveal
+ * cannot remember that a dismissal happened; this attribute is that memory.
+ *
+ * IT IS ONE PANEL'S MEMORY, NOT THE BAR'S. Raised on the root it blanked every
+ * panel at once (the force-hide was a descendant rule) and the hover guard below
+ * refused every trigger, so after an Escape the whole nav went inert until the
+ * pointer left it -- hovering a SIBLING trigger opened nothing, in CSS and in
+ * JavaScript alike. The dismissed panel is the thing that was dismissed, so the
+ * dismissed panel is where the flag lives.
+ */
+export function setNavigationMenuDismissed(panel: HTMLElement | null, dismissed: boolean): void {
+  if (!panel) return;
+  if (dismissed) panel.dataset['dismissed'] = 'true';
+  else delete panel.dataset['dismissed'];
+}
+
+/** The panel belonging to one item value -- where that item's dismissal lives. */
+export function navigationMenuPanel(root: HTMLElement | null, value: string): HTMLElement | null {
+  return root?.querySelector<HTMLElement>(`[data-part="content"][data-value="${value}"]`) ?? null;
+}
+
+/**
+ * The item that scopes one panel's reveal: trigger and content are siblings
+ * inside it (navigation-menu.classes.ts's `group/navigation-item`), so the
+ * item's `:hover` and `:focus-within` are exactly the two conditions the
+ * stylesheet reveals the panel on.
+ */
+const itemScopeOf = (panel: HTMLElement): HTMLElement => panel.parentElement ?? panel;
+
+/**
+ * Can this panel still be revealed by CSS alone -- is its item hovered, or does
+ * it hold the focus? A dismissal may only be dropped once the answer is no.
+ *
+ * `focusTarget` is where focus is COMING TO REST, which is not always
+ * `document.activeElement`: inside a focusout handler the browser has not moved
+ * it yet, so the caller passes the event's relatedTarget instead. Reading
+ * activeElement there would call a panel settled at the exact moment Escape is
+ * handing focus back to its own trigger.
+ */
+function canStillReveal(panel: HTMLElement, focusTarget: Node | null): boolean {
+  const item = itemScopeOf(panel);
+  return item.matches(':hover') || (focusTarget !== null && item.contains(focusTarget));
+}
+
+/**
+ * Drop every dismissal that has SETTLED -- every flagged panel whose item is
+ * neither hovered nor holding focus any more.
+ *
+ * The condition is the whole point. Clearing a dismissal unconditionally when
+ * the pointer left the bar re-revealed the panel the user had just dismissed:
+ * a click-to-close or an Escape leaves focus on the trigger (Escape returns it
+ * there deliberately), so `group-focus-within/navigation-item:opacity-100` was
+ * still matching, and deleting `data-dismissed` brought the panel back at
+ * opacity 1 and hit-testable against `data-state="closed"` and
+ * `aria-expanded="false"` -- a WCAG 1.4.13 dismissibility failure the `hidden`
+ * panel of the old design could not have. The mirror case is focus leaving
+ * while the pointer still rests on the item.
+ *
+ * Because the pointer axis and the focus axis are checked per panel rather than
+ * per menu, the two leave handlers hand off to each other: whichever leaves
+ * LAST is the one whose sweep finds the panel settled and clears it. Nothing
+ * stays flagged once nothing can reveal it, so there is no dead item left
+ * behind either.
+ */
+export function clearSettledNavigationMenuDismissals(
+  root: HTMLElement | null,
+  focusTarget: Node | null = document.activeElement,
+): void {
+  if (!root) return;
+  for (const panel of root.querySelectorAll<HTMLElement>('[data-part="content"][data-dismissed]')) {
+    if (!canStillReveal(panel, focusTarget)) delete panel.dataset['dismissed'];
+  }
+}
+
+const isDismissed = (panel: HTMLElement | null): boolean => panel?.dataset['dismissed'] === 'true';
+
+/**
+ * The navigation-menu DOM trio, composed directly from the primitives: roving
+ * tabindex across the trigger list, pointer/focus tracking over the root, and
+ * outside-pointerdown dismissal. Level-triggered whenever the menu is mounted --
+ * BOTH the DOM-native bindNavigationMenu and the React NavigationMenu start this
+ * once and call the returned cleanup on unmount. The outside-dismiss listener
+ * stays attached throughout; `close` is idempotence-gated (canDispatch rejects
+ * it when nothing is open), so onClose acts only while a panel is open -- no
+ * per-open re-composition. Cleanup releases LIFO.
+ *
+ * NO TIMERS (#2148). Hover and focus dispatch IMMEDIATELY, so `aria-expanded`
+ * and `data-state` track real interaction for assistive technology while the
+ * only hover-intent timing on the page is the panel's `transition-delay`. It is
+ * expected and correct for the ARIA state to move before the CSS-delayed visual
+ * transition finishes on open; the close carries no delay at all, per the
+ * matrix.
+ *
+ * `pointerenter` is captured (it does not bubble) so one root listener sees
+ * every trigger. `pointerleave` is bound on the ROOT ITSELF, not per trigger:
+ * travelling from a trigger down onto its own panel must not read as leaving,
+ * and there is no linger on this component's close to forgive the flicker if it
+ * did.
  */
 export function startNavigationMenuEffects({
   root,
   list,
   orientation,
-  delay,
-  isOpen,
   onHoverOpen,
   onClose,
 }: NavigationMenuEffectPorts): () => void {
   const releaseRoving = list ? createRovingFocus(list, { orientation }) : () => {};
-  const releaseHover = createMenuHoverIntent(root, {
-    triggerSelector: '[data-part="trigger"]',
-    contentSelector: '[data-part="content"]',
-    delay,
-    isOpen,
-    onOpen: onHoverOpen,
-    onClose,
-  });
+
+  // One entry point for both hover and focus: the item that was dismissed stays
+  // dismissed while the pointer/focus sits on it, and reaching any OTHER item
+  // opens that one. Reaching a sibling does NOT force the standing flag off the
+  // dismissed panel -- Escape left focus on ITS trigger, so its
+  // `:focus-within` is still matching and an unconditional clear would bring
+  // the dismissed panel back alongside the one being hovered. The sweep drops
+  // it the moment it has settled instead. Guarding per item is what keeps a
+  // dismissal from making the rest of the bar inert.
+  const enterItem = (value: string) => {
+    if (isDismissed(navigationMenuPanel(root, value))) return;
+    clearSettledNavigationMenuDismissals(root);
+    onHoverOpen(value);
+  };
+
+  const onPointerEnter = (event: Event) => {
+    const value = (event.target as HTMLElement).closest<HTMLElement>(TRIGGER_SELECTOR)?.dataset[
+      'value'
+    ];
+    if (value) enterItem(value);
+  };
+  const onPointerLeave = () => {
+    clearSettledNavigationMenuDismissals(root);
+    onClose();
+  };
+  // focusin/focusout rather than focus/blur: they carry a relatedTarget, which
+  // is what tells "focus moved from the trigger into its own panel" (stay open)
+  // apart from "focus left the menu" (close).
+  const onFocusIn = (event: FocusEvent) => {
+    // Escape returns focus to the trigger, which fires focusin. Reopening there
+    // would undo the dismissal the user just asked for -- hence the per-item
+    // guard inside enterItem.
+    const value = (event.target as HTMLElement).closest<HTMLElement>(ITEM_SELECTOR)?.dataset[
+      'value'
+    ];
+    if (value) enterItem(value);
+  };
+  const onFocusOut = (event: FocusEvent) => {
+    // Focus moving off an item settles that item whatever the destination --
+    // including a rove to a SIBLING trigger, which never reaches the close
+    // below. A flag left standing on a panel nothing can reveal any more is a
+    // dead item: the guard in enterItem would keep refusing to open it. The
+    // destination is read from relatedTarget, not activeElement, because the
+    // browser has not moved focus yet when focusout fires.
+    const next = event.relatedTarget;
+    clearSettledNavigationMenuDismissals(root, next instanceof Node ? next : null);
+    if (next instanceof Node && root.contains(next)) return;
+    onClose();
+  };
+
+  root.addEventListener('pointerenter', onPointerEnter, true);
+  root.addEventListener('pointerleave', onPointerLeave);
+  root.addEventListener('focusin', onFocusIn);
+  root.addEventListener('focusout', onFocusOut);
+
   const releaseDismiss = onPointerDownOutside(root, () => {
     onClose();
   });
   return () => {
     releaseDismiss();
-    releaseHover();
+    root.removeEventListener('focusout', onFocusOut);
+    root.removeEventListener('focusin', onFocusIn);
+    root.removeEventListener('pointerleave', onPointerLeave);
+    root.removeEventListener('pointerenter', onPointerEnter, true);
     releaseRoving();
   };
 }
@@ -260,26 +391,13 @@ export function startNavigationMenuEffects({
  * no per-framework copy, no drift.
  */
 export function bindNavigationMenu(root: HTMLElement): () => void {
-  // Config travels as `data-*` and nothing else (#2001): `orientation` and
-  // `delay-duration` are not valid attributes on a <nav>, and only `data-*`
-  // reaches `dataset`. `data-orientation` is written by the score's own aria
-  // projection (see navigationMenu.aria), so the markup must not re-emit it.
+  // Config travels as `data-*` and nothing else (#2001): `orientation` is not a
+  // valid attribute on a <nav>, and only `data-*` reaches `dataset`.
+  // `data-orientation` is written by the score's own aria projection (see
+  // navigationMenu.aria), so the markup must not re-emit it. There is no
+  // delay attribute left to read (#2148).
   const config: NavigationMenuConfig = {
     orientation: root.dataset['orientation'] === 'vertical' ? 'vertical' : 'horizontal',
-    // NON-EMPTY presence, not truthiness (#2011): `data-delay-duration="0"` is
-    // a real request for no delay, and `|| 200` used to swallow it -- but
-    // `data-delay-duration=""` is the attribute written with nothing in it,
-    // which is absence, not zero. `Number('')` is 0, so the empty string has to
-    // be rejected explicitly or a blank attribute becomes a silent 0ms.
-    // Lazy, and `Number()` rather than `parseInt`: the token read only happens
-    // on the branch that needs it, and `"200px"` is a malformed attribute
-    // rather than a silent 200. Same convention as tooltip.behavior.ts.
-    delayDuration: (() => {
-      const raw = root.dataset['delayDuration'];
-      if (raw === undefined || raw === '') return navigationMenuHoverDelay(root);
-      const parsed = Number(raw);
-      return Number.isFinite(parsed) ? parsed : navigationMenuHoverDelay(root);
-    })(),
     defaultValue:
       root.querySelector<HTMLElement>('[data-part="trigger"][data-state="open"]')?.dataset[
         'value'
@@ -346,14 +464,12 @@ export function bindNavigationMenu(root: HTMLElement): () => void {
   const unsubscribe = memory.subscribe(render); // fires immediately: first paint
 
   // Compose the roving/hover/dismiss trio directly, level-triggered whenever
-  // mounted -- one instance for the menu's lifetime; hover reads the open
-  // state live, so no re-composition on open/close.
+  // mounted -- one instance for the menu's lifetime; every dispatch is
+  // immediate, so there is nothing to re-compose on open/close.
   const stopEffects = startNavigationMenuEffects({
     root,
     list: getPart('list'),
     orientation: orientationOf(config),
-    delay: config.delayDuration ?? navigationMenuHoverDelay(root),
-    isOpen: () => activeItem(memory.get(), config) !== null,
     onHoverOpen: (value) => void request('hoverOpen', value),
     onClose: () => void request('close'),
   });
@@ -361,7 +477,21 @@ export function bindNavigationMenu(root: HTMLElement): () => void {
   const onClick = (event: Event) => {
     const trigger = (event.target as HTMLElement).closest<HTMLElement>('[data-part="trigger"]');
     const value = trigger?.dataset['value'];
-    if (value && root.contains(trigger)) request('toggle', value);
+    if (!value || !root.contains(trigger)) return;
+    // A deliberate click is a fresh intent for THIS item, so it drops THIS
+    // panel's flag unconditionally -- the settling sweep would refuse to,
+    // because the item the user just clicked is both hovered and focused.
+    // Siblings keep their own flags; the sweep drops those when they settle.
+    setNavigationMenuDismissed(navigationMenuPanel(root, value), false);
+    request('toggle', value);
+    // ...but a click (or Enter/Space, which a native button fulfils as a click)
+    // that CLOSED the panel leaves focus on the trigger, so the item still
+    // matches `:focus-within` and the reveal rule would keep the panel visible
+    // against a `data-state="closed"`. Same dismissal the Escape path raises,
+    // for the same reason -- and on the same one panel.
+    if (memory.get().active === null) {
+      setNavigationMenuDismissed(navigationMenuPanel(root, value), true);
+    }
   };
   root.addEventListener('click', onClick);
 
@@ -384,6 +514,10 @@ export function bindNavigationMenu(root: HTMLElement): () => void {
       const value = trigger?.dataset['value'];
       if (!value) return;
       event.preventDefault();
+      // A deliberate open is a fresh intent for THIS item -- same reason as the
+      // click path: the trigger holds focus, so only an unconditional drop gets
+      // the panel back up.
+      setNavigationMenuDismissed(navigationMenuPanel(root, value), false);
       request('open', value);
       return;
     }
@@ -395,6 +529,10 @@ export function bindNavigationMenu(root: HTMLElement): () => void {
         `[data-part="trigger"][data-value="${active}"]`,
       );
       request('close');
+      // Raise the flag on the dismissed panel BEFORE returning focus: the
+      // refocus fires focusin, and the guard there reads this attribute to know
+      // not to reopen THIS item -- while its siblings stay live.
+      setNavigationMenuDismissed(navigationMenuPanel(root, active), true);
       openTrigger?.focus();
     }
   };

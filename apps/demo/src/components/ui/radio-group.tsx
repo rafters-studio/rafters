@@ -1,3 +1,33 @@
+/**
+ * Radio group component for mutually exclusive selections
+ *
+ * @cognitive-load 3/10 - Clear single choice from visible options
+ * @attention-economics Options visible simultaneously: enables comparison, reduces memory load
+ * @trust-building Immediate visual feedback, reversible selection, clear current state
+ * @accessibility Arrow key navigation between options, proper ARIA radiogroup, roving tabindex
+ * @semantic-meaning Mutually exclusive choice: only one option can be selected at a time
+ *
+ * @usage-patterns
+ * DO: Use for 2-5 mutually exclusive options
+ * DO: Make all options visible for easy comparison
+ * DO: Use descriptive labels for each option
+ * DO: Pre-select the most common or safest option when appropriate
+ * NEVER: More than 7 options (use Select instead), independent selections (use Checkbox)
+ *
+ * @example
+ * ```tsx
+ * <RadioGroup defaultValue="option-1">
+ *   <div className="flex items-center gap-2">
+ *     <RadioGroup.Item value="option-1" id="r1" />
+ *     <Label htmlFor="r1">Option 1</Label>
+ *   </div>
+ *   <div className="flex items-center gap-2">
+ *     <RadioGroup.Item value="option-2" id="r2" />
+ *     <Label htmlFor="r2">Option 2</Label>
+ *   </div>
+ * </RadioGroup>
+ * ```
+ */
 import * as React from 'react';
 import { createBehavior, type PartIds } from '@/lib/contract';
 import { useMemory } from '@/hooks/use-memory';
