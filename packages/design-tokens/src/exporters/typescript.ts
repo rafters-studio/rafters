@@ -12,6 +12,7 @@
  * - JSDoc comments from semanticMeaning
  */
 
+import { oklchToCSS } from '@rafters/color-utils';
 import type { ColorReference, ColorValue, Token } from '@rafters/shared';
 import type { TokenRegistry } from '../registry.js';
 
@@ -46,8 +47,10 @@ function tokenValueToTS(token: Token): string {
       // Return OKLCH string for the base color (position 500 = index 5)
       const baseColor = colorValue.scale[5];
       if (baseColor) {
-        const oklch = `oklch(${baseColor.l.toFixed(3)} ${baseColor.c.toFixed(3)} ${baseColor.h.toFixed(1)})`;
-        return escapeStringValue(oklch);
+        // alpha is forced to 1 because the old toFixed(3)/toFixed(3)/toFixed(1)
+        // template literal never emitted a fourth channel, even for an
+        // imported color carrying alpha < 1 -- same trick as tailwind.ts.
+        return escapeStringValue(oklchToCSS({ ...baseColor, alpha: 1 }, { precision: 3 }));
       }
       // Fallback: stringify the whole object
       return JSON.stringify(value);

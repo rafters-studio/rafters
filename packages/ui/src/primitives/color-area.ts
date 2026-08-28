@@ -6,9 +6,11 @@
  *
  * Framework-agnostic, SSR-safe. The caller provides the canvas element;
  * the primitive handles rendering and ARIA attributes.
+ *
+ * @internal-dependencies @rafters/color-utils
  */
 
-import { computeGamutBoundaries } from '@rafters/color-utils';
+import { computeGamutBoundaries, oklchToCSS } from '@rafters/color-utils';
 import type { CleanupFunction } from './types';
 
 export interface ColorAreaOptions {
@@ -87,7 +89,7 @@ function renderArea(canvas: HTMLCanvasElement, options: ColorAreaOptions): void 
       const distPx = ((mc - c) / maxChroma) * cssHeight;
       const t = distPx >= FADE_PX ? 1 : Math.max(0, distPx / FADE_PX);
       ctx.globalAlpha = t * t;
-      ctx.fillStyle = `oklch(${l} ${c} ${hue})`;
+      ctx.fillStyle = oklchToCSS({ l, c, h: hue, alpha: 1 });
       ctx.fillRect(x, y, 1, 1);
     }
   }
