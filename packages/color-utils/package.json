@@ -23,6 +23,7 @@
   },
   "scripts": {
     "test": "vitest run",
+    "test:unit": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
