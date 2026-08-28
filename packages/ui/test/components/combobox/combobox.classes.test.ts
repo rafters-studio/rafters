@@ -33,13 +33,6 @@ describe('combobox classes', () => {
     }
   });
 
-  it('items consume the stagger-step delay generic (#2156, motion.jsonl:61)', () => {
-    // delay-stagger-step is the generated consumption of the items/enter cell;
-    // no nth-child multiplier is expressible in this file (see the itemClasses
-    // comment) so it is applied once, flat, across the item collection.
-    expect(classes.item).toContain('delay-stagger-step');
-  });
-
   it('declares no raw numeric duration or hand-picked easing (motion token gap)', () => {
     for (const value of Object.values(classes)) {
       expect(value).not.toMatch(/duration-\[?\d/);

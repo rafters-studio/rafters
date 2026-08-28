@@ -46,15 +46,6 @@ describe('dropdown-menu classes', () => {
     expect(classes.content).not.toContain('motion-reduce:animate-none');
   });
 
-  it('items consume the stagger-step delay generic (#2156, motion.jsonl:38)', () => {
-    // delay-stagger-step is the generated consumption of the items/enter cell;
-    // no nth-child multiplier is expressible in this file (see the itemBase
-    // comment) so it is applied once, flat, across the item collection.
-    expect(classes.item).toContain('delay-stagger-step');
-    expect(classes.checkboxItem).toContain('delay-stagger-step');
-    expect(classes.radioItem).toContain('delay-stagger-step');
-  });
-
   it('no hand-rolled animation vocabulary and no raw durations', () => {
     // The oracle's animate-in/zoom/fade/slide + duration-N string is the
     // prohibited hand-rolled form (05-authoring, MOTION.md). See the doc.

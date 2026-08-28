@@ -36,11 +36,4 @@ describe('command classes', () => {
     expect(classes.dialogBackdrop).toContain('z-depth-overlay');
     expect(classes.dialogContent).toContain('z-depth-modal');
   });
-
-  it('items consume the stagger-step delay generic (#2156, motion.jsonl:66)', () => {
-    // delay-stagger-step is the generated consumption of the items/enter cell;
-    // no nth-child multiplier is expressible in this file (see the itemClasses
-    // comment) so it is applied once, flat, across the item collection.
-    expect(classes.item).toContain('delay-stagger-step');
-  });
 });

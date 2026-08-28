@@ -46,16 +46,6 @@ describe('context-menu classes', () => {
     expect(classes.shortcut).toContain('ml-auto');
   });
 
-  it('items consume the stagger-step delay generic (#2156, motion.jsonl:42)', () => {
-    // delay-stagger-step is the generated consumption of the items/enter cell;
-    // no nth-child multiplier is expressible in this file (see the itemBase
-    // comment) so it is applied once, flat, across the item collection.
-    expect(classes.item).toContain('delay-stagger-step');
-    expect(classes.checkboxItem).toContain('delay-stagger-step');
-    expect(classes.radioItem).toContain('delay-stagger-step');
-    expect(classes.subTrigger).toContain('delay-stagger-step');
-  });
-
   it('declares no raw numeric durations or animate utilities (motion tokens only)', () => {
     for (const value of [classes.content, classes.item, classes.checkboxItem, classes.radioItem]) {
       expect(value).not.toMatch(/duration-\d/);

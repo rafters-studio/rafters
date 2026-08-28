@@ -35,26 +35,9 @@ const groupClasses = 'overflow-hidden p-1 text-foreground';
 
 const groupHeadingClasses = 'px-2 py-1.5 text-label-small ts-label-small text-muted-foreground';
 
-// STAGGER (#2156): motion.jsonl:66 (command | items | enter) declares delay
-// generic `stagger-step`, zero by default (defaults.ts:1758 -- "efficient does
-// not stagger lists"). `delay-stagger-step` is the generated consumption of
-// that cell: a flat `transition-delay`, wrapping the --rafters-delay-stagger-step
-// custom property directly (MOTION_NAMESPACE_PROPERTY, tailwind.ts), the only
-// form this generic compiles to today. A genuine per-item multiplier
-// (`calc(n * <token>)` scoped per `:nth-child`) is NOT implemented here: it
-// would require constructing that CSS function directly in this file, which
-// the repo's component-authoring guardrail denies outright ("consumers never
-// reference [rafters custom properties] directly; the exporter wires them" --
-// Spec 00 Sec 6, "classes.ts ... never arbitrary values"), and no
-// multiplier-aware utility exists upstream (out of #2156's scope --
-// packages/design-tokens is #2154's package). Applying `delay-stagger-step` at
-// eight identical `:nth-child` positions would compile eight selectors to one
-// identical declaration, which is dead structure, not a stagger -- so it is
-// applied once, unscoped, on the whole item collection instead.
 const itemClasses =
   'relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 ' +
   'text-body-small ts-body-small outline-none transition-colors motion-reduce:transition-none ' +
-  'delay-stagger-step ' +
   'data-[selected]:bg-accent data-[selected]:text-accent-foreground ' +
   'data-[disabled]:pointer-events-none data-[disabled]:opacity-50';
 
