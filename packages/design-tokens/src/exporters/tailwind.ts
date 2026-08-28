@@ -962,13 +962,21 @@ function parseCellSpec(tokenName: string, raw: string): CellSpec | null {
  *
  * REDUCED MOTION IS MECHANISM B: zero `animation-duration` in the emission. The
  * alternative, `motion-reduce:animate-none` on the consuming class, was measured
- * against this one (toy 14) and loses on three counts:
+ * against this one (toy 14) and loses on two counts, having stopped differing on
+ * a third that used to read as one -- the middle bullet is kept because a
+ * maintainer who remembers the old argument needs to be told it lapsed, not to
+ * find it quietly missing:
  *   - `animation: none` removes the animation, so the element never reaches the
  *     keyframe's END STATE. Zeroing the duration completes it instantly and
  *     keeps the end state;
- *   - a zero duration still FIRES `animationend`, which is what the presence
- *     contract releases the unmount on. `animate-none` fires nothing, so a
- *     closing dialog would be released by the backstop timer instead;
+ *   - the release path does NOT separate them, and saying so is the point. A
+ *     zero-duration animation is never returned by `getAnimations()` either --
+ *     it finishes inside the style flush that creates it -- so under reduced
+ *     motion both mechanisms leave presence with an empty list and both release
+ *     in the same tick (`test/presence/presence-race.e2e.ts` pins this against
+ *     the real engines). This bullet used to argue the opposite, back when
+ *     presence released on `animationend` and had a backstop timer to fall
+ *     through to; #2157 deleted both. The choice rests on the other two;
  *   - the period exemption (loops slow, they never stop) is expressible here as
  *     SET MEMBERSHIP -- this function emits the block for the tier-kind cells
  *     and withholds it from the period-kind ones, and the period utilities do

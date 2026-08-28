@@ -36,8 +36,8 @@ describe('popover classes', () => {
     // Mechanism B (#2017): the generated cell utility zeroes animation-duration
     // under the media query. `motion-reduce:animate-none` must NOT appear here
     // -- `animation: none` resets the shorthand, so wherever it wins it discards
-    // the zeroed duration AND stops animationend from firing, which is the event
-    // presence releases the unmount on.
+    // the zeroed duration, and it removes the animation rather than completing
+    // it, so the keyframe's end state is never reached.
     expect(classes.content).not.toContain('motion-reduce:animate-none');
     // The close control is a TRANSITION, not a keyframe, and transition-none is
     // still its correct reduced-motion path.

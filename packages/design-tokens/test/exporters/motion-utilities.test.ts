@@ -400,10 +400,11 @@ describe('semantic motion utilities compile (#1902/#1903/#1904)', () => {
 
   it('reduced motion is mechanism B, and mechanism A is nowhere near it', async () => {
     // B: zero animation-duration in the emission. It preserves the keyframe's
-    // end state and still fires animationend, which is what presence releases
-    // the unmount on. A (`animation: none`) fires nothing and, wherever it
-    // wins, resets the shorthand and discards B with it -- so the two must
-    // never both apply to a cell.
+    // end state, which A (`animation: none`) never reaches -- A removes the
+    // animation rather than completing it instantly. A also, wherever it wins,
+    // resets the shorthand and discards B with it, so the two must never both
+    // apply to a cell. Presence's release path does not separate them: under
+    // reduced motion neither leaves anything in `getAnimations()`.
     const css = await registryToCompiled(baseRegistry(), { contentSources: [fixtureDir] });
 
     const reducedBlocks =

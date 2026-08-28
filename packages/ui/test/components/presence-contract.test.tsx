@@ -32,17 +32,26 @@ import {
   DropdownMenuTrigger,
 } from '../../src/components/dropdown-menu/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '../../src/components/popover/popover';
+import {
+  attachAnimation,
+  attachAnimations,
+  type FakeAnimation,
+} from '../harness/presence-animations';
 
-/** Report a running 200ms exit keyframe, the way the compiled sheet would. */
-function runningExitKeyframe() {
-  vi.spyOn(window, 'getComputedStyle').mockReturnValue({
-    animationName: 'scale-out',
-    animationDuration: '0.2s',
-    animationDelay: '0s',
-    transitionProperty: 'none',
-    transitionDuration: '0s',
-    transitionDelay: '0s',
-  } as unknown as CSSStyleDeclaration);
+/**
+ * Put a running exit animation on the content node, the way the compiled sheet
+ * would -- and hand back the switch that ends it.
+ *
+ * Presence OBSERVES animations now (#2157): it calls `getAnimations()` on the
+ * node and awaits the returned animations' `finished` promises. The test DOM has
+ * no Web Animations API at all, so the animation is installed here and settled
+ * by hand. Call this while the node is still open, before the rerender that
+ * closes it -- that is the moment the real sheet's exit rule would attach.
+ */
+function runningExitKeyframe(): FakeAnimation {
+  const node = content();
+  if (node === null) throw new Error('runningExitKeyframe: no content node to animate');
+  return attachAnimation(node);
 }
 
 function content(): HTMLElement | null {
@@ -124,18 +133,18 @@ describe('presence contract: dropdown-menu via asChild', () => {
     expect(content()?.getAttribute('data-state')).toBe('open');
   });
 
-  it('holds the cloned child through its exit keyframe, then hides it', () => {
+  it('holds the cloned child through its exit keyframe, then hides it', async () => {
     const { rerender } = render(renderAt(true));
-    runningExitKeyframe();
+    const exit = runningExitKeyframe();
 
     rerender(renderAt(false));
     const node = content();
-    // The ref reached the clone: presence measured a real node and is waiting.
+    // The ref reached the clone: presence observed a real node and is waiting.
     expect(node?.hasAttribute('hidden')).toBe(false);
     expect(node?.getAttribute('data-state')).toBe('closed');
 
-    act(() => {
-      node?.dispatchEvent(new Event('animationend'));
+    await act(async () => {
+      exit.finish();
     });
     expect(content()?.hasAttribute('hidden')).toBe(true);
   });
@@ -188,59 +197,63 @@ describe.each(cases)('presence contract: $name', ({ render: renderAt, absent }) 
     expect(content()?.hasAttribute('inert')).toBe(false);
   });
 
-  it('goes once the exit keyframe ends', () => {
+  it('goes once the exit keyframe ends', async () => {
     const { rerender } = render(renderAt(true));
-    runningExitKeyframe();
+    const exit = runningExitKeyframe();
     rerender(renderAt(false));
 
     const node = content();
     expect(node).not.toBeNull();
-    act(() => {
-      node?.dispatchEvent(new Event('animationend'));
+    await act(async () => {
+      exit.finish();
     });
 
     absent(content());
   });
 
-  it('reduced motion: closes without waiting on an animationend that never fires', () => {
+  it('closes without waiting when no animation is attached at all', () => {
+    // The EMPTY-LIST branch, and it has to be installed to be reached. happy-dom
+    // ships no `Element.prototype.getAnimations` at all, so a node left alone
+    // here would take the hook's DOM-shim guard instead and this case would
+    // silently stop covering what it names. `attachAnimations(node, 0)` gives
+    // the node a real `getAnimations` that answers with an empty list -- the
+    // shape of an exit rule declaring a transition on a property that never
+    // changes, which creates no CSSTransition object. Presence must release in
+    // the same tick rather than await a promise that will never exist. (The shim
+    // path is covered separately, by use-presence.test.tsx's 'releases when the
+    // DOM has no Web Animations API at all'.)
     const { rerender } = render(renderAt(true));
-    vi.spyOn(window, 'getComputedStyle').mockReturnValue({
-      animationName: 'none',
-      animationDuration: '0s',
-      animationDelay: '0s',
-      transitionProperty: 'none',
-      transitionDuration: '0s',
-      transitionDelay: '0s',
-    } as unknown as CSSStyleDeclaration);
+    const node = content();
+    if (node === null) throw new Error('no content node to leave unanimated');
+    attachAnimations(node, 0);
 
     rerender(renderAt(false));
 
-    // No event dispatched, no timer advanced.
+    // Nothing settled, no timer advanced.
     absent(content());
   });
 
-  it('rapid open/close/open does not wedge presence', () => {
+  it('rapid open/close/open does not wedge presence', async () => {
     const { rerender } = render(renderAt(true));
-    runningExitKeyframe();
+    const interrupted = runningExitKeyframe();
 
     rerender(renderAt(false));
     rerender(renderAt(true));
     expect(content()?.getAttribute('data-state')).toBe('open');
 
-    // The interrupted exit's own end event, arriving late against the reopened
-    // node, must not take it away.
-    const node = content();
-    act(() => {
-      node?.dispatchEvent(new Event('animationend'));
+    // The interrupted exit settling late, against the reopened node, must not
+    // take it away.
+    await act(async () => {
+      interrupted.finish();
     });
     expect(content()?.getAttribute('data-state')).toBe('open');
 
     // And a subsequent genuine close still completes.
+    const second = runningExitKeyframe();
     rerender(renderAt(false));
-    const closing = content();
-    expect(closing?.getAttribute('data-state')).toBe('closed');
-    act(() => {
-      closing?.dispatchEvent(new Event('animationend'));
+    expect(content()?.getAttribute('data-state')).toBe('closed');
+    await act(async () => {
+      second.finish();
     });
     absent(content());
   });

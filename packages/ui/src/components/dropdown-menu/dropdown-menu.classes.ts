@@ -35,8 +35,9 @@ const triggerClasses =
 // drag the other with it. Collapsing distinct cells is the #2012 defect.
 //
 // NO motion-reduce:animate-none -- the generated utility zeroes
-// animation-duration under the media query instead, which keeps the end state
-// and keeps animationend firing for presence.
+// animation-duration under the media query instead, which keeps the keyframe's
+// end state. animate-none here would win destructively: `animation: none`
+// resets the shorthand and discards the zeroed duration with it.
 const contentClasses =
   'z-depth-dropdown min-w-32 overflow-hidden rounded-md border bg-popover p-1 ' +
   'text-popover-foreground shadow-lg ' +
