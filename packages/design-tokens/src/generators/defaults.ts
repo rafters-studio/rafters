@@ -916,13 +916,42 @@ export const DEFAULT_ANIMATION_DEFINITIONS: Record<string, AnimationDef> = {
  * leaves, and the emitted value is a var() per reference -- so retuning a leaf
  * moves one line of the sheet and every cell that points at it follows.
  */
+
+/**
+ * How a CELL gets its duration, as the matrix states it (#2154).
+ *
+ * `motion.jsonl`'s own `duration` column is a discriminated union and this
+ * mirrors it exactly: a transition names a perceptual TIER, a loop names a
+ * PERIOD. The two are not interchangeable and neither is a default for the
+ * other -- a tier-kind cell runs once, a period-kind cell runs forever, and the
+ * reduced-motion law treats them oppositely (the tier is zeroed, the period is
+ * exempt because loops slow and never stop).
+ *
+ * The `kind` tag is what makes the difference REPRESENTABLE. A single
+ * `durationTier: string` had no way to say "this cell loops", so the four
+ * looping cells (skeleton, spinner, progress indeterminate, input-otp caret)
+ * could not be transcribed at all.
+ */
+export type MotionCellDuration =
+  /** Key of DEFAULT_DURATION_DEFINITIONS -- the cell's `duration.tier`. */
+  | { kind: 'tier'; tier: string }
+  /** Key of DEFAULT_PERIOD_NAMESPACE -- the cell's `duration.period`. */
+  | { kind: 'period'; period: string };
+
 export interface MotionCellAnimation {
   /** Key of DEFAULT_KEYFRAME_DEFINITIONS -- the SHAPE, carrying no timing. */
   keyframe: string;
-  /** Key of DEFAULT_DURATION_DEFINITIONS -- the cell's `duration.tier`. */
-  tier: string;
-  /** Key of DEFAULT_EASING_DEFINITIONS -- the cell's `curve.role`. */
-  curve: string;
+  duration: MotionCellDuration;
+  /**
+   * Key of DEFAULT_EASING_DEFINITIONS -- the cell's `curve.role`.
+   *
+   * ABSENT means the cell declares `curve: {"kind":"none"}`, which every
+   * period-kind row in the matrix does. Supplying one anyway would be inventing
+   * an assignment no cell made -- the same class of error as the
+   * `scaleStart = 1/ratio^0.25` derivation #2017 deleted. A tier-kind cell
+   * without one fails the generator.
+   */
+  curve?: string;
   /** The matrix coordinates this composite transcribes, for review and for docs. */
   cell: { component: string; part: string; transition: string };
   meaning: string;
@@ -933,27 +962,79 @@ export interface MotionCellAnimation {
  * THE ANIMATED CELLS, transcribed from motion.jsonl. Each key becomes one
  * `motion-cell-<key>` token and one `animate-<key>` utility.
  *
- * Verbatim from the matrix rows, which is the only permitted provenance here:
- *   dialog / content        closed -> open   normal   enter   extent pop
- *   dialog / content        open -> closed   moderate exit    extent pop
- *   popover / content       closed -> open   moderate enter   extent pop
- *   popover / content       open -> closed   fast     exit    extent pop
- *   dropdown-menu / content closed -> open   moderate enter   extent pop
- *   dropdown-menu / content open -> closed   fast     exit    extent pop
+ * WHICH ROWS APPEAR HERE -- the predicate, stated once so the both-directions
+ * diff (cells-consumed vs cells-assigned) is reviewable:
  *
- * Popover and dropdown-menu carry identical assignments today. They stay two
- * cells, not one shared name: the matrix declares two moments, and collapsing
- * them is precisely the move that produced the #2012 defect -- the day one of
- * them is retuned, a shared name would drag the other with it silently.
+ *   1. The row's transition is PRESENCE (the part mounts or unmounts), an
+ *      APPEARANCE (it arrives once, like an image load), or a LOOP. A
+ *      state-to-state change on a part that stays mounted -- a hover colour, a
+ *      highlight move, a chevron rotate, a fill -- is a TRANSITION, and
+ *      `motion-semantic-*` is where transitions live. Keyframes there would
+ *      restart on every state flip.
+ *   2. The row's declared `properties` intersect what the keyframe vocabulary
+ *      can express: `opacity` -> fade, `transform: scale` -> scale, `keyframes,
+ *      infinite` -> a loop shape. WE EMIT ONLY THE INTERSECTION. Where a row
+ *      declares more than the vocabulary covers, the entry says so in `meaning`
+ *      rather than an invented shape being authored to fill the gap.
+ *   3. `duration.kind` is `tier` or `period`. `pointer-rule`, `follows` and
+ *      `none` rows are not animated at all -- the pointer rule is a law, and a
+ *      `none` row (every `items / enter` stagger row) is waiting on the
+ *      stagger-step work, not on a shape.
+ *   4. The component the row names EXISTS in `packages/ui/src/components`. The
+ *      matrix runs ahead of the library in two places (menubar, date-picker),
+ *      and a utility for a component nobody can import is a token with no
+ *      consumer.
+ *   5. A cell here would not DOUBLE-DRIVE a property a transition is already
+ *      driving. This bites exactly one shape of row: `opacity` +
+ *      `grid-rows / height` (accordion content, collapsible content, a field
+ *      message). No keyframe expresses `grid-template-rows`, so that moment can
+ *      only run as a transition, and `motion-expand`/`motion-collapse` already
+ *      transition `grid-template-rows` AND `opacity` together. A cell for the
+ *      opacity half would put an animation and a transition on the same
+ *      property at once -- the animation wins, and the transition's opacity is
+ *      overridden mid-flight.
+ *
+ *      This is NOT the broader claim that an overlapping semantic property list
+ *      excludes a row: `modal-in` also declares `opacity` + `transform`, and
+ *      `dialog / content / closed -> open` is covered here all the same. The
+ *      difference is that its non-opacity half IS a shape (`transform: scale`
+ *      -> `scale-in`), so the whole moment runs as one animation and no
+ *      transition is competing for opacity.
+ *
+ * EVERY ROW THIS PREDICATE EXCLUDES IS ENUMERATED, one line each with its
+ * reason, in `EXCLUDED_ROWS` in `test/motion-cells.test.ts`, and the suite there
+ * asserts that (cells-assigned - cells-consumed) equals that list EXACTLY. So a
+ * new matrix row lands in CI as a failure until somebody either transcribes it
+ * here or writes down why not, and a stale exclusion fails the same way. The
+ * prose above says why the categories exist; the list says which rows are in
+ * them.
+ *
+ * NO NEW KEYFRAME IS AUTHORED HERE, and that is the point rather than an
+ * omission. Every entry below names a shape that already exists, so no geometry
+ * enters the system in a coverage change -- which is exactly the move that
+ * produced the #2012 defect (`scaleStart = 1/ratio^0.25`, a formula in value
+ * position). The rows whose movement has no existing shape (drawer content's
+ * per-side slide, carousel travel, the discrete swaps) are LEFT OUT rather than
+ * approximated: an approximated shape is a value nobody chose.
  *
  * The extent is not named here because the KEYFRAME carries it (`scale-in` /
  * `scale-out` reference `var(--rafters-extent-pop)`), which is what "keyframes
  * are shapes" means: geometry rides with the shape, timing attaches at the cell.
+ * A fade names no extent because there is no extent member for opacity -- the
+ * namespace holds pop, press and draw, and inventing a fourth to satisfy a
+ * symmetry would be a second value for a knob nobody turns.
+ *
+ * Components with identical assignments stay SEPARATE cells (popover and
+ * dropdown-menu, tooltip and hover-card, every overlay fade). The matrix
+ * declares distinct moments, and collapsing them is precisely the move that
+ * produced #2012 -- the day one is retuned, a shared name would drag the others
+ * with it silently.
  */
 export const DEFAULT_MOTION_CELL_ANIMATIONS: Record<string, MotionCellAnimation> = {
+  // ---------------------------------------------------------------- modal overlay
   'dialog-content-open': {
     keyframe: 'scale-in',
-    tier: 'normal',
+    duration: { kind: 'tier', tier: 'normal' },
     curve: 'enter',
     cell: { component: 'dialog', part: 'content', transition: 'closed -> open' },
     meaning: 'A dialog arriving: fade + zoom from the pop extent, on the arrival curve.',
@@ -961,15 +1042,131 @@ export const DEFAULT_MOTION_CELL_ANIMATIONS: Record<string, MotionCellAnimation>
   },
   'dialog-content-close': {
     keyframe: 'scale-out',
-    tier: 'moderate',
+    duration: { kind: 'tier', tier: 'moderate' },
     curve: 'exit',
     cell: { component: 'dialog', part: 'content', transition: 'open -> closed' },
     meaning: 'A dialog leaving: fade + zoom back to the pop extent, on the departure curve.',
     contexts: ['dialog', 'modal', 'alert-dialog'],
   },
+  'dialog-overlay-open': {
+    keyframe: 'fade-in',
+    duration: { kind: 'tier', tier: 'normal' },
+    curve: 'enter',
+    cell: { component: 'dialog', part: 'overlay', transition: 'closed -> open' },
+    meaning: 'The scrim behind a dialog, arriving with the surface it dims for.',
+    contexts: ['dialog', 'overlay', 'scrim'],
+  },
+  'dialog-overlay-close': {
+    keyframe: 'fade-out',
+    duration: { kind: 'tier', tier: 'moderate' },
+    curve: 'exit',
+    cell: { component: 'dialog', part: 'overlay', transition: 'open -> closed' },
+    meaning: 'The scrim behind a dialog, leaving with it.',
+    contexts: ['dialog', 'overlay', 'scrim'],
+  },
+  'alert-dialog-content-open': {
+    keyframe: 'scale-in',
+    duration: { kind: 'tier', tier: 'normal' },
+    curve: 'enter',
+    cell: { component: 'alert-dialog', part: 'content', transition: 'closed -> open' },
+    meaning: 'An alert dialog arriving: the dialog moment, declared on its own row.',
+    contexts: ['alert-dialog', 'modal'],
+  },
+  'alert-dialog-content-close': {
+    keyframe: 'scale-out',
+    duration: { kind: 'tier', tier: 'moderate' },
+    curve: 'exit',
+    cell: { component: 'alert-dialog', part: 'content', transition: 'open -> closed' },
+    meaning: 'An alert dialog leaving, once the choice it demanded has been made.',
+    contexts: ['alert-dialog', 'modal'],
+  },
+  'alert-dialog-overlay-open': {
+    keyframe: 'fade-in',
+    duration: { kind: 'tier', tier: 'normal' },
+    curve: 'enter',
+    cell: { component: 'alert-dialog', part: 'overlay', transition: 'closed -> open' },
+    meaning: 'The scrim behind an alert dialog, arriving with the surface it dims for.',
+    contexts: ['alert-dialog', 'overlay', 'scrim'],
+  },
+  'alert-dialog-overlay-close': {
+    keyframe: 'fade-out',
+    duration: { kind: 'tier', tier: 'moderate' },
+    curve: 'exit',
+    cell: { component: 'alert-dialog', part: 'overlay', transition: 'open -> closed' },
+    meaning: 'The scrim behind an alert dialog, leaving with it.',
+    contexts: ['alert-dialog', 'overlay', 'scrim'],
+  },
+  'sheet-content-open': {
+    keyframe: 'fade-in',
+    duration: { kind: 'tier', tier: 'normal' },
+    curve: 'spring-smooth',
+    cell: { component: 'sheet', part: 'content', transition: 'closed -> open' },
+    meaning:
+      'A sheet arriving. The row declares slide (per side) + fade; the fade is emitted and the per-side slide is not, because the vocabulary has no side-agnostic slide shape and the matrix calls a physical side a defect.',
+    contexts: ['sheet', 'panel', 'edge-anchored'],
+  },
+  'sheet-content-close': {
+    keyframe: 'fade-out',
+    duration: { kind: 'tier', tier: 'moderate' },
+    curve: 'exit',
+    cell: { component: 'sheet', part: 'content', transition: 'open -> closed' },
+    meaning: 'A sheet leaving. The fade half of slide (per side) + fade, on the departure curve.',
+    contexts: ['sheet', 'panel', 'edge-anchored'],
+  },
+  'sheet-overlay-open': {
+    keyframe: 'fade-in',
+    duration: { kind: 'tier', tier: 'normal' },
+    curve: 'enter',
+    cell: { component: 'sheet', part: 'overlay', transition: 'closed -> open' },
+    meaning: 'The scrim behind a sheet, arriving with it.',
+    contexts: ['sheet', 'overlay', 'scrim'],
+  },
+  'sheet-overlay-close': {
+    keyframe: 'fade-out',
+    duration: { kind: 'tier', tier: 'moderate' },
+    curve: 'exit',
+    cell: { component: 'sheet', part: 'overlay', transition: 'open -> closed' },
+    meaning: 'The scrim behind a sheet, leaving with it.',
+    contexts: ['sheet', 'overlay', 'scrim'],
+  },
+  'drawer-overlay-open': {
+    keyframe: 'fade-in',
+    duration: { kind: 'tier', tier: 'normal' },
+    curve: 'enter',
+    cell: { component: 'drawer', part: 'overlay', transition: 'closed -> open' },
+    meaning: 'The scrim behind a drawer, arriving with it.',
+    contexts: ['drawer', 'overlay', 'scrim'],
+  },
+  'drawer-overlay-close': {
+    keyframe: 'fade-out',
+    duration: { kind: 'tier', tier: 'moderate' },
+    curve: 'exit',
+    cell: { component: 'drawer', part: 'overlay', transition: 'open -> closed' },
+    meaning: 'The scrim behind a drawer, leaving with it.',
+    contexts: ['drawer', 'overlay', 'scrim'],
+  },
+  'sidebar-overlay-mobile-open': {
+    keyframe: 'fade-in',
+    duration: { kind: 'tier', tier: 'normal' },
+    curve: 'spring-smooth',
+    cell: { component: 'sidebar', part: 'overlay (mobile)', transition: 'open' },
+    meaning:
+      'A sidebar arriving as a mobile overlay. The row declares fade + slide; the fade is emitted and the slide is not, for the reason the sheet row gives -- no side-agnostic slide shape.',
+    contexts: ['sidebar', 'overlay', 'mobile'],
+  },
+  'sidebar-overlay-mobile-close': {
+    keyframe: 'fade-out',
+    duration: { kind: 'tier', tier: 'moderate' },
+    curve: 'exit',
+    cell: { component: 'sidebar', part: 'overlay (mobile)', transition: 'close' },
+    meaning:
+      'A mobile sidebar overlay leaving. The fade half of fade + slide, on the departure curve.',
+    contexts: ['sidebar', 'overlay', 'mobile'],
+  },
+  // --------------------------------------------------------------- anchored popup
   'popover-content-open': {
     keyframe: 'scale-in',
-    tier: 'moderate',
+    duration: { kind: 'tier', tier: 'moderate' },
     curve: 'enter',
     cell: { component: 'popover', part: 'content', transition: 'closed -> open' },
     meaning: 'A popover arriving: smaller and nearer than a dialog, so one tier quicker.',
@@ -977,7 +1174,7 @@ export const DEFAULT_MOTION_CELL_ANIMATIONS: Record<string, MotionCellAnimation>
   },
   'popover-content-close': {
     keyframe: 'scale-out',
-    tier: 'fast',
+    duration: { kind: 'tier', tier: 'fast' },
     curve: 'exit',
     cell: { component: 'popover', part: 'content', transition: 'open -> closed' },
     meaning: 'A popover leaving: the user already chose to dismiss it.',
@@ -985,7 +1182,7 @@ export const DEFAULT_MOTION_CELL_ANIMATIONS: Record<string, MotionCellAnimation>
   },
   'dropdown-menu-content-open': {
     keyframe: 'scale-in',
-    tier: 'moderate',
+    duration: { kind: 'tier', tier: 'moderate' },
     curve: 'enter',
     cell: { component: 'dropdown-menu', part: 'content', transition: 'closed -> open' },
     meaning: 'A menu arriving: same anchored-popup moment as popover, declared separately.',
@@ -993,11 +1190,234 @@ export const DEFAULT_MOTION_CELL_ANIMATIONS: Record<string, MotionCellAnimation>
   },
   'dropdown-menu-content-close': {
     keyframe: 'scale-out',
-    tier: 'fast',
+    duration: { kind: 'tier', tier: 'fast' },
     curve: 'exit',
     cell: { component: 'dropdown-menu', part: 'content', transition: 'open -> closed' },
     meaning: 'A menu leaving, after a choice or a dismissal.',
     contexts: ['dropdown-menu', 'menu', 'anchored-popup'],
+  },
+  'context-menu-content-open': {
+    keyframe: 'scale-in',
+    duration: { kind: 'tier', tier: 'moderate' },
+    curve: 'enter',
+    cell: { component: 'context-menu', part: 'content', transition: 'closed -> open' },
+    meaning: 'A context menu arriving at the pointer that summoned it.',
+    contexts: ['context-menu', 'menu', 'anchored-popup'],
+  },
+  'context-menu-content-close': {
+    keyframe: 'scale-out',
+    duration: { kind: 'tier', tier: 'fast' },
+    curve: 'exit',
+    cell: { component: 'context-menu', part: 'content', transition: 'open -> closed' },
+    meaning: 'A context menu leaving, after a choice or a dismissal.',
+    contexts: ['context-menu', 'menu', 'anchored-popup'],
+  },
+  'select-content-open': {
+    keyframe: 'scale-in',
+    duration: { kind: 'tier', tier: 'moderate' },
+    curve: 'enter',
+    cell: { component: 'select', part: 'content', transition: 'closed -> open' },
+    meaning: 'A select list arriving over its trigger.',
+    contexts: ['select', 'listbox', 'anchored-popup'],
+  },
+  'select-content-close': {
+    keyframe: 'scale-out',
+    duration: { kind: 'tier', tier: 'fast' },
+    curve: 'exit',
+    cell: { component: 'select', part: 'content', transition: 'open -> closed' },
+    meaning: 'A select list leaving, once a value is chosen or the list is dismissed.',
+    contexts: ['select', 'listbox', 'anchored-popup'],
+  },
+  'combobox-content-open': {
+    keyframe: 'scale-in',
+    duration: { kind: 'tier', tier: 'moderate' },
+    curve: 'enter',
+    cell: { component: 'combobox', part: 'content', transition: 'closed -> open' },
+    meaning: 'A combobox list arriving under the field being typed into.',
+    contexts: ['combobox', 'listbox', 'anchored-popup'],
+  },
+  'combobox-content-close': {
+    keyframe: 'scale-out',
+    duration: { kind: 'tier', tier: 'fast' },
+    curve: 'exit',
+    cell: { component: 'combobox', part: 'content', transition: 'open -> closed' },
+    meaning: 'A combobox list leaving, once a value is chosen or the field is left.',
+    contexts: ['combobox', 'listbox', 'anchored-popup'],
+  },
+  'command-content-open': {
+    keyframe: 'fade-in',
+    duration: { kind: 'tier', tier: 'moderate' },
+    curve: 'enter',
+    cell: { component: 'command', part: 'content', transition: 'closed -> open' },
+    meaning:
+      'A command palette arriving. The row declares fade alone -- no zoom, unlike its anchored-popup siblings.',
+    contexts: ['command', 'palette'],
+  },
+  'command-content-close': {
+    keyframe: 'fade-out',
+    duration: { kind: 'tier', tier: 'fast' },
+    curve: 'exit',
+    cell: { component: 'command', part: 'content', transition: 'open -> closed' },
+    meaning: 'A command palette leaving, after a command is run or the palette is dismissed.',
+    contexts: ['command', 'palette'],
+  },
+  'tooltip-content-open': {
+    keyframe: 'scale-in',
+    duration: { kind: 'tier', tier: 'moderate' },
+    curve: 'enter',
+    cell: { component: 'tooltip', part: 'content', transition: 'closed -> open' },
+    meaning:
+      'A tooltip arriving. The hover-intent delay its row also assigns is behaviour-owned, not part of this shape.',
+    contexts: ['tooltip', 'anchored-popup'],
+  },
+  'tooltip-content-close': {
+    keyframe: 'scale-out',
+    duration: { kind: 'tier', tier: 'fast' },
+    curve: 'exit',
+    cell: { component: 'tooltip', part: 'content', transition: 'open -> closed' },
+    meaning: 'A tooltip leaving as soon as the pointer does.',
+    contexts: ['tooltip', 'anchored-popup'],
+  },
+  'hover-card-content-open': {
+    keyframe: 'scale-in',
+    duration: { kind: 'tier', tier: 'moderate' },
+    curve: 'enter',
+    cell: { component: 'hover-card', part: 'content', transition: 'closed -> open' },
+    meaning: 'A hover card arriving: the tooltip moment at card weight, declared separately.',
+    contexts: ['hover-card', 'anchored-popup'],
+  },
+  'hover-card-content-close': {
+    keyframe: 'scale-out',
+    duration: { kind: 'tier', tier: 'fast' },
+    curve: 'exit',
+    cell: { component: 'hover-card', part: 'content', transition: 'open -> closed' },
+    meaning: 'A hover card leaving, after the linger grace its row assigns.',
+    contexts: ['hover-card', 'anchored-popup'],
+  },
+  'navigation-menu-panel-open': {
+    keyframe: 'scale-in',
+    duration: { kind: 'tier', tier: 'moderate' },
+    curve: 'enter',
+    cell: { component: 'navigation-menu', part: 'panel', transition: 'closed -> open' },
+    meaning: 'A navigation panel arriving under its trigger.',
+    contexts: ['navigation-menu', 'anchored-popup'],
+  },
+  'navigation-menu-panel-close': {
+    keyframe: 'scale-out',
+    duration: { kind: 'tier', tier: 'fast' },
+    curve: 'exit',
+    cell: { component: 'navigation-menu', part: 'panel', transition: 'open -> closed' },
+    meaning: 'A navigation panel leaving when the pointer goes elsewhere.',
+    contexts: ['navigation-menu', 'anchored-popup'],
+  },
+  // ---------------------------------------------------------------- value display
+  'calendar-grid-month-change': {
+    keyframe: 'fade-in',
+    duration: { kind: 'tier', tier: 'moderate' },
+    curve: 'standard',
+    cell: { component: 'calendar', part: 'grid', transition: 'month change' },
+    meaning:
+      'The incoming month grid. The row declares fade or slide (x) crossfade; the fade is emitted, the optional slide is not, because its distance is a grid width nothing names.',
+    contexts: ['calendar', 'date-picker'],
+  },
+  'tabs-panel-active-change': {
+    keyframe: 'fade-in',
+    duration: { kind: 'tier', tier: 'fast' },
+    curve: 'standard',
+    cell: { component: 'tabs', part: 'panel', transition: 'active change' },
+    meaning:
+      'The incoming tab panel as the selection moves: the calendar month-change moment on a panel instead of a grid, one tier quicker because a panel swap covers no distance.',
+    contexts: ['tabs', 'panel', 'crossfade'],
+  },
+  // ------------------------------------------------------------- load / appearance
+  'avatar-image-load': {
+    keyframe: 'fade-in',
+    duration: { kind: 'tier', tier: 'moderate' },
+    curve: 'enter',
+    cell: { component: 'avatar', part: 'image', transition: 'load' },
+    meaning: 'An avatar image arriving once it has decoded, rather than snapping in.',
+    contexts: ['avatar', 'image', 'load'],
+  },
+  'image-img-load': {
+    keyframe: 'fade-in',
+    duration: { kind: 'tier', tier: 'moderate' },
+    curve: 'enter',
+    cell: { component: 'image', part: 'img', transition: 'load' },
+    meaning: 'An image arriving once it has decoded: the avatar moment, declared on its own row.',
+    contexts: ['image', 'load'],
+  },
+  'embed-frame-load': {
+    keyframe: 'fade-in',
+    duration: { kind: 'tier', tier: 'moderate' },
+    curve: 'enter',
+    cell: { component: 'embed', part: 'frame', transition: 'load' },
+    meaning: 'An embedded frame arriving once the thing inside it has loaded.',
+    contexts: ['embed', 'iframe', 'load'],
+  },
+  'alert-root-appear': {
+    keyframe: 'fade-in',
+    duration: { kind: 'tier', tier: 'normal' },
+    curve: 'enter',
+    cell: { component: 'alert', part: 'root', transition: 'appear' },
+    meaning:
+      'An alert arriving in the flow. The row declares fade + a short translate; the fade is emitted and the translate is not, for the reason the sheet row gives.',
+    contexts: ['alert', 'notice', 'appear'],
+  },
+  'scroll-area-scrollbar-show': {
+    keyframe: 'fade-in',
+    duration: { kind: 'tier', tier: 'fast' },
+    curve: 'standard',
+    cell: { component: 'scroll-area', part: 'scrollbar', transition: 'show' },
+    meaning: 'A scrollbar surfacing when the pointer or a scroll says it is wanted.',
+    contexts: ['scroll-area', 'scrollbar'],
+  },
+  'scroll-area-scrollbar-hide': {
+    keyframe: 'fade-out',
+    duration: { kind: 'tier', tier: 'fast' },
+    curve: 'standard',
+    cell: { component: 'scroll-area', part: 'scrollbar', transition: 'hide' },
+    meaning: 'A scrollbar standing down once the scrolling that summoned it stops.',
+    contexts: ['scroll-area', 'scrollbar'],
+  },
+  'skeleton-root-waiting': {
+    keyframe: 'pulse',
+    duration: { kind: 'period', period: 'shimmer' },
+    cell: { component: 'skeleton', part: 'root', transition: 'waiting' },
+    meaning:
+      'A skeleton breathing while its content loads. A loop, so it takes a period rather than a tier -- and reduced motion may slow it but never stops it.',
+    contexts: ['skeleton', 'loading-placeholder'],
+  },
+  'skeleton-root-content-ready': {
+    keyframe: 'fade-out',
+    duration: { kind: 'tier', tier: 'fast' },
+    curve: 'exit',
+    cell: { component: 'skeleton', part: 'root', transition: 'content ready' },
+    meaning: 'A skeleton standing down once the real content has arrived.',
+    contexts: ['skeleton', 'loading-placeholder'],
+  },
+  'spinner-root-busy': {
+    keyframe: 'spin',
+    duration: { kind: 'period', period: 'spin' },
+    cell: { component: 'spinner', part: 'root', transition: 'busy' },
+    meaning:
+      'A spinner turning while the system works. A stopped spinner says the work stopped, so this loop is exempt from the reduced-motion zeroing.',
+    contexts: ['spinner', 'loading', 'busy'],
+  },
+  'progress-root-indeterminate': {
+    keyframe: 'pulse',
+    duration: { kind: 'period', period: 'shimmer' },
+    cell: { component: 'progress', part: 'root', transition: 'indeterminate' },
+    meaning:
+      'A progress bar with no known end, pulsing to say work continues. Exempt from the reduced-motion zeroing for the same reason as the spinner.',
+    contexts: ['progress', 'indeterminate', 'loading'],
+  },
+  // -------------------------------------------------------------------- text input
+  'input-otp-caret-idle': {
+    keyframe: 'caret-blink',
+    duration: { kind: 'period', period: 'blink' },
+    cell: { component: 'input-otp', part: 'caret', transition: 'idle' },
+    meaning: 'The caret in an empty OTP slot, blinking to say the field is waiting for a key.',
+    contexts: ['input-otp', 'input-caret', 'text-cursor'],
   },
 };
 
