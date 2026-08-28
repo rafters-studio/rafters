@@ -13,7 +13,7 @@ export interface SwitchClassSet {
 const baseTrackClasses =
   'peer inline-flex shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent ' +
   'bg-input ' +
-  'transition-colors duration-200 motion-reduce:transition-none ' +
+  'transition-colors duration-moderate motion-reduce:transition-none ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background ' +
   'disabled:cursor-not-allowed disabled:opacity-50';
 
@@ -36,7 +36,7 @@ const trackSizeClasses: Record<SwitchSize, string> = {
 
 const baseThumbClasses =
   'pointer-events-none block rounded-full bg-background shadow-sm ring-0 translate-x-0 ' +
-  'transition-transform duration-200 motion-reduce:transition-none';
+  'transition-transform duration-moderate motion-reduce:transition-none';
 
 const thumbSizeClasses: Record<SwitchSize, string> = {
   sm: 'h-4 w-4 data-[state=checked]:translate-x-4',

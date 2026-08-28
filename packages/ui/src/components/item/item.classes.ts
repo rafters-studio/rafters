@@ -27,7 +27,7 @@ const itemFocusClasses =
   'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1';
 
 /** Colour transition, honoured only when the user allows motion. */
-const itemMotionClasses = 'transition-colors duration-150 motion-reduce:transition-none';
+const itemMotionClasses = 'transition-colors duration-fast motion-reduce:transition-none';
 
 /** Size variants: padding + the semantic typography role token per scale. */
 export const itemSizeClasses: Record<ItemSize, string> = {

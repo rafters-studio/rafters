@@ -21,7 +21,7 @@ describe('collapsible classes', () => {
   it('the content clips its region and declares the height-axis motion intent', () => {
     expect(classes.content).toContain('overflow-hidden');
     expect(classes.content).toContain('transition-all');
-    expect(classes.content).toContain('duration-200');
+    expect(classes.content).toContain('duration-moderate');
   });
 
   it('motion respects reduced-motion on both the trigger and the content', () => {
