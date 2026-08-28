@@ -4,4 +4,4 @@
  * Written by packages/cli/scripts/sync-version.ts from the CLI's own
  * package.json version at build time -- do not edit by hand.
  */
-export const RAFTERS_VERSION = '0.2.3';
+export const RAFTERS_VERSION = '0.3.0';
