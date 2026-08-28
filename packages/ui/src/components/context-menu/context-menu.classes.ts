@@ -80,13 +80,28 @@ const content =
 // `overflow-hidden` and its roving-focus scope) or portalled, which breaks
 // that DOM adjacency, so the `:hover` selector can no longer match it. From
 // then on `data-[state=open]` -- flipped by the same pointerenter/pointerleave
-// listeners, plus keyboard (ArrowRight/ArrowLeft/Escape) -- is the ONLY
-// reachable path, and it carries the identical duration/curve/delay: the
-// matrix's cell governs the transition regardless of which input opened it,
-// so no keyboard-instant exception is invented here (contrast tooltip/
-// hover-card, whose data-state path deliberately drops delay-hover-intent for
-// a forced/keyboard open -- their content never moves, so that path races the
-// live `:hover` rule; here it never does, so there is nothing to race).
+// listeners, plus keyboard (ArrowRight/ArrowLeft/Escape) and click -- is the
+// ONLY reachable path. Unlike tooltip/hover-card (#2148), that single path is
+// not uniformly delayed OR uniformly instant: a genuine pointer hover still
+// needs the hover-intent filter (accidental transit should not pop a
+// submenu), but a click or keyboard open has already declared intent and
+// must be instant -- WAI-ARIA menu keyboard, and the issue's own acceptance
+// criterion that keyboard navigation is unchanged. `data-open-source` is the
+// disambiguator: `bindContextSubMenu`/`ContextMenuSub` dispatch `open` with a
+// `'pointer'` or `'discrete'` payload (context-menu.behavior.ts), the score
+// projects it straight onto `subContent`, and this is a plain input-source
+// MARK, not a timing decision -- the CSS below still owns every duration,
+// curve, and delay. `data-[state=open]:data-[open-source=pointer]:` scopes
+// `delay-hover-intent` to that mark; click and keyboard opens carry
+// `data-open-source="discrete"` instead (never `"pointer"`, so the scoped
+// selector above never matches them) and so resolve through the un-delayed
+// `data-[state=open]:duration-moderate`/`ease-enter` pair a few lines below,
+// with no reveal delay whatsoever (contrast tooltip/hover-card, whose
+// data-state path drops delay-hover-intent for a forced/keyboard open because
+// their content never moves and that path would otherwise race the live
+// `:hover` rule; here it never does, so there is nothing to race -- the
+// pointer/discrete split exists for the hover-intent filter itself, not to
+// avoid a race).
 //
 // No `data-dismissed` escape hatch: tooltip/hover-card need one because their
 // content stays a real sibling under `:hover`, so an Escape-dismissed panel
@@ -124,7 +139,8 @@ const subContent =
   '[:is([data-part=sub]:has(>[data-part=sub-trigger]:is(:hover,:focus-within)),[data-part=sub]:has(>[data-part=sub-content]:is(:hover,:focus-within)))>&]:delay-hover-intent ' +
   'data-[state=open]:opacity-100 data-[state=open]:scale-100 data-[state=open]:pointer-events-auto ' +
   'data-[state=open]:transition-[opacity,scale] ' +
-  'data-[state=open]:duration-moderate data-[state=open]:ease-enter data-[state=open]:delay-hover-intent';
+  'data-[state=open]:duration-moderate data-[state=open]:ease-enter ' +
+  'data-[state=open]:data-[open-source=pointer]:delay-hover-intent';
 
 const itemBase =
   'relative flex cursor-default select-none items-center rounded-sm text-body-small ts-body-small outline-none ' +

@@ -569,7 +569,7 @@ interface SubMenuContextValue {
   config: ContextSubMenuConfig;
   ids: PartIds<ContextSubMenuPart>;
   aria: Partial<Record<ContextSubMenuPart, AriaAttrs>>;
-  request: (action: keyof ContextSubMenuActions) => boolean;
+  request: (action: keyof ContextSubMenuActions, source?: 'pointer' | 'discrete') => boolean;
   effectiveOpen: boolean;
 }
 
@@ -623,10 +623,18 @@ export function ContextMenuSub({
   // the hover-intent delay the submenu's `closed -> open` cell assigns is a
   // CSS `transition-delay` on `subContent` (context-menu.classes.ts, consuming
   // `--rafters-delay-hover-intent`), not a value this component reads or sets.
+  // `source` (only meaningful for 'open') is that delay's disambiguator: the
+  // score projects it as `data-open-source`, and the CSS scopes the delay to
+  // `'pointer'` so a click or keyboard open (marked 'discrete' by its caller
+  // below) resolves through the un-delayed cell instead -- keyboard
+  // navigation stays exactly as fast as before this issue. Defaults to
+  // 'discrete' so a caller that forgets to pass one fails safe.
   const request = React.useCallback(
-    (action: keyof ContextSubMenuActions): boolean => {
+    (action: keyof ContextSubMenuActions, source?: 'pointer' | 'discrete'): boolean => {
       const { config: cfg, onOpenChange: cb } = latest.current;
-      if (!dispatch(action, cfg)) return false;
+      const ok =
+        action === 'open' ? dispatch('open', cfg, source ?? 'discrete') : dispatch('close', cfg);
+      if (!ok) return false;
       cb?.(action === 'open');
       return true;
     },
@@ -698,7 +706,7 @@ export function ContextMenuSubTrigger({
       {...sub.aria.subTrigger}
       onPointerEnter={(event: React.PointerEvent<HTMLDivElement>) => {
         onPointerEnter?.(event);
-        if (!disabled) sub.request('open');
+        if (!disabled) sub.request('open', 'pointer');
       }}
       onPointerLeave={(event: React.PointerEvent<HTMLDivElement>) => {
         onPointerLeave?.(event);
@@ -706,7 +714,7 @@ export function ContextMenuSubTrigger({
       }}
       onClick={(event: React.MouseEvent<HTMLDivElement>) => {
         onClick?.(event);
-        if (!disabled) sub.request('open');
+        if (!disabled) sub.request('open', 'discrete');
       }}
       onKeyDown={(event: React.KeyboardEvent<HTMLDivElement>) => {
         onKeyDown?.(event);
@@ -719,7 +727,7 @@ export function ContextMenuSubTrigger({
         );
         if (action === 'open') {
           event.preventDefault();
-          sub.request('open');
+          sub.request('open', 'discrete');
         }
       }}
       {...props}
@@ -777,7 +785,7 @@ export function ContextMenuSubContent({
       tabIndex={-1}
       className={classy(classes.subContent, className)}
       {...sub.aria.subContent}
-      onPointerEnter={() => sub.request('open')}
+      onPointerEnter={() => sub.request('open', 'pointer')}
       onPointerLeave={() => sub.request('close')}
       onKeyDown={handleKeyDown}
       {...props}

@@ -137,10 +137,22 @@ export interface ContextSubMenuConfig {
 
 export interface ContextSubMenuState {
   open: boolean;
+  /**
+   * Which input opened the panel, stamped by the `open` action's payload:
+   * `'pointer'` for a genuine pointerenter (hover), `'discrete'` for a click
+   * or the ArrowRight/Enter/Space keyboard open. `undefined` when the panel
+   * has never gone through an in-score `open` dispatch (initial/controlled
+   * `open: true`). `context-menu.classes.ts` reads this back as
+   * `data-open-source` to decide whether `delay-hover-intent` applies --
+   * a genuine hover still gets the intent filter, a click or keyboard open
+   * (declared intent) does not. Optional so existing `{ open: boolean }`
+   * state literals stay valid.
+   */
+  openSource?: 'pointer' | 'discrete' | undefined;
 }
 
 export type ContextSubMenuActions = {
-  open: undefined;
+  open: 'pointer' | 'discrete';
   close: undefined;
 };
 
@@ -164,8 +176,8 @@ const contextSubMenuSlice: Slice<
   },
   initialState: (config) => ({ open: config.open ?? config.defaultOpen ?? false }),
   actions: {
-    open: () => ({ open: true }),
-    close: () => ({ open: false }),
+    open: (state, source) => ({ ...state, open: true, openSource: source }),
+    close: (state) => ({ ...state, open: false, openSource: undefined }),
   },
   canDispatch: (state, action, config) =>
     action === 'open' ? !isSubMenuOpen(state, config) : isSubMenuOpen(state, config),
@@ -186,6 +198,25 @@ const contextSubMenuSlice: Slice<
         // the submenu reveal is CSS opacity/scale over `:hover`/`:focus-within`
         // and `data-state`, and `hidden` (display:none) would defeat both --
         // a hidden node cannot transition, so it can never fade or scale in.
+        //
+        // Which input opened the panel, read back by context-menu.classes.ts
+        // as `data-[open-source=pointer]` to scope `delay-hover-intent` to a
+        // genuine hover -- undefined (removed) while closed, or on a
+        // controlled/never-dispatched open, so a forced open carries no delay
+        // either (the tooltip/hover-card #2148 doctrine: a consumer forcing
+        // `open` true has already declared intent).
+        'data-open-source': open ? state.openSource : undefined,
+        // Dropping `hidden` (above) means a closed panel is still a live
+        // `role="menu"` node with `role="menuitem"` children in the
+        // accessibility tree -- `tabindex="-1"` keeps them out of the TAB
+        // order but not out of a screen reader's browse-mode cursor.
+        // `aria-hidden`, not `inert`: `inert` would also zero pointer-events
+        // immediately, which breaks the pointerenter recovery path below
+        // (bindContextSubMenu's `onContentEnter`) that relies on the CLOSED
+        // rule's `pointer-events` still riding the transition for part of the
+        // close. `aria-hidden` has no interaction effect, only an
+        // accessibility-tree one.
+        'aria-hidden': open ? undefined : 'true',
       },
     };
   },
@@ -324,6 +355,18 @@ export function startContextSubMenuEffects(subContent: HTMLElement, loop: boolea
   return () => {
     releaseTypeahead();
     releaseRoving();
+    // Closing does not remove sub-content from the DOM (#2152: a hidden node
+    // cannot transition), and roving-focus's own cleanup only detaches its
+    // listeners -- it never rewrites the `tabindex` it was managing. Left
+    // alone, whichever item was current when the panel closed keeps
+    // `tabindex="0"`: a real Tab stop, and a focusable descendant inside the
+    // `aria-hidden="true"` panel the aria() projection now sets on close
+    // (axe's aria-hidden-focus rule). Put every item back to the
+    // SSR-authored baseline (context-menu-sub.astro: `tabindex="-1"`) the
+    // instant the panel stops being interactive.
+    for (const item of subContent.querySelectorAll<HTMLElement>(MENU_ITEM_SELECTOR)) {
+      item.setAttribute('tabindex', '-1');
+    }
   };
 }
 
@@ -375,7 +418,13 @@ export function bindContextSubMenu(
   document.body.appendChild(subContent);
 
   const { memory, dispatch } = createBehavior(contextSubMenu, config);
-  const request = (action: keyof ContextSubMenuActions): boolean => dispatch(action, config);
+  // `source` only matters for 'open' (see ContextSubMenuState.openSource) --
+  // branched per action so each `dispatch` call stays fully typed against its
+  // own literal key rather than a widened `keyof ContextSubMenuActions`.
+  // Defaults to 'discrete' (never delayed) so a caller that forgets to pass
+  // one fails safe rather than silently inheriting a hover-intent delay.
+  const request = (action: keyof ContextSubMenuActions, source?: 'pointer' | 'discrete'): boolean =>
+    action === 'open' ? dispatch('open', config, source ?? 'discrete') : dispatch('close', config);
 
   const ids = {
     subTrigger: subTrigger.id,
@@ -415,29 +464,36 @@ export function bindContextSubMenu(
   // reveal's hover-intent delay is a CSS `transition-delay` on the sub-content
   // rule (context-menu.classes.ts, consuming `--rafters-delay-hover-intent`),
   // not a JS timer. `data-state` and aria-expanded flip the instant the pointer
-  // crosses the boundary; the stylesheet decides when that becomes visible.
-  const onTriggerEnter = () => void request('open');
+  // crosses the boundary; the stylesheet decides when that becomes visible --
+  // and it only decides to delay it for a genuine pointerenter ('pointer'
+  // below). A click or keyboard open has already declared intent, so it is
+  // marked 'discrete' and the reveal rule resolves through the un-delayed
+  // duration-moderate/ease-enter pair instead (keyboard navigation stays
+  // exactly as fast as it was before #2152's `data-state` path became the
+  // only reachable one -- see context-menu.classes.ts for the full CSS side).
+  const onTriggerEnter = () => void request('open', 'pointer');
   const onTriggerLeave = () => void request('close');
   const onTriggerClick = (event: Event) => {
     event.stopPropagation();
-    request('open');
+    request('open', 'discrete');
   };
   const onTriggerKeydown = (event: KeyboardEvent) => {
     const action = contextSubMenu.keymap(keyInput(event), memory.get(), 'subTrigger', config);
     if (action === 'open') {
       event.preventDefault();
       event.stopPropagation();
-      request('open');
+      request('open', 'discrete');
     }
   };
   // Re-asserts open if the pointer lands on the panel after a premature close
   // (the panel sits flush against the trigger, zero `sideOffset`, but a fast
   // or diagonal crossing can still land outside both boxes for an instant).
   // `canDispatch` no-ops an already-open request, so this is safe when the
-  // panel never actually closed. Mirrors React's `ContextMenuSubContent`
-  // `onPointerEnter` (context-menu.tsx) -- one score, three performances, so
-  // the DOM-native bind keeps the same recovery path.
-  const onContentEnter = () => void request('open');
+  // panel never actually closed. Still a genuine pointer signal, so it is
+  // marked 'pointer' like the trigger's own pointerenter. Mirrors React's
+  // `ContextMenuSubContent` `onPointerEnter` (context-menu.tsx) -- one score,
+  // three performances, so the DOM-native bind keeps the same recovery path.
+  const onContentEnter = () => void request('open', 'pointer');
   const onContentLeave = () => void request('close');
   const onContentKeydown = (event: KeyboardEvent) => {
     const action = contextSubMenu.keymap(keyInput(event), memory.get(), 'subContent', config);

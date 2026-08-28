@@ -7,6 +7,13 @@
  * the SSR markup supports arbitrary nesting, the same depth bindContextSubMenu
  * binds. Not a decorator; a fragment of the one Astro performance, sharing the
  * same classes and the same data-part contract.
+ *
+ * `aria-hidden="true"` on the closed sub-content mirrors the score's aria()
+ * projection (context-menu.behavior.ts) from first paint: a present-but-closed
+ * `role="menu"` node would otherwise be reachable by a screen reader's
+ * browse-mode cursor before any JS ever runs (#2187 review). It has no visual
+ * or interaction effect, so it does not touch the `:hover`/`:focus-within`
+ * reveal or the transition -- both are gone the instant JS flips it to open.
  */
 import ContextMenuSub from './context-menu-sub.astro';
 import { contextMenuClasses } from './context-menu.classes';
@@ -54,6 +61,7 @@ const classes = contextMenuClasses({}, { open: false, x: 0, y: 0 });
     role="menu"
     aria-label={label}
     data-state="closed"
+    aria-hidden="true"
     class={classes.subContent}
     style="position: fixed; left: 0; top: 0;"
   >

@@ -155,13 +155,41 @@ describe('the hover-reveal candidates compile (#2148)', () => {
     expect(css, 'scale-(--rafters-consumed-extent) utility missing').toContain(
       'scale:var(--rafters-consumed-extent)',
     );
-    // The reveal rule and the data-state rule both carry the SAME delay -- no
-    // keyboard-instant exception, unlike tooltip/hover-card (see
-    // context-menu.classes.ts for why: sub-content moves at runtime, so the two
-    // rules never race the way tooltip/hover-card's do).
-    expect(css).toMatch(
-      /data-\\\[state\\=open\\\]\\:delay-hover-intent[^{]*\{[^}]*transition-delay/,
-    );
+    // Unlike tooltip/hover-card (whose data-state path drops delay-hover-intent
+    // for a forced/keyboard open outright), context-menu's data-state path is
+    // the ONLY reachable one once sub-content portals (see context-menu.classes.ts),
+    // so it cannot drop the delay uniformly without also un-delaying a genuine
+    // hover. `data-open-source=pointer` is the disambiguator (issue's own
+    // acceptance criterion 6: keyboard navigation unchanged) -- the stacked
+    // `data-[state=open]:data-[open-source=pointer]:` variant must compile to a
+    // real rule carrying `transition-delay`, not silently drop (Tailwind drops a
+    // malformed candidate with no warning, which is this whole file's premise).
+    // Plain substring search, not a regex built from `escapeCandidate`'s
+    // output: that string already carries the LITERAL backslashes CSS escaping
+    // puts in the selector text, and handing literal backslashes to `new
+    // RegExp()` re-interprets each one as regex escape syntax instead of a
+    // character to match -- silently searching for the UNESCAPED selector,
+    // which can never appear in Tailwind's output.
+    const pointerDelayCandidate = 'data-[state=open]:data-[open-source=pointer]:delay-hover-intent';
+    const pointerDelaySelector = escapeCandidate(pointerDelayCandidate);
+    const selectorAt = css.indexOf(pointerDelaySelector);
+    expect(selectorAt, 'stacked data-open-source delay selector missing').toBeGreaterThanOrEqual(0);
+    const ruleStart = css.indexOf('{', selectorAt);
+    const ruleEnd = css.indexOf('}', ruleStart);
+    expect(
+      css.slice(ruleStart, ruleEnd),
+      'stacked data-open-source delay rule does not set transition-delay',
+    ).toContain('transition-delay');
+    // The plain (unscoped) candidate this PR removed must NOT reappear as its
+    // OWN selector -- pinning the negative keeps a future edit from silently
+    // reinstating the uniform delay this file used to declare correct. It is
+    // still a (harmless) substring of the stacked selector above, so this
+    // checks for it immediately followed by a rule body, not anywhere at all.
+    const unscopedDelaySelector = escapeCandidate('data-[state=open]:delay-hover-intent');
+    expect(
+      css.includes(`${unscopedDelaySelector}[`),
+      'unscoped data-state=open delay candidate reappeared',
+    ).toBe(false);
   }, 120_000);
 
   it('navigation-menu: the reveal is the ITEM, the dismissal is the PANEL', async () => {

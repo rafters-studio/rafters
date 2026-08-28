@@ -88,17 +88,34 @@ describe('context-menu classes', () => {
     }
   });
 
-  it('a keyboard/programmatic open reveals on the same cell (same delay -- data-state never races a live :hover rule once portalled)', () => {
+  it('a keyboard/click open reveals on the same cell but with NO reveal delay (data-state is the only reachable path once portalled, but click/keyboard have already declared intent)', () => {
     for (const utility of [
       'opacity-100',
       'scale-100',
       'pointer-events-auto',
       'duration-moderate',
       'ease-enter',
-      'delay-hover-intent',
     ]) {
       expect(classes.subContent).toContain(`data-[state=open]:${utility}`);
     }
+    // The bare (unscoped) delay candidate must be gone -- it would apply to
+    // EVERY data-state=open, keyboard/click included, which is exactly the
+    // regression this PR fixes (acceptance criterion 6: keyboard navigation
+    // unchanged). `delay-hover-intent` is the string's last candidate, so
+    // `endsWith` is the precise check -- a plain `.toContain` would also match
+    // as a substring of the scoped `data-[open-source=pointer]:` candidate.
+    expect(classes.subContent.endsWith('data-[state=open]:delay-hover-intent')).toBe(false);
+  });
+
+  it('a genuine pointer-sourced data-state open (the portalled hover/recovery path) still carries the hover-intent delay, scoped by data-open-source', () => {
+    // `data-open-source="pointer"` is stamped only by a pointerenter handler
+    // (context-menu.behavior.ts's `bindContextSubMenu`, React's
+    // `ContextMenuSub`) -- an input-source MARK, not a timing decision. The
+    // delay stays scoped to it so a click or keyboard open (marked
+    // 'discrete', or carrying no mark at all) never inherits it.
+    expect(classes.subContent).toContain(
+      'data-[state=open]:data-[open-source=pointer]:delay-hover-intent',
+    );
   });
 
   it('states no timing as a literal and queries reduced motion nowhere', () => {
