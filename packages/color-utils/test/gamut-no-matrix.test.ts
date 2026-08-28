@@ -69,8 +69,6 @@ function findHandRolledMatrices(trees: readonly string[]): string[] {
   const offenders: string[] = [];
   for (const tree of trees) {
     for (const file of sourceFiles(join(repoRoot, tree))) {
-      // This test file names the literals it hunts for; it is not a matrix.
-      if (file === fileURLToPath(import.meta.url)) continue;
       const content = readFileSync(file, 'utf-8');
       for (const coefficient of MATRIX_COEFFICIENTS) {
         if (content.includes(coefficient)) {
