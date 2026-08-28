@@ -182,7 +182,10 @@ const contextSubMenuSlice: Slice<
       subContent: {
         'aria-orientation': 'vertical',
         'data-state': open ? 'open' : 'closed',
-        hidden: open ? undefined : true,
+        // No `hidden` toggle here (unlike the parent menu's content, #2152):
+        // the submenu reveal is CSS opacity/scale over `:hover`/`:focus-within`
+        // and `data-state`, and `hidden` (display:none) would defeat both --
+        // a hidden node cannot transition, so it can never fade or scale in.
       },
     };
   },
@@ -208,10 +211,6 @@ export const contextSubMenu: BehaviorSpec<
   ContextSubMenuActions,
   ContextSubMenuPart
 > = compose('context-sub-menu', contextSubMenuSlice);
-
-/** Hover-open/close intent delay for submenus, ms (matches the oracle). This is
- *  a JS pointer-intent timeout, not a CSS transition -- no motion token applies. */
-export const SUB_MENU_HOVER_DELAY = 100;
 
 /** Apply a resolved aria projection to an element (validate:false skips the
  *  author-input coercion that would flip a projected 'false'). */
@@ -392,14 +391,6 @@ export function bindContextSubMenu(
 
   let stopEffects: (() => void) | null = null;
   let prevOpen = isSubMenuOpen(memory.get(), config);
-  let openTimer: ReturnType<typeof setTimeout> | undefined;
-  let closeTimer: ReturnType<typeof setTimeout> | undefined;
-  const clearTimers = () => {
-    if (openTimer) clearTimeout(openTimer);
-    if (closeTimer) clearTimeout(closeTimer);
-    openTimer = undefined;
-    closeTimer = undefined;
-  };
 
   const render = () => {
     const state = memory.get();
@@ -420,17 +411,15 @@ export function bindContextSubMenu(
   };
   const unsubscribe = memory.subscribe(render);
 
-  const onTriggerEnter = () => {
-    clearTimers();
-    openTimer = setTimeout(() => void request('open'), SUB_MENU_HOVER_DELAY);
-  };
-  const onTriggerLeave = () => {
-    clearTimers();
-    closeTimer = setTimeout(() => void request('close'), SUB_MENU_HOVER_DELAY);
-  };
+  // Hover open/close is a direct, undelayed state update (#2152): the visual
+  // reveal's hover-intent delay is a CSS `transition-delay` on the sub-content
+  // rule (context-menu.classes.ts, consuming `--rafters-delay-hover-intent`),
+  // not a JS timer. `data-state` and aria-expanded flip the instant the pointer
+  // crosses the boundary; the stylesheet decides when that becomes visible.
+  const onTriggerEnter = () => void request('open');
+  const onTriggerLeave = () => void request('close');
   const onTriggerClick = (event: Event) => {
     event.stopPropagation();
-    clearTimers();
     request('open');
   };
   const onTriggerKeydown = (event: KeyboardEvent) => {
@@ -441,13 +430,7 @@ export function bindContextSubMenu(
       request('open');
     }
   };
-  const onContentEnter = () => {
-    clearTimers();
-  };
-  const onContentLeave = () => {
-    clearTimers();
-    closeTimer = setTimeout(() => void request('close'), SUB_MENU_HOVER_DELAY);
-  };
+  const onContentLeave = () => void request('close');
   const onContentKeydown = (event: KeyboardEvent) => {
     const action = contextSubMenu.keymap(keyInput(event), memory.get(), 'subContent', config);
     if (action === 'close') {
@@ -476,7 +459,6 @@ export function bindContextSubMenu(
   subTrigger.addEventListener('pointerleave', onTriggerLeave);
   subTrigger.addEventListener('click', onTriggerClick);
   subTrigger.addEventListener('keydown', onTriggerKeydown);
-  subContent.addEventListener('pointerenter', onContentEnter);
   subContent.addEventListener('pointerleave', onContentLeave);
   subContent.addEventListener('keydown', onContentKeydown);
   subContent.addEventListener('click', onContentClick);
@@ -491,7 +473,6 @@ export function bindContextSubMenu(
       request('close');
     },
     teardown: () => {
-      clearTimers();
       unsubscribe();
       stopEffects?.();
       stopEffects = null;
@@ -500,7 +481,6 @@ export function bindContextSubMenu(
       subTrigger.removeEventListener('pointerleave', onTriggerLeave);
       subTrigger.removeEventListener('click', onTriggerClick);
       subTrigger.removeEventListener('keydown', onTriggerKeydown);
-      subContent.removeEventListener('pointerenter', onContentEnter);
       subContent.removeEventListener('pointerleave', onContentLeave);
       subContent.removeEventListener('keydown', onContentKeydown);
       subContent.removeEventListener('click', onContentClick);

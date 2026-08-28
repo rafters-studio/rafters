@@ -48,7 +48,6 @@ import {
   positionSubContent,
   startContextMenuEffects,
   startContextSubMenuEffects,
-  SUB_MENU_HOVER_DELAY,
   type ContextMenuActions,
   type ContextMenuConfig,
   type ContextMenuPart,
@@ -572,9 +571,6 @@ interface SubMenuContextValue {
   aria: Partial<Record<ContextSubMenuPart, AriaAttrs>>;
   request: (action: keyof ContextSubMenuActions) => boolean;
   effectiveOpen: boolean;
-  openViaHover: () => void;
-  closeViaHover: () => void;
-  cancelHover: () => void;
 }
 
 const SubMenuCtx = React.createContext<SubMenuContextValue | null>(null);
@@ -621,15 +617,12 @@ export function ContextMenuSub({
     [uid],
   );
 
-  const openTimer = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const closeTimer = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const clearTimers = React.useCallback(() => {
-    if (openTimer.current) clearTimeout(openTimer.current);
-    if (closeTimer.current) clearTimeout(closeTimer.current);
-  }, []);
-
   const latest = React.useRef({ config, onOpenChange });
   latest.current = { config, onOpenChange };
+  // Hover open/close dispatches `request` directly, with no JS timer (#2152):
+  // the hover-intent delay the submenu's `closed -> open` cell assigns is a
+  // CSS `transition-delay` on `subContent` (context-menu.classes.ts, consuming
+  // `--rafters-delay-hover-intent`), not a value this component reads or sets.
   const request = React.useCallback(
     (action: keyof ContextSubMenuActions): boolean => {
       const { config: cfg, onOpenChange: cb } = latest.current;
@@ -639,16 +632,6 @@ export function ContextMenuSub({
     },
     [dispatch],
   );
-
-  const openViaHover = React.useCallback(() => {
-    clearTimers();
-    openTimer.current = setTimeout(() => request('open'), SUB_MENU_HOVER_DELAY);
-  }, [clearTimers, request]);
-  const closeViaHover = React.useCallback(() => {
-    clearTimers();
-    closeTimer.current = setTimeout(() => request('close'), SUB_MENU_HOVER_DELAY);
-  }, [clearTimers, request]);
-  React.useEffect(() => () => clearTimers(), [clearTimers]);
 
   // Position + roving/typeahead + focus-first on the open transition. The
   // sub-content portals to body, so the parent's roving never sees its items.
@@ -678,9 +661,6 @@ export function ContextMenuSub({
     aria,
     request,
     effectiveOpen,
-    openViaHover,
-    closeViaHover,
-    cancelHover: clearTimers,
   };
 
   return <SubMenuCtx.Provider value={value}>{children}</SubMenuCtx.Provider>;
@@ -718,11 +698,11 @@ export function ContextMenuSubTrigger({
       {...sub.aria.subTrigger}
       onPointerEnter={(event: React.PointerEvent<HTMLDivElement>) => {
         onPointerEnter?.(event);
-        if (!disabled) sub.openViaHover();
+        if (!disabled) sub.request('open');
       }}
       onPointerLeave={(event: React.PointerEvent<HTMLDivElement>) => {
         onPointerLeave?.(event);
-        sub.closeViaHover();
+        sub.request('close');
       }}
       onClick={(event: React.MouseEvent<HTMLDivElement>) => {
         onClick?.(event);
@@ -795,10 +775,10 @@ export function ContextMenuSubContent({
       ref={presenceRef}
       role="menu"
       tabIndex={-1}
-      className={classy(classes.content, className)}
+      className={classy(classes.subContent, className)}
       {...sub.aria.subContent}
-      onPointerEnter={() => sub.cancelHover()}
-      onPointerLeave={() => sub.closeViaHover()}
+      onPointerEnter={() => sub.request('open')}
+      onPointerLeave={() => sub.request('close')}
       onKeyDown={handleKeyDown}
       {...props}
     >

@@ -206,7 +206,7 @@ describe('context-sub-menu score', () => {
     expect(contextSubMenu.keymap({ key: 'ArrowRight' }, open, 'subContent', base)).toBeNull();
   });
 
-  it('aria: trigger advertises the popup, content is a hidden vertical menu when closed', () => {
+  it('aria: trigger advertises the popup, content is a vertical menu carrying data-state (never `hidden` -- #2152: a hidden node cannot transition, and the CSS reveal must work with JS off)', () => {
     const ids = { subTrigger: 'st', subContent: 'sc' };
     const closedAria = contextSubMenu.aria(closed, base, ids);
     expect(closedAria.subTrigger).toEqual({
@@ -215,11 +215,18 @@ describe('context-sub-menu score', () => {
       'aria-controls': undefined,
       'data-state': 'closed',
     });
-    expect(closedAria.subContent?.['hidden']).toBe(true);
+    expect(closedAria.subContent).toEqual({
+      'aria-orientation': 'vertical',
+      'data-state': 'closed',
+    });
+    expect(closedAria.subContent?.['hidden']).toBeUndefined();
     const openAria = contextSubMenu.aria(open, base, ids);
     expect(openAria.subTrigger?.['aria-expanded']).toBe('true');
     expect(openAria.subTrigger?.['aria-controls']).toBe('sc');
-    expect(openAria.subContent?.['hidden']).toBeUndefined();
+    expect(openAria.subContent).toEqual({
+      'aria-orientation': 'vertical',
+      'data-state': 'open',
+    });
   });
 });
 

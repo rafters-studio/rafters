@@ -302,4 +302,33 @@ describe('context-menu submenu [react]', () => {
     expect(menu()).toBeNull();
     expect(subContent()).toBeNull();
   });
+
+  // #2152: the hover-intent delay is a CSS `transition-delay`
+  // (`delay-hover-intent` in context-menu.classes.ts), never a JS timer -- so
+  // hovering the sub-trigger flips `data-state` to open the instant the
+  // pointer event fires, with `setTimeout` never scheduled for it.
+  it('opens the submenu on pointer hover with no JS timer', async () => {
+    setupWithSub();
+    openMenu();
+    const spy = vi.spyOn(globalThis, 'setTimeout');
+    spy.mockClear();
+    fireEvent.pointerEnter(subTrigger());
+    expect(spy).not.toHaveBeenCalled();
+    expect(subContent()).not.toBeNull();
+    expect(subTrigger().getAttribute('aria-expanded')).toBe('true');
+    spy.mockRestore();
+  });
+
+  it('closes the submenu on pointer leave with no JS timer', async () => {
+    setupWithSub();
+    openMenu();
+    fireEvent.pointerEnter(subTrigger());
+    expect(subContent()).not.toBeNull();
+    const spy = vi.spyOn(globalThis, 'setTimeout');
+    spy.mockClear();
+    fireEvent.pointerLeave(subTrigger());
+    expect(spy).not.toHaveBeenCalled();
+    expect(subContent()).toBeNull();
+    spy.mockRestore();
+  });
 });

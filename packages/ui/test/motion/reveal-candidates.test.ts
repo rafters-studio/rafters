@@ -41,16 +41,20 @@ import {
   statePlugin,
   TokenRegistry,
 } from '@rafters/design-tokens';
+import { contextMenuClasses } from '../../src/components/context-menu/context-menu.classes';
 import { hoverCardClasses } from '../../src/components/hover-card/hover-card.classes';
 import { navigationMenuClasses } from '../../src/components/navigation-menu/navigation-menu.classes';
 import { tooltipClasses } from '../../src/components/tooltip/tooltip.classes';
 
-const COMPONENTS = ['tooltip', 'hover-card', 'navigation-menu'] as const;
+const COMPONENTS = ['tooltip', 'hover-card', 'navigation-menu', 'context-menu'] as const;
 
 const CONTENT_CLASSES: Record<(typeof COMPONENTS)[number], string> = {
   tooltip: tooltipClasses({}, { open: false }).content,
   'hover-card': hoverCardClasses({}, { open: false }).content,
   'navigation-menu': navigationMenuClasses({}, { active: null, pointerOpened: false }).content,
+  // context-menu's REVEALED part is subContent (#2152), not content -- content
+  // (the parent right-click panel) is out of scope, unconverted since #2017.
+  'context-menu': contextMenuClasses({}, { open: false, x: 0, y: 0 }).subContent,
 };
 
 /** Tailwind escapes every character outside [A-Za-z0-9_-] with a backslash, so
@@ -130,6 +134,26 @@ describe('the hover-reveal candidates compile (#2148)', () => {
     },
     120_000,
   );
+
+  it('context-menu: the submenu reveal selector compiles to the real sub-trigger/sub-content sibling structure (#2152)', async () => {
+    // This test never calls bindContextSubMenu or bindContextMenu -- it proves
+    // the CSS half of "reveals with JavaScript disabled" by checking the rule
+    // Tailwind actually emits for the SSR-authored markup's sibling relationship
+    // (context-menu-sub.astro: sub-trigger and sub-content are both direct
+    // children of `[data-part="sub"]`), not by executing the behavior script.
+    const css = await sheet('context-menu');
+    expect(css, 'sub-content reveal-on-hover selector missing').toContain(
+      ':is([data-part=sub]:has(>[data-part=sub-trigger]:is(:hover,:focus-within)),' +
+        '[data-part=sub]:has(>[data-part=sub-content]:is(:hover,:focus-within)))>',
+    );
+    // The reveal rule and the data-state rule both carry the SAME delay -- no
+    // keyboard-instant exception, unlike tooltip/hover-card (see
+    // context-menu.classes.ts for why: sub-content moves at runtime, so the two
+    // rules never race the way tooltip/hover-card's do).
+    expect(css).toMatch(
+      /data-\\\[state\\=open\\\]\\:delay-hover-intent[^{]*\{[^}]*transition-delay/,
+    );
+  }, 120_000);
 
   it('navigation-menu: the reveal is the ITEM, the dismissal is the PANEL', async () => {
     const css = await sheet('navigation-menu');

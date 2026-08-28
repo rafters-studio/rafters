@@ -6,7 +6,7 @@
  */
 import { cleanup, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { contextMenu } from '../../../src/components/context-menu/context-menu.behavior';
 import { RaftersContextMenu } from '../../../src/components/context-menu/context-menu.element';
 import { assertAxeClean, assertContractFulfillment } from '../../harness/conformance';
@@ -58,11 +58,13 @@ const itemByText = (text: string): HTMLElement => {
   return match;
 };
 
-// The bind portals an open submenu's content to document.body (escaping the
-// parent overflow and roving scope). In happy-dom a `hidden` attribute is not
-// collapsed to display:none, so a closed sub-content there would trip axe's
-// best-practice region rule that a real browser skips. Scope axe to the <main>
-// landmark, which contains the menu; the portaled node sits outside it.
+// The bind portals a submenu's sub-content to document.body on mount (escaping
+// the parent overflow and roving scope), open or closed -- unlike the parent
+// menu's `content`, sub-content is never `hidden` (#2152: a hidden node cannot
+// transition, and the CSS reveal must survive with JS off), so a closed one
+// sitting outside <main> would trip axe's best-practice region rule that a
+// real browser skips. Scope axe to the <main> landmark, which contains the
+// menu; the portaled node sits outside it.
 const landmark = () => document.body.querySelector('main') as HTMLElement;
 
 afterEach(() => {
@@ -148,16 +150,37 @@ describe('context-menu conformance [wc]', () => {
     fireEvent.contextMenu(trigger(), { clientX: 10, clientY: 10 });
     const st = document.body.querySelector<HTMLElement>('[data-part="sub-trigger"]') as HTMLElement;
     const sc = document.body.querySelector<HTMLElement>('[data-part="sub-content"]') as HTMLElement;
-    expect(sc.hidden).toBe(true);
+    expect(sc.getAttribute('data-state')).toBe('closed');
     st.focus();
     await user.keyboard('{ArrowRight}');
-    expect(sc.hidden).toBe(false);
+    expect(sc.getAttribute('data-state')).toBe('open');
     expect(st.getAttribute('aria-expanded')).toBe('true');
     expect(st.getAttribute('aria-controls')).toBe('cm-sub-content');
     expect(document.activeElement).toBe(itemByText('Deep'));
     await user.keyboard('{ArrowLeft}');
-    expect(sc.hidden).toBe(true);
+    expect(sc.getAttribute('data-state')).toBe('closed');
     expect(document.activeElement).toBe(st);
+  });
+
+  // #2152: the hover-intent delay is a CSS `transition-delay`
+  // (`delay-hover-intent` in context-menu.classes.ts), never a JS timer -- so
+  // pointer hover flips `data-state` the instant the event fires, with
+  // `setTimeout` never scheduled for it.
+  it('opens and closes the submenu on pointer hover with no JS timer', async () => {
+    await mount();
+    fireEvent.contextMenu(trigger(), { clientX: 10, clientY: 10 });
+    const st = document.getElementById('cm-sub-trigger') as HTMLElement;
+    const sc = document.getElementById('cm-sub-content') as HTMLElement;
+    const spy = vi.spyOn(globalThis, 'setTimeout');
+    spy.mockClear();
+    fireEvent.pointerEnter(st);
+    expect(spy).not.toHaveBeenCalled();
+    expect(sc.getAttribute('data-state')).toBe('open');
+    spy.mockClear();
+    fireEvent.pointerLeave(st);
+    expect(spy).not.toHaveBeenCalled();
+    expect(sc.getAttribute('data-state')).toBe('closed');
+    spy.mockRestore();
   });
 
   it('closing the whole menu collapses an open submenu', async () => {
@@ -168,10 +191,10 @@ describe('context-menu conformance [wc]', () => {
     const sc = document.getElementById('cm-sub-content') as HTMLElement;
     st.focus();
     await user.keyboard('{ArrowRight}');
-    expect(sc.hidden).toBe(false);
+    expect(sc.getAttribute('data-state')).toBe('open');
     await user.keyboard('{Escape}');
     // Escape in the submenu closes the submenu first, back to the sub-trigger.
-    expect(sc.hidden).toBe(true);
+    expect(sc.getAttribute('data-state')).toBe('closed');
     expect(document.activeElement).toBe(st);
   });
 
@@ -183,7 +206,7 @@ describe('context-menu conformance [wc]', () => {
     (document.getElementById('cm-sub2-trigger') as HTMLElement).focus();
     await user.keyboard('{ArrowRight}');
     const grandchild = document.getElementById('cm-sub2-content') as HTMLElement;
-    expect(grandchild.hidden).toBe(false);
+    expect(grandchild.getAttribute('data-state')).toBe('open');
     return grandchild;
   }
 
@@ -195,7 +218,6 @@ describe('context-menu conformance [wc]', () => {
     document.body.appendChild(outside);
     fireEvent.pointerDown(outside);
     expect(content().hidden).toBe(true);
-    expect(grandchild.hidden).toBe(true);
     expect(grandchild.getAttribute('data-state')).toBe('closed');
   });
 
@@ -205,7 +227,6 @@ describe('context-menu conformance [wc]', () => {
     const grandchild = await openTwoLevels(user);
     await user.click(itemByText('Cut'));
     expect(content().hidden).toBe(true);
-    expect(grandchild.hidden).toBe(true);
     expect(grandchild.getAttribute('data-state')).toBe('closed');
   });
 });

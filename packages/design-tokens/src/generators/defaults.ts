@@ -1212,6 +1212,23 @@ export const DEFAULT_MOTION_CELL_ANIMATIONS: Record<string, MotionCellAnimation>
     meaning: 'A context menu leaving, after a choice or a dismissal.',
     contexts: ['context-menu', 'menu', 'anchored-popup'],
   },
+  'context-menu-subcontent-open': {
+    keyframe: 'scale-in',
+    duration: { kind: 'tier', tier: 'moderate' },
+    curve: 'enter',
+    cell: { component: 'context-menu', part: 'subcontent', transition: 'closed -> open' },
+    meaning:
+      'A submenu arriving beside its sub-trigger. The hover-intent delay its row also assigns is behaviour-owned (a CSS transition-delay in context-menu.classes.ts), not part of this shape.',
+    contexts: ['context-menu', 'menu', 'anchored-popup'],
+  },
+  'context-menu-subcontent-close': {
+    keyframe: 'scale-out',
+    duration: { kind: 'tier', tier: 'fast' },
+    curve: 'exit',
+    cell: { component: 'context-menu', part: 'subcontent', transition: 'open -> closed' },
+    meaning: 'A submenu leaving, on ArrowLeft/Escape or hover-leave.',
+    contexts: ['context-menu', 'menu', 'anchored-popup'],
+  },
   'select-content-open': {
     keyframe: 'scale-in',
     duration: { kind: 'tier', tier: 'moderate' },

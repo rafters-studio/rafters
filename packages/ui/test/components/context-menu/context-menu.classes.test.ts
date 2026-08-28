@@ -40,6 +40,64 @@ describe('context-menu classes', () => {
     expect(classes.subTriggerChevron).toContain('ml-auto');
   });
 
+  /**
+   * subContent's motion is CSS/tokens only (#2152): no `setTimeout`, no ms
+   * literal, and the reveal works with JavaScript disabled. This file pins the
+   * CLASS-STRING half of that contract, the same split #2148 uses for tooltip.
+   */
+  it('subcontent sits on the dropdown depth and popover surface tokens', () => {
+    expect(classes.subContent).toContain('z-depth-dropdown');
+    expect(classes.subContent).toContain('bg-popover');
+    expect(classes.subContent).toContain('text-popover-foreground');
+  });
+
+  it('subcontent closes on the fast/exit cell with no delay reference', () => {
+    // The base (unqualified) rule IS the open -> closed cell: motion.jsonl
+    // gives subcontent's close `fast` + `exit` and an empty `delays` array.
+    expect(classes.subContent).toContain('opacity-0');
+    expect(classes.subContent).toContain('pointer-events-none');
+    expect(classes.subContent).toContain('duration-fast');
+    expect(classes.subContent).toContain('ease-exit');
+  });
+
+  it('pointer-events rides the transition, so an inert panel cannot latch a click', () => {
+    expect(classes.subContent).toContain('transition-[opacity,pointer-events]');
+    expect(classes.subContent).toContain('transition-discrete');
+  });
+
+  it('subcontent opens via :hover/:focus-within over the real sub-trigger/sub-content siblings, on the moderate/enter cell with the hover-intent delay', () => {
+    const revealSelector =
+      '[:is([data-part=sub]:has(>[data-part=sub-trigger]:is(:hover,:focus-within)),' +
+      '[data-part=sub]:has(>[data-part=sub-content]:is(:hover,:focus-within)))>&]';
+    for (const utility of [
+      'opacity-100',
+      'pointer-events-auto',
+      'duration-moderate',
+      'ease-enter',
+      'delay-hover-intent',
+    ]) {
+      expect(classes.subContent).toContain(`${revealSelector}:${utility}`);
+    }
+  });
+
+  it('a keyboard/programmatic open reveals on the same cell (same delay -- data-state never races a live :hover rule once portalled)', () => {
+    for (const utility of [
+      'opacity-100',
+      'pointer-events-auto',
+      'duration-moderate',
+      'ease-enter',
+      'delay-hover-intent',
+    ]) {
+      expect(classes.subContent).toContain(`data-[state=open]:${utility}`);
+    }
+  });
+
+  it('states no timing as a literal and queries reduced motion nowhere', () => {
+    expect(classes.subContent).not.toMatch(/\b(duration|delay)-\d/);
+    expect(classes.subContent).not.toContain('motion-reduce');
+    expect(classes.subContent).not.toMatch(/\bsetTimeout\b/);
+  });
+
   it('separator, label, and shortcut carry their chrome', () => {
     expect(classes.separator).toContain('bg-muted');
     expect(classes.label).toContain('ts-label-medium');
@@ -47,7 +105,13 @@ describe('context-menu classes', () => {
   });
 
   it('declares no raw numeric durations or animate utilities (motion tokens only)', () => {
-    for (const value of [classes.content, classes.item, classes.checkboxItem, classes.radioItem]) {
+    for (const value of [
+      classes.content,
+      classes.subContent,
+      classes.item,
+      classes.checkboxItem,
+      classes.radioItem,
+    ]) {
       expect(value).not.toMatch(/duration-\d/);
       expect(value).not.toContain('animate-in');
       expect(value).not.toContain('zoom-in');

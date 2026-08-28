@@ -17,6 +17,7 @@ import type { ContextMenuConfig, ContextMenuState } from './context-menu.behavio
 export interface ContextMenuClassSet {
   trigger: string;
   content: string;
+  subContent: string;
   item: string;
   checkboxItem: string;
   radioItem: string;
@@ -37,6 +38,85 @@ const content =
   'z-depth-dropdown min-w-32 overflow-hidden rounded-md border bg-popover p-1 ' +
   'text-popover-foreground shadow-lg outline-none ' +
   'motion-dropdown-in opacity-0 scale-95 data-[state=open]:opacity-100 data-[state=open]:scale-100';
+
+// The submenu panel shares its surface chrome with `content` but NOT its
+// motion: `content` is out of scope for #2152 (the parent menu's open/close
+// cells are a later component-sweep item, #2017's CHANGELOG), while
+// `subContent` consumes the two rows #2151 added to motion.jsonl -- context-menu
+// / subcontent / "closed -> open" (moderate, enter, delay hover-intent) and
+// "open -> closed" (fast, exit, no delay) -- entirely as CSS/tokens. No
+// TypeScript reads a motion token and no timer implements the hover-intent
+// delay (#2152): `bindContextSubMenu`/`ContextMenuSub` dispatch `open`/`close`
+// the instant a pointer event fires, and `transition-delay` on the reveal rule
+// is what makes that state change invisible for the hover-intent window.
+//
+// No extent-pop/scale: the cell's movement is "fade + zoom", but the zoom
+// half has no consumer here, matching tooltip/hover-card content (#2148),
+// which declare the identical extent-pop cell and also implement fade only.
+// Consuming extent-pop as a transform requires a Tailwind arbitrary value that
+// names the exporter's `--rafters-consumed-extent` alias directly, which the
+// repo's "consumers never reference --rafters-* vars directly" rule forbids in
+// component source; no generated utility bridges a custom property into
+// `scale-*` today. The gap is pre-existing and shared with every other
+// hover-triggered surface, not introduced here.
+//
+// THE CLOSED cell is the base rule (duration-fast ease-exit, no delay) and the
+// OPEN cell is the reveal rule, exactly as tooltip/hover-card content already
+// do (#2148): whichever rule currently applies owns the duration/curve/delay
+// of the transition INTO it.
+//
+// TWO independent ways into the open rule, because sub-content moves at
+// runtime. `context-menu-sub.astro`'s authored markup has sub-content as a
+// real DOM sibling of sub-trigger under `[data-part="sub"]`, so the `:hover` /
+// `:focus-within` selector below reveals it with NO JavaScript at all -- the
+// no-JS floor. Once `bindContextSubMenu` (or React's `ContextMenuSub`) runs,
+// sub-content is moved to `document.body` (escaping the parent's
+// `overflow-hidden` and its roving-focus scope) or portalled, which breaks
+// that DOM adjacency, so the `:hover` selector can no longer match it. From
+// then on `data-[state=open]` -- flipped by the same pointerenter/pointerleave
+// listeners, plus keyboard (ArrowRight/ArrowLeft/Escape) -- is the ONLY
+// reachable path, and it carries the identical duration/curve/delay: the
+// matrix's cell governs the transition regardless of which input opened it,
+// so no keyboard-instant exception is invented here (contrast tooltip/
+// hover-card, whose data-state path deliberately drops delay-hover-intent for
+// a forced/keyboard open -- their content never moves, so that path races the
+// live `:hover` rule; here it never does, so there is nothing to race).
+//
+// No `data-dismissed` escape hatch: tooltip/hover-card need one because their
+// content stays a real sibling under `:hover`, so an Escape-dismissed panel
+// could otherwise be pulled back open by a pointer that never left. Once
+// sub-content is detached, its `:hover` rule is permanently unreachable, so an
+// Escape close (`data-state` flips to closed) cannot be reopened by a
+// still-hovering pointer -- the race that hatch exists for cannot occur here.
+//
+// `pointer-events` rides the transition (`transition-discrete`) rather than
+// toggling with `hidden`: the panel is now unconditionally in the render tree
+// (no `hidden`/display:none -- a hidden node cannot transition), so an inert,
+// invisible fixed-position box must not still intercept clicks while closed.
+// NOTE: every `[:is(...)>&]:<utility>` candidate below is spelled out in full,
+// never built by interpolating a shared prefix variable into a template
+// literal. Tailwind's oxide scanner extracts candidates from the SOURCE TEXT
+// of this file, not from the evaluated runtime string -- an interpolation
+// leaves the literal characters `${...}` in the file and the resolved
+// candidate exists nowhere in the source Tailwind actually reads, so it
+// compiles to nothing (silently; verified against the real Tailwind CLI in
+// `test/motion/reveal-candidates.test.ts`, which is the whole reason that
+// suite scans the real component directories rather than a fixture built from
+// the evaluated strings).
+const subContent =
+  'z-depth-dropdown min-w-32 overflow-hidden rounded-md border bg-popover p-1 ' +
+  'text-popover-foreground shadow-lg outline-none ' +
+  'opacity-0 pointer-events-none transition-[opacity,pointer-events] transition-discrete ' +
+  'duration-fast ease-exit ' +
+  '[:is([data-part=sub]:has(>[data-part=sub-trigger]:is(:hover,:focus-within)),[data-part=sub]:has(>[data-part=sub-content]:is(:hover,:focus-within)))>&]:opacity-100 ' +
+  '[:is([data-part=sub]:has(>[data-part=sub-trigger]:is(:hover,:focus-within)),[data-part=sub]:has(>[data-part=sub-content]:is(:hover,:focus-within)))>&]:pointer-events-auto ' +
+  '[:is([data-part=sub]:has(>[data-part=sub-trigger]:is(:hover,:focus-within)),[data-part=sub]:has(>[data-part=sub-content]:is(:hover,:focus-within)))>&]:transition-opacity ' +
+  '[:is([data-part=sub]:has(>[data-part=sub-trigger]:is(:hover,:focus-within)),[data-part=sub]:has(>[data-part=sub-content]:is(:hover,:focus-within)))>&]:duration-moderate ' +
+  '[:is([data-part=sub]:has(>[data-part=sub-trigger]:is(:hover,:focus-within)),[data-part=sub]:has(>[data-part=sub-content]:is(:hover,:focus-within)))>&]:ease-enter ' +
+  '[:is([data-part=sub]:has(>[data-part=sub-trigger]:is(:hover,:focus-within)),[data-part=sub]:has(>[data-part=sub-content]:is(:hover,:focus-within)))>&]:delay-hover-intent ' +
+  'data-[state=open]:opacity-100 data-[state=open]:pointer-events-auto ' +
+  'data-[state=open]:transition-opacity ' +
+  'data-[state=open]:duration-moderate data-[state=open]:ease-enter data-[state=open]:delay-hover-intent';
 
 const itemBase =
   'relative flex cursor-default select-none items-center rounded-sm text-body-small ts-body-small outline-none ' +
@@ -76,6 +156,7 @@ export function contextMenuClasses(
   return {
     trigger,
     content,
+    subContent,
     item,
     checkboxItem,
     radioItem,

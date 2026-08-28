@@ -1,10 +1,12 @@
 ---
 /**
  * Recursive submenu sub-template for the Astro performance. Renders a sub-trigger
- * plus its (initially closed, hidden) sub-content, recursing into nested
- * submenus via itself so the SSR markup supports arbitrary nesting -- the same
- * depth bindContextSubMenu binds. Not a decorator; a fragment of the one Astro
- * performance, sharing the same classes and the same data-part contract.
+ * plus its (initially closed) sub-content -- present, never `hidden`, so the
+ * `:hover` / `:focus-within` reveal in `context-menu.classes.ts` works with
+ * JavaScript turned off (#2152) -- recursing into nested submenus via itself so
+ * the SSR markup supports arbitrary nesting, the same depth bindContextSubMenu
+ * binds. Not a decorator; a fragment of the one Astro performance, sharing the
+ * same classes and the same data-part contract.
  */
 import ContextMenuSub from './context-menu-sub.astro';
 import { contextMenuClasses } from './context-menu.classes';
@@ -52,8 +54,7 @@ const classes = contextMenuClasses({}, { open: false, x: 0, y: 0 });
     role="menu"
     aria-label={label}
     data-state="closed"
-    hidden
-    class={classes.content}
+    class={classes.subContent}
     style="position: fixed; left: 0; top: 0;"
   >
     {
