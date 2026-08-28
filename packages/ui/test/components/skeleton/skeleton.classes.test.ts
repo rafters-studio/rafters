@@ -9,12 +9,19 @@ function root(): string {
 }
 
 describe('skeleton classes', () => {
-  it('carries the pulse shimmer', () => {
-    expect(root()).toContain('animate-pulse');
+  it('carries the shimmer cell utility, not the stock animate-pulse', () => {
+    expect(root()).toContain('animate-skeleton-root-waiting');
+    expect(root()).not.toContain('animate-pulse');
   });
 
-  it('honours reduced motion -- the pulse opts out under prefers-reduced-motion', () => {
-    expect(root()).toContain('motion-reduce:animate-none');
+  it('never stops the shimmer under reduced motion -- period cells are exempt', () => {
+    // #2155: motion-reduce:animate-none is removed, not replaced. The loop
+    // slows only if a designer retunes period-shimmer; reduced motion never
+    // stops it (the compiled-layer guarantee lives at
+    // packages/design-tokens/test/exporters/motion-utilities.test.ts, the
+    // "reduced motion zeroes every tier-kind cell and no period-kind cell"
+    // case).
+    expect(root()).not.toContain('motion-reduce:animate-none');
   });
 
   it('is a rounded, muted surface (semantic token, not a raw colour utility)', () => {

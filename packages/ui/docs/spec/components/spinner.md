@@ -74,9 +74,14 @@ the Astro performance ships no `<script>`.
 ## Motion
 
 Intent: `feedback-loop`. The ring spins continuously to signal ongoing work.
-The score declares intent only -- `animate-spin` (and its duration/easing)
-resolves from the token-driven Tailwind utilities. `motion-reduce:animate-none`
-honours `prefers-reduced-motion`: the ring stops, the semantics stay.
+The score declares intent only -- `animate-spinner-root-busy`, the generated
+consumption of the `spinner / root / busy` cell
+(`packages/ui/docs/spec/matrix/motion.jsonl`, period `spin`), resolves the
+duration from the `period-spin` token. Unlike a duration-tier transition, a
+period-kind cell carries no `prefers-reduced-motion` media block at all -- the
+ring keeps spinning at the same period regardless of the user's preference
+(#2155): a stopped busy indicator would say the work stopped, which would be
+false while work is still in flight.
 
 ## Oracle dispositions (src/old/ui/spinner.{tsx,astro,element.ts}, boundary 9)
 
@@ -102,9 +107,12 @@ surface, carried forward unchanged; there is no shadcn API to match.
   region with implicit `aria-live="polite"` -- assistive tech announces the
   busy state without moving focus. The projected `aria-label="Loading"` gives
   the region an accessible name.
-- 2.3.3 Animation from Interactions / prefers-reduced-motion:
-  `motion-reduce:animate-none` stops the spin when the user requests reduced
-  motion, without removing the status semantics.
+- 2.3.3 Animation from Interactions / prefers-reduced-motion: the spin does
+  NOT stop when the user requests reduced motion (#2155) -- a work loop is
+  exempt from the reduced-motion zeroing law by design, the same ruling
+  `packages/ui/src/primitives/intelligence-integration.ts:106-121` and
+  `REDUCED_MOTION_ZEROED` in `packages/design-tokens/src/exporters/tailwind.ts`
+  record. This is a deliberate exception to 2.3.3, not an oversight.
 - 1.4.1 Use of Color: the busy state is never colour-only -- the accessible
   name ("Loading") and the live-region role carry the meaning independent of
   the ring's variant colour.

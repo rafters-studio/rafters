@@ -1,5 +1,11 @@
 # rafters
 
+## Unreleased
+
+### Bug Fixes
+
+- fix(ui): skeleton and spinner run on period tokens and never stop under reduced motion (#2155). `skeletonBaseClasses` and `spinner.classes.ts`'s `baseClasses` drop the stock `animate-pulse` / `animate-spin` for `animate-skeleton-root-waiting` / `animate-spinner-root-busy`, the per-cell utilities #2154 emits for `skeleton / root / waiting` and `spinner / root / busy` (period `shimmer` and `spin`), and `motion-reduce:animate-none` is removed rather than replaced. **This is a visible behavior change**: under `prefers-reduced-motion: reduce`, the skeleton shimmer and the spinner's ring now keep running at their normal period instead of freezing -- period-kind cells carry no `@media (prefers-reduced-motion: reduce)` block by design (`REDUCED_MOTION_ZEROED` in `packages/design-tokens/src/exporters/tailwind.ts`), because a stopped work loop says the work stopped, which is false while the work is still in flight. The audit this issue names as its premise (only skeleton and spinner as live `motion-reduce:animate-none` violations) undercounted by one: `input-otp.classes.ts`'s caret-blink (`caretBar`) was still riding the stock `animate-pulse motion-reduce:animate-none` rather than its own `input-otp / caret / idle` cell, so it is migrated the same way, onto `animate-input-otp-caret-idle` -- also a visible behavior change, since the caret no longer stills under reduced motion. `progress.classes.ts`'s indeterminate state was checked and found NOT live: it references `animate-progress-indeterminate`, a class with no `@utility`, no `@keyframes`, and no theme var anywhere in the compiled sheet (unlike `animate-pulse`/`animate-spin`, which are real Tailwind builtins), so it does not animate today and is left untouched, out of scope, per the issue's own carve-out for net-new animation. `sidebar.classes.ts` (two skeleton-shaped rows) and `button.classes.ts` (its inline busy spinner) carry the identical `animate-pulse`/`animate-spin` + `motion-reduce:animate-none` pattern and are left standing, out of scope by the issue's explicit component list.
+
 ## 0.3.0
 
 ### Breaking changes

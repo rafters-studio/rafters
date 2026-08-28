@@ -6,6 +6,21 @@ import { assertAxeClean, assertContractFulfillment, partElement } from '../../ha
 
 const body = () => document.body;
 
+// Mocks window.matchMedia to report the given prefers-reduced-motion state,
+// the way sidebar's viewport mock does for its own media query.
+function mockReducedMotion(reduce: boolean): void {
+  window.matchMedia = ((query: string) => ({
+    matches: reduce && query.includes('prefers-reduced-motion'),
+    media: query,
+    onchange: null,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    addListener: () => {},
+    removeListener: () => {},
+    dispatchEvent: () => false,
+  })) as unknown as typeof window.matchMedia;
+}
+
 afterEach(() => {
   cleanup();
 });
@@ -21,11 +36,11 @@ describe('spinner conformance [react]', () => {
     expect(root.getAttribute('aria-label')).toBe('Loading');
   });
 
-  it('carries the spinning ring with the reduced-motion opt-out', () => {
+  it('carries the spinning ring cell utility and never stops under reduced motion', () => {
     render(<Spinner />);
     const root = body().querySelector('[data-part="root"]') as HTMLElement;
-    expect(root.className).toContain('animate-spin');
-    expect(root.className).toContain('motion-reduce:animate-none');
+    expect(root.className).toContain('animate-spinner-root-busy');
+    expect(root.className).not.toContain('motion-reduce:animate-none');
   });
 
   it('size and variant drive the class projection', () => {
@@ -38,7 +53,7 @@ describe('spinner conformance [react]', () => {
   it('consumer className merges via classy', () => {
     render(<Spinner className="ml-2" />);
     const root = body().querySelector('[data-part="root"]') as HTMLElement;
-    expect(root.className).toContain('animate-spin');
+    expect(root.className).toContain('animate-spinner-root-busy');
     expect(root.className).toContain('ml-2');
   });
 
@@ -53,5 +68,27 @@ describe('spinner conformance [react]', () => {
       </main>,
     );
     await assertAxeClean(body());
+  });
+
+  it('keeps spinning under prefers-reduced-motion: reduce (#2155)', () => {
+    // The `getComputedStyle(...).animationDuration` form of this assertion is
+    // not meaningful in this unit environment: no compiled Tailwind sheet is
+    // loaded here, so animation-duration reads empty regardless of classes or
+    // matchMedia, which would pass vacuously whether or not the loop actually
+    // survives reduced motion. The property this issue cares about --
+    // period-kind cells carry no reduced-motion media block at all -- is
+    // proven at the compiled layer instead:
+    // packages/design-tokens/test/exporters/motion-utilities.test.ts, the
+    // "reduced motion zeroes every tier-kind cell and no period-kind cell"
+    // case, and motion-css-golden.test.ts's `block('period-spin')` assertion
+    // containing no `prefers-reduced-motion`. What this test owns is the
+    // class the component emits: the loop utility is present and no
+    // `motion-reduce:animate-none` override rides along to defeat it, with
+    // `prefers-reduced-motion: reduce` actually simulated via matchMedia.
+    mockReducedMotion(true);
+    render(<Spinner data-testid="spinner-root" />);
+    const root = body().querySelector('[data-part="root"]') as HTMLElement;
+    expect(root.className).toContain('animate-spinner-root-busy');
+    expect(root.className).not.toContain('motion-reduce:animate-none');
   });
 });
