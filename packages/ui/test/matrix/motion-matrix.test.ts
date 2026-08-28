@@ -25,7 +25,7 @@ const cells = readMotionCells();
 
 describe('motion.jsonl', () => {
   it('carries every cell of the grid', () => {
-    expect(cells).toHaveLength(142);
+    expect(cells).toHaveLength(144);
   });
 
   it('declares the schema on every line', () => {
@@ -85,6 +85,28 @@ describe('motion.jsonl', () => {
       for (const delay of cell.delays) provenances.add(delay.provenance);
     }
     expect([...provenances].sort()).toEqual(['baseline', 'proposed']);
+  });
+
+  it('gives context-menu subcontent a hover-intent open and an undelayed close', () => {
+    const subOpen = cells.find(
+      (c) =>
+        c.component === 'context-menu' &&
+        c.part === 'subcontent' &&
+        c.transition === 'closed -> open',
+    );
+    expect(subOpen?.duration).toMatchObject({ kind: 'tier', tier: 'moderate' });
+    expect(subOpen?.curve).toMatchObject({ kind: 'role', role: 'enter' });
+    expect(subOpen?.delays).toEqual([expect.objectContaining({ generic: 'hover-intent' })]);
+
+    const subClose = cells.find(
+      (c) =>
+        c.component === 'context-menu' &&
+        c.part === 'subcontent' &&
+        c.transition === 'open -> closed',
+    );
+    expect(subClose?.duration).toMatchObject({ kind: 'tier', tier: 'fast' });
+    expect(subClose?.curve).toMatchObject({ kind: 'role', role: 'exit' });
+    expect(subClose?.delays).toEqual([]);
   });
 });
 
