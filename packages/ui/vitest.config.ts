@@ -29,6 +29,12 @@ export default defineConfig({
     exclude: [
       'test/**/*.spec.{ts,tsx}',
       'test/**/*.e2e.{ts,tsx}',
+      // src/old/ is the quarantined pre-rewrite tree: outside the delivered
+      // surface the registry serves, under a standing no-edits rule, and now
+      // excluded from tsconfig too. Discovering its tests here is what put it
+      // in front of anyone working in this package; nothing under it is
+      // maintained, so nothing under it is run.
+      'src/old/**',
       // Astro conformance tests import .astro files, which need Astro's own
       // Vite transform (vitest.config.astro.ts) -- the react-only plugin set
       // here cannot parse them.
@@ -38,7 +44,7 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
       include: ['src/**/*.{ts,tsx}'],
-      exclude: ['src/**/*.test.{ts,tsx}', 'src/**/*.spec.{ts,tsx}'],
+      exclude: ['src/**/*.test.{ts,tsx}', 'src/**/*.spec.{ts,tsx}', 'src/old/**'],
     },
   },
 });
