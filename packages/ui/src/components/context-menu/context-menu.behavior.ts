@@ -430,6 +430,14 @@ export function bindContextSubMenu(
       request('open');
     }
   };
+  // Re-asserts open if the pointer lands on the panel after a premature close
+  // (the panel sits flush against the trigger, zero `sideOffset`, but a fast
+  // or diagonal crossing can still land outside both boxes for an instant).
+  // `canDispatch` no-ops an already-open request, so this is safe when the
+  // panel never actually closed. Mirrors React's `ContextMenuSubContent`
+  // `onPointerEnter` (context-menu.tsx) -- one score, three performances, so
+  // the DOM-native bind keeps the same recovery path.
+  const onContentEnter = () => void request('open');
   const onContentLeave = () => void request('close');
   const onContentKeydown = (event: KeyboardEvent) => {
     const action = contextSubMenu.keymap(keyInput(event), memory.get(), 'subContent', config);
@@ -459,6 +467,7 @@ export function bindContextSubMenu(
   subTrigger.addEventListener('pointerleave', onTriggerLeave);
   subTrigger.addEventListener('click', onTriggerClick);
   subTrigger.addEventListener('keydown', onTriggerKeydown);
+  subContent.addEventListener('pointerenter', onContentEnter);
   subContent.addEventListener('pointerleave', onContentLeave);
   subContent.addEventListener('keydown', onContentKeydown);
   subContent.addEventListener('click', onContentClick);
@@ -481,6 +490,7 @@ export function bindContextSubMenu(
       subTrigger.removeEventListener('pointerleave', onTriggerLeave);
       subTrigger.removeEventListener('click', onTriggerClick);
       subTrigger.removeEventListener('keydown', onTriggerKeydown);
+      subContent.removeEventListener('pointerenter', onContentEnter);
       subContent.removeEventListener('pointerleave', onContentLeave);
       subContent.removeEventListener('keydown', onContentKeydown);
       subContent.removeEventListener('click', onContentClick);

@@ -51,17 +51,24 @@ describe('context-menu classes', () => {
     expect(classes.subContent).toContain('text-popover-foreground');
   });
 
-  it('subcontent closes on the fast/exit cell with no delay reference', () => {
+  it('subcontent closes on the fast/exit cell with no delay reference, resting at the extent-pop scale', () => {
     // The base (unqualified) rule IS the open -> closed cell: motion.jsonl
     // gives subcontent's close `fast` + `exit` and an empty `delays` array.
     expect(classes.subContent).toContain('opacity-0');
     expect(classes.subContent).toContain('pointer-events-none');
     expect(classes.subContent).toContain('duration-fast');
     expect(classes.subContent).toContain('ease-exit');
+    // The zoom half of "fade + zoom": extent-pop picks the member, the
+    // parens-shorthand scale utility reads the alias back -- never a raw
+    // scale-95 literal, and never a `var(--rafters-...)` call in source.
+    expect(classes.subContent).toContain('extent-pop');
+    expect(classes.subContent).toContain('scale-(--rafters-consumed-extent)');
+    expect(classes.subContent).not.toContain('scale-95');
+    expect(classes.subContent).not.toContain('var(--rafters');
   });
 
-  it('pointer-events rides the transition, so an inert panel cannot latch a click', () => {
-    expect(classes.subContent).toContain('transition-[opacity,pointer-events]');
+  it('pointer-events and scale ride the transition, so an inert panel cannot latch a click', () => {
+    expect(classes.subContent).toContain('transition-[opacity,scale,pointer-events]');
     expect(classes.subContent).toContain('transition-discrete');
   });
 
@@ -71,6 +78,7 @@ describe('context-menu classes', () => {
       '[data-part=sub]:has(>[data-part=sub-content]:is(:hover,:focus-within)))>&]';
     for (const utility of [
       'opacity-100',
+      'scale-100',
       'pointer-events-auto',
       'duration-moderate',
       'ease-enter',
@@ -83,6 +91,7 @@ describe('context-menu classes', () => {
   it('a keyboard/programmatic open reveals on the same cell (same delay -- data-state never races a live :hover rule once portalled)', () => {
     for (const utility of [
       'opacity-100',
+      'scale-100',
       'pointer-events-auto',
       'duration-moderate',
       'ease-enter',

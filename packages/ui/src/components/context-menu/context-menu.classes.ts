@@ -50,15 +50,21 @@ const content =
 // the instant a pointer event fires, and `transition-delay` on the reveal rule
 // is what makes that state change invisible for the hover-intent window.
 //
-// No extent-pop/scale: the cell's movement is "fade + zoom", but the zoom
-// half has no consumer here, matching tooltip/hover-card content (#2148),
-// which declare the identical extent-pop cell and also implement fade only.
-// Consuming extent-pop as a transform requires a Tailwind arbitrary value that
-// names the exporter's `--rafters-consumed-extent` alias directly, which the
-// repo's "consumers never reference --rafters-* vars directly" rule forbids in
-// component source; no generated utility bridges a custom property into
-// `scale-*` today. The gap is pre-existing and shared with every other
-// hover-triggered surface, not introduced here.
+// The cell's movement is "fade + zoom", and the zoom half rides `extent-pop`
+// (packages/design-tokens/src/exporters/tailwind.ts, MOTION_NAMESPACE_PROPERTY
+// .extent): the `extent-pop` class picks the member (writing the
+// `--rafters-consumed-extent` alias) and `scale-(--rafters-consumed-extent)`
+// -- Tailwind v4's CSS-variable-shorthand form of the arbitrary `scale`
+// utility -- reads that alias back, never the leaf token. Neither candidate
+// spells the wrapping function call this repo's authoring rule forbids
+// (consumers never write that call around a `--rafters-*` name directly), so
+// the alias's NAME is referenced, its value never is. Confirmed compiling
+// against the real Tailwind CLI (`test/motion/reveal-candidates.test.ts`),
+// which is the whole reason that suite exists rather than trusting the
+// string. tooltip/hover-card content (#2148) declare the identical extent-pop
+// cell and implement fade only -- a pre-existing gap this file does not
+// inherit, because the shorthand form was untried there, not because it does
+// not work.
 //
 // THE CLOSED cell is the base rule (duration-fast ease-exit, no delay) and the
 // OPEN cell is the reveal rule, exactly as tooltip/hover-card content already
@@ -106,16 +112,18 @@ const content =
 const subContent =
   'z-depth-dropdown min-w-32 overflow-hidden rounded-md border bg-popover p-1 ' +
   'text-popover-foreground shadow-lg outline-none ' +
-  'opacity-0 pointer-events-none transition-[opacity,pointer-events] transition-discrete ' +
+  'opacity-0 pointer-events-none extent-pop scale-(--rafters-consumed-extent) ' +
+  'transition-[opacity,scale,pointer-events] transition-discrete ' +
   'duration-fast ease-exit ' +
   '[:is([data-part=sub]:has(>[data-part=sub-trigger]:is(:hover,:focus-within)),[data-part=sub]:has(>[data-part=sub-content]:is(:hover,:focus-within)))>&]:opacity-100 ' +
+  '[:is([data-part=sub]:has(>[data-part=sub-trigger]:is(:hover,:focus-within)),[data-part=sub]:has(>[data-part=sub-content]:is(:hover,:focus-within)))>&]:scale-100 ' +
   '[:is([data-part=sub]:has(>[data-part=sub-trigger]:is(:hover,:focus-within)),[data-part=sub]:has(>[data-part=sub-content]:is(:hover,:focus-within)))>&]:pointer-events-auto ' +
-  '[:is([data-part=sub]:has(>[data-part=sub-trigger]:is(:hover,:focus-within)),[data-part=sub]:has(>[data-part=sub-content]:is(:hover,:focus-within)))>&]:transition-opacity ' +
+  '[:is([data-part=sub]:has(>[data-part=sub-trigger]:is(:hover,:focus-within)),[data-part=sub]:has(>[data-part=sub-content]:is(:hover,:focus-within)))>&]:transition-[opacity,scale] ' +
   '[:is([data-part=sub]:has(>[data-part=sub-trigger]:is(:hover,:focus-within)),[data-part=sub]:has(>[data-part=sub-content]:is(:hover,:focus-within)))>&]:duration-moderate ' +
   '[:is([data-part=sub]:has(>[data-part=sub-trigger]:is(:hover,:focus-within)),[data-part=sub]:has(>[data-part=sub-content]:is(:hover,:focus-within)))>&]:ease-enter ' +
   '[:is([data-part=sub]:has(>[data-part=sub-trigger]:is(:hover,:focus-within)),[data-part=sub]:has(>[data-part=sub-content]:is(:hover,:focus-within)))>&]:delay-hover-intent ' +
-  'data-[state=open]:opacity-100 data-[state=open]:pointer-events-auto ' +
-  'data-[state=open]:transition-opacity ' +
+  'data-[state=open]:opacity-100 data-[state=open]:scale-100 data-[state=open]:pointer-events-auto ' +
+  'data-[state=open]:transition-[opacity,scale] ' +
   'data-[state=open]:duration-moderate data-[state=open]:ease-enter data-[state=open]:delay-hover-intent';
 
 const itemBase =

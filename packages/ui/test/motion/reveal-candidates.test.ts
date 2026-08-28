@@ -146,6 +146,15 @@ describe('the hover-reveal candidates compile (#2148)', () => {
       ':is([data-part=sub]:has(>[data-part=sub-trigger]:is(:hover,:focus-within)),' +
         '[data-part=sub]:has(>[data-part=sub-content]:is(:hover,:focus-within)))>',
     );
+    // extent-pop compiles to the alias assignment, and the parens-shorthand
+    // scale utility compiles to reading it back -- the zoom half of "fade +
+    // zoom" is a real rule, not a candidate Tailwind silently dropped.
+    expect(css, 'extent-pop utility missing').toContain(
+      '.extent-pop{--rafters-consumed-extent:var(--rafters-extent-pop)}',
+    );
+    expect(css, 'scale-(--rafters-consumed-extent) utility missing').toContain(
+      'scale:var(--rafters-consumed-extent)',
+    );
     // The reveal rule and the data-state rule both carry the SAME delay -- no
     // keyboard-instant exception, unlike tooltip/hover-card (see
     // context-menu.classes.ts for why: sub-content moves at runtime, so the two
@@ -168,11 +177,24 @@ describe('the hover-reveal candidates compile (#2148)', () => {
     expect(css).not.toContain('[data-part=root][data-dismissed=true]');
   }, 120_000);
 
+  // context-menu's subContent transitions THREE properties on the base rule
+  // (opacity, scale, pointer-events -- it consumes extent-pop, the other three
+  // components do not), so the base transition-property candidate differs per
+  // component rather than being one shared literal.
+  const BASE_TRANSITION_PROPERTY: Record<(typeof COMPONENTS)[number], string> = {
+    tooltip: 'transition-[opacity,pointer-events]',
+    'hover-card': 'transition-[opacity,pointer-events]',
+    'navigation-menu': 'transition-[opacity,pointer-events]',
+    'context-menu': 'transition-[opacity,scale,pointer-events]',
+  };
+
   it.each(COMPONENTS)(
     '%s: pointer-events is transitioned discretely, never switched by the reveal',
     async (component) => {
       const css = await sheet(component);
-      expect(css).toContain('transition-property:opacity,pointer-events');
+      expect(css).toContain(
+        `transition-property:${BASE_TRANSITION_PROPERTY[component].slice('transition-['.length, -1)}`,
+      );
       expect(css).toContain('transition-behavior:allow-discrete');
     },
     120_000,
@@ -185,12 +207,18 @@ describe('the hover-reveal candidates compile (#2148)', () => {
       // sheet, because Tailwind's sort order is the only thing that decides it.
       const css = await sheet(component);
       const pairs: Array<[string, string]> = [
-        ['transition-[opacity,pointer-events]', 'duration-fast'],
+        [BASE_TRANSITION_PROPERTY[component], 'duration-fast'],
       ];
-      for (const candidate of CONTENT_CLASSES[component].split(' ')) {
-        if (!candidate.endsWith(':transition-opacity')) continue;
-        const prefix = candidate.slice(0, -'transition-opacity'.length);
-        pairs.push([candidate, `${prefix}duration-moderate`]);
+      // The reveal rule's own transition-property candidate is either bare
+      // `transition-opacity` (tooltip/hover-card/navigation-menu) or the
+      // bracketed `transition-[opacity,scale]` (context-menu, which also
+      // transitions the extent-pop scale on open).
+      for (const suffix of ['transition-opacity', 'transition-[opacity,scale]']) {
+        for (const candidate of CONTENT_CLASSES[component].split(' ')) {
+          if (!candidate.endsWith(`:${suffix}`)) continue;
+          const prefix = candidate.slice(0, -suffix.length);
+          pairs.push([candidate, `${prefix}duration-moderate`]);
+        }
       }
       expect(pairs.length, 'no transition-property utilities found to check').toBeGreaterThan(1);
       for (const [property, duration] of pairs) {
