@@ -46,17 +46,8 @@
  */
 import * as React from 'react';
 import classy from '@/lib/primitives/classy';
-import {
-  avatar,
-  type AvatarSize,
-  type AvatarStatus,
-  resolveAvatar,
-} from '@/components/ui/avatar.behavior';
-import {
-  avatarClasses,
-  avatarFallbackClasses,
-  avatarImageClasses,
-} from '@/components/ui/avatar.classes';
+import { avatar, type AvatarSize, type AvatarStatus, resolveAvatar } from '@/components/ui/avatar.behavior';
+import { avatarClasses, avatarFallbackClasses, avatarImageClasses } from '@/components/ui/avatar.classes';
 
 export interface AvatarProps extends React.HTMLAttributes<HTMLSpanElement> {
   size?: AvatarSize;

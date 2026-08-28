@@ -31,9 +31,9 @@ jobs:
       - name: Build CLI
         run: pnpm --filter=rafters build
 
-      - name: Publish to npm
-        run: npm publish --access=public --provenance
-        working-directory: packages/cli
+      - name: Publish @rafters/math-utils to npm
+        run: pnpm publish --access=public --provenance --no-git-checks
+        working-directory: packages/math-utils
 
       - name: Publish @rafters/shared to npm
         run: pnpm publish --access=public --provenance --no-git-checks
@@ -42,6 +42,10 @@ jobs:
       - name: Publish @rafters/color-utils to npm
         run: pnpm publish --access=public --provenance --no-git-checks
         working-directory: packages/color-utils
+
+      - name: Publish to npm
+        run: npm publish --access=public --provenance
+        working-directory: packages/cli
 
       - name: Create GitHub Release
         run: gh release create "$GITHUB_REF_NAME" --generate-notes

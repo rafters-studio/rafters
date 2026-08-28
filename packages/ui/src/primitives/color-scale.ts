@@ -14,8 +14,11 @@
  *   onSwatchFocus: (position) => showDetails(position),
  * });
  * ```
+ *
+ * @internal-dependencies @rafters/color-utils
  */
 
+import { oklchToCSS } from '@rafters/color-utils';
 import type { CleanupFunction, GamutTier, OklchColor } from './types';
 
 const SCALE_KEYS = [
@@ -44,10 +47,6 @@ export interface ColorScaleOptions {
   onSwatchFocus?: (position: ScalePosition, index: number) => void;
   /** Called when a swatch is clicked */
   onSwatchClick?: (position: ScalePosition, index: number) => void;
-}
-
-function toOklchString(v: OklchColor): string {
-  return `oklch(${v.l} ${v.c} ${v.h})`;
 }
 
 function formatLabel(name: string, position: string, v: OklchColor): string {
@@ -82,7 +81,10 @@ export function createColorScale(
     el.setAttribute('aria-label', formatLabel(name, position, value));
     el.setAttribute('data-scale-position', position);
     el.setAttribute('tabindex', i === 0 ? '0' : '-1');
-    el.style.backgroundColor = toOklchString(value);
+    // alpha: 1 last -- the old formatter ignored alpha entirely (OklchColor
+    // has no alpha field); this override preserves that even if a caller
+    // hands us a value that happens to carry one at runtime.
+    el.style.backgroundColor = oklchToCSS({ ...value, alpha: 1 });
 
     const tier = tiers?.[i];
     if (tier) {

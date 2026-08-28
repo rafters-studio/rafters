@@ -1,142 +1,169 @@
 # @rafters/color-utils
 
-> OKLCH-first color utilities for the Rafters design system.
+> OKLCH-first color math for the Rafters design system.
 
-This package implements a comprehensive set of color functions used across
-Rafters: conversion helpers, perceptual analysis, accessibility math,
-harmony and semantic generation, and OKLCH-aware manipulation primitives.
+Every color in Rafters is OKLCH before it is anything else. This package holds
+the math that acts on it: conversion, perceptual analysis, accessibility scoring,
+gamut awareness, harmony and semantic generation, deterministic naming, and the
+builder that assembles a full color value from a single seed. Parsing from CSS
+and formatting back to it exist for interoperability, but the algorithms work in
+OKLCH because that is where the perceptual results hold up.
 
 ## Install
 
-Install dependencies from the monorepo root and consume as a workspace package:
+Published as TypeScript source; consumers need a bundler or tsx/vite. Plain
+`node` cannot import it.
 
 ```bash
-pnpm install
+pnpm add @rafters/color-utils
 ```
 
-Import in another package:
+Import from another package:
 
 ```ts
 import {
-  oklchToHex,
   hexToOKLCH,
-  generateOKLCHScale,
+  oklchToCSS,
+  roundOKLCH,
+  buildColorValue,
+  getGamutTier,
   generateHarmony,
-  lighten,
+  generateColorName,
   calculateWCAGContrast,
-  validateSemanticMappings,
 } from '@rafters/color-utils';
 ```
 
-## What’s included
-
-The package is organized by capability. Below are the exported functions and
-types with concise explanations and short examples.
+## What's inside
 
 ### Conversion (`conversion.ts`)
-- `oklchToHex(oklch: OKLCH): string` — Convert an OKLCH object to a hex string.
-- `oklchToCSS(oklch: OKLCH): string` — Format OKLCH as a CSS `oklch()` string.
-- `hexToOKLCH(hex: string): OKLCH` — Parse hex or CSS color into OKLCH.
-- `roundOKLCH(oklch: OKLCH): OKLCH` — Normalize/round OKLCH values for caching.
 
-Example:
+- `hexToOKLCH(hex)` — parse a hex or CSS color into OKLCH.
+- `tryParseColor(input)` — parse without throwing; returns null on a bad string.
+- `oklchToCSS(oklch, options?)` — format as a CSS `oklch()` string.
+- `roundOKLCH(oklch)` — normalize and round, so equal colors cache as equal.
 
 ```ts
 const o = hexToOKLCH('#0ea5a4');
-oklchToHex(o); // -> '#0EA5A4'
+oklchToCSS(roundOKLCH(o)); // 'oklch(0.654 0.11 194)'
 ```
 
-### Accessibility (`accessibility.ts`)
-- `calculateWCAGContrast(foreground: OKLCH, background: OKLCH): number` — WCAG-style contrast ratio.
-- `calculateAPCAContrast(foreground: OKLCH, background: OKLCH): number` — Modern APCA contrast score.
-- `meetsWCAGStandard(foreground, background, level, textSize): boolean` — Check AA/AAA.
-- `meetsAPCAStandard(foreground, background, textSize): boolean` — APCA thresholding.
-- `generateAccessibilityMetadata(scale: OKLCH[]): AccessibilityMetadata` — Precompute matrices of accessible pairs.
-- `findAccessibleColor(target, background, standard): OKLCH` — Find nearest accessible color (binary search).
-
-Example:
+`oklchToCSS` emits `oklch(L C H)`, or `oklch(L C H / A)` when `alpha` is defined
+and is not 1. `options.precision`, when given, is the number of decimal places
+applied to every emitted channel — L, C, H, and A alike. With no options and no
+alpha the output is the plain three-channel string, unrounded.
 
 ```ts
-const contrast = calculateWCAGContrast(o, hexToOKLCH('#ffffff'));
-const ok = meetsWCAGStandard(o, hexToOKLCH('#ffffff'), 'AA', 'normal');
+oklchToCSS({ l: 0.7, c: 0.15, h: 250 });
+// 'oklch(0.7 0.15 250)'
+
+oklchToCSS({ l: 0.7, c: 0.15, h: 250, alpha: 0.5 });
+// 'oklch(0.7 0.15 250 / 0.5)'
+
+oklchToCSS({ l: 0.70001, c: 0.15001, h: 250.001 }, { precision: 2 });
+// 'oklch(0.70 0.15 250.00)'
+
+oklchToCSS({ l: 0.70001, c: 0.15001, h: 250.001, alpha: 0.5001 }, { precision: 3 });
+// 'oklch(0.700 0.150 250.001 / 0.500)'
+```
+
+### Gamut (`gamut.ts`)
+
+A three-tier model built on what displays actually support: `srgb` shows
+everywhere, `p3` needs a wide-gamut screen, `out` is displayable nowhere.
+
+- `getGamutTier(oklch)` — which tier a color falls in.
+- `isInSRGBGamut(oklch)` / `isInP3Gamut(oklch)` — the two boundary checks.
+- `toNearestGamut(oklch)` — snap an out-of-gamut color into sRGB. Returns
+  `{ color, tier }`: the snapped OKLCH and the tier it landed in.
+- `computeGamutBoundaries(hue, steps?)` — the boundary points a picker draws
+  against.
+
+Boundary checks run through `colorjs.io`, so sRGB and P3 agree with what the
+browser will render.
+
+### Accessibility (`accessibility.ts`)
+
+- `calculateWCAGContrast(fg, bg)` — the WCAG contrast ratio.
+- `calculateAPCAContrast(fg, bg)` — the APCA score, for modern contrast work.
+- `generateAccessibilityMetadata(scale)` / `rebakeAccessibility(value)` — precompute
+  the pass/fail matrix for a scale, and rebuild it after an edit.
+
+```ts
+calculateWCAGContrast(o, hexToOKLCH('#ffffff'));
 ```
 
 ### Analysis (`analysis.ts`)
-- `calculateColorDistance(color1: OKLCH, color2: OKLCH): number` — Perceptual distance (Delta-like).
-- `isLightColor(color: OKLCH): boolean` — Heuristic to classify light vs dark with chroma adjustments.
-- `getColorTemperature(color: OKLCH): 'warm'|'cool'|'neutral'` — Temperature from hue and chroma.
 
-Example:
-
-```ts
-calculateColorDistance(o, hexToOKLCH('#ffcc00'));
-isLightColor(o); // true/false
-```
-
-### Harmony & Scales (`harmony.ts`)
-- `generateHarmony(base: OKLCH)` — Pure OKLCH hue rotations: complementary, triadic (3), analogous (6), tetradic (4), splitComplementary (3), monochromatic (6).
-- `generateSemanticColorSuggestions(base: OKLCH)` — Suggested semantic palettes (danger, success, warning, info).
-- `generateOKLCHScale(base: OKLCH)` — Create an accessible 50–950 OKLCH scale optimized for contrast.
-- `calculateAtmosphericWeight(color: OKLCH)` — Perceptual “distance”/role (background ↔ foreground).
-- `calculatePerceptualWeight(color: OKLCH)` — Visual weight heuristic for layout balance.
-- `generateSemanticColors(base, suggestions)` — Enhance semantic suggestions with context-aware variants.
-
-Example:
-
-```ts
-const harmony = generateHarmony(o);
-const scale = generateOKLCHScale(o);
-```
+- `isLightColor(color)` — light or dark, with a chroma adjustment.
+- `getColorTemperature(color)` — warm, cool, or neutral from hue and chroma. The
+  package's only temperature classifier: everything that needs the verdict calls
+  this one.
+- `calculateAtmosphericWeight(color)` / `calculatePerceptualWeight(color)` —
+  perceptual weight, for background-to-foreground role and layout balance.
 
 ### Manipulation (`manipulation.ts`)
-- `lighten(color, amount)` — Increase lightness (OKLCH l += amount).
-- `darken(color, amount)` — Decrease lightness.
-- `adjustChroma(color, amount)` — Modify chroma.
-- `adjustHue(color, degrees)` — Rotate hue.
-- `generateSurfaceColor(base)` — Desaturated surface color for UI backgrounds.
-- `generateNeutralColor(base)` — Strongly desaturated neutral.
-- `adjustLightness(color, amount)` — Alias for compatibility.
-- `blendColors(a, b, ratio)` — Linear interpolation in OKLCH space.
 
-Example:
+- `adjustHue(color, degrees)` — rotate the hue, normalized back into 0-360.
+
+### Harmony and scales (`harmony.ts`)
+
+- `generateHarmony(base)` — hue rotations: complementary, triadic, analogous,
+  tetradic, split-complementary, monochromatic.
+- `generateOKLCHScale(base)` — an accessible 50 to 950 scale tuned for contrast.
+
+### Semantic selection (`semantic.ts`)
+
+Purpose-driven pair finding over a color value. Pairs are found in light mode,
+then inverted as a unit for dark mode so the relationship survives.
+
+- `semanticFor(family, { name? })` — open a selection context over one color
+  family. The returned context carries `.pair(request)` for a single use,
+  `.states(from, dark?)` for the whole state ladder, and `.invert(pair)` for the
+  dark-mode counterpart.
+- `statusAnchor(role, seed)` — the one OKLCH anchor for a status role
+  (`destructive`, `success`, `warning`, `info`), with chroma derived from the seed.
+- `generateSemanticColorSuggestions(base)` — seed-derived semantic palettes
+  (danger, success, warning, info), three variants per role.
+- `STATE_USES`, `SemanticSelectionError`, and the `Pair*` types.
+
+### Color wheel and builder (`color-wheel.ts`, `builder.ts`)
+
+- `buildColorValue(oklch, options)` — assemble a full color value (scale,
+  harmonies, accessibility) from one OKLCH seed, with pure math and no network.
+- `colorWheel(seed, harmony, options?)` — a complete 11-family semantic system
+  from a single seed. `harmony` is required and names the relationship
+  (`complementary`, `triadic`, `tetradic`, `analogous`, `split-complementary`).
+
+### Scale positions (`scale-positions.ts`)
+
+- `SCALE_POSITIONS` — the canonical labels (`50`, `100`, ... `950`).
+- `POSITION_TO_INDEX` — the inverse lookup. Vocabulary only; selection lives in
+  `semantic.ts`.
+
+### Naming (`naming/`)
+
+- `generateColorName(oklch)` / `generateColorNameWithMetadata(oklch)` — a stable,
+  human-readable name from an OKLCH value, chosen by temperature and perceptual
+  weight.
 
 ```ts
-lighten(o, 0.1);
-blendColors(o, hexToOKLCH('#ffffff'), 0.2);
+generateColorName({ l: 0.65, c: 0.12, h: 230, alpha: 1 }); // 'luminous-true-bay-blue'
 ```
 
-### Validation & Alerts (`validation-alerts.ts`)
-- `validateSemanticMappings(mappings, colorFamilies): AccessibilityAlert[]` — Run a suite of mathematical validations
-  for semantic token assignments. Returns `AccessibilityAlert`s with `autoFix` suggestions.
-
-Types included:
-- `AccessibilityAlert` — severity, type, message, suggestion, affectedTokens, and optional `autoFix`.
-- `SemanticMapping` — mapping format expected by `validateSemanticMappings`.
-
-Example:
-
-```ts
-const alerts = validateSemanticMappings(mappings, colorFamilies);
-if (alerts.length) console.table(alerts);
-```
+The bucket helpers and word lists (`getCBucket`, `getChromaBand`, `HUE_HUBS`,
+`MATERIAL_WORDS`, and the rest) are exported for callers building their own
+naming views.
 
 ## Testing
 
-Run unit tests from the monorepo root:
-
 ```bash
-pnpm -w test:unit
+pnpm --filter @rafters/color-utils test
 ```
 
-## Notes & philosophy
+## Notes
 
-- This library is OKLCH-first: conversions are provided for interoperability but
-  algorithms operate in OKLCH for better perceptual results.
-- Accessibility calculations are mathematical and conservative — APCA support
-  is included for modern contrast evaluation.
-- Many helper functions return immutable objects and small utilities are
-  preserved for internal harmony generation; the public API above is stable.
-
----
-
-Maintainers: Rafters core team
+- OKLCH-first. Conversions exist for interoperability; the math stays in OKLCH.
+- Accessibility scoring is mathematical, and APCA is there for modern contrast
+  evaluation alongside WCAG.
+- Published as TypeScript source. It gains nothing from a build step, but a
+  consumer needs a bundler or tsx/vite to import it — plain `node` cannot.

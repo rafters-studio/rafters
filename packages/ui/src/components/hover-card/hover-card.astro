@@ -10,7 +10,7 @@
  *
  * @usage-patterns
  * DO: Show supplementary information like user profiles, link previews, or contextual details
- * DO: Use appropriate delays to prevent accidental triggers (openDelay >= 500ms recommended)
+ * DO: Trust the system hover-intent delay -- it is a token the stylesheet applies, not a per-instance tuning knob
  * DO: Keep content focused and scannable - users glance, not read
  * DO: Position intelligently to avoid viewport edges
  * NEVER: Essential information that should always be visible
@@ -42,9 +42,11 @@
  * then the <script> hands each instance to bindHoverCard -- the SAME DOM-native
  * client the Web Component uses. One score, three performances.
  *
- * The content stays in light DOM (present-but-hidden) so the hover-delay
- * primitive the bind composes can read it, and so it is crawlable before JS.
- * Positioning and hover timing are the bind's job; this is enter-only.
+ * The content stays in light DOM -- present, never `hidden`, revealed by the
+ * stylesheet's `:hover` / `:focus-visible` rule -- so the preview works with
+ * JavaScript turned off and is crawlable before JS. The hover-intent delay on
+ * open and the linger on close are `transition-delay` on tokens (#2148), not
+ * timers; positioning is the bind's job.
  *
  * The card is role="dialog"; supply `label` (or an aria-labelledby target in the
  * content slot) so the preview has an accessible name.
@@ -71,8 +73,6 @@ interface Props {
   href?: string;
   /** Accessible name for the role=dialog preview. */
   label?: string;
-  openDelay?: number;
-  closeDelay?: number;
   disableHoverableContent?: boolean;
   defaultOpen?: boolean;
   side?: HoverCardConfig['side'];
@@ -84,8 +84,6 @@ const {
   id,
   href,
   label,
-  openDelay,
-  closeDelay,
   disableHoverableContent = false,
   defaultOpen = false,
   side,
@@ -95,8 +93,6 @@ const {
 
 const config: HoverCardConfig = {
   defaultOpen,
-  openDelay,
-  closeDelay,
   disableHoverableContent,
   side,
   align,
@@ -115,8 +111,6 @@ const open = state.open;
 <div
   data-part="root"
   data-hover-card
-  data-open-delay={openDelay === undefined ? undefined : String(openDelay)}
-  data-close-delay={closeDelay === undefined ? undefined : String(closeDelay)}
   data-disable-hoverable-content={String(disableHoverableContent)}
   data-default-open={String(defaultOpen)}
   data-side={placement.side}
@@ -140,7 +134,6 @@ const open = state.open;
     class={classes.content}
     data-state={open ? 'open' : 'closed'}
     aria-label={label}
-    hidden={!open}
     {...aria.content}
   >
     <slot name="content" />

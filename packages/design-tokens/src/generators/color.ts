@@ -12,6 +12,7 @@ import {
   calculateWCAGContrast,
   generateAccessibilityMetadata,
   generateOKLCHScale,
+  oklchToCSS,
 } from '@rafters/color-utils';
 import type { ColorAccessibility, ColorValue, OKLCH, Token } from '@rafters/shared';
 import type { ColorScaleInput, SemanticColorBase } from './defaults.js';
@@ -47,17 +48,6 @@ export function buildColorScaleFromBase(name: string, base: SemanticColorBase): 
     scale,
     description: base.description,
   };
-}
-
-/**
- * Convert OKLCH to CSS string
- */
-function oklchToCSS(oklch: OKLCH): string {
-  const { l, c, h, alpha = 1 } = oklch;
-  if (alpha < 1) {
-    return `oklch(${l} ${c} ${h} / ${alpha})`;
-  }
-  return `oklch(${l} ${c} ${h})`;
 }
 
 /**

@@ -1,9 +1,4 @@
-import type {
-  SwitchConfig,
-  SwitchSize,
-  SwitchState,
-  SwitchVariant,
-} from '@/components/ui/switch.behavior';
+import type { SwitchConfig, SwitchSize, SwitchState, SwitchVariant } from '@/components/ui/switch.behavior';
 
 export interface SwitchClassSet {
   root: string;
