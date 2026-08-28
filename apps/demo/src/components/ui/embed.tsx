@@ -1,38 +1,31 @@
 /**
- * Embed -- an external media frame. Wraps a third-party iframe (YouTube, Vimeo,
- * Twitch) with an accessible title and aspect-ratio control, behind a secure
- * URL allowlist: a URL that is missing, off-allowlist, or unresolvable renders
- * a recovery fallback instead of a frame, and an iframe is NEVER pointed at a
- * host outside the allowlist. Detection rewrites YouTube URLs to the
- * privacy-preserving nocookie host and carries the security attributes
- * (`allow`, `referrerPolicy`, `loading="lazy"`) verbatim.
+ * Embed component for external content (YouTube, Vimeo, Twitch, Twitter)
  *
- * @cognitive-load 3/10 - decision 0, info 1, interaction 0, disruption 1, learning 1
- * @attention-economics Content container: the video/embed is the primary
- * focus; the frame is a neutral surround, never the attraction. Reserve embeds
- * for content that earns a viewport -- an autoplaying frame is an attention
- * tax the surrounding page pays.
- * @trust-building Secure URL validation is the whole point: only an allowlisted
- * host renders a frame, YouTube resolves to the nocookie domain, and every
- * iframe ships a strict referrer policy. A disallowed URL degrades to an
- * honest recovery link rather than a silent blank.
- * @accessibility Every iframe carries a `title` (defaulting to `{provider}
- * embed`); pass a descriptive one. The fallback exposes a real link to the
- * original URL so a blocked embed is still reachable.
- * @semantic-meaning An iframe with security attributes for third-party content,
- * wrapped in a presentational aspect-ratio surface that projects no ARIA.
+ * @cognitive-load 3/10 - Familiar video/embed pattern with clear boundaries
+ * @attention-economics Content container: Video/embed is primary focus
+ * @trust-building Secure URL validation, clear provider indicators
+ * @accessibility Title for iframe, proper aspect ratios
+ * @semantic-meaning iframe with security attributes for embedded content
  *
- * A pure static score has nothing to subscribe to: the performance is pure
- * decoration application. No useBehavior, no memory, no bind -- config in,
- * descriptor out, classes on.
+ * @usage-patterns
+ * DO: Always provide a title for accessibility
+ * DO: Use appropriate aspect ratios for content type
+ * DO: Let users know the content source
+ * NEVER: Embed from untrusted sources
+ * NEVER: Use without URL validation
  *
  * @example
  * ```tsx
  * // Auto-detected YouTube embed
- * <Embed url="https://www.youtube.com/watch?v=dQw4w9WgXcQ" title="Intro video" />
+ * <Embed url="https://www.youtube.com/watch?v=dQw4w9WgXcQ" />
  *
- * // Explicit aspect ratio
- * <Embed url="https://vimeo.com/123456789" aspectRatio="4:3" title="My Vimeo Video" />
+ * // Explicit provider with custom aspect ratio
+ * <Embed
+ *   url="https://vimeo.com/123456789"
+ *   provider="vimeo"
+ *   aspectRatio="4:3"
+ *   title="My Vimeo Video"
+ * />
  * ```
  */
 import * as React from 'react';

@@ -1,20 +1,18 @@
 /**
- * Kbd -- a keyboard key cap for displaying keys, shortcuts, and combinations.
- * Render one key per Kbd and compose several for a combination
- * (`<Kbd>Cmd</Kbd> + <Kbd>S</Kbd>`); use platform-appropriate modifiers.
+ * Keyboard key indicator component for displaying shortcuts and key combinations
  *
- * @cognitive-load 1/10 - decision 0, info 1, interaction 0, disruption 0, learning 0
- * @attention-economics Tertiary information: a key cap supplements the primary
- * content without competing for attention -- it annotates, it never announces.
- * @trust-building Teaches keyboard shortcuts in place, building power-user
- * confidence; a consistent cap shape makes shortcuts scannable across a view.
- * @accessibility The semantic `<kbd>` element is the whole contract -- it marks
- * its text as keyboard input for assistive technology, so the score projects no
- * ARIA and adds no role. The key text is the accessible name by construction.
+ * @cognitive-load 1/10 - Simple visual indicator, no interaction required
+ * @attention-economics Tertiary information: supplements primary content without competing
+ * @trust-building Teaches keyboard shortcuts, builds power-user confidence
+ * @accessibility Semantic kbd element, screen reader compatible
+ * @semantic-meaning Keyboard representation: displays key names, shortcuts, combinations
  *
- * A pure static score has nothing to subscribe to: the performance is pure
- * decoration application. No useMemory, no bind -- config in, classes out,
- * children through, the semantic `<kbd>` element is fixed.
+ * @usage-patterns
+ * DO: Use in tooltips to show keyboard shortcuts
+ * DO: Use in menus alongside action items
+ * DO: Use platform-appropriate modifier keys (Cmd for Mac, Ctrl for Windows)
+ * DO: Combine multiple Kbd elements for key combinations
+ * NEVER: Use for non-keyboard content, use without context
  *
  * @example
  * ```tsx

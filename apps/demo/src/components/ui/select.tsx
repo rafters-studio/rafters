@@ -1,37 +1,43 @@
 /**
- * Dropdown selection component with typeahead and accessibility features.
+ * Dropdown selection component with search and accessibility features
  *
- * @cognitive-load 5/10 - Option selection with type-to-search requires holding
- *   the choice set and the current pick in working memory.
- * @attention-economics closed=compact single-line display, open=full option
- *   list; typeahead narrows attention to the matching option.
- * @trust-building Clear selection indication (checkmark + aria-selected),
- *   keyboard-first navigation, and focus returned to the trigger on commit.
- * @accessibility Combobox/listbox APG pattern: roving focus across options,
- *   type-to-search, screen-reader option roles, focus management, form
- *   association via a mirrored hidden input.
+ * @cognitive-load 5/10 - Option selection with search functionality requires cognitive processing
+ * @attention-economics State management: closed=compact display, open=full options, searching=filtered results
+ * @trust-building Search functionality, clear selection indication, undo patterns for accidental selections
+ * @accessibility Keyboard navigation, screen reader announcements, focus management, option grouping
+ * @semantic-meaning Option structure: value=data, label=display, group=categorization, disabled=unavailable choices
  *
- * The React performance is a DECORATOR over select.behavior.ts: it adds only
- * the view (select.classes.ts) and React wiring (useMemory + a useEffect that
- * composes startSelectOpenEffects + the dispatch protocol). Every decision --
- * reducers, aria, keymap, and the open-listbox effect trio -- lives in the
- * score. The shadcn drop-in surface (Trigger, Value, Content,
- * Item, Group, Label, Separator, Portal, Viewport, ScrollUp/DownButton, Icon)
- * plus the `Select.*` namespace is preserved; each extra is a thin view wrapper.
- *
- * Structural inline elements are built with React.createElement, the same
- * documented escape hatch card/alert use for raw tags.
+ * @usage-patterns
+ * DO: Use 3-12 choices for optimal cognitive load
+ * DO: Provide clear, descriptive option text
+ * DO: Pre-select most common/safe option when appropriate
+ * DO: Enable search for 8+ options to reduce cognitive load
+ * NEVER: Too many options without grouping, unclear option descriptions
  *
  * @example
  * ```tsx
+ * // shadcn-compatible usage (drop-in replacement)
  * import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@rafters/ui';
  *
- * <Select defaultValue="apple" onValueChange={save}>
- *   <SelectTrigger><SelectValue placeholder="Choose..." /></SelectTrigger>
+ * <Select>
+ *   <SelectTrigger>
+ *     <SelectValue placeholder="Choose option..." />
+ *   </SelectTrigger>
  *   <SelectContent>
- *     <SelectItem value="apple">Apple</SelectItem>
- *     <SelectItem value="banana">Banana</SelectItem>
+ *     <SelectItem value="option1">Option 1</SelectItem>
+ *     <SelectItem value="option2">Option 2</SelectItem>
  *   </SelectContent>
+ * </Select>
+ *
+ * // Or with namespaced imports
+ * <Select>
+ *   <Select.Trigger>
+ *     <Select.Value placeholder="Choose option..." />
+ *   </Select.Trigger>
+ *   <Select.Content>
+ *     <Select.Item value="option1">Option 1</Select.Item>
+ *     <Select.Item value="option2">Option 2</Select.Item>
+ *   </Select.Content>
  * </Select>
  * ```
  */

@@ -11,10 +11,11 @@ OKLCH because that is where the perceptual results hold up.
 
 ## Install
 
-Consumed as a workspace package inside the monorepo:
+Published as TypeScript source; consumers need a bundler or tsx/vite. Plain
+`node` cannot import it.
 
 ```bash
-pnpm install
+pnpm add @rafters/color-utils
 ```
 
 Import from another package:
@@ -164,5 +165,5 @@ pnpm --filter @rafters/color-utils test
 - OKLCH-first. Conversions exist for interoperability; the math stays in OKLCH.
 - Accessibility scoring is mathematical, and APCA is there for modern contrast
   evaluation alongside WCAG.
-- Published as source — it gains nothing from a build step, and consumers
-  import the TypeScript directly.
+- Published as TypeScript source. It gains nothing from a build step, but a
+  consumer needs a bundler or tsx/vite to import it — plain `node` cannot.

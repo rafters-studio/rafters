@@ -6,6 +6,7 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { VERSION } from '../../src/version.js';
 import {
   registryFileFactory,
   registryFixtures,
@@ -124,11 +125,67 @@ describe('installRegistryDependencies', () => {
 
     const result = await installRegistryDependencies([item], '/fake/project');
 
-    expect(result.installed).toContain('@rafters/color-utils@0.1.0');
+    expect(result.installed).toContain(`@rafters/color-utils@${VERSION}`);
     expect(result.installed).toContain('lodash@4.17.21');
     expect(result.skipped).toHaveLength(0);
     expect(updateDependenciesMock).toHaveBeenCalledWith(
-      ['@rafters/color-utils@0.1.0', 'lodash@4.17.21'],
+      [`@rafters/color-utils@${VERSION}`, 'lodash@4.17.21'],
+      [],
+      expect.objectContaining({ cwd: '/fake/project' }),
+    );
+  });
+
+  it('pins @rafters/* dependencies to the CLI version', async () => {
+    mockPackageJson();
+
+    const item = registryItemFactory.generate({
+      name: 'test-component',
+      type: 'ui',
+      primitives: [],
+      files: [
+        registryFileFactory.generate({
+          path: 'components/ui/test.tsx',
+          content: 'export const Test = () => null;',
+          dependencies: [
+            '@rafters/color-utils',
+            '@rafters/shared',
+            '@rafters/math-utils',
+            'zod@^4.0.0',
+          ],
+        }),
+      ],
+    });
+
+    const result = await installRegistryDependencies([item], '/fake/project');
+
+    expect(result.installed).toContain(`@rafters/color-utils@${VERSION}`);
+    expect(result.installed).toContain(`@rafters/shared@${VERSION}`);
+    expect(result.installed).toContain(`@rafters/math-utils@${VERSION}`);
+    expect(result.installed).toContain('zod@^4.0.0');
+    expect(result.installed).not.toContain('@rafters/color-utils');
+  });
+
+  it('replaces a registry-declared @rafters/* version with the CLI version', async () => {
+    mockPackageJson();
+
+    const item = registryItemFactory.generate({
+      name: 'test-component',
+      type: 'ui',
+      primitives: [],
+      files: [
+        registryFileFactory.generate({
+          path: 'components/ui/test.tsx',
+          content: 'export const Test = () => null;',
+          dependencies: ['@rafters/shared@0.0.1'],
+        }),
+      ],
+    });
+
+    const result = await installRegistryDependencies([item], '/fake/project');
+
+    expect(result.installed).toEqual([`@rafters/shared@${VERSION}`]);
+    expect(updateDependenciesMock).toHaveBeenCalledWith(
+      [`@rafters/shared@${VERSION}`],
       [],
       expect.objectContaining({ cwd: '/fake/project' }),
     );

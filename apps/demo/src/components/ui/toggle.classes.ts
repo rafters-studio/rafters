@@ -1,9 +1,4 @@
-import type {
-  ToggleConfig,
-  ToggleSize,
-  ToggleState,
-  ToggleVariant,
-} from '@/components/ui/toggle.behavior';
+import type { ToggleConfig, ToggleSize, ToggleState, ToggleVariant } from '@/components/ui/toggle.behavior';
 
 export interface ToggleClassSet {
   root: string;

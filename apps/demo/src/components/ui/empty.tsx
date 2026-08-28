@@ -1,42 +1,62 @@
 /**
- * Empty -- an empty-state placeholder for when there is no content to show.
- * Compose Empty with EmptyIcon, EmptyTitle, EmptyDescription, and EmptyAction;
- * the centered column is the contract, the sub-components are the composition.
- * The placeholder communicates absence honestly and, where possible, points at
- * the next step -- it fills a void without demanding attention.
+ * Empty state display for when there's no content to show
  *
- * @cognitive-load 2/10 - decision 0, info 1, interaction 0, disruption 0, learning 1
- * @attention-economics Supportive element: it fills a void without demanding
- * attention. An empty state is read once, briefly, when the content the user
- * expected is not there; it orients and, at most, offers one next step. Keep it
- * quiet -- a loud empty state competes with the content it is standing in for.
- * @trust-building Honest communication about the empty state builds trust:
- * say why the state is empty (no results, nothing yet, filtered to nothing) and
- * offer an actionable next step through EmptyAction. Never let the placeholder
- * read as breakage.
- * @accessibility Clear heading hierarchy -- EmptyTitle renders a real heading
- * (default h3, `as` = h1..h6) so the placeholder takes its correct outline
- * level; never skip levels. Any control placed in EmptyAction is a real,
- * keyboard-reachable element, not a styled div.
- * @semantic-meaning State communication: empty search results, no items yet, a
- * cleared list, or a filter that matched nothing -- the placeholder narrates
- * the absence and, where it can, the recovery.
+ * @cognitive-load 2/10 - Simple informational display with clear next steps
+ * @attention-economics Supportive element: Fills void without demanding attention, guides to action
+ * @trust-building Honest communication about empty state builds trust; actionable guidance reduces frustration
+ * @accessibility Clear heading hierarchy; actionable elements are keyboard accessible
+ * @semantic-meaning State communication: empty search results, no items yet, cleared list, filtered to nothing
  *
- * A pure static score has nothing to subscribe to: the performance is pure
- * decoration application. No useBehavior, no memory, no bind -- config in,
- * classes out, children through.
+ * @usage-patterns
+ * DO: Provide actionable next steps when possible
+ * DO: Explain why the state is empty (no results, no items yet, etc.)
+ * DO: Use appropriate illustrations to soften the empty state
+ * DO: Match tone to context (playful for personal apps, professional for business)
+ * NEVER: Leave empty states blank
+ * NEVER: Use generic "No data" without context
+ * NEVER: Make users feel like something is broken
  *
  * @example
  * ```tsx
+ * // Empty search results
  * <Empty>
  *   <EmptyIcon>
  *     <SearchIcon />
  *   </EmptyIcon>
  *   <EmptyTitle>No results found</EmptyTitle>
- *   <EmptyDescription>Try adjusting your search terms or filters.</EmptyDescription>
+ *   <EmptyDescription>
+ *     Try adjusting your search terms or filters.
+ *   </EmptyDescription>
  *   <EmptyAction>
- *     <Button variant="outline" onClick={clearFilters}>Clear filters</Button>
+ *     <Button variant="outline" onClick={clearFilters}>
+ *       Clear filters
+ *     </Button>
  *   </EmptyAction>
+ * </Empty>
+ *
+ * // Empty list (first time)
+ * <Empty>
+ *   <EmptyIcon>
+ *     <FolderIcon />
+ *   </EmptyIcon>
+ *   <EmptyTitle>No projects yet</EmptyTitle>
+ *   <EmptyDescription>
+ *     Create your first project to get started.
+ *   </EmptyDescription>
+ *   <EmptyAction>
+ *     <Button>Create project</Button>
+ *   </EmptyAction>
+ * </Empty>
+ *
+ * // Informational only (no action)
+ * <Empty>
+ *   <EmptyIcon>
+ *     <InboxIcon />
+ *   </EmptyIcon>
+ *   <EmptyTitle>All caught up!</EmptyTitle>
+ *   <EmptyDescription>
+ *     No new notifications.
+ *   </EmptyDescription>
  * </Empty>
  * ```
  */

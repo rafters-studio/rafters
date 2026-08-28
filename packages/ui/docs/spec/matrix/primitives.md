@@ -17,7 +17,6 @@ Every primitive under `packages/ui/src/primitives/`. Behavior files COMPOSE thes
 | `outside-click` | dismissal | dom | Fires on click/pointerdown outside an element; returns cleanup. | `onOutsideClick`, `onPointerDownOutside` |
 | `focus-trap` | focus | dom | Traps Tab focus in a region and restores on cleanup; preventBodyScroll companion. | `createFocusTrap`, `preventBodyScroll` |
 | `roving-focus` | focus | dom | Roving-tabindex keyboard navigation for menus, radio groups, toolbars, tabs. | `createRovingFocus`, `focusItem`, `getCurrentIndex` |
-| `hover-delay` | hover | dom | Configurable show/hide hover-intent delays for tooltips and hover cards. | `createHoverDelay`, `createControlledHoverDelay`, `resetHoverDelayState` |
 | `intelligence-integration` | intelligence | pure | Pure design-reasoning functions: cognitive load, motion timing, a11y validation. | `calculateDialogCognitiveLoad`, `validateDialogAccessibility` |
 | `keyboard-handler` | keyboard | dom | Type-safe keyboard event handling with modifier support. | `createKeyboardHandler`, `createActivationHandler`, `createDismissalHandler` |
 | `typeahead` | keyboard | dom | Type-to-search navigation for lists and menus. | `fuzzyScore`, `createTypeahead`, `createControlledTypeahead` |

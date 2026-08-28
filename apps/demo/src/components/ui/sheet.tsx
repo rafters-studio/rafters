@@ -1,29 +1,22 @@
 /**
- * Edge-anchored modal panel: a dialog that slides in from a side over a scrim
- * and traps focus. Supplementary flows -- mobile navigation, filters, detail
- * forms -- that warrant interruption but not a full page.
+ * Sheet component for slide-in side panel overlays
  *
- * @cognitive-load 5/10 - A partial overlay dims but preserves the page, so the
- *   user holds two things at once: the panel's single purpose and their place
- *   underneath. Modality bounds the choice set; the fixed side anchors where
- *   attention must go; focus containment removes the "where can I type" load.
- * @attention-economics Partial capture, not seizure: the scrim signals a
- *   temporary detour while the dimmed page keeps context in view, so the user
- *   never loses the thread they will return to.
- * @trust-building One consistent slide direction, a scrim that reads as
- *   dismissable, an always-present close affordance, Escape, and outside-click
- *   -- every exit is obvious and reversible, so committing feels safe.
- * @accessibility role=dialog with aria-modal, labelledby/describedby wired to
- *   real ids, focus trapped inside while open and restored to the trigger on
- *   close, Escape dismiss, and a labelled close control.
+ * @cognitive-load 5/10 - Partial page overlay requiring focused attention
+ * @attention-economics Partial attention capture: main content dimmed but visible, slide animation indicates temporary state
+ * @trust-building Clear slide direction, easy dismissal via overlay click or escape, preserves main content context
+ * @accessibility Focus trap within sheet, escape key closes, proper ARIA dialog role
+ * @semantic-meaning Supplementary content: navigation, filters, forms that don't warrant full page navigation
  *
- * The React performance is a DECORATOR over sheet.behavior.ts: it adds only the
- * view (sheet.classes.ts) and React wiring (useMemory + a useEffect that
- * composes startSheetModalEffects). Every decision -- reducers, aria, keymap --
- * stays in the score, shared with the WC and Astro performances via bindSheet.
+ * @usage-patterns
+ * DO: Use for mobile navigation, filters, or secondary forms
+ * DO: Choose side based on content relationship (left=nav, right=details)
+ * DO: Provide clear close mechanism
+ * DO: Keep content scoped to single purpose
+ * NEVER: Primary content, complex multi-step workflows, content requiring full attention
  *
  * @example
  * ```tsx
+ * // Minimal usage - Portal, Overlay, and Close button are included automatically
  * <Sheet>
  *   <SheetTrigger>Open</SheetTrigger>
  *   <SheetContent side="right">
@@ -34,6 +27,22 @@
  *     Content here
  *   </SheetContent>
  * </Sheet>
+ *
+ * // Or with namespace syntax
+ * <Sheet>
+ *   <Sheet.Trigger asChild>
+ *     <Button variant="outline">Open</Button>
+ *   </Sheet.Trigger>
+ *   <Sheet.Content side="right">
+ *     <Sheet.Header>
+ *       <Sheet.Title>Sheet Title</Sheet.Title>
+ *     </Sheet.Header>
+ *     Sheet content here
+ *   </Sheet.Content>
+ * </Sheet>
+ *
+ * // Hide close button if needed
+ * <SheetContent showCloseButton={false}>...</SheetContent>
  * ```
  */
 import * as React from 'react';
@@ -54,11 +63,7 @@ import {
   type SheetSide,
   type SheetState,
 } from '@/components/ui/sheet.behavior';
-import {
-  sheetClasses,
-  sheetContentClasses,
-  type SheetClassSet,
-} from '@/components/ui/sheet.classes';
+import { sheetClasses, sheetContentClasses, type SheetClassSet } from '@/components/ui/sheet.classes';
 
 /** The oracle-compatible dismissal veto surface on SheetContent. */
 interface DismissVetoCallbacks {

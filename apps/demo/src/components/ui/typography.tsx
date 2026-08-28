@@ -1,3 +1,43 @@
+/**
+ * Typography primitives for consistent text styling and hierarchy
+ *
+ * @cognitive-load 2/10 - Familiar text patterns with clear visual hierarchy
+ * @attention-economics Hierarchy guides reading: H1=page title (one per page), H2=sections, H3=subsections, body text flows naturally
+ * @trust-building Consistent typography builds readability and professionalism
+ * @accessibility Proper heading hierarchy for screen readers; sufficient contrast ratios
+ * @semantic-meaning Element mapping: H1-H6=document structure, P=body content (with token overrides for lead/muted variants), Code=technical content
+ *
+ * @usage-patterns
+ * DO: Use H1 once per page for main title
+ * DO: Follow heading hierarchy (H1 -> H2 -> H3, never skip)
+ * DO: Use P with size/color token props for variant styling (e.g., lead, muted)
+ * DO: Use token props to override individual typography dimensions
+ * NEVER: Skip heading levels (H1 -> H3)
+ * NEVER: Use headings for styling only (use CSS instead)
+ * NEVER: Use multiple H1s on a single page
+ *
+ * @example
+ * ```tsx
+ * // Page structure
+ * <H1>Page Title</H1>
+ * <P size="xl" color="muted">This is an introduction to the page content.</P>
+ *
+ * <H2>Section Title</H2>
+ * <P>Body paragraph with standard styling.</P>
+ *
+ * <H3>Subsection</H3>
+ * <P>More content here.</P>
+ * <P size="sm" color="muted">Last updated: Jan 2025</P>
+ *
+ * // Code example
+ * <P>Use the <Code>useState</Code> hook for local state.</P>
+ *
+ * // Blockquote
+ * <Blockquote>
+ *   "Design is not just what it looks like. Design is how it works."
+ * </Blockquote>
+ * ```
+ */
 import * as React from 'react';
 import classy from '@/lib/primitives/classy';
 import {

@@ -1,41 +1,49 @@
 /**
- * Item -- a generic list row for menus, lists, and selection surfaces. Lays
- * out an optional leading icon, the label + optional description, as a single
- * `role="option"` row. Selection and disabled state are props; the row
- * projects the matching option semantics and styles them by variant.
+ * Generic list item component for menus, lists, and selection interfaces
  *
- * @cognitive-load 3/10 - decision 1, information 1, interaction 0, disruption
- * 0, learning 1. A familiar list pattern: recognisable at a glance, its
- * selected/disabled states read without instruction.
- * @attention-economics Secondary selection. The selected row draws the eye
- * (accent surface), a disabled row recedes (dimmed, muted). The leading icon
- * is a visual anchor for fast scanning -- reserve it for rows that benefit
- * from one, or the column of glyphs becomes noise.
- * @trust-building Consistent hover / focus-visible / selected surfaces make
- * the interaction predictable; a clearly dimmed, non-interactive disabled row
- * prevents the confusion of a control that looks live but does nothing.
- * @accessibility Projects role="option", aria-selected (always, so the
- * selection state is announced either way), aria-disabled when disabled, and a
- * tabindex that drops a disabled row from the tab order. An option must live
- * inside a listbox/menu that owns roving focus and activation -- Item supplies
- * the row semantics, not a standalone control's keyboard contract.
- * @semantic-meaning Building block for menu items, list items, and selection
- * options -- never a primary action (use Button) and never a standalone
- * control outside a list container.
+ * @cognitive-load 3/10 - Familiar list pattern with clear visual states and predictable behavior
+ * @attention-economics Secondary selection: Selected state draws focus, disabled reduces prominence. Icon slot provides visual anchoring for quick scanning.
+ * @trust-building Consistent hover/focus/selected states build predictable interaction patterns. Clear disabled state prevents user confusion.
+ * @accessibility Proper aria-selected for selection, aria-disabled for disabled state, keyboard navigation support, focus-visible for keyboard users
+ * @semantic-meaning Building block for: menu items (navigation/actions), list items (content/data), option items (selection interfaces)
  *
- * A static score with a config-driven projection needs no client: the aria is
- * read synchronously in render (no useMemory, no bind), config in, classes and
- * option semantics out, slots through. The row's wrappers are `div`s (the new
- * tree has no Typography component yet -- the card/alert disposition); under
- * the flex row/column they lay out identically to the oracle's spans.
+ * @usage-patterns
+ * DO: Use as building block for menu items, list items, selection options
+ * DO: Include icons on the left for quick visual scanning
+ * DO: Add description for secondary information or context
+ * DO: Use selected state for current/active items in navigation
+ * DO: Use disabled state for unavailable options with clear visual feedback
+ * NEVER: Use for primary actions (use Button instead)
+ * NEVER: Nest interactive elements within Item
+ * NEVER: Use Item without a container (list, menu, etc.)
  *
  * @example
  * ```tsx
- * <div role="listbox" aria-label="Settings">
- *   <Item icon={<HomeIcon />} selected>Dashboard</Item>
- *   <Item description="Manage your account">Profile</Item>
- *   <Item disabled>Admin Panel</Item>
- * </div>
+ * // Basic list item
+ * <Item>Settings</Item>
+ *
+ * // With icon and description
+ * <Item
+ *   icon={<UserIcon className="h-4 w-4" />}
+ *   description="Manage your account settings"
+ * >
+ *   Profile
+ * </Item>
+ *
+ * // Selected state for navigation
+ * <Item selected icon={<HomeIcon className="h-4 w-4" />}>
+ *   Dashboard
+ * </Item>
+ *
+ * // Disabled option
+ * <Item disabled icon={<LockIcon className="h-4 w-4" />}>
+ *   Admin Panel
+ * </Item>
+ *
+ * // Interactive item with handler
+ * <Item onClick={handleSelect} icon={<SettingsIcon className="h-4 w-4" />}>
+ *   Settings
+ * </Item>
  * ```
  */
 import * as React from 'react';

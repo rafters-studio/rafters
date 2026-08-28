@@ -1,3 +1,37 @@
+/**
+ * Progress indicator for task completion status
+ *
+ * @cognitive-load 4/10 - Moderate attention required for progress monitoring
+ * @attention-economics Temporal attention: Holds user attention during wait states with clear progress indication
+ * @trust-building Accurate progress builds user confidence; clear completion states and next steps
+ * @accessibility Screen reader announcements via native progress element; keyboard navigation not applicable
+ * @semantic-meaning Progress communication: determinate=known duration with value, indeterminate=unknown duration
+ *
+ * @usage-patterns
+ * DO: Provide accurate progress indication when possible
+ * DO: Use indeterminate for unknown durations
+ * DO: Show clear completion states
+ * DO: Include value labels for complex operations
+ * NEVER: Fake progress (inaccurate progress bars)
+ * NEVER: Use for instant operations (< 1 second)
+ * NEVER: Leave progress at 99% indefinitely
+ *
+ * @example
+ * ```tsx
+ * // Determinate progress
+ * <Progress value={66} />
+ *
+ * // With custom label
+ * <Progress
+ *   value={3}
+ *   max={10}
+ *   getValueLabel={(value, max) => `${value} of ${max} files uploaded`}
+ * />
+ *
+ * // Indeterminate (loading)
+ * <Progress />
+ * ```
+ */
 import * as React from 'react';
 import classy from '@/lib/primitives/classy';
 import {

@@ -33,8 +33,6 @@ import { createPortal } from 'react-dom';
 import { keyInputOf } from '../../hooks/key-input';
 import { useMemory } from '../../hooks/use-memory';
 import classy from '../../primitives/classy';
-import { createControlledHoverDelay } from '../../primitives/hover-delay';
-import { getPortalContainer } from '../../primitives/portal';
 import { mergeProps } from '../../primitives/slot';
 import type { Align, Side } from '../../primitives/types';
 import { createBehavior, type AriaAttrs, type PartIds } from '../../lib/contract';
@@ -42,8 +40,6 @@ import {
   isOpen,
   positionTooltipContent,
   tooltip,
-  tooltipOpenDelay,
-  tooltipCloseDelay,
   type TooltipActions,
   type TooltipConfig,
   type TooltipPart,
@@ -51,46 +47,32 @@ import {
 } from './tooltip.behavior';
 import { tooltipClasses, type TooltipClassSet } from './tooltip.classes';
 
-type HoverDelay = ReturnType<typeof createControlledHoverDelay>;
-
-// ==================== Provider (delay defaults) ====================
+// ==================== Provider (shared defaults) ====================
 
 /**
- * The delays are OPTIONAL here, and deliberately so: an unset delay means "read
- * the token", and the token can only be read once there is a document. Baking a
- * number into the context default at module scope would be a second source for
- * a value the accessor already owns -- so absence travels, and the resolution
- * happens where the DOM exists.
+ * The delay props are GONE (#2148). Hover-intent timing is `transition-delay`
+ * on `--rafters-delay-hover-intent` in tooltip.classes.ts -- a system decision,
+ * not a per-instance or per-provider tuning knob. What is left here is the one
+ * genuinely per-tree default: whether the pointer may travel onto the tip.
  */
 interface TooltipProviderContextValue {
-  delayDuration: number | undefined;
-  skipDelayDuration: number | undefined;
   disableHoverableContent: boolean;
 }
 
 const TooltipProviderContext = React.createContext<TooltipProviderContextValue>({
-  delayDuration: undefined,
-  skipDelayDuration: undefined,
   disableHoverableContent: false,
 });
 
 export interface TooltipProviderProps {
-  delayDuration?: number;
-  skipDelayDuration?: number;
   disableHoverableContent?: boolean;
   children: React.ReactNode;
 }
 
 export function TooltipProvider({
-  delayDuration,
-  skipDelayDuration,
   disableHoverableContent = false,
   children,
 }: TooltipProviderProps) {
-  const value = React.useMemo(
-    () => ({ delayDuration, skipDelayDuration, disableHoverableContent }),
-    [delayDuration, skipDelayDuration, disableHoverableContent],
-  );
+  const value = React.useMemo(() => ({ disableHoverableContent }), [disableHoverableContent]);
   return (
     <TooltipProviderContext.Provider value={value}>{children}</TooltipProviderContext.Provider>
   );
@@ -106,9 +88,10 @@ interface TooltipContextValue {
   aria: Partial<Record<TooltipPart, AriaAttrs>>;
   classes: TooltipClassSet;
   request: (action: keyof TooltipActions) => boolean;
-  hover: HoverDelay;
   triggerRef: React.RefObject<HTMLElement | null>;
   disableHoverableContent: boolean;
+  /** Escape sets it, a pointer leave or blur clears it (WCAG 1.4.13). */
+  setDismissed: (dismissed: boolean) => void;
 }
 
 const TooltipContext = React.createContext<TooltipContextValue | null>(null);
@@ -121,27 +104,29 @@ function useTooltipContext(component: string): TooltipContextValue {
   return context;
 }
 
-/** True when rendering inside an explicit <TooltipPortal> (Radix-style
- *  composition); TooltipContent then skips its automatic portal. */
-const TooltipPortalContext = React.createContext(false);
-
 export interface TooltipProps {
   children: React.ReactNode;
   open?: boolean;
   defaultOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
-  delayDuration?: number;
   side?: Side;
   align?: Align;
   sideOffset?: number;
 }
 
+/**
+ * The root renders a REAL wrapper element (#2148), matching tooltip.astro's
+ * `<div data-part="root" data-tooltip>`, so trigger and content are DOM
+ * siblings under a hoverable root. That sibling shape is the whole CSS
+ * contract: the stylesheet reveals the tip through `[data-tooltip]:hover >
+ * [data-part=content]`, which a context-only root (rendering no node at all)
+ * gave it nowhere to attach.
+ */
 export function TooltipRoot({
   children,
   open,
   defaultOpen = false,
   onOpenChange,
-  delayDuration,
   side,
   align,
   sideOffset,
@@ -150,8 +135,6 @@ export function TooltipRoot({
   const config: TooltipConfig = {
     open,
     defaultOpen,
-    delayDuration: delayDuration ?? provider.delayDuration,
-    skipDelayDuration: provider.skipDelayDuration,
     disableHoverableContent: provider.disableHoverableContent,
     side,
     align,
@@ -161,6 +144,7 @@ export function TooltipRoot({
   const { memory, dispatch } = React.useMemo(() => createBehavior(tooltip, config), []);
   const state = useMemory(memory);
   const effectiveOpen = isOpen(state, config);
+  const [dismissed, setDismissed] = React.useState(false);
 
   const uid = React.useId();
   const ids = React.useMemo(() => {
@@ -183,22 +167,8 @@ export function TooltipRoot({
     [dispatch],
   );
 
-  // The hover-intent primitive: one instance per tooltip, its callbacks flow
-  // through the idempotent request so the score stays the single truth.
-  const hover = React.useMemo<HoverDelay>(
-    () =>
-      createControlledHoverDelay({
-        openDelay: config.delayDuration ?? tooltipOpenDelay(triggerRef.current),
-        closeDelay: config.skipDelayDuration ?? tooltipCloseDelay(triggerRef.current),
-        onOpen: () => request('open'),
-        onClose: () => request('close'),
-      }),
-    // request is stable; delays are read at open time by the primitive.
-    [request, config.delayDuration, config.skipDelayDuration],
-  );
-  React.useEffect(() => () => hover.destroy(), [hover]);
-
   const aria = tooltip.aria(state, config, ids);
+  const disableHoverableContent = config.disableHoverableContent ?? false;
 
   const contextValue: TooltipContextValue = {
     state,
@@ -208,12 +178,45 @@ export function TooltipRoot({
     aria,
     classes: tooltipClasses(config, state),
     request,
-    hover,
     triggerRef,
-    disableHoverableContent: config.disableHoverableContent ?? false,
+    disableHoverableContent,
+    setDismissed,
   };
 
-  return <TooltipContext.Provider value={contextValue}>{children}</TooltipContext.Provider>;
+  // The hover SCOPE mirrors the CSS reveal rule: the root by default (so the
+  // pointer can travel onto the tip), the trigger alone when the content is
+  // declared un-hoverable. These handlers move `data-state`, `onOpenChange`,
+  // and positioning -- visibility belongs to the stylesheet, always, and there
+  // is no timer on either side of the transition.
+  //
+  // The dismissal is dropped only once nothing can still reveal the tip: the
+  // trigger's `:focus-visible` is a reveal half of its own, so a pointerleave
+  // that cleared the flag while the trigger still held focus would put the
+  // dismissed tip straight back up (WCAG 1.4.13). The trigger's own blur checks
+  // the hover axis in the same way -- whichever leaves last does the clear.
+  const scopeHandlers = disableHoverableContent
+    ? {}
+    : {
+        onPointerEnter: () => request('open'),
+        onPointerLeave: (event: React.PointerEvent<HTMLDivElement>) => {
+          if (!event.currentTarget.contains(document.activeElement)) setDismissed(false);
+          request('close');
+        },
+      };
+
+  return (
+    <TooltipContext.Provider value={contextValue}>
+      <div
+        data-part="root"
+        data-tooltip
+        data-disable-hoverable-content={String(disableHoverableContent)}
+        data-dismissed={dismissed ? 'true' : undefined}
+        {...scopeHandlers}
+      >
+        {children}
+      </div>
+    </TooltipContext.Provider>
+  );
 }
 
 // ==================== Trigger ====================
@@ -224,16 +227,25 @@ export interface TooltipTriggerProps extends React.ButtonHTMLAttributes<HTMLButt
 
 export function TooltipTrigger({
   asChild,
-  onMouseEnter,
-  onMouseLeave,
+  onPointerEnter,
+  onPointerLeave,
   onFocus,
   onBlur,
   onKeyDown,
   children,
   ...props
 }: TooltipTriggerProps) {
-  const { config, effectiveOpen, ids, aria, classes, hover, triggerRef, request } =
-    useTooltipContext('TooltipTrigger');
+  const {
+    config,
+    effectiveOpen,
+    ids,
+    aria,
+    classes,
+    triggerRef,
+    request,
+    disableHoverableContent,
+    setDismissed,
+  } = useTooltipContext('TooltipTrigger');
 
   const setRef = React.useCallback(
     (element: HTMLElement | null) => {
@@ -242,33 +254,46 @@ export function TooltipTrigger({
     [triggerRef],
   );
 
-  const handleMouseEnter = (event: React.MouseEvent<HTMLButtonElement>) => {
-    onMouseEnter?.(event);
-    hover.onTriggerEnter();
+  const handlePointerEnter = (event: React.PointerEvent<HTMLButtonElement>) => {
+    onPointerEnter?.(event);
+    // Only when the root is NOT the hover scope -- otherwise the root already
+    // covers the trigger and this would double-dispatch.
+    if (disableHoverableContent) request('open');
   };
-  const handleMouseLeave = (event: React.MouseEvent<HTMLButtonElement>) => {
-    onMouseLeave?.(event);
-    hover.onTriggerLeave();
+  const handlePointerLeave = (event: React.PointerEvent<HTMLButtonElement>) => {
+    onPointerLeave?.(event);
+    if (disableHoverableContent) {
+      // Same handoff as the root scope: the focus half of the reveal rule may
+      // still be matching, and clearing under it re-reveals the dismissed tip.
+      if (!event.currentTarget.contains(document.activeElement)) setDismissed(false);
+      request('close');
+    }
   };
   const handleFocus = (event: React.FocusEvent<HTMLButtonElement>) => {
     onFocus?.(event);
-    hover.onTriggerFocus();
+    request('open');
   };
   const handleBlur = (event: React.FocusEvent<HTMLButtonElement>) => {
     onBlur?.(event);
-    hover.onTriggerBlur();
+    // The other half of the handoff: the hover scope -- the root, or the trigger
+    // alone when the content is un-hoverable -- may still be `:hover`, and the
+    // reveal rule does not care that focus has gone.
+    const scope = disableHoverableContent
+      ? event.currentTarget
+      : event.currentTarget.closest('[data-part="root"]');
+    if (scope?.matches(':hover') !== true) setDismissed(false);
+    request('close');
   };
   const handleKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
     onKeyDown?.(event);
     if (event.defaultPrevented) return;
-    // The score claims Escape. Dismiss through the score directly (see
-    // bindTooltip): a defaultOpen tip with no prior hover has no pending state in
-    // the hover primitive, so hover.close() alone would not close it. Dispatch
-    // close, then reset the primitive so a re-hover reopens.
+    // The score claims Escape. Dismissal is two moves: close the score (so
+    // data-state and onOpenChange agree) and raise `data-dismissed` on the root,
+    // which the stylesheet force-hides on even while `:hover` still matches.
     if (tooltip.keymap(keyInputOf(event), { open: effectiveOpen }, 'trigger', config) === 'close') {
       event.preventDefault();
       request('close');
-      hover.close();
+      setDismissed(true);
     }
   };
 
@@ -276,8 +301,8 @@ export function TooltipTrigger({
     'data-part': 'trigger',
     id: ids.trigger,
     ...aria.trigger,
-    onMouseEnter: handleMouseEnter,
-    onMouseLeave: handleMouseLeave,
+    onPointerEnter: handlePointerEnter,
+    onPointerLeave: handlePointerLeave,
     onFocus: handleFocus,
     onBlur: handleBlur,
     onKeyDown: handleKeyDown,
@@ -313,17 +338,19 @@ export interface TooltipPortalProps {
   forceMount?: boolean;
 }
 
-/** Radix-style explicit portal (a rafters extension over the shadcn base). When
- *  present, the nested TooltipContent skips its own automatic portal and the
- *  consumer owns placement in the tree. */
+/**
+ * The explicit escape hatch for a clipping ancestor. Reaching for it OPTS THAT
+ * INSTANCE OUT of the CSS sibling contract (#2148): a `document.body`-portaled
+ * content node is not a DOM sibling of its trigger, so `[data-tooltip]:hover >
+ * [data-part=content]` can never match it and the tip becomes JS-only, revealed
+ * through `data-state` alone. Un-portaled is the default for exactly that
+ * reason.
+ */
 export function TooltipPortal({ children, container, forceMount }: TooltipPortalProps) {
   const { effectiveOpen } = useTooltipContext('TooltipPortal');
   if (!(forceMount || effectiveOpen)) return null;
   if (typeof document === 'undefined') return null;
-  return createPortal(
-    <TooltipPortalContext.Provider value={true}>{children}</TooltipPortalContext.Provider>,
-    container ?? document.body,
-  );
+  return createPortal(children, container ?? document.body);
 }
 
 // ==================== Content ====================
@@ -332,26 +359,18 @@ export interface TooltipContentProps extends React.HTMLAttributes<HTMLDivElement
   side?: Side;
   align?: Align;
   sideOffset?: number;
-  forceMount?: boolean;
-  /** Portal target for the floating tip; defaults to document.body. */
-  container?: HTMLElement | null;
 }
 
 export function TooltipContent({
   side,
   align,
   sideOffset,
-  forceMount,
-  container,
   className,
-  onMouseEnter,
-  onMouseLeave,
   children,
   ...props
 }: TooltipContentProps) {
-  const { config, effectiveOpen, ids, aria, classes, triggerRef, hover, disableHoverableContent } =
+  const { config, effectiveOpen, ids, aria, classes, triggerRef } =
     useTooltipContext('TooltipContent');
-  const isInsidePortal = React.useContext(TooltipPortalContext);
   const contentRef = React.useRef<HTMLDivElement | null>(null);
 
   // Positioning is a DOM side-effect: wire it here, but the placement decision
@@ -376,20 +395,13 @@ export function TooltipContent({
     };
   });
 
-  if (!(forceMount || effectiveOpen)) return null;
-  if (typeof document === 'undefined') return null;
-
-  const handleMouseEnter = (event: React.MouseEvent<HTMLDivElement>) => {
-    onMouseEnter?.(event);
-    if (!disableHoverableContent) hover.onContentEnter();
-  };
-  const handleMouseLeave = (event: React.MouseEvent<HTMLDivElement>) => {
-    onMouseLeave?.(event);
-    if (!disableHoverableContent) hover.onContentLeave();
-  };
-
+  // UNCONDITIONAL (#2148). A node that does not exist cannot be revealed by
+  // `:hover`, so there is no `forceMount || open` gate and no automatic portal:
+  // the tip renders as a DOM sibling of its trigger and the stylesheet decides
+  // whether it is visible. `hidden` is never applied for the same reason -- it
+  // is UA `display: none`, which kills both the transition and the reveal.
   const dataState = effectiveOpen ? 'open' : 'closed';
-  const node = (
+  return (
     <div
       data-part="content"
       id={ids.content}
@@ -397,21 +409,11 @@ export function TooltipContent({
       data-state={dataState}
       className={classy(classes.content, className)}
       {...aria.content}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
       {...props}
     >
       {children}
     </div>
   );
-
-  // Inside an explicit <TooltipPortal> the consumer owns the portal.
-  if (isInsidePortal) return node;
-
-  const portalTarget = getPortalContainer(
-    container !== undefined ? { container, enabled: true } : { enabled: true },
-  );
-  return portalTarget ? createPortal(node, portalTarget) : node;
 }
 
 // ==================== Display names + namespaced (shadcn) surface ====================

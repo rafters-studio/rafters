@@ -2,14 +2,17 @@
  * Navigation menu component for site-level navigation with expandable sections
  *
  * Behavior (which menu is open, arrow-key navigation across triggers, roving tabindex,
- * hover-intent open/close, Escape + outside-click dismiss, and ARIA / visibility
- * reflection) lives in the framework-agnostic createNavigationMenu controller, which
- * composes the shared primitives (selection-group + roving-focus + dismissable-layer).
+ * hover / focus open and close, Escape + outside-click dismiss, and ARIA reflection)
+ * lives in the framework-agnostic createNavigationMenu controller, which composes the
+ * shared primitives (selection-group + roving-focus + dismissable-layer).
  * React renders structural markup and delegates via a callback ref - the same controller
  * the Astro and web-component wrappers use, so behavior cannot drift between frameworks.
+ * VISIBILITY is not in that list any more (#2148): the panel is revealed by the item's
+ * own :hover / :focus-within in navigation-menu.classes.ts, over the motion matrix's
+ * duration / curve / delay tokens, so it opens with JavaScript turned off.
  *
  * Trigger and Content render NO open-derived attributes that the controller owns once
- * mounted (it reflects aria-expanded / data-state / hidden before paint); they render
+ * mounted (it reflects aria-expanded / data-state before paint); they render
  * only a static, non-reactive initial state for SSR so the server HTML is correct and
  * re-renders cannot clobber the controller. The decorative Viewport and Indicator are
  * the exception: they subscribe to the controller's open value to size / position
@@ -63,7 +66,8 @@ import {
   activeItem,
   navInstanceAria,
   navigationMenu,
-  navigationMenuHoverDelay,
+  navigationMenuPanel,
+  setNavigationMenuDismissed,
   startNavigationMenuEffects,
   type NavigationMenuActions,
   type NavigationMenuConfig,
@@ -83,6 +87,8 @@ interface NavigationMenuContextValue {
     ...payload: PayloadArgs<NavigationMenuActions[K]>
   ) => boolean;
   getPart: (part: string) => HTMLElement | null;
+  /** Toggle an item AND keep the WCAG 1.4.13 dismissal flag in step. */
+  toggleItem: (value: string) => void;
   instanceId: (part: NavigationMenuPart, key: string) => string;
   config: NavigationMenuConfig;
   active: string | null;
@@ -120,7 +126,6 @@ export interface NavigationMenuProps extends React.HTMLAttributes<HTMLElement> {
   defaultValue?: string;
   onValueChange?: (value: string) => void;
   orientation?: 'horizontal' | 'vertical';
-  delayDuration?: number;
 }
 
 export function NavigationMenu({
@@ -128,13 +133,12 @@ export function NavigationMenu({
   defaultValue = '',
   onValueChange,
   orientation = 'horizontal',
-  delayDuration,
   className,
   children,
   onKeyDown,
   ...props
 }: NavigationMenuProps) {
-  const config: NavigationMenuConfig = { value, defaultValue, orientation, delayDuration };
+  const config: NavigationMenuConfig = { value, defaultValue, orientation };
 
   // The controller composes the score with the substrate -- no useBehavior.
   // createBehavior is the model instance (memory + canDispatch-gated
@@ -190,9 +194,9 @@ export function NavigationMenu({
   );
 
   // Compose the roving/hover/dismiss trio directly, once per mount (rebuilt
-  // only when orientation or delay change). Hover reads the open state live
-  // from memory, so open/close needs no dependency and roving/hover are not
-  // torn down per render. getPart, memory, and request are stable.
+  // only when orientation changes). Every dispatch is immediate, so open/close
+  // needs no dependency and roving/hover are not torn down per render. getPart
+  // and request are stable.
   React.useEffect(() => {
     const root = rootRef.current;
     if (!root) return;
@@ -200,14 +204,28 @@ export function NavigationMenu({
       root,
       list: getPart('list'),
       orientation,
-      // Unset means "read the token": the delay resolves off the mounted root,
-      // so a scoped override applies and reduced motion zeroes it.
-      delay: delayDuration ?? navigationMenuHoverDelay(root),
-      isOpen: () => activeItem(memory.get(), latest.current.config) !== null,
       onHoverOpen: (value) => void request('hoverOpen', value),
       onClose: () => void request('close'),
     });
-  }, [orientation, delayDuration, getPart, memory, request]);
+  }, [orientation, getPart, request]);
+
+  // A deliberate click is a fresh intent for THIS item, so it drops THIS
+  // panel's flag unconditionally (the clicked item is hovered and focused, so
+  // the settling sweep in the effects would keep it) -- but a click (or
+  // Enter/Space, which a native button fulfils as a click) that CLOSED the panel
+  // leaves focus on the trigger, so the item still matches `:focus-within` and
+  // the reveal rule would keep the panel visible against a
+  // `data-state="closed"`. Raise the same flag the Escape path raises.
+  const toggleItem = React.useCallback(
+    (value: string) => {
+      setNavigationMenuDismissed(navigationMenuPanel(rootRef.current, value), false);
+      request('toggle', value);
+      if (memory.get().active === null) {
+        setNavigationMenuDismissed(navigationMenuPanel(rootRef.current, value), true);
+      }
+    },
+    [memory, request],
+  );
 
   const aria = navigationMenu.aria(state, config, ids);
 
@@ -226,6 +244,10 @@ export function NavigationMenu({
       const itemValue = trigger?.dataset['value'];
       if (!itemValue) return;
       event.preventDefault();
+      // A deliberate open is a fresh intent for THIS item -- same reason as the
+      // click path: the trigger holds focus, so only an unconditional drop gets
+      // the panel back up.
+      setNavigationMenuDismissed(navigationMenuPanel(rootRef.current, itemValue), false);
       request('open', itemValue);
       return;
     }
@@ -235,6 +257,12 @@ export function NavigationMenu({
         `[data-part="trigger"][data-value="${active}"]`,
       );
       request('close');
+      // Raise the WCAG dismissal flag on the dismissed PANEL before returning
+      // focus: the refocus fires focusin, and the effects' guard reads this
+      // attribute to know not to reopen this item (its siblings stay live). It
+      // is written imperatively, never rendered, so React's next render cannot
+      // clobber what the effects clear.
+      setNavigationMenuDismissed(navigationMenuPanel(rootRef.current, active), true);
       openTrigger?.focus();
     }
   };
@@ -245,6 +273,7 @@ export function NavigationMenu({
     aria,
     request,
     getPart,
+    toggleItem,
     instanceId,
     config,
     active,
@@ -310,7 +339,7 @@ export function NavigationMenuTrigger({
   onClick,
   ...props
 }: NavigationMenuTriggerProps) {
-  const { config, state, classes, request } = useNavigationMenuContext('NavigationMenuTrigger');
+  const { config, state, classes, toggleItem } = useNavigationMenuContext('NavigationMenuTrigger');
   const { value, triggerId, contentId } = useItemContext('NavigationMenuTrigger');
   const aria = navInstanceAria('trigger', value, state, config, {
     trigger: triggerId,
@@ -329,7 +358,7 @@ export function NavigationMenuTrigger({
       onClick={(event) => {
         onClick?.(event);
         if (event.defaultPrevented) return;
-        request('toggle', value);
+        toggleItem(value);
       }}
       {...props}
     >
