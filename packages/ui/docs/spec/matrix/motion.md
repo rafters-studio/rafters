@@ -174,6 +174,8 @@ All popup contents scale from the anchor origin.
 | context-menu C | content | open -> closed | fade + zoom | fast | exit | -- | extent-pop |
 | context-menu C | items | enter | fade (with content) | -- | -- | delay-stagger-step | -- |
 | context-menu C | items | highlight move | color | micro* | standard* | -- | -- |
+| context-menu C | subcontent | closed -> open | fade + zoom | moderate | enter | delay-hover-intent | extent-pop |
+| context-menu C | subcontent | open -> closed | fade + zoom | fast | exit | -- | extent-pop |
 | menubar C | content | closed -> open | fade + zoom | moderate | enter | -- | extent-pop |
 | menubar C | content | open -> closed | fade + zoom | fast | exit | -- | extent-pop |
 | menubar C | items | enter | fade (with content) | -- | -- | delay-stagger-step | -- |

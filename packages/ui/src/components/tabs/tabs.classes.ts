@@ -24,7 +24,7 @@ const triggerBaseClasses = [
   'text-label-medium ts-label-medium ring-offset-background cursor-pointer',
   // Motion intent indicator-move: the active pill travels along the rail's main
   // axis. Duration and easing come from tokens; motion-reduce opts out entirely.
-  'transition-all duration-200 motion-reduce:transition-none',
+  'transition-all duration-fast motion-reduce:transition-none',
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
   'disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none',
 ].join(' ');

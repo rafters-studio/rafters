@@ -1,24 +1,36 @@
 /**
- * Adjoins a set of related buttons into one cohesive action set: shared,
- * collapsed borders and a single focus ring that stacks above its neighbors.
- * A layout composition -- it arranges whatever buttons the consumer projects
- * but renders no button itself, holds no state, and is not form-associated.
+ * Groups related buttons with connected styling for cohesive action sets
  *
- * @cognitive-load 2/10 - decision 0, information 1, interaction 0, disruption
- * 0, learning 1. The group makes no decision and has no interaction of its own;
- * connected borders add a little information (these actions are related) and the
- * grouping convention is quickly learned. The buttons inside carry their own load.
- * @attention-economics Groups related actions so they read as one unit and stop
- * competing individually for attention -- first/last position signals flow
- * direction. Keep groups small (2-5 buttons); a larger group reads as a toolbar,
- * not a decision.
- * @trust-building Collapsed borders and consistent sizing make the set look
- * deliberate rather than assembled by accident, reducing decision fatigue across
- * the shared action context.
- * @accessibility role="group" (WAI-ARIA APG) with a consumer aria-label names the
- * set for assistive tech; each child button keeps its full native keyboard
- * accessibility, and the focus-visible child stacks above its neighbors so the
- * ring is never clipped by an overlapping collapsed border.
+ * @cognitive-load 2/10 - Visual grouping reduces perceived options, connected styling signals relatedness
+ * @attention-economics Groups related actions to reduce visual noise. First/last position indicates primary flow direction. Use sparingly - max 3-5 buttons per group.
+ * @trust-building Connected borders create visual hierarchy and reduce decision fatigue. Consistent sizing reinforces professional appearance.
+ * @accessibility Uses role="group" with aria-label for screen readers. Individual buttons retain full keyboard accessibility. Focus ring spans full group context.
+ * @semantic-meaning Grouping indicates related actions that share context. Horizontal for sequential steps, vertical for stacked choices.
+ *
+ * @usage-patterns
+ * DO: Group related actions (Save/Cancel, Undo/Redo, pagination controls)
+ * DO: Use size prop on group (Button must use useButtonGroupContext for inheritance)
+ * DO: Keep groups small (2-5 buttons) for scannability
+ * DO: Add aria-label to describe the group's purpose
+ * NEVER: Mix unrelated actions in the same group
+ * NEVER: Use more than 5 buttons in a group
+ * NEVER: Nest button groups
+ *
+ * @example
+ * ```tsx
+ * // Horizontal group with size inheritance
+ * <ButtonGroup size="sm" aria-label="Document actions">
+ *   <Button variant="outline">Cancel</Button>
+ *   <Button variant="default">Save</Button>
+ * </ButtonGroup>
+ *
+ * // Vertical group for stacked options
+ * <ButtonGroup orientation="vertical" aria-label="View options">
+ *   <Button variant="ghost">Grid</Button>
+ *   <Button variant="ghost">List</Button>
+ *   <Button variant="ghost">Table</Button>
+ * </ButtonGroup>
+ * ```
  */
 import * as React from 'react';
 import classy from '@/lib/primitives/classy';

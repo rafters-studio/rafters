@@ -1,47 +1,34 @@
 /**
- * Table -- a semantic data table for structured, comparable information.
- * Compose Table with Table.Header, Table.Body, Table.Footer, Table.Row,
- * Table.Head, Table.Cell, and Table.Caption; the semantic element tree is the
- * contract, the sub-components are the composition. A row carries a selected
- * state through the `selected` prop (never an internal selection model): a
- * selected row projects `aria-selected` and the `data-state="selected"` hook.
+ * Table component for displaying structured data in rows and columns
  *
- * @cognitive-load 3/10 - decision 0, info 2, interaction 0, disruption 0, learning 1
- * @attention-economics Low attention cost: a table is furniture for scanning.
- * Structured rows and columns let the eye compare without re-reading; the
- * header row anchors meaning once and every cell inherits it. Reserve row
- * selection tint for genuine state -- a table where every row looks active
- * teaches the reader to ignore the signal.
- * @trust-building Clear column headers with honest `scope`, consistent
- * alignment (text left, numbers right), and visible row separation make the
- * data legible and predictable. A selected row is announced, not merely
- * coloured, so keyboard and screen-reader users share the sighted user's
- * model of what is chosen.
- * @accessibility Native table semantics carry the contract -- `<table>` is
- * role=table, `<th>` a columnheader/rowheader, `<tr>` a row. Give header cells
- * a `scope` (`col`/`row`) so assistive tech associates each data cell with its
- * headers; a selected row's `aria-selected="true"` rides the native row role.
- * Never use a table for layout, and never hide the header row.
- * @semantic-meaning Data presentation: lists, comparisons, and structured
- * records where rows are entities and columns are their attributes.
+ * @cognitive-load 3/10 - Familiar grid pattern; visual scanning is natural
+ * @attention-economics Low attention cost: structured data is easy to scan
+ * @trust-building Clear headers, consistent alignment, visible row separation
+ * @accessibility Semantic table elements, proper scope attributes, keyboard navigable
+ * @semantic-meaning Data presentation: lists, comparisons, structured information
  *
- * A pure static score has nothing to subscribe to: the performance is
- * decoration application plus the per-row selected projection. No useBehavior,
- * no memory, no bind -- config in, classes out, children through.
+ * @usage-patterns
+ * DO: Use for structured, comparable data
+ * DO: Provide clear column headers
+ * DO: Use consistent alignment (left for text, right for numbers)
+ * DO: Support sorting and filtering for large datasets
+ * DO: Consider sticky headers for long tables
+ * NEVER: Use for layout purposes (use CSS Grid instead)
+ * NEVER: Nest tables within tables
+ * NEVER: Hide header row
  *
  * @example
  * ```tsx
  * <Table>
- *   <Table.Caption>Recent signups</Table.Caption>
  *   <Table.Header>
  *     <Table.Row>
- *       <Table.Head scope="col">Name</Table.Head>
- *       <Table.Head scope="col">Status</Table.Head>
+ *       <Table.Head>Name</Table.Head>
+ *       <Table.Head>Status</Table.Head>
  *     </Table.Row>
  *   </Table.Header>
  *   <Table.Body>
- *     <Table.Row selected>
- *       <Table.Cell>Ada</Table.Cell>
+ *     <Table.Row>
+ *       <Table.Cell>John</Table.Cell>
  *       <Table.Cell>Active</Table.Cell>
  *     </Table.Row>
  *   </Table.Body>

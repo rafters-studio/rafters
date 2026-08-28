@@ -1,31 +1,46 @@
 /**
- * Adjoins a text control with leading/trailing affixes -- a currency symbol, a
- * unit, a search icon, an action button -- into one box with one border and one
- * focus ring. The group supplies chrome and the disabled/validity rules; the
- * contained control keeps its own value, caret, and form participation.
+ * InputGroup combines an input with visual addons (icons, buttons, text) for enhanced form UX
  *
- * @cognitive-load 3/10 - decision 0, information 2, interaction 1, disruption 0,
- * learning 0. The group asks nothing of the user; the affixes ADD information
- * (what unit, what currency, what this field searches) that a bare input would
- * otherwise have to spend its placeholder on, and interaction is just the
- * familiar act of typing into a field.
- * @attention-economics Affixes are context, not competition: muted foreground,
- * no fill by default, and never wider than their content. Reading order puts the
- * leading affix before the value so a currency symbol is understood before the
- * number is typed. An action button in a trailing affix is the one element that
- * may claim attention, and only after the field holds a value.
- * @trust-building One border and one focus ring around the whole assembly tell
- * the user this is a single control, not a row of loosely arranged pieces. A
- * disabled group disables its affix buttons too, so nothing inside a dead
- * control looks clickable -- the honesty that stops a user testing whether it
- * still works.
- * @accessibility The affixes are decoration around the control, not
- * replacements for its name: an icon affix must be aria-hidden and the control
- * still needs a real label (Field, or aria-label). The score puts no nameless
- * role="group" on the wrapper, projects aria-invalid onto the CONTROL where
- * assistive tech expects validity, and propagates disabled to every focusable
- * descendant so a dead group holds no reachable tab stop. The focus ring is a
- * focus-within ring, so keyboard focus is always visible wherever it lands.
+ * @cognitive-load 4/10 - Composite input control with clear addon boundaries and input focus
+ * @attention-economics Visual hierarchy: addons=contextual, input=primary focus. Addons should clarify input purpose without competing for attention
+ * @trust-building Clear boundaries between addons and input, consistent sizing, proper focus management across the group
+ * @accessibility Focus ring wraps entire group, addons support aria-label for screen readers, keyboard navigation preserved
+ * @semantic-meaning Start addons=prefixes (currency symbols, icons), end addons=suffixes (units, action buttons)
+ *
+ * @usage-patterns
+ * DO: Use start addon for input type indicators (search icon, currency symbol)
+ * DO: Use end addon for units, clear buttons, or submit actions
+ * DO: Keep addons visually lightweight to not overshadow input
+ * DO: Ensure addons have proper accessibility labels when using icons
+ * NEVER: Use addons without semantic meaning
+ * NEVER: Place primary actions in addons (use a separate button instead)
+ * NEVER: Nest input groups
+ *
+ * @example
+ * ```tsx
+ * // Search input with icon
+ * <InputGroup>
+ *   <InputGroupAddon position="start">
+ *     <SearchIcon aria-hidden />
+ *   </InputGroupAddon>
+ *   <Input placeholder="Search..." aria-label="Search" />
+ * </InputGroup>
+ *
+ * // Price input with currency and unit
+ * <InputGroup>
+ *   <InputGroupAddon position="start">$</InputGroupAddon>
+ *   <Input type="number" placeholder="0.00" />
+ *   <InputGroupAddon position="end">USD</InputGroupAddon>
+ * </InputGroup>
+ *
+ * // Input with button addon
+ * <InputGroup>
+ *   <Input placeholder="Enter code" />
+ *   <InputGroupAddon position="end">
+ *     <Button size="sm" variant="ghost">Apply</Button>
+ *   </InputGroupAddon>
+ * </InputGroup>
+ * ```
  */
 import * as React from 'react';
 import classy from '@/lib/primitives/classy';

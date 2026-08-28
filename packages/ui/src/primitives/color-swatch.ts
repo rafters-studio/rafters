@@ -17,8 +17,11 @@
  * // teardown
  * cleanup();
  * ```
+ *
+ * @internal-dependencies @rafters/color-utils
  */
 
+import { oklchToCSS } from '@rafters/color-utils';
 import type { CleanupFunction, GamutTier } from './types';
 
 export interface SwatchOptions {
@@ -40,11 +43,7 @@ export interface SwatchOptions {
  * Build the oklch() CSS string from options
  */
 export function toOklch(options: SwatchOptions): string {
-  const a = options.alpha ?? 1;
-  if (a < 1) {
-    return `oklch(${options.l} ${options.c} ${options.h} / ${a})`;
-  }
-  return `oklch(${options.l} ${options.c} ${options.h})`;
+  return oklchToCSS({ ...options, alpha: options.alpha ?? 1 });
 }
 
 /**

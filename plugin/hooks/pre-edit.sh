@@ -144,7 +144,7 @@ if [ "$IS_AUTHORING" != "1" ]; then
   # composite (block.meta.variant) or component (variant prop, dictated
   # by JSDoc), never to consumer-side className.
   if echo "$CONTENT" | grep -qE '(className|class)=|classy\(' && echo "$CONTENT" | grep -qE '\b(bg|text|border)-(primary|secondary|tertiary|accent|highlight|destructive|success|warning|info|muted|foreground|background|card|popover|sidebar|chart-[0-9]|ring|input)\b'; then
-    VIOLATIONS+="THE SYSTEM OWNS VISUAL VALUES: Found semantic color utility (bg-primary / text-destructive / etc.) in a class-bearing context. The composite manifest (block.meta.variant) or component (variant prop per JSDoc) owns variant choice -- never consumer className/classy(). Query rafters_pattern / rafters_composite / rafters_component. (If you are authoring a custom component, put it in src/components/ where these utilities are allowed.)\n"
+    VIOLATIONS+="THE SYSTEM OWNS VISUAL VALUES: Found semantic color utility (bg-primary / text-destructive / etc.) in a class-bearing context. The composite manifest (block.meta.variant) or component (variant prop per JSDoc) owns variant choice -- never consumer className/classy(). Query rafters_describe to find the right variant. (If you are authoring a custom component, put it in src/components/ where these utilities are allowed.)\n"
   fi
 
   # THE SYSTEM OWNS TYPOGRAPHY SIZE + WEIGHT

@@ -79,7 +79,7 @@ describe('sidebar menu button variants', () => {
   it('base keeps only the small interaction-feedback duration (Spec 04)', () => {
     const base = sidebarMenuButtonClasses('default', 'default');
     expect(base).toContain('transition-colors');
-    expect(base).toContain('duration-150');
+    expect(base).toContain('duration-fast');
     expect(base).toContain('motion-reduce:transition-none');
     expect(base).not.toContain('duration-200');
   });

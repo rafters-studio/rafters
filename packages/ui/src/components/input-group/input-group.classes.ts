@@ -41,7 +41,7 @@ const rootClasses =
   'flex items-center w-full rounded-md border border-input bg-transparent ' +
   'ring-offset-background ' +
   'focus-within:outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 ' +
-  'transition-shadow duration-100 motion-reduce:transition-none ' +
+  'transition-shadow duration-micro motion-reduce:transition-none ' +
   'data-[state=invalid]:border-destructive data-[state=invalid]:focus-within:ring-destructive-ring ' +
   'data-[disabled]:opacity-50 data-[disabled]:cursor-not-allowed';
 

@@ -51,6 +51,12 @@ describe('tabs classes', () => {
     expect(trigger).toContain('motion-reduce:transition-none');
   });
 
+  it('the trigger transition uses the fast tier per the matrix (motion.jsonl:6-7)', () => {
+    const trigger = classesFor({}).trigger;
+    expect(trigger).toContain('duration-fast');
+    expect(trigger).not.toMatch(/duration-[0-9]/);
+  });
+
   it('the trigger carries the focus ring and the disabled treatment', () => {
     const trigger = classesFor({}).trigger;
     expect(trigger).toContain('focus-visible:ring-ring');

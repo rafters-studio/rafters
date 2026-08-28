@@ -1,5 +1,10 @@
 import { compose, type GlueSlice } from '@/lib/compose';
-import { createBehavior, type AriaAttrs, type BehaviorSpec, type PartIds } from '@/lib/contract';
+import {
+  createBehavior,
+  type AriaAttrs,
+  type BehaviorSpec,
+  type PartIds,
+} from '@/lib/contract';
 import {
   disclosable,
   isOpen,

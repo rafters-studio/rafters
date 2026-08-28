@@ -15,7 +15,7 @@ const rootClasses = '';
 
 const triggerClasses =
   'inline-flex items-center hover:bg-muted ' +
-  'transition-colors duration-150 motion-reduce:transition-none ' +
+  'transition-colors duration-fast motion-reduce:transition-none ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ' +
   'ring-offset-background focus-visible:ring-offset-2 ' +
   'disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none';
@@ -25,7 +25,8 @@ const triggerClasses =
 // carries the token-scale duration and yields to reduced-motion. The oracle's
 // `animate-collapsible-up/down` utilities were never defined in the token
 // system, so porting them would be dead classes (see collapsible.md).
-const contentClasses = 'overflow-hidden transition-all duration-200 motion-reduce:transition-none';
+const contentClasses =
+  'overflow-hidden transition-all duration-moderate motion-reduce:transition-none';
 
 /** The view: class strings keyed by config/state. No logic. */
 export function collapsibleClasses(
