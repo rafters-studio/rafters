@@ -334,11 +334,17 @@ date-picker (the anchored-popup content pair) carry cells with no
 ported yet. Dropping the rows would claim the moment does not exist; it exists in the
 design, just not in code, so they stay as a needs-ledger entry until the port lands.
 
-`delay-skip` (Token generics table above) stays unconsumed by the same logic: #2148
-confirmed tooltip's `skipDelayDuration` is NOT `delay-skip` despite the similar name,
-so the token names a real, specified interaction (the warm-reopen window) rather than
-being mislabelled onto a prop that means something else -- a future component may
-still consume it.
+`delay-skip` (Token generics table above) stays unconsumed by the same logic: it
+names a real, specified interaction -- the warm-reopen grace window, reopen a
+just-closed surface within it and the entrance delay is skipped because the user is
+already oriented -- with no component wired to it today, not a row kept alive by
+confusion with some other prop. There is no delay prop left in tooltip's source
+(`packages/ui/src/components/tooltip/`) to confuse it with, either: commit
+c92f9814 (#2148) deleted the delay-prop mechanism outright -- tooltip, hover-card,
+and navigation-menu reveal in CSS now, not TypeScript -- and tooltip's own
+open -> closed cell (motion.jsonl) carries no delay generic at all; `linger` belongs
+to hover-card's close, not tooltip's. A future component may still consume
+`delay-skip`.
 
 Scroll-area's scrollbar `hide` row above carries a `linger` delay at `proposed` with
 no CSS or JS behind it: proposed, unimplemented. Building it waits on `linger`'s exact
