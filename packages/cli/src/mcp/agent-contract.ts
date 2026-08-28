@@ -59,8 +59,9 @@ hook denies any edit that hand-authors a visual decision.
   and Grid own all layout.
 - Never use raw \`<h1>\`/\`<p>\`/\`<span>\` with class attributes for styled text.
   Use the typography components with token props (size, weight, color).
-- Never use hex colors, arbitrary values, or \`var()\`. Use semantic color tokens
-  (bg-primary, text-accent).
+- Never use hex colors, arbitrary values, or \`var()\`. The composite's block meta
+  or the component's \`variant\` prop carries the color decision -- do not set
+  semantic color utilities (bg-primary, text-accent) in assembly class strings.
 - Never pass \`class\` or \`className\` to a served component. Use token props for
   overrides.
 

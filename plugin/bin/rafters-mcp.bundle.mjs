@@ -24039,7 +24039,7 @@ function readVersion() {
 var VERSION = readVersion();
 
 // src/mcp/tools.ts
-import { readFile as readFile2, writeFile } from "fs/promises";
+import { readdir as readdir2, readFile as readFile2, writeFile } from "fs/promises";
 import { isAbsolute as isAbsolute2, join as join5 } from "path";
 
 // ../../node_modules/.pnpm/zod@4.1.12/node_modules/zod/v4/classic/external.js
@@ -37126,8 +37126,16 @@ function resolveReadSet(field, cwd, fallback) {
   return out;
 }
 
+// src/utils/reconcile.ts
+import { readdirSync } from "fs";
+var KIND_PATHS = {
+  components: { field: "componentsPath", fallback: "components/ui" },
+  primitives: { field: "primitivesPath", fallback: "lib/primitives" },
+  composites: { field: "compositesPath", fallback: "composites" }
+};
+
 // src/utils/workspaces.ts
-import { existsSync as existsSync2, readdirSync, readFileSync as readFileSync2, statSync } from "fs";
+import { existsSync as existsSync2, readdirSync as readdirSync2, readFileSync as readFileSync2, statSync } from "fs";
 import { basename, dirname as dirname2, join as join4, resolve as resolve3 } from "path";
 
 // src/utils/discover.ts
@@ -37218,7 +37226,7 @@ function expandPattern(monorepoRoot, pattern) {
     const parentRel = trimmed.slice(0, -2);
     const parent = join4(monorepoRoot, parentRel);
     if (!existsSync2(parent)) return [];
-    return readdirSync(parent).map((entry) => join4(parent, entry)).filter((path) => {
+    return readdirSync2(parent).map((entry) => join4(parent, entry)).filter((path) => {
       try {
         return statSync(path).isDirectory();
       } catch {
@@ -37616,12 +37624,6 @@ function noMatch() {
 }
 
 // src/mcp/overlay.ts
-function buildInstalledSet(config3) {
-  return {
-    components: new Set(config3.installed?.components ?? []),
-    composites: new Set(config3.installed?.composites ?? [])
-  };
-}
 function describeWithOverlay(addr, graph, ctx) {
   const result = describe3(addr, graph, ctx.target);
   if (addr === "components" || addr === "composites") {
@@ -37779,7 +37781,7 @@ var TOOL_DEFINITIONS = [
   },
   {
     name: "rafters_describe",
-    description: 'Recursively introspect the component/composite intel graph. describe() returns the installed surface; describe(components)/describe(composites) list the kind roster; describe(button) returns a node -- intel plus type-marked, drillable children; describe(button.props.fill) drills into a prop; describe(button.props.fill.vocab) returns the real token values. describe(button.*) expands all props inline in one call (no more drill-per-prop round trips); describe(button.props.fill.?) probes safely (null on miss, not an error). A natural-language question (e.g. "what do I use when it needs to be above everything") routes to the best-matching node plus a near-miss counter-example instead of an address.',
+    description: `Recursively introspect the component/composite intel graph. describe() returns the installed surface; describe(components)/describe(composites) list the kind roster; describe(button) returns a node -- intel plus type-marked, drillable children; describe(button.props.variant) drills into a prop -- an enum prop returns its literal union members; a grammar prop returns its composition rules, with the token vocabulary deliberately withheld. describe(button.*) expands all props inline in one call (no more drill-per-prop round trips); describe(button.props.color.?) probes safely (null on miss, not an error). A natural-language address (e.g. "what do I use when it needs to be above everything") routes through a separate intent door instead: deterministic keyword matching over a small, curated tag axis, returning a best-match node plus its near-miss counter-example. Below its match threshold it refuses rather than guessing, with a note pointing you at describe(components)/describe(composites) to browse; #2166 (open) is the follow-up that scores it against the intel this tool already owns. A part node carries parent, plus siblings when its parent has other parts; children are typed pointers you feed back in (the prop's own type for props, part for sub-components, edge for composesWith).`,
     inputSchema: {
       type: "object",
       properties: {
@@ -37794,7 +37796,7 @@ var TOOL_DEFINITIONS = [
   },
   {
     name: "rafters_generate",
-    description: 'Resolve a prose query to ONE registry component and return its verbatim, target-correct snippet with open content slots. A bare component name (e.g. "button", "give me a modal") resolves directly; a semantic question (e.g. "what do I use when it needs to be above everything") falls back to the intent door. Returns { component, target, snippet, slots } where snippet is the registry facet verbatim and each slot is left for the caller to fill. v1 serves single components only -- no parameterization, no composites, no writes.',
+    description: 'Resolve a bare component name to ONE registry component and return its verbatim, target-correct snippet with open content slots. A component name (e.g. "button", "separator", "badge") resolves directly; on a miss it falls back to the same intent door rafters_describe uses -- deterministic keyword matching over a small, curated tag axis, refusing below its match threshold with a note pointing you at describe(components) rather than guessing (#2166, open, is the follow-up that scores it against the intel this tool already owns). Returns { component, target, presence, snippet, slots } where snippet is the registry facet verbatim and each slot is left for the caller to fill. READ `presence` BEFORE PASTING: `installed` means the import resolves in this workspace; `available` means the component exists in the registry but is NOT in this project yet -- the snippet is still correct, but you must run the command in `install` first or the build fails on a missing import. v1 serves single components only -- no parameterization, no composites, no writes.',
     inputSchema: {
       type: "object",
       properties: {
@@ -37857,10 +37859,10 @@ var TOOL_DEFINITIONS = [
   }
 ];
 var DEPRECATED_MSG = "use rafters_describe instead";
-var OverlayInstalledSchema = external_exports4.object({
-  components: external_exports4.array(external_exports4.string()).optional(),
-  primitives: external_exports4.array(external_exports4.string()).optional(),
-  composites: external_exports4.array(external_exports4.string()).optional()
+var OverlayPathsSchema = external_exports4.object({
+  componentsPath: PathFieldSchema.optional(),
+  primitivesPath: PathFieldSchema.optional(),
+  compositesPath: PathFieldSchema.optional()
 });
 var RaftersToolHandler = class {
   workspaces;
@@ -38094,12 +38096,13 @@ var RaftersToolHandler = class {
   }
   /**
    * Resolve a workspace's overlay context: the configured `componentTarget`
-   * (echoed as-is, `undefined` in degraded mode) and its installed set. Per the
-   * integration note on #2074, `installed.primitives` folds into the components
-   * set -- a `primitive`-kind item maps to graph kind `component`, so without the
-   * fold every installed primitive would misreport as `available`. Built here
-   * rather than by mutating `buildInstalledSet`'s output, leaving overlay.ts
-   * untouched.
+   * (echoed as-is, `undefined` in degraded mode) and its installed set. The
+   * installed set is measured from disk via `scanInstalled`, not read off
+   * `config.installed` -- see that method's header for why. Per the
+   * integration note on #2074, a scanned primitive folds into the components
+   * set (`scanInstalled` does this itself) -- a `primitive`-kind item maps to
+   * graph kind `component`, so without the fold every installed primitive
+   * would misreport as `available`.
    *
    * `componentTarget` comes off unvalidated on-disk config (`readConfig` is a raw
    * `JSON.parse`), so it is run through `ComponentTargetSchema` here rather than
@@ -38109,26 +38112,67 @@ var RaftersToolHandler = class {
    */
   async overlayContext(workspace) {
     const config3 = workspace ? await this.readConfig(workspace.root) : null;
-    const parsedInstalled = OverlayInstalledSchema.safeParse(config3?.installed ?? {});
-    if (!parsedInstalled.success) {
-      const issue3 = parsedInstalled.error.issues[0];
-      const field = issue3 && issue3.path.length > 0 ? `installed.${issue3.path.join(".")}` : "installed";
+    const parsedPaths = OverlayPathsSchema.safeParse(config3 ?? {});
+    if (!parsedPaths.success) {
+      const issue3 = parsedPaths.error.issues[0];
+      const field = issue3 && issue3.path.length > 0 ? issue3.path.join(".") : "a path field";
       const configPath = workspace ? getRaftersPaths(workspace.root).config : "config.rafters.json";
       return {
         configError: `malformed config at ${configPath}: ${field} ${issue3?.message ?? "is invalid"}`
       };
     }
-    const base = buildInstalledSet({
-      installed: {
-        components: parsedInstalled.data.components ?? [],
-        composites: parsedInstalled.data.composites ?? []
-      }
-    });
-    const components = /* @__PURE__ */ new Set([...base.components, ...parsedInstalled.data.primitives ?? []]);
     const parsedTarget = ComponentTargetSchema.safeParse(config3?.componentTarget);
     return {
       target: parsedTarget.success ? parsedTarget.data : void 0,
-      installed: { components, composites: base.composites }
+      installed: workspace ? await this.scanInstalled(workspace.root, parsedPaths.data) : { components: /* @__PURE__ */ new Set(), composites: /* @__PURE__ */ new Set() }
+    };
+  }
+  /**
+   * The component and composite ids actually present on disk in a workspace.
+   *
+   * DISK IS THE TRUTH, not `config.installed`. That field is a record `rafters
+   * add` maintains, and a record drifts from the thing it records in both
+   * directions: a part pulled in as a dependency (card-action) never appears in
+   * it, and an entry survives a manual delete. Presence is the JOIN between the
+   * public catalog and this project, so it has to be MEASURED, not remembered.
+   *
+   * An id is the basename before the first dot, so every file a component ships
+   * (`input.tsx`, `input.behavior.ts`, `input.classes.ts`) maps to one id and
+   * any single one of them proves the component is there. Target-agnostic by
+   * construction -- no extension table to keep in sync as targets are added.
+   *
+   * NOT CACHED, deliberately. This is a readdir; the catalog behind it is a
+   * network fetch plus a graph build. Caching the cheap half is exactly what
+   * would make `rafters add` invisible until an MCP restart -- re-reading it per
+   * query means the next call simply sees the new file, with no invalidation,
+   * no IPC, and no watcher. `add` writes a file; the file IS the message.
+   */
+  async scanInstalled(workspaceRoot, paths) {
+    const idsUnder = async (field, fallback) => {
+      const roots = field ? resolveReadSet(field, workspaceRoot) : [join5(workspaceRoot, fallback)];
+      const ids = /* @__PURE__ */ new Set();
+      for (const root of roots) {
+        let entries;
+        try {
+          entries = await readdir2(root, { withFileTypes: true });
+        } catch {
+          continue;
+        }
+        for (const entry of entries) {
+          if (!entry.isFile() || entry.name.startsWith(".")) continue;
+          const id = entry.name.split(".")[0];
+          if (id) ids.add(id);
+        }
+      }
+      return ids;
+    };
+    const components = await idsUnder(paths.componentsPath, KIND_PATHS.components.fallback);
+    for (const id of await idsUnder(paths.primitivesPath, KIND_PATHS.primitives.fallback)) {
+      components.add(id);
+    }
+    return {
+      components,
+      composites: await idsUnder(paths.compositesPath, KIND_PATHS.composites.fallback)
     };
   }
   /**
@@ -38188,14 +38232,22 @@ var RaftersToolHandler = class {
     const candidate = normalizeGenerateQuery(intent);
     const directHit = graph.nodes.get(candidate);
     let nodeId;
+    let noMatchNote;
     if (directHit && directHit.kind === "component") {
       nodeId = candidate;
     } else {
       const match = matchIntent(intent, graph);
-      if ("use" in match) nodeId = match.use.id;
+      if ("use" in match) {
+        nodeId = match.use.id;
+      } else {
+        noMatchNote = match.note;
+      }
     }
     if (nodeId === void 0) {
-      return this.errorResult("no registry component matches this query");
+      return this.errorResult(
+        "no registry component matches this query",
+        noMatchNote === void 0 ? void 0 : { note: noMatchNote }
+      );
     }
     const result = describe3(nodeId, graph, ctx.target);
     if (result === null || Array.isArray(result) || !("children" in result)) {
@@ -38217,15 +38269,21 @@ var RaftersToolHandler = class {
         `${node.id} resolved, but has no ${ctx.target} facet -- nothing to generate for this target`
       );
     }
+    const presence = ctx.installed.components.has(node.id) ? "installed" : "available";
     return this.jsonResult({
       component: node.id,
       target: ctx.target,
+      presence,
       snippet: node.snippet,
       slots: (node.slots ?? []).map((slot) => ({
         slot,
         ownedBy: "caller",
         status: "open"
-      }))
+      })),
+      // Spread rather than assign: `exactOptionalPropertyTypes` distinguishes
+      // an absent key from an explicit `undefined`, and an installed component
+      // has no install step to name.
+      ...presence === "available" ? { install: `rafters add ${node.id}` } : {}
     });
   }
   /**
