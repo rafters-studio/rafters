@@ -11,10 +11,12 @@
  * Why this exists: every gate this repo runs tests SOURCE inside the pnpm
  * workspace, where `@rafters/*` specifiers link locally and always succeed.
  * Nothing tests the PUBLISHED INSTALL PATH, so a delivered file that imports an
- * internal build-time package (`motion-tokens.ts` -> `@rafters/design-tokens`,
- * #2132) or hand-rolls library math (`oklch-gamut.ts`, its color-primitives
- * companion) reaches a consumer silently. This is the regression guard, not the
- * fix for either -- both known offenders are carried as dated exceptions below.
+ * internal build-time package or hand-rolls library math reaches a consumer
+ * silently. Both original offenders are gone -- `oklch-gamut.ts` moved onto
+ * `@rafters/color-utils`, and the runtime motion-token accessor was deleted
+ * outright by #2148 rather than detached, because motion in rafters is CSS and
+ * tokens only and no TypeScript reads a motion token at all. Both exception sets
+ * below are empty now, and this is what keeps them that way.
  */
 
 /**
@@ -33,7 +35,7 @@
 export const DELIVERABLE_LIBRARY_PACKAGES: readonly string[] = ['@rafters/color-utils'];
 
 export interface GuardrailViolation {
-  /** RegistryFile.path of the offending file, e.g. "lib/primitives/motion-tokens.ts" */
+  /** RegistryFile.path of the offending file, e.g. "lib/primitives/oklch-gamut.ts" */
   file: string;
   /** The offending import specifier, or the shadow symbol name for a math violation */
   found: string;
@@ -210,16 +212,13 @@ export function findShadowMathViolations(filePath: string, content: string): Gua
 }
 
 /**
- * Dated, file-path-keyed exceptions -- today's two known offenders, each removed
- * by its own companion issue as part of that issue's own fix. Keys are
- * RegistryFile.path values. The staleness test asserts every entry still names a
- * file that actually violates, so a listed exception cannot outlive its fix: when
- * #2132 removes motion-tokens.ts's @rafters/design-tokens imports, that PR must
- * also delete this entry or the suite goes red.
+ * Dated, file-path-keyed exceptions. Keys are RegistryFile.path values, and the
+ * staleness test asserts every entry still names a file that actually violates,
+ * so a listed exception cannot outlive its fix. EMPTY as of #2148, which deleted
+ * the runtime motion-token accessor -- the last entry, and the only import
+ * offender -- instead of detaching it. An addition here is a deliberate, dated, reviewed decision
+ * that names the issue removing it again.
  */
-export const KNOWN_IMPORT_VIOLATIONS: ReadonlySet<string> = new Set([
-  // motion-tokens.ts imports @rafters/design-tokens/generators/* at runtime -- removed by #2132.
-  'lib/primitives/motion-tokens.ts',
-]);
+export const KNOWN_IMPORT_VIOLATIONS: ReadonlySet<string> = new Set([]);
 
 export const KNOWN_SHADOW_MATH_VIOLATIONS: ReadonlySet<string> = new Set([]);

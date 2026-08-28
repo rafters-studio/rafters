@@ -1,5 +1,10 @@
 import { compose, type Slice } from '@/lib/compose';
-import { createBehavior, type AriaAttrs, type BehaviorSpec, type PartIds } from '@/lib/contract';
+import {
+  createBehavior,
+  type AriaAttrs,
+  type BehaviorSpec,
+  type PartIds,
+} from '@/lib/contract';
 import { updateAriaAttribute } from '@/lib/primitives/aria-manager';
 import { fuzzyMatch } from '@/lib/primitives/command-palette';
 import { createFocusTrap, preventBodyScroll } from '@/lib/primitives/focus-trap';

@@ -1,2 +1,31 @@
-apps/demo/.rafters/output/
+# The whole .rafters/ directory is tool-managed: config.rafters.json is rewritten
+# by `rafters add`, tokens/ by Studio, output/ by the exporters. None is authored.
+apps/demo/.rafters/
+apps/lab/.rafters/
 plugin/bin/
+
+# Installed component surface -- written by `rafters add`, not authored here.
+#
+# The repo already declares these read-only: pre-edit.sh denies edits to
+# components/ui and lib/primitives with "installed by rafters, fix your
+# consuming code or file upstream". Their formatting belongs to the registry
+# the same way their content does, so the format check has no standing over
+# them either.
+#
+# There is also a concrete reason they will never pass: `add` rewrites import
+# specifiers for the consumer's configured directories, and a rewrite that
+# SHORTENS a path (../../lib/contract -> @/lib/contract) can carry a line back
+# under printWidth without anything reformatting it. The content is a string
+# inside JSON from the registry read to the disk write, so no seam in that
+# pipeline can notice. A correctly formatted source lands here formatted for a
+# path it no longer has. Full diagnosis: legion reflect 01a02866.
+#
+# Paths are the ones each app's .rafters/config.rafters.json declares as
+# rafters-written, plus the substrate dirs that ship alongside them.
+apps/demo/src/components/ui/
+apps/demo/src/composites/
+apps/demo/src/hooks/
+apps/demo/src/lib/
+apps/lab/src/components/ui/
+apps/lab/src/composites/
+apps/lab/src/lib/

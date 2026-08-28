@@ -1,7 +1,7 @@
 ---
 name: rafters-frontend
 description: Use when building frontend UI in a Rafters project -- enforces the assembly model (composites first, components second, native HTML inside Container article-mode) and prohibits any agent-side design choice.
-version: 2.1.0
+version: 0.2.3
 user-invocable: true
 allowed-tools: Read, Edit, Write, Glob, Grep, Bash
 ---

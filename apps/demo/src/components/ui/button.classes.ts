@@ -1,9 +1,4 @@
-import type {
-  ButtonConfig,
-  ButtonSize,
-  ButtonState,
-  ButtonVariant,
-} from '@/components/ui/button.behavior';
+import type { ButtonConfig, ButtonSize, ButtonState, ButtonVariant } from '@/components/ui/button.behavior';
 
 export interface ButtonClassSet {
   root: string;

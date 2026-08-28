@@ -1,23 +1,53 @@
 /**
- * Alert dialog: a consequence-gated confirm dialog for destructive or
- * irreversible actions. It interrupts with a decision, traps focus, defaults
- * focus to Cancel (the safer choice), and -- unlike Dialog -- never dismisses
- * on an outside click. The user must choose.
+ * Alert dialog component for destructive or important confirmation actions
  *
- * @cognitive-load 7/10 - high extraneous load: the dialog seizes the whole
- *   viewport and forces a decision before any other interaction resumes;
- *   intrinsic load is low (two choices), germane load is the consequence the
- *   description spells out; working-memory cost is a single held question;
- *   decision reversibility is the point (Cancel is always the escape hatch).
- * @attention-economics Full-capture interrupt: the overlay and forced-modal
- *   trap collapse the attention field to one decision. Reserve it for stakes
- *   that justify blocking; routine confirmations belong elsewhere.
- * @trust-building Focus defaults to Cancel so the reflexive Enter/Space keeps
- *   the user safe; the action button carries the destructive styling so the
- *   consequence is legible before the click; Escape offers a safe exit.
- * @accessibility role="alertdialog" with aria-modal, aria-labelledby/
- *   describedby wiring, a focus trap, and Escape-to-close with focus restored
- *   to the trigger.
+ * @cognitive-load 7/10 - Requires immediate decision, interrupts workflow with high stakes
+ * @attention-economics Full attention capture: blocks all other interactions until resolved
+ * @trust-building Focus defaults to Cancel (safer choice), clear action consequences, escape allows safe exit
+ * @accessibility role="alertdialog" for screen readers, focus trap, keyboard dismissal via Escape
+ * @semantic-meaning Confirmation patterns: Action=proceed with consequence, Cancel=safe exit without changes
+ *
+ * @usage-patterns
+ * DO: Use for destructive actions (delete, remove, discard)
+ * DO: Use for irreversible operations requiring explicit confirmation
+ * DO: Make consequences clear in description text
+ * DO: Default focus to Cancel for safety
+ * NEVER: Routine confirmations, non-destructive actions, information-only dialogs
+ *
+ * @example
+ * ```tsx
+ * // Minimal usage - Portal and Overlay are included automatically, no close X button
+ * <AlertDialog>
+ *   <AlertDialogTrigger>Delete</AlertDialogTrigger>
+ *   <AlertDialogContent>
+ *     <AlertDialogHeader>
+ *       <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+ *       <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+ *     </AlertDialogHeader>
+ *     <AlertDialogFooter>
+ *       <AlertDialogCancel>Cancel</AlertDialogCancel>
+ *       <AlertDialogAction>Delete</AlertDialogAction>
+ *     </AlertDialogFooter>
+ *   </AlertDialogContent>
+ * </AlertDialog>
+ *
+ * // Or with namespace syntax
+ * <AlertDialog>
+ *   <AlertDialog.Trigger asChild>
+ *     <Button variant="destructive">Delete</Button>
+ *   </AlertDialog.Trigger>
+ *   <AlertDialog.Content>
+ *     <AlertDialog.Header>
+ *       <AlertDialog.Title>Are you sure?</AlertDialog.Title>
+ *       <AlertDialog.Description>This action cannot be undone.</AlertDialog.Description>
+ *     </AlertDialog.Header>
+ *     <AlertDialog.Footer>
+ *       <AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
+ *       <AlertDialog.Action>Delete</AlertDialog.Action>
+ *     </AlertDialog.Footer>
+ *   </AlertDialog.Content>
+ * </AlertDialog>
+ * ```
  */
 import * as React from 'react';
 import { createPortal } from 'react-dom';

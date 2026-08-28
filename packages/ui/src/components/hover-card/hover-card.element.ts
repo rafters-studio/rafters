@@ -9,7 +9,7 @@
  *
  * @usage-patterns
  * DO: Show supplementary information like user profiles, link previews, or contextual details
- * DO: Use appropriate delays to prevent accidental triggers (openDelay >= 500ms recommended)
+ * DO: Trust the system hover-intent delay -- it is a token the stylesheet applies, not a per-instance tuning knob
  * DO: Keep content focused and scannable - users glance, not read
  * DO: Position intelligently to avoid viewport edges
  * NEVER: Essential information that should always be visible
@@ -52,6 +52,10 @@ export class RaftersHoverCard extends HTMLElement {
     // custom element defaults to display:inline. Pin block so the WC host lays
     // out identically to the other two performances (#2004).
     this.style.display = 'block';
+    // Target parity, second half (#2148): the CSS reveal rule is scoped by the
+    // `data-hover-card` marker the Astro and React roots carry, so the host has
+    // to carry it too or the stylesheet has no root to hang `:hover` off.
+    this.dataset['hoverCard'] = '';
     queueMicrotask(() => {
       if (this.isConnected && !this.teardown) this.teardown = bindHoverCard(this);
     });

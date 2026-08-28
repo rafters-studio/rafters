@@ -6,9 +6,16 @@
  *
  * Framework-agnostic, SSR-safe. The caller provides the canvas element;
  * the primitive handles rendering and ARIA attributes.
+ *
+ * @internal-dependencies @rafters/color-utils
  */
 
-import { computeGamutBoundaries, isInP3Gamut, isInSRGBGamut } from '@rafters/color-utils';
+import {
+  computeGamutBoundaries,
+  isInP3Gamut,
+  isInSRGBGamut,
+  oklchToCSS,
+} from '@rafters/color-utils';
 import { hueFromBarPos } from './hue-warp';
 import type { CleanupFunction } from './types';
 
@@ -97,7 +104,7 @@ function renderVivid(
 
   // Phase 3: paint each column
   for (let i = 0; i < steps; i++) {
-    ctx.fillStyle = `oklch(${sL[i] ?? 0} ${sC[i] ?? 0} ${hues[i] ?? 0})`;
+    ctx.fillStyle = oklchToCSS({ l: sL[i] ?? 0, c: sC[i] ?? 0, h: hues[i] ?? 0, alpha: 1 });
     if (isHorizontal) {
       ctx.fillRect(i, 0, 1, cssHeight);
     } else {
@@ -150,7 +157,7 @@ function renderHueBar(canvas: HTMLCanvasElement, options: HueBarOptions): void {
       isInSRGBGamut({ l: lightness, c: chroma, h, alpha: 1 }) ||
       isInP3Gamut({ l: lightness, c: chroma, h, alpha: 1 })
     ) {
-      ctx.fillStyle = `oklch(${lightness} ${chroma} ${h})`;
+      ctx.fillStyle = oklchToCSS({ l: lightness, c: chroma, h, alpha: 1 });
     } else {
       ctx.fillStyle = '#000';
     }
