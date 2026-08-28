@@ -16,7 +16,7 @@ import {
 export const progressContainerClasses = 'relative w-full overflow-hidden rounded-full bg-muted';
 
 export const progressIndicatorBaseClasses =
-  'h-full transition-all duration-300 motion-reduce:transition-none';
+  'h-full transition-all duration-moderate motion-reduce:transition-none';
 
 /**
  * Animation utility applied to the indicator when the value is indeterminate.

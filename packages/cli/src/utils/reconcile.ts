@@ -35,8 +35,16 @@ export type DiscoveryIndex = Record<DiscoverableKind, string[]>;
 /** Bare directory entry names found under each kind's configured roots. */
 export type DirEntries = Record<DiscoverableKind, string[]>;
 
-/** Config path field and default folder for each discoverable kind. */
-const KIND_PATHS: Record<DiscoverableKind, { field: keyof RaftersConfig; fallback: string }> = {
+/**
+ * Config path field and default folder for each discoverable kind. Exported so
+ * other on-disk scans (the MCP server's presence scan in mcp/tools.ts) resolve
+ * the same fallback a project gets from `rafters init` (`FRAMEWORK_SPECS.next`),
+ * instead of re-declaring their own copy that can drift from it.
+ */
+export const KIND_PATHS: Record<
+  DiscoverableKind,
+  { field: keyof RaftersConfig; fallback: string }
+> = {
   components: { field: 'componentsPath', fallback: 'components/ui' },
   primitives: { field: 'primitivesPath', fallback: 'lib/primitives' },
   composites: { field: 'compositesPath', fallback: 'composites' },

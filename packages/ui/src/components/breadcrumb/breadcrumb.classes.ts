@@ -15,7 +15,7 @@ export const breadcrumbListClasses =
 export const breadcrumbItemClasses = 'inline-flex items-center gap-1.5';
 
 export const breadcrumbLinkClasses =
-  'transition-colors duration-150 motion-reduce:transition-none hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
+  'transition-colors duration-fast motion-reduce:transition-none hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
 
 export const breadcrumbPageClasses = 'text-foreground';
 

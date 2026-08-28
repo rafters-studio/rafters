@@ -39,11 +39,11 @@ const scrollAreaOrientationClasses: Record<ScrollAreaOrientation, string> = {
 /**
  * Decorative ScrollBar track (shadcn's ScrollBar). Config-independent literals,
  * so the framework files import them directly (no context/provider for a flat
- * static). `duration-150` is the oracle's settled transition timing, ported
+ * static). `duration-fast` is the oracle's settled transition timing, ported
  * verbatim; `motion-reduce:transition-none` honours reduced-motion.
  */
 export const scrollBarBaseClasses =
-  'flex touch-none select-none transition-colors duration-150 motion-reduce:transition-none';
+  'flex touch-none select-none transition-colors duration-fast motion-reduce:transition-none';
 
 const scrollBarOrientationClasses: Record<ScrollBarOrientation, string> = {
   vertical: 'h-full w-2.5 border-l border-l-transparent p-px',
