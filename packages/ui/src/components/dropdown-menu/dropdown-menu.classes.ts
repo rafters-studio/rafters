@@ -38,9 +38,13 @@ const triggerClasses =
 // animation-duration under the media query instead, which keeps the keyframe's
 // end state. animate-none here would win destructively: `animation: none`
 // resets the shorthand and discards the zeroed duration with it.
+// stagger-items (#2156) is the exporter-emitted per-position ladder (#2189):
+// classes.ts SELECTS the utility on the item collection's container, it never
+// constructs calc()/nth-child itself (00-boundaries Sec 6). Content is the
+// direct DOM parent of the item children in the ungrouped case.
 const contentClasses =
   'z-depth-dropdown min-w-32 overflow-hidden rounded-md border bg-popover p-1 ' +
-  'text-popover-foreground shadow-lg ' +
+  'text-popover-foreground shadow-lg stagger-items ' +
   'data-[state=open]:animate-dropdown-menu-content-open ' +
   'data-[state=closed]:animate-dropdown-menu-content-close ' +
   'data-[state=closed]:pointer-events-none';
