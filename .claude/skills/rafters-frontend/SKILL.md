@@ -98,15 +98,9 @@ Container owns max-width, padding, gap. Grid owns columns and column gap.
 
 | Grid preset | Use for |
 |---|---|
-| linear | Equal-priority columns |
-| golden | Hierarchical (2:1) |
-| bento | Asymmetric showcase |
-| cards | Responsive card flow |
-| split | Equal columns |
-| sidebar | Sidebar + main |
-| form | Label/input pairs |
-| row | Horizontal group |
-| stack | Vertical sequence |
+| linear | Equal-priority columns (default) |
+| golden | Hierarchical flow (natural 2:1 asymmetry) |
+| bento | Asymmetric showcase (high cognitive load -- use sparingly) |
 
 ## Variant is semantic, never aesthetic
 

@@ -36837,6 +36837,21 @@ var PropFieldSchema = external_exports4.discriminatedUnion("type", [
     }).optional()
   }),
   external_exports4.object({
+    type: external_exports4.literal("boolean"),
+    default: external_exports4.boolean().optional(),
+    required: external_exports4.boolean().optional()
+  }),
+  external_exports4.object({
+    type: external_exports4.literal("string"),
+    default: external_exports4.string().optional(),
+    required: external_exports4.boolean().optional()
+  }),
+  external_exports4.object({
+    type: external_exports4.literal("number"),
+    default: external_exports4.number().optional(),
+    required: external_exports4.boolean().optional()
+  }),
+  external_exports4.object({
     // Matches #2072's PropNode 'grammar' arm exactly, so graph.ts's
     // describe(<id>.props.<name>.vocab) drill has real shape data.
     type: external_exports4.literal("grammar"),

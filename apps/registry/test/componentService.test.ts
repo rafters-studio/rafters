@@ -311,25 +311,26 @@ describe('per-target facet + reverse-composites extraction (#2073)', () => {
   });
 
   it("extracts react's variant as a verbatim literal union with its destructured default", () => {
-    expect(buttonItem?.facets?.react?.props['variant']).toEqual({
-      type: 'enum',
-      values: [
-        'default',
-        'primary',
-        'secondary',
-        'destructive',
-        'success',
-        'warning',
-        'info',
-        'muted',
-        'accent',
-        'outline',
-        'ghost',
-        'link',
-      ],
-      // button.tsx:90 destructures `variant = 'default'` -- extractable, not left undefined.
-      default: 'default',
-    });
+    const variant = buttonItem?.facets?.react?.props['variant'];
+    expect(variant?.type).toBe('enum');
+    if (variant?.type !== 'enum') throw new Error('variant not enum');
+    const expected = [
+      'default',
+      'primary',
+      'secondary',
+      'destructive',
+      'success',
+      'warning',
+      'info',
+      'muted',
+      'accent',
+      'outline',
+      'ghost',
+      'link',
+    ];
+    expect(variant.values).toHaveLength(expected.length);
+    expect(variant.values).toEqual(expect.arrayContaining(expected));
+    expect(variant.default).toBe('default');
   });
 
   it('never collapses a styling prop to a bare string type', () => {
@@ -398,6 +399,145 @@ describe('@constraint JSDoc tag parsing (#2073)', () => {
     // contributes -- the component still yields its other intelligence.
     const intel = parseJSDocFromSource(malformed, { componentName: 'button' });
     expect(intel?.cognitiveLoad).toBe(3);
+  });
+});
+
+/**
+ * Type-checker-based prop extraction (#2165). The regex extractor missed badge
+ * (as-const array alias), container (resolveUnion called with no type annotation),
+ * grid (body-level destructuring), input (scalar props), card, and sidebar. The
+ * TS checker resolves all of them through alias depth, intersections, and
+ * (typeof X)[number] patterns.
+ */
+describe('type-checker-based prop extraction (#2165)', () => {
+  it('extracts badge variant from an as-const array alias', () => {
+    const badge = loadComponent('badge');
+    const variant = badge?.facets?.react?.props['variant'];
+    expect(variant?.type).toBe('enum');
+    if (variant?.type !== 'enum') throw new Error('variant not enum');
+    expect(variant.values).toHaveLength(12);
+    expect(variant.values).toContain('default');
+    expect(variant.values).toContain('destructive');
+    expect(variant.values).toContain('link');
+    expect(variant.default).toBe('default');
+  });
+
+  it('extracts badge size from an as-const array alias', () => {
+    const badge = loadComponent('badge');
+    const size = badge?.facets?.react?.props['size'];
+    expect(size?.type).toBe('enum');
+    if (size?.type !== 'enum') throw new Error('size not enum');
+    expect(size.values).toEqual(expect.arrayContaining(['sm', 'default', 'lg']));
+    expect(size.default).toBe('default');
+  });
+
+  it('extracts container as/size without a naming-convention alias', () => {
+    const container = loadComponent('container');
+    const asField = container?.facets?.react?.props['as'];
+    expect(asField?.type).toBe('enum');
+    if (asField?.type !== 'enum') throw new Error('as not enum');
+    expect(asField.values).toEqual(
+      expect.arrayContaining(['div', 'main', 'header', 'footer', 'section', 'article', 'aside']),
+    );
+
+    const size = container?.facets?.react?.props['size'];
+    expect(size?.type).toBe('enum');
+    if (size?.type !== 'enum') throw new Error('size not enum');
+    expect(size.values).toHaveLength(11);
+  });
+
+  it('extracts container boolean and string props', () => {
+    const container = loadComponent('container');
+    expect(container?.facets?.react?.props['query']).toMatchObject({
+      type: 'boolean',
+      default: true,
+    });
+    expect(container?.facets?.react?.props['queryName']).toMatchObject({
+      type: 'string',
+    });
+    expect(container?.facets?.react?.props['fill']).toMatchObject({
+      type: 'string',
+    });
+  });
+
+  it('extracts grid preset regardless of destructuring shape', () => {
+    const grid = loadComponent('grid');
+    const preset = grid?.facets?.react?.props['preset'];
+    expect(preset?.type).toBe('enum');
+    if (preset?.type !== 'enum') throw new Error('preset not enum');
+    expect(preset.values).toEqual(expect.arrayContaining(['linear', 'golden', 'bento']));
+    expect(preset.default).toBe('linear');
+  });
+
+  it('emits scalar props for input instead of props: {}', () => {
+    const input = loadComponent('input');
+    expect(input?.facets?.react?.props['value']).toMatchObject({ type: 'string' });
+    expect(input?.facets?.react?.props['defaultValue']).toMatchObject({ type: 'string' });
+    expect(input?.facets?.react?.props['invalid']).toMatchObject({ type: 'boolean' });
+    expect(input?.facets?.react?.props['errorId']).toMatchObject({ type: 'string' });
+  });
+
+  it('emits card own declared props', () => {
+    const card = loadComponent('card');
+    const asField = card?.facets?.react?.props['as'];
+    expect(asField?.type).toBe('enum');
+    if (asField?.type !== 'enum') throw new Error('as not enum');
+    expect(asField.values).toEqual(expect.arrayContaining(['article', 'div', 'section', 'aside']));
+    expect(card?.facets?.react?.props['fill']).toMatchObject({ type: 'string' });
+  });
+
+  it('emits sidebar own declared props', () => {
+    const sidebar = loadComponent('sidebar');
+    const side = sidebar?.facets?.react?.props['side'];
+    expect(side?.type).toBe('enum');
+    if (side?.type !== 'enum') throw new Error('side not enum');
+    expect(side.values).toEqual(expect.arrayContaining(['left', 'right']));
+    expect(side.default).toBe('left');
+
+    const variant = sidebar?.facets?.react?.props['variant'];
+    expect(variant?.type).toBe('enum');
+    if (variant?.type !== 'enum') throw new Error('variant not enum');
+    expect(variant.values).toEqual(expect.arrayContaining(['sidebar', 'floating', 'inset']));
+  });
+
+  it('emits button boolean props the regex extractor missed', () => {
+    const button = loadComponent('button');
+    expect(button?.facets?.react?.props['loading']).toMatchObject({
+      type: 'boolean',
+      default: false,
+    });
+    expect(button?.facets?.react?.props['toggle']).toMatchObject({
+      type: 'boolean',
+      default: false,
+    });
+    expect(button?.facets?.react?.props['softDisabled']).toMatchObject({
+      type: 'boolean',
+      default: false,
+    });
+  });
+
+  it('emits button string props the regex extractor missed', () => {
+    const button = loadComponent('button');
+    expect(button?.facets?.react?.props['loadingAnnouncement']).toMatchObject({
+      type: 'string',
+    });
+    expect(button?.facets?.react?.props['loadedAnnouncement']).toMatchObject({
+      type: 'string',
+    });
+  });
+
+  it('does not emit inherited React HTML attributes', () => {
+    const button = loadComponent('button');
+    expect(button?.facets?.react?.props['onClick']).toBeUndefined();
+    expect(button?.facets?.react?.props['className']).toBeUndefined();
+    expect(button?.facets?.react?.props['style']).toBeUndefined();
+  });
+
+  it('parses cleanly against the CLI RegistryItemSchema with new prop kinds', () => {
+    for (const name of ['badge', 'container', 'grid', 'input', 'card', 'sidebar']) {
+      const item = loadComponent(name);
+      expect(() => RegistryItemSchema.parse(item), name).not.toThrow();
+    }
   });
 });
 

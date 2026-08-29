@@ -93,6 +93,21 @@ export const PropFieldSchema = z.discriminatedUnion('type', [
       .optional(),
   }),
   z.object({
+    type: z.literal('boolean'),
+    default: z.boolean().optional(),
+    required: z.boolean().optional(),
+  }),
+  z.object({
+    type: z.literal('string'),
+    default: z.string().optional(),
+    required: z.boolean().optional(),
+  }),
+  z.object({
+    type: z.literal('number'),
+    default: z.number().optional(),
+    required: z.boolean().optional(),
+  }),
+  z.object({
     // Matches #2072's PropNode 'grammar' arm exactly, so graph.ts's
     // describe(<id>.props.<name>.vocab) drill has real shape data.
     type: z.literal('grammar'),

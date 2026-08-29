@@ -6,6 +6,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { parse, type Spec } from 'comment-parser';
+import { resolvePropsFromChecker } from './typeChecker';
 
 /**
  * Registry item types. Defined locally (like RegistryItem/RegistryFile/
@@ -59,6 +60,21 @@ export type PropField =
       default?: string;
       required?: boolean;
       constraint?: Constraint;
+    }
+  | {
+      type: 'boolean';
+      default?: boolean;
+      required?: boolean;
+    }
+  | {
+      type: 'string';
+      default?: string;
+      required?: boolean;
+    }
+  | {
+      type: 'number';
+      default?: number;
+      required?: boolean;
     }
   | {
       type: 'grammar';
@@ -869,19 +885,6 @@ function extractDestructuredDefaults(source: string): Map<string, string> {
   return defaults;
 }
 
-/** Prop names a target destructures from its props (React has no interface for `size`). */
-function extractDestructuredNames(source: string): string[] {
-  const block = source.match(/const\s*\{([\s\S]*?)\}\s*=\s*(?:props|Astro\.props)/);
-  if (!block) return [];
-  const names: string[] = [];
-  for (const part of block[1].split(',')) {
-    const match = part.match(/^\s*(?:'([^']+)'|([A-Za-z_$][\w$]*))/);
-    const name = match?.[1] ?? match?.[2];
-    if (name) names.push(name);
-  }
-  return names;
-}
-
 /** Fields of a target's own `interface Props`/`*Props` body: name, optionality, type. */
 function extractInterfaceProps(
   source: string,
@@ -939,17 +942,21 @@ function extractConstraints(source: string): Map<string, Constraint> {
 /**
  * Extract one target's facet from its already-read source.
  *
- * The declared issue signature took `(componentDir, name, ext, behaviorSource)`
- * and re-read the file; this takes the loop's already-read `targetSource`
- * instead, so extraction adds a regex pass and NO extra file read (the perf
- * requirement). `behaviorSource` is the shared `.behavior.ts`, the source of
- * truth for verbatim literal-union prop vocabularies.
+ * React props come from the TypeScript type checker (#2165), which resolves
+ * through alias depth, intersections, and `(typeof X)[number]` patterns that
+ * regexes miss. Non-TS targets (astro/vue/svelte) keep the interface-body
+ * regex path because `.astro`/`.vue`/`.svelte` are not valid TypeScript and
+ * cannot be fed to `ts.createProgram`.
+ *
+ * `componentDir` is the ABSOLUTE path to the component directory, used by the
+ * react branch to locate the `.tsx` source in the shared `ts.Program`.
  */
 function extractFacet(
   name: string,
   ext: string,
   targetSource: string,
   behaviorSource: string | null,
+  componentDir: string,
 ): Facet | null {
   const target = EXT_TO_TARGET[ext];
   if (!target) return null;
@@ -965,53 +972,42 @@ function extractFacet(
     };
   }
 
-  const unions = behaviorSource
-    ? extractLiteralUnions(behaviorSource)
-    : new Map<string, string[]>();
-  const defaults = extractDestructuredDefaults(targetSource);
   const constraints = extractConstraints(targetSource);
-  const props: Record<string, PropField> = {};
-
-  // A prop's literal-union members: a named alias by the <Component><Prop>
-  // convention (button + variant -> ButtonVariant), the type annotation naming
-  // an alias directly, or an inline literal union. Otherwise null.
-  const resolveUnion = (propName: string, typeExpr?: string): string[] | null => {
-    const byConvention = unions.get(pascalCase(name) + pascalCase(propName));
-    if (byConvention) return byConvention;
-    if (typeExpr) {
-      const byAnnotation = unions.get(typeExpr);
-      if (byAnnotation) return byAnnotation;
-      const inline = inlineUnionValues(typeExpr);
-      if (inline.length > 0) return inline;
-    }
-    return null;
-  };
-
-  const makeEnum = (propName: string, values: string[], required: boolean): PropField => {
-    const field: PropField = { type: 'enum', values };
-    const def = defaults.get(propName);
-    if (def !== undefined) field.default = def;
-    if (required) field.required = true;
-    const constraint = constraints.get(propName);
-    if (constraint) field.constraint = constraint;
-    return field;
-  };
+  let props: Record<string, PropField>;
 
   if (target === 'react') {
-    // React's destructuring is the prop-name source: `size` lives in the
-    // ButtonProps intersection, not the ButtonBaseProps body, so an interface
-    // scan would miss it. Destructuring carries no requiredness, so only props
-    // whose type resolves to a verbatim literal union are emitted.
-    for (const propName of extractDestructuredNames(targetSource)) {
-      const values = resolveUnion(propName);
-      if (values) props[propName] = makeEnum(propName, values, false);
-    }
+    props = resolvePropsFromChecker(name, componentDir, constraints);
   } else {
-    // Interface-declared targets (astro/vue/svelte) carry requiredness. Emit a
-    // prop when its type resolves to a literal union, OR it is required -- so a
-    // required non-union structural prop (astro's `id: string`) is kept as an
-    // empty-values enum with `required: true`, preserving the required/optional
-    // asymmetry rather than fabricating a domain for it.
+    // Interface-declared targets (astro/vue/svelte) carry requiredness. The TS
+    // checker cannot read these file formats, so the regex path stays.
+    const unions = behaviorSource
+      ? extractLiteralUnions(behaviorSource)
+      : new Map<string, string[]>();
+    const defaults = extractDestructuredDefaults(targetSource);
+    props = {};
+
+    const resolveUnion = (propName: string, typeExpr?: string): string[] | null => {
+      const byConvention = unions.get(pascalCase(name) + pascalCase(propName));
+      if (byConvention) return byConvention;
+      if (typeExpr) {
+        const byAnnotation = unions.get(typeExpr);
+        if (byAnnotation) return byAnnotation;
+        const inline = inlineUnionValues(typeExpr);
+        if (inline.length > 0) return inline;
+      }
+      return null;
+    };
+
+    const makeEnum = (propName: string, values: string[], required: boolean): PropField => {
+      const field: PropField = { type: 'enum', values };
+      const def = defaults.get(propName);
+      if (def !== undefined) field.default = def;
+      if (required) field.required = true;
+      const constraint = constraints.get(propName);
+      if (constraint) field.constraint = constraint;
+      return field;
+    };
+
     for (const prop of extractInterfaceProps(targetSource)) {
       const values = resolveUnion(prop.name, prop.typeExpr);
       if (values) props[prop.name] = makeEnum(prop.name, values, !prop.optional);
@@ -1251,7 +1247,7 @@ export function loadComponent(name: string): RegistryItem | null {
   for (const { ext, content } of targetSources) {
     const target = EXT_TO_TARGET[ext];
     if (!target) continue;
-    const facet = extractFacet(name, ext, content, behaviorSource);
+    const facet = extractFacet(name, ext, content, behaviorSource, componentDir);
     if (facet) facets[target] = facet;
   }
 

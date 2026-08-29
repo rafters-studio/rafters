@@ -28,7 +28,16 @@
 import type { ComponentTarget, Facet, PropField, RegistryItem } from '../registry/types.js';
 
 // A child a caller can drill into next. `type` says whether to drill and what returns.
-export type ChildType = 'enum' | 'grammar' | 'leaf' | 'edge' | 'deprecated' | 'part';
+export type ChildType =
+  | 'enum'
+  | 'boolean'
+  | 'string'
+  | 'number'
+  | 'grammar'
+  | 'leaf'
+  | 'edge'
+  | 'deprecated'
+  | 'part';
 
 export interface DrillableChild {
   addr: string;
@@ -50,7 +59,9 @@ export type PropNode = PropField;
 // container); rafters validates that value against the internal vocab with
 // `onInvalid: 'silent-noop'` behind the curtain.
 export type AgentGrammarProp = Omit<Extract<PropField, { type: 'grammar' }>, 'vocab'>;
-export type AgentPropField = Extract<PropField, { type: 'enum' | 'deprecated' }> | AgentGrammarProp;
+export type AgentPropField =
+  | Extract<PropField, { type: 'enum' | 'boolean' | 'string' | 'number' | 'deprecated' }>
+  | AgentGrammarProp;
 
 export interface GraphIntel {
   cognitiveLoad?: number;
