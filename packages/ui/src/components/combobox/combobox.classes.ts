@@ -44,13 +44,9 @@ const chevronClasses =
 // generated as a utility (#1899/#1902). Per the port rules we leave motion
 // undeclared rather than hardcode a numeric duration; the token gap is recorded
 // in docs/spec/components/combobox.md.
-// stagger-items (#2156) is the exporter-emitted per-position ladder (#2189):
-// classes.ts SELECTS the utility on the item collection's container, it never
-// constructs calc()/nth-child itself (00-boundaries Sec 6). Content is the
-// direct DOM parent of the item children in the ungrouped case.
 const contentClasses =
   'z-depth-dropdown max-h-60 min-w-32 overflow-auto rounded-md border bg-popover p-1 ' +
-  'text-popover-foreground shadow-md stagger-items';
+  'text-popover-foreground shadow-md';
 
 const itemClasses =
   'relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 ' +

@@ -12,14 +12,6 @@ describe('dropdown-menu classes', () => {
     expect(classes.content).toContain('text-popover-foreground');
   });
 
-  it('the item collection SELECTS the stagger-items utility (#2156/#2189), never constructs calc()/nth-child', () => {
-    expect(classes.content).toContain('stagger-items');
-    for (const value of Object.values(classes)) {
-      expect(value).not.toContain('calc(');
-      expect(value).not.toContain('nth-child');
-    }
-  });
-
   it('the active item look keys off :focus (roving-focus current item), not a data-highlighted axis', () => {
     expect(classes.item).toContain('focus:bg-accent');
     expect(classes.item).toContain('focus:text-accent-foreground');

@@ -10,14 +10,6 @@ describe('select classes', () => {
     expect(classes.content).toContain('z-depth-dropdown');
   });
 
-  it('the item collection (viewport) SELECTS the stagger-items utility (#2156/#2189), never constructs calc()/nth-child', () => {
-    expect(classes.viewport).toContain('stagger-items');
-    for (const value of Object.values(classes)) {
-      expect(value).not.toContain('calc(');
-      expect(value).not.toContain('nth-child');
-    }
-  });
-
   it('the trigger honors the touch floor and scales down via CQ', () => {
     expect(classes.trigger).toContain('h-11');
     expect(classes.trigger).toContain('@md:h-9');

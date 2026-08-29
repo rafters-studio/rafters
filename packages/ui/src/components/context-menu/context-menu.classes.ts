@@ -33,13 +33,9 @@ export interface ContextMenuClassSet {
 
 const trigger = 'inline-block';
 
-// stagger-items (#2156) is the exporter-emitted per-position ladder (#2189):
-// classes.ts SELECTS the utility on the item collection's container, it never
-// constructs calc()/nth-child itself (00-boundaries Sec 6). Content is the
-// direct DOM parent of the item children in the ungrouped case.
 const content =
   'z-depth-dropdown min-w-32 overflow-hidden rounded-md border bg-popover p-1 ' +
-  'text-popover-foreground shadow-lg outline-none stagger-items ' +
+  'text-popover-foreground shadow-lg outline-none ' +
   'motion-dropdown-in opacity-0 scale-95 data-[state=open]:opacity-100 data-[state=open]:scale-100';
 
 const itemBase =
