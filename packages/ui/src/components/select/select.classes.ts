@@ -54,7 +54,12 @@ const contentClasses =
   'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 ' +
   'data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95';
 
-const viewportClasses = 'p-1';
+// stagger-items (#2156) is the exporter-emitted per-position ladder (#2189):
+// classes.ts SELECTS the utility on the item collection's container, it never
+// constructs calc()/nth-child itself (00-boundaries Sec 6). The viewport, not
+// content, is the direct DOM parent of item children (content > viewport >
+// item*).
+const viewportClasses = 'p-1 stagger-items';
 
 const itemClasses =
   'relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 ' +

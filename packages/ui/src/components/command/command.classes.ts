@@ -27,7 +27,11 @@ const inputClasses =
   'flex h-11 @md:h-10 w-full rounded-md bg-transparent py-3 text-body-small ts-body-small outline-none ' +
   'placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50';
 
-const listClasses = 'max-h-80 overflow-y-auto overflow-x-hidden p-1';
+// stagger-items (#2156) is the exporter-emitted per-position ladder (#2189):
+// classes.ts SELECTS the utility on the item collection's container, it never
+// constructs calc()/nth-child itself (00-boundaries Sec 6). List is the
+// direct DOM parent of the item/group children.
+const listClasses = 'max-h-80 overflow-y-auto overflow-x-hidden p-1 stagger-items';
 
 const emptyClasses = 'py-6 text-center text-body-small ts-body-small';
 

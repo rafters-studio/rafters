@@ -11,6 +11,14 @@ describe('command classes', () => {
     expect(classes.root).toContain('overflow-hidden');
   });
 
+  it('the item collection (list) SELECTS the stagger-items utility (#2156/#2189), never constructs calc()/nth-child', () => {
+    expect(classes.list).toContain('stagger-items');
+    for (const value of Object.values(classes)) {
+      expect(value).not.toContain('calc(');
+      expect(value).not.toContain('nth-child');
+    }
+  });
+
   it('the active option keys off the projected data-selected attribute', () => {
     expect(classes.item).toContain('data-[selected]:bg-accent');
     expect(classes.item).toContain('data-[selected]:text-accent-foreground');
