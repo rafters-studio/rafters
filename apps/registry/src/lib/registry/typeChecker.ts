@@ -234,26 +234,26 @@ function sortValues(values: string[]): string[] {
   });
 }
 
-/** The literal a `LiteralTypeNode` carries, or null for `true`/`false`/`null`. */
-function literalNodeValue(node: ts.LiteralTypeNode): string | null {
-  const { literal } = node;
-  if (ts.isStringLiteral(literal) || ts.isNoSubstitutionTemplateLiteral(literal)) {
-    return literal.text;
+/**
+ * The text a string or numeric literal expression carries, or null for anything
+ * else -- `true`/`false`/`null` and every non-literal expression alike.
+ *
+ * The one place this repo reads a literal's text: the member of a
+ * `LiteralTypeNode` in a union, an element of an as-const array, and the
+ * initializer of a destructured default are all the same transformation, and
+ * writing it once keeps the three readings from drifting apart (a negative
+ * numeric member used to parse in a type position and not in an array one).
+ */
+function literalText(expression: ts.Expression): string | null {
+  if (ts.isStringLiteral(expression) || ts.isNoSubstitutionTemplateLiteral(expression)) {
+    return expression.text;
   }
-  if (ts.isNumericLiteral(literal)) return literal.text;
-  if (ts.isPrefixUnaryExpression(literal) && ts.isNumericLiteral(literal.operand)) {
-    return literal.operator === ts.SyntaxKind.MinusToken
-      ? `-${literal.operand.text}`
-      : literal.operand.text;
+  if (ts.isNumericLiteral(expression)) return expression.text;
+  if (ts.isPrefixUnaryExpression(expression) && ts.isNumericLiteral(expression.operand)) {
+    return expression.operator === ts.SyntaxKind.MinusToken
+      ? `-${expression.operand.text}`
+      : expression.operand.text;
   }
-  return null;
-}
-
-function elementLiteral(element: ts.Expression): string | null {
-  if (ts.isStringLiteral(element) || ts.isNoSubstitutionTemplateLiteral(element)) {
-    return element.text;
-  }
-  if (ts.isNumericLiteral(element)) return element.text;
   return null;
 }
 
@@ -299,7 +299,9 @@ function collectSourceOrder(
   }
 
   if (ts.isLiteralTypeNode(node)) {
-    const value = literalNodeValue(node);
+    // `true`/`false`/`null` members read as null here; the BooleanKeyword arm
+    // below is what carries a `boolean` member's two literals.
+    const value = literalText(node.literal);
     if (value !== null) out.push(value);
     return;
   }
@@ -378,20 +380,33 @@ function namedMember(
   return undefined;
 }
 
-/** The object literal `typeof X` names, if `X` is a const object. */
-function objectLiteralKeys(node: ts.TypeNode, checker: ts.TypeChecker): string[] {
+/**
+ * The initializers of the const variable `typeof X` names, `as const` and
+ * parenthesis wrappers stripped. Both `keyof typeof MAP` and
+ * `(typeof ARRAY)[number]` reach their members through exactly this resolution;
+ * only the literal shape they then expect differs.
+ */
+function constInitializers(node: ts.TypeNode, checker: ts.TypeChecker): ts.Expression[] {
   const query = unwrapTypeNode(node);
   if (!ts.isTypeQueryNode(query) || !ts.isIdentifier(query.exprName)) return [];
   const symbol = checker.getSymbolAtLocation(query.exprName);
-  const keys: string[] = [];
+  const initializers: ts.Expression[] = [];
   for (const declaration of symbol?.getDeclarations() ?? []) {
     if (!ts.isVariableDeclaration(declaration) || !declaration.initializer) continue;
-    const initializer = unwrapExpression(declaration.initializer);
+    initializers.push(unwrapExpression(declaration.initializer));
+  }
+  return initializers;
+}
+
+/** The object literal `typeof X` names, if `X` is a const object. */
+function objectLiteralKeys(node: ts.TypeNode, checker: ts.TypeChecker): string[] {
+  const keys: string[] = [];
+  for (const initializer of constInitializers(node, checker)) {
     if (!ts.isObjectLiteralExpression(initializer)) continue;
     for (const property of initializer.properties) {
-      if (!property.name) continue;
-      if (ts.isIdentifier(property.name)) keys.push(property.name.text);
-      else if (ts.isStringLiteral(property.name)) keys.push(property.name.text);
+      const name = property.name;
+      if (!name) continue;
+      if (ts.isIdentifier(name) || ts.isStringLiteral(name)) keys.push(name.text);
     }
   }
   return keys;
@@ -399,16 +414,11 @@ function objectLiteralKeys(node: ts.TypeNode, checker: ts.TypeChecker): string[]
 
 /** The literal members of the array `typeof X` names, in source order. */
 function constArrayValues(node: ts.TypeNode, checker: ts.TypeChecker): string[] {
-  const query = unwrapTypeNode(node);
-  if (!ts.isTypeQueryNode(query) || !ts.isIdentifier(query.exprName)) return [];
-  const symbol = checker.getSymbolAtLocation(query.exprName);
   const values: string[] = [];
-  for (const declaration of symbol?.getDeclarations() ?? []) {
-    if (!ts.isVariableDeclaration(declaration) || !declaration.initializer) continue;
-    const initializer = unwrapExpression(declaration.initializer);
+  for (const initializer of constInitializers(node, checker)) {
     if (!ts.isArrayLiteralExpression(initializer)) continue;
     for (const element of initializer.elements) {
-      const value = elementLiteral(element);
+      const value = literalText(element);
       if (value !== null) values.push(value);
     }
   }
@@ -462,29 +472,28 @@ function isFunctionType(_checker: ts.TypeChecker, type: ts.Type): boolean {
   return signatures.length > 0;
 }
 
-function extractDefaultFromInitializer(
-  initializer: ts.Expression,
-): { value: string | boolean | number; kind: 'string' | 'boolean' | 'number' } | null {
+/**
+ * A destructured default, tagged by the `PropField` arm it can supply.
+ *
+ * Discriminated on `kind`, so `def.kind === 'number'` narrows `def.value` to
+ * `number` at the emit sites -- a `{ value: string | boolean | number }` pair
+ * would leave every one of them casting.
+ */
+type PropDefault =
+  | { kind: 'string'; value: string }
+  | { kind: 'boolean'; value: boolean }
+  | { kind: 'number'; value: number };
+
+function extractDefaultFromInitializer(initializer: ts.Expression): PropDefault | null {
+  if (initializer.kind === ts.SyntaxKind.TrueKeyword) return { kind: 'boolean', value: true };
+  if (initializer.kind === ts.SyntaxKind.FalseKeyword) return { kind: 'boolean', value: false };
   if (ts.isStringLiteral(initializer) || ts.isNoSubstitutionTemplateLiteral(initializer)) {
-    return { value: initializer.text, kind: 'string' };
+    return { kind: 'string', value: initializer.text };
   }
-  if (initializer.kind === ts.SyntaxKind.TrueKeyword) {
-    return { value: true, kind: 'boolean' };
-  }
-  if (initializer.kind === ts.SyntaxKind.FalseKeyword) {
-    return { value: false, kind: 'boolean' };
-  }
-  if (ts.isNumericLiteral(initializer)) {
-    return { value: Number(initializer.text), kind: 'number' };
-  }
-  if (ts.isPrefixUnaryExpression(initializer) && ts.isNumericLiteral(initializer.operand)) {
-    const val = Number(initializer.operand.text);
-    return {
-      value: initializer.operator === ts.SyntaxKind.MinusToken ? -val : val,
-      kind: 'number',
-    };
-  }
-  return null;
+  // Everything `literalText` still answers for past the string arms above is
+  // numeric, negation included.
+  const numeric = literalText(initializer);
+  return numeric === null ? null : { kind: 'number', value: Number(numeric) };
 }
 
 /**
@@ -500,11 +509,8 @@ function extractDefaultFromInitializer(
 function findDestructuredDefaults(
   sourceFile: ts.SourceFile,
   propsTypeName: string,
-): Map<string, { value: string | boolean | number; kind: 'string' | 'boolean' | 'number' }> {
-  const defaults = new Map<
-    string,
-    { value: string | boolean | number; kind: 'string' | 'boolean' | 'number' }
-  >();
+): Map<string, PropDefault> {
+  const defaults = new Map<string, PropDefault>();
 
   function extractFromPattern(pattern: ts.ObjectBindingPattern): void {
     for (const element of pattern.elements) {
@@ -753,7 +759,7 @@ function resolvePropsFromChecker(
     if (isBooleanType(checker, nonNullType)) {
       const field: PropField = { type: 'boolean' };
       const def = defaults.get(propName);
-      if (def !== undefined && def.kind === 'boolean') field.default = def.value as boolean;
+      if (def !== undefined && def.kind === 'boolean') field.default = def.value;
       if (required) field.required = true;
       props[propName] = field;
       continue;
@@ -763,7 +769,7 @@ function resolvePropsFromChecker(
     if (isStringType(nonNullType)) {
       const field: PropField = { type: 'string' };
       const def = defaults.get(propName);
-      if (def !== undefined && def.kind === 'string') field.default = def.value as string;
+      if (def !== undefined && def.kind === 'string') field.default = def.value;
       if (required) field.required = true;
       props[propName] = field;
       continue;
@@ -773,7 +779,7 @@ function resolvePropsFromChecker(
     if (isNumberType(nonNullType)) {
       const field: PropField = { type: 'number' };
       const def = defaults.get(propName);
-      if (def !== undefined && def.kind === 'number') field.default = def.value as number;
+      if (def !== undefined && def.kind === 'number') field.default = def.value;
       if (required) field.required = true;
       props[propName] = field;
       continue;
