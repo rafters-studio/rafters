@@ -201,6 +201,8 @@ All popup contents scale from the anchor origin.
 | command C | items | filter change | fade + swap | micro* | standard* | -- | -- |
 | date-picker | content | closed -> open | fade + zoom | moderate | enter | -- | extent-pop |
 | date-picker | content | open -> closed | fade + zoom | fast | exit | -- | extent-pop |
+| color-picker | root | closed -> open | fade | moderate | enter | -- | -- |
+| color-picker | root | open -> closed | fade | fast | exit | -- | -- |
 
 ### toggle family
 
@@ -251,6 +253,7 @@ All popup contents scale from the anchor origin.
 | sidebar | item | hover | color | fast | standard | -- | -- |
 | slider | thumb | hover | color | fast | standard | -- | -- |
 | slider | thumb | grab | zoom | micro* | spring-snappy* | -- | extent-press |
+| badge | root | hover | color | fast | standard | -- | -- |
 
 Focus is a system-level cell: one `ring` movement, `micro` / `linear` (baseline),
 shared by every focusable component. It splits per component only when a real brand
@@ -308,17 +311,47 @@ need arrives, not speculatively.
 ### no rows
 
 aspect-ratio, container, grid, kbd, label, separator, typography, button-group, empty,
-field (wrapper itself), calendar (day cells -- selection is instant), badge.
+field (wrapper itself), calendar (day cells -- selection is instant).
 
-Badge's variant colour is a prop change, not a behavioural moment -- no state machine,
-no cell. Empty appears only by its parent's choice; the parent owns that motion. These
-are exclusions by absence of behaviour, not values set to zero: a zero cell is tunable,
-a missing row is a claim the moment does not exist. Contest the claim by finding the
-behaviour, not by adding the row.
+Badge's *variant* colour is a prop change, not a behavioural moment -- no cell for a
+variant swap. Its root does carry a hover cell: `hover:bg-muted`/`hover:underline`
+(ghost/link variants) are literal `:hover` pseudo-classes, and `transition-colors
+duration-150` makes them animate -- a real interactive moment distinct from the
+variant prop. Empty appears only by its parent's choice; the parent owns that motion.
+These are exclusions by absence of behaviour, not values set to zero: a zero cell is
+tunable, a missing row is a claim the moment does not exist. Contest the claim by
+finding the behaviour, not by adding the row.
 
 Two deliberate non-cells, recorded so they read as decisions*: enabled <-> disabled
 snaps everywhere (state gating, not communication); alert-dialog has no close-button
 row because a consequence-gated dialog deliberately has no casual dismiss affordance.
+
+### needs-ledger
+
+Menubar (interactive-surface trigger plus the anchored-popup content/items rows) and
+date-picker (the anchored-popup content pair) carry cells with no
+`packages/ui/src/components/<name>/` directory behind them -- neither component is
+ported yet. Dropping the rows would claim the moment does not exist; it exists in the
+design, just not in code, so they stay as a needs-ledger entry until the port lands.
+
+`delay-skip` (Token generics table above) stays unconsumed by the same logic: it
+names a real, specified interaction -- the warm-reopen grace window, reopen a
+just-closed surface within it and the entrance delay is skipped because the user is
+already oriented -- with no component wired to it today, not a row kept alive by
+confusion with some other prop. There is no delay prop left in tooltip's source
+(`packages/ui/src/components/tooltip/`) to confuse it with, either: commit
+c92f9814 (#2148) deleted the delay-prop mechanism outright -- tooltip, hover-card,
+and navigation-menu reveal in CSS now, not TypeScript -- and tooltip's own
+open -> closed cell (motion.jsonl) carries no delay generic at all; `linger` belongs
+to hover-card's close, not tooltip's. A future component may still consume
+`delay-skip`.
+
+Scroll-area's scrollbar `hide` row above carries a `linger` delay at `proposed` with
+no CSS or JS behind it: proposed, unimplemented. Building it waits on `linger`'s exact
+semantics (how long to linger after the last scroll event), left unsettled here.
+
+Rows and namespace members exist by need, not by implementation status (matrix
+hygiene pass, issue #2158).
 
 ## Consumption
 
