@@ -67,13 +67,15 @@ const itemByText = (text: string): HTMLElement => {
 // This scoping is ONLY for axe's best-practice region rule, which flags any
 // content sitting outside a landmark whether or not it is visible or
 // interactive -- a real browser skips that rule, and it would fire on the
-// portaled node regardless of its open/closed state. It is not standing in
-// for anything else: a closed sub-content is verifiably excluded from the
-// accessibility tree on its own (`aria-hidden="true"`, projected by the score
-// and mirrored in the SSR markup, #2187 review), independent of landmark
-// containment -- see the open/close/axe-clean assertion below, which runs
-// against this same `landmark()` scope and would still catch a closed,
-// interactive node if `aria-hidden` regressed.
+// portaled node regardless of its open/closed state. But the tradeoff is
+// real: because the portaled sub-content sits outside <main>, a
+// `landmark()`-scoped axe run never reaches it, so it cannot be the
+// regression guard for a closed sub-content's accessibility-tree exclusion
+// (`aria-hidden="true"`, projected by the score and mirrored in the SSR
+// markup, #2187 review). That guard is the explicit `aria-hidden` /
+// `tabindex` assertions in the open/close/axe-clean test below, plus a
+// second `assertAxeClean` call there scoped directly to the sub-content
+// node so axe actually scans the portaled element.
 const landmark = () => document.body.querySelector('main') as HTMLElement;
 
 afterEach(() => {
@@ -242,7 +244,14 @@ describe('context-menu conformance [wc]', () => {
     for (const item of sc.querySelectorAll<HTMLElement>('[role="menuitem"]')) {
       expect(item.getAttribute('tabindex')).toBe('-1');
     }
+    // landmark() only covers the top-level menu content inside <main> --
+    // the portalled sub-content sits outside it and is invisible to this
+    // scan (see the comment on `landmark()` above). Scan the sub-content
+    // node directly so a regressed `aria-hidden` or a leftover
+    // `tabindex="0"` on it is actually caught by axe, not just by the
+    // explicit assertions above.
     await assertAxeClean(landmark());
+    await assertAxeClean(sc);
   });
 
   it('closing the whole menu collapses an open submenu', async () => {
