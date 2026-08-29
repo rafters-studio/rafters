@@ -19,7 +19,7 @@
 
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import {
   contrastPlugin,
   generateBaseSystem,
@@ -126,27 +126,25 @@ describe('stagger-items consumption: real component source (#2156)', () => {
     }
   });
 
-  it("compiling this package's real src/components produces the calc(3 * var(--rafters-delay-stagger-step)) rule for position 3", async () => {
+  // Compiled once (real @tailwindcss/cli invocation is the slow part of this
+  // file) and shared by both assertions below, rather than each `it`
+  // recompiling the identical sheet from the identical content source.
+  let block: string;
+  beforeAll(async () => {
     const css = await registryToCompiled(baseRegistry(), {
       contentSources: [COMPONENTS_DIR],
       minify: false,
     });
+    block = extractStaggerBlock(css);
+  });
 
-    const block = extractStaggerBlock(css);
-
+  it("compiling this package's real src/components produces the calc(3 * var(--rafters-delay-stagger-step)) rule for position 3", () => {
     expect(block).toMatch(
       /:nth-child\(3\)[^}]*animation-delay:\s*calc\(3 \* var\(--rafters-delay-stagger-step\)\)/s,
     );
   });
 
-  it('the compiled ladder is strictly increasing across item positions (visible stagger once the token is tuned)', async () => {
-    const css = await registryToCompiled(baseRegistry(), {
-      contentSources: [COMPONENTS_DIR],
-      minify: false,
-    });
-
-    const block = extractStaggerBlock(css);
-
+  it('the compiled ladder is strictly increasing across item positions (visible stagger once the token is tuned)', () => {
     // Read the multiplier the compiled rule attaches to each position: a
     // strictly increasing sequence of multipliers against a single nonzero
     // token is a strictly increasing sequence of animation-delay values --
