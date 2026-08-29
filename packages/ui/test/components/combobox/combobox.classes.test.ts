@@ -10,14 +10,6 @@ describe('combobox classes', () => {
     expect(classes.content).toContain('z-depth-dropdown');
   });
 
-  it('the item collection SELECTS the stagger-items utility (#2156/#2189), never constructs calc()/nth-child', () => {
-    expect(classes.content).toContain('stagger-items');
-    for (const value of Object.values(classes)) {
-      expect(value).not.toContain('calc(');
-      expect(value).not.toContain('nth-child');
-    }
-  });
-
   it('the input honors the touch floor and scales down via CQ', () => {
     expect(classes.input).toContain('h-11');
     expect(classes.input).toContain('@md:h-9');

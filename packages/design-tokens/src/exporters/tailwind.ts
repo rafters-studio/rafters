@@ -1170,66 +1170,6 @@ function generateMotionNamespaceUtilities(motionTokens: Token[]): string {
   return emitted === 0 ? '' : lines.join('\n');
 }
 
-/** Positions 1..STAGGER_CAP each get an explicit `:nth-child(n)` rule. */
-const STAGGER_CAP = 12;
-
-/**
- * Emit the single `@utility stagger-items` block: a per-position stagger
- * ladder for an item collection's CONTAINER, so a component's `.classes.ts`
- * SELECTS this class rather than constructing `calc()` / `:nth-child` itself
- * (`packages/ui/docs/spec/00-boundaries.md` Sec 6 -- classes.ts owns selection
- * among literal strings, never construction, never arbitrary values).
- *
- * Positions 1 through `STAGGER_CAP` (12) each get their own `:nth-child(n)`
- * rule multiplying `--rafters-delay-stagger-step` by their position. 12 is the
- * cap because it is the size of the largest items/enter collection in
- * `motion.jsonl` -- the six stagger-step assignments (dropdown-menu,
- * context-menu, select, combobox, command, menubar) do not exceed 12 rendered
- * items in the matrix's reference cases. Position 13 and beyond match only
- * the `& > *` fallback rule below, which carries the SAME multiplier as
- * position 12 -- the delay saturates, it does not reset to 0 or keep climbing
- * unbounded. Raising the cap is a separate, deliberate change to this
- * function, never a per-call parameter.
- *
- * Every `animation-delay` declaration references `var(--rafters-delay-stagger-step)`
- * inside a `calc()`; no literal ms appears anywhere in the block, so the whole
- * utility is byte-identical across any retune of that token -- the same toy-9
- * invariant `generateMotionNamespaceUtilities` documents above. Reduced motion
- * routes through the same `REDUCED_MOTION_ZEROED` law the namespace utilities
- * use: `delay` is already a member of that set, so the gate below tracks it
- * rather than hard-coding the zero as a law of its own.
- */
-function generateStaggerUtility(motionTokens: Token[]): string {
-  const hasStaggerStep = motionTokens.some((token) => {
-    const parts = motionNamespaceParts(token.name);
-    return parts?.namespace === 'delay' && parts.member === 'stagger-step';
-  });
-  if (!hasStaggerStep) return '';
-
-  const lines: string[] = [
-    '/* Per-position stagger ladder -- one utility for the whole item collection */',
-    '@utility stagger-items {',
-    '  & > * {',
-    `    animation-delay: calc(${STAGGER_CAP} * var(--rafters-delay-stagger-step));`,
-    '  }',
-  ];
-  for (let position = 1; position <= STAGGER_CAP; position++) {
-    lines.push(`  & > *:nth-child(${position}) {`);
-    lines.push(`    animation-delay: calc(${position} * var(--rafters-delay-stagger-step));`);
-    lines.push('  }');
-  }
-  if (REDUCED_MOTION_ZEROED.has('delay')) {
-    lines.push('  @media (prefers-reduced-motion: reduce) {');
-    lines.push('    & > * {');
-    lines.push('      animation-delay: 0ms;');
-    lines.push('    }');
-    lines.push('  }');
-  }
-  lines.push('}');
-
-  return lines.join('\n');
-}
-
 /**
  * Map a typography override property to a Tailwind utility class.
  */
@@ -1385,13 +1325,6 @@ export function tokensToTailwind(
   if (cellUtilities) {
     sections.push('');
     sections.push(cellUtilities);
-  }
-
-  // Per-position stagger ladder (@utility stagger-items)
-  const staggerUtility = generateStaggerUtility(groups.motion);
-  if (staggerUtility) {
-    sections.push('');
-    sections.push(staggerUtility);
   }
 
   // Typography element overrides (if any)
