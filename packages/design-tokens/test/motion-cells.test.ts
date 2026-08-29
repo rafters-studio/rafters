@@ -268,18 +268,26 @@ const EXCLUDED_ROWS: Record<ExclusionReason, readonly string[]> = {
     'button | root | press',
     'button | content | idle <-> busy',
     'slider | thumb | grab',
-    // #2152 (spec correction 2026-08-28): subcontent stays permanently mounted
-    // (context-menu-sub.astro never sets `hidden`), so open/close is a state
-    // change on a mounted part, not a presence change -- unlike its sibling
-    // anchored-popup cells (tooltip-content-open, popover-content-open, ...),
-    // which DO get a cell because their content mounts/unmounts on an
-    // `animate-*` keyframe. This row's reveal is a CSS `transition` with a
+    // #2152 (spec correction 2026-08-28): packages/design-tokens gains no
+    // entry for these two rows, full stop -- the issue's spec correction rules
+    // that the subcontent cells are consumed as transition tokens directly in
+    // context-menu.classes.ts, not as named `DEFAULT_MOTION_CELL_ANIMATIONS`
+    // entries; a branch that added them was told to remove them. That is the
+    // exclusion's actual ground; it does not turn on presence.
+    //
+    // (For WC/Astro, subcontent does stay permanently mounted --
+    // context-menu-sub.astro never sets `hidden` -- so open/close is a state
+    // change on a mounted part there. React's ContextMenuSubContent diverges:
+    // it unmounts via `usePresence` once the close transition ends, so for
+    // that performance this IS a presence change, same as its sibling
+    // anchored-popup cells (tooltip-content-open, popover-content-open, ...).
+    // The exclusion holds regardless, per the spec correction above -- not
+    // because the part is uniformly non-presence across all three
+    // performances.) The reveal itself is a CSS `transition` with a
     // per-selector `transition-delay` scoped by `data-open-source` (pointer vs.
     // keyboard/click), which the cell vocabulary has no member for -- so it
     // rides the generic leaves directly (`duration-fast`/`ease-exit` closed,
-    // `duration-moderate`/`ease-enter`/`delay-hover-intent`/`extent-pop` open)
-    // in context-menu.classes.ts rather than a named cell. Per the issue's
-    // spec correction, packages/design-tokens gains no entry for it.
+    // `duration-moderate`/`ease-enter`/`delay-hover-intent`/`extent-pop` open).
     'context-menu | subcontent | closed -> open',
     'context-menu | subcontent | open -> closed',
   ],
