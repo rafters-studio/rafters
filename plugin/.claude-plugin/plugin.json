@@ -1,7 +1,7 @@
 {
   "name": "rafters",
   "description": "Design intelligence enforcement for Rafters projects. Prevents guessing at design decisions by enforcing MCP tool usage, Container/Grid layout, classy(), and design token compliance.",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "author": {
     "name": "Sean Silvius",
     "email": "sean@silvius.me"
