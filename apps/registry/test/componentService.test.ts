@@ -355,12 +355,15 @@ describe('per-target facet + reverse-composites extraction (#2073)', () => {
   });
 
   it('sources react `size` (which lives in the ButtonProps intersection, not the interface body)', () => {
-    // Proves the destructuring-driven name source catches `size`; an interface-body
-    // scan would miss it. Its 8 members come verbatim from ButtonSize.
-    const size = buttonItem?.facets?.react?.props['size'];
-    expect(size?.type).toBe('enum');
-    expect(size).toMatchObject({
+    // `size` is declared in the two arms of the ButtonProps intersection, never
+    // in the ButtonBaseProps body, so an interface-body scan misses it. Exact
+    // and ordered like `variant` above: the four NonIconSize members come first
+    // because that arm is declared first, then IconSize's four (#2165 pins the
+    // emit order to the declarations, not to the checker's union order).
+    expect(buttonItem?.facets?.react?.props['size']).toEqual({
+      type: 'enum',
       values: ['default', 'xs', 'sm', 'lg', 'icon', 'icon-xs', 'icon-sm', 'icon-lg'],
+      default: 'default',
     });
   });
 
