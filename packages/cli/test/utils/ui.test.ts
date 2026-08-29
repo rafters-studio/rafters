@@ -191,3 +191,77 @@ describe('add:complete headline', () => {
     expect(success).not.toContain('failed');
   });
 });
+
+/**
+ * `motion:override-dropped` is the notice that a designer's stored override was
+ * discarded during a motion rebuild (#2208). It reached agent JSON for free and
+ * nothing else: with no case of its own it fell to the default branch, which
+ * assigns the event NAME to the active spinner's text and discards `message` --
+ * and on `init --rebuild` a spinner is provably running, so the line was then
+ * overwritten by the next `spinner.succeed()`. The drop was silent for exactly
+ * the human the notice is for.
+ */
+describe('motion:override-dropped human output', () => {
+  const dropped = {
+    event: 'motion:override-dropped',
+    token: 'motion-cell-dialog-content-open',
+    message:
+      'Stored override on "motion-cell-dialog-content-open" holds a value shape this version no longer emits; the token is rebuilt from the generator and the override is dropped.',
+  };
+
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+    setAgentMode(false);
+  });
+
+  it('warns durably for a human instead of borrowing the spinner line', () => {
+    setAgentMode(false);
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    log(dropped);
+
+    const warned = warnSpy.mock.calls.map((call) => String(call[0] ?? '')).join('\n');
+    expect(warned).toContain('motion-cell-dialog-content-open');
+    expect(warned).toContain('the override is dropped');
+    // The old render leaked the event name in place of the message.
+    expect(warned).not.toContain('motion:override-dropped');
+  });
+
+  it('still emits the event as JSON in agent mode', () => {
+    setAgentMode(true);
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    log(dropped);
+
+    expect(logSpy).toHaveBeenCalledTimes(1);
+    const parsed: unknown = JSON.parse(String(logSpy.mock.calls[0]?.[0] ?? ''));
+    expect(parsed).toMatchObject({
+      event: 'motion:override-dropped',
+      token: 'motion-cell-dialog-content-open',
+    });
+  });
+
+  it('leaves the surrounding spinner able to report its own outcome', () => {
+    // Two spies, because the two writers do not share a path under vitest: ora
+    // writes frames straight to process.stderr, while console.warn is routed
+    // through the runner's own reporter. A mocked non-TTY stream also cannot
+    // reproduce ora's line clearing, so what this pins is co-presence rather
+    // than terminal rendering -- the warning is emitted AND the regenerate
+    // step still reports its own outcome. It goes red if the new case clears
+    // `context.spinner`, which would silently delete `init:loaded`'s line --
+    // the one way of getting the warning out that costs a report elsewhere.
+    setAgentMode(false);
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+
+    log({ event: 'init:regenerate' });
+    log(dropped);
+    log({ event: 'init:loaded', tokenCount: 412 });
+
+    const warned = warnSpy.mock.calls.map((call) => String(call[0] ?? '')).join('\n');
+    const stream = stderrSpy.mock.calls.map((call) => String(call[0] ?? '')).join('');
+    expect(warned).toContain('the override is dropped');
+    expect(stream).toContain('Loaded 412 tokens');
+  });
+});
