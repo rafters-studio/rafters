@@ -1,59 +1,73 @@
 import { existsSync, readdirSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import ts from 'typescript';
 import type { Constraint, PropField } from './componentService';
 
-export interface ResolvedProp {
-  name: string;
-  field: PropField;
+interface CheckerHandle {
+  root: string;
+  program: ts.Program;
+  checker: ts.TypeChecker;
 }
 
-let cachedChecker: { program: ts.Program; checker: ts.TypeChecker } | undefined;
+let cachedChecker: CheckerHandle | undefined;
 
-function getComponentsPath(): string {
-  return join(process.cwd(), '../../packages/ui/src/components');
+function readEntriesOrThrow(dir: string, label: string) {
+  try {
+    return readdirSync(dir, { withFileTypes: true });
+  } catch (cause) {
+    throw new Error(`registry type checker: cannot read the ${label} ${dir}: ${String(cause)}`);
+  }
 }
 
-function getUiPath(): string {
-  return join(process.cwd(), '../../packages/ui');
-}
-
+/**
+ * Every discovery failure is fatal (#2165 Error Handling). A silently empty
+ * root file list still builds a valid (empty) `ts.Program`, so every component
+ * would resolve to `props: {}` and the registry would ship green with exactly
+ * the bug this checker exists to fix.
+ */
 function discoverTsxFiles(componentsDir: string): string[] {
   const files: string[] = [];
-  try {
-    for (const entry of readdirSync(componentsDir, { withFileTypes: true })) {
-      if (!entry.isDirectory()) continue;
-      const dir = join(componentsDir, entry.name);
-      try {
-        for (const f of readdirSync(dir)) {
-          if (f.endsWith('.tsx') || f.endsWith('.ts')) {
-            files.push(join(dir, f));
-          }
-        }
-      } catch {
-        // skip unreadable dirs
-      }
+  let directories = 0;
+  for (const entry of readEntriesOrThrow(componentsDir, 'component root')) {
+    if (!entry.isDirectory()) continue;
+    directories += 1;
+    const dir = join(componentsDir, entry.name);
+    for (const file of readEntriesOrThrow(dir, 'component directory')) {
+      const name = file.name;
+      if (file.isDirectory()) continue;
+      if (name.endsWith('.tsx') || name.endsWith('.ts')) files.push(join(dir, name));
     }
-  } catch {
-    // skip if components dir doesn't exist
+  }
+
+  if (directories === 0) {
+    throw new Error(`registry type checker: no component directories under ${componentsDir}`);
+  }
+  if (files.length === 0) {
+    throw new Error(`registry type checker: no .ts/.tsx sources under ${componentsDir}`);
   }
   return files;
 }
 
-function ensureChecker(): { program: ts.Program; checker: ts.TypeChecker } {
-  if (cachedChecker) return cachedChecker;
+/**
+ * One shared `ts.Program` over every component directory, built from the
+ * ABSOLUTE component root the caller already resolved -- never from
+ * `process.cwd()`, so the checker is not coupled to the directory the registry
+ * build happens to run from.
+ */
+function ensureChecker(componentsRoot: string): CheckerHandle {
+  const root = resolve(componentsRoot);
+  if (cachedChecker && cachedChecker.root === root) return cachedChecker;
 
-  const uiPath = getUiPath();
+  // <ui>/src/components -> <ui>
+  const uiPath = resolve(root, '..', '..');
   const tsconfigPath = join(uiPath, 'tsconfig.json');
 
   let compilerOptions: ts.CompilerOptions;
-  let rootFiles: string[];
 
   if (existsSync(tsconfigPath)) {
     const parsed = ts.readConfigFile(tsconfigPath, ts.sys.readFile);
     const config = ts.parseJsonConfigFileContent(parsed.config, ts.sys, uiPath);
     compilerOptions = { ...config.options, noEmit: true, skipLibCheck: true };
-    rootFiles = discoverTsxFiles(getComponentsPath());
   } else {
     compilerOptions = {
       target: ts.ScriptTarget.ES2024,
@@ -65,12 +79,12 @@ function ensureChecker(): { program: ts.Program; checker: ts.TypeChecker } {
       skipLibCheck: true,
       esModuleInterop: true,
     };
-    rootFiles = discoverTsxFiles(getComponentsPath());
   }
 
+  const rootFiles = discoverTsxFiles(root);
   const program = ts.createProgram(rootFiles, compilerOptions);
   const checker = program.getTypeChecker();
-  cachedChecker = { program, checker };
+  cachedChecker = { root, program, checker };
   return cachedChecker;
 }
 
@@ -86,14 +100,29 @@ function pascalCase(input: string): string {
     .join('');
 }
 
+/**
+ * Anchored containment. A bare `startsWith` would count `button-group/` as
+ * inside `button/` -- and the sibling-prefix collisions are real here
+ * (button/button-group, input/input-group + input-otp, toggle/toggle-group,
+ * alert/alert-dialog), which would defeat the own-declaration filter outright.
+ *
+ * Exported for the regression test: no component's props type references a
+ * sibling-prefixed neighbour's symbols TODAY, so the anchoring is only
+ * assertable against the predicate itself.
+ */
+export function isInsideDir(dir: string, fileName: string): boolean {
+  const rel = relative(dir, fileName);
+  if (rel === '' || isAbsolute(rel)) return false;
+  return rel !== '..' && !rel.startsWith(`..${sep}`);
+}
+
 function isOwnDeclaration(symbol: ts.Symbol, componentDir: string): boolean {
   const declarations = symbol.getDeclarations();
   if (!declarations || declarations.length === 0) return false;
   const resolved = resolve(componentDir);
-  return declarations.every((decl) => {
-    const fileName = resolve(decl.getSourceFile().fileName);
-    return fileName.startsWith(resolved);
-  });
+  return declarations.every((decl) =>
+    isInsideDir(resolved, resolve(decl.getSourceFile().fileName)),
+  );
 }
 
 function isStringLiteralUnion(_checker: ts.TypeChecker, type: ts.Type): string[] | null {
@@ -132,6 +161,51 @@ function isNumberLiteralUnion(_checker: ts.TypeChecker, type: ts.Type): string[]
   return null;
 }
 
+/** Widened primitives: an arm no finite list of literals can stand in for. */
+const OPEN_PRIMITIVE_FLAGS =
+  ts.TypeFlags.String |
+  ts.TypeFlags.Number |
+  ts.TypeFlags.BigInt |
+  ts.TypeFlags.ESSymbol |
+  ts.TypeFlags.Any |
+  ts.TypeFlags.Unknown;
+
+/**
+ * A union that mixes literals with non-literal members -- container's
+ * `columns?: ResponsiveColumns` (`ColumnsValue | ResponsiveColumnsObject`),
+ * container's `gap?: boolean | ContainerPadding`, grid's `columns`. Every pure
+ * classifier above returns null for these, so before this arm existed the prop
+ * fell out of the loop with no diagnostic and no emission (#2165 Proof).
+ *
+ * Every LITERAL member becomes an enum value -- string, number, and boolean
+ * alike, so checkbox's `checked?: boolean | 'indeterminate'` reads as the
+ * tri-state it is (`true`/`false`/`indeterminate`) rather than as the single
+ * value `indeterminate`. Structural arms (container's responsive-columns
+ * object) have no enum representation and are dropped: the emitted values are
+ * the literal vocabulary an agent can pick from, not the whole assignable
+ * domain.
+ *
+ * Reached only after every pure classifier has declined, so a union that gets
+ * here is mixed by construction.
+ */
+function mixedLiteralUnion(checker: ts.TypeChecker, type: ts.Type): string[] | null {
+  if (!type.isUnion()) return null;
+  const values: string[] = [];
+  for (const member of type.types) {
+    if (member.isStringLiteral()) values.push(member.value);
+    else if (member.isNumberLiteral()) values.push(String(member.value));
+    else if (member.getFlags() & ts.TypeFlags.BooleanLiteral) {
+      values.push(checker.typeToString(member));
+    } else if (member.getFlags() & OPEN_PRIMITIVE_FLAGS) {
+      // A widened primitive arm means the literals are examples, not a
+      // vocabulary -- `React.ReactNode` would otherwise publish its `true` and
+      // `false` members as if `children` were a two-value enum.
+      return null;
+    }
+  }
+  return values.length > 0 ? values : null;
+}
+
 function isBooleanType(_checker: ts.TypeChecker, type: ts.Type): boolean {
   const flags = type.getFlags();
   if (flags & ts.TypeFlags.BooleanLike) return true;
@@ -141,6 +215,238 @@ function isBooleanType(_checker: ts.TypeChecker, type: ts.Type): boolean {
     );
   }
   return false;
+}
+
+/**
+ * Deterministic fallback order, numeric-aware so `colSpan` reads 1,2,...,12
+ * rather than 1,10,11,12,2. Used only when the declaration's source order
+ * cannot be recovered (see `orderValues`).
+ */
+function sortValues(values: string[]): string[] {
+  return [...values].sort((a, b) => {
+    const na = Number(a);
+    const nb = Number(b);
+    const aNumeric = a.trim() !== '' && Number.isFinite(na);
+    const bNumeric = b.trim() !== '' && Number.isFinite(nb);
+    if (aNumeric && bNumeric) return na - nb;
+    if (aNumeric !== bNumeric) return aNumeric ? -1 : 1;
+    return a < b ? -1 : a > b ? 1 : 0;
+  });
+}
+
+/** The literal a `LiteralTypeNode` carries, or null for `true`/`false`/`null`. */
+function literalNodeValue(node: ts.LiteralTypeNode): string | null {
+  const { literal } = node;
+  if (ts.isStringLiteral(literal) || ts.isNoSubstitutionTemplateLiteral(literal)) {
+    return literal.text;
+  }
+  if (ts.isNumericLiteral(literal)) return literal.text;
+  if (ts.isPrefixUnaryExpression(literal) && ts.isNumericLiteral(literal.operand)) {
+    return literal.operator === ts.SyntaxKind.MinusToken
+      ? `-${literal.operand.text}`
+      : literal.operand.text;
+  }
+  return null;
+}
+
+function elementLiteral(element: ts.Expression): string | null {
+  if (ts.isStringLiteral(element) || ts.isNoSubstitutionTemplateLiteral(element)) {
+    return element.text;
+  }
+  if (ts.isNumericLiteral(element)) return element.text;
+  return null;
+}
+
+function unwrapExpression(expression: ts.Expression): ts.Expression {
+  let current = expression;
+  while (ts.isAsExpression(current) || ts.isParenthesizedExpression(current)) {
+    current = current.expression;
+  }
+  return current;
+}
+
+/** `(typeof X)[number]` parenthesizes its object type; `typeof X[number]` does not. */
+function unwrapTypeNode(node: ts.TypeNode): ts.TypeNode {
+  let current = node;
+  while (ts.isParenthesizedTypeNode(current)) current = current.type;
+  return current;
+}
+
+/**
+ * Collect a type node's literal members IN SOURCE ORDER, following alias
+ * references, `(typeof ARRAY)[number]`, `keyof typeof MAP`, and indexed access
+ * into a named member. Best-effort by design: any member it cannot resolve is
+ * skipped rather than aborting, because the caller only trusts this ordering
+ * when its value SET matches the checker's (see `orderValues`).
+ */
+function collectSourceOrder(
+  node: ts.TypeNode,
+  checker: ts.TypeChecker,
+  out: string[],
+  seen: Set<ts.Node>,
+): void {
+  if (seen.has(node)) return;
+  seen.add(node);
+
+  if (ts.isParenthesizedTypeNode(node)) {
+    collectSourceOrder(node.type, checker, out, seen);
+    return;
+  }
+
+  if (ts.isUnionTypeNode(node)) {
+    for (const member of node.types) collectSourceOrder(member, checker, out, seen);
+    return;
+  }
+
+  if (ts.isLiteralTypeNode(node)) {
+    const value = literalNodeValue(node);
+    if (value !== null) out.push(value);
+    return;
+  }
+
+  // `boolean` in a mixed union is two literal members once the checker
+  // expands it, so the recovered order has to carry both or the set gate
+  // rejects it (checkbox's `checked?: boolean | 'indeterminate'`).
+  if (node.kind === ts.SyntaxKind.BooleanKeyword) {
+    out.push('true', 'false');
+    return;
+  }
+
+  if (ts.isTypeReferenceNode(node)) {
+    const symbol = checker.getSymbolAtLocation(node.typeName);
+    const aliased =
+      symbol && symbol.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol;
+    for (const declaration of aliased?.getDeclarations() ?? []) {
+      if (ts.isTypeAliasDeclaration(declaration)) {
+        collectSourceOrder(declaration.type, checker, out, seen);
+      }
+    }
+    return;
+  }
+
+  if (ts.isTypeOperatorNode(node) && node.operator === ts.SyntaxKind.KeyOfKeyword) {
+    for (const key of objectLiteralKeys(node.type, checker)) out.push(key);
+    return;
+  }
+
+  if (ts.isIndexedAccessTypeNode(node)) {
+    // `(typeof VALUES)[number]` -- badge's as-const array alias.
+    if (node.indexType.kind === ts.SyntaxKind.NumberKeyword) {
+      for (const value of constArrayValues(node.objectType, checker)) out.push(value);
+      return;
+    }
+    // `GridConfig['gap']` -- indexed access into a named member.
+    if (ts.isLiteralTypeNode(node.indexType) && ts.isStringLiteral(node.indexType.literal)) {
+      const member = namedMember(node.objectType, node.indexType.literal.text, checker);
+      if (member) collectSourceOrder(member, checker, out, seen);
+    }
+  }
+}
+
+/** Declarations a type node's name resolves to, following import aliases. */
+function declarationsOf(node: ts.TypeNode, checker: ts.TypeChecker): ts.Declaration[] {
+  if (!ts.isTypeReferenceNode(node)) return [];
+  const symbol = checker.getSymbolAtLocation(node.typeName);
+  if (!symbol) return [];
+  const aliased = symbol.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol;
+  return [...(aliased.getDeclarations() ?? [])];
+}
+
+/** The type node of `member` on the interface/type-literal `node` names. */
+function namedMember(
+  node: ts.TypeNode,
+  member: string,
+  checker: ts.TypeChecker,
+): ts.TypeNode | undefined {
+  for (const declaration of declarationsOf(node, checker)) {
+    const members = ts.isInterfaceDeclaration(declaration)
+      ? declaration.members
+      : ts.isTypeAliasDeclaration(declaration) && ts.isTypeLiteralNode(declaration.type)
+        ? declaration.type.members
+        : undefined;
+    for (const candidate of members ?? []) {
+      if (
+        ts.isPropertySignature(candidate) &&
+        candidate.name &&
+        ts.isIdentifier(candidate.name) &&
+        candidate.name.text === member
+      ) {
+        return candidate.type;
+      }
+    }
+  }
+  return undefined;
+}
+
+/** The object literal `typeof X` names, if `X` is a const object. */
+function objectLiteralKeys(node: ts.TypeNode, checker: ts.TypeChecker): string[] {
+  const query = unwrapTypeNode(node);
+  if (!ts.isTypeQueryNode(query) || !ts.isIdentifier(query.exprName)) return [];
+  const symbol = checker.getSymbolAtLocation(query.exprName);
+  const keys: string[] = [];
+  for (const declaration of symbol?.getDeclarations() ?? []) {
+    if (!ts.isVariableDeclaration(declaration) || !declaration.initializer) continue;
+    const initializer = unwrapExpression(declaration.initializer);
+    if (!ts.isObjectLiteralExpression(initializer)) continue;
+    for (const property of initializer.properties) {
+      if (!property.name) continue;
+      if (ts.isIdentifier(property.name)) keys.push(property.name.text);
+      else if (ts.isStringLiteral(property.name)) keys.push(property.name.text);
+    }
+  }
+  return keys;
+}
+
+/** The literal members of the array `typeof X` names, in source order. */
+function constArrayValues(node: ts.TypeNode, checker: ts.TypeChecker): string[] {
+  const query = unwrapTypeNode(node);
+  if (!ts.isTypeQueryNode(query) || !ts.isIdentifier(query.exprName)) return [];
+  const symbol = checker.getSymbolAtLocation(query.exprName);
+  const values: string[] = [];
+  for (const declaration of symbol?.getDeclarations() ?? []) {
+    if (!ts.isVariableDeclaration(declaration) || !declaration.initializer) continue;
+    const initializer = unwrapExpression(declaration.initializer);
+    if (!ts.isArrayLiteralExpression(initializer)) continue;
+    for (const element of initializer.elements) {
+      const value = elementLiteral(element);
+      if (value !== null) values.push(value);
+    }
+  }
+  return values;
+}
+
+/**
+ * Emit order for an enum prop's values.
+ *
+ * The checker's own union member order is an implementation detail -- TS
+ * interns literal types globally and orders union constituents by type id, so
+ * the order depends on which file in the shared program happened to mint each
+ * literal first, and adding an unrelated component reshuffles it. Source order
+ * is stable and reads the way the author wrote it (`default` first, not
+ * `accent` first), so it wins when it can be recovered.
+ *
+ * The recovered order is trusted only when its value SET matches the checker's
+ * exactly; any resolution gap therefore costs a nicer order, never a wrong
+ * vocabulary. Multiple declarations (button's `size`, split across the two arms
+ * of the `ButtonProps` intersection) are concatenated in declaration order.
+ */
+function orderValues(prop: ts.Symbol, checker: ts.TypeChecker, resolved: string[]): string[] {
+  const collected: string[] = [];
+  const seen = new Set<ts.Node>();
+  for (const declaration of prop.getDeclarations() ?? []) {
+    const typeNode =
+      ts.isPropertySignature(declaration) || ts.isPropertyDeclaration(declaration)
+        ? declaration.type
+        : undefined;
+    if (typeNode) collectSourceOrder(typeNode, checker, collected, seen);
+  }
+
+  const ordered = [...new Set(collected)];
+  const target = new Set(resolved);
+  if (ordered.length === target.size && ordered.every((value) => target.has(value))) {
+    return ordered;
+  }
+  return sortValues(resolved);
 }
 
 function isStringType(type: ts.Type): boolean {
@@ -352,7 +658,10 @@ export function resolvePropsFromChecker(
   componentDir: string,
   constraints: Map<string, Constraint>,
 ): Record<string, PropField> {
-  const { checker, program } = ensureChecker();
+  // The component root is the parent of the component's own directory, so the
+  // shared program is anchored to the caller's absolute path rather than to
+  // whatever `process.cwd()` the build happens to run from.
+  const { checker, program } = ensureChecker(dirname(resolve(componentDir)));
 
   const tsxPath = join(componentDir, `${componentName}.tsx`);
   const sourceFile = program.getSourceFile(tsxPath);
@@ -378,29 +687,27 @@ export function resolvePropsFromChecker(
     // Strip optionality wrapper to get the real type
     const nonNullType = propType.getNonNullableType();
 
-    // String literal union (enum)
-    const stringValues = isStringLiteralUnion(checker, nonNullType);
-    if (stringValues) {
-      const field: PropField = { type: 'enum', values: stringValues };
+    const emitEnum = (values: string[]): void => {
+      const field: PropField = { type: 'enum', values: orderValues(prop, checker, values) };
       const def = defaults.get(propName);
-      if (def !== undefined && def.kind === 'string') field.default = def.value as string;
+      if (def !== undefined && def.kind !== 'boolean') field.default = String(def.value);
       if (required) field.required = true;
       const constraint = constraints.get(propName);
       if (constraint) field.constraint = constraint;
       props[propName] = field;
+    };
+
+    // String literal union (enum)
+    const stringValues = isStringLiteralUnion(checker, nonNullType);
+    if (stringValues) {
+      emitEnum(stringValues);
       continue;
     }
 
     // Number literal union (emit as enum with stringified values)
     const numberValues = isNumberLiteralUnion(checker, nonNullType);
     if (numberValues) {
-      const field: PropField = { type: 'enum', values: numberValues };
-      const def = defaults.get(propName);
-      if (def !== undefined && def.kind === 'number') field.default = String(def.value);
-      if (required) field.required = true;
-      const constraint = constraints.get(propName);
-      if (constraint) field.constraint = constraint;
-      props[propName] = field;
+      emitEnum(numberValues);
       continue;
     }
 
@@ -431,6 +738,14 @@ export function resolvePropsFromChecker(
       if (def !== undefined && def.kind === 'number') field.default = def.value as number;
       if (required) field.required = true;
       props[propName] = field;
+      continue;
+    }
+
+    // Mixed literal/non-literal union, LAST so it never intercepts a prop one
+    // of the pure classifiers above already answers.
+    const mixedValues = mixedLiteralUnion(checker, nonNullType);
+    if (mixedValues) {
+      emitEnum(mixedValues);
       continue;
     }
   }

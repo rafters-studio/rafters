@@ -12,9 +12,17 @@ import {
   loadPrimitive,
   loadSubstrate,
   parseJSDocFromSource,
+  propFieldToFieldDescriptor,
   type RegistryItem,
 } from '../src/lib/registry/componentService';
+import { isInsideDir } from '../src/lib/registry/typeChecker';
 import { RegistryItemSchema } from '../../../packages/cli/src/registry/types';
+
+/** The real component root, for the sibling-prefix anchoring test. */
+const UI_COMPONENTS = join(
+  dirname(fileURLToPath(import.meta.url)),
+  '../../../packages/ui/src/components',
+);
 
 /**
  * Registry cutover guard (#1896). The registry serves behavior-layer sources
@@ -311,26 +319,29 @@ describe('per-target facet + reverse-composites extraction (#2073)', () => {
   });
 
   it("extracts react's variant as a verbatim literal union with its destructured default", () => {
-    const variant = buttonItem?.facets?.react?.props['variant'];
-    expect(variant?.type).toBe('enum');
-    if (variant?.type !== 'enum') throw new Error('variant not enum');
-    const expected = [
-      'default',
-      'primary',
-      'secondary',
-      'destructive',
-      'success',
-      'warning',
-      'info',
-      'muted',
-      'accent',
-      'outline',
-      'ghost',
-      'link',
-    ];
-    expect(variant.values).toHaveLength(expected.length);
-    expect(variant.values).toEqual(expect.arrayContaining(expected));
-    expect(variant.default).toBe('default');
+    // Exact, ordered equality on purpose: #2165 pins the emitted order to the
+    // SOURCE order of the union declaration, never the checker's own union
+    // member order (which is keyed on global literal-type interning and would
+    // reshuffle when an unrelated component is added to the shared program).
+    expect(buttonItem?.facets?.react?.props['variant']).toEqual({
+      type: 'enum',
+      values: [
+        'default',
+        'primary',
+        'secondary',
+        'destructive',
+        'success',
+        'warning',
+        'info',
+        'muted',
+        'accent',
+        'outline',
+        'ghost',
+        'link',
+      ],
+      // button.tsx:90 destructures `variant = 'default'` -- extractable, not left undefined.
+      default: 'default',
+    });
   });
 
   it('never collapses a styling prop to a bare string type', () => {
@@ -410,40 +421,106 @@ describe('@constraint JSDoc tag parsing (#2073)', () => {
  * (typeof X)[number] patterns.
  */
 describe('type-checker-based prop extraction (#2165)', () => {
-  it('extracts badge variant from an as-const array alias', () => {
+  it('extracts badge variant from an as-const array alias, in BADGE_VARIANTS order', () => {
     const badge = loadComponent('badge');
-    const variant = badge?.facets?.react?.props['variant'];
-    expect(variant?.type).toBe('enum');
-    if (variant?.type !== 'enum') throw new Error('variant not enum');
-    expect(variant.values).toHaveLength(12);
-    expect(variant.values).toContain('default');
-    expect(variant.values).toContain('destructive');
-    expect(variant.values).toContain('link');
-    expect(variant.default).toBe('default');
+    // Verbatim, ordered: the values and their order both come from the
+    // `BADGE_VARIANTS` as-const array `(typeof BADGE_VARIANTS)[number]` names.
+    expect(badge?.facets?.react?.props['variant']).toEqual({
+      type: 'enum',
+      values: [
+        'default',
+        'primary',
+        'secondary',
+        'destructive',
+        'success',
+        'warning',
+        'info',
+        'muted',
+        'accent',
+        'outline',
+        'ghost',
+        'link',
+      ],
+      default: 'default',
+    });
   });
 
   it('extracts badge size from an as-const array alias', () => {
     const badge = loadComponent('badge');
-    const size = badge?.facets?.react?.props['size'];
-    expect(size?.type).toBe('enum');
-    if (size?.type !== 'enum') throw new Error('size not enum');
-    expect(size.values).toEqual(expect.arrayContaining(['sm', 'default', 'lg']));
-    expect(size.default).toBe('default');
+    expect(badge?.facets?.react?.props['size']).toEqual({
+      type: 'enum',
+      values: ['sm', 'default', 'lg'],
+      default: 'default',
+    });
   });
 
   it('extracts container as/size without a naming-convention alias', () => {
     const container = loadComponent('container');
-    const asField = container?.facets?.react?.props['as'];
-    expect(asField?.type).toBe('enum');
-    if (asField?.type !== 'enum') throw new Error('as not enum');
-    expect(asField.values).toEqual(
-      expect.arrayContaining(['div', 'main', 'header', 'footer', 'section', 'article', 'aside']),
-    );
+    expect(container?.facets?.react?.props['as']).toEqual({
+      type: 'enum',
+      values: ['div', 'main', 'header', 'footer', 'section', 'article', 'aside'],
+    });
+    expect(container?.facets?.react?.props['size']).toEqual({
+      type: 'enum',
+      values: ['sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl', '6xl', '7xl', 'full'],
+    });
+  });
 
-    const size = container?.facets?.react?.props['size'];
-    expect(size?.type).toBe('enum');
-    if (size?.type !== 'enum') throw new Error('size not enum');
-    expect(size.values).toHaveLength(11);
+  /**
+   * The three props the issue's Proof section named as the gap the checker
+   * must close. All three are MIXED unions -- literal members beside a
+   * structural or boolean arm -- which every pure classifier declines, so
+   * before the mixed-union arm existed they fell out of the loop silently.
+   */
+  it('emits container columns/gap and grid columns from mixed literal unions', () => {
+    const container = loadComponent('container');
+    const grid = loadComponent('grid');
+    const columns = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', 'auto'];
+
+    // ResponsiveColumns = ColumnsValue | ResponsiveColumnsObject. The object
+    // arm has no enum representation and is dropped; the literals are the
+    // vocabulary an agent can pick from.
+    expect(container?.facets?.react?.props['columns']).toEqual({ type: 'enum', values: columns });
+    expect(grid?.facets?.react?.props['columns']).toEqual({ type: 'enum', values: columns });
+
+    // gap = boolean | ContainerPadding: `true` derives the gap from `size`, so
+    // the boolean literals are real members of the vocabulary, not noise.
+    expect(container?.facets?.react?.props['gap']).toEqual({
+      type: 'enum',
+      values: [
+        'true',
+        'false',
+        '0',
+        '1',
+        '2',
+        '3',
+        '4',
+        '5',
+        '6',
+        '8',
+        '10',
+        '12',
+        '16',
+        '20',
+        '24',
+      ],
+    });
+  });
+
+  it('numbers a numeric-literal union in numeric order, never lexical', () => {
+    const container = loadComponent('container');
+    expect(container?.facets?.react?.props['colSpan']).toEqual({
+      type: 'enum',
+      values: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],
+    });
+  });
+
+  it('declines to enumerate a union whose non-literal arm is a widened primitive', () => {
+    // select's `children` is React.ReactNode -- ReactElement | string | number
+    // | boolean | ... . Its `true`/`false` members are literals, but publishing
+    // them as a two-value enum would be a lie about the prop's domain.
+    const select = loadComponent('select');
+    expect(select?.facets?.react?.props['children']).toBeUndefined();
   });
 
   it('extracts container boolean and string props', () => {
@@ -462,11 +539,11 @@ describe('type-checker-based prop extraction (#2165)', () => {
 
   it('extracts grid preset regardless of destructuring shape', () => {
     const grid = loadComponent('grid');
-    const preset = grid?.facets?.react?.props['preset'];
-    expect(preset?.type).toBe('enum');
-    if (preset?.type !== 'enum') throw new Error('preset not enum');
-    expect(preset.values).toEqual(expect.arrayContaining(['linear', 'golden', 'bento']));
-    expect(preset.default).toBe('linear');
+    expect(grid?.facets?.react?.props['preset']).toEqual({
+      type: 'enum',
+      values: ['linear', 'golden', 'bento'],
+      default: 'linear',
+    });
   });
 
   it('emits scalar props for input instead of props: {}', () => {
@@ -531,6 +608,36 @@ describe('type-checker-based prop extraction (#2165)', () => {
     expect(button?.facets?.react?.props['onClick']).toBeUndefined();
     expect(button?.facets?.react?.props['className']).toBeUndefined();
     expect(button?.facets?.react?.props['style']).toBeUndefined();
+  });
+
+  it('does not emit a prop declared only in a sibling-prefixed neighbour', () => {
+    // `packages/ui/src/components` really does hold button/ beside
+    // button-group/, input/ beside input-group/ and input-otp/, toggle/ beside
+    // toggle-group/, alert/ beside alert-dialog/. An unanchored path prefix
+    // test counts every one of those as the shorter name's own directory.
+    const button = loadComponent('button');
+    const buttonGroup = loadComponent('button-group');
+    expect(buttonGroup?.facets?.react?.props['orientation']).toBeDefined();
+    expect(button?.facets?.react?.props['orientation']).toBeUndefined();
+  });
+
+  it('anchors the own-declaration test at a path segment boundary', () => {
+    // The predicate itself, because no component's props type references a
+    // sibling-prefixed neighbour's symbols today: the facet assertion above
+    // would pass under the unanchored prefix test too.
+    const buttonDir = join(UI_COMPONENTS, 'button');
+    expect(isInsideDir(buttonDir, join(buttonDir, 'button.tsx'))).toBe(true);
+    expect(isInsideDir(buttonDir, join(UI_COMPONENTS, 'button-group', 'button-group.tsx'))).toBe(
+      false,
+    );
+    expect(isInsideDir(buttonDir, buttonDir)).toBe(false);
+  });
+
+  it('emits a number prop for a scalar numeric member', () => {
+    const slider = loadComponent('slider');
+    expect(slider?.facets?.react?.props['min']).toEqual({ type: 'number', default: 0 });
+    expect(slider?.facets?.react?.props['max']).toEqual({ type: 'number', default: 100 });
+    expect(slider?.facets?.react?.props['step']).toEqual({ type: 'number', default: 1 });
   });
 
   it('parses cleanly against the CLI RegistryItemSchema with new prop kinds', () => {
@@ -646,5 +753,87 @@ describe('editor primitive discovery after relocation (#2136)', () => {
       misplaced,
       `editor-tagged primitives still at flat root: ${misplaced.join(', ')}`,
     ).toEqual([]);
+  });
+});
+
+/**
+ * `propFieldToFieldDescriptor` (#2165). The operator's ruling is that the
+ * shared thing across rafters/veneer/gitpress is the OUTPUT IR -- kelex's
+ * `FieldDescriptor` -- not the extractor, so a resolved `PropField` has to map
+ * out cleanly for veneer and gitpress to consume rafters' published facet JSON
+ * instead of re-parsing rafters source.
+ *
+ * The issue's test sketch asserts `descriptor.default` / `.required` /
+ * `.constraint`. Those are the PropField's own member names; kelex's
+ * FieldDescriptor (`src/introspection/types.ts:140`) has no such members, so
+ * these assert the real ones the conversion targets: `defaultValue`,
+ * `isOptional` (inverted), and `meta.constraint`.
+ */
+describe('propFieldToFieldDescriptor (#2165)', () => {
+  it('converts an enum PropField, carrying values, default and requiredness', () => {
+    const descriptor = propFieldToFieldDescriptor('size', {
+      type: 'enum',
+      values: ['sm', 'lg'],
+      default: 'sm',
+      required: true,
+    });
+    expect(descriptor).toEqual({
+      name: 'size',
+      label: 'size',
+      type: 'enum',
+      isOptional: false,
+      isNullable: false,
+      constraints: {},
+      metadata: { kind: 'enum', values: ['sm', 'lg'] },
+      defaultValue: 'sm',
+    });
+  });
+
+  it('converts a boolean PropField, keeping a `false` default rather than dropping it', () => {
+    const descriptor = propFieldToFieldDescriptor('loading', { type: 'boolean', default: false });
+    expect(descriptor.type).toBe('boolean');
+    expect(descriptor.metadata).toEqual({ kind: 'boolean' });
+    expect(descriptor.defaultValue).toBe(false);
+    expect(descriptor.isOptional).toBe(true);
+  });
+
+  it('converts a string PropField and marks a required prop not-optional', () => {
+    const descriptor = propFieldToFieldDescriptor('alt', { type: 'string', required: true });
+    expect(descriptor.type).toBe('string');
+    expect(descriptor.metadata).toEqual({ kind: 'string' });
+    expect(descriptor.isOptional).toBe(false);
+    expect(descriptor).not.toHaveProperty('defaultValue');
+  });
+
+  it('converts a number PropField, keeping a numeric default as a number', () => {
+    const descriptor = propFieldToFieldDescriptor('step', { type: 'number', default: 4 });
+    expect(descriptor.type).toBe('number');
+    expect(descriptor.metadata).toEqual({ kind: 'number' });
+    expect(descriptor.defaultValue).toBe(4);
+  });
+
+  it('carries a cross-prop constraint through the conversion', () => {
+    // kelex's `FieldConstraints` is VALUE validation (minLength, pattern, min,
+    // max) and has no arm for a cross-prop rule, so it rides in `meta` rather
+    // than being silently dropped.
+    const constraint = {
+      when: { prop: 'size', matches: 'icon*' },
+      requires: { prop: 'aria-label' },
+    };
+    const descriptor = propFieldToFieldDescriptor('size', {
+      type: 'enum',
+      values: ['icon', 'default'],
+      constraint,
+    });
+    expect(descriptor.constraints).toEqual({});
+    expect(descriptor.meta).toEqual({ constraint });
+  });
+
+  it('maps a real resolved facet prop without loss', () => {
+    const variant = loadComponent('badge')?.facets?.react?.props['variant'];
+    if (variant?.type !== 'enum') throw new Error('badge variant did not resolve as an enum');
+    const descriptor = propFieldToFieldDescriptor('variant', variant);
+    expect(descriptor.metadata).toEqual({ kind: 'enum', values: variant.values });
+    expect(descriptor.defaultValue).toBe('default');
   });
 });

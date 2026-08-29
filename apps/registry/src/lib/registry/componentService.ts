@@ -1024,6 +1024,124 @@ function extractFacet(
 }
 
 /**
+ * kelex's `FieldDescriptor` IR, hand-mirrored structurally.
+ *
+ * The descriptor lives in kelex (`src/introspection/types.ts:140`) and rafters
+ * has no dependency on kelex, so the shape is declared here the same way
+ * `RegistryItem` and `PropField` mirror the CLI's zod source of truth. The
+ * operator's ruling (see the #2165 rationale) is that the shared thing across
+ * rafters/veneer/gitpress is the OUTPUT IR, not the extractor: type resolution
+ * stays on the TS checker in this build, and only the resolved `PropField`
+ * maps out.
+ */
+export type FieldDescriptorType =
+  | 'string'
+  | 'number'
+  | 'boolean'
+  | 'date'
+  | 'enum'
+  | 'literal'
+  | 'object'
+  | 'array'
+  | 'union'
+  | 'tuple'
+  | 'record'
+  | 'ref';
+
+/** kelex's type-specific metadata, narrowed to the kinds a `PropField` produces. */
+export type FieldDescriptorMetadata =
+  | { kind: 'string' }
+  | { kind: 'number' }
+  | { kind: 'boolean' }
+  | { kind: 'enum'; values: readonly (string | number)[] };
+
+export interface FieldDescriptor {
+  name: string;
+  label: string;
+  type: FieldDescriptorType;
+  isOptional: boolean;
+  isNullable: boolean;
+  /**
+   * kelex's `FieldConstraints` is VALUE validation (minLength, pattern, min,
+   * max, step). rafters derives none of it -- the checker reads types, not
+   * refinements -- so this is always empty.
+   */
+  constraints: Record<string, never>;
+  metadata: FieldDescriptorMetadata;
+  defaultValue?: unknown;
+  /**
+   * kelex's open extension slot. rafters' `constraint` is a CROSS-PROP rule
+   * ("size matches icon* requires aria-label"), which `FieldConstraints` has no
+   * arm for, so it rides here rather than being silently dropped.
+   */
+  meta?: Record<string, unknown>;
+}
+
+/**
+ * Map one resolved `PropField` to kelex's `FieldDescriptor`, so veneer and
+ * gitpress can consume rafters' published facet JSON instead of re-parsing
+ * rafters source. Pure: no file reads, no checker, no registry lookups.
+ *
+ * `required` inverts into kelex's `isOptional`; `default` becomes
+ * `defaultValue`; `constraint` rides in `meta.constraint` (see above).
+ */
+export function propFieldToFieldDescriptor(name: string, field: PropField): FieldDescriptor {
+  const base = {
+    name,
+    label: name,
+    isNullable: false,
+    constraints: {},
+  } as const;
+
+  switch (field.type) {
+    case 'enum': {
+      const descriptor: FieldDescriptor = {
+        ...base,
+        type: 'enum',
+        isOptional: field.required !== true,
+        metadata: { kind: 'enum', values: [...field.values] },
+      };
+      if (field.default !== undefined) descriptor.defaultValue = field.default;
+      if (field.constraint) descriptor.meta = { constraint: field.constraint };
+      return descriptor;
+    }
+    case 'boolean':
+    case 'string':
+    case 'number': {
+      const descriptor: FieldDescriptor = {
+        ...base,
+        type: field.type,
+        isOptional: field.required !== true,
+        metadata: { kind: field.type },
+      };
+      if (field.default !== undefined) descriptor.defaultValue = field.default;
+      return descriptor;
+    }
+    case 'grammar': {
+      // A grammar prop is authored as a token string; its composition rules are
+      // rafters-specific and have no kelex arm, so they ride in `meta`.
+      const descriptor: FieldDescriptor = {
+        ...base,
+        type: 'string',
+        isOptional: true,
+        metadata: { kind: 'string' },
+        meta: { grammar: field.grammar, vocab: field.vocab, onInvalid: field.onInvalid },
+      };
+      if (field.default !== undefined) descriptor.defaultValue = field.default;
+      return descriptor;
+    }
+    case 'deprecated':
+      return {
+        ...base,
+        type: 'string',
+        isOptional: true,
+        metadata: { kind: 'string' },
+        meta: { deprecatedFor: field.deprecatedFor },
+      };
+  }
+}
+
+/**
  * Reverse index: the composite names that reference `componentName`. Iterates
  * the composite NODE set (listCompositeNames) and reuses loadComposite, whose
  * `primitives` field already holds the block component names (extractComponentDeps).
