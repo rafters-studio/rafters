@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { generateBaseSystem, generateNamespaces } from '@rafters/design-tokens';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -299,6 +299,17 @@ describe('rafters init --rebuild -- motion namespace (#2208)', () => {
     // without the value would leave the token claiming a decision it no
     // longer applies.
     expect(overridden?.value).toBe(STALE_MOTION_FILE.tokens[2].value);
+  }, 60000);
+
+  it('still refuses a rebuild with no stored tokens at all', async () => {
+    for (const file of readdirSync(tokensDir(projectDir))) {
+      rmSync(join(tokensDir(projectDir), file));
+    }
+
+    // Regenerating motion must not manufacture a system out of an empty
+    // tokens directory -- that would turn this refusal into a rebuild off
+    // one namespace.
+    await expect(init({ rebuild: true, agent: true })).rejects.toThrow('No tokens found');
   }, 60000);
 
   it('leaves init --reset regenerating the whole default system', async () => {

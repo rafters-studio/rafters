@@ -6,7 +6,7 @@
  * Asks about export targets and generates selected formats.
  */
 
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { copyFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { join, relative } from 'node:path';
@@ -469,6 +469,15 @@ export async function generateOutputs(
   });
 }
 
+/** Whether a tokens directory holds any namespace file at all. */
+function hasStoredTokens(tokensDir: string): boolean {
+  try {
+    return readdirSync(tokensDir).some((entry) => entry.endsWith('.rafters.json'));
+  } catch {
+    return false;
+  }
+}
+
 /**
  * The designer-owned half of a stored motion token. `userOverride` is the
  * provenance; `value` is what the token actually emits, because TokenRegistry
@@ -583,8 +592,11 @@ async function regenerateFromExisting(
   await rm(join(paths.tokens, 'fill.rafters.json'), { force: true });
 
   // Motion is system-generated end to end (#2208): same treatment, except the
-  // namespace is still alive, so it is rewritten rather than dropped.
-  if (existsSync(paths.tokens)) {
+  // namespace is still alive, so it is rewritten rather than dropped. Only for
+  // a project that HAS stored tokens -- writing motion into an empty or absent
+  // tokens directory would turn the "no tokens found" refusal below into a
+  // bogus rebuild off a motion-only system.
+  if (hasStoredTokens(paths.tokens)) {
     regenerateMotionNamespace(paths.tokens);
   }
 
