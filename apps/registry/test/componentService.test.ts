@@ -508,3 +508,73 @@ describe('editor primitive discovery after relocation (#2136)', () => {
     ).toEqual([]);
   });
 });
+
+/**
+ * Subsystem file discovery (#2170). A folder-shaped component (editor) carries
+ * files beyond the primary and shared suffixes: editor-history.ts and ops/*.ts.
+ * loadComponent must serve them under components/ui/<name>/, and they must NOT
+ * leak into the primitives array.
+ */
+describe('subsystem file discovery for folder-shaped components (#2170)', () => {
+  it('loadComponent("editor").files includes editor-history.ts and ops/', () => {
+    const editor = loadComponent('editor');
+    expect(editor).not.toBeNull();
+    const paths = editor!.files.map((f) => f.path);
+    expect(paths).toEqual(
+      expect.arrayContaining([
+        'components/ui/editor.tsx',
+        'components/ui/editor.behavior.ts',
+        'components/ui/editor.classes.ts',
+        'components/ui/editor/editor-history.ts',
+        'components/ui/editor/ops/index.ts',
+        'components/ui/editor/ops/content.ts',
+        'components/ui/editor/ops/format.ts',
+        'components/ui/editor/ops/structural.ts',
+        'components/ui/editor/ops/text.ts',
+        'components/ui/editor/ops/types.ts',
+      ]),
+    );
+  });
+
+  it('loadComponent("editor").primitives contains neither "ops" nor "editor-history"', () => {
+    const editor = loadComponent('editor');
+    expect(editor).not.toBeNull();
+    expect(editor!.primitives).not.toContain('ops');
+    expect(editor!.primitives).not.toContain('editor-history');
+    expect(editor!.primitives).not.toContain('content');
+    expect(editor!.primitives).not.toContain('format');
+    expect(editor!.primitives).not.toContain('structural');
+    expect(editor!.primitives).not.toContain('text');
+    expect(editor!.primitives).not.toContain('types');
+  });
+
+  it('loadComponent for card, typography, and container yield unchanged file paths', () => {
+    for (const name of ['card', 'typography', 'container']) {
+      const item = loadComponent(name);
+      expect(item).not.toBeNull();
+      const paths = item!.files.map((f) => f.path);
+      // All paths are flat: components/ui/<name>.<ext> or components/ui/<name>-<sub>.<ext>
+      for (const p of paths) {
+        const afterPrefix = p.slice('components/ui/'.length);
+        expect(afterPrefix.includes('/'), `${name} has nested path: ${p}`).toBe(false);
+      }
+    }
+  });
+
+  it('subsystem file content is readable and non-empty', () => {
+    const editor = loadComponent('editor');
+    expect(editor).not.toBeNull();
+    const subsystem = editor!.files.filter((f) => f.path.startsWith('components/ui/editor/'));
+    expect(subsystem.length).toBeGreaterThanOrEqual(7);
+    for (const file of subsystem) {
+      expect(file.content.length, `${file.path} is empty`).toBeGreaterThan(0);
+    }
+  });
+
+  it('parses cleanly against the CLI RegistryItemSchema', () => {
+    const editor = loadComponent('editor');
+    expect(editor).not.toBeNull();
+    const result = RegistryItemSchema.safeParse(editor);
+    expect(result.success, `schema parse failed: ${JSON.stringify(result)}`).toBe(true);
+  });
+});

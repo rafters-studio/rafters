@@ -220,6 +220,86 @@ import * as Dialog from '@radix-ui/react-dialog';`;
     const result = transformFileContent(input, null);
     expect(result).toBe(`import classy from '@/lib/primitives/classy';`);
   });
+
+  // #2170: subsystem file import rewriting
+  it('rewrites ./editor-history from a main component file to nested path', () => {
+    const out = transformFileContent(
+      `import { createEditorHistory } from './editor-history';\nimport { normalizeRuns } from './ops/content';`,
+      null,
+      'component',
+      '/proj',
+      { installPath: 'components/ui/editor.behavior.ts' },
+    );
+    expect(out).toContain("from '@/components/ui/editor/editor-history'");
+    expect(out).toContain("from '@/components/ui/editor/ops/content'");
+  });
+
+  it('keeps shared-suffix ./imports flat from a main component file', () => {
+    const out = transformFileContent(
+      `import { editorClasses } from './editor.classes';`,
+      null,
+      'component',
+      '/proj',
+      { installPath: 'components/ui/editor.tsx' },
+    );
+    expect(out).toContain("from '@/components/ui/editor.classes'");
+  });
+
+  it('leaves ./ imports relative inside a subsystem file', () => {
+    const out = transformFileContent(
+      `import { applyOp } from './ops';`,
+      null,
+      'component',
+      '/proj',
+      { installPath: 'components/ui/editor/editor-history.ts' },
+    );
+    expect(out).toContain("from './ops'");
+  });
+
+  it('rewrites ../../../primitives/ from a deep subsystem file', () => {
+    const out = transformFileContent(
+      `import type { BaseBlock } from '../../../primitives/types';`,
+      null,
+      'component',
+      '/proj',
+      { installPath: 'components/ui/editor/ops/types.ts' },
+    );
+    expect(out).toContain("from '@/lib/primitives/types'");
+  });
+
+  it('collapses ../../../primitives/editor/ subdir to flat served path', () => {
+    const out = transformFileContent(
+      `import { splitInlineContent } from '../../../primitives/editor/block-operations';`,
+      null,
+      'component',
+      '/proj',
+      { installPath: 'components/ui/editor/ops/content.ts' },
+    );
+    expect(out).toContain("from '@/lib/primitives/block-operations'");
+  });
+
+  it('rewrites ../../primitives/ from a level-1 subsystem file', () => {
+    const out = transformFileContent(
+      `import { createMemory } from '../../primitives/memory';`,
+      null,
+      'component',
+      '/proj',
+      { installPath: 'components/ui/editor/editor-history.ts' },
+    );
+    expect(out).toContain("from '@/lib/primitives/memory'");
+  });
+
+  it('does not rewrite ../ imports for subsystem files', () => {
+    const out = transformFileContent(
+      `import { Card } from '../card';`,
+      null,
+      'component',
+      '/proj',
+      { installPath: 'components/ui/editor/editor-history.ts' },
+    );
+    // Should NOT be rewritten since subsystem files stay relative
+    expect(out).toContain("from '../card'");
+  });
 });
 
 describe('substrate install-path routing', () => {
