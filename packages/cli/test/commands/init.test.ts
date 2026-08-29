@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { readdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { generateBaseSystem, generateNamespaces } from '@rafters/design-tokens';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -9,6 +9,14 @@ import {
   isTailwindCliInstalled,
 } from '../../src/commands/init.js';
 import { cleanupFixture, createFixture } from '../fixtures/projects.js';
+import {
+  CARRIED_EASING,
+  findToken,
+  readNamespaceTokens,
+  seedStaleMotion,
+  STALE_OVERRIDDEN_CELL,
+  tokensDir,
+} from '../fixtures/stale-motion.js';
 
 vi.mock('@inquirer/prompts', () => ({
   checkbox: vi.fn(),
@@ -176,62 +184,6 @@ describe('cleanSourceCssBlocks (#1647 -- import must clean theme-inline and :roo
   });
 });
 
-/**
- * The stored motion namespace as a pre-0.3.0 rafters left it: a cell whose
- * value predates `duration.kind` (0.2.3 wrote `durationTier`, which the
- * Tailwind exporter now reads as `duration.kind null`), an easing whose name
- * has since been retired from the enum (which fails TokenSchema on load), and
- * one still-current easing carrying a designer override.
- */
-const STALE_MOTION_FILE = {
-  namespace: 'motion',
-  generatedAt: '2026-04-17T19:57:12.919Z',
-  tokens: [
-    {
-      name: 'motion-cell-dialog-content-open',
-      value: JSON.stringify({ keyframe: 'scale-in', durationTier: 'normal', curve: 'enter' }),
-      category: 'motion',
-      namespace: 'motion',
-      userOverride: null,
-    },
-    {
-      name: 'motion-easing-ease-in',
-      value: 'cubic-bezier(0.42, 0, 1, 1)',
-      category: 'motion',
-      namespace: 'motion',
-      easingName: 'ease-in',
-      easingCurve: [0.42, 0, 1, 1],
-      userOverride: null,
-    },
-    {
-      name: 'motion-easing-standard',
-      value: 'cubic-bezier(0.2, 0, 0, 1)',
-      category: 'motion',
-      namespace: 'motion',
-      easingName: 'standard',
-      easingCurve: [0.2, 0, 0, 1],
-      userOverride: {
-        previousValue: 'cubic-bezier(0.4, 0, 0.2, 1)',
-        reason: 'Brand curve settles harder than the system default',
-        kind: 'designer',
-      },
-    },
-  ],
-};
-
-type StoredToken = { name: string; value: string; userOverride: unknown };
-
-function tokensDir(projectDir: string): string {
-  return join(projectDir, '.rafters', 'tokens');
-}
-
-function readNamespaceTokens(projectDir: string, namespace: string): StoredToken[] {
-  const file = JSON.parse(
-    readFileSync(join(tokensDir(projectDir), `${namespace}.rafters.json`), 'utf8'),
-  ) as { tokens: StoredToken[] };
-  return file.tokens;
-}
-
 function sortedNames(tokens: readonly { name: string }[]): string[] {
   return tokens.map((t) => t.name).sort();
 }
@@ -253,16 +205,8 @@ describe('rafters init --rebuild -- motion namespace (#2208)', () => {
     projectDir = '';
   });
 
-  function seedStaleMotion(): void {
-    writeFileSync(
-      join(tokensDir(projectDir), 'motion.rafters.json'),
-      `${JSON.stringify(STALE_MOTION_FILE, null, 2)}\n`,
-      'utf8',
-    );
-  }
-
   it('regenerates motion instead of reloading stale tokens', async () => {
-    seedStaleMotion();
+    seedStaleMotion(projectDir);
 
     await expect(init({ rebuild: true, agent: true })).resolves.not.toThrow();
 
@@ -272,33 +216,47 @@ describe('rafters init --rebuild -- motion namespace (#2208)', () => {
   }, 60000);
 
   it('drops stored motion tokens the generator no longer emits', async () => {
-    seedStaleMotion();
+    seedStaleMotion(projectDir);
 
     await init({ rebuild: true, agent: true });
 
-    const names = sortedNames(readNamespaceTokens(projectDir, 'motion'));
-    expect(names).not.toContain('motion-easing-ease-in');
+    const rebuilt = readNamespaceTokens(projectDir, 'motion');
+    expect(sortedNames(rebuilt)).not.toContain('motion-easing-ease-in');
 
-    const cell = readNamespaceTokens(projectDir, 'motion').find(
-      (t) => t.name === 'motion-cell-dialog-content-open',
-    );
+    const cell = findToken(rebuilt, 'motion-cell-dialog-content-open');
     expect(cell?.value).toContain('"duration"');
     expect(cell?.value).not.toContain('durationTier');
   }, 60000);
 
   it('carries a userOverride and its value onto the regenerated token', async () => {
-    seedStaleMotion();
+    seedStaleMotion(projectDir);
 
     await init({ rebuild: true, agent: true });
 
-    const overridden = readNamespaceTokens(projectDir, 'motion').find(
-      (t) => t.name === 'motion-easing-standard',
-    );
-    expect(overridden?.userOverride).toEqual(STALE_MOTION_FILE.tokens[2].userOverride);
+    const overridden = findToken(readNamespaceTokens(projectDir, 'motion'), CARRIED_EASING.name);
+    expect(overridden?.userOverride).toEqual(CARRIED_EASING.userOverride);
     // The override's value is what the token emits -- carrying the record
     // without the value would leave the token claiming a decision it no
     // longer applies.
-    expect(overridden?.value).toBe(STALE_MOTION_FILE.tokens[2].value);
+    expect(overridden?.value).toBe(CARRIED_EASING.value);
+  }, 60000);
+
+  it('refuses to carry an override whose value shape the generator no longer emits', async () => {
+    seedStaleMotion(projectDir);
+
+    // The carry is the second way the #2208 failure gets in: a 0.2.3-shaped
+    // cell value is still a plain string to TokenSchema, so an override on
+    // that token would write it straight back over the regenerated cell and
+    // the exporter would throw on it exactly as before.
+    await expect(init({ rebuild: true, agent: true })).resolves.not.toThrow();
+
+    const cell = findToken(readNamespaceTokens(projectDir, 'motion'), STALE_OVERRIDDEN_CELL.name);
+    expect(cell?.value).toContain('"duration"');
+    expect(cell?.value).not.toContain('durationTier');
+    // Both halves go: a token holding the regenerated value while still
+    // claiming the override would assert a decision over a shape that no
+    // longer exists.
+    expect(cell?.userOverride).toBeNull();
   }, 60000);
 
   it('still refuses a rebuild with no stored tokens at all', async () => {

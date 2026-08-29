@@ -6,7 +6,7 @@
  * Asks about export targets and generates selected formats.
  */
 
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { copyFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { join, relative } from 'node:path';
@@ -21,7 +21,6 @@ import {
   extractShadcnRoot,
   extractThemeBlocks,
   generateBaseSystem,
-  generateNamespaces,
   getAdapter,
   importColorFamily,
   invertPlugin,
@@ -34,8 +33,7 @@ import {
   statePlugin,
   TokenRegistry,
 } from '@rafters/design-tokens';
-import { type OKLCH, TokenSchema } from '@rafters/shared';
-import { z } from 'zod';
+import type { OKLCH } from '@rafters/shared';
 
 const REGISTRY_PLUGINS = [scalePlugin, contrastPlugin, statePlugin, invertPlugin];
 
@@ -57,6 +55,7 @@ import {
   FUTURE_EXPORTS,
   selectionsToConfig,
 } from '../utils/exports.js';
+import { hasStoredTokens, regenerateMotionNamespace } from '../utils/motion-rebuild.js';
 import { getRaftersPaths } from '../utils/paths.js';
 import { isAgentMode, log, setAgentMode } from '../utils/ui.js';
 import { updateDependencies } from '../utils/update-dependencies.js';
@@ -469,95 +468,6 @@ export async function generateOutputs(
   });
 }
 
-/** Whether a tokens directory holds any namespace file at all. */
-function hasStoredTokens(tokensDir: string): boolean {
-  try {
-    return readdirSync(tokensDir).some((entry) => entry.endsWith('.rafters.json'));
-  } catch {
-    return false;
-  }
-}
-
-/**
- * The designer-owned half of a stored motion token. `userOverride` is the
- * provenance; `value` is what the token actually emits, because TokenRegistry
- * seeds an overridden token from its on-disk value rather than re-deriving it
- * (registry.ts pass 1). Carrying one without the other either loses the
- * decision or leaves a token claiming an override it no longer applies.
- */
-const StoredMotionTokenSchema = z.object({
-  name: z.string(),
-  value: TokenSchema.shape.value,
-  userOverride: TokenSchema.shape.userOverride,
-});
-
-type CarriedMotionOverride = {
-  value: z.infer<typeof StoredMotionTokenSchema>['value'];
-  userOverride: NonNullable<z.infer<typeof StoredMotionTokenSchema>['userOverride']>;
-};
-
-/**
- * Read the overrides worth carrying out of a stored motion namespace file.
- *
- * Parsing is per token, never per file: the whole premise here is that most of
- * a pre-0.3.0 motion file no longer satisfies TokenSchema, so a token that
- * fails to parse is skipped rather than allowed to abort the read.
- */
-function readStoredMotionOverrides(motionFile: string): Map<string, CarriedMotionOverride> {
-  const carried = new Map<string, CarriedMotionOverride>();
-
-  let raw: unknown;
-  try {
-    raw = JSON.parse(readFileSync(motionFile, 'utf8'));
-  } catch {
-    // No stored motion namespace, or unreadable JSON: nothing to carry.
-    return carried;
-  }
-
-  const file = z.object({ tokens: z.array(z.unknown()) }).safeParse(raw);
-  if (!file.success) return carried;
-
-  for (const entry of file.data.tokens) {
-    const parsed = StoredMotionTokenSchema.safeParse(entry);
-    if (!parsed.success) continue;
-    const { name, value, userOverride } = parsed.data;
-    if (!userOverride) continue;
-    carried.set(name, { value, userOverride });
-  }
-
-  return carried;
-}
-
-/**
- * Rewrite `.rafters/tokens/motion.rafters.json` from the motion generator.
- *
- * Motion is system-owned end to end -- cells, easings, durations and the five
- * namespaces all come out of the motion matrix, and nobody hand-authors one.
- * A file written by an older rafters therefore holds tokens the current
- * generator no longer emits: 0.2.3 cells keyed on `durationTier` instead of
- * `duration.kind`, `motion-easing-*` names retired since. Reloading those
- * fails either TokenSchema validation or the Tailwind exporter, which is what
- * made `--rebuild` unusable on every pre-0.3.0 project (#2208).
- *
- * `generateNamespaces(['motion'])` is deliberately the same generator call a
- * fresh `init` makes, so a rebuilt namespace holds exactly the tokens a fresh
- * one does and stale names do not come back. The single thing on a motion
- * token that belongs to the designer rather than the generator is a
- * `userOverride`, so that is carried forward onto tokens still present by
- * name. Writing before the registry load is what lets the reload see the
- * regenerated namespace with no further surgery.
- */
-function regenerateMotionNamespace(tokensDir: string): void {
-  const carried = readStoredMotionOverrides(join(tokensDir, 'motion.rafters.json'));
-
-  const tokens = generateNamespaces(['motion']).allTokens.map((token) => {
-    const override = carried.get(token.name);
-    return override ? { ...token, ...override } : token;
-  });
-
-  saveRegistryToDir(tokensDir, new TokenRegistry(tokens, REGISTRY_PLUGINS));
-}
-
 async function regenerateFromExisting(
   cwd: string,
   paths: ReturnType<typeof getRaftersPaths>,
@@ -597,7 +507,7 @@ async function regenerateFromExisting(
   // tokens directory would turn the "no tokens found" refusal below into a
   // bogus rebuild off a motion-only system.
   if (hasStoredTokens(paths.tokens)) {
-    regenerateMotionNamespace(paths.tokens);
+    regenerateMotionNamespace(paths.tokens, REGISTRY_PLUGINS);
   }
 
   // Load all tokens from .rafters/tokens/
