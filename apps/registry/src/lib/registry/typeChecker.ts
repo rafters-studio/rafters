@@ -508,18 +508,52 @@ function findDestructuredDefaults(
 
   function extractFromPattern(pattern: ts.ObjectBindingPattern): void {
     for (const element of pattern.elements) {
-      if (ts.isBindingElement(element) && element.initializer && ts.isIdentifier(element.name)) {
-        const extracted = extractDefaultFromInitializer(element.initializer);
-        if (extracted) {
-          defaults.set(element.name.text, extracted);
-        }
-      }
+      if (!ts.isBindingElement(element) || !element.initializer) continue;
+      if (!ts.isIdentifier(element.name)) continue;
+      // `{ as: Element = 'div' }` renames the prop to a local binding. The
+      // default belongs to the PROP (`as`, in propertyName), never to the local
+      // (`Element`): keyed on the local, container.as and card.as shipped with
+      // no default at all. Without a rename the two names coincide.
+      const key =
+        element.propertyName && ts.isIdentifier(element.propertyName)
+          ? element.propertyName.text
+          : element.name.text;
+      const extracted = extractDefaultFromInitializer(element.initializer);
+      if (extracted) defaults.set(key, extracted);
     }
   }
 
   function typeAnnotationNames(param: ts.ParameterDeclaration): string | null {
     if (!param.type) return null;
     return param.type.getText(sourceFile);
+  }
+
+  const propsTypeWord = new RegExp(`\\b${propsTypeName}\\b`);
+
+  // A call's callback is a source of defaults only when the call is bound to the
+  // props type: by the callback parameter's annotation, by the call's type
+  // arguments (`forwardRef<HTMLButtonElement, ButtonProps>`), or, for an
+  // unannotated callback, by the callee being a known component wrapper. Any
+  // other call whose first argument happens to be a function with a
+  // destructured parameter (a hook, a reducer, a memoised helper) is not the
+  // component and must not win the first-pattern race with a phantom default.
+  function wrapsPropsType(call: ts.CallExpression): boolean {
+    const firstArg = call.arguments[0];
+    if (firstArg === undefined) return false;
+    if (!ts.isArrowFunction(firstArg) && !ts.isFunctionExpression(firstArg)) return false;
+    const param = firstArg.parameters[0];
+    if (param === undefined) return false;
+    const annotation = typeAnnotationNames(param);
+    if (annotation !== null) return propsTypeWord.test(annotation);
+    const typeArguments = call.typeArguments ?? [];
+    if (typeArguments.some((t) => propsTypeWord.test(t.getText(sourceFile)))) return true;
+    const callee = call.expression;
+    const calleeName = ts.isIdentifier(callee)
+      ? callee.text
+      : ts.isPropertyAccessExpression(callee)
+        ? callee.name.text
+        : null;
+    return calleeName === 'forwardRef' || calleeName === 'memo';
   }
 
   let found = false;
@@ -564,8 +598,8 @@ function findDestructuredDefaults(
       }
     }
 
-    // Pattern 2 + 3: forwardRef callback
-    if (ts.isCallExpression(node) && node.arguments.length > 0) {
+    // Pattern 2 + 3: forwardRef / memo callback, bound to the props type
+    if (ts.isCallExpression(node) && node.arguments.length > 0 && wrapsPropsType(node)) {
       const firstArg = node.arguments[0];
       if (
         firstArg !== undefined &&
@@ -653,7 +687,7 @@ function findPropsType(
  * `componentDir` is the ABSOLUTE path to the component's directory on disk
  * (the same value `loadComponent` already has from `resolveComponentDir`).
  */
-export function resolvePropsFromChecker(
+function resolvePropsFromChecker(
   componentName: string,
   componentDir: string,
   constraints: Map<string, Constraint>,
@@ -752,3 +786,27 @@ export function resolvePropsFromChecker(
 
   return props;
 }
+
+/**
+ * The seam the registry build calls through (#2165 Interface). The TypeScript
+ * 5.9 checker is the backend today; the tsgo / TS7 follow-up plugs in here as
+ * another PropsTypeChecker without touching componentService.
+ */
+export interface PropsTypeLocation {
+  componentName: string;
+  /** ABSOLUTE path to the component's own directory on disk. */
+  componentDir: string;
+}
+
+export interface PropsTypeChecker {
+  resolveProps(
+    location: PropsTypeLocation,
+    constraints: Map<string, Constraint>,
+  ): Record<string, PropField>;
+}
+
+export const typescriptPropsTypeChecker: PropsTypeChecker = {
+  resolveProps(location, constraints) {
+    return resolvePropsFromChecker(location.componentName, location.componentDir, constraints);
+  },
+};

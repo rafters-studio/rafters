@@ -6,7 +6,12 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { parse, type Spec } from 'comment-parser';
-import { resolvePropsFromChecker } from './typeChecker';
+import { type PropsTypeChecker, typescriptPropsTypeChecker } from './typeChecker';
+
+// The one place the checker backend is chosen (#2165 Interface). Swapping to
+// tsgo / TS7 is a new PropsTypeChecker assigned here; extractFacet never
+// learns which backend answered.
+const propsTypeChecker: PropsTypeChecker = typescriptPropsTypeChecker;
 
 /**
  * Registry item types. Defined locally (like RegistryItem/RegistryFile/
@@ -976,7 +981,7 @@ function extractFacet(
   let props: Record<string, PropField>;
 
   if (target === 'react') {
-    props = resolvePropsFromChecker(name, componentDir, constraints);
+    props = propsTypeChecker.resolveProps({ componentName: name, componentDir }, constraints);
   } else {
     // Interface-declared targets (astro/vue/svelte) carry requiredness. The TS
     // checker cannot read these file formats, so the regex path stays.

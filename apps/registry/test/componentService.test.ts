@@ -8,6 +8,8 @@ import {
   listPrimitiveNames,
   listSubstrate,
   listSubstrateKinds,
+  loadAllComponents,
+  loadAllComposites,
   loadComponent,
   loadPrimitive,
   loadSubstrate,
@@ -17,6 +19,13 @@ import {
 } from '../src/lib/registry/componentService';
 import { isInsideDir } from '../src/lib/registry/typeChecker';
 import { RegistryItemSchema } from '../../../packages/cli/src/registry/types';
+import {
+  assembleGraph,
+  describe as describeGraph,
+  type ExpandedNodeResult,
+  type Graph,
+  type NodeResult,
+} from '../../../packages/cli/src/mcp/graph';
 
 /** The real component root, for the sibling-prefix anchoring test. */
 const UI_COMPONENTS = join(
@@ -459,9 +468,12 @@ describe('type-checker-based prop extraction (#2165)', () => {
 
   it('extracts container as/size without a naming-convention alias', () => {
     const container = loadComponent('container');
+    // `{ as: Element = 'div' }` (container.tsx:333): the default is keyed on
+    // the PROP name, not the renamed local, so it reaches the facet.
     expect(container?.facets?.react?.props['as']).toEqual({
       type: 'enum',
       values: ['div', 'main', 'header', 'footer', 'section', 'article', 'aside'],
+      default: 'div',
     });
     expect(container?.facets?.react?.props['size']).toEqual({
       type: 'enum',
@@ -563,6 +575,8 @@ describe('type-checker-based prop extraction (#2165)', () => {
     expect(asField?.type).toBe('enum');
     if (asField?.type !== 'enum') throw new Error('as not enum');
     expect(asField.values).toEqual(expect.arrayContaining(['article', 'div', 'section', 'aside']));
+    // card.tsx:97 destructures `as: Element = 'div'` -- the renamed binding.
+    expect(asField.default).toBe('div');
     expect(card?.facets?.react?.props['fill']).toMatchObject({ type: 'string' });
   });
 
@@ -838,5 +852,150 @@ describe('propFieldToFieldDescriptor (#2165)', () => {
     const descriptor = propFieldToFieldDescriptor('variant', variant);
     expect(descriptor.metadata).toEqual({ kind: 'enum', values: variant.values });
     expect(descriptor.defaultValue).toBe('default');
+  });
+});
+
+/**
+ * AC1 as literally written (#2165): the graph is built FROM REGISTRY OUTPUT,
+ * never from a hand-written fixture. Every served component and composite is
+ * loaded, parsed through the CLI's RegistryItemSchema (the shape the MCP
+ * actually consumes), assembled with the real assembleGraph, and then walked
+ * RECURSIVELY through describe(): every node's expansion, every prop child,
+ * every composesWith edge, every part, compared against the registry item it
+ * came from. A prop the registry extracted that the graph cannot resolve, or
+ * the reverse, fails here for every component, not only for badge.
+ */
+describe('registry output feeds the graph, wide and recursive (#2165)', () => {
+  const fixturesDir = join(fileURLToPath(new URL('.', import.meta.url)), 'fixtures');
+  type CliRegistryItem = ReturnType<typeof RegistryItemSchema.parse>;
+  type CliPropField = CliRegistryItem['facets'] extends infer F
+    ? F extends Partial<Record<string, { props: Record<string, infer P> }>> | undefined
+      ? P
+      : never
+    : never;
+  let prevCompositesDir: string | undefined;
+  let byName: Map<string, CliRegistryItem>;
+  let graph: Graph;
+
+  beforeAll(() => {
+    prevCompositesDir = process.env['RAFTERS_COMPOSITES_DIR'];
+    process.env['RAFTERS_COMPOSITES_DIR'] = fixturesDir;
+    const items = [...loadAllComponents(), ...loadAllComposites()].map((item) =>
+      RegistryItemSchema.parse(item),
+    );
+    byName = new Map(items.map((item) => [item.name, item]));
+    graph = assembleGraph(items);
+  });
+
+  afterAll(() => {
+    if (prevCompositesDir === undefined) delete process.env['RAFTERS_COMPOSITES_DIR'];
+    else process.env['RAFTERS_COMPOSITES_DIR'] = prevCompositesDir;
+  });
+
+  // What describe() hands an agent: the registry field with a grammar prop's
+  // token vocab stripped (graph.ts toAgentProp).
+  function agentView(field: CliPropField): Record<string, unknown> {
+    if (field.type === 'grammar') {
+      const { vocab: _vocab, ...rest } = field;
+      return rest;
+    }
+    return field;
+  }
+
+  function reactProps(id: string): Record<string, CliPropField> {
+    return byName.get(id)?.facets?.react?.props ?? {};
+  }
+
+  function walk(id: string, visited: Set<string>, resolved: Set<string>): void {
+    if (visited.has(id)) return;
+    visited.add(id);
+    expect(byName.has(id), `graph node ${id} came from no registry item`).toBe(true);
+
+    // The node expanded: every prop resolved inline, equal to the registry's.
+    const expanded = describeGraph(`${id}.*`, graph, 'react') as ExpandedNodeResult;
+    expect(expanded.id, `${id}.* did not expand`).toBe(id);
+    const expectedProps = Object.fromEntries(
+      Object.entries(reactProps(id)).map(([name, field]) => [name, agentView(field)]),
+    );
+    expect(expanded.props, `${id}.* props`).toEqual(expectedProps);
+
+    // Layer 0 advertises the children; each one resolves, and the walk descends
+    // through every part and every composesWith edge.
+    const layer = describeGraph(id, graph, 'react') as NodeResult;
+    expect(layer.id, `${id} layer 0`).toBe(id);
+    for (const child of layer.children) {
+      if (child.type === 'edge') {
+        const edges = describeGraph(child.addr, graph, 'react') as NodeResult[];
+        expect(edges.length, child.addr).toBeGreaterThan(0);
+        for (const edge of edges) walk(edge.id, visited, resolved);
+        continue;
+      }
+      if (child.type === 'part') {
+        walk(child.addr, visited, resolved);
+        continue;
+      }
+      const propName = child.addr.slice(`${id}.props.`.length);
+      const field = reactProps(id)[propName];
+      expect(field, `${child.addr} advertised but not in the registry item`).toBeDefined();
+      if (field === undefined) continue;
+      expect(describeGraph(child.addr, graph, 'react'), child.addr).toEqual(agentView(field));
+      resolved.add(child.addr);
+    }
+  }
+
+  it('resolves every served node, every prop child, every edge, and every part', () => {
+    const visited = new Set<string>();
+    const resolved = new Set<string>();
+    for (const id of graph.nodes.keys()) walk(id, visited, resolved);
+    expect(visited.size).toBe(graph.nodes.size);
+
+    // Wide: the walk reached every react prop the registry extracted, and
+    // nothing else -- the graph neither drops nor invents a prop.
+    const extracted = new Set<string>();
+    for (const item of byName.values()) {
+      for (const name of Object.keys(item.facets?.react?.props ?? {})) {
+        extracted.add(`${item.name}.props.${name}`);
+      }
+    }
+    expect(resolved).toEqual(extracted);
+    expect(extracted.size).toBeGreaterThan(0);
+  });
+
+  it('the components the regex path returned props: {} for are non-empty through the graph', () => {
+    for (const id of ['badge', 'container', 'grid', 'input', 'card', 'sidebar']) {
+      const expanded = describeGraph(`${id}.*`, graph, 'react') as ExpandedNodeResult;
+      expect(Object.keys(expanded.props).length, id).toBeGreaterThan(0);
+    }
+  });
+
+  it("badge's variant reaches the agent as BADGE_VARIANTS, in order, with its default", () => {
+    const expanded = describeGraph('badge.*', graph, 'react') as ExpandedNodeResult;
+    expect(expanded.props['variant']).toEqual({
+      type: 'enum',
+      values: [
+        'default',
+        'primary',
+        'secondary',
+        'destructive',
+        'success',
+        'warning',
+        'info',
+        'muted',
+        'accent',
+        'outline',
+        'ghost',
+        'link',
+      ],
+      default: 'default',
+    });
+    expect(describeGraph('badge.props.variant.?', graph, 'react')).not.toBeNull();
+  });
+
+  it('a renamed destructure default survives the trip through the graph', () => {
+    expect(describeGraph('container.props.as', graph, 'react')).toEqual({
+      type: 'enum',
+      values: ['div', 'main', 'header', 'footer', 'section', 'article', 'aside'],
+      default: 'div',
+    });
   });
 });
