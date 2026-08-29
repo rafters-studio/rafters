@@ -41,16 +41,20 @@ import {
   statePlugin,
   TokenRegistry,
 } from '@rafters/design-tokens';
+import { contextMenuClasses } from '../../src/components/context-menu/context-menu.classes';
 import { hoverCardClasses } from '../../src/components/hover-card/hover-card.classes';
 import { navigationMenuClasses } from '../../src/components/navigation-menu/navigation-menu.classes';
 import { tooltipClasses } from '../../src/components/tooltip/tooltip.classes';
 
-const COMPONENTS = ['tooltip', 'hover-card', 'navigation-menu'] as const;
+const COMPONENTS = ['tooltip', 'hover-card', 'navigation-menu', 'context-menu'] as const;
 
 const CONTENT_CLASSES: Record<(typeof COMPONENTS)[number], string> = {
   tooltip: tooltipClasses({}, { open: false }).content,
   'hover-card': hoverCardClasses({}, { open: false }).content,
   'navigation-menu': navigationMenuClasses({}, { active: null, pointerOpened: false }).content,
+  // context-menu's REVEALED part is subContent (#2152), not content -- content
+  // (the parent right-click panel) is out of scope, unconverted since #2017.
+  'context-menu': contextMenuClasses({}, { open: false, x: 0, y: 0 }).subContent,
 };
 
 /** Tailwind escapes every character outside [A-Za-z0-9_-] with a backslash, so
@@ -131,6 +135,65 @@ describe('the hover-reveal candidates compile (#2148)', () => {
     120_000,
   );
 
+  it('context-menu: the submenu reveal selector compiles to the real sub-trigger/sub-content sibling structure (#2152)', async () => {
+    // This test never calls bindContextSubMenu or bindContextMenu -- it proves
+    // the reveal is CSS, not a JS timer, by checking the rule Tailwind
+    // actually emits for the SSR-authored markup's sibling relationship
+    // (context-menu-sub.astro: sub-trigger and sub-content are both direct
+    // children of `[data-part="sub"]`), not by executing the behavior script.
+    // (Not a no-JS-floor claim -- spec correction 2026-08-28: the parent menu
+    // itself opens only on the `contextmenu` event, which requires script.)
+    const css = await sheet('context-menu');
+    expect(css, 'sub-content reveal-on-hover selector missing').toContain(
+      ':is([data-part=sub]:has(>[data-part=sub-trigger]:is(:hover,:focus-within)),' +
+        '[data-part=sub]:has(>[data-part=sub-content]:is(:hover,:focus-within)))>',
+    );
+    // extent-pop compiles to the alias assignment, and the parens-shorthand
+    // scale utility compiles to reading it back -- the zoom half of "fade +
+    // zoom" is a real rule, not a candidate Tailwind silently dropped.
+    expect(css, 'extent-pop utility missing').toContain(
+      '.extent-pop{--rafters-consumed-extent:var(--rafters-extent-pop)}',
+    );
+    expect(css, 'scale-(--rafters-consumed-extent) utility missing').toContain(
+      'scale:var(--rafters-consumed-extent)',
+    );
+    // Unlike tooltip/hover-card (whose data-state path drops delay-hover-intent
+    // for a forced/keyboard open outright), context-menu's data-state path is
+    // the ONLY reachable one once sub-content portals (see context-menu.classes.ts),
+    // so it cannot drop the delay uniformly without also un-delaying a genuine
+    // hover. `data-open-source=pointer` is the disambiguator (issue's own
+    // acceptance criterion 6: keyboard navigation unchanged) -- the stacked
+    // `data-[state=open]:data-[open-source=pointer]:` variant must compile to a
+    // real rule carrying `transition-delay`, not silently drop (Tailwind drops a
+    // malformed candidate with no warning, which is this whole file's premise).
+    // Plain substring search, not a regex built from `escapeCandidate`'s
+    // output: that string already carries the LITERAL backslashes CSS escaping
+    // puts in the selector text, and handing literal backslashes to `new
+    // RegExp()` re-interprets each one as regex escape syntax instead of a
+    // character to match -- silently searching for the UNESCAPED selector,
+    // which can never appear in Tailwind's output.
+    const pointerDelayCandidate = 'data-[state=open]:data-[open-source=pointer]:delay-hover-intent';
+    const pointerDelaySelector = escapeCandidate(pointerDelayCandidate);
+    const selectorAt = css.indexOf(pointerDelaySelector);
+    expect(selectorAt, 'stacked data-open-source delay selector missing').toBeGreaterThanOrEqual(0);
+    const ruleStart = css.indexOf('{', selectorAt);
+    const ruleEnd = css.indexOf('}', ruleStart);
+    expect(
+      css.slice(ruleStart, ruleEnd),
+      'stacked data-open-source delay rule does not set transition-delay',
+    ).toContain('transition-delay');
+    // The plain (unscoped) candidate this PR removed must NOT reappear as its
+    // OWN selector -- pinning the negative keeps a future edit from silently
+    // reinstating the uniform delay this file used to declare correct. It is
+    // still a (harmless) substring of the stacked selector above, so this
+    // checks for it immediately followed by a rule body, not anywhere at all.
+    const unscopedDelaySelector = escapeCandidate('data-[state=open]:delay-hover-intent');
+    expect(
+      css.includes(`${unscopedDelaySelector}[`),
+      'unscoped data-state=open delay candidate reappeared',
+    ).toBe(false);
+  }, 120_000);
+
   it('navigation-menu: the reveal is the ITEM, the dismissal is the PANEL', async () => {
     const css = await sheet('navigation-menu');
     // Tailwind's own named-group emission for the item scope...
@@ -144,11 +207,24 @@ describe('the hover-reveal candidates compile (#2148)', () => {
     expect(css).not.toContain('[data-part=root][data-dismissed=true]');
   }, 120_000);
 
+  // context-menu's subContent transitions THREE properties on the base rule
+  // (opacity, scale, pointer-events -- it consumes extent-pop, the other three
+  // components do not), so the base transition-property candidate differs per
+  // component rather than being one shared literal.
+  const BASE_TRANSITION_PROPERTY: Record<(typeof COMPONENTS)[number], string> = {
+    tooltip: 'transition-[opacity,pointer-events]',
+    'hover-card': 'transition-[opacity,pointer-events]',
+    'navigation-menu': 'transition-[opacity,pointer-events]',
+    'context-menu': 'transition-[opacity,scale,pointer-events]',
+  };
+
   it.each(COMPONENTS)(
     '%s: pointer-events is transitioned discretely, never switched by the reveal',
     async (component) => {
       const css = await sheet(component);
-      expect(css).toContain('transition-property:opacity,pointer-events');
+      expect(css).toContain(
+        `transition-property:${BASE_TRANSITION_PROPERTY[component].slice('transition-['.length, -1)}`,
+      );
       expect(css).toContain('transition-behavior:allow-discrete');
     },
     120_000,
@@ -161,12 +237,18 @@ describe('the hover-reveal candidates compile (#2148)', () => {
       // sheet, because Tailwind's sort order is the only thing that decides it.
       const css = await sheet(component);
       const pairs: Array<[string, string]> = [
-        ['transition-[opacity,pointer-events]', 'duration-fast'],
+        [BASE_TRANSITION_PROPERTY[component], 'duration-fast'],
       ];
-      for (const candidate of CONTENT_CLASSES[component].split(' ')) {
-        if (!candidate.endsWith(':transition-opacity')) continue;
-        const prefix = candidate.slice(0, -'transition-opacity'.length);
-        pairs.push([candidate, `${prefix}duration-moderate`]);
+      // The reveal rule's own transition-property candidate is either bare
+      // `transition-opacity` (tooltip/hover-card/navigation-menu) or the
+      // bracketed `transition-[opacity,scale]` (context-menu, which also
+      // transitions the extent-pop scale on open).
+      for (const suffix of ['transition-opacity', 'transition-[opacity,scale]']) {
+        for (const candidate of CONTENT_CLASSES[component].split(' ')) {
+          if (!candidate.endsWith(`:${suffix}`)) continue;
+          const prefix = candidate.slice(0, -suffix.length);
+          pairs.push([candidate, `${prefix}duration-moderate`]);
+        }
       }
       expect(pairs.length, 'no transition-property utilities found to check').toBeGreaterThan(1);
       for (const [property, duration] of pairs) {

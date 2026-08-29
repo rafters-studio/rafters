@@ -155,14 +155,16 @@ describe('context-menu conformance [astro]', () => {
     const user = userEvent.setup();
     await mountWithSub();
     fireEvent.contextMenu(trigger(), { clientX: 12, clientY: 22 });
-    expect(subContent().hidden).toBe(true);
+    // Never `hidden` (#2152): sub-content's presence is CSS opacity/scale over
+    // `:hover`/`:focus-within` and `data-state`, not display:none.
+    expect(subContent().getAttribute('data-state')).toBe('closed');
     subTrigger().focus();
     await user.keyboard('{ArrowRight}');
-    expect(subContent().hidden).toBe(false);
+    expect(subContent().getAttribute('data-state')).toBe('open');
     expect(subTrigger().getAttribute('aria-expanded')).toBe('true');
     expect(document.activeElement).toBe(itemByText('Deep'));
     await user.keyboard('{ArrowLeft}');
-    expect(subContent().hidden).toBe(true);
+    expect(subContent().getAttribute('data-state')).toBe('closed');
     expect(document.activeElement).toBe(subTrigger());
   });
 
@@ -174,7 +176,7 @@ describe('context-menu conformance [astro]', () => {
     subTriggerByText('Even more').focus();
     await user.keyboard('{ArrowRight}');
     const grandchild = grandchildContent();
-    expect(grandchild.hidden).toBe(false);
+    expect(grandchild.getAttribute('data-state')).toBe('open');
     return grandchild;
   }
 
@@ -186,7 +188,7 @@ describe('context-menu conformance [astro]', () => {
     document.body.appendChild(outside);
     fireEvent.pointerDown(outside);
     expect(content().hidden).toBe(true);
-    expect(grandchild.hidden).toBe(true);
+    expect(grandchild.getAttribute('data-state')).toBe('closed');
   });
 
   it('selecting a top-level item while a nested submenu is open collapses the grandchild', async () => {
@@ -195,7 +197,7 @@ describe('context-menu conformance [astro]', () => {
     const grandchild = await openTwoLevels(user);
     await user.click(itemByText('Cut'));
     expect(content().hidden).toBe(true);
-    expect(grandchild.hidden).toBe(true);
+    expect(grandchild.getAttribute('data-state')).toBe('closed');
   });
 
   // The #2001 pairing: config is data-* in the markup AND read through dataset

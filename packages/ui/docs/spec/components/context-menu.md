@@ -46,9 +46,18 @@ that trigger via `positionSubContent`. The sub-content is moved to `document.bod
 so it escapes the parent's `overflow-hidden` AND leaves the parent's roving and
 keyboard scope (nested menuitems would otherwise pollute the parent's item list).
 `bindContextSubMenu` binds one submenu and recurses into nested ones; the React
-`ContextMenu.Sub`/`SubTrigger`/`SubContent` mirror it. Hover-open uses a plain
-`setTimeout` (`SUB_MENU_HOVER_DELAY`, a JS pointer-intent delay -- no motion token
-applies); keyboard is the required floor.
+`ContextMenu.Sub`/`SubTrigger`/`SubContent` mirror it. Hover-open/close is CSS
+and tokens only (#2152, following #2148's shape): pointerenter/pointerleave
+dispatch `open`/`close` the instant the event fires, with no JS timer of any
+kind, and the perceived hover-intent delay is a `transition-delay` on
+`subContent`'s reveal rule, consuming `--rafters-delay-hover-intent`. The
+reveal is native `:hover`/`:focus-within` over the sub-trigger/sub-content
+siblings the SSR markup authors, so nothing but CSS decides when it fires (not
+a no-JS floor -- spec correction 2026-08-28: the parent menu itself opens only
+on the `contextmenu` event, which requires script); once bound (sub-content
+moves to `document.body`, below), `data-[state=open]` -- carrying the identical
+duration/curve/delay -- is what governs it instead. Keyboard is the required
+floor either way.
 
 Highlighted item is NOT score state: it is ephemeral DOM state owned by
 roving-focus (the focused item's tabindex), exactly as navigation-menu keeps
@@ -84,7 +93,7 @@ a legitimate move (the menu follows the cursor).
 | trigger | always | `data-state`; no role (a right-click region has no keyboard equivalent, so an `aria-haspopup` on a non-interactive host would mislead AT). `tabindex="-1"` so focus can be restored here on close |
 | content | while open (React unmounts; WC/Astro `hidden`-toggle) | `role="menu"`, `aria-orientation="vertical"`, `data-state`, `hidden` (absent while open) |
 | sub-trigger | always (a menuitem of the parent) | `role="menuitem"`, `aria-haspopup="menu"`, `aria-expanded`, `aria-controls` (only while the submenu is open), `data-state` |
-| sub-content | while the submenu is open | `role="menu"`, `aria-orientation="vertical"`, `data-state`, `hidden` (absent while open) |
+| sub-content | always (WC/Astro); while open in React (`usePresence` unmounts once the close transition finishes) -- never `hidden` (#2152: a hidden node cannot transition, and the CSS reveal must run once the menu is open) | `role="menu"`, `aria-orientation="vertical"`, `data-state`, `data-open-source` (`pointer` or `discrete` while open, reflecting the input that opened it; absent while closed or on a controlled/never-dispatched open), `aria-hidden` (while closed) |
 
 Items are `menuitem` / `menuitemcheckbox` / `menuitemradio` in the decorators;
 they carry no per-instance sibling ids, so the score declares no `instanceAria`
@@ -104,9 +113,10 @@ they carry no per-instance sibling ids, so the score declares no `instanceAria`
   the trigger.
 - Submenu: ArrowRight (or Enter/Space) on a sub-trigger opens the submenu and
   focuses its first item; ArrowLeft or Escape from the sub-content closes it and
-  restores focus to the sub-trigger; hover-intent opens/closes after
-  `SUB_MENU_HOVER_DELAY`. Selecting a submenu item collapses the whole tree;
-  closing the parent collapses any open submenu.
+  restores focus to the sub-trigger; hover/focus opens and closes it too, with
+  the hover-intent delay living entirely in CSS (`context-menu.classes.ts`,
+  #2152) rather than a JS timer. Selecting a submenu item collapses the whole
+  tree; closing the parent collapses any open submenu.
 
 ## Motion
 
@@ -137,7 +147,7 @@ does not yet.
 | `asChild` on Trigger | framework affordance (React) |
 | CheckboxItem/RadioItem check + dot indicator SVGs | framework affordance (React markup) |
 | `onSelect` cancelable event, `onCheckedChange`, radio `onValueChange` | contract (consumer callbacks at the React boundary) |
-| Sub / SubTrigger / SubContent (nested submenu, hover-intent) | contract -- its own `contextSubMenu` score, composed from the same primitives (roving/typeahead + collision-detector anchored to the sub-trigger). Hover-open is a plain `setTimeout` (as the oracle had), not a new primitive. Bound in all three frameworks; supports arbitrary nesting |
+| Sub / SubTrigger / SubContent (nested submenu, hover-intent) | contract -- its own `contextSubMenu` score, composed from the same primitives (roving/typeahead + collision-detector anchored to the sub-trigger). The oracle's `setTimeout` hover-open is GONE (#2152): hover/focus dispatch open/close immediately and the hover-intent delay is a CSS `transition-delay` on `subContent`, the same shape #2148 gave tooltip/hover-card. Bound in all three frameworks; supports arbitrary nesting |
 | `alignOffset` prop on Content | dropped -- cursor placement uses side='bottom' align='start' at the point; the offset knob had no wave-4 consumer and no oracle test exercised a non-zero value |
 | raw `duration-100` transitions and `animate-in`/`zoom-*` utilities | defect-do-not-port -- replaced by the semantic motion tokens (Spec 05 prohibits raw numeric durations) |
 

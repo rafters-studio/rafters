@@ -48,7 +48,6 @@ import {
   positionSubContent,
   startContextMenuEffects,
   startContextSubMenuEffects,
-  SUB_MENU_HOVER_DELAY,
   type ContextMenuActions,
   type ContextMenuConfig,
   type ContextMenuPart,
@@ -570,11 +569,8 @@ interface SubMenuContextValue {
   config: ContextSubMenuConfig;
   ids: PartIds<ContextSubMenuPart>;
   aria: Partial<Record<ContextSubMenuPart, AriaAttrs>>;
-  request: (action: keyof ContextSubMenuActions) => boolean;
+  request: (action: keyof ContextSubMenuActions, source?: 'pointer' | 'discrete') => boolean;
   effectiveOpen: boolean;
-  openViaHover: () => void;
-  closeViaHover: () => void;
-  cancelHover: () => void;
 }
 
 const SubMenuCtx = React.createContext<SubMenuContextValue | null>(null);
@@ -621,34 +617,29 @@ export function ContextMenuSub({
     [uid],
   );
 
-  const openTimer = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const closeTimer = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const clearTimers = React.useCallback(() => {
-    if (openTimer.current) clearTimeout(openTimer.current);
-    if (closeTimer.current) clearTimeout(closeTimer.current);
-  }, []);
-
   const latest = React.useRef({ config, onOpenChange });
   latest.current = { config, onOpenChange };
+  // Hover open/close dispatches `request` directly, with no JS timer (#2152):
+  // the hover-intent delay the submenu's `closed -> open` cell assigns is a
+  // CSS `transition-delay` on `subContent` (context-menu.classes.ts, consuming
+  // `--rafters-delay-hover-intent`), not a value this component reads or sets.
+  // `source` (only meaningful for 'open') is that delay's disambiguator: the
+  // score projects it as `data-open-source`, and the CSS scopes the delay to
+  // `'pointer'` so a click or keyboard open (marked 'discrete' by its caller
+  // below) resolves through the un-delayed cell instead -- keyboard
+  // navigation stays exactly as fast as before this issue. Defaults to
+  // 'discrete' so a caller that forgets to pass one fails safe.
   const request = React.useCallback(
-    (action: keyof ContextSubMenuActions): boolean => {
+    (action: keyof ContextSubMenuActions, source?: 'pointer' | 'discrete'): boolean => {
       const { config: cfg, onOpenChange: cb } = latest.current;
-      if (!dispatch(action, cfg)) return false;
+      const ok =
+        action === 'open' ? dispatch('open', cfg, source ?? 'discrete') : dispatch('close', cfg);
+      if (!ok) return false;
       cb?.(action === 'open');
       return true;
     },
     [dispatch],
   );
-
-  const openViaHover = React.useCallback(() => {
-    clearTimers();
-    openTimer.current = setTimeout(() => request('open'), SUB_MENU_HOVER_DELAY);
-  }, [clearTimers, request]);
-  const closeViaHover = React.useCallback(() => {
-    clearTimers();
-    closeTimer.current = setTimeout(() => request('close'), SUB_MENU_HOVER_DELAY);
-  }, [clearTimers, request]);
-  React.useEffect(() => () => clearTimers(), [clearTimers]);
 
   // Position + roving/typeahead + focus-first on the open transition. The
   // sub-content portals to body, so the parent's roving never sees its items.
@@ -678,9 +669,6 @@ export function ContextMenuSub({
     aria,
     request,
     effectiveOpen,
-    openViaHover,
-    closeViaHover,
-    cancelHover: clearTimers,
   };
 
   return <SubMenuCtx.Provider value={value}>{children}</SubMenuCtx.Provider>;
@@ -718,15 +706,15 @@ export function ContextMenuSubTrigger({
       {...sub.aria.subTrigger}
       onPointerEnter={(event: React.PointerEvent<HTMLDivElement>) => {
         onPointerEnter?.(event);
-        if (!disabled) sub.openViaHover();
+        if (!disabled) sub.request('open', 'pointer');
       }}
       onPointerLeave={(event: React.PointerEvent<HTMLDivElement>) => {
         onPointerLeave?.(event);
-        sub.closeViaHover();
+        sub.request('close');
       }}
       onClick={(event: React.MouseEvent<HTMLDivElement>) => {
         onClick?.(event);
-        if (!disabled) sub.request('open');
+        if (!disabled) sub.request('open', 'discrete');
       }}
       onKeyDown={(event: React.KeyboardEvent<HTMLDivElement>) => {
         onKeyDown?.(event);
@@ -739,7 +727,7 @@ export function ContextMenuSubTrigger({
         );
         if (action === 'open') {
           event.preventDefault();
-          sub.request('open');
+          sub.request('open', 'discrete');
         }
       }}
       {...props}
@@ -795,10 +783,10 @@ export function ContextMenuSubContent({
       ref={presenceRef}
       role="menu"
       tabIndex={-1}
-      className={classy(classes.content, className)}
+      className={classy(classes.subContent, className)}
       {...sub.aria.subContent}
-      onPointerEnter={() => sub.cancelHover()}
-      onPointerLeave={() => sub.closeViaHover()}
+      onPointerEnter={() => sub.request('open', 'pointer')}
+      onPointerLeave={() => sub.request('close')}
       onKeyDown={handleKeyDown}
       {...props}
     >

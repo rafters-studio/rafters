@@ -6,7 +6,7 @@
  */
 import { cleanup, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { contextMenu } from '../../../src/components/context-menu/context-menu.behavior';
 import { RaftersContextMenu } from '../../../src/components/context-menu/context-menu.element';
 import { assertAxeClean, assertContractFulfillment } from '../../harness/conformance';
@@ -58,11 +58,24 @@ const itemByText = (text: string): HTMLElement => {
   return match;
 };
 
-// The bind portals an open submenu's content to document.body (escaping the
-// parent overflow and roving scope). In happy-dom a `hidden` attribute is not
-// collapsed to display:none, so a closed sub-content there would trip axe's
-// best-practice region rule that a real browser skips. Scope axe to the <main>
-// landmark, which contains the menu; the portaled node sits outside it.
+// The bind portals a submenu's sub-content to document.body on mount (escaping
+// the parent overflow and roving scope), open or closed -- unlike the parent
+// menu's `content`, sub-content is never `hidden` (#2152: a hidden node cannot
+// transition, and the CSS reveal must survive with JS off). Scope axe to the
+// <main> landmark, which contains the menu; the portaled node sits outside it.
+//
+// This scoping is ONLY for axe's best-practice region rule, which flags any
+// content sitting outside a landmark whether or not it is visible or
+// interactive -- a real browser skips that rule, and it would fire on the
+// portaled node regardless of its open/closed state. But the tradeoff is
+// real: because the portaled sub-content sits outside <main>, a
+// `landmark()`-scoped axe run never reaches it, so it cannot be the
+// regression guard for a closed sub-content's accessibility-tree exclusion
+// (`aria-hidden="true"`, projected by the score and mirrored in the SSR
+// markup, #2187 review). That guard is the explicit `aria-hidden` /
+// `tabindex` assertions in the open/close/axe-clean test below, plus a
+// second `assertAxeClean` call there scoped directly to the sub-content
+// node so axe actually scans the portaled element.
 const landmark = () => document.body.querySelector('main') as HTMLElement;
 
 afterEach(() => {
@@ -148,16 +161,97 @@ describe('context-menu conformance [wc]', () => {
     fireEvent.contextMenu(trigger(), { clientX: 10, clientY: 10 });
     const st = document.body.querySelector<HTMLElement>('[data-part="sub-trigger"]') as HTMLElement;
     const sc = document.body.querySelector<HTMLElement>('[data-part="sub-content"]') as HTMLElement;
-    expect(sc.hidden).toBe(true);
+    expect(sc.getAttribute('data-state')).toBe('closed');
     st.focus();
     await user.keyboard('{ArrowRight}');
-    expect(sc.hidden).toBe(false);
+    expect(sc.getAttribute('data-state')).toBe('open');
     expect(st.getAttribute('aria-expanded')).toBe('true');
     expect(st.getAttribute('aria-controls')).toBe('cm-sub-content');
     expect(document.activeElement).toBe(itemByText('Deep'));
     await user.keyboard('{ArrowLeft}');
-    expect(sc.hidden).toBe(true);
+    expect(sc.getAttribute('data-state')).toBe('closed');
     expect(document.activeElement).toBe(st);
+  });
+
+  // #2152: the hover-intent delay is a CSS `transition-delay`
+  // (`delay-hover-intent` in context-menu.classes.ts), never a JS timer -- so
+  // pointer hover flips `data-state` the instant the event fires, with
+  // `setTimeout` never scheduled for it.
+  it('opens and closes the submenu on pointer hover with no JS timer', async () => {
+    await mount();
+    fireEvent.contextMenu(trigger(), { clientX: 10, clientY: 10 });
+    const st = document.getElementById('cm-sub-trigger') as HTMLElement;
+    const sc = document.getElementById('cm-sub-content') as HTMLElement;
+    const spy = vi.spyOn(globalThis, 'setTimeout');
+    spy.mockClear();
+    fireEvent.pointerEnter(st);
+    expect(spy).not.toHaveBeenCalled();
+    expect(sc.getAttribute('data-state')).toBe('open');
+    spy.mockClear();
+    fireEvent.pointerLeave(st);
+    expect(spy).not.toHaveBeenCalled();
+    expect(sc.getAttribute('data-state')).toBe('closed');
+    spy.mockRestore();
+  });
+
+  // #2187 review: a pointer hover is the only input `delay-hover-intent`
+  // should filter (accidental transit); a click or keyboard open has already
+  // declared intent and must stay instant (acceptance criterion 6: keyboard
+  // navigation unchanged). `data-open-source` is what the CSS reveal rule
+  // (context-menu.classes.ts) reads to tell the two apart.
+  it('a pointer hover marks data-open-source="pointer"; ArrowRight marks it "discrete"', async () => {
+    const user = userEvent.setup();
+    await mount();
+    fireEvent.contextMenu(trigger(), { clientX: 10, clientY: 10 });
+    const st = document.getElementById('cm-sub-trigger') as HTMLElement;
+    const sc = document.getElementById('cm-sub-content') as HTMLElement;
+
+    fireEvent.pointerEnter(st);
+    expect(sc.getAttribute('data-open-source')).toBe('pointer');
+    fireEvent.pointerLeave(st);
+    expect(sc.hasAttribute('data-open-source')).toBe(false);
+
+    st.focus();
+    await user.keyboard('{ArrowRight}');
+    expect(sc.getAttribute('data-state')).toBe('open');
+    expect(sc.getAttribute('data-open-source')).toBe('discrete');
+  });
+
+  // #2187 review: dropping `hidden` from sub-content (needed so it can
+  // transition) leaves a closed panel a live `role="menu"` node with
+  // `role="menuitem"` children in the accessibility tree unless something
+  // else marks it hidden from AT. `aria-hidden` does that without collapsing
+  // layout (the CSS reveal and transition are untouched by it). The
+  // discriminating check is axe AFTER an open/close cycle, not just at
+  // mount: roving-focus leaves one item at `tabindex="0"` when it tears
+  // down, which would be a focusable descendant of an aria-hidden container
+  // (axe's aria-hidden-focus rule) if that tabindex were not also reset.
+  it('closed sub-content is aria-hidden with every item back at tabindex="-1", and stays axe-clean after an open/close cycle', async () => {
+    const user = userEvent.setup();
+    await mount();
+    fireEvent.contextMenu(trigger(), { clientX: 10, clientY: 10 });
+    const st = document.getElementById('cm-sub-trigger') as HTMLElement;
+    const sc = document.getElementById('cm-sub-content') as HTMLElement;
+    expect(sc.getAttribute('aria-hidden')).toBe('true');
+
+    st.focus();
+    await user.keyboard('{ArrowRight}'); // open -- roving-focus puts tabindex="0" on Deep
+    expect(sc.getAttribute('aria-hidden')).toBeNull();
+    expect(sc.querySelector('[role="menuitem"]')?.getAttribute('tabindex')).toBe('0');
+    await user.keyboard('{ArrowLeft}'); // close back to the sub-trigger
+
+    expect(sc.getAttribute('aria-hidden')).toBe('true');
+    for (const item of sc.querySelectorAll<HTMLElement>('[role="menuitem"]')) {
+      expect(item.getAttribute('tabindex')).toBe('-1');
+    }
+    // landmark() only covers the top-level menu content inside <main> --
+    // the portalled sub-content sits outside it and is invisible to this
+    // scan (see the comment on `landmark()` above). Scan the sub-content
+    // node directly so a regressed `aria-hidden` or a leftover
+    // `tabindex="0"` on it is actually caught by axe, not just by the
+    // explicit assertions above.
+    await assertAxeClean(landmark());
+    await assertAxeClean(sc);
   });
 
   it('closing the whole menu collapses an open submenu', async () => {
@@ -168,10 +262,10 @@ describe('context-menu conformance [wc]', () => {
     const sc = document.getElementById('cm-sub-content') as HTMLElement;
     st.focus();
     await user.keyboard('{ArrowRight}');
-    expect(sc.hidden).toBe(false);
+    expect(sc.getAttribute('data-state')).toBe('open');
     await user.keyboard('{Escape}');
     // Escape in the submenu closes the submenu first, back to the sub-trigger.
-    expect(sc.hidden).toBe(true);
+    expect(sc.getAttribute('data-state')).toBe('closed');
     expect(document.activeElement).toBe(st);
   });
 
@@ -183,7 +277,7 @@ describe('context-menu conformance [wc]', () => {
     (document.getElementById('cm-sub2-trigger') as HTMLElement).focus();
     await user.keyboard('{ArrowRight}');
     const grandchild = document.getElementById('cm-sub2-content') as HTMLElement;
-    expect(grandchild.hidden).toBe(false);
+    expect(grandchild.getAttribute('data-state')).toBe('open');
     return grandchild;
   }
 
@@ -195,7 +289,6 @@ describe('context-menu conformance [wc]', () => {
     document.body.appendChild(outside);
     fireEvent.pointerDown(outside);
     expect(content().hidden).toBe(true);
-    expect(grandchild.hidden).toBe(true);
     expect(grandchild.getAttribute('data-state')).toBe('closed');
   });
 
@@ -205,7 +298,6 @@ describe('context-menu conformance [wc]', () => {
     const grandchild = await openTwoLevels(user);
     await user.click(itemByText('Cut'));
     expect(content().hidden).toBe(true);
-    expect(grandchild.hidden).toBe(true);
     expect(grandchild.getAttribute('data-state')).toBe('closed');
   });
 });

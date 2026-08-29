@@ -206,7 +206,7 @@ describe('context-sub-menu score', () => {
     expect(contextSubMenu.keymap({ key: 'ArrowRight' }, open, 'subContent', base)).toBeNull();
   });
 
-  it('aria: trigger advertises the popup, content is a hidden vertical menu when closed', () => {
+  it('aria: trigger advertises the popup, content is a vertical menu carrying data-state (never `hidden` -- #2152: a hidden node cannot transition, and the CSS reveal must work with JS off)', () => {
     const ids = { subTrigger: 'st', subContent: 'sc' };
     const closedAria = contextSubMenu.aria(closed, base, ids);
     expect(closedAria.subTrigger).toEqual({
@@ -215,11 +215,60 @@ describe('context-sub-menu score', () => {
       'aria-controls': undefined,
       'data-state': 'closed',
     });
-    expect(closedAria.subContent?.['hidden']).toBe(true);
+    expect(closedAria.subContent).toEqual({
+      'aria-orientation': 'vertical',
+      'data-state': 'closed',
+      'data-open-source': undefined,
+      // Dropping `hidden` (below) keeps a closed sub-content a live
+      // `role="menu"` node in the accessibility tree, so `aria-hidden`
+      // marks it hidden from AT the same way `hidden` used to --
+      // without collapsing layout, so the CSS transition still runs.
+      'aria-hidden': 'true',
+    });
+    expect(closedAria.subContent?.['hidden']).toBeUndefined();
     const openAria = contextSubMenu.aria(open, base, ids);
     expect(openAria.subTrigger?.['aria-expanded']).toBe('true');
     expect(openAria.subTrigger?.['aria-controls']).toBe('sc');
-    expect(openAria.subContent?.['hidden']).toBeUndefined();
+    expect(openAria.subContent).toEqual({
+      'aria-orientation': 'vertical',
+      'data-state': 'open',
+      // `open` here has no `openSource` (a bare `{ open: true }` literal, as
+      // a controlled/never-dispatched open would produce) -- no delay mark,
+      // and `aria-hidden` is gone the instant it is open.
+      'data-open-source': undefined,
+      'aria-hidden': undefined,
+    });
+  });
+
+  it('aria: data-open-source mirrors state.openSource while open, scoping the CSS hover-intent delay to a genuine pointer open', () => {
+    const ids = { subTrigger: 'st', subContent: 'sc' };
+    const openFromPointer: ContextSubMenuState = { open: true, openSource: 'pointer' };
+    const openFromDiscrete: ContextSubMenuState = { open: true, openSource: 'discrete' };
+    expect(contextSubMenu.aria(openFromPointer, base, ids).subContent?.['data-open-source']).toBe(
+      'pointer',
+    );
+    expect(contextSubMenu.aria(openFromDiscrete, base, ids).subContent?.['data-open-source']).toBe(
+      'discrete',
+    );
+    // Closed always removes the mark, even if state still carries a stale one
+    // from before the close (the actions reducer clears it, but aria() itself
+    // does not rely on that -- it gates on `open` directly).
+    const closedButStale: ContextSubMenuState = { open: false, openSource: 'pointer' };
+    expect(
+      contextSubMenu.aria(closedButStale, base, ids).subContent?.['data-open-source'],
+    ).toBeUndefined();
+  });
+
+  it('actions: open stores which input opened it; close always clears it', () => {
+    const initial: ContextSubMenuState = { open: false };
+    const openedByPointer = contextSubMenu.actions.open(initial, 'pointer');
+    expect(openedByPointer).toEqual({ open: true, openSource: 'pointer' });
+    const openedByDiscrete = contextSubMenu.actions.open(initial, 'discrete');
+    expect(openedByDiscrete).toEqual({ open: true, openSource: 'discrete' });
+    expect(contextSubMenu.actions.close(openedByPointer, undefined)).toEqual({
+      open: false,
+      openSource: undefined,
+    });
   });
 });
 
