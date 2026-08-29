@@ -80,6 +80,19 @@ export function clampColor(color: OKLCH): OKLCH {
 const DEFAULT_STEPS = 101;
 const TOLERANCE = 0.001;
 
+/**
+ * Largest chroma at this lightness and hue that colorjs.io still calls in
+ * gamut, by bisection over `inGamut`.
+ *
+ * The bisection stays rather than deferring to `toGamut`, whose 0.5.2 options
+ * do include a coordinate-reduction method (`{ method: 'oklch.c' }`) that
+ * looks like it would answer this directly. It does not: `toGamut` returns a
+ * color CLIPPED into the target space, and clipping moves lightness too, so
+ * reading chroma back off the result overshoots the boundary AT THIS
+ * LIGHTNESS -- 0.0284 against the true 0.0094 at h=160, l=0.04, and 0.0337
+ * against 0.0227 at h=145, l=0.05. `inGamut` is the predicate this function
+ * actually needs, and bisecting it is the only way to ask where it flips.
+ */
 function findMaxChroma(l: number, h: number, gamutSpace: string): number {
   let lo = 0;
   let hi = MAX_CHROMA;

@@ -25,8 +25,8 @@ Behavior-layer support: only the five articles have react (verified). Old tree a
 | **progress** | Progress bar | Shows determinate value or indeterminate activity | value, indeterminate | - | - | transition-all -> value-change | astro/react/wc | none |
 | **scroll-area** | Styled scroll container | Custom scrollbar rendering over native scroll | scrolling | - | - | transition-colors | react | none |
 | **separator** | Visual divider | Horizontal/vertical rule; decorative by default (role=none), semantic on request | - | - | - | none | astro/react/wc | none |
-| **skeleton** | Loading shimmer | Occupies layout while content loads | - | - | - | animate-pulse -> feedback-loop | astro/react/wc | none |
-| **spinner** | Busy indicator | Signals in-flight work | - | - | - | animate-spin -> feedback-loop | astro/react/wc | none |
+| **skeleton** | Loading shimmer | Occupies layout while content loads | - | - | - | animate-skeleton-root-waiting -> feedback-loop | astro/react/wc | none |
+| **spinner** | Busy indicator | Signals in-flight work | - | - | - | animate-spinner-root-busy -> feedback-loop | astro/react/wc | none |
 | **table** | Semantic data table | Renders table landmarks; rows can carry selected state | row: selected | - | - | transition-colors | astro/react | none |
 | **typography** | Semantic text set (H1-H6, P, Code, Small, Blockquote, List) | Renders native text elements with token props; no raw class surface | - | - | - | none | astro/react/wc | none |
 
@@ -57,7 +57,7 @@ Behavior-layer support: only the five articles have react (verified). Old tree a
 | **field** | Label+control+message wrapper | Wires label, description, and validation message ids to a control | invalid | - | - | none | react/wc | none |
 | **input** | Single-line text field | Edits text; reflects validity; form-associated | value, invalid, disabled | - | form-value, input-events | transition-shadow focus | astro/react/wc | none |
 | **input-group** | Input with addons | Composes input with leading/trailing addons as one control | value, invalid | - | - | none | react/wc | react/wc/astro OK |
-| **input-otp** | Segmented one-time-code input | One char per slot; auto-advance; paste splits | slots filled, active slot | - | form-value, input-events, keyboard-handler | animate-pulse caret -> caret-blink: feedback-loop | react/wc | none |
+| **input-otp** | Segmented one-time-code input | One char per slot; auto-advance; paste splits | slots filled, active slot | - | form-value, input-events, keyboard-handler | animate-input-otp-caret-idle -> caret-blink: feedback-loop | react/wc | none |
 | **textarea** | Multi-line text field | Edits multiline text; autosize optional | value, invalid, disabled | - | form-value, input-events | transition-shadow focus | react/wc | none |
 
 ## disclosure (3)

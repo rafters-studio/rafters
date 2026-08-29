@@ -93,7 +93,7 @@ a legitimate move (the menu follows the cursor).
 | trigger | always | `data-state`; no role (a right-click region has no keyboard equivalent, so an `aria-haspopup` on a non-interactive host would mislead AT). `tabindex="-1"` so focus can be restored here on close |
 | content | while open (React unmounts; WC/Astro `hidden`-toggle) | `role="menu"`, `aria-orientation="vertical"`, `data-state`, `hidden` (absent while open) |
 | sub-trigger | always (a menuitem of the parent) | `role="menuitem"`, `aria-haspopup="menu"`, `aria-expanded`, `aria-controls` (only while the submenu is open), `data-state` |
-| sub-content | always (WC/Astro); while open in React (`usePresence` unmounts once the close transition finishes) -- never `hidden` (#2152: a hidden node cannot transition, and the CSS reveal must run once the menu is open) | `role="menu"`, `aria-orientation="vertical"`, `data-state`, `data-open-source` (pointer opens only, while open), `aria-hidden` (while closed) |
+| sub-content | always (WC/Astro); while open in React (`usePresence` unmounts once the close transition finishes) -- never `hidden` (#2152: a hidden node cannot transition, and the CSS reveal must run once the menu is open) | `role="menu"`, `aria-orientation="vertical"`, `data-state`, `data-open-source` (`pointer` or `discrete` while open, reflecting the input that opened it; absent while closed or on a controlled/never-dispatched open), `aria-hidden` (while closed) |
 
 Items are `menuitem` / `menuitemcheckbox` / `menuitemradio` in the decorators;
 they carry no per-instance sibling ids, so the score declares no `instanceAria`

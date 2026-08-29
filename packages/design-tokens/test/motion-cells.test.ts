@@ -224,6 +224,8 @@ type ExclusionReason =
   | 'noExistingShape'
   /** `opacity` + `grid-rows / height`: a cell would double-drive opacity against motion-expand/collapse. */
   | 'carriedByExpandCollapse'
+  /** Opacity already transitions via a `motion-*-in`/`-out` semantic token; a keyframe cell would double-drive it and the animation would win. */
+  | 'carriedBySemanticTransition'
   /** The matrix runs ahead of packages/ui/src/components -- there is no component to style. */
   | 'noComponentDirectory';
 
@@ -326,6 +328,8 @@ const EXCLUDED_ROWS: Record<ExclusionReason, readonly string[]> = {
     'navigation-menu | trigger | hover',
     'sidebar | item | hover',
     'slider | thumb | hover',
+    // Declares ['background, text, border'] only, same as navigation-menu trigger hover above.
+    'badge | root | hover',
     'input | root | focus',
     'input | root | valid <-> invalid',
     'textarea | root | focus',
@@ -366,6 +370,19 @@ const EXCLUDED_ROWS: Record<ExclusionReason, readonly string[]> = {
     'collapsible | content | open -> closed',
     'field | message | appear',
     'field | message | disappear',
+  ],
+  // Declares ['opacity'] only, but color-picker.classes.ts already transitions
+  // it via the motion-dropdown-in/motion-dropdown-out semantic token
+  // (opacity-0 <-> data-[state=open]:opacity-100, with starting:opacity-0 for
+  // the mount case). A keyframe cell here would put an animation and a
+  // transition on the same property at once, and the animation wins -- the
+  // same double-drive carriedByExpandCollapse guards against, on a different
+  // mechanism. command | content | closed -> open is the same shape (fade,
+  // opacity, tier moderate, curve enter) and IS a cell, because command does
+  // not carry its fade via a semantic transition token.
+  carriedBySemanticTransition: [
+    'color-picker | root | closed -> open',
+    'color-picker | root | open -> closed',
   ],
   // Verified against packages/ui/src/components: no menubar, no date-picker.
   noComponentDirectory: [

@@ -38,8 +38,8 @@ describe('skeleton conformance [wc]', () => {
     const host = mount();
     const root = shadowRoot(host);
     expect(root).not.toBeNull();
-    expect(root.className).toContain('animate-pulse');
-    expect(root.className).toContain('motion-reduce:animate-none');
+    expect(root.className).toContain('animate-skeleton-root-waiting');
+    expect(root.className).not.toContain('motion-reduce:animate-none');
     expect(root.className).toContain('bg-muted');
   });
 

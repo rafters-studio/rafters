@@ -6,6 +6,6 @@
     "types": ["node", "vitest/globals", "@testing-library/jest-dom"]
   },
   "include": ["src/**/*", "../color-utils/src/**/*.d.ts", "test/components/dialog.test.tsx"],
-  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.test.tsx"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.test.tsx", "src/old/**/*"],
   "files": ["test/components/editor/editor.conformance.test.tsx"]
 }

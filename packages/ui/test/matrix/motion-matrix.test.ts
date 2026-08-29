@@ -25,7 +25,7 @@ const cells = readMotionCells();
 
 describe('motion.jsonl', () => {
   it('carries every cell of the grid', () => {
-    expect(cells).toHaveLength(144);
+    expect(cells).toHaveLength(147);
   });
 
   it('declares the schema on every line', () => {
@@ -107,6 +107,28 @@ describe('motion.jsonl', () => {
     expect(subClose?.duration).toMatchObject({ kind: 'tier', tier: 'fast' });
     expect(subClose?.curve).toMatchObject({ kind: 'role', role: 'exit' });
     expect(subClose?.delays).toEqual([]);
+  });
+
+  it('gives badge a fast, standard hover cell on root', () => {
+    const badgeHover = cells.find(
+      (c) => c.component === 'badge' && c.part === 'root' && c.transition === 'hover',
+    );
+    expect(badgeHover?.duration).toMatchObject({ kind: 'tier', tier: 'fast' });
+    expect(badgeHover?.curve).toMatchObject({ kind: 'role', role: 'standard' });
+  });
+
+  it('gives color-picker a moderate enter and a fast exit fade on root', () => {
+    const colorPickerOpen = cells.find(
+      (c) => c.component === 'color-picker' && c.transition === 'closed -> open',
+    );
+    expect(colorPickerOpen?.duration).toMatchObject({ kind: 'tier', tier: 'moderate' });
+    expect(colorPickerOpen?.curve).toMatchObject({ kind: 'role', role: 'enter' });
+
+    const colorPickerClose = cells.find(
+      (c) => c.component === 'color-picker' && c.transition === 'open -> closed',
+    );
+    expect(colorPickerClose?.duration).toMatchObject({ kind: 'tier', tier: 'fast' });
+    expect(colorPickerClose?.curve).toMatchObject({ kind: 'role', role: 'exit' });
   });
 });
 

@@ -39,10 +39,23 @@ const charClasses = 'pointer-events-none';
 
 const caretClasses = 'pointer-events-none absolute inset-0 flex items-center justify-center';
 
-// The caret-blink feedback loop. Duration and easing come from the token-backed
-// animate-pulse utility; reduced motion stills it rather than hiding it, so the
-// caret still marks the slot for a user who asked for less movement.
-const caretBarClasses = 'h-4 w-px animate-pulse bg-foreground motion-reduce:animate-none';
+// The caret-blink feedback loop.
+//
+// THE CELL IS THE SPEC (#2017, #2154). `animate-input-otp-caret-idle` is the
+// generated consumption of `input-otp / caret / idle` in
+// `packages/ui/docs/spec/matrix/motion.jsonl` (period `blink`) -- one
+// reference, not the stock `animate-pulse` this used before #2155's audit
+// migrated it onto the caret's own cell.
+//
+// NO motion-reduce:animate-none. A period-kind cell is exempt from the
+// reduced-motion zeroing law by design (#2155): the utility carries no
+// `@media (prefers-reduced-motion: reduce)` block at all, so the caret keeps
+// blinking at the same period regardless of the user's preference -- see
+// `packages/ui/src/primitives/intelligence-integration.ts:106-121` and
+// `REDUCED_MOTION_ZEROED` in `packages/design-tokens/src/exporters/tailwind.ts`
+// for the ruling this follows. This is a behavior change from the previous
+// `motion-reduce:animate-none`, which stilled the caret under reduced motion.
+const caretBarClasses = 'h-4 w-px animate-input-otp-caret-idle bg-foreground';
 
 const separatorClasses = 'flex items-center justify-center text-muted-foreground';
 
