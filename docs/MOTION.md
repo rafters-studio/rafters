@@ -42,7 +42,7 @@ Intent is the project's aesthetic starting position -- the first question Studio
 
 **Exits are faster than entrances.** When something appears, the user needs a moment to comprehend it. When something disappears, the user already decided it should go. You greet warmly and leave quietly.
 
-**Duration is a function of size and distance.** Larger elements moving further need longer durations, because that is how physics works and the visual system expects physics. This principle is what *assigns* each semantic token its tier -- a modal is larger and travels further than a dropdown, which is why `motion-modal-in` sits at `normal` and `motion-dropdown-in` at `moderate`. Authors do not re-derive it; they use the semantic token that already encodes it.
+**Duration is a function of size and distance.** Larger elements moving further need longer durations, because that is how physics works and the visual system expects physics. This principle is what assigns each matrix row its tier -- a modal is larger and travels further than a dropdown, which is why a modal's entrance sits at `normal` and a dropdown's at `moderate`. Authors do not re-derive it; the row already encodes it.
 
 **One element at a time.** The eye tracks one moving element. Sequential animation creates narrative; simultaneous animation creates noise.
 
@@ -108,29 +108,9 @@ The emotional register is not decoration. It is how the shape is read, and it is
 
 Springs read as alive because of biological motion perception. Johansson showed that point-lights on a moving body are instantly seen as a human figure and are unrecognizable when static;[^johansson-1973] Pratt et al. showed that motion perceived as animate -- self-propelled, variable speed -- captures attention more effectively than mechanical motion.[^pratt-2010] Springs exhibit exactly those hallmarks.
 
-## Semantic motion tokens
+## How a component consumes motion
 
-Components do not reference durations and curves directly. They reference semantic tokens encoding the complete specification -- which properties animate, which tier, which curve, and the reduced-motion degradation. The tier-to-token assignment is the size-and-distance principle already applied, so an author never re-derives it.
-
-The property column is deliberate. `motion-hover` owning `transition-property: colors` is the design: the token is the complete transition, not a timing fragment the author must assemble.
-
-| Token | Duration | Easing | Property |
-|-------|----------|--------|----------|
-| `motion-hover` | fast | standard | colors |
-| `motion-focus` | micro | linear | ring, shadow |
-| `motion-press` | micro | spring-snappy | transform, colors |
-| `motion-toggle` | moderate | spring-snappy | colors, transform |
-| `motion-dropdown-in` | moderate | enter | opacity, transform |
-| `motion-dropdown-out` | fast | exit | opacity, transform |
-| `motion-modal-in` | normal | enter | opacity, transform |
-| `motion-modal-out` | moderate | exit | opacity, transform |
-| `motion-sheet-in` | slow | spring-smooth | transform |
-| `motion-sheet-out` | normal | exit | transform |
-| `motion-expand` | normal | enter | grid-template-rows, opacity |
-| `motion-collapse` | moderate | exit | grid-template-rows, opacity |
-| `motion-page` | slow | spring-smooth | opacity, transform |
-
-The Duration and Easing columns name **tiers and roles**, not values -- each resolves to whatever the project's intent set it to. Every `-in`/`-out` pair has a shorter exit. The user chose to leave.
+A component does not reference durations, curves, or delays as values, and there are no per-component motion tokens: a set of semantic transition tokens was tried and aborted because it created single-use tokens. Each animated moment of a component is a row in the motion matrix, `packages/ui/docs/spec/matrix/motion.jsonl`, which assigns it a duration tier, a curve role, delays, and an extent from the five generic namespaces (`duration-*`, `ease-*`, `delay-*`, `extent-*`, `period-*`). The component's CSS applies those generics through the utilities the token exporter emits, and the browser does the rest. Studio writes the values. The matrix preamble carries the mechanics vocabulary, the pointer and anchor rules, and presence.
 
 Expand and collapse animate `grid-template-rows` (`0fr` <-> `1fr`), never `height` -- `height: auto` is not transitionable, and a grid row animates on an element that stays present, which sidesteps the fact that `display: none` blocks transitions entirely.
 
@@ -167,7 +147,7 @@ The validator is a tool rafters holds itself to and exposes, **not a gate on con
 
 ## What gets no motion
 
-Cursor changes. Text colour on validation (the border and ring animate, the text does not). Icon swaps. Badge counts. Scroll position. Breadcrumbs. Tooltip appearance (opacity only, no spatial motion).
+Cursor changes. Text colour on validation (the border and ring animate, the text does not). Icon swaps. Badge counts. Scroll position. Breadcrumbs. Beyond this list, what animates and how is the matrix's call: a moment with no row does not move.
 
 ## Reduced motion
 
