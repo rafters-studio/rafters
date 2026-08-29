@@ -6,12 +6,26 @@ function root(config: Parameters<typeof spinnerClasses>[0]): string {
 }
 
 describe('spinner classes', () => {
-  it('always carries the spinning ring base with the reduced-motion opt-out', () => {
+  it('always carries the spinning ring cell utility, not the stock animate-spin', () => {
     const classes = root({});
+    const tokens = classes.split(/\s+/);
     expect(classes).toContain('inline-block');
     expect(classes).toContain('rounded-full');
-    expect(classes).toContain('animate-spin');
-    expect(classes).toContain('motion-reduce:animate-none');
+    expect(classes).toContain('animate-spinner-root-busy');
+    // `animate-spinner-root-busy` itself contains the substring `animate-spin`,
+    // so this must check for the OLD utility as a whole class token, not a
+    // substring match.
+    expect(tokens).not.toContain('animate-spin');
+  });
+
+  it('never stops spinning under reduced motion -- period cells are exempt', () => {
+    // #2155: motion-reduce:animate-none is removed, not replaced. The loop
+    // slows only if a designer retunes period-spin; reduced motion never
+    // stops it (the compiled-layer guarantee lives at
+    // packages/design-tokens/test/exporters/motion-utilities.test.ts, the
+    // "reduced motion zeroes every tier-kind cell and no period-kind cell"
+    // case).
+    expect(root({})).not.toContain('motion-reduce:animate-none');
   });
 
   it('defaults to the default size and the primary variant ring', () => {

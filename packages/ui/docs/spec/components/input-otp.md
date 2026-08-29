@@ -139,10 +139,16 @@ re-fire. React reports the same edge through `onComplete`.
 
 ## Motion
 
-`caret-blink`: the fake caret in the active empty slot. Intent only —
-`animate-pulse motion-reduce:animate-none`; durations and easing come from
-tokens. Reduced motion STILLS the caret rather than hiding it, so it still marks
-the slot. Slot state transitions honour `motion-reduce:transition-none`.
+`caret-blink`: the fake caret in the active empty slot. Intent only --
+`animate-input-otp-caret-idle`, the generated consumption of the
+`input-otp / caret / idle` cell (`packages/ui/docs/spec/matrix/motion.jsonl`,
+period `blink`); duration comes from the `period-blink` token. This is a
+change from the `animate-pulse motion-reduce:animate-none` this carried
+before #2155's audit migrated it onto its own cell: reduced motion no longer
+STILLS the caret -- a period-kind cell carries no `prefers-reduced-motion`
+media block at all, so it keeps blinking at the same period regardless of the
+user's preference. Slot state transitions still honour
+`motion-reduce:transition-none`; only the caret's loop is exempt.
 
 ## Oracle dispositions (src/old/ui/input-otp.{tsx,element.ts,classes.ts})
 
@@ -189,5 +195,10 @@ the slot. Slot state transitions honour `motion-reduce:transition-none`.
 - 1.3.5 Identify Input Purpose: `autocomplete="one-time-code"` lets the platform
   autofill an SMS code, which is the single largest accessibility win available
   to this control.
-- 1.4.13 / motion: the caret blink honours `motion-reduce:animate-none` and slot
-  transitions honour `motion-reduce:transition-none`.
+- 1.4.13 / motion: the caret blink does NOT stop under `prefers-reduced-motion`
+  (#2155) -- a work loop is exempt from the reduced-motion zeroing law by
+  design, the same ruling
+  `packages/ui/src/primitives/intelligence-integration.ts:106-121` and
+  `REDUCED_MOTION_ZEROED` in `packages/design-tokens/src/exporters/tailwind.ts`
+  record; this is a deliberate exception to 2.3.3, not an oversight. Slot
+  transitions still honour `motion-reduce:transition-none`.

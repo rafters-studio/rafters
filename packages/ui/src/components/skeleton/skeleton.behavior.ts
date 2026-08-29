@@ -26,9 +26,12 @@ import type { BehaviorSpec } from '../../lib/contract';
  * one real contract (the `root` renders and projects `aria-hidden="true"`)
  * across every framework.
  *
- * Motion intent is a feedback-loop shimmer (`animate-pulse`); duration and
- * easing come from tokens, and the pulse opts out under `prefers-reduced-motion`
- * via `motion-reduce:animate-none`.
+ * Motion intent is a feedback-loop shimmer, consumed via the generated
+ * `animate-skeleton-root-waiting` cell utility (#2154); duration comes from
+ * the `period-shimmer` token. The shimmer runs unchanged under
+ * `prefers-reduced-motion` -- a period-kind cell is exempt from the
+ * reduced-motion zeroing law, because a stopped work loop says the work
+ * stopped (#2155).
  */
 
 export type SkeletonConfig = Record<never, never>;

@@ -28,9 +28,13 @@ describe('input-otp classes', () => {
     expect(classes.slot).toContain('group-data-[disabled=true]:cursor-not-allowed');
   });
 
-  it('the caret is a blink feedback loop that stills under reduced motion', () => {
-    expect(classes.caretBar).toContain('animate-pulse');
-    expect(classes.caretBar).toContain('motion-reduce:animate-none');
+  it('the caret is a blink feedback loop that never stops under reduced motion (#2155)', () => {
+    // Migrated off the stock animate-pulse onto the caret's own cell utility;
+    // motion-reduce:animate-none is removed, not replaced, so the caret
+    // continues marking the active slot under prefers-reduced-motion.
+    expect(classes.caretBar).toContain('animate-input-otp-caret-idle');
+    expect(classes.caretBar).not.toContain('animate-pulse');
+    expect(classes.caretBar).not.toContain('motion-reduce:animate-none');
   });
 
   it('slot motion respects reduced motion', () => {
