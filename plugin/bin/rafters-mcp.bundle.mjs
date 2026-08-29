@@ -36837,6 +36837,21 @@ var PropFieldSchema = external_exports4.discriminatedUnion("type", [
     }).optional()
   }),
   external_exports4.object({
+    type: external_exports4.literal("boolean"),
+    default: external_exports4.boolean().optional(),
+    required: external_exports4.boolean().optional()
+  }),
+  external_exports4.object({
+    type: external_exports4.literal("string"),
+    default: external_exports4.string().optional(),
+    required: external_exports4.boolean().optional()
+  }),
+  external_exports4.object({
+    type: external_exports4.literal("number"),
+    default: external_exports4.number().optional(),
+    required: external_exports4.boolean().optional()
+  }),
+  external_exports4.object({
     // Matches #2072's PropNode 'grammar' arm exactly, so graph.ts's
     // describe(<id>.props.<name>.vocab) drill has real shape data.
     type: external_exports4.literal("grammar"),
@@ -37781,7 +37796,7 @@ var TOOL_DEFINITIONS = [
   },
   {
     name: "rafters_describe",
-    description: `Recursively introspect the component/composite intel graph. describe() returns the installed surface; describe(components)/describe(composites) list the kind roster; describe(button) returns a node -- intel plus type-marked, drillable children; describe(button.props.variant) drills into a prop -- an enum prop returns its literal union members; a grammar prop returns its composition rules, with the token vocabulary deliberately withheld. describe(button.*) expands all props inline in one call (no more drill-per-prop round trips); describe(button.props.color.?) probes safely (null on miss, not an error). A natural-language address (e.g. "what do I use when it needs to be above everything") routes through a separate intent door instead: deterministic keyword matching over a small, curated tag axis, returning a best-match node plus its near-miss counter-example. Below its match threshold it refuses rather than guessing, with a note pointing you at describe(components)/describe(composites) to browse; #2166 (open) is the follow-up that scores it against the intel this tool already owns. A part node carries parent, plus siblings when its parent has other parts; children are typed pointers you feed back in (the prop's own type for props, part for sub-components, edge for composesWith).`,
+    description: `Recursively introspect the component/composite intel graph. describe() returns the installed surface; describe(components)/describe(composites) list the kind roster; describe(button) returns a node -- intel plus type-marked, drillable children; describe(button.props.variant) drills into a prop -- an enum prop returns its literal union members; a boolean, string, or number prop returns its kind with any default and whether it is required, and no value list, because it has no finite one; a grammar prop returns its composition rules, with the token vocabulary deliberately withheld. describe(button.*) expands all props inline in one call (no more drill-per-prop round trips); describe(button.props.color.?) probes safely (null on miss, not an error). A natural-language address (e.g. "what do I use when it needs to be above everything") routes through a separate intent door instead: deterministic keyword matching over a small, curated tag axis, returning a best-match node plus its near-miss counter-example. Below its match threshold it refuses rather than guessing, with a note pointing you at describe(components)/describe(composites) to browse; #2166 (open) is the follow-up that scores it against the intel this tool already owns. A part node carries parent, plus siblings when its parent has other parts; children are typed pointers you feed back in (the prop's own type for props, part for sub-components, edge for composesWith).`,
     inputSchema: {
       type: "object",
       properties: {

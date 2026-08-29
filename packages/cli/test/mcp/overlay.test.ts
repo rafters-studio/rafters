@@ -234,3 +234,70 @@ vdescribe('describeWithOverlay -- passthrough shapes', () => {
     });
   });
 });
+
+/**
+ * The prop kinds the type checker added in #2165 -- boolean, string, number --
+ * must reach an agent through the same drill and probe path enum already uses.
+ * The overlay is the outermost layer, so probing through it covers layer0's
+ * structural `type: prop.type` child marking and `toAgentProp`'s pass-through
+ * for every non-grammar arm in one assertion.
+ */
+vdescribe('describeWithOverlay -- non-enum prop kinds reach the agent (#2165)', () => {
+  const reactFacet: Facet = {
+    props: {
+      variant: { type: 'enum', values: ['default', 'primary'], default: 'default' },
+      invalid: { type: 'boolean', default: false },
+      errorId: { type: 'string' },
+      sideOffset: { type: 'number', default: 4 },
+    },
+    snippet: '<Badge variant="default" />',
+  };
+  const reactGraph = assembleGraph([
+    {
+      name: 'badge',
+      type: 'ui',
+      primitives: [],
+      files: [],
+      rules: [],
+      composites: [],
+      facets: { react: reactFacet },
+    },
+  ]);
+  const ctxReact: OverlayContext = {
+    target: 'react',
+    installed: { components: new Set(['badge']), composites: new Set() },
+  };
+
+  it('badge.props.variant.? resolves through the overlay', () => {
+    expect(describeWithOverlay('badge.props.variant.?', reactGraph, ctxReact)).toEqual({
+      type: 'enum',
+      values: ['default', 'primary'],
+      default: 'default',
+    });
+  });
+
+  it.each([
+    ['boolean', 'invalid', { type: 'boolean', default: false }],
+    ['string', 'errorId', { type: 'string' }],
+    ['number', 'sideOffset', { type: 'number', default: 4 }],
+  ])('a %s prop drills and probes unchanged', (_kind, name, expected) => {
+    expect(describeWithOverlay(`badge.props.${name}`, reactGraph, ctxReact)).toEqual(expected);
+    expect(describeWithOverlay(`badge.props.${name}.?`, reactGraph, ctxReact)).toEqual(expected);
+  });
+
+  it('marks each child with its own prop kind, not a flattened enum', () => {
+    const node = describeWithOverlay('badge', reactGraph, ctxReact) as OverlayNodeResult;
+    expect(node.children).toEqual(
+      expect.arrayContaining([
+        { addr: 'badge.props.variant', type: 'enum' },
+        { addr: 'badge.props.invalid', type: 'boolean' },
+        { addr: 'badge.props.errorId', type: 'string' },
+        { addr: 'badge.props.sideOffset', type: 'number' },
+      ]),
+    );
+  });
+
+  it('a missing prop still probes to null rather than erroring', () => {
+    expect(describeWithOverlay('badge.props.nope.?', reactGraph, ctxReact)).toBeNull();
+  });
+});

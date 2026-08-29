@@ -8,13 +8,30 @@ import {
   listPrimitiveNames,
   listSubstrate,
   listSubstrateKinds,
+  loadAllComponents,
+  loadAllComposites,
   loadComponent,
   loadPrimitive,
   loadSubstrate,
   parseJSDocFromSource,
+  propFieldToFieldDescriptor,
   type RegistryItem,
 } from '../src/lib/registry/componentService';
+import { isInsideDir } from '../src/lib/registry/typeChecker';
 import { RegistryItemSchema } from '../../../packages/cli/src/registry/types';
+import {
+  assembleGraph,
+  describe as describeGraph,
+  type ExpandedNodeResult,
+  type Graph,
+  type NodeResult,
+} from '../../../packages/cli/src/mcp/graph';
+
+/** The real component root, for the sibling-prefix anchoring test. */
+const UI_COMPONENTS = join(
+  dirname(fileURLToPath(import.meta.url)),
+  '../../../packages/ui/src/components',
+);
 
 /**
  * Registry cutover guard (#1896). The registry serves behavior-layer sources
@@ -311,6 +328,10 @@ describe('per-target facet + reverse-composites extraction (#2073)', () => {
   });
 
   it("extracts react's variant as a verbatim literal union with its destructured default", () => {
+    // Exact, ordered equality on purpose: #2165 pins the emitted order to the
+    // SOURCE order of the union declaration, never the checker's own union
+    // member order (which is keyed on global literal-type interning and would
+    // reshuffle when an unrelated component is added to the shared program).
     expect(buttonItem?.facets?.react?.props['variant']).toEqual({
       type: 'enum',
       values: [
@@ -343,12 +364,15 @@ describe('per-target facet + reverse-composites extraction (#2073)', () => {
   });
 
   it('sources react `size` (which lives in the ButtonProps intersection, not the interface body)', () => {
-    // Proves the destructuring-driven name source catches `size`; an interface-body
-    // scan would miss it. Its 8 members come verbatim from ButtonSize.
-    const size = buttonItem?.facets?.react?.props['size'];
-    expect(size?.type).toBe('enum');
-    expect(size).toMatchObject({
+    // `size` is declared in the two arms of the ButtonProps intersection, never
+    // in the ButtonBaseProps body, so an interface-body scan misses it. Exact
+    // and ordered like `variant` above: the four NonIconSize members come first
+    // because that arm is declared first, then IconSize's four (#2165 pins the
+    // emit order to the declarations, not to the checker's union order).
+    expect(buttonItem?.facets?.react?.props['size']).toEqual({
+      type: 'enum',
       values: ['default', 'xs', 'sm', 'lg', 'icon', 'icon-xs', 'icon-sm', 'icon-lg'],
+      default: 'default',
     });
   });
 
@@ -398,6 +422,312 @@ describe('@constraint JSDoc tag parsing (#2073)', () => {
     // contributes -- the component still yields its other intelligence.
     const intel = parseJSDocFromSource(malformed, { componentName: 'button' });
     expect(intel?.cognitiveLoad).toBe(3);
+  });
+});
+
+/**
+ * Type-checker-based prop extraction (#2165). The regex extractor missed badge
+ * (as-const array alias), container (resolveUnion called with no type annotation),
+ * grid (body-level destructuring), input (scalar props), card, and sidebar. The
+ * TS checker resolves all of them through alias depth, intersections, and
+ * (typeof X)[number] patterns.
+ */
+describe('type-checker-based prop extraction (#2165)', () => {
+  it('extracts badge variant from an as-const array alias, in BADGE_VARIANTS order', () => {
+    const badge = loadComponent('badge');
+    // Verbatim, ordered: the values and their order both come from the
+    // `BADGE_VARIANTS` as-const array `(typeof BADGE_VARIANTS)[number]` names.
+    expect(badge?.facets?.react?.props['variant']).toEqual({
+      type: 'enum',
+      values: [
+        'default',
+        'primary',
+        'secondary',
+        'destructive',
+        'success',
+        'warning',
+        'info',
+        'muted',
+        'accent',
+        'outline',
+        'ghost',
+        'link',
+      ],
+      default: 'default',
+    });
+  });
+
+  it('extracts badge size from an as-const array alias', () => {
+    const badge = loadComponent('badge');
+    expect(badge?.facets?.react?.props['size']).toEqual({
+      type: 'enum',
+      values: ['sm', 'default', 'lg'],
+      default: 'default',
+    });
+  });
+
+  it('extracts container as/size without a naming-convention alias', () => {
+    const container = loadComponent('container');
+    // `{ as: Element = 'div' }` (container.tsx:333): the default is keyed on
+    // the PROP name, not the renamed local, so it reaches the facet.
+    expect(container?.facets?.react?.props['as']).toEqual({
+      type: 'enum',
+      values: ['div', 'main', 'header', 'footer', 'section', 'article', 'aside'],
+      default: 'div',
+    });
+    expect(container?.facets?.react?.props['size']).toEqual({
+      type: 'enum',
+      values: ['sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl', '6xl', '7xl', 'full'],
+    });
+  });
+
+  /**
+   * The three props the issue's Proof section named as the gap the checker
+   * must close. All three are MIXED unions -- literal members beside a
+   * structural or boolean arm -- which every pure classifier declines, so
+   * before the mixed-union arm existed they fell out of the loop silently.
+   */
+  it('emits container columns/gap and grid columns from mixed literal unions', () => {
+    const container = loadComponent('container');
+    const grid = loadComponent('grid');
+    const columns = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', 'auto'];
+
+    // ResponsiveColumns = ColumnsValue | ResponsiveColumnsObject. The object
+    // arm has no enum representation and is dropped; the literals are the
+    // vocabulary an agent can pick from.
+    expect(container?.facets?.react?.props['columns']).toEqual({ type: 'enum', values: columns });
+    expect(grid?.facets?.react?.props['columns']).toEqual({ type: 'enum', values: columns });
+
+    // gap = boolean | ContainerPadding: `true` derives the gap from `size`, so
+    // the boolean literals are real members of the vocabulary, not noise.
+    expect(container?.facets?.react?.props['gap']).toEqual({
+      type: 'enum',
+      values: [
+        'true',
+        'false',
+        '0',
+        '1',
+        '2',
+        '3',
+        '4',
+        '5',
+        '6',
+        '8',
+        '10',
+        '12',
+        '16',
+        '20',
+        '24',
+      ],
+    });
+  });
+
+  it('numbers a numeric-literal union in numeric order, never lexical', () => {
+    const container = loadComponent('container');
+    expect(container?.facets?.react?.props['colSpan']).toEqual({
+      type: 'enum',
+      values: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],
+    });
+  });
+
+  it('declines to enumerate a union whose non-literal arm is a widened primitive', () => {
+    // select's `children` is React.ReactNode -- ReactElement | string | number
+    // | boolean | ... . Its `true`/`false` members are literals, but publishing
+    // them as a two-value enum would be a lie about the prop's domain.
+    const select = loadComponent('select');
+    expect(select?.facets?.react?.props['children']).toBeUndefined();
+  });
+
+  it('extracts container boolean and string props', () => {
+    const container = loadComponent('container');
+    expect(container?.facets?.react?.props['query']).toMatchObject({
+      type: 'boolean',
+      default: true,
+    });
+    expect(container?.facets?.react?.props['queryName']).toMatchObject({
+      type: 'string',
+    });
+    expect(container?.facets?.react?.props['fill']).toMatchObject({
+      type: 'string',
+    });
+  });
+
+  it('extracts grid preset regardless of destructuring shape', () => {
+    const grid = loadComponent('grid');
+    expect(grid?.facets?.react?.props['preset']).toEqual({
+      type: 'enum',
+      values: ['linear', 'golden', 'bento'],
+      default: 'linear',
+    });
+  });
+
+  it('emits scalar props for input instead of props: {}', () => {
+    const input = loadComponent('input');
+    expect(input?.facets?.react?.props['value']).toMatchObject({ type: 'string' });
+    expect(input?.facets?.react?.props['defaultValue']).toMatchObject({ type: 'string' });
+    expect(input?.facets?.react?.props['invalid']).toMatchObject({ type: 'boolean' });
+    expect(input?.facets?.react?.props['errorId']).toMatchObject({ type: 'string' });
+  });
+
+  it('emits card own declared props', () => {
+    const card = loadComponent('card');
+    const asField = card?.facets?.react?.props['as'];
+    expect(asField?.type).toBe('enum');
+    if (asField?.type !== 'enum') throw new Error('as not enum');
+    expect(asField.values).toEqual(expect.arrayContaining(['article', 'div', 'section', 'aside']));
+    // card.tsx:97 destructures `as: Element = 'div'` -- the renamed binding.
+    expect(asField.default).toBe('div');
+    expect(card?.facets?.react?.props['fill']).toMatchObject({ type: 'string' });
+  });
+
+  /**
+   * The four exact-key-set tests below pin WHICH props type the checker picked,
+   * which no other test in this file can (#2196 review).
+   *
+   * Four component files declare a provider or a sub-component interface ABOVE
+   * the component's own, so a search that takes the first `*Props` declaration
+   * publishes the wrong prop surface -- and a wrong props type is
+   * self-consistent everywhere downstream: the wide graph test compares the
+   * registry against the same registry items that built the graph, so it proves
+   * transport, not extraction. A partial `arrayContaining` cannot separate them
+   * either -- `SidebarProps` and `SidebarProviderProps` SHARE side and variant,
+   * so sampling those two keys passes under either resolution.
+   *
+   * Only the exact key set discriminates. Each one is the component's own
+   * declared members plus whatever its extends chain contributes from inside
+   * the component directory (typography's token props), never a neighbour's.
+   */
+  it('emits sidebar own declared props, not the provider it sits under', () => {
+    const props = loadComponent('sidebar')?.facets?.react?.props ?? {};
+    // SidebarProps (sidebar.tsx:210) declares exactly side and variant.
+    // SidebarProviderProps (:109) is declared first and adds open, defaultOpen
+    // and collapsible -- knobs `<Sidebar>` itself does not accept.
+    expect(Object.keys(props).sort()).toEqual(['side', 'variant']);
+    // No default: `Sidebar({ side, variant, ... })` destructures without
+    // initializers. The 'left'/'sidebar' defaults belong to SidebarProvider's
+    // parameter, and defaults are read off the props type's own component
+    // (#2165 Behavior), not synthesized from a neighbour's.
+    expect(props['side']).toEqual({ type: 'enum', values: ['left', 'right'] });
+    expect(props['variant']).toEqual({
+      type: 'enum',
+      values: ['sidebar', 'floating', 'inset'],
+    });
+  });
+
+  it('emits tooltip root props, not the provider that wraps it', () => {
+    const props = loadComponent('tooltip')?.facets?.react?.props ?? {};
+    // TooltipProps (tooltip.tsx:107). TooltipProviderProps (:66) is declared
+    // first and carries only disableHoverableContent -- the provider's knob.
+    expect(Object.keys(props).sort()).toEqual([
+      'align',
+      'defaultOpen',
+      'open',
+      'side',
+      'sideOffset',
+    ]);
+    expect(props['disableHoverableContent']).toBeUndefined();
+    expect(props['sideOffset']).toEqual({ type: 'number' });
+  });
+
+  it('emits typography as/variant, not the token interface it extends', () => {
+    const props = loadComponent('typography')?.facets?.react?.props ?? {};
+    // TypographyProps (typography.tsx:139) adds `as` and `variant` on top of
+    // TypographyComponentProps (:67, declared first), whose token props reach
+    // the facet through the extends chain because they are declared inside the
+    // component's own directory. Resolving to :67 drops `as` and `variant`.
+    expect(Object.keys(props).sort()).toEqual([
+      'align',
+      'as',
+      'family',
+      'line',
+      'size',
+      'tracking',
+      'transform',
+      'variant',
+      'weight',
+    ]);
+    expect(props['as']).toMatchObject({ type: 'enum', default: 'p' });
+  });
+
+  it('emits an empty prop set when the component declares no props type', () => {
+    // resizable.tsx declares ResizablePanelProps, ResizableHandleProps and
+    // ResizablePanelGroupProps -- no `ResizableProps`. #2165's Error Handling
+    // clause makes that the documented empty-props case, and the alternative is
+    // concrete harm: the first declaration is ResizablePanelProps, which would
+    // publish the group-injected internal `__resizableIndex` as a prop an agent
+    // is invited to set.
+    const props = loadComponent('resizable')?.facets?.react?.props ?? {};
+    expect(props).toEqual({});
+  });
+
+  it('emits button boolean props the regex extractor missed', () => {
+    const button = loadComponent('button');
+    expect(button?.facets?.react?.props['loading']).toMatchObject({
+      type: 'boolean',
+      default: false,
+    });
+    expect(button?.facets?.react?.props['toggle']).toMatchObject({
+      type: 'boolean',
+      default: false,
+    });
+    expect(button?.facets?.react?.props['softDisabled']).toMatchObject({
+      type: 'boolean',
+      default: false,
+    });
+  });
+
+  it('emits button string props the regex extractor missed', () => {
+    const button = loadComponent('button');
+    expect(button?.facets?.react?.props['loadingAnnouncement']).toMatchObject({
+      type: 'string',
+    });
+    expect(button?.facets?.react?.props['loadedAnnouncement']).toMatchObject({
+      type: 'string',
+    });
+  });
+
+  it('does not emit inherited React HTML attributes', () => {
+    const button = loadComponent('button');
+    expect(button?.facets?.react?.props['onClick']).toBeUndefined();
+    expect(button?.facets?.react?.props['className']).toBeUndefined();
+    expect(button?.facets?.react?.props['style']).toBeUndefined();
+  });
+
+  it('does not emit a prop declared only in a sibling-prefixed neighbour', () => {
+    // `packages/ui/src/components` really does hold button/ beside
+    // button-group/, input/ beside input-group/ and input-otp/, toggle/ beside
+    // toggle-group/, alert/ beside alert-dialog/. An unanchored path prefix
+    // test counts every one of those as the shorter name's own directory.
+    const button = loadComponent('button');
+    const buttonGroup = loadComponent('button-group');
+    expect(buttonGroup?.facets?.react?.props['orientation']).toBeDefined();
+    expect(button?.facets?.react?.props['orientation']).toBeUndefined();
+  });
+
+  it('anchors the own-declaration test at a path segment boundary', () => {
+    // The predicate itself, because no component's props type references a
+    // sibling-prefixed neighbour's symbols today: the facet assertion above
+    // would pass under the unanchored prefix test too.
+    const buttonDir = join(UI_COMPONENTS, 'button');
+    expect(isInsideDir(buttonDir, join(buttonDir, 'button.tsx'))).toBe(true);
+    expect(isInsideDir(buttonDir, join(UI_COMPONENTS, 'button-group', 'button-group.tsx'))).toBe(
+      false,
+    );
+    expect(isInsideDir(buttonDir, buttonDir)).toBe(false);
+  });
+
+  it('emits a number prop for a scalar numeric member', () => {
+    const slider = loadComponent('slider');
+    expect(slider?.facets?.react?.props['min']).toEqual({ type: 'number', default: 0 });
+    expect(slider?.facets?.react?.props['max']).toEqual({ type: 'number', default: 100 });
+    expect(slider?.facets?.react?.props['step']).toEqual({ type: 'number', default: 1 });
+  });
+
+  it('parses cleanly against the CLI RegistryItemSchema with new prop kinds', () => {
+    for (const name of ['badge', 'container', 'grid', 'input', 'card', 'sidebar']) {
+      const item = loadComponent(name);
+      expect(() => RegistryItemSchema.parse(item), name).not.toThrow();
+    }
   });
 });
 
@@ -506,5 +836,232 @@ describe('editor primitive discovery after relocation (#2136)', () => {
       misplaced,
       `editor-tagged primitives still at flat root: ${misplaced.join(', ')}`,
     ).toEqual([]);
+  });
+});
+
+/**
+ * `propFieldToFieldDescriptor` (#2165). The operator's ruling is that the
+ * shared thing across rafters/veneer/gitpress is the OUTPUT IR -- kelex's
+ * `FieldDescriptor` -- not the extractor, so a resolved `PropField` has to map
+ * out cleanly for veneer and gitpress to consume rafters' published facet JSON
+ * instead of re-parsing rafters source.
+ *
+ * The issue's test sketch asserts `descriptor.default` / `.required` /
+ * `.constraint`. Those are the PropField's own member names; kelex's
+ * FieldDescriptor (`src/introspection/types.ts:140`) has no such members, so
+ * these assert the real ones the conversion targets: `defaultValue`,
+ * `isOptional` (inverted), and `meta.constraint`.
+ */
+describe('propFieldToFieldDescriptor (#2165)', () => {
+  it('converts an enum PropField, carrying values, default and requiredness', () => {
+    const descriptor = propFieldToFieldDescriptor('size', {
+      type: 'enum',
+      values: ['sm', 'lg'],
+      default: 'sm',
+      required: true,
+    });
+    expect(descriptor).toEqual({
+      name: 'size',
+      label: 'size',
+      type: 'enum',
+      isOptional: false,
+      isNullable: false,
+      constraints: {},
+      metadata: { kind: 'enum', values: ['sm', 'lg'] },
+      defaultValue: 'sm',
+    });
+  });
+
+  it('converts a boolean PropField, keeping a `false` default rather than dropping it', () => {
+    const descriptor = propFieldToFieldDescriptor('loading', { type: 'boolean', default: false });
+    expect(descriptor.type).toBe('boolean');
+    expect(descriptor.metadata).toEqual({ kind: 'boolean' });
+    expect(descriptor.defaultValue).toBe(false);
+    expect(descriptor.isOptional).toBe(true);
+  });
+
+  it('converts a string PropField and marks a required prop not-optional', () => {
+    const descriptor = propFieldToFieldDescriptor('alt', { type: 'string', required: true });
+    expect(descriptor.type).toBe('string');
+    expect(descriptor.metadata).toEqual({ kind: 'string' });
+    expect(descriptor.isOptional).toBe(false);
+    expect(descriptor).not.toHaveProperty('defaultValue');
+  });
+
+  it('converts a number PropField, keeping a numeric default as a number', () => {
+    const descriptor = propFieldToFieldDescriptor('step', { type: 'number', default: 4 });
+    expect(descriptor.type).toBe('number');
+    expect(descriptor.metadata).toEqual({ kind: 'number' });
+    expect(descriptor.defaultValue).toBe(4);
+  });
+
+  it('carries a cross-prop constraint through the conversion', () => {
+    // kelex's `FieldConstraints` is VALUE validation (minLength, pattern, min,
+    // max) and has no arm for a cross-prop rule, so it rides in `meta` rather
+    // than being silently dropped.
+    const constraint = {
+      when: { prop: 'size', matches: 'icon*' },
+      requires: { prop: 'aria-label' },
+    };
+    const descriptor = propFieldToFieldDescriptor('size', {
+      type: 'enum',
+      values: ['icon', 'default'],
+      constraint,
+    });
+    expect(descriptor.constraints).toEqual({});
+    expect(descriptor.meta).toEqual({ constraint });
+  });
+
+  it('maps a real resolved facet prop without loss', () => {
+    const variant = loadComponent('badge')?.facets?.react?.props['variant'];
+    if (variant?.type !== 'enum') throw new Error('badge variant did not resolve as an enum');
+    const descriptor = propFieldToFieldDescriptor('variant', variant);
+    expect(descriptor.metadata).toEqual({ kind: 'enum', values: variant.values });
+    expect(descriptor.defaultValue).toBe('default');
+  });
+});
+
+/**
+ * AC1 as literally written (#2165): the graph is built FROM REGISTRY OUTPUT,
+ * never from a hand-written fixture. Every served component and composite is
+ * loaded, parsed through the CLI's RegistryItemSchema (the shape the MCP
+ * actually consumes), assembled with the real assembleGraph, and then walked
+ * RECURSIVELY through describe(): every node's expansion, every prop child,
+ * every composesWith edge, every part, compared against the registry item it
+ * came from. A prop the registry extracted that the graph cannot resolve, or
+ * the reverse, fails here for every component, not only for badge.
+ */
+describe('registry output feeds the graph, wide and recursive (#2165)', () => {
+  const fixturesDir = join(fileURLToPath(new URL('.', import.meta.url)), 'fixtures');
+  type CliRegistryItem = ReturnType<typeof RegistryItemSchema.parse>;
+  type CliPropField = CliRegistryItem['facets'] extends infer F
+    ? F extends Partial<Record<string, { props: Record<string, infer P> }>> | undefined
+      ? P
+      : never
+    : never;
+  let prevCompositesDir: string | undefined;
+  let byName: Map<string, CliRegistryItem>;
+  let graph: Graph;
+
+  beforeAll(() => {
+    prevCompositesDir = process.env['RAFTERS_COMPOSITES_DIR'];
+    process.env['RAFTERS_COMPOSITES_DIR'] = fixturesDir;
+    const items = [...loadAllComponents(), ...loadAllComposites()].map((item) =>
+      RegistryItemSchema.parse(item),
+    );
+    byName = new Map(items.map((item) => [item.name, item]));
+    graph = assembleGraph(items);
+  });
+
+  afterAll(() => {
+    if (prevCompositesDir === undefined) delete process.env['RAFTERS_COMPOSITES_DIR'];
+    else process.env['RAFTERS_COMPOSITES_DIR'] = prevCompositesDir;
+  });
+
+  // What describe() hands an agent: the registry field with a grammar prop's
+  // token vocab stripped (graph.ts toAgentProp).
+  function agentView(field: CliPropField): Record<string, unknown> {
+    if (field.type === 'grammar') {
+      const { vocab: _vocab, ...rest } = field;
+      return rest;
+    }
+    return field;
+  }
+
+  function reactProps(id: string): Record<string, CliPropField> {
+    return byName.get(id)?.facets?.react?.props ?? {};
+  }
+
+  function walk(id: string, visited: Set<string>, resolved: Set<string>): void {
+    if (visited.has(id)) return;
+    visited.add(id);
+    expect(byName.has(id), `graph node ${id} came from no registry item`).toBe(true);
+
+    // The node expanded: every prop resolved inline, equal to the registry's.
+    const expanded = describeGraph(`${id}.*`, graph, 'react') as ExpandedNodeResult;
+    expect(expanded.id, `${id}.* did not expand`).toBe(id);
+    const expectedProps = Object.fromEntries(
+      Object.entries(reactProps(id)).map(([name, field]) => [name, agentView(field)]),
+    );
+    expect(expanded.props, `${id}.* props`).toEqual(expectedProps);
+
+    // Layer 0 advertises the children; each one resolves, and the walk descends
+    // through every part and every composesWith edge.
+    const layer = describeGraph(id, graph, 'react') as NodeResult;
+    expect(layer.id, `${id} layer 0`).toBe(id);
+    for (const child of layer.children) {
+      if (child.type === 'edge') {
+        const edges = describeGraph(child.addr, graph, 'react') as NodeResult[];
+        expect(edges.length, child.addr).toBeGreaterThan(0);
+        for (const edge of edges) walk(edge.id, visited, resolved);
+        continue;
+      }
+      if (child.type === 'part') {
+        walk(child.addr, visited, resolved);
+        continue;
+      }
+      const propName = child.addr.slice(`${id}.props.`.length);
+      const field = reactProps(id)[propName];
+      expect(field, `${child.addr} advertised but not in the registry item`).toBeDefined();
+      if (field === undefined) continue;
+      expect(describeGraph(child.addr, graph, 'react'), child.addr).toEqual(agentView(field));
+      resolved.add(child.addr);
+    }
+  }
+
+  it('resolves every served node, every prop child, every edge, and every part', () => {
+    const visited = new Set<string>();
+    const resolved = new Set<string>();
+    for (const id of graph.nodes.keys()) walk(id, visited, resolved);
+    expect(visited.size).toBe(graph.nodes.size);
+
+    // Wide: the walk reached every react prop the registry extracted, and
+    // nothing else -- the graph neither drops nor invents a prop.
+    const extracted = new Set<string>();
+    for (const item of byName.values()) {
+      for (const name of Object.keys(item.facets?.react?.props ?? {})) {
+        extracted.add(`${item.name}.props.${name}`);
+      }
+    }
+    expect(resolved).toEqual(extracted);
+    expect(extracted.size).toBeGreaterThan(0);
+  });
+
+  it('the components the regex path returned props: {} for are non-empty through the graph', () => {
+    for (const id of ['badge', 'container', 'grid', 'input', 'card', 'sidebar']) {
+      const expanded = describeGraph(`${id}.*`, graph, 'react') as ExpandedNodeResult;
+      expect(Object.keys(expanded.props).length, id).toBeGreaterThan(0);
+    }
+  });
+
+  it("badge's variant reaches the agent as BADGE_VARIANTS, in order, with its default", () => {
+    const expanded = describeGraph('badge.*', graph, 'react') as ExpandedNodeResult;
+    expect(expanded.props['variant']).toEqual({
+      type: 'enum',
+      values: [
+        'default',
+        'primary',
+        'secondary',
+        'destructive',
+        'success',
+        'warning',
+        'info',
+        'muted',
+        'accent',
+        'outline',
+        'ghost',
+        'link',
+      ],
+      default: 'default',
+    });
+    expect(describeGraph('badge.props.variant.?', graph, 'react')).not.toBeNull();
+  });
+
+  it('a renamed destructure default survives the trip through the graph', () => {
+    expect(describeGraph('container.props.as', graph, 'react')).toEqual({
+      type: 'enum',
+      values: ['div', 'main', 'header', 'footer', 'section', 'article', 'aside'],
+      default: 'div',
+    });
   });
 });
