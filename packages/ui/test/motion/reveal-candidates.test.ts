@@ -137,10 +137,12 @@ describe('the hover-reveal candidates compile (#2148)', () => {
 
   it('context-menu: the submenu reveal selector compiles to the real sub-trigger/sub-content sibling structure (#2152)', async () => {
     // This test never calls bindContextSubMenu or bindContextMenu -- it proves
-    // the CSS half of "reveals with JavaScript disabled" by checking the rule
-    // Tailwind actually emits for the SSR-authored markup's sibling relationship
+    // the reveal is CSS, not a JS timer, by checking the rule Tailwind
+    // actually emits for the SSR-authored markup's sibling relationship
     // (context-menu-sub.astro: sub-trigger and sub-content are both direct
     // children of `[data-part="sub"]`), not by executing the behavior script.
+    // (Not a no-JS-floor claim -- spec correction 2026-08-28: the parent menu
+    // itself opens only on the `contextmenu` event, which requires script.)
     const css = await sheet('context-menu');
     expect(css, 'sub-content reveal-on-hover selector missing').toContain(
       ':is([data-part=sub]:has(>[data-part=sub-trigger]:is(:hover,:focus-within)),' +

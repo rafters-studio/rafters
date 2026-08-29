@@ -2,8 +2,10 @@
 /**
  * Recursive submenu sub-template for the Astro performance. Renders a sub-trigger
  * plus its (initially closed) sub-content -- present, never `hidden`, so the
- * `:hover` / `:focus-within` reveal in `context-menu.classes.ts` works with
- * JavaScript turned off (#2152) -- recursing into nested submenus via itself so
+ * `:hover` / `:focus-within` reveal in `context-menu.classes.ts` is CSS, not a
+ * JS timer (#2152; spec correction 2026-08-28: the parent menu itself opens
+ * only on the `contextmenu` event, which requires script, so this is not a
+ * no-JS floor) -- recursing into nested submenus via itself so
  * the SSR markup supports arbitrary nesting, the same depth bindContextSubMenu
  * binds. Not a decorator; a fragment of the one Astro performance, sharing the
  * same classes and the same data-part contract.

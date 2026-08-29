@@ -74,8 +74,11 @@ const content =
 // TWO independent ways into the open rule, because sub-content moves at
 // runtime. `context-menu-sub.astro`'s authored markup has sub-content as a
 // real DOM sibling of sub-trigger under `[data-part="sub"]`, so the `:hover` /
-// `:focus-within` selector below reveals it with NO JavaScript at all -- the
-// no-JS floor. Once `bindContextSubMenu` (or React's `ContextMenuSub`) runs,
+// `:focus-within` selector below reveals it purely through native CSS, no
+// `setTimeout` or other script deciding WHEN -- not a no-JS floor (spec
+// correction 2026-08-28: a context menu opens on the `contextmenu` event,
+// which requires script by construction, so nothing renders for that
+// guarantee to protect). Once `bindContextSubMenu` (or React's `ContextMenuSub`) runs,
 // sub-content is moved to `document.body` (escaping the parent's
 // `overflow-hidden` and its roving-focus scope) or portalled, which breaks
 // that DOM adjacency, so the `:hover` selector can no longer match it. From

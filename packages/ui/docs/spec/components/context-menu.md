@@ -52,10 +52,12 @@ dispatch `open`/`close` the instant the event fires, with no JS timer of any
 kind, and the perceived hover-intent delay is a `transition-delay` on
 `subContent`'s reveal rule, consuming `--rafters-delay-hover-intent`. The
 reveal is native `:hover`/`:focus-within` over the sub-trigger/sub-content
-siblings the SSR markup authors, so it works with JavaScript off; once bound
-(sub-content moves to `document.body`, below), `data-[state=open]` -- carrying
-the identical duration/curve/delay -- is what governs it instead. Keyboard is
-the required floor either way.
+siblings the SSR markup authors, so nothing but CSS decides when it fires (not
+a no-JS floor -- spec correction 2026-08-28: the parent menu itself opens only
+on the `contextmenu` event, which requires script); once bound (sub-content
+moves to `document.body`, below), `data-[state=open]` -- carrying the identical
+duration/curve/delay -- is what governs it instead. Keyboard is the required
+floor either way.
 
 Highlighted item is NOT score state: it is ephemeral DOM state owned by
 roving-focus (the focused item's tabindex), exactly as navigation-menu keeps
@@ -91,7 +93,7 @@ a legitimate move (the menu follows the cursor).
 | trigger | always | `data-state`; no role (a right-click region has no keyboard equivalent, so an `aria-haspopup` on a non-interactive host would mislead AT). `tabindex="-1"` so focus can be restored here on close |
 | content | while open (React unmounts; WC/Astro `hidden`-toggle) | `role="menu"`, `aria-orientation="vertical"`, `data-state`, `hidden` (absent while open) |
 | sub-trigger | always (a menuitem of the parent) | `role="menuitem"`, `aria-haspopup="menu"`, `aria-expanded`, `aria-controls` (only while the submenu is open), `data-state` |
-| sub-content | always (never `hidden` -- #2152: a hidden node cannot transition, and the CSS reveal must work with JS off) | `role="menu"`, `aria-orientation="vertical"`, `data-state` |
+| sub-content | always (never `hidden` -- #2152: a hidden node cannot transition, and the CSS reveal must run once the menu is open) | `role="menu"`, `aria-orientation="vertical"`, `data-state` |
 
 Items are `menuitem` / `menuitemcheckbox` / `menuitemradio` in the decorators;
 they carry no per-instance sibling ids, so the score declares no `instanceAria`
