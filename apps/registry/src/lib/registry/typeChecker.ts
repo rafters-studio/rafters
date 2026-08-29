@@ -644,38 +644,42 @@ function findDestructuredDefaults(
   return defaults;
 }
 
+/**
+ * The component's props type is the one it declares under its OWN name:
+ * `pascalCase(componentName) + 'Props'`, matched case-insensitively against the
+ * type and interface declarations in the component's own source file so
+ * input-otp's declared `InputOTPProps` still answers to `InputOtpProps`.
+ *
+ * Matching by NAME, never by position, is the whole point. A file that declares
+ * a provider or a sub-component interface ABOVE the component's own -- and four
+ * do: sidebar.tsx (`SidebarProviderProps` at :109, `SidebarProps` at :210),
+ * tooltip.tsx (`TooltipProviderProps` before `TooltipProps`), typography.tsx
+ * (`TypographyComponentProps` before `TypographyProps`), resizable.tsx
+ * (`ResizablePanelProps`, carrying the internal `__resizableIndex`) -- hands a
+ * first-declaration search the WRONG prop surface: `<Sidebar>` would advertise
+ * `open`/`defaultOpen`/`collapsible`, which it does not accept.
+ *
+ * No such declaration means null, and the caller emits the documented empty
+ * props object (#2165 Error Handling: it "does not silently fabricate a props
+ * object"). resizable.tsx declares no `ResizableProps`, so resizable's react
+ * facet is empty rather than a panel's props wearing the group's name.
+ */
 function findPropsType(
   checker: ts.TypeChecker,
   sourceFile: ts.SourceFile,
   componentName: string,
 ): { type: ts.Type; name: string } | null {
-  const pascal = pascalCase(componentName);
-  const candidates = [`${pascal}Props`];
+  const wanted = `${pascalCase(componentName)}Props`.toLowerCase();
 
-  for (const candidate of candidates) {
-    const symbol = checker
-      .getSymbolsInScope(sourceFile, ts.SymbolFlags.Type | ts.SymbolFlags.Interface)
-      .find((s) => s.name === candidate);
-    if (symbol) {
-      const type = checker.getDeclaredTypeOfSymbol(symbol);
-      if (type && !(type.getFlags() & ts.TypeFlags.Any)) return { type, name: candidate };
-    }
-  }
-
-  // Fallback: look for exported type/interface with Props suffix
   for (const statement of sourceFile.statements) {
-    if (
-      (ts.isTypeAliasDeclaration(statement) || ts.isInterfaceDeclaration(statement)) &&
-      statement.name.text.endsWith('Props') &&
-      statement.modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword)
-    ) {
-      const symbol = checker.getSymbolAtLocation(statement.name);
-      if (symbol) {
-        const type = checker.getDeclaredTypeOfSymbol(symbol);
-        if (type && !(type.getFlags() & ts.TypeFlags.Any)) {
-          return { type, name: statement.name.text };
-        }
-      }
+    if (!ts.isTypeAliasDeclaration(statement) && !ts.isInterfaceDeclaration(statement)) continue;
+    if (statement.name.text.toLowerCase() !== wanted) continue;
+
+    const symbol = checker.getSymbolAtLocation(statement.name);
+    if (!symbol) continue;
+    const type = checker.getDeclaredTypeOfSymbol(symbol);
+    if (type && !(type.getFlags() & ts.TypeFlags.Any)) {
+      return { type, name: statement.name.text };
     }
   }
 

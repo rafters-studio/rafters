@@ -580,18 +580,84 @@ describe('type-checker-based prop extraction (#2165)', () => {
     expect(card?.facets?.react?.props['fill']).toMatchObject({ type: 'string' });
   });
 
-  it('emits sidebar own declared props', () => {
-    const sidebar = loadComponent('sidebar');
-    const side = sidebar?.facets?.react?.props['side'];
-    expect(side?.type).toBe('enum');
-    if (side?.type !== 'enum') throw new Error('side not enum');
-    expect(side.values).toEqual(expect.arrayContaining(['left', 'right']));
-    expect(side.default).toBe('left');
+  /**
+   * The four exact-key-set tests below pin WHICH props type the checker picked,
+   * which no other test in this file can (#2196 review).
+   *
+   * Four component files declare a provider or a sub-component interface ABOVE
+   * the component's own, so a search that takes the first `*Props` declaration
+   * publishes the wrong prop surface -- and a wrong props type is
+   * self-consistent everywhere downstream: the wide graph test compares the
+   * registry against the same registry items that built the graph, so it proves
+   * transport, not extraction. A partial `arrayContaining` cannot separate them
+   * either -- `SidebarProps` and `SidebarProviderProps` SHARE side and variant,
+   * so sampling those two keys passes under either resolution.
+   *
+   * Only the exact key set discriminates. Each one is the component's own
+   * declared members plus whatever its extends chain contributes from inside
+   * the component directory (typography's token props), never a neighbour's.
+   */
+  it('emits sidebar own declared props, not the provider it sits under', () => {
+    const props = loadComponent('sidebar')?.facets?.react?.props ?? {};
+    // SidebarProps (sidebar.tsx:210) declares exactly side and variant.
+    // SidebarProviderProps (:109) is declared first and adds open, defaultOpen
+    // and collapsible -- knobs `<Sidebar>` itself does not accept.
+    expect(Object.keys(props).sort()).toEqual(['side', 'variant']);
+    // No default: `Sidebar({ side, variant, ... })` destructures without
+    // initializers. The 'left'/'sidebar' defaults belong to SidebarProvider's
+    // parameter, and defaults are read off the props type's own component
+    // (#2165 Behavior), not synthesized from a neighbour's.
+    expect(props['side']).toEqual({ type: 'enum', values: ['left', 'right'] });
+    expect(props['variant']).toEqual({
+      type: 'enum',
+      values: ['sidebar', 'floating', 'inset'],
+    });
+  });
 
-    const variant = sidebar?.facets?.react?.props['variant'];
-    expect(variant?.type).toBe('enum');
-    if (variant?.type !== 'enum') throw new Error('variant not enum');
-    expect(variant.values).toEqual(expect.arrayContaining(['sidebar', 'floating', 'inset']));
+  it('emits tooltip root props, not the provider that wraps it', () => {
+    const props = loadComponent('tooltip')?.facets?.react?.props ?? {};
+    // TooltipProps (tooltip.tsx:107). TooltipProviderProps (:66) is declared
+    // first and carries only disableHoverableContent -- the provider's knob.
+    expect(Object.keys(props).sort()).toEqual([
+      'align',
+      'defaultOpen',
+      'open',
+      'side',
+      'sideOffset',
+    ]);
+    expect(props['disableHoverableContent']).toBeUndefined();
+    expect(props['sideOffset']).toEqual({ type: 'number' });
+  });
+
+  it('emits typography as/variant, not the token interface it extends', () => {
+    const props = loadComponent('typography')?.facets?.react?.props ?? {};
+    // TypographyProps (typography.tsx:139) adds `as` and `variant` on top of
+    // TypographyComponentProps (:67, declared first), whose token props reach
+    // the facet through the extends chain because they are declared inside the
+    // component's own directory. Resolving to :67 drops `as` and `variant`.
+    expect(Object.keys(props).sort()).toEqual([
+      'align',
+      'as',
+      'family',
+      'line',
+      'size',
+      'tracking',
+      'transform',
+      'variant',
+      'weight',
+    ]);
+    expect(props['as']).toMatchObject({ type: 'enum', default: 'p' });
+  });
+
+  it('emits an empty prop set when the component declares no props type', () => {
+    // resizable.tsx declares ResizablePanelProps, ResizableHandleProps and
+    // ResizablePanelGroupProps -- no `ResizableProps`. #2165's Error Handling
+    // clause makes that the documented empty-props case, and the alternative is
+    // concrete harm: the first declaration is ResizablePanelProps, which would
+    // publish the group-injected internal `__resizableIndex` as a prop an agent
+    // is invited to set.
+    const props = loadComponent('resizable')?.facets?.react?.props ?? {};
+    expect(props).toEqual({});
   });
 
   it('emits button boolean props the regex extractor missed', () => {
