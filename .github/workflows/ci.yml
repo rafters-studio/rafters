@@ -5,6 +5,10 @@ on:
     branches: [main]
   push:
     branches: [main]
+  # The merge queue runs CI on the merge_group ref. Without this trigger no
+  # check ever reports inside the queue, so a queued PR merges with its own
+  # pull_request run still in flight (#2214 merged that way).
+  merge_group:
 
 jobs:
   test:
