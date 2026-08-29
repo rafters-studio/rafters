@@ -368,6 +368,21 @@ export function log(event: Record<string, unknown>): void {
       console.log('');
       break;
 
+    // Motion rebuild events
+    case 'motion:override-dropped':
+      // A discarded designer decision has to survive the run, and the default
+      // branch below would not let it: it assigns the event NAME to the active
+      // spinner's text and throws the message away, and on the `--rebuild` path
+      // a spinner is always running (`init:regenerate` starts one immediately
+      // before, `init:loaded` succeeds it immediately after). Stopping first
+      // clears the spinner's line so the warning is not written over; the
+      // spinner object itself stays in place, because the succeed() that
+      // follows on both callers -- `init:loaded` and `add:complete` -- is
+      // optional-chained and would print nothing at all against a null.
+      context.spinner?.stop();
+      console.warn(`  Warning: ${event.message}`);
+      break;
+
     default:
       // Fallback for unknown events
       if (context.spinner) {
