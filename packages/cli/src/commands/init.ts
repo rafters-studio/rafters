@@ -55,6 +55,7 @@ import {
   FUTURE_EXPORTS,
   selectionsToConfig,
 } from '../utils/exports.js';
+import { hasStoredTokens, regenerateMotionNamespace } from '../utils/motion-rebuild.js';
 import { getRaftersPaths } from '../utils/paths.js';
 import { isAgentMode, log, setAgentMode } from '../utils/ui.js';
 import { updateDependencies } from '../utils/update-dependencies.js';
@@ -499,6 +500,15 @@ async function regenerateFromExisting(
   // stale files so their dead tokens stop reloading on every rebuild.
   await rm(join(paths.tokens, 'elevation.rafters.json'), { force: true });
   await rm(join(paths.tokens, 'fill.rafters.json'), { force: true });
+
+  // Motion is system-generated end to end (#2208): same treatment, except the
+  // namespace is still alive, so it is rewritten rather than dropped. Only for
+  // a project that HAS stored tokens -- writing motion into an empty or absent
+  // tokens directory would turn the "no tokens found" refusal below into a
+  // bogus rebuild off a motion-only system.
+  if (hasStoredTokens(paths.tokens)) {
+    regenerateMotionNamespace(paths.tokens, REGISTRY_PLUGINS);
+  }
 
   // Load all tokens from .rafters/tokens/
   const registry = loadRegistryFromDir(paths.tokens, REGISTRY_PLUGINS);

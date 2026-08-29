@@ -6,6 +6,12 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { parse, type Spec } from 'comment-parser';
+import { type PropsTypeChecker, typescriptPropsTypeChecker } from './typeChecker';
+
+// The one place the checker backend is chosen (#2165 Interface). Swapping to
+// tsgo / TS7 is a new PropsTypeChecker assigned here; extractFacet never
+// learns which backend answered.
+const propsTypeChecker: PropsTypeChecker = typescriptPropsTypeChecker;
 
 /**
  * Registry item types. Defined locally (like RegistryItem/RegistryFile/
@@ -59,6 +65,21 @@ export type PropField =
       default?: string;
       required?: boolean;
       constraint?: Constraint;
+    }
+  | {
+      type: 'boolean';
+      default?: boolean;
+      required?: boolean;
+    }
+  | {
+      type: 'string';
+      default?: string;
+      required?: boolean;
+    }
+  | {
+      type: 'number';
+      default?: number;
+      required?: boolean;
     }
   | {
       type: 'grammar';
@@ -869,19 +890,6 @@ function extractDestructuredDefaults(source: string): Map<string, string> {
   return defaults;
 }
 
-/** Prop names a target destructures from its props (React has no interface for `size`). */
-function extractDestructuredNames(source: string): string[] {
-  const block = source.match(/const\s*\{([\s\S]*?)\}\s*=\s*(?:props|Astro\.props)/);
-  if (!block) return [];
-  const names: string[] = [];
-  for (const part of block[1].split(',')) {
-    const match = part.match(/^\s*(?:'([^']+)'|([A-Za-z_$][\w$]*))/);
-    const name = match?.[1] ?? match?.[2];
-    if (name) names.push(name);
-  }
-  return names;
-}
-
 /** Fields of a target's own `interface Props`/`*Props` body: name, optionality, type. */
 function extractInterfaceProps(
   source: string,
@@ -939,17 +947,21 @@ function extractConstraints(source: string): Map<string, Constraint> {
 /**
  * Extract one target's facet from its already-read source.
  *
- * The declared issue signature took `(componentDir, name, ext, behaviorSource)`
- * and re-read the file; this takes the loop's already-read `targetSource`
- * instead, so extraction adds a regex pass and NO extra file read (the perf
- * requirement). `behaviorSource` is the shared `.behavior.ts`, the source of
- * truth for verbatim literal-union prop vocabularies.
+ * React props come from the TypeScript type checker (#2165), which resolves
+ * through alias depth, intersections, and `(typeof X)[number]` patterns that
+ * regexes miss. Non-TS targets (astro/vue/svelte) keep the interface-body
+ * regex path because `.astro`/`.vue`/`.svelte` are not valid TypeScript and
+ * cannot be fed to `ts.createProgram`.
+ *
+ * `componentDir` is the ABSOLUTE path to the component directory, used by the
+ * react branch to locate the `.tsx` source in the shared `ts.Program`.
  */
 function extractFacet(
   name: string,
   ext: string,
   targetSource: string,
   behaviorSource: string | null,
+  componentDir: string,
 ): Facet | null {
   const target = EXT_TO_TARGET[ext];
   if (!target) return null;
@@ -965,53 +977,42 @@ function extractFacet(
     };
   }
 
-  const unions = behaviorSource
-    ? extractLiteralUnions(behaviorSource)
-    : new Map<string, string[]>();
-  const defaults = extractDestructuredDefaults(targetSource);
   const constraints = extractConstraints(targetSource);
-  const props: Record<string, PropField> = {};
-
-  // A prop's literal-union members: a named alias by the <Component><Prop>
-  // convention (button + variant -> ButtonVariant), the type annotation naming
-  // an alias directly, or an inline literal union. Otherwise null.
-  const resolveUnion = (propName: string, typeExpr?: string): string[] | null => {
-    const byConvention = unions.get(pascalCase(name) + pascalCase(propName));
-    if (byConvention) return byConvention;
-    if (typeExpr) {
-      const byAnnotation = unions.get(typeExpr);
-      if (byAnnotation) return byAnnotation;
-      const inline = inlineUnionValues(typeExpr);
-      if (inline.length > 0) return inline;
-    }
-    return null;
-  };
-
-  const makeEnum = (propName: string, values: string[], required: boolean): PropField => {
-    const field: PropField = { type: 'enum', values };
-    const def = defaults.get(propName);
-    if (def !== undefined) field.default = def;
-    if (required) field.required = true;
-    const constraint = constraints.get(propName);
-    if (constraint) field.constraint = constraint;
-    return field;
-  };
+  let props: Record<string, PropField>;
 
   if (target === 'react') {
-    // React's destructuring is the prop-name source: `size` lives in the
-    // ButtonProps intersection, not the ButtonBaseProps body, so an interface
-    // scan would miss it. Destructuring carries no requiredness, so only props
-    // whose type resolves to a verbatim literal union are emitted.
-    for (const propName of extractDestructuredNames(targetSource)) {
-      const values = resolveUnion(propName);
-      if (values) props[propName] = makeEnum(propName, values, false);
-    }
+    props = propsTypeChecker.resolveProps({ componentName: name, componentDir }, constraints);
   } else {
-    // Interface-declared targets (astro/vue/svelte) carry requiredness. Emit a
-    // prop when its type resolves to a literal union, OR it is required -- so a
-    // required non-union structural prop (astro's `id: string`) is kept as an
-    // empty-values enum with `required: true`, preserving the required/optional
-    // asymmetry rather than fabricating a domain for it.
+    // Interface-declared targets (astro/vue/svelte) carry requiredness. The TS
+    // checker cannot read these file formats, so the regex path stays.
+    const unions = behaviorSource
+      ? extractLiteralUnions(behaviorSource)
+      : new Map<string, string[]>();
+    const defaults = extractDestructuredDefaults(targetSource);
+    props = {};
+
+    const resolveUnion = (propName: string, typeExpr?: string): string[] | null => {
+      const byConvention = unions.get(pascalCase(name) + pascalCase(propName));
+      if (byConvention) return byConvention;
+      if (typeExpr) {
+        const byAnnotation = unions.get(typeExpr);
+        if (byAnnotation) return byAnnotation;
+        const inline = inlineUnionValues(typeExpr);
+        if (inline.length > 0) return inline;
+      }
+      return null;
+    };
+
+    const makeEnum = (propName: string, values: string[], required: boolean): PropField => {
+      const field: PropField = { type: 'enum', values };
+      const def = defaults.get(propName);
+      if (def !== undefined) field.default = def;
+      if (required) field.required = true;
+      const constraint = constraints.get(propName);
+      if (constraint) field.constraint = constraint;
+      return field;
+    };
+
     for (const prop of extractInterfaceProps(targetSource)) {
       const values = resolveUnion(prop.name, prop.typeExpr);
       if (values) props[prop.name] = makeEnum(prop.name, values, !prop.optional);
@@ -1025,6 +1026,124 @@ function extractFacet(
   const slots = target === 'react' ? [] : extractSlots(targetSource);
   if (slots.length > 0) facet.slots = slots;
   return facet;
+}
+
+/**
+ * kelex's `FieldDescriptor` IR, hand-mirrored structurally.
+ *
+ * The descriptor lives in kelex (`src/introspection/types.ts:140`) and rafters
+ * has no dependency on kelex, so the shape is declared here the same way
+ * `RegistryItem` and `PropField` mirror the CLI's zod source of truth. The
+ * operator's ruling (see the #2165 rationale) is that the shared thing across
+ * rafters/veneer/gitpress is the OUTPUT IR, not the extractor: type resolution
+ * stays on the TS checker in this build, and only the resolved `PropField`
+ * maps out.
+ */
+export type FieldDescriptorType =
+  | 'string'
+  | 'number'
+  | 'boolean'
+  | 'date'
+  | 'enum'
+  | 'literal'
+  | 'object'
+  | 'array'
+  | 'union'
+  | 'tuple'
+  | 'record'
+  | 'ref';
+
+/** kelex's type-specific metadata, narrowed to the kinds a `PropField` produces. */
+export type FieldDescriptorMetadata =
+  | { kind: 'string' }
+  | { kind: 'number' }
+  | { kind: 'boolean' }
+  | { kind: 'enum'; values: readonly (string | number)[] };
+
+export interface FieldDescriptor {
+  name: string;
+  label: string;
+  type: FieldDescriptorType;
+  isOptional: boolean;
+  isNullable: boolean;
+  /**
+   * kelex's `FieldConstraints` is VALUE validation (minLength, pattern, min,
+   * max, step). rafters derives none of it -- the checker reads types, not
+   * refinements -- so this is always empty.
+   */
+  constraints: Record<string, never>;
+  metadata: FieldDescriptorMetadata;
+  defaultValue?: unknown;
+  /**
+   * kelex's open extension slot. rafters' `constraint` is a CROSS-PROP rule
+   * ("size matches icon* requires aria-label"), which `FieldConstraints` has no
+   * arm for, so it rides here rather than being silently dropped.
+   */
+  meta?: Record<string, unknown>;
+}
+
+/**
+ * Map one resolved `PropField` to kelex's `FieldDescriptor`, so veneer and
+ * gitpress can consume rafters' published facet JSON instead of re-parsing
+ * rafters source. Pure: no file reads, no checker, no registry lookups.
+ *
+ * `required` inverts into kelex's `isOptional`; `default` becomes
+ * `defaultValue`; `constraint` rides in `meta.constraint` (see above).
+ */
+export function propFieldToFieldDescriptor(name: string, field: PropField): FieldDescriptor {
+  const base = {
+    name,
+    label: name,
+    isNullable: false,
+    constraints: {},
+  } as const;
+
+  switch (field.type) {
+    case 'enum': {
+      const descriptor: FieldDescriptor = {
+        ...base,
+        type: 'enum',
+        isOptional: field.required !== true,
+        metadata: { kind: 'enum', values: [...field.values] },
+      };
+      if (field.default !== undefined) descriptor.defaultValue = field.default;
+      if (field.constraint) descriptor.meta = { constraint: field.constraint };
+      return descriptor;
+    }
+    case 'boolean':
+    case 'string':
+    case 'number': {
+      const descriptor: FieldDescriptor = {
+        ...base,
+        type: field.type,
+        isOptional: field.required !== true,
+        metadata: { kind: field.type },
+      };
+      if (field.default !== undefined) descriptor.defaultValue = field.default;
+      return descriptor;
+    }
+    case 'grammar': {
+      // A grammar prop is authored as a token string; its composition rules are
+      // rafters-specific and have no kelex arm, so they ride in `meta`.
+      const descriptor: FieldDescriptor = {
+        ...base,
+        type: 'string',
+        isOptional: true,
+        metadata: { kind: 'string' },
+        meta: { grammar: field.grammar, vocab: field.vocab, onInvalid: field.onInvalid },
+      };
+      if (field.default !== undefined) descriptor.defaultValue = field.default;
+      return descriptor;
+    }
+    case 'deprecated':
+      return {
+        ...base,
+        type: 'string',
+        isOptional: true,
+        metadata: { kind: 'string' },
+        meta: { deprecatedFor: field.deprecatedFor },
+      };
+  }
 }
 
 /**
@@ -1315,7 +1434,7 @@ export function loadComponent(name: string): RegistryItem | null {
   for (const { ext, content } of targetSources) {
     const target = EXT_TO_TARGET[ext];
     if (!target) continue;
-    const facet = extractFacet(name, ext, content, behaviorSource);
+    const facet = extractFacet(name, ext, content, behaviorSource, componentDir);
     if (facet) facets[target] = facet;
   }
 

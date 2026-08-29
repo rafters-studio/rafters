@@ -293,8 +293,9 @@ export const TOOL_DEFINITIONS = [
       'installed surface; describe(components)/describe(composites) list the kind roster; ' +
       'describe(button) returns a node -- intel plus type-marked, drillable children; ' +
       'describe(button.props.variant) drills into a prop -- an enum prop returns its literal ' +
-      'union members; a grammar prop returns its composition rules, with the token ' +
-      'vocabulary deliberately withheld. ' +
+      'union members; a boolean, string, or number prop returns its kind with any default and ' +
+      'whether it is required, and no value list, because it has no finite one; a grammar prop ' +
+      'returns its composition rules, with the token vocabulary deliberately withheld. ' +
       'describe(button.*) expands all props inline in one call (no more drill-per-prop ' +
       'round trips); describe(button.props.color.?) probes safely (null on miss, not an ' +
       'error). A natural-language address (e.g. "what do I use when it needs to be above ' +

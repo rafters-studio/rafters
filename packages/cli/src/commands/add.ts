@@ -29,6 +29,7 @@ import {
   type InstallRegistryDepsResult,
   installRegistryDependencies,
 } from '../utils/install-registry-deps.js';
+import { hasStoredTokens, regenerateMotionNamespace } from '../utils/motion-rebuild.js';
 import { getRaftersPaths, type PathField, resolveRoot } from '../utils/paths.js';
 import { buildUpdateCandidates, readInstallRoots } from '../utils/reconcile.js';
 import { error, log, setAgentMode } from '../utils/ui.js';
@@ -50,18 +51,29 @@ const REGISTRY_PLUGINS = [scalePlugin, contrastPlugin, statePlugin, invertPlugin
  * component vocabulary, so the compiled standalone sheet (the WC utility sheet)
  * reflects the new class strings. Delegates to the single regen path; failures
  * here are logged but do not fail the install (the files are already on disk).
+ *
+ * "Not initialized" is decided by {@link hasStoredTokens}, not by a bare catch
+ * around the load (#2208). `loadRegistryFromDir` throws three different ways --
+ * ENOENT on an absent tokens directory, a SyntaxError on a corrupt file, a
+ * TokenParseError on a token the current schema rejects -- and only the first
+ * is an uninitialized project. Swallowing the other two under that name is
+ * what let the stale-motion failure this issue is about leave no trace at all
+ * on the `add` path.
+ *
+ * Motion is regenerated from the generator before the load, the same treatment
+ * `init --rebuild` gives it, so a pre-0.3.0 `motion.rafters.json` never reaches
+ * either the schema or the exporter.
  */
-async function regenerateAfterInstall(cwd: string, config: RaftersConfig): Promise<void> {
+export async function regenerateAfterInstall(cwd: string, config: RaftersConfig): Promise<void> {
   const paths = getRaftersPaths(cwd);
-  let registry: ReturnType<typeof loadRegistryFromDir>;
+  // No tokens on disk yet (project not initialized) -- nothing to regenerate,
+  // and nothing to regenerate motion INTO either.
+  if (!hasStoredTokens(paths.tokens)) return;
+
   try {
-    registry = loadRegistryFromDir(paths.tokens, REGISTRY_PLUGINS);
-  } catch {
-    // No tokens on disk yet (project not initialized) -- nothing to regenerate.
-    return;
-  }
-  if (registry.size() === 0) return;
-  try {
+    regenerateMotionNamespace(paths.tokens, REGISTRY_PLUGINS);
+    const registry = loadRegistryFromDir(paths.tokens, REGISTRY_PLUGINS);
+    if (registry.size() === 0) return;
     await regenerateOutputs(registry, {
       outputDir: paths.output,
       exports: config.exports,
