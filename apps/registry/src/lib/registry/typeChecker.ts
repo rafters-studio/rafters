@@ -529,6 +529,32 @@ function findDestructuredDefaults(
     }
   }
 
+  /**
+   * `const { variant = 'default' } = <param>;` at the top level of a function
+   * body -- pattern 1b's plain component and pattern 3's forwardRef callback
+   * reach their defaults through exactly this scan, differing only in which
+   * function's body they hand over. Returns whether it found one, so the caller
+   * sets the first-match flag rather than repeating the search.
+   */
+  function extractFromBody(body: ts.ConciseBody | undefined, param: ts.Identifier): boolean {
+    if (!body || !ts.isBlock(body)) return false;
+    for (const statement of body.statements) {
+      if (!ts.isVariableStatement(statement)) continue;
+      for (const declaration of statement.declarationList.declarations) {
+        if (
+          ts.isObjectBindingPattern(declaration.name) &&
+          declaration.initializer &&
+          ts.isIdentifier(declaration.initializer) &&
+          declaration.initializer.text === param.text
+        ) {
+          extractFromPattern(declaration.name);
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
   function typeAnnotationNames(param: ts.ParameterDeclaration): string | null {
     if (!param.type) return null;
     return param.type.getText(sourceFile);
@@ -583,23 +609,9 @@ function findDestructuredDefaults(
           found = true;
           return;
         }
-        if (param.name && ts.isIdentifier(param.name) && node.body && ts.isBlock(node.body)) {
-          for (const stmt of node.body.statements) {
-            if (ts.isVariableStatement(stmt)) {
-              for (const decl of stmt.declarationList.declarations) {
-                if (
-                  ts.isObjectBindingPattern(decl.name) &&
-                  decl.initializer &&
-                  ts.isIdentifier(decl.initializer) &&
-                  decl.initializer.text === param.name.text
-                ) {
-                  extractFromPattern(decl.name);
-                  found = true;
-                  return;
-                }
-              }
-            }
-          }
+        if (param.name && ts.isIdentifier(param.name) && extractFromBody(node.body, param.name)) {
+          found = true;
+          return;
         }
       }
     }
@@ -621,23 +633,9 @@ function findDestructuredDefaults(
             return;
           }
           // Pattern 3: forwardRef((props, ref) => { const { variant = 'default' } = props; })
-          if (ts.isIdentifier(param.name) && firstArg.body && ts.isBlock(firstArg.body)) {
-            for (const stmt of firstArg.body.statements) {
-              if (ts.isVariableStatement(stmt) && stmt.declarationList.declarations.length > 0) {
-                const decl = stmt.declarationList.declarations[0];
-                if (
-                  decl !== undefined &&
-                  ts.isObjectBindingPattern(decl.name) &&
-                  decl.initializer &&
-                  ts.isIdentifier(decl.initializer) &&
-                  decl.initializer.text === param.name.text
-                ) {
-                  extractFromPattern(decl.name);
-                  found = true;
-                  return;
-                }
-              }
-            }
+          if (ts.isIdentifier(param.name) && extractFromBody(firstArg.body, param.name)) {
+            found = true;
+            return;
           }
         }
       }
