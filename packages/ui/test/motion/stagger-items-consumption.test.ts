@@ -47,6 +47,12 @@ const COMPONENTS_DIR = join(import.meta.dirname, '..', '..', 'src', 'components'
 // this probe can assert BOTH the positive (container selects it) and the
 // negative (nothing anywhere constructs calc()/nth-child) directly against
 // what classes.ts actually EMITS, not against comment prose in the file.
+const dropdownMenuClassSet = dropdownMenuClasses({}, dropdownMenu.initialState({}));
+const contextMenuClassSet = contextMenuClasses({}, contextMenu.initialState({}));
+const selectClassSet = selectClasses({}, select.initialState({}));
+const comboboxClassSet = comboboxClasses({}, combobox.initialState({}));
+const commandClassSet = commandClasses({}, command.initialState({}));
+
 const CONSUMING_COMPONENTS: ReadonlyArray<{
   name: string;
   container: string;
@@ -54,28 +60,28 @@ const CONSUMING_COMPONENTS: ReadonlyArray<{
 }> = [
   {
     name: 'dropdown-menu',
-    container: dropdownMenuClasses({}, dropdownMenu.initialState({})).content,
-    allClassValues: Object.values(dropdownMenuClasses({}, dropdownMenu.initialState({}))),
+    container: dropdownMenuClassSet.content,
+    allClassValues: Object.values(dropdownMenuClassSet),
   },
   {
     name: 'context-menu',
-    container: contextMenuClasses({}, contextMenu.initialState({})).content,
-    allClassValues: Object.values(contextMenuClasses({}, contextMenu.initialState({}))),
+    container: contextMenuClassSet.content,
+    allClassValues: Object.values(contextMenuClassSet),
   },
   {
     name: 'select',
-    container: selectClasses({}, select.initialState({})).viewport,
-    allClassValues: Object.values(selectClasses({}, select.initialState({}))),
+    container: selectClassSet.viewport,
+    allClassValues: Object.values(selectClassSet),
   },
   {
     name: 'combobox',
-    container: comboboxClasses({}, combobox.initialState({})).content,
-    allClassValues: Object.values(comboboxClasses({}, combobox.initialState({}))),
+    container: comboboxClassSet.content,
+    allClassValues: Object.values(comboboxClassSet),
   },
   {
     name: 'command',
-    container: commandClasses({}, command.initialState({})).list,
-    allClassValues: Object.values(commandClasses({}, command.initialState({}))),
+    container: commandClassSet.list,
+    allClassValues: Object.values(commandClassSet),
   },
 ];
 
