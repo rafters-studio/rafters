@@ -6,6 +6,7 @@ import type { OKLCH } from '@rafters/shared';
 import { describe, expect, it } from 'vitest';
 import {
   computeGamutBoundaries,
+  type GamutTier,
   getGamutTier,
   isInP3Gamut,
   isInSRGBGamut,
@@ -163,4 +164,95 @@ describe('computeGamutBoundaries', () => {
       expect(diff).toBeLessThan(0.05);
     }
   });
+});
+
+/**
+ * Regression pins for the numerics PR #2141 changed.
+ *
+ * #2141 deleted `packages/ui/src/primitives/oklch-gamut.ts`, which carried its
+ * own OKLCH -> linear-RGB matrices behind a private `EPS = 0.001` tolerance,
+ * and routed every caller onto this module's colorjs.io `inGamut`/`toGamut`
+ * wrap. It claimed the two were "numerically equal" and shipped no test that
+ * could tell them apart. They are not equal: over a 45,360-sample OKLCH grid
+ * the two disagree on sRGB membership for 3.2% of samples and on the P3/out
+ * split for 5.3%. Two independent causes:
+ *
+ *   1. `EPS = 0.001` was applied to LINEAR-RGB channels, where the whole cube
+ *      is [0, 1]. Near black that tolerance is larger than the gamut itself,
+ *      so the old code called plainly undisplayable colors in-gamut.
+ *   2. The old P3 blue row (`-0.026073181, -0.703486028, +1.729559209`) was a
+ *      copy of the sRGB blue row's shape rather than P3's, so the old P3
+ *      boundary sat well inside the real one.
+ *
+ * Every number below is the colorjs.io answer and differs from what the
+ * deleted implementation returned. The existing
+ * `packages/ui/test/primitives/color-picker.test.ts` p3-tier pin for
+ * `{ l: 0.7, c: 0.25, h: 150 }` passes against BOTH implementations and so
+ * proves nothing about this change; these cases are chosen where they differ.
+ */
+describe('computeGamutBoundaries regression (post-#2141 colorjs.io wrap)', () => {
+  // 101 steps -> l lands on exact hundredths, and each point's maxC_p3 is by
+  // construction the same bisection over colorjs.io's `inGamut` that
+  // findMaxChroma runs, so the boundary array is the public way to assert it.
+  const h145 = computeGamutBoundaries(145);
+  const at = (boundaries: typeof h145, l: number) =>
+    boundaries.find((p) => Math.abs(p.l - l) < 0.005);
+
+  it('h=145, l=0.85 sits at the colorjs.io boundary, not the hand-rolled one', () => {
+    const point = at(h145, 0.85);
+    // Old hand-rolled: maxC_srgb 0.2672 (coincidentally equal here), maxC_p3
+    // 0.3047 -- the P3 blue-row bug cost ~0.058 of real chroma at this point.
+    expect(point?.maxC_srgb).toBeCloseTo(0.2672, 3);
+    expect(point?.maxC_p3).toBeCloseTo(0.3625, 3);
+  });
+
+  it('h=145, l=0.80 gives the maxC_p3 0.341 / maxC_srgb 0.252 pair', () => {
+    // #2159 quotes this pair against l=0.85; it is measured at l=0.80. Both
+    // lightnesses are pinned so the quoted figures stay covered either way.
+    const point = at(h145, 0.8);
+    expect(point?.maxC_srgb).toBeCloseTo(0.252, 2);
+    expect(point?.maxC_p3).toBeCloseTo(0.341, 2);
+  });
+
+  it('dark case h=160, l=0.04 collapses to near-zero chroma', () => {
+    // The near-black case the old EPS=0.001 linear-RGB tolerance got most
+    // wrong: it put both boundaries above 0.26 here, an order of magnitude
+    // past what either gamut actually holds at this lightness.
+    const point = at(computeGamutBoundaries(160), 0.04);
+    expect(point?.maxC_srgb).toBeCloseTo(0.0094, 3);
+    expect(point?.maxC_p3).toBeCloseTo(0.0133, 3);
+  });
+
+  it('h=145, l=0.05 is not 8.5x too permissive', () => {
+    // The old findMaxChroma also FUSED the two gamuts (`inSrgb || inP3`), so
+    // its single answer here was 0.1937 -- 8.5x the real P3 boundary.
+    const maxC_p3 = at(h145, 0.05)?.maxC_p3;
+    expect(maxC_p3).not.toBeCloseTo(0.1937, 2);
+    expect(maxC_p3).toBeCloseTo(0.0227, 2);
+  });
+});
+
+/**
+ * Tier classifications where the deleted hand-rolled implementation and the
+ * colorjs.io wrap DISAGREE. The colorjs.io answer is asserted as correct.
+ */
+describe('getGamutTier regression (post-#2141 colorjs.io wrap)', () => {
+  const disagreementFixtures: ReadonlyArray<readonly [OKLCH, GamutTier, string]> = [
+    // EPS=0.001 on linear-RGB channels near black: the old code called this
+    // 'srgb'. No display shows it -- it is outside P3 as well.
+    [{ l: 0.03, c: 0.02, h: 40, alpha: 1 }, 'out', 'srgb'],
+    // The same tolerance one tier up: the old code called this 'srgb' when it
+    // is only reachable on a P3 display.
+    [{ l: 0.15, c: 0.03, h: 200, alpha: 1 }, 'p3', 'srgb'],
+    // The P3 blue-row copy-paste bug, in the other direction: the old code
+    // called this 'out' when Display P3 holds it comfortably.
+    [{ l: 0.68, c: 0.15, h: 90, alpha: 1 }, 'p3', 'out'],
+  ];
+
+  it.each(disagreementFixtures)(
+    'classifies %o as %s (hand-rolled math said %s)',
+    (oklch, expectedTier) => {
+      expect(getGamutTier(oklch)).toBe(expectedTier);
+    },
+  );
 });

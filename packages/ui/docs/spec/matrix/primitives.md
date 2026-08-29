@@ -38,7 +38,7 @@ Every primitive under `packages/ui/src/primitives/`. Behavior files COMPOSE thes
 | primitive | category | kind | is | key api |
 |---|---|---|---|---|
 | `graph` | chart | dom | Base SVG/Canvas rendering engine for the chart system. | `createGraph`, `linearScale`, `polarToCartesian` |
-| `oklch-gamut` | math | pure | Pure OKLCH gamut classification math, zero dependencies. | `inSrgb`, `inP3`, `findMaxChroma` |
+| `hue-warp` | math | pure | Perceptual hue-bar layout warp: normalized bar position to hue angle and back. | `hueFromBarPos`, `barPosFromHue` |
 | `color-area` | picker | dom | 2D lightness-vs-chroma canvas at a fixed hue. | `createColorArea`, `updateColorArea` |
 | `color-family` | picker | dom | Disclosure state machine for progressive color-family reveal. | `createColorFamily` |
 | `color-input` | picker | dom | Numeric OKLCH channel input fields with clamping/formatting. | `createColorInput`, `updateColorInput` |

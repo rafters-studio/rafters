@@ -468,8 +468,11 @@ describe('buildColorValue', () => {
       }
       const duration = performance.now() - start;
 
-      // 100 colors should complete in under 2 seconds
-      expect(duration).toBeLessThan(2000);
+      // A sanity bound against pathological regressions, not a benchmark:
+      // 100 colors take ~1 s on a laptop and ~2 s on a GitHub Actions runner
+      // (the first CI run of this suite measured 2007 ms against a 2000 ms
+      // bound). Keep the budget loose enough that runner speed never fails it.
+      expect(duration).toBeLessThan(10_000);
     });
   });
 });
