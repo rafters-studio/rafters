@@ -1333,6 +1333,68 @@ export function loadComponent(name: string): RegistryItem | null {
     }
   }
 
+  // Subsystem files: the transitive closure of relative imports that resolve
+  // inside the component directory but are NOT framework variants, shared
+  // auxiliary files, or sub-components. These install nested under
+  // `components/ui/<name>/` (e.g., `components/ui/editor/editor-history.ts`,
+  // `components/ui/editor/ops/index.ts`).
+  //
+  // Queue entries carry { specifier, fromDir } where fromDir is the directory
+  // (relative to componentDir) of the importing file, so `./format` from
+  // `ops/index.ts` resolves as `ops/format`, not `format`.
+  const subsystemQueue: Array<{ specifier: string; fromDir: string }> = [];
+  const subsystemSeen = new Set<string>();
+
+  for (const file of files) {
+    for (const rel of extractAllRelativeImports(file.content)) {
+      if (isSharedSuffix(rel)) continue;
+      if (COMPONENT_EXTENSIONS.some((ext) => rel.endsWith(ext.replace(/^\./, '')))) continue;
+      subsystemQueue.push({ specifier: rel, fromDir: '' });
+    }
+  }
+
+  while (subsystemQueue.length > 0) {
+    const { specifier, fromDir } = subsystemQueue.pop() as {
+      specifier: string;
+      fromDir: string;
+    };
+    const absSpecifier = fromDir ? `${fromDir}/${specifier}` : specifier;
+    if (subsystemSeen.has(absSpecifier)) continue;
+    subsystemSeen.add(absSpecifier);
+
+    const resolved = resolveRelativeImport(componentDir, absSpecifier);
+    if (!resolved) {
+      throw new Error(
+        `Dangling relative import "./${specifier}" in component "${name}": ` +
+          `no file resolves at ${join(componentDir, absSpecifier)}(.ts|.tsx|/index.ts)`,
+      );
+    }
+
+    const servedPath = `components/ui/${name}/${resolved.relPath}`;
+    if (loadedPaths.has(servedPath)) continue;
+
+    const analysis = analyzeSource(resolved.content, false);
+    files.push({
+      path: servedPath,
+      content: resolved.content,
+      dependencies: analysis.allExternalDeps,
+      devDependencies: analysis.devDependencies,
+    });
+    loadedPaths.add(servedPath);
+    primitivesAll = [...new Set([...primitivesAll, ...analysis.primitiveDeps])];
+
+    // The resolved file's directory for its own relative imports
+    const resolvedDir = resolved.relPath.includes('/')
+      ? resolved.relPath.slice(0, resolved.relPath.lastIndexOf('/'))
+      : '';
+    for (const sub of extractAllRelativeImports(resolved.content)) {
+      const subAbs = resolvedDir ? `${resolvedDir}/${sub}` : sub;
+      if (!subsystemSeen.has(subAbs)) {
+        subsystemQueue.push({ specifier: sub, fromDir: resolvedDir });
+      }
+    }
+  }
+
   // Behavior-layer runtime substrate (lib/, hooks/) is resolved copy-in like
   // primitives: collect the names the component's files reference so
   // resolveDependencies pulls the full closure (contract, compose, use-memory,
@@ -1352,12 +1414,14 @@ export function loadComponent(name: string): RegistryItem | null {
   primitivesAll = [...new Set([...primitivesAll, ...substrateDeps])];
 
   // Drop deps that are actually the component's OWN sibling/sub-component files
-  // (e.g. context-menu-sub.astro, bundled above). They live in this folder, so
-  // they are never standalone registry items -- listing them would make
-  // resolveDependencies chase a name that 404s. Compare on extension-stripped
-  // basenames so `./context-menu-sub.astro` matches the bundled file.
+  // or subsystem files (e.g. context-menu-sub.astro, editor-history.ts, ops/).
+  // They live in this folder, so they are never standalone registry items --
+  // listing them would make resolveDependencies chase a name that 404s.
   const stripExt = (s: string): string => s.replace(/\.[^./]+$/, '');
   const ownBasenames = new Set(readdirSync(componentDir).map(stripExt));
+  for (const seen of subsystemSeen) {
+    ownBasenames.add(stripExt(basename(seen)));
+  }
   primitivesAll = primitivesAll.filter((dep) => !ownBasenames.has(stripExt(dep)));
 
   // Per-target facets. The shared .behavior.ts (now in `files` from the
@@ -1605,6 +1669,68 @@ export function extractSiblingImports(content: string): string[] {
   }
 
   return siblings;
+}
+
+/**
+ * Extract ALL relative imports from source, including nested paths.
+ * `./types` -> "types", `./ops/content` -> "ops/content",
+ * `./editor-history` -> "editor-history". Strips .ts/.tsx extensions.
+ */
+export function extractAllRelativeImports(content: string): string[] {
+  const imports: string[] = [];
+  const matches = content.matchAll(IMPORT_REGEX);
+
+  for (const match of matches) {
+    const pkg = match[1];
+    if (pkg.startsWith('./')) {
+      const name = pkg.slice(2).replace(/\.(tsx?|jsx?)$/, '');
+      if (name && !imports.includes(name)) {
+        imports.push(name);
+      }
+    }
+  }
+
+  return imports;
+}
+
+/**
+ * Resolve a relative import specifier to a file on disk inside `baseDir`.
+ * Tries .ts, .tsx, and /index.ts (for directory imports like `./ops`).
+ * Returns the file content, resolved extension, and the canonical relative
+ * path (with extension) from baseDir, or null if nothing resolves.
+ */
+function resolveRelativeImport(
+  baseDir: string,
+  specifier: string,
+): { content: string; ext: string; relPath: string } | null {
+  for (const ext of ['.ts', '.tsx']) {
+    const filePath = join(baseDir, `${specifier}${ext}`);
+    try {
+      return { content: readFileSync(filePath, 'utf-8'), ext, relPath: `${specifier}${ext}` };
+    } catch {
+      // try next
+    }
+  }
+  // Directory import: ./ops -> ./ops/index.ts
+  const indexPath = join(baseDir, specifier, 'index.ts');
+  try {
+    return {
+      content: readFileSync(indexPath, 'utf-8'),
+      ext: '.ts',
+      relPath: `${specifier}/index.ts`,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Whether an import specifier matches a known shared auxiliary suffix.
+ * Shared files install flat beside the component; subsystem files nest under
+ * `components/ui/<name>/`.
+ */
+function isSharedSuffix(specifier: string): boolean {
+  return SHARED_SUFFIXES.some((suffix) => specifier.endsWith(suffix.replace(/\.ts$/, '')));
 }
 
 /**

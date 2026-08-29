@@ -204,11 +204,27 @@ function getComponentTarget(config: RaftersConfig | null): ComponentTarget {
 const SHARED_EXTENSIONS = new Set(['.behavior.ts', '.classes.ts']);
 
 /**
- * Check if a file path is a shared auxiliary file.
+ * Framework-variant extensions. A file ending in one of these is a
+ * target-specific component file (.tsx = React, .astro = Astro, etc.).
+ * Everything else is framework-agnostic and installs for all targets.
+ */
+const FRAMEWORK_EXTENSIONS = ['.tsx', '.astro', '.vue', '.svelte', '.element.ts'];
+
+/**
+ * Check if a file path is a shared/auxiliary file that installs regardless of
+ * framework target. This includes shared suffixes (.behavior.ts, .classes.ts),
+ * and subsystem files nested under a component dir (e.g.,
+ * `components/ui/editor/editor-history.ts`).
  */
 function isSharedFile(path: string): boolean {
+  if (FRAMEWORK_EXTENSIONS.some((ext) => path.endsWith(ext))) return false;
   for (const ext of SHARED_EXTENSIONS) {
     if (path.endsWith(ext)) return true;
+  }
+  // Subsystem files: .ts files nested under components/ui/<name>/
+  if (path.startsWith('components/') && path.endsWith('.ts')) {
+    const afterComponents = path.slice('components/ui/'.length);
+    if (afterComponents.includes('/')) return true;
   }
   return false;
 }
@@ -468,40 +484,86 @@ export function transformFileContent(
   const aliasComponents = stripSourceRoot(componentsPath);
   const aliasPrimitives = stripSourceRoot(primitivesPath);
 
-  // Transform imports from ../../primitives/ or ../primitives/ to the
-  // configured primitives path. Served primitives are ALWAYS flat
+  // Transform imports from any depth of ../primitives/ to the configured
+  // primitives path. Served primitives are ALWAYS flat
   // (`lib/primitives/<name>`), even when their SOURCE lives in a subdir like
   // `primitives/editor/<name>` -- source nesting is deliberately decoupled from
-  // the served/consumer layout (#2136). So collapse any subpath to its
-  // basename: `../../primitives/editor/command-palette` and
-  // `../../primitives/command-palette` both install as `@/lib/primitives/command-palette`.
+  // the served/consumer layout (#2136). Any depth of ../ handles subsystem files
+  // that live deeper (e.g., ops/types.ts at ../../../primitives/types).
   const toFlatPrimitive = (_match: string, subpath: string): string =>
     `from '@/${aliasPrimitives}/${basename(subpath)}'`;
   transformed = transformed.replace(
-    /from\s+['"]\.\.\/\.\.\/primitives\/([^'"]+)['"]/g,
+    /from\s+['"](?:\.\.\/)+primitives\/([^'"]+)['"]/g,
     toFlatPrimitive,
   );
-  transformed = transformed.replace(/from\s+['"]\.\.\/primitives\/([^'"]+)['"]/g, toFlatPrimitive);
 
-  // Sibling imports (./foo) resolve to the dir THIS file installs into:
-  // primitives -> primitivesPath, a substrate file -> its OWN install dir (from
-  // its path, e.g. lib/contract.ts -> @/lib), else componentsPath.
-  const substrateOwnDir =
-    fileType === 'substrate' && installPath ? stripSourceRoot(dirname(installPath)) : null;
-  const aliasSibling =
-    fileType === 'primitive' ? aliasPrimitives : (substrateOwnDir ?? aliasComponents);
-  transformed = transformed.replace(/from\s+['"]\.\/([^'"]+)['"]/g, `from '@/${aliasSibling}/$1'`);
+  // Detect whether this file is a subsystem file (nested under
+  // components/ui/<name>/) vs. a main component file (flat at
+  // components/ui/<name>.<ext>).
+  const isSubsystemFile =
+    fileType === 'component' &&
+    installPath?.startsWith('components/') &&
+    installPath.slice('components/ui/'.length).includes('/');
+
+  // Extract the component name from the install path for main component files.
+  // `components/ui/editor.tsx` -> "editor"
+  // `components/ui/editor.behavior.ts` -> "editor" (strip shared suffix)
+  const SHARED_SUFFIX_BASES = ['.behavior', '.classes', '.types', '.constants', '.styles'];
+  function extractComponentName(path: string): string | null {
+    if (!path.startsWith('components/')) return null;
+    let base = basename(path).replace(/\.(tsx?|jsx?|astro|vue|svelte)$/, '');
+    // Strip shared suffixes: editor.behavior -> editor
+    for (const suffix of SHARED_SUFFIX_BASES) {
+      if (base.endsWith(suffix)) {
+        base = base.slice(0, -suffix.length);
+        break;
+      }
+    }
+    return base || null;
+  }
+
+  // Sibling imports (./foo) resolve based on where this file installs:
+  if (isSubsystemFile) {
+    // Subsystem files install nested (components/ui/<name>/<subpath>), so their
+    // ./foo imports are relative to the same subtree and stay untouched.
+  } else if (fileType === 'component' && installPath) {
+    const componentName = extractComponentName(installPath);
+    transformed = transformed.replace(
+      /from\s+['"]\.\/([^'"]+)['"]/g,
+      (_match: string, importPath: string) => {
+        // Shared-suffix imports install flat beside the component
+        if (SHARED_SUFFIX_BASES.some((s) => importPath.endsWith(s))) {
+          return `from '@/${aliasComponents}/${importPath}'`;
+        }
+        // Everything else is a subsystem file that installs nested
+        if (componentName) {
+          return `from '@/${aliasComponents}/${componentName}/${importPath}'`;
+        }
+        return `from '@/${aliasComponents}/${importPath}'`;
+      },
+    );
+  } else {
+    // Primitives -> primitivesPath, substrate -> own dir, fallback -> componentsPath
+    const substrateOwnDir =
+      fileType === 'substrate' && installPath ? stripSourceRoot(dirname(installPath)) : null;
+    const aliasSibling =
+      fileType === 'primitive' ? aliasPrimitives : (substrateOwnDir ?? aliasComponents);
+    transformed = transformed.replace(
+      /from\s+['"]\.\/([^'"]+)['"]/g,
+      `from '@/${aliasSibling}/$1'`,
+    );
+  }
 
   // Parent imports into a substrate kind dir (`../lib/x`, `../../hooks/y`, ...).
   // The kind name in the import equals its install dir, so the rewrite is
   // `@/<kind>/<rest>`. Kinds are DATA discovered from the served items, never
   // hardcoded -- a new substrate dir needs no rule change. Runs for every file
-  // type because components import substrate this way too. Must precede the
-  // component fallback so substrate parents are not mistaken for components.
+  // type because components import substrate this way too. Any depth of ../
+  // handles subsystem files at deeper nesting.
   if (substrateKinds.length > 0) {
     const kindAlternation = substrateKinds.join('|');
     transformed = transformed.replace(
-      new RegExp(`from\\s+['"](?:\\.\\./){1,2}(${kindAlternation})/([^'"]+)['"]`, 'g'),
+      new RegExp(`from\\s+['"](?:\\.\\./)+?(${kindAlternation})/([^'"]+)['"]`, 'g'),
       "from '@/$1/$2'",
     );
   }
@@ -509,16 +571,23 @@ export function transformFileContent(
   // Cross-component sibling: ../name/name.suffix -> @/components/ui/name.suffix
   // Source layout is nested (grid/grid.classes.ts); consumer layout is flat
   // (grid.classes.ts next to grid.tsx). Collapse the repeated dir prefix.
-  transformed = transformed.replace(
-    /from\s+['"]\.\.\/([^/'"]+)\/\1([^'"]*)['"]/g,
-    `from '@/${aliasComponents}/$1$2'`,
-  );
+  // Skip for subsystem files -- their ../ imports are already handled.
+  if (!isSubsystemFile) {
+    transformed = transformed.replace(
+      /from\s+['"]\.\.\/([^/'"]+)\/\1([^'"]*)['"]/g,
+      `from '@/${aliasComponents}/$1$2'`,
+    );
+  }
 
   // Any remaining parent import is a sibling component -> componentsPath.
-  transformed = transformed.replace(
-    /from\s+['"]\.\.\/([^'"]+)['"]/g,
-    `from '@/${aliasComponents}/$1'`,
-  );
+  // Skip for subsystem files -- their remaining ../ imports resolve within
+  // the component subtree or to primitives (already rewritten above).
+  if (!isSubsystemFile) {
+    transformed = transformed.replace(
+      /from\s+['"]\.\.\/([^'"]+)['"]/g,
+      `from '@/${aliasComponents}/$1'`,
+    );
+  }
 
   return transformed;
 }
