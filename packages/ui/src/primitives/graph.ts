@@ -21,9 +21,18 @@ export interface GraphControls {
   readonly element: SVGSVGElement | HTMLCanvasElement | null;
 }
 
+export interface BandScaleOptions {
+  paddingInner?: number;
+  paddingOuter?: number;
+}
+
 export interface BandScale<T extends string> {
+  /** Returns the left edge of the band for a given category value. */
   scale: (value: T) => number;
-  bandwidth: number;
+  /** Returns the width of each band (excluding padding). */
+  bandwidth: () => number;
+  /** Returns the distance between the starts of adjacent bands. */
+  step: () => number;
   domain: readonly T[];
   range: readonly [number, number];
 }
@@ -121,14 +130,31 @@ export function linearScale(
 
 /**
  * Create a band scale that maps categorical values to evenly-spaced bands.
+ * paddingInner controls space between bands (0-1, fraction of step).
+ * paddingOuter controls space before the first and after the last band (0-1, fraction of step).
  */
 export function bandScale<T extends string>(
   domain: readonly T[],
   range: readonly [number, number],
+  opts?: BandScaleOptions,
 ): BandScale<T> {
   const rangeSpan = range[1] - range[0];
   const count = domain.length;
-  const bandwidth = count === 0 ? 0 : rangeSpan / count;
+  const pInner = opts?.paddingInner ?? 0;
+  const pOuter = opts?.paddingOuter ?? 0;
+
+  let stepVal: number;
+  let bw: number;
+
+  if (count === 0) {
+    stepVal = 0;
+    bw = 0;
+  } else {
+    stepVal = rangeSpan / (count + 2 * pOuter - pInner + count * pInner);
+    bw = stepVal * (1 - pInner);
+  }
+
+  const offset = pOuter * stepVal;
 
   const indexMap = new Map<T, number>();
   for (let i = 0; i < domain.length; i++) {
@@ -139,9 +165,10 @@ export function bandScale<T extends string>(
     scale(value: T): number {
       const idx = indexMap.get(value);
       if (idx === undefined) return range[0];
-      return range[0] + idx * bandwidth;
+      return range[0] + offset + idx * stepVal;
     },
-    bandwidth,
+    bandwidth: () => bw,
+    step: () => stepVal,
     domain,
     range,
   };
@@ -149,6 +176,9 @@ export function bandScale<T extends string>(
 
 /**
  * Generate nicely-rounded tick values for a numeric axis.
+ * Uses the 1/2/5 x 10^n "nice number" rule: steps are always 1, 2, 5, 10, 20, 50, etc.
+ * 25 is not a nice number (2.5 x 10 doesn't fit the 1/2/5 pattern), so ticks(0,100,4)
+ * produces [0,20,40,60,80,100] (step=20), not [0,25,50,75,100].
  */
 export function ticks(min: number, max: number, count: number): number[] {
   if (count <= 0 || min === max) return [min];
@@ -305,9 +335,9 @@ export function slicePath(
   cx: number,
   cy: number,
   outerRadius: number,
+  innerRadius: number,
   startAngle: number,
   endAngle: number,
-  innerRadius = 0,
 ): string {
   const toRad = (deg: number) => ((deg - 90) * Math.PI) / 180;
 
@@ -394,6 +424,10 @@ export function observeResize(
   callback: (width: number, height: number) => void,
   debounceMs = 16,
 ): () => void {
+  if (typeof ResizeObserver === 'undefined') {
+    return () => {};
+  }
+
   let timer: ReturnType<typeof setTimeout> | undefined;
   let lastWidth = 0;
   let lastHeight = 0;

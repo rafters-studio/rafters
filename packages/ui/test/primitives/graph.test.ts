@@ -181,12 +181,13 @@ describe('linearScale', () => {
 });
 
 describe('bandScale', () => {
-  it('maps categorical values to evenly-spaced bands', () => {
+  it('maps categorical values to evenly-spaced bands (no padding)', () => {
     const s = bandScale(['a', 'b', 'c'] as const, [0, 300]);
     expect(s.scale('a')).toBe(0);
     expect(s.scale('b')).toBe(100);
     expect(s.scale('c')).toBe(200);
-    expect(s.bandwidth).toBe(100);
+    expect(s.bandwidth()).toBe(100);
+    expect(s.step()).toBe(100);
   });
 
   it('returns range start for unknown values', () => {
@@ -196,13 +197,14 @@ describe('bandScale', () => {
 
   it('handles empty domain', () => {
     const s = bandScale([] as const, [0, 300]);
-    expect(s.bandwidth).toBe(0);
+    expect(s.bandwidth()).toBe(0);
+    expect(s.step()).toBe(0);
   });
 
   it('handles single value domain', () => {
     const s = bandScale(['only'] as const, [0, 100]);
     expect(s.scale('only')).toBe(0);
-    expect(s.bandwidth).toBe(100);
+    expect(s.bandwidth()).toBe(100);
   });
 
   it('preserves domain and range', () => {
@@ -215,7 +217,31 @@ describe('bandScale', () => {
     const s = bandScale(['a', 'b'] as const, [50, 150]);
     expect(s.scale('a')).toBe(50);
     expect(s.scale('b')).toBe(100);
-    expect(s.bandwidth).toBe(50);
+    expect(s.bandwidth()).toBe(50);
+  });
+
+  it('applies paddingInner between bands', () => {
+    const s = bandScale(['a', 'b', 'c'] as const, [0, 300], { paddingInner: 0.5 });
+    const bw = s.bandwidth();
+    const st = s.step();
+    expect(bw).toBeLessThan(st);
+    expect(bw).toBeCloseTo(st * 0.5, 5);
+    expect(s.scale('b')).toBeCloseTo(s.scale('a') + st, 5);
+  });
+
+  it('applies paddingOuter before first and after last band', () => {
+    const s = bandScale(['a', 'b'] as const, [0, 200], { paddingOuter: 0.5 });
+    expect(s.scale('a')).toBeGreaterThan(0);
+    const lastEnd = s.scale('b') + s.bandwidth();
+    expect(lastEnd).toBeLessThan(200);
+  });
+
+  it('bandwidth() and step() are callable', () => {
+    const s = bandScale(['a', 'b'] as const, [0, 100]);
+    expect(typeof s.bandwidth).toBe('function');
+    expect(typeof s.step).toBe('function');
+    expect(s.bandwidth()).toBeGreaterThan(0);
+    expect(s.step()).toBeGreaterThan(0);
   });
 });
 
@@ -419,15 +445,15 @@ describe('areaPath', () => {
 });
 
 describe('slicePath', () => {
-  it('builds a pie slice (no inner radius)', () => {
-    const path = slicePath(100, 100, 50, 0, 90);
+  it('builds a pie slice (innerRadius = 0)', () => {
+    const path = slicePath(100, 100, 50, 0, 0, 90);
     expect(path).toContain('M 100 100');
     expect(path).toContain('A 50 50');
     expect(path).toContain('Z');
   });
 
   it('builds a donut slice with inner radius', () => {
-    const path = slicePath(100, 100, 50, 0, 90, 20);
+    const path = slicePath(100, 100, 50, 20, 0, 90);
     expect(path).not.toContain('M 100 100');
     expect(path).toContain('A 50 50');
     expect(path).toContain('A 20 20');
@@ -435,12 +461,12 @@ describe('slicePath', () => {
   });
 
   it('handles large arc (> 180 degrees)', () => {
-    const path = slicePath(100, 100, 50, 0, 270);
+    const path = slicePath(100, 100, 50, 0, 0, 270);
     expect(path).toContain('1 1');
   });
 
   it('handles full circle (360 degrees minus epsilon)', () => {
-    const path = slicePath(100, 100, 50, 0, 359.99);
+    const path = slicePath(100, 100, 50, 0, 0, 359.99);
     expect(path).toContain('A 50 50');
   });
 });
@@ -533,6 +559,22 @@ describe('observeResize', () => {
     expect(disconnectSpy).toHaveBeenCalled();
 
     vi.unstubAllGlobals();
+  });
+
+  it('returns no-op cleanup when ResizeObserver is undefined (SSR)', () => {
+    const original = globalThis.ResizeObserver;
+    // @ts-expect-error -- simulating SSR where ResizeObserver does not exist
+    delete globalThis.ResizeObserver;
+
+    const callback = vi.fn();
+    const element = document.createElement('div');
+    const teardown = observeResize(element, callback);
+
+    expect(typeof teardown).toBe('function');
+    expect(() => teardown()).not.toThrow();
+    expect(callback).not.toHaveBeenCalled();
+
+    globalThis.ResizeObserver = original;
   });
 
   it('deduplicates unchanged sizes', async () => {
