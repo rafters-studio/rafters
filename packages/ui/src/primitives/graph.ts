@@ -15,17 +15,22 @@ export interface GraphConfig {
   renderer?: 'svg' | 'canvas';
 }
 
-export interface GraphTheme {
-  foreground: string;
-  muted: string;
-  background: string;
-}
-
 export interface GraphControls {
   resize: (width: number, height: number) => void;
-  setTheme: (theme: Partial<GraphTheme>) => void;
   destroy: () => void;
   readonly element: SVGSVGElement | HTMLCanvasElement | null;
+}
+
+export interface BandScale<T extends string> {
+  scale: (value: T) => number;
+  bandwidth: number;
+  domain: readonly T[];
+  range: readonly [number, number];
+}
+
+export interface GridLines {
+  horizontal: Array<{ y: number; x1: number; x2: number }>;
+  vertical: Array<{ x: number; y1: number; y2: number }>;
 }
 
 const DEFAULT_WIDTH = 300;
@@ -84,17 +89,6 @@ export function createGraph(config: GraphConfig): GraphControls {
       }
     },
 
-    setTheme(theme: Partial<GraphTheme>) {
-      if (!element) return;
-
-      if (theme.foreground) {
-        element.style.color = theme.foreground;
-      }
-      if (theme.background && element instanceof SVGSVGElement) {
-        element.style.backgroundColor = theme.background;
-      }
-    },
-
     destroy() {
       if (element) {
         element.remove();
@@ -122,6 +116,84 @@ export function linearScale(
   return (value: number) => {
     const normalized = (value - domain[0]) / domainSpan;
     return range[0] + normalized * rangeSpan;
+  };
+}
+
+/**
+ * Create a band scale that maps categorical values to evenly-spaced bands.
+ */
+export function bandScale<T extends string>(
+  domain: readonly T[],
+  range: readonly [number, number],
+): BandScale<T> {
+  const rangeSpan = range[1] - range[0];
+  const count = domain.length;
+  const bandwidth = count === 0 ? 0 : rangeSpan / count;
+
+  const indexMap = new Map<T, number>();
+  for (let i = 0; i < domain.length; i++) {
+    indexMap.set(domain[i] as T, i);
+  }
+
+  return {
+    scale(value: T): number {
+      const idx = indexMap.get(value);
+      if (idx === undefined) return range[0];
+      return range[0] + idx * bandwidth;
+    },
+    bandwidth,
+    domain,
+    range,
+  };
+}
+
+/**
+ * Generate nicely-rounded tick values for a numeric axis.
+ */
+export function ticks(min: number, max: number, count: number): number[] {
+  if (count <= 0 || min === max) return [min];
+
+  const rawStep = (max - min) / count;
+  const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)));
+  const residual = rawStep / magnitude;
+
+  let niceStep: number;
+  if (residual <= 1.5) niceStep = 1;
+  else if (residual <= 3) niceStep = 2;
+  else if (residual <= 7) niceStep = 5;
+  else niceStep = 10;
+  niceStep *= magnitude;
+
+  const niceMin = Math.ceil(min / niceStep) * niceStep;
+  const result: number[] = [];
+
+  for (let v = niceMin; v <= max; v += niceStep) {
+    const rounded = Math.round(v * 1e12) / 1e12;
+    result.push(rounded);
+  }
+
+  return result;
+}
+
+/**
+ * Generate gridline coordinates from tick arrays.
+ */
+export function gridLines(
+  xTicks: number[],
+  yTicks: number[],
+  plotArea: { x1: number; y1: number; x2: number; y2: number },
+): GridLines {
+  return {
+    horizontal: yTicks.map((y) => ({
+      y,
+      x1: plotArea.x1,
+      x2: plotArea.x2,
+    })),
+    vertical: xTicks.map((x) => ({
+      x,
+      y1: plotArea.y1,
+      y2: plotArea.y2,
+    })),
   };
 }
 
@@ -206,4 +278,146 @@ export function arcPath(
     `M ${start.x} ${start.y}`,
     `A ${radius} ${radius} 0 ${largeArc} 0 ${end.x} ${end.y}`,
   ].join(' ');
+}
+
+/**
+ * Build a closed area SVG path: the line path closed back along a baseline.
+ */
+export function areaPath(
+  points: { x: number; y: number }[],
+  baseline: number,
+  smooth?: boolean,
+): string {
+  if (points.length === 0) return '';
+
+  const topPath = smooth ? smoothPath(points) : linePath(points);
+  const last = points[points.length - 1] as { x: number; y: number };
+  const first = points[0] as { x: number; y: number };
+
+  return `${topPath} L ${last.x} ${baseline} L ${first.x} ${baseline} Z`;
+}
+
+/**
+ * Build a filled pie/donut slice SVG path.
+ * Angles in degrees, 0 = top (12 o'clock), clockwise -- standard chart convention.
+ */
+export function slicePath(
+  cx: number,
+  cy: number,
+  outerRadius: number,
+  startAngle: number,
+  endAngle: number,
+  innerRadius = 0,
+): string {
+  const toRad = (deg: number) => ((deg - 90) * Math.PI) / 180;
+
+  const outerStart = {
+    x: cx + outerRadius * Math.cos(toRad(startAngle)),
+    y: cy + outerRadius * Math.sin(toRad(startAngle)),
+  };
+  const outerEnd = {
+    x: cx + outerRadius * Math.cos(toRad(endAngle)),
+    y: cy + outerRadius * Math.sin(toRad(endAngle)),
+  };
+
+  let sweep = endAngle - startAngle;
+  if (sweep < 0) sweep += 360;
+  const largeArc = sweep > 180 ? 1 : 0;
+
+  if (innerRadius <= 0) {
+    return [
+      `M ${cx} ${cy}`,
+      `L ${outerStart.x} ${outerStart.y}`,
+      `A ${outerRadius} ${outerRadius} 0 ${largeArc} 1 ${outerEnd.x} ${outerEnd.y}`,
+      'Z',
+    ].join(' ');
+  }
+
+  const innerStart = {
+    x: cx + innerRadius * Math.cos(toRad(startAngle)),
+    y: cy + innerRadius * Math.sin(toRad(startAngle)),
+  };
+  const innerEnd = {
+    x: cx + innerRadius * Math.cos(toRad(endAngle)),
+    y: cy + innerRadius * Math.sin(toRad(endAngle)),
+  };
+
+  return [
+    `M ${outerStart.x} ${outerStart.y}`,
+    `A ${outerRadius} ${outerRadius} 0 ${largeArc} 1 ${outerEnd.x} ${outerEnd.y}`,
+    `L ${innerEnd.x} ${innerEnd.y}`,
+    `A ${innerRadius} ${innerRadius} 0 ${largeArc} 0 ${innerStart.x} ${innerStart.y}`,
+    'Z',
+  ].join(' ');
+}
+
+/**
+ * Convert a value on a radial axis to cartesian coordinates.
+ * Used for radar/radial charts. Angle 0 = top, clockwise.
+ */
+export function radialToCartesian(
+  cx: number,
+  cy: number,
+  radius: number,
+  angleDeg: number,
+): { x: number; y: number } {
+  const angleRad = ((angleDeg - 90) * Math.PI) / 180;
+  return {
+    x: cx + radius * Math.cos(angleRad),
+    y: cy + radius * Math.sin(angleRad),
+  };
+}
+
+/**
+ * Build a closed polygon path for radar charts.
+ * Takes values at equally-spaced angles from 0 (top), clockwise.
+ */
+export function radarPath(cx: number, cy: number, values: number[], maxRadius: number): string {
+  if (values.length === 0) return '';
+
+  const angleStep = 360 / values.length;
+  const points = values.map((v, i) => {
+    const angle = i * angleStep;
+    const r = (v / 1) * maxRadius;
+    return radialToCartesian(cx, cy, r, angle);
+  });
+
+  return linePath(points) + ' Z';
+}
+
+/**
+ * Observe an element's size and invoke a callback on resize.
+ * Returns a teardown function. Debounced to avoid layout thrash.
+ */
+export function observeResize(
+  element: Element,
+  callback: (width: number, height: number) => void,
+  debounceMs = 16,
+): () => void {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let lastWidth = 0;
+  let lastHeight = 0;
+
+  const observer = new ResizeObserver((entries) => {
+    const entry = entries[0];
+    if (!entry) return;
+
+    const { width, height } = entry.contentRect;
+    if (width === lastWidth && height === lastHeight) return;
+
+    lastWidth = width;
+    lastHeight = height;
+
+    if (timer !== undefined) clearTimeout(timer);
+    timer = setTimeout(() => {
+      callback(width, height);
+    }, debounceMs);
+  });
+
+  observer.observe(element);
+
+  return () => {
+    if (timer !== undefined) clearTimeout(timer);
+    observer.disconnect();
+  };
 }

@@ -2,14 +2,22 @@
  * Tests for graph core primitive
  */
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  areaPath,
   arcPath,
+  bandScale,
   createGraph,
+  gridLines,
   linearScale,
   linePath,
+  observeResize,
   polarToCartesian,
+  radarPath,
+  radialToCartesian,
+  slicePath,
   smoothPath,
+  ticks,
 } from '../../src/primitives/graph';
 
 describe('createGraph', () => {
@@ -73,6 +81,14 @@ describe('createGraph', () => {
     const graph = createGraph({ container });
     expect(graph.element).toBeTruthy();
     expect(graph.element instanceof SVGSVGElement).toBe(true);
+    graph.destroy();
+  });
+
+  it('does not set inline color styles on the element', () => {
+    const graph = createGraph({ container });
+    const svg = container.querySelector('svg');
+    expect(svg?.style.color).toBe('');
+    expect(svg?.style.backgroundColor).toBe('');
     graph.destroy();
   });
 
@@ -161,6 +177,106 @@ describe('linearScale', () => {
     const scale = linearScale([0, 1], [0, 100]);
     expect(scale(0.5)).toBe(50);
     expect(scale(0.25)).toBe(25);
+  });
+});
+
+describe('bandScale', () => {
+  it('maps categorical values to evenly-spaced bands', () => {
+    const s = bandScale(['a', 'b', 'c'] as const, [0, 300]);
+    expect(s.scale('a')).toBe(0);
+    expect(s.scale('b')).toBe(100);
+    expect(s.scale('c')).toBe(200);
+    expect(s.bandwidth).toBe(100);
+  });
+
+  it('returns range start for unknown values', () => {
+    const s = bandScale(['a', 'b'] as const, [0, 200]);
+    expect(s.scale('z' as 'a')).toBe(0);
+  });
+
+  it('handles empty domain', () => {
+    const s = bandScale([] as const, [0, 300]);
+    expect(s.bandwidth).toBe(0);
+  });
+
+  it('handles single value domain', () => {
+    const s = bandScale(['only'] as const, [0, 100]);
+    expect(s.scale('only')).toBe(0);
+    expect(s.bandwidth).toBe(100);
+  });
+
+  it('preserves domain and range', () => {
+    const s = bandScale(['x', 'y'] as const, [10, 50]);
+    expect(s.domain).toEqual(['x', 'y']);
+    expect(s.range).toEqual([10, 50]);
+  });
+
+  it('handles non-zero range start', () => {
+    const s = bandScale(['a', 'b'] as const, [50, 150]);
+    expect(s.scale('a')).toBe(50);
+    expect(s.scale('b')).toBe(100);
+    expect(s.bandwidth).toBe(50);
+  });
+});
+
+describe('ticks', () => {
+  it('generates nice round tick values', () => {
+    const t = ticks(0, 100, 5);
+    expect(t).toEqual([0, 20, 40, 60, 80, 100]);
+  });
+
+  it('handles min equal to max', () => {
+    const t = ticks(5, 5, 5);
+    expect(t).toEqual([5]);
+  });
+
+  it('handles zero count', () => {
+    const t = ticks(0, 100, 0);
+    expect(t).toEqual([0]);
+  });
+
+  it('generates ticks for small ranges', () => {
+    const t = ticks(0, 1, 5);
+    expect(t.length).toBeGreaterThan(0);
+    for (const v of t) {
+      expect(v).toBeGreaterThanOrEqual(0);
+      expect(v).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it('generates ticks for large ranges', () => {
+    const t = ticks(0, 10000, 5);
+    expect(t.length).toBeGreaterThan(0);
+    expect(t[0]).toBeGreaterThanOrEqual(0);
+    expect(t[t.length - 1] as number).toBeLessThanOrEqual(10000);
+  });
+
+  it('produces values within the domain', () => {
+    const t = ticks(3, 97, 10);
+    for (const v of t) {
+      expect(v).toBeGreaterThanOrEqual(3);
+      expect(v).toBeLessThanOrEqual(97);
+    }
+  });
+});
+
+describe('gridLines', () => {
+  it('generates horizontal and vertical gridlines from ticks', () => {
+    const plotArea = { x1: 0, y1: 0, x2: 300, y2: 200 };
+    const g = gridLines([50, 100, 150], [40, 80, 120], plotArea);
+
+    expect(g.horizontal).toHaveLength(3);
+    expect(g.vertical).toHaveLength(3);
+
+    expect(g.horizontal[0]).toEqual({ y: 40, x1: 0, x2: 300 });
+    expect(g.vertical[0]).toEqual({ x: 50, y1: 0, y2: 200 });
+  });
+
+  it('handles empty tick arrays', () => {
+    const plotArea = { x1: 0, y1: 0, x2: 100, y2: 100 };
+    const g = gridLines([], [], plotArea);
+    expect(g.horizontal).toHaveLength(0);
+    expect(g.vertical).toHaveLength(0);
   });
 });
 
@@ -259,5 +375,195 @@ describe('arcPath', () => {
   it('handles small arcs (< 180 degrees)', () => {
     const path = arcPath(50, 50, 40, 0, 90);
     expect(path).toContain('0 0');
+  });
+});
+
+describe('areaPath', () => {
+  it('returns empty string for empty points', () => {
+    expect(areaPath([], 100)).toBe('');
+  });
+
+  it('builds a closed area with straight lines by default', () => {
+    const points = [
+      { x: 0, y: 50 },
+      { x: 100, y: 30 },
+      { x: 200, y: 70 },
+    ];
+    const path = areaPath(points, 100);
+    expect(path).toMatch(/^M 0 50/);
+    expect(path).toContain('L 200 100');
+    expect(path).toContain('L 0 100');
+    expect(path).toContain('Z');
+  });
+
+  it('uses smooth interpolation when smooth is true', () => {
+    const points = [
+      { x: 0, y: 50 },
+      { x: 50, y: 30 },
+      { x: 100, y: 70 },
+    ];
+    const path = areaPath(points, 100, true);
+    expect(path).toContain('C');
+    expect(path).toContain('Z');
+  });
+
+  it('closes back to the first x at the baseline', () => {
+    const points = [
+      { x: 10, y: 20 },
+      { x: 90, y: 40 },
+    ];
+    const path = areaPath(points, 200);
+    expect(path).toContain('L 90 200');
+    expect(path).toContain('L 10 200');
+  });
+});
+
+describe('slicePath', () => {
+  it('builds a pie slice (no inner radius)', () => {
+    const path = slicePath(100, 100, 50, 0, 90);
+    expect(path).toContain('M 100 100');
+    expect(path).toContain('A 50 50');
+    expect(path).toContain('Z');
+  });
+
+  it('builds a donut slice with inner radius', () => {
+    const path = slicePath(100, 100, 50, 0, 90, 20);
+    expect(path).not.toContain('M 100 100');
+    expect(path).toContain('A 50 50');
+    expect(path).toContain('A 20 20');
+    expect(path).toContain('Z');
+  });
+
+  it('handles large arc (> 180 degrees)', () => {
+    const path = slicePath(100, 100, 50, 0, 270);
+    expect(path).toContain('1 1');
+  });
+
+  it('handles full circle (360 degrees minus epsilon)', () => {
+    const path = slicePath(100, 100, 50, 0, 359.99);
+    expect(path).toContain('A 50 50');
+  });
+});
+
+describe('radialToCartesian', () => {
+  it('0 degrees points up (12 o-clock)', () => {
+    const p = radialToCartesian(0, 0, 10, 0);
+    expect(p.x).toBeCloseTo(0, 5);
+    expect(p.y).toBeCloseTo(-10, 5);
+  });
+
+  it('90 degrees points right (3 o-clock)', () => {
+    const p = radialToCartesian(0, 0, 10, 90);
+    expect(p.x).toBeCloseTo(10, 5);
+    expect(p.y).toBeCloseTo(0, 5);
+  });
+
+  it('180 degrees points down (6 o-clock)', () => {
+    const p = radialToCartesian(0, 0, 10, 180);
+    expect(p.x).toBeCloseTo(0, 5);
+    expect(p.y).toBeCloseTo(10, 5);
+  });
+
+  it('respects center offset', () => {
+    const p = radialToCartesian(50, 50, 10, 0);
+    expect(p.x).toBeCloseTo(50, 5);
+    expect(p.y).toBeCloseTo(40, 5);
+  });
+});
+
+describe('radarPath', () => {
+  it('returns empty string for empty values', () => {
+    expect(radarPath(0, 0, [], 50)).toBe('');
+  });
+
+  it('builds a closed polygon from values', () => {
+    const path = radarPath(100, 100, [1, 1, 1], 50);
+    expect(path).toMatch(/^M/);
+    expect(path).toContain('Z');
+  });
+
+  it('produces three points for three values', () => {
+    const path = radarPath(100, 100, [1, 0.5, 0.8], 50);
+    const segments = path.split(/[MLZ]/).filter(Boolean);
+    expect(segments.length).toBe(3);
+  });
+
+  it('scales values by maxRadius', () => {
+    const path = radarPath(0, 0, [1], 100);
+    expect(path).toMatch(/-100/);
+    expect(path).toMatch(/^M/);
+  });
+});
+
+describe('observeResize', () => {
+  it('calls callback on size changes', async () => {
+    const callback = vi.fn();
+    const element = document.createElement('div');
+
+    const observeSpy = vi.fn();
+    const disconnectSpy = vi.fn();
+
+    let resizeCallback: ResizeObserverCallback | undefined;
+
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(cb: ResizeObserverCallback) {
+          resizeCallback = cb;
+        }
+        observe = observeSpy;
+        disconnect = disconnectSpy;
+        unobserve = vi.fn();
+      },
+    );
+
+    const teardown = observeResize(element, callback, 0);
+
+    expect(observeSpy).toHaveBeenCalledWith(element);
+
+    resizeCallback!(
+      [{ contentRect: { width: 400, height: 300 } } as ResizeObserverEntry],
+      {} as ResizeObserver,
+    );
+
+    await new Promise((r) => setTimeout(r, 10));
+    expect(callback).toHaveBeenCalledWith(400, 300);
+
+    teardown();
+    expect(disconnectSpy).toHaveBeenCalled();
+
+    vi.unstubAllGlobals();
+  });
+
+  it('deduplicates unchanged sizes', async () => {
+    const callback = vi.fn();
+    const element = document.createElement('div');
+
+    let resizeCallback: ResizeObserverCallback | undefined;
+
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(cb: ResizeObserverCallback) {
+          resizeCallback = cb;
+        }
+        observe = vi.fn();
+        disconnect = vi.fn();
+        unobserve = vi.fn();
+      },
+    );
+
+    observeResize(element, callback, 0);
+
+    const entry = { contentRect: { width: 100, height: 100 } } as ResizeObserverEntry;
+    resizeCallback!([entry], {} as ResizeObserver);
+    await new Promise((r) => setTimeout(r, 10));
+
+    resizeCallback!([entry], {} as ResizeObserver);
+    await new Promise((r) => setTimeout(r, 10));
+
+    expect(callback).toHaveBeenCalledTimes(1);
+
+    vi.unstubAllGlobals();
   });
 });
