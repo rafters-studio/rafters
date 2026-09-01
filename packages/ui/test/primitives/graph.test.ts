@@ -274,6 +274,25 @@ describe('ticks', () => {
     expect(ticks(0, 145, 10)).toEqual([0, 20, 40, 60, 80, 100, 120, 140]);
   });
 
+  it('includes the upper-bound tick (index-based, no float-accumulation drop)', () => {
+    // A float-accumulating loop drops the top tick when the step is not a clean
+    // divisor of the span; d3's index-based generation keeps it.
+    expect(ticks(0, 3, 10)).toContain(3);
+    expect(ticks(1, 1.3, 4)).toEqual([1, 1.1, 1.2, 1.3]);
+    expect(ticks(-5, -4, 4)).toContain(-4);
+    // and never emits a value past the bounds
+    for (const [lo, hi, c] of [
+      [0, 3, 10],
+      [1, 1.3, 4],
+      [-5, -4, 4],
+    ] as const) {
+      for (const v of ticks(lo, hi, c)) {
+        expect(v).toBeGreaterThanOrEqual(lo);
+        expect(v).toBeLessThanOrEqual(hi);
+      }
+    }
+  });
+
   it('handles min equal to max', () => {
     const t = ticks(5, 5, 5);
     expect(t).toEqual([5]);

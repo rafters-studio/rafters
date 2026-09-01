@@ -182,23 +182,34 @@ export function bandScale<T extends string>(
 export function ticks(min: number, max: number, count: number): number[] {
   if (count <= 0 || min === max) return [min];
 
-  const rawStep = (max - min) / count;
-  const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)));
-  const residual = rawStep / magnitude;
-
-  // d3-array tickIncrement factor thresholds: sqrt(50), sqrt(10), sqrt(2).
+  // d3-array tickIncrement: a SIGNED increment. Positive is the ordinary step;
+  // negative signals the sub-integer branch, which multiplies by 1/step instead
+  // of dividing by step to avoid float drift.
   const e10 = Math.sqrt(50);
   const e5 = Math.sqrt(10);
   const e2 = Math.sqrt(2);
-  const factor = residual >= e10 ? 10 : residual >= e5 ? 5 : residual >= e2 ? 2 : 1;
-  const niceStep = factor * magnitude;
+  const rawStep = (max - min) / count;
+  const power = Math.floor(Math.log10(rawStep));
+  const errorFactor = rawStep / Math.pow(10, power);
+  const factor = errorFactor >= e10 ? 10 : errorFactor >= e5 ? 5 : errorFactor >= e2 ? 2 : 1;
+  const inc = power >= 0 ? factor * Math.pow(10, power) : -Math.pow(10, -power) / factor;
 
-  const niceMin = Math.ceil(min / niceStep) * niceStep;
+  // Index-based generation (d3-array ticks): each tick is a rounded integer index
+  // times the step, so the upper bound is never dropped by accumulated float error.
   const result: number[] = [];
-
-  for (let v = niceMin; v <= max; v += niceStep) {
-    const rounded = Math.round(v * 1e12) / 1e12;
-    result.push(rounded);
+  if (inc > 0) {
+    let r0 = Math.round(min / inc);
+    let r1 = Math.round(max / inc);
+    if (r0 * inc < min) ++r0;
+    if (r1 * inc > max) --r1;
+    for (let i = 0; i <= r1 - r0; i++) result.push((r0 + i) * inc);
+  } else {
+    const step = -inc;
+    let r0 = Math.round(min * step);
+    let r1 = Math.round(max * step);
+    if (r0 / step < min) ++r0;
+    if (r1 / step > max) --r1;
+    for (let i = 0; i <= r1 - r0; i++) result.push((r0 + i) / step);
   }
 
   return result;
