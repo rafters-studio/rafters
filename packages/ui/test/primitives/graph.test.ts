@@ -293,6 +293,15 @@ describe('ticks', () => {
     }
   });
 
+  it('returns in-bounds ticks at count=1 (d3 retry branch, never empty)', () => {
+    // count=1 can collapse the tick indices (i2 < i1); d3 retries at count*2.
+    expect(ticks(19.477802570666093, 472.4822831908769, 1)).toEqual([200, 400]);
+    const b = ticks(61.56449325455562, 61.93527658473829, 1);
+    expect(b.length).toBeGreaterThan(0);
+    expect(b[0] as number).toBeCloseTo(61.6, 10);
+    expect(b[b.length - 1] as number).toBeCloseTo(61.8, 10);
+  });
+
   it('handles min equal to max', () => {
     const t = ticks(5, 5, 5);
     expect(t).toEqual([5]);

@@ -179,39 +179,56 @@ export function bandScale<T extends string>(
  * across the input space, not only for round cases: ticks(0,100,5) -> step 20
  * ([0,20,40,60,80,100]); 25 (2.5 x 10) is never chosen.
  */
-export function ticks(min: number, max: number, count: number): number[] {
-  if (count <= 0 || min === max) return [min];
-
-  // d3-array tickIncrement: a SIGNED increment. Positive is the ordinary step;
-  // negative signals the sub-integer branch, which multiplies by 1/step instead
-  // of dividing by step to avoid float drift.
+/**
+ * d3-array tickSpec: the [firstIndex, lastIndex, signedIncrement] of the nice
+ * ticks. A negative increment signals the sub-integer branch (multiply by 1/inc
+ * rather than divide, to avoid float drift). Retries at double the count when the
+ * indices collapse (i2 < i1) for a near-1 count, so an ordinary domain never comes
+ * back empty at count=1.
+ */
+function tickSpec(start: number, stop: number, count: number): [number, number, number] {
   const e10 = Math.sqrt(50);
   const e5 = Math.sqrt(10);
   const e2 = Math.sqrt(2);
-  const rawStep = (max - min) / count;
-  const power = Math.floor(Math.log10(rawStep));
-  const errorFactor = rawStep / Math.pow(10, power);
-  const factor = errorFactor >= e10 ? 10 : errorFactor >= e5 ? 5 : errorFactor >= e2 ? 2 : 1;
-  const inc = power >= 0 ? factor * Math.pow(10, power) : -Math.pow(10, -power) / factor;
+  const step = (stop - start) / count;
+  const power = Math.floor(Math.log10(step));
+  const error = step / Math.pow(10, power);
+  const factor = error >= e10 ? 10 : error >= e5 ? 5 : error >= e2 ? 2 : 1;
+  let i1: number;
+  let i2: number;
+  let inc: number;
+  if (power < 0) {
+    inc = Math.pow(10, -power) / factor;
+    i1 = Math.round(start * inc);
+    i2 = Math.round(stop * inc);
+    if (i1 / inc < start) ++i1;
+    if (i2 / inc > stop) --i2;
+    inc = -inc;
+  } else {
+    inc = Math.pow(10, power) * factor;
+    i1 = Math.round(start / inc);
+    i2 = Math.round(stop / inc);
+    if (i1 * inc < start) ++i1;
+    if (i2 * inc > stop) --i2;
+  }
+  if (i2 < i1 && count >= 0.5 && count < 2) return tickSpec(start, stop, count * 2);
+  return [i1, i2, inc];
+}
+
+export function ticks(min: number, max: number, count: number): number[] {
+  if (count <= 0 || min === max) return [min];
 
   // Index-based generation (d3-array ticks): each tick is a rounded integer index
   // times the step, so the upper bound is never dropped by accumulated float error.
+  const [i1, i2, inc] = tickSpec(min, max, count);
+  if (i2 < i1) return [];
   const result: number[] = [];
-  if (inc > 0) {
-    let r0 = Math.round(min / inc);
-    let r1 = Math.round(max / inc);
-    if (r0 * inc < min) ++r0;
-    if (r1 * inc > max) --r1;
-    for (let i = 0; i <= r1 - r0; i++) result.push((r0 + i) * inc);
+  if (inc < 0) {
+    const stepRecip = -inc;
+    for (let i = i1; i <= i2; i++) result.push(i / stepRecip);
   } else {
-    const step = -inc;
-    let r0 = Math.round(min * step);
-    let r1 = Math.round(max * step);
-    if (r0 / step < min) ++r0;
-    if (r1 / step > max) --r1;
-    for (let i = 0; i <= r1 - r0; i++) result.push((r0 + i) / step);
+    for (let i = i1; i <= i2; i++) result.push(i * inc);
   }
-
   return result;
 }
 
