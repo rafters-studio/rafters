@@ -536,6 +536,34 @@ describe('slicePath', () => {
     expect(path.match(/A 50 50/g)).toHaveLength(2); // outer circle, two arcs
     expect(path.match(/A 20 20/g)).toHaveLength(2); // inner circle (reversed), two arcs
   });
+
+  it('draws the short arc counterclockwise when endAngle < startAngle (matches d3 arc)', () => {
+    // d3-shape arc: da = |a1 - a0|, cw = a1 > a0 -- a shrinking end angle draws
+    // the short arc the OTHER way, never the 360-minus complement.
+    const start = radialToCartesian(100, 100, 50, 90);
+    const end = radialToCartesian(100, 100, 50, 0);
+    const path = slicePath(100, 100, 50, 20, 90, 0);
+
+    // Outer arc sweep flag 0 (counterclockwise), inner arc gets the opposite (1).
+    expect(path).toContain(`A 50 50 0 0 0 ${end.x} ${end.y}`);
+    expect(path).toContain(`A 20 20 0 0 1`);
+    // Outer endpoints equal radialToCartesian at the given start and end angles.
+    expect(path).toContain(`${start.x} ${start.y}`);
+    expect(path).toContain(`${end.x} ${end.y}`);
+  });
+
+  it('draws clockwise when endAngle > startAngle (unchanged direction)', () => {
+    const path = slicePath(100, 100, 50, 20, 0, 90);
+    // Outer arc sweep flag 1 (clockwise), inner arc gets the opposite (0).
+    expect(path).toContain('A 50 50 0 0 1');
+    expect(path).toContain('A 20 20 0 0 0');
+  });
+
+  it('a 90-to-0 slice is a 90-degree wedge, not a 270-degree one', () => {
+    const path = slicePath(100, 100, 50, 0, 90, 0);
+    // largeArc flag is 0 -- the short 90-degree arc, never the 270-degree complement.
+    expect(path).toContain('A 50 50 0 0 0');
+  });
 });
 
 describe('radialToCartesian', () => {

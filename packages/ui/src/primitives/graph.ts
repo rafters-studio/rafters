@@ -173,13 +173,6 @@ export function bandScale<T extends string>(
 }
 
 /**
- * Generate nicely-rounded tick values for a numeric axis.
- * Uses d3-array's 1/2/5 x 10^n "nice number" rule with d3's exact factor
- * thresholds (sqrt(2), sqrt(10), sqrt(50)), so the step matches what d3 picks
- * across the input space, not only for round cases: ticks(0,100,5) -> step 20
- * ([0,20,40,60,80,100]); 25 (2.5 x 10) is never chosen.
- */
-/**
  * d3-array tickSpec: the [firstIndex, lastIndex, signedIncrement] of the nice
  * ticks. A negative increment signals the sub-integer branch (multiply by 1/inc
  * rather than divide, to avoid float drift). Retries at double the count when the
@@ -215,6 +208,13 @@ function tickSpec(start: number, stop: number, count: number): [number, number, 
   return [i1, i2, inc];
 }
 
+/**
+ * Generate nicely-rounded tick values for a numeric axis.
+ * Uses d3-array's 1/2/5 x 10^n "nice number" rule with d3's exact factor
+ * thresholds (sqrt(2), sqrt(10), sqrt(50)), so the step matches what d3 picks
+ * across the input space, not only for round cases: ticks(0,100,5) -> step 20
+ * ([0,20,40,60,80,100]); 25 (2.5 x 10) is never chosen.
+ */
 export function ticks(min: number, max: number, count: number): number[] {
   if (count <= 0 || min === max) return [min];
 
@@ -373,7 +373,11 @@ function circleArcs(cx: number, cy: number, r: number, sweepFlag: 0 | 1): string
 
 /**
  * Build a filled pie/donut slice SVG path.
- * Angles in degrees, 0 = top (12 o'clock), clockwise -- standard chart convention.
+ * Angles in degrees, 0 = top (12 o'clock), positive = clockwise -- standard chart
+ * convention. Matches d3-shape arc: the sweep is the absolute angular distance
+ * (never the 360-minus complement), and the direction follows the angle sign --
+ * endAngle > startAngle draws clockwise, endAngle < startAngle draws the short
+ * arc counterclockwise.
  */
 export function slicePath(
   cx: number,
@@ -383,26 +387,31 @@ export function slicePath(
   startAngle: number,
   endAngle: number,
 ): string {
-  let sweep = endAngle - startAngle;
-  if (sweep < 0) sweep += 360;
+  const sweep = Math.abs(endAngle - startAngle);
+  const clockwise = endAngle > startAngle;
 
   // Full circle: one 360-degree arc has coincident endpoints (dropped by the SVG
-  // spec), so emit two semicircle arcs. Donut = outer circle (cw) + inner circle
-  // (ccw), the reversed inner winding cutting the hole.
+  // spec), so emit two semicircle arcs. Donut = outer circle + inner circle with
+  // the reversed winding, cutting the hole; the winding direction still follows
+  // the requested sweep direction.
   if (sweep >= 360 - 1e-9) {
-    const outer = circleArcs(cx, cy, outerRadius, 1);
-    return innerRadius <= 0 ? outer : `${outer} ${circleArcs(cx, cy, innerRadius, 0)}`;
+    const outerFlag = clockwise ? 1 : 0;
+    const innerFlag = clockwise ? 0 : 1;
+    const outer = circleArcs(cx, cy, outerRadius, outerFlag);
+    return innerRadius <= 0 ? outer : `${outer} ${circleArcs(cx, cy, innerRadius, innerFlag)}`;
   }
 
   const outerStart = radialToCartesian(cx, cy, outerRadius, startAngle);
   const outerEnd = radialToCartesian(cx, cy, outerRadius, endAngle);
   const largeArc = sweep > 180 ? 1 : 0;
+  const outerSweepFlag = clockwise ? 1 : 0;
+  const innerSweepFlag = clockwise ? 0 : 1;
 
   if (innerRadius <= 0) {
     return [
       `M ${cx} ${cy}`,
       `L ${outerStart.x} ${outerStart.y}`,
-      `A ${outerRadius} ${outerRadius} 0 ${largeArc} 1 ${outerEnd.x} ${outerEnd.y}`,
+      `A ${outerRadius} ${outerRadius} 0 ${largeArc} ${outerSweepFlag} ${outerEnd.x} ${outerEnd.y}`,
       'Z',
     ].join(' ');
   }
@@ -412,9 +421,9 @@ export function slicePath(
 
   return [
     `M ${outerStart.x} ${outerStart.y}`,
-    `A ${outerRadius} ${outerRadius} 0 ${largeArc} 1 ${outerEnd.x} ${outerEnd.y}`,
+    `A ${outerRadius} ${outerRadius} 0 ${largeArc} ${outerSweepFlag} ${outerEnd.x} ${outerEnd.y}`,
     `L ${innerEnd.x} ${innerEnd.y}`,
-    `A ${innerRadius} ${innerRadius} 0 ${largeArc} 0 ${innerStart.x} ${innerStart.y}`,
+    `A ${innerRadius} ${innerRadius} 0 ${largeArc} ${innerSweepFlag} ${innerStart.x} ${innerStart.y}`,
     'Z',
   ].join(' ');
 }
