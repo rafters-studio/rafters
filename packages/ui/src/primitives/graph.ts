@@ -327,6 +327,23 @@ export function areaPath(
 }
 
 /**
+ * Build a full circle (or ring outline) as two semicircle arcs.
+ * A single 360-degree arc has coincident endpoints, which the SVG spec drops as
+ * a zero-length segment, so d3-shape (and this) splits it in two. sweepFlag 1 is
+ * clockwise, 0 counterclockwise (used to cut the donut hole via winding).
+ */
+function circleArcs(cx: number, cy: number, r: number, sweepFlag: 0 | 1): string {
+  const top = radialToCartesian(cx, cy, r, 0);
+  const bottom = radialToCartesian(cx, cy, r, 180);
+  return [
+    `M ${top.x} ${top.y}`,
+    `A ${r} ${r} 0 1 ${sweepFlag} ${bottom.x} ${bottom.y}`,
+    `A ${r} ${r} 0 1 ${sweepFlag} ${top.x} ${top.y}`,
+    'Z',
+  ].join(' ');
+}
+
+/**
  * Build a filled pie/donut slice SVG path.
  * Angles in degrees, 0 = top (12 o'clock), clockwise -- standard chart convention.
  */
@@ -338,11 +355,19 @@ export function slicePath(
   startAngle: number,
   endAngle: number,
 ): string {
-  const outerStart = radialToCartesian(cx, cy, outerRadius, startAngle);
-  const outerEnd = radialToCartesian(cx, cy, outerRadius, endAngle);
-
   let sweep = endAngle - startAngle;
   if (sweep < 0) sweep += 360;
+
+  // Full circle: one 360-degree arc has coincident endpoints (dropped by the SVG
+  // spec), so emit two semicircle arcs. Donut = outer circle (cw) + inner circle
+  // (ccw), the reversed inner winding cutting the hole.
+  if (sweep >= 360 - 1e-9) {
+    const outer = circleArcs(cx, cy, outerRadius, 1);
+    return innerRadius <= 0 ? outer : `${outer} ${circleArcs(cx, cy, innerRadius, 0)}`;
+  }
+
+  const outerStart = radialToCartesian(cx, cy, outerRadius, startAngle);
+  const outerEnd = radialToCartesian(cx, cy, outerRadius, endAngle);
   const largeArc = sweep > 180 ? 1 : 0;
 
   if (innerRadius <= 0) {

@@ -493,13 +493,20 @@ describe('slicePath', () => {
     expect(path).toContain('A 50 50');
   });
 
-  it('renders an exact 360-degree sweep as a full circle (large-arc set)', () => {
-    // The AC's named case. A full sweep normalizes to 360, so largeArc is 1;
-    // the arc still renders (start/end map to near-coincident but distinct points).
-    const path = slicePath(100, 100, 50, 0, 0, 360);
-    expect(path).toMatch(/^M 100 100/); // pie (innerRadius 0): center-anchored
-    expect(path).toContain('A 50 50 0 1 1'); // largeArc=1, clockwise sweep
+  it('renders an exact 360-degree pie sweep via two semicircle arcs (not a dropped zero-length arc)', () => {
+    // cx=150,cy=150,r=75: a single 360 arc has bit-identical start/end here, which
+    // the SVG spec drops. Two semicircle arcs (top<->bottom) keep it a real circle.
+    const path = slicePath(150, 150, 75, 0, 0, 360);
+    expect(path.match(/A 75 75/g)).toHaveLength(2);
+    expect(path).toContain('M 150 75'); // top of the circle
+    expect(path).toContain('150 225'); // bottom (cy + r), distinct from top
     expect(path).toContain('Z');
+  });
+
+  it('renders an exact 360-degree donut sweep as outer + inner rings', () => {
+    const path = slicePath(100, 100, 50, 20, 0, 360);
+    expect(path.match(/A 50 50/g)).toHaveLength(2); // outer circle, two arcs
+    expect(path.match(/A 20 20/g)).toHaveLength(2); // inner circle (reversed), two arcs
   });
 });
 
