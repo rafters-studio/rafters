@@ -3,6 +3,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { stubResizeObserver } from '../harness/resize-observer';
 import {
   areaPath,
   arcPath,
@@ -615,42 +616,6 @@ describe('radarPath', () => {
     expect(path).toMatch(/^M/);
   });
 });
-
-/**
- * Stub the global ResizeObserver and hand back a way to trigger its callback,
- * plus the observe/disconnect spies -- shared by the observeResize tests below
- * so each test only states what it uniquely asserts.
- */
-function stubResizeObserver(): {
-  triggerResize: (entries: Array<{ contentRect: { width: number; height: number } }>) => void;
-  observeSpy: ReturnType<typeof vi.fn>;
-  disconnectSpy: ReturnType<typeof vi.fn>;
-} {
-  const observeSpy = vi.fn();
-  const disconnectSpy = vi.fn();
-  let resizeCallback: ResizeObserverCallback | undefined;
-
-  vi.stubGlobal(
-    'ResizeObserver',
-    class {
-      constructor(cb: ResizeObserverCallback) {
-        resizeCallback = cb;
-      }
-      observe = observeSpy;
-      disconnect = disconnectSpy;
-      unobserve = vi.fn();
-    },
-  );
-
-  return {
-    triggerResize: (entries) => {
-      if (!resizeCallback) throw new Error('ResizeObserver callback was never registered');
-      resizeCallback(entries as ResizeObserverEntry[], {} as ResizeObserver);
-    },
-    observeSpy,
-    disconnectSpy,
-  };
-}
 
 describe('observeResize', () => {
   it('fires with a { width, height } object on observe and on every resize', () => {
