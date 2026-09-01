@@ -263,6 +263,17 @@ describe('ticks', () => {
     expect(t).toEqual([0, 20, 40, 60, 80, 100]);
   });
 
+  it('picks the d3 step at residuals where a 1.5/3/7 ladder would diverge', () => {
+    // residual 3.1 (rawStep 31): d3 uses sqrt(10)~3.162 as the 2->5 boundary, so
+    // factor stays 2 -> step 20; a 1.5/3/7 ladder would jump to 5 -> step 50.
+    expect(ticks(0, 310, 10)).toEqual([
+      0, 20, 40, 60, 80, 100, 120, 140, 160, 180, 200, 220, 240, 260, 280, 300,
+    ]);
+    // residual 1.45 (rawStep 14.5): d3 uses sqrt(2)~1.414 as the 1->2 boundary, so
+    // factor is 2 -> step 20; a 1.5 ladder would keep factor 1 -> step 10.
+    expect(ticks(0, 145, 10)).toEqual([0, 20, 40, 60, 80, 100, 120, 140]);
+  });
+
   it('handles min equal to max', () => {
     const t = ticks(5, 5, 5);
     expect(t).toEqual([5]);
@@ -481,6 +492,15 @@ describe('slicePath', () => {
     const path = slicePath(100, 100, 50, 0, 0, 359.99);
     expect(path).toContain('A 50 50');
   });
+
+  it('renders an exact 360-degree sweep as a full circle (large-arc set)', () => {
+    // The AC's named case. A full sweep normalizes to 360, so largeArc is 1;
+    // the arc still renders (start/end map to near-coincident but distinct points).
+    const path = slicePath(100, 100, 50, 0, 0, 360);
+    expect(path).toMatch(/^M 100 100/); // pie (innerRadius 0): center-anchored
+    expect(path).toContain('A 50 50 0 1 1'); // largeArc=1, clockwise sweep
+    expect(path).toContain('Z');
+  });
 });
 
 describe('radialToCartesian', () => {
@@ -534,8 +554,8 @@ describe('radarPath', () => {
 });
 
 describe('observeResize', () => {
-  it('calls callback on size changes', async () => {
-    const callback = vi.fn();
+  it('fires with a { width, height } object on observe and on every resize', () => {
+    const onResize = vi.fn();
     const element = document.createElement('div');
 
     const observeSpy = vi.fn();
@@ -555,17 +575,22 @@ describe('observeResize', () => {
       },
     );
 
-    const teardown = observeResize(element, callback, 0);
-
+    const teardown = observeResize(element, onResize);
     expect(observeSpy).toHaveBeenCalledWith(element);
 
+    // Initial observation (ResizeObserver fires once on observe).
     resizeCallback!(
       [{ contentRect: { width: 400, height: 300 } } as ResizeObserverEntry],
       {} as ResizeObserver,
     );
+    expect(onResize).toHaveBeenNthCalledWith(1, { width: 400, height: 300 });
 
-    await new Promise((r) => setTimeout(r, 10));
-    expect(callback).toHaveBeenCalledWith(400, 300);
+    // A later resize fires again -- no dedup suppression.
+    resizeCallback!(
+      [{ contentRect: { width: 420, height: 300 } } as ResizeObserverEntry],
+      {} as ResizeObserver,
+    );
+    expect(onResize).toHaveBeenNthCalledWith(2, { width: 420, height: 300 });
 
     teardown();
     expect(disconnectSpy).toHaveBeenCalled();
@@ -573,26 +598,9 @@ describe('observeResize', () => {
     vi.unstubAllGlobals();
   });
 
-  it('returns no-op cleanup when ResizeObserver is undefined (SSR)', () => {
-    const original = globalThis.ResizeObserver;
-    // @ts-expect-error -- simulating SSR where ResizeObserver does not exist
-    delete globalThis.ResizeObserver;
-
-    const callback = vi.fn();
+  it('fires on the initial observation even for a 0x0 element', () => {
+    const onResize = vi.fn();
     const element = document.createElement('div');
-    const teardown = observeResize(element, callback);
-
-    expect(typeof teardown).toBe('function');
-    expect(() => teardown()).not.toThrow();
-    expect(callback).not.toHaveBeenCalled();
-
-    globalThis.ResizeObserver = original;
-  });
-
-  it('deduplicates unchanged sizes', async () => {
-    const callback = vi.fn();
-    const element = document.createElement('div');
-
     let resizeCallback: ResizeObserverCallback | undefined;
 
     vi.stubGlobal(
@@ -607,17 +615,29 @@ describe('observeResize', () => {
       },
     );
 
-    observeResize(element, callback, 0);
-
-    const entry = { contentRect: { width: 100, height: 100 } } as ResizeObserverEntry;
-    resizeCallback!([entry], {} as ResizeObserver);
-    await new Promise((r) => setTimeout(r, 10));
-
-    resizeCallback!([entry], {} as ResizeObserver);
-    await new Promise((r) => setTimeout(r, 10));
-
-    expect(callback).toHaveBeenCalledTimes(1);
+    observeResize(element, onResize);
+    resizeCallback!(
+      [{ contentRect: { width: 0, height: 0 } } as ResizeObserverEntry],
+      {} as ResizeObserver,
+    );
+    expect(onResize).toHaveBeenCalledWith({ width: 0, height: 0 });
 
     vi.unstubAllGlobals();
+  });
+
+  it('returns no-op cleanup when ResizeObserver is undefined (SSR)', () => {
+    const original = globalThis.ResizeObserver;
+    // @ts-expect-error -- simulating SSR where ResizeObserver does not exist
+    delete globalThis.ResizeObserver;
+
+    const onResize = vi.fn();
+    const element = document.createElement('div');
+    const teardown = observeResize(element, onResize);
+
+    expect(typeof teardown).toBe('function');
+    expect(() => teardown()).not.toThrow();
+    expect(onResize).not.toHaveBeenCalled();
+
+    globalThis.ResizeObserver = original;
   });
 });

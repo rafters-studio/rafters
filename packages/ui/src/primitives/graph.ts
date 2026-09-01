@@ -174,9 +174,10 @@ export function bandScale<T extends string>(
 
 /**
  * Generate nicely-rounded tick values for a numeric axis.
- * Uses the 1/2/5 x 10^n "nice number" rule: steps are always 1, 2, 5, 10, 20, 50, etc.
- * 25 is not a nice number (2.5 x 10 doesn't fit the 1/2/5 pattern), so ticks(0,100,4)
- * produces [0,20,40,60,80,100] (step=20), not [0,25,50,75,100].
+ * Uses d3-array's 1/2/5 x 10^n "nice number" rule with d3's exact factor
+ * thresholds (sqrt(2), sqrt(10), sqrt(50)), so the step matches what d3 picks
+ * across the input space, not only for round cases: ticks(0,100,5) -> step 20
+ * ([0,20,40,60,80,100]); 25 (2.5 x 10) is never chosen.
  */
 export function ticks(min: number, max: number, count: number): number[] {
   if (count <= 0 || min === max) return [min];
@@ -185,12 +186,12 @@ export function ticks(min: number, max: number, count: number): number[] {
   const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)));
   const residual = rawStep / magnitude;
 
-  let niceStep: number;
-  if (residual <= 1.5) niceStep = 1;
-  else if (residual <= 3) niceStep = 2;
-  else if (residual <= 7) niceStep = 5;
-  else niceStep = 10;
-  niceStep *= magnitude;
+  // d3-array tickIncrement factor thresholds: sqrt(50), sqrt(10), sqrt(2).
+  const e10 = Math.sqrt(50);
+  const e5 = Math.sqrt(10);
+  const e2 = Math.sqrt(2);
+  const factor = residual >= e10 ? 10 : residual >= e5 ? 5 : residual >= e2 ? 2 : 1;
+  const niceStep = factor * magnitude;
 
   const niceMin = Math.ceil(min / niceStep) * niceStep;
   const result: number[] = [];
@@ -400,42 +401,29 @@ export function radarPath(cx: number, cy: number, values: number[], maxRadius: n
 }
 
 /**
- * Observe an element's size and invoke a callback on resize.
- * Returns a teardown function. Debounced to avoid layout thrash.
+ * Observe a container's content-box size, calling back with { width, height }.
+ * Fires once on observe and on every subsequent resize (ResizeObserver's own
+ * cadence). Returns a cleanup that disconnects. SSR-safe: a no-op cleanup when
+ * ResizeObserver is absent. Signature matches the #2223 pinned interface.
  */
 export function observeResize(
-  element: Element,
-  callback: (width: number, height: number) => void,
-  debounceMs = 16,
+  el: HTMLElement,
+  onResize: (size: { width: number; height: number }) => void,
 ): () => void {
   if (typeof ResizeObserver === 'undefined') {
     return () => {};
   }
 
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  let lastWidth = 0;
-  let lastHeight = 0;
-
   const observer = new ResizeObserver((entries) => {
     const entry = entries[0];
     if (!entry) return;
-
     const { width, height } = entry.contentRect;
-    if (width === lastWidth && height === lastHeight) return;
-
-    lastWidth = width;
-    lastHeight = height;
-
-    if (timer !== undefined) clearTimeout(timer);
-    timer = setTimeout(() => {
-      callback(width, height);
-    }, debounceMs);
+    onResize({ width, height });
   });
 
-  observer.observe(element);
+  observer.observe(el);
 
   return () => {
-    if (timer !== undefined) clearTimeout(timer);
     observer.disconnect();
   };
 }
