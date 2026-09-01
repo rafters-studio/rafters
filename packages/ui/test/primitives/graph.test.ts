@@ -616,43 +616,57 @@ describe('radarPath', () => {
   });
 });
 
+/**
+ * Stub the global ResizeObserver and hand back a way to trigger its callback,
+ * plus the observe/disconnect spies -- shared by the observeResize tests below
+ * so each test only states what it uniquely asserts.
+ */
+function stubResizeObserver(): {
+  triggerResize: (entries: Array<{ contentRect: { width: number; height: number } }>) => void;
+  observeSpy: ReturnType<typeof vi.fn>;
+  disconnectSpy: ReturnType<typeof vi.fn>;
+} {
+  const observeSpy = vi.fn();
+  const disconnectSpy = vi.fn();
+  let resizeCallback: ResizeObserverCallback | undefined;
+
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      constructor(cb: ResizeObserverCallback) {
+        resizeCallback = cb;
+      }
+      observe = observeSpy;
+      disconnect = disconnectSpy;
+      unobserve = vi.fn();
+    },
+  );
+
+  return {
+    triggerResize: (entries) => {
+      if (!resizeCallback) throw new Error('ResizeObserver callback was never registered');
+      resizeCallback(entries as ResizeObserverEntry[], {} as ResizeObserver);
+    },
+    observeSpy,
+    disconnectSpy,
+  };
+}
+
 describe('observeResize', () => {
   it('fires with a { width, height } object on observe and on every resize', () => {
     const onResize = vi.fn();
     const element = document.createElement('div');
-
-    const observeSpy = vi.fn();
-    const disconnectSpy = vi.fn();
-
-    let resizeCallback: ResizeObserverCallback | undefined;
-
-    vi.stubGlobal(
-      'ResizeObserver',
-      class {
-        constructor(cb: ResizeObserverCallback) {
-          resizeCallback = cb;
-        }
-        observe = observeSpy;
-        disconnect = disconnectSpy;
-        unobserve = vi.fn();
-      },
-    );
+    const { triggerResize, observeSpy, disconnectSpy } = stubResizeObserver();
 
     const teardown = observeResize(element, onResize);
     expect(observeSpy).toHaveBeenCalledWith(element);
 
     // Initial observation (ResizeObserver fires once on observe).
-    resizeCallback!(
-      [{ contentRect: { width: 400, height: 300 } } as ResizeObserverEntry],
-      {} as ResizeObserver,
-    );
+    triggerResize([{ contentRect: { width: 400, height: 300 } }]);
     expect(onResize).toHaveBeenNthCalledWith(1, { width: 400, height: 300 });
 
     // A later resize fires again -- no dedup suppression.
-    resizeCallback!(
-      [{ contentRect: { width: 420, height: 300 } } as ResizeObserverEntry],
-      {} as ResizeObserver,
-    );
+    triggerResize([{ contentRect: { width: 420, height: 300 } }]);
     expect(onResize).toHaveBeenNthCalledWith(2, { width: 420, height: 300 });
 
     teardown();
@@ -664,25 +678,10 @@ describe('observeResize', () => {
   it('fires on the initial observation even for a 0x0 element', () => {
     const onResize = vi.fn();
     const element = document.createElement('div');
-    let resizeCallback: ResizeObserverCallback | undefined;
-
-    vi.stubGlobal(
-      'ResizeObserver',
-      class {
-        constructor(cb: ResizeObserverCallback) {
-          resizeCallback = cb;
-        }
-        observe = vi.fn();
-        disconnect = vi.fn();
-        unobserve = vi.fn();
-      },
-    );
+    const { triggerResize } = stubResizeObserver();
 
     observeResize(element, onResize);
-    resizeCallback!(
-      [{ contentRect: { width: 0, height: 0 } } as ResizeObserverEntry],
-      {} as ResizeObserver,
-    );
+    triggerResize([{ contentRect: { width: 0, height: 0 } }]);
     expect(onResize).toHaveBeenCalledWith({ width: 0, height: 0 });
 
     vi.unstubAllGlobals();
