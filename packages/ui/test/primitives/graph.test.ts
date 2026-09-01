@@ -2,14 +2,22 @@
  * Tests for graph core primitive
  */
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  areaPath,
   arcPath,
+  bandScale,
   createGraph,
+  gridLines,
   linearScale,
   linePath,
+  observeResize,
   polarToCartesian,
+  radarPath,
+  radialToCartesian,
+  slicePath,
   smoothPath,
+  ticks,
 } from '../../src/primitives/graph';
 
 describe('createGraph', () => {
@@ -73,6 +81,14 @@ describe('createGraph', () => {
     const graph = createGraph({ container });
     expect(graph.element).toBeTruthy();
     expect(graph.element instanceof SVGSVGElement).toBe(true);
+    graph.destroy();
+  });
+
+  it('does not set inline color styles on the element', () => {
+    const graph = createGraph({ container });
+    const svg = container.querySelector('svg');
+    expect(svg?.style.color).toBe('');
+    expect(svg?.style.backgroundColor).toBe('');
     graph.destroy();
   });
 
@@ -161,6 +177,183 @@ describe('linearScale', () => {
     const scale = linearScale([0, 1], [0, 100]);
     expect(scale(0.5)).toBe(50);
     expect(scale(0.25)).toBe(25);
+  });
+});
+
+describe('bandScale', () => {
+  it('maps categorical values to evenly-spaced bands (no padding)', () => {
+    const s = bandScale(['a', 'b', 'c'] as const, [0, 300]);
+    expect(s.scale('a')).toBe(0);
+    expect(s.scale('b')).toBe(100);
+    expect(s.scale('c')).toBe(200);
+    expect(s.bandwidth()).toBe(100);
+    expect(s.step()).toBe(100);
+  });
+
+  it('returns range start for unknown values', () => {
+    const s = bandScale(['a', 'b'] as const, [0, 200]);
+    expect(s.scale('z' as 'a')).toBe(0);
+  });
+
+  it('handles empty domain', () => {
+    const s = bandScale([] as const, [0, 300]);
+    expect(s.bandwidth()).toBe(0);
+    expect(s.step()).toBe(0);
+  });
+
+  it('handles single value domain', () => {
+    const s = bandScale(['only'] as const, [0, 100]);
+    expect(s.scale('only')).toBe(0);
+    expect(s.bandwidth()).toBe(100);
+  });
+
+  it('preserves domain and range', () => {
+    const s = bandScale(['x', 'y'] as const, [10, 50]);
+    expect(s.domain).toEqual(['x', 'y']);
+    expect(s.range).toEqual([10, 50]);
+  });
+
+  it('handles non-zero range start', () => {
+    const s = bandScale(['a', 'b'] as const, [50, 150]);
+    expect(s.scale('a')).toBe(50);
+    expect(s.scale('b')).toBe(100);
+    expect(s.bandwidth()).toBe(50);
+  });
+
+  it('applies paddingInner between bands', () => {
+    const s = bandScale(['a', 'b', 'c'] as const, [0, 300], { paddingInner: 0.5 });
+    const bw = s.bandwidth();
+    const st = s.step();
+    expect(bw).toBeLessThan(st);
+    expect(bw).toBeCloseTo(st * 0.5, 5);
+    expect(s.scale('b')).toBeCloseTo(s.scale('a') + st, 5);
+  });
+
+  it('matches the d3 scaleBand formula and fills the range under paddingInner', () => {
+    // d3: step = span / (n - paddingInner + 2*paddingOuter) = 300 / (3 - 0.5) = 120;
+    // bandwidth = step*(1-paddingInner) = 60; align 0.5 with paddingOuter 0 leaves no
+    // leftover, so bands fill [0,300] exactly (the pre-fix denominator left ~37% unused).
+    const s = bandScale(['a', 'b', 'c'] as const, [0, 300], { paddingInner: 0.5 });
+    expect(s.step()).toBeCloseTo(120, 6);
+    expect(s.bandwidth()).toBeCloseTo(60, 6);
+    expect(s.scale('a')).toBeCloseTo(0, 6);
+    expect(s.scale('c')).toBeCloseTo(240, 6);
+    expect(s.scale('c') + s.bandwidth()).toBeCloseTo(300, 6); // last band ends at the range end
+  });
+
+  it('applies paddingOuter before first and after last band', () => {
+    const s = bandScale(['a', 'b'] as const, [0, 200], { paddingOuter: 0.5 });
+    expect(s.scale('a')).toBeGreaterThan(0);
+    const lastEnd = s.scale('b') + s.bandwidth();
+    expect(lastEnd).toBeLessThan(200);
+  });
+
+  it('bandwidth() and step() are callable', () => {
+    const s = bandScale(['a', 'b'] as const, [0, 100]);
+    expect(typeof s.bandwidth).toBe('function');
+    expect(typeof s.step).toBe('function');
+    expect(s.bandwidth()).toBeGreaterThan(0);
+    expect(s.step()).toBeGreaterThan(0);
+  });
+});
+
+describe('ticks', () => {
+  it('generates nice round tick values', () => {
+    const t = ticks(0, 100, 5);
+    expect(t).toEqual([0, 20, 40, 60, 80, 100]);
+  });
+
+  it('picks the d3 step at residuals where a 1.5/3/7 ladder would diverge', () => {
+    // residual 3.1 (rawStep 31): d3 uses sqrt(10)~3.162 as the 2->5 boundary, so
+    // factor stays 2 -> step 20; a 1.5/3/7 ladder would jump to 5 -> step 50.
+    expect(ticks(0, 310, 10)).toEqual([
+      0, 20, 40, 60, 80, 100, 120, 140, 160, 180, 200, 220, 240, 260, 280, 300,
+    ]);
+    // residual 1.45 (rawStep 14.5): d3 uses sqrt(2)~1.414 as the 1->2 boundary, so
+    // factor is 2 -> step 20; a 1.5 ladder would keep factor 1 -> step 10.
+    expect(ticks(0, 145, 10)).toEqual([0, 20, 40, 60, 80, 100, 120, 140]);
+  });
+
+  it('includes the upper-bound tick (index-based, no float-accumulation drop)', () => {
+    // A float-accumulating loop drops the top tick when the step is not a clean
+    // divisor of the span; d3's index-based generation keeps it.
+    expect(ticks(0, 3, 10)).toContain(3);
+    expect(ticks(1, 1.3, 4)).toEqual([1, 1.1, 1.2, 1.3]);
+    expect(ticks(-5, -4, 4)).toContain(-4);
+    // and never emits a value past the bounds
+    for (const [lo, hi, c] of [
+      [0, 3, 10],
+      [1, 1.3, 4],
+      [-5, -4, 4],
+    ] as const) {
+      for (const v of ticks(lo, hi, c)) {
+        expect(v).toBeGreaterThanOrEqual(lo);
+        expect(v).toBeLessThanOrEqual(hi);
+      }
+    }
+  });
+
+  it('returns in-bounds ticks at count=1 (d3 retry branch, never empty)', () => {
+    // count=1 can collapse the tick indices (i2 < i1); d3 retries at count*2.
+    expect(ticks(19.477802570666093, 472.4822831908769, 1)).toEqual([200, 400]);
+    const b = ticks(61.56449325455562, 61.93527658473829, 1);
+    expect(b.length).toBeGreaterThan(0);
+    expect(b[0] as number).toBeCloseTo(61.6, 10);
+    expect(b[b.length - 1] as number).toBeCloseTo(61.8, 10);
+  });
+
+  it('handles min equal to max', () => {
+    const t = ticks(5, 5, 5);
+    expect(t).toEqual([5]);
+  });
+
+  it('handles zero count', () => {
+    const t = ticks(0, 100, 0);
+    expect(t).toEqual([0]);
+  });
+
+  it('generates ticks for small ranges', () => {
+    const t = ticks(0, 1, 5);
+    expect(t.length).toBeGreaterThan(0);
+    for (const v of t) {
+      expect(v).toBeGreaterThanOrEqual(0);
+      expect(v).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it('generates ticks for large ranges', () => {
+    const t = ticks(0, 10000, 5);
+    expect(t.length).toBeGreaterThan(0);
+    expect(t[0]).toBeGreaterThanOrEqual(0);
+    expect(t[t.length - 1] as number).toBeLessThanOrEqual(10000);
+  });
+
+  it('produces values within the domain', () => {
+    const t = ticks(3, 97, 10);
+    for (const v of t) {
+      expect(v).toBeGreaterThanOrEqual(3);
+      expect(v).toBeLessThanOrEqual(97);
+    }
+  });
+});
+
+describe('gridLines', () => {
+  it('generates horizontal and vertical gridlines from ticks', () => {
+    const plotArea = { x1: 0, y1: 0, x2: 300, y2: 200 };
+    const g = gridLines([50, 100, 150], [40, 80, 120], plotArea);
+
+    expect(g.horizontal).toHaveLength(3);
+    expect(g.vertical).toHaveLength(3);
+
+    expect(g.horizontal[0]).toEqual({ y: 40, x1: 0, x2: 300 });
+    expect(g.vertical[0]).toEqual({ x: 50, y1: 0, y2: 200 });
+  });
+
+  it('handles empty tick arrays', () => {
+    const plotArea = { x1: 0, y1: 0, x2: 100, y2: 100 };
+    const g = gridLines([], [], plotArea);
+    expect(g.horizontal).toHaveLength(0);
+    expect(g.vertical).toHaveLength(0);
   });
 });
 
@@ -259,5 +452,254 @@ describe('arcPath', () => {
   it('handles small arcs (< 180 degrees)', () => {
     const path = arcPath(50, 50, 40, 0, 90);
     expect(path).toContain('0 0');
+  });
+});
+
+describe('areaPath', () => {
+  it('returns empty string for empty points', () => {
+    expect(areaPath([], 100)).toBe('');
+  });
+
+  it('builds a closed area with straight lines by default', () => {
+    const points = [
+      { x: 0, y: 50 },
+      { x: 100, y: 30 },
+      { x: 200, y: 70 },
+    ];
+    const path = areaPath(points, 100);
+    expect(path).toMatch(/^M 0 50/);
+    expect(path).toContain('L 200 100');
+    expect(path).toContain('L 0 100');
+    expect(path).toContain('Z');
+  });
+
+  it('uses smooth interpolation when smooth is true', () => {
+    const points = [
+      { x: 0, y: 50 },
+      { x: 50, y: 30 },
+      { x: 100, y: 70 },
+    ];
+    const path = areaPath(points, 100, true);
+    expect(path).toContain('C');
+    expect(path).toContain('Z');
+  });
+
+  it('closes back to the first x at the baseline', () => {
+    const points = [
+      { x: 10, y: 20 },
+      { x: 90, y: 40 },
+    ];
+    const path = areaPath(points, 200);
+    expect(path).toContain('L 90 200');
+    expect(path).toContain('L 10 200');
+  });
+});
+
+describe('slicePath', () => {
+  it('builds a pie slice (innerRadius = 0)', () => {
+    const path = slicePath(100, 100, 50, 0, 0, 90);
+    expect(path).toContain('M 100 100');
+    expect(path).toContain('A 50 50');
+    expect(path).toContain('Z');
+  });
+
+  it('builds a donut slice with inner radius', () => {
+    const path = slicePath(100, 100, 50, 20, 0, 90);
+    expect(path).not.toContain('M 100 100');
+    expect(path).toContain('A 50 50');
+    expect(path).toContain('A 20 20');
+    expect(path).toContain('Z');
+  });
+
+  it('handles large arc (> 180 degrees)', () => {
+    const path = slicePath(100, 100, 50, 0, 0, 270);
+    expect(path).toContain('1 1');
+  });
+
+  it('handles full circle (360 degrees minus epsilon)', () => {
+    const path = slicePath(100, 100, 50, 0, 0, 359.99);
+    expect(path).toContain('A 50 50');
+  });
+
+  it('renders an exact 360-degree pie sweep via two semicircle arcs (not a dropped zero-length arc)', () => {
+    // cx=150,cy=150,r=75: a single 360 arc has bit-identical start/end here, which
+    // the SVG spec drops. Two semicircle arcs (top<->bottom) keep it a real circle.
+    const path = slicePath(150, 150, 75, 0, 0, 360);
+    expect(path.match(/A 75 75/g)).toHaveLength(2);
+    expect(path).toContain('M 150 75'); // top of the circle
+    expect(path).toContain('150 225'); // bottom (cy + r), distinct from top
+    expect(path).toContain('Z');
+  });
+
+  it('renders an exact 360-degree donut sweep as outer + inner rings', () => {
+    const path = slicePath(100, 100, 50, 20, 0, 360);
+    expect(path.match(/A 50 50/g)).toHaveLength(2); // outer circle, two arcs
+    expect(path.match(/A 20 20/g)).toHaveLength(2); // inner circle (reversed), two arcs
+  });
+
+  it('draws the short arc counterclockwise when endAngle < startAngle (matches d3 arc)', () => {
+    // d3-shape arc: da = |a1 - a0|, cw = a1 > a0 -- a shrinking end angle draws
+    // the short arc the OTHER way, never the 360-minus complement.
+    const start = radialToCartesian(100, 100, 50, 90);
+    const end = radialToCartesian(100, 100, 50, 0);
+    const path = slicePath(100, 100, 50, 20, 90, 0);
+
+    // Outer arc sweep flag 0 (counterclockwise), inner arc gets the opposite (1).
+    expect(path).toContain(`A 50 50 0 0 0 ${end.x} ${end.y}`);
+    expect(path).toContain(`A 20 20 0 0 1`);
+    // Outer endpoints equal radialToCartesian at the given start and end angles.
+    expect(path).toContain(`${start.x} ${start.y}`);
+    expect(path).toContain(`${end.x} ${end.y}`);
+  });
+
+  it('draws clockwise when endAngle > startAngle (unchanged direction)', () => {
+    const path = slicePath(100, 100, 50, 20, 0, 90);
+    // Outer arc sweep flag 1 (clockwise), inner arc gets the opposite (0).
+    expect(path).toContain('A 50 50 0 0 1');
+    expect(path).toContain('A 20 20 0 0 0');
+  });
+
+  it('a 90-to-0 slice is a 90-degree wedge, not a 270-degree one', () => {
+    const path = slicePath(100, 100, 50, 0, 90, 0);
+    // largeArc flag is 0 -- the short 90-degree arc, never the 270-degree complement.
+    expect(path).toContain('A 50 50 0 0 0');
+  });
+});
+
+describe('radialToCartesian', () => {
+  it('0 degrees points up (12 o-clock)', () => {
+    const p = radialToCartesian(0, 0, 10, 0);
+    expect(p.x).toBeCloseTo(0, 5);
+    expect(p.y).toBeCloseTo(-10, 5);
+  });
+
+  it('90 degrees points right (3 o-clock)', () => {
+    const p = radialToCartesian(0, 0, 10, 90);
+    expect(p.x).toBeCloseTo(10, 5);
+    expect(p.y).toBeCloseTo(0, 5);
+  });
+
+  it('180 degrees points down (6 o-clock)', () => {
+    const p = radialToCartesian(0, 0, 10, 180);
+    expect(p.x).toBeCloseTo(0, 5);
+    expect(p.y).toBeCloseTo(10, 5);
+  });
+
+  it('respects center offset', () => {
+    const p = radialToCartesian(50, 50, 10, 0);
+    expect(p.x).toBeCloseTo(50, 5);
+    expect(p.y).toBeCloseTo(40, 5);
+  });
+});
+
+describe('radarPath', () => {
+  it('returns empty string for empty values', () => {
+    expect(radarPath(0, 0, [], 50)).toBe('');
+  });
+
+  it('builds a closed polygon from values', () => {
+    const path = radarPath(100, 100, [1, 1, 1], 50);
+    expect(path).toMatch(/^M/);
+    expect(path).toContain('Z');
+  });
+
+  it('produces three points for three values', () => {
+    const path = radarPath(100, 100, [1, 0.5, 0.8], 50);
+    const segments = path.split(/[MLZ]/).filter(Boolean);
+    expect(segments.length).toBe(3);
+  });
+
+  it('scales values by maxRadius', () => {
+    const path = radarPath(0, 0, [1], 100);
+    expect(path).toMatch(/-100/);
+    expect(path).toMatch(/^M/);
+  });
+});
+
+/**
+ * Stub the global ResizeObserver and hand back a way to trigger its callback,
+ * plus the observe/disconnect spies -- shared by the observeResize tests below
+ * so each test only states what it uniquely asserts.
+ */
+function stubResizeObserver(): {
+  triggerResize: (entries: Array<{ contentRect: { width: number; height: number } }>) => void;
+  observeSpy: ReturnType<typeof vi.fn>;
+  disconnectSpy: ReturnType<typeof vi.fn>;
+} {
+  const observeSpy = vi.fn();
+  const disconnectSpy = vi.fn();
+  let resizeCallback: ResizeObserverCallback | undefined;
+
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      constructor(cb: ResizeObserverCallback) {
+        resizeCallback = cb;
+      }
+      observe = observeSpy;
+      disconnect = disconnectSpy;
+      unobserve = vi.fn();
+    },
+  );
+
+  return {
+    triggerResize: (entries) => {
+      if (!resizeCallback) throw new Error('ResizeObserver callback was never registered');
+      resizeCallback(entries as ResizeObserverEntry[], {} as ResizeObserver);
+    },
+    observeSpy,
+    disconnectSpy,
+  };
+}
+
+describe('observeResize', () => {
+  it('fires with a { width, height } object on observe and on every resize', () => {
+    const onResize = vi.fn();
+    const element = document.createElement('div');
+    const { triggerResize, observeSpy, disconnectSpy } = stubResizeObserver();
+
+    const teardown = observeResize(element, onResize);
+    expect(observeSpy).toHaveBeenCalledWith(element);
+
+    // Initial observation (ResizeObserver fires once on observe).
+    triggerResize([{ contentRect: { width: 400, height: 300 } }]);
+    expect(onResize).toHaveBeenNthCalledWith(1, { width: 400, height: 300 });
+
+    // A later resize fires again -- no dedup suppression.
+    triggerResize([{ contentRect: { width: 420, height: 300 } }]);
+    expect(onResize).toHaveBeenNthCalledWith(2, { width: 420, height: 300 });
+
+    teardown();
+    expect(disconnectSpy).toHaveBeenCalled();
+
+    vi.unstubAllGlobals();
+  });
+
+  it('fires on the initial observation even for a 0x0 element', () => {
+    const onResize = vi.fn();
+    const element = document.createElement('div');
+    const { triggerResize } = stubResizeObserver();
+
+    observeResize(element, onResize);
+    triggerResize([{ contentRect: { width: 0, height: 0 } }]);
+    expect(onResize).toHaveBeenCalledWith({ width: 0, height: 0 });
+
+    vi.unstubAllGlobals();
+  });
+
+  it('returns no-op cleanup when ResizeObserver is undefined (SSR)', () => {
+    const original = globalThis.ResizeObserver;
+    // @ts-expect-error -- simulating SSR where ResizeObserver does not exist
+    delete globalThis.ResizeObserver;
+
+    const onResize = vi.fn();
+    const element = document.createElement('div');
+    const teardown = observeResize(element, onResize);
+
+    expect(typeof teardown).toBe('function');
+    expect(() => teardown()).not.toThrow();
+    expect(onResize).not.toHaveBeenCalled();
+
+    globalThis.ResizeObserver = original;
   });
 });

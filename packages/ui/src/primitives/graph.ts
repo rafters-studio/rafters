@@ -15,17 +15,33 @@ export interface GraphConfig {
   renderer?: 'svg' | 'canvas';
 }
 
-export interface GraphTheme {
-  foreground: string;
-  muted: string;
-  background: string;
-}
-
 export interface GraphControls {
   resize: (width: number, height: number) => void;
-  setTheme: (theme: Partial<GraphTheme>) => void;
   destroy: () => void;
   readonly element: SVGSVGElement | HTMLCanvasElement | null;
+}
+
+export interface BandScaleOptions {
+  paddingInner?: number;
+  paddingOuter?: number;
+  /** Distributes leftover range; 0.5 (default) centers bands, like d3-scale. */
+  align?: number;
+}
+
+export interface BandScale<T extends string> {
+  /** Returns the left edge of the band for a given category value. */
+  scale: (value: T) => number;
+  /** Returns the width of each band (excluding padding). */
+  bandwidth: () => number;
+  /** Returns the distance between the starts of adjacent bands. */
+  step: () => number;
+  domain: readonly T[];
+  range: readonly [number, number];
+}
+
+export interface GridLines {
+  horizontal: Array<{ y: number; x1: number; x2: number }>;
+  vertical: Array<{ x: number; y1: number; y2: number }>;
 }
 
 const DEFAULT_WIDTH = 300;
@@ -84,17 +100,6 @@ export function createGraph(config: GraphConfig): GraphControls {
       }
     },
 
-    setTheme(theme: Partial<GraphTheme>) {
-      if (!element) return;
-
-      if (theme.foreground) {
-        element.style.color = theme.foreground;
-      }
-      if (theme.background && element instanceof SVGSVGElement) {
-        element.style.backgroundColor = theme.background;
-      }
-    },
-
     destroy() {
       if (element) {
         element.remove();
@@ -122,6 +127,130 @@ export function linearScale(
   return (value: number) => {
     const normalized = (value - domain[0]) / domainSpan;
     return range[0] + normalized * rangeSpan;
+  };
+}
+
+/**
+ * Create a band scale that maps categorical values to evenly-spaced bands,
+ * reproducing d3-scale scaleBand: step = span / (n - paddingInner + 2*paddingOuter),
+ * bandwidth = step * (1 - paddingInner), and leftover range distributed by align
+ * (default 0.5 centers). paddingInner/paddingOuter/align are fractions in [0,1].
+ */
+export function bandScale<T extends string>(
+  domain: readonly T[],
+  range: readonly [number, number],
+  opts?: BandScaleOptions,
+): BandScale<T> {
+  const rangeSpan = range[1] - range[0];
+  const count = domain.length;
+  const pInner = opts?.paddingInner ?? 0;
+  const pOuter = opts?.paddingOuter ?? 0;
+  const align = opts?.align ?? 0.5;
+
+  // d3 denominator: n - paddingInner + 2*paddingOuter (clamped so a single band divides by >= 1).
+  const stepVal = count === 0 ? 0 : rangeSpan / Math.max(1, count - pInner + 2 * pOuter);
+  const bw = stepVal * (1 - pInner);
+
+  // Distribute leftover range by align (0.5 centers); firstEdge is the left edge of band 0.
+  const firstEdge = range[0] + (rangeSpan - stepVal * (count - pInner)) * align;
+
+  const indexMap = new Map<T, number>();
+  for (let i = 0; i < domain.length; i++) {
+    indexMap.set(domain[i] as T, i);
+  }
+
+  return {
+    scale(value: T): number {
+      const idx = indexMap.get(value);
+      if (idx === undefined) return range[0];
+      return firstEdge + idx * stepVal;
+    },
+    bandwidth: () => bw,
+    step: () => stepVal,
+    domain,
+    range,
+  };
+}
+
+/**
+ * d3-array tickSpec: the [firstIndex, lastIndex, signedIncrement] of the nice
+ * ticks. A negative increment signals the sub-integer branch (multiply by 1/inc
+ * rather than divide, to avoid float drift). Retries at double the count when the
+ * indices collapse (i2 < i1) for a near-1 count, so an ordinary domain never comes
+ * back empty at count=1.
+ */
+function tickSpec(start: number, stop: number, count: number): [number, number, number] {
+  const e10 = Math.sqrt(50);
+  const e5 = Math.sqrt(10);
+  const e2 = Math.sqrt(2);
+  const step = (stop - start) / count;
+  const power = Math.floor(Math.log10(step));
+  const error = step / Math.pow(10, power);
+  const factor = error >= e10 ? 10 : error >= e5 ? 5 : error >= e2 ? 2 : 1;
+  let i1: number;
+  let i2: number;
+  let inc: number;
+  if (power < 0) {
+    inc = Math.pow(10, -power) / factor;
+    i1 = Math.round(start * inc);
+    i2 = Math.round(stop * inc);
+    if (i1 / inc < start) ++i1;
+    if (i2 / inc > stop) --i2;
+    inc = -inc;
+  } else {
+    inc = Math.pow(10, power) * factor;
+    i1 = Math.round(start / inc);
+    i2 = Math.round(stop / inc);
+    if (i1 * inc < start) ++i1;
+    if (i2 * inc > stop) --i2;
+  }
+  if (i2 < i1 && count >= 0.5 && count < 2) return tickSpec(start, stop, count * 2);
+  return [i1, i2, inc];
+}
+
+/**
+ * Generate nicely-rounded tick values for a numeric axis.
+ * Uses d3-array's 1/2/5 x 10^n "nice number" rule with d3's exact factor
+ * thresholds (sqrt(2), sqrt(10), sqrt(50)), so the step matches what d3 picks
+ * across the input space, not only for round cases: ticks(0,100,5) -> step 20
+ * ([0,20,40,60,80,100]); 25 (2.5 x 10) is never chosen.
+ */
+export function ticks(min: number, max: number, count: number): number[] {
+  if (count <= 0 || min === max) return [min];
+
+  // Index-based generation (d3-array ticks): each tick is a rounded integer index
+  // times the step, so the upper bound is never dropped by accumulated float error.
+  const [i1, i2, inc] = tickSpec(min, max, count);
+  if (i2 < i1) return [];
+  const result: number[] = [];
+  if (inc < 0) {
+    const stepRecip = -inc;
+    for (let i = i1; i <= i2; i++) result.push(i / stepRecip);
+  } else {
+    for (let i = i1; i <= i2; i++) result.push(i * inc);
+  }
+  return result;
+}
+
+/**
+ * Generate gridline coordinates from tick arrays.
+ */
+export function gridLines(
+  xTicks: number[],
+  yTicks: number[],
+  plotArea: { x1: number; y1: number; x2: number; y2: number },
+): GridLines {
+  return {
+    horizontal: yTicks.map((y) => ({
+      y,
+      x1: plotArea.x1,
+      x2: plotArea.x2,
+    })),
+    vertical: xTicks.map((x) => ({
+      x,
+      y1: plotArea.y1,
+      y2: plotArea.y2,
+    })),
   };
 }
 
@@ -206,4 +335,157 @@ export function arcPath(
     `M ${start.x} ${start.y}`,
     `A ${radius} ${radius} 0 ${largeArc} 0 ${end.x} ${end.y}`,
   ].join(' ');
+}
+
+/**
+ * Build a closed area SVG path: the line path closed back along a baseline.
+ */
+export function areaPath(
+  points: { x: number; y: number }[],
+  baseline: number,
+  smooth?: boolean,
+): string {
+  if (points.length === 0) return '';
+
+  const topPath = smooth ? smoothPath(points) : linePath(points);
+  const last = points[points.length - 1] as { x: number; y: number };
+  const first = points[0] as { x: number; y: number };
+
+  return `${topPath} L ${last.x} ${baseline} L ${first.x} ${baseline} Z`;
+}
+
+/**
+ * Build a full circle (or ring outline) as two semicircle arcs.
+ * A single 360-degree arc has coincident endpoints, which the SVG spec drops as
+ * a zero-length segment, so d3-shape (and this) splits it in two. sweepFlag 1 is
+ * clockwise, 0 counterclockwise (used to cut the donut hole via winding).
+ */
+function circleArcs(cx: number, cy: number, r: number, sweepFlag: 0 | 1): string {
+  const top = radialToCartesian(cx, cy, r, 0);
+  const bottom = radialToCartesian(cx, cy, r, 180);
+  return [
+    `M ${top.x} ${top.y}`,
+    `A ${r} ${r} 0 1 ${sweepFlag} ${bottom.x} ${bottom.y}`,
+    `A ${r} ${r} 0 1 ${sweepFlag} ${top.x} ${top.y}`,
+    'Z',
+  ].join(' ');
+}
+
+/**
+ * Build a filled pie/donut slice SVG path.
+ * Angles in degrees, 0 = top (12 o'clock), positive = clockwise -- standard chart
+ * convention. Matches d3-shape arc: the sweep is the absolute angular distance
+ * (never the 360-minus complement), and the direction follows the angle sign --
+ * endAngle > startAngle draws clockwise, endAngle < startAngle draws the short
+ * arc counterclockwise.
+ */
+export function slicePath(
+  cx: number,
+  cy: number,
+  outerRadius: number,
+  innerRadius: number,
+  startAngle: number,
+  endAngle: number,
+): string {
+  const sweep = Math.abs(endAngle - startAngle);
+  const clockwise = endAngle > startAngle;
+
+  // Full circle: one 360-degree arc has coincident endpoints (dropped by the SVG
+  // spec), so emit two semicircle arcs. Donut = outer circle + inner circle with
+  // the reversed winding, cutting the hole; the winding direction still follows
+  // the requested sweep direction.
+  if (sweep >= 360 - 1e-9) {
+    const outerFlag = clockwise ? 1 : 0;
+    const innerFlag = clockwise ? 0 : 1;
+    const outer = circleArcs(cx, cy, outerRadius, outerFlag);
+    return innerRadius <= 0 ? outer : `${outer} ${circleArcs(cx, cy, innerRadius, innerFlag)}`;
+  }
+
+  const outerStart = radialToCartesian(cx, cy, outerRadius, startAngle);
+  const outerEnd = radialToCartesian(cx, cy, outerRadius, endAngle);
+  const largeArc = sweep > 180 ? 1 : 0;
+  const outerSweepFlag = clockwise ? 1 : 0;
+  const innerSweepFlag = clockwise ? 0 : 1;
+
+  if (innerRadius <= 0) {
+    return [
+      `M ${cx} ${cy}`,
+      `L ${outerStart.x} ${outerStart.y}`,
+      `A ${outerRadius} ${outerRadius} 0 ${largeArc} ${outerSweepFlag} ${outerEnd.x} ${outerEnd.y}`,
+      'Z',
+    ].join(' ');
+  }
+
+  const innerStart = radialToCartesian(cx, cy, innerRadius, startAngle);
+  const innerEnd = radialToCartesian(cx, cy, innerRadius, endAngle);
+
+  return [
+    `M ${outerStart.x} ${outerStart.y}`,
+    `A ${outerRadius} ${outerRadius} 0 ${largeArc} ${outerSweepFlag} ${outerEnd.x} ${outerEnd.y}`,
+    `L ${innerEnd.x} ${innerEnd.y}`,
+    `A ${innerRadius} ${innerRadius} 0 ${largeArc} ${innerSweepFlag} ${innerStart.x} ${innerStart.y}`,
+    'Z',
+  ].join(' ');
+}
+
+/**
+ * Convert a value on a radial axis to cartesian coordinates.
+ * Used for radar/radial charts. Angle 0 = top, clockwise.
+ */
+export function radialToCartesian(
+  cx: number,
+  cy: number,
+  radius: number,
+  angleDeg: number,
+): { x: number; y: number } {
+  const angleRad = ((angleDeg - 90) * Math.PI) / 180;
+  return {
+    x: cx + radius * Math.cos(angleRad),
+    y: cy + radius * Math.sin(angleRad),
+  };
+}
+
+/**
+ * Build a closed polygon path for radar charts.
+ * Takes values at equally-spaced angles from 0 (top), clockwise.
+ */
+export function radarPath(cx: number, cy: number, values: number[], maxRadius: number): string {
+  if (values.length === 0) return '';
+
+  const angleStep = 360 / values.length;
+  const points = values.map((v, i) => {
+    const angle = i * angleStep;
+    const r = v * maxRadius;
+    return radialToCartesian(cx, cy, r, angle);
+  });
+
+  return linePath(points) + ' Z';
+}
+
+/**
+ * Observe a container's content-box size, calling back with { width, height }.
+ * Fires once on observe and on every subsequent resize (ResizeObserver's own
+ * cadence). Returns a cleanup that disconnects. SSR-safe: a no-op cleanup when
+ * ResizeObserver is absent. Signature matches the #2223 pinned interface.
+ */
+export function observeResize(
+  el: HTMLElement,
+  onResize: (size: { width: number; height: number }) => void,
+): () => void {
+  if (typeof ResizeObserver === 'undefined') {
+    return () => {};
+  }
+
+  const observer = new ResizeObserver((entries) => {
+    const entry = entries[0];
+    if (!entry) return;
+    const { width, height } = entry.contentRect;
+    onResize({ width, height });
+  });
+
+  observer.observe(el);
+
+  return () => {
+    observer.disconnect();
+  };
 }
