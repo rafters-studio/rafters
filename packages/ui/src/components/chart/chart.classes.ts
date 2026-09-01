@@ -45,24 +45,36 @@ function fallbackTokenIndex(config: ChartConfig, key: string, index: number | un
   return normalized % CHART_TOKENS.length;
 }
 
+/** Shared resolution shape for both color channels: an explicit `token` maps
+ *  straight to the channel's literal class; a token-less series falls back
+ *  to `chart-N` by series index, never to a hex or `var()`. `resolveSeriesClass`
+ *  and `resolveSeriesStrokeClass` are one-line callers over their own literal
+ *  map -- the map itself must still be a fully literal `Record` (Spec 01), so
+ *  the sharing stops at the lookup, never at the literals. */
+function resolveFromMap(
+  map: Record<ChartToken, string>,
+  config: ChartConfig,
+  key: string,
+  index: number | undefined,
+): string {
+  const token = config[key]?.token;
+  if (token) return map[token];
+  const tokenIndex = fallbackTokenIndex(config, key, index);
+  return map[CHART_TOKENS[tokenIndex] as ChartToken];
+}
+
 /**
  * Resolve a series' fill class: an explicit `token` maps to its literal
  * `fill-chart-N`; a token-less series falls back to `chart-N` by series
  * index, never to a hex or `var()`.
  */
 export function resolveSeriesClass(config: ChartConfig, key: string, index?: number): string {
-  const token = config[key]?.token;
-  if (token) return FILL_CLASS_BY_TOKEN[token];
-  const tokenIndex = fallbackTokenIndex(config, key, index);
-  return FILL_CLASS_BY_TOKEN[CHART_TOKENS[tokenIndex] as ChartToken];
+  return resolveFromMap(FILL_CLASS_BY_TOKEN, config, key, index);
 }
 
 /** Same resolution over the stroke channel. */
 export function resolveSeriesStrokeClass(config: ChartConfig, key: string, index?: number): string {
-  const token = config[key]?.token;
-  if (token) return STROKE_CLASS_BY_TOKEN[token];
-  const tokenIndex = fallbackTokenIndex(config, key, index);
-  return STROKE_CLASS_BY_TOKEN[CHART_TOKENS[tokenIndex] as ChartToken];
+  return resolveFromMap(STROKE_CLASS_BY_TOKEN, config, key, index);
 }
 
 /**
