@@ -229,6 +229,18 @@ describe('bandScale', () => {
     expect(s.scale('b')).toBeCloseTo(s.scale('a') + st, 5);
   });
 
+  it('matches the d3 scaleBand formula and fills the range under paddingInner', () => {
+    // d3: step = span / (n - paddingInner + 2*paddingOuter) = 300 / (3 - 0.5) = 120;
+    // bandwidth = step*(1-paddingInner) = 60; align 0.5 with paddingOuter 0 leaves no
+    // leftover, so bands fill [0,300] exactly (the pre-fix denominator left ~37% unused).
+    const s = bandScale(['a', 'b', 'c'] as const, [0, 300], { paddingInner: 0.5 });
+    expect(s.step()).toBeCloseTo(120, 6);
+    expect(s.bandwidth()).toBeCloseTo(60, 6);
+    expect(s.scale('a')).toBeCloseTo(0, 6);
+    expect(s.scale('c')).toBeCloseTo(240, 6);
+    expect(s.scale('c') + s.bandwidth()).toBeCloseTo(300, 6); // last band ends at the range end
+  });
+
   it('applies paddingOuter before first and after last band', () => {
     const s = bandScale(['a', 'b'] as const, [0, 200], { paddingOuter: 0.5 });
     expect(s.scale('a')).toBeGreaterThan(0);

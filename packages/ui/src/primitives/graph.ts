@@ -24,6 +24,8 @@ export interface GraphControls {
 export interface BandScaleOptions {
   paddingInner?: number;
   paddingOuter?: number;
+  /** Distributes leftover range; 0.5 (default) centers bands, like d3-scale. */
+  align?: number;
 }
 
 export interface BandScale<T extends string> {
@@ -129,9 +131,10 @@ export function linearScale(
 }
 
 /**
- * Create a band scale that maps categorical values to evenly-spaced bands.
- * paddingInner controls space between bands (0-1, fraction of step).
- * paddingOuter controls space before the first and after the last band (0-1, fraction of step).
+ * Create a band scale that maps categorical values to evenly-spaced bands,
+ * reproducing d3-scale scaleBand: step = span / (n - paddingInner + 2*paddingOuter),
+ * bandwidth = step * (1 - paddingInner), and leftover range distributed by align
+ * (default 0.5 centers). paddingInner/paddingOuter/align are fractions in [0,1].
  */
 export function bandScale<T extends string>(
   domain: readonly T[],
@@ -142,19 +145,14 @@ export function bandScale<T extends string>(
   const count = domain.length;
   const pInner = opts?.paddingInner ?? 0;
   const pOuter = opts?.paddingOuter ?? 0;
+  const align = opts?.align ?? 0.5;
 
-  let stepVal: number;
-  let bw: number;
+  // d3 denominator: n - paddingInner + 2*paddingOuter (clamped so a single band divides by >= 1).
+  const stepVal = count === 0 ? 0 : rangeSpan / Math.max(1, count - pInner + 2 * pOuter);
+  const bw = stepVal * (1 - pInner);
 
-  if (count === 0) {
-    stepVal = 0;
-    bw = 0;
-  } else {
-    stepVal = rangeSpan / (count + 2 * pOuter - pInner + count * pInner);
-    bw = stepVal * (1 - pInner);
-  }
-
-  const offset = pOuter * stepVal;
+  // Distribute leftover range by align (0.5 centers); firstEdge is the left edge of band 0.
+  const firstEdge = range[0] + (rangeSpan - stepVal * (count - pInner)) * align;
 
   const indexMap = new Map<T, number>();
   for (let i = 0; i < domain.length; i++) {
@@ -165,7 +163,7 @@ export function bandScale<T extends string>(
     scale(value: T): number {
       const idx = indexMap.get(value);
       if (idx === undefined) return range[0];
-      return range[0] + offset + idx * stepVal;
+      return firstEdge + idx * stepVal;
     },
     bandwidth: () => bw,
     step: () => stepVal,
@@ -339,16 +337,8 @@ export function slicePath(
   startAngle: number,
   endAngle: number,
 ): string {
-  const toRad = (deg: number) => ((deg - 90) * Math.PI) / 180;
-
-  const outerStart = {
-    x: cx + outerRadius * Math.cos(toRad(startAngle)),
-    y: cy + outerRadius * Math.sin(toRad(startAngle)),
-  };
-  const outerEnd = {
-    x: cx + outerRadius * Math.cos(toRad(endAngle)),
-    y: cy + outerRadius * Math.sin(toRad(endAngle)),
-  };
+  const outerStart = radialToCartesian(cx, cy, outerRadius, startAngle);
+  const outerEnd = radialToCartesian(cx, cy, outerRadius, endAngle);
 
   let sweep = endAngle - startAngle;
   if (sweep < 0) sweep += 360;
@@ -363,14 +353,8 @@ export function slicePath(
     ].join(' ');
   }
 
-  const innerStart = {
-    x: cx + innerRadius * Math.cos(toRad(startAngle)),
-    y: cy + innerRadius * Math.sin(toRad(startAngle)),
-  };
-  const innerEnd = {
-    x: cx + innerRadius * Math.cos(toRad(endAngle)),
-    y: cy + innerRadius * Math.sin(toRad(endAngle)),
-  };
+  const innerStart = radialToCartesian(cx, cy, innerRadius, startAngle);
+  const innerEnd = radialToCartesian(cx, cy, innerRadius, endAngle);
 
   return [
     `M ${outerStart.x} ${outerStart.y}`,
@@ -408,7 +392,7 @@ export function radarPath(cx: number, cy: number, values: number[], maxRadius: n
   const angleStep = 360 / values.length;
   const points = values.map((v, i) => {
     const angle = i * angleStep;
-    const r = (v / 1) * maxRadius;
+    const r = v * maxRadius;
     return radialToCartesian(cx, cy, r, angle);
   });
 
