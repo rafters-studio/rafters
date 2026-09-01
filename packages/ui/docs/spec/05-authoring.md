@@ -139,44 +139,63 @@ bind and the React `useEffect`):
 | overlay + presence | `dialog` | presence (content mounts/unmounts in React, `hidden`-toggles in the bind) + a composition function that starts `focus-trap` + `scroll-lock` (`preventBodyScroll`) + `outside-click` on open and tears them down on close. Composed parts stay light DOM. |
 | compound | `navigation-menu` | many-part instances (trigger/content per value); composes `roving-focus` + `hover-delay` + `outside-click`. |
 
-## Motion: semantic tokens only, never raw numerics
+## Motion: a matrix cell, never a token or a numeric
 
-A component's `classes.ts` reaches for a **semantic motion token** and nothing
-else. The token layer (`packages/design-tokens`, #1902/#1903/#1904) generates
-thirteen `motion-*` @utility classes -- `motion-hover`, `motion-focus`,
-`motion-press`, `motion-toggle`, `motion-dropdown-in`/`-out`,
-`motion-modal-in`/`-out`, `motion-sheet-in`/`-out`, `motion-expand`,
-`motion-collapse`, `motion-page` -- each of which encodes the complete
-transition: which properties animate, the perceptually-derived duration tier,
-the named easing curve, and the `prefers-reduced-motion` degradation. The
-duration is `f(size, distance)` already applied; the semantic name carries the
-use case so you inherit the principle (modal is `normal`, dropdown is
-`moderate`, exits are shorter than entrances) without re-deriving it.
+Motion is declared, assigned, and then consumed. A component never picks a
+duration, an easing, or a class that encodes one. The full doctrine is
+`docs/MOTION.md`; the source of record for every moment is
+`docs/spec/matrix/motion.jsonl` (rendered as `matrix/motion.md`). The shape:
 
-**Raw numeric durations and hand-picked easings are prohibited.** Never write
-`duration-300`, `duration-[350ms]`, `ease-[cubic-bezier(...)]`, or a
-`transition-duration`/`transition-timing-function` literal in a component. Those
-are the exact guesses this layer exists to prevent -- a class whose timing no one
-can enforce or audit. If no `motion-*` token fits, that is a token-layer gap:
-raise it, do not paper over it with a numeric.
+1. **Declare it in the score.** `BehaviorSpec.motion` (a `MotionMap`, Spec 01)
+   names each `(transition, part)` moment the component has, with intent, axis,
+   and size class only. Statics omit it. A moment not declared here does not
+   exist for the rest of the pipeline.
+2. **A row assigns it.** Every declared moment is one row in `motion.jsonl`:
+   `(component, part, transition)` with a duration tier, a curve role, delays,
+   and an extent. Rows are assigned by need, never by cross-product, and a row
+   never carries a raw value -- tiers and roles resolve from the project's intent
+   through the system tokens. **No row, no motion.** A moment with no row is
+   still, and that is a legitimate answer.
+3. **The exporter emits it.** The token generator turns each row into a
+   `motion-cell-<key>` token and the Tailwind exporter emits one
+   `animate-<key>` keyframe utility per cell (`design-tokens/src/exporters/tailwind.ts`),
+   named `animate-<component>-<part>-<transition>` -- `animate-dialog-content-open`
+   is the reference consumer.
+4. **`classes.ts` consumes it.** The class string selects the utility off the
+   projected state, and nothing else:
+   `'data-[state=open]:animate-dialog-content-open data-[state=closed]:animate-dialog-content-close'`.
+   Reduced motion is handled INSIDE the generated utility (it zeroes the
+   duration and keeps the end state). Do **not** add `motion-reduce:animate-none`
+   to a cell utility: `animation: none` resets the shorthand and discards the
+   zeroed duration, so the two mechanisms must never both apply.
 
-The token encodes timing + property set; the **from/to values are the
-component's concern**. Consumption has a shape per category:
+**Prohibited in a component:** the legacy `motion-*` utility classes
+(`motion-hover`, `motion-modal-in`, `motion-expand`, and the rest of the thirteen
+-- deleted by ruling 2026-08-02, matrix preamble); `duration-*`, `delay-*`, or
+`ease-*` literals; `duration-[350ms]`, `ease-[cubic-bezier(...)]`, or any
+`transition-*` timing literal; and a keyframe authored in a component file. Every
+one of these is a value wearing a class name, and both spellings compile, which
+is exactly why the rule has to be a rule. If the matrix has no row for a moment
+the component genuinely has, that is a matrix change request: add the row (with
+its provenance marked proposed), never a local class.
 
-- **Interaction** (`motion-hover`/`focus`/`press`/`toggle`): the class defines
-  the timing; a variant triggers the change. `class="motion-press active:scale-95
-  active:bg-primary-active"` -- the transition rides the `active:` swap.
-- **Enter/exit** (`motion-*-in`/`-out`): the token carries only
-  property/duration/easing. The component declares the closed rest state and the
-  open active state and toggles via `data-state`, AND keeps the exiting node
-  mounted (presence management, docs/MOTION.md) so the out transition can play:
-  `class="motion-modal-in opacity-0 scale-95 data-[state=open]:opacity-100
-  data-[state=open]:scale-100"`. Slapping `motion-modal-in` on a conditionally
-  *rendered* element animates nothing and errors nowhere -- the silent no-op.
-- **Expand/collapse** (`motion-expand`/`collapse`): the animated property is
-  `grid-template-rows` (`0fr`<->`1fr`), never `height` (`height:auto` is not
-  transitionable). Wrap in a grid container with the motion class; the child
-  needs `min-h-0 overflow-hidden` or the `0fr` row still shows its content.
+**Legacy consumers.** Components ported before the ruling still carry
+`motion-*` classes (accordion, the button spinner). They migrate one at a time;
+a new component never adds a consumer, and a port never copies one forward.
+
+Presence rules are unchanged from `docs/MOTION.md`: an exit cell can only play
+on a node that is still mounted, so enter/exit consumers keep the exiting node
+present and toggle `data-state` (presence management); expand and collapse
+animate `grid-template-rows` (`0fr` <-> `1fr`), never `height`, inside a grid
+container whose child carries `min-h-0 overflow-hidden`. SVG marks are not a
+special case: a keyframe on `transform` or `opacity` animates a `rect` or `path`
+the same way it animates a `div`.
+
+**Matrix conformance is a review lane.** Every motion PR is checked cell by
+cell: the cells a component consumes must equal the cells the matrix assigns
+it, with no formula-derived geometry and no collapsed cells (legion 019fc8e9,
+the lesson from the first cell consumer). Declaring the mechanism is not enough;
+the values bind to the rows.
 
 ## The three gotchas (encode all three)
 
@@ -190,7 +209,7 @@ component's concern**. Consumption has a shape per category:
 
 ## Composing motion (combination constraints)
 
-When a component animates, the duration and easing come from motion tokens --
+When a component animates, the duration and easing come from its matrix cell --
 but *which parameters you combine* is governed by cross-parameter rules that no
 single token can hold. They are not prose to remember; they are queryable data
 plus a validator in `@rafters/design-tokens`
