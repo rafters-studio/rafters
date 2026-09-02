@@ -105,3 +105,12 @@ Behavior-layer support: only the five articles have react (verified). Old tree a
 | **navigation-menu** A | Site navigation bar (ARTICLE) | Bar of disclosure triggers; one panel open; hover intent | activeItem, open per trigger | - | - | animate-in (dead classes, task 7) -> panel enter/exit: fade+zoom | astro/react | react OK |
 | **resizable** | Draggable split panels | Drag handles resize adjacent panels; keyboard resizes | sizes, dragging | memory | interactive, keyboard-handler | transition-shadow handle | react | none |
 | **sidebar** | Collapsible navigation rail | Expands/collapses app nav; remembers state; mobile overlay mode | open, collapsed rail, mobile | memory | - | translate-x slide -> expand/collapse: slide, axis x | react | none |
+
+## chart (4)
+
+| component | is | does | states | uses (current) | uses (planned) | motion | old tree | layer |
+|---|---|---|---|---|---|---|---|---|
+| **chart-container** | shadcn-compatible sized plot region + token-mapped series config | Measures width/height (graph.ts observeResize), provides ChartConfig + size to children; validates config at the boundary (Zod) | size (width, height) | graph.ts observeResize | - | none | none | none |
+| **x-axis** | Category axis (compositional child, never a prop) | Carries `dataKey`; the owning cartesian chart (Bar #2225, Line #2226, Area #2227) reads it for real tick rendering | - | - | graph.ts ticks (owning chart type) | none | none | none |
+| **y-axis** | Value axis (compositional child, never a prop) | Carries an optional label; the owning cartesian chart reads it and its own data domain for real tick rendering | - | - | graph.ts ticks (owning chart type) | none | none | none |
+| **cartesian-grid** | Background grid lines (compositional child, never a prop) | Carries horizontal/vertical toggle; the owning cartesian chart reads it and its own plot rectangle for real line rendering | - | - | graph.ts gridLines/ticks (owning chart type) | none | none | none |
