@@ -24,15 +24,19 @@
  * document-level `selectionchange` listener and teardown (no second listener
  * added here) and `primitives/editor/cursor-tracker.ts`'s `findBlockElement`
  * to resolve the owning block -- `domOffsetInBlock` below does the rest of the
- * mapping. The primitive's own `SelectionRange` (ordered `startNode`/
- * `endNode`, not a directional anchor/focus) is read as-is: every consumer of
- * `state.sel` in this file already normalizes order itself (`caretStart`,
- * `orderedRange`, `deleteRangeAcrossBlocksOps`'s `anchorFirst`), so start/end
- * ordering loses nothing a caller here depends on. A mapped selection equal to
- * `state.sel` is dropped (the echo from this file's own `restoreSelection`);
- * a genuine move writes `sel` via `EditorHistoryControls.setSelection` (no
- * `done`/`undone` change) and calls `closeGroup()` (a caret move is not an
- * edit, but it IS a coalescing boundary).
+ * mapping. The primitive's own `SelectionRange` carries both an ordered
+ * `startNode`/`endNode` pair (tree-order normalized by `Range`, so it cannot
+ * tell a backward selection from a forward one) and the live `Selection`'s
+ * true `anchorNode`/`anchorOffset`/`focusNode`/`focusOffset` -- `mapSelectionRange`
+ * below reads the latter so a backward DOM selection (built with
+ * `setBaseAndExtent(later, earlier)`, or produced by Shift+ArrowLeft) maps to
+ * a model selection whose `anchor` is the later position and `focus` the
+ * earlier one, matching what the user actually did. A mapped selection equal
+ * to `state.sel` is dropped (the echo from this file's own
+ * `restoreSelection`); a genuine move writes `sel` via
+ * `EditorHistoryControls.setSelection` (no `done`/`undone` change) and calls
+ * `closeGroup()` (a caret move is not an edit, but it IS a coalescing
+ * boundary).
  */
 import { z } from 'zod';
 import type { AriaAttrs, KeyInput, PartDecl, PartIds } from '../../lib/contract';
@@ -166,7 +170,21 @@ function isCollapsed(sel: EditorHistoryState['sel']): boolean {
 }
 
 /** The block id + offset the caret/anchor of an edit acts at. For a range on
- *  one block this is the ordered start; otherwise the focus position. */
+ *  one block this is the ordered start (`Math.min`, direction-independent).
+ *
+ *  For a range spanning two blocks it returns `sel.focus` as-is, NOT the
+ *  earlier of the two blocks in document order (this function has no `doc`
+ *  to consult, only `sel`). Every current caller of this branch
+ *  (`translateBeforeInput`'s `insertText` case, `pasteText`,
+ *  `onCompositionEnd`) inserts at that position WITHOUT first removing the
+ *  rest of the cross-block selection -- typing, pasting, or committing an
+ *  IME composition over a cross-block range selection is not a complete
+ *  replace yet (unlike Backspace/Delete over the same selection, which
+ *  route through `deleteRangeAcrossBlocksOps` and correctly resolve
+ *  document order). #2236's direction fix changes what `sel.focus` IS for a
+ *  backward cross-block selection (the earlier block, not always the
+ *  later one a pre-fix `mapSelectionRange` always produced), but does not
+ *  change that this path was already an incomplete replace either way. */
 function caretStart(sel: EditorHistoryState['sel']): { blockId: string; offset: number } {
   if (sel.anchor.blockId === sel.focus.blockId) {
     return { blockId: sel.focus.blockId, offset: Math.min(sel.anchor.offset, sel.focus.offset) };
@@ -454,18 +472,38 @@ function resolveEditorPosition(
 
 /** Map a `createTextSelection` `SelectionRange` (already filtered to
  *  boundaries inside `root`) to a model `EditorSelection`, or `null` when
- *  either boundary's block cannot be resolved. `startNode`/`endNode` are
- *  ordered (per `SelectionRange`'s own contract), not a directional
- *  anchor/focus -- see this file's header comment for why that loses nothing
- *  a caller of `state.sel` depends on. */
+ *  either boundary's block cannot be resolved.
+ *
+ *  Prefers the range's `anchorNode`/`anchorOffset`/`focusNode`/`focusOffset`
+ *  -- the live `Selection`'s true, direction-preserving boundary pair -- so a
+ *  backward DOM selection (anchor after focus in document order) maps to a
+ *  model selection whose `anchor` is likewise the later position. Falls back
+ *  to the ordered `startNode`/`endNode` pair when a `SelectionRange` was
+ *  constructed directly rather than read from a live `Selection` (that pair
+ *  has no direction to lose, so start=anchor/end=focus is exact, not a
+ *  guess) -- `selectionToRange` (the only producer of a `SelectionRange`
+ *  read from an actual `Selection`) already omits the anchor/focus pair
+ *  entirely when it would be untrustworthy, so presence here is sufficient
+ *  to trust it. */
 function mapSelectionRange(
   root: HTMLElement,
   range: SelectionRange,
 ): EditorHistoryState['sel'] | null {
-  const anchor = resolveEditorPosition(root, range.startNode, range.startOffset);
+  const { anchorNode, anchorOffset, focusNode, focusOffset } = range;
+  const hasDirection =
+    anchorNode !== undefined &&
+    anchorOffset !== undefined &&
+    focusNode !== undefined &&
+    focusOffset !== undefined;
+
+  const anchor = hasDirection
+    ? resolveEditorPosition(root, anchorNode, anchorOffset)
+    : resolveEditorPosition(root, range.startNode, range.startOffset);
   const focus = range.collapsed
     ? anchor
-    : resolveEditorPosition(root, range.endNode, range.endOffset);
+    : hasDirection
+      ? resolveEditorPosition(root, focusNode, focusOffset)
+      : resolveEditorPosition(root, range.endNode, range.endOffset);
   if (anchor === null || focus === null) return null;
   return { anchor, focus };
 }

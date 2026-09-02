@@ -243,6 +243,55 @@ describe('bindEditor -- DOM to model selection recovery (#2236)', () => {
     teardown();
   });
 
+  it('maps a backward selection so anchor is the later position and focus the earlier one (#2236 HIGH fix)', () => {
+    // `Selection.getRangeAt(0)` is tree-order normalized in every browser: a
+    // backward drag/extend (anchor after focus in the document) still comes
+    // back as a Range whose startContainer/startOffset is the EARLIER point.
+    // Without reading the live Selection's own anchor/focus, that ordering
+    // gets baked into the model as a forward selection.
+    //
+    // happy-dom's real `Selection` cannot exercise this: its `focusNode`/
+    // `focusOffset` getters unconditionally alias `anchorNode`/`anchorOffset`
+    // (verified directly against
+    // node_modules/happy-dom/lib/selection/Selection.js -- `get focusNode()
+    // { return this.anchorNode; }`), so `setBaseAndExtent(later, earlier)`
+    // reports `anchorOffset === focusOffset` even though the real selection
+    // is backward. This test stubs `window.getSelection` instead, supplying
+    // a real `Range` (tree-order start/end) alongside a correctly distinct
+    // anchor/focus pair, so it exercises `mapSelectionRange`'s direction
+    // handling the way a real browser's `Selection` would.
+    const doc: BaseBlock[] = [{ id: 'b1', type: 'text', content: 'hello world' }];
+    const { root, history, teardown } = mount(doc, collapsedAt('b1', 5));
+
+    const b1Text = root.querySelector('[data-block-id="b1"]')?.firstChild as Text;
+    const range = document.createRange();
+    range.setStart(b1Text, 3); // tree-order start = the earlier point (focus)
+    range.setEnd(b1Text, 5); // tree-order end = the later point (anchor)
+
+    const stubSelection = {
+      rangeCount: 1,
+      getRangeAt: () => range,
+      anchorNode: b1Text,
+      anchorOffset: 5,
+      focusNode: b1Text,
+      focusOffset: 3,
+      // render()'s restoreSelection echo calls this after every state.sel
+      // change -- a no-op keeps it from needing removeAllRanges/addRange too.
+      setBaseAndExtent: vi.fn(),
+    } as unknown as Selection;
+    const getSelectionSpy = vi.spyOn(window, 'getSelection').mockReturnValue(stubSelection);
+
+    document.dispatchEvent(new Event('selectionchange'));
+
+    expect(history.memory.get().sel).toEqual({
+      anchor: { blockId: 'b1', offset: 5 },
+      focus: { blockId: 'b1', offset: 3 },
+    });
+
+    getSelectionSpy.mockRestore();
+    teardown();
+  });
+
   it("does not re-enter when render()'s own restoreSelection echoes the move back", () => {
     const doc: BaseBlock[] = [
       { id: 'b1', type: 'text', content: 'first' },

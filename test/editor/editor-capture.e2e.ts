@@ -222,6 +222,62 @@ test('ArrowLeft moves the caret, and Backspace removes the character before the 
   expect(caretOffset).toBe(2);
 });
 
+test('Shift+ArrowLeft extends the selection backward instead of shrinking it (#2236 HIGH fix)', async ({
+  page,
+}) => {
+  // Regression for the HIGH review finding on #2236: `Selection.getRangeAt(0)`
+  // is tree-order normalized, so a backward selection's Range always reports
+  // its EARLIER boundary as `startContainer`. Without reading the live
+  // `Selection`'s own (direction-preserving) anchor/focus, `mapSelectionRange`
+  // mapped that ordered pair straight into `state.sel` as if it were forward
+  // -- so `render()`'s own `restoreSelection` echo re-asserted the caret
+  // FORWARD (`setBaseAndExtent(start, end)`), silently flipping the DOM
+  // selection's true anchor/focus after every Shift+ArrowLeft. The next
+  // Shift+ArrowLeft then extended from the wrong end, so the selection
+  // shrank on the second press instead of growing to two characters.
+  await page.goto('about:blank');
+  await page.setContent(
+    await buildEditorHarness({ blocks: [{ id: 'b1', type: 'text', content: 'hello world' }] }),
+  );
+  const block = page.locator('[data-block-id="b1"]');
+
+  // Same midpoint-of-the-text-node's-own-rect click as the test above, for
+  // the same reason: the exact offset is font/engine-dependent, so the
+  // assertions below are relative to whatever offset the click resolves to.
+  const rect = await block.evaluate((el) => {
+    const textNode = el.firstChild as Text;
+    const range = document.createRange();
+    range.selectNodeContents(textNode);
+    const { x, y, width, height } = range.getBoundingClientRect();
+    return { x, y, width, height };
+  });
+  await page.mouse.click(rect.x + rect.width / 2, rect.y + rect.height / 2);
+  await settleSelection(page);
+
+  const clickedOffset = await page.evaluate(() => window.getSelection()?.focusOffset ?? -1);
+  expect(clickedOffset).toBeGreaterThan(1); // needs at least 2 characters to its left
+
+  await page.keyboard.press('Shift+ArrowLeft');
+  await settleSelection(page);
+  await page.keyboard.press('Shift+ArrowLeft');
+  await settleSelection(page);
+
+  const sel = await page.evaluate(() => {
+    const s = window.getSelection();
+    return {
+      isCollapsed: s?.isCollapsed ?? true,
+      selectedLength: s ? s.toString().length : 0,
+      anchorOffset: s?.anchorOffset ?? -1,
+      focusOffset: s?.focusOffset ?? -1,
+    };
+  });
+
+  expect(sel.isCollapsed).toBe(false);
+  expect(sel.selectedLength).toBe(2); // grew by one char per press, not shrank
+  expect(sel.anchorOffset).toBe(clickedOffset); // anchor pinned where the click landed
+  expect(sel.focusOffset).toBe(clickedOffset - 2); // focus is the earlier position
+});
+
 // -----------------------------------------------------------------------------
 // Caret-notation scenario table (FR-EDITOR-006) -- the SAME EDITOR_SCENARIOS
 // the model-level BDD (editor.behavior.test.ts) replays via
