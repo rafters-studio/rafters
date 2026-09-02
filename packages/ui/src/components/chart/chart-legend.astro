@@ -1,0 +1,67 @@
+---
+/**
+ * ChartLegend -- one entry per configured series, display-only (#2228)
+ *
+ * @cognitive-load 1/10 - No decisions: renders one swatch+label per series in
+ * config order.
+ * @attention-economics Always visible while its chart is visible; a fixed,
+ * low-attention reference the eye returns to, never something that competes
+ * for attention on its own.
+ * @trust-building The swatch color always traces to the SAME `ChartConfig`
+ * the tooltip and marks read -- a legend entry can never disagree with the
+ * chart about what a color means.
+ * @accessibility `role="list"`/`role="listitem"` with `roving-focus` keyboard
+ * traversal across entries; focus is visible. Default is DISPLAY-ONLY: no
+ * action dispatches on activation (shadcn parity). Server-rendered entries
+ * work with JS off; only the roving-focus tab order needs the client script.
+ * @semantic-meaning Ports shadcn's `<ChartLegend content={<ChartLegendContent />} />`
+ * call site -- entries render directly from `config` at build/request time.
+ *
+ * @usage-patterns
+ * DO: Pass the SAME `ChartConfig` the chart's `ChartContainer` uses
+ * NEVER: Add a click handler that hides a series
+ *
+ * @example
+ * ```astro
+ * <ChartLegend id="revenue-legend" config={{ desktop: { label: 'Desktop', token: 'chart-1' } }} />
+ * ```
+ */
+import { chartLegendClasses, chartLegendSwatchWrapperClass } from './chart-legend.classes';
+import { legendEntries } from './chart-legend.behavior';
+import type { ChartConfig } from './chart.behavior';
+
+interface Props {
+  id: string;
+  config?: ChartConfig;
+  nameKey?: string;
+}
+
+const { id, config = {}, nameKey } = Astro.props;
+const classes = chartLegendClasses();
+const entries = legendEntries(config, nameKey);
+const swatchWrapperClass = chartLegendSwatchWrapperClass();
+---
+
+<rafters-chart-legend id={id} data-part="root" role="list" class={classes.root}>
+  {
+    entries.map((entry) => (
+      <span data-part="entry" data-roving-item tabindex="0" role="listitem" class={classes.entry}>
+        <svg class={swatchWrapperClass} viewBox="0 0 10 10" aria-hidden="true">
+          <rect width="10" height="10" rx="2" class={entry.swatchClass} />
+        </svg>
+        <span class={classes.label}>{entry.label}</span>
+      </span>
+    ))
+  }
+</rafters-chart-legend>
+
+<script>
+  import { bindChartLegend } from './chart-legend.behavior';
+
+  for (const root of document.querySelectorAll('rafters-chart-legend[data-part="root"]')) {
+    const el = root as HTMLElement;
+    if (el.dataset['bound'] === 'true') continue;
+    el.dataset['bound'] = 'true';
+    bindChartLegend(el);
+  }
+</script>

@@ -109,3 +109,18 @@ export function tooltipClasses(_config: TooltipConfig, _state: TooltipState): To
     content: contentClasses,
   };
 }
+
+/**
+ * The literal content-panel decoration, exported standalone (#2228) so a
+ * data-state-driven consumer with no `[data-tooltip]`/`[data-part=trigger]`
+ * sibling structure of its own -- chart-tooltip, which reveals via a
+ * hit-tested datum rather than CSS `:hover` -- can reuse the SAME surface
+ * and motion (`data-[state=open]:opacity-100 duration-moderate ease-enter`,
+ * base `duration-fast ease-exit`, no spatial movement) without fabricating a
+ * `TooltipConfig`/`TooltipState` it has neither of just to call
+ * `tooltipClasses()`. The CSS-hover reveal selectors embedded above are
+ * scoped to `[data-tooltip]` ancestors and are inert wherever that marker is
+ * absent -- reusing this string elsewhere activates only the
+ * `data-[state=...]` rules, which is the intended shared surface.
+ */
+export const tooltipContentSurfaceClasses = contentClasses;
