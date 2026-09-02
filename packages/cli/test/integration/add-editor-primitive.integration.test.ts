@@ -121,3 +121,50 @@ describe('rafters add installs a relocated editor primitive (#2136)', () => {
     30000,
   );
 });
+
+/**
+ * Snapshot-history retirement (#2240). `history`, `document-editor`, and
+ * `block-handler` are deleted from `primitives/editor/` and from the served
+ * registry. `document-editor` is the #2220 case: it used to install with a
+ * dangling import into `components/editor/editor-history` (a component-layer
+ * path a primitive install never rewrites); now it does not install at all,
+ * loudly, instead of installing broken.
+ */
+describe('rafters add after the snapshot-history retirement (#2240)', () => {
+  it.skipIf(!DIST_AVAILABLE)(
+    'editor installs clean, with no reference to the retired document-editor primitive',
+    async () => {
+      fixturePath = await createInitializedFixture('nextjs-shadcn-v4');
+      const result = await execCli(fixturePath, ['add', 'editor', '--registry-url', registryUrl]);
+
+      expect(result.stderr).not.toMatch(/Cannot find module/);
+      expect(result.exitCode).toBe(0);
+      expect(fixtureFileExists(fixturePath, 'components/ui/editor.tsx')).toBe(true);
+      expect(fixtureFileExists(fixturePath, 'components/ui/editor/editor-history.ts')).toBe(true);
+
+      // The editor component never depended on the snapshot-history track;
+      // this pins that it still does not, post-retirement.
+      expect(fixtureFileExists(fixturePath, 'lib/primitives/document-editor.ts')).toBe(false);
+      expect(fixtureFileExists(fixturePath, 'lib/primitives/block-handler.ts')).toBe(false);
+      expect(fixtureFileExists(fixturePath, 'lib/primitives/history.ts')).toBe(false);
+    },
+    30000,
+  );
+
+  it.skipIf(!DIST_AVAILABLE)(
+    'document-editor, block-handler, and history report not-found instead of installing broken (the #2220 case)',
+    async () => {
+      for (const name of ['document-editor', 'block-handler', 'history']) {
+        fixturePath = await createInitializedFixture('nextjs-shadcn-v4');
+        const result = await execCli(fixturePath, ['add', name, '--registry-url', registryUrl]);
+
+        expect(result.exitCode, `${name}: ${result.stdout}\n${result.stderr}`).not.toBe(0);
+        expect(fixtureFileExists(fixturePath, `lib/primitives/${name}.ts`)).toBe(false);
+
+        await cleanupFixture(fixturePath);
+        fixturePath = '';
+      }
+    },
+    30000,
+  );
+});

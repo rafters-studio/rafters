@@ -19,10 +19,7 @@ import * as React from 'react';
 import { convertBlockType } from '../../primitives/editor/block-operations';
 import classy from '../../primitives/classy';
 import { findBlockElement } from '../../primitives/editor/cursor-tracker';
-import {
-  createDocumentEditor,
-  type DocumentEditorControls,
-} from '../../primitives/editor/document-editor';
+import { createDocumentEditor, type DocumentEditorControls } from './document-editor';
 import type { BaseBlock, CleanupFunction, Direction, InlineContent } from '../../primitives/types';
 import { Button } from './button';
 import { Container } from './container';

@@ -733,19 +733,22 @@ describe('type-checker-based prop extraction (#2165)', () => {
 });
 
 /**
- * Editor-subsystem relocation (#2136). The 25 `subsystem:"editor"` primitives
+ * Editor-subsystem relocation (#2136). The 22 `subsystem:"editor"` primitives
  * live under `packages/ui/src/primitives/editor/` on disk, but discovery must
  * find them by bare name and serve them at the UNCHANGED flat consumer path
  * (`lib/primitives/<name>.ts`). Source nesting and served layout are decoupled:
  * a consumer sees zero path churn. These tests fail loudly if discovery drops
  * the subdir (the #2018 silent-empty shape) or if the folder and the matrix tag
  * drift apart.
+ *
+ * `history`, `document-editor`, and `block-handler` retired from this list in
+ * #2240 (the snapshot-history track); see 'retired snapshot-history
+ * primitives are not registry items' below.
  */
 describe('editor primitive discovery after relocation (#2136)', () => {
   const EDITOR_PRIMITIVES = [
     'block-canvas',
     'block-context-menu',
-    'block-handler',
     'block-operations',
     'block-palette',
     'block-wrapper',
@@ -753,10 +756,8 @@ describe('editor primitive discovery after relocation (#2136)', () => {
     'clipboard',
     'command-palette',
     'cursor-tracker',
-    'document-editor',
     'drag-drop',
     'editor-toolbar',
-    'history',
     'inline-formatter',
     'inline-toolbar',
     'input-events',
@@ -802,16 +803,32 @@ describe('editor primitive discovery after relocation (#2136)', () => {
   });
 
   it('served editor content never leaks the editor/ source nesting', () => {
-    // A nested `../memory` that survived into served content would resolve to
-    // `lib/memory` in the flat consumer tree -- a dangling import. It must be
-    // flattened back to `./memory` (a flat sibling) before serving.
-    const handler = loadPrimitive('block-handler');
-    const content = handler?.files[0]?.content ?? '';
+    // A nested `../types` or `../keyboard-handler` that survived into served
+    // content would resolve to `lib/types` in the flat consumer tree -- a
+    // dangling import. It must be flattened back to `./types` (a flat sibling)
+    // before serving. (Exemplar was `block-handler` before its #2240 removal;
+    // `block-canvas` exercises the identical parent-relative-import shape.)
+    const canvas = loadPrimitive('block-canvas');
+    const content = canvas?.files[0]?.content ?? '';
     expect(content).not.toMatch(/from\s+['"]\.\.\/(memory|types|keyboard-handler)['"]/);
-    expect(content).toMatch(/from\s+['"]\.\/memory['"]/);
+    expect(content).toMatch(/from\s+['"]\.\/(types|keyboard-handler)['"]/);
     // The transitive closure still names the flat behavior siblings.
-    expect(handler?.primitives).toContain('memory');
-    expect(handler?.primitives).toContain('types');
+    expect(canvas?.primitives).toContain('keyboard-handler');
+    expect(canvas?.primitives).toContain('types');
+  });
+
+  /**
+   * #2240 retires the snapshot-history track: `history`, `document-editor`,
+   * and `block-handler` are deleted from `primitives/editor/` and must stop
+   * being registry items. `document-editor` is the #2220 case -- it used to
+   * serve with a dangling import; now it does not serve at all.
+   */
+  it('retired snapshot-history primitives are not registry items', () => {
+    const names = listPrimitiveNames();
+    for (const retired of ['history', 'document-editor', 'block-handler']) {
+      expect(names).not.toContain(retired);
+      expect(loadPrimitive(retired)).toBeNull();
+    }
   });
 
   it('non-editor primitives are unaffected at the flat root', () => {
