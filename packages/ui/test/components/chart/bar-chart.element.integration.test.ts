@@ -18,6 +18,7 @@ import { RaftersChartContainer } from '../../../src/components/chart/chart.eleme
 import { RaftersXAxis } from '../../../src/components/chart/x-axis.element';
 import { RaftersBarChart } from '../../../src/components/chart/bar-chart.element';
 import { computeBars } from '../../../src/components/chart/bar-chart.behavior';
+import { resolveBarFillClass } from '../../../src/components/chart/bar-chart.classes';
 import type { ChartConfig } from '../../../src/components/chart/chart.behavior';
 import { stubResizeObserver } from '../../harness/resize-observer';
 
@@ -116,7 +117,7 @@ describe('bar-chart [wc]', () => {
       expect(rect, bar.key).not.toBeNull();
       expect(Number(rect?.getAttribute('x'))).toBeCloseTo(bar.x);
       expect(Number(rect?.getAttribute('height'))).toBeCloseTo(bar.height);
-      expect(rect?.getAttribute('class')).toContain(bar.className);
+      expect(rect?.getAttribute('class')).toContain(resolveBarFillClass(chartConfig, bar));
     }
   });
 

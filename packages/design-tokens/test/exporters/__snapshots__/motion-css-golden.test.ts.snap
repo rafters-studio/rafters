@@ -40,7 +40,7 @@ exports[`motion CSS: golden emission > emits a stable motion surface 1`] = `
   "  --motion-keyframe-slide-out-to-right: from { transform: translateX(0); } to { transform: translateX(100%); };",
   "  --motion-keyframe-scale-in: from { transform: scale(var(--rafters-extent-pop)); opacity: 0; } to { transform: scale(1); opacity: 1; };",
   "  --motion-keyframe-scale-out: from { transform: scale(1); opacity: 1; } to { transform: scale(var(--rafters-extent-pop)); opacity: 0; };",
-  "  --motion-keyframe-grow-in: from { transform: scale(0); } to { transform: scale(1); };",
+  "  --motion-keyframe-grow-in: from { transform: scaleY(0); } to { transform: scaleY(1); };",
   "  --motion-keyframe-spin: from { transform: rotate(0deg); } to { transform: rotate(360deg); };",
   "  --motion-keyframe-ping: 75%, 100% { transform: scale(1.7); opacity: 0; };",
   "  --motion-keyframe-pulse: 0%, 100% { opacity: 1; } 50% { opacity: 0.48; };",

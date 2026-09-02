@@ -61,13 +61,26 @@
  * data-driven, so there is no fixed markup for this element to merely enhance.
  */
 import { bindBarChart } from './bar-chart.behavior';
+import { barChartClasses, resolveBarFillClass } from './bar-chart.classes';
 
 export class RaftersBarChart extends HTMLElement {
   private teardown: (() => void) | null = null;
 
   connectedCallback(): void {
     queueMicrotask(() => {
-      if (this.isConnected && !this.teardown) this.teardown = bindBarChart(this);
+      if (this.isConnected && !this.teardown) {
+        // `barChartClasses` ignores both arguments (root/plot/bar/table are
+        // constant regardless of layout/state) -- placeholder values, same
+        // as bar-chart.astro's server-render call.
+        const classes = barChartClasses(
+          { layout: 'vertical' },
+          { bars: [], valueTicks: [], activeIndex: null },
+        );
+        this.teardown = bindBarChart(this, {
+          bar: classes.bar,
+          resolveFillClass: resolveBarFillClass,
+        });
+      }
     });
   }
 

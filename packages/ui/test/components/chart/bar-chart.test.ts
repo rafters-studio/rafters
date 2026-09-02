@@ -8,9 +8,13 @@ import {
   barAria,
   barChart,
   computeBars,
+  type Bar,
   type BarChartBehaviorConfig,
 } from '../../../src/components/chart/bar-chart.behavior';
-import { barChartClasses } from '../../../src/components/chart/bar-chart.classes';
+import {
+  barChartClasses,
+  resolveBarFillClass,
+} from '../../../src/components/chart/bar-chart.classes';
 import type { ChartConfig } from '../../../src/components/chart/chart.behavior';
 import { hasArbitraryValue } from '../../../src/primitives/classy';
 import { bandScale, linearScale } from '../../../src/primitives/graph';
@@ -19,6 +23,18 @@ const cfg = {
   desktop: { label: 'Desktop', token: 'chart-1' },
   mobile: { label: 'Mobile', token: 'chart-2' },
 } satisfies ChartConfig;
+
+const BEHAVIOR_PATH = join(
+  dirname(fileURLToPath(import.meta.url)),
+  '../../../src/components/chart/bar-chart.behavior.ts',
+);
+
+describe('Spec 01 rule 1: behavior.ts never imports a classes module', () => {
+  it('bar-chart.behavior.ts has no import from any *.classes module', () => {
+    const source = readFileSync(BEHAVIOR_PATH, 'utf8');
+    expect(source).not.toMatch(/from\s+['"][^'"]*\.classes['"]/);
+  });
+});
 
 const data = [
   { month: 'Jan', desktop: 100, mobile: 40 },
@@ -118,15 +134,22 @@ describe('computeBars: horizontal layout', () => {
 });
 
 describe('computeBars: color', () => {
-  it('each bar paints exactly its series fill-chart-N from ChartConfig', () => {
+  it('each bar carries its series key and index; resolveBarFillClass resolves exactly its series fill-chart-N from ChartConfig', () => {
     const bars = computeBars({ data, series: ['desktop', 'mobile'] }, cfg, {
       categoryKey: 'month',
       width: 300,
       height: 200,
     });
-    expect(bars.every((b) => /^fill-chart-[1-5]$/.test(b.className))).toBe(true);
-    expect(bars.find((b) => b.key === 'Jan:desktop')?.className).toBe('fill-chart-1');
-    expect(bars.find((b) => b.key === 'Jan:mobile')?.className).toBe('fill-chart-2');
+    expect(bars.every((b) => /^fill-chart-[1-5]$/.test(resolveBarFillClass(cfg, b)))).toBe(true);
+
+    const janDesktop = bars.find((b) => b.key === 'Jan:desktop') as Bar;
+    const janMobile = bars.find((b) => b.key === 'Jan:mobile') as Bar;
+    expect(janDesktop.series).toBe('desktop');
+    expect(janDesktop.seriesIndex).toBe(0);
+    expect(resolveBarFillClass(cfg, janDesktop)).toBe('fill-chart-1');
+    expect(janMobile.series).toBe('mobile');
+    expect(janMobile.seriesIndex).toBe(1);
+    expect(resolveBarFillClass(cfg, janMobile)).toBe('fill-chart-2');
   });
 });
 
@@ -171,7 +194,10 @@ describe('issue #2225 functional test block', () => {
       width: 300,
       height: 200,
     });
-    expect(bars.find((b) => b.key === 'Feb:desktop')?.className).toBe('fill-chart-1');
+    const febDesktop = bars.find((b) => b.key === 'Feb:desktop') as Bar;
+    expect(febDesktop.series).toBe('desktop');
+    expect(febDesktop.seriesIndex).toBe(0);
+    expect(resolveBarFillClass(cfg, febDesktop)).toBe('fill-chart-1');
     expect(bars.every((b) => b.height >= 0)).toBe(true);
   });
 });
@@ -305,10 +331,12 @@ describe('motion: matrix declaration (#2225 AC4; BehaviorSpec.motion is spec-res
     expect(classes.bar).toContain('animate-bar-chart-bar-enter');
   });
 
-  it('the bar-enter composition (uniform scale, no translate/rotate) is legal under validateMotionComposition', () => {
+  it('the bar-enter composition (scale, no translate/rotate) is legal under validateMotionComposition', () => {
     // Describes the SAME moment the matrix row and the generated keyframe
-    // express (grow-in: scale(0) -> scale(1), no opacity/translate/rotate),
-    // independent of any BehaviorSpec.motion declaration.
+    // express (grow-in: scaleY(0) -> scaleY(1), no opacity/translate/rotate --
+    // structural geometry, not a pop), independent of any BehaviorSpec.motion
+    // declaration. MotionComposition's `scale` flag is axis-agnostic, so a
+    // scaleY-only composition is described the same way a uniform scale would be.
     const violations = validateMotionComposition({
       scale: true,
       elementSize: 'large',

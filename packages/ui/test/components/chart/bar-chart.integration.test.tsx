@@ -13,6 +13,7 @@ import { ChartContainer } from '../../../src/components/chart/chart';
 import { BarChart } from '../../../src/components/chart/bar-chart';
 import { XAxis } from '../../../src/components/chart/x-axis';
 import { computeBars } from '../../../src/components/chart/bar-chart.behavior';
+import { resolveBarFillClass } from '../../../src/components/chart/bar-chart.classes';
 import type { ChartConfig } from '../../../src/components/chart/chart.behavior';
 import { stubResizeObserver } from '../../harness/resize-observer';
 
@@ -82,7 +83,7 @@ describe('BarChart [react]', () => {
       expect(Number(rect?.getAttribute('y'))).toBeCloseTo(bar.y);
       expect(Number(rect?.getAttribute('width'))).toBeCloseTo(bar.width);
       expect(Number(rect?.getAttribute('height'))).toBeCloseTo(bar.height);
-      expect(rect?.getAttribute('class')).toContain(bar.className);
+      expect(rect?.getAttribute('class')).toContain(resolveBarFillClass(config, bar));
     }
   });
 

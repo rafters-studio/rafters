@@ -1,4 +1,6 @@
-import type { BarChartBehaviorConfig, BarChartState } from './bar-chart.behavior';
+import type { Bar, BarChartBehaviorConfig, BarChartState } from './bar-chart.behavior';
+import type { ChartConfig } from './chart.behavior';
+import { resolveSeriesClass } from './chart.classes';
 
 export interface BarChartClassSet {
   root: string;
@@ -33,9 +35,10 @@ const tableClasses = 'sr-only';
  * BarChart classes: root/plot are pure layout (Container/Grid own spacing,
  * this family owns none, same disposition as chart.classes.ts). `bar` names
  * only the generated motion utility -- the per-bar FILL color
- * (`fill-chart-N`) is resolved per-instance by `resolveSeriesClass`
- * (chart.classes.ts) inside `computeBars`, never here, and never a hex,
- * `var()`, or arbitrary value.
+ * (`fill-chart-N`) is resolved per-instance by `resolveBarFillClass` (below,
+ * this file) at render time, never in `computeBars` (bar-chart.behavior.ts
+ * never imports a classes module, Spec 01 rule 1), and never a hex, `var()`,
+ * or arbitrary value.
  */
 export function barChartClasses(
   _config: Pick<BarChartBehaviorConfig, 'layout'>,
@@ -47,4 +50,19 @@ export function barChartClasses(
     bar: barClasses,
     table: tableClasses,
   };
+}
+
+/**
+ * Resolve one bar's `fill-chart-N` literal at render time -- the classes-side
+ * half of the Spec 01 rule 1 fix: `computeBars` (bar-chart.behavior.ts) only
+ * returns `series`/`seriesIndex`, never a class string, so every performance
+ * (React, WC, Astro) calls this instead of reading a `className` field off
+ * the geometry. Thin wrapper over `resolveSeriesClass` (chart.classes.ts),
+ * the same literal lookup table the whole chart family shares.
+ */
+export function resolveBarFillClass(
+  chartConfig: ChartConfig,
+  bar: Pick<Bar, 'series' | 'seriesIndex'>,
+): string {
+  return resolveSeriesClass(chartConfig, bar.series, bar.seriesIndex);
 }

@@ -695,15 +695,16 @@ export const DEFAULT_KEYFRAME_DEFINITIONS: Record<string, KeyframeDef> = {
     contexts: ['modal-exit', 'popover-close'],
   },
   'grow-in': {
-    // Uniform scale, no opacity -- unlike scale-in/-out (which pair scale
-    // with a fade for anchored popups), a bar is fully opaque the instant it
-    // exists. The "from a baseline" framing comes from the caller-set
-    // `transform-origin` (bar-chart.behavior.ts's `transformOriginFor`), not
-    // from this keyframe: the same uniform scale anchored at a bar's bottom
-    // edge (vertical layout) or left edge (horizontal) reads as growth along
-    // the value axis without needing an axis-specific keyframe pair.
-    css: () => 'from { transform: scale(0); } to { transform: scale(1); }',
-    meaning: 'Grow from zero to full size, anchored at the caller-set transform-origin',
+    // scaleY, not a uniform scale -- a bar growing from the baseline to its
+    // full height is STRUCTURAL geometry (fixed, like the accordion
+    // chevron's 180deg rotation), not a pop: no opacity, no other numeric.
+    // The transform-origin anchoring the growth at the bottom (the
+    // value-axis baseline) is the caller-set `transform-origin`
+    // (bar-chart.behavior.ts's `transformOriginFor`), not this keyframe --
+    // this declares only the scaleY 0 -> 1 extent.
+    css: () => 'from { transform: scaleY(0); } to { transform: scaleY(1); }',
+    meaning:
+      'Grow from zero to full height, anchored at the baseline (caller-set transform-origin)',
     contexts: ['bar-chart', 'value-display'],
   },
   spin: {

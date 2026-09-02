@@ -299,7 +299,7 @@ need arrives, not speculatively.
 
 | component | part | transition | movement | duration | curve | delay | extent |
 |---|---|---|---|---|---|---|---|
-| bar-chart | bar | enter | zoom (grow from the value-axis baseline) | normal* | enter* | -- | -- |
+| bar-chart | bar | enter | grow (scaleY from the value-axis baseline) | normal* | enter* | -- | structural (scaleY 0 -> 1 from the baseline) |
 
 ### load / appearance
 

@@ -6,19 +6,6 @@ import { bandScale, linearScale, ticks } from '../../primitives/graph';
 import { announceToScreenReader } from '../../primitives/sr-announcer';
 import type { ChartConfig } from './chart.behavior';
 import { parseChartConfig } from './chart.behavior';
-// Sibling classes.ts import, disclosed divergence from Spec 01 rule 1
-// ("behavior.ts ... never a classes.ts import"): `resolveSeriesClass` is not
-// a layout/visual decision, it is the literal fill-chart-N LOOKUP TABLE the
-// whole chart family shares (#2224), and the issue's own functional test
-// pins `computeBars(...)[n].className` as part of THIS function's return
-// contract -- the geometry and the color resolution are computed together
-// here so a consumer never re-derives the series index itself. Recorded in
-// the PR body rather than silently bent.
-import { resolveSeriesClass } from './chart.classes';
-// Same disclosed divergence as above: the DOM-native bind needs the `bar`
-// class string to render rects it creates itself (no pre-existing markup to
-// enhance -- see syncBarElements).
-import { barChartClasses } from './bar-chart.classes';
 import { readXAxisConfig } from './x-axis.behavior';
 
 /**
@@ -67,6 +54,13 @@ export interface Bar {
   key: string;
   category: string;
   series: string;
+  /** The series' position in the declared `series` array -- the same index
+   *  `resolveSeriesClass` (chart.classes.ts) uses for its token-less
+   *  fallback. Geometry is a classes.ts-free concern (Spec 01 rule 1);
+   *  `series` + `seriesIndex` give a consumer everything `resolveSeriesClass`
+   *  needs without this behavior file importing a classes module itself --
+   *  color resolution happens at render time in bar-chart.classes.ts. */
+  seriesIndex: number;
   /** The raw data value this bar/segment represents (not the pixel extent),
    *  needed for the accessible announcement and the data-table fallback. */
   value: number;
@@ -74,9 +68,6 @@ export interface Bar {
   y: number;
   width: number;
   height: number;
-  /** The resolved `fill-chart-N` literal (chart.classes.ts), never a hex,
-   *  `var()`, or arbitrary value. */
-  className: string;
 }
 
 export interface ComputeBarsOptions {
@@ -151,7 +142,12 @@ function computeValueDomainMax(
  */
 export function computeBars(
   input: { data: ReadonlyArray<Record<string, string | number>>; series: string[] },
-  config: ChartConfig,
+  // Unused: color resolution moved to bar-chart.classes.ts (Spec 01 rule 1 --
+  // behavior.ts never imports a classes module, so this function can no
+  // longer resolve `resolveSeriesClass` itself). Kept as the second
+  // positional parameter so the ChartConfig call-site shape stays identical
+  // across the chart family and every existing caller.
+  _config: ChartConfig,
   options: ComputeBarsOptions,
 ): Bar[] {
   const { data, series } = input;
@@ -199,7 +195,6 @@ export function computeBars(
     for (const [seriesIndex, seriesKey] of series.entries()) {
       const rawValue = row[seriesKey];
       const value = typeof rawValue === 'number' ? rawValue : Number(rawValue ?? 0);
-      const className = resolveSeriesClass(config, seriesKey, seriesIndex);
       const key = `${category}:${seriesKey}`;
       const categoryOffset = band.scale(category) + (stacked ? 0 : seriesIndex * subBandwidth);
       const segmentStart = stacked ? cumulative : 0;
@@ -212,12 +207,12 @@ export function computeBars(
           key,
           category,
           series: seriesKey,
+          seriesIndex,
           value,
           x: categoryOffset,
           y: yTop,
           width: subBandwidth,
           height: Math.max(0, yBottom - yTop),
-          className,
         });
       } else {
         const xStart = valueScale(segmentStart);
@@ -226,12 +221,12 @@ export function computeBars(
           key,
           category,
           series: seriesKey,
+          seriesIndex,
           value,
           x: xStart,
           y: categoryOffset,
           width: Math.max(0, xEnd - xStart),
           height: subBandwidth,
-          className,
         });
       }
 
@@ -475,6 +470,12 @@ function readContainerSize(containerRoot: HTMLElement | null): { width: number; 
  * `data-bar-key`; a bar no longer present is removed, one newly present is
  * created, and every surviving one has its geometry/class/aria refreshed --
  * so a resize or a data change never leaves a stale or duplicate rect.
+ *
+ * `resolveFillClass` is injected by the caller (bar-chart.element.ts /
+ * bar-chart.astro's script), never imported here -- this file never imports
+ * a classes module (Spec 01 rule 1). It resolves the same `fill-chart-N`
+ * literal `resolveSeriesClass` (chart.classes.ts) would, off `bar.series`/
+ * `bar.seriesIndex`.
  */
 function syncBarElements(
   plotEl: SVGElement | null,
@@ -482,6 +483,7 @@ function syncBarElements(
   config: BarChartBehaviorConfig,
   layout: 'vertical' | 'horizontal',
   barClassName: string,
+  resolveFillClass: (chartConfig: ChartConfig, bar: Bar) => string,
   applyProjection: (el: HTMLElement, attrs: AriaAttrs) => void,
 ): void {
   if (!plotEl) return;
@@ -505,7 +507,7 @@ function syncBarElements(
     el.setAttribute('y', String(bar.y));
     el.setAttribute('width', String(bar.width));
     el.setAttribute('height', String(bar.height));
-    el.setAttribute('class', `${bar.className} ${barClassName}`.trim());
+    el.setAttribute('class', `${resolveFillClass(config.chartConfig, bar)} ${barClassName}`.trim());
     el.style.transformOrigin = transformOriginFor(bar, layout);
     applyProjection(el as unknown as HTMLElement, barAria(bar.key, state, config, {}));
   }
@@ -538,7 +540,20 @@ function syncTableRows(tableEl: HTMLElement | null, state: BarChartState): void 
   }
 }
 
-export function bindBarChart(root: HTMLElement): () => void {
+/**
+ * The DOM-native bind's dependency on the classes layer, injected by the
+ * caller (bar-chart.element.ts / bar-chart.astro's script) rather than
+ * imported here -- this file never imports a classes module (Spec 01 rule
+ * 1). `bar` is the static generated motion utility (bar-chart.classes.ts's
+ * `barChartClasses(...).bar`); `resolveFillClass` resolves the same
+ * `fill-chart-N` literal `resolveSeriesClass` (chart.classes.ts) would.
+ */
+export interface BarChartRuntimeClasses {
+  bar: string;
+  resolveFillClass: (chartConfig: ChartConfig, bar: Bar) => string;
+}
+
+export function bindBarChart(root: HTMLElement, classes: BarChartRuntimeClasses): () => void {
   const getPart = (part: BarChartPart): HTMLElement | null =>
     part === 'root' ? root : root.querySelector<HTMLElement>(`[data-part="${part}"]`);
   const containerRoot = root.parentElement?.closest<HTMLElement>('[data-part="root"]') ?? null;
@@ -569,7 +584,6 @@ export function bindBarChart(root: HTMLElement): () => void {
       ids[part] = getPart(part)?.id ?? '';
     }
 
-    const barClasses = barChartClasses({ layout: config.layout ?? 'vertical' }, memory.get());
     let previousActive: number | null = null;
 
     const render = () => {
@@ -585,7 +599,8 @@ export function bindBarChart(root: HTMLElement): () => void {
         state,
         config,
         config.layout ?? 'vertical',
-        barClasses.bar,
+        classes.bar,
+        classes.resolveFillClass,
         applyProjection,
       );
       syncTableRows(getPart('table'), state);

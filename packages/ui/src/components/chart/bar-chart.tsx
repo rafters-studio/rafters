@@ -61,7 +61,7 @@ import {
   type BarChartConfig,
   type BarChartState,
 } from './bar-chart.behavior';
-import { barChartClasses } from './bar-chart.classes';
+import { barChartClasses, resolveBarFillClass } from './bar-chart.classes';
 import { XAxis } from './x-axis';
 
 export interface BarChartProps extends BarChartConfig {
@@ -186,7 +186,7 @@ export const BarChart: React.FC<BarChartProps> = ({
               width={bar.width}
               height={bar.height}
               style={{ transformOrigin: transformOriginFor(bar, layout) }}
-              className={classy(bar.className, classes.bar) || undefined}
+              className={classy(resolveBarFillClass(chartConfig, bar), classes.bar) || undefined}
               aria-hidden={attrs['aria-hidden'] === 'true'}
               data-state={typeof attrs['data-state'] === 'string' ? attrs['data-state'] : undefined}
               data-active={

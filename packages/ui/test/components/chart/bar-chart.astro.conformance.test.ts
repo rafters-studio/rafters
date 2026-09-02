@@ -17,6 +17,10 @@ import BarChartAstro from '../../../src/components/chart/bar-chart.astro';
 import XAxis from '../../../src/components/chart/x-axis.astro';
 import { bindChart } from '../../../src/components/chart/chart.behavior';
 import { bindBarChart, computeBars } from '../../../src/components/chart/bar-chart.behavior';
+import {
+  barChartClasses,
+  resolveBarFillClass,
+} from '../../../src/components/chart/bar-chart.classes';
 import { assertAxeClean } from '../../harness/conformance';
 import { stubResizeObserver } from '../../harness/resize-observer';
 import { vi } from 'vitest';
@@ -74,7 +78,14 @@ async function mount(
 
   bindChart(containerRoot); // the chart-container <script> does this per instance
   triggerResize([{ contentRect: { width: 300, height: 200 } }]);
-  bindBarChart(barChartRoot); // the bar-chart <script> does this per instance
+  // Same placeholder-argument call bar-chart.astro's own <script> makes --
+  // barChartClasses ignores both arguments (root/plot/bar/table are constant
+  // regardless of layout/state).
+  const classes = barChartClasses(
+    { layout: 'vertical' },
+    { bars: [], valueTicks: [], activeIndex: null },
+  );
+  bindBarChart(barChartRoot, { bar: classes.bar, resolveFillClass: resolveBarFillClass }); // the bar-chart <script> does this per instance
 
   return { containerRoot, barChartRoot, triggerResize };
 }

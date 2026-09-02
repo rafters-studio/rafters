@@ -103,11 +103,20 @@ const label = buildChartLabel({ ...config, chartConfig: {}, categoryKey: '', wid
 
 <script>
   import { bindBarChart } from './bar-chart.behavior';
+  import { barChartClasses, resolveBarFillClass } from './bar-chart.classes';
+
+  // `barChartClasses` ignores both arguments (root/plot/bar/table are
+  // constant regardless of layout/state) -- same placeholder values this
+  // file's server-render call above uses.
+  const classes = barChartClasses(
+    { layout: 'vertical' },
+    { bars: [], valueTicks: [], activeIndex: null },
+  );
 
   for (const root of document.querySelectorAll('rafters-bar-chart[data-part="root"]')) {
     const el = root as HTMLElement;
     if (el.dataset['bound'] === 'true') continue;
     el.dataset['bound'] = 'true';
-    bindBarChart(el);
+    bindBarChart(el, { bar: classes.bar, resolveFillClass: resolveBarFillClass });
   }
 </script>
