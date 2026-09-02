@@ -1,0 +1,141 @@
+---
+/**
+ * Area chart -- overlaid/stacked area marks for the rafters chart family
+ *
+ * @cognitive-load 3/10 - One structural decision (overlaid vs stacked) plus
+ * an optional smooth toggle; series and colors flow from ChartConfig,
+ * categories from the composed XAxis child. Low because the shape is fully
+ * determined by data plus two booleans, not open configuration -- same
+ * budget as BarChart (#2225), which this component mirrors structurally.
+ * @attention-economics The filled areas ARE the content -- unlike
+ * ChartContainer's invisible scaffolding, this component draws the primary
+ * visual a chart exists for. The area-enter fade draws the eye to newly-
+ * arrived values on mount, then gets out of the way (no ongoing animation).
+ * @trust-building Deterministic, token-mapped color per series (never a
+ * random or config-order-dependent hue); geometry computed once from real
+ * data via the same bandScale/linearScale/areaPath primitives every chart
+ * in the family shares, so an Area and a Bar agree on where a category
+ * sits. Stacked baselines are literal running sums, assertable against a
+ * fixture -- never an approximation.
+ * @accessibility role="img" is never used (it would make the SVG's
+ * descendants presentational and break keyboard traversal). The chart
+ * renders inside a <figure role="figure"> with a descriptive aria-label;
+ * its SVG is aria-hidden; arrow keys (and Home/End) move an active-datum
+ * cursor announced via sr-announcer, focus staying on the figure rather
+ * than entering the SVG; a visually-hidden data table carries the same
+ * data in fully accessible tabular form, always present in the DOM. axe
+ * passes for the default, empty, and active-datum states.
+ * @semantic-meaning Ports shadcn's `<AreaChart data={data}><Area
+ * dataKey="desktop"/></AreaChart>` call site directly: composed `<Area
+ * dataKey>` children (area.astro, #2227) register a chart's series, in
+ * declaration order (also the stack order), and take precedence outright
+ * over the `series: string[]` config prop when both are present; `series`
+ * alone still fully works with no `<Area>` children composed at all.
+ * categoryKey moves to the composed <XAxis dataKey> child rather than a
+ * chart-level prop (veneer's compositional-children amendment, bullpen
+ * 01a058ec).
+ *
+ * @usage-patterns
+ * DO: Compose inside a ChartContainer with a ChartConfig mapping each series to a token
+ * DO: Compose one <Area dataKey="..."/> per series for the shadcn-parity call site
+ * DO: Compose <XAxis dataKey="..."/> as an AreaChart child for the category axis
+ * DO: Keep series to 5 or fewer -- the categorical token set has 5 members
+ * NEVER: Pass a categoryKey prop -- it belongs on the composed XAxis child
+ * NEVER: Pass BOTH series and <Area> children expecting them to merge -- children win outright
+ * NEVER: Author a color, duration, or easing here -- token + matrix cell only
+ *
+ * @example
+ * ```astro
+ * <ChartContainer id="revenue" config={{ desktop: { token: 'chart-1' } }}>
+ *   <AreaChart id="revenue-areas" data={data} stacked>
+ *     <XAxis dataKey="month" />
+ *     <Area dataKey="desktop" />
+ *   </AreaChart>
+ * </ChartContainer>
+ * ```
+ */
+
+/**
+ * Astro performance of the area-chart score. Server-renders the `<figure>`
+ * root with config serialized as `data-config` (same transport
+ * `chart.astro`/`bar-chart.astro` pin) and an EMPTY `<svg data-part="plot">`/
+ * `<tbody>` -- area geometry and the data-table rows are both data-driven
+ * and depend on the measured plot size and the composed `<XAxis>` sibling
+ * respectively, neither of which this component can resolve at server-
+ * render time. The `<script>` hands each instance to `bindAreaChart`, which
+ * fills both in -- the SAME DOM-native client the Web Component uses.
+ */
+import { buildAreaChartLabel, type AreaChartConfig } from './area-chart.behavior';
+import { areaChartClasses } from './area-chart.classes';
+
+interface Props extends Omit<AreaChartConfig, 'series'> {
+  id: string;
+  /** Optional when composed `<Area dataKey>` slot children supply the
+   *  series list instead (area.astro, #2227) -- `bindAreaChart`'s DOM-based
+   *  `seriesFromAreaChildren` read resolves them client-side, same
+   *  precedence the React performance gives its own children over `series`. */
+  series?: string[] | undefined;
+}
+
+const { id, data, series = [], smooth, stacked } = Astro.props;
+const config: AreaChartConfig = { data, series, smooth, stacked };
+const classes = areaChartClasses(
+  {},
+  { series: [], datums: [], valueTicks: [], activeIndex: null },
+);
+// buildAreaChartLabel only reads series/data.length -- chartConfig and
+// categoryKey (both unknown at this component's server-render time) never
+// enter the label text, so a placeholder AreaChartBehaviorConfig is safe here.
+const label = buildAreaChartLabel({ ...config, chartConfig: {}, categoryKey: '', width: 0, height: 0 });
+---
+
+<rafters-area-chart
+  id={id}
+  data-part="root"
+  data-config={JSON.stringify(config)}
+  role="figure"
+  aria-label={label}
+  tabindex="0"
+  class={classes.root}
+>
+  <slot />
+  <svg data-part="plot" aria-hidden="true" class={classes.plot}></svg>
+  <table data-part="table" class={classes.table}>
+    <caption>{label}</caption>
+    <thead>
+      <tr>
+        <th scope="col">Category</th>
+        <th scope="col">Series</th>
+        <th scope="col">Value</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</rafters-area-chart>
+
+<script>
+  import { bindAreaChart } from './area-chart.behavior';
+  import {
+    resolveAreaEnterClass,
+    resolveAreaFillClass,
+    resolveAreaLineClass,
+    resolveAreaStrokeClass,
+  } from './area-chart.classes';
+
+  // resolveAreaEnterClass/resolveAreaLineClass are the whole of
+  // areaChartClasses's per-mount surface (root/plot/table are constant and
+  // already applied by this file's server-render markup above, never by the
+  // client script) -- same rationale bar-chart.astro's own script comment
+  // records for resolveBarEnterClass.
+  for (const root of document.querySelectorAll('rafters-area-chart[data-part="root"]')) {
+    const el = root as HTMLElement;
+    if (el.dataset['bound'] === 'true') continue;
+    el.dataset['bound'] = 'true';
+    bindAreaChart(el, {
+      areaClassName: resolveAreaEnterClass(),
+      lineClassName: resolveAreaLineClass(),
+      resolveFillClass: resolveAreaFillClass,
+      resolveStrokeClass: resolveAreaStrokeClass,
+    });
+  }
+</script>

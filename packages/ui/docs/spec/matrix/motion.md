@@ -308,6 +308,7 @@ via a `follows`.
 | bar-chart | bar | enter-horizontal | grow (scaleX from the value-axis baseline, layout: 'horizontal') | normal* | enter* | -- | structural (scaleX 0 -> 1 from the baseline) |
 | chart-tooltip | content | closed -> open | fade | moderate* | enter* | -- | -- |
 | chart-tooltip | content | open -> closed | fade | fast* | exit* | -- | -- |
+| area-chart | area | enter | fade (the filled area arriving on mount) | moderate* | enter* | -- | -- |
 
 ### load / appearance
 
