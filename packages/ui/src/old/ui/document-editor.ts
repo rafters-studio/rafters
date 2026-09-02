@@ -1,6 +1,16 @@
 /**
  * Document editor composition primitive - unified contentEditable surface
  *
+ * QUARANTINED (#2240): this file is retired from `primitives/editor/` and
+ * the served registry -- it is no longer a registry item, has no
+ * `@registry-*` tags, and is not typechecked or tested on its own (src/old/
+ * is excluded from both). It lives here, next to old/ui/editor.tsx, only
+ * because that file's public types (`EditorControls`, `EditorBlock`, ...) are
+ * re-exported from the package root (src/index.ts) as a type-only import,
+ * which pulls old/ui/editor.tsx -- and therefore this file -- into every
+ * `tsc` run regardless of tsconfig's src/old exclude. Do not add new callers;
+ * old/ui/editor.tsx is the only one and is itself quarantined.
+ *
  * Orchestrates leaf primitives into a document editing experience:
  * - input-events: content change detection with IME support
  * - clipboard: paste/copy/cut with format detection
@@ -13,26 +23,14 @@
  *
  * The React component layer is a thin wrapper: state + render. This primitive
  * owns all event handling and block mutation logic.
- *
- * @registry-name document-editor
- * @registry-version 0.1.0
- * @registry-status published
- * @registry-path primitives/document-editor.ts
- * @registry-type registry:primitive
- *
- * @dependencies nanostores
- * @internal-dependencies primitives/input-events.ts, primitives/clipboard.ts,
- *   primitives/keyboard-handler.ts, primitives/cursor-tracker.ts,
- *   primitives/block-operations.ts, components/editor/editor-history.ts,
- *   components/editor/ops, primitives/serializer-html.ts, primitives/serializer-text.ts
  */
 import {
   blockContentToText,
   deleteBlock,
   mergeWithNext,
   mergeWithPrevious,
-} from './block-operations';
-import { createClipboard } from './clipboard';
+} from '../../primitives/editor/block-operations';
+import { createClipboard } from '../../primitives/editor/clipboard';
 import {
   findBlockElement,
   getCursorPosition,
@@ -41,16 +39,16 @@ import {
   setCursorAtBlockEnd,
   setCursorAtBlockStart,
   setCursorInBlock,
-} from './cursor-tracker';
+} from '../../primitives/editor/cursor-tracker';
 import { createEditorHistory } from '../../components/editor/editor-history';
 import { normalizeRuns } from '../../components/editor/ops/content';
 import type { EditorOp } from '../../components/editor/ops';
-import { createInputHandler } from './input-events';
-import { createKeyboardHandler } from '../keyboard-handler';
-import { createMemory } from '../memory';
-import { htmlSerializer } from './serializer-html';
-import { textSerializer } from './serializer-text';
-import type { BaseBlock, CleanupFunction } from '../types';
+import { createInputHandler } from '../../primitives/editor/input-events';
+import { createKeyboardHandler } from '../../primitives/keyboard-handler';
+import { createMemory } from '../../primitives/memory';
+import { htmlSerializer } from '../../primitives/editor/serializer-html';
+import { textSerializer } from '../../primitives/editor/serializer-text';
+import type { BaseBlock, CleanupFunction } from '../../primitives/types';
 
 // =============================================================================
 // Types

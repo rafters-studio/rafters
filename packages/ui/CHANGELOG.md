@@ -42,6 +42,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+- **The snapshot-history track is retired from `primitives/editor/` and the
+  registry (#2240, folding #2239, closing #2220).** `history.ts`
+  (`createHistory`) and `block-handler.ts` (`createBlockHandler`, zero
+  importers, no test) are deleted outright, along with `hooks/use-history.ts`
+  and its barrel export -- measured before deletion, `use-history` had no
+  consumer outside its own test and the `hooks/index.ts` barrel, and that
+  barrel itself had no in-repo importer. `document-editor.ts`
+  (`createDocumentEditor`) is retired from the registry the same way but not
+  deleted from disk: `src/old/ui/editor.tsx` (the quarantined pre-rewrite
+  surface) still imports it, and that file's public types are re-exported
+  from the package root as a type-only import, which pulls it -- and
+  therefore `document-editor.ts` -- into every `tsc` run regardless of
+  tsconfig's `src/old` exclude. It moves to `src/old/ui/document-editor.ts`,
+  next to its one remaining caller, stripped of its `@registry-*` tags so it
+  is no longer a registry item. The editor's op-based history
+  (`components/editor/editor-history.ts`, RULING-EDITOR-HISTORY) was already
+  the only history the live editor component used; all three primitives were
+  dead weight the registry still served, and `document-editor` was the #2220
+  case specifically: installing it stood up a primitive whose own import
+  reached into `components/editor/editor-history`, a component-layer path the
+  primitive-install flattening never rewrote, so the install always shipped a
+  dangling import. `rafters add document-editor` (or `block-handler`,
+  `history`) now reports not-found instead. `rafters add editor` is
+  unaffected -- the live editor component never depended on any of the
+  three.
+
 - **BREAKING: Card no longer accepts `className` (or `class` in Astro), on the
   root or on any of the seven sub-components (#2019).** The one deliberate API
   break in the drop-in contract, and the thesis rather than an oversight:

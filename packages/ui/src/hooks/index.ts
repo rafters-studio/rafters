@@ -20,8 +20,5 @@ export type {
 } from './use-drag-drop';
 // R-303: useDragDrop
 export { useDraggable, useDropZone } from './use-drag-drop';
-export type { UseHistoryOptions, UseHistoryReturn } from './use-history';
-// R-301: useHistory
-export { useHistory } from './use-history';
 // memory bridge: subscribe a component to a createMemory cell
 export { useMemory } from './use-memory';

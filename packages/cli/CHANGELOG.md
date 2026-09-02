@@ -1,5 +1,11 @@
 # rafters
 
+## [Unreleased]
+
+### Bug Fixes
+
+- fix(registry): `rafters add document-editor`, `add block-handler`, and `add history` now report not-found instead of installing a broken file (#2240, closes #2220). The three are the retired snapshot-history track (`@rafters/ui`'s `primitives/editor/{history,document-editor,block-handler}.ts`), dropped from the served registry index and matrix; `history.ts` and `block-handler.ts` are deleted outright, and `document-editor.ts` moves to `@rafters/ui`'s quarantined `src/old/` tree (its one remaining caller) with its registry tags stripped. `document-editor` was the concrete #2220 bug: its own import reached into `components/editor/editor-history`, a component-layer path the primitive-install flattening step never rewrote, so every install of it shipped with a dangling `Cannot find module` import; now the item simply is not there to install. `rafters add editor` is unaffected -- the live editor component depended on its own op-based history (`editor-history.ts`), never on any of the three.
+
 ## 0.3.1
 
 ### Features

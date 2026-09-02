@@ -56,7 +56,6 @@ Every primitive under `packages/ui/src/primitives/`. Behavior files COMPOSE thes
 |---|---|---|---|---|
 | `block-canvas` | block | dom | Selection/focus/keyboard state machine for a block editing surface. | `createBlockCanvas` |
 | `block-context-menu` | block | dom | Right-click context menu for block operations. | `createBlockContextMenu` |
-| `block-handler` | block | pure | Composes block-canvas/wrapper/history/clipboard into one block editing machine. | `createBlockHandler` |
 | `block-operations` | block | pure | Pure structural block mutations: split/merge/convert/insert/delete. | `blockContentToText`, `splitBlock`, `mergeWithPrevious` |
 | `block-palette` | block | dom | Categorized grid of draggable block templates with typeahead. | `createBlockPalette` |
 | `block-wrapper` | block | pure | Per-block hover chrome, drag handle, and action-menu state. | `createBlockWrapper` |
@@ -64,10 +63,8 @@ Every primitive under `packages/ui/src/primitives/`. Behavior files COMPOSE thes
 | `clipboard` | block | dom | Copy/cut/paste operations, SSR-safe. | `createClipboard` |
 | `command-palette` | block | dom | Slash-triggered command palette with fuzzy search. | `fuzzyMatch`, `createCommandPalette` |
 | `cursor-tracker` | block | dom | Reads/sets cursor position in a contentEditable. | `findBlockElement`, `getCursorPosition`, `isCursorAtBlockStart` |
-| `document-editor` | block | dom | Composes leaf primitives into a contentEditable document surface. | `createDocumentEditor` |
 | `drag-drop` | block | dom | Accessible drag-and-drop with mouse, keyboard, and touch support. | `createDraggable`, `createDropZone`, `resetDragDropState` |
 | `editor-toolbar` | block | pure | Toolbar button config and platform-aware shortcut labels. | `createEditorToolbar` |
-| `history` | block | pure | Undo/redo state history with limits and batching. | `createHistory` |
 | `inline-formatter` | block | dom | Inline formatting (bold/italic/code/link) for contenteditable. | `BOLD`, `ITALIC`, `CODE` |
 | `inline-toolbar` | block | pure | Viewport-aware positioning for a floating format toolbar. | `getFormatButtons`, `getModifierKey`, `adjustToolbarPosition` |
 | `input-events` | block | dom | beforeinput/input handling with IME composition tracking. | `createInputHandler` |
