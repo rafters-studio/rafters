@@ -29,8 +29,9 @@ describe('motion.jsonl', () => {
     // (#2225's two layout-specific bar-enter motion cells) + chart-tooltip/
     // content closed->open and open->closed (#2228), opacity-only per
     // docs/MOTION.md's tooltip rule -- see the notes on those two rows for
-    // why they do not `follow` tooltip's own cell. 147 + 2 + 2 = 151.
-    expect(cells).toHaveLength(151);
+    // why they do not `follow` tooltip's own cell + line-chart | line | enter
+    // (#2226's line-draw-in motion cell). 147 + 2 + 2 + 1 = 152.
+    expect(cells).toHaveLength(152);
   });
 
   it('declares the schema on every line', () => {

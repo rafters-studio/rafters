@@ -73,6 +73,42 @@ export type {
 export { barChartClasses, resolveBarEnterClass, resolveBarFillClass } from './bar-chart.classes';
 export type { BarChartClassSet } from './bar-chart.classes';
 
+export { line, readLineConfig } from './line.behavior';
+export type { LineConfig, LinePart, LineState } from './line.behavior';
+
+export {
+  bindLineChart,
+  buildSeriesPath,
+  computeDots,
+  computeLinePoints,
+  describePoint,
+  lineAria,
+  lineChart,
+  pointAria,
+  resolveAxisParts,
+} from './line-chart.behavior';
+export type {
+  AxisChildDescriptor,
+  AxisPartsPresence,
+  ComputeLinePointsOptions,
+  LineChartActions,
+  LineChartBehaviorConfig,
+  LineChartConfig,
+  LineChartPart,
+  LineChartRuntimeClasses,
+  LineChartState,
+  LineDot,
+  LinePoint,
+  ResolveAxisPartsInput,
+} from './line-chart.behavior';
+export {
+  lineChartClasses,
+  resolveDotFillClass,
+  resolveLineEnterClass,
+  resolveLineStrokeClass,
+} from './line-chart.classes';
+export type { LineChartClassSet } from './line-chart.classes';
+
 export {
   bandCenter,
   bindChartTooltip,

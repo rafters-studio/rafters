@@ -9,6 +9,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Line chart component (#2226).** The second chart-type mark on the same
+  cartesian machinery Bar (#2225) proved out: one path per series
+  (`computeLinePoints`/`buildSeriesPath`), shadcn-API parity -- a composed
+  `<Line dataKey="desktop"/>` child per series (its own behavior + three
+  decorators, absence by omission like Bar's `<Bar>`) derives the series
+  list in declaration order and takes precedence outright over the `series:
+  string[]` config prop, which still works fully on its own; categoryKey
+  lives on the composed `<XAxis dataKey>` child, same as Bar. `smooth`
+  toggles `linePath` (straight segments, default) vs `smoothPath`; `dots`
+  (default true) renders one point marker per datum. A LineChart with no
+  XAxis/YAxis/CartesianGrid children composed renders axis-less BY
+  OMISSION -- the #2230 StatTile sparkline shape -- with no `minimal`/
+  `axisless` prop anywhere; an unresolvable category key spreads points by
+  row index rather than collapsing them onto one position, so a sparkline
+  with no `<XAxis>` still plots real geometry. `smoothPath` (`graph.ts`) is
+  now a direct port of d3-shape's `curveMonotoneX` (Fritsch-Carlson/Steffen
+  monotone cubic) rather than a Catmull-Rom conversion -- what rafters
+  `smooth` means by shadcn/Recharts `type="monotone"` (ruling 2026-09-01):
+  it never overshoots the data between two points, unlike the interpolation
+  it replaces. Line/dot color is `stroke-chart-N`/`fill-chart-N`, resolved
+  from `ChartConfig` exactly like Bar's `fill-chart-N`. Line-enter motion is
+  declared as one matrix cell (`docs/spec/matrix/motion.jsonl`) -- a fade
+  (opacity) rather than a stroke-dashoffset reveal, since a dashoffset
+  keyframe would need a per-instance path-length value nothing in the
+  system names. Reuses the SAME pinned accessible structure Bar
+  established: `<figure role="figure">`, `aria-hidden` SVG, keyboard active-
+  datum cursor (arrows/Home/End, `sr-announcer`), always-present data-table
+  fallback.
 - **Bar chart component (#2225).** The first real chart-type mark on top of
   ChartContainer/XAxis/YAxis/CartesianGrid (#2224): grouped and stacked bar
   geometry computed via `bandScale`/`linearScale` (`computeBars`), shadcn-API

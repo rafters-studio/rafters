@@ -19,8 +19,9 @@
 
 import { ticks as d3Ticks } from 'd3-array';
 import { scaleBand } from 'd3-scale';
+import { curveMonotoneX, line as d3Line } from 'd3-shape';
 import { describe, expect, it } from 'vitest';
-import { bandScale, ticks } from '../../src/primitives/graph';
+import { bandScale, smoothPath, ticks } from '../../src/primitives/graph';
 
 /** Deterministic linear congruential generator -- no new dependency for seeded randomness. */
 function makeRng(seed: number): () => number {
@@ -102,6 +103,94 @@ describe('bandScale matches d3-scale scaleBand', () => {
       for (const key of domain) {
         assertClose(ours.scale(key), theirs(key) as number, `${label} key=${key}`);
       }
+    }
+  });
+});
+
+/** Every numeric literal in an SVG path 'd' string, in order. `smoothPath`
+ *  and d3-shape's default (no-context) line generator format numbers
+ *  differently (space- vs comma-separated, `M`/`C` command casing aside), so
+ *  this compares the underlying coordinate SEQUENCE -- move/control/end
+ *  points, in emission order -- rather than the strings themselves. */
+function pathNumbers(d: string): number[] {
+  return (d.match(/-?\d+(?:\.\d+)?(?:e-?\d+)?/g) ?? []).map(Number);
+}
+
+describe('smoothPath matches d3-shape line().curve(curveMonotoneX) (#2226)', () => {
+  it('matches control-point and end-point coordinates over 600 random point sets', () => {
+    const rng = makeRng(20260901226);
+    const cases = 600;
+    // d3-shape's line() defaults to `.digits(3)` -- rounding every emitted
+    // coordinate to 3 decimals (d3-shape/src/path.js `withPath`). Disabled
+    // here so this diffs against d3's actual computed control points, not a
+    // pre-rounded approximation of them.
+    const d3MonotoneLine = d3Line<{ x: number; y: number }>()
+      .x((p) => p.x)
+      .y((p) => p.y)
+      .curve(curveMonotoneX)
+      .digits(null);
+
+    for (let i = 0; i < cases; i++) {
+      const count = 3 + (i % 10); // 3 through 12 points -- below 3 is the linePath fallback
+      const points: { x: number; y: number }[] = [];
+      let x = 0;
+      for (let k = 0; k < count; k++) {
+        x += rng() * 40 + 1; // strictly increasing x, the monotone-x contract
+        const y = (rng() - 0.5) * 400;
+        points.push({ x, y });
+      }
+
+      const ours = pathNumbers(smoothPath(points));
+      const theirs = pathNumbers(d3MonotoneLine(points) as string);
+      const label = `case ${i}: ${count} points`;
+
+      expect(ours.length, label).toBe(theirs.length);
+      for (let j = 0; j < ours.length; j++) {
+        assertClose(ours[j] as number, theirs[j] as number, `${label} numeral ${j}`);
+      }
+    }
+  });
+
+  it('a fixture with a flat -> step -> flat run never overshoots the data extrema (no Catmull-Rom-style ringing)', () => {
+    // The classic monotone-vs-non-monotone stress case: two flat runs joined
+    // by a sharp rise. A Catmull-Rom-style curve (the implementation this
+    // replaces) overshoots above the top flat run and below the bottom one
+    // between the corner points; a monotone cubic never does, by
+    // construction (Fritsch-Carlson clamps each tangent to at most 3x the
+    // adjacent secant slope).
+    const points = [
+      { x: 0, y: 0 },
+      { x: 10, y: 0 },
+      { x: 20, y: 100 },
+      { x: 30, y: 100 },
+    ];
+    const yMin = Math.min(...points.map((p) => p.y));
+    const yMax = Math.max(...points.map((p) => p.y));
+
+    const segments = smoothPath(points)
+      .split(/(?=M|C)/)
+      .filter((s) => s.trim() !== '');
+    const start = pathNumbers(segments[0] as string); // "M x y"
+    let cursorY = start[1] as number;
+
+    for (const segment of segments.slice(1)) {
+      const [, cp1y, , cp2y, , ey] = pathNumbers(segment) as [
+        number,
+        number,
+        number,
+        number,
+        number,
+        number,
+      ]; // cp1x cp1y cp2x cp2y ex ey -- only the y's feed the extrema check.
+      for (let step = 0; step <= 20; step++) {
+        const t = step / 20;
+        const mt = 1 - t;
+        const by =
+          mt ** 3 * cursorY + 3 * mt ** 2 * t * cp1y + 3 * mt * t ** 2 * cp2y + t ** 3 * ey;
+        expect(by, `t=${t} on segment ending y=${ey}`).toBeGreaterThanOrEqual(yMin - 1e-6);
+        expect(by, `t=${t} on segment ending y=${ey}`).toBeLessThanOrEqual(yMax + 1e-6);
+      }
+      cursorY = ey;
     }
   });
 });

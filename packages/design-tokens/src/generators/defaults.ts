@@ -1370,6 +1370,15 @@ export const DEFAULT_MOTION_CELL_ANIMATIONS: Record<string, MotionCellAnimation>
       'A bar arriving under layout: "horizontal": grows from zero at the value-axis baseline, now the left edge (bar-chart.behavior.ts sets the transform-origin), on the same arrival curve as the vertical bar-chart-bar-enter cell -- only the transform property (scaleX, not scaleY) changes with the swapped axis.',
     contexts: ['bar-chart', 'chart', 'value-display'],
   },
+  'line-chart-line-enter': {
+    keyframe: 'fade-in',
+    duration: { kind: 'tier', tier: 'moderate' },
+    curve: 'enter',
+    cell: { component: 'line-chart', part: 'line', transition: 'enter' },
+    meaning:
+      'A line series arriving on mount: fades in rather than snapping into place. The matrix assigns opacity over a stroke-dashoffset reveal for this cell -- a dashoffset keyframe needs a per-instance path-length value nothing here names, where a fade needs none.',
+    contexts: ['line-chart', 'chart', 'value-display'],
+  },
   // ------------------------------------------------------------- load / appearance
   'avatar-image-load': {
     keyframe: 'fade-in',
