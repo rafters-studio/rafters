@@ -248,16 +248,19 @@ function isCoalescible(prev: EditorOp, next: EditorOp): boolean {
 }
 
 /** Callers seed doc/sel; done/undone always start empty -- a caller cannot
- *  construct a history with a pre-populated op-log. */
+ *  construct a history with a pre-populated op-log. Both `doc` and `sel` are
+ *  independently optional (#2212): a caller seeding only a document (the
+ *  React `initialDocument` prop) is not required to also construct a
+ *  selection -- the default selection targets the first seeded block. */
 export function createEditorHistory(
-  initial?: Pick<EditorHistoryState, 'doc' | 'sel'>,
+  initial?: { doc?: BaseBlock[]; sel?: EditorSelection },
   config?: EditorHistoryConfig,
 ): EditorHistory {
   const cap = config?.cap ?? 100;
   const coalesceWindowMs = config?.coalesceWindowMs ?? 500;
 
   const seedDoc = initial?.doc ?? [];
-  const seedSel = initial?.sel ?? collapsedAt('', 0);
+  const seedSel = initial?.sel ?? collapsedAt(seedDoc[0]?.id ?? '', 0);
 
   const memory = createMemory<EditorHistoryState>(() => ({
     doc: seedDoc,
