@@ -46,6 +46,7 @@ import type { BandScale } from '../../primitives/graph';
 import { getPortalContainer } from '../../primitives/portal';
 import { useChartConfig } from './chart';
 import {
+  bandCenter,
   chartTooltip,
   startChartTooltipEffects,
   tooltipHeaderLabel,
@@ -125,8 +126,8 @@ export function ChartTooltip({
     const plot = rootRef.current?.closest<HTMLElement>('[data-part="plot"]');
     if (!anchor || !plot || !state.datum) return;
     const plotRect = plot.getBoundingClientRect();
-    const bandCenter = scale.scale(state.datum.category) + scale.bandwidth() / 2;
-    anchor.style.left = `${plotRect.left + bandCenter}px`;
+    const center = bandCenter(scale, state.datum.category);
+    anchor.style.left = `${plotRect.left + center}px`;
     anchor.style.top = `${plotRect.top + plotRect.height / 2}px`;
   }, [state.datum, scale]);
 

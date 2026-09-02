@@ -10,7 +10,13 @@
  * force every consumer's bundle to pay for React or run a `customElements.define`
  * side effect just to read `parseChartConfig` or `resolveSeriesClass`.
  */
-export { bindChart, chartContainer, parseChartConfig } from './chart.behavior';
+export {
+  applyAriaProjection,
+  bindChart,
+  chartContainer,
+  parseChartConfig,
+  resolveSeriesLabel,
+} from './chart.behavior';
 export type {
   ChartConfig,
   ChartContainerActions,
@@ -42,6 +48,7 @@ export type {
 } from './cartesian-grid.behavior';
 
 export {
+  bandCenter,
   bindChartTooltip,
   chartTooltip,
   describeDatum,

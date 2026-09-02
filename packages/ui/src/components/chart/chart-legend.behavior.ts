@@ -1,6 +1,6 @@
-import type { AriaAttrs, BehaviorSpec, PartIds } from '../../lib/contract';
+import type { BehaviorSpec, PartIds } from '../../lib/contract';
 import { createRovingFocus } from '../../primitives/roving-focus';
-import type { ChartConfig } from './chart.behavior';
+import { applyAriaProjection, resolveSeriesLabel, type ChartConfig } from './chart.behavior';
 import { resolveSeriesClass } from './chart.classes';
 
 /**
@@ -32,16 +32,12 @@ export interface ChartLegendEntry {
   swatchClass: string;
 }
 
-function resolveLabel(config: ChartConfig, key: string, fallback: string): string {
-  return config[key]?.label ?? fallback;
-}
-
 /** One entry per configured series, in config key order. Pure. Empty config
  *  -> empty legend, never a throw (the issue's error-handling contract). */
 export function legendEntries(config: ChartConfig, nameKey?: string): ChartLegendEntry[] {
   return Object.keys(config).map((key, index) => ({
     key,
-    label: resolveLabel(config, nameKey ?? key, key),
+    label: resolveSeriesLabel(config, nameKey ?? key, key),
     swatchClass: resolveSeriesClass(config, key, index),
   }));
 }
@@ -90,18 +86,11 @@ export const chartLegend: BehaviorSpec<
  * function needed).
  */
 export function bindChartLegend(root: HTMLElement): () => void {
-  const applyProjection = (el: HTMLElement, attrs: AriaAttrs) => {
-    for (const [name, value] of Object.entries(attrs)) {
-      if (value === undefined) continue;
-      el.setAttribute(name, String(value));
-    }
-  };
-
   const ids: PartIds<ChartLegendPart> = { root: root.id || '', entry: '' };
   const projection = chartLegend.aria({}, {}, ids);
-  applyProjection(root, projection.root ?? {});
+  applyAriaProjection(root, projection.root ?? {});
   for (const entry of root.querySelectorAll<HTMLElement>('[data-part="entry"]')) {
-    applyProjection(entry, projection.entry ?? {});
+    applyAriaProjection(entry, projection.entry ?? {});
   }
 
   return createRovingFocus(root, { orientation: 'horizontal' });

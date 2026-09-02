@@ -1,11 +1,11 @@
-import type { AriaAttrs, BehaviorSpec, PartIds } from '../../lib/contract';
+import type { BehaviorSpec, PartIds } from '../../lib/contract';
 import { createBehavior } from '../../lib/contract';
 import { computePosition } from '../../primitives/collision-detector';
 import type { BandScale } from '../../primitives/graph';
 import { getPortalContainer } from '../../primitives/portal';
 import { createPoliteAnnouncer } from '../../primitives/sr-announcer';
 import type { CleanupFunction, NormalizedPoint } from '../../primitives/types';
-import type { ChartConfig } from './chart.behavior';
+import { applyAriaProjection, resolveSeriesLabel, type ChartConfig } from './chart.behavior';
 import { resolveSeriesClass } from './chart.classes';
 
 /**
@@ -84,6 +84,17 @@ export function hitTest(
   return { category, categoryIndex: index, values: data[index] ?? {} };
 }
 
+/**
+ * The pixel center of a category's band on `scale` -- the anchor point every
+ * performance positions the floating content at (React's two `useLayoutEffect`s
+ * in chart-tooltip.tsx, and the DOM-native `render()` in `bindChartTooltip`
+ * below, both call this rather than each re-deriving `scale(category) +
+ * bandwidth()/2`).
+ */
+export function bandCenter(scale: BandScale<string>, category: string): number {
+  return scale.scale(category) + scale.bandwidth() / 2;
+}
+
 // ---------------------------------------------------------------------------
 // Tooltip content: ChartConfig + datum -> rows (shadcn-compatible config)
 // ---------------------------------------------------------------------------
@@ -116,10 +127,6 @@ export interface TooltipRowData {
   swatchClass: string;
 }
 
-function resolveLabel(config: ChartConfig, key: string, fallback: string): string {
-  return config[key]?.label ?? fallback;
-}
-
 /** The header label shown above the rows: the datum's category, or a
  *  config-driven override when `labelKey` names a config entry. */
 export function tooltipHeaderLabel(
@@ -127,7 +134,7 @@ export function tooltipHeaderLabel(
   config: ChartConfig,
   labelKey?: string,
 ): string {
-  return labelKey ? resolveLabel(config, labelKey, datum.category) : datum.category;
+  return labelKey ? resolveSeriesLabel(config, labelKey, datum.category) : datum.category;
 }
 
 /**
@@ -143,7 +150,7 @@ export function tooltipRows(
 ): TooltipRowData[] {
   return Object.keys(config).map((key, index) => ({
     key,
-    label: resolveLabel(config, nameKey ?? key, key),
+    label: resolveSeriesLabel(config, nameKey ?? key, key),
     value: datum.values[key],
     swatchClass: resolveSeriesClass(config, key, index),
   }));
@@ -353,13 +360,6 @@ export function bindChartTooltip(
 
   const { memory, dispatch } = createBehavior(chartTooltip, {});
 
-  const applyProjection = (el: HTMLElement, attrs: AriaAttrs) => {
-    for (const [name, value] of Object.entries(attrs)) {
-      if (value === undefined) continue;
-      el.setAttribute(name, String(value));
-    }
-  };
-
   const ids: PartIds<ChartTooltipPart> = { root: root.id || '', content: contentEl?.id ?? '' };
 
   // Portal once, matching the React performance: `getPortalContainer`
@@ -379,7 +379,7 @@ export function bindChartTooltip(
     const state = memory.get();
     const projection = chartTooltip.aria(state, {}, ids);
     if (!contentEl) return;
-    applyProjection(contentEl, projection.content ?? {});
+    applyAriaProjection(contentEl, projection.content ?? {});
     contentEl.dataset['state'] = state.datum ? 'open' : 'closed';
     if (state.datum) {
       const rows = tooltipRows(state.datum, mountConfig.config, mountConfig.nameKey);
@@ -393,9 +393,8 @@ export function bindChartTooltip(
       // collision-detector.ts's `Anchor` type accepts a raw point, so no
       // fake anchor DOM node is needed for this performance).
       const plotRect = plot.getBoundingClientRect();
-      const bandCenter =
-        mountConfig.scale.scale(state.datum.category) + mountConfig.scale.bandwidth() / 2;
-      const anchorPoint = { x: plotRect.left + bandCenter, y: plotRect.top + plotRect.height / 2 };
+      const center = bandCenter(mountConfig.scale, state.datum.category);
+      const anchorPoint = { x: plotRect.left + center, y: plotRect.top + plotRect.height / 2 };
       const result = computePosition(anchorPoint, contentEl, {
         side: 'top',
         align: 'center',
