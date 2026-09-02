@@ -11,7 +11,13 @@
  * pay for React or run a `customElements.define` side effect just to read
  * `parseChartConfig`, `resolveSeriesClass`, or `computeBars`.
  */
-export { bindChart, chartContainer, parseChartConfig } from './chart.behavior';
+export {
+  applyAriaProjection,
+  bindChart,
+  chartContainer,
+  parseChartConfig,
+  resolveSeriesLabel,
+} from './chart.behavior';
 export type {
   ChartConfig,
   ChartContainerActions,
@@ -66,3 +72,41 @@ export type {
 } from './bar-chart.behavior';
 export { barChartClasses, resolveBarEnterClass, resolveBarFillClass } from './bar-chart.classes';
 export type { BarChartClassSet } from './bar-chart.classes';
+
+export {
+  bandCenter,
+  bindChartTooltip,
+  chartTooltip,
+  describeDatum,
+  hitTest,
+  startChartTooltipEffects,
+  tooltipHeaderLabel,
+  tooltipRows,
+} from './chart-tooltip.behavior';
+export type {
+  ChartDatum,
+  ChartTooltipActions,
+  ChartTooltipConfig,
+  ChartTooltipContentConfig,
+  ChartTooltipEffectsOptions,
+  ChartTooltipMountConfig,
+  ChartTooltipPart,
+  ChartTooltipPointPayload,
+  ChartTooltipState,
+  IndicatorVariant,
+  TooltipRowData,
+} from './chart-tooltip.behavior';
+export { chartTooltipClasses, chartTooltipIndicatorWrapperClass } from './chart-tooltip.classes';
+export type { ChartTooltipClassSet } from './chart-tooltip.classes';
+
+export { bindChartLegend, chartLegend, legendEntries } from './chart-legend.behavior';
+export type {
+  ChartLegendActions,
+  ChartLegendConfig,
+  ChartLegendContentConfig,
+  ChartLegendEntry,
+  ChartLegendPart,
+  ChartLegendState,
+} from './chart-legend.behavior';
+export { chartLegendClasses, chartLegendSwatchWrapperClass } from './chart-legend.classes';
+export type { ChartLegendClassSet } from './chart-legend.classes';

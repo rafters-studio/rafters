@@ -98,6 +98,13 @@ export interface EditorHistoryControls {
   /** NFR-EDITOR-003: applies an op without pushing a `done` entry
    *  (programmatic / remote edits opt out of history). */
   applyExcluded(op: EditorOp): void;
+  /** #2236: writes `sel` directly -- no op, no `done`/`undone` change. A DOM
+   *  selection change (click, caret key) is not an edit: `doc`, `done`, and
+   *  `undone` all stay exactly as they were, only `sel` moves. Callers that
+   *  want the native "a caret move breaks coalescing" boundary call
+   *  `closeGroup()` separately -- this control only ever writes the one
+   *  field. */
+  setSelection(sel: EditorSelection): void;
 }
 
 export interface EditorHistory {
@@ -248,16 +255,19 @@ function isCoalescible(prev: EditorOp, next: EditorOp): boolean {
 }
 
 /** Callers seed doc/sel; done/undone always start empty -- a caller cannot
- *  construct a history with a pre-populated op-log. */
+ *  construct a history with a pre-populated op-log. Both `doc` and `sel` are
+ *  independently optional (#2212): a caller seeding only a document (the
+ *  React `initialDocument` prop) is not required to also construct a
+ *  selection -- the default selection targets the first seeded block. */
 export function createEditorHistory(
-  initial?: Pick<EditorHistoryState, 'doc' | 'sel'>,
+  initial?: { doc?: BaseBlock[]; sel?: EditorSelection },
   config?: EditorHistoryConfig,
 ): EditorHistory {
   const cap = config?.cap ?? 100;
   const coalesceWindowMs = config?.coalesceWindowMs ?? 500;
 
   const seedDoc = initial?.doc ?? [];
-  const seedSel = initial?.sel ?? collapsedAt('', 0);
+  const seedSel = initial?.sel ?? collapsedAt(seedDoc[0]?.id ?? '', 0);
 
   const memory = createMemory<EditorHistoryState>(() => ({
     doc: seedDoc,
@@ -383,6 +393,11 @@ export function createEditorHistory(
       // excluded edit has since changed underneath it.
       forceNewGroup = true;
       memory.set({ doc: result.blocks, sel: selAfter, done: state.done, undone: state.undone });
+    },
+
+    setSelection(sel: EditorSelection): void {
+      const state = memory.get();
+      memory.set({ doc: state.doc, sel, done: state.done, undone: state.undone });
     },
   };
 

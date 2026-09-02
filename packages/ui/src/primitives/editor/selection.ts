@@ -401,6 +401,22 @@ function isNodeInContainer(node: Node | null, container: HTMLElement): boolean {
 /**
  * Convert browser Selection to SelectionRange
  * Returns null if selection is not within container
+ *
+ * `Range.startContainer`/`endContainer` are tree-order normalized by the
+ * browser, so they alone cannot tell a forward selection from a backward
+ * one. `selection.anchorNode`/`anchorOffset`/`focusNode`/`focusOffset` carry
+ * that direction -- they are attached alongside the ordered pair (not in
+ * place of it) so `mapSelectionRange` can recover which end the user
+ * actually anchored.
+ *
+ * Omitted (not just left `undefined`) when they would be untrustworthy: a
+ * genuinely non-collapsed selection can never report an identical anchor and
+ * focus (its own `Range` would then be collapsed too), so a `collapsed:
+ * false` range whose anchor equals its focus can only come from a
+ * spec-violating `Selection` implementation that aliases one to the other.
+ * Dropping the pair here -- the one place that reads the live `Selection` --
+ * means every consumer of `SelectionRange` gets to trust "if these fields
+ * are present, they're accurate" without re-deriving this check itself.
  */
 function selectionToRange(selection: Selection, container: HTMLElement): SelectionRange | null {
   if (selection.rangeCount === 0) {
@@ -416,12 +432,19 @@ function selectionToRange(selection: Selection, container: HTMLElement): Selecti
     return null;
   }
 
+  const { anchorNode, anchorOffset, focusNode, focusOffset } = selection;
+  const hasDirection =
+    anchorNode !== null &&
+    focusNode !== null &&
+    !(range.collapsed === false && anchorNode === focusNode && anchorOffset === focusOffset);
+
   return {
     startNode,
     startOffset: range.startOffset,
     endNode,
     endOffset: range.endOffset,
     collapsed: range.collapsed,
+    ...(hasDirection ? { anchorNode, anchorOffset, focusNode, focusOffset } : {}),
   };
 }
 

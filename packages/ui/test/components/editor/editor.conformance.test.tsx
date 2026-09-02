@@ -105,10 +105,9 @@ describe('editor conformance [react]', () => {
 
   it('undo/redo gate: Cmd+Z before any edit is a silent no-op', () => {
     render(<Editor label="Document" />);
-    // A freshly-mounted editor has no seeded content (React's EditorProps has
-    // no initial-doc field in this issue's interface) and therefore an empty
-    // `done` log -- history.canUndo is false. Confirms the gate, not a
-    // reducer: no throw, root stays present and unchanged.
+    // Deliberately unseeded (no initialDocument) so `done` starts empty --
+    // history.canUndo is false. Confirms the gate, not a reducer: no throw,
+    // root stays present and unchanged.
     expect(() =>
       root().dispatchEvent(
         new KeyboardEvent('keydown', { key: 'z', metaKey: true, bubbles: true, cancelable: true }),
@@ -131,10 +130,9 @@ describe('editor conformance [react]', () => {
     // dispatching the chord before AND after an actual insertText -- is
     // proven in editor.element.conformance.test.ts and
     // editor.astro.conformance.test.ts, which seed a real block via
-    // data-initial-doc; React's <Editor> has no such prop in this issue's
-    // pinned interface, so it cannot produce a first edit to gate around
-    // without going through the same empty-doc limitation this test already
-    // covers the "before" half of. Same bindEditor, same editorKeymap, same
+    // data-initial-doc. React's own initialDocument-seeded equivalent lives
+    // in editor.react-props.test.tsx (#2212) alongside the rest of that
+    // prop's coverage, not here. Same bindEditor, same editorKeymap, same
     // history.canUndo/canRedo gate in every performance -- proven once at the
     // DOM-native layer covers all three.
   });

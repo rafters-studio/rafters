@@ -1,5 +1,11 @@
 # rafters
 
+## Unreleased
+
+### Bug Fixes
+
+- fix(cli): `rafters add` refuses a placeholder dependency name instead of installing it (#2219). `add editor` on 0.3.1 ran `pnpm add none` and pulled the unrelated npm package published under that name into the consumer's lockfile -- `none` was a literal `@dependencies none` JSDoc tag several editor primitives (`cursor-tracker`, `block-operations`, `serializer`, `serializer-html`, `serializer-text`) carry to document "no external dependencies," and the registry's JSDoc parser (`extractDepsFromSource`, `apps/registry/src/lib/registry/componentService.ts`) added the word itself to the emitted `dependencies` array instead of recognizing it as a sentinel. That parser now drops `none`, `n/a`, and empty-string tokens before they reach the manifest, so a file with no external dependencies emits an empty list -- the five editor primitives above are unchanged on disk and need no edit; the fix is entirely in how the generator reads them. As defense in depth for any manifest that still slips one through, `installRegistryDependencies` (`packages/cli/src/utils/install-registry-deps.ts`) now checks every dependency name against the same placeholder set before installing anything, and throws a `PlaceholderDependencyError` naming both the registry item and the bad entry the moment one is found -- nothing in that `add` run gets installed, and the CLI exits non-zero instead of quietly logging a warning and exiting clean the way an ordinary install failure does. This does not attempt the harder allowlist form the issue also considered (cross-checking each dependency name against the item's actual package sources) -- there is no such source of truth available at install time, only the manifest that already failed once; the known-placeholder refusal is the floor the issue calls "at minimum."
+
 ## 0.3.1
 
 ### Features

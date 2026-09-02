@@ -712,6 +712,21 @@ function getTagValue(tag: Spec): string {
 }
 
 /**
+ * Sentinel words authors write in an `@dependencies` tag to mean "this file
+ * has no external dependencies" -- documentation, not npm package names. A
+ * manifest that let one of these through as a literal dependency entry would
+ * have the CLI install whatever package happens to be published under that
+ * name (#2219); an item with no external dependencies must emit an empty
+ * list instead.
+ */
+const DEPENDENCY_PLACEHOLDERS = new Set(['none', 'n/a']);
+
+function isPlaceholderDependency(pkg: string): boolean {
+  const normalized = pkg.trim().toLowerCase();
+  return normalized === '' || DEPENDENCY_PLACEHOLDERS.has(normalized);
+}
+
+/**
  * Extract dependencies and devDependencies from JSDoc tags in source content.
  *
  * Uses comment-parser for JSDoc-aware parsing so that @dependencies appearing
@@ -722,7 +737,9 @@ function getTagValue(tag: Spec): string {
  *   @devDependencies pkg1 pkg2 - dev-time deps for consumers
  *   @internal-dependencies ... - completely excluded from registry output
  *
- * Filters out @rafters/* packages (internal workspace deps, not for consumers).
+ * Filters out @rafters/* packages (internal workspace deps, not for consumers)
+ * and placeholder words like `none`/`n/a` that document "no dependencies"
+ * rather than naming one.
  */
 export function extractDepsFromSource(content: string): {
   dependencies: string[];
@@ -756,6 +773,7 @@ export function extractDepsFromSource(content: string): {
       if (target) {
         for (const pkg of value.split(/\s+/)) {
           if (!pkg || pkg.startsWith('(')) break;
+          if (isPlaceholderDependency(pkg)) continue;
           if (!pkg.startsWith('@rafters/')) target.add(pkg);
         }
       }

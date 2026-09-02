@@ -94,6 +94,17 @@ export function parseChartConfig(input: unknown): ChartConfig {
   throw new Error(`Invalid ChartConfig at key "${keyPath}": ${detail}`);
 }
 
+/**
+ * Resolve a series' display label from `ChartConfig`, falling back when the
+ * key is absent or carries no `label`. Additive export (#2228): both
+ * `chart-tooltip.behavior.ts` and `chart-legend.behavior.ts` read a series
+ * label the same way (a row's own key, or a `nameKey`/`labelKey` override),
+ * so this lives once here rather than as two identical private helpers.
+ */
+export function resolveSeriesLabel(config: ChartConfig, key: string, fallback: string): string {
+  return config[key]?.label ?? fallback;
+}
+
 // -- Behavior spec (measured size is state; no keymap, no dispatched actions) -
 
 export interface ChartSize {
@@ -132,6 +143,20 @@ export const chartContainer: BehaviorSpec<
 };
 
 // -- DOM-native client (WC + Astro share this) --------------------------------
+
+/**
+ * Apply a projected `AriaAttrs` object to an element via the `aria-manager`
+ * primitive (`updateAriaAttribute`) -- composed, not a hand-rolled
+ * `setAttribute` loop. Additive export (#2228): `bindChart` below still
+ * inlines its own copy (pre-existing, untouched here); `chart-tooltip.behavior.ts`
+ * and `chart-legend.behavior.ts` both import THIS one rather than each
+ * defining their own, which is what made it worth naming.
+ */
+export function applyAriaProjection(el: HTMLElement, attrs: AriaAttrs): void {
+  for (const [name, value] of Object.entries(attrs)) {
+    updateAriaAttribute(el, name as never, value as never, { validate: false });
+  }
+}
 
 /**
  * The DOM-native binding of the chart-container score. Reads `ChartConfig`

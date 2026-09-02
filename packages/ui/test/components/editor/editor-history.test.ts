@@ -454,3 +454,35 @@ describe('history perf (NFR-EDITOR-001)', () => {
     expect(p95(redoSamples)).toBeLessThanOrEqual(16);
   });
 });
+
+// -----------------------------------------------------------------------
+// Relaxed `initial` seeding (#2212): `doc` and `sel` are independently
+// optional, so a caller (the React `initialDocument` prop) can seed a
+// document without also constructing a selection.
+// -----------------------------------------------------------------------
+
+describe('relaxed initial seeding', () => {
+  it('seeding only doc defaults the selection to a collapsed caret at the first block', () => {
+    const h = createEditorHistory({ doc: [block('b1', 'hello'), block('b2', 'world')] });
+    expect(h.memory.get().sel).toEqual(collapsed('b1', 0));
+    expect(h.memory.get().doc.map((b) => b.id)).toEqual(['b1', 'b2']);
+  });
+
+  it('seeding neither doc nor sel (or omitting initial entirely) keeps the existing empty-editor default', () => {
+    const withEmptyObject = createEditorHistory({});
+    expect(withEmptyObject.memory.get().doc).toEqual([]);
+    expect(withEmptyObject.memory.get().sel).toEqual(collapsed('', 0));
+
+    const withNoArg = createEditorHistory();
+    expect(withNoArg.memory.get().doc).toEqual([]);
+    expect(withNoArg.memory.get().sel).toEqual(collapsed('', 0));
+  });
+
+  it('an explicit sel is honored even when doc is also seeded', () => {
+    const h = createEditorHistory({
+      doc: [block('b1', 'hello'), block('b2', 'world')],
+      sel: collapsed('b2', 3),
+    });
+    expect(h.memory.get().sel).toEqual(collapsed('b2', 3));
+  });
+});

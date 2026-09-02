@@ -35,11 +35,15 @@ export const SECTIONS: readonly MatrixSection[] = [
   },
   { heading: 'text input', intro: '', outro: '' },
   { heading: 'value display', intro: '', outro: '' },
-  // Registered by #2225 (Bar chart). If a sibling chart issue (#2226 Line,
-  // #2227 Area, #2229/#2230) lands its own rows first, keep this heading
-  // name -- "chart" -- so both branches merge onto the same section rather
-  // than forking a second heading for the same family.
-  { heading: 'chart', intro: '', outro: '' },
+  // Registered by #2225 (Bar chart) and #2228 (chart-tooltip/chart-legend) on
+  // separate branches that both needed a "chart" section -- merged onto this
+  // ONE entry rather than forking a second heading for the same family.
+  {
+    heading: 'chart',
+    intro:
+      "\nChart-tooltip is data-state driven (a hit-tested datum), never a CSS `:hover`\nreveal, so it reuses tooltip/content's tier and curve role but not its cell:\nsee the notes column for why the values are declared fresh here rather than\nvia a `follows`.\n",
+    outro: '',
+  },
   { heading: 'load / appearance', intro: '', outro: '' },
 ];
 

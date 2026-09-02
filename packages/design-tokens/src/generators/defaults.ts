@@ -1370,6 +1370,33 @@ export const DEFAULT_MOTION_CELL_ANIMATIONS: Record<string, MotionCellAnimation>
       'A bar arriving under layout: "horizontal": grows from zero at the value-axis baseline, now the left edge (bar-chart.behavior.ts sets the transform-origin), on the same arrival curve as the vertical bar-chart-bar-enter cell -- only the transform property (scaleX, not scaleY) changes with the swapped axis.',
     contexts: ['bar-chart', 'chart', 'value-display'],
   },
+  // #2225/#2228 merge: chart-tooltip's two motion.jsonl rows (added on
+  // #2228, main) declared no matching cell here and were not on
+  // motion-cells.test.ts's EXCLUDED_ROWS list either, so the matrix
+  // conformance gate failed once both branches merged -- fixed mechanically
+  // here, recording what the rows (and chart-tooltip.classes.ts's own doc
+  // comment) already specify, not inventing new values. Fade-only (`fade-in`/
+  // `fade-out`, not tooltip's own `scale-in`/`scale-out`): chart-tooltip's
+  // rows explicitly declare `properties: ["opacity"]` only, matching the
+  // opacity-only class string it reuses from tooltip.classes.ts
+  // (`tooltipContentSurfaceClasses`) -- see command-content-open/-close for
+  // the same fade-only shape.
+  'chart-tooltip-content-open': {
+    keyframe: 'fade-in',
+    duration: { kind: 'tier', tier: 'moderate' },
+    curve: 'enter',
+    cell: { component: 'chart-tooltip', part: 'content', transition: 'closed -> open' },
+    meaning: 'A chart tooltip arriving over a hit-tested datum, opacity-only.',
+    contexts: ['chart-tooltip', 'chart', 'anchored-popup'],
+  },
+  'chart-tooltip-content-close': {
+    keyframe: 'fade-out',
+    duration: { kind: 'tier', tier: 'fast' },
+    curve: 'exit',
+    cell: { component: 'chart-tooltip', part: 'content', transition: 'open -> closed' },
+    meaning: 'A chart tooltip leaving as the pointer moves off every datum, opacity-only.',
+    contexts: ['chart-tooltip', 'chart', 'anchored-popup'],
+  },
   // ------------------------------------------------------------- load / appearance
   'avatar-image-load': {
     keyframe: 'fade-in',
