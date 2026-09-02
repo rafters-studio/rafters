@@ -70,6 +70,7 @@ import {
   computeDots,
   computeLinePoints,
   describePoint,
+  groupPointsBySeries,
   lineAria,
   lineChart,
   pointAria,
@@ -231,12 +232,7 @@ export const LineChart: React.FC<LineChartProps> = ({
 
   const label = buildChartLabel(config);
 
-  const bySeries = new Map<string, LinePoint[]>();
-  for (const point of points) {
-    const existing = bySeries.get(point.series);
-    if (existing) existing.push(point);
-    else bySeries.set(point.series, [point]);
-  }
+  const bySeries = groupPointsBySeries(points);
 
   return (
     <figure

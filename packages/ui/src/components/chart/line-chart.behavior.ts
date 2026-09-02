@@ -566,11 +566,12 @@ function readContainerSize(containerRoot: HTMLElement | null): { width: number; 
  *  which equals `config.series`'s declaration order, since
  *  `computeLinePoints` iterates rows outer, series inner, so every series
  *  is first seen while processing row 0 in `series` order. Used by the
- *  DOM-native client to build one `<path>` per series
- *  (`syncLineElements`); the React performance filters `state.points`
- *  per-series inline instead (line-chart.tsx), an equivalent read with no
- *  shared helper worth naming across two different tree shapes. */
-function groupPointsBySeries(points: readonly LinePoint[]): Map<string, LinePoint[]> {
+ *  DOM-native client to build one `<path>` per series (`syncLineElements`,
+ *  below) and by the React performance for the same grouping
+ *  (line-chart.tsx) -- exported rather than duplicated inline in both, since
+ *  both performances already share this module's other geometry/path
+ *  helpers across the same import boundary. */
+export function groupPointsBySeries(points: readonly LinePoint[]): Map<string, LinePoint[]> {
   const bySeries = new Map<string, LinePoint[]>();
   for (const point of points) {
     const existing = bySeries.get(point.series);

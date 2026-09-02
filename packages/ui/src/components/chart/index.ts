@@ -82,6 +82,7 @@ export {
   computeDots,
   computeLinePoints,
   describePoint,
+  groupPointsBySeries,
   lineAria,
   lineChart,
   pointAria,
