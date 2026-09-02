@@ -56,8 +56,9 @@ export type {
   BarChartBehaviorConfig,
   BarChartConfig,
   BarChartPart,
+  BarChartRuntimeClasses,
   BarChartState,
   ComputeBarsOptions,
 } from './bar-chart.behavior';
-export { barChartClasses } from './bar-chart.classes';
+export { barChartClasses, resolveBarFillClass } from './bar-chart.classes';
 export type { BarChartClassSet } from './bar-chart.classes';
