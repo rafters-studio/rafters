@@ -32,16 +32,28 @@ const data = [
   { month: 'Feb', desktop: 120, mobile: 60 },
 ];
 
+/** Shared render shape for this suite: a ChartContainer/BarChart/XAxis tree
+ *  differing only in `barProps` (series/layout/stacked). Extracted after
+ *  simplify review flagged the identical JSX repeated across five tests. */
+function renderBarChart(barProps: {
+  data: typeof data;
+  series: string[];
+  layout?: 'vertical' | 'horizontal';
+  stacked?: boolean;
+}) {
+  return render(
+    <ChartContainer config={config}>
+      <BarChart {...barProps}>
+        <XAxis dataKey="month" />
+      </BarChart>
+    </ChartContainer>,
+  );
+}
+
 describe('BarChart [react]', () => {
   it('renders root/plot/table parts and no bars before the plot has a measured size', () => {
     stubResizeObserver();
-    const { container } = render(
-      <ChartContainer config={config}>
-        <BarChart data={data} series={['desktop', 'mobile']}>
-          <XAxis dataKey="month" />
-        </BarChart>
-      </ChartContainer>,
-    );
+    const { container } = renderBarChart({ data, series: ['desktop', 'mobile'] });
     expect(container.querySelector('figure[data-part="root"]')).not.toBeNull();
     expect(container.querySelector('svg[data-part="plot"]')).not.toBeNull();
     expect(container.querySelector('[data-part="table"]')).not.toBeNull();
@@ -53,13 +65,7 @@ describe('BarChart [react]', () => {
 
   it('rendered rect geometry matches computeBars once the plot is measured', () => {
     const { triggerResize } = stubResizeObserver();
-    const { container } = render(
-      <ChartContainer config={config}>
-        <BarChart data={data} series={['desktop', 'mobile']}>
-          <XAxis dataKey="month" />
-        </BarChart>
-      </ChartContainer>,
-    );
+    const { container } = renderBarChart({ data, series: ['desktop', 'mobile'] });
     act(() => {
       triggerResize([{ contentRect: { width: 300, height: 200 } }]);
     });
@@ -82,13 +88,7 @@ describe('BarChart [react]', () => {
 
   it('a resize recomputes geometry against the new plot size', () => {
     const { triggerResize } = stubResizeObserver();
-    const { container } = render(
-      <ChartContainer config={config}>
-        <BarChart data={data} series={['desktop', 'mobile']}>
-          <XAxis dataKey="month" />
-        </BarChart>
-      </ChartContainer>,
-    );
+    const { container } = renderBarChart({ data, series: ['desktop', 'mobile'] });
     act(() => triggerResize([{ contentRect: { width: 300, height: 200 } }]));
     const before = container.querySelector('[data-bar-key="Jan:desktop"]')?.getAttribute('height');
 
@@ -100,13 +100,12 @@ describe('BarChart [react]', () => {
 
   it('stacked and horizontal props reach computeBars (grouped vertical is the default)', () => {
     const { triggerResize } = stubResizeObserver();
-    const { container } = render(
-      <ChartContainer config={config}>
-        <BarChart data={data} series={['desktop', 'mobile']} layout="horizontal" stacked>
-          <XAxis dataKey="month" />
-        </BarChart>
-      </ChartContainer>,
-    );
+    const { container } = renderBarChart({
+      data,
+      series: ['desktop', 'mobile'],
+      layout: 'horizontal',
+      stacked: true,
+    });
     act(() => triggerResize([{ contentRect: { width: 300, height: 200 } }]));
 
     const expected = computeBars({ data, series: ['desktop', 'mobile'] }, config, {
@@ -126,13 +125,7 @@ describe('BarChart [react]', () => {
     // shadcn's <BarChart data={data}><Bar dataKey="desktop" /></BarChart> ->
     // rafters' series prop; categoryKey never appears on BarChartConfig.
     const { triggerResize } = stubResizeObserver();
-    const { container } = render(
-      <ChartContainer config={config}>
-        <BarChart data={data} series={['desktop']}>
-          <XAxis dataKey="month" />
-        </BarChart>
-      </ChartContainer>,
-    );
+    const { container } = renderBarChart({ data, series: ['desktop'] });
     act(() => triggerResize([{ contentRect: { width: 300, height: 200 } }]));
     expect(container.querySelectorAll('[data-part="bar"]')).toHaveLength(2); // one per category
   });

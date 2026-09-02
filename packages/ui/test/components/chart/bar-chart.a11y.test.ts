@@ -149,34 +149,17 @@ describe('BarChart a11y [react]: active-datum state', () => {
 
 describe('BarChart a11y: no keyboard contract claimed outside root/plot', () => {
   it('barChart.keymap never claims a key on the bar or table parts', () => {
-    const state = barChart.initialState({
+    const barChartConfig = {
       data,
       series: ['desktop'],
       chartConfig: config,
       categoryKey: 'month',
       width: 300,
       height: 200,
-    });
-    expect(
-      barChart.keymap({ key: 'ArrowRight' }, state, 'bar', {
-        data,
-        series: ['desktop'],
-        chartConfig: config,
-        categoryKey: 'month',
-        width: 300,
-        height: 200,
-      }),
-    ).toBeNull();
-    expect(
-      barChart.keymap({ key: 'ArrowRight' }, state, 'table', {
-        data,
-        series: ['desktop'],
-        chartConfig: config,
-        categoryKey: 'month',
-        width: 300,
-        height: 200,
-      }),
-    ).toBeNull();
+    };
+    const state = barChart.initialState(barChartConfig);
+    expect(barChart.keymap({ key: 'ArrowRight' }, state, 'bar', barChartConfig)).toBeNull();
+    expect(barChart.keymap({ key: 'ArrowRight' }, state, 'table', barChartConfig)).toBeNull();
   });
 });
 
