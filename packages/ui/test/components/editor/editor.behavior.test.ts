@@ -8,9 +8,10 @@
  * (test/editor/editor-capture.e2e.ts) -- happy-dom has no real `beforeinput`
  * semantics, so no synthetic `beforeinput` is dispatched here (AC).
  */
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createEditorHistory } from '../../../src/components/editor/editor-history';
 import {
+  bindEditor,
   editorAria,
   editorKeymap,
   parts,
@@ -170,6 +171,190 @@ describe('capture-side coalescing shape (translateBeforeInput -> controls)', () 
     // The doc reflects every op (sanity that the shape actually applied).
     const block = history.memory.get().doc.find((b) => b.id === 'b1');
     expect(block?.content).toBe('hey!');
+  });
+});
+
+// -----------------------------------------------------------------------------
+// DOM -> model selection recovery (#2236) -- bindEditor composes
+// createTextSelection's selectionchange listener; these drive a REAL
+// happy-dom Selection against a REAL bound editor (the `injectedHistory`
+// parameter lets the test read `memory.get()` directly, same pattern
+// editor.react-props.test.tsx uses to share one cell with its own assertions).
+// -----------------------------------------------------------------------------
+
+describe('bindEditor -- DOM to model selection recovery (#2236)', () => {
+  afterEach(() => {
+    window.getSelection()?.removeAllRanges();
+    document.body.innerHTML = '';
+  });
+
+  function collapsedAt(blockId: string, offset: number) {
+    const pos = { blockId, offset };
+    return { anchor: pos, focus: pos };
+  }
+
+  function mount(doc: BaseBlock[], sel: ReturnType<typeof collapsedAt>) {
+    const root = document.createElement('div');
+    document.body.appendChild(root);
+    const history = createEditorHistory({ doc, sel });
+    const teardown = bindEditor(root, history);
+    return { root, history, teardown };
+  }
+
+  it('writes a collapsed DOM caret move into state.sel without touching done/undone', () => {
+    const doc: BaseBlock[] = [
+      { id: 'b1', type: 'text', content: 'first' },
+      { id: 'b2', type: 'text', content: 'second' },
+    ];
+    const { root, history, teardown } = mount(doc, collapsedAt('b1', 0));
+
+    const b2Text = root.querySelector('[data-block-id="b2"]')?.firstChild as Text;
+    (window.getSelection() as Selection).setBaseAndExtent(b2Text, 3, b2Text, 3);
+
+    const state = history.memory.get();
+    expect(state.sel).toEqual(collapsedAt('b2', 3));
+    expect(state.done).toHaveLength(0);
+    expect(state.undone).toHaveLength(0);
+
+    teardown();
+  });
+
+  it('maps a range selection across two blocks to anchor and focus on their respective blocks', () => {
+    const doc: BaseBlock[] = [
+      { id: 'b1', type: 'text', content: 'first' },
+      { id: 'b2', type: 'text', content: 'second' },
+    ];
+    const { root, history, teardown } = mount(doc, collapsedAt('b1', 0));
+
+    const b1Text = root.querySelector('[data-block-id="b1"]')?.firstChild as Text;
+    const b2Text = root.querySelector('[data-block-id="b2"]')?.firstChild as Text;
+    const selection = window.getSelection() as Selection;
+    const range = document.createRange();
+    range.setStart(b1Text, 2);
+    range.setEnd(b2Text, 3);
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    expect(history.memory.get().sel).toEqual({
+      anchor: { blockId: 'b1', offset: 2 },
+      focus: { blockId: 'b2', offset: 3 },
+    });
+
+    teardown();
+  });
+
+  it('maps a backward selection so anchor is the later position and focus the earlier one (#2236 HIGH fix)', () => {
+    // `Selection.getRangeAt(0)` is tree-order normalized in every browser: a
+    // backward drag/extend (anchor after focus in the document) still comes
+    // back as a Range whose startContainer/startOffset is the EARLIER point.
+    // Without reading the live Selection's own anchor/focus, that ordering
+    // gets baked into the model as a forward selection.
+    //
+    // happy-dom's real `Selection` cannot exercise this: its `focusNode`/
+    // `focusOffset` getters unconditionally alias `anchorNode`/`anchorOffset`
+    // (verified directly against
+    // node_modules/happy-dom/lib/selection/Selection.js -- `get focusNode()
+    // { return this.anchorNode; }`), so `setBaseAndExtent(later, earlier)`
+    // reports `anchorOffset === focusOffset` even though the real selection
+    // is backward. This test stubs `window.getSelection` instead, supplying
+    // a real `Range` (tree-order start/end) alongside a correctly distinct
+    // anchor/focus pair, so it exercises `mapSelectionRange`'s direction
+    // handling the way a real browser's `Selection` would.
+    const doc: BaseBlock[] = [{ id: 'b1', type: 'text', content: 'hello world' }];
+    const { root, history, teardown } = mount(doc, collapsedAt('b1', 5));
+
+    const b1Text = root.querySelector('[data-block-id="b1"]')?.firstChild as Text;
+    const range = document.createRange();
+    range.setStart(b1Text, 3); // tree-order start = the earlier point (focus)
+    range.setEnd(b1Text, 5); // tree-order end = the later point (anchor)
+
+    const stubSelection = {
+      rangeCount: 1,
+      getRangeAt: () => range,
+      anchorNode: b1Text,
+      anchorOffset: 5,
+      focusNode: b1Text,
+      focusOffset: 3,
+      // render()'s restoreSelection echo calls this after every state.sel
+      // change -- a no-op keeps it from needing removeAllRanges/addRange too.
+      setBaseAndExtent: vi.fn(),
+    } as unknown as Selection;
+    const getSelectionSpy = vi.spyOn(window, 'getSelection').mockReturnValue(stubSelection);
+
+    document.dispatchEvent(new Event('selectionchange'));
+
+    expect(history.memory.get().sel).toEqual({
+      anchor: { blockId: 'b1', offset: 5 },
+      focus: { blockId: 'b1', offset: 3 },
+    });
+
+    getSelectionSpy.mockRestore();
+    teardown();
+  });
+
+  it("does not re-enter when render()'s own restoreSelection echoes the move back", () => {
+    const doc: BaseBlock[] = [
+      { id: 'b1', type: 'text', content: 'first' },
+      { id: 'b2', type: 'text', content: 'second' },
+    ];
+    const { root, history, teardown } = mount(doc, collapsedAt('b1', 0));
+    const setSpy = vi.spyOn(history.memory, 'set');
+
+    const b2Text = root.querySelector('[data-block-id="b2"]')?.firstChild as Text;
+    (window.getSelection() as Selection).setBaseAndExtent(b2Text, 3, b2Text, 3);
+
+    // One genuine move -> exactly one memory.set call. render()'s own
+    // restoreSelection re-asserts the identical position, which happy-dom
+    // re-fires as another `selectionchange` (Selection#associateRange
+    // dispatches unconditionally, on a freshly constructed Range every call)
+    // -- the re-mapped position now equals state.sel, so the guard drops it
+    // before a second memory.set. Without the guard this recurses forever.
+    expect(setSpy).toHaveBeenCalledTimes(1);
+
+    setSpy.mockRestore();
+    teardown();
+  });
+
+  it('closes the coalescing group on a caret move: type, move, type is two done entries', () => {
+    const doc: BaseBlock[] = [
+      { id: 'b1', type: 'text', content: '' },
+      { id: 'b2', type: 'text', content: '' },
+    ];
+    const { root, history, teardown } = mount(doc, collapsedAt('b1', 0));
+
+    const op1 = translateBeforeInput(
+      { inputType: 'insertText', data: 'a' },
+      history.memory.get().sel,
+    );
+    history.controls.apply(op1 as NonNullable<typeof op1>);
+    expect(history.memory.get().done).toHaveLength(1);
+
+    const b1Text = root.querySelector('[data-block-id="b1"]')?.firstChild as Text;
+    const b2El = root.querySelector('[data-block-id="b2"]') as HTMLElement;
+    const selection = window.getSelection() as Selection;
+
+    // A real caret move away from b1 -- an empty block renders only a `<br>`,
+    // so the caret sits on the block element itself (same boundary
+    // `locatePosition` uses for an empty block) -- then back to the EXACT
+    // offset a second `insertText` at b1 would otherwise coalesce into
+    // (`isCoalescible` only checks blockId + adjacent offset, not "did the
+    // user go elsewhere in between"). This is the one shape that actually
+    // exercises `closeGroup()`: a same-block round trip, not just a
+    // different-block move (isCoalescible already rejects a blockId
+    // mismatch on its own).
+    selection.setBaseAndExtent(b2El, 0, b2El, 0);
+    selection.setBaseAndExtent(b1Text, 1, b1Text, 1);
+
+    const op2 = translateBeforeInput(
+      { inputType: 'insertText', data: 'b' },
+      history.memory.get().sel,
+    );
+    history.controls.apply(op2 as NonNullable<typeof op2>);
+
+    expect(history.memory.get().done).toHaveLength(2);
+    expect(history.memory.get().doc.find((b) => b.id === 'b1')?.content).toBe('ab');
+
+    teardown();
   });
 });
 

@@ -18,13 +18,34 @@
  * FR-EDITOR-005 adds the editor SCORE below (`parts`, `editorAria`,
  * `editorKeymap`) -- hand-written, not produced by `compose()` -- and extends
  * `bindEditor` with the aria projection and the undo/redo keymap wiring.
+ *
+ * #2236 adds the other direction: DOM -> model selection recovery. `bindEditor`
+ * composes `primitives/editor/selection.ts`'s `createTextSelection` for its
+ * document-level `selectionchange` listener and teardown (no second listener
+ * added here) and `primitives/editor/cursor-tracker.ts`'s `findBlockElement`
+ * to resolve the owning block -- `domOffsetInBlock` below does the rest of the
+ * mapping. The primitive's own `SelectionRange` carries both an ordered
+ * `startNode`/`endNode` pair (tree-order normalized by `Range`, so it cannot
+ * tell a backward selection from a forward one) and the live `Selection`'s
+ * true `anchorNode`/`anchorOffset`/`focusNode`/`focusOffset` -- `mapSelectionRange`
+ * below reads the latter so a backward DOM selection (built with
+ * `setBaseAndExtent(later, earlier)`, or produced by Shift+ArrowLeft) maps to
+ * a model selection whose `anchor` is the later position and `focus` the
+ * earlier one, matching what the user actually did. A mapped selection equal
+ * to `state.sel` is dropped (the echo from this file's own
+ * `restoreSelection`); a genuine move writes `sel` via
+ * `EditorHistoryControls.setSelection` (no `done`/`undone` change) and calls
+ * `closeGroup()` (a caret move is not an edit, but it IS a coalescing
+ * boundary).
  */
 import { z } from 'zod';
 import type { AriaAttrs, KeyInput, PartDecl, PartIds } from '../../lib/contract';
 import { updateAriaAttribute } from '../../primitives/aria-manager';
 import { createClipboard } from '../../primitives/editor/clipboard';
+import { findBlockElement } from '../../primitives/editor/cursor-tracker';
 import { createInputHandler } from '../../primitives/editor/input-events';
-import type { BaseBlock, InlineContent } from '../../primitives/types';
+import { createTextSelection } from '../../primitives/editor/selection';
+import type { BaseBlock, InlineContent, SelectionRange } from '../../primitives/types';
 import type { EditorHistory, EditorHistoryState } from './editor-history';
 import { createEditorHistory } from './editor-history';
 import { normalizeRuns, splitRuns, totalTextLength } from './ops/content';
@@ -149,7 +170,21 @@ function isCollapsed(sel: EditorHistoryState['sel']): boolean {
 }
 
 /** The block id + offset the caret/anchor of an edit acts at. For a range on
- *  one block this is the ordered start; otherwise the focus position. */
+ *  one block this is the ordered start (`Math.min`, direction-independent).
+ *
+ *  For a range spanning two blocks it returns `sel.focus` as-is, NOT the
+ *  earlier of the two blocks in document order (this function has no `doc`
+ *  to consult, only `sel`). Every current caller of this branch
+ *  (`translateBeforeInput`'s `insertText` case, `pasteText`,
+ *  `onCompositionEnd`) inserts at that position WITHOUT first removing the
+ *  rest of the cross-block selection -- typing, pasting, or committing an
+ *  IME composition over a cross-block range selection is not a complete
+ *  replace yet (unlike Backspace/Delete over the same selection, which
+ *  route through `deleteRangeAcrossBlocksOps` and correctly resolve
+ *  document order). #2236's direction fix changes what `sel.focus` IS for a
+ *  backward cross-block selection (the earlier block, not always the
+ *  later one a pre-fix `mapSelectionRange` always produced), but does not
+ *  change that this path was already an incomplete replace either way. */
 function caretStart(sel: EditorHistoryState['sel']): { blockId: string; offset: number } {
   if (sel.anchor.blockId === sel.focus.blockId) {
     return { blockId: sel.focus.blockId, offset: Math.min(sel.anchor.offset, sel.focus.offset) };
@@ -408,6 +443,78 @@ function domOffsetInBlock(blockEl: Element, node: Node, offset: number): number 
     // for a `null` result.
     return null;
   }
+}
+
+// ---------------------------------------------------------------------------
+// DOM -> model selection recovery (#2236): the inverse direction of
+// restoreSelection above.
+// ---------------------------------------------------------------------------
+
+/** Map one DOM (node, offset) boundary to a model `EditorPosition`, or `null`
+ *  when `node` is not inside any block under `root` (outside `root` entirely,
+ *  or inside `root` but outside every `[data-block-id]` element -- e.g. the
+ *  root's own padding). Composes `findBlockElement` (cursor-tracker.ts) for
+ *  block resolution and `domOffsetInBlock` above for the text-offset
+ *  measurement, rather than reimplementing either. */
+function resolveEditorPosition(
+  root: HTMLElement,
+  node: Node,
+  offset: number,
+): { blockId: string; offset: number } | null {
+  const blockEl = findBlockElement(node);
+  if (blockEl === null || !root.contains(blockEl)) return null;
+  const blockId = blockEl.getAttribute('data-block-id');
+  if (blockId === null) return null;
+  const modelOffset = domOffsetInBlock(blockEl, node, offset);
+  if (modelOffset === null) return null;
+  return { blockId, offset: modelOffset };
+}
+
+/** Map a `createTextSelection` `SelectionRange` (already filtered to
+ *  boundaries inside `root`) to a model `EditorSelection`, or `null` when
+ *  either boundary's block cannot be resolved.
+ *
+ *  Prefers the range's `anchorNode`/`anchorOffset`/`focusNode`/`focusOffset`
+ *  -- the live `Selection`'s true, direction-preserving boundary pair -- so a
+ *  backward DOM selection (anchor after focus in document order) maps to a
+ *  model selection whose `anchor` is likewise the later position. Falls back
+ *  to the ordered `startNode`/`endNode` pair when a `SelectionRange` was
+ *  constructed directly rather than read from a live `Selection` (that pair
+ *  has no direction to lose, so start=anchor/end=focus is exact, not a
+ *  guess) -- `selectionToRange` (the only producer of a `SelectionRange`
+ *  read from an actual `Selection`) already omits the anchor/focus pair
+ *  entirely when it would be untrustworthy, so presence here is sufficient
+ *  to trust it. */
+function mapSelectionRange(
+  root: HTMLElement,
+  range: SelectionRange,
+): EditorHistoryState['sel'] | null {
+  const { anchorNode, anchorOffset, focusNode, focusOffset } = range;
+  const hasDirection =
+    anchorNode !== undefined &&
+    anchorOffset !== undefined &&
+    focusNode !== undefined &&
+    focusOffset !== undefined;
+
+  const anchor = hasDirection
+    ? resolveEditorPosition(root, anchorNode, anchorOffset)
+    : resolveEditorPosition(root, range.startNode, range.startOffset);
+  const focus = range.collapsed
+    ? anchor
+    : hasDirection
+      ? resolveEditorPosition(root, focusNode, focusOffset)
+      : resolveEditorPosition(root, range.endNode, range.endOffset);
+  if (anchor === null || focus === null) return null;
+  return { anchor, focus };
+}
+
+function selectionsEqual(a: EditorHistoryState['sel'], b: EditorHistoryState['sel']): boolean {
+  return (
+    a.anchor.blockId === b.anchor.blockId &&
+    a.anchor.offset === b.anchor.offset &&
+    a.focus.blockId === b.focus.blockId &&
+    a.focus.offset === b.focus.offset
+  );
 }
 
 function restoreSelection(root: HTMLElement, sel: EditorHistoryState['sel']): void {
@@ -815,6 +922,30 @@ export function bindEditor(root: HTMLElement, injectedHistory?: EditorHistory): 
     },
   });
 
+  // -- DOM -> model selection recovery (#2236) --
+  //
+  // Composes createTextSelection for its document-level `selectionchange`
+  // listener and teardown -- no second listener added here. Its callback
+  // fires with `null` when the live selection's boundaries are not both
+  // inside `root`; that IS the "selections outside root ... leave state.sel
+  // untouched" rule, so a `null` callback is simply ignored.
+  const textSelection = createTextSelection({
+    container: root,
+    onSelectionChange: (range) => {
+      if (range === null) return;
+      if (!root.isConnected) return; // detached: ignore (teardown safety)
+      try {
+        const mapped = mapSelectionRange(root, range);
+        if (mapped === null) return; // a boundary's block could not be resolved
+        if (selectionsEqual(mapped, memory.get().sel)) return; // render()'s own echo
+        controls.setSelection(mapped);
+        controls.closeGroup(); // a caret move is not an edit, but IS a coalescing boundary
+      } catch {
+        // Mapping never throws into the listener (same rule as domOffsetInBlock).
+      }
+    },
+  });
+
   // -- keydown: undo/redo (FR-EDITOR-005) --
 
   const onKeydown = (event: KeyboardEvent): void => {
@@ -847,6 +978,7 @@ export function bindEditor(root: HTMLElement, injectedHistory?: EditorHistory): 
     attrObserver?.disconnect();
     inputHandler.cleanup();
     clipboard.cleanup();
+    textSelection.cleanup();
     root.removeEventListener('paste', onPasteRaw);
     root.removeEventListener('beforeinput', onBeforeInputRaw);
     root.removeEventListener('keydown', onKeydown);
