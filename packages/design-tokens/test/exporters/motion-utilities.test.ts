@@ -117,8 +117,8 @@ describe('semantic motion utilities compile (#1902/#1903/#1904)', () => {
     const css = registryToTailwind(baseRegistry());
     expect(css).toContain('@utility motion-modal-in {');
     expect(css).toContain('transition-property: opacity, transform;');
-    expect(css).toContain('transition-duration: var(--duration-normal);');
-    expect(css).toContain('transition-timing-function: var(--ease-enter);');
+    expect(css).toContain('transition-duration: var(--rafters-duration-normal);');
+    expect(css).toContain('transition-timing-function: var(--rafters-ease-enter);');
     // Nested reduced-motion override, longhand re-set.
     expect(css).toContain('@media (prefers-reduced-motion: reduce) {');
     // Preserved-feedback token has no reduced-motion block.
@@ -126,12 +126,12 @@ describe('semantic motion utilities compile (#1902/#1903/#1904)', () => {
     // expand/collapse transition grid-template-rows, never height.
     expect(css).toContain('transition-property: grid-template-rows, opacity;');
     expect(css).not.toContain('transition-property: height');
-    // The referenced theme vars bridge onto the namespace leaves (#1991), and the
-    // leaves carry the perceptual value and the named curve. A literal on the
-    // bridge would be a second copy of the value that could drift from the leaf.
-    expect(css).toContain('--duration-normal: var(--rafters-duration-normal);');
+    // ONE HOP, NOT TWO. These used to read the `--duration-*` / `--ease-*`
+    // aliases, which referenced the leaves in turn. The aliases are gone: an
+    // `--ease-*` declaration makes Tailwind v4 infer a utility of that name that
+    // merges with our own block and wins on order, and no alias ever carried the
+    // reduced-motion path. The leaf is the only name.
     expect(css).toContain('--rafters-duration-normal: 350ms;');
-    expect(css).toContain('--ease-enter: var(--rafters-ease-enter);');
     expect(css).toContain('--rafters-ease-enter: cubic-bezier(0, 0, 0.2, 1);');
   });
 
@@ -142,11 +142,12 @@ describe('semantic motion utilities compile (#1902/#1903/#1904)', () => {
     expect(css).toContain('.motion-hover');
     // The nested @media survived compile + minify -- the blueprint-risk-#1 shape.
     expect(css, 'reduced-motion block dropped').toContain('prefers-reduced-motion');
-    // The referenced duration theme var resolved into the sheet, proving the
-    // class is not a dangling var() reference.
-    expect(css, 'duration bridge tree-shaken').toMatch(
-      /--duration-normal:\s*var\(--rafters-duration-normal\)/,
-    );
+    // The referenced duration leaf resolved into the sheet, proving the class is
+    // not a dangling var() reference. Matched loosely on the value because this
+    // is the COMPILED sheet: the minifier rewrites `350ms` as `.35s`, and pinning
+    // the authored spelling here would fail on a formatting change rather than on
+    // the dangling reference this test exists to catch.
+    expect(css, 'duration leaf tree-shaken').toMatch(/--rafters-duration-normal:\s*(350ms|\.35s)/);
   });
 
   it('every motion var in the COMPILED sheet is declared -- BOTH hops', async () => {
@@ -185,13 +186,14 @@ describe('semantic motion utilities compile (#1902/#1903/#1904)', () => {
       referenced.size,
       'no motion var references at all -- the layer vanished',
     ).toBeGreaterThan(0);
-    // Both ends of the bridge must actually be among the references.
-    expect(referenced).toContain('--duration-normal');
+    // The leaf must actually be among the references. There is no second end to
+    // check any more: the `--duration-*` alias that used to sit in front of it is
+    // gone, so the chain is one hop and this is it.
     expect(referenced).toContain('--rafters-duration-normal');
-    // And the animation chain is genuinely in the sweep, not silently empty:
-    // .animate-scale-out -> var(--animate-scale-out) -> the animation shorthand,
-    // whose duration and easing are themselves var()s that must resolve.
-    expect(referenced).toContain('--animate-scale-out');
+    // The animation chain is genuinely in the sweep, not silently empty. A shape
+    // is name-only now, so what has to resolve is the duration a composed class
+    // supplies -- `.animate-scale-out` carries no var of its own to dangle.
+    expect(referenced).toContain('--rafters-duration-fast');
 
     const undeclared = [...referenced].filter((name) => !css.includes(`${name}:`));
     expect(undeclared, 'referenced but never declared -- resolves to nothing').toEqual([]);
@@ -226,9 +228,13 @@ describe('semantic motion utilities compile (#1902/#1903/#1904)', () => {
     const undeclared = [...referenced].filter((name) => !css.includes(`${name}:`));
     expect(undeclared, 'referenced but never declared in the static sheet').toEqual([]);
 
-    // And the animation entries carry the value rather than the invented bridge.
+    // No animation theme keys at all -- neither the invented `--rafters-animate-*`
+    // leaf nor the `--animate-*` shorthand that replaced it. A shape utility sets
+    // `animation-name` and nothing else, so there is no shorthand to declare and
+    // nothing here to dangle.
     expect(css).not.toContain('--rafters-animate-');
-    expect(css).toMatch(/--animate-scale-out:\s*scale-out /);
+    expect(css).not.toMatch(/^\s*--animate-[\w-]+:/m);
+    expect(css).toContain('@utility animate-scale-out {\n  animation-name: scale-out;\n}');
 
     // The motion CELLS reach this sheet too (#2017). They are NOT in the
     // `--animate-*` theme namespace -- on purpose, since a theme-inferred rule
