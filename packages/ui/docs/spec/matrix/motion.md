@@ -295,6 +295,20 @@ need arrives, not speculatively.
 | sidebar | overlay (mobile) | open | slide + fade (scrim) | normal | spring-smooth | -- | structural |
 | sidebar | overlay (mobile) | close | slide + fade (scrim) | moderate | exit | -- | structural |
 
+### chart
+
+Chart-tooltip is data-state driven (a hit-tested datum), never a CSS `:hover`
+reveal, so it reuses tooltip/content's tier and curve role but not its cell:
+see the notes column for why the values are declared fresh here rather than
+via a `follows`.
+
+| component | part | transition | movement | duration | curve | delay | extent |
+|---|---|---|---|---|---|---|---|
+| bar-chart | bar | enter | grow (scaleY from the value-axis baseline, vertical layout, the default) | normal* | enter* | -- | structural (scaleY 0 -> 1 from the baseline) |
+| bar-chart | bar | enter-horizontal | grow (scaleX from the value-axis baseline, layout: 'horizontal') | normal* | enter* | -- | structural (scaleX 0 -> 1 from the baseline) |
+| chart-tooltip | content | closed -> open | fade | moderate* | enter* | -- | -- |
+| chart-tooltip | content | open -> closed | fade | fast* | exit* | -- | -- |
+
 ### load / appearance
 
 | component | part | transition | movement | duration | curve | delay | extent |
@@ -307,18 +321,6 @@ need arrives, not speculatively.
 | skeleton | root | waiting | loop (shimmer/pulse) | period-shimmer | -- | -- | -- |
 | skeleton | root | content ready | fade | fast* | exit* | -- | -- |
 | spinner | root | busy | loop (spin) | period-spin | -- | -- | -- |
-
-### chart
-
-Chart-tooltip is data-state driven (a hit-tested datum), never a CSS `:hover`
-reveal, so it reuses tooltip/content's tier and curve role but not its cell:
-see the notes column for why the values are declared fresh here rather than
-via a `follows`.
-
-| component | part | transition | movement | duration | curve | delay | extent |
-|---|---|---|---|---|---|---|---|
-| chart-tooltip | content | closed -> open | fade | moderate* | enter* | -- | -- |
-| chart-tooltip | content | open -> closed | fade | fast* | exit* | -- | -- |
 
 ### no rows
 

@@ -694,6 +694,29 @@ export const DEFAULT_KEYFRAME_DEFINITIONS: Record<string, KeyframeDef> = {
     meaning: 'Scale down while fading out',
     contexts: ['modal-exit', 'popover-close'],
   },
+  'grow-in': {
+    // scaleY, not a uniform scale -- a bar growing from the baseline to its
+    // full height is STRUCTURAL geometry (fixed, like the accordion
+    // chevron's 180deg rotation), not a pop: no opacity, no other numeric.
+    // The transform-origin anchoring the growth at the bottom (the
+    // value-axis baseline) is the caller-set `transform-origin`
+    // (bar-chart.behavior.ts's `transformOriginFor`), not this keyframe --
+    // this declares only the scaleY 0 -> 1 extent.
+    css: () => 'from { transform: scaleY(0); } to { transform: scaleY(1); }',
+    meaning:
+      'Grow from zero to full height, anchored at the baseline (caller-set transform-origin)',
+    contexts: ['bar-chart', 'value-display'],
+  },
+  'grow-in-x': {
+    // The horizontal-layout counterpart of grow-in: scaleX, not scaleY --
+    // `layout: 'horizontal'` swaps computeBars' value axis from y to x
+    // (bar-chart.behavior.ts), so the structural growth axis swaps with it.
+    // Same rationale as grow-in: no opacity, no other numeric, transform-
+    // origin is caller-set (transformOriginFor).
+    css: () => 'from { transform: scaleX(0); } to { transform: scaleX(1); }',
+    meaning: 'Grow from zero to full width, anchored at the baseline (caller-set transform-origin)',
+    contexts: ['bar-chart', 'value-display'],
+  },
   spin: {
     css: () => 'from { transform: rotate(0deg); } to { transform: rotate(360deg); }',
     meaning: 'Continuous rotation',
@@ -1328,6 +1351,24 @@ export const DEFAULT_MOTION_CELL_ANIMATIONS: Record<string, MotionCellAnimation>
     meaning:
       'The incoming tab panel as the selection moves: the calendar month-change moment on a panel instead of a grid, one tier quicker because a panel swap covers no distance.',
     contexts: ['tabs', 'panel', 'crossfade'],
+  },
+  'bar-chart-bar-enter': {
+    keyframe: 'grow-in',
+    duration: { kind: 'tier', tier: 'normal' },
+    curve: 'enter',
+    cell: { component: 'bar-chart', part: 'bar', transition: 'enter' },
+    meaning:
+      'A bar arriving: grows from zero at the value-axis baseline (bar-chart.behavior.ts sets the transform-origin), on the arrival curve. Vertical layout, the default -- see bar-chart-bar-enter-x for the horizontal counterpart.',
+    contexts: ['bar-chart', 'chart', 'value-display'],
+  },
+  'bar-chart-bar-enter-x': {
+    keyframe: 'grow-in-x',
+    duration: { kind: 'tier', tier: 'normal' },
+    curve: 'enter',
+    cell: { component: 'bar-chart', part: 'bar', transition: 'enter-horizontal' },
+    meaning:
+      'A bar arriving under layout: "horizontal": grows from zero at the value-axis baseline, now the left edge (bar-chart.behavior.ts sets the transform-origin), on the same arrival curve as the vertical bar-chart-bar-enter cell -- only the transform property (scaleX, not scaleY) changes with the swapped axis.',
+    contexts: ['bar-chart', 'chart', 'value-display'],
   },
   // ------------------------------------------------------------- load / appearance
   'avatar-image-load': {

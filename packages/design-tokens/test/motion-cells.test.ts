@@ -292,6 +292,19 @@ const EXCLUDED_ROWS: Record<ExclusionReason, readonly string[]> = {
     // `duration-moderate`/`ease-enter`/`delay-hover-intent`/`extent-pop` open).
     'context-menu | subcontent | closed -> open',
     'context-menu | subcontent | open -> closed',
+    // #2228 ruling: chart-tooltip's content panel is consumed as
+    // duration-*/ease-* transition generics directly via
+    // tooltipContentSurfaceClasses (chart-tooltip.classes.ts reuses
+    // tooltip.classes.ts's content-panel decoration verbatim -- see that
+    // file's own doc comment), not as a named `DEFAULT_MOTION_CELL_ANIMATIONS`
+    // entry -- same ground as the context-menu subcontent exclusion above,
+    // not this file inventing a new reason. chart-tooltip.test.ts:237 asserts
+    // no `animate-*` keyframe class appears on the content panel; a branch
+    // that added `chart-tooltip-content-open`/`-close` cells here was
+    // producing two dead `animate-chart-tooltip-content-*` utilities nothing
+    // consumes, corrected by this exclusion instead.
+    'chart-tooltip | content | closed -> open',
+    'chart-tooltip | content | open -> closed',
   ],
   noIntersectingProperty: [
     'accordion | chevron | open <-> closed',

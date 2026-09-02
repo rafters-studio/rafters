@@ -7,7 +7,7 @@
  */
 import * as React from 'react';
 import { act, cleanup, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ChartContainer, useChartConfig, useChartSize } from '../../../src/components/chart/chart';
 import { CartesianGrid } from '../../../src/components/chart/cartesian-grid';
 import { XAxis } from '../../../src/components/chart/x-axis';
@@ -21,6 +21,11 @@ const body = () => document.body;
 afterEach(() => {
   cleanup();
   document.body.innerHTML = '';
+  // #2243 deferred low finding: stubResizeObserver stubs the global
+  // ResizeObserver (test/harness/resize-observer.ts), and its own doc
+  // says the caller owns vi.unstubAllGlobals() afterward, matching every
+  // other vi.stubGlobal usage in this codebase.
+  vi.unstubAllGlobals();
 });
 
 const config = {

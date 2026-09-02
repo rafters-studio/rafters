@@ -6,7 +6,7 @@
  * microtask (05-authoring WC bind timing rule), so every mount awaits one
  * `Promise.resolve()` before asserting.
  */
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { RaftersCartesianGrid } from '../../../src/components/chart/cartesian-grid.element';
 import { RaftersChartContainer } from '../../../src/components/chart/chart.element';
 import { RaftersXAxis } from '../../../src/components/chart/x-axis.element';
@@ -26,6 +26,10 @@ beforeAll(() => {
 
 afterEach(() => {
   document.body.innerHTML = '';
+  // #2243 deferred low finding: the caller owns vi.unstubAllGlobals() after
+  // stubResizeObserver (test/harness/resize-observer.ts), matching every
+  // other vi.stubGlobal usage in this codebase.
+  vi.unstubAllGlobals();
 });
 
 async function mount(config: unknown): Promise<HTMLElement> {

@@ -1,14 +1,15 @@
 /**
- * Chart family -- ChartContainer + ChartConfig, and the XAxis/YAxis/
+ * Chart family -- ChartContainer + ChartConfig, the XAxis/YAxis/
  * CartesianGrid compositional children every cartesian chart composes
- * (#2224).
+ * (#2224), and BarChart -- the first real chart-type mark, with its own Bar
+ * compositional child registering one series each (#2225).
  *
  * Framework-agnostic surface only (functions + types, no module-level side
  * effects) -- same convention as the editor barrel (components/editor/index.ts):
- * the five decorators (`chart.tsx`/`.element.ts`/`.astro`, and the same trio
- * per axis/grid child) are imported directly by path. This barrel should not
- * force every consumer's bundle to pay for React or run a `customElements.define`
- * side effect just to read `parseChartConfig` or `resolveSeriesClass`.
+ * the decorators (`*.tsx`/`.element.ts`/`.astro` per component) are imported
+ * directly by path. This barrel should not force every consumer's bundle to
+ * pay for React or run a `customElements.define` side effect just to read
+ * `parseChartConfig`, `resolveSeriesClass`, or `computeBars`.
  */
 export {
   applyAriaProjection,
@@ -46,6 +47,31 @@ export type {
   CartesianGridPart,
   CartesianGridState,
 } from './cartesian-grid.behavior';
+
+export { bar, readBarConfig } from './bar.behavior';
+export type { BarConfig, BarPart, BarState } from './bar.behavior';
+
+export {
+  barAria,
+  barChart,
+  bindBarChart,
+  buildChartLabel,
+  computeBars,
+  describeBar,
+  transformOriginFor,
+} from './bar-chart.behavior';
+export type {
+  BarChartActions,
+  BarChartBehaviorConfig,
+  BarChartConfig,
+  BarChartPart,
+  BarChartRuntimeClasses,
+  BarChartState,
+  BarRect,
+  ComputeBarsOptions,
+} from './bar-chart.behavior';
+export { barChartClasses, resolveBarEnterClass, resolveBarFillClass } from './bar-chart.classes';
+export type { BarChartClassSet } from './bar-chart.classes';
 
 export {
   bandCenter,

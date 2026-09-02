@@ -11,7 +11,7 @@
  * runs. See the PR body for the full note on this naming conflict.
  */
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import Chart from '../../../src/components/chart/chart.astro';
 import CartesianGrid from '../../../src/components/chart/cartesian-grid.astro';
 import XAxis from '../../../src/components/chart/x-axis.astro';
@@ -22,6 +22,10 @@ import { stubResizeObserver } from '../../harness/resize-observer';
 
 afterEach(() => {
   document.body.innerHTML = '';
+  // #2243 deferred low finding: the caller owns vi.unstubAllGlobals() after
+  // stubResizeObserver (test/harness/resize-observer.ts), matching every
+  // other vi.stubGlobal usage in this codebase.
+  vi.unstubAllGlobals();
 });
 
 const config = {
