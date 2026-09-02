@@ -31,6 +31,7 @@
 import * as React from 'react';
 import type { PartIds } from '../../lib/contract';
 import { useMemory } from '../../hooks/use-memory';
+import type { BaseBlock } from '../../primitives/types';
 import { bindEditor, editorAria, type EditorConfig, type EditorPart } from './editor.behavior';
 import { editorClasses } from './editor.classes';
 import { createEditorHistory } from './editor-history';
@@ -41,18 +42,49 @@ export type EditorProps = (
 ) & {
   disabled?: boolean;
   readonly?: boolean;
+  /** Seed the editor with an initial block document. Seeded once on mount;
+   *  to switch documents, remount via a React key tied to the document id. */
+  initialDocument?: BaseBlock[];
+  /** Fires when the document changes (after any op, undo, or redo). Does NOT
+   *  fire on mount -- the caller already holds the initial document. */
+  onChange?: (doc: BaseBlock[]) => void;
 };
 
 export function Editor(props: EditorProps): React.JSX.Element {
-  const { disabled, readonly } = props;
+  const { disabled, readonly, initialDocument, onChange } = props;
   const rootRef = React.useRef<HTMLDivElement | null>(null);
   const uid = React.useId();
 
   // Own createEditorHistory instance, injected into bindEditor below so the
   // DOM-native binder and useMemory here read the SAME cell -- bindEditor
   // would otherwise construct its own from root's data-* (the WC/Astro path).
-  const history = React.useMemo(() => createEditorHistory(), []);
+  // `initialDocument` is read ONCE here (React.useMemo's lazy-init semantics,
+  // empty deps): later prop changes are ignored per this issue's pinned
+  // contract -- remount via a React key to load a different document.
+  const history = React.useMemo(
+    () => createEditorHistory(initialDocument ? { doc: initialDocument } : undefined),
+    [],
+  );
   const state = useMemory(history.memory);
+
+  // Callback ref (#2212): onChange's identity can change every render
+  // without tearing down and re-establishing the memory.select subscription
+  // below -- the effect that owns the subscription depends only on
+  // `history`, never on `onChange` itself.
+  const onChangeRef = React.useRef(onChange);
+  React.useEffect(() => {
+    onChangeRef.current = onChange;
+  });
+
+  React.useEffect(() => {
+    // memory.select is equality-gated on the `doc` slice and does NOT fire
+    // on initial subscribe (primitives/memory.ts) -- exactly "fires on
+    // change, not on mount" without any mount-guard bookkeeping here.
+    return history.memory.select(
+      (s) => s.doc,
+      (doc) => onChangeRef.current?.(doc),
+    );
+  }, [history]);
 
   const config = props as EditorConfig;
   const ids = { root: uid } as PartIds<EditorPart>;
