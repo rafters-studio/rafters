@@ -106,7 +106,7 @@ Behavior-layer support: only the five articles have react (verified). Old tree a
 | **resizable** | Draggable split panels | Drag handles resize adjacent panels; keyboard resizes | sizes, dragging | memory | interactive, keyboard-handler | transition-shadow handle | react | none |
 | **sidebar** | Collapsible navigation rail | Expands/collapses app nav; remembers state; mobile overlay mode | open, collapsed rail, mobile | memory | - | translate-x slide -> expand/collapse: slide, axis x | react | none |
 
-## chart (4)
+## chart (6)
 
 | component | is | does | states | uses (current) | uses (planned) | motion | old tree | layer |
 |---|---|---|---|---|---|---|---|---|
@@ -114,3 +114,5 @@ Behavior-layer support: only the five articles have react (verified). Old tree a
 | **x-axis** | Category axis (compositional child, never a prop) | Carries `dataKey`; the owning cartesian chart (Bar #2225, Line #2226, Area #2227) reads it for real tick rendering | - | - | graph.ts ticks (owning chart type) | none | none | none |
 | **y-axis** | Value axis (compositional child, never a prop) | Carries an optional label; the owning cartesian chart reads it and its own data domain for real tick rendering | - | - | graph.ts ticks (owning chart type) | none | none | none |
 | **cartesian-grid** | Background grid lines (compositional child, never a prop) | Carries horizontal/vertical toggle; the owning cartesian chart reads it and its own plot rectangle for real line rendering | - | - | graph.ts gridLines/ticks (owning chart type) | none | none | none |
+| **chart-tooltip** | Pointer-driven datum surface over a chart's plot (#2228) | Pure hit-test (pointer + graph.ts BandScale + data -> nearest datum); renders series rows via ChartConfig; announces the datum edge via sr-announcer; positions/portals via collision-detector + portal (Float's own two composed primitives, not Float's React compound API -- see PR: Float.Content's position effect does not re-run on a moving anchor) | datum (ChartDatum \| null) | graph.ts BandScale, collision-detector, portal, sr-announcer, tooltip.classes.ts (content surface reused, not rebuilt) | interactive (evaluated, not composed -- see PR: mousedown-drag semantics + role=application/tabindex mismatch a hover tooltip cannot use) | reuses tooltip/content's tier+curve (moderate/enter, fast/exit), opacity-only; own motion.jsonl rows (tooltip's own row is fade+zoom, a recorded matrix defect against the opacity-only doctrine, not reused) | none | none |
+| **chart-legend** | One entry per configured series, display-only by default (#2228) | Renders swatch (fill-chart-N) + label per series from ChartConfig; roving-focus keyboard traversal across entries; dispatches nothing on activation (shadcn parity) | - (static score, no actions) | roving-focus | - | none | none | none |

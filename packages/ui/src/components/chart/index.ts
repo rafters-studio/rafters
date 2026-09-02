@@ -40,3 +40,40 @@ export type {
   CartesianGridPart,
   CartesianGridState,
 } from './cartesian-grid.behavior';
+
+export {
+  bindChartTooltip,
+  chartTooltip,
+  describeDatum,
+  hitTest,
+  startChartTooltipEffects,
+  tooltipHeaderLabel,
+  tooltipRows,
+} from './chart-tooltip.behavior';
+export type {
+  ChartDatum,
+  ChartTooltipActions,
+  ChartTooltipConfig,
+  ChartTooltipContentConfig,
+  ChartTooltipEffectsOptions,
+  ChartTooltipMountConfig,
+  ChartTooltipPart,
+  ChartTooltipPointPayload,
+  ChartTooltipState,
+  IndicatorVariant,
+  TooltipRowData,
+} from './chart-tooltip.behavior';
+export { chartTooltipClasses, chartTooltipIndicatorWrapperClass } from './chart-tooltip.classes';
+export type { ChartTooltipClassSet } from './chart-tooltip.classes';
+
+export { bindChartLegend, chartLegend, legendEntries } from './chart-legend.behavior';
+export type {
+  ChartLegendActions,
+  ChartLegendConfig,
+  ChartLegendContentConfig,
+  ChartLegendEntry,
+  ChartLegendPart,
+  ChartLegendState,
+} from './chart-legend.behavior';
+export { chartLegendClasses, chartLegendSwatchWrapperClass } from './chart-legend.classes';
+export type { ChartLegendClassSet } from './chart-legend.classes';

@@ -36,6 +36,12 @@ export const SECTIONS: readonly MatrixSection[] = [
   { heading: 'text input', intro: '', outro: '' },
   { heading: 'value display', intro: '', outro: '' },
   { heading: 'load / appearance', intro: '', outro: '' },
+  {
+    heading: 'chart',
+    intro:
+      "\nChart-tooltip is data-state driven (a hit-tested datum), never a CSS `:hover`\nreveal, so it reuses tooltip/content's tier and curve role but not its cell:\nsee the notes column for why the values are declared fresh here rather than\nvia a `follows`.\n",
+    outro: '',
+  },
 ];
 
 export const EPILOGUE =

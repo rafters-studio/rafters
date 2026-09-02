@@ -1,0 +1,87 @@
+---
+/**
+ * ChartTooltip -- pointer-driven datum surface over a chart's plot (#2228)
+ *
+ * @cognitive-load 2/10 - One consumer decision (what the content markup
+ * shows); the hit-testing, positioning, and announcing are invisible plumbing.
+ * @attention-economics Appears only while a datum is under the pointer;
+ * never competes for attention at rest, and never blocks the plot's own
+ * pointer events (`pointer-events-none` on the floating panel).
+ * @trust-building The swatch color and label always trace to the SAME
+ * `ChartConfig` the legend and marks read -- a tooltip row can never show a
+ * color or label the rest of the chart disagrees with.
+ * @accessibility Never focusable (matches the shipped tooltip/hover-card
+ * contract): the datum is announced through `sr-announcer` on every change,
+ * one-shot per transition. Keyboard datum traversal is the owning chart
+ * shell's responsibility (Bar #2225 etc.) -- it dispatches into this SAME
+ * `point`/`clear` action pair.
+ * @semantic-meaning Ports shadcn's `<ChartTooltip content={<ChartTooltipContent />} />`
+ * call site as closely as a non-serializable `BandScale` allows: `domain`/
+ * `range` (JSON-serializable) travel as `data-*`, and the client script
+ * reconstructs the real `BandScale` via graph.ts `bandScale()` -- a
+ * `BandScale`'s functions cannot round-trip through an attribute.
+ *
+ * @usage-patterns
+ * DO: Render inside a chart shell's plot region so `[data-part="plot"]` resolves
+ * DO: Pass the SAME domain/range the chart shell renders its bars/lines against
+ * NEVER: Expect content before the client script binds -- there is no
+ *        server-rendered datum (SSR has no pointer)
+ *
+ * @example
+ * ```astro
+ * <ChartTooltip
+ *   id="revenue-tip"
+ *   config={{ desktop: { label: 'Desktop', token: 'chart-1' } }}
+ *   domain={['Jan', 'Feb', 'Mar']}
+ *   range={[0, 300]}
+ *   data={[{ desktop: 120 }, { desktop: 200 }, { desktop: 150 }]}
+ * />
+ * ```
+ */
+import { chartTooltipClasses } from './chart-tooltip.classes';
+import type { ChartConfig } from './chart.behavior';
+
+interface Props {
+  id: string;
+  config?: ChartConfig;
+  domain?: readonly string[];
+  range?: readonly [number, number];
+  data?: readonly Record<string, number>[];
+  nameKey?: string;
+}
+
+const { id, config = {}, domain = [], range = [0, 0], data = [], nameKey } = Astro.props;
+const classes = chartTooltipClasses();
+---
+
+<rafters-chart-tooltip
+  id={id}
+  data-part="root"
+  data-config={JSON.stringify(config)}
+  data-domain={JSON.stringify(domain)}
+  data-range={JSON.stringify(range)}
+  data-data={JSON.stringify(data)}
+  data-name-key={nameKey}
+>
+  <div data-part="content" class={classes.content} data-state="closed"></div>
+</rafters-chart-tooltip>
+
+<script>
+  import { bandScale } from '../../primitives/graph';
+  import { parseChartConfig } from './chart.behavior';
+  import { bindChartTooltip } from './chart-tooltip.behavior';
+
+  for (const root of document.querySelectorAll('rafters-chart-tooltip[data-part="root"]')) {
+    const el = root as HTMLElement;
+    if (el.dataset['bound'] === 'true') continue;
+    el.dataset['bound'] = 'true';
+
+    const domain = JSON.parse(el.dataset['domain'] ?? '[]') as string[];
+    const range = JSON.parse(el.dataset['range'] ?? '[0,0]') as [number, number];
+    const data = JSON.parse(el.dataset['data'] ?? '[]') as Record<string, number>[];
+    const config = parseChartConfig(el.dataset['config'] ? JSON.parse(el.dataset['config']) : {});
+    const nameKey = el.dataset['nameKey'];
+
+    bindChartTooltip(el, { scale: bandScale(domain, range), data, config, nameKey });
+  }
+</script>
