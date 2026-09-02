@@ -50,6 +50,7 @@ describe('parseDependency', () => {
 
 describe('installRegistryDependencies', () => {
   let installRegistryDependencies: typeof import('../../src/utils/install-registry-deps.js').installRegistryDependencies;
+  let PlaceholderDependencyError: typeof import('../../src/utils/install-registry-deps.js').PlaceholderDependencyError;
   let readFileMock: ReturnType<typeof vi.fn>;
   let updateDependenciesMock: ReturnType<typeof vi.fn>;
 
@@ -66,6 +67,7 @@ describe('installRegistryDependencies', () => {
 
     const mod = await import('../../src/utils/install-registry-deps.js');
     installRegistryDependencies = mod.installRegistryDependencies;
+    PlaceholderDependencyError = mod.PlaceholderDependencyError;
   });
 
   function mockPackageJson(deps: Record<string, string> = {}): void {
@@ -367,5 +369,92 @@ describe('installRegistryDependencies', () => {
 
     expect(result.installed).toContain('react@19.2.0');
     expect(result.installed).toContain('lodash@4.17.21');
+  });
+
+  describe('placeholder dependency refusal (#2219)', () => {
+    it.each(['none', 'n/a', 'None', ''])(
+      'refuses to install "%s" and names the item and the bad entry',
+      async (placeholder) => {
+        mockPackageJson();
+
+        const item = registryItemFactory.generate({
+          name: 'cursor-tracker',
+          type: 'primitive',
+          primitives: [],
+          files: [
+            registryFileFactory.generate({
+              path: 'lib/primitives/cursor-tracker.ts',
+              content: 'export const trackCursor = () => null;',
+              dependencies: [placeholder],
+            }),
+          ],
+        });
+
+        const attempt = installRegistryDependencies([item], '/fake/project');
+        await expect(attempt).rejects.toThrow(PlaceholderDependencyError);
+        await expect(attempt).rejects.toThrow(/cursor-tracker/);
+        expect(updateDependenciesMock).not.toHaveBeenCalled();
+      },
+    );
+
+    it('refuses the whole install when only one item among several is broken', async () => {
+      mockPackageJson();
+
+      const good = registryItemFactory.generate({
+        name: 'block-handler',
+        type: 'primitive',
+        primitives: [],
+        files: [
+          registryFileFactory.generate({
+            path: 'lib/primitives/block-handler.ts',
+            content: 'export const handleBlock = () => null;',
+            dependencies: ['nanostores@0.11.0'],
+          }),
+        ],
+      });
+      const broken = registryItemFactory.generate({
+        name: 'serializer-text',
+        type: 'primitive',
+        primitives: [],
+        files: [
+          registryFileFactory.generate({
+            path: 'lib/primitives/serializer-text.ts',
+            content: 'export const serialize = () => null;',
+            dependencies: ['none'],
+          }),
+        ],
+      });
+
+      await expect(installRegistryDependencies([good, broken], '/fake/project')).rejects.toThrow(
+        /serializer-text/,
+      );
+      expect(updateDependenciesMock).not.toHaveBeenCalled();
+    });
+
+    it('installs a valid dependency list unaffected by the placeholder guard', async () => {
+      mockPackageJson();
+
+      const item = registryItemFactory.generate({
+        name: 'document-editor',
+        type: 'primitive',
+        primitives: [],
+        files: [
+          registryFileFactory.generate({
+            path: 'lib/primitives/document-editor.ts',
+            content: 'export const DocumentEditor = () => null;',
+            dependencies: ['nanostores@0.11.0'],
+          }),
+        ],
+      });
+
+      const result = await installRegistryDependencies([item], '/fake/project');
+
+      expect(result.installed).toContain('nanostores@0.11.0');
+      expect(updateDependenciesMock).toHaveBeenCalledWith(
+        ['nanostores@0.11.0'],
+        [],
+        expect.objectContaining({ cwd: '/fake/project' }),
+      );
+    });
   });
 });
