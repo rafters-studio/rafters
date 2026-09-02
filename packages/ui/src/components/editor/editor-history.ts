@@ -85,6 +85,14 @@ export interface EditorHistoryControls {
    *  one undo restores the pre-edit text and the pre-edit selection
    *  together. */
   apply(op: EditorOp): void;
+  /** #2242: applies an ORDERED sequence of ops as ONE atomic `HistoryEntry`
+   *  -- for a single user action that legitimately needs more than one op
+   *  (a cross-block range removal, a range-remove-then-split), so one
+   *  `undo()` restores the whole action instead of requiring one undo per
+   *  op. Unlike `apply`, does NOT synthesize a selection-replace removeText
+   *  first -- callers needing that already include it as one of `ops`
+   *  themselves. A no-op for an empty array. */
+  applyBatch(ops: readonly EditorOp[]): void;
   /** Replays the inverse of the most recent `done` entry; restores its
    *  carried `selBefore`. No-op when `done` is empty. */
   undo(): void;
@@ -354,6 +362,11 @@ export function createEditorHistory(
       opsToApply.push(op);
 
       commitEntry(opsToApply);
+    },
+
+    applyBatch(ops: readonly EditorOp[]): void {
+      if (ops.length === 0) return;
+      commitEntry(ops);
     },
 
     undo(): void {

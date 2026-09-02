@@ -111,6 +111,14 @@ export function editorAria(
  * other key -- including plain character input -- returns null: content
  * edits are NOT routed through keymap, they arrive via beforeinput
  * (FR-EDITOR-004), composed by bindEditor.
+ *
+ * #2242: also claims Ctrl+Y as redo -- the conventional Windows/Linux redo
+ * chord, ADDITIVE to the Cmd+Z/Cmd+Shift+Z/Ctrl+Z/Ctrl+Shift+Z chords above
+ * (checked first, its own early return, so every non-chord key still falls
+ * through the single `'z'` path below unchanged). `ctrlKey` only, never
+ * `metaKey`: Cmd+Y stays unclaimed (FR-EDITOR-005 pins the Cmd+Z/Cmd+Shift+Z
+ * contract; this is additive, not a change to it). `altKey` is ignored here,
+ * same as the `'z'` chords below never check it either.
  */
 export function editorKeymap(
   event: KeyInput,
@@ -118,6 +126,7 @@ export function editorKeymap(
   _part: EditorPart,
   _config: EditorConfig,
 ): 'undo' | 'redo' | null {
+  if (event.ctrlKey && event.key.toLowerCase() === 'y') return 'redo';
   if (event.key.toLowerCase() !== 'z') return null;
   if (!(event.metaKey || event.ctrlKey)) return null;
   return event.shiftKey ? 'redo' : 'undo';
@@ -205,6 +214,145 @@ function sliceContent(
   const [, fromStart] = splitRuns(runs, start);
   const [middle] = splitRuns(fromStart, end - start);
   return middle;
+}
+
+/** For a selection whose anchor and focus sit on DIFFERENT blocks, resolves
+ *  which endpoint comes first in DOCUMENT order -- selection direction
+ *  (#2236) is independent of document order (a backward cross-block
+ *  selection can have `sel.focus` as the earlier block), so every cross-block
+ *  range computation resolves order from `doc`, never assumes anchor-is-
+ *  earlier. The single source of truth `deleteRangeAcrossBlocksOps` and
+ *  `splitOps`'s cross-block branch both read, rather than each re-deriving
+ *  its own `anchorFirst`/`startIndex` arithmetic. Returns null when either
+ *  endpoint's block cannot be resolved (unresolvable blockId). */
+function crossBlockRangeOrder(
+  doc: EditorHistoryState['doc'],
+  sel: EditorHistoryState['sel'],
+): {
+  startIndex: number;
+  endIndex: number;
+  startBlockId: string;
+  endBlockId: string;
+  startOffset: number;
+  endOffset: number;
+} | null {
+  const anchorIndex = doc.findIndex((b) => b.id === sel.anchor.blockId);
+  const focusIndex = doc.findIndex((b) => b.id === sel.focus.blockId);
+  if (anchorIndex === -1 || focusIndex === -1) return null;
+  const anchorFirst = anchorIndex <= focusIndex;
+  return {
+    startIndex: anchorFirst ? anchorIndex : focusIndex,
+    endIndex: anchorFirst ? focusIndex : anchorIndex,
+    startBlockId: anchorFirst ? sel.anchor.blockId : sel.focus.blockId,
+    endBlockId: anchorFirst ? sel.focus.blockId : sel.anchor.blockId,
+    startOffset: anchorFirst ? sel.anchor.offset : sel.focus.offset,
+    endOffset: anchorFirst ? sel.focus.offset : sel.anchor.offset,
+  };
+}
+
+/** A range selection spanning two OR MORE blocks (`anchor.blockId !==
+ *  focus.blockId`, not collapsed): truncate the earlier block from its
+ *  offset to its end, truncate the later block from its start to its
+ *  offset, `delete` any block strictly between them, then `mergeNext` the
+ *  (now-truncated) earlier block into the (now-truncated) later one --
+ *  landing the caret at the earlier block's offset, same as a same-block
+ *  range delete. Built entirely from the existing op vocabulary (no new op
+ *  kind), the same compound-ops-for-one-user-action shape `splitOps` below
+ *  already uses for a range-remove-then-split. Pure (doc/sel in, EditorOp[]
+ *  out) -- reused by `deleteBackwardOp`/`deleteForwardOp` (which need the
+ *  bound `root` for `deletionRange` and so stay in `bindEditor`'s closure)
+ *  and by `splitOps` (#2242) for a cross-block Enter. */
+function deleteRangeAcrossBlocksOps(
+  doc: EditorHistoryState['doc'],
+  sel: EditorHistoryState['sel'],
+): EditorOp[] {
+  const range = crossBlockRangeOrder(doc, sel);
+  if (range === null) return [];
+  const { startIndex, endIndex, startBlockId, endBlockId, startOffset, endOffset } = range;
+
+  const startBlock = doc[startIndex] as BaseBlock;
+  const endBlock = doc[endIndex] as BaseBlock;
+  const startTotal = totalTextLength(normalizeRuns(startBlock.content));
+
+  const ops: EditorOp[] = [
+    {
+      kind: 'removeText',
+      blockId: startBlockId,
+      offset: startOffset,
+      text: sliceContent(startBlock.content, startOffset, startTotal),
+    },
+    {
+      kind: 'removeText',
+      blockId: endBlockId,
+      offset: 0,
+      text: sliceContent(endBlock.content, 0, endOffset),
+    },
+  ];
+  for (let i = startIndex + 1; i < endIndex; i++) {
+    ops.push({ kind: 'delete', blockId: (doc[i] as BaseBlock).id });
+  }
+  ops.push({ kind: 'mergeNext', blockId: startBlockId });
+  return ops;
+}
+
+/** A range selection on a SINGLE block (`anchor.blockId === focus.blockId`,
+ *  not collapsed): remove [start, end) as one `removeText` op. Shared by
+ *  `deleteBackwardOp` and `deleteForwardOp` -- a range delete removes the
+ *  same span regardless of which key triggered it. Pure, like
+ *  `deleteRangeAcrossBlocksOps` above. */
+function sameBlockRangeRemoveOp(
+  doc: EditorHistoryState['doc'],
+  sel: EditorHistoryState['sel'],
+): EditorOp[] {
+  const start = Math.min(sel.anchor.offset, sel.focus.offset);
+  const end = Math.max(sel.anchor.offset, sel.focus.offset);
+  const block = doc.find((b) => b.id === sel.focus.blockId);
+  return [
+    {
+      kind: 'removeText',
+      blockId: sel.focus.blockId,
+      offset: start,
+      text: sliceContent(block?.content, start, end),
+    },
+  ];
+}
+
+/** Enter -> split. With a range selection on ONE block, remove the range
+ *  first so the split lands at the collapsed point (as one `EditorOp[]`,
+ *  applied through `EditorHistoryControls.applyBatch` so both land in a
+ *  single `HistoryEntry` -- one undo restores the removed text AND the
+ *  split). #2242: a range spanning TWO OR MORE blocks removes the whole
+ *  cross-block range via `deleteRangeAcrossBlocksOps` (reused as-is, the
+ *  same removal `deleteBackwardOp`/`deleteForwardOp` already use for this
+ *  selection shape) and then splits at the collapsed point the removal
+ *  leaves -- the earlier block's own offset, from the SAME
+ *  `crossBlockRangeOrder` resolution `deleteRangeAcrossBlocksOps` used
+ *  internally, not a second, independently-derived ordering. */
+export function splitOps(state: EditorHistoryState): EditorOp[] {
+  const { sel, doc } = state;
+
+  if (!isCollapsed(sel) && sel.anchor.blockId !== sel.focus.blockId) {
+    const range = crossBlockRangeOrder(doc, sel);
+    if (range === null) return [];
+    const ops = deleteRangeAcrossBlocksOps(doc, sel);
+    ops.push({
+      kind: 'split',
+      blockId: range.startBlockId,
+      offset: range.startOffset,
+      newBlockId: mintBlockId(),
+    });
+    return ops;
+  }
+
+  const ops: EditorOp[] = [];
+  let offset = sel.focus.offset;
+  const blockId = sel.focus.blockId;
+  if (!isCollapsed(sel) && sel.anchor.blockId === blockId) {
+    ops.push(...sameBlockRangeRemoveOp(doc, sel));
+    offset = Math.min(sel.anchor.offset, sel.focus.offset);
+  }
+  ops.push({ kind: 'split', blockId, offset, newBlockId: mintBlockId() });
+  return ops;
 }
 
 /**
@@ -619,53 +767,9 @@ export function bindEditor(root: HTMLElement, injectedHistory?: EditorHistory): 
   }
 
   // -- op construction for the doc-dependent inputs (deletes / structural) --
-
-  /** A range selection spanning two OR MORE blocks (`anchor.blockId !==
-   *  focus.blockId`, not collapsed): truncate the earlier block from its
-   *  offset to its end, truncate the later block from its start to its
-   *  offset, `delete` any block strictly between them, then `mergeNext` the
-   *  (now-truncated) earlier block into the (now-truncated) later one --
-   *  landing the caret at the earlier block's offset, same as a same-block
-   *  range delete. Built entirely from the existing op vocabulary (no new op
-   *  kind), the same compound-ops-for-one-user-action shape `splitOps` below
-   *  already uses for a range-remove-then-split. */
-  function deleteRangeAcrossBlocksOps(
-    doc: EditorHistoryState['doc'],
-    sel: EditorHistoryState['sel'],
-  ): EditorOp[] {
-    const anchorIndex = doc.findIndex((b) => b.id === sel.anchor.blockId);
-    const focusIndex = doc.findIndex((b) => b.id === sel.focus.blockId);
-    if (anchorIndex === -1 || focusIndex === -1) return [];
-    const anchorFirst = anchorIndex <= focusIndex;
-    const startIndex = anchorFirst ? anchorIndex : focusIndex;
-    const endIndex = anchorFirst ? focusIndex : anchorIndex;
-    const startOffset = anchorFirst ? sel.anchor.offset : sel.focus.offset;
-    const endOffset = anchorFirst ? sel.focus.offset : sel.anchor.offset;
-
-    const startBlock = doc[startIndex] as BaseBlock;
-    const endBlock = doc[endIndex] as BaseBlock;
-    const startTotal = totalTextLength(normalizeRuns(startBlock.content));
-
-    const ops: EditorOp[] = [
-      {
-        kind: 'removeText',
-        blockId: startBlock.id,
-        offset: startOffset,
-        text: sliceContent(startBlock.content, startOffset, startTotal),
-      },
-      {
-        kind: 'removeText',
-        blockId: endBlock.id,
-        offset: 0,
-        text: sliceContent(endBlock.content, 0, endOffset),
-      },
-    ];
-    for (let i = startIndex + 1; i < endIndex; i++) {
-      ops.push({ kind: 'delete', blockId: (doc[i] as BaseBlock).id });
-    }
-    ops.push({ kind: 'mergeNext', blockId: startBlock.id });
-    return ops;
-  }
+  // `deleteRangeAcrossBlocksOps`, `sameBlockRangeRemoveOp`, and `splitOps`
+  // are pure (doc/sel in, EditorOp[] out) and live at module scope above --
+  // only `deletionRange` below needs the bound `root`.
 
   /** The [start, end) model-offset range a native `deleteContentBackward`/
    *  `Forward` actually removes, per the browser's own `beforeinput`
@@ -687,27 +791,6 @@ export function bindEditor(root: HTMLElement, injectedHistory?: EditorHistory): 
     const end = domOffsetInBlock(blockEl, range.endContainer, range.endOffset);
     if (start === null || end === null) return fallback;
     return { start: Math.min(start, end), end: Math.max(start, end) };
-  }
-
-  /** A range selection on a SINGLE block (`anchor.blockId === focus.blockId`,
-   *  not collapsed): remove [start, end) as one `removeText` op. Shared by
-   *  `deleteBackwardOp` and `deleteForwardOp` -- a range delete removes the
-   *  same span regardless of which key triggered it. */
-  function sameBlockRangeRemoveOp(
-    doc: EditorHistoryState['doc'],
-    sel: EditorHistoryState['sel'],
-  ): EditorOp[] {
-    const start = Math.min(sel.anchor.offset, sel.focus.offset);
-    const end = Math.max(sel.anchor.offset, sel.focus.offset);
-    const block = doc.find((b) => b.id === sel.focus.blockId);
-    return [
-      {
-        kind: 'removeText',
-        blockId: sel.focus.blockId,
-        offset: start,
-        text: sliceContent(block?.content, start, end),
-      },
-    ];
   }
 
   function deleteBackwardOp(
@@ -765,32 +848,20 @@ export function bindEditor(root: HTMLElement, injectedHistory?: EditorHistory): 
     ];
   }
 
-  /** Enter -> split. With a range selection, remove the range first (as a
-   *  separate op) so the split lands at the collapsed point. */
-  function splitOps(state: EditorHistoryState): EditorOp[] {
-    const { sel } = state;
-    const ops: EditorOp[] = [];
-    let offset = sel.focus.offset;
-    const blockId = sel.focus.blockId;
-    if (!isCollapsed(sel) && sel.anchor.blockId === blockId) {
-      const start = Math.min(sel.anchor.offset, sel.focus.offset);
-      const end = Math.max(sel.anchor.offset, sel.focus.offset);
-      const block = state.doc.find((b) => b.id === blockId);
-      ops.push({
-        kind: 'removeText',
-        blockId,
-        offset: start,
-        text: sliceContent(block?.content, start, end),
-      });
-      offset = start;
-    }
-    ops.push({ kind: 'split', blockId, offset, newBlockId: mintBlockId() });
-    return ops;
-  }
-
+  /** Applies the ops one user action produced. A single op goes through
+   *  `controls.apply` unchanged (preserving its insertText-over-same-block-
+   *  selection auto-remove synthesis). More than one op -- a cross-block
+   *  delete, a range-remove-then-split (#2242) -- goes through
+   *  `applyBatch` so the whole group commits as ONE `HistoryEntry`: one
+   *  undo restores every op the action produced, not one undo per op. */
   function applyOps(ops: EditorOp[]): void {
+    if (ops.length === 0) return;
     try {
-      for (const op of ops) controls.apply(op);
+      if (ops.length === 1) {
+        controls.apply(ops[0] as EditorOp);
+      } else {
+        controls.applyBatch(ops);
+      }
     } catch {
       // applyOp threw (unresolvable blockId / out-of-bounds offset): the native
       // edit was already prevented and the cell is untouched (commitEntry runs
