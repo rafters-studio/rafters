@@ -7,6 +7,7 @@ import { createPoliteAnnouncer } from '../../primitives/sr-announcer';
 import type { CleanupFunction, NormalizedPoint } from '../../primitives/types';
 import { applyAriaProjection, resolveSeriesLabel, type ChartConfig } from './chart.behavior';
 import { resolveSeriesClass } from './chart.classes';
+import { chartTooltipClasses, chartTooltipIndicatorWrapperClass } from './chart-tooltip.classes';
 
 /**
  * ChartTooltip: the pointer-driven datum surface over a chart's plot (#2228).
@@ -333,6 +334,84 @@ export function startChartTooltipEffects(options: ChartTooltipEffectsOptions): C
 }
 
 // ---------------------------------------------------------------------------
+// DOM-native rendering: header + rows + swatch, same structure as
+// chart-tooltip.tsx's `renderTooltipBody` (React), built with `createElement`
+// (SVG parts via `createElementNS`) and the SAME classes.ts literals -- never
+// a flat textContent string, which drops the header/row/label/value classes
+// and the per-series `fill-chart-N` swatch entirely (the classes exist, they
+// were just never attached to any node in this performance).
+// ---------------------------------------------------------------------------
+
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
+/** The literal swatch shape for a row: a filled circle for `dot`, a filled
+ *  rect for `line`/`dashed` (the wrapper class, not the shape, carries the
+ *  line/dashed distinction -- same split as chart-tooltip.tsx). */
+function buildSwatch(indicator: IndicatorVariant, swatchClass: string): SVGSVGElement {
+  const svg = document.createElementNS(SVG_NS, 'svg');
+  svg.setAttribute('class', chartTooltipIndicatorWrapperClass(indicator));
+  svg.setAttribute('viewBox', '0 0 10 10');
+  svg.setAttribute('aria-hidden', 'true');
+
+  const shape = document.createElementNS(SVG_NS, indicator === 'dot' ? 'circle' : 'rect');
+  if (indicator === 'dot') {
+    shape.setAttribute('cx', '5');
+    shape.setAttribute('cy', '5');
+    shape.setAttribute('r', '5');
+  } else {
+    shape.setAttribute('width', '10');
+    shape.setAttribute('height', '10');
+    shape.setAttribute('rx', '1');
+  }
+  shape.setAttribute('class', swatchClass);
+  svg.appendChild(shape);
+  return svg;
+}
+
+/** Header + one row per series for a hit-tested datum -- the DOM-native twin
+ *  of `renderTooltipBody` in chart-tooltip.tsx. Rows always render a swatch
+ *  (WC/Astro expose no `ChartTooltipContentConfig`, so there is no
+ *  `hideIndicator`/`hideLabel`/`indicator` override surface to read here,
+ *  same as this performance's existing `mountConfig` shape). */
+function buildTooltipContentNodes(
+  datum: ChartDatum,
+  config: ChartConfig,
+  nameKey: string | undefined,
+): DocumentFragment {
+  const classes = chartTooltipClasses();
+  const fragment = document.createDocumentFragment();
+
+  const header = tooltipHeaderLabel(datum, config);
+  if (header) {
+    const headerEl = document.createElement('div');
+    headerEl.className = classes.header;
+    headerEl.textContent = header;
+    fragment.appendChild(headerEl);
+  }
+
+  for (const row of tooltipRows(datum, config, nameKey)) {
+    const rowEl = document.createElement('div');
+    rowEl.className = classes.row;
+    rowEl.dataset['part'] = 'row';
+    rowEl.appendChild(buildSwatch('dot', row.swatchClass));
+
+    const labelEl = document.createElement('span');
+    labelEl.className = classes.label;
+    labelEl.textContent = row.label;
+    rowEl.appendChild(labelEl);
+
+    const valueEl = document.createElement('span');
+    valueEl.className = classes.value;
+    valueEl.textContent = row.value === undefined ? '' : String(row.value);
+    rowEl.appendChild(valueEl);
+
+    fragment.appendChild(rowEl);
+  }
+
+  return fragment;
+}
+
+// ---------------------------------------------------------------------------
 // DOM-native client (WC + Astro share this)
 // ---------------------------------------------------------------------------
 
@@ -350,6 +429,17 @@ export interface ChartTooltipMountConfig {
  * attribute -- a `BandScale`'s functions cannot round-trip through JSON, so
  * there is no serialization boundary to parse here; see chart-tooltip.astro
  * and chart-tooltip.element.ts for how each performance obtains it.
+ *
+ * The returned cleanup restores `contentEl` to the parent (and sibling
+ * position) it had when THIS bind started, undoing the portal below. This
+ * matters because every `domain`/`range`/`data`/`config`/`nameKey` setter on
+ * `RaftersChartTooltip` tears down and rebinds (chart-tooltip.element.ts's
+ * `rebind()`): without restoring first, the second `bindChartTooltip` call's
+ * `root.querySelector('[data-part="content"]')` finds nothing -- the node is
+ * still wherever the first bind portaled it (document.body) -- and every
+ * render after that silently no-ops (`if (!contentEl) return`), orphaning
+ * the old node. Restoring on cleanup keeps exactly one content node in the
+ * document across any number of rebinds.
  */
 export function bindChartTooltip(
   root: HTMLElement,
@@ -357,6 +447,8 @@ export function bindChartTooltip(
 ): () => void {
   const plot = root.closest<HTMLElement>('[data-part="plot"]') ?? root;
   const contentEl = root.querySelector<HTMLElement>('[data-part="content"]');
+  const originalParent = contentEl?.parentElement ?? null;
+  const originalNextSibling = contentEl?.nextSibling ?? null;
 
   const { memory, dispatch } = createBehavior(chartTooltip, {});
 
@@ -382,12 +474,10 @@ export function bindChartTooltip(
     applyAriaProjection(contentEl, projection.content ?? {});
     contentEl.dataset['state'] = state.datum ? 'open' : 'closed';
     if (state.datum) {
-      const rows = tooltipRows(state.datum, mountConfig.config, mountConfig.nameKey);
       contentEl.dataset['category'] = state.datum.category;
-      contentEl.textContent = [
-        tooltipHeaderLabel(state.datum, mountConfig.config),
-        ...rows.map((row) => `${row.label}: ${row.value ?? ''}`),
-      ].join(' ');
+      contentEl.replaceChildren(
+        buildTooltipContentNodes(state.datum, mountConfig.config, mountConfig.nameKey),
+      );
 
       // Anchor at the hit band's center point ({x, y} anchor form --
       // collision-detector.ts's `Anchor` type accepts a raw point, so no
@@ -404,7 +494,7 @@ export function bindChartTooltip(
       contentEl.style.transform = `translate(${Math.round(result.x)}px, ${Math.round(result.y)}px)`;
     } else {
       delete contentEl.dataset['category'];
-      contentEl.textContent = '';
+      contentEl.replaceChildren();
     }
   };
   const unsubscribe = memory.subscribe(render);
@@ -427,5 +517,8 @@ export function bindChartTooltip(
   return () => {
     unsubscribe();
     stopEffects();
+    if (contentEl && originalParent && contentEl.parentElement !== originalParent) {
+      originalParent.insertBefore(contentEl, originalNextSibling);
+    }
   };
 }
