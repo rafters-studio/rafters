@@ -23,24 +23,30 @@
  * entering the SVG; a visually-hidden data table carries the same data in
  * fully accessible tabular form, always present in the DOM. axe passes for
  * the default, empty, and active-datum states.
- * @semantic-meaning Ports shadcn's `<BarChart data={data}><Bar dataKey=/></BarChart>`
- * call site: `series` names the data keys to plot (shadcn expresses the same
- * thing as `<Bar dataKey="desktop" />` children); categoryKey moves to the
- * composed <XAxis dataKey> child rather than a chart-level prop (veneer's
- * compositional-children amendment, bullpen 01a058ec).
+ * @semantic-meaning Ports shadcn's `<BarChart data={data}><Bar dataKey="desktop"/>
+ * </BarChart>` call site directly: composed `<Bar dataKey>` children (bar.tsx,
+ * #2225) register a chart's series, in declaration order, and take
+ * precedence outright over the `series: string[]` config prop when both are
+ * present; `series` alone still fully works with no `<Bar>` children
+ * composed at all. categoryKey moves to the composed <XAxis dataKey> child
+ * rather than a chart-level prop (veneer's compositional-children amendment,
+ * bullpen 01a058ec).
  *
  * @usage-patterns
  * DO: Compose inside a ChartContainer with a ChartConfig mapping each series to a token
+ * DO: Compose one <Bar dataKey="..."/> per series for the shadcn-parity call site
  * DO: Compose <XAxis dataKey="..."/> as a BarChart child for the category axis
  * DO: Keep series to 5 or fewer -- the categorical token set has 5 members
  * NEVER: Pass a categoryKey prop -- it belongs on the composed XAxis child
+ * NEVER: Pass BOTH series and <Bar> children expecting them to merge -- children win outright
  * NEVER: Author a color, duration, or easing here -- token + matrix cell only
  *
  * @example
  * ```astro
  * <ChartContainer id="revenue" config={{ desktop: { token: 'chart-1' } }}>
- *   <BarChart id="revenue-bars" data={data} series={['desktop']}>
+ *   <BarChart id="revenue-bars" data={data}>
  *     <XAxis dataKey="month" />
+ *     <Bar dataKey="desktop" />
  *   </BarChart>
  * </ChartContainer>
  * ```
@@ -60,11 +66,16 @@
 import { buildChartLabel, type BarChartConfig } from './bar-chart.behavior';
 import { barChartClasses } from './bar-chart.classes';
 
-interface Props extends BarChartConfig {
+interface Props extends Omit<BarChartConfig, 'series'> {
   id: string;
+  /** Optional when composed `<Bar dataKey>` slot children supply the series
+   *  list instead (bar.astro, #2225) -- `bindBarChart`'s DOM-based
+   *  `seriesFromBarChildren` read resolves them client-side, same
+   *  precedence the React performance gives its own children over `series`. */
+  series?: string[] | undefined;
 }
 
-const { id, data, series, layout, stacked } = Astro.props;
+const { id, data, series = [], layout, stacked } = Astro.props;
 const config: BarChartConfig = { data, series, layout, stacked };
 const classes = barChartClasses({ layout: layout ?? 'vertical' }, {
   bars: [],
@@ -103,20 +114,18 @@ const label = buildChartLabel({ ...config, chartConfig: {}, categoryKey: '', wid
 
 <script>
   import { bindBarChart } from './bar-chart.behavior';
-  import { barChartClasses, resolveBarFillClass } from './bar-chart.classes';
+  import { resolveBarEnterClass, resolveBarFillClass } from './bar-chart.classes';
 
-  // `barChartClasses` ignores both arguments (root/plot/bar/table are
-  // constant regardless of layout/state) -- same placeholder values this
-  // file's server-render call above uses.
-  const classes = barChartClasses(
-    { layout: 'vertical' },
-    { bars: [], valueTicks: [], activeIndex: null },
-  );
-
+  // `resolveBarEnterClass` is the whole of `barChartClasses`'s
+  // layout-dependent surface -- `bindBarChart` resolves each instance's own
+  // `config.layout` itself (readBarChartConfig) and calls this once per
+  // mount, so there is nothing per-instance to precompute here (root/plot/
+  // table are constant and already applied by this file's server-render
+  // markup above, never by the client script).
   for (const root of document.querySelectorAll('rafters-bar-chart[data-part="root"]')) {
     const el = root as HTMLElement;
     if (el.dataset['bound'] === 'true') continue;
     el.dataset['bound'] = 'true';
-    bindBarChart(el, { bar: classes.bar, resolveFillClass: resolveBarFillClass });
+    bindBarChart(el, { barByLayout: resolveBarEnterClass, resolveFillClass: resolveBarFillClass });
   }
 </script>

@@ -22,26 +22,33 @@
  * entering the SVG; a visually-hidden data table carries the same data in
  * fully accessible tabular form, always present in the DOM. axe passes for
  * the default, empty, and active-datum states.
- * @semantic-meaning Ports shadcn's `<BarChart data={data}><Bar dataKey=/></BarChart>`
- * call site: `series` names the data keys to plot (shadcn expresses the same
- * thing as `<Bar dataKey="desktop" />` children); categoryKey moves to the
- * composed <XAxis dataKey> child rather than a chart-level prop (veneer's
- * compositional-children amendment, bullpen 01a058ec).
+ * @semantic-meaning Ports shadcn's `<BarChart data={data}><Bar dataKey="desktop"/>
+ * </BarChart>` call site directly: composed `<Bar dataKey>` children (bar.tsx,
+ * #2225) register a chart's series, in declaration order, and take
+ * precedence outright over the `series: string[]` config prop when both are
+ * present; `series` alone still fully works with no `<Bar>` children
+ * composed at all. categoryKey moves to the composed <XAxis dataKey> child
+ * rather than a chart-level prop (veneer's compositional-children amendment,
+ * bullpen 01a058ec).
  *
  * @usage-patterns
  * DO: Compose inside a ChartContainer with a ChartConfig mapping each series to a token
+ * DO: Compose one <Bar dataKey="..."/> per series for the shadcn-parity call site
  * DO: Compose <XAxis dataKey="..."/> as a BarChart child for the category axis
  * DO: Keep series to 5 or fewer -- the categorical token set has 5 members
  * NEVER: Pass a categoryKey prop -- it belongs on the composed XAxis child
+ * NEVER: Pass BOTH series and <Bar> children expecting them to merge -- children win outright
  * NEVER: Author a color, duration, or easing here -- token + matrix cell only
  *
  * @example
  * ```tsx
  * <ChartContainer config={{ desktop: { token: 'chart-1' }, mobile: { token: 'chart-2' } }}>
- *   <BarChart data={data} series={['desktop', 'mobile']}>
+ *   <BarChart data={data}>
  *     <CartesianGrid />
  *     <XAxis dataKey="month" />
  *     <YAxis />
+ *     <Bar dataKey="desktop" />
+ *     <Bar dataKey="mobile" />
  *   </BarChart>
  * </ChartContainer>
  * ```
@@ -62,13 +69,21 @@ import {
   type BarChartState,
 } from './bar-chart.behavior';
 import { barChartClasses, resolveBarFillClass } from './bar-chart.classes';
+import { Bar } from './bar';
 import { XAxis } from './x-axis';
 
-export interface BarChartProps extends BarChartConfig {
-  /** CartesianGrid/XAxis/YAxis, composed as children (shadcn parity's
-   *  `<BarChart><XAxis dataKey="month"/></BarChart>` call site). BarChart
-   *  reads the category key off the composed XAxis child's `dataKey` prop;
-   *  it never accepts one directly. */
+export interface BarChartProps extends Omit<BarChartConfig, 'series'> {
+  /** Optional when composed `<Bar dataKey>` children supply the series list
+   *  instead (bar.tsx, #2225) -- required in `BarChartConfig` for the
+   *  score/WC/Astro layer, where there is no React children tree to read. */
+  series?: string[] | undefined;
+  /** CartesianGrid/XAxis/YAxis/Bar, composed as children (shadcn parity's
+   *  `<BarChart><XAxis dataKey="month"/><Bar dataKey="desktop"/></BarChart>`
+   *  call site). BarChart reads the category key off the composed XAxis
+   *  child's `dataKey` prop and, when at least one `<Bar>` child is present,
+   *  its series list off their `dataKey` props in order (taking precedence
+   *  over the `series` prop) -- it never accepts a categoryKey prop, and
+   *  `series` remains the only way to name series with no `<Bar>` children. */
   children?: React.ReactNode | undefined;
 }
 
@@ -88,9 +103,25 @@ function categoryKeyFromChildren(children: React.ReactNode): string {
   return categoryKey;
 }
 
+/** Series from composed `<Bar dataKey>` children, in declaration order, or
+ *  `[]` when none are composed -- the React-props-tree counterpart of
+ *  `seriesFromBarChildren` (bar-chart.behavior.ts's DOM-based read for the
+ *  WC/Astro performances). Empty `dataKey` values are skipped rather than
+ *  pushed as `''`: an omitted dataKey names no series, it does not name an
+ *  empty-string one. */
+function seriesFromChildren(children: React.ReactNode): string[] {
+  const found: string[] = [];
+  React.Children.forEach(children, (child) => {
+    if (!React.isValidElement(child) || child.type !== Bar) return;
+    const dataKey = (child.props as { dataKey?: string }).dataKey;
+    if (dataKey) found.push(dataKey);
+  });
+  return found;
+}
+
 export const BarChart: React.FC<BarChartProps> = ({
   data,
-  series,
+  series = [],
   layout = 'vertical',
   stacked = false,
   children,
@@ -98,10 +129,15 @@ export const BarChart: React.FC<BarChartProps> = ({
   const chartConfig = useChartConfig();
   const size = useChartSize();
   const categoryKey = React.useMemo(() => categoryKeyFromChildren(children), [children]);
+  // Composed <Bar> children win outright over the `series` prop when at
+  // least one is present -- same precedence readBarChartConfig gives
+  // seriesFromBarChildren over data-config's series array (bar-chart.behavior.ts).
+  const barChildSeries = React.useMemo(() => seriesFromChildren(children), [children]);
+  const resolvedSeries = barChildSeries.length > 0 ? barChildSeries : series;
 
   const config: BarChartBehaviorConfig = {
     data,
-    series,
+    series: resolvedSeries,
     layout,
     stacked,
     chartConfig,
@@ -112,14 +148,14 @@ export const BarChart: React.FC<BarChartProps> = ({
 
   const bars = React.useMemo(
     () =>
-      computeBars({ data, series }, chartConfig, {
+      computeBars({ data, series: resolvedSeries }, chartConfig, {
         categoryKey,
         width: size.width,
         height: size.height,
         layout,
         stacked,
       }),
-    [data, series, chartConfig, categoryKey, size.width, size.height, layout, stacked],
+    [data, resolvedSeries, chartConfig, categoryKey, size.width, size.height, layout, stacked],
   );
 
   const [activeIndex, setActiveIndex] = React.useState<number | null>(null);

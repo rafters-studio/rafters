@@ -16,6 +16,7 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { RaftersChartContainer } from '../../../src/components/chart/chart.element';
 import { RaftersXAxis } from '../../../src/components/chart/x-axis.element';
+import { RaftersBar } from '../../../src/components/chart/bar.element';
 import { RaftersBarChart } from '../../../src/components/chart/bar-chart.element';
 import { computeBars } from '../../../src/components/chart/bar-chart.behavior';
 import { resolveBarFillClass } from '../../../src/components/chart/bar-chart.classes';
@@ -27,6 +28,7 @@ beforeAll(() => {
     customElements.define('rafters-chart-container', RaftersChartContainer);
   }
   if (!customElements.get('rafters-x-axis')) customElements.define('rafters-x-axis', RaftersXAxis);
+  if (!customElements.get('rafters-bar')) customElements.define('rafters-bar', RaftersBar);
   if (!customElements.get('rafters-bar-chart')) {
     customElements.define('rafters-bar-chart', RaftersBarChart);
   }
@@ -49,12 +51,16 @@ const data = [
 
 const barChartConfig = { data, series: ['desktop', 'mobile'] };
 
-function markup(barConfig: unknown = barChartConfig): string {
+function markup(barConfig: unknown = barChartConfig, barChildKeys: string[] = []): string {
+  const barChildren = barChildKeys
+    .map((key) => `<rafters-bar data-part="series" data-key="${key}" hidden></rafters-bar>`)
+    .join('\n');
   return `
     <rafters-chart-container data-part="root" data-config='${JSON.stringify(chartConfig)}'>
       <div data-part="plot">
         <rafters-x-axis data-part="x-axis" data-key="month" hidden></rafters-x-axis>
         <rafters-bar-chart data-part="root" data-config='${JSON.stringify(barConfig)}'>
+          ${barChildren}
           <svg data-part="plot"></svg>
           <table data-part="table"><tbody></tbody></table>
         </rafters-bar-chart>
@@ -81,13 +87,14 @@ async function mount(
   width: number,
   height: number,
   barConfig: unknown = barChartConfig,
+  barChildKeys: string[] = [],
 ): Promise<{
   containerRoot: HTMLElement;
   barChartRoot: HTMLElement;
   triggerResize: (entries: Array<{ contentRect: { width: number; height: number } }>) => void;
 }> {
   const { triggerResize } = stubResizeObserver();
-  document.body.innerHTML = markup(barConfig);
+  document.body.innerHTML = markup(barConfig, barChildKeys);
   await Promise.resolve(); // deferred connectedCallback binds (both elements)
   triggerResize([{ contentRect: { width, height } }]); // ChartContainer's own bind sets its dataset
   await flushMutationObserver();
@@ -163,5 +170,23 @@ describe('bar-chart [wc]', () => {
     const { barChartRoot } = await mount(300, 200, { data: [], series: ['desktop'] });
     expect(barChartRoot.querySelectorAll('[data-part="bar"]')).toHaveLength(0);
     expect(barChartRoot.querySelectorAll('[data-part="table"] tbody tr')).toHaveLength(0);
+  });
+
+  it('composed <rafters-bar> children alone derive the series list -- no series in data-config', async () => {
+    const { barChartRoot } = await mount(300, 200, { data }, ['desktop', 'mobile']);
+    // 2 categories x 2 <rafters-bar> children, same as the JSON series array
+    // case above, just derived from DOM children instead.
+    expect(barChartRoot.querySelectorAll('[data-part="bar"]')).toHaveLength(4);
+    expect(barChartRoot.querySelector('[data-bar-key="Jan:desktop"]')).not.toBeNull();
+    expect(barChartRoot.querySelector('[data-bar-key="Jan:mobile"]')).not.toBeNull();
+  });
+
+  it('composed <rafters-bar> children win outright over data-config series when both are present', async () => {
+    const { barChartRoot } = await mount(300, 200, barChartConfig, ['mobile']);
+    // One <rafters-bar> child (mobile) wins over the two-entry series array
+    // in data-config: 2 categories x 1 series, not x 2.
+    expect(barChartRoot.querySelectorAll('[data-part="bar"]')).toHaveLength(2);
+    expect(barChartRoot.querySelector('[data-bar-key="Jan:mobile"]')).not.toBeNull();
+    expect(barChartRoot.querySelector('[data-bar-key="Jan:desktop"]')).toBeNull();
   });
 });

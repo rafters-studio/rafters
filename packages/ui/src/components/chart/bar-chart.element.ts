@@ -22,17 +22,22 @@
  * entering the SVG; a visually-hidden data table carries the same data in
  * fully accessible tabular form, always present in the DOM. axe passes for
  * the default, empty, and active-datum states.
- * @semantic-meaning Ports shadcn's `<BarChart data={data}><Bar dataKey=/></BarChart>`
- * call site: `series` names the data keys to plot (shadcn expresses the same
- * thing as `<Bar dataKey="desktop" />` children); categoryKey moves to the
- * composed <XAxis dataKey> child rather than a chart-level prop (veneer's
- * compositional-children amendment, bullpen 01a058ec).
+ * @semantic-meaning Ports shadcn's `<BarChart data={data}><Bar dataKey="desktop"/>
+ * </BarChart>` call site directly: composed `<Bar dataKey>` children (bar.tsx,
+ * #2225) register a chart's series, in declaration order, and take
+ * precedence outright over the `series: string[]` config prop when both are
+ * present; `series` alone still fully works with no `<Bar>` children
+ * composed at all. categoryKey moves to the composed <XAxis dataKey> child
+ * rather than a chart-level prop (veneer's compositional-children amendment,
+ * bullpen 01a058ec).
  *
  * @usage-patterns
  * DO: Compose inside a ChartContainer with a ChartConfig mapping each series to a token
+ * DO: Compose one <Bar dataKey="..."/> per series for the shadcn-parity call site
  * DO: Compose <XAxis dataKey="..."/> as a BarChart child for the category axis
  * DO: Keep series to 5 or fewer -- the categorical token set has 5 members
  * NEVER: Pass a categoryKey prop -- it belongs on the composed XAxis child
+ * NEVER: Pass BOTH series and <Bar> children expecting them to merge -- children win outright
  * NEVER: Author a color, duration, or easing here -- token + matrix cell only
  *
  * @example
@@ -40,7 +45,8 @@
  * <rafters-chart-container data-part="root" data-config='{"desktop":{"token":"chart-1"}}'>
  *   <div data-part="plot">
  *     <rafters-x-axis data-part="x-axis" data-key="month" hidden></rafters-x-axis>
- *     <rafters-bar-chart data-part="root" data-config='{"data":[{"month":"Jan","desktop":100}],"series":["desktop"]}'>
+ *     <rafters-bar-chart data-part="root" data-config='{"data":[{"month":"Jan","desktop":100}]}'>
+ *       <rafters-bar data-part="series" data-key="desktop" hidden></rafters-bar>
  *       <svg data-part="plot"></svg>
  *       <table data-part="table"></table>
  *     </rafters-bar-chart>
@@ -61,7 +67,7 @@
  * data-driven, so there is no fixed markup for this element to merely enhance.
  */
 import { bindBarChart } from './bar-chart.behavior';
-import { barChartClasses, resolveBarFillClass } from './bar-chart.classes';
+import { resolveBarEnterClass, resolveBarFillClass } from './bar-chart.classes';
 
 export class RaftersBarChart extends HTMLElement {
   private teardown: (() => void) | null = null;
@@ -69,15 +75,14 @@ export class RaftersBarChart extends HTMLElement {
   connectedCallback(): void {
     queueMicrotask(() => {
       if (this.isConnected && !this.teardown) {
-        // `barChartClasses` ignores both arguments (root/plot/bar/table are
-        // constant regardless of layout/state) -- placeholder values, same
-        // as bar-chart.astro's server-render call.
-        const classes = barChartClasses(
-          { layout: 'vertical' },
-          { bars: [], valueTicks: [], activeIndex: null },
-        );
+        // `resolveBarEnterClass` is the whole of `barChartClasses`'s
+        // layout-dependent surface -- `bindBarChart` resolves `config.layout`
+        // itself (readBarChartConfig) and calls this once per mount, so there
+        // is nothing left for a `barChartClasses({layout}, state)` call to
+        // add here (root/plot/table are constant, unused by the DOM-native
+        // client -- only `bar-chart.astro`'s SSR markup applies them).
         this.teardown = bindBarChart(this, {
-          bar: classes.bar,
+          barByLayout: resolveBarEnterClass,
           resolveFillClass: resolveBarFillClass,
         });
       }

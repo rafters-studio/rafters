@@ -8,8 +8,8 @@ import {
   barAria,
   barChart,
   computeBars,
-  type Bar,
   type BarChartBehaviorConfig,
+  type BarRect,
 } from '../../../src/components/chart/bar-chart.behavior';
 import {
   barChartClasses,
@@ -142,8 +142,8 @@ describe('computeBars: color', () => {
     });
     expect(bars.every((b) => /^fill-chart-[1-5]$/.test(resolveBarFillClass(cfg, b)))).toBe(true);
 
-    const janDesktop = bars.find((b) => b.key === 'Jan:desktop') as Bar;
-    const janMobile = bars.find((b) => b.key === 'Jan:mobile') as Bar;
+    const janDesktop = bars.find((b) => b.key === 'Jan:desktop') as BarRect;
+    const janMobile = bars.find((b) => b.key === 'Jan:mobile') as BarRect;
     expect(janDesktop.series).toBe('desktop');
     expect(janDesktop.seriesIndex).toBe(0);
     expect(resolveBarFillClass(cfg, janDesktop)).toBe('fill-chart-1');
@@ -194,7 +194,7 @@ describe('issue #2225 functional test block', () => {
       width: 300,
       height: 200,
     });
-    const febDesktop = bars.find((b) => b.key === 'Feb:desktop') as Bar;
+    const febDesktop = bars.find((b) => b.key === 'Feb:desktop') as BarRect;
     expect(febDesktop.series).toBe('desktop');
     expect(febDesktop.seriesIndex).toBe(0);
     expect(resolveBarFillClass(cfg, febDesktop)).toBe('fill-chart-1');
@@ -326,9 +326,35 @@ describe('motion: matrix declaration (#2225 AC4; BehaviorSpec.motion is spec-res
     expect(row?.['curve']).toMatchObject({ kind: 'role', role: 'enter', provenance: 'proposed' });
   });
 
-  it('barChartClasses references the generated animate-bar-chart-bar-enter utility', () => {
+  it('the horizontal-layout counterpart is declared as a SEPARATE matrix row, same tier/curve', () => {
+    // The structural extent is "grow along the value axis from the
+    // baseline" -- computeBars swaps the value axis from y to x under
+    // layout: 'horizontal', so the declared motion moment swaps with it.
+    // Two rows (enter, enter-horizontal), never one row's numeric driven by
+    // a runtime CSS variable.
+    const row = motionRows().find(
+      (r) =>
+        r['component'] === 'bar-chart' &&
+        r['part'] === 'bar' &&
+        r['transition'] === 'enter-horizontal',
+    );
+    expect(row, 'no (bar-chart, bar, enter-horizontal) row in motion.jsonl').toBeDefined();
+    expect(row?.['duration']).toMatchObject({
+      kind: 'tier',
+      tier: 'normal',
+      provenance: 'proposed',
+    });
+    expect(row?.['curve']).toMatchObject({ kind: 'role', role: 'enter', provenance: 'proposed' });
+  });
+
+  it('barChartClasses selects the vertical utility for the default/vertical layout', () => {
     const classes = barChartClasses({ layout: 'vertical' }, barChart.initialState(baseConfig));
-    expect(classes.bar).toContain('animate-bar-chart-bar-enter');
+    expect(classes.bar).toBe('data-[state=visible]:animate-bar-chart-bar-enter');
+  });
+
+  it('barChartClasses selects the horizontal (-x) utility once layout is horizontal', () => {
+    const classes = barChartClasses({ layout: 'horizontal' }, barChart.initialState(baseConfig));
+    expect(classes.bar).toBe('data-[state=visible]:animate-bar-chart-bar-enter-x');
   });
 
   it('the bar-enter composition (scale, no translate/rotate) is legal under validateMotionComposition', () => {

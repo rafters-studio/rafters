@@ -707,6 +707,16 @@ export const DEFAULT_KEYFRAME_DEFINITIONS: Record<string, KeyframeDef> = {
       'Grow from zero to full height, anchored at the baseline (caller-set transform-origin)',
     contexts: ['bar-chart', 'value-display'],
   },
+  'grow-in-x': {
+    // The horizontal-layout counterpart of grow-in: scaleX, not scaleY --
+    // `layout: 'horizontal'` swaps computeBars' value axis from y to x
+    // (bar-chart.behavior.ts), so the structural growth axis swaps with it.
+    // Same rationale as grow-in: no opacity, no other numeric, transform-
+    // origin is caller-set (transformOriginFor).
+    css: () => 'from { transform: scaleX(0); } to { transform: scaleX(1); }',
+    meaning: 'Grow from zero to full width, anchored at the baseline (caller-set transform-origin)',
+    contexts: ['bar-chart', 'value-display'],
+  },
   spin: {
     css: () => 'from { transform: rotate(0deg); } to { transform: rotate(360deg); }',
     meaning: 'Continuous rotation',
@@ -1348,7 +1358,16 @@ export const DEFAULT_MOTION_CELL_ANIMATIONS: Record<string, MotionCellAnimation>
     curve: 'enter',
     cell: { component: 'bar-chart', part: 'bar', transition: 'enter' },
     meaning:
-      'A bar arriving: grows from zero at the value-axis baseline (bar-chart.behavior.ts sets the transform-origin), on the arrival curve.',
+      'A bar arriving: grows from zero at the value-axis baseline (bar-chart.behavior.ts sets the transform-origin), on the arrival curve. Vertical layout, the default -- see bar-chart-bar-enter-x for the horizontal counterpart.',
+    contexts: ['bar-chart', 'chart', 'value-display'],
+  },
+  'bar-chart-bar-enter-x': {
+    keyframe: 'grow-in-x',
+    duration: { kind: 'tier', tier: 'normal' },
+    curve: 'enter',
+    cell: { component: 'bar-chart', part: 'bar', transition: 'enter-horizontal' },
+    meaning:
+      'A bar arriving under layout: "horizontal": grows from zero at the value-axis baseline, now the left edge (bar-chart.behavior.ts sets the transform-origin), on the same arrival curve as the vertical bar-chart-bar-enter cell -- only the transform property (scaleX, not scaleY) changes with the swapped axis.',
     contexts: ['bar-chart', 'chart', 'value-display'],
   },
   // ------------------------------------------------------------- load / appearance

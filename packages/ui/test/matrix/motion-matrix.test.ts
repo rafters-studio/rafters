@@ -25,8 +25,9 @@ const cells = readMotionCells();
 
 describe('motion.jsonl', () => {
   it('carries every cell of the grid', () => {
-    // 147 + bar-chart | bar | enter (#2225's motion cell).
-    expect(cells).toHaveLength(148);
+    // 147 + bar-chart | bar | enter and bar-chart | bar | enter-horizontal
+    // (#2225's two layout-specific bar-enter motion cells).
+    expect(cells).toHaveLength(149);
   });
 
   it('declares the schema on every line', () => {

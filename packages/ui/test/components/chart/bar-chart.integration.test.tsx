@@ -10,6 +10,7 @@ import * as React from 'react';
 import { act, cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ChartContainer } from '../../../src/components/chart/chart';
+import { Bar } from '../../../src/components/chart/bar';
 import { BarChart } from '../../../src/components/chart/bar-chart';
 import { XAxis } from '../../../src/components/chart/x-axis';
 import { computeBars } from '../../../src/components/chart/bar-chart.behavior';
@@ -129,5 +130,43 @@ describe('BarChart [react]', () => {
     const { container } = renderBarChart({ data, series: ['desktop'] });
     act(() => triggerResize([{ contentRect: { width: 300, height: 200 } }]));
     expect(container.querySelectorAll('[data-part="bar"]')).toHaveLength(2); // one per category
+  });
+
+  it('composed <Bar> children alone derive the series list -- no series prop at all', () => {
+    // The real shadcn-parity call site: <BarChart data={data}><Bar
+    // dataKey="desktop"/></BarChart>, no series prop.
+    const { triggerResize } = stubResizeObserver();
+    const { container } = render(
+      <ChartContainer config={config}>
+        <BarChart data={data}>
+          <XAxis dataKey="month" />
+          <Bar dataKey="desktop" />
+          <Bar dataKey="mobile" />
+        </BarChart>
+      </ChartContainer>,
+    );
+    act(() => triggerResize([{ contentRect: { width: 300, height: 200 } }]));
+    // 2 categories x 2 <Bar> children.
+    expect(container.querySelectorAll('[data-part="bar"]')).toHaveLength(4);
+    expect(container.querySelector('[data-bar-key="Jan:desktop"]')).not.toBeNull();
+    expect(container.querySelector('[data-bar-key="Jan:mobile"]')).not.toBeNull();
+  });
+
+  it('composed <Bar> children win outright over a series prop when both are present', () => {
+    const { triggerResize } = stubResizeObserver();
+    const { container } = render(
+      <ChartContainer config={config}>
+        <BarChart data={data} series={['desktop', 'mobile']}>
+          <XAxis dataKey="month" />
+          <Bar dataKey="mobile" />
+        </BarChart>
+      </ChartContainer>,
+    );
+    act(() => triggerResize([{ contentRect: { width: 300, height: 200 } }]));
+    // One <Bar> child (mobile) wins over the two-entry series prop: 2
+    // categories x 1 series, not x 2.
+    expect(container.querySelectorAll('[data-part="bar"]')).toHaveLength(2);
+    expect(container.querySelector('[data-bar-key="Jan:mobile"]')).not.toBeNull();
+    expect(container.querySelector('[data-bar-key="Jan:desktop"]')).toBeNull();
   });
 });

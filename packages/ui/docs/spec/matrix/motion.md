@@ -299,7 +299,8 @@ need arrives, not speculatively.
 
 | component | part | transition | movement | duration | curve | delay | extent |
 |---|---|---|---|---|---|---|---|
-| bar-chart | bar | enter | grow (scaleY from the value-axis baseline) | normal* | enter* | -- | structural (scaleY 0 -> 1 from the baseline) |
+| bar-chart | bar | enter | grow (scaleY from the value-axis baseline, vertical layout, the default) | normal* | enter* | -- | structural (scaleY 0 -> 1 from the baseline) |
+| bar-chart | bar | enter-horizontal | grow (scaleX from the value-axis baseline, layout: 'horizontal') | normal* | enter* | -- | structural (scaleX 0 -> 1 from the baseline) |
 
 ### load / appearance
 

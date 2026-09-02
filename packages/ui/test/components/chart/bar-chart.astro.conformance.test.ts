@@ -13,12 +13,13 @@
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import { afterEach, describe, expect, it } from 'vitest';
 import Chart from '../../../src/components/chart/chart.astro';
+import BarAstro from '../../../src/components/chart/bar.astro';
 import BarChartAstro from '../../../src/components/chart/bar-chart.astro';
 import XAxis from '../../../src/components/chart/x-axis.astro';
 import { bindChart } from '../../../src/components/chart/chart.behavior';
 import { bindBarChart, computeBars } from '../../../src/components/chart/bar-chart.behavior';
 import {
-  barChartClasses,
+  resolveBarEnterClass,
   resolveBarFillClass,
 } from '../../../src/components/chart/bar-chart.classes';
 import { assertAxeClean } from '../../harness/conformance';
@@ -46,6 +47,7 @@ function flushMutationObserver(): Promise<void> {
 
 async function mount(
   barConfig: Record<string, unknown> = { data, series: ['desktop', 'mobile'] },
+  barChildKeys: string[] = [],
 ): Promise<{
   containerRoot: HTMLElement;
   barChartRoot: HTMLElement;
@@ -55,9 +57,12 @@ async function mount(
   const container = await AstroContainer.create();
 
   const xAxisHtml = await container.renderToString(XAxis, { props: { dataKey: 'month' } });
+  const barHtmls = await Promise.all(
+    barChildKeys.map((dataKey) => container.renderToString(BarAstro, { props: { dataKey } })),
+  );
   const barChartHtml = await container.renderToString(BarChartAstro, {
     props: { id: 'bars', ...barConfig },
-    slots: { default: xAxisHtml },
+    slots: { default: [xAxisHtml, ...barHtmls].join('\n') },
   });
   const chartHtml = await container.renderToString(Chart, {
     props: { id: 'c', config: chartConfig },
@@ -78,14 +83,13 @@ async function mount(
 
   bindChart(containerRoot); // the chart-container <script> does this per instance
   triggerResize([{ contentRect: { width: 300, height: 200 } }]);
-  // Same placeholder-argument call bar-chart.astro's own <script> makes --
-  // barChartClasses ignores both arguments (root/plot/bar/table are constant
-  // regardless of layout/state).
-  const classes = barChartClasses(
-    { layout: 'vertical' },
-    { bars: [], valueTicks: [], activeIndex: null },
-  );
-  bindBarChart(barChartRoot, { bar: classes.bar, resolveFillClass: resolveBarFillClass }); // the bar-chart <script> does this per instance
+  // Same call bar-chart.astro's own <script> makes -- resolveBarEnterClass is
+  // the whole of barChartClasses's layout-dependent surface, and bindBarChart
+  // resolves config.layout (and any composed <rafters-bar> children) itself.
+  bindBarChart(barChartRoot, {
+    barByLayout: resolveBarEnterClass,
+    resolveFillClass: resolveBarFillClass,
+  }); // the bar-chart <script> does this per instance
 
   return { containerRoot, barChartRoot, triggerResize };
 }
@@ -157,5 +161,19 @@ describe('bar-chart [astro]', () => {
   it('is axe-clean rendered inside a landmark', async () => {
     const { containerRoot } = await mount();
     await assertAxeClean(document.body.querySelector('main') ?? containerRoot);
+  });
+
+  it('composed <rafters-bar> children alone derive the series list -- no series in data-config', async () => {
+    const { barChartRoot } = await mount({ data }, ['desktop', 'mobile']);
+    expect(barChartRoot.querySelectorAll('[data-part="bar"]')).toHaveLength(4);
+    expect(barChartRoot.querySelector('[data-bar-key="Jan:desktop"]')).not.toBeNull();
+    expect(barChartRoot.querySelector('[data-bar-key="Jan:mobile"]')).not.toBeNull();
+  });
+
+  it('composed <rafters-bar> children win outright over data-config series when both are present', async () => {
+    const { barChartRoot } = await mount({ data, series: ['desktop', 'mobile'] }, ['mobile']);
+    expect(barChartRoot.querySelectorAll('[data-part="bar"]')).toHaveLength(2);
+    expect(barChartRoot.querySelector('[data-bar-key="Jan:mobile"]')).not.toBeNull();
+    expect(barChartRoot.querySelector('[data-bar-key="Jan:desktop"]')).toBeNull();
   });
 });

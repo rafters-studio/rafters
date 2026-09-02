@@ -48,7 +48,13 @@ export interface BarChartBehaviorConfig extends BarChartConfig {
 
 // -- Geometry (computeBars) -------------------------------------------------
 
-export interface Bar {
+/** One rendered bar's computed geometry -- named `BarRect` (not `Bar`) so it
+ *  does not collide with the `<Bar dataKey="desktop"/>` compositional child
+ *  component (bar.behavior.ts/.tsx/.element.ts/.astro): a `Bar` names one
+ *  data series in the config surface, a `BarRect` names one rendered bar's
+ *  pixel geometry -- distinct concepts that happened to share a name before
+ *  `Bar` existed as a real component. */
+export interface BarRect {
   /** `${category}:${series}` -- stable across a re-render as long as the
    *  category and series names do not change. */
   key: string;
@@ -149,7 +155,7 @@ export function computeBars(
   // across the chart family and every existing caller.
   _config: ChartConfig,
   options: ComputeBarsOptions,
-): Bar[] {
+): BarRect[] {
   const { data, series } = input;
   const { categoryKey, width, height } = options;
   const layout = options.layout ?? 'vertical';
@@ -185,7 +191,7 @@ export function computeBars(
 
   const subBandwidth = stacked ? band.bandwidth() : band.bandwidth() / Math.max(1, series.length);
 
-  const bars: Bar[] = [];
+  const bars: BarRect[] = [];
   const stackCumulative = new Map<string, number>();
 
   for (const [rowIndex, row] of data.entries()) {
@@ -240,14 +246,14 @@ export function computeBars(
 
 /** The accessible description for one bar -- the announcer text on keyboard
  *  traversal and a row's plain-language summary in the data-table fallback. */
-export function describeBar(bar: Bar): string {
+export function describeBar(bar: BarRect): string {
   return `${bar.category}, ${bar.series}, ${bar.value}`;
 }
 
 // -- Behavior spec -----------------------------------------------------------
 
 export interface BarChartState {
-  bars: Bar[];
+  bars: BarRect[];
   /** Nicely-rounded value-axis tick values (`ticks()`, #2223) for a composed
    *  YAxis/CartesianGrid to read once it renders real ticks against a
    *  numeric domain -- wiring that rendering is out of this issue's scope
@@ -268,7 +274,7 @@ export type BarChartActions = {
 
 export type BarChartPart = 'root' | 'plot' | 'bar' | 'table';
 
-function clampActive(index: number, bars: readonly Bar[]): number {
+function clampActive(index: number, bars: readonly BarRect[]): number {
   return Math.min(Math.max(index, 0), bars.length - 1);
 }
 
@@ -410,13 +416,23 @@ export function buildChartLabel(config: BarChartBehaviorConfig): string {
  *  bars grow from their left edge. Shared by the React performance and the
  *  DOM-native client so both anchor the "grow from baseline" keyframe
  *  identically. */
-export function transformOriginFor(bar: Bar, layout: 'vertical' | 'horizontal'): string {
+export function transformOriginFor(bar: BarRect, layout: 'vertical' | 'horizontal'): string {
   const x = layout === 'horizontal' ? bar.x : bar.x + bar.width / 2;
   const y = layout === 'horizontal' ? bar.y + bar.height / 2 : bar.y + bar.height;
   return `${x}px ${y}px`;
 }
 
 // -- DOM-native client (WC + Astro share this) --------------------------------
+
+/** Series from composed `<rafters-bar data-part="series">` children of
+ *  `root`, in DOM order, or `[]` when none are present. `querySelectorAll`
+ *  (not a direct-children scan) matches how every other DOM-native read in
+ *  this file locates a composed child -- see `readBarChartConfig`'s own
+ *  `[data-part="x-axis"]` lookup. */
+function seriesFromBarChildren(root: HTMLElement): string[] {
+  const barEls = Array.from(root.querySelectorAll<HTMLElement>('[data-part="series"]'));
+  return barEls.map((el) => el.dataset['key'] ?? '');
+}
 
 /** Read `BarChartConfig` off the root's `data-config` JSON attribute (the
  *  same WC/Astro transport `bindChart` pins), then resolve the three
@@ -434,9 +450,13 @@ function readBarChartConfig(
   const configAttr = root.getAttribute('data-config');
   const parsed: unknown = configAttr ? JSON.parse(configAttr) : { data: [], series: [] };
   const raw = parsed as Partial<BarChartConfig>;
+  // Composed <Bar dataKey> children win outright over the data-config series
+  // array when present, same precedence the React performance gives
+  // seriesFromChildren over the `series` prop (bar-chart.tsx).
+  const seriesFromChildren = seriesFromBarChildren(root);
   const barChartConfig: BarChartConfig = {
     data: raw.data ?? [],
-    series: raw.series ?? [],
+    series: seriesFromChildren.length > 0 ? seriesFromChildren : (raw.series ?? []),
     layout: raw.layout,
     stacked: raw.stacked,
   };
@@ -483,7 +503,7 @@ function syncBarElements(
   config: BarChartBehaviorConfig,
   layout: 'vertical' | 'horizontal',
   barClassName: string,
-  resolveFillClass: (chartConfig: ChartConfig, bar: Bar) => string,
+  resolveFillClass: (chartConfig: ChartConfig, bar: BarRect) => string,
   applyProjection: (el: HTMLElement, attrs: AriaAttrs) => void,
 ): void {
   if (!plotEl) return;
@@ -544,13 +564,15 @@ function syncTableRows(tableEl: HTMLElement | null, state: BarChartState): void 
  * The DOM-native bind's dependency on the classes layer, injected by the
  * caller (bar-chart.element.ts / bar-chart.astro's script) rather than
  * imported here -- this file never imports a classes module (Spec 01 rule
- * 1). `bar` is the static generated motion utility (bar-chart.classes.ts's
- * `barChartClasses(...).bar`); `resolveFillClass` resolves the same
+ * 1). `barByLayout` selects the generated bar-enter motion utility for a
+ * given layout (bar-chart.classes.ts's `resolveBarEnterClass` -- vertical
+ * grows on scaleY, horizontal on scaleX, two separate matrix cells, never one
+ * keyframe driven by an inline numeric); `resolveFillClass` resolves the same
  * `fill-chart-N` literal `resolveSeriesClass` (chart.classes.ts) would.
  */
 export interface BarChartRuntimeClasses {
-  bar: string;
-  resolveFillClass: (chartConfig: ChartConfig, bar: Bar) => string;
+  barByLayout: (layout: 'vertical' | 'horizontal') => string;
+  resolveFillClass: (chartConfig: ChartConfig, bar: BarRect) => string;
 }
 
 export function bindBarChart(root: HTMLElement, classes: BarChartRuntimeClasses): () => void {
@@ -584,6 +606,12 @@ export function bindBarChart(root: HTMLElement, classes: BarChartRuntimeClasses)
       ids[part] = getPart(part)?.id ?? '';
     }
 
+    // Resolved once per mount, not per render: `config.layout` cannot change
+    // without a full remount (a resize only ever updates width/height, see
+    // the MutationObserver below), so re-selecting it on every state change
+    // would be redundant work, not a correctness need.
+    const layout = config.layout ?? 'vertical';
+    const barClassName = classes.barByLayout(layout);
     let previousActive: number | null = null;
 
     const render = () => {
@@ -598,8 +626,8 @@ export function bindBarChart(root: HTMLElement, classes: BarChartRuntimeClasses)
         getPart('plot') as unknown as SVGElement | null,
         state,
         config,
-        config.layout ?? 'vertical',
-        classes.bar,
+        layout,
+        barClassName,
         classes.resolveFillClass,
         applyProjection,
       );

@@ -1,7 +1,8 @@
 /**
  * Chart family -- ChartContainer + ChartConfig, the XAxis/YAxis/
  * CartesianGrid compositional children every cartesian chart composes
- * (#2224), and BarChart -- the first real chart-type mark (#2225).
+ * (#2224), and BarChart -- the first real chart-type mark, with its own Bar
+ * compositional child registering one series each (#2225).
  *
  * Framework-agnostic surface only (functions + types, no module-level side
  * effects) -- same convention as the editor barrel (components/editor/index.ts):
@@ -41,6 +42,9 @@ export type {
   CartesianGridState,
 } from './cartesian-grid.behavior';
 
+export { bar, readBarConfig } from './bar.behavior';
+export type { BarConfig, BarPart, BarState } from './bar.behavior';
+
 export {
   barAria,
   barChart,
@@ -51,14 +55,14 @@ export {
   transformOriginFor,
 } from './bar-chart.behavior';
 export type {
-  Bar,
   BarChartActions,
   BarChartBehaviorConfig,
   BarChartConfig,
   BarChartPart,
   BarChartRuntimeClasses,
   BarChartState,
+  BarRect,
   ComputeBarsOptions,
 } from './bar-chart.behavior';
-export { barChartClasses, resolveBarFillClass } from './bar-chart.classes';
+export { barChartClasses, resolveBarEnterClass, resolveBarFillClass } from './bar-chart.classes';
 export type { BarChartClassSet } from './bar-chart.classes';
