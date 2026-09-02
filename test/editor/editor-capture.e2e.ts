@@ -279,6 +279,53 @@ test('Shift+ArrowLeft extends the selection backward instead of shrinking it (#2
 });
 
 // -----------------------------------------------------------------------------
+// #2242: Enter over a range selection spanning two blocks. `buildEditorHarness`
+// can only SEED a collapsed caret (see the filtered-scenario comment below),
+// so the cross-block RANGE selection is built after load via a real
+// `Selection.setBaseAndExtent` across both blocks' text nodes, then
+// `settleSelection` lets #2236's `selectionchange` listener map it into
+// `state.sel` before Enter is pressed -- otherwise the model would still hold
+// the seeded collapsed caret and this would pass or fail for the wrong
+// reason. #2237 gates this suite's execution in CI; this issue only adds the
+// scenario to the file.
+// -----------------------------------------------------------------------------
+
+test('Enter over a cross-block range selection removes it, then splits at the collapsed point', async ({
+  page,
+}) => {
+  await page.goto('about:blank');
+  await page.setContent(
+    await buildEditorHarness({
+      blocks: [
+        { id: 'b1', type: 'text', content: 'hello' },
+        { id: 'b2', type: 'text', content: 'world' },
+      ],
+    }),
+  );
+
+  await page.evaluate(() => {
+    const b1 = document.querySelector('[data-block-id="b1"]');
+    const b2 = document.querySelector('[data-block-id="b2"]');
+    const b1Node = b1?.firstChild as Text;
+    const b2Node = b2?.firstChild as Text;
+    const selection = window.getSelection() as Selection;
+    selection.setBaseAndExtent(b1Node, 2, b2Node, 1);
+  });
+  await settleSelection(page);
+
+  await page.keyboard.press('Enter');
+
+  const blockTexts = await page.locator('[data-block-id]').allTextContents();
+  expect(blockTexts).toEqual(['he', 'orld']); // selection removed, split at the collapsed point
+
+  // One undo restores the original two-block doc AND the original selection
+  // -- both the merge and the removed text land in a single HistoryEntry.
+  await page.keyboard.press('Control+z');
+  const restoredTexts = await page.locator('[data-block-id]').allTextContents();
+  expect(restoredTexts).toEqual(['hello', 'world']);
+});
+
+// -----------------------------------------------------------------------------
 // Caret-notation scenario table (FR-EDITOR-006) -- the SAME EDITOR_SCENARIOS
 // the model-level BDD (editor.behavior.test.ts) replays via
 // caret.ts's given/when/then, replayed HERE through real keyboard/paste input

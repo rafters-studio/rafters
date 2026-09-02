@@ -16,6 +16,7 @@ import {
   editorKeymap,
   parts,
   projectDocument,
+  splitOps,
   translateBeforeInput,
   type EditorConfig,
 } from '../../../src/components/editor/editor.behavior';
@@ -413,6 +414,10 @@ describe('editorKeymap', () => {
     );
   });
 
+  it('claims Ctrl+Y as redo (Windows/Linux convention)', () => {
+    expect(editorKeymap({ key: 'y', ctrlKey: true }, state, 'root', config)).toBe('redo');
+  });
+
   it('claims the shifted-character chord a real browser sends for Shift', () => {
     // KeyboardEvent.key reports the shifted character ('Z', not 'z') when
     // Shift is held -- a strict `key === 'z'` check would pass the fixture
@@ -426,6 +431,80 @@ describe('editorKeymap', () => {
     expect(editorKeymap({ key: 'a' }, state, 'root', config)).toBeNull();
     expect(editorKeymap({ key: 'z' }, state, 'root', config)).toBeNull(); // no modifier
     expect(editorKeymap({ key: 'y', metaKey: true }, state, 'root', config)).toBeNull();
+  });
+});
+
+// -----------------------------------------------------------------------------
+// #2242: Enter over a selection spanning two blocks. `caret.ts`'s given/when
+// harness is hardcoded to one block (its own doc comment: cross-block
+// structural ops are out of that harness's scope), and vitest/happy-dom
+// cannot dispatch a real `beforeinput` (#2109, this file's own header
+// comment) -- so this drives the op-construction path directly: `splitOps`
+// builds the op sequence a real Enter keypress would produce, applied
+// through the SAME `EditorHistoryControls.applyBatch` `bindEditor`'s
+// `applyOps` uses for a multi-op group, never a hand-rolled apply loop.
+// -----------------------------------------------------------------------------
+
+describe('splitOps -- Enter over a cross-block range selection (#2242)', () => {
+  it('removes the selected range across both blocks, then splits at the collapsed point, as one undo step', () => {
+    const doc: BaseBlock[] = [
+      { id: 'b1', type: 'text', content: 'hello' },
+      { id: 'b2', type: 'text', content: 'world' },
+    ];
+    const sel = { anchor: { blockId: 'b1', offset: 2 }, focus: { blockId: 'b2', offset: 1 } };
+    const history = createEditorHistory({ doc, sel });
+
+    const ops = splitOps(history.memory.get());
+    expect(ops.length).toBeGreaterThan(1); // a real compound group, not a single op
+    history.controls.applyBatch(ops);
+
+    const afterEdit = history.memory.get();
+    expect(afterEdit.doc).toHaveLength(2);
+    expect(afterEdit.doc[0]?.content).toEqual('he'); // b1's remainder, selection removed
+    expect(afterEdit.doc[1]?.content).toEqual('orld'); // b2's remainder, selection removed
+    const newBlockId = afterEdit.doc[1]?.id as string;
+    expect(newBlockId).not.toBe('b2'); // split minted a fresh block for the tail
+    expect(afterEdit.sel).toEqual({
+      anchor: { blockId: newBlockId, offset: 0 },
+      focus: { blockId: newBlockId, offset: 0 },
+    }); // caret lands at the start of the new (post-split) block
+    expect(afterEdit.done).toHaveLength(1); // the whole group is ONE HistoryEntry
+
+    history.controls.undo();
+    const restored = history.memory.get();
+    expect(restored.doc).toEqual(doc); // original two-block doc, byte for byte
+    expect(restored.sel).toEqual(sel); // original cross-block selection, restored in one step
+    expect(restored.done).toHaveLength(0);
+  });
+
+  it('same-block range + Enter also commits as one undo step (pins the multi-op grouping contract applyOps relies on)', () => {
+    // Not a new behavior this issue adds -- the SAME-block range-remove-then-
+    // split path already existed. Pinned here because `applyOps` itself is
+    // not exported (only reachable via a real `beforeinput`, which this file
+    // cannot dispatch, per #2109): without this, a future revert of
+    // `applyOps`'s `ops.length > 1 -> applyBatch` routing back to a per-op
+    // loop would pass every OTHER test in this file while silently breaking
+    // one-undo-restores-both for this case too.
+    const doc: BaseBlock[] = [{ id: 'b1', type: 'text', content: 'hello world' }];
+    const sel = { anchor: { blockId: 'b1', offset: 2 }, focus: { blockId: 'b1', offset: 5 } };
+    const history = createEditorHistory({ doc, sel });
+
+    const ops = splitOps(history.memory.get());
+    expect(ops).toHaveLength(2); // removeText + split, the same-block compound group
+    // Mirrors bindEditor's own applyOps routing (ops.length > 1 -> applyBatch).
+    history.controls.applyBatch(ops);
+
+    const afterEdit = history.memory.get();
+    expect(afterEdit.doc).toHaveLength(2);
+    expect(afterEdit.doc[0]?.content).toEqual('he'); // "llo" removed, split at offset 2
+    expect(afterEdit.doc[1]?.content).toEqual(' world');
+    expect(afterEdit.done).toHaveLength(1); // ONE HistoryEntry, not one per op
+
+    history.controls.undo();
+    const restored = history.memory.get();
+    expect(restored.doc).toEqual(doc);
+    expect(restored.sel).toEqual(sel);
+    expect(restored.done).toHaveLength(0);
   });
 });
 
