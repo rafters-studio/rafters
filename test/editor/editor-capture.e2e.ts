@@ -137,6 +137,92 @@ test('selection is restored from state.sel after every edit', async ({ page }) =
 });
 
 // -----------------------------------------------------------------------------
+// DOM -> model selection recovery (#2236): a click or a caret key moves
+// `state.sel`, so the NEXT edit lands where the user actually put the caret,
+// not at the seeded/previous model position.
+// -----------------------------------------------------------------------------
+
+/**
+ * A real browser dispatches `selectionchange` asynchronously relative to the
+ * click/keydown that moved the selection (unlike happy-dom's synchronous
+ * dispatch in the vitest suite), so a `page.mouse.click`/`page.keyboard.press`
+ * immediately followed by another action that depends on `state.sel` can
+ * race bindEditor's own `selectionchange` listener -- something no human
+ * ever does (there is always reaction time between moving the caret and the
+ * next action), but Playwright's zero-delay automation can. This bounded
+ * wait -- comfortably above any engine's real dispatch latency, the same
+ * settle-then-proceed idiom `performScenarioAction`'s `type`/`paste` cases
+ * use below for the coalescing window -- lets the listener catch up.
+ */
+async function settleSelection(page: Page): Promise<void> {
+  await page.waitForTimeout(50);
+}
+
+test('clicking places the caret and the next typed character lands exactly there', async ({
+  page,
+}) => {
+  await page.goto('about:blank');
+  await page.setContent(
+    await buildEditorHarness({ blocks: [{ id: 'b1', type: 'text', content: 'hello world' }] }),
+  );
+  const block = page.locator('[data-block-id="b1"]');
+
+  // Click the midpoint of the TEXT NODE's own rect, not the block element's --
+  // buildEditorHarness's CSS gives [data-part="root"] no width constraint, so
+  // the block div spans the viewport and its own midpoint would land well
+  // past the last glyph. The exact character the click resolves to is
+  // font/engine-dependent; the test asserts INTERNAL consistency (whatever
+  // offset the browser's hit-testing picks, typing lands exactly there)
+  // rather than a hardcoded offset, so it holds across chromium/firefox/webkit.
+  const rect = await block.evaluate((el) => {
+    const textNode = el.firstChild as Text;
+    const range = document.createRange();
+    range.selectNodeContents(textNode);
+    const { x, y, width, height } = range.getBoundingClientRect();
+    return { x, y, width, height };
+  });
+  await page.mouse.click(rect.x + rect.width / 2, rect.y + rect.height / 2);
+  await settleSelection(page);
+
+  const clickedOffset = await page.evaluate(() => window.getSelection()?.focusOffset ?? -1);
+  expect(clickedOffset).toBeGreaterThan(0);
+  expect(clickedOffset).toBeLessThan('hello world'.length);
+
+  await page.keyboard.type('X');
+
+  const expectedText = `${'hello world'.slice(0, clickedOffset)}X${'hello world'.slice(clickedOffset)}`;
+  await expect(block).toHaveText(expectedText);
+
+  const caretOffset = await page.evaluate(() => window.getSelection()?.focusOffset ?? -1);
+  expect(caretOffset).toBe(clickedOffset + 1);
+});
+
+test('ArrowLeft moves the caret, and Backspace removes the character before the moved caret', async ({
+  page,
+}) => {
+  await page.goto('about:blank');
+  await page.setContent(
+    await buildEditorHarness({
+      blocks: [{ id: 'b1', type: 'text', content: 'abcde' }],
+      caret: { blockId: 'b1', offset: 5 },
+    }),
+  );
+  // No click -- see the "No click" comment on the scenario loop below: the
+  // seeded caret is already restored by the first render(), and arrow keys
+  // move the native Selection directly (no `beforeinput` at all), which is
+  // exactly the path #2236 adds a listener for.
+  await page.keyboard.press('ArrowLeft'); // 5 -> 4
+  await settleSelection(page);
+  await page.keyboard.press('ArrowLeft'); // 4 -> 3 (between 'c' and 'd')
+  await settleSelection(page);
+  await page.keyboard.press('Backspace'); // removes 'c'
+
+  await expect(page.locator('[data-block-id="b1"]')).toHaveText('abde');
+  const caretOffset = await page.evaluate(() => window.getSelection()?.focusOffset ?? -1);
+  expect(caretOffset).toBe(2);
+});
+
+// -----------------------------------------------------------------------------
 // Caret-notation scenario table (FR-EDITOR-006) -- the SAME EDITOR_SCENARIOS
 // the model-level BDD (editor.behavior.test.ts) replays via
 // caret.ts's given/when/then, replayed HERE through real keyboard/paste input
@@ -145,15 +231,18 @@ test('selection is restored from state.sel after every edit', async ({ page }) =
 //
 // FILTERED to scenarios whose `given` seeds a COLLAPSED caret only: this
 // repo's Playwright harness (buildEditorHarness's SeedCaret) can only seed a
-// collapsed position, and bindEditor never reads the live DOM Selection back
-// into the model (RULING-EDITOR-HISTORY's pinned amendment: "fable's #1 (no
-// DOM->model selection) is OUT of scope here"), so a scenario that starts
-// from a RANGE selection (`he[llo]`) cannot be driven through real input --
-// it stays proven at the model level only (editor.behavior.test.ts), which
-// is where the canonical "undo restores document AND selection" scenario
-// (itself range-seeded) already runs. The filtered set still covers every
-// named category the issue's Interface section asks Playwright to cover:
-// typing, backspace, delete, paste, undo, redo.
+// collapsed position -- it has no way to seed a live RANGE selection before
+// the first keystroke. That is independent of #2236's DOM-to-model selection
+// recovery (bindEditor now maps whatever the real Selection API reports,
+// collapsed or not, AFTER bind -- see "clicking places the caret..." and
+// "ArrowLeft moves the caret..." below); it does not let the harness SEED a
+// range. So a scenario that starts from a RANGE selection (`he[llo]`) cannot
+// be driven through real input here -- it stays proven at the model level
+// only (editor.behavior.test.ts), which is where the canonical "undo
+// restores document AND selection" scenario (itself range-seeded) already
+// runs. The filtered set still covers every named category the issue's
+// Interface section asks Playwright to cover: typing, backspace, delete,
+// paste, undo, redo.
 // -----------------------------------------------------------------------------
 
 const PLAYWRIGHT_SCENARIOS = EDITOR_SCENARIOS.filter((s) => !s.given.includes('['));

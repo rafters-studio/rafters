@@ -98,6 +98,13 @@ export interface EditorHistoryControls {
   /** NFR-EDITOR-003: applies an op without pushing a `done` entry
    *  (programmatic / remote edits opt out of history). */
   applyExcluded(op: EditorOp): void;
+  /** #2236: writes `sel` directly -- no op, no `done`/`undone` change. A DOM
+   *  selection change (click, caret key) is not an edit: `doc`, `done`, and
+   *  `undone` all stay exactly as they were, only `sel` moves. Callers that
+   *  want the native "a caret move breaks coalescing" boundary call
+   *  `closeGroup()` separately -- this control only ever writes the one
+   *  field. */
+  setSelection(sel: EditorSelection): void;
 }
 
 export interface EditorHistory {
@@ -386,6 +393,11 @@ export function createEditorHistory(
       // excluded edit has since changed underneath it.
       forceNewGroup = true;
       memory.set({ doc: result.blocks, sel: selAfter, done: state.done, undone: state.undone });
+    },
+
+    setSelection(sel: EditorSelection): void {
+      const state = memory.get();
+      memory.set({ doc: state.doc, sel, done: state.done, undone: state.undone });
     },
   };
 

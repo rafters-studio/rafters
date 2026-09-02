@@ -18,13 +18,30 @@
  * FR-EDITOR-005 adds the editor SCORE below (`parts`, `editorAria`,
  * `editorKeymap`) -- hand-written, not produced by `compose()` -- and extends
  * `bindEditor` with the aria projection and the undo/redo keymap wiring.
+ *
+ * #2236 adds the other direction: DOM -> model selection recovery. `bindEditor`
+ * composes `primitives/editor/selection.ts`'s `createTextSelection` for its
+ * document-level `selectionchange` listener and teardown (no second listener
+ * added here) and `primitives/editor/cursor-tracker.ts`'s `findBlockElement`
+ * to resolve the owning block -- `domOffsetInBlock` below does the rest of the
+ * mapping. The primitive's own `SelectionRange` (ordered `startNode`/
+ * `endNode`, not a directional anchor/focus) is read as-is: every consumer of
+ * `state.sel` in this file already normalizes order itself (`caretStart`,
+ * `orderedRange`, `deleteRangeAcrossBlocksOps`'s `anchorFirst`), so start/end
+ * ordering loses nothing a caller here depends on. A mapped selection equal to
+ * `state.sel` is dropped (the echo from this file's own `restoreSelection`);
+ * a genuine move writes `sel` via `EditorHistoryControls.setSelection` (no
+ * `done`/`undone` change) and calls `closeGroup()` (a caret move is not an
+ * edit, but it IS a coalescing boundary).
  */
 import { z } from 'zod';
 import type { AriaAttrs, KeyInput, PartDecl, PartIds } from '../../lib/contract';
 import { updateAriaAttribute } from '../../primitives/aria-manager';
 import { createClipboard } from '../../primitives/editor/clipboard';
+import { findBlockElement } from '../../primitives/editor/cursor-tracker';
 import { createInputHandler } from '../../primitives/editor/input-events';
-import type { BaseBlock, InlineContent } from '../../primitives/types';
+import { createTextSelection } from '../../primitives/editor/selection';
+import type { BaseBlock, InlineContent, SelectionRange } from '../../primitives/types';
 import type { EditorHistory, EditorHistoryState } from './editor-history';
 import { createEditorHistory } from './editor-history';
 import { normalizeRuns, splitRuns, totalTextLength } from './ops/content';
@@ -408,6 +425,58 @@ function domOffsetInBlock(blockEl: Element, node: Node, offset: number): number 
     // for a `null` result.
     return null;
   }
+}
+
+// ---------------------------------------------------------------------------
+// DOM -> model selection recovery (#2236): the inverse direction of
+// restoreSelection above.
+// ---------------------------------------------------------------------------
+
+/** Map one DOM (node, offset) boundary to a model `EditorPosition`, or `null`
+ *  when `node` is not inside any block under `root` (outside `root` entirely,
+ *  or inside `root` but outside every `[data-block-id]` element -- e.g. the
+ *  root's own padding). Composes `findBlockElement` (cursor-tracker.ts) for
+ *  block resolution and `domOffsetInBlock` above for the text-offset
+ *  measurement, rather than reimplementing either. */
+function resolveEditorPosition(
+  root: HTMLElement,
+  node: Node,
+  offset: number,
+): { blockId: string; offset: number } | null {
+  const blockEl = findBlockElement(node);
+  if (blockEl === null || !root.contains(blockEl)) return null;
+  const blockId = blockEl.getAttribute('data-block-id');
+  if (blockId === null) return null;
+  const modelOffset = domOffsetInBlock(blockEl, node, offset);
+  if (modelOffset === null) return null;
+  return { blockId, offset: modelOffset };
+}
+
+/** Map a `createTextSelection` `SelectionRange` (already filtered to
+ *  boundaries inside `root`) to a model `EditorSelection`, or `null` when
+ *  either boundary's block cannot be resolved. `startNode`/`endNode` are
+ *  ordered (per `SelectionRange`'s own contract), not a directional
+ *  anchor/focus -- see this file's header comment for why that loses nothing
+ *  a caller of `state.sel` depends on. */
+function mapSelectionRange(
+  root: HTMLElement,
+  range: SelectionRange,
+): EditorHistoryState['sel'] | null {
+  const anchor = resolveEditorPosition(root, range.startNode, range.startOffset);
+  const focus = range.collapsed
+    ? anchor
+    : resolveEditorPosition(root, range.endNode, range.endOffset);
+  if (anchor === null || focus === null) return null;
+  return { anchor, focus };
+}
+
+function selectionsEqual(a: EditorHistoryState['sel'], b: EditorHistoryState['sel']): boolean {
+  return (
+    a.anchor.blockId === b.anchor.blockId &&
+    a.anchor.offset === b.anchor.offset &&
+    a.focus.blockId === b.focus.blockId &&
+    a.focus.offset === b.focus.offset
+  );
 }
 
 function restoreSelection(root: HTMLElement, sel: EditorHistoryState['sel']): void {
@@ -815,6 +884,30 @@ export function bindEditor(root: HTMLElement, injectedHistory?: EditorHistory): 
     },
   });
 
+  // -- DOM -> model selection recovery (#2236) --
+  //
+  // Composes createTextSelection for its document-level `selectionchange`
+  // listener and teardown -- no second listener added here. Its callback
+  // fires with `null` when the live selection's boundaries are not both
+  // inside `root`; that IS the "selections outside root ... leave state.sel
+  // untouched" rule, so a `null` callback is simply ignored.
+  const textSelection = createTextSelection({
+    container: root,
+    onSelectionChange: (range) => {
+      if (range === null) return;
+      if (!root.isConnected) return; // detached: ignore (teardown safety)
+      try {
+        const mapped = mapSelectionRange(root, range);
+        if (mapped === null) return; // a boundary's block could not be resolved
+        if (selectionsEqual(mapped, memory.get().sel)) return; // render()'s own echo
+        controls.setSelection(mapped);
+        controls.closeGroup(); // a caret move is not an edit, but IS a coalescing boundary
+      } catch {
+        // Mapping never throws into the listener (same rule as domOffsetInBlock).
+      }
+    },
+  });
+
   // -- keydown: undo/redo (FR-EDITOR-005) --
 
   const onKeydown = (event: KeyboardEvent): void => {
@@ -847,6 +940,7 @@ export function bindEditor(root: HTMLElement, injectedHistory?: EditorHistory): 
     attrObserver?.disconnect();
     inputHandler.cleanup();
     clipboard.cleanup();
+    textSelection.cleanup();
     root.removeEventListener('paste', onPasteRaw);
     root.removeEventListener('beforeinput', onBeforeInputRaw);
     root.removeEventListener('keydown', onKeydown);
