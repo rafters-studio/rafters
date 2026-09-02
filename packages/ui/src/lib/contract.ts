@@ -168,6 +168,15 @@ export interface BehaviorSpec<Config, State, Actions extends ActionPayloads, Par
   ) => AriaAttrs;
 
   keymap: (event: KeyInput, state: State, part: Part, config: Config) => keyof Actions | null;
+
+  /** RESERVED (spec-only, 01-behavior-contract.md:123-125): `motion?:
+   *  MotionMap<Part>`. #1990 (open) owns the shape and the two-directional
+   *  existence/assignment validation gate; declaring it here ahead of that
+   *  landing would invent the shape rather than receive it. Until #1990
+   *  lands, a component's motion surface is declared by adding its
+   *  `(component, part, transition)` row(s) to
+   *  `docs/spec/matrix/motion.jsonl` directly -- see bar-chart.behavior.ts
+   *  (#2225) for the reference. */
 }
 
 export function createBehavior<Config, State, Actions extends ActionPayloads, Part extends string>(

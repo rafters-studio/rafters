@@ -76,9 +76,14 @@ export interface ChartContainerProps extends React.HTMLAttributes<HTMLDivElement
 export const ChartContainer = React.forwardRef<HTMLDivElement, ChartContainerProps>(
   ({ config, className, children, ...props }, ref) => {
     const containerConfig: ChartContainerConfig = { config };
-    const classes = chartContainerClasses(containerConfig, ZERO_SIZE);
     const plotRef = React.useRef<HTMLDivElement>(null);
     const [size, setSize] = React.useState<ChartSize>(ZERO_SIZE);
+    // #2243 deferred low finding: this was ZERO_SIZE unconditionally, so a
+    // future state-dependent class in chartContainerClasses would have been
+    // silently stuck at the pre-layout value for the life of the component.
+    // chartContainerClasses ignores its state parameter today (chart.classes.ts),
+    // so this is behavior-neutral now and only matters once that changes.
+    const classes = chartContainerClasses(containerConfig, size);
 
     // Composed directly (one primitive -- 05-authoring: no colocated
     // composition function needed until a second primitive joins it). The

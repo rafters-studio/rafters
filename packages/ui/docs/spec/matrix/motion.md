@@ -295,6 +295,12 @@ need arrives, not speculatively.
 | sidebar | overlay (mobile) | open | slide + fade (scrim) | normal | spring-smooth | -- | structural |
 | sidebar | overlay (mobile) | close | slide + fade (scrim) | moderate | exit | -- | structural |
 
+### chart
+
+| component | part | transition | movement | duration | curve | delay | extent |
+|---|---|---|---|---|---|---|---|
+| bar-chart | bar | enter | zoom (grow from the value-axis baseline) | normal* | enter* | -- | -- |
+
 ### load / appearance
 
 | component | part | transition | movement | duration | curve | delay | extent |

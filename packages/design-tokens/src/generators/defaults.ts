@@ -694,6 +694,18 @@ export const DEFAULT_KEYFRAME_DEFINITIONS: Record<string, KeyframeDef> = {
     meaning: 'Scale down while fading out',
     contexts: ['modal-exit', 'popover-close'],
   },
+  'grow-in': {
+    // Uniform scale, no opacity -- unlike scale-in/-out (which pair scale
+    // with a fade for anchored popups), a bar is fully opaque the instant it
+    // exists. The "from a baseline" framing comes from the caller-set
+    // `transform-origin` (bar-chart.behavior.ts's `transformOriginFor`), not
+    // from this keyframe: the same uniform scale anchored at a bar's bottom
+    // edge (vertical layout) or left edge (horizontal) reads as growth along
+    // the value axis without needing an axis-specific keyframe pair.
+    css: () => 'from { transform: scale(0); } to { transform: scale(1); }',
+    meaning: 'Grow from zero to full size, anchored at the caller-set transform-origin',
+    contexts: ['bar-chart', 'value-display'],
+  },
   spin: {
     css: () => 'from { transform: rotate(0deg); } to { transform: rotate(360deg); }',
     meaning: 'Continuous rotation',
@@ -1328,6 +1340,15 @@ export const DEFAULT_MOTION_CELL_ANIMATIONS: Record<string, MotionCellAnimation>
     meaning:
       'The incoming tab panel as the selection moves: the calendar month-change moment on a panel instead of a grid, one tier quicker because a panel swap covers no distance.',
     contexts: ['tabs', 'panel', 'crossfade'],
+  },
+  'bar-chart-bar-enter': {
+    keyframe: 'grow-in',
+    duration: { kind: 'tier', tier: 'normal' },
+    curve: 'enter',
+    cell: { component: 'bar-chart', part: 'bar', transition: 'enter' },
+    meaning:
+      'A bar arriving: grows from zero at the value-axis baseline (bar-chart.behavior.ts sets the transform-origin), on the arrival curve.',
+    contexts: ['bar-chart', 'chart', 'value-display'],
   },
   // ------------------------------------------------------------- load / appearance
   'avatar-image-load': {

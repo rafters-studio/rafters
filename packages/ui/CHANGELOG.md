@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Bar chart component (#2225).** The first real chart-type mark on top of
+  ChartContainer/XAxis/YAxis/CartesianGrid (#2224): grouped and stacked bar
+  geometry computed via `bandScale`/`linearScale` (`computeBars`), shadcn-API
+  parity (`series` maps data keys to `ChartConfig` tokens; categoryKey lives
+  on the composed `<XAxis dataKey>` child, never a chart-level prop). Pins
+  the accessible chart structure the family copies: a `<figure role="figure">`
+  groups an `aria-hidden` SVG (never `role="img"`, which would make its
+  descendants presentational) with a keyboard-driven active-datum cursor
+  (arrows/Home/End, announced via `sr-announcer`) and an always-present
+  visually-hidden data-table fallback. Bar-enter motion (`grow-in`, a scale
+  keyframe anchored at the value-axis baseline) is declared as a matrix cell
+  (`docs/spec/matrix/motion.jsonl`) rather than a hand-written class --
+  `BehaviorSpec.motion` itself stays spec-reserved but unimplemented pending
+  #1990.
 - **Card meets the shadcn replacement requirement (#2019).** `data-slot` now
   lands on every node in all three performances (`card`, `card-header`,
   `card-title`, `card-description`, `card-action`, `card-content`,

@@ -35,6 +35,11 @@ export const SECTIONS: readonly MatrixSection[] = [
   },
   { heading: 'text input', intro: '', outro: '' },
   { heading: 'value display', intro: '', outro: '' },
+  // Registered by #2225 (Bar chart). If a sibling chart issue (#2226 Line,
+  // #2227 Area, #2229/#2230) lands its own rows first, keep this heading
+  // name -- "chart" -- so both branches merge onto the same section rather
+  // than forking a second heading for the same family.
+  { heading: 'chart', intro: '', outro: '' },
   { heading: 'load / appearance', intro: '', outro: '' },
 ];
 

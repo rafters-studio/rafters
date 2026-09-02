@@ -106,7 +106,7 @@ Behavior-layer support: only the five articles have react (verified). Old tree a
 | **resizable** | Draggable split panels | Drag handles resize adjacent panels; keyboard resizes | sizes, dragging | memory | interactive, keyboard-handler | transition-shadow handle | react | none |
 | **sidebar** | Collapsible navigation rail | Expands/collapses app nav; remembers state; mobile overlay mode | open, collapsed rail, mobile | memory | - | translate-x slide -> expand/collapse: slide, axis x | react | none |
 
-## chart (4)
+## chart (5)
 
 | component | is | does | states | uses (current) | uses (planned) | motion | old tree | layer |
 |---|---|---|---|---|---|---|---|---|
@@ -114,3 +114,4 @@ Behavior-layer support: only the five articles have react (verified). Old tree a
 | **x-axis** | Category axis (compositional child, never a prop) | Carries `dataKey`; the owning cartesian chart (Bar #2225, Line #2226, Area #2227) reads it for real tick rendering | - | - | graph.ts ticks (owning chart type) | none | none | none |
 | **y-axis** | Value axis (compositional child, never a prop) | Carries an optional label; the owning cartesian chart reads it and its own data domain for real tick rendering | - | - | graph.ts ticks (owning chart type) | none | none | none |
 | **cartesian-grid** | Background grid lines (compositional child, never a prop) | Carries horizontal/vertical toggle; the owning cartesian chart reads it and its own plot rectangle for real line rendering | - | - | graph.ts gridLines/ticks (owning chart type) | none | none | none |
+| **bar-chart** | Grouped/stacked bar marks, shadcn-API-compatible (#2225) | Computes bar geometry from data via bandScale/linearScale (computeBars); resolves series color via chart.classes.ts resolveSeriesClass; keyboard traversal (arrows/Home/End) moves an active-datum cursor announced via sr-announcer; pins the family's accessible structure (figure + aria-hidden SVG + always-present data-table fallback) | bars, activeIndex (active-datum cursor) | graph.ts bandScale/linearScale/ticks, sr-announcer | - | matrix cell (bar-chart/bar/enter, motion.jsonl; BehaviorSpec.motion is spec-reserved but unimplemented, #1990 open) | none | react, wc, astro |
