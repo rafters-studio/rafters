@@ -28,6 +28,7 @@ import { DEFAULT_EXPORTS } from '../utils/exports.js';
 import {
   type InstallRegistryDepsResult,
   installRegistryDependencies,
+  PlaceholderDependencyError,
 } from '../utils/install-registry-deps.js';
 import { hasStoredTokens, regenerateMotionNamespace } from '../utils/motion-rebuild.js';
 import { getRaftersPaths, type PathField, resolveRoot } from '../utils/paths.js';
@@ -1002,13 +1003,25 @@ export async function add(componentArgs: string[], options: AddOptions): Promise
       target,
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    log({
-      event: 'add:deps:install-failed',
-      message: `Failed to process dependencies: ${message}`,
-      dependencies: [],
-      suggestion: 'Check package.json and try installing dependencies manually.',
-    });
+    if (err instanceof PlaceholderDependencyError) {
+      // A broken manifest, not a transient install failure -- this run must
+      // not exit 0 as if the dependency step were merely skipped.
+      log({
+        event: 'add:deps:install-failed',
+        message: err.message,
+        dependencies: [],
+        suggestion: 'This is a registry defect, not a local problem -- do not install it manually.',
+      });
+      process.exitCode = 1;
+    } else {
+      const message = err instanceof Error ? err.message : String(err);
+      log({
+        event: 'add:deps:install-failed',
+        message: `Failed to process dependencies: ${message}`,
+        dependencies: [],
+        suggestion: 'Check package.json and try installing dependencies manually.',
+      });
+    }
   }
 
   if (depsResult.installed.length > 0 || depsResult.skipped.length > 0) {

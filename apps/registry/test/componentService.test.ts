@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
+  extractDepsFromSource,
   getRegistryIndex,
   listComponentNames,
   listPrimitiveNames,
@@ -818,6 +819,26 @@ describe('editor primitive discovery after relocation (#2136)', () => {
     expect(loadPrimitive('memory')?.files[0]?.path).toBe('lib/primitives/memory.ts');
   });
 
+  it('no editor primitive manifest carries a placeholder dependency (#2219)', () => {
+    // Several editor primitives document "no external dependencies" as a
+    // literal `@dependencies none` JSDoc tag. That word must never survive
+    // into the served manifest: `rafters add` installs every entry in
+    // `files[].dependencies` as an npm package, so a placeholder there
+    // becomes an install of whatever the string happens to resolve to on
+    // npm. A file with no external dependencies must emit an empty list.
+    const placeholders = ['none', 'n/a', ''];
+    for (const name of EDITOR_PRIMITIVES) {
+      const item = loadPrimitive(name);
+      for (const file of item?.files ?? []) {
+        for (const dep of file.dependencies) {
+          expect(placeholders, `${name} (${file.path}) declares "${dep}"`).not.toContain(
+            dep.trim().toLowerCase(),
+          );
+        }
+      }
+    }
+  });
+
   it('editor folder membership matches matrix subsystem:"editor" exactly', () => {
     const onDisk = new Set(
       readdirSync(editorDir)
@@ -1133,5 +1154,42 @@ describe('registry output feeds the graph, wide and recursive (#2165)', () => {
       values: ['div', 'main', 'header', 'footer', 'section', 'article', 'aside'],
       default: 'div',
     });
+  });
+});
+
+/**
+ * #2219: `@dependencies none` (used across several editor primitives to
+ * document "no external dependencies") was parsed as a literal package name.
+ * `rafters add editor` on 0.3.1 then ran `pnpm add none`, installing whatever
+ * package a stranger holds under that name. An item with no external
+ * dependencies must emit an empty list, never a placeholder string.
+ */
+describe('extractDepsFromSource placeholder handling (#2219)', () => {
+  it('treats "none" as no external dependencies', () => {
+    const source = `/**\n * @dependencies none\n */\nexport const x = 1;\n`;
+    expect(extractDepsFromSource(source)).toEqual({ dependencies: [], devDependencies: [] });
+  });
+
+  it('treats "n/a" as no external dependencies', () => {
+    const source = `/**\n * @dependencies n/a\n */\nexport const x = 1;\n`;
+    expect(extractDepsFromSource(source)).toEqual({ dependencies: [], devDependencies: [] });
+  });
+
+  it('never emits an empty-string dependency entry', () => {
+    const source = `/**\n * @dependencies  \n */\nexport const x = 1;\n`;
+    expect(extractDepsFromSource(source)).toEqual({ dependencies: [], devDependencies: [] });
+  });
+
+  it('still recognizes a real dependency alongside a placeholder-free tag', () => {
+    const source = `/**\n * @dependencies nanostores\n */\nexport const x = 1;\n`;
+    expect(extractDepsFromSource(source)).toEqual({
+      dependencies: ['nanostores'],
+      devDependencies: [],
+    });
+  });
+
+  it('applies the same placeholder handling to @devDependencies', () => {
+    const source = `/**\n * @devDependencies none\n */\nexport const x = 1;\n`;
+    expect(extractDepsFromSource(source)).toEqual({ dependencies: [], devDependencies: [] });
   });
 });
