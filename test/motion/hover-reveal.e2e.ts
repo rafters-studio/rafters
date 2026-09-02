@@ -426,7 +426,17 @@ test.describe('hover reveal with JavaScript disabled', () => {
     await expectCell(page, '#card-content', OPEN);
   });
 
-  test('navigation-menu: hover reveals the panel; closes fast/exit/NO delay', async ({ page }) => {
+  test('navigation-menu: hover reveals the panel; closes fast/exit/NO delay', async ({
+    page,
+    browserName,
+  }) => {
+    // #2256: the reveal rule below is wrapped in `@media (hover: hover)`
+    // (Tailwind's own group-hover emission, verbatim -- see the comment above
+    // NAVIGATION_MENU). Headless Firefox on Linux CI evaluates that query as
+    // not matching, so the rule never applies and opacity stays 0 for the
+    // whole 5s timeout; tooltip and hover-card have no such media guard and
+    // are unaffected. Chromium and webkit are unaffected here too.
+    test.fixme(browserName === 'firefox', '#2256: nav-menu reveal never applies on firefox in CI');
     await page.setContent(NAVIGATION_MENU);
 
     const content = page.locator('#nav-content');
@@ -441,10 +451,16 @@ test.describe('hover reveal with JavaScript disabled', () => {
     await expectCell(page, '#nav-content', OPEN);
   });
 
-  test('navigation-menu: the panel stays revealed while the pointer is on it', async ({ page }) => {
+  test('navigation-menu: the panel stays revealed while the pointer is on it', async ({
+    page,
+    browserName,
+  }) => {
     // Trigger and panel are siblings inside the item, and the panel sits flush
     // at the item's bottom edge -- so travelling onto it never leaves the hover
     // scope. There is no linger on this close to forgive it if it did.
+    // #2256: same firefox-only `@media (hover: hover)` failure as the test
+    // above.
+    test.fixme(browserName === 'firefox', '#2256: nav-menu reveal never applies on firefox in CI');
     await page.setContent(NAVIGATION_MENU);
     await page.hover('#nav-trigger');
     await expect(page.locator('#nav-content')).toHaveCSS('opacity', '1');
@@ -452,9 +468,16 @@ test.describe('hover reveal with JavaScript disabled', () => {
     await expect(page.locator('#nav-content')).toHaveCSS('opacity', '1');
   });
 
-  test('navigation-menu: a dismissal hides ONE panel, not the whole bar', async ({ page }) => {
+  test('navigation-menu: a dismissal hides ONE panel, not the whole bar', async ({
+    page,
+    browserName,
+  }) => {
     // Root-scoped, the force-hide was a descendant rule over every panel in the
     // menu: one Escape blanked the lot. The flag is the dismissed panel's own.
+    // #2256: the second assertion below (hovering the live trigger reveals its
+    // own panel) goes through the same firefox-only `@media (hover: hover)`
+    // failure as the two tests above.
+    test.fixme(browserName === 'firefox', '#2256: nav-menu reveal never applies on firefox in CI');
     await page.setContent(NAVIGATION_MENU);
     await page.hover('#nav-trigger-two');
     await expect(page.locator('#nav-content-two')).toHaveCSS('opacity', '0');
