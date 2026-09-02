@@ -17,6 +17,40 @@ import { updateDependencies } from './update-dependencies.js';
 /** Prefix identifying a package this monorepo ships in lockstep with the CLI. */
 const RAFTERS_SCOPE_PREFIX = '@rafters/';
 
+/**
+ * Known placeholder strings a broken registry manifest can carry in a
+ * dependency name -- documentation shorthand for "no dependencies" that
+ * leaked into the emitted `dependencies` array instead of an empty list
+ * (#2219). Installing one hands whoever owns that npm name an arbitrary
+ * install into the consumer's project, so the CLI refuses outright rather
+ * than trying to sanitize it.
+ */
+const PLACEHOLDER_DEPENDENCY_NAMES = new Set(['none', 'n/a']);
+
+function isPlaceholderDependencyName(name: string): boolean {
+  const normalized = name.trim().toLowerCase();
+  return normalized === '' || PLACEHOLDER_DEPENDENCY_NAMES.has(normalized);
+}
+
+/**
+ * Thrown when a registry item declares a dependency name that is not a real
+ * npm package -- a placeholder left in the manifest (#2219). The item name
+ * and the offending literal are both on the error so a report points
+ * straight at the broken manifest entry.
+ */
+export class PlaceholderDependencyError extends Error {
+  constructor(
+    readonly itemName: string,
+    readonly dependency: string,
+  ) {
+    super(
+      `Registry item "${itemName}" declares dependency "${dependency}", which is not a real npm ` +
+        'package name -- it looks like a placeholder left in the manifest. Refusing to install it.',
+    );
+    this.name = 'PlaceholderDependencyError';
+  }
+}
+
 export interface InstallRegistryDepsOptions {
   /** Suppress spinner and install output */
   silent?: boolean;
@@ -127,6 +161,22 @@ export async function installRegistryDependencies(
     devInstalled: [],
     failed: [],
   };
+
+  // 0. Refuse a placeholder dependency name before anything is installed.
+  // A registry item with no external dependencies must declare an empty
+  // list; a literal "none"/"n/a"/empty string reaching this point means the
+  // manifest is broken, and installing it would run `pnpm add <placeholder>`
+  // against whatever package a stranger happens to own under that name.
+  for (const item of items) {
+    for (const file of item.files) {
+      for (const dep of file.dependencies) {
+        const { name } = parseDependency(dep);
+        if (isPlaceholderDependencyName(name)) {
+          throw new PlaceholderDependencyError(item.name, dep);
+        }
+      }
+    }
+  }
 
   // 1. Collect and deduplicate all deps across all files
   const allDeps = new Set(items.flatMap((item) => item.files.flatMap((file) => file.dependencies)));
