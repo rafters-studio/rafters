@@ -29,8 +29,21 @@ describe('input-group root decoration', () => {
     expect(classes.root).toContain('data-[disabled]:cursor-not-allowed');
   });
 
-  it('motion respects reduced-motion', () => {
-    expect(classes.root).toContain('motion-reduce:transition-none');
+  it('motion is the focus row alone, composed as generics (#2289)', () => {
+    // root / focus -- ring -- duration-micro, ease-linear. The only row
+    // input-group has, and `transition-shadow` is exactly the ring's property.
+    expect(classes.root).toContain('transition-shadow');
+    expect(classes.root).toContain('duration-micro');
+    expect(classes.root).toContain('ease-linear');
+    // The reduced-motion law is written once on the token leaves.
+    expect(classes.root).not.toContain('motion-reduce:');
+  });
+
+  it('the invalid border snaps: input-group has no valid/invalid row (#2289)', () => {
+    // input and textarea each carry a `valid <-> invalid` colour cell; this
+    // component does not, so `border-color` stays out of the transition list.
+    expect(classes.root).toContain('data-[state=invalid]:border-destructive');
+    expect(classes.root).not.toContain('border-color');
   });
 });
 

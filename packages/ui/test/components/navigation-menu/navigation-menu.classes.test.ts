@@ -103,11 +103,44 @@ describe('navigation-menu classes', () => {
       expect(value).not.toMatch(/\b(duration|delay)-\d/);
       expect(value).not.toContain('motion-reduce');
     }
-    // The generated semantic utilities carry the tier, the curve, AND the
-    // reduced-motion zeroing, so nothing here has to restate any of the three.
-    expect(classes.trigger).toContain('motion-hover');
-    expect(classes.link).toContain('motion-hover');
-    expect(classes.triggerChevron).toContain('motion-toggle');
-    expect(classes.indicator).toContain('motion-toggle');
+    // The 13 semantic motion tokens are deleted by ruling (2026-08-02); they
+    // kept compiling by accident, which is what let them linger here.
+    for (const value of Object.values(classes)) {
+      expect(value).not.toContain('motion-hover');
+      expect(value).not.toContain('motion-toggle');
+    }
+  });
+
+  it('the trigger hover carries its row: color, fast, standard', () => {
+    // motion.jsonl navigation-menu / trigger / "hover".
+    for (const utility of ['transition-colors', 'duration-fast', 'ease-standard'])
+      expect(classes.trigger).toContain(utility);
+  });
+
+  it('the link hover carries the same row, being the same kind of surface', () => {
+    // The matrix has no separate `link` row; the link's hover is the trigger
+    // row's movement, properties, tier and curve on a second element of the same
+    // component, so it carries that row rather than an invented value.
+    for (const utility of ['transition-colors', 'duration-fast', 'ease-standard'])
+      expect(classes.link).toContain(utility);
+  });
+
+  it('the chevron and indicator move only if a row says so, and none does', () => {
+    // The matrix gives navigation-menu no `chevron` row and no `indicator` row.
+    // The chevron still flips (rotate-180 is mechanics) but is not timed, and
+    // the indicator carries no motion at all. Reported on #2293.
+    expect(classes.triggerChevron).toContain('group-data-[state=open]:rotate-180');
+    expect(classes.triggerChevron).not.toContain('transition');
+    expect(classes.triggerChevron).not.toMatch(/\b(duration|ease)-/);
+    expect(classes.indicator).not.toContain('transition');
+    expect(classes.indicator).not.toMatch(/\b(duration|ease)-/);
+  });
+
+  it('the item-change row is left unconsumed rather than doubled onto the viewport', () => {
+    // #2148 replaced the shared morphing viewport with one panel per item, so
+    // "open -> open (item change)" is panel-A close plus panel-B open -- both
+    // already consumed on `content`. The viewport renders empty and has nothing
+    // whose size could morph.
+    expect(classes.viewport).not.toMatch(/\b(transition|duration|ease|animate)-/);
   });
 });

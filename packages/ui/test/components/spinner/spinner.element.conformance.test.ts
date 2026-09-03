@@ -38,7 +38,7 @@ describe('spinner conformance [wc]', () => {
     const root = shadowRoot(mount());
     expect(root).not.toBeNull();
     expect(root.tagName.toLowerCase()).toBe('output');
-    expect(root.className).toContain('animate-spinner-root-busy');
+    expect(root.className).toContain('animate-spin-spin');
     expect(root.className).not.toContain('motion-reduce:animate-none');
   });
 

@@ -194,6 +194,7 @@ All popup contents scale from the anchor origin.
 | combobox C | items | enter | fade (with content) | -- | -- | delay-stagger-step | -- |
 | combobox C | items | highlight move | color | micro* | standard* | -- | -- |
 | combobox C | items | selected check | swap | micro* | standard* | -- | -- |
+| combobox | chevron | open <-> closed | rotate | moderate* | standard* | -- | structural (180deg) |
 | command C | content | closed -> open | fade | moderate | enter | -- | -- |
 | command C | content | open -> closed | fade | fast | exit | -- | -- |
 | command C | items | enter | fade (with content) | -- | -- | delay-stagger-step | -- |
@@ -254,6 +255,8 @@ All popup contents scale from the anchor origin.
 | slider | thumb | hover | color | fast | standard | -- | -- |
 | slider | thumb | grab | zoom | micro* | spring-snappy* | -- | extent-press |
 | badge | root | hover | color | fast | standard | -- | -- |
+| carousel | control | hover | color | fast* | standard* | -- | -- |
+| carousel | indicator | active change | color | fast* | standard* | -- | -- |
 
 Focus is a system-level cell: one `ring` movement, `micro` / `linear` (baseline),
 shared by every focusable component. It splits per component only when a real brand
@@ -263,6 +266,7 @@ need arrives, not speculatively.
 
 | component | part | transition | movement | duration | curve | delay | extent |
 |---|---|---|---|---|---|---|---|
+| combobox | input | focus | ring | micro* | linear* | -- | -- |
 | input | root | focus | ring | micro | linear | -- | -- |
 | input | root | valid <-> invalid | color | fast* | standard* | -- | -- |
 | textarea | root | focus | ring | micro | linear | -- | -- |

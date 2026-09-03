@@ -17,7 +17,31 @@ describe('switch classes', () => {
     const { root } = classesFor(base);
     expect(root).toContain('rounded-full');
     expect(root).toContain('bg-input');
-    expect(root).toContain('transition-colors');
+    expect(root).toContain('transition-[color,background-color,border-color,scale]');
+  });
+
+  it('the track consumes its colour row and the root press row (#2305)', () => {
+    const { root } = classesFor(base);
+    // track / off <-> on -- color -- duration-moderate, ease-standard
+    expect(root).toContain('duration-moderate');
+    expect(root).toContain('ease-standard');
+    // root / press -- zoom + color -- duration-micro, ease-spring-snappy, extent-press
+    expect(root).toContain('active:extent-press');
+    expect(root).toContain('active:scale-(--rafters-consumed-extent)');
+    expect(root).toContain('active:duration-micro');
+    expect(root).toContain('active:ease-spring-snappy');
+    // The law lives on the token leaves; a component-level escape fights it.
+    expect(root).not.toContain('motion-reduce:');
+  });
+
+  it('the thumb travels as a TRANSITION, never a keyframe (#2305)', () => {
+    const { thumb } = classesFor(base);
+    // thumb / off <-> on -- travel (x) -- duration-moderate, ease-standard.
+    // A keyframe would restart from its own `from` and snap a half-thrown switch.
+    expect(thumb).toContain('duration-moderate');
+    expect(thumb).toContain('ease-standard');
+    expect(thumb).not.toContain('animate-');
+    expect(thumb).not.toContain('motion-reduce:');
   });
 
   it('checked fill and focus ring track the variant, via data-state', () => {

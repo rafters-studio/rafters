@@ -29,21 +29,47 @@ export interface PopoverClassSet {
 // NO motion-reduce:animate-none. The generated utility zeroes animation-duration
 // under prefers-reduced-motion instead (mechanism B). That preserves the
 // keyframe's end state, which animate-none never reaches -- it removes the
-// animation rather than completing it instantly. The two mechanisms never
-// compose either: `animation: none` resets the shorthand and discards the zeroed
-// duration wherever it wins.
+// animation rather than completing it instantly -- AND it still fires
+// animationend, which is what presence releases the unmount on; animate-none
+// fires nothing, so every reduced-motion close would fall through to the
+// backstop timer. The two mechanisms never compose either: `animation: none`
+// resets the shorthand and discards the zeroed duration wherever it wins.
 const contentClasses =
   'z-depth-popover w-72 rounded-md border bg-popover p-4 text-popover-foreground shadow-lg outline-none ' +
-  'data-[state=open]:animate-popover-content-open data-[state=closed]:animate-popover-content-close ' +
+  'data-[state=open]:animate-scale-in-moderate-enter data-[state=closed]:animate-scale-out-fast-exit ' +
   'data-[state=closed]:pointer-events-none';
 
 // The optional in-panel dismiss control. Sized to the touch floor, scaling
 // down through the container query, echoing dialog's close affordance.
+//
+// THE ROW: popover / close button / hover -- fade + color, duration-fast,
+// ease-standard (motion.md:164). It is a TRANSITION, not a keyframe: the control
+// stays put and only its appearance changes, so it is excluded from the cell
+// vocabulary by name (`popover | close button | hover`, EXCLUDED_ROWS
+// .notAPresenceChange in packages/design-tokens/test/motion-cells.test.ts) and
+// consumes the generics directly. `ease-standard` is what this fix adds; the
+// tier was already named and no literal was ever written here.
+//
+// THE COLOR HALF OF THE ROW HAS NO MOMENT ON THIS CONTROL, reported rather than
+// faked: the hover changes opacity alone (opacity-70 -> opacity-100) and no
+// background, text or border colour moves, so there is nothing for a
+// `transition-colors` to drive. Inventing a hover colour to fill the row would
+// be a design decision this issue does not carry. dialog, sheet and drawer carry
+// the identical row on the identical control and have the identical gap.
+//
+// NO component-level reduced-motion escape, and the pre-existing
+// `motion-reduce:transition-none` is REMOVED rather than kept. The generated
+// `duration-*` and `delay-*` utilities zero themselves under
+// prefers-reduced-motion (the exporter's REDUCED_MOTION_ZEROED set,
+// packages/design-tokens/src/exporters/tailwind.ts), so reduced motion is the
+// token sheet's responsibility and never a component-level media query --
+// tooltip.classes.ts states the rule. The escape was redundant, not harmful,
+// which is exactly why it survived this long.
 const closeClasses =
   'absolute right-2 top-2 inline-flex h-11 w-11 items-center justify-center ' +
   '@md:right-4 @md:top-4 @md:h-8 @md:w-8 ' +
   'rounded-sm opacity-70 ring-offset-background cursor-pointer ' +
-  'transition-opacity duration-fast motion-reduce:transition-none hover:opacity-100 ' +
+  'transition-opacity duration-fast ease-standard hover:opacity-100 ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
 
 const closeIconClasses = 'h-5 w-5 @md:h-4 @md:w-4';

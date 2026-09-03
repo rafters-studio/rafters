@@ -10,10 +10,20 @@ export interface SwitchClassSet {
 // data-state flip is what the CSS reads -- so light-DOM markup, the WC, and
 // React all animate identically with no extra class logic (the same technique
 // input uses to style validity off aria-invalid).
+// The root IS the track: the matrix's `switch / track` and `switch / root` rows
+// both land on this one element, and they carry different tiers, so the press row
+// rides `active:` variants over the colour row's base assignment.
+//   switch / track / off <-> on -- color -- duration-moderate, ease-standard
+//   switch / root / press -- zoom + color -- duration-micro, ease-spring-snappy,
+//     extent-press
+// `scale` is named in the transition list because Tailwind v4 writes the
+// individual `scale` property; `transform` would transition nothing.
 const baseTrackClasses =
   'peer inline-flex shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent ' +
   'bg-input ' +
-  'transition-colors duration-200 motion-reduce:transition-none ' +
+  'transition-[color,background-color,border-color,scale] duration-moderate ease-standard ' +
+  'active:extent-press active:scale-(--rafters-consumed-extent) ' +
+  'active:duration-micro active:ease-spring-snappy ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background ' +
   'disabled:cursor-not-allowed disabled:opacity-50';
 
@@ -34,9 +44,17 @@ const trackSizeClasses: Record<SwitchSize, string> = {
   lg: 'h-7 w-14',
 };
 
+// switch / thumb / off <-> on -- travel (x) -- duration-moderate, ease-standard,
+// structural (track minus thumb).
+//
+// A TRANSITION, NOT A KEYFRAME. The thumb stays on screen and moves between two
+// resting positions, so it must interpolate from wherever it currently is; a
+// keyframe would restart from its own `from` and snap a half-thrown switch back
+// to the start. The travel distance stays structural -- the per-size
+// `translate-x-*` below -- which is what the row's `structural` extent means.
 const baseThumbClasses =
   'pointer-events-none block rounded-full bg-background shadow-sm ring-0 translate-x-0 ' +
-  'transition-transform duration-200 motion-reduce:transition-none';
+  'transition-transform duration-moderate ease-standard';
 
 const thumbSizeClasses: Record<SwitchSize, string> = {
   sm: 'h-4 w-4 data-[state=checked]:translate-x-4',

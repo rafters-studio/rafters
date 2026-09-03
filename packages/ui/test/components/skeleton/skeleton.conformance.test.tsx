@@ -41,7 +41,7 @@ describe('skeleton conformance [react]', () => {
     // test suite.
     render(<Skeleton data-testid="s" />);
     const root = body().querySelector('[data-part="root"]') as HTMLElement;
-    expect(root.className).toContain('animate-skeleton-root-waiting');
+    expect(root.className).toContain('animate-pulse-shimmer');
     expect(root.className).not.toContain('motion-reduce:animate-none');
     expect(root.className).toContain('bg-muted');
   });
@@ -87,25 +87,35 @@ describe('skeleton conformance [react]', () => {
       rmSync(fixtureDir, { recursive: true, force: true });
     }
 
-    const cellRule = css.match(/\.animate-skeleton-root-waiting\{([^}]*)\}/)?.[1];
+    const cellRule = css.match(/\.animate-pulse-shimmer\{([^}]*)\}/)?.[1];
     expect(
       cellRule,
-      'animate-skeleton-root-waiting did not compile at all -- the class the component renders has drifted from the cell the exporter names',
+      'animate-pulse-shimmer did not compile at all -- the class the component renders has drifted from the cell the exporter names',
     ).toBeDefined();
-    expect(cellRule).toContain('animation-iteration-count:infinite');
-    expect(cellRule).toMatch(/animation-duration:var\(--rafters-period-shimmer\)/);
+    // The loop is the animation SHORTHAND Tailwind generates from the
+    // `--animate-*` key, so both the period and `infinite` ride inside the key's
+    // value rather than standing as longhand declarations on the rule.
+    expect(cellRule, 'the loop rule is not built on the key').toContain(
+      'animation:var(--animate-pulse-shimmer)',
+    );
+    expect(css, 'the loop key does not run forever on its period leaf').toMatch(
+      /--animate-pulse-shimmer:[^;]*var\(--rafters-period-shimmer\)[^;]*\binfinite\b/,
+    );
 
     const reduced = (
       css.match(/@media\s*\(prefers-reduced-motion:\s*reduce\)\{.*?\}\}/g) ?? []
     ).join('');
+    // THE WITNESS IS THE LAW ITSELF. The reduced-motion rule is written on the
+    // LEAVES now -- one `:root` override zeroing every duration and delay -- so a
+    // sheet carrying it proves the mechanism fired, which is what makes the
+    // exclusion below meaningful.
     expect(
       reduced,
-      'the witness class compiled no reduced-motion block at all -- the exclusion below would prove nothing',
-    ).toContain('motion-modal-in');
-    expect(
-      reduced,
-      'a reduced-motion block zeroed the shimmer cell -- a period-kind cell must carry none',
-    ).not.toContain('animate-skeleton-root-waiting');
+      'no reduced-motion block compiled at all -- the exclusion below would prove nothing',
+    ).toMatch(/--rafters-duration-[a-z]+:\s*0/);
+    expect(reduced, 'the loop period was zeroed -- work loops slow, they never stop').not.toContain(
+      '--rafters-period-shimmer',
+    );
   }, 30000);
 
   it('is a decorative leaf -- no children, no nested parts', () => {
@@ -124,7 +134,7 @@ describe('skeleton conformance [react]', () => {
   it('consumer className merges via classy -- the shadcn sizing surface', () => {
     render(<Skeleton className="h-4 w-48" />);
     const root = body().querySelector('[data-part="root"]') as HTMLElement;
-    expect(root.className).toContain('animate-skeleton-root-waiting');
+    expect(root.className).toContain('animate-pulse-shimmer');
     expect(root.className).toContain('h-4');
     expect(root.className).toContain('w-48');
   });

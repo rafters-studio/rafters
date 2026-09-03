@@ -64,7 +64,23 @@ describe('badge classes', () => {
     expect(classes).toContain('rounded-full');
   });
 
-  it('respects prefers-reduced-motion on the color transition', () => {
-    expect(root()).toContain('motion-reduce:transition-none');
+  // Reduced motion is the token sheet's job, never the component's: the
+  // generated duration-* and delay-* utilities zero themselves under
+  // prefers-reduced-motion (REDUCED_MOTION_ZEROED in the tailwind exporter).
+  // A component-level escape fights that law, so its ABSENCE is the assertion
+  // -- this is the tripwire against reintroducing one.
+  it('adds no component-level reduced-motion escape', () => {
+    expect(root()).not.toContain('motion-reduce:');
+  });
+
+  // `badge / root / hover`: a colour change on a part that stays put, so a
+  // transition named as composed generics -- tier `fast`, curve role
+  // `standard`. The `duration-150` this replaced was a literal.
+  it('the hover colour transition consumes the tier and curve the matrix assigns', () => {
+    const classes = root();
+    expect(classes).toContain('transition-colors');
+    expect(classes).toContain('duration-fast');
+    expect(classes).toContain('ease-standard');
+    expect(classes).not.toMatch(/duration-\d/);
   });
 });

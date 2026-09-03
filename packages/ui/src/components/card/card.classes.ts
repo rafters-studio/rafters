@@ -9,6 +9,19 @@ export interface CardClassSet {
  * Structure the surface always carries: an elevated, bordered, rounded
  * panel. Colour is kept separate so a resolved `fill` can replace the
  * default `bg-card` surface without leaving a competing `bg-*` behind.
+ *
+ * NO MOTION, AND THE ROW SAYS WHY IT IS MISSING RATHER THAN THIS FILE FAKING
+ * ONE. `card / root / hover (when interactive)` in
+ * `packages/ui/docs/spec/matrix/motion.jsonl` assigns tier `fast` and curve
+ * role `standard` (provenance `baseline`) to an elevation change
+ * (`box-shadow`) -- but Card has no interactive variant for that moment to
+ * belong to. `CardConfig` is `as` + `fill`, `CardElement` is
+ * `div | article | section | aside` (never `a` or `button`), and no hover
+ * elevation exists anywhere in the component: the shadow is the constant
+ * `shadow-sm` above. A `transition-shadow duration-fast ease-standard` here
+ * would time a property that never changes -- the same dead emission the
+ * chart-tooltip cells were excluded for. The disagreement between the row and
+ * the component is the finding, reported here and not resolved.
  */
 const cardStructureClasses =
   'flex flex-col gap-6 rounded-xl border border-card-border py-6 shadow-sm';

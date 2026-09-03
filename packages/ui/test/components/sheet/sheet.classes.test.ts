@@ -35,14 +35,51 @@ describe('sheet classes', () => {
     expect(classes.footer).not.toContain('sm:');
   });
 
-  it('motion respects reduced-motion on the only declared transition', () => {
-    expect(classes.close).toContain('motion-reduce:transition-none');
+  it('the overlay consumes its own two cells, keyed off data-state', () => {
+    // motion.jsonl: sheet / overlay / closed -> open is normal + enter, and
+    // open -> closed is moderate + exit. Both rows carry provenance "proposed".
+    expect(classes.overlay).toContain('data-[state=open]:animate-fade-in-normal-enter');
+    expect(classes.overlay).toContain('data-[state=closed]:animate-fade-out-moderate-exit');
   });
 
-  it('drops the oracle slide utilities and its raw slide durations (motion tokens pending)', () => {
+  it('the content consumes the fade half of its rows on every side', () => {
+    // motion.jsonl: sheet / content / closed -> open is normal + spring-smooth,
+    // open -> closed is moderate + exit. Both declare `slide (per side) + fade`;
+    // only the fade half is nameable, because the keyframe vocabulary has no
+    // side-agnostic slide shape. The fade is side-independent, so it holds for
+    // all four placements.
+    for (const side of ['top', 'right', 'bottom', 'left'] as const) {
+      const composed = sheetContentClasses(side);
+      expect(composed).toContain('data-[state=open]:animate-fade-in-normal-spring-smooth');
+      expect(composed).toContain('data-[state=closed]:animate-fade-out-moderate-exit');
+    }
+  });
+
+  it('the close button names the curve its row assigns, not just the tier', () => {
+    // motion.jsonl: sheet / close button / hover is fast + standard.
+    expect(classes.close).toContain('duration-fast');
+    expect(classes.close).toContain('ease-standard');
+    expect(classes.close).not.toMatch(/\bduration-\d/);
+  });
+
+  it('reduced motion is not fought with animate-none on any animated part', () => {
+    expect(classes.overlay).not.toContain('motion-reduce:animate-none');
+    expect(sheetContentClasses('right')).not.toContain('motion-reduce:animate-none');
+    // NO COMPONENT-LEVEL ESCAPE. Reduced motion is the token sheet's
+    // responsibility, never a component-level media query (tooltip.classes.ts
+    // states the law). The leaf-level block zeroes every duration and delay
+    // leaf, so this transition is already 0 under reduce and the escape was
+    // redundant. Asserted as ABSENT rather than deleted, so reintroducing one
+    // fails here.
+    expect(classes.close).not.toContain('motion-reduce:');
+  });
+
+  it('drops the oracle slide utilities and its raw slide durations', () => {
     // The overlay and the per-side content carry the motion the oracle animated;
     // the close button's duration-fast is a hover acknowledgment (Spec 04 keeps
-    // those), so it is excluded from this scan.
+    // those), so it is excluded from this scan. The slide utilities stay absent
+    // because no slide keyframe exists to replace them, not because motion is
+    // still pending -- the fade half of both content rows is consumed above.
     const motionSurfaces = `${classes.overlay} ${sheetContentClasses('right')}`;
     expect(motionSurfaces).not.toContain('animate-in');
     expect(motionSurfaces).not.toContain('animate-out');

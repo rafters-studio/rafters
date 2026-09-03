@@ -32,13 +32,23 @@ describe('input-otp classes', () => {
     // Migrated off the stock animate-pulse onto the caret's own cell utility;
     // motion-reduce:animate-none is removed, not replaced, so the caret
     // continues marking the active slot under prefers-reduced-motion.
-    expect(classes.caretBar).toContain('animate-input-otp-caret-idle');
+    expect(classes.caretBar).toContain('animate-caret-blink-blink');
     expect(classes.caretBar).not.toContain('animate-pulse');
     expect(classes.caretBar).not.toContain('motion-reduce:animate-none');
   });
 
-  it('slot motion respects reduced motion', () => {
-    expect(classes.slot).toContain('motion-reduce:transition-none');
+  it('the slot consumes both its rows: focus is linear, the advance is standard (#2290)', () => {
+    // slot / focus -- ring -- duration-micro, ease-linear
+    expect(classes.slot).toContain('transition-[box-shadow,border-color,color]');
+    expect(classes.slot).toContain('duration-micro');
+    expect(classes.slot).toContain('ease-linear');
+    // active slot / advance -- swap -- duration-micro, ease-standard. The active
+    // ring is both the focus indication and the advance marker, so the two rows
+    // share a tier and split only on curve.
+    expect(classes.slot).toContain('data-[active=true]:ease-standard');
+    // The reduced-motion law is written once on the token leaves.
+    expect(classes.slot).not.toContain('motion-reduce:');
+    expect(classes.slot).not.toContain('transition-all');
   });
 
   it('the separator is muted, not a foreground element', () => {

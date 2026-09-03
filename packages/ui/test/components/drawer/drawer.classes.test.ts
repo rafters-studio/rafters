@@ -34,11 +34,44 @@ describe('drawer classes', () => {
     expect(classesFor().content).not.toContain('bg-white');
   });
 
-  it('declares no raw numeric enter/exit motion (motion-sheet-in is pending)', () => {
+  it('the content declares no enter/exit motion, because no slide shape exists', () => {
+    // motion.jsonl assigns drawer / content / closed -> open (normal,
+    // spring-smooth) and open -> closed (moderate, exit), both `slide (y)` over
+    // `transform: translate` alone. The keyframe vocabulary has no slide shape,
+    // and unlike sheet these rows declare no fade half, so there is nothing to
+    // name. An approximated shape would be geometry nobody chose.
     const classes = classesFor();
     expect(classes.content).not.toContain('animate-in');
     expect(classes.content).not.toMatch(/duration-\d/);
     expect(classes.content).not.toContain('slide-in');
+    expect(classes.content).not.toContain('animate-');
+  });
+
+  it('the content carries no settle transition, because it never settles', () => {
+    // motion.jsonl assigns drawer / content / settle on release (fast,
+    // spring-smooth, provenance "proposed"). That row is nameable as composed
+    // generics, but the drag-to-dismiss gesture is deferred and the handle is
+    // decorative, so the panel never travels to a snap point. A settle
+    // transition on a panel that never settles would animate nothing.
+    const classes = classesFor();
+    expect(classes.content).not.toContain('ease-spring-smooth');
+    expect(classes.content).not.toContain('duration-fast');
+  });
+
+  it('the overlay consumes its own two cells, keyed off data-state', () => {
+    // motion.jsonl: drawer / overlay / closed -> open is normal + enter, and
+    // open -> closed is moderate + exit. Both carry provenance "proposed".
+    const classes = classesFor();
+    expect(classes.overlay).toContain('data-[state=open]:animate-fade-in-normal-enter');
+    expect(classes.overlay).toContain('data-[state=closed]:animate-fade-out-moderate-exit');
+  });
+
+  it('the close button names the curve its row assigns, not just the tier', () => {
+    // motion.jsonl: drawer / close button / hover is fast + standard.
+    const classes = classesFor();
+    expect(classes.close).toContain('duration-fast');
+    expect(classes.close).toContain('ease-standard');
+    expect(classes.close).not.toMatch(/\bduration-\d/);
   });
 
   it('the grab handle is a decorative token-filled affordance', () => {
@@ -62,7 +95,14 @@ describe('drawer classes', () => {
     expect(classes.footer).not.toContain('sm:');
   });
 
-  it('motion respects reduced-motion', () => {
-    expect(classesFor().close).toContain('motion-reduce:transition-none');
+  it('motion respects reduced-motion, and does NOT do it with animate-none', () => {
+    // NO COMPONENT-LEVEL ESCAPE. Reduced motion is the token sheet's
+    // responsibility, never a component-level media query (tooltip.classes.ts
+    // states the law). The leaf-level block zeroes every duration and delay
+    // leaf, so this transition is already 0 under reduce and the escape was
+    // redundant. Asserted as ABSENT rather than deleted, so reintroducing one
+    // fails here.
+    expect(classesFor().close).not.toContain('motion-reduce:');
+    expect(classesFor().overlay).not.toContain('motion-reduce:animate-none');
   });
 });

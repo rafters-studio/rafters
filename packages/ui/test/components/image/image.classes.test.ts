@@ -6,6 +6,7 @@ import {
   imageErrorClasses,
   imageFrameClasses,
   imageImgClasses,
+  imageLoadedClasses,
   imageLoadingClasses,
   imageRadiusClasses,
   imageSizeClasses,
@@ -46,7 +47,27 @@ describe('image classes', () => {
   });
 
   it('the img fills the frame in block flow', () => {
-    expect(imageClasses({}, {}).img).toBe(imageImgClasses);
+    expect(imageClasses({}, {}).img).toContain(imageImgClasses);
+  });
+
+  // `image / img / load` in packages/ui/docs/spec/matrix/motion.jsonl: fade,
+  // tier `moderate`, curve role `enter`. The fade lands the instant status
+  // resolves to `loaded` -- on first render for a clean image, and on the load
+  // event that clears a loading or error overlay.
+  it('the img consumes the load fade the matrix assigns once status is loaded', () => {
+    expect(imageClasses({}, {}).img).toContain(imageLoadedClasses);
+    expect(imageClasses({ status: 'loaded' }, {}).img).toContain(imageLoadedClasses);
+  });
+
+  it('the img carries no load fade while an overlay covers it', () => {
+    expect(imageClasses({ status: 'loading' }, {}).img).toBe(imageImgClasses);
+    expect(imageClasses({ status: 'error' }, {}).img).toBe(imageImgClasses);
+  });
+
+  it('the load fade names no literal timing and no reduced-motion escape', () => {
+    expect(imageLoadedClasses).toBe('animate-fade-in-moderate-enter');
+    expect(imageLoadedClasses).not.toMatch(/duration-\d/);
+    expect(imageLoadedClasses).not.toContain('motion-reduce:');
   });
 
   it('the overlay carries the loading surface while loading', () => {

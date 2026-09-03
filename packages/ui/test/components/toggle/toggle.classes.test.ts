@@ -38,10 +38,20 @@ describe('toggle classes', () => {
     expect(classes.root).not.toContain('pointer-events-none');
   });
 
-  it('motion is transition-colors with a reduced-motion guard', () => {
+  it('motion is the state row and the press row, composed as generics (#2309)', () => {
     const classes = classesFor(base);
-    expect(classes.root).toContain('transition-colors');
-    expect(classes.root).toContain('motion-reduce:transition-none');
+    // root / off <-> on -- color -- duration-moderate, ease-standard
+    expect(classes.root).toContain('transition-[color,background-color,border-color,scale]');
+    expect(classes.root).toContain('duration-moderate');
+    expect(classes.root).toContain('ease-standard');
+    // root / press -- zoom + color -- duration-micro, ease-spring-snappy, extent-press
+    expect(classes.root).toContain('active:extent-press');
+    expect(classes.root).toContain('active:scale-(--rafters-consumed-extent)');
+    expect(classes.root).toContain('active:duration-micro');
+    expect(classes.root).toContain('active:ease-spring-snappy');
+    // The reduced-motion law lives on the token leaves; a component-level escape
+    // fights it, so there is no guard here to find.
+    expect(classes.root).not.toContain('motion-reduce:');
   });
 
   it('toggleVariants matches the root projection', () => {

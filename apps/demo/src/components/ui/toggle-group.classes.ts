@@ -16,12 +16,27 @@ const rootBaseClasses = 'inline-flex items-center justify-center gap-1 rounded-l
 const rootDefaultVariantClasses = 'bg-muted p-1';
 const rootVerticalClasses = 'flex-col';
 
+// Two rows on one element, carrying different tiers, so the press row rides
+// `active:` variants over the state row's base assignment.
+//   toggle-group / item / off <-> on -- color -- duration-moderate, ease-standard
+//   toggle-group / item / press -- zoom + color -- duration-micro,
+//     ease-spring-snappy, extent-press
+//
+// `active:scale-[0.98]` is gone: the press extent is `extent-press`, a token
+// leaf Studio retunes, not a number typed here.
+//
+// BOX-SHADOW IS DELIBERATELY OUT OF THE TRANSITION LIST. The default variant's
+// `data-[state=on]:shadow-sm` is an elevation change, and toggle-group has no
+// elevation row in the matrix -- only button and card do. `transition-all` used
+// to time it by accident; naming the properties makes the shadow snap, which is
+// what a moment with no row is supposed to do. Reported rather than faked.
 const itemBaseClasses =
   'inline-flex items-center justify-center ' +
   'rounded-md ' +
   'text-label-large ts-label-large ' +
-  'transition-all duration-200 motion-reduce:transition-none ' +
-  'active:scale-[0.98] ' +
+  'transition-[color,background-color,border-color,scale] duration-moderate ease-standard ' +
+  'active:extent-press active:scale-(--rafters-consumed-extent) ' +
+  'active:duration-micro active:ease-spring-snappy ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ' +
   'disabled:pointer-events-none disabled:opacity-50 ' +
   'hover:bg-muted hover:text-muted-foreground';

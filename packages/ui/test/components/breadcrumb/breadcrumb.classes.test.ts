@@ -21,9 +21,23 @@ describe('breadcrumb classes', () => {
 
   it('the link carries the sole motion intent (hover colour) plus a focus ring', () => {
     expect(breadcrumbLinkClasses).toContain('transition-colors');
-    expect(breadcrumbLinkClasses).toContain('motion-reduce:transition-none');
+    // Reduced motion is the token sheet's job, never the component's: the
+    // generated duration-*/delay-* utilities zero themselves under
+    // prefers-reduced-motion (REDUCED_MOTION_ZEROED in the tailwind
+    // exporter). Its ABSENCE is the assertion -- the tripwire against
+    // reintroducing a component-level escape.
+    expect(breadcrumbLinkClasses).not.toContain('motion-reduce:');
     expect(breadcrumbLinkClasses).toContain('hover:text-foreground');
     expect(breadcrumbLinkClasses).toContain('focus-visible:ring-2');
+  });
+
+  // `breadcrumb / link / hover`: a colour change on a link that stays put, so
+  // a transition named as composed generics -- tier `fast`, curve role
+  // `standard`, no literal timing.
+  it('the link hover consumes the tier and curve the matrix assigns', () => {
+    expect(breadcrumbLinkClasses).toContain('duration-fast');
+    expect(breadcrumbLinkClasses).toContain('ease-standard');
+    expect(breadcrumbLinkClasses).not.toMatch(/duration-\d/);
   });
 
   it('the current page reads with the foreground token, not muted', () => {

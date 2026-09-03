@@ -13,7 +13,19 @@ describe('embed classes', () => {
   });
 
   it('the iframe fills the aspect-ratio container', () => {
-    expect(embedIframeClasses).toBe('absolute inset-0 h-full w-full border-0');
+    expect(embedIframeClasses).toBe(
+      'absolute inset-0 h-full w-full border-0 animate-fade-in-moderate-enter',
+    );
+  });
+
+  // `embed / frame / load` in packages/ui/docs/spec/matrix/motion.jsonl: fade,
+  // tier `moderate`, curve role `enter`. The iframe mounts only once the URL
+  // resolves, so the load moment is its first paint and the cell utility rides
+  // the part unconditionally -- no literal timing, no motion-reduce escape.
+  it('the iframe consumes the load fade the matrix assigns', () => {
+    expect(embedIframeClasses).toContain('animate-fade-in-moderate-enter');
+    expect(embedIframeClasses).not.toMatch(/duration-\d/);
+    expect(embedIframeClasses).not.toContain('motion-reduce:');
   });
 
   it('the fallback is a dashed, centered recovery panel', () => {

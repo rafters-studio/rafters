@@ -26,8 +26,19 @@ const itemFocusClasses =
   'focus-visible:bg-accent focus-visible:text-accent-foreground ' +
   'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1';
 
-/** Colour transition, honoured only when the user allows motion. */
-const itemMotionClasses = 'transition-colors duration-150 motion-reduce:transition-none';
+/**
+ * `item / root / hover` in `packages/ui/docs/spec/matrix/motion.jsonl` assigns
+ * tier `fast` and curve role `standard` (provenance `baseline`) to a colour
+ * change (`background, text, border`) on a part that stays put -- a
+ * TRANSITION, named as composed generics. `ease-standard` was the half of the
+ * row this file had not yet named; the timing carries no literal.
+ *
+ * NO component-level reduced-motion escape. The generated `duration-*` and
+ * `delay-*` utilities zero themselves under `prefers-reduced-motion` (the
+ * exporter's `REDUCED_MOTION_ZEROED` set), so reduced motion is the token
+ * sheet's responsibility and never a component-level media query.
+ */
+const itemMotionClasses = 'transition-colors duration-fast ease-standard';
 
 /** Size variants: padding + the semantic typography role token per scale. */
 export const itemSizeClasses: Record<ItemSize, string> = {

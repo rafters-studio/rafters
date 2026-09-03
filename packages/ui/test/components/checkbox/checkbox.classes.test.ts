@@ -41,11 +41,51 @@ describe('checkbox classes', () => {
     expect(root).toContain('data-[disabled]:opacity-50');
   });
 
-  it('state-swap: each glyph is hidden until its data-state (only one shows at a time)', () => {
+  it('state-swap: each glyph recedes until its data-state (only one shows at a time)', () => {
     const classes = classesFor({});
-    expect(classes.check).toContain('hidden');
-    expect(classes.check).toContain('group-data-[state=checked]:block');
-    expect(classes.dash).toContain('hidden');
-    expect(classes.dash).toContain('group-data-[state=indeterminate]:block');
+    // Opacity + scale, never `hidden`/`block`: `display` cannot transition, and
+    // the indicator row assigns a duration, a curve and an extent (#2276).
+    for (const glyph of [classes.check, classes.dash]) {
+      expect(glyph).toContain('opacity-0');
+      expect(glyph).toContain('scale-0');
+      expect(glyph.split(/\s+/)).not.toContain('hidden');
+    }
+    expect(classes.check).toContain('group-data-[state=checked]:opacity-100');
+    expect(classes.dash).toContain('group-data-[state=indeterminate]:opacity-100');
+    // Stacked in one grid cell, so both being painted costs no layout.
+    expect(classes.check).toContain('col-start-1 row-start-1');
+    expect(classes.dash).toContain('col-start-1 row-start-1');
+    expect(classesFor({}).root).toContain('inline-grid');
+  });
+
+  it('the root consumes its colour row and its press row (#2276)', () => {
+    const root = classesFor({}).root;
+    // root / unchecked <-> checked -- color -- duration-moderate, ease-standard
+    expect(root).toContain('duration-moderate');
+    expect(root).toContain('ease-standard');
+    // root / press -- zoom + color -- duration-micro, ease-spring-snappy, extent-press
+    expect(root).toContain('active:extent-press');
+    expect(root).toContain('active:scale-(--rafters-consumed-extent)');
+    expect(root).toContain('active:duration-micro');
+    expect(root).toContain('active:ease-spring-snappy');
+    // `scale` and not `transform`: Tailwind v4 writes the individual property.
+    expect(root).toContain('transition-[color,background-color,border-color,scale]');
+    // The law lives on the token leaves; a component-level escape fights it.
+    expect(root).not.toContain('motion-reduce:');
+  });
+
+  it('the indicator consumes its swap row and the check-sequence delay (#2276)', () => {
+    const classes = classesFor({});
+    for (const glyph of [classes.check, classes.dash]) {
+      // indicator / unchecked <-> checked -- duration-fast, ease-standard, extent-draw
+      expect(glyph).toContain('transition-[opacity,scale]');
+      expect(glyph).toContain('duration-fast');
+      expect(glyph).toContain('ease-standard');
+      expect(glyph).toContain('extent-draw');
+      expect(glyph).toContain('scale-(--rafters-consumed-extent)');
+      // root/indicator / check sequence -- delay-choreo-step, on the way IN only.
+      expect(glyph).toContain('delay-choreo-step');
+      expect(glyph).not.toContain('motion-reduce:');
+    }
   });
 });

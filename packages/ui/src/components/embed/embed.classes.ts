@@ -16,8 +16,27 @@ export const embedContainerClasses = 'relative overflow-hidden rounded-lg bg-mut
 
 /**
  * Iframe positioning: absolutely filling the aspect-ratio container.
+ *
+ * THE CELL IS THE SPEC. `animate-fade-in-moderate-enter` is the generated
+ * consumption of `embed / frame / load` in
+ * `packages/ui/docs/spec/matrix/motion.jsonl` -- keyframe `fade-in`, tier
+ * `moderate`, curve role `enter`. A load is an arrival, so it is a keyframe,
+ * not a transition, and it names no literal duration or easing.
+ *
+ * KEYED OFF THE MOUNT: the iframe renders only once the resolver accepts the
+ * URL, so its first paint is the load moment and no state attribute is
+ * involved.
+ *
+ * PART-NAME GAP, reported not resolved: the row names the part `frame`, and
+ * Embed's part vocabulary (`EmbedPart`) is `'root'` alone -- the element that
+ * loads is this iframe, and the surrounding `embedContainerClasses` box is the
+ * static aspect-ratio frame. The motion goes on the loading element; the
+ * matrix and the score disagree about what to call it.
+ *
+ * The row is marked `proposed` -- a starting position, never reviewed.
  */
-export const embedIframeClasses = 'absolute inset-0 h-full w-full border-0';
+export const embedIframeClasses =
+  'absolute inset-0 h-full w-full border-0 animate-fade-in-moderate-enter';
 
 /**
  * Fallback container shown for missing, disallowed, or unresolvable URLs.

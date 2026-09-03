@@ -26,22 +26,27 @@ const listClasses = 'group flex flex-1 list-none items-center justify-center gap
 // style: `relative` is still the only declaration the item makes.
 const itemClasses = 'relative group/navigation-item';
 
-// `motion-hover` is the generated semantic utility for the interactive-surface
-// hover cell (color, fast, standard) -- motion.jsonl's navigation-menu /
-// trigger / "hover" row, verbatim, instead of a hand-written transition-colors
-// pair with a literal duration and a component-level reduced-motion escape.
+// motion.jsonl `navigation-menu / trigger / hover` -- color (background, text,
+// border), fast, standard. Composed generics on a transition. Replaces
+// `motion-hover`, one of the 13 semantic motion tokens deleted by ruling
+// (2026-08-02) that kept compiling by accident.
 const triggerClasses =
   'group inline-flex h-11 @md:h-10 w-max items-center justify-center rounded-md ' +
   'bg-background px-4 py-2 text-label-medium ts-label-medium cursor-pointer ' +
-  'motion-hover ' +
+  'transition-colors duration-fast ease-standard ' +
   'hover:bg-accent hover:text-accent-foreground ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ' +
   'disabled:opacity-50 disabled:cursor-not-allowed ' +
   'data-[state=open]:bg-accent-subtle';
 
-// The chevron turns with the panel it announces, so it takes the panel's own
-// item-change tier through `motion-toggle` (transform, moderate, standard).
-const triggerChevronClasses = 'ml-1 h-3 w-3 motion-toggle group-data-[state=open]:rotate-180';
+// NO ROW. The matrix gives accordion and select a `chevron / open <-> closed`
+// rotate row; navigation-menu has none, so the flip is instant. `motion-toggle`
+// used to sit here, borrowing the panel's item-change tier on the reasoning that
+// "the chevron turns with the panel it announces" -- which is deriving an
+// assignment nobody made, on top of a retired token. A moment with no row does
+// not move (docs/MOTION.md:150). Reported on #2293: if the chevron should turn,
+// motion.jsonl needs the row.
+const triggerChevronClasses = 'ml-1 h-3 w-3 group-data-[state=open]:rotate-180';
 
 // MOTION IS CSS AND TOKENS ONLY (#2148). The hover-intent delay that used to be
 // a JavaScript timer reading the `hover-intent` delay token through the DOM is
@@ -51,7 +56,18 @@ const triggerChevronClasses = 'ml-1 h-3 w-3 motion-toggle group-data-[state=open
 // THE CELL IS THE SPEC. These utilities are the consumption of two rows of
 // packages/ui/docs/spec/matrix/motion.jsonl -- navigation-menu / panel /
 // "closed -> open" (moderate, enter, delay hover-intent) and navigation-menu /
-// panel / "open -> closed" (fast, exit, NO delay). The old
+// panel / "open -> closed" (fast, exit, NO delay).
+//
+// PARTIAL: both rows name the movement `fade + zoom`, and only the FADE runs
+// here. The zoom half would need a scale on a reveal that has to work with
+// JavaScript disabled, and the rows' `extent-pop` is carried by the scale-in /
+// scale-out KEYFRAMES rather than named by a class -- so on a transition path
+// there is nothing to attach it to, and nothing here should name it. The
+// generator still emits `navigation-menu-panel-open`/`-close` as scale cells;
+// they go unreferenced because this panel consumes its presence as a transition.
+// Reported on #2293.
+//
+// The old
 // `createMenuHoverIntent` reused the hover-intent delay for its CLOSE timer as
 // well; that was drift against the matrix, and the close is now immediate --
 // still animated over the fast/exit cell, just not held back.
@@ -114,9 +130,13 @@ const contentClasses =
   'data-[dismissed=true]:opacity-0! ' +
   'data-[dismissed=true]:pointer-events-none!';
 
+// The link is a second interactive surface inside the same component, and its
+// hover is the same movement, properties, tier and curve the `trigger / hover`
+// row assigns -- so it carries that row rather than a value invented for it. The
+// matrix has no separate `link` row; reported on #2293.
 const linkClasses =
   'block select-none space-y-1 rounded-md p-3 no-underline outline-none ' +
-  'motion-hover ' +
+  'transition-colors duration-fast ease-standard ' +
   'hover:bg-accent hover:text-accent-foreground ' +
   'active:bg-muted active:text-foreground ' +
   'focus-visible:bg-accent focus-visible:text-accent-foreground ' +
@@ -125,15 +145,34 @@ const linkClasses =
 
 const viewportWrapperClasses = 'absolute left-0 top-full';
 
+// NO DISTINCT MOMENT for motion.jsonl `navigation-menu / panel / open -> open
+// (item change)` (crossfade + size morph, moderate*, standard*, extent
+// structural (panel delta), and an EMPTY `properties` list).
+//
+// That row describes shadcn's shared viewport: one surface that stays put and
+// morphs between panel sizes while the open item changes. #2148 replaced that
+// architecture with one panel per item, absolutely positioned flush under its
+// own item -- so an item change IS panel-A's `open -> closed` plus panel-B's
+// `closed -> open`, both already consumed on `contentClasses` above. The
+// viewport survives only as the shadcn-compatible surface: no panel portals
+// into it (navigation-menu.tsx:417-426 renders it with no content of its own,
+// and the Astro performance has no viewport at all), so nothing it holds has a
+// size that could morph.
+//
+// Consuming the row a second time here would be one row driving two moments --
+// the vocabulary drift the animation-key dedup exists to prevent. Reported on
+// #2293 rather than resolved: the row and the component disagree about whether
+// this moment exists, and that disagreement belongs to the matrix.
 const viewportClasses =
   'h-min w-full overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-lg';
 
-// The indicator slides between items as the open panel changes, which is
-// motion.jsonl's navigation-menu / panel / "open -> open (item change)" cell
-// (moderate, standard) -- `motion-toggle`, the generated utility for exactly
-// that tier and curve.
+// NO ROW. The indicator is a marker that mounts while some panel is open and
+// unmounts when none is (navigation-menu.tsx:437-452); nothing computes a
+// position for it, so there is no travel to time. It carried `motion-toggle`
+// (retired) on the claim that it consumed the item-change row -- see the
+// viewport note above for why that row has no moment here. Reported on #2293.
 const indicatorClasses =
-  'absolute bottom-0 z-10 flex h-2.5 items-end justify-center overflow-hidden motion-toggle';
+  'absolute bottom-0 z-10 flex h-2.5 items-end justify-center overflow-hidden';
 
 const indicatorArrowClasses = 'top-full h-2 w-2 rotate-45 rounded-tl-sm bg-border shadow-md';
 

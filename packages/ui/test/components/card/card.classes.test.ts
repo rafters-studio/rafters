@@ -105,4 +105,16 @@ describe('card classes', () => {
   it('container queries stay OUT -- Tier B, tracked separately', () => {
     expect(cardHeaderClasses).not.toContain('@container');
   });
+
+  // `card / root / hover (when interactive)` assigns tier `fast` and curve
+  // role `standard` to an elevation change, but Card has no interactive
+  // variant: no `a`/`button` element, no interactive prop, and a constant
+  // `shadow-sm`. Timing a property that never changes would be a dead
+  // emission, so the row is reported in the classes file instead.
+  it('the root carries no elevation transition, matching the moment it lacks', () => {
+    const classes = root({});
+    expect(classes).toContain('shadow-sm');
+    expect(classes).not.toContain('hover:shadow');
+    expect(classes).not.toContain('duration-');
+  });
 });

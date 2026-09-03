@@ -17,8 +17,9 @@ import {
  * zero drift.
  *
  * Fill, not background: the frame's placeholder resolves through fill-resolver
- * (a role token or gradient), never a raw colour utility. Motion is none --
- * the overlay is a static token surface, no spinner, no transition.
+ * (a role token or gradient), never a raw colour utility. The overlay itself is
+ * a static token surface -- no spinner, no transition; the matrix gives Image
+ * one animated moment, the img's load fade, and it lives on the img part.
  */
 
 /** Size preset to token-based max-width. */
@@ -62,6 +63,25 @@ export const imageFrameClasses = 'relative overflow-hidden';
 /** The inner image element -- block flow, fills the frame width. */
 export const imageImgClasses = 'block w-full h-auto';
 
+/**
+ * THE CELL IS THE SPEC. `animate-fade-in-moderate-enter` is the generated
+ * consumption of `image / img / load` in
+ * `packages/ui/docs/spec/matrix/motion.jsonl` -- keyframe `fade-in`, tier
+ * `moderate`, curve role `enter`. A load is an arrival, so it is a keyframe,
+ * not a transition, and it carries no literal duration or easing.
+ *
+ * KEYED OFF THE STATUS, which is the only place the load moment is legible:
+ * the img stays mounted under the status overlay while `loading`, so a mount
+ * animation would run behind the overlay instead of at the moment the image
+ * arrives. `imageClasses` adds this the instant status resolves to `loaded`
+ * -- on first render for the default clean image, and on the load event that
+ * clears a `loading` or `error` overlay. All three performances route their
+ * img className through `imageClasses`, so the moment is identical in each.
+ *
+ * The row is marked `proposed` -- a starting position, never reviewed.
+ */
+export const imageLoadedClasses = 'animate-fade-in-moderate-enter';
+
 /** The optional caption below the frame. */
 export const imageCaptionClasses = 'mt-2 text-center text-sm text-muted-foreground';
 
@@ -86,7 +106,7 @@ export interface ImageClassSet {
 export function imageClasses(config: ImageConfig, _state: ImageState): ImageClassSet {
   const alignment = config.alignment ?? 'center';
   const radius = config.radius ?? 'lg';
-  const { isError } = resolveImage(config);
+  const { isError, hasOverlay } = resolveImage(config);
 
   const root = [
     imageBaseClasses,
@@ -108,5 +128,8 @@ export function imageClasses(config: ImageConfig, _state: ImageState): ImageClas
     .filter(Boolean)
     .join(' ');
 
-  return { root, frame, img: imageImgClasses, status, caption: imageCaptionClasses };
+  // `hasOverlay` is false exactly when status is `loaded` -- the load moment.
+  const img = hasOverlay ? imageImgClasses : `${imageImgClasses} ${imageLoadedClasses}`;
+
+  return { root, frame, img, status, caption: imageCaptionClasses };
 }
