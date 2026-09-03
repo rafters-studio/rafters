@@ -80,6 +80,11 @@ interface SheetContextValue {
   getPart: (part: string) => HTMLElement | null;
   config: SheetConfig;
   effectiveOpen: boolean;
+  /** Presence, held at the PROVIDER. Every part gates on this, never on
+   *  `effectiveOpen`: the portal is the content's ancestor, so a portal that
+   *  unmounts on the raw flag takes the content's own exit with it. */
+  present: boolean;
+  presenceRef: (node: HTMLElement | null) => void;
   classes: SheetClassSet;
   dismissVetoRef: React.RefObject<DismissVetoCallbacks | null>;
 }
@@ -202,6 +207,11 @@ export function Sheet({
 
   const aria = sheet.aria(state, config, ids);
 
+  // Presence, at the provider. `data-state` is NOT set from here --
+  // disclosable already contributes it from the same value that feeds
+  // presence. One attribute, one writer.
+  const { present, ref: presenceRef } = usePresence(effectiveOpen);
+
   const contextValue: SheetContextValue = {
     state,
     ids,
@@ -211,6 +221,8 @@ export function Sheet({
     getPart,
     config,
     effectiveOpen,
+    present,
+    presenceRef,
     classes: sheetClasses(config, state),
     dismissVetoRef,
   };
@@ -226,8 +238,8 @@ export interface SheetPortalProps {
 }
 
 export function SheetPortal({ children, container, forceMount }: SheetPortalProps) {
-  const { effectiveOpen } = useSheetContext('SheetPortal');
-  if (!(forceMount || effectiveOpen)) return null;
+  const { present } = useSheetContext('SheetPortal');
+  if (!(forceMount || present)) return null;
   if (typeof document === 'undefined') return null;
   return createPortal(
     <SheetPortalContext.Provider value={true}>{children}</SheetPortalContext.Provider>,
@@ -240,15 +252,18 @@ export interface SheetOverlayProps extends React.HTMLAttributes<HTMLDivElement> 
 }
 
 export function SheetOverlay({ forceMount, className, ...props }: SheetOverlayProps) {
-  const { effectiveOpen, ids, aria, classes, setPart } = useSheetContext('SheetOverlay');
-  if (!(forceMount || effectiveOpen)) return null;
+  const { effectiveOpen, present, ids, aria, classes, setPart } = useSheetContext('SheetOverlay');
+  if (!(forceMount || present)) return null;
   return (
     <div
       data-part="overlay"
       id={ids.overlay || undefined}
       ref={setPart('overlay')}
       // A force-mounted closed overlay must not cover the page.
-      hidden={effectiveOpen ? undefined : true}
+      // `hidden` is `display: none`, which blocks animation outright, so an
+      // overlay that is closed and STILL PRESENT is mid-exit and has to stay
+      // paintable for its own fade to run.
+      hidden={effectiveOpen || present ? undefined : true}
       className={classy(classes.overlay, className)}
       {...aria.overlay}
       {...props}
@@ -318,12 +333,21 @@ export function SheetContent({
   onKeyDown,
   ...props
 }: SheetContentProps) {
-  const { config, state, effectiveOpen, ids, aria, classes, request, setPart, dismissVetoRef } =
-    useSheetContext('SheetContent');
+  const {
+    config,
+    state,
+    present,
+    presenceRef,
+    ids,
+    aria,
+    classes,
+    request,
+    setPart,
+    dismissVetoRef,
+  } = useSheetContext('SheetContent');
   const isInsidePortal = React.useContext(SheetPortalContext);
   // Presence (wave 0-B): keep the content mounted through its exit animation.
   // With no exit animation it releases immediately, so behavior is unchanged.
-  const { present, ref: presenceRef } = usePresence(effectiveOpen);
 
   React.useEffect(() => {
     dismissVetoRef.current = { onPointerDownOutside, onInteractOutside };

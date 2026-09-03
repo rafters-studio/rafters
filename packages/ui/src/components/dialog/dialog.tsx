@@ -78,6 +78,11 @@ interface DialogContextValue {
   getPart: (part: string) => HTMLElement | null;
   config: DialogConfig;
   effectiveOpen: boolean;
+  /** Presence, held at the PROVIDER. Every part gates on this, never on
+   *  `effectiveOpen`: the portal is the content's ancestor, so a portal that
+   *  unmounts on the raw flag takes the content's own exit with it. */
+  present: boolean;
+  presenceRef: (node: HTMLElement | null) => void;
   classes: DialogClassSet;
   dismissVetoRef: React.RefObject<DismissVetoCallbacks | null>;
 }
@@ -199,6 +204,11 @@ export function Dialog({
 
   const aria = dialog.aria(state, config, ids);
 
+  // Presence, at the provider. `data-state` is NOT set from here -- disclosable
+  // already contributes it through `aria.content`, from the same value that
+  // feeds presence. One attribute, one writer.
+  const { present, ref: presenceRef } = usePresence(effectiveOpen);
+
   const contextValue: DialogContextValue = {
     state,
     ids,
@@ -208,6 +218,8 @@ export function Dialog({
     getPart,
     config,
     effectiveOpen,
+    present,
+    presenceRef,
     classes: dialogClasses(config, state),
     dismissVetoRef,
   };
@@ -223,8 +235,11 @@ export interface DialogPortalProps {
 }
 
 export function DialogPortal({ children, container, forceMount }: DialogPortalProps) {
-  const { effectiveOpen } = useDialogContext('DialogPortal');
-  if (!(forceMount || effectiveOpen)) return null;
+  // THE HELD VALUE, not the raw flag. This is the gate that used to defeat
+  // presence: the portal is the content's ancestor, so unmounting here on the
+  // tick the flag flips removed the content before its exit could run.
+  const { present } = useDialogContext('DialogPortal');
+  if (!(forceMount || present)) return null;
   if (typeof document === 'undefined') return null;
   return createPortal(
     <DialogPortalContext.Provider value={true}>{children}</DialogPortalContext.Provider>,
@@ -237,15 +252,19 @@ export interface DialogOverlayProps extends React.HTMLAttributes<HTMLDivElement>
 }
 
 export function DialogOverlay({ forceMount, className, ...props }: DialogOverlayProps) {
-  const { effectiveOpen, ids, aria, classes, setPart } = useDialogContext('DialogOverlay');
-  if (!(forceMount || effectiveOpen)) return null;
+  const { effectiveOpen, present, ids, aria, classes, setPart } = useDialogContext('DialogOverlay');
+  if (!(forceMount || present)) return null;
   return (
     <div
       data-part="overlay"
       id={ids.overlay || undefined}
       ref={setPart('overlay')}
-      // A force-mounted closed overlay must not cover the page.
-      hidden={effectiveOpen ? undefined : true}
+      // A force-mounted closed overlay must not cover the page -- but `hidden` is
+      // `display: none`, which blocks animation outright, so an overlay that is
+      // closed and STILL PRESENT is mid-exit and has to stay paintable for its
+      // own fade to run. Only a closed overlay with nothing left to animate is
+      // hidden.
+      hidden={effectiveOpen || present ? undefined : true}
       className={classy(classes.overlay, className)}
       {...aria.overlay}
       {...props}
@@ -312,15 +331,23 @@ export function DialogContent({
   onKeyDown,
   ...props
 }: DialogContentProps) {
-  const { config, state, effectiveOpen, ids, aria, classes, request, setPart, dismissVetoRef } =
-    useDialogContext('DialogContent');
+  const {
+    config,
+    state,
+    effectiveOpen,
+    present,
+    presenceRef,
+    ids,
+    aria,
+    classes,
+    request,
+    setPart,
+    dismissVetoRef,
+  } = useDialogContext('DialogContent');
   const isInsidePortal = React.useContext(DialogPortalContext);
-  // Presence: keep the content mounted through its exit animation. `data-state`
-  // is NOT set here -- disclosable already contributes it through `aria.content`,
-  // from `isOpen(state, config)`, which is the same value `effectiveOpen` carries
-  // into presence. One attribute, one writer. See the ownership note in
-  // use-presence.ts.
-  const { present, ref: presenceRef } = usePresence(effectiveOpen);
+  // Presence comes from the PROVIDER now, so the portal above holds for the same
+  // window this does. The ref is still attached here, because the animations
+  // being waited on are this node's.
 
   React.useEffect(() => {
     dismissVetoRef.current = { onPointerDownOutside, onInteractOutside };
