@@ -285,30 +285,162 @@ export function linePath(points: { x: number; y: number }[]): string {
   return segments.join(' ');
 }
 
+/** `sign(x)`, ported verbatim from d3-shape's `curve/monotone.js` -- `0` is
+ *  never a distinct case (matches `x < 0 ? -1 : 1`, including for `-0`/`NaN`,
+ *  which both take the `1` branch there too). */
+function monotoneSign(x: number): number {
+  return x < 0 ? -1 : 1;
+}
+
 /**
- * Build a smooth cubic bezier SVG path from a series of points.
- * Uses Catmull-Rom to cubic bezier conversion for smooth interpolation.
+ * Steffen's one-dimensional monotonic slope estimate at the MIDDLE of three
+ * points (Steffen 1990, as cited in d3-shape's `curve/monotone.js` `slope3`).
+ * Ported member-for-member, including the `-0` denominator substitution that
+ * gives a degenerate (zero-width) step the correctly-signed infinite slope --
+ * simplifying it away would change which points end up +/-Infinity before the
+ * `Math.min` clamps them.
  */
-export function smoothPath(points: { x: number; y: number }[]): string {
-  if (points.length === 0) return '';
-  if (points.length < 3) return linePath(points);
+function monotoneSlope3(
+  x0: number,
+  y0: number,
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+): number {
+  const h0 = x1 - x0;
+  const h1 = x2 - x1;
+  // d3: `h0 || (h1 < 0 && -0)` -- `-0` is itself falsy, so `h0 !== 0` mirrors
+  // the `||`'s truthiness test exactly (true for +0 and -0 alike).
+  const denom0 = h0 !== 0 ? h0 : h1 < 0 ? -0 : 0;
+  const denom1 = h1 !== 0 ? h1 : h0 < 0 ? -0 : 0;
+  const s0 = (y1 - y0) / denom0;
+  const s1 = (y2 - y1) / denom1;
+  const p = (s0 * h1 + s1 * h0) / (h0 + h1);
+  return (
+    (monotoneSign(s0) + monotoneSign(s1)) *
+      Math.min(Math.abs(s0), Math.abs(s1), 0.5 * Math.abs(p)) || 0
+  );
+}
 
-  const first = points[0] as { x: number; y: number };
-  let d = `M ${first.x} ${first.y}`;
+/** The one-sided boundary slope at a curve's first or last point, ported
+ *  verbatim from d3-shape's `slope2` (`curve/monotone.js`). */
+function monotoneSlope2(x0: number, y0: number, x1: number, y1: number, t: number): number {
+  const h = x1 - x0;
+  return h !== 0 ? (3 * ((y1 - y0) / h) - t) / 2 : t;
+}
 
-  for (let i = 0; i < points.length - 1; i++) {
-    const p0 = points[Math.max(0, i - 1)] as { x: number; y: number };
-    const p1 = points[i] as { x: number; y: number };
-    const p2 = points[i + 1] as { x: number; y: number };
-    const p3 = points[Math.min(points.length - 1, i + 2)] as { x: number; y: number };
+/** The two interior Bezier control points for the segment (x0,y0) -> (x1,y1)
+ *  given its start/end tangents, per the cubic-Hermite-as-Bezier identity
+ *  d3-shape's `point` function (`curve/monotone.js`) cites (Wikipedia: Cubic
+ *  Hermite spline, "Representations"). */
+function monotoneControlPoints(
+  x0: number,
+  y0: number,
+  x1: number,
+  y1: number,
+  t0: number,
+  t1: number,
+): { cp1x: number; cp1y: number; cp2x: number; cp2y: number } {
+  const dx = (x1 - x0) / 3;
+  return { cp1x: x0 + dx, cp1y: y0 + dx * t0, cp2x: x1 - dx, cp2y: y1 - dx * t1 };
+}
 
-    const cp1x = p1.x + (p2.x - p0.x) / 6;
-    const cp1y = p1.y + (p2.y - p0.y) / 6;
-    const cp2x = p2.x - (p3.x - p1.x) / 6;
-    const cp2y = p2.y - (p3.y - p1.y) / 6;
-
-    d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
+/**
+ * Build a smooth cubic bezier SVG path from a series of points, using a
+ * monotone cubic interpolation (Fritsch-Carlson via Steffen's method) -- a
+ * direct port of d3-shape's `curveMonotoneX` (`src/curve/monotone.js`), the
+ * curve shadcn/Recharts mean by `type="monotone"` (rafters ruling
+ * 2026-09-01, issue #2226). Unlike the Catmull-Rom conversion this replaces,
+ * a monotone curve never overshoots the data: between any two points the
+ * curve stays within their y-extent, so it never invents a local max/min the
+ * data does not have.
+ *
+ * d3-shape drives this incrementally through a streaming context
+ * (`moveTo`/`lineTo`/`bezierCurveTo`) fed one point at a time; this port
+ * replays the SAME state machine (`lineStart`/`point`/`lineEnd`) over a
+ * known-length array in one pass instead, using local variables in place of
+ * the context's `this._x0`/`_x1`/`_t0`/`_point` fields. The arithmetic
+ * (`monotoneSlope3`/`monotoneSlope2`/`monotoneControlPoints` above) is
+ * unchanged from the source; only the driving loop differs. A reference test
+ * (`graph.reference.test.ts`) diffs this against d3-shape's own
+ * `line().curve(curveMonotoneX)` output.
+ */
+export function smoothPath(points: ReadonlyArray<{ x: number; y: number }>): string {
+  // d3-shape's `MonotoneX.point` ignores a point coincident with the
+  // immediately preceding one ("if (x === this._x1 && y === this._y1)
+  // return;") before its state machine ever sees it -- deduped here, once,
+  // rather than inside the loop below.
+  const pts: { x: number; y: number }[] = [];
+  for (const p of points) {
+    const prev = pts[pts.length - 1];
+    if (!prev || prev.x !== p.x || prev.y !== p.y) pts.push({ x: p.x, y: p.y });
   }
+
+  if (pts.length === 0) return '';
+  if (pts.length < 3) return linePath(pts); // d3 lineEnd case 1/2: M only, or M + one lineTo.
+
+  let d = '';
+  // Mirrors d3's this._x0/_y0 (two points back) and this._x1/_y1 (one point
+  // back); NaN until enough points have been seen to mean anything.
+  let x0 = Number.NaN;
+  let y0 = Number.NaN;
+  let x1 = Number.NaN;
+  let y1 = Number.NaN;
+  // Mirrors this._t0: the tangent at (x1,y1), carried into the NEXT
+  // segment's bezier as its start tangent.
+  let t0 = Number.NaN;
+
+  // Draws the bezier for the segment ending at the CURRENT (x1,y1), starting
+  // at the CURRENT (x0,y0) -- called before those are advanced for the point
+  // that triggered it, same order d3's `point` calls its own `point()` before
+  // its trailer reassigns `_x0`/`_x1`.
+  const emitBezier = (startTangent: number, endTangent: number): void => {
+    const { cp1x, cp1y, cp2x, cp2y } = monotoneControlPoints(
+      x0,
+      y0,
+      x1,
+      y1,
+      startTangent,
+      endTangent,
+    );
+    d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${x1} ${y1}`;
+  };
+
+  for (const [i, p] of pts.entries()) {
+    if (i === 0) {
+      d = `M ${p.x} ${p.y}`;
+    } else if (i === 1) {
+      // Second point: recorded only, same as d3's `_point === 1` case -- a
+      // segment needs a third point before Steffen's formula has neighbors.
+    } else if (i === 2) {
+      // Third point: (x0,y0)/(x1,y1) are p0/p1. slope3 estimates the tangent
+      // AT p1 from its neighbors p0/p2; the segment p0->p1 has no point
+      // before p0, so its start tangent falls back to the one-sided
+      // boundary formula (slope2), same as d3's `_point === 2` case.
+      const t1 = monotoneSlope3(x0, y0, x1, y1, p.x, p.y);
+      emitBezier(monotoneSlope2(x0, y0, x1, y1, t1), t1);
+      t0 = t1;
+    } else {
+      // Interior points: (x0,y0)/(x1,y1) are the PREVIOUS pair; t0 is the
+      // tangent already computed at (x1,y1) on a prior iteration. slope3
+      // estimates the tangent at the new point p, closing the segment
+      // between the previous pair with both of its now-known tangents, same
+      // as d3's default case.
+      const t1 = monotoneSlope3(x0, y0, x1, y1, p.x, p.y);
+      emitBezier(t0, t1);
+      t0 = t1;
+    }
+    x0 = x1;
+    y0 = y1;
+    x1 = p.x;
+    y1 = p.y;
+  }
+
+  // d3's `lineEnd` case 3: the final segment ((x0,y0) -> (x1,y1), now the
+  // LAST pair) uses the last computed tangent as its start and the one-sided
+  // boundary formula as its end, mirroring the case-2 start above.
+  emitBezier(t0, monotoneSlope2(x0, y0, x1, y1, t0));
 
   return d;
 }

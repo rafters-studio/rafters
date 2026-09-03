@@ -1,0 +1,153 @@
+---
+/**
+ * Line chart -- one path per series for the rafters chart family
+ *
+ * @cognitive-load 3/10 - Two independent booleans (smooth curve, dot
+ * markers) plus whichever axis children are composed or omitted; series and
+ * colors flow from ChartConfig, categories from the composed XAxis child
+ * when present. Low because the shape is fully determined by data plus two
+ * booleans and composition, not open configuration.
+ * @attention-economics The line IS the content -- unlike ChartContainer's
+ * invisible scaffolding, this component draws the primary visual a chart
+ * exists for. The line-enter motion draws the eye to a newly-arrived series
+ * on mount, then gets out of the way (no ongoing animation).
+ * @trust-building Deterministic, token-mapped color per series (never a
+ * random or config-order-dependent hue); geometry computed once from real
+ * data via the same bandScale/linearScale primitives Bar (#2225) already
+ * proved, so a Bar and a Line agree on where a category sits. A monotone
+ * curve (`smooth`) never overshoots the data -- it stays within each pair of
+ * points' own value range, so a reader never sees a peak or trough the data
+ * does not have.
+ * @accessibility role="img" is never used (it would make the SVG's
+ * descendants presentational and break keyboard traversal). The chart
+ * renders inside a <figure role="figure"> with a descriptive aria-label; its
+ * SVG is aria-hidden; arrow keys (and Home/End) move an active-datum cursor
+ * announced via sr-announcer, focus staying on the figure rather than
+ * entering the SVG; a visually-hidden data table carries the same data in
+ * fully accessible tabular form, always present in the DOM. axe passes for
+ * the default, empty, and active-datum states.
+ * @semantic-meaning Ports shadcn's `<LineChart data={data}><Line
+ * dataKey="desktop"/></LineChart>` call site directly: composed `<Line
+ * dataKey>` children (line.tsx, #2226) register a chart's series, in
+ * declaration order, and take precedence outright over the `series:
+ * string[]` config prop when both are present; `series` alone still fully
+ * works with no `<Line>` children composed at all. categoryKey moves to the
+ * composed <XAxis dataKey> child rather than a chart-level prop (veneer's
+ * compositional-children amendment, bullpen 01a058ec). A LineChart with NO
+ * XAxis/YAxis/CartesianGrid/legend children composed renders axis-less BY
+ * OMISSION -- the #2230 StatTile sparkline shape -- never via a
+ * `minimal`/`axisless` prop.
+ *
+ * @usage-patterns
+ * DO: Compose inside a ChartContainer with a ChartConfig mapping each series to a token
+ * DO: Compose one <Line dataKey="..."/> per series for the shadcn-parity call site
+ * DO: Compose <XAxis dataKey="..."/> as a LineChart child for the category axis
+ * DO: Omit XAxis/YAxis/CartesianGrid entirely for a sparkline -- omission, never a flag
+ * DO: Keep series to 5 or fewer -- the categorical token set has 5 members
+ * NEVER: Pass a categoryKey prop -- it belongs on the composed XAxis child
+ * NEVER: Pass BOTH series and <Line> children expecting them to merge -- children win outright
+ * NEVER: Author a color, duration, or easing here -- token + matrix cell only
+ *
+ * @example
+ * ```astro
+ * <ChartContainer id="revenue" config={{ desktop: { token: 'chart-1' } }}>
+ *   <LineChart id="revenue-lines" data={data}>
+ *     <XAxis dataKey="month" />
+ *     <Line dataKey="desktop" />
+ *   </LineChart>
+ * </ChartContainer>
+ * ```
+ */
+
+/**
+ * Astro performance of the line-chart score. Server-renders the `<figure>`
+ * root with config serialized as `data-config` (same transport
+ * `bar-chart.astro` pins) and an EMPTY `<svg data-part="plot">`/`<tbody>` --
+ * line/point geometry and the data-table rows are both data-driven and
+ * depend on the measured plot size and the composed `<XAxis>` sibling
+ * respectively, neither of which this component can resolve at
+ * server-render time (categoryKey lives on a slotted child; width/height
+ * arrive from the client-side ChartContainer bind). The SSR `aria-label`
+ * is built against a placeholder `axisParts` (all false) for the same
+ * reason -- whether the default slot contains an XAxis/YAxis/CartesianGrid
+ * is not inspectable at this component's render time, so the SSR label may
+ * read "Sparkline" even when axes ARE composed, until the client `<script>`
+ * hands the instance to `bindLineChart`, which re-resolves the real
+ * `axisParts` from the rendered DOM and corrects it -- the same
+ * SSR-placeholder-then-client-correction shape `bar-chart.astro` already
+ * accepts for bar geometry.
+ */
+import { buildChartLabel, type LineChartConfig } from './line-chart.behavior';
+import { lineChartClasses } from './line-chart.classes';
+
+interface Props extends Omit<LineChartConfig, 'series'> {
+  id: string;
+  /** Optional when composed `<Line dataKey>` slot children supply the
+   *  series list instead (line.astro, #2226) -- `bindLineChart`'s DOM-based
+   *  `seriesFromLineChildren` read resolves them client-side, same
+   *  precedence the React performance gives its own children over
+   *  `series`. */
+  series?: string[] | undefined;
+}
+
+const { id, data, series = [], smooth, dots } = Astro.props;
+const config: LineChartConfig = { data, series, smooth, dots };
+const classes = lineChartClasses({ smooth, dots }, { points: [], valueTicks: [], activeIndex: null });
+// buildChartLabel only reads series/data.length/axisParts -- chartConfig and
+// categoryKey (both unknown at this component's server-render time) never
+// enter the label text, so a placeholder LineChartBehaviorConfig is safe
+// here; axisParts is deliberately the all-false placeholder this file's own
+// doc comment above explains.
+const label = buildChartLabel({
+  ...config,
+  chartConfig: {},
+  categoryKey: '',
+  width: 0,
+  height: 0,
+  axisParts: { xAxis: false, yAxis: false, grid: false },
+});
+---
+
+<rafters-line-chart
+  id={id}
+  data-part="root"
+  data-config={JSON.stringify(config)}
+  role="figure"
+  aria-label={label}
+  tabindex="0"
+  class={classes.root}
+>
+  <slot />
+  <svg data-part="plot" aria-hidden="true" class={classes.plot}></svg>
+  <table data-part="table" class={classes.table}>
+    <caption>{label}</caption>
+    <thead>
+      <tr>
+        <th scope="col">Category</th>
+        <th scope="col">Series</th>
+        <th scope="col">Value</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</rafters-line-chart>
+
+<script>
+  import { bindLineChart } from './line-chart.behavior';
+  import {
+    resolveDotFillClass,
+    resolveLineEnterClass,
+    resolveLineStrokeClass,
+  } from './line-chart.classes';
+
+  for (const root of document.querySelectorAll('rafters-line-chart[data-part="root"]')) {
+    const el = root as HTMLElement;
+    if (el.dataset['bound'] === 'true') continue;
+    el.dataset['bound'] = 'true';
+    bindLineChart(el, {
+      lineEnterClass: resolveLineEnterClass(),
+      resolveStrokeClass: resolveLineStrokeClass,
+      resolveDotFillClass: resolveDotFillClass,
+    });
+  }
+</script>

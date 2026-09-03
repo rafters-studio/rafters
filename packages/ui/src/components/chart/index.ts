@@ -107,6 +107,43 @@ export {
 } from './area-chart.classes';
 export type { AreaChartClassSet } from './area-chart.classes';
 
+export { line, readLineConfig } from './line.behavior';
+export type { LineConfig, LinePart, LineState } from './line.behavior';
+
+export {
+  bindLineChart,
+  buildSeriesPath,
+  computeDots,
+  computeLinePoints,
+  describePoint,
+  groupPointsBySeries,
+  lineAria,
+  lineChart,
+  pointAria,
+  resolveAxisParts,
+} from './line-chart.behavior';
+export type {
+  AxisChildDescriptor,
+  AxisPartsPresence,
+  ComputeLinePointsOptions,
+  LineChartActions,
+  LineChartBehaviorConfig,
+  LineChartConfig,
+  LineChartPart,
+  LineChartRuntimeClasses,
+  LineChartState,
+  LineDot,
+  LinePoint,
+  ResolveAxisPartsInput,
+} from './line-chart.behavior';
+export {
+  lineChartClasses,
+  resolveDotFillClass,
+  resolveLineEnterClass,
+  resolveLineStrokeClass,
+} from './line-chart.classes';
+export type { LineChartClassSet } from './line-chart.classes';
+
 export {
   bandCenter,
   bindChartTooltip,

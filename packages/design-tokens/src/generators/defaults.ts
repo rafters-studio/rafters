@@ -1379,6 +1379,15 @@ export const DEFAULT_MOTION_CELL_ANIMATIONS: Record<string, MotionCellAnimation>
       'A filled area arriving on mount: fade, not scale -- unlike bar-chart-bar-enter, a stacked area series has no single baseline edge to grow from (its baseline is the previous series own top curve, area-chart.behavior.ts computeAreas), so opacity is the one property every area shares whether overlaid or stacked.',
     contexts: ['area-chart', 'chart', 'value-display'],
   },
+  'line-chart-line-enter': {
+    keyframe: 'fade-in',
+    duration: { kind: 'tier', tier: 'moderate' },
+    curve: 'enter',
+    cell: { component: 'line-chart', part: 'line', transition: 'enter' },
+    meaning:
+      'A line series arriving on mount: fades in rather than snapping into place. The matrix assigns opacity over a stroke-dashoffset reveal for this cell -- a dashoffset keyframe needs a per-instance path-length value nothing here names, where a fade needs none.',
+    contexts: ['line-chart', 'chart', 'value-display'],
+  },
   // ------------------------------------------------------------- load / appearance
   'avatar-image-load': {
     keyframe: 'fade-in',
