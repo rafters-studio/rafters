@@ -93,6 +93,11 @@ interface DrawerContextValue {
   config: DrawerConfig;
   side: DrawerSide;
   effectiveOpen: boolean;
+  /** Presence, held at the PROVIDER. Every part gates on this, never on
+   *  `effectiveOpen`: the portal is the content's ancestor, so a portal that
+   *  unmounts on the raw flag takes the content's own exit with it. */
+  present: boolean;
+  presenceRef: (node: HTMLElement | null) => void;
   classes: DrawerClassSet;
   dismissVetoRef: React.RefObject<DismissVetoCallbacks | null>;
 }
@@ -247,6 +252,11 @@ export function Drawer({
 
   const aria = drawer.aria(state, config, ids);
 
+  // Presence, at the provider. `data-state` is NOT set from here --
+  // disclosable already contributes it from the same value that feeds
+  // presence. One attribute, one writer.
+  const { present, ref: presenceRef } = usePresence(effectiveOpen);
+
   const contextValue: DrawerContextValue = {
     state,
     ids,
@@ -257,6 +267,8 @@ export function Drawer({
     config,
     side,
     effectiveOpen,
+    present,
+    presenceRef,
     classes: drawerClasses(config, state),
     dismissVetoRef,
   };
@@ -272,8 +284,8 @@ export interface DrawerPortalProps {
 }
 
 export function DrawerPortal({ children, container, forceMount }: DrawerPortalProps) {
-  const { effectiveOpen } = useDrawerContext('DrawerPortal');
-  if (!(forceMount || effectiveOpen)) return null;
+  const { present } = useDrawerContext('DrawerPortal');
+  if (!(forceMount || present)) return null;
   if (typeof document === 'undefined') return null;
   return createPortal(
     <DrawerPortalContext.Provider value={true}>{children}</DrawerPortalContext.Provider>,
@@ -286,15 +298,18 @@ export interface DrawerOverlayProps extends React.HTMLAttributes<HTMLDivElement>
 }
 
 export function DrawerOverlay({ forceMount, className, ...props }: DrawerOverlayProps) {
-  const { effectiveOpen, ids, aria, classes, setPart } = useDrawerContext('DrawerOverlay');
-  if (!(forceMount || effectiveOpen)) return null;
+  const { effectiveOpen, present, ids, aria, classes, setPart } = useDrawerContext('DrawerOverlay');
+  if (!(forceMount || present)) return null;
   return (
     <div
       data-part="overlay"
       id={ids.overlay || undefined}
       ref={setPart('overlay')}
       // A force-mounted closed overlay must not cover the page.
-      hidden={effectiveOpen ? undefined : true}
+      // `hidden` is `display: none`, which blocks animation outright, so an
+      // overlay that is closed and STILL PRESENT is mid-exit and has to stay
+      // paintable for its own fade to run.
+      hidden={effectiveOpen || present ? undefined : true}
       className={classy(classes.overlay, className)}
       {...aria.overlay}
       {...props}
@@ -360,12 +375,21 @@ export function DrawerContent({
   onKeyDown,
   ...props
 }: DrawerContentProps) {
-  const { config, state, effectiveOpen, ids, aria, classes, request, setPart, dismissVetoRef } =
-    useDrawerContext('DrawerContent');
+  const {
+    config,
+    state,
+    present,
+    presenceRef,
+    ids,
+    aria,
+    classes,
+    request,
+    setPart,
+    dismissVetoRef,
+  } = useDrawerContext('DrawerContent');
   const isInsidePortal = React.useContext(DrawerPortalContext);
   // Presence (wave 0-B): keep the content mounted through its exit animation.
   // With no exit animation it releases immediately, so behavior is unchanged.
-  const { present, ref: presenceRef } = usePresence(effectiveOpen);
 
   React.useEffect(() => {
     dismissVetoRef.current = { onPointerDownOutside, onInteractOutside };

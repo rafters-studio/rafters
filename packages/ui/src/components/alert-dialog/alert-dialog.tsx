@@ -77,6 +77,11 @@ interface AlertDialogContextValue {
   getPart: (part: string) => HTMLElement | null;
   config: AlertDialogConfig;
   effectiveOpen: boolean;
+  /** Presence, held at the PROVIDER. Every part gates on this, never on
+   *  `effectiveOpen`: the portal is the content's ancestor, so a portal that
+   *  unmounts on the raw flag takes the content's own exit with it. */
+  present: boolean;
+  presenceRef: (node: HTMLElement | null) => void;
   classes: AlertDialogClassSet;
 }
 
@@ -170,6 +175,11 @@ export function AlertDialog({
 
   const aria = alertDialog.aria(state, config, ids);
 
+  // Presence, at the provider. `data-state` is NOT set from here --
+  // disclosable already contributes it from the same value that feeds
+  // presence. One attribute, one writer.
+  const { present, ref: presenceRef } = usePresence(effectiveOpen);
+
   const contextValue: AlertDialogContextValue = {
     state,
     ids,
@@ -179,6 +189,8 @@ export function AlertDialog({
     getPart,
     config,
     effectiveOpen,
+    present,
+    presenceRef,
     classes: alertDialogClasses(config, state),
   };
 
@@ -193,8 +205,8 @@ export interface AlertDialogPortalProps {
 }
 
 export function AlertDialogPortal({ children, container, forceMount }: AlertDialogPortalProps) {
-  const { effectiveOpen } = useAlertDialogContext('AlertDialogPortal');
-  if (!(forceMount || effectiveOpen)) return null;
+  const { present } = useAlertDialogContext('AlertDialogPortal');
+  if (!(forceMount || present)) return null;
   if (typeof document === 'undefined') return null;
   return createPortal(
     <AlertDialogPortalContext.Provider value={true}>{children}</AlertDialogPortalContext.Provider>,
@@ -207,16 +219,19 @@ export interface AlertDialogOverlayProps extends React.HTMLAttributes<HTMLDivEle
 }
 
 export function AlertDialogOverlay({ forceMount, className, ...props }: AlertDialogOverlayProps) {
-  const { effectiveOpen, ids, aria, classes, setPart } =
+  const { effectiveOpen, present, ids, aria, classes, setPart } =
     useAlertDialogContext('AlertDialogOverlay');
-  if (!(forceMount || effectiveOpen)) return null;
+  if (!(forceMount || present)) return null;
   return (
     <div
       data-part="overlay"
       id={ids.overlay || undefined}
       ref={setPart('overlay')}
       // A force-mounted closed overlay must not cover the page.
-      hidden={effectiveOpen ? undefined : true}
+      // `hidden` is `display: none`, which blocks animation outright, so an
+      // overlay that is closed and STILL PRESENT is mid-exit and has to stay
+      // paintable for its own fade to run.
+      hidden={effectiveOpen || present ? undefined : true}
       className={classy(classes.overlay, className)}
       {...aria.overlay}
       {...props}
@@ -241,12 +256,21 @@ export function AlertDialogContent({
   onKeyDown,
   ...props
 }: AlertDialogContentProps) {
-  const { config, state, effectiveOpen, ids, aria, classes, request, getPart } =
-    useAlertDialogContext('AlertDialogContent');
+  const {
+    config,
+    state,
+    effectiveOpen,
+    present,
+    presenceRef,
+    ids,
+    aria,
+    classes,
+    request,
+    getPart,
+  } = useAlertDialogContext('AlertDialogContent');
   const isInsidePortal = React.useContext(AlertDialogPortalContext);
   // Presence (wave 0-B): keep the content mounted through its exit animation.
   // With no exit animation it releases immediately, so behavior is unchanged.
-  const { present, ref: presenceRef } = usePresence(effectiveOpen);
 
   // The modal overlay pair, composed directly on the open transition (replacing
   // the effects runner). Level-triggered via the dependency array; the cleanup
