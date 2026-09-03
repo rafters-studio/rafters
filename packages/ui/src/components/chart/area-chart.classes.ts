@@ -25,7 +25,7 @@ const plotClasses = 'block w-full h-full';
 // projected by `areaAria` (area-chart.behavior.ts); every area reaches
 // "visible" once mounted, so the keyframe plays once and never replays on a
 // later render.
-const areaClasses = 'data-[state=visible]:animate-area-chart-area-enter';
+const areaClasses = 'data-[state=visible]:animate-fade-in-moderate-enter';
 
 // The optional top-edge stroke (line part) carries no motion of its own --
 // the issue names ONE motion moment (the area's reveal); the line is a

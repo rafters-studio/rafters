@@ -413,9 +413,9 @@ describe('motion: matrix declaration (#2227; BehaviorSpec.motion is spec-reserve
     expect(row?.['curve']).toMatchObject({ kind: 'role', role: 'enter', provenance: 'proposed' });
   });
 
-  it('areaChartClasses selects the generated animate-area-chart-area-enter utility', () => {
+  it('areaChartClasses selects the generated fade-in/moderate/enter assignment', () => {
     const classes = areaChartClasses({}, areaChart.initialState(baseConfig));
-    expect(classes.area).toBe('data-[state=visible]:animate-area-chart-area-enter');
+    expect(classes.area).toBe('data-[state=visible]:animate-fade-in-moderate-enter');
   });
 
   it('the area-enter composition (opacity only, no scale/translate/rotate) is legal under validateMotionComposition', () => {
@@ -435,8 +435,8 @@ describe('areaChartClasses', () => {
   const FORBIDDEN_LITERAL = /#[0-9a-f]{3,8}\b|var\(--/i;
   const classes = areaChartClasses({}, areaChart.initialState(baseConfig));
 
-  it('consumes the generated animate-area-chart-area-enter utility off data-state', () => {
-    expect(classes.area).toContain('data-[state=visible]:animate-area-chart-area-enter');
+  it('consumes the generated fade-in/moderate/enter assignment off data-state', () => {
+    expect(classes.area).toContain('data-[state=visible]:animate-fade-in-moderate-enter');
   });
 
   it('never carries a numeric duration or motion-reduce:animate-none', () => {
