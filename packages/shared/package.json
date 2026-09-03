@@ -1,6 +1,6 @@
 {
   "name": "@rafters/shared",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "Shared W3C DTCG schemas, base types, and utilities for Rafters design system",
   "homepage": "https://rafters.studio",
   "license": "MIT",
