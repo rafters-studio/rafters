@@ -117,8 +117,8 @@ describe('semantic motion utilities compile (#1902/#1903/#1904)', () => {
     const css = registryToTailwind(baseRegistry());
     expect(css).toContain('@utility motion-modal-in {');
     expect(css).toContain('transition-property: opacity, transform;');
-    expect(css).toContain('transition-duration: var(--duration-normal);');
-    expect(css).toContain('transition-timing-function: var(--ease-enter);');
+    expect(css).toContain('transition-duration: var(--rafters-duration-normal);');
+    expect(css).toContain('transition-timing-function: var(--rafters-ease-enter);');
     // Nested reduced-motion override, longhand re-set.
     expect(css).toContain('@media (prefers-reduced-motion: reduce) {');
     // Preserved-feedback token has no reduced-motion block.
@@ -126,12 +126,11 @@ describe('semantic motion utilities compile (#1902/#1903/#1904)', () => {
     // expand/collapse transition grid-template-rows, never height.
     expect(css).toContain('transition-property: grid-template-rows, opacity;');
     expect(css).not.toContain('transition-property: height');
-    // The referenced theme vars bridge onto the namespace leaves (#1991), and the
-    // leaves carry the perceptual value and the named curve. A literal on the
-    // bridge would be a second copy of the value that could drift from the leaf.
-    expect(css).toContain('--duration-normal: var(--rafters-duration-normal);');
+    // These read the LEAF. The bridge keys exist to make Tailwind generate its
+    // own utilities and are not a naming layer for us to read through -- and the
+    // leaf is the only spelling the reduced-motion law reaches, since the law is
+    // written on the values rather than on each utility.
     expect(css).toContain('--rafters-duration-normal: 350ms;');
-    expect(css).toContain('--ease-enter: var(--rafters-ease-enter);');
     expect(css).toContain('--rafters-ease-enter: cubic-bezier(0, 0, 0.2, 1);');
   });
 
@@ -144,9 +143,10 @@ describe('semantic motion utilities compile (#1902/#1903/#1904)', () => {
     expect(css, 'reduced-motion block dropped').toContain('prefers-reduced-motion');
     // The referenced duration theme var resolved into the sheet, proving the
     // class is not a dangling var() reference.
-    expect(css, 'duration bridge tree-shaken').toMatch(
-      /--duration-normal:\s*var\(--rafters-duration-normal\)/,
-    );
+    // Matched loosely on the value: this is the COMPILED sheet, and the minifier
+    // rewrites `350ms` as `.35s`. Pinning the authored spelling would fail on a
+    // formatting change rather than on the dangling reference this test catches.
+    expect(css, 'duration leaf tree-shaken').toMatch(/--rafters-duration-normal:\s*(350ms|\.35s)/);
   });
 
   it('every motion var in the COMPILED sheet is declared -- BOTH hops', async () => {
@@ -185,8 +185,8 @@ describe('semantic motion utilities compile (#1902/#1903/#1904)', () => {
       referenced.size,
       'no motion var references at all -- the layer vanished',
     ).toBeGreaterThan(0);
-    // Both ends of the bridge must actually be among the references.
-    expect(referenced).toContain('--duration-normal');
+    // The leaf must be among the references. The bridge key is Tailwind's to
+    // read, not ours, so there is no second end for us to check here.
     expect(referenced).toContain('--rafters-duration-normal');
     // And the animation chain is genuinely in the sweep, not silently empty:
     // .animate-scale-out -> var(--animate-scale-out) -> the animation shorthand,
@@ -297,27 +297,24 @@ describe('semantic motion utilities compile (#1902/#1903/#1904)', () => {
     }
   });
 
-  it('the hand-authored ease declaration wins the merged rule', async () => {
-    // ease-* is the ONE namespace Tailwind v4 also theme-infers a utility for
-    // (from the --ease-* bridge), so the compiled sheet merges Tailwind's
-    // inferred declaration with ours into a single .ease-<member> rule. The
-    // computed value is only correct because OUR declaration comes last. This
-    // pins that ordering: if it ever flips, the bridge's declaration would win
-    // and a retune of the leaf alone could stop reaching consumers -- the
-    // review round's finding, promoted to a loud failure.
+  it('every motion class compiles to exactly ONE rule -- one generator per class', async () => {
+    // REPLACES "the hand-authored ease declaration wins the merged rule". That
+    // test existed because we emitted an @utility ease-standard block AND a
+    // --ease-* theme key, so Tailwind generated a second rule with the same
+    // selector and merged the two -- with its declaration landing LAST, meaning
+    // the computed value came from the theme key. The old test could only PIN
+    // that ordering; it could not stop it flipping, and merely adding a second
+    // property to our block was enough to flip it.
+    //
+    // The duplicate is gone rather than ordered: duration, ease and delay have
+    // exactly one generator (Tailwind, from the bridge keys), and extent and
+    // period have exactly one (us, because Tailwind has no namespace for them).
+    // Two rules for one class is now the failure, not the thing to arrange.
     const css = await registryToCompiled(baseRegistry(), { contentSources: [fixtureDir] });
-    const rules = css.match(/\.ease-standard\s*\{[^}]*\}/g) ?? [];
-    expect(rules.length, '.ease-standard rule missing from compiled sheet').toBeGreaterThan(0);
-    const declarations = rules
-      .join(';')
-      .split(/[;{}]/)
-      .map((d) => d.trim())
-      .filter((d) => d.startsWith('transition-timing-function:'));
-    expect(declarations.length).toBeGreaterThan(0);
-    expect(
-      declarations[declarations.length - 1],
-      'the last transition-timing-function must reference the leaf, not the bridge',
-    ).toBe('transition-timing-function:var(--rafters-ease-standard)');
+    for (const className of ['duration-fast', 'ease-standard', 'delay-hover-intent']) {
+      const rules = css.match(new RegExp(`\\.${className}\\s*\\{[^}]*\\}`, 'g')) ?? [];
+      expect(rules.length, `.${className} should compile to exactly one rule`).toBe(1);
+    }
   });
 
   // ==========================================================================

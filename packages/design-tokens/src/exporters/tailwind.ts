@@ -90,6 +90,28 @@ const MOTION_NAMESPACE_NAMES = Object.keys(MOTION_NAMESPACE_PROPERTY) as readonl
  */
 const REDUCED_MOTION_ZEROED: ReadonlySet<MotionNamespace> = new Set(['duration', 'delay']);
 
+/**
+ * The Tailwind v4 theme namespace each of ours bridges onto, or absent when
+ * Tailwind has none.
+ *
+ * MEASURED, not assumed (2026-09-02, `@tailwindcss/cli` 4.1.18, compiled and
+ * read back). Tailwind generates `duration-*`, `ease-*` and `delay-*` from these
+ * keys with no `@utility` block from us -- and note the two that are NOT what
+ * the class is called: the duration namespace is `--transition-duration-*` and
+ * the delay namespace is `--transition-delay-*`. A `--duration-*` key, which is
+ * what this bridge used to write, generates NOTHING; it was inert for utility
+ * purposes and only ever fed hand-written `var(--duration-*)` references.
+ *
+ * `extent` and `period` have no Tailwind namespace and keep their own `@utility`
+ * blocks: an extent publishes a custom property rather than a CSS one, and a
+ * loop's time rides inside an `--animate-*` shorthand.
+ */
+const TAILWIND_THEME_PREFIX: Partial<Record<MotionNamespace, string>> = {
+  duration: 'transition-duration',
+  ease: 'ease',
+  delay: 'transition-delay',
+};
+
 const MOTION_NAMESPACE_TOKEN = new RegExp(`^rafters-(${MOTION_NAMESPACE_NAMES.join('|')})-(.+)$`);
 
 /** Split a `rafters-<ns>-<member>` token name, or null if it is not one. */
@@ -860,8 +882,13 @@ function generateMotionUtilities(motionTokens: Token[]): string {
     const className = token.name.replace('motion-semantic-', 'motion-');
     lines.push(`@utility ${className} {`);
     lines.push(`  transition-property: ${spec.properties.join(', ')};`);
-    lines.push(`  transition-duration: var(--duration-${spec.durationTier});`);
-    lines.push(`  transition-timing-function: var(--ease-${spec.curve});`);
+    // THE LEAF, NOT A BRIDGE NAME. The bridge writes Tailwind's own namespace
+    // keys now (`--transition-duration-*`, `--ease-*`), which exist to make
+    // Tailwind generate utilities -- they are not a naming layer for us to read
+    // through. These read the leaf directly, which is also the only spelling the
+    // reduced-motion law reaches.
+    lines.push(`  transition-duration: var(--rafters-duration-${spec.durationTier});`);
+    lines.push(`  transition-timing-function: var(--rafters-ease-${spec.curve});`);
 
     if (spec.reducedMotion) {
       lines.push('  @media (prefers-reduced-motion: reduce) {');
@@ -1101,6 +1128,43 @@ function generateMotionNamespaceVars(motionTokens: Token[]): string {
 }
 
 /**
+ * The reduced-motion law, written once, on the LEAVES.
+ *
+ * Every duration and every delay resolves to zero under
+ * `prefers-reduced-motion: reduce`. `period` is deliberately absent -- loops
+ * slow, they never stop, because a stopped spinner says the work stopped.
+ * `ease` and `extent` are absent because zeroing the duration already removes
+ * the motion they shape.
+ *
+ * ON THE LEAF, NOT ON THE UTILITY, and that is the whole point. A per-utility
+ * `@media` block only covers the utilities we hand-write, so anything that
+ * reaches a leaf another way -- Tailwind's own generated `duration-*`, its
+ * `transition` shorthand, an `--animate-*` whose duration is a `var()` onto the
+ * same leaf -- escaped the law silently while looking token-correct. Zero the
+ * value itself and there is nothing left to escape through.
+ *
+ * Emitted OUTSIDE `@theme`, as a plain `:root` override. Verified against the
+ * real compiler (2026-09-02): the block survives compilation intact.
+ */
+function generateReducedMotionLaw(motionTokens: Token[]): string {
+  const lines: string[] = [];
+  for (const token of motionTokens) {
+    const parts = motionNamespaceParts(token.name);
+    if (!parts || !REDUCED_MOTION_ZEROED.has(parts.namespace)) continue;
+    lines.push(`    --${token.name}: 0ms;`);
+  }
+  if (lines.length === 0) return '';
+  return [
+    '/* Reduced motion is law: every duration and delay is zero, loops are not. */',
+    '@media (prefers-reduced-motion: reduce) {',
+    '  :root {',
+    ...lines,
+    '  }',
+    '}',
+  ].join('\n');
+}
+
+/**
  * Emit the Tailwind-facing `--duration-*` / `--ease-*` names as REFERENCES to
  * the namespace leaves. Indented for the @theme block.
  *
@@ -1125,33 +1189,45 @@ function generateMotionNamespaceVars(motionTokens: Token[]): string {
 function generateMotionBridgeVars(motionTokens: Token[]): string {
   const lines: string[] = [];
   for (const token of motionTokens) {
-    if (token.name.startsWith('motion-duration-') && token.name !== 'motion-duration-base') {
-      const key = token.name.replace('motion-duration-', '');
-      lines.push(`  --duration-${key}: var(--rafters-duration-${key});`);
-    }
-    if (token.name.startsWith('motion-easing-')) {
-      const key = token.name.replace('motion-easing-', '');
-      lines.push(`  --ease-${key}: var(--rafters-ease-${key});`);
-    }
+    const parts = motionNamespaceParts(token.name);
+    if (!parts) continue;
+    const themePrefix = TAILWIND_THEME_PREFIX[parts.namespace];
+    if (!themePrefix) continue;
+    lines.push(`  --${themePrefix}-${parts.member}: var(--${token.name});`);
   }
   return lines.join('\n');
 }
 
 /**
- * Emit one `@utility <namespace>-<member>` block per namespace member.
+ * Emit an `@utility <namespace>-<member>` block ONLY where Tailwind has no
+ * namespace of its own -- `extent-*` and `period-*`.
  *
- * Every block references a var by NAME and contains no motion value, so the
- * whole set is byte-identical across any retune -- the toy-9 invariant, asserted
- * in `motion-css-golden.test.ts`. The only literal any block may contain is the
- * reduced-motion zero, which is a law rather than a tuned value.
+ * The other three are generated by Tailwind from the bridge keys, so writing
+ * them here too produced a second rule with the same selector: for `ease-*`,
+ * measurably, Tailwind's declaration merged in and landed LAST, which meant the
+ * computed value came from the theme key and not from the block we thought was
+ * authoritative. One generator per class.
+ *
+ * These two remain ours because Tailwind cannot express them. An extent
+ * publishes a custom property (a consuming rule reads `--rafters-consumed-extent`
+ * without knowing which member won), not a CSS property Tailwind knows how to
+ * set. A period is a loop's time, which rides inside an `--animate-*` shorthand
+ * rather than in any duration namespace.
+ *
+ * Every block references a var by NAME and contains no motion value, so the set
+ * is byte-identical across any retune -- the toy-9 invariant, asserted in
+ * `motion-css-golden.test.ts`. There is no reduced-motion literal here any more
+ * either: the law is written once on the leaves, so a block that referenced a
+ * zeroed leaf is already zero.
  */
 function generateMotionNamespaceUtilities(motionTokens: Token[]): string {
-  const lines: string[] = ['/* The five motion namespaces -- one utility per member */'];
+  const lines: string[] = ['/* Motion namespaces Tailwind has no theme key for */'];
   let emitted = 0;
 
   for (const token of motionTokens) {
     const parts = motionNamespaceParts(token.name);
     if (!parts) continue;
+    if (TAILWIND_THEME_PREFIX[parts.namespace]) continue;
     // Total by construction: parts.namespace is MotionNamespace and the map
     // satisfies Record<MotionNamespace, string> -- no silent-drop branch.
     const property = MOTION_NAMESPACE_PROPERTY[parts.namespace];
@@ -1159,11 +1235,6 @@ function generateMotionNamespaceUtilities(motionTokens: Token[]): string {
     emitted++;
     lines.push(`@utility ${parts.namespace}-${parts.member} {`);
     lines.push(`  ${property}: var(--${token.name});`);
-    if (REDUCED_MOTION_ZEROED.has(parts.namespace)) {
-      lines.push('  @media (prefers-reduced-motion: reduce) {');
-      lines.push(`    ${property}: 0ms;`);
-      lines.push('  }');
-    }
     lines.push('}');
   }
 
@@ -1283,6 +1354,14 @@ export function tokensToTailwind(
   const keyframes = generateKeyframes(groups.motion);
   if (keyframes) {
     sections.push(keyframes);
+  }
+
+  // The reduced-motion law, once, on the leaves -- so every consumer of a
+  // duration or delay inherits it, including Tailwind's own generated utilities.
+  const reducedMotionLaw = generateReducedMotionLaw(groups.motion);
+  if (reducedMotionLaw) {
+    sections.push('');
+    sections.push(reducedMotionLaw);
   }
 
   // Typography composition assignments (@theme inline + ts-* utility)
@@ -1565,6 +1644,14 @@ export function registryToTailwindStatic(registry: TokenRegistry): string {
   const keyframes = generateKeyframes(groups.motion);
   if (keyframes) {
     sections.push(keyframes);
+  }
+
+  // The reduced-motion law, once, on the leaves -- so every consumer of a
+  // duration or delay inherits it, including Tailwind's own generated utilities.
+  const reducedMotionLaw = generateReducedMotionLaw(groups.motion);
+  if (reducedMotionLaw) {
+    sections.push('');
+    sections.push(reducedMotionLaw);
   }
 
   // Per-cell animation @utility classes -- BOTH emission paths, deliberately.
