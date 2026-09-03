@@ -29,8 +29,8 @@ const plotClasses = 'block w-full h-full';
 // reaches "visible" once mounted, so the keyframe plays once on mount and
 // never replays on a later render (the class selector does not retrigger a
 // running/finished CSS animation).
-const barClassesVertical = 'data-[state=visible]:animate-bar-chart-bar-enter';
-const barClassesHorizontal = 'data-[state=visible]:animate-bar-chart-bar-enter-x';
+const barClassesVertical = 'data-[state=visible]:animate-grow-in-normal-enter';
+const barClassesHorizontal = 'data-[state=visible]:animate-grow-in-x-normal-enter';
 
 /**
  * Select the bar-enter matrix cell's generated utility by layout -- the

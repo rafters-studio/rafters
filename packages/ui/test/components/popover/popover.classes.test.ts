@@ -16,10 +16,10 @@ describe('popover classes', () => {
     // The cell is the spec: popover / content / closed -> open and open ->
     // closed, each with its own tier and curve. A shared animate-scale-in here
     // was the #2012 defect -- three distinct cells collapsed into one.
-    expect(classes.content).toContain('data-[state=open]:animate-popover-content-open');
-    expect(classes.content).toContain('data-[state=closed]:animate-popover-content-close');
-    expect(classes.content).not.toContain('animate-scale-in');
-    expect(classes.content).not.toContain('animate-scale-out');
+    expect(classes.content).toContain('data-[state=open]:animate-scale-in-moderate-enter');
+    expect(classes.content).toContain('data-[state=closed]:animate-scale-out-fast-exit');
+    expect(classes.content.split(/[\s:]+/)).not.toContain('animate-scale-in');
+    expect(classes.content.split(/[\s:]+/)).not.toContain('animate-scale-out');
   });
 
   it('uses no @starting-style and no tailwindcss-animate vocabulary', () => {

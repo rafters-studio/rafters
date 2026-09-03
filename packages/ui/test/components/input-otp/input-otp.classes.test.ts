@@ -32,7 +32,7 @@ describe('input-otp classes', () => {
     // Migrated off the stock animate-pulse onto the caret's own cell utility;
     // motion-reduce:animate-none is removed, not replaced, so the caret
     // continues marking the active slot under prefers-reduced-motion.
-    expect(classes.caretBar).toContain('animate-input-otp-caret-idle');
+    expect(classes.caretBar).toContain('animate-caret-blink-blink');
     expect(classes.caretBar).not.toContain('animate-pulse');
     expect(classes.caretBar).not.toContain('motion-reduce:animate-none');
   });

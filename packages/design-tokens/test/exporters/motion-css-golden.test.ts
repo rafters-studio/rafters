@@ -184,10 +184,20 @@ describe('motion CSS: golden emission', () => {
   });
 
   it('builds every animation on the namespace leaves', () => {
+    // The assignment keys are named for the motion -- shape, tier, curve -- and
+    // built entirely from leaves. The legacy `motion-animation-*` set that used
+    // to be emitted alongside them carried literal times (`spin 1s`,
+    // `caret-blink 1.25s`) straight into a theme key, which is a value written
+    // outside the leaf layer: retuning a period moved nothing, and the two
+    // copies could disagree.
     const css = emitCSS(baseTokens());
     expect(css).toContain(
-      '--animate-scale-out: scale-out var(--rafters-duration-fast) var(--rafters-ease-exit);',
+      '--animate-scale-out-fast-exit: scale-out var(--rafters-duration-fast) var(--rafters-ease-exit);',
     );
+    expect(css).toContain('--animate-spin-spin: spin var(--rafters-period-spin) infinite;');
+    for (const line of css.split('\n').filter((l) => l.includes('--animate-'))) {
+      expect(line, `an assignment carries a literal: ${line.trim()}`).not.toMatch(/\d+m?s\b/);
+    }
     expect(css).not.toContain('var(--motion-duration-');
     expect(css).not.toContain('var(--motion-easing-');
   });

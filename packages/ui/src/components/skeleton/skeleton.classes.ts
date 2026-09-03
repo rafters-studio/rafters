@@ -9,7 +9,7 @@ export interface SkeletonClassSet {
  * shimmers. `bg-muted` is a SEMANTIC token (the same shape as Card baking in
  * `bg-card`), not a raw colour utility.
  *
- * THE CELL IS THE SPEC (#2017, #2154). `animate-skeleton-root-waiting` is the
+ * THE CELL IS THE SPEC (#2017, #2154). `animate-pulse-shimmer` is the
  * generated consumption of `skeleton / root / waiting` in
  * `packages/ui/docs/spec/matrix/motion.jsonl` (period `shimmer`) -- one
  * reference, no raw `animate-pulse`, no literal duration.
@@ -27,7 +27,7 @@ export interface SkeletonClassSet {
  * Consumers size and shape the placeholder through `className` (`h-4 w-48`,
  * `rounded-full`, ...), exactly as the shadcn base and the oracle intended.
  */
-export const skeletonBaseClasses = 'animate-skeleton-root-waiting rounded-md bg-muted';
+export const skeletonBaseClasses = 'animate-pulse-shimmer rounded-md bg-muted';
 
 export function skeletonClasses(_config: SkeletonConfig, _state: SkeletonState): SkeletonClassSet {
   return { root: skeletonBaseClasses };

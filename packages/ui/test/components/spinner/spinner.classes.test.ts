@@ -11,8 +11,8 @@ describe('spinner classes', () => {
     const tokens = classes.split(/\s+/);
     expect(classes).toContain('inline-block');
     expect(classes).toContain('rounded-full');
-    expect(classes).toContain('animate-spinner-root-busy');
-    // `animate-spinner-root-busy` itself contains the substring `animate-spin`,
+    expect(classes).toContain('animate-spin-spin');
+    // `animate-spin-spin` itself contains the substring `animate-spin`,
     // so this must check for the OLD utility as a whole class token, not a
     // substring match.
     expect(tokens).not.toContain('animate-spin');

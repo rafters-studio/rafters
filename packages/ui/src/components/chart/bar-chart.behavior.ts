@@ -373,7 +373,7 @@ export const barChart: BehaviorSpec<
   // way every other component in this codebase declares one today: as a row
   // in docs/spec/matrix/motion.jsonl (component: bar-chart, part: bar,
   // transition: enter, provenance: proposed), consumed below in
-  // bar-chart.classes.ts via the generated animate-bar-chart-bar-enter
+  // bar-chart.classes.ts via the generated animate-grow-in-normal-enter
   // utility.
 };
 

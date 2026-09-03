@@ -349,12 +349,12 @@ describe('motion: matrix declaration (#2225 AC4; BehaviorSpec.motion is spec-res
 
   it('barChartClasses selects the vertical utility for the default/vertical layout', () => {
     const classes = barChartClasses({ layout: 'vertical' }, barChart.initialState(baseConfig));
-    expect(classes.bar).toBe('data-[state=visible]:animate-bar-chart-bar-enter');
+    expect(classes.bar).toBe('data-[state=visible]:animate-grow-in-normal-enter');
   });
 
   it('barChartClasses selects the horizontal (-x) utility once layout is horizontal', () => {
     const classes = barChartClasses({ layout: 'horizontal' }, barChart.initialState(baseConfig));
-    expect(classes.bar).toBe('data-[state=visible]:animate-bar-chart-bar-enter-x');
+    expect(classes.bar).toBe('data-[state=visible]:animate-grow-in-x-normal-enter');
   });
 
   it('the bar-enter composition (scale, no translate/rotate) is legal under validateMotionComposition', () => {
@@ -380,8 +380,8 @@ describe('barChartClasses', () => {
   const FORBIDDEN_LITERAL = /#[0-9a-f]{3,8}\b|var\(--/i;
   const classes = barChartClasses({ layout: 'vertical' }, barChart.initialState(baseConfig));
 
-  it('consumes the generated animate-bar-chart-bar-enter utility off data-state', () => {
-    expect(classes.bar).toContain('data-[state=visible]:animate-bar-chart-bar-enter');
+  it('consumes the generated animate-grow-in-normal-enter utility off data-state', () => {
+    expect(classes.bar).toContain('data-[state=visible]:animate-grow-in-normal-enter');
   });
 
   it('never carries a numeric duration or motion-reduce:animate-none', () => {

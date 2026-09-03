@@ -40,8 +40,8 @@ const triggerClasses =
 const contentClasses =
   'z-depth-dropdown min-w-32 overflow-hidden rounded-md border bg-popover p-1 ' +
   'text-popover-foreground shadow-lg ' +
-  'data-[state=open]:animate-dropdown-menu-content-open ' +
-  'data-[state=closed]:animate-dropdown-menu-content-close ' +
+  'data-[state=open]:animate-scale-in-moderate-enter ' +
+  'data-[state=closed]:animate-scale-out-fast-exit ' +
   'data-[state=closed]:pointer-events-none';
 
 // The active item is the roving-focus current item, styled via :focus. No

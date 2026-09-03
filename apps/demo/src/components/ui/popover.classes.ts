@@ -35,7 +35,7 @@ export interface PopoverClassSet {
 // duration wherever it wins.
 const contentClasses =
   'z-depth-popover w-72 rounded-md border bg-popover p-4 text-popover-foreground shadow-lg outline-none ' +
-  'data-[state=open]:animate-popover-content-open data-[state=closed]:animate-popover-content-close ' +
+  'data-[state=open]:animate-scale-in-moderate-enter data-[state=closed]:animate-scale-out-fast-exit ' +
   'data-[state=closed]:pointer-events-none';
 
 // The optional in-panel dismiss control. Sized to the touch floor, scaling

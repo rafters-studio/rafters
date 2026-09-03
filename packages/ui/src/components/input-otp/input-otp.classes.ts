@@ -41,7 +41,7 @@ const caretClasses = 'pointer-events-none absolute inset-0 flex items-center jus
 
 // The caret-blink feedback loop.
 //
-// THE CELL IS THE SPEC (#2017, #2154). `animate-input-otp-caret-idle` is the
+// THE CELL IS THE SPEC (#2017, #2154). `animate-caret-blink-blink` is the
 // generated consumption of `input-otp / caret / idle` in
 // `packages/ui/docs/spec/matrix/motion.jsonl` (period `blink`) -- one
 // reference, not the stock `animate-pulse` this used before #2155's audit
@@ -55,7 +55,7 @@ const caretClasses = 'pointer-events-none absolute inset-0 flex items-center jus
 // `REDUCED_MOTION_ZEROED` in `packages/design-tokens/src/exporters/tailwind.ts`
 // for the ruling this follows. This is a behavior change from the previous
 // `motion-reduce:animate-none`, which stilled the caret under reduced motion.
-const caretBarClasses = 'h-4 w-px animate-input-otp-caret-idle bg-foreground';
+const caretBarClasses = 'h-4 w-px animate-caret-blink-blink bg-foreground';
 
 const separatorClasses = 'flex items-center justify-center text-muted-foreground';
 

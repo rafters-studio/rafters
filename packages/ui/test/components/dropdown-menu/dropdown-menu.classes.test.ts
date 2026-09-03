@@ -33,10 +33,10 @@ describe('dropdown-menu classes', () => {
     // enter, open -> closed is fast + exit. The assignments match popover's
     // today and the cells stay SEPARATE anyway -- the matrix declares two
     // moments, and a shared name would drag one when the other is retuned.
-    expect(classes.content).toContain('data-[state=open]:animate-dropdown-menu-content-open');
-    expect(classes.content).toContain('data-[state=closed]:animate-dropdown-menu-content-close');
-    expect(classes.content).not.toContain('animate-scale-in');
-    expect(classes.content).not.toContain('animate-scale-out');
+    expect(classes.content).toContain('data-[state=open]:animate-scale-in-moderate-enter');
+    expect(classes.content).toContain('data-[state=closed]:animate-scale-out-fast-exit');
+    expect(classes.content.split(/[\s:]+/)).not.toContain('animate-scale-in');
+    expect(classes.content.split(/[\s:]+/)).not.toContain('animate-scale-out');
   });
 
   it('motion respects reduced-motion, and does NOT do it with animate-none', () => {

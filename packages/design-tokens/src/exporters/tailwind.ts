@@ -513,6 +513,14 @@ function generateThemeBlock(groups: GroupedTokens): string {
     lines.push('');
   }
 
+  // The matrix's assignments, as Tailwind animation keys. Tailwind generates the
+  // .animate-* utility from each; we write no @utility block for them.
+  const animationKeys = generateMotionAnimationKeys(groups.motion);
+  if (animationKeys) {
+    lines.push(animationKeys);
+    lines.push('');
+  }
+
   // Breakpoint tokens (exclude media query tokens -- their values are
   // conditions like "(prefers-reduced-motion: reduce)", not dimensions,
   // and Tailwind would generate invalid CSS like @media (width >= ...))
@@ -550,11 +558,12 @@ function generateThemeBlock(groups: GroupedTokens): string {
     lines.push('');
   }
 
-  // Animation utility tokens (from motion-animation-* tokens)
-  const animationTokens = generateAnimationTokens(groups.motion);
-  if (animationTokens) {
-    lines.push(animationTokens);
-  }
+  // NO LEGACY --animate-* KEYS. The `motion-animation-*` tokens carried literal
+  // times (`spin 1s`, `pulse 2s`, `caret-blink 1.25s`) straight into a theme key,
+  // which is a value written outside the leaf layer -- retuning a period moved
+  // nothing, and the two copies could disagree. The matrix's own assignments are
+  // emitted as --animate-* keys above, deduplicated and built entirely from
+  // var()s onto the leaves.
 
   lines.push('}');
   return lines.join('\n');
@@ -684,27 +693,6 @@ function generateKeyframes(motionTokens: Token[]): string {
   }
 
   return lines.join('\n').trim();
-}
-
-/**
- * Generate animation utility tokens for @theme block from motion-animation-* tokens
- * These create --animate-* tokens that can be used with Tailwind's animate-* utilities
- */
-function generateAnimationTokens(motionTokens: Token[]): string {
-  const animationTokens = motionTokens.filter((t) => t.name.startsWith('motion-animation-'));
-
-  if (animationTokens.length === 0) {
-    return '';
-  }
-
-  const lines: string[] = [];
-
-  for (const token of animationTokens) {
-    const animName = token.animationName || token.name.replace('motion-animation-', '');
-    lines.push(`  --animate-${animName}: ${token.value};`);
-  }
-
-  return lines.join('\n');
 }
 
 /**
@@ -1032,35 +1020,59 @@ function parseCellSpec(tokenName: string, raw: string): CellSpec | null {
  * utility and stop the component animating with no error at all. All are the
  * 019fb063 silent-resolution failure arriving from inside our own emission.
  */
-function generateMotionCellUtilities(motionTokens: Token[]): string {
+/**
+ * Emit one `--animate-<shape>-<tier>-<curve>` theme key per DISTINCT motion the
+ * matrix assigns, deduplicated.
+ *
+ * Tailwind generates the `.animate-*` utility from these -- there is no
+ * `@utility` block here, because `--animate-*` is a Tailwind v4 theme namespace
+ * and writing our own would be the second generator that made `.ease-standard`
+ * merge into two declarations.
+ *
+ * DEDUPLICATED BY THE MOTION, NOT BY THE MOMENT. This replaces one utility per
+ * `(component, part, transition)` -- 49 names, of which the matrix used only 17
+ * distinct (keyframe, tier, curve) triples, so `scale-in` at `moderate` on
+ * `enter` carried eight different names. Eight names for one motion is the
+ * vocabulary drift the generics ruling exists to prevent: one fast, everywhere,
+ * always. Two moments assigned the same shape, tier and curve ARE the same
+ * motion; a component that should differ differs by TIER, which is already in
+ * the name.
+ *
+ * The name is derived from the assignment and invents nothing -- the keyframe
+ * the row names, the tier it consumes, the curve role it consumes. Reading the
+ * class back gives you the row.
+ *
+ * A LOOP names its period instead of a tier and carries `infinite`. It gets no
+ * reduced-motion treatment for the same reason `period` sits outside
+ * REDUCED_MOTION_ZEROED: work loops slow, they never stop.
+ *
+ * No value appears in any key -- duration and curve are `var()`s onto the leaves
+ * -- so the set is byte-identical across a retune (the toy-9 invariant), and the
+ * reduced-motion law, which is written on those leaves, reaches every one of
+ * these animations without a single line here.
+ */
+function generateMotionAnimationKeys(motionTokens: Token[]): string {
   const cellTokens = motionTokens.filter((t) => t.name.startsWith('motion-cell-'));
   if (cellTokens.length === 0) return '';
 
-  // The period members this sheet actually declares. The exporter holds no
-  // definition tables, so the leaves already in the token list ARE the
-  // vocabulary -- and checking against them is the exporter-side mirror of the
-  // generator's `requireDef`. Without it a mistyped period emits
-  // `var(--rafters-period-shimmr)`, which compiles clean, resolves to nothing
-  // and leaves the loop standing still (reflection 019fb063).
   const periodMembers = new Set<string>();
   for (const token of motionTokens) {
     const parts = motionNamespaceParts(token.name);
     if (parts?.namespace === 'period') periodMembers.add(parts.member);
   }
 
-  const lines: string[] = [
-    '/* Motion cells -- one utility per animated (component, part, transition) */',
-  ];
-
+  // Insertion-ordered, so the emission is stable across runs.
+  const keys = new Map<string, string>();
   for (const token of cellTokens) {
     if (typeof token.value !== 'string') continue;
     const spec = parseCellSpec(token.name, token.value);
-
-    lines.push(`@utility ${token.name.replace('motion-cell-', 'animate-')} {`);
+    // A PINNED CELL is an operator's hand-tuned shorthand, and it stays keyed by
+    // its own name: it is one specific moment by definition, not a shared motion.
     if (spec === null) {
-      // A user-pinned cell: the value is an animation shorthand, verbatim.
-      lines.push(`  animation: ${token.value};`);
-    } else if (spec.duration.kind === 'period') {
+      keys.set(token.name.replace('motion-cell-', ''), token.value);
+      continue;
+    }
+    if (spec.duration.kind === 'period') {
       const { period } = spec.duration;
       if (!periodMembers.has(period)) {
         throw new Error(
@@ -1068,40 +1080,24 @@ function generateMotionCellUtilities(motionTokens: Token[]): string {
             `"${period}". Known periods: ${[...periodMembers].sort().join(', ')}.`,
         );
       }
-      // A LOOP. It takes a period, it repeats forever, and it names no curve --
-      // every period row in the matrix declares curve "none", and supplying one
-      // here would be inventing an assignment no cell made.
-      lines.push(`  animation-name: ${spec.keyframe};`);
-      lines.push(`  animation-duration: var(--rafters-period-${period});`);
-      lines.push('  animation-iteration-count: infinite;');
-    } else {
-      // A TRANSITION. It runs ONCE, so no iteration count is written: the CSS
-      // initial value is already 1, and writing it would be a literal standing
-      // where the absence of one says the same thing.
-      lines.push(`  animation-name: ${spec.keyframe};`);
-      lines.push(`  animation-duration: var(--rafters-duration-${spec.duration.tier});`);
-      lines.push(`  animation-timing-function: var(--rafters-ease-${spec.curve});`);
+      keys.set(
+        `${spec.keyframe}-${period}`,
+        `${spec.keyframe} var(--rafters-period-${period}) infinite`,
+      );
+      continue;
     }
-    // The reduced-motion law reaches derived and pinned cells alike. It lands
-    // AFTER the shorthand in the pinned case, so it wins on the duration and
-    // only on the duration -- exactly what mechanism B is.
-    //
-    // THE PERIOD EXEMPTION IS SET MEMBERSHIP HERE TOO. `reducedMotionAware` is
-    // false on exactly the period-kind cells (the generator sets it from the
-    // same tagged union `REDUCED_MOTION_ZEROED` encodes for the namespaces), so
-    // a loop simply gets no block -- loops slow, they never stop. Reading the
-    // token field rather than `spec` is deliberate: a PINNED loop has no spec
-    // left to read, and gating on the spec would silently zero a hand-tuned
-    // spinner.
-    if (token.reducedMotionAware !== false) {
-      lines.push('  @media (prefers-reduced-motion: reduce) {');
-      lines.push('    animation-duration: 0s;');
-      lines.push('  }');
-    }
-    lines.push('}');
+    const { tier } = spec.duration;
+    keys.set(
+      `${spec.keyframe}-${tier}-${spec.curve}`,
+      `${spec.keyframe} var(--rafters-duration-${tier}) var(--rafters-ease-${spec.curve})`,
+    );
   }
 
-  return lines.join('\n');
+  if (keys.size === 0) return '';
+  return [
+    '  /* Motion assignments -- one key per distinct (shape, tier, curve) */',
+    ...[...keys].map(([name, value]) => `  --animate-${name}: ${value};`),
+  ].join('\n');
 }
 
 /**
@@ -1399,12 +1395,10 @@ export function tokensToTailwind(
     sections.push(motionUtilities);
   }
 
-  // Per-cell animation @utility classes (animate-<component>-<part>-<transition>)
-  const cellUtilities = generateMotionCellUtilities(groups.motion);
-  if (cellUtilities) {
-    sections.push('');
-    sections.push(cellUtilities);
-  }
+  // NO PER-CELL @utility BLOCKS. The matrix's assignments are --animate-* theme
+  // keys in the block above, deduplicated by (shape, tier, curve), and Tailwind
+  // generates the utility for each. A hand-written block here would be the
+  // second generator for the same class name.
 
   // Typography element overrides (if any)
   const overrideCSS = generateTypographyOverrideCSS(typographyOverrides);
@@ -1557,6 +1551,14 @@ function generateThemeBlockWithVarRefs(groups: GroupedTokens): string {
     lines.push('');
   }
 
+  // The matrix's assignments, as Tailwind animation keys. Tailwind generates the
+  // .animate-* utility from each; we write no @utility block for them.
+  const animationKeys = generateMotionAnimationKeys(groups.motion);
+  if (animationKeys) {
+    lines.push(animationKeys);
+    lines.push('');
+  }
+
   // Breakpoint tokens (exclude media query tokens)
   if (groups.breakpoint.length > 0) {
     for (const token of groups.breakpoint) {
@@ -1582,20 +1584,12 @@ function generateThemeBlockWithVarRefs(groups: GroupedTokens): string {
     lines.push('');
   }
 
-  // Animation utility tokens (from motion-animation-* tokens).
-  //
-  // The VALUE, not a `var(--rafters-animate-*)` bridge -- the same line the
-  // dynamic path emits. `--rafters-animate-*` was invented here and declared
-  // nowhere: no token is named `animate-*`, so no leaf of that name exists in
-  // either sheet, and every `animate-*` utility in the static Studio sheet
-  // resolved to nothing. Retheming still reaches these, because the value is an
-  // animation shorthand whose duration and easing are THEMSELVES var()s onto
-  // the declared `--rafters-duration-*` / `--rafters-ease-*` leaves. The
-  // indirection was never needed; it was only ever a dangling reference.
-  const animationTokens = groups.motion.filter((t) => t.name.startsWith('motion-animation-'));
-  if (animationTokens.length > 0) {
-    lines.push(generateAnimationTokens(groups.motion));
-  }
+  // NO LEGACY --animate-* KEYS. The `motion-animation-*` tokens carried literal
+  // times (`spin 1s`, `pulse 2s`, `caret-blink 1.25s`) straight into a theme key,
+  // which is a value written outside the leaf layer -- retuning a period moved
+  // nothing, and the two copies could disagree. The matrix's own assignments are
+  // emitted as --animate-* keys above, deduplicated and built entirely from
+  // var()s onto the leaves.
 
   lines.push('}');
   return lines.join('\n');
@@ -1654,29 +1648,9 @@ export function registryToTailwindStatic(registry: TokenRegistry): string {
     sections.push(reducedMotionLaw);
   }
 
-  // Per-cell animation @utility classes -- BOTH emission paths, deliberately.
-  //
-  // The other animate-* utilities reach this sheet by THEME INFERENCE: the
-  // `--animate-*` entries above are a Tailwind v4 namespace, so Tailwind
-  // generates `.animate-<name>` for them. Motion cells are not in that
-  // namespace (on purpose -- a theme-inferred rule sets the animation
-  // SHORTHAND, which would reset the reduced-motion zeroed duration), so
-  // without this call the three components that consume them would compile to
-  // nothing in the Studio sheet while working in the dynamic one. That split is
-  // the 019fb063 silent failure with a second path to arrive by.
-  //
-  // Safe to share: the function emits references only and reads nothing but
-  // tokens, so both sheets carry byte-identical blocks -- which is the property
-  // the golden asserts.
-  //
-  // KNOWN LIMITATION, unchanged by this: the five-namespace and semantic-motion
-  // @utility blocks are still absent from the static sheet. Those never worked
-  // here and adding them is the utility-parity sweep, not this fix.
-  const cellUtilities = generateMotionCellUtilities(groups.motion);
-  if (cellUtilities) {
-    sections.push('');
-    sections.push(cellUtilities);
-  }
+  // No per-cell @utility blocks here either -- see the dynamic path. Both sheets
+  // carry the --animate-* keys, and Tailwind generates the utilities from them,
+  // so the parity gap this block used to work around no longer exists.
 
   // Typography composition assignments + ts-* utility
   const staticTypoTheme = generateTypographyCompositeThemeInline(groups['typography-composite']);

@@ -40,7 +40,7 @@ const containerClasses = 'fixed inset-0 z-depth-modal flex items-center justify-
 // instantly.
 const contentClasses =
   'relative w-full max-w-lg rounded-lg border border-card-border bg-card p-6 text-card-foreground shadow-lg ' +
-  'data-[state=open]:animate-dialog-content-open data-[state=closed]:animate-dialog-content-close ' +
+  'data-[state=open]:animate-scale-in-normal-enter data-[state=closed]:animate-scale-out-moderate-exit ' +
   'data-[state=closed]:pointer-events-none';
 
 const headerClasses = 'flex flex-col space-y-1.5 text-center @md:text-left';

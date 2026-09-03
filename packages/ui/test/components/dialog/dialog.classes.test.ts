@@ -29,10 +29,10 @@ describe('dialog classes', () => {
     // motion.jsonl: dialog / content / closed -> open is normal + enter, and
     // open -> closed is moderate + exit. Two distinct cells, two utilities --
     // not one shared animation standing in for both (the #2012 defect).
-    expect(classes.content).toContain('data-[state=open]:animate-dialog-content-open');
-    expect(classes.content).toContain('data-[state=closed]:animate-dialog-content-close');
-    expect(classes.content).not.toContain('animate-scale-in');
-    expect(classes.content).not.toContain('animate-scale-out');
+    expect(classes.content).toContain('data-[state=open]:animate-scale-in-normal-enter');
+    expect(classes.content).toContain('data-[state=closed]:animate-scale-out-moderate-exit');
+    expect(classes.content.split(/[\s:]+/)).not.toContain('animate-scale-in');
+    expect(classes.content.split(/[\s:]+/)).not.toContain('animate-scale-out');
   });
 
   it('motion respects reduced-motion, and does NOT do it with animate-none', () => {

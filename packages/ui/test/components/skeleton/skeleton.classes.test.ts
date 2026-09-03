@@ -10,8 +10,8 @@ function root(): string {
 
 describe('skeleton classes', () => {
   it('carries the shimmer cell utility, not the stock animate-pulse', () => {
-    expect(root()).toContain('animate-skeleton-root-waiting');
-    expect(root()).not.toContain('animate-pulse');
+    expect(root()).toContain('animate-pulse-shimmer');
+    expect(root().split(/[\s:]+/)).not.toContain('animate-pulse');
   });
 
   it('never stops the shimmer under reduced motion -- period cells are exempt', () => {
