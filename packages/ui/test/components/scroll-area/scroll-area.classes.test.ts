@@ -50,8 +50,34 @@ describe('scroll-area classes', () => {
     expect(horizontal.bar).toContain('border-t');
   });
 
-  it('scrollbar transition honours reduced-motion', () => {
-    expect(scrollBarBaseClasses).toContain('motion-reduce:transition-none');
+  it('the scrollbar hover carries its row: color, fast, standard', () => {
+    // motion.jsonl scroll-area / scrollbar / "hover". The curve was missing
+    // before; motion-reduce is gone because the law is written on the leaves.
+    expect(scrollBarBaseClasses).toContain('transition-colors');
+    expect(scrollBarBaseClasses).toContain('duration-fast');
+    expect(scrollBarBaseClasses).toContain('ease-standard');
+    expect(scrollBarBaseClasses).not.toContain('motion-reduce');
+  });
+
+  it('the thumb consumes the pointer rule by absence', () => {
+    // While the pointer drives the thumb it must track it exactly; any nonzero
+    // duration is a defect, so there is no transition utility here at all.
+    expect(scrollBarThumbClasses).not.toMatch(/\b(transition|duration|ease|animate)-/);
+  });
+
+  it('leaves the proposed show/hide rows unconsumed rather than inventing a trigger', () => {
+    // ScrollArea is the static archetype -- no state, an empty aria projection,
+    // and a bar that is always visible. Deciding what reveals a scrollbar is a
+    // design decision no row makes. Reported on #2299.
+    expect(scrollBarBaseClasses).not.toContain('animate-');
+    expect(scrollBarBaseClasses).not.toContain('delay-linger');
+  });
+
+  it('states no timing as a literal', () => {
+    for (const value of [scrollBarBaseClasses, scrollBarThumbClasses, root({})]) {
+      expect(value).not.toMatch(/\b(duration|delay)-\d/);
+      expect(value).not.toContain('motion-reduce');
+    }
   });
 
   it('the thumb uses the semantic border colour token', () => {

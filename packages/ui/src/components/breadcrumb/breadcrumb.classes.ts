@@ -14,8 +14,20 @@ export const breadcrumbListClasses =
 
 export const breadcrumbItemClasses = 'inline-flex items-center gap-1.5';
 
+/**
+ * `breadcrumb / link / hover` in `packages/ui/docs/spec/matrix/motion.jsonl`
+ * assigns tier `fast` and curve role `standard` (provenance `baseline`) to a
+ * colour change (`background, text, border`) on a link that stays put -- a
+ * TRANSITION, named as composed generics. `ease-standard` was the half of the
+ * row this file had not yet named.
+ *
+ * NO component-level reduced-motion escape. The generated `duration-*` and
+ * `delay-*` utilities zero themselves under `prefers-reduced-motion` (the
+ * exporter's `REDUCED_MOTION_ZEROED` set), so reduced motion is the token
+ * sheet's responsibility and never a component-level media query.
+ */
 export const breadcrumbLinkClasses =
-  'transition-colors duration-fast motion-reduce:transition-none hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
+  'transition-colors duration-fast ease-standard hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
 
 export const breadcrumbPageClasses = 'text-foreground';
 

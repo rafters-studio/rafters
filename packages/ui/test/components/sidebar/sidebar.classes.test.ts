@@ -60,28 +60,74 @@ describe('sidebar panel: one element, both axes', () => {
     expect(panelVariantClasses.sidebar).toBe('');
   });
 
-  it('declares NO layout motion: the collapse/slide timing is undeclared (tokens pending)', () => {
-    // The oracle animated the collapse and slide with raw duration-200 +
-    // ease-linear/ease-in-out; those are dropped -- only the from/to states ride
-    // the data hooks. The horizontal-slide motion tokens do not exist yet.
+  it('carries the root expand/collapse rows on the desktop width transition', () => {
+    // motion.jsonl sidebar / root / "expand" (normal, enter) and "collapse"
+    // (moderate, exit). The base rule is the expanded rail; data-[state=collapsed]
+    // owns the collapse. md:-scoped -- below that the same element is the mobile
+    // overlay, whose presence Sheet owns.
+    const panel = sidebarPanelClasses('left', 'sidebar');
+    expect(panel).toContain('md:transition-[width]');
+    expect(panel).toContain('md:duration-normal');
+    expect(panel).toContain('md:ease-enter');
+    expect(panel).toContain('md:data-[state=collapsed]:duration-moderate');
+    expect(panel).toContain('md:data-[state=collapsed]:ease-exit');
+  });
+
+  it('drops the oracle literals and the stock Tailwind curves', () => {
     const panel = `${sidebarPanelClasses('left', 'sidebar')} ${sidebarPanelClasses('right', 'inset')}`;
     expect(panel).not.toContain('duration-200');
-    expect(panel).not.toContain('ease-linear');
     expect(panel).not.toContain('ease-in-out');
-    expect(panel).not.toContain('transition-transform');
-    expect(panel).not.toContain('transition-all');
     expect(panel).not.toContain('animate-in');
     expect(panel).not.toContain('slide-in');
+  });
+
+  it('leaves the mobile overlay rows to the Sheet node this class lands on', () => {
+    // sidebar.tsx passes mobilePanel as SheetContent's className, and sheet
+    // already carries animate-fade-in-normal-spring-smooth /
+    // animate-fade-out-moderate-exit -- the identical triples sidebar's own
+    // cells emit. Restating them would double-drive opacity on one node.
+    expect(classes.mobilePanel).not.toContain('animate-');
   });
 });
 
 describe('sidebar menu button variants', () => {
-  it('base keeps only the small interaction-feedback duration (Spec 04)', () => {
+  it('carries the item hover and active-change rows: color, fast, standard', () => {
+    // Both rows assign the same movement, properties, tier and curve on the same
+    // element, so one declaration serves both.
     const base = sidebarMenuButtonClasses('default', 'default');
     expect(base).toContain('transition-colors');
     expect(base).toContain('duration-fast');
-    expect(base).toContain('motion-reduce:transition-none');
+    expect(base).toContain('ease-standard');
     expect(base).not.toContain('duration-200');
+  });
+
+  it('the action buttons transition colours, not transforms', () => {
+    // transition-transform was the wrong property as well as an incomplete
+    // generic: nothing on these buttons transforms; hover changes bg and text.
+    for (const value of [classes.groupAction, classes.menuAction]) {
+      expect(value).toContain('transition-colors');
+      expect(value).toContain('duration-fast');
+      expect(value).toContain('ease-standard');
+      expect(value).not.toContain('transition-transform');
+    }
+  });
+
+  it('the submenu button carries the same item rows', () => {
+    const sub = sidebarMenuSubButtonClasses('md');
+    expect(sub).toContain('transition-colors');
+    expect(sub).toContain('duration-fast');
+    expect(sub).toContain('ease-standard');
+  });
+
+  it('the loading placeholder borrows the skeleton loop cell, not stock animate-pulse', () => {
+    // The matrix assigns the moment once, as skeleton / root / "waiting" -- a
+    // period-kind loop the generator emits as animate-pulse-shimmer. A loop is
+    // exempt from the reduced-motion zero by design, and animate-none would win
+    // destructively. Sidebar has no skeleton row of its own; reported on #2302.
+    for (const value of [classes.menuSkeletonIcon, classes.menuSkeletonText]) {
+      expect(value.split(/\s+/)).toContain('animate-pulse-shimmer');
+      expect(value).not.toContain('motion-reduce:animate-none');
+    }
   });
 
   it('size and outline variants layer onto the base', () => {
@@ -93,5 +139,33 @@ describe('sidebar menu button variants', () => {
   it('submenu button sizes layer onto its base', () => {
     expect(sidebarMenuSubButtonClasses('sm')).toContain('ts-label-small');
     expect(sidebarMenuSubButtonClasses('md')).toContain('ts-label-medium');
+  });
+});
+
+describe('sidebar motion vocabulary', () => {
+  const everyClass = [
+    ...Object.values(classes),
+    sidebarPanelClasses('left', 'sidebar'),
+    sidebarPanelClasses('right', 'inset'),
+    sidebarMenuButtonClasses('outline', 'lg'),
+    sidebarMenuSubButtonClasses('sm'),
+  ];
+
+  it('states no timing as a literal and queries reduced motion nowhere', () => {
+    for (const value of everyClass) {
+      expect(value).not.toMatch(/\b(duration|delay)-\d/);
+      expect(value).not.toContain('motion-reduce');
+    }
+  });
+
+  it('names only the six curve roles', () => {
+    const roles = ['standard', 'enter', 'exit', 'linear', 'spring-smooth', 'spring-snappy'];
+    for (const value of everyClass) {
+      for (const candidate of value.split(/\s+/)) {
+        const curve = candidate.split(':').pop() ?? '';
+        if (!curve.startsWith('ease-')) continue;
+        expect(roles).toContain(curve.slice('ease-'.length));
+      }
+    }
   });
 });

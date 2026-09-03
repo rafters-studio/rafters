@@ -54,6 +54,22 @@ describe('alert classes', () => {
     expect(classes).not.toMatch(/\[[a-z0-9.]+px\]/);
   });
 
+  // `alert / root / appear`: fade, tier `normal`, curve role `enter`, narrowed
+  // to the fade alone on the operator's ruling (the row still reads
+  // `fade + slide (y, small)` with a spacing-derived nudge). An alert has no
+  // open/closed state, so the cell utility rides the root unconditionally.
+  it('the root consumes the appear fade the matrix assigns', () => {
+    expect(root()).toContain('animate-fade-in-normal-enter');
+  });
+
+  it('the appear motion names no literal timing, no slide, and no escape', () => {
+    const classes = root();
+    expect(classes).not.toMatch(/duration-\d/);
+    expect(classes).not.toContain('motion-reduce:');
+    expect(classes).not.toContain('slide');
+    expect(classes).not.toContain('extent-');
+  });
+
   it('title/description/action are config-independent literals', () => {
     expect(alertTitleClasses).toBe('mb-1 text-title-small ts-title-small leading-none');
     expect(alertDescriptionClasses).toBe('text-body-small ts-body-small [&_p]:leading-relaxed');

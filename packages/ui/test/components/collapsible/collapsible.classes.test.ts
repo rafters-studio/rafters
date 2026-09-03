@@ -18,15 +18,52 @@ describe('collapsible classes', () => {
     expect(classes.trigger).toContain('disabled:pointer-events-none');
   });
 
-  it('the content clips its region and declares the height-axis motion intent', () => {
-    expect(classes.content).toContain('overflow-hidden');
-    expect(classes.content).toContain('transition-all');
-    expect(classes.content).toContain('duration-moderate');
+  it('the trigger hover carries its row: color, fast, standard', () => {
+    // motion.jsonl collapsible / trigger / "hover".
+    expect(classes.trigger).toContain('transition-colors');
+    expect(classes.trigger).toContain('duration-fast');
+    expect(classes.trigger).toContain('ease-standard');
   });
 
-  it('motion respects reduced-motion on both the trigger and the content', () => {
-    expect(classes.trigger).toContain('motion-reduce:transition-none');
-    expect(classes.content).toContain('motion-reduce:transition-none');
+  it('the content reveals by transitioning grid-template-rows, never height', () => {
+    // Reveal is a TRANSITION: height:auto is not transitionable, so the row
+    // animates 0fr<->1fr on an element that stays present. No animate-* cell
+    // exists for either direction.
+    expect(classes.content).toContain('transition-[grid-template-rows,opacity]');
+    expect(classes.content).toContain('grid-rows-[minmax(0,0fr)]');
+    expect(classes.content).toContain('group-data-[state=open]:grid-rows-[minmax(0,1fr)]');
+    expect(classes.content).not.toContain('animate-');
+    expect(classes.content).not.toContain('transition-all');
+  });
+
+  it('each direction carries its own row: open normal/enter, closed moderate/exit', () => {
+    expect(classes.content).toContain('group-data-[state=open]:duration-normal');
+    expect(classes.content).toContain('group-data-[state=open]:ease-enter');
+    expect(classes.content).toContain('duration-moderate');
+    expect(classes.content).toContain('ease-exit');
+  });
+
+  it('the reveal reads state from the root group, the only node given data-state', () => {
+    // collapsible.behavior.ts projects data-state onto `root` alone -- the
+    // content gets only data-disabled -- so a content-scoped data-[state=open]
+    // variant would match nothing while reading as consumed.
+    expect(classes.root.split(/\s+/)).toContain('group');
+    for (const candidate of classes.content.split(/\s+/))
+      expect(candidate.startsWith('data-[state=')).toBe(false);
+  });
+
+  it('the child clips so the 0fr track can actually collapse', () => {
+    // Stands in for the inner box accordion has as contentInner and this class
+    // set has no part for.
+    expect(classes.content).toContain('[&>*]:min-h-0');
+    expect(classes.content).toContain('[&>*]:overflow-hidden');
+  });
+
+  it('states no timing as a literal and queries reduced motion nowhere', () => {
+    for (const value of Object.values(classes)) {
+      expect(value).not.toMatch(/\b(duration|delay)-\d/);
+      expect(value).not.toContain('motion-reduce');
+    }
   });
 
   it('carries no raw color, spacing or z-index utilities', () => {

@@ -67,15 +67,83 @@ const sizeClasses: Record<ButtonSize, string> = {
   'icon-lg': 'h-12 w-12',
 };
 
+// Motion is the matrix's, transcribed (#2272). Three rows land on this file.
+//
+// ROOT / HOVER -- "color + elevation" (background/text/border, box-shadow) at
+// duration-fast, ease-standard. The element stays put, so it is a transition,
+// and the transition-property list names the row's own properties rather than
+// the shorthand colour utility, which omits box-shadow.
+//
+// ROOT / PRESS -- "zoom + color" at duration-micro, ease-spring-snappy,
+// extent-press. The zoom half rides the extent namespace exactly as
+// context-menu's subContent rides extent-pop: `extent-press` picks the member
+// (writing the `--rafters-consumed-extent` alias) and
+// `scale-(--rafters-consumed-extent)` reads the alias back, never the leaf.
+// `scale-100` is the resting geometry so there is a value to interpolate from.
+//
+// Duration and curve are scoped to `active:` and the transition-property list
+// is declared ONCE on the base: Tailwind's own `transition-*` utilities restate
+// transition-duration from `var(--tw-duration, ...)` while this repo's
+// `duration-*` utilities set the longhand, so a transition-property utility
+// sorting after a duration would silently collapse the cell onto Tailwind's
+// default (test/motion/reveal-candidates.test.ts). Scoping only duration/ease
+// keeps every variant out of that ordering question. Press-in therefore runs at
+// micro/spring-snappy and release settles on the base hover pair -- the same
+// "whichever rule you transition INTO owns the timing" convention context-menu
+// records.
+//
+// No `motion-reduce:` escape: the reduced-motion zero is written once on the
+// token leaves (packages/design-tokens/src/exporters/tailwind.ts,
+// REDUCED_MOTION_ZEROED), and a component-level escape fights it.
 const baseClasses =
   'inline-flex items-center justify-center gap-2 rounded-md text-label-large ts-label-large cursor-pointer ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ' +
-  'transition-colors duration-fast motion-reduce:transition-none ' +
+  'transition-[color,background-color,border-color,box-shadow,scale] duration-fast ease-standard ' +
+  'scale-100 extent-press ' +
+  'active:scale-(--rafters-consumed-extent) active:duration-micro active:ease-spring-snappy ' +
   'disabled:opacity-50 disabled:cursor-not-allowed ' +
   'aria-disabled:opacity-50 aria-disabled:cursor-not-allowed ' +
   'aria-busy:cursor-progress';
 
-const spinnerClasses = 'h-5 w-5 @md:h-4 @md:w-4 animate-spin motion-reduce:animate-none';
+// CONTENT / IDLE <-> BUSY -- "swap (label <-> spinner) + fade" at duration-fast,
+// ease-standard, marked `proposed` (unreviewed) in motion.jsonl.
+//
+// The row and the component disagree about the swap, and the disagreement is
+// reported rather than resolved: button.tsx renders the spinner ALONGSIDE the
+// label (both are children of the root; the label never leaves), so there is no
+// label <-> spinner swap to time. The moment that does exist is the spinner
+// arriving and leaving, which is the row's fade half, and that is what is
+// consumed here.
+//
+// The fade is a transition, not a keyframe, because the loop already owns
+// `animation` on this node: two animate-* utilities compile to the same
+// property at the same specificity, so declaring both would leave exactly one
+// of them running -- silently. So the row's tier and curve are named on the
+// property the row moves, and the browser does the rest once something drives
+// that property.
+//
+// NEITHER DIRECTION PLAYS TODAY, and the reason is the same on both sides: the
+// spinner is mounted and unmounted outright, so it is outside the box model
+// before an entrance or exit transition can run. Presence is the layer that
+// fixes this -- it holds a node until its own animations settle -- and the
+// matrix rules out the shortcut explicitly: "No @starting-style dependency; it
+// is not trusted outside Tailwind's pipeline" (motion.md, Presence). A
+// @starting-style rule would compile cleanly and pass every candidate sweep
+// while running nowhere, which is worse than an undeclared moment.
+//
+// SPINNER / BUSY LOOP -- the loop is spinner/root/busy's cell, `animate-spin-spin`
+// (keyframe `spin`, period `spin`). It replaces stock Tailwind's spin utility,
+// whose 1s cycle is a literal outside the leaf layer, and the reduced-motion
+// escape that rode with it: `period` is deliberately absent from
+// REDUCED_MOTION_ZEROED because a work loop slows, it never stops -- a stopped
+// spinner says the work stopped.
+//
+// Neither of those two names is spelled out above, deliberately: Tailwind
+// extracts candidates from this file's whole SOURCE TEXT, comments included, so
+// naming a utility in prose ships its rule to every consumer that installs the
+// component. A comment about a class we deleted must not resurrect it.
+const spinnerClasses =
+  'h-5 w-5 @md:h-4 @md:w-4 animate-spin-spin transition-opacity duration-fast ease-standard';
 
 export function buttonClasses(config: ButtonConfig, _state: ButtonState): ButtonClassSet {
   return {

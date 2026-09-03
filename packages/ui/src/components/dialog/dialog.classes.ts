@@ -12,7 +12,25 @@ export interface DialogClassSet {
   closeIcon: string;
 }
 
-const overlayClasses = 'fixed inset-0 z-depth-overlay bg-foreground/80';
+// THE CELL IS THE SPEC (#2017). Two rows of the motion matrix --
+// dialog / overlay / closed -> open (normal, enter) and
+// dialog / overlay / open -> closed (moderate, exit). Both rows carry
+// provenance "proposed": a starting position, never reviewed.
+//
+// The overlay carries data-state from the behavior's aria projection
+// (dialog.behavior.ts), so the state selectors match in all three renderers.
+//
+// ROW AND BEHAVIOR DISAGREE ON THE EXIT. The open -> closed row assumes the
+// scrim is held present while its keyframe runs; nothing holds it. React
+// returns null the instant `effectiveOpen` flips false (dialog.tsx), Astro
+// renders `hidden={!open}`, and the DOM binding sets `el.hidden = !open`
+// (dialog.behavior.ts). `usePresence` wraps the CONTENT only. So
+// animate-fade-out-moderate-exit is named here as the row assigns it and will
+// render its first frame the day the overlay gets a presence hold. Consuming
+// the row does not, by itself, make the exit visible.
+const overlayClasses =
+  'fixed inset-0 z-depth-overlay bg-foreground/80 ' +
+  'data-[state=open]:animate-fade-in-normal-enter data-[state=closed]:animate-fade-out-moderate-exit';
 
 const containerClasses = 'fixed inset-0 z-depth-modal flex items-center justify-center p-4';
 
@@ -51,11 +69,20 @@ const titleClasses = 'text-title-medium ts-title-medium leading-none';
 
 const descriptionClasses = 'text-body-small ts-body-small text-muted-foreground';
 
+// dialog / close button / hover (fast, standard). A hover on a button that
+// stays put is a TRANSITION, so the row is consumed as composed generics --
+// duration-fast plus the standard curve -- not as a keyframe.
+//
+// THE ROW'S COLOUR HALF HAS NO MOMENT HERE. It declares fade + color over
+// ['opacity', 'background, text, border']; this button only raises opacity on
+// hover, and it inherits no background, text or border change to transition.
+// The fade half is consumed; the colour half is reported rather than invented,
+// because a hover colour nobody chose is a value nobody chose.
 const closeClasses =
   'absolute right-2 top-2 inline-flex h-11 w-11 items-center justify-center ' +
   '@md:right-4 @md:top-4 @md:h-8 @md:w-8 ' +
   'rounded-sm opacity-70 ring-offset-background cursor-pointer ' +
-  'transition-opacity duration-fast motion-reduce:transition-none hover:opacity-100 ' +
+  'transition-opacity duration-fast ease-standard motion-reduce:transition-none hover:opacity-100 ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
 
 const closeIconClasses = 'h-5 w-5 @md:h-4 @md:w-4';

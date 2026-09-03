@@ -55,7 +55,7 @@ describe('progress conformance [astro]', () => {
     expect(root.hasAttribute('aria-valuenow')).toBe(false);
     expect(root.getAttribute('aria-busy')).toBe('true');
     const indicator = partElement(root, 'indicator') as HTMLElement;
-    expect(indicator.className).toContain('animate-progress-indeterminate');
+    expect(indicator.className).toContain('animate-pulse-shimmer');
     expect(indicator.getAttribute('style')).toBeNull();
     await assertAxeClean(document.body);
   });

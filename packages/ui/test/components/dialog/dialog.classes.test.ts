@@ -35,6 +35,23 @@ describe('dialog classes', () => {
     expect(classes.content.split(/[\s:]+/)).not.toContain('animate-scale-out');
   });
 
+  it('the overlay consumes its own two cells, keyed off data-state', () => {
+    // motion.jsonl: dialog / overlay / closed -> open is normal + enter, and
+    // open -> closed is moderate + exit. Both rows carry provenance "proposed".
+    // The overlay's data-state comes from the behavior's aria projection, so the
+    // selectors match in React, Astro and the custom element alike.
+    expect(classes.overlay).toContain('data-[state=open]:animate-fade-in-normal-enter');
+    expect(classes.overlay).toContain('data-[state=closed]:animate-fade-out-moderate-exit');
+  });
+
+  it('the close button names the curve its row assigns, not just the tier', () => {
+    // motion.jsonl: dialog / close button / hover is fast + standard. A hover on
+    // a part that stays put is a transition, so the row is composed generics.
+    expect(classes.close).toContain('duration-fast');
+    expect(classes.close).toContain('ease-standard');
+    expect(classes.close).not.toMatch(/\bduration-\d/);
+  });
+
   it('motion respects reduced-motion, and does NOT do it with animate-none', () => {
     // Mechanism B (#2017): the cell utility zeroes animation-duration under the
     // media query. animate-none here would win destructively -- `animation:

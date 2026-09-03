@@ -47,8 +47,39 @@ const contentClasses =
 
 // The active item is the roving-focus current item, styled via :focus. No
 // data-highlighted axis (the highlight is ephemeral DOM focus, not score state).
+//
+// THE ROW: dropdown-menu / items / highlight move -- color, duration-micro,
+// ease-standard (motion.md:172). A transition, not a keyframe: the item stays
+// put and only its fill and text colour move, which is why the row is excluded
+// from the cell vocabulary by name (`dropdown-menu | items | highlight move`,
+// EXCLUDED_ROWS.noIntersectingProperty in
+// packages/design-tokens/test/motion-cells.test.ts) and consumes the generics
+// here instead. The row is marked PROPOSED in the matrix -- a starting position
+// for the knobs, never reviewed -- and is transcribed as written.
+//
+// THE SECOND ROW: dropdown-menu / items / enter -- fade (with content), which
+// assigns `delay-stagger-step` and NO duration and NO curve (motion.jsonl:38).
+// `duration: {"kind":"none"}` means the row assigns no duration, not that it
+// assigns nothing: the delay generic IS the whole assignment, so the whole
+// consumption is naming it. The fade itself is the CONTENT's keyframe -- that
+// is what "with content" says -- and this class only carries the offset.
+//
+// ZERO IS THE ASSIGNMENT, NOT A GAP. `delay-stagger-step` resolves to 0ms at
+// the efficient intent, so this class changes nothing on screen today, and
+// that is the point rather than a reason to omit it: a later retune reaches
+// these lists because a consumer exists to move. The silence below is a value
+// somebody chose, not an oversight, and the next reader should not remove the
+// class on the theory that it does nothing.
+//
+// ONE COUPLING TO KNOW ABOUT: `transition-delay` is per ELEMENT, exactly like
+// `transition-duration`, so this delay also sits on the highlight-move
+// transition above. At 0ms nothing shows. A non-zero `stagger-step` retune
+// would delay the highlight as well as the entrance, which is a matrix
+// question (the two rows share one element and the vocabulary has no
+// per-property delay), not something this file can resolve.
 const itemBase =
   'relative flex cursor-default select-none items-center rounded-sm text-body-small ts-body-small outline-none ' +
+  'transition-colors duration-micro ease-standard delay-stagger-step ' +
   'focus:bg-accent focus:text-accent-foreground ' +
   'data-[disabled]:pointer-events-none data-[disabled]:opacity-50';
 

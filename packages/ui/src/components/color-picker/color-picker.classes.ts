@@ -12,15 +12,35 @@ export interface ColorPickerClassSet {
   gamutLabel: string;
 }
 
-// Enter: motion-dropdown-in (slower). Exit: motion-dropdown-out (faster).
-// Fade from/to declared here; the token carries property/duration/easing.
-// starting:opacity-0 emits @starting-style so the enter transition fires on
-// mount (no previous computed value without it).
+// ROOT / CLOSED -> OPEN -- "fade" (opacity) at duration-moderate, ease-enter.
+// ROOT / OPEN -> CLOSED -- "fade" (opacity) at duration-fast, ease-exit.
+//
+// Both are presence changes, so both are keyframes named as one class each and
+// keyed off the state that drives them. The two triples the rows assign are
+// already emitted -- `animate-fade-in-moderate-enter` and
+// `animate-fade-out-fast-exit` -- because the cell keys are deduplicated by the
+// MOTION, not by the moment (packages/design-tokens/src/exporters/tailwind.ts):
+// sharing a name with command/content or avatar/image is the mechanism working,
+// not a borrowed cell.
+//
+// The old semantic dropdown-in / dropdown-out motion pair is gone (a
+// per-component motion token is the thing the matrix replaced), and the
+// unconditional `opacity-0` base went with it: it was the transition's start
+// value, and with a keyframe carrying its own `from`, it would otherwise leave
+// the picker permanently invisible wherever nothing sets `data-state`. Neither
+// deleted utility is spelled out here -- Tailwind extracts candidates from this
+// file's whole SOURCE TEXT, comments included, so naming one in prose would
+// ship its rule to every consumer that installs the component.
+//
+// Nothing in color-picker's own sources projects `data-state`: the behavior has
+// no open/closed axis, because the picker is a surface a popup opens rather than
+// a popup itself. The rows are still color-picker's own (motion.jsonl, anchored
+// popup, both baseline) -- the attribute comes from the composing surface, the
+// same way the matrix records the cell against the part that fades.
 const baseRootClasses =
   'flex w-full flex-col ' +
-  'motion-dropdown-in motion-dropdown-out ' +
-  'opacity-0 data-[state=open]:opacity-100 ' +
-  'starting:opacity-0 ' +
+  'data-[state=open]:animate-fade-in-moderate-enter ' +
+  'data-[state=closed]:animate-fade-out-fast-exit ' +
   'data-[disabled]:opacity-50 data-[disabled]:pointer-events-none';
 
 const baseAreaClasses = 'relative aspect-square w-full cursor-crosshair overflow-hidden rounded-lg';

@@ -24,6 +24,16 @@ describe('skeleton classes', () => {
     expect(root()).not.toContain('motion-reduce:animate-none');
   });
 
+  // `skeleton / root / content ready` assigns a fade-out (tier `fast`, curve
+  // role `exit`) that Skeleton cannot key off anything: no config, no state,
+  // and "content ready" is the consumer unmounting the element. A
+  // `data-[state=ready]:` hook would name a state nothing sets -- the dead
+  // class #2225 removed elsewhere -- so the row is reported, not faked.
+  it('names no content-ready fade, since no state drives one', () => {
+    expect(root()).not.toContain('animate-fade-out-fast-exit');
+    expect(root()).not.toContain('data-[state=');
+  });
+
   it('is a rounded, muted surface (semantic token, not a raw colour utility)', () => {
     expect(root()).toContain('rounded-md');
     expect(root()).toContain('bg-muted');

@@ -27,8 +27,17 @@ describe('input classes', () => {
     expect(classes.input).toContain('read-only:cursor-default');
   });
 
-  it('motion respects reduced-motion', () => {
-    expect(classes.input).toContain('motion-reduce:transition-none');
+  it('motion is the focus row and the validity row, composed as generics (#2288)', () => {
+    // root / focus -- ring -- duration-micro, ease-linear
+    expect(classes.input).toContain('transition-[box-shadow,border-color]');
+    expect(classes.input).toContain('duration-micro');
+    expect(classes.input).toContain('ease-linear');
+    // root / valid <-> invalid -- color -- duration-fast, ease-standard
+    expect(classes.input).toContain('aria-invalid:duration-fast');
+    expect(classes.input).toContain('aria-invalid:ease-standard');
+    // The reduced-motion law is written once on the token leaves; a
+    // component-level escape fights it, so there is none to find here.
+    expect(classes.input).not.toContain('motion-reduce:');
   });
 
   it('the error message uses the destructive text token', () => {

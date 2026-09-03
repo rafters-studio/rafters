@@ -51,9 +51,22 @@ describe('item classes', () => {
     expect(root({ size: 'huge' as never })).toContain(itemSizeClasses.default);
   });
 
-  it('honours reduced motion on the colour transition', () => {
+  // Reduced motion is the token sheet's job, never the component's: the
+  // generated duration-* and delay-* utilities zero themselves under
+  // prefers-reduced-motion (REDUCED_MOTION_ZEROED in the tailwind exporter).
+  // Its ABSENCE is the assertion -- the tripwire against reintroducing one.
+  it('transitions colour and adds no component-level reduced-motion escape', () => {
     expect(root({})).toContain('transition-colors');
-    expect(root({})).toContain('motion-reduce:transition-none');
+    expect(root({})).not.toContain('motion-reduce:');
+  });
+
+  // `item / root / hover`: a colour change on a part that stays put, so a
+  // transition named as composed generics -- tier `fast`, curve role
+  // `standard`, no literal timing.
+  it('the hover colour transition consumes the tier and curve the matrix assigns', () => {
+    expect(root({})).toContain('duration-fast');
+    expect(root({})).toContain('ease-standard');
+    expect(root({})).not.toMatch(/duration-\d/);
   });
 
   it('sub-part classes are config-independent literals', () => {

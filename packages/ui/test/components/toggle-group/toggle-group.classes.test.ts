@@ -65,4 +65,31 @@ describe('toggle-group item classes', () => {
     expect(item).toContain('data-[state=on]:bg-accent');
     expect(item).toContain('data-[state=on]:text-accent-foreground');
   });
+
+  it('the item consumes its state row and its press row (#2310)', () => {
+    const item = classesFor({}).item;
+    // item / off <-> on -- color -- duration-moderate, ease-standard
+    expect(item).toContain('transition-[color,background-color,border-color,scale]');
+    expect(item).toContain('duration-moderate');
+    expect(item).toContain('ease-standard');
+    // item / press -- zoom + color -- duration-micro, ease-spring-snappy, extent-press.
+    // The hand-typed `active:scale-[0.98]` is gone: the extent is a token leaf.
+    expect(item).toContain('active:extent-press');
+    expect(item).toContain('active:scale-(--rafters-consumed-extent)');
+    expect(item).toContain('active:duration-micro');
+    expect(item).toContain('active:ease-spring-snappy');
+    expect(item).not.toContain('active:scale-[0.98]');
+    expect(item).not.toContain('motion-reduce:');
+  });
+
+  it('the pressed shadow snaps: toggle-group has no elevation row (#2310)', () => {
+    // `data-[state=on]:shadow-sm` is a moment the matrix does not claim -- only
+    // button and card carry elevation cells. `transition-all` used to time it by
+    // accident; naming the properties leaves it instant, which is what a moment
+    // with no row is supposed to do.
+    const item = classesFor({}).item;
+    expect(item).toContain('data-[state=on]:shadow-sm');
+    expect(item).not.toContain('transition-all');
+    expect(item).not.toContain('box-shadow');
+  });
 });

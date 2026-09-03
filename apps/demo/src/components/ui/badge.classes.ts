@@ -30,8 +30,24 @@ const sizeClasses: Record<BadgeSize, string> = {
   lg: 'px-3 py-1 text-label-medium ts-label-medium',
 };
 
+/**
+ * `badge / root / hover` in `packages/ui/docs/spec/matrix/motion.jsonl` assigns
+ * tier `fast` and curve role `standard` to a colour change (`background, text,
+ * border`) on a part that stays put -- a TRANSITION, named as composed
+ * generics, not a keyframe. `duration-fast ease-standard` is that row and
+ * nothing else; the `duration-150` this replaces was a literal wearing a
+ * token's name, which is the defect docs/MOTION.md names outright.
+ *
+ * NO component-level reduced-motion escape. The generated `duration-*` and
+ * `delay-*` utilities zero themselves under `prefers-reduced-motion` (the
+ * exporter's `REDUCED_MOTION_ZEROED` set), so reduced motion is the token
+ * sheet's responsibility and never a component-level media query. The
+ * `motion-reduce:transition-none` this drops was redundant with that law.
+ *
+ * The row's provenance is `baseline`.
+ */
 const baseClasses =
-  'inline-flex items-center justify-center rounded-full transition-colors duration-150 motion-reduce:transition-none';
+  'inline-flex items-center justify-center rounded-full transition-colors duration-fast ease-standard';
 
 export function badgeClasses(config: BadgeConfig, _state: BadgeState): BadgeClassSet {
   const variant = config.variant ?? 'default';

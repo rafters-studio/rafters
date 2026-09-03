@@ -41,7 +41,15 @@ const rootClasses =
   'flex items-center w-full rounded-md border border-input bg-transparent ' +
   'ring-offset-background ' +
   'focus-within:outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 ' +
-  'transition-shadow duration-100 motion-reduce:transition-none ' +
+  // input-group / root / focus -- ring -- duration-micro, ease-linear. The only
+  // row this component has, and `transition-shadow` is exactly the ring's
+  // property, so the list stays as narrow as the row.
+  //
+  // `data-[state=invalid]:border-destructive` IS A MOMENT WITH NO ROW. input and
+  // textarea each carry a `valid <-> invalid` colour cell; input-group does not,
+  // so `border-color` is deliberately left out of the transition list and the
+  // invalid border snaps. Reported rather than given an invented cell.
+  'transition-shadow duration-micro ease-linear ' +
   'data-[state=invalid]:border-destructive data-[state=invalid]:focus-within:ring-destructive-ring ' +
   'data-[disabled]:opacity-50 data-[disabled]:cursor-not-allowed';
 

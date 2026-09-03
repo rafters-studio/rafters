@@ -46,6 +46,27 @@ describe('dropdown-menu classes', () => {
     expect(classes.content).not.toContain('motion-reduce:animate-none');
   });
 
+  it('items carry the highlight-move row: color, micro, standard', () => {
+    // motion.jsonl: dropdown-menu / items / highlight move -- duration-micro,
+    // ease-standard, marked proposed and transcribed as written. The focus
+    // colours above had no transition at all before this.
+    expect(classes.item).toContain('transition-colors');
+    expect(classes.item).toContain('duration-micro');
+    expect(classes.item).toContain('ease-standard');
+  });
+
+  it('items carry the enter row: the stagger delay, no duration, no curve', () => {
+    // motion.jsonl: dropdown-menu / items / enter assigns `delay-stagger-step`
+    // and `duration: {"kind":"none"}` -- no DURATION, which is not the same as
+    // no assignment. The delay generic is the whole row, so naming it is the
+    // whole consumption; the fade itself belongs to the content keyframe.
+    // It resolves to 0ms at the efficient intent, and that is the assignment
+    // rather than a gap: a later retune needs a consumer here to reach.
+    expect(classes.item).toContain('delay-stagger-step');
+    expect(classes.checkboxItem).toContain('delay-stagger-step');
+    expect(classes.radioItem).toContain('delay-stagger-step');
+  });
+
   it('no hand-rolled animation vocabulary and no raw durations', () => {
     // The oracle's animate-in/zoom/fade/slide + duration-N string is the
     // prohibited hand-rolled form (05-authoring, MOTION.md). See the doc.

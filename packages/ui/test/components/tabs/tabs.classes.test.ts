@@ -45,16 +45,33 @@ describe('tabs classes', () => {
     expect(trigger).toContain('data-[state=inactive]:text-muted-foreground');
   });
 
-  it('the trigger declares the indicator-move motion intent and honors reduced motion', () => {
+  it('the trigger carries the trigger/hover row: color, fast, standard', () => {
     const trigger = classesFor({}).trigger;
-    expect(trigger).toContain('transition-all');
-    expect(trigger).toContain('motion-reduce:transition-none');
+    expect(trigger).toContain('transition-colors');
+    expect(trigger).toContain('duration-fast');
+    expect(trigger).toContain('ease-standard');
   });
 
-  it('the trigger transition uses the fast tier per the matrix (motion.jsonl:6-7)', () => {
-    const trigger = classesFor({}).trigger;
-    expect(trigger).toContain('duration-fast');
-    expect(trigger).not.toMatch(/duration-[0-9]/);
+  it('the trigger no longer transitions the active pill shadow', () => {
+    // `transition-all` also timed `shadow-sm`, and the matrix assigns tabs no
+    // elevation row. A moment with no row does not move.
+    expect(classesFor({}).trigger).not.toContain('transition-all');
+  });
+
+  it('the panel crossfades in on the panel/active-change cell', () => {
+    // motion.jsonl tabs / panel / "active change" -- fade, fast, standard, which
+    // the generator emits as animate-fade-in-fast-standard. Unconditional: only
+    // the active panel loses `hidden`, and regaining a box restarts the
+    // animation.
+    expect(classesFor({}).panel.split(/\s+/)).toContain('animate-fade-in-fast-standard');
+  });
+
+  it('has no indicator part, so the travel row stays unconsumed', () => {
+    // The active pill is the trigger's own data-[state=active]:bg-background --
+    // it appears in place rather than travelling along the rail. Reported on
+    // #2307 rather than faked back onto the trigger.
+    const classes = classesFor({});
+    expect(Object.keys(classes).sort()).toEqual(['list', 'panel', 'root', 'trigger']);
   });
 
   it('the trigger carries the focus ring and the disabled treatment', () => {
@@ -68,5 +85,12 @@ describe('tabs classes', () => {
     const panel = classesFor({}).panel;
     expect(panel).toContain('focus-visible:ring-ring');
     expect(panel).toContain('ring-offset-background');
+  });
+
+  it('states no timing as a literal and queries reduced motion nowhere', () => {
+    for (const value of Object.values(classesFor({}))) {
+      expect(value).not.toMatch(/\b(duration|delay)-\d/);
+      expect(value).not.toContain('motion-reduce');
+    }
   });
 });

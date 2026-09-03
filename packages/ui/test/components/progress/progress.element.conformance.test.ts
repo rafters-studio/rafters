@@ -51,7 +51,7 @@ describe('progress conformance [wc]', () => {
     expect(host.getAttribute('aria-busy')).toBe('true');
     const indicator = partElement(host, 'indicator') as HTMLElement;
     expect(indicator.style.width).toBe('');
-    expect(indicator.className).toContain('animate-progress-indeterminate');
+    expect(indicator.className).toContain('animate-pulse-shimmer');
   });
 
   it('custom data-max and data-value-text drive valuemax and the label', async () => {

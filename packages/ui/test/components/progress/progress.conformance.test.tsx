@@ -64,7 +64,7 @@ describe('progress conformance [react]', () => {
     expect(root.getAttribute('aria-busy')).toBe('true');
     const indicator = partElement(body(), 'indicator') as HTMLElement;
     expect(indicator.style.width).toBe('');
-    expect(indicator.className).toContain('animate-progress-indeterminate');
+    expect(indicator.className).toContain('animate-pulse-shimmer');
     assertContractFulfillment(progress, root, {}, config, parts);
     await assertAxeClean(body());
   });

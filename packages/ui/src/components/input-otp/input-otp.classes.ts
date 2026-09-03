@@ -26,10 +26,24 @@ const groupClasses = 'flex items-center';
 // Every state rides a projected data-attribute, so light-DOM markup, the WC and
 // React all reach the same presentation with no class recomposition anywhere:
 // active from data-active, filled from data-filled, disabled from the root.
+//
+// Two rows land on the slot, at the same tier with different curves:
+//   input-otp / slot / focus -- ring -- duration-micro, ease-linear
+//   input-otp / active slot / advance -- swap -- duration-micro, ease-standard
+//
+// The active slot's ring IS the advance marker -- `data-[active=true]:ring-1` is
+// both the focus indication and the "the caret moved here" signal -- so the base
+// rule takes the focus row's linear curve and `data-[active=true]:` lifts the
+// advancing slot onto the swap row's standard curve. Same micro tier either way,
+// which is why the two rows can share one element without conflict.
+//
+// `transition-all` is narrowed to the properties the rows actually name: the ring
+// (`box-shadow`), the slot border, and the filled-state text colour.
 const slotClasses =
   'relative flex h-9 w-9 items-center justify-center ' +
   'border-y border-r border-input text-body-small ts-body-small shadow-sm ' +
-  'transition-all duration-micro motion-reduce:transition-none ' +
+  'transition-[box-shadow,border-color,color] duration-micro ease-linear ' +
+  'data-[active=true]:ease-standard ' +
   'first:rounded-l-md first:border-l last:rounded-r-md ' +
   'data-[active=true]:z-10 data-[active=true]:ring-1 data-[active=true]:ring-ring ' +
   'data-[filled=true]:text-foreground ' +
