@@ -1,6 +1,6 @@
 {
   "name": "@rafters/color-utils",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "OKLCH color manipulation utilities for Rafters design system",
   "homepage": "https://rafters.studio",
   "license": "MIT",

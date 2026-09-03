@@ -1,7 +1,7 @@
 ---
 name: rafters-frontend
 description: Use when building or changing UI in a Rafters project. Rafters resembles Tailwind and shadcn but inverts them -- the designer's judgment is encoded in the components, so you compose patterns instead of authoring visual values. Supersedes generic frontend-design guidance inside a Rafters project.
-version: 0.3.1
+version: 0.4.0
 user-invocable: true
 ---
 
