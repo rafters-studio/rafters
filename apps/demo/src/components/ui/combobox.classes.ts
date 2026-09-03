@@ -35,9 +35,19 @@ const fieldClasses = 'relative w-full';
 // built-in 150ms, which is the #1955 trap in its quiet form: no literal appears
 // in this file, and a literal is what runs. Adding the rows is matrix hygiene
 // (#2158/#2159), not a transcription this issue can make.
+//
+// NO component-level reduced-motion escape here or on the chevron below. The
+// pre-existing `motion-reduce:transition-none` on both is REMOVED: the
+// generated `duration-*` and `delay-*` utilities zero themselves under
+// prefers-reduced-motion (REDUCED_MOTION_ZEROED,
+// packages/design-tokens/src/exporters/tailwind.ts), so reduced motion is the
+// token sheet's responsibility and never a component-level media query
+// (tooltip.classes.ts states the rule). Note this leaves BOTH transitions
+// below with no tier at all, which is the unrowed gap the paragraph above
+// reports -- the escape was not what made them token-correct.
 const inputClasses =
   'flex h-11 @md:h-9 w-full rounded-md border border-input bg-background px-3 py-1 pr-9 ' +
-  'text-body-small ts-body-small shadow-sm ring-offset-background transition-shadow motion-reduce:transition-none ' +
+  'text-body-small ts-body-small shadow-sm ring-offset-background transition-shadow ' +
   'placeholder:text-muted-foreground hover:border-input-hover ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ' +
   'disabled:cursor-not-allowed disabled:opacity-50 ' +
@@ -47,8 +57,7 @@ const triggerClasses =
   'absolute inset-y-0 right-0 flex items-center px-2 text-muted-foreground hover:text-foreground';
 
 const chevronClasses =
-  'size-4 shrink-0 opacity-50 transition-transform motion-reduce:transition-none ' +
-  'group-data-[state=open]:rotate-180';
+  'size-4 shrink-0 opacity-50 transition-transform ' + 'group-data-[state=open]:rotate-180';
 
 // THE CELL IS THE SPEC. These two utilities are the generated consumption of
 // combobox / content / closed -> open (moderate, enter, extent pop) and

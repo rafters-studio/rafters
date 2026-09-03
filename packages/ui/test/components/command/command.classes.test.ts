@@ -27,9 +27,16 @@ describe('command classes', () => {
     expect(classes.input).not.toContain('sm:');
   });
 
-  it('the option color transition respects reduced motion', () => {
+  it('reduced motion is the token sheet, never a component-level escape', () => {
+    // INVERTED, not deleted. This once asserted the option carried
+    // `motion-reduce:transition-none`. It does not: the generated duration and
+    // delay utilities zero themselves under prefers-reduced-motion
+    // (REDUCED_MOTION_ZEROED), so a component-level media query is redundant --
+    // tooltip.classes.ts states the rule.
     expect(classes.item).toContain('transition-colors');
-    expect(classes.item).toContain('motion-reduce:transition-none');
+    for (const value of Object.values(classes)) {
+      expect(value).not.toContain('motion-reduce');
+    }
   });
 
   it('the dialog surfaces sit on the overlay and modal depth tokens', () => {

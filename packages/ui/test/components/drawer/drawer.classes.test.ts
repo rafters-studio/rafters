@@ -96,7 +96,13 @@ describe('drawer classes', () => {
   });
 
   it('motion respects reduced-motion, and does NOT do it with animate-none', () => {
-    expect(classesFor().close).toContain('motion-reduce:transition-none');
+    // NO COMPONENT-LEVEL ESCAPE. Reduced motion is the token sheet's
+    // responsibility, never a component-level media query (tooltip.classes.ts
+    // states the law). The leaf-level block zeroes every duration and delay
+    // leaf, so this transition is already 0 under reduce and the escape was
+    // redundant. Asserted as ABSENT rather than deleted, so reintroducing one
+    // fails here.
+    expect(classesFor().close).not.toContain('motion-reduce:');
     expect(classesFor().overlay).not.toContain('motion-reduce:animate-none');
   });
 });

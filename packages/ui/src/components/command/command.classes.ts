@@ -43,6 +43,14 @@ const groupHeadingClasses = 'px-2 py-1.5 text-label-small ts-label-small text-mu
 // highlight move`, EXCLUDED_ROWS.noIntersectingProperty in
 // packages/design-tokens/test/motion-cells.test.ts).
 //
+// NO component-level reduced-motion escape: the pre-existing
+// `motion-reduce:transition-none` is REMOVED, because the generated
+// `duration-*` and `delay-*` utilities zero themselves under
+// prefers-reduced-motion (REDUCED_MOTION_ZEROED,
+// packages/design-tokens/src/exporters/tailwind.ts). Reduced motion is the
+// token sheet's responsibility, never a component-level media query
+// (tooltip.classes.ts states the rule).
+//
 // THE SECOND ROW: command / items / enter -- fade (with content), which assigns
 // `delay-stagger-step` and no duration and no curve (motion.jsonl:66).
 // `duration: {"kind":"none"}` means no DURATION is assigned, not that nothing
@@ -67,7 +75,7 @@ const groupHeadingClasses = 'px-2 py-1.5 text-label-small ts-label-small text-mu
 const itemClasses =
   'relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 ' +
   'text-body-small ts-body-small outline-none ' +
-  'transition-colors duration-micro ease-standard delay-stagger-step motion-reduce:transition-none ' +
+  'transition-colors duration-micro ease-standard delay-stagger-step ' +
   'data-[selected]:bg-accent data-[selected]:text-accent-foreground ' +
   'data-[disabled]:pointer-events-none data-[disabled]:opacity-50';
 

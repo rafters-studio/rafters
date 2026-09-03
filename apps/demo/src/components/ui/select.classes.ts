@@ -42,10 +42,18 @@ export interface SelectClassSet {
 // (#2158/#2159) and not a change this file may make. The property list is spelled
 // out rather than left to `transition-colors`, which would have dropped
 // box-shadow from the list entirely and killed the ring's transition outright.
+//
+// NO component-level reduced-motion escape here or on the chevron below. The
+// pre-existing `motion-reduce:transition-none` on both is REMOVED: the
+// generated `duration-*` and `delay-*` utilities zero themselves under
+// prefers-reduced-motion (REDUCED_MOTION_ZEROED,
+// packages/design-tokens/src/exporters/tailwind.ts), so reduced motion is the
+// token sheet's responsibility and never a component-level media query
+// (tooltip.classes.ts states the rule).
 const triggerClasses =
   'group flex h-11 @md:h-9 w-full items-center justify-between gap-2 rounded-md ' +
   'border border-input bg-background px-3 py-2 text-body-small ts-body-small shadow-sm ring-offset-background ' +
-  'transition-[box-shadow,color,background-color,border-color] duration-fast ease-standard motion-reduce:transition-none ' +
+  'transition-[box-shadow,color,background-color,border-color] duration-fast ease-standard ' +
   'hover:border-input-hover ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ' +
   'disabled:cursor-not-allowed disabled:opacity-50 ' +
@@ -63,7 +71,7 @@ const valueClasses = 'pointer-events-none truncate text-left data-[empty]:text-m
 // from the cell vocabulary by name (`select | chevron | open <-> closed`,
 // EXCLUDED_ROWS.noIntersectingProperty).
 const chevronClasses =
-  'size-4 shrink-0 opacity-50 transition-transform duration-moderate ease-standard motion-reduce:transition-none ' +
+  'size-4 shrink-0 opacity-50 transition-transform duration-moderate ease-standard ' +
   'group-data-[state=open]:rotate-180';
 
 // THE CELL IS THE SPEC. These two utilities are the generated consumption of

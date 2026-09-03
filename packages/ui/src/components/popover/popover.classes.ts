@@ -57,15 +57,19 @@ const contentClasses =
 // be a design decision this issue does not carry. dialog, sheet and drawer carry
 // the identical row on the identical control and have the identical gap.
 //
-// `motion-reduce:transition-none` is PRE-EXISTING and stays. It is the correct
-// reduced-motion path for a transition (popover.classes.test.ts pins it), and
-// unlike `animate-none` on a keyframe it discards nothing -- the keyframe
-// mechanism is the one that must not carry an escape.
+// NO component-level reduced-motion escape, and the pre-existing
+// `motion-reduce:transition-none` is REMOVED rather than kept. The generated
+// `duration-*` and `delay-*` utilities zero themselves under
+// prefers-reduced-motion (the exporter's REDUCED_MOTION_ZEROED set,
+// packages/design-tokens/src/exporters/tailwind.ts), so reduced motion is the
+// token sheet's responsibility and never a component-level media query --
+// tooltip.classes.ts states the rule. The escape was redundant, not harmful,
+// which is exactly why it survived this long.
 const closeClasses =
   'absolute right-2 top-2 inline-flex h-11 w-11 items-center justify-center ' +
   '@md:right-4 @md:top-4 @md:h-8 @md:w-8 ' +
   'rounded-sm opacity-70 ring-offset-background cursor-pointer ' +
-  'transition-opacity duration-fast ease-standard motion-reduce:transition-none hover:opacity-100 ' +
+  'transition-opacity duration-fast ease-standard hover:opacity-100 ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
 
 const closeIconClasses = 'h-5 w-5 @md:h-4 @md:w-4';

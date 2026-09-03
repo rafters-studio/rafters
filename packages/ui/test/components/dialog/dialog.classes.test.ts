@@ -58,6 +58,12 @@ describe('dialog classes', () => {
     // none` resets the shorthand and discards the zeroed duration -- and would
     // leave the element short of the keyframe's end state.
     expect(classes.content).not.toContain('motion-reduce:animate-none');
-    expect(classes.close).toContain('motion-reduce:transition-none');
+    // NO COMPONENT-LEVEL ESCAPE. Reduced motion is the token sheet's
+    // responsibility, never a component-level media query (tooltip.classes.ts
+    // states the law). The leaf-level block zeroes every duration and delay
+    // leaf, so this transition is already 0 under reduce and the escape was
+    // redundant. Asserted as ABSENT rather than deleted, so reintroducing one
+    // fails here.
+    expect(classes.close).not.toContain('motion-reduce:');
   });
 });

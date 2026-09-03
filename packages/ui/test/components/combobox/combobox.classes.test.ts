@@ -27,9 +27,14 @@ describe('combobox classes', () => {
     expect(classes.input).toContain('disabled:opacity-50');
   });
 
-  it('motion respects reduced-motion everywhere it animates', () => {
-    for (const value of [classes.input, classes.chevron]) {
-      expect(value).toContain('motion-reduce:transition-none');
+  it('reduced motion is the token sheet, never a component-level escape', () => {
+    // INVERTED, not deleted. This once asserted input and chevron carried
+    // `motion-reduce:transition-none`. They do not: the generated duration and
+    // delay utilities zero themselves under prefers-reduced-motion
+    // (REDUCED_MOTION_ZEROED), so a component-level media query is redundant --
+    // tooltip.classes.ts states the rule.
+    for (const value of Object.values(classes)) {
+      expect(value).not.toContain('motion-reduce');
     }
   });
 

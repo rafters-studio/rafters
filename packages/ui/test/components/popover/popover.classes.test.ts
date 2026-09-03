@@ -39,9 +39,14 @@ describe('popover classes', () => {
     // the zeroed duration, and it removes the animation rather than completing
     // it, so the keyframe's end state is never reached.
     expect(classes.content).not.toContain('motion-reduce:animate-none');
-    // The close control is a TRANSITION, not a keyframe, and transition-none is
-    // still its correct reduced-motion path.
-    expect(classes.close).toContain('motion-reduce:transition-none');
+    // INVERTED, not deleted. This once asserted the close control kept
+    // `motion-reduce:transition-none`. It does not: reduced motion is the token
+    // sheet's responsibility (REDUCED_MOTION_ZEROED zeroes every duration and
+    // delay leaf), never a component-level media query -- tooltip.classes.ts
+    // states the rule. Asserting the ABSENCE means reintroducing one fails.
+    for (const value of Object.values(classes)) {
+      expect(value).not.toContain('motion-reduce');
+    }
   });
 
   it('the close control carries its hover row: fast, standard', () => {

@@ -95,9 +95,15 @@ describe('select classes', () => {
     expect(classes.item).toContain('data-[disabled]:pointer-events-none');
   });
 
-  it('motion respects reduced-motion everywhere it animates', () => {
-    for (const value of [classes.trigger, classes.chevron]) {
-      expect(value).toContain('motion-reduce:transition-none');
+  it('reduced motion is the token sheet, never a component-level escape', () => {
+    // INVERTED, not deleted. This once asserted trigger and chevron carried
+    // `motion-reduce:transition-none`. They do not: the generated duration and
+    // delay utilities zero themselves under prefers-reduced-motion
+    // (REDUCED_MOTION_ZEROED), so a component-level media query is redundant --
+    // tooltip.classes.ts states the rule. Asserting the ABSENCE means
+    // reintroducing one fails rather than passing quietly.
+    for (const value of Object.values(classes)) {
+      expect(value).not.toContain('motion-reduce');
     }
   });
 });
