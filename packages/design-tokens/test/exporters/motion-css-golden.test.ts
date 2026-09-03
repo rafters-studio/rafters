@@ -89,24 +89,14 @@ describe('motion CSS: golden emission', () => {
     expect(css).toContain('--rafters-period-spin: 1s;');
   });
 
-  it('declares each motion value under exactly one name -- no Tailwind-facing alias', () => {
-    // INVERTED FROM "bridges the pre-existing names onto the leaves". The
-    // `--duration-*` / `--ease-*` aliases are gone, and their absence is now the
-    // assertion, for two reasons they failed at.
-    //
-    // `ease-*` IS a Tailwind v4 theme namespace, so declaring `--ease-standard`
-    // made Tailwind infer a `.ease-standard` utility that merged with our own
-    // block and landed its declaration LAST -- the computed value came from the
-    // alias, so a retune of the leaf could stop reaching consumers. And the alias
-    // carried no reduced-motion path, so anything reading `var(--duration-*)`
-    // escaped the zeroing law silently while looking token-correct.
-    //
-    // One name per value. The leaf holds it; the utility applies it and carries
-    // the law.
+  it('bridges the pre-existing names onto the leaves rather than duplicating values', () => {
+    // Purely additive: --duration-* and --ease-* still exist, and now reference
+    // the leaf instead of holding a second copy of the number. A literal here
+    // would mean retuning one leaf moves two lines, and the two could disagree.
     const css = emitCSS(baseTokens());
-    expect(css).toContain('--rafters-duration-moderate: 250ms;');
-    expect(css).not.toMatch(/^\s*--duration-[\w-]+:/m);
-    expect(css).not.toMatch(/^\s*--ease-[\w-]+:/m);
+    expect(css).toContain('--duration-moderate: var(--rafters-duration-moderate);');
+    expect(css).toContain('--ease-standard: var(--rafters-ease-standard);');
+    expect(css).not.toContain('--duration-moderate: 250ms;');
   });
 
   it('generates a utility for every member of every namespace', () => {
@@ -174,19 +164,11 @@ describe('motion CSS: golden emission', () => {
     expect([...dangling].sort()).toEqual([]);
   });
 
-  it('a shape names a keyframe and carries no duration or curve of its own', () => {
-    // INVERTED FROM "builds every animation on the namespace leaves", which
-    // asserted the `--animate-*` theme keys held an animation SHORTHAND bundling
-    // name, duration and curve. Tailwind compiles such a key to
-    // `.animate-scale-out{animation:var(--animate-scale-out)}`, and a shorthand
-    // cannot be composed with: a `duration-moderate` typed beside it is either
-    // ignored or fighting it on source order.
-    //
-    // A shape is now name-only, so the duration and the curve are named by their
-    // own classes and the three compose into one rule.
+  it('builds every animation on the namespace leaves', () => {
     const css = emitCSS(baseTokens());
-    expect(css).toContain('@utility animate-scale-out {\n  animation-name: scale-out;\n}');
-    expect(css).not.toMatch(/^\s*--animate-[\w-]+:/m);
+    expect(css).toContain(
+      '--animate-scale-out: scale-out var(--rafters-duration-fast) var(--rafters-ease-exit);',
+    );
     expect(css).not.toContain('var(--motion-duration-');
     expect(css).not.toContain('var(--motion-easing-');
   });

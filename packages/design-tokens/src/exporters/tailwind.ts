@@ -53,19 +53,9 @@ const SHADOW_PART_SUFFIX = /-(offset-x|offset-y|blur|spread|color)$/;
  * explicit block anyway so all five behave identically.
  */
 const MOTION_NAMESPACE_PROPERTY = {
-  // ONE MEMBER, BOTH MECHANISMS. `duration-moderate` means moderate whether the
-  // element transitions or animates -- the browser applies whichever of the two
-  // properties the element actually uses and ignores the other. Two namespaces
-  // (a transition duration and an animation duration) would be the "two fasts"
-  // the generics ruling exists to prevent: one fast, everywhere, always.
-  //
-  // This is also what closes the hole the motion-cell system was invented to
-  // paper over. Before this, nothing but `period-*` reached `animation-duration`,
-  // so there was no way to say "moderate on the enter curve" about a KEYFRAME in
-  // classes, and a per-moment token got minted for every such moment instead.
-  duration: ['transition-duration', 'animation-duration'],
-  ease: ['transition-timing-function', 'animation-timing-function'],
-  delay: ['transition-delay', 'animation-delay'],
+  duration: 'transition-duration',
+  ease: 'transition-timing-function',
+  delay: 'transition-delay',
   // Extents are consumed inside transforms, so the utility publishes the chosen
   // extent under a fixed name the consuming rule reads. The name comes from toy
   // 9 (worktree-toy-motion-registry).
@@ -77,12 +67,9 @@ const MOTION_NAMESPACE_PROPERTY = {
   // reference the LEAF directly (`var(--rafters-extent-pop)`, see
   // DEFAULT_KEYFRAME_DEFINITIONS). A shape is not a function of whatever extent
   // the consuming class last selected. Do not merge the two contracts.
-  extent: ['--rafters-consumed-extent'],
-  // A LOOP IS NOT A DURATION. `period` stays its own namespace and stays OUT of
-  // REDUCED_MOTION_ZEROED below, which is the whole reduced-motion law for loops
-  // expressed as set membership: work loops slow, they never stop.
-  period: ['animation-duration'],
-} as const satisfies Record<MotionNamespace, readonly string[]>;
+  extent: '--rafters-consumed-extent',
+  period: 'animation-duration',
+} as const satisfies Record<MotionNamespace, string>;
 
 // The exporter never imports generator RUNTIME (registry-in, not
 // generator-internals-in), but the namespace SET must not be re-declarable by
@@ -497,14 +484,12 @@ function generateThemeBlock(groups: GroupedTokens): string {
     lines.push('');
   }
 
-  // NO `--duration-*` / `--ease-*` BRIDGE NAMES. They were a compatibility alias
-  // pointing at the leaves, and their own note said they die in the component
-  // sweep. This is that sweep. Two reasons they had to go with it: `ease-*` IS a
-  // Tailwind v4 theme namespace, so the alias made Tailwind infer a `.ease-standard`
-  // utility that merged with ours and landed LAST, meaning the computed value came
-  // from the alias rather than the leaf; and the alias carried no reduced-motion
-  // path, so anything reaching for `var(--duration-*)` escaped the law silently.
-  // One name per value, and the law lives on the utility.
+  // The Tailwind-facing duration/ease names, as REFERENCES to the leaves above.
+  const bridgeLines = generateMotionBridgeVars(groups.motion);
+  if (bridgeLines) {
+    lines.push(bridgeLines);
+    lines.push('');
+  }
 
   // Breakpoint tokens (exclude media query tokens -- their values are
   // conditions like "(prefers-reduced-motion: reduce)", not dimensions,
@@ -543,15 +528,11 @@ function generateThemeBlock(groups: GroupedTokens): string {
     lines.push('');
   }
 
-  // NO `--animate-*` THEME KEYS. They used to be emitted here, one per shape,
-  // each holding the `animation` SHORTHAND -- `scale-in var(--rafters-duration-normal)
-  // var(--rafters-ease-spring-snappy)`. Tailwind turns such a key into
-  // `.animate-scale-in{animation:var(--animate-scale-in)}`, which bundles name,
-  // duration and curve into one declaration and so cannot be composed with:
-  // a `duration-moderate` beside it is either ignored or fighting it on source
-  // order. The shape utilities emitted by generateMotionShapeUtilities set
-  // `animation-name` alone, which is what lets duration and curve be named
-  // separately by their own namespace classes.
+  // Animation utility tokens (from motion-animation-* tokens)
+  const animationTokens = generateAnimationTokens(groups.motion);
+  if (animationTokens) {
+    lines.push(animationTokens);
+  }
 
   lines.push('}');
   return lines.join('\n');
@@ -681,6 +662,27 @@ function generateKeyframes(motionTokens: Token[]): string {
   }
 
   return lines.join('\n').trim();
+}
+
+/**
+ * Generate animation utility tokens for @theme block from motion-animation-* tokens
+ * These create --animate-* tokens that can be used with Tailwind's animate-* utilities
+ */
+function generateAnimationTokens(motionTokens: Token[]): string {
+  const animationTokens = motionTokens.filter((t) => t.name.startsWith('motion-animation-'));
+
+  if (animationTokens.length === 0) {
+    return '';
+  }
+
+  const lines: string[] = [];
+
+  for (const token of animationTokens) {
+    const animName = token.animationName || token.name.replace('motion-animation-', '');
+    lines.push(`  --animate-${animName}: ${token.value};`);
+  }
+
+  return lines.join('\n');
 }
 
 /**
@@ -858,15 +860,8 @@ function generateMotionUtilities(motionTokens: Token[]): string {
     const className = token.name.replace('motion-semantic-', 'motion-');
     lines.push(`@utility ${className} {`);
     lines.push(`  transition-property: ${spec.properties.join(', ')};`);
-    // THE LEAF, NOT THE BRIDGE. These used to read `var(--duration-*)` /
-    // `var(--ease-*)`, the Tailwind-facing alias names. Those aliases are gone
-    // (see the removal note on generateMotionBridgeVars' old call sites): an
-    // alias in a theme block makes Tailwind v4 infer a utility of the same name,
-    // which then merged with our own `.ease-standard` block and landed its
-    // declaration LAST -- so the computed value came from the alias and a retune
-    // of the leaf could stop reaching consumers. One name per value.
-    lines.push(`  transition-duration: var(--rafters-duration-${spec.durationTier});`);
-    lines.push(`  transition-timing-function: var(--rafters-ease-${spec.curve});`);
+    lines.push(`  transition-duration: var(--duration-${spec.durationTier});`);
+    lines.push(`  transition-timing-function: var(--ease-${spec.curve});`);
 
     if (spec.reducedMotion) {
       lines.push('  @media (prefers-reduced-motion: reduce) {');
@@ -1106,36 +1101,38 @@ function generateMotionNamespaceVars(motionTokens: Token[]): string {
 }
 
 /**
- * Emit one `@utility animate-<shape>` block per keyframe -- the SHAPE half of the
- * class vocabulary.
+ * Emit the Tailwind-facing `--duration-*` / `--ease-*` names as REFERENCES to
+ * the namespace leaves. Indented for the @theme block.
  *
- * A shape names a keyframe and nothing else. It carries no duration and no curve,
- * because those are the other two namespaces' job and a class picks them by name:
+ * Purely additive: every name that existed before still exists, and every
+ * consumer of `var(--duration-moderate)` keeps working. What changed is that
+ * these no longer hold a second copy of the value -- a literal here would mean
+ * retuning one leaf moved two lines, and the two could then disagree. They die
+ * in the component sweep, when their consumers do.
  *
- *   data-[state=open]:animate-scale-in  duration-moderate  ease-enter
+ * KNOWN LIMITATION until that sweep: the bridge names carry NO reduced-motion
+ * path -- the zeroing law lives in the generated utilities, which are the ONLY
+ * compliant consumption path today. Never `var(--duration-*)` directly, or the
+ * law is silently escaped. A typed runtime accessor for JS-consumed cells is
+ * #1995 and does not exist yet. Pre-existing posture, disclosed here so nobody
+ * reaches for the bridge expecting compliance.
  *
- * That is the whole composition. It is deliberately NOT the `animation` shorthand
- * Tailwind would generate from an `--animate-*` theme key: the shorthand bundles
- * name, duration and curve into one value, so a `duration-*` class beside it is
- * either ignored or fighting it depending on source order. Longhand composes;
- * shorthand does not.
- *
- * NO REDUCED-MOTION BLOCK HERE. The law lives on `duration-*`, which now zeroes
- * `animation-duration` as well -- so a composed animation is covered by the same
- * mechanism as a composed transition, and a LOOP (which takes `period-*`, outside
- * REDUCED_MOTION_ZEROED) keeps its exemption for free. A shape has no opinion
- * about time, so it has nothing to zero.
+ * Both emission paths (`generateThemeBlock` and `generateThemeBlockWithVarRefs`)
+ * call this, because after #1991 the bridge is the same line in both: the
+ * dynamic sheet used to write a literal here and the static one a reference, and
+ * that difference is exactly what the leaf layer removed.
  */
-function generateMotionShapeUtilities(motionTokens: Token[]): string {
-  const keyframeTokens = motionTokens.filter((t) => t.name.startsWith('motion-keyframe-'));
-  if (keyframeTokens.length === 0) return '';
-
-  const lines: string[] = ['/* Motion shapes -- one utility per keyframe, name only */'];
-  for (const token of keyframeTokens) {
-    const shape = token.keyframeName || token.name.replace('motion-keyframe-', '');
-    lines.push(`@utility animate-${shape} {`);
-    lines.push(`  animation-name: ${shape};`);
-    lines.push('}');
+function generateMotionBridgeVars(motionTokens: Token[]): string {
+  const lines: string[] = [];
+  for (const token of motionTokens) {
+    if (token.name.startsWith('motion-duration-') && token.name !== 'motion-duration-base') {
+      const key = token.name.replace('motion-duration-', '');
+      lines.push(`  --duration-${key}: var(--rafters-duration-${key});`);
+    }
+    if (token.name.startsWith('motion-easing-')) {
+      const key = token.name.replace('motion-easing-', '');
+      lines.push(`  --ease-${key}: var(--rafters-ease-${key});`);
+    }
   }
   return lines.join('\n');
 }
@@ -1156,24 +1153,15 @@ function generateMotionNamespaceUtilities(motionTokens: Token[]): string {
     const parts = motionNamespaceParts(token.name);
     if (!parts) continue;
     // Total by construction: parts.namespace is MotionNamespace and the map
-    // satisfies Record<MotionNamespace, readonly string[]> -- no silent-drop branch.
-    const properties = MOTION_NAMESPACE_PROPERTY[parts.namespace];
+    // satisfies Record<MotionNamespace, string> -- no silent-drop branch.
+    const property = MOTION_NAMESPACE_PROPERTY[parts.namespace];
 
     emitted++;
     lines.push(`@utility ${parts.namespace}-${parts.member} {`);
-    for (const property of properties) {
-      lines.push(`  ${property}: var(--${token.name});`);
-    }
-    // THE REDUCED-MOTION ZERO RIDES THE UTILITY, NOT THE VAR. The leaf still
-    // resolves to its authored value under reduce; it is this block that zeroes
-    // the property. Anything that reaches for `var(--rafters-duration-*)` outside
-    // these utilities therefore opts out of the law silently -- it compiles, it
-    // looks token-correct, and it never zeroes. The utility is the law.
+    lines.push(`  ${property}: var(--${token.name});`);
     if (REDUCED_MOTION_ZEROED.has(parts.namespace)) {
       lines.push('  @media (prefers-reduced-motion: reduce) {');
-      for (const property of properties) {
-        lines.push(`    ${property}: 0ms;`);
-      }
+      lines.push(`    ${property}: 0ms;`);
       lines.push('  }');
     }
     lines.push('}');
@@ -1323,13 +1311,6 @@ export function tokensToTailwind(
   if (namespaceUtilities) {
     sections.push('');
     sections.push(namespaceUtilities);
-  }
-
-  // Motion shapes (animate-<keyframe>) -- the third half of the class vocabulary
-  const shapeUtilities = generateMotionShapeUtilities(groups.motion);
-  if (shapeUtilities) {
-    sections.push('');
-    sections.push(shapeUtilities);
   }
 
   // Semantic motion @utility classes (motion-*)
@@ -1489,8 +1470,13 @@ function generateThemeBlockWithVarRefs(groups: GroupedTokens): string {
     lines.push('');
   }
 
-  // No bridge names here either -- see the note on the dynamic path. Both sheets
-  // carry the leaves and the utilities, and nothing else.
+  // Motion duration/easing tokens with Tailwind-native names, bridged onto the
+  // namespace leaves -- byte-identical to the dynamic path, and shared with it.
+  const bridgeLines = generateMotionBridgeVars(groups.motion);
+  if (bridgeLines) {
+    lines.push(bridgeLines);
+    lines.push('');
+  }
 
   // Breakpoint tokens (exclude media query tokens)
   if (groups.breakpoint.length > 0) {
@@ -1517,8 +1503,20 @@ function generateThemeBlockWithVarRefs(groups: GroupedTokens): string {
     lines.push('');
   }
 
-  // No `--animate-*` theme keys here either -- see the note on the dynamic path.
-  // A shape names a keyframe; duration and curve are named beside it.
+  // Animation utility tokens (from motion-animation-* tokens).
+  //
+  // The VALUE, not a `var(--rafters-animate-*)` bridge -- the same line the
+  // dynamic path emits. `--rafters-animate-*` was invented here and declared
+  // nowhere: no token is named `animate-*`, so no leaf of that name exists in
+  // either sheet, and every `animate-*` utility in the static Studio sheet
+  // resolved to nothing. Retheming still reaches these, because the value is an
+  // animation shorthand whose duration and easing are THEMSELVES var()s onto
+  // the declared `--rafters-duration-*` / `--rafters-ease-*` leaves. The
+  // indirection was never needed; it was only ever a dangling reference.
+  const animationTokens = groups.motion.filter((t) => t.name.startsWith('motion-animation-'));
+  if (animationTokens.length > 0) {
+    lines.push(generateAnimationTokens(groups.motion));
+  }
 
   lines.push('}');
   return lines.join('\n');
@@ -1584,25 +1582,9 @@ export function registryToTailwindStatic(registry: TokenRegistry): string {
   // tokens, so both sheets carry byte-identical blocks -- which is the property
   // the golden asserts.
   //
-  // THE UTILITY-PARITY GAP IS NOW LOAD-BEARING AND SO IT IS CLOSED HERE. This
-  // block used to note that the five-namespace utilities were absent from the
-  // static sheet as a known limitation. That was survivable only while a cell
-  // utility carried name, duration and curve by itself. Under the composed
-  // vocabulary a class says `animate-scale-in duration-moderate ease-enter`, so a
-  // sheet with shapes and no namespaces gives every consumer an animation with no
-  // duration -- which resolves to 0s and never runs. Both blocks ship here.
-  const staticNamespaceUtilities = generateMotionNamespaceUtilities(groups.motion);
-  if (staticNamespaceUtilities) {
-    sections.push('');
-    sections.push(staticNamespaceUtilities);
-  }
-
-  const staticShapeUtilities = generateMotionShapeUtilities(groups.motion);
-  if (staticShapeUtilities) {
-    sections.push('');
-    sections.push(staticShapeUtilities);
-  }
-
+  // KNOWN LIMITATION, unchanged by this: the five-namespace and semantic-motion
+  // @utility blocks are still absent from the static sheet. Those never worked
+  // here and adding them is the utility-parity sweep, not this fix.
   const cellUtilities = generateMotionCellUtilities(groups.motion);
   if (cellUtilities) {
     sections.push('');
