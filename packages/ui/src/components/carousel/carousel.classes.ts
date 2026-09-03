@@ -73,7 +73,7 @@ const itemClasses = 'min-w-0 shrink-0 grow-0 basis-full';
 // file would be inventing; contest it by adding the rows, not by picking here.
 const controlBase =
   'absolute inline-flex h-8 w-8 items-center justify-center rounded-full border ' +
-  'bg-background text-foreground shadow-sm transition-colors ' +
+  'bg-background text-foreground shadow-sm transition-colors duration-fast ease-standard ' +
   'hover:bg-accent hover:text-accent-foreground ' +
   'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ' +
   'disabled:pointer-events-none disabled:opacity-50';
@@ -86,7 +86,7 @@ const nextVertical = 'bottom-2 left-1/2 -translate-x-1/2 rotate-90';
 const indicatorsClasses = 'flex justify-center gap-2 py-2';
 
 const indicatorClasses =
-  'h-2 w-2 rounded-full bg-muted-foreground/30 transition-colors ' +
+  'h-2 w-2 rounded-full bg-muted-foreground/30 transition-colors duration-fast ease-standard ' +
   'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ' +
   'data-[state=active]:bg-primary';
 

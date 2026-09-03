@@ -19,18 +19,37 @@ import {
   SCHEMA_ID,
   VOCABULARY,
 } from './motion-cell.ts';
-import { MARKDOWN_PATH, readMotionCells, renderMotionMatrix } from './render-motion-matrix.ts';
+import {
+  JSONL_PATH,
+  MARKDOWN_PATH,
+  readMotionCells,
+  renderMotionMatrix,
+} from './render-motion-matrix.ts';
 
 const cells = readMotionCells();
 
 describe('motion.jsonl', () => {
-  it('carries every cell of the grid', () => {
-    // 147 + bar-chart | bar | enter and bar-chart | bar | enter-horizontal
-    // (#2225's two layout-specific bar-enter motion cells) + chart-tooltip/
-    // content closed->open and open->closed (#2228), opacity-only per
-    // docs/MOTION.md's tooltip rule -- see the notes on those two rows for
-    // why they do not `follow` tooltip's own cell. 147 + 2 + 2 = 151.
-    expect(cells).toHaveLength(151);
+  it('carries every cell of the grid, with no duplicate and no dropped line', () => {
+    // NO HARDCODED TOTAL (#2262). The literal here was wrong three times in one
+    // week -- 147, then 151, then 155 -- and each failure said nothing about the
+    // matrix except that somebody had added a row deliberately. A count is a
+    // restatement of the file, not an invariant over it, so it can only be stale
+    // or redundant.
+    //
+    // What this actually guards is derived from the file instead: every
+    // non-empty line parses into a cell, and no (component, part, transition) is
+    // written twice. Both catch what a count cannot -- a malformed line that
+    // parses to nothing, and a duplicate that a count would hide the moment
+    // someone deleted another row in the same commit.
+    const lines = readFileSync(JSONL_PATH, 'utf8')
+      .split('\n')
+      .filter((line) => line.trim().length > 0);
+    expect(cells, 'a line failed to parse into a cell').toHaveLength(lines.length);
+    expect(cells.length, 'the matrix is empty').toBeGreaterThan(0);
+
+    const keys = cells.map(cellKey);
+    const duplicates = keys.filter((key, i) => keys.indexOf(key) !== i);
+    expect(duplicates, 'the same (component, part, transition) appears twice').toEqual([]);
   });
 
   it('declares the schema on every line', () => {
