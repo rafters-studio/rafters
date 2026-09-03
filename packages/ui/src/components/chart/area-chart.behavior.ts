@@ -483,7 +483,8 @@ export const areaChart: BehaviorSpec<
   // single baseline edge to grow from) -- is declared as a row in
   // docs/spec/matrix/motion.jsonl (component: area-chart, part: area,
   // transition: enter), consumed below in area-chart.classes.ts via the
-  // generated animate-area-chart-area-enter utility.
+  // generated animate-fade-in-moderate-enter utility, the assignment this cell shares
+  // with every other moment on the same shape, tier and curve.
 };
 
 /** Per-instance ARIA for the `many: true` "area" and "line" parts (Spec
