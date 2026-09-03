@@ -35,9 +35,35 @@ describe('alert-dialog classes', () => {
     expect(classes.footer).not.toContain('sm:');
   });
 
-  it('declares no raw numeric transition duration (motion token layer pending)', () => {
+  it('enter/exit are the alert-dialog CELLS, keyed off data-state (#1996 / #2017)', () => {
+    // motion.jsonl: alert-dialog / content / closed -> open is normal + enter,
+    // and open -> closed is moderate + exit. Two distinct cells, two utilities.
+    // The extent rides with the shape, so no extent-pop class appears here.
+    expect(classes.content).toContain('data-[state=open]:animate-scale-in-normal-enter');
+    expect(classes.content).toContain('data-[state=closed]:animate-scale-out-moderate-exit');
+    expect(classes.content.split(/[\s:]+/)).not.toContain('extent-pop');
+  });
+
+  it('the overlay consumes its own two cells, keyed off data-state', () => {
+    // motion.jsonl: alert-dialog / overlay / closed -> open is normal + enter,
+    // and open -> closed is moderate + exit. Both carry provenance "proposed".
+    expect(classes.overlay).toContain('data-[state=open]:animate-fade-in-normal-enter');
+    expect(classes.overlay).toContain('data-[state=closed]:animate-fade-out-moderate-exit');
+  });
+
+  it('declares no raw numeric duration, and no animate-none escape', () => {
     for (const value of Object.values(classes)) {
       expect(value).not.toMatch(/\bduration-\d/);
+      expect(value).not.toContain('motion-reduce:animate-none');
     }
+  });
+
+  it('the decision buttons carry no motion, because no matrix row assigns any', () => {
+    // The modal-overlay section assigns a close-button hover row to dialog,
+    // sheet and drawer. An alert dialog has no close button, and no row names
+    // its action or cancel. A tier nobody assigned would be a value nobody
+    // chose, so the hover stays instant.
+    expect(classes.action).not.toContain('duration-');
+    expect(classes.cancel).not.toContain('duration-');
   });
 });

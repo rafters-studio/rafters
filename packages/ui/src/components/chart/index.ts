@@ -73,6 +73,40 @@ export type {
 export { barChartClasses, resolveBarEnterClass, resolveBarFillClass } from './bar-chart.classes';
 export type { BarChartClassSet } from './bar-chart.classes';
 
+export { area, readAreaConfig } from './area.behavior';
+export type { AreaConfig, AreaPart, AreaState } from './area.behavior';
+
+export {
+  areaAria,
+  areaChart,
+  bindAreaChart,
+  buildAreaChartLabel,
+  buildAreaPath,
+  computeAreas,
+  describeArea,
+} from './area-chart.behavior';
+export type {
+  AreaChartActions,
+  AreaChartBehaviorConfig,
+  AreaChartConfig,
+  AreaChartGeometry,
+  AreaChartPart,
+  AreaChartRuntimeClasses,
+  AreaChartState,
+  AreaDatum,
+  AreaPoint,
+  AreaSeriesGeometry,
+  ComputeAreasOptions,
+} from './area-chart.behavior';
+export {
+  areaChartClasses,
+  resolveAreaEnterClass,
+  resolveAreaFillClass,
+  resolveAreaLineClass,
+  resolveAreaStrokeClass,
+} from './area-chart.classes';
+export type { AreaChartClassSet } from './area-chart.classes';
+
 export { line, readLineConfig } from './line.behavior';
 export type { LineConfig, LinePart, LineState } from './line.behavior';
 

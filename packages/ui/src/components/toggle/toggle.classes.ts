@@ -43,10 +43,19 @@ const sizeClasses: Record<ToggleSize, string> = {
   lg: 'h-11 px-5',
 };
 
+// Two rows on one element, carrying different tiers, so the press row rides
+// `active:` variants over the state row's base assignment.
+//   toggle / root / off <-> on -- color -- duration-moderate, ease-standard
+//   toggle / root / press -- zoom + color -- duration-micro, ease-spring-snappy,
+//     extent-press
+// `scale` is named in the transition list because Tailwind v4 writes the
+// individual `scale` property; `transform` would transition nothing.
 const baseClasses =
   'inline-flex items-center justify-center gap-2 rounded-md text-label-large ts-label-large cursor-pointer ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ' +
-  'transition-colors duration-moderate motion-reduce:transition-none ' +
+  'transition-[color,background-color,border-color,scale] duration-moderate ease-standard ' +
+  'active:extent-press active:scale-(--rafters-consumed-extent) ' +
+  'active:duration-micro active:ease-spring-snappy ' +
   'disabled:opacity-50 disabled:cursor-not-allowed ' +
   'aria-disabled:opacity-50 aria-disabled:cursor-not-allowed';
 

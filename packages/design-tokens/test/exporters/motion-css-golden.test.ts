@@ -89,48 +89,67 @@ describe('motion CSS: golden emission', () => {
     expect(css).toContain('--rafters-period-spin: 1s;');
   });
 
-  it('bridges the pre-existing names onto the leaves rather than duplicating values', () => {
-    // Purely additive: --duration-* and --ease-* still exist, and now reference
-    // the leaf instead of holding a second copy of the number. A literal here
-    // would mean retuning one leaf moves two lines, and the two could disagree.
+  it('bridges onto the theme namespaces Tailwind actually reads', () => {
+    // The bridge exists to make TAILWIND generate the utility, so the key has to
+    // be spelled the way Tailwind's namespace is spelled -- which for two of the
+    // three is not what the class is called. Measured against the real compiler:
+    // `--transition-duration-*` yields `duration-*`, `--transition-delay-*`
+    // yields `delay-*`, `--ease-*` yields `ease-*`. A `--duration-*` key, which
+    // is what this used to write, generates nothing at all.
+    //
+    // The value is a reference, never a copy: retuning a leaf moves one line.
     const css = emitCSS(baseTokens());
-    expect(css).toContain('--duration-moderate: var(--rafters-duration-moderate);');
+    expect(css).toContain('--transition-duration-moderate: var(--rafters-duration-moderate);');
     expect(css).toContain('--ease-standard: var(--rafters-ease-standard);');
-    expect(css).not.toContain('--duration-moderate: 250ms;');
+    expect(css).toContain('--transition-delay-linger: var(--rafters-delay-linger);');
+    expect(css).not.toContain('--transition-duration-moderate: 250ms;');
   });
 
-  it('generates a utility for every member of every namespace', () => {
+  it('hand-writes a utility ONLY where Tailwind has no namespace', () => {
+    // ONE GENERATOR PER CLASS. duration, ease and delay come from Tailwind, via
+    // the bridge keys above; writing our own block for them too produced a second
+    // rule with the same selector, and for ease-* Tailwind's declaration measurably
+    // landed LAST -- so the computed value came from the theme key, not from the
+    // block we believed was authoritative.
+    //
+    // extent and period stay ours because Tailwind cannot express them: an extent
+    // publishes a custom property rather than a CSS one, and a period is a loop's
+    // time, which rides inside an --animate-* shorthand.
     const css = emitCSS(baseTokens());
-    // Nothing here RELIES on Tailwind theme inference -- we emit every block
-    // ourselves (the #1955 lesson). One caveat, matching tailwind.ts: `ease-*`
-    // IS a v4 theme namespace, so Tailwind also infers its own ease utilities
-    // from the --ease-* bridge; the compiled-layer test pins which declaration
-    // wins. The other four are not theme namespaces at all.
-    expect(css).toContain(
-      '@utility duration-fast {\n  transition-duration: var(--rafters-duration-fast);',
-    );
-    expect(css).toContain(
-      '@utility ease-standard {\n  transition-timing-function: var(--rafters-ease-standard);',
-    );
-    expect(css).toContain(
-      '@utility delay-hover-intent {\n  transition-delay: var(--rafters-delay-hover-intent);',
-    );
     expect(css).toContain(
       '@utility extent-pop {\n  --rafters-consumed-extent: var(--rafters-extent-pop);',
     );
     expect(css).toContain(
       '@utility period-spin {\n  animation-duration: var(--rafters-period-spin);',
     );
+    expect(css).not.toContain('@utility duration-');
+    expect(css).not.toContain('@utility ease-');
+    expect(css).not.toContain('@utility delay-');
   });
 
-  it('zeroes duration and delay under reduced motion, and never period', () => {
+  it('zeroes duration and delay under reduced motion, on the LEAF, and never period', () => {
+    // THE LAW IS ON THE VALUE, NOT ON THE UTILITY. A per-utility @media block only
+    // covers the utilities we hand-write, so anything reaching a leaf another way
+    // -- Tailwind's own generated duration-*, its `transition` shorthand, an
+    // --animate-* whose duration is a var() onto the same leaf -- escaped it
+    // silently while looking token-correct. Zero the value and nothing escapes.
     const css = emitCSS(baseTokens());
-    const blocks = utilityBlocks(css).split('@utility ');
-    const block = (name: string) => blocks.find((b) => b.startsWith(`${name} {`)) ?? '';
-    expect(block('duration-normal')).toContain('transition-duration: 0ms;');
-    expect(block('delay-linger')).toContain('transition-delay: 0ms;');
+    const start = css.indexOf('@media (prefers-reduced-motion: reduce) {\n  :root {');
+    expect(start, 'no leaf-level reduced-motion block').toBeGreaterThan(-1);
+    // The block only, not the rest of the sheet after it -- otherwise the
+    // "never period" assertion below reads every period leaf in the file.
+    const law = css.slice(start, css.indexOf('\n}', css.indexOf('  }', start)));
+    expect(law).toContain('--rafters-duration-normal: 0ms;');
+    expect(law).toContain('--rafters-delay-linger: 0ms;');
     // Loops slow, never stop -- a stopped spinner says the work stopped.
-    expect(block('period-spin')).not.toContain('prefers-reduced-motion');
+    expect(law).not.toContain('--rafters-period-');
+    // And no utility block writes the ZERO any more. The semantic motion-*
+    // blocks still carry a reduced-motion @media, which is a different rule:
+    // they re-set transition-property to drop transforms (spatial movement
+    // becomes a cross-fade, per docs/MOTION.md), a substitution rather than the
+    // zeroing law this test is about.
+    expect(utilityBlocks(css)).not.toContain('transition-duration: 0ms;');
+    expect(utilityBlocks(css)).not.toContain('transition-delay: 0ms;');
   });
 
   it('carries no motion-delay-* orphan tokens into the sheet', () => {
@@ -165,10 +184,20 @@ describe('motion CSS: golden emission', () => {
   });
 
   it('builds every animation on the namespace leaves', () => {
+    // The assignment keys are named for the motion -- shape, tier, curve -- and
+    // built entirely from leaves. The legacy `motion-animation-*` set that used
+    // to be emitted alongside them carried literal times (`spin 1s`,
+    // `caret-blink 1.25s`) straight into a theme key, which is a value written
+    // outside the leaf layer: retuning a period moved nothing, and the two
+    // copies could disagree.
     const css = emitCSS(baseTokens());
     expect(css).toContain(
-      '--animate-scale-out: scale-out var(--rafters-duration-fast) var(--rafters-ease-exit);',
+      '--animate-scale-out-fast-exit: scale-out var(--rafters-duration-fast) var(--rafters-ease-exit);',
     );
+    expect(css).toContain('--animate-spin-spin: spin var(--rafters-period-spin) infinite;');
+    for (const line of css.split('\n').filter((l) => l.includes('--animate-'))) {
+      expect(line, `an assignment carries a literal: ${line.trim()}`).not.toMatch(/\d+m?s\b/);
+    }
     expect(css).not.toContain('var(--motion-duration-');
     expect(css).not.toContain('var(--motion-easing-');
   });

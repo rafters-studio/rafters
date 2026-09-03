@@ -16,10 +16,10 @@ describe('popover classes', () => {
     // The cell is the spec: popover / content / closed -> open and open ->
     // closed, each with its own tier and curve. A shared animate-scale-in here
     // was the #2012 defect -- three distinct cells collapsed into one.
-    expect(classes.content).toContain('data-[state=open]:animate-popover-content-open');
-    expect(classes.content).toContain('data-[state=closed]:animate-popover-content-close');
-    expect(classes.content).not.toContain('animate-scale-in');
-    expect(classes.content).not.toContain('animate-scale-out');
+    expect(classes.content).toContain('data-[state=open]:animate-scale-in-moderate-enter');
+    expect(classes.content).toContain('data-[state=closed]:animate-scale-out-fast-exit');
+    expect(classes.content.split(/[\s:]+/)).not.toContain('animate-scale-in');
+    expect(classes.content.split(/[\s:]+/)).not.toContain('animate-scale-out');
   });
 
   it('uses no @starting-style and no tailwindcss-animate vocabulary', () => {
@@ -39,9 +39,33 @@ describe('popover classes', () => {
     // the zeroed duration, and it removes the animation rather than completing
     // it, so the keyframe's end state is never reached.
     expect(classes.content).not.toContain('motion-reduce:animate-none');
-    // The close control is a TRANSITION, not a keyframe, and transition-none is
-    // still its correct reduced-motion path.
-    expect(classes.close).toContain('motion-reduce:transition-none');
+    // INVERTED, not deleted. This once asserted the close control kept
+    // `motion-reduce:transition-none`. It does not: reduced motion is the token
+    // sheet's responsibility (REDUCED_MOTION_ZEROED zeroes every duration and
+    // delay leaf), never a component-level media query -- tooltip.classes.ts
+    // states the rule. Asserting the ABSENCE means reintroducing one fails.
+    for (const value of Object.values(classes)) {
+      expect(value).not.toContain('motion-reduce');
+    }
+  });
+
+  it('the close control carries its hover row: fast, standard', () => {
+    // motion.jsonl: popover / close button / hover -- fade + color,
+    // duration-fast, ease-standard. The tier was already named; the curve is
+    // what this fix adds. The row's COLOR half has no moment on this control --
+    // the hover moves opacity alone -- and inventing a hover colour to fill it
+    // would be a design decision, so the gap is reported in the source instead.
+    expect(classes.close).toContain('transition-opacity');
+    expect(classes.close).toContain('duration-fast');
+    expect(classes.close).toContain('ease-standard');
+    expect(classes.close).toContain('hover:opacity-100');
+  });
+
+  it('no literal duration, delay or easing value appears anywhere', () => {
+    for (const value of Object.values(classes)) {
+      expect(value).not.toMatch(/\b(duration|delay)-\[?\d/);
+      expect(value).not.toContain('ease-[');
+    }
   });
 
   it('the close control honors the touch floor and scales down via CQ', () => {

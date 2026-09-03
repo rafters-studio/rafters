@@ -28,7 +28,7 @@ const plotClasses = 'block w-full h-full';
 // `lineAria` (line-chart.behavior.ts); every line reaches "visible" once
 // mounted, so the keyframe plays once on mount and never replays on a later
 // render.
-const lineClasses = 'data-[state=visible]:animate-line-chart-line-enter';
+const lineClasses = 'data-[state=visible]:animate-fade-in-moderate-enter';
 
 /** Select the line-enter matrix cell's generated utility -- the single place
  *  that names it. Used by `lineChartClasses` below (React reads `.line` off

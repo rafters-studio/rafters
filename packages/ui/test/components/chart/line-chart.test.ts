@@ -397,12 +397,12 @@ describe('motion: matrix declaration (#2226; BehaviorSpec.motion is spec-reserve
     expect(row?.['curve']).toMatchObject({ kind: 'role', role: 'enter', provenance: 'proposed' });
   });
 
-  it('lineChartClasses consumes the generated animate-line-chart-line-enter utility off data-state', () => {
+  it('lineChartClasses consumes the generated fade-in/moderate/enter assignment off data-state', () => {
     const classes = lineChartClasses(
       { smooth: false, dots: true },
       lineChart.initialState(baseConfig),
     );
-    expect(classes.line).toBe('data-[state=visible]:animate-line-chart-line-enter');
+    expect(classes.line).toBe('data-[state=visible]:animate-fade-in-moderate-enter');
   });
 
   it('the line-enter composition (opacity only) is legal under validateMotionComposition', () => {

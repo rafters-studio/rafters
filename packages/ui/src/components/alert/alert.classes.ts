@@ -4,8 +4,34 @@ export interface AlertClassSet {
   root: string;
 }
 
+/**
+ * THE CELL IS THE SPEC. `animate-fade-in-normal-enter` is the generated
+ * consumption of `alert / root / appear` in
+ * `packages/ui/docs/spec/matrix/motion.jsonl` -- keyframe `fade-in`, tier
+ * `normal`, curve role `enter`, all three read off the row. No literal
+ * duration, no literal easing, no per-component motion token.
+ *
+ * NARROWED TO A FADE, on the operator's ruling (2026-09-02). The row's
+ * movement reads `fade + slide (y, small)` with a `structural` extent
+ * ("spacing-derived nudge"); the ruling is that an alert fades and does not
+ * slide, so the slide half and the nudge are dropped rather than approximated.
+ * The token layer already agrees -- `alert-root-appear` in
+ * `DEFAULT_MOTION_CELL_ANIMATIONS` names the shape `fade-in` and no extent --
+ * so the jsonl row is the artifact still to be corrected.
+ *
+ * KEYED OFF THE MOUNT, not a state attribute. An alert has no open/closed
+ * state: it appears when it renders, so the animation is unconditional on the
+ * root. `data-[state=...]` here would name a state nothing sets.
+ *
+ * NO motion-reduce escape. The reduced-motion law is written on the duration
+ * and easing leaves the generated utility references, so it reaches this
+ * animation without a line here.
+ *
+ * The row is marked `proposed` in the matrix -- a starting position, never
+ * reviewed.
+ */
 const baseClasses =
-  'relative w-full rounded-lg border p-4 ' +
+  'relative w-full rounded-lg border p-4 animate-fade-in-normal-enter ' +
   '[&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&:has(svg)]:pl-11 [&>svg+div]:-translate-y-0.5';
 
 /**

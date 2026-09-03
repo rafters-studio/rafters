@@ -259,6 +259,16 @@ const EXCLUDED_ROWS: Record<ExclusionReason, readonly string[]> = {
     'sheet | close button | hover',
     'drawer | close button | hover',
     'popover | close button | hover',
+    // The four rows added when the sweep found these moments running on
+    // Tailwind's stock 150ms with no row to assign them a tier. Every one is a
+    // state change on a part that stays mounted -- a control recolouring, a dot
+    // strip recolouring, a ring appearing on focus, a chevron rotating -- so
+    // each is consumed as composed generics in its classes file and none names a
+    // keyframe. Same ground as the close-button rows above.
+    'carousel | control | hover',
+    'carousel | indicator | active change',
+    'combobox | input | focus',
+    'combobox | chevron | open <-> closed',
     // The list container stays mounted; per-item entrance is the stagger axis (#2156).
     'command | items | filter change',
     'checkbox | indicator | unchecked <-> checked',

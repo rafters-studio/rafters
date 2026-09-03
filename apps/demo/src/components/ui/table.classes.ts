@@ -7,10 +7,12 @@
  *
  * All colour and typography come through semantic role tokens
  * (`text-body-small ts-body-small`, `text-label-medium ts-label-medium`, `text-muted-foreground`, `bg-muted`,
- * `border-b`/`border-t`) -- no raw colour or arbitrary values. The only delta
- * from the oracle: the redundant `duration-150` is dropped, since Tailwind's
- * `transition-colors` already carries the default duration/easing (motion
- * intent: transition-colors; durations come from tokens, Spec 04).
+ * `border-b`/`border-t`) -- no raw colour or arbitrary values. The one delta
+ * from the oracle is motion: its literal `duration-150` is replaced by the
+ * generics the matrix assigns, `duration-fast ease-standard` (see the row
+ * on `tableRowClasses`). Leaving the timing off entirely, as this file did
+ * before, took Tailwind's stock default rather than the token -- which is the
+ * same defect as the literal, one step quieter.
  */
 
 /** The `<table>` root: full width, bottom-anchored caption, small body text. */
@@ -33,11 +35,25 @@ export const tableFooterClasses =
  * `<tr>`: a bottom border, a colour transition on hover, and the selected
  * hook. `data-[state=selected]:bg-muted` is the class side of the
  * `tableRowAttrs` projection -- a selected row (data-state="selected") tints
- * to the muted surface. `motion-reduce:transition-none` respects the user's
- * reduced-motion preference.
+ * to the muted surface.
+ *
+ * NO component-level reduced-motion escape. The generated `duration-*` and
+ * `delay-*` utilities zero themselves under `prefers-reduced-motion` (the
+ * exporter's `REDUCED_MOTION_ZEROED` set), so reduced motion is the token
+ * sheet's responsibility and never a component-level media query. The
+ * `motion-reduce:transition-none` this drops was redundant with that law.
+ *
+ * TWO ROWS, ONE TRANSITION. `table / row / hover` (provenance `baseline`) and
+ * `table / row / selected <-> unselected` (provenance `proposed`) both assign
+ * tier `fast` and curve role `standard` to the same colour change
+ * (`background, text, border`) on the same part. One `duration-fast
+ * ease-standard` satisfies both, which is the exporter's own rule --
+ * deduplicated by the motion, not by the moment. Two identical strings here
+ * would be two names for one motion. Neither moment is a keyframe: the row
+ * stays mounted through both.
  */
 export const tableRowClasses =
-  'border-b transition-colors motion-reduce:transition-none hover:bg-muted/50 data-[state=selected]:bg-muted';
+  'border-b transition-colors duration-fast ease-standard hover:bg-muted/50 data-[state=selected]:bg-muted';
 
 /**
  * `<th>`: header cell -- fixed height, left-aligned, muted label typography.

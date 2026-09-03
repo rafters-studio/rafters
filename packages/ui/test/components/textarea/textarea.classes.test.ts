@@ -32,8 +32,24 @@ describe('textarea classes', () => {
     expect(classes.textarea).toContain('read-only:cursor-default');
   });
 
-  it('motion respects reduced-motion', () => {
-    expect(classes.textarea).toContain('motion-reduce:transition-none');
+  it('motion is the focus row and the validity row, composed as generics (#2308)', () => {
+    // root / focus -- ring -- duration-micro, ease-linear
+    expect(classes.textarea).toContain('transition-[box-shadow,border-color]');
+    expect(classes.textarea).toContain('duration-micro');
+    expect(classes.textarea).toContain('ease-linear');
+    // root / valid <-> invalid -- color -- duration-fast, ease-standard
+    expect(classes.textarea).toContain('aria-invalid:duration-fast');
+    expect(classes.textarea).toContain('aria-invalid:ease-standard');
+    expect(classes.textarea).not.toContain('motion-reduce:');
+  });
+
+  it('THE INPUT RULE: autosize is never timed (#2308)', () => {
+    // Layout driven by the user's own keystrokes tracks instantly -- animating it
+    // puts lag between a person and their own hands. No size property is in the
+    // transition list, and `transition-all` (which would sweep one in) is absent.
+    expect(classes.textarea).not.toContain('transition-all');
+    expect(classes.textarea).not.toContain('height');
+    expect(classes.textarea).not.toContain('block-size');
   });
 
   it('the error message uses the destructive text token', () => {

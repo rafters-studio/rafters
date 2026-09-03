@@ -43,7 +43,7 @@ describe('spinner conformance [react]', () => {
     // test suite.
     render(<Spinner />);
     const root = body().querySelector('[data-part="root"]') as HTMLElement;
-    expect(root.className).toContain('animate-spinner-root-busy');
+    expect(root.className).toContain('animate-spin-spin');
     expect(root.className).not.toContain('motion-reduce:animate-none');
   });
 
@@ -88,25 +88,38 @@ describe('spinner conformance [react]', () => {
       rmSync(fixtureDir, { recursive: true, force: true });
     }
 
-    const cellRule = css.match(/\.animate-spinner-root-busy\{([^}]*)\}/)?.[1];
+    const cellRule = css.match(/\.animate-spin-spin\{([^}]*)\}/)?.[1];
     expect(
       cellRule,
-      'animate-spinner-root-busy did not compile at all -- the class the component renders has drifted from the cell the exporter names',
+      'animate-spin-spin did not compile at all -- the class the component renders has drifted from the cell the exporter names',
     ).toBeDefined();
-    expect(cellRule).toContain('animation-iteration-count:infinite');
-    expect(cellRule).toMatch(/animation-duration:var\(--rafters-period-spin\)/);
+    // The loop is the animation SHORTHAND Tailwind generates from the
+    // `--animate-*` key, so both the period and `infinite` ride inside the key's
+    // value rather than standing as longhand declarations on the rule.
+    expect(cellRule, 'the loop rule is not built on the key').toContain(
+      'animation:var(--animate-spin-spin)',
+    );
+    expect(css, 'the loop key does not run forever on its period leaf').toMatch(
+      /--animate-spin-spin:[^;]*var\(--rafters-period-spin\)[^;]*\binfinite\b/,
+    );
 
     const reduced = (
       css.match(/@media\s*\(prefers-reduced-motion:\s*reduce\)\{.*?\}\}/g) ?? []
     ).join('');
+    // THE WITNESS IS THE LAW ITSELF. The reduced-motion rule is written on the
+    // LEAVES now -- one `:root` override that zeroes every duration and delay --
+    // so a compiled sheet that carries it is proof the mechanism fired, and the
+    // exclusion below is then meaningful. (It used to witness on
+    // `motion-modal-in`'s own block, which is a different rule: that one re-sets
+    // transition-property to drop transforms, a cross-fade substitution rather
+    // than the zero.)
     expect(
       reduced,
-      'the witness class compiled no reduced-motion block at all -- the exclusion below would prove nothing',
-    ).toContain('motion-modal-in');
-    expect(
-      reduced,
-      'a reduced-motion block zeroed the busy cell -- a period-kind cell must carry none',
-    ).not.toContain('animate-spinner-root-busy');
+      'no reduced-motion block compiled at all -- the exclusion below would prove nothing',
+    ).toMatch(/--rafters-duration-[a-z]+:\s*0/);
+    expect(reduced, 'the loop period was zeroed -- work loops slow, they never stop').not.toContain(
+      '--rafters-period-spin',
+    );
   }, 30000);
 
   it('size and variant drive the class projection', () => {
@@ -119,7 +132,7 @@ describe('spinner conformance [react]', () => {
   it('consumer className merges via classy', () => {
     render(<Spinner className="ml-2" />);
     const root = body().querySelector('[data-part="root"]') as HTMLElement;
-    expect(root.className).toContain('animate-spinner-root-busy');
+    expect(root.className).toContain('animate-spin-spin');
     expect(root.className).toContain('ml-2');
   });
 

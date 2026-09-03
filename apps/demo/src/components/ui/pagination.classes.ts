@@ -14,9 +14,26 @@ export const paginationNavClasses = 'mx-auto flex w-full justify-center';
 
 export const paginationContentClasses = 'flex flex-row items-center gap-1';
 
+/**
+ * TWO ROWS, ONE TRANSITION. `pagination / link / hover` (provenance
+ * `baseline`) and `pagination / link / current change` (provenance
+ * `proposed`) in `packages/ui/docs/spec/matrix/motion.jsonl` both assign tier
+ * `fast` and curve role `standard` to the same colour change (`background,
+ * text, border`) on the same part. One `duration-fast ease-standard` on the
+ * link base satisfies both -- deduplicated by the motion, not by the moment,
+ * which is the rule the token exporter follows for its own keys. The current
+ * page is a colour swap on a link that stays put (`paginationLinkActiveClasses`
+ * / `aria-[current=page]`), so it is a transition and not a keyframe.
+ * `ease-standard` was the half of the assignment this file had not yet named.
+ *
+ * NO component-level reduced-motion escape. The generated `duration-*` and
+ * `delay-*` utilities zero themselves under `prefers-reduced-motion` (the
+ * exporter's `REDUCED_MOTION_ZEROED` set), so reduced motion is the token
+ * sheet's responsibility and never a component-level media query.
+ */
 export const paginationLinkBaseClasses =
   'inline-flex items-center justify-center rounded-md text-label-medium ts-label-medium ' +
-  'transition-colors duration-150 motion-reduce:transition-none ' +
+  'transition-colors duration-fast ease-standard ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ' +
   'disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none ' +
   'aria-disabled:opacity-50 aria-disabled:cursor-not-allowed aria-disabled:pointer-events-none';

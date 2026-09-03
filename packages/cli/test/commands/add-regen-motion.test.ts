@@ -75,7 +75,12 @@ describe('regenerateAfterInstall -- stale motion (#2208)', () => {
     // is also what a path that silently returned would produce.
     expect(existsSync(outputFile('rafters.css'))).toBe(true);
     const css = readFileSync(outputFile('rafters.css'), 'utf8');
-    expect(css).toContain('animate-dialog-content-open');
+    // The assignment `dialog / content / closed -> open` makes, named for the
+    // motion rather than for the component: scale-in on the normal tier and the
+    // enter curve. The cell token is still `motion-cell-dialog-content-open`
+    // (asserted below) -- what changed is that the emitted class is shared by
+    // every moment assigned the same shape, tier and curve.
+    expect(css).toContain('--animate-scale-in-normal-enter');
 
     const rebuilt = readNamespaceTokens(projectDir, 'motion');
     expect(rebuilt.map((t) => t.name)).not.toContain('motion-easing-ease-in');

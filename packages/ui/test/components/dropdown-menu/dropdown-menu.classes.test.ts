@@ -33,10 +33,10 @@ describe('dropdown-menu classes', () => {
     // enter, open -> closed is fast + exit. The assignments match popover's
     // today and the cells stay SEPARATE anyway -- the matrix declares two
     // moments, and a shared name would drag one when the other is retuned.
-    expect(classes.content).toContain('data-[state=open]:animate-dropdown-menu-content-open');
-    expect(classes.content).toContain('data-[state=closed]:animate-dropdown-menu-content-close');
-    expect(classes.content).not.toContain('animate-scale-in');
-    expect(classes.content).not.toContain('animate-scale-out');
+    expect(classes.content).toContain('data-[state=open]:animate-scale-in-moderate-enter');
+    expect(classes.content).toContain('data-[state=closed]:animate-scale-out-fast-exit');
+    expect(classes.content.split(/[\s:]+/)).not.toContain('animate-scale-in');
+    expect(classes.content.split(/[\s:]+/)).not.toContain('animate-scale-out');
   });
 
   it('motion respects reduced-motion, and does NOT do it with animate-none', () => {
@@ -44,6 +44,27 @@ describe('dropdown-menu classes', () => {
     // would reset the shorthand, discard the zeroed duration, and leave the
     // element short of the keyframe's end state.
     expect(classes.content).not.toContain('motion-reduce:animate-none');
+  });
+
+  it('items carry the highlight-move row: color, micro, standard', () => {
+    // motion.jsonl: dropdown-menu / items / highlight move -- duration-micro,
+    // ease-standard, marked proposed and transcribed as written. The focus
+    // colours above had no transition at all before this.
+    expect(classes.item).toContain('transition-colors');
+    expect(classes.item).toContain('duration-micro');
+    expect(classes.item).toContain('ease-standard');
+  });
+
+  it('items carry the enter row: the stagger delay, no duration, no curve', () => {
+    // motion.jsonl: dropdown-menu / items / enter assigns `delay-stagger-step`
+    // and `duration: {"kind":"none"}` -- no DURATION, which is not the same as
+    // no assignment. The delay generic is the whole row, so naming it is the
+    // whole consumption; the fade itself belongs to the content keyframe.
+    // It resolves to 0ms at the efficient intent, and that is the assignment
+    // rather than a gap: a later retune needs a consumer here to reach.
+    expect(classes.item).toContain('delay-stagger-step');
+    expect(classes.checkboxItem).toContain('delay-stagger-step');
+    expect(classes.radioItem).toContain('delay-stagger-step');
   });
 
   it('no hand-rolled animation vocabulary and no raw durations', () => {

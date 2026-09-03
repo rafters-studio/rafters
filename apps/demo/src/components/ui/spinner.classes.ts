@@ -6,11 +6,26 @@ export interface SpinnerClassSet {
 
 /**
  * The ring structure every spinner carries: an inline round element that
- * spins, with the reduced-motion opt-out baked in so the animation respects
- * `prefers-reduced-motion`. Motion intent only -- `animate-spin` and its
- * duration/easing resolve from the token-driven Tailwind utilities.
+ * spins.
+ *
+ * THE MATRIX IS THE SPEC. `animate-spin-spin` is the assignment
+ * `spinner / root / busy` makes in
+ * `packages/ui/docs/spec/matrix/motion.jsonl` -- the `spin` shape on the
+ * `spin` period -- named for the motion rather than for this component, so
+ * every part assigned that same loop names the same class. One reference,
+ * no literal duration.
+ *
+ * NO motion-reduce:animate-none. A period-kind cell is exempt from the
+ * reduced-motion zeroing law by design (#2155): the utility carries no
+ * `@media (prefers-reduced-motion: reduce)` block at all, so the ring keeps
+ * spinning at the same period regardless of the user's preference -- a
+ * stopped busy indicator says the work stopped, which would be false while
+ * work is still in flight. See
+ * `packages/ui/src/primitives/intelligence-integration.ts:106-121` and
+ * `REDUCED_MOTION_ZEROED` in `packages/design-tokens/src/exporters/tailwind.ts`
+ * for the ruling this follows.
  */
-const baseClasses = 'inline-block rounded-full animate-spin motion-reduce:animate-none';
+const baseClasses = 'inline-block rounded-full animate-spin-spin';
 
 /**
  * Size selects the ring's box and stroke. Ported verbatim from the oracle.

@@ -1,18 +1,16 @@
 import type { ContextMenuConfig, ContextMenuState } from './context-menu.behavior';
 
 /**
- * The view for context-menu: class strings only, no logic. Motion rides the
- * semantic motion tokens (Spec 05): the content enters on `motion-dropdown-in`
- * (fade + zoom, the dropdown tier), and item highlight rides `motion-focus`.
- * No raw numeric durations or hand-picked easings -- the tokens encode timing,
- * curve, and the prefers-reduced-motion degradation. Fill, not background:
+ * The view for context-menu: class strings only, no logic. Motion is CSS: the
+ * content runs the two anchored-popup CELLS keyed off `data-state`, and every
+ * other moment names duration/curve generics. Fill, not background:
  * bg-popover/text-popover-foreground are the popover surface tokens; the depth
  * token (z-depth-dropdown) replaces a raw z-index.
  *
- * Exit motion (`motion-dropdown-out`) is intentionally NOT declared: the content
- * toggles `hidden` when closed, so the exiting node leaves the box model before
- * an out transition can play. A played exit awaits the Presence layer (Spec 04);
- * declaring it now would be a silent no-op.
+ * THE THIRTEEN SEMANTIC MOTION CLASSES ARE GONE (ruling 2026-08-02). This file
+ * used to name two of them -- `motion-dropdown-in` on `content` and
+ * `motion-focus` on `itemBase` -- which compiled only because nothing failed on
+ * an unknown class. Both are replaced below by what their matrix rows assign.
  */
 export interface ContextMenuClassSet {
   trigger: string;
@@ -34,15 +32,40 @@ export interface ContextMenuClassSet {
 
 const trigger = 'inline-block';
 
+// THE CELL IS THE SPEC. These two utilities are the generated consumption of
+// context-menu / content / closed -> open (moderate, enter, extent pop) and
+// open -> closed (fast, exit, extent pop) -- motion.md:173-174, emitted as
+// `context-menu-content-open` / `-close` in DEFAULT_MOTION_CELL_ANIMATIONS.
+// They replace `motion-dropdown-in` plus a hand-rolled `opacity-0 scale-95`
+// reveal: the retired semantic class named no tier the matrix assigns, and the
+// hand-rolled pair is the tailwindcss-animate-shaped form this repo's own
+// popover/dropdown-menu classes already prohibit.
+//
+// NO motion-reduce:animate-none. The generated utility zeroes
+// animation-duration under prefers-reduced-motion, which keeps the keyframe's
+// end state; `animation: none` resets the shorthand and discards that zero.
+//
+// ONE KNOWN LIMIT, reported not papered over: the exit keyframe cannot run
+// today. `contextMenu.aria(...).content` projects `hidden` off the same
+// open flag (context-menu.behavior.ts:105) and ContextMenuContent spreads it
+// AFTER presence's own props (context-menu.tsx:297), so the panel goes
+// display:none the instant it closes and the closed cell never gets a frame.
+// dropdown-menu solved this by keeping `hidden` off `aria.content` and gating
+// it on `present` instead (dropdown-menu.tsx:288-290). The fix belongs to the
+// behavior/view layer, not to this file; the class is correct and starts
+// running the moment that wiring lands.
 const content =
   'z-depth-dropdown min-w-32 overflow-hidden rounded-md border bg-popover p-1 ' +
   'text-popover-foreground shadow-lg outline-none ' +
-  'motion-dropdown-in opacity-0 scale-95 data-[state=open]:opacity-100 data-[state=open]:scale-100';
+  'data-[state=open]:animate-scale-in-moderate-enter ' +
+  'data-[state=closed]:animate-scale-out-fast-exit ' +
+  'data-[state=closed]:pointer-events-none';
 
 // The submenu panel shares its surface chrome with `content` but NOT its
-// motion: `content` is out of scope for #2152 (the parent menu's open/close
-// cells are a later component-sweep item, #2017's CHANGELOG), while
-// `subContent` consumes the two rows #2151 added to motion.jsonl -- context-menu
+// motion, and the two arrive by different mechanisms: `content` above runs the
+// anchored-popup KEYFRAME cells (the component-sweep item #2152 deferred, done
+// now), while `subContent` consumes the two rows #2151 added to motion.jsonl
+// as TRANSITION generics -- context-menu
 // / subcontent / "closed -> open" (moderate, enter, delay hover-intent) and
 // "open -> closed" (fast, exit, no delay) -- entirely as CSS/tokens. No
 // TypeScript reads a motion token and no timer implements the hover-intent
@@ -145,9 +168,26 @@ const subContent =
   'data-[state=open]:duration-moderate data-[state=open]:ease-enter ' +
   'data-[state=open]:data-[open-source=pointer]:delay-hover-intent';
 
+// THE ROW: context-menu / items / highlight move -- color, duration-micro,
+// ease-standard (motion.md:176), marked PROPOSED and unreviewed, transcribed as
+// written. It replaces the retired `motion-focus` semantic class, which named
+// no tier this matrix assigns. A transition, not a keyframe -- the item stays
+// put -- so it is excluded from the cell vocabulary by name (`context-menu |
+// items | highlight move`, EXCLUDED_ROWS.noIntersectingProperty in
+// packages/design-tokens/test/motion-cells.test.ts).
+//
+// THE SECOND ROW: context-menu / items / enter -- fade (with content), which
+// assigns `delay-stagger-step` and no duration and no curve (motion.jsonl:42).
+// `duration: {"kind":"none"}` means no DURATION is assigned, not that nothing
+// is: the delay generic is the entire assignment, and naming it is the whole
+// consumption. The fade is the content keyframe's; this class carries only the
+// offset, which resolves to 0ms at the efficient intent. Zero is the
+// assignment, not a gap -- see dropdown-menu's items class for the full note,
+// including the per-element `transition-delay` coupling with the row above.
 const itemBase =
   'relative flex cursor-default select-none items-center rounded-sm text-body-small ts-body-small outline-none ' +
-  'motion-focus focus:bg-accent focus:text-accent-foreground ' +
+  'transition-colors duration-micro ease-standard delay-stagger-step ' +
+  'focus:bg-accent focus:text-accent-foreground ' +
   'data-[disabled]:pointer-events-none data-[disabled]:opacity-50';
 
 const item = `${itemBase} gap-2 px-2 py-1.5`;

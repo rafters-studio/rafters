@@ -28,7 +28,7 @@ describe('skeleton conformance [astro]', () => {
     const body = await render();
     const root = partElement(body, 'root') as HTMLElement;
     expect(root).not.toBeNull();
-    expect(root.className).toContain('animate-skeleton-root-waiting');
+    expect(root.className).toContain('animate-pulse-shimmer');
     expect(root.className).not.toContain('motion-reduce:animate-none');
     expect(root.className).toContain('bg-muted');
   });
@@ -55,7 +55,7 @@ describe('skeleton conformance [astro]', () => {
   it('merges a consumer class through the same projection', async () => {
     const body = await render({ class: 'h-4 w-48' });
     const root = partElement(body, 'root') as HTMLElement;
-    expect(root.className).toContain('animate-skeleton-root-waiting');
+    expect(root.className).toContain('animate-pulse-shimmer');
     expect(root.className).toContain('h-4');
     expect(root.className).toContain('w-48');
   });

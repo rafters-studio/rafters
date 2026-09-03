@@ -40,4 +40,21 @@ describe('field classes', () => {
     expect(disabled).toContain('opacity-50');
     expect(disabled.startsWith(enabled)).toBe(true);
   });
+
+  it('the message rows stay UNCONSUMED, and the gap is the finding (#2286)', () => {
+    // field / message / appear|disappear want `fade + reveal (y)` keyframes at
+    // fast/enter and fast/exit. Three things block them, all recorded in
+    // field.classes.ts: `animate-fade-in-fast-enter` is not in the emitted set,
+    // no reveal shape exists in any tier or curve, and the message node unmounts
+    // with no presence wiring, so an exit keyframe could never play.
+    //
+    // This pins the ABSENCE. A future edit that reaches for the nearest existing
+    // name -- `animate-fade-in-fast-standard`, whose curve the row does not
+    // assign -- fails here rather than shipping an invented assignment.
+    for (const part of [classes.container, classes.description, classes.error]) {
+      expect(part).not.toContain('animate-');
+      expect(part).not.toContain('duration-');
+      expect(part).not.toContain('motion-reduce:');
+    }
+  });
 });

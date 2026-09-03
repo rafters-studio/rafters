@@ -18,6 +18,39 @@ export interface FieldClassSet {
   error: string;
 }
 
+/**
+ * THE TWO MESSAGE ROWS ARE NOT CONSUMED, AND THE REASON IS A GAP, NOT A CHOICE.
+ *
+ * The matrix assigns field two cells (#2286):
+ *   field / message / appear -- fade + reveal (y) -- duration-fast, ease-enter
+ *   field / message / disappear -- fade + reveal (y) -- duration-fast, ease-exit
+ * Both are marked `proposed` -- a starting position, never reviewed.
+ *
+ * Three things block them, all reported rather than papered over:
+ *
+ * 1. NO CLASS NAME EXISTS. A message appearing and disappearing is a presence
+ *    change, so it wants keyframes. The emitted `--animate-*` set (built from
+ *    DEFAULT_MOTION_CELL_ANIMATIONS, one key per distinct shape/tier/curve) has
+ *    no `animate-fade-in-fast-enter`. `animate-fade-in-fast-standard` exists and
+ *    is NOT a substitute: the row assigns `enter`, and swapping the curve would
+ *    invent an assignment. `animate-fade-out-fast-exit` does exist, so only the
+ *    disappear half has a name -- half a pair is worse than neither.
+ *
+ * 2. NO REVEAL SHAPE EXISTS AT ALL. The `reveal (y)` half of both rows is a
+ *    grid-rows movement (docs/MOTION.md: `0fr` <-> `1fr`, never `height`), and
+ *    the keyframe vocabulary has no reveal shape in any tier or curve.
+ *
+ * 3. THE NODE UNMOUNTS WITH NO PRESENCE WIRING. All three performances render
+ *    the error only while there is one (field.tsx:159 and its Astro/WC
+ *    equivalents), and nothing holds the node while an exit animation settles --
+ *    the matrix's presence note names `use-presence` as that mechanism, and
+ *    field does not use it. An exit keyframe could never play, and a CSS
+ *    transition cannot run on a fresh mount either; the matrix rules out leaning
+ *    on `@starting-style`.
+ *
+ * Consuming these rows needs a keyframe pair added upstream and presence wiring
+ * added in the performances -- neither is a classes-file change.
+ */
 const fieldContainerClasses = 'flex flex-col gap-2';
 const fieldLabelDisabledClasses = 'opacity-50';
 const fieldRequiredMarkerClasses = 'text-destructive ml-1';

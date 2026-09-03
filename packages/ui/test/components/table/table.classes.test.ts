@@ -34,9 +34,25 @@ describe('table classes', () => {
   it('the row declares the selected hook and a colour transition, no raw duration', () => {
     expect(tableRowClasses).toContain('data-[state=selected]:bg-muted');
     expect(tableRowClasses).toContain('transition-colors');
-    expect(tableRowClasses).toContain('motion-reduce:transition-none');
+    // Reduced motion is the token sheet's job, never the component's: the
+    // generated duration-*/delay-* utilities zero themselves under
+    // prefers-reduced-motion (REDUCED_MOTION_ZEROED in the tailwind
+    // exporter), so a component-level escape fights that law. Its ABSENCE is
+    // the assertion -- the tripwire against reintroducing one.
+    expect(tableRowClasses).not.toContain('motion-reduce:');
     // Motion durations come from tokens (Spec 04), never a hardcoded utility.
     expect(tableRowClasses).not.toMatch(/duration-\d/);
+  });
+
+  // `table / row / hover` and `table / row / selected <-> unselected` assign
+  // the same tier `fast` and curve role `standard` to the same colour change
+  // on the same part, so one transition satisfies both -- deduplicated by the
+  // motion, not by the moment. Neither is a keyframe: the row stays mounted.
+  it('the row consumes both colour rows as one transition', () => {
+    expect(tableRowClasses).toContain('duration-fast');
+    expect(tableRowClasses).toContain('ease-standard');
+    expect(tableRowClasses).not.toContain('animate-');
+    expect(tableRowClasses.match(/duration-fast/g)).toHaveLength(1);
   });
 
   it('header and data cells carry muted label typography and the checkbox flush', () => {

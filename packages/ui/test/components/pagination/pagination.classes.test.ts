@@ -23,11 +23,28 @@ describe('pagination classes', () => {
 
   it('the link base carries the sole motion intent (hover colour), a focus ring, and disabled affordances', () => {
     expect(paginationLinkBaseClasses).toContain('transition-colors');
-    expect(paginationLinkBaseClasses).toContain('motion-reduce:transition-none');
+    // Reduced motion is the token sheet's job, never the component's: the
+    // generated duration-*/delay-* utilities zero themselves under
+    // prefers-reduced-motion (REDUCED_MOTION_ZEROED in the tailwind
+    // exporter). Its ABSENCE is the assertion -- the tripwire against
+    // reintroducing a component-level escape.
+    expect(paginationLinkBaseClasses).not.toContain('motion-reduce:');
     expect(paginationLinkBaseClasses).toContain('focus-visible:ring-2');
     expect(paginationLinkBaseClasses).toContain('focus-visible:ring-ring');
     expect(paginationLinkBaseClasses).toContain('disabled:pointer-events-none');
     expect(paginationLinkBaseClasses).toContain('aria-disabled:pointer-events-none');
+  });
+
+  // `pagination / link / hover` and `pagination / link / current change` both
+  // assign tier `fast` and curve role `standard` to the same colour change on
+  // the same part, so one transition on the link base satisfies both --
+  // deduplicated by the motion, not by the moment. Neither is a keyframe.
+  it('the link base consumes both colour rows as one transition', () => {
+    expect(paginationLinkBaseClasses).toContain('duration-fast');
+    expect(paginationLinkBaseClasses).toContain('ease-standard');
+    expect(paginationLinkBaseClasses).not.toMatch(/duration-\d/);
+    expect(paginationLinkBaseClasses).not.toContain('animate-');
+    expect(paginationLinkActiveClasses).not.toContain('duration-');
   });
 
   it('the active link reads with the primary token pairing and honours aria-current', () => {

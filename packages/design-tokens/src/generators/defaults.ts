@@ -1370,6 +1370,15 @@ export const DEFAULT_MOTION_CELL_ANIMATIONS: Record<string, MotionCellAnimation>
       'A bar arriving under layout: "horizontal": grows from zero at the value-axis baseline, now the left edge (bar-chart.behavior.ts sets the transform-origin), on the same arrival curve as the vertical bar-chart-bar-enter cell -- only the transform property (scaleX, not scaleY) changes with the swapped axis.',
     contexts: ['bar-chart', 'chart', 'value-display'],
   },
+  'area-chart-area-enter': {
+    keyframe: 'fade-in',
+    duration: { kind: 'tier', tier: 'moderate' },
+    curve: 'enter',
+    cell: { component: 'area-chart', part: 'area', transition: 'enter' },
+    meaning:
+      'A filled area arriving on mount: fade, not scale -- unlike bar-chart-bar-enter, a stacked area series has no single baseline edge to grow from (its baseline is the previous series own top curve, area-chart.behavior.ts computeAreas), so opacity is the one property every area shares whether overlaid or stacked.',
+    contexts: ['area-chart', 'chart', 'value-display'],
+  },
   'line-chart-line-enter': {
     keyframe: 'fade-in',
     duration: { kind: 'tier', tier: 'moderate' },

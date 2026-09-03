@@ -12,19 +12,39 @@ describe('context-menu classes', () => {
     expect(classes.content).toContain('text-popover-foreground');
   });
 
-  it('content enters on the semantic dropdown motion token, driven by data-state', () => {
-    expect(classes.content).toContain('motion-dropdown-in');
-    expect(classes.content).toContain('opacity-0');
-    expect(classes.content).toContain('scale-95');
-    expect(classes.content).toContain('data-[state=open]:opacity-100');
-    expect(classes.content).toContain('data-[state=open]:scale-100');
+  it('content runs the two anchored-popup CELLS, keyed off data-state', () => {
+    // motion.jsonl: context-menu / content / closed -> open (moderate, enter,
+    // extent pop) and open -> closed (fast, exit, extent pop). The retired
+    // `motion-dropdown-in` semantic class, and the hand-rolled `opacity-0
+    // scale-95` reveal that stood in for the exit, are both gone.
+    expect(classes.content).toContain('data-[state=open]:animate-scale-in-moderate-enter');
+    expect(classes.content).toContain('data-[state=closed]:animate-scale-out-fast-exit');
+    expect(classes.content).not.toContain('motion-dropdown-in');
+    expect(classes.content).not.toContain('scale-95');
+    // The reduced-motion law lives on the token leaves. `animate-none` would
+    // reset the animation shorthand and discard the zeroed duration with it.
+    expect(classes.content).not.toContain('motion-reduce:animate-none');
   });
 
-  it('items highlight on the semantic focus motion token', () => {
-    expect(classes.item).toContain('motion-focus');
+  it('items highlight on the row generics: color, micro, standard', () => {
+    // motion.jsonl: context-menu / items / highlight move -- duration-micro,
+    // ease-standard, marked proposed. Replaces the retired `motion-focus`.
+    expect(classes.item).toContain('transition-colors');
+    expect(classes.item).toContain('duration-micro');
+    expect(classes.item).toContain('ease-standard');
+    expect(classes.item).not.toContain('motion-focus');
     expect(classes.item).toContain('focus:bg-accent');
     expect(classes.item).toContain('data-[disabled]:pointer-events-none');
     expect(classes.item).toContain('data-[disabled]:opacity-50');
+  });
+
+  it('items carry the enter row: the stagger delay, no duration, no curve', () => {
+    // motion.jsonl: context-menu / items / enter assigns `delay-stagger-step`
+    // with `duration: {"kind":"none"}` -- no DURATION assigned, not no
+    // assignment. The delay generic is the whole row. It resolves to 0ms at the
+    // efficient intent, and that zero is the assignment rather than a gap.
+    expect(classes.item).toContain('delay-stagger-step');
+    expect(classes.subTrigger).toContain('delay-stagger-step');
   });
 
   it('checkbox and radio items reserve the indicator gutter', () => {
@@ -35,7 +55,10 @@ describe('context-menu classes', () => {
   });
 
   it('the sub-trigger highlights while its submenu is open', () => {
-    expect(classes.subTrigger).toContain('motion-focus');
+    // Built from itemBase, so it carries the same highlight-move generics.
+    expect(classes.subTrigger).toContain('duration-micro');
+    expect(classes.subTrigger).toContain('ease-standard');
+    expect(classes.subTrigger).not.toContain('motion-focus');
     expect(classes.subTrigger).toContain('data-[state=open]:bg-accent');
     expect(classes.subTriggerChevron).toContain('ml-auto');
   });

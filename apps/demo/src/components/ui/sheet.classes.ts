@@ -10,16 +10,44 @@ export interface SheetClassSet {
   closeIcon: string;
 }
 
-const overlayClasses = 'fixed inset-0 z-depth-overlay bg-foreground/80';
+// THE CELL IS THE SPEC (#2017). Two rows of the motion matrix --
+// sheet / overlay / closed -> open (normal, enter) and
+// sheet / overlay / open -> closed (moderate, exit). Both rows carry provenance
+// "proposed": a starting position, never reviewed.
+//
+// ROW AND BEHAVIOR DISAGREE ON THE EXIT. The open -> closed row assumes the
+// scrim is held present while its keyframe runs; nothing holds it. React
+// returns null the instant `effectiveOpen` flips false, Astro renders
+// `hidden={!open}`, and the DOM binding sets `el.hidden = !open`. `usePresence`
+// wraps the CONTENT only. The class is named as the row assigns it and will
+// render its first frame the day the overlay gets a presence hold.
+const overlayClasses =
+  'fixed inset-0 z-depth-overlay bg-foreground/80 ' +
+  'data-[state=open]:animate-fade-in-normal-enter data-[state=closed]:animate-fade-out-moderate-exit';
 
 // Base content signature shared across sides. The per-side anchor, size and
-// border edge come from `sheetSideClasses`. No animation utilities and no raw
-// durations: the semantic slide-per-side motion tokens do not exist yet (the
-// motion token layer is being rebuilt, #1899), so motion is left UNDECLARED
-// rather than hardcoded. Enter-only ships once those tokens land (Presence,
-// wave 0-B). data-state is projected so a future token layer can hook it.
+// border edge come from `sheetSideClasses`.
+//
+// THE CELL IS THE SPEC (#2017). Two matrix rows --
+// sheet / content / closed -> open (normal, spring-smooth) and
+// sheet / content / open -> closed (moderate, exit). Enter/exit is PRESENCE
+// (#1996): the node mounts with its keyframe attached, and usePresence holds
+// the unmount until the exit keyframe ends.
+//
+// ONLY THE FADE HALF IS CONSUMED, and the missing half is a vocabulary gap, not
+// an omission. Both rows declare `slide (per side) + fade`. The keyframe
+// vocabulary has no side-agnostic slide shape and the matrix calls a physical
+// side a defect, so no slide keyframe exists to name -- an approximated one
+// would be geometry nobody chose. The fade runs on the tier and curve the row
+// assigns; the slide is reported. The classes are side-independent, so they sit
+// here rather than in `sheetSideClasses`.
+//
+// NO motion-reduce:animate-none. Reduced motion is handled on the duration
+// leaf, which the generated animation reads through it. animate-none here would
+// reset the shorthand and discard the zeroed duration with it.
 const contentBaseClasses =
   'fixed z-depth-modal flex flex-col gap-4 bg-background p-6 shadow-lg ' +
+  'data-[state=open]:animate-fade-in-normal-spring-smooth data-[state=closed]:animate-fade-out-moderate-exit ' +
   'data-[state=closed]:pointer-events-none';
 
 // Per-side placement: one axis, one edge. Left/right run full height and cap
@@ -41,11 +69,18 @@ const titleClasses = 'text-title-medium ts-title-medium leading-none text-foregr
 
 const descriptionClasses = 'text-body-small ts-body-small text-muted-foreground';
 
+// sheet / close button / hover (fast, standard). A hover on a button that stays
+// put is a TRANSITION, so the row is consumed as composed generics.
+//
+// THE ROW'S COLOUR HALF HAS NO MOMENT HERE. It declares fade + color over
+// ['opacity', 'background, text, border']; this button only raises opacity on
+// hover, with no background, text or border change to transition. The fade half
+// is consumed; the colour half is reported rather than invented.
 const closeClasses =
   'absolute right-2 top-2 inline-flex h-11 w-11 items-center justify-center ' +
   '@md:right-4 @md:top-4 @md:h-8 @md:w-8 ' +
   'rounded-sm opacity-70 ring-offset-background cursor-pointer ' +
-  'transition-opacity duration-150 motion-reduce:transition-none hover:opacity-100 ' +
+  'transition-opacity duration-fast ease-standard hover:opacity-100 ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
 
 const closeIconClasses = 'h-5 w-5 @md:h-4 @md:w-4';
