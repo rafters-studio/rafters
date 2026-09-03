@@ -30,6 +30,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `bar-chart.classes.ts`'s `resolveBarEnterClass`, never a numeric or a
   runtime CSS variable computed outside the matrix. `BehaviorSpec.motion`
   itself stays spec-reserved but unimplemented pending #1990.
+- **Area chart component (#2227).** Overlaid and stacked area geometry on
+  top of ChartContainer/XAxis/YAxis/CartesianGrid (#2224), following the
+  same shape Bar/BarChart (#2225) established: a composed
+  `<Area dataKey="desktop"/>` child per series (its own behavior + three
+  decorators) derives the series list in declaration order -- also the
+  stack order -- and takes precedence outright over the
+  `series: string[]` config prop, which still works fully on its own with
+  no `<Area>` children composed; categoryKey lives on the composed
+  `<XAxis dataKey>` child, never a chart-level prop. `computeAreas` places
+  categories with a point scale (`bandScale` with `paddingInner: 1`, edge
+  to edge, unlike Bar's inset bands) and accumulates stacked baselines as
+  running sums per category, in declaration order; `buildAreaPath` builds
+  the closed fill path, delegating to `areaPath` (#2223) for a flat
+  baseline and closing by hand -- top edge honoring `smooth`, the closing
+  edge always straight -- for a stacked series' per-category baseline.
+  Reuses the same pinned accessible chart structure Bar established: a
+  `<figure role="figure">` groups an `aria-hidden` SVG with a
+  keyboard-driven active-datum cursor (arrows/Home/End, announced via
+  `sr-announcer`) and an always-present visually-hidden data-table
+  fallback; because one area path paints a whole series rather than one
+  datum, the active-datum cursor and the paint units are tracked as two
+  separate lists (`datums` for traversal, `series` for what the SVG
+  renders) rather than the single flat list Bar's one-rect-per-datum shape
+  allows. Area-enter motion (a fade, not a scale -- a stacked series has no
+  single baseline edge to grow from) is declared as one matrix cell
+  (`docs/spec/matrix/motion.jsonl`), consumed via
+  `area-chart.classes.ts`'s `resolveAreaEnterClass`, never a numeric or a
+  runtime CSS variable computed outside the matrix. The optional top-edge
+  stroke (`line` part, `stroke-chart-N`) carries no motion of its own.
+  `BehaviorSpec.motion` itself stays spec-reserved but unimplemented
+  pending #1990. The smooth top edge (`smoothPath`, #2223) inherits
+  whichever curve #2226 lands under it -- this PR calls it, does not touch
+  it.
 - **Card meets the shadcn replacement requirement (#2019).** `data-slot` now
   lands on every node in all three performances (`card`, `card-header`,
   `card-title`, `card-description`, `card-action`, `card-content`,

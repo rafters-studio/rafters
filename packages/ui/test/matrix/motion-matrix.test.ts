@@ -30,11 +30,12 @@ const cells = readMotionCells();
 
 describe('motion.jsonl', () => {
   it('carries every cell of the grid, with no duplicate and no dropped line', () => {
-    // NO HARDCODED TOTAL (#2262). The literal here was wrong three times in one
-    // week -- 147, then 151, then 155 -- and each failure said nothing about the
-    // matrix except that somebody had added a row deliberately. A count is a
-    // restatement of the file, not an invariant over it, so it can only be stale
-    // or redundant.
+    // NO HARDCODED TOTAL (#2262). The literal here was wrong four times in one
+    // week -- 147, 151, 152, 156 -- and each failure said nothing about the
+    // matrix except that somebody had added a row deliberately. It conflicted on
+    // every merge for the same reason: two branches each bump one number, and
+    // git cannot tell that both edits are right. A count is a restatement of the
+    // file, not an invariant over it, so it can only be stale or redundant.
     //
     // What this actually guards is derived from the file instead: every
     // non-empty line parses into a cell, and no (component, part, transition) is
