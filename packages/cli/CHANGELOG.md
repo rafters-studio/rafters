@@ -1,5 +1,15 @@
 # rafters
 
+## Unreleased
+
+### Bug Fixes
+
+- fix(registry): **a component's non-React targets now publish every prop their own interface declares.** `container.astro` declares twelve props and the registry served three of them; `rafters_describe` on an Astro workspace therefore could not report `padding`, `columns`, `position`, `gap`, `colSpan`, `rowSpan`, `query`, `queryName` or `fill` at all, while the same component on React reported all twelve. The cause is that #2165 moved React to the TypeScript checker and left astro/vue/svelte on the regex, which resolves a prop only when its type is a literal union it can find by naming convention, by annotation, or inline -- and **silently drops every other optional prop**, since only a required one falls through to the empty-values arm. Every Container prop is optional, so nine vanished with no error and no diagnostic. The names were never missing; only their types were unresolvable, so the fix reads the shape from `<Component>Config` on the behavior file -- the one declaration every target performs -- while each target's own interface still decides its surface. That distinction is what keeps `sidebar` reporting `side`/`variant` on React rather than inheriting its provider's controlled state, and keeps `typography`'s `as` where it is declared: the score supplies types, never the prop set. Ownership for that lookup is the component's own directory plus `packages/ui/src/lib`, measured rather than assumed -- `lib/disclosable.ts` owns `open`/`defaultOpen` for every overlay and `lib/pressable.ts` owns button and toggle's `disabled`, `loading`, `softDisabled`, `defaultPressed` and the two announcements, and nothing legitimate is declared in a neighbouring component's directory. Widening it to all of `src` readmits a neighbour's props and breaks exactly the exclusions #2165 established.
+
+- fix(registry): **a prop that carries a default is no longer also reported as required.** The default is the prop's value when the caller does not override it, so there is nothing the caller must supply. Several scores declare such props without a `?` -- `ButtonConfig` has `variant: ButtonVariant`, `SliderConfig` has `min` -- which published `required: true` alongside a `default`, telling an agent to pass a value the component already has.
+
+- fix(registry): **a renamed destructure no longer hides a default.** `container.astro` writes `as: Tag = 'div'`, and the defaults scanner matched the initializer alone, recording the default under the local name `Tag` -- so `as` looked defaultless on Astro while `container.tsx`'s plain `as = 'div'` matched fine, the same prop of the same component reporting a default on one target and not the other. Bare `true`/`false` and numeric initializers are read now too, which is how `query` reports its `true` on Astro.
+
 ## 0.4.0
 
 ### Features

@@ -116,13 +116,35 @@ export function isInsideDir(dir: string, fileName: string): boolean {
   return rel !== '..' && !rel.startsWith(`..${sep}`);
 }
 
-function isOwnDeclaration(symbol: ts.Symbol, componentDir: string): boolean {
+/**
+ * `<ui>/src/lib` -- the shared behavior contracts, and the ONLY place outside a
+ * component's own directory that a score legitimately declares props.
+ *
+ * Measured, not assumed: every cross-directory member of a `<Component>Config`
+ * comes from `lib/disclosable.ts` (`open`, `defaultOpen`, on every overlay) or
+ * `lib/pressable.ts` (button and toggle's `toggle`, `disabled`, `loading`,
+ * `softDisabled`, `defaultPressed`, and the two announcements). None comes from
+ * another component's directory.
+ *
+ * That distinction is the whole rule. Widening to all of `<ui>/src` also readmits
+ * a neighbouring component's props, which is precisely what #2165 excluded --
+ * it put sidebar's provider props back on sidebar and tooltip's wrapper props
+ * back on tooltip. Own directory plus `lib` keeps both invariants.
+ *
+ * `<component>/..` is `src/components`; one more is `src`.
+ */
+function sharedContractRoot(componentDir: string): string {
+  return join(dirname(dirname(resolve(componentDir))), 'lib');
+}
+
+function isOwnDeclaration(symbol: ts.Symbol, roots: string[]): boolean {
   const declarations = symbol.getDeclarations();
   if (!declarations || declarations.length === 0) return false;
-  const resolved = resolve(componentDir);
-  return declarations.every((decl) =>
-    isInsideDir(resolved, resolve(decl.getSourceFile().fileName)),
-  );
+  const resolved = roots.map((root) => resolve(root));
+  return declarations.every((decl) => {
+    const file = resolve(decl.getSourceFile().fileName);
+    return resolved.some((root) => isInsideDir(root, file));
+  });
 }
 
 function isStringLiteralUnion(_checker: ts.TypeChecker, type: ts.Type): string[] | null {
@@ -672,8 +694,9 @@ function findPropsType(
   checker: ts.TypeChecker,
   sourceFile: ts.SourceFile,
   componentName: string,
+  suffix: PropsTypeSuffix,
 ): { type: ts.Type; name: string } | null {
-  const wanted = `${pascalCase(componentName)}Props`.toLowerCase();
+  const wanted = `${pascalCase(componentName)}${suffix}`.toLowerCase();
 
   for (const statement of sourceFile.statements) {
     if (!ts.isTypeAliasDeclaration(statement) && !ts.isInterfaceDeclaration(statement)) continue;
@@ -699,25 +722,31 @@ function resolvePropsFromChecker(
   componentName: string,
   componentDir: string,
   constraints: Map<string, Constraint>,
+  source: PropsSource,
 ): Record<string, PropField> {
   // The component root is the parent of the component's own directory, so the
   // shared program is anchored to the caller's absolute path rather than to
   // whatever `process.cwd()` the build happens to run from.
   const { checker, program } = ensureChecker(dirname(resolve(componentDir)));
 
-  const tsxPath = join(componentDir, `${componentName}.tsx`);
+  const tsxPath = join(componentDir, `${componentName}${source.fileSuffix}`);
   const sourceFile = program.getSourceFile(tsxPath);
   if (!sourceFile) return {};
 
-  const found = findPropsType(checker, sourceFile, componentName);
+  const found = findPropsType(checker, sourceFile, componentName, source.typeSuffix);
   if (!found) return {};
 
   const defaults = findDestructuredDefaults(sourceFile, found.name);
   const properties = checker.getPropertiesOfType(found.type);
   const props: Record<string, PropField> = {};
 
+  const ownershipRoots =
+    source.ownership === 'component'
+      ? [componentDir]
+      : [componentDir, sharedContractRoot(componentDir)];
+
   for (const prop of properties) {
-    if (!isOwnDeclaration(prop, componentDir)) continue;
+    if (!isOwnDeclaration(prop, ownershipRoots)) continue;
 
     const propType = checker.getTypeOfSymbol(prop);
     if (isFunctionType(checker, propType)) continue;
@@ -806,8 +835,47 @@ export interface PropsTypeLocation {
   componentDir: string;
 }
 
+type PropsTypeSuffix = 'Props' | 'Config';
+
+/**
+ * Which declaration a resolution reads. Two exist, and they answer different
+ * questions:
+ *
+ * - `Props` on `<name>.tsx` is ONE TARGET'S VIEW TYPE. Scoped to the component
+ *   directory so React's own `HTMLAttributes` members stay out.
+ * - `Config` on `<name>.behavior.ts` is THE SCORE -- the contract every target
+ *   performs. Scoped to `<ui>/src`, because a score composes other scores.
+ */
+interface PropsSource {
+  fileSuffix: '.tsx' | '.behavior.ts';
+  typeSuffix: PropsTypeSuffix;
+  ownership: 'component' | 'authored';
+}
+
+const REACT_VIEW: PropsSource = {
+  fileSuffix: '.tsx',
+  typeSuffix: 'Props',
+  ownership: 'component',
+};
+
+const SCORE: PropsSource = {
+  fileSuffix: '.behavior.ts',
+  typeSuffix: 'Config',
+  ownership: 'authored',
+};
+
 export interface PropsTypeChecker {
+  /** One target's view type (`<Component>Props` on the react source). */
   resolveProps(
+    location: PropsTypeLocation,
+    constraints: Map<string, Constraint>,
+  ): Record<string, PropField>;
+  /**
+   * The score (`<Component>Config` on the behavior file) -- the prop contract
+   * EVERY target performs. Returns `{}` when a component has no score, which
+   * leaves the caller on its per-target extraction.
+   */
+  resolveScoreProps(
     location: PropsTypeLocation,
     constraints: Map<string, Constraint>,
   ): Record<string, PropField>;
@@ -815,6 +883,19 @@ export interface PropsTypeChecker {
 
 export const typescriptPropsTypeChecker: PropsTypeChecker = {
   resolveProps(location, constraints) {
-    return resolvePropsFromChecker(location.componentName, location.componentDir, constraints);
+    return resolvePropsFromChecker(
+      location.componentName,
+      location.componentDir,
+      constraints,
+      REACT_VIEW,
+    );
+  },
+  resolveScoreProps(location, constraints) {
+    return resolvePropsFromChecker(
+      location.componentName,
+      location.componentDir,
+      constraints,
+      SCORE,
+    );
   },
 };
