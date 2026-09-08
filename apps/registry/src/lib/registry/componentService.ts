@@ -902,8 +902,17 @@ function extractDestructuredDefaults(source: string): Map<string, string> {
   const defaults = new Map<string, string>();
   const block = source.match(/const\s*\{([\s\S]*?)\}\s*=\s*(?:props|Astro\.props)/);
   if (!block) return defaults;
-  for (const match of block[1].matchAll(/([A-Za-z_$][\w$]*)\s*=\s*'([^']*)'/g)) {
-    defaults.set(match[1], match[2]);
+  // A RENAMED destructure binds a different local name than the prop it reads:
+  // `container.astro` writes `as: Tag = 'div'`, and matching the initializer
+  // alone recorded the default under `Tag`, so the prop `as` looked like it had
+  // none while `container.tsx`'s plain `as = 'div'` matched fine -- the same
+  // prop of the same component reporting a default on one target and not the
+  // other. Group 1 is the PROP; the optional group 2 alias is discarded.
+  const binding =
+    /([A-Za-z_$][\w$]*)\s*(?::\s*[A-Za-z_$][\w$]*)?\s*=\s*(?:'([^']*)'|(true|false|-?\d+(?:\.\d+)?))/g;
+  for (const match of block[1].matchAll(binding)) {
+    const value = match[2] ?? match[3];
+    if (value !== undefined) defaults.set(match[1], value);
   }
   return defaults;
 }
@@ -974,6 +983,80 @@ function extractConstraints(source: string): Map<string, Constraint> {
  * `componentDir` is the ABSOLUTE path to the component directory, used by the
  * react branch to locate the `.tsx` source in the shared `ts.Program`.
  */
+/**
+ * A default belongs to the PERFORMANCE, not the score: `as` defaults to `div`
+ * where each target destructures it, and the behavior file declares no
+ * initializers at all. So the score decides a prop's shape and the target
+ * supplies its default -- taken from the target's own resolved field when the
+ * two agree on type, else from the target source's destructuring.
+ *
+ * Switched on the score field's own type because `default` is typed per
+ * variant (enum/string/grammar carry a string, boolean a boolean, number a
+ * number, and the deprecated arm carries none).
+ */
+function withTargetDefault(
+  field: PropField,
+  targetField: PropField | undefined,
+  fromSource: string | undefined,
+): PropField {
+  if (field.type === 'deprecated' || field.default !== undefined) return field;
+
+  if (field.type === 'boolean') {
+    const own = targetField?.type === 'boolean' ? targetField.default : undefined;
+    if (own !== undefined) return { ...field, default: own };
+    if (fromSource === 'true' || fromSource === 'false') {
+      return { ...field, default: fromSource === 'true' };
+    }
+    return field;
+  }
+
+  if (field.type === 'number') {
+    const own = targetField?.type === 'number' ? targetField.default : undefined;
+    if (own !== undefined) return { ...field, default: own };
+    const parsed = fromSource === undefined ? Number.NaN : Number(fromSource);
+    return Number.isFinite(parsed) ? { ...field, default: parsed } : field;
+  }
+
+  // enum | string | grammar -- all carry a string default.
+  const own =
+    targetField !== undefined &&
+    targetField.type !== 'deprecated' &&
+    typeof targetField.default === 'string'
+      ? targetField.default
+      : undefined;
+  const next = own ?? fromSource;
+  return next === undefined ? field : { ...field, default: next };
+}
+
+/**
+ * The TARGET decides whether a prop is optional in its own performance. The
+ * score supplies the type; requiredness travels with the interface that
+ * declares the prop, because the same score is performed differently --
+ * `sidebar.astro` requires an `id` that `SidebarConfig` never mentions.
+ */
+function withTargetOptionality(field: PropField, optional: boolean): PropField {
+  if (field.type === 'deprecated') return field;
+  if (optional) {
+    const { required: _dropped, ...rest } = field as PropField & { required?: boolean };
+    return rest as PropField;
+  }
+  return { ...field, required: true } as PropField;
+}
+
+/**
+ * A prop that carries a default is NOT required (Sean, 2026-09-07): the default
+ * IS its value when the caller does not override, so there is nothing the
+ * caller must supply. The scores declare several such props without a `?`
+ * (`ButtonConfig` has `variant: ButtonVariant`, `SliderConfig` has `min`), which
+ * would otherwise publish `required: true` alongside a `default` -- telling an
+ * agent it must pass a value the component already has.
+ */
+function settledIsNotRequired(field: PropField): PropField {
+  if (field.type === 'deprecated' || field.default === undefined) return field;
+  const { required: _dropped, ...rest } = field as PropField & { required?: boolean };
+  return rest as PropField;
+}
+
 function extractFacet(
   name: string,
   ext: string,
@@ -1031,12 +1114,44 @@ function extractFacet(
       return field;
     };
 
+    // The interface names the SURFACE; the score resolves the SHAPES this
+    // regex cannot. Before, a declared prop whose type was not a literal union
+    // was dropped outright unless it was required -- so container.astro
+    // published 3 of the 12 props its own Props interface declares, and an
+    // Astro consumer could not discover `padding`, `columns` or `position` at
+    // all. The names were never the problem; only their types were.
+    const score = propsTypeChecker.resolveScoreProps(
+      { componentName: name, componentDir },
+      constraints,
+    );
+
     for (const prop of extractInterfaceProps(targetSource)) {
       const values = resolveUnion(prop.name, prop.typeExpr);
-      if (values) props[prop.name] = makeEnum(prop.name, values, !prop.optional);
-      else if (!prop.optional) props[prop.name] = makeEnum(prop.name, [], true);
+      if (values) {
+        props[prop.name] = makeEnum(prop.name, values, !prop.optional);
+        continue;
+      }
+
+      // The score declares this prop's real type. The TARGET still decides
+      // whether it is optional here -- a score is performed differently by
+      // each target, and sidebar.astro requires an `id` the score never
+      // mentions.
+      const scored = score[prop.name];
+      if (scored) {
+        props[prop.name] = withTargetOptionality(
+          withTargetDefault(scored, undefined, defaults.get(prop.name)),
+          prop.optional,
+        );
+        continue;
+      }
+
+      if (!prop.optional) props[prop.name] = makeEnum(prop.name, [], true);
     }
   }
+
+  props = Object.fromEntries(
+    Object.entries(props).map(([key, field]) => [key, settledIsNotRequired(field)]),
+  );
 
   const facet: Facet = { props, snippet: `<${pascalCase(name)}>Save</${pascalCase(name)}>` };
   // React exposes content via `children`, not slots -- omit slots for react
