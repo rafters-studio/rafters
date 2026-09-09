@@ -1,6 +1,7 @@
 import { expect, test } from 'vitest';
 import { render } from 'vitest-browser-react';
 import { runAxe } from '../../a11y/run-axe';
+import { plotSize } from '../../a11y/plot-size';
 import { nextFrame } from '../../a11y/next-frame';
 import { ChartContainer } from '../../../src/components/chart/chart';
 import { ChartTooltip, ChartTooltipContent } from '../../../src/components/chart/chart-tooltip';
@@ -24,14 +25,10 @@ interface Scene {
   open: boolean;
 }
 
-/** No stylesheet loads in the a11y browser, so the plot the tooltip tracks
- *  is pinned to a real box: a pointer position then normalizes to a datum. */
-const PLOT_SIZE = 'div[data-part="plot"]{width:300px;height:100px}';
-
 function Tooltip() {
   return (
     <main>
-      <style>{PLOT_SIZE}</style>
+      <style>{plotSize(100)}</style>
       <ChartContainer config={config}>
         <ChartTooltip scale={scale} data={data} content={<ChartTooltipContent />} />
       </ChartContainer>

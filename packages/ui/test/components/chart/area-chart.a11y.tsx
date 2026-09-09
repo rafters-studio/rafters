@@ -1,6 +1,7 @@
 import { expect, test } from 'vitest';
 import { render } from 'vitest-browser-react';
 import { runAxe } from '../../a11y/run-axe';
+import { plotSize } from '../../a11y/plot-size';
 import { nextFrame } from '../../a11y/next-frame';
 import { ChartContainer } from '../../../src/components/chart/chart';
 import { AreaChart } from '../../../src/components/chart/area-chart';
@@ -22,16 +23,10 @@ interface Scene {
   activate?: boolean;
 }
 
-/** No stylesheet loads in the a11y browser, so the plot box is pinned here:
- *  the real ResizeObserver then reports a stable 300x200 (the size the unit
- *  suite stubs) instead of a content-driven height the chart's own svg would
- *  feed back into on every frame. */
-const PLOT_SIZE = 'div[data-part="plot"]{width:300px;height:200px}';
-
 function Chart({ rows }: { rows: typeof data }) {
   return (
     <main>
-      <style>{PLOT_SIZE}</style>
+      <style>{plotSize()}</style>
       <ChartContainer config={config}>
         <AreaChart data={rows} series={['desktop', 'mobile']}>
           <XAxis dataKey="month" />
