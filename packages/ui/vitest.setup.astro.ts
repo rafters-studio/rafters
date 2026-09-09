@@ -21,9 +21,23 @@ import { builtinEnvironments } from 'vitest/runtime';
 await builtinEnvironments['happy-dom'].setup(globalThis, {
   happyDOM: {
     settings: {
-      // Never let happy-dom fetch iframe subresources over the network during
-      // a test (Embed with a YouTube URL would otherwise hit the live host).
-      disableIframePageLoading: true,
+      // The SSR markup carries each component's <script>, and Embed's markup
+      // carries a real iframe pointed at youtube-nocookie.com; the tests call
+      // bindX(root) themselves and never expect a network fetch, so both the
+      // module and the iframe page must never be fetched. A refused script
+      // load only stays quiet with handleDisabledFileLoadingAsSuccess, and a
+      // refused iframe load must go through navigation.disableChildFrameNavigation
+      // rather than the deprecated disableIframePageLoading, which logs a
+      // NotSupportedError through console.error unconditionally
+      // (HTMLIFrameElement.js) with no handleDisabledFileLoadingAsSuccess
+      // escape hatch -- the class-discard spies in embed, image, and progress
+      // all counted that call (three tests went red on main after #2331 and
+      // #2332 met).
+      disableJavaScriptFileLoading: true,
+      handleDisabledFileLoadingAsSuccess: true,
+      navigation: {
+        disableChildFrameNavigation: true,
+      },
     },
   },
 });
