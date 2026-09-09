@@ -27,7 +27,6 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "catalog:",
-    "@cloudflare/vitest-pool-workers": "catalog:",
     "@playwright/test": "catalog:",
     "@tailwindcss/cli": "^4.1.18",
     "@testing-library/jest-dom": "catalog:",

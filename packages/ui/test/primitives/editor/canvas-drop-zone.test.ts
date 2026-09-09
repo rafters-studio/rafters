@@ -75,6 +75,12 @@ describe('createCanvasDropZone', () => {
 
   afterEach(() => {
     container?.remove();
+    // Unstub before restoring real timers. The stub above was recorded over
+    // the fake clock's requestAnimationFrame, so unstubbing first hands that
+    // fake back and useRealTimers then hands the real one back. The reverse
+    // order leaves the dead fake installed after the last test, and with
+    // isolate: false every later file in this worker would inherit it.
+    vi.unstubAllGlobals();
     vi.useRealTimers();
     vi.restoreAllMocks();
   });

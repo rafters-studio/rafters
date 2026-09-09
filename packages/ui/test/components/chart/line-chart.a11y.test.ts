@@ -9,9 +9,9 @@
  */
 import * as React from 'react';
 import { act, cleanup, fireEvent, render } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { axe } from 'vitest-axe';
-import { announceToScreenReader } from '../../../src/primitives/sr-announcer';
+import * as srAnnouncer from '../../../src/primitives/sr-announcer';
 import { ChartContainer } from '../../../src/components/chart/chart';
 import { LineChart } from '../../../src/components/chart/line-chart';
 import { XAxis } from '../../../src/components/chart/x-axis';
@@ -21,11 +21,16 @@ import { hasArbitraryValue } from '../../../src/primitives/classy';
 import type { ChartConfig } from '../../../src/components/chart/chart.behavior';
 import { stubResizeObserver } from '../../harness/resize-observer';
 
-vi.mock('../../../src/primitives/sr-announcer', async () => {
-  const actual = await vi.importActual<typeof import('../../../src/primitives/sr-announcer')>(
-    '../../../src/primitives/sr-announcer',
-  );
-  return { ...actual, announceToScreenReader: vi.fn() };
+// A namespace spy rather than vi.mock: the unit project runs with isolate:
+// false, so a consumer module an earlier file already evaluated keeps its
+// binding to the real export, which a mock factory cannot reach. The spy
+// replaces the export in place and is restored so it never leaks forward.
+const announceToScreenReader = vi
+  .spyOn(srAnnouncer, 'announceToScreenReader')
+  .mockImplementation(() => {});
+
+afterAll(() => {
+  announceToScreenReader.mockRestore();
 });
 
 afterEach(() => {

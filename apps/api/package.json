@@ -7,9 +7,6 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy --minify",
     "cf-typegen": "wrangler types --env-interface CloudflareBindings",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:unit": "vitest run",
     "ops:regenerate-names": "tsx src/scripts/regenerate-color-names.ts",
     "ops:regenerate-names:dry": "tsx src/scripts/regenerate-color-names.ts --dry-run"
   },
@@ -23,11 +20,9 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "catalog:",
     "@rafters/shared": "workspace:^",
     "@types/node": "catalog:",
     "typescript": "catalog:",
-    "vitest": "catalog:",
     "wrangler": "^4.54.0",
     "zocker": "catalog:"
   }

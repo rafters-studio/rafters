@@ -15,8 +15,8 @@ allowBuilds:
 
 catalog:
   '@axe-core/playwright': ^4.11.0
-  '@cloudflare/vitest-pool-workers': ^0.13.0
-  '@playwright/test': ^1.56.0
+  # @vitest/browser-playwright dev-pins playwright ^1.62.1; keep the runner in step.
+  '@playwright/test': ^1.62.1
   '@testing-library/jest-dom': ^6.6.3
   '@testing-library/react': ^16.1.0
   '@testing-library/user-event': ^14.5.2
@@ -24,8 +24,11 @@ catalog:
   '@types/react': ^19.0.0
   '@types/react-dom': ^19.0.0
   '@vitejs/plugin-react': ^6.0.0
-  '@vitest/coverage-v8': ^4.1.0
-  '@vitest/ui': ^4.1.0
+  # Vitest moves as one block: every first-party companion peers on the exact
+  # vitest version it ships with, so a partial bump does not resolve.
+  '@vitest/browser-playwright': ^5.0.0
+  '@vitest/coverage-v8': ^5.0.0
+  '@vitest/ui': ^5.0.0
   comment-parser: ^1.4.1
   esbuild: ^0.27.3
   happy-dom: ^20.0.10
@@ -38,7 +41,8 @@ catalog:
   react-dom: ^19.2.0
   stoker: ^2.0.1
   typescript: 5.9.3
-  vitest: ^4.1.0
+  vitest: ^5.0.0
   vitest-axe: ^1.0.0-pre.3
+  vitest-browser-react: ^2.3.0
   zocker: 3.0.0
   zod: ^4.1.12
