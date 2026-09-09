@@ -31,8 +31,11 @@ the resolver.
 - **Web Component**: `<rafters-typography variant="…">` renders the variant's
   tag inside a shadow root (RaftersElement), carrying the shared composed
   classes. Unknown `variant` falls back to `p` — never throws.
-- **Astro**: `<Typography as="…" variant="…">` renders the element through
-  Astro's dynamic-tag support (one tag, not the oracle's branch-per-element).
+- **Astro**: exports the same named components (`H1`–`H6`, `P`, `Lead`,
+  `Large`, `Muted`, `Small`, `Code`, `CodeBlock`, `Blockquote`, `Mark`,
+  `Abbr`, `Ul`, `Ol`, `Li`, `List`) from the single `typography.astro` file
+  as hoisted `createComponent` exports, alongside the default
+  `<Typography as>` (#2325).
 
 ## Config / state / actions
 
@@ -85,7 +88,7 @@ and (Spec 03 is gone) no effects. The score composes no primitives.
 | `as`-element → variant derivation (span→p, h5/h6→h4) | contract — moved onto the score as `variantForElement` |
 | h5/h6 as tags (no own variant scale) | ported as-is — h5/h6 render their tag with h4 classes |
 | generic `<Typography as … variant …>` | contract |
-| named per-tag components (H1…, P, Code, …) | contract — React factory; Astro's per-tag `.astro` files collapse into one dynamic tag |
+| named per-tag components (H1…, P, Code, …) | contract — React factory; Astro exports the same named components from the single `typography.astro` file as hoisted `createComponent` exports (#2325) |
 | editable / contenteditable / `onChange` / `onEnter` / `onBackspaceAtStart` / placeholder | **stripped** — block-editor concern, belongs in a studio-layer wrapper (matches Container's editable strip). `Fill, not background. No editor props.` |
 | `InlineToolbar` / `SlashMenu` / `SelectionInfo` / inline-mark rich text | **stripped** — editor surface, not the text set |
 | `CodeBlock` `language` / `showLineNumbers` | dropped — syntax highlighting + gutter are a studio/highlighter concern; `CodeBlock` renders `pre > code` only |

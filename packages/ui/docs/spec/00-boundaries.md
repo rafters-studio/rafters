@@ -155,3 +155,15 @@ frozen spec.
 **Change control:** a spec defect found mid-sweep stops the line — amend,
 re-ratify, re-verify affected components. No agent patches around the spec
 locally. Prototypes may cross boundaries to FIND them; the sweep may not.
+
+## Guideline: shadcn API compatibility
+
+A component with a shadcn counterpart is API compatible with it on every
+target rafters ships, except `class` and `className`, which rafters
+discards by design. Sub-component names, prop names, and the composition
+pattern are all part of that API; named slots alone are not parity. Where a
+target cannot express a shadcn prop the way React does (`asChild` in
+Astro), the component spec says what that target does instead.
+
+This is a guideline, not a boundary: it falls away when it stops being
+useful.
