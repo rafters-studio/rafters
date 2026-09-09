@@ -14,7 +14,6 @@ import {
 } from '../../../src/components/accordion/accordion';
 import { accordion } from '../../../src/components/accordion/accordion.behavior';
 import {
-  assertAxeClean,
   assertInstanceAriaFulfillment,
   partElement,
   partElements,
@@ -72,7 +71,6 @@ describe('accordion conformance [react]', () => {
     expect(contentFor('a').hasAttribute('hidden')).toBe(false);
     expect(contentFor('a').getAttribute('data-state')).toBe('closed');
     expect(triggerFor('a').getAttribute('aria-expanded')).toBe('false');
-    await assertAxeClean(body());
   });
 
   it('each header button sits inside a role=heading wrapper at the configured level', async () => {
@@ -81,7 +79,6 @@ describe('accordion conformance [react]', () => {
     expect(heading.getAttribute('role')).toBe('heading');
     expect(heading.getAttribute('aria-level')).toBe('2');
     expect(partElement(body(), 'root')?.getAttribute('data-heading-level')).toBe('2');
-    await assertAxeClean(body());
   });
 
   it('trigger and panel are wired by real ids, collapsed as well as expanded', () => {
@@ -118,7 +115,6 @@ describe('accordion conformance [react]', () => {
     await user.click(triggerFor('b'));
     expect(contentFor('b').hasAttribute('inert')).toBe(false);
     expect(contentFor('a').hasAttribute('inert')).toBe(true);
-    await assertAxeClean(body());
   });
 
   it('single non-collapsible: clicking the open header keeps it open', async () => {
@@ -142,7 +138,6 @@ describe('accordion conformance [react]', () => {
     await user.click(triggerFor('c'));
     expect(contentFor('a').hasAttribute('inert')).toBe(false);
     expect(contentFor('c').hasAttribute('inert')).toBe(false);
-    await assertAxeClean(body());
     await user.click(triggerFor('a'));
     expect(contentFor('a').hasAttribute('inert')).toBe(true);
     expect(contentFor('c').hasAttribute('inert')).toBe(false);

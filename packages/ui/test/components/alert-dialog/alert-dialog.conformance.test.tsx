@@ -23,12 +23,7 @@ import {
   AlertDialogTrigger,
 } from '../../../src/components/alert-dialog/alert-dialog';
 import { alertDialog } from '../../../src/components/alert-dialog/alert-dialog.behavior';
-import {
-  assertAxeClean,
-  assertContractFulfillment,
-  domPartIds,
-  partElement,
-} from '../../harness/conformance';
+import { assertContractFulfillment, domPartIds, partElement } from '../../harness/conformance';
 
 interface SetupProps {
   open?: boolean;
@@ -72,7 +67,6 @@ describe('alert-dialog conformance [react]', () => {
     expect(partElement(body(), 'content')).toBeNull();
     expect(trigger?.getAttribute('aria-expanded')).toBe('false');
     expect(trigger?.hasAttribute('aria-controls')).toBe(false);
-    await assertAxeClean(body());
   });
 
   it('open: every part renders and ARIA equals the projection', async () => {
@@ -91,7 +85,6 @@ describe('alert-dialog conformance [react]', () => {
       'cancel',
       'action',
     ]);
-    await assertAxeClean(body());
   });
 
   it('content carries role=alertdialog and is always modal', async () => {
@@ -110,7 +103,6 @@ describe('alert-dialog conformance [react]', () => {
     const content = partElement(body(), 'content');
     expect(content?.hasAttribute('aria-describedby')).toBe(false);
     expect(content?.getAttribute('aria-labelledby')).toBeTruthy();
-    await assertAxeClean(body());
   });
 
   it('trigger and content are wired by real DOM ids', async () => {
@@ -261,7 +253,6 @@ describe('alert-dialog conformance [react]', () => {
     await user.click(partElement(body(), 'trigger') as HTMLElement);
     expect(partElement(body(), 'content')).not.toBeNull();
     expect(document.querySelectorAll('[data-part="overlay"]')).toHaveLength(1);
-    await assertAxeClean(body());
   });
 
   it('forceMount keeps the content in the DOM, hidden and inert, while closed', () => {

@@ -15,7 +15,6 @@ import {
   type CalendarConfig,
 } from '../../../src/components/calendar/calendar.behavior';
 import {
-  assertAxeClean,
   assertContractFulfillment,
   assertInstanceAriaFulfillment,
   partElement,
@@ -60,7 +59,6 @@ describe('calendar conformance [react]', () => {
     expect(grid?.hasAttribute('aria-labelledby')).toBe(true);
     expect(partElement(body(), 'heading')?.textContent).toBe('July 2026');
     expect(dayCell('2026-07-15').getAttribute('role')).toBe('gridcell');
-    await assertAxeClean(body());
   });
 
   it('contract: grid/heading/nav projections and per-day ARIA equal the DOM', () => {
@@ -99,7 +97,6 @@ describe('calendar conformance [react]', () => {
     expect(dayCell('2026-07-15').getAttribute('data-selected')).toBe('true');
     const arg = onSelect.mock.calls[0]?.[0] as Date;
     expect(toISO(arg)).toBe('2026-07-15');
-    await assertAxeClean(body());
   });
 
   it('arrow keys move focus and cross the month boundary', async () => {
@@ -176,7 +173,6 @@ describe('calendar conformance [react]', () => {
     expect(dayCell('2026-07-20').getAttribute('aria-selected')).toBe('true');
     expect(dayCell('2026-07-15').getAttribute('data-in-range')).toBe('true');
     expect(partElement(body(), 'grid')?.getAttribute('aria-multiselectable')).toBeNull();
-    await assertAxeClean(body());
   });
 
   it('multiple mode toggles membership', async () => {

@@ -9,7 +9,6 @@
  * `editorAria`'s own projection directly instead.
  */
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { assertAxeClean } from '../../harness/conformance';
 import {
   editorAria,
   parts,
@@ -69,16 +68,6 @@ describe('editor conformance [wc]', () => {
     await mount({ 'data-labelledby': 'external-heading' });
     expect(root().getAttribute('aria-labelledby')).toBe('external-heading');
     expect(root().hasAttribute('aria-label')).toBe(false);
-  });
-
-  it('is axe-clean with a real accessible name', async () => {
-    await mount({ 'data-label': 'Document' });
-    // Scoped to the editor root itself, not document.body: axe's "region"
-    // rule (page content must be contained by a landmark) is a page-layout
-    // concern, not a property of this widget in isolation -- the same reason
-    // the WC dialog conformance suite (dialog.element.conformance.test.ts)
-    // has no body-level axe check either.
-    await assertAxeClean(root());
   });
 
   it('contenteditable reflects data-disabled/data-readonly at bind, and MutationObserver keeps it live', async () => {

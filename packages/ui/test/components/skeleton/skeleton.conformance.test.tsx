@@ -15,7 +15,7 @@ import {
 } from '@rafters/design-tokens';
 import { Skeleton } from '../../../src/components/skeleton/skeleton';
 import { skeleton } from '../../../src/components/skeleton/skeleton.behavior';
-import { assertAxeClean, assertContractFulfillment, partElement } from '../../harness/conformance';
+import { assertContractFulfillment, partElement } from '../../harness/conformance';
 
 const body = () => document.body;
 
@@ -147,6 +147,5 @@ describe('skeleton conformance [react]', () => {
     );
     const root = body().querySelector('[data-testid="avatar"]') as HTMLElement;
     expect(root.getAttribute('data-part')).toBe('root');
-    await assertAxeClean(body());
   });
 });

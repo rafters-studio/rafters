@@ -10,7 +10,7 @@
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import AspectRatio from '../../../src/components/aspect-ratio/aspect-ratio.astro';
-import { assertAxeClean, partElement } from '../../harness/conformance';
+import { partElement } from '../../harness/conformance';
 
 afterEach(() => {
   document.body.innerHTML = '';
@@ -80,10 +80,5 @@ describe('aspect-ratio conformance [astro]', () => {
     expect(root.className).not.toContain('rounded-lg');
     expect(warn).not.toHaveBeenCalled();
     expect(error).not.toHaveBeenCalled();
-  });
-
-  it('is axe-clean rendered inside a landmark', async () => {
-    const body = await render();
-    await assertAxeClean(body);
   });
 });

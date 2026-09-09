@@ -11,7 +11,7 @@ import {
   PaginationPrevious,
 } from '../../../src/components/pagination/pagination';
 import { pagination } from '../../../src/components/pagination/pagination.behavior';
-import { assertAxeClean, assertContractFulfillment, partElement } from '../../harness/conformance';
+import { assertContractFulfillment, partElement } from '../../harness/conformance';
 
 const body = () => document.body;
 
@@ -163,11 +163,6 @@ describe('pagination conformance [react]', () => {
     expect(link.getAttribute('href')).toBe('/custom');
     expect(link.getAttribute('aria-current')).toBe('page');
     expect(link.className).toContain('transition-colors');
-  });
-
-  it('the full pagination is axe-clean -- the nav is its own landmark', async () => {
-    render(fullPagination());
-    await assertAxeClean(body());
   });
 
   it('has no keyboard contract and dispatches nothing observable', () => {

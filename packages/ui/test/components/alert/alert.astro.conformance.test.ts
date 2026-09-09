@@ -11,7 +11,7 @@ import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import Alert from '../../../src/components/alert/alert.astro';
 import { alert } from '../../../src/components/alert/alert.behavior';
-import { assertAxeClean, assertContractFulfillment, partElement } from '../../harness/conformance';
+import { assertContractFulfillment, partElement } from '../../harness/conformance';
 
 afterEach(() => {
   document.body.innerHTML = '';
@@ -105,21 +105,5 @@ describe('alert conformance [astro]', () => {
     const body = await render({}, { default: '<svg aria-hidden="true"></svg>' });
     const root = partElement(body, 'root') as HTMLElement;
     expect(root.querySelector(':scope > svg')).not.toBeNull();
-  });
-
-  it('is axe-clean composed with title, description, and an action control', async () => {
-    const body = await render(
-      { variant: 'success' },
-      {
-        title: 'Saved',
-        description: 'Your changes were saved.',
-        action: '<button type="button">Undo</button>',
-      },
-    );
-    await assertAxeClean(body);
-  });
-
-  it('is axe-clean with every region empty -- no empty heading left behind', async () => {
-    await assertAxeClean(await render());
   });
 });

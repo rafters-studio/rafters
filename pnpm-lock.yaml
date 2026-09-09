@@ -42,6 +42,9 @@ catalogs:
     '@vitest/ui':
       specifier: ^5.0.0
       version: 5.0.0
+    axe-core:
+      specifier: ^4.11.0
+      version: 4.11.0
     comment-parser:
       specifier: ^1.4.1
       version: 1.4.1
@@ -692,6 +695,9 @@ importers:
       astro:
         specifier: ^5.16.5
         version: 5.16.5(@types/node@24.10.0)(jiti@2.7.0)(lightningcss@1.32.0)(rollup@4.52.5)(terser@5.44.1)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.9.0)
+      axe-core:
+        specifier: 'catalog:'
+        version: 4.11.0
       d3-array:
         specifier: ^3.2.4
         version: 3.2.4
@@ -7054,7 +7060,7 @@ snapshots:
 
   '@babel/code-frame@7.27.1':
     dependencies:
-      '@babel/helper-validator-identifier': 7.28.5
+      '@babel/helper-validator-identifier': 7.29.7
       js-tokens: 4.0.0
       picocolors: 1.1.1
 
@@ -10086,6 +10092,10 @@ snapshots:
     optionalDependencies:
       picomatch: 4.0.5
 
+  fdir@6.5.0(picomatch@4.0.7):
+    optionalDependencies:
+      picomatch: 4.0.7
+
   fflate@0.8.3: {}
 
   figures@6.1.0:
@@ -10470,7 +10480,7 @@ snapshots:
       whatwg-encoding: 3.1.1
       whatwg-mimetype: 4.0.0
       whatwg-url: 14.2.0
-      ws: 8.18.0
+      ws: 8.21.3
       xml-name-validator: 5.0.0
     transitivePeerDependencies:
       - bufferutil
@@ -12222,8 +12232,8 @@ snapshots:
 
   tinyglobby@0.2.17:
     dependencies:
-      fdir: 6.5.0(picomatch@4.0.5)
-      picomatch: 4.0.5
+      fdir: 6.5.0(picomatch@4.0.7)
+      picomatch: 4.0.7
 
   tinypool@2.1.0: {}
 
@@ -12543,7 +12553,7 @@ snapshots:
   vite@8.1.5(@types/node@24.10.0)(esbuild@0.27.3)(jiti@2.7.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.0):
     dependencies:
       lightningcss: 1.32.0
-      picomatch: 4.0.5
+      picomatch: 4.0.7
       postcss: 8.5.21
       rolldown: 1.1.5
       tinyglobby: 0.2.17
@@ -12559,7 +12569,7 @@ snapshots:
   vite@8.1.5(@types/node@24.13.3)(esbuild@0.27.3)(jiti@2.7.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.0):
     dependencies:
       lightningcss: 1.32.0
-      picomatch: 4.0.5
+      picomatch: 4.0.7
       postcss: 8.5.21
       rolldown: 1.1.5
       tinyglobby: 0.2.17

@@ -15,7 +15,6 @@ import {
   type ToggleGroupConfig,
 } from '../../../src/components/toggle-group/toggle-group.behavior';
 import {
-  assertAxeClean,
   assertContractFulfillment,
   assertInstanceContractFulfillment,
   partElement,
@@ -70,7 +69,6 @@ describe('toggle-group conformance [react]', () => {
     expect(root?.getAttribute('role')).toBe('group');
     expect(root?.getAttribute('data-orientation')).toBe('horizontal');
     expect(itemFor('a').getAttribute('aria-pressed')).toBe('true');
-    await assertAxeClean(body());
   });
 
   it('contract: root + item projections equal the rendered DOM', () => {
@@ -102,7 +100,6 @@ describe('toggle-group conformance [react]', () => {
     expect(itemFor('b').getAttribute('data-state')).toBe('on');
     expect(itemFor('a').getAttribute('aria-pressed')).toBe('false');
     expect(onValueChange).toHaveBeenCalledWith('b');
-    await assertAxeClean(body());
   });
 
   it('single is collapsible: re-clicking the selected item clears it and reports empty', async () => {

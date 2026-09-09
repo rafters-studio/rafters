@@ -13,7 +13,6 @@ import {
   type ProgressConfig,
 } from '../../../src/components/progress/progress.behavior';
 import {
-  assertAxeClean,
   assertConfigTravelsAsData,
   assertContractFulfillment,
   partElement,
@@ -47,7 +46,6 @@ describe('progress conformance [astro]', () => {
 
     const config: ProgressConfig = { value: 66, max: 100, variant: 'default', size: 'default' };
     assertContractFulfillment(progress, root, {}, config, parts);
-    await assertAxeClean(document.body);
   });
 
   it('indeterminate: no valuenow, aria-busy set, animation class, no fill width', async () => {
@@ -57,7 +55,6 @@ describe('progress conformance [astro]', () => {
     const indicator = partElement(root, 'indicator') as HTMLElement;
     expect(indicator.className).toContain('animate-pulse-shimmer');
     expect(indicator.getAttribute('style')).toBeNull();
-    await assertAxeClean(document.body);
   });
 
   it('custom max and valueText reflect in the projection', async () => {

@@ -9,7 +9,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Input } from '../../../src/components/input/input';
 import { inputBehavior } from '../../../src/components/input/input.behavior';
-import { assertAxeClean, assertContractFulfillment, partElement } from '../../harness/conformance';
+import { assertContractFulfillment, partElement } from '../../harness/conformance';
 
 afterEach(() => {
   cleanup();
@@ -26,7 +26,6 @@ describe('input conformance [react]', () => {
     const el = inputOf(container);
     expect(el.getAttribute('aria-invalid')).toBe('false');
     expect(el.hasAttribute('aria-describedby')).toBe(false);
-    await assertAxeClean(container);
   });
 
   it('invalid: aria-invalid true and wired to the error id, axe-clean', async () => {
@@ -47,7 +46,6 @@ describe('input conformance [react]', () => {
     expect(el.getAttribute('aria-invalid')).toBe('true');
     expect(el.getAttribute('aria-describedby')).toBe('err');
     expect(el.getAttribute('data-state')).toBe('invalid');
-    await assertAxeClean(container);
   });
 
   it('required projects aria-required', () => {

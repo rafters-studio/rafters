@@ -11,7 +11,6 @@ import {
   type ResizableDirection,
 } from '../../../src/components/resizable/resizable.behavior';
 import {
-  assertAxeClean,
   assertContractFulfillment,
   assertInstanceAriaFulfillment,
   partElement,
@@ -117,15 +116,6 @@ export function runResizableConformance(adapter: ResizableAdapter): void {
             expect(handle.getAttribute('aria-valuemin')).not.toBeNull();
             expect(handle.getAttribute('aria-valuemax')).not.toBeNull();
           }
-        } finally {
-          result.cleanup();
-        }
-      });
-
-      it(`${scenario.name}: axe clean`, async () => {
-        const result = await adapter.render(scenario.props, 'Resize section');
-        try {
-          await assertAxeClean(result.host);
         } finally {
           result.cleanup();
         }

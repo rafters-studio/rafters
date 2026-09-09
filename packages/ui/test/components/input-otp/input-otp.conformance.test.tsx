@@ -9,7 +9,6 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { InputOTP } from '../../../src/components/input-otp/input-otp';
 import { inputOtpBehavior } from '../../../src/components/input-otp/input-otp.behavior';
 import {
-  assertAxeClean,
   assertContractFulfillment,
   assertInstanceAriaFulfillment,
   partElement,
@@ -56,7 +55,6 @@ describe('input-otp conformance [react]', () => {
     ]);
     assertInstanceAriaFulfillment(inputOtpBehavior, container, state, config);
     expect(partElements(container, 'slot')).toHaveLength(6);
-    await assertAxeClean(container);
   });
 
   it('names the field by its slot count and offers one-time-code autofill', () => {
@@ -218,6 +216,5 @@ describe('input-otp conformance [react]', () => {
     expect(el.getAttribute('aria-required')).toBe('true');
     expect(el.name).toBe('code');
     expect(container.querySelectorAll('input[type="hidden"]')).toHaveLength(0);
-    await assertAxeClean(container);
   });
 });

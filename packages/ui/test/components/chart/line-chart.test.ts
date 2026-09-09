@@ -2,8 +2,15 @@ import { validateMotionComposition } from '@rafters/design-tokens';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { describe, expect, it } from 'vitest';
+import * as React from 'react';
+import { act, cleanup, fireEvent, render } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createBehavior } from '../../../src/lib/contract';
+import { ChartContainer } from '../../../src/components/chart/chart';
+import { LineChart } from '../../../src/components/chart/line-chart';
+import { XAxis } from '../../../src/components/chart/x-axis';
+import { stubResizeObserver } from '../../harness/resize-observer';
+import { stubAnnounceToScreenReader } from '../../harness/sr-announcer';
 import {
   buildSeriesPath,
   computeDots,
@@ -454,5 +461,198 @@ describe('lineChartClasses', () => {
       expect(hasArbitraryValue(stroke)).toBe(false);
       expect(hasArbitraryValue(fill)).toBe(false);
     }
+  });
+});
+
+// The structural guarantees #2226 pins outside axe's reach, moved here from
+// the component's a11y suite under #2222 (the axe scenes now live in
+// line-chart.a11y.tsx and its element/astro lanes): no role="img" on the SVG
+// (it would make its descendants presentational and break keyboard
+// traversal), the data-table fallback always present, axis-less-by-omission
+// (the #2230 sparkline shape), and every emitted class a literal token
+// class, never a hex, `var()`, or arbitrary value. The two-row fixture below
+// is the a11y suite's own; it shadows this file's three-row `data` so the
+// moved assertions keep their counts.
+describe('LineChart [react] structural contract (moved from the a11y suite, #2222)', () => {
+  const announceToScreenReader = stubAnnounceToScreenReader();
+
+  afterEach(() => {
+    cleanup();
+    document.body.innerHTML = '';
+    vi.unstubAllGlobals();
+    vi.clearAllMocks();
+  });
+
+  const config = {
+    desktop: { label: 'Desktop', token: 'chart-1' },
+    mobile: { label: 'Mobile', token: 'chart-2' },
+  } satisfies ChartConfig;
+
+  const data = [
+    { month: 'Jan', desktop: 100, mobile: 40 },
+    { month: 'Feb', desktop: 120, mobile: 60 },
+  ];
+
+  function renderChart(rows: typeof data = data) {
+    const { triggerResize } = stubResizeObserver();
+    const view = render(
+      React.createElement(
+        'main',
+        null,
+        React.createElement(
+          ChartContainer,
+          { config },
+          React.createElement(
+            LineChart,
+            { data: rows, series: ['desktop', 'mobile'] },
+            React.createElement(XAxis, { dataKey: 'month' }),
+          ),
+        ),
+      ),
+    );
+    act(() => {
+      triggerResize([{ contentRect: { width: 300, height: 200 } }]);
+    });
+    return view;
+  }
+
+  describe('LineChart a11y [react]: default state', () => {
+    it('renders inside a figure carrying role="figure" and a descriptive aria-label', () => {
+      const { container } = renderChart();
+      const figure = container.querySelector('figure[data-part="root"]');
+      expect(figure?.getAttribute('role')).toBe('figure');
+      expect(figure?.getAttribute('aria-label')).toContain('desktop');
+      expect(figure?.tagName.toLowerCase()).toBe('figure');
+    });
+
+    it('never uses role="img" on the SVG -- it would make descendants presentational', () => {
+      const { container } = renderChart();
+      const svg = container.querySelector('svg[data-part="plot"]');
+      expect(svg?.getAttribute('role')).not.toBe('img');
+      expect(svg?.getAttribute('aria-hidden')).toBe('true');
+    });
+
+    it('the data-table fallback is always present, with one row per point', () => {
+      const { container } = renderChart();
+      const table = container.querySelector('[data-part="table"]');
+      expect(table).not.toBeNull();
+      expect(table?.tagName.toLowerCase()).toBe('table');
+      expect(table).toHaveProperty('hidden', false);
+      const rows = table?.querySelectorAll('tbody tr');
+      expect(rows).toHaveLength(4); // 2 categories x 2 series
+    });
+
+    it('renders one <path> per series and one <circle> dot per datum by default', () => {
+      const { container } = renderChart();
+      expect(container.querySelectorAll('[data-part="line"]')).toHaveLength(2);
+      expect(container.querySelectorAll('[data-part="point"]')).toHaveLength(4);
+    });
+  });
+
+  describe('LineChart a11y [react]: dots suppressed', () => {
+    it('renders no point markers with dots={false}', () => {
+      const { triggerResize } = stubResizeObserver();
+      const { container } = render(
+        React.createElement(
+          ChartContainer,
+          { config },
+          React.createElement(
+            LineChart,
+            { data, series: ['desktop'], dots: false },
+            React.createElement(XAxis, { dataKey: 'month' }),
+          ),
+        ),
+      );
+      act(() => triggerResize([{ contentRect: { width: 300, height: 200 } }]));
+      expect(container.querySelectorAll('[data-part="point"]')).toHaveLength(0);
+    });
+  });
+
+  describe('LineChart a11y [react]: axis-less by omission (the #2230 sparkline shape)', () => {
+    it('describes itself as a Sparkline with no XAxis/YAxis/CartesianGrid composed', () => {
+      const { triggerResize } = stubResizeObserver();
+      const { container } = render(
+        React.createElement(
+          ChartContainer,
+          { config },
+          React.createElement(LineChart, { data, series: ['desktop'] }),
+        ),
+      );
+      act(() => triggerResize([{ contentRect: { width: 120, height: 40 } }]));
+      const figure = container.querySelector('figure[data-part="root"]');
+      expect(figure?.getAttribute('aria-label')).toMatch(/^Sparkline of/);
+    });
+  });
+
+  describe('LineChart a11y [react]: empty state', () => {
+    it('renders an empty plot and an empty table body, no throw', () => {
+      const { container } = renderChart([]);
+      expect(container.querySelectorAll('[data-part="line"]')).toHaveLength(0);
+      expect(container.querySelectorAll('[data-part="point"]')).toHaveLength(0);
+      expect(container.querySelectorAll('[data-part="table"] tbody tr')).toHaveLength(0);
+    });
+  });
+
+  describe('LineChart a11y [react]: active-datum state', () => {
+    it('arrow keys move the active-datum cursor and announce it, focus staying on the figure', () => {
+      const { container } = renderChart();
+      const figure = container.querySelector('figure[data-part="root"]') as HTMLElement;
+      figure.focus();
+      fireEvent.keyDown(figure, { key: 'ArrowRight' });
+
+      const activePoint = container.querySelector('[data-part="point"][data-active="true"]');
+      expect(activePoint).not.toBeNull();
+      expect(announceToScreenReader).toHaveBeenCalledWith(expect.stringContaining('Jan'), 'polite');
+      expect(document.activeElement).toBe(figure);
+    });
+
+    it('every point not the active one carries data-active="false"', () => {
+      const { container } = renderChart();
+      const figure = container.querySelector('figure[data-part="root"]') as HTMLElement;
+      fireEvent.keyDown(figure, { key: 'ArrowRight' });
+      const points = Array.from(container.querySelectorAll('[data-part="point"]'));
+      const activeCount = points.filter((el) => el.getAttribute('data-active') === 'true').length;
+      expect(activeCount).toBe(1);
+    });
+  });
+
+  describe('LineChart a11y: no keyboard contract claimed outside root/plot', () => {
+    it('lineChart.keymap never claims a key on the line, point, or table parts', () => {
+      const lineChartConfig = {
+        data,
+        series: ['desktop'],
+        chartConfig: config,
+        categoryKey: 'month',
+        width: 300,
+        height: 200,
+        axisParts: { xAxis: true, yAxis: false, grid: false },
+      };
+      const state = lineChart.initialState(lineChartConfig);
+      expect(lineChart.keymap({ key: 'ArrowRight' }, state, 'line', lineChartConfig)).toBeNull();
+      expect(lineChart.keymap({ key: 'ArrowRight' }, state, 'point', lineChartConfig)).toBeNull();
+      expect(lineChart.keymap({ key: 'ArrowRight' }, state, 'table', lineChartConfig)).toBeNull();
+    });
+  });
+
+  describe('LineChart a11y: color/class token compliance -- no hex, no var(), no arbitrary value', () => {
+    const classes = lineChartClasses(
+      { smooth: false, dots: true },
+      { points: [], valueTicks: [], activeIndex: null },
+    );
+    const FORBIDDEN_LITERAL = /#[0-9a-f]{3,8}\b|var\(--/i;
+
+    it('emits no hex or var() literal', () => {
+      for (const value of Object.values(classes)) {
+        expect(value).not.toMatch(FORBIDDEN_LITERAL);
+      }
+    });
+
+    it('emits no arbitrary-value utility', () => {
+      for (const value of Object.values(classes)) {
+        for (const cls of value.split(/\s+/).filter(Boolean)) {
+          expect(hasArbitraryValue(cls), cls).toBe(false);
+        }
+      }
+    });
   });
 });

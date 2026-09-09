@@ -26,7 +26,7 @@ import {
   ContextMenuTrigger,
 } from '../../../src/components/context-menu/context-menu';
 import { contextMenu } from '../../../src/components/context-menu/context-menu.behavior';
-import { assertAxeClean, assertContractFulfillment } from '../../harness/conformance';
+import { assertContractFulfillment } from '../../harness/conformance';
 
 interface SetupProps {
   onSelectEdit?: () => void;
@@ -89,7 +89,6 @@ describe('context-menu conformance [react]', () => {
     setup();
     expect(menu()).toBeNull();
     expect(trigger().getAttribute('data-state')).toBe('closed');
-    await assertAxeClean(body());
   });
 
   it('right-click opens the menu at the pointer point, focus lands on the first item', async () => {
@@ -104,7 +103,6 @@ describe('context-menu conformance [react]', () => {
     expect(content?.style.left).toBe('40px');
     expect(content?.style.top).toBe('60px');
     expect(document.activeElement).toBe(itemByText('Edit'));
-    await assertAxeClean(body());
   });
 
   it('the rendered ARIA equals the score projection when open', () => {
@@ -273,7 +271,6 @@ describe('context-menu submenu [react]', () => {
     expect(subTrigger().getAttribute('aria-expanded')).toBe('true');
     expect(subTrigger().getAttribute('aria-controls')).toBe(subContent()?.id);
     expect(document.activeElement?.textContent).toBe('Deep');
-    await assertAxeClean(body());
   });
 
   it('ArrowLeft closes the submenu and restores focus to the sub-trigger', async () => {

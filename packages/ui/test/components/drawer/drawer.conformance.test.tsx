@@ -19,12 +19,7 @@ import {
   type DrawerProps,
 } from '../../../src/components/drawer/drawer';
 import { drawer } from '../../../src/components/drawer/drawer.behavior';
-import {
-  assertAxeClean,
-  assertContractFulfillment,
-  domPartIds,
-  partElement,
-} from '../../harness/conformance';
+import { assertContractFulfillment, domPartIds, partElement } from '../../harness/conformance';
 
 interface SetupProps extends Partial<DrawerProps> {
   withDescription?: boolean;
@@ -61,7 +56,6 @@ describe('drawer conformance [react]', () => {
     expect(partElement(body(), 'content')).toBeNull();
     expect(trigger?.getAttribute('aria-expanded')).toBe('false');
     expect(trigger?.hasAttribute('aria-controls')).toBe(false);
-    await assertAxeClean(body());
   });
 
   it('open: every part renders and ARIA equals the projection', async () => {
@@ -79,7 +73,6 @@ describe('drawer conformance [react]', () => {
       'description',
       'close',
     ]);
-    await assertAxeClean(body());
   });
 
   it('side is edge-only: an explicit edge changes classes, never the dialog ARIA', async () => {
@@ -99,7 +92,6 @@ describe('drawer conformance [react]', () => {
     const content = partElement(body(), 'content');
     expect(content?.hasAttribute('aria-describedby')).toBe(false);
     expect(content?.getAttribute('aria-labelledby')).toBeTruthy();
-    await assertAxeClean(body());
   });
 
   it('trigger and content are wired by real DOM ids', async () => {
@@ -239,7 +231,6 @@ describe('drawer conformance [react]', () => {
     expect(document.querySelectorAll('[data-part="overlay"]')).toHaveLength(1);
     // Oracle default: no automatic close button inside an explicit portal.
     expect(partElement(body(), 'close')).toBeNull();
-    await assertAxeClean(body());
   });
 
   it('forceMount keeps the content in the DOM, hidden and inert, while closed', () => {

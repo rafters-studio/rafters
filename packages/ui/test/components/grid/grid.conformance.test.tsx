@@ -3,7 +3,7 @@ import { cleanup, render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it } from 'vitest';
 import { Grid } from '../../../src/components/grid/grid';
-import { assertAxeClean, partElement } from '../../harness/conformance';
+import { partElement } from '../../harness/conformance';
 
 const body = () => document.body;
 
@@ -28,7 +28,6 @@ describe('grid conformance [react]', () => {
     const items = root.querySelectorAll('[data-priority]');
     expect(items).toHaveLength(3);
     expect(items[0]?.getAttribute('data-priority')).toBe('primary');
-    await assertAxeClean(body());
   });
 
   it('reordering the tree does not change which item is the hero', () => {
@@ -59,7 +58,6 @@ describe('grid conformance [react]', () => {
     expect(root.getAttribute('aria-label')).toBe('Photo picker');
     expect(root.querySelectorAll('[role="row"]')).toHaveLength(2);
     expect(root.querySelectorAll('[role="gridcell"]')).toHaveLength(3);
-    await assertAxeClean(body());
   });
 
   it('role=grid: arrow keys rove in two dimensions', async () => {

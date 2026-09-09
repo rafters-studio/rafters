@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from '../../../src/components/card/card';
 import { card } from '../../../src/components/card/card.behavior';
-import { assertAxeClean, assertContractFulfillment, partElement } from '../../harness/conformance';
+import { assertContractFulfillment, partElement } from '../../harness/conformance';
 
 const body = () => document.body;
 
@@ -67,7 +67,6 @@ describe('card conformance [react]', () => {
     // data-part, and no descendant does (boundary 5).
     expect(root.getAttribute('data-part')).toBe('root');
     expect(root.querySelectorAll('[data-part]')).toHaveLength(0);
-    await assertAxeClean(body());
   });
 
   it('CardTitle places the heading level via as', () => {

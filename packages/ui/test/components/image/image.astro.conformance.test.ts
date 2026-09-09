@@ -9,7 +9,6 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import Image from '../../../src/components/image/image.astro';
 import { bindImage, image, type ImageConfig } from '../../../src/components/image/image.behavior';
 import {
-  assertAxeClean,
   assertConfigTravelsAsData,
   assertContractFulfillment,
   partElement,
@@ -42,7 +41,6 @@ describe('image conformance [astro]', () => {
     expect(partElement(root, 'status')).toBeNull();
     const config: ImageConfig = { alignment: 'center', radius: 'lg', status: 'loaded' };
     assertContractFulfillment(image, root, {}, config, ['root', 'frame', 'img']);
-    await assertAxeClean(document.body);
   });
 
   it('loading: the img is aria-busy and the overlay is role="status"', async () => {
@@ -52,7 +50,6 @@ describe('image conformance [astro]', () => {
     const status = partElement(root, 'status') as HTMLElement;
     expect(status.getAttribute('role')).toBe('status');
     expect(status.textContent?.trim()).toBe('Loading image');
-    await assertAxeClean(document.body);
   });
 
   it('error: the overlay is role="alert" carrying the message', async () => {

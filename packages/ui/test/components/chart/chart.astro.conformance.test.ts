@@ -17,7 +17,6 @@ import CartesianGrid from '../../../src/components/chart/cartesian-grid.astro';
 import XAxis from '../../../src/components/chart/x-axis.astro';
 import YAxis from '../../../src/components/chart/y-axis.astro';
 import { bindChart } from '../../../src/components/chart/chart.behavior';
-import { assertAxeClean } from '../../harness/conformance';
 import { stubResizeObserver } from '../../harness/resize-observer';
 
 afterEach(() => {
@@ -87,10 +86,5 @@ describe('chart-container [astro]', () => {
     expect(root.querySelector('[data-part="x-axis"]')).toBeNull();
     expect(root.querySelector('[data-part="y-axis"]')).toBeNull();
     expect(root.querySelector('[data-part="grid"]')).toBeNull();
-  });
-
-  it('is axe-clean rendered inside a landmark', async () => {
-    const root = await mount();
-    await assertAxeClean(root);
   });
 });

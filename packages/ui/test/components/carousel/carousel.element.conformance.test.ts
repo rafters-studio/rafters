@@ -9,7 +9,6 @@ import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { carouselBehavior } from '../../../src/components/carousel/carousel.behavior';
 import { RaftersCarousel } from '../../../src/components/carousel/carousel.element';
 import {
-  assertAxeClean,
   assertContractFulfillment,
   assertInstanceAriaFulfillment,
 } from '../../harness/conformance';
@@ -76,7 +75,6 @@ describe('carousel conformance [wc]', () => {
       'indicator',
     ]);
     assertInstanceAriaFulfillment(carouselBehavior, root, { index: 0 }, config());
-    await assertAxeClean(document.body);
   });
 
   it('first slide active, previous disabled, next enabled', async () => {

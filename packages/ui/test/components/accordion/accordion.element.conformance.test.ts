@@ -8,7 +8,6 @@ import { cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { RaftersAccordion } from '../../../src/components/accordion/accordion.element';
-import { assertAxeClean } from '../../harness/conformance';
 
 beforeAll(() => {
   if (!customElements.get('rafters-accordion')) {
@@ -98,7 +97,6 @@ describe('accordion conformance [wc]', () => {
     expect(content('b').hasAttribute('inert')).toBe(false);
     expect(trigger('a').getAttribute('aria-expanded')).toBe('false');
     expect(content('a').hasAttribute('inert')).toBe(true);
-    await assertAxeClean(document.body);
   });
 
   it('the panel is named by its header and referenced back, collapsed included', async () => {

@@ -27,11 +27,7 @@ import {
 } from '../../../src/components/navigation-menu/navigation-menu';
 import { navigationMenu } from '../../../src/components/navigation-menu/navigation-menu.behavior';
 import { navigationMenuClasses } from '../../../src/components/navigation-menu/navigation-menu.classes';
-import {
-  assertAxeClean,
-  assertInstanceAriaFulfillment,
-  partElement,
-} from '../../harness/conformance';
+import { assertInstanceAriaFulfillment, partElement } from '../../harness/conformance';
 
 interface SetupProps {
   value?: string;
@@ -95,7 +91,6 @@ describe('navigation-menu conformance [react]', () => {
     expect(stateFor('products')).toBe('closed');
     expect(triggerFor('products').getAttribute('aria-expanded')).toBe('false');
     expect(partElement(body(), 'root')?.getAttribute('aria-label')).toBe('Main navigation');
-    await assertAxeClean(body());
   });
 
   it('trigger and content are wired by real ids', () => {
@@ -128,7 +123,6 @@ describe('navigation-menu conformance [react]', () => {
     await user.click(triggerFor('products'));
     expect(stateFor('products')).toBe('open');
     expect(triggerFor('products').getAttribute('aria-expanded')).toBe('true');
-    await assertAxeClean(body());
 
     await user.click(triggerFor('docs'));
     expect(stateFor('products')).toBe('closed');

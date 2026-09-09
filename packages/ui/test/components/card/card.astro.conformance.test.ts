@@ -9,7 +9,7 @@
  */
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import { afterEach, describe, expect, it } from 'vitest';
-import { assertAxeClean, partElement } from '../../harness/conformance';
+import { partElement } from '../../harness/conformance';
 import Card from '../../../src/components/card/card.astro';
 
 afterEach(() => {
@@ -123,10 +123,5 @@ describe('card conformance [astro]', () => {
     expect(body.querySelector('[data-slot="card-title"]')).not.toBeNull();
     // Description and action stay absent, so the header keeps one column.
     expect(body.querySelector('[data-slot="card-action"]')).toBeNull();
-  });
-
-  it('is axe-clean rendered inside a landmark', async () => {
-    const body = await render({}, { title: '<h3>Report</h3>', content: '<p>Body</p>' });
-    await assertAxeClean(body);
   });
 });

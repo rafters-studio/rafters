@@ -10,7 +10,6 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../src/components/tabs/tabs';
 import { tabs, type TabsConfig } from '../../../src/components/tabs/tabs.behavior';
 import {
-  assertAxeClean,
   assertContractFulfillment,
   assertInstanceAriaFulfillment,
   partElement,
@@ -76,7 +75,6 @@ describe('tabs conformance [react]', () => {
     expect(partElement(body(), 'list')?.getAttribute('aria-orientation')).toBe('horizontal');
     expect(triggerFor('overview').getAttribute('role')).toBe('tab');
     expect(panelFor('overview').getAttribute('role')).toBe('tabpanel');
-    await assertAxeClean(body());
   });
 
   it('contract: the part and instance projections equal the rendered DOM', () => {
@@ -121,7 +119,6 @@ describe('tabs conformance [react]', () => {
     expect(panelFor('details').hasAttribute('hidden')).toBe(false);
     expect(panelFor('overview').hasAttribute('hidden')).toBe(true);
     expect(onValueChange).toHaveBeenCalledWith('details');
-    await assertAxeClean(body());
   });
 
   it('re-clicking the active tab does NOT deactivate it or re-fire the callback', async () => {

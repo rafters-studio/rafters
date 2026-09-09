@@ -9,7 +9,7 @@
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import Separator from '../../../src/components/separator/separator.astro';
-import { assertAxeClean, partElement } from '../../harness/conformance';
+import { partElement } from '../../harness/conformance';
 
 afterEach(() => {
   document.body.innerHTML = '';
@@ -65,13 +65,5 @@ describe('separator conformance [astro]', () => {
   it('root is the only declared part -- a rule has no content or sub-parts', async () => {
     const body = await render();
     expect(body.querySelectorAll('[data-part]')).toHaveLength(1);
-  });
-
-  it('is axe-clean as a decorative rule inside a landmark', async () => {
-    await assertAxeClean(await render());
-  });
-
-  it('is axe-clean as a semantic separator inside a landmark', async () => {
-    await assertAxeClean(await render({ decorative: false }));
   });
 });

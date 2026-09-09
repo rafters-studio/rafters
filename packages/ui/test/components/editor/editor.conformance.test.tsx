@@ -20,7 +20,7 @@ import {
   parts,
   type EditorConfig,
 } from '../../../src/components/editor/editor.behavior';
-import { assertAxeClean, partElement } from '../../harness/conformance';
+import { partElement } from '../../harness/conformance';
 
 afterEach(() => {
   cleanup();
@@ -49,29 +49,6 @@ describe('editor conformance [react]', () => {
     render(<Editor labelledBy="external-heading" />);
     expect(root().getAttribute('aria-labelledby')).toBe('external-heading');
     expect(root().hasAttribute('aria-label')).toBe(false);
-  });
-
-  it('is axe-clean with a real accessible name', async () => {
-    render(<Editor label="Document" />);
-    // Scoped to the editor root, not document.body: axe's "region" rule
-    // (page content must be contained by a landmark) is a page-layout
-    // concern, not a property of this widget in isolation.
-    await assertAxeClean(root());
-  });
-
-  it('sanity: assertAxeClean, scoped this same way, DOES fail an unnamed textbox', async () => {
-    // Negative control for the assertion above (and for the WC/Astro suites'
-    // identically-scoped axe checks): proves narrowing assertAxeClean's
-    // target from document.body to the widget root did not also narrow away
-    // the violation the axe tier exists to catch (an incidentally-passing
-    // unnamed role=textbox). If this ever stops throwing, the axe tier in
-    // every editor conformance suite has gone vacuous.
-    const unnamed = document.createElement('div');
-    unnamed.setAttribute('role', 'textbox');
-    unnamed.setAttribute('aria-multiline', 'true');
-    unnamed.setAttribute('contenteditable', 'true');
-    document.body.appendChild(unnamed);
-    await expect(assertAxeClean(unnamed)).rejects.toThrow();
   });
 
   it('disabled/readonly toggle contenteditable post-mount (no re-bind needed)', async () => {

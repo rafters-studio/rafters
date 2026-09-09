@@ -16,7 +16,6 @@
  */
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import { afterEach, describe, expect, it } from 'vitest';
-import { assertAxeClean } from '../../harness/conformance';
 import Card from '../../../src/components/card/card.astro';
 import CardHeader from '../../../src/components/card/card-header.astro';
 import CardTitle from '../../../src/components/card/card-title.astro';
@@ -146,7 +145,5 @@ describe('card astro sub-components [parity surface]', () => {
     expect(root.querySelectorAll('[data-slot="card-header"]')).toHaveLength(1);
     // Root remains the only declared part.
     expect(root.querySelectorAll('[data-part]')).toHaveLength(0);
-
-    await assertAxeClean(document.body);
   });
 });

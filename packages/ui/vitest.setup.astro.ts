@@ -21,9 +21,18 @@ import { builtinEnvironments } from 'vitest/runtime';
 await builtinEnvironments['happy-dom'].setup(globalThis, {
   happyDOM: {
     settings: {
-      // Never let happy-dom fetch iframe subresources over the network during
-      // a test (Embed with a YouTube URL would otherwise hit the live host).
-      disableIframePageLoading: true,
+      // Never let happy-dom fetch an iframe page over the network during a
+      // test (Embed with a YouTube URL would otherwise hit the live host).
+      // The navigation form, not the deprecated disableIframePageLoading: that
+      // one reports its refusal through console.error, which the "consumer
+      // class is discarded silently" conformance tests spy on; this one falls
+      // back to setting the frame URL and fires load, quietly.
+      navigation: { disableChildFrameNavigation: true },
+      // Container output carries each component's <script type="module">;
+      // happy-dom must neither fetch it nor report the refusal through
+      // console.error, for the same spy (#2331 meeting #2332; hotfix pending).
+      disableJavaScriptFileLoading: true,
+      handleDisabledFileLoadingAsSuccess: true,
     },
   },
 });

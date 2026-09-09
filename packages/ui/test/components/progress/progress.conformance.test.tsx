@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { axe } from 'vitest-axe';
 import { Progress } from '../../../src/components/progress/progress';
 import { progress, type ProgressConfig } from '../../../src/components/progress/progress.behavior';
-import { assertAxeClean, assertContractFulfillment, partElement } from '../../harness/conformance';
+import { assertContractFulfillment, partElement } from '../../harness/conformance';
 
 const body = () => document.body;
 const parts = ['root', 'indicator'] as const;
@@ -14,7 +14,7 @@ afterEach(() => {
 });
 
 describe('progress conformance [react]', () => {
-  it('determinate: progressbar contract fulfilled against real DOM', async () => {
+  it('determinate: progressbar contract fulfilled against real DOM', () => {
     const config: ProgressConfig = { value: 66, max: 100, variant: 'default', size: 'default' };
     render(
       <main>
@@ -26,7 +26,6 @@ describe('progress conformance [react]', () => {
     expect(root.getAttribute('aria-valuenow')).toBe('66');
     expect(root.getAttribute('aria-busy')).toBeNull();
     assertContractFulfillment(progress, root, {}, config, parts);
-    await assertAxeClean(body());
   });
 
   it('the indicator fill width tracks the value', () => {
@@ -52,7 +51,7 @@ describe('progress conformance [react]', () => {
     expect(root.getAttribute('aria-valuetext')).toBe('3 of 10');
   });
 
-  it('indeterminate: omits valuenow, sets aria-busy, no inline width', async () => {
+  it('indeterminate: omits valuenow, sets aria-busy, no inline width', () => {
     const config: ProgressConfig = { max: 100, variant: 'default', size: 'default' };
     render(
       <main>
@@ -66,7 +65,6 @@ describe('progress conformance [react]', () => {
     expect(indicator.style.width).toBe('');
     expect(indicator.className).toContain('animate-pulse-shimmer');
     assertContractFulfillment(progress, root, {}, config, parts);
-    await assertAxeClean(body());
   });
 
   it('a progressbar with no accessible name FAILS axe (name is required)', async () => {

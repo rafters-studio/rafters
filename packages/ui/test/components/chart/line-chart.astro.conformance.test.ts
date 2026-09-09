@@ -26,7 +26,6 @@ import {
   resolveLineEnterClass,
   resolveLineStrokeClass,
 } from '../../../src/components/chart/line-chart.classes';
-import { assertAxeClean } from '../../harness/conformance';
 import { stubResizeObserver } from '../../harness/resize-observer';
 
 afterEach(() => {
@@ -157,11 +156,6 @@ describe('line-chart [astro]', () => {
     expect(lineChartRoot.querySelectorAll('[data-part="line"]')).toHaveLength(0);
     expect(lineChartRoot.querySelectorAll('[data-part="point"]')).toHaveLength(0);
     expect(lineChartRoot.querySelectorAll('[data-part="table"] tbody tr')).toHaveLength(0);
-  });
-
-  it('is axe-clean rendered inside a landmark', async () => {
-    const { containerRoot } = await mount();
-    await assertAxeClean(document.body.querySelector('main') ?? containerRoot);
   });
 
   it('composed <rafters-line> children alone derive the series list -- no series in data-config', async () => {

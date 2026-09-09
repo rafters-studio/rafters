@@ -22,7 +22,6 @@ import {
   resolveBarEnterClass,
   resolveBarFillClass,
 } from '../../../src/components/chart/bar-chart.classes';
-import { assertAxeClean } from '../../harness/conformance';
 import { stubResizeObserver } from '../../harness/resize-observer';
 import { vi } from 'vitest';
 
@@ -156,11 +155,6 @@ describe('bar-chart [astro]', () => {
     const { barChartRoot } = await mount({ data: [], series: ['desktop'] });
     expect(barChartRoot.querySelectorAll('[data-part="bar"]')).toHaveLength(0);
     expect(barChartRoot.querySelectorAll('[data-part="table"] tbody tr')).toHaveLength(0);
-  });
-
-  it('is axe-clean rendered inside a landmark', async () => {
-    const { containerRoot } = await mount();
-    await assertAxeClean(document.body.querySelector('main') ?? containerRoot);
   });
 
   it('composed <rafters-bar> children alone derive the series list -- no series in data-config', async () => {

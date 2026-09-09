@@ -13,7 +13,6 @@ import {
   type CalendarConfig,
 } from '../../../src/components/calendar/calendar.behavior';
 import {
-  assertAxeClean,
   assertContractFulfillment,
   assertInstanceAriaFulfillment,
   partElement,
@@ -67,7 +66,6 @@ describe('calendar conformance [wc]', () => {
     expect(grid?.hasAttribute('aria-labelledby')).toBe(true);
     expect(partElement(document.body, 'heading')?.textContent).toBe('July 2026');
     expect(dayCell('2026-07-20').getAttribute('data-today')).toBe('true');
-    await assertAxeClean(document.body);
   });
 
   it('contract: grid/heading/nav projections and per-day ARIA equal the DOM', async () => {

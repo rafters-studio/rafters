@@ -1,6 +1,6 @@
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { assertAxeClean, partElement } from '../../harness/conformance';
+import { partElement } from '../../harness/conformance';
 import Typography from '../../../src/components/typography/typography.astro';
 
 afterEach(() => {
@@ -25,7 +25,6 @@ describe('typography conformance [astro]', () => {
     expect(root?.tagName.toLowerCase()).toBe('h1');
     expect(root?.className).toContain('text-4xl');
     expect(root?.className).toContain('@lg:text-5xl');
-    await assertAxeClean(body);
   });
 
   it('h5 renders its own tag but borrows h4 scale', async () => {

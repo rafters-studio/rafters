@@ -7,7 +7,6 @@ import { describe, expect, it } from 'vitest';
 import userEvent from '@testing-library/user-event';
 import { sliderBehavior, type SliderConfig } from '../../../src/components/slider/slider.behavior';
 import {
-  assertAxeClean,
   assertContractFulfillment,
   assertInstanceAriaFulfillment,
   partElement,
@@ -84,15 +83,6 @@ export function runSliderConformance(adapter: SliderAdapter): void {
           const thumbs = partElements(result.root, 'thumb');
           expect(thumbs.length).toBe((scenario.props.value ?? [50]).length);
           for (const thumb of thumbs) expect(thumb.getAttribute('role')).toBe('slider');
-        } finally {
-          result.cleanup();
-        }
-      });
-
-      it(`${scenario.name}: axe clean`, async () => {
-        const result = await adapter.render(scenario.props, 'Volume');
-        try {
-          await assertAxeClean(result.host);
         } finally {
           result.cleanup();
         }

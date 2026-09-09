@@ -17,12 +17,7 @@ import {
   PopoverTrigger,
 } from '../../../src/components/popover/popover';
 import { popover } from '../../../src/components/popover/popover.behavior';
-import {
-  assertAxeClean,
-  assertContractFulfillment,
-  domPartIds,
-  partElement,
-} from '../../harness/conformance';
+import { assertContractFulfillment, domPartIds, partElement } from '../../harness/conformance';
 
 interface SetupProps {
   open?: boolean;
@@ -51,7 +46,7 @@ afterEach(() => {
 });
 
 describe('popover conformance [react]', () => {
-  it('closed: only the trigger renders, collapsed, haspopup dialog, axe-clean', async () => {
+  it('closed: only the trigger renders, collapsed, haspopup dialog', () => {
     render(<TestPopover />);
     const trigger = partElement(body(), 'trigger');
     expect(trigger).not.toBeNull();
@@ -59,7 +54,6 @@ describe('popover conformance [react]', () => {
     expect(trigger?.getAttribute('aria-expanded')).toBe('false');
     expect(trigger?.getAttribute('aria-haspopup')).toBe('dialog');
     expect(trigger?.hasAttribute('aria-controls')).toBe(false);
-    await assertAxeClean(body());
   });
 
   it('open: trigger and content render and ARIA equals the projection', async () => {
@@ -71,7 +65,6 @@ describe('popover conformance [react]', () => {
     const state = { open: true };
     assertContractFulfillment(popover, body(), state, config, ['trigger', 'content']);
     expect(partElement(body(), 'content')?.getAttribute('role')).toBe('dialog');
-    await assertAxeClean(body());
   });
 
   it('trigger and content are wired by real DOM ids', async () => {
@@ -151,7 +144,6 @@ describe('popover conformance [react]', () => {
     await user.click(partElement(body(), 'trigger') as HTMLElement);
     expect(partElement(body(), 'content')).not.toBeNull();
     expect(partElement(body(), 'anchor')).not.toBeNull();
-    await assertAxeClean(body());
   });
 
   it('defaultOpen mounts open', () => {
@@ -194,7 +186,6 @@ describe('popover conformance [react]', () => {
     );
     await user.click(partElement(body(), 'trigger') as HTMLElement);
     expect(partElement(body(), 'content')).not.toBeNull();
-    await assertAxeClean(body());
   });
 
   it('forceMount keeps the content in the DOM, hidden and inert, while closed', () => {

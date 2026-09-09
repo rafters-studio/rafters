@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { Image } from '../../../src/components/image/image';
 import { image, type ImageConfig } from '../../../src/components/image/image.behavior';
-import { assertAxeClean, assertContractFulfillment, partElement } from '../../harness/conformance';
+import { assertContractFulfillment, partElement } from '../../harness/conformance';
 
 const body = () => document.body;
 
@@ -26,7 +26,6 @@ describe('image conformance [react]', () => {
     expect(img.hasAttribute('aria-busy')).toBe(false);
     expect(partElement(root, 'status')).toBeNull();
     assertContractFulfillment(image, root, {}, config, ['root', 'frame', 'img']);
-    await assertAxeClean(body());
   });
 
   it('loading: the img is aria-busy and a polite status overlay announces', async () => {
@@ -43,7 +42,6 @@ describe('image conformance [react]', () => {
     expect(status.getAttribute('role')).toBe('status');
     expect(status.textContent).toBe('Loading image');
     assertContractFulfillment(image, root, {}, config, ['root', 'frame', 'img', 'status']);
-    await assertAxeClean(body());
   });
 
   it('error: an assertive alert overlay carries the message', async () => {
@@ -58,7 +56,6 @@ describe('image conformance [react]', () => {
     expect(status.getAttribute('role')).toBe('alert');
     expect(status.textContent).toBe('Failed to load image');
     assertContractFulfillment(image, root, {}, config, ['root', 'frame', 'img', 'status']);
-    await assertAxeClean(body());
   });
 
   it('the img onError flips the runtime status to error (React owns the lifecycle)', () => {

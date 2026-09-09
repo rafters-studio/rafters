@@ -21,11 +21,7 @@ import {
   tableHeaderClasses,
   tableRowClasses,
 } from '../../../src/components/table/table.classes';
-import {
-  assertAxeClean,
-  assertInstanceContractFulfillment,
-  partElement,
-} from '../../harness/conformance';
+import { assertInstanceContractFulfillment, partElement } from '../../harness/conformance';
 
 afterEach(() => {
   document.body.innerHTML = '';
@@ -101,11 +97,6 @@ describe('table conformance [astro]', () => {
     expect(root.querySelector('caption')?.textContent).toBe('Recent signups');
     expect(root.querySelector('thead th')?.getAttribute('scope')).toBe('col');
     expect(root.querySelectorAll('tbody tr')).toHaveLength(2);
-  });
-
-  it('is axe-clean rendered inside a landmark', async () => {
-    const dom = await render();
-    await assertAxeClean(dom);
   });
 
   it('consumer class is discarded silently -- not merged onto the root', async () => {

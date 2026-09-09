@@ -2,7 +2,6 @@ import * as React from 'react';
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { Container } from '../../../src/components/container/container';
-import { assertAxeClean } from '../../harness/conformance';
 
 const body = () => document.body;
 
@@ -32,7 +31,6 @@ describe('container conformance [react]', () => {
     expect(body().querySelector('footer')).not.toBeNull();
     expect(body().querySelector('article')).not.toBeNull();
     expect(body().querySelector('aside')?.getAttribute('aria-label')).toBe('Related');
-    await assertAxeClean(body());
   });
 
   it('one tag, container and grid: columns puts children on the grid', () => {

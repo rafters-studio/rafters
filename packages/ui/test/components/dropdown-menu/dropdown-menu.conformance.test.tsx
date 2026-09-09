@@ -19,7 +19,7 @@ import {
   type DropdownMenuConfig,
   type DropdownMenuState,
 } from '../../../src/components/dropdown-menu/dropdown-menu.behavior';
-import { assertAxeClean, assertContractFulfillment, partElement } from '../../harness/conformance';
+import { assertContractFulfillment, partElement } from '../../harness/conformance';
 
 interface SetupProps {
   open?: boolean;
@@ -74,7 +74,6 @@ describe('dropdown-menu conformance [react]', () => {
       'trigger',
       'content',
     ]);
-    await assertAxeClean(body());
   });
 
   it('trigger and menu are wired by real ids', () => {
@@ -96,7 +95,6 @@ describe('dropdown-menu conformance [react]', () => {
     expect(content().hidden).toBe(false);
     expect(trigger().getAttribute('aria-expanded')).toBe('true');
     expect(document.activeElement).toBe(item('Edit'));
-    await assertAxeClean(body());
   });
 
   it('clicking an item runs its action, closes, and returns focus to the trigger', async () => {

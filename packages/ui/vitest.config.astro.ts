@@ -1,5 +1,6 @@
 /// <reference types="vitest/config" />
 import { getViteConfig } from 'astro/config';
+import { a11yOnly } from './vitest.config';
 
 /**
  * The `astro` project of vitest.config.ts, kept as its own file because
@@ -19,12 +20,14 @@ export default getViteConfig({
     extends: false,
     globals: true,
     environment: 'node',
-    setupFiles: ['./vitest.setup.astro.ts'],
-    include: [
-      'test/**/*.astro.spec.ts',
-      'test/**/*.astro.a11y.ts',
-      // Pre-trim conformance files; the trim renames them to the two globs above.
-      'test/**/*.astro.conformance.test.ts',
-    ],
+    setupFiles: ['./vitest.setup.astro.ts', './test/a11y/setup.ts'],
+    include: a11yOnly
+      ? ['test/**/*.astro.a11y.ts']
+      : [
+          'test/**/*.astro.spec.ts',
+          'test/**/*.astro.a11y.ts',
+          // Pre-trim conformance files; the trim renames them to the two globs above.
+          'test/**/*.astro.conformance.test.ts',
+        ],
   },
 });

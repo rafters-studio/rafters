@@ -7,7 +7,6 @@ import { describe, expect, it } from 'vitest';
 import userEvent from '@testing-library/user-event';
 import { switchBehavior, type SwitchConfig } from '../../../src/components/switch/switch.behavior';
 import {
-  assertAxeClean,
   assertContractFulfillment,
   partElement,
   type RenderResult,
@@ -63,15 +62,6 @@ export function runSwitchConformance(adapter: SwitchAdapter): void {
           const config = configFor(scenario.props);
           const state = switchBehavior.initialState(config);
           assertContractFulfillment(switchBehavior, result.root, state, config, EXPECTED_PARTS);
-        } finally {
-          result.cleanup();
-        }
-      });
-
-      it(`${scenario.name}: axe clean`, async () => {
-        const result = await adapter.render(scenario.props, 'Enable notifications');
-        try {
-          await assertAxeClean(result.host);
         } finally {
           result.cleanup();
         }

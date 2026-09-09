@@ -2,7 +2,7 @@ import { cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { Separator } from '../../../src/components/separator/separator';
 import { separator } from '../../../src/components/separator/separator.behavior';
-import { assertAxeClean, assertContractFulfillment, partElement } from '../../harness/conformance';
+import { assertContractFulfillment, partElement } from '../../harness/conformance';
 
 const body = () => document.body;
 
@@ -51,28 +51,6 @@ describe('separator conformance [react]', () => {
     const root = body().querySelector('[data-part="root"]') as HTMLElement;
     expect(root.className).toContain('bg-border');
     expect(root.className).toContain('my-4');
-  });
-
-  it('is axe-clean as a decorative rule inside a landmark', async () => {
-    render(
-      <main>
-        <p>Above</p>
-        <Separator />
-        <p>Below</p>
-      </main>,
-    );
-    await assertAxeClean(body());
-  });
-
-  it('is axe-clean as a semantic separator inside a landmark', async () => {
-    render(
-      <main>
-        <p>Above</p>
-        <Separator decorative={false} />
-        <p>Below</p>
-      </main>,
-    );
-    await assertAxeClean(body());
   });
 
   it('has no keyboard contract -- a rule dispatches nothing', () => {

@@ -14,7 +14,7 @@ import {
 } from '@rafters/design-tokens';
 import { Spinner } from '../../../src/components/spinner/spinner';
 import { spinner } from '../../../src/components/spinner/spinner.behavior';
-import { assertAxeClean, assertContractFulfillment, partElement } from '../../harness/conformance';
+import { assertContractFulfillment, partElement } from '../../harness/conformance';
 
 const body = () => document.body;
 
@@ -138,14 +138,5 @@ describe('spinner conformance [react]', () => {
 
   it('has no keyboard contract and dispatches nothing observable', () => {
     expect(spinner.keymap({ key: 'Enter' }, {}, 'root', {})).toBeNull();
-  });
-
-  it('is axe-clean inside a landmark', async () => {
-    render(
-      <main>
-        <Spinner />
-      </main>,
-    );
-    await assertAxeClean(body());
   });
 });

@@ -22,7 +22,6 @@ import {
   type CommandState,
 } from '../../../src/components/command/command.behavior';
 import {
-  assertAxeClean,
   assertContractFulfillment,
   assertInstanceContractFulfillment,
   partElement,
@@ -94,7 +93,6 @@ describe('command conformance [react]', () => {
       ['calendar', 'search', 'settings'],
       (key) => commandItemAria(key, state, config),
     );
-    await assertAxeClean(body());
   });
 
   it('typing fuzzy-filters the options, hiding non-matches', async () => {

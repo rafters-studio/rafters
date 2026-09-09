@@ -6,7 +6,7 @@ import {
   useButtonGroupContext,
 } from '../../../src/components/button-group/button-group';
 import { buttonGroup } from '../../../src/components/button-group/button-group.behavior';
-import { assertAxeClean, assertContractFulfillment, partElement } from '../../harness/conformance';
+import { assertContractFulfillment, partElement } from '../../harness/conformance';
 
 const body = () => document.body;
 
@@ -85,20 +85,5 @@ describe('button-group conformance [react]', () => {
     }
     render(<Probe />);
     expect(seen).toBeNull();
-  });
-
-  it('is axe-clean with a labelled group of buttons', async () => {
-    // A real group lives inside a landmark; wrap in <main> so axe's region
-    // rule (all content contained by a landmark) has one -- role=group is not
-    // itself a landmark.
-    render(
-      <main>
-        <ButtonGroup aria-label="Document actions">
-          <button type="button">Cancel</button>
-          <button type="button">Save</button>
-        </ButtonGroup>
-      </main>,
-    );
-    await assertAxeClean(body());
   });
 });

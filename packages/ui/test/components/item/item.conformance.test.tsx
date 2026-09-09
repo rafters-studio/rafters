@@ -3,7 +3,7 @@ import { cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { Item } from '../../../src/components/item/item';
 import { item } from '../../../src/components/item/item.behavior';
-import { assertAxeClean, assertContractFulfillment, partElement } from '../../harness/conformance';
+import { assertContractFulfillment, partElement } from '../../harness/conformance';
 
 const body = () => document.body;
 
@@ -35,7 +35,6 @@ describe('item conformance [react]', () => {
     assertContractFulfillment(item, root, {}, {}, ['root']);
     expect(root.getAttribute('role')).toBe('option');
     expect(root.getAttribute('tabindex')).toBe('0');
-    await assertAxeClean(body());
   });
 
   it('selected row projects aria-selected=true + data-selected, axe-clean', async () => {
@@ -48,7 +47,6 @@ describe('item conformance [react]', () => {
     assertContractFulfillment(item, root, {}, { selected: true }, ['root']);
     expect(root.getAttribute('aria-selected')).toBe('true');
     expect(root.hasAttribute('data-selected')).toBe(true);
-    await assertAxeClean(body());
   });
 
   it('disabled row projects aria-disabled + data-disabled + tabindex -1, axe-clean', async () => {
@@ -62,7 +60,6 @@ describe('item conformance [react]', () => {
     expect(root.getAttribute('aria-disabled')).toBe('true');
     expect(root.hasAttribute('data-disabled')).toBe(true);
     expect(root.getAttribute('tabindex')).toBe('-1');
-    await assertAxeClean(body());
   });
 
   it('renders icon (aria-hidden), label, and description, passing content through', () => {

@@ -9,7 +9,7 @@ import {
   EmptyTitle,
 } from '../../../src/components/empty/empty';
 import { empty } from '../../../src/components/empty/empty.behavior';
-import { assertAxeClean, assertContractFulfillment, partElement } from '../../harness/conformance';
+import { assertContractFulfillment, partElement } from '../../harness/conformance';
 
 const body = () => document.body;
 
@@ -61,7 +61,6 @@ describe('empty conformance [react]', () => {
     // data-part, and no descendant does (boundary 5).
     expect(root.getAttribute('data-part')).toBe('root');
     expect(root.querySelectorAll('[data-part]')).toHaveLength(0);
-    await assertAxeClean(body());
   });
 
   it('EmptyTitle places the heading level via as -- clear heading hierarchy', () => {

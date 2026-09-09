@@ -8,7 +8,7 @@
  */
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { assertAxeClean, partElement } from '../../harness/conformance';
+import { partElement } from '../../harness/conformance';
 import Kbd from '../../../src/components/kbd/kbd.astro';
 
 afterEach(() => {
@@ -61,10 +61,5 @@ describe('kbd conformance [astro]', () => {
     expect(root.className).not.toContain('ml-1');
     expect(warn).not.toHaveBeenCalled();
     expect(error).not.toHaveBeenCalled();
-  });
-
-  it('is axe-clean scoped to the rendered cap', async () => {
-    const body = await render();
-    await assertAxeClean(body);
   });
 });

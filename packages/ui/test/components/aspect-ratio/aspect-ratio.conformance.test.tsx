@@ -3,7 +3,7 @@ import { cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { AspectRatio } from '../../../src/components/aspect-ratio/aspect-ratio';
 import { aspectRatio } from '../../../src/components/aspect-ratio/aspect-ratio.behavior';
-import { assertAxeClean, assertContractFulfillment, partElement } from '../../harness/conformance';
+import { assertContractFulfillment, partElement } from '../../harness/conformance';
 
 const body = () => document.body;
 
@@ -72,17 +72,6 @@ describe('aspect-ratio conformance [react]', () => {
     const root = body().querySelector('[data-testid="ar"]') as HTMLElement;
     expect(root.className).toContain('relative w-full');
     expect(root.className).toContain('rounded-lg');
-  });
-
-  it('is axe-clean: the box is a layout utility, its content carries semantics', async () => {
-    render(
-      <main>
-        <AspectRatio ratio={16 / 9}>
-          <img src="/photo.jpg" alt="A descriptive alt" />
-        </AspectRatio>
-      </main>,
-    );
-    await assertAxeClean(body());
   });
 
   it('has no keyboard contract and dispatches nothing observable', () => {
