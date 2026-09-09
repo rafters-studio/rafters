@@ -61,6 +61,7 @@
  * bindInputGroup recover the config from server markup without mistaking its
  * own projection for author input.
  */
+import type { HTMLAttributes } from 'astro/types';
 import classy from '../../primitives/classy';
 import {
   inputGroupBehavior,
@@ -81,7 +82,7 @@ interface Props {
   disabled?: boolean;
   invalid?: boolean;
   name?: string;
-  type?: string;
+  type?: HTMLAttributes<'input'>['type'];
   placeholder?: string;
   value?: string;
   'aria-label'?: string;

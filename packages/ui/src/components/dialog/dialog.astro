@@ -86,7 +86,7 @@ const open = state.open;
 ---
 
 <rafters-dialog data-part="root" modal={String(modal)} default-open={String(defaultOpen)}>
-  <button type="button" id={ids.trigger} data-part="trigger" class={classes.trigger} {...aria.trigger}>
+  <button type="button" id={ids.trigger} data-part="trigger" {...aria.trigger}>
     <slot name="trigger">Open</slot>
   </button>
 

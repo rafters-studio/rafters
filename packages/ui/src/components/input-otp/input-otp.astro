@@ -130,7 +130,7 @@ const slots = groupedIndexes.map((indexes) =>
       char: { 'data-otp-char': '', class: classes.char },
       caret: {
         'data-otp-caret': '',
-        'aria-hidden': 'true',
+        'aria-hidden': 'true' as const,
         hidden: !slot.caret,
         class: classes.caret,
       },
@@ -141,7 +141,7 @@ const slots = groupedIndexes.map((indexes) =>
 );
 const separatorAttrs = {
   'data-part': 'separator',
-  'aria-hidden': 'true',
+  'aria-hidden': 'true' as const,
   class: classes.separator,
 };
 ---

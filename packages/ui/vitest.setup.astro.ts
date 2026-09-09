@@ -21,9 +21,24 @@ import { builtinEnvironments } from 'vitest/runtime';
 await builtinEnvironments['happy-dom'].setup(globalThis, {
   happyDOM: {
     settings: {
-      // Never let happy-dom fetch iframe subresources over the network during
-      // a test (Embed with a YouTube URL would otherwise hit the live host).
-      disableIframePageLoading: true,
+      // Nothing happy-dom loads on the components' behalf may reach the
+      // network or the console. The class-discard tests assert that rendering
+      // logs nothing, and a NotSupportedError from the DOM is not a component
+      // message, so every refusal below is a silent one:
+      //
+      // - From Astro 6 the container renders each component's <script> as a
+      //   `<script type="module" src="...?astro&type=script">` tag. The test
+      //   calls bindX itself, so the load is disabled, and the disabled load
+      //   counts as a success instead of a console.error.
+      // - An iframe (Embed with a YouTube URL) must not fetch the live host.
+      //   `disableIframePageLoading` would do that but reports it as a
+      //   console.error; refusing child-frame navigation instead just leaves
+      //   the frame on its URL.
+      disableJavaScriptFileLoading: true,
+      handleDisabledFileLoadingAsSuccess: true,
+      navigation: {
+        disableChildFrameNavigation: true,
+      },
     },
   },
 });

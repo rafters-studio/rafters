@@ -29,3 +29,41 @@ jobs:
       # measured in every engine the project ships against.
       - run: pnpm exec playwright install --with-deps chromium firefox webkit
       - run: pnpm test:all
+
+  # The Astro matrix (#2327): the same packages/ui Astro test files and
+  # `astro check` against each Astro major the consumers run. One job per
+  # leg so each reports on its own and neither masks the other. The 7 leg is
+  # the workspace pin (its tests also run inside `test` above; this job adds
+  # `astro check`). The 6 leg is an isolated install under
+  # packages/ui/test/astro-matrix/v6 with its own lockfile.
+  astro-7:
+    runs-on: ubuntu-latest
+    env:
+      CI: true
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v6.0.10
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24.12
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @rafters/ui test:astro
+      - run: pnpm --filter @rafters/ui check:astro
+
+  astro-6:
+    runs-on: ubuntu-latest
+    env:
+      CI: true
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v6.0.10
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24.12
+          cache: 'pnpm'
+      # The workspace install is still needed: the component sources import
+      # workspace packages and the test files import the shared test tooling.
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @rafters/ui test:astro:v6
+      - run: pnpm --filter @rafters/ui check:astro:v6
