@@ -11,7 +11,6 @@ import * as React from 'react';
 import { act, cleanup, fireEvent, render } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { axe } from 'vitest-axe';
-import { announceToScreenReader } from '../../../src/primitives/sr-announcer';
 import { ChartContainer } from '../../../src/components/chart/chart';
 import { LineChart } from '../../../src/components/chart/line-chart';
 import { XAxis } from '../../../src/components/chart/x-axis';
@@ -20,13 +19,9 @@ import { lineChart } from '../../../src/components/chart/line-chart.behavior';
 import { hasArbitraryValue } from '../../../src/primitives/classy';
 import type { ChartConfig } from '../../../src/components/chart/chart.behavior';
 import { stubResizeObserver } from '../../harness/resize-observer';
+import { stubAnnounceToScreenReader } from '../../harness/sr-announcer';
 
-vi.mock('../../../src/primitives/sr-announcer', async () => {
-  const actual = await vi.importActual<typeof import('../../../src/primitives/sr-announcer')>(
-    '../../../src/primitives/sr-announcer',
-  );
-  return { ...actual, announceToScreenReader: vi.fn() };
-});
+const announceToScreenReader = stubAnnounceToScreenReader();
 
 afterEach(() => {
   cleanup();

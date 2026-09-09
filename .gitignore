@@ -12,6 +12,8 @@ coverage
 .npmrc.approvals
 playwright-report
 test-results
+# Vitest 5 writes the JSON report (and other reporter output) here by default.
+.vitest/
 *.turbo/
 *.astro/
 .rafters/
