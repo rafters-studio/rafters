@@ -1,5 +1,6 @@
 import { expect, test } from 'vitest';
 import { runAxe } from '../../a11y/run-axe';
+import { nextFrame } from '../../a11y/next-frame';
 import '../../../src/components/chart/chart-tooltip.element';
 import type { RaftersChartTooltip } from '../../../src/components/chart/chart-tooltip.element';
 import type { ChartConfig } from '../../../src/components/chart/chart.behavior';
@@ -19,10 +20,6 @@ const data = [
 
 interface Scene {
   open: boolean;
-}
-
-function nextFrame(): Promise<void> {
-  return new Promise<void>((done) => requestAnimationFrame(() => done()));
 }
 
 /** The light-DOM shape chart-tooltip.element.ts documents, inside the plot

@@ -8,6 +8,7 @@ import {
   type ResizableDirection,
 } from '../../../src/components/resizable/resizable.behavior';
 import { resizableClasses } from '../../../src/components/resizable/resizable.classes';
+import { applyAria } from './conformance-suite';
 
 interface ScenePanel {
   defaultSize: number;
@@ -32,16 +33,6 @@ function configFor(scene: Scene): ResizableConfig {
       maxSize: panel.maxSize ?? 100,
     })),
   };
-}
-
-function applyAria(
-  element: HTMLElement,
-  attrs: Record<string, string | boolean | undefined>,
-): void {
-  for (const [name, value] of Object.entries(attrs)) {
-    if (value === undefined) continue;
-    element.setAttribute(name, String(value));
-  }
 }
 
 /** The light-DOM group the author (or Astro) provides: panels interleaved

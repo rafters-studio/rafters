@@ -1,19 +1,7 @@
 import { expect, test } from 'vitest';
 import { runAxe } from '../../a11y/run-axe';
 import '../../../src/components/alert/alert.element';
-import type { AlertVariant } from '../../../src/components/alert/alert.behavior';
-
-const VARIANTS: ReadonlyArray<AlertVariant> = [
-  'default',
-  'primary',
-  'secondary',
-  'destructive',
-  'success',
-  'warning',
-  'info',
-  'muted',
-  'accent',
-];
+import { ALERT_VARIANTS } from '../../../src/components/alert/alert.behavior';
 
 interface Scene {
   attrs: string;
@@ -29,7 +17,7 @@ const titled =
   '<span slot="title">Saved</span><span slot="description">Your changes were saved.</span>';
 
 const scenes: ReadonlyArray<[string, Scene]> = [
-  ...VARIANTS.map((variant): [string, Scene] => [
+  ...ALERT_VARIANTS.map((variant): [string, Scene] => [
     `variant=${variant}`,
     { attrs: `variant="${variant}"`, slots: titled },
   ]),

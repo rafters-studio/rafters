@@ -2,24 +2,12 @@ import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import { Window } from 'happy-dom';
 import { expect, test } from 'vitest';
 import { runAxe } from '../../a11y/run-axe';
+import { decodeHtmlEntities } from '../../a11y/decode-html-entities';
 import Editor from '../../../src/components/editor/editor.astro';
 import { bindEditor } from '../../../src/components/editor/editor.behavior';
 import type { BaseBlock } from '../../../src/primitives/types';
 
 const seededDoc: BaseBlock[] = [{ id: 'b1', type: 'text', content: 'hello' }];
-
-/** happy-dom leaves numeric character references inside attribute values
- *  encoded; Astro entity-encodes the JSON quotes in data-initial-doc and
- *  data-caret, so decode those two attributes after parsing, as the astro
- *  conformance test does, before the bind reads them. */
-function decodeHtmlEntities(value: string): string {
-  return value
-    .replace(/&#34;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&#38;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>');
-}
 
 interface Scene {
   props: Record<string, unknown>;
@@ -38,6 +26,9 @@ async function mount({ props, bind = false, before = '' }: Scene): Promise<Docum
   const document = window.document as unknown as Document;
   document.body.innerHTML = `<main>${before}${html}</main>`;
   const root = document.querySelector('rafters-editor') as HTMLElement;
+  // Astro entity-encodes the JSON quotes in data-initial-doc and data-caret;
+  // decode those two attributes after parsing, as the astro conformance test
+  // does, before the bind reads them.
   for (const attr of ['data-initial-doc', 'data-caret']) {
     const raw = root.getAttribute(attr);
     if (raw !== null) root.setAttribute(attr, decodeHtmlEntities(raw));

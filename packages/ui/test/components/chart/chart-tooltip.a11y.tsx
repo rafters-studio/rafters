@@ -1,6 +1,7 @@
 import { expect, test } from 'vitest';
 import { render } from 'vitest-browser-react';
 import { runAxe } from '../../a11y/run-axe';
+import { nextFrame } from '../../a11y/next-frame';
 import { ChartContainer } from '../../../src/components/chart/chart';
 import { ChartTooltip, ChartTooltipContent } from '../../../src/components/chart/chart-tooltip';
 import { bandScale } from '../../../src/primitives/graph';
@@ -36,10 +37,6 @@ function Tooltip() {
       </ChartContainer>
     </main>
   );
-}
-
-function nextFrame(): Promise<void> {
-  return new Promise<void>((done) => requestAnimationFrame(() => done()));
 }
 
 /** Moves the pointer over the plot's second band and returns the open panel.

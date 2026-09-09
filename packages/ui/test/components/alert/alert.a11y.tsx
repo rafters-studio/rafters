@@ -8,22 +8,10 @@ import {
   AlertDescription,
   AlertTitle,
 } from '../../../src/components/alert/alert';
-import type { AlertVariant } from '../../../src/components/alert/alert.behavior';
-
-const VARIANTS: ReadonlyArray<AlertVariant> = [
-  'default',
-  'primary',
-  'secondary',
-  'destructive',
-  'success',
-  'warning',
-  'info',
-  'muted',
-  'accent',
-];
+import { ALERT_VARIANTS } from '../../../src/components/alert/alert.behavior';
 
 const scenes: ReadonlyArray<[string, () => ReactElement]> = [
-  ...VARIANTS.map((variant): [string, () => ReactElement] => [
+  ...ALERT_VARIANTS.map((variant): [string, () => ReactElement] => [
     `variant=${variant}`,
     () => (
       <Alert variant={variant}>

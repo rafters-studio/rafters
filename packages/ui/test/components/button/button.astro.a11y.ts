@@ -5,27 +5,10 @@ import { runAxe } from '../../a11y/run-axe';
 import Button from '../../../src/components/button/button.astro';
 import {
   bindButton,
-  type ButtonSize,
-  type ButtonVariant,
+  BUTTON_ICON_SIZES,
+  BUTTON_TEXT_SIZES,
+  BUTTON_VARIANTS,
 } from '../../../src/components/button/button.behavior';
-
-const VARIANTS: ReadonlyArray<ButtonVariant> = [
-  'default',
-  'primary',
-  'secondary',
-  'destructive',
-  'success',
-  'warning',
-  'info',
-  'muted',
-  'accent',
-  'outline',
-  'ghost',
-  'link',
-];
-
-const TEXT_SIZES: ReadonlyArray<ButtonSize> = ['default', 'xs', 'sm', 'lg'];
-const ICON_SIZES: ReadonlyArray<ButtonSize> = ['icon', 'icon-xs', 'icon-sm', 'icon-lg'];
 
 const ICON =
   '<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor"></path></svg>';
@@ -47,7 +30,7 @@ async function mount(
   return document;
 }
 
-for (const variant of VARIANTS) {
+for (const variant of BUTTON_VARIANTS) {
   test(`button.astro variant=${variant}`, async ({ task }) => {
     const document = await mount({ variant });
     const results = await runAxe(document.body);
@@ -56,7 +39,7 @@ for (const variant of VARIANTS) {
   });
 }
 
-for (const size of TEXT_SIZES) {
+for (const size of BUTTON_TEXT_SIZES) {
   test(`button.astro size=${size}`, async ({ task }) => {
     const document = await mount({ size });
     const results = await runAxe(document.body);
@@ -65,7 +48,7 @@ for (const size of TEXT_SIZES) {
   });
 }
 
-for (const size of ICON_SIZES) {
+for (const size of BUTTON_ICON_SIZES) {
   test(`button.astro size=${size} icon-only with an accessible name`, async ({ task }) => {
     const document = await mount({ size, label: '', 'aria-label': 'Close' }, { default: ICON });
     const results = await runAxe(document.body);

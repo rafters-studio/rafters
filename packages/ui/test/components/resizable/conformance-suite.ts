@@ -73,6 +73,20 @@ const SCENARIOS: ReadonlyArray<Scenario> = [
 
 const EXPECTED_PARTS = ['root', 'panel', 'handle'] as const;
 
+/** Applies an ARIA attribute map to an element, skipping attributes whose
+ *  projected value is undefined (behavior-conditional ARIA, e.g. aria-disabled
+ *  only when disabled). Shared by every adapter that hand-builds a resizable's
+ *  light DOM. */
+export function applyAria(
+  element: HTMLElement,
+  attrs: Record<string, string | boolean | undefined>,
+): void {
+  for (const [name, value] of Object.entries(attrs)) {
+    if (value === undefined) continue;
+    element.setAttribute(name, String(value));
+  }
+}
+
 export function configFor(props: ResizableScenarioProps): ResizableConfig {
   const share = props.panels.length > 0 ? 100 / props.panels.length : 100;
   return {

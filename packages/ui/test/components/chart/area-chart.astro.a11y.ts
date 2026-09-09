@@ -2,6 +2,7 @@ import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import { Window } from 'happy-dom';
 import { expect, test } from 'vitest';
 import { runAxe } from '../../a11y/run-axe';
+import { decodeConfig } from '../../a11y/decode-config';
 import Chart from '../../../src/components/chart/chart.astro';
 import AreaChartAstro from '../../../src/components/chart/area-chart.astro';
 import XAxis from '../../../src/components/chart/x-axis.astro';
@@ -28,14 +29,6 @@ const data = [
 interface Scene {
   areaConfig: { data: typeof data; series: string[] };
   bind: boolean;
-}
-
-/** happy-dom's innerHTML parser leaves numeric character entities intact in
- *  attribute values; a real browser decodes `&#34;` to `"` when parsing, so
- *  undo it before a bind reads data-config as JSON. */
-function decodeConfig(el: HTMLElement): void {
-  const raw = el.getAttribute('data-config');
-  if (raw) el.setAttribute('data-config', raw.replaceAll('&#34;', '"'));
 }
 
 async function mount({ areaConfig, bind }: Scene): Promise<Document> {

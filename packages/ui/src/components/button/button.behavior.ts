@@ -15,29 +15,71 @@ import {
   type PressableState,
 } from '../../lib/pressable';
 
-export type ButtonVariant =
-  | 'default'
-  | 'primary'
-  | 'secondary'
-  | 'destructive'
-  | 'success'
-  | 'warning'
-  | 'info'
-  | 'muted'
-  | 'accent'
-  | 'outline'
-  | 'ghost'
-  | 'link';
+/**
+ * The variant and size vocabularies, in runtime form so nothing has to restate
+ * them. DOM-native performances take these as `string | null` and must narrow
+ * before they can call `buttonClasses`, and the test lanes enumerate them to
+ * build one scene per value. Deriving each type from its array rather than
+ * declaring both keeps them structurally impossible to desync.
+ */
+export const BUTTON_VARIANTS = [
+  'default',
+  'primary',
+  'secondary',
+  'destructive',
+  'success',
+  'warning',
+  'info',
+  'muted',
+  'accent',
+  'outline',
+  'ghost',
+  'link',
+] as const;
 
-export type ButtonSize =
-  | 'default'
-  | 'xs'
-  | 'sm'
-  | 'lg'
-  | 'icon'
-  | 'icon-xs'
-  | 'icon-sm'
-  | 'icon-lg';
+/**
+ * Sizes are one list, not two. The icon sizes are the `icon`-prefixed members;
+ * a consumer that wants only the text sizes or only the icon sizes filters on
+ * that prefix rather than keeping a second list that can fall behind this one.
+ */
+export const BUTTON_SIZES = [
+  'default',
+  'xs',
+  'sm',
+  'lg',
+  'icon',
+  'icon-xs',
+  'icon-sm',
+  'icon-lg',
+] as const;
+
+export type ButtonVariant = (typeof BUTTON_VARIANTS)[number];
+export type ButtonSize = (typeof BUTTON_SIZES)[number];
+
+export function isButtonVariant(value: string | null | undefined): value is ButtonVariant {
+  return value != null && (BUTTON_VARIANTS as ReadonlyArray<string>).includes(value);
+}
+
+export function isButtonSize(value: string | null | undefined): value is ButtonSize {
+  return value != null && (BUTTON_SIZES as ReadonlyArray<string>).includes(value);
+}
+
+/** A size that shapes a square icon-only button. */
+export type ButtonIconSize = Extract<ButtonSize, `icon${string}`>;
+/** A size that shapes a button with a text label. */
+export type ButtonTextSize = Exclude<ButtonSize, ButtonIconSize>;
+
+const isIconSize = (size: ButtonSize): size is ButtonIconSize => size.startsWith('icon');
+
+/**
+ * The two halves of BUTTON_SIZES, split on the `icon` prefix rather than
+ * written out again. A size added above lands in exactly one of these without
+ * anyone maintaining a second list.
+ */
+export const BUTTON_ICON_SIZES: ReadonlyArray<ButtonIconSize> = BUTTON_SIZES.filter(isIconSize);
+export const BUTTON_TEXT_SIZES: ReadonlyArray<ButtonTextSize> = BUTTON_SIZES.filter(
+  (size): size is ButtonTextSize => !isIconSize(size),
+);
 
 export interface ButtonConfig extends PressableConfig {
   variant: ButtonVariant;

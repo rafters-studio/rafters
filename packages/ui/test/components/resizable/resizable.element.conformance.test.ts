@@ -18,6 +18,7 @@ import { resizableClasses } from '../../../src/components/resizable/resizable.cl
 import { RaftersResizable } from '../../../src/components/resizable/resizable.element';
 import type { RenderResult } from '../../harness/conformance';
 import {
+  applyAria,
   configFor,
   runResizableConformance,
   type ResizableAdapter,
@@ -29,16 +30,6 @@ beforeAll(() => {
     customElements.define('rafters-resizable', RaftersResizable);
   }
 });
-
-function applyAria(
-  element: HTMLElement,
-  attrs: Record<string, string | boolean | undefined>,
-): void {
-  for (const [name, value] of Object.entries(attrs)) {
-    if (value === undefined) continue;
-    element.setAttribute(name, String(value));
-  }
-}
 
 function buildRoot(config: ResizableConfig, label: string, withHandle: boolean): HTMLElement {
   const state = resizableBehavior.initialState(config);

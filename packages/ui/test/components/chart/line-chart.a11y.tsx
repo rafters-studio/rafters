@@ -1,6 +1,7 @@
 import { expect, test } from 'vitest';
 import { render } from 'vitest-browser-react';
 import { runAxe } from '../../a11y/run-axe';
+import { nextFrame } from '../../a11y/next-frame';
 import { ChartContainer } from '../../../src/components/chart/chart';
 import { LineChart } from '../../../src/components/chart/line-chart';
 import { XAxis } from '../../../src/components/chart/x-axis';
@@ -42,10 +43,6 @@ function Chart({ rows, series = ['desktop', 'mobile'], dots = true, axis = true 
       </ChartContainer>
     </main>
   );
-}
-
-function nextFrame(): Promise<void> {
-  return new Promise<void>((done) => requestAnimationFrame(() => done()));
 }
 
 const scenes: ReadonlyArray<[string, Scene]> = [

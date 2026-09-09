@@ -3,29 +3,14 @@ import { runAxe } from '../../a11y/run-axe';
 import '../../../src/components/button/button.element';
 import {
   button,
+  BUTTON_ICON_SIZES,
+  BUTTON_TEXT_SIZES,
+  BUTTON_VARIANTS,
   type ButtonConfig,
   type ButtonSize,
   type ButtonVariant,
 } from '../../../src/components/button/button.behavior';
 import { buttonClasses } from '../../../src/components/button/button.classes';
-
-const VARIANTS: ReadonlyArray<ButtonVariant> = [
-  'default',
-  'primary',
-  'secondary',
-  'destructive',
-  'success',
-  'warning',
-  'info',
-  'muted',
-  'accent',
-  'outline',
-  'ghost',
-  'link',
-];
-
-const TEXT_SIZES: ReadonlyArray<ButtonSize> = ['default', 'xs', 'sm', 'lg'];
-const ICON_SIZES: ReadonlyArray<ButtonSize> = ['icon', 'icon-xs', 'icon-sm', 'icon-lg'];
 
 interface Scene {
   variant?: ButtonVariant;
@@ -88,7 +73,7 @@ async function mount(scene: Scene, label: string): Promise<HTMLElement> {
   return document.body.querySelector('main') as HTMLElement;
 }
 
-for (const variant of VARIANTS) {
+for (const variant of BUTTON_VARIANTS) {
   test(`rafters-button variant=${variant}`, async ({ task }) => {
     const host = await mount({ variant }, 'Save changes');
     const results = await runAxe(host);
@@ -97,7 +82,7 @@ for (const variant of VARIANTS) {
   });
 }
 
-for (const size of TEXT_SIZES) {
+for (const size of BUTTON_TEXT_SIZES) {
   test(`rafters-button size=${size}`, async ({ task }) => {
     const host = await mount({ size }, 'Save changes');
     const results = await runAxe(host);
@@ -106,7 +91,7 @@ for (const size of TEXT_SIZES) {
   });
 }
 
-for (const size of ICON_SIZES) {
+for (const size of BUTTON_ICON_SIZES) {
   test(`rafters-button size=${size} icon-only with an accessible name`, async ({ task }) => {
     const host = await mount({ size, ariaLabel: 'Close' }, '');
     const results = await runAxe(host);

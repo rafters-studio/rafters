@@ -2,38 +2,13 @@ import { expect, test } from 'vitest';
 import { render } from 'vitest-browser-react';
 import { runAxe } from '../../a11y/run-axe';
 import { Button, type ButtonProps } from '../../../src/components/button/button';
-import type { ButtonSize, ButtonVariant } from '../../../src/components/button/button.behavior';
+import {
+  BUTTON_ICON_SIZES,
+  BUTTON_TEXT_SIZES,
+  BUTTON_VARIANTS,
+} from '../../../src/components/button/button.behavior';
 
-const VARIANTS: ReadonlyArray<ButtonVariant> = [
-  'default',
-  'primary',
-  'secondary',
-  'destructive',
-  'success',
-  'warning',
-  'info',
-  'muted',
-  'accent',
-  'outline',
-  'ghost',
-  'link',
-];
-
-const TEXT_SIZES: ReadonlyArray<Extract<ButtonSize, 'default' | 'xs' | 'sm' | 'lg'>> = [
-  'default',
-  'xs',
-  'sm',
-  'lg',
-];
-
-const ICON_SIZES: ReadonlyArray<Extract<ButtonSize, 'icon' | 'icon-xs' | 'icon-sm' | 'icon-lg'>> = [
-  'icon',
-  'icon-xs',
-  'icon-sm',
-  'icon-lg',
-];
-
-for (const variant of VARIANTS) {
+for (const variant of BUTTON_VARIANTS) {
   test(`button variant=${variant}`, async ({ task }) => {
     const { container } = await render(<Button variant={variant}>Save changes</Button>);
     const results = await runAxe(container);
@@ -42,7 +17,7 @@ for (const variant of VARIANTS) {
   });
 }
 
-for (const size of TEXT_SIZES) {
+for (const size of BUTTON_TEXT_SIZES) {
   test(`button size=${size}`, async ({ task }) => {
     const { container } = await render(<Button size={size}>Save changes</Button>);
     const results = await runAxe(container);
@@ -51,7 +26,7 @@ for (const size of TEXT_SIZES) {
   });
 }
 
-for (const size of ICON_SIZES) {
+for (const size of BUTTON_ICON_SIZES) {
   test(`button size=${size} icon-only with an accessible name`, async ({ task }) => {
     const { container } = await render(
       <Button size={size} aria-label="Close">

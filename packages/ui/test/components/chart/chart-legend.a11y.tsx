@@ -1,6 +1,7 @@
 import { expect, test } from 'vitest';
 import { render } from 'vitest-browser-react';
 import { runAxe } from '../../a11y/run-axe';
+import { nextFrame } from '../../a11y/next-frame';
 import { ChartContainer } from '../../../src/components/chart/chart';
 import { ChartLegend, ChartLegendContent } from '../../../src/components/chart/chart-legend';
 import type { ChartConfig } from '../../../src/components/chart/chart.behavior';
@@ -24,10 +25,6 @@ function Legend({ cfg, nameKey }: Scene) {
       </ChartContainer>
     </main>
   );
-}
-
-function nextFrame(): Promise<void> {
-  return new Promise<void>((done) => requestAnimationFrame(() => done()));
 }
 
 const scenes: ReadonlyArray<[string, Scene]> = [

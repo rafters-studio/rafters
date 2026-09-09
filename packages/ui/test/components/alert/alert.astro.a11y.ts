@@ -3,19 +3,7 @@ import { Window } from 'happy-dom';
 import { expect, test } from 'vitest';
 import { runAxe } from '../../a11y/run-axe';
 import Alert from '../../../src/components/alert/alert.astro';
-import type { AlertVariant } from '../../../src/components/alert/alert.behavior';
-
-const VARIANTS: ReadonlyArray<AlertVariant> = [
-  'default',
-  'primary',
-  'secondary',
-  'destructive',
-  'success',
-  'warning',
-  'info',
-  'muted',
-  'accent',
-];
+import { ALERT_VARIANTS } from '../../../src/components/alert/alert.behavior';
 
 interface Scene {
   props: Record<string, unknown>;
@@ -35,7 +23,7 @@ async function mount({ props, slots }: Scene): Promise<Document> {
 const titled = { title: 'Saved', description: 'Your changes were saved.' };
 
 const scenes: ReadonlyArray<[string, Scene]> = [
-  ...VARIANTS.map((variant): [string, Scene] => [
+  ...ALERT_VARIANTS.map((variant): [string, Scene] => [
     `variant=${variant}`,
     { props: { variant }, slots: titled },
   ]),

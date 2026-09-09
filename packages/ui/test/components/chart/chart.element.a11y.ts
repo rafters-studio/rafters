@@ -1,5 +1,6 @@
 import { expect, test } from 'vitest';
 import { runAxe } from '../../a11y/run-axe';
+import { nextFrame } from '../../a11y/next-frame';
 import '../../../src/components/chart/chart.element';
 import '../../../src/components/chart/cartesian-grid.element';
 import '../../../src/components/chart/x-axis.element';
@@ -19,10 +20,6 @@ const AXES = `
   <rafters-cartesian-grid data-part="grid" hidden></rafters-cartesian-grid>
   <rafters-x-axis data-part="x-axis" data-key="month" hidden></rafters-x-axis>
   <rafters-y-axis data-part="y-axis" hidden></rafters-y-axis>`;
-
-function nextFrame(): Promise<void> {
-  return new Promise<void>((done) => requestAnimationFrame(() => done()));
-}
 
 async function mount({ axes }: Scene): Promise<HTMLElement> {
   document.body.innerHTML = `

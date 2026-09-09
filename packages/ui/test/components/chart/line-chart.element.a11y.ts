@@ -1,5 +1,6 @@
 import { expect, test } from 'vitest';
 import { runAxe } from '../../a11y/run-axe';
+import { nextFrame } from '../../a11y/next-frame';
 import '../../../src/components/chart/chart.element';
 import '../../../src/components/chart/x-axis.element';
 import '../../../src/components/chart/line-chart.element';
@@ -49,10 +50,6 @@ function markup(lineConfig: Scene['lineConfig'], axis: boolean): string {
         </div>
       </rafters-chart-container>
     </main>`;
-}
-
-function nextFrame(): Promise<void> {
-  return new Promise<void>((done) => requestAnimationFrame(() => done()));
 }
 
 async function mount({ lineConfig, axis = true, activate = false }: Scene): Promise<HTMLElement> {

@@ -9,16 +9,31 @@ import type { BehaviorSpec } from '../../lib/contract';
  * and the severity variant drives token-driven classes only.
  */
 
-export type AlertVariant =
-  | 'default'
-  | 'primary'
-  | 'secondary'
-  | 'destructive'
-  | 'success'
-  | 'warning'
-  | 'info'
-  | 'muted'
-  | 'accent';
+/**
+ * The severity vocabulary, in runtime form so nothing has to restate it.
+ * DOM-native performances take the variant as `string | null` and must narrow
+ * before they can call `alertClasses`, and the test lanes enumerate it to build
+ * one scene per variant. Deriving the type from the array rather than declaring
+ * both keeps them structurally impossible to desync -- a hand-kept parallel
+ * list is exactly how a variant goes missing from one lane and nobody notices.
+ */
+export const ALERT_VARIANTS = [
+  'default',
+  'primary',
+  'secondary',
+  'destructive',
+  'success',
+  'warning',
+  'info',
+  'muted',
+  'accent',
+] as const;
+
+export type AlertVariant = (typeof ALERT_VARIANTS)[number];
+
+export function isAlertVariant(value: string | null | undefined): value is AlertVariant {
+  return value != null && (ALERT_VARIANTS as ReadonlyArray<string>).includes(value);
+}
 
 export interface AlertConfig {
   variant?: AlertVariant | undefined;
