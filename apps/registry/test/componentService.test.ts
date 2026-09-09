@@ -1210,3 +1210,36 @@ describe('extractDepsFromSource placeholder handling (#2219)', () => {
     expect(extractDepsFromSource(source)).toEqual({ dependencies: [], devDependencies: [] });
   });
 });
+
+/**
+ * #2325: typography.astro builds its named exports with `createComponent`
+ * from `astro/runtime/server/index.js`. That is a subpath of a package the
+ * consumer already has, not a package -- and `pnpm add
+ * astro/runtime/server/index.js` fails, since the CLI's install path skips a
+ * dependency only on an exact name match against the consumer's package.json.
+ * The registry must never emit an `astro/` subpath as a dependency.
+ */
+describe('astro subpaths are never registry dependencies (#2325)', () => {
+  it('typography.astro imports the runtime subpath and lists no astro/ dependency', () => {
+    const typography = loadComponent('typography');
+    const astroFile = typography?.files.find((f) => f.path === 'components/ui/typography.astro');
+    if (!astroFile) throw new Error('typography.astro did not load');
+    // The mechanism is present in the served source...
+    expect(astroFile.content).toContain("from 'astro/runtime/server/index.js'");
+    // ...and never surfaces as something to install.
+    expect(astroFile.dependencies).not.toContain('astro/runtime/server/index.js');
+    expect(astroFile.dependencies.filter((dep) => dep.startsWith('astro/'))).toEqual([]);
+  });
+
+  it('no delivered component file lists an astro/ subpath as a dependency', () => {
+    const offenders: string[] = [];
+    for (const name of listComponentNames()) {
+      for (const file of loadComponent(name)?.files ?? []) {
+        for (const dep of file.dependencies) {
+          if (dep.startsWith('astro/')) offenders.push(`${file.path}: ${dep}`);
+        }
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+});

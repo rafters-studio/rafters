@@ -1,0 +1,37 @@
+---
+/**
+ * Type fixture for #2325, checked by this app's `astro check` (the one
+ * `astro check` in the workspace, so the one place `pnpm typecheck` can see
+ * an .astro file's named exports). It is never rendered or served.
+ *
+ * Proves two things about `import { H1, ... } from 'typography.astro'`:
+ *   - the named exports resolve WITH their declared props (a bad prop is a
+ *     type error, not silently `any`), and
+ *   - `class` is not a prop on any of them -- the `@ts-expect-error` below
+ *     would itself be an error if `class` were accepted.
+ */
+import Typography, {
+  Blockquote,
+  CodeBlock,
+  H1,
+  Li,
+  List,
+  P,
+} from '../../../../packages/ui/src/components/typography/typography.astro';
+
+// @ts-expect-error class is not a prop on a named typography export; it is discarded by design
+const rejected: Parameters<typeof H1>[0] = { class: 'bg-red-500' };
+const accepted: Parameters<typeof P>[0] = { size: 'xl', color: 'muted', id: 'intro' };
+void rejected;
+void accepted;
+---
+
+<H1 id="title">Named exports type-check</H1>
+<P size="xl" color="muted">Token props are typed on the named surface.</P>
+<Blockquote>The default export is still here beside them.</Blockquote>
+<CodeBlock>const x = 1;</CodeBlock>
+<List>
+  <Li>one</Li>
+  <Li>two</Li>
+</List>
+<Typography as="h2" size="2xl">Generic wrapper, unchanged</Typography>
