@@ -19,10 +19,11 @@
     "test:unit": "vitest run",
     "test:spec": "vitest run --project browser --project astro",
     "test:astro": "vitest run -p astro",
-    "test:astro:v6": "pnpm -C test/astro-matrix/v6 install --frozen-lockfile && pnpm -C test/astro-matrix/v6 test",
+    "test:astro:v6": "pnpm astro:v6:install && pnpm -C test/astro-matrix/v6 test",
     "test:a11y": "vitest run .a11y.",
     "check:astro": "astro check",
-    "check:astro:v6": "pnpm -C test/astro-matrix/v6 install --frozen-lockfile && pnpm -C test/astro-matrix/v6 check",
+    "check:astro:v6": "pnpm astro:v6:install && pnpm -C test/astro-matrix/v6 check",
+    "astro:v6:install": "pnpm -C test/astro-matrix/v6 install --frozen-lockfile",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

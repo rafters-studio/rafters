@@ -1,6 +1,11 @@
 {
   "extends": "../../../tsconfig.json",
   "compilerOptions": {
+    // `astro check` on this leg resolves the workspace's astro (7) from the
+    // component sources unless told otherwise; the two astro entries route
+    // `astro/types` and friends to the install in this directory. TypeScript
+    // replaces `paths` wholesale on `extends`, so the workspace mappings from
+    // tsconfig.base.json are repeated here, relative to this file.
     "paths": {
       "astro": ["./node_modules/astro"],
       "astro/*": ["./node_modules/astro/*"],
