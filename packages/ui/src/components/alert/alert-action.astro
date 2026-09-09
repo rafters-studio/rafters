@@ -1,0 +1,33 @@
+---
+/**
+ * AlertAction -- the Astro performance of Alert's action region, importable
+ * on its own so an Astro tree composes exactly like the React tree:
+ *
+ *   <Alert><AlertAction>...</AlertAction></Alert>
+ *
+ * alert.astro's named `action` slot remains as a convenience; this file is
+ * the parity surface. Both draw from the SAME class string in
+ * alert.classes.ts -- one score, one composition, no drift.
+ *
+ * Renders a `div`, matching the React `AlertAction` (alert.tsx:130).
+ * `AlertAction` is not a shadcn component -- it is an oracle addition, carried
+ * forward as it predates this port and composes cleanly (alert.md's
+ * disposition table). It ships a part file for the same reason the other two
+ * do: the React surface has the name, and Astro must be able to write it.
+ *
+ * `class` is NOT a prop -- design travels through token props only. It is
+ * discarded so `...attrs` cannot carry it onto the element.
+ *
+ * @parent alert
+ */
+import type { HTMLAttributes } from 'astro/types';
+import { alertActionClasses } from './alert.classes';
+
+type Props = Omit<HTMLAttributes<'div'>, 'class'>;
+
+const { class: _discardedClass, ...attrs } = Astro.props as Props & { class?: string };
+---
+
+<div data-slot="alert-action" class={alertActionClasses} {...attrs}>
+  <slot />
+</div>

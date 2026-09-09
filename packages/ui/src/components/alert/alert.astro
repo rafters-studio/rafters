@@ -77,11 +77,19 @@
  * optical alignment, not a contract -- absolute positioning and the `:has(svg)`
  * padding, which are what actually place the icon, both hold.
  *
- * Title renders a `div`, not the `h5` the React `AlertTitle` renders: a
- * bind-free static cannot omit an unfilled region without a slotchange
- * listener, and an always-present empty `h5` is an axe `empty-heading`
- * violation. Same disposition card and empty already record. A consumer who
- * wants a real heading slots one in.
+ * Alert composes two ways, matching card's model (card.md): the drop-in part
+ * files (`alert-title.astro`, `alert-description.astro`, `alert-action.astro`,
+ * #2323) are the parity surface, importable so an Astro tree composes exactly
+ * like the React tree. The named slots below (`title`, `description`,
+ * `action`) survive as a convenience, not the parity surface, and render only
+ * when `Astro.slots.has` finds content -- exactly the mechanism
+ * `card.astro:109-112` uses -- so composing the part files inside `<Alert>`
+ * never collides with an unfilled convenience wrapper, and a bare `<Alert>`
+ * leaves no phantom empty regions behind. The convenience wrapper for title
+ * stays a `div`, not the `h5` `alert-title.astro` renders: a consumer who
+ * wants the real heading composes `<AlertTitle>` instead, exactly as card's
+ * named-slot wrappers stay `div` regardless of the tag their matching part
+ * file renders.
  */
 import type { AriaAttrs } from '../../lib/contract';
 import { alert, type AlertConfig, type AlertVariant } from './alert.behavior';
@@ -106,13 +114,33 @@ const classes: AlertClassSet = alertClasses(config, {});
 // without it through contextual typing of the ?? {} fallback.
 const projection: AriaAttrs = alert.aria({}, config, { root: '' }).root ?? {};
 const role = projection.role;
+
+const hasTitle = Astro.slots.has('title');
+const hasDescription = Astro.slots.has('description');
+const hasAction = Astro.slots.has('action');
 ---
 
 <div data-part="root" role={role} class={classes.root} {...attrs}>
-  <div data-slot="alert-title" class={alertTitleClasses}><slot name="title" /></div>
-  <div data-slot="alert-description" class={alertDescriptionClasses}>
-    <slot name="description" />
-  </div>
-  <div data-slot="alert-action" class={alertActionClasses}><slot name="action" /></div>
+  {
+    hasTitle && (
+      <div data-slot="alert-title" class={alertTitleClasses}>
+        <slot name="title" />
+      </div>
+    )
+  }
+  {
+    hasDescription && (
+      <div data-slot="alert-description" class={alertDescriptionClasses}>
+        <slot name="description" />
+      </div>
+    )
+  }
+  {
+    hasAction && (
+      <div data-slot="alert-action" class={alertActionClasses}>
+        <slot name="action" />
+      </div>
+    )
+  }
   <slot />
 </div>
