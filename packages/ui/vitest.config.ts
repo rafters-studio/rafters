@@ -22,6 +22,9 @@ import { defineConfig } from 'vitest/config';
  * the unit tier they run in today until the test-suite trim retires them.
  */
 export default defineConfig({
+  // Inherited by the two inline projects (extends: true); the astro project
+  // opts out with extends: false so Astro's own transform owns its plugins.
+  plugins: [react()],
   test: {
     globals: true,
     reporters: ['default', 'json'],
@@ -34,7 +37,6 @@ export default defineConfig({
     projects: [
       {
         extends: true,
-        plugins: [react()],
         test: {
           name: 'unit',
           environment: 'happy-dom',
@@ -75,7 +77,6 @@ export default defineConfig({
       },
       {
         extends: true,
-        plugins: [react()],
         test: {
           name: 'browser',
           include: ['test/**/*.spec.{ts,tsx}', 'test/**/*.a11y.{ts,tsx}'],

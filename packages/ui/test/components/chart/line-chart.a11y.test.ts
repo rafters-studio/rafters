@@ -9,9 +9,8 @@
  */
 import * as React from 'react';
 import { act, cleanup, fireEvent, render } from '@testing-library/react';
-import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { axe } from 'vitest-axe';
-import * as srAnnouncer from '../../../src/primitives/sr-announcer';
 import { ChartContainer } from '../../../src/components/chart/chart';
 import { LineChart } from '../../../src/components/chart/line-chart';
 import { XAxis } from '../../../src/components/chart/x-axis';
@@ -20,18 +19,9 @@ import { lineChart } from '../../../src/components/chart/line-chart.behavior';
 import { hasArbitraryValue } from '../../../src/primitives/classy';
 import type { ChartConfig } from '../../../src/components/chart/chart.behavior';
 import { stubResizeObserver } from '../../harness/resize-observer';
+import { stubAnnounceToScreenReader } from '../../harness/sr-announcer';
 
-// A namespace spy rather than vi.mock: the unit project runs with isolate:
-// false, so a consumer module an earlier file already evaluated keeps its
-// binding to the real export, which a mock factory cannot reach. The spy
-// replaces the export in place and is restored so it never leaks forward.
-const announceToScreenReader = vi
-  .spyOn(srAnnouncer, 'announceToScreenReader')
-  .mockImplementation(() => {});
-
-afterAll(() => {
-  announceToScreenReader.mockRestore();
-});
+const announceToScreenReader = stubAnnounceToScreenReader();
 
 afterEach(() => {
   cleanup();
