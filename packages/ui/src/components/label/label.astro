@@ -45,14 +45,14 @@ import type { HTMLAttributes } from 'astro/types';
 import { labelClasses, type LabelClassSet } from './label.classes';
 import type { LabelVariant } from './label.behavior';
 
-interface Props extends HTMLAttributes<'label'> {
+interface Props extends Omit<HTMLAttributes<'label'>, 'class'> {
   variant?: LabelVariant;
 }
 
-const { variant = 'default', class: className, ...attrs } = Astro.props;
+const { variant = 'default', class: _discardedClass, ...attrs } = Astro.props as Props & { class?: string };
 
 const classes: LabelClassSet = labelClasses({ variant }, {});
-const rootClass = [classes.root, className].filter(Boolean).join(' ');
+const rootClass = classes.root;
 ---
 
 <label data-part="root" class={rootClass} {...attrs}><slot /></label>

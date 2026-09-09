@@ -1,7 +1,8 @@
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { assertAxeClean, partElement } from '../../harness/conformance';
 import Container from '../../../src/components/container/container.astro';
+import { containerClasses } from '../../../src/components/container/container.classes';
 
 afterEach(() => {
   document.body.innerHTML = '';
@@ -44,10 +45,23 @@ describe('container conformance [astro]', () => {
     expect(root.style.containerName).toBe('rail');
   });
 
-  it('consumer class merges via classy', async () => {
-    const body = await render({ class: 'min-h-screen' });
+  it('consumer class is discarded silently -- the root carries only its own projected classes', async () => {
+    const warn = vi.spyOn(console, 'warn');
+    const error = vi.spyOn(console, 'error');
+    const body = await render({ size: '6xl', padding: '6', class: 'bg-red-500 p-0' });
     const root = partElement(body, 'root') as HTMLElement;
-    expect(root.className).toContain('@container');
-    expect(root.className).toContain('min-h-screen');
+    expect(root.className).not.toContain('bg-red-500');
+    expect(root.className).not.toContain('p-0');
+    expect(root.getAttribute('class')).toBe(
+      containerClasses({ size: '6xl', padding: '6' }, {}).root,
+    );
+    expect(warn).not.toHaveBeenCalled();
+    expect(error).not.toHaveBeenCalled();
+  });
+
+  it('output with no class prop is unchanged', async () => {
+    const body = await render({ size: '6xl' });
+    const root = partElement(body, 'root') as HTMLElement;
+    expect(root.getAttribute('class')).toBe(containerClasses({ size: '6xl' }, {}).root);
   });
 });

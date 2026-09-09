@@ -64,7 +64,7 @@ import {
 import { imageClasses } from './image.classes';
 import type { PartIds } from '../../lib/contract';
 
-interface Props extends Omit<HTMLAttributes<'figure'>, 'src' | 'alt'> {
+interface Props extends Omit<HTMLAttributes<'figure'>, 'src' | 'alt' | 'class'> {
   src: string;
   alt: string;
   size?: ImageSize;
@@ -88,9 +88,9 @@ const {
   caption,
   errorMessage,
   loadingLabel,
-  class: className,
+  class: _discardedClass,
   ...attrs
-} = Astro.props;
+} = Astro.props as Props & { class?: string };
 
 const config: ImageConfig = { size, alignment, radius, fill, status, errorMessage, loadingLabel };
 const classes = imageClasses(config, {});
@@ -113,7 +113,7 @@ const statusAria = projection.status ?? {};
   data-status={status}
   data-error-message={errorMessage}
   data-loading-label={loadingLabel}
-  class={classy(classes.root, className)}
+  class={classy(classes.root)}
   {...attrs}
 >
   <div data-part="frame" class={classes.frame}>

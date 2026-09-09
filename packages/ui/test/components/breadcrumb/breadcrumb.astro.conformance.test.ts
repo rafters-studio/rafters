@@ -8,7 +8,7 @@
  * cleanliness. One score, three performances; here it is markup + slots.
  */
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { assertAxeClean, partElement } from '../../harness/conformance';
 import Breadcrumb from '../../../src/components/breadcrumb/breadcrumb.astro';
 
@@ -67,10 +67,14 @@ describe('breadcrumb conformance [astro]', () => {
     expect(body.querySelector('li[role="presentation"]')?.getAttribute('aria-hidden')).toBe('true');
   });
 
-  it('consumer class merges onto the nav via classy', async () => {
+  it('consumer class is discarded silently -- not merged onto the nav', async () => {
+    const warn = vi.spyOn(console, 'warn');
+    const error = vi.spyOn(console, 'error');
     const body = await render({ class: 'mb-4' });
     const root = partElement(body, 'root') as HTMLElement;
-    expect(root.className).toContain('mb-4');
+    expect(root.className).not.toContain('mb-4');
+    expect(warn).not.toHaveBeenCalled();
+    expect(error).not.toHaveBeenCalled();
   });
 
   it('is axe-clean -- the nav is its own landmark', async () => {

@@ -55,10 +55,9 @@ import { aspectRatioClasses } from './aspect-ratio.classes';
 
 interface Props {
   ratio?: number;
-  class?: string;
 }
 
-const { ratio = 1, class: className, ...attrs } = Astro.props;
+const { ratio = 1, class: _discardedClass, ...attrs } = Astro.props as Props & { class?: string };
 
 const config: AspectRatioConfig = { ratio };
 const classes = aspectRatioClasses(config, {});
@@ -67,6 +66,6 @@ const classes = aspectRatioClasses(config, {});
 const ratioStyle = `aspect-ratio: ${resolveRatio(config)}`;
 ---
 
-<div data-part="root" class={classy(classes.root, className)} style={ratioStyle} {...attrs}>
+<div data-part="root" class={classy(classes.root)} style={ratioStyle} {...attrs}>
   <slot />
 </div>

@@ -69,7 +69,7 @@ import {
   itemLabelClasses,
 } from './item.classes';
 
-interface Props extends HTMLAttributes<'div'> {
+interface Props extends Omit<HTMLAttributes<'div'>, 'class'> {
   selected?: boolean;
   disabled?: boolean;
   size?: 'default' | 'sm' | 'lg';
@@ -81,14 +81,14 @@ const {
   disabled = false,
   size = 'default',
   description,
-  class: className,
+  class: _discardedClass,
   ...attrs
-} = Astro.props;
+} = Astro.props as Props & { class?: string };
 
 const config: ItemConfig = { size: parseItemSize(size), selected, disabled };
 const classes = itemClasses(config, {});
 const aria = item.aria({}, config, { root: '' }).root ?? {};
-const rootClass = [classes.root, className].filter(Boolean).join(' ');
+const rootClass = classes.root;
 
 const hasIcon = Astro.slots.has('icon');
 ---

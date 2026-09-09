@@ -7,7 +7,7 @@
  * performances; here the performance is markup + classes + slot, nothing more.
  */
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { assertAxeClean, partElement } from '../../harness/conformance';
 import Kbd from '../../../src/components/kbd/kbd.astro';
 
@@ -52,11 +52,15 @@ describe('kbd conformance [astro]', () => {
     expect(root.textContent).toContain('Cmd');
   });
 
-  it('consumer class merges via classy', async () => {
+  it('consumer class is discarded silently -- not merged onto the root', async () => {
+    const warn = vi.spyOn(console, 'warn');
+    const error = vi.spyOn(console, 'error');
     const body = await render({ class: 'ml-1' });
     const root = partElement(body, 'root') as HTMLElement;
     expect(root.className).toContain('inline-flex');
-    expect(root.className).toContain('ml-1');
+    expect(root.className).not.toContain('ml-1');
+    expect(warn).not.toHaveBeenCalled();
+    expect(error).not.toHaveBeenCalled();
   });
 
   it('is axe-clean scoped to the rendered cap', async () => {

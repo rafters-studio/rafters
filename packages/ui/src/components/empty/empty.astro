@@ -81,14 +81,12 @@ import {
   emptyTitleClasses,
 } from './empty.classes';
 
-interface Props {
-  class?: string;
-}
+interface Props {}
 
-const { class: className, ...attrs } = Astro.props;
+const { class: _discardedClass, ...attrs } = Astro.props as Props & { class?: string };
 
 const classes: EmptyClassSet = emptyClasses({}, {});
-const rootClass = [classes.root, className].filter(Boolean).join(' ');
+const rootClass = classes.root;
 ---
 
 <div data-part="root" class={rootClass} {...attrs}>

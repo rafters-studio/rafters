@@ -8,7 +8,7 @@
  * slots, nothing more.
  */
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { assertAxeClean, partElement } from '../../harness/conformance';
 import Empty from '../../../src/components/empty/empty.astro';
 
@@ -48,6 +48,17 @@ describe('empty conformance [astro]', () => {
     const body = await render();
     const parts = body.querySelectorAll('[data-part]');
     expect(parts).toHaveLength(1);
+  });
+
+  it('consumer class is discarded silently -- not merged onto the root', async () => {
+    const warn = vi.spyOn(console, 'warn');
+    const error = vi.spyOn(console, 'error');
+    const body = await render({ class: 'mt-4' });
+    const root = partElement(body, 'root') as HTMLElement;
+    expect(root.className).toContain('flex flex-col');
+    expect(root.className).not.toContain('mt-4');
+    expect(warn).not.toHaveBeenCalled();
+    expect(error).not.toHaveBeenCalled();
   });
 
   it('exposes the icon/title/description/action named-slot regions', async () => {

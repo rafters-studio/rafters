@@ -55,16 +55,16 @@ import classy from '../../primitives/classy';
 import type { BadgeSize, BadgeVariant } from './badge.behavior';
 import { badgeClasses } from './badge.classes';
 
-interface Props extends HTMLAttributes<'span'> {
+interface Props extends Omit<HTMLAttributes<'span'>, 'class'> {
   /** Visual variant. The oracle's full vocabulary (contract, boundary 9). */
   variant?: BadgeVariant;
   size?: BadgeSize;
 }
 
-const { variant, size, class: className, ...attrs } = Astro.props;
+const { variant, size, class: _discardedClass, ...attrs } = Astro.props as Props & { class?: string };
 
 const classes = badgeClasses({ variant, size }, {});
-const rootClass = classy(classes.root, className);
+const rootClass = classy(classes.root);
 ---
 
 <span

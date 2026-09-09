@@ -73,15 +73,16 @@ interface Props {
   provider?: EmbedProvider;
   aspectRatio?: AspectRatio;
   title?: string;
-  class?: string;
 }
 
-const { url, provider, aspectRatio, title, class: className } = Astro.props;
+const { url, provider, aspectRatio, title, class: _discardedClass } = Astro.props as Props & {
+  class?: string;
+};
 
 const descriptor = resolveEmbed({ url, provider, aspectRatio, title });
 
-const containerClass = [embedContainerClasses, className].filter(Boolean).join(' ');
-const fallbackClass = [embedFallbackClasses, className].filter(Boolean).join(' ');
+const containerClass = embedContainerClasses;
+const fallbackClass = embedFallbackClasses;
 ---
 
 {

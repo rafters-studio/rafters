@@ -5,7 +5,7 @@
  * <script>, so the test calls bindProgress directly -- that IS the script's job.
  */
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import Progress from '../../../src/components/progress/progress.astro';
 import {
   bindProgress,
@@ -72,10 +72,14 @@ describe('progress conformance [astro]', () => {
     expect(root.getAttribute('aria-valuetext')).toBe('3 of 10 files');
   });
 
-  it('consumer class merges via classy', async () => {
+  it('consumer class is discarded silently -- not merged onto the root', async () => {
+    const warn = vi.spyOn(console, 'warn');
+    const error = vi.spyOn(console, 'error');
     const root = await mount({ value: 50, class: 'my-4', 'aria-label': 'Upload' });
     expect(root.className).toContain('rounded-full');
-    expect(root.className).toContain('my-4');
+    expect(root.className).not.toContain('my-4');
+    expect(warn).not.toHaveBeenCalled();
+    expect(error).not.toHaveBeenCalled();
   });
 
   // The #2001 pairing: config is data-* in the markup AND read through dataset

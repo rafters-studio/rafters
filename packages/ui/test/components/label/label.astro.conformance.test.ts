@@ -7,7 +7,7 @@
  * score, three performances; here the performance is markup + classes + slot.
  */
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import Label from '../../../src/components/label/label.astro';
 import { assertAxeClean, partElement } from '../../harness/conformance';
 
@@ -56,6 +56,17 @@ describe('label conformance [astro]', () => {
     const body = await render({ for: 'email' }, { default: 'Email' });
     const root = partElement(body, 'root') as HTMLElement;
     expect(root.getAttribute('for')).toBe('email');
+  });
+
+  it('consumer class is discarded silently -- not merged onto the root', async () => {
+    const warn = vi.spyOn(console, 'warn');
+    const error = vi.spyOn(console, 'error');
+    const body = await render({ class: 'mb-1' }, { default: 'Email' });
+    const root = partElement(body, 'root') as HTMLElement;
+    expect(root.className).toContain('ts-label-medium');
+    expect(root.className).not.toContain('mb-1');
+    expect(warn).not.toHaveBeenCalled();
+    expect(error).not.toHaveBeenCalled();
   });
 
   it('slotted content projects into the label', async () => {

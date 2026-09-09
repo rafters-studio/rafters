@@ -95,14 +95,13 @@ import {
 
 interface Props {
   variant?: AlertVariant;
-  class?: string;
 }
 
-const { variant, class: className, ...attrs } = Astro.props;
+const { variant, class: _discardedClass, ...attrs } = Astro.props as Props & { class?: string };
 
 const config: AlertConfig = { variant };
 const classes: AlertClassSet = alertClasses(config, {});
-const rootClass = [classes.root, className].filter(Boolean).join(' ');
+const rootClass = classes.root;
 
 // Annotation is documentation, not load-bearing -- inference reaches AriaAttrs
 // without it through contextual typing of the ?? {} fallback.

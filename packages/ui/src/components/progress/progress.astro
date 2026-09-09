@@ -63,7 +63,7 @@ import {
 import { progressClasses } from './progress.classes';
 import type { PartIds } from '../../lib/contract';
 
-interface Props extends HTMLAttributes<'div'> {
+interface Props extends Omit<HTMLAttributes<'div'>, 'class'> {
   value?: number;
   max?: number;
   variant?: ProgressVariant;
@@ -78,9 +78,9 @@ const {
   variant = 'default',
   size = 'default',
   valueText,
-  class: className,
+  class: _discardedClass,
   ...attrs
-} = Astro.props;
+} = Astro.props as Props & { class?: string };
 
 const config: ProgressConfig = { value, max, variant, size, valueText };
 const state = progress.initialState(config);
@@ -107,7 +107,7 @@ const indicatorStyle = indeterminate ? undefined : `width: ${percent}%`;
   data-variant={variant}
   data-size={size}
   data-value-text={valueText}
-  class={classy(classes.root, className)}
+  class={classy(classes.root)}
   {...rootAria}
   {...attrs}
 >

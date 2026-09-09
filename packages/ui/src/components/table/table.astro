@@ -57,10 +57,10 @@
 import type { HTMLAttributes } from 'astro/types';
 import { tableRootClasses, tableWrapperClasses } from './table.classes';
 
-interface Props extends HTMLAttributes<'table'> {}
+interface Props extends Omit<HTMLAttributes<'table'>, 'class'> {}
 
-const { class: className, ...attrs } = Astro.props;
-const rootClass = [tableRootClasses, className].filter(Boolean).join(' ');
+const { class: _discardedClass, ...attrs } = Astro.props as Props & { class?: string };
+const rootClass = tableRootClasses;
 ---
 
 <div class={tableWrapperClasses}>

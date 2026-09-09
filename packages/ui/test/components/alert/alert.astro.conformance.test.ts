@@ -8,7 +8,7 @@
  * cleanliness.
  */
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import Alert from '../../../src/components/alert/alert.astro';
 import { alert } from '../../../src/components/alert/alert.behavior';
 import { assertAxeClean, assertContractFulfillment, partElement } from '../../harness/conformance';
@@ -61,10 +61,14 @@ describe('alert conformance [astro]', () => {
     expect(root.className).toContain('bg-primary-subtle');
   });
 
-  it('consumer class merges onto the root', async () => {
+  it('consumer class is discarded silently -- not merged onto the root', async () => {
+    const warn = vi.spyOn(console, 'warn');
+    const error = vi.spyOn(console, 'error');
     const root = partElement(await render({ class: 'mt-4' }), 'root') as HTMLElement;
     expect(root.className).toContain('relative w-full rounded-lg');
-    expect(root.className).toContain('mt-4');
+    expect(root.className).not.toContain('mt-4');
+    expect(warn).not.toHaveBeenCalled();
+    expect(error).not.toHaveBeenCalled();
   });
 
   it('root is the only declared part -- sub-wrappers carry classes, not data-part', async () => {

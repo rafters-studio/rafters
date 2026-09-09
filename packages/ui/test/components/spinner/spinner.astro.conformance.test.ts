@@ -7,7 +7,7 @@
  * classes, and axe cleanliness. One score, three performances.
  */
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import Spinner from '../../../src/components/spinner/spinner.astro';
 import { spinner } from '../../../src/components/spinner/spinner.behavior';
 import { assertAxeClean, assertContractFulfillment, partElement } from '../../harness/conformance';
@@ -53,6 +53,16 @@ describe('spinner conformance [astro]', () => {
   it('root is the only declared part', async () => {
     const parts = (await render()).querySelectorAll('[data-part]');
     expect(parts).toHaveLength(1);
+  });
+
+  it('consumer class is discarded silently -- not merged onto the root', async () => {
+    const warn = vi.spyOn(console, 'warn');
+    const error = vi.spyOn(console, 'error');
+    const root = partElement(await render({ class: 'ml-2' }), 'root') as HTMLElement;
+    expect(root.className).toContain('animate-spin-spin');
+    expect(root.className).not.toContain('ml-2');
+    expect(warn).not.toHaveBeenCalled();
+    expect(error).not.toHaveBeenCalled();
   });
 
   it('is axe-clean rendered inside a landmark', async () => {

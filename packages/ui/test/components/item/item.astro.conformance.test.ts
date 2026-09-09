@@ -6,7 +6,7 @@
  * and the Web Component. One score, three performances.
  */
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import Item from '../../../src/components/item/item.astro';
 import { item } from '../../../src/components/item/item.behavior';
 import { assertAxeClean, assertContractFulfillment, partElement } from '../../harness/conformance';
@@ -71,6 +71,17 @@ describe('item conformance [astro]', () => {
     expect(icon).not.toBeNull();
     expect(root.textContent).toContain('Profile');
     expect(root.textContent).toContain('Manage your account');
+  });
+
+  it('consumer class is discarded silently -- not merged onto the root', async () => {
+    const warn = vi.spyOn(console, 'warn');
+    const error = vi.spyOn(console, 'error');
+    const body = await render({ class: 'mt-4' }, { default: 'Settings' });
+    const root = partElement(body, 'root') as HTMLElement;
+    expect(root.className).toContain('flex items-center');
+    expect(root.className).not.toContain('mt-4');
+    expect(warn).not.toHaveBeenCalled();
+    expect(error).not.toHaveBeenCalled();
   });
 
   it('only the row is a declared part -- wrappers carry classes, no data-part', async () => {
