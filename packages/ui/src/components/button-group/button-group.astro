@@ -50,7 +50,7 @@ import classy from '../../primitives/classy';
 import { buttonGroup, type ButtonGroupConfig, type ButtonGroupOrientation } from './button-group.behavior';
 import { buttonGroupClasses } from './button-group.classes';
 
-interface Props extends HTMLAttributes<'div'> {
+interface Props extends Omit<HTMLAttributes<'div'>, 'class'> {
   orientation?: ButtonGroupOrientation;
   'aria-label'?: string;
 }
@@ -58,9 +58,9 @@ interface Props extends HTMLAttributes<'div'> {
 const {
   orientation = 'horizontal',
   'aria-label': ariaLabel,
-  class: className,
+  class: _discardedClass,
   ...attrs
-} = Astro.props;
+} = Astro.props as Props & { class?: string };
 
 const config: ButtonGroupConfig = { orientation };
 const classes = buttonGroupClasses(config, {});
@@ -70,7 +70,7 @@ const { root: aria } = buttonGroup.aria({}, config, { root: '' });
 <div
   data-part="root"
   data-orientation={orientation}
-  class={classy(classes.root, className)}
+  class={classy(classes.root)}
   aria-label={ariaLabel}
   {...aria}
   {...attrs}

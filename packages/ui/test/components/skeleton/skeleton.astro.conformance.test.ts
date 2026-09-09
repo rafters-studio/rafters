@@ -8,7 +8,7 @@
  * nothing more.
  */
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { assertAxeClean, partElement } from '../../harness/conformance';
 import Skeleton from '../../../src/components/skeleton/skeleton.astro';
 
@@ -52,12 +52,16 @@ describe('skeleton conformance [astro]', () => {
     expect(root.getAttribute('data-slot')).toBe('skeleton');
   });
 
-  it('merges a consumer class through the same projection', async () => {
+  it('consumer class is discarded silently -- not merged onto the root', async () => {
+    const warn = vi.spyOn(console, 'warn');
+    const error = vi.spyOn(console, 'error');
     const body = await render({ class: 'h-4 w-48' });
     const root = partElement(body, 'root') as HTMLElement;
     expect(root.className).toContain('animate-pulse-shimmer');
-    expect(root.className).toContain('h-4');
-    expect(root.className).toContain('w-48');
+    expect(root.className).not.toContain('h-4');
+    expect(root.className).not.toContain('w-48');
+    expect(warn).not.toHaveBeenCalled();
+    expect(error).not.toHaveBeenCalled();
   });
 
   it('is axe-clean rendered inside a landmark', async () => {

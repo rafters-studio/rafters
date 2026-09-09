@@ -5,7 +5,7 @@
  * bind. One score, three performances.
  */
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import ButtonGroup from '../../../src/components/button-group/button-group.astro';
 import { buttonGroup } from '../../../src/components/button-group/button-group.behavior';
 import { assertAxeClean, assertContractFulfillment, partElement } from '../../harness/conformance';
@@ -60,10 +60,14 @@ describe('button-group conformance [astro]', () => {
     expect(root.getAttribute('data-testid')).toBe('bg');
   });
 
-  it('consumer class merges via classy', async () => {
+  it('consumer class is discarded silently -- not merged onto the root', async () => {
+    const warn = vi.spyOn(console, 'warn');
+    const error = vi.spyOn(console, 'error');
     const body = await render({ class: 'mt-4', 'aria-label': 'Actions' });
     const root = partElement(body, 'root') as HTMLElement;
     expect(root.className).toContain('inline-flex');
-    expect(root.className).toContain('mt-4');
+    expect(root.className).not.toContain('mt-4');
+    expect(warn).not.toHaveBeenCalled();
+    expect(error).not.toHaveBeenCalled();
   });
 });

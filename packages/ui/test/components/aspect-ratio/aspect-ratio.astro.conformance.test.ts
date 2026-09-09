@@ -8,7 +8,7 @@
  * performance is markup + classes + slot, nothing more.
  */
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import AspectRatio from '../../../src/components/aspect-ratio/aspect-ratio.astro';
 import { assertAxeClean, partElement } from '../../harness/conformance';
 
@@ -71,11 +71,15 @@ describe('aspect-ratio conformance [astro]', () => {
     expect(paintedRatio(root)).toBe(String(16 / 9));
   });
 
-  it('consumer class merges via classy', async () => {
+  it('consumer class is discarded silently -- not merged onto the root', async () => {
+    const warn = vi.spyOn(console, 'warn');
+    const error = vi.spyOn(console, 'error');
     const body = await render({ class: 'rounded-lg' });
     const root = partElement(body, 'root') as HTMLElement;
     expect(root.className).toContain('relative w-full');
-    expect(root.className).toContain('rounded-lg');
+    expect(root.className).not.toContain('rounded-lg');
+    expect(warn).not.toHaveBeenCalled();
+    expect(error).not.toHaveBeenCalled();
   });
 
   it('is axe-clean rendered inside a landmark', async () => {

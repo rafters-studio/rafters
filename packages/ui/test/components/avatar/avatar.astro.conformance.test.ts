@@ -7,7 +7,7 @@
  * the empty projection, and axe cleanliness.
  */
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { assertAxeClean, partElement } from '../../harness/conformance';
 import { avatarSizeClasses } from '../../../src/components/avatar/avatar.classes';
 import Avatar from '../../../src/components/avatar/avatar.astro';
@@ -80,6 +80,17 @@ describe('avatar conformance [astro]', () => {
     const body = await render({ size: 'xl', src: '/user.jpg', alt: 'Jane Doe' });
     const root = partElement(body, 'root') as HTMLElement;
     expect(root.className).toContain(avatarSizeClasses.xl);
+  });
+
+  it('consumer class is discarded silently -- not merged onto the root', async () => {
+    const warn = vi.spyOn(console, 'warn');
+    const error = vi.spyOn(console, 'error');
+    const body = await render({ src: '/user.jpg', alt: 'Jane Doe', class: 'ml-2' });
+    const root = partElement(body, 'root') as HTMLElement;
+    expect(root.className).toContain('rounded-full');
+    expect(root.className).not.toContain('ml-2');
+    expect(warn).not.toHaveBeenCalled();
+    expect(error).not.toHaveBeenCalled();
   });
 
   it('is axe-clean with an alt-bearing image', async () => {

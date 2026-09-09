@@ -5,7 +5,7 @@
  * so the test calls bindImage directly -- that IS the script's job.
  */
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import Image from '../../../src/components/image/image.astro';
 import { bindImage, image, type ImageConfig } from '../../../src/components/image/image.behavior';
 import {
@@ -69,13 +69,17 @@ describe('image conformance [astro]', () => {
     expect(caption.textContent?.trim()).toBe('Photo by John Doe');
   });
 
-  it('consumer class merges via classy', async () => {
+  it('consumer class is discarded silently -- not merged onto the root', async () => {
+    const warn = vi.spyOn(console, 'warn');
+    const error = vi.spyOn(console, 'error');
     const root = await mount({ src: SRC, alt: 'Photo', radius: '2xl', class: 'my-4' });
     // The figure carries base + alignment; the radius token lands on the frame.
     expect(root.className).toContain('mx-auto');
-    expect(root.className).toContain('my-4');
+    expect(root.className).not.toContain('my-4');
     const frame = partElement(root, 'frame') as HTMLElement;
     expect(frame.className).toContain('rounded-2xl');
+    expect(warn).not.toHaveBeenCalled();
+    expect(error).not.toHaveBeenCalled();
   });
 
   // The #2001 pairing: config is data-* in the markup AND read through dataset

@@ -69,7 +69,7 @@ import type {
 import { containerClasses } from './container.classes';
 import type { ResponsiveColumns } from '../grid/grid.behavior';
 
-interface Props extends HTMLAttributes<'div'> {
+interface Props extends Omit<HTMLAttributes<'div'>, 'class'> {
   as?: ContainerElement;
   size?: ContainerSize;
   padding?: ContainerPadding;
@@ -99,9 +99,9 @@ const {
   position,
   depth,
   fill,
-  class: className,
+  class: _discardedClass,
   ...attrs
-} = Astro.props;
+} = Astro.props as Props & { class?: string };
 
 const config: ContainerConfig = {
   as: Tag,
@@ -127,7 +127,7 @@ const containerStyle = queryName ? `container-name: ${queryName}` : undefined;
 
 <Tag
   data-part="root"
-  class={classy(classes.root, className)}
+  class={classy(classes.root)}
   style={containerStyle}
   data-fill={fill || undefined}
   {...attrs}

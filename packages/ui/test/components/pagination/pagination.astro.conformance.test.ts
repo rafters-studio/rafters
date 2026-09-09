@@ -9,7 +9,7 @@
  * performances; here it is markup + slots.
  */
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { assertAxeClean, partElement } from '../../harness/conformance';
 import Pagination from '../../../src/components/pagination/pagination.astro';
 
@@ -73,10 +73,14 @@ describe('pagination conformance [astro]', () => {
     expect(body.querySelector('span[aria-hidden="true"] .sr-only')?.textContent).toBe('More pages');
   });
 
-  it('consumer class merges onto the nav via classy', async () => {
+  it('consumer class is discarded silently -- not merged onto the nav', async () => {
+    const warn = vi.spyOn(console, 'warn');
+    const error = vi.spyOn(console, 'error');
     const body = await render({ class: 'mt-4' });
     const root = partElement(body, 'root') as HTMLElement;
-    expect(root.className).toContain('mt-4');
+    expect(root.className).not.toContain('mt-4');
+    expect(warn).not.toHaveBeenCalled();
+    expect(error).not.toHaveBeenCalled();
   });
 
   it('is axe-clean -- the nav is its own landmark', async () => {

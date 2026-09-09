@@ -9,7 +9,7 @@
  * classes, nothing more.
  */
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { BADGE_VARIANTS, badge } from '../../../src/components/badge/badge.behavior';
 import { assertAxeClean, assertContractFulfillment, partElement } from '../../harness/conformance';
 import Badge from '../../../src/components/badge/badge.astro';
@@ -68,11 +68,15 @@ describe('badge conformance [astro]', () => {
     expect(root.getAttribute('data-slot')).toBe('badge');
   });
 
-  it('consumer class merges via classy', async () => {
+  it('consumer class is discarded silently -- not merged onto the root', async () => {
+    const warn = vi.spyOn(console, 'warn');
+    const error = vi.spyOn(console, 'error');
     const body = await render({ class: 'ml-2' }, { default: 'Tagged' });
     const root = partElement(body, 'root') as HTMLElement;
     expect(root.className).toContain('bg-primary');
-    expect(root.className).toContain('ml-2');
+    expect(root.className).not.toContain('ml-2');
+    expect(warn).not.toHaveBeenCalled();
+    expect(error).not.toHaveBeenCalled();
   });
 
   it('passes through arbitrary HTML attributes', async () => {

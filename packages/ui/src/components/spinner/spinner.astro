@@ -42,16 +42,16 @@ import classy from '../../primitives/classy';
 import { spinner, type SpinnerConfig } from './spinner.behavior';
 import { spinnerClasses } from './spinner.classes';
 
-interface Props extends HTMLAttributes<'output'> {
+interface Props extends Omit<HTMLAttributes<'output'>, 'class'> {
   size?: SpinnerConfig['size'];
   variant?: SpinnerConfig['variant'];
 }
 
-const { size, variant, class: className, ...attrs } = Astro.props;
+const { size, variant, class: _discardedClass, ...attrs } = Astro.props as Props & { class?: string };
 
 const config: SpinnerConfig = { size, variant };
 const classes = spinnerClasses(config, {});
 const { root: aria } = spinner.aria({}, config, { root: '' });
 ---
 
-<output data-part="root" class={classy(classes.root, className)} {...aria} {...attrs}></output>
+<output data-part="root" class={classy(classes.root)} {...aria} {...attrs}></output>

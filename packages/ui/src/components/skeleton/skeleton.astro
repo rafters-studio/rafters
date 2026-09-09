@@ -41,15 +41,12 @@
 import { skeleton } from './skeleton.behavior';
 import { skeletonClasses } from './skeleton.classes';
 
-interface Props {
-  class?: string;
-}
+interface Props {}
 
-const { class: className, ...attrs } = Astro.props;
+const { class: _discardedClass, ...attrs } = Astro.props as Props & { class?: string };
 
 const classes = skeletonClasses({}, {});
-const rootClass = [classes.root, className].filter(Boolean).join(' ');
 const aria = skeleton.aria({}, {}, { root: '' }).root;
 ---
 
-<div data-part="root" data-slot="skeleton" class={rootClass} {...aria} {...attrs}></div>
+<div data-part="root" data-slot="skeleton" class={classes.root} {...aria} {...attrs}></div>

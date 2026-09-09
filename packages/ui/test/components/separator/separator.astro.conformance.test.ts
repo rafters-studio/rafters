@@ -7,7 +7,7 @@
  * axe cleanliness. `decorative` is a plain boolean prop default true.
  */
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import Separator from '../../../src/components/separator/separator.astro';
 import { assertAxeClean, partElement } from '../../harness/conformance';
 
@@ -50,6 +50,16 @@ describe('separator conformance [astro]', () => {
     const root = partElement(await render({ orientation: 'vertical' }), 'root') as HTMLElement;
     expect(root.className).toContain('h-full w-px');
     expect(root.className).not.toContain('h-px w-full');
+  });
+
+  it('consumer class is discarded silently -- not merged onto the root', async () => {
+    const warn = vi.spyOn(console, 'warn');
+    const error = vi.spyOn(console, 'error');
+    const root = partElement(await render({ class: 'mx-4' }), 'root') as HTMLElement;
+    expect(root.className).toContain('shrink-0');
+    expect(root.className).not.toContain('mx-4');
+    expect(warn).not.toHaveBeenCalled();
+    expect(error).not.toHaveBeenCalled();
   });
 
   it('root is the only declared part -- a rule has no content or sub-parts', async () => {

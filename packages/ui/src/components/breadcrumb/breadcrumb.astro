@@ -75,11 +75,11 @@
 import type { HTMLAttributes } from 'astro/types';
 import classy from '../../primitives/classy';
 
-interface Props extends HTMLAttributes<'nav'> {}
+interface Props extends Omit<HTMLAttributes<'nav'>, 'class'> {}
 
-const { class: className, ...attrs } = Astro.props;
+const { class: _discardedClass, ...attrs } = Astro.props as Props & { class?: string };
 ---
 
-<nav data-part="root" aria-label="Breadcrumb" class={classy(className)} {...attrs}>
+<nav data-part="root" aria-label="Breadcrumb" class={classy()} {...attrs}>
   <slot />
 </nav>

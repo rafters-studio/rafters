@@ -47,14 +47,17 @@ import { separatorClasses } from './separator.classes';
 interface Props {
   orientation?: SeparatorOrientation;
   decorative?: boolean;
-  class?: string;
 }
 
-const { orientation = 'horizontal', decorative = true, class: className, ...attrs } = Astro.props;
+const {
+  orientation = 'horizontal',
+  decorative = true,
+  class: _discardedClass,
+  ...attrs
+} = Astro.props as Props & { class?: string };
 
 const config: SeparatorConfig = { orientation, decorative };
 const classes = separatorClasses(config, {});
-const rootClass = [classes.root, className].filter(Boolean).join(' ');
 
 // The annotation documents the projection's type; inference reaches the same
 // result without it (contextual typing of the ?? {} fallback), so it is
@@ -68,6 +71,6 @@ const ariaOrientation = projection['aria-orientation'] as SeparatorOrientation |
   data-part="root"
   role={role}
   aria-orientation={ariaOrientation}
-  class={rootClass}
+  class={classes.root}
   {...attrs}
 />

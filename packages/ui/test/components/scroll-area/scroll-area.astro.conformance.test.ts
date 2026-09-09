@@ -8,7 +8,7 @@
  * slot, nothing more.
  */
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { assertAxeClean, partElement } from '../../harness/conformance';
 import ScrollArea from '../../../src/components/scroll-area/scroll-area.astro';
 
@@ -55,6 +55,17 @@ describe('scroll-area conformance [astro]', () => {
     const root = partElement(body, 'root') as HTMLElement;
     expect(root.className).toContain('overflow-x-auto');
     expect(root.className).not.toContain('overflow-y-auto');
+  });
+
+  it('consumer class is discarded silently -- not merged onto the root', async () => {
+    const warn = vi.spyOn(console, 'warn');
+    const error = vi.spyOn(console, 'error');
+    const body = await render({ class: 'mx-4' });
+    const root = partElement(body, 'root') as HTMLElement;
+    expect(root.className).toContain('h-full w-full');
+    expect(root.className).not.toContain('mx-4');
+    expect(warn).not.toHaveBeenCalled();
+    expect(error).not.toHaveBeenCalled();
   });
 
   it('slotted content projects into the surface', async () => {

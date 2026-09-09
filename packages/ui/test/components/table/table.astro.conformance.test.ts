@@ -10,7 +10,7 @@
  * classes + slot, nothing more.
  */
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import Table from '../../../src/components/table/table.astro';
 import { tableRowAttrs } from '../../../src/components/table/table.behavior';
 import {
@@ -106,5 +106,16 @@ describe('table conformance [astro]', () => {
   it('is axe-clean rendered inside a landmark', async () => {
     const dom = await render();
     await assertAxeClean(dom);
+  });
+
+  it('consumer class is discarded silently -- not merged onto the root', async () => {
+    const warn = vi.spyOn(console, 'warn');
+    const error = vi.spyOn(console, 'error');
+    const dom = await render({ class: 'mt-4' });
+    const root = partElement(dom, 'root') as HTMLElement;
+    expect(root.className).toContain('w-full');
+    expect(root.className).not.toContain('mt-4');
+    expect(warn).not.toHaveBeenCalled();
+    expect(error).not.toHaveBeenCalled();
   });
 });

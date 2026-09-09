@@ -7,7 +7,7 @@
  * cleanliness. One score, three performances; here it is markup + classes.
  */
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { axe } from 'vitest-axe';
 import { partElement } from '../../harness/conformance';
 import Embed from '../../../src/components/embed/embed.astro';
@@ -79,6 +79,26 @@ describe('embed conformance [astro]', () => {
   it('root is the only declared part -- the iframe carries no data-part', async () => {
     const body = await render({ url: YOUTUBE });
     expect(body.querySelectorAll('[data-part]')).toHaveLength(1);
+  });
+
+  it('consumer class is discarded silently -- not merged onto the iframe root or fallback', async () => {
+    const warn = vi.spyOn(console, 'warn');
+    const error = vi.spyOn(console, 'error');
+    const iframeRoot = partElement(
+      await render({ url: YOUTUBE, class: 'mt-4' }),
+      'root',
+    ) as HTMLElement;
+    expect(iframeRoot.className).toContain('relative');
+    expect(iframeRoot.className).not.toContain('mt-4');
+
+    const fallbackRoot = partElement(
+      await render({ url: 'https://evil.com/watch?v=x', class: 'mt-4' }),
+      'root',
+    ) as HTMLElement;
+    expect(fallbackRoot.className).not.toContain('mt-4');
+
+    expect(warn).not.toHaveBeenCalled();
+    expect(error).not.toHaveBeenCalled();
   });
 
   it('is axe-clean rendered inside a landmark', async () => {

@@ -58,15 +58,15 @@ import { scrollAreaClasses } from './scroll-area.classes';
 
 interface Props {
   orientation?: ScrollAreaOrientation;
-  class?: string;
 }
 
-const { orientation = 'vertical', class: className, ...attrs } = Astro.props;
+const { orientation = 'vertical', class: _discardedClass, ...attrs } = Astro.props as Props & {
+  class?: string;
+};
 
 const classes = scrollAreaClasses({ orientation }, {});
-const rootClass = [classes.root, className].filter(Boolean).join(' ');
 ---
 
-<div data-part="root" class={rootClass} {...attrs}>
+<div data-part="root" class={classes.root} {...attrs}>
   <slot />
 </div>

@@ -60,7 +60,7 @@ import {
 } from './avatar.behavior';
 import { avatarClasses } from './avatar.classes';
 
-interface Props extends HTMLAttributes<'span'> {
+interface Props extends Omit<HTMLAttributes<'span'>, 'class'> {
   size?: AvatarSize;
   src?: string;
   alt?: string;
@@ -70,13 +70,21 @@ interface Props extends HTMLAttributes<'span'> {
   fallback?: string;
 }
 
-const { size, src, alt = '', status, fallback, class: className, ...attrs } = Astro.props;
+const {
+  size,
+  src,
+  alt = '',
+  status,
+  fallback,
+  class: _discardedClass,
+  ...attrs
+} = Astro.props as Props & { class?: string };
 
 const effectiveStatus: AvatarStatus = status ?? (src ? 'loaded' : 'error');
 const config: AvatarConfig = { size, status: effectiveStatus };
 const resolved = resolveAvatar(config);
 const classes = avatarClasses(config);
-const rootClass = classy(classes.root, className);
+const rootClass = classy(classes.root);
 ---
 
 <span data-part="root" class={rootClass} {...attrs}>
