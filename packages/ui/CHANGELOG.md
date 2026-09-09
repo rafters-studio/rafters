@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Typography named exports on the Astro target (#2325).** The single
+  `typography.astro` now exports the same 20 names `typography.tsx` exports
+  (`H1`-`H6`, `P`, `Lead`, `Large`, `Muted`, `Small`, `Code`, `CodeBlock`,
+  `Blockquote`, `Mark`, `Abbr`, `Ul`, `Ol`, `Li`, and the `List` alias), so
+  `import { H1, P } from './typography.astro'` is a drop-in beside the
+  unchanged default `<Typography as>`. Each is a `createComponent` export the
+  Astro compiler hoists to module scope, typed per tag so `astro check` flags
+  a bad prop; every one resolves its class through `resolveTypography` and
+  discards a consumer `class` silently, before the rest spread. The registry
+  no longer classifies `astro/` subpaths (`astro/runtime/server/index.js`,
+  `astro/types`) as installable dependencies.
 - **Line chart component (#2226).** The second chart-type mark on the same
   cartesian machinery Bar (#2225) proved out: one path per series
   (`computeLinePoints`/`buildSeriesPath`), shadcn-API parity -- a composed
@@ -113,6 +124,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   there the consumer supplies the tag and should pass a real heading.
 
 ### Changed
+
+- **Astro pin moves to 7 and the Astro tests run against 6 and 7 (#2327).**
+  `astro` is `^7.3.2` here and in `apps/registry`, so the `.astro` files the
+  registry serves compile under `@astrojs/compiler-rs`, the strict Rust
+  compiler the consumer sites run. A second, isolated install under
+  `test/astro-matrix/v6` runs the same test files and `astro check` against
+  Astro 6 (`test:astro:v6`, `check:astro:v6`); CI reports each leg on its own.
+  `astro check` now runs on `packages/ui` and is clean on both majors: the
+  nine diagnostics it surfaced were fixed in place (a `type` prop typed as
+  `string` on input and input-group, literal `role`/`aria-hidden` values
+  widened to `string` on slider and input-otp, a dead `id` on context-menu's
+  root and a dead `class` on dialog's trigger, and a `{}` in command's doc
+  example that hid its `Props` from the language server). None changes the
+  rendered markup.
 
 - **Card adopts shadcn v4 spacing, which changes existing rendering (#2019).**
   The root carries the vertical rhythm (`flex flex-col gap-6 py-6`) and each

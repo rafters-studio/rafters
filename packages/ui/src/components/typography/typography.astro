@@ -53,14 +53,27 @@
  * not the branch-per-element the oracle (src/old/ui/typography.astro) paid for
  * by hand.
  *
+ * This ONE file also exports the same named components typography.tsx exports
+ * (`import { H1, P, Blockquote } from './typography.astro'`) -- see the named
+ * surface below the default component's frontmatter.
+ *
  * @cognitive-load 1/10
  */
-import type { HTMLAttributes } from 'astro/types';
+import type { HTMLAttributes, HTMLTag } from 'astro/types';
+import {
+  addAttribute,
+  createComponent,
+  maybeRenderHead,
+  render,
+  renderSlot,
+  spreadAttributes,
+} from 'astro/runtime/server/index.js';
 import classy from '../../primitives/classy';
 import {
   resolveVariant,
   variantForElement,
   type TypographyElement,
+  type TypographyTokenProps,
   type TypographyVariant,
 } from './typography.behavior';
 import { resolveTypography } from './typography.classes';
@@ -106,6 +119,104 @@ const classes = classy(
     transform,
   }),
 );
+
+/**
+ * THE NAMED SURFACE (#2325). The Astro compiler hoists every `export`ed
+ * frontmatter statement to module scope, next to this file's `export default`,
+ * and relocates every non-exported statement (the destructure above included)
+ * into the default component's render body. So a named export built here with
+ * `createComponent` -- the same runtime call the compiler emits for this file
+ * -- is importable by name from the single `typography.astro`.
+ *
+ * Two consequences of that hoisting rule shape this block:
+ *
+ * 1. `makeTypography` is exported, though it is construction and not a
+ *    component: the exports call it at module scope, and a non-exported
+ *    helper would be relocated into the render body, out of their reach.
+ * 2. The exports sit LAST in the frontmatter, cast-free. The compiler's
+ *    statement scanner treats an `as ... => unknown` cast on an `export const`
+ *    line as an unfinished arrow function and hoists whatever non-exported
+ *    statement follows it -- the `Astro.props` destructure, which throws at
+ *    module scope. Typing lives on the factory's return type instead, inside
+ *    braces, which the scanner delimits correctly.
+ *
+ * Props are typed per tag through the factory's return type, so `astro check`
+ * flags a bad prop -- `class` included, which is not a prop: it is discarded,
+ * silently and by design, before the rest spread (card-header pattern).
+ *
+ * `maybeRenderHead()` takes no argument (Astro 6.4.8 and 7.3.2 types; 5.16
+ * agrees) and the runtime ignores one either way.
+ */
+type TypographyProps<Tag extends HTMLTag> = Omit<HTMLAttributes<Tag>, 'class'> &
+  TypographyTokenProps;
+
+export function makeTypography<Tag extends HTMLTag>(
+  variant: TypographyVariant,
+  tag: Tag,
+  name: string,
+  options: { nestCode?: boolean } = {},
+): (_props: TypographyProps<Tag>) => unknown {
+  const component = createComponent((result, props, slots) => {
+    const {
+      size,
+      weight,
+      color,
+      line,
+      tracking,
+      family,
+      align,
+      transform,
+      class: _discardedClass,
+      ...attrs
+    } = props as TypographyProps<Tag> & { class?: string };
+    const classes = classy(
+      resolveTypography(variant, {
+        size,
+        weight,
+        color,
+        line,
+        tracking,
+        family,
+        align,
+        transform,
+      }),
+    );
+    const content = renderSlot(result, slots.default);
+    const children = options.nestCode ? render`<code>${content}</code>` : content;
+    return render`${maybeRenderHead()}<${tag} data-part="root"${addAttribute(classes, 'class')}${spreadAttributes(attrs)}>${children}</${tag}>`;
+  }, name);
+  return component as unknown as (_props: TypographyProps<Tag>) => unknown;
+}
+
+// Headings. h5/h6 render their own tags but borrow h4's scale -- the variant
+// vocabulary stops at h4, faithful to the oracle (and to typography.tsx).
+export const H1 = makeTypography('h1', 'h1', 'H1');
+export const H2 = makeTypography('h2', 'h2', 'H2');
+export const H3 = makeTypography('h3', 'h3', 'H3');
+export const H4 = makeTypography('h4', 'h4', 'H4');
+export const H5 = makeTypography('h4', 'h5', 'H5');
+export const H6 = makeTypography('h4', 'h6', 'H6');
+
+// Body and its presentational variants (all render <p>).
+export const P = makeTypography('p', 'p', 'P');
+export const Lead = makeTypography('lead', 'p', 'Lead');
+export const Large = makeTypography('large', 'p', 'Large');
+export const Muted = makeTypography('muted', 'p', 'Muted');
+
+// Inline + block text. CodeBlock nests its content in a <code> inside <pre>.
+export const Small = makeTypography('small', 'small', 'Small');
+export const Code = makeTypography('code', 'code', 'Code');
+export const CodeBlock = makeTypography('codeblock', 'pre', 'CodeBlock', { nestCode: true });
+export const Blockquote = makeTypography('blockquote', 'blockquote', 'Blockquote');
+export const Mark = makeTypography('mark', 'mark', 'Mark');
+export const Abbr = makeTypography('abbr', 'abbr', 'Abbr');
+
+// Lists.
+export const Ul = makeTypography('ul', 'ul', 'Ul');
+export const Ol = makeTypography('ol', 'ol', 'Ol');
+export const Li = makeTypography('li', 'li', 'Li');
+/** shadcn parity alias: the default list is an unordered list. */
+export const List = Ul;
 ---
 
 <Tag data-part="root" class={classes} {...attrs}><slot /></Tag>

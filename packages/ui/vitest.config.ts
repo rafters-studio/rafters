@@ -1,6 +1,7 @@
 import react from '@vitejs/plugin-react';
 import { playwright } from '@vitest/browser-playwright';
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
+import { a11yOnly } from './vitest.astro.shared';
 
 /**
  * One config, three projects, one per test tier (#2326):
@@ -20,6 +21,11 @@ import { defineConfig } from 'vitest/config';
  * src/old/ and test/old/ are the quarantined pre-rewrite trees: nothing under
  * src/old/ runs; test/old/ only contributes its `.a11y` files, which stay in
  * the unit tier they run in today until the test-suite trim retires them.
+ *
+ * A custom `exclude` REPLACES Vitest's default one, so each project spreads
+ * `configDefaults.exclude` first to keep `node_modules` and friends out: the
+ * Astro 6 leg of the matrix (#2327) installs under test/astro-matrix/v6, and
+ * its node_modules carry third-party `.test.ts` files that `test/**` matches.
  */
 /**
  * `test:a11y` sets this to run the a11y tier alone. The include glob is the
@@ -28,7 +34,6 @@ import { defineConfig } from 'vitest/config';
  * pass as a tier, #2222), and `--exclude` does not reach a project that sets
  * its own `exclude`.
  */
-export const a11yOnly = process.env['VITEST_A11Y_ONLY'] === '1';
 
 export default defineConfig({
   // Inherited by the two inline projects (extends: true); the astro project
@@ -84,6 +89,7 @@ export default defineConfig({
             'test/old/**/*.a11y.{ts,tsx}',
           ],
           exclude: [
+            ...configDefaults.exclude,
             'src/old/**',
             'test/**/*.astro.*',
             // The one test/old file that evaluates src/old element code:
@@ -102,7 +108,9 @@ export default defineConfig({
           include: a11yOnly
             ? ['test/**/*.a11y.{ts,tsx}']
             : ['test/**/*.spec.{ts,tsx}', 'test/**/*.a11y.{ts,tsx}'],
-          exclude: ['test/**/*.astro.*', 'src/old/**', 'test/old/**'],
+          // configDefaults.exclude first: a custom exclude REPLACES it, and
+          // without it the v6 matrix install's own node_modules gets scanned.
+          exclude: [...configDefaults.exclude, 'test/**/*.astro.*', 'src/old/**', 'test/old/**'],
           setupFiles: ['./test/a11y/setup.ts'],
           browser: {
             enabled: true,

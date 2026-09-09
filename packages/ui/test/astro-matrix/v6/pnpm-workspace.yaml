@@ -1,0 +1,11 @@
+# This file makes the directory its own pnpm root, so `pnpm install` here
+# resolves against this package.json and lockfile instead of folding into the
+# repo workspace one level up. The install exists to hold the second Astro
+# major of the matrix (#2327); nothing in it is a workspace package.
+
+# Same build-script decisions as the repo root: both binaries arrive via
+# optional platform packages, the postinstalls are redundant. sharp is an
+# Astro 6 dependency that 7 no longer carries.
+allowBuilds:
+  esbuild: false
+  sharp: false

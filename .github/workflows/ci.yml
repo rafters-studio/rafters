@@ -50,3 +50,38 @@ jobs:
           echo "playwright install failed after 3 attempts"
           exit 1
       - run: pnpm test:all
+
+  # The Astro matrix (#2327): the same packages/ui Astro test files and
+  # `astro check` against each Astro major the consumers run. One matrix
+  # entry per leg, fail-fast off, so each reports as its own check and
+  # neither masks the other. The 7 leg is the workspace pin (its tests also
+  # run inside `test` above; this adds `astro check`). The 6 leg is an
+  # isolated install under packages/ui/test/astro-matrix/v6 with its own
+  # lockfile; the workspace install is still needed there because the
+  # component sources import workspace packages and the test files import
+  # the shared test tooling.
+  astro:
+    name: astro-${{ matrix.leg }}
+    runs-on: ubuntu-latest
+    env:
+      CI: true
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - leg: 7
+            test: test:astro
+            check: check:astro
+          - leg: 6
+            test: test:astro:v6
+            check: check:astro:v6
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v6.0.10
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24.12
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @rafters/ui ${{ matrix.test }}
+      - run: pnpm --filter @rafters/ui ${{ matrix.check }}

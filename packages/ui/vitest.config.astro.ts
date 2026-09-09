@@ -1,6 +1,6 @@
 /// <reference types="vitest/config" />
 import { getViteConfig } from 'astro/config';
-import { a11yOnly } from './vitest.config';
+import { astroTestOptions } from './vitest.astro.shared';
 
 /**
  * The `astro` project of vitest.config.ts, kept as its own file because
@@ -8,26 +8,13 @@ import { a11yOnly } from './vitest.config';
  * `getViteConfig` merges in and which must own this project's plugin set:
  * `extends: false` keeps the root's react plugin out of it.
  *
- * environment is 'node', not happy-dom: from Astro 6 the Container API cannot
- * render into a Vitest client environment (v6 upgrade guide, PR #14895);
- * verified on 6.4.8 and 7.3.2 (legion 01a08406) that every `renderToString`
- * throws NoMatchingRenderer under happy-dom and passes under node. The DOM
- * the pre-trim conformance files parse into comes from vitest.setup.astro.ts.
+ * This is the Astro 7 leg of the matrix; the options it shares with the
+ * Astro 6 leg (files, environment, setup) live in vitest.astro.shared.ts.
  */
 export default getViteConfig({
   test: {
+    ...astroTestOptions,
     name: 'astro',
     extends: false,
-    globals: true,
-    environment: 'node',
-    setupFiles: ['./vitest.setup.astro.ts', './test/a11y/setup.ts'],
-    include: a11yOnly
-      ? ['test/**/*.astro.a11y.ts']
-      : [
-          'test/**/*.astro.spec.ts',
-          'test/**/*.astro.a11y.ts',
-          // Pre-trim conformance files; the trim renames them to the two globs above.
-          'test/**/*.astro.conformance.test.ts',
-        ],
   },
 });

@@ -1,0 +1,30 @@
+---
+/**
+ * AlertDescription -- the Astro performance of Alert's description region,
+ * importable on its own so an Astro tree composes exactly like the React
+ * tree:
+ *
+ *   <Alert><AlertDescription>...</AlertDescription></Alert>
+ *
+ * alert.astro's named `description` slot remains as a convenience; this file
+ * is the parity surface. Both draw from the SAME class string in
+ * alert.classes.ts -- one score, one composition, no drift.
+ *
+ * Renders a `div`, matching the React `AlertDescription` (alert.tsx:108).
+ *
+ * `class` is NOT a prop -- design travels through token props only. It is
+ * discarded so `...attrs` cannot carry it onto the element.
+ *
+ * @parent alert
+ */
+import type { HTMLAttributes } from 'astro/types';
+import { alertDescriptionClasses } from './alert.classes';
+
+type Props = Omit<HTMLAttributes<'div'>, 'class'>;
+
+const { class: _discardedClass, ...attrs } = Astro.props as Props & { class?: string };
+---
+
+<div data-slot="alert-description" class={alertDescriptionClasses} {...attrs}>
+  <slot />
+</div>

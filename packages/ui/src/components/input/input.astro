@@ -44,6 +44,7 @@
  * The projection is computed here from the same inputBehavior.aria the React
  * and WC controllers read.
  */
+import type { HTMLAttributes } from 'astro/types';
 import { inputBehavior, type InputConfig, type InputPart } from './input.behavior';
 import { inputClassSet } from './input.classes';
 import type { PartIds } from '../../lib/contract';
@@ -52,7 +53,7 @@ interface Props {
   id: string;
   value?: string;
   defaultValue?: string;
-  type?: string;
+  type?: HTMLAttributes<'input'>['type'];
   name?: string;
   placeholder?: string;
   disabled?: boolean;

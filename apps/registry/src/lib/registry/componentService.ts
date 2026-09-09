@@ -529,17 +529,17 @@ const FRAMEWORK_VERSIONS: Record<string, string> = {
 /**
  * Dependencies to exclude (internal/build-time only)
  */
-const EXCLUDED_DEPS = new Set([
-  'react/jsx-runtime',
-  '@types/react',
-  '@types/react-dom',
-  'astro/types',
-]);
+const EXCLUDED_DEPS = new Set(['react/jsx-runtime', '@types/react', '@types/react-dom']);
 
 /**
- * Prefixes to exclude (internal packages)
+ * Prefixes to exclude: internal packages, and every subpath of `astro` itself
+ * (`astro/types`, `astro/runtime/server/index.js`). A subpath is not an npm
+ * package name -- `pnpm add astro/runtime/server/index.js` fails outright, and
+ * the CLI skips a dependency only on an exact name match, so `astro` being
+ * installed does not save it (#2325). Every consumer that installs an .astro
+ * target already carries `astro`, which resolves its own subpaths.
  */
-const EXCLUDED_PREFIXES = ['@rafters/'];
+const EXCLUDED_PREFIXES = ['@rafters/', 'astro/'];
 
 /**
  * Add versions to dependencies

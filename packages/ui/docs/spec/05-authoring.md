@@ -260,9 +260,16 @@ rest, and the split is recorded in the data:
   (`test/harness/conformance.ts`).
 - Astro conformance runs under `vitest.config.astro.ts`: `AstroContainer`
   renders SSR markup; the container does **not** run the `<script>`, so the test
-  calls `bindX(root)` directly (that *is* the script's job) then drives. A
-  `DOMException` about a failed script module load is happy-dom refusing to
-  auto-run the SSR script -- expected, harmless.
+  calls `bindX(root)` directly (that *is* the script's job) then drives.
+  happy-dom is told to skip the rendered `<script>` and any iframe silently
+  (`vitest.setup.astro.ts`), so a render logs nothing of its own.
+- The same Astro files run against both Astro majors the consumers use
+  (`pnpm test:astro` on the workspace pin, `pnpm test:astro:v6` on the isolated
+  install under `test/astro-matrix/v6`), and `astro check` runs on each
+  (`check:astro`, `check:astro:v6`). Assert on attributes and text content,
+  never on a raw HTML string: Astro 7 compresses inter-element whitespace that
+  6 keeps. The Rust compiler behind 7 is strict about unclosed tags and invalid
+  nesting; both legs must pass.
 - A component is `verified` in the matrix only when its framework's conformance
   is green. Reconcile the matrix against the files, never against a report.
 
