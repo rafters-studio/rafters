@@ -6,8 +6,9 @@ keymap, no effects, no motion block.
 Files (`src/components/alert/`):
 
 ```
-alert.classes.ts    alert.behavior.ts    alert.tsx
-alert.astro         alert.element.ts
+alert.classes.ts       alert.behavior.ts       alert.tsx
+alert.astro            alert.element.ts
+alert-title.astro       alert-description.astro alert-action.astro
 ```
 
 Tests mirror into `test/components/alert/`. All three performances -- React,
@@ -78,7 +79,7 @@ nothing to dispatch, gate, or execute.
 | `muted` variant (flat `bg-muted`/`text-muted-foreground`/`border-border`) | contract -- `muted` has no subtle tier in the registry, so it keeps its existing flat pairing rather than inventing one |
 | icon slot via `[&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4`, description shift via `[&>svg+div]:-translate-y-0.5` | contract -- decorative icon positioning is a selector against a child SVG the consumer supplies, not an authored glyph (boundary 1: no invented icon, only layout for one the consumer brings) |
 | WC (`<rafters-alert>`, `variant` attribute only, title/description/action out of scope) | contract -- ported (#1806). The `variant` attribute and its silent fall-back to `default` on an unknown value carry over verbatim; the oracle's "subcomponents out of scope" limit does NOT, because the new tree gives every multi-region static named slot regions (card, empty) |
-| Astro target | contract -- ported (#1805). The oracle's three-file split (`alert.astro` + `alert-title.astro` + `alert-description.astro`) collapses into one file with named slots, the shape card and empty already settled |
+| Astro target | contract -- ported (#1805), extended under #2323 with the drop-in part files (`alert-title.astro`, `alert-description.astro`, `alert-action.astro`), matching card's model (`card.md`): each sub-component is an importable file, the parity surface. `alert.astro`'s named slots remain a convenience, rendered only when `Astro.slots.has` finds content |
 | Oracle's `classy(base, variant, className)` composition in the Astro/WC targets | framework-affordance -- replaced by the shared `alertClasses` projection, so all three performances read one function |
 | Oracle's hardcoded `role="alert"` attribute in the Astro/WC targets | framework-affordance -- replaced by painting `alert.aria({}, config, { root: '' })`, so the contract is stated once, in the score |
 
@@ -98,15 +99,25 @@ nothing to dispatch, gate, or execute.
 
 ## Performance notes
 
-Alert composes through three named-slot regions (title, description, action)
-plus a default slot, the shape card and empty settled for a multi-region
-static. Two consequences a reader should know about:
+Alert composes two ways, matching card's model (`card.md`): the drop-in part
+files (`AlertTitle`, `AlertDescription`, `AlertAction`, shipped for Astro
+under #2323) are the parity surface, and three named-slot regions (title,
+description, action) plus a default slot survive as a convenience.
+`alert.astro` renders a named-slot region only when `Astro.slots.has` finds
+content, exactly as `card.astro` does, so composing the part files inside
+`<Alert>` never collides with an unfilled convenience wrapper. Two
+consequences a reader should know about:
 
-1. **Astro/WC render the title region as a `div`, not React's `h5`.** A
-   bind-free static cannot omit an unfilled region without a `slotchange`
-   listener, and an always-present empty heading is an axe `empty-heading`
-   violation. Card and empty record the same disposition. A consumer who wants
-   a real heading slots one in.
+1. **The named-slot convenience renders its title region as a `div`, not the
+   `h5` `AlertTitle` renders.** That is not an axe workaround forced by a
+   bind-free static -- the `Astro.slots.has` guard means an unfilled region is
+   simply absent, never an empty heading, so nothing here required the `div`.
+   The convenience is a plain wrapper, not the parity surface: a consumer who
+   wants the real heading composes `<AlertTitle>` instead, exactly as card's
+   named-slot wrappers stay `div` regardless of the tag their matching part
+   file renders. WC records a different disposition, for a different reason:
+   its named slots are fixed (no runtime to check `Astro.slots.has` against),
+   so `<rafters-alert>`'s title region stays a `div` unconditionally.
 2. **The `[&>svg]` icon positioning does not reach a slotted SVG in the Web
    Component.** In the shadow DOM the root's child is the `<slot>` element, not
    the assigned SVG, so the absolute-positioning selectors never match. React
@@ -122,11 +133,17 @@ static. Two consequences a reader should know about:
 
 ## shadcn drop-in parity
 
-shadcn's Alert exports `Alert`, `AlertTitle`, `AlertDescription`. This port
-matches that surface (plus the oracle's `AlertAction`), with the same
-`variant` prop shape shadcn/this workspace's oracle already used. A consumer
-migrating a shadcn `<Alert variant="destructive">` tree needs no prop or
-import-path changes beyond the registry path.
+shadcn's Alert exports `Alert`, `AlertTitle`, `AlertDescription`. The React
+performance (`alert.tsx`) and, as of #2323, the Astro performance
+(`alert.astro` plus `alert-title.astro`, `alert-description.astro`,
+`alert-action.astro`) both match that surface (plus the oracle's
+`AlertAction`), with the same `variant` prop shape shadcn/this workspace's
+oracle already used. A consumer migrating a shadcn `<Alert
+variant="destructive">` tree needs no prop or import-path changes beyond the
+registry path, for either of those two performances. The Web Component
+(`<rafters-alert>`) does not carry importable sub-components -- its fixed
+named-slot regions are the honest cost of having no runtime (see the
+disposition table above), so it is not a drop-in on this surface.
 
 ## WCAG 2.1 AA obligations
 

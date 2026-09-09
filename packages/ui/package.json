@@ -16,8 +16,14 @@
   "scripts": {
     "matrix:motion": "tsx test/matrix/render-motion-matrix.ts",
     "test": "vitest",
-    "test:unit": "vitest run && vitest run -c vitest.config.astro.ts",
+    "test:unit": "vitest run",
+    "test:spec": "vitest run --project browser --project astro",
+    "test:astro": "vitest run -p astro",
+    "test:astro:v6": "pnpm astro:v6:install && pnpm -C test/astro-matrix/v6 test",
     "test:a11y": "vitest run .a11y.",
+    "check:astro": "astro check",
+    "check:astro:v6": "pnpm astro:v6:install && pnpm -C test/astro-matrix/v6 check",
+    "astro:v6:install": "pnpm -C test/astro-matrix/v6 install --frozen-lockfile",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -32,6 +38,7 @@
     "nanostores": "^1.1.0"
   },
   "devDependencies": {
+    "@astrojs/check": "^0.9.10",
     "@hookform/resolvers": "^5.2.2",
     "@rafters/shared": "workspace:*",
     "@testing-library/jest-dom": "catalog:",
@@ -45,8 +52,9 @@
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "@vitejs/plugin-react": "catalog:",
+    "@vitest/browser-playwright": "catalog:",
     "@vitest/coverage-v8": "catalog:",
-    "astro": "^5.16.5",
+    "astro": "^7.3.2",
     "d3-array": "^3.2.4",
     "d3-scale": "^4.0.2",
     "d3-shape": "^3.2.0",
@@ -57,6 +65,8 @@
     "typescript": "catalog:",
     "vitest": "catalog:",
     "vitest-axe": "catalog:",
+    "vitest-browser-react": "catalog:",
+    "yaml": "^2.9.0",
     "zod": "catalog:"
   },
   "peerDependencies": {
