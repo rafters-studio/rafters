@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Typography named exports on the Astro target (#2325).** The single
+  `typography.astro` now exports the same 20 names `typography.tsx` exports
+  (`H1`-`H6`, `P`, `Lead`, `Large`, `Muted`, `Small`, `Code`, `CodeBlock`,
+  `Blockquote`, `Mark`, `Abbr`, `Ul`, `Ol`, `Li`, and the `List` alias), so
+  `import { H1, P } from './typography.astro'` is a drop-in beside the
+  unchanged default `<Typography as>`. Each is a `createComponent` export the
+  Astro compiler hoists to module scope, typed per tag so `astro check` flags
+  a bad prop; every one resolves its class through `resolveTypography` and
+  discards a consumer `class` silently, before the rest spread. The registry
+  no longer classifies `astro/` subpaths (`astro/runtime/server/index.js`,
+  `astro/types`) as installable dependencies.
 - **Line chart component (#2226).** The second chart-type mark on the same
   cartesian machinery Bar (#2225) proved out: one path per series
   (`computeLinePoints`/`buildSeriesPath`), shadcn-API parity -- a composed
