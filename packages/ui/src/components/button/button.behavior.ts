@@ -38,20 +38,14 @@ export const BUTTON_VARIANTS = [
 ] as const;
 
 /**
- * Sizes are one list, not two. The icon sizes are the `icon`-prefixed members;
- * a consumer that wants only the text sizes or only the icon sizes filters on
- * that prefix rather than keeping a second list that can fall behind this one.
+ * Sizes, declared as the two groups that actually differ and concatenated into
+ * the full list, so there is one ordered source and no way for a group to fall
+ * out of step with the whole. Order is load-bearing: the registry serves this
+ * vocabulary to consumers as an enum in declaration order.
  */
-export const BUTTON_SIZES = [
-  'default',
-  'xs',
-  'sm',
-  'lg',
-  'icon',
-  'icon-xs',
-  'icon-sm',
-  'icon-lg',
-] as const;
+export const BUTTON_TEXT_SIZES = ['default', 'xs', 'sm', 'lg'] as const;
+export const BUTTON_ICON_SIZES = ['icon', 'icon-xs', 'icon-sm', 'icon-lg'] as const;
+export const BUTTON_SIZES = [...BUTTON_TEXT_SIZES, ...BUTTON_ICON_SIZES] as const;
 
 export type ButtonVariant = (typeof BUTTON_VARIANTS)[number];
 export type ButtonSize = (typeof BUTTON_SIZES)[number];
@@ -65,21 +59,9 @@ export function isButtonSize(value: string | null | undefined): value is ButtonS
 }
 
 /** A size that shapes a square icon-only button. */
-export type ButtonIconSize = Extract<ButtonSize, `icon${string}`>;
+export type ButtonIconSize = (typeof BUTTON_ICON_SIZES)[number];
 /** A size that shapes a button with a text label. */
-export type ButtonTextSize = Exclude<ButtonSize, ButtonIconSize>;
-
-const isIconSize = (size: ButtonSize): size is ButtonIconSize => size.startsWith('icon');
-
-/**
- * The two halves of BUTTON_SIZES, split on the `icon` prefix rather than
- * written out again. A size added above lands in exactly one of these without
- * anyone maintaining a second list.
- */
-export const BUTTON_ICON_SIZES: ReadonlyArray<ButtonIconSize> = BUTTON_SIZES.filter(isIconSize);
-export const BUTTON_TEXT_SIZES: ReadonlyArray<ButtonTextSize> = BUTTON_SIZES.filter(
-  (size): size is ButtonTextSize => !isIconSize(size),
-);
+export type ButtonTextSize = (typeof BUTTON_TEXT_SIZES)[number];
 
 export interface ButtonConfig extends PressableConfig {
   variant: ButtonVariant;
