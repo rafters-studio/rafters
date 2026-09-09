@@ -3,13 +3,16 @@
  * markup. Same score as the React conformance test. The viewport signal is
  * mocked via matchMedia (the bind reads it live).
  *
- * The mobile overlay is the panel enhanced IN PLACE by the bind into a modal
- * (role=dialog + the sheet modal trio), composing the merged sheet's own
- * behavior; a closed mobile overlay is `hidden` so its links leave the tab order
- * and a11y tree (WCAG 2.2 AAA). The Escape test focuses the RAIL -- a focusable
- * element that carries its own data-part inside the panel -- to prove the part is
- * resolved by CONTAINMENT (`panel.contains`), not `closest('[data-part]')`, the
- * dialog-family defect #1921.
+ * The mobile overlay is the panel (a `<nav>`) rendered inside a `dialog`
+ * wrapper `<div>`, authored here the same way `sidebar.astro` emits it; the
+ * bind puts the modal identity (role=dialog + the sheet modal trio) on that
+ * WRAPPER, never on the `<nav>` (role=dialog is not an allowed ARIA role on
+ * `<nav>` -- axe `aria-allowed-role`, #2338/#2222), composing the merged
+ * sheet's own behavior. A closed mobile overlay is `hidden` so its links leave
+ * the tab order and a11y tree (WCAG 2.2 AAA). The Escape test focuses the
+ * RAIL -- a focusable element that carries its own data-part inside the panel
+ * -- to prove the part is resolved by CONTAINMENT (`panel.contains`), not
+ * `closest('[data-part]')`, the dialog-family defect #1921.
  */
 import { cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -39,10 +42,12 @@ async function mount(): Promise<HTMLElement> {
   document.body.innerHTML = `
     <rafters-sidebar data-part="root" data-default-open="true" data-side="left" data-collapsible="offcanvas">
       <button type="button" data-part="trigger" id="sb-trigger" aria-controls="sb-panel" data-state="expanded">Toggle</button>
-      <nav data-part="panel" id="sb-panel" data-state="expanded" data-mobile="closed" tabindex="-1">
-        <button type="button" data-part="rail" id="sb-rail" tabindex="-1" aria-label="Toggle Sidebar" data-state="expanded"></button>
-        <button type="button" data-sidebar="menu-button">Dashboard</button>
-      </nav>
+      <div data-part="dialog" id="sb-dialog">
+        <nav data-part="panel" id="sb-panel" data-state="expanded" data-mobile="closed" tabindex="-1">
+          <button type="button" data-part="rail" id="sb-rail" tabindex="-1" aria-label="Toggle Sidebar" data-state="expanded"></button>
+          <button type="button" data-sidebar="menu-button">Dashboard</button>
+        </nav>
+      </div>
     </rafters-sidebar>`;
   await Promise.resolve();
   return document.body.querySelector('rafters-sidebar') as HTMLElement;
@@ -51,6 +56,7 @@ async function mount(): Promise<HTMLElement> {
 const trigger = () => document.body.querySelector<HTMLElement>('[data-part="trigger"]')!;
 const rail = () => document.body.querySelector<HTMLElement>('[data-part="rail"]')!;
 const panel = () => document.body.querySelector<HTMLElement>('[data-part="panel"]')!;
+const dialog = () => document.body.querySelector<HTMLElement>('[data-part="dialog"]')!;
 
 beforeEach(() => setViewport(false));
 afterEach(() => {
@@ -90,16 +96,19 @@ describe('sidebar conformance [wc]', () => {
     expect(panel().hasAttribute('role')).toBe(false);
   });
 
-  it('mobile: the trigger opens a modal dialog, traps focus, and locks scroll', async () => {
+  it('mobile: the trigger opens a modal dialog on the wrapper (never the nav), traps focus, and locks scroll', async () => {
     setViewport(true);
     const user = userEvent.setup();
     await mount();
     await user.click(trigger());
     expect(panel().hidden).toBe(false);
-    expect(panel().getAttribute('role')).toBe('dialog');
-    expect(panel().getAttribute('aria-modal')).toBe('true');
-    expect(panel().getAttribute('aria-label')).toBe('Sidebar');
-    expect(panel().contains(document.activeElement)).toBe(true);
+    // role=dialog is not an allowed ARIA role on <nav> (axe aria-allowed-role,
+    // #2338/#2222) -- the dialog identity lives on the wrapper, never the panel.
+    expect(dialog().getAttribute('role')).toBe('dialog');
+    expect(dialog().getAttribute('aria-modal')).toBe('true');
+    expect(dialog().getAttribute('aria-label')).toBe('Sidebar');
+    expect(panel().hasAttribute('role')).toBe(false);
+    expect(dialog().contains(document.activeElement)).toBe(true);
     expect(document.body.style.overflow).toBe('hidden');
   });
 
@@ -108,13 +117,13 @@ describe('sidebar conformance [wc]', () => {
     const user = userEvent.setup();
     await mount();
     await user.click(trigger());
-    expect(panel().getAttribute('role')).toBe('dialog');
+    expect(dialog().getAttribute('role')).toBe('dialog');
 
     // Focus the rail (its own data-part, inside the panel), then Escape.
     rail().focus();
     await user.keyboard('{Escape}');
     expect(panel().hidden).toBe(true);
-    expect(panel().hasAttribute('role')).toBe(false);
+    expect(dialog().hasAttribute('role')).toBe(false);
     expect(document.activeElement).toBe(trigger());
     expect(document.body.style.overflow).not.toBe('hidden');
   });

@@ -1,0 +1,89 @@
+---
+/**
+ * SidebarTrigger -- the Astro performance of Sidebar's toggle button,
+ * importable on its own. Unlike the pure-decoration parts, Trigger is
+ * BEHAVIOR-CONNECTED: `sidebar.astro` computes its `aria-controls`/`data-state`
+ * from the score (`sidebar.aria`), keyed off the desktop open/collapsed axis.
+ * Astro has no shared client-side context to read that projection from, so
+ * this file recomputes it the SAME way `sidebar.astro:92-99` does, from the
+ * SAME exported pure `sidebar.initialState`/`sidebar.aria` functions, given
+ * the SAME `id` (and `open`/`defaultOpen`) as the parent `<Sidebar id="...">`.
+ * That agreement is the honest cost of no runtime -- mismatched ids/config
+ * between this file and its `Sidebar` produce a `SidebarTrigger` whose
+ * `aria-controls` does not resolve.
+ *
+ * `bindSidebar` resolves parts by
+ * `root.querySelector('[data-part="trigger"]')` inside the `<rafters-sidebar>`
+ * root, so a `<SidebarTrigger>` rendered as a DESCENDANT of that root is found
+ * and kept live by the same bind `sidebar.astro`'s own inline trigger uses.
+ * Placed OUTSIDE the root (the common shadcn pattern of a trigger living in
+ * the page header, next to `SidebarInset`) it still server-renders correctly
+ * but will not receive live updates after a toggle -- a known limitation
+ * recorded in `sidebar.md`, not a second binding.
+ *
+ * React's `SidebarTrigger` also accepts `asChild` (`sidebar.tsx:273`), but
+ * Decision 2 (2026-09-09) names only five parts for Astro's `asChild` and
+ * Trigger is not one of them -- this file does not carry it. Flagged in the
+ * PR as a discrepancy between the decision and the React source.
+ *
+ * `class` is NOT a prop -- design travels through token props only. It is
+ * discarded so `...attrs` cannot carry it onto the element.
+ *
+ * @parent sidebar
+ */
+import type { HTMLAttributes } from 'astro/types';
+import type { PartIds } from '../../lib/contract';
+import { sidebar, type SidebarConfig, type SidebarPart } from './sidebar.behavior';
+import { sidebarClasses } from './sidebar.classes';
+
+type Props = Omit<HTMLAttributes<'button'>, 'class'> & {
+  id: string;
+  open?: boolean;
+  defaultOpen?: boolean;
+};
+
+const {
+  class: _discardedClass,
+  id,
+  open,
+  defaultOpen,
+  ...attrs
+} = Astro.props as Props & { class?: string };
+
+const config: SidebarConfig = { open, defaultOpen };
+const state = sidebar.initialState(config);
+const ids = {} as PartIds<SidebarPart>;
+for (const part of Object.keys(sidebar.parts) as SidebarPart[]) ids[part] = `${id}-${part}`;
+const aria = sidebar.aria(state, config, ids);
+const classes = sidebarClasses();
+---
+
+<button
+  type="button"
+  id={ids.trigger}
+  data-part="trigger"
+  aria-label="Toggle Sidebar"
+  class={classes.trigger}
+  {...aria.trigger}
+  {...attrs}
+>
+  <slot>
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      class="size-4"
+      aria-hidden="true"
+    >
+      <title>Toggle sidebar</title>
+      <rect width="18" height="18" x="3" y="3" rx="2"></rect>
+      <path d="M9 3v18"></path>
+    </svg>
+  </slot>
+</button>

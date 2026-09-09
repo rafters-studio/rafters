@@ -1,0 +1,65 @@
+---
+/**
+ * SidebarMenuButton -- the Astro performance of a menu item's primary button,
+ * importable on its own so an Astro tree composes exactly like the React
+ * tree: `<SidebarMenuItem><SidebarMenuButton asChild><a href="/x">Home</a></SidebarMenuButton></SidebarMenuItem>`.
+ * Draws from the SAME class projection (`sidebarMenuButtonClasses`) in
+ * sidebar.classes.ts the React performance reads -- one score, one
+ * composition, no drift.
+ *
+ * `asChild` (Decision 2, 2026-09-09): render-then-inject via
+ * `primitives/astro-as-child.ts`. When true, the default slot renders to a
+ * string, is parsed with ultrahtml, and this part's class + `data-sidebar` /
+ * `data-size` / `data-active` land on the FIRST element of that markup (its
+ * own `class` dropped); when false or absent, this file renders its own
+ * `<button>`. Consumer syntax matches shadcn's, and is the reference example
+ * proven on Astro 6.4.8 and 7.3.2 (legion 01a08406).
+ *
+ * `class` is NOT a prop -- design travels through token props only. It is
+ * discarded so `...attrs` cannot carry it onto the element.
+ *
+ * @parent sidebar
+ */
+import type { HTMLAttributes } from 'astro/types';
+import { injectAsChildAttrs } from '../../primitives/astro-as-child';
+import { sidebarMenuButtonClasses } from './sidebar.classes';
+
+type Props = Omit<HTMLAttributes<'button'>, 'class'> & {
+  asChild?: boolean;
+  isActive?: boolean;
+  variant?: 'default' | 'outline';
+  size?: 'default' | 'sm' | 'lg';
+};
+
+const {
+  class: _discardedClass,
+  asChild = false,
+  isActive = false,
+  variant = 'default',
+  size = 'default',
+  ...attrs
+} = Astro.props as Props & { class?: string };
+
+const decoration = {
+  class: sidebarMenuButtonClasses(variant, size),
+  'data-sidebar': 'menu-button',
+  'data-size': size,
+  'data-active': isActive ? 'true' : 'false',
+};
+
+let injected: string | null = null;
+if (asChild) {
+  const slotHtml = await Astro.slots.render('default');
+  injected = injectAsChildAttrs(slotHtml, attrs, decoration);
+}
+---
+
+{
+  injected !== null ? (
+    <Fragment set:html={injected} />
+  ) : (
+    <button type="button" {...decoration} {...attrs}>
+      <slot />
+    </button>
+  )
+}

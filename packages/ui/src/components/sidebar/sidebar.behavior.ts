@@ -62,7 +62,7 @@ export type SidebarActions = {
   closeMobile: undefined;
 };
 
-export type SidebarPart = 'root' | 'trigger' | 'rail' | 'panel';
+export type SidebarPart = 'root' | 'trigger' | 'rail' | 'panel' | 'dialog';
 
 /** The effective desktop-expand value: a controlled `open` shadows intrinsic. */
 export function isOpen(state: SidebarState, config: SidebarConfig): boolean {
@@ -102,6 +102,7 @@ const sidebarSlice: Slice<SidebarConfig, SidebarState, SidebarActions, SidebarPa
     trigger: { optional: true },
     rail: { optional: true },
     panel: {},
+    dialog: { optional: true },
   },
   initialState: (config) => ({
     // A fresh app opens expanded (oracle default true); a controlled value seeds
@@ -181,13 +182,17 @@ const MOBILE_DIALOG_LABEL = 'Sidebar';
  *
  * - `createBehavior` is the model (the one memory cell, the two axes).
  * - `aria-manager` applies the resolved projection.
- * - Presence + modality on the mobile axis: below `md`, an open overlay turns the
- *   panel into a modal dialog (role=dialog, aria-modal, and the sheet modal trio
- *   -- focus-trap, scroll-lock, dismiss-on-outside -- COMPOSED from
- *   `startSheetModalEffects`, the merged sheet's own behavior), and a CLOSED
- *   mobile overlay `hidden`s the panel so its links leave the tab order and a11y
- *   tree (WCAG 2.2 AAA focus management). On the desktop viewport the panel is
- *   never modal and never hidden -- the collapsed rail stays visible/navigable.
+ * - Presence + modality on the mobile axis: below `md`, an open overlay turns
+ *   the `dialog` part -- a wrapper the panel (`<nav>`) renders inside, never
+ *   the panel itself -- into a modal dialog (role=dialog, aria-modal, and the
+ *   sheet modal trio -- focus-trap, scroll-lock, dismiss-on-outside -- COMPOSED
+ *   from `startSheetModalEffects`, the merged sheet's own behavior), and a
+ *   CLOSED mobile overlay `hidden`s the panel so its links leave the tab order
+ *   and a11y tree (WCAG 2.2 AAA focus management). `role="dialog"` is not an
+ *   allowed ARIA role on `<nav>` (axe `aria-allowed-role`, #2338/#2222) -- the
+ *   `<nav>` stays a `<nav>` on every viewport, so the wrapper carries the
+ *   dialog identity instead. On the desktop viewport nothing here is modal and
+ *   the panel is never hidden -- the collapsed rail stays visible/navigable.
  *
  * Escape closes via the score keymap, its part resolved by CONTAINMENT
  * (`panel.contains(target)`), not `target.closest('[data-part]')` -- the latter
@@ -245,32 +250,44 @@ export function bindSidebar(root: HTMLElement): () => void {
     }
 
     const panel = getPart('panel');
+    // The dialog is a wrapper the panel renders inside (never the panel
+    // itself -- see the module doc). Absent on markup authored before this
+    // fix (a hand-authored WC instance that has not added it yet): the modal
+    // barrier still runs against the panel, but no dialog role is applied
+    // anywhere, rather than reintroducing role=dialog on the nav.
+    const dialog = getPart('dialog');
     const overlayOpen = isMobile() && isMobileOpen(state);
     if (panel) {
       // Presence: a closed mobile overlay removes the panel from the tree so its
       // links are unreachable (AAA); the open overlay and the desktop rail stay.
       panel.hidden = isMobile() && !isMobileOpen(state);
-      // Modality: while the mobile overlay is open the panel IS the dialog. These
-      // depend on the viewport signal, so the bind manages them (the score, which
-      // holds no isMobile, cannot). Mirrors the React SheetContent surface.
+    }
+    if (dialog) {
+      // Modality: while the mobile overlay is open the DIALOG WRAPPER is the
+      // dialog -- never the panel/`<nav>` it contains. These depend on the
+      // viewport signal, so the bind manages them (the score, which holds no
+      // isMobile, cannot). Mirrors the React SheetContent surface.
       if (overlayOpen) {
-        panel.setAttribute('role', 'dialog');
-        panel.setAttribute('aria-modal', 'true');
-        panel.setAttribute('aria-label', MOBILE_DIALOG_LABEL);
+        dialog.setAttribute('role', 'dialog');
+        dialog.setAttribute('aria-modal', 'true');
+        dialog.setAttribute('aria-label', MOBILE_DIALOG_LABEL);
       } else {
-        panel.removeAttribute('role');
-        panel.removeAttribute('aria-modal');
-        panel.removeAttribute('aria-label');
+        dialog.removeAttribute('role');
+        dialog.removeAttribute('aria-modal');
+        dialog.removeAttribute('aria-label');
       }
     }
 
     // Compose the merged sheet's modal trio directly, level-triggered: focus-trap
     // + scroll-lock + dismiss-on-pointerdown-outside (sparing the trigger). The
-    // panel is un-hidden above before the trap reads its focusables. On close the
-    // trap teardown restores focus to the opener.
-    if (overlayOpen && !modalCleanup && panel) {
+    // trap traps within the dialog wrapper (which contains the panel), so a
+    // click on the panel's own links is INSIDE, never a dismiss. The panel is
+    // un-hidden above before the trap reads its focusables. On close the trap
+    // teardown restores focus to the opener.
+    const modalContent = dialog ?? panel;
+    if (overlayOpen && !modalCleanup && modalContent) {
       modalCleanup = startSheetModalEffects({
-        content: panel,
+        content: modalContent,
         getTrigger: () => getPart('trigger'),
         onDismiss: () => {
           request('closeMobile');
