@@ -160,10 +160,10 @@ surface; `dropped` = intentionally not ported; `defect-do-not-port` = oracle bug
 | desktop "gap" element for a smooth width transition | dropped; it existed only to animate width, and desktop motion is undeclared |
 | Rail (desktop toggle, `tabIndex=-1`, labelled) | contract |
 | Inset (`<main>` landmark) | contract |
-| Header/Footer/Content/Group(+Label/Action/Content)/Menu(+Item/Button/Action/Badge/Skeleton/Sub/SubItem/SubButton)/Separator | contract; pure decoration (classes + `data-sidebar` attrs), no behavior |
-| `asChild` on Trigger/GroupLabel/GroupAction/MenuButton/MenuAction/MenuSubButton | framework-affordance (React) |
+| Header/Footer/Content/Group(+Label/Action/Content)/Menu(+Item/Button/Action/Badge/Skeleton/Sub/SubItem/SubButton)/Separator | contract; pure decoration (classes + `data-sidebar` attrs), no behavior; importable on every target under shadcn's flat names, as decided in #2324 (not yet landed) |
+| `asChild` on Trigger/GroupLabel/GroupAction/MenuButton/MenuAction/MenuSubButton | contract; React expresses it directly, Astro's equivalent is decided in #2324 (not yet landed) |
 | MenuButton `variant`/`size`, MenuSubButton `size`, `isActive` (`data-active`) | contract; decoration variants |
-| MenuSkeleton random bar width (`Math.random`) | framework-affordance (React only); the WC/Astro shells do not render skeletons |
+| MenuSkeleton random bar width (`Math.random`) | contract; `MenuSkeleton` is importable on every target under shadcn's flat name, as decided in #2324 (not yet landed) |
 | JSDoc claimed a "nav role" landmark but rendered a `<div>` | defect-do-not-port; this port actually delivers `<nav>` for the panel (the landmark the oracle only aspired to) |
 | trigger had no `aria-controls`/`aria-expanded` | contract, hardened: desktop `aria-controls` -> panel added (dropped on mobile, where the panel is the Sheet); `aria-expanded` deliberately omitted (viewport-ambiguous) |
 | raw `duration-200 ease-linear`/`ease-in-out` desktop collapse transition | defect-do-not-port; raw numeric durations, dropped -- desktop motion undeclared pending horizontal tokens (#1899/#1902) |
