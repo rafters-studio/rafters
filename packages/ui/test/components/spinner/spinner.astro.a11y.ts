@@ -31,18 +31,17 @@ async function mount(props: Record<string, unknown>): Promise<Document> {
   return document;
 }
 
-for (const size of SIZES) {
-  test(`spinner.astro size=${size}`, async ({ task }) => {
-    const document = await mount({ size });
-    const results = await runAxe(document.body);
-    task.meta.axe = results;
-    expect(results.violations).toEqual([]);
-  });
-}
+const scenes: ReadonlyArray<[string, Record<string, unknown>]> = [
+  ...SIZES.map((size): [string, Record<string, unknown>] => [`size=${size}`, { size }]),
+  ...VARIANTS.map((variant): [string, Record<string, unknown>] => [
+    `variant=${variant}`,
+    { variant },
+  ]),
+];
 
-for (const variant of VARIANTS) {
-  test(`spinner.astro variant=${variant}`, async ({ task }) => {
-    const document = await mount({ variant });
+for (const [name, props] of scenes) {
+  test(`spinner.astro ${name}`, async ({ task }) => {
+    const document = await mount(props);
     const results = await runAxe(document.body);
     task.meta.axe = results;
     expect(results.violations).toEqual([]);

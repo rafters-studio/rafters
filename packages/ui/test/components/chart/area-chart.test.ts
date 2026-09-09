@@ -466,15 +466,13 @@ describe('areaChartClasses', () => {
   });
 });
 
-// The structural guarantees #2227 pins outside axe's reach, moved here from
-// the component's a11y suite under #2222 (the axe scenes now live in
-// area-chart.a11y.tsx and its element/astro lanes): no role="img" on the SVG
-// (it would make its descendants presentational and break keyboard
+// The structural guarantees #2227 pins outside axe's reach: no role="img" on
+// the SVG (it would make its descendants presentational and break keyboard
 // traversal), the data-table fallback always present, and every emitted
 // class a literal token class, never a hex, `var()`, or arbitrary value.
 // Same suite shape as bar-chart.test.ts (#2225), the pinned structure this
 // component reuses.
-describe('AreaChart [react] structural contract (moved from the a11y suite, #2222)', () => {
+describe('AreaChart [react] structural contract', () => {
   const announceToScreenReader = stubAnnounceToScreenReader();
 
   afterEach(() => {
@@ -484,11 +482,6 @@ describe('AreaChart [react] structural contract (moved from the a11y suite, #222
     vi.clearAllMocks();
   });
 
-  const config = {
-    desktop: { label: 'Desktop', token: 'chart-1' },
-    mobile: { label: 'Mobile', token: 'chart-2' },
-  } satisfies ChartConfig;
-
   function renderChart(rows: typeof data = data) {
     const { triggerResize } = stubResizeObserver();
     const view = render(
@@ -497,7 +490,7 @@ describe('AreaChart [react] structural contract (moved from the a11y suite, #222
         null,
         React.createElement(
           ChartContainer,
-          { config },
+          { config: cfg },
           React.createElement(
             AreaChart,
             { data: rows, series: ['desktop', 'mobile'] },
@@ -512,7 +505,7 @@ describe('AreaChart [react] structural contract (moved from the a11y suite, #222
     return view;
   }
 
-  describe('AreaChart a11y [react]: default state', () => {
+  describe('AreaChart structure: figure, svg, data-table fallback', () => {
     it('renders inside a figure carrying role="figure" and a descriptive aria-label', () => {
       const { container } = renderChart();
       const figure = container.querySelector('figure[data-part="root"]');
@@ -546,7 +539,7 @@ describe('AreaChart [react] structural contract (moved from the a11y suite, #222
     });
   });
 
-  describe('AreaChart a11y [react]: empty state', () => {
+  describe('empty state', () => {
     it('renders no area/line paths and an empty table body, no throw', () => {
       const { container } = renderChart([]);
       expect(container.querySelectorAll('[data-part="area"]')).toHaveLength(0);
@@ -555,7 +548,7 @@ describe('AreaChart [react] structural contract (moved from the a11y suite, #222
     });
   });
 
-  describe('AreaChart a11y [react]: active-datum state', () => {
+  describe('active-datum state', () => {
     it('arrow keys move the active-datum cursor and announce it, focus staying on the figure', () => {
       const { container } = renderChart();
       const figure = container.querySelector('figure[data-part="root"]') as HTMLElement;
@@ -581,12 +574,12 @@ describe('AreaChart [react] structural contract (moved from the a11y suite, #222
     });
   });
 
-  describe('AreaChart a11y: no keyboard contract claimed outside root/plot', () => {
+  describe('no keyboard contract outside root/plot', () => {
     it('areaChart.keymap never claims a key on the area, line, or table parts', () => {
       const areaChartConfig = {
         data,
         series: ['desktop'],
-        chartConfig: config,
+        chartConfig: cfg,
         categoryKey: 'month',
         width: 300,
         height: 200,
@@ -598,7 +591,7 @@ describe('AreaChart [react] structural contract (moved from the a11y suite, #222
     });
   });
 
-  describe('AreaChart a11y: color/class token compliance -- no hex, no var(), no arbitrary value', () => {
+  describe('color token compliance -- no hex, no var(), no arbitrary value', () => {
     const classes = areaChartClasses(
       {},
       { series: [], datums: [], valueTicks: [], activeIndex: null },

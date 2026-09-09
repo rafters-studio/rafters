@@ -23,7 +23,6 @@ interface Scene {
   /** false composes no XAxis: the axis-less-by-omission sparkline shape (#2230). */
   axis?: boolean;
   activate?: boolean;
-  sparkline?: boolean;
 }
 
 /** No stylesheet loads in the a11y browser, so the plot box is pinned here:
@@ -52,10 +51,7 @@ function nextFrame(): Promise<void> {
 const scenes: ReadonlyArray<[string, Scene]> = [
   ['default', { rows: data }],
   ['dots suppressed', { rows: data, series: ['desktop'], dots: false }],
-  [
-    'sparkline (no axis or grid composed)',
-    { rows: data, series: ['desktop'], axis: false, sparkline: true },
-  ],
+  ['sparkline (no axis or grid composed)', { rows: data, series: ['desktop'], axis: false }],
   ['empty data', { rows: [] }],
   ['active datum', { rows: data, activate: true }],
 ];
@@ -68,7 +64,7 @@ for (const [name, scene] of scenes) {
     await nextFrame();
     await nextFrame();
     const figure = container.querySelector('figure[data-part="root"]') as HTMLElement;
-    if (scene.sparkline) {
+    if (scene.axis === false) {
       expect(figure.getAttribute('aria-label')).toMatch(/^Sparkline of/);
     }
     if (scene.dots === false) {

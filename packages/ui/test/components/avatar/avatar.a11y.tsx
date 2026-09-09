@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react';
 import { expect, test } from 'vitest';
 import { render } from 'vitest-browser-react';
 import { runAxe } from '../../a11y/run-axe';
@@ -7,51 +8,49 @@ import { AVATAR_SIZES } from '../../../src/components/avatar/avatar.behavior';
 const PIXEL =
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
 
-for (const size of AVATAR_SIZES) {
-  test(`avatar size=${size}`, async ({ task }) => {
-    const { container } = await render(
+const scenes: ReadonlyArray<[string, () => ReactElement]> = [
+  ...AVATAR_SIZES.map((size): [string, () => ReactElement] => [
+    `size=${size}`,
+    () => (
       <Avatar size={size}>
         <AvatarImage src={PIXEL} alt="Jane Doe" />
         <AvatarFallback>JD</AvatarFallback>
-      </Avatar>,
-    );
+      </Avatar>
+    ),
+  ]),
+  [
+    'image that fails to load falls back to initials',
+    () => (
+      <Avatar>
+        <AvatarImage src="/missing.jpg" alt="Jane Doe" />
+        <AvatarFallback>JD</AvatarFallback>
+      </Avatar>
+    ),
+  ],
+  [
+    'fallback only',
+    () => (
+      <Avatar>
+        <AvatarFallback>JD</AvatarFallback>
+      </Avatar>
+    ),
+  ],
+  [
+    'decorative, hidden from assistive tech',
+    () => (
+      <Avatar aria-hidden="true">
+        <AvatarImage src={PIXEL} alt="" />
+        <AvatarFallback>AI</AvatarFallback>
+      </Avatar>
+    ),
+  ],
+];
+
+for (const [name, element] of scenes) {
+  test(`avatar ${name}`, async ({ task }) => {
+    const { container } = await render(element());
     const results = await runAxe(container);
     task.meta.axe = results;
     expect(results.violations).toEqual([]);
   });
 }
-
-test('avatar image that fails to load falls back to initials', async ({ task }) => {
-  const { container } = await render(
-    <Avatar>
-      <AvatarImage src="/missing.jpg" alt="Jane Doe" />
-      <AvatarFallback>JD</AvatarFallback>
-    </Avatar>,
-  );
-  const results = await runAxe(container);
-  task.meta.axe = results;
-  expect(results.violations).toEqual([]);
-});
-
-test('avatar fallback only', async ({ task }) => {
-  const { container } = await render(
-    <Avatar>
-      <AvatarFallback>JD</AvatarFallback>
-    </Avatar>,
-  );
-  const results = await runAxe(container);
-  task.meta.axe = results;
-  expect(results.violations).toEqual([]);
-});
-
-test('avatar decorative, hidden from assistive tech', async ({ task }) => {
-  const { container } = await render(
-    <Avatar aria-hidden="true">
-      <AvatarImage src={PIXEL} alt="" />
-      <AvatarFallback>AI</AvatarFallback>
-    </Avatar>,
-  );
-  const results = await runAxe(container);
-  task.meta.axe = results;
-  expect(results.violations).toEqual([]);
-});

@@ -116,14 +116,13 @@ describe('issue #2228 functional test block (legend half)', () => {
   });
 });
 
-// Moved here from the component's a11y suite under #2222 (the axe scenes now
-// live in chart-legend.a11y.tsx and its element/astro lanes): roving-focus
-// keyboard traversal with visible focus, and the display-only contract --
-// activating an entry dispatches nothing.
-describe('ChartLegend [react] structural contract (moved from the a11y suite, #2222)', () => {
+// Structural guarantees axe cannot see: roving-focus keyboard traversal with
+// native (visible) focus, the display-only contract -- activating an entry
+// dispatches nothing -- and every emitted class a literal token class.
+describe('ChartLegend [react] structural contract', () => {
   // The functional-test block above appends its stand-in legend to
   // document.body and leaves it there; these tests query the document, so
-  // they start from an empty body the way their own file gave them.
+  // they start from an empty body.
   beforeEach(() => {
     document.body.innerHTML = '';
   });
@@ -138,17 +137,21 @@ describe('ChartLegend [react] structural contract (moved from the a11y suite, #2
     mobile: { label: 'Mobile', token: 'chart-2' },
   } satisfies ChartConfig;
 
-  describe('ChartLegend a11y [react]', () => {
+  function renderLegend() {
+    return render(
+      React.createElement(
+        ChartContainer,
+        { config },
+        React.createElement(ChartLegend, {
+          content: React.createElement(ChartLegendContent, null),
+        }),
+      ),
+    );
+  }
+
+  describe('ChartLegend roving focus: list roles and arrow traversal', () => {
     it('renders role=list on root and role=listitem + data-roving-item on every entry', () => {
-      render(
-        React.createElement(
-          ChartContainer,
-          { config },
-          React.createElement(ChartLegend, {
-            content: React.createElement(ChartLegendContent, null),
-          }),
-        ),
-      );
+      renderLegend();
       // ChartContainer also renders its own `[data-part="root"]`; ChartLegend's
       // is nested inside it, so it is the LAST match in document order.
       const roots = document.querySelectorAll('[data-part="root"]');
@@ -163,15 +166,7 @@ describe('ChartLegend [react] structural contract (moved from the a11y suite, #2
     });
 
     it('roving-focus moves focus across entries on ArrowRight; focus stays visible (native focus, no outline suppression)', () => {
-      render(
-        React.createElement(
-          ChartContainer,
-          { config },
-          React.createElement(ChartLegend, {
-            content: React.createElement(ChartLegendContent, null),
-          }),
-        ),
-      );
+      renderLegend();
       const entries = Array.from(document.querySelectorAll<HTMLElement>('[data-part="entry"]'));
       entries[0]?.focus();
       expect(document.activeElement).toBe(entries[0]);
@@ -182,15 +177,7 @@ describe('ChartLegend [react] structural contract (moved from the a11y suite, #2
 
   describe('display-only contract: activation dispatches nothing', () => {
     it('clicking or pressing Enter/Space on an entry never changes chart config or throws', () => {
-      render(
-        React.createElement(
-          ChartContainer,
-          { config },
-          React.createElement(ChartLegend, {
-            content: React.createElement(ChartLegendContent, null),
-          }),
-        ),
-      );
+      renderLegend();
       const entry = document.querySelector<HTMLElement>('[data-part="entry"]')!;
       expect(() => fireEvent.click(entry)).not.toThrow();
       expect(() => fireEvent.keyDown(entry, { key: 'Enter' })).not.toThrow();
@@ -202,15 +189,7 @@ describe('ChartLegend [react] structural contract (moved from the a11y suite, #2
 
   describe('color token compliance -- no hex, no var(), no arbitrary value', () => {
     it('the default content render never emits a forbidden class', () => {
-      const { container } = render(
-        React.createElement(
-          ChartContainer,
-          { config },
-          React.createElement(ChartLegend, {
-            content: React.createElement(ChartLegendContent, null),
-          }),
-        ),
-      );
+      const { container } = renderLegend();
       const html = container.innerHTML;
       expect(html).not.toMatch(/#[0-9a-f]{3,8}\b/i);
       expect(html).not.toMatch(/var\(--/);

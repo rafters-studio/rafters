@@ -411,13 +411,11 @@ describe('barChartClasses', () => {
   });
 });
 
-// The structural guarantees #2225 pins outside axe's reach, moved here from
-// the component's a11y suite under #2222 (the axe scenes now live in
-// bar-chart.a11y.tsx and its element/astro lanes): no role="img" on the SVG
-// (it would make its descendants presentational and break keyboard
+// The structural guarantees #2225 pins outside axe's reach: no role="img" on
+// the SVG (it would make its descendants presentational and break keyboard
 // traversal), the data-table fallback always present, and every emitted
 // class a literal token class, never a hex, `var()`, or arbitrary value.
-describe('BarChart [react] structural contract (moved from the a11y suite, #2222)', () => {
+describe('BarChart [react] structural contract', () => {
   const announceToScreenReader = stubAnnounceToScreenReader();
 
   afterEach(() => {
@@ -427,11 +425,6 @@ describe('BarChart [react] structural contract (moved from the a11y suite, #2222
     vi.clearAllMocks();
   });
 
-  const config = {
-    desktop: { label: 'Desktop', token: 'chart-1' },
-    mobile: { label: 'Mobile', token: 'chart-2' },
-  } satisfies ChartConfig;
-
   function renderChart(rows: typeof data = data) {
     const { triggerResize } = stubResizeObserver();
     const view = render(
@@ -440,7 +433,7 @@ describe('BarChart [react] structural contract (moved from the a11y suite, #2222
         null,
         React.createElement(
           ChartContainer,
-          { config },
+          { config: cfg },
           React.createElement(
             BarChart,
             { data: rows, series: ['desktop', 'mobile'] },
@@ -455,7 +448,7 @@ describe('BarChart [react] structural contract (moved from the a11y suite, #2222
     return view;
   }
 
-  describe('BarChart a11y [react]: default state', () => {
+  describe('BarChart structure: figure, svg, data-table fallback', () => {
     it('renders inside a figure carrying role="figure" and a descriptive aria-label', () => {
       const { container } = renderChart();
       const figure = container.querySelector('figure[data-part="root"]');
@@ -483,7 +476,7 @@ describe('BarChart [react] structural contract (moved from the a11y suite, #2222
     });
   });
 
-  describe('BarChart a11y [react]: empty state', () => {
+  describe('empty state', () => {
     it('renders an empty plot and an empty table body, no throw', () => {
       const { container } = renderChart([]);
       expect(container.querySelectorAll('[data-part="bar"]')).toHaveLength(0);
@@ -491,7 +484,7 @@ describe('BarChart [react] structural contract (moved from the a11y suite, #2222
     });
   });
 
-  describe('BarChart a11y [react]: active-datum state', () => {
+  describe('active-datum state', () => {
     it('arrow keys move the active-datum cursor and announce it, focus staying on the figure', () => {
       const { container } = renderChart();
       const figure = container.querySelector('figure[data-part="root"]') as HTMLElement;
@@ -515,12 +508,12 @@ describe('BarChart [react] structural contract (moved from the a11y suite, #2222
     });
   });
 
-  describe('BarChart a11y: no keyboard contract claimed outside root/plot', () => {
+  describe('no keyboard contract outside root/plot', () => {
     it('barChart.keymap never claims a key on the bar or table parts', () => {
       const barChartConfig = {
         data,
         series: ['desktop'],
-        chartConfig: config,
+        chartConfig: cfg,
         categoryKey: 'month',
         width: 300,
         height: 200,
@@ -531,7 +524,7 @@ describe('BarChart [react] structural contract (moved from the a11y suite, #2222
     });
   });
 
-  describe('BarChart a11y: color/class token compliance -- no hex, no var(), no arbitrary value', () => {
+  describe('color token compliance -- no hex, no var(), no arbitrary value', () => {
     const classes = barChartClasses(
       { layout: 'vertical' },
       { bars: [], valueTicks: [], activeIndex: null },

@@ -23,18 +23,14 @@ function mount(attrs: string): HTMLElement {
   return document.body.querySelector('main') as HTMLElement;
 }
 
-for (const size of SIZES) {
-  test(`rafters-spinner size=${size}`, async ({ task }) => {
-    const host = mount(`size="${size}"`);
-    const results = await runAxe(host);
-    task.meta.axe = results;
-    expect(results.violations).toEqual([]);
-  });
-}
+const scenes: ReadonlyArray<[string, string]> = [
+  ...SIZES.map((size): [string, string] => [`size=${size}`, `size="${size}"`]),
+  ...VARIANTS.map((variant): [string, string] => [`variant=${variant}`, `variant="${variant}"`]),
+];
 
-for (const variant of VARIANTS) {
-  test(`rafters-spinner variant=${variant}`, async ({ task }) => {
-    const host = mount(`variant="${variant}"`);
+for (const [name, attrs] of scenes) {
+  test(`rafters-spinner ${name}`, async ({ task }) => {
+    const host = mount(attrs);
     const results = await runAxe(host);
     task.meta.axe = results;
     expect(results.violations).toEqual([]);

@@ -258,19 +258,18 @@ describe('issue #2228 functional test block (tooltip half)', () => {
   });
 });
 
-// Moved here from the component's a11y suite under #2222 (the axe scenes now
-// live in chart-tooltip.a11y.tsx and its element/astro lanes): the "never
-// focusable, discoverable via sr-announcer" claim, and the mouse-free path
-// -- a shell dispatching `point`/`clear` (simulating keyboard-driven datum
-// traversal) drives the SAME content and announcement a pointer would, with
-// no keyboard contract of the tooltip's own.
-describe('ChartTooltip [react] structural contract (moved from the a11y suite, #2222)', () => {
+// Structural guarantees axe cannot see: the tooltip is never focusable
+// (discoverable via the sr-announcer instead), and the mouse-free path -- a
+// shell dispatching `point`/`clear` for keyboard-driven datum traversal --
+// drives the SAME content and announcement a pointer would, with no keyboard
+// contract of the tooltip's own.
+describe('ChartTooltip [react] structural contract', () => {
   afterEach(() => {
     cleanup();
     document.body.innerHTML = '';
   });
 
-  describe('ChartTooltip a11y [react]', () => {
+  describe('ChartTooltip is never focusable', () => {
     it('content carries role=tooltip and no focus-granting attribute', () => {
       render(
         React.createElement(
@@ -291,7 +290,7 @@ describe('ChartTooltip [react] structural contract (moved from the a11y suite, #
     });
   });
 
-  describe('mouse-free path: a shell driving point/clear reaches the same content', () => {
+  describe('mouse-free parity: a shell driving point/clear reaches the same content', () => {
     it('dispatching point (as a keyboard-driven chart shell would) resolves the same datum hitTest gives a pointer', () => {
       const viaShell = chartTooltip.actions.point(
         { datum: null },

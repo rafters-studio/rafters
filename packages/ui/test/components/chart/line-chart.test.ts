@@ -464,16 +464,14 @@ describe('lineChartClasses', () => {
   });
 });
 
-// The structural guarantees #2226 pins outside axe's reach, moved here from
-// the component's a11y suite under #2222 (the axe scenes now live in
-// line-chart.a11y.tsx and its element/astro lanes): no role="img" on the SVG
-// (it would make its descendants presentational and break keyboard
+// The structural guarantees #2226 pins outside axe's reach: no role="img" on
+// the SVG (it would make its descendants presentational and break keyboard
 // traversal), the data-table fallback always present, axis-less-by-omission
 // (the #2230 sparkline shape), and every emitted class a literal token
 // class, never a hex, `var()`, or arbitrary value. The two-row fixture below
-// is the a11y suite's own; it shadows this file's three-row `data` so the
-// moved assertions keep their counts.
-describe('LineChart [react] structural contract (moved from the a11y suite, #2222)', () => {
+// shadows this file's three-row `data` so the row and point counts stay
+// small enough to assert by hand.
+describe('LineChart [react] structural contract', () => {
   const announceToScreenReader = stubAnnounceToScreenReader();
 
   afterEach(() => {
@@ -493,7 +491,22 @@ describe('LineChart [react] structural contract (moved from the a11y suite, #222
     { month: 'Feb', desktop: 120, mobile: 60 },
   ];
 
-  function renderChart(rows: typeof data = data) {
+  interface RenderOptions {
+    rows?: typeof data;
+    series?: string[];
+    dots?: boolean;
+    /** false composes no XAxis: the axis-less-by-omission sparkline shape (#2230). */
+    axis?: boolean;
+    size?: { width: number; height: number };
+  }
+
+  function renderChart({
+    rows = data,
+    series = ['desktop', 'mobile'],
+    dots = true,
+    axis = true,
+    size = { width: 300, height: 200 },
+  }: RenderOptions = {}) {
     const { triggerResize } = stubResizeObserver();
     const view = render(
       React.createElement(
@@ -504,19 +517,19 @@ describe('LineChart [react] structural contract (moved from the a11y suite, #222
           { config },
           React.createElement(
             LineChart,
-            { data: rows, series: ['desktop', 'mobile'] },
-            React.createElement(XAxis, { dataKey: 'month' }),
+            { data: rows, series, dots },
+            axis ? React.createElement(XAxis, { dataKey: 'month' }) : null,
           ),
         ),
       ),
     );
     act(() => {
-      triggerResize([{ contentRect: { width: 300, height: 200 } }]);
+      triggerResize([{ contentRect: size }]);
     });
     return view;
   }
 
-  describe('LineChart a11y [react]: default state', () => {
+  describe('LineChart structure: figure, svg, data-table fallback', () => {
     it('renders inside a figure carrying role="figure" and a descriptive aria-label', () => {
       const { container } = renderChart();
       const figure = container.querySelector('figure[data-part="root"]');
@@ -549,51 +562,35 @@ describe('LineChart [react] structural contract (moved from the a11y suite, #222
     });
   });
 
-  describe('LineChart a11y [react]: dots suppressed', () => {
+  describe('dots suppressed', () => {
     it('renders no point markers with dots={false}', () => {
-      const { triggerResize } = stubResizeObserver();
-      const { container } = render(
-        React.createElement(
-          ChartContainer,
-          { config },
-          React.createElement(
-            LineChart,
-            { data, series: ['desktop'], dots: false },
-            React.createElement(XAxis, { dataKey: 'month' }),
-          ),
-        ),
-      );
-      act(() => triggerResize([{ contentRect: { width: 300, height: 200 } }]));
+      const { container } = renderChart({ series: ['desktop'], dots: false });
       expect(container.querySelectorAll('[data-part="point"]')).toHaveLength(0);
     });
   });
 
-  describe('LineChart a11y [react]: axis-less by omission (the #2230 sparkline shape)', () => {
+  describe('axis-less by omission (the #2230 sparkline shape)', () => {
     it('describes itself as a Sparkline with no XAxis/YAxis/CartesianGrid composed', () => {
-      const { triggerResize } = stubResizeObserver();
-      const { container } = render(
-        React.createElement(
-          ChartContainer,
-          { config },
-          React.createElement(LineChart, { data, series: ['desktop'] }),
-        ),
-      );
-      act(() => triggerResize([{ contentRect: { width: 120, height: 40 } }]));
+      const { container } = renderChart({
+        series: ['desktop'],
+        axis: false,
+        size: { width: 120, height: 40 },
+      });
       const figure = container.querySelector('figure[data-part="root"]');
       expect(figure?.getAttribute('aria-label')).toMatch(/^Sparkline of/);
     });
   });
 
-  describe('LineChart a11y [react]: empty state', () => {
+  describe('empty state', () => {
     it('renders an empty plot and an empty table body, no throw', () => {
-      const { container } = renderChart([]);
+      const { container } = renderChart({ rows: [] });
       expect(container.querySelectorAll('[data-part="line"]')).toHaveLength(0);
       expect(container.querySelectorAll('[data-part="point"]')).toHaveLength(0);
       expect(container.querySelectorAll('[data-part="table"] tbody tr')).toHaveLength(0);
     });
   });
 
-  describe('LineChart a11y [react]: active-datum state', () => {
+  describe('active-datum state', () => {
     it('arrow keys move the active-datum cursor and announce it, focus staying on the figure', () => {
       const { container } = renderChart();
       const figure = container.querySelector('figure[data-part="root"]') as HTMLElement;
@@ -616,7 +613,7 @@ describe('LineChart [react] structural contract (moved from the a11y suite, #222
     });
   });
 
-  describe('LineChart a11y: no keyboard contract claimed outside root/plot', () => {
+  describe('no keyboard contract outside root/plot', () => {
     it('lineChart.keymap never claims a key on the line, point, or table parts', () => {
       const lineChartConfig = {
         data,
@@ -634,7 +631,7 @@ describe('LineChart [react] structural contract (moved from the a11y suite, #222
     });
   });
 
-  describe('LineChart a11y: color/class token compliance -- no hex, no var(), no arbitrary value', () => {
+  describe('color token compliance -- no hex, no var(), no arbitrary value', () => {
     const classes = lineChartClasses(
       { smooth: false, dots: true },
       { points: [], valueTicks: [], activeIndex: null },

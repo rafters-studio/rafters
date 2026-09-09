@@ -41,15 +41,15 @@ async function mount(): Promise<Document> {
  *  plot. Without layout every rect is zero, so the pointer normalizes to the
  *  first band (Jan). bindChartTooltip portals the panel into the ambient
  *  document.body (getPortalContainer, the same primitive Float composes),
- *  which under the astro project's happy-dom globals is not the parsed
- *  window, so the open panel is audited where it lands. */
+ *  which under the astro project's happy-dom globals (registered by
+ *  vitest.setup.astro.ts) is not the parsed window, so the open panel is
+ *  audited where it lands. */
 function openOnJan(parsed: Document): HTMLElement {
   const plot = parsed.querySelector('div[data-part="plot"]') as HTMLElement;
   const root = parsed.querySelector('rafters-chart-tooltip') as HTMLElement;
   bindChartTooltip(root, { scale: bandScale(domain, range), data, config });
   plot.dispatchEvent(new MouseEvent('mousemove', { clientX: 1, clientY: 1, bubbles: true }));
-  const ambient = typeof globalThis.document === 'undefined' ? parsed : globalThis.document;
-  const content = ambient.querySelector('[data-part="content"][data-state="open"]');
+  const content = globalThis.document.querySelector('[data-part="content"][data-state="open"]');
   expect(content).not.toBeNull();
   expect(content?.textContent).toContain('Jan');
   return content as HTMLElement;

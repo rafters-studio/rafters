@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest';
 import { render } from 'vitest-browser-react';
 import { runAxe } from '../../a11y/run-axe';
-import { Spinner } from '../../../src/components/spinner/spinner';
+import { Spinner, type SpinnerProps } from '../../../src/components/spinner/spinner';
 import type { SpinnerSize, SpinnerVariant } from '../../../src/components/spinner/spinner.behavior';
 
 // The score projects aria-label="Loading" on every instance, so there is no
@@ -19,24 +19,16 @@ const VARIANTS: ReadonlyArray<SpinnerVariant> = [
   'muted',
 ];
 
-for (const size of SIZES) {
-  test(`spinner size=${size}`, async ({ task }) => {
-    const { container } = await render(
-      <main>
-        <Spinner size={size} />
-      </main>,
-    );
-    const results = await runAxe(container);
-    task.meta.axe = results;
-    expect(results.violations).toEqual([]);
-  });
-}
+const scenes: ReadonlyArray<[string, SpinnerProps]> = [
+  ...SIZES.map((size): [string, SpinnerProps] => [`size=${size}`, { size }]),
+  ...VARIANTS.map((variant): [string, SpinnerProps] => [`variant=${variant}`, { variant }]),
+];
 
-for (const variant of VARIANTS) {
-  test(`spinner variant=${variant}`, async ({ task }) => {
+for (const [name, props] of scenes) {
+  test(`spinner ${name}`, async ({ task }) => {
     const { container } = await render(
       <main>
-        <Spinner variant={variant} />
+        <Spinner {...props} />
       </main>,
     );
     const results = await runAxe(container);

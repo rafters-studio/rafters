@@ -7,6 +7,8 @@ interface Scene {
   open?: string[];
   disabled?: boolean;
   disabledItems?: string[];
+  collapsible?: boolean;
+  headingLevel?: number;
 }
 
 const SECTIONS: ReadonlyArray<[string, string]> = [
@@ -15,11 +17,17 @@ const SECTIONS: ReadonlyArray<[string, string]> = [
   ['c', 'Gamma'],
 ];
 
-function section(value: string, label: string, expanded: boolean, disabled: boolean): string {
+function section(
+  value: string,
+  label: string,
+  expanded: boolean,
+  disabled: boolean,
+  headingLevel: number,
+): string {
   const state = expanded ? 'open' : 'closed';
   return `
     <div data-part="item" data-value="${value}" data-state="${state}">
-      <div data-part="heading" data-value="${value}" role="heading" aria-level="3">
+      <div data-part="heading" data-value="${value}" role="heading" aria-level="${headingLevel}">
         <button type="button" id="acc-trigger-${value}" data-part="trigger" data-value="${value}"
                 data-roving-item data-state="${state}" aria-expanded="${expanded}"
                 aria-controls="acc-content-${value}"${disabled ? ' disabled' : ''}>${label}</button>
@@ -36,14 +44,22 @@ async function mount({
   open = [],
   disabled = false,
   disabledItems = [],
+  collapsible = false,
+  headingLevel = 3,
 }: Scene): Promise<HTMLElement> {
   const sections = SECTIONS.map(([value, label]) =>
-    section(value, label, open.includes(value), disabled || disabledItems.includes(value)),
+    section(
+      value,
+      label,
+      open.includes(value),
+      disabled || disabledItems.includes(value),
+      headingLevel,
+    ),
   ).join('');
   document.body.innerHTML = `
     <main>
       <rafters-accordion>
-        <div data-part="root" data-orientation="vertical" data-type="${type}" data-collapsible="false" data-heading-level="3"${disabled ? ' data-disabled="true"' : ''}>
+        <div data-part="root" data-orientation="vertical" data-type="${type}" data-collapsible="${collapsible}" data-heading-level="${headingLevel}"${disabled ? ' data-disabled="true"' : ''}>
           ${sections}
         </div>
       </rafters-accordion>
@@ -55,7 +71,9 @@ async function mount({
 const scenes: ReadonlyArray<[string, Scene]> = [
   ['collapsed', {}],
   ['one section open', { open: ['b'] }],
+  ['collapsible single', { open: ['a'], collapsible: true }],
   ['multiple with two open', { type: 'multiple', open: ['a', 'c'] }],
+  ['heading level 2', { open: ['b'], headingLevel: 2 }],
   ['one section disabled', { disabledItems: ['b'] }],
   ['whole accordion disabled', { disabled: true }],
 ];
