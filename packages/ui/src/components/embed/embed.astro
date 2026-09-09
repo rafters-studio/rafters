@@ -80,14 +80,15 @@ const { url, provider, aspectRatio, title, class: _discardedClass } = Astro.prop
 };
 
 const descriptor = resolveEmbed({ url, provider, aspectRatio, title });
-
-const containerClass = embedContainerClasses;
-const fallbackClass = embedFallbackClasses;
 ---
 
 {
   descriptor.kind === 'iframe' ? (
-    <div data-part="root" class={containerClass} style={`aspect-ratio: ${descriptor.aspectRatio}`}>
+    <div
+      data-part="root"
+      class={embedContainerClasses}
+      style={`aspect-ratio: ${descriptor.aspectRatio}`}
+    >
       <iframe
         src={descriptor.src}
         title={descriptor.title}
@@ -99,7 +100,7 @@ const fallbackClass = embedFallbackClasses;
       />
     </div>
   ) : (
-    <div data-part="root" class={fallbackClass}>
+    <div data-part="root" class={embedFallbackClasses}>
       <div class={embedFallbackMessageClasses}>{descriptor.message}</div>
       {descriptor.includeLink && descriptor.url ? (
         <a

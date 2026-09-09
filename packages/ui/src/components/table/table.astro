@@ -60,11 +60,10 @@ import { tableRootClasses, tableWrapperClasses } from './table.classes';
 interface Props extends Omit<HTMLAttributes<'table'>, 'class'> {}
 
 const { class: _discardedClass, ...attrs } = Astro.props as Props & { class?: string };
-const rootClass = tableRootClasses;
 ---
 
 <div class={tableWrapperClasses}>
-  <table data-part="root" class={rootClass} {...attrs}>
+  <table data-part="root" class={tableRootClasses} {...attrs}>
     <slot />
   </table>
 </div>

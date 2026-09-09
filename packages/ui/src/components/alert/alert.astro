@@ -101,7 +101,6 @@ const { variant, class: _discardedClass, ...attrs } = Astro.props as Props & { c
 
 const config: AlertConfig = { variant };
 const classes: AlertClassSet = alertClasses(config, {});
-const rootClass = classes.root;
 
 // Annotation is documentation, not load-bearing -- inference reaches AriaAttrs
 // without it through contextual typing of the ?? {} fallback.
@@ -109,7 +108,7 @@ const projection: AriaAttrs = alert.aria({}, config, { root: '' }).root ?? {};
 const role = projection.role;
 ---
 
-<div data-part="root" role={role} class={rootClass} {...attrs}>
+<div data-part="root" role={role} class={classes.root} {...attrs}>
   <div data-slot="alert-title" class={alertTitleClasses}><slot name="title" /></div>
   <div data-slot="alert-description" class={alertDescriptionClasses}>
     <slot name="description" />

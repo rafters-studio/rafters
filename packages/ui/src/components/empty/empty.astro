@@ -86,10 +86,9 @@ interface Props {}
 const { class: _discardedClass, ...attrs } = Astro.props as Props & { class?: string };
 
 const classes: EmptyClassSet = emptyClasses({}, {});
-const rootClass = classes.root;
 ---
 
-<div data-part="root" class={rootClass} {...attrs}>
+<div data-part="root" class={classes.root} {...attrs}>
   <div data-slot="empty-icon" class={emptyIconClasses}><slot name="icon" /></div>
   <div data-slot="empty-title" class={emptyTitleClasses}><slot name="title" /></div>
   <div data-slot="empty-description" class={emptyDescriptionClasses}>

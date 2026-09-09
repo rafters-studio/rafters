@@ -58,7 +58,6 @@ const {
 
 const config: SeparatorConfig = { orientation, decorative };
 const classes = separatorClasses(config, {});
-const rootClass = classes.root;
 
 // The annotation documents the projection's type; inference reaches the same
 // result without it (contextual typing of the ?? {} fallback), so it is
@@ -72,6 +71,6 @@ const ariaOrientation = projection['aria-orientation'] as SeparatorOrientation |
   data-part="root"
   role={role}
   aria-orientation={ariaOrientation}
-  class={rootClass}
+  class={classes.root}
   {...attrs}
 />

@@ -88,12 +88,11 @@ const {
 const config: ItemConfig = { size: parseItemSize(size), selected, disabled };
 const classes = itemClasses(config, {});
 const aria = item.aria({}, config, { root: '' }).root ?? {};
-const rootClass = classes.root;
 
 const hasIcon = Astro.slots.has('icon');
 ---
 
-<div data-part="root" class={rootClass} {...aria} {...attrs}>
+<div data-part="root" class={classes.root} {...aria} {...attrs}>
   {hasIcon && (
     <div class={itemIconClasses} aria-hidden="true">
       <slot name="icon" />

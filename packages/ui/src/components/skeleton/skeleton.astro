@@ -46,8 +46,7 @@ interface Props {}
 const { class: _discardedClass, ...attrs } = Astro.props as Props & { class?: string };
 
 const classes = skeletonClasses({}, {});
-const rootClass = classes.root;
 const aria = skeleton.aria({}, {}, { root: '' }).root;
 ---
 
-<div data-part="root" data-slot="skeleton" class={rootClass} {...aria} {...attrs}></div>
+<div data-part="root" data-slot="skeleton" class={classes.root} {...aria} {...attrs}></div>

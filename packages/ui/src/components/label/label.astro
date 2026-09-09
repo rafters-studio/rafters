@@ -52,7 +52,6 @@ interface Props extends Omit<HTMLAttributes<'label'>, 'class'> {
 const { variant = 'default', class: _discardedClass, ...attrs } = Astro.props as Props & { class?: string };
 
 const classes: LabelClassSet = labelClasses({ variant }, {});
-const rootClass = classes.root;
 ---
 
-<label data-part="root" class={rootClass} {...attrs}><slot /></label>
+<label data-part="root" class={classes.root} {...attrs}><slot /></label>
