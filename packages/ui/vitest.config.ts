@@ -58,7 +58,18 @@ export default defineConfig({
           environmentOptions: {
             happyDOM: {
               settings: {
-                disableIframePageLoading: true,
+                // Same rationale as vitest.setup.astro.ts: this project
+                // renders the same components under happy-dom, so a
+                // disabled <script> module fetch or iframe page load must
+                // never surface as a console.error the class-discard spies
+                // count. navigation.disableChildFrameNavigation replaces the
+                // deprecated disableIframePageLoading, which logs its refusal
+                // through console.error unconditionally.
+                disableJavaScriptFileLoading: true,
+                handleDisabledFileLoadingAsSuccess: true,
+                navigation: {
+                  disableChildFrameNavigation: true,
+                },
               },
             },
           },
