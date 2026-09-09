@@ -27,7 +27,28 @@ jobs:
       # webkit is not optional: test/presence/presence-race.e2e.ts is the only
       # place the browser semantics usePresence rests on are measured, and it is
       # measured in every engine the project ships against.
-      - run: pnpm exec playwright install --with-deps chromium firefox webkit
+      #
+      # --with-deps runs apt-get update against the runner's Google Chrome
+      # source, which has twice answered with a Hash Sum mismatch from
+      # dl.google.com and failed the job before a single test ran. A mismatch
+      # means the cached package index disagrees with the mirror mid-update, so
+      # a bare retry would re-read the same bad index; each attempt drops
+      # /var/lib/apt/lists to force a clean refetch. The first attempt neither
+      # clears nor sleeps, so a healthy run costs nothing extra (#2342).
+      - name: Install Playwright engines and system dependencies
+        run: |
+          for attempt in 1 2 3; do
+            if pnpm exec playwright install --with-deps chromium firefox webkit; then
+              exit 0
+            fi
+            if [ "$attempt" -lt 3 ]; then
+              echo "playwright install failed (attempt $attempt of 3); clearing the apt index and retrying"
+              sudo rm -rf /var/lib/apt/lists/*
+              sleep 15
+            fi
+          done
+          echo "playwright install failed after 3 attempts"
+          exit 1
       - run: pnpm test:all
 
   # The Astro matrix (#2327): the same packages/ui Astro test files and

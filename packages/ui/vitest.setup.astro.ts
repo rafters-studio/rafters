@@ -21,19 +21,18 @@ import { builtinEnvironments } from 'vitest/runtime';
 await builtinEnvironments['happy-dom'].setup(globalThis, {
   happyDOM: {
     settings: {
-      // Nothing happy-dom loads on the components' behalf may reach the
-      // network or the console. The class-discard tests assert that rendering
-      // logs nothing, and a NotSupportedError from the DOM is not a component
-      // message, so every refusal below is a silent one:
-      //
-      // - From Astro 6 the container renders each component's <script> as a
-      //   `<script type="module" src="...?astro&type=script">` tag. The test
-      //   calls bindX itself, so the load is disabled, and the disabled load
-      //   counts as a success instead of a console.error.
-      // - An iframe (Embed with a YouTube URL) must not fetch the live host.
-      //   `disableIframePageLoading` would do that but reports it as a
-      //   console.error; refusing child-frame navigation instead just leaves
-      //   the frame on its URL.
+      // The SSR markup carries each component's <script>, and Embed's markup
+      // carries a real iframe pointed at youtube-nocookie.com; the tests call
+      // bindX(root) themselves and never expect a network fetch, so both the
+      // module and the iframe page must never be fetched. A refused script
+      // load only stays quiet with handleDisabledFileLoadingAsSuccess, and a
+      // refused iframe load must go through navigation.disableChildFrameNavigation
+      // rather than the deprecated disableIframePageLoading, which logs a
+      // NotSupportedError through console.error unconditionally
+      // (HTMLIFrameElement.js) with no handleDisabledFileLoadingAsSuccess
+      // escape hatch -- the class-discard spies in embed, image, and progress
+      // all counted that call (three tests went red on main after #2331 and
+      // #2332 met).
       disableJavaScriptFileLoading: true,
       handleDisabledFileLoadingAsSuccess: true,
       navigation: {
