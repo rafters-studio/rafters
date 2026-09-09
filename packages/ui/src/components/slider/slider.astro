@@ -125,7 +125,7 @@ const thumbs = values.map((value, index) => {
     ? `left:${pct}%;top:50%;transform:translate(-50%,-50%)`
     : `bottom:${pct}%;left:50%;transform:translate(-50%,50%)`;
   return {
-    role: 'slider',
+    role: 'slider' as const,
     'data-part': 'thumb',
     'data-index': index,
     'data-value': value,

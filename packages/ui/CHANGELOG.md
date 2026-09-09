@@ -114,6 +114,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Astro pin moves to 7 and the Astro tests run against 6 and 7 (#2327).**
+  `astro` is `^7.3.2` here and in `apps/registry`, so the `.astro` files the
+  registry serves compile under `@astrojs/compiler-rs`, the strict Rust
+  compiler the consumer sites run. A second, isolated install under
+  `test/astro-matrix/v6` runs the same test files and `astro check` against
+  Astro 6 (`test:astro:v6`, `check:astro:v6`); CI reports each leg on its own.
+  `astro check` now runs on `packages/ui` and is clean on both majors: the
+  nine diagnostics it surfaced were fixed in place (a `type` prop typed as
+  `string` on input and input-group, literal `role`/`aria-hidden` values
+  widened to `string` on slider and input-otp, a dead `id` on context-menu's
+  root and a dead `class` on dialog's trigger, and a `{}` in command's doc
+  example that hid its `Props` from the language server). None changes the
+  rendered markup.
+
 - **Card adopts shadcn v4 spacing, which changes existing rendering (#2019).**
   The root carries the vertical rhythm (`flex flex-col gap-6 py-6`) and each
   part only its horizontal inset (`px-6`), replacing the per-part `p-6 pt-0`;
