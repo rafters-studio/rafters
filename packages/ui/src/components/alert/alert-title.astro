@@ -1,0 +1,33 @@
+---
+/**
+ * AlertTitle -- the Astro performance of Alert's title region, importable on
+ * its own so an Astro tree composes exactly like the React tree:
+ *
+ *   <Alert><AlertTitle>...</AlertTitle></Alert>
+ *
+ * alert.astro's named `title` slot remains as a convenience; this file is the
+ * parity surface. Both draw from the SAME class string in alert.classes.ts --
+ * one score, one composition, no drift.
+ *
+ * Renders a real `h5`, matching the React `AlertTitle` (alert.tsx:93). A
+ * region that is absent when unfilled cannot be an empty heading, and
+ * `alert.astro`'s `Astro.slots.has` guard is what keeps the named-slot
+ * convenience absent when unfilled -- which is what makes this real heading
+ * safe to render here.
+ *
+ * `class` is NOT a prop -- design travels through token props only. It is
+ * discarded so `...attrs` cannot carry it onto the element.
+ *
+ * @parent alert
+ */
+import type { HTMLAttributes } from 'astro/types';
+import { alertTitleClasses } from './alert.classes';
+
+type Props = Omit<HTMLAttributes<'h5'>, 'class'>;
+
+const { class: _discardedClass, ...attrs } = Astro.props as Props & { class?: string };
+---
+
+<h5 data-slot="alert-title" class={alertTitleClasses} {...attrs}>
+  <slot />
+</h5>
