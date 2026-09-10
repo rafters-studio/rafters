@@ -5,9 +5,12 @@
  * the React and WC performances drive. The viewport signal is mocked via
  * matchMedia (read live by the bind).
  *
- * The mobile overlay is the SSR panel enhanced in place into a modal by the bind
- * (role=dialog + the sheet modal trio); a closed mobile overlay is `hidden` so
- * its links leave the tab order and a11y tree.
+ * The mobile overlay is the SSR panel (a `<nav>`) rendered inside a `dialog`
+ * wrapper `<div>`; the bind puts the modal identity (role=dialog + the sheet
+ * modal trio) on that WRAPPER, never on the `<nav>` (role=dialog is not an
+ * allowed ARIA role on `<nav>` -- axe `aria-allowed-role`, #2338/#2222). A
+ * closed mobile overlay `hidden`s the panel so its links leave the tab order
+ * and a11y tree.
  */
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import userEvent from '@testing-library/user-event';
@@ -43,6 +46,7 @@ async function mount(props: Record<string, unknown> = {}): Promise<HTMLElement> 
 const trigger = () => document.body.querySelector<HTMLElement>('[data-part="trigger"]')!;
 const rail = () => document.body.querySelector<HTMLElement>('[data-part="rail"]')!;
 const panel = () => document.body.querySelector<HTMLElement>('[data-part="panel"]')!;
+const dialog = () => document.body.querySelector<HTMLElement>('[data-part="dialog"]')!;
 
 beforeEach(() => setViewport(false));
 afterEach(() => {
@@ -73,15 +77,21 @@ describe('sidebar conformance [astro]', () => {
     expect(panel().hidden).toBe(true);
   });
 
-  it('bind mobile: the trigger opens a modal dialog; Escape from a data-part descendant dismisses', async () => {
+  it('bind mobile: the trigger opens a modal dialog on the wrapper, never the nav; Escape from a data-part descendant dismisses', async () => {
     setViewport(true);
     const user = userEvent.setup();
     await mount();
     await user.click(trigger());
     expect(panel().hidden).toBe(false);
-    expect(panel().getAttribute('role')).toBe('dialog');
-    expect(panel().getAttribute('aria-modal')).toBe('true');
-    expect(panel().contains(document.activeElement)).toBe(true);
+    // role=dialog is not an allowed ARIA role on <nav> (axe aria-allowed-role,
+    // #2338/#2222) -- the dialog identity lives on the wrapper, never the panel.
+    expect(dialog().getAttribute('role')).toBe('dialog');
+    expect(dialog().getAttribute('aria-modal')).toBe('true');
+    expect(dialog().getAttribute('aria-label')).toBe('Sidebar');
+    expect(panel().tagName).toBe('NAV');
+    expect(panel().hasAttribute('role')).toBe(false);
+    expect(panel().hasAttribute('aria-modal')).toBe(false);
+    expect(dialog().contains(document.activeElement)).toBe(true);
     expect(document.body.style.overflow).toBe('hidden');
 
     // Containment resolution: focus the rail (its own data-part, inside the

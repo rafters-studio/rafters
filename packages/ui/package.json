@@ -35,7 +35,8 @@
     "mdast-util-to-markdown": "^2.1.2",
     "micromark": "^4.0.2",
     "micromark-extension-mdxjs": "^3.0.0",
-    "nanostores": "^1.1.0"
+    "nanostores": "^1.1.0",
+    "ultrahtml": "^1.6.0"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",

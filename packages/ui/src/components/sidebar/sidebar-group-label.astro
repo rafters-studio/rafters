@@ -1,0 +1,53 @@
+---
+/**
+ * SidebarGroupLabel -- the Astro performance of a group's label, importable
+ * on its own so an Astro tree composes exactly like the React tree:
+ * `<SidebarGroup><SidebarGroupLabel>Main</SidebarGroupLabel></SidebarGroup>`.
+ * Draws from the SAME class string in sidebar.classes.ts the React
+ * performance reads -- one score, one composition, no drift.
+ *
+ * `asChild` (Decision 2, 2026-09-09): render-then-inject via
+ * `primitives/astro-as-child.ts`. When true, the default slot renders to a
+ * string, is parsed with ultrahtml, and this part's class + `data-sidebar`
+ * land on the FIRST element of that markup (its own `class` dropped); when
+ * false or absent, this file renders its own `<div>`. Consumer syntax matches
+ * shadcn's: `<SidebarGroupLabel asChild><a href="/x">Main</a></SidebarGroupLabel>`.
+ *
+ * `class` is NOT a prop -- design travels through token props only. It is
+ * discarded so `...attrs` cannot carry it onto the element.
+ *
+ * @parent sidebar
+ */
+import type { HTMLAttributes } from 'astro/types';
+import { injectAsChildAttrs } from '../../primitives/astro-as-child';
+import { sidebarClasses } from './sidebar.classes';
+
+type Props = Omit<HTMLAttributes<'div'>, 'class'> & {
+  asChild?: boolean;
+};
+
+const {
+  class: _discardedClass,
+  asChild = false,
+  ...attrs
+} = Astro.props as Props & { class?: string };
+
+const classes = sidebarClasses();
+const decoration = { class: classes.groupLabel, 'data-sidebar': 'group-label' };
+
+let injected: string | null = null;
+if (asChild) {
+  const slotHtml = await Astro.slots.render('default');
+  injected = injectAsChildAttrs(slotHtml, attrs, decoration);
+}
+---
+
+{
+  injected !== null ? (
+    <Fragment set:html={injected} />
+  ) : (
+    <div {...decoration} {...attrs}>
+      <slot />
+    </div>
+  )
+}

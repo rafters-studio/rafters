@@ -1,0 +1,40 @@
+---
+/**
+ * SidebarMenuSkeleton -- the Astro performance of a loading placeholder menu
+ * row, importable on its own so an Astro tree composes exactly like the React
+ * tree: `<SidebarMenu><SidebarMenuItem><SidebarMenuSkeleton/></SidebarMenuItem></SidebarMenu>`.
+ * Pure decoration -- no behavior, no state -- modelled on `card-header.astro`.
+ * Draws from the SAME class strings in sidebar.classes.ts the React
+ * performance reads -- one score, one composition, no drift.
+ *
+ * The random bar width is a per-render server value (`sidebar.tsx:541`'s
+ * `Math.random`, carried forward per the oracle disposition table in
+ * sidebar.md): a fresh SSR request gets a fresh width, matching the React
+ * mount-once behavior close enough that neither jitters within its own
+ * lifetime.
+ *
+ * `class` is NOT a prop -- design travels through token props only. It is
+ * discarded so `...attrs` cannot carry it onto the element.
+ *
+ * @parent sidebar
+ */
+import type { HTMLAttributes } from 'astro/types';
+import { sidebarClasses } from './sidebar.classes';
+
+type Props = Omit<HTMLAttributes<'div'>, 'class'> & {
+  showIcon?: boolean;
+};
+
+const {
+  class: _discardedClass,
+  showIcon = false,
+  ...attrs
+} = Astro.props as Props & { class?: string };
+const classes = sidebarClasses();
+const width = `${Math.floor(Math.random() * 40) + 50}%`;
+---
+
+<div data-sidebar="menu-skeleton" class={classes.menuSkeleton} {...attrs}>
+  {showIcon && <div class={classes.menuSkeletonIcon} />}
+  <div class={classes.menuSkeletonText} style={{ '--skeleton-width': width }} />
+</div>
