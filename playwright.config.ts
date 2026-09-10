@@ -2,7 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './test',
-  testMatch: ['**/*.{e2e,spec,a11y}.{ts,tsx}'],
+  testMatch: ['**/*.{spec,a11y}.{ts,tsx}'],
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
@@ -17,17 +17,17 @@ export default defineConfig({
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
-      testMatch: ['**/*.{e2e,spec,a11y}.{ts,tsx}'],
+      testMatch: ['**/*.{spec,a11y}.{ts,tsx}'],
     },
     {
       name: 'firefox',
       use: { ...devices['Desktop Firefox'] },
-      testMatch: ['**/*.{e2e,spec}.{ts,tsx}'],
+      testMatch: ['**/*.spec.{ts,tsx}'],
     },
     {
       name: 'webkit',
       use: { ...devices['Desktop Safari'] },
-      testMatch: ['**/*.{e2e,spec}.{ts,tsx}'],
+      testMatch: ['**/*.spec.{ts,tsx}'],
     },
   ],
 });

@@ -4,13 +4,12 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as React from 'react';
 import { act, cleanup, fireEvent, render } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { createBehavior } from '../../../src/lib/contract';
 import { ChartContainer } from '../../../src/components/chart/chart';
 import { AreaChart } from '../../../src/components/chart/area-chart';
 import { XAxis } from '../../../src/components/chart/x-axis';
-import { stubResizeObserver } from '../../harness/resize-observer';
-import { stubAnnounceToScreenReader } from '../../harness/sr-announcer';
+import * as srAnnouncer from '../../../src/primitives/sr-announcer';
 import {
   areaAria,
   areaChart,
@@ -30,6 +29,63 @@ import {
 import type { ChartConfig } from '../../../src/components/chart/chart.behavior';
 import { hasArbitraryValue } from '../../../src/primitives/classy';
 import { bandScale, linearScale } from '../../../src/primitives/graph';
+
+/**
+ * Inlined per the no-shared-test-support-module rule (#2329): stub the
+ * global ResizeObserver and hand back a way to trigger its callback, plus
+ * the observe/disconnect spies. Caller owns vi.unstubAllGlobals() after the
+ * test, matching every other vi.stubGlobal usage in this codebase.
+ */
+function stubResizeObserver(): {
+  triggerResize: (entries: Array<{ contentRect: { width: number; height: number } }>) => void;
+  observeSpy: ReturnType<typeof vi.fn>;
+  disconnectSpy: ReturnType<typeof vi.fn>;
+} {
+  const observeSpy = vi.fn();
+  const disconnectSpy = vi.fn();
+  let resizeCallback: ResizeObserverCallback | undefined;
+
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      constructor(cb: ResizeObserverCallback) {
+        resizeCallback = cb;
+      }
+      observe = observeSpy;
+      disconnect = disconnectSpy;
+      unobserve = vi.fn();
+    },
+  );
+
+  return {
+    triggerResize: (entries) => {
+      if (!resizeCallback) throw new Error('ResizeObserver callback was never registered');
+      resizeCallback(entries as ResizeObserverEntry[], {} as ResizeObserver);
+    },
+    observeSpy,
+    disconnectSpy,
+  };
+}
+
+/**
+ * Inlined per the no-shared-test-support-module rule (#2329): silence
+ * `announceToScreenReader` for a suite and hand back the spy so the suite can
+ * assert on what would have been announced. A namespace spy rather than
+ * `vi.mock`: the unit project runs with `isolate: false`, so a consumer
+ * module an earlier file already evaluated keeps its binding to the real
+ * export, which a mock factory cannot reach. The spy replaces the export in
+ * place and restores itself after the suite so the stub never leaks into the
+ * next file in the worker.
+ */
+function stubAnnounceToScreenReader(): ReturnType<
+  typeof vi.spyOn<typeof srAnnouncer, 'announceToScreenReader'>
+> {
+  const spy = vi.spyOn(srAnnouncer, 'announceToScreenReader').mockImplementation(() => {});
+  afterAll(() => {
+    spy.mockRestore();
+  });
+  return spy;
+}
 
 const cfg = {
   desktop: { label: 'Desktop', token: 'chart-1' },

@@ -8,7 +8,19 @@ import {
   type ResizableDirection,
 } from '../../../src/components/resizable/resizable.behavior';
 import { resizableClasses } from '../../../src/components/resizable/resizable.classes';
-import { applyAria } from './conformance-suite';
+
+/** Applies an ARIA attribute map to an element, skipping attributes whose
+ *  projected value is undefined (behavior-conditional ARIA, e.g. aria-disabled
+ *  only when disabled). */
+function applyAria(
+  element: HTMLElement,
+  attrs: Record<string, string | boolean | undefined>,
+): void {
+  for (const [name, value] of Object.entries(attrs)) {
+    if (value === undefined) continue;
+    element.setAttribute(name, String(value));
+  }
+}
 
 interface ScenePanel {
   defaultSize: number;

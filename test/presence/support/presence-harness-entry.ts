@@ -4,7 +4,7 @@
  * esbuild bundles THIS file -- which mounts the REAL `usePresence` from
  * `packages/ui/src/hooks` into a real React root -- into a single IIFE injected
  * via `page.setContent`. There is no dev server in this repo and a spec may not
- * start one (see test/presence/presence-exit.e2e.ts), so this is how a browser
+ * start one (see test/presence/presence-exit.spec.ts), so this is how a browser
  * spec drives the genuine hook rather than a hand-copied imitation of it.
  *
  * `React.createElement`, not JSX, so the entry stays a plain `.ts` file with no

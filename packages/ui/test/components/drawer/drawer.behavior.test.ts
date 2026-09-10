@@ -160,5 +160,5 @@ describe('drawer keymap', () => {
 
 // The modal overlay trio (focus-trap, scroll-lock, trigger-spared outside
 // dismissal) is composed by the bindings directly, not declared on the score;
-// the BEHAVIOR is asserted end to end in the conformance suites
-// (drawer.conformance.test.tsx / .astro. / .element.).
+// the BEHAVIOR is asserted end to end in the per-target specs
+// (drawer.spec.tsx / drawer.astro.spec.ts / drawer.element.spec.ts).

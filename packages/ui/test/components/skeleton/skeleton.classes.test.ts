@@ -1,4 +1,16 @@
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import {
+  contrastPlugin,
+  generateBaseSystem,
+  invertPlugin,
+  registryToCompiled,
+  scalePlugin,
+  statePlugin,
+  TokenRegistry,
+} from '@rafters/design-tokens';
 import {
   skeletonBaseClasses,
   skeletonClasses,
@@ -42,4 +54,73 @@ describe('skeleton classes', () => {
   it('is a single constant class string -- no config, no variant channel', () => {
     expect(root()).toBe(skeletonBaseClasses);
   });
+
+  it('compiles to a rule the reduced-motion law never reaches (#2155)', async () => {
+    // Ported from the React conformance suite (#2329): a React render's DOM
+    // is not needed here -- `skeletonBaseClasses` IS the literal class the
+    // component renders, since skeletonClasses() has no config/state
+    // channel. This proves that class compiles to a loop the reduced-motion
+    // law is exempt from -- a property of the compiled CSS, not of any
+    // framework's output. The literal class is scanned by a real Tailwind +
+    // @rafters/design-tokens compile, and the resulting sheet is inspected
+    // as text (no jsdom/happy-dom CSS engine involved -- happy-dom silently
+    // drops every @layer-wrapped rule, so a getComputedStyle or CSSOM
+    // assertion against real compiled output would pass vacuously
+    // regardless of what the sheet actually says).
+    //
+    // motion-modal-in rides along in the fixture purely as a witness: a
+    // tier-kind class known (packages/design-tokens/test/exporters/
+    // motion-css-golden.test.ts) to compile a real reduced-motion block. Its
+    // presence in `reduced` below is what proves the reduced-motion
+    // mechanism fired at all in this compile -- without it, an empty
+    // `reduced` string would make the negative assertion on the skeleton
+    // cell pass for the wrong reason (nothing to be excluded from).
+    const fixtureDir = mkdtempSync(join(tmpdir(), 'rafters-skeleton-motion-'));
+    let css: string;
+    try {
+      writeFileSync(
+        join(fixtureDir, 'probe.classes.ts'),
+        `export const x = '${skeletonBaseClasses} motion-modal-in';\n`,
+      );
+      const registry = new TokenRegistry(generateBaseSystem({}).allTokens, [
+        scalePlugin,
+        contrastPlugin,
+        statePlugin,
+        invertPlugin,
+      ]);
+      css = await registryToCompiled(registry, { contentSources: [fixtureDir] });
+    } finally {
+      rmSync(fixtureDir, { recursive: true, force: true });
+    }
+
+    const cellRule = css.match(/\.animate-pulse-shimmer\{([^}]*)\}/)?.[1];
+    expect(
+      cellRule,
+      'animate-pulse-shimmer did not compile at all -- the class the component renders has drifted from the cell the exporter names',
+    ).toBeDefined();
+    // The loop is the animation SHORTHAND Tailwind generates from the
+    // `--animate-*` key, so both the period and `infinite` ride inside the
+    // key's value rather than standing as longhand declarations on the rule.
+    expect(cellRule, 'the loop rule is not built on the key').toContain(
+      'animation:var(--animate-pulse-shimmer)',
+    );
+    expect(css, 'the loop key does not run forever on its period leaf').toMatch(
+      /--animate-pulse-shimmer:[^;]*var\(--rafters-period-shimmer\)[^;]*\binfinite\b/,
+    );
+
+    const reduced = (
+      css.match(/@media\s*\(prefers-reduced-motion:\s*reduce\)\{.*?\}\}/g) ?? []
+    ).join('');
+    // THE WITNESS IS THE LAW ITSELF. The reduced-motion rule is written on
+    // the LEAVES now -- one `:root` override zeroing every duration and
+    // delay -- so a sheet carrying it proves the mechanism fired, which is
+    // what makes the exclusion below meaningful.
+    expect(
+      reduced,
+      'no reduced-motion block compiled at all -- the exclusion below would prove nothing',
+    ).toMatch(/--rafters-duration-[a-z]+:\s*0/);
+    expect(reduced, 'the loop period was zeroed -- work loops slow, they never stop').not.toContain(
+      '--rafters-period-shimmer',
+    );
+  }, 30000);
 });

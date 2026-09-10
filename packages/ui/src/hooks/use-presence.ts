@@ -45,7 +45,7 @@
  *      animation is never handed back by `getAnimations()` -- it finishes inside
  *      the same style flush that creates it, which makes it no longer relevant,
  *      so the list comes back empty and the exit releases in the same tick as
- *      case 1. Measured, not assumed: `test/presence/presence-race.e2e.ts` pins
+ *      case 1. Measured, not assumed: `test/presence/presence-race.spec.ts` pins
  *      it against the real engines, and the same is true of a bare
  *      `data-state` flip with no React in the picture at all.
  *

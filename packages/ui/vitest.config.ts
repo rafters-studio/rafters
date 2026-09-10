@@ -105,6 +105,13 @@ export default defineConfig({
         extends: true,
         test: {
           name: 'browser',
+          // Each worker here is a real Chromium tab holding a live page, not a
+          // node worker. maxWorkers defaults to all available parallelism, so
+          // leaving it unset opens one tab per core -- ten on this machine, and
+          // a comparable number on a standard CI runner. That is what makes a
+          // large browser lane exceed a 16GB box. Cap it so the ceiling is a
+          // property of the config rather than of whoever runs it.
+          maxWorkers: 2,
           include: a11yOnly
             ? ['test/**/*.a11y.{ts,tsx}']
             : ['test/**/*.spec.{ts,tsx}', 'test/**/*.a11y.{ts,tsx}'],
