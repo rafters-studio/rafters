@@ -59,18 +59,36 @@ const scenes: ReadonlyArray<[string, Scene]> = [
  * leftover tabindex on the closed subtree -- the accessibility-tree exclusion
  * the score projects and #2187 guarded.
  */
-test('rafters-context-menu portaled sub-content, scanned directly', async ({ task }) => {
+test('rafters-context-menu portaled sub-content, scanned directly after an open and close cycle', async ({
+  task,
+}) => {
   await mount({ open: true });
+  const subTrigger = document.getElementById('cm-sub-trigger') as HTMLElement;
   const subContent = document.getElementById('cm-sub-content') as HTMLElement;
   expect(subContent).not.toBeNull();
-  // Closed while the parent menu is open: the score keeps it out of the tree.
   expect(subContent.getAttribute('aria-hidden')).toBe('true');
-  // Nothing inside a closed subtree may be tab-reachable. An item the bind has
-  // not touched yet carries no tabindex at all, which is equally unreachable;
-  // the regression to catch is a leftover '0'.
+
+  // Auditing at mount would pass trivially: the items have no tabindex yet, so
+  // there is no leftover '0' to find. The discriminating state is AFTER a cycle
+  // -- roving focus puts tabindex="0" on an item while the submenu is open, and
+  // a focusable descendant of an aria-hidden container is exactly what axe's
+  // aria-hidden-focus rule catches if the teardown fails to reset it.
+  subTrigger.focus();
+  subTrigger.dispatchEvent(
+    new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }),
+  );
+  expect(subContent.getAttribute('aria-hidden')).toBeNull();
+  expect(subContent.querySelector('[role="menuitem"]')?.getAttribute('tabindex')).toBe('0');
+
+  const focused = document.activeElement as HTMLElement;
+  focused.dispatchEvent(
+    new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true, cancelable: true }),
+  );
+  expect(subContent.getAttribute('aria-hidden')).toBe('true');
   for (const item of subContent.querySelectorAll<HTMLElement>('[role="menuitem"]')) {
-    expect(item.getAttribute('tabindex')).not.toBe('0');
+    expect(item.getAttribute('tabindex')).toBe('-1');
   }
+
   const results = await runAxe(subContent);
   task.meta.axe = results;
   expect(results.violations).toEqual([]);
