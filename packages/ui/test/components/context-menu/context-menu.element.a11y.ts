@@ -50,6 +50,32 @@ const scenes: ReadonlyArray<[string, Scene]> = [
   ['open', { open: true }],
 ];
 
+/**
+ * The <main>-scoped scenes above cannot reach a portaled sub-content node, so
+ * on their own they leave the portaled subtree unaudited entirely. Scanning
+ * that node directly restores the coverage: axe's region rule is a
+ * page-structure rule and does not fire when the node itself is the root, so
+ * the scan runs clean while still catching a regressed aria-hidden or a
+ * leftover tabindex on the closed subtree -- the accessibility-tree exclusion
+ * the score projects and #2187 guarded.
+ */
+test('rafters-context-menu portaled sub-content, scanned directly', async ({ task }) => {
+  await mount({ open: true });
+  const subContent = document.getElementById('cm-sub-content') as HTMLElement;
+  expect(subContent).not.toBeNull();
+  // Closed while the parent menu is open: the score keeps it out of the tree.
+  expect(subContent.getAttribute('aria-hidden')).toBe('true');
+  // Nothing inside a closed subtree may be tab-reachable. An item the bind has
+  // not touched yet carries no tabindex at all, which is equally unreachable;
+  // the regression to catch is a leftover '0'.
+  for (const item of subContent.querySelectorAll<HTMLElement>('[role="menuitem"]')) {
+    expect(item.getAttribute('tabindex')).not.toBe('0');
+  }
+  const results = await runAxe(subContent);
+  task.meta.axe = results;
+  expect(results.violations).toEqual([]);
+});
+
 for (const [name, scene] of scenes) {
   test(`rafters-context-menu ${name}`, async ({ task }) => {
     const host = await mount(scene);

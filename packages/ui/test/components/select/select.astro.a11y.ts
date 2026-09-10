@@ -38,7 +38,7 @@ async function mount({ props = {}, open = false }: Scene): Promise<Document> {
   return document;
 }
 
-// Excluded: every closed state fails `aria-input-field-name` on the listbox
+// Excluded, tracked as #2339: every closed state fails `aria-input-field-name` on the listbox
 // (`#s-content`) in this lane only. The parsed happy-dom window reports no
 // `display: none` for `hidden`, so axe audits the closed listbox, and its
 // aria-labelledby traversal to the label-named trigger comes back empty here.

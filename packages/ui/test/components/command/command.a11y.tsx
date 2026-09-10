@@ -53,7 +53,8 @@ function Scene({ disabledItem, grouped = true, ...props }: SceneProps) {
   );
 }
 
-// Excluded: a query matching nothing (value: 'zzz') fails aria-required-children, because
+// Excluded, tracked as #2337: a query matching nothing (value: 'zzz') fails
+// aria-required-children, because
 // the listbox is left with no visible option or group child once every item is hidden.
 const scenes: ReadonlyArray<[string, SceneProps]> = [
   ['all options visible', {}],

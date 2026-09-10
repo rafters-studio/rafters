@@ -60,6 +60,18 @@ async function mount({
   return document.body.querySelector('main') as HTMLElement;
 }
 
+/**
+ * These scenes carry a raised timeout, and the reason is the component, not the
+ * audit. Measured in this project on the same run: Badge renders in 10ms,
+ * ColorPicker in 1840ms and 1717ms on a repeat, so the cost is per render and
+ * not module initialisation. Splitting one scene gives render 1848ms against
+ * axe 65ms over 15 DOM nodes -- axe is doing almost nothing. Locally each scene
+ * lands near 2s; the CI runner is roughly eight times slower and crosses the
+ * 15s default. The render cost is tracked as #2345, and this raise comes out
+ * when that lands.
+ */
+const SLOW_COMPONENT_TIMEOUT = 60_000;
+
 const scenes: ReadonlyArray<[string, Scene]> = [
   ['default', {}],
   ['custom color', { color: { l: 0.3, c: 0.2, h: 90 } }],
@@ -69,10 +81,14 @@ const scenes: ReadonlyArray<[string, Scene]> = [
 ];
 
 for (const [name, scene] of scenes) {
-  test(`rafters-color-picker ${name}`, async ({ task }) => {
-    const host = await mount(scene);
-    const results = await runAxe(host);
-    task.meta.axe = results;
-    expect(results.violations).toEqual([]);
-  });
+  test(
+    `rafters-color-picker ${name}`,
+    async ({ task }) => {
+      const host = await mount(scene);
+      const results = await runAxe(host);
+      task.meta.axe = results;
+      expect(results.violations).toEqual([]);
+    },
+    SLOW_COMPONENT_TIMEOUT,
+  );
 }

@@ -3,6 +3,9 @@ import { Window } from 'happy-dom';
 import { expect, test } from 'vitest';
 import { runAxe } from '../../a11y/run-axe';
 import Alert from '../../../src/components/alert/alert.astro';
+import AlertTitle from '../../../src/components/alert/alert-title.astro';
+import AlertDescription from '../../../src/components/alert/alert-description.astro';
+import AlertAction from '../../../src/components/alert/alert-action.astro';
 import { ALERT_VARIANTS } from '../../../src/components/alert/alert.behavior';
 
 interface Scene {
@@ -48,6 +51,44 @@ const scenes: ReadonlyArray<[string, Scene]> = [
     },
   ],
 ];
+
+/**
+ * Alert composes two ways and they render DIFFERENT elements, so auditing one
+ * does not audit the other. The named `title` slot renders a `div`
+ * (alert.astro:126); the `AlertTitle` part file renders a real `h5`
+ * (alert-title.astro:31). A heading is what brings axe's heading rules into
+ * play at all, so the parity surface needs its own scene rather than riding on
+ * the convenience wrapper's.
+ */
+async function partComposedScene(): Promise<Document> {
+  const container = await AstroContainer.create();
+  const title = await container.renderToString(AlertTitle, { slots: { default: 'Saved' } });
+  const description = await container.renderToString(AlertDescription, {
+    slots: { default: 'Your changes were saved.' },
+  });
+  const action = await container.renderToString(AlertAction, {
+    slots: { default: '<button type="button">Undo</button>' },
+  });
+  const html = await container.renderToString(Alert, {
+    props: { variant: 'success' },
+    slots: { default: `${title}${description}${action}` },
+  });
+  const window = new Window();
+  const document = window.document as unknown as Document;
+  document.body.innerHTML = `<main>${html}</main>`;
+  return document;
+}
+
+test('alert.astro composed from the AlertTitle, AlertDescription and AlertAction part files', async ({
+  task,
+}) => {
+  const document = await partComposedScene();
+  // The part file's real heading, not the convenience wrapper's div.
+  expect(document.querySelector('h5[data-slot="alert-title"]')).not.toBeNull();
+  const results = await runAxe(document.body);
+  task.meta.axe = results;
+  expect(results.violations).toEqual([]);
+});
 
 for (const [name, scene] of scenes) {
   test(`alert.astro ${name}`, async ({ task }) => {

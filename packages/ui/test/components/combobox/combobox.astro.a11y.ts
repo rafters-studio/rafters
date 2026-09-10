@@ -35,7 +35,8 @@ async function mount({ props = {}, open = false }: Scene): Promise<Document> {
   return document;
 }
 
-// Excluded: open with no options (options: []) fails aria-required-children, because the
+// Excluded, tracked as #2337: open with no options (options: []) fails
+// aria-required-children, because the
 // open listbox then holds only the empty message and no option or group child.
 const scenes: ReadonlyArray<[string, Scene]> = [
   ['closed', {}],
