@@ -23,6 +23,7 @@
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import { afterEach, describe, expect, it } from 'vitest';
 import { assertAxeClean } from '../../harness/conformance';
+import { injectAsChildAttrs } from '../../../src/primitives/astro-as-child';
 import {
   sidebarClasses,
   sidebarMenuButtonClasses,
@@ -128,22 +129,70 @@ describe('sidebar astro sub-components [parity surface, pure decoration]', () =>
     expect(text.style.getPropertyValue('--skeleton-width')).toMatch(/^\d+%$/);
   });
 
-  it('class is NOT a prop on any decoration sub-component -- it never reaches the element', async () => {
+  it('class is NOT a prop on ANY sub-component -- it never reaches the element', async () => {
+    // Every part that carries a data-sidebar marker, including the five that
+    // take asChild in their default (no child) branch, and the two that are
+    // behavior-connected. A partial list here is how a part quietly regains a
+    // class passthrough without a test noticing.
     for (const [Component, part] of [
       [SidebarHeader, 'header'],
       [SidebarFooter, 'footer'],
       [SidebarContent, 'content'],
       [SidebarGroup, 'group'],
       [SidebarGroupContent, 'group-content'],
+      [SidebarMenu, 'menu'],
+      [SidebarMenuItem, 'menu-item'],
       [SidebarMenuBadge, 'menu-badge'],
+      [SidebarMenuSkeleton, 'menu-skeleton'],
       [SidebarMenuSub, 'menu-sub'],
       [SidebarMenuSubItem, 'menu-sub-item'],
       [SidebarSeparator, 'separator'],
+      [SidebarGroupLabel, 'group-label'],
+      [SidebarGroupAction, 'group-action'],
+      [SidebarMenuButton, 'menu-button'],
+      [SidebarMenuAction, 'menu-action'],
+      [SidebarMenuSubButton, 'menu-sub-button'],
     ] as const) {
       const body = await renderOne(Component, { class: 'bg-red-500' }, { default: 'x' });
       const el = body.querySelector(`[data-sidebar="${part}"]`) as HTMLElement;
       expect(el, part).not.toBeNull();
       expect(el.className, part).not.toContain('bg-red-500');
+    }
+  });
+
+  it('class is NOT a prop on the three parts marked by data-part rather than data-sidebar', async () => {
+    // Inset is a <main> landmark and Trigger/Rail are behavior-connected, so
+    // the bind resolves them by data-part; they carry no data-sidebar marker.
+    for (const [Component, part] of [
+      [SidebarInset, 'inset'],
+      [SidebarTrigger, 'trigger'],
+      [SidebarRail, 'rail'],
+    ] as const) {
+      const body = await renderOne(Component, { class: 'bg-red-500' }, { default: 'x' });
+      const el = body.querySelector(`[data-part="${part}"]`) as HTMLElement;
+      expect(el, part).not.toBeNull();
+      expect(el.className, part).not.toContain('bg-red-500');
+    }
+  });
+
+  it('class is dropped on the asChild branch too, not only on the default branch', async () => {
+    for (const [Component, part] of [
+      [SidebarGroupLabel, 'group-label'],
+      [SidebarGroupAction, 'group-action'],
+      [SidebarMenuButton, 'menu-button'],
+      [SidebarMenuAction, 'menu-action'],
+      [SidebarMenuSubButton, 'menu-sub-button'],
+    ] as const) {
+      const body = await renderOne(
+        Component,
+        { asChild: true, class: 'bg-red-500' },
+        { default: '<a href="/x" class="text-blue-500">Go</a>' },
+      );
+      const el = body.querySelector(`[data-sidebar="${part}"]`) as HTMLElement;
+      expect(el, part).not.toBeNull();
+      expect(el.tagName, part).toBe('A');
+      expect(el.className, part).not.toContain('bg-red-500');
+      expect(el.className, part).not.toContain('text-blue-500');
     }
   });
 });
@@ -350,5 +399,64 @@ describe('sidebar astro sub-components [composed tree matches sidebar.astro:23-4
     expect(insetEl.className).toBe(classes.inset);
 
     await assertAxeClean(document.body);
+  });
+});
+
+describe('injectAsChildAttrs: the render-then-inject contract', () => {
+  const decoration = { class: 'x y', 'data-sidebar': 'menu-button' };
+
+  it('escapes an injected attribute value so it cannot close the attribute', () => {
+    // ultrahtml escapes text nodes and never attributes, so an unescaped value
+    // ending the quote lands a live element in the set:html output.
+    const html = injectAsChildAttrs(
+      '<a href="/x">Home</a>',
+      { title: '"><script>alert(1)</script>' },
+      decoration,
+    );
+    expect(html).not.toBeNull();
+    expect(html).not.toContain('<script>');
+    expect(html).toContain('&quot;&gt;&lt;script&gt;');
+
+    // Parsed back, the payload stayed inside the attribute: no element was
+    // created from it. The exact decoded value is not asserted, because
+    // happy-dom decodes &quot; but leaves &lt;/&gt; encoded when assigning
+    // innerHTML, and that inconsistency is the parser's, not the contract's.
+    document.body.innerHTML = html as string;
+    expect(document.querySelectorAll('script')).toHaveLength(0);
+    const anchor = document.querySelector('a') as HTMLElement;
+    expect(anchor.getAttribute('title')).not.toBeNull();
+    expect(anchor.childElementCount).toBe(0);
+  });
+
+  it('leaves an already-encoded child attribute alone rather than double-escaping it', () => {
+    const html = injectAsChildAttrs('<a href="/x?a=1&amp;b=2">H</a>', {}, decoration);
+    expect(html).toContain('href="/x?a=1&amp;b=2"');
+    expect(html).not.toContain('&amp;amp;');
+  });
+
+  it("the child's own attribute wins over the part's, matching React mergeProps", () => {
+    const html = injectAsChildAttrs('<a id="child">Home</a>', { id: 'part' }, decoration);
+    expect(html).toContain('id="child"');
+    expect(html).not.toContain('id="part"');
+  });
+
+  it('decoration wins over both, because the projection is the contract', () => {
+    const html = injectAsChildAttrs(
+      '<a data-sidebar="wrong" class="mine">Home</a>',
+      { 'data-sidebar': 'also-wrong' },
+      decoration,
+    );
+    expect(html).toContain('data-sidebar="menu-button"');
+    expect(html).not.toContain('wrong');
+    expect(html).not.toContain('mine');
+  });
+
+  it('returns null when the slot rendered no element, so the caller can fall back', () => {
+    expect(injectAsChildAttrs('just text', {}, decoration)).toBeNull();
+    expect(injectAsChildAttrs('', {}, decoration)).toBeNull();
+  });
+
+  it('throws on more than one top-level element instead of silently ignoring the rest', () => {
+    expect(() => injectAsChildAttrs('<a>A</a><b>B</b>', {}, decoration)).toThrow(/single element/);
   });
 });

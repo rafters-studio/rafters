@@ -232,6 +232,25 @@ both -- a non-boolean value is a compile error). A slot-function form was
 tried and rejected: it works only on the default slot and cannot make the
 part's class win without string surgery.
 
+**Attribute precedence on the `asChild` path**, lowest to highest: the props
+the caller put on the PART, then the child's own attributes, then the part's
+decoration. The first two match React's `mergeProps`, which ends with "default:
+child value overrides" -- a child that states its own `id` or `aria-label`
+keeps it. Decoration deliberately does NOT: the class and `data-*` projection
+IS the contract (Spec 00, boundary 6), so a child cannot make the component look
+right while announcing wrong. The child's `class` is dropped rather than merged,
+the same discard rafters applies on every target.
+
+Two mechanical points the implementation owns. Values injected into the child
+are HTML-escaped first: `ultrahtml` escapes text nodes and never attributes, so
+an unescaped value could close the attribute and land a live element in the
+`set:html` output. Values PARSED from the child are left alone, because that
+parser returns them still encoded and a round trip is lossless; escaping them
+again would double-encode. And a slot rendering more than one top-level element
+throws, as React's own `asChild` does through `Children.only` -- injecting into
+the first and emitting the rest untouched would render markup that escapes both
+the decoration and the contract.
+
 React's `SidebarTrigger` also carries `asChild` (`sidebar.tsx:273`); Decision 2
 named only the five parts above, so `SidebarTrigger.astro` does not carry it --
 a discrepancy between the decision and the React source, flagged rather than
