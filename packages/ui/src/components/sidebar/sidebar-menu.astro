@@ -1,0 +1,27 @@
+---
+/**
+ * SidebarMenu -- the Astro performance of Sidebar's menu list, importable on
+ * its own so an Astro tree composes exactly like the React tree:
+ * `<SidebarGroup><SidebarMenu><SidebarMenuItem>...</SidebarMenuItem></SidebarMenu></SidebarGroup>`.
+ * Pure decoration -- no behavior, no state -- modelled on `card-header.astro`,
+ * rendering `<ul>` per the React performance (`sidebar.tsx:446-450`). Draws
+ * from the SAME class string in sidebar.classes.ts the React performance
+ * reads -- one score, one composition, no drift.
+ *
+ * `class` is NOT a prop -- design travels through token props only. It is
+ * discarded so `...attrs` cannot carry it onto the element.
+ *
+ * @parent sidebar
+ */
+import type { HTMLAttributes } from 'astro/types';
+import { sidebarClasses } from './sidebar.classes';
+
+type Props = Omit<HTMLAttributes<'ul'>, 'class'>;
+
+const { class: _discardedClass, ...attrs } = Astro.props as Props & { class?: string };
+const classes = sidebarClasses();
+---
+
+<ul data-sidebar="menu" class={classes.menu} {...attrs}>
+  <slot />
+</ul>

@@ -56,12 +56,17 @@
  * three performances.
  *
  * The panel is a single <nav> carrying both axes' data hooks; side/variant are
- * authored into its classes here (decoration the binding never touches). On the
- * mobile viewport bindSidebar enhances that same <nav> into a modal overlay
- * (role=dialog + the sheet modal trio) and `hidden`s it when closed; the desktop
- * rail path is untouched. Nav content arrives through the default slot; the
- * trigger through the `trigger` slot. Motion is undeclared (horizontal-slide
- * tokens pending, #1899/#1902), so this is state-correct, not animated.
+ * authored into its classes here (decoration the binding never touches). The
+ * <nav> renders inside a `dialog` wrapper `<div>` (Decision 6, 2026-09-09):
+ * `role="dialog"` is not an allowed ARIA role on `<nav>` (axe
+ * `aria-allowed-role`, #2338/#2222), so on the mobile viewport bindSidebar puts
+ * the dialog identity (role=dialog + the sheet modal trio) on that wrapper,
+ * never on the <nav> itself, and `hidden`s the panel when closed; the desktop
+ * rail path is untouched. The wrapper carries no classes of its own (`contents`
+ * only, so it never affects the panel's own fixed/sticky positioning). Nav
+ * content arrives through the default slot; the trigger through the `trigger`
+ * slot. Motion is undeclared (horizontal-slide tokens pending, #1899/#1902),
+ * so this is state-correct, not animated.
  */
 import {
   sidebar,
@@ -111,25 +116,27 @@ const aria = sidebar.aria(state, config, ids);
     <slot name="trigger">Toggle Sidebar</slot>
   </button>
 
-  <nav
-    id={ids.panel}
-    data-part="panel"
-    data-side={side}
-    data-variant={variant}
-    tabindex="-1"
-    class={panelClass}
-    {...aria.panel}
-  >
-    <button
-      type="button"
-      id={ids.rail}
-      data-part="rail"
+  <div id={ids.dialog} data-part="dialog" class="contents">
+    <nav
+      id={ids.panel}
+      data-part="panel"
+      data-side={side}
+      data-variant={variant}
       tabindex="-1"
-      title="Toggle Sidebar"
-      class={classes.rail}
-      {...aria.rail}></button>
-    <slot />
-  </nav>
+      class={panelClass}
+      {...aria.panel}
+    >
+      <button
+        type="button"
+        id={ids.rail}
+        data-part="rail"
+        tabindex="-1"
+        title="Toggle Sidebar"
+        class={classes.rail}
+        {...aria.rail}></button>
+      <slot />
+    </nav>
+  </div>
 </rafters-sidebar>
 
 <script>

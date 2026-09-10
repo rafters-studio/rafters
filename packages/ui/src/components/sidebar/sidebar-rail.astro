@@ -1,0 +1,58 @@
+---
+/**
+ * SidebarRail -- the Astro performance of Sidebar's desktop drag rail,
+ * importable on its own. Like Trigger, Rail is BEHAVIOR-CONNECTED
+ * (`data-state` off the desktop open/collapsed axis), so this file recomputes
+ * the same projection `sidebar.astro:92-99` computes inline, from the SAME
+ * exported pure `sidebar.initialState`/`sidebar.aria` functions, given the
+ * SAME `id` (and `open`/`defaultOpen`) as the parent `<Sidebar id="...">`. See
+ * `sidebar-trigger.astro` for the full rationale (id/config agreement, live
+ * updates only as a descendant of the same `<rafters-sidebar>` root).
+ *
+ * `sidebar.astro` already renders its own rail inline inside the panel, with
+ * no named slot to receive a replacement -- this file exists for the
+ * enumeration and standalone-render requirements (Decision/AC in #2324), not
+ * as a wired alternative to that inline rail. Recorded in `sidebar.md`.
+ *
+ * `class` is NOT a prop -- design travels through token props only. It is
+ * discarded so `...attrs` cannot carry it onto the element.
+ *
+ * @parent sidebar
+ */
+import type { HTMLAttributes } from 'astro/types';
+import type { PartIds } from '../../lib/contract';
+import { sidebar, type SidebarConfig, type SidebarPart } from './sidebar.behavior';
+import { sidebarClasses } from './sidebar.classes';
+
+type Props = Omit<HTMLAttributes<'button'>, 'class'> & {
+  id: string;
+  open?: boolean;
+  defaultOpen?: boolean;
+};
+
+const {
+  class: _discardedClass,
+  id,
+  open,
+  defaultOpen,
+  ...attrs
+} = Astro.props as Props & { class?: string };
+
+const config: SidebarConfig = { open, defaultOpen };
+const state = sidebar.initialState(config);
+const ids = {} as PartIds<SidebarPart>;
+for (const part of Object.keys(sidebar.parts) as SidebarPart[]) ids[part] = `${id}-${part}`;
+const aria = sidebar.aria(state, config, ids);
+const classes = sidebarClasses();
+---
+
+<button
+  type="button"
+  id={ids.rail}
+  data-part="rail"
+  tabindex="-1"
+  title="Toggle Sidebar"
+  class={classes.rail}
+  {...aria.rail}
+  {...attrs}
+></button>

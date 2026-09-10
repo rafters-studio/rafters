@@ -3,6 +3,14 @@ import { Window } from 'happy-dom';
 import { expect, test } from 'vitest';
 import { runAxe } from '../../a11y/run-axe';
 import Sidebar from '../../../src/components/sidebar/sidebar.astro';
+import SidebarHeader from '../../../src/components/sidebar/sidebar-header.astro';
+import SidebarContent from '../../../src/components/sidebar/sidebar-content.astro';
+import SidebarFooter from '../../../src/components/sidebar/sidebar-footer.astro';
+import SidebarGroup from '../../../src/components/sidebar/sidebar-group.astro';
+import SidebarGroupLabel from '../../../src/components/sidebar/sidebar-group-label.astro';
+import SidebarMenu from '../../../src/components/sidebar/sidebar-menu.astro';
+import SidebarMenuItem from '../../../src/components/sidebar/sidebar-menu-item.astro';
+import SidebarMenuButton from '../../../src/components/sidebar/sidebar-menu-button.astro';
 import { bindSidebar } from '../../../src/components/sidebar/sidebar.behavior';
 
 interface Scene {
@@ -53,9 +61,10 @@ async function mount({ props = {}, mobile = false, openMobile = false }: Scene):
   return document;
 }
 
-// Excluded: `mobile open` fails `aria-allowed-role` because bindSidebar sets
-// role="dialog" on the `<nav>` panel (`#sb-panel`), a role HTML does not allow
-// on nav. That is the component's own output, not the scene markup.
+// `mobile open` was excluded while bindSidebar put role="dialog" on the `<nav>`
+// panel, which HTML does not allow on nav and axe reports as aria-allowed-role.
+// #2324 moved those modal attributes onto a dedicated wrapper element the panel
+// now renders inside, so the scene audits clean and is back in the table.
 const scenes: ReadonlyArray<[string, Scene]> = [
   ['desktop expanded', {}],
   ['desktop collapsed offcanvas', { props: { defaultOpen: false } }],
@@ -63,7 +72,58 @@ const scenes: ReadonlyArray<[string, Scene]> = [
   ['desktop on the right', { props: { side: 'right' } }],
   ['desktop floating variant', { props: { variant: 'floating' } }],
   ['mobile closed', { mobile: true }],
+  ['mobile open', { mobile: true, openMobile: true }],
 ];
+
+/**
+ * The scenes above pass the sidebar's own default slot a single anchor. The
+ * part files are the parity surface (#2324), and a tree built from them is a
+ * different DOM: real ul and li elements, a group label, and a menu button that
+ * rendered through asChild onto an anchor. sidebar-subcomponents' conformance
+ * test used to audit that composition; auditing only the plain slot would leave
+ * the shape a consumer actually writes unaudited.
+ */
+async function partComposedScene(): Promise<Document> {
+  const container = await AstroContainer.create();
+  const groupLabel = await container.renderToString(SidebarGroupLabel, {
+    slots: { default: 'Main' },
+  });
+  const menuButton = await container.renderToString(SidebarMenuButton, {
+    props: { asChild: true },
+    slots: { default: '<a href="/dashboard">Dashboard</a>' },
+  });
+  const menuItem = await container.renderToString(SidebarMenuItem, {
+    slots: { default: menuButton },
+  });
+  const menu = await container.renderToString(SidebarMenu, { slots: { default: menuItem } });
+  const group = await container.renderToString(SidebarGroup, {
+    slots: { default: groupLabel + menu },
+  });
+  const content = await container.renderToString(SidebarContent, { slots: { default: group } });
+  const header = await container.renderToString(SidebarHeader, { slots: { default: 'Logo' } });
+  const footer = await container.renderToString(SidebarFooter, { slots: { default: 'UserMenu' } });
+  const html = await container.renderToString(Sidebar, {
+    props: { id: 'sb' },
+    slots: { default: header + content + footer },
+  });
+  const window = new Window();
+  const document = window.document as unknown as Document;
+  document.body.innerHTML = `<main>${html}</main>`;
+  const root = document.querySelector('rafters-sidebar') as HTMLElement;
+  withViewport(false, () => bindSidebar(root));
+  return document;
+}
+
+test('sidebar.astro composed from the flat part files', async ({ task }) => {
+  const document = await partComposedScene();
+  // The part-file tree, not the plain-slot one: real list semantics and an
+  // anchor the menu button injected onto through asChild.
+  expect(document.querySelector('ul[data-sidebar="menu"]')).not.toBeNull();
+  expect(document.querySelector('a[data-sidebar="menu-button"]')).not.toBeNull();
+  const results = await runAxe(document.body);
+  task.meta.axe = results;
+  expect(results.violations).toEqual([]);
+});
 
 for (const [name, scene] of scenes) {
   test(`sidebar.astro ${name}`, async ({ task }) => {

@@ -16,6 +16,7 @@ const ids: PartIds<SidebarPart> = {
   trigger: 't',
   rail: 'rl',
   panel: 'p',
+  dialog: 'd',
 };
 
 function ariaAt(config: SidebarConfig, state: SidebarState = sidebar.initialState(config)) {
@@ -24,13 +25,25 @@ function ariaAt(config: SidebarConfig, state: SidebarState = sidebar.initialStat
 
 describe('sidebar parts', () => {
   it('declares the full behavior surface', () => {
-    expect(Object.keys(sidebar.parts).sort()).toEqual(['panel', 'rail', 'root', 'trigger']);
+    expect(Object.keys(sidebar.parts).sort()).toEqual([
+      'dialog',
+      'panel',
+      'rail',
+      'root',
+      'trigger',
+    ]);
     // The panel is the only always-present interactive part besides root; the
-    // rest are optional. There is no scrim part: the mobile overlay is the merged
-    // Sheet (React) or the bind-enhanced modal panel (WC/Astro).
+    // rest are optional. `dialog` is the mobile-overlay wrapper the panel (a
+    // <nav>) renders inside -- role=dialog is not an allowed ARIA role on
+    // <nav> (axe aria-allowed-role, #2338/#2222), so the bind puts the dialog
+    // identity there, never on the panel. Optional because hand-authored WC
+    // markup predating this fix may not have added it yet. There is no scrim
+    // part: the mobile overlay is the merged Sheet (React) or the
+    // bind-enhanced modal dialog wrapper (WC/Astro).
     expect(sidebar.parts.panel.optional).toBeUndefined();
     expect(sidebar.parts.trigger.optional).toBe(true);
     expect(sidebar.parts.rail.optional).toBe(true);
+    expect(sidebar.parts.dialog.optional).toBe(true);
   });
 });
 
