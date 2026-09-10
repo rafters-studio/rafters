@@ -10,7 +10,7 @@ import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import { afterEach, describe, expect, it } from 'vitest';
 import Field from '../../../src/components/field/field.astro';
 import { bindField, fieldBehavior } from '../../../src/components/field/field.behavior';
-import { assertAxeClean, assertContractFulfillment, partElement } from '../../harness/conformance';
+import { assertContractFulfillment, partElement } from '../../harness/conformance';
 
 afterEach(() => {
   document.body.innerHTML = '';
@@ -39,14 +39,12 @@ describe('field conformance [astro]', () => {
     expect(label().getAttribute('for')).toBe('email');
     expect(control().getAttribute('data-part')).toBe('control');
     expect(control().hasAttribute('aria-invalid')).toBe(false);
-    await assertAxeClean(root);
   });
 
   it('description: control describedby wired to the description id, axe-clean', async () => {
     const root = await mount({ description: 'We never share your email' });
     assertContractFulfillment(fieldBehavior, root, {}, {}, ['label', 'control', 'description']);
     expect(control().getAttribute('aria-describedby')).toBe('email-description');
-    await assertAxeClean(root);
   });
 
   it('error: aria-invalid true, describedby to the error id, role=alert, description hidden', async () => {
@@ -59,7 +57,6 @@ describe('field conformance [astro]', () => {
     expect(control().getAttribute('aria-describedby')).toBe('email-error');
     expect(partElement(root, 'error')?.getAttribute('role')).toBe('alert');
     expect(partElement(root, 'description')).toBeNull();
-    await assertAxeClean(root);
   });
 
   it('required host signal projects aria-required onto the control', async () => {

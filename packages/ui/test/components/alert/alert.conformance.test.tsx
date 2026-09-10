@@ -8,7 +8,7 @@ import {
   AlertTitle,
 } from '../../../src/components/alert/alert';
 import { alert } from '../../../src/components/alert/alert.behavior';
-import { assertAxeClean, assertContractFulfillment, partElement } from '../../harness/conformance';
+import { assertContractFulfillment, partElement } from '../../harness/conformance';
 
 const body = () => document.body;
 
@@ -43,7 +43,6 @@ describe('alert conformance [react]', () => {
     expect(root.querySelector('h5')?.textContent).toBe('Saved');
     expect(root.textContent).toContain('Your changes were saved.');
     expect(root.querySelector('button')?.textContent).toBe('Undo');
-    await assertAxeClean(body());
   });
 
   it('sub-components carry data-slot markers matching Astro/WC', () => {

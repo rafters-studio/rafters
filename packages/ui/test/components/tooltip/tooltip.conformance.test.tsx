@@ -28,12 +28,7 @@ import {
   TooltipTrigger,
 } from '../../../src/components/tooltip/tooltip';
 import { tooltip } from '../../../src/components/tooltip/tooltip.behavior';
-import {
-  assertAxeClean,
-  assertContractFulfillment,
-  domPartIds,
-  partElement,
-} from '../../harness/conformance';
+import { assertContractFulfillment, domPartIds, partElement } from '../../harness/conformance';
 
 interface SetupProps {
   open?: boolean;
@@ -96,7 +91,6 @@ describe('tooltip conformance [react]', () => {
     // `hidden` would be display:none -- out of the a11y tree and out of reach
     // of the hover reveal.
     expect(content.hasAttribute('hidden')).toBe(false);
-    await assertAxeClean(body());
   });
 
   it('hover opens: content is role=tooltip and ARIA equals the projection', async () => {
@@ -108,7 +102,6 @@ describe('tooltip conformance [react]', () => {
     const config = { defaultOpen: false };
     const state = { open: true };
     assertContractFulfillment(tooltip, body(), state, config, ['trigger', 'content']);
-    await assertAxeClean(body());
   });
 
   it('trigger and content are wired by real DOM ids', async () => {

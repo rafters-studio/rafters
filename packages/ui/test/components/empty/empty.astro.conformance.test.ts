@@ -9,7 +9,7 @@
  */
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { assertAxeClean, partElement } from '../../harness/conformance';
+import { partElement } from '../../harness/conformance';
 import Empty from '../../../src/components/empty/empty.astro';
 
 afterEach(() => {
@@ -82,13 +82,5 @@ describe('empty conformance [astro]', () => {
     expect(
       (body.querySelector('[data-slot="empty-description"]') as HTMLElement).textContent,
     ).toContain('Try another search');
-  });
-
-  it('is axe-clean rendered inside a landmark', async () => {
-    const body = await render(
-      {},
-      { title: '<h3>No results found</h3>', description: 'Try another search' },
-    );
-    await assertAxeClean(body);
   });
 });

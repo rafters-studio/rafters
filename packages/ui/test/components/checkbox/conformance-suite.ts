@@ -11,7 +11,6 @@ import {
   type CheckedState,
 } from '../../../src/components/checkbox/checkbox.behavior';
 import {
-  assertAxeClean,
   assertContractFulfillment,
   partElement,
   type RenderResult,
@@ -63,15 +62,6 @@ export function runCheckboxConformance(adapter: CheckboxAdapter): void {
           const config = configFor(scenario.props);
           const state = checkbox.initialState(config);
           assertContractFulfillment(checkbox, result.root, state, config, ['root']);
-        } finally {
-          result.cleanup();
-        }
-      });
-
-      it(`${scenario.name}: axe clean`, async () => {
-        const result = await adapter.render(scenario.props, 'Accept terms');
-        try {
-          await assertAxeClean(result.host);
         } finally {
           result.cleanup();
         }

@@ -34,8 +34,10 @@ import {
   button,
   type ButtonActions,
   type ButtonConfig,
+  type ButtonIconSize,
   type ButtonPart,
   type ButtonSize,
+  type ButtonTextSize,
   type ButtonVariant,
 } from './button.behavior';
 import { buttonClasses } from './button.classes';
@@ -43,8 +45,6 @@ import { buttonClasses } from './button.classes';
 export { buttonVariants } from './button.classes';
 export type { ButtonSize, ButtonVariant };
 
-type NonIconSize = 'default' | 'xs' | 'sm' | 'lg';
-type IconSize = 'icon' | 'icon-xs' | 'icon-sm' | 'icon-lg';
 type AccessibleName = { 'aria-label': string } | { 'aria-labelledby': string };
 
 /**
@@ -82,7 +82,7 @@ interface ButtonBaseProps extends React.ButtonHTMLAttributes<HTMLButtonElement> 
 }
 
 export type ButtonProps = ButtonBaseProps &
-  ({ size?: NonIconSize } | ({ size: IconSize } & AccessibleName));
+  ({ size?: ButtonTextSize } | ({ size: ButtonIconSize } & AccessibleName));
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>((props, ref) => {
   const {

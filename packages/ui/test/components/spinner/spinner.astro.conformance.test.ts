@@ -10,7 +10,7 @@ import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import Spinner from '../../../src/components/spinner/spinner.astro';
 import { spinner } from '../../../src/components/spinner/spinner.behavior';
-import { assertAxeClean, assertContractFulfillment, partElement } from '../../harness/conformance';
+import { assertContractFulfillment, partElement } from '../../harness/conformance';
 
 afterEach(() => {
   document.body.innerHTML = '';
@@ -63,9 +63,5 @@ describe('spinner conformance [astro]', () => {
     expect(root.className).not.toContain('ml-2');
     expect(warn).not.toHaveBeenCalled();
     expect(error).not.toHaveBeenCalled();
-  });
-
-  it('is axe-clean rendered inside a landmark', async () => {
-    await assertAxeClean(await render());
   });
 });

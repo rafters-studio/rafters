@@ -19,12 +19,7 @@ import {
   DialogTrigger,
 } from '../../../src/components/dialog/dialog';
 import { dialog } from '../../../src/components/dialog/dialog.behavior';
-import {
-  assertAxeClean,
-  assertContractFulfillment,
-  domPartIds,
-  partElement,
-} from '../../harness/conformance';
+import { assertContractFulfillment, domPartIds, partElement } from '../../harness/conformance';
 
 interface SetupProps {
   open?: boolean;
@@ -65,7 +60,6 @@ describe('dialog conformance [react]', () => {
     expect(partElement(body(), 'content')).toBeNull();
     expect(trigger?.getAttribute('aria-expanded')).toBe('false');
     expect(trigger?.hasAttribute('aria-controls')).toBe(false);
-    await assertAxeClean(body());
   });
 
   it('open: every part renders and ARIA equals the projection', async () => {
@@ -83,7 +77,6 @@ describe('dialog conformance [react]', () => {
       'description',
       'close',
     ]);
-    await assertAxeClean(body());
   });
 
   it('omitted description projects NO aria-describedby', async () => {
@@ -93,7 +86,6 @@ describe('dialog conformance [react]', () => {
     const content = partElement(body(), 'content');
     expect(content?.hasAttribute('aria-describedby')).toBe(false);
     expect(content?.getAttribute('aria-labelledby')).toBeTruthy();
-    await assertAxeClean(body());
   });
 
   it('trigger and content are wired by real DOM ids', async () => {
@@ -233,7 +225,6 @@ describe('dialog conformance [react]', () => {
     expect(document.querySelectorAll('[data-part="overlay"]')).toHaveLength(1);
     // Oracle default: no automatic close button inside an explicit portal.
     expect(partElement(body(), 'close')).toBeNull();
-    await assertAxeClean(body());
   });
 
   it('forceMount keeps the content in the DOM, hidden and inert, while closed', () => {

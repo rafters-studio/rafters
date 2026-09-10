@@ -13,7 +13,6 @@ import {
   Ul,
   P,
 } from '../../../src/components/typography/typography';
-import { assertAxeClean } from '../../harness/conformance';
 
 const body = () => document.body;
 
@@ -123,15 +122,5 @@ describe('typography conformance [react]', () => {
     const p = body().querySelector('p') as HTMLElement;
     expect(p.className).toContain('leading-7');
     expect(p.className).toContain('max-w-prose');
-  });
-
-  it('a heading + prose set is axe-clean inside a landmark', async () => {
-    render(
-      <main>
-        <H1>Doc title</H1>
-        <P>First paragraph.</P>
-      </main>,
-    );
-    await assertAxeClean(body());
   });
 });

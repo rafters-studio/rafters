@@ -9,7 +9,7 @@
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import Label from '../../../src/components/label/label.astro';
-import { assertAxeClean, partElement } from '../../harness/conformance';
+import { partElement } from '../../harness/conformance';
 
 afterEach(() => {
   document.body.innerHTML = '';
@@ -73,17 +73,5 @@ describe('label conformance [astro]', () => {
     const body = await render({}, { default: 'Email address' });
     const root = partElement(body, 'root') as HTMLElement;
     expect(root.textContent).toContain('Email address');
-  });
-
-  it('is axe-clean when associated with a control', async () => {
-    const container = await AstroContainer.create();
-    const html = await container.renderToString(Label, {
-      props: { for: 'email' },
-      slots: { default: 'Email address' },
-    });
-    // The label associates by id with a light-DOM control, inside a landmark so
-    // the axe best-practice `region` rule is satisfied by the page.
-    document.body.innerHTML = `<main>${html}<input id="email" type="email" /></main>`;
-    await assertAxeClean(document.body);
   });
 });

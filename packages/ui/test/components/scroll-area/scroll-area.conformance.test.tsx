@@ -3,7 +3,7 @@ import { cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { ScrollArea, ScrollBar } from '../../../src/components/scroll-area/scroll-area';
 import { scrollArea } from '../../../src/components/scroll-area/scroll-area.behavior';
-import { assertAxeClean, assertContractFulfillment, partElement } from '../../harness/conformance';
+import { assertContractFulfillment, partElement } from '../../harness/conformance';
 
 const body = () => document.body;
 
@@ -58,7 +58,6 @@ describe('scroll-area conformance [react]', () => {
     // Only root is a declared part -- children carry none (boundary 5).
     expect(root.getAttribute('data-part')).toBe('root');
     expect(root.querySelectorAll('[data-part]')).toHaveLength(0);
-    await assertAxeClean(body());
   });
 
   it('consumer className merges via classy', () => {

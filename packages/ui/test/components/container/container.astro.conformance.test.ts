@@ -1,6 +1,6 @@
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { assertAxeClean, partElement } from '../../harness/conformance';
+import { partElement } from '../../harness/conformance';
 import Container from '../../../src/components/container/container.astro';
 import { containerClasses } from '../../../src/components/container/container.classes';
 
@@ -24,7 +24,6 @@ describe('container conformance [astro]', () => {
     expect(body.querySelector('main')).not.toBeNull();
     const root = partElement(body, 'root');
     expect(root?.tagName.toLowerCase()).toBe('main');
-    await assertAxeClean(body);
   });
 
   it('aside carries a passed-through aria-label (no server-side aria projection)', async () => {

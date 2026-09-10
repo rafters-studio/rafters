@@ -9,7 +9,7 @@ import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import Item from '../../../src/components/item/item.astro';
 import { item } from '../../../src/components/item/item.behavior';
-import { assertAxeClean, assertContractFulfillment, partElement } from '../../harness/conformance';
+import { assertContractFulfillment, partElement } from '../../harness/conformance';
 
 afterEach(() => {
   document.body.innerHTML = '';
@@ -87,10 +87,5 @@ describe('item conformance [astro]', () => {
   it('only the row is a declared part -- wrappers carry classes, no data-part', async () => {
     const body = await render({}, { default: 'Row' });
     expect(body.querySelectorAll('[data-part]')).toHaveLength(1);
-  });
-
-  it('is axe-clean inside a listbox', async () => {
-    const body = await render({ selected: true }, { default: 'Dashboard' });
-    await assertAxeClean(body);
   });
 });

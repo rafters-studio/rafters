@@ -15,7 +15,6 @@ import { afterEach, describe, expect, it } from 'vitest';
 import ChartLegend from '../../../src/components/chart/chart-legend.astro';
 import { bindChartLegend } from '../../../src/components/chart/chart-legend.behavior';
 import type { ChartConfig } from '../../../src/components/chart/chart.behavior';
-import { assertAxeClean } from '../../harness/conformance';
 
 afterEach(() => {
   document.body.innerHTML = '';
@@ -75,10 +74,5 @@ describe('chart-legend [astro]', () => {
   it('omitted config renders an empty legend -- no throw', async () => {
     const root = await mount({ config: {} });
     expect(root.querySelectorAll('[data-part="entry"]')).toHaveLength(0);
-  });
-
-  it('is axe-clean rendered inside a landmark', async () => {
-    const root = await mount();
-    await assertAxeClean(root);
   });
 });

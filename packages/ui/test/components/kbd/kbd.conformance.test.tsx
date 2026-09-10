@@ -3,7 +3,7 @@ import { cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { Kbd } from '../../../src/components/kbd/kbd';
 import { kbd } from '../../../src/components/kbd/kbd.behavior';
-import { assertAxeClean, assertContractFulfillment, partElement } from '../../harness/conformance';
+import { assertContractFulfillment, partElement } from '../../harness/conformance';
 
 const body = () => document.body;
 
@@ -30,17 +30,13 @@ describe('kbd conformance [react]', () => {
     expect(root.textContent).toBe('Cmd');
   });
 
-  it('composes a key combination axe-clean when scoped to its container', async () => {
+  it('composes a key combination of two caps', () => {
     const { container } = render(
       <span>
         <Kbd>Cmd</Kbd> + <Kbd>S</Kbd>
       </span>,
     );
     expect(container.querySelectorAll('kbd[data-part="root"]')).toHaveLength(2);
-    // A bare inline cap has no landmark ancestor; scope axe to the render
-    // container so the document-level `region` best-practice rule (about the
-    // test page, not the component) does not fire -- badge's approach.
-    await assertAxeClean(container);
   });
 
   it('consumer className merges via classy', () => {

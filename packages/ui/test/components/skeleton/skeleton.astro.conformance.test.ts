@@ -9,7 +9,7 @@
  */
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { assertAxeClean, partElement } from '../../harness/conformance';
+import { partElement } from '../../harness/conformance';
 import Skeleton from '../../../src/components/skeleton/skeleton.astro';
 
 afterEach(() => {
@@ -62,10 +62,5 @@ describe('skeleton conformance [astro]', () => {
     expect(root.className).not.toContain('w-48');
     expect(warn).not.toHaveBeenCalled();
     expect(error).not.toHaveBeenCalled();
-  });
-
-  it('is axe-clean rendered inside a landmark', async () => {
-    const body = await render();
-    await assertAxeClean(body);
   });
 });

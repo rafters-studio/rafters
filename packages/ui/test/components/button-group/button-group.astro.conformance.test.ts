@@ -8,7 +8,7 @@ import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import ButtonGroup from '../../../src/components/button-group/button-group.astro';
 import { buttonGroup } from '../../../src/components/button-group/button-group.behavior';
-import { assertAxeClean, assertContractFulfillment, partElement } from '../../harness/conformance';
+import { assertContractFulfillment, partElement } from '../../harness/conformance';
 
 const BUTTONS = '<button type="button">Cancel</button><button type="button">Save</button>';
 
@@ -33,7 +33,6 @@ describe('button-group conformance [astro]', () => {
     const body = await render({ 'aria-label': 'Text style' });
     const root = partElement(body, 'root') as HTMLElement;
     assertContractFulfillment(buttonGroup, root, {}, { orientation: 'horizontal' }, ['root']);
-    await assertAxeClean(body);
   });
 
   it('orientation drives the reflected attribute and connected classes', async () => {

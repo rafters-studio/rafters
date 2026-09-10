@@ -1,6 +1,7 @@
 import react from '@vitejs/plugin-react';
 import { playwright } from '@vitest/browser-playwright';
 import { configDefaults, defineConfig } from 'vitest/config';
+import { a11yOnly } from './vitest.astro.shared';
 
 /**
  * One config, three projects, one per test tier (#2326):
@@ -26,6 +27,14 @@ import { configDefaults, defineConfig } from 'vitest/config';
  * Astro 6 leg of the matrix (#2327) installs under test/astro-matrix/v6, and
  * its node_modules carry third-party `.test.ts` files that `test/**` matches.
  */
+/**
+ * `test:a11y` sets this to run the a11y tier alone. The include glob is the
+ * switch because nothing else selects by glob: the CLI has no `--include`, its
+ * positional filter is a substring match (which let `.a11y.test.ts` unit files
+ * pass as a tier, #2222), and `--exclude` does not reach a project that sets
+ * its own `exclude`.
+ */
+
 export default defineConfig({
   // Inherited by the two inline projects (extends: true); the astro project
   // opts out with extends: false so Astro's own transform owns its plugins.
@@ -96,8 +105,13 @@ export default defineConfig({
         extends: true,
         test: {
           name: 'browser',
-          include: ['test/**/*.spec.{ts,tsx}', 'test/**/*.a11y.{ts,tsx}'],
+          include: a11yOnly
+            ? ['test/**/*.a11y.{ts,tsx}']
+            : ['test/**/*.spec.{ts,tsx}', 'test/**/*.a11y.{ts,tsx}'],
+          // configDefaults.exclude first: a custom exclude REPLACES it, and
+          // without it the v6 matrix install's own node_modules gets scanned.
           exclude: [...configDefaults.exclude, 'test/**/*.astro.*', 'src/old/**', 'test/old/**'],
+          setupFiles: ['./test/a11y/setup.ts'],
           browser: {
             enabled: true,
             provider: playwright(),

@@ -17,7 +17,6 @@ import {
 } from '../../../src/components/carousel/carousel';
 import { carouselBehavior } from '../../../src/components/carousel/carousel.behavior';
 import {
-  assertAxeClean,
   assertContractFulfillment,
   assertInstanceAriaFulfillment,
   partElement,
@@ -82,7 +81,6 @@ describe('carousel conformance [react]', () => {
       'indicator',
     ]);
     assertInstanceAriaFulfillment(carouselBehavior, root(), { index: 0 }, config());
-    await assertAxeClean(body());
   });
 
   it('opens on the first slide with previous disabled and next enabled', () => {

@@ -20,12 +20,7 @@ import {
 } from '../../../src/components/sheet/sheet';
 import { sheet } from '../../../src/components/sheet/sheet.behavior';
 import { sheetSideClasses } from '../../../src/components/sheet/sheet.classes';
-import {
-  assertAxeClean,
-  assertContractFulfillment,
-  domPartIds,
-  partElement,
-} from '../../harness/conformance';
+import { assertContractFulfillment, domPartIds, partElement } from '../../harness/conformance';
 import type { SheetSide } from '../../../src/components/sheet/sheet.behavior';
 
 interface SetupProps {
@@ -68,7 +63,6 @@ describe('sheet conformance [react]', () => {
     expect(partElement(body(), 'content')).toBeNull();
     expect(trigger?.getAttribute('aria-expanded')).toBe('false');
     expect(trigger?.hasAttribute('aria-controls')).toBe(false);
-    await assertAxeClean(body());
   });
 
   it('open: every part renders and ARIA equals the projection', async () => {
@@ -86,7 +80,6 @@ describe('sheet conformance [react]', () => {
       'description',
       'close',
     ]);
-    await assertAxeClean(body());
   });
 
   it('side selects the positional variant; default is right', async () => {
@@ -113,7 +106,6 @@ describe('sheet conformance [react]', () => {
     const content = partElement(body(), 'content');
     expect(content?.hasAttribute('aria-describedby')).toBe(false);
     expect(content?.getAttribute('aria-labelledby')).toBeTruthy();
-    await assertAxeClean(body());
   });
 
   it('trigger and content are wired by real DOM ids', async () => {
@@ -256,7 +248,6 @@ describe('sheet conformance [react]', () => {
     // Sheet oracle parity: the close button renders even inside an explicit
     // portal (showCloseButton ?? true), unlike dialog.
     expect(partElement(body(), 'close')).not.toBeNull();
-    await assertAxeClean(body());
   });
 
   it('forceMount keeps the content in the DOM, hidden and inert, while closed', () => {

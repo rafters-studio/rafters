@@ -7,6 +7,7 @@ import {
   type ChartConfig,
 } from '../../../src/components/chart/chart.behavior';
 import {
+  chartContainerClasses,
   resolveSeriesClass,
   resolveSeriesStrokeClass,
 } from '../../../src/components/chart/chart.classes';
@@ -268,5 +269,59 @@ describe('issue #2224 functional test block', () => {
     expect(resolveSeriesClass(config, 'desktop')).toBe('fill-chart-1');
     expect(resolveSeriesClass(config, 'mobile', 1)).toBe('fill-chart-2'); // index fallback
     expect(() => parseChartConfig({ x: { token: 'chart-6' } })).toThrow(/chart-6/);
+  });
+});
+
+// The two static guarantees #2224 pins outside axe's reach (moved here from
+// the family's a11y suite under #2222): no chart-family score ever claims a
+// keyboard contract (they are all static scores; Bar/Line/Area own real
+// keyboard traversal), and every class this family emits is a literal token
+// class, never a hex, `var()`, or arbitrary value (Boundary 00 sec 6).
+const config = {
+  desktop: { label: 'Desktop', token: 'chart-1' },
+  mobile: { label: 'Mobile' },
+} satisfies ChartConfig;
+
+describe('no chart-family score claims a keyboard contract', () => {
+  it('chartContainer.keymap never claims a key', () => {
+    expect(
+      chartContainer.keymap({ key: 'Enter' }, { width: 0, height: 0 }, 'root', { config: {} }),
+    ).toBeNull();
+    expect(
+      chartContainer.keymap({ key: 'ArrowRight' }, { width: 0, height: 0 }, 'plot', { config: {} }),
+    ).toBeNull();
+  });
+
+  it('xAxis/yAxis/cartesianGrid.keymap never claim a key', () => {
+    expect(xAxis.keymap({ key: 'Enter' }, {}, 'x-axis', { dataKey: 'month' })).toBeNull();
+    expect(yAxis.keymap({ key: 'Enter' }, {}, 'y-axis', {})).toBeNull();
+    expect(cartesianGrid.keymap({ key: 'Enter' }, {}, 'grid', {})).toBeNull();
+  });
+});
+
+describe('color token compliance -- no hex, no var(), no arbitrary value', () => {
+  const FORBIDDEN = /#[0-9a-f]{3,8}\b|var\(--|\[[^\]]*\]/i;
+
+  it('resolveSeriesClass never emits a hex/var()/arbitrary class for any series/index', () => {
+    for (let index = 0; index < 12; index++) {
+      expect(resolveSeriesClass(config, 'desktop', index)).not.toMatch(FORBIDDEN);
+      expect(resolveSeriesStrokeClass(config, 'desktop', index)).not.toMatch(FORBIDDEN);
+    }
+  });
+
+  it('resolveSeriesClass output is always exactly fill-chart-N', () => {
+    for (let index = 0; index < 10; index++) {
+      expect(resolveSeriesClass(config, 'mobile', index)).toMatch(/^fill-chart-[1-5]$/);
+    }
+  });
+
+  it('chartContainerClasses emits no color/spacing/motion literal', () => {
+    const classes = chartContainerClasses({ config }, { width: 0, height: 0 });
+    expect(classes.root).not.toMatch(FORBIDDEN);
+    expect(classes.plot).not.toMatch(FORBIDDEN);
+    // No spacing-scale (p-*, m-*, gap-*) or motion (animate-*, transition-*)
+    // utility -- Container/Grid own layout, chart owns none.
+    expect(classes.root).not.toMatch(/\b(p|m|gap)-\d/);
+    expect(classes.root).not.toMatch(/\b(animate|transition)-/);
   });
 });

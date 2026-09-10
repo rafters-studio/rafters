@@ -20,7 +20,7 @@ import {
   SidebarTrigger,
 } from '../../../src/components/sidebar/sidebar';
 import { sidebar } from '../../../src/components/sidebar/sidebar.behavior';
-import { assertAxeClean, assertContractFulfillment, partElement } from '../../harness/conformance';
+import { assertContractFulfillment, partElement } from '../../harness/conformance';
 import type { SidebarConfig, SidebarState } from '../../../src/components/sidebar/sidebar.behavior';
 
 function setViewport(isMobile: boolean): void {
@@ -88,7 +88,6 @@ describe('sidebar conformance [react]', () => {
       'rail',
       'panel',
     ]);
-    await assertAxeClean(container);
   });
 
   it('desktop: the trigger collapses the rail and projects the collapse mode hook', async () => {
@@ -136,7 +135,6 @@ describe('sidebar conformance [react]', () => {
     expect(menuButton()).not.toBeNull();
     expect(modal.contains(document.activeElement)).toBe(true);
     expect(document.body.style.overflow).toBe('hidden');
-    await assertAxeClean(document.body);
   });
 
   it('mobile: Escape closes the overlay, unmounts the nav, and restores focus to the trigger', async () => {

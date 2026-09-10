@@ -19,7 +19,7 @@ import {
   alertDescriptionClasses,
   alertTitleClasses,
 } from '../../../src/components/alert/alert.classes';
-import { assertAxeClean, assertContractFulfillment, partElement } from '../../harness/conformance';
+import { assertContractFulfillment, partElement } from '../../harness/conformance';
 
 afterEach(() => {
   document.body.innerHTML = '';
@@ -138,22 +138,6 @@ describe('alert conformance [astro]', () => {
     const root = partElement(body, 'root') as HTMLElement;
     expect(root.querySelector(':scope > svg')).not.toBeNull();
   });
-
-  it('is axe-clean composed with title, description, and an action control', async () => {
-    const body = await render(
-      { variant: 'success' },
-      {
-        title: 'Saved',
-        description: 'Your changes were saved.',
-        action: '<button type="button">Undo</button>',
-      },
-    );
-    await assertAxeClean(body);
-  });
-
-  it('is axe-clean with every region empty -- no empty heading left behind', async () => {
-    await assertAxeClean(await render());
-  });
 });
 
 /**
@@ -253,7 +237,5 @@ describe('alert astro part files [parity surface]', () => {
     expect(root.querySelectorAll('[data-slot="alert-description"]')).toHaveLength(1);
     expect(root.querySelectorAll('[data-slot="alert-action"]')).toHaveLength(1);
     expect(root.querySelector('button')?.textContent).toBe('Undo');
-
-    await assertAxeClean(document.body);
   });
 });

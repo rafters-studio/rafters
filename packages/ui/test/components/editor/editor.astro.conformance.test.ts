@@ -9,7 +9,6 @@ import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import { afterEach, describe, expect, it } from 'vitest';
 import Editor from '../../../src/components/editor/editor.astro';
 import { bindEditor } from '../../../src/components/editor/editor.behavior';
-import { assertAxeClean } from '../../harness/conformance';
 import type { BaseBlock } from '../../../src/primitives/types';
 
 afterEach(() => {
@@ -73,16 +72,10 @@ describe('editor conformance [astro]', () => {
     expect(el.hasAttribute('aria-label')).toBe(false);
   });
 
-  it('is axe-clean pre-bind with a real accessible name', async () => {
-    const el = await mount({ label: 'Document' });
-    await assertAxeClean(el);
-  });
-
   it('bind: script-equivalent call projects the seeded doc and is axe-clean bound', async () => {
     const el = await mount({ label: 'Document' });
     bindEditor(el); // what the <script> does per instance on a real page
     expect(el.querySelector('[data-block-id="b1"]')?.textContent).toBe('hello');
-    await assertAxeClean(el);
   });
 
   it('bind: undo/redo gate works through the SSR + script path', async () => {

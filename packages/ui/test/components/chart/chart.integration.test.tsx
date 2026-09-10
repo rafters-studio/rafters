@@ -13,7 +13,6 @@ import { CartesianGrid } from '../../../src/components/chart/cartesian-grid';
 import { XAxis } from '../../../src/components/chart/x-axis';
 import { YAxis } from '../../../src/components/chart/y-axis';
 import type { ChartConfig } from '../../../src/components/chart/chart.behavior';
-import { assertAxeClean } from '../../harness/conformance';
 import { stubResizeObserver } from '../../harness/resize-observer';
 
 const body = () => document.body;
@@ -45,7 +44,6 @@ describe('ChartContainer [react]', () => {
     );
     expect(body().querySelector('[data-part="root"]')).not.toBeNull();
     expect(body().querySelector('[data-part="plot"]')).not.toBeNull();
-    await assertAxeClean(body());
   });
 
   it('measures width/height via observeResize and exposes them to children', () => {
@@ -157,6 +155,5 @@ describe('cartesian axis/grid children [react]', () => {
       </main>,
     );
     expect(body().querySelector('[data-part="x-axis"]')).toHaveProperty('hidden', true);
-    await assertAxeClean(body());
   });
 });

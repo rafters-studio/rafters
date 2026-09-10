@@ -87,7 +87,7 @@
  */
 
 import { RaftersElement } from '../../primitives/rafters-element';
-import { alert, type AlertConfig, type AlertVariant } from './alert.behavior';
+import { alert, type AlertConfig, type AlertVariant, isAlertVariant } from './alert.behavior';
 import {
   alertActionClasses,
   alertClasses,
@@ -95,26 +95,13 @@ import {
   alertTitleClasses,
 } from './alert.classes';
 
-const ALLOWED_VARIANTS: ReadonlyArray<AlertVariant> = [
-  'default',
-  'primary',
-  'secondary',
-  'destructive',
-  'success',
-  'warning',
-  'info',
-  'muted',
-  'accent',
-];
-
 /** Attributes are strings, so an unknown value has to land somewhere: it lands
  *  on 'default', silently, never throwing. The same guard `separator.element`
- *  applies to `orientation` and the oracle applied to this very attribute. */
+ *  applies to `orientation` and the oracle applied to this very attribute.
+ *  The vocabulary itself comes from the score, so this performance cannot hold
+ *  a stale copy of it. */
 function parseVariant(value: string | null): AlertVariant {
-  if (value && (ALLOWED_VARIANTS as ReadonlyArray<string>).includes(value)) {
-    return value as AlertVariant;
-  }
-  return 'default';
+  return isAlertVariant(value) ? value : 'default';
 }
 
 /** A named-slot wrapper: a div carrying the shared class string, a `data-slot`

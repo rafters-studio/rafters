@@ -29,12 +29,7 @@ import {
   HoverCardTrigger,
 } from '../../../src/components/hover-card/hover-card';
 import { hoverCard } from '../../../src/components/hover-card/hover-card.behavior';
-import {
-  assertAxeClean,
-  assertContractFulfillment,
-  domPartIds,
-  partElement,
-} from '../../harness/conformance';
+import { assertContractFulfillment, domPartIds, partElement } from '../../harness/conformance';
 
 interface SetupProps {
   open?: boolean;
@@ -93,7 +88,6 @@ describe('hover-card conformance [react]', () => {
     expect(stateOf('trigger')).toBe('closed');
     expect(stateOf('content')).toBe('closed');
     expect(content.hasAttribute('hidden')).toBe(false);
-    await assertAxeClean(body());
   });
 
   it('hover opens: content is role=dialog and ARIA equals the projection', async () => {
@@ -106,7 +100,6 @@ describe('hover-card conformance [react]', () => {
     const state = { open: true };
     assertContractFulfillment(hoverCard, body(), state, config, ['trigger', 'content']);
     expect(partElement(body(), 'content')?.getAttribute('role')).toBe('dialog');
-    await assertAxeClean(body());
   });
 
   it('trigger and content are wired by real DOM ids', async () => {

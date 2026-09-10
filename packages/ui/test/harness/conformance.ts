@@ -2,16 +2,15 @@
  * The conformance harness (Spec 01, testing obligations).
  *
  * ONE harness, N render adapters. A binding is conformant when, for every
- * scenario: (1) axe reports no violations, (2) every declared part is
- * present and the DOM's ARIA equals the behavior's aria projection,
- * (3) keymap keys move state and DOM (interaction assertions live with the
- * component suite, since observables are component-specific).
+ * scenario: (1) every declared part is present and the DOM's ARIA equals the
+ * behavior's aria projection, (2) keymap keys move state and DOM (interaction
+ * assertions live with the component suite, since observables are
+ * component-specific). Axe runs in the a11y tier (test/**\/*.a11y.*), not here.
  *
  * Adding a framework means writing a render adapter (~10 lines) and
  * inheriting this entire suite.
  */
 import { expect } from 'vitest';
-import { axe } from 'vitest-axe';
 import type { ActionPayloads, BehaviorSpec, PartIds } from '../../src/lib/contract';
 
 export interface RenderResult {
@@ -84,11 +83,6 @@ export function domPartIds<Part extends string>(
     ids[part] = partElement(root, part)?.id ?? '';
   }
   return ids;
-}
-
-export async function assertAxeClean(host: HTMLElement): Promise<void> {
-  const results = await axe(host);
-  expect(results.violations).toEqual([]);
 }
 
 /**

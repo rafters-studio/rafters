@@ -11,7 +11,7 @@ import {
   BreadcrumbSeparator,
 } from '../../../src/components/breadcrumb/breadcrumb';
 import { breadcrumb } from '../../../src/components/breadcrumb/breadcrumb.behavior';
-import { assertAxeClean, assertContractFulfillment, partElement } from '../../harness/conformance';
+import { assertContractFulfillment, partElement } from '../../harness/conformance';
 
 const body = () => document.body;
 
@@ -122,11 +122,6 @@ describe('breadcrumb conformance [react]', () => {
     expect(link).not.toBeNull();
     expect(link.getAttribute('href')).toBe('/custom');
     expect(link.className).toContain('transition-colors');
-  });
-
-  it('the full trail is axe-clean -- the nav is its own landmark', async () => {
-    render(fullTrail());
-    await assertAxeClean(body());
   });
 
   it('has no keyboard contract and dispatches nothing observable', () => {

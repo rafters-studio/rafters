@@ -8,7 +8,6 @@ import userEvent from '@testing-library/user-event';
 import { button, type ButtonConfig } from '../../../src/components/button/button.behavior';
 import { clearAllAnnouncers, getAnnouncerCount } from '../../../src/primitives/sr-announcer';
 import {
-  assertAxeClean,
   assertContractFulfillment,
   partElement,
   partText,
@@ -101,15 +100,6 @@ export function runButtonConformance(adapter: ButtonAdapter): void {
           const config = configFor(scenario.props);
           const state = button.initialState(config);
           assertContractFulfillment(button, result.root, state, config, scenario.expectedParts);
-        } finally {
-          result.cleanup();
-        }
-      });
-
-      it(`${scenario.name}: axe clean`, async () => {
-        const result = await adapter.render(scenario.props, 'Save changes');
-        try {
-          await assertAxeClean(result.host);
         } finally {
           result.cleanup();
         }

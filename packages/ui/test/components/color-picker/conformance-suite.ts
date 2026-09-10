@@ -10,7 +10,6 @@ import {
   type ColorPickerConfig,
 } from '../../../src/components/color-picker/color-picker.behavior';
 import {
-  assertAxeClean,
   assertContractFulfillment,
   partElement,
   type RenderResult,
@@ -88,15 +87,6 @@ export function runColorPickerConformance(adapter: ColorPickerAdapter): void {
             const input = result.root.querySelector(`[data-channel="${channel}"]`);
             expect(input, `input for channel ${channel}`).not.toBeNull();
           }
-        } finally {
-          result.cleanup();
-        }
-      });
-
-      it(`${scenario.name}: axe clean`, async () => {
-        const result = await adapter.render(scenario.props);
-        try {
-          await assertAxeClean(result.host);
         } finally {
           result.cleanup();
         }

@@ -2,6 +2,15 @@ import { fileURLToPath } from 'node:url';
 import type { ViteUserConfig } from 'vitest/config';
 
 /**
+ * Set by the `test:a11y` script. There is no CLI flag that can express this:
+ * a11y files are spread across the browser and astro projects, and `--include`
+ * does not exist, so the projects narrow their own globs off this instead.
+ * It lives here rather than in vitest.config.ts because both Astro legs and
+ * the browser project all read it, and this module imports nothing of theirs.
+ */
+export const a11yOnly = process.env['VITEST_A11Y_ONLY'] === '1';
+
+/**
  * The one description of the Astro test tier, consumed by both legs of the
  * Astro matrix (#2327): vitest.config.astro.ts (Astro 7, the workspace pin)
  * and test/astro-matrix/v6/vitest.config.ts (Astro 6, an isolated install).
@@ -22,11 +31,16 @@ export const astroTestOptions = {
   globals: true,
   environment: 'node',
   dir: fileURLToPath(new URL('.', import.meta.url)),
-  setupFiles: [fileURLToPath(new URL('./vitest.setup.astro.ts', import.meta.url))],
-  include: [
-    'test/**/*.astro.spec.ts',
-    'test/**/*.astro.a11y.ts',
-    // Pre-trim conformance files; the trim renames them to the two globs above.
-    'test/**/*.astro.conformance.test.ts',
+  setupFiles: [
+    fileURLToPath(new URL('./vitest.setup.astro.ts', import.meta.url)),
+    fileURLToPath(new URL('./test/a11y/setup.ts', import.meta.url)),
   ],
+  include: a11yOnly
+    ? ['test/**/*.astro.a11y.ts']
+    : [
+        'test/**/*.astro.spec.ts',
+        'test/**/*.astro.a11y.ts',
+        // Pre-trim conformance files; the trim renames them to the two globs above.
+        'test/**/*.astro.conformance.test.ts',
+      ],
 } satisfies NonNullable<ViteUserConfig['test']>;

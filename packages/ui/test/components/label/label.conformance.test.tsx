@@ -3,7 +3,7 @@ import { cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { Label } from '../../../src/components/label/label';
 import { label } from '../../../src/components/label/label.behavior';
-import { assertAxeClean, assertContractFulfillment, partElement } from '../../harness/conformance';
+import { assertContractFulfillment, partElement } from '../../harness/conformance';
 
 const body = () => document.body;
 
@@ -53,17 +53,5 @@ describe('label conformance [react]', () => {
   it('has no keyboard contract and dispatches nothing observable', () => {
     // A static score claims no keys; a label is not interactive.
     expect(label.keymap({ key: 'Enter' }, {}, 'root', {})).toBeNull();
-  });
-
-  it('is axe-clean when associated with a control', async () => {
-    // Rendered inside a landmark so the axe best-practice `region` rule is
-    // satisfied by the page, not the label pairing.
-    render(
-      <main>
-        <Label htmlFor="email">Email address</Label>
-        <input id="email" type="email" />
-      </main>,
-    );
-    await assertAxeClean(body());
   });
 });

@@ -9,7 +9,7 @@
  */
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { assertAxeClean, partElement } from '../../harness/conformance';
+import { partElement } from '../../harness/conformance';
 import ScrollArea from '../../../src/components/scroll-area/scroll-area.astro';
 
 afterEach(() => {
@@ -72,10 +72,5 @@ describe('scroll-area conformance [astro]', () => {
     const body = await render({}, { default: '<ul><li>One</li></ul>' });
     const root = partElement(body, 'root') as HTMLElement;
     expect(root.textContent).toContain('One');
-  });
-
-  it('is axe-clean rendered inside a landmark', async () => {
-    const body = await render({}, { default: '<p>Body</p>' });
-    await assertAxeClean(body);
   });
 });

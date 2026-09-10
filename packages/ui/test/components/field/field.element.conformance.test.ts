@@ -8,7 +8,7 @@
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { RaftersField } from '../../../src/components/field/field.element';
 import { fieldBehavior } from '../../../src/components/field/field.behavior';
-import { assertAxeClean, assertContractFulfillment, partElement } from '../../harness/conformance';
+import { assertContractFulfillment, partElement } from '../../harness/conformance';
 
 beforeAll(() => {
   if (!customElements.get('rafters-field')) customElements.define('rafters-field', RaftersField);
@@ -39,7 +39,6 @@ describe('field conformance [wc]', () => {
     expect(label().getAttribute('for')).toBe('email');
     expect(control().hasAttribute('aria-invalid')).toBe(false);
     expect(control().hasAttribute('aria-required')).toBe(false);
-    await assertAxeClean(root);
   });
 
   it('locates and stamps a bare slotted control (no data-part authored)', async () => {
@@ -65,7 +64,6 @@ describe('field conformance [wc]', () => {
     assertContractFulfillment(fieldBehavior, root, {}, {}, ['label', 'control', 'description']);
     expect(control().getAttribute('aria-describedby')).toBe('email-description');
     expect(control().hasAttribute('aria-invalid')).toBe(false);
-    await assertAxeClean(root);
   });
 
   it('error: aria-invalid true, describedby to the error id, role=alert', async () => {
@@ -80,7 +78,6 @@ describe('field conformance [wc]', () => {
     expect(control().getAttribute('aria-invalid')).toBe('true');
     expect(control().getAttribute('aria-describedby')).toBe('email-error');
     expect(partElement(root, 'error')?.getAttribute('role')).toBe('alert');
-    await assertAxeClean(root);
   });
 
   it('required host signal projects aria-required onto the control', async () => {

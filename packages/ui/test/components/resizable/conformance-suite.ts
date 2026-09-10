@@ -11,7 +11,6 @@ import {
   type ResizableDirection,
 } from '../../../src/components/resizable/resizable.behavior';
 import {
-  assertAxeClean,
   assertContractFulfillment,
   assertInstanceAriaFulfillment,
   partElement,
@@ -74,6 +73,20 @@ const SCENARIOS: ReadonlyArray<Scenario> = [
 
 const EXPECTED_PARTS = ['root', 'panel', 'handle'] as const;
 
+/** Applies an ARIA attribute map to an element, skipping attributes whose
+ *  projected value is undefined (behavior-conditional ARIA, e.g. aria-disabled
+ *  only when disabled). Shared by every adapter that hand-builds a resizable's
+ *  light DOM. */
+export function applyAria(
+  element: HTMLElement,
+  attrs: Record<string, string | boolean | undefined>,
+): void {
+  for (const [name, value] of Object.entries(attrs)) {
+    if (value === undefined) continue;
+    element.setAttribute(name, String(value));
+  }
+}
+
 export function configFor(props: ResizableScenarioProps): ResizableConfig {
   const share = props.panels.length > 0 ? 100 / props.panels.length : 100;
   return {
@@ -117,15 +130,6 @@ export function runResizableConformance(adapter: ResizableAdapter): void {
             expect(handle.getAttribute('aria-valuemin')).not.toBeNull();
             expect(handle.getAttribute('aria-valuemax')).not.toBeNull();
           }
-        } finally {
-          result.cleanup();
-        }
-      });
-
-      it(`${scenario.name}: axe clean`, async () => {
-        const result = await adapter.render(scenario.props, 'Resize section');
-        try {
-          await assertAxeClean(result.host);
         } finally {
           result.cleanup();
         }

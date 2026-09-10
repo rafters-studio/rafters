@@ -21,7 +21,6 @@ import {
   type SelectState,
 } from '../../../src/components/select/select.behavior';
 import {
-  assertAxeClean,
   assertContractFulfillment,
   assertInstanceContractFulfillment,
   partElement,
@@ -90,7 +89,6 @@ describe('select conformance [react]', () => {
       ['apple', 'banana', 'cherry'],
       (key) => selectItemAria(key, state, config),
     );
-    await assertAxeClean(body());
   });
 
   it('trigger and listbox are wired by real ids', () => {
@@ -111,7 +109,6 @@ describe('select conformance [react]', () => {
     await user.click(trigger());
     expect(content().hidden).toBe(false);
     expect(trigger().getAttribute('aria-expanded')).toBe('true');
-    await assertAxeClean(body());
 
     await user.click(option('banana'));
     expect(onValueChange).toHaveBeenLastCalledWith('banana');

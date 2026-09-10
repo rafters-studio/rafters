@@ -9,7 +9,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { contextMenu } from '../../../src/components/context-menu/context-menu.behavior';
 import { RaftersContextMenu } from '../../../src/components/context-menu/context-menu.element';
-import { assertAxeClean, assertContractFulfillment } from '../../harness/conformance';
+import { assertContractFulfillment } from '../../harness/conformance';
 
 beforeAll(() => {
   if (!customElements.get('rafters-context-menu')) {
@@ -58,26 +58,6 @@ const itemByText = (text: string): HTMLElement => {
   return match;
 };
 
-// The bind portals a submenu's sub-content to document.body on mount (escaping
-// the parent overflow and roving scope), open or closed -- unlike the parent
-// menu's `content`, sub-content is never `hidden` (#2152: a hidden node cannot
-// transition, and the CSS reveal must survive with JS off). Scope axe to the
-// <main> landmark, which contains the menu; the portaled node sits outside it.
-//
-// This scoping is ONLY for axe's best-practice region rule, which flags any
-// content sitting outside a landmark whether or not it is visible or
-// interactive -- a real browser skips that rule, and it would fire on the
-// portaled node regardless of its open/closed state. But the tradeoff is
-// real: because the portaled sub-content sits outside <main>, a
-// `landmark()`-scoped axe run never reaches it, so it cannot be the
-// regression guard for a closed sub-content's accessibility-tree exclusion
-// (`aria-hidden="true"`, projected by the score and mirrored in the SSR
-// markup, #2187 review). That guard is the explicit `aria-hidden` /
-// `tabindex` assertions in the open/close/axe-clean test below, plus a
-// second `assertAxeClean` call there scoped directly to the sub-content
-// node so axe actually scans the portaled element.
-const landmark = () => document.body.querySelector('main') as HTMLElement;
-
 afterEach(() => {
   cleanup();
   document.body.innerHTML = '';
@@ -89,7 +69,6 @@ describe('context-menu conformance [wc]', () => {
     expect(content().hidden).toBe(true);
     expect(content().getAttribute('data-state')).toBe('closed');
     expect(trigger().getAttribute('data-state')).toBe('closed');
-    await assertAxeClean(landmark());
   });
 
   it('right-click opens at the pointer point, focus lands on the first item', async () => {
@@ -100,7 +79,6 @@ describe('context-menu conformance [wc]', () => {
     expect(content().style.left).toBe('30px');
     expect(content().style.top).toBe('50px');
     expect(document.activeElement).toBe(itemByText('Cut'));
-    await assertAxeClean(landmark());
   });
 
   it('the rendered ARIA equals the score projection when open', async () => {
@@ -244,14 +222,6 @@ describe('context-menu conformance [wc]', () => {
     for (const item of sc.querySelectorAll<HTMLElement>('[role="menuitem"]')) {
       expect(item.getAttribute('tabindex')).toBe('-1');
     }
-    // landmark() only covers the top-level menu content inside <main> --
-    // the portalled sub-content sits outside it and is invisible to this
-    // scan (see the comment on `landmark()` above). Scan the sub-content
-    // node directly so a regressed `aria-hidden` or a leftover
-    // `tabindex="0"` on it is actually caught by axe, not just by the
-    // explicit assertions above.
-    await assertAxeClean(landmark());
-    await assertAxeClean(sc);
   });
 
   it('closing the whole menu collapses an open submenu', async () => {

@@ -9,7 +9,7 @@ import { cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { Field } from '../../../src/components/field/field';
 import { fieldBehavior } from '../../../src/components/field/field.behavior';
-import { assertAxeClean, assertContractFulfillment, partElement } from '../../harness/conformance';
+import { assertContractFulfillment, partElement } from '../../harness/conformance';
 
 afterEach(() => {
   cleanup();
@@ -32,7 +32,6 @@ describe('field conformance [react]', () => {
     expect(control.hasAttribute('aria-invalid')).toBe(false);
     expect(control.hasAttribute('aria-required')).toBe(false);
     expect(control.hasAttribute('aria-describedby')).toBe(false);
-    await assertAxeClean(container);
   });
 
   it('description: control describedby wired to the description id, axe-clean', async () => {
@@ -50,7 +49,6 @@ describe('field conformance [react]', () => {
     const description = partElement(container, 'description');
     expect(control.getAttribute('aria-describedby')).toBe(description?.id);
     expect(control.hasAttribute('aria-invalid')).toBe(false);
-    await assertAxeClean(container);
   });
 
   it('error: aria-invalid true, describedby to the error id, role=alert, description hidden', async () => {
@@ -67,7 +65,6 @@ describe('field conformance [react]', () => {
     expect(error?.getAttribute('role')).toBe('alert');
     // description-hidden-while-error: only one helper node is rendered.
     expect(partElement(container, 'description')).toBeNull();
-    await assertAxeClean(container);
   });
 
   it('required: aria-required on the control and an aria-hidden marker', async () => {
@@ -83,7 +80,6 @@ describe('field conformance [react]', () => {
     expect(controlOf(container).getAttribute('aria-required')).toBe('true');
     const marker = labelOf(container).querySelector('[aria-hidden="true"]');
     expect(marker?.textContent).toBe('*');
-    await assertAxeClean(container);
   });
 
   it('disabled: propagates to the control (native), axe-clean', async () => {
@@ -93,7 +89,6 @@ describe('field conformance [react]', () => {
       </Field>,
     );
     expect(controlOf(container).disabled).toBe(true);
-    await assertAxeClean(container);
   });
 
   it('respects an author-supplied control id: the label tracks it', async () => {

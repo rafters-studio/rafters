@@ -13,7 +13,7 @@ import {
   InputGroupInput,
 } from '../../../src/components/input-group/input-group';
 import { inputGroupBehavior } from '../../../src/components/input-group/input-group.behavior';
-import { assertAxeClean, assertContractFulfillment, partElement } from '../../harness/conformance';
+import { assertContractFulfillment, partElement } from '../../harness/conformance';
 
 afterEach(() => {
   cleanup();
@@ -39,7 +39,6 @@ describe('input-group conformance [react]', () => {
     ]);
     expect(controlOf(container).hasAttribute('aria-invalid')).toBe(false);
     expect(rootOf(container).getAttribute('data-state')).toBe('default');
-    await assertAxeClean(container);
   });
 
   it('invalid: aria-invalid lands on the control, data-state on both, axe-clean', async () => {
@@ -58,7 +57,6 @@ describe('input-group conformance [react]', () => {
     expect(controlOf(container).getAttribute('data-state')).toBe('invalid');
     expect(rootOf(container).getAttribute('data-state')).toBe('invalid');
     expect(rootOf(container).hasAttribute('aria-invalid')).toBe(false);
-    await assertAxeClean(container);
   });
 
   it('a group with no affixes renders neither optional part', () => {
@@ -151,6 +149,5 @@ describe('input-group conformance [react]', () => {
     );
     await user.click(container.querySelector('button') as HTMLButtonElement);
     expect(clicks).toEqual(['apply']);
-    await assertAxeClean(container);
   });
 });

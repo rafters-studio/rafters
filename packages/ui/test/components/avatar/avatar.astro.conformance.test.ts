@@ -8,7 +8,7 @@
  */
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { assertAxeClean, partElement } from '../../harness/conformance';
+import { partElement } from '../../harness/conformance';
 import { avatarSizeClasses } from '../../../src/components/avatar/avatar.classes';
 import Avatar from '../../../src/components/avatar/avatar.astro';
 
@@ -91,10 +91,5 @@ describe('avatar conformance [astro]', () => {
     expect(root.className).not.toContain('ml-2');
     expect(warn).not.toHaveBeenCalled();
     expect(error).not.toHaveBeenCalled();
-  });
-
-  it('is axe-clean with an alt-bearing image', async () => {
-    const body = await render({ src: '/user.jpg', alt: 'Jane Doe' });
-    await assertAxeClean(body);
   });
 });

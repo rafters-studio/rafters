@@ -29,6 +29,7 @@ catalog:
   '@vitest/browser-playwright': ^5.0.0
   '@vitest/coverage-v8': ^5.0.0
   '@vitest/ui': ^5.0.0
+  axe-core: ^4.11.0
   comment-parser: ^1.4.1
   esbuild: ^0.27.3
   happy-dom: ^20.0.10

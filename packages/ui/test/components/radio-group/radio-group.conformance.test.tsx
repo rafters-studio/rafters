@@ -14,7 +14,6 @@ import {
   type RadioGroupConfig,
 } from '../../../src/components/radio-group/radio-group.behavior';
 import {
-  assertAxeClean,
   assertContractFulfillment,
   assertInstanceContractFulfillment,
   partElement,
@@ -58,9 +57,7 @@ afterEach(() => {
 });
 
 describe('radio-group conformance [react]', () => {
-  it('renders a radiogroup with radio items, axe-clean', async () => {
-    // Wrapped in a landmark: a radiogroup is not itself a landmark, and axe's
-    // best-practice `region` rule flags page content outside one.
+  it('renders a radiogroup with radio items', () => {
     render(
       <main>
         <TestGroup defaultValue="a" />
@@ -70,7 +67,6 @@ describe('radio-group conformance [react]', () => {
     expect(root?.getAttribute('role')).toBe('radiogroup');
     expect(root?.getAttribute('aria-orientation')).toBe('vertical');
     expect(itemFor('a').getAttribute('role')).toBe('radio');
-    await assertAxeClean(body());
   });
 
   it('contract: root + item projections equal the rendered DOM', () => {
@@ -98,7 +94,6 @@ describe('radio-group conformance [react]', () => {
     expect(itemFor('b').getAttribute('data-state')).toBe('checked');
     expect(itemFor('a').getAttribute('aria-checked')).toBe('false');
     expect(onValueChange).toHaveBeenCalledWith('b');
-    await assertAxeClean(body());
   });
 
   it('re-clicking the selected item does NOT deselect or re-fire the callback', async () => {

@@ -7,7 +7,6 @@ import { describe, expect, it } from 'vitest';
 import userEvent from '@testing-library/user-event';
 import { toggle, type ToggleConfig } from '../../../src/components/toggle/toggle.behavior';
 import {
-  assertAxeClean,
   assertContractFulfillment,
   partElement,
   type RenderResult,
@@ -67,15 +66,6 @@ export function runToggleConformance(adapter: ToggleAdapter): void {
           const config = configFor(scenario.props);
           const state = toggle.initialState(config);
           assertContractFulfillment(toggle, result.root, state, config, EXPECTED_PARTS);
-        } finally {
-          result.cleanup();
-        }
-      });
-
-      it(`${scenario.name}: axe clean`, async () => {
-        const result = await adapter.render(scenario.props, 'Bold');
-        try {
-          await assertAxeClean(result.host);
         } finally {
           result.cleanup();
         }

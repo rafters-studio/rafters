@@ -15,29 +15,53 @@ import {
   type PressableState,
 } from '../../lib/pressable';
 
-export type ButtonVariant =
-  | 'default'
-  | 'primary'
-  | 'secondary'
-  | 'destructive'
-  | 'success'
-  | 'warning'
-  | 'info'
-  | 'muted'
-  | 'accent'
-  | 'outline'
-  | 'ghost'
-  | 'link';
+/**
+ * The variant and size vocabularies, in runtime form so nothing has to restate
+ * them. DOM-native performances take these as `string | null` and must narrow
+ * before they can call `buttonClasses`, and the test lanes enumerate them to
+ * build one scene per value. Deriving each type from its array rather than
+ * declaring both keeps them structurally impossible to desync.
+ */
+export const BUTTON_VARIANTS = [
+  'default',
+  'primary',
+  'secondary',
+  'destructive',
+  'success',
+  'warning',
+  'info',
+  'muted',
+  'accent',
+  'outline',
+  'ghost',
+  'link',
+] as const;
 
-export type ButtonSize =
-  | 'default'
-  | 'xs'
-  | 'sm'
-  | 'lg'
-  | 'icon'
-  | 'icon-xs'
-  | 'icon-sm'
-  | 'icon-lg';
+/**
+ * Sizes, declared as the two groups that actually differ and concatenated into
+ * the full list, so there is one ordered source and no way for a group to fall
+ * out of step with the whole. Order is load-bearing: the registry serves this
+ * vocabulary to consumers as an enum in declaration order.
+ */
+export const BUTTON_TEXT_SIZES = ['default', 'xs', 'sm', 'lg'] as const;
+export const BUTTON_ICON_SIZES = ['icon', 'icon-xs', 'icon-sm', 'icon-lg'] as const;
+export const BUTTON_SIZES = [...BUTTON_TEXT_SIZES, ...BUTTON_ICON_SIZES] as const;
+
+export type ButtonVariant = (typeof BUTTON_VARIANTS)[number];
+export type ButtonSize = (typeof BUTTON_SIZES)[number];
+
+export function isButtonVariant(value: string | null | undefined): value is ButtonVariant {
+  return value != null && (BUTTON_VARIANTS as ReadonlyArray<string>).includes(value);
+}
+
+export function isButtonSize(value: string | null | undefined): value is ButtonSize {
+  return value != null && (BUTTON_SIZES as ReadonlyArray<string>).includes(value);
+}
+
+/** A size that shapes a square icon-only button. */
+export type ButtonIconSize = (typeof BUTTON_ICON_SIZES)[number];
+/** A size that shapes a button with a text label. */
+export type ButtonTextSize = (typeof BUTTON_TEXT_SIZES)[number];
 
 export interface ButtonConfig extends PressableConfig {
   variant: ButtonVariant;

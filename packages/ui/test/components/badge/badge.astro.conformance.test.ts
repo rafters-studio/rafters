@@ -10,8 +10,8 @@
  */
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { BADGE_VARIANTS, badge } from '../../../src/components/badge/badge.behavior';
-import { assertAxeClean, assertContractFulfillment, partElement } from '../../harness/conformance';
+import { badge } from '../../../src/components/badge/badge.behavior';
+import { assertContractFulfillment, partElement } from '../../harness/conformance';
 import Badge from '../../../src/components/badge/badge.astro';
 
 afterEach(() => {
@@ -88,12 +88,5 @@ describe('badge conformance [astro]', () => {
   it('is a leaf: exactly one declared part', async () => {
     const body = await render();
     expect(body.querySelectorAll('[data-part]')).toHaveLength(1);
-  });
-
-  it('every variant renders clean of axe violations', async () => {
-    for (const variant of BADGE_VARIANTS) {
-      const body = await render({ variant }, { default: variant });
-      await assertAxeClean(body);
-    }
   });
 });

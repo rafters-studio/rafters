@@ -9,7 +9,6 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { RaftersInputOtp } from '../../../src/components/input-otp/input-otp.element';
 import { inputOtpBehavior } from '../../../src/components/input-otp/input-otp.behavior';
 import {
-  assertAxeClean,
   assertContractFulfillment,
   assertInstanceAriaFulfillment,
   partElements,
@@ -75,7 +74,6 @@ describe('input-otp conformance [wc]', () => {
       'slot',
     ]);
     assertInstanceAriaFulfillment(inputOtpBehavior, root, state, config);
-    await assertAxeClean(root);
   });
 
   it('seeds the value from the server markup and paints the slots on first bind', async () => {

@@ -10,7 +10,7 @@
  */
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { assertAxeClean, partElement } from '../../harness/conformance';
+import { partElement } from '../../harness/conformance';
 import Pagination from '../../../src/components/pagination/pagination.astro';
 
 afterEach(() => {
@@ -81,10 +81,5 @@ describe('pagination conformance [astro]', () => {
     expect(root.className).not.toContain('mt-4');
     expect(warn).not.toHaveBeenCalled();
     expect(error).not.toHaveBeenCalled();
-  });
-
-  it('is axe-clean -- the nav is its own landmark', async () => {
-    const body = await render();
-    await assertAxeClean(body);
   });
 });

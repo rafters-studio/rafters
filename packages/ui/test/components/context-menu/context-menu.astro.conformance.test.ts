@@ -15,11 +15,7 @@ import {
   bindContextMenu,
   contextMenu,
 } from '../../../src/components/context-menu/context-menu.behavior';
-import {
-  assertAxeClean,
-  assertConfigTravelsAsData,
-  assertContractFulfillment,
-} from '../../harness/conformance';
+import { assertConfigTravelsAsData, assertContractFulfillment } from '../../harness/conformance';
 
 const items = [
   { label: 'Cut' },
@@ -101,7 +97,6 @@ describe('context-menu conformance [astro]', () => {
     expect(content().hidden).toBe(true);
     expect(content().getAttribute('data-state')).toBe('closed');
     expect(content().querySelectorAll('[role="menuitem"]').length).toBe(4);
-    await assertAxeClean(document.body);
   });
 
   it('per-part ARIA equals the score projection, closed (SSR) and open', async () => {
@@ -130,7 +125,6 @@ describe('context-menu conformance [astro]', () => {
     expect(content().style.left).toBe('12px');
     expect(content().style.top).toBe('22px');
     expect(document.activeElement).toBe(itemByText('Cut'));
-    await assertAxeClean(document.body);
   });
 
   it('Escape closes and restores focus to the trigger', async () => {

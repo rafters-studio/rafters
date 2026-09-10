@@ -12,12 +12,7 @@ import {
   CollapsibleTrigger,
 } from '../../../src/components/collapsible/collapsible';
 import { collapsible } from '../../../src/components/collapsible/collapsible.behavior';
-import {
-  assertAxeClean,
-  assertContractFulfillment,
-  domPartIds,
-  partElement,
-} from '../../harness/conformance';
+import { assertContractFulfillment, domPartIds, partElement } from '../../harness/conformance';
 
 interface SetupProps {
   open?: boolean;
@@ -50,7 +45,6 @@ describe('collapsible conformance [react]', () => {
     expect(trigger?.getAttribute('aria-expanded')).toBe('false');
     expect(trigger?.hasAttribute('aria-controls')).toBe(false);
     expect(partElement(container, 'root')?.getAttribute('data-state')).toBe('closed');
-    await assertAxeClean(container);
   });
 
   it('open: every part renders and ARIA equals the projection', async () => {
@@ -65,7 +59,6 @@ describe('collapsible conformance [react]', () => {
       'trigger',
       'content',
     ]);
-    await assertAxeClean(container);
   });
 
   it('trigger and content are wired by real DOM ids', async () => {
@@ -116,7 +109,6 @@ describe('collapsible conformance [react]', () => {
     const { container } = render(<TestCollapsible defaultOpen />);
     expect(partElement(container, 'content')).not.toBeNull();
     expect(partElement(container, 'trigger')?.getAttribute('aria-expanded')).toBe('true');
-    await assertAxeClean(container);
   });
 
   it('forceMount keeps the content in the DOM, hidden, while closed', () => {

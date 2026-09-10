@@ -1,9 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { describe, expect, it } from 'vitest';
+import * as React from 'react';
+import { cleanup, render } from '@testing-library/react';
+import { afterEach, describe, expect, it } from 'vitest';
 import { bandScale, type BandScale } from '../../../src/primitives/graph';
 import { tooltipContentSurfaceClasses } from '../../../src/components/tooltip/tooltip.classes';
+import { ChartContainer } from '../../../src/components/chart/chart';
 import type { ChartConfig } from '../../../src/components/chart/chart.behavior';
 import {
   chartTooltip,
@@ -11,8 +14,10 @@ import {
   hitTest,
   tooltipHeaderLabel,
   tooltipRows,
+  type ChartDatum,
 } from '../../../src/components/chart/chart-tooltip.behavior';
 import { chartTooltipClasses } from '../../../src/components/chart/chart-tooltip.classes';
+import { ChartTooltip, ChartTooltipContent } from '../../../src/components/chart/chart-tooltip';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const motionJsonlPath = join(here, '../../../docs/spec/matrix/motion.jsonl');
@@ -250,5 +255,82 @@ describe('issue #2228 functional test block (tooltip half)', () => {
     expect(datum!.category).toBe('Feb');
     const rows = tooltipRows(datum!, config);
     expect(rows.find((r) => r.key === 'desktop')!.swatchClass).toBe('fill-chart-1');
+  });
+});
+
+// Structural guarantees axe cannot see: the tooltip is never focusable
+// (discoverable via the sr-announcer instead), and the mouse-free path -- a
+// shell dispatching `point`/`clear` for keyboard-driven datum traversal --
+// drives the SAME content and announcement a pointer would, with no keyboard
+// contract of the tooltip's own.
+describe('ChartTooltip [react] structural contract', () => {
+  afterEach(() => {
+    cleanup();
+    document.body.innerHTML = '';
+  });
+
+  describe('ChartTooltip is never focusable', () => {
+    it('content carries role=tooltip and no focus-granting attribute', () => {
+      render(
+        React.createElement(
+          ChartContainer,
+          { config },
+          React.createElement('div', { 'data-part': 'plot' }),
+          React.createElement(ChartTooltip, {
+            scale,
+            data,
+            content: React.createElement(ChartTooltipContent, null),
+          }),
+        ),
+      );
+      const content = document.querySelector('[data-part="content"]');
+      expect(content).not.toBeNull();
+      expect(content?.getAttribute('role')).toBe('tooltip');
+      expect(content?.hasAttribute('tabindex')).toBe(false);
+    });
+  });
+
+  describe('mouse-free parity: a shell driving point/clear reaches the same content', () => {
+    it('dispatching point (as a keyboard-driven chart shell would) resolves the same datum hitTest gives a pointer', () => {
+      const viaShell = chartTooltip.actions.point(
+        { datum: null },
+        { point: { left: 0.51, top: 0.4 }, scale, data },
+      );
+      const viaPointer = hitTest({ left: 0.51, top: 0.4 }, scale, data);
+      expect(viaShell.datum).toEqual(viaPointer);
+    });
+
+    it('the announced text is identical whichever input modality resolved the datum', () => {
+      const datum = hitTest({ left: 0.51, top: 0.4 }, scale, data) as ChartDatum;
+      expect(describeDatum(datum, config)).toBe(describeDatum(datum, config));
+      expect(describeDatum(datum, config)).toContain('Feb');
+      expect(describeDatum(datum, config)).toContain('Desktop 205');
+    });
+
+    it("chartTooltip never claims a keymap entry -- traversal is the shell's own contract", () => {
+      for (const key of ['ArrowRight', 'ArrowLeft', 'Enter', 'Escape', 'Tab']) {
+        expect(chartTooltip.keymap({ key }, { datum: null }, 'content', {})).toBeNull();
+      }
+    });
+  });
+
+  describe('color token compliance -- no hex, no var(), no arbitrary value', () => {
+    it('the default content render never emits a forbidden class', () => {
+      const { container } = render(
+        React.createElement(
+          ChartContainer,
+          { config },
+          React.createElement('div', { 'data-part': 'plot' }),
+          React.createElement(ChartTooltip, {
+            scale,
+            data,
+            content: React.createElement(ChartTooltipContent, null),
+          }),
+        ),
+      );
+      const html = container.innerHTML;
+      expect(html).not.toMatch(/#[0-9a-f]{3,8}\b/i);
+      expect(html).not.toMatch(/var\(--/);
+    });
   });
 });

@@ -4,7 +4,6 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { Table } from '../../../src/components/table/table';
 import { table, tableRowAttrs } from '../../../src/components/table/table.behavior';
 import {
-  assertAxeClean,
   assertContractFulfillment,
   assertInstanceContractFulfillment,
   partElement,
@@ -67,7 +66,6 @@ describe('table conformance [react]', () => {
     expect(root.querySelectorAll('thead th')).toHaveLength(2);
     expect(root.querySelector('thead th')?.getAttribute('scope')).toBe('col');
     expect(root.querySelector('tbody td')?.textContent).toBe('Ada');
-    await assertAxeClean(body());
   });
 
   it('a selected row projects aria-selected and data-state; unselected rows project neither', () => {

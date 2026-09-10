@@ -3,9 +3,7 @@ import { cleanup, fireEvent, render } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { Avatar, AvatarFallback, AvatarImage } from '../../../src/components/avatar/avatar';
 import { avatar } from '../../../src/components/avatar/avatar.behavior';
-import { assertAxeClean, assertContractFulfillment, partElement } from '../../harness/conformance';
-
-const body = () => document.body;
+import { assertContractFulfillment, partElement } from '../../harness/conformance';
 
 afterEach(() => {
   cleanup();
@@ -101,19 +99,5 @@ describe('avatar conformance [react]', () => {
 
   it('has no keyboard contract and dispatches nothing observable', () => {
     expect(avatar.keymap({ key: 'Enter' }, {}, 'root', {})).toBeNull();
-  });
-
-  it('is axe-clean with an alt-bearing image', async () => {
-    // An avatar is a peripheral element, not a landmark, so the page around it
-    // supplies the region (axe best-practice `region` rule).
-    render(
-      <main>
-        <Avatar>
-          <AvatarImage src="/user.jpg" alt="Jane Doe" />
-          <AvatarFallback>JD</AvatarFallback>
-        </Avatar>
-      </main>,
-    );
-    await assertAxeClean(body());
   });
 });
