@@ -6,12 +6,6 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { parse, type Spec } from 'comment-parser';
-import { type PropsTypeChecker, typescriptPropsTypeChecker } from './typeChecker';
-
-// The one place the checker backend is chosen (#2165 Interface). Swapping to
-// tsgo / TS7 is a new PropsTypeChecker assigned here; extractFacet never
-// learns which backend answered.
-const propsTypeChecker: PropsTypeChecker = typescriptPropsTypeChecker;
 
 /**
  * Registry item types. Defined locally (like RegistryItem/RegistryFile/
@@ -42,15 +36,6 @@ export interface RegistryFile {
   dependencies: string[]; // e.g., ["lodash@4.17.21"] - versioned
   devDependencies: string[]; // e.g., ["vitest"] - from @devDependencies JSDoc
 }
-
-/**
- * Per-target extraction types. Hand-mirrored from the CLI's zod source of truth
- * (packages/cli/src/registry/types.ts: ComponentTargetSchema / PropFieldSchema /
- * FacetSchema) for the same reason RegistryItem is -- the registry never imports
- * the CLI's built dist. The componentService.test.ts parses generator output
- * through the real zod schema, so the two declarations must agree.
- */
-export type ComponentTarget = 'react' | 'astro' | 'vue' | 'svelte' | 'wc';
 
 /** A structured, machine-actionable cross-prop rule -- never a prose string. */
 export interface Constraint {
@@ -90,13 +75,6 @@ export type PropField =
     }
   | { type: 'deprecated'; deprecatedFor: string };
 
-export interface Facet {
-  props: Record<string, PropField>;
-  slots?: string[];
-  events?: string[];
-  snippet: string;
-}
-
 export interface RegistryItem {
   name: string;
   type: RegistryItemType;
@@ -104,20 +82,8 @@ export interface RegistryItem {
   primitives: string[];
   files: RegistryFile[];
   rules?: string[];
-  composites?: string[];
   intelligence?: ComponentIntelligence;
-  facets?: Partial<Record<ComponentTarget, Facet>>;
-  parent?: string;
 }
-
-/** Source file extension -> framework target. Parallel to COMPONENT_EXTENSIONS. */
-const EXT_TO_TARGET: Record<string, ComponentTarget> = {
-  '.tsx': 'react',
-  '.astro': 'astro',
-  '.vue': 'vue',
-  '.svelte': 'svelte',
-  '.element.ts': 'wc',
-};
 
 export interface RegistryIndex {
   name: string;
@@ -790,26 +756,6 @@ export function extractDepsFromSource(content: string): {
  * in string literals or line comments is not matched. Returns the first
  * match, or undefined when no @parent tag is present.
  */
-export function extractParentFromSource(content: string): string | undefined {
-  let blocks: ReturnType<typeof parse>;
-  try {
-    blocks = parse(content);
-  } catch {
-    return undefined;
-  }
-
-  for (const block of blocks) {
-    for (const tag of block.tags) {
-      if (tag.tag.toLowerCase() === 'parent') {
-        const value = getTagValue(tag).trim();
-        if (value) return value;
-      }
-    }
-  }
-
-  return undefined;
-}
-
 /**
  * Analyze source content to extract merged dependencies and intelligence metadata.
  * Shared by loadComponent and loadPrimitive.
@@ -857,92 +803,6 @@ function analyzeSource(
   };
 }
 
-/** PascalCase a component/prop name: `card-header` -> `CardHeader`. */
-function pascalCase(input: string): string {
-  return input
-    .split(/[-_]/)
-    .filter((part) => part.length > 0)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join('');
-}
-
-/**
- * Every exported literal-union type alias in a source, name -> members, verbatim
- * and in declaration order. Only `export type X = | 'a' | 'b' ...` matches;
- * `export type X = string` or a template type never does, so a styling prop can
- * never be collapsed to a bare-string type -- it is simply absent from the map.
- */
-function extractLiteralUnions(source: string): Map<string, string[]> {
-  const unions = new Map<string, string[]>();
-  const typeRe = /export\s+type\s+(\w+)\s*=\s*((?:\s*\|\s*'[^']*')+)\s*;/g;
-  for (const match of source.matchAll(typeRe)) {
-    const values = [...match[2].matchAll(/'([^']*)'/g)].map((m) => m[1]);
-    if (values.length > 0) unions.set(match[1], values);
-  }
-  return unions;
-}
-
-/**
- * Members of an INLINE literal union type expression (`'button' | 'submit'`),
- * or [] when the expression contains any non-literal part (`string`, `boolean`,
- * a named type). Never collapses a mixed expression to a bare string.
- */
-function inlineUnionValues(typeExpr: string): string[] {
-  if (!typeExpr.includes("'")) return [];
-  const residue = typeExpr
-    .replace(/'[^']*'/g, '')
-    .replace(/\|/g, '')
-    .trim();
-  if (residue.length > 0) return [];
-  return [...typeExpr.matchAll(/'([^']*)'/g)].map((m) => m[1]);
-}
-
-/** Defaults from the target's own destructuring: `variant = 'default'` -> default. */
-function extractDestructuredDefaults(source: string): Map<string, string> {
-  const defaults = new Map<string, string>();
-  const block = source.match(/const\s*\{([\s\S]*?)\}\s*=\s*(?:props|Astro\.props)/);
-  if (!block) return defaults;
-  // A RENAMED destructure binds a different local name than the prop it reads:
-  // `container.astro` writes `as: Tag = 'div'`, and matching the initializer
-  // alone recorded the default under `Tag`, so the prop `as` looked like it had
-  // none while `container.tsx`'s plain `as = 'div'` matched fine -- the same
-  // prop of the same component reporting a default on one target and not the
-  // other. Group 1 is the PROP; the optional group 2 alias is discarded.
-  const binding =
-    /([A-Za-z_$][\w$]*)\s*(?::\s*[A-Za-z_$][\w$]*)?\s*=\s*(?:'([^']*)'|(true|false|-?\d+(?:\.\d+)?))/g;
-  for (const match of block[1].matchAll(binding)) {
-    const value = match[2] ?? match[3];
-    if (value !== undefined) defaults.set(match[1], value);
-  }
-  return defaults;
-}
-
-/** Fields of a target's own `interface Props`/`*Props` body: name, optionality, type. */
-function extractInterfaceProps(
-  source: string,
-): Array<{ name: string; optional: boolean; typeExpr: string }> {
-  const body = source.match(/interface\s+\w*Props\b[^{]*\{([\s\S]*?)\n\}/);
-  if (!body) return [];
-  const props: Array<{ name: string; optional: boolean; typeExpr: string }> = [];
-  for (const line of body[1].split('\n')) {
-    const match = line.match(/^\s*(?:'([^']+)'|([A-Za-z_$][\w$-]*))(\?)?\s*:\s*(.+?);?\s*$/);
-    if (!match) continue;
-    const name = match[1] ?? match[2];
-    if (!name) continue;
-    props.push({ name, optional: match[3] === '?', typeExpr: match[4].trim() });
-  }
-  return props;
-}
-
-/** The named slots a target renders (`<slot>` -> default, `<slot name="x">` -> x). */
-function extractSlots(source: string): string[] {
-  const slots = new Set<string>();
-  for (const match of source.matchAll(/<slot\s+name="([^"]+)"/g)) slots.add(match[1]);
-  // A bare `<slot>` / `<slot />` (no name= before its `>`) is the default slot.
-  if (/<slot(?![^>]*\bname=)[\s/>]/.test(source)) slots.add('default');
-  return [...slots];
-}
-
 /** Parse a `@constraint` body into a structured Constraint, or null if malformed. */
 function parseConstraintBody(body: string): Constraint | null {
   const whenProp = body.match(/when\s+prop=(\S+)/)?.[1];
@@ -950,215 +810,6 @@ function parseConstraintBody(body: string): Constraint | null {
   const requiresProp = body.match(/requires\s+prop=(\S+)/)?.[1];
   if (!whenProp || !matches || !requiresProp) return null;
   return { when: { prop: whenProp, matches }, requires: { prop: requiresProp } };
-}
-
-/** Structured constraints from a source's `@constraint` tags, keyed by `when.prop`. */
-function extractConstraints(source: string): Map<string, Constraint> {
-  const constraints = new Map<string, Constraint>();
-  let blocks: ReturnType<typeof parse>;
-  try {
-    blocks = parse(source);
-  } catch {
-    return constraints;
-  }
-  for (const block of blocks) {
-    for (const tag of block.tags) {
-      if (tag.tag.toLowerCase() !== 'constraint') continue;
-      const parsed = parseConstraintBody(getTagValue(tag));
-      if (parsed) constraints.set(parsed.when.prop, parsed);
-    }
-  }
-  return constraints;
-}
-
-/**
- * Extract one target's facet from its already-read source.
- *
- * React props come from the TypeScript type checker (#2165), which resolves
- * through alias depth, intersections, and `(typeof X)[number]` patterns that
- * regexes miss. Non-TS targets (astro/vue/svelte) keep the interface-body
- * regex path because `.astro`/`.vue`/`.svelte` are not valid TypeScript and
- * cannot be fed to `ts.createProgram`.
- *
- * `componentDir` is the ABSOLUTE path to the component directory, used by the
- * react branch to locate the `.tsx` source in the shared `ts.Program`.
- */
-/**
- * A default belongs to the PERFORMANCE, not the score: `as` defaults to `div`
- * where each target destructures it, and the behavior file declares no
- * initializers at all. So the score decides a prop's shape and the target
- * supplies its default -- taken from the target's own resolved field when the
- * two agree on type, else from the target source's destructuring.
- *
- * Switched on the score field's own type because `default` is typed per
- * variant (enum/string/grammar carry a string, boolean a boolean, number a
- * number, and the deprecated arm carries none).
- */
-function withTargetDefault(
-  field: PropField,
-  targetField: PropField | undefined,
-  fromSource: string | undefined,
-): PropField {
-  if (field.type === 'deprecated' || field.default !== undefined) return field;
-
-  if (field.type === 'boolean') {
-    const own = targetField?.type === 'boolean' ? targetField.default : undefined;
-    if (own !== undefined) return { ...field, default: own };
-    if (fromSource === 'true' || fromSource === 'false') {
-      return { ...field, default: fromSource === 'true' };
-    }
-    return field;
-  }
-
-  if (field.type === 'number') {
-    const own = targetField?.type === 'number' ? targetField.default : undefined;
-    if (own !== undefined) return { ...field, default: own };
-    const parsed = fromSource === undefined ? Number.NaN : Number(fromSource);
-    return Number.isFinite(parsed) ? { ...field, default: parsed } : field;
-  }
-
-  // enum | string | grammar -- all carry a string default.
-  const own =
-    targetField !== undefined &&
-    targetField.type !== 'deprecated' &&
-    typeof targetField.default === 'string'
-      ? targetField.default
-      : undefined;
-  const next = own ?? fromSource;
-  return next === undefined ? field : { ...field, default: next };
-}
-
-/**
- * The TARGET decides whether a prop is optional in its own performance. The
- * score supplies the type; requiredness travels with the interface that
- * declares the prop, because the same score is performed differently --
- * `sidebar.astro` requires an `id` that `SidebarConfig` never mentions.
- */
-function withTargetOptionality(field: PropField, optional: boolean): PropField {
-  if (field.type === 'deprecated') return field;
-  if (optional) {
-    const { required: _dropped, ...rest } = field as PropField & { required?: boolean };
-    return rest as PropField;
-  }
-  return { ...field, required: true } as PropField;
-}
-
-/**
- * A prop that carries a default is NOT required (Sean, 2026-09-07): the default
- * IS its value when the caller does not override, so there is nothing the
- * caller must supply. The scores declare several such props without a `?`
- * (`ButtonConfig` has `variant: ButtonVariant`, `SliderConfig` has `min`), which
- * would otherwise publish `required: true` alongside a `default` -- telling an
- * agent it must pass a value the component already has.
- */
-function settledIsNotRequired(field: PropField): PropField {
-  if (field.type === 'deprecated' || field.default === undefined) return field;
-  const { required: _dropped, ...rest } = field as PropField & { required?: boolean };
-  return rest as PropField;
-}
-
-function extractFacet(
-  name: string,
-  ext: string,
-  targetSource: string,
-  behaviorSource: string | null,
-  componentDir: string,
-): Facet | null {
-  const target = EXT_TO_TARGET[ext];
-  if (!target) return null;
-
-  // wc has no functional attribute-driven props today: button.element.ts is a
-  // bare HTMLElement subclass with no observedAttributes, and bindButton reads
-  // only aria-* off the light-DOM root. Emit honest empty props and a light-DOM
-  // enhancement snippet -- never a fabricated `variant="..."` attribute surface.
-  if (target === 'wc') {
-    return {
-      props: {},
-      snippet: `<rafters-${name}><button data-part="root" class="...">Save</button></rafters-${name}>`,
-    };
-  }
-
-  const constraints = extractConstraints(targetSource);
-  let props: Record<string, PropField>;
-
-  if (target === 'react') {
-    props = propsTypeChecker.resolveProps({ componentName: name, componentDir }, constraints);
-  } else {
-    // Interface-declared targets (astro/vue/svelte) carry requiredness. The TS
-    // checker cannot read these file formats, so the regex path stays.
-    const unions = behaviorSource
-      ? extractLiteralUnions(behaviorSource)
-      : new Map<string, string[]>();
-    const defaults = extractDestructuredDefaults(targetSource);
-    props = {};
-
-    const resolveUnion = (propName: string, typeExpr?: string): string[] | null => {
-      const byConvention = unions.get(pascalCase(name) + pascalCase(propName));
-      if (byConvention) return byConvention;
-      if (typeExpr) {
-        const byAnnotation = unions.get(typeExpr);
-        if (byAnnotation) return byAnnotation;
-        const inline = inlineUnionValues(typeExpr);
-        if (inline.length > 0) return inline;
-      }
-      return null;
-    };
-
-    const makeEnum = (propName: string, values: string[], required: boolean): PropField => {
-      const field: PropField = { type: 'enum', values };
-      const def = defaults.get(propName);
-      if (def !== undefined) field.default = def;
-      if (required) field.required = true;
-      const constraint = constraints.get(propName);
-      if (constraint) field.constraint = constraint;
-      return field;
-    };
-
-    // The interface names the SURFACE; the score resolves the SHAPES this
-    // regex cannot. Before, a declared prop whose type was not a literal union
-    // was dropped outright unless it was required -- so container.astro
-    // published 3 of the 12 props its own Props interface declares, and an
-    // Astro consumer could not discover `padding`, `columns` or `position` at
-    // all. The names were never the problem; only their types were.
-    const score = propsTypeChecker.resolveScoreProps(
-      { componentName: name, componentDir },
-      constraints,
-    );
-
-    for (const prop of extractInterfaceProps(targetSource)) {
-      const values = resolveUnion(prop.name, prop.typeExpr);
-      if (values) {
-        props[prop.name] = makeEnum(prop.name, values, !prop.optional);
-        continue;
-      }
-
-      // The score declares this prop's real type. The TARGET still decides
-      // whether it is optional here -- a score is performed differently by
-      // each target, and sidebar.astro requires an `id` the score never
-      // mentions.
-      const scored = score[prop.name];
-      if (scored) {
-        props[prop.name] = withTargetOptionality(
-          withTargetDefault(scored, undefined, defaults.get(prop.name)),
-          prop.optional,
-        );
-        continue;
-      }
-
-      if (!prop.optional) props[prop.name] = makeEnum(prop.name, [], true);
-    }
-  }
-
-  props = Object.fromEntries(
-    Object.entries(props).map(([key, field]) => [key, settledIsNotRequired(field)]),
-  );
-
-  const facet: Facet = { props, snippet: `<${pascalCase(name)}>Save</${pascalCase(name)}>` };
-  // React exposes content via `children`, not slots -- omit slots for react
-  // entirely (never scan its source, which could carry `<slot` in a JSDoc example).
-  const slots = target === 'react' ? [] : extractSlots(targetSource);
-  if (slots.length > 0) facet.slots = slots;
-  return facet;
 }
 
 /**
@@ -1280,22 +931,6 @@ export function propFieldToFieldDescriptor(name: string, field: PropField): Fiel
 }
 
 /**
- * Reverse index: the composite names that reference `componentName`. Iterates
- * the composite NODE set (listCompositeNames) and reuses loadComposite, whose
- * `primitives` field already holds the block component names (extractComponentDeps).
- * Because the discovery is identical to the node set's, every name returned is a
- * real composite node -- #2072's assembleGraph never sees a dangling edge.
- */
-function findReferencingComposites(componentName: string): string[] {
-  const referencing: string[] = [];
-  for (const compositeName of listCompositeNames()) {
-    const item = loadComposite(compositeName);
-    if (item?.primitives.includes(componentName)) referencing.push(compositeName);
-  }
-  return referencing.sort();
-}
-
-/**
  * Load a single component by name.
  * Discovers all framework variants (.tsx, .astro, .vue, .svelte) and
  * shared auxiliary files (.classes.ts, etc.) to include in the registry item.
@@ -1310,12 +945,8 @@ export function loadComponent(name: string): RegistryItem | null {
   if (!resolved) return null;
   const componentDir = resolved.dir;
   const files: RegistryFile[] = [];
-  // Each existing framework variant's already-read source, for per-target facet
-  // extraction after the shared .behavior.ts is loaded (no extra file reads).
-  const targetSources: Array<{ ext: string; content: string }> = [];
   let primitivesAll: string[] = [];
   let intelligence: ReturnType<typeof parseJSDocFromSource> | undefined;
-  let parent: string | undefined;
 
   // Load framework-specific variants
   // Strict intel is enforced only on the primary .tsx file. Other extensions
@@ -1333,7 +964,6 @@ export function loadComponent(name: string): RegistryItem | null {
         dependencies: analysis.allExternalDeps,
         devDependencies: analysis.devDependencies,
       });
-      if (EXT_TO_TARGET[ext]) targetSources.push({ ext, content });
 
       // Merge primitive/internal deps from all variants.
       // Filter out shared auxiliary files -- they are bundled with the
@@ -1353,12 +983,6 @@ export function loadComponent(name: string): RegistryItem | null {
       // Use intelligence from first variant that has it (typically .tsx)
       if (!intelligence && analysis.intelligence) {
         intelligence = analysis.intelligence;
-      }
-
-      // Use parent from first variant that declares it
-      if (!parent) {
-        const p = extractParentFromSource(content);
-        if (p) parent = p;
       }
     } catch {
       // Variant doesn't exist for this extension -- skip
@@ -1557,38 +1181,15 @@ export function loadComponent(name: string): RegistryItem | null {
   }
   primitivesAll = primitivesAll.filter((dep) => !ownBasenames.has(stripExt(dep)));
 
-  // Per-target facets. The shared .behavior.ts (now in `files` from the
-  // shared-suffix loop above) is the verbatim literal-union source of truth;
-  // each already-read variant source is extracted once. Always set `facets` and
-  // `composites` (even empty) so RegistryItemSchema.parse is stable.
-  const behaviorSource =
-    files.find((f) => f.path === `components/ui/${name}.behavior.ts`)?.content ?? null;
-  const facets: Partial<Record<ComponentTarget, Facet>> = {};
-  for (const { ext, content } of targetSources) {
-    const target = EXT_TO_TARGET[ext];
-    if (!target) continue;
-    const facet = extractFacet(name, ext, content, behaviorSource, componentDir);
-    if (facet) facets[target] = facet;
-  }
-
   const result: RegistryItem = {
     name,
     type: 'ui',
     primitives: primitivesAll,
     files,
-    composites: findReferencingComposites(name),
-    facets,
   };
 
   if (intelligence) {
     result.intelligence = intelligence;
-  }
-
-  // A component cannot be its own parent -- guard against @parent tags on
-  // sub-component JSDoc blocks inside the primary file (e.g. card.tsx carries
-  // @parent card on CardHeader et al., but card itself has no parent).
-  if (parent && parent !== name) {
-    result.parent = parent;
   }
 
   return result;
