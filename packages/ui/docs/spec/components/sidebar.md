@@ -251,10 +251,12 @@ throws, as React's own `asChild` does through `Children.only` -- injecting into
 the first and emitting the rest untouched would render markup that escapes both
 the decoration and the contract.
 
-React's `SidebarTrigger` also carries `asChild` (`sidebar.tsx:273`); Decision 2
-named only the five parts above, so `SidebarTrigger.astro` does not carry it --
-a discrepancy between the decision and the React source, flagged rather than
-silently extended.
+React's `SidebarTrigger` carries `asChild` (`sidebar.tsx:273`); `SidebarTrigger.astro`
+now carries it too (`sidebar-trigger.astro:43`), closing the cross-target gap.
+The behavior contract declares `asChild: true` on the trigger part
+(`sidebar.behavior.ts:102`). On the asChild path, `aria-label` is not forced --
+the consumer's child element keeps its own accessible name, matching React's
+behavior where `aria-label` appears only on the static button fallback.
 
 **Trigger and Rail are behavior-connected, not pure decoration.** Their React
 performances read `useSidebar()` for `aria-controls`/`data-state`
@@ -298,7 +300,7 @@ surface; `dropped` = intentionally not ported; `defect-do-not-port` = oracle bug
 | Rail (desktop toggle, `tabIndex=-1`, labelled) | contract |
 | Inset (`<main>` landmark) | contract |
 | Header/Footer/Content/Group(+Label/Action/Content)/Menu(+Item/Button/Action/Badge/Skeleton/Sub/SubItem/SubButton)/Separator | contract; pure decoration (classes + `data-sidebar` attrs), no behavior; importable on every target under shadcn's flat names per the 00-boundaries shadcn-parity guideline. #2324 carries the Astro part files (see Astro composition); the WC surface has no issue carrying it yet |
-| `asChild` on GroupLabel/GroupAction/MenuButton/MenuAction/MenuSubButton | contract; React expresses it via `cloneElement`+`mergeProps`, Astro via render-then-inject (#2324, Decision 2, 2026-09-09 -- see Astro composition). React's `SidebarTrigger` also carries `asChild` (`sidebar.tsx:273`); Decision 2 named only these five for Astro and Trigger is not one of them, a discrepancy flagged rather than resolved here |
+| `asChild` on GroupLabel/GroupAction/MenuButton/MenuAction/MenuSubButton/Trigger | contract; React expresses it via `cloneElement`+`mergeProps`, Astro via render-then-inject (#2324, Decision 2; #2352 extended to Trigger). Behavior contract declares `asChild: true` on the trigger part (`sidebar.behavior.ts:102`) |
 | MenuButton `variant`/`size`, MenuSubButton `size`, `isActive` (`data-active`) | contract; decoration variants |
 | MenuSkeleton random bar width (`Math.random`) | contract; `MenuSkeleton` itself is importable on every target under shadcn's flat name per the 00-boundaries shadcn-parity guideline. #2324 carries the Astro part file (a fresh per-render server value, close enough to the React mount-once value that neither jitters within its own lifetime); the WC surface has no issue carrying it yet |
 | JSDoc claimed a "nav role" landmark but rendered a `<div>` | defect-do-not-port; this port actually delivers `<nav>` for the panel (the landmark the oracle only aspired to) |

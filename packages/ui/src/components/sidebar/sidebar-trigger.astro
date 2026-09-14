@@ -63,7 +63,6 @@ const decoration: Record<string, string> = {
   'data-part': 'trigger',
   id: ids.trigger,
   class: classes.trigger,
-  'aria-label': 'Toggle Sidebar',
   ...(aria.trigger as Record<string, string>),
 };
 
@@ -80,6 +79,7 @@ if (asChild) {
   ) : (
     <button
       type="button"
+      aria-label="Toggle Sidebar"
       {...decoration}
       {...attrs}
     >
