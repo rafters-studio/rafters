@@ -17,6 +17,8 @@
  */
 import { ELEMENT_NODE, type ElementNode, type Node, parse, renderSync } from 'ultrahtml';
 
+export { partSupportsAsChild } from '../lib/contract';
+
 function isElement(node: Node): node is ElementNode {
   return node.type === ELEMENT_NODE;
 }
