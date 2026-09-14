@@ -12,6 +12,7 @@ import {
   disclosable,
   isOpen,
   type DisclosableActions,
+  type DisclosableConfig,
   type DisclosablePart,
   type DisclosableState,
 } from '../../lib/disclosable';
@@ -21,9 +22,7 @@ import {
  *  ARIA, and claims no key. Default: right. */
 export type SheetSide = 'top' | 'right' | 'bottom' | 'left';
 
-export interface SheetConfig {
-  open?: boolean | undefined;
-  defaultOpen?: boolean | undefined;
+export interface SheetConfig extends DisclosableConfig {
   /** Modal sheets trap focus, lock scroll, and dismiss on outside pointerdown.
    *  Default: true. */
   modal?: boolean | undefined;

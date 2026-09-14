@@ -9,6 +9,7 @@ import {
   disclosable,
   isOpen,
   type DisclosableActions,
+  type DisclosableConfig,
   type DisclosablePart,
   type DisclosableState,
 } from '../../lib/disclosable';
@@ -16,9 +17,7 @@ import { computePosition } from '../../primitives/collision-detector';
 import { updateAriaAttribute } from '../../primitives/aria-manager';
 import type { Align, Side } from '../../primitives/types';
 
-export interface HoverCardConfig {
-  open?: boolean | undefined;
-  defaultOpen?: boolean | undefined;
+export interface HoverCardConfig extends DisclosableConfig {
   /** When true, moving the pointer onto the content does NOT hold it open.
    *  Default false (content is hoverable, so the pointer can travel onto it).
    *  Reflected as `data-disable-hoverable-content` and read by the CSS reveal
