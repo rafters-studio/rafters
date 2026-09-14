@@ -86,6 +86,8 @@ export interface SwitchProps extends Omit<
   value?: string;
   /** Constraint advertised to AT via aria-required. */
   required?: boolean;
+  disabled?: boolean;
+  name?: string;
 }
 
 export const Switch = React.forwardRef<HTMLButtonElement, SwitchProps>((props, ref) => {
