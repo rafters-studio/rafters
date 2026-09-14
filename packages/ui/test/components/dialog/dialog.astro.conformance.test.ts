@@ -31,20 +31,20 @@ const content = () => document.body.querySelector<HTMLElement>('[data-part="cont
 
 describe('dialog conformance [astro]', () => {
   it('SSR closed: content hidden and crawlable, trigger collapsed', async () => {
-    await mount({ title: 'Settings' });
+    await mount({}, { title: 'Settings' });
     expect(content().hidden).toBe(true);
     expect(trigger().getAttribute('aria-expanded')).toBe('false');
   });
 
   it('SSR wires aria by real ids; omitted description projects none', async () => {
-    await mount({ title: 'Settings' });
+    await mount({}, { title: 'Settings' });
     expect(content().getAttribute('aria-labelledby')).toBe('d-title');
     expect(content().hasAttribute('aria-describedby')).toBe(false);
   });
 
   it('bind: trigger opens, focus trapped, scroll locked; Escape closes + restores focus', async () => {
     const user = userEvent.setup();
-    await mount({ title: 'Settings' }, { default: '<button type="button">Save</button>' });
+    await mount({}, { title: 'Settings', default: '<button type="button">Save</button>' });
     await user.click(trigger());
     expect(content().hidden).toBe(false);
     expect(content().contains(document.activeElement)).toBe(true);

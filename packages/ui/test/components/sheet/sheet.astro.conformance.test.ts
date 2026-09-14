@@ -32,30 +32,30 @@ const content = () => document.body.querySelector<HTMLElement>('[data-part="cont
 
 describe('sheet conformance [astro]', () => {
   it('SSR closed: content hidden and crawlable, trigger collapsed', async () => {
-    await mount({ title: 'Filters' });
+    await mount({}, { title: 'Filters' });
     expect(content().hidden).toBe(true);
     expect(trigger().getAttribute('aria-expanded')).toBe('false');
   });
 
   it('SSR wires aria by real ids; omitted description projects none', async () => {
-    await mount({ title: 'Filters' });
+    await mount({}, { title: 'Filters' });
     expect(content().getAttribute('aria-labelledby')).toBe('s-title');
     expect(content().hasAttribute('aria-describedby')).toBe(false);
   });
 
   it('SSR renders the requested side variant; default is right', async () => {
-    await mount({ title: 'Filters', side: 'left' });
+    await mount({ side: 'left' }, { title: 'Filters' });
     expect(content().getAttribute('data-side')).toBe('left');
     expect(content().className).toContain(sheetSideClasses.left);
 
-    await mount({ title: 'Filters' });
+    await mount({}, { title: 'Filters' });
     expect(content().getAttribute('data-side')).toBe('right');
     expect(content().className).toContain(sheetSideClasses.right);
   });
 
   it('bind: trigger opens, focus trapped, scroll locked; Escape closes + restores focus', async () => {
     const user = userEvent.setup();
-    await mount({ title: 'Filters' }, { default: '<button type="button">Apply</button>' });
+    await mount({}, { title: 'Filters', default: '<button type="button">Apply</button>' });
     await user.click(trigger());
     expect(content().hidden).toBe(false);
     expect(content().contains(document.activeElement)).toBe(true);
