@@ -12,12 +12,13 @@ import {
   disclosable,
   isOpen,
   type DisclosableActions,
-  type DisclosableConfig,
   type DisclosablePart,
   type DisclosableState,
 } from '../../lib/disclosable';
 
-export interface DialogConfig extends DisclosableConfig {
+export interface DialogConfig {
+  open?: boolean | undefined;
+  defaultOpen?: boolean | undefined;
   /** Modal dialogs trap focus, lock scroll, and dismiss on outside
    *  pointerdown. Default: true. */
   modal?: boolean | undefined;
