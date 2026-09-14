@@ -99,7 +99,7 @@ const sidebarSlice: Slice<SidebarConfig, SidebarState, SidebarActions, SidebarPa
   name: 'sidebar',
   parts: {
     root: {},
-    trigger: { optional: true },
+    trigger: { optional: true, asChild: true },
     rail: { optional: true },
     panel: {},
     dialog: { optional: true },
