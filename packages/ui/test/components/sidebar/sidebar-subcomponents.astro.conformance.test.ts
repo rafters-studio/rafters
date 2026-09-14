@@ -320,6 +320,64 @@ describe('sidebar astro sub-components [trigger/rail, behavior-connected]', () =
     expect(trigger.getAttribute('data-state')).toBe('collapsed');
   });
 
+  it('SidebarTrigger: asChild=true renders the child with data-part, id, and aria preserved', async () => {
+    const body = await renderOne(
+      SidebarTrigger,
+      { id: 'sb', asChild: true },
+      { default: '<button class="custom">Toggle</button>' },
+    );
+    const trigger = body.querySelector('[data-part="trigger"]') as HTMLElement;
+    expect(trigger).not.toBeNull();
+    expect(trigger.tagName).toBe('BUTTON');
+    expect(trigger.id).toBe('sb-trigger');
+    expect(trigger.getAttribute('aria-controls')).toBe('sb-panel');
+    expect(trigger.getAttribute('data-state')).toBe('expanded');
+    expect(trigger.className).toBe(classes.trigger);
+    expect(trigger.className).not.toContain('custom');
+  });
+
+  it('SidebarTrigger: asChild=true with defaultOpen=false reflects collapsed state', async () => {
+    const body = await renderOne(
+      SidebarTrigger,
+      { id: 'sb', defaultOpen: false, asChild: true },
+      { default: '<button>Toggle</button>' },
+    );
+    const trigger = body.querySelector('[data-part="trigger"]') as HTMLElement;
+    expect(trigger.getAttribute('data-state')).toBe('collapsed');
+  });
+
+  it('SidebarTrigger: asChild=true with no element in slot falls back to own button', async () => {
+    const body = await renderOne(
+      SidebarTrigger,
+      { id: 'sb', asChild: true },
+      { default: 'plain text' },
+    );
+    const trigger = body.querySelector('[data-part="trigger"]') as HTMLElement;
+    expect(trigger).not.toBeNull();
+    expect(trigger.tagName).toBe('BUTTON');
+    expect(trigger.textContent).toContain('plain text');
+  });
+
+  it('SidebarTrigger: asChild=false (default) is unchanged', async () => {
+    const body = await renderOne(SidebarTrigger, { id: 'sb' });
+    const trigger = body.querySelector('[data-part="trigger"]') as HTMLElement;
+    expect(trigger.id).toBe('sb-trigger');
+    expect(trigger.getAttribute('aria-controls')).toBe('sb-panel');
+    expect(trigger.getAttribute('data-state')).toBe('expanded');
+    expect(trigger.className).toBe(classes.trigger);
+  });
+
+  it('class is dropped on the asChild branch for SidebarTrigger', async () => {
+    const body = await renderOne(
+      SidebarTrigger,
+      { id: 'sb', asChild: true, class: 'bg-red-500' },
+      { default: '<button class="text-blue-500">Go</button>' },
+    );
+    const trigger = body.querySelector('[data-part="trigger"]') as HTMLElement;
+    expect(trigger.className).not.toContain('bg-red-500');
+    expect(trigger.className).not.toContain('text-blue-500');
+  });
+
   it('SidebarRail recomputes the SAME projection sidebar.astro renders inline, given the same id', async () => {
     const body = await renderOne(SidebarRail, { id: 'sb' });
     const rail = body.querySelector('[data-part="rail"]') as HTMLElement;
