@@ -19,8 +19,6 @@ import type * as React from 'react';
 import classy from './classy';
 import type { CleanupFunction } from './types';
 
-export { partSupportsAsChild } from '../lib/contract';
-
 export interface SlotMergeOptions {
   /**
    * Whether to merge ARIA attributes

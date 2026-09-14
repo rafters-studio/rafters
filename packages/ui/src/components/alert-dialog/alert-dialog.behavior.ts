@@ -44,8 +44,8 @@ const alertDialogSurface: Slice<
   name: 'alert-dialog-surface',
   parts: {
     overlay: { optional: true },
-    title: { optional: true, asChild: true },
-    description: { optional: true, asChild: true },
+    title: { optional: true },
+    description: { optional: true },
     cancel: { optional: true },
     action: { optional: true },
   },

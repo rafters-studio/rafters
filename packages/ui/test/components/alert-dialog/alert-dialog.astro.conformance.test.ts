@@ -32,26 +32,26 @@ const cancel = () => document.body.querySelector<HTMLElement>('[data-part="cance
 
 describe('alert-dialog conformance [astro]', () => {
   it('SSR closed: content hidden and crawlable, trigger collapsed', async () => {
-    await mount({}, { title: 'Are you sure?' });
+    await mount({ title: 'Are you sure?' });
     expect(content().hidden).toBe(true);
     expect(trigger().getAttribute('aria-expanded')).toBe('false');
   });
 
   it('SSR content is an alertdialog, always modal; aria wired by real ids', async () => {
-    await mount({}, { title: 'Are you sure?' });
+    await mount({ title: 'Are you sure?' });
     expect(content().getAttribute('role')).toBe('alertdialog');
     expect(content().getAttribute('aria-modal')).toBe('true');
     expect(content().getAttribute('aria-labelledby')).toBe('a-title');
   });
 
   it('omitted description projects no aria-describedby', async () => {
-    await mount({}, { title: 'Are you sure?' });
+    await mount({ title: 'Are you sure?' });
     expect(content().hasAttribute('aria-describedby')).toBe(false);
   });
 
   it('bind: trigger opens, focus lands on Cancel, scroll locked; Escape closes + restores focus', async () => {
     const user = userEvent.setup();
-    await mount({}, { title: 'Are you sure?' });
+    await mount({ title: 'Are you sure?' });
     await user.click(trigger());
     expect(content().hidden).toBe(false);
     expect(document.activeElement).toBe(cancel());
@@ -64,7 +64,7 @@ describe('alert-dialog conformance [astro]', () => {
 
   it('an outside pointerdown does NOT dismiss', async () => {
     const user = userEvent.setup();
-    await mount({}, { title: 'Are you sure?' });
+    await mount({ title: 'Are you sure?' });
     const outside = document.createElement('button');
     document.body.appendChild(outside);
     await user.click(trigger());

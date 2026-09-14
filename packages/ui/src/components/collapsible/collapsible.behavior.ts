@@ -9,6 +9,7 @@ import {
   disclosable,
   isOpen,
   type DisclosableActions,
+  type DisclosableConfig,
   type DisclosablePart,
   type DisclosableState,
 } from '../../lib/disclosable';
@@ -23,9 +24,7 @@ import { updateAriaAttribute } from '../../primitives/aria-manager';
  * keymap. The only concern beyond the disclosable axis is `disabled`, which
  * gates the toggle so a disabled region can never open or close.
  */
-export interface CollapsibleConfig {
-  open?: boolean | undefined;
-  defaultOpen?: boolean | undefined;
+export interface CollapsibleConfig extends DisclosableConfig {
   /** A disabled collapsible refuses to toggle (gates open/close). */
   disabled?: boolean | undefined;
 }

@@ -12,13 +12,12 @@ import {
   disclosable,
   isOpen,
   type DisclosableActions,
+  type DisclosableConfig,
   type DisclosablePart,
   type DisclosableState,
 } from '../../lib/disclosable';
 
-export interface DialogConfig {
-  open?: boolean | undefined;
-  defaultOpen?: boolean | undefined;
+export interface DialogConfig extends DisclosableConfig {
   /** Modal dialogs trap focus, lock scroll, and dismiss on outside
    *  pointerdown. Default: true. */
   modal?: boolean | undefined;
@@ -47,8 +46,8 @@ const dialogSurface: Slice<
   name: 'dialog-surface',
   parts: {
     overlay: { optional: true },
-    title: { optional: true, asChild: true },
-    description: { optional: true, asChild: true },
+    title: { optional: true },
+    description: { optional: true },
     close: { optional: true },
   },
   initialState: () => ({}),

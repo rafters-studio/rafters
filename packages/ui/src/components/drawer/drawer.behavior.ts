@@ -12,6 +12,7 @@ import {
   disclosable,
   isOpen,
   type DisclosableActions,
+  type DisclosableConfig,
   type DisclosablePart,
   type DisclosableState,
 } from '../../lib/disclosable';
@@ -21,9 +22,7 @@ import {
  *  with the old surface -- see the component doc's motion dispositions. */
 export type DrawerSide = 'top' | 'right' | 'bottom' | 'left';
 
-export interface DrawerConfig {
-  open?: boolean | undefined;
-  defaultOpen?: boolean | undefined;
+export interface DrawerConfig extends DisclosableConfig {
   /** Modal drawers trap focus, lock scroll, and dismiss on outside
    *  pointerdown. Default: true. */
   modal?: boolean | undefined;
@@ -61,8 +60,8 @@ const drawerSurface: Slice<
   name: 'drawer-surface',
   parts: {
     overlay: { optional: true },
-    title: { optional: true, asChild: true },
-    description: { optional: true, asChild: true },
+    title: { optional: true },
+    description: { optional: true },
     close: { optional: true },
   },
   initialState: () => ({}),

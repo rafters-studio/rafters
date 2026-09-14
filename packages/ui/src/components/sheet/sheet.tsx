@@ -451,60 +451,33 @@ export function SheetFooter({ className, ...props }: SheetFooterProps) {
   return <div className={classy(classes.footer, className)} {...props} />;
 }
 
-export interface SheetTitleProps extends React.HTMLAttributes<HTMLHeadingElement> {
-  asChild?: boolean;
-}
+export type SheetTitleProps = React.HTMLAttributes<HTMLHeadingElement>;
 
-export function SheetTitle({ asChild, className, children, ...props }: SheetTitleProps) {
+export function SheetTitle({ className, ...props }: SheetTitleProps) {
   const { ids, classes, setPart } = useSheetContext('SheetTitle');
-
-  const partProps = {
-    'data-part': 'title' as const,
-    id: ids.title || undefined,
-    ref: setPart('title'),
-    className: classy(classes.title, className),
-  };
-
-  if (asChild && React.isValidElement(children)) {
-    const childProps = children.props as Record<string, unknown>;
-    return React.cloneElement(children, mergeProps(partProps, childProps) as React.Attributes);
-  }
-
   return (
-    <h2 {...partProps} {...props}>
-      {children}
-    </h2>
+    <h2
+      data-part="title"
+      id={ids.title || undefined}
+      ref={setPart('title')}
+      className={classy(classes.title, className)}
+      {...props}
+    />
   );
 }
 
-export interface SheetDescriptionProps extends React.HTMLAttributes<HTMLParagraphElement> {
-  asChild?: boolean;
-}
+export type SheetDescriptionProps = React.HTMLAttributes<HTMLParagraphElement>;
 
-export function SheetDescription({
-  asChild,
-  className,
-  children,
-  ...props
-}: SheetDescriptionProps) {
+export function SheetDescription({ className, ...props }: SheetDescriptionProps) {
   const { ids, classes, setPart } = useSheetContext('SheetDescription');
-
-  const partProps = {
-    'data-part': 'description' as const,
-    id: ids.description || undefined,
-    ref: setPart('description'),
-    className: classy(classes.description, className),
-  };
-
-  if (asChild && React.isValidElement(children)) {
-    const childProps = children.props as Record<string, unknown>;
-    return React.cloneElement(children, mergeProps(partProps, childProps) as React.Attributes);
-  }
-
   return (
-    <p {...partProps} {...props}>
-      {children}
-    </p>
+    <p
+      data-part="description"
+      id={ids.description || undefined}
+      ref={setPart('description')}
+      className={classy(classes.description, className)}
+      {...props}
+    />
   );
 }
 

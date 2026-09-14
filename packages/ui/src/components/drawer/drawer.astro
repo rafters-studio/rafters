@@ -88,6 +88,8 @@ interface Props {
   modal?: boolean;
   defaultOpen?: boolean;
   side?: DrawerConfig['side'];
+  title?: string;
+  description?: string;
 }
 
 const {
@@ -95,9 +97,9 @@ const {
   modal = true,
   defaultOpen = false,
   side = 'bottom',
+  title,
+  description,
 } = Astro.props;
-const hasTitle = Astro.slots.has('title');
-const hasDescription = Astro.slots.has('description');
 
 const config: DrawerConfig = { modal, defaultOpen, side };
 const state = drawer.initialState(config);
@@ -107,7 +109,7 @@ const classes = drawerClasses(config, state);
 // the score's `|| undefined` guards emit no dangling reference.
 const ids = {} as PartIds<DrawerPart>;
 for (const part of Object.keys(drawer.parts) as DrawerPart[]) {
-  const absent = (part === 'title' && !hasTitle) || (part === 'description' && !hasDescription);
+  const absent = (part === 'title' && !title) || (part === 'description' && !description);
   ids[part] = absent ? '' : `${id}-${part}`;
 }
 const aria = drawer.aria(state, config, ids);
@@ -137,16 +139,16 @@ const open = state.open;
   >
     <div class={classes.handle} aria-hidden="true"></div>
     {
-      hasTitle && (
+      title && (
         <div id={ids.title} data-part="title" role="heading" aria-level="2" class={classes.title}>
-          <slot name="title" />
+          {title}
         </div>
       )
     }
     {
-      hasDescription && (
+      description && (
         <div id={ids.description} data-part="description" class={classes.description}>
-          <slot name="description" />
+          {description}
         </div>
       )
     }

@@ -9,6 +9,7 @@ import { updateAriaAttribute } from '../../primitives/aria-manager';
 import {
   pressable,
   type PressableActions,
+  type PressableConfig,
   type PressablePart,
   type PressableState,
 } from '../../lib/pressable';
@@ -27,16 +28,9 @@ export type ToggleVariant =
 
 export type ToggleSize = 'default' | 'sm' | 'lg';
 
-export interface ToggleConfig {
+export interface ToggleConfig extends PressableConfig {
   variant: ToggleVariant;
   size: ToggleSize;
-  toggle?: boolean | undefined;
-  defaultPressed?: boolean | undefined;
-  loadingAnnouncement?: string | undefined;
-  loadedAnnouncement?: string | undefined;
-  disabled?: boolean | undefined;
-  softDisabled?: boolean | undefined;
-  loading?: boolean | undefined;
 }
 
 export type ToggleState = PressableState;
