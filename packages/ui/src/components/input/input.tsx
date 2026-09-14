@@ -55,6 +55,10 @@ export interface InputProps extends Omit<
   /** Id of the external error message element (Field/FormMessage) to reference
    *  from aria-describedby while invalid. */
   errorId?: string;
+  disabled?: boolean;
+  readOnly?: boolean;
+  required?: boolean;
+  name?: string;
 }
 
 /**
