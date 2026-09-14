@@ -81,7 +81,6 @@ export interface CheckboxProps extends Omit<
   value?: string;
   variant?: CheckboxVariant;
   size?: CheckboxSize;
-  disabled?: boolean;
 }
 
 export const Checkbox = React.forwardRef<HTMLButtonElement, CheckboxProps>((props, ref) => {
