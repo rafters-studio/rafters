@@ -32,19 +32,19 @@ const content = () => document.body.querySelector<HTMLElement>('[data-part="cont
 
 describe('drawer conformance [astro]', () => {
   it('SSR closed: content hidden and crawlable, trigger collapsed', async () => {
-    await mount({ title: 'Actions' });
+    await mount({}, { title: 'Actions' });
     expect(content().hidden).toBe(true);
     expect(trigger().getAttribute('aria-expanded')).toBe('false');
   });
 
   it('SSR wires aria by real ids; omitted description projects none', async () => {
-    await mount({ title: 'Actions' });
+    await mount({}, { title: 'Actions' });
     expect(content().getAttribute('aria-labelledby')).toBe('dr-title');
     expect(content().hasAttribute('aria-describedby')).toBe(false);
   });
 
   it('SSR anchors to the configured edge without disturbing the dialog role', async () => {
-    await mount({ title: 'Actions', side: 'right' });
+    await mount({ side: 'right' }, { title: 'Actions' });
     expect(content().getAttribute('role')).toBe('dialog');
     expect(content().className).toContain('right-0');
   });
@@ -55,7 +55,7 @@ describe('drawer conformance [astro]', () => {
     // target-scoped keymap would classify Escape as `close` and drop it; the
     // bind resolves any keydown inside content as content-scoped.
     const user = userEvent.setup();
-    await mount({ title: 'Actions' });
+    await mount({}, { title: 'Actions' });
     await user.click(trigger());
     const close = document.body.querySelector<HTMLElement>('[data-part="close"]')!;
     expect(document.activeElement).toBe(close);
@@ -66,7 +66,7 @@ describe('drawer conformance [astro]', () => {
 
   it('bind: trigger opens, focus trapped, scroll locked; Escape closes + restores focus', async () => {
     const user = userEvent.setup();
-    await mount({ title: 'Actions' }, { default: '<button type="button">Save</button>' });
+    await mount({}, { title: 'Actions', default: '<button type="button">Save</button>' });
     await user.click(trigger());
     expect(content().hidden).toBe(false);
     expect(content().contains(document.activeElement)).toBe(true);
@@ -80,7 +80,7 @@ describe('drawer conformance [astro]', () => {
   // #2004: the root is a real, semantic element, not an unregistered
   // <rafters-drawer> used as a query hook. #2001: its config is data-* only.
   it('root is a semantic, unclassed div and config crosses the seam as data-* only', async () => {
-    const root = await mount({ title: 'Actions', modal: false, side: 'right' });
+    const root = await mount({ modal: false, side: 'right' }, { title: 'Actions' });
     expect(root.tagName).toBe('DIV');
     // No class, ever: a behavior root is a binding host, not a box, and it
     // never styles itself (operator ruling, 2026-08-02). Layout is Container's.
@@ -95,7 +95,7 @@ describe('drawer conformance [astro]', () => {
   });
 
   it('rehydration: bindDrawer reconstructs defaultOpen from dataset alone', async () => {
-    const root = await mount({ title: 'Actions', defaultOpen: true });
+    const root = await mount({ defaultOpen: true }, { title: 'Actions' });
     expect(root.dataset['defaultOpen']).toBe('true');
     // Erase the SSR open projection AND the content's data-state fallback, then
     // re-bind: only data-default-open, read through dataset, can bring it back.

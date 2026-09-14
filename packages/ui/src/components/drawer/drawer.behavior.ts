@@ -61,8 +61,8 @@ const drawerSurface: Slice<
   name: 'drawer-surface',
   parts: {
     overlay: { optional: true },
-    title: { optional: true },
-    description: { optional: true },
+    title: { optional: true, asChild: true },
+    description: { optional: true, asChild: true },
     close: { optional: true },
   },
   initialState: () => ({}),
