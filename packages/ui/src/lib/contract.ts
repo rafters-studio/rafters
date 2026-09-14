@@ -123,19 +123,6 @@ export interface PartDecl {
   role?: string;
   many?: boolean;
   optional?: boolean;
-  asChild?: boolean;
-}
-
-/**
- * Whether a part in a behavior spec supports render delegation. Framework
- * primitives (slot.ts, astro-as-child.ts) call this to discover asChild
- * capability from the contract at runtime.
- */
-export function partSupportsAsChild<Part extends string>(
-  parts: Record<Part, PartDecl>,
-  part: Part,
-): boolean {
-  return parts[part]?.asChild === true;
 }
 
 export type PartIds<Part extends string> = Record<Part, string>;
