@@ -10,7 +10,6 @@ import { announceToScreenReader } from '../../primitives/sr-announcer';
 import {
   pressable,
   type PressableActions,
-  type PressableConfig,
   type PressablePart,
   type PressableState,
 } from '../../lib/pressable';
@@ -63,9 +62,16 @@ export type ButtonIconSize = (typeof BUTTON_ICON_SIZES)[number];
 /** A size that shapes a button with a text label. */
 export type ButtonTextSize = (typeof BUTTON_TEXT_SIZES)[number];
 
-export interface ButtonConfig extends PressableConfig {
+export interface ButtonConfig {
   variant: ButtonVariant;
   size: ButtonSize;
+  toggle?: boolean | undefined;
+  defaultPressed?: boolean | undefined;
+  loadingAnnouncement?: string | undefined;
+  loadedAnnouncement?: string | undefined;
+  disabled?: boolean | undefined;
+  softDisabled?: boolean | undefined;
+  loading?: boolean | undefined;
 }
 
 export type ButtonState = PressableState;
