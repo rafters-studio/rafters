@@ -23,18 +23,26 @@ const wcFacet: Facet = {
   snippet: '<raf-button variant="solid"></raf-button>',
 };
 
-const items: RegistryItem[] = [
+const items = [
   {
     name: 'button',
-    type: 'ui',
+    type: 'ui' as const,
     primitives: [],
     files: [],
     rules: [],
     composites: [],
     facets: { astro: astroFacet, wc: wcFacet },
   },
-  { name: 'modal', type: 'ui', primitives: [], files: [], rules: [], composites: [], facets: {} },
-];
+  {
+    name: 'modal',
+    type: 'ui' as const,
+    primitives: [],
+    files: [],
+    rules: [],
+    composites: [],
+    facets: {},
+  },
+] satisfies Array<RegistryItem & Record<string, unknown>>;
 
 const graph = assembleGraph(items);
 

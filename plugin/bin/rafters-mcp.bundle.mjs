@@ -36880,13 +36880,7 @@ var RegistryItemSchema = external_exports4.object({
   primitives: external_exports4.array(external_exports4.string()),
   files: external_exports4.array(RegistryFileSchema),
   rules: external_exports4.array(external_exports4.string()).default([]),
-  composites: external_exports4.array(external_exports4.string()).default([]),
-  intelligence: RegistryItemIntelligenceSchema.optional(),
-  // Per-target facets. zod v4's `z.record(enum, ...)` demands EVERY enum key be
-  // present; a component built for only some targets must parse, so this is a
-  // partial record (only the built targets appear).
-  facets: external_exports4.partialRecord(ComponentTargetSchema, FacetSchema).default({}),
-  parent: external_exports4.string().optional()
+  intelligence: RegistryItemIntelligenceSchema.optional()
 });
 var RegistryIndexSchema = external_exports4.object({
   name: external_exports4.string(),
@@ -37318,15 +37312,16 @@ function assembleGraph(items) {
     if (src?.accessibility !== void 0) intel.accessibility = src.accessibility;
     if (src?.attentionEconomics !== void 0) intel.attentionEconomics = src.attentionEconomics;
     if (src?.trustBuilding !== void 0) intel.trustBuilding = src.trustBuilding;
+    const raw = item;
     const gn = {
       id: item.name,
       kind,
       intel,
-      facets: item.facets ?? {},
-      composesWith: item.composites,
+      facets: raw["facets"] ?? {},
+      composesWith: raw["composites"] ?? [],
       parts: []
     };
-    if (item.parent !== void 0) gn.parent = item.parent;
+    if (typeof raw["parent"] === "string") gn.parent = raw["parent"];
     nodes.set(item.name, gn);
   }
   for (const node of nodes.values()) {

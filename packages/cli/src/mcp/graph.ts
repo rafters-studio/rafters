@@ -169,15 +169,16 @@ export function assembleGraph(items: RegistryItem[]): Graph {
     if (src?.attentionEconomics !== undefined) intel.attentionEconomics = src.attentionEconomics;
     if (src?.trustBuilding !== undefined) intel.trustBuilding = src.trustBuilding;
 
+    const raw = item as Record<string, unknown>;
     const gn: GraphNode = {
       id: item.name,
       kind,
       intel,
-      facets: item.facets ?? {},
-      composesWith: item.composites,
+      facets: (raw['facets'] as GraphNode['facets']) ?? {},
+      composesWith: (raw['composites'] as string[]) ?? [],
       parts: [],
     };
-    if (item.parent !== undefined) gn.parent = item.parent;
+    if (typeof raw['parent'] === 'string') gn.parent = raw['parent'];
     nodes.set(item.name, gn);
   }
 

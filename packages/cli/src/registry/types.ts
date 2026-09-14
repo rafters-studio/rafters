@@ -145,13 +145,7 @@ export const RegistryItemSchema = z.object({
   primitives: z.array(z.string()),
   files: z.array(RegistryFileSchema),
   rules: z.array(z.string()).default([]),
-  composites: z.array(z.string()).default([]),
   intelligence: RegistryItemIntelligenceSchema.optional(),
-  // Per-target facets. zod v4's `z.record(enum, ...)` demands EVERY enum key be
-  // present; a component built for only some targets must parse, so this is a
-  // partial record (only the built targets appear).
-  facets: z.partialRecord(ComponentTargetSchema, FacetSchema).default({}),
-  parent: z.string().optional(),
 });
 
 export type RegistryItem = z.infer<typeof RegistryItemSchema>;

@@ -1,5 +1,11 @@
 # rafters
 
+## 0.4.2
+
+### Breaking Changes
+
+- refactor(registry): **the registry no longer serves `facets`, `composites`, or `parent` on component items.** The registry is the design system -- source files, dependency edges, and encoded intelligence. Per-target prop surfaces (facets), the composites reverse-index, and compound-component parent pointers were graph and working-tree concerns that had drifted from the source they duplicated: the WC facet shipped as a hardcoded stub for all 92 components and stayed broken for three weeks (#2346). The clean item shape is `name`, `type`, `description`, `primitives`, `files`, `rules`, `intelligence`. Existing CLI versions parse facet-less items via schema defaults and degrade gracefully (describe reports no props, generate reports no snippet). The graph migration to resolve props from source directly is tracked separately.
+
 ## 0.4.1
 
 ### Bug Fixes

@@ -8,8 +8,12 @@ import { RaftersToolHandler, TOOL_DEFINITIONS } from '../../src/mcp/tools.js';
 import type { RegistryItem } from '../../src/registry/types.js';
 
 /** Minimal, schema-valid registry item for the in-memory fixture catalog. */
-function node(name: string, type: RegistryItem['type'], composites: string[] = []): RegistryItem {
-  return { name, type, primitives: [], files: [], rules: [], composites, facets: {} };
+function node(
+  name: string,
+  type: RegistryItem['type'],
+  composites: string[] = [],
+): RegistryItem & { composites: string[] } {
+  return { name, type, primitives: [], files: [], rules: [], composites };
 }
 
 // A fixture catalog large enough to exercise every dispatch path. modal/alert/

@@ -28,7 +28,7 @@ afterEach(async () => {
 });
 
 function node(name: string, type: RegistryItem['type']): RegistryItem {
-  return { name, type, primitives: [], files: [], rules: [], composites: [], facets: {} };
+  return { name, type, primitives: [], files: [], rules: [] };
 }
 
 const FIXTURE: RegistryItem[] = [node('button', 'ui'), node('modal', 'ui'), node('alert', 'ui')];
