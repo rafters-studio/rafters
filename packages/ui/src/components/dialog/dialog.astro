@@ -64,11 +64,11 @@ interface Props {
   id: string;
   modal?: boolean;
   defaultOpen?: boolean;
+  title?: string;
+  description?: string;
 }
 
-const { id, modal = true, defaultOpen = false } = Astro.props;
-const hasTitle = Astro.slots.has('title');
-const hasDescription = Astro.slots.has('description');
+const { id, modal = true, defaultOpen = false, title, description } = Astro.props;
 
 const config: DialogConfig = { modal, defaultOpen };
 const state = dialog.initialState(config);
@@ -78,7 +78,7 @@ const classes = dialogClasses(config, state);
 // the score's `|| undefined` guards emit no dangling reference.
 const ids = {} as PartIds<DialogPart>;
 for (const part of Object.keys(dialog.parts) as DialogPart[]) {
-  const absent = (part === 'title' && !hasTitle) || (part === 'description' && !hasDescription);
+  const absent = (part === 'title' && !title) || (part === 'description' && !description);
   ids[part] = absent ? '' : `${id}-${part}`;
 }
 const aria = dialog.aria(state, config, ids);
@@ -101,11 +101,11 @@ const open = state.open;
       {...aria.content}
       hidden={!open}
     >
-      {hasTitle && <h2 id={ids.title} data-part="title" class={classes.title}><slot name="title" /></h2>}
+      {title && <h2 id={ids.title} data-part="title" class={classes.title}>{title}</h2>}
       {
-        hasDescription && (
+        description && (
           <div id={ids.description} data-part="description" class={classes.description}>
-            <slot name="description" />
+            {description}
           </div>
         )
       }

@@ -75,11 +75,11 @@ interface Props {
   side?: SheetSide;
   modal?: boolean;
   defaultOpen?: boolean;
+  title?: string;
+  description?: string;
 }
 
-const { id, side = 'right', modal = true, defaultOpen = false } = Astro.props;
-const hasTitle = Astro.slots.has('title');
-const hasDescription = Astro.slots.has('description');
+const { id, side = 'right', modal = true, defaultOpen = false, title, description } = Astro.props;
 
 const config: SheetConfig = { modal, defaultOpen };
 const state = sheet.initialState(config);
@@ -91,7 +91,7 @@ const Title = 'h2';
 // score's `|| undefined` guards emit no dangling reference.
 const ids = {} as PartIds<SheetPart>;
 for (const part of Object.keys(sheet.parts) as SheetPart[]) {
-  const absent = (part === 'title' && !hasTitle) || (part === 'description' && !hasDescription);
+  const absent = (part === 'title' && !title) || (part === 'description' && !description);
   ids[part] = absent ? '' : `${id}-${part}`;
 }
 const aria = sheet.aria(state, config, ids);
@@ -114,11 +114,11 @@ const open = state.open;
     {...aria.content}
     hidden={!open}
   >
-    {hasTitle && <Title id={ids.title} data-part="title" class={classes.title}><slot name="title" /></Title>}
+    {title && <Title id={ids.title} data-part="title" class={classes.title}>{title}</Title>}
     {
-      hasDescription && (
+      description && (
         <div id={ids.description} data-part="description" class={classes.description}>
-          <slot name="description" />
+          {description}
         </div>
       )
     }
