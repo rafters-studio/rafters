@@ -136,7 +136,6 @@ rafters/
 │   ├── docs-rs/          # Rust-based documentation engine
 │   ├── math-utils/       # Mathematical progressions and scales
 │   ├── shared/           # Consolidated utilities and types
-│   ├── studio/           # Visual design studio
 │   └── ui/               # Components with cognitive metadata
 └── .rafters/             # Your design intelligence (Git-tracked)
     ├── tokens/           # Token registry with dependencies

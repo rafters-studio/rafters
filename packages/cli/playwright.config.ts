@@ -16,7 +16,4 @@ export default defineConfig({
   // Run sequentially to avoid test isolation issues
   fullyParallel: false,
   workers: 1,
-  // Skip studio tests - they require full dev environment with all packages built
-  // Run separately with: pnpm exec playwright test --grep "studio"
-  testIgnore: ['**/studio.feature.spec.js'],
 });

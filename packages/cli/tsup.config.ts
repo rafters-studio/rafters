@@ -30,7 +30,7 @@ export default defineConfig([
     // The Claude Code plugin bundle: a single self-contained .mjs file the
     // plugin ships and runs directly (no npm install, no pnpx, no dlx cache).
     // Wraps the MCP-only entry (src/plugin-entry.ts), never src/index.ts, so
-    // lightningcss stays out of the bundle.
+    // the add/init paths stay out of the bundle.
     entry: { 'rafters-mcp.bundle': 'src/plugin-entry.ts' },
     format: ['esm'],
     target: 'node22',
