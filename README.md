@@ -185,12 +185,9 @@ pnpm dlx rafters add button
 
 # Start the MCP server for AI agents
 pnpm dlx rafters mcp
-
-# Launch Studio to add your brand
-pnpm dlx rafters studio
 ```
 
-That's it. You now have a mathematically-sound, AI-readable design system with 18+ components that work immediately with grayscale defaults. Run Studio later to add your brand personality.
+That's it. You now have a mathematically-sound, AI-readable design system with 18+ components that work immediately with grayscale defaults.
 
 ## For AI Agents
 

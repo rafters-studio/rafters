@@ -46,8 +46,7 @@
     "commander": "^13.0.0",
     "css-tree": "^3.2.1",
     "execa": "^9.6.1",
-    "ora": "^9.0.0",
-    "vite": "^8.0.0"
+    "ora": "^9.0.0"
   },
   "devDependencies": {
     "@playwright/test": "catalog:",
@@ -56,7 +55,6 @@
     "@rafters/design-tokens": "workspace:*",
     "@rafters/math-utils": "workspace:*",
     "@rafters/shared": "workspace:*",
-    "@rafters/studio": "workspace:*",
     "@types/css-tree": "^2.3.11",
     "@types/node": "catalog:",
     "playwright-bdd": "catalog:",
