@@ -108,6 +108,14 @@ const rangeFillClasses: Record<SliderVariant, string> = {
 // (slider.behavior.ts updateThumb, slider.tsx thumbStyle). The matrix calls a
 // physical side a defect; correcting it belongs to the score, not here.
 //
+// THE `thumb / hover` ROW'S COLOUR HAS NO MOMENT ON THE THUMB. The row assigns a
+// colour change (background, text, border) at duration-fast / ease-standard, but
+// no class here or in thumbVariantClasses changes the thumb's colour on hover:
+// there is no `hover:bg-*` and no `hover:border-*`. `background-color` and
+// `border-color` sit in the transition list below, so the timing is ready, yet
+// nothing ever changes those values -- the row is NOT consumed. Reported rather
+// than faked with an invented hover colour.
+//
 // `hover:scale-110` HAS NO ROW. The matrix's `thumb / hover` row is colour only,
 // so this zoom is a moment the component has and the matrix does not claim. It is
 // kept as it stands and reported rather than deleted or given an invented cell;
