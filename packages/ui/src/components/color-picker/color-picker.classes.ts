@@ -57,6 +57,12 @@ const baseHueThumbClasses =
 
 const baseInputsClasses = 'mt-3 flex gap-2';
 
+// INPUT / FOCUS -- a moment with no color-picker row in motion.jsonl. The focus
+// ring is covered only by the matrix's prose system-level focus cell (ring,
+// micro / linear), not by a row of this component, so it keeps the existing
+// focus utility below untouched rather than inventing a row's consumption here.
+// The area and hue thumbs carry no transition by the pointer rule, and there is
+// no keyboard-step row for them, so they have no motion to consume.
 const baseInputClasses =
   'w-full min-w-0 rounded-md border border-border bg-background px-2 py-1 text-sm ' +
   'motion-focus ' +
