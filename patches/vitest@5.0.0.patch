@@ -1,0 +1,14 @@
+diff --git a/dist/chunks/index.B89dZ0-N.js b/dist/chunks/index.B89dZ0-N.js
+index 50abf4fb..73341d32 100644
+--- a/dist/chunks/index.B89dZ0-N.js
++++ b/dist/chunks/index.B89dZ0-N.js
+@@ -21420,6 +21420,9 @@ class Vitest {
+ 			// it's possible that it's not initialized at all because it's not running any tests
+ 			if (this.coreWorkspaceProject && !this.projects.includes(this.coreWorkspaceProject)) closePromises.push(this.coreWorkspaceProject.close().then(() => this.vite = void 0));
+ 			closePromises.push(...this._onClose.map((fn) => fn()));
++			// rafters patch: the core fetcher writes transformed modules to _tmpDir,
++			// and nothing else removes it, so every run leaked one os.tmpdir() dir.
++			closePromises.push(rm(this._tmpDir, { recursive: true, force: true }));
+ 			await Promise.allSettled(closePromises).then((results) => {
+ 				const errors = [...results.filter((r) => r.status === "rejected").map((r) => r.reason), ...teardownErrors];
+ 				for (const error of errors) this.logger.error("error during close", error);
