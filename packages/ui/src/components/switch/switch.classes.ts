@@ -18,6 +18,9 @@ export interface SwitchClassSet {
 //     extent-press
 // `scale` is named in the transition list because Tailwind v4 writes the
 // individual `scale` property; `transform` would transition nothing.
+// Unassigned moment: the focus-visible ring on the root has no switch row in
+// motion.jsonl (input / combobox carry a focus/ring row; switch does not), so
+// box-shadow is deliberately absent from the transition list and the ring snaps.
 const baseTrackClasses =
   'peer inline-flex shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent ' +
   'bg-input ' +
