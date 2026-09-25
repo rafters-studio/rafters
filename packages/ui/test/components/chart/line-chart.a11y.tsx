@@ -61,6 +61,7 @@ for (const [name, scene] of scenes) {
       expect(container.querySelectorAll('[data-part="point"]')).toHaveLength(0);
     }
     if (scene.activate) {
+      figure.focus();
       await activateFirstDatum(figure, '[data-part="point"][data-active="true"]');
     }
     const results = await runAxe(container);

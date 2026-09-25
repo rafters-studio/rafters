@@ -1,5 +1,6 @@
 import { expect, test } from 'vitest';
 import { runAxe } from '../../a11y/run-axe';
+import { PLOT_HEIGHT, PLOT_WIDTH } from '../../a11y/plot-size';
 import { elementPlotSettled } from '../../a11y/plot-settled';
 import '../../../src/components/chart/chart.element';
 import '../../../src/components/chart/x-axis.element';
@@ -35,7 +36,7 @@ function markup(lineConfig: Scene['lineConfig'], axis: boolean): string {
   return `
     <main>
       <rafters-chart-container data-part="root" data-config='${JSON.stringify(chartConfig)}'>
-        <div data-part="plot" style="width:300px;height:200px">
+        <div data-part="plot" style="width:${PLOT_WIDTH}px;height:${PLOT_HEIGHT}px">
           ${xAxis}
           <rafters-line-chart data-part="root" data-config='${JSON.stringify(lineConfig)}'>
             <svg data-part="plot"></svg>

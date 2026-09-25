@@ -49,6 +49,7 @@ for (const [name, scene] of scenes) {
     if (scene.activate) {
       const figure = container.querySelector('figure[data-part="root"]');
       if (!(figure instanceof HTMLElement)) throw new Error('bar-chart root not rendered');
+      figure.focus();
       await activateFirstDatum(figure, '[data-part="bar"][data-active="true"]');
     }
     const results = await runAxe(container);

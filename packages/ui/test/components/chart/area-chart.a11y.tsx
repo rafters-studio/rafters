@@ -49,6 +49,7 @@ for (const [name, scene] of scenes) {
     if (scene.activate) {
       const figure = container.querySelector('figure[data-part="root"]');
       if (!(figure instanceof HTMLElement)) throw new Error('area-chart root not rendered');
+      figure.focus();
       await activateFirstDatum(figure, '[data-part="area"][data-active="true"]');
     }
     const results = await runAxe(container);
