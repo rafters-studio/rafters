@@ -148,7 +148,7 @@ afterEach(() => {
   cleanup();
 });
 
-describe('command conformance [react]', () => {
+describe('command [react]', () => {
   it('renders a combobox wired to a listbox of options, aria clean', async () => {
     render(
       <main>

@@ -37,7 +37,7 @@ async function render(
   return document.body;
 }
 
-describe('aspect-ratio conformance [astro]', () => {
+describe('aspect-ratio [astro]', () => {
   it('renders a root box carrying the shared base and child-fill classes', async () => {
     const doc = await render();
     const root = partElement(doc, 'root') as HTMLElement;

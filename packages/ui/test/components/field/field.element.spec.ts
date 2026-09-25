@@ -1,5 +1,5 @@
 /**
- * Ported conformance for Field, Web Component target, driven end to end
+ * Spec for Field, Web Component target, driven end to end
  * against light-DOM markup. Field is a light-DOM enhancer: the author
  * supplies the label / control / helper markup and the element only wires
  * it -- proves the id-association and the ARIA projection through the

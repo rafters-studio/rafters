@@ -1,6 +1,6 @@
 /**
  * Web Component performance of the Avatar score. The SAME score as the React
- * conformance test -- but the WC is a caller-decides static (the oracle
+ * spec -- but the WC is a caller-decides static (the oracle
  * deferred runtime image-load coordination), so presence comes from the
  * `status` attribute (defaulted from `src`) through the shared `resolveAvatar`,
  * with no controller to drive.
@@ -33,7 +33,7 @@ afterEach(() => {
   document.body.innerHTML = '';
 });
 
-describe('avatar conformance [wc]', () => {
+describe('avatar [wc]', () => {
   it('renders a root part carrying the shared base + size classes', () => {
     const host = mount();
     const root = rootPart(host);

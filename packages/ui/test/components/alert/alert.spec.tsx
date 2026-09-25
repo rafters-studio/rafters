@@ -25,7 +25,7 @@ afterEach(() => {
   cleanup();
 });
 
-describe('alert conformance [react]', () => {
+describe('alert [react]', () => {
   it('fulfills the contract: root renders and carries role=alert, the score projection', () => {
     const { container } = render(<Alert data-testid="a">Saved.</Alert>);
     const root = partElement(container, 'root') as HTMLElement;

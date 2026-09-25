@@ -13,7 +13,7 @@ afterEach(() => {
   cleanup();
 });
 
-describe('badge conformance [react]', () => {
+describe('badge [react]', () => {
   it('renders a span carrying data-part="root" and the children as label text', () => {
     const { container } = render(<Badge>New</Badge>);
     const root = container.querySelector('[data-part="root"]');

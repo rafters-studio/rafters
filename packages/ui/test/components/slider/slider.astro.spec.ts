@@ -31,7 +31,7 @@ function thumbs(root: HTMLElement): HTMLElement[] {
   return Array.from(root.querySelectorAll<HTMLElement>('[data-part="thumb"]'));
 }
 
-describe('slider conformance [astro]', () => {
+describe('slider [astro]', () => {
   // The Astro lane renders through the real component, so the class strings on
   // the emitted markup are worth asserting: the classes file is proven in
   // isolation elsewhere, and this is the only place that proves what the

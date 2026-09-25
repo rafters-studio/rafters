@@ -1,5 +1,5 @@
 /**
- * Ported conformance for Image, React target. A token-aware `<img>` wrapper
+ * Spec for Image, React target. A token-aware `<img>` wrapper
  * with figure/figcaption semantics. Image is a STATIC score -- no reducer
  * state, no actions, no keymap -- but its ARIA projection is LIVE: the `img`
  * part carries `aria-busy` while loading and the `status` overlay carries a

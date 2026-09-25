@@ -14,7 +14,7 @@ const items = [
 ];
 
 // context-menu-sub.astro is composed here through the parent's `sub` entries,
-// nested to the same depth the astro conformance test renders.
+// nested to the same depth the astro spec renders.
 const itemsWithSub = [
   { label: 'Cut' },
   {

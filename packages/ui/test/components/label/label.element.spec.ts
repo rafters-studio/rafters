@@ -1,6 +1,6 @@
 /**
  * Web Component performance of the Label score. The SAME score as the React
- * conformance test -- but Label is a pure static, so there is no controller to
+ * spec -- but Label is a pure static, so there is no controller to
  * drive. The WC renders the inner label with the shared classes and a default
  * slot, once, plus the oracle's `for`-forwarding onto the inner label. These
  * assertions prove the one contract (root renders, empty projection, slot

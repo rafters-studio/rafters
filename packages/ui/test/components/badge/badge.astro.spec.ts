@@ -30,7 +30,7 @@ async function render(
   return document.body;
 }
 
-describe('badge conformance [astro]', () => {
+describe('badge [astro]', () => {
   it('renders a span carrying data-part="root" and the slotted label text', async () => {
     const doc = await render();
     const root = partElement(doc, 'root') as HTMLElement;

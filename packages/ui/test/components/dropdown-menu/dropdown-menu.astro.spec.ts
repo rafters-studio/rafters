@@ -39,7 +39,7 @@ const item = (label: string) =>
     (el) => el.textContent?.trim() === label,
   )!;
 
-describe('dropdown-menu conformance [astro]', () => {
+describe('dropdown-menu [astro]', () => {
   it('SSR closed: menu hidden and crawlable, trigger a collapsed menu button', async () => {
     await mount();
     expect(content().hidden).toBe(true);

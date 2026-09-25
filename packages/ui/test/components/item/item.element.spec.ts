@@ -1,6 +1,6 @@
 /**
  * Web Component performance of the Item score. The SAME score as the React
- * conformance test: Item has no bind, but its config-driven projection
+ * spec: Item has no bind, but its config-driven projection
  * (role=option + selected/disabled semantics) must hold in the shadow-DOM
  * performance too. These assertions prove the projection and the slot
  * structure agree with React and Astro. `item.element.ts` self-registers

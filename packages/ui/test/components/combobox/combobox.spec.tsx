@@ -143,7 +143,7 @@ afterEach(() => {
   cleanup();
 });
 
-describe('combobox conformance [react]', () => {
+describe('combobox [react]', () => {
   it('closed: listbox hidden, input is a collapsed combobox, aria clean', async () => {
     render(
       <main>

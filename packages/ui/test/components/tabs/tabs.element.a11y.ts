@@ -10,7 +10,7 @@ interface Scene {
 
 const VALUES = ['overview', 'details', 'history'] as const;
 
-/** The light-DOM markup the element conformance test mounts, inside a landmark. */
+/** The light-DOM markup the element spec mounts, inside a landmark. */
 async function mount({
   active = 'overview',
   orientation = 'horizontal',

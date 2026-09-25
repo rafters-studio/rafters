@@ -26,7 +26,7 @@ async function mount(props: Record<string, unknown> = {}): Promise<HTMLElement> 
   return root;
 }
 
-describe('toggle conformance [astro]', () => {
+describe('toggle [astro]', () => {
   it('aria-pressed and data-state swap off -> on -> off across clicks', async () => {
     const user = userEvent.setup();
     const root = await mount();

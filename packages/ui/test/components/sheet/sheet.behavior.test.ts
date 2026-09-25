@@ -152,5 +152,5 @@ describe('sheet keymap', () => {
 
 // The modal overlay trio (focus-trap, scroll-lock, trigger-spared outside
 // dismissal) is not a declarative effect on the score; the bindings compose the
-// primitives directly. The BEHAVIOR is asserted end to end in the conformance
-// suites (sheet.conformance.test.tsx / .astro. / .element.).
+// primitives directly. The BEHAVIOR is asserted end to end in the specs
+// (sheet.spec.tsx / .astro. / .element.).

@@ -1,6 +1,6 @@
 /**
  * WC performance of the input-group score, driven end to end against light-DOM
- * markup. Same score as the React conformance test -- proves the projection and
+ * markup. Same score as the React spec -- proves the projection and
  * the disabled propagation reach an AUTHORED control the element never rendered.
  * `input-group.element.ts` self-registers `rafters-input-group` on import,
  * guarded, so no explicit customElements.define is needed here.

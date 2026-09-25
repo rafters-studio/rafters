@@ -4,7 +4,7 @@ import { runAxe } from '../../a11y/run-axe';
 import { Switch, type SwitchProps } from '../../../src/components/switch/switch';
 
 // A switch has no intrinsic text, so every scene carries an accessible name
-// the way the conformance suite gives it: aria-label on the control.
+// the way the spec gives it: aria-label on the control.
 const scenes: ReadonlyArray<[string, SwitchProps]> = [
   ['unchecked default', {}],
   ['checked', { defaultChecked: true }],

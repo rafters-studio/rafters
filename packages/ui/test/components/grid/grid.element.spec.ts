@@ -1,6 +1,6 @@
 /**
- * Ported conformance for Grid, Web Component target, driven end to end
- * against light-DOM markup. Same score as the React conformance test --
+ * Spec for Grid, Web Component target, driven end to end
+ * against light-DOM markup. Same score as the React spec --
  * proves the static projection (role disposition, data-preset/data-columns)
  * and the conditional 2D roving-focus composition drive through the DOM
  * binding.

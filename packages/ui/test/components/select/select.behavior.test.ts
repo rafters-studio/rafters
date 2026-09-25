@@ -184,6 +184,6 @@ describe('select keymap', () => {
 // The open-listbox effect trio (roving focus, typeahead, trigger-spared outside
 // dismissal) is no longer a declarative effect-spec on the score; the bindings
 // compose the primitives directly via startSelectOpenEffects. The BEHAVIOR is
-// asserted end to end in the conformance suites (select.conformance.test.tsx /
+// asserted end to end in the specs (select.spec.tsx /
 // .astro. / .element.): arrows rove the options, a keystroke jumps focus to the
 // matching option, and a pointerdown outside the listbox closes it.

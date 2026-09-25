@@ -1,6 +1,6 @@
 /**
  * Web Component performance of the Breadcrumb score. The SAME score as the
- * React and Astro conformances -- but Breadcrumb is a PURE STATIC, so there is
+ * React and Astro specs -- but Breadcrumb is a PURE STATIC, so there is
  * no controller to drive. Like Container, the root IS the semantic nav
  * landmark, so the element creates that tag inside its shadow root and the host
  * is display:contents -- the landmark, not the custom element, is the box. The

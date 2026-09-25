@@ -1,6 +1,6 @@
 /**
  * WC performance of the navigation-menu score, driven end to end against
- * light-DOM markup. Same score as the React conformance test -- the only
+ * light-DOM markup. Same score as the React spec -- the only
  * difference is the controller applies the projection imperatively.
  *
  * WHAT CHANGED AT #2148: the panel is never `hidden` and there is no

@@ -5,7 +5,6 @@
  * survives, and RaftersToggle hands the root to bindToggle -- the SAME
  * controller the React binding composes.
  */
-import { cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { toggle, type ToggleConfig } from '../../../src/components/toggle/toggle.behavior';
@@ -91,11 +90,10 @@ async function mount(props: ScenarioProps, label: string): Promise<HTMLElement> 
 }
 
 afterEach(() => {
-  cleanup();
   document.body.innerHTML = '';
 });
 
-describe('toggle conformance [wc]', () => {
+describe('toggle [wc]', () => {
   for (const scenario of SCENARIOS) {
     it(`${scenario.name}: parts and aria match the behavior projection`, async () => {
       const rootEl = await mount(scenario.props, 'Bold');
@@ -112,7 +110,7 @@ describe('toggle conformance [wc]', () => {
       // never render a data-part="spinner" element (confirmed by inspection --
       // no lane emits one), so its unconditional aria-hidden projection has no
       // DOM node to land on. Asserting it here would be a false failure, not a
-      // dropped check: the original conformance-suite's EXPECTED_PARTS made the
+      // dropped check: the former harness's EXPECTED_PARTS made the
       // same exclusion.
       for (const part of ['root', 'label'] as const) {
         const attrs = projection[part];

@@ -55,7 +55,7 @@ async function render(
   return document.body;
 }
 
-describe('item conformance [astro]', () => {
+describe('item [astro]', () => {
   it('renders a root row part carrying the shared item classes', async () => {
     const body = await render({}, { default: 'Settings' });
     const root = partElement(body, 'root') as HTMLElement;

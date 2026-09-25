@@ -1,6 +1,6 @@
 /**
  * Web Component performance of the ButtonGroup score. The SAME score as the
- * React and Astro conformances -- but ButtonGroup is a PURE STATIC, so there
+ * React and Astro specs -- but ButtonGroup is a PURE STATIC, so there
  * is no controller to drive. The host IS the adjoining root: role="group",
  * data-orientation, and data-part="root" are reflected onto it, and the
  * connected-border rules live as ::slotted shadow CSS (the Tailwind descendant

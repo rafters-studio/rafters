@@ -111,6 +111,6 @@ describe('button keymap', () => {
 // primitive directly, edge-triggered. Its behavior (a mount that is already
 // loading projects aria-busy but stays silent; a loading false->true transition
 // announces the loading message once) is asserted end to end: baseline
-// suppression in the shared conformance suite ('loading at mount ... announce
+// suppression in the former shared harness ('loading at mount ... announce
 // suppressed') and the runtime transition in the React-only edge-triggered
 // suite ('announces when loading transitions false -> true').

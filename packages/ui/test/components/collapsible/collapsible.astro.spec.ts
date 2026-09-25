@@ -29,7 +29,7 @@ async function mount(
 const trigger = () => document.body.querySelector<HTMLElement>('[data-part="trigger"]')!;
 const content = () => document.body.querySelector<HTMLElement>('[data-part="content"]')!;
 
-describe('collapsible conformance [astro]', () => {
+describe('collapsible [astro]', () => {
   it('SSR closed: content hidden and crawlable, trigger collapsed', async () => {
     await mount();
     expect(content().hidden).toBe(true);

@@ -102,7 +102,7 @@ afterEach(() => {
   cleanup();
 });
 
-describe('color-picker conformance [react]', () => {
+describe('color-picker [react]', () => {
   for (const scenario of SCENARIOS) {
     it(`${scenario.name}: parts and aria match the behavior projection`, () => {
       const { root } = renderColorPicker(scenario.props);

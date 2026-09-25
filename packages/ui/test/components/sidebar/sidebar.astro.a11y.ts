@@ -20,7 +20,7 @@ interface Scene {
 }
 
 /** bindSidebar reads the viewport from the global window.matchMedia (the
- *  same signal the conformance tests mock); the mocked list is captured at
+ *  same signal the specs mock); the mocked list is captured at
  *  bind time, so the original is restored right after. */
 function withViewport<T>(isMobile: boolean, run: () => T): T {
   const original = window.matchMedia;
@@ -79,7 +79,7 @@ const scenes: ReadonlyArray<[string, Scene]> = [
  * The scenes above pass the sidebar's own default slot a single anchor. The
  * part files are the parity surface (#2324), and a tree built from them is a
  * different DOM: real ul and li elements, a group label, and a menu button that
- * rendered through asChild onto an anchor. sidebar-subcomponents' conformance
+ * rendered through asChild onto an anchor. sidebar-subcomponents' spec
  * test used to audit that composition; auditing only the plain slot would leave
  * the shape a consumer actually writes unaudited.
  */

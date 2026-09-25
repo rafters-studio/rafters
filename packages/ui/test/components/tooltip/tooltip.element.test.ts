@@ -1,6 +1,6 @@
 /**
  * WC performance of the tooltip score, driven end to end against light-DOM
- * markup. Same score as the React conformance test.
+ * markup. Same score as the React spec.
  *
  * WHAT CHANGED AT #2148: presence is CONSTANT. The content is never `hidden`
  * and never unmounted -- the stylesheet reveals it through `[data-tooltip]:hover
@@ -53,7 +53,7 @@ afterEach(() => {
   document.body.innerHTML = '';
 });
 
-describe('tooltip conformance [wc]', () => {
+describe('tooltip [wc]', () => {
   it('host pins display:block to match the unclassed block root of the other targets', async () => {
     const element = await mount();
     expect(element.style.display).toBe('block');

@@ -67,7 +67,7 @@ function renderSwitch(props: ScenarioProps, label: string) {
   return { root, unmount: utils.unmount };
 }
 
-describe('switch conformance [react]', () => {
+describe('switch [react]', () => {
   for (const scenario of SCENARIOS) {
     it(`${scenario.name}: parts and aria match the behavior projection`, () => {
       const { root, unmount } = renderSwitch(scenario.props, 'Enable notifications');

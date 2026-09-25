@@ -36,7 +36,7 @@ afterEach(() => {
   document.body.innerHTML = '';
 });
 
-describe('dialog conformance [wc]', () => {
+describe('dialog [wc]', () => {
   it('closed: content hidden, trigger collapsed', async () => {
     await mount();
     expect(content().hidden).toBe(true);

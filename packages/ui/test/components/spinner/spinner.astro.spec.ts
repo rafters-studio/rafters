@@ -26,7 +26,7 @@ function root(host: HTMLElement): HTMLElement {
   return host.querySelector<HTMLElement>('[data-part="root"]') as HTMLElement;
 }
 
-describe('spinner conformance [astro]', () => {
+describe('spinner [astro]', () => {
   it('renders an output root carrying the shared spinner classes', async () => {
     const el = root(await render());
     expect(el).not.toBeNull();

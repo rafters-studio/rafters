@@ -1,6 +1,6 @@
 /**
  * Web Component performance of the Kbd score. The SAME score as the React
- * conformance test -- but Kbd is a pure static, so there is no controller to
+ * spec -- but Kbd is a pure static, so there is no controller to
  * drive. The WC renders the semantic <kbd> cap with the shared classes and a
  * default slot, once, and that is the whole performance. These assertions
  * prove the one contract (root renders, empty projection, slot passes

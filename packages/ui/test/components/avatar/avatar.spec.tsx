@@ -17,7 +17,7 @@ afterEach(() => {
   cleanup();
 });
 
-describe('avatar conformance [react]', () => {
+describe('avatar [react]', () => {
   it('fulfills the contract: root renders and projects NO ARIA', () => {
     const { container } = render(
       <Avatar>

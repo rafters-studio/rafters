@@ -65,7 +65,7 @@ afterEach(() => {
   cleanup();
 });
 
-describe('checkbox conformance [react]', () => {
+describe('checkbox [react]', () => {
   for (const scenario of SCENARIOS) {
     it(`${scenario.name}: parts and aria match the behavior projection`, () => {
       const { root, unmount } = renderCheckbox(scenario.props, 'Accept terms');

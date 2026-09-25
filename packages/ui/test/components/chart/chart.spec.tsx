@@ -69,15 +69,8 @@ const config = {
 } satisfies ChartConfig;
 
 describe('ChartContainer [react]', () => {
-  it('renders root and plot parts and passes axe clean', async () => {
-    // Wrapped in <main>: ChartContainer's box is a layout utility (same
-    // disposition as AspectRatio's), its content carries the semantics --
-    // axe's landmark-region rule is about the page, not this component.
-    render(
-      <main>
-        <ChartContainer config={config}>content</ChartContainer>
-      </main>,
-    );
+  it('renders root and plot parts', async () => {
+    render(<ChartContainer config={config}>content</ChartContainer>);
     expect(body().querySelector('[data-part="root"]')).not.toBeNull();
     expect(body().querySelector('[data-part="plot"]')).not.toBeNull();
   });

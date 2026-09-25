@@ -1,6 +1,6 @@
 /**
  * Web Component performance of the AspectRatio score. The SAME score as the
- * React and Astro conformances -- but AspectRatio is a PURE STATIC, so there is
+ * React and Astro specs -- but AspectRatio is a PURE STATIC, so there is
  * no controller to drive. The element renders one wrapper carrying the shared
  * base classes, the resolved ratio on the inline style channel, and a default
  * slot. These assertions prove the one contract (root renders, empty
@@ -46,7 +46,7 @@ afterEach(() => {
   document.body.innerHTML = '';
 });
 
-describe('aspect-ratio conformance [wc]', () => {
+describe('aspect-ratio [wc]', () => {
   it('renders a single root wrapper carrying the shared base classes and a slot', () => {
     const host = mount();
     const root = shadowRoot(host);

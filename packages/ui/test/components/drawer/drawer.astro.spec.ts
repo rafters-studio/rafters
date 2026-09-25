@@ -46,7 +46,7 @@ function assertConfigTravelsAsData(
   }
 }
 
-describe('drawer conformance [astro]', () => {
+describe('drawer [astro]', () => {
   it('SSR closed: content hidden and crawlable, trigger collapsed', async () => {
     await mount({ title: 'Actions' });
     expect(content().hidden).toBe(true);

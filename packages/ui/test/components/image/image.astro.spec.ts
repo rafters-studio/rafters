@@ -1,5 +1,5 @@
 /**
- * Ported conformance for Image, Astro target. Image is a STATIC score, but
+ * Spec for Image, Astro target. Image is a STATIC score, but
  * its ARIA projection is LIVE (aria-busy / the overlay role), so this drives
  * it end to end. AstroContainer renders the SSR markup but does NOT run the
  * <script>, so the test calls bindImage directly -- that IS the script's job.

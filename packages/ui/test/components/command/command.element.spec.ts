@@ -1,6 +1,6 @@
 /**
  * WC performance of the command score, driven end to end against light-DOM
- * markup. Same score as the React conformance test -- the binding applies the
+ * markup. Same score as the React spec -- the binding applies the
  * projection imperatively, fuzzy-filters the options, and commits via the
  * command-select event.
  */
@@ -48,7 +48,7 @@ afterEach(() => {
   document.body.innerHTML = '';
 });
 
-describe('command conformance [wc]', () => {
+describe('command [wc]', () => {
   it('wires the combobox to the listbox by real ids on first paint', async () => {
     await mount();
     expect(input().getAttribute('role')).toBe('combobox');

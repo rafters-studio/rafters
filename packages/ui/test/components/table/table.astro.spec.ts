@@ -104,7 +104,7 @@ async function render(
   return document.body;
 }
 
-describe('table conformance [astro]', () => {
+describe('table [astro]', () => {
   it('renders a root table part carrying the shared root/wrapper classes', async () => {
     const dom = await render();
     const root = partElement(dom, 'root') as HTMLElement;

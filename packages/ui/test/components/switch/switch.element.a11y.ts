@@ -9,10 +9,10 @@ interface Scene {
 }
 
 /**
- * The light-DOM markup the element conformance adapter builds: a real
+ * The light-DOM markup the element spec builds: a real
  * <button role="switch" data-part="root"> carrying the score's initial
  * projection, with a decorative thumb. The accessible name is aria-label on
- * the inner button, exactly as the conformance suite supplies it.
+ * the inner button, exactly as the spec supplies it.
  */
 async function mount({ checked = false, disabled = false, required = false }: Scene) {
   const state = checked ? 'checked' : 'unchecked';

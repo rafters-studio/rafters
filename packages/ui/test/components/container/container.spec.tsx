@@ -9,7 +9,7 @@ afterEach(() => {
   cleanup();
 });
 
-describe('container conformance [react]', () => {
+describe('container [react]', () => {
   // No aria/keymap assertions: Container is a pure static (no behavior file,
   // no data-part="root" ARIA projection) -- structure (the `as` landmark) and
   // classes (queryName, columns, className merge) are the whole surface.

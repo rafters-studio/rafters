@@ -33,7 +33,7 @@ function attrsOf(attrs: Record<string, string | boolean | undefined>): string {
 /**
  * The light-DOM markup Astro emits: a real inner button carrying the score's
  * initial projection, which the element hands to bindButton after one
- * microtask. Same shape the element conformance adapter builds.
+ * microtask. Same shape the element spec builds.
  */
 async function mount(scene: Scene, label: string): Promise<HTMLElement> {
   const config: ButtonConfig = {

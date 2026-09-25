@@ -19,7 +19,7 @@ afterEach(() => {
   cleanup();
 });
 
-describe('spinner conformance [react]', () => {
+describe('spinner [react]', () => {
   it('fulfills the contract: root renders and projects aria-label="Loading"', () => {
     const { container } = render(<Spinner />);
     const root = container.querySelector<HTMLElement>('[data-part="root"]');

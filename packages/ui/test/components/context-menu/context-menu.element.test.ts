@@ -5,7 +5,7 @@
  * <main> landmark so axe's best-practice region rule holds for the menu
  * (asserted by context-menu.element.a11y.ts, not here).
  *
- * WHY THIS ONE KEEPS THE `.test` NAME (#2329). Every other ported conformance
+ * WHY THIS ONE KEEPS THE `.test` NAME (#2329). Every other ported spec
  * file became `.spec`, which routes it to the browser project and real
  * chromium. This file stays in `unit`, under happy-dom, deliberately.
  *
@@ -143,7 +143,7 @@ afterEach(() => {
   document.body.innerHTML = '';
 });
 
-describe('context-menu conformance [wc]', () => {
+describe('context-menu [wc]', () => {
   it('closed: content hidden, trigger collapsed', async () => {
     await mount();
     expect(content().hidden).toBe(true);

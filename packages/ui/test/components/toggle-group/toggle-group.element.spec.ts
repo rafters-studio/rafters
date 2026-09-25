@@ -1,6 +1,6 @@
 /**
  * WC performance of the toggle-group score, driven end to end against light-DOM
- * markup. Same score as the React conformance test -- the only difference is the
+ * markup. Same score as the React spec -- the only difference is the
  * controller applies the projection imperatively via bindToggleGroup.
  */
 import { cleanup } from '@testing-library/react';
@@ -67,7 +67,7 @@ afterEach(() => {
   document.body.innerHTML = '';
 });
 
-describe('toggle-group conformance [wc]', () => {
+describe('toggle-group [wc]', () => {
   it('reflects the server-rendered pressed item as the initial selection', async () => {
     await mount({ pressed: ['b'] });
     expect(item('b').getAttribute('aria-pressed')).toBe('true');

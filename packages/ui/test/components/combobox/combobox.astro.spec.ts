@@ -38,7 +38,7 @@ const empty = () => document.body.querySelector<HTMLElement>('[data-part="empty"
 const option = (v: string) =>
   document.body.querySelector<HTMLElement>(`[data-part="item"][data-value="${v}"]`)!;
 
-describe('combobox conformance [astro]', () => {
+describe('combobox [astro]', () => {
   it('SSR closed: listbox hidden and crawlable, input a collapsed combobox', async () => {
     await mount();
     expect(content().hidden).toBe(true);

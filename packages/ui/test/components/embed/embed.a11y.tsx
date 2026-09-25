@@ -4,7 +4,7 @@ import { render } from 'vitest-browser-react';
 import { runAxe } from '../../a11y/run-axe';
 import { Embed } from '../../../src/components/embed/embed';
 
-// The same URL the conformance tests resolve; the resolver rewrites it to the
+// The same URL the specs resolve; the resolver rewrites it to the
 // nocookie embed host, so every iframe path is a remote origin by design. axe
 // pings the frame, gets no answer (axe is not injected there), and after its
 // ping timeout audits the iframe element itself from this document: the

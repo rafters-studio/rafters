@@ -1,5 +1,5 @@
 /**
- * Ported conformance for Empty, React target. Runs in the browser project
+ * Spec for Empty, React target. Runs in the browser project
  * (real chromium). Empty is a pure static -- no state, no keymap, and an
  * empty aria projection, since the placeholder carries no role of its own.
  */

@@ -40,7 +40,7 @@ const option = (v: string) =>
   document.body.querySelector<HTMLElement>(`[data-part="item"][data-value="${v}"]`)!;
 const emptyEl = () => document.body.querySelector<HTMLElement>('[data-part="empty"]')!;
 
-describe('command conformance [astro]', () => {
+describe('command [astro]', () => {
   it('SSR renders a combobox and a crawlable listbox of options', async () => {
     await mount();
     expect(input().getAttribute('role')).toBe('combobox');

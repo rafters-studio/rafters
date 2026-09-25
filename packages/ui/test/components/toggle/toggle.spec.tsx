@@ -47,7 +47,7 @@ afterEach(() => {
   cleanup();
 });
 
-describe('toggle conformance [react]', () => {
+describe('toggle [react]', () => {
   for (const scenario of SCENARIOS) {
     it(`${scenario.name}: parts and aria match the behavior projection`, () => {
       render(<Toggle {...scenario.props}>Bold</Toggle>);
@@ -68,7 +68,7 @@ describe('toggle conformance [react]', () => {
       // never render a data-part="spinner" element (confirmed by inspection --
       // no lane emits one), so its unconditional aria-hidden projection has no
       // DOM node to land on. Asserting it here would be a false failure, not a
-      // dropped check: the original conformance-suite's EXPECTED_PARTS made the
+      // dropped check: the former harness's EXPECTED_PARTS made the
       // same exclusion.
       for (const part of ['root', 'label'] as const) {
         const attrs = projection[part];

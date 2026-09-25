@@ -1,6 +1,6 @@
 /**
  * Web Component performance of the Spinner score. The SAME score as the React
- * conformance test -- but Spinner is a pure static, so there is no controller
+ * spec -- but Spinner is a pure static, so there is no controller
  * to drive. The WC renders the ring markup with the shared classes and the
  * projected label, once, and that is the whole performance.
  */
@@ -27,7 +27,7 @@ afterEach(() => {
   document.body.innerHTML = '';
 });
 
-describe('spinner conformance [wc]', () => {
+describe('spinner [wc]', () => {
   it('registers the rafters-spinner tag on import', () => {
     expect(customElements.get('rafters-spinner')).toBe(RaftersSpinner);
   });

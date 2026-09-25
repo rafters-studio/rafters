@@ -66,7 +66,7 @@ afterEach(() => {
   document.body.replaceChildren();
 });
 
-describe('dialog conformance [react]', () => {
+describe('dialog [react]', () => {
   it('closed: only the trigger renders, collapsed', async () => {
     render(<TestDialog />);
     const trigger = partElement(body(), 'trigger');

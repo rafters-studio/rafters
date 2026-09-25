@@ -1,6 +1,6 @@
 /**
  * Web Component performance of the Card score. The SAME score as the React
- * conformance test -- but Card is a pure static, so there is no controller to
+ * spec -- but Card is a pure static, so there is no controller to
  * drive. The WC renders the surface markup with the shared classes and named
  * slots, once, and that is the whole performance. These assertions prove the
  * one contract (root renders, empty projection, slots pass through) holds in

@@ -34,7 +34,7 @@ async function mount({
   ).join('');
   // The trigger is a combobox, which takes its name from the author, never
   // from its contents -- so the light-DOM markup labels it, as the React
-  // conformance scene does.
+  // spec scene does.
   document.body.innerHTML = `
     <main>
       <rafters-select data-part="root" value="${value}"${disabled ? ' disabled' : ''}>

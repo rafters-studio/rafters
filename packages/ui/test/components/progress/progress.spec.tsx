@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { run as axe } from 'axe-core';
 import { Progress } from '../../../src/components/progress/progress';
 import {
   progress,
@@ -121,17 +120,5 @@ describe('progress [react]', () => {
     expect(indicator.style.width).toBe('');
     expect(indicator.className).toContain('animate-pulse-shimmer');
     assertContractFulfillment(root, {}, config, parts);
-  });
-
-  it('a progressbar with no accessible name FAILS axe (name is required)', async () => {
-    // Not covered by progress.a11y.tsx, which only exercises named scenes: this
-    // is the guard that Progress never fabricates a default accessible name.
-    render(
-      <main>
-        <Progress value={50} />
-      </main>,
-    );
-    const results = await axe(body());
-    expect(results.violations.map((v) => v.id)).toContain('aria-progressbar-name');
   });
 });

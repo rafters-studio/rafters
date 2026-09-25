@@ -1,6 +1,6 @@
 /**
  * WC performance of the combobox score, driven end to end against light-DOM
- * markup. Same score as the React conformance test -- the binding applies the
+ * markup. Same score as the React spec -- the binding applies the
  * projection imperatively, filters the options in place, and composes the
  * positioning + outside-dismiss affordances.
  */
@@ -49,7 +49,7 @@ afterEach(() => {
   document.body.innerHTML = '';
 });
 
-describe('combobox conformance [wc]', () => {
+describe('combobox [wc]', () => {
   it('closed: listbox hidden, input a collapsed combobox wired by real ids', async () => {
     await mount();
     expect(content().hidden).toBe(true);

@@ -1,6 +1,6 @@
 /**
  * WC performance of the dropdown-menu score, driven end to end against light-DOM
- * markup. Same score as the React conformance test -- the binding applies the
+ * markup. Same score as the React spec -- the binding applies the
  * projection imperatively and runs the roving/typeahead/dismiss effects.
  */
 import { cleanup } from '@testing-library/react';
@@ -45,7 +45,7 @@ afterEach(() => {
   document.body.innerHTML = '';
 });
 
-describe('dropdown-menu conformance [wc]', () => {
+describe('dropdown-menu [wc]', () => {
   it('closed: menu hidden, trigger a collapsed menu button, aria wired by real ids', async () => {
     await mount();
     expect(content().hidden).toBe(true);

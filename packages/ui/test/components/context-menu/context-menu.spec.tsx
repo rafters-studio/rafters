@@ -142,7 +142,7 @@ afterEach(() => {
   document.body.replaceChildren();
 });
 
-describe('context-menu conformance [react]', () => {
+describe('context-menu [react]', () => {
   it('the open menu carries the class strings the resolver computes', async () => {
     // The classes file is proven in isolation by context-menu.classes.test.ts.
     // This is the other half: that what the resolver computed actually reaches

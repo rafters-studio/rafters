@@ -26,7 +26,7 @@ async function render(props: Record<string, unknown> = {}, slot = 'Enter'): Prom
   return document.body;
 }
 
-describe('kbd conformance [astro]', () => {
+describe('kbd [astro]', () => {
   it('renders a <kbd> root cap carrying the shared classes', async () => {
     const body = await render();
     const root = partElement(body, 'root') as HTMLElement;

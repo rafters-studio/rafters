@@ -1,6 +1,6 @@
 /**
  * WC performance of the collapsible score, driven end to end against light-DOM
- * markup. Same score as the React conformance test -- proves presence (content
+ * markup. Same score as the React spec -- proves presence (content
  * hidden off the open axis) and the native-button toggle drive through the DOM
  * binding.
  */
@@ -37,7 +37,7 @@ afterEach(() => {
   document.body.innerHTML = '';
 });
 
-describe('collapsible conformance [wc]', () => {
+describe('collapsible [wc]', () => {
   it('closed: content hidden, trigger collapsed', async () => {
     await mount();
     expect(content().hidden).toBe(true);

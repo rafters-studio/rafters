@@ -29,7 +29,7 @@ function partElements(root: HTMLElement, part: string): HTMLElement[] {
 }
 
 /**
- * The two-tier contract check every conformance suite makes: (1) every
+ * The two-tier contract check every spec makes: (1) every
  * declared part is present and its aria equals the score's per-part
  * projection, read against real DOM ids; (2) every rendered `slot` instance's
  * data-* attributes equal the score's `instanceAria` projection for its index.

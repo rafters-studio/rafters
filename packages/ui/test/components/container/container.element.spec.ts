@@ -1,6 +1,6 @@
 /**
  * Web Component performance of the Container score. The SAME score as the
- * React and Astro conformances -- but Container is a PURE STATIC, so there is
+ * React and Astro specs -- but Container is a PURE STATIC, so there is
  * no controller to drive. The one difference from card: Container's root IS
  * the semantic `as` element (a landmark), so the element creates that tag
  * inside its shadow root and the host is display:contents -- the landmark, not
@@ -31,7 +31,7 @@ afterEach(() => {
   document.body.innerHTML = '';
 });
 
-describe('container conformance [wc]', () => {
+describe('container [wc]', () => {
   it('the semantic element IS the contract: as drives the landmark root', () => {
     const host = mount('as="main" size="6xl"');
     const root = shadowRoot(host);

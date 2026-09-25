@@ -23,7 +23,7 @@ function partElement(root: HTMLElement, part: string): HTMLElement | null {
   return root.querySelector<HTMLElement>(`[data-part="${part}"]`);
 }
 
-describe('container conformance [astro]', () => {
+describe('container [astro]', () => {
   it('the semantic element IS the contract: as drives the landmark', async () => {
     const body = await render({ as: 'main', size: '6xl' });
     expect(body.querySelector('main')).not.toBeNull();

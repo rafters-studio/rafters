@@ -1,6 +1,6 @@
 /**
- * Ported conformance for HoverCard, Web Component target, driven end to end
- * against light-DOM markup. Same score as the React conformance test.
+ * Spec for HoverCard, Web Component target, driven end to end
+ * against light-DOM markup. Same score as the React spec.
  *
  * WHAT CHANGED AT #2148: presence is CONSTANT. The preview is never `hidden`
  * and never unmounted -- the stylesheet reveals it through

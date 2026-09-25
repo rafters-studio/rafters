@@ -1,6 +1,6 @@
 /**
  * Astro performance of the Alert score. The SAME score as the React
- * conformance test -- Alert is a static, so the role/variant projection is a
+ * spec -- Alert is a static, so the role/variant projection is a
  * pure function of config and its Astro file ships NO <script>, no bindAlert.
  * This test renders the server markup and asserts the contract a banner
  * carries: the root part with the score's projected role, the variant classes
@@ -52,7 +52,7 @@ async function renderOne(
   return document.body;
 }
 
-describe('alert conformance [astro]', () => {
+describe('alert [astro]', () => {
   it('fulfills the contract: root renders and carries the projected role=alert', async () => {
     const root = partElement(await render(), 'root') as HTMLElement;
     expect(root).not.toBeNull();

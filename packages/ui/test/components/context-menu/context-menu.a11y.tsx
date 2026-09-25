@@ -75,7 +75,7 @@ function Menu({ open = false, items = 'actions', subOpen = false, region }: Menu
 // The menu and any submenu portal to document.body by default, where axe's
 // region rule flags them as content outside every landmark. A real page has
 // landmarks, so the scene renders inside a <main> and hands it to the content
-// as the portal `container`, the way the conformance test does; the whole
+// as the portal `container`, the way the spec does; the whole
 // tree then lives inside the render container that is audited.
 function Scene(props: SceneProps) {
   const [region, setRegion] = React.useState<HTMLElement | null>(null);

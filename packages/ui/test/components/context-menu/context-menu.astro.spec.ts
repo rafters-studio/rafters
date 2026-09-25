@@ -164,7 +164,7 @@ function assertConfigTravelsAsData(
   }
 }
 
-describe('context-menu conformance [astro]', () => {
+describe('context-menu [astro]', () => {
   it('the SSR markup carries the class strings the resolver computes', async () => {
     // The Astro lane emits its markup ahead of any binding, so this proves the
     // resolver's output reaches the server-rendered nodes rather than being

@@ -33,7 +33,7 @@ afterEach(() => {
   cleanup();
 });
 
-describe('aspect-ratio conformance [react]', () => {
+describe('aspect-ratio [react]', () => {
   it('fulfills the contract: root renders and projects NO ARIA', () => {
     const { container } = render(
       <AspectRatio>

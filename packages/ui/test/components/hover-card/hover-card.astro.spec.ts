@@ -1,5 +1,5 @@
 /**
- * Ported conformance for HoverCard, Astro target, driven end to end.
+ * Spec for HoverCard, Astro target, driven end to end.
  * AstroContainer renders the SSR markup but does NOT run the <script>, so the
  * test binds bindHoverCard directly -- that IS the script's job -- then
  * drives the same score the React and WC performances drive.

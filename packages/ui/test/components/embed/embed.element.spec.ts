@@ -1,5 +1,5 @@
 /**
- * Ported conformance for Embed, Web Component target. Runs in the browser
+ * Spec for Embed, Web Component target. Runs in the browser
  * project (real chromium). Embed is a pure static -- no controller to drive --
  * so this proves the one contract (root renders, empty aria projection,
  * security attributes verbatim, disallowed hosts never reach an iframe) holds

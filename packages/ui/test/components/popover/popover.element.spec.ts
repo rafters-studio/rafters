@@ -1,6 +1,6 @@
 /**
  * WC performance of the popover score, driven end to end against light-DOM
- * markup. Same score as the React and Astro conformances -- proves presence
+ * markup. Same score as the React and Astro specs -- proves presence
  * (content hidden off the open axis), the dismiss effect, and the positioning +
  * focus-first affordances drive through the DOM binding. Non-modal: no trap, no
  * scroll lock.

@@ -1,6 +1,6 @@
 /**
  * WC performance of the textarea score, driven end to end against light-DOM
- * markup. Same score as the React conformance test -- proves value-sync and
+ * markup. Same score as the React spec -- proves value-sync and
  * the validity projection (including the aria-invalid="false" that only lands
  * because the bind applies with {validate:false}) through the DOM binding.
  *
@@ -31,7 +31,7 @@ afterEach(() => {
   document.body.innerHTML = '';
 });
 
-describe('textarea conformance [wc]', () => {
+describe('textarea [wc]', () => {
   it('valid: projects aria-invalid="false" literally (validate:false, not coerced truthy)', async () => {
     await mount(
       `<rafters-textarea><textarea data-part="textarea" id="t" aria-label="Message"></textarea></rafters-textarea>`,

@@ -4,7 +4,7 @@ import { runAxe } from '../../a11y/run-axe';
 import { Textarea, type TextareaProps } from '../../../src/components/textarea/textarea';
 
 // A textarea has no intrinsic name, so every scene carries an accessible name
-// the way the conformance test gives it: aria-label on the control (or a
+// the way the spec gives it: aria-label on the control (or a
 // paired <label> in the last scene).
 const scenes: ReadonlyArray<[string, TextareaProps]> = [
   ['valid empty', {}],

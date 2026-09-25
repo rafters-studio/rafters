@@ -110,7 +110,7 @@ async function mount(
   const containerRoot = document.body.querySelector('rafters-chart-container') as HTMLElement;
   const lineChartRoot = document.body.querySelector('rafters-line-chart') as HTMLElement;
   // happy-dom's innerHTML parser leaves numeric character entities intact in
-  // attribute values, same quirk bar-chart.astro.conformance.test.ts decodes.
+  // attribute values, same quirk bar-chart.astro.spec.ts decodes.
   for (const el of [containerRoot, lineChartRoot]) {
     const raw = el?.getAttribute('data-config');
     if (raw) el.setAttribute('data-config', raw.replaceAll('&#34;', '"'));

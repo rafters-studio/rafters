@@ -58,7 +58,7 @@ function assertConfigTravelsAsData(
   }
 }
 
-describe('tooltip conformance [astro]', () => {
+describe('tooltip [astro]', () => {
   it('SSR closed: content present, crawlable, described, and never hidden', async () => {
     const html = await render();
     document.body.innerHTML = html;

@@ -1,6 +1,6 @@
 /**
  * WC performance of the drawer score, driven end to end against light-DOM
- * markup. Same score as the React conformance test -- proves presence (content
+ * markup. Same score as the React spec -- proves presence (content
  * hidden off the open axis) and the directly-composed modal trio (focus-trap,
  * scroll-lock, dismiss) drive through the DOM binding.
  */
@@ -37,7 +37,7 @@ afterEach(() => {
   document.body.innerHTML = '';
 });
 
-describe('drawer conformance [wc]', () => {
+describe('drawer [wc]', () => {
   it('host pins display:block to match the unclassed block root of the other targets', async () => {
     const host = await mount();
     expect(host.style.display).toBe('block');

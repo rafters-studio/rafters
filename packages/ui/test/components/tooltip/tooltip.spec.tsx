@@ -66,7 +66,7 @@ afterEach(() => {
   document.body.replaceChildren();
 });
 
-describe('tooltip conformance [react]', () => {
+describe('tooltip [react]', () => {
   it('the root is a real element with trigger and content as DOM siblings', () => {
     renderInLandmark(<TestTooltip />);
     const root = rootEl();

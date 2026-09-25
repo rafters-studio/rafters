@@ -149,7 +149,7 @@ afterEach(() => {
   cleanup();
 });
 
-describe('tabs conformance [react]', () => {
+describe('tabs [react]', () => {
   it('renders a tablist with tabs and tabpanels', () => {
     render(
       <main>

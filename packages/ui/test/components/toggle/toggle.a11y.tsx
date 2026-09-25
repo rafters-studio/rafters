@@ -3,7 +3,7 @@ import { render } from 'vitest-browser-react';
 import { runAxe } from '../../a11y/run-axe';
 import { Toggle, type ToggleProps } from '../../../src/components/toggle/toggle';
 
-// Every scene carries an accessible name the way the conformance suite gives
+// Every scene carries an accessible name the way the spec gives
 // it: the "Bold" label as the button's text, or aria-label for the icon-only
 // pattern.
 const scenes: ReadonlyArray<[string, ToggleProps]> = [

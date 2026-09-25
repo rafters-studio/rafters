@@ -1,5 +1,5 @@
 /**
- * Ported conformance for Field, React target. A container that pairs a label
+ * Spec for Field, React target. A container that pairs a label
  * with a slotted control and optional helper/error text, wiring the
  * id-association + validity ARIA the score projects.
  */

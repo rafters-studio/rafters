@@ -61,7 +61,7 @@ afterEach(() => {
   document.body.replaceChildren();
 });
 
-describe('drawer conformance [react]', () => {
+describe('drawer [react]', () => {
   it('closed: only the trigger renders, collapsed', async () => {
     render(<TestDrawer />);
     const trigger = partElement(body(), 'trigger');

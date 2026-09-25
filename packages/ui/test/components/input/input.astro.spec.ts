@@ -26,7 +26,7 @@ async function mount(props: Record<string, unknown> = {}): Promise<HTMLInputElem
   return inputEl;
 }
 
-describe('input conformance [astro]', () => {
+describe('input [astro]', () => {
   it('valid field reflects aria-invalid as the literal string "false" (NOT coerced away)', async () => {
     const inputEl = await mount();
     expect(inputEl.getAttribute('aria-invalid')).toBe('false');

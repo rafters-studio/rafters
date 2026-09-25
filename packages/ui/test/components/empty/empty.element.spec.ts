@@ -1,5 +1,5 @@
 /**
- * Ported conformance for Empty, Web Component target. Runs in the browser
+ * Spec for Empty, Web Component target. Runs in the browser
  * project (real chromium). Empty is a pure static, so there is no controller
  * to drive: the WC renders the placeholder markup with the shared classes and
  * named slots once, and that is the whole performance.

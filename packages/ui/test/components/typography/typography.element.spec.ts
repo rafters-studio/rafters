@@ -1,6 +1,6 @@
 /**
  * Web Component performance of the Typography score -- the SAME static score as
- * the React and Astro conformances, so there is no controller to drive. These
+ * the React and Astro specs, so there is no controller to drive. These
  * assertions prove the one contract (the variant's semantic tag renders in the
  * shadow root with the shared composed classes and data-part="root", slotted
  * content projects through) holds in the shadow-DOM performance too. Axe
@@ -29,7 +29,7 @@ afterEach(() => {
   document.body.innerHTML = '';
 });
 
-describe('typography conformance [wc]', () => {
+describe('typography [wc]', () => {
   it('the variant drives the semantic tag of the shadow root', () => {
     const root = shadowRoot(mount('variant="h1"', 'Title'));
     expect(root).not.toBeNull();

@@ -107,7 +107,7 @@ afterEach(() => {
   cleanup();
 });
 
-describe('dropdown-menu conformance [react]', () => {
+describe('dropdown-menu [react]', () => {
   it('closed: menu hidden, trigger is a collapsed menu button', async () => {
     render(
       <main>

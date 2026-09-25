@@ -1,5 +1,5 @@
 /**
- * Ported conformance for Grid, Astro target. Grid is a STATIC score -- no
+ * Spec for Grid, Astro target. Grid is a STATIC score -- no
  * state, no actions, no keymap -- but the STRUCTURE contract (role
  * disposition, the conditional 2D roving-focus composition) is behavior, so
  * this drives both archetypes end to end. AstroContainer renders the SSR

@@ -37,7 +37,7 @@ const trigger = (value: string) =>
 const content = (value: string) =>
   document.body.querySelector<HTMLElement>(`[data-part="content"][data-value="${value}"]`)!;
 
-describe('accordion conformance [astro]', () => {
+describe('accordion [astro]', () => {
   it('SSR: the seeded section is open and the rest are inert before any JS', async () => {
     const root = await mount({ value: 'b' });
     expect(root.getAttribute('data-orientation')).toBe('vertical');

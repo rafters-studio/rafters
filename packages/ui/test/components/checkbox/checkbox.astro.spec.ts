@@ -29,7 +29,7 @@ async function mount(props: Record<string, unknown> = {}): Promise<HTMLElement> 
   return root;
 }
 
-describe('checkbox conformance [astro]', () => {
+describe('checkbox [astro]', () => {
   it('toggles aria-checked false -> true -> false across clicks', async () => {
     const user = userEvent.setup();
     const root = await mount();

@@ -30,7 +30,7 @@ const trigger = () => document.body.querySelector<HTMLElement>('[data-part="trig
 const content = () => document.body.querySelector<HTMLElement>('[data-part="content"]')!;
 const cancel = () => document.body.querySelector<HTMLElement>('[data-part="cancel"]')!;
 
-describe('alert-dialog conformance [astro]', () => {
+describe('alert-dialog [astro]', () => {
   it('SSR closed: content hidden and crawlable, trigger collapsed', async () => {
     await mount({ title: 'Are you sure?' });
     expect(content().hidden).toBe(true);

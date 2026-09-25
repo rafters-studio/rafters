@@ -1,6 +1,6 @@
 /**
  * WC decorator of the Progress score, driven against light-DOM markup. Same
- * score as the React and Astro conformances: the host IS the progressbar root
+ * score as the React and Astro specs: the host IS the progressbar root
  * (host === root), bindProgress projects the aria-value contract and sizes the
  * indicator fill. Proves the static projection drives identically through the
  * DOM binding, and that a live attribute change re-derives config. Axe

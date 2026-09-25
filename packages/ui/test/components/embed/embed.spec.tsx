@@ -1,5 +1,5 @@
 /**
- * Ported conformance for Embed, React target. Runs in the browser project
+ * Spec for Embed, React target. Runs in the browser project
  * (real chromium): Embed is a pure static -- no state, no keymap, and an
  * empty aria projection, since the iframe's own `title` (content, not a
  * projection) is the whole accessible contract.

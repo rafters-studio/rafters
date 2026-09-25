@@ -184,7 +184,7 @@ describe('navigation-menu effects composition', () => {
   // The score no longer emits vocabulary effects: roving/hover/dismiss are
   // composed directly from the primitives by startNavigationMenuEffects, which
   // both the DOM-native and React bindings call. These tests drive that
-  // composition seam -- including the immediate-switch semantics conformance
+  // composition seam -- including the immediate-switch semantics the specs
   // does not exercise -- against real DOM.
   interface Harness {
     root: HTMLElement;

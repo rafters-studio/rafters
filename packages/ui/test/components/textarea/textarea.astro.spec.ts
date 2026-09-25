@@ -29,7 +29,7 @@ async function mount(props: Record<string, unknown> = {}): Promise<HTMLTextAreaE
   return areaEl;
 }
 
-describe('textarea conformance [astro]', () => {
+describe('textarea [astro]', () => {
   it('valid field reflects aria-invalid as the literal string "false" (NOT coerced away)', async () => {
     const areaEl = await mount();
     expect(areaEl.getAttribute('aria-invalid')).toBe('false');

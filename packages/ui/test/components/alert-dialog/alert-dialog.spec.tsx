@@ -73,7 +73,7 @@ afterEach(() => {
   document.body.replaceChildren();
 });
 
-describe('alert-dialog conformance [react]', () => {
+describe('alert-dialog [react]', () => {
   it('closed: only the trigger renders, collapsed', async () => {
     render(<TestAlertDialog />);
     const trigger = partElement(body(), 'trigger');

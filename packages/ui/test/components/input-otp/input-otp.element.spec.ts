@@ -1,6 +1,6 @@
 /**
  * WC performance of the input-otp score, driven end to end against light-DOM
- * markup. Same score as the React conformance test -- proves the filter, the
+ * markup. Same score as the React spec -- proves the filter, the
  * active-slot rule, paste and the completion edge through the DOM binding.
  * `input-otp.element.ts` self-registers `rafters-input-otp` on import,
  * guarded, so no explicit customElements.define is needed here.

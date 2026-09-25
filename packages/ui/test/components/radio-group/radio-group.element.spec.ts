@@ -1,6 +1,6 @@
 /**
  * WC performance of the radio-group score, driven end to end against light-DOM
- * markup. Same score as the React conformance test -- the only difference is
+ * markup. Same score as the React spec -- the only difference is
  * the controller applies the projection imperatively via bindRadioGroup.
  */
 import { cleanup } from '@testing-library/react';

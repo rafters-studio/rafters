@@ -35,7 +35,7 @@ async function mount(props: Record<string, unknown> = {}): Promise<HTMLElement> 
 const item = (value: string) =>
   document.body.querySelector<HTMLElement>(`[data-part="item"][data-value="${value}"]`)!;
 
-describe('toggle-group conformance [astro]', () => {
+describe('toggle-group [astro]', () => {
   it('SSR: group + toggle items, the seeded value pressed, orientation reflected', async () => {
     await mount({ value: 'b', orientation: 'vertical' });
     const root = document.body.querySelector('[data-part="root"]');

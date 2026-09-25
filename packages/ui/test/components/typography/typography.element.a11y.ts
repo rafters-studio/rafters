@@ -4,7 +4,7 @@ import '../../../src/components/typography/typography.element';
 
 /**
  * Typography is a shadow-rendering static: the markup is just the tag with
- * its attributes and slotted text, as the element conformance test mounts it.
+ * its attributes and slotted text, as the element spec mounts it.
  * Bare text is not landmark content, so every scene sits inside a <main>.
  */
 function mount(inner: string): HTMLElement {

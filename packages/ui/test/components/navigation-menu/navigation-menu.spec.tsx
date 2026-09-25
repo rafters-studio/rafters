@@ -89,7 +89,7 @@ const dismissedFor = (value: string): string | undefined => contentFor(value).da
 
 /** Every rendered `trigger`/`content` instance's ARIA equals the score's
  *  per-instance projection, sibling ids resolved from the DOM (behaviors never
- *  generate ids). The generic conformance harness drove this from
+ *  generate ids). The former shared harness drove this from
  *  `spec.instanceAria`; here it drives the same function directly. */
 function assertNavInstanceAria(
   root: HTMLElement,

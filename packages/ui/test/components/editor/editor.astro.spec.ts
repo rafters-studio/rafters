@@ -51,7 +51,7 @@ async function mount(props: Record<string, unknown> = {}): Promise<HTMLElement> 
   return el;
 }
 
-describe('editor conformance [astro]', () => {
+describe('editor [astro]', () => {
   it('SSR renders role=textbox, aria-multiline, and the label -- correct before any JS', async () => {
     const el = await mount({ label: 'Document' });
     expect(el.getAttribute('data-part')).toBe('root');
@@ -72,7 +72,7 @@ describe('editor conformance [astro]', () => {
     expect(el.hasAttribute('aria-label')).toBe(false);
   });
 
-  it('bind: script-equivalent call projects the seeded doc and is axe-clean bound', async () => {
+  it('bind: script-equivalent call projects the seeded doc', async () => {
     const el = await mount({ label: 'Document' });
     bindEditor(el); // what the <script> does per instance on a real page
     expect(el.querySelector('[data-block-id="b1"]')?.textContent).toBe('hello');

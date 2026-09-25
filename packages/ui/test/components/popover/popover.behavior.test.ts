@@ -120,5 +120,5 @@ describe('popover keymap', () => {
 // onPointerDownOutside primitive directly. Its behavior (a pointerdown outside
 // the content closes the popover, sparing the trigger and anchor; present only
 // while open; non-modal, so no focus-trap or scroll-lock) is asserted end to
-// end in the react/wc/astro conformance suites, which drive the real DOM the
+// end in the react/wc/astro specs, which drive the real DOM the
 // primitive operates on.

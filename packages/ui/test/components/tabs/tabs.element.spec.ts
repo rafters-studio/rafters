@@ -1,6 +1,6 @@
 /**
  * WC performance of the tabs score, driven end to end against light-DOM markup.
- * Same score as the React conformance test -- the only difference is the
+ * Same score as the React spec -- the only difference is the
  * controller applies the projection imperatively via bindTabs.
  */
 import { cleanup } from '@testing-library/react';
@@ -54,7 +54,7 @@ afterEach(() => {
   document.body.innerHTML = '';
 });
 
-describe('tabs conformance [wc]', () => {
+describe('tabs [wc]', () => {
   it('reflects the server-rendered active trigger as the initial selection', async () => {
     await mount({ active: 'details' });
     expect(trigger('details').getAttribute('aria-selected')).toBe('true');

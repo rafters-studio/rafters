@@ -30,7 +30,7 @@ async function mount(props: Record<string, unknown> = {}): Promise<HTMLElement> 
   return root;
 }
 
-describe('switch conformance [astro]', () => {
+describe('switch [astro]', () => {
   it('unchecked SSR: aria-checked false, data-state unchecked, role switch', async () => {
     const root = await mount();
     expect(root.getAttribute('role')).toBe('switch');

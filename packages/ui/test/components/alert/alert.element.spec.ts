@@ -1,6 +1,6 @@
 /**
  * Web Component performance of the Alert score. The SAME score as the React
- * conformance test -- but Alert is a static, so there is no controller to
+ * spec -- but Alert is a static, so there is no controller to
  * drive. The WC renders the banner markup with the shared classes and named
  * slots, painting the score's aria projection onto the root, and that is the
  * whole performance. These assertions prove the one contract (root renders,
@@ -30,7 +30,7 @@ afterEach(() => {
   document.body.innerHTML = '';
 });
 
-describe('alert conformance [wc]', () => {
+describe('alert [wc]', () => {
   it('fulfills the contract: root renders and carries the projected role=alert', () => {
     const root = shadowRoot(mount());
     expect(root).not.toBeNull();

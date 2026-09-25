@@ -1,5 +1,5 @@
 /**
- * Ported conformance for Empty, Astro target. Empty is a PURE STATIC -- the
+ * Spec for Empty, Astro target. Empty is a PURE STATIC -- the
  * score projects no ARIA, holds no state, runs no effects -- so its Astro
  * file ships NO <script> and there is NO bindEmpty. This renders the server
  * markup and asserts the one contract a static placeholder can carry: the

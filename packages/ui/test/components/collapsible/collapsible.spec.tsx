@@ -50,8 +50,8 @@ afterEach(() => {
   cleanup();
 });
 
-describe('collapsible conformance [react]', () => {
-  it('closed: trigger renders collapsed, content absent, axe-clean', async () => {
+describe('collapsible [react]', () => {
+  it('closed: trigger renders collapsed, content absent', async () => {
     const { container } = render(<TestCollapsible />);
     const trigger = partElement(container, 'trigger');
     expect(trigger).not.toBeNull();

@@ -1,6 +1,6 @@
 /**
  * Web Component performance of the Badge score. The SAME score as the React and
- * Astro conformance tests -- but Badge is a pure static, so there is no
+ * Astro specs -- but Badge is a pure static, so there is no
  * controller to drive. The WC renders the chip markup with the shared classes
  * once, slots the label from the light tree, and re-renders when `variant` or
  * `size` changes. That is the whole performance.
@@ -44,7 +44,7 @@ afterEach(() => {
   document.body.innerHTML = '';
 });
 
-describe('badge conformance [wc]', () => {
+describe('badge [wc]', () => {
   it('registers the rafters-badge tag on import', () => {
     expect(customElements.get('rafters-badge')).toBe(RaftersBadge);
   });

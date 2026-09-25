@@ -99,7 +99,7 @@ async function mount(props: ScenarioProps, label: string): Promise<HTMLElement> 
   return root;
 }
 
-describe('checkbox conformance [wc]', () => {
+describe('checkbox [wc]', () => {
   for (const scenario of SCENARIOS) {
     it(`${scenario.name}: parts and aria match the behavior projection`, async () => {
       const root = await mount(scenario.props, 'Accept terms');

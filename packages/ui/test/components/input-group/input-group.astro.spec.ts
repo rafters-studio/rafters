@@ -73,7 +73,7 @@ async function mount(
 
 const control = () => document.body.querySelector<HTMLInputElement>('[data-part="control"]')!;
 
-describe('input-group conformance [astro]', () => {
+describe('input-group [astro]', () => {
   it('valid: SSR markup fulfils the contract with both affixes', async () => {
     const root = await mount({}, { start: '$', end: 'USD' });
     assertAriaContract(root, {}, { invalid: false }, ['root', 'control', 'addonStart', 'addonEnd']);

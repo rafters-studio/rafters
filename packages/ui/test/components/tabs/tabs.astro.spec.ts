@@ -37,7 +37,7 @@ const trigger = (value: string) =>
 const panel = (value: string) =>
   document.body.querySelector<HTMLElement>(`[data-part="panel"][data-value="${value}"]`)!;
 
-describe('tabs conformance [astro]', () => {
+describe('tabs [astro]', () => {
   it('SSR: tablist + tabs + tabpanels with the seeded tab active', async () => {
     await mount({ value: 'details' });
     const list = document.body.querySelector('[data-part="list"]');

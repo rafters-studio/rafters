@@ -35,7 +35,7 @@ const controlOf = (host: HTMLElement) => partElement(host, 'control') as HTMLInp
 /**
  * Assert the aria/data-state projection for the given parts against the
  * score's own `aria()` function, reading each part's id from the real DOM --
- * the fidelity check every conformance suite makes: the bound DOM must equal
+ * the fidelity check every spec makes: the bound DOM must equal
  * what the score projects for the same config.
  */
 function assertAriaContract(

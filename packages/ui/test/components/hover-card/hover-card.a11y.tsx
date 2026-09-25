@@ -19,8 +19,7 @@ interface SceneProps {
 /**
  * The preview is a DOM sibling of its trigger inside the root (#2148): it is
  * never portalled, so `container` holds the whole component in both states.
- * The content is role="dialog" and the consumer names it, as the conformance
- * tests do.
+ * The content is role="dialog" and the consumer names it, as the specs do.
  */
 function Scene(props: SceneProps) {
   return (

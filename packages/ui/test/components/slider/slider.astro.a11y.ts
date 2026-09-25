@@ -8,7 +8,7 @@ import { bindSlider } from '../../../src/components/slider/slider.behavior';
 async function mount(props: Record<string, unknown>): Promise<Document> {
   const container = await AstroContainer.create();
   // A slider has no intrinsic text, so every scene names each thumb with the
-  // same `aria-label` the conformance test applies.
+  // same `aria-label` the spec applies.
   const html = await container.renderToString(Slider, {
     props: { id: 's', 'aria-label': 'Volume', ...props },
   });

@@ -1,6 +1,6 @@
 /**
  * WC performance of the input score, driven end to end against light-DOM
- * markup. Same score as the React conformance test -- proves value-sync and
+ * markup. Same score as the React spec -- proves value-sync and
  * the validity projection (including the aria-invalid="false" that only lands
  * because the bind applies with {validate:false}) through the DOM binding.
  * `input.element.ts` self-registers `rafters-input` on import, guarded, so no

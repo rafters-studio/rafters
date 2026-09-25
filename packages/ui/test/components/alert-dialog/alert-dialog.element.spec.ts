@@ -1,6 +1,6 @@
 /**
  * WC performance of the alert-dialog score, driven end to end against light-DOM
- * markup. Same score as the React conformance test -- proves presence (content
+ * markup. Same score as the React spec -- proves presence (content
  * hidden off the open axis), the focus-trap + scroll-lock pair, focus-to-Cancel,
  * and the deliberate ABSENCE of outside-dismiss, all through the DOM binding.
  */
@@ -40,7 +40,7 @@ afterEach(() => {
   document.body.innerHTML = '';
 });
 
-describe('alert-dialog conformance [wc]', () => {
+describe('alert-dialog [wc]', () => {
   it('closed: content hidden, trigger collapsed', async () => {
     await mount();
     expect(content().hidden).toBe(true);

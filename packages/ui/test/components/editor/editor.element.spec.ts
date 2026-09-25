@@ -46,7 +46,7 @@ async function mount(attrs: Record<string, string> = {}, seed = true): Promise<H
 
 const root = () => document.querySelector<HTMLElement>('rafters-editor')!;
 
-describe('editor conformance [wc]', () => {
+describe('editor [wc]', () => {
   it('declares exactly one part, root, with role=textbox, matching editorAria', async () => {
     await mount({ 'data-label': 'Document' });
     expect(root().getAttribute('data-part')).toBe('root');

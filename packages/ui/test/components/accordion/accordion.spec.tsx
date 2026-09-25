@@ -110,7 +110,7 @@ afterEach(() => {
   cleanup();
 });
 
-describe('accordion conformance [react]', () => {
+describe('accordion [react]', () => {
   it('collapsed: panels stay in the DOM, inert -- the body is crawlable', async () => {
     render(<TestAccordion />);
     expect(body().querySelectorAll('[data-part="content"]')).toHaveLength(3);

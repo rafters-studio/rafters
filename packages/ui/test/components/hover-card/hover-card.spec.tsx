@@ -1,5 +1,5 @@
 /**
- * Ported conformance for HoverCard, React target.
+ * Spec for HoverCard, React target.
  *
  * WHAT CHANGED AT #2148: the preview is no longer mounted on the open axis and
  * no longer portals to document.body by default. `HoverCardRoot` renders a real

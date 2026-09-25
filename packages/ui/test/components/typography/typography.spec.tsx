@@ -20,7 +20,7 @@ afterEach(() => {
   cleanup();
 });
 
-describe('typography conformance [react]', () => {
+describe('typography [react]', () => {
   it('the semantic element IS the contract: each variant renders its tag with data-part root', () => {
     render(
       <main>

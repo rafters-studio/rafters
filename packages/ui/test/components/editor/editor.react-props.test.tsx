@@ -1,7 +1,7 @@
 /**
  * #2212: React-only `initialDocument`/`onChange` props on `Editor`. These
  * sit alongside editor.spec.tsx (which still owns the label/aria/disabled/
- * readonly conformance suite for the React performance) rather than inside
+ * readonly specs for the React performance) rather than inside
  * it, since this file exercises props this issue's pinned interface added,
  * not the shared cross-performance contract.
  */

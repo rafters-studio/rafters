@@ -1,5 +1,5 @@
 /**
- * Ported conformance for Grid, React target. Grid is a static score -- no
+ * Spec for Grid, React target. Grid is a static score -- no
  * state, no actions, no keymap action -- but the structure contract (roles,
  * per-instance priority projection, the 2D roving keyboard navigation) is
  * behavior this proves end to end.

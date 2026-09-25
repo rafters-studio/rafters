@@ -1,7 +1,7 @@
 /**
  * THE PRESENCE CONTRACT, across its three proof components (#1996).
  *
- * The per-component conformance suites drive behavior; this file drives the one
+ * The per-component specs drive behavior; this file drives the one
  * thing they all share and none of them owned: the EXIT WINDOW. The node must
  * still be there while its exit keyframe runs, carrying data-state=closed and
  * `inert`, and must go once the keyframe ends.

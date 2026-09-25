@@ -1,6 +1,6 @@
 /**
- * Ported conformance for Image, Web Component target, driven against
- * light-DOM markup. Same score as the React and Astro conformances: the host
+ * Spec for Image, Web Component target, driven against
+ * light-DOM markup. Same score as the React and Astro specs: the host
  * renders a real <figure data-part="root"> and bindImage applies the aria
  * projection. Proves the static projection drives identically through the DOM
  * binding, and that a live attribute change re-derives config.

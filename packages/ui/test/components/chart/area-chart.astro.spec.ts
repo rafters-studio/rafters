@@ -104,7 +104,7 @@ async function mount(
   const containerRoot = document.body.querySelector('rafters-chart-container') as HTMLElement;
   const areaChartRoot = document.body.querySelector('rafters-area-chart') as HTMLElement;
   // happy-dom's innerHTML parser leaves numeric character entities intact in
-  // attribute values (same quirk chart.astro.conformance.test.ts decodes);
+  // attribute values (same quirk chart.astro.spec.ts decodes);
   // a real browser decodes &#34; to " when parsing HTML.
   for (const el of [containerRoot, areaChartRoot]) {
     const raw = el.getAttribute('data-config');

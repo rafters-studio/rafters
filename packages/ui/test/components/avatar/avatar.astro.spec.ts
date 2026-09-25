@@ -29,7 +29,7 @@ function part(doc: HTMLElement, name: string): HTMLElement | null {
   return doc.querySelector<HTMLElement>(`[data-part="${name}"]`);
 }
 
-describe('avatar conformance [astro]', () => {
+describe('avatar [astro]', () => {
   it('renders a root part carrying the shared base + size classes', async () => {
     const doc = await render({ src: '/user.jpg', alt: 'Jane Doe' });
     const root = part(doc, 'root') as HTMLElement;

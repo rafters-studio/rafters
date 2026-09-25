@@ -58,7 +58,7 @@ async function render(props: Record<string, unknown>, slot = 'content'): Promise
   return document.body;
 }
 
-describe('typography conformance [astro]', () => {
+describe('typography [astro]', () => {
   it('as chooses the element and derives the variant; data-part root is present', async () => {
     const body = await render({ as: 'h1' }, 'Title');
     const root = partElement(body, 'root');

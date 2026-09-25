@@ -29,7 +29,7 @@ async function mount(props: Record<string, unknown> = {}): Promise<HTMLElement> 
 const input = () => document.body.querySelector<HTMLInputElement>('input[data-part="input"]')!;
 const slots = () => Array.from(document.body.querySelectorAll<HTMLElement>('[data-part="slot"]'));
 
-describe('input-otp conformance [astro]', () => {
+describe('input-otp [astro]', () => {
   it('server-renders one slot per character, named and autofillable before any JS', async () => {
     await mount();
     expect(slots()).toHaveLength(6);

@@ -29,7 +29,7 @@ async function render(
   return document.body;
 }
 
-describe('label conformance [astro]', () => {
+describe('label [astro]', () => {
   it('renders a root <label> part carrying the shared classes', async () => {
     const body = await render({}, { default: 'Email' });
     const root = partElement(body, 'root') as HTMLElement;

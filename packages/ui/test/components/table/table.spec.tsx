@@ -56,7 +56,7 @@ afterEach(() => {
   cleanup();
 });
 
-describe('table conformance [react]', () => {
+describe('table [react]', () => {
   it('fulfills the contract: root renders (role=table native) and projects NO ARIA', () => {
     const { container } = render(
       <Table>

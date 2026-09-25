@@ -8,7 +8,7 @@ import { bindToggle } from '../../../src/components/toggle/toggle.behavior';
 async function mount(props: Record<string, unknown>): Promise<Document> {
   const container = await AstroContainer.create();
   // Every scene carries an accessible name: the `label` prop the astro
-  // conformance test supplies, or aria-label for the icon-only scene.
+  // spec supplies, or aria-label for the icon-only scene.
   const html = await container.renderToString(Toggle, {
     props: { id: 't', label: 'Bold', ...props },
   });

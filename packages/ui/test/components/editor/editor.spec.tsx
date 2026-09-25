@@ -31,7 +31,7 @@ afterEach(() => {
 
 const root = () => partElement(document.body, 'root') as HTMLElement;
 
-describe('editor conformance [react]', () => {
+describe('editor [react]', () => {
   it('renders exactly the root part, role=textbox, matching editorAria(label)', () => {
     render(<Editor label="Document" />);
     expect(root()).not.toBeNull();

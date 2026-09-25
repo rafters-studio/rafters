@@ -1,5 +1,5 @@
 /**
- * Ported conformance for Field, Astro target, driven end to end.
+ * Spec for Field, Astro target, driven end to end.
  * AstroContainer renders the SSR markup (label + `<slot/>` control +
  * helper/error) but does NOT run the `<script>`, so the test calls bindField
  * directly on the rafters-field root -- that IS the script's job -- then

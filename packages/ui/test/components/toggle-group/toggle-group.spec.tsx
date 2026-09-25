@@ -57,7 +57,7 @@ afterEach(() => {
   cleanup();
 });
 
-describe('toggle-group conformance [react]', () => {
+describe('toggle-group [react]', () => {
   it('renders a role=group with toggle items', async () => {
     render(
       <main>

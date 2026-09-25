@@ -56,7 +56,7 @@ describe('skeleton classes', () => {
   });
 
   it('compiles to a rule the reduced-motion law never reaches (#2155)', async () => {
-    // Ported from the React conformance suite (#2329): a React render's DOM
+    // Ported from the React spec (#2329): a React render's DOM
     // is not needed here -- `skeletonBaseClasses` IS the literal class the
     // component renders, since skeletonClasses() has no config/state
     // channel. This proves that class compiles to a loop the reduced-motion

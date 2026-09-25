@@ -1,5 +1,5 @@
 /**
- * Ported conformance for Embed, Astro target. Embed is a PURE STATIC -- the
+ * Spec for Embed, Astro target. Embed is a PURE STATIC -- the
  * score projects no ARIA, holds no state, runs no effects -- so its Astro
  * file ships NO <script> and there is NO bindEmbed. This renders the server
  * markup and asserts the one contract: the root frame/fallback, the iframe

@@ -9,10 +9,10 @@ interface Scene {
 }
 
 /**
- * The light-DOM markup the element conformance adapter builds: a real
+ * The light-DOM markup the element spec builds: a real
  * <button data-part="root"> carrying the score's initial projection and a
  * label span. The accessible name is the label text, or aria-label on the
- * inner button for the icon-only pattern, as the conformance suite gives it.
+ * inner button for the icon-only pattern, as the spec gives it.
  */
 async function mount({ pressed = false, disabled = false, ariaLabel }: Scene) {
   const label = ariaLabel === undefined ? 'Bold' : '<span aria-hidden="true">B</span>';

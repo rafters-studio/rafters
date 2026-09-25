@@ -128,7 +128,7 @@ function assertAria(
   }
 }
 
-describe('slider conformance [react]', () => {
+describe('slider [react]', () => {
   for (const scenario of SCENARIOS) {
     it(`${scenario.name}: parts and aria match the behavior projection`, () => {
       const { root, unmount } = renderSlider(scenario.props, 'Volume');

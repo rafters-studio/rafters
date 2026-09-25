@@ -63,7 +63,7 @@ function assertContractFulfillment(
 
 const areaOf = (host: HTMLElement) => partElement(host, 'textarea') as HTMLTextAreaElement;
 
-describe('textarea conformance [react]', () => {
+describe('textarea [react]', () => {
   it('valid: renders collapsed validity', () => {
     const { container } = render(<Textarea aria-label="Message" />);
     const config: TextareaConfig = { invalid: undefined, required: undefined };

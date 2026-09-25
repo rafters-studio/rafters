@@ -1,6 +1,6 @@
 /**
  * WC performance of the accordion score, driven end to end against light-DOM
- * markup. Same score as the React conformance test -- the only difference is
+ * markup. Same score as the React spec -- the only difference is
  * that the controller applies the projection imperatively via bindAccordion,
  * seeding the intrinsic set from the server-rendered open sections.
  */
@@ -90,7 +90,7 @@ afterEach(() => {
   document.body.innerHTML = '';
 });
 
-describe('accordion conformance [wc]', () => {
+describe('accordion [wc]', () => {
   it('seeds the intrinsic set from the server-rendered open section', async () => {
     await mount({ open: ['b'] });
     expect(trigger('b').getAttribute('aria-expanded')).toBe('true');
