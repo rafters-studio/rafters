@@ -33,6 +33,15 @@ export interface CheckboxClassSet {
 // `scale` is in the transition list for the press zoom; Tailwind v4 writes the
 // individual `scale` property, never `transform`, so naming `transform` here
 // would transition nothing.
+//
+// MOMENTS WITH NO ROW, reported rather than resolved:
+//   - `hover:border-input-hover` is a pointer-triggered border-colour moment. No
+//     matrix row covers checkbox hover; it rides the colour row's
+//     duration-moderate ease-standard transition only because it shares this
+//     element's transition list, not because a row assigns it.
+//   - The root fill for data-state=indeterminate (unchecked <-> indeterminate,
+//     checked <-> indeterminate) rides the same transition. The matrix only has
+//     unchecked <-> checked rows; no row covers the indeterminate transitions.
 const baseClasses =
   'group inline-grid place-items-center shrink-0 ' +
   'rounded-sm border cursor-pointer ' +
@@ -136,6 +145,12 @@ const sizeClasses: Record<CheckboxSize, { box: string; icon: string }> = {
 //
 // The choreo delay is on the CHECKED variant only: the glyph follows the fill in
 // by one beat on the way in, and leaves without ceremony on the way out.
+//
+// THE DASH HAS NO ROW. Both rows above name unchecked <-> checked only; the dash's
+// reveal on data-state=indeterminate (and the check/dash swap between checked and
+// indeterminate) is a moment no matrix row covers. It reuses the check glyph's
+// timing, extent and delay by shared base classes, not by any row's assignment --
+// reported here, not claimed as consumed.
 const indicatorBaseClasses =
   'col-start-1 row-start-1 text-current opacity-0 scale-0 ' +
   'transition-[opacity,scale] duration-fast ease-standard';
