@@ -25,26 +25,24 @@ const fieldClasses = 'relative w-full';
 // Touch floor at h-11, scaling down via the container query (repo CQ
 // convention). Right padding leaves room for the chevron. Fill, not background.
 //
-// TWO MOMENTS WITH NO ROW, reported rather than assigned a tier this file would
-// have to invent: the ring's `transition-shadow` here, and the chevron's
-// `transition-transform` below. motion.jsonl gives combobox four rows only --
-// content open/close and items enter/highlight/selected -- and nothing for a
-// combobox trigger, focus ring, or chevron, even though select carries both a
-// `trigger | hover` and a `chevron | open <-> closed` row for the same two
-// moments (motion.md:191, 250). Both therefore still fall through to Tailwind's
-// built-in 150ms, which is the #1955 trap in its quiet form: no literal appears
-// in this file, and a literal is what runs. Adding the rows is matrix hygiene
-// (#2158/#2159), not a transcription this issue can make.
+// THE ROW: combobox / input / focus -- ring, duration-micro, ease-linear
+// (motion.jsonl:64), PROPOSED and unreviewed. The ring's `transition-shadow`
+// consumes it. The chevron below consumes combobox / chevron / open <-> closed
+// -- rotate, duration-moderate, ease-standard, structural 180deg
+// (motion.jsonl:65), also PROPOSED. Neither row is in issue #2279's list; both
+// were added by matrix hygiene after this file first reported them as unrowed.
 //
-// NO component-level reduced-motion escape here or on the chevron below. The
-// pre-existing `motion-reduce:transition-none` on both is REMOVED: the
+// ONE MOMENT WITH NO ROW, reported rather than assigned a tier: the input's
+// `hover:border-input-hover` and the trigger's `hover:text-foreground` carry no
+// transition and no row (select has a `trigger | hover` row; combobox does
+// not), so both snap. Adding a row is matrix hygiene, not a transcription.
+//
+// NO component-level reduced-motion escape here or on the chevron below: the
 // generated `duration-*` and `delay-*` utilities zero themselves under
 // prefers-reduced-motion (REDUCED_MOTION_ZEROED,
 // packages/design-tokens/src/exporters/tailwind.ts), so reduced motion is the
 // token sheet's responsibility and never a component-level media query
-// (tooltip.classes.ts states the rule). Note this leaves BOTH transitions
-// below with no tier at all, which is the unrowed gap the paragraph above
-// reports -- the escape was not what made them token-correct.
+// (tooltip.classes.ts states the rule).
 const inputClasses =
   'flex h-11 @md:h-9 w-full rounded-md border border-input bg-background px-3 py-1 pr-9 ' +
   'text-body-small ts-body-small shadow-sm ring-offset-background transition-shadow duration-micro ease-linear ' +
@@ -62,7 +60,7 @@ const chevronClasses =
 
 // THE CELL IS THE SPEC. These two utilities are the generated consumption of
 // combobox / content / closed -> open (moderate, enter, extent pop) and
-// open -> closed (fast, exit, extent pop) -- motion.md:192-193, emitted as
+// open -> closed (fast, exit, extent pop) -- motion.jsonl:59-60, emitted as
 // `combobox-content-open` / `-close` in DEFAULT_MOTION_CELL_ANIMATIONS. The
 // comment they replace said the semantic `motion-dropdown-in/-out` tokens were
 // "documented but not yet generated"; those thirteen tokens were deleted by
@@ -90,7 +88,7 @@ const contentClasses =
   'data-[state=closed]:pointer-events-none';
 
 // THE ROW: combobox / items / highlight move -- color, duration-micro,
-// ease-standard (motion.md:195), PROPOSED and unreviewed, transcribed as
+// ease-standard (motion.jsonl:62), PROPOSED and unreviewed, transcribed as
 // written. A transition, not a keyframe (`combobox | items | highlight move`,
 // EXCLUDED_ROWS.noIntersectingProperty in
 // packages/design-tokens/test/motion-cells.test.ts).
@@ -116,7 +114,7 @@ const itemClasses =
   'data-[disabled]:pointer-events-none data-[disabled]:opacity-50';
 
 // THE ROW: combobox / items / selected check -- swap (discrete state change),
-// duration-micro, ease-standard (motion.md:196), PROPOSED and unreviewed. The
+// duration-micro, ease-standard (motion.jsonl:63), PROPOSED and unreviewed. The
 // swap rides opacity on the always-present indicator BOX rather than on the
 // check glyph, which the views mount and unmount (combobox.tsx:419-423): a
 // mounting node has no previous opacity to transition from, and the box does.
