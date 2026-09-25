@@ -7,11 +7,12 @@ describe('Index Route', () => {
 
     expect(res.status).toBe(200);
     const json = (await res.json()) as Record<string, unknown>;
-    expect(json.name).toBe('Rafters Studio API');
+    expect(json.name).toBe('Rafters Color API');
     expect(json.version).toBeTruthy();
-    expect(json.system).toBeTruthy();
-    expect(json.rules).toBeTruthy();
     expect(json.endpoints).toBeTruthy();
+    expect(
+      Object.keys(json.endpoints as Record<string, string>).some((e) => e.includes('/tokens')),
+    ).toBe(false);
   });
 
   it('GET /docs returns OpenAPI spec', async () => {
@@ -29,6 +30,12 @@ describe('Index Route', () => {
 
     expect(res.status).toBe(200);
     expect(res.headers.get('content-type')).toContain('text/html');
+  });
+
+  it('serves no token routes', async () => {
+    const res = await SELF.fetch('http://localhost/tokens');
+
+    expect(res.status).toBe(404);
   });
 
   it('GET /unknown returns 404', async () => {
