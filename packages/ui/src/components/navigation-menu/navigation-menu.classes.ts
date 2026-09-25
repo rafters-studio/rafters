@@ -30,6 +30,13 @@ const itemClasses = 'relative group/navigation-item';
 // border), fast, standard. Composed generics on a transition. Replaces
 // `motion-hover`, one of the 13 semantic motion tokens deleted by ruling
 // (2026-08-02) that kept compiling by accident.
+//
+// NO ROW for the trigger's open state. `data-[state=open]:bg-accent-subtle` is a
+// second colour moment on the trigger, and the base transition above animates it
+// over the hover row's fast/standard cell -- but the matrix gives navigation-menu
+// no `trigger / open` row, so that timing is borrowed, not assigned. Reported on
+// #2293: if the open-state tint should have its own timing, motion.jsonl needs
+// the row.
 const triggerClasses =
   'group inline-flex h-11 @md:h-10 w-max items-center justify-center rounded-md ' +
   'bg-background px-4 py-2 text-label-medium ts-label-medium cursor-pointer ' +
