@@ -13,6 +13,12 @@ allowBuilds:
   vue-demi: true
   workerd: false
 
+# Vitest 5 creates os.tmpdir()/<nanoid> for its core module fetcher and never
+# removes it, leaking one dir per run (still true in 5.0.2). The patch removes
+# it in Vitest.close(). Drop it once upstream cleans _tmpDir on close.
+patchedDependencies:
+  vitest@5.0.0: patches/vitest@5.0.0.patch
+
 catalog:
   '@axe-core/playwright': ^4.11.0
   # @vitest/browser-playwright dev-pins playwright ^1.62.1; keep the runner in step.
