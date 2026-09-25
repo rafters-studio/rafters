@@ -52,6 +52,11 @@ export const embedFallbackMessageClasses =
 
 /**
  * Fallback recovery link (Open in new tab).
+ *
+ * MOMENT WITHOUT A ROW, reported not resolved: `hover:text-primary/80` is a
+ * hover colour moment, and `motion.jsonl` assigns embed no row for it (the only
+ * embed row is `frame / load`). No transition is named here because none is
+ * assigned; the colour change is instant until the matrix gives it a row.
  */
 export const embedFallbackLinkClasses =
   'text-label-small ts-label-small text-primary underline underline-offset-4 hover:text-primary/80';
