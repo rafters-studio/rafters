@@ -30,15 +30,30 @@ const groupClasses = 'flex items-center';
 // Two rows land on the slot, at the same tier with different curves:
 //   input-otp / slot / focus -- ring -- duration-micro, ease-linear
 //   input-otp / active slot / advance -- swap -- duration-micro, ease-standard
+//     (the advance row is `proposed` in the matrix: consumed as written, unreviewed)
 //
-// The active slot's ring IS the advance marker -- `data-[active=true]:ring-1` is
-// both the focus indication and the "the caret moved here" signal -- so the base
-// rule takes the focus row's linear curve and `data-[active=true]:` lifts the
-// advancing slot onto the swap row's standard curve. Same micro tier either way,
-// which is why the two rows can share one element without conflict.
+// UNRESOLVED ROW CONFLICT -- reported, not resolved. The active slot's ring IS
+// the advance marker: `data-[active=true]:ring-1` is both the focus indication
+// and the "the caret moved here" signal, and no DOM state distinguishes plain
+// focus from advance. Both rows are transcribed -- the base rule carries the
+// focus row's `ease-linear`, `data-[active=true]:` carries the advance row's
+// `ease-standard` -- but a CSS transition takes its timing function from the
+// after-change style, so:
+//   - the ring ARRIVING (data-active -> true) always runs ease-standard, the
+//     advance row's curve, including on plain focus;
+//   - the focus row's ease-linear only ever governs the ring LEAVING (blur, or
+//     the caret moving off the slot).
+// The tier agrees (micro on both rows); the curve does not. The focus row's
+// curve is unreachable for the moment it names until the matrix either merges
+// these rows or the component grows a signal that separates focus from advance.
 //
-// `transition-all` is narrowed to the properties the rows actually name: the ring
-// (`box-shadow`), the slot border, and the filled-state text colour.
+// `transition-all` is narrowed to the ring (`box-shadow`), the slot border, and
+// the filled-state text colour.
+//
+// Moment with no row: `data-[filled=true]:text-foreground` (a slot receiving a
+// character) is a colour change the matrix has no input-otp row for. It rides
+// the slot's transition above rather than a tier of its own; it is not claimed
+// as consuming either row.
 const slotClasses =
   'relative flex h-9 w-9 items-center justify-center ' +
   'border-y border-r border-input text-body-small ts-body-small shadow-sm ' +
