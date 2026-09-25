@@ -44,11 +44,15 @@ const overlayClasses =
 //
 //   drawer / content / closed -> open (normal, spring-smooth) and
 //   drawer / content / open -> closed (moderate, exit) both declare
-//   `slide (y)` over `transform: translate`. No slide keyframe exists in the
-//   vocabulary -- the shape was left out rather than approximated, because an
-//   approximated shape is geometry nobody chose -- so there is no class to
-//   name. Unlike sheet, these rows declare NO fade half, so there is not even a
-//   partial consumption to make. This is a vocabulary gap, reported here.
+//   `slide (y)` over `transform: translate`. The slide-in-from-* /
+//   slide-out-to-* keyframes exist, but no motion cell binds them to these
+//   rows, so the exporter emits no animate-slide-*-normal-spring-smooth or
+//   animate-slide-*-moderate-exit utility (design-tokens excludes both rows as
+//   noExistingShape). The row also names one axis (y) while this panel anchors
+//   on four sides, two of them on x. There is no class to name, and
+//   duration-*/ease-* here would time a transition nothing drives. Unlike
+//   sheet, these rows declare NO fade half, so there is not even a partial
+//   consumption to make. This is a vocabulary gap, reported here.
 //
 //   drawer / content / dragging is a pointer-rule row: a part tracking a
 //   pointer moves exactly with it, and any nonzero duration would be the
