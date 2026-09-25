@@ -2,7 +2,7 @@ import { expect, test } from 'vitest';
 import { render } from 'vitest-browser-react';
 import { runAxe } from '../../a11y/run-axe';
 import { plotSize } from '../../a11y/plot-size';
-import { nextFrame } from '../../a11y/next-frame';
+import { activateFirstDatum, reactPlotSettled } from '../../a11y/plot-settled';
 import { ChartContainer } from '../../../src/components/chart/chart';
 import { LineChart } from '../../../src/components/chart/line-chart';
 import { XAxis } from '../../../src/components/chart/x-axis';
@@ -51,11 +51,9 @@ const scenes: ReadonlyArray<[string, Scene]> = [
 for (const [name, scene] of scenes) {
   test(`line-chart ${name}`, async ({ task }) => {
     const { container } = await render(<Chart {...scene} />);
-    // ResizeObserver delivers after the first frame's layout; the points (and
-    // the cursor reset that follows a point-set change) settle by the second.
-    await nextFrame();
-    await nextFrame();
-    const figure = container.querySelector('figure[data-part="root"]') as HTMLElement;
+    await reactPlotSettled(container);
+    const figure = container.querySelector('figure[data-part="root"]');
+    if (!(figure instanceof HTMLElement)) throw new Error('line-chart root not rendered');
     if (scene.axis === false) {
       expect(figure.getAttribute('aria-label')).toMatch(/^Sparkline of/);
     }
@@ -64,9 +62,7 @@ for (const [name, scene] of scenes) {
     }
     if (scene.activate) {
       figure.focus();
-      figure.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
-      await nextFrame();
-      expect(container.querySelectorAll('[data-part="point"][data-active="true"]')).toHaveLength(1);
+      await activateFirstDatum(figure, '[data-part="point"][data-active="true"]');
     }
     const results = await runAxe(container);
     task.meta.axe = results;

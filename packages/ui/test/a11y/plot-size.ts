@@ -9,6 +9,10 @@
  * Height is a parameter because a chart and a tooltip want different boxes;
  * width does not vary, so it is not one.
  */
-export function plotSize(height = 200): string {
-  return `div[data-part="plot"]{width:300px;height:${height}px}`;
+/** The pinned plot box, shared with plot-settled.ts and the element markup. */
+export const PLOT_WIDTH = 300;
+export const PLOT_HEIGHT = 200;
+
+export function plotSize(height = PLOT_HEIGHT): string {
+  return `div[data-part="plot"]{width:${PLOT_WIDTH}px;height:${height}px}`;
 }

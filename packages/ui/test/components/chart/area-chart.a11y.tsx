@@ -2,7 +2,7 @@ import { expect, test } from 'vitest';
 import { render } from 'vitest-browser-react';
 import { runAxe } from '../../a11y/run-axe';
 import { plotSize } from '../../a11y/plot-size';
-import { nextFrame } from '../../a11y/next-frame';
+import { activateFirstDatum, reactPlotSettled } from '../../a11y/plot-settled';
 import { ChartContainer } from '../../../src/components/chart/chart';
 import { AreaChart } from '../../../src/components/chart/area-chart';
 import { XAxis } from '../../../src/components/chart/x-axis';
@@ -45,16 +45,12 @@ const scenes: ReadonlyArray<[string, Scene]> = [
 for (const [name, scene] of scenes) {
   test(`area-chart ${name}`, async ({ task }) => {
     const { container } = await render(<Chart rows={scene.rows} />);
-    // ResizeObserver delivers after the first frame's layout; the geometry
-    // (and the cursor reset that follows a geometry change) settles by the second.
-    await nextFrame();
-    await nextFrame();
+    await reactPlotSettled(container);
     if (scene.activate) {
-      const figure = container.querySelector('figure[data-part="root"]') as HTMLElement;
+      const figure = container.querySelector('figure[data-part="root"]');
+      if (!(figure instanceof HTMLElement)) throw new Error('area-chart root not rendered');
       figure.focus();
-      figure.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
-      await nextFrame();
-      expect(container.querySelectorAll('[data-part="area"][data-active="true"]')).toHaveLength(1);
+      await activateFirstDatum(figure, '[data-part="area"][data-active="true"]');
     }
     const results = await runAxe(container);
     task.meta.axe = results;
