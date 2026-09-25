@@ -31,9 +31,14 @@ const itemClasses = 'border-b';
 const headingClasses = 'flex';
 
 // motion.jsonl `accordion / trigger / hover` -- color (background, text,
-// border), fast, standard. Composed generics on a transition, because the header
-// stays put while its colours change. Replaces `motion-hover`, one of the 13
-// semantic motion tokens deleted by ruling (2026-08-02) that kept compiling.
+// border), fast, standard. NO MOMENT FOR THIS ROW: the trigger changes no
+// background, text or border colour on hover -- it carries no hover:bg-*,
+// hover:text-* or hover:border-* class, only `hover:underline`. The
+// `transition-colors duration-fast ease-standard` below is the row's timing
+// written out, but it has no colour change to carry, so the row is not
+// consumed. Reported, not faked: no hover colour is invented to give it one.
+// The timing replaces `motion-hover`, one of the 13 semantic motion tokens
+// deleted by ruling (2026-08-02) that kept compiling.
 //
 // NO ROW for the trigger's focus ring or for `hover:underline`: the ring is a
 // `ring` movement and the underline a text-decoration change, and the matrix
