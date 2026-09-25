@@ -18,6 +18,12 @@ const verticalClasses = 'grid gap-2';
 // NO PRESS ROW. checkbox, switch, toggle and toggle-group each carry a
 // `root|item / press` zoom cell; radio-group does not, so no `active:` scale is
 // added here. A press moment the matrix does not claim is not ours to invent.
+//
+// HOVER HAS NO ROW. `hover:border-input-hover` is a hover colour moment the
+// matrix does not list for radio-group; it rides the item transition above
+// (duration-moderate, ease-standard) rather than a row of its own. The item's
+// own border/text colours carry no data-state variant, so today that hover
+// border is the only colour change this transition actually animates.
 const itemBaseClasses =
   'inline-flex items-center justify-center ' +
   'aspect-square h-4 w-4 ' +
