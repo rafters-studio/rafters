@@ -37,8 +37,13 @@ const groupClasses = 'flex items-center';
 // advancing slot onto the swap row's standard curve. Same micro tier either way,
 // which is why the two rows can share one element without conflict.
 //
-// `transition-all` is narrowed to the properties the rows actually name: the ring
-// (`box-shadow`), the slot border, and the filled-state text colour.
+// `transition-all` is narrowed to the ring (`box-shadow`), the slot border, and
+// the filled-state text colour.
+//
+// Moment with no row: `data-[filled=true]:text-foreground` (a slot receiving a
+// character) is a colour change the matrix has no input-otp row for. It rides
+// the slot's transition above rather than a tier of its own; it is not claimed
+// as consuming either row.
 const slotClasses =
   'relative flex h-9 w-9 items-center justify-center ' +
   'border-y border-r border-input text-body-small ts-body-small shadow-sm ' +
