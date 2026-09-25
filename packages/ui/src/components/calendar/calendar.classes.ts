@@ -21,6 +21,9 @@ export interface CalendarClassSet {
 
 const rootClasses = 'inline-block p-3';
 const headerClasses = 'flex items-center justify-between pb-4';
+// NAV / HOVER -- a moment with no row, reported rather than invented. The
+// prev/next controls change colour on hover, but motion.jsonl assigns calendar
+// no nav row, so no transition is named here and the hover snaps.
 const navClasses =
   'inline-flex items-center justify-center size-7 rounded-md ' +
   'text-foreground hover:bg-accent hover:text-accent-foreground ' +
