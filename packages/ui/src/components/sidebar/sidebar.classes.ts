@@ -158,6 +158,9 @@ const contentClasses =
 
 const groupClasses = 'relative flex w-full min-w-0 flex-col p-2';
 
+// NO ROW for the label hiding as the rail collapses to icons (`opacity-0`,
+// `-mt-8`). The `root / collapse` row times the rail's width, not its children,
+// so the label snaps. Reported on #2302.
 const groupLabelClasses =
   'flex h-8 shrink-0 items-center rounded-md px-2 text-label-small ts-label-small text-sidebar-foreground/70 ' +
   'outline-none ring-sidebar-ring focus-visible:ring-2 ' +
@@ -202,6 +205,9 @@ const menuButtonSizeClasses: Record<'default' | 'sm' | 'lg', string> = {
   lg: 'text-label-medium ts-label-medium group-data-[collapsible=icon]:p-0',
 };
 
+// NO ROW for the outline variant's shadow dropping on hover (`hover:shadow-none`).
+// `sidebar / item / hover` names color only, and `transition-colors` does not
+// time `box-shadow`, so the elevation change is instant. Reported on #2302.
 const menuButtonOutlineClasses =
   'bg-background shadow-sm hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:shadow-none';
 
@@ -229,6 +235,9 @@ const menuActionClasses =
   'focus-visible:ring-2 peer-hover/menu-button:text-sidebar-accent-foreground ' +
   'after:absolute after:-inset-2 md:after:hidden group-data-[collapsible=icon]:hidden';
 
+// NO ROW for the show-on-hover action's reveal (`md:opacity-0` ->
+// `opacity-100`). None of the sidebar rows names that fade, so it is instant.
+// Reported on #2302.
 const menuActionShowOnHoverClasses =
   'group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 ' +
   'data-[state=open]:opacity-100 peer-data-[active=true]/menu-button:text-sidebar-accent-foreground ' +
