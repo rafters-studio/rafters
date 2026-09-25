@@ -17,6 +17,12 @@ export interface InputClassSet {
 // `border-color`, so both are named in the transition list -- `transition-shadow`
 // alone left the border snapping.
 //
+// PARTIAL ROW: the validity row assigns background, text and border, but only
+// the border has a moment here -- `aria-invalid:border-destructive` is the whole
+// invalid change. Background stays transparent and text stays foreground in both
+// states, so the row's background/text half has nothing to time and is reported,
+// not faked; neither property is in the transition list.
+//
 // HONEST LIMIT: Tailwind emits one `transition-duration` per rule, so the two
 // rows cannot carry different tiers per property. The base rule takes focus's
 // micro/linear and `aria-invalid:` lifts the whole element to the validity row's
