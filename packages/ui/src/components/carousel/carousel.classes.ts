@@ -65,12 +65,10 @@ const itemClasses = 'min-w-0 shrink-0 grow-0 basis-full';
 
 // The prev/next controls share the round chrome; orientation only moves them.
 //
-// MOMENTS WITH NO ROW, reported rather than assigned: the controls' and the
-// indicators' `transition-colors` below are hover/active moments the matrix
-// gives carousel no cell for -- the interactive-surface section carries rows for
-// button, badge, table rows and kin, none for a carousel control or indicator.
-// They are left on Tailwind's own default timing rather than given a tier this
-// file would be inventing; contest it by adding the rows, not by picking here.
+// CONTROL / HOVER and INDICATOR / ACTIVE CHANGE -- both "color" at the fast
+// tier on the standard curve, marked `proposed` (unreviewed) in motion.jsonl.
+// Consumed as transitions below: the controls' hover colour and the indicator
+// dot's data-[state=active] fill swap on elements that stay present.
 const controlBase =
   'absolute inline-flex h-8 w-8 items-center justify-center rounded-full border ' +
   'bg-background text-foreground shadow-sm transition-colors duration-fast ease-standard ' +
