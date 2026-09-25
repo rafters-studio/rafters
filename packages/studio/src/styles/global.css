@@ -1,7 +1,0 @@
-@import 'tailwindcss';
-
-/*
- * Studio self-consumption pattern:
- * Dynamic vars from project (HMR updates when tokens change)
- */
-@import '@rafters-output/rafters.vars.css';

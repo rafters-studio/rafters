@@ -11,9 +11,8 @@ export default defineConfig([
       '@rafters/composites',
       '@rafters/design-tokens',
       '@rafters/shared',
-      '@rafters/studio',
     ],
-    external: ['commander', '@modelcontextprotocol/sdk', 'vite'],
+    external: ['commander', '@modelcontextprotocol/sdk'],
     outDir: 'dist',
     clean: true,
   },
@@ -31,7 +30,7 @@ export default defineConfig([
     // The Claude Code plugin bundle: a single self-contained .mjs file the
     // plugin ships and runs directly (no npm install, no pnpx, no dlx cache).
     // Wraps the MCP-only entry (src/plugin-entry.ts), never src/index.ts, so
-    // vite/lightningcss stay out of the bundle.
+    // the add/init paths stay out of the bundle.
     entry: { 'rafters-mcp.bundle': 'src/plugin-entry.ts' },
     format: ['esm'],
     target: 'node22',

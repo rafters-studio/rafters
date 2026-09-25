@@ -79,14 +79,6 @@ Start the MCP server for AI agent access via stdio transport.
 pnpm dlx rafters mcp
 ```
 
-### `rafters studio`
-
-Launch Studio for visual token editing.
-
-```bash
-pnpm dlx rafters studio
-```
-
 ## MCP tools
 
 Four tools for agent ASSEMBLY (not design). Token design lives in Studio; import lives in `rafters init`. Agents read pre-made decisions; they do not author them.
