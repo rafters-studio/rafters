@@ -1,8 +1,5 @@
 import { expect } from 'vitest';
-
-/** The plot box the a11y lane pins (plot-size.ts and the element markup):
- *  300 wide, `height` tall. */
-const PLOT_WIDTH = 300;
+import { PLOT_WIDTH } from './plot-size';
 
 /**
  * Resolves once a React chart has drawn against the pinned plot box.
