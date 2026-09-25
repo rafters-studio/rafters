@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 import { runAxe } from '../../a11y/run-axe';
-import { nextFrame } from '../../a11y/next-frame';
+import { elementPlotSettled } from '../../a11y/plot-settled';
 import '../../../src/components/chart/chart.element';
 import '../../../src/components/chart/x-axis.element';
 import '../../../src/components/chart/line-chart.element';
@@ -55,11 +55,9 @@ function markup(lineConfig: Scene['lineConfig'], axis: boolean): string {
 async function mount({ lineConfig, axis = true, activate = false }: Scene): Promise<HTMLElement> {
   document.body.innerHTML = markup(lineConfig, axis);
   await Promise.resolve(); // both elements bind one microtask after connecting
-  // ResizeObserver publishes the container size after the first frame's
-  // layout; the line bind's MutationObserver on that dataset draws by the next.
-  await nextFrame();
-  await nextFrame();
-  const root = document.body.querySelector('rafters-line-chart') as HTMLElement;
+  await elementPlotSettled(document.body);
+  const root = document.body.querySelector('rafters-line-chart');
+  if (!(root instanceof HTMLElement)) throw new Error('rafters-line-chart not connected');
   if (!axis) {
     expect(root.getAttribute('aria-label')).toMatch(/^Sparkline of/);
   }

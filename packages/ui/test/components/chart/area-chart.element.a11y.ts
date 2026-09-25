@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 import { runAxe } from '../../a11y/run-axe';
-import { nextFrame } from '../../a11y/next-frame';
+import { elementPlotSettled } from '../../a11y/plot-settled';
 import '../../../src/components/chart/chart.element';
 import '../../../src/components/chart/x-axis.element';
 import '../../../src/components/chart/area-chart.element';
@@ -50,12 +50,10 @@ function markup(areaConfig: Scene['areaConfig']): string {
 async function mount({ areaConfig, activate = false }: Scene): Promise<HTMLElement> {
   document.body.innerHTML = markup(areaConfig);
   await Promise.resolve(); // both elements bind one microtask after connecting
-  // ResizeObserver publishes the container size after the first frame's
-  // layout; the area bind's MutationObserver on that dataset draws by the next.
-  await nextFrame();
-  await nextFrame();
+  await elementPlotSettled(document.body);
   if (activate) {
-    const root = document.body.querySelector('rafters-area-chart') as HTMLElement;
+    const root = document.body.querySelector('rafters-area-chart');
+    if (!(root instanceof HTMLElement)) throw new Error('rafters-area-chart not connected');
     root.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
     expect(root.querySelectorAll('[data-part="area"][data-active="true"]')).toHaveLength(1);
   }

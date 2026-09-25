@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 import { runAxe } from '../../a11y/run-axe';
-import { nextFrame } from '../../a11y/next-frame';
+import { elementPlotSettled } from '../../a11y/plot-settled';
 import '../../../src/components/chart/chart.element';
 import '../../../src/components/chart/x-axis.element';
 import '../../../src/components/chart/bar-chart.element';
@@ -50,12 +50,10 @@ function markup(barConfig: Scene['barConfig']): string {
 async function mount({ barConfig, activate = false }: Scene): Promise<HTMLElement> {
   document.body.innerHTML = markup(barConfig);
   await Promise.resolve(); // both elements bind one microtask after connecting
-  // ResizeObserver publishes the container size after the first frame's
-  // layout; the bar bind's MutationObserver on that dataset draws by the next.
-  await nextFrame();
-  await nextFrame();
+  await elementPlotSettled(document.body);
   if (activate) {
-    const root = document.body.querySelector('rafters-bar-chart') as HTMLElement;
+    const root = document.body.querySelector('rafters-bar-chart');
+    if (!(root instanceof HTMLElement)) throw new Error('rafters-bar-chart not connected');
     root.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
     expect(root.querySelectorAll('[data-part="bar"][data-active="true"]')).toHaveLength(1);
   }
