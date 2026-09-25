@@ -38,10 +38,11 @@ export const tableFooterClasses =
  * to the muted surface.
  *
  * NO component-level reduced-motion escape. The generated `duration-*` and
- * `delay-*` utilities zero themselves under `prefers-reduced-motion` (the
- * exporter's `REDUCED_MOTION_ZEROED` set), so reduced motion is the token
- * sheet's responsibility and never a component-level media query. The
- * `motion-reduce:transition-none` this drops was redundant with that law.
+ * `delay-*` utilities zero themselves when the user asks for reduced motion
+ * (the exporter's `REDUCED_MOTION_ZEROED` set), so reduced motion is the
+ * token sheet's responsibility and never a component-level media query. The
+ * reduced-motion `transition-none` variant this drops was redundant with
+ * that law.
  *
  * TWO ROWS, ONE TRANSITION. `table / row / hover` (provenance `baseline`) and
  * `table / row / selected <-> unselected` (provenance `proposed`) both assign
