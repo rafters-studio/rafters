@@ -154,4 +154,4 @@ describe('alert-dialog keymap', () => {
 
 // The modal overlay pair (focus-trap, scroll-lock, focus-to-Cancel) and the
 // deliberate ABSENCE of outside-dismiss are asserted end to end in the
-// conformance suites (alert-dialog.conformance.test.tsx / .astro. / .element.).
+// specs (alert-dialog.spec.tsx / .astro. / .element.).

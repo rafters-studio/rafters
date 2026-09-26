@@ -7,7 +7,7 @@ const classes = hoverCardClasses(config, hoverCard.initialState(config));
 
 /**
  * The CLASS-STRING half of the motion contract (#2148). This file pins the
- * candidates the stylesheet is compiled from; `test/motion/hover-reveal.e2e.ts`
+ * candidates the stylesheet is compiled from; `test/motion/hover-reveal.spec.ts`
  * pins the DESUGARED rules those candidates produce, driven with JavaScript
  * disabled in a real browser. Neither half proves the other -- Tailwind emits
  * nothing at all for a malformed candidate, silently -- so both are pinned and

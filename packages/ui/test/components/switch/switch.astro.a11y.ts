@@ -8,7 +8,7 @@ import { bindSwitch } from '../../../src/components/switch/switch.behavior';
 async function mount(props: Record<string, unknown>): Promise<Document> {
   const container = await AstroContainer.create();
   // The switch has no intrinsic text: every scene names it through aria-label,
-  // the prop the astro conformance test supplies.
+  // the prop the astro spec supplies.
   const html = await container.renderToString(Switch, {
     props: { id: 's', 'aria-label': 'Enable notifications', ...props },
   });

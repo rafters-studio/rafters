@@ -1,7 +1,7 @@
 /**
  * buildEditorHarness (FR-EDITOR-004) -- the no-dev-server Playwright harness.
  *
- * This repo has no e2e dev server (see test/presence/presence-exit.e2e.ts:
+ * This repo has no e2e dev server (see test/presence/presence-exit.spec.ts:
  * "There is no dev server in this repo and a spec may not start one"). So we
  * compile the REAL `bindEditor` (via `harness-entry.ts`) into an injectable
  * IIFE with esbuild and hand it to `page.setContent`. `buildEditorHarness`

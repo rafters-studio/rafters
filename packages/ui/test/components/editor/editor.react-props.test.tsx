@@ -1,20 +1,24 @@
 /**
  * #2212: React-only `initialDocument`/`onChange` props on `Editor`. These
- * sit alongside editor.conformance.test.tsx (which still owns the
- * label/aria/disabled/readonly integration suite for the React performance)
- * rather than inside it, since this file exercises props this issue's
- * pinned interface added, not the shared cross-performance contract.
+ * sit alongside editor.spec.tsx (which still owns the label/aria/disabled/
+ * readonly specs for the React performance) rather than inside
+ * it, since this file exercises props this issue's pinned interface added,
+ * not the shared cross-performance contract.
  */
 import { cleanup, render } from '@testing-library/react';
 import { act } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Editor } from '../../../src/components/editor/editor';
 import type { BaseBlock } from '../../../src/primitives/types';
-import { partElement } from '../../harness/conformance';
 
 afterEach(() => {
   cleanup();
 });
+
+/** Inlined per the no-shared-test-support-module rule (#2329). */
+function partElement(root: ParentNode, part: string): HTMLElement | null {
+  return root.querySelector<HTMLElement>(`[data-part="${part}"]`);
+}
 
 const root = () => partElement(document.body, 'root') as HTMLElement;
 
@@ -22,8 +26,8 @@ function seededDoc(): BaseBlock[] {
   return [{ id: 'b1', type: 'text', content: 'hello' }];
 }
 
-/** Same beforeinput-dispatch technique editor.element.conformance.test.ts
- *  and editor.astro.conformance.test.ts use to drive a real edit: the
+/** Same beforeinput-dispatch technique editor.element.spec.ts
+ *  and editor.astro.spec.ts use to drive a real edit: the
  *  handler reads the caret from the history cell's own `sel`, not a live
  *  DOM Selection/Range, so no focus/selection setup is needed first. */
 function typeChar(char: string): void {

@@ -6,7 +6,7 @@ import { Item } from '../../../src/components/item/item';
 
 /** An option must live inside a listbox (axe aria-required-parent), and page
  *  content must sit inside a landmark; every scene renders the row inside
- *  a listbox inside a `<main>`, as the conformance tests do. */
+ *  a listbox inside a `<main>`, as the specs do. */
 function Listbox({ children }: { children: ReactElement }) {
   return (
     <main>

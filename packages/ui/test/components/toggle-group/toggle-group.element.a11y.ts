@@ -21,7 +21,7 @@ function itemMarkup(value: string, label: string, pressed: boolean, disabled: bo
   return `<button type="button" data-part="item" data-value="${value}" data-roving-item data-state="${state}" aria-pressed="${pressed}"${disabled ? ' disabled' : ''}>${label}</button>`;
 }
 
-/** The light-DOM markup the element conformance test mounts, inside a landmark. */
+/** The light-DOM markup the element spec mounts, inside a landmark. */
 async function mount({
   type = 'single',
   orientation = 'horizontal',

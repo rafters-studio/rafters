@@ -2,7 +2,7 @@
  * The MISSING half of the #2148 motion contract: that the `.classes.ts`
  * candidates compile to anything at all.
  *
- * `test/motion/hover-reveal.e2e.ts` drives desugared rules in a real browser and
+ * `test/motion/hover-reveal.spec.ts` drives desugared rules in a real browser and
  * the three `*.classes.test.ts` files pin the candidate strings, and BOTH pass
  * identically whether or not Tailwind emits a single byte for those candidates
  * -- Tailwind drops a malformed candidate silently, with no warning and no rule.

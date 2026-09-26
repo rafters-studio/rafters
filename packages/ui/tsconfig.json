@@ -14,5 +14,5 @@
     "test/components/**/*.element.a11y.ts"
   ],
   "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.test.tsx", "src/old/**/*"],
-  "files": ["test/components/editor/editor.conformance.test.tsx"]
+  "files": ["test/components/editor/editor.spec.tsx"]
 }

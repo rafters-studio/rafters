@@ -8,7 +8,7 @@ interface Scene {
 }
 
 /**
- * The light-DOM markup the element conformance test mounts, inside a landmark:
+ * The light-DOM markup the element spec mounts, inside a landmark:
  * the host is the root, with the trigger and the always-present content as
  * siblings. The open scene is the SSR shape for a default-open tip.
  */

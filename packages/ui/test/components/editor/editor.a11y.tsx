@@ -9,7 +9,7 @@ const seededDoc: BaseBlock[] = [{ id: 'b1', type: 'text', content: 'hello' }];
 
 // The editor is one contenteditable root with role=textbox; its accessible
 // name (label or labelledBy) is the whole ARIA contract, so the scenes cover
-// both naming routes and every contenteditable state the conformance tests set up.
+// both naming routes and every contenteditable state the specs set up.
 const scenes: ReadonlyArray<[string, () => ReactElement]> = [
   ['empty with a label', () => <Editor label="Document" />],
   ['with seeded content', () => <Editor label="Document" initialDocument={seededDoc} />],

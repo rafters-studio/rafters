@@ -52,3 +52,16 @@ for (const [name, props] of scenes) {
     expect(results.violations).toEqual([]);
   });
 }
+
+// The guard that Progress never fabricates a default accessible name: without
+// one, axe must report the missing progressbar name.
+test('progress with no accessible name fails aria-progressbar-name', async ({ task }) => {
+  const { container } = await render(
+    <main>
+      <Progress value={50} />
+    </main>,
+  );
+  const results = await runAxe(container);
+  task.meta.axe = results;
+  expect(results.violations.map((v) => v.id)).toContain('aria-progressbar-name');
+});

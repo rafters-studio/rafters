@@ -5,7 +5,7 @@
  * coalescing SHAPE (translateBeforeInput -> controls -> one `done` entry).
  *
  * `beforeinput` CAPTURE itself is proven only in Playwright
- * (test/editor/editor-capture.e2e.ts) -- happy-dom has no real `beforeinput`
+ * (test/editor/editor-capture.spec.ts) -- happy-dom has no real `beforeinput`
  * semantics, so no synthetic `beforeinput` is dispatched here (AC).
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -22,8 +22,8 @@ import {
 } from '../../../src/components/editor/editor.behavior';
 import { applyOp } from '../../../src/components/editor/ops';
 import type { BaseBlock } from '../../../src/primitives/types';
-import { formatCaret, given, parseCaret, thenAssert as then, when } from '../../harness/caret';
-import { EDITOR_SCENARIOS } from '../../harness/editor-scenarios';
+import { formatCaret, given, parseCaret, thenAssert as then, when } from './caret';
+import { EDITOR_SCENARIOS } from './editor-scenarios';
 
 describe('translateBeforeInput', () => {
   it('maps insertText to an insertText op at the current selection (InlineContent[] text)', () => {
@@ -512,7 +512,7 @@ describe('splitOps -- Enter over a cross-block range selection (#2242)', () => {
 // Caret-notation BDD (FR-EDITOR-006) -- DOM-free, model-level scenarios over
 // editor.behavior.ts's EditorState via the caret.ts Given/When/Then. The
 // IDENTICAL named scenarios (EDITOR_SCENARIOS) replay through a real
-// contenteditable in test/editor/editor-capture.e2e.ts (Playwright); this is
+// contenteditable in test/editor/editor-capture.spec.ts (Playwright); this is
 // the one authored list, not a re-authored duplicate.
 // -----------------------------------------------------------------------------
 

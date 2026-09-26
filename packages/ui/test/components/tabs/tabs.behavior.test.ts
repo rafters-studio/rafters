@@ -3,7 +3,7 @@
  * aria/keymap projections, and the per-instance tabsInstanceAria projection
  * directly. Roving-focus behavior (arrow/Home/End movement and the automatic
  * activation that rides its onNavigate) is asserted end to end in the three
- * conformance suites, which drive the real DOM the primitive operates on.
+ * specs, which drive the real DOM the primitive operates on.
  */
 import { describe, expect, it } from 'vitest';
 import { createBehavior } from '../../../src/lib/contract';

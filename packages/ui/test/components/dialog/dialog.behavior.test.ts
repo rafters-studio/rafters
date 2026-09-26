@@ -145,4 +145,4 @@ describe('dialog keymap', () => {
 // The modal overlay trio (focus-trap, scroll-lock, trigger-spared outside
 // dismissal) is no longer a declarative effect-spec on the score; the bindings
 // compose the primitives directly. The BEHAVIOR is asserted end to end in the
-// conformance suites (dialog.conformance.test.tsx / .astro. / .element.).
+// per-target specs (dialog.spec.tsx / dialog.astro.spec.ts / dialog.element.spec.ts).

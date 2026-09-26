@@ -13,7 +13,7 @@ function mount(markup: string): HTMLElement {
 
 // The inner <label> lives in the shadow root, so a host `for` cannot reach a
 // light-DOM control by id (the element's documented shadow-boundary caveat).
-// The conformance test audits the host with slotted text alone; the wrapping
+// The spec audits the host with slotted text alone; the wrapping
 // scene slots the control through the label so the association is structural.
 for (const variant of VARIANTS) {
   test(`rafters-label variant=${variant}`, async ({ task }) => {

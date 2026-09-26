@@ -8,7 +8,20 @@ export default defineConfig({
     environment: 'happy-dom',
     setupFiles: ['./test/setup.ts'],
     include: ['**/*.{test,spec}.{ts,tsx}'],
-    exclude: ['**/*.e2e.{ts,tsx}', '**/*.a11y.{ts,tsx}', '**/node_modules/**', '**/dist/**'],
+    // These five are Playwright specs (playwright.config.ts), not vitest
+    // tests -- named *.spec.ts like the rest of the suite since #2329
+    // retired the *.e2e.ts convention, so they must be excluded by path
+    // rather than by a naming pattern.
+    exclude: [
+      '**/*.a11y.{ts,tsx}',
+      '**/node_modules/**',
+      '**/dist/**',
+      'test/editor/editor-capture.spec.ts',
+      'test/infrastructure/playwright.spec.ts',
+      'test/motion/hover-reveal.spec.ts',
+      'test/presence/presence-exit.spec.ts',
+      'test/presence/presence-race.spec.ts',
+    ],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov', 'html', 'json-summary'],
@@ -20,7 +33,6 @@ export default defineConfig({
         '**/*.test.{ts,tsx}',
         '**/*.spec.{ts,tsx}',
         '**/*.a11y.{ts,tsx}',
-        '**/*.e2e.{ts,tsx}',
       ],
       thresholds: {
         statements: 0,

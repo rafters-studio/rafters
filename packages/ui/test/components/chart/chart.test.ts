@@ -17,7 +17,43 @@ import {
 } from '../../../src/components/chart/cartesian-grid.behavior';
 import { readXAxisConfig, xAxis } from '../../../src/components/chart/x-axis.behavior';
 import { readYAxisConfig, yAxis } from '../../../src/components/chart/y-axis.behavior';
-import { stubResizeObserver } from '../../harness/resize-observer';
+
+/**
+ * Inlined per the no-shared-test-support-module rule (#2329): stub the
+ * global ResizeObserver and hand back a way to trigger its callback, plus
+ * the observe/disconnect spies. Caller owns vi.unstubAllGlobals() after the
+ * test, matching every other vi.stubGlobal usage in this codebase.
+ */
+function stubResizeObserver(): {
+  triggerResize: (entries: Array<{ contentRect: { width: number; height: number } }>) => void;
+  observeSpy: ReturnType<typeof vi.fn>;
+  disconnectSpy: ReturnType<typeof vi.fn>;
+} {
+  const observeSpy = vi.fn();
+  const disconnectSpy = vi.fn();
+  let resizeCallback: ResizeObserverCallback | undefined;
+
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      constructor(cb: ResizeObserverCallback) {
+        resizeCallback = cb;
+      }
+      observe = observeSpy;
+      disconnect = disconnectSpy;
+      unobserve = vi.fn();
+    },
+  );
+
+  return {
+    triggerResize: (entries) => {
+      if (!resizeCallback) throw new Error('ResizeObserver callback was never registered');
+      resizeCallback(entries as ResizeObserverEntry[], {} as ResizeObserver);
+    },
+    observeSpy,
+    disconnectSpy,
+  };
+}
 
 describe('parseChartConfig', () => {
   it('accepts a valid config', () => {

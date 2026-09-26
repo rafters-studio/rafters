@@ -34,7 +34,7 @@ describe('grid aria projection', () => {
 // an honest role="grid" with a fixed column count. That behavior (Left/Right
 // move by one column, Up/Down by a full row, Home/End to the ends, clamped at
 // the edges, presentation/fluid grids stay inert) is asserted end to end in the
-// react/wc/astro conformance suites, which drive the real DOM it operates on.
+// react/wc/astro specs, which drive the real DOM it operates on.
 
 describe('grid item projection', () => {
   it('items declare their priority through data-priority', () => {

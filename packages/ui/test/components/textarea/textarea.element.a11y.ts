@@ -3,7 +3,7 @@ import { runAxe } from '../../a11y/run-axe';
 import '../../../src/components/textarea/textarea.element';
 
 /**
- * The light-DOM markup the element conformance test mounts: a real
+ * The light-DOM markup the element spec mounts: a real
  * <textarea data-part="textarea"> named by aria-label, optionally with an
  * error sibling. A <textarea> holds its initial value as child text.
  */

@@ -27,7 +27,7 @@ async function mount({ props, bind = false, before = '' }: Scene): Promise<Docum
   document.body.innerHTML = `<main>${before}${html}</main>`;
   const root = document.querySelector('rafters-editor') as HTMLElement;
   // Astro entity-encodes the JSON quotes in data-initial-doc and data-caret;
-  // decode those two attributes after parsing, as the astro conformance test
+  // decode those two attributes after parsing, as the astro spec
   // does, before the bind reads them.
   for (const attr of ['data-initial-doc', 'data-caret']) {
     const raw = root.getAttribute(attr);

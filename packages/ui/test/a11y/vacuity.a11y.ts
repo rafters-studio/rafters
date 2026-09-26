@@ -13,10 +13,9 @@
  * clean, the tier has gone vacuous and every other green result in it means
  * nothing.
  *
- * It replaces the guard the editor conformance suite used to carry
- * (`editor.conformance.test.tsx` on main, "sanity: assertAxeClean, scoped this
- * same way, DOES fail an unnamed textbox"), which went away with
- * `assertAxeClean` itself.
+ * It replaces the editor guard the removed shared harness used to carry
+ * ("sanity: assertAxeClean, scoped this same way, DOES fail an unnamed
+ * textbox"), which went away with `assertAxeClean` itself.
  */
 import { expect, test } from 'vitest';
 import { runAxe } from './run-axe';

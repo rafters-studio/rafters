@@ -276,9 +276,15 @@ rest, and the split is recorded in the data:
 
 ## Testing (three frameworks drive the one score)
 
-- React + WC conformance run under `vitest.config.ts` via the shared harness
-  (`test/harness/conformance.ts`).
-- Astro conformance runs under `vitest.config.astro.ts`: `AstroContainer`
+- Three tiers, named by suffix: `.test` unit, `.spec` integration and
+  behavior, `.a11y` accessibility. Each component carries up to one file per
+  target per tier (`<name>.spec.tsx`, `<name>.element.spec.ts`,
+  `<name>.astro.spec.ts`), and each file is self-contained: it imports the
+  component, its score, vitest, and the render API, never a shared test
+  helper. There is no harness.
+- React and WC `.spec` and `.a11y` files run in the `browser` project (real
+  chromium); `.test` files run in `unit` (happy-dom).
+- Astro files run in the `astro` project (`vitest.config.astro.ts`): `AstroContainer`
   renders SSR markup; the container does **not** run the `<script>`, so the test
   calls `bindX(root)` directly (that *is* the script's job) then drives.
   happy-dom is told to skip the rendered `<script>` and any iframe silently
@@ -290,8 +296,8 @@ rest, and the split is recorded in the data:
   never on a raw HTML string: Astro 7 compresses inter-element whitespace that
   6 keeps. The Rust compiler behind 7 is strict about unclosed tags and invalid
   nesting; both legs must pass.
-- A component is `verified` in the matrix only when its framework's conformance
-  is green. Reconcile the matrix against the files, never against a report.
+- A component is `verified` in the matrix only when its framework's `.spec`
+  and `.a11y` files are green. Reconcile the matrix against the files, never against a report.
 
 ## Open contract gap (settle before the next compound wave)
 

@@ -4,7 +4,7 @@ import { runAxe } from '../../a11y/run-axe';
 import { Slider, type SliderProps } from '../../../src/components/slider/slider';
 
 // A slider has no intrinsic text, so every scene names each thumb with the
-// same `aria-label` the conformance suite applies.
+// same `aria-label` the spec applies.
 const scenes: ReadonlyArray<[string, SliderProps]> = [
   ['single default', { defaultValue: [50] }],
   ['range two thumbs', { defaultValue: [25, 75] }],

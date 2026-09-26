@@ -4,7 +4,7 @@ import { expect, test } from 'vitest';
 import { runAxe } from '../../a11y/run-axe';
 import Embed from '../../../src/components/embed/embed.astro';
 
-// The same URL the conformance tests resolve. The parsed window disables
+// The same URL the specs resolve. The parsed window disables
 // iframe page loading, as the astro project's own environment does, so the
 // remote src is never fetched: axe audits the iframe element in this document.
 const YOUTUBE = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';

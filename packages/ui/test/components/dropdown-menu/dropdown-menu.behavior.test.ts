@@ -149,6 +149,7 @@ describe('dropdown-menu keymap', () => {
 // The open-menu effect trio (roving focus, typeahead, trigger-spared outside
 // dismissal) is not a declarative effect-spec on the score; the bindings compose
 // the primitives directly via startDropdownMenuEffects. The BEHAVIOR is asserted
-// end to end in the conformance suites (dropdown-menu.conformance.test.tsx /
-// .astro. / .element.): arrows rove the items, a keystroke jumps focus to the
-// matching item, activating an item closes, and a pointerdown outside dismisses.
+// end to end in the per-target specs (dropdown-menu.spec.tsx /
+// dropdown-menu.astro.spec.ts / dropdown-menu.element.spec.ts): arrows rove the
+// items, a keystroke jumps focus to the matching item, activating an item
+// closes, and a pointerdown outside dismisses.

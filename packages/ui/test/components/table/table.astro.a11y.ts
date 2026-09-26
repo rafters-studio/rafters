@@ -29,7 +29,7 @@ const ROWS: ReadonlyArray<[string, string, string]> = [
 ];
 
 /** A <tr> carrying data-part="row" and the tableRowAttrs projection -- the
- *  same composition the astro conformance test slots into the table. */
+ *  same composition the astro spec slots into the table. */
 function tr(selected: boolean, cells: string): string {
   const attrs = tableRowAttrs(selected);
   const ariaSelected = attrs['aria-selected']

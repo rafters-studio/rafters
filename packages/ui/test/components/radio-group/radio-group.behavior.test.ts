@@ -145,5 +145,5 @@ describe('radio-group keymap', () => {
 // the WC/Astro bind and the React controller each compose the roving-focus
 // primitive directly. Its behavior (arrow/Home/End move focus AND select the
 // newly focused item, horizontal orientation, roving skips disabled items) is
-// asserted end to end in the react/wc/astro conformance suites, which drive the
+// asserted end to end in the react/wc/astro specs, which drive the
 // real DOM the primitive operates on.
