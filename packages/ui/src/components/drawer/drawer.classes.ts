@@ -52,8 +52,8 @@ const overlayClasses =
 //   on four sides, two of them on x. There is no class to name, and
 //   duration-*/ease-* here would time a transition nothing drives. Unlike
 //   sheet, these rows declare NO fade half, so there is not even a partial
-//   consumption to make. Reported here; the base animate-slide-* utilities
-//   that would let these rows be consumed are tracked by #2391.
+//   consumption to make. Reported here: no utility names a slide at the tier
+//   and curve these rows assign, and none is added in a component.
 //
 //   drawer / content / dragging is a pointer-rule row: a part tracking a
 //   pointer moves exactly with it, and any nonzero duration would be the
