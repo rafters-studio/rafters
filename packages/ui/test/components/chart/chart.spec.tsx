@@ -57,7 +57,7 @@ afterEach(() => {
   cleanup();
   document.body.innerHTML = '';
   // #2243 deferred low finding: stubResizeObserver stubs the global
-  // ResizeObserver (inlined above per #2329), and its own doc says the
+  // ResizeObserver, and its own doc says the
   // caller owns vi.unstubAllGlobals() afterward, matching every other
   // vi.stubGlobal usage in this codebase.
   vi.unstubAllGlobals();

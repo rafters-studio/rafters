@@ -87,7 +87,7 @@ function pressEscape(el: HTMLElement): void {
   );
 }
 
-/** Inlined equivalent of the harness's assertContractFulfillment: every
+/** Inlined equivalent of the former harness's assertContractFulfillment: every
  *  expected part is rendered (with its declared role, if any) and the DOM's
  *  ARIA equals the score's own projection, including absence. */
 function assertContract(

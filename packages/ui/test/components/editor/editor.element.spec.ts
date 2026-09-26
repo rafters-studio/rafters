@@ -1,12 +1,10 @@
 /**
  * WC performance of the editor score, driven end to end against light-DOM
  * markup -- same shared `bindEditor` client the React and Astro performances
- * use. `assertContractFulfillment` (the shared harness's Tier-2 helper)
- * cannot be reused here: it is typed to `BehaviorSpec`, and the editor is
- * deliberately NOT a compose()/BehaviorSpec component (RULING-EDITOR-HISTORY,
- * frozen Spec 00 line 132) -- `parts`/`editorAria` are hand-written, not
- * bundled into that shape. Assertions below compare the rendered DOM against
- * `editorAria`'s own projection directly instead.
+ * use. The editor is deliberately NOT a compose()/BehaviorSpec component
+ * (RULING-EDITOR-HISTORY, frozen Spec 00 line 132) -- `parts`/`editorAria`
+ * are hand-written, not bundled into that shape -- so the assertions below
+ * compare the rendered DOM against `editorAria`'s own projection directly.
  */
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import {

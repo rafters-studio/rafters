@@ -93,7 +93,7 @@ function renderButton(props: ScenarioProps, label: string) {
   const utils = render(<Button {...toProps(props)}>{label}</Button>);
   const root = utils.container.querySelector<HTMLElement>('[data-part="root"]');
   if (!root) throw new Error('no [data-part="root"] rendered');
-  return { root, unmount: utils.unmount };
+  return { root };
 }
 
 /** Every declared part present, and the rendered ARIA equal to the score's
@@ -135,30 +135,22 @@ function assertContract(
 describe('button [react]', () => {
   for (const scenario of SCENARIOS) {
     it(`${scenario.name}: parts and aria match the behavior projection`, () => {
-      const { root, unmount } = renderButton(scenario.props, 'Save changes');
-      try {
-        const config = configFor(scenario.props);
-        const state = button.initialState(config);
-        assertContract(root, state, config, scenario.expectedParts);
-      } finally {
-        unmount();
-      }
+      const { root } = renderButton(scenario.props, 'Save changes');
+      const config = configFor(scenario.props);
+      const state = button.initialState(config);
+      assertContract(root, state, config, scenario.expectedParts);
     });
   }
 
   it('toggle: Enter and Space flip aria-pressed through the keymap', async () => {
-    const { root, unmount } = renderButton({ toggle: true }, 'Mute');
-    try {
-      expect(root.getAttribute('aria-pressed')).toBe('false');
-      const user = userEvent.setup();
-      root.focus();
-      await user.keyboard('{Enter}');
-      expect(root.getAttribute('aria-pressed')).toBe('true');
-      await user.keyboard(' ');
-      expect(root.getAttribute('aria-pressed')).toBe('false');
-    } finally {
-      unmount();
-    }
+    const { root } = renderButton({ toggle: true }, 'Mute');
+    expect(root.getAttribute('aria-pressed')).toBe('false');
+    const user = userEvent.setup();
+    root.focus();
+    await user.keyboard('{Enter}');
+    expect(root.getAttribute('aria-pressed')).toBe('true');
+    await user.keyboard(' ');
+    expect(root.getAttribute('aria-pressed')).toBe('false');
   });
 
   it('loading at mount: aria-busy projected, announce suppressed (edge, not level)', () => {
@@ -167,50 +159,34 @@ describe('button [react]', () => {
     // announcement fires. The runtime loading transition (false->true) is
     // the retained-mode surface, proven below.
     expect(getAnnouncerCount()).toBe(0);
-    const { root, unmount } = renderButton({ loading: true }, 'Saving');
-    try {
-      expect(root.getAttribute('aria-busy')).toBe('true');
-      expect(getAnnouncerCount()).toBe(0);
-    } finally {
-      unmount();
-    }
+    const { root } = renderButton({ loading: true }, 'Saving');
+    expect(root.getAttribute('aria-busy')).toBe('true');
+    expect(getAnnouncerCount()).toBe(0);
   });
 
   it('loading: activation is suppressed, focus is kept, label survives', async () => {
-    const { root, unmount } = renderButton({ toggle: true, loading: true }, 'Submit');
-    try {
-      expect(root.hasAttribute('disabled')).toBe(false);
-      expect(root.getAttribute('aria-busy')).toBe('true');
-      expect(root.querySelector('[data-part="label"]')?.textContent).toContain('Submit');
-      const user = userEvent.setup();
-      await user.click(root);
-      expect(root.getAttribute('aria-pressed')).toBe('false');
-    } finally {
-      unmount();
-    }
+    const { root } = renderButton({ toggle: true, loading: true }, 'Submit');
+    expect(root.hasAttribute('disabled')).toBe(false);
+    expect(root.getAttribute('aria-busy')).toBe('true');
+    expect(root.querySelector('[data-part="label"]')?.textContent).toContain('Submit');
+    const user = userEvent.setup();
+    await user.click(root);
+    expect(root.getAttribute('aria-pressed')).toBe('false');
   });
 
   it('soft-disabled: discoverable, focusable, suppressed', async () => {
-    const { root, unmount } = renderButton({ toggle: true, softDisabled: true }, 'Archive');
-    try {
-      expect(root.hasAttribute('disabled')).toBe(false);
-      expect(root.getAttribute('aria-disabled')).toBe('true');
-      const user = userEvent.setup();
-      await user.click(root);
-      expect(root.getAttribute('aria-pressed')).toBe('false');
-    } finally {
-      unmount();
-    }
+    const { root } = renderButton({ toggle: true, softDisabled: true }, 'Archive');
+    expect(root.hasAttribute('disabled')).toBe(false);
+    expect(root.getAttribute('aria-disabled')).toBe('true');
+    const user = userEvent.setup();
+    await user.click(root);
+    expect(root.getAttribute('aria-pressed')).toBe('false');
   });
 
   it('hard disabled: native disabled only, no redundant aria-disabled', () => {
-    const { root, unmount } = renderButton({ disabled: true }, 'Delete');
-    try {
-      expect(root.hasAttribute('disabled')).toBe(true);
-      expect(root.hasAttribute('aria-disabled')).toBe(false);
-    } finally {
-      unmount();
-    }
+    const { root } = renderButton({ disabled: true }, 'Delete');
+    expect(root.hasAttribute('disabled')).toBe(true);
+    expect(root.hasAttribute('aria-disabled')).toBe(false);
   });
 });
 

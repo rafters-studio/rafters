@@ -7,7 +7,7 @@
  * unlike the static XAxis/YAxis/CartesianGrid elements), and the
  * ChartContainer-size -> AreaChart-geometry propagation via MutationObserver
  * on data-chart-width/height. Same suite shape as
- * bar-chart.element.integration.test.ts (#2225).
+ * bar-chart.element.spec.ts (#2225).
  */
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { RaftersChartContainer } from '../../../src/components/chart/chart.element';
@@ -100,9 +100,8 @@ function markup(areaConfig: unknown = areaChartConfig, areaChildKeys: string[] =
     </rafters-chart-container>`;
 }
 
-/** happy-dom delivers MutationObserver callbacks on a macrotask, not a
- *  microtask -- same test-environment accommodation
- *  bar-chart.element.integration.test.ts documents. */
+/** Waits one macrotask so pending MutationObserver callbacks have run --
+ *  the same accommodation bar-chart.element.spec.ts documents. */
 function flushMutationObserver(): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, 0));
 }

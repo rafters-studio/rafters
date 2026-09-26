@@ -4,7 +4,7 @@
  * ResizeObserver, shared with the rest of the chart family), and asserts
  * the rendered SVG path geometry matches computeAreas -- proving the score
  * and its React performance agree, not just the score in isolation
- * (area-chart.test.ts). Same suite shape as bar-chart.integration.test.tsx
+ * (area-chart.test.ts). Same suite shape as bar-chart.spec.tsx
  * (#2225).
  */
 import * as React from 'react';
@@ -76,7 +76,7 @@ const data = [
 
 /** Shared render shape for this suite: a ChartContainer/AreaChart/XAxis tree
  *  differing only in `areaProps` (series/smooth/stacked). Same extraction
- *  bar-chart.integration.test.tsx applies for its own five-test repeat. */
+ *  bar-chart.spec.tsx applies for its own five-test repeat. */
 function renderAreaChart(areaProps: {
   data: typeof data;
   series: string[];

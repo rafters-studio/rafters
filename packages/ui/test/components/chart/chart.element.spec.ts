@@ -63,7 +63,7 @@ beforeAll(() => {
 afterEach(() => {
   document.body.innerHTML = '';
   // #2243 deferred low finding: the caller owns vi.unstubAllGlobals() after
-  // stubResizeObserver (inlined above per #2329), matching every other
+  // stubResizeObserver, matching every other
   // vi.stubGlobal usage in this codebase.
   vi.unstubAllGlobals();
 });

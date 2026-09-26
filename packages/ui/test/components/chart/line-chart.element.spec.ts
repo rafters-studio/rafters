@@ -6,7 +6,7 @@
  * geometry has no fixed markup for a light-DOM enhancer to merely toggle,
  * unlike the static XAxis/YAxis/CartesianGrid elements), and the
  * ChartContainer-size -> LineChart-geometry propagation via MutationObserver
- * on data-chart-width/height, same shape bar-chart.element.integration.test.ts
+ * on data-chart-width/height, same shape bar-chart.element.spec.ts
  * already proves for Bar.
  */
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
@@ -110,8 +110,8 @@ function markup(
     </rafters-chart-container>`;
 }
 
-/** happy-dom delivers MutationObserver callbacks on a macrotask, same
- *  accommodation bar-chart.element.integration.test.ts documents. */
+/** Waits one macrotask so pending MutationObserver callbacks have run --
+ *  the same accommodation bar-chart.element.spec.ts documents. */
 function flushMutationObserver(): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, 0));
 }

@@ -154,7 +154,7 @@ describe('card [react]', () => {
   });
 
   it('CardAction is a DIRECT CHILD of the grid header, so its placement resolves', () => {
-    // The proof is structural + class, not computed layout: jsdom has no
+    // The proof is structural + class, not computed layout: the test page loads no
     // compiled Tailwind sheet, so getComputedStyle would report nothing either
     // way. What was actually broken is the parentage -- placement utilities
     // with a `flex flex-col` parent. These assertions lock the two things that

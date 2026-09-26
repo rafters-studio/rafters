@@ -14,6 +14,7 @@ import userEvent from '@testing-library/user-event';
 import { button, type ButtonConfig } from '../../../src/components/button/button.behavior';
 import { buttonClasses } from '../../../src/components/button/button.classes';
 import { RaftersButton } from '../../../src/components/button/button.element';
+import { clearAllAnnouncers, getAnnouncerCount } from '../../../src/primitives/sr-announcer';
 
 beforeAll(() => {
   if (!customElements.get('rafters-button')) customElements.define('rafters-button', RaftersButton);
@@ -168,6 +169,7 @@ function assertContract(
 describe('button [wc]', () => {
   afterEach(() => {
     for (const el of document.querySelectorAll('rafters-button')) el.remove();
+    clearAllAnnouncers();
   });
 
   for (const scenario of SCENARIOS) {
@@ -190,9 +192,14 @@ describe('button [wc]', () => {
     expect(root.getAttribute('aria-pressed')).toBe('false');
   });
 
-  it('loading at mount: aria-busy projected on the light-DOM markup', async () => {
+  it('loading at mount: aria-busy projected, announce suppressed (edge, not level)', async () => {
+    // Markup that renders already-loading is the baseline for bindButton's
+    // one-shot announce: aria-busy is projected but no live-region
+    // announcement fires.
+    expect(getAnnouncerCount()).toBe(0);
     const root = await mountButton({ loading: true }, 'Saving');
     expect(root.getAttribute('aria-busy')).toBe('true');
+    expect(getAnnouncerCount()).toBe(0);
   });
 
   it('loading: activation is suppressed, focus is kept, label survives', async () => {

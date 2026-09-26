@@ -9,7 +9,7 @@
  * remain as a convenience; these files are what a shadcn consumer's existing
  * imports resolve to.
  *
- * These tests assert the composed tree, not a computed layout: jsdom has no
+ * These tests assert the composed tree, not a computed layout: happy-dom has no
  * compiled Tailwind sheet, so the proof that CardAction finally places is
  * structural (direct child of a grid header) plus the class strings that make
  * it resolve.

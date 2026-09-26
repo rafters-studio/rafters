@@ -104,12 +104,11 @@ function markup(barConfig: unknown = barChartConfig, barChildKeys: string[] = []
     </rafters-chart-container>`;
 }
 
-/** happy-dom delivers MutationObserver callbacks on a macrotask, not a
- *  microtask (confirmed empirically: a mutation observed with
- *  `attributeFilter` only reaches its callback after a `setTimeout(0)`
- *  flush, never after any number of `await Promise.resolve()`s). Real
- *  browsers queue it as a compound microtask instead, so this flush is a
- *  test-environment accommodation, not a statement about production timing. */
+/** Waits one macrotask so pending MutationObserver callbacks have run.
+ *  Chromium delivers them as a microtask, but happy-dom (where this file
+ *  used to run) delivers them on a macrotask; a `setTimeout(0)` flush
+ *  covers both, so it is a test-timing accommodation, not a statement
+ *  about production timing. */
 function flushMutationObserver(): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, 0));
 }

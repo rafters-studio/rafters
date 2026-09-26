@@ -27,7 +27,7 @@ function part(root: Element | ParentNode, name: string): HTMLElement | null {
   return root.querySelector<HTMLElement>(`[data-part="${name}"]`);
 }
 
-/** Inlined equivalent of the harness's assertContractFulfillment. */
+/** Inlined equivalent of the former harness's assertContractFulfillment. */
 function assertContract(
   root: HTMLElement,
   state: ImageState,
