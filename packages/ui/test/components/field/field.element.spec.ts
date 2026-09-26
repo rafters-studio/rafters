@@ -60,6 +60,8 @@ test('description: control describedby wired to the description id', async () =>
       <div data-part="description" id="email-description">We never share your email</div>
     </rafters-field>`,
   );
+  expect(root.querySelector('[data-part="label"]'), 'declared part "label"').not.toBeNull();
+  expect(root.querySelector('[data-part="control"]'), 'declared part "control"').not.toBeNull();
   expect(
     root.querySelector('[data-part="description"]'),
     'declared part "description"',
@@ -77,6 +79,8 @@ test('error: aria-invalid true, describedby to the error id, role=alert', async 
       <div data-part="error" id="email-error" role="alert">Email is required</div>
     </rafters-field>`,
   );
+  expect(root.querySelector('[data-part="label"]'), 'declared part "label"').not.toBeNull();
+  expect(root.querySelector('[data-part="control"]'), 'declared part "control"').not.toBeNull();
   expect(root.querySelector('[data-part="error"]'), 'declared part "error"').not.toBeNull();
   expect(control().getAttribute('aria-invalid')).toBe('true');
   expect(control().getAttribute('aria-describedby')).toBe('email-error');
@@ -85,12 +89,14 @@ test('error: aria-invalid true, describedby to the error id, role=alert', async 
 });
 
 test('required host signal projects aria-required onto the control', async () => {
-  await mount(
+  const root = await mount(
     `<rafters-field data-required>
       <label data-part="label">Email</label>
       <input data-part="control" id="email" type="email" />
     </rafters-field>`,
   );
+  expect(root.querySelector('[data-part="label"]'), 'declared part "label"').not.toBeNull();
+  expect(root.querySelector('[data-part="control"]'), 'declared part "control"').not.toBeNull();
   expect(control().getAttribute('aria-required')).toBe('true');
   expect(control().hasAttribute('aria-invalid')).toBe(false);
   expect(control().hasAttribute('aria-describedby')).toBe(false);

@@ -43,6 +43,8 @@ test('basic: SSR associates label<->control, no validity aria', async () => {
 
 test('description: control describedby wired to the description id', async () => {
   const root = await mount({ description: 'We never share your email' });
+  expect(root.querySelector('[data-part="label"]'), 'declared part "label"').not.toBeNull();
+  expect(root.querySelector('[data-part="control"]'), 'declared part "control"').not.toBeNull();
   expect(
     root.querySelector('[data-part="description"]'),
     'declared part "description"',
@@ -57,6 +59,8 @@ test('error: aria-invalid true, describedby to the error id, role=alert, descrip
     description: 'We never share your email',
     error: 'Email is required',
   });
+  expect(root.querySelector('[data-part="label"]'), 'declared part "label"').not.toBeNull();
+  expect(root.querySelector('[data-part="control"]'), 'declared part "control"').not.toBeNull();
   expect(root.querySelector('[data-part="error"]'), 'declared part "error"').not.toBeNull();
   expect(control().getAttribute('aria-invalid')).toBe('true');
   expect(control().getAttribute('aria-describedby')).toBe('email-error');
@@ -66,7 +70,9 @@ test('error: aria-invalid true, describedby to the error id, role=alert, descrip
 });
 
 test('required host signal projects aria-required onto the control', async () => {
-  await mount({ required: true });
+  const root = await mount({ required: true });
+  expect(root.querySelector('[data-part="label"]'), 'declared part "label"').not.toBeNull();
+  expect(root.querySelector('[data-part="control"]'), 'declared part "control"').not.toBeNull();
   expect(control().getAttribute('aria-required')).toBe('true');
   expect(control().hasAttribute('aria-invalid')).toBe(false);
   expect(control().hasAttribute('aria-describedby')).toBe(false);

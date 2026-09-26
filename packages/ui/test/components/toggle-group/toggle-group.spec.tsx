@@ -102,9 +102,13 @@ describe('toggle-group [react]', () => {
     for (const [i, value] of ['a', 'b', 'c'].entries()) {
       const projected = toggleItemAria(value, state, config);
       for (const [attr, expectedValue] of Object.entries(projected)) {
-        expect(items[i]?.getAttribute(attr), `instance "${value}" ${attr}`).toBe(
-          String(expectedValue),
-        );
+        if (expectedValue === undefined) {
+          expect(items[i]?.hasAttribute(attr), `instance "${value}" ${attr} absent`).toBe(false);
+        } else {
+          expect(items[i]?.getAttribute(attr), `instance "${value}" ${attr}`).toBe(
+            String(expectedValue),
+          );
+        }
       }
     }
   });
