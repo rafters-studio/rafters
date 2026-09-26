@@ -558,14 +558,23 @@ function generateThemeBlock(groups: GroupedTokens): string {
     lines.push('');
   }
 
-  // NO LEGACY --animate-* KEYS. The `motion-animation-*` tokens carried literal
-  // times (`spin 1s`, `pulse 2s`, `caret-blink 1.25s`) straight into a theme key,
-  // which is a value written outside the leaf layer -- retuning a period moved
-  // nothing, and the two copies could disagree. The matrix's own assignments are
-  // emitted as --animate-* keys above, deduplicated and built entirely from
-  // var()s onto the leaves.
+  // The `motion-animation-*` tokens are published as base --animate-* keys by
+  // generateBaseAnimationKeys, built only from var()s onto the leaves; a loop
+  // with a literal period stays unpublished.
 
   lines.push('}');
+
+  // Base animation keys go in their own `@theme inline` block: inlined, the
+  // value lands in the utility itself, so `var(--tw-duration, ...)` resolves on
+  // the element where `duration-*` set it. In the shared @theme block it would
+  // resolve once on :root and never see the element override.
+  const baseAnimationKeys = generateBaseAnimationKeys(groups.motion);
+  if (baseAnimationKeys) {
+    lines.push('');
+    lines.push('@theme inline {');
+    lines.push(baseAnimationKeys);
+    lines.push('}');
+  }
   return lines.join('\n');
 }
 
@@ -1101,6 +1110,59 @@ function generateMotionAnimationKeys(motionTokens: Token[]): string {
 }
 
 /**
+ * Emit one base `--animate-<name>` theme key per animation definition
+ * (`DEFAULT_ANIMATION_DEFINITIONS`, carried as `motion-animation-*` tokens), so
+ * Tailwind's base `animate-<name>` utilities take their values from the same
+ * leaves as everything else. These sit alongside the matrix assignment keys
+ * above; they do not replace them.
+ *
+ * PURE CSS COMPOSITION, emitted in an `@theme inline` block so the value is
+ * inlined into the utility and resolves on the element. A tier-kind definition reads Tailwind's own
+ * `--tw-duration` / `--tw-ease` first and falls back to the definition's tier
+ * and curve: `animate-slide-in-from-bottom` alone runs on the designer default,
+ * and `animate-slide-in-from-bottom duration-normal ease-spring-smooth` runs on
+ * the tier and curve a matrix row assigns, because Tailwind's `duration-*` and
+ * `ease-*` set those two variables (measured against the real compiler,
+ * tailwindcss 4.3.3, 2026-09-26). Every value is still a `var()` onto a leaf,
+ * so the reduced-motion law on the leaves reaches these too.
+ *
+ * A loop reads its `period-*` leaf and runs `infinite`. A loop whose definition
+ * still carries a literal period (no period member names it) is NOT published:
+ * a literal in a theme key is a value written outside the leaf layer.
+ */
+function generateBaseAnimationKeys(motionTokens: Token[]): string {
+  const lines: string[] = [];
+  for (const token of motionTokens) {
+    if (!token.name.startsWith('motion-animation-')) continue;
+    const name = token.name.replace('motion-animation-', '');
+    const keyframe = token.keyframeName;
+    const deps = token.dependsOn ?? [];
+    const curve = deps.find((d) => d.startsWith('rafters-ease-'))?.replace('rafters-ease-', '');
+    const tier = deps
+      .find((d) => d.startsWith('rafters-duration-'))
+      ?.replace('rafters-duration-', '');
+    const period = deps
+      .find((d) => d.startsWith('rafters-period-'))
+      ?.replace('rafters-period-', '');
+    if (!keyframe || !curve) continue;
+    if (tier) {
+      lines.push(
+        `  --animate-${name}: ${keyframe} var(--tw-duration, var(--rafters-duration-${tier})) var(--tw-ease, var(--rafters-ease-${curve}));`,
+      );
+    } else if (period) {
+      lines.push(
+        `  --animate-${name}: ${keyframe} var(--rafters-period-${period}) var(--tw-ease, var(--rafters-ease-${curve})) infinite;`,
+      );
+    }
+  }
+  if (lines.length === 0) return '';
+  return [
+    '  /* Base animations -- one key per animation definition, on the leaves */',
+    ...lines,
+  ].join('\n');
+}
+
+/**
  * Emit the five motion namespaces as `--rafters-<namespace>-<member>` leaves.
  *
  * Indented for the @theme block. These are the only place a motion value is
@@ -1584,14 +1646,23 @@ function generateThemeBlockWithVarRefs(groups: GroupedTokens): string {
     lines.push('');
   }
 
-  // NO LEGACY --animate-* KEYS. The `motion-animation-*` tokens carried literal
-  // times (`spin 1s`, `pulse 2s`, `caret-blink 1.25s`) straight into a theme key,
-  // which is a value written outside the leaf layer -- retuning a period moved
-  // nothing, and the two copies could disagree. The matrix's own assignments are
-  // emitted as --animate-* keys above, deduplicated and built entirely from
-  // var()s onto the leaves.
+  // The `motion-animation-*` tokens are published as base --animate-* keys by
+  // generateBaseAnimationKeys, built only from var()s onto the leaves; a loop
+  // with a literal period stays unpublished.
 
   lines.push('}');
+
+  // Base animation keys go in their own `@theme inline` block: inlined, the
+  // value lands in the utility itself, so `var(--tw-duration, ...)` resolves on
+  // the element where `duration-*` set it. In the shared @theme block it would
+  // resolve once on :root and never see the element override.
+  const baseAnimationKeys = generateBaseAnimationKeys(groups.motion);
+  if (baseAnimationKeys) {
+    lines.push('');
+    lines.push('@theme inline {');
+    lines.push(baseAnimationKeys);
+    lines.push('}');
+  }
   return lines.join('\n');
 }
 

@@ -8,6 +8,10 @@
 
 - refactor(registry): **the registry no longer serves `facets`, `composites`, or `parent` on component items.** The registry is the design system -- source files, dependency edges, and encoded intelligence. Per-target prop surfaces (facets), the composites reverse-index, and compound-component parent pointers were graph and working-tree concerns that had drifted from the source they duplicated: the WC facet shipped as a hardcoded stub for all 92 components and stayed broken for three weeks (#2346). The clean item shape is `name`, `type`, `description`, `primitives`, `files`, `rules`, `intelligence`. Existing CLI versions parse facet-less items via schema defaults and degrade gracefully (describe reports no props, generate reports no snippet). The graph migration to resolve props from source directly is tracked separately.
 
+### Features
+
+- feat(design-tokens): **the animation definitions are Tailwind base `animate-*` utilities again, on the leaves (#2391).** Every `DEFAULT_ANIMATION_DEFINITIONS` entry emits a base `--animate-<name>` key in an `@theme inline` block, built only from `var()`s: `animate-slide-in-from-bottom` runs on the designer default for that animation, and adding the generics a matrix row assigns (`duration-normal ease-spring-smooth`) retimes it, because Tailwind `duration-*` / `ease-*` set `--tw-duration` / `--tw-ease` and the inlined value reads them on the element. This sits alongside the matrix assignment keys (`animate-<shape>-<tier>-<curve>`), which are unchanged. The `spin`, `pulse` and `caret-blink` loops now read their `period-*` leaves instead of literal times, which also replaces Tailwind stock `animate-spin` / `animate-pulse` with the designer periods; `ping` and `bounce` have no period member and stay unpublished.
+
 ## 0.4.1
 
 ### Bug Fixes

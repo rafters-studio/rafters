@@ -396,7 +396,17 @@ export function generateMotionTokens(
     let durationValue: string;
     let durationRef: string;
     let durationDependency: string[];
-    if ('loopPeriod' in anim.duration) {
+    if ('period' in anim.duration) {
+      const periodDef = requireDef(
+        periodDefs,
+        anim.duration.period,
+        'period',
+        `animation "${name}"`,
+      );
+      durationValue = periodDef.value;
+      durationRef = `var(--rafters-period-${anim.duration.period})`;
+      durationDependency = [`rafters-period-${anim.duration.period}`];
+    } else if ('loopPeriod' in anim.duration) {
       durationValue = anim.duration.loopPeriod;
       durationRef = anim.duration.loopPeriod;
       durationDependency = [];

@@ -151,11 +151,11 @@ exports[`motion generator: golden output > emits a stable set of token names 1`]
 exports[`motion generator: golden output > emits stable name -> value pairs 1`] = `
 [
   "motion-animation-bounce = bounce 1s var(--rafters-ease-standard) infinite",
-  "motion-animation-caret-blink = caret-blink 1.25s var(--rafters-ease-enter) infinite",
+  "motion-animation-caret-blink = caret-blink var(--rafters-period-blink) var(--rafters-ease-enter) infinite",
   "motion-animation-fade-in = fade-in var(--rafters-duration-fast) var(--rafters-ease-enter)",
   "motion-animation-fade-out = fade-out var(--rafters-duration-fast) var(--rafters-ease-exit)",
   "motion-animation-ping = ping 1s var(--rafters-ease-enter) infinite",
-  "motion-animation-pulse = pulse 2s var(--rafters-ease-standard) infinite",
+  "motion-animation-pulse = pulse var(--rafters-period-pulse) var(--rafters-ease-standard) infinite",
   "motion-animation-scale-in = scale-in var(--rafters-duration-normal) var(--rafters-ease-spring-snappy)",
   "motion-animation-scale-out = scale-out var(--rafters-duration-fast) var(--rafters-ease-exit)",
   "motion-animation-slide-in-from-bottom = slide-in-from-bottom var(--rafters-duration-normal) var(--rafters-ease-enter)",
@@ -166,7 +166,7 @@ exports[`motion generator: golden output > emits stable name -> value pairs 1`] 
   "motion-animation-slide-out-to-left = slide-out-to-left var(--rafters-duration-fast) var(--rafters-ease-exit)",
   "motion-animation-slide-out-to-right = slide-out-to-right var(--rafters-duration-fast) var(--rafters-ease-exit)",
   "motion-animation-slide-out-to-top = slide-out-to-top var(--rafters-duration-fast) var(--rafters-ease-exit)",
-  "motion-animation-spin = spin 1s var(--rafters-ease-linear) infinite",
+  "motion-animation-spin = spin var(--rafters-period-spin) var(--rafters-ease-linear) infinite",
   "motion-cell-alert-dialog-content-close = {"keyframe":"scale-out","duration":{"kind":"tier","tier":"moderate"},"curve":"exit"}",
   "motion-cell-alert-dialog-content-open = {"keyframe":"scale-in","duration":{"kind":"tier","tier":"normal"},"curve":"enter"}",
   "motion-cell-alert-dialog-overlay-close = {"keyframe":"fade-out","duration":{"kind":"tier","tier":"moderate"},"curve":"exit"}",

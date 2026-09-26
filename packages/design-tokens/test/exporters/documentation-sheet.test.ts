@@ -152,6 +152,10 @@ describe('documentation sheet (#2039)', () => {
       '--default-mono-font-feature-settings',
       '--default-mono-font-variation-settings',
       '--tw-tracking',
+      // Read by the base --animate-* keys (#2391) with a leaf fallback; set by
+      // Tailwind duration-* / ease-* when a component names them.
+      '--tw-duration',
+      '--tw-ease',
     ]);
     const unresolved = new Set<string>();
     for (const name of referenced) {

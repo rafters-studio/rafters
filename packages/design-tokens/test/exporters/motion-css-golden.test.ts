@@ -177,6 +177,7 @@ describe('motion CSS: golden emission', () => {
       const name = match[1];
       // Tailwind's own internals (--tw-*) are declared by Tailwind, not by us.
       if (!name || declared.has(name)) continue;
+      if (name.startsWith('--tw-')) continue;
       if (!MOTION_LINE.test(name)) continue;
       dangling.add(name);
     }

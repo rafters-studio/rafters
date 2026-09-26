@@ -328,7 +328,11 @@ describe('semantic motion utilities compile (#1902/#1903/#1904)', () => {
           `var(--rafters-duration-${tier}) var(--rafters-ease-${curve});`,
       );
     }
-    const assignmentLines = css.split('\n').filter((l) => l.includes('--animate-'));
+    // The matrix assignment keys only. The base --animate-<name> keys (#2391) are
+    // the animation definitions, not assignments; they read --tw-duration first.
+    const assignmentLines = css
+      .split('\n')
+      .filter((l) => l.includes('--animate-') && !l.includes('var(--tw-'));
     expect(
       assignmentLines.filter((l) => l.includes('spring-snappy')),
       'spring-snappy is press feedback -- no entrance may name it',

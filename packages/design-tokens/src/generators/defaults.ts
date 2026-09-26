@@ -753,7 +753,12 @@ export const DEFAULT_KEYFRAME_DEFINITIONS: Record<string, KeyframeDef> = {
  * by sniffing whether the string ended in "s" -- stringly-typed state standing in
  * for a real distinction.
  */
-export type AnimationDuration = { tier: string } | { loopPeriod: string };
+export type AnimationDuration =
+  | { tier: string }
+  /** Key of DEFAULT_PERIOD_NAMESPACE: a loop that reads its period leaf. */
+  | { period: string }
+  /** A literal loop period, for a loop with no period member to read. */
+  | { loopPeriod: string };
 
 export interface AnimationDef {
   /** Key of DEFAULT_KEYFRAME_DEFINITIONS. */
@@ -876,7 +881,7 @@ export const DEFAULT_ANIMATION_DEFINITIONS: Record<string, AnimationDef> = {
   },
   spin: {
     keyframe: 'spin',
-    duration: { loopPeriod: '1s' },
+    duration: { period: 'spin' },
     curve: 'linear',
     iterations: 'infinite',
     meaning: 'Continuous spin',
@@ -892,7 +897,7 @@ export const DEFAULT_ANIMATION_DEFINITIONS: Record<string, AnimationDef> = {
   },
   pulse: {
     keyframe: 'pulse',
-    duration: { loopPeriod: '2s' },
+    duration: { period: 'pulse' },
     curve: 'standard',
     iterations: 'infinite',
     meaning: 'Gentle pulse',
@@ -908,7 +913,7 @@ export const DEFAULT_ANIMATION_DEFINITIONS: Record<string, AnimationDef> = {
   },
   'caret-blink': {
     keyframe: 'caret-blink',
-    duration: { loopPeriod: '1.25s' },
+    duration: { period: 'blink' },
     curve: 'enter',
     iterations: 'infinite',
     meaning: 'Caret blinking',
