@@ -160,7 +160,10 @@ duration, an easing, or a class that encodes one. The full doctrine is
    (`DEFAULT_MOTION_CELL_ANIMATIONS`) binds a row to a keyframe, and
    `generateMotionAnimationKeys` (`design-tokens/src/exporters/tailwind.ts`)
    emits one deduplicated `--animate-<shape>-<tier>-<curve>` theme key per
-   distinct motion, read straight off the row. A state change on a part that
+   distinct motion, read straight off the row. A loop row names its period
+   instead of a tier and curve and runs `infinite`:
+   `--animate-<shape>-<period>` (`animate-spin-spin`, consumed in
+   `button.classes.ts`). A state change on a part that
    stays mounted (hover, checked) is a transition, named as composed generics:
    `duration-<tier> ease-<role>`, plus `delay-<name>` and `extent-<name>` where
    the row assigns them.
@@ -197,7 +200,7 @@ designer as a matrix change request. Never add the row yourself, and never a
 local class.
 
 **Legacy consumers.** Components ported before the ruling still carry
-`motion-*` classes (accordion, the button spinner). They migrate one at a time;
+`motion-*` classes (accordion). They migrate one at a time;
 a new component never adds a consumer, and a port never copies one forward.
 
 Presence rules are unchanged from `docs/MOTION.md`: an exit cell can only play
