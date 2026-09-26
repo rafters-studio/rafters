@@ -139,7 +139,7 @@ bind and the React `useEffect`):
 | overlay + presence | `dialog` | presence (content mounts/unmounts in React, `hidden`-toggles in the bind) + a composition function that starts `focus-trap` + `scroll-lock` (`preventBodyScroll`) + `outside-click` on open and tears them down on close. Composed parts stay light DOM. |
 | compound | `navigation-menu` | many-part instances (trigger/content per value); composes `roving-focus` + `hover-delay` + `outside-click`. |
 
-## Motion: consume the generics, never a token or a numeric
+## Motion: a matrix cell, never a token or a numeric
 
 Motion is declared, assigned, and then consumed. A component never picks a
 duration, an easing, or a class that encodes one. The full doctrine is
@@ -156,25 +156,25 @@ duration, an easing, or a class that encodes one. The full doctrine is
    never carries a raw value -- tiers and roles resolve from the project's intent
    through the system tokens. **No row, no motion.** A moment with no row is
    still, and that is a legitimate answer.
-3. **`classes.ts` consumes it through the generics.** Every value a component
-   names resolves to a `--rafters-*` leaf the designer sets in Studio. A state
-   change on a part that stays mounted (hover, checked) is a transition, named
-   as composed generics: `duration-<tier> ease-<role>`, plus `delay-<name>` and
-   `extent-<name>` where the row assigns them. A presence change (mount,
-   unmount) is a keyframe: the target shape is the keyframe utility plus the
-   same generics, for example
-   `data-[state=open]:animate-slide-in-from-bottom data-[state=open]:duration-normal data-[state=open]:ease-spring-smooth`
-   -- the way shadcn's drawer (vaul) times one keyframe per direction with one
-   shared duration and curve. The exporter support for that is #2391.
-4. **Until #2391 lands, keyframes reach components only through motion
-   cells.** `DEFAULT_MOTION_CELL_ANIMATIONS` binds a row to a keyframe and
+3. **The motion system emits it.** A motion cell
+   (`DEFAULT_MOTION_CELL_ANIMATIONS`) binds a row to a keyframe, and
    `generateMotionAnimationKeys` (`design-tokens/src/exporters/tailwind.ts`)
-   emits one deduplicated `animate-<shape>-<tier>-<curve>` per distinct motion
-   (`dialog.classes.ts`: `animate-scale-in-normal-enter`). Those cells are
-   per-moment tokens, the pattern `docs/MOTION.md` says was aborted; they are
-   being replaced, not extended. Reduced motion is written once on the leaves,
-   so it reaches both paths. Do **not** add `motion-reduce:animate-none`:
-   `animation: none` resets the shorthand and discards the zeroed duration.
+   emits one deduplicated `--animate-<shape>-<tier>-<curve>` theme key per
+   distinct motion, read straight off the row. A state change on a part that
+   stays mounted (hover, checked) is a transition, named as composed generics:
+   `duration-<tier> ease-<role>`, plus `delay-<name>` and `extent-<name>` where
+   the row assigns them.
+4. **`classes.ts` consumes it.** The class string selects the utility off the
+   projected state, and nothing else. The reference is `dialog.classes.ts`:
+   `'data-[state=open]:animate-scale-in-normal-enter data-[state=closed]:animate-scale-out-moderate-exit'`.
+   Every value resolves to a `--rafters-*` leaf the designer sets in Studio.
+   The base Tailwind utilities carry values from the same tokens -- `duration-*`,
+   `ease-*` and `delay-*` today, and `animate-<name>` from
+   `DEFAULT_ANIMATION_DEFINITIONS` once #2391 publishes them -- so the motion
+   system and the base utilities are two routes onto one set of leaves, not
+   alternatives. Reduced motion is written once on the leaves, so it reaches
+   both. Do **not** add `motion-reduce:animate-none`: `animation: none` resets
+   the shorthand and discards the zeroed duration.
 
 **An agent consumes motion; it never authors it (Sean, 2026-09-25).** The
 rows, the cells, the keyframes and the token values are designer decisions
