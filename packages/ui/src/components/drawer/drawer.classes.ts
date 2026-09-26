@@ -44,11 +44,16 @@ const overlayClasses =
 //
 //   drawer / content / closed -> open (normal, spring-smooth) and
 //   drawer / content / open -> closed (moderate, exit) both declare
-//   `slide (y)` over `transform: translate`. No slide keyframe exists in the
-//   vocabulary -- the shape was left out rather than approximated, because an
-//   approximated shape is geometry nobody chose -- so there is no class to
-//   name. Unlike sheet, these rows declare NO fade half, so there is not even a
-//   partial consumption to make. This is a vocabulary gap, reported here.
+//   `slide (y)` over `transform: translate`. The slide-in-from-* /
+//   slide-out-to-* keyframes exist, but no motion cell binds them to these
+//   rows, so the exporter emits no animate-slide-*-normal-spring-smooth or
+//   animate-slide-*-moderate-exit utility (design-tokens excludes both rows as
+//   noExistingShape). The row also names one axis (y) while this panel anchors
+//   on four sides, two of them on x. There is no class to name, and
+//   duration-*/ease-* here would time a transition nothing drives. Unlike
+//   sheet, these rows declare NO fade half, so there is not even a partial
+//   consumption to make. Reported here: no utility names a slide at the tier
+//   and curve these rows assign, and none is added in a component.
 //
 //   drawer / content / dragging is a pointer-rule row: a part tracking a
 //   pointer moves exactly with it, and any nonzero duration would be the
@@ -64,8 +69,8 @@ const contentBaseClasses =
   'border-card-border data-[state=closed]:pointer-events-none';
 
 // Position + rounding + the border edge, keyed on the anchoring side. The slide
-// these positions imply stays undeclared for the reason given above: the
-// keyframe vocabulary has no slide shape.
+// these positions imply stays undeclared for the reason given above: no
+// animate-slide-* utility at the tier and curve the content rows assign.
 const sideClasses: Record<DrawerSide, string> = {
   bottom: 'inset-x-0 bottom-0 border-t rounded-t-lg',
   top: 'inset-x-0 top-0 border-b rounded-b-lg',
