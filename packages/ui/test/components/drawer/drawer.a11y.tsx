@@ -60,11 +60,11 @@ const scenes: ReadonlyArray<[string, SceneProps]> = [
 
 for (const [name, props] of scenes) {
   test(`drawer ${name}`, async ({ task }) => {
-    const { container } = await render(<Scene {...props} />);
-    // The content portals into document.body, outside the render container,
-    // so an open scene audits the body; closed, only the trigger renders.
-    const host = props.defaultOpen ? document.body : container;
-    const results = await runAxe(host);
+    // The overlay and content portal into document.body, outside the render
+    // container, and stay there while closed (inert), so every scene audits
+    // the body.
+    await render(<Scene {...props} />);
+    const results = await runAxe(document.body);
     task.meta.axe = results;
     expect(results.violations).toEqual([]);
   });

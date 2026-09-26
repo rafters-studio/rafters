@@ -151,13 +151,15 @@ export const drawer: BehaviorSpec<DrawerConfig, DrawerState, DrawerActions, Draw
 /**
  * The DOM-native binding of the drawer score -- the client. The Web Component
  * and the Astro <script> both import THIS; only React reads the projections
- * declaratively. Same shape as bindDialog: PRESENCE (content/overlay are
- * present-but-hidden, toggled on the open axis -- the trapped/dismissable
- * parts must be light DOM so focus-trap's activeElement read and dismiss's
- * document .contains work) and the modal overlay trio (focus-trap,
- * scroll-lock, dismiss-on-outside), composed directly and level-triggered:
+ * declaratively. PRESENCE: content/overlay are always present, inert and
+ * hidden by CSS off the open axis (bindDialog still toggles `hidden`; this
+ * bind does not). The trapped/dismissable parts must be light DOM so
+ * focus-trap's activeElement read and dismiss's document .contains work.
+ * It also composes the modal overlay trio (focus-trap,
+ * scroll-lock, dismiss-on-outside) directly, level-triggered:
  * started on the open+modal transition and torn down on close/unbind.
- * Enter-only; exit/drag animation waits on Presence (wave 0-B).
+ * The parts are never hidden by the bind: CSS keyed off data-state moves them,
+ * so both enter and exit play. Drag animation stays deferred.
  */
 export function bindDrawer(root: HTMLElement): () => void {
   // Config travels as `data-*` and nothing else (#2001/#2004), so the read is
@@ -202,15 +204,18 @@ export function bindDrawer(root: HTMLElement): () => void {
       const el = getPart(part);
       if (el && attrs) applyProjection(el, attrs);
     }
-    // Presence: the overlay and the content panel hide off the open axis.
-    // The parts stay in light DOM (crawlable, and effects can read them).
+    // The overlay and the content stay in light DOM whether open or closed;
+    // CSS keyed off data-state (applied by the projection above) moves and
+    // hides them, so the exit can play (drawer.classes.ts). `inert` keeps a
+    // closed part out of focus and the accessibility tree without touching
+    // rendering, which `hidden` (display: none) would.
     for (const part of ['overlay', 'content'] as const) {
       const el = getPart(part);
-      if (el) el.hidden = !open;
+      if (el) el.inert = !open;
     }
     // Compose the modal overlay trio directly, level-triggered: start it once
-    // on the open+modal transition (content is now un-hidden above so the trap
-    // can read its focusables), tear it down when it should no longer be present.
+    // on the open+modal transition (data-state=open makes the content visible, so
+    // the trap can read its focusables), tear it down when it should no longer be present.
     const wantModal = open && isModal(config);
     if (wantModal && !modalCleanup) {
       const content = getPart('content');
