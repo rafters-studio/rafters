@@ -139,83 +139,66 @@ bind and the React `useEffect`):
 | overlay + presence | `dialog` | presence (content mounts/unmounts in React, `hidden`-toggles in the bind) + a composition function that starts `focus-trap` + `scroll-lock` (`preventBodyScroll`) + `outside-click` on open and tears them down on close. Composed parts stay light DOM. |
 | compound | `navigation-menu` | many-part instances (trigger/content per value); composes `roving-focus` + `hover-delay` + `outside-click`. |
 
-## Motion: a matrix cell, never a token or a numeric
+## Motion: generics per the matrix row, never a token or a numeric
 
-Motion is declared, assigned, and then consumed. A component never picks a
-duration, an easing, or a class that encodes one. The full doctrine is
-`docs/MOTION.md`; the source of record for every moment is
-`docs/spec/matrix/motion.jsonl` (rendered as `matrix/motion.md`). The shape:
+`docs/MOTION.md` is the doctrine and `docs/spec/matrix/motion.jsonl` (rendered as
+`matrix/motion.md`) is the source of record for every moment. Read both before
+writing motion; this section only says how a classes file consumes them.
 
-1. **Declare it in the score.** `BehaviorSpec.motion` (a `MotionMap`, Spec 01)
-   names each `(transition, part)` moment the component has, with intent, axis,
-   and size class only. Statics omit it. A moment not declared here does not
-   exist for the rest of the pipeline.
-2. **A row assigns it.** Every declared moment is one row in `motion.jsonl`:
-   `(component, part, transition)` with a duration tier, a curve role, delays,
-   and an extent. Rows are assigned by need, never by cross-product, and a row
-   never carries a raw value -- tiers and roles resolve from the project's intent
-   through the system tokens. **No row, no motion.** A moment with no row is
-   still, and that is a legitimate answer.
-3. **The motion system emits it.** A motion cell
-   (`DEFAULT_MOTION_CELL_ANIMATIONS`) binds a row to a keyframe, and
-   `generateMotionAnimationKeys` (`design-tokens/src/exporters/tailwind.ts`)
-   emits one deduplicated `--animate-<shape>-<tier>-<curve>` theme key per
-   distinct motion, read straight off the row. A loop row names its period
-   instead of a tier and curve and runs `infinite`:
-   `--animate-<shape>-<period>` (`animate-spin-spin`, consumed in
-   `button.classes.ts`). A state change on a part that
-   stays mounted (hover, checked) is a transition, named as composed generics:
-   `duration-<tier> ease-<role>`, plus `delay-<name>` and `extent-<name>` where
-   the row assigns them.
-4. **`classes.ts` consumes it.** The class string selects the utility off the
-   projected state, and nothing else. The reference is `dialog.classes.ts`:
-   `'data-[state=open]:animate-scale-in-normal-enter data-[state=closed]:animate-scale-out-moderate-exit'`.
-   Every value resolves to a `--rafters-*` leaf the designer sets in Studio.
-   The base Tailwind utilities carry values from the same tokens -- `duration-*`,
-   `ease-*` and `delay-*` today, and `animate-<name>` from
-   `DEFAULT_ANIMATION_DEFINITIONS` once #2391 publishes them -- so the motion
-   system and the base utilities are two routes onto one set of leaves, not
-   alternatives. Reduced motion is written once on the leaves, so it reaches
-   both. Do **not** add `motion-reduce:animate-none`: `animation: none` resets
-   the shorthand and discards the zeroed duration.
+1. **A row assigns it.** Every moment a component has is one row in
+   `motion.jsonl`: `(component, part, transition)` with a duration tier, a curve
+   role, delays and an extent. A row never carries a raw value; tiers and roles
+   resolve to the `--rafters-*` leaves the designer sets in Studio. **No row, no
+   motion.** A moment with no row is still, and that is a legitimate answer.
+2. **`classes.ts` names the generics the row assigns**, keyed off the projected
+   state: `duration-<tier>`, `ease-<role>`, and `delay-<name>` /
+   `extent-<name>` where the row assigns them. The part stays present and the
+   state drives a transition between two poses. Drawer is the example to copy.
+   Tooltip, hover-card, navigation-menu, the context-menu submenu, accordion
+   and sidebar follow the same pattern but still name `transition-[...]`
+   lists, which React drops (#2396). A fade, closed then open:
+   `opacity-0 pointer-events-none transition-opacity duration-moderate ease-exit`
+   plus
+   `data-[state=open]:opacity-100 data-[state=open]:pointer-events-auto data-[state=open]:duration-normal data-[state=open]:ease-enter`.
+   A part that must be unreachable while closed takes `inert`, never `hidden`:
+   `display: none` stops the transition. A part that must also be invisible
+   while closed keeps visibility off the enter: the closed pose transitions
+   every property (`invisible transition-all`), so it stays visible until its
+   exit ends, and the open pose narrows (`data-[state=open]:visible
+   data-[state=open]:transition-transform`), so it is visible from the first
+   frame and a focus trap can focus inside it (drawer content). Name transition
+   utilities (`transition-opacity`, `transition-transform`, `transition-all`),
+   not `transition-[...]` lists: the React performance passes classes through
+   `classy()`, which drops arbitrary values (#2396).
+3. **Reduced motion is already handled** on the leaves (`docs/MOTION.md`, Reduced
+   motion). A component adds no `motion-reduce:` class and no reduced-motion
+   media query.
 
-**An agent consumes motion; it never authors it (Sean, 2026-09-25).** The
-rows, the cells, the keyframes and the token values are designer decisions
-made through the motion system the human manages. If the utility a moment
-needs is not emitted, the moment has no motion yet, and the component says so
-in a comment. An agent never adds a cell, a row, a keyframe or a token to make
-one appear, and never picks a shape, tier or curve the row did not assign.
-Adding per-component cells for the drawer slide (reverted in 53208a61) is the
-failure this rule exists to stop.
+What exists today besides that: most overlays (dialog, alert-dialog, sheet,
+popover, select, combobox, dropdown-menu, context-menu, command, and others)
+consume
+`animate-<shape>-<tier>-<curve>` keys that the exporter derives from motion cells
+(`DEFAULT_MOTION_CELL_ANIMATIONS`). Do not add to that path: no new cell, no new
+keyframe, no new token, and no exporter change to make a moment animate.
 
-**Prohibited in a component:** the legacy `motion-*` utility classes
-(`motion-hover`, `motion-modal-in`, `motion-expand`, and the rest of the thirteen
--- deleted by ruling 2026-08-02, matrix preamble); `duration-*`, `delay-*`, or
-`ease-*` literals; `duration-[350ms]`, `ease-[cubic-bezier(...)]`, or any
-`transition-*` timing literal; and a keyframe authored in a component file. Every
-one of these is a value wearing a class name, and both spellings compile, which
-is exactly why the rule has to be a rule. If the matrix has no row for a moment
-the component genuinely has, report it in a comment in `classes.ts` and to the
-designer as a matrix change request. Never add the row yourself, and never a
-local class.
+A loop row names a period instead of a tier and curve and runs `infinite`: the
+loops consume `animate-<shape>-<period>` keys (`animate-spin-spin` in spinner,
+`animate-pulse-shimmer` in skeleton and progress).
 
-**Legacy consumers.** Components ported before the ruling still carry
-`motion-*` classes (accordion). They migrate one at a time;
-a new component never adds a consumer, and a port never copies one forward.
+**Prohibited in a component:** the legacy `motion-*` utility classes (removed
+2026-08-02 in favor of the generics; `color-picker`'s `motion-focus` is the last consumer);
+`duration-*`, `delay-*` or `ease-*` literals; `duration-[350ms]`,
+`ease-[cubic-bezier(...)]` or any `transition-*` timing literal; a keyframe
+authored in a component file; and a shape, tier or curve the row did not assign.
+If the matrix has no row for a moment the component genuinely has, report it in a
+comment in `classes.ts` and to the designer. Never add the row yourself.
 
-Presence rules are unchanged from `docs/MOTION.md`: an exit cell can only play
-on a node that is still mounted, so enter/exit consumers keep the exiting node
-present and toggle `data-state` (presence management); expand and collapse
-animate `grid-template-rows` (`0fr` <-> `1fr`), never `height`, inside a grid
-container whose child carries `min-h-0 overflow-hidden`. SVG marks are not a
-special case: a keyframe on `transform` or `opacity` animates a `rect` or `path`
-the same way it animates a `div`.
+Expand and collapse animate `grid-template-rows` (`0fr` <-> `1fr`), never
+`height`, inside a grid container whose child carries `min-h-0 overflow-hidden`
+(`docs/MOTION.md`).
 
-**Matrix conformance is a review lane.** Every motion PR is checked cell by
-cell: the cells a component consumes must equal the cells the matrix assigns
-it, with no formula-derived geometry and no collapsed cells (legion 019fc8e9,
-the lesson from the first cell consumer). Declaring the mechanism is not enough;
-the values bind to the rows.
+**Matrix conformance is a review lane.** Every motion PR is checked row by row:
+the generics a component names must equal what the matrix assigns it.
 
 ## The three gotchas (encode all three)
 
