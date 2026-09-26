@@ -6,7 +6,7 @@
  * timing them, and the test DOM has no Web Animations API whatsoever -- no
  * `Element.prototype.getAnimations`, no `Animation` constructor, no timeline.
  * So every case here that involves a running exit installs a FAKE
- * `getAnimations` on the node (`../harness/presence-animations`) returning
+ * `getAnimations` on the node (the FakeAnimation helper below) returning
  * promises this file settles by hand. That is enough to pin the wiring -- held
  * until settled, released once, never released against a reopened node -- and it
  * is NOT enough to pin the browser semantics underneath it: whether a cancelled
