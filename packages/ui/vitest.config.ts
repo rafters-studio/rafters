@@ -112,6 +112,11 @@ export default defineConfig({
           // large browser lane exceed a 16GB box. Cap it so the ceiling is a
           // property of the config rather than of whoever runs it.
           maxWorkers: 2,
+          // Vitest refuses to schedule projects with different maxWorkers in
+          // the same group (CI error: "have different 'maxWorkers' but same
+          // 'sequence.groupOrder'"), so the capped browser lane runs as its
+          // own group after unit and astro.
+          sequence: { groupOrder: 1 },
           include: a11yOnly
             ? ['test/**/*.a11y.{ts,tsx}']
             : ['test/**/*.spec.{ts,tsx}', 'test/**/*.a11y.{ts,tsx}'],
