@@ -70,7 +70,7 @@ const contentBaseClasses =
 
 // Position + rounding + the border edge, keyed on the anchoring side. The slide
 // these positions imply stays undeclared for the reason given above: no
-// animate-slide-* utility is emitted for the drawer content rows.
+// animate-slide-* utility at the tier and curve the content rows assign.
 const sideClasses: Record<DrawerSide, string> = {
   bottom: 'inset-x-0 bottom-0 border-t rounded-t-lg',
   top: 'inset-x-0 top-0 border-b rounded-b-lg',
