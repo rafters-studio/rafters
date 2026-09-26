@@ -1036,10 +1036,9 @@ export interface MotionCellAnimation {
  * omission. Every entry below names a shape that already exists, so no geometry
  * enters the system in a coverage change -- which is exactly the move that
  * produced the #2012 defect (`scaleStart = 1/ratio^0.25`, a formula in value
- * position). The rows whose movement has no existing shape (carousel travel,
- * the discrete swaps) are LEFT OUT rather than approximated: an approximated
- * shape is a value nobody chose. The drawer content slide does have one: the
- * existing slide-in-from-* / slide-out-to-* keyframe for each anchoring edge.
+ * position). The rows whose movement has no existing shape (drawer content's
+ * per-side slide, carousel travel, the discrete swaps) are LEFT OUT rather than
+ * approximated: an approximated shape is a value nobody chose.
  *
  * The extent is not named here because the KEYFRAME carries it (`scale-in` /
  * `scale-out` reference `var(--rafters-extent-pop)`), which is what "keyframes
@@ -1152,73 +1151,6 @@ export const DEFAULT_MOTION_CELL_ANIMATIONS: Record<string, MotionCellAnimation>
     cell: { component: 'sheet', part: 'overlay', transition: 'open -> closed' },
     meaning: 'The scrim behind a sheet, leaving with it.',
     contexts: ['sheet', 'overlay', 'scrim'],
-  },
-  // The drawer content moves from the edge it is anchored to, as the shadcn
-  // drawer it implements does: one cell per side, each naming the existing
-  // slide keyframe for that edge at the row's timing.
-  'drawer-content-open-top': {
-    keyframe: 'slide-in-from-top',
-    duration: { kind: 'tier', tier: 'normal' },
-    curve: 'spring-smooth',
-    cell: { component: 'drawer', part: 'content', transition: 'closed -> open' },
-    meaning: 'A top-anchored drawer arriving: it slides in from the top edge.',
-    contexts: ['drawer', 'panel', 'edge-anchored'],
-  },
-  'drawer-content-open-bottom': {
-    keyframe: 'slide-in-from-bottom',
-    duration: { kind: 'tier', tier: 'normal' },
-    curve: 'spring-smooth',
-    cell: { component: 'drawer', part: 'content', transition: 'closed -> open' },
-    meaning: 'A bottom-anchored drawer arriving: it slides in from the bottom edge.',
-    contexts: ['drawer', 'panel', 'edge-anchored'],
-  },
-  'drawer-content-open-left': {
-    keyframe: 'slide-in-from-left',
-    duration: { kind: 'tier', tier: 'normal' },
-    curve: 'spring-smooth',
-    cell: { component: 'drawer', part: 'content', transition: 'closed -> open' },
-    meaning: 'A left-anchored drawer arriving: it slides in from the left edge.',
-    contexts: ['drawer', 'panel', 'edge-anchored'],
-  },
-  'drawer-content-open-right': {
-    keyframe: 'slide-in-from-right',
-    duration: { kind: 'tier', tier: 'normal' },
-    curve: 'spring-smooth',
-    cell: { component: 'drawer', part: 'content', transition: 'closed -> open' },
-    meaning: 'A right-anchored drawer arriving: it slides in from the right edge.',
-    contexts: ['drawer', 'panel', 'edge-anchored'],
-  },
-  'drawer-content-close-top': {
-    keyframe: 'slide-out-to-top',
-    duration: { kind: 'tier', tier: 'moderate' },
-    curve: 'exit',
-    cell: { component: 'drawer', part: 'content', transition: 'open -> closed' },
-    meaning: 'A top-anchored drawer leaving: it slides back out to the top edge.',
-    contexts: ['drawer', 'panel', 'edge-anchored'],
-  },
-  'drawer-content-close-bottom': {
-    keyframe: 'slide-out-to-bottom',
-    duration: { kind: 'tier', tier: 'moderate' },
-    curve: 'exit',
-    cell: { component: 'drawer', part: 'content', transition: 'open -> closed' },
-    meaning: 'A bottom-anchored drawer leaving: it slides back out to the bottom edge.',
-    contexts: ['drawer', 'panel', 'edge-anchored'],
-  },
-  'drawer-content-close-left': {
-    keyframe: 'slide-out-to-left',
-    duration: { kind: 'tier', tier: 'moderate' },
-    curve: 'exit',
-    cell: { component: 'drawer', part: 'content', transition: 'open -> closed' },
-    meaning: 'A left-anchored drawer leaving: it slides back out to the left edge.',
-    contexts: ['drawer', 'panel', 'edge-anchored'],
-  },
-  'drawer-content-close-right': {
-    keyframe: 'slide-out-to-right',
-    duration: { kind: 'tier', tier: 'moderate' },
-    curve: 'exit',
-    cell: { component: 'drawer', part: 'content', transition: 'open -> closed' },
-    meaning: 'A right-anchored drawer leaving: it slides back out to the right edge.',
-    contexts: ['drawer', 'panel', 'edge-anchored'],
   },
   'drawer-overlay-open': {
     keyframe: 'fade-in',

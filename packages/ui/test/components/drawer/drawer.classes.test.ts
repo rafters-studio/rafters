@@ -34,18 +34,17 @@ describe('drawer classes', () => {
     expect(classesFor().content).not.toContain('bg-white');
   });
 
-  it('the content slides in from and back out to its anchoring edge', () => {
+  it('the content declares no enter/exit motion, because no slide shape exists', () => {
     // motion.jsonl assigns drawer / content / closed -> open (normal,
-    // spring-smooth) and open -> closed (moderate, exit). Each side consumes the
-    // existing slide keyframe for its own edge through a drawer-content-* cell.
-    for (const side of ['top', 'right', 'bottom', 'left'] as const) {
-      const { content } = classesFor(side);
-      expect(content).toContain(
-        `data-[state=open]:animate-slide-in-from-${side}-normal-spring-smooth`,
-      );
-      expect(content).toContain(`data-[state=closed]:animate-slide-out-to-${side}-moderate-exit`);
-      expect(content).not.toMatch(/duration-\d/);
-    }
+    // spring-smooth) and open -> closed (moderate, exit), both `slide (y)` over
+    // `transform: translate` alone. The keyframe vocabulary has no slide shape,
+    // and unlike sheet these rows declare no fade half, so there is nothing to
+    // name. An approximated shape would be geometry nobody chose.
+    const classes = classesFor();
+    expect(classes.content).not.toContain('animate-in');
+    expect(classes.content).not.toMatch(/duration-\d/);
+    expect(classes.content).not.toContain('slide-in');
+    expect(classes.content).not.toContain('animate-');
   });
 
   it('the content carries no settle transition, because it never settles', () => {
