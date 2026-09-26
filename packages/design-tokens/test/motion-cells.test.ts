@@ -368,8 +368,6 @@ const EXCLUDED_ROWS: Record<ExclusionReason, readonly string[]> = {
   ],
   noExistingShape: [
     'tabs | indicator | active change',
-    'drawer | content | closed -> open',
-    'drawer | content | open -> closed',
     'drawer | content | settle on release',
     'switch | thumb | off <-> on',
     'resizable | panels | keyboard step',

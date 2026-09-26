@@ -39,20 +39,13 @@ const overlayClasses =
 // dialog). data-[state=closed]:pointer-events-none keeps a closed panel from
 // swallowing clicks while it is held present through any future exit window.
 //
-// FOUR MATRIX ROWS NAME THIS PART AND NONE OF THEM IS CONSUMED. Each is a
-// different reason, and none of them is a missing transcription:
+// FOUR MATRIX ROWS NAME THIS PART.
 //
 //   drawer / content / closed -> open (normal, spring-smooth) and
-//   drawer / content / open -> closed (moderate, exit) both declare
-//   `slide (y)` over `transform: translate`. The slide-in-from-* /
-//   slide-out-to-* keyframes exist, but no motion cell binds them to these
-//   rows, so the exporter emits no animate-slide-*-normal-spring-smooth or
-//   animate-slide-*-moderate-exit utility (design-tokens excludes both rows as
-//   noExistingShape). The row also names one axis (y) while this panel anchors
-//   on four sides, two of them on x. There is no class to name, and
-//   duration-*/ease-* here would time a transition nothing drives. Unlike
-//   sheet, these rows declare NO fade half, so there is not even a partial
-//   consumption to make. This is a vocabulary gap, reported here.
+//   drawer / content / open -> closed (moderate, exit) are consumed per side
+//   in `sideClasses` below: the panel slides in from the edge it is anchored to
+//   and back out to it, as the shadcn drawer does. Each side names the existing
+//   slide keyframe for its edge through the drawer-content-* motion cells.
 //
 //   drawer / content / dragging is a pointer-rule row: a part tracking a
 //   pointer moves exactly with it, and any nonzero duration would be the
@@ -67,14 +60,25 @@ const contentBaseClasses =
   'fixed z-depth-modal flex flex-col gap-4 bg-background p-6 text-foreground shadow-lg ' +
   'border-card-border data-[state=closed]:pointer-events-none';
 
-// Position + rounding + the border edge, keyed on the anchoring side. The slide
-// these positions imply stays undeclared for the reason given above: no
-// animate-slide-* utility is emitted for the drawer content rows.
+// Position + rounding + the border edge, keyed on the anchoring side, plus the
+// slide in from and back out to that same edge.
 const sideClasses: Record<DrawerSide, string> = {
-  bottom: 'inset-x-0 bottom-0 border-t rounded-t-lg',
-  top: 'inset-x-0 top-0 border-b rounded-b-lg',
-  left: 'inset-y-0 left-0 h-full w-3/4 max-w-sm border-r rounded-r-lg',
-  right: 'inset-y-0 right-0 h-full w-3/4 max-w-sm border-l rounded-l-lg',
+  bottom:
+    'inset-x-0 bottom-0 border-t rounded-t-lg ' +
+    'data-[state=open]:animate-slide-in-from-bottom-normal-spring-smooth ' +
+    'data-[state=closed]:animate-slide-out-to-bottom-moderate-exit',
+  top:
+    'inset-x-0 top-0 border-b rounded-b-lg ' +
+    'data-[state=open]:animate-slide-in-from-top-normal-spring-smooth ' +
+    'data-[state=closed]:animate-slide-out-to-top-moderate-exit',
+  left:
+    'inset-y-0 left-0 h-full w-3/4 max-w-sm border-r rounded-r-lg ' +
+    'data-[state=open]:animate-slide-in-from-left-normal-spring-smooth ' +
+    'data-[state=closed]:animate-slide-out-to-left-moderate-exit',
+  right:
+    'inset-y-0 right-0 h-full w-3/4 max-w-sm border-l rounded-l-lg ' +
+    'data-[state=open]:animate-slide-in-from-right-normal-spring-smooth ' +
+    'data-[state=closed]:animate-slide-out-to-right-moderate-exit',
 };
 
 // Decorative drag affordance. Renders the vaul-style grabber; the drag-to-
