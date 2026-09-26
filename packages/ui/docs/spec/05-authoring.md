@@ -153,9 +153,10 @@ writing motion; this section only says how a classes file consumes them.
 2. **`classes.ts` names the generics the row assigns**, keyed off the projected
    state: `duration-<tier>`, `ease-<role>`, and `delay-<name>` /
    `extent-<name>` where the row assigns them. The part stays present and the
-   state drives a transition between two poses. Reference implementations:
-   tooltip, hover-card, navigation-menu, the context-menu submenu, accordion,
-   collapsible, sidebar and drawer. A fade, closed then open:
+   state drives a transition between two poses. Drawer is the example to copy.
+   Tooltip, hover-card, navigation-menu, the context-menu submenu, accordion
+   and sidebar follow the same pattern but still name `transition-[...]`
+   lists, which React drops (#2396). A fade, closed then open:
    `opacity-0 pointer-events-none transition-opacity duration-moderate ease-exit`
    plus
    `data-[state=open]:opacity-100 data-[state=open]:pointer-events-auto data-[state=open]:duration-normal data-[state=open]:ease-enter`.
@@ -173,12 +174,16 @@ writing motion; this section only says how a classes file consumes them.
    motion). A component adds no `motion-reduce:` class and no reduced-motion
    media query.
 
-What exists today besides that: most overlays and the loading loops (dialog,
-alert-dialog, sheet, popover, select, combobox, dropdown-menu, context-menu,
-command, spinner, skeleton, progress, and others) consume
+What exists today besides that: most overlays (dialog, alert-dialog, sheet,
+popover, select, combobox, dropdown-menu, context-menu, command, and others)
+consume
 `animate-<shape>-<tier>-<curve>` keys that the exporter derives from motion cells
 (`DEFAULT_MOTION_CELL_ANIMATIONS`). Do not add to that path: no new cell, no new
 keyframe, no new token, and no exporter change to make a moment animate.
+
+A loop row names a period instead of a tier and curve and runs `infinite`: the
+loops consume `animate-<shape>-<period>` keys (`animate-spin-spin` in spinner,
+`animate-pulse-shimmer` in skeleton and progress).
 
 **Prohibited in a component:** the legacy `motion-*` utility classes (removed
 2026-08-02 in favor of the generics; `color-picker`'s `motion-focus` is the last consumer);
