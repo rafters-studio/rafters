@@ -23,7 +23,8 @@
  * `:hover`-based checks inside the component (the focus/hover dismissal
  * handoff) resolve exactly as they did under jsdom: never matching.
  */
-import { expect, test, vi } from 'vitest';
+import { beforeEach, expect, test, vi } from 'vitest';
+import { userEvent as browserUserEvent } from 'vitest/browser';
 import { render } from 'vitest-browser-react';
 import {
   HoverCard,
@@ -37,6 +38,20 @@ import {
   type HoverCardPart,
   type HoverCardState,
 } from '../../../src/components/hover-card/hover-card.behavior';
+
+// This binding reads the REAL pointer (`:hover`) and `document.activeElement`.
+// Browser mode keeps both across test files (vitest-dev/vitest#5706), so a
+// pointer an earlier file left resting over this spot keeps the scope hovered
+// and the dismissal never settles. Park the pointer in the bottom-right corner, clear of the rendered component, and drop
+// focus before each test, so each one starts from no hover and no focus.
+beforeEach(async () => {
+  const park = document.createElement('div');
+  park.style.cssText = 'position:fixed;right:0;bottom:0;width:16px;height:16px;z-index:2147483647';
+  document.body.appendChild(park);
+  await browserUserEvent.hover(park);
+  park.remove();
+  if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+});
 
 interface SetupProps {
   open?: boolean;
