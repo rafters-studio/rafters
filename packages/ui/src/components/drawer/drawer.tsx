@@ -92,9 +92,6 @@ interface DrawerContextValue {
   config: DrawerConfig;
   side: DrawerSide;
   effectiveOpen: boolean;
-  /** Presence, held at the PROVIDER. Every part gates on this, never on
-   *  `effectiveOpen`: the portal is the content's ancestor, so a portal that
-   *  unmounts on the raw flag takes the content's own exit with it. */
   classes: DrawerClassSet;
   dismissVetoRef: React.RefObject<DismissVetoCallbacks | null>;
 }

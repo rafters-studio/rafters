@@ -49,7 +49,11 @@ describe('drawer classes', () => {
       const { content } = classesFor(side);
       expect(content.split(' ')).toContain(offset);
       expect(content).toContain('data-[state=open]:translate-x-0 data-[state=open]:translate-y-0');
-      expect(content).toContain('transition-[translate,visibility] duration-moderate ease-exit');
+      // Closed transitions every property (visibility held until the slide
+      // ends); open narrows to transform, so visibility flips at once.
+      expect(content).toContain('transition-all duration-moderate ease-exit');
+      expect(content).toContain('data-[state=open]:transition-transform');
+      expect(content).not.toContain('transition-[');
       expect(content).toContain(
         'data-[state=open]:duration-normal data-[state=open]:ease-spring-smooth',
       );
@@ -73,9 +77,8 @@ describe('drawer classes', () => {
     // motion.jsonl: drawer / overlay / closed -> open is normal + enter, and
     // open -> closed is moderate + exit. Both carry provenance "proposed".
     const classes = classesFor();
-    expect(classes.overlay).toContain(
-      'opacity-0 transition-[opacity,visibility] duration-moderate ease-exit',
-    );
+    expect(classes.overlay).toContain('opacity-0 transition-opacity duration-moderate ease-exit');
+    expect(classes.overlay).not.toContain('transition-[');
     expect(classes.overlay).toContain('data-[state=open]:opacity-100');
     expect(classes.overlay).toContain(
       'data-[state=open]:duration-normal data-[state=open]:ease-enter',

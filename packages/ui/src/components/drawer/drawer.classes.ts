@@ -23,17 +23,16 @@ export interface DrawerClassSet {
 // Motion is CSS the browser applies from the generics each matrix row assigns,
 // the same way tooltip, hover-card and navigation-menu do it: the overlay and
 // the content stay present, and the open axis (data-state) drives a transition.
-// Visibility rides the transition, so a closing part stays visible until its
-// exit ends and is then out of the accessibility tree and the tab order.
+// Closed, both parts are inert (set by the performance, not here), so they are
+// out of the accessibility tree and the tab order whatever their pose.
 //
 // drawer / overlay / closed -> open (normal, enter) and open -> closed
 // (moderate, exit): a fade. Both rows carry provenance "proposed": a starting
 // position, never reviewed.
 const overlayClasses =
   'fixed inset-0 z-depth-overlay bg-foreground/80 ' +
-  'invisible pointer-events-none opacity-0 ' +
-  'transition-[opacity,visibility] duration-moderate ease-exit ' +
-  'data-[state=open]:visible data-[state=open]:pointer-events-auto data-[state=open]:opacity-100 ' +
+  'pointer-events-none opacity-0 transition-opacity duration-moderate ease-exit ' +
+  'data-[state=open]:pointer-events-auto data-[state=open]:opacity-100 ' +
   'data-[state=open]:duration-normal data-[state=open]:ease-enter';
 
 // The panel is fixed to its anchoring edge (no centering container -- unlike a
@@ -46,7 +45,9 @@ const overlayClasses =
 //   transform: translate. Closed, the panel sits one full panel off its
 //   anchoring edge (the row extent is structural: 100% of its own size, set in
 //   sideClasses); open, it translates to 0. The panel slides in from the edge
-//   it is anchored to and back out to it, as the shadcn drawer does.
+//   it is anchored to and back out to it, as the shadcn drawer does. The rows
+//   name one axis, y; the left and right sides slide on x with the same timing,
+//   by analogy rather than by an assigned row.
 //
 //   drawer / content / dragging is a pointer-rule row: a part tracking a
 //   pointer moves exactly with it, and any nonzero duration would be the
@@ -56,11 +57,19 @@ const overlayClasses =
 //   "proposed") is a travel transition. The moment does not exist: the
 //   drag-to-dismiss gesture is deferred, the handle below is decorative, and
 //   this panel never travels to a snap point.
+//
+// The panel is also invisible while closed, so its shadow never shows at the
+// viewport edge. Visibility is on the closing transition only, the way tooltip
+// narrows its open pose: the closed pose transitions every property, so a
+// closing panel stays visible until its slide ends; the open pose narrows to
+// transform, so the panel is visible from the first frame and the focus trap,
+// which focuses synchronously on open, lands inside it.
 const contentBaseClasses =
   'fixed z-depth-modal flex flex-col gap-4 bg-background p-6 text-foreground shadow-lg ' +
   'border-card-border invisible pointer-events-none ' +
-  'transition-[translate,visibility] duration-moderate ease-exit ' +
+  'transition-all duration-moderate ease-exit ' +
   'data-[state=open]:visible data-[state=open]:pointer-events-auto ' +
+  'data-[state=open]:transition-transform ' +
   'data-[state=open]:translate-x-0 data-[state=open]:translate-y-0 ' +
   'data-[state=open]:duration-normal data-[state=open]:ease-spring-smooth';
 

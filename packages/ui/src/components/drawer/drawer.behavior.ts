@@ -151,9 +151,9 @@ export const drawer: BehaviorSpec<DrawerConfig, DrawerState, DrawerActions, Draw
 /**
  * The DOM-native binding of the drawer score -- the client. The Web Component
  * and the Astro <script> both import THIS; only React reads the projections
- * declaratively. Same shape as bindDialog: PRESENCE (content/overlay are
- * present, hidden by CSS off the open axis -- the trapped/dismissable
- * parts must be light DOM so focus-trap's activeElement read and dismiss's
+ * declaratively. PRESENCE: content/overlay are always present, inert and
+ * hidden by CSS off the open axis (bindDialog still toggles `hidden`; this
+ * bind does not) -- the trapped/dismissable parts must be light DOM so focus-trap's activeElement read and dismiss's
  * document .contains work) and the modal overlay trio (focus-trap,
  * scroll-lock, dismiss-on-outside), composed directly and level-triggered:
  * started on the open+modal transition and torn down on close/unbind.

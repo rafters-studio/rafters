@@ -31,6 +31,7 @@ async function mount(modal = true): Promise<HTMLElement> {
 
 const trigger = () => document.body.querySelector<HTMLElement>('[data-part="trigger"]')!;
 const content = () => document.body.querySelector<HTMLElement>('[data-part="content"]')!;
+const overlay = () => document.body.querySelector<HTMLElement>('[data-part="overlay"]')!;
 
 afterEach(() => {
   cleanup();
@@ -43,21 +44,52 @@ describe('drawer [wc]', () => {
     expect(host.style.display).toBe('block');
   });
 
-  it('closed: content hidden, trigger collapsed', async () => {
+  it('closed: overlay and content inert, trigger collapsed', async () => {
     await mount();
     expect(content().inert).toBe(true);
+    expect(overlay().inert).toBe(true);
     expect(trigger().getAttribute('aria-expanded')).toBe('false');
   });
 
-  it('trigger opens: content shows, aria wired, focus trapped, scroll locked', async () => {
+  it('trigger opens: overlay and content live, aria wired, focus trapped, scroll locked', async () => {
     const user = userEvent.setup();
     await mount();
     await user.click(trigger());
     expect(content().inert).toBe(false);
+    expect(overlay().inert).toBe(false);
     expect(trigger().getAttribute('aria-expanded')).toBe('true');
     expect(trigger().getAttribute('aria-controls')).toBe('dr-content');
     expect(content().contains(document.activeElement)).toBe(true);
     expect(document.body.style.overflow).toBe('hidden');
+  });
+
+  it('the trap lands initial focus inside the content while visibility transitions', async () => {
+    // The trap focuses synchronously on open, and a hidden element cannot take
+    // focus. A transition that included visibility on enter would read hidden
+    // on its first frame and the focus would stay on the trigger, so the open
+    // pose narrows the transition to transform (drawer.classes.ts). The
+    // component tests load no Tailwind output, so the two poses are injected as
+    // the CSS those classes compile to.
+    const style = document.createElement('style');
+    style.textContent = `
+      [data-part="content"] { visibility: hidden; transition: all 1s; }
+      [data-part="content"][data-state="open"] {
+        visibility: visible;
+        transition-property: transform, translate, scale, rotate;
+      }`;
+    document.head.appendChild(style);
+    try {
+      const user = userEvent.setup();
+      await mount();
+      await user.click(trigger());
+      expect(getComputedStyle(content()).visibility).toBe('visible');
+      expect(content().contains(document.activeElement)).toBe(true);
+      // Closing holds the panel visible until the slide ends.
+      await user.keyboard('{Escape}');
+      expect(getComputedStyle(content()).visibility).toBe('visible');
+    } finally {
+      style.remove();
+    }
   });
 
   it('Escape closes, restores focus to the trigger, releases scroll', async () => {
@@ -66,6 +98,7 @@ describe('drawer [wc]', () => {
     await user.click(trigger());
     await user.keyboard('{Escape}');
     expect(content().inert).toBe(true);
+    expect(overlay().inert).toBe(true);
     expect(document.activeElement).toBe(trigger());
     expect(document.body.style.overflow).not.toBe('hidden');
   });

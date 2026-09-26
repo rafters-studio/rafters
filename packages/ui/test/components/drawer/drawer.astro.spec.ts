@@ -47,7 +47,7 @@ function assertConfigTravelsAsData(
 }
 
 describe('drawer [astro]', () => {
-  it('SSR closed: content hidden and crawlable, trigger collapsed', async () => {
+  it('SSR closed: content inert and crawlable, trigger collapsed', async () => {
     await mount({ title: 'Actions' });
     expect(content().inert).toBe(true);
     expect(trigger().getAttribute('aria-expanded')).toBe('false');

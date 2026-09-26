@@ -65,9 +65,10 @@
  * JS), then the <script> hands each instance to bindDrawer -- the SAME
  * DOM-native client the Web Component uses. One score, three performances.
  *
- * Content stays in light DOM (present, hidden by CSS off data-state) so the effects the bind
- * runs -- focus-trap, scroll-lock, dismiss-on-outside -- can read it. Exit and
- * drag motion wait on the Presence adapter (wave 0-B); this is enter-only.
+ * Content stays in light DOM (present, inert and hidden by CSS off data-state)
+ * so the effects the bind runs -- focus-trap, scroll-lock, dismiss-on-outside --
+ * can read it. Enter and exit both play off data-state; drag motion stays
+ * deferred.
  *
  * The title renders as a div with role="heading" (not a raw <h2 class>) so it
  * carries its token styling without tripping the typography-component guard;
