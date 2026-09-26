@@ -182,4 +182,9 @@ describe('table [react]', () => {
     expect(body().querySelector('[data-part="row"]')?.className).toContain('font-bold');
     expect(body().querySelector('td')?.className).toContain('text-right');
   });
+
+  it('has no keyboard contract and dispatches nothing observable', () => {
+    // A static score claims no keys; nothing to interact with.
+    expect(table.keymap({ key: 'Enter' }, {}, 'root', {})).toBeNull();
+  });
 });

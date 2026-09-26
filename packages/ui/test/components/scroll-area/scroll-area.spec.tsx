@@ -8,6 +8,7 @@
 import { describe, expect, it } from 'vitest';
 import { render } from 'vitest-browser-react';
 import { ScrollArea, ScrollBar } from '../../../src/components/scroll-area/scroll-area';
+import { scrollArea } from '../../../src/components/scroll-area/scroll-area.behavior';
 
 function root(container: HTMLElement): HTMLElement {
   const el = container.querySelector<HTMLElement>('[data-part="root"]');
@@ -87,5 +88,9 @@ describe('scroll-area [react]', () => {
     expect(bar.querySelector('[data-slot="scroll-thumb"]')).not.toBeNull();
     // ScrollBar is decoration, not a declared part.
     expect(bar.getAttribute('data-part')).toBeNull();
+  });
+
+  it('has no keyboard contract -- scrolling stays native', () => {
+    expect(scrollArea.keymap({ key: 'ArrowDown' }, {}, 'root', {})).toBeNull();
   });
 });

@@ -9,6 +9,7 @@ import * as React from 'react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render } from 'vitest-browser-react';
 import { Label } from '../../../src/components/label/label';
+import { label } from '../../../src/components/label/label.behavior';
 
 afterEach(async () => {
   await cleanup();
@@ -53,5 +54,10 @@ describe('label [react]', () => {
     const root = rootOf(container);
     expect(root.className).toContain('leading-none');
     expect(root.className).toContain('mb-2');
+  });
+
+  it('has no keyboard contract and dispatches nothing observable', () => {
+    // A static score claims no keys; a label is not interactive.
+    expect(label.keymap({ key: 'Enter' }, {}, 'root', {})).toBeNull();
   });
 });

@@ -133,4 +133,8 @@ describe('item [react]', () => {
     expect(root.className).toContain('flex items-center');
     expect(root.className).toContain('mt-4');
   });
+
+  it('has no keyboard contract -- the score claims no keys', () => {
+    expect(item.keymap({ key: 'Enter' }, {}, 'root', {})).toBeNull();
+  });
 });

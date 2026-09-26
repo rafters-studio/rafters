@@ -65,4 +65,8 @@ describe('spinner [react]', () => {
     expect(root.className).toContain('animate-spin-spin');
     expect(root.className).toContain('ml-2');
   });
+
+  it('has no keyboard contract and dispatches nothing observable', () => {
+    expect(spinner.keymap({ key: 'Enter' }, {}, 'root', {})).toBeNull();
+  });
 });

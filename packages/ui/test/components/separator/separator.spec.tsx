@@ -72,4 +72,8 @@ describe('separator [react]', () => {
     expect(el.className).toContain('bg-border');
     expect(el.className).toContain('my-4');
   });
+
+  it('has no keyboard contract -- a rule dispatches nothing', () => {
+    expect(separator.keymap({ key: 'Enter' }, {}, 'root', {})).toBeNull();
+  });
 });

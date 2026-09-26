@@ -8,6 +8,7 @@ import * as React from 'react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render } from 'vitest-browser-react';
 import { Kbd } from '../../../src/components/kbd/kbd';
+import { kbd } from '../../../src/components/kbd/kbd.behavior';
 
 afterEach(async () => {
   await cleanup();
@@ -49,5 +50,10 @@ describe('kbd [react]', () => {
     const el = rootOf(container);
     expect(el.className).toContain('inline-flex');
     expect(el.className).toContain('ml-1');
+  });
+
+  it('has no keyboard contract and dispatches nothing observable', () => {
+    // A static score claims no keys; there is nothing to interact with.
+    expect(kbd.keymap({ key: 'Enter' }, {}, 'root', {})).toBeNull();
   });
 });
