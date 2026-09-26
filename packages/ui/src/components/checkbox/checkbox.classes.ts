@@ -148,8 +148,9 @@ const sizeClasses: Record<CheckboxSize, { box: string; icon: string }> = {
 //
 // THE DASH HAS NO ROW. Both rows above name unchecked <-> checked only; the dash's
 // reveal on data-state=indeterminate (and the check/dash swap between checked and
-// indeterminate) is a moment no matrix row covers. It reuses the check glyph's
-// timing, extent and delay by shared base classes, not by any row's assignment --
+// indeterminate) is a moment no matrix row covers. It shares the check glyph's
+// timing through indicatorBaseClasses and repeats its extent-draw and
+// delay-choreo-step in dashStateClasses, not by any row's assignment --
 // reported here, not claimed as consumed.
 const indicatorBaseClasses =
   'col-start-1 row-start-1 text-current opacity-0 scale-0 ' +
