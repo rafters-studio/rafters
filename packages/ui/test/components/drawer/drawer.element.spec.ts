@@ -1,7 +1,7 @@
 /**
  * WC performance of the drawer score, driven end to end against light-DOM
  * markup. Same score as the React spec -- proves presence (content
- * hidden off the open axis) and the directly-composed modal trio (focus-trap,
+ * inert off the open axis; CSS moves and hides them) and the directly-composed modal trio (focus-trap,
  * scroll-lock, dismiss) drive through the DOM binding.
  */
 import { cleanup } from '@testing-library/react';
@@ -17,8 +17,8 @@ async function mount(modal = true): Promise<HTMLElement> {
   document.body.innerHTML = `
     <rafters-drawer${modal ? '' : ' data-modal="false"'} data-side="bottom">
       <button type="button" data-part="trigger" id="dr-trigger" aria-haspopup="dialog" aria-expanded="false" data-state="closed">Open</button>
-      <div data-part="overlay" id="dr-overlay" aria-hidden="true" data-state="closed" hidden></div>
-      <div data-part="content" id="dr-content" role="dialog" tabindex="-1" aria-labelledby="dr-title" data-state="closed" hidden>
+      <div data-part="overlay" id="dr-overlay" aria-hidden="true" data-state="closed" inert></div>
+      <div data-part="content" id="dr-content" role="dialog" tabindex="-1" aria-labelledby="dr-title" data-state="closed" inert>
         <div aria-hidden="true"></div>
         <div id="dr-title" data-part="title" role="heading" aria-level="2">Actions</div>
         <button type="button">Save</button>
@@ -45,7 +45,7 @@ describe('drawer [wc]', () => {
 
   it('closed: content hidden, trigger collapsed', async () => {
     await mount();
-    expect(content().hidden).toBe(true);
+    expect(content().inert).toBe(true);
     expect(trigger().getAttribute('aria-expanded')).toBe('false');
   });
 
@@ -53,7 +53,7 @@ describe('drawer [wc]', () => {
     const user = userEvent.setup();
     await mount();
     await user.click(trigger());
-    expect(content().hidden).toBe(false);
+    expect(content().inert).toBe(false);
     expect(trigger().getAttribute('aria-expanded')).toBe('true');
     expect(trigger().getAttribute('aria-controls')).toBe('dr-content');
     expect(content().contains(document.activeElement)).toBe(true);
@@ -65,7 +65,7 @@ describe('drawer [wc]', () => {
     await mount();
     await user.click(trigger());
     await user.keyboard('{Escape}');
-    expect(content().hidden).toBe(true);
+    expect(content().inert).toBe(true);
     expect(document.activeElement).toBe(trigger());
     expect(document.body.style.overflow).not.toBe('hidden');
   });
@@ -75,7 +75,7 @@ describe('drawer [wc]', () => {
     await mount();
     await user.click(trigger());
     await user.click(document.body.querySelector('[data-part="close"]') as HTMLElement);
-    expect(content().hidden).toBe(true);
+    expect(content().inert).toBe(true);
   });
 
   it('pointerdown outside dismisses; the trigger toggles, not close-then-open', async () => {
@@ -84,13 +84,13 @@ describe('drawer [wc]', () => {
     const outside = document.createElement('button');
     document.body.appendChild(outside);
     await user.click(trigger());
-    expect(content().hidden).toBe(false);
+    expect(content().inert).toBe(false);
     await user.click(outside);
-    expect(content().hidden).toBe(true);
+    expect(content().inert).toBe(true);
     await user.click(trigger());
-    expect(content().hidden).toBe(false);
+    expect(content().inert).toBe(false);
     await user.click(trigger());
-    expect(content().hidden).toBe(true);
+    expect(content().inert).toBe(true);
   });
 
   it('Escape closes even when the close button holds the trap initial focus', async () => {
@@ -102,8 +102,8 @@ describe('drawer [wc]', () => {
     document.body.innerHTML = `
       <rafters-drawer data-side="bottom">
         <button type="button" data-part="trigger" id="dr-trigger" aria-haspopup="dialog" aria-expanded="false" data-state="closed">Open</button>
-        <div data-part="overlay" id="dr-overlay" aria-hidden="true" data-state="closed" hidden></div>
-        <div data-part="content" id="dr-content" role="dialog" tabindex="-1" aria-labelledby="dr-title" data-state="closed" hidden>
+        <div data-part="overlay" id="dr-overlay" aria-hidden="true" data-state="closed" inert></div>
+        <div data-part="content" id="dr-content" role="dialog" tabindex="-1" aria-labelledby="dr-title" data-state="closed" inert>
           <div id="dr-title" data-part="title" role="heading" aria-level="2">Actions</div>
           <button type="button" data-part="close" id="dr-close" aria-label="Close">x</button>
         </div>
@@ -113,7 +113,7 @@ describe('drawer [wc]', () => {
     // The close button is the only focusable child, so it takes initial focus.
     expect(document.activeElement).toBe(document.body.querySelector('[data-part="close"]'));
     await user.keyboard('{Escape}');
-    expect(content().hidden).toBe(true);
+    expect(content().inert).toBe(true);
     expect(document.activeElement).toBe(trigger());
   });
 
@@ -124,6 +124,6 @@ describe('drawer [wc]', () => {
     expect(document.body.style.overflow).not.toBe('hidden');
     (content().querySelector('button') as HTMLElement).focus();
     await user.keyboard('{Escape}');
-    expect(content().hidden).toBe(true);
+    expect(content().inert).toBe(true);
   });
 });

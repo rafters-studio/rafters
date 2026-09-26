@@ -53,13 +53,6 @@ import {
   DialogTitle,
 } from '../../src/components/dialog/dialog';
 import {
-  Drawer,
-  DrawerContent,
-  DrawerOverlay,
-  DrawerPortal,
-  DrawerTitle,
-} from '../../src/components/drawer/drawer';
-import {
   Sheet,
   SheetContent,
   SheetOverlay,
@@ -135,6 +128,10 @@ const part = (name: string) => body().querySelector(`[data-part="${name}"]`);
 /**
  * Each case renders an EXPLICIT portal + overlay, because that composition is
  * the one the defect lived in: the portal gate ran before the content's own.
+ *
+ * The drawer is not here: its overlay and content never unmount, so there is
+ * no hold to test. They stay present and inert while closed, and CSS keyed
+ * off data-state plays the exit (drawer.spec.tsx asserts it).
  */
 const CASES = [
   {
@@ -178,19 +175,6 @@ const CASES = [
           </SheetContent>
         </SheetPortal>
       </Sheet>
-    ),
-  },
-  {
-    name: 'drawer',
-    render: (open: boolean) => (
-      <Drawer open={open}>
-        <DrawerPortal>
-          <DrawerOverlay />
-          <DrawerContent>
-            <DrawerTitle>Details</DrawerTitle>
-          </DrawerContent>
-        </DrawerPortal>
-      </Drawer>
     ),
   },
 ] as const;

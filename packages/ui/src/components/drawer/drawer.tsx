@@ -62,7 +62,6 @@ import { createPortal } from 'react-dom';
 import { createBehavior, type AriaAttrs, type PartIds } from '../../lib/contract';
 import { keyInputOf } from '../../hooks/key-input';
 import { useMemory } from '../../hooks/use-memory';
-import { usePresence } from '../../hooks/use-presence';
 import classy from '../../primitives/classy';
 import { mergeProps } from '../../primitives/slot';
 import {
@@ -96,8 +95,6 @@ interface DrawerContextValue {
   /** Presence, held at the PROVIDER. Every part gates on this, never on
    *  `effectiveOpen`: the portal is the content's ancestor, so a portal that
    *  unmounts on the raw flag takes the content's own exit with it. */
-  present: boolean;
-  presenceRef: (node: HTMLElement | null) => void;
   classes: DrawerClassSet;
   dismissVetoRef: React.RefObject<DismissVetoCallbacks | null>;
 }
@@ -252,11 +249,6 @@ export function Drawer({
 
   const aria = drawer.aria(state, config, ids);
 
-  // Presence, at the provider. `data-state` is NOT set from here --
-  // disclosable already contributes it from the same value that feeds
-  // presence. One attribute, one writer.
-  const { present, ref: presenceRef } = usePresence(effectiveOpen);
-
   const contextValue: DrawerContextValue = {
     state,
     ids,
@@ -267,8 +259,6 @@ export function Drawer({
     config,
     side,
     effectiveOpen,
-    present,
-    presenceRef,
     classes: drawerClasses(config, state),
     dismissVetoRef,
   };
@@ -283,9 +273,11 @@ export interface DrawerPortalProps {
   forceMount?: boolean;
 }
 
-export function DrawerPortal({ children, container, forceMount }: DrawerPortalProps) {
-  const { present } = useDrawerContext('DrawerPortal');
-  if (!(forceMount || present)) return null;
+// The overlay and the content stay present whether open or closed; CSS keyed
+// off data-state moves and hides them (drawer.classes.ts). `forceMount` stays
+// in the props for shadcn API compatibility and has nothing left to force.
+export function DrawerPortal({ children, container }: DrawerPortalProps) {
+  useDrawerContext('DrawerPortal');
   if (typeof document === 'undefined') return null;
   return createPortal(
     <DrawerPortalContext.Provider value={true}>{children}</DrawerPortalContext.Provider>,
@@ -297,19 +289,20 @@ export interface DrawerOverlayProps extends React.HTMLAttributes<HTMLDivElement>
   forceMount?: boolean | undefined;
 }
 
-export function DrawerOverlay({ forceMount, className, ...props }: DrawerOverlayProps) {
-  const { effectiveOpen, present, ids, aria, classes, setPart } = useDrawerContext('DrawerOverlay');
-  if (!(forceMount || present)) return null;
+export function DrawerOverlay({
+  forceMount: _forceMount,
+  className,
+  ...props
+}: DrawerOverlayProps) {
+  const { effectiveOpen, ids, aria, classes, setPart } = useDrawerContext('DrawerOverlay');
   return (
     <div
       data-part="overlay"
       id={ids.overlay || undefined}
       ref={setPart('overlay')}
-      // A force-mounted closed overlay must not cover the page.
-      // `hidden` is `display: none`, which blocks animation outright, so an
-      // overlay that is closed and STILL PRESENT is mid-exit and has to stay
-      // paintable for its own fade to run.
-      hidden={effectiveOpen || present ? undefined : true}
+      // Closed, the overlay stays rendered so its fade can play; inert keeps it
+      // from blocking the page or reaching assistive tech.
+      inert={!effectiveOpen}
       className={classy(classes.overlay, className)}
       {...aria.overlay}
       {...props}
@@ -375,21 +368,9 @@ export function DrawerContent({
   onKeyDown,
   ...props
 }: DrawerContentProps) {
-  const {
-    config,
-    state,
-    present,
-    presenceRef,
-    ids,
-    aria,
-    classes,
-    request,
-    setPart,
-    dismissVetoRef,
-  } = useDrawerContext('DrawerContent');
+  const { config, state, effectiveOpen, ids, aria, classes, request, setPart, dismissVetoRef } =
+    useDrawerContext('DrawerContent');
   const isInsidePortal = React.useContext(DrawerPortalContext);
-  // Presence (wave 0-B): keep the content mounted through its exit animation.
-  // With no exit animation it releases immediately, so behavior is unchanged.
 
   React.useEffect(() => {
     dismissVetoRef.current = { onPointerDownOutside, onInteractOutside };
@@ -398,7 +379,6 @@ export function DrawerContent({
     };
   });
 
-  if (!(forceMount || present)) return null;
   if (typeof document === 'undefined') return null;
 
   const modal = config.modal !== false;
@@ -421,12 +401,10 @@ export function DrawerContent({
     <div
       data-part="content"
       id={ids.content || undefined}
-      ref={presenceRef}
       tabIndex={-1}
-      // forceMount keeps the node for animation tooling; a closed modal must
-      // still be invisible to AT, untabbable, and must not block the page --
-      // hidden covers all three.
-      hidden={present ? undefined : true}
+      // Closed, the panel stays rendered so its slide can play; inert keeps it
+      // out of focus and the accessibility tree.
+      inert={!effectiveOpen}
       className={classy(classes.content, className)}
       {...aria.content}
       onKeyDown={handleKeyDown}

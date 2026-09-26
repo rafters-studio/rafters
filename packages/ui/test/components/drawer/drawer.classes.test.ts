@@ -34,36 +34,53 @@ describe('drawer classes', () => {
     expect(classesFor().content).not.toContain('bg-white');
   });
 
-  it('the content declares no enter/exit motion, because no slide shape exists', () => {
-    // motion.jsonl assigns drawer / content / closed -> open (normal,
-    // spring-smooth) and open -> closed (moderate, exit), both `slide (y)` over
-    // `transform: translate` alone. The keyframe vocabulary has no slide shape,
-    // and unlike sheet these rows declare no fade half, so there is nothing to
-    // name. An approximated shape would be geometry nobody chose.
-    const classes = classesFor();
-    expect(classes.content).not.toContain('animate-in');
-    expect(classes.content).not.toMatch(/duration-\d/);
-    expect(classes.content).not.toContain('slide-in');
-    expect(classes.content).not.toContain('animate-');
+  it('the content slides from its anchoring edge on the generics its rows assign', () => {
+    // motion.jsonl: drawer / content / closed -> open is normal + spring-smooth,
+    // open -> closed is moderate + exit, slide over transform: translate. The
+    // panel stays present; closed it sits one full panel past its edge, open it
+    // translates to 0, and the transition runs on the generics per state.
+    const offsets = {
+      bottom: 'translate-y-full',
+      top: '-translate-y-full',
+      left: '-translate-x-full',
+      right: 'translate-x-full',
+    } as const;
+    for (const [side, offset] of Object.entries(offsets) as [keyof typeof offsets, string][]) {
+      const { content } = classesFor(side);
+      expect(content.split(' ')).toContain(offset);
+      expect(content).toContain('data-[state=open]:translate-x-0 data-[state=open]:translate-y-0');
+      expect(content).toContain('transition-[translate,visibility] duration-moderate ease-exit');
+      expect(content).toContain(
+        'data-[state=open]:duration-normal data-[state=open]:ease-spring-smooth',
+      );
+      expect(content).toContain('invisible');
+      expect(content).toContain('data-[state=open]:visible');
+      expect(content).not.toMatch(/duration-\d/);
+      expect(content).not.toContain('animate-');
+    }
   });
 
   it('the content carries no settle transition, because it never settles', () => {
     // motion.jsonl assigns drawer / content / settle on release (fast,
-    // spring-smooth, provenance "proposed"). That row is nameable as composed
-    // generics, but the drag-to-dismiss gesture is deferred and the handle is
-    // decorative, so the panel never travels to a snap point. A settle
-    // transition on a panel that never settles would animate nothing.
+    // spring-smooth, provenance "proposed"). The drag-to-dismiss gesture is
+    // deferred and the handle is decorative, so the panel never travels to a
+    // snap point: nothing is timed at the settle tier.
     const classes = classesFor();
-    expect(classes.content).not.toContain('ease-spring-smooth');
     expect(classes.content).not.toContain('duration-fast');
   });
 
-  it('the overlay consumes its own two cells, keyed off data-state', () => {
+  it('the overlay fades on the generics its rows assign, keyed off data-state', () => {
     // motion.jsonl: drawer / overlay / closed -> open is normal + enter, and
     // open -> closed is moderate + exit. Both carry provenance "proposed".
     const classes = classesFor();
-    expect(classes.overlay).toContain('data-[state=open]:animate-fade-in-normal-enter');
-    expect(classes.overlay).toContain('data-[state=closed]:animate-fade-out-moderate-exit');
+    expect(classes.overlay).toContain(
+      'opacity-0 transition-[opacity,visibility] duration-moderate ease-exit',
+    );
+    expect(classes.overlay).toContain('data-[state=open]:opacity-100');
+    expect(classes.overlay).toContain(
+      'data-[state=open]:duration-normal data-[state=open]:ease-enter',
+    );
+    expect(classes.overlay).not.toContain('animate-');
   });
 
   it('the close button names the curve its row assigns, not just the tier', () => {

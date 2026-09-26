@@ -20,62 +20,57 @@ export interface DrawerClassSet {
 // The DOM-native root is a binding host, not a box: it carries data-part="root"
 // and the config, and NO class -- a behavior root never styles itself; layout
 // belongs to the consumer's Container/Grid (operator ruling, 2026-08-02).
-// THE CELL IS THE SPEC (#2017). Two rows of the motion matrix --
-// drawer / overlay / closed -> open (normal, enter) and
-// drawer / overlay / open -> closed (moderate, exit). Both rows carry
-// provenance "proposed": a starting position, never reviewed.
+// Motion is CSS the browser applies from the generics each matrix row assigns,
+// the same way tooltip, hover-card and navigation-menu do it: the overlay and
+// the content stay present, and the open axis (data-state) drives a transition.
+// Visibility rides the transition, so a closing part stays visible until its
+// exit ends and is then out of the accessibility tree and the tab order.
 //
-// ROW AND BEHAVIOR DISAGREE ON THE EXIT. The open -> closed row assumes the
-// scrim is held present while its keyframe runs; nothing holds it. React
-// returns null the instant `effectiveOpen` flips false, Astro renders
-// `hidden={!open}`, and the DOM binding sets `el.hidden = !open`. `usePresence`
-// wraps the CONTENT only. The class is named as the row assigns it and will
-// render its first frame the day the overlay gets a presence hold.
+// drawer / overlay / closed -> open (normal, enter) and open -> closed
+// (moderate, exit): a fade. Both rows carry provenance "proposed": a starting
+// position, never reviewed.
 const overlayClasses =
   'fixed inset-0 z-depth-overlay bg-foreground/80 ' +
-  'data-[state=open]:animate-fade-in-normal-enter data-[state=closed]:animate-fade-out-moderate-exit';
+  'invisible pointer-events-none opacity-0 ' +
+  'transition-[opacity,visibility] duration-moderate ease-exit ' +
+  'data-[state=open]:visible data-[state=open]:pointer-events-auto data-[state=open]:opacity-100 ' +
+  'data-[state=open]:duration-normal data-[state=open]:ease-enter';
 
 // The panel is fixed to its anchoring edge (no centering container -- unlike a
-// dialog). data-[state=closed]:pointer-events-none keeps a closed panel from
-// swallowing clicks while it is held present through any future exit window.
+// dialog).
 //
-// FOUR MATRIX ROWS NAME THIS PART AND NONE OF THEM IS CONSUMED. Each is a
-// different reason, and none of them is a missing transcription:
+// FOUR MATRIX ROWS NAME THIS PART.
 //
 //   drawer / content / closed -> open (normal, spring-smooth) and
-//   drawer / content / open -> closed (moderate, exit) both declare
-//   `slide (y)` over `transform: translate`. The slide-in-from-* /
-//   slide-out-to-* keyframes exist, but no motion cell binds them to these
-//   rows, so the exporter emits no animate-slide-*-normal-spring-smooth or
-//   animate-slide-*-moderate-exit utility (design-tokens excludes both rows as
-//   noExistingShape). The row also names one axis (y) while this panel anchors
-//   on four sides, two of them on x. There is no class to name, and
-//   duration-*/ease-* here would time a transition nothing drives. Unlike
-//   sheet, these rows declare NO fade half, so there is not even a partial
-//   consumption to make. Reported here: no utility names a slide at the tier
-//   and curve these rows assign, and none is added in a component.
+//   drawer / content / open -> closed (moderate, exit): slide over
+//   transform: translate. Closed, the panel sits one full panel off its
+//   anchoring edge (the row extent is structural: 100% of its own size, set in
+//   sideClasses); open, it translates to 0. The panel slides in from the edge
+//   it is anchored to and back out to it, as the shadcn drawer does.
 //
 //   drawer / content / dragging is a pointer-rule row: a part tracking a
 //   pointer moves exactly with it, and any nonzero duration would be the
 //   defect. There is nothing to write.
 //
 //   drawer / content / settle on release (fast, spring-smooth, provenance
-//   "proposed") is a travel TRANSITION and would be nameable. The moment does
-//   not exist: the drag-to-dismiss gesture is deferred, the handle below is
-//   decorative, and this panel never travels to a snap point. A settle
-//   transition on a panel that never settles would animate nothing.
+//   "proposed") is a travel transition. The moment does not exist: the
+//   drag-to-dismiss gesture is deferred, the handle below is decorative, and
+//   this panel never travels to a snap point.
 const contentBaseClasses =
   'fixed z-depth-modal flex flex-col gap-4 bg-background p-6 text-foreground shadow-lg ' +
-  'border-card-border data-[state=closed]:pointer-events-none';
+  'border-card-border invisible pointer-events-none ' +
+  'transition-[translate,visibility] duration-moderate ease-exit ' +
+  'data-[state=open]:visible data-[state=open]:pointer-events-auto ' +
+  'data-[state=open]:translate-x-0 data-[state=open]:translate-y-0 ' +
+  'data-[state=open]:duration-normal data-[state=open]:ease-spring-smooth';
 
-// Position + rounding + the border edge, keyed on the anchoring side. The slide
-// these positions imply stays undeclared for the reason given above: no
-// animate-slide-* utility at the tier and curve the content rows assign.
+// Position + rounding + the border edge, keyed on the anchoring side, plus the
+// closed offset: one full panel past that same edge.
 const sideClasses: Record<DrawerSide, string> = {
-  bottom: 'inset-x-0 bottom-0 border-t rounded-t-lg',
-  top: 'inset-x-0 top-0 border-b rounded-b-lg',
-  left: 'inset-y-0 left-0 h-full w-3/4 max-w-sm border-r rounded-r-lg',
-  right: 'inset-y-0 right-0 h-full w-3/4 max-w-sm border-l rounded-l-lg',
+  bottom: 'inset-x-0 bottom-0 border-t rounded-t-lg translate-y-full',
+  top: 'inset-x-0 top-0 border-b rounded-b-lg -translate-y-full',
+  left: 'inset-y-0 left-0 h-full w-3/4 max-w-sm border-r rounded-r-lg -translate-x-full',
+  right: 'inset-y-0 right-0 h-full w-3/4 max-w-sm border-l rounded-l-lg translate-x-full',
 };
 
 // Decorative drag affordance. Renders the vaul-style grabber; the drag-to-

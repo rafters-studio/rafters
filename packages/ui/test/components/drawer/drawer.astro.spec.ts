@@ -49,7 +49,7 @@ function assertConfigTravelsAsData(
 describe('drawer [astro]', () => {
   it('SSR closed: content hidden and crawlable, trigger collapsed', async () => {
     await mount({ title: 'Actions' });
-    expect(content().hidden).toBe(true);
+    expect(content().inert).toBe(true);
     expect(trigger().getAttribute('aria-expanded')).toBe('false');
   });
 
@@ -76,7 +76,7 @@ describe('drawer [astro]', () => {
     const close = document.body.querySelector<HTMLElement>('[data-part="close"]')!;
     expect(document.activeElement).toBe(close);
     await user.keyboard('{Escape}');
-    expect(content().hidden).toBe(true);
+    expect(content().inert).toBe(true);
     expect(document.activeElement).toBe(trigger());
   });
 
@@ -84,11 +84,11 @@ describe('drawer [astro]', () => {
     const user = userEvent.setup();
     await mount({ title: 'Actions' }, { default: '<button type="button">Save</button>' });
     await user.click(trigger());
-    expect(content().hidden).toBe(false);
+    expect(content().inert).toBe(false);
     expect(content().contains(document.activeElement)).toBe(true);
     expect(document.body.style.overflow).toBe('hidden');
     await user.keyboard('{Escape}');
-    expect(content().hidden).toBe(true);
+    expect(content().inert).toBe(true);
     expect(document.activeElement).toBe(trigger());
     expect(document.body.style.overflow).not.toBe('hidden');
   });
@@ -117,8 +117,8 @@ describe('drawer [astro]', () => {
     // re-bind: only data-default-open, read through dataset, can bring it back.
     const panel = content();
     panel.removeAttribute('data-state');
-    panel.hidden = true;
+    panel.inert = true;
     bindDrawer(root);
-    expect(panel.hidden).toBe(false);
+    expect(panel.inert).toBe(false);
   });
 });

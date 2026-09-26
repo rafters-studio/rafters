@@ -65,7 +65,7 @@
  * JS), then the <script> hands each instance to bindDrawer -- the SAME
  * DOM-native client the Web Component uses. One score, three performances.
  *
- * Content stays in light DOM (present-but-hidden) so the effects the bind
+ * Content stays in light DOM (present, hidden by CSS off data-state) so the effects the bind
  * runs -- focus-trap, scroll-lock, dismiss-on-outside -- can read it. Exit and
  * drag motion wait on the Presence adapter (wave 0-B); this is enter-only.
  *
@@ -127,15 +127,15 @@ const open = state.open;
     <slot name="trigger">Open</slot>
   </button>
 
-  <div id={ids.overlay} data-part="overlay" class={classes.overlay} hidden={!open} {...aria.overlay}></div>
+  <div id={ids.overlay} data-part="overlay" class={classes.overlay} inert={!open} {...aria.overlay}></div>
 
   <div
     id={ids.content}
     data-part="content"
+    inert={!open}
     tabindex="-1"
     class={classes.content}
     {...aria.content}
-    hidden={!open}
   >
     <div class={classes.handle} aria-hidden="true"></div>
     {

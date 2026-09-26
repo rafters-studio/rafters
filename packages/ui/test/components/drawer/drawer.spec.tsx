@@ -66,7 +66,7 @@ describe('drawer [react]', () => {
     render(<TestDrawer />);
     const trigger = partElement(body(), 'trigger');
     expect(trigger).not.toBeNull();
-    expect(partElement(body(), 'content')).toBeNull();
+    expect(partElement(body(), 'content')?.inert).toBe(true);
     expect(trigger?.getAttribute('aria-expanded')).toBe('false');
     expect(trigger?.hasAttribute('aria-controls')).toBe(false);
   });
@@ -152,10 +152,10 @@ describe('drawer [react]', () => {
     render(<TestDrawer />);
     const trigger = partElement(body(), 'trigger') as HTMLElement;
     await user.click(trigger);
-    expect(partElement(body(), 'content')).not.toBeNull();
+    expect(partElement(body(), 'content')?.inert).toBe(false);
 
     await user.keyboard('{Escape}');
-    expect(partElement(body(), 'content')).toBeNull();
+    expect(partElement(body(), 'content')?.inert).toBe(true);
     expect(document.activeElement).toBe(trigger);
     expect(trigger.getAttribute('aria-expanded')).toBe('false');
   });
@@ -171,14 +171,14 @@ describe('drawer [react]', () => {
     const trigger = partElement(body(), 'trigger') as HTMLElement;
 
     await user.click(trigger);
-    expect(partElement(body(), 'content')).not.toBeNull();
+    expect(partElement(body(), 'content')?.inert).toBe(false);
     await user.click(document.querySelector('button') as HTMLElement);
-    expect(partElement(body(), 'content')).toBeNull();
+    expect(partElement(body(), 'content')?.inert).toBe(true);
 
     await user.click(trigger);
-    expect(partElement(body(), 'content')).not.toBeNull();
+    expect(partElement(body(), 'content')?.inert).toBe(false);
     await user.click(trigger);
-    expect(partElement(body(), 'content')).toBeNull();
+    expect(partElement(body(), 'content')?.inert).toBe(true);
   });
 
   it('close button closes', async () => {
@@ -186,7 +186,7 @@ describe('drawer [react]', () => {
     render(<TestDrawer />);
     await user.click(partElement(body(), 'trigger') as HTMLElement);
     await user.click(partElement(body(), 'close') as HTMLElement);
-    expect(partElement(body(), 'content')).toBeNull();
+    expect(partElement(body(), 'content')?.inert).toBe(true);
   });
 
   it('scroll is locked while open and released on close', async () => {
@@ -209,7 +209,7 @@ describe('drawer [react]', () => {
 
     (content.querySelector('button') as HTMLElement).focus();
     await user.keyboard('{Escape}');
-    expect(partElement(body(), 'content')).toBeNull();
+    expect(partElement(body(), 'content')?.inert).toBe(true);
   });
 
   it('defaultOpen mounts open with the trap live', () => {
@@ -226,17 +226,17 @@ describe('drawer [react]', () => {
     const { rerender } = render(<TestDrawer open={false} onOpenChange={onOpenChange} />);
     await user.click(partElement(body(), 'trigger') as HTMLElement);
     expect(onOpenChange).toHaveBeenLastCalledWith(true);
-    expect(partElement(body(), 'content')).toBeNull();
+    expect(partElement(body(), 'content')?.inert).toBe(true);
 
     rerender(<TestDrawer open onOpenChange={onOpenChange} />);
-    expect(partElement(body(), 'content')).not.toBeNull();
+    expect(partElement(body(), 'content')?.inert).toBe(false);
 
     await user.keyboard('{Escape}');
     expect(onOpenChange).toHaveBeenLastCalledWith(false);
-    expect(partElement(body(), 'content')).not.toBeNull();
+    expect(partElement(body(), 'content')?.inert).toBe(false);
 
     rerender(<TestDrawer open={false} onOpenChange={onOpenChange} />);
-    expect(partElement(body(), 'content')).toBeNull();
+    expect(partElement(body(), 'content')?.inert).toBe(true);
   });
 
   it('explicit Portal + Overlay composition renders without the automatic wrappers', async () => {
@@ -253,13 +253,13 @@ describe('drawer [react]', () => {
       </Drawer>,
     );
     await user.click(partElement(body(), 'trigger') as HTMLElement);
-    expect(partElement(body(), 'content')).not.toBeNull();
+    expect(partElement(body(), 'content')?.inert).toBe(false);
     expect(document.querySelectorAll('[data-part="overlay"]')).toHaveLength(1);
     // Oracle default: no automatic close button inside an explicit portal.
     expect(partElement(body(), 'close')).toBeNull();
   });
 
-  it('forceMount keeps the content in the DOM, hidden and inert, while closed', () => {
+  it('a closed drawer keeps its content in the DOM, inert rather than hidden', () => {
     render(
       <Drawer>
         <DrawerTrigger>Open</DrawerTrigger>
@@ -271,7 +271,8 @@ describe('drawer [react]', () => {
     const content = partElement(body(), 'content');
     expect(content).not.toBeNull();
     expect(content?.getAttribute('data-state')).toBe('closed');
-    expect(content?.hasAttribute('hidden')).toBe(true);
+    expect(content?.hasAttribute('hidden')).toBe(false);
+    expect(content?.inert).toBe(true);
     expect(document.body.style.overflow).not.toBe('hidden');
   });
 
@@ -302,7 +303,7 @@ describe('drawer [react]', () => {
       </Drawer>,
     );
     await user.keyboard('{Escape}');
-    expect(partElement(body(), 'content')).not.toBeNull();
+    expect(partElement(body(), 'content')?.inert).toBe(false);
   });
 
   it('onPointerDownOutside veto keeps the drawer open; without veto it closes', async () => {
@@ -320,7 +321,7 @@ describe('drawer [react]', () => {
     );
     await user.click(document.querySelector('button') as HTMLElement);
     expect(outside).toHaveBeenCalled();
-    expect(partElement(body(), 'content')).not.toBeNull();
+    expect(partElement(body(), 'content')?.inert).toBe(false);
     unmount();
 
     render(
@@ -334,7 +335,7 @@ describe('drawer [react]', () => {
       </div>,
     );
     await user.click(document.querySelector('button') as HTMLElement);
-    expect(partElement(body(), 'content')).toBeNull();
+    expect(partElement(body(), 'content')?.inert).toBe(true);
   });
 
   it('uncontrolled callback fires once per real transition', async () => {
