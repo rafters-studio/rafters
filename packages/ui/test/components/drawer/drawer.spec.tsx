@@ -62,11 +62,12 @@ afterEach(() => {
 });
 
 describe('drawer [react]', () => {
-  it('closed: only the trigger renders, collapsed', async () => {
+  it('closed: overlay and content inert, trigger collapsed', async () => {
     render(<TestDrawer />);
     const trigger = partElement(body(), 'trigger');
     expect(trigger).not.toBeNull();
     expect(partElement(body(), 'content')?.inert).toBe(true);
+    expect(partElement(body(), 'overlay')?.inert).toBe(true);
     expect(trigger?.getAttribute('aria-expanded')).toBe('false');
     expect(trigger?.hasAttribute('aria-controls')).toBe(false);
   });
@@ -153,9 +154,11 @@ describe('drawer [react]', () => {
     const trigger = partElement(body(), 'trigger') as HTMLElement;
     await user.click(trigger);
     expect(partElement(body(), 'content')?.inert).toBe(false);
+    expect(partElement(body(), 'overlay')?.inert).toBe(false);
 
     await user.keyboard('{Escape}');
     expect(partElement(body(), 'content')?.inert).toBe(true);
+    expect(partElement(body(), 'overlay')?.inert).toBe(true);
     expect(document.activeElement).toBe(trigger);
     expect(trigger.getAttribute('aria-expanded')).toBe('false');
   });

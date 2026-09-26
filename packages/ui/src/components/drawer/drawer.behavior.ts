@@ -153,9 +153,10 @@ export const drawer: BehaviorSpec<DrawerConfig, DrawerState, DrawerActions, Draw
  * and the Astro <script> both import THIS; only React reads the projections
  * declaratively. PRESENCE: content/overlay are always present, inert and
  * hidden by CSS off the open axis (bindDialog still toggles `hidden`; this
- * bind does not) -- the trapped/dismissable parts must be light DOM so focus-trap's activeElement read and dismiss's
- * document .contains work) and the modal overlay trio (focus-trap,
- * scroll-lock, dismiss-on-outside), composed directly and level-triggered:
+ * bind does not). The trapped/dismissable parts must be light DOM so
+ * focus-trap's activeElement read and dismiss's document .contains work.
+ * It also composes the modal overlay trio (focus-trap,
+ * scroll-lock, dismiss-on-outside) directly, level-triggered:
  * started on the open+modal transition and torn down on close/unbind.
  * The parts are never hidden by the bind: CSS keyed off data-state moves them,
  * so both enter and exit play. Drag animation stays deferred.

@@ -62,7 +62,7 @@ effective value, so intrinsic state can never drift from a controlled consumer.
 
 | Part | Presence | ARIA |
 | --- | --- | --- |
-| trigger | always | `aria-haspopup="dialog"`, `aria-expanded`, `aria-controls` (only while content is in the DOM), `data-state` |
+| trigger | always | `aria-haspopup="dialog"`, `aria-expanded`, `aria-controls` (only while open), `data-state` |
 | content | always (inert while closed) | `role="dialog"`, `aria-modal="true"` (modal only), `aria-labelledby`/`aria-describedby` (only when the part rendered), `data-state` |
 | overlay | modal (inert while closed) | `aria-hidden="true"`, `data-state` |
 | title | consumer renders | referenced by labelledby via registration |
