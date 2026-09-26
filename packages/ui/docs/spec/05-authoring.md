@@ -156,18 +156,37 @@ duration, an easing, or a class that encodes one. The full doctrine is
    never carries a raw value -- tiers and roles resolve from the project's intent
    through the system tokens. **No row, no motion.** A moment with no row is
    still, and that is a legitimate answer.
-3. **The exporter emits it.** The token generator turns each row into a
-   `motion-cell-<key>` token and the Tailwind exporter emits one
-   `animate-<key>` keyframe utility per cell (`design-tokens/src/exporters/tailwind.ts`),
-   named `animate-<component>-<part>-<transition>` -- `animate-dialog-content-open`
-   is the reference consumer.
+3. **The motion system emits it.** A motion cell
+   (`DEFAULT_MOTION_CELL_ANIMATIONS`) binds a row to a keyframe, and
+   `generateMotionAnimationKeys` (`design-tokens/src/exporters/tailwind.ts`)
+   emits one deduplicated `--animate-<shape>-<tier>-<curve>` theme key per
+   distinct motion, read straight off the row. A loop row names its period
+   instead of a tier and curve and runs `infinite`:
+   `--animate-<shape>-<period>` (`animate-spin-spin`, consumed in
+   `button.classes.ts`). A state change on a part that
+   stays mounted (hover, checked) is a transition, named as composed generics:
+   `duration-<tier> ease-<role>`, plus `delay-<name>` and `extent-<name>` where
+   the row assigns them.
 4. **`classes.ts` consumes it.** The class string selects the utility off the
-   projected state, and nothing else:
-   `'data-[state=open]:animate-dialog-content-open data-[state=closed]:animate-dialog-content-close'`.
-   Reduced motion is handled INSIDE the generated utility (it zeroes the
-   duration and keeps the end state). Do **not** add `motion-reduce:animate-none`
-   to a cell utility: `animation: none` resets the shorthand and discards the
-   zeroed duration, so the two mechanisms must never both apply.
+   projected state, and nothing else. The reference is `dialog.classes.ts`:
+   `'data-[state=open]:animate-scale-in-normal-enter data-[state=closed]:animate-scale-out-moderate-exit'`.
+   Every value resolves to a `--rafters-*` leaf the designer sets in Studio.
+   The base Tailwind utilities carry values from the same tokens -- `duration-*`,
+   `ease-*` and `delay-*` today, and `animate-<name>` from
+   `DEFAULT_ANIMATION_DEFINITIONS` once #2391 publishes them -- so the motion
+   system and the base utilities are two routes onto one set of leaves, not
+   alternatives. Reduced motion is written once on the leaves, so it reaches
+   both. Do **not** add `motion-reduce:animate-none`: `animation: none` resets
+   the shorthand and discards the zeroed duration.
+
+**An agent consumes motion; it never authors it (Sean, 2026-09-25).** The
+rows, the cells, the keyframes and the token values are designer decisions
+made through the motion system the human manages. If the utility a moment
+needs is not emitted, the moment has no motion yet, and the component says so
+in a comment. An agent never adds a cell, a row, a keyframe or a token to make
+one appear, and never picks a shape, tier or curve the row did not assign.
+Adding per-component cells for the drawer slide (reverted in 53208a61) is the
+failure this rule exists to stop.
 
 **Prohibited in a component:** the legacy `motion-*` utility classes
 (`motion-hover`, `motion-modal-in`, `motion-expand`, and the rest of the thirteen
@@ -176,11 +195,12 @@ duration, an easing, or a class that encodes one. The full doctrine is
 `transition-*` timing literal; and a keyframe authored in a component file. Every
 one of these is a value wearing a class name, and both spellings compile, which
 is exactly why the rule has to be a rule. If the matrix has no row for a moment
-the component genuinely has, that is a matrix change request: add the row (with
-its provenance marked proposed), never a local class.
+the component genuinely has, report it in a comment in `classes.ts` and to the
+designer as a matrix change request. Never add the row yourself, and never a
+local class.
 
 **Legacy consumers.** Components ported before the ruling still carry
-`motion-*` classes (accordion, the button spinner). They migrate one at a time;
+`motion-*` classes (accordion). They migrate one at a time;
 a new component never adds a consumer, and a port never copies one forward.
 
 Presence rules are unchanged from `docs/MOTION.md`: an exit cell can only play
