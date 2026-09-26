@@ -156,18 +156,34 @@ duration, an easing, or a class that encodes one. The full doctrine is
    never carries a raw value -- tiers and roles resolve from the project's intent
    through the system tokens. **No row, no motion.** A moment with no row is
    still, and that is a legitimate answer.
-3. **The exporter emits it.** The token generator turns each row into a
-   `motion-cell-<key>` token and the Tailwind exporter emits one
-   `animate-<key>` keyframe utility per cell (`design-tokens/src/exporters/tailwind.ts`),
-   named `animate-<component>-<part>-<transition>` -- `animate-dialog-content-open`
-   is the reference consumer.
+3. **The exporter emits it.** A designer-owned motion cell binds a row to a
+   keyframe (`DEFAULT_MOTION_CELL_ANIMATIONS` in `@rafters/design-tokens`). The
+   Tailwind exporter emits one `--animate-<shape>-<tier>-<curve>` theme key per
+   DISTINCT motion those cells assign, deduplicated
+   (`generateMotionAnimationKeys`, `design-tokens/src/exporters/tailwind.ts`).
+   The name is read straight off the row: the keyframe it names, the tier and
+   the curve role it consumes. Two moments with the same shape, tier and curve
+   are the same motion and share one utility.
 4. **`classes.ts` consumes it.** The class string selects the utility off the
-   projected state, and nothing else:
-   `'data-[state=open]:animate-dialog-content-open data-[state=closed]:animate-dialog-content-close'`.
-   Reduced motion is handled INSIDE the generated utility (it zeroes the
-   duration and keeps the end state). Do **not** add `motion-reduce:animate-none`
-   to a cell utility: `animation: none` resets the shorthand and discards the
-   zeroed duration, so the two mechanisms must never both apply.
+   projected state, and nothing else. The reference is `dialog.classes.ts`:
+   `'data-[state=open]:animate-scale-in-normal-enter data-[state=closed]:animate-scale-out-moderate-exit'`.
+   A state change on a part that stays mounted (hover, checked) is a
+   transition instead, named as composed generics: `duration-<tier>
+   ease-<role>`, plus `delay-<name>` and `extent-<name>` where the row assigns
+   them. Reduced motion is handled INSIDE the generated utility and on the
+   duration leaf (it zeroes the duration and keeps the end state). Do **not**
+   add `motion-reduce:animate-none`: `animation: none` resets the shorthand and
+   discards the zeroed duration, so the two mechanisms must never both apply.
+
+**An agent consumes motion; it never authors it (Sean, 2026-09-25).** The
+rows, the cells, the keyframes and the token values are designer decisions
+made through the motion system the human manages. If the utility a row calls
+for is not emitted -- no cell binds that shape at that tier and curve -- the
+moment has no motion, and the component says so in a comment. An agent never
+adds a cell, a row, a keyframe or a token to make one appear, and never picks a
+shape, tier or curve the row did not assign. Adding per-component cells for
+the drawer slide (reverted in 53208a61) is the failure this rule exists to
+stop.
 
 **Prohibited in a component:** the legacy `motion-*` utility classes
 (`motion-hover`, `motion-modal-in`, `motion-expand`, and the rest of the thirteen
@@ -176,8 +192,9 @@ duration, an easing, or a class that encodes one. The full doctrine is
 `transition-*` timing literal; and a keyframe authored in a component file. Every
 one of these is a value wearing a class name, and both spellings compile, which
 is exactly why the rule has to be a rule. If the matrix has no row for a moment
-the component genuinely has, that is a matrix change request: add the row (with
-its provenance marked proposed), never a local class.
+the component genuinely has, report it in a comment in `classes.ts` and to the
+designer as a matrix change request. Never add the row yourself, and never a
+local class.
 
 **Legacy consumers.** Components ported before the ruling still carry
 `motion-*` classes (accordion, the button spinner). They migrate one at a time;
