@@ -155,13 +155,20 @@ writing motion; this section only says how a classes file consumes them.
    `extent-<name>` where the row assigns them. The part stays present and the
    state drives a transition between two poses. Reference implementations:
    tooltip, hover-card, navigation-menu, the context-menu submenu, accordion,
-   collapsible and sidebar. The pattern, closed then open:
-   `opacity-0 invisible transition-[opacity,visibility] duration-moderate ease-exit`
+   collapsible, sidebar and drawer. A fade, closed then open:
+   `opacity-0 pointer-events-none transition-opacity duration-moderate ease-exit`
    plus
-   `data-[state=open]:opacity-100 data-[state=open]:visible data-[state=open]:duration-normal data-[state=open]:ease-enter`.
-   Visibility rides the transition, so a closing part stays visible until its
-   exit ends. A part that must be unreachable while closed takes `inert`, never
-   `hidden`: `display: none` stops the transition.
+   `data-[state=open]:opacity-100 data-[state=open]:pointer-events-auto data-[state=open]:duration-normal data-[state=open]:ease-enter`.
+   A part that must be unreachable while closed takes `inert`, never `hidden`:
+   `display: none` stops the transition. A part that must also be invisible
+   while closed keeps visibility off the enter: the closed pose transitions
+   every property (`invisible transition-all`), so it stays visible until its
+   exit ends, and the open pose narrows (`data-[state=open]:visible
+   data-[state=open]:transition-transform`), so it is visible from the first
+   frame and a focus trap can focus inside it (drawer content). Name transition
+   utilities (`transition-opacity`, `transition-transform`, `transition-all`),
+   not `transition-[...]` lists: the React performance passes classes through
+   `classy()`, which drops arbitrary values (#2396).
 3. **Reduced motion is already handled** on the leaves (`docs/MOTION.md`, Reduced
    motion). A component adds no `motion-reduce:` class and no reduced-motion
    media query.
