@@ -52,7 +52,8 @@ const overlayClasses =
 //   on four sides, two of them on x. There is no class to name, and
 //   duration-*/ease-* here would time a transition nothing drives. Unlike
 //   sheet, these rows declare NO fade half, so there is not even a partial
-//   consumption to make. This is a vocabulary gap, reported here.
+//   consumption to make. Reported here; #2391 publishes the base
+//   animate-slide-* utilities from the animation definitions.
 //
 //   drawer / content / dragging is a pointer-rule row: a part tracking a
 //   pointer moves exactly with it, and any nonzero duration would be the
