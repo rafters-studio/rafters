@@ -1,0 +1,185 @@
+---
+/**
+ * DatePicker: a calendar in an anchored popup that selects a date for a form
+ *
+ * @cognitive-load 4/10 - decision 2, information 1, interaction 1, disruption 0,
+ * learning 0. One decision (which date) plus the month to find it in; the closed
+ * trigger shows a single value, the open popup is one month of dates; one click
+ * opens and one click selects; the popup is non-modal and anchored, so the page
+ * stays in view; the trigger-plus-calendar pattern is universally learned.
+ * @attention-economics Closed, it costs what a text field costs: one line with the
+ * committed date or a muted placeholder. Attention is spent only while the popup
+ * is open, and the popup closes itself the moment the selection is complete.
+ * @trust-building The trigger always shows what the form will submit; a single
+ * date or a finished range closes the popup and returns focus to the trigger;
+ * Escape and an outside click dismiss without changing the value.
+ * @accessibility The trigger carries aria-haspopup="dialog", aria-expanded and
+ * aria-controls; the popup is role="dialog" named by its trigger; focus moves to
+ * the grid's single tabstop on open and back to the trigger on close; the grid
+ * is calendar's role="grid" with full arrow/Home/End/PageUp/PageDown navigation;
+ * the value submits through a hidden input.
+ * @semantic-meaning Date entry for a form: scheduling, booking, filtering. Single
+ * mode picks one date; range mode picks a start and an end.
+ *
+ * @usage-patterns
+ * DO: Use for single date or date range selection inside a form
+ * DO: Give the picker a name so the value submits with its form
+ * DO: Provide a clear placeholder for the empty state
+ * DO: Bound selectable dates with fromDate/toDate
+ * NEVER: Use for time-only selection
+ * NEVER: Require more than one click to select a single date
+ * NEVER: Hide the selected value behind the popup
+ *
+ * @example
+ * ```tsx
+ * <DatePicker name="due" value={date} onValueChange={setDate} placeholder="Pick a date" />
+ * ```
+ */
+
+/**
+ * Astro performance for date-picker. Server-renders the full light-DOM
+ * structure with the closed-state projection applied -- the trigger showing the
+ * committed date (or the placeholder), the popup present-but-hidden holding
+ * calendar's own Astro performance, and the hidden form input when `name` is
+ * set -- so the picker is correct and submits its value before any JS. The
+ * <script> hands each instance to bindDatePicker, the SAME DOM-native client the
+ * Web Component uses, which binds the nested calendar unless the calendar's own
+ * script already did.
+ *
+ * The root is a semantic <div data-part="root" data-date-picker>. It carries
+ * neither `data-mode` nor `data-popover`, so calendar's and popover's page
+ * scripts never mistake it for one of theirs; config rides as `data-*`.
+ */
+import Calendar from '../calendar/calendar.astro';
+import {
+  DEFAULT_PLACEHOLDER,
+  datePicker,
+  effectiveValue,
+  formValueAttrs,
+  formatValue,
+  parseSelection,
+  serializeValue,
+  type DatePickerConfig,
+  type DatePickerMode,
+  type DatePickerPart,
+} from './date-picker.behavior';
+import { datePickerClasses } from './date-picker.classes';
+import type { PartIds } from '../../lib/contract';
+import type { ComponentProps } from 'astro/types';
+
+interface Props {
+  id: string;
+  mode?: DatePickerMode;
+  /** Serialized value: `yyyy-mm-dd`, or `from..to` in range mode. */
+  value?: string;
+  name?: string;
+  placeholder?: string;
+  disabled?: boolean;
+  defaultMonth?: string;
+  fromDate?: string;
+  toDate?: string;
+  showOutsideDays?: boolean;
+  fixedWeeks?: boolean;
+  weekStartsOn?: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+  today?: string;
+}
+
+const {
+  id,
+  mode = 'single',
+  value = '',
+  name,
+  placeholder = DEFAULT_PLACEHOLDER,
+  disabled = false,
+  defaultMonth,
+  fromDate,
+  toDate,
+  showOutsideDays,
+  fixedWeeks,
+  weekStartsOn,
+  today,
+} = Astro.props;
+
+const config: DatePickerConfig = {
+  mode,
+  defaultValue: parseSelection(mode, value || null),
+  disabled,
+};
+const state = datePicker.initialState(config);
+const classes = datePickerClasses(config, state);
+
+const ids = {} as PartIds<DatePickerPart>;
+for (const part of Object.keys(datePicker.parts) as DatePickerPart[]) ids[part] = '';
+ids.trigger = `${id}-trigger`;
+ids.content = `${id}-content`;
+ids.value = `${id}-value`;
+const aria = datePicker.aria(state, config, ids);
+const committed = effectiveValue(state, config);
+const label = formatValue(committed) || placeholder;
+const hiddenInput = formValueAttrs({ name, value: serializeValue(committed) });
+
+// Calendar's props are exact-optional: forward only the options that were set.
+const forwarded = {
+  selected: value || undefined,
+  defaultMonth,
+  fromDate,
+  toDate,
+  showOutsideDays,
+  fixedWeeks,
+  weekStartsOn,
+  today,
+};
+const calendarProps = Object.fromEntries(
+  Object.entries(forwarded).filter(([, option]) => option !== undefined),
+) as Omit<ComponentProps<typeof Calendar>, 'id' | 'mode'>;
+---
+
+<div
+  data-part="root"
+  data-date-picker
+  data-picker-mode={mode}
+  data-value={value}
+  data-placeholder={placeholder}
+  data-disabled={String(disabled)}
+>
+  <button
+    type="button"
+    id={ids.trigger}
+    data-part="trigger"
+    class={classes.trigger}
+    disabled={disabled}
+    {...aria.trigger}
+  >
+    <span id={ids.value} data-part="value" class={classes.value} {...aria.value}>{label}</span>
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      class={classes.icon}
+      aria-hidden="true"
+    >
+      <path d="M8 2v4"></path>
+      <path d="M16 2v4"></path>
+      <path d="M3 10h18"></path>
+      <rect width="18" height="18" x="3" y="4" rx="2"></rect>
+    </svg>
+  </button>
+  <div id={ids.content} data-part="content" tabindex="-1" class={classes.content} {...aria.content} hidden>
+    <Calendar id={`${id}-calendar`} mode={mode} {...calendarProps} />
+  </div>
+  {hiddenInput && <input data-part="hidden-input" {...hiddenInput} />}
+</div>
+
+<script>
+  import { bindDatePicker } from './date-picker.behavior';
+
+  for (const root of document.querySelectorAll<HTMLElement>('[data-part="root"][data-date-picker]')) {
+    if (root.dataset['bound'] === 'true') continue;
+    root.dataset['bound'] = 'true';
+    bindDatePicker(root);
+  }
+</script>
