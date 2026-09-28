@@ -6,6 +6,9 @@ import { describe, expect, it } from 'vitest';
 import { createBehavior } from '../../../src/lib/contract';
 import { popover } from '../../../src/components/popover/popover.behavior';
 import {
+  calendarKey,
+  calendarSelected,
+  controlledSelection,
   datePicker,
   datePickerIds,
   effectiveValue,
@@ -236,5 +239,30 @@ describe('date-picker value helpers', () => {
     });
     expect(selectionProp('single', undefined)).toBeUndefined();
     expect(selectionProp('single', date)).toEqual({ mode: 'single', date: '2026-07-08' });
+  });
+});
+
+describe('date-picker React value helpers', () => {
+  it('controlledSelection: controlled by the prop key, an explicit undefined is empty', () => {
+    expect(controlledSelection('single', {})).toBeUndefined();
+    expect(controlledSelection('single', { value: undefined })).toEqual({
+      mode: 'single',
+      date: null,
+    });
+    expect(controlledSelection('single', { value: new Date(2026, 6, 8) })).toEqual({
+      mode: 'single',
+      date: '2026-07-08',
+    });
+  });
+
+  it('calendarSelected keeps an empty range controlled; calendarKey flips only for an empty single', () => {
+    expect(calendarSelected({ mode: 'range', from: null, to: null })).toEqual({
+      from: undefined,
+      to: undefined,
+    });
+    expect(calendarSelected({ mode: 'single', date: null })).toBeUndefined();
+    expect(calendarKey({ mode: 'single', date: null })).toBe('empty');
+    expect(calendarKey({ mode: 'single', date: '2026-07-08' })).toBe('set');
+    expect(calendarKey({ mode: 'range', from: null, to: null })).toBe('set');
   });
 });

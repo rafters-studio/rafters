@@ -195,6 +195,39 @@ export function selectionProp(
   return value === undefined ? undefined : toSelection(mode, value);
 }
 
+/**
+ * The React controlled value. Controlled is decided by the prop's PRESENCE,
+ * not its definedness: `value={date}` with `date` undefined is a controlled
+ * empty picker (the shadcn `useState<Date>()` shape), so a reset to undefined
+ * clears the picker instead of falling back to a stale intrinsic value.
+ */
+export function controlledSelection(
+  mode: DatePickerMode,
+  props: { value?: Date | DatePickerRange | undefined },
+): CalendarSelection | undefined {
+  return 'value' in props ? toSelection(mode, props.value) : undefined;
+}
+
+/**
+ * The `selected` prop for calendar's React performance. An empty range is
+ * passed as `{ from: undefined, to: undefined }` so the grid stays controlled
+ * (calendar reads `undefined` as uncontrolled).
+ */
+export function calendarSelected(selection: CalendarSelection): Date | DatePickerRange | undefined {
+  if (selection.mode === 'range' && !selection.from) return { from: undefined, to: undefined };
+  return fromSelection(selection);
+}
+
+/**
+ * A remount key for calendar's React performance. Single mode has no
+ * controlled-empty value (calendar reads `selected={undefined}` as
+ * uncontrolled), so an emptied single picker remounts its grid to drop the
+ * grid's own stale selection. A range never needs it (see calendarSelected).
+ */
+export function calendarKey(selection: CalendarSelection): string {
+  return selection.mode === 'single' && isEmpty(selection) ? 'empty' : 'set';
+}
+
 /** A selection as the React value shape: a Date (or undefined) for single, a
  *  `{ from, to }` range (or undefined when empty) for range. */
 export function fromSelection(selection: CalendarSelection): Date | DatePickerRange | undefined {
@@ -489,6 +522,13 @@ export function bindDatePicker(root: HTMLElement): () => void {
     if (!iso) return;
     const before = effectiveValue(memory.get(), config);
     dispatch('commit', config, { selection: nextSelection(before, iso) });
+    // bindCalendar rebuilt the grid on its own selection, destroying the
+    // focused cell. A partial range keeps the popup open, so put focus back on
+    // the grid's tabstop; otherwise keys land on the body, outside this root.
+    const active = root.ownerDocument.activeElement;
+    if (content && isOpen(memory.get(), config) && !(active && content.contains(active))) {
+      focusGrid(content);
+    }
   };
   root.addEventListener('calendarselect', onCalendarSelect);
 

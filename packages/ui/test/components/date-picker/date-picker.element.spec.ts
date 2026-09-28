@@ -96,7 +96,31 @@ describe('rafters-date-picker [wc]', () => {
     expect(document.activeElement).toBe(dayCell('2026-07-15'));
     await user.keyboard('{Escape}');
     expect(part('content').hidden).toBe(true);
+    expect(document.activeElement).toBe(part('trigger'));
     expect(part('value').textContent).toBe('Jul 8, 2026');
+  });
+
+  it('an outside pointerdown dismisses without changing the value', async () => {
+    const user = userEvent.setup();
+    await mount();
+    await user.click(part('trigger'));
+    expect(part('content').hidden).toBe(false);
+    await user.click(body().querySelector('main') as HTMLElement);
+    expect(part('content').hidden).toBe(true);
+    expect(part('value').textContent).toBe('Pick a date');
+  });
+
+  it('disconnecting tears the bind down: the trigger no longer opens', async () => {
+    const user = userEvent.setup();
+    await mount();
+    const host = body().querySelector('rafters-date-picker') as HTMLElement;
+    const trigger = part('trigger');
+    const content = part('content');
+    host.remove();
+    body().appendChild(trigger);
+    await user.click(trigger);
+    expect(content.hidden).toBe(true);
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
   });
 
   it('range mode stays open for the end, then closes with both dates', async () => {
@@ -108,6 +132,22 @@ describe('rafters-date-picker [wc]', () => {
     await user.click(dayCell('2026-07-14'));
     expect(part('content').hidden).toBe(true);
     expect(part('value').textContent).toBe('Jul 10, 2026 - Jul 14, 2026');
+  });
+
+  it('range by keyboard: focus stays in the grid after the start, Escape still closes', async () => {
+    const user = userEvent.setup();
+    await mount({ mode: 'range' });
+    await user.click(part('trigger'));
+    await user.keyboard('{Enter}');
+    expect(part('content').hidden).toBe(false);
+    expect(document.activeElement).toBe(dayCell('2026-07-20'));
+    await user.keyboard('{ArrowRight}{ArrowRight}{Enter}');
+    expect(part('content').hidden).toBe(true);
+    expect(part('value').textContent).toBe('Jul 20, 2026 - Jul 22, 2026');
+    await user.click(part('trigger'));
+    await user.keyboard('{Enter}');
+    await user.keyboard('{Escape}');
+    expect(part('content').hidden).toBe(true);
   });
 
   it('submits with its form through the hidden input', async () => {

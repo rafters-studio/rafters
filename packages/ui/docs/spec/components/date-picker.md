@@ -104,7 +104,13 @@ type DatePickerActions = {
 ```
 
 `open` and `value` follow the controlled-versus-intrinsic boundary: config
-shadows state, and projections read `isOpen` and `effectiveValue`. `commit`
+shadows state, and projections read `isOpen` and `effectiveValue`. In React,
+`value` is controlled by the prop's presence, not its definedness
+(`controlledSelection`): `value={date}` with `date` undefined is a controlled
+empty picker, so a reset clears it. The nested `<Calendar>` stays controlled
+too: an empty range is passed as `{ from: undefined, to: undefined }`, and an
+emptied single picker remounts the grid (`calendarKey`), because calendar reads
+`selected={undefined}` as uncontrolled. `commit`
 takes an already-computed selection (calendar's `nextSelection` owns the
 transition) and closes the popup when the selection is complete: a single date,
 or a range with both ends. A partial range keeps the popup open for the second
@@ -143,6 +149,10 @@ the placeholder. No label copy is invented, and the dialog is never unnamed.
   dismisses.
 - Selecting a complete value closes the popup and returns focus to the
   trigger.
+- Selecting the start of a range keeps the popup open with focus on the grid.
+  Under WC and Astro, `bindCalendar` rebuilds the day cells on its own
+  selection, so `bindDatePicker` returns focus to the grid's tabstop after a
+  commit that leaves the popup open.
 
 ## Motion
 

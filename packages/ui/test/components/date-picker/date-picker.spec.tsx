@@ -177,6 +177,35 @@ describe('date-picker [react]', () => {
     expect(part('value').textContent).toBe('Jul 1, 2026');
   });
 
+  it('controlled reset to undefined clears the label, the grid and the form value', async () => {
+    const user = userEvent.setup();
+    function Harness() {
+      const [date, setDate] = React.useState<Date | undefined>();
+      return (
+        <form>
+          <DatePicker
+            name="due"
+            value={date}
+            onValueChange={setDate}
+            calendarProps={calendarProps}
+          />
+          <button type="button" onClick={() => setDate(undefined)}>
+            reset
+          </button>
+        </form>
+      );
+    }
+    render(<Harness />);
+    await user.click(part('trigger'));
+    await user.click(dayCell('2026-07-08'));
+    expect(part('value').textContent).toBe('Jul 8, 2026');
+    await user.click(body().querySelector('button:not([data-part])') as HTMLElement);
+    expect(part('value').textContent).toBe('Pick a date');
+    const form = body().querySelector('form') as HTMLFormElement;
+    expect(new FormData(form).get('due')).toBe('');
+    expect(dayCell('2026-07-08').getAttribute('aria-selected')).toBe('false');
+  });
+
   it('disabled: the trigger is inert and the popup never opens', async () => {
     const user = userEvent.setup();
     renderPicker({ disabled: true });

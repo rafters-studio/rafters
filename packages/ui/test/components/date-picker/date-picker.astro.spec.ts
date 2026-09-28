@@ -92,6 +92,41 @@ describe('date-picker [astro]', () => {
     dayCell('2026-07-20').focus();
     await user.keyboard('{Escape}');
     expect(part('content').hidden).toBe(true);
+    expect(document.activeElement).toBe(part('trigger'));
+  });
+
+  it('an outside pointerdown dismisses without changing the value', async () => {
+    const user = userEvent.setup();
+    await mount();
+    await user.click(part('trigger'));
+    expect(part('content').hidden).toBe(false);
+    await user.click(document.body.querySelector('main') as HTMLElement);
+    expect(part('content').hidden).toBe(true);
+    expect(part('value').textContent).toBe('Pick a date');
+  });
+
+  it('teardown removes the listeners and releases the calendar it bound', async () => {
+    const user = userEvent.setup();
+    const root = await render();
+    const calendarRoot = root.querySelector<HTMLElement>('[data-part="root"][data-mode]');
+    const teardown = bindDatePicker(root);
+    expect(calendarRoot?.dataset['bound']).toBe('true');
+    teardown();
+    expect(calendarRoot?.dataset['bound']).toBeUndefined();
+    await user.click(part('trigger'));
+    expect(part('content').hidden).toBe(true);
+  });
+
+  it('range by keyboard: focus stays in the grid after the start, Escape still closes', async () => {
+    const user = userEvent.setup();
+    await mount({ mode: 'range' });
+    await user.click(part('trigger'));
+    dayCell('2026-07-20').focus();
+    await user.keyboard('{Enter}');
+    expect(part('content').hidden).toBe(false);
+    expect(document.activeElement).toBe(dayCell('2026-07-20'));
+    await user.keyboard('{Escape}');
+    expect(part('content').hidden).toBe(true);
   });
 
   it('range: open until the end is picked; the form value is from..to', async () => {

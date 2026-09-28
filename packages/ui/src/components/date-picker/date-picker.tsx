@@ -49,6 +49,9 @@ import { createBehavior } from '../../lib/contract';
 import { Calendar, type CalendarProps } from '../calendar/calendar';
 import {
   DEFAULT_PLACEHOLDER,
+  calendarKey,
+  calendarSelected,
+  controlledSelection,
   datePicker,
   datePickerIds,
   effectiveValue,
@@ -146,14 +149,17 @@ export function DatePicker(props: DatePickerProps) {
 
   const config: DatePickerConfig = {
     mode,
-    value: selectionProp(mode, props.value),
+    value: controlledSelection(mode, props),
     defaultValue: selectionProp(mode, props.defaultValue),
     open,
     defaultOpen,
     disabled,
   };
 
-  const { memory, dispatch } = React.useMemo(() => createBehavior(datePicker, config), []);
+  // The instance is created once from the first render's config (a lazy state
+  // initializer, not a memo: nothing should ever re-create it). Later configs
+  // travel fresh through dispatch and the projections.
+  const [{ memory, dispatch }] = React.useState(() => createBehavior(datePicker, config));
   const state = useMemory(memory);
   const effectiveOpen = isOpen(state, config);
   const value = effectiveValue(state, config);
@@ -219,7 +225,7 @@ export function DatePicker(props: DatePickerProps) {
   const calendar = {
     ...calendarProps,
     mode,
-    selected: fromSelection(value),
+    selected: calendarSelected(value),
     onSelect: (next: Date | DatePickerRange | undefined) => commit(toSelection(mode, next)),
   } as CalendarProps;
 
@@ -250,7 +256,7 @@ export function DatePicker(props: DatePickerProps) {
         {...aria.content}
         onKeyDown={handleKeyDown}
       >
-        <Calendar {...calendar} />
+        <Calendar key={calendarKey(value)} {...calendar} />
       </div>
       {hiddenInput && <input data-part="hidden-input" {...hiddenInput} readOnly />}
     </div>
