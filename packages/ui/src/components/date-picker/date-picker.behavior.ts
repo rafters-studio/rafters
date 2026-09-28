@@ -272,6 +272,21 @@ export const datePicker: BehaviorSpec<
   DatePickerPart
 > = compose('date-picker', popoverSlice, datePickerValue, datePickerGlue);
 
+/**
+ * The part ids every performance renders, derived from one base: trigger,
+ * content and value are real; anchor and close are popover parts the picker
+ * never renders, so they carry the empty-id sentinel.
+ */
+export function datePickerIds(base: string): PartIds<DatePickerPart> {
+  return {
+    trigger: `${base}-trigger`,
+    content: `${base}-content`,
+    value: `${base}-value`,
+    anchor: '',
+    close: '',
+  };
+}
+
 // ==================== Composition function (bind + React share it) ====================
 
 const DAY_TABSTOP = '[data-part="day"][tabindex="0"]';

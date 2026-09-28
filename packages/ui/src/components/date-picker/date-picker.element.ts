@@ -53,6 +53,7 @@ import '../calendar/calendar.element';
 import {
   bindDatePicker,
   datePicker,
+  datePickerIds,
   DEFAULT_PLACEHOLDER,
   formValueAttrs,
   type DatePickerConfig,
@@ -134,6 +135,7 @@ export class RaftersDatePicker extends HTMLElement {
     const classes = datePickerClasses(config, datePicker.initialState(config));
 
     const base = this.id ? `${this.id}-picker` : `date-picker-${++idCounter}`;
+    const ids = datePickerIds(base);
 
     const root = document.createElement('div');
     root.setAttribute('data-part', 'root');
@@ -146,19 +148,19 @@ export class RaftersDatePicker extends HTMLElement {
 
     const trigger = document.createElement('button');
     trigger.type = 'button';
-    trigger.id = `${base}-trigger`;
+    trigger.id = ids.trigger;
     trigger.setAttribute('data-part', 'trigger');
     trigger.className = classes.trigger;
     trigger.disabled = disabled;
 
     const label = document.createElement('span');
-    label.id = `${base}-value`;
+    label.id = ids.value;
     label.setAttribute('data-part', 'value');
     label.className = classes.value;
     trigger.append(label, glyph(classes.icon));
 
     const content = document.createElement('div');
-    content.id = `${base}-content`;
+    content.id = ids.content;
     content.setAttribute('data-part', 'content');
     content.tabIndex = -1;
     content.hidden = true;

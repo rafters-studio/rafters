@@ -7,6 +7,7 @@ import { createBehavior } from '../../../src/lib/contract';
 import { popover } from '../../../src/components/popover/popover.behavior';
 import {
   datePicker,
+  datePickerIds,
   effectiveValue,
   formatValue,
   fromSelection,
@@ -58,6 +59,18 @@ describe('date-picker score: composition', () => {
       single({ defaultValue: { mode: 'single', date: '2026-07-08' }, defaultOpen: true }),
     );
     expect(state).toEqual({ open: true, value: { mode: 'single', date: '2026-07-08' } });
+  });
+});
+
+describe('date-picker part ids', () => {
+  it('derives the rendered parts from one base; unrendered popover parts are empty', () => {
+    expect(datePickerIds('dp')).toEqual({
+      trigger: 'dp-trigger',
+      content: 'dp-content',
+      value: 'dp-value',
+      anchor: '',
+      close: '',
+    });
   });
 });
 

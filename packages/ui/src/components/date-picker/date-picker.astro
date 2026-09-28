@@ -54,6 +54,7 @@ import Calendar from '../calendar/calendar.astro';
 import {
   DEFAULT_PLACEHOLDER,
   datePicker,
+  datePickerIds,
   effectiveValue,
   formValueAttrs,
   formatValue,
@@ -61,10 +62,8 @@ import {
   serializeValue,
   type DatePickerConfig,
   type DatePickerMode,
-  type DatePickerPart,
 } from './date-picker.behavior';
 import { datePickerClasses } from './date-picker.classes';
-import type { PartIds } from '../../lib/contract';
 import type { ComponentProps } from 'astro/types';
 
 interface Props {
@@ -108,11 +107,7 @@ const config: DatePickerConfig = {
 const state = datePicker.initialState(config);
 const classes = datePickerClasses(config, state);
 
-const ids = {} as PartIds<DatePickerPart>;
-for (const part of Object.keys(datePicker.parts) as DatePickerPart[]) ids[part] = '';
-ids.trigger = `${id}-trigger`;
-ids.content = `${id}-content`;
-ids.value = `${id}-value`;
+const ids = datePickerIds(id);
 const aria = datePicker.aria(state, config, ids);
 const committed = effectiveValue(state, config);
 const label = formatValue(committed) || placeholder;

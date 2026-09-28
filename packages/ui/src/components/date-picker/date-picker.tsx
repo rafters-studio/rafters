@@ -45,11 +45,12 @@
 import * as React from 'react';
 import { keyInputOf } from '../../hooks/key-input';
 import { useMemory } from '../../hooks/use-memory';
-import { createBehavior, type PartIds } from '../../lib/contract';
+import { createBehavior } from '../../lib/contract';
 import { Calendar, type CalendarProps } from '../calendar/calendar';
 import {
   DEFAULT_PLACEHOLDER,
   datePicker,
+  datePickerIds,
   effectiveValue,
   formValueAttrs,
   formatValue,
@@ -62,7 +63,6 @@ import {
   toSelection,
   type CalendarSelection,
   type DatePickerConfig,
-  type DatePickerPart,
   type DatePickerRange,
 } from './date-picker.behavior';
 import { datePickerClasses } from './date-picker.classes';
@@ -159,14 +159,7 @@ export function DatePicker(props: DatePickerProps) {
   const value = effectiveValue(state, config);
 
   const uid = React.useId();
-  const ids = React.useMemo(() => {
-    const out = {} as PartIds<DatePickerPart>;
-    for (const part of Object.keys(datePicker.parts) as DatePickerPart[]) out[part] = '';
-    out.trigger = `${uid}-trigger`;
-    out.content = `${uid}-content`;
-    out.value = `${uid}-value`;
-    return out;
-  }, [uid]);
+  const ids = React.useMemo(() => datePickerIds(uid), [uid]);
 
   const triggerRef = React.useRef<HTMLButtonElement>(null);
   const contentRef = React.useRef<HTMLDivElement>(null);
