@@ -582,10 +582,25 @@ export function bindCalendar(root: HTMLElement): () => void {
     return cell && root.contains(cell) ? cell : null;
   };
 
+  const focusFocusedCell = () => {
+    const state = memory.get();
+    if (!state.focusedDate) return;
+    const cell = grid?.querySelector<HTMLElement>(
+      `${DAY_SELECTOR}[data-value="${state.focusedDate}"]`,
+    );
+    cell?.focus();
+  };
+
+  // renderDays replaces every cell, so the cell that held focus is gone after the
+  // selection renders. The activated day becomes the focused date (it owns the
+  // tabstop) and its rebuilt cell takes focus back, BEFORE calendarselect fires so
+  // a listener that moves focus elsewhere (a closing popup) still wins.
   const activate = (iso: ISODate) => {
     if (isDateDisabled(iso, config)) return;
     const before = effectiveSelected(memory.get(), config);
+    dispatch('focusDate', config, iso);
     dispatch('setSelected', config, { selection: nextSelection(before, iso) });
+    focusFocusedCell();
     root.dispatchEvent(new CustomEvent('calendarselect', { bubbles: true, detail: { date: iso } }));
   };
 
@@ -602,15 +617,6 @@ export function bindCalendar(root: HTMLElement): () => void {
   const onNext = () => dispatch('shiftMonth', config, 1);
   prev?.addEventListener('click', onPrev);
   next?.addEventListener('click', onNext);
-
-  const focusFocusedCell = () => {
-    const state = memory.get();
-    if (!state.focusedDate) return;
-    const cell = grid?.querySelector<HTMLElement>(
-      `${DAY_SELECTOR}[data-value="${state.focusedDate}"]`,
-    );
-    cell?.focus();
-  };
 
   // preventDefault is scoped INSIDE the handler (only when a day cell owns focus)
   // so a keydown bubbling from the focused prev/next button keeps its native
