@@ -343,11 +343,15 @@ export function MenubarTrigger({
   onClick,
   ...props
 }: MenubarTriggerProps) {
-  const { state, config, request, currentActive, classes } = useMenubarContext('MenubarTrigger');
+  const { state, config, request, currentActive, menuHost, classes } =
+    useMenubarContext('MenubarTrigger');
   const { value, triggerId, contentId } = useMenuContext('MenubarTrigger');
+  // The menu renders only once its host has mounted (never on the server), so
+  // until then its id is not real: pass the empty id and aria-controls stays
+  // absent rather than dangling.
   const aria = menubarInstanceAria('trigger', value, state, config, {
     trigger: triggerId,
-    content: contentId,
+    content: menuHost ? contentId : '',
   });
 
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
