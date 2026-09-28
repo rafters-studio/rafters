@@ -292,17 +292,18 @@ export interface MenubarMenuPorts {
   bar: HTMLElement;
   trigger: HTMLElement;
   content: HTMLElement;
-  /** Outside-pointerdown dismissal (a pointerdown on the bar is spared: it is
-   *  a trigger click, which switches or closes through the click path). */
+  /** Outside-pointerdown dismissal. A pointerdown on any trigger is spared:
+   *  it is a trigger click, which switches or closes through the click path. */
   onDismiss: () => void;
 }
 
 /**
  * One open menu: position it under its trigger, then run dropdown-menu's own
- * open-menu trio over it (roving focus, typeahead, outside dismissal). The bar
- * stands in for the trigger dropdown-menu spares, so a pointerdown on ANY
- * trigger is left to the click path. Started when a menu opens (or the open
- * menu changes) and torn down when it closes.
+ * open-menu trio over it (roving focus, typeahead, outside dismissal). The
+ * trigger dropdown-menu spares is left unset; the spare happens here instead,
+ * for a pointerdown on ANY trigger of the bar -- and only a trigger, so a
+ * pointerdown on the bar's blank space still dismisses. Started when a menu
+ * opens (or the open menu changes) and torn down when it closes.
  */
 export function startMenubarMenu({
   bar,
@@ -311,7 +312,18 @@ export function startMenubarMenu({
   onDismiss,
 }: MenubarMenuPorts): () => void {
   positionMenubarContent(trigger, content);
-  return startDropdownMenuEffects({ content, getTrigger: () => bar, onDismiss });
+  return startDropdownMenuEffects({
+    content,
+    getTrigger: () => null,
+    onDismiss: (event) => {
+      const target = event.target;
+      const onTrigger =
+        target instanceof Element &&
+        bar.contains(target) &&
+        target.closest('[data-part="trigger"]') !== null;
+      if (!onTrigger) onDismiss();
+    },
+  });
 }
 
 /** Move focus into an opened menu unless it is already there. */

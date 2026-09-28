@@ -41,9 +41,10 @@ What is reused, and how:
 - **Each menu's keys** are `dropdownMenu.keymap`: ArrowDown/ArrowUp/Enter/Space
   on a trigger open, Escape inside a menu closes.
 - **Each open menu's effects** are `startDropdownMenuEffects`, unchanged:
-  vertical roving focus, typeahead, and outside-pointerdown dismissal. The bar is
-  passed as the element dropdown-menu spares, so a pointerdown on any trigger is
-  left to the click path (switch or close) instead of dismissing.
+  vertical roving focus, typeahead, and outside-pointerdown dismissal. Its
+  dismiss handler spares a pointerdown on any trigger of the bar, leaving it to
+  the click path (switch or close); a pointerdown on the bar's blank space
+  still dismisses.
   `focusFirstItem` is reused for open-focus.
 - **The bar** is `createRovingFocus(bar, { orientation: 'horizontal' })`, the
   shape navigation-menu runs over its trigger list.
@@ -68,10 +69,28 @@ therefore leave the bar, the context-menu submenu precedent:
 - `bindMenubar` moves every menu out of the root to sit right after it, and
   restores each to its authored place on teardown.
 - React portals each `MenubarContent` into a host `Menubar` renders right after
-  the bar (`display: contents`, no box of its own).
+  the bar (`display: contents`, no box of its own). The host exists only after
+  mount, so until then -- the server render and the hydration pass -- each menu
+  renders in place inside the bar, always hidden. React server HTML therefore
+  carries every menu, as the Astro performance does, every trigger's
+  `aria-controls` resolves, and hydration matches (a unit test hydrates the
+  server string and asserts no recoverable error). The first effect pass moves
+  the menus into the host, before the bar rove reads any key.
+
+Both performances end in the same DOM: the bar, then its menus as the
+following siblings. Alternatives considered and not taken:
+
+- Menus inside the bar: the rove above breaks, and `role="menu"` sits inside
+  `role="menubar"` (the oracle's defect).
+- Excluding the menu items from the rove: needs a selector option on
+  `roving-focus`, a shared primitive this port may not edit.
+- The end of the body (the context-menu precedent): fails axe `region`,
+  because the menus leave the landmark that holds the bar.
 
 Right after the bar, not the end of the body, keeps each menu inside whatever
-landmark holds the bar (axe `region`). Outside the bar the menus no longer
+landmark holds the bar (axe `region`). The cost: the bind rearranges author
+markup (restored on teardown), and a consumer styling the menubar's parent sees
+the menus as its children. Outside the bar the menus no longer
 bubble native events to the root, so the bind listens on each menu too; React
 events still bubble through the portal to the root's `onKeyDown`. An open menu
 is anchored under its trigger by `positionMenubarContent`
@@ -167,7 +186,8 @@ convention: a projection referencing an empty id emits `undefined`, so
   the open menu's trigger closes it (after the one absorbed click above).
 - With a menu open, moving the pointer onto another trigger switches to its
   menu. With every menu closed, hovering opens nothing.
-- A pointerdown outside the open menu and outside the bar closes it.
+- A pointerdown outside the open menu closes it, unless it lands on a trigger
+  (the click path handles that). The bar's blank space counts as outside.
 
 ## Motion
 
@@ -193,7 +213,7 @@ animate utility, and the classes test asserts it.
 | Arrow Up/Down + typeahead within the open menu | contract (`startDropdownMenuEffects`) |
 | focus first item on open, return to trigger on close | contract |
 | Escape closes via a document `escape-keydown` listener | contract, moved to the menu keymap (dropdown-menu's) -- no `escape-keydown` primitive |
-| outside pointerdown closes, sparing triggers | contract (dropdown-menu's `onPointerDownOutside`, the bar spared) |
+| outside pointerdown closes, sparing triggers | contract (dropdown-menu's `onPointerDownOutside`; `startMenubarMenu` spares a pointerdown on a trigger only) |
 | Enter/Space on an item synthesizes a click; selecting closes | contract |
 | ArrowLeft/Right inside a menu | contract, new in the score (`next`/`prev`); the oracle let these bubble into the trigger rove, whose item list included the menu items |
 | `loop` prop | contract (`config.loop`: the bar rove and `next`/`prev`); menus always wrap, as dropdown-menu's do |
@@ -202,6 +222,8 @@ animate utility, and the classes test asserts it.
 | `aria-controls` always set on triggers | defect-do-not-port -- dangling while closed; now only while open |
 | asChild on Trigger / Content | framework affordance (React); also on Item |
 | Portal (`container`, `forceMount`) | framework affordance -> pass-through: Content already portals out of the bar |
+| `React.forwardRef` on every React part | dropped -- consistent with dropdown-menu, whose parts do not forward refs either; React 19 passes `ref` as a prop to function components, and the parts spread props onto their element |
+| seven slot-composed Astro parts (`menubar-menu`/`-trigger`/`-content`/`-item`/`-label`/`-separator`/`-shortcut.astro`) | reduced -- one data-driven `menubar.astro` taking `menus: { value, label, items: { label, disabled?, shortcut? }[] }[]`, the shape dropdown-menu.astro and navigation-menu.astro take. The Astro surface has no label, separator, group, checkbox or radio items; those remain React-only, as dropdown-menu's are |
 | Content `loop` prop | dropped -- menus always wrap (dropdown-menu's trio) |
 | Sub / SubTrigger / SubContent (nested submenus with `setTimeout` hover) | dropped -- dropdown-menu, which each menu is, has no submenu (its doc drops it for the same reasons: no submenu axis in the issue, and the raw `setTimeout` is a forbidden half-solution). Building one here would be a menu reimplemented, which the issue rules out |
 | `animate-in`/`zoom`/`fade`/`slide` + `duration-100` + `motion-reduce:` classes | dropped -- motion is #2292 |

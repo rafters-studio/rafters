@@ -260,6 +260,22 @@ describe('menubar [react]', () => {
     expect(content('file').hidden).toBe(true);
   });
 
+  it("a pointerdown on the bar's blank space dismisses", async () => {
+    const user = userEvent.setup();
+    render(<TestMenubar />);
+    await user.click(trigger('file'));
+    await user.click(root());
+    expect(content('file').hidden).toBe(true);
+  });
+
+  it('menus render in place, hidden, until the host mounts, then leave the bar', () => {
+    const { container } = render(<TestMenubar defaultValue="file" />);
+    // After mount every menu sits in the host after the bar, not in the bar.
+    expect(root().querySelector('[data-part="content"]')).toBeNull();
+    expect(container.querySelectorAll('[data-part="content"]')).toHaveLength(3);
+    expect(content('file').hidden).toBe(false);
+  });
+
   it('controlled value: onValueChange reports the next menu and state follows the prop', async () => {
     const user = userEvent.setup();
     const onValueChange = vi.fn();

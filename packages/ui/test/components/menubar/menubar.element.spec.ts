@@ -159,6 +159,16 @@ describe('menubar [wc]', () => {
     expect(content('file').hidden).toBe(true);
   });
 
+  it("a pointerdown on the bar's blank space dismisses; one on a trigger does not", async () => {
+    const user = userEvent.setup();
+    await mount();
+    await user.click(trigger('file'));
+    await user.click(trigger('edit'));
+    expect(content('edit').hidden).toBe(false);
+    await user.click(root());
+    expect(content('edit').hidden).toBe(true);
+  });
+
   it('disconnecting restores each menu to its authored place in the bar', async () => {
     await mount();
     const menu = content('file');

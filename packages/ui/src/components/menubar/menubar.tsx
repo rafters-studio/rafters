@@ -170,7 +170,7 @@ export function Menubar({
   const rootRef = React.useRef<HTMLDivElement>(null);
   // Where the menus portal to: a host rendered right after the bar, so each
   // menu is out of the bar (see MenubarContent) but inside whatever landmark
-  // holds it. Known only after mount, so the menus render from then on.
+  // holds it. Known only after mount; until then each menu renders in place.
   const [menuHost, setMenuHost] = React.useState<HTMLElement | null>(null);
 
   // Effect-initiated dispatches (focus/pointer follow, outside dismissal) must
@@ -343,15 +343,11 @@ export function MenubarTrigger({
   onClick,
   ...props
 }: MenubarTriggerProps) {
-  const { state, config, request, currentActive, menuHost, classes } =
-    useMenubarContext('MenubarTrigger');
+  const { state, config, request, currentActive, classes } = useMenubarContext('MenubarTrigger');
   const { value, triggerId, contentId } = useMenuContext('MenubarTrigger');
-  // The menu renders only once its host has mounted (never on the server), so
-  // until then its id is not real: pass the empty id and aria-controls stays
-  // absent rather than dangling.
   const aria = menubarInstanceAria('trigger', value, state, config, {
     trigger: triggerId,
-    content: menuHost ? contentId : '',
+    content: contentId,
   });
 
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -397,8 +393,8 @@ export interface MenubarContentProps extends React.HTMLAttributes<HTMLDivElement
  * The menu. Portaled out of the bar: the trigger rove is roving-focus over the
  * bar, which collects every `role="menuitem"` beneath it, so a menu left inside
  * would pour its items into the trigger row. It lands in the host Menubar
- * renders right after the bar, inside the same landmark. Present but hidden
- * while closed.
+ * renders right after the bar, inside the same landmark (in place, hidden,
+ * until that host mounts). Present but hidden while closed.
  */
 export function MenubarContent({ className, children, asChild, ...props }: MenubarContentProps) {
   const { state, config, active, menuHost, classes } = useMenubarContext('MenubarContent');
@@ -412,7 +408,10 @@ export function MenubarContent({ className, children, asChild, ...props }: Menub
     'data-part': 'content',
     'data-value': value,
     id: contentId,
-    hidden: active === value ? undefined : true,
+    // Inline (before the host mounts) the menu is always hidden: it sits in the
+    // bar's flow there, unpositioned, so it is markup for the server and the
+    // hydration pass, never something to show.
+    hidden: menuHost && active === value ? undefined : true,
     ...aria,
   };
 
@@ -428,7 +427,11 @@ export function MenubarContent({ className, children, asChild, ...props }: Menub
       </div>
     );
 
-  return menuHost ? createPortal(content, menuHost) : null;
+  // Until the host exists -- the server render and the hydration pass -- the
+  // menu renders in place, so React server HTML carries every menu (as the
+  // Astro performance does) and hydration matches it. Once the host mounts the
+  // menu moves out of the bar, before the bar rove ever reads a key.
+  return menuHost ? createPortal(content, menuHost) : content;
 }
 
 export type MenubarGroupProps = React.HTMLAttributes<HTMLDivElement>;
