@@ -150,9 +150,8 @@ the placeholder. No label copy is invented, and the dialog is never unnamed.
 - Selecting a complete value closes the popup and returns focus to the
   trigger.
 - Selecting the start of a range keeps the popup open with focus on the grid.
-  Under WC and Astro, `bindCalendar` rebuilds the day cells on its own
-  selection, so `bindDatePicker` returns focus to the grid's tabstop after a
-  commit that leaves the popup open.
+  Under WC and Astro this is calendar's own contract: `bindCalendar` refocuses
+  the chosen day after rebuilding the cells (#2400), so the picker adds nothing.
 
 ## Motion
 

@@ -522,13 +522,6 @@ export function bindDatePicker(root: HTMLElement): () => void {
     if (!iso) return;
     const before = effectiveValue(memory.get(), config);
     dispatch('commit', config, { selection: nextSelection(before, iso) });
-    // bindCalendar rebuilt the grid on its own selection, destroying the
-    // focused cell. A partial range keeps the popup open, so put focus back on
-    // the grid's tabstop; otherwise keys land on the body, outside this root.
-    const active = root.ownerDocument.activeElement;
-    if (content && isOpen(memory.get(), config) && !(active && content.contains(active))) {
-      focusGrid(content);
-    }
   };
   root.addEventListener('calendarselect', onCalendarSelect);
 
