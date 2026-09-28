@@ -154,6 +154,28 @@ describe('calendar [wc]', () => {
     expect(dayCell('2026-07-15').getAttribute('data-selected')).toBe('true');
   });
 
+  it('click leaves focus on the selected day cell', async () => {
+    const user = userEvent.setup();
+    await mount();
+    await user.click(dayCell('2026-07-15'));
+    expect(document.activeElement).toBe(dayCell('2026-07-15'));
+    expect(dayCell('2026-07-15').getAttribute('tabindex')).toBe('0');
+  });
+
+  it.each([
+    ['Enter', '{Enter}'],
+    ['Space', ' '],
+  ])('%s selects the focused day, keeps focus on it, and arrows keep working', async (_, key) => {
+    const user = userEvent.setup();
+    await mount();
+    dayCell('2026-07-15').focus();
+    await user.keyboard(key);
+    expect(dayCell('2026-07-15').getAttribute('aria-selected')).toBe('true');
+    expect(document.activeElement).toBe(dayCell('2026-07-15'));
+    await user.keyboard('{ArrowRight}');
+    expect(document.activeElement).toBe(dayCell('2026-07-16'));
+  });
+
   it('arrow keys move focus and cross the month boundary', async () => {
     const user = userEvent.setup();
     await mount();
