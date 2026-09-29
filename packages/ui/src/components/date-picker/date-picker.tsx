@@ -251,7 +251,9 @@ export function DatePicker(props: DatePickerProps) {
         data-part="content"
         id={ids.content}
         tabIndex={-1}
-        hidden={!effectiveOpen}
+        // Closed, the popup stays rendered so its fade + zoom can play; inert
+        // keeps it out of the tab order and the accessibility tree.
+        inert={!effectiveOpen}
         className={classes.content}
         {...aria.content}
         onKeyDown={handleKeyDown}

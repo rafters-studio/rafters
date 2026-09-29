@@ -163,7 +163,7 @@ export class RaftersDatePicker extends HTMLElement {
     content.id = ids.content;
     content.setAttribute('data-part', 'content');
     content.tabIndex = -1;
-    content.hidden = true;
+    content.inert = true;
     content.className = classes.content;
 
     const calendar = document.createElement('rafters-calendar');
