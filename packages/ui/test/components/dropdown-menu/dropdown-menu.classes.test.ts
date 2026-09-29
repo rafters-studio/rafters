@@ -55,16 +55,25 @@ describe('dropdown-menu classes', () => {
     expect(classes.item).toContain('ease-standard');
   });
 
-  it('items carry the enter row: the stagger delay, no duration, no curve', () => {
+  it('the items enter row is selected on their container, not on the items', () => {
     // motion.jsonl: dropdown-menu / items / enter assigns `delay-stagger-step`
-    // and `duration: {"kind":"none"}` -- no DURATION, which is not the same as
-    // no assignment. The delay generic is the whole row, so naming it is the
-    // whole consumption; the fade itself belongs to the content keyframe.
-    // It resolves to 0ms at the efficient intent, and that is the assignment
-    // rather than a gap: a later retune needs a consumer here to reach.
-    expect(classes.item).toContain('delay-stagger-step');
-    expect(classes.checkboxItem).toContain('delay-stagger-step');
-    expect(classes.radioItem).toContain('delay-stagger-step');
+    // per POSITION. The content -- the item collection's container -- selects
+    // the generated `stagger-items` ladder (#2189); the compiled per-item
+    // delays are read in dropdown-menu.stagger.test.tsx. The items carry no
+    // delay of their own, so the highlight-colour transition never waits on
+    // the stagger step (#2410).
+    expect(classes.content.split(/\s+/)).toContain('stagger-items');
+    expect(classes.item).not.toContain('delay-stagger-step');
+    expect(classes.checkboxItem).not.toContain('delay-stagger-step');
+    expect(classes.radioItem).not.toContain('delay-stagger-step');
+  });
+
+  it('selects the ladder, never constructs it (00-boundaries.md Sec 6)', () => {
+    for (const value of Object.values(classes)) {
+      expect(value).not.toContain('calc(');
+      expect(value).not.toContain('nth-child');
+      expect(value).not.toContain('[animation-delay');
+    }
   });
 
   it('no hand-rolled animation vocabulary and no raw durations', () => {
