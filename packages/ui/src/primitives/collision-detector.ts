@@ -279,7 +279,56 @@ function calculateArrowPosition(
 }
 
 /**
+ * One axis of the floating element's layout size. `offsetWidth`/`offsetHeight`
+ * ignore transforms, so a popup measured mid-zoom (a `scale` transition, or a
+ * `transform: scale()` keyframe) reports the size it settles at, not the scaled
+ * box. They are whole pixels, so the visual size stands whenever the two agree
+ * within a pixel (an unscaled element keeps its fractional measurement), and it
+ * is the fallback where there is no layout (a DOM such as happy-dom reads 0).
+ */
+function layoutAxis(layout: number, visual: number): number {
+  if (layout === 0 || Math.abs(layout - visual) < 1) return visual;
+  return layout;
+}
+
+/**
+ * The floating element's rect at its unscaled layout size (see
+ * {@link layoutAxis}). Only width and height feed the placement math.
+ */
+function measureFloating(floating: HTMLElement): DOMRect {
+  const visual = floating.getBoundingClientRect();
+  const width = layoutAxis(floating.offsetWidth, visual.width);
+  const height = layoutAxis(floating.offsetHeight, visual.height);
+  if (width === visual.width && height === visual.height) return visual;
+  return new DOMRect(visual.x, visual.y, width, height);
+}
+
+/**
+ * Write a placement to the floating element through `left`/`top`, never
+ * `transform`. Every named transition utility that covers `scale`
+ * (`transition`, `transition-transform`, `transition-all`) also covers
+ * `transform`, so a placement written there animates with the popup's zoom: the
+ * first open travels in from the viewport origin and a scroll reposition lags.
+ * A `transform: scale()` keyframe would also replace the translate outright
+ * while it runs. `left`/`top` leave `transform` and `scale` to the motion.
+ */
+export function placeFloating(
+  floating: HTMLElement,
+  result: Pick<CollisionResult, 'x' | 'y' | 'side' | 'align'>,
+  strategy: 'fixed' | 'absolute',
+): void {
+  floating.style.position = strategy;
+  floating.style.left = `${Math.round(result.x)}px`;
+  floating.style.top = `${Math.round(result.y)}px`;
+  floating.setAttribute('data-side', result.side);
+  floating.setAttribute('data-align', result.align);
+}
+
+/**
  * Compute optimal position for floating element
+ *
+ * The floating element is measured at its layout size, so a popup that is
+ * scaled down while it zooms in is placed from the size it settles at.
  *
  * The anchor may be an `HTMLElement` (measured via `getBoundingClientRect()`),
  * a `DOMRect` (used directly), or a `{ x, y }` point (treated as a zero-size
@@ -294,9 +343,7 @@ function calculateArrowPosition(
  *   avoidCollisions: true,
  * });
  *
- * floating.style.transform = `translate(${result.x}px, ${result.y}px)`;
- * floating.dataset.side = result.side;
- * floating.dataset.align = result.align;
+ * placeFloating(floating, result, 'fixed');
  * ```
  */
 export function computePosition(
@@ -330,7 +377,7 @@ export function computePosition(
 
   // Get rects
   const anchorRect = resolveAnchorRect(anchor);
-  const floatingRect = floating.getBoundingClientRect();
+  const floatingRect = measureFloating(floating);
   const boundaryRect = collisionBoundary
     ? collisionBoundary.getBoundingClientRect()
     : getViewportRect();
@@ -459,7 +506,7 @@ export function computePosition(
  * @example
  * ```typescript
  * applyPosition(anchor, floating, { side: 'bottom' });
- * // Sets transform, data-side, data-align on floating element
+ * // Sets left/top, data-side, data-align on floating element
  * ```
  */
 export function applyPosition(
@@ -469,15 +516,7 @@ export function applyPosition(
 ): CollisionResult {
   const result = computePosition(anchor, floating, options);
 
-  // Apply position
-  floating.style.position = 'absolute';
-  floating.style.left = '0';
-  floating.style.top = '0';
-  floating.style.transform = `translate(${Math.round(result.x)}px, ${Math.round(result.y)}px)`;
-
-  // Set data attributes for styling
-  floating.setAttribute('data-side', result.side);
-  floating.setAttribute('data-align', result.align);
+  placeFloating(floating, result, 'absolute');
 
   // Apply arrow position if provided
   if (options.arrowElement && (result.arrowX !== undefined || result.arrowY !== undefined)) {

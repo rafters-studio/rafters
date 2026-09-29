@@ -30,11 +30,51 @@ describe('date-picker classes', () => {
     expect(classes.trigger).toContain('focus-visible:ring-ring');
   });
 
-  it('names no motion: date-picker motion is #2282', () => {
-    for (const value of Object.values(classes)) {
-      expect(value).not.toMatch(/\b(animate|transition|duration|delay|ease)-/);
-      expect(value).not.toContain('motion-');
+  it('the content fades and zooms on the generics its rows assign, keyed off data-state (#2282)', () => {
+    // motion.jsonl: date-picker / content / closed -> open is moderate + enter,
+    // open -> closed is fast + exit, both fade + zoom with extent pop. The
+    // closed pose is the base (the exit row); the open pose owns the enter row.
+    const content = classes.content.split(' ');
+    for (const closed of [
+      'opacity-0',
+      'pointer-events-none',
+      'extent-pop',
+      'scale-(--rafters-consumed-extent)',
+      'transition',
+      'duration-fast',
+      'ease-exit',
+    ]) {
+      expect(content).toContain(closed);
     }
+    for (const open of [
+      'data-[state=open]:opacity-100',
+      'data-[state=open]:scale-100',
+      'data-[state=open]:pointer-events-auto',
+      'data-[state=open]:duration-moderate',
+      'data-[state=open]:ease-enter',
+    ]) {
+      expect(content).toContain(open);
+    }
+    // Out of flow while closed: the part stays present, so it must not hold
+    // layout under the trigger before the first open positions it.
+    expect(content).toContain('fixed');
+  });
+
+  it('names only the generics the rows assign: no literals, keyframes or bracketed lists', () => {
+    for (const value of Object.values(classes)) {
+      expect(value).not.toContain('animate-');
+      expect(value).not.toContain('transition-[');
+      expect(value).not.toContain('transition-all');
+      expect(value).not.toMatch(/\b(duration|delay)-\d/);
+      expect(value).not.toContain('ease-[');
+      expect(value).not.toContain('motion-');
+      expect(value).not.toContain('motion-reduce:');
+      expect(value).not.toMatch(/\bdelay-/);
+    }
+    // The trigger has no row: its hover border and focus ring stay instant.
+    expect(classes.trigger).not.toMatch(
+      /\b(transition|duration|ease)\b|\b(transition|duration|ease)-/,
+    );
   });
 
   it('semantic tokens only: no arbitrary values, no named colors, no raw z-index', () => {

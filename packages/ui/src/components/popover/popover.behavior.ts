@@ -14,7 +14,7 @@ import {
   type DisclosableState,
 } from '../../lib/disclosable';
 import { updateAriaAttribute } from '../../primitives/aria-manager';
-import { computePosition } from '../../primitives/collision-detector';
+import { computePosition, placeFloating } from '../../primitives/collision-detector';
 import { onPointerDownOutside } from '../../primitives/outside-click';
 import type { Align, Side } from '../../primitives/types';
 
@@ -88,9 +88,10 @@ export const popover: BehaviorSpec<PopoverConfig, PopoverState, PopoverActions, 
 /**
  * Position the content against the anchor -- a framework-affordance shared by
  * every decorator. Composes the collision-detector primitive (the positioning
- * math) and applies the result with fixed positioning, exactly as the old
- * Float substrate did. The resolved side/align land as data-side/data-align on
- * the content so the enter/exit slide variants key off the real placement.
+ * math) and applies the result with fixed positioning through `left`/`top`
+ * (`placeFloating`), so the content's zoom motion never animates its placement.
+ * The resolved side/align land as data-side/data-align on the content so the
+ * enter/exit variants key off the real placement.
  */
 export function positionPopover(
   anchor: HTMLElement | null,
@@ -104,12 +105,7 @@ export function positionPopover(
     sideOffset: options.sideOffset ?? DEFAULT_SIDE_OFFSET,
     alignOffset: options.alignOffset ?? DEFAULT_ALIGN_OFFSET,
   });
-  content.style.position = 'fixed';
-  content.style.left = '0';
-  content.style.top = '0';
-  content.style.transform = `translate(${Math.round(result.x)}px, ${Math.round(result.y)}px)`;
-  content.setAttribute('data-side', result.side);
-  content.setAttribute('data-align', result.align);
+  placeFloating(content, result, 'fixed');
 }
 
 /** Move focus to the first focusable descendant of the content -- a

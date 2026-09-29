@@ -35,7 +35,7 @@ import { contextMenuClasses } from '../../src/components/context-menu/context-me
 import { hoverCardClasses } from '../../src/components/hover-card/hover-card.classes';
 import { navigationMenuClasses } from '../../src/components/navigation-menu/navigation-menu.classes';
 import { tooltipClasses } from '../../src/components/tooltip/tooltip.classes';
-import { componentSheet, escapeCandidate } from './component-sheet';
+import { componentSheet as sheet, escapeCandidate } from './component-sheet';
 
 const COMPONENTS = ['tooltip', 'hover-card', 'navigation-menu', 'context-menu'] as const;
 
@@ -52,7 +52,7 @@ describe('the hover-reveal candidates compile (#2148)', () => {
   it.each(COMPONENTS)(
     '%s: every content candidate became a real rule',
     async (component) => {
-      const css = await componentSheet(component);
+      const css = await sheet(component);
       const missing = CONTENT_CLASSES[component]
         .split(' ')
         .filter(Boolean)
@@ -68,7 +68,7 @@ describe('the hover-reveal candidates compile (#2148)', () => {
   ] as const)(
     '%s: the arbitrary variants desugar to the selectors they were written for',
     async (component, marker) => {
-      const css = await componentSheet(component);
+      const css = await sheet(component);
       // Not "a rule exists" but "THIS rule exists": the reveal is a root-level
       // :hover the pointer can travel into, narrowed to the trigger by :has()
       // when the content is declared un-hoverable.
@@ -90,7 +90,7 @@ describe('the hover-reveal candidates compile (#2148)', () => {
     // children of `[data-part="sub"]`), not by executing the behavior script.
     // (Not a no-JS-floor claim -- spec correction 2026-08-28: the parent menu
     // itself opens only on the `contextmenu` event, which requires script.)
-    const css = await componentSheet('context-menu');
+    const css = await sheet('context-menu');
     expect(css, 'sub-content reveal-on-hover selector missing').toContain(
       ':is([data-part=sub]:has(>[data-part=sub-trigger]:is(:hover,:focus-within)),' +
         '[data-part=sub]:has(>[data-part=sub-content]:is(:hover,:focus-within)))>',
@@ -142,7 +142,7 @@ describe('the hover-reveal candidates compile (#2148)', () => {
   }, 120_000);
 
   it('navigation-menu: the reveal is the ITEM, the dismissal is the PANEL', async () => {
-    const css = await componentSheet('navigation-menu');
+    const css = await sheet('navigation-menu');
     // Tailwind's own named-group emission for the item scope...
     expect(css).toContain(':where(.group\\/navigation-item):hover');
     expect(css).toContain(':where(.group\\/navigation-item):focus-within');
@@ -168,7 +168,7 @@ describe('the hover-reveal candidates compile (#2148)', () => {
   it.each(COMPONENTS)(
     '%s: pointer-events is transitioned discretely, never switched by the reveal',
     async (component) => {
-      const css = await componentSheet(component);
+      const css = await sheet(component);
       expect(css).toContain(
         `transition-property:${BASE_TRANSITION_PROPERTY[component].slice('transition-['.length, -1)}`,
       );
@@ -182,7 +182,7 @@ describe('the hover-reveal candidates compile (#2148)', () => {
     async (component) => {
       // The silent-drift guard described in the header. Read off the compiled
       // sheet, because Tailwind's sort order is the only thing that decides it.
-      const css = await componentSheet(component);
+      const css = await sheet(component);
       const pairs: Array<[string, string]> = [
         [BASE_TRANSITION_PROPERTY[component], 'duration-fast'],
       ];

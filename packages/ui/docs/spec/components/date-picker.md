@@ -76,7 +76,7 @@ containment (anything inside the popup is `content`), then asks the keymap.
 | form-value | yes | the hidden mirror input (`formValueAttrs`): the trigger is a button, not a form field |
 | keyboard-handler | via calendar | calendar composes it for grid navigation; the picker adds no key handling of its own beyond Escape |
 | escape-keydown | no | Escape rides the score keymap on the content, as dialog and popover do |
-| portal | no | the popup lives in light DOM, present but hidden (select and combobox precedent), so all three performances share one bind |
+| portal | no | the popup lives in light DOM, present but `inert` while closed, so all three performances share one bind |
 | createDisclosure / createSelectionGroup | no | cell-owning primitives do not compose; the open axis is the `disclosable` slice inside popover's score |
 
 ## Config, state, actions
@@ -129,7 +129,7 @@ input, and `parseSelection` reads it back.
 | --- | --- | --- |
 | trigger | always | `aria-haspopup="dialog"`, `aria-expanded`, `aria-controls` (open + real id), `data-state`, `data-disabled`; native `disabled` from config |
 | value | always (inside trigger) | `data-empty` when nothing is selected; text is the formatted value or the placeholder |
-| content | present, `hidden` when closed | `role="dialog"`, `aria-labelledby` (the trigger), `data-state`, `tabindex="-1"` |
+| content | present, `inert` when closed | `role="dialog"`, `aria-labelledby` (the trigger), `data-state`, `tabindex="-1"` |
 | anchor | not rendered | popover's part; the trigger is the positioning reference (empty-id sentinel) |
 | close | not rendered | popover's part; no in-panel close (empty-id sentinel) |
 | hidden-input | when `name` is set | `type="hidden"`, `name`, `value` (form-value); not a score part |
@@ -155,9 +155,15 @@ the placeholder. No label copy is invented, and the dialog is never unnamed.
 
 ## Motion
 
-None. Motion is #2282, built after this port lands, and
-`date-picker.classes.ts` names no motion. The popup appears and disappears
-through the `hidden` toggle.
+The content consumes its two `motion.jsonl` rows (#2282) as a transition
+between a closed and an open pose keyed off `data-state`: closed -> open is
+fade + zoom at `duration-moderate`, `ease-enter`, `extent-pop`; open -> closed
+is fade + zoom at `duration-fast`, `ease-exit`, `extent-pop`. The popup stays
+present and is `inert` while closed, never `hidden`, because `display: none`
+stops the transition. Placement goes through `positionPopover`, which writes
+`left`/`top` (#2403), outside the bare `transition` utility, so the placement
+never animates. The trigger's hover border and focus ring have no row and stay
+instant; `date-picker.classes.ts` reports them.
 
 ## shadcn parity
 
@@ -202,11 +208,11 @@ Per target:
 | Escape closes and refocuses the trigger | contract (score keymap; refocus in the composition function's teardown) |
 | outside pointerdown closes, sparing the trigger | contract (`outside-click`) |
 | collision positioning below the trigger, start-aligned, 4px offset | contract (`positionPopover` with `DATE_PICKER_POSITION`) |
-| portal to `document.body` | dropped: the popup lives in light DOM present-but-hidden (select/combobox precedent) |
+| portal to `document.body` | dropped: the popup lives in light DOM, present and `inert` while closed |
 | calendar glyph in the trigger | contract (the oracle's SVG, `size-4 shrink-0 opacity-50`) |
 | `defaultMonth` falls back to the value, else today | contract (calendar seeds its month from the selection, else today) |
-| content unmounts on close | dropped: present-but-hidden keeps the calendar's visible month between openings, identically in all three targets |
-| tailwindcss-animate enter/exit classes | dropped: motion is #2282 |
+| content unmounts on close | dropped: present-and-inert keeps the calendar's visible month between openings, identically in all three targets, and lets the exit transition play |
+| tailwindcss-animate enter/exit classes | replaced: the content transitions on the generics its matrix rows assign (#2282), no keyframe |
 
 ## Deltas from the oracle
 

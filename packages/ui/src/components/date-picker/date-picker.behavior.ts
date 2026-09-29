@@ -425,7 +425,7 @@ function readConfig(root: HTMLElement): DatePickerConfig {
  * its own script already did (`data-bound`), and only what this bind bound is
  * torn down. Each `calendarselect` from the grid is committed through the glue,
  * which sets the value and closes a complete selection; render then writes the
- * label, the hidden input, and presence.
+ * label, the hidden input, and presence (`inert` while closed).
  *
  * Three-gotcha ledger: (1) uncontrolled here, so no callback compare; (2) the
  * projection is resolved and applied with `{ validate: false }`; (3) the WC
@@ -475,7 +475,9 @@ export function bindDatePicker(root: HTMLElement): () => void {
     const value = effectiveValue(state, config);
     if (valueEl) valueEl.textContent = formatValue(value) || placeholder;
     if (hiddenInput) hiddenInput.value = serializeValue(value);
-    if (content) content.hidden = !open;
+    // Presence is `inert`, never `hidden`: `display: none` would stop the
+    // row's transition (date-picker.classes.ts).
+    if (content) content.inert = !open;
     if (open && !wasOpen) {
       popupCleanup = startDatePickerPopup({
         trigger,
