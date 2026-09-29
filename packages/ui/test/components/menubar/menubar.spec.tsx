@@ -273,7 +273,7 @@ describe('menubar [react]', () => {
     expect(content('file').inert).toBe(true);
   });
 
-  it('menus render in place, hidden, until the host mounts, then leave the bar', () => {
+  it('menus render in place, closed and inert, until the host mounts, then leave the bar', () => {
     const { container } = render(<TestMenubar defaultValue="file" />);
     // After mount every menu sits in the host after the bar, not in the bar.
     expect(root().querySelector('[data-part="content"]')).toBeNull();

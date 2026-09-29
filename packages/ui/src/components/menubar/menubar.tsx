@@ -393,7 +393,7 @@ export interface MenubarContentProps extends React.HTMLAttributes<HTMLDivElement
  * The menu. Portaled out of the bar: the trigger rove is roving-focus over the
  * bar, which collects every `role="menuitem"` beneath it, so a menu left inside
  * would pour its items into the trigger row. It lands in the host Menubar
- * renders right after the bar, inside the same landmark (in place, hidden,
+ * renders right after the bar, inside the same landmark (in place, closed and inert,
  * until that host mounts). Present but inert while closed: the closed pose is
  * CSS off data-state, so the exit can play.
  */
