@@ -306,9 +306,10 @@ describe('applyPosition', () => {
     applyPosition(anchor, floating);
 
     expect(floating.style.position).toBe('absolute');
-    expect(floating.style.left).toBe('0px');
-    expect(floating.style.top).toBe('0px');
-    expect(floating.style.transform).toContain('translate');
+    // Default placement: below the anchor, centred (100 + 50 - 40 = 110).
+    expect(floating.style.left).toBe('110px');
+    expect(floating.style.top).toBe('150px');
+    expect(floating.style.transform).toBe('');
   });
 
   it('sets data attributes for styling', () => {
