@@ -1,6 +1,6 @@
 /**
  * React server render of the menubar. The menus portal into a host that exists
- * only after mount; until then each renders in place, hidden, so the server
+ * only after mount; until then each renders in place, closed and inert, so the server
  * markup carries every menu (as the Astro performance does) and every trigger
  * reference resolves.
  */
@@ -58,14 +58,17 @@ describe('menubar [react ssr]', () => {
     container.remove();
   });
 
-  it('server markup carries the menu, hidden, and the trigger references it', () => {
+  it('server markup carries the menu, closed and inert, and the trigger references it', () => {
     const html = renderToString(<Scene />);
     const host = document.createElement('div');
     host.innerHTML = html;
     const trigger = host.querySelector('[data-part="trigger"][data-value="file"]');
     const menu = host.querySelector<HTMLElement>('[data-part="content"][data-value="file"]');
     expect(menu).not.toBeNull();
-    expect(menu?.hidden).toBe(true);
+    expect(menu?.inert).toBe(true);
+    expect(menu?.hidden).toBe(false);
+    // Inline, unpositioned: the closed pose even for the default-open menu.
+    expect(menu?.dataset['state']).toBe('closed');
     expect(menu?.getAttribute('role')).toBe('menu');
     expect(menu?.textContent).toBe('New');
     expect(trigger?.getAttribute('aria-expanded')).toBe('true');

@@ -135,7 +135,7 @@ const instanceIds = (value: string) => ({
         data-part="content"
         data-value={menu.value}
         class={classes.content}
-        hidden
+        inert
         {...menubarInstanceAria('content', menu.value, state, config, instanceIds(menu.value))}
       >
         {menu.items.map((item) => (

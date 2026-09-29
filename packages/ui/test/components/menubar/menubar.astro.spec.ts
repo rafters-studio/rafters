@@ -83,7 +83,7 @@ describe('menubar [astro]', () => {
     assertAriaContract(menubar.initialState({}));
     expect(root().getAttribute('role')).toBe('menubar');
     expect(trigger('file').getAttribute('role')).toBe('menuitem');
-    expect(content('file').hidden).toBe(true);
+    expect(content('file').inert).toBe(true);
     // Items and shortcuts are present in the DOM even while closed.
     expect(item('New').textContent).toContain('Cmd+N');
   });
@@ -98,7 +98,7 @@ describe('menubar [astro]', () => {
     const user = userEvent.setup();
     await mount();
     await user.click(trigger('file'));
-    expect(content('file').hidden).toBe(false);
+    expect(content('file').inert).toBe(false);
     assertAriaContract({ active: 'file', pointerOpened: false });
     expect(document.activeElement).toBe(item('New'));
   });
@@ -108,8 +108,8 @@ describe('menubar [astro]', () => {
     await mount();
     await user.click(trigger('file'));
     await user.keyboard('{ArrowRight}');
-    expect(content('file').hidden).toBe(true);
-    expect(content('edit').hidden).toBe(false);
+    expect(content('file').inert).toBe(true);
+    expect(content('edit').inert).toBe(false);
     expect(document.activeElement).toBe(item('Undo'));
   });
 
@@ -118,7 +118,7 @@ describe('menubar [astro]', () => {
     await mount();
     await user.click(trigger('edit'));
     await user.click(item('Redo'));
-    expect(content('edit').hidden).toBe(true);
+    expect(content('edit').inert).toBe(true);
     expect(document.activeElement).toBe(trigger('edit'));
   });
 
@@ -127,7 +127,7 @@ describe('menubar [astro]', () => {
     await mount();
     await user.click(trigger('file'));
     await user.keyboard('{Escape}');
-    expect(content('file').hidden).toBe(true);
+    expect(content('file').inert).toBe(true);
     expect(document.activeElement).toBe(trigger('file'));
   });
 

@@ -394,7 +394,8 @@ export interface MenubarContentProps extends React.HTMLAttributes<HTMLDivElement
  * bar, which collects every `role="menuitem"` beneath it, so a menu left inside
  * would pour its items into the trigger row. It lands in the host Menubar
  * renders right after the bar, inside the same landmark (in place, hidden,
- * until that host mounts). Present but hidden while closed.
+ * until that host mounts). Present but inert while closed: the closed pose is
+ * CSS off data-state, so the exit can play.
  */
 export function MenubarContent({ className, children, asChild, ...props }: MenubarContentProps) {
   const { state, config, active, menuHost, classes } = useMenubarContext('MenubarContent');
@@ -404,15 +405,20 @@ export function MenubarContent({ className, children, asChild, ...props }: Menub
     content: contentId,
   });
 
+  // Inline (before the host mounts) the menu is always closed: it sits in the
+  // bar there, unpositioned, so it is markup for the server and the hydration
+  // pass, never something to show.
+  const shown = menuHost !== null && active === value;
   const partProps = {
     'data-part': 'content',
     'data-value': value,
     id: contentId,
-    // Inline (before the host mounts) the menu is always hidden: it sits in the
-    // bar's flow there, unpositioned, so it is markup for the server and the
-    // hydration pass, never something to show.
-    hidden: menuHost && active === value ? undefined : true,
     ...aria,
+    'data-state': shown ? 'open' : 'closed',
+    // Closed, the menu stays rendered so its exit can play; inert keeps it out
+    // of the accessibility tree and the tab order. Never `hidden`: display:
+    // none would stop the transition.
+    inert: !shown,
   };
 
   const content =

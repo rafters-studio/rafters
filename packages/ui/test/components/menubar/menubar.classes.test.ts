@@ -40,14 +40,69 @@ describe('menubar classes', () => {
     expect(classes.shortcut).toContain('ts-shortcut');
   });
 
-  it('names no motion: #2292 consumes the matrix rows after this port', () => {
-    for (const value of Object.values(classes)) {
-      for (const token of value.split(/\s+/)) {
-        const utility = token.split(':').pop() ?? '';
-        expect(utility, token).not.toMatch(/^(transition|duration-|ease-|delay-|animate-)/);
-        expect(utility, token).not.toMatch(/^motion-/);
+  describe('motion: the generics each matrix row assigns (#2292)', () => {
+    const tokens = (value: string) => value.split(/\s+/).filter(Boolean);
+
+    it('content closed -> open: the open pose names moderate, enter, full size', () => {
+      expect(tokens(classes.content)).toEqual(
+        expect.arrayContaining([
+          'data-[state=open]:opacity-100',
+          'data-[state=open]:scale-100',
+          'data-[state=open]:pointer-events-auto',
+          'data-[state=open]:duration-moderate',
+          'data-[state=open]:ease-enter',
+        ]),
+      );
+    });
+
+    it('content open -> closed: the closed pose names fast, exit, the pop extent', () => {
+      expect(tokens(classes.content)).toEqual(
+        expect.arrayContaining([
+          'opacity-0',
+          'pointer-events-none',
+          'extent-pop',
+          'scale-(--rafters-consumed-extent)',
+          'transition',
+          'duration-fast',
+          'ease-exit',
+        ]),
+      );
+    });
+
+    it('content stays out of flow while present and closed', () => {
+      expect(tokens(classes.content)).toContain('fixed');
+    });
+
+    it('items: highlight move (micro, standard) and enter (stagger-step)', () => {
+      for (const item of [classes.item, classes.checkboxItem, classes.radioItem]) {
+        expect(tokens(item)).toEqual(
+          expect.arrayContaining([
+            'transition-colors',
+            'duration-micro',
+            'ease-standard',
+            'delay-stagger-step',
+          ]),
+        );
       }
-    }
+    });
+
+    it('trigger hover: color (fast, standard)', () => {
+      expect(tokens(classes.trigger)).toEqual(
+        expect.arrayContaining(['transition-colors', 'duration-fast', 'ease-standard']),
+      );
+    });
+
+    it('names only generics: no literal, no transition list, no keyframe, no motion-reduce', () => {
+      for (const value of Object.values(classes)) {
+        for (const token of tokens(value)) {
+          const utility = token.split(':').pop() ?? '';
+          expect(token, token).not.toMatch(/(^|:)motion-reduce:/);
+          expect(utility, token).not.toMatch(/^(animate-|motion-)/);
+          expect(utility, token).not.toMatch(/^transition-\[/);
+          expect(utility, token).not.toMatch(/^(duration|delay|ease)-(\d|\[)/);
+        }
+      }
+    });
   });
 
   it('no arbitrary values (classy drops them)', () => {

@@ -76,10 +76,13 @@ afterEach(() => {
 });
 
 describe('menubar [wc]', () => {
-  it('closed: projection applied, menus hidden and moved out of the bar', async () => {
+  it('closed: projection applied, menus inert and moved out of the bar', async () => {
     await mount();
     assertAriaContract(menubar.initialState({}));
-    expect(content('file').hidden).toBe(true);
+    expect(content('file').inert).toBe(true);
+    // The fixture authors `hidden`; bind clears it, closed is a CSS pose.
+    expect(content('file').hidden).toBe(false);
+    expect(content('file').dataset['state']).toBe('closed');
     expect(root().contains(content('file'))).toBe(false);
     expect(root().querySelectorAll('[role="menuitem"]')).toHaveLength(3);
   });
@@ -88,7 +91,7 @@ describe('menubar [wc]', () => {
     const user = userEvent.setup();
     await mount();
     await user.click(trigger('file'));
-    expect(content('file').hidden).toBe(false);
+    expect(content('file').inert).toBe(false);
     assertAriaContract({ active: 'file', pointerOpened: false });
     expect(document.activeElement).toBe(item('New'));
   });
@@ -98,8 +101,8 @@ describe('menubar [wc]', () => {
     await mount();
     await user.click(trigger('file'));
     await user.click(trigger('edit'));
-    expect(content('file').hidden).toBe(true);
-    expect(content('edit').hidden).toBe(false);
+    expect(content('file').inert).toBe(true);
+    expect(content('edit').inert).toBe(false);
     expect(document.activeElement).toBe(item('Undo'));
   });
 
@@ -109,7 +112,7 @@ describe('menubar [wc]', () => {
     trigger('file').focus();
     await user.keyboard('{ArrowRight}');
     expect(document.activeElement).toBe(trigger('edit'));
-    expect(content('edit').hidden).toBe(true);
+    expect(content('edit').inert).toBe(true);
   });
 
   it('arrows rove the items, skipping the disabled one; typeahead jumps', async () => {
@@ -127,7 +130,7 @@ describe('menubar [wc]', () => {
     await mount();
     await user.click(trigger('file'));
     await user.keyboard('{ArrowRight}');
-    expect(content('edit').hidden).toBe(false);
+    expect(content('edit').inert).toBe(false);
     expect(document.activeElement).toBe(item('Undo'));
   });
 
@@ -136,7 +139,7 @@ describe('menubar [wc]', () => {
     await mount();
     await user.click(trigger('file'));
     await user.keyboard('{Enter}');
-    expect(content('file').hidden).toBe(true);
+    expect(content('file').inert).toBe(true);
     expect(document.activeElement).toBe(trigger('file'));
   });
 
@@ -145,7 +148,7 @@ describe('menubar [wc]', () => {
     await mount();
     await user.click(trigger('view'));
     await user.keyboard('{Escape}');
-    expect(content('view').hidden).toBe(true);
+    expect(content('view').inert).toBe(true);
     expect(document.activeElement).toBe(trigger('view'));
   });
 
@@ -156,7 +159,7 @@ describe('menubar [wc]', () => {
     document.body.appendChild(outside);
     await user.click(trigger('file'));
     await user.click(outside);
-    expect(content('file').hidden).toBe(true);
+    expect(content('file').inert).toBe(true);
   });
 
   it("a pointerdown on the bar's blank space dismisses; one on a trigger does not", async () => {
@@ -164,9 +167,9 @@ describe('menubar [wc]', () => {
     await mount();
     await user.click(trigger('file'));
     await user.click(trigger('edit'));
-    expect(content('edit').hidden).toBe(false);
+    expect(content('edit').inert).toBe(false);
     await user.click(root());
-    expect(content('edit').hidden).toBe(true);
+    expect(content('edit').inert).toBe(true);
   });
 
   it('disconnecting restores each menu to its authored place in the bar', async () => {

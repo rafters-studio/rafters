@@ -119,8 +119,9 @@ const bar: Slice<MenubarConfig, MenubarState, MenubarActions, MenubarPart> = {
   parts: {
     root: { role: 'menubar' },
     trigger: { many: true, role: 'menuitem' },
-    // Each menu is present but hidden while closed (no mount/unmount), so the
-    // item set is readable by the open-menu effects the moment it opens.
+    // Each menu is present but inert while closed (no mount/unmount), so the
+    // item set is readable by the open-menu effects the moment it opens, and
+    // the closed pose is CSS the exit transition can run to.
     content: { many: true },
     // Role is author markup: checkbox/radio items use menuitemcheckbox/radio.
     item: { many: true },
@@ -379,6 +380,9 @@ export function bindMenubar(root: HTMLElement): () => void {
     next: content.nextSibling,
   }));
   root.after(...contents);
+  // A menu authored `hidden` would stay display: none; closed is a pose now,
+  // and render() makes the closed menus inert.
+  for (const content of contents) content.hidden = false;
 
   const { memory, dispatch } = createBehavior(menubar, config);
   const effective = () => activeMenu(memory.get(), config);
@@ -412,12 +416,16 @@ export function bindMenubar(root: HTMLElement): () => void {
       applyProjection(trigger, menubarInstanceAria('trigger', value, state, config, ids));
       if (content) {
         applyProjection(content, menubarInstanceAria('content', value, state, config, ids));
-        content.hidden = value !== active;
+        // Closed, the menu stays rendered so its exit can play (the pose is
+        // CSS off data-state, menubar.classes.ts); inert keeps it out of the
+        // accessibility tree and the tab order. Never `hidden`: display: none
+        // would stop the transition.
+        content.inert = value !== active;
       }
     }
 
     // One open menu at a time: tear down the previous menu's effects before
-    // starting the next (content is already un-hidden above).
+    // starting the next (content is already un-inerted above).
     if (openMenu && openMenu.value !== active) {
       openMenu.stop();
       openMenu = null;

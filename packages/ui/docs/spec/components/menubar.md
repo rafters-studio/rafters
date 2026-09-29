@@ -71,13 +71,13 @@ therefore leave the bar, the context-menu submenu precedent:
 - React portals each `MenubarContent` into a host `Menubar` renders right after
   the bar (`display: contents`, no box of its own). The host exists only after
   mount, so until then -- the server render and the hydration pass -- each menu
-  renders in place inside the bar, always hidden. React server HTML therefore
+  renders in place inside the bar, always closed and inert. React server HTML therefore
   carries every menu, as the Astro performance does, every trigger's
   `aria-controls` resolves, and hydration matches (a unit test hydrates the
   server string and asserts no recoverable error). The host's ref callback
   runs in the first commit and its synchronous re-render moves the menus into
   the host. The bar rove initialises in that first commit's effects, while the
-  hidden menu items are still in the bar. That is harmless: the rove only sets
+  closed menu items are still in the bar. That is harmless: the rove only sets
   their `tabindex` to -1, which they already carry, and it re-reads its items
   on every keydown, and no input can arrive in that window.
 
@@ -173,7 +173,7 @@ callback gotcha).
 | --- | --- | --- |
 | root | always | `role="menubar"`, `aria-orientation="horizontal"`, `data-state` (open while any menu is) |
 | trigger (many) | always | `role="menuitem"`, `aria-haspopup="menu"`, `aria-expanded`, `aria-controls` (only while its menu is open and the id is real), `data-state`; `data-value` names the menu |
-| content (many) | present, `hidden` while closed, outside the bar | `role="menu"`, `aria-orientation="vertical"`, `aria-labelledby` (its trigger, only when the id is real), `data-state`; `data-value` |
+| content (many) | present, `inert` while closed (never `hidden`, so the exit can play), outside the bar | `role="menu"`, `aria-orientation="vertical"`, `aria-labelledby` (its trigger, only when the id is real), `data-state`; `data-value` |
 | item (many) | present | role is author markup (`menuitem` / `menuitemcheckbox` / `menuitemradio`); `data-roving-item`, `tabindex=-1`, `aria-disabled`/`data-disabled` when disabled; `aria-checked` + `data-state` on checkbox/radio items (consumer-controlled) |
 
 The trigger and content projections are `menubar.instanceAria`
@@ -209,10 +209,14 @@ convention: a projection referencing an empty id emits `undefined`, so
 
 ## Motion
 
-None in this port. motion.jsonl carries menubar rows (content closed <-> open,
-items enter and highlight move, trigger hover); #2292 consumes them after this
-port lands. `menubar.classes.ts` names no transition, duration, curve, delay or
-animate utility, and the classes test asserts it.
+#2292 consumes the five motion.jsonl rows in `menubar.classes.ts` as
+transitions keyed off `data-state`, the drawer pattern: content fades and zooms
+(`extent-pop`) between a closed pose (fast, exit) and an open pose (moderate,
+enter); items carry the highlight move (micro, standard; proposed, unreviewed)
+and `delay-stagger-step`; the trigger carries its colour row (fast, standard).
+Every menu stays present and out of flow (`fixed`); closed, the performances
+make it `inert`. The classes file reports the moments with no row and the row
+with no pose of its own.
 
 ## Oracle dispositions (src/old/ui/menubar.*)
 
@@ -244,7 +248,7 @@ animate utility, and the classes test asserts it.
 | seven slot-composed Astro parts (`menubar-menu`/`-trigger`/`-content`/`-item`/`-label`/`-separator`/`-shortcut.astro`) | reduced -- one data-driven `menubar.astro` taking `menus: { value, label, items: { label, disabled?, shortcut? }[] }[]`, the shape dropdown-menu.astro and navigation-menu.astro take. The Astro surface has no label, separator, group, checkbox or radio items; those remain React-only, as dropdown-menu's are |
 | Content `loop` prop | dropped -- menus always wrap (dropdown-menu's trio) |
 | Sub / SubTrigger / SubContent (nested submenus with `setTimeout` hover) | dropped -- dropdown-menu, which each menu is, has no submenu (its doc drops it for the same reasons: no submenu axis in the issue, and the raw `setTimeout` is a forbidden half-solution). Building one here would be a menu reimplemented, which the issue rules out |
-| `animate-in`/`zoom`/`fade`/`slide` + `duration-100` + `motion-reduce:` classes | dropped -- motion is #2292 |
+| `animate-in`/`zoom`/`fade`/`slide` + `duration-100` + `motion-reduce:` classes | dropped -- #2292 names the matrix generics instead |
 | collision-aware side flipping (`data-side`) | reduced -- the open menu is placed under its trigger by `computePosition` (which flips/clamps); no `data-side` is projected |
 
 ## WCAG 2.1 AA obligations
