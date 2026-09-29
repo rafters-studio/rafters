@@ -39,13 +39,47 @@ function mountPopup(height: number): HTMLElement {
   return popup;
 }
 
-/** The zoom's closed pose, committed as the transition's start. */
-function closedPose(popup: HTMLElement, duration: string): void {
+/** The zoom transition, as `transition-transform` names it. */
+function zoomTransition(popup: HTMLElement): void {
   popup.style.transitionProperty = ZOOM_TRANSITION;
-  popup.style.transitionDuration = duration;
+  popup.style.transitionDuration = '10s';
   popup.style.transitionTimingFunction = 'linear';
+}
+
+/** The zoom's closed pose, committed as the transition's start. */
+function closedPose(popup: HTMLElement): void {
+  zoomTransition(popup);
   popup.style.scale = '0.5';
   popup.getBoundingClientRect();
+}
+
+const BELOW_START = { side: 'bottom', align: 'start', sideOffset: 4 } as const;
+
+/**
+ * Open a zooming popup against a fixed anchor and assert it sits at its
+ * anchored position two frames later. `closedTransition` overrides the closed
+ * pose's transition-property; the open edge always switches to the zoom's.
+ */
+async function expectFirstOpenInPlace(
+  place: (anchor: HTMLElement, popup: HTMLElement) => void,
+  closedTransition?: string,
+): Promise<void> {
+  const anchor = mountAnchor('position: fixed; left: 200px; top: 100px;');
+  const popup = mountPopup(100);
+  closedPose(popup);
+  if (closedTransition) {
+    popup.style.transitionProperty = closedTransition;
+    popup.getBoundingClientRect();
+  }
+
+  popup.style.transitionProperty = ZOOM_TRANSITION;
+  popup.style.scale = '1';
+  place(anchor, popup);
+  await frames(2);
+
+  const rect = popup.getBoundingClientRect();
+  expect(rect.left).toBeCloseTo(200, 0);
+  expect(rect.top).toBeCloseTo(134, 0);
 }
 
 afterEach(() => {
@@ -56,67 +90,35 @@ afterEach(() => {
 
 describe('anchored placement under a zoom transition', () => {
   it('positionPopover: the first open appears at its anchored position', async () => {
-    const anchor = mountAnchor('position: fixed; left: 200px; top: 100px;');
-    const popup = mountPopup(100);
-    closedPose(popup, '10s');
-
-    popup.style.scale = '1';
-    positionPopover(anchor, popup, { side: 'bottom', align: 'start', sideOffset: 4 });
-    await frames(2);
-
-    const rect = popup.getBoundingClientRect();
-    expect(rect.left).toBeCloseTo(200, 0);
-    expect(rect.top).toBeCloseTo(134, 0);
+    await expectFirstOpenInPlace((anchor, popup) => positionPopover(anchor, popup, BELOW_START));
   });
 
   it('positionPopover: the drawer pattern (closed pose transition-all, open pose transition-transform) places without travel', async () => {
-    const anchor = mountAnchor('position: fixed; left: 200px; top: 100px;');
-    const popup = mountPopup(100);
-    closedPose(popup, '10s');
-    popup.style.transitionProperty = 'all';
-    popup.getBoundingClientRect();
-
-    // The open edge: the pose and its transition-property change with the placement.
-    popup.style.transitionProperty = ZOOM_TRANSITION;
-    popup.style.scale = '1';
-    positionPopover(anchor, popup, { side: 'bottom', align: 'start', sideOffset: 4 });
-    await frames(2);
-
-    const rect = popup.getBoundingClientRect();
-    expect(rect.left).toBeCloseTo(200, 0);
-    expect(rect.top).toBeCloseTo(134, 0);
+    await expectFirstOpenInPlace(
+      (anchor, popup) => positionPopover(anchor, popup, BELOW_START),
+      'all',
+    );
   });
 
   it('applyPosition: the first open appears at its anchored position', async () => {
-    const anchor = mountAnchor('position: fixed; left: 200px; top: 100px;');
-    const popup = mountPopup(100);
-    closedPose(popup, '10s');
-
-    popup.style.scale = '1';
-    applyPosition(anchor, popup, { side: 'bottom', align: 'start', sideOffset: 4 });
-    await frames(2);
-
-    const rect = popup.getBoundingClientRect();
-    expect(rect.left).toBeCloseTo(200, 0);
-    expect(rect.top).toBeCloseTo(134, 0);
+    await expectFirstOpenInPlace((anchor, popup) => {
+      applyPosition(anchor, popup, BELOW_START);
+    });
   });
 
   it('positionPopover: a scroll reposition follows the anchor without lag', async () => {
     document.body.style.height = '3000px';
     const anchor = mountAnchor('position: absolute; left: 200px; top: 300px;');
     const popup = mountPopup(100);
-    const options = { side: 'bottom', align: 'start', sideOffset: 4 } as const;
 
     // Settle the open popup first, then give it the zoom transition.
-    positionPopover(anchor, popup, options);
+    positionPopover(anchor, popup, BELOW_START);
     await frames(2);
-    popup.style.transitionProperty = ZOOM_TRANSITION;
-    popup.style.transitionDuration = '10s';
-    popup.style.transitionTimingFunction = 'linear';
+    zoomTransition(popup);
     popup.getBoundingClientRect();
 
     window.scrollTo(0, 150);
-    positionPopover(anchor, popup, options);
+    positionPopover(anchor, popup, BELOW_START);
     await frames(2);
 
     const anchorRect = anchor.getBoundingClientRect();
@@ -136,7 +138,7 @@ describe('placement measures the unscaled size', () => {
     const settle = scaleDown(popup);
     expect(popup.getBoundingClientRect().height).toBeCloseTo(150, 0);
 
-    positionPopover(anchor, popup, { side: 'bottom', align: 'start', sideOffset: 4 });
+    positionPopover(anchor, popup, BELOW_START);
 
     settle();
     await frames(1);
