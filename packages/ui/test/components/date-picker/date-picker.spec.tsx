@@ -66,10 +66,13 @@ afterEach(() => {
 });
 
 describe('date-picker [react]', () => {
-  it('closed: trigger shows the placeholder, popup present but hidden, ARIA equals the projection', () => {
+  it('closed: trigger shows the placeholder, popup present but inert, ARIA equals the projection', () => {
     renderPicker();
     expect(part('value').textContent).toBe('Pick a date');
-    expect(part('content').hidden).toBe(true);
+    expect(part('content').inert).toBe(true);
+    // Present while closed (inert, never hidden) so the exit transition can play.
+    expect(part('content').hidden).toBe(false);
+    expect(part('content').getAttribute('data-state')).toBe('closed');
     const config: DatePickerConfig = { mode: 'single' };
     assertContract(datePicker.initialState(config), config);
   });
@@ -78,11 +81,40 @@ describe('date-picker [react]', () => {
     const user = userEvent.setup();
     renderPicker();
     await user.click(part('trigger'));
-    expect(part('content').hidden).toBe(false);
+    expect(part('content').inert).toBe(false);
     expect(part('trigger').getAttribute('aria-controls')).toBe(part('content').id);
+    // Placed through left/top, never transform (positionPopover ->
+    // placeFloating, #2403): the zoom transitions scale, and every named
+    // utility covering scale also covers transform, so a translate would
+    // animate the placement.
+    expect(part('content').style.transform).toBe('');
+    expect(part('content').style.left).toMatch(/px$/);
+    expect(part('content').style.top).toMatch(/px$/);
     expect(document.activeElement).toBe(dayCell('2026-07-20'));
     const config: DatePickerConfig = { mode: 'single' };
     assertContract({ ...datePicker.initialState(config), open: true }, config);
+  });
+
+  it('a flipped popup is placed from its layout size, not its zoomed size (#2282)', async () => {
+    // Closed, the content rests at the pop extent, and positioning runs on the
+    // open edge before the zoom plays. The shared placement measures the
+    // unscaled size (computePosition, #2403); measured at the zoomed size, a
+    // flip to the top would leave the settled popup overlapping its trigger.
+    // The spec env loads no Tailwind sheet, so the closed-pose scale is inline.
+    const user = userEvent.setup();
+    render(
+      <div style={{ position: 'fixed', bottom: '8px', left: '8px' }}>
+        <DatePicker calendarProps={calendarProps} />
+      </div>,
+    );
+    part('content').style.scale = '0.5';
+    await user.click(part('trigger'));
+    const content = part('content');
+    expect(content.getAttribute('data-side')).toBe('top');
+    const triggerTop = part('trigger').getBoundingClientRect().top;
+    expect(Number.parseFloat(content.style.top) + content.offsetHeight).toBeLessThanOrEqual(
+      triggerTop - 4 + 1,
+    );
   });
 
   it('selecting a date sets the label, closes, returns focus and reports the Date', async () => {
@@ -94,7 +126,7 @@ describe('date-picker [react]', () => {
     await user.click(dayCell('2026-07-08'));
     expect(part('value').textContent).toBe('Jul 8, 2026');
     expect(part('value').hasAttribute('data-empty')).toBe(false);
-    expect(part('content').hidden).toBe(true);
+    expect(part('content').inert).toBe(true);
     expect(document.activeElement).toBe(part('trigger'));
     expect(onValueChange).toHaveBeenCalledWith(new Date(2026, 6, 8));
     expect(onOpenChange).toHaveBeenLastCalledWith(false);
@@ -108,7 +140,7 @@ describe('date-picker [react]', () => {
     expect(document.activeElement).toBe(dayCell('2026-07-21'));
     await user.keyboard('{Enter}');
     expect(part('value').textContent).toBe('Jul 21, 2026');
-    expect(part('content').hidden).toBe(true);
+    expect(part('content').inert).toBe(true);
   });
 
   it('Escape from a focused day cell closes without changing the value', async () => {
@@ -117,7 +149,7 @@ describe('date-picker [react]', () => {
     await user.click(part('trigger'));
     expect(document.activeElement).toBe(dayCell('2026-07-08'));
     await user.keyboard('{Escape}');
-    expect(part('content').hidden).toBe(true);
+    expect(part('content').inert).toBe(true);
     expect(document.activeElement).toBe(part('trigger'));
     expect(part('value').textContent).toBe('Jul 8, 2026');
   });
@@ -128,10 +160,10 @@ describe('date-picker [react]', () => {
     renderPicker({ mode: 'range', onValueChange } as Partial<DatePickerProps>);
     await user.click(part('trigger'));
     await user.click(dayCell('2026-07-10'));
-    expect(part('content').hidden).toBe(false);
+    expect(part('content').inert).toBe(false);
     expect(part('value').textContent).toBe('Jul 10, 2026');
     await user.click(dayCell('2026-07-14'));
-    expect(part('content').hidden).toBe(true);
+    expect(part('content').inert).toBe(true);
     expect(part('value').textContent).toBe('Jul 10, 2026 - Jul 14, 2026');
     expect(onValueChange).toHaveBeenLastCalledWith({
       from: new Date(2026, 6, 10),
@@ -149,7 +181,7 @@ describe('date-picker [react]', () => {
     );
     await user.click(part('trigger'));
     await user.click(body().querySelector('button:not([data-part])') as HTMLElement);
-    expect(part('content').hidden).toBe(true);
+    expect(part('content').inert).toBe(true);
   });
 
   it('submits with its form through the hidden input', async () => {
@@ -211,7 +243,7 @@ describe('date-picker [react]', () => {
     renderPicker({ disabled: true });
     expect((part('trigger') as HTMLButtonElement).disabled).toBe(true);
     await user.click(part('trigger'));
-    expect(part('content').hidden).toBe(true);
+    expect(part('content').inert).toBe(true);
   });
 
   it('formatDate overrides the label format (React-only)', async () => {

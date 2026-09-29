@@ -39,7 +39,7 @@
 /**
  * Astro performance for date-picker. Server-renders the full light-DOM
  * structure with the closed-state projection applied -- the trigger showing the
- * committed date (or the placeholder), the popup present-but-hidden holding
+ * committed date (or the placeholder), the popup present-but-inert holding
  * calendar's own Astro performance, and the hidden form input when `name` is
  * set -- so the picker is correct and submits its value before any JS. The
  * <script> hands each instance to bindDatePicker, the SAME DOM-native client the
@@ -163,7 +163,7 @@ const calendarProps = Object.fromEntries(
       <rect width="18" height="18" x="3" y="4" rx="2"></rect>
     </svg>
   </button>
-  <div id={ids.content} data-part="content" tabindex="-1" class={classes.content} {...aria.content} hidden>
+  <div id={ids.content} data-part="content" tabindex="-1" class={classes.content} {...aria.content} inert>
     <Calendar id={`${id}-calendar`} mode={mode} {...calendarProps} />
   </div>
   {hiddenInput && <input data-part="hidden-input" {...hiddenInput} />}

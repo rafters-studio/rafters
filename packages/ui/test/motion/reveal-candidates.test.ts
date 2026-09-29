@@ -30,21 +30,12 @@
  * consumer's sheet -- their Tailwind scans the same installed file, comments and
  * all -- so the verdict here is the verdict there.
  */
-import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { generateBaseSystem } from '@rafters/design-tokens/generators/index';
-import {
-  contrastPlugin,
-  invertPlugin,
-  registryToCompiled,
-  scalePlugin,
-  statePlugin,
-  TokenRegistry,
-} from '@rafters/design-tokens';
 import { contextMenuClasses } from '../../src/components/context-menu/context-menu.classes';
 import { hoverCardClasses } from '../../src/components/hover-card/hover-card.classes';
 import { navigationMenuClasses } from '../../src/components/navigation-menu/navigation-menu.classes';
 import { tooltipClasses } from '../../src/components/tooltip/tooltip.classes';
+import { componentSheet as sheet, escapeCandidate } from './component-sheet';
 
 const COMPONENTS = ['tooltip', 'hover-card', 'navigation-menu', 'context-menu'] as const;
 
@@ -55,50 +46,6 @@ const CONTENT_CLASSES: Record<(typeof COMPONENTS)[number], string> = {
   // context-menu's REVEALED part is subContent (#2152), not content -- content
   // (the parent right-click panel) is out of scope, unconverted since #2017.
   'context-menu': contextMenuClasses({}, { open: false, x: 0, y: 0 }).subContent,
-};
-
-/** Tailwind escapes every character outside [A-Za-z0-9_-] with a backslash, so
- *  `data-[state=open]:opacity-100` is emitted as
- *  `.data-\[state\=open\]\:opacity-100`. Reconstructing the selector from the
- *  candidate is what makes "did this compile" answerable per candidate rather
- *  than per file. */
-const escapeCandidate = (candidate: string): string =>
-  `.${candidate.replace(/[^a-zA-Z0-9_-]/g, (char) => `\\${char}`)}`;
-
-/** Tailwind scans the REAL component directories, not a fixture built from the
- *  evaluated class strings. The distinction is the whole point: a
- *  `.classes.ts` value is a chain of `'...' + '...'`, and a candidate that a
- *  `+` splits mid-token exists in the runtime string while existing NOWHERE in
- *  the source Tailwind actually reads. Compiling the runtime string would pass
- *  over exactly that bug.
- *
- *  `import.meta.dirname`, not `new URL(..., import.meta.url)`: under Vite the
- *  module's url is a dev-server path, so the URL form silently resolves to
- *  `/src/components/...` and Tailwind scans nothing at all. */
-const componentDir = (name: string) => resolve(import.meta.dirname, '../../src/components', name);
-
-/** ONE SHEET PER COMPONENT, deliberately: the three share plain utilities
- *  (`opacity-0`, `duration-fast`, `transition-discrete`), so a single sheet
- *  compiled from all three directories lets one component's intact candidate
- *  stand in for another's broken one. Compiled separately, each component's
- *  sweep answers only for itself. */
-const compiled = new Map<string, Promise<string>>();
-
-const sheet = (component: string): Promise<string> => {
-  const existing = compiled.get(component);
-  if (existing) return existing;
-  const pending = (async () => {
-    const system = generateBaseSystem({});
-    const registry = new TokenRegistry(system.allTokens, [
-      scalePlugin,
-      contrastPlugin,
-      statePlugin,
-      invertPlugin,
-    ]);
-    return registryToCompiled(registry, { contentSources: [componentDir(component)] });
-  })();
-  compiled.set(component, pending);
-  return pending;
 };
 
 describe('the hover-reveal candidates compile (#2148)', () => {

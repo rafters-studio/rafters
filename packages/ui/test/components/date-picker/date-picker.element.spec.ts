@@ -68,7 +68,10 @@ describe('rafters-date-picker [wc]', () => {
   it('scaffolds the parts with the closed projection and the nested grid', async () => {
     await mount();
     expect(part('value').textContent).toBe('Pick a date');
-    expect(part('content').hidden).toBe(true);
+    expect(part('content').inert).toBe(true);
+    // Present while closed (inert, never hidden) so the exit transition can play.
+    expect(part('content').hidden).toBe(false);
+    expect(part('content').getAttribute('data-state')).toBe('closed');
     expect(body().querySelector('[data-part="grid"]')).not.toBeNull();
     assertContract(false, { mode: 'single' });
   });
@@ -77,12 +80,12 @@ describe('rafters-date-picker [wc]', () => {
     const user = userEvent.setup();
     await mount();
     await user.click(part('trigger'));
-    expect(part('content').hidden).toBe(false);
+    expect(part('content').inert).toBe(false);
     assertContract(true, { mode: 'single' });
     expect(document.activeElement).toBe(dayCell('2026-07-20'));
     await user.click(dayCell('2026-07-08'));
     expect(part('value').textContent).toBe('Jul 8, 2026');
-    expect(part('content').hidden).toBe(true);
+    expect(part('content').inert).toBe(true);
     expect(document.activeElement).toBe(part('trigger'));
   });
 
@@ -95,7 +98,7 @@ describe('rafters-date-picker [wc]', () => {
     await user.keyboard('{ArrowDown}');
     expect(document.activeElement).toBe(dayCell('2026-07-15'));
     await user.keyboard('{Escape}');
-    expect(part('content').hidden).toBe(true);
+    expect(part('content').inert).toBe(true);
     expect(document.activeElement).toBe(part('trigger'));
     expect(part('value').textContent).toBe('Jul 8, 2026');
   });
@@ -104,9 +107,9 @@ describe('rafters-date-picker [wc]', () => {
     const user = userEvent.setup();
     await mount();
     await user.click(part('trigger'));
-    expect(part('content').hidden).toBe(false);
+    expect(part('content').inert).toBe(false);
     await user.click(body().querySelector('main') as HTMLElement);
-    expect(part('content').hidden).toBe(true);
+    expect(part('content').inert).toBe(true);
     expect(part('value').textContent).toBe('Pick a date');
   });
 
@@ -119,7 +122,7 @@ describe('rafters-date-picker [wc]', () => {
     host.remove();
     body().appendChild(trigger);
     await user.click(trigger);
-    expect(content.hidden).toBe(true);
+    expect(content.inert).toBe(true);
     expect(trigger.getAttribute('aria-expanded')).toBe('false');
   });
 
@@ -128,9 +131,9 @@ describe('rafters-date-picker [wc]', () => {
     await mount({ mode: 'range' });
     await user.click(part('trigger'));
     await user.click(dayCell('2026-07-10'));
-    expect(part('content').hidden).toBe(false);
+    expect(part('content').inert).toBe(false);
     await user.click(dayCell('2026-07-14'));
-    expect(part('content').hidden).toBe(true);
+    expect(part('content').inert).toBe(true);
     expect(part('value').textContent).toBe('Jul 10, 2026 - Jul 14, 2026');
   });
 
@@ -139,15 +142,15 @@ describe('rafters-date-picker [wc]', () => {
     await mount({ mode: 'range' });
     await user.click(part('trigger'));
     await user.keyboard('{Enter}');
-    expect(part('content').hidden).toBe(false);
+    expect(part('content').inert).toBe(false);
     expect(document.activeElement).toBe(dayCell('2026-07-20'));
     await user.keyboard('{ArrowRight}{ArrowRight}{Enter}');
-    expect(part('content').hidden).toBe(true);
+    expect(part('content').inert).toBe(true);
     expect(part('value').textContent).toBe('Jul 20, 2026 - Jul 22, 2026');
     await user.click(part('trigger'));
     await user.keyboard('{Enter}');
     await user.keyboard('{Escape}');
-    expect(part('content').hidden).toBe(true);
+    expect(part('content').inert).toBe(true);
   });
 
   it('submits with its form through the hidden input', async () => {
@@ -166,6 +169,6 @@ describe('rafters-date-picker [wc]', () => {
     await mount({ disabled: '' });
     expect((part('trigger') as HTMLButtonElement).disabled).toBe(true);
     await user.click(part('trigger'));
-    expect(part('content').hidden).toBe(true);
+    expect(part('content').inert).toBe(true);
   });
 });

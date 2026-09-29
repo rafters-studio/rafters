@@ -39,7 +39,7 @@ const dayCell = (iso: string): HTMLElement =>
   document.body.querySelector<HTMLElement>(`[data-part="day"][data-value="${iso}"]`) as HTMLElement;
 
 describe('date-picker [astro]', () => {
-  it('SSR: closed projection, placeholder label, popup hidden, dialog named by the trigger', async () => {
+  it('SSR: closed projection, placeholder label, popup present but inert, dialog named by the trigger', async () => {
     await render();
     const config = { mode: 'single' } as const;
     const aria = datePicker.aria(datePicker.initialState(config), config, {
@@ -51,7 +51,10 @@ describe('date-picker [astro]', () => {
     });
     expect(part('value').textContent).toBe('Pick a date');
     expect(part('value').hasAttribute('data-empty')).toBe(true);
-    expect(part('content').hidden).toBe(true);
+    expect(part('content').inert).toBe(true);
+    // Present while closed (inert, never hidden) so the exit transition can play.
+    expect(part('content').hidden).toBe(false);
+    expect(part('content').getAttribute('data-state')).toBe('closed');
     expect(part('trigger').getAttribute('aria-expanded')).toBe(aria.trigger?.['aria-expanded']);
     expect(part('trigger').getAttribute('aria-haspopup')).toBe('dialog');
     expect(part('trigger').hasAttribute('aria-controls')).toBe(false);
@@ -77,12 +80,12 @@ describe('date-picker [astro]', () => {
     const user = userEvent.setup();
     await mount();
     await user.click(part('trigger'));
-    expect(part('content').hidden).toBe(false);
+    expect(part('content').inert).toBe(false);
     expect(part('trigger').getAttribute('aria-controls')).toBe('dp-content');
     await user.click(dayCell('2026-07-08'));
     expect(part('value').textContent).toBe('Jul 8, 2026');
     expect(part('value').hasAttribute('data-empty')).toBe(false);
-    expect(part('content').hidden).toBe(true);
+    expect(part('content').inert).toBe(true);
   });
 
   it('Escape inside the popup closes', async () => {
@@ -91,7 +94,7 @@ describe('date-picker [astro]', () => {
     await user.click(part('trigger'));
     dayCell('2026-07-20').focus();
     await user.keyboard('{Escape}');
-    expect(part('content').hidden).toBe(true);
+    expect(part('content').inert).toBe(true);
     expect(document.activeElement).toBe(part('trigger'));
   });
 
@@ -99,9 +102,9 @@ describe('date-picker [astro]', () => {
     const user = userEvent.setup();
     await mount();
     await user.click(part('trigger'));
-    expect(part('content').hidden).toBe(false);
+    expect(part('content').inert).toBe(false);
     await user.click(document.body.querySelector('main') as HTMLElement);
-    expect(part('content').hidden).toBe(true);
+    expect(part('content').inert).toBe(true);
     expect(part('value').textContent).toBe('Pick a date');
   });
 
@@ -114,7 +117,7 @@ describe('date-picker [astro]', () => {
     teardown();
     expect(calendarRoot?.dataset['bound']).toBeUndefined();
     await user.click(part('trigger'));
-    expect(part('content').hidden).toBe(true);
+    expect(part('content').inert).toBe(true);
   });
 
   it('range by keyboard: focus stays in the grid after the start, Escape still closes', async () => {
@@ -123,10 +126,10 @@ describe('date-picker [astro]', () => {
     await user.click(part('trigger'));
     dayCell('2026-07-20').focus();
     await user.keyboard('{Enter}');
-    expect(part('content').hidden).toBe(false);
+    expect(part('content').inert).toBe(false);
     expect(document.activeElement).toBe(dayCell('2026-07-20'));
     await user.keyboard('{Escape}');
-    expect(part('content').hidden).toBe(true);
+    expect(part('content').inert).toBe(true);
   });
 
   it('range: open until the end is picked; the form value is from..to', async () => {
@@ -134,9 +137,9 @@ describe('date-picker [astro]', () => {
     await mount({ mode: 'range', name: 'stay' }, 'form');
     await user.click(part('trigger'));
     await user.click(dayCell('2026-07-10'));
-    expect(part('content').hidden).toBe(false);
+    expect(part('content').inert).toBe(false);
     await user.click(dayCell('2026-07-14'));
-    expect(part('content').hidden).toBe(true);
+    expect(part('content').inert).toBe(true);
     const input = document.body.querySelector<HTMLInputElement>('input[data-part="hidden-input"]');
     expect(input?.name).toBe('stay');
     expect(input?.value).toBe('2026-07-10..2026-07-14');
@@ -156,6 +159,6 @@ describe('date-picker [astro]', () => {
     expect((part('trigger') as HTMLButtonElement).disabled).toBe(true);
     expect(root.dataset['disabled']).toBe('true');
     part('trigger').dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    expect(part('content').hidden).toBe(true);
+    expect(part('content').inert).toBe(true);
   });
 });
