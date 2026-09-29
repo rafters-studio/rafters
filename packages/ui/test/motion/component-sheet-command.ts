@@ -11,27 +11,22 @@
 import { resolve } from 'node:path';
 import type { BrowserCommand } from 'vitest/node';
 
-const harnessOf = (value: unknown): ((component: string) => Promise<unknown>) => {
-  if (
-    typeof value === 'object' &&
-    value !== null &&
-    'componentSheet' in value &&
-    typeof value.componentSheet === 'function'
-  ) {
-    const { componentSheet } = value;
-    return async (component) => componentSheet(component);
-  }
-  throw new Error('component-sheet.ts does not export componentSheet');
-};
-
 export const componentSheet: BrowserCommand<[component: string]> = async (
   { project },
   component,
 ) => {
-  const harness = harnessOf(
-    await project.import<unknown>(resolve(project.config.root, 'test/motion/component-sheet.ts')),
+  const harness = await project.import<unknown>(
+    resolve(project.config.root, 'test/motion/component-sheet.ts'),
   );
-  const css = await harness(component);
+  if (
+    typeof harness !== 'object' ||
+    harness === null ||
+    !('componentSheet' in harness) ||
+    typeof harness.componentSheet !== 'function'
+  ) {
+    throw new Error('component-sheet.ts does not export componentSheet');
+  }
+  const css: unknown = await harness.componentSheet(component);
   if (typeof css !== 'string') throw new Error('componentSheet did not return a string');
   return css;
 };
