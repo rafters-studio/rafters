@@ -9,42 +9,14 @@
  * utilities restate `transition-duration`, so a later one would silently put
  * the default back in place of the tier.
  */
-import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { generateBaseSystem } from '@rafters/design-tokens/generators/index';
-import {
-  contrastPlugin,
-  invertPlugin,
-  registryToCompiled,
-  scalePlugin,
-  statePlugin,
-  TokenRegistry,
-} from '@rafters/design-tokens';
 import { menubar } from '../../src/components/menubar/menubar.behavior';
 import { menubarClasses } from '../../src/components/menubar/menubar.classes';
+import { componentSheet, escapeCandidate } from './component-sheet';
 
 const classes = menubarClasses({}, menubar.initialState({}));
 
-const escapeCandidate = (candidate: string): string =>
-  `.${candidate.replace(/[^a-zA-Z0-9_-]/g, (char) => `\\${char}`)}`;
-
-let pending: Promise<string> | null = null;
-const sheet = (): Promise<string> => {
-  if (pending) return pending;
-  pending = (async () => {
-    const system = generateBaseSystem({});
-    const registry = new TokenRegistry(system.allTokens, [
-      scalePlugin,
-      contrastPlugin,
-      statePlugin,
-      invertPlugin,
-    ]);
-    return registryToCompiled(registry, {
-      contentSources: [resolve(import.meta.dirname, '../../src/components/menubar')],
-    });
-  })();
-  return pending;
-};
+const sheet = (): Promise<string> => componentSheet('menubar');
 
 /** The body of the first rule whose selector is exactly this candidate. */
 const ruleBody = (css: string, candidate: string): string => {
