@@ -74,8 +74,12 @@ therefore leave the bar, the context-menu submenu precedent:
   renders in place inside the bar, always hidden. React server HTML therefore
   carries every menu, as the Astro performance does, every trigger's
   `aria-controls` resolves, and hydration matches (a unit test hydrates the
-  server string and asserts no recoverable error). The first effect pass moves
-  the menus into the host, before the bar rove reads any key.
+  server string and asserts no recoverable error). The host's ref callback
+  runs in the first commit and its synchronous re-render moves the menus into
+  the host. The bar rove initialises in that first commit's effects, while the
+  hidden menu items are still in the bar. That is harmless: the rove only sets
+  their `tabindex` to -1, which they already carry, and it re-reads its items
+  on every keydown, and no input can arrive in that window.
 
 Both performances end in the same DOM: the bar, then its menus as the
 following siblings. Alternatives considered and not taken:
@@ -86,6 +90,20 @@ following siblings. Alternatives considered and not taken:
   `roving-focus`, a shared primitive this port may not edit.
 - The end of the body (the context-menu precedent): fails axe `region`,
   because the menus leave the landmark that holds the bar.
+- navigation-menu's shape: rove a trigger-only row, with the panels outside
+  that row. navigation-menu itself does not quite do this. Its panels sit inside
+  the roved `list` and escape the rove only because they hold links, not
+  menuitems. For menubar the shape would mean a `role="menubar"` row part
+  holding only triggers and the menus as its siblings. The authoring surface
+  cannot produce that. shadcn's `Menubar.Menu` wraps each Trigger with its
+  Content, so in React they render at the same place in the tree, and a
+  Content can only get out of the trigger row by being portaled -- which is
+  the relocation this doc already makes. The only difference would be an
+  extra wrapper element for the row, and the menus would still need
+  positioning under their triggers, so it adds a part and buys nothing. For
+  Astro and WC, authored markup could place the menus beside the row, but
+  keeping one markup contract (menus next to their triggers, moved on bind)
+  keeps the three performances the same.
 
 Right after the bar, not the end of the body, keeps each menu inside whatever
 landmark holds the bar (axe `region`). The cost: the bind rearranges author

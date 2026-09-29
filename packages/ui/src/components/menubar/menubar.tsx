@@ -429,8 +429,9 @@ export function MenubarContent({ className, children, asChild, ...props }: Menub
 
   // Until the host exists -- the server render and the hydration pass -- the
   // menu renders in place, so React server HTML carries every menu (as the
-  // Astro performance does) and hydration matches it. Once the host mounts the
-  // menu moves out of the bar, before the bar rove ever reads a key.
+  // Astro performance does) and hydration matches it. The host's ref callback
+  // runs in the first commit and its synchronous re-render moves the menu out
+  // of the bar before any input can reach the bar rove.
   return menuHost ? createPortal(content, menuHost) : content;
 }
 
