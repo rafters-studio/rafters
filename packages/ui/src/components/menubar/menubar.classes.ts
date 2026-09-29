@@ -18,31 +18,90 @@ export interface MenubarClassSet {
   menuHost: string;
 }
 
-// NO MOTION IN THIS FILE. menubar's rows in motion.jsonl (content closed <->
-// open, items enter / highlight move, trigger hover) are consumed by #2292,
-// which lands after this port. Until then every moment is still: no
-// transition, duration, curve, delay or animate utility is named here.
+// Motion is CSS the browser applies from the generics each matrix row assigns
+// (docs/spec/05-authoring.md, "Motion: generics per the matrix row"), the way
+// drawer does it: every menu stays present, and the projected open axis
+// (data-state) drives a transition between a closed pose and an open pose.
+// Closed, a menu is inert (set by the performance, not here), so it is out of
+// the accessibility tree and the tab order whatever its pose.
+//
+// FIVE MATRIX ROWS NAME THIS COMPONENT; all five are consumed below. Reported,
+// per the authoring rule, not invented:
+//   - menubar / trigger / hover is a pointer moment with no pose of its own
+//     here: the trigger has no hover fill, so on a closed bar a hover changes
+//     nothing. Its colour moves on focus and when its menu opens (on an open
+//     bar the pointer crossing a trigger opens that menu), and the row's
+//     timing is what that colour move runs on. The focus colour move has no
+//     row of its own.
+//   - The checkbox and radio indicators appear and disappear with no row, so
+//     they stay still.
 
 const rootClasses = 'flex h-9 items-center gap-1 rounded-md border bg-background p-1';
 
 // The open menu's trigger keeps the accent fill while focus is inside its menu.
+//
+// THE ROW: menubar / trigger / hover -- color over background, text, border
+// (fast, standard). The trigger stays put and only its fill and text colour
+// move, so the row is a transition of the colour properties.
 const triggerClasses =
   'flex cursor-default select-none items-center rounded-sm px-3 py-1 ' +
   'text-label-medium ts-label-medium outline-none ' +
+  'transition-colors duration-fast ease-standard ' +
   'focus:bg-accent focus:text-accent-foreground ' +
   'data-[state=open]:bg-accent data-[state=open]:text-accent-foreground ' +
   'disabled:pointer-events-none disabled:opacity-50';
 
 // z-depth-dropdown is the semantic depth token; fill (bg-popover), not a raw
-// color. The menu is positioned (fixed) by positionMenubarContent, not here.
+// color. The menu's coordinates are written by positionMenubarContent, not
+// here. `fixed` is here because every menu is now present while closed: out
+// of flow, a closed menu takes no room in the bar (where the performances
+// author it before bind or before the React host mounts) or after it.
+//
+// TWO MATRIX ROWS NAME THIS PART.
+//
+//   menubar / content / closed -> open (moderate, enter, extent pop) and
+//   menubar / content / open -> closed (fast, exit, extent pop): fade + zoom
+//   over opacity and transform: scale. The closed row is the base rule and the
+//   open row is the data-[state=open] rule: whichever pose applies owns the
+//   duration and curve of the transition into it. The zoom rides `extent-pop`,
+//   as context-menu's submenu does: `extent-pop` picks the member (writing the
+//   `--rafters-consumed-extent` alias) and `scale-(--rafters-consumed-extent)`
+//   reads that alias back, so the closed pose sits at the pop extent and the
+//   open pose at full size.
+//
+// `transition`, not `transition-all`: the named default set covers opacity and
+// scale but not the inset properties, and positionMenubarContent rewrites
+// `left`/`top` on every open. Under `transition-all` a menu reopened after a
+// scroll would slide from its old place, a movement no row assigns.
 const contentClasses =
-  'z-depth-dropdown min-w-48 overflow-hidden rounded-md border bg-popover p-1 ' +
-  'text-popover-foreground shadow-lg';
+  'fixed z-depth-dropdown min-w-48 overflow-hidden rounded-md border bg-popover p-1 ' +
+  'text-popover-foreground shadow-lg ' +
+  'opacity-0 pointer-events-none extent-pop scale-(--rafters-consumed-extent) ' +
+  'transition duration-fast ease-exit ' +
+  'data-[state=open]:opacity-100 data-[state=open]:scale-100 ' +
+  'data-[state=open]:pointer-events-auto ' +
+  'data-[state=open]:duration-moderate data-[state=open]:ease-enter';
 
 // The active item is the roving-focus current item, styled via :focus. No
 // data-highlighted axis (the highlight is ephemeral DOM focus, not score state).
+//
+// THE ROW: menubar / items / highlight move -- color, duration-micro,
+// ease-standard. The item stays put and only its fill and text colour move, so
+// it is a transition. Both values carry provenance "proposed" in the matrix: a
+// starting position, never reviewed, transcribed as written.
+//
+// THE SECOND ROW: menubar / items / enter -- fade (with content), which assigns
+// `delay-stagger-step` and no duration and no curve. The fade is the content's
+// (above); this class carries only the offset, which is the whole assignment.
+// `delay-stagger-step` resolves to 0ms at the efficient intent, so it changes
+// nothing on screen today; zero is the assignment, not a gap. `transition-delay`
+// is per element, so the delay also sits on the highlight move: a non-zero
+// stagger-step retune would delay the highlight too, a matrix question (the two
+// rows share one element) this file cannot resolve -- dropdown-menu's items
+// carry the same note.
 const itemBase =
   'relative flex cursor-default select-none items-center rounded-sm text-body-small ts-body-small outline-none ' +
+  'transition-colors duration-micro ease-standard delay-stagger-step ' +
   'focus:bg-accent focus:text-accent-foreground ' +
   'data-[disabled]:pointer-events-none data-[disabled]:opacity-50';
 

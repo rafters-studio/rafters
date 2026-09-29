@@ -103,10 +103,15 @@ afterEach(() => {
 });
 
 describe('menubar [react]', () => {
-  it('closed: every menu hidden, triggers are collapsed menuitem menu buttons', () => {
+  it('closed: every menu inert, triggers are collapsed menuitem menu buttons', () => {
     render(<TestMenubar />);
     for (const value of ['file', 'edit', 'view']) {
-      expect(content(value).hidden).toBe(true);
+      expect(content(value).inert).toBe(true);
+      expect(content(value).hidden).toBe(false);
+      expect(content(value).dataset['state']).toBe('closed');
+      // classy() passes the extent pair through (parens, not brackets).
+      expect(content(value).className).toContain('extent-pop');
+      expect(content(value).className).toContain('scale-(--rafters-consumed-extent)');
       expect(trigger(value).getAttribute('aria-expanded')).toBe('false');
       expect(trigger(value).hasAttribute('aria-controls')).toBe(false);
     }
@@ -124,7 +129,7 @@ describe('menubar [react]', () => {
     const user = userEvent.setup();
     render(<TestMenubar />);
     await user.click(trigger('file'));
-    expect(content('file').hidden).toBe(false);
+    expect(content('file').inert).toBe(false);
     expect(trigger('file').getAttribute('aria-controls')).toBe(content('file').id);
     expect(content('file').getAttribute('aria-labelledby')).toBe(trigger('file').id);
     expect(document.activeElement).toBe(item('New'));
@@ -136,8 +141,8 @@ describe('menubar [react]', () => {
     render(<TestMenubar />);
     await user.click(trigger('file'));
     await user.click(trigger('edit'));
-    expect(content('file').hidden).toBe(true);
-    expect(content('edit').hidden).toBe(false);
+    expect(content('file').inert).toBe(true);
+    expect(content('edit').inert).toBe(false);
     expect(document.activeElement).toBe(item('Undo'));
   });
 
@@ -146,7 +151,7 @@ describe('menubar [react]', () => {
     render(<TestMenubar />);
     await user.click(trigger('file'));
     await user.click(trigger('file'));
-    expect(content('file').hidden).toBe(true);
+    expect(content('file').inert).toBe(true);
   });
 
   it('ArrowRight/ArrowLeft rove the triggers while closed, without opening', async () => {
@@ -157,7 +162,7 @@ describe('menubar [react]', () => {
     expect(document.activeElement).toBe(trigger('edit'));
     await user.keyboard('{ArrowLeft}{ArrowLeft}');
     expect(document.activeElement).toBe(trigger('view'));
-    expect(content('view').hidden).toBe(true);
+    expect(content('view').inert).toBe(true);
   });
 
   it('ArrowDown on a trigger opens its menu', async () => {
@@ -165,7 +170,7 @@ describe('menubar [react]', () => {
     render(<TestMenubar />);
     trigger('edit').focus();
     await user.keyboard('{ArrowDown}');
-    expect(content('edit').hidden).toBe(false);
+    expect(content('edit').inert).toBe(false);
     expect(document.activeElement).toBe(item('Undo'));
   });
 
@@ -192,11 +197,11 @@ describe('menubar [react]', () => {
     render(<TestMenubar />);
     await user.click(trigger('file'));
     await user.keyboard('{ArrowRight}');
-    expect(content('file').hidden).toBe(true);
-    expect(content('edit').hidden).toBe(false);
+    expect(content('file').inert).toBe(true);
+    expect(content('edit').inert).toBe(false);
     expect(document.activeElement).toBe(item('Undo'));
     await user.keyboard('{ArrowLeft}{ArrowLeft}');
-    expect(content('view').hidden).toBe(false);
+    expect(content('view').inert).toBe(false);
     expect(document.activeElement).toBe(item('Zoom'));
   });
 
@@ -205,15 +210,15 @@ describe('menubar [react]', () => {
     render(<TestMenubar />);
     await user.click(trigger('file'));
     await user.hover(trigger('view'));
-    expect(content('view').hidden).toBe(false);
-    expect(content('file').hidden).toBe(true);
+    expect(content('view').inert).toBe(false);
+    expect(content('file').inert).toBe(true);
   });
 
   it('hovering a trigger opens nothing while every menu is closed', async () => {
     const user = userEvent.setup();
     render(<TestMenubar />);
     await user.hover(trigger('view'));
-    expect(content('view').hidden).toBe(true);
+    expect(content('view').inert).toBe(true);
   });
 
   it('clicking an item runs its action, closes, and returns focus to the trigger', async () => {
@@ -223,7 +228,7 @@ describe('menubar [react]', () => {
     await user.click(trigger('file'));
     await user.click(item('New'));
     expect(onNew).toHaveBeenCalledTimes(1);
-    expect(content('file').hidden).toBe(true);
+    expect(content('file').inert).toBe(true);
     expect(document.activeElement).toBe(trigger('file'));
   });
 
@@ -234,7 +239,7 @@ describe('menubar [react]', () => {
     await user.click(trigger('file'));
     await user.keyboard('{Enter}');
     expect(onNew).toHaveBeenCalledTimes(1);
-    expect(content('file').hidden).toBe(true);
+    expect(content('file').inert).toBe(true);
     expect(document.activeElement).toBe(trigger('file'));
   });
 
@@ -243,7 +248,7 @@ describe('menubar [react]', () => {
     render(<TestMenubar />);
     await user.click(trigger('edit'));
     await user.keyboard('{Escape}');
-    expect(content('edit').hidden).toBe(true);
+    expect(content('edit').inert).toBe(true);
     expect(document.activeElement).toBe(trigger('edit'));
   });
 
@@ -257,7 +262,7 @@ describe('menubar [react]', () => {
     );
     await user.click(trigger('file'));
     await user.click(body().querySelector('button') as HTMLElement);
-    expect(content('file').hidden).toBe(true);
+    expect(content('file').inert).toBe(true);
   });
 
   it("a pointerdown on the bar's blank space dismisses", async () => {
@@ -265,15 +270,15 @@ describe('menubar [react]', () => {
     render(<TestMenubar />);
     await user.click(trigger('file'));
     await user.click(root());
-    expect(content('file').hidden).toBe(true);
+    expect(content('file').inert).toBe(true);
   });
 
-  it('menus render in place, hidden, until the host mounts, then leave the bar', () => {
+  it('menus render in place, closed and inert, until the host mounts, then leave the bar', () => {
     const { container } = render(<TestMenubar defaultValue="file" />);
     // After mount every menu sits in the host after the bar, not in the bar.
     expect(root().querySelector('[data-part="content"]')).toBeNull();
     expect(container.querySelectorAll('[data-part="content"]')).toHaveLength(3);
-    expect(content('file').hidden).toBe(false);
+    expect(content('file').inert).toBe(false);
   });
 
   it('controlled value: onValueChange reports the next menu and state follows the prop', async () => {
@@ -282,10 +287,10 @@ describe('menubar [react]', () => {
     const { rerender } = render(<TestMenubar value="" onValueChange={onValueChange} />);
     await user.click(trigger('edit'));
     expect(onValueChange).toHaveBeenLastCalledWith('edit');
-    expect(content('edit').hidden).toBe(true);
+    expect(content('edit').inert).toBe(true);
 
     rerender(<TestMenubar value="edit" onValueChange={onValueChange} />);
-    expect(content('edit').hidden).toBe(false);
+    expect(content('edit').inert).toBe(false);
   });
 
   it('uncontrolled callback fires once per real change', async () => {
