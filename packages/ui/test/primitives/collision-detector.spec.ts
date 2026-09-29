@@ -69,6 +69,24 @@ describe('anchored placement under a zoom transition', () => {
     expect(rect.top).toBeCloseTo(134, 0);
   });
 
+  it('positionPopover: the drawer pattern (closed pose transition-all, open pose transition-transform) places without travel', async () => {
+    const anchor = mountAnchor('position: fixed; left: 200px; top: 100px;');
+    const popup = mountPopup(100);
+    closedPose(popup, '10s');
+    popup.style.transitionProperty = 'all';
+    popup.getBoundingClientRect();
+
+    // The open edge: the pose and its transition-property change with the placement.
+    popup.style.transitionProperty = ZOOM_TRANSITION;
+    popup.style.scale = '1';
+    positionPopover(anchor, popup, { side: 'bottom', align: 'start', sideOffset: 4 });
+    await frames(2);
+
+    const rect = popup.getBoundingClientRect();
+    expect(rect.left).toBeCloseTo(200, 0);
+    expect(rect.top).toBeCloseTo(134, 0);
+  });
+
   it('applyPosition: the first open appears at its anchored position', async () => {
     const anchor = mountAnchor('position: fixed; left: 200px; top: 100px;');
     const popup = mountPopup(100);
