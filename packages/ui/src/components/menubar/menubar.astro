@@ -1,0 +1,168 @@
+---
+/**
+ * Menubar component for application-style horizontal command menus
+ *
+ * @cognitive-load 5/10 - decision 1, information 2, interaction 1, disruption 0,
+ * learning 1. The user picks a category, then an action inside it: two small
+ * decisions made one at a time. Information is the heavy dimension -- every menu
+ * is a list to scan, and the bar exists to hold many commands. Interaction is one
+ * point because the keyboard model spans two axes (across the bar, down a menu).
+ * Nothing is seized: menus anchor under their trigger and the page stays put. The
+ * File/Edit/View bar is a long-learned desktop idiom, so learning costs little.
+ * @attention-economics Persistent and quiet: the bar is always visible but spends
+ * no attention until a trigger is chosen, and only one menu is ever open, so at
+ * most one list competes for attention. Moving between menus while one is open
+ * lets the user browse categories without re-committing each time.
+ * @trust-building Predictable and reversible: exactly one menu opens at a time,
+ * Escape and an outside click close it without acting, and activating an item
+ * closes the menu and hands focus back to the trigger it came from. Keyboard
+ * shortcuts shown beside items build confidence in the command set.
+ * @accessibility role="menubar" (horizontal) on the root; each trigger is a
+ * role="menuitem" menu button (aria-haspopup="menu", aria-expanded,
+ * aria-controls while open); each menu is role="menu" (vertical) named by its
+ * trigger. ArrowLeft/Right rove the triggers, ArrowDown/Enter/Space open a menu
+ * and land focus on its first item, ArrowUp/Down and Home/End rove the items,
+ * typing jumps to a matching item, ArrowLeft/Right inside a menu move to the
+ * neighbouring menu, Escape closes and returns focus to the trigger.
+ * @semantic-meaning Application command bar: Menu=command category,
+ * Item=action, CheckboxItem=toggle, RadioItem=exclusive choice,
+ * Shortcut=keyboard hint, Separator=group boundary
+ *
+ * @usage-patterns
+ * DO: Use for application-level commands grouped by category (File, Edit, View, Help)
+ * DO: Group related actions within each menu, separated by Separator
+ * DO: Show keyboard shortcuts with Shortcut for frequent actions
+ * DO: Keep the bar to a handful of menus (5-8) and each menu to 7 plus or minus 2 items
+ * NEVER: Primary site navigation (use NavigationMenu), a single menu (use DropdownMenu), mobile-first layouts
+ *
+ * @example
+ * ```tsx
+ * <Menubar>
+ *   <Menubar.Menu value="file">
+ *     <Menubar.Trigger>File</Menubar.Trigger>
+ *     <Menubar.Content>
+ *       <Menubar.Item>New Tab <Menubar.Shortcut>Cmd+T</Menubar.Shortcut></Menubar.Item>
+ *       <Menubar.Separator />
+ *       <Menubar.Item>Print</Menubar.Item>
+ *     </Menubar.Content>
+ *   </Menubar.Menu>
+ *   <Menubar.Menu value="edit">
+ *     <Menubar.Trigger>Edit</Menubar.Trigger>
+ *     <Menubar.Content>
+ *       <Menubar.Item>Undo <Menubar.Shortcut>Cmd+Z</Menubar.Shortcut></Menubar.Item>
+ *     </Menubar.Content>
+ *   </Menubar.Menu>
+ * </Menubar>
+ * ```
+ */
+
+/**
+ * Astro performance for menubar. Server-renders the bar and every menu in light
+ * DOM with the closed-state projection already applied (correct and inert
+ * before JS), then the <script> hands each instance to bindMenubar -- the SAME
+ * DOM-native client the Web Component uses. One score, three performances.
+ *
+ * The menus are authored inside the bar here; bindMenubar moves each one out of
+ * the bar to sit right after it (the trigger rove would otherwise collect their
+ * items) and positions the open one under its trigger.
+ */
+import {
+  menubar,
+  menubarInstanceAria,
+  type MenubarConfig,
+  type MenubarPart,
+} from './menubar.behavior';
+import { menubarClasses } from './menubar.classes';
+import type { PartIds } from '../../lib/contract';
+
+interface Item {
+  label: string;
+  disabled?: boolean;
+  shortcut?: string;
+}
+
+interface Menu {
+  value: string;
+  label: string;
+  items: Item[];
+}
+
+interface Props {
+  id: string;
+  menus: Menu[];
+  loop?: boolean;
+}
+
+const { id, menus, loop = true } = Astro.props;
+
+const config: MenubarConfig = { loop };
+const state = menubar.initialState(config);
+const classes = menubarClasses(config, state);
+
+const ids: PartIds<MenubarPart> = { root: `${id}-root`, trigger: '', content: '', item: '' };
+const rootAria = menubar.aria(state, config, ids);
+const instanceIds = (value: string) => ({
+  trigger: `${id}-trigger-${value}`,
+  content: `${id}-content-${value}`,
+});
+---
+
+<rafters-menubar
+  data-part="root"
+  id={ids.root}
+  data-loop={loop ? undefined : 'false'}
+  class={classes.root}
+  {...rootAria.root}
+>
+  {
+    menus.map((menu) => (
+      <button
+        type="button"
+        id={instanceIds(menu.value).trigger}
+        data-part="trigger"
+        data-value={menu.value}
+        class={classes.trigger}
+        {...menubarInstanceAria('trigger', menu.value, state, config, instanceIds(menu.value))}
+      >
+        {menu.label}
+      </button>
+    ))
+  }
+  {
+    menus.map((menu) => (
+      <div
+        id={instanceIds(menu.value).content}
+        data-part="content"
+        data-value={menu.value}
+        class={classes.content}
+        hidden
+        {...menubarInstanceAria('content', menu.value, state, config, instanceIds(menu.value))}
+      >
+        {menu.items.map((item) => (
+          <div
+            role="menuitem"
+            data-part="item"
+            data-roving-item=""
+            data-disabled={item.disabled ? '' : undefined}
+            aria-disabled={item.disabled ? 'true' : undefined}
+            tabindex={item.disabled ? undefined : -1}
+            class={classes.item}
+          >
+            {item.label}
+            {item.shortcut ? <span class={classes.shortcut}>{item.shortcut}</span> : null}
+          </div>
+        ))}
+      </div>
+    ))
+  }
+</rafters-menubar>
+
+<script>
+  import { bindMenubar } from './menubar.behavior';
+
+  for (const root of document.querySelectorAll<HTMLElement>('rafters-menubar[data-part="root"]')) {
+    if (root.dataset['bound'] === 'true') continue;
+    root.dataset['bound'] = 'true';
+    bindMenubar(root);
+  }
+</script>
