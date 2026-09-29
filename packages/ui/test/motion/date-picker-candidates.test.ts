@@ -3,8 +3,8 @@
  * keeps the rows' timing.
  *
  * `date-picker.classes.test.ts` pins the candidate strings; this points the
- * REAL Tailwind CLI at the REAL component directory (the same harness as
- * `reveal-candidates.test.ts`) and checks the emitted sheet. Two properties:
+ * REAL Tailwind CLI at the REAL component directory (`component-sheet.ts`, the
+ * harness `reveal-candidates.test.ts` also uses) and checks the emitted sheet. Two properties:
  *  1. every content candidate became a rule (Tailwind drops a malformed one
  *     silently);
  *  2. the bare `transition` utility sorts BEFORE `duration-fast` and
@@ -18,43 +18,15 @@
  * (`positionPopover` -> `placeFloating`, #2403) writes the popup's position
  * there, so the placement never animates with the zoom.
  */
-import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { generateBaseSystem } from '@rafters/design-tokens/generators/index';
-import {
-  contrastPlugin,
-  invertPlugin,
-  registryToCompiled,
-  scalePlugin,
-  statePlugin,
-  TokenRegistry,
-} from '@rafters/design-tokens';
 import { datePicker } from '../../src/components/date-picker/date-picker.behavior';
 import { datePickerClasses } from '../../src/components/date-picker/date-picker.classes';
+import { componentSheet, escapeCandidate } from './component-sheet';
 
 const config = { mode: 'single' } as const;
 const CONTENT = datePickerClasses(config, datePicker.initialState(config)).content;
 
-const escapeCandidate = (candidate: string): string =>
-  `.${candidate.replace(/[^a-zA-Z0-9_-]/g, (char) => `\\${char}`)}`;
-
-let compiled: Promise<string> | null = null;
-const sheet = (): Promise<string> => {
-  if (compiled) return compiled;
-  compiled = (async () => {
-    const system = generateBaseSystem({});
-    const registry = new TokenRegistry(system.allTokens, [
-      scalePlugin,
-      contrastPlugin,
-      statePlugin,
-      invertPlugin,
-    ]);
-    return registryToCompiled(registry, {
-      contentSources: [resolve(import.meta.dirname, '../../src/components/date-picker')],
-    });
-  })();
-  return compiled;
-};
+const sheet = (): Promise<string> => componentSheet('date-picker');
 
 /** The body of the first rule whose selector is exactly `selector`. */
 const ruleBody = (css: string, selector: string): string => {
