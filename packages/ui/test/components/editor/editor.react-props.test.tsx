@@ -136,3 +136,50 @@ describe('editor react props [onChange]', () => {
     expect(second).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('editor react props [document identity] (#2201)', () => {
+  it('a rerender with the same document keeps in-flight edits', () => {
+    const onChange = vi.fn();
+    const { rerender } = render(
+      <Editor key="doc-1" label="Document" initialDocument={seededDoc()} onChange={onChange} />,
+    );
+
+    typeChar('!');
+    // Same key, fresh-but-equal initialDocument: the host re-rendering with the
+    // document it already passed must not reset the history.
+    rerender(
+      <Editor key="doc-1" label="Document" initialDocument={seededDoc()} onChange={onChange} />,
+    );
+
+    expect(root().querySelector('[data-block-id="b1"]')?.textContent).toBe('!hello');
+    undo();
+    expect(root().querySelector('[data-block-id="b1"]')?.textContent).toBe('hello');
+  });
+
+  it('a remount keyed to a different document shows it with a fresh history', () => {
+    const onChange = vi.fn();
+    const { rerender } = render(
+      <Editor key="doc-1" label="Document" initialDocument={seededDoc()} onChange={onChange} />,
+    );
+
+    typeChar('!');
+    expect(onChange).toHaveBeenCalledTimes(1);
+
+    rerender(
+      <Editor
+        key="doc-2"
+        label="Document"
+        initialDocument={[{ id: 'b2', type: 'text', content: 'goodbye' }]}
+        onChange={onChange}
+      />,
+    );
+
+    expect(root().querySelector('[data-block-id="b1"]')).toBeNull();
+    expect(root().querySelector('[data-block-id="b2"]')?.textContent).toBe('goodbye');
+
+    // The new history carries none of doc-1's entries: undo has nothing to revert.
+    undo();
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(root().querySelector('[data-block-id="b2"]')?.textContent).toBe('goodbye');
+  });
+});
