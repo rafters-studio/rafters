@@ -38,9 +38,20 @@ const triggerClasses =
 // animation-duration under the media query instead, which keeps the keyframe's
 // end state. animate-none here would win destructively: `animation: none`
 // resets the shorthand and discards the zeroed duration with it.
+//
+// THE ITEMS' ENTER ROW LIVES HERE TOO: dropdown-menu / items / enter -- fade
+// (with content), which assigns `delay-stagger-step` and NO duration and NO
+// curve (motion.jsonl:38). The delay is per POSITION, so the content -- the
+// item collection's container -- selects `stagger-items` (#2189): the
+// generated utility gives each direct child its own rung of the ladder, saturating
+// at 12. The ladder is built once in the exporter; this file only names it
+// (00-boundaries.md Sec 6). It reaches the children, never the content's own
+// scale keyframe. `--rafters-delay-stagger-step` defaults to 0ms, so at the
+// default intent the items enter with the content as one block, as shadcn's
+// do; a later retune reaches them because a consumer exists to move.
 const contentClasses =
   'z-depth-dropdown min-w-32 overflow-hidden rounded-md border bg-popover p-1 ' +
-  'text-popover-foreground shadow-lg ' +
+  'text-popover-foreground shadow-lg stagger-items ' +
   'data-[state=open]:animate-scale-in-moderate-enter ' +
   'data-[state=closed]:animate-scale-out-fast-exit ' +
   'data-[state=closed]:pointer-events-none';
@@ -57,29 +68,12 @@ const contentClasses =
 // here instead. The row is marked PROPOSED in the matrix -- a starting position
 // for the knobs, never reviewed -- and is transcribed as written.
 //
-// THE SECOND ROW: dropdown-menu / items / enter -- fade (with content), which
-// assigns `delay-stagger-step` and NO duration and NO curve (motion.jsonl:38).
-// `duration: {"kind":"none"}` means the row assigns no duration, not that it
-// assigns nothing: the delay generic IS the whole assignment, so the whole
-// consumption is naming it. The fade itself is the CONTENT's keyframe -- that
-// is what "with content" says -- and this class only carries the offset.
-//
-// ZERO IS THE ASSIGNMENT, NOT A GAP. `delay-stagger-step` resolves to 0ms at
-// the efficient intent, so this class changes nothing on screen today, and
-// that is the point rather than a reason to omit it: a later retune reaches
-// these lists because a consumer exists to move. The silence below is a value
-// somebody chose, not an oversight, and the next reader should not remove the
-// class on the theory that it does nothing.
-//
-// ONE COUPLING TO KNOW ABOUT: `transition-delay` is per ELEMENT, exactly like
-// `transition-duration`, so this delay also sits on the highlight-move
-// transition above. At 0ms nothing shows. A non-zero `stagger-step` retune
-// would delay the highlight as well as the entrance, which is a matrix
-// question (the two rows share one element and the vocabulary has no
-// per-property delay), not something this file can resolve.
+// The items' enter row (the stagger) is on the container above, not here:
+// `transition-delay` is per ELEMENT, so a delay on the item would hold back
+// this highlight-colour transition too. The highlight never waits.
 const itemBase =
   'relative flex cursor-default select-none items-center rounded-sm text-body-small ts-body-small outline-none ' +
-  'transition-colors duration-micro ease-standard delay-stagger-step ' +
+  'transition-colors duration-micro ease-standard ' +
   'focus:bg-accent focus:text-accent-foreground ' +
   'data-[disabled]:pointer-events-none data-[disabled]:opacity-50';
 
