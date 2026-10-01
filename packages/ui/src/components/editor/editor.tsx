@@ -10,11 +10,14 @@
  * @usage-patterns
  * DO: Always supply a real accessible name (label or labelledBy) -- axe fails an unnamed textbox
  * DO: Seed initial content via the decorator's own data, not a post-mount DOM write
+ * DO: React -- pass the document as initialDocument (BaseBlock[]); it is read once on mount, so key the Editor by document id to load a different document
+ * DO: React -- read edits back through onChange(doc: BaseBlock[]); it fires after every op, undo, and redo, never on mount
+ * DO: Astro -- pass initialDoc; Web Component -- set data-initial-doc (JSON) on the element before it connects
  * NEVER: Mutate the contenteditable's DOM directly -- the model owns every edit
  *
  * @example
  * ```tsx
- * <Editor label="Document" />
+ * <Editor key={doc.id} label="Document" initialDocument={doc.body} onChange={saveBody} />
  * ```
  */
 
