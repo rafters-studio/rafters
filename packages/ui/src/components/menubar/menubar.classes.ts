@@ -75,7 +75,7 @@ const triggerClasses =
 // scroll would slide from its old place, a movement no row assigns.
 const contentClasses =
   'fixed z-depth-dropdown min-w-48 overflow-hidden rounded-md border bg-popover p-1 ' +
-  'text-popover-foreground shadow-lg ' +
+  'text-popover-foreground shadow-lg stagger-items ' +
   'opacity-0 pointer-events-none extent-pop scale-(--rafters-consumed-extent) ' +
   'transition duration-fast ease-exit ' +
   'data-[state=open]:opacity-100 data-[state=open]:scale-100 ' +
@@ -91,17 +91,18 @@ const contentClasses =
 // starting position, never reviewed, transcribed as written.
 //
 // THE SECOND ROW: menubar / items / enter -- fade (with content), which assigns
-// `delay-stagger-step` and no duration and no curve. The fade is the content's
-// (above); this class carries only the offset, which is the whole assignment.
-// `delay-stagger-step` resolves to 0ms at the efficient intent, so it changes
-// nothing on screen today; zero is the assignment, not a gap. `transition-delay`
-// is per element, so the delay also sits on the highlight move: a non-zero
-// stagger-step retune would delay the highlight too, a matrix question (the two
-// rows share one element) this file cannot resolve -- dropdown-menu's items
-// carry the same note.
+// `delay-stagger-step` and no duration and no curve. The delay is per POSITION,
+// so it is selected on the content, the item collection's container: it carries
+// `stagger-items` (#2189), the generated utility that gives each direct child its
+// own rung of the ladder, saturating at 12. This file only names it
+// (00-boundaries.md Sec 6). `--rafters-delay-stagger-step` defaults to 0ms, so
+// at the default intent the items enter with the content as one block. The item
+// carries no delay of its own: `transition-delay` is per element, so a delay
+// here would hold back the highlight-colour transition too. The highlight never
+// waits.
 const itemBase =
   'relative flex cursor-default select-none items-center rounded-sm text-body-small ts-body-small outline-none ' +
-  'transition-colors duration-micro ease-standard delay-stagger-step ' +
+  'transition-colors duration-micro ease-standard ' +
   'focus:bg-accent focus:text-accent-foreground ' +
   'data-[disabled]:pointer-events-none data-[disabled]:opacity-50';
 
