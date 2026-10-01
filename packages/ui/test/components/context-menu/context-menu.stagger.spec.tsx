@@ -100,7 +100,10 @@ describe('context-menu items / enter: the stagger-items ladder (#2411)', () => {
 
   it('the highlight colour change is never delayed by the step', () => {
     inject(sheet);
-    inject('[data-part="content"] { --rafters-delay-stagger-step: 10ms; }');
+    // delay-stagger-step compiles to var(--transition-delay-stagger-step), a
+    // theme alias resolved at :root, so the step must be set on :root for a
+    // delayed item transition to be observable at all.
+    inject(':root { --rafters-delay-stagger-step: 10ms; }');
     const content = renderOpenMenu();
     for (const item of Array.from(content.children)) {
       const delays = getComputedStyle(item).transitionDelay.split(',');
