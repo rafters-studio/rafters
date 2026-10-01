@@ -27,11 +27,11 @@ const inputClasses =
   'flex h-11 @md:h-10 w-full rounded-md bg-transparent py-3 text-body-small ts-body-small outline-none ' +
   'placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50';
 
-const listClasses = 'max-h-80 overflow-y-auto overflow-x-hidden p-1';
+const listClasses = 'max-h-80 overflow-y-auto overflow-x-hidden p-1 stagger-items';
 
 const emptyClasses = 'py-6 text-center text-body-small ts-body-small';
 
-const groupClasses = 'overflow-hidden p-1 text-foreground';
+const groupClasses = 'overflow-hidden p-1 text-foreground stagger-items';
 
 const groupHeadingClasses = 'px-2 py-1.5 text-label-small ts-label-small text-muted-foreground';
 
@@ -52,13 +52,16 @@ const groupHeadingClasses = 'px-2 py-1.5 text-label-small ts-label-small text-mu
 // (tooltip.classes.ts states the rule).
 //
 // THE SECOND ROW: command / items / enter -- fade (with content), which assigns
-// `delay-stagger-step` and no duration and no curve (motion.jsonl:66).
-// `duration: {"kind":"none"}` means no DURATION is assigned, not that nothing
-// is: the delay generic is the entire assignment, and naming it is the whole
-// consumption. The fade is the content keyframe's; this class carries only the
-// offset, which resolves to 0ms at the efficient intent. Zero is the
-// assignment, not a gap -- see dropdown-menu's items class for the full note,
-// including the per-element `transition-delay` coupling with the row above.
+// `delay-stagger-step` and no duration and no curve (motion.jsonl:66). The delay
+// is per POSITION, so it is not on the item: the item collections' containers --
+// the list (ungrouped items) and each group -- select `stagger-items` (#2189),
+// the generated ladder that gives each direct child its own rung, saturating at
+// 12. The ladder is built once in the exporter; this file only names it
+// (00-boundaries.md Sec 6). `--rafters-delay-stagger-step` defaults to 0ms, so
+// at the default intent the items enter with the content as one block, as
+// shadcn's do. `transition-delay` is per ELEMENT, so a delay on the item would
+// hold back the highlight-colour transition above too: the highlight never
+// waits (#2414).
 //
 // ONE ROW WITH NO CONSUMABLE FORM HERE, reported rather than faked:
 //
@@ -75,7 +78,7 @@ const groupHeadingClasses = 'px-2 py-1.5 text-label-small ts-label-small text-mu
 const itemClasses =
   'relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 ' +
   'text-body-small ts-body-small outline-none ' +
-  'transition-colors duration-micro ease-standard delay-stagger-step ' +
+  'transition-colors duration-micro ease-standard ' +
   'data-[selected]:bg-accent data-[selected]:text-accent-foreground ' +
   'data-[disabled]:pointer-events-none data-[disabled]:opacity-50';
 
