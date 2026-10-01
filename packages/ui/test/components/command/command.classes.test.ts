@@ -69,7 +69,7 @@ describe('command classes', () => {
     // motion.jsonl: command / items / enter assigns `delay-stagger-step` per
     // POSITION. The list and each group -- the item collections' containers --
     // select the generated `stagger-items` ladder (#2189); the compiled per-item
-    // delays are read in command.stagger.test.tsx. The items carry no delay of
+    // delays are read in command.stagger.spec.tsx. The items carry no delay of
     // their own, so the highlight-colour transition never waits (#2414).
     expect(classes.list.split(/\s+/)).toContain('stagger-items');
     expect(classes.group.split(/\s+/)).toContain('stagger-items');
