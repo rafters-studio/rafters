@@ -101,6 +101,30 @@ test('pasting plain text produces insert ops and the resulting doc matches', asy
   await expect(surface).toHaveText('pasted');
 });
 
+test('a multi-line paste is one undo step: one Control+z restores the original text (#2257)', async ({
+  page,
+}) => {
+  await page.goto('about:blank');
+  await page.setContent(
+    await buildEditorHarness({ blocks: [{ id: 'b1', type: 'text', content: 'start' }] }),
+  );
+  const surface = page.locator('[data-part="root"]');
+  await surface.click();
+  // Same synthetic-ClipboardEvent technique as the single-line paste test above.
+  await surface.evaluate((el) => {
+    const dt = new DataTransfer();
+    dt.setData('text/plain', 'a\nb\nc');
+    const event = new ClipboardEvent('paste', { bubbles: true, cancelable: true });
+    Object.defineProperty(event, 'clipboardData', { value: dt, configurable: true });
+    el.dispatchEvent(event);
+  });
+  await expect(page.locator('[data-block-id]')).toHaveCount(3);
+
+  await page.keyboard.press('Control+z');
+  await expect(page.locator('[data-block-id]')).toHaveCount(1);
+  await expect(surface).toHaveText('start');
+});
+
 test('IME composition commits as one insertText op on compositionend', async ({ page }) => {
   await page.goto('about:blank');
   await page.setContent(

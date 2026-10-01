@@ -265,8 +265,8 @@ function crossBlockRangeOrder(
 function deleteRangeAcrossBlocksOps(
   doc: EditorHistoryState['doc'],
   sel: EditorHistoryState['sel'],
+  range = crossBlockRangeOrder(doc, sel),
 ): EditorOp[] {
-  const range = crossBlockRangeOrder(doc, sel);
   if (range === null) return [];
   const { startIndex, endIndex, startBlockId, endBlockId, startOffset, endOffset } = range;
 
@@ -334,7 +334,7 @@ export function splitOps(state: EditorHistoryState): EditorOp[] {
   if (!isCollapsed(sel) && sel.anchor.blockId !== sel.focus.blockId) {
     const range = crossBlockRangeOrder(doc, sel);
     if (range === null) return [];
-    const ops = deleteRangeAcrossBlocksOps(doc, sel);
+    const ops = deleteRangeAcrossBlocksOps(doc, sel, range);
     ops.push({
       kind: 'split',
       blockId: range.startBlockId,
@@ -872,34 +872,64 @@ export function bindEditor(root: HTMLElement, injectedHistory?: EditorHistory): 
 
   // -- paste: read via createClipboard, own the insert --
 
+  /** #2257: a paste is ONE user action, so it commits as ONE `HistoryEntry`.
+   *  A single line is one `insertText` through `applyOps`' one-op path
+   *  (`controls.apply`, unchanged: it still replaces a same-block selection
+   *  and coalesces with adjacent typing). Multiple lines build the whole op
+   *  list up front -- `insertText` for the first line, then `split` +
+   *  `insertText` per following line -- and commit it once through
+   *  `applyBatch`. `commitEntry` applies the batch in one pass without
+   *  writing the cell between ops, so each op's position is derived from the
+   *  ops before it (the split's `newBlockId` is minted here, before apply),
+   *  never read back from `memory.get()`. `applyBatch` synthesizes no
+   *  selection-replace removal, so a same-block range selection's removal is
+   *  included explicitly -- the same removal `controls.apply` synthesized for
+   *  the first line's `insertText` before. The entry's `selAfter` follows the
+   *  last op: the caret at the end of the last pasted line (the new block at
+   *  offset 0 when that line is empty); `selBefore` is the pre-paste
+   *  selection. */
   function pasteText(text: string): void {
     const lines = text.split('\n');
-    const start = caretStart(memory.get().sel);
-    controls.apply({
-      kind: 'insertText',
-      blockId: start.blockId,
-      offset: start.offset,
-      text: [{ text: lines[0] ?? '' }],
-    });
-    for (let i = 1; i < lines.length; i++) {
-      const afterSplit = memory.get().sel.focus;
-      controls.apply({
-        kind: 'split',
-        blockId: afterSplit.blockId,
-        offset: afterSplit.offset,
-        newBlockId: mintBlockId(),
+    const { sel, doc } = memory.get();
+    const start = caretStart(sel);
+    const first = lines[0] ?? '';
+    if (lines.length === 1) {
+      applyOps([
+        {
+          kind: 'insertText',
+          blockId: start.blockId,
+          offset: start.offset,
+          text: [{ text: first }],
+        },
+      ]);
+      return;
+    }
+
+    const ops: EditorOp[] = [];
+    if (!isCollapsed(sel) && sel.anchor.blockId === sel.focus.blockId) {
+      ops.push(...sameBlockRangeRemoveOp(doc, sel));
+    }
+    if (first.length > 0) {
+      ops.push({
+        kind: 'insertText',
+        blockId: start.blockId,
+        offset: start.offset,
+        text: [{ text: first }],
       });
+    }
+    let blockId = start.blockId;
+    let offset = start.offset + first.length;
+    for (let i = 1; i < lines.length; i++) {
+      const newBlockId = mintBlockId();
+      ops.push({ kind: 'split', blockId, offset, newBlockId });
       const line = lines[i] ?? '';
       if (line.length > 0) {
-        const at = memory.get().sel.focus;
-        controls.apply({
-          kind: 'insertText',
-          blockId: at.blockId,
-          offset: 0,
-          text: [{ text: line }],
-        });
+        ops.push({ kind: 'insertText', blockId: newBlockId, offset: 0, text: [{ text: line }] });
       }
+      blockId = newBlockId;
+      offset = line.length;
     }
+    applyOps(ops);
   }
 
   const clipboard = createClipboard({
