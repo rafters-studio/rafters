@@ -54,9 +54,13 @@ const trigger = 'inline-block';
 // it on `present` instead (dropdown-menu.tsx:288-290). The fix belongs to the
 // behavior/view layer, not to this file; the class is correct and starts
 // running the moment that wiring lands.
+//
+// THE ITEMS / ENTER ROW rides here, on the container: `stagger-items` is the
+// per-position ladder rafters.css emits (#2189), selected rather than built --
+// see the items note below.
 const content =
   'z-depth-dropdown min-w-32 overflow-hidden rounded-md border bg-popover p-1 ' +
-  'text-popover-foreground shadow-lg outline-none ' +
+  'text-popover-foreground shadow-lg outline-none stagger-items ' +
   'data-[state=open]:animate-scale-in-moderate-enter ' +
   'data-[state=closed]:animate-scale-out-fast-exit ' +
   'data-[state=closed]:pointer-events-none';
@@ -177,16 +181,19 @@ const subContent =
 // packages/design-tokens/test/motion-cells.test.ts).
 //
 // THE SECOND ROW: context-menu / items / enter -- fade (with content), which
-// assigns `delay-stagger-step` and no duration and no curve (motion.jsonl:42).
-// `duration: {"kind":"none"}` means no DURATION is assigned, not that nothing
-// is: the delay generic is the entire assignment, and naming it is the whole
-// consumption. The fade is the content keyframe's; this class carries only the
-// offset, which resolves to 0ms at the efficient intent. Zero is the
-// assignment, not a gap -- see dropdown-menu's items class for the full note,
-// including the per-element `transition-delay` coupling with the row above.
+// assigns the stagger step and no duration and no curve (motion.jsonl:42). The
+// assignment is PER POSITION, so it lives on the item collection's container,
+// not on the item: `content` selects `stagger-items`, the utility rafters.css
+// emits (#2189), which gives child N `animation-delay: calc(N * step)`, capped
+// at 12. The `calc()` and `:nth-child` are written once in the exporter and
+// never here (00-boundaries.md Sec 6: classes.ts selects, never constructs).
+// The item names no delay at all, so the highlight move above is never held
+// back by the stagger step. The step defaults to 0ms, so at the default intent
+// the items enter with the content as one block (current choice, 2026-09-29:
+// every component behaves like shadcn out of the box; revisable).
 const itemBase =
   'relative flex cursor-default select-none items-center rounded-sm text-body-small ts-body-small outline-none ' +
-  'transition-colors duration-micro ease-standard delay-stagger-step ' +
+  'transition-colors duration-micro ease-standard ' +
   'focus:bg-accent focus:text-accent-foreground ' +
   'data-[disabled]:pointer-events-none data-[disabled]:opacity-50';
 
