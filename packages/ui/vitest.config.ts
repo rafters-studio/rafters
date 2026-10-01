@@ -1,6 +1,7 @@
 import react from '@vitejs/plugin-react';
 import { playwright } from '@vitest/browser-playwright';
 import { configDefaults, defineConfig } from 'vitest/config';
+import { componentSheet } from './test/motion/component-sheet-command';
 import { a11yOnly } from './vitest.astro.shared';
 
 /**
@@ -129,6 +130,10 @@ export default defineConfig({
             provider: playwright(),
             instances: [{ browser: 'chromium' }],
             headless: true,
+            // A spec that reads a computed style off the REAL compiled
+            // component sheet asks the node side for it (the Tailwind CLI
+            // does not run in the page).
+            commands: { componentSheet },
           },
         },
       },
