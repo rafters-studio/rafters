@@ -74,12 +74,9 @@ describe('select classes', () => {
     expect(classes.itemIndicator).toContain('ease-standard');
   });
 
-  it('items carry the enter row: the stagger delay, no duration, no curve', () => {
-    // motion.jsonl: select / items / enter assigns `delay-stagger-step` with
-    // `duration: {"kind":"none"}` -- no DURATION assigned, not no assignment.
-    // The delay generic is the whole row, and it resolves to 0ms at the
-    // efficient intent: that zero is the assignment rather than a gap.
-    expect(classes.item).toContain('delay-stagger-step');
+  it('the stagger rides the viewport, never the item, so the highlight is not delayed', () => {
+    expect(classes.viewport).toContain('stagger-items');
+    expect(classes.item).not.toContain('delay-stagger-step');
   });
 
   it('no literal duration, delay or easing value appears anywhere', () => {

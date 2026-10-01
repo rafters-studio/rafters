@@ -101,7 +101,16 @@ const contentClasses =
   'data-[state=closed]:animate-scale-out-fast-exit ' +
   'data-[state=closed]:pointer-events-none';
 
-const viewportClasses = 'p-1';
+// THE ITEMS' ENTER ROW LIVES HERE: select / items / enter -- fade (with
+// content), which assigns `delay-stagger-step` and no duration and no curve
+// (motion.jsonl:55). The delay is per POSITION, so the viewport -- the item
+// collection's container -- selects `stagger-items` (#2189): the generated
+// utility gives each direct child its own rung of the ladder, saturating at 12.
+// The ladder is built once in the exporter; this file only names it
+// (00-boundaries.md Sec 6). `--rafters-delay-stagger-step` defaults to 0ms, so
+// at the default intent the items enter with the content as one block, as
+// shadcn's do.
+const viewportClasses = 'p-1 stagger-items';
 
 // THE ROW: select / items / highlight move -- color, duration-micro,
 // ease-standard (motion.md:189), PROPOSED and unreviewed, transcribed as
@@ -112,18 +121,13 @@ const viewportClasses = 'p-1';
 // and nothing else: the trigger above is already a bare `group` (for the
 // chevron) and a second unnamed scope would make the two selectors ambiguous.
 //
-// THE SECOND ROW: select / items / enter -- fade (with content), which assigns
-// `delay-stagger-step` and no duration and no curve (motion.jsonl:55).
-// `duration: {"kind":"none"}` means no DURATION is assigned, not that nothing
-// is: the delay generic is the entire assignment, and naming it is the whole
-// consumption. The fade is the content keyframe's; this class carries only the
-// offset, which resolves to 0ms at the efficient intent. Zero is the
-// assignment, not a gap -- see dropdown-menu's items class for the full note,
-// including the per-element `transition-delay` coupling with the row above.
+// The items' enter row (the stagger) is on the viewport above, not here:
+// `transition-delay` is per ELEMENT, so a delay on the item would hold back
+// this highlight-colour transition too. The highlight never waits.
 const itemClasses =
   'group/item relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 ' +
   'text-body-small ts-body-small outline-none ' +
-  'transition-colors duration-micro ease-standard delay-stagger-step ' +
+  'transition-colors duration-micro ease-standard ' +
   'focus:bg-accent focus:text-accent-foreground ' +
   'data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground ' +
   'data-[disabled]:pointer-events-none data-[disabled]:opacity-50';
