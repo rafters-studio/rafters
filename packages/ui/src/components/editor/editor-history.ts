@@ -91,7 +91,12 @@ export interface EditorHistoryControls {
    *  `undo()` restores the whole action instead of requiring one undo per
    *  op. Unlike `apply`, does NOT synthesize a selection-replace removeText
    *  first -- callers needing that already include it as one of `ops`
-   *  themselves. A no-op for an empty array. */
+   *  themselves. A no-op for an empty array.
+   *
+   *  Caller contract (#2257): callers pass TWO OR MORE ops. A single op goes
+   *  through `apply`, which keeps its selection-replace synthesis and its
+   *  coalescing with adjacent edits (`commitEntry` never coalesces a
+   *  multi-op batch). */
   applyBatch(ops: readonly EditorOp[]): void;
   /** Replays the inverse of the most recent `done` entry; restores its
    *  carried `selBefore`. No-op when `done` is empty. */

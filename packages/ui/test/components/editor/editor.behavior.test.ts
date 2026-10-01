@@ -508,6 +508,86 @@ describe('splitOps -- Enter over a cross-block range selection (#2242)', () => {
   });
 });
 
+describe('bindEditor -- paste is one undo step (#2257)', () => {
+  afterEach(() => {
+    window.getSelection()?.removeAllRanges();
+    document.body.innerHTML = '';
+  });
+
+  function blockText(block: BaseBlock | undefined): string {
+    const content = block?.content;
+    if (content === undefined) return '';
+    if (typeof content === 'string') return content;
+    return content.map((run) => run.text).join('');
+  }
+
+  // Drives the clipboard primitive's onPaste path: a `paste` event whose
+  // `clipboardData` carries text/plain. createClipboard parses it async, so
+  // the test yields a macrotask before reading the cell.
+  async function paste(root: HTMLElement, text: string): Promise<void> {
+    const event = new Event('paste', { bubbles: true, cancelable: true });
+    Object.defineProperty(event, 'clipboardData', {
+      value: { getData: (type: string) => (type === 'text/plain' ? text : '') },
+      configurable: true,
+    });
+    root.dispatchEvent(event);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  }
+
+  it('pasting three lines commits ONE HistoryEntry; one undo restores doc and selection; redo reapplies all three', async () => {
+    const doc: BaseBlock[] = [{ id: 'b1', type: 'text', content: 'xy' }];
+    const sel = { anchor: { blockId: 'b1', offset: 1 }, focus: { blockId: 'b1', offset: 1 } };
+    const root = document.createElement('div');
+    document.body.appendChild(root);
+    const history = createEditorHistory({ doc, sel });
+    const teardown = bindEditor(root, history);
+
+    await paste(root, 'a\nb\nc');
+
+    const afterPaste = history.memory.get();
+    expect(afterPaste.done).toHaveLength(1);
+    expect(afterPaste.doc.map(blockText)).toEqual(['xa', 'b', 'cy']);
+    const lastId = afterPaste.doc[2]?.id as string;
+    expect(afterPaste.sel).toEqual({
+      anchor: { blockId: lastId, offset: 1 },
+      focus: { blockId: lastId, offset: 1 },
+    }); // caret at the end of the last pasted line
+
+    history.controls.undo();
+    const restored = history.memory.get();
+    expect(restored.doc).toEqual(doc);
+    expect(restored.sel).toEqual(sel);
+    expect(restored.done).toHaveLength(0);
+
+    history.controls.redo();
+    const redone = history.memory.get();
+    expect(redone.doc.map(blockText)).toEqual(['xa', 'b', 'cy']);
+    expect(redone.sel).toEqual(afterPaste.sel);
+    expect(redone.done).toHaveLength(1);
+
+    teardown();
+  });
+
+  it('a single-line paste still coalesces with adjacent typing (one-op path unchanged)', async () => {
+    const doc: BaseBlock[] = [{ id: 'b1', type: 'text', content: '' }];
+    const sel = { anchor: { blockId: 'b1', offset: 0 }, focus: { blockId: 'b1', offset: 0 } };
+    const root = document.createElement('div');
+    document.body.appendChild(root);
+    const history = createEditorHistory({ doc, sel });
+    const teardown = bindEditor(root, history);
+
+    // Typing goes through controls.apply, the same path a typed insertText takes.
+    history.controls.apply({ kind: 'insertText', blockId: 'b1', offset: 0, text: [{ text: 'x' }] });
+    await paste(root, 'yz');
+
+    const afterPaste = history.memory.get();
+    expect(blockText(afterPaste.doc[0])).toBe('xyz');
+    expect(afterPaste.done).toHaveLength(1); // the paste coalesced into the typing entry
+
+    teardown();
+  });
+});
+
 // -----------------------------------------------------------------------------
 // Caret-notation BDD (FR-EDITOR-006) -- DOM-free, model-level scenarios over
 // editor.behavior.ts's EditorState via the caret.ts Given/When/Then. The
