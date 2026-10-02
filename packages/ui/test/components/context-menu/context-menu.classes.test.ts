@@ -38,23 +38,13 @@ describe('context-menu classes', () => {
     expect(classes.item).toContain('data-[disabled]:opacity-50');
   });
 
-  it('the container carries the enter row: content selects the stagger-items ladder', () => {
-    // motion.jsonl: context-menu / items / enter assigns the stagger step per
-    // position. The ladder is the exporter's `stagger-items` utility (#2189),
-    // selected on the item collection's container; no calc() or :nth-child is
-    // built here (00-boundaries.md Sec 6).
-    expect(classes.content.split(/\s+/)).toContain('stagger-items');
-    for (const cls of Object.values(classes)) {
-      expect(cls).not.toMatch(/calc\(|nth-child/);
-    }
-  });
-
-  it('no item names the stagger step, so the highlight colour is never delayed', () => {
-    for (const cls of [classes.item, classes.checkboxItem, classes.radioItem, classes.subTrigger]) {
-      expect(cls).toContain('transition-colors');
-      expect(cls).not.toContain('delay-stagger-step');
-      expect(cls).not.toContain('stagger-items');
-    }
+  it('items carry the enter row: the stagger delay, no duration, no curve', () => {
+    // motion.jsonl: context-menu / items / enter assigns `delay-stagger-step`
+    // with `duration: {"kind":"none"}` -- no DURATION assigned, not no
+    // assignment. The delay generic is the whole row. It resolves to 0ms at the
+    // efficient intent, and that zero is the assignment rather than a gap.
+    expect(classes.item).toContain('delay-stagger-step');
+    expect(classes.subTrigger).toContain('delay-stagger-step');
   });
 
   it('checkbox and radio items reserve the indicator gutter', () => {

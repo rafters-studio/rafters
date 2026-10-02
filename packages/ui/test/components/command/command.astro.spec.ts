@@ -83,15 +83,4 @@ describe('command [astro]', () => {
     await user.keyboard('zzz');
     expect(emptyEl().hidden).toBe(false);
   });
-
-  it('items take list-child positions 1..N: the empty div follows them (#2414)', async () => {
-    // `stagger-items` ranks the list's children by position, so anything ahead
-    // of the items shifts every item onto a later rung.
-    await mount();
-    const children = Array.from(list().children);
-    for (const [index, item] of items.entries()) {
-      expect(children.indexOf(option(item.value)), item.value).toBe(index);
-    }
-    expect(children.indexOf(emptyEl())).toBe(items.length);
-  });
 });

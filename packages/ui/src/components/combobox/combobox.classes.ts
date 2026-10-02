@@ -80,17 +80,9 @@ const chevronClasses =
 // exactly as a mounting one does, which is why no @starting-style appears here.
 // dropdown-menu shows the fix (usePresence gating `hidden`,
 // dropdown-menu.tsx:288-290); it belongs to the view layer, not this file.
-// THE ITEMS' ENTER ROW LIVES HERE TOO: combobox / items / enter -- fade (with
-// content), which assigns `delay-stagger-step` and no duration and no curve
-// (motion.jsonl:61). The delay is per POSITION, so the content -- the item
-// collection's container -- selects `stagger-items` (#2189): the generated
-// utility gives each direct child its own rung, saturating at 12. This file
-// only names it (00-boundaries.md Sec 6). `--rafters-delay-stagger-step`
-// defaults to 0ms, so at the default intent the items enter with the content
-// as one block, as shadcn's do.
 const contentClasses =
   'z-depth-dropdown max-h-60 min-w-32 overflow-auto rounded-md border bg-popover p-1 ' +
-  'text-popover-foreground shadow-md stagger-items ' +
+  'text-popover-foreground shadow-md ' +
   'data-[state=open]:animate-scale-in-moderate-enter ' +
   'data-[state=closed]:animate-scale-out-fast-exit ' +
   'data-[state=closed]:pointer-events-none';
@@ -106,13 +98,18 @@ const contentClasses =
 // `group` (for the chevron's rotation) and a second unnamed scope here would
 // make the two selectors ambiguous.
 //
-// The items' enter row (the stagger) is on the content above, not here:
-// `transition-delay` is per ELEMENT, so a delay on the item would hold back
-// this highlight-colour transition too. The highlight never waits.
+// THE SECOND ROW: combobox / items / enter -- fade (with content), which
+// assigns `delay-stagger-step` and no duration and no curve (motion.jsonl:61).
+// `duration: {"kind":"none"}` means no DURATION is assigned, not that nothing
+// is: the delay generic is the entire assignment, and naming it is the whole
+// consumption. The fade is the content keyframe's; this class carries only the
+// offset, which resolves to 0ms at the efficient intent. Zero is the
+// assignment, not a gap -- see dropdown-menu's items class for the full note,
+// including the per-element `transition-delay` coupling with the row above.
 const itemClasses =
   'group/item relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 ' +
   'text-body-small ts-body-small outline-none ' +
-  'transition-colors duration-micro ease-standard ' +
+  'transition-colors duration-micro ease-standard delay-stagger-step ' +
   'data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground ' +
   'data-[disabled]:pointer-events-none data-[disabled]:opacity-50';
 

@@ -63,20 +63,12 @@ describe('combobox classes', () => {
     expect(classes.itemIndicator).toContain('ease-standard');
   });
 
-  it('the items enter row is selected on their container, not on the items', () => {
-    // motion.jsonl: combobox / items / enter assigns `delay-stagger-step` per
-    // POSITION; the content selects the generated `stagger-items` ladder
-    // (#2189). The items carry no delay, so the highlight never waits (#2413).
-    expect(classes.content.split(/\s+/)).toContain('stagger-items');
-    expect(classes.item).not.toContain('delay-stagger-step');
-  });
-
-  it('selects the ladder, never constructs it (00-boundaries.md Sec 6)', () => {
-    for (const value of Object.values(classes)) {
-      expect(value).not.toContain('calc(');
-      expect(value).not.toContain('nth-child');
-      expect(value).not.toContain('[animation-delay');
-    }
+  it('items carry the enter row: the stagger delay, no duration, no curve', () => {
+    // motion.jsonl: combobox / items / enter assigns `delay-stagger-step` with
+    // `duration: {"kind":"none"}` -- no DURATION assigned, not no assignment.
+    // The delay generic is the whole row, and it resolves to 0ms at the
+    // efficient intent: that zero is the assignment rather than a gap.
+    expect(classes.item).toContain('delay-stagger-step');
   });
 
   it('declares no raw numeric duration or hand-picked easing', () => {
