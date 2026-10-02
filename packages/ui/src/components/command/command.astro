@@ -115,6 +115,9 @@ const sanitize = (value: string): string => value.replace(/[^a-zA-Z0-9_-]/g, '-'
   </div>
 
   <div data-part="list" id={ids.list} {...aria.list} class={classes.list}>
+    <div data-part="empty" id={ids.empty} class={classes.empty} role="presentation" hidden>
+      {emptyText}
+    </div>
     {
       items.map((item) => {
         const itemAria = commandItemAria(item.value, state, config);
@@ -139,11 +142,6 @@ const sanitize = (value: string): string => value.replace(/[^a-zA-Z0-9_-]/g, '-'
         );
       })
     }
-    {/* After the items: `stagger-items` ranks the list's children by position, so an
-        empty div ahead of them would push item k onto rung k+1. */}
-    <div data-part="empty" id={ids.empty} class={classes.empty} role="presentation" hidden>
-      {emptyText}
-    </div>
   </div>
 </rafters-command>
 

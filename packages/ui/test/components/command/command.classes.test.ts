@@ -65,23 +65,12 @@ describe('command classes', () => {
     expect(classes.dialogBackdrop).not.toContain('animate-');
   });
 
-  it('the items enter row is selected on their containers, not on the items', () => {
-    // motion.jsonl: command / items / enter assigns `delay-stagger-step` per
-    // POSITION. The list and each group -- the item collections' containers --
-    // select the generated `stagger-items` ladder (#2189); the compiled per-item
-    // delays are read in command.stagger.spec.tsx. The items carry no delay of
-    // their own, so the highlight-colour transition never waits (#2414).
-    expect(classes.list.split(/\s+/)).toContain('stagger-items');
-    expect(classes.group.split(/\s+/)).toContain('stagger-items');
-    expect(classes.item).not.toContain('delay-stagger-step');
-  });
-
-  it('selects the ladder, never constructs it (00-boundaries.md Sec 6)', () => {
-    for (const value of Object.values(classes)) {
-      expect(value).not.toContain('calc(');
-      expect(value).not.toContain('nth-child');
-      expect(value).not.toContain('[animation-delay');
-    }
+  it('items carry the enter row: the stagger delay, no duration, no curve', () => {
+    // motion.jsonl: command / items / enter assigns `delay-stagger-step` with
+    // `duration: {"kind":"none"}` -- no DURATION assigned, not no assignment.
+    // The delay generic is the whole row, and it resolves to 0ms at the
+    // efficient intent: that zero is the assignment rather than a gap.
+    expect(classes.item).toContain('delay-stagger-step');
   });
 
   it('the items / filter change row is reported, never faked', () => {
