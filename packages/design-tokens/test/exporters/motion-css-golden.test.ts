@@ -24,13 +24,9 @@ import type { Token } from '@rafters/shared';
  * `animation-name` / `animation-duration`, so the per-cell utility blocks (#2017)
  * were landing in this snapshot with their keyframe line silently filtered out
  * -- a golden that hides the very declaration under review.
- *
- * `stagger`, `nth-child` and `& > *` for the same reason (#2189): without them
- * the `stagger-items` ladder landed here as thirteen anonymous `animation-delay`
- * lines, its `@utility` header and every position selector filtered out.
  */
 const MOTION_LINE =
-  /(duration|ease|delay|extent|period|motion|animate|animation|keyframes|transition|stagger|nth-child|& > \*)/i;
+  /(duration|ease|delay|extent|period|motion|animate|animation|keyframes|transition)/i;
 
 function motionLines(css: string): string[] {
   return css

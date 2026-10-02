@@ -1237,78 +1237,6 @@ function generateMotionNamespaceUtilities(motionTokens: Token[]): string {
   return emitted === 0 ? '' : lines.join('\n');
 }
 
-/** The leaf the stagger ladder multiplies. Designer-owned; this file adds no value of its own. */
-const STAGGER_STEP_TOKEN = 'rafters-delay-stagger-step';
-
-/**
- * Positions 1..STAGGER_CAP each get an explicit `:nth-child(n)` rule; position
- * STAGGER_CAP + 1 and beyond saturate at the STAGGER_CAP delay.
- */
-const STAGGER_CAP = 12;
-
-/**
- * Emit the single `@utility stagger-items` block: a per-position stagger ladder
- * applied to an item collection's CONTAINER.
- *
- * WHY A UTILITY. A component's `.classes.ts` SELECTS this class; it never builds
- * the ladder itself. `packages/ui/docs/spec/00-boundaries.md` Sec 6: "classes.ts
- * owns selection among literal strings, never construction, never arbitrary
- * values" -- so `calc()` and `:nth-child` are written here, once, and nowhere in
- * a component.
- *
- * THE CAP IS 12. Positions 1 through 12 each get their own `:nth-child(n)` rule
- * multiplying `--rafters-delay-stagger-step` by `n`. 12 is the largest
- * collection in motion.jsonl's items/enter cells -- the six stagger-step
- * assignments (dropdown-menu, context-menu, select, combobox, command, menubar)
- * do not exceed 12 rendered items in the matrix's reference cases. Position 13
- * and beyond match only the `& > *` fallback, which carries the SAME multiplier
- * as position 12: the delay saturates, it neither resets to 0 nor keeps
- * climbing. A future matrix entry that needs more than 12 is a deliberate change
- * to this function, never a silent truncation and never a per-call parameter.
- *
- * NO LITERAL DURATION. Every `animation-delay` is `calc(<n> * var(...))` on the
- * leaf, so the block is byte-identical across any retune of that token -- the
- * toy-9 invariant `generateMotionNamespaceUtilities` documents above.
- *
- * REDUCED MOTION. `delay` is a member of `REDUCED_MOTION_ZEROED`, so the leaf
- * law (`generateReducedMotionLaw`) already zeroes `--rafters-delay-stagger-step`
- * and with it every rung of the ladder. The nested `@media` block below writes
- * `animation-delay: 0ms` on `& > *` as well; at that specificity it is what
- * zeroes the saturated positions' own rule, while positions 1-12 reach zero
- * through the leaf.
- *
- * Emitted only when the stagger-step leaf is declared, so the block can never
- * reference a property the sheet does not carry.
- */
-export function generateStaggerUtility(motionTokens: Token[]): string {
-  if (!motionTokens.some((token) => token.name === STAGGER_STEP_TOKEN)) return '';
-
-  const delay = (position: number): string =>
-    `    animation-delay: calc(${position} * var(--${STAGGER_STEP_TOKEN}));`;
-
-  const lines: string[] = [
-    '/* Per-position stagger ladder -- positions 1-12, saturating at 12 */',
-    '@utility stagger-items {',
-    '  & > * {',
-    delay(STAGGER_CAP),
-    '  }',
-  ];
-  for (let position = 1; position <= STAGGER_CAP; position++) {
-    lines.push(`  & > *:nth-child(${position}) {`, delay(position), '  }');
-  }
-  if (REDUCED_MOTION_ZEROED.has('delay')) {
-    lines.push(
-      '  @media (prefers-reduced-motion: reduce) {',
-      '    & > * {',
-      '      animation-delay: 0ms;',
-      '    }',
-      '  }',
-    );
-  }
-  lines.push('}');
-  return lines.join('\n');
-}
-
 /**
  * Map a typography override property to a Tailwind utility class.
  */
@@ -1458,13 +1386,6 @@ export function tokensToTailwind(
   if (namespaceUtilities) {
     sections.push('');
     sections.push(namespaceUtilities);
-  }
-
-  // The per-position stagger ladder (stagger-items), on the stagger-step leaf
-  const staggerUtility = generateStaggerUtility(groups.motion);
-  if (staggerUtility) {
-    sections.push('');
-    sections.push(staggerUtility);
   }
 
   // Semantic motion @utility classes (motion-*)

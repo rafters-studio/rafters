@@ -8,10 +8,6 @@
 
 - refactor(registry): **the registry no longer serves `facets`, `composites`, or `parent` on component items.** The registry is the design system -- source files, dependency edges, and encoded intelligence. Per-target prop surfaces (facets), the composites reverse-index, and compound-component parent pointers were graph and working-tree concerns that had drifted from the source they duplicated: the WC facet shipped as a hardcoded stub for all 92 components and stayed broken for three weeks (#2346). The clean item shape is `name`, `type`, `description`, `primitives`, `files`, `rules`, `intelligence`. Existing CLI versions parse facet-less items via schema defaults and degrade gracefully (describe reports no props, generate reports no snippet). The graph migration to resolve props from source directly is tracked separately.
 
-### Features
-
-- feat(design-tokens): **`rafters.css` carries a `stagger-items` utility, a per-position delay ladder for an item collection** (#2189). Put the class on the container and child N gets `animation-delay: calc(N * var(--rafters-delay-stagger-step))` for N from 1 to 12; position 13 and later hold at the position-12 delay rather than resetting or climbing. 12 is the largest items/enter collection in the motion matrix, and the cap is documented in the exporter so that exceeding it takes a deliberate change. The block writes no duration of its own, so retuning the stagger step leaves it byte-identical. Under `prefers-reduced-motion: reduce` every position is zero, because the reduced-motion rule on the leaves already zeroes the step. The step still defaults to `0ms`, so nothing staggers until a designer sets it. It exists so a component's `.classes.ts` can select the ladder rather than construct `calc()`/`:nth-child` itself (`packages/ui/docs/spec/00-boundaries.md` Sec 6).
-
 ## 0.4.1
 
 ### Bug Fixes
