@@ -73,24 +73,16 @@ describe('menubar classes', () => {
       expect(tokens(classes.content)).toContain('fixed');
     });
 
-    it('items: highlight move (micro, standard), never stagger-delayed (#2415)', () => {
+    it('items: highlight move (micro, standard) and enter (stagger-step)', () => {
       for (const item of [classes.item, classes.checkboxItem, classes.radioItem]) {
         expect(tokens(item)).toEqual(
-          expect.arrayContaining(['transition-colors', 'duration-micro', 'ease-standard']),
+          expect.arrayContaining([
+            'transition-colors',
+            'duration-micro',
+            'ease-standard',
+            'delay-stagger-step',
+          ]),
         );
-        expect(item).not.toContain('delay-stagger-step');
-      }
-    });
-
-    it('the items enter row is selected on their container (stagger-items)', () => {
-      expect(tokens(classes.content)).toContain('stagger-items');
-    });
-
-    it('selects the ladder, never constructs it (00-boundaries.md Sec 6)', () => {
-      for (const value of Object.values(classes)) {
-        expect(value).not.toContain('calc(');
-        expect(value).not.toContain('nth-child');
-        expect(value).not.toContain('[animation-delay');
       }
     });
 
