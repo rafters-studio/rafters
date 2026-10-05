@@ -9,7 +9,7 @@ import {
   type CommandPaletteController,
   type CommandPaletteState,
   createCommandPalette,
-} from '../primitives/editor/command-palette';
+} from '../primitives/command-palette';
 import type { Command } from '../primitives/types';
 
 /**

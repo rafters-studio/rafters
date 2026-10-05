@@ -229,16 +229,6 @@ function resolveComponentDir(name: string): { dir: string; owner: string } | nul
   return null;
 }
 
-/**
- * The one primitive subsystem that lives in its own subdirectory rather than
- * flat under `primitives/`. The editor cluster (Spec 00 boundary 9) is a
- * structural boundary on disk: `primitives/editor/<name>.ts`. Discovery walks
- * the flat root PLUS this single known subdir -- one level deep, not unbounded
- * recursion. The served/consumer layout stays FLAT (`lib/primitives/<name>.ts`)
- * regardless of source nesting; see `flattenNestedPrimitiveImports`.
- */
-const PRIMITIVE_SUBDIRS = ['editor'];
-
 /** Read the `.ts`/`.tsx` basenames directly in `dir` (non-recursive). */
 function listTsBasenames(dir: string): string[] {
   try {
@@ -251,19 +241,11 @@ function listTsBasenames(dir: string): string[] {
 }
 
 /**
- * List all available primitive names.
- * Walks the flat `primitives/` root plus each known one-level subdir (`editor/`).
- * Names are bare basenames (nesting is a source detail, invisible to consumers)
- * and the list is sorted+deduped so the returned array is deterministic and its
- * SET stays disjoint from every other kind's name list.
+ * List all available primitive names: the `.ts`/`.tsx` basenames in the flat
+ * `primitives/` folder, sorted so the result is deterministic.
  */
 export function listPrimitiveNames(): string[] {
-  const primitivesDir = getPrimitivesPath();
-  const names = new Set<string>(listTsBasenames(primitivesDir));
-  for (const sub of PRIMITIVE_SUBDIRS) {
-    for (const name of listTsBasenames(join(primitivesDir, sub))) names.add(name);
-  }
-  return [...names].sort();
+  return listTsBasenames(getPrimitivesPath()).sort();
 }
 
 /** packages/ui/src -- the root every source kind lives under. */
@@ -1093,8 +1075,7 @@ export function loadComponent(name: string): RegistryItem | null {
   // Subsystem files: the transitive closure of relative imports that resolve
   // inside the component directory but are NOT framework variants, shared
   // auxiliary files, or sub-components. These install nested under
-  // `components/ui/<name>/` (e.g., `components/ui/editor/editor-history.ts`,
-  // `components/ui/editor/ops/index.ts`).
+  // `components/ui/<name>/` (e.g., `components/ui/<name>/helpers.ts`).
   //
   // Queue entries carry { specifier, fromDir } where fromDir is the directory
   // (relative to componentDir) of the importing file, so `./format` from
@@ -1171,7 +1152,7 @@ export function loadComponent(name: string): RegistryItem | null {
   primitivesAll = [...new Set([...primitivesAll, ...substrateDeps])];
 
   // Drop deps that are actually the component's OWN sibling/sub-component files
-  // or subsystem files (e.g. context-menu-sub.astro, editor-history.ts, ops/).
+  // or subsystem files (e.g. context-menu-sub.astro, or files under the component folder).
   // They live in this folder, so they are never standalone registry items --
   // listing them would make resolveDependencies chase a name that 404s.
   const stripExt = (s: string): string => s.replace(/\.[^./]+$/, '');
@@ -1210,47 +1191,12 @@ function tryReadTs(dir: string, name: string): { content: string; ext: string } 
   return null;
 }
 
-/**
- * Collapse one level of parent-relative import so a primitive that lives in a
- * source subdir (`primitives/editor/<name>.ts`) serves content identical to a
- * flat primitive. In the source tree a nested editor primitive reaches its
- * flat behavior-layer siblings via `../memory` and reaches `components/` via
- * `../../components/...`; in the FLAT served/consumer layout (every primitive
- * side by side under `lib/primitives/`) those must read `./memory` and
- * `../components/...`. Stripping exactly one `../` does both:
- *   `../memory`                 -> `./memory`
- *   `../../components/editor/x`  -> `../components/editor/x`
- * Editor-internal `./sibling` imports are already flat and untouched. This
- * runs BEFORE dependency analysis, so `../memory` is seen as the sibling
- * primitive `./memory` and is not silently dropped from the closure (#2018).
- */
-function flattenNestedPrimitiveImports(content: string): string {
-  return content.replace(
-    /(from\s+['"])((?:\.\.\/)+)([^'"]*)(['"])/g,
-    (_m, pre: string, ups: string, rest: string, post: string) => {
-      const levels = ups.length / 3 - 1;
-      const prefix = levels <= 0 ? './' : '../'.repeat(levels);
-      return `${pre}${prefix}${rest}${post}`;
-    },
-  );
-}
-
-/**
- * Read a primitive's source, flat root first then the known `editor/` subdir.
- * Content read from a subdir is flattened so the served text matches the flat
- * consumer layout. Returns null when the primitive exists in neither place.
- */
+/** Read a primitive's source from the flat `primitives/` folder. */
 function readPrimitiveSource(
   primitivesDir: string,
   name: string,
 ): { content: string; ext: string } | null {
-  const flat = tryReadTs(primitivesDir, name);
-  if (flat) return flat;
-  for (const sub of PRIMITIVE_SUBDIRS) {
-    const nested = tryReadTs(join(primitivesDir, sub), name);
-    if (nested) return { content: flattenNestedPrimitiveImports(nested.content), ext: nested.ext };
-  }
-  return null;
+  return tryReadTs(primitivesDir, name);
 }
 
 /**

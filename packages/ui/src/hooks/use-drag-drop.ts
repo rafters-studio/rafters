@@ -10,7 +10,7 @@ import {
   createDropZone,
   type DraggableControls,
   type DropZoneControls,
-} from '../primitives/editor/drag-drop';
+} from '../primitives/drag-drop';
 
 /**
  * Options for the useDraggable hook

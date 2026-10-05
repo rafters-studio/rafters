@@ -9,7 +9,7 @@ import {
   type BlockSelectionController,
   type BlockSelectionState,
   createBlockSelection,
-} from '../primitives/editor/selection';
+} from '../primitives/selection';
 
 /**
  * Options for the useBlockSelection hook

@@ -16,7 +16,6 @@ export default defineConfig({
       '**/*.a11y.{ts,tsx}',
       '**/node_modules/**',
       '**/dist/**',
-      'test/editor/editor-capture.spec.ts',
       'test/infrastructure/playwright.spec.ts',
       'test/motion/hover-reveal.spec.ts',
       'test/presence/presence-exit.spec.ts',

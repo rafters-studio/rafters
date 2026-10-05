@@ -215,7 +215,7 @@ const FRAMEWORK_EXTENSIONS = ['.tsx', '.astro', '.vue', '.svelte', '.element.ts'
  * Check if a file path is a shared/auxiliary file that installs regardless of
  * framework target. This includes shared suffixes (.behavior.ts, .classes.ts),
  * and subsystem files nested under a component dir (e.g.,
- * `components/ui/editor/editor-history.ts`).
+ * `components/ui/<name>/helpers.ts`).
  */
 function isSharedFile(path: string): boolean {
   if (FRAMEWORK_EXTENSIONS.some((ext) => path.endsWith(ext))) return false;
@@ -487,10 +487,8 @@ export function transformFileContent(
 
   // Transform imports from any depth of ../primitives/ to the configured
   // primitives path. Served primitives are ALWAYS flat
-  // (`lib/primitives/<name>`), even when their SOURCE lives in a subdir like
-  // `primitives/editor/<name>` -- source nesting is deliberately decoupled from
-  // the served/consumer layout (#2136). Any depth of ../ handles subsystem files
-  // that live deeper (e.g., ops/types.ts at ../../../primitives/types).
+  // (`lib/primitives/<name>`), so any subpath collapses to its basename. Any
+  // depth of ../ handles subsystem files that live deeper in a component dir.
   const toFlatPrimitive = (_match: string, subpath: string): string =>
     `from '@/${aliasPrimitives}/${basename(subpath)}'`;
   transformed = transformed.replace(

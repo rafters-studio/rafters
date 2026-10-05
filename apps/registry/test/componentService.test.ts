@@ -1,6 +1,3 @@
-import { readFileSync, readdirSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   extractDepsFromSource,
@@ -16,7 +13,6 @@ import {
   propFieldToFieldDescriptor,
   type RegistryItem,
 } from '../src/lib/registry/componentService';
-import { RegistryItemSchema } from '../../../packages/cli/src/registry/types';
 
 /**
  * Registry cutover guard (#1896). The registry serves behavior-layer sources
@@ -317,190 +313,7 @@ describe('@constraint JSDoc tag parsing (#2073)', () => {
   });
 });
 
-/**
- * Editor-subsystem relocation (#2136). The 22 `subsystem:"editor"` primitives
- * live under `packages/ui/src/primitives/editor/` on disk, but discovery must
- * find them by bare name and serve them at the UNCHANGED flat consumer path
- * (`lib/primitives/<name>.ts`). Source nesting and served layout are decoupled:
- * a consumer sees zero path churn. These tests fail loudly if discovery drops
- * the subdir (the #2018 silent-empty shape) or if the folder and the matrix tag
- * drift apart.
- *
- * `history`, `document-editor`, and `block-handler` retired from this list in
- * #2240 (the snapshot-history track); see 'retired snapshot-history
- * primitives are not registry items' below.
- */
-describe('editor primitive discovery after relocation (#2136)', () => {
-  const EDITOR_PRIMITIVES = [
-    'block-canvas',
-    'block-context-menu',
-    'block-operations',
-    'block-palette',
-    'block-wrapper',
-    'canvas-drop-zone',
-    'clipboard',
-    'command-palette',
-    'cursor-tracker',
-    'drag-drop',
-    'editor-toolbar',
-    'inline-formatter',
-    'inline-toolbar',
-    'input-events',
-    'rule-dialog',
-    'rule-drop-zone',
-    'rule-palette',
-    'selection',
-    'serializer',
-    'serializer-html',
-    'serializer-mdx',
-    'serializer-text',
-  ];
-
-  // Resolve source paths from THIS test file, never from process.cwd():
-  // apps/registry/test/ -> repo root is three levels up.
-  const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '../../..');
-  const primitivesDir = join(repoRoot, 'packages/ui/src/primitives');
-  const editorDir = join(primitivesDir, 'editor');
-  const matrixPath = join(repoRoot, 'packages/ui/docs/spec/matrix/primitives.jsonl');
-
-  const matrixEditorNames = new Set(
-    readFileSync(matrixPath, 'utf-8')
-      .split('\n')
-      .filter((l) => l.trim())
-      .map((l) => JSON.parse(l) as { name: string; subsystem: string })
-      .filter((d) => d.subsystem === 'editor')
-      .map((d) => d.name),
-  );
-
-  it('lists every editor primitive by bare name', () => {
-    const names = listPrimitiveNames();
-    for (const name of EDITOR_PRIMITIVES) {
-      expect(names).toContain(name);
-    }
-  });
-
-  it('loads each editor primitive with the served path unchanged (flat)', () => {
-    for (const name of EDITOR_PRIMITIVES) {
-      const item = loadPrimitive(name);
-      expect(item, `loadPrimitive('${name}') returned null`).not.toBeNull();
-      expect(item?.files[0]?.path).toBe(`lib/primitives/${name}.ts`);
-    }
-  });
-
-  it('served editor content never leaks the editor/ source nesting', () => {
-    // A nested `../types` or `../keyboard-handler` that survived into served
-    // content would resolve to `lib/types` in the flat consumer tree -- a
-    // dangling import. It must be flattened back to `./types` (a flat sibling)
-    // before serving. (Exemplar was `block-handler` before its #2240 removal;
-    // `block-canvas` exercises the identical parent-relative-import shape.)
-    const canvas = loadPrimitive('block-canvas');
-    const content = canvas?.files[0]?.content ?? '';
-    expect(content).not.toMatch(/from\s+['"]\.\.\/(memory|types|keyboard-handler)['"]/);
-    expect(content).toMatch(/from\s+['"]\.\/(types|keyboard-handler)['"]/);
-    // The transitive closure still names the flat behavior siblings.
-    expect(canvas?.primitives).toContain('keyboard-handler');
-    expect(canvas?.primitives).toContain('types');
-  });
-
-  /**
-   * #2240 retires the snapshot-history track: `history`, `document-editor`,
-   * and `block-handler` are deleted from `primitives/editor/` and must stop
-   * being registry items. `document-editor` is the #2220 case -- it used to
-   * serve with a dangling import; now it does not serve at all.
-   */
-  it('retired snapshot-history primitives are not registry items', () => {
-    const names = listPrimitiveNames();
-    for (const retired of ['history', 'document-editor', 'block-handler']) {
-      expect(names).not.toContain(retired);
-      expect(loadPrimitive(retired)).toBeNull();
-    }
-  });
-
-  it('non-editor primitives are unaffected at the flat root', () => {
-    expect(loadPrimitive('aria-manager')?.files[0]?.path).toBe('lib/primitives/aria-manager.ts');
-    expect(loadPrimitive('memory')?.files[0]?.path).toBe('lib/primitives/memory.ts');
-  });
-
-  it('no editor primitive manifest carries a placeholder dependency (#2219)', () => {
-    // Several editor primitives document "no external dependencies" as a
-    // literal `@dependencies none` JSDoc tag. That word must never survive
-    // into the served manifest: `rafters add` installs every entry in
-    // `files[].dependencies` as an npm package, so a placeholder there
-    // becomes an install of whatever the string happens to resolve to on
-    // npm. A file with no external dependencies must emit an empty list.
-    const placeholders = ['none', 'n/a', ''];
-    for (const name of EDITOR_PRIMITIVES) {
-      const item = loadPrimitive(name);
-      for (const file of item?.files ?? []) {
-        for (const dep of file.dependencies) {
-          expect(placeholders, `${name} (${file.path}) declares "${dep}"`).not.toContain(
-            dep.trim().toLowerCase(),
-          );
-        }
-      }
-    }
-  });
-
-  it('editor folder membership matches matrix subsystem:"editor" exactly', () => {
-    const onDisk = new Set(
-      readdirSync(editorDir)
-        .filter((f) => f.endsWith('.ts') || f.endsWith('.tsx'))
-        .map((f) => f.replace(/\.tsx?$/, '')),
-    );
-    expect(onDisk).toEqual(matrixEditorNames);
-  });
-
-  it('no flat-root primitive carries subsystem:"editor" (drift is a failure)', () => {
-    const flatNames = readdirSync(primitivesDir, { withFileTypes: true })
-      .filter((e) => e.isFile() && /\.tsx?$/.test(e.name))
-      .map((e) => e.name.replace(/\.tsx?$/, ''));
-    const misplaced = flatNames.filter((n) => matrixEditorNames.has(n));
-    expect(
-      misplaced,
-      `editor-tagged primitives still at flat root: ${misplaced.join(', ')}`,
-    ).toEqual([]);
-  });
-});
-
-/**
- * Subsystem file discovery (#2170). A folder-shaped component (editor) carries
- * files beyond the primary and shared suffixes: editor-history.ts and ops/*.ts.
- * loadComponent must serve them under components/ui/<name>/, and they must NOT
- * leak into the primitives array.
- */
-describe('subsystem file discovery for folder-shaped components (#2170)', () => {
-  it('loadComponent("editor").files includes editor-history.ts and ops/', () => {
-    const editor = loadComponent('editor');
-    expect(editor).not.toBeNull();
-    const paths = editor!.files.map((f) => f.path);
-    expect(paths).toEqual(
-      expect.arrayContaining([
-        'components/ui/editor.tsx',
-        'components/ui/editor.behavior.ts',
-        'components/ui/editor.classes.ts',
-        'components/ui/editor/editor-history.ts',
-        'components/ui/editor/ops/index.ts',
-        'components/ui/editor/ops/content.ts',
-        'components/ui/editor/ops/format.ts',
-        'components/ui/editor/ops/structural.ts',
-        'components/ui/editor/ops/text.ts',
-        'components/ui/editor/ops/types.ts',
-      ]),
-    );
-  });
-
-  it('loadComponent("editor").primitives contains neither "ops" nor "editor-history"', () => {
-    const editor = loadComponent('editor');
-    expect(editor).not.toBeNull();
-    expect(editor!.primitives).not.toContain('ops');
-    expect(editor!.primitives).not.toContain('editor-history');
-    expect(editor!.primitives).not.toContain('content');
-    expect(editor!.primitives).not.toContain('format');
-    expect(editor!.primitives).not.toContain('structural');
-    expect(editor!.primitives).not.toContain('text');
-    expect(editor!.primitives).not.toContain('types');
-  });
-
+describe('ordinary components serve flat paths', () => {
   it('loadComponent for card, typography, and container yield unchanged file paths', () => {
     for (const name of ['card', 'typography', 'container']) {
       const item = loadComponent(name);
@@ -513,38 +326,8 @@ describe('subsystem file discovery for folder-shaped components (#2170)', () => 
       }
     }
   });
-
-  it('subsystem file content is readable and non-empty', () => {
-    const editor = loadComponent('editor');
-    expect(editor).not.toBeNull();
-    const subsystem = editor!.files.filter((f) => f.path.startsWith('components/ui/editor/'));
-    expect(subsystem.length).toBeGreaterThanOrEqual(7);
-    for (const file of subsystem) {
-      expect(file.content.length, `${file.path} is empty`).toBeGreaterThan(0);
-    }
-  });
-
-  it('parses cleanly against the CLI RegistryItemSchema', () => {
-    const editor = loadComponent('editor');
-    expect(editor).not.toBeNull();
-    const result = RegistryItemSchema.safeParse(editor);
-    expect(result.success, `schema parse failed: ${JSON.stringify(result)}`).toBe(true);
-  });
 });
 
-/**
- * `propFieldToFieldDescriptor` (#2165). The operator's ruling is that the
- * shared thing across rafters/veneer/gitpress is the OUTPUT IR -- kelex's
- * `FieldDescriptor` -- not the extractor, so a resolved `PropField` has to map
- * out cleanly for veneer and gitpress to consume rafters' published facet JSON
- * instead of re-parsing rafters source.
- *
- * The issue's test sketch asserts `descriptor.default` / `.required` /
- * `.constraint`. Those are the PropField's own member names; kelex's
- * FieldDescriptor (`src/introspection/types.ts:140`) has no such members, so
- * these assert the real ones the conversion targets: `defaultValue`,
- * `isOptional` (inverted), and `meta.constraint`.
- */
 describe('propFieldToFieldDescriptor (#2165)', () => {
   it('converts an enum PropField, carrying values, default and requiredness', () => {
     const descriptor = propFieldToFieldDescriptor('size', {
