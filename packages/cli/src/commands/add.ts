@@ -215,7 +215,7 @@ const FRAMEWORK_EXTENSIONS = ['.tsx', '.astro', '.vue', '.svelte', '.element.ts'
  * Check if a file path is a shared/auxiliary file that installs regardless of
  * framework target. This includes shared suffixes (.behavior.ts, .classes.ts),
  * and subsystem files nested under a component dir (e.g.,
- * `components/ui/editor/editor-history.ts`).
+ * `components/ui/<name>/helpers.ts`).
  */
 function isSharedFile(path: string): boolean {
   if (FRAMEWORK_EXTENSIONS.some((ext) => path.endsWith(ext))) return false;

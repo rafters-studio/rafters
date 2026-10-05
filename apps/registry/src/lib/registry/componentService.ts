@@ -1075,8 +1075,7 @@ export function loadComponent(name: string): RegistryItem | null {
   // Subsystem files: the transitive closure of relative imports that resolve
   // inside the component directory but are NOT framework variants, shared
   // auxiliary files, or sub-components. These install nested under
-  // `components/ui/<name>/` (e.g., `components/ui/editor/editor-history.ts`,
-  // `components/ui/editor/ops/index.ts`).
+  // `components/ui/<name>/` (e.g., `components/ui/<name>/helpers.ts`).
   //
   // Queue entries carry { specifier, fromDir } where fromDir is the directory
   // (relative to componentDir) of the importing file, so `./format` from
@@ -1153,7 +1152,7 @@ export function loadComponent(name: string): RegistryItem | null {
   primitivesAll = [...new Set([...primitivesAll, ...substrateDeps])];
 
   // Drop deps that are actually the component's OWN sibling/sub-component files
-  // or subsystem files (e.g. context-menu-sub.astro, editor-history.ts, ops/).
+  // or subsystem files (e.g. context-menu-sub.astro, or files under the component folder).
   // They live in this folder, so they are never standalone registry items --
   // listing them would make resolveDependencies chase a name that 404s.
   const stripExt = (s: string): string => s.replace(/\.[^./]+$/, '');

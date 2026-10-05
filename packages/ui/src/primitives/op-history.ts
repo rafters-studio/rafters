@@ -1,5 +1,5 @@
 /**
- * editor-history.ts -- op-based undo/redo on one memory cell (FR-EDITOR-002).
+ * op-history.ts -- op-based undo/redo on one memory cell (FR-EDITOR-002).
  *
  * The editor's document state -- { doc, sel, done, undone } -- lives in a
  * SINGLE createMemory cell (RULING-EDITOR-HISTORY's Editor interface

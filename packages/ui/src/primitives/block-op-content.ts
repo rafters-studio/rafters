@@ -1,7 +1,8 @@
 /**
- * Internal content-splicing helpers shared by format.ts and text.ts.
+ * Internal content-splicing helpers shared by block-op-format.ts and
+ * block-op-text.ts.
  *
- * Not exported from ops/index.ts -- these are generic InlineContent[] array
+ * Not exported from block-ops.ts -- these are generic InlineContent[] array
  * utilities (slice-at-offset, merge-adjacent-identical-runs), not a
  * reimplementation of block-operations' structural logic.
  *

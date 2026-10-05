@@ -313,6 +313,21 @@ describe('@constraint JSDoc tag parsing (#2073)', () => {
   });
 });
 
+describe('ordinary components serve flat paths', () => {
+  it('loadComponent for card, typography, and container yield unchanged file paths', () => {
+    for (const name of ['card', 'typography', 'container']) {
+      const item = loadComponent(name);
+      expect(item).not.toBeNull();
+      const paths = item!.files.map((f) => f.path);
+      // All paths are flat: components/ui/<name>.<ext> or components/ui/<name>-<sub>.<ext>
+      for (const p of paths) {
+        const afterPrefix = p.slice('components/ui/'.length);
+        expect(afterPrefix.includes('/'), `${name} has nested path: ${p}`).toBe(false);
+      }
+    }
+  });
+});
+
 describe('propFieldToFieldDescriptor (#2165)', () => {
   it('converts an enum PropField, carrying values, default and requiredness', () => {
     const descriptor = propFieldToFieldDescriptor('size', {
