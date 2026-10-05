@@ -1,7 +1,7 @@
 # Component Spec — Toggle Group
 
-Status: DRAFT. Toggle-family article. Ports the imperative
-`old/ui/toggle-group.controller.ts` + `old/ui/toggle-group.element.ts` onto the
+Status: DRAFT. Toggle-family article. Ports the old imperative
+toggle-group controller + the old toggle-group element onto the
 behavior layer (selection state as reducer, focus movement as the composed
 `roving-focus` primitive).
 

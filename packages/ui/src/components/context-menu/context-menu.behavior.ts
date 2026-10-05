@@ -15,7 +15,7 @@ import { createTypeahead } from '../../primitives/typeahead';
  * Context menu: the right-click popup. Same menu machinery as a dropdown --
  * a role="menu" surface of items with roving focus, typeahead, and dismissal --
  * but opened by a pointer gesture AT the cursor point rather than anchored to a
- * trigger. Replaces the imperative old/ui/context-menu.tsx effects wholesale.
+ * trigger. Replaces the old imperative context-menu effects wholesale.
  *
  * The score's state is the open axis plus the pointer point the menu opens at.
  * Which item is HIGHLIGHTED is not state here: it is ephemeral DOM state owned

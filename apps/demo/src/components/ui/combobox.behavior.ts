@@ -14,7 +14,7 @@ import type { Align, Side } from '@/lib/primitives/types';
  * Combobox: a filtering autocomplete. A single-line text input discloses a
  * listbox of options; typing filters the options, arrows move a highlight, and
  * committing an option persists its value and fills the input with its label.
- * Extracted from the imperative old/ui/combobox.tsx (+ its rejected
+ * Extracted from the old imperative combobox (+ its rejected
  * combobox.controller.ts, which was NOT read).
  *
  * This is the EDITABLE combobox APG pattern, not the listbox-focus one:

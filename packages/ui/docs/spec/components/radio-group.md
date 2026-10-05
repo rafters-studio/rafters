@@ -1,7 +1,7 @@
 # Component Spec — Radio Group
 
-Status: DRAFT. Toggle-family article. Ports the imperative
-`old/ui/radio-group.controller.ts` + `old/ui/radio-group.element.ts` onto the
+Status: DRAFT. Toggle-family article. Ports the old imperative
+radio-group controller + the old radio-group element onto the
 behavior layer (selection state as reducer, focus movement as effect).
 
 Files (`src/components/radio-group/`):

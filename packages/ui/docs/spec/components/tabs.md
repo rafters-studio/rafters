@@ -1,7 +1,7 @@
 # Component Spec — Tabs
 
-Status: DRAFT. Disclosure article. Ports the imperative
-`old/ui/tabs.controller.ts` onto the behavior layer: active-tab selection as
+Status: DRAFT. Disclosure article. Ports the old imperative
+tabs controller onto the behavior layer: active-tab selection as
 reducer state, focus movement as the composed `roving-focus` primitive.
 
 Files (`src/components/tabs/`):

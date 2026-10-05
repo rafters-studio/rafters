@@ -11,7 +11,7 @@ import { createRovingFocus } from '@/lib/primitives/roving-focus';
 
 /**
  * Tabs: a list of triggers, exactly one active, each disclosing its panel.
- * Ports the imperative old/ui/tabs.controller.ts wholesale.
+ * Ports the old imperative tabs controller wholesale.
  *
  * The score's only state axis is which tab is active. Focus movement across
  * triggers is NOT state -- it is ephemeral DOM state owned by the roving-focus

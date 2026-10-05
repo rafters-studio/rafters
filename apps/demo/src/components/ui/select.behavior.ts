@@ -14,8 +14,8 @@ import { createTypeahead } from '@/lib/primitives/typeahead';
 /**
  * Select: a listbox picker. The trigger (a combobox button) discloses a
  * listbox; picking an option persists the value, fires the change, and
- * closes. Replaces the imperative old/ui/select.controller.ts +
- * old/ui/select.tsx wholesale.
+ * closes. Replaces the old imperative select controller +
+ * the old select wholesale.
  *
  * The three state axes are `open`, `value`, and `highlighted`:
  *  - open/value follow the controlled-vs-intrinsic boundary (config shadows

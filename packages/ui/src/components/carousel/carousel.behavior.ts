@@ -12,7 +12,7 @@ import { createKeyboardHandler } from '../../primitives/keyboard-handler';
  * Carousel: a sequence of slides advanced one at a time. The single state axis
  * is the current slide `index`; `canScrollPrev`/`canScrollNext` are pure
  * derivations of that index against the slide count and the loop flag, not
- * stored state. Replaces the ref-registry controller in old/ui/carousel.tsx.
+ * stored state. Replaces the ref-registry controller in the old carousel.
  *
  * Composition (Spec 05, "compose the primitive, never reimplement it"):
  * - arrow-key navigation rides `keyboard-handler` (`createKeyboardHandler`),

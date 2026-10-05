@@ -109,7 +109,7 @@ violation).
 
 ## Oracle dispositions (boundary 9)
 
-Only `input.classes.ts` survived into `old/ui` -- there is no oracle
+Only `input.classes.ts` survived into the old tree -- there is no oracle
 controller to port. The primitives the matrix once planned are dispositioned:
 
 | Item | Disposition |

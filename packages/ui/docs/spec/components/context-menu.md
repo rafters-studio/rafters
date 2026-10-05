@@ -5,7 +5,7 @@ Status: PORTED (wave-4). The first menu-collection-popup on the behavior layer.
 Right-click contextual action popup. Same menu machinery as a dropdown -- a
 `role="menu"` surface of items with roving focus, typeahead, and dismissal -- but
 summoned by a pointer gesture AT the cursor point instead of anchored to a
-trigger. Replaces the imperative `old/ui/context-menu.tsx` effects wholesale.
+trigger. Replaces the old imperative context-menu effects wholesale.
 
 Files (`src/components/context-menu/`):
 

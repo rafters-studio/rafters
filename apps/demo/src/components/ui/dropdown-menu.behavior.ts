@@ -22,7 +22,7 @@ import { createTypeahead } from '@/lib/primitives/typeahead';
  * Dropdown menu: a trigger discloses an anchored action menu. Opening lands
  * focus on the first item; roving-focus moves it with the arrow keys, typeahead
  * jumps to the first matching label, and activating an item runs its action and
- * closes. Replaces the imperative old/ui/dropdown-menu.tsx wholesale.
+ * closes. Replaces the old imperative dropdown-menu wholesale.
  *
  * The score's only state axis is `open`. The "highlighted item" is NOT state
  * here -- it is ephemeral DOM focus owned by roving-focus and styled via
