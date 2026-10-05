@@ -76,18 +76,18 @@ the issue's acceptance criteria.
 
 React and Astro expose `decorative` as a plain boolean prop defaulting to
 `true`. The Web Component exposes it as a presence-based attribute, faithful
-to the oracle (`src/old/ui/separator.element.ts`): ABSENT = decorative;
+to the oracle: ABSENT = decorative;
 PRESENT and not the literal `"false"` = semantic; `decorative="false"` keeps
 it decorative. This attribute/prop asymmetry is standard (an attribute is a
 string, a prop is a boolean) and is asserted in both conformance suites.
 
-## Oracle dispositions (src/old/ui/separator.{tsx,astro,element.ts}, boundary 9)
+## Oracle dispositions (boundary 9)
 
 | Oracle feature | Disposition |
 | --- | --- |
 | `orientation` (`horizontal \| vertical`, all three targets) | contract |
 | `decorative` (default true; role="none" vs role="separator" + aria-orientation) | contract -- the earned accessibility semantic, moved verbatim into the score's aria projection |
-| Base classes `shrink-0 bg-border` + orientation map (`h-px w-full` / `h-full w-px`) | contract, ported verbatim from `src/old/ui/separator.classes.ts` |
+| Base classes `shrink-0 bg-border` + orientation map (`h-px w-full` / `h-full w-px`) | contract, ported verbatim from the old separator |
 | WC presence-based `decorative` rule (absent/"false" = decorative; any other present value = semantic) | contract -- preserved as the WC attribute semantic, distinct from the React/Astro boolean prop |
 | `forwardRef<HTMLDivElement>` | contract -- separators are frequently placed by layout wrappers; ref forwarding is load-bearing |
 | WCAG/JSDoc block (`@cognitive-load`, `@attention-economics`, `@trust-building`, `@accessibility`) | contract, carried into `separator.tsx` as the recorded designer decision |
@@ -97,7 +97,7 @@ string, a prop is a boolean) and is asserted in both conformance suites.
 ## classes.ts
 
 - Shape per Spec 01: `separatorClasses(config, state) => { root }`.
-- Content ported verbatim from `src/old/ui/separator.classes.ts`, typed
+- Content ported verbatim from the old separator, typed
   against the closed `SeparatorOrientation` enum instead of loose
   `Record<string, string>`.
 - Every string a literal; classy composes the tuple in `separator.tsx`.

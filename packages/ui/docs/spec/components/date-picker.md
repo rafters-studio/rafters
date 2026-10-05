@@ -187,7 +187,7 @@ Per target:
   fromDate toDate showOutsideDays fixedWeeks weekStartsOn today />`, with
   `value` serialized as above.
 
-## Oracle dispositions (src/old/ui/date-picker.tsx, boundary 9)
+## Oracle dispositions (boundary 9)
 
 | Oracle feature | Disposition |
 | --- | --- |

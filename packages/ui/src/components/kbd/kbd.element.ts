@@ -43,7 +43,7 @@
  * component-owned CSS is the structural host-display shim.
  *
  * No attributes -- the React and Astro performances expose no variants or sizes
- * either, faithful to the oracle (`src/old/ui/kbd.element.ts`).
+ * either, faithful to the oracle.
  */
 
 import { RaftersElement } from '../../primitives/rafters-element';

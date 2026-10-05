@@ -107,7 +107,7 @@ resulting ids back off the markup rather than minting its own.
 - Panels carry `tabIndex={0}`: after choosing a tab, Tab moves from the trigger
   into the panel, which is how a keyboard user reaches panel content.
 
-## Oracle dispositions (`src/old/ui/tabs.*`)
+## Oracle dispositions
 
 | Oracle feature | Disposition |
 | --- | --- |

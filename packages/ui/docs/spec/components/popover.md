@@ -85,7 +85,7 @@ sites — no drift):
 - `focusFirst(content)` — moves focus to the first focusable descendant on open.
   Non-modal, so this is initial focus only — **not** a trap.
 
-## Oracle dispositions (src/old/ui/popover.tsx, boundary 9)
+## Oracle dispositions (boundary 9)
 
 The old tree ships React only (`popover.tsx` + `popover.classes.ts`), built on
 the `Float` primitive.

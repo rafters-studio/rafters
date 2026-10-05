@@ -44,19 +44,10 @@ const MATRIX_COEFFICIENTS = [
 /** Repo root: packages/color-utils/test/ -> three levels up. */
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '../../..');
 
-/**
- * `packages/ui/src/old/` is the quarantined pre-rewrite tree -- outside the
- * delivered surface, excluded from the ui tsconfig and from vitest discovery,
- * and under a standing no-edits rule. A finding there could not be fixed, so
- * scanning it would only produce an unfixable failure.
- */
-const QUARANTINED = join(repoRoot, 'packages/ui/src/old');
-
 function* sourceFiles(dir: string): Generator<string> {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     const full = join(dir, entry.name);
     if (entry.isDirectory()) {
-      if (full === QUARANTINED) continue;
       yield* sourceFiles(full);
     } else if (/\.(ts|tsx)$/.test(entry.name)) {
       yield full;

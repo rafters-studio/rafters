@@ -18,10 +18,9 @@ import {
 
 /**
  * Every file across the entire delivered surface -- the exact set the guardrail
- * scans. Reuses the same enumerators the registry serves from, so
- * packages/ui/src/old/** (outside getComponentsPath/getPrimitivesPath/substrate
- * discovery) is excluded automatically and never reached by a raw filesystem
- * walk.
+ * scans. Reuses the same enumerators the registry serves from, so nothing
+ * outside getComponentsPath/getPrimitivesPath/substrate discovery is reached
+ * by a raw filesystem walk.
  */
 function deliveredFiles(): RegistryFile[] {
   const files: RegistryFile[] = [];

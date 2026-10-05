@@ -127,7 +127,7 @@ gate, or execute -- which is precisely why it needs no client. Links are native
 anchors (native focus + activation); the current page is intentionally
 non-interactive.
 
-## Oracle dispositions (src/old/ui/breadcrumb.{tsx,astro,element.ts}, boundary 9)
+## Oracle dispositions (boundary 9)
 
 | Oracle feature | Disposition |
 | --- | --- |

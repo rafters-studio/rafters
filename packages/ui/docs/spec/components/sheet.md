@@ -95,7 +95,7 @@ exit animation additionally waits on the Presence adapter (wave 0-B). Until
 then, sheet is enter-only in the visual sense and correct at every state via
 `data-state` + `hidden`.
 
-## Oracle dispositions (src/old/ui/sheet.tsx, boundary 9)
+## Oracle dispositions (boundary 9)
 
 | Oracle feature | Disposition |
 | --- | --- |

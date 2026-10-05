@@ -101,7 +101,7 @@ utility and arbitrary-value classes are banned.
 N/A — shadcn/ui has no `embed` component, so there is no drop-in surface to
 match. The API is Rafters' own, carried forward from the oracle's iframe path.
 
-## Oracle dispositions (src/old/ui/embed.{tsx,element.ts,classes.ts,-utils.ts}, boundary 9)
+## Oracle dispositions (boundary 9)
 
 | Oracle feature | Disposition |
 | --- | --- |

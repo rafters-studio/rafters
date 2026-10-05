@@ -92,7 +92,7 @@ export type DatePickerPart = PopoverPart | DatePickerValuePart;
 
 export { isOpen };
 
-/** The oracle's placeholder (src/old/ui/date-picker.tsx). */
+/** The oracle's placeholder (the old date-picker). */
 export const DEFAULT_PLACEHOLDER = 'Pick a date';
 
 /** The oracle's placement: below the trigger, start-aligned, 4px off. */

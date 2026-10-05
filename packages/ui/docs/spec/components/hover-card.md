@@ -97,7 +97,7 @@ popover carries); the conformance suite supplies `aria-label`.
   `keymap` Escape contract dispatched directly. Enter-only: the exit animation
   waits on Presence (wave 0-B).
 
-## Oracle dispositions (src/old/ui/hover-card.tsx, boundary 9)
+## Oracle dispositions (boundary 9)
 
 | Oracle feature | Disposition |
 | --- | --- |

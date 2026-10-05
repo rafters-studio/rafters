@@ -103,7 +103,7 @@ hide-while-error rule reconcile with no dangle.
   projection, propagate `disabled` -- no `createBehavior`, no subscription, no
   keydown listener.
 
-## Oracle dispositions (`src/old/ui/field.*`)
+## Oracle dispositions
 
 Field's old tree shipped React + a shadow-DOM WC (`field.element.ts`) driven by
 host attributes. The semantics carried across; the shadow machinery did not.

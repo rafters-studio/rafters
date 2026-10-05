@@ -82,7 +82,7 @@ axe violation) never appears.
   teardown (the trap captured the previously-focused element before the Cancel
   override). There is deliberately NO outside-dismiss.
 
-## Oracle dispositions (src/old/ui/alert-dialog.tsx, boundary 9)
+## Oracle dispositions (boundary 9)
 
 | Oracle feature | Disposition |
 | --- | --- |

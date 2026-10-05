@@ -92,7 +92,7 @@ button's hard-disabled.
   dispatches a bubbling, composed `change` event on a real toggle (the old WC's
   change contract, preserved).
 
-## Oracle dispositions (src/old/ui/switch.*, boundary 9)
+## Oracle dispositions (boundary 9)
 
 | Oracle feature | Disposition |
 | --- | --- |

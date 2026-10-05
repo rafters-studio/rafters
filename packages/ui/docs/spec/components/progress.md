@@ -77,7 +77,7 @@ intent is `value-change` -- the width transition (`transition-all duration-300`)
 and the indeterminate slide (`animate-progress-indeterminate`) are class-level,
 with `motion-reduce` opt-outs; durations/easing come from tokens.
 
-## Oracle dispositions (src/old/ui/progress.*, boundary 9)
+## Oracle dispositions (boundary 9)
 
 | Oracle feature | Disposition |
 | --- | --- |

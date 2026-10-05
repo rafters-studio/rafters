@@ -1,7 +1,7 @@
 /**
  * Table view: class strings, no logic. Shared by every performance
  * (table.tsx, table.astro) so one score wears one decoration across
- * frameworks. Ported from the oracle (src/old/ui/table.classes.ts); the sub-
+ * frameworks. Ported from the oracle; the sub-
  * part classes are config-independent literals, so the performances import
  * them directly (no context/provider needed for a flat static).
  *

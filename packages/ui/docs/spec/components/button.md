@@ -65,8 +65,7 @@ suite where `useBehaviorEffects` persists the runner across commits.
 
 ## Compatibility contract (shadcn superset)
 
-The React binding is a drop-in for shadcn/ui Button AND for the oracle
-(`src/old/ui/button.tsx`). Rule: shadcn exactly, plus everything the oracle
+The React binding is a drop-in for shadcn/ui Button AND for the oracle. Rule: shadcn exactly, plus everything the oracle
 added, plus the new states.
 
 - `variant`: shadcn's 6 (`default | secondary | destructive | outline |

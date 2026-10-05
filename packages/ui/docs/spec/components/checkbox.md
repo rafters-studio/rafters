@@ -84,7 +84,7 @@ checked — replicating the old element's `setFormValue(value|null)` without
 ElementInternals. Conformance asserts the real `FormData` contract, not the
 input mechanism.
 
-## Oracle dispositions (src/old/ui/checkbox.*, boundary 9)
+## Oracle dispositions (boundary 9)
 
 | Oracle feature | Disposition |
 | --- | --- |

@@ -53,7 +53,7 @@ SCHEMA — layout JSON in the token registry, named slots, generator-emitted
 selection classes. Geometry only, ever: the first conditional or binding in
 that JSON is the template framework boundary 5 prohibits.
 
-## Oracle dispositions (src/old/ui/grid.{tsx,classes.ts}, boundary 9)
+## Oracle dispositions (boundary 9)
 
 | Oracle feature | Disposition |
 | --- | --- |

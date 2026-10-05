@@ -117,7 +117,7 @@ aria-manager does not coerce the string `'false'` truthy (Gotcha #2).
   branch — selection does not follow focus, so there is nothing to wire on top
   of roving (contrast radio-group, which adds a select-follows-focus keydown).
 
-## Oracle dispositions (`src/old/ui/toggle-group.*`)
+## Oracle dispositions
 
 | Oracle feature | Disposition |
 | --- | --- |

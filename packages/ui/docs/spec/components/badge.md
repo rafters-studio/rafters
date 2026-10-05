@@ -66,7 +66,7 @@ the issue's acceptance criteria, even though Container (the imitation
 target) has no behavior test file at all because its projections are
 equally empty and nobody wrote one down.
 
-## Oracle dispositions (src/old/ui/badge.{tsx,astro,element.ts}, boundary 9)
+## Oracle dispositions (boundary 9)
 
 | Oracle feature | Disposition |
 | --- | --- |
@@ -83,7 +83,7 @@ equally empty and nobody wrote one down.
 ## classes.ts
 
 - Shape per Spec 01: `badgeClasses(config, state) => { root }`.
-- Content ported verbatim from `src/old/ui/badge.classes.ts`, typed against
+- Content ported verbatim from the old badge, typed against
   the closed `BadgeVariant`/`BadgeSize` enums instead of loose
   `Record<string, string>`.
 - Every string literal; classy composes the tuple in `badge.tsx`.

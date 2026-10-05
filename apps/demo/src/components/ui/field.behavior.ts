@@ -12,7 +12,7 @@ import { updateAriaAttribute } from '@/lib/primitives/aria-manager';
  * static-with-projection score, the label archetype plus a non-empty
  * projection.
  *
- * What the score owns (the earned semantics, ported from src/old/ui/field.*):
+ * What the score owns (the earned semantics, ported from the old field):
  *  - the id-association scheme: label `for` <-> control `id`, with
  *    `${id}-description` and `${id}-error` as the sibling ids;
  *  - the `aria-describedby` composition: error id first, then description id,

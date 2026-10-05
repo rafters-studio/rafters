@@ -112,7 +112,7 @@ drives CSS transitions on the generics the rows assign (drawer.classes.ts).
   trap can place initial focus inside it.
 - Dragging and settle on release wait on the deferred drag gesture.
 
-## Oracle dispositions (src/old/ui/drawer.tsx, boundary 9)
+## Oracle dispositions (boundary 9)
 
 Disposition vocabulary: `contract | framework-affordance | dropped | defect-do-not-port`.
 

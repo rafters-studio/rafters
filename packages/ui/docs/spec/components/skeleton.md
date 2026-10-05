@@ -73,7 +73,7 @@ shimmer runs at the same period regardless of the user's preference (#2155). A
 stopped work loop would say the work stopped, which is false while content is
 still loading.
 
-## Oracle dispositions (src/old/ui/skeleton.*, boundary 9)
+## Oracle dispositions (boundary 9)
 
 | Oracle feature | Disposition |
 | --- | --- |

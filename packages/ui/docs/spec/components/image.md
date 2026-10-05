@@ -78,7 +78,7 @@ HTML spec for decorative images.
 - Motion: **none** (docs/MOTION.md intent). The overlay is a static token surface — no
   spinner, no transition.
 
-## Oracle dispositions (src/old/ui/image.*)
+## Oracle dispositions
 
 | Oracle feature | Disposition |
 | --- | --- |

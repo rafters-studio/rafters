@@ -115,7 +115,7 @@ nothing to dispatch, gate, or execute -- which is why it needs no client. The
 row's colour transition (`transition-colors motion-reduce:transition-none`) is
 a decoration intent; its duration comes from tokens, never a hardcoded utility.
 
-## Oracle dispositions (src/old/ui/table.{tsx,astro,classes.ts}, boundary 9)
+## Oracle dispositions (boundary 9)
 
 | Oracle feature | Disposition |
 | --- | --- |

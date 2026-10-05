@@ -218,7 +218,7 @@ Every menu stays present and out of flow (`fixed`); closed, the performances
 make it `inert`. The classes file reports the moments with no row and the row
 with no pose of its own.
 
-## Oracle dispositions (src/old/ui/menubar.*)
+## Oracle dispositions
 
 | Oracle feature | Disposition |
 | --- | --- |

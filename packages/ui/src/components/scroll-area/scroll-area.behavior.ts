@@ -13,7 +13,7 @@ import type { BehaviorSpec } from '../../lib/contract';
  * uses no `useBehavior`/`useMemory`, the Astro performance ships no `<script>`,
  * and the Web Component performs no binding. This is the pure-static finding
  * Card records -- the framework files are the thinnest possible: markup +
- * classes + slots, nothing more. The oracle (`src/old/ui/scroll-area.tsx`) was
+ * classes + slots, nothing more. The oracle was
  * CSS-only too: no handlers, no state, no scroll-position tracking. Porting a
  * scrolling reducer would REINVENT what the oracle deliberately left to the
  * platform, so the score stays static and faithful.

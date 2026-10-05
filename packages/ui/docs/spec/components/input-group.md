@@ -21,9 +21,9 @@ drawn as a single control. The tempting reading is that InputGroup owns a value
 the way `input` does -- a `setValue` reducer over a controlled/uncontrolled
 cell.
 
-It does not, and the oracle says so first. `src/old/ui/input-group.tsx` ships an
+It does not, and the oracle says so first. The old input-group ships an
 `InputGroupInput` that is a bare styled `<input>` with no value handling and no
-validity wiring; `src/old/ui/input-group.element.ts` propagates `disabled` and
+validity wiring; the old input-group propagates `disabled` and
 draws a focus-within ring and nothing else. Neither surface ever held a value.
 
 Two further constraints close it:
@@ -129,7 +129,7 @@ Intent only: the focus ring transitions its shadow on focus change
 (`transition-shadow duration-100`), and honours `motion-reduce:transition-none`.
 Durations and easing come from tokens; the score declares no motion.
 
-## Oracle dispositions (`src/old/ui/input-group.*`, react + wc)
+## Oracle dispositions
 
 | Item | Disposition |
 | --- | --- |

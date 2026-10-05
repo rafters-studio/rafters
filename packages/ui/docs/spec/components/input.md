@@ -107,7 +107,7 @@ violation).
   field whose consumer pins `config.value` reverts a rejected edit here.
   React performs the equivalent via `value={effectiveValue}`.
 
-## Oracle dispositions (src/old/ui/input.classes.ts, boundary 9)
+## Oracle dispositions (boundary 9)
 
 Only `input.classes.ts` survived into `old/ui` -- there is no oracle
 controller to port. The primitives the matrix once planned are dispositioned:

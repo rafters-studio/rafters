@@ -95,7 +95,7 @@ Tests live in `test/`, mirroring `src/`.
 
 ## Migration
 
-Rewriting, not refactoring. Old components in `src/old/`, old tests in `test/old/`. Exports kept green via `index.ts` re-exports. Old components are oracles -- reference implementations to diff against, not code to preserve.
+Every component lives in `src/components/<name>/` on the behavior layer. The pre-rewrite tree and its tests have been removed.
 
 ## Styling
 

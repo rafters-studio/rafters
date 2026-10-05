@@ -83,7 +83,7 @@ ring keeps spinning at the same period regardless of the user's preference
 (#2155): a stopped busy indicator would say the work stopped, which would be
 false while work is still in flight.
 
-## Oracle dispositions (src/old/ui/spinner.{tsx,astro,element.ts}, boundary 9)
+## Oracle dispositions (boundary 9)
 
 | Oracle feature | Disposition |
 | --- | --- |

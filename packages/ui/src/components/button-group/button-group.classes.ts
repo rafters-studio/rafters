@@ -19,7 +19,7 @@ const orientationClasses: Record<ButtonGroupOrientation, string> = {
 
 /**
  * Connected-border rules for horizontal groups (ported verbatim from the
- * oracle, src/old/ui/button-group.classes.ts):
+ * oracle):
  *   - First child: clear right radius so it joins the next button.
  *   - Last child: clear left radius so it joins the prior button.
  *   - Middle children: clear both so they sit flush between neighbors.

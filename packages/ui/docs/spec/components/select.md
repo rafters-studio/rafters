@@ -94,7 +94,7 @@ as a native `<select>` requires.
   `roving-focus(content, vertical)`, `typeahead(content)`,
   `dismiss-on-outside(content, close, except trigger)`. Closed -> `[]`.
 
-## Oracle dispositions (src/old/ui/select.tsx + select.controller.ts)
+## Oracle dispositions
 
 | Oracle feature | Disposition |
 | --- | --- |

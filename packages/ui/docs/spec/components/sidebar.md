@@ -276,7 +276,7 @@ is hardcoded, with no named-slot escape hatch); its part file exists for the
 enumeration and standalone-render requirements, not as a wired alternative to
 the inline rail.
 
-## Oracle dispositions (src/old/ui/sidebar.tsx, boundary 9)
+## Oracle dispositions (boundary 9)
 
 Legend: `contract` = preserved semantic; `framework-affordance` = React-only
 surface; `dropped` = intentionally not ported; `defect-do-not-port` = oracle bug.

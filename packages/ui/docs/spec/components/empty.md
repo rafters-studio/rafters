@@ -104,7 +104,7 @@ gate, or execute -- which is precisely why it needs no client. Any interactivity
 comes from a real control the consumer places in `EmptyAction`, which carries
 its own keyboard semantics.
 
-## Oracle dispositions (src/old/ui/empty.{tsx,astro,element.ts}, boundary 9)
+## Oracle dispositions (boundary 9)
 
 | Oracle feature | Disposition |
 | --- | --- |

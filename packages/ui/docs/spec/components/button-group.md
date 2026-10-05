@@ -80,7 +80,7 @@ behaviour natively as irreducible `::slotted(*)` shadow CSS, keyed by the
 reflected `data-orientation` host attribute -- ported verbatim from the oracle
 element. These rules carry no design tokens, so they live in `static styles`.
 
-## Oracle dispositions (src/old/ui/button-group.{tsx,classes.ts,element.ts})
+## Oracle dispositions
 
 | Oracle feature | Disposition |
 | --- | --- |

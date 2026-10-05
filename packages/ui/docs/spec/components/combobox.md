@@ -132,7 +132,7 @@ toggle. The chevron's open-state rotation and the input's shadow transition carr
 `motion-reduce:transition-none` and no explicit duration. Re-declare the enter/exit
 motion when the dropdown token ships.
 
-## Oracle dispositions (src/old/ui/combobox.tsx, boundary 9)
+## Oracle dispositions (boundary 9)
 
 The old React controller (`combobox.controller.ts`) is the rejected architecture
 and was NOT read; dispositions are taken from `combobox.tsx` and the archetype.

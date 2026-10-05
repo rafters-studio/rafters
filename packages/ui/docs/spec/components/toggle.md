@@ -122,8 +122,7 @@ None. Toggle emits no `EffectSpec` -- the fill swap is pure CSS driven by
 
 ## Compatibility contract (shadcn superset)
 
-The React binding is a drop-in for shadcn/ui Toggle AND for the oracle
-(`src/old/ui/toggle.tsx`): shadcn exactly, plus the oracle's additions.
+The React binding is a drop-in for shadcn/ui Toggle AND for the oracle: shadcn exactly, plus the oracle's additions.
 
 - `variant`: shadcn's 2 (`default | outline`) plus the oracle's additions
   (`primary | secondary | destructive | success | warning | info | accent |
@@ -150,7 +149,7 @@ The oracle ships a React target (`toggle.tsx`) and a WC target
 | `aria-pressed` + `data-state` on/off | contract | Preserved; the glue projects on/off, the fill rides `data-[state=on]`. |
 | Enter/Space activation | contract | Native `<button>`; the keymap asserts it on every binding. |
 | `asChild` (React polymorphism) | framework-affordance | A React-only slot affordance; button dropped it on the behavior-layer pattern, and toggle follows -- WC/Astro use slots, not `asChild`. |
-| Form association (WC `ElementInternals`, `setFormValue`, form reset/restore/disabled callbacks) | dropped | The behavior-layer WC is a light-DOM enhancer, not a form-associated shadow element. No ported `.element.ts` carries `ElementInternals` -- even `input`, the most form-natural, is a plain enhancer -- and shadcn Toggle is not form-associated. Where form participation is needed it comes from a native light-DOM control the enhancer wraps (see `src/old/ui/checkbox.element.ts` for the abandoned form-value axis). |
+| Form association (WC `ElementInternals`, `setFormValue`, form reset/restore/disabled callbacks) | dropped | The behavior-layer WC is a light-DOM enhancer, not a form-associated shadow element. No ported `.element.ts` carries `ElementInternals` -- even `input`, the most form-natural, is a plain enhancer -- and shadcn Toggle is not form-associated. Where form participation is needed it comes from a native light-DOM control the enhancer wraps (see the old checkbox for the abandoned form-value axis). |
 | `active:scale-[0.98]` | dropped | Arbitrary value against the semantic-classes-only rule; the `state-swap` fill transition covers the press feedback. |
 
 ## WCAG 2.1 AA obligations (minimum bar)

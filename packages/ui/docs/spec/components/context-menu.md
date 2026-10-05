@@ -132,7 +132,7 @@ declaring it now would be a silent no-op. No motion token is missing -- both
 `motion-dropdown-in` and `-out` exist; only the presence plumbing to run the exit
 does not yet.
 
-## Oracle dispositions (src/old/ui/context-menu.tsx, boundary 9)
+## Oracle dispositions (boundary 9)
 
 | Oracle feature | Disposition |
 | --- | --- |

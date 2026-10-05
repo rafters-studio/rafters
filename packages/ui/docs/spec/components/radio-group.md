@@ -90,7 +90,7 @@ aria-manager does not coerce the string `'false'` truthy (Gotcha #2).
   React synthetic `onKeyDown` would fire before roving and read stale focus.
 - `effects(state, config)`: always `roving-focus(root, orientation)`.
 
-## Oracle dispositions (`src/old/ui/radio-group.*`)
+## Oracle dispositions
 
 | Oracle feature | Disposition |
 | --- | --- |
