@@ -126,8 +126,8 @@ export interface EditorHistory {
 
 // ---------------------------------------------------------------------------
 // Small local helpers -- generic InlineContent[]/selection arithmetic, not a
-// reimplementation of block-operations' structural logic or
-// inline-formatter's mark vocabulary. Structural/mark edits themselves are
+// reimplementation of block-operations' structural logic. Structural/mark
+// edits themselves are
 // always delegated to applyOp; these only read positions/lengths to decide
 // what op to synthesize (replace-selection) or where the caret lands after
 // an already-applied op.

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { applyOp, applyOpSequence } from '../../src/primitives/block-ops';
 import type { EditorOp, FormatOp, StructuralOp, TextOp } from '../../src/primitives/block-op-types';
-import type { BaseBlock } from '../../../src/primitives/types';
+import type { BaseBlock } from '../../src/primitives/types';
 
 function applyThenInverse(blocks: BaseBlock[], op: EditorOp): BaseBlock[] {
   const first = applyOp(blocks, op);

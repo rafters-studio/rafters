@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createEditorHistory } from '../../src/primitives/op-history';
 import type { EditorSelection } from '../../src/primitives/op-history';
-import type { BaseBlock } from '../../../src/primitives/types';
+import type { BaseBlock } from '../../src/primitives/types';
 
 const block = (id: string, text: string): BaseBlock => ({
   id,

@@ -8,7 +8,7 @@ import {
   mergeWithPrevious,
   splitBlock,
 } from '../../src/primitives/block-operations';
-import type { BaseBlock } from '../../../src/primitives/types';
+import type { BaseBlock } from '../../src/primitives/types';
 
 const blocks: BaseBlock[] = [
   { id: 'h1', type: 'heading', content: 'Title', meta: { level: 1 } },

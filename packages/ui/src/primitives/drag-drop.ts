@@ -740,12 +740,8 @@ export function createDraggable(options: DraggableOptions): DraggableControls {
  * NOTE: The `onDrop` callback receives the dragged data and drop effect but
  * does NOT provide position coordinates (clientX/clientY). This is by design:
  * createDropZone answers "was something dropped here?" but not "where exactly
- * within the zone?" For position-aware drop handling (e.g., inserting a block
- * between existing blocks based on cursor position), use the canvas-drop-zone
- * primitive (`primitives/canvas-drop-zone.ts`) which calculates insertion
- * indices from cursor proximity to existing block boundaries.
- *
- * @see canvas-drop-zone (`primitives/canvas-drop-zone.ts`) for position-aware drop targeting
+ * within the zone?" Position-aware handling, such as inserting a block between
+ * existing blocks at the cursor, belongs to the caller.
  *
  * @example
  * ```typescript

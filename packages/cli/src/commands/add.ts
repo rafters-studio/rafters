@@ -487,10 +487,8 @@ export function transformFileContent(
 
   // Transform imports from any depth of ../primitives/ to the configured
   // primitives path. Served primitives are ALWAYS flat
-  // (`lib/primitives/<name>`), even when their SOURCE lives in a subdir like
-  // `primitives/editor/<name>` -- source nesting is deliberately decoupled from
-  // the served/consumer layout (#2136). Any depth of ../ handles subsystem files
-  // that live deeper (e.g., ops/types.ts at ../../../primitives/types).
+  // (`lib/primitives/<name>`), so any subpath collapses to its basename. Any
+  // depth of ../ handles subsystem files that live deeper in a component dir.
   const toFlatPrimitive = (_match: string, subpath: string): string =>
     `from '@/${aliasPrimitives}/${basename(subpath)}'`;
   transformed = transformed.replace(

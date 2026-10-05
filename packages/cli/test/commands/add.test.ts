@@ -39,17 +39,15 @@ describe('transformFileContent', () => {
     expect(result).toBe(`import { cn } from '@/lib/primitives/cn';`);
   });
 
-  // #2136: editor primitives live under primitives/editor/ in SOURCE but serve
-  // flat (lib/primitives/<name>). The install transform must collapse the
-  // subdir to the basename so a consumer importing across the boundary
-  // (command -> command-palette, input-otp -> input-events) resolves.
-  it('collapses ../../primitives/editor/ subdir imports to the flat served path', () => {
+  // Served primitives are flat (lib/primitives/<name>), so the install
+  // transform collapses any ../primitives/<subpath> import to its basename.
+  it('collapses a nested ../../primitives/<subdir>/ import to the flat served path', () => {
     const input = `import { fuzzyMatch } from '../../primitives/editor/command-palette';`;
     const result = transformFileContent(input, null, 'component');
     expect(result).toBe(`import { fuzzyMatch } from '@/lib/primitives/command-palette';`);
   });
 
-  it('collapses ../primitives/editor/ subdir imports to the flat served path', () => {
+  it('collapses a nested ../primitives/<subdir>/ import to the flat served path', () => {
     const input = `import { createInputHandler } from '../primitives/editor/input-events';`;
     const result = transformFileContent(input, null, 'component');
     expect(result).toBe(`import { createInputHandler } from '@/lib/primitives/input-events';`);
@@ -267,7 +265,7 @@ import * as Dialog from '@radix-ui/react-dialog';`;
     expect(out).toContain("from '@/lib/primitives/types'");
   });
 
-  it('collapses ../../../primitives/editor/ subdir to flat served path', () => {
+  it('collapses a nested ../../../primitives/<subdir>/ import to the flat served path', () => {
     const out = transformFileContent(
       `import { splitInlineContent } from '../../../primitives/editor/block-operations';`,
       null,

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createCommandPalette, fuzzyMatch } from '../../src/primitives/command-palette';
-import type { Command } from '../../../src/primitives/types';
+import type { Command } from '../../src/primitives/types';
 
 describe('fuzzyMatch', () => {
   describe('exact matching', () => {

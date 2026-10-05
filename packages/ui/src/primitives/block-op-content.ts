@@ -3,8 +3,7 @@
  *
  * Not exported from ops/index.ts -- these are generic InlineContent[] array
  * utilities (slice-at-offset, merge-adjacent-identical-runs), not a
- * reimplementation of block-operations' structural logic or
- * inline-formatter's mark vocabulary/DOM controller.
+ * reimplementation of block-operations' structural logic.
  *
  * splitRuns/marksEqual/mergeRuns delegate to block-operations.ts's
  * splitInlineContent/inlineMarksEqual/mergeAdjacentRuns rather than carrying

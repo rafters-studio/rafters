@@ -2,12 +2,9 @@
  * Format ops (FR-EDITOR-003) -- apply/remove inline marks over a block's
  * InlineContent[], invertible by construction.
  *
- * Reuses InlineMark (primitives/types.ts) as the closed mark vocabulary, the
- * same set inline-formatter.ts's BOLD/ITALIC/CODE/STRIKETHROUGH/LINK format
- * definitions name. Operates on a block's InlineContent[] directly -- NOT via
- * inline-formatter's DOM controller (createInlineFormatter/applyFormat/
- * removeFormat), which reads window.getSelection() and a live contenteditable
- * container and has no place in a pure function over a data document.
+ * Reuses InlineMark (primitives/types.ts) as the closed mark vocabulary and
+ * operates on a block's InlineContent[] directly: a pure function over a data
+ * document, with no DOM or live selection.
  */
 import type { BaseBlock } from './types';
 import {
