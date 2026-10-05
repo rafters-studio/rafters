@@ -1,5 +1,11 @@
 # rafters
 
+## Unreleased
+
+### Breaking Changes
+
+- chore(ui): **the registry no longer serves the editor.** `rafters add editor` and the editor-only primitives (block-canvas, block-context-menu, block-wrapper, canvas-drop-zone, editor-toolbar, inline-formatter, inline-toolbar, rule-dialog, rule-drop-zone, rule-palette and the four serializers) are gone. The editor is being rebuilt from a new design, and these pieces belong to the old one. What carries forward is served as ordinary flat primitives: the op model (`block-ops` and the `block-op-*` files), op-based undo (`op-history`), `block-operations`, and the reusable input primitives (`clipboard`, `input-events`, `selection`, `cursor-tracker`, `command-palette`, `drag-drop`, `block-palette`).
+
 ## 0.4.2
 
 ### Breaking Changes

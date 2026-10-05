@@ -5,8 +5,7 @@
  * compositional child registering one series each (#2225).
  *
  * Framework-agnostic surface only (functions + types, no module-level side
- * effects) -- same convention as the editor barrel (components/editor/index.ts):
- * the decorators (`*.tsx`/`.element.ts`/`.astro` per component) are imported
+ * effects): the decorators (`*.tsx`/`.element.ts`/`.astro` per component) are imported
  * directly by path. This barrel should not force every consumer's bundle to
  * pay for React or run a `customElements.define` side effect just to read
  * `parseChartConfig`, `resolveSeriesClass`, or `computeBars`.
