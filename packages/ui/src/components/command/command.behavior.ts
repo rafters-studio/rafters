@@ -13,8 +13,8 @@ import { onPointerDownOutside } from '../../primitives/outside-click';
 /**
  * Command: a filtered command palette. A search combobox narrows a listbox of
  * options; the highlighted option is virtual (aria-activedescendant), so DOM
- * focus never leaves the input and the user keeps typing. Ports the React-only
- * old/ui/command.tsx wholesale.
+ * focus never leaves the input and the user keeps typing. Ports the old React-only
+ * command wholesale.
  *
  * The two state axes are `query` and `highlighted`:
  *  - query is the search string. Controlled/uncontrolled per boundary 4:

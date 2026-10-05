@@ -6,7 +6,7 @@ export interface EmptyClassSet {
 
 /**
  * The placeholder's structure: a centered column that owns its own vertical
- * breathing room. Ported verbatim from the oracle (src/old/ui/empty.classes.ts)
+ * breathing room. Ported verbatim from the oracle
  * -- a flex column, centered on both axes, with a gap between regions, generous
  * block padding, and centered text.
  */

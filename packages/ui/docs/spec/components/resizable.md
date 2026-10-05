@@ -91,7 +91,7 @@ fits a separator hover/focus transition (the motion-token layer is being rebuilt
 ring and the `data-dragging` colour swap apply instantly. Reinstate a
 `motion-hover`/`motion-focus` token here when one lands.
 
-## Oracle dispositions (src/old/ui/resizable.tsx)
+## Oracle dispositions
 
 | Oracle feature | Disposition |
 | --- | --- |

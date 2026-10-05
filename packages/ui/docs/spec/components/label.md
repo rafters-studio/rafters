@@ -88,7 +88,7 @@ gate, or execute -- which is precisely why it needs no client. A label is not
 interactive; clicking it focuses its associated control, which is native
 behaviour the score neither adds to nor removes.
 
-## Oracle dispositions (src/old/ui/label.{tsx,astro,element.ts}, boundary 9)
+## Oracle dispositions (boundary 9)
 
 | Oracle feature | Disposition |
 | --- | --- |

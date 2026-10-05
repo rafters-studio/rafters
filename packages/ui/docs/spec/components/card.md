@@ -204,7 +204,7 @@ never authorized).
 None. A static score with an empty ARIA projection has nothing to dispatch,
 gate, or execute -- which is precisely why it needs no client.
 
-## Oracle dispositions (src/old/ui/card.{tsx,astro,element.ts}, boundary 9)
+## Oracle dispositions (boundary 9)
 
 | Oracle feature | Disposition |
 | --- | --- |

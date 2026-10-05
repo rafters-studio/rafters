@@ -10,7 +10,7 @@ import type { BehaviorSpec } from '../../lib/contract';
  *
  * Embed has NO client and NO `bindEmbed`. The `loading`/`loaded` vocabulary in
  * the matrix is descriptive of the iframe's NATIVE `loading="lazy"` lifecycle,
- * not a reducer: the oracle (src/old/ui/embed.{tsx,element.ts}) tracks no
+ * not a reducer: the oracle tracks no
  * loading state on the iframe path -- only the dropped Twitter widget flow did
  * -- so there is nothing to bind. This is a pure static, modelled on Card.
  *

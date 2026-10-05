@@ -3,7 +3,7 @@
 Status: DRAFT. Wave-4 port. Archetype: menu-collection-popup.
 
 A command palette: a search combobox that fuzzy-filters a listbox of options,
-invoked keyboard-first. Ports the React-only `src/old/ui/command.tsx` to the
+invoked keyboard-first. Ports the old React-only command to the
 behavior layer with three performances (React, Web Component, Astro).
 
 Files (`src/components/command/`):
@@ -101,7 +101,7 @@ Invocation raises a `command-select` CustomEvent (`detail.value`) on the root
 for WC/Astro consumers; React consumers use the item's `onSelect` prop, which
 fires from the same click path.
 
-## Oracle dispositions (`src/old/ui/command.tsx`, React-only)
+## Oracle dispositions
 
 | Oracle feature | Disposition |
 | --- | --- |

@@ -13,5 +13,5 @@
     "test/components/**/*.a11y.tsx",
     "test/components/**/*.element.a11y.ts"
   ],
-  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.test.tsx", "src/old/**/*"]
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.test.tsx"]
 }

@@ -75,7 +75,7 @@ absence is honest. The guard moves into the adapter (wave 0-A).
   `focus-trap(content)`, `scroll-lock`,
   `dismiss-on-outside(content, close, except trigger)`. Otherwise `[]`.
 
-## Oracle dispositions (src/old/ui/dialog.tsx, boundary 9)
+## Oracle dispositions (boundary 9)
 
 | Oracle feature | Disposition |
 | --- | --- |

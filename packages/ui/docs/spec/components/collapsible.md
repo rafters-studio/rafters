@@ -73,7 +73,7 @@ so an initially-closed collapsible never leaks a dangling reference. Native
   present-but-hidden in the WC/Astro bind (toggled on the open axis) and mounts
   on open in React (`forceMount` keeps it mounted, hidden, while closed).
 
-## Oracle dispositions (src/old/ui/collapsible.tsx, boundary 9)
+## Oracle dispositions (boundary 9)
 
 | Oracle feature | Disposition |
 | --- | --- |

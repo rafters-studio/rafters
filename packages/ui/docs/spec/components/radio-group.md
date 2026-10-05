@@ -1,7 +1,7 @@
 # Component Spec — Radio Group
 
-Status: DRAFT. Toggle-family article. Ports the imperative
-`old/ui/radio-group.controller.ts` + `old/ui/radio-group.element.ts` onto the
+Status: DRAFT. Toggle-family article. Ports the old imperative
+radio-group controller + the old radio-group element onto the
 behavior layer (selection state as reducer, focus movement as effect).
 
 Files (`src/components/radio-group/`):
@@ -90,7 +90,7 @@ aria-manager does not coerce the string `'false'` truthy (Gotcha #2).
   React synthetic `onKeyDown` would fire before roving and read stale focus.
 - `effects(state, config)`: always `roving-focus(root, orientation)`.
 
-## Oracle dispositions (`src/old/ui/radio-group.*`)
+## Oracle dispositions
 
 | Oracle feature | Disposition |
 | --- | --- |

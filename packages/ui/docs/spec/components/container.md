@@ -42,7 +42,7 @@ internal spacing, and layout flow, so agents never hand-roll wrapper divs.
   narrowly (arbitrary-value classes are banned; CQ names cannot be
   literal classes). Needs formal ratification as a contract note.
 
-## Oracle dispositions (src/old/ui/container.{tsx,classes.ts}, boundary 9)
+## Oracle dispositions (boundary 9)
 
 | Oracle feature | Disposition |
 | --- | --- |

@@ -77,7 +77,7 @@ the resolver.
 None. A static text set has no interaction tier and no impure work: no keymap,
 and (Spec 03 is gone) no effects. The score composes no primitives.
 
-## Oracle dispositions (src/old/ui/typography.{tsx,classes.ts,element.ts,astro})
+## Oracle dispositions
 
 | Oracle feature | Disposition |
 | --- | --- |

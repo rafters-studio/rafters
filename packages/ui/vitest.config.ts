@@ -18,10 +18,6 @@ import { a11yOnly } from './vitest.astro.shared';
  * JSON reporter writes one report per run (default path `.vitest/`, which is
  * gitignored) that veneer slices by `testResults[].name`.
  *
- * src/old/ and test/old/ are the quarantined pre-rewrite trees: nothing under
- * src/old/ runs; test/old/ only contributes its `.a11y` files, which stay in
- * the unit tier they run in today until the test-suite trim retires them.
- *
  * A custom `exclude` REPLACES Vitest's default one, so each project spreads
  * `configDefaults.exclude` first to keep `node_modules` and friends out: the
  * Astro 6 leg of the matrix (#2327) installs under test/astro-matrix/v6, and
@@ -46,7 +42,7 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
       include: ['src/**/*.{ts,tsx}'],
-      exclude: ['src/**/*.test.{ts,tsx}', 'src/**/*.spec.{ts,tsx}', 'src/old/**'],
+      exclude: ['src/**/*.test.{ts,tsx}', 'src/**/*.spec.{ts,tsx}'],
     },
     projects: [
       {
@@ -83,22 +79,8 @@ export default defineConfig({
           // Never a vm pool: vmForks exhausts the heap on this suite.
           isolate: false,
           setupFiles: ['./vitest.setup.ts'],
-          include: [
-            'src/**/*.test.{ts,tsx}',
-            'test/**/*.test.{ts,tsx}',
-            'test/old/**/*.a11y.{ts,tsx}',
-          ],
-          exclude: [
-            ...configDefaults.exclude,
-            'src/old/**',
-            'test/**/*.astro.*',
-            // The one test/old file that evaluates src/old element code:
-            // src/old/ui/badge.element defines the same `rafters-badge` tag
-            // as src/components/badge/badge.element, and one shared realm
-            // (isolate: false) holds one definition, so whichever file loads
-            // second fails. Nothing under src/old runs; this keeps that true.
-            'test/old/**/*.element.a11y.{ts,tsx}',
-          ],
+          include: ['src/**/*.test.{ts,tsx}', 'test/**/*.test.{ts,tsx}'],
+          exclude: [...configDefaults.exclude, 'test/**/*.astro.*'],
         },
       },
       {
@@ -122,7 +104,7 @@ export default defineConfig({
             : ['test/**/*.spec.{ts,tsx}', 'test/**/*.a11y.{ts,tsx}'],
           // configDefaults.exclude first: a custom exclude REPLACES it, and
           // without it the v6 matrix install's own node_modules gets scanned.
-          exclude: [...configDefaults.exclude, 'test/**/*.astro.*', 'src/old/**', 'test/old/**'],
+          exclude: [...configDefaults.exclude, 'test/**/*.astro.*'],
           setupFiles: ['./test/a11y/setup.ts'],
           browser: {
             enabled: true,

@@ -1,7 +1,7 @@
 # Component Spec — Tabs
 
-Status: DRAFT. Disclosure article. Ports the imperative
-`old/ui/tabs.controller.ts` onto the behavior layer: active-tab selection as
+Status: DRAFT. Disclosure article. Ports the old imperative
+tabs controller onto the behavior layer: active-tab selection as
 reducer state, focus movement as the composed `roving-focus` primitive.
 
 Files (`src/components/tabs/`):
@@ -107,7 +107,7 @@ resulting ids back off the markup rather than minting its own.
 - Panels carry `tabIndex={0}`: after choosing a tab, Tab moves from the trigger
   into the panel, which is how a keyboard user reaches panel content.
 
-## Oracle dispositions (`src/old/ui/tabs.*`)
+## Oracle dispositions
 
 | Oracle feature | Disposition |
 | --- | --- |

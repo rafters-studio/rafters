@@ -15,7 +15,7 @@ import type { BehaviorSpec } from '../../lib/contract';
  * harness can assert the one real contract (the `root` part renders and
  * projects no ARIA) identically across React, the Web Component, and Astro.
  *
- * The oracle (`src/old/ui/kbd.*`) exposes no variants, sizes, or attributes on
+ * The oracle exposes no variants, sizes, or attributes on
  * any of its three targets, so `KbdConfig` is empty by construction -- config
  * in, one class string out.
  */

@@ -106,7 +106,7 @@ are declared optional because which one is present is a function of status.
 None. A static score with an empty ARIA projection has nothing to dispatch,
 gate, or execute. Motion: none.
 
-## Oracle dispositions (src/old/ui/avatar.{tsx,astro,element.ts}, boundary 9)
+## Oracle dispositions (boundary 9)
 
 | Oracle feature | Disposition |
 | --- | --- |

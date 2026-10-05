@@ -5,7 +5,7 @@ export interface BadgeClassSet {
 }
 
 /**
- * Variant classes, ported verbatim from the oracle (src/old/ui/badge.classes.ts):
+ * Variant classes, ported verbatim from the oracle:
  * semantic token pairs (bg-X text-X-foreground) for the fill-family variants,
  * plus the shadcn structural variants (outline/ghost/link) that carry no fill.
  */

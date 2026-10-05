@@ -18,7 +18,7 @@ import { updateAriaAttribute } from '../../primitives/aria-manager';
  * markup (default 'loaded' -- a clean, crawlable image before any JS, matching
  * the oracle's `isLoading=false` start).
  *
- * Move-with-care (src/old/ui/image.*): the editable surface -- upload,
+ * Move-with-care (the old image): the editable surface -- upload,
  * drag-drop, paste, the alignment toolbar, the contentEditable caption -- is
  * DROPPED (out of scope, React-only in the oracle, and the WC oracle already
  * shed it). The load/error handling and the required-alt semantics are

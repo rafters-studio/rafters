@@ -150,7 +150,7 @@ media block at all, so it keeps blinking at the same period regardless of the
 user's preference. Slot state transitions still honour
 `motion-reduce:transition-none`; only the caret's loop is exempt.
 
-## Oracle dispositions (src/old/ui/input-otp.{tsx,element.ts,classes.ts})
+## Oracle dispositions
 
 | Oracle feature | Disposition |
 | --- | --- |

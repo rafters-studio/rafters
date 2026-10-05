@@ -100,7 +100,7 @@ pointer gesture for the CSS to read; it is not projected (ephemeral).
 `transition-all duration-150 motion-reduce:transition-none`; durations/easing
 come from tokens.
 
-## Oracle dispositions (src/old/ui/slider.{tsx,element.ts,classes.ts})
+## Oracle dispositions
 
 | Oracle feature | Disposition |
 | --- | --- |

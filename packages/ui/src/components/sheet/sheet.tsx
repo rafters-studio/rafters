@@ -360,7 +360,7 @@ export function SheetContent({
   if (typeof document === 'undefined') return null;
 
   const modal = config.modal !== false;
-  // The sheet oracle (src/old/ui/sheet.tsx: showCloseButton ?? true) ALWAYS
+  // The sheet oracle ALWAYS
   // rendered the close button, including inside an explicit portal -- matching
   // shadcn, where the close lives unconditionally in SheetContent. Kept as-is;
   // this is the parity floor. (Dialog diverges with `?? !isInsidePortal`.)

@@ -108,7 +108,7 @@ by a listbox/menu parent, and the parent owns roving focus (which row is
 semantics and the disabled tab-order rule; it does not fabricate a standalone
 control's keyboard contract.
 
-## Oracle dispositions (src/old/ui/item.{tsx,astro,element.ts}, boundary 9)
+## Oracle dispositions (boundary 9)
 
 | Oracle feature | Disposition |
 | --- | --- |

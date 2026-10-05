@@ -7,7 +7,7 @@ export interface KbdClassSet {
 /**
  * The whole cap: an inline, bordered, muted chip carrying the key text at the
  * code-small type scale. Ported verbatim from the oracle
- * (`src/old/ui/kbd.classes.ts`). Every token is a semantic role utility
+ * (the old kbd). Every token is a semantic role utility
  * (`border-border`, `bg-muted`, `text-code-small ts-code-small`, `text-muted-foreground`) --
  * no raw spacing, color, or z-index utility.
  */

@@ -1,7 +1,7 @@
 # Component Spec — Toggle Group
 
-Status: DRAFT. Toggle-family article. Ports the imperative
-`old/ui/toggle-group.controller.ts` + `old/ui/toggle-group.element.ts` onto the
+Status: DRAFT. Toggle-family article. Ports the old imperative
+toggle-group controller + the old toggle-group element onto the
 behavior layer (selection state as reducer, focus movement as the composed
 `roving-focus` primitive).
 
@@ -117,7 +117,7 @@ aria-manager does not coerce the string `'false'` truthy (Gotcha #2).
   branch — selection does not follow focus, so there is nothing to wire on top
   of roving (contrast radio-group, which adds a select-follows-focus keydown).
 
-## Oracle dispositions (`src/old/ui/toggle-group.*`)
+## Oracle dispositions
 
 | Oracle feature | Disposition |
 | --- | --- |

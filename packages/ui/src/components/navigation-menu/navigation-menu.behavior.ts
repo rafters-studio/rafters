@@ -12,8 +12,8 @@ import { createRovingFocus } from '../../primitives/roving-focus';
 
 /**
  * Navigation menu: a bar of triggers, each disclosing a content panel, one
- * open at a time (or none). Replaces the imperative
- * old/ui/navigation-menu.controller.ts wholesale.
+ * open at a time (or none). Replaces the old imperative
+ * navigation-menu controller wholesale.
  *
  * Focus movement across triggers is NOT state here -- it is ephemeral DOM
  * state owned by the roving-focus effect. The score's only state axis is

@@ -37,8 +37,8 @@ Never write machinery a primitive provides.
 
 Verify a primitive is actually composable before planning on it. A matrix description
 states intent; `legion sym importers packages/ui/src/primitives/<name>.ts` states fact.
-If every importer is under `src/old/`, it belongs to the rejected architecture and does
-not compose into the behavior layer.
+A primitive with no importer in `src/components/` has not yet proven it composes into the
+behavior layer.
 
 **Cell-owning primitives do not compose.** `createBehavior` owns *the* single memory cell
 for a component and `Slice` reducers are pure `(state, payload) => state` over that one
@@ -74,13 +74,6 @@ Do **not** write raw numeric durations (`duration-300`). If the semantic motion 
 you need does not exist yet, say so in the component doc and leave the motion
 undeclared rather than hardcoding a number. The motion token layer is being rebuilt
 (#1899); a hardcoded value now is drift later.
-
-## Oracle
-
-`src/old/ui/[name].*` — read for feature dispositions only:
-`contract | framework-affordance | dropped | defect-do-not-port`.
-Dispositions go in the component doc.
-Controllers are rejected architecture. Never port their shape.
 
 ## Component doc
 

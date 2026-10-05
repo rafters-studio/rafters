@@ -8,7 +8,7 @@
  * alphabetically and thus cannot be trusted for overrides: `text-accent` would
  * lose to `text-foreground` on 'a' < 'f').
  *
- * Ported from the oracle (src/old/ui/typography.classes.ts) verbatim; the
+ * Ported from the oracle verbatim; the
  * TypographyVariant / TypographyTokenProps types now live on the score
  * (typography.behavior.ts) so the pure behavior test imports them with no DOM.
  */

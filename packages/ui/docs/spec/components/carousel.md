@@ -1,7 +1,7 @@
 # Component Spec — Carousel
 
 Status: DRAFT. Compound archetype (imitates navigation-menu). Behavior-layer
-port of `src/old/ui/carousel.tsx`.
+port of the old carousel.
 
 Files (`src/components/carousel/`):
 
@@ -95,7 +95,7 @@ drives them.
   token ships (motion layer rebuild, #1899). This is why the oracle's
   `transition-transform duration-300 ease-in-out` is not ported.
 
-## Oracle dispositions (src/old/ui/carousel.tsx, boundary 9)
+## Oracle dispositions (boundary 9)
 
 | Oracle feature | Disposition |
 | --- | --- |

@@ -89,7 +89,7 @@ special-cases the controlled textarea, same as the controlled input).
   when the two diverge, so the caret is preserved in the common typing case.
   React performs the equivalent via `value={effectiveValue}`.
 
-## Oracle dispositions (`src/old/ui/textarea.*`, boundary 15)
+## Oracle dispositions
 
 The oracle shipped a React target (`textarea.tsx`) and a form-associated Web
 Component (`textarea.element.ts`) far richer than Input's. Each feature is

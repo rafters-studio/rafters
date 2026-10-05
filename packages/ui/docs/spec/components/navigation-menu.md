@@ -103,7 +103,7 @@ content cancels the pending close; leave triggers/content -> close after
 `delay`. Effect identity includes `immediate`, so crossing open/closed
 restarts the executor with fresh timers.
 
-## Oracle dispositions (src/old/ui/navigation-menu.{tsx,controller.ts}, boundary 9)
+## Oracle dispositions (boundary 9)
 
 | Oracle feature | Disposition |
 | --- | --- |

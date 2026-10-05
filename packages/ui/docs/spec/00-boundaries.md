@@ -130,20 +130,18 @@ npm dependency.
 
 ## 9. Oracle / new grain — the migration line
 
-**src/old owns:** the oracle role — behavior parity evidence and the
-quarantine. Every oracle feature gets an explicit disposition: contract
-(all frameworks), framework affordance (e.g. asChild), dropped, or
-defect-do-not-port (e.g. loading label replacement).
-
-**Violation test:** porting behavior without a disposition, or "improving"
-without recording the delta. Exports flip one component at a time; src/old
-dies only when out-proven.
+**Retired (2026-10-05).** The migration is complete. Every component was
+ported to the behavior layer, its oracle features dispositioned in its
+component doc (contract, framework affordance, dropped, or
+defect-do-not-port), and the pre-rewrite tree `src/old` was deleted.
+color-inspector, punted below, was not ported. The dispositions in each
+component doc remain the record of what changed and why.
 
 **Scope rulings (2026-07-08/09):** the editor cluster is fully out of
 behavior-layer scope — own-project scale. color-picker and color-inspector
 are punted with it. The old controllers are rejected architecture: they get
 dispositions, never transcription. The machine comes from the primitives and
-the archetype article, never from src/old.
+the archetype article, never from the retired pre-rewrite tree.
 
 ## 10. Spec / build — the process line
 

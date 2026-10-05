@@ -104,7 +104,7 @@ gate, or execute -- which is precisely why it needs no client. Any interactivity
 comes from a real control the consumer places in `EmptyAction`, which carries
 its own keyboard semantics.
 
-## Oracle dispositions (src/old/ui/empty.{tsx,astro,element.ts}, boundary 9)
+## Oracle dispositions (boundary 9)
 
 | Oracle feature | Disposition |
 | --- | --- |
@@ -134,7 +134,7 @@ shadcn's own `Empty` (added Sep 2025) ships a different surface --
 `Empty`/`EmptyHeader`/`EmptyMedia`/`EmptyTitle`/`EmptyDescription`/`EmptyContent`
 -- than this component. The rafters `Empty` predates and diverges from it:
 rafters exports `Empty`/`EmptyIcon`/`EmptyTitle`/`EmptyDescription`/`EmptyAction`.
-Per the port contract, `old/ui` is rafters' own shadcn-compatible base plus
+Per the port contract, the old tree was rafters' own shadcn-compatible base plus
 rafters extensions; this port preserves that rafters surface rather than
 renaming to chase shadcn's later, incompatible names. So parity here is
 **rafters-original, not a shadcn drop-in** -- a consumer migrating from shadcn's

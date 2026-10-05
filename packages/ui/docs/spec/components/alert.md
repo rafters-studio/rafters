@@ -68,7 +68,7 @@ consumer composes inside."
 None. A static score with a single unconditional ARIA projection has
 nothing to dispatch, gate, or execute.
 
-## Oracle dispositions (src/old/ui/alert.{tsx,astro,element.ts}, boundary 9)
+## Oracle dispositions (boundary 9)
 
 | Oracle feature | Disposition |
 | --- | --- |

@@ -28,7 +28,7 @@ client. There is no `bindScrollArea`, no `useBehavior`/`useMemory`, no Astro
 only so the conformance harness asserts the one real contract (root renders,
 projects no ARIA) identically across the three frameworks.
 
-The oracle (`src/old/ui/scroll-area.tsx`) was CSS-only -- no handlers, no
+The oracle was CSS-only -- no handlers, no
 state, no scroll-position tracking, no `scroll-area.controller.ts`. Porting a
 scrolling reducer would reinvent what the oracle deliberately left to the
 platform, so the score stays static and faithful.
@@ -65,7 +65,7 @@ declared part (boundary 5): it carries `data-slot="scroll-bar"` and a
 - `effects(state, config)`: `[]`. No focus-trap, no dismiss, no scroll-lock;
   the surface only decorates native overflow.
 
-## Oracle dispositions (src/old/ui/scroll-area.tsx, boundary 9)
+## Oracle dispositions (boundary 9)
 
 | Oracle feature | Disposition |
 | --- | --- |

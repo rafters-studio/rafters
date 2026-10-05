@@ -6,11 +6,10 @@
   "exports": {
     ".": "./src/index.ts",
     "./primitives/*": "./src/primitives/*.ts",
-    "./components/*": "./src/old/*.tsx",
+    "./components/*": "./src/components/*.tsx",
     "./hooks/*": "./src/hooks/*.ts",
-    "./dialog": "./src/old/ui/dialog.tsx",
-    "./dialog.vue": "./src/old/ui/dialog.vue.ts",
-    "./skeleton": "./src/old/ui/skeleton.tsx",
+    "./dialog": "./src/components/dialog/dialog.tsx",
+    "./skeleton": "./src/components/skeleton/skeleton.tsx",
     "./lib/*": "./src/lib/*.ts"
   },
   "scripts": {
@@ -30,11 +29,6 @@
     "@rafters/color-utils": "workspace:*",
     "@rafters/design-tokens": "workspace:*",
     "css-tree": "^3.2.1",
-    "mdast-util-from-markdown": "^2.0.3",
-    "mdast-util-mdx": "^3.0.0",
-    "mdast-util-to-markdown": "^2.1.2",
-    "micromark": "^4.0.2",
-    "micromark-extension-mdxjs": "^3.0.0",
     "nanostores": "^1.1.0",
     "ultrahtml": "^1.6.0"
   },

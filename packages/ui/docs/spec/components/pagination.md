@@ -140,7 +140,7 @@ native anchors (native focus + activation); button-style controls are native
 `<button>`s (native Enter/Space); a disabled control is either a native
 `disabled` button or an `aria-disabled` anchor with `pointer-events-none`.
 
-## Oracle dispositions (src/old/ui/pagination.{tsx,astro}, boundary 9)
+## Oracle dispositions (boundary 9)
 
 | Oracle feature | Disposition |
 | --- | --- |

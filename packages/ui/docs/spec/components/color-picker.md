@@ -112,7 +112,7 @@ already decided.
 - Inputs carry `motion-focus` for the focus ring transition.
 - Canvas repaints are immediate (no transition on the rendering surfaces).
 
-## Old implementation dispositions (src/old/ui/color-picker.tsx)
+## Old implementation dispositions
 
 | Feature | Disposition |
 | --- | --- |

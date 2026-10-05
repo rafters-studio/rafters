@@ -13,7 +13,7 @@ import type { BehaviorSpec } from '@/lib/contract';
  * by default, so the one real contract Skeleton carries is a CONSTANT
  * `aria-hidden="true"` on its root. That lives in the score, not in the markup,
  * so the conformance harness enforces it identically across React, the Web
- * Component, and Astro. The oracle (`src/old/ui/skeleton.*`) set `aria-hidden`
+ * Component, and Astro. The oracle set `aria-hidden`
  * on the Web Component only and left React/Astro exposed -- exactly the drift
  * the behavior layer exists to kill; the score closes it.
  *

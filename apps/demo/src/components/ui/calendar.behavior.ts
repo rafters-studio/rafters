@@ -10,7 +10,7 @@ import { createKeyboardHandler } from '@/lib/primitives/keyboard-handler';
 
 /**
  * Calendar: a month grid that grid-navigates dates (arrows/page/home/end) and
- * selects single/multiple/range values. Extracted from old/ui/calendar.tsx --
+ * selects single/multiple/range values. Extracted from the old calendar --
  * every earned keyboard and selection semantic is preserved (see calendar.md
  * dispositions).
  *

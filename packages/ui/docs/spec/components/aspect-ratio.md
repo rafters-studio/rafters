@@ -69,7 +69,7 @@ selectors on the wrapper. Those selectors cannot cross the shadow boundary, so
 the Web Component encodes the same fill natively as a `::slotted(*)` rule in
 `static styles`. All three leave `object-fit` to the consumer.
 
-## Oracle dispositions (src/old/ui/aspect-ratio.{tsx,element.ts,classes.ts}, boundary 9)
+## Oracle dispositions (boundary 9)
 
 | Oracle feature | Disposition |
 | --- | --- |

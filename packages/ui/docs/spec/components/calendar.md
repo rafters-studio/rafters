@@ -142,7 +142,7 @@ Enter/Space on a `day` part; the bind resolves the target from the focused cell
 (or `tabbableDate` when the grid is entered fresh) and moves DOM focus after the
 re-render.
 
-## Oracle dispositions (src/old/ui/calendar.tsx)
+## Oracle dispositions
 
 | Oracle feature | Disposition |
 | --- | --- |

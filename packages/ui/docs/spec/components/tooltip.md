@@ -84,7 +84,7 @@ honest. The tip itself is never focusable and never in the tab order.
 - `effects(state, config)`: always `[]`. Hover-intent and positioning are
   composed by the clients from primitives, not run as vocabulary effects.
 
-## Oracle dispositions (src/old/ui/tooltip.tsx + tooltip.astro, boundary 9)
+## Oracle dispositions (boundary 9)
 
 | Oracle feature | Disposition |
 | --- | --- |

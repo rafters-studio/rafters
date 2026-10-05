@@ -17,7 +17,7 @@ import { updateAriaAttribute } from '@/lib/primitives/aria-manager';
  * therefore satisfied by composition rather than duplication.
  *
  * What the score owns (the earned semantics, extracted from
- * `src/old/ui/input-group.*`):
+ * the old input-group):
  *  - the disabled propagation rule: a disabled GROUP disables every control it
  *    contains, and -- correcting an oracle defect -- an ENABLED group never
  *    re-enables a control the author disabled individually (`isControlDisabled`);

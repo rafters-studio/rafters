@@ -10,7 +10,7 @@ import { createRovingFocus } from '../../primitives/roving-focus';
 
 /**
  * Radio group: an exclusive set of options where exactly one (or none) is
- * selected. Replaces the imperative old/ui/radio-group.controller.ts +
+ * selected. Replaces the old imperative radio-group controller +
  * radio-group.element.ts wholesale.
  *
  * The score's only state axis is the selected value. Focus movement across

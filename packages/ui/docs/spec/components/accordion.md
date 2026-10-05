@@ -125,7 +125,7 @@ keymap as well would double-toggle. Arrow and Home/End keys are deliberately NOT
 claimed by the score -- the composed primitive owns focus movement, and
 expansion never follows focus.
 
-## Oracle dispositions (src/old/ui/accordion.*, boundary 9)
+## Oracle dispositions (boundary 9)
 
 The oracle's behavior lived in a rejected `accordion.controller.ts`, which was
 not read for this port; the dispositions below cover the surface the framework

@@ -49,7 +49,7 @@ type KbdState = Record<never, never>;
 type KbdActions = Record<never, never>;
 ```
 
-`KbdConfig` is empty by construction: the oracle (`src/old/ui/kbd.*`) exposes
+`KbdConfig` is empty by construction: the oracle exposes
 no variants, sizes, or attributes on any of its three targets. Config in, one
 class string out. `kbdClasses(config, state) => { root }` returns the base cap
 string regardless of config or state -- the single projection every
@@ -77,12 +77,12 @@ the explicit "nothing happens" contract.
 
 None. The cap is a static chip; the matrix records no motion intents.
 
-## Oracle dispositions (src/old/ui/kbd.{tsx,astro,element.ts}, boundary 9)
+## Oracle dispositions (boundary 9)
 
 | Oracle feature | Disposition |
 | --- | --- |
 | Semantic `<kbd>` element, all three targets | contract |
-| Base cap: `inline-flex items-center justify-center rounded border border-border bg-muted px-1.5 py-0.5 text-code-small text-muted-foreground shadow-sm` | contract -- ported verbatim from `src/old/ui/kbd.classes.ts` |
+| Base cap: `inline-flex items-center justify-center rounded border border-border bg-muted px-1.5 py-0.5 text-code-small text-muted-foreground shadow-sm` | contract -- ported verbatim from the old kbd |
 | No variants, sizes, or attributes on any target | contract -- `KbdConfig` is empty; the WC keeps an empty `observedAttributes` |
 | `forwardRef<HTMLElement>` (React) | contract -- Kbd is frequently wrapped by Tooltip/Popover shortcut rows; ref forwarding is load-bearing |
 | `:host { display: inline-flex }` shim (WC) | contract -- a `<kbd>` is inline, so the host is inline-flex (not card's block) |

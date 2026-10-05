@@ -1,7 +1,6 @@
 # The whole .rafters/ directory is tool-managed: config.rafters.json is rewritten
 # by `rafters add`, tokens/ by Studio, output/ by the exporters. None is authored.
 apps/demo/.rafters/
-apps/lab/.rafters/
 plugin/bin/
 
 # Installed component surface -- written by `rafters add`, not authored here.
@@ -26,6 +25,3 @@ apps/demo/src/components/ui/
 apps/demo/src/composites/
 apps/demo/src/hooks/
 apps/demo/src/lib/
-apps/lab/src/components/ui/
-apps/lab/src/composites/
-apps/lab/src/lib/

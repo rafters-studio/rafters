@@ -260,7 +260,7 @@ function getUiSrcPath(): string {
  * dirs with their own handling belong here -- a plain new folder is discovered
  * automatically, no edit required.
  */
-const NON_SUBSTRATE_DIRS = new Set(['components', 'old', 'primitives', 'composites']);
+const NON_SUBSTRATE_DIRS = new Set(['components', 'primitives', 'composites']);
 
 /**
  * Discover substrate kind directories from the filesystem. Adding a flat dir

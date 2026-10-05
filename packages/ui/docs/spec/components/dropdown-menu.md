@@ -102,7 +102,7 @@ than hardcoded; the menu shows/hides via `hidden`. When the token layer ships,
 `classes.content` gains `motion-dropdown-in`/`-out` with `data-[state]`-toggled
 from/to values and a presence adapter to keep the exiting node mounted.
 
-## Oracle dispositions (src/old/ui/dropdown-menu.tsx)
+## Oracle dispositions
 
 | Oracle feature | Disposition |
 | --- | --- |

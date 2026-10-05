@@ -15,7 +15,7 @@ import { formValueAttrs } from '../../primitives/form-value';
  * bindButton). One score, three thin performances.
  *
  * Tri-state (`checked | unchecked | indeterminate`) is the new capability the
- * old tree never had: old/ui/checkbox.tsx and checkbox.element.ts are binary
+ * old tree never had: the old checkbox and its element are binary
  * (a `checked` attribute, aria-checked true/false). The port adds the mixed
  * state -- `aria-checked="mixed"`, `data-state="indeterminate"` -- and toggles
  * an indeterminate box to checked, matching a native `<input type=checkbox>`.

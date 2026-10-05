@@ -16,8 +16,7 @@ import {
 
 /**
  * Registry cutover guard (#1896). The registry serves behavior-layer sources
- * from packages/ui/src/components (NESTED: <name>/<name>.tsx), not the flat
- * src/old/ui, AND resolves their lib/hooks runtime substrate copy-in like
+ * from packages/ui/src/components (NESTED: <name>/<name>.tsx), AND resolves their lib/hooks runtime substrate copy-in like
  * primitives. The dangerous failure modes are SILENT:
  *   - a bare path swap returns an empty registry with no error;
  *   - a served component references lib/hooks the registry never serves, so
@@ -147,7 +146,6 @@ describe('registry resolves the behavior-layer runtime substrate', () => {
     // Dedicated-loader / deprecated dirs are NOT substrate.
     expect(kinds).not.toContain('components');
     expect(kinds).not.toContain('primitives');
-    expect(kinds).not.toContain('old');
     expect(kinds).not.toContain('composites');
   });
 

@@ -39,7 +39,7 @@
  * host-display shim.
  *
  * `decorative` is presence-based here (attribute semantics, faithful to the
- * oracle `src/old/ui/separator.element.ts`): ABSENT = decorative (matches the
+ * oracle): ABSENT = decorative (matches the
  * React default of `true`); PRESENT and not the literal string "false" =
  * semantic; `decorative="false"` turns the semantic role OFF (stays
  * decorative). The React/Astro `decorative` prop is a plain boolean default
