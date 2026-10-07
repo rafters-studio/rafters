@@ -9,14 +9,18 @@ export type {
 export { discoverComposites } from './discovery';
 export type { ViteRawGlob } from './discovery-vite';
 export { discoverFromVite, viteAdapter, viteGlobEntries } from './discovery-vite';
+export type { BindProps } from './bind';
+export { resolveBindings } from './bind';
 export type {
   AppliedRule,
+  Binding,
   CompositeBlock,
   CompositeCategory,
   CompositeFile,
   CompositeManifest,
   UsagePatterns,
 } from './manifest';
+export { BindingSchema } from './manifest';
 export type {
   BlockResolution,
   ComponentResolution,

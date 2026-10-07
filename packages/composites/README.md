@@ -191,10 +191,10 @@ A datatable composite might declare:
 }
 ```
 
-Static meta values render as-is. Bound values (`$bind`) resolve against the consumer's props at render time. The serializers handle the resolution:
-- **React/JSX**: passes the bound prop through `createElement`
-- **Astro**: emits `{Astro.props.data}` in the template
-- **MDX**: emits `{props.data}`
+Static meta values render as-is. Bound values (`$bind`) resolve against the consumer's props at render time:
+- **React/JSX**: pass the data as the `props` option -- `toJsx(blocks, { components, props: { columns, data } })` or `<Composite file={datatable} components={components} props={{ columns, data }} />` -- and each bound value reaches `createElement` as the value at that path. A path that does not resolve leaves the prop out.
+
+The Astro engine and `toMdx` do not resolve `$bind`, and bound meta reaches them unchanged.
 
 This separates the composite's structure (which blocks, in what arrangement) from the consumer's data (what fills those blocks). The composite author decides the shape. The consumer provides the content.
 

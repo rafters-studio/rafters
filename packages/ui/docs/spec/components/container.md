@@ -49,7 +49,7 @@ internal spacing, and layout flow, so agents never hand-roll wrapper divs.
 | as/size/padding/gap/query/queryName/colSpan/rowSpan/position/depth | contract |
 | `fill` signature (#1637, build-time safelist gate) | contract |
 | `background` legacy enum | dropped — superseded by fill (pending ratification) |
-| article typography flow + max-w-prose | ported VERBATIM — raw sizes, not the typography role utilities; repointing is a designer pass, flagged, not done |
+| article typography flow + max-w-prose | `max-w-prose` is the article's default measure, applied only when `size` is unset; a set `size` alone governs width (#2437). Typography flow ported VERBATIM — raw sizes, not the typography role utilities; repointing is a designer pass, flagged, not done |
 | editable / showDropZone / DropZonePlaceholder / onBackgroundChange | stripped — block-editor concern, belongs in a studio-layer wrapper (pending ratification); onBackgroundChange was a void'd dead callback |
 | position sticky/fixed bake top-anchored offsets | ported as-is; sticky-bottom impossible through the prop — flagged |
 

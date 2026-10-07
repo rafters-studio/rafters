@@ -32,6 +32,10 @@ describe('composites runtime source files', () => {
     expect(read('rule-attrs.ts')).toContain('export function rulesToHtmlAttrs');
   });
 
+  it('ships the pure binding resolver', () => {
+    expect(read('bind.ts')).toContain('export function resolveBindings');
+  });
+
   it('engine merges block rules into element attrs via rulesToHtmlAttrs', () => {
     const engine = read('Composite.astro');
     expect(engine).toContain("import { rulesToHtmlAttrs } from './rule-attrs'");
@@ -44,6 +48,7 @@ describe('composites runtime source files', () => {
       'Composite.astro',
       'resolve-block.ts',
       'rule-attrs.ts',
+      'bind.ts',
       'discovery.ts',
       'discovery-vite.ts',
     ]) {

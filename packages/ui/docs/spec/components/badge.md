@@ -72,7 +72,7 @@ equally empty and nobody wrote one down.
 | --- | --- |
 | `variant` (12-value vocabulary, all three targets) | contract |
 | `size` (`sm \| default \| lg`) | contract |
-| Base shape: `inline-flex items-center justify-center rounded-full transition-colors duration-150 motion-reduce:transition-none` | contract |
+| Base shape: `inline-flex w-fit items-center justify-center rounded-full transition-colors duration-fast ease-standard` | contract |
 | `forwardRef<HTMLSpanElement>` | contract -- badges are frequently wrapped by Tooltip/Popover anchors; ref forwarding is load-bearing, not decoration |
 | `asChild` | deferred, not framework affordance yet. shadcn's Badge supports `asChild` via Slot; the oracle React/Astro/WC targets never did. Every asChild implementation in this tree so far (`DialogTrigger`, `DialogClose`, `NavigationMenuLink`) is a plain function component using `mergeProps`; none combines `forwardRef` with `asChild`, and Badge needs the ref. Bespoke ref-composition for one leaf component would be new shared machinery grown outside the adapter layer (boundary 00 rule 3) -- out of scope for this port. Revisit once a `composeRefs` primitive exists, or once a second forwardRef+asChild component forces the adapter to grow one. |
 | `link` variant present in React/Astro but absent from the oracle's WC (`badge.element.ts`) | not ported forward as a gap -- the React target here carries the full 12-value vocabulary; the WC binding (not yet written) should carry it too when built, closing the drift rather than repeating it |

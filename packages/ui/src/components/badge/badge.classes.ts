@@ -47,7 +47,7 @@ const sizeClasses: Record<BadgeSize, string> = {
  * The row's provenance is `baseline`.
  */
 const baseClasses =
-  'inline-flex items-center justify-center rounded-full transition-colors duration-fast ease-standard';
+  'inline-flex w-fit items-center justify-center rounded-full transition-colors duration-fast ease-standard';
 
 export function badgeClasses(config: BadgeConfig, _state: BadgeState): BadgeClassSet {
   const variant = config.variant ?? 'default';
