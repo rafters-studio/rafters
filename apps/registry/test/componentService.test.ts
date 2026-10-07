@@ -9,6 +9,7 @@ import {
   listSubstrate,
   listSubstrateKinds,
   loadComponent,
+  loadCompositesRuntime,
   loadPrimitive,
   loadSubstrate,
   parseJSDocFromSource,
@@ -549,5 +550,12 @@ describe('every component file is installable', () => {
     expect(expected).toHaveLength(39);
     const paths = (loadComponent('chart')?.files ?? []).map((f) => f.path);
     for (const p of expected) expect(paths).toContain(p);
+  });
+});
+
+describe('composites runtime (#2441)', () => {
+  it('ships embed.ts with the runtime', () => {
+    const paths = loadCompositesRuntime().files.map((f) => f.path);
+    expect(paths).toContain('lib/composites/embed.ts');
   });
 });
