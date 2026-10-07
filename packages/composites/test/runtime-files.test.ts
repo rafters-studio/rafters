@@ -36,6 +36,13 @@ describe('composites runtime source files', () => {
     expect(read('bind.ts')).toContain('export function resolveBindings');
   });
 
+  it('ships the embed input checker without rule code', () => {
+    const src = read('embed.ts');
+    expect(src).toContain('export function checkEmbedInput');
+    expect(src).not.toContain('built-in-rules');
+    expect(src).toMatch(/import type \{[^}]*ZodType[^}]*\} from ['"]zod['"]/);
+  });
+
   it('engine merges block rules into element attrs via rulesToHtmlAttrs', () => {
     const engine = read('Composite.astro');
     expect(engine).toContain("import { rulesToHtmlAttrs } from './rule-attrs'");
@@ -49,6 +56,7 @@ describe('composites runtime source files', () => {
       'resolve-block.ts',
       'rule-attrs.ts',
       'bind.ts',
+      'embed.ts',
       'discovery.ts',
       'discovery-vite.ts',
     ]) {

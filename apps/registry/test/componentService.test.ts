@@ -616,3 +616,10 @@ describe('every component file is installable', () => {
     for (const p of expected) expect(paths).toContain(p);
   });
 });
+
+describe('composites runtime (#2441)', () => {
+  it('ships embed.ts with the runtime', () => {
+    const paths = loadCompositesRuntime().files.map((f) => f.path);
+    expect(paths).toContain('lib/composites/embed.ts');
+  });
+});
