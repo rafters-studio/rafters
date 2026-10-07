@@ -1,3 +1,5 @@
+import { readdirSync, statSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   extractDepsFromSource,
@@ -454,5 +456,98 @@ describe('astro subpaths are never registry dependencies (#2325)', () => {
       }
     }
     expect(offenders).toEqual([]);
+  });
+});
+
+const COMPONENTS = join(process.cwd(), '../../packages/ui/src/components');
+const SERVED_EXTS = [
+  '.tsx',
+  '.astro',
+  '.vue',
+  '.svelte',
+  '.element.ts',
+  '.behavior.ts',
+  '.classes.ts',
+  '.types.ts',
+  '.constants.ts',
+  '.styles.ts',
+];
+
+describe('every component file is installable', () => {
+  it('no file in a component directory is left unserved', () => {
+    const served = new Set<string>();
+    for (const name of listComponentNames()) {
+      for (const file of loadComponent(name)?.files ?? []) {
+        served.add(file.path.replace('components/ui/', ''));
+      }
+    }
+    const unserved: string[] = [];
+    for (const dir of readdirSync(COMPONENTS)) {
+      const path = join(COMPONENTS, dir);
+      if (!statSync(path).isDirectory()) continue;
+      for (const f of readdirSync(path)) {
+        if (SERVED_EXTS.some((ext) => f.endsWith(ext)) && !served.has(f)) {
+          unserved.push(`${dir}/${f}`);
+        }
+      }
+    }
+    expect(unserved).toEqual([]);
+  });
+
+  it('chart ships its marks and axes flat beside ChartContainer', () => {
+    const item = loadComponent('chart');
+    expect(item).not.toBeNull();
+    const paths = (item?.files ?? []).map((f) => f.path);
+    for (const p of [
+      'components/ui/chart.tsx',
+      'components/ui/line-chart.tsx',
+      'components/ui/line.tsx',
+      'components/ui/area-chart.element.ts',
+      'components/ui/bar-chart.astro',
+      'components/ui/x-axis.behavior.ts',
+      'components/ui/cartesian-grid.tsx',
+    ]) {
+      expect(paths).toContain(p);
+    }
+    expect(paths.filter((p) => p.startsWith('components/ui/chart/'))).toEqual([]);
+    expect(new Set(paths).size).toBe(paths.length);
+    expect(item?.primitives).toContain('sr-announcer');
+  });
+
+  it('chart-legend and chart-tooltip keep their own, unchanged file lists', () => {
+    for (const name of ['chart-legend', 'chart-tooltip']) {
+      expect(loadComponent(name)?.files.map((f) => f.path)).toEqual([
+        `components/ui/${name}.tsx`,
+        `components/ui/${name}.astro`,
+        `components/ui/${name}.element.ts`,
+        `components/ui/${name}.behavior.ts`,
+        `components/ui/${name}.classes.ts`,
+        'components/ui/chart.behavior.ts',
+        `components/ui/${name}/chart.tsx`,
+        `components/ui/${name}/chart.classes.ts`,
+        `components/ui/${name}/chart.behavior.ts`,
+      ]);
+    }
+  });
+
+  it('serves all 39 chart-family mark and axis files in the chart item', () => {
+    const family = [
+      'line-chart',
+      'line',
+      'area-chart',
+      'area',
+      'bar-chart',
+      'bar',
+      'x-axis',
+      'y-axis',
+      'cartesian-grid',
+    ];
+    const expected = readdirSync(join(COMPONENTS, 'chart'))
+      .filter((f) => SERVED_EXTS.some((ext) => f.endsWith(ext)))
+      .filter((f) => family.includes(f.slice(0, f.indexOf('.'))))
+      .map((f) => `components/ui/${f}`);
+    expect(expected).toHaveLength(39);
+    const paths = (loadComponent('chart')?.files ?? []).map((f) => f.path);
+    for (const p of expected) expect(paths).toContain(p);
   });
 });

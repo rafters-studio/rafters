@@ -6,6 +6,10 @@
 
 - chore(ui): **the registry no longer serves the editor.** `rafters add editor` and the editor-only primitives (block-canvas, block-context-menu, block-wrapper, canvas-drop-zone, editor-toolbar, inline-formatter, inline-toolbar, rule-dialog, rule-drop-zone, rule-palette and the four serializers) are gone. The editor is being rebuilt from a new design, and these pieces belong to the old one. What carries forward is served as ordinary flat primitives: the op model (`block-ops` and the `block-op-*` files), op-based undo (`op-history`), `block-operations`, and the reusable input primitives (`clipboard`, `input-events`, `selection`, `cursor-tracker`, `command-palette`, `drag-drop`, `block-palette`).
 
+### Bug Fixes
+
+- fix(registry): `rafters add chart` now installs the line, area and bar charts (`line-chart`, `area-chart`, `bar-chart`), their marks (`line`, `area`, `bar`), and the axis and grid children (`x-axis`, `y-axis`, `cartesian-grid`) flat beside ChartContainer, along with the `sr-announcer` primitive they use. Before, the registry served only ChartContainer and its legend and tooltip, so none of the chart marks could be installed.
+
 ## 0.4.2
 
 ### Breaking Changes

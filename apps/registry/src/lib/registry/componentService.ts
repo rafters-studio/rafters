@@ -1072,6 +1072,43 @@ export function loadComponent(name: string): RegistryItem | null {
     }
   }
 
+  // Family files: a directory owner also serves every framework and shared file
+  // in its directory that no registry name can reach -- a file that is neither
+  // `<name>.*` nor a `<name>-*` sub-component. `chart/` holds the marks and axes
+  // ChartContainer is composed with (line-chart, line, x-axis, ...); they import
+  // `./chart` and each other, so they install flat beside the owner and
+  // `rafters add chart` delivers the whole family.
+  if (resolved.owner === name) {
+    const familyExts = [...COMPONENT_EXTENSIONS, ...SHARED_SUFFIXES];
+    for (const f of [...allDirFiles].sort()) {
+      const matchedExt = familyExts.find((ext) => f.endsWith(ext));
+      if (!matchedExt) continue;
+      const base = f.slice(0, -matchedExt.length);
+      if (base === name || base.startsWith(subPrefix)) continue;
+      const servedPath = `components/ui/${f}`;
+      if (loadedPaths.has(servedPath)) continue;
+
+      const content = readFileSync(join(componentDir, f), 'utf-8');
+      const analysis = analyzeSource(content, false);
+      files.push({
+        path: servedPath,
+        content,
+        dependencies: analysis.allExternalDeps,
+        devDependencies: analysis.devDependencies,
+      });
+      loadedPaths.add(servedPath);
+      primitivesAll = [...new Set([...primitivesAll, ...analysis.primitiveDeps])];
+    }
+  }
+
+  // In a directory owner's item, a relative import naming a file already served
+  // flat (`./chart`, `./line`) resolves beside it after install; it is never a
+  // nested subsystem file. Sub-component items keep their existing resolution.
+  const isServedFlat = (specifier: string): boolean =>
+    resolved.owner === name &&
+    !specifier.includes('/') &&
+    ['.ts', '.tsx'].some((ext) => loadedPaths.has(`components/ui/${specifier}${ext}`));
+
   // Subsystem files: the transitive closure of relative imports that resolve
   // inside the component directory but are NOT framework variants, shared
   // auxiliary files, or sub-components. These install nested under
@@ -1099,6 +1136,7 @@ export function loadComponent(name: string): RegistryItem | null {
     const absSpecifier = fromDir ? `${fromDir}/${specifier}` : specifier;
     if (subsystemSeen.has(absSpecifier)) continue;
     subsystemSeen.add(absSpecifier);
+    if (isServedFlat(absSpecifier)) continue;
 
     const resolved = resolveRelativeImport(componentDir, absSpecifier);
     if (!resolved) {
