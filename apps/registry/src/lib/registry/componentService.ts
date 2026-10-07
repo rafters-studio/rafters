@@ -431,14 +431,41 @@ const COMPOSITES_RUNTIME_FILES = [
   'Composite.astro',
 ];
 
+/** npm dependencies each runtime file imports. */
+const COMPOSITES_RUNTIME_DEPENDENCIES: Record<string, string[]> = {
+  'manifest.ts': ['zod'],
+  'to-mdx.ts': ['escape-html'],
+};
+
+/** Workspace primitive specifiers in runtime source: `@rafters/ui/primitives/<name>`. */
+const WORKSPACE_PRIMITIVE_SPECIFIER = /(['"])@rafters\/ui\/primitives\/([^'"]+)\1/g;
+
+/**
+ * Served runtime, consumer-shaped at serve time:
+ *  - every `@rafters/ui/primitives/<name>` specifier in a file's content is
+ *    rewritten to `../primitives/<name>` (the shape served ui components already
+ *    use, which every CLI version rewrites to the consumer's primitivesPath);
+ *  - item.primitives lists those primitive names, so resolveDependencies
+ *    installs them;
+ *  - per-file dependencies come from COMPOSITES_RUNTIME_DEPENDENCIES.
+ * Served paths stay `lib/composites/<file>`. The package source is untouched.
+ */
 export function loadCompositesRuntime(): RegistryItem {
   const srcDir = getCompositesPackagePath();
+  const primitives = new Set<string>();
   const files: RegistryFile[] = COMPOSITES_RUNTIME_FILES.map((filename) => {
-    const content = readFileSync(join(srcDir, filename), 'utf-8');
+    const source = readFileSync(join(srcDir, filename), 'utf-8');
+    const content = source.replace(
+      WORKSPACE_PRIMITIVE_SPECIFIER,
+      (_match: string, quote: string, name: string) => {
+        primitives.add(name);
+        return `${quote}../primitives/${name}${quote}`;
+      },
+    );
     return {
       path: `lib/composites/${filename}`,
       content,
-      dependencies: filename === 'manifest.ts' ? ['zod'] : [],
+      dependencies: COMPOSITES_RUNTIME_DEPENDENCIES[filename] ?? [],
       devDependencies: [],
     };
   });
@@ -448,7 +475,7 @@ export function loadCompositesRuntime(): RegistryItem {
     type: 'composite' as RegistryItemType,
     description:
       'Composites runtime: block tree walker, JSX/MDX serializers, registry, bridge, and manifest types.',
-    primitives: [],
+    primitives: [...primitives].sort(),
     files,
   };
 }

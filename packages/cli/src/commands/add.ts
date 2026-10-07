@@ -399,8 +399,21 @@ function rootFor(field: PathField | undefined, cwd: string, fallback: string): s
 }
 
 /**
+ * The project source root, derived from componentsPath minus a trailing
+ * `components/ui` (`src/components/ui` -> `src`, `components/ui` -> '').
+ */
+function sourceRootFor(config: RaftersConfig | null, cwd: string): string {
+  const componentsResolved = rootFor(config?.componentsPath, cwd, 'components/ui');
+  return componentsResolved.replace(/\/?components\/ui$/, '');
+}
+
+/**
  * Transform registry path to project path based on config
  * e.g., "components/ui/button.tsx" -> "app/components/ui/button.tsx"
+ *
+ * The composites runtime (`lib/composites/<file>`) installs at
+ * `<sourceRoot>/lib/composites/<file>`, where `@/lib/composites/...` resolves.
+ * It never goes into compositesPath, which holds composite data only.
  */
 export function transformPath(
   registryPath: string,
@@ -408,6 +421,11 @@ export function transformPath(
   cwd: string = process.cwd(),
 ): string {
   if (!config) return registryPath;
+
+  if (registryPath.startsWith('lib/composites/')) {
+    const sourceRoot = sourceRootFor(config, cwd);
+    return sourceRoot ? join(sourceRoot, registryPath) : registryPath;
+  }
 
   const replacements: Array<[string, PathField, string]> = [
     ['components/ui/', config.componentsPath, 'components/ui'],
@@ -434,8 +452,7 @@ export function substrateProjectPath(
   config: RaftersConfig | null,
   cwd: string = process.cwd(),
 ): string {
-  const componentsResolved = rootFor(config?.componentsPath, cwd, 'components/ui');
-  const sourceRoot = componentsResolved.replace(/\/?components\/ui$/, '');
+  const sourceRoot = sourceRootFor(config, cwd);
   return sourceRoot ? join(sourceRoot, registryPath) : registryPath;
 }
 
@@ -451,8 +468,10 @@ function fileExists(cwd: string, relativePath: string): boolean {
  *
  * @param content     - Raw source text from the registry file
  * @param config      - Project rafters config (path mappings)
- * @param fileType    - component | primitive | substrate. Controls where bare
- *                      `./foo` sibling imports resolve.
+ * @param fileType    - component | primitive | substrate | composite. Controls
+ *                      where bare `./foo` sibling imports resolve. The composites
+ *                      runtime installs as one flat directory, so its `./foo`
+ *                      siblings stay relative.
  * @param cwd         - Project root.
  * @param opts.substrateKinds - The substrate dir names in play (lib, hooks, ...),
  *                      discovered from the resolved items -- never hardcoded.
@@ -465,7 +484,7 @@ function fileExists(cwd: string, relativePath: string): boolean {
 export function transformFileContent(
   content: string,
   config: RaftersConfig | null,
-  fileType: 'component' | 'primitive' | 'substrate' = 'component',
+  fileType: 'component' | 'primitive' | 'substrate' | 'composite' = 'component',
   cwd: string = process.cwd(),
   opts: { substrateKinds?: string[]; installPath?: string } = {},
 ): string {
@@ -525,6 +544,9 @@ export function transformFileContent(
   if (isSubsystemFile) {
     // Subsystem files install nested (components/ui/<name>/<subpath>), so their
     // ./foo imports are relative to the same subtree and stay untouched.
+  } else if (fileType === 'composite') {
+    // The composites runtime installs as one flat directory, so its ./foo
+    // imports already resolve to the sibling file and stay untouched.
   } else if (fileType === 'component' && installPath) {
     const componentName = extractComponentName(installPath);
     transformed = transformed.replace(
@@ -670,7 +692,9 @@ async function installItem(
         ? 'primitive'
         : item.type === 'substrate'
           ? 'substrate'
-          : 'component';
+          : item.type === 'composite'
+            ? 'composite'
+            : 'component';
     const transformedContent = transformFileContent(file.content, config, fileType, cwd, {
       substrateKinds,
       installPath: file.path,

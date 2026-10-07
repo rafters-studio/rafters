@@ -6,6 +6,10 @@
 
 - chore(ui): **the registry no longer serves the editor.** `rafters add editor` and the editor-only primitives (block-canvas, block-context-menu, block-wrapper, canvas-drop-zone, editor-toolbar, inline-formatter, inline-toolbar, rule-dialog, rule-drop-zone, rule-palette and the four serializers) are gone. The editor is being rebuilt from a new design, and these pieces belong to the old one. What carries forward is served as ordinary flat primitives: the op model (`block-ops` and the `block-op-*` files), op-based undo (`op-history`), `block-operations`, and the reusable input primitives (`clipboard`, `input-events`, `selection`, `cursor-tracker`, `command-palette`, `drag-drop`, `block-palette`).
 
+### Bug Fixes
+
+- fix(cli): **`rafters add composites` writes a runtime that compiles in the consumer project.** The runtime landed at `<cwd>/lib/composites/`, outside `src/` where `@/` resolves, so the documented `import Composite from '@/lib/composites/Composite.astro'` failed on vite and astro projects. It now installs at `<sourceRoot>/lib/composites/`, with the source root derived from `componentsPath` (`src/components/ui` -> `src/lib/composites/`, `components/ui` -> `lib/composites/`). It never goes into `compositesPath`, which holds composite data only. Sibling imports such as `./manifest` stay relative instead of being rewritten to `@/components/ui/manifest`, which did not exist. The registry now serves the runtime's two primitive imports as `../primitives/block-palette` and `../primitives/typeahead` instead of `@rafters/ui/primitives/...`, lists both primitives so they install with it, and declares `escape-html` on `to-mdx.ts` alongside `zod` on `manifest.ts`. CLIs older than this release get the served imports and dependencies but still write the runtime to the old location.
+
 ## 0.4.2
 
 ### Breaking Changes
