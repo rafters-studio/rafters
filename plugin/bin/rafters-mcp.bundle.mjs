@@ -32126,6 +32126,7 @@ var CompositeBlockSchema = external_exports.object({
   meta: external_exports.record(external_exports.string(), external_exports.unknown()).optional(),
   rules: external_exports.array(AppliedRuleSchema).optional()
 });
+var BindingSchema = external_exports.object({ $bind: external_exports.string().regex(/^props(\.[^.]+)+$/) }).strict();
 var UsagePatternsSchema = external_exports.object({
   do: external_exports.array(external_exports.string()),
   never: external_exports.array(external_exports.string())

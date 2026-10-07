@@ -1,10 +1,13 @@
 import { type ComponentType, createElement, type ReactNode } from 'react';
+import { type BindProps, resolveBindings } from './bind';
 import type { CompositeBlock, CompositeFile } from './manifest';
 import { kebabToPascal, walkBlocks } from './walk-blocks';
 
 export interface ToJsxOptions {
   components?: Record<string, ComponentType<Record<string, unknown>>>;
   fallback?: ComponentType<{ type: string }>;
+  /** Consumer data that `{ "$bind": "props.<path>" }` meta values resolve against. */
+  props?: BindProps;
 }
 
 export interface CompositeProps extends ToJsxOptions {
@@ -28,7 +31,8 @@ function createVisitor(options: ToJsxOptions) {
 
     const props: Record<string, unknown> = { key: block.id };
     if (block.meta) {
-      for (const [k, v] of Object.entries(block.meta)) {
+      const meta = resolveBindings(block.meta, options.props ?? {}, block.id);
+      for (const [k, v] of Object.entries(meta)) {
         if (!RESERVED_PROPS.has(k)) props[k] = v;
       }
     }
@@ -52,11 +56,18 @@ export function toJsx(blocks: CompositeBlock[], options: ToJsxOptions = {}): Rea
   );
 }
 
-export function Composite({ file, blocks, components, fallback }: CompositeProps): ReactNode {
+export function Composite({
+  file,
+  blocks,
+  components,
+  fallback,
+  props,
+}: CompositeProps): ReactNode {
   const source = file?.blocks ?? blocks ?? [];
   const opts: ToJsxOptions = {};
   if (components) opts.components = components;
   if (fallback) opts.fallback = fallback;
+  if (props) opts.props = props;
   return toJsx(source, opts);
 }
 
@@ -73,6 +84,8 @@ export function createComposites(
       const f = props.fallback ?? options.fallback;
       if (c) merged.components = c;
       if (f) merged.fallback = f;
+      const p = props.props ?? options.props;
+      if (p) merged.props = p;
       return createElement(Composite, merged);
     };
     Component.displayName = name;
