@@ -7,13 +7,17 @@
  * - Test behavior, not implementation details
  */
 
-import { describe, expect, it } from 'vitest';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { zocker } from 'zocker';
 import { z } from 'zod';
 import {
   type AddOptions,
   collectDependencies,
   getInstalledNames,
+  installComponent,
   isAlreadyInstalled,
   resolveRegistryUrl,
   substrateProjectPath,
@@ -855,5 +859,109 @@ describe('composites support', () => {
     ];
     trackInstalled(config, items);
     expect(config.installed?.composites).toEqual(['hero-banner']);
+  });
+});
+
+describe('composites runtime install (#2435)', () => {
+  const viteConfig: RaftersConfig = {
+    framework: 'vite',
+    componentsPath: 'src/components/ui',
+    primitivesPath: 'src/lib/primitives',
+    compositesPath: 'src/composites',
+    rulesPath: 'src/lib/rules',
+    cssPath: null,
+    exports: { tailwind: true, typescript: true, dtcg: false, compiled: false },
+  };
+
+  it('installs the runtime under <sourceRoot>/lib/composites', () => {
+    expect(transformPath('lib/composites/manifest.ts', viteConfig)).toBe(
+      'src/lib/composites/manifest.ts',
+    );
+    expect(
+      transformPath('lib/composites/manifest.ts', {
+        ...viteConfig,
+        componentsPath: 'components/ui',
+      }),
+    ).toBe('lib/composites/manifest.ts');
+    expect(transformPath('lib/composites/manifest.ts', null)).toBe('lib/composites/manifest.ts');
+  });
+
+  it('keeps composite data under compositesPath', () => {
+    expect(transformPath('composites/hero.composite.json', viteConfig)).toBe(
+      'src/composites/hero.composite.json',
+    );
+  });
+
+  it('leaves ./sibling imports relative for composite files', () => {
+    const walk = transformFileContent(
+      "import type { CompositeBlock } from './manifest';",
+      viteConfig,
+      'composite',
+      process.cwd(),
+      { installPath: 'lib/composites/walk-blocks.ts' },
+    );
+    expect(walk).toContain("from './manifest'");
+    expect(walk).not.toContain('@/components/ui/manifest');
+  });
+
+  it('rewrites ../primitives imports to the primitives alias for composite files', () => {
+    const reg = transformFileContent(
+      "import { fuzzyScore } from '../primitives/typeahead';",
+      viteConfig,
+      'composite',
+      process.cwd(),
+      { installPath: 'lib/composites/registry.ts' },
+    );
+    expect(reg).toContain("from '@/lib/primitives/typeahead'");
+  });
+
+  describe('installComponent writes the runtime item', () => {
+    let projectDir: string;
+
+    beforeEach(async () => {
+      projectDir = await mkdtemp(join(tmpdir(), 'rafters-composites-runtime-'));
+      await mkdir(join(projectDir, '.rafters'), { recursive: true });
+      await writeFile(
+        join(projectDir, '.rafters', 'config.rafters.json'),
+        JSON.stringify(viteConfig),
+      );
+    });
+
+    afterEach(async () => {
+      await rm(projectDir, { recursive: true, force: true });
+    });
+
+    it('installs at src/lib/composites with relative siblings and aliased primitives', async () => {
+      const runtime: RegistryItem = {
+        name: 'composites',
+        type: 'composite',
+        primitives: ['typeahead'],
+        files: [
+          {
+            path: 'lib/composites/walk-blocks.ts',
+            content: "import type { CompositeBlock } from './manifest';\n",
+            dependencies: [],
+            devDependencies: [],
+          },
+          {
+            path: 'lib/composites/registry.ts',
+            content:
+              "import { fuzzyScore } from '../primitives/typeahead';\nimport type { CompositeFile } from './manifest';\n",
+            dependencies: [],
+            devDependencies: [],
+          },
+        ],
+      };
+
+      await installComponent(runtime, projectDir);
+
+      const walk = await readFile(join(projectDir, 'src/lib/composites/walk-blocks.ts'), 'utf-8');
+      expect(walk).toContain("from './manifest'");
+      expect(walk).not.toContain('@/components/ui/manifest');
+
+      const reg = await readFile(join(projectDir, 'src/lib/composites/registry.ts'), 'utf-8');
+      expect(reg).toContain("from '@/lib/primitives/typeahead'");
+      expect(reg).toContain("from './manifest'");
+    });
   });
 });

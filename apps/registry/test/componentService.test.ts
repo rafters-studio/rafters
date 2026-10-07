@@ -460,6 +460,70 @@ describe('astro subpaths are never registry dependencies (#2325)', () => {
   });
 });
 
+describe('composites runtime serves a consumer-resolvable closure (#2435)', () => {
+  const runtime = loadCompositesRuntime();
+  const byName = (f: string) => runtime.files.find((x) => x.path === `lib/composites/${f}`);
+
+  /**
+   * Every module specifier a file statically imports or re-exports: statements
+   * that start a line with `import`/`export`, including multi-line import lists
+   * and side-effect imports. Prose in comments never starts a line that way.
+   */
+  function importSpecifiers(content: string): string[] {
+    const statement =
+      /^\s*(?:import|export)\b[^;'"()=]*?\bfrom\s+['"]([^'"]+)['"]|^\s*import\s+['"]([^'"]+)['"]/gm;
+    return [...content.matchAll(statement)].map((m) => m[1] ?? m[2] ?? '');
+  }
+
+  /** The npm package name of a bare specifier (`@scope/pkg/sub` -> `@scope/pkg`). */
+  function packageName(specifier: string): string {
+    const parts = specifier.split('/');
+    return specifier.startsWith('@') ? parts.slice(0, 2).join('/') : (parts[0] ?? specifier);
+  }
+
+  /** A declared dependency without its version (`zod@3.0.0` -> `zod`, `@scope/pkg@1` -> `@scope/pkg`). */
+  function stripVersion(dep: string): string {
+    const at = dep.indexOf('@', 1);
+    return at === -1 ? dep : dep.slice(0, at);
+  }
+
+  it('serves no @rafters/ workspace specifier', () => {
+    for (const file of runtime.files) {
+      expect(file.content, file.path).not.toMatch(/from\s+['"]@rafters\//);
+    }
+  });
+
+  it('rewrites workspace primitive imports to the served ../primitives shape', () => {
+    expect(byName('bridge.ts')?.content).toContain("from '../primitives/block-palette'");
+    expect(byName('registry.ts')?.content).toContain("from '../primitives/typeahead'");
+  });
+
+  it('lists the imported primitives so resolveDependencies installs them', () => {
+    expect(runtime.primitives).toEqual(expect.arrayContaining(['block-palette', 'typeahead']));
+    const served = new Set(listPrimitiveNames());
+    for (const name of runtime.primitives) {
+      expect(served.has(name), name).toBe(true);
+    }
+  });
+
+  it('declares the npm dependencies of to-mdx.ts and manifest.ts', () => {
+    expect(byName('to-mdx.ts')?.dependencies).toContain('escape-html');
+    expect(byName('manifest.ts')?.dependencies).toContain('zod');
+  });
+
+  it('declares every bare npm import on its own file (drift guard; react excluded)', () => {
+    for (const file of runtime.files) {
+      const declared = new Set(file.dependencies.map(stripVersion));
+      for (const specifier of importSpecifiers(file.content)) {
+        if (specifier.startsWith('.') || specifier.startsWith('@/')) continue;
+        const pkg = packageName(specifier);
+        if (pkg === 'react') continue;
+        expect(declared.has(pkg), `${file.path} imports ${specifier}`).toBe(true);
+      }
+    }
+  });
+});
+
 const COMPONENTS = join(process.cwd(), '../../packages/ui/src/components');
 const SERVED_EXTS = [
   '.tsx',
