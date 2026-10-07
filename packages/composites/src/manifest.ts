@@ -41,6 +41,11 @@ export const CompositeBlockSchema = z.object({
 
 export type CompositeBlock = z.infer<typeof CompositeBlockSchema>;
 
+/** A meta value bound to consumer data: exactly one key, `$bind`, whose value is `props.<segment>[.<segment>...]`. */
+export const BindingSchema = z.object({ $bind: z.string().regex(/^props(\.[^.]+)+$/) }).strict();
+
+export type Binding = z.infer<typeof BindingSchema>;
+
 /** Designer intent - captures WHY and WHEN to use this composite */
 export const UsagePatternsSchema = z.object({
   do: z.array(z.string()),

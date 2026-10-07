@@ -62,3 +62,31 @@ describe('container classes', () => {
     expect(root({ fill: 'muted' })).toContain('bg-muted');
   });
 });
+
+describe('article measure yields to size', () => {
+  it('keeps the prose measure when no size is set', () => {
+    const article = root({ as: 'article' });
+    expect(article).toContain('max-w-prose');
+    expect(article).toContain('[&_h1]:');
+  });
+
+  it.each(['sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl', '6xl', '7xl'] as const)(
+    'size %s governs width and drops max-w-prose',
+    (size) => {
+      const article = root({ as: 'article', size });
+      expect(article).toContain(`max-w-${size}`);
+      expect(article).toContain('mx-auto');
+      expect(article).not.toContain('max-w-prose');
+      expect(article).toContain('[&_p]:leading-relaxed');
+    },
+  );
+
+  it('size full drops max-w-prose', () => {
+    expect(root({ as: 'article', size: 'full' })).not.toContain('max-w-prose');
+  });
+
+  it('non-article elements never carry the prose measure', () => {
+    expect(root({ as: 'section' })).not.toContain('max-w-prose');
+    expect(root({ as: 'section', size: '5xl' })).not.toContain('max-w-prose');
+  });
+});
