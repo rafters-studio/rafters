@@ -14,6 +14,8 @@
 
 - fix(composites): **the installed composites runtime now resolves `$bind` in `toJsx`, and ships `bind.ts`.** The README documented `{ "$bind": "props.<path>" }` meta values as resolving against the consumer's props, but no runtime code read them, so a bound prop reached the component as the literal binding object. `toJsx`, `Composite` and the `createComposites` components take a `props` option now; each binding is replaced by the value at its path, by reference, and a path that does not resolve leaves the prop out. A malformed binding throws. `rafters add composites` installs `bind.ts`, the pure resolver, with the rest of the runtime. The Astro engine and `toMdx` do not resolve `$bind` yet.
 
+- fix(registry): `rafters add chart` now installs the line, area and bar charts (`line-chart`, `area-chart`, `bar-chart`), their marks (`line`, `area`, `bar`), and the axis and grid children (`x-axis`, `y-axis`, `cartesian-grid`) flat beside ChartContainer, along with the `sr-announcer` primitive they use. Before, the registry served only ChartContainer and its legend and tooltip, so none of the chart marks could be installed.
+
 ## 0.4.2
 
 ### Breaking Changes
