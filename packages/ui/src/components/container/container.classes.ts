@@ -132,8 +132,10 @@ const articleTypography = [
   '[&_table]:w-full [&_table]:my-4',
   '[&_th]:border [&_th]:border-border [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:font-semibold',
   '[&_td]:border [&_td]:border-border [&_td]:px-3 [&_td]:py-2',
-  'max-w-prose',
 ].join(' ');
+
+/** The article's default reading measure; a set `size` governs width instead. */
+const articleMeasure = 'max-w-prose';
 
 export function containerClasses(
   config: ContainerConfig,
@@ -178,7 +180,10 @@ export function containerClasses(
   if (config.position) parts.push(positionClasses[config.position]);
   if (config.depth) parts.push(depthClasses[config.depth]);
 
-  if (config.as === 'article') parts.push(articleTypography);
+  if (config.as === 'article') {
+    parts.push(articleTypography);
+    if (config.size === undefined) parts.push(articleMeasure);
+  }
 
   return { root: parts.filter(Boolean).join(' ') };
 }
