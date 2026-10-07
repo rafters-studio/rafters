@@ -45,6 +45,21 @@ Block types are not a fixed set. A composite defines whatever types it needs. Th
 
 The `composite:` prefix references another composite by ID. `type: "composite:login-form"` embeds the login-form composite's blocks inline.
 
+`toJsx` embeds a `composite:<id>` block only when you pass `resolveComposite`, a lookup from manifest ID to composite file (the same signature `instantiateBlocks` takes). Without it, the block renders as an ordinary component lookup, then `fallback`, then nothing. The embedded composite receives data only through its declared `input`. The embedding block's meta keys must be exactly the embedded composite's input names. Each value is resolved in the parent's scope (`$bind` against the parent's props and any `each`/`as` item), then checked with `rules[name].safeParse`, where `rules` is a map of rule schemas by name that you pass in, as you pass `components`. The embedded composite renders with the parsed outputs as its `props`, so fields a rule does not declare do not reach it, and the parent's props and repeat items do not leak in. A missing input, an extra key, an input with no schema in `rules`, a value that fails its rule, an unresolved reference, and an embed cycle all throw. The embedded composite's roots are spread into a `Fragment` keyed by the embedding block, with no wrapping element, and the embedding block's own children are not rendered.
+
+```tsx
+toJsx(board.blocks, {
+  components,
+  props: { featured },
+  resolveComposite: (id) => registry.get(id) ?? null,
+  rules: { question }, // the consumer's own rule schemas
+});
+// board block:   { "id": "card", "type": "composite:question-card", "meta": { "question": { "$bind": "props.featured" } } }
+// question-card: "input": ["question"]
+```
+
+The Astro engine (`Composite.astro`) and `instantiateBlocks` embed a composite's blocks but pass it no data.
+
 ## The block tree
 
 Blocks are a flat array with parent-child relationships expressed through `children` (array of child IDs) and `parentId`. A grid block with three text children:

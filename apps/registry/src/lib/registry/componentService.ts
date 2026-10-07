@@ -422,6 +422,7 @@ const COMPOSITES_RUNTIME_FILES = [
   'resolve-block.ts',
   'rule-attrs.ts',
   'bind.ts',
+  'embed.ts',
   'discovery.ts',
   'discovery-vite.ts',
   'to-jsx.tsx',

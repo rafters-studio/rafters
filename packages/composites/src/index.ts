@@ -27,6 +27,7 @@ export type {
   RawCompositeEntry,
 } from './discovery';
 export { discoverComposites } from './discovery';
+export { checkEmbedInput } from './embed';
 // NOTE: the node-fs adapter (discovery-node) imports node:fs and is therefore
 // NOT exported here -- index.ts must stay browser-safe (the demo pulls it into
 // the client bundle). It lives behind the server-only "@rafters/composites/node"

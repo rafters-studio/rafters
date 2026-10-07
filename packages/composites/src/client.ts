@@ -7,6 +7,7 @@ export type {
   RawCompositeEntry,
 } from './discovery';
 export { discoverComposites } from './discovery';
+export { checkEmbedInput } from './embed';
 export type { ViteRawGlob } from './discovery-vite';
 export { discoverFromVite, viteAdapter, viteGlobEntries } from './discovery-vite';
 export type { BindLocals, BindProps } from './bind';
