@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { badgeClasses } from '../../../src/components/badge/badge.classes';
-import type { BadgeVariant } from '../../../src/components/badge/badge.behavior';
+import { badgeClasses, badgeVariants } from '../../../src/components/badge/badge.classes';
+import type { BadgeSize, BadgeVariant } from '../../../src/components/badge/badge.behavior';
 
 function root(variant?: BadgeVariant, size?: 'sm' | 'default' | 'lg'): string {
   return badgeClasses({ variant, size }, {}).root;
@@ -82,5 +82,36 @@ describe('badge classes', () => {
     expect(classes).toContain('duration-fast');
     expect(classes).toContain('ease-standard');
     expect(classes).not.toMatch(/duration-\d/);
+  });
+});
+
+const VARIANTS: BadgeVariant[] = [
+  'default',
+  'primary',
+  'secondary',
+  'destructive',
+  'success',
+  'warning',
+  'info',
+  'muted',
+  'accent',
+  'outline',
+  'ghost',
+  'link',
+];
+const SIZES: BadgeSize[] = ['sm', 'default', 'lg'];
+
+describe('badge sizes to its content', () => {
+  it('every variant and size carries w-fit', () => {
+    for (const variant of VARIANTS) {
+      for (const size of SIZES) {
+        expect(badgeClasses({ variant, size }, {}).root).toContain('w-fit');
+      }
+    }
+  });
+
+  it('badgeVariants carries w-fit', () => {
+    expect(badgeVariants()).toContain('w-fit');
+    expect(badgeVariants({ variant: 'outline', size: 'lg' })).toContain('w-fit');
   });
 });
