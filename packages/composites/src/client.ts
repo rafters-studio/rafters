@@ -9,7 +9,7 @@ export type {
 export { discoverComposites } from './discovery';
 export type { ViteRawGlob } from './discovery-vite';
 export { discoverFromVite, viteAdapter, viteGlobEntries } from './discovery-vite';
-export type { BindProps } from './bind';
+export type { BindLocals, BindProps } from './bind';
 export { resolveBindings } from './bind';
 export type {
   AppliedRule,
@@ -20,7 +20,7 @@ export type {
   CompositeManifest,
   UsagePatterns,
 } from './manifest';
-export { BindingSchema } from './manifest';
+export { BindingSchema, RepeatNameSchema } from './manifest';
 export type {
   BlockResolution,
   ComponentResolution,
@@ -32,3 +32,5 @@ export { rulesToHtmlAttrs } from './rule-attrs';
 export type { CompositeProps, ToJsxOptions } from './to-jsx';
 export { Composite, createComposites, toJsx } from './to-jsx';
 export { toMdx } from './to-mdx';
+export type { BlockScope, EachResolver, ScopedBlockVisitor } from './walk-blocks';
+export { walkScopedBlocks } from './walk-blocks';

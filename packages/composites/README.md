@@ -62,9 +62,24 @@ Blocks are a flat array with parent-child relationships expressed through `child
 
 Root blocks (no `parentId`) render at the top level. Children render inside their parent. The walker handles the recursion, cycle detection, and depth limiting.
 
+### Repeating a block per item (`each` / `as`)
+
+A block can render once per item of an array the consumer passes in. `each` is a binding to the array (see [Data binding](#data-binding)) and `as` names the current item inside the block and its subtree. The two are set together or not at all, and `as` cannot be `props`.
+
+```json
+{ "id": "lane", "type": "stack", "children": ["question"] },
+{ "id": "question", "type": "card", "parentId": "lane",
+  "each": { "$bind": "props.questions" }, "as": "q",
+  "meta": { "title": { "$bind": "q.text" }, "status": { "$bind": "q.status" } } }
+```
+
+With `props: { questions: [a, b] }`, `toJsx` renders two `card` elements inside the `stack`, in array order, in the place of the one `question` block. At the root, the copies become separate roots. Each copy's React key is the block id plus `:<index>` (`question:0`, `question:1`), and every descendant inside a copy gets the same suffix. A nested `each` appends its own index (`cell:0:1`). An inner `as` with the same name as an outer one wins inside the inner subtree. An `each` that resolves to `undefined`, `null` or `[]` renders no copies; any other non-array throws. A block never renders under itself, so a cycle through a repeated block stops at once.
+
+Only `toJsx` repeats. `toMdx` and the Astro engine render an `each` block once, as if it had no `each`.
+
 ## Serializers
 
-Three serializers convert the block tree into different output formats. All three use the same walker (`walkBlocks`) with a format-specific visitor.
+Three serializers convert the block tree into different output formats. `toMdx` walks it with `walkBlocks` and `toJsx` with `walkScopedBlocks` (see [The walker](#the-walker)), each with a format-specific visitor; the Astro engine recurses through the tree itself.
 
 ### toMdx
 
@@ -137,7 +152,7 @@ resolveBlockTag('link');           // { kind: 'native', tag: 'a' }
 
 ## The walker
 
-`walkBlocks` is the shared tree traversal that all serializers consume. It builds a block map, filters root blocks, and recurses through children with cycle detection and a depth cap (50).
+`walkBlocks` is the tree traversal behind `toMdx`. It builds a block map, filters root blocks, and recurses through children with cycle detection and a depth cap (50).
 
 ```typescript
 import { walkBlocks, type BlockVisitor } from '@rafters/composites';
@@ -150,6 +165,22 @@ const output = walkBlocks(blocks, visitor, (results) => results.join('\n'));
 ```
 
 The visitor receives a block and its already-rendered children. It returns whatever the output format needs. The walker owns the traversal; the visitor owns the rendering. Adding a new output format means writing a visitor function, not a new tree walk.
+
+`walkScopedBlocks` is the walk `toJsx` uses. It keeps the same roots, skips dangling children, renders a child listed twice under one root once, and caps depth at 50, and it adds `each`/`as` repeats. Its visitor gets a third argument, a `BlockScope`: `key` is the block id plus `:<index>` for each enclosing `each` copy, and `locals` holds the item names bound by enclosing `each`/`as` blocks. The walker resolves no bindings itself; the caller passes an `EachResolver` that returns the array for a block's `each` in the given locals (or `undefined` when unresolved).
+
+```typescript
+import { resolveBindings, walkScopedBlocks, type ScopedBlockVisitor } from '@rafters/composites';
+
+const visitor: ScopedBlockVisitor<string> = (block, children, scope) =>
+  `<${block.type} key="${scope.key}">${children.join('')}</${block.type}>`;
+
+const output = walkScopedBlocks(
+  blocks,
+  visitor,
+  (results) => results.join('\n'),
+  (block, locals) => resolveBindings({ each: block.each }, props, block.id, locals).each,
+);
+```
 
 ## Slots
 
@@ -193,6 +224,8 @@ A datatable composite might declare:
 
 Static meta values render as-is. Bound values (`$bind`) resolve against the consumer's props at render time:
 - **React/JSX**: pass the data as the `props` option -- `toJsx(blocks, { components, props: { columns, data } })` or `<Composite file={datatable} components={components} props={{ columns, data }} />` -- and each bound value reaches `createElement` as the value at that path. A path that does not resolve leaves the prop out.
+
+A binding path is a root followed by dot-separated segments. The root is either `props`, which needs at least one segment, or an `as` name in scope (see [Repeating a block per item](#repeating-a-block-per-item-each--as)), which may stand alone to mean the whole item (`{ "$bind": "q" }`, passed by reference) or be followed by segments (`{ "$bind": "q.text" }`). A root that is neither `props` nor an `as` name in scope throws `Invalid $bind in block "<blockId>" meta "<metaKey>": unknown scope "<root>"`.
 
 The Astro engine and `toMdx` do not resolve `$bind`, and bound meta reaches them unchanged.
 
@@ -265,7 +298,8 @@ const results = searchComposites('auth');
 ```
 packages/composites/src/
   manifest.ts      -- CompositeFile, CompositeBlock, and related types (Zod schemas)
-  walk-blocks.ts   -- shared tree walker and BlockVisitor type
+  walk-blocks.ts   -- tree walkers (walkBlocks, walkScopedBlocks for each/as) and visitor types
+  bind.ts          -- pure $bind resolver (resolveBindings)
   to-mdx.ts        -- MDX string serializer
   to-jsx.tsx       -- React element serializer, Composite component, createComposites factory
   resolve-block.ts -- pure resolveBlockTag: block type -> composite | component | native

@@ -32113,6 +32113,10 @@ var AppliedRuleSchema = external_exports.union([
     config: external_exports.record(external_exports.string(), external_exports.unknown())
   })
 ]);
+var BindingSchema = external_exports.object({
+  $bind: external_exports.string().regex(/^[A-Za-z_][A-Za-z0-9_]*(\.[^.]+)*$/).refine((path) => path !== "props", "a props path needs at least one segment")
+}).strict();
+var RepeatNameSchema = external_exports.string().regex(/^[A-Za-z_][A-Za-z0-9_]*$/).refine((name) => name !== "props", '"props" is reserved');
 var CompositeBlockSchema = external_exports.object({
   id: external_exports.string().min(1),
   type: external_exports.string().min(1),
@@ -32124,9 +32128,20 @@ var CompositeBlockSchema = external_exports.object({
   children: external_exports.array(external_exports.string()).optional(),
   parentId: external_exports.string().optional(),
   meta: external_exports.record(external_exports.string(), external_exports.unknown()).optional(),
-  rules: external_exports.array(AppliedRuleSchema).optional()
+  rules: external_exports.array(AppliedRuleSchema).optional(),
+  /** Render this block and its subtree once per item of the bound array. */
+  each: BindingSchema.optional(),
+  /** The name each item is bound to; required with `each`, forbidden without it. */
+  as: RepeatNameSchema.optional()
+}).superRefine((block, ctx) => {
+  if (block.each === void 0 !== (block.as === void 0)) {
+    ctx.addIssue({
+      code: "custom",
+      message: "`each` and `as` must be set together",
+      path: ["each"]
+    });
+  }
 });
-var BindingSchema = external_exports.object({ $bind: external_exports.string().regex(/^props(\.[^.]+)+$/) }).strict();
 var UsagePatternsSchema = external_exports.object({
   do: external_exports.array(external_exports.string()),
   never: external_exports.array(external_exports.string())
