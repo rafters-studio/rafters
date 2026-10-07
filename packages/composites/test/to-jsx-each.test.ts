@@ -154,3 +154,27 @@ it('rejects unpaired or malformed each/as', () => {
     true,
   );
 });
+
+it('drops an unregistered child with no fallback, as walkBlocks does', () => {
+  const blocks: CompositeBlock[] = [
+    { id: 'list', type: 'list', children: ['ghost'] },
+    { id: 'ghost', type: 'unregistered', parentId: 'list' },
+  ];
+  expect(element(toJsx(blocks, { components })).props.children).toBeUndefined();
+});
+
+it('drops an unregistered root with no fallback, as walkBlocks does', () => {
+  const blocks: CompositeBlock[] = [
+    { id: 'ghost', type: 'unregistered' },
+    { id: 'list', type: 'list' },
+  ];
+  const root = element(toJsx(blocks, { components }));
+  expect(root.key).toBe('list');
+  expect(root.type).toBe(Probe);
+});
+
+it('drops unregistered repeat copies with no fallback', () => {
+  const blocks = listOfCards({ type: 'unregistered', each: { $bind: 'props.questions' }, as: 'q' });
+  const list = element(toJsx(blocks, { components, props: { questions: [1, 2] } }));
+  expect(list.props.children).toBeUndefined();
+});

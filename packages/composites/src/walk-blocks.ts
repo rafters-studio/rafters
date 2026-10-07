@@ -80,7 +80,9 @@ function walkScoped<T>(
   state.visited.add(baseKey);
 
   if (block.each === undefined || block.as === undefined) {
-    return [renderScoped(block, state, suffix, locals, depth)];
+    const result = renderScoped(block, state, suffix, locals, depth);
+    // A null visitor result renders nothing, as in walkBlocks.
+    return result === null ? [] : [result];
   }
 
   const items = state.resolveEach(block, locals);
@@ -90,9 +92,19 @@ function walkScoped<T>(
   }
 
   const name = block.as;
-  return items.map((item: unknown, index) =>
-    renderScoped(block, state, `${suffix}:${index}`, { ...locals, [name]: item }, depth),
-  );
+  const results: T[] = [];
+  for (let index = 0; index < items.length; index++) {
+    const item: unknown = items[index];
+    const result = renderScoped(
+      block,
+      state,
+      `${suffix}:${index}`,
+      { ...locals, [name]: item },
+      depth,
+    );
+    if (result !== null) results.push(result);
+  }
+  return results;
 }
 
 function renderScoped<T>(
