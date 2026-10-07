@@ -1,7 +1,7 @@
 import { type ComponentType, createElement, type ReactNode } from 'react';
 import { type BindProps, resolveBindings } from './bind';
 import type { CompositeBlock, CompositeFile } from './manifest';
-import { kebabToPascal, walkBlocks } from './walk-blocks';
+import { type BlockScope, kebabToPascal, walkScopedBlocks } from './walk-blocks';
 
 export interface ToJsxOptions {
   components?: Record<string, ComponentType<Record<string, unknown>>>;
@@ -20,18 +20,18 @@ const RESERVED_PROPS = new Set(['key', 'ref', 'children']);
 function createVisitor(options: ToJsxOptions) {
   const components = options.components ?? {};
 
-  return (block: CompositeBlock, children: ReactNode[]): ReactNode => {
+  return (block: CompositeBlock, children: ReactNode[], scope: BlockScope): ReactNode => {
     const Component = components[block.type] ?? components[kebabToPascal(block.type)];
 
     if (!Component) {
       if (options.fallback)
-        return createElement(options.fallback, { key: block.id, type: block.type });
+        return createElement(options.fallback, { key: scope.key, type: block.type });
       return null;
     }
 
-    const props: Record<string, unknown> = { key: block.id };
+    const props: Record<string, unknown> = { key: scope.key };
     if (block.meta) {
-      const meta = resolveBindings(block.meta, options.props ?? {}, block.id);
+      const meta = resolveBindings(block.meta, options.props ?? {}, block.id, scope.locals);
       for (const [k, v] of Object.entries(meta)) {
         if (!RESERVED_PROPS.has(k)) props[k] = v;
       }
@@ -51,8 +51,12 @@ function createVisitor(options: ToJsxOptions) {
 
 export function toJsx(blocks: CompositeBlock[], options: ToJsxOptions = {}): ReactNode {
   if (blocks.length === 0) return null;
-  return walkBlocks(blocks, createVisitor(options), (r) =>
-    r.length === 1 ? (r[0] ?? null) : createElement('div', null, ...r),
+  const props = options.props ?? {};
+  return walkScopedBlocks(
+    blocks,
+    createVisitor(options),
+    (r) => (r.length === 1 ? (r[0] ?? null) : createElement('div', null, ...r)),
+    (block, locals) => resolveBindings({ each: block.each }, props, block.id, locals).each,
   );
 }
 

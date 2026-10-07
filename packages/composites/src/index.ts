@@ -33,7 +33,7 @@ export { discoverComposites } from './discovery';
 // subpath instead. See package.json exports.
 export type { ViteRawGlob } from './discovery-vite';
 export { discoverFromVite, viteAdapter, viteGlobEntries } from './discovery-vite';
-export type { BindProps } from './bind';
+export type { BindLocals, BindProps } from './bind';
 export { resolveBindings } from './bind';
 export type {
   AppliedRule,
@@ -51,6 +51,7 @@ export {
   CompositeCategorySchema,
   CompositeFileSchema,
   CompositeManifestSchema,
+  RepeatNameSchema,
   UsagePatternsSchema,
 } from './manifest';
 export {
@@ -77,3 +78,5 @@ export {
   matchRules,
 } from './rules';
 export { toMdx } from './to-mdx';
+export type { BlockScope, EachResolver, ScopedBlockVisitor } from './walk-blocks';
+export { walkScopedBlocks } from './walk-blocks';

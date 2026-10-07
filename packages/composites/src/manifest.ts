@@ -24,27 +24,58 @@ export const AppliedRuleSchema = z.union([
 
 export type AppliedRule = z.infer<typeof AppliedRuleSchema>;
 
-/** Zod schema for a single block in a composite */
-export const CompositeBlockSchema = z.object({
-  id: z.string().min(1),
-  type: z.string().min(1),
-  /** Signatures this block consumes / produces (rule names) -- the typed I/O edges.
-   * Within a composite, an output named X feeds any block input named X. */
-  input: z.array(z.string()).optional(),
-  output: z.array(z.string()).optional(),
-  content: z.unknown().optional(),
-  children: z.array(z.string()).optional(),
-  parentId: z.string().optional(),
-  meta: z.record(z.string(), z.unknown()).optional(),
-  rules: z.array(AppliedRuleSchema).optional(),
-});
-
-export type CompositeBlock = z.infer<typeof CompositeBlockSchema>;
-
-/** A meta value bound to consumer data: exactly one key, `$bind`, whose value is `props.<segment>[.<segment>...]`. */
-export const BindingSchema = z.object({ $bind: z.string().regex(/^props(\.[^.]+)+$/) }).strict();
+/**
+ * A meta value bound to consumer data: exactly one key, `$bind`, whose value is a
+ * dotted path. The root is `props` (followed by at least one segment) or an `as`
+ * name in scope (which may stand alone, meaning the whole item).
+ */
+export const BindingSchema = z
+  .object({
+    $bind: z
+      .string()
+      .regex(/^[A-Za-z_][A-Za-z0-9_]*(\.[^.]+)*$/)
+      .refine((path) => path !== 'props', 'a props path needs at least one segment'),
+  })
+  .strict();
 
 export type Binding = z.infer<typeof BindingSchema>;
+
+/** Name an `each` item is bound to inside the repeated subtree. `props` is reserved. */
+export const RepeatNameSchema = z
+  .string()
+  .regex(/^[A-Za-z_][A-Za-z0-9_]*$/)
+  .refine((name) => name !== 'props', '"props" is reserved');
+
+/** Zod schema for a single block in a composite */
+export const CompositeBlockSchema = z
+  .object({
+    id: z.string().min(1),
+    type: z.string().min(1),
+    /** Signatures this block consumes / produces (rule names) -- the typed I/O edges.
+     * Within a composite, an output named X feeds any block input named X. */
+    input: z.array(z.string()).optional(),
+    output: z.array(z.string()).optional(),
+    content: z.unknown().optional(),
+    children: z.array(z.string()).optional(),
+    parentId: z.string().optional(),
+    meta: z.record(z.string(), z.unknown()).optional(),
+    rules: z.array(AppliedRuleSchema).optional(),
+    /** Render this block and its subtree once per item of the bound array. */
+    each: BindingSchema.optional(),
+    /** The name each item is bound to; required with `each`, forbidden without it. */
+    as: RepeatNameSchema.optional(),
+  })
+  .superRefine((block, ctx) => {
+    if ((block.each === undefined) !== (block.as === undefined)) {
+      ctx.addIssue({
+        code: 'custom',
+        message: '`each` and `as` must be set together',
+        path: ['each'],
+      });
+    }
+  });
+
+export type CompositeBlock = z.infer<typeof CompositeBlockSchema>;
 
 /** Designer intent - captures WHY and WHEN to use this composite */
 export const UsagePatternsSchema = z.object({
