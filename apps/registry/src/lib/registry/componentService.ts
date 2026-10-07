@@ -435,7 +435,9 @@ const COMPOSITES_RUNTIME_FILES = [
 
 /** npm dependencies each runtime file imports. */
 const COMPOSITES_RUNTIME_DEPENDENCIES: Record<string, string[]> = {
+  'embed.ts': ['zod'],
   'manifest.ts': ['zod'],
+  'to-jsx.tsx': ['zod'],
   'to-mdx.ts': ['escape-html'],
 };
 
