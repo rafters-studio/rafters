@@ -15,4 +15,4 @@ If you are not, start with [docs/DESIGN_PHILOSOPHY.md](docs/DESIGN_PHILOSOPHY.md
 
 Toolchain: pnpm. Run `pnpm install` after pulling and `pnpm preflight` before committing. A change to CLI behaviour carries an entry in `packages/cli/CHANGELOG.md` in the same commit.
 
-Rules no tool enforces: never start, stop or touch a dev server; async/await, never `.then()`; never write to `/tmp`; React components stay pure; Zod at every external data boundary.
+Rules no tool enforces: never start, stop or touch a dev server; never commit a broken or skipped test; async/await, never `.then()`; never write to `/tmp`; React components stay pure; Zod at every external data boundary.
