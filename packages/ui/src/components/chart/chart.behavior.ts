@@ -48,7 +48,7 @@ export interface ChartContainerConfig {
   config: ChartConfig;
 }
 
-// -- Zod validation (external data boundary, CLAUDE.md) ----------------------
+// -- Zod validation (external data boundary, AGENTS.md) ----------------------
 
 const chartTokenSchema = z.enum(['chart-1', 'chart-2', 'chart-3', 'chart-4', 'chart-5']);
 

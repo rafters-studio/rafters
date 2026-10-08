@@ -38,5 +38,5 @@ jobs:
           timeout_minutes: 30
           custom_instructions: |
             When implementing issues, always create a pull request when your work is complete.
-            Follow all guidelines in CLAUDE.md and the docs/ directory.
+            Follow all guidelines in AGENTS.md and the docs/ directory.
             Run tests and linting before committing.

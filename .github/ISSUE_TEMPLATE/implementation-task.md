@@ -70,7 +70,7 @@ expect(() => invalidOperation()).toThrow('Specific error message');
 
 ## Code Standards
 
-Repo invariants (see `CLAUDE.md`) apply to every issue and are enforced by
+Repo invariants (see `AGENTS.md`) apply to every issue and are enforced by
 `pnpm preflight` (typecheck, oxlint, oxfmt, tests, build). They are NOT
 per-issue acceptance criteria:
 

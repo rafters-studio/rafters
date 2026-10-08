@@ -141,7 +141,7 @@ const MAX_SERIES = 5;
 
 /** Every declared series key must exist on every data row -- a Zod
  *  validation error naming the offending key (external-data boundary,
- *  CLAUDE.md), never a silently-undefined area. Duplicated from
+ *  AGENTS.md), never a silently-undefined area. Duplicated from
  *  bar-chart.behavior.ts's identical helper rather than shared: each chart-
  *  type behavior file is a self-contained score, same precedent that file
  *  itself sets. */
