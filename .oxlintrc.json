@@ -38,7 +38,7 @@
     "**/.cache",
     "**/worker-configuration.d.ts",
     "**/.rafters",
-    ".claude/worktrees",
+    ".claude",
     "docs-site",
     "docs/templates",
     "plugin/bin"
