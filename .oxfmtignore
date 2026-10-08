@@ -25,3 +25,6 @@ apps/demo/src/components/ui/
 apps/demo/src/composites/
 apps/demo/src/hooks/
 apps/demo/src/lib/
+
+# Agent working files (scratch, toys, notes) -- not product code.
+.claude/
