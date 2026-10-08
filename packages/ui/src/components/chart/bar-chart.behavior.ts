@@ -90,7 +90,7 @@ const MAX_SERIES = 5;
 
 /** Every declared series key must exist on every data row -- a Zod
  *  validation error naming the offending key (external-data boundary,
- *  CLAUDE.md), never a silently-undefined bar. */
+ *  AGENTS.md), never a silently-undefined bar. */
 function requireSeriesPresence(
   data: ReadonlyArray<Record<string, string | number>>,
   series: readonly string[],
