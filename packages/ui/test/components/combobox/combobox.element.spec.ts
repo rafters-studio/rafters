@@ -6,7 +6,8 @@
  */
 import { cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { ICON_SVG_16, installIconLayout, rect } from './icon-layout';
 import { RaftersCombobox } from '../../../src/components/combobox/combobox.element';
 
 beforeAll(() => {
@@ -47,6 +48,65 @@ const option = (v: string) =>
 afterEach(() => {
   cleanup();
   document.body.innerHTML = '';
+});
+
+describe('combobox icons [wc]', () => {
+  let uninstall: () => void;
+  beforeEach(() => {
+    uninstall = installIconLayout();
+  });
+  afterEach(() => uninstall());
+
+  const mountIcons = async (): Promise<void> => {
+    const user = userEvent.setup();
+    document.body.innerHTML = `
+      <rafters-combobox data-part="root" value="">
+        <div data-part="field">
+          <input data-part="input" id="cb-input" type="text" autocomplete="off" value="" />
+          <button type="button" data-part="trigger" tabindex="-1" aria-label="Open"></button>
+        </div>
+        <div data-part="content" id="cb-content">
+          <div role="option" data-part="item" id="cb-content-option-react" data-value="react"><span></span>${ICON_SVG_16.replace('<svg', '<svg slot="start-icon"')}<span>React</span></div>
+          <div role="option" data-part="item" id="cb-content-option-vue" data-value="vue"><span></span><span>Vue</span></div>
+        </div>
+        ${ICON_SVG_16.replace('<svg', '<svg slot="start-icon"')}
+      </rafters-combobox>`;
+    await Promise.resolve();
+    await user.click(toggle());
+  };
+
+  it('wraps the slotted icons in aria-hidden wrappers beside the input and the option label', async () => {
+    await mountIcons();
+    const wrappers = document.body.querySelectorAll('[data-part="startIcon"]');
+    expect(wrappers).toHaveLength(2);
+    for (const wrapper of wrappers) {
+      expect(wrapper.getAttribute('aria-hidden')).toBe('true');
+      expect(wrapper.getAttribute('data-icon')).toBe('inline-start');
+      expect(wrapper.querySelector('[slot]')).toBeNull();
+    }
+    expect(option('vue').querySelector('[data-part="startIcon"]')).toBeNull();
+    const field = document.body.querySelector('[data-part="field"]') as HTMLElement;
+    expect(rect(field, '[data-part="startIcon"]').right).toBeLessThanOrEqual(
+      rect(field, '[data-part="trigger"]').left,
+    );
+    const itemIcon = rect(option('react'), '[data-part="startIcon"]');
+    const text = (option('react').lastElementChild as HTMLElement).getBoundingClientRect();
+    expect(itemIcon.right).toBeLessThanOrEqual(text.left + 0.5);
+  });
+
+  it('on a dir="rtl" page the start icon renders on the right of the label; size is kept', async () => {
+    document.documentElement.dir = 'rtl';
+    await mountIcons();
+    const itemIcon = rect(option('react'), '[data-part="startIcon"]');
+    const text = (option('react').lastElementChild as HTMLElement).getBoundingClientRect();
+    expect(itemIcon.left).toBeGreaterThan(text.left);
+    expect(itemIcon.width).toBe(16);
+  });
+
+  it('no wrapper is made when no icon is given', async () => {
+    await mount();
+    expect(document.body.querySelector('[data-part="startIcon"]')).toBeNull();
+  });
 });
 
 describe('combobox [wc]', () => {
