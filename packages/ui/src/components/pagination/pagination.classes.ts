@@ -53,8 +53,8 @@ export const paginationLinkInactiveClasses =
 
 export const paginationDisabledClasses = 'pointer-events-none opacity-50';
 
-export const paginationPreviousClasses = 'gap-1 pl-2.5';
+export const paginationPreviousClasses = 'gap-1 ps-2.5';
 
-export const paginationNextClasses = 'gap-1 pr-2.5';
+export const paginationNextClasses = 'gap-1 pe-2.5';
 
 export const paginationEllipsisClasses = 'flex h-9 w-9 items-center justify-center';

@@ -35,9 +35,9 @@ export const imageSizeClasses: Record<ImageSize, string> = {
 
 /** Horizontal alignment via auto margins. */
 export const imageAlignmentClasses: Record<ImageAlignment, string> = {
-  left: 'mr-auto',
+  left: 'me-auto',
   center: 'mx-auto',
-  right: 'ml-auto',
+  right: 'ms-auto',
 };
 
 /** Corner radius token applied to the clipping frame. */

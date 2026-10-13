@@ -65,7 +65,7 @@ const basePanelClasses =
 const baseHandleClasses =
   'relative flex items-center justify-center bg-border ' +
   'transition-[color,background-color,border-color,box-shadow] duration-fast ease-standard ' +
-  'after:absolute after:inset-y-0 after:left-1/2 after:-translate-x-1/2 ' +
+  'after:absolute after:inset-y-0 after:inset-x-0 after:mx-auto ' +
   'hover:bg-muted ' +
   'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-1 ' +
   'data-[dragging]:bg-primary ' +

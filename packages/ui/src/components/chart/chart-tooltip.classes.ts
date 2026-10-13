@@ -47,9 +47,9 @@ export function chartTooltipClasses(): ChartTooltipClassSet {
     root: '',
     content: tooltipContentSurfaceClasses,
     header: 'mb-1 font-medium text-background',
-    row: 'flex items-center gap-1.5',
-    label: 'text-background/70',
-    value: 'ml-auto font-mono font-medium tabular-nums text-background',
+    row: 'grid grid-cols-menu-row items-center',
+    label: 'col-start-3 text-background/70',
+    value: 'col-start-4 ms-1.5 font-mono font-medium tabular-nums text-background',
   };
 }
 
@@ -57,9 +57,9 @@ export function chartTooltipClasses(): ChartTooltipClassSet {
  *  the three indicator variants -- never constructed. Color is layered on
  *  separately via the per-row `swatchClass` (`fill-chart-N`). */
 const INDICATOR_WRAPPER_CLASS: Record<IndicatorVariant, string> = {
-  dot: 'h-2.5 w-2.5 shrink-0',
-  line: 'h-3.5 w-1 shrink-0',
-  dashed: 'h-1.5 w-3.5 shrink-0',
+  dot: 'col-start-1 me-1.5 h-2.5 w-2.5 shrink-0',
+  line: 'col-start-1 me-1.5 h-3.5 w-1 shrink-0',
+  dashed: 'col-start-1 me-1.5 h-1.5 w-3.5 shrink-0',
 };
 
 export function chartTooltipIndicatorWrapperClass(variant: IndicatorVariant): string {

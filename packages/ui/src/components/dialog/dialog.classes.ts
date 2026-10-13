@@ -79,8 +79,8 @@ const descriptionClasses = 'text-body-small ts-body-small text-muted-foreground'
 // The fade half is consumed; the colour half is reported rather than invented,
 // because a hover colour nobody chose is a value nobody chose.
 const closeClasses =
-  'absolute right-2 top-2 inline-flex h-11 w-11 items-center justify-center ' +
-  '@md:right-4 @md:top-4 @md:h-8 @md:w-8 ' +
+  'absolute end-2 top-2 inline-flex h-11 w-11 items-center justify-center ' +
+  '@md:end-4 @md:top-4 @md:h-8 @md:w-8 ' +
   'rounded-sm opacity-70 ring-offset-background cursor-pointer ' +
   'transition-opacity duration-fast ease-standard hover:opacity-100 ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';

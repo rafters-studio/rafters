@@ -66,8 +66,8 @@ describe('pagination classes', () => {
   });
 
   it('Previous/Next add a directional gap and the disabled dimmer greys the control', () => {
-    expect(paginationPreviousClasses).toBe('gap-1 pl-2.5');
-    expect(paginationNextClasses).toBe('gap-1 pr-2.5');
+    expect(paginationPreviousClasses).toBe('gap-1 ps-2.5');
+    expect(paginationNextClasses).toBe('gap-1 pe-2.5');
     expect(paginationDisabledClasses).toBe('pointer-events-none opacity-50');
   });
 

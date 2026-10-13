@@ -75,11 +75,11 @@ const VARIANTS: Record<TypographyVariant, VariantDefaults> = {
     color: 'foreground',
     layout: 'relative rounded-lg bg-muted p-4 overflow-x-auto [&_code]:bg-transparent [&_code]:p-0',
   },
-  blockquote: { color: 'foreground', layout: 'mt-6 border-l-2 border-border pl-6 italic' },
+  blockquote: { color: 'foreground', layout: 'mt-6 border-s-2 border-border ps-6 italic' },
   mark: { color: 'accent-foreground', layout: 'bg-accent px-1 rounded' },
   abbr: { layout: 'cursor-help underline decoration-dotted underline-offset-4' },
-  ul: { color: 'foreground', layout: 'my-6 ml-6 list-disc [&>li]:mt-2' },
-  ol: { color: 'foreground', layout: 'my-6 ml-6 list-decimal [&>li]:mt-2' },
+  ul: { color: 'foreground', layout: 'my-6 ms-6 list-disc [&>li]:mt-2' },
+  ol: { color: 'foreground', layout: 'my-6 ms-6 list-decimal [&>li]:mt-2' },
   li: { line: '7' },
 };
 

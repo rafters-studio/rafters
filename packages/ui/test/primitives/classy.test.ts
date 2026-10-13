@@ -62,3 +62,14 @@ describe('classy - layout utilities pass through', () => {
     expect(spy).not.toHaveBeenCalled();
   });
 });
+
+describe('classy - named grid track utility', () => {
+  it('keeps grid-cols-menu-row and drops the arbitrary track list it replaces', () => {
+    const spy = vi.fn();
+    const c = createClassy({ warn: spy });
+    expect(c('grid grid-cols-menu-row')).toBe('grid grid-cols-menu-row');
+    expect(spy).not.toHaveBeenCalled();
+    expect(c('grid grid-cols-[auto_auto_1fr_auto]')).toBe('grid');
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+});

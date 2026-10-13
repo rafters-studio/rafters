@@ -26,8 +26,8 @@ const orientationClasses: Record<ButtonGroupOrientation, string> = {
  *   - Non-first children: negative left margin collapses the shared 1px border.
  */
 const horizontalConnectedClasses = [
-  '[&>*:first-child]:rounded-r-none',
-  '[&>*:last-child]:rounded-l-none',
+  '[&>*:first-child]:rounded-e-none',
+  '[&>*:last-child]:rounded-s-none',
   '[&>*:not(:first-child):not(:last-child)]:rounded-none',
   '[&>*:not(:first-child)]:-ml-px',
 ].join(' ');
