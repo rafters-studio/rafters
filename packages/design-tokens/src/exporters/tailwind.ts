@@ -702,12 +702,25 @@ function generateKeyframes(motionTokens: Token[]): string {
  * track list a component needs is a named utility. grid-cols-menu-row is the
  * menu-style row: indicator, icon, label, end (shortcut or chevron). Columns
  * lay out in reading order, so the row mirrors on a dir="rtl" page.
+ *
+ * grid-cols-affix-start/end/both are the field row: a flexible field with a
+ * decorative icon beside it on one side or both. One list per combination, so
+ * an absent icon leaves no empty track and no stray gap.
  */
 function generateGridTrackUtilities(): string {
   return [
     '/* Grid track lists -- named, because classy skips arbitrary track lists */',
     '@utility grid-cols-menu-row {',
     '  grid-template-columns: auto auto 1fr auto; /* indicator, icon, label, end */',
+    '}',
+    '@utility grid-cols-affix-start {',
+    '  grid-template-columns: auto 1fr; /* start icon, field */',
+    '}',
+    '@utility grid-cols-affix-end {',
+    '  grid-template-columns: 1fr auto; /* field, end icon */',
+    '}',
+    '@utility grid-cols-affix-both {',
+    '  grid-template-columns: auto 1fr auto; /* start icon, field, end icon */',
     '}',
   ].join('\n');
 }
