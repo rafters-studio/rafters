@@ -39,14 +39,16 @@
  * lifecycle -- deferring the bind one microtask because connectedCallback can
  * fire before the light-DOM <input> is parsed.
  */
-import { bindInput } from './input.behavior';
+import { bindInput, wrapInputIcons } from './input.behavior';
 
 export class RaftersInput extends HTMLElement {
   private teardown: (() => void) | null = null;
 
   connectedCallback(): void {
     queueMicrotask(() => {
-      if (this.isConnected && !this.teardown) this.teardown = bindInput(this);
+      if (!this.isConnected || this.teardown) return;
+      wrapInputIcons(this);
+      this.teardown = bindInput(this);
     });
   }
 

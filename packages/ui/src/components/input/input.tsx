@@ -37,6 +37,7 @@ import { useMemory } from '../../hooks/use-memory';
 import classy from '../../primitives/classy';
 import { effectiveValue, inputBehavior, type InputConfig, type InputPart } from './input.behavior';
 import { inputClassSet } from './input.classes';
+import { addonPart, inputGroupBehavior } from '../input-group/input-group.behavior';
 
 export interface InputProps extends Omit<
   React.InputHTMLAttributes<HTMLInputElement>,
@@ -55,7 +56,13 @@ export interface InputProps extends Omit<
   /** Id of the external error message element (Field/FormMessage) to reference
    *  from aria-describedby while invalid. */
   errorId?: string;
+  /** Decorative icon before the field (after it on a right-to-left page), e.g. search or currency. Hidden from assistive technology. */
+  startIcon?: React.ReactNode;
+  /** Decorative icon after the field (before it on a right-to-left page), e.g. clear or unit. Hidden from assistive technology. */
+  endIcon?: React.ReactNode;
 }
+
+const hasIcon = (icon: React.ReactNode): boolean => icon != null && icon !== false;
 
 /**
  * Input -- the React performance of the input score. The shadcn Input surface:
@@ -78,9 +85,13 @@ export function Input({
   disabled,
   readOnly,
   errorId,
+  startIcon,
+  endIcon,
   className,
   ...props
 }: InputProps) {
+  const hasStart = hasIcon(startIcon);
+  const hasEnd = hasIcon(endIcon);
   const config: InputConfig = {
     value,
     defaultValue,
@@ -88,6 +99,8 @@ export function Input({
     readonly: readOnly,
     required,
     invalid,
+    startIcon: hasStart,
+    endIcon: hasEnd,
   };
 
   // The controller composes the score with the substrate -- no useBehavior.
@@ -127,11 +140,16 @@ export function Input({
 
   const aria = inputBehavior.aria(state, config, ids);
   const classes = inputClassSet(config, state);
+  const groupAria = inputGroupBehavior.aria(
+    {},
+    {},
+    { root: '', control: '', addonStart: '', addonEnd: '' },
+  );
 
-  return (
+  const field = (
     <input
       data-part="input"
-      className={classy(classes.input, className)}
+      className={classy(hasStart || hasEnd ? classes.rowInput : classes.input, className)}
       value={effective}
       disabled={disabled}
       readOnly={readOnly}
@@ -143,5 +161,35 @@ export function Input({
       }}
       {...props}
     />
+  );
+  if (!hasStart && !hasEnd) return field;
+
+  // The icons ride InputGroup's addon parts: one affix vocabulary, not two.
+  const addon = (position: 'start' | 'end', icon: React.ReactNode) => {
+    const part = addonPart(position);
+    const iconPart = position === 'start' ? 'startIcon' : 'endIcon';
+    return (
+      <div
+        data-part={part}
+        className={classes[position === 'start' ? 'addonStart' : 'addonEnd']}
+        {...groupAria[part]}
+      >
+        <span
+          data-part={iconPart}
+          data-icon={position === 'start' ? 'inline-start' : 'inline-end'}
+          className={classes[iconPart]}
+          {...aria[iconPart]}
+        >
+          {icon}
+        </span>
+      </div>
+    );
+  };
+  return (
+    <div data-part="row" className={classes.row}>
+      {hasStart ? addon('start', startIcon) : null}
+      {field}
+      {hasEnd ? addon('end', endIcon) : null}
+    </div>
   );
 }

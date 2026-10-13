@@ -109,6 +109,18 @@ const aria = combobox.aria(state, config, ids);
       class={classes.input}
       {...aria.input}
     />
+    {
+      Astro.slots.has('start-icon') && (
+        <span
+          data-part="startIcon"
+          data-icon="inline-start"
+          class={classes.startIcon}
+          {...aria.startIcon}
+        >
+          <slot name="start-icon" />
+        </span>
+      )
+    }
     <button
       type="button"
       data-part="trigger"
@@ -134,7 +146,7 @@ const aria = combobox.aria(state, config, ids);
 
   <div id={ids.content} data-part="content" class={classes.content} hidden={!state.open} {...aria.content}>
     {
-      options.map((option) => {
+      options.map(async (option) => {
         const itemAria = comboboxItemAria(option.value, state, config);
         return (
           <div
@@ -148,6 +160,18 @@ const aria = combobox.aria(state, config, ids);
             {...itemAria}
           >
             <div class={classes.itemIndicator} aria-hidden="true"></div>
+            {
+              Astro.slots.has(`start-icon-${option.value}`) && (
+                <span
+                  data-part="startIcon"
+                  data-icon="inline-start"
+                  class={classes.itemStartIcon}
+                  {...aria.startIcon}
+                >
+                  <Fragment set:html={await Astro.slots.render(`start-icon-${option.value}`)} />
+                </span>
+              )
+            }
             <div class={classes.itemText}>{option.label}</div>
           </div>
         );

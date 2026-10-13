@@ -5,7 +5,8 @@
  */
 import * as React from 'react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { page } from 'vitest/browser';
 import { cleanup, render } from 'vitest-browser-react';
 import { Input } from '../../../src/components/input/input';
 import {
@@ -14,6 +15,7 @@ import {
   type InputPart,
   type InputState,
 } from '../../../src/components/input/input.behavior';
+import { installIconLayout, ICON_SVG_16, ICON_SVG_20, rectsOf } from './icon-layout';
 
 afterEach(async () => {
   await cleanup();
@@ -158,5 +160,103 @@ describe('input [react]', () => {
     await user.type(el, 'a');
     expect(onChange).toHaveBeenCalled();
     expect(el.value).toBe('a');
+  });
+});
+
+describe('input icons [react]', () => {
+  let uninstall: () => void;
+  beforeEach(() => {
+    uninstall = installIconLayout();
+  });
+  afterEach(() => uninstall());
+
+  const svg = (markup: string) => <span dangerouslySetInnerHTML={{ __html: markup }} />;
+  const rowOf = (container: HTMLElement) =>
+    container.querySelector<HTMLElement>('[data-part="row"]') as HTMLElement;
+
+  it('start, end and both render beside the field on one line', async () => {
+    for (const name of ['start', 'end', 'both'] as const) {
+      const { container, unmount } = await render(
+        <Input
+          aria-label="Search"
+          startIcon={name !== 'end' ? svg(ICON_SVG_16) : undefined}
+          endIcon={name !== 'start' ? svg(ICON_SVG_16) : undefined}
+        />,
+      );
+      const r = rectsOf(rowOf(container));
+      if (name !== 'end') {
+        expect(r.start, name).not.toBeNull();
+        expect((r.start as DOMRect).right).toBeLessThanOrEqual(r.field.left + 0.5);
+      }
+      if (name !== 'start') {
+        expect(r.end, name).not.toBeNull();
+        expect((r.end as DOMRect).left).toBeGreaterThanOrEqual(r.field.right - 0.5);
+      }
+      await unmount();
+    }
+  });
+
+  it('on a dir="rtl" page the start icon renders on the right of the field', async () => {
+    document.documentElement.dir = 'rtl';
+    const { container } = await render(<Input aria-label="Search" startIcon={svg(ICON_SVG_16)} />);
+    const r = rectsOf(rowOf(container));
+    expect((r.start as DOMRect).left).toBeGreaterThan(r.field.left);
+  });
+
+  it('an icon keeps its own size', async () => {
+    const { container } = await render(
+      <Input aria-label="Search" startIcon={svg(ICON_SVG_16)} endIcon={svg(ICON_SVG_20)} />,
+    );
+    const r = rectsOf(rowOf(container));
+    expect(r.start?.width).toBe(16);
+    expect(r.end?.width).toBe(20);
+  });
+
+  it('each wrapper is aria-hidden, rides an addon part, and is absent when no icon is given', async () => {
+    const { container } = await render(
+      <Input aria-label="Search" startIcon={svg(ICON_SVG_16)} endIcon={svg(ICON_SVG_16)} />,
+    );
+    const config = { startIcon: true, endIcon: true };
+    assertContract(container, inputBehavior.initialState(config), config, [
+      'input',
+      'startIcon',
+      'endIcon',
+    ]);
+    for (const [part, addon, icon] of [
+      ['startIcon', 'addonStart', 'inline-start'],
+      ['endIcon', 'addonEnd', 'inline-end'],
+    ] as const) {
+      const wrapper = container.querySelector(`[data-part="${addon}"] > [data-part="${part}"]`);
+      expect(wrapper?.getAttribute('aria-hidden')).toBe('true');
+      expect(wrapper?.getAttribute('data-icon')).toBe(icon);
+    }
+    await cleanup();
+    const bare = await render(<Input aria-label="Search" />);
+    expect(bare.container.querySelector('[data-part="row"]')).toBeNull();
+    expect(bare.container.querySelector('[data-part="startIcon"]')).toBeNull();
+    expect(bare.container.querySelector('[data-part="endIcon"]')).toBeNull();
+  });
+
+  it('the accessible name is the label alone even when the svg has a title', async () => {
+    await render(
+      <Input
+        aria-label="Search"
+        startIcon={
+          <svg viewBox="0 0 24 24" width="16" height="16">
+            <title>Magnifier</title>
+          </svg>
+        }
+      />,
+    );
+    await expect
+      .element(page.getByRole('textbox', { name: 'Search', exact: true }))
+      .toBeInTheDocument();
+  });
+
+  it('typing still works with icons present', async () => {
+    const user = userEvent.setup();
+    const { container } = await render(<Input aria-label="Search" startIcon={svg(ICON_SVG_16)} />);
+    await user.type(inputOf(container), 'hi');
+    expect(inputOf(container).value).toBe('hi');
   });
 });
