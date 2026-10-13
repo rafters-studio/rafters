@@ -5,9 +5,12 @@ import { runAxe } from '../../a11y/run-axe';
 import Input from '../../../src/components/input/input.astro';
 import { bindInput } from '../../../src/components/input/input.behavior';
 
-async function mount(props: Record<string, unknown>): Promise<Document> {
+async function mount(
+  props: Record<string, unknown>,
+  slots: Record<string, string> = {},
+): Promise<Document> {
   const container = await AstroContainer.create();
-  const html = await container.renderToString(Input, { props: { id: 'i', ...props } });
+  const html = await container.renderToString(Input, { props: { id: 'i', ...props }, slots });
   const window = new Window();
   const document = window.document as unknown as Document;
   // input.astro renders the bare control; the accessible name is the page's
@@ -15,7 +18,7 @@ async function mount(props: Record<string, unknown>): Promise<Document> {
   document.body.innerHTML = `<main><div><label for="i">Name</label>${html}</div></main>`;
   // The page <script> binds the input's parent; the Container never runs it.
   const input = document.querySelector('input[data-part="input"]') as HTMLInputElement;
-  bindInput(input.parentElement as HTMLElement);
+  bindInput((input.closest('[data-part="row"]') ?? input).parentElement as HTMLElement);
   return document;
 }
 
@@ -37,3 +40,19 @@ for (const [name, props] of scenes) {
     expect(results.violations).toEqual([]);
   });
 }
+
+test('input.astro with start and end icons, svg title does not leak into the name', async ({
+  task,
+}) => {
+  const document = await mount(
+    {},
+    {
+      'start-icon': '<svg viewBox="0 0 24 24"><title>Magnifier</title></svg>',
+      'end-icon': '<svg viewBox="0 0 24 24"><title>Clear</title></svg>',
+    },
+  );
+  const results = await runAxe(document.body);
+  task.meta.axe = results;
+  expect(results.violations).toEqual([]);
+  expect(document.querySelectorAll('[data-icon][aria-hidden="true"]').length).toBe(2);
+});
