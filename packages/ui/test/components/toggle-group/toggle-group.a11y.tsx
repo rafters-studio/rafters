@@ -49,3 +49,28 @@ for (const [name, props] of scenes) {
     expect(results.violations).toEqual([]);
   });
 }
+
+test('toggle-group with start and end icons, svg title does not leak into the name', async ({
+  task,
+}) => {
+  const icon = (
+    <svg viewBox="0 0 24 24" width="16" height="16">
+      <title>Mail</title>
+      <path d="M2 4h20v16H2z" stroke="currentColor" />
+    </svg>
+  );
+  const { container } = await render(
+    <main>
+      <ToggleGroup aria-label="Text formatting">
+        <ToggleGroupItem value="a" startIcon={icon} endIcon={icon}>
+          Alpha
+        </ToggleGroupItem>
+        <ToggleGroupItem value="b">Beta</ToggleGroupItem>
+      </ToggleGroup>
+    </main>,
+  );
+  const results = await runAxe(container);
+  task.meta.axe = results;
+  expect(results.violations).toEqual([]);
+  expect(container.querySelectorAll('[data-icon][aria-hidden="true"]').length).toBe(2);
+});
