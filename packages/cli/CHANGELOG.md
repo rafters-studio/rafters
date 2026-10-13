@@ -8,6 +8,8 @@
 
 - feat(ui): **components mirror on a `dir="rtl"` page, and the generated theme CSS gains `grid-cols-menu-row`.** Alert, Chart tooltip, Button group, Carousel, Container, Dialog, Drawer, Field, Image, Input OTP, Pagination, Popover, Resizable, Scroll area, Sheet, Table and Typography now lay out rows with Grid and write the edges that remain as logical classes (`ps`/`pe`, `ms`/`me`, `start`/`end`, `rounded-s`/`rounded-e`, `border-s`, `text-start`). Sheet and Drawer keep `side="left"`/`side="right"` physical, as in shadcn. The Tailwind exporter emits `@utility grid-cols-menu-row` (`auto auto 1fr auto`: indicator, icon, label, end), because `classy` skips arbitrary track lists. Re-run `rafters` to regenerate the theme CSS and re-add the components to pick this up.
 
+- feat(ui): **Date picker takes decorative `startIcon` and `endIcon`.** In React they are props (`startIcon: ReactNode`, `endIcon: ReactNode`), in Astro the `start-icon` and `end-icon` slots, and in the Web Component a child with `slot="start-icon"` or `slot="end-icon"`. Each icon sits in a wrapper the behavior renders with `aria-hidden="true"` in the server markup, so the trigger's label alone is the accessible name; the wrapper is absent when no icon is given. A given `endIcon` replaces the built-in calendar glyph. The trigger is now a `grid grid-flow-col` instead of `flex`, so the start icon sits on the right on a `dir="rtl"` page, and inline padding tightens on the icon's own side only with logical `ps-*`/`pe-*` classes. The brand brings its icons, sizing included: the wrapper only places and hides.
+
 ## 0.4.3
 
 ### Breaking Changes

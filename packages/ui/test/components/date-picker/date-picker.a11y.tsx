@@ -34,3 +34,23 @@ for (const [name, props] of scenes) {
     expect(results.violations).toEqual([]);
   });
 }
+
+test('date-picker with start and end icons, svg title does not leak into the name', async ({
+  task,
+}) => {
+  const icon = (
+    <svg viewBox="0 0 24 24" width="16" height="16">
+      <title>Mail</title>
+      <path d="M2 4h20v16H2z" stroke="currentColor" />
+    </svg>
+  );
+  await render(
+    <main>
+      <DatePicker calendarProps={calendarProps} startIcon={icon} endIcon={icon} />
+    </main>,
+  );
+  const results = await runAxe(document.body);
+  task.meta.axe = results;
+  expect(results.violations).toEqual([]);
+  expect(document.querySelectorAll('[data-icon][aria-hidden="true"]').length).toBe(2);
+});

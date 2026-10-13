@@ -39,3 +39,16 @@ for (const [name, attrs] of scenes) {
     expect(results.violations).toEqual([]);
   });
 }
+
+test('rafters-date-picker with start and end icon slots, svg title does not leak into the name', async ({
+  task,
+}) => {
+  document.body.innerHTML = `<main><rafters-date-picker today="2026-07-20" default-month="2026-07-01"><svg slot="start-icon" viewBox="0 0 24 24"><title>Mail</title></svg><svg slot="end-icon" viewBox="0 0 24 24"><title>Arrow</title></svg></rafters-date-picker></main>`;
+  await Promise.resolve();
+  await Promise.resolve();
+  const host = document.body.querySelector('main') as HTMLElement;
+  const results = await runAxe(host);
+  task.meta.axe = results;
+  expect(results.violations).toEqual([]);
+  expect(host.querySelectorAll('[data-icon][aria-hidden="true"]').length).toBe(2);
+});
