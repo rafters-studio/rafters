@@ -5,8 +5,15 @@
  */
 import { cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { RaftersSelect } from '../../../src/components/select/select.element';
+import {
+  ICON_SVG_16,
+  ICON_SVG_20,
+  installIconLayout,
+  itemRects,
+  triggerRects,
+} from './icon-layout';
 
 beforeAll(() => {
   if (!customElements.get('rafters-select')) customElements.define('rafters-select', RaftersSelect);
@@ -119,5 +126,78 @@ describe('select [wc]', () => {
     expect(content().hidden).toBe(false);
     await user.click(outside);
     expect(content().hidden).toBe(true);
+  });
+});
+
+describe('select icons [wc]', () => {
+  let uninstall: () => void;
+  beforeEach(() => {
+    uninstall = installIconLayout();
+  });
+  afterEach(() => uninstall());
+
+  async function mountIcons(triggerHtml: string, appleExtra: string): Promise<HTMLElement> {
+    document.body.innerHTML = `
+      <rafters-select data-part="root" value="">
+        <button type="button" data-part="trigger" id="s-trigger" aria-label="Fruit">
+          ${triggerHtml}
+        </button>
+        <div data-part="content" id="s-content" data-state="open">
+          <div>
+            <div role="option" data-part="item" data-value="apple" data-roving-item tabindex="-1"><span></span><span>Apple</span>${appleExtra}</div>
+            <div role="option" data-part="item" data-value="banana" data-roving-item tabindex="-1"><span></span><span>Banana</span></div>
+          </div>
+        </div>
+      </rafters-select>`;
+    await Promise.resolve();
+    await Promise.resolve();
+    return document.body.querySelector('rafters-select') as HTMLElement;
+  }
+
+  const valueHtml = '<div data-part="value" data-placeholder="Pick">Pick</div>';
+
+  it('slotted trigger icons become hidden wrappers beside the value, in reading order', async () => {
+    const root = await mountIcons(
+      `<span slot="start-icon">${ICON_SVG_16}</span>${valueHtml}<span slot="end-icon">${ICON_SVG_20}</span>`,
+      '',
+    );
+    const wrappers = root.querySelectorAll('[data-part="trigger"] > [data-icon]');
+    expect(wrappers.length).toBe(2);
+    for (const w of wrappers) expect(w.getAttribute('aria-hidden')).toBe('true');
+    const r = triggerRects(root);
+    expect((r.start as DOMRect).right).toBeLessThanOrEqual(r.label.left + 0.5);
+    expect((r.end as DOMRect).left).toBeGreaterThanOrEqual(r.label.right - 0.5);
+    expect(r.start?.width).toBe(16);
+    expect(r.end?.width).toBe(20);
+  });
+
+  it('slotted item icons sit beside the item text', async () => {
+    const root = await mountIcons(
+      valueHtml,
+      `<span slot="start-icon">${ICON_SVG_16}</span><span slot="end-icon">${ICON_SVG_16}</span>`,
+    );
+    const apple = root.querySelector('[data-value="apple"]') as HTMLElement;
+    const r = itemRects(apple);
+    expect((r.start as DOMRect).right).toBeLessThanOrEqual(r.label.left + 0.5);
+    expect((r.end as DOMRect).left).toBeGreaterThanOrEqual(r.label.right - 0.5);
+    expect(apple.querySelectorAll('[aria-hidden="true"][data-icon]').length).toBe(2);
+  });
+
+  it('on a dir="rtl" page the start icon renders on the right of the value and the item text', async () => {
+    document.documentElement.dir = 'rtl';
+    const root = await mountIcons(
+      `<span slot="start-icon">${ICON_SVG_16}</span>${valueHtml}`,
+      `<span slot="start-icon">${ICON_SVG_16}</span>`,
+    );
+    const t = triggerRects(root);
+    expect((t.start as DOMRect).left).toBeGreaterThan(t.label.left);
+    const i = itemRects(root.querySelector('[data-value="apple"]') as HTMLElement);
+    expect((i.start as DOMRect).left).toBeGreaterThan(i.label.left);
+  });
+
+  it('no wrapper without an icon child', async () => {
+    const root = await mountIcons(valueHtml, '');
+    expect(root.querySelector('[data-part="startIcon"]')).toBeNull();
+    expect(root.querySelector('[data-part="endIcon"]')).toBeNull();
   });
 });

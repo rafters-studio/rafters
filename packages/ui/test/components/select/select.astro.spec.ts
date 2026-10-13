@@ -20,11 +20,16 @@ afterEach(() => {
   document.body.innerHTML = '';
 });
 
-async function mount(props: Record<string, unknown> = {}): Promise<HTMLElement> {
+async function render(
+  props: Record<string, unknown> = {},
+  slots: Record<string, string> = {},
+): Promise<string> {
   const container = await AstroContainer.create();
-  const html = await container.renderToString(Select, {
-    props: { id: 's', options, ...props },
-  });
+  return container.renderToString(Select, { props: { id: 's', options, ...props }, slots });
+}
+
+async function mount(props: Record<string, unknown> = {}): Promise<HTMLElement> {
+  const html = await render(props);
   document.body.innerHTML = html;
   const root = document.body.querySelector('rafters-select') as HTMLElement;
   bindSelect(root); // the <script> does this per instance on the real page
@@ -80,5 +85,55 @@ describe('select [astro]', () => {
     await user.keyboard('{Escape}');
     expect(content().hidden).toBe(true);
     expect(document.activeElement).toBe(trigger());
+  });
+});
+
+describe('select icons [astro]', () => {
+  it('the server markup already hides each wrapper, before any script runs', async () => {
+    const html = await render(
+      {},
+      {
+        'start-icon': '<svg><title>Mail</title></svg>',
+        'end-icon': '<svg></svg>',
+        'item-start-icon-apple': '<svg><title>Apple</title></svg>',
+        'item-end-icon-apple': '<svg></svg>',
+      },
+    );
+    document.body.innerHTML = html; // no bindSelect: the SSR render alone
+    const wrappers = [
+      ...document.querySelectorAll('[data-part="startIcon"], [data-part="endIcon"]'),
+    ];
+    expect(wrappers.length).toBe(4);
+    for (const wrapper of wrappers) {
+      expect(wrapper.getAttribute('aria-hidden')).toBe('true');
+      const part = wrapper.getAttribute('data-part');
+      expect(wrapper.getAttribute('data-icon')).toBe(
+        part === 'startIcon' ? 'inline-start' : 'inline-end',
+      );
+    }
+    const triggerOrder = [...trigger().children].map(
+      (el) => el.getAttribute('data-part') ?? el.tagName.toLowerCase(),
+    );
+    expect(triggerOrder).toEqual(['startIcon', 'value', 'endIcon', 'svg']);
+    const itemOrder = [...option('apple').children].map(
+      (el) => el.getAttribute('data-part') ?? 'text',
+    );
+    expect(itemOrder).toEqual(['text', 'startIcon', 'text', 'endIcon']);
+  });
+
+  it('the trigger value ignores an item icon title', async () => {
+    const html = await render(
+      { value: 'apple' },
+      { 'item-start-icon-apple': '<svg><title>Apple icon</title></svg>' },
+    );
+    document.body.innerHTML = html;
+    bindSelect(document.body.querySelector('rafters-select') as HTMLElement);
+    expect(valueEl().textContent?.trim()).toBe('Apple');
+  });
+
+  it('no wrapper when no icon slot is given', async () => {
+    await mount();
+    expect(document.querySelector('[data-part="startIcon"]')).toBeNull();
+    expect(document.querySelector('[data-part="endIcon"]')).toBeNull();
   });
 });

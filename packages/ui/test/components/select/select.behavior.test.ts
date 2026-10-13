@@ -10,7 +10,14 @@ import {
   type SelectState,
 } from '../../../src/components/select/select.behavior';
 
-const ids: PartIds<SelectPart> = { root: 'r', trigger: 't', content: 'c', item: '' };
+const ids: PartIds<SelectPart> = {
+  root: 'r',
+  trigger: 't',
+  content: 'c',
+  item: '',
+  startIcon: '',
+  endIcon: '',
+};
 
 const closed: SelectConfig = {};
 const openSeed: SelectConfig = { defaultOpen: true };
@@ -21,10 +28,27 @@ function ariaAt(config: SelectConfig, state: SelectState = select.initialState(c
 
 describe('select parts', () => {
   it('declares root, trigger, the listbox content, and the many-instance item', () => {
-    expect(Object.keys(select.parts).sort()).toEqual(['content', 'item', 'root', 'trigger']);
+    expect(Object.keys(select.parts).sort()).toEqual([
+      'content',
+      'endIcon',
+      'item',
+      'root',
+      'startIcon',
+      'trigger',
+    ]);
     expect(select.parts.item.many).toBe(true);
     expect(select.parts.content.optional).toBe(true);
     expect(select.parts.trigger.optional).toBeUndefined();
+  });
+});
+
+describe('select icons', () => {
+  it('declares startIcon and endIcon as optional, repeatable parts that project aria-hidden', () => {
+    expect(select.parts.startIcon).toEqual({ optional: true, many: true });
+    expect(select.parts.endIcon).toEqual({ optional: true, many: true });
+    const aria = ariaAt(closed);
+    expect(aria.startIcon).toEqual({ 'aria-hidden': 'true' });
+    expect(aria.endIcon).toEqual({ 'aria-hidden': 'true' });
   });
 });
 

@@ -6,7 +6,7 @@
 import * as React from 'react';
 import { cleanup, render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   Select,
   SelectContent,
@@ -14,6 +14,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../../../src/components/select/select';
+import {
+  ICON_SVG_16,
+  ICON_SVG_20,
+  installIconLayout,
+  itemRects,
+  triggerRects,
+} from './icon-layout';
 import {
   select,
   selectItemAria,
@@ -266,5 +273,117 @@ describe('select [react]', () => {
     await user.click(trigger());
     await user.click(option('apple'));
     expect(input.value).toBe('apple');
+  });
+});
+
+describe('select icons [react]', () => {
+  let uninstall: () => void;
+  beforeEach(() => {
+    uninstall = installIconLayout();
+  });
+  afterEach(() => uninstall());
+
+  const svg = (markup: string) => <span dangerouslySetInnerHTML={{ __html: markup }} />;
+
+  function IconSelect({
+    start,
+    end,
+    itemStart,
+    itemEnd,
+  }: {
+    start?: React.ReactNode;
+    end?: React.ReactNode;
+    itemStart?: React.ReactNode;
+    itemEnd?: React.ReactNode;
+  }) {
+    return (
+      <Select defaultOpen>
+        <SelectTrigger aria-label="Fruit" startIcon={start} endIcon={end}>
+          <SelectValue placeholder="Pick a fruit" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="apple" startIcon={itemStart} endIcon={itemEnd}>
+            Apple
+          </SelectItem>
+          <SelectItem value="banana">Banana</SelectItem>
+        </SelectContent>
+      </Select>
+    );
+  }
+
+  it('trigger: start, end and both render beside the value', () => {
+    for (const [name, start, end] of [
+      ['start', svg(ICON_SVG_16), undefined],
+      ['end', undefined, svg(ICON_SVG_16)],
+      ['both', svg(ICON_SVG_16), svg(ICON_SVG_16)],
+    ] as const) {
+      const { unmount } = render(<IconSelect start={start} end={end} />);
+      const r = triggerRects(root());
+      if (name !== 'end') {
+        expect(r.start, name).not.toBeNull();
+        expect(r.start?.right as number).toBeLessThanOrEqual(r.label.left + 0.5);
+      }
+      if (name !== 'start') {
+        expect(r.end, name).not.toBeNull();
+        expect(r.end?.left as number).toBeGreaterThanOrEqual(r.label.right - 0.5);
+      }
+      unmount();
+    }
+  });
+
+  it('item: start and end render beside the item text, and labels align across items', () => {
+    render(<IconSelect itemStart={svg(ICON_SVG_16)} itemEnd={svg(ICON_SVG_16)} />);
+    const apple = itemRects(option('apple'));
+    expect((apple.start as DOMRect).right).toBeLessThanOrEqual(apple.label.left + 0.5);
+    expect((apple.end as DOMRect).left).toBeGreaterThanOrEqual(apple.label.right - 0.5);
+    // Banana has no icon, yet its label starts where Apple's does (subgrid).
+    const banana = itemRects(option('banana'));
+    expect(banana.label.left).toBe(apple.label.left);
+  });
+
+  it('every wrapper is aria-hidden, and absent when no icon is given', () => {
+    const { unmount } = render(
+      <IconSelect
+        start={svg(ICON_SVG_16)}
+        end={svg(ICON_SVG_16)}
+        itemStart={svg(ICON_SVG_16)}
+        itemEnd={svg(ICON_SVG_16)}
+      />,
+    );
+    const wrappers = body().querySelectorAll('[data-part="startIcon"], [data-part="endIcon"]');
+    expect(wrappers.length).toBe(4);
+    for (const w of wrappers) expect(w.getAttribute('aria-hidden')).toBe('true');
+    unmount();
+    render(<IconSelect />);
+    expect(body().querySelector('[data-part="startIcon"]')).toBeNull();
+    expect(body().querySelector('[data-part="endIcon"]')).toBeNull();
+  });
+
+  it('the trigger value shows the item text alone, not an item icon title', async () => {
+    const user = userEvent.setup();
+    render(
+      <IconSelect itemStart={svg('<svg width="16" height="16"><title>Apple icon</title></svg>')} />,
+    );
+    await user.click(option('apple'));
+    expect(value().textContent).toBe('Apple');
+  });
+
+  it('on a dir="rtl" page the start icon renders on the right of the value and the item text', () => {
+    document.documentElement.dir = 'rtl';
+    render(<IconSelect start={svg(ICON_SVG_16)} itemStart={svg(ICON_SVG_16)} />);
+    const t = triggerRects(root());
+    expect((t.start as DOMRect).left).toBeGreaterThan(t.label.left);
+    const i = itemRects(option('apple'));
+    expect((i.start as DOMRect).left).toBeGreaterThan(i.label.left);
+  });
+
+  it('an icon keeps its own size', () => {
+    render(
+      <IconSelect start={svg(ICON_SVG_16)} end={svg(ICON_SVG_20)} itemStart={svg(ICON_SVG_20)} />,
+    );
+    const t = triggerRects(root());
+    expect(t.start?.width).toBe(16);
+    expect(t.end?.width).toBe(20);
+    expect(itemRects(option('apple')).start?.width).toBe(20);
   });
 });

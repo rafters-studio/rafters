@@ -58,6 +58,7 @@ import {
   startSelectOpenEffects,
   type SelectActions,
   type SelectConfig,
+  type SelectIconPart,
   type SelectPart,
   type SelectState,
 } from './select.behavior';
@@ -271,8 +272,37 @@ export function Select({
   );
 }
 
+/** A decorative icon wrapper: present only when an icon is given, hidden from
+ *  assistive technology by the behavior's projection. */
+function IconWrapper({
+  part,
+  className,
+  children,
+}: {
+  part: SelectIconPart;
+  className: string;
+  children: React.ReactNode;
+}) {
+  const { aria } = useSelectContext('Select icon');
+  if (children == null || children === false) return null;
+  return (
+    <span
+      data-part={part}
+      data-icon={part === 'startIcon' ? 'inline-start' : 'inline-end'}
+      className={className}
+      {...aria[part]}
+    >
+      {children}
+    </span>
+  );
+}
+
 export interface SelectTriggerProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   asChild?: boolean;
+  /** Decorative icon before the value (after it on a right-to-left page). Hidden from assistive technology. */
+  startIcon?: React.ReactNode;
+  /** Decorative icon after the value (before it on a right-to-left page), before the chevron. Hidden from assistive technology. */
+  endIcon?: React.ReactNode;
 }
 
 export function SelectTrigger({
@@ -280,6 +310,8 @@ export function SelectTrigger({
   children,
   asChild,
   onClick,
+  startIcon,
+  endIcon,
   ...props
 }: SelectTriggerProps) {
   const { ids, aria, request, effectiveOpen, disabled, classes } =
@@ -306,7 +338,13 @@ export function SelectTrigger({
 
   return (
     <button type="button" className={classy(classes.trigger, className)} {...partProps} {...props}>
+      <IconWrapper part="startIcon" className={classes.triggerStartIcon}>
+        {startIcon}
+      </IconWrapper>
       {children}
+      <IconWrapper part="endIcon" className={classes.triggerEndIcon}>
+        {endIcon}
+      </IconWrapper>
       <svg
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 24 24"
@@ -412,6 +450,10 @@ export interface SelectItemProps extends React.HTMLAttributes<HTMLDivElement> {
   value: string;
   disabled?: boolean;
   asChild?: boolean;
+  /** Decorative icon before the item text (after it on a right-to-left page). Hidden from assistive technology. */
+  startIcon?: React.ReactNode;
+  /** Decorative icon after the item text (before it on a right-to-left page). Hidden from assistive technology. */
+  endIcon?: React.ReactNode;
 }
 
 export function SelectItem({
@@ -422,6 +464,8 @@ export function SelectItem({
   onClick,
   onPointerMove,
   onFocus,
+  startIcon,
+  endIcon,
   ...props
 }: SelectItemProps) {
   const { state, config, request, getPart, classes } = useSelectContext('SelectItem');
@@ -470,7 +514,13 @@ export function SelectItem({
       {...props}
     >
       {indicator}
+      <IconWrapper part="startIcon" className={classes.startIcon}>
+        {startIcon}
+      </IconWrapper>
       {text}
+      <IconWrapper part="endIcon" className={classes.endIcon}>
+        {endIcon}
+      </IconWrapper>
     </div>
   );
 }
