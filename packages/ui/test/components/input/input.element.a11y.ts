@@ -52,3 +52,19 @@ for (const [name, markup] of scenes) {
     expect(results.violations).toEqual([]);
   });
 }
+
+test('rafters-input with start and end icon slots, svg title does not leak into the name', async ({
+  task,
+}) => {
+  const host = await mount(
+    `<rafters-input>
+      <svg slot="start-icon" viewBox="0 0 24 24"><title>Magnifier</title></svg>
+      <input data-part="input" id="i" aria-label="Search" value="" />
+      <svg slot="end-icon" viewBox="0 0 24 24"><title>Clear</title></svg>
+    </rafters-input>`,
+  );
+  const results = await runAxe(host);
+  task.meta.axe = results;
+  expect(results.violations).toEqual([]);
+  expect(host.querySelectorAll('[data-icon][aria-hidden="true"]').length).toBe(2);
+});

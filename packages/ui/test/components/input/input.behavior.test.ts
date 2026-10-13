@@ -3,11 +3,12 @@ import { createBehavior, type PartIds } from '../../../src/lib/contract';
 import {
   effectiveValue,
   inputBehavior,
+  wrapInputIcons,
   type InputConfig,
   type InputPart,
 } from '../../../src/components/input/input.behavior';
 
-const ids: PartIds<InputPart> = { input: 'i', error: 'e' };
+const ids: PartIds<InputPart> = { input: 'i', error: 'e', startIcon: 's', endIcon: 'n' };
 
 function ariaAt(config: InputConfig, partIds: PartIds<InputPart> = ids) {
   return inputBehavior.aria(inputBehavior.initialState(config), config, partIds);
@@ -15,9 +16,61 @@ function ariaAt(config: InputConfig, partIds: PartIds<InputPart> = ids) {
 
 describe('input parts', () => {
   it('declares the input control and an optional error target', () => {
-    expect(Object.keys(inputBehavior.parts).sort()).toEqual(['error', 'input']);
+    expect(Object.keys(inputBehavior.parts).sort()).toEqual([
+      'endIcon',
+      'error',
+      'input',
+      'startIcon',
+    ]);
     expect(inputBehavior.parts.error.optional).toBe(true);
     expect(inputBehavior.parts.input.optional).toBeUndefined();
+  });
+});
+
+describe('input icon parts', () => {
+  it('declares startIcon and endIcon as optional parts that project aria-hidden', () => {
+    expect(inputBehavior.parts.startIcon).toEqual({ optional: true });
+    expect(inputBehavior.parts.endIcon).toEqual({ optional: true });
+    const aria = ariaAt({});
+    expect(aria.startIcon).toEqual({ 'aria-hidden': 'true' });
+    expect(aria.endIcon).toEqual({ 'aria-hidden': 'true' });
+  });
+});
+
+describe('wrapInputIcons', () => {
+  function host(children: string): HTMLElement {
+    document.body.innerHTML = `<rafters-input>${children}<input data-part="input" id="i" aria-label="Q" /></rafters-input>`;
+    return document.querySelector('rafters-input') as HTMLElement;
+  }
+
+  it('seats slotted children in hidden wrappers inside addon parts, in reading order', () => {
+    const h = host('<svg slot="end-icon"></svg><svg slot="start-icon"></svg>');
+    wrapInputIcons(h);
+    const row = h.querySelector('[data-part="row"]') as HTMLElement;
+    expect([...row.children].map((el) => el.getAttribute('data-part'))).toEqual([
+      'addonStart',
+      'input',
+      'addonEnd',
+    ]);
+    const start = row.querySelector('[data-part="addonStart"] > [data-part="startIcon"]');
+    expect(start?.getAttribute('aria-hidden')).toBe('true');
+    expect(start?.getAttribute('data-icon')).toBe('inline-start');
+    const end = row.querySelector('[data-part="addonEnd"] > [data-part="endIcon"]');
+    expect(end?.getAttribute('aria-hidden')).toBe('true');
+    expect(end?.getAttribute('data-icon')).toBe('inline-end');
+    expect(start?.querySelector('svg')?.hasAttribute('slot')).toBe(false);
+  });
+
+  it('adds no row without a slotted child, and is idempotent', () => {
+    const bare = host('');
+    wrapInputIcons(bare);
+    expect(bare.querySelector('[data-part="row"]')).toBeNull();
+    const h = host('<svg slot="start-icon"></svg>');
+    wrapInputIcons(h);
+    wrapInputIcons(h);
+    expect(h.querySelectorAll('[data-part="row"]').length).toBe(1);
+    expect(h.querySelectorAll('[data-part="startIcon"]').length).toBe(1);
+    expect(h.querySelector('[data-part="endIcon"]')).toBeNull();
   });
 });
 

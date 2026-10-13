@@ -43,6 +43,7 @@ import {
   comboboxItemAria,
   isOpen,
   matchesQuery,
+  optionLabel,
   positionCombobox,
   selectedValue,
   visibleOptionValues,
@@ -215,7 +216,7 @@ export function Combobox({
       );
       if (!item || item.getAttribute('aria-disabled') === 'true') return;
       event.preventDefault();
-      request('select', { value, label: (item.textContent ?? '').trim() });
+      request('select', { value, label: optionLabel(item) });
       return;
     }
     if (action === 'close') {
@@ -260,9 +261,16 @@ export function Combobox({
 export interface ComboboxInputProps extends Omit<
   React.InputHTMLAttributes<HTMLInputElement>,
   'value' | 'onChange'
-> {}
+> {
+  /** Decorative icon at the start of the input (the right on a right-to-left page). Hidden from assistive technology. */
+  startIcon?: React.ReactNode;
+}
 
-export function ComboboxInput({ className, ...props }: ComboboxInputProps) {
+function hasIcon(icon: React.ReactNode): boolean {
+  return icon != null && icon !== false;
+}
+
+export function ComboboxInput({ className, startIcon, ...props }: ComboboxInputProps) {
   const { ids, aria, request, query, effectiveOpen, getPart, disabled, classes } =
     useComboboxContext('Combobox.Input');
 
@@ -292,6 +300,16 @@ export function ComboboxInput({ className, ...props }: ComboboxInputProps) {
         {...aria.input}
         {...props}
       />
+      {hasIcon(startIcon) ? (
+        <span
+          data-part="startIcon"
+          data-icon="inline-start"
+          className={classes.startIcon}
+          {...aria.startIcon}
+        >
+          {startIcon}
+        </span>
+      ) : null}
       <button
         type="button"
         data-part="trigger"
@@ -384,19 +402,30 @@ export function ComboboxGroup({ heading, className, children, ...props }: Combob
 export interface ComboboxItemProps extends React.HTMLAttributes<HTMLDivElement> {
   value: string;
   disabled?: boolean;
+  /** Decorative icon before the label (after it on a right-to-left page). Hidden from assistive technology. */
+  startIcon?: React.ReactNode;
 }
 
 export function ComboboxItem({
   value: itemValue,
   disabled = false,
+  startIcon,
   className,
   children,
   onClick,
   onPointerMove,
   ...props
 }: ComboboxItemProps) {
-  const { state, config, ids, request, getPart, query, classes } =
-    useComboboxContext('Combobox.Item');
+  const {
+    state,
+    config,
+    ids,
+    request,
+    getPart,
+    query,
+    classes,
+    aria: contextAria,
+  } = useComboboxContext('Combobox.Item');
   const label = typeof children === 'string' ? children : itemValue;
   const aria = comboboxItemAria(itemValue, state, config);
   const isSelected = selectedValue(state, config) === itemValue;
@@ -441,6 +470,16 @@ export function ComboboxItem({
       {...props}
     >
       {indicator}
+      {hasIcon(startIcon) ? (
+        <span
+          data-part="startIcon"
+          data-icon="inline-start"
+          className={classes.itemStartIcon}
+          {...contextAria.startIcon}
+        >
+          {startIcon}
+        </span>
+      ) : null}
       {text}
     </div>
   );

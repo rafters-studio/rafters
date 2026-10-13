@@ -19,6 +19,7 @@ const ids: PartIds<ComboboxPart> = {
   content: 'c',
   item: '',
   empty: 'e',
+  startIcon: '',
 };
 
 const closed: ComboboxConfig = {};
@@ -36,6 +37,7 @@ describe('combobox parts', () => {
       'input',
       'item',
       'root',
+      'startIcon',
       'trigger',
     ]);
     expect(combobox.parts.item.many).toBe(true);
@@ -279,5 +281,13 @@ describe('combobox keymap (all keys ride the input)', () => {
   it('claims no keys off the input and ignores plain typing keys', () => {
     expect(combobox.keymap({ key: 'ArrowDown' }, openState, 'content', closed)).toBeNull();
     expect(combobox.keymap({ key: 'a' }, openState, 'input', closed)).toBeNull();
+  });
+});
+
+describe('combobox icon part', () => {
+  it('declares startIcon as an optional part that projects aria-hidden', () => {
+    expect(combobox.parts.startIcon).toEqual({ optional: true, many: true });
+    expect(ariaAt(closed).startIcon).toEqual({ 'aria-hidden': 'true' });
+    expect(ariaAt(openSeed).startIcon).toEqual({ 'aria-hidden': 'true' });
   });
 });
