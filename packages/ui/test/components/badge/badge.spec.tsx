@@ -171,19 +171,20 @@ describe('badge icons [react]', () => {
 
   it('the accessible name is the label alone even when the svg has a title', async () => {
     render(
-      <Badge
-        role="status"
-        startIcon={
-          <svg viewBox="0 0 24 24" width="16" height="16">
-            <title>Mail icon</title>
-          </svg>
-        }
-      >
-        Sent
-      </Badge>,
+      <button type="button">
+        <Badge
+          startIcon={
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <title>Mail icon</title>
+            </svg>
+          }
+        >
+          Sent
+        </Badge>
+      </button>,
     );
     await expect
-      .element(page.getByRole('status', { name: 'Sent', exact: true }))
+      .element(page.getByRole('button', { name: 'Sent', exact: true }))
       .toBeInTheDocument();
   });
 });

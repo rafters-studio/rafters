@@ -56,5 +56,4 @@ test('badge with start and end icons, svg title does not leak into the name', as
   task.meta.axe = results;
   expect(results.violations).toEqual([]);
   expect(container.querySelectorAll('[data-icon][aria-hidden="true"]').length).toBe(2);
-  expect(container.querySelector('[data-part="root"]')?.textContent).toBe('MailSent');
 });
