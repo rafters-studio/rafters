@@ -3,6 +3,8 @@ import type { ButtonConfig, ButtonSize, ButtonState, ButtonVariant } from './but
 export interface ButtonClassSet {
   root: string;
   spinner: string;
+  startIcon: string;
+  endIcon: string;
 }
 
 const variantClasses: Record<ButtonVariant, string> = {
@@ -56,11 +58,25 @@ const variantClasses: Record<ButtonVariant, string> = {
     'focus-visible:ring-2 focus-visible:ring-ring',
 };
 
+// Padding tightens on the icon's own side only, in logical edges so the start
+// icon sits on the right of the label on a dir="rtl" page. Each text size
+// restates its tighter edge at the same container breakpoint as its px-*.
+// Icon-only sizes carry no label to pad.
 const sizeClasses: Record<ButtonSize, string> = {
-  default: 'h-11 px-4 py-2.5 @md:h-10 @md:py-2',
-  xs: 'h-11 px-3 text-label-small ts-label-small @md:h-6 @md:px-2',
-  sm: 'h-11 px-4 text-label-small ts-label-small @md:h-8 @md:px-3',
-  lg: 'h-12 px-6 text-label-large ts-label-large',
+  default:
+    'h-11 px-4 py-2.5 @md:h-10 @md:py-2 ' +
+    'has-data-[icon=inline-start]:ps-3 has-data-[icon=inline-end]:pe-3',
+  xs:
+    'h-11 px-3 text-label-small ts-label-small @md:h-6 @md:px-2 ' +
+    'has-data-[icon=inline-start]:ps-2 has-data-[icon=inline-end]:pe-2 ' +
+    '@md:has-data-[icon=inline-start]:ps-1.5 @md:has-data-[icon=inline-end]:pe-1.5',
+  sm:
+    'h-11 px-4 text-label-small ts-label-small @md:h-8 @md:px-3 ' +
+    'has-data-[icon=inline-start]:ps-3 has-data-[icon=inline-end]:pe-3 ' +
+    '@md:has-data-[icon=inline-start]:ps-2 @md:has-data-[icon=inline-end]:pe-2',
+  lg:
+    'h-12 px-6 text-label-large ts-label-large ' +
+    'has-data-[icon=inline-start]:ps-4 has-data-[icon=inline-end]:pe-4',
   icon: 'h-11 w-11 @md:h-10 @md:w-10',
   'icon-xs': 'h-11 w-11 @md:h-6 @md:w-6',
   'icon-sm': 'h-11 w-11 @md:h-8 @md:w-8',
@@ -96,7 +112,7 @@ const sizeClasses: Record<ButtonSize, string> = {
 // token leaves (packages/design-tokens/src/exporters/tailwind.ts,
 // REDUCED_MOTION_ZEROED), and a component-level escape fights it.
 const baseClasses =
-  'inline-flex items-center justify-center gap-2 rounded-md text-label-large ts-label-large cursor-pointer ' +
+  'inline-grid grid-flow-col items-center justify-center gap-2 rounded-md text-label-large ts-label-large cursor-pointer ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ' +
   'transition-[color,background-color,border-color,box-shadow,scale] duration-fast ease-standard ' +
   'scale-100 extent-press ' +
@@ -145,10 +161,15 @@ const baseClasses =
 const spinnerClasses =
   'h-5 w-5 @md:h-4 @md:w-4 animate-spin-spin transition-opacity duration-fast ease-standard';
 
+// The wrapper only places and hides: the brand brings its icons, sizing included.
+const iconClasses = 'inline-grid place-items-center';
+
 export function buttonClasses(config: ButtonConfig, _state: ButtonState): ButtonClassSet {
   return {
     root: `${baseClasses} ${variantClasses[config.variant]} ${sizeClasses[config.size]}`,
     spinner: spinnerClasses,
+    startIcon: iconClasses,
+    endIcon: iconClasses,
   };
 }
 

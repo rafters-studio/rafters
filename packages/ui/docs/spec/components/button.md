@@ -170,6 +170,31 @@ Emitted on `loading` transitions with `config.loadingAnnouncement` /
 `config.loadedAnnouncement`. `aria-busy` alone has weak screen-reader
 support; the live-region announcement is the reliable channel.
 
+## Icons beside a label
+
+Two optional props place decorative icons around the label, in reading order (MUI's names): `startIcon` and `endIcon`.
+
+| Target | Start icon | End icon |
+| --- | --- | --- |
+| React | `startIcon: ReactNode` | `endIcon: ReactNode` |
+| Astro | `<slot name="start-icon" />` | `<slot name="end-icon" />` |
+| Web Component | child with `slot="start-icon"` | child with `slot="end-icon"` |
+
+```html
+<button class="inline-grid grid-flow-col items-center gap-2 ...">
+  <span data-part="startIcon" data-icon="inline-start" aria-hidden="true">...</span>
+  <span data-part="label">Send</span>
+  <span data-part="endIcon" data-icon="inline-end" aria-hidden="true">...</span>
+</button>
+```
+
+- `startIcon` and `endIcon` are optional parts, present only when an icon is given. The behavior projects `aria-hidden="true"` on each, so the markup is hidden from assistive technology before any script runs; the label is the accessible name.
+- The root is a grid (`inline-grid grid-flow-col items-center`). The label and the icon wrappers are its columns in reading order, so the start icon is on the right on a `dir="rtl"` page. No physical direction class.
+- Inline padding tightens on the icon's side only, with `has-data-[icon=inline-start]:ps-*` and `has-data-[icon=inline-end]:pe-*`.
+- Rafters does not size icons. The wrapper (`inline-grid place-items-center`) only places and hides.
+- Why props and not a bare `data-icon` child as in shadcn v4: a child the author writes cannot be guaranteed `aria-hidden`. shadcn code that puts a `data-icon` child in the label still lays out, but hiding it is the author's job.
+- The icon-only guard below is unchanged.
+
 ## Icon-only label guard (compile-time 4.1.2)
 
 In `button.tsx`, icon sizes require an accessible name at the type level:

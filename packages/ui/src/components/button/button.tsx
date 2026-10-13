@@ -79,6 +79,10 @@ interface ButtonBaseProps extends React.ButtonHTMLAttributes<HTMLButtonElement> 
   onPressedChange?: (pressed: boolean) => void;
   loadingAnnouncement?: string;
   loadedAnnouncement?: string;
+  /** Decorative icon before the label (after it on a right-to-left page). Hidden from assistive technology. */
+  startIcon?: React.ReactNode;
+  /** Decorative icon after the label (before it on a right-to-left page). Hidden from assistive technology. */
+  endIcon?: React.ReactNode;
 }
 
 export type ButtonProps = ButtonBaseProps &
@@ -99,6 +103,8 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>((props, r
     loadingAnnouncement,
     loadedAnnouncement,
     onClick,
+    startIcon,
+    endIcon,
     children,
     type,
     ...rest
@@ -194,9 +200,31 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>((props, r
           <path d="M21 12a9 9 0 1 1-6.219-8.56" />
         </svg>
       ) : null}
+      {startIcon != null && startIcon !== false ? (
+        <span
+          data-part="startIcon"
+          data-icon="inline-start"
+          id={ids.startIcon}
+          className={classes.startIcon}
+          {...aria.startIcon}
+        >
+          {startIcon}
+        </span>
+      ) : null}
       <span data-part="label" id={ids.label}>
         {children}
       </span>
+      {endIcon != null && endIcon !== false ? (
+        <span
+          data-part="endIcon"
+          data-icon="inline-end"
+          id={ids.endIcon}
+          className={classes.endIcon}
+          {...aria.endIcon}
+        >
+          {endIcon}
+        </span>
+      ) : null}
     </button>
   );
 });

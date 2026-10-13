@@ -38,7 +38,7 @@
  * microtask because connectedCallback can fire before the light-DOM children
  * are parsed (upgrade order).
  */
-import { bindButton } from './button.behavior';
+import { bindButton, wrapButtonIcons } from './button.behavior';
 
 export class RaftersButton extends HTMLElement {
   private teardown: (() => void) | null = null;
@@ -47,7 +47,9 @@ export class RaftersButton extends HTMLElement {
     queueMicrotask(() => {
       if (!this.isConnected || this.teardown) return;
       const root = this.querySelector<HTMLElement>('[data-part="root"]');
-      if (root) this.teardown = bindButton(root);
+      if (!root) return;
+      wrapButtonIcons(this, root);
+      this.teardown = bindButton(root);
     });
   }
 

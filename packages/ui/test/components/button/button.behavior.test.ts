@@ -1,9 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import { createBehavior } from '../../../src/lib/contract';
-import { button, type ButtonConfig } from '../../../src/components/button/button.behavior';
+import {
+  button,
+  wrapButtonIcons,
+  type ButtonConfig,
+} from '../../../src/components/button/button.behavior';
 
 const base: ButtonConfig = { variant: 'default', size: 'default' };
-const ids = { root: 'r', label: 'r-label', spinner: 'r-spinner' };
+const ids = {
+  root: 'r',
+  label: 'r-label',
+  spinner: 'r-spinner',
+  startIcon: 'r-start',
+  endIcon: 'r-end',
+};
 
 function ariaFor(config: Partial<ButtonConfig>) {
   const full = { ...base, ...config };
@@ -25,6 +35,14 @@ describe('button aria projection', () => {
     expect(aria.root?.['aria-busy']).toBe('true');
     expect(aria.root?.['data-state']).toBe('loading');
     expect(aria.spinner).toEqual({ 'aria-hidden': 'true' });
+  });
+
+  it('declares startIcon and endIcon as optional parts that project aria-hidden', () => {
+    expect(button.parts.startIcon).toEqual({ optional: true });
+    expect(button.parts.endIcon).toEqual({ optional: true });
+    const aria = ariaFor({});
+    expect(aria.startIcon).toEqual({ 'aria-hidden': 'true' });
+    expect(aria.endIcon).toEqual({ 'aria-hidden': 'true' });
   });
 
   it('soft-disabled: aria-disabled without native disabled', () => {
@@ -114,3 +132,36 @@ describe('button keymap', () => {
 // suppression in the former shared harness ('loading at mount ... announce
 // suppressed') and the runtime transition in the React-only edge-triggered
 // suite ('announces when loading transitions false -> true').
+
+describe('wrapButtonIcons', () => {
+  function host(children: string): { host: HTMLElement; root: HTMLElement } {
+    document.body.innerHTML = `<rafters-button><button data-part="root"><span data-part="label">Send</span></button>${children}</rafters-button>`;
+    const h = document.querySelector('rafters-button') as HTMLElement;
+    return { host: h, root: h.querySelector('[data-part="root"]') as HTMLElement };
+  }
+
+  it('wraps slotted children in hidden wrappers in reading order', () => {
+    const { host: h, root } = host('<svg slot="end-icon"></svg><svg slot="start-icon"></svg>');
+    wrapButtonIcons(h, root);
+    const order = [...root.children].map((el) => el.getAttribute('data-part'));
+    expect(order).toEqual(['startIcon', 'label', 'endIcon']);
+    const start = root.querySelector('[data-part="startIcon"]');
+    expect(start?.getAttribute('aria-hidden')).toBe('true');
+    expect(start?.getAttribute('data-icon')).toBe('inline-start');
+    expect(root.querySelector('[data-part="endIcon"]')?.getAttribute('data-icon')).toBe(
+      'inline-end',
+    );
+    expect(start?.querySelector('svg')?.hasAttribute('slot')).toBe(false);
+  });
+
+  it('adds no wrapper without a slotted child, and is idempotent', () => {
+    const { host: h, root } = host('');
+    wrapButtonIcons(h, root);
+    expect(root.querySelector('[data-part="startIcon"]')).toBeNull();
+    expect(root.querySelector('[data-part="endIcon"]')).toBeNull();
+    const again = host('<svg slot="start-icon"></svg>');
+    wrapButtonIcons(again.host, again.root);
+    wrapButtonIcons(again.host, again.root);
+    expect(again.root.querySelectorAll('[data-part="startIcon"]').length).toBe(1);
+  });
+});

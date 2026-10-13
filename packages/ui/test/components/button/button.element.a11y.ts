@@ -46,7 +46,13 @@ async function mount(scene: Scene, label: string): Promise<HTMLElement> {
     defaultPressed: scene.pressed ?? false,
   };
   const state = button.initialState(config);
-  const ids = { root: 'wc-root', label: 'wc-label', spinner: 'wc-spinner' };
+  const ids = {
+    root: 'wc-root',
+    label: 'wc-label',
+    spinner: 'wc-spinner',
+    startIcon: 'wc-start',
+    endIcon: 'wc-end',
+  };
   const aria = button.aria(state, config, ids);
   const classes = buttonClasses(config, state);
 
@@ -116,3 +122,23 @@ for (const [name, scene] of states) {
     expect(results.violations).toEqual([]);
   });
 }
+
+test('rafters-button with start and end icon slots, svg title does not leak into the name', async ({
+  task,
+}) => {
+  document.body.innerHTML = `
+    <main>
+      <rafters-button>
+        <button type="button" data-part="root" id="wc-root"><span data-part="label" id="wc-label">Save changes</span></button>
+        <svg slot="start-icon" viewBox="0 0 24 24"><title>Mail</title></svg>
+        <svg slot="end-icon" viewBox="0 0 24 24"><title>Arrow</title></svg>
+      </rafters-button>
+    </main>`;
+  await Promise.resolve();
+  await Promise.resolve();
+  const host = document.body.querySelector('main') as HTMLElement;
+  const results = await runAxe(host);
+  task.meta.axe = results;
+  expect(results.violations).toEqual([]);
+  expect(host.querySelectorAll('[data-icon][aria-hidden="true"]').length).toBe(2);
+});

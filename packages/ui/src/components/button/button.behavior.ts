@@ -1,10 +1,11 @@
-import { compose } from '../../lib/compose';
+import { compose, type Slice } from '../../lib/compose';
 import {
   createBehavior,
   type AriaAttrs,
   type BehaviorSpec,
   type PartIds,
 } from '../../lib/contract';
+import { buttonClasses } from './button.classes';
 import { updateAriaAttribute } from '../../primitives/aria-manager';
 import { announceToScreenReader } from '../../primitives/sr-announcer';
 import {
@@ -70,11 +71,36 @@ export interface ButtonConfig extends PressableConfig {
 
 export type ButtonState = PressableState;
 export type ButtonActions = PressableActions;
-export type ButtonPart = PressablePart;
+export type ButtonIconPart = 'startIcon' | 'endIcon';
+export type ButtonPart = PressablePart | ButtonIconPart;
+
+/**
+ * The decorative icon wrappers. Each is present only when the author gives an
+ * icon, and each projects aria-hidden="true" so the label alone is the
+ * accessible name on every target, with or without JavaScript. The wrapper
+ * carries the hiding because a child the author writes cannot be guaranteed to.
+ */
+function buttonIcons(): Slice<
+  ButtonConfig,
+  Record<never, never>,
+  Record<never, never>,
+  ButtonIconPart
+> {
+  return {
+    name: 'button-icons',
+    parts: { startIcon: { optional: true }, endIcon: { optional: true } },
+    initialState: () => ({}),
+    aria: () => ({
+      startIcon: { 'aria-hidden': 'true' },
+      endIcon: { 'aria-hidden': 'true' },
+    }),
+  };
+}
 
 export const button: BehaviorSpec<ButtonConfig, ButtonState, ButtonActions, ButtonPart> = compose(
   'button',
   pressable<ButtonConfig>(),
+  buttonIcons(),
 );
 
 /**
@@ -173,4 +199,35 @@ export function bindButton(root: HTMLElement): () => void {
     unsubscribe();
     root.removeEventListener('click', onClick);
   };
+}
+
+/**
+ * Wrap each `slot="start-icon"` / `slot="end-icon"` child of the host in the
+ * decorative wrapper the behavior projects aria-hidden onto, inside the root,
+ * before the bind reads the parts. The light DOM has no slot assignment, so the
+ * slot attribute is only the author's marker.
+ */
+export function wrapButtonIcons(host: HTMLElement, root: HTMLElement): void {
+  const label = root.querySelector('[data-part="label"]');
+  const classes = buttonClasses(
+    { variant: 'default', size: 'default' },
+    button.initialState({ variant: 'default', size: 'default' }),
+  );
+  const kinds = [
+    { slot: 'start-icon', part: 'startIcon', icon: 'inline-start', className: classes.startIcon },
+    { slot: 'end-icon', part: 'endIcon', icon: 'inline-end', className: classes.endIcon },
+  ] as const;
+  for (const kind of kinds) {
+    const child = host.querySelector(`:scope > [slot="${kind.slot}"]`);
+    if (!child || root.querySelector(`[data-part="${kind.part}"]`)) continue;
+    const wrapper = document.createElement('span');
+    wrapper.dataset['part'] = kind.part;
+    wrapper.dataset['icon'] = kind.icon;
+    wrapper.setAttribute('aria-hidden', 'true');
+    wrapper.className = kind.className;
+    child.removeAttribute('slot');
+    wrapper.appendChild(child);
+    if (kind.slot === 'start-icon') root.insertBefore(wrapper, label ?? root.firstChild);
+    else root.appendChild(wrapper);
+  }
 }

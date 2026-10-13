@@ -8,12 +8,17 @@
  * icon-only accessible-name pattern is expressible via aria-label on the
  * inner button.
  */
-import { afterEach, beforeAll, describe, expect, it, test } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, test } from 'vitest';
 import { page } from 'vitest/browser';
 import userEvent from '@testing-library/user-event';
-import { button, type ButtonConfig } from '../../../src/components/button/button.behavior';
+import {
+  button,
+  type ButtonConfig,
+  type ButtonPart,
+} from '../../../src/components/button/button.behavior';
 import { buttonClasses } from '../../../src/components/button/button.classes';
 import { RaftersButton } from '../../../src/components/button/button.element';
+import { installIconLayout, ICON_SVG_16, rectsOf } from './icon-layout';
 import { clearAllAnnouncers, getAnnouncerCount } from '../../../src/primitives/sr-announcer';
 
 beforeAll(() => {
@@ -41,7 +46,7 @@ interface ScenarioProps {
 interface Scenario {
   name: string;
   props: ScenarioProps;
-  expectedParts: ReadonlyArray<'root' | 'label' | 'spinner'>;
+  expectedParts: ReadonlyArray<ButtonPart>;
 }
 
 const SCENARIOS: ReadonlyArray<Scenario> = [
@@ -93,7 +98,13 @@ function applyAria(
 async function mountButton(props: ScenarioProps, label: string): Promise<HTMLElement> {
   const config = configFor(props);
   const state = button.initialState(config);
-  const ids = { root: 'wc-root', label: 'wc-label', spinner: 'wc-spinner' };
+  const ids = {
+    root: 'wc-root',
+    label: 'wc-label',
+    spinner: 'wc-spinner',
+    startIcon: 'wc-start',
+    endIcon: 'wc-end',
+  };
   const aria = button.aria(state, config, ids);
   const classes = buttonClasses(config, state);
 
@@ -136,7 +147,7 @@ function assertContract(
   root: HTMLElement,
   state: ReturnType<typeof button.initialState>,
   config: ButtonConfig,
-  expectedParts: ReadonlyArray<'root' | 'label' | 'spinner'>,
+  expectedParts: ReadonlyArray<ButtonPart>,
 ): void {
   for (const part of expectedParts) {
     const element =
@@ -147,6 +158,8 @@ function assertContract(
     root: root.id,
     label: root.querySelector<HTMLElement>('[data-part="label"]')?.id ?? '',
     spinner: root.querySelector<HTMLElement>('[data-part="spinner"]')?.id ?? '',
+    startIcon: root.querySelector<HTMLElement>('[data-part="startIcon"]')?.id ?? '',
+    endIcon: root.querySelector<HTMLElement>('[data-part="endIcon"]')?.id ?? '',
   };
   const projection = button.aria(state, config, ids);
   for (const part of Object.keys(button.parts) as Array<keyof typeof projection>) {
@@ -225,5 +238,50 @@ describe('button [wc]', () => {
     const root = await mountButton({ disabled: true }, 'Delete');
     expect(root.hasAttribute('disabled')).toBe(true);
     expect(root.hasAttribute('aria-disabled')).toBe(false);
+  });
+});
+
+describe('button icons [wc]', () => {
+  let uninstall: () => void;
+  beforeEach(() => {
+    uninstall = installIconLayout();
+  });
+  afterEach(() => {
+    for (const el of document.querySelectorAll('rafters-button')) el.remove();
+    uninstall();
+  });
+
+  async function mountIcons(children = ''): Promise<HTMLElement> {
+    document.body.innerHTML = `<rafters-button><button type="button" data-part="root" id="r"><span data-part="label" id="r-label">Send</span></button>${children}</rafters-button>`;
+    await Promise.resolve();
+    await Promise.resolve();
+    return document.querySelector('[data-part="root"]') as HTMLElement;
+  }
+
+  it('slot="start-icon" and slot="end-icon" children become hidden wrappers beside the label', async () => {
+    const root = await mountIcons(
+      `<span slot="start-icon">${ICON_SVG_16}</span><span slot="end-icon">${ICON_SVG_16}</span>`,
+    );
+    const start = root.querySelector('[data-part="startIcon"]');
+    const end = root.querySelector('[data-part="endIcon"]');
+    expect(start?.getAttribute('aria-hidden')).toBe('true');
+    expect(end?.getAttribute('aria-hidden')).toBe('true');
+    const r = rectsOf(root);
+    expect((r.start as DOMRect).right).toBeLessThanOrEqual(r.label.left + 0.5);
+    expect((r.end as DOMRect).left).toBeGreaterThanOrEqual(r.label.right - 0.5);
+    expect(r.start?.width).toBe(16);
+  });
+
+  it('on a dir="rtl" page the start icon renders on the right of the label', async () => {
+    document.documentElement.dir = 'rtl';
+    const root = await mountIcons(`<span slot="start-icon">${ICON_SVG_16}</span>`);
+    const r = rectsOf(root);
+    expect((r.start as DOMRect).left).toBeGreaterThan(r.label.left);
+  });
+
+  it('no wrapper without an icon child', async () => {
+    const root = await mountIcons();
+    expect(root.querySelector('[data-part="startIcon"]')).toBeNull();
+    expect(root.querySelector('[data-part="endIcon"]')).toBeNull();
   });
 });
