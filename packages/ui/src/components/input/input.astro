@@ -47,6 +47,7 @@
 import type { HTMLAttributes } from 'astro/types';
 import { inputBehavior, type InputConfig, type InputPart } from './input.behavior';
 import { inputClassSet } from './input.classes';
+import { addonPart, inputGroupBehavior } from '../input-group/input-group.behavior';
 import type { PartIds } from '../../lib/contract';
 
 interface Props {
@@ -78,7 +79,19 @@ const {
   error,
 } = Astro.props;
 
-const config: InputConfig = { value, defaultValue, disabled, readonly, required, invalid };
+const hasStart = Astro.slots.has('start-icon');
+const hasEnd = Astro.slots.has('end-icon');
+const hasIcons = hasStart || hasEnd;
+const config: InputConfig = {
+  value,
+  defaultValue,
+  disabled,
+  readonly,
+  required,
+  invalid,
+  startIcon: hasStart,
+  endIcon: hasEnd,
+};
 const state = inputBehavior.initialState(config);
 const classes = inputClassSet(config, state);
 
@@ -87,9 +100,34 @@ for (const part of Object.keys(inputBehavior.parts) as InputPart[]) {
   ids[part] = part === 'error' && error ? `${id}-error` : part === 'input' ? id : '';
 }
 const projection = inputBehavior.aria(state, config, ids);
+const groupAria = inputGroupBehavior.aria(
+  {},
+  {},
+  { root: '', control: '', addonStart: '', addonEnd: '' },
+);
+const startPart = addonPart('start');
+const endPart = addonPart('end');
+// With no icon the field renders bare, as before: a fragment, not a row.
+const Row = hasIcons ? 'div' : Fragment;
+const rowProps = hasIcons ? { 'data-part': 'row', class: classes.row } : {};
 const seeded = config.value ?? config.defaultValue ?? '';
 ---
 
+<Row {...rowProps}>
+{
+  hasStart && (
+    <div data-part={startPart} class={classes.addonStart} {...groupAria[startPart]}>
+      <span
+        data-part="startIcon"
+        data-icon="inline-start"
+        class={classes.startIcon}
+        {...projection.startIcon}
+      >
+        <slot name="start-icon" />
+      </span>
+    </div>
+  )
+}
 <input
   data-part="input"
   id={id}
@@ -99,9 +137,24 @@ const seeded = config.value ?? config.defaultValue ?? '';
   value={seeded}
   disabled={disabled}
   readonly={readonly}
-  class={classes.input}
+  class={hasIcons ? classes.rowInput : classes.input}
   {...projection.input}
 />
+{
+  hasEnd && (
+    <div data-part={endPart} class={classes.addonEnd} {...groupAria[endPart]}>
+      <span
+        data-part="endIcon"
+        data-icon="inline-end"
+        class={classes.endIcon}
+        {...projection.endIcon}
+      >
+        <slot name="end-icon" />
+      </span>
+    </div>
+  )
+}
+</Row>
 {
   error && (
     <div data-part="error" id={ids.error} class={classes.error}>
@@ -118,7 +171,9 @@ const seeded = config.value ?? config.defaultValue ?? '';
   // parent is the binding root so the delegated 'input' listener and the error
   // sibling both fall under it.
   for (const el of document.querySelectorAll<HTMLElement>('input[data-part="input"]')) {
-    const root = el.parentElement;
+    // With icons the field sits in a row; the root is the row's parent so the
+    // error sibling still falls under the bind.
+    const root = (el.closest('[data-part="row"]') ?? el).parentElement;
     if (!root || root.dataset['inputBound'] === 'true') continue;
     root.dataset['inputBound'] = 'true';
     bindInput(root);

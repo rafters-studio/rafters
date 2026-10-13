@@ -57,6 +57,8 @@ for an edit the field would not have accepted.
 | Part | Presence | ARIA |
 | --- | --- | --- |
 | input | always | `aria-invalid` (always `true`/`false`), `aria-required` (when required), `aria-describedby` (only when invalid AND the error id is real), `data-state` (`invalid`/`default`) |
+| startIcon | only when an icon is given | `aria-hidden="true"` |
+| endIcon | only when an icon is given | `aria-hidden="true"` |
 | error | consumer renders | referenced by `aria-describedby`; carries no aria of its own (like dialog's title/description -- an id target only) |
 
 The `error` id is sourced deterministically, NOT from a mounted child: React
@@ -69,6 +71,37 @@ That is the thin-React justification.
 Empty-id convention (ratified 2026-07-08): an absent error resolves to `''`,
 and the projection drops `aria-describedby` rather than dangle it (an axe
 violation).
+
+## Icons beside the field
+
+Two optional props place decorative icons around the field, in reading order (the same two as Button): `startIcon` (search, currency) and `endIcon` (clear, unit).
+
+| Target | Start icon | End icon |
+| --- | --- | --- |
+| React | `startIcon: ReactNode` | `endIcon: ReactNode` |
+| Astro | `<slot name="start-icon" />` | `<slot name="end-icon" />` |
+| Web Component | child with `slot="start-icon"` | child with `slot="end-icon"` |
+
+```html
+<div data-part="row" class="grid grid-flow-col grid-cols-affix-both items-center gap-2 ...">
+  <div data-part="addonStart" data-position="start">
+    <span data-part="startIcon" data-icon="inline-start" aria-hidden="true">...</span>
+  </div>
+  <input data-part="input" ... />
+  <div data-part="addonEnd" data-position="end">
+    <span data-part="endIcon" data-icon="inline-end" aria-hidden="true">...</span>
+  </div>
+</div>
+```
+
+- `startIcon` and `endIcon` are optional parts, present only when an icon is given. The behavior projects `aria-hidden="true"` on each, so the markup is hidden from assistive technology before any script runs; the label is the accessible name.
+- The icons ride InputGroup's `addonStart` / `addonEnd` parts (`input-group.md`), with `data-position` from the same projection. There is no second affix implementation; Input only draws no divider, because an icon is not a labelled affix.
+- With no icon the field renders bare, as before. With an icon it sits in a row that draws the border, the focus ring, the invalid border and the dim off the field inside it (`focus-within`, `has-[[aria-invalid=true]]`, `has-disabled`), and the field draws none.
+- The row is a grid (`grid grid-flow-col items-center gap-2`). The icons and the field are its columns in reading order, so the start icon is on the right on a `dir="rtl"` page. No physical direction class. The track list is a named utility, one per combination (`grid-cols-affix-start`, `grid-cols-affix-end`, `grid-cols-affix-both`), because `classy` skips arbitrary track lists and an absent icon must leave no empty track and no stray gap.
+- Inline padding tightens on the icon's side only, with `has-data-[icon=inline-start]:ps-*` and `has-data-[icon=inline-end]:pe-*`.
+- Rafters does not size icons. The wrapper (`inline-grid place-items-center`) only places and hides.
+- In the Web Component the bind wraps the slotted children and seats the field in the row, and sets the field's class to the in-row set.
+- An icon that carries meaning on its own (an icon-only control, a status with no text) needs an accessible name, not `aria-hidden`; it is not a `startIcon`.
 
 ## The three gotchas
 
