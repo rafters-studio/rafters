@@ -106,7 +106,7 @@ const hiddenInput = formValueAttrs({ name, value });
 
 const hasStartIcon = Astro.slots.has('start-icon');
 const hasEndIcon = Astro.slots.has('end-icon');
-const itemIcons = new Map<string, { start?: string; end?: string }>();
+const itemIcons = new Map<string, { start?: string | undefined; end?: string | undefined }>();
 for (const option of options) {
   const start = Astro.slots.has(`item-start-icon-${option.value}`)
     ? await Astro.slots.render(`item-start-icon-${option.value}`)
