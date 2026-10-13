@@ -245,11 +245,21 @@ describe('button icons [react]', () => {
 
   it('start, end and both render beside the label on one line', () => {
     for (const [name, node] of [
-      ['start', <Button startIcon={svg(ICON_SVG_16)}>Send</Button>],
-      ['end', <Button endIcon={svg(ICON_SVG_16)}>Send</Button>],
+      [
+        'start',
+        <Button key="start" startIcon={svg(ICON_SVG_16)}>
+          Send
+        </Button>,
+      ],
+      [
+        'end',
+        <Button key="end" endIcon={svg(ICON_SVG_16)}>
+          Send
+        </Button>,
+      ],
       [
         'both',
-        <Button startIcon={svg(ICON_SVG_16)} endIcon={svg(ICON_SVG_16)}>
+        <Button key="both" startIcon={svg(ICON_SVG_16)} endIcon={svg(ICON_SVG_16)}>
           Send
         </Button>,
       ],
