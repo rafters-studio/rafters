@@ -18,4 +18,12 @@ describe('grid track utilities', () => {
     expect(match).not.toBeNull();
     expect(match?.[1]).toContain('grid-template-columns: auto auto 1fr auto;');
   });
+
+  it('emits the field-row track lists, one per icon combination', () => {
+    const track = (name: string) =>
+      css.match(new RegExp(`@utility ${name} \\{([^}]*)\\}`))?.[1] ?? '';
+    expect(track('grid-cols-affix-start')).toContain('grid-template-columns: auto 1fr;');
+    expect(track('grid-cols-affix-end')).toContain('grid-template-columns: 1fr auto;');
+    expect(track('grid-cols-affix-both')).toContain('grid-template-columns: auto 1fr auto;');
+  });
 });
