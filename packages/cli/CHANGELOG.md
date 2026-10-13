@@ -1,5 +1,11 @@
 # rafters
 
+## Unreleased
+
+### Features
+
+- feat(ui): **components mirror on a `dir="rtl"` page, and the generated theme CSS gains `grid-cols-menu-row`.** Alert, Chart tooltip, Button group, Carousel, Container, Dialog, Drawer, Field, Image, Input OTP, Pagination, Popover, Resizable, Scroll area, Sheet, Table and Typography now lay out rows with Grid and write the edges that remain as logical classes (`ps`/`pe`, `ms`/`me`, `start`/`end`, `rounded-s`/`rounded-e`, `border-s`, `text-start`). Sheet and Drawer keep `side="left"`/`side="right"` physical, as in shadcn. The Tailwind exporter emits `@utility grid-cols-menu-row` (`auto auto 1fr auto`: indicator, icon, label, end), because `classy` skips arbitrary track lists. Re-run `rafters` to regenerate the theme CSS and re-add the components to pick this up.
+
 ## 0.4.3
 
 ### Breaking Changes
@@ -7,8 +13,6 @@
 - chore(ui): **the registry no longer serves the editor.** `rafters add editor` and the editor-only primitives (block-canvas, block-context-menu, block-wrapper, canvas-drop-zone, editor-toolbar, inline-formatter, inline-toolbar, rule-dialog, rule-drop-zone, rule-palette and the four serializers) are gone. The editor is being rebuilt from a new design, and these pieces belong to the old one. What carries forward is served as ordinary flat primitives: the op model (`block-ops` and the `block-op-*` files), op-based undo (`op-history`), `block-operations`, and the reusable input primitives (`clipboard`, `input-events`, `selection`, `cursor-tracker`, `command-palette`, `drag-drop`, `block-palette`).
 
 ### Features
-
-- feat(ui): **components mirror on a `dir="rtl"` page, and the generated theme CSS gains `grid-cols-menu-row`.** Alert, Chart tooltip, Button group, Carousel, Container, Dialog, Drawer, Field, Image, Input OTP, Pagination, Popover, Resizable, Scroll area, Sheet, Table and Typography now lay out rows with Grid and write the edges that remain as logical classes (`ps`/`pe`, `ms`/`me`, `start`/`end`, `rounded-s`/`rounded-e`, `border-s`, `text-start`). Sheet and Drawer keep `side="left"`/`side="right"` physical, as in shadcn. The Tailwind exporter emits `@utility grid-cols-menu-row` (`auto auto 1fr auto`: indicator, icon, label, end), because `classy` skips arbitrary track lists. Re-run `rafters` to regenerate the theme CSS and re-add the components to pick this up.
 
 - feat(composites): **the installed composites runtime embeds `composite:<id>` blocks in `toJsx` and passes them data checked against their input.** `toJsx`, `Composite` and the `createComposites` components take two new options: `resolveComposite`, a lookup from manifest id to composite file, and `rules`, the consumer's rule schemas by name. With `resolveComposite`, a `composite:<id>` block renders the referenced composite's roots inside a `Fragment` keyed by the embedding block. The embedding block's meta keys must equal the embedded composite's `input` names; each value is resolved in the parent's scope and parsed with its rule's schema, and the embedded composite renders with the parsed outputs as its props and nothing else from the parent. A missing or extra input, an input with no schema in `rules`, a value that fails its rule, an unresolved reference and an embed cycle all throw. An embedding block with `each`/`as` embeds once per item. Without `resolveComposite`, `composite:<id>` blocks render as before. `rafters add composites` installs `embed.ts`, which exports the checker `checkEmbedInput` and ships no rule code. The Astro engine and `instantiateBlocks` still pass embedded composites no data.
 
