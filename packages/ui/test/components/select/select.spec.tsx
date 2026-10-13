@@ -6,6 +6,7 @@
 import * as React from 'react';
 import { cleanup, render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { page } from 'vitest/browser';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   Select,
@@ -331,14 +332,35 @@ describe('select icons [react]', () => {
     }
   });
 
-  it('item: start and end render beside the item text, and labels align across items', () => {
-    render(<IconSelect itemStart={svg(ICON_SVG_16)} itemEnd={svg(ICON_SVG_16)} />);
-    const apple = itemRects(option('apple'));
-    expect((apple.start as DOMRect).right).toBeLessThanOrEqual(apple.label.left + 0.5);
-    expect((apple.end as DOMRect).left).toBeGreaterThanOrEqual(apple.label.right - 0.5);
-    // Banana has no icon, yet its label starts where Apple's does (subgrid).
-    const banana = itemRects(option('banana'));
-    expect(banana.label.left).toBe(apple.label.left);
+  it('item: start, end and both render beside the item text, and labels align across items', () => {
+    for (const [name, start, end] of [
+      ['start', svg(ICON_SVG_16), undefined],
+      ['end', undefined, svg(ICON_SVG_16)],
+      ['both', svg(ICON_SVG_16), svg(ICON_SVG_16)],
+    ] as const) {
+      const { unmount } = render(<IconSelect itemStart={start} itemEnd={end} />);
+      const apple = itemRects(option('apple'));
+      if (name !== 'end') {
+        expect(apple.start, name).not.toBeNull();
+        expect(apple.start?.right as number).toBeLessThanOrEqual(apple.label.left + 0.5);
+      }
+      if (name !== 'start') {
+        expect(apple.end, name).not.toBeNull();
+        expect(apple.end?.left as number).toBeGreaterThanOrEqual(apple.label.right - 0.5);
+      }
+      // Banana has no icon, yet its label starts where Apple's does (subgrid).
+      expect(itemRects(option('banana')).label.left, name).toBe(apple.label.left);
+      unmount();
+    }
+  });
+
+  it('the option name is its label alone, whatever the icon svg titles say', async () => {
+    const titled = (title: string) =>
+      svg(`<svg width="16" height="16"><title>${title}</title></svg>`);
+    render(<IconSelect itemStart={titled('Apple icon')} itemEnd={titled('Apple badge')} />);
+    await expect
+      .element(page.getByRole('option', { name: 'Apple', exact: true }))
+      .toBeInTheDocument();
   });
 
   it('every wrapper is aria-hidden, and absent when no icon is given', () => {

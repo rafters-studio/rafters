@@ -5,6 +5,7 @@
  */
 import { cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { page } from 'vitest/browser';
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { RaftersSelect } from '../../../src/components/select/select.element';
 import {
@@ -156,31 +157,59 @@ describe('select icons [wc]', () => {
 
   const valueHtml = '<div data-part="value" data-placeholder="Pick">Pick</div>';
 
-  it('slotted trigger icons become hidden wrappers beside the value, in reading order', async () => {
-    const root = await mountIcons(
-      `<span slot="start-icon">${ICON_SVG_16}</span>${valueHtml}<span slot="end-icon">${ICON_SVG_20}</span>`,
-      '',
-    );
-    const wrappers = root.querySelectorAll('[data-part="trigger"] > [data-icon]');
-    expect(wrappers.length).toBe(2);
-    for (const w of wrappers) expect(w.getAttribute('aria-hidden')).toBe('true');
-    const r = triggerRects(root);
-    expect((r.start as DOMRect).right).toBeLessThanOrEqual(r.label.left + 0.5);
-    expect((r.end as DOMRect).left).toBeGreaterThanOrEqual(r.label.right - 0.5);
-    expect(r.start?.width).toBe(16);
-    expect(r.end?.width).toBe(20);
+  it('slotted trigger icons (start, end, both) become hidden wrappers beside the value', async () => {
+    const icon = (slot: string, svg: string) => `<span slot="${slot}">${svg}</span>`;
+    for (const [name, start, end] of [
+      ['start', icon('start-icon', ICON_SVG_16), ''],
+      ['end', '', icon('end-icon', ICON_SVG_20)],
+      ['both', icon('start-icon', ICON_SVG_16), icon('end-icon', ICON_SVG_20)],
+    ] as const) {
+      const root = await mountIcons(`${start}${valueHtml}${end}`, '');
+      const wrappers = root.querySelectorAll('[data-part="trigger"] > [data-icon]');
+      expect(wrappers.length, name).toBe(name === 'both' ? 2 : 1);
+      for (const w of wrappers) expect(w.getAttribute('aria-hidden'), name).toBe('true');
+      const r = triggerRects(root);
+      if (name !== 'end') {
+        expect((r.start as DOMRect).right, name).toBeLessThanOrEqual(r.label.left + 0.5);
+        expect(r.start?.width, name).toBe(16);
+      }
+      if (name !== 'start') {
+        expect((r.end as DOMRect).left, name).toBeGreaterThanOrEqual(r.label.right - 0.5);
+        expect(r.end?.width, name).toBe(20);
+      }
+    }
   });
 
-  it('slotted item icons sit beside the item text', async () => {
-    const root = await mountIcons(
+  it('slotted item icons (start, end, both) sit beside the item text', async () => {
+    const icon = (slot: string) => `<span slot="${slot}">${ICON_SVG_16}</span>`;
+    for (const [name, extra] of [
+      ['start', icon('start-icon')],
+      ['end', icon('end-icon')],
+      ['both', icon('start-icon') + icon('end-icon')],
+    ] as const) {
+      const root = await mountIcons(valueHtml, extra);
+      const apple = root.querySelector('[data-value="apple"]') as HTMLElement;
+      const r = itemRects(apple);
+      if (name !== 'end') {
+        expect((r.start as DOMRect).right, name).toBeLessThanOrEqual(r.label.left + 0.5);
+      }
+      if (name !== 'start') {
+        expect((r.end as DOMRect).left, name).toBeGreaterThanOrEqual(r.label.right - 0.5);
+      }
+      for (const w of apple.querySelectorAll('[data-icon]')) {
+        expect(w.getAttribute('aria-hidden'), name).toBe('true');
+      }
+    }
+  });
+
+  it('the option name is its label alone, whatever the icon svg titles say', async () => {
+    await mountIcons(
       valueHtml,
-      `<span slot="start-icon">${ICON_SVG_16}</span><span slot="end-icon">${ICON_SVG_16}</span>`,
+      '<svg slot="start-icon" width="16" height="16"><title>Apple icon</title></svg>',
     );
-    const apple = root.querySelector('[data-value="apple"]') as HTMLElement;
-    const r = itemRects(apple);
-    expect((r.start as DOMRect).right).toBeLessThanOrEqual(r.label.left + 0.5);
-    expect((r.end as DOMRect).left).toBeGreaterThanOrEqual(r.label.right - 0.5);
-    expect(apple.querySelectorAll('[aria-hidden="true"][data-icon]').length).toBe(2);
+    await expect
+      .element(page.getByRole('option', { name: 'Apple', exact: true }))
+      .toBeInTheDocument();
   });
 
   it('on a dir="rtl" page the start icon renders on the right of the value and the item text', async () => {
