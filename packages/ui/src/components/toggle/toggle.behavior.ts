@@ -1,10 +1,11 @@
-import { compose, type GlueSlice } from '../../lib/compose';
+import { compose, type GlueSlice, type Slice } from '../../lib/compose';
 import {
   createBehavior,
   type AriaAttrs,
   type BehaviorSpec,
   type PartIds,
 } from '../../lib/contract';
+import { toggleClasses } from './toggle.classes';
 import { updateAriaAttribute } from '../../primitives/aria-manager';
 import {
   pressable,
@@ -35,7 +36,31 @@ export interface ToggleConfig extends PressableConfig {
 
 export type ToggleState = PressableState;
 export type ToggleActions = PressableActions;
-export type TogglePart = PressablePart;
+export type ToggleIconPart = 'startIcon' | 'endIcon';
+export type TogglePart = PressablePart | ToggleIconPart;
+
+/**
+ * The decorative icon wrappers. Each is present only when the author gives an
+ * icon, and each projects aria-hidden="true" so the label alone is the
+ * accessible name on every target, with or without JavaScript. The wrapper
+ * carries the hiding because a child the author writes cannot be guaranteed to.
+ */
+function toggleIcons(): Slice<
+  ToggleConfig,
+  Record<never, never>,
+  Record<never, never>,
+  ToggleIconPart
+> {
+  return {
+    name: 'toggle-icons',
+    parts: { startIcon: { optional: true }, endIcon: { optional: true } },
+    initialState: () => ({}),
+    aria: () => ({
+      startIcon: { 'aria-hidden': 'true' },
+      endIcon: { 'aria-hidden': 'true' },
+    }),
+  };
+}
 
 /**
  * The toggle score glues the on/off `data-state` over the pressable slice. A
@@ -59,6 +84,7 @@ const toggleState: GlueSlice<ToggleConfig, ToggleState, Record<never, never>, To
 export const toggle: BehaviorSpec<ToggleConfig, ToggleState, ToggleActions, TogglePart> = compose(
   'toggle',
   pressable<ToggleConfig>(),
+  toggleIcons(),
   toggleState,
 );
 
@@ -136,4 +162,33 @@ export function bindToggle(root: HTMLElement): () => void {
     unsubscribe();
     root.removeEventListener('click', onClick);
   };
+}
+
+/**
+ * Wrap each `slot="start-icon"` / `slot="end-icon"` child of the host in the
+ * decorative wrapper the behavior projects aria-hidden onto, inside the root,
+ * before the bind reads the parts. The light DOM has no slot assignment, so the
+ * slot attribute is only the author's marker.
+ */
+export function wrapToggleIcons(host: HTMLElement, root: HTMLElement): void {
+  const label = root.querySelector('[data-part="label"]');
+  const config: ToggleConfig = { variant: 'default', size: 'default', toggle: true };
+  const classes = toggleClasses(config, toggle.initialState(config));
+  const kinds = [
+    { slot: 'start-icon', part: 'startIcon', icon: 'inline-start', className: classes.startIcon },
+    { slot: 'end-icon', part: 'endIcon', icon: 'inline-end', className: classes.endIcon },
+  ] as const;
+  for (const kind of kinds) {
+    const child = host.querySelector(`:scope > [slot="${kind.slot}"]`);
+    if (!child || root.querySelector(`[data-part="${kind.part}"]`)) continue;
+    const wrapper = document.createElement('span');
+    wrapper.dataset['part'] = kind.part;
+    wrapper.dataset['icon'] = kind.icon;
+    wrapper.setAttribute('aria-hidden', 'true');
+    wrapper.className = kind.className;
+    child.removeAttribute('slot');
+    wrapper.appendChild(child);
+    if (kind.slot === 'start-icon') root.insertBefore(wrapper, label ?? root.firstChild);
+    else root.appendChild(wrapper);
+  }
 }
