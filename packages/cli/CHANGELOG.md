@@ -1,5 +1,11 @@
 # rafters
 
+## Unreleased
+
+### Features
+
+- feat(ui): **Button takes decorative `startIcon` and `endIcon`.** In React they are props (`startIcon: ReactNode`, `endIcon: ReactNode`), in Astro the `start-icon` and `end-icon` slots, and in the Web Component a child with `slot="start-icon"` or `slot="end-icon"`. Each icon sits in a wrapper the behavior renders with `aria-hidden="true"` in the server markup, so the label alone is the accessible name even when the icon svg has a `<title>`; the wrapper is absent when no icon is given. The button root is now an `inline-grid grid-flow-col` instead of `inline-flex`, so the start icon sits on the right on a `dir="rtl"` page, and inline padding tightens on the icon's own side only with logical `ps-*`/`pe-*` classes. The brand brings its icons, sizing included: the wrapper only places and hides. shadcn code that puts a `data-icon` child inside the label still lays out, but hiding it is then the author's job.
+
 ## 0.4.3
 
 ### Breaking Changes

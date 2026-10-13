@@ -7,10 +7,15 @@
 import * as React from 'react';
 import { cleanup, render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it, test } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, test } from 'vitest';
 import { page } from 'vitest/browser';
 import { Button, type ButtonProps } from '../../../src/components/button/button';
-import { button, type ButtonConfig } from '../../../src/components/button/button.behavior';
+import {
+  button,
+  type ButtonConfig,
+  type ButtonPart,
+} from '../../../src/components/button/button.behavior';
+import { installIconLayout, ICON_SVG_16, ICON_SVG_20, rectsOf } from './icon-layout';
 import { clearAllAnnouncers, getAnnouncerCount } from '../../../src/primitives/sr-announcer';
 
 afterEach(() => {
@@ -37,7 +42,7 @@ interface ScenarioProps {
 interface Scenario {
   name: string;
   props: ScenarioProps;
-  expectedParts: ReadonlyArray<'root' | 'label' | 'spinner'>;
+  expectedParts: ReadonlyArray<ButtonPart>;
 }
 
 const SCENARIOS: ReadonlyArray<Scenario> = [
@@ -102,7 +107,7 @@ function assertContract(
   root: HTMLElement,
   state: ReturnType<typeof button.initialState>,
   config: ButtonConfig,
-  expectedParts: ReadonlyArray<'root' | 'label' | 'spinner'>,
+  expectedParts: ReadonlyArray<ButtonPart>,
 ): void {
   for (const part of expectedParts) {
     const element =
@@ -113,6 +118,8 @@ function assertContract(
     root: root.id,
     label: root.querySelector<HTMLElement>('[data-part="label"]')?.id ?? '',
     spinner: root.querySelector<HTMLElement>('[data-part="spinner"]')?.id ?? '',
+    startIcon: root.querySelector<HTMLElement>('[data-part="startIcon"]')?.id ?? '',
+    endIcon: root.querySelector<HTMLElement>('[data-part="endIcon"]')?.id ?? '',
   };
   const projection = button.aria(state, config, ids);
   for (const part of Object.keys(button.parts) as Array<keyof typeof projection>) {
@@ -224,5 +231,115 @@ describe('button announce [react, edge-triggered]', () => {
     });
     expect(getAnnouncerCount()).toBe(1);
     unmount();
+  });
+});
+
+describe('button icons [react]', () => {
+  let uninstall: () => void;
+  beforeEach(() => {
+    uninstall = installIconLayout();
+  });
+  afterEach(() => uninstall());
+
+  const svg = (markup: string) => <span dangerouslySetInnerHTML={{ __html: markup }} />;
+
+  it('start, end and both render beside the label on one line', () => {
+    for (const [name, node] of [
+      ['start', <Button startIcon={svg(ICON_SVG_16)}>Send</Button>],
+      ['end', <Button endIcon={svg(ICON_SVG_16)}>Send</Button>],
+      [
+        'both',
+        <Button startIcon={svg(ICON_SVG_16)} endIcon={svg(ICON_SVG_16)}>
+          Send
+        </Button>,
+      ],
+    ] as const) {
+      const { container, unmount } = render(node);
+      const root = container.querySelector<HTMLElement>('[data-part="root"]') as HTMLElement;
+      const r = rectsOf(root);
+      if (name !== 'end') {
+        expect(r.start, name).not.toBeNull();
+        expect(r.start?.right as number).toBeLessThanOrEqual(r.label.left + 0.5);
+        expect(Math.abs((r.start?.top as number) - r.label.top)).toBeLessThan(r.label.height);
+      }
+      if (name !== 'start') {
+        expect(r.end, name).not.toBeNull();
+        expect(r.end?.left as number).toBeGreaterThanOrEqual(r.label.right - 0.5);
+        expect(Math.abs((r.end?.top as number) - r.label.top)).toBeLessThan(r.label.height);
+      }
+      unmount();
+    }
+  });
+
+  it('on a dir="rtl" page the start icon renders on the right of the label', () => {
+    document.documentElement.dir = 'rtl';
+    const { container } = render(<Button startIcon={svg(ICON_SVG_16)}>Send</Button>);
+    const r = rectsOf(container.querySelector<HTMLElement>('[data-part="root"]') as HTMLElement);
+    expect((r.start as DOMRect).left).toBeGreaterThan(r.label.left);
+  });
+
+  it('an icon keeps its own size', () => {
+    const { container } = render(
+      <Button startIcon={svg(ICON_SVG_16)} endIcon={svg(ICON_SVG_20)}>
+        Send
+      </Button>,
+    );
+    const r = rectsOf(container.querySelector<HTMLElement>('[data-part="root"]') as HTMLElement);
+    expect(r.start?.width).toBe(16);
+    expect(r.end?.width).toBe(20);
+  });
+
+  it('each wrapper is aria-hidden and absent when no icon is given', () => {
+    const { container } = render(
+      <Button startIcon={svg(ICON_SVG_16)} endIcon={svg(ICON_SVG_16)}>
+        Send
+      </Button>,
+    );
+    for (const part of ['startIcon', 'endIcon']) {
+      const wrapper = container.querySelector(`[data-part="${part}"]`);
+      expect(wrapper?.getAttribute('aria-hidden')).toBe('true');
+    }
+    expect(container.querySelector('[data-part="startIcon"]')?.getAttribute('data-icon')).toBe(
+      'inline-start',
+    );
+    expect(container.querySelector('[data-part="endIcon"]')?.getAttribute('data-icon')).toBe(
+      'inline-end',
+    );
+    cleanup();
+    const bare = render(<Button>Send</Button>);
+    expect(bare.container.querySelector('[data-part="startIcon"]')).toBeNull();
+    expect(bare.container.querySelector('[data-part="endIcon"]')).toBeNull();
+  });
+
+  it('the accessible name is the label alone even when the svg has a title', async () => {
+    render(
+      <Button
+        startIcon={
+          <svg viewBox="0 0 24 24" width="16" height="16">
+            <title>Mail icon</title>
+          </svg>
+        }
+      >
+        Send
+      </Button>,
+    );
+    await expect
+      .element(page.getByRole('button', { name: 'Send', exact: true }))
+      .toBeInTheDocument();
+  });
+
+  it('the spinner and an icon coexist without moving the label', () => {
+    const idle = render(<Button startIcon={svg(ICON_SVG_16)}>Send</Button>);
+    const before = rectsOf(idle.container.querySelector('[data-part="root"]') as HTMLElement);
+    idle.unmount();
+    const busy = render(
+      <Button loading startIcon={svg(ICON_SVG_16)}>
+        Send
+      </Button>,
+    );
+    const root = busy.container.querySelector('[data-part="root"]') as HTMLElement;
+    expect(root.querySelector('[data-part="spinner"]')).not.toBeNull();
+    expect(root.querySelector('[data-part="startIcon"]')).not.toBeNull();
+    expect(rectsOf(root).label.width).toBe(before.label.width);
   });
 });

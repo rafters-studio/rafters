@@ -1,4 +1,4 @@
-import { compose } from '../../lib/compose';
+import { compose, type Slice } from '../../lib/compose';
 import {
   createBehavior,
   type AriaAttrs,
@@ -70,11 +70,36 @@ export interface ButtonConfig extends PressableConfig {
 
 export type ButtonState = PressableState;
 export type ButtonActions = PressableActions;
-export type ButtonPart = PressablePart;
+export type ButtonIconPart = 'startIcon' | 'endIcon';
+export type ButtonPart = PressablePart | ButtonIconPart;
+
+/**
+ * The decorative icon wrappers. Each is present only when the author gives an
+ * icon, and each projects aria-hidden="true" so the label alone is the
+ * accessible name on every target, with or without JavaScript. The wrapper
+ * carries the hiding because a child the author writes cannot be guaranteed to.
+ */
+function buttonIcons(): Slice<
+  ButtonConfig,
+  Record<never, never>,
+  Record<never, never>,
+  ButtonIconPart
+> {
+  return {
+    name: 'button-icons',
+    parts: { startIcon: { optional: true }, endIcon: { optional: true } },
+    initialState: () => ({}),
+    aria: () => ({
+      startIcon: { 'aria-hidden': 'true' },
+      endIcon: { 'aria-hidden': 'true' },
+    }),
+  };
+}
 
 export const button: BehaviorSpec<ButtonConfig, ButtonState, ButtonActions, ButtonPart> = compose(
   'button',
   pressable<ButtonConfig>(),
+  buttonIcons(),
 );
 
 /**
