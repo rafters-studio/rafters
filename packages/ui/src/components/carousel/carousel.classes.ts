@@ -76,10 +76,10 @@ const controlBase =
   'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ' +
   'disabled:pointer-events-none disabled:opacity-50';
 
-const previousHorizontal = 'left-2 top-1/2 -translate-y-1/2';
-const previousVertical = 'left-1/2 top-2 -translate-x-1/2 rotate-90';
-const nextHorizontal = 'right-2 top-1/2 -translate-y-1/2';
-const nextVertical = 'bottom-2 left-1/2 -translate-x-1/2 rotate-90';
+const previousHorizontal = 'start-2 top-1/2 -translate-y-1/2';
+const previousVertical = 'inset-x-0 mx-auto top-2 rotate-90';
+const nextHorizontal = 'end-2 top-1/2 -translate-y-1/2';
+const nextVertical = 'bottom-2 inset-x-0 mx-auto rotate-90';
 
 const indicatorsClasses = 'flex justify-center gap-2 py-2';
 

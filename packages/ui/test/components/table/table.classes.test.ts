@@ -58,9 +58,9 @@ describe('table classes', () => {
   it('header and data cells carry muted label typography and the checkbox flush', () => {
     expect(tableHeadClasses).toContain('text-label-medium ts-label-medium');
     expect(tableHeadClasses).toContain('text-muted-foreground');
-    expect(tableHeadClasses).toContain('text-left');
+    expect(tableHeadClasses).toContain('text-start');
     expect(tableCellClasses).toContain('align-middle');
-    expect(tableCellClasses).toContain('[&:has([role=checkbox])]:pr-0');
+    expect(tableCellClasses).toContain('[&:has([role=checkbox])]:pe-0');
   });
 
   it('the caption is muted small text', () => {

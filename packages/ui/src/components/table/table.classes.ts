@@ -56,16 +56,16 @@ export const tableRowClasses =
   'border-b transition-colors duration-fast ease-standard hover:bg-muted/50 data-[state=selected]:bg-muted';
 
 /**
- * `<th>`: header cell -- fixed height, left-aligned, muted label typography.
+ * `<th>`: header cell -- fixed height, start-aligned, muted label typography.
  * The `[&:has([role=checkbox])]` and `[&>[role=checkbox]]` selectors align a
  * selection checkbox flush in the cell (shadcn v4 surface).
  */
 export const tableHeadClasses =
-  'h-10 px-2 text-left align-middle text-label-medium ts-label-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-0.5';
+  'h-10 px-2 text-start align-middle text-label-medium ts-label-medium text-muted-foreground [&:has([role=checkbox])]:pe-0 [&>[role=checkbox]]:translate-y-0.5';
 
 /** `<td>`: data cell -- padded, middle-aligned, with the same checkbox flush. */
 export const tableCellClasses =
-  'p-2 align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-0.5';
+  'p-2 align-middle [&:has([role=checkbox])]:pe-0 [&>[role=checkbox]]:translate-y-0.5';
 
 /** `<caption>`: muted small text, anchored to the bottom by the root. */
 export const tableCaptionClasses = 'text-body-small ts-body-small text-muted-foreground';

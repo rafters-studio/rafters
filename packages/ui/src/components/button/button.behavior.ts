@@ -5,6 +5,7 @@ import {
   type BehaviorSpec,
   type PartIds,
 } from '../../lib/contract';
+import { buttonClasses } from './button.classes';
 import { updateAriaAttribute } from '../../primitives/aria-manager';
 import { announceToScreenReader } from '../../primitives/sr-announcer';
 import {
@@ -198,4 +199,35 @@ export function bindButton(root: HTMLElement): () => void {
     unsubscribe();
     root.removeEventListener('click', onClick);
   };
+}
+
+/**
+ * Wrap each `slot="start-icon"` / `slot="end-icon"` child of the host in the
+ * decorative wrapper the behavior projects aria-hidden onto, inside the root,
+ * before the bind reads the parts. The light DOM has no slot assignment, so the
+ * slot attribute is only the author's marker.
+ */
+export function wrapButtonIcons(host: HTMLElement, root: HTMLElement): void {
+  const label = root.querySelector('[data-part="label"]');
+  const classes = buttonClasses(
+    { variant: 'default', size: 'default' },
+    button.initialState({ variant: 'default', size: 'default' }),
+  );
+  const kinds = [
+    { slot: 'start-icon', part: 'startIcon', icon: 'inline-start', className: classes.startIcon },
+    { slot: 'end-icon', part: 'endIcon', icon: 'inline-end', className: classes.endIcon },
+  ] as const;
+  for (const kind of kinds) {
+    const child = host.querySelector(`:scope > [slot="${kind.slot}"]`);
+    if (!child || root.querySelector(`[data-part="${kind.part}"]`)) continue;
+    const wrapper = document.createElement('span');
+    wrapper.dataset['part'] = kind.part;
+    wrapper.dataset['icon'] = kind.icon;
+    wrapper.setAttribute('aria-hidden', 'true');
+    wrapper.className = kind.className;
+    child.removeAttribute('slot');
+    wrapper.appendChild(child);
+    if (kind.slot === 'start-icon') root.insertBefore(wrapper, label ?? root.firstChild);
+    else root.appendChild(wrapper);
+  }
 }

@@ -71,8 +71,10 @@ describe('alert classes', () => {
   });
 
   it('title/description/action are config-independent literals', () => {
-    expect(alertTitleClasses).toBe('mb-1 text-title-small ts-title-small leading-none');
-    expect(alertDescriptionClasses).toBe('text-body-small ts-body-small [&_p]:leading-relaxed');
-    expect(alertActionClasses).toBe('ml-auto shrink-0');
+    expect(alertTitleClasses).toBe('col-start-3 mb-1 text-title-small ts-title-small leading-none');
+    expect(alertDescriptionClasses).toBe(
+      'col-start-3 text-body-small ts-body-small [&_p]:leading-relaxed',
+    );
+    expect(alertActionClasses).toBe('col-start-4 row-start-1 row-span-2 ms-3 shrink-0');
   });
 });

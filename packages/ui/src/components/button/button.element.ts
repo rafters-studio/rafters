@@ -38,39 +38,7 @@
  * microtask because connectedCallback can fire before the light-DOM children
  * are parsed (upgrade order).
  */
-import { bindButton, button } from './button.behavior';
-import { buttonClasses } from './button.classes';
-
-/**
- * Wrap each `slot="start-icon"` / `slot="end-icon"` child of the host in the
- * decorative wrapper the behavior projects aria-hidden onto, inside the root,
- * before the bind reads the parts. The light DOM has no slot assignment, so the
- * slot attribute is only the author's marker.
- */
-function wrapIcons(host: HTMLElement, root: HTMLElement): void {
-  const label = root.querySelector('[data-part="label"]');
-  const classes = buttonClasses(
-    { variant: 'default', size: 'default' },
-    button.initialState({ variant: 'default', size: 'default' }),
-  );
-  const kinds = [
-    { slot: 'start-icon', part: 'startIcon', icon: 'inline-start', className: classes.startIcon },
-    { slot: 'end-icon', part: 'endIcon', icon: 'inline-end', className: classes.endIcon },
-  ] as const;
-  for (const kind of kinds) {
-    const child = host.querySelector(`:scope > [slot="${kind.slot}"]`);
-    if (!child || root.querySelector(`[data-part="${kind.part}"]`)) continue;
-    const wrapper = document.createElement('span');
-    wrapper.dataset['part'] = kind.part;
-    wrapper.dataset['icon'] = kind.icon;
-    wrapper.setAttribute('aria-hidden', 'true');
-    wrapper.className = kind.className;
-    child.removeAttribute('slot');
-    wrapper.appendChild(child);
-    if (kind.slot === 'start-icon') root.insertBefore(wrapper, label ?? root.firstChild);
-    else root.appendChild(wrapper);
-  }
-}
+import { bindButton, wrapButtonIcons } from './button.behavior';
 
 export class RaftersButton extends HTMLElement {
   private teardown: (() => void) | null = null;
@@ -80,7 +48,7 @@ export class RaftersButton extends HTMLElement {
       if (!this.isConnected || this.teardown) return;
       const root = this.querySelector<HTMLElement>('[data-part="root"]');
       if (!root) return;
-      wrapIcons(this, root);
+      wrapButtonIcons(this, root);
       this.teardown = bindButton(root);
     });
   }

@@ -31,8 +31,8 @@ describe('carousel classes', () => {
   it('orientation only relocates the controls; the chrome is shared', () => {
     const horizontal = carouselClasses({ orientation: 'horizontal' });
     const vertical = carouselClasses({ orientation: 'vertical' });
-    expect(horizontal.previous).toContain('left-2');
-    expect(horizontal.next).toContain('right-2');
+    expect(horizontal.previous).toContain('start-2');
+    expect(horizontal.next).toContain('end-2');
     expect(vertical.previous).toContain('rotate-90');
     expect(horizontal.previous).toContain('disabled:opacity-50');
   });
