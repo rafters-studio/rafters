@@ -6,6 +6,8 @@ import {
   type PartIds,
 } from '../../lib/contract';
 import { updateAriaAttribute } from '../../primitives/aria-manager';
+import { addonPart } from '../input-group/input-group.behavior';
+import { inputClassSet } from './input.classes';
 
 /**
  * Input: a single-line text field. The archetype answer for a control whose
@@ -36,6 +38,10 @@ export interface InputConfig {
   required?: boolean | undefined;
   /** Advertised to AT via aria-invalid; wires aria-describedby to the error. */
   invalid?: boolean | undefined;
+  /** A decorative start icon is given: the field sits in a row beside it. */
+  startIcon?: boolean | undefined;
+  /** A decorative end icon is given: the field sits in a row beside it. */
+  endIcon?: boolean | undefined;
 }
 
 export interface InputState {
@@ -48,7 +54,8 @@ export type InputActions = {
   setValue: string;
 };
 
-export type InputPart = 'input' | 'error';
+export type InputIconPart = 'startIcon' | 'endIcon';
+export type InputPart = 'input' | 'error' | InputIconPart;
 
 /** The effective value: a controlled value shadows the intrinsic state. */
 export function effectiveValue(state: InputState, config: InputConfig): string {
@@ -68,6 +75,13 @@ const input: Slice<InputConfig, InputState, InputActions, InputPart> = {
     // referenced by aria-describedby via its id -- like dialog's title and
     // description, this part carries no aria of its own, only an id target.
     error: { optional: true },
+    // The decorative icon wrappers. Each is present only when the author gives
+    // an icon, and each projects aria-hidden="true" so the label alone is the
+    // accessible name on every target, with or without JavaScript. The wrapper
+    // carries the hiding because a child the author writes cannot be
+    // guaranteed to. They render inside InputGroup's addonStart / addonEnd.
+    startIcon: { optional: true },
+    endIcon: { optional: true },
   },
   initialState: (config) => ({ value: config.value ?? config.defaultValue ?? '' }),
   actions: {
@@ -93,6 +107,8 @@ const input: Slice<InputConfig, InputState, InputActions, InputPart> = {
         'aria-describedby': invalid && ids.error ? ids.error : undefined,
         'data-state': invalid ? 'invalid' : 'default',
       },
+      startIcon: { 'aria-hidden': 'true' },
+      endIcon: { 'aria-hidden': 'true' },
     };
   },
   // The native <input> owns every key: no keymap action to claim.
@@ -175,4 +191,45 @@ export function bindInput(root: HTMLElement): () => void {
     unsubscribe();
     root.removeEventListener('input', onInput);
   };
+}
+
+/**
+ * Wrap each `slot="start-icon"` / `slot="end-icon"` child of the host in the
+ * decorative wrapper the behavior projects aria-hidden onto, and seat the field
+ * and the wrappers in the row the classes lay out as a grid. The wrappers ride
+ * InputGroup's addon parts, so there is one affix vocabulary. The light DOM has
+ * no slot assignment, so the slot attribute is only the author's marker.
+ */
+export function wrapInputIcons(host: HTMLElement): void {
+  const field = host.querySelector<HTMLElement>(':scope > [data-part="input"]');
+  if (!field || field.closest('[data-part="row"]')) return;
+  const start = host.querySelector(':scope > [slot="start-icon"]');
+  const end = host.querySelector(':scope > [slot="end-icon"]');
+  if (!start && !end) return;
+  const config: InputConfig = { startIcon: start !== null, endIcon: end !== null };
+  const classes = inputClassSet(config, inputBehavior.initialState(config));
+  const row = document.createElement('div');
+  row.dataset['part'] = 'row';
+  row.className = classes.row;
+  host.insertBefore(row, field);
+  const seat = (child: Element | null, position: 'start' | 'end') => {
+    if (!child) return;
+    const addon = document.createElement('div');
+    addon.dataset['part'] = addonPart(position);
+    addon.dataset['position'] = position;
+    addon.className = classes[position === 'start' ? 'addonStart' : 'addonEnd'];
+    const wrapper = document.createElement('span');
+    wrapper.dataset['part'] = position === 'start' ? 'startIcon' : 'endIcon';
+    wrapper.dataset['icon'] = position === 'start' ? 'inline-start' : 'inline-end';
+    wrapper.setAttribute('aria-hidden', 'true');
+    wrapper.className = classes[position === 'start' ? 'startIcon' : 'endIcon'];
+    child.removeAttribute('slot');
+    wrapper.appendChild(child);
+    addon.appendChild(wrapper);
+    row.appendChild(addon);
+  };
+  seat(start, 'start');
+  row.appendChild(field);
+  seat(end, 'end');
+  field.className = classes.rowInput;
 }

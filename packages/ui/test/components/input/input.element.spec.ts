@@ -7,8 +7,9 @@
  * explicit customElements.define is needed here.
  */
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import '../../../src/components/input/input.element';
+import { installIconLayout, ICON_SVG_16, rectsOf } from './icon-layout';
 
 async function mount(markup: string): Promise<HTMLElement> {
   document.body.innerHTML = markup;
@@ -69,5 +70,63 @@ describe('input [wc]', () => {
     );
     await user.type(input(), 'x');
     expect(input().value).toBe('seed');
+  });
+});
+
+describe('input icons [wc]', () => {
+  let uninstall: () => void;
+  beforeEach(() => {
+    uninstall = installIconLayout();
+  });
+  afterEach(() => uninstall());
+
+  const markup = (before: string, after: string) =>
+    `<rafters-input>${before}<input data-part="input" id="i" aria-label="Search" value="" />${after}</rafters-input>`;
+  const rowOf = () => document.body.querySelector<HTMLElement>('[data-part="row"]') as HTMLElement;
+
+  it('slot="start-icon" and slot="end-icon" children become hidden wrappers beside the field', async () => {
+    await mount(
+      markup(
+        `<span slot="start-icon">${ICON_SVG_16}</span>`,
+        `<span slot="end-icon">${ICON_SVG_16}</span>`,
+      ),
+    );
+    for (const part of ['startIcon', 'endIcon']) {
+      expect(document.querySelector(`[data-part="${part}"]`)?.getAttribute('aria-hidden')).toBe(
+        'true',
+      );
+    }
+    const r = rectsOf(rowOf());
+    expect((r.start as DOMRect).right).toBeLessThanOrEqual(r.field.left + 0.5);
+    expect((r.end as DOMRect).left).toBeGreaterThanOrEqual(r.field.right - 0.5);
+    expect(r.start?.width).toBe(16);
+  });
+
+  it('start-only and end-only each render beside the field', async () => {
+    await mount(markup(`<span slot="start-icon">${ICON_SVG_16}</span>`, ''));
+    expect(document.querySelector('[data-part="endIcon"]')).toBeNull();
+    expect(rectsOf(rowOf()).start).not.toBeNull();
+    document.body.innerHTML = '';
+    await mount(markup('', `<span slot="end-icon">${ICON_SVG_16}</span>`));
+    expect(document.querySelector('[data-part="startIcon"]')).toBeNull();
+    expect(rectsOf(rowOf()).end).not.toBeNull();
+  });
+
+  it('on a dir="rtl" page the start icon renders on the right of the field', async () => {
+    document.documentElement.dir = 'rtl';
+    await mount(markup(`<span slot="start-icon">${ICON_SVG_16}</span>`, ''));
+    const r = rectsOf(rowOf());
+    expect((r.start as DOMRect).left).toBeGreaterThan(r.field.left);
+  });
+
+  it('no row and no wrapper without an icon child; typing still works with one', async () => {
+    await mount(markup('', ''));
+    expect(document.querySelector('[data-part="row"]')).toBeNull();
+    expect(document.querySelector('[data-part="startIcon"]')).toBeNull();
+    document.body.innerHTML = '';
+    await mount(markup(`<span slot="start-icon">${ICON_SVG_16}</span>`, ''));
+    const user = userEvent.setup();
+    await user.type(input(), 'hi');
+    expect(input().value).toBe('hi');
   });
 });
