@@ -15,14 +15,24 @@ afterEach(() => {
   document.body.innerHTML = '';
 });
 
-async function mount(props: Record<string, unknown> = {}): Promise<HTMLInputElement> {
+async function render(
+  props: Record<string, unknown> = {},
+  slots: Record<string, string> = {},
+): Promise<string> {
   const container = await AstroContainer.create();
-  const html = await container.renderToString(Input, { props: { id: 'i', ...props } });
+  return container.renderToString(Input, { props: { id: 'i', ...props }, slots });
+}
+
+async function mount(
+  props: Record<string, unknown> = {},
+  slots: Record<string, string> = {},
+): Promise<HTMLInputElement> {
+  const html = await render(props, slots);
   // Wrap so the input's parent (the binding root) is a fresh element per test;
   // binding document.body directly would leak the input listener across tests.
   document.body.innerHTML = `<div>${html}</div>`;
   const inputEl = document.body.querySelector<HTMLInputElement>('input[data-part="input"]')!;
-  bindInput(inputEl.parentElement as HTMLElement);
+  bindInput((inputEl.closest('[data-part="row"]') ?? inputEl).parentElement as HTMLElement);
   return inputEl;
 }
 
@@ -57,5 +67,49 @@ describe('input [astro]', () => {
     const inputEl = await mount({ readonly: true, defaultValue: 'seed' });
     await user.type(inputEl, 'more');
     expect(inputEl.value).toBe('seed');
+  });
+});
+
+describe('input icons [astro]', () => {
+  it('the server markup already hides each wrapper, before any script runs', async () => {
+    const html = await render(
+      {},
+      { 'start-icon': '<svg><title>Magnifier</title></svg>', 'end-icon': '<svg></svg>' },
+    );
+    document.body.innerHTML = html; // no bindInput: the SSR render alone
+    const start = document.querySelector('[data-part="addonStart"] > [data-part="startIcon"]');
+    const end = document.querySelector('[data-part="addonEnd"] > [data-part="endIcon"]');
+    expect(start?.getAttribute('aria-hidden')).toBe('true');
+    expect(start?.getAttribute('data-icon')).toBe('inline-start');
+    expect(end?.getAttribute('aria-hidden')).toBe('true');
+    expect(end?.getAttribute('data-icon')).toBe('inline-end');
+    const order = [...document.querySelectorAll('[data-part]')].map((el) =>
+      el.getAttribute('data-part'),
+    );
+    expect(order).toEqual(['row', 'addonStart', 'startIcon', 'input', 'addonEnd', 'endIcon']);
+  });
+
+  it('start-only and end-only render one wrapper', async () => {
+    document.body.innerHTML = await render({}, { 'start-icon': '<svg></svg>' });
+    expect(document.querySelector('[data-part="startIcon"]')).not.toBeNull();
+    expect(document.querySelector('[data-part="endIcon"]')).toBeNull();
+    document.body.innerHTML = await render({}, { 'end-icon': '<svg></svg>' });
+    expect(document.querySelector('[data-part="startIcon"]')).toBeNull();
+    expect(document.querySelector('[data-part="endIcon"]')).not.toBeNull();
+  });
+
+  it('no row and no wrapper when no icon slot is given', async () => {
+    await mount();
+    expect(document.querySelector('[data-part="row"]')).toBeNull();
+    expect(document.querySelector('[data-part="startIcon"]')).toBeNull();
+    expect(document.querySelector('[data-part="endIcon"]')).toBeNull();
+  });
+
+  it('the error sibling stays wired when the field sits in a row', async () => {
+    const inputEl = await mount(
+      { invalid: true, error: 'Required' },
+      { 'start-icon': '<svg></svg>' },
+    );
+    expect(inputEl.getAttribute('aria-describedby')).toBe('i-error');
   });
 });
