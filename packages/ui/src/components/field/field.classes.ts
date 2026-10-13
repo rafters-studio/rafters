@@ -61,7 +61,7 @@ export interface FieldClassSet {
  */
 const fieldContainerClasses = 'flex flex-col gap-2';
 const fieldLabelDisabledClasses = 'opacity-50';
-const fieldRequiredMarkerClasses = 'text-destructive ml-1';
+const fieldRequiredMarkerClasses = 'text-destructive ms-1';
 const fieldDescriptionClasses = 'text-body-small ts-body-small text-muted-foreground';
 const fieldErrorClasses = 'text-body-small ts-body-small text-destructive';
 

@@ -78,7 +78,9 @@ const contentBaseClasses =
 const sideClasses: Record<DrawerSide, string> = {
   bottom: 'inset-x-0 bottom-0 border-t rounded-t-lg translate-y-full',
   top: 'inset-x-0 top-0 border-b rounded-b-lg -translate-y-full',
+  // Physical on purpose (shadcn parity): side names a physical side, not a direction.
   left: 'inset-y-0 left-0 h-full w-3/4 max-w-sm border-r rounded-r-lg -translate-x-full',
+  // Physical on purpose (shadcn parity): side names a physical side, not a direction.
   right: 'inset-y-0 right-0 h-full w-3/4 max-w-sm border-l rounded-l-lg translate-x-full',
 };
 
@@ -103,8 +105,8 @@ const descriptionClasses = 'text-body-small ts-body-small text-muted-foreground'
 // hover, with no background, text or border change to transition. The fade half
 // is consumed; the colour half is reported rather than invented.
 const closeClasses =
-  'absolute right-2 top-2 inline-flex h-11 w-11 items-center justify-center ' +
-  '@md:right-4 @md:top-4 @md:h-8 @md:w-8 ' +
+  'absolute end-2 top-2 inline-flex h-11 w-11 items-center justify-center ' +
+  '@md:end-4 @md:top-4 @md:h-8 @md:w-8 ' +
   'rounded-sm opacity-70 ring-offset-background cursor-pointer ' +
   'transition-opacity duration-fast ease-standard hover:opacity-100 ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';

@@ -66,7 +66,7 @@ export const scrollBarBaseClasses =
   'flex touch-none select-none transition-colors duration-fast ease-standard';
 
 const scrollBarOrientationClasses: Record<ScrollBarOrientation, string> = {
-  vertical: 'h-full w-2.5 border-l border-l-transparent p-px',
+  vertical: 'h-full w-2.5 border-s border-s-transparent p-px',
   horizontal: 'h-2.5 w-full flex-col border-t border-t-transparent p-px',
 };
 

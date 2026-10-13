@@ -21,8 +21,8 @@ describe('button-group classes', () => {
 
   it('horizontal collapses left/right radii and the shared vertical border', () => {
     const h = root('horizontal');
-    expect(h).toContain('[&>*:first-child]:rounded-r-none');
-    expect(h).toContain('[&>*:last-child]:rounded-l-none');
+    expect(h).toContain('[&>*:first-child]:rounded-e-none');
+    expect(h).toContain('[&>*:last-child]:rounded-s-none');
     expect(h).toContain('[&>*:not(:first-child):not(:last-child)]:rounded-none');
     expect(h).toContain('[&>*:not(:first-child)]:-ml-px');
   });

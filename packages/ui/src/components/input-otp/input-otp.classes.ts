@@ -59,7 +59,7 @@ const slotClasses =
   'border-y border-r border-input text-body-small ts-body-small shadow-sm ' +
   'transition-[box-shadow,border-color,color] duration-micro ease-linear ' +
   'data-[active=true]:ease-standard ' +
-  'first:rounded-l-md first:border-l last:rounded-r-md ' +
+  'first:rounded-s-md first:border-s last:rounded-e-md ' +
   'data-[active=true]:z-10 data-[active=true]:ring-1 data-[active=true]:ring-ring ' +
   'data-[filled=true]:text-foreground ' +
   'group-data-[disabled=true]:cursor-not-allowed group-data-[disabled=true]:opacity-50';

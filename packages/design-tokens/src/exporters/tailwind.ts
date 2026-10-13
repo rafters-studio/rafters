@@ -696,6 +696,23 @@ function generateKeyframes(motionTokens: Token[]): string {
 }
 
 /**
+ * Named grid track lists for rows a component lays out as columns.
+ *
+ * `classy` drops arbitrary track lists (`grid-cols-[auto_auto_1fr_auto]`), so a
+ * track list a component needs is a named utility. grid-cols-menu-row is the
+ * menu-style row: indicator, icon, label, end (shortcut or chevron). Columns
+ * lay out in reading order, so the row mirrors on a dir="rtl" page.
+ */
+function generateGridTrackUtilities(): string {
+  return [
+    '/* Grid track lists -- named, because classy skips arbitrary track lists */',
+    '@utility grid-cols-menu-row {',
+    '  grid-template-columns: auto auto 1fr auto; /* indicator, icon, label, end */',
+    '}',
+  ].join('\n');
+}
+
+/**
  * Depth words as real utilities (#1638 S3, the Tailwind namespace rule).
  *
  * Agents need WORDS to say where something sits -- z-depth-modal, not z-40 --
@@ -1407,6 +1424,10 @@ export function tokensToTailwind(
     sections.push(overrideCSS);
   }
 
+  // Named grid track lists (grid-cols-menu-row)
+  sections.push('');
+  sections.push(generateGridTrackUtilities());
+
   // Article type system - @layer base with @apply compositions
   sections.push('');
   sections.push(generateArticleBaseLayer());
@@ -1663,6 +1684,10 @@ export function registryToTailwindStatic(registry: TokenRegistry): string {
     sections.push('');
     sections.push(staticTypoUtility);
   }
+
+  // Named grid track lists (grid-cols-menu-row)
+  sections.push('');
+  sections.push(generateGridTrackUtilities());
 
   // Article type system - @layer base with @apply compositions
   sections.push('');

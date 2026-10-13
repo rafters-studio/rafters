@@ -1,5 +1,11 @@
 # rafters
 
+## Unreleased
+
+### Features
+
+- feat(ui): **components mirror on a `dir="rtl"` page, and the generated theme CSS gains `grid-cols-menu-row`.** Alert, Chart tooltip, Button group, Carousel, Container, Dialog, Drawer, Field, Image, Input OTP, Pagination, Popover, Resizable, Scroll area, Sheet, Table and Typography now lay out rows with Grid and write the edges that remain as logical classes (`ps`/`pe`, `ms`/`me`, `start`/`end`, `rounded-s`/`rounded-e`, `border-s`, `text-start`). Sheet and Drawer keep `side="left"`/`side="right"` physical, as in shadcn. The Tailwind exporter emits `@utility grid-cols-menu-row` (`auto auto 1fr auto`: indicator, icon, label, end), because `classy` skips arbitrary track lists. Re-run `rafters` to regenerate the theme CSS and re-add the components to pick this up.
+
 ## 0.4.3
 
 ### Breaking Changes

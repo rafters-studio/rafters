@@ -85,7 +85,7 @@ const autoEdgePadding = 'px-4 @md:px-6 @lg:px-8';
 
 const positionClasses: Record<ContainerPosition, string> = {
   sticky: 'sticky top-0',
-  fixed: 'fixed top-0 left-0 right-0',
+  fixed: 'fixed top-0 inset-x-0',
   relative: 'relative',
   absolute: 'absolute',
   static: 'static',
@@ -119,11 +119,11 @@ const articleTypography = [
   '[&_h2]:text-3xl [&_h2]:font-semibold [&_h2]:tracking-tight [&_h2]:mb-3 [&_h2]:mt-8 [&_h2]:first:mt-0 [&_h2]:text-accent-foreground',
   '[&_h3]:text-2xl [&_h3]:font-semibold [&_h3]:mb-2 [&_h3]:mt-6 [&_h3]:text-accent-foreground',
   '[&_h4]:text-xl [&_h4]:font-semibold [&_h4]:mb-2 [&_h4]:mt-4 [&_h4]:text-accent-foreground',
-  '[&_ul]:list-disc [&_ul]:pl-6 [&_ul]:mb-4',
-  '[&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:mb-4',
+  '[&_ul]:list-disc [&_ul]:ps-6 [&_ul]:mb-4',
+  '[&_ol]:list-decimal [&_ol]:ps-6 [&_ol]:mb-4',
   '[&_li]:mb-1',
   '[&_a]:text-primary [&_a]:underline [&_a]:underline-offset-4 [&_a:hover]:text-primary/80',
-  '[&_blockquote]:border-l-4 [&_blockquote]:border-muted [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:my-4',
+  '[&_blockquote]:border-s-4 [&_blockquote]:border-muted [&_blockquote]:ps-4 [&_blockquote]:italic [&_blockquote]:my-4',
   '[&_code]:bg-muted [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-sm [&_code]:font-mono',
   '[&_pre]:bg-muted [&_pre]:p-4 [&_pre]:rounded-lg [&_pre]:overflow-x-auto [&_pre]:my-4',
   '[&_pre_code]:bg-transparent [&_pre_code]:p-0',
