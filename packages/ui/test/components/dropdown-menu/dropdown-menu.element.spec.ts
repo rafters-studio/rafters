@@ -5,7 +5,8 @@
  */
 import { cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { ICON_SVG_16, iconRect, installIconLayout, labelRect } from './icon-layout';
 import { RaftersDropdownMenu } from '../../../src/components/dropdown-menu/dropdown-menu.element';
 
 beforeAll(() => {
@@ -111,5 +112,54 @@ describe('dropdown-menu [wc]', () => {
     expect(content().hidden).toBe(false);
     await user.click(outside);
     expect(content().hidden).toBe(true);
+  });
+});
+
+describe('dropdown-menu icons [wc]', () => {
+  let uninstall: () => void;
+  beforeEach(() => {
+    uninstall = installIconLayout();
+  });
+  afterEach(() => uninstall());
+
+  const mountIcons = async (): Promise<void> => {
+    const user = userEvent.setup();
+    document.body.innerHTML = `
+      <rafters-dropdown-menu data-part="root">
+        <button type="button" data-part="trigger" id="dm-trigger">Options</button>
+        <div data-part="content" id="dm-content" hidden>
+          <div role="menuitem" data-part="item" data-roving-item tabindex="-1">${ICON_SVG_16.replace('<svg', '<svg slot="start-icon"')}Edit</div>
+          ${itemMarkup('Duplicate')}
+        </div>
+      </rafters-dropdown-menu>`;
+    await Promise.resolve();
+    await user.click(trigger());
+  };
+
+  it('wraps the slotted icon in an aria-hidden wrapper before the label', async () => {
+    await mountIcons();
+    const wrappers = document.body.querySelectorAll('[data-part="startIcon"]');
+    expect(wrappers).toHaveLength(1);
+    const wrapper = wrappers[0]!;
+    expect(wrapper.getAttribute('aria-hidden')).toBe('true');
+    expect(wrapper.getAttribute('data-icon')).toBe('inline-start');
+    expect(wrapper.querySelector('[slot]')).toBeNull();
+    const edit = item('Edit');
+    expect(edit.lastElementChild?.textContent).toBe('Edit');
+    expect(iconRect(edit).right).toBeLessThanOrEqual(labelRect(edit).left + 0.5);
+    expect(item('Duplicate').querySelector('[data-part="startIcon"]')).toBeNull();
+  });
+
+  it('on a dir="rtl" page the start icon renders on the right of the label; size is kept', async () => {
+    document.documentElement.dir = 'rtl';
+    await mountIcons();
+    const edit = item('Edit');
+    expect(iconRect(edit).left).toBeGreaterThan(labelRect(edit).left);
+    expect(iconRect(edit).width).toBe(16);
+  });
+
+  it('no wrapper is made when no icon is given', async () => {
+    await mount();
+    expect(document.body.querySelector('[data-part="startIcon"]')).toBeNull();
   });
 });

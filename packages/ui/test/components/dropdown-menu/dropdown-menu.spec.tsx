@@ -6,11 +6,15 @@
 import * as React from 'react';
 import { cleanup, render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { iconRect, installIconLayout, labelRect } from './icon-layout';
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '../../../src/components/dropdown-menu/dropdown-menu';
@@ -228,5 +232,87 @@ describe('dropdown-menu [react]', () => {
 
     rerender(<TestMenu open onOpenChange={onOpenChange} />);
     expect(content().hidden).toBe(false);
+  });
+});
+
+describe('dropdown-menu icons [react]', () => {
+  let uninstall: () => void;
+  beforeEach(() => {
+    uninstall = installIconLayout();
+  });
+  afterEach(() => uninstall());
+
+  const mark = (
+    <svg width="16" height="16" viewBox="0 0 24 24">
+      <title>Edit mark</title>
+      <rect width="24" height="24" fill="currentColor" />
+    </svg>
+  );
+
+  function IconMenu() {
+    return (
+      <DropdownMenu defaultOpen>
+        <DropdownMenuTrigger aria-label="Options">Options</DropdownMenuTrigger>
+        <DropdownMenuContent aria-label="Options">
+          <DropdownMenuItem startIcon={mark}>Edit</DropdownMenuItem>
+          <DropdownMenuCheckboxItem checked startIcon={mark}>
+            Bold
+          </DropdownMenuCheckboxItem>
+          <DropdownMenuRadioGroup value="a">
+            <DropdownMenuRadioItem value="a" startIcon={mark}>
+              Left
+            </DropdownMenuRadioItem>
+          </DropdownMenuRadioGroup>
+          <DropdownMenuItem>Duplicate</DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  }
+
+  const byRole = (role: string) => body().querySelector<HTMLElement>(`[role="${role}"]`)!;
+
+  it('renders an aria-hidden wrapper on each item that has an icon, and none on the rest', () => {
+    render(<IconMenu />);
+    const wrappers = body().querySelectorAll('[data-part="startIcon"]');
+    expect(wrappers).toHaveLength(3);
+    for (const wrapper of wrappers) {
+      expect(wrapper.getAttribute('aria-hidden')).toBe('true');
+      expect(wrapper.getAttribute('data-icon')).toBe('inline-start');
+    }
+    expect(item('Duplicate').querySelector('[data-part="startIcon"]')).toBeNull();
+  });
+
+  it('the icon precedes the label, which excludes the svg title', () => {
+    render(<IconMenu />);
+    const edit = byRole('menuitem');
+    expect([...edit.children].map((el) => el.getAttribute('data-part'))).toEqual([
+      'startIcon',
+      null,
+    ]);
+    expect(edit.lastElementChild?.textContent).toBe('Edit');
+    expect(iconRect(edit).right).toBeLessThanOrEqual(labelRect(edit).left + 0.5);
+  });
+
+  it('on a checkbox item the icon sits after the indicator', () => {
+    render(<IconMenu />);
+    const bold = byRole('menuitemcheckbox');
+    expect([...bold.children].map((el) => el.getAttribute('data-part'))).toEqual([
+      null,
+      'startIcon',
+      null,
+    ]);
+  });
+
+  it('on a dir="rtl" page the icon renders on the right of the label; size is kept', () => {
+    document.documentElement.dir = 'rtl';
+    render(<IconMenu />);
+    const edit = byRole('menuitem');
+    expect(iconRect(edit).left).toBeGreaterThan(labelRect(edit).left);
+    expect(iconRect(edit).width).toBe(16);
+  });
+
+  it('renders no wrapper when no icon is given', () => {
+    render(<TestMenu defaultOpen />);
+    expect(body().querySelector('[data-part="startIcon"]')).toBeNull();
   });
 });

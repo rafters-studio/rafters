@@ -17,6 +17,7 @@ import { updateAriaAttribute } from '../../primitives/aria-manager';
 import { onPointerDownOutside } from '../../primitives/outside-click';
 import { createRovingFocus } from '../../primitives/roving-focus';
 import { createTypeahead } from '../../primitives/typeahead';
+import { dropdownMenuClasses } from './dropdown-menu.classes';
 
 /**
  * Dropdown menu: a trigger discloses an anchored action menu. Opening lands
@@ -39,7 +40,7 @@ export type DropdownMenuConfig = DisclosableConfig;
 export type DropdownMenuState = DisclosableState;
 export type DropdownMenuActions = DisclosableActions;
 
-export type DropdownMenuPart = DisclosablePart | 'root' | 'item';
+export type DropdownMenuPart = DisclosablePart | 'root' | 'item' | 'startIcon';
 
 export { isOpen };
 
@@ -51,12 +52,16 @@ const menuStructure: Slice<
   DropdownMenuConfig,
   Record<never, never>,
   Record<never, never>,
-  'root' | 'item'
+  'root' | 'item' | 'startIcon'
 > = {
   name: 'dropdown-menu-structure',
   parts: {
     root: {},
     item: { many: true },
+    // The decorative icon beside an item's label. Present only when the author
+    // gives an icon; it occurs once per item, so the binding projects
+    // aria-hidden onto every one it finds.
+    startIcon: { optional: true, many: true },
   },
   initialState: () => ({}),
 };
@@ -81,6 +86,9 @@ const menuGlue: GlueSlice<
       trigger: {
         'aria-haspopup': 'menu',
       },
+      // The icon is decorative: hidden from assistive technology in the markup
+      // itself, so the label alone is the accessible name with no script run.
+      startIcon: { 'aria-hidden': 'true' },
       content: {
         role: 'menu',
         'aria-orientation': 'vertical',
@@ -134,6 +142,16 @@ export interface DropdownMenuOpenPorts {
   onDismiss: (event: Event) => void;
 }
 
+/** An item's typeahead text: its aria-label or its text without the decorative
+ *  icon, whose svg may carry a <title> that is not part of the label. */
+export function itemText(item: HTMLElement): string {
+  const label = item.getAttribute('aria-label');
+  if (label) return label;
+  const clone = item.cloneNode(true) as HTMLElement;
+  for (const icon of clone.querySelectorAll('[data-part="startIcon"]')) icon.remove();
+  return (clone.textContent ?? '').trim();
+}
+
 /** The enabled menu items -- the set roving and typeahead operate over, shared
  *  so both agree. All three item roles (menuitem/menuitemcheckbox/
  *  menuitemradio) carry data-part="item", so this globs them uniformly. */
@@ -160,6 +178,7 @@ export function startDropdownMenuEffects({
   const stopRoving = createRovingFocus(content, { orientation: 'vertical', loop: true });
   const stopTypeahead = createTypeahead(content, {
     getItems: () => enabledItems(content),
+    getItemText: itemText,
     onMatch: (item) => item.focus(),
   });
   const stopDismiss = onPointerDownOutside(content, (event) => {
@@ -231,6 +250,13 @@ export function bindDropdownMenu(root: HTMLElement): () => void {
       const attrs = projection[part];
       const el = getPart(part);
       if (el && attrs) applyProjection(el, attrs);
+    }
+
+    // The icon part occurs once per item; the loop above reached only the
+    // first, so project onto every one.
+    if (projection.startIcon) {
+      for (const el of root.querySelectorAll<HTMLElement>('[data-part="startIcon"]'))
+        applyProjection(el, projection.startIcon);
     }
 
     // Presence: the menu hides off the open axis (stays in light DOM).
@@ -335,4 +361,35 @@ export function bindDropdownMenu(root: HTMLElement): () => void {
     root.removeEventListener('click', onClick);
     root.removeEventListener('keydown', onKeydown);
   };
+}
+
+/**
+ * Lay each item out as the grid row the classes describe, before the bind reads
+ * the parts: a direct `slot="start-icon"` child becomes the decorative wrapper
+ * the behavior projects aria-hidden onto, and the rest of the item's content
+ * becomes the label cell. The light DOM has no slot assignment, so the slot
+ * attribute is only the author's marker. Idempotent.
+ */
+export function wrapDropdownMenuIcons(root: HTMLElement): void {
+  const className = dropdownMenuClasses({}, dropdownMenu.initialState({}));
+  for (const item of root.querySelectorAll<HTMLElement>('[data-part="item"]')) {
+    if (item.querySelector(':scope > [data-slot="label"]')) continue;
+    const icon = item.querySelector(':scope > [slot="start-icon"]');
+    const rest = [...item.childNodes].filter((node) => node !== icon);
+    const label = document.createElement('span');
+    label.dataset['slot'] = 'label';
+    label.className = className.itemLabel;
+    label.append(...rest);
+    if (icon) {
+      const wrapper = document.createElement('span');
+      wrapper.dataset['part'] = 'startIcon';
+      wrapper.dataset['icon'] = 'inline-start';
+      wrapper.setAttribute('aria-hidden', 'true');
+      wrapper.className = className.startIcon;
+      icon.removeAttribute('slot');
+      wrapper.appendChild(icon);
+      item.appendChild(wrapper);
+    }
+    item.appendChild(label);
+  }
 }

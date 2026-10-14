@@ -53,6 +53,9 @@ interface Item {
   disabled?: boolean;
 }
 
+// An item's decorative start icon comes through the named slot
+// `start-icon-<index>`, where index is the item's position in `items`.
+
 interface Props {
   id: string;
   label: string;
@@ -79,7 +82,7 @@ const aria = dropdownMenu.aria(state, config, ids);
 
   <div id={ids.content} data-part="content" class={classes.content} hidden={!state.open} {...aria.content}>
     {
-      items.map((item) => (
+      items.map(async (item, index) => (
         <div
           role="menuitem"
           data-part="item"
@@ -89,7 +92,17 @@ const aria = dropdownMenu.aria(state, config, ids);
           tabindex={item.disabled ? undefined : -1}
           class={classes.item}
         >
-          {item.label}
+          {Astro.slots.has(`start-icon-${index}`) && (
+            <span
+              data-part="startIcon"
+              data-icon="inline-start"
+              class={classes.startIcon}
+              {...aria.startIcon}
+            >
+              <Fragment set:html={await Astro.slots.render(`start-icon-${index}`)} />
+            </span>
+          )}
+          <span class={classes.itemLabel}>{item.label}</span>
         </div>
       ))
     }
