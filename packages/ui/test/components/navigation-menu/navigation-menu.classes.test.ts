@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import classy from '../../../src/primitives/classy';
 import { navigationMenu } from '../../../src/components/navigation-menu/navigation-menu.behavior';
 import { navigationMenuClasses } from '../../../src/components/navigation-menu/navigation-menu.classes';
 
@@ -142,5 +143,66 @@ describe('navigation-menu classes', () => {
     // already consumed on `content`. The viewport renders empty and has nothing
     // whose size could morph.
     expect(classes.viewport).not.toMatch(/\b(transition|duration|ease|animate)-/);
+  });
+});
+
+describe('navigation-menu icon classes', () => {
+  it('the trigger is a grid whose columns follow reading order', () => {
+    const tokens = classes.trigger.split(' ');
+    expect(tokens).toContain('grid-flow-col');
+    expect(tokens).toContain('items-center');
+    expect(tokens.some((t) => t.startsWith('gap-'))).toBe(true);
+    expect(classes.trigger.split(' ')).toContain('inline-grid');
+    expect(classes.trigger.split(' ')).not.toContain('inline-flex');
+    expect(classes.triggerChevron).not.toMatch(/(^|\s)ml-/);
+  });
+
+  it('a link without an icon keeps its stacked layout', () => {
+    const tokens = classes.link.split(' ');
+    expect(tokens).toContain('block');
+    expect(tokens).toContain('space-y-1');
+    expect(tokens).not.toContain('grid');
+    expect(tokens).not.toContain('grid-flow-col');
+  });
+
+  it('a link that holds an icon wrapper becomes a grid row', () => {
+    const tokens = classes.link.split(' ');
+    for (const literal of ['grid', 'grid-flow-col', 'items-center', 'gap-2', 'space-y-0']) {
+      expect(tokens).toContain(`has-data-[icon]:${literal}`);
+    }
+  });
+
+  it('the file has no physical direction class', () => {
+    for (const set of Object.values(classes)) {
+      expect(set).not.toMatch(/(^|\s)(left|right|ml|mr|pl|pr|float)-/);
+    }
+    expect(classes.content).toContain('start-0');
+    expect(classes.viewportWrapper).toContain('start-0');
+  });
+
+  it('the icon wrapper only places and hides, never sizes', () => {
+    expect(classes.startIcon).toBe('inline-grid place-items-center');
+    expect(classes.endIcon).toBe('inline-grid place-items-center');
+  });
+
+  it('padding tightens per side with logical classes', () => {
+    for (const row of [classes.trigger, classes.link]) {
+      expect(row).toMatch(/has-data-\[icon=inline-start\]:ps-/);
+      expect(row).toMatch(/has-data-\[icon=inline-end\]:pe-/);
+    }
+  });
+
+  it('classy keeps every new literal', () => {
+    for (const row of [classes.trigger, classes.link]) {
+      const kept = classy(row).split(' ');
+      const added = row
+        .split(' ')
+        .filter((t) => t.includes('has-data-') || t === 'grid-flow-col' || t === 'inline-grid');
+      expect(added.length).toBeGreaterThan(2);
+      for (const literal of added) expect(kept, `classy dropped ${literal}`).toContain(literal);
+    }
+    expect(classy(classes.startIcon)).toBe(classes.startIcon);
+    expect(classy(classes.endIcon)).toBe(classes.endIcon);
+    expect(classy(classes.content).split(' ')).toContain('start-0');
   });
 });

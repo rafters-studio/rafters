@@ -25,12 +25,14 @@ interface Scene {
   props?: Record<string, unknown>;
   /** Value of the item to open by clicking its trigger after the bind. */
   open?: string;
+  slots?: Record<string, string>;
 }
 
-async function mount({ props = {}, open }: Scene): Promise<Document> {
+async function mount({ props = {}, open, slots = {} }: Scene): Promise<Document> {
   const container = await AstroContainer.create();
   const html = await container.renderToString(NavigationMenu, {
     props: { id: 'nav', items, ...props },
+    slots,
   });
   const window = new Window();
   const document = window.document as unknown as Document;
@@ -63,3 +65,19 @@ for (const [name, scene] of scenes) {
     expect(results.violations).toEqual([]);
   });
 }
+
+test('navigation-menu.astro with start and end icons, svg title does not leak into the name', async ({
+  task,
+}) => {
+  const document = await mount({
+    slots: {
+      'products:start-icon': '<svg viewBox="0 0 24 24"><title>Box</title></svg>',
+      'products:end-icon': '<svg viewBox="0 0 24 24"><title>Arrow</title></svg>',
+      'products:0:start-icon': '<svg viewBox="0 0 24 24"><title>Dot</title></svg>',
+    },
+  });
+  const results = await runAxe(document.body);
+  task.meta.axe = results;
+  expect(results.violations).toEqual([]);
+  expect(document.querySelectorAll('[data-icon][aria-hidden="true"]').length).toBe(3);
+});

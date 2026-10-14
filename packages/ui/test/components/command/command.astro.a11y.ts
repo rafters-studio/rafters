@@ -11,10 +11,14 @@ const items = [
   { value: 'settings', label: 'Settings', shortcut: 'Cmd+S' },
 ];
 
-async function mount(props: Record<string, unknown>): Promise<Document> {
+async function mount(
+  props: Record<string, unknown>,
+  slots: Record<string, string> = {},
+): Promise<Document> {
   const container = await AstroContainer.create();
   const html = await container.renderToString(Command, {
     props: { id: 'c', items, label: 'Actions', ...props },
+    slots,
   });
   const window = new Window();
   const document = window.document as unknown as Document;
@@ -44,3 +48,16 @@ for (const [name, props] of scenes) {
     expect(results.violations).toEqual([]);
   });
 }
+
+test('command.astro with a start icon', async ({ task }) => {
+  const document = await mount(
+    {},
+    {
+      'start-icon-calendar':
+        '<svg width="16" height="16" viewBox="0 0 24 24"><title>Mark</title><rect width="24" height="24"/></svg>',
+    },
+  );
+  const results = await runAxe(document.body);
+  task.meta.axe = results;
+  expect(results.violations).toEqual([]);
+});

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import classy from '../../../src/primitives/classy';
 import { contextMenu } from '../../../src/components/context-menu/context-menu.behavior';
 import { contextMenuClasses } from '../../../src/components/context-menu/context-menu.classes';
 
@@ -47,10 +48,9 @@ describe('context-menu classes', () => {
     expect(classes.subTrigger).toContain('delay-stagger-step');
   });
 
-  it('checkbox and radio items reserve the indicator gutter', () => {
-    expect(classes.checkboxItem).toContain('pl-8');
-    expect(classes.radioItem).toContain('pl-8');
-    expect(classes.itemIndicator).toContain('absolute');
+  it('checkbox and radio items put the indicator in the first track', () => {
+    expect(classes.itemIndicator).toContain('col-start-1');
+    expect(classes.itemIndicator).not.toContain('absolute');
     expect(classes.radioDot).toContain('rounded-full');
   });
 
@@ -60,7 +60,7 @@ describe('context-menu classes', () => {
     expect(classes.subTrigger).toContain('ease-standard');
     expect(classes.subTrigger).not.toContain('motion-focus');
     expect(classes.subTrigger).toContain('data-[state=open]:bg-accent');
-    expect(classes.subTriggerChevron).toContain('ml-auto');
+    expect(classes.subTriggerChevron).toContain('col-start-4');
   });
 
   /**
@@ -150,7 +150,7 @@ describe('context-menu classes', () => {
   it('separator, label, and shortcut carry their chrome', () => {
     expect(classes.separator).toContain('bg-muted');
     expect(classes.label).toContain('ts-label-medium');
-    expect(classes.shortcut).toContain('ml-auto');
+    expect(classes.shortcut).toContain('col-start-4');
   });
 
   it('declares no raw numeric durations or animate utilities (motion tokens only)', () => {
@@ -164,6 +164,77 @@ describe('context-menu classes', () => {
       expect(value).not.toMatch(/duration-\d/);
       expect(value).not.toContain('animate-in');
       expect(value).not.toContain('zoom-in');
+    }
+  });
+});
+
+describe('context-menu row grid and icons', () => {
+  const tokens = (value: string) => value.split(/\s+/);
+
+  it('the content and the submenu panel are grids on the menu-row track list', () => {
+    for (const key of ['content', 'subContent'] as const) {
+      expect(tokens(classes[key])).toEqual(expect.arrayContaining(['grid', 'grid-cols-menu-row']));
+    }
+  });
+
+  it('every item kind, the group and the submenu wrapper are subgrid rows across all tracks', () => {
+    for (const key of [
+      'item',
+      'checkboxItem',
+      'radioItem',
+      'subTrigger',
+      'group',
+      'sub',
+    ] as const) {
+      expect(tokens(classes[key])).toEqual(
+        expect.arrayContaining(['grid', 'grid-cols-subgrid', 'col-span-full']),
+      );
+    }
+  });
+
+  it('the label, icon, shortcut and chevron each take their own track', () => {
+    expect(classes.itemLabel).toContain('col-start-3');
+    expect(classes.startIcon).toContain('col-start-2');
+    expect(classes.shortcut).toContain('col-start-4');
+    expect(classes.subTriggerChevron).toContain('col-start-4');
+  });
+
+  it('no class in the set names a physical direction', () => {
+    for (const value of Object.values(classes)) {
+      expect(value).not.toMatch(/(^|[\s:])-?(p[lr]|m[lr]|left|right|float)-/);
+    }
+  });
+
+  it('the icon wrapper places and hides, never sizes', () => {
+    expect(tokens(classes.startIcon)).toEqual(
+      expect.arrayContaining(['inline-grid', 'place-items-center']),
+    );
+    expect(classes.startIcon).not.toMatch(/(^|\s)(size|w|h)-/);
+  });
+
+  it('classy keeps every layout literal', () => {
+    const layout = /grid|col-|place-items|(^|:)p[se]-|(^|:)m[se]-|justify-self/;
+    for (const key of [
+      'content',
+      'subContent',
+      'item',
+      'checkboxItem',
+      'radioItem',
+      'subTrigger',
+      'subTriggerChevron',
+      'startIcon',
+      'itemLabel',
+      'sub',
+      'itemIndicator',
+      'label',
+      'separator',
+      'shortcut',
+      'group',
+    ] as const) {
+      const kept = classy(classes[key]).split(' ');
+      for (const literal of classes[key].split(/\s+/).filter((c) => layout.test(c))) {
+        expect(kept, `classy dropped ${literal} from ${key}`).toContain(literal);
+      }
     }
   });
 });

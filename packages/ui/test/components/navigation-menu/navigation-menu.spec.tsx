@@ -13,7 +13,9 @@
 import * as React from 'react';
 import { cleanup, fireEvent, render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { page } from 'vitest/browser';
+import { installIconLayout, ICON_SVG_16, ICON_SVG_20, rectsOf } from './icon-layout';
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -443,5 +445,128 @@ describe('navigation-menu [react]', () => {
     );
     const link = body().querySelector('a[href="/here"]');
     expect(link?.hasAttribute('data-active')).toBe(true);
+  });
+});
+
+describe('navigation-menu icons [react]', () => {
+  let uninstall: () => void;
+  beforeEach(() => {
+    uninstall = installIconLayout();
+  });
+  afterEach(() => uninstall());
+
+  const svg = (markup: string) => <span dangerouslySetInnerHTML={{ __html: markup }} />;
+
+  function Menu(props: {
+    startIcon?: React.ReactNode;
+    endIcon?: React.ReactNode;
+    asChild?: boolean;
+  }) {
+    const { startIcon, endIcon, asChild } = props;
+    return (
+      <NavigationMenu>
+        <NavigationMenuList>
+          <NavigationMenuItem value="a">
+            <NavigationMenuTrigger startIcon={startIcon} endIcon={endIcon}>
+              Products
+            </NavigationMenuTrigger>
+            <NavigationMenuContent>
+              {asChild ? (
+                <NavigationMenuLink asChild startIcon={startIcon} endIcon={endIcon}>
+                  <a href="/one">One</a>
+                </NavigationMenuLink>
+              ) : (
+                <NavigationMenuLink href="/one" startIcon={startIcon} endIcon={endIcon}>
+                  One
+                </NavigationMenuLink>
+              )}
+            </NavigationMenuContent>
+          </NavigationMenuItem>
+        </NavigationMenuList>
+      </NavigationMenu>
+    );
+  }
+
+  const rows = () => [triggerFor('a'), body().querySelector('a[href="/one"]') as HTMLElement];
+
+  it('start, end and both render beside the label in the trigger and the link', () => {
+    for (const [name, props] of [
+      ['start', { startIcon: svg(ICON_SVG_16) }],
+      ['end', { endIcon: svg(ICON_SVG_16) }],
+      ['both', { startIcon: svg(ICON_SVG_16), endIcon: svg(ICON_SVG_16) }],
+    ] as const) {
+      const { unmount } = render(<Menu {...props} />);
+      for (const row of rows()) {
+        const r = rectsOf(row);
+        if (name !== 'end') {
+          expect(r.start, name).not.toBeNull();
+          expect(r.start?.right as number).toBeLessThanOrEqual(r.label.left + 0.5);
+        }
+        if (name !== 'start') {
+          expect(r.end, name).not.toBeNull();
+          expect(r.end?.left as number).toBeGreaterThanOrEqual(r.label.right - 0.5);
+        }
+      }
+      unmount();
+    }
+  });
+
+  it('asChild links carry the wrappers inside the child', () => {
+    render(<Menu asChild startIcon={svg(ICON_SVG_16)} endIcon={svg(ICON_SVG_16)} />);
+    const link = body().querySelector('a[href="/one"]') as HTMLElement;
+    expect(link.querySelector('[data-part="startIcon"]')?.getAttribute('aria-hidden')).toBe('true');
+    expect(link.querySelector('[data-part="endIcon"]')?.getAttribute('aria-hidden')).toBe('true');
+    expect(link.textContent).toBe('One');
+  });
+
+  it('on a dir="rtl" page the start icon renders on the right of the label', () => {
+    document.documentElement.dir = 'rtl';
+    render(<Menu startIcon={svg(ICON_SVG_16)} />);
+    for (const row of rows()) {
+      const r = rectsOf(row);
+      expect((r.start as DOMRect).left).toBeGreaterThan(r.label.left);
+    }
+  });
+
+  it('an icon keeps its own size', () => {
+    render(<Menu startIcon={svg(ICON_SVG_16)} endIcon={svg(ICON_SVG_20)} />);
+    for (const row of rows()) {
+      const r = rectsOf(row);
+      expect(r.start?.width).toBe(16);
+      expect(r.end?.width).toBe(20);
+    }
+  });
+
+  it('each wrapper is aria-hidden and absent when no icon is given', () => {
+    const { container, unmount } = render(
+      <Menu startIcon={svg(ICON_SVG_16)} endIcon={svg(ICON_SVG_16)} />,
+    );
+    for (const part of ['startIcon', 'endIcon']) {
+      const wrappers = container.querySelectorAll(`[data-part="${part}"]`);
+      expect(wrappers.length).toBe(2);
+      for (const wrapper of wrappers) expect(wrapper.getAttribute('aria-hidden')).toBe('true');
+    }
+    expect(container.querySelector('[data-part="startIcon"]')?.getAttribute('data-icon')).toBe(
+      'inline-start',
+    );
+    unmount();
+    const bare = render(<Menu />);
+    expect(bare.container.querySelector('[data-part="startIcon"]')).toBeNull();
+    expect(bare.container.querySelector('[data-part="endIcon"]')).toBeNull();
+  });
+
+  it('the accessible name is the label alone even when the svg has a title', async () => {
+    render(
+      <Menu
+        startIcon={
+          <svg viewBox="0 0 24 24" width="16" height="16">
+            <title>Mail icon</title>
+          </svg>
+        }
+      />,
+    );
+    await expect
+      .element(page.getByRole('button', { name: 'Products', exact: true }))
+      .toBeInTheDocument();
   });
 });

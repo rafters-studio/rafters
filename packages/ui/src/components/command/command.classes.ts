@@ -10,6 +10,8 @@ export interface CommandClassSet {
   group: string;
   groupHeading: string;
   item: string;
+  startIcon: string;
+  label: string;
   separator: string;
   shortcut: string;
   dialogBackdrop: string;
@@ -27,13 +29,17 @@ const inputClasses =
   'flex h-11 @md:h-10 w-full rounded-md bg-transparent py-3 text-body-small ts-body-small outline-none ' +
   'placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50';
 
-const listClasses = 'max-h-80 overflow-y-auto overflow-x-hidden p-1';
+// The list is a grid on the menu-row track list (indicator, icon, label, end);
+// each item is a subgrid row, so the icon and label are columns in reading order
+// and the icon swaps sides on a dir="rtl" page with no direction class.
+const listClasses = 'grid grid-cols-menu-row max-h-80 overflow-y-auto overflow-x-hidden p-1';
 
-const emptyClasses = 'py-6 text-center text-body-small ts-body-small';
+const emptyClasses = 'col-span-full py-6 text-center text-body-small ts-body-small';
 
-const groupClasses = 'overflow-hidden p-1 text-foreground';
+const groupClasses = 'grid grid-cols-subgrid col-span-full overflow-hidden p-1 text-foreground';
 
-const groupHeadingClasses = 'px-2 py-1.5 text-label-small ts-label-small text-muted-foreground';
+const groupHeadingClasses =
+  'col-span-full px-2 py-1.5 text-label-small ts-label-small text-muted-foreground';
 
 // THE ROW: command / items / highlight move -- color, duration-micro,
 // ease-standard (motion.md:200), PROPOSED and unreviewed, transcribed as
@@ -73,15 +79,23 @@ const groupHeadingClasses = 'px-2 py-1.5 text-label-small ts-label-small text-mu
 //   filter runs per keystroke. Both readings say the row wants a second look
 //   before a component animates a person's own hands.
 const itemClasses =
-  'relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 ' +
+  'grid grid-cols-subgrid col-span-full cursor-default select-none items-center rounded-sm px-2 py-1.5 ' +
+  'has-data-[icon=inline-start]:ps-1.5 ' +
   'text-body-small ts-body-small outline-none ' +
   'transition-colors duration-micro ease-standard delay-stagger-step ' +
   'data-[selected]:bg-accent data-[selected]:text-accent-foreground ' +
   'data-[disabled]:pointer-events-none data-[disabled]:opacity-50';
 
-const separatorClasses = '-mx-1 h-px bg-border';
+// The wrappers only place and hide: the brand brings its icons, sizing included.
+const startIconClasses = 'col-start-2 me-2 inline-grid place-items-center';
 
-const shortcutClasses = 'ml-auto text-shortcut ts-shortcut tracking-widest text-muted-foreground';
+const labelClasses = 'col-start-3 min-w-0 truncate';
+
+const separatorClasses = 'col-span-full -mx-1 h-px bg-border';
+
+// The shortcut is the end column of the row: no auto margin pushes it.
+const shortcutClasses =
+  'col-start-4 ms-2 text-shortcut ts-shortcut tracking-widest text-muted-foreground';
 
 // The dialog wrapper is the overlay variant -- the palette itself, and so the
 // `content` part motion.jsonl names. The comment here used to cite
@@ -109,7 +123,7 @@ const dialogBackdropClasses = 'fixed inset-0 z-depth-overlay bg-foreground/80';
 // behavior/view change outside this file's scope -- the classes name the right
 // cells on the right part and start running the moment it lands.
 const dialogContentClasses =
-  'fixed left-1/2 top-1/2 z-depth-modal w-full max-w-lg -translate-x-1/2 -translate-y-1/2 ' +
+  'fixed inset-x-0 mx-auto top-1/2 z-depth-modal w-full max-w-lg -translate-y-1/2 ' +
   'overflow-hidden rounded-lg border bg-popover shadow-lg ' +
   'data-[state=open]:animate-fade-in-moderate-enter ' +
   'data-[state=closed]:animate-fade-out-fast-exit ' +
@@ -126,6 +140,8 @@ export function commandClasses(_config: CommandConfig, _state: CommandState): Co
     group: groupClasses,
     groupHeading: groupHeadingClasses,
     item: itemClasses,
+    startIcon: startIconClasses,
+    label: labelClasses,
     separator: separatorClasses,
     shortcut: shortcutClasses,
     dialogBackdrop: dialogBackdropClasses,
