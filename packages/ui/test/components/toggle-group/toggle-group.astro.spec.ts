@@ -79,4 +79,35 @@ describe('toggle-group [astro]', () => {
     await user.keyboard(' ');
     expect(item('c').getAttribute('aria-pressed')).toBe('true');
   });
+
+  it('icons: the server markup already hides each wrapper, before any script runs', async () => {
+    const container = await AstroContainer.create();
+    const html = await container.renderToString(ToggleGroup, {
+      props: { id: 'tg', items },
+      slots: {
+        'start-icon-a': '<svg><title>Mail</title></svg>',
+        'end-icon-a': '<svg></svg>',
+      },
+    });
+    document.body.innerHTML = html; // no bindToggleGroup: the SSR render alone
+    const start = document.querySelector('[data-part="startIcon"]');
+    const end = document.querySelector('[data-part="endIcon"]');
+    expect(start?.getAttribute('aria-hidden')).toBe('true');
+    expect(start?.getAttribute('data-icon')).toBe('inline-start');
+    expect(end?.getAttribute('aria-hidden')).toBe('true');
+    expect(end?.getAttribute('data-icon')).toBe('inline-end');
+    const order = [...item('a').querySelectorAll('[data-part]')].map((el) =>
+      el.getAttribute('data-part'),
+    );
+    expect(order).toEqual(['startIcon', 'endIcon']);
+    expect(item('a').firstElementChild).toBe(start);
+    expect(item('a').lastElementChild).toBe(end);
+    expect(item('b').querySelector('[data-part="startIcon"]')).toBeNull();
+  });
+
+  it('icons: no wrapper when no icon slot is given', async () => {
+    await mount();
+    expect(document.querySelector('[data-part="startIcon"]')).toBeNull();
+    expect(document.querySelector('[data-part="endIcon"]')).toBeNull();
+  });
 });
