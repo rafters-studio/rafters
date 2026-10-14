@@ -323,7 +323,7 @@ export interface ContextMenuLabelProps extends React.HTMLAttributes<HTMLDivEleme
 
 export function ContextMenuLabel({ className, inset, ...props }: ContextMenuLabelProps) {
   const { classes } = useContextMenuCtx('ContextMenuLabel');
-  return <div className={classy(classes.label, inset ? 'pl-8' : '', className)} {...props} />;
+  return <div className={classy(classes.label, inset ? 'ps-8' : '', className)} {...props} />;
 }
 
 /** Shared select-and-close for every item variant. Runs the consumer's select
@@ -344,7 +344,50 @@ function useItemSelect(disabled: boolean | undefined, onSelect?: (event: Event) 
   );
 }
 
-/** The absolute-positioned check/dot slot. className is pre-declared in a props
+function hasIcon(icon: React.ReactNode): boolean {
+  return icon != null && icon !== false;
+}
+
+/**
+ * The row's content after any indicator: the decorative icon, the label, and
+ * the end (a Shortcut child). The label is its own part so the row grid places
+ * it in the label track whether or not an icon or indicator comes before it.
+ */
+function ItemBody({
+  startIcon,
+  children,
+}: {
+  startIcon?: React.ReactNode;
+  children?: React.ReactNode;
+}) {
+  const { classes, aria } = useContextMenuCtx('ContextMenuItem');
+  const label: React.ReactNode[] = [];
+  const end: React.ReactNode[] = [];
+  for (const child of React.Children.toArray(children)) {
+    if (React.isValidElement(child) && child.type === ContextMenuShortcut) end.push(child);
+    else label.push(child);
+  }
+  return (
+    <>
+      {hasIcon(startIcon) ? (
+        <span
+          data-part="startIcon"
+          data-icon="inline-start"
+          className={classes.startIcon}
+          {...aria.startIcon}
+        >
+          {startIcon}
+        </span>
+      ) : null}
+      <span data-part="label" className={classes.itemLabel}>
+        {label}
+      </span>
+      {end}
+    </>
+  );
+}
+
+/** The check/dot slot in the indicator track. className is pre-declared in a props
  *  object so the span carries no literal className attribute. */
 function ItemIndicator({ children }: { children?: React.ReactNode }) {
   const { classes } = useContextMenuCtx('ContextMenuItemIndicator');
@@ -359,6 +402,8 @@ export interface ContextMenuItemProps extends Omit<
   inset?: boolean;
   disabled?: boolean;
   onSelect?: (event: Event) => void;
+  /** Decorative icon before the label (after it on a right-to-left page). Hidden from assistive technology. */
+  startIcon?: React.ReactNode;
 }
 
 export function ContextMenuItem({
@@ -368,6 +413,8 @@ export function ContextMenuItem({
   onSelect,
   onClick,
   onKeyDown,
+  startIcon,
+  children,
   ...props
 }: ContextMenuItemProps) {
   const { classes } = useContextMenuCtx('ContextMenuItem');
@@ -380,7 +427,7 @@ export function ContextMenuItem({
       tabIndex={disabled ? undefined : -1}
       aria-disabled={disabled || undefined}
       data-disabled={disabled ? '' : undefined}
-      className={classy(classes.item, inset ? 'pl-8' : '', className)}
+      className={classy(classes.item, inset ? 'ps-8' : '', className)}
       onClick={(event: React.MouseEvent<HTMLDivElement>) => {
         onClick?.(event);
         select();
@@ -393,7 +440,9 @@ export function ContextMenuItem({
         }
       }}
       {...props}
-    />
+    >
+      <ItemBody startIcon={startIcon}>{children}</ItemBody>
+    </div>
   );
 }
 
@@ -405,6 +454,8 @@ export interface ContextMenuCheckboxItemProps extends Omit<
   disabled?: boolean;
   onCheckedChange?: (checked: boolean) => void;
   onSelect?: (event: Event) => void;
+  /** Decorative icon between the check and the label. Hidden from assistive technology. */
+  startIcon?: React.ReactNode;
 }
 
 export function ContextMenuCheckboxItem({
@@ -415,6 +466,7 @@ export function ContextMenuCheckboxItem({
   onSelect,
   onClick,
   onKeyDown,
+  startIcon,
   children,
   ...props
 }: ContextMenuCheckboxItemProps) {
@@ -459,7 +511,7 @@ export function ContextMenuCheckboxItem({
           </svg>
         ) : null}
       </ItemIndicator>
-      {children}
+      <ItemBody startIcon={startIcon}>{children}</ItemBody>
     </div>
   );
 }
@@ -495,6 +547,8 @@ export interface ContextMenuRadioItemProps extends Omit<
   value: string;
   disabled?: boolean;
   onSelect?: (event: Event) => void;
+  /** Decorative icon between the dot and the label. Hidden from assistive technology. */
+  startIcon?: React.ReactNode;
 }
 
 export function ContextMenuRadioItem({
@@ -504,6 +558,7 @@ export function ContextMenuRadioItem({
   onSelect,
   onClick,
   onKeyDown,
+  startIcon,
   children,
   ...props
 }: ContextMenuRadioItemProps) {
@@ -542,7 +597,7 @@ export function ContextMenuRadioItem({
       {...props}
     >
       <ItemIndicator>{checked ? React.createElement('span', dotProps) : null}</ItemIndicator>
-      {children}
+      <ItemBody startIcon={startIcon}>{children}</ItemBody>
     </div>
   );
 }
@@ -677,6 +732,8 @@ export function ContextMenuSub({
 export interface ContextMenuSubTriggerProps extends React.HTMLAttributes<HTMLDivElement> {
   inset?: boolean;
   disabled?: boolean;
+  /** Decorative icon before the label (after it on a right-to-left page). Hidden from assistive technology. */
+  startIcon?: React.ReactNode;
 }
 
 export function ContextMenuSubTrigger({
@@ -687,6 +744,7 @@ export function ContextMenuSubTrigger({
   onPointerLeave,
   onKeyDown,
   onClick,
+  startIcon,
   children,
   ...props
 }: ContextMenuSubTriggerProps) {
@@ -702,7 +760,7 @@ export function ContextMenuSubTrigger({
       tabIndex={disabled ? undefined : -1}
       aria-disabled={disabled || undefined}
       data-disabled={disabled ? '' : undefined}
-      className={classy(classes.subTrigger, inset ? 'pl-8' : '', className)}
+      className={classy(classes.subTrigger, inset ? 'ps-8' : '', className)}
       {...sub.aria.subTrigger}
       onPointerEnter={(event: React.PointerEvent<HTMLDivElement>) => {
         onPointerEnter?.(event);
@@ -732,7 +790,7 @@ export function ContextMenuSubTrigger({
       }}
       {...props}
     >
-      {children}
+      <ItemBody startIcon={startIcon}>{children}</ItemBody>
       <svg
         className={classes.subTriggerChevron}
         fill="none"
