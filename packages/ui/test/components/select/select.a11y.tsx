@@ -62,3 +62,36 @@ for (const [name, props] of scenes) {
     expect(results.violations).toEqual([]);
   });
 }
+
+test('select with trigger and item icons, svg titles do not leak into the name', async ({
+  task,
+}) => {
+  const icon = (title: string) => (
+    <svg viewBox="0 0 24 24" width="16" height="16">
+      <title>{title}</title>
+      <path d="M2 4h20v16H2z" stroke="currentColor" />
+    </svg>
+  );
+  const { container } = await render(
+    <main>
+      <Select defaultOpen>
+        <SelectTrigger aria-label="Fruit" startIcon={icon('Fruit')} endIcon={icon('Arrow')}>
+          <SelectValue placeholder="Pick a fruit" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="apple" startIcon={icon('Apple icon')} endIcon={icon('Apple badge')}>
+            Apple
+          </SelectItem>
+          <SelectItem value="banana">Banana</SelectItem>
+        </SelectContent>
+      </Select>
+    </main>,
+  );
+  const results = await runAxe(container);
+  task.meta.axe = results;
+  expect(results.violations).toEqual([]);
+  expect(container.querySelectorAll('[data-icon][aria-hidden="true"]').length).toBe(4);
+  expect(container.querySelector('[data-part="trigger"]')?.getAttribute('aria-label')).toBe(
+    'Fruit',
+  );
+});

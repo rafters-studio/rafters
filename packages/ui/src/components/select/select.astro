@@ -52,6 +52,12 @@
  * The listbox stays in light DOM (present-but-hidden) so the effects the bind
  * runs -- roving-focus, typeahead, dismiss-on-outside -- can read it, and the
  * value text is read from the selected option.
+ *
+ * Decorative icons: the `start-icon` and `end-icon` slots fill the trigger, and
+ * an option's own icons fill the slots `item-start-icon-<value>` and
+ * `item-end-icon-<value>`. Each renders inside a wrapper the behavior projects
+ * aria-hidden="true" onto, in the server markup, so the label alone is the
+ * accessible name with no script run.
  */
 import {
   formValueAttrs,
@@ -97,6 +103,19 @@ const isEmpty = selected === undefined;
 
 // Form association composed through the form-value primitive.
 const hiddenInput = formValueAttrs({ name, value });
+
+const hasStartIcon = Astro.slots.has('start-icon');
+const hasEndIcon = Astro.slots.has('end-icon');
+const itemIcons = new Map<string, { start?: string | undefined; end?: string | undefined }>();
+for (const option of options) {
+  const start = Astro.slots.has(`item-start-icon-${option.value}`)
+    ? await Astro.slots.render(`item-start-icon-${option.value}`)
+    : undefined;
+  const end = Astro.slots.has(`item-end-icon-${option.value}`)
+    ? await Astro.slots.render(`item-end-icon-${option.value}`)
+    : undefined;
+  itemIcons.set(option.value, { start, end });
+}
 ---
 
 <rafters-select
@@ -115,9 +134,33 @@ const hiddenInput = formValueAttrs({ name, value });
     class={classes.trigger}
     {...aria.trigger}
   >
+    {
+      hasStartIcon && (
+        <span
+          data-part="startIcon"
+          data-icon="inline-start"
+          class={classes.triggerStartIcon}
+          {...aria.startIcon}
+        >
+          <slot name="start-icon" />
+        </span>
+      )
+    }
     <div data-part="value" data-placeholder={placeholder} data-empty={isEmpty ? '' : undefined} class={classes.value}>
       {displayLabel}
     </div>
+    {
+      hasEndIcon && (
+        <span
+          data-part="endIcon"
+          data-icon="inline-end"
+          class={classes.triggerEndIcon}
+          {...aria.endIcon}
+        >
+          <slot name="end-icon" />
+        </span>
+      )
+    }
     <svg
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 24 24"
@@ -138,6 +181,7 @@ const hiddenInput = formValueAttrs({ name, value });
       {
         options.map((option) => {
           const itemAria = selectItemAria(option.value, state, config);
+          const icons = itemIcons.get(option.value);
           return (
             <div
               role="option"
@@ -151,7 +195,25 @@ const hiddenInput = formValueAttrs({ name, value });
               {...itemAria}
             >
               <div class={classes.itemIndicator} aria-hidden="true"></div>
+              {icons?.start !== undefined && (
+                <span
+                  data-part="startIcon"
+                  data-icon="inline-start"
+                  class={classes.startIcon}
+                  {...aria.startIcon}
+                  set:html={icons.start}
+                />
+              )}
               <div class={classes.itemText}>{option.label}</div>
+              {icons?.end !== undefined && (
+                <span
+                  data-part="endIcon"
+                  data-icon="inline-end"
+                  class={classes.endIcon}
+                  {...aria.endIcon}
+                  set:html={icons.end}
+                />
+              )}
             </div>
           );
         })

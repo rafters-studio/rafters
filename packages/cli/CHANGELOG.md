@@ -4,6 +4,8 @@
 
 ### Features
 
+- feat(ui): **Select takes decorative `startIcon` and `endIcon` on the trigger and on each item.** In React they are props on `SelectTrigger` and `SelectItem`; in Astro the `start-icon` / `end-icon` slots fill the trigger and `item-start-icon-<value>` / `item-end-icon-<value>` fill an option; in the Web Component a child with `slot="start-icon"` or `slot="end-icon"` inside the trigger or an item. Each icon sits in a wrapper the behavior renders with `aria-hidden="true"` in the server markup, so the label alone is the accessible name; the wrapper is absent when no icon is given. The listbox content is now a `grid-cols-menu-row` grid with each item a subgrid row, the trigger is a grid, and the file has no physical direction class, so icons and the selected check swap sides on a `dir="rtl"` page. Padding tightens on the icon's own side with logical `ps-*`/`pe-*`. The brand brings its icons, sizing included.
+
 - feat(ui): **Remaining bare physical direction classes become logical.** The header classes of AlertDialog, Dialog, Drawer and Sheet use `@md:text-start`, the Container table header uses `[&_th]:text-start`, and the InputGroup addons and the InputOTP slot border use `border-e` / `border-s`, so they follow the writing direction on a `dir="rtl"` page. Drawer and Sheet side classes stay physical.
 
 - feat(ui): **Breadcrumb links and current page take decorative `startIcon` and `endIcon`.** In React they are props on `BreadcrumbLink` and `BreadcrumbPage` (`startIcon: ReactNode`, `endIcon: ReactNode`), in Astro the `start-icon` and `end-icon` slots of the new `breadcrumb-link.astro` and `breadcrumb-page.astro`, and in the Web Component a child of the link or current page with `slot="start-icon"` or `slot="end-icon"`. Each icon sits in a wrapper the behavior renders with `aria-hidden="true"` in the server markup, so the label alone is the accessible name; the wrapper is absent when no icon is given. The link and the page are now an `inline-grid grid-flow-col` row, so the start icon sits on the right on a `dir="rtl"` page. The brand brings its icons, sizing included: the wrapper only places and hides.
@@ -406,7 +408,6 @@
 - feat(design-tokens): the elevation token namespace is deleted (#1638 S2). The `elevation-{level}` JSON composite tokens and their `-z`/`-shadow` alias shorthands were grammar extensions Tailwind cannot manage -- their values were already silently dropped from emitted CSS, and nothing consumed them. Depth words (`z-depth-*`, #1651) and shadow utilities are the rendering surface; `ELEVATION_LEVELS` and `Token.elevationLevel` survive as metadata vocabulary; the level meanings are carried by the namespaced words themselves (z-depth-modal needs no manifest to mean modal). Existing projects: `rafters init --rebuild` drops the dead `elevation.rafters.json`.
 
 - fix(cli): `rafters set` is removed. Token mutation is a designer action: it lives in studio (and its API), behind the why-gate. Agents never write tokens -- an agent-reachable mutation surface is a boundary violation, not a convenience (#1643). The accessibility-rebake guard from the old command moved to @rafters/color-utils as `rebakeAccessibility` and now runs in the studio API PATCH path for scale-bearing values.
-
 
 ## 0.0.65
 
