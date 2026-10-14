@@ -96,6 +96,10 @@ interface DatePickerBaseProps {
   /** React-only display formatter (a function is not serializable). */
   formatDate?: ((date: Date) => string) | undefined;
   calendarProps?: DatePickerCalendarProps | undefined;
+  /** Decorative icon before the label (after it on a right-to-left page). Hidden from assistive technology. */
+  startIcon?: React.ReactNode;
+  /** Decorative icon after the label (before it on a right-to-left page); replaces the calendar glyph. Hidden from assistive technology. */
+  endIcon?: React.ReactNode;
 }
 
 export type DatePickerProps =
@@ -145,6 +149,8 @@ export function DatePicker(props: DatePickerProps) {
     defaultOpen = false,
     formatDate,
     calendarProps,
+    startIcon,
+    endIcon,
   } = props;
 
   const config: DatePickerConfig = {
@@ -241,10 +247,33 @@ export function DatePicker(props: DatePickerProps) {
         {...aria.trigger}
         onClick={() => request(effectiveOpen ? 'close' : 'open')}
       >
+        {startIcon != null && startIcon !== false ? (
+          <span
+            data-part="startIcon"
+            data-icon="inline-start"
+            id={ids.startIcon}
+            className={classes.startIcon}
+            {...aria.startIcon}
+          >
+            {startIcon}
+          </span>
+        ) : null}
         <span data-part="value" id={ids.value} className={classes.value} {...aria.value}>
           {formatValue(value, formatDate) || placeholder}
         </span>
-        <CalendarGlyph className={classes.icon} />
+        {endIcon != null && endIcon !== false ? (
+          <span
+            data-part="endIcon"
+            data-icon="inline-end"
+            id={ids.endIcon}
+            className={classes.endIcon}
+            {...aria.endIcon}
+          >
+            {endIcon}
+          </span>
+        ) : (
+          <CalendarGlyph className={classes.icon} />
+        )}
       </button>
       <div
         ref={contentRef}

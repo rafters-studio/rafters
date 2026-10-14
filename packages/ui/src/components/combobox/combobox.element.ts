@@ -40,14 +40,16 @@
  * custom-element lifecycle -- deferring the bind one microtask because
  * connectedCallback can fire before the light-DOM parts are parsed.
  */
-import { bindCombobox } from './combobox.behavior';
+import { bindCombobox, wrapComboboxIcons } from './combobox.behavior';
 
 export class RaftersCombobox extends HTMLElement {
   private teardown: (() => void) | null = null;
 
   connectedCallback(): void {
     queueMicrotask(() => {
-      if (this.isConnected && !this.teardown) this.teardown = bindCombobox(this);
+      if (!this.isConnected || this.teardown) return;
+      wrapComboboxIcons(this);
+      this.teardown = bindCombobox(this);
     });
   }
 

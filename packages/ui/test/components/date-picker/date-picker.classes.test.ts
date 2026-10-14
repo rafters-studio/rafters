@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import classy from '../../../src/primitives/classy';
 import { datePicker } from '../../../src/components/date-picker/date-picker.behavior';
 import { datePickerClasses } from '../../../src/components/date-picker/date-picker.classes';
 
@@ -86,5 +87,41 @@ describe('date-picker classes', () => {
       expect(value).not.toMatch(/\bz-\d/);
       expect(value).not.toMatch(/-(red|blue|green|gray|slate|zinc|neutral|white|black)\b/);
     }
+  });
+});
+
+describe('date-picker icon classes', () => {
+  it('the trigger is a grid whose columns follow reading order, with no physical direction', () => {
+    const tokens = classes.trigger.split(' ');
+    for (const literal of ['grid', 'grid-flow-col', 'items-center', 'gap-2']) {
+      expect(tokens).toContain(literal);
+    }
+    expect(tokens).not.toContain('flex');
+    expect(classes.trigger).not.toMatch(/(^|\s)(p[lr]|m[lr]|left|right|float)-/);
+    expect(classes.value).not.toContain('text-left');
+  });
+
+  it('the icon wrapper only places and hides, never sizes', () => {
+    expect(classes.startIcon).toBe('inline-grid place-items-center');
+    expect(classes.endIcon).toBe('inline-grid place-items-center');
+  });
+
+  it('padding tightens per side with logical classes', () => {
+    expect(classes.trigger).toContain('has-data-[icon=inline-start]:ps-2');
+    expect(classes.trigger).toContain('has-data-[icon=inline-end]:pe-2');
+  });
+
+  it('classy keeps every new literal', () => {
+    const kept = classy(classes.trigger).split(' ');
+    for (const literal of [
+      'grid',
+      'grid-flow-col',
+      'has-data-[icon=inline-start]:ps-2',
+      'has-data-[icon=inline-end]:pe-2',
+    ]) {
+      expect(kept, `classy dropped ${literal}`).toContain(literal);
+    }
+    expect(classy(classes.startIcon)).toBe(classes.startIcon);
+    expect(classy(classes.endIcon)).toBe(classes.endIcon);
   });
 });

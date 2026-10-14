@@ -6,8 +6,9 @@
  * drives. today/default-month are pinned so the projection is deterministic.
  */
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import '../../../src/components/date-picker/date-picker.element';
+import { installIconLayout, ICON_SVG_16, ICON_SVG_20, rectsOf } from './icon-layout';
 import {
   datePicker,
   type DatePickerConfig,
@@ -45,7 +46,15 @@ async function mount(attrs: Record<string, string> = {}, wrap = 'main'): Promise
 
 function assertContract(open: boolean, config: DatePickerConfig): void {
   const rendered: DatePickerPart[] = ['trigger', 'content', 'value'];
-  const ids = { trigger: '', content: '', value: '', anchor: '', close: '' };
+  const ids = {
+    trigger: '',
+    content: '',
+    value: '',
+    anchor: '',
+    close: '',
+    startIcon: '',
+    endIcon: '',
+  };
   for (const name of rendered) ids[name] = part(name).id;
   const state = { ...datePicker.initialState(config), open };
   const projection = datePicker.aria(state, config, ids);
@@ -170,5 +179,53 @@ describe('rafters-date-picker [wc]', () => {
     expect((part('trigger') as HTMLButtonElement).disabled).toBe(true);
     await user.click(part('trigger'));
     expect(part('content').inert).toBe(true);
+  });
+});
+
+describe('date-picker icons [wc]', () => {
+  let uninstall: () => void;
+  beforeEach(() => {
+    uninstall = installIconLayout();
+  });
+  afterEach(() => {
+    body().innerHTML = '';
+    uninstall();
+  });
+
+  async function mountIcons(children: string): Promise<HTMLElement> {
+    body().innerHTML = `<main><rafters-date-picker today="2026-07-20" default-month="2026-07-01">${children}</rafters-date-picker></main>`;
+    await Promise.resolve();
+    await Promise.resolve();
+    return part('trigger');
+  }
+
+  it('slot="start-icon" and slot="end-icon" children become hidden wrappers beside the label', async () => {
+    const trigger = await mountIcons(
+      `<span slot="start-icon">${ICON_SVG_16}</span><span slot="end-icon">${ICON_SVG_20}</span>`,
+    );
+    const start = trigger.querySelector('[data-part="startIcon"]');
+    const end = trigger.querySelector('[data-part="endIcon"]');
+    expect(start?.getAttribute('aria-hidden')).toBe('true');
+    expect(start?.getAttribute('data-icon')).toBe('inline-start');
+    expect(end?.getAttribute('aria-hidden')).toBe('true');
+    expect(end?.getAttribute('data-icon')).toBe('inline-end');
+    const r = rectsOf(trigger);
+    expect((r.start as DOMRect).right).toBeLessThanOrEqual(r.value.left + 0.5);
+    expect((r.end as DOMRect).left).toBeGreaterThanOrEqual(r.value.right - 0.5);
+    expect(r.start?.width).toBe(16);
+    expect(r.end?.width).toBe(20);
+  });
+
+  it('on a dir="rtl" page the start icon renders on the right of the label', async () => {
+    document.documentElement.dir = 'rtl';
+    const trigger = await mountIcons(`<span slot="start-icon">${ICON_SVG_16}</span>`);
+    const r = rectsOf(trigger);
+    expect((r.start as DOMRect).left).toBeGreaterThan(r.value.left);
+  });
+
+  it('no wrapper without an icon child', async () => {
+    const trigger = await mountIcons('');
+    expect(trigger.querySelector('[data-part="startIcon"]')).toBeNull();
+    expect(trigger.querySelector('[data-part="endIcon"]')).toBeNull();
   });
 });

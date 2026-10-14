@@ -7,6 +7,10 @@ export interface DatePickerClassSet {
   value: string;
   /** The calendar glyph at the trailing edge of the trigger. */
   icon: string;
+  /** The decorative wrapper before the label (after it on a right-to-left page). */
+  startIcon: string;
+  /** The decorative wrapper after the label, replacing the calendar glyph. */
+  endIcon: string;
   /** The anchored popup holding the calendar. */
   content: string;
 }
@@ -26,8 +30,9 @@ export interface DatePickerClassSet {
 // state, and motion.jsonl has no date-picker / trigger row for either. No row,
 // no motion: both stay instant here. Designer: assign rows if they should move.
 const triggerClasses =
-  'flex h-11 @md:h-9 w-full items-center justify-between gap-2 rounded-md ' +
+  'grid grid-flow-col auto-cols-auto h-11 @md:h-9 w-full items-center justify-between gap-2 rounded-md ' +
   'border border-input bg-background px-3 py-2 text-body-small ts-body-small shadow-sm ring-offset-background ' +
+  'has-data-[icon=inline-start]:ps-2 has-data-[icon=inline-end]:pe-2 ' +
   'hover:border-input-hover ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ' +
   'disabled:cursor-not-allowed disabled:opacity-50 ' +
@@ -35,10 +40,13 @@ const triggerClasses =
 
 // Placeholder look keys off data-empty, which the score projects when nothing is
 // selected (select's convention).
-const valueClasses = 'pointer-events-none truncate text-left data-[empty]:text-muted-foreground';
+const valueClasses = 'pointer-events-none truncate text-start data-[empty]:text-muted-foreground';
 
 // The oracle's calendar glyph sizing and weight (select's chevron twin).
 const iconClasses = 'size-4 shrink-0 opacity-50';
+
+// The wrapper only places and hides: the brand brings its icons, sizing included.
+const iconWrapperClasses = 'inline-grid place-items-center';
 
 // The popup sits on the popover depth token and fills with the popover surface
 // tokens; it hugs the calendar (shadcn's `w-auto p-0` on PopoverContent, the
@@ -86,6 +94,8 @@ export function datePickerClasses(
     trigger: triggerClasses,
     value: valueClasses,
     icon: iconClasses,
+    startIcon: iconWrapperClasses,
+    endIcon: iconWrapperClasses,
     content: contentClasses,
   };
 }
