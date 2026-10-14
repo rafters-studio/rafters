@@ -7,6 +7,7 @@
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it } from 'vitest';
+import { ICON_SVG_16 } from './icon-layout';
 import Combobox from '../../../src/components/combobox/combobox.astro';
 import { bindCombobox } from '../../../src/components/combobox/combobox.behavior';
 
@@ -37,6 +38,46 @@ const content = () => document.body.querySelector<HTMLElement>('[data-part="cont
 const empty = () => document.body.querySelector<HTMLElement>('[data-part="empty"]')!;
 const option = (v: string) =>
   document.body.querySelector<HTMLElement>(`[data-part="item"][data-value="${v}"]`)!;
+
+describe('combobox icons [astro]', () => {
+  const withIcons = async (): Promise<string> => {
+    const container = await AstroContainer.create();
+    return container.renderToString(Combobox, {
+      props: { id: 'cb', options },
+      slots: { 'start-icon': ICON_SVG_16, 'start-icon-react': ICON_SVG_16 },
+    });
+  };
+
+  it('SSR, no script run: each icon wrapper already has aria-hidden="true"', async () => {
+    const html = await withIcons();
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const wrappers = doc.querySelectorAll('[data-part="startIcon"]');
+    expect(wrappers).toHaveLength(2);
+    for (const wrapper of wrappers) {
+      expect(wrapper.getAttribute('aria-hidden')).toBe('true');
+      expect(wrapper.getAttribute('data-icon')).toBe('inline-start');
+    }
+    expect(doc.querySelector('[data-value="vue"] [data-part="startIcon"]')).toBeNull();
+  });
+
+  it('renders no wrapper when no icon slot is given', async () => {
+    await mount();
+    expect(document.body.querySelector('[data-part="startIcon"]')).toBeNull();
+  });
+
+  it('the icons sit in reading order: before the toggle, and before the option label', async () => {
+    document.body.innerHTML = await withIcons();
+    const field = document.body.querySelector('[data-part="field"]') as HTMLElement;
+    expect([...field.children].map((el) => el.getAttribute('data-part'))).toEqual([
+      'input',
+      'startIcon',
+      'trigger',
+    ]);
+    const parts = [...option('react').children].map((el) => el.getAttribute('data-part'));
+    expect(parts).toEqual([null, 'startIcon', null]);
+    expect(option('react').lastElementChild?.textContent).toBe('React');
+  });
+});
 
 describe('combobox [astro]', () => {
   it('SSR closed: listbox hidden and crawlable, input a collapsed combobox', async () => {

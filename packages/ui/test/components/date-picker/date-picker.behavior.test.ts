@@ -22,6 +22,7 @@ import {
   selectionProp,
   serializeValue,
   toSelection,
+  wrapDatePickerIcon,
   type DatePickerConfig,
 } from '../../../src/components/date-picker/date-picker.behavior';
 
@@ -34,7 +35,15 @@ const range = (overrides: Partial<DatePickerConfig> = {}): DatePickerConfig => (
   ...overrides,
 });
 
-const ids = { trigger: 't', content: 'c', anchor: '', close: '', value: 'v' };
+const ids = {
+  trigger: 't',
+  content: 'c',
+  anchor: '',
+  close: '',
+  value: 'v',
+  startIcon: 'si',
+  endIcon: 'ei',
+};
 
 describe('date-picker score: composition', () => {
   it('folds popover whole: every popover part is a picker part, plus the value label', () => {
@@ -42,7 +51,7 @@ describe('date-picker score: composition', () => {
       expect(datePicker.parts).toHaveProperty(part);
     }
     expect(Object.keys(datePicker.parts).sort()).toEqual(
-      ['anchor', 'close', 'content', 'trigger', 'value'].sort(),
+      ['anchor', 'close', 'content', 'endIcon', 'startIcon', 'trigger', 'value'].sort(),
     );
   });
 
@@ -65,12 +74,39 @@ describe('date-picker score: composition', () => {
   });
 });
 
+describe('date-picker icons', () => {
+  it('declares startIcon and endIcon as optional parts that project aria-hidden', () => {
+    expect(datePicker.parts.startIcon).toEqual({ optional: true });
+    expect(datePicker.parts.endIcon).toEqual({ optional: true });
+    const config = single();
+    const aria = datePicker.aria(datePicker.initialState(config), config, ids);
+    expect(aria.startIcon).toEqual({ 'aria-hidden': 'true' });
+    expect(aria.endIcon).toEqual({ 'aria-hidden': 'true' });
+  });
+
+  it('wrapDatePickerIcon moves the slotted child into a hidden wrapper', () => {
+    const child = document.createElement('svg');
+    child.setAttribute('slot', 'start-icon');
+    const wrapper = wrapDatePickerIcon(child, 'startIcon', 'inline-grid place-items-center');
+    expect(wrapper.getAttribute('aria-hidden')).toBe('true');
+    expect(wrapper.dataset['part']).toBe('startIcon');
+    expect(wrapper.dataset['icon']).toBe('inline-start');
+    expect(wrapper.className).toBe('inline-grid place-items-center');
+    expect(child.hasAttribute('slot')).toBe(false);
+    expect(wrapper.firstElementChild).toBe(child);
+    const end = wrapDatePickerIcon(document.createElement('svg'), 'endIcon', '');
+    expect(end.dataset['icon']).toBe('inline-end');
+  });
+});
+
 describe('date-picker part ids', () => {
   it('derives the rendered parts from one base; unrendered popover parts are empty', () => {
     expect(datePickerIds('dp')).toEqual({
       trigger: 'dp-trigger',
       content: 'dp-content',
       value: 'dp-value',
+      startIcon: 'dp-start-icon',
+      endIcon: 'dp-end-icon',
       anchor: '',
       close: '',
     });

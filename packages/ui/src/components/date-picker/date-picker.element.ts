@@ -56,6 +56,7 @@ import {
   datePickerIds,
   DEFAULT_PLACEHOLDER,
   formValueAttrs,
+  wrapDatePickerIcon,
   type DatePickerConfig,
   type DatePickerMode,
 } from './date-picker.behavior';
@@ -157,7 +158,16 @@ export class RaftersDatePicker extends HTMLElement {
     label.id = ids.value;
     label.setAttribute('data-part', 'value');
     label.className = classes.value;
-    trigger.append(label, glyph(classes.icon));
+    // The author's slotted icons, taken before replaceChildren drops them.
+    const slotted = (slot: string): Element | null =>
+      this.querySelector(`:scope > [slot="${slot}"]`);
+    const startChild = slotted('start-icon');
+    const endChild = slotted('end-icon');
+    const start = startChild && wrapDatePickerIcon(startChild, 'startIcon', classes.startIcon);
+    const end = endChild && wrapDatePickerIcon(endChild, 'endIcon', classes.endIcon);
+    if (start) start.id = ids.startIcon;
+    if (end) end.id = ids.endIcon;
+    trigger.append(...(start ? [start] : []), label, end ?? glyph(classes.icon));
 
     const content = document.createElement('div');
     content.id = ids.content;

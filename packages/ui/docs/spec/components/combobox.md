@@ -120,6 +120,25 @@ All keys ride the input (focus never leaves it):
 - Printable keys: handled natively by the input, dispatched as `setQuery`, which
   filters and opens.
 
+## Icons beside a label
+
+One optional prop places a decorative icon at the start of the input and at the start of each option: `startIcon`. Combobox has no end icon: the input's end is the toggle, and an option's end column is left to the row.
+
+| Target | Input | Option |
+| --- | --- | --- |
+| React | `<Combobox.Input startIcon={node} />` | `<Combobox.Item startIcon={node} />` |
+| Astro | `<slot name="start-icon" />` | `<slot name="start-icon-{value}" />` |
+| Web Component | child of the host with `slot="start-icon"` | child of the option with `slot="start-icon"` |
+
+```html
+<span data-part="startIcon" data-icon="inline-start" aria-hidden="true">...</span>
+```
+
+- `startIcon` is an optional part, present only when an icon is given. The behavior projects `aria-hidden="true"` on every one, so the markup is hidden from assistive technology before any script runs; the label is the accessible name. The option label read on commit and filter excludes the icon, so an svg `<title>` never enters it.
+- The field, the content and each option are grids on `grid-cols-menu-row` (indicator, icon, label, end). The input spans every column and the icon and toggle sit in columns 2 and 4 of its row; each option is `grid-cols-subgrid col-span-full` with the check in column 1, so the icon and label follow reading order and mirror on a `dir="rtl"` page. No physical direction class remains in `combobox.classes.ts`.
+- The input's inline-start padding tightens only when an icon is present (`has-data-[icon=inline-start]:[&>input]:ps-9`); the end padding for the toggle is `pe-9`.
+- Rafters does not size icons. The wrapper (`inline-grid place-items-center`) only places and hides.
+
 ## Motion
 
 Enter/exit intent: fade + zoom on the listbox, exit shorter than entrance

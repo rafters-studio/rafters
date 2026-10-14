@@ -10,6 +10,13 @@ import {
   ComboboxItem,
 } from '../../../src/components/combobox/combobox';
 
+const mark = (
+  <svg width="16" height="16" viewBox="0 0 24 24">
+    <title>Framework mark</title>
+    <rect width="24" height="24" fill="currentColor" />
+  </svg>
+);
+
 interface SceneProps {
   value?: string;
   defaultValue?: string;
@@ -18,12 +25,17 @@ interface SceneProps {
   disabled?: boolean;
   disabledItem?: string;
   grouped?: boolean;
+  icons?: boolean;
 }
 
-function Scene({ disabledItem, grouped = false, ...props }: SceneProps) {
+function Scene({ disabledItem, grouped = false, icons = false, ...props }: SceneProps) {
   const items = (
     <>
-      <ComboboxItem value="react" disabled={disabledItem === 'react'}>
+      <ComboboxItem
+        value="react"
+        disabled={disabledItem === 'react'}
+        startIcon={icons ? mark : undefined}
+      >
         React
       </ComboboxItem>
       <ComboboxItem value="vue" disabled={disabledItem === 'vue'}>
@@ -36,7 +48,11 @@ function Scene({ disabledItem, grouped = false, ...props }: SceneProps) {
   );
   return (
     <Combobox {...props}>
-      <ComboboxInput aria-label="Framework" placeholder="Search framework" />
+      <ComboboxInput
+        aria-label="Framework"
+        placeholder="Search framework"
+        startIcon={icons ? mark : undefined}
+      />
       <ComboboxContent>
         <ComboboxEmpty>No framework found.</ComboboxEmpty>
         {grouped ? <ComboboxGroup heading="Frameworks">{items}</ComboboxGroup> : items}
@@ -54,6 +70,7 @@ const scenes: ReadonlyArray<[string, SceneProps]> = [
   ['disabled', { disabled: true }],
   ['open with a disabled option', { defaultOpen: true, disabledItem: 'vue' }],
   ['open with a headed group', { defaultOpen: true, grouped: true }],
+  ['open with start icons', { defaultOpen: true, icons: true }],
 ];
 
 for (const [name, props] of scenes) {
