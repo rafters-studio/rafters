@@ -89,8 +89,8 @@ describe('input-group affix decoration', () => {
   });
 
   it('puts the divider on the side facing the control', () => {
-    expect(composeInputGroupAddonClasses('start')).toContain('border-r');
-    expect(composeInputGroupAddonClasses('end')).toContain('border-l');
+    expect(composeInputGroupAddonClasses('start')).toContain('border-e');
+    expect(composeInputGroupAddonClasses('end')).toContain('border-s');
   });
 
   it('fills only on the filled variant', () => {

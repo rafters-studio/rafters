@@ -130,7 +130,7 @@ const articleTypography = [
   '[&_hr]:border-border [&_hr]:my-8',
   '[&_img]:rounded-lg [&_img]:my-4',
   '[&_table]:w-full [&_table]:my-4',
-  '[&_th]:border [&_th]:border-border [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:font-semibold',
+  '[&_th]:border [&_th]:border-border [&_th]:px-3 [&_th]:py-2 [&_th]:text-start [&_th]:font-semibold',
   '[&_td]:border [&_td]:border-border [&_td]:px-3 [&_td]:py-2',
 ].join(' ');
 
