@@ -1,4 +1,5 @@
 import type { BehaviorSpec } from '../../lib/contract';
+import { breadcrumbIconClasses } from './breadcrumb.classes';
 
 /**
  * Breadcrumb: a hierarchical location trail. The wayfinding archetype -- a
@@ -34,7 +35,8 @@ import type { BehaviorSpec } from '../../lib/contract';
 export type BreadcrumbConfig = Record<never, never>;
 export type BreadcrumbState = Record<never, never>;
 export type BreadcrumbActions = Record<never, never>;
-export type BreadcrumbPart = 'root';
+export type BreadcrumbIconPart = 'startIcon' | 'endIcon';
+export type BreadcrumbPart = 'root' | BreadcrumbIconPart;
 
 export const breadcrumb: BehaviorSpec<
   BreadcrumbConfig,
@@ -43,13 +45,52 @@ export const breadcrumb: BehaviorSpec<
   BreadcrumbPart
 > = {
   name: 'breadcrumb',
-  parts: { root: {} },
+  parts: { root: {}, startIcon: { optional: true }, endIcon: { optional: true } },
   initialState: () => ({}),
   actions: {},
   canDispatch: () => true,
   // The nav landmark, the current-page marker, and the hidden separators are
-  // native to the markup each performance renders; the score projects nothing
-  // and the harness asserts the empty contract across every framework.
-  aria: () => ({ root: {} }),
+  // native to the markup each performance renders; the root projects nothing.
+  // Each decorative icon wrapper beside a link or page label is present only
+  // when the author gives an icon, and hides it from assistive technology in
+  // the server markup, with no script run: the label alone is the name.
+  aria: () => ({
+    root: {},
+    startIcon: { 'aria-hidden': 'true' },
+    endIcon: { 'aria-hidden': 'true' },
+  }),
   keymap: () => null,
 };
+
+/**
+ * Wrap each `slot="start-icon"` / `slot="end-icon"` child of a trail link or
+ * current page in the decorative wrapper the behavior projects aria-hidden
+ * onto. The trail is consumer-composed light DOM, so the slot attribute is only
+ * the author's marker. The start wrapper goes first and the end wrapper last,
+ * so the label sits between them in reading order. Idempotent.
+ */
+export function wrapBreadcrumbIcons(scope: ParentNode): void {
+  const classes = breadcrumbIconClasses;
+  const kinds = [
+    { slot: 'start-icon', part: 'startIcon', icon: 'inline-start' },
+    { slot: 'end-icon', part: 'endIcon', icon: 'inline-end' },
+  ] as const;
+  const aria = breadcrumb.aria({}, {}, { root: '', startIcon: '', endIcon: '' });
+  for (const host of scope.querySelectorAll<HTMLElement>('a, [aria-current="page"]')) {
+    for (const kind of kinds) {
+      const child = host.querySelector(`:scope > [slot="${kind.slot}"]`);
+      if (!child || host.querySelector(`:scope > [data-part="${kind.part}"]`)) continue;
+      const wrapper = document.createElement('span');
+      wrapper.dataset['part'] = kind.part;
+      wrapper.dataset['icon'] = kind.icon;
+      for (const [name, value] of Object.entries(aria[kind.part] ?? {})) {
+        wrapper.setAttribute(name, String(value));
+      }
+      wrapper.className = classes;
+      child.removeAttribute('slot');
+      wrapper.appendChild(child);
+      if (kind.slot === 'start-icon') host.insertBefore(wrapper, host.firstChild);
+      else host.appendChild(wrapper);
+    }
+  }
+}

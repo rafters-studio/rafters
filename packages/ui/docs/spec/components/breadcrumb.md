@@ -98,6 +98,32 @@ utility sheet -- so there is no shadow-scoped descendant CSS to maintain.
 and Alert record while the new tree's Typography component does not exist yet; a
 navigation marker is not prose, so no typography role component fits it either.
 
+## Icons beside a label
+
+Two optional props place decorative icons around the label of a `BreadcrumbLink` or a `BreadcrumbPage`, in reading order (MUI's names): `startIcon` and `endIcon`.
+
+| Target | Start icon | End icon |
+| --- | --- | --- |
+| React | `startIcon: ReactNode` on `BreadcrumbLink` and `BreadcrumbPage` | `endIcon: ReactNode` on the same |
+| Astro | `<slot name="start-icon" />` of `breadcrumb-link.astro` and `breadcrumb-page.astro` | `<slot name="end-icon" />` of the same |
+| Web Component | child of the link or current page with `slot="start-icon"` | child of the link or current page with `slot="end-icon"` |
+
+The Astro and Web Component performances own only the nav landmark, so Astro gains two small sub-components for the places an icon sits, and the Web Component wraps the slotted children of the consumer-composed link or current page.
+
+```html
+<a href="/" class="inline-grid grid-flow-col items-center gap-1.5 ...">
+  <span data-part="startIcon" data-icon="inline-start" aria-hidden="true">...</span>
+  Home
+  <span data-part="endIcon" data-icon="inline-end" aria-hidden="true">...</span>
+</a>
+```
+
+- `startIcon` and `endIcon` are optional behavior parts, present only when the author gives an icon. The behavior projects `aria-hidden="true"` on each through `aria`, so the markup is hidden from assistive technology before any script runs; the label is the accessible name.
+- The link and the page are grids (`inline-grid grid-flow-col items-center gap-1.5`). The icon wrappers and the label are columns in reading order, so the start icon is on the right on a `dir="rtl"` page. No physical direction class.
+- Inline padding tightens on the icon's side only, with `has-data-[icon=inline-start]:ps-0` and `has-data-[icon=inline-end]:pe-0`.
+- Rafters does not size icons. The wrapper (`inline-grid place-items-center`) only places and hides.
+- An icon-only home crumb is not decorative: it needs an accessible name and is out of scope here.
+
 ## Config, state, actions
 
 ```ts
@@ -116,9 +142,12 @@ default chevron.
 | Part | Presence | ARIA |
 | --- | --- | --- |
 | root | always | none projected -- the `aria-label="Breadcrumb"` landmark label is fixed native markup, not a score projection |
+| startIcon | only when an icon is given | `aria-hidden="true"` |
+| endIcon | only when an icon is given | `aria-hidden="true"` |
 
-There is exactly one behavioral part. List/item/link/page/separator/ellipsis are
-structural composition, not ARIA-bearing parts of the score (boundary 5).
+List/item/link/page/separator/ellipsis are structural composition, not
+ARIA-bearing parts of the score (boundary 5). The two icon parts are the
+exception: they are decorative wrappers the score hides.
 
 ## Keyboard and effects
 

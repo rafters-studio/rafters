@@ -27,9 +27,14 @@ export const breadcrumbItemClasses = 'inline-flex items-center gap-1.5';
  * sheet's responsibility and never a component-level media query.
  */
 export const breadcrumbLinkClasses =
-  'transition-colors duration-fast ease-standard hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
+  'inline-grid grid-flow-col items-center gap-1.5 has-data-[icon=inline-start]:ps-0 has-data-[icon=inline-end]:pe-0 transition-colors duration-fast ease-standard hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
 
-export const breadcrumbPageClasses = 'text-foreground';
+export const breadcrumbPageClasses =
+  'inline-grid grid-flow-col items-center gap-1.5 has-data-[icon=inline-start]:ps-0 has-data-[icon=inline-end]:pe-0 text-foreground';
+
+// The decorative icon wrapper beside a link or page label. It only places and
+// hides: the brand brings its icons, sizing included.
+export const breadcrumbIconClasses = 'inline-grid place-items-center';
 
 export const breadcrumbSeparatorClasses = '[&>svg]:size-3.5';
 
