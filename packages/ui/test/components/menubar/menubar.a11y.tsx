@@ -15,18 +15,26 @@ import {
   MenubarTrigger,
 } from '../../../src/components/menubar/menubar';
 
+const mark = (
+  <svg width="16" height="16" viewBox="0 0 24 24">
+    <title>Framework mark</title>
+    <rect width="24" height="24" fill="currentColor" />
+  </svg>
+);
+
 interface SceneProps {
   defaultValue?: string;
+  icons?: boolean;
 }
 
-function Scene(props: SceneProps) {
+function Scene({ icons = false, ...props }: SceneProps) {
   return (
     <main>
       <Menubar {...props}>
         <MenubarMenu value="file">
-          <MenubarTrigger>File</MenubarTrigger>
+          <MenubarTrigger startIcon={icons ? mark : undefined}>File</MenubarTrigger>
           <MenubarContent>
-            <MenubarItem>
+            <MenubarItem startIcon={icons ? mark : undefined}>
               New Tab <MenubarShortcut>Cmd+T</MenubarShortcut>
             </MenubarItem>
             <MenubarSeparator />
@@ -57,6 +65,7 @@ const scenes: ReadonlyArray<[string, SceneProps]> = [
   ['closed', {}],
   ['open with action items', { defaultValue: 'file' }],
   ['open with checkbox and radio items', { defaultValue: 'view' }],
+  ['open with start icons', { defaultValue: 'file', icons: true }],
 ];
 
 for (const [name, props] of scenes) {

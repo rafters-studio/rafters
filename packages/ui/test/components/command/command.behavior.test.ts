@@ -12,7 +12,14 @@ import {
   type CommandState,
 } from '../../../src/components/command/command.behavior';
 
-const ids: PartIds<CommandPart> = { root: 'r', input: 'i', list: 'l', item: '', empty: 'e' };
+const ids: PartIds<CommandPart> = {
+  root: 'r',
+  input: 'i',
+  list: 'l',
+  item: '',
+  empty: 'e',
+  startIcon: '',
+};
 
 function ariaAt(config: CommandConfig, state: CommandState = command.initialState(config)) {
   return command.aria(state, config, ids);
@@ -20,7 +27,14 @@ function ariaAt(config: CommandConfig, state: CommandState = command.initialStat
 
 describe('command parts', () => {
   it('declares root, the combobox input, the listbox list, the many-instance item, and the empty state', () => {
-    expect(Object.keys(command.parts).sort()).toEqual(['empty', 'input', 'item', 'list', 'root']);
+    expect(Object.keys(command.parts).sort()).toEqual([
+      'empty',
+      'input',
+      'item',
+      'list',
+      'root',
+      'startIcon',
+    ]);
     expect(command.parts.item.many).toBe(true);
     expect(command.parts.input.role).toBe('combobox');
     expect(command.parts.list.role).toBe('listbox');
@@ -176,5 +190,14 @@ describe('command keymap', () => {
   it('claims no keys off the input', () => {
     expect(command.keymap({ key: 'ArrowDown' }, state, 'item', {})).toBeNull();
     expect(command.keymap({ key: 'Enter' }, state, 'list', {})).toBeNull();
+  });
+});
+
+describe('command icon part', () => {
+  it('declares startIcon as an optional part that projects aria-hidden', () => {
+    expect(command.parts.startIcon).toEqual({ optional: true, many: true });
+    expect(command.aria(command.initialState({}), {}, ids).startIcon).toEqual({
+      'aria-hidden': 'true',
+    });
   });
 });
