@@ -5,7 +5,8 @@
  */
 import { cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { installIconLayout, ICON_SVG_16, rectsOf } from './icon-layout';
 import { RaftersToggleGroup } from '../../../src/components/toggle-group/toggle-group.element';
 
 beforeAll(() => {
@@ -135,5 +136,44 @@ describe('toggle-group [wc]', () => {
     await mount({ disabled: true });
     await user.click(item('a'));
     expect(item('a').getAttribute('aria-pressed')).toBe('false');
+  });
+});
+
+describe('toggle-group icons [wc]', () => {
+  let uninstall: () => void;
+  beforeEach(() => {
+    uninstall = installIconLayout();
+  });
+  afterEach(() => uninstall());
+
+  async function mountIcons(children = ''): Promise<HTMLElement> {
+    document.body.innerHTML = `<rafters-toggle-group><div data-part="root" role="group" aria-label="Text formatting" data-type="single"><button type="button" data-part="item" data-value="a" data-roving-item data-state="off" aria-pressed="false">Alpha${children}</button></div></rafters-toggle-group>`;
+    await Promise.resolve();
+    await Promise.resolve();
+    return item('a');
+  }
+
+  it('slot="start-icon" and slot="end-icon" children become hidden wrappers beside the label', async () => {
+    const el = await mountIcons(
+      `<span slot="start-icon">${ICON_SVG_16}</span><span slot="end-icon">${ICON_SVG_16}</span>`,
+    );
+    expect(el.querySelector('[data-part="startIcon"]')?.getAttribute('aria-hidden')).toBe('true');
+    expect(el.querySelector('[data-part="endIcon"]')?.getAttribute('aria-hidden')).toBe('true');
+    const r = rectsOf(el);
+    expect((r.start as DOMRect).right).toBeLessThanOrEqual(r.label.left + 0.5);
+    expect((r.end as DOMRect).left).toBeGreaterThanOrEqual(r.label.right - 0.5);
+    expect(r.start?.width).toBe(16);
+  });
+
+  it('on a dir="rtl" page the start icon renders on the right of the label', async () => {
+    document.documentElement.dir = 'rtl';
+    const r = rectsOf(await mountIcons(`<span slot="start-icon">${ICON_SVG_16}</span>`));
+    expect((r.start as DOMRect).left).toBeGreaterThan(r.label.left);
+  });
+
+  it('no wrapper without an icon child', async () => {
+    const el = await mountIcons();
+    expect(el.querySelector('[data-part="startIcon"]')).toBeNull();
+    expect(el.querySelector('[data-part="endIcon"]')).toBeNull();
   });
 });
