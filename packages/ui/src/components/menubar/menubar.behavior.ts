@@ -218,6 +218,7 @@ export function menubarInstanceAria(
       trigger: ids.trigger ?? '',
       content: ids.content ?? '',
       item: '',
+      startIcon: '',
     },
   );
   const attrs = menu[part] ?? {};

@@ -10,13 +10,14 @@ import {
   selectedValues,
   toggleGroup,
   toggleItemAria,
+  wrapToggleGroupIcons,
   type ToggleGroupConfig,
   type ToggleGroupState,
 } from '../../../src/components/toggle-group/toggle-group.behavior';
 
 const single: ToggleGroupConfig = { type: 'single' };
 const multiple: ToggleGroupConfig = { type: 'multiple' };
-const ids = { root: 'tg', item: 'tg-item' };
+const ids = { root: 'tg', item: 'tg-item', startIcon: 'tg-start', endIcon: 'tg-end' };
 
 describe('toggle-group initialState', () => {
   it('single seeds from a string defaultValue', () => {
@@ -219,5 +220,47 @@ describe('toggle-group emitValue (change-callback shape)', () => {
 
   it('multiple reports the array', () => {
     expect(emitValue(['a', 'b'], multiple)).toEqual(['a', 'b']);
+  });
+});
+
+describe('toggle-group icon parts', () => {
+  it('declares startIcon and endIcon as optional many parts that project aria-hidden', () => {
+    expect(toggleGroup.parts.startIcon).toEqual({ many: true, optional: true });
+    expect(toggleGroup.parts.endIcon).toEqual({ many: true, optional: true });
+    const aria = toggleGroup.aria(toggleGroup.initialState({}), {}, ids);
+    expect(aria.startIcon).toEqual({ 'aria-hidden': 'true' });
+    expect(aria.endIcon).toEqual({ 'aria-hidden': 'true' });
+  });
+});
+
+describe('wrapToggleGroupIcons', () => {
+  function group(items: string): HTMLElement {
+    document.body.innerHTML = `<div data-part="root" role="group">${items}</div>`;
+    return document.querySelector('[data-part="root"]') as HTMLElement;
+  }
+
+  it('wraps slotted children of each item in hidden wrappers in reading order', () => {
+    const root = group(
+      '<button data-part="item" data-value="a">Alpha<svg slot="end-icon"></svg><svg slot="start-icon"></svg></button>' +
+        '<button data-part="item" data-value="b">Beta</button>',
+    );
+    wrapToggleGroupIcons(root);
+    wrapToggleGroupIcons(root); // idempotent: the slot attribute is gone after the first pass
+    const [a, b] = Array.from(root.querySelectorAll<HTMLElement>('[data-part="item"]'));
+    expect(Array.from(a?.children ?? []).map((el) => el.getAttribute('data-part'))).toEqual([
+      'startIcon',
+      'endIcon',
+    ]);
+    expect(a?.firstElementChild?.getAttribute('data-part')).toBe('startIcon');
+    expect(a?.lastElementChild?.getAttribute('data-part')).toBe('endIcon');
+    for (const part of ['startIcon', 'endIcon']) {
+      expect(a?.querySelector(`[data-part="${part}"]`)?.getAttribute('aria-hidden')).toBe('true');
+    }
+    expect(a?.querySelector('[data-part="startIcon"]')?.getAttribute('data-icon')).toBe(
+      'inline-start',
+    );
+    expect(a?.querySelector('svg')?.hasAttribute('slot')).toBe(false);
+    expect(b?.querySelector('[data-part="startIcon"]')).toBeNull();
+    expect(b?.querySelector('[data-part="endIcon"]')).toBeNull();
   });
 });

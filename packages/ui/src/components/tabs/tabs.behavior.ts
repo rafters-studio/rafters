@@ -7,6 +7,7 @@ import {
   type PartIds,
 } from '../../lib/contract';
 import { updateAriaAttribute } from '../../primitives/aria-manager';
+import { tabsClasses } from './tabs.classes';
 import { createRovingFocus } from '../../primitives/roving-focus';
 
 /**
@@ -47,7 +48,8 @@ export type TabsActions = {
   activate: string;
 };
 
-export type TabsPart = 'root' | 'list' | 'trigger' | 'panel';
+export type TabsIconPart = 'startIcon' | 'endIcon';
+export type TabsPart = 'root' | 'list' | 'trigger' | 'panel' | TabsIconPart;
 
 /** The effective active tab: a controlled value shadows intrinsic state. */
 export function activeTab(state: TabsState, config: TabsConfig): string | null {
@@ -86,6 +88,10 @@ const tabsSlice: Slice<TabsConfig, TabsState, TabsActions, TabsPart> = {
     // SSR-stable and present before JS. Presence is constant; visibility is
     // state, projected as the boolean `hidden` on the instance.
     panel: { role: 'tabpanel', many: true },
+    // Decorative icon wrappers inside a trigger: present only when the author
+    // gives an icon, once per trigger that has one.
+    startIcon: { many: true, optional: true },
+    endIcon: { many: true, optional: true },
   },
   initialState: (config) => {
     const seed = config.value ?? config.defaultValue ?? '';
@@ -147,6 +153,12 @@ export function tabsInstanceAria(
       'data-state': active ? 'active' : 'inactive',
       hidden: active ? undefined : true,
     };
+  }
+  if (part === 'startIcon' || part === 'endIcon') {
+    // The label alone is the accessible name, with or without script: the
+    // wrapper carries the hiding because a child the author writes cannot be
+    // guaranteed to.
+    return { 'aria-hidden': 'true' };
   }
   return {};
 }
@@ -294,4 +306,34 @@ export function bindTabs(root: HTMLElement): () => void {
     stopRoving();
     root.removeEventListener('click', onClick);
   };
+}
+
+/**
+ * Wrap each `slot="start-icon"` / `slot="end-icon"` child of a trigger in the
+ * decorative wrapper the behavior projects aria-hidden onto, before the bind
+ * reads the parts. The light DOM has no slot assignment, so the slot attribute
+ * is only the author's marker. The start wrapper goes first in the trigger and
+ * the end wrapper last, so the label sits between them in reading order.
+ */
+export function wrapTabsIcons(root: HTMLElement): void {
+  const classes = tabsClasses({}, tabs.initialState({}));
+  const kinds = [
+    { slot: 'start-icon', part: 'startIcon', icon: 'inline-start', className: classes.startIcon },
+    { slot: 'end-icon', part: 'endIcon', icon: 'inline-end', className: classes.endIcon },
+  ] as const;
+  for (const trigger of root.querySelectorAll<HTMLElement>('[data-part="trigger"]')) {
+    for (const kind of kinds) {
+      const child = trigger.querySelector(`:scope > [slot="${kind.slot}"]`);
+      if (!child || trigger.querySelector(`:scope > [data-part="${kind.part}"]`)) continue;
+      const wrapper = document.createElement('span');
+      wrapper.dataset['part'] = kind.part;
+      wrapper.dataset['icon'] = kind.icon;
+      wrapper.setAttribute('aria-hidden', 'true');
+      wrapper.className = kind.className;
+      child.removeAttribute('slot');
+      wrapper.appendChild(child);
+      if (kind.slot === 'start-icon') trigger.insertBefore(wrapper, trigger.firstChild);
+      else trigger.appendChild(wrapper);
+    }
+  }
 }

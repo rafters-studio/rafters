@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import classy from '../../../src/primitives/classy';
 import { dropdownMenu } from '../../../src/components/dropdown-menu/dropdown-menu.behavior';
 import { dropdownMenuClasses } from '../../../src/components/dropdown-menu/dropdown-menu.classes';
 
@@ -77,6 +78,55 @@ describe('dropdown-menu classes', () => {
       expect(value).not.toContain('fade-in');
       expect(value).not.toContain('slide-in');
       expect(value).not.toMatch(/duration-\d/);
+    }
+  });
+
+  it('the content, items, and groups are a grid on the menu-row track list', () => {
+    const tokens = (value: string) => value.split(/\s+/);
+    expect(tokens(classes.content)).toEqual(expect.arrayContaining(['grid', 'grid-cols-menu-row']));
+    for (const key of ['item', 'checkboxItem', 'radioItem', 'group'] as const) {
+      expect(tokens(classes[key])).toEqual(
+        expect.arrayContaining(['grid', 'grid-cols-subgrid', 'col-span-full']),
+      );
+    }
+  });
+
+  it('no class in the set names a physical direction', () => {
+    for (const value of Object.values(classes)) {
+      expect(value).not.toMatch(/(^|[\s:])-?(p[lr]|m[lr]|left|right|float)-/);
+    }
+  });
+
+  it('the icon wrapper places and hides, never sizes', () => {
+    expect(classes.startIcon.split(/\s+/)).toEqual(
+      expect.arrayContaining(['inline-grid', 'place-items-center']),
+    );
+    expect(classes.startIcon).not.toMatch(/(^|\s)(size|w|h)-/);
+  });
+
+  it('an item tightens its start padding only when an icon is present', () => {
+    expect(classes.item).toContain('has-data-[icon=inline-start]:ps-1.5');
+  });
+
+  it('classy keeps every layout literal', () => {
+    const layout = /grid|col-|row-start|place-items|has-data|(^|:)p[se]-|(^|:)m[se]-/;
+    for (const key of [
+      'content',
+      'item',
+      'checkboxItem',
+      'radioItem',
+      'group',
+      'label',
+      'separator',
+      'shortcut',
+      'itemIndicator',
+      'startIcon',
+      'itemLabel',
+    ] as const) {
+      const kept = classy(classes[key]).split(' ');
+      for (const literal of classes[key].split(/\s+/).filter((c) => layout.test(c))) {
+        expect(kept, `classy dropped ${literal} from ${key}`).toContain(literal);
+      }
     }
   });
 });
