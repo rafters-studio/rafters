@@ -170,6 +170,6 @@ describe('menubar icons [astro]', () => {
     expect(trigger('file').firstElementChild?.getAttribute('data-part')).toBe('startIcon');
     const parts = [...item('Open').children].map((el) => el.getAttribute('data-part'));
     expect(parts).toEqual(['startIcon', null]);
-    expect(item('Open').lastElementChild?.textContent).toBe('Open');
+    expect(item('Open').lastElementChild?.textContent?.trim()).toBe('Open');
   });
 });
