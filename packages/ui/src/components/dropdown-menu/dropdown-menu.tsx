@@ -316,7 +316,7 @@ export interface DropdownMenuLabelProps extends React.HTMLAttributes<HTMLDivElem
 
 export function DropdownMenuLabel({ className, inset, ...props }: DropdownMenuLabelProps) {
   const { classes } = useDropdownMenuContext('DropdownMenuLabel');
-  return <div className={classy(classes.label, inset && 'pl-8', className)} {...props} />;
+  return <div className={classy(classes.label, inset && 'ps-8', className)} {...props} />;
 }
 
 /** The shared select-then-close path: fire a cancelable `select` event, and
@@ -348,6 +348,8 @@ export interface DropdownMenuItemProps extends Omit<
   disabled?: boolean;
   asChild?: boolean;
   onSelect?: (event: Event) => void;
+  /** Decorative icon before the label (after it on a right-to-left page). Hidden from assistive technology. */
+  startIcon?: React.ReactNode;
 }
 
 export function DropdownMenuItem({
@@ -357,6 +359,7 @@ export function DropdownMenuItem({
   disabled = false,
   asChild,
   onSelect,
+  startIcon,
   onClick,
   ...props
 }: DropdownMenuItemProps) {
@@ -386,9 +389,40 @@ export function DropdownMenuItem({
 
   return (
     // biome-ignore lint/a11y/useSemanticElements: role="menuitem" is the menu APG pattern
-    <div className={classy(classes.item, inset && 'pl-8', className)} {...partProps} {...props}>
-      {children}
+    <div className={classy(classes.item, inset && 'ps-8', className)} {...partProps} {...props}>
+      <ItemCells startIcon={startIcon}>{children}</ItemCells>
     </div>
+  );
+}
+
+function hasIcon(icon: React.ReactNode): boolean {
+  return icon != null && icon !== false;
+}
+
+/** An item's cells after the indicator: the decorative start icon, when given,
+ *  then the label. The icon is hidden from assistive technology in the markup. */
+function ItemCells({
+  startIcon,
+  children,
+}: {
+  startIcon: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  const { classes, aria } = useDropdownMenuContext('DropdownMenuItem');
+  return (
+    <>
+      {hasIcon(startIcon) ? (
+        <span
+          data-part="startIcon"
+          data-icon="inline-start"
+          className={classes.startIcon}
+          {...aria.startIcon}
+        >
+          {startIcon}
+        </span>
+      ) : null}
+      <span className={classes.itemLabel}>{children}</span>
+    </>
   );
 }
 
@@ -415,6 +449,8 @@ export interface DropdownMenuCheckboxItemProps extends Omit<
   disabled?: boolean;
   onCheckedChange?: (checked: boolean) => void;
   onSelect?: (event: Event) => void;
+  /** Decorative icon before the label (after it on a right-to-left page). Hidden from assistive technology. */
+  startIcon?: React.ReactNode;
 }
 
 export function DropdownMenuCheckboxItem({
@@ -424,6 +460,7 @@ export function DropdownMenuCheckboxItem({
   disabled = false,
   onCheckedChange,
   onSelect,
+  startIcon,
   onClick,
   ...props
 }: DropdownMenuCheckboxItemProps) {
@@ -459,7 +496,7 @@ export function DropdownMenuCheckboxItem({
       {...props}
     >
       {indicator}
-      {children}
+      <ItemCells startIcon={startIcon}>{children}</ItemCells>
     </div>
   );
 }
@@ -498,6 +535,8 @@ export interface DropdownMenuRadioItemProps extends Omit<
   value: string;
   disabled?: boolean;
   onSelect?: (event: Event) => void;
+  /** Decorative icon before the label (after it on a right-to-left page). Hidden from assistive technology. */
+  startIcon?: React.ReactNode;
 }
 
 export function DropdownMenuRadioItem({
@@ -506,6 +545,7 @@ export function DropdownMenuRadioItem({
   value: itemValue,
   disabled = false,
   onSelect,
+  startIcon,
   onClick,
   ...props
 }: DropdownMenuRadioItemProps) {
@@ -548,7 +588,7 @@ export function DropdownMenuRadioItem({
       {...props}
     >
       {indicator}
-      {children}
+      <ItemCells startIcon={startIcon}>{children}</ItemCells>
     </div>
   );
 }

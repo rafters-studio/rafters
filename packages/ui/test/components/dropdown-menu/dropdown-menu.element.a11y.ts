@@ -6,6 +6,7 @@ import '../../../src/components/dropdown-menu/dropdown-menu.element';
 interface Scene {
   open?: boolean;
   disabledItem?: boolean;
+  icons?: boolean;
 }
 
 function itemMarkup(label: string, disabled = false): string {
@@ -13,13 +14,21 @@ function itemMarkup(label: string, disabled = false): string {
   return `<div role="menuitem" data-part="item" data-roving-item ${dis}>${label}</div>`;
 }
 
-async function mount({ open = false, disabledItem = true }: Scene): Promise<HTMLElement> {
+function iconItem(label: string): string {
+  return `<div role="menuitem" data-part="item" data-roving-item tabindex="-1"><svg slot="start-icon" width="16" height="16" viewBox="0 0 24 24"><title>Item mark</title><rect width="24" height="24" fill="currentColor"/></svg>${label}</div>`;
+}
+
+async function mount({
+  open = false,
+  disabledItem = true,
+  icons = false,
+}: Scene): Promise<HTMLElement> {
   document.body.innerHTML = `
     <main>
       <rafters-dropdown-menu data-part="root">
         <button type="button" data-part="trigger" id="dm-trigger">Options</button>
         <div data-part="content" id="dm-content" hidden>
-          ${itemMarkup('Edit')}
+          ${icons ? iconItem('Edit') : itemMarkup('Edit')}
           ${itemMarkup('Duplicate')}
           ${itemMarkup('Archive', disabledItem)}
           ${itemMarkup('Delete')}
@@ -35,6 +44,7 @@ const scenes: ReadonlyArray<[string, Scene]> = [
   ['closed', {}],
   ['open', { open: true }],
   ['open with every item enabled', { open: true, disabledItem: false }],
+  ['open with a start icon', { open: true, icons: true }],
 ];
 
 for (const [name, scene] of scenes) {
