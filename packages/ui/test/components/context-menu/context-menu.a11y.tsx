@@ -16,7 +16,14 @@ import {
   ContextMenuTrigger,
 } from '../../../src/components/context-menu/context-menu';
 
-type Items = 'actions' | 'selectable' | 'submenu';
+type Items = 'actions' | 'selectable' | 'submenu' | 'icons';
+
+const mark = (
+  <svg width="16" height="16" viewBox="0 0 24 24">
+    <title>Action mark</title>
+    <rect width="24" height="24" fill="currentColor" />
+  </svg>
+);
 
 interface SceneProps {
   open?: boolean;
@@ -55,6 +62,20 @@ function Menu({ open = false, items = 'actions', subOpen = false, region }: Menu
             </ContextMenuRadioGroup>
           </>
         ) : null}
+        {items === 'icons' ? (
+          <>
+            <ContextMenuItem startIcon={mark}>Edit</ContextMenuItem>
+            <ContextMenuCheckboxItem checked startIcon={mark}>
+              Bold
+            </ContextMenuCheckboxItem>
+            <ContextMenuSub open={subOpen}>
+              <ContextMenuSubTrigger startIcon={mark}>More</ContextMenuSubTrigger>
+              <ContextMenuSubContent aria-label="More actions" container={region}>
+                <ContextMenuItem startIcon={mark}>Deep</ContextMenuItem>
+              </ContextMenuSubContent>
+            </ContextMenuSub>
+          </>
+        ) : null}
         {items === 'submenu' ? (
           <>
             <ContextMenuItem>Edit</ContextMenuItem>
@@ -88,6 +109,7 @@ const scenes: ReadonlyArray<[string, SceneProps]> = [
   ['open with checkbox and radio items', { open: true, items: 'selectable' }],
   ['open with submenu collapsed', { open: true, items: 'submenu' }],
   ['open with submenu expanded', { open: true, items: 'submenu', subOpen: true }],
+  ['open with start icons', { open: true, items: 'icons', subOpen: true }],
 ];
 
 for (const [name, props] of scenes) {

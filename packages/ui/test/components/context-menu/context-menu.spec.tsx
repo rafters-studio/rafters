@@ -12,7 +12,8 @@
 import * as React from 'react';
 import { cleanup, fireEvent, render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ICON_SVG_16, installIconLayout, rect } from './icon-layout';
 import { contextMenuClasses } from '../../../src/components/context-menu/context-menu.classes';
 import {
   ContextMenu,
@@ -410,5 +411,107 @@ describe('context-menu submenu [react]', () => {
     expect(spy).not.toHaveBeenCalled();
     expect(subContent()).toBeNull();
     spy.mockRestore();
+  });
+});
+
+describe('context-menu icons [react]', () => {
+  let uninstall: () => void;
+  beforeEach(() => {
+    uninstall = installIconLayout();
+  });
+  afterEach(() => uninstall());
+
+  const svg = (markup: string) => <span dangerouslySetInnerHTML={{ __html: markup }} />;
+  const iconScene = (
+    <ContextMenu open>
+      <ContextMenuTrigger>
+        <span>Right-click surface</span>
+      </ContextMenuTrigger>
+      <ContextMenuContent aria-label="Actions">
+        <ContextMenuItem startIcon={svg(ICON_SVG_16)}>Edit</ContextMenuItem>
+        <ContextMenuItem>Duplicate</ContextMenuItem>
+        <ContextMenuCheckboxItem checked startIcon={svg(ICON_SVG_16)}>
+          Bold
+        </ContextMenuCheckboxItem>
+        <ContextMenuRadioGroup value="a">
+          <ContextMenuRadioItem value="a" startIcon={svg(ICON_SVG_16)}>
+            Left
+          </ContextMenuRadioItem>
+        </ContextMenuRadioGroup>
+        <ContextMenuSub open>
+          <ContextMenuSubTrigger startIcon={svg(ICON_SVG_16)}>More</ContextMenuSubTrigger>
+          <ContextMenuSubContent aria-label="More actions">
+            <ContextMenuItem>Deep</ContextMenuItem>
+          </ContextMenuSubContent>
+        </ContextMenuSub>
+      </ContextMenuContent>
+    </ContextMenu>
+  );
+
+  const labelOf = (item: HTMLElement) =>
+    item.querySelector<HTMLElement>('[data-part="label"]') as HTMLElement;
+
+  it('the icon sits before the label on every item kind, including the sub-trigger', () => {
+    render(iconScene);
+    for (const name of ['Edit', 'Bold', 'Left', 'More']) {
+      const item = Array.from(body().querySelectorAll<HTMLElement>('[role^="menuitem"]')).find(
+        (el) => el.textContent === name,
+      ) as HTMLElement;
+      const icon = rect(item, '[data-part="startIcon"]');
+      const label = labelOf(item).getBoundingClientRect();
+      expect(icon.right, name).toBeLessThanOrEqual(label.left + 0.5);
+    }
+  });
+
+  it('on a dir="rtl" page the start icon renders on the right of the label', () => {
+    document.documentElement.dir = 'rtl';
+    render(iconScene);
+    const item = itemByText('Edit');
+    const icon = rect(item, '[data-part="startIcon"]');
+    const label = labelOf(item).getBoundingClientRect();
+    expect(icon.left).toBeGreaterThan(label.left);
+  });
+
+  it('an icon keeps its own size', () => {
+    render(iconScene);
+    expect(rect(itemByText('Edit'), '[data-part="startIcon"]').width).toBe(16);
+  });
+
+  it('each wrapper is aria-hidden per the contract and absent when no icon is given', () => {
+    render(iconScene);
+    const wrappers = body().querySelectorAll('[data-part="startIcon"]');
+    expect(wrappers).toHaveLength(4);
+    for (const wrapper of wrappers) {
+      expect(wrapper.getAttribute('aria-hidden')).toBe('true');
+      expect(wrapper.getAttribute('data-icon')).toBe('inline-start');
+    }
+    expect(itemByText('Duplicate').querySelector('[data-part="startIcon"]')).toBeNull();
+    cleanup();
+    render(<TestMenu open />);
+    expect(body().querySelector('[data-part="startIcon"]')).toBeNull();
+  });
+
+  it('the label part is the item text alone, even when the icon svg has a title', () => {
+    render(
+      <ContextMenu open>
+        <ContextMenuTrigger>
+          <span>Right-click surface</span>
+        </ContextMenuTrigger>
+        <ContextMenuContent aria-label="Actions">
+          <ContextMenuItem
+            startIcon={
+              <svg viewBox="0 0 24 24" width="16" height="16">
+                <title>Pencil icon</title>
+              </svg>
+            }
+          >
+            Edit
+          </ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>,
+    );
+    const item = body().querySelector('[role="menuitem"]') as HTMLElement;
+    expect(labelOf(item).textContent).toBe('Edit');
+    expect(item.querySelector('[data-part="startIcon"]')?.getAttribute('aria-hidden')).toBe('true');
   });
 });

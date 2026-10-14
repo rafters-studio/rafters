@@ -296,3 +296,67 @@ describe('context-menu [astro]', () => {
     expect(content().getAttribute('data-state')).toBe('open');
   });
 });
+
+describe('context-menu icons [astro]', () => {
+  const svg = (name: string) =>
+    `<svg width="16" height="16" viewBox="0 0 24 24"><title>${name}</title><rect width="24" height="24"/></svg>`;
+  const withIcons = async (): Promise<string> => {
+    const container = await AstroContainer.create();
+    return container.renderToString(ContextMenu, {
+      props: { id: 'cm', triggerLabel: 'Right-click here', items: itemsWithSub },
+      slots: {
+        'start-icon-0': svg('cut'),
+        'start-icon-1': svg('more'),
+        'start-icon-1-0': svg('deep'),
+        'start-icon-1-1-0': svg('grandchild'),
+      },
+    });
+  };
+
+  it('SSR, no script run: each icon wrapper already has aria-hidden="true"', async () => {
+    const doc = new DOMParser().parseFromString(await withIcons(), 'text/html');
+    const wrappers = doc.querySelectorAll('[data-part="startIcon"]');
+    expect(wrappers).toHaveLength(4);
+    for (const wrapper of wrappers) {
+      expect(wrapper.getAttribute('aria-hidden')).toBe('true');
+      expect(wrapper.getAttribute('data-icon')).toBe('inline-start');
+    }
+  });
+
+  it('icons reach the top-level item, the sub-trigger, and items two levels down', async () => {
+    const doc = new DOMParser().parseFromString(await withIcons(), 'text/html');
+    const titleIn = (el: Element | null | undefined) =>
+      el?.querySelector('[data-part="startIcon"] title')?.textContent;
+    const items = Array.from(doc.querySelectorAll('[role="menuitem"]'));
+    const byLabel = (label: string) =>
+      items.find(
+        (el) => el.querySelector(':scope > [data-part="label"]')?.textContent?.trim() === label,
+      );
+    expect(titleIn(byLabel('Cut'))).toBe('cut');
+    expect(titleIn(byLabel('More'))).toBe('more');
+    expect(titleIn(byLabel('Deep'))).toBe('deep');
+    expect(titleIn(byLabel('Grandchild'))).toBe('grandchild');
+    expect(byLabel('Even more')?.querySelector('[data-part="startIcon"]')).toBeNull();
+  });
+
+  it('renders no wrapper when no icon slot is given', async () => {
+    await mount();
+    expect(document.body.querySelector('[data-part="startIcon"]')).toBeNull();
+  });
+
+  it('the icon sits in reading order: before the label, and the label before the shortcut', async () => {
+    const container = await AstroContainer.create();
+    document.body.innerHTML = await container.renderToString(ContextMenu, {
+      props: {
+        id: 'cm',
+        triggerLabel: 'Right-click here',
+        items: [{ label: 'Delete', shortcut: 'Del' }],
+      },
+      slots: { 'start-icon-0': svg('trash') },
+    });
+    const item = document.body.querySelector('[role="menuitem"]') as HTMLElement;
+    expect(
+      [...item.children].map((el) => el.getAttribute('data-part') ?? el.tagName.toLowerCase()),
+    ).toEqual(['startIcon', 'label', 'kbd']);
+  });
+});
