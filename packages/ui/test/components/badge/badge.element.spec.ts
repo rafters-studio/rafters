@@ -5,7 +5,8 @@
  * once, slots the label from the light tree, and re-renders when `variant` or
  * `size` changes. That is the whole performance.
  */
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { installIconLayout, ICON_SVG_16, rectsOf } from './icon-layout';
 import { badge } from '../../../src/components/badge/badge.behavior';
 import { RaftersBadge } from '../../../src/components/badge/badge.element';
 
@@ -53,7 +54,7 @@ describe('badge [wc]', () => {
     const root = rootPart(mount());
     expect(root).not.toBeNull();
     expect(root.tagName).toBe('SPAN');
-    expect(root.className).toContain('inline-flex');
+    expect(root.className).toContain('inline-grid');
     expect(root.className).toContain('rounded-full');
   });
 
@@ -103,8 +104,63 @@ describe('badge [wc]', () => {
     expect(rootPart(host).className).toContain('bg-destructive');
   });
 
-  it('is a leaf: exactly one declared part', () => {
+  it('is a leaf: exactly one declared part when no icon is given', () => {
     const host = mount();
     expect(host.shadowRoot?.querySelectorAll('[data-part]')).toHaveLength(1);
+  });
+});
+
+describe('badge icons [wc]', () => {
+  let uninstall: () => void;
+  beforeEach(() => {
+    uninstall = installIconLayout();
+  });
+  afterEach(() => uninstall());
+
+  function mountIcons(children = ''): HTMLElement {
+    document.body.innerHTML = `<rafters-badge><span data-label>New</span>${children}</rafters-badge>`;
+    return document.body.querySelector('rafters-badge') as HTMLElement;
+  }
+
+  it('slot="start-icon" and slot="end-icon" children render in hidden wrappers beside the label', () => {
+    const host = mountIcons(
+      `<span slot="start-icon">${ICON_SVG_16}</span><span slot="end-icon">${ICON_SVG_16}</span>`,
+    );
+    const shadow = host.shadowRoot as ShadowRoot;
+    const start = shadow.querySelector('[data-part="startIcon"]');
+    const end = shadow.querySelector('[data-part="endIcon"]');
+    expect(start?.getAttribute('aria-hidden')).toBe('true');
+    expect(start?.getAttribute('data-icon')).toBe('inline-start');
+    expect(end?.getAttribute('aria-hidden')).toBe('true');
+    expect(end?.getAttribute('data-icon')).toBe('inline-end');
+    const r = rectsOf(host);
+    expect((r.start as DOMRect).right).toBeLessThanOrEqual(r.label.left + 0.5);
+    expect((r.end as DOMRect).left).toBeGreaterThanOrEqual(r.label.right - 0.5);
+    expect(r.start?.width).toBe(16);
+  });
+
+  it('start only and end only render just that wrapper', () => {
+    const startOnly = mountIcons(`<span slot="start-icon">${ICON_SVG_16}</span>`);
+    expect(startOnly.shadowRoot?.querySelector('[data-part="startIcon"]')).not.toBeNull();
+    expect(startOnly.shadowRoot?.querySelector('[data-part="endIcon"]')).toBeNull();
+    const endOnly = mountIcons(`<span slot="end-icon">${ICON_SVG_16}</span>`);
+    expect(endOnly.shadowRoot?.querySelector('[data-part="startIcon"]')).toBeNull();
+    expect(endOnly.shadowRoot?.querySelector('[data-part="endIcon"]')).not.toBeNull();
+  });
+
+  it('on a dir="rtl" page the start icon renders on the right of the label', () => {
+    document.documentElement.dir = 'rtl';
+    const host = mountIcons(`<span slot="start-icon">${ICON_SVG_16}</span>`);
+    const r = rectsOf(host);
+    expect((r.start as DOMRect).left).toBeGreaterThan(r.label.left);
+  });
+
+  it('no wrapper without an icon child, and one appears when a child is added', async () => {
+    const host = mountIcons();
+    expect(host.shadowRoot?.querySelector('[data-part="startIcon"]')).toBeNull();
+    expect(host.shadowRoot?.querySelector('[data-part="endIcon"]')).toBeNull();
+    host.insertAdjacentHTML('beforeend', `<span slot="start-icon">${ICON_SVG_16}</span>`);
+    await Promise.resolve();
+    expect(host.shadowRoot?.querySelector('[data-part="startIcon"]')).not.toBeNull();
   });
 });
