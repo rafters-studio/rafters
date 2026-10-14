@@ -5,6 +5,7 @@ import {
   navInstanceAria,
   navigationMenu,
   startNavigationMenuEffects,
+  wrapNavigationMenuIcons,
   type NavigationMenuConfig,
 } from '../../../src/components/navigation-menu/navigation-menu.behavior';
 
@@ -15,9 +16,11 @@ describe('navigation-menu parts', () => {
   it('declares root, list, the many-instance trigger/content, and the chrome', () => {
     expect(Object.keys(navigationMenu.parts).sort()).toEqual([
       'content',
+      'endIcon',
       'indicator',
       'list',
       'root',
+      'startIcon',
       'trigger',
       'viewport',
     ]);
@@ -108,7 +111,16 @@ describe('navigation-menu keymap', () => {
 });
 
 describe('navigation-menu aria', () => {
-  const ids = { root: 'r', list: 'l', trigger: '', content: '', viewport: 'v', indicator: 'i' };
+  const ids = {
+    root: 'r',
+    list: 'l',
+    trigger: '',
+    content: '',
+    viewport: 'v',
+    indicator: 'i',
+    startIcon: '',
+    endIcon: '',
+  };
 
   it('root and list carry orientation; root reflects open state', () => {
     const aria = navigationMenu.aria({ active: null, pointerOpened: false }, base, ids);
@@ -313,5 +325,62 @@ describe('navigation-menu effects composition', () => {
     triggerFor(h.root, 'a').dispatchEvent(new Event('pointerenter'));
     expect(h.onClose).toHaveBeenCalledTimes(1);
     expect(h.onHoverOpen).not.toHaveBeenCalled();
+  });
+});
+
+describe('navigation-menu icon parts', () => {
+  it('declares startIcon and endIcon as optional parts that project aria-hidden', () => {
+    expect(navigationMenu.parts.startIcon).toEqual({ many: true, optional: true });
+    expect(navigationMenu.parts.endIcon).toEqual({ many: true, optional: true });
+    const aria = navigationMenu.aria(navigationMenu.initialState(base), base, {
+      root: 'r',
+      list: 'l',
+      trigger: '',
+      content: '',
+      viewport: 'v',
+      indicator: 'i',
+      startIcon: '',
+      endIcon: '',
+    });
+    expect(aria.startIcon).toEqual({ 'aria-hidden': 'true' });
+    expect(aria.endIcon).toEqual({ 'aria-hidden': 'true' });
+  });
+});
+
+describe('wrapNavigationMenuIcons', () => {
+  function mount(inner: string): HTMLElement {
+    document.body.innerHTML = `<rafters-navigation-menu>${inner}</rafters-navigation-menu>`;
+    return document.querySelector('rafters-navigation-menu') as HTMLElement;
+  }
+
+  it('wraps slotted children of a trigger and a link in hidden wrappers, start first, end last', () => {
+    const root = mount(
+      '<ul data-part="list"><li><button data-part="trigger" data-value="a"><svg slot="end-icon"></svg>Label<svg slot="start-icon"></svg></button>' +
+        '<div data-part="content" data-value="a"><a href="/x"><svg slot="start-icon"></svg>X</a></div></li></ul>',
+    );
+    wrapNavigationMenuIcons(root);
+    const trigger = root.querySelector('[data-part="trigger"]') as HTMLElement;
+    expect([...trigger.children].map((el) => el.getAttribute('data-part'))).toEqual([
+      'startIcon',
+      'endIcon',
+    ]);
+    expect(trigger.firstElementChild?.getAttribute('aria-hidden')).toBe('true');
+    expect(trigger.firstElementChild?.getAttribute('data-icon')).toBe('inline-start');
+    expect(trigger.lastElementChild?.getAttribute('data-icon')).toBe('inline-end');
+    const link = root.querySelector('a') as HTMLElement;
+    expect(link.firstElementChild?.getAttribute('data-part')).toBe('startIcon');
+    expect(link.querySelector('svg')?.hasAttribute('slot')).toBe(false);
+  });
+
+  it('adds no wrapper without a slotted child, and is idempotent', () => {
+    const none = mount('<button data-part="trigger" data-value="a">A</button>');
+    wrapNavigationMenuIcons(none);
+    expect(none.querySelector('[data-part="startIcon"]')).toBeNull();
+    const some = mount(
+      '<button data-part="trigger" data-value="a"><svg slot="start-icon"></svg>A</button>',
+    );
+    wrapNavigationMenuIcons(some);
+    wrapNavigationMenuIcons(some);
+    expect(some.querySelectorAll('[data-part="startIcon"]').length).toBe(1);
   });
 });

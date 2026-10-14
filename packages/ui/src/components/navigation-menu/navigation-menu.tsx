@@ -71,6 +71,7 @@ import {
   startNavigationMenuEffects,
   type NavigationMenuActions,
   type NavigationMenuConfig,
+  type NavigationMenuIconPart,
   type NavigationMenuPart,
   type NavigationMenuState,
 } from './navigation-menu.behavior';
@@ -331,12 +332,49 @@ export function NavigationMenuItem({ value, className, ...props }: NavigationMen
   );
 }
 
-export type NavigationMenuTriggerProps = React.ButtonHTMLAttributes<HTMLButtonElement>;
+/** Decorative icons beside a label, in reading order. Hidden from assistive technology. */
+interface NavigationMenuIconProps {
+  /** Decorative icon before the label (after it on a right-to-left page). */
+  startIcon?: React.ReactNode;
+  /** Decorative icon after the label (before it on a right-to-left page). */
+  endIcon?: React.ReactNode;
+}
+
+function hasIcon(icon: React.ReactNode): boolean {
+  return icon != null && icon !== false;
+}
+
+/** The wrapper the behavior declares: present only when an icon is given. */
+function NavigationMenuIcon({
+  part,
+  icon,
+}: {
+  part: NavigationMenuIconPart;
+  icon: React.ReactNode;
+}) {
+  const { aria, classes } = useNavigationMenuContext('NavigationMenuIcon');
+  if (!hasIcon(icon)) return null;
+  return (
+    <span
+      data-part={part}
+      data-icon={part === 'startIcon' ? 'inline-start' : 'inline-end'}
+      className={classes[part]}
+      {...aria[part]}
+    >
+      {icon}
+    </span>
+  );
+}
+
+export interface NavigationMenuTriggerProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>, NavigationMenuIconProps {}
 
 export function NavigationMenuTrigger({
   className,
   children,
   onClick,
+  startIcon,
+  endIcon,
   ...props
 }: NavigationMenuTriggerProps) {
   const { config, state, classes, toggleItem } = useNavigationMenuContext('NavigationMenuTrigger');
@@ -362,7 +400,9 @@ export function NavigationMenuTrigger({
       }}
       {...props}
     >
+      <NavigationMenuIcon part="startIcon" icon={startIcon} />
       {children}
+      <NavigationMenuIcon part="endIcon" icon={endIcon} />
       <svg
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 24 24"
@@ -453,7 +493,8 @@ export function NavigationMenuIndicator({
   );
 }
 
-export interface NavigationMenuLinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
+export interface NavigationMenuLinkProps
+  extends React.AnchorHTMLAttributes<HTMLAnchorElement>, NavigationMenuIconProps {
   asChild?: boolean;
   active?: boolean;
 }
@@ -463,6 +504,8 @@ export function NavigationMenuLink({
   active,
   className,
   children,
+  startIcon,
+  endIcon,
   ...props
 }: NavigationMenuLinkProps) {
   const { classes } = useNavigationMenuContext('NavigationMenuLink');
@@ -471,12 +514,22 @@ export function NavigationMenuLink({
   if (asChild && React.isValidElement(children)) {
     const childProps = children.props as Record<string, unknown>;
     const parentProps = { className: cls, 'data-active': active || undefined, ...props };
-    return React.cloneElement(children, mergeProps(parentProps, childProps) as React.Attributes);
+    const merged = mergeProps(parentProps, childProps) as React.Attributes;
+    if (!(hasIcon(startIcon) || hasIcon(endIcon))) return React.cloneElement(children, merged);
+    return React.cloneElement(
+      children,
+      merged,
+      <NavigationMenuIcon part="startIcon" icon={startIcon} />,
+      childProps['children'] as React.ReactNode,
+      <NavigationMenuIcon part="endIcon" icon={endIcon} />,
+    );
   }
 
   return (
     <a className={cls} data-active={active || undefined} {...props}>
+      <NavigationMenuIcon part="startIcon" icon={startIcon} />
       {children}
+      <NavigationMenuIcon part="endIcon" icon={endIcon} />
     </a>
   );
 }

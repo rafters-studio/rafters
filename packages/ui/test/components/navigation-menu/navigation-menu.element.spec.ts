@@ -9,7 +9,8 @@
  */
 import { cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { installIconLayout, ICON_SVG_16, rectsOf } from './icon-layout';
 import {
   navInstanceAria,
   type NavigationMenuConfig,
@@ -283,5 +284,58 @@ describe('navigation-menu [wc]', () => {
     expect(state('products')).toBe('open');
     await user.click(outside);
     expect(state('products')).toBe('closed');
+  });
+});
+
+describe('navigation-menu icons [wc]', () => {
+  let uninstall: () => void;
+  beforeEach(() => {
+    uninstall = installIconLayout();
+  });
+  afterEach(() => {
+    for (const el of document.querySelectorAll('rafters-navigation-menu')) el.remove();
+    uninstall();
+  });
+
+  async function mountIcons(triggerHtml: string, linkHtml: string): Promise<HTMLElement> {
+    document.body.innerHTML = `
+      <rafters-navigation-menu>
+        <ul data-part="list"><li>
+          <button type="button" data-part="trigger" data-value="a" data-roving-item id="t-a">${triggerHtml}</button>
+          <div data-part="content" data-value="a" id="c-a"><a href="/one">${linkHtml}</a></div>
+        </li></ul>
+      </rafters-navigation-menu>`;
+    await Promise.resolve();
+    await Promise.resolve();
+    return document.querySelector('rafters-navigation-menu') as HTMLElement;
+  }
+
+  const both = `<span slot="start-icon">${ICON_SVG_16}</span>Label<span slot="end-icon">${ICON_SVG_16}</span>`;
+
+  it('slot="start-icon" and slot="end-icon" children become hidden wrappers beside the label', async () => {
+    const root = await mountIcons(both, both);
+    for (const row of [trigger('a'), root.querySelector('a') as HTMLElement]) {
+      expect(row.querySelector('[data-part="startIcon"]')?.getAttribute('aria-hidden')).toBe(
+        'true',
+      );
+      expect(row.querySelector('[data-part="endIcon"]')?.getAttribute('aria-hidden')).toBe('true');
+      const r = rectsOf(row);
+      expect((r.start as DOMRect).right).toBeLessThanOrEqual(r.label.left + 0.5);
+      expect((r.end as DOMRect).left).toBeGreaterThanOrEqual(r.label.right - 0.5);
+      expect(r.start?.width).toBe(16);
+    }
+  });
+
+  it('on a dir="rtl" page the start icon renders on the right of the label', async () => {
+    document.documentElement.dir = 'rtl';
+    await mountIcons(both, both);
+    const r = rectsOf(trigger('a'));
+    expect((r.start as DOMRect).left).toBeGreaterThan(r.label.left);
+  });
+
+  it('no wrapper without an icon child', async () => {
+    const root = await mountIcons('Label', 'Label');
+    expect(root.querySelector('[data-part="startIcon"]')).toBeNull();
+    expect(root.querySelector('[data-part="endIcon"]')).toBeNull();
   });
 });
