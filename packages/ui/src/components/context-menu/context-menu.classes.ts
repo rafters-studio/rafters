@@ -21,6 +21,9 @@ export interface ContextMenuClassSet {
   radioItem: string;
   subTrigger: string;
   subTriggerChevron: string;
+  startIcon: string;
+  itemLabel: string;
+  sub: string;
   itemIndicator: string;
   checkIcon: string;
   radioDot: string;
@@ -55,7 +58,7 @@ const trigger = 'inline-block';
 // behavior/view layer, not to this file; the class is correct and starts
 // running the moment that wiring lands.
 const content =
-  'z-depth-dropdown min-w-32 overflow-hidden rounded-md border bg-popover p-1 ' +
+  'grid grid-cols-menu-row z-depth-dropdown min-w-32 overflow-hidden rounded-md border bg-popover p-1 ' +
   'text-popover-foreground shadow-lg outline-none ' +
   'data-[state=open]:animate-scale-in-moderate-enter ' +
   'data-[state=closed]:animate-scale-out-fast-exit ' +
@@ -151,7 +154,7 @@ const content =
 // suite scans the real component directories rather than a fixture built from
 // the evaluated strings).
 const subContent =
-  'z-depth-dropdown min-w-32 overflow-hidden rounded-md border bg-popover p-1 ' +
+  'grid grid-cols-menu-row z-depth-dropdown min-w-32 overflow-hidden rounded-md border bg-popover p-1 ' +
   'text-popover-foreground shadow-lg outline-none ' +
   'opacity-0 pointer-events-none extent-pop scale-(--rafters-consumed-extent) ' +
   'transition-[opacity,scale,pointer-events] transition-discrete ' +
@@ -184,37 +187,52 @@ const subContent =
 // offset, which resolves to 0ms at the efficient intent. Zero is the
 // assignment, not a gap -- see dropdown-menu's items class for the full note,
 // including the per-element `transition-delay` coupling with the row above.
+// THE ROW IS A SUBGRID. The content is a grid on the menu-row track list
+// (indicator, icon, label, end) and every item a subgrid row across all four
+// tracks, so labels line up between items whether or not they carry an
+// indicator or an icon, and the row mirrors on a dir="rtl" page with no
+// direction class. Spacing is a margin on the cell that has something after it,
+// not a gap, so an empty track leaves no stray space.
 const itemBase =
-  'relative flex cursor-default select-none items-center rounded-sm text-body-small ts-body-small outline-none ' +
+  'relative grid grid-cols-subgrid col-span-full cursor-default select-none items-center rounded-sm text-body-small ts-body-small outline-none ' +
   'transition-colors duration-micro ease-standard delay-stagger-step ' +
   'focus:bg-accent focus:text-accent-foreground ' +
   'data-[disabled]:pointer-events-none data-[disabled]:opacity-50';
 
-const item = `${itemBase} gap-2 px-2 py-1.5`;
+const item = `${itemBase} px-2 py-1.5`;
 
-const checkboxItem = `${itemBase} py-1.5 pl-8 pr-2`;
+const checkboxItem = `${itemBase} px-2 py-1.5`;
 
-const radioItem = `${itemBase} py-1.5 pl-8 pr-2`;
+const radioItem = `${itemBase} px-2 py-1.5`;
 
 // The sub-trigger is a menuitem that also stays highlighted while its submenu is
 // open (data-[state=open]).
-const subTrigger = `${itemBase} gap-2 px-2 py-1.5 data-[state=open]:bg-accent data-[state=open]:text-accent-foreground`;
+const subTrigger = `${itemBase} px-2 py-1.5 data-[state=open]:bg-accent data-[state=open]:text-accent-foreground`;
 
-const subTriggerChevron = 'ml-auto h-4 w-4';
+// The wrapper only places and hides: the brand brings its icons, sizing included.
+const startIcon = 'col-start-2 me-2 inline-grid place-items-center';
 
-const itemIndicator = 'absolute left-2 flex h-3.5 w-3.5 items-center justify-center';
+const itemLabel = 'col-start-3 min-w-0';
+
+// The submenu wrapper in the Astro markup is one more subgrid row; its panel is
+// fixed-position and leaves the flow.
+const sub = 'grid grid-cols-subgrid col-span-full';
+
+const subTriggerChevron = 'col-start-4 ms-4 h-4 w-4 justify-self-end';
+
+const itemIndicator = 'col-start-1 me-2 flex h-3.5 w-3.5 items-center justify-center';
 
 const checkIcon = 'h-4 w-4';
 
 const radioDot = 'h-2 w-2 rounded-full bg-current';
 
-const label = 'px-2 py-1.5 text-label-medium ts-label-medium';
+const label = 'col-span-full px-2 py-1.5 text-label-medium ts-label-medium';
 
-const separator = '-mx-1 my-1 h-px border-0 bg-muted';
+const separator = 'col-span-full -mx-1 my-1 h-px border-0 bg-muted';
 
-const shortcut = 'ml-auto text-shortcut ts-shortcut opacity-60';
+const shortcut = 'col-start-4 ms-4 justify-self-end text-shortcut ts-shortcut opacity-60';
 
-const group = '';
+const group = 'grid grid-cols-subgrid col-span-full';
 
 export function contextMenuClasses(
   _config: ContextMenuConfig,
@@ -229,6 +247,9 @@ export function contextMenuClasses(
     radioItem,
     subTrigger,
     subTriggerChevron,
+    startIcon,
+    itemLabel,
+    sub,
     itemIndicator,
     checkIcon,
     radioDot,

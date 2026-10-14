@@ -16,8 +16,8 @@ import {
 const base: ContextMenuConfig = {};
 
 describe('context-menu parts', () => {
-  it('declares the trigger region and the menu content', () => {
-    expect(Object.keys(contextMenu.parts).sort()).toEqual(['content', 'trigger']);
+  it('declares the trigger region, the menu content and the decorative icon', () => {
+    expect(Object.keys(contextMenu.parts).sort()).toEqual(['content', 'startIcon', 'trigger']);
     // The menu surface carries the WAI-ARIA menu role.
     expect(contextMenu.parts.content.role).toBe('menu');
     expect(contextMenu.parts.content.optional).toBe(true);
@@ -293,5 +293,16 @@ describe('directSubMenus', () => {
     const content = document.body.querySelector('[data-part="content"]') as HTMLElement;
     const direct = directSubMenus(content).map((el) => el.id);
     expect(direct).toEqual(['s1']);
+  });
+});
+
+describe('context-menu icon part', () => {
+  it('declares startIcon as an optional part that projects aria-hidden', () => {
+    expect(contextMenu.parts.startIcon).toEqual({ optional: true, many: true });
+    const ids = { trigger: 't', content: 'c', startIcon: '' };
+    const closed: ContextMenuState = { open: false, x: 0, y: 0 };
+    const opened: ContextMenuState = { open: true, x: 4, y: 8 };
+    expect(contextMenu.aria(closed, base, ids).startIcon).toEqual({ 'aria-hidden': 'true' });
+    expect(contextMenu.aria(opened, base, ids).startIcon).toEqual({ 'aria-hidden': 'true' });
   });
 });
