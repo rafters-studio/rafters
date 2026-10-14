@@ -2,6 +2,8 @@ import type { BadgeConfig, BadgeSize, BadgeState, BadgeVariant } from './badge.b
 
 export interface BadgeClassSet {
   root: string;
+  startIcon: string;
+  endIcon: string;
 }
 
 /**
@@ -25,10 +27,16 @@ const variantClasses: Record<BadgeVariant, string> = {
 };
 
 const sizeClasses: Record<BadgeSize, string> = {
-  sm: 'px-2 py-0.5 text-label-small ts-label-small',
-  default: 'px-2.5 py-0.5 text-label-small ts-label-small',
-  lg: 'px-3 py-1 text-label-medium ts-label-medium',
+  sm: 'px-2 py-0.5 text-label-small ts-label-small has-data-[icon=inline-start]:ps-1.5 has-data-[icon=inline-end]:pe-1.5',
+  default:
+    'px-2.5 py-0.5 text-label-small ts-label-small has-data-[icon=inline-start]:ps-2 has-data-[icon=inline-end]:pe-2',
+  lg: 'px-3 py-1 text-label-medium ts-label-medium has-data-[icon=inline-start]:ps-2.5 has-data-[icon=inline-end]:pe-2.5',
 };
+
+// Padding tightens on the icon's own side only, in logical edges so the start
+// icon sits on the right of the label on a dir="rtl" page. The wrapper only
+// places and hides: the brand brings its icons, sizing included.
+const iconClasses = 'inline-grid place-items-center';
 
 /**
  * `badge / root / hover` in `packages/ui/docs/spec/matrix/motion.jsonl` assigns
@@ -47,13 +55,15 @@ const sizeClasses: Record<BadgeSize, string> = {
  * The row's provenance is `baseline`.
  */
 const baseClasses =
-  'inline-flex w-fit items-center justify-center rounded-full transition-colors duration-fast ease-standard';
+  'inline-grid grid-flow-col w-fit items-center justify-center gap-1 rounded-full transition-colors duration-fast ease-standard';
 
 export function badgeClasses(config: BadgeConfig, _state: BadgeState): BadgeClassSet {
   const variant = config.variant ?? 'default';
   const size = config.size ?? 'default';
   return {
     root: `${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]}`,
+    startIcon: iconClasses,
+    endIcon: iconClasses,
   };
 }
 

@@ -61,3 +61,24 @@ for (const [name, scene] of scenes) {
     expect(results.violations).toEqual([]);
   });
 }
+
+test('rafters-toggle-group with start and end icon slots, svg title does not leak into the name', async ({
+  task,
+}) => {
+  document.body.innerHTML = `
+    <main>
+      <rafters-toggle-group>
+        <div data-part="root" role="group" aria-label="Text formatting" data-type="single" data-orientation="horizontal">
+          <button type="button" data-part="item" data-value="a" data-roving-item data-state="off" aria-pressed="false">Alpha<svg slot="start-icon" viewBox="0 0 24 24"><title>Mail</title></svg><svg slot="end-icon" viewBox="0 0 24 24"><title>Arrow</title></svg></button>
+          <button type="button" data-part="item" data-value="b" data-roving-item data-state="off" aria-pressed="false">Beta</button>
+        </div>
+      </rafters-toggle-group>
+    </main>`;
+  await Promise.resolve();
+  await Promise.resolve();
+  const host = document.body.querySelector('main') as HTMLElement;
+  const results = await runAxe(host);
+  task.meta.axe = results;
+  expect(results.violations).toEqual([]);
+  expect(host.querySelectorAll('[data-icon][aria-hidden="true"]').length).toBe(2);
+});

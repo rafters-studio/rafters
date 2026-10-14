@@ -25,3 +25,22 @@ for (const size of BADGE_SIZES) {
     expect(results.violations).toEqual([]);
   });
 }
+
+test('rafters-badge with start and end icon slots, svg title does not leak into the name', async ({
+  task,
+}) => {
+  document.body.innerHTML = `
+    <main>
+      <rafters-badge>
+        <svg slot="start-icon" viewBox="0 0 24 24"><title>Mail</title></svg>
+        Sent
+        <svg slot="end-icon" viewBox="0 0 24 24"><title>Arrow</title></svg>
+      </rafters-badge>
+    </main>`;
+  const host = document.body.querySelector('main') as HTMLElement;
+  const results = await runAxe(host);
+  task.meta.axe = results;
+  expect(results.violations).toEqual([]);
+  const shadow = (host.querySelector('rafters-badge') as HTMLElement).shadowRoot;
+  expect(shadow?.querySelectorAll('[data-icon][aria-hidden="true"]').length).toBe(2);
+});

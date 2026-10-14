@@ -15,12 +15,23 @@ const items = [
 interface Scene {
   items?: typeof items;
   open?: boolean;
+  icons?: boolean;
 }
 
-async function mount({ items: menuItems = items, open = false }: Scene): Promise<Document> {
+async function mount({
+  items: menuItems = items,
+  open = false,
+  icons = false,
+}: Scene): Promise<Document> {
   const container = await AstroContainer.create();
   const html = await container.renderToString(DropdownMenu, {
     props: { id: 'dm', label: 'Options', items: menuItems },
+    slots: icons
+      ? {
+          'start-icon-0':
+            '<svg width="16" height="16" viewBox="0 0 24 24"><title>Item mark</title><rect width="24" height="24" fill="currentColor"/></svg>',
+        }
+      : {},
   });
   const window = new Window();
   const document = window.document as unknown as Document;
@@ -34,6 +45,7 @@ async function mount({ items: menuItems = items, open = false }: Scene): Promise
 const scenes: ReadonlyArray<[string, Scene]> = [
   ['closed', {}],
   ['open', { open: true }],
+  ['open with a start icon', { open: true, icons: true }],
   ['open with every item enabled', { open: true, items: items.map(({ label }) => ({ label })) }],
 ];
 

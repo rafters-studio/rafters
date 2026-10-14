@@ -5,7 +5,8 @@
  */
 import { cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { installIconLayout, ICON_SVG_16, rectsOf } from './icon-layout';
 import { RaftersTabs } from '../../../src/components/tabs/tabs.element';
 
 beforeAll(() => {
@@ -141,5 +142,59 @@ describe('tabs [wc]', () => {
     expect(trigger('history').getAttribute('tabindex')).toBe('0');
     expect(trigger('overview').getAttribute('tabindex')).toBe('-1');
     expect(trigger('details').getAttribute('tabindex')).toBe('-1');
+  });
+});
+
+describe('tabs icons [wc]', () => {
+  let uninstall: () => void;
+  beforeEach(() => {
+    uninstall = installIconLayout();
+  });
+  afterEach(() => {
+    document.body.innerHTML = '';
+    uninstall();
+  });
+
+  async function mountIcons(inner: string): Promise<HTMLElement> {
+    document.body.innerHTML = `
+      <rafters-tabs>
+        <div data-part="root">
+          <div data-part="list" role="tablist" aria-orientation="horizontal">
+            <button type="button" role="tab" data-part="trigger" data-value="a" id="t-tab-a" aria-controls="t-panel-a" aria-selected="true" data-state="active">${inner}</button>
+          </div>
+          <div role="tabpanel" data-part="panel" data-value="a" id="t-panel-a" aria-labelledby="t-tab-a" tabindex="0" data-state="active">A panel</div>
+        </div>
+      </rafters-tabs>`;
+    await Promise.resolve();
+    return document.querySelector('[data-part="trigger"]') as HTMLElement;
+  }
+
+  it('slot="start-icon" and slot="end-icon" children become hidden wrappers beside the label', async () => {
+    const trigger = await mountIcons(
+      `<span slot="start-icon">${ICON_SVG_16}</span>Overview<span slot="end-icon">${ICON_SVG_16}</span>`,
+    );
+    expect(trigger.querySelector('[data-part="startIcon"]')?.getAttribute('aria-hidden')).toBe(
+      'true',
+    );
+    expect(trigger.querySelector('[data-part="endIcon"]')?.getAttribute('aria-hidden')).toBe(
+      'true',
+    );
+    const r = rectsOf(trigger);
+    expect((r.start as DOMRect).right).toBeLessThanOrEqual(r.label.left + 0.5);
+    expect((r.end as DOMRect).left).toBeGreaterThanOrEqual(r.label.right - 0.5);
+    expect(r.start?.width).toBe(16);
+  });
+
+  it('on a dir="rtl" page the start icon renders on the right of the label', async () => {
+    document.documentElement.dir = 'rtl';
+    const trigger = await mountIcons(`<span slot="start-icon">${ICON_SVG_16}</span>Overview`);
+    const r = rectsOf(trigger);
+    expect((r.start as DOMRect).left).toBeGreaterThan(r.label.left);
+  });
+
+  it('no wrapper without an icon child', async () => {
+    const trigger = await mountIcons('Overview');
+    expect(trigger.querySelector('[data-part="startIcon"]')).toBeNull();
+    expect(trigger.querySelector('[data-part="endIcon"]')).toBeNull();
   });
 });

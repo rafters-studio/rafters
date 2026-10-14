@@ -37,14 +37,16 @@
  * custom-element lifecycle -- deferring the bind one microtask because
  * connectedCallback can fire before the light-DOM parts are parsed.
  */
-import { bindDropdownMenu } from './dropdown-menu.behavior';
+import { bindDropdownMenu, wrapDropdownMenuIcons } from './dropdown-menu.behavior';
 
 export class RaftersDropdownMenu extends HTMLElement {
   private teardown: (() => void) | null = null;
 
   connectedCallback(): void {
     queueMicrotask(() => {
-      if (this.isConnected && !this.teardown) this.teardown = bindDropdownMenu(this);
+      if (!this.isConnected || this.teardown) return;
+      wrapDropdownMenuIcons(this);
+      this.teardown = bindDropdownMenu(this);
     });
   }
 

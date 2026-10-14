@@ -55,6 +55,8 @@ classes out.
 | Part | Presence | ARIA |
 | --- | --- | --- |
 | root | always | none projected -- the rendered text is the accessible name |
+| startIcon | only when an icon is given | `aria-hidden="true"` |
+| endIcon | only when an icon is given | `aria-hidden="true"` |
 
 ## Keyboard and effects
 
@@ -78,7 +80,31 @@ equally empty and nobody wrote one down.
 | `link` variant present in React/Astro but absent from the oracle's WC (`badge.element.ts`) | not ported forward as a gap -- the React target here carries the full 12-value vocabulary; the WC binding (not yet written) should carry it too when built, closing the drift rather than repeating it |
 | WCAG/JSDoc block (`@cognitive-load`, `@attention-economics`, `@trust-building`, `@accessibility`) | contract, carried into `badge.tsx` verbatim as the recorded designer decision (boundary 1: traceable, not agent-invented) |
 | `@semantic-meaning` / `@usage-patterns` / `@example` JSDoc tags | dropped from `badge.tsx` -- the issue's four required tags (`@cognitive-load`, `@attention-economics`, `@trust-building`, `@accessibility`) are the registry's parsed surface; the extra tags were prose, not contract, and are recoverable from the oracle file if a future pass wants them |
-| `data-icon` slot support (shadcn v4's `Badge` accepts icon children with `data-icon="inline-start\|inline-end"`) | dropped -- absent from the oracle across all three targets; not a migration regression, a feature the oracle never had |
+| `data-icon` slot support (shadcn v4's `Badge` accepts icon children with `data-icon="inline-start\|inline-end"`) | restored through props (#2465) -- `startIcon` / `endIcon` render wrappers that carry `data-icon` and `aria-hidden="true"`; see Icons beside a label. A bare `data-icon` child still lays out, but hiding it is the author's job |
+
+## Icons beside a label
+
+Two optional props place decorative icons beside the label, in reading order, as Button does (#2460): `startIcon` and `endIcon`. Status goes at the start, remove at the end.
+
+| Target | Start icon | End icon |
+| --- | --- | --- |
+| React | `startIcon: ReactNode` | `endIcon: ReactNode` |
+| Astro | `<slot name="start-icon" />` | `<slot name="end-icon" />` |
+| Web Component | child with `slot="start-icon"` | child with `slot="end-icon"` |
+
+```html
+<span data-part="root" class="inline-grid grid-flow-col items-center gap-1 ...">
+  <span data-part="startIcon" data-icon="inline-start" aria-hidden="true">...</span>
+  Label
+  <span data-part="endIcon" data-icon="inline-end" aria-hidden="true">...</span>
+</span>
+```
+
+- `startIcon` and `endIcon` are optional parts, present only when an icon is given. The behavior projects `aria-hidden="true"` on each, so the markup is hidden from assistive technology before any script runs; the label is the accessible name.
+- The root is a grid (`inline-grid grid-flow-col items-center gap-1`). The label and the icon wrappers are its columns in reading order, so the start icon is on the right on a `dir="rtl"` page. No physical direction class.
+- Inline padding tightens on the icon's side only, with `has-data-[icon=inline-start]:ps-*` and `has-data-[icon=inline-end]:pe-*`.
+- Rafters does not size icons. The wrapper (`inline-grid place-items-center`) only places and hides.
+- A remove icon that is a control is not decorative: it needs its own button with a name, and is out of scope here.
 
 ## classes.ts
 

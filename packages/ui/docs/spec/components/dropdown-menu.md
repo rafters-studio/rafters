@@ -91,6 +91,25 @@ stable.
   dispatches the score's `close`. It is deliberately NOT a score keymap action --
   activation is a consumer concern; only its state effect (close) is the score's.
 
+## Icons beside a label
+
+One optional prop places a decorative icon at the start of an item: `startIcon`, on `DropdownMenuItem`, `DropdownMenuCheckboxItem` and `DropdownMenuRadioItem`. There is no end icon: the end of an item is the shortcut, and checkbox and radio items already draw their indicator at the start, so `startIcon` sits after the indicator.
+
+| Target | Item |
+| --- | --- |
+| React | `<DropdownMenu.Item startIcon={node} />` |
+| Astro | `<slot name="start-icon-{index}" />`, index being the item's position in `items` |
+| Web Component | child of the item with `slot="start-icon"` |
+
+```html
+<span data-part="startIcon" data-icon="inline-start" aria-hidden="true">...</span>
+```
+
+- `startIcon` is an optional part, present only when an icon is given. The behavior projects `aria-hidden="true"` on every one, so the markup is hidden from assistive technology before any script runs; the label alone is the accessible name. Typeahead reads the item text without the icon.
+- The content is a grid on `grid-cols-menu-row` (indicator, icon, label, end) and each item and group a subgrid row, so columns line up across items and the icon mirrors on a `dir="rtl"` page. The label sits in a cell of its own spanning the label and end columns, so a shortcut pushed with `ms-auto` lands at the row's end. No physical direction class remains in `dropdown-menu.classes.ts`.
+- An item tightens its inline-start padding only when an icon is present (`has-data-[icon=inline-start]:ps-1.5`).
+- Rafters does not size icons. The wrapper (`inline-grid place-items-center`) only places and hides.
+
 ## Motion
 
 Enter/exit and interaction motion are left UNDECLARED. The semantic

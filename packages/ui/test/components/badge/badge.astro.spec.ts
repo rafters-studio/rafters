@@ -88,8 +88,35 @@ describe('badge [astro]', () => {
     expect(element?.getAttribute('aria-label')).toBe('status');
   });
 
-  it('is a leaf: exactly one declared part', async () => {
+  it('is a leaf: exactly one declared part when no icon is given', async () => {
     const doc = await render();
     expect(doc.querySelectorAll('[data-part]')).toHaveLength(1);
+  });
+
+  it('icons: the server markup already hides each wrapper, before any script runs', async () => {
+    const doc = await render(
+      {},
+      { default: 'New', 'start-icon': '<svg><title>Mail</title></svg>', 'end-icon': '<svg></svg>' },
+    );
+    const start = partElement(doc, 'startIcon');
+    const end = partElement(doc, 'endIcon');
+    expect(start?.getAttribute('aria-hidden')).toBe('true');
+    expect(start?.getAttribute('data-icon')).toBe('inline-start');
+    expect(end?.getAttribute('aria-hidden')).toBe('true');
+    expect(end?.getAttribute('data-icon')).toBe('inline-end');
+    const order = [...doc.querySelectorAll('[data-part]')].map((el) =>
+      el.getAttribute('data-part'),
+    );
+    expect(order).toEqual(['root', 'startIcon', 'endIcon']);
+    const root = partElement(doc, 'root') as HTMLElement;
+    expect(root.firstElementChild).toBe(start);
+    expect(root.lastElementChild).toBe(end);
+    expect(root.textContent).toContain('New');
+  });
+
+  it('icons: no wrapper when no icon slot is given', async () => {
+    const doc = await render({}, { default: 'New' });
+    expect(partElement(doc, 'startIcon')).toBeNull();
+    expect(partElement(doc, 'endIcon')).toBeNull();
   });
 });
