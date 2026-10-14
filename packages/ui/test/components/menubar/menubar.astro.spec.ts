@@ -7,6 +7,7 @@
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it } from 'vitest';
+import { ICON_SVG_16 } from './icon-layout';
 import Menubar from '../../../src/components/menubar/menubar.astro';
 import {
   bindMenubar,
@@ -136,5 +137,39 @@ describe('menubar [astro]', () => {
     teardown?.();
     teardown = null;
     expect(root().contains(content('file'))).toBe(true);
+  });
+});
+
+describe('menubar icons [astro]', () => {
+  const withIcons = async (): Promise<string> => {
+    const container = await AstroContainer.create();
+    return container.renderToString(Menubar, {
+      props: { id: 'mb', menus },
+      slots: { 'start-icon-file': ICON_SVG_16, 'start-icon-file-1': ICON_SVG_16 },
+    });
+  };
+
+  it('SSR, no script run: each icon wrapper already has aria-hidden="true"', async () => {
+    const doc = new DOMParser().parseFromString(await withIcons(), 'text/html');
+    const wrappers = doc.querySelectorAll('[data-part="startIcon"]');
+    expect(wrappers).toHaveLength(2);
+    for (const wrapper of wrappers) {
+      expect(wrapper.getAttribute('aria-hidden')).toBe('true');
+      expect(wrapper.getAttribute('data-icon')).toBe('inline-start');
+    }
+    expect(doc.querySelector('[data-value="edit"] [data-part="startIcon"]')).toBeNull();
+  });
+
+  it('renders no wrapper when no icon slot is given', async () => {
+    await mount();
+    expect(document.body.querySelector('[data-part="startIcon"]')).toBeNull();
+  });
+
+  it('the icons sit in reading order: before the trigger label and before the item label', async () => {
+    document.body.innerHTML = await withIcons();
+    expect(trigger('file').firstElementChild?.getAttribute('data-part')).toBe('startIcon');
+    const parts = [...item('Open').children].map((el) => el.getAttribute('data-part'));
+    expect(parts).toEqual(['startIcon', null]);
+    expect(item('Open').lastElementChild?.textContent?.trim()).toBe('Open');
   });
 });

@@ -5,7 +5,8 @@
  * open menu's roving/typeahead/dismiss effects.
  */
 import userEvent from '@testing-library/user-event';
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { ICON_SVG_16, installIconLayout, rect } from './icon-layout';
 import { RaftersMenubar } from '../../../src/components/menubar/menubar.element';
 import {
   menubar,
@@ -178,5 +179,58 @@ describe('menubar [wc]', () => {
     const host = root();
     host.remove();
     expect(host.contains(menu)).toBe(true);
+  });
+});
+
+describe('menubar icons [wc]', () => {
+  let uninstall: () => void;
+  beforeEach(() => {
+    uninstall = installIconLayout();
+  });
+  afterEach(() => uninstall());
+
+  const icon = ICON_SVG_16.replace('<svg', '<svg slot="start-icon"');
+  const mountIcons = async (): Promise<void> => {
+    const user = userEvent.setup();
+    document.body.innerHTML = `
+      <rafters-menubar data-part="root" id="mb-root">
+        <button type="button" data-part="trigger" data-value="file" id="mb-trigger-file">${icon}File</button>
+        <button type="button" data-part="trigger" data-value="edit" id="mb-trigger-edit">Edit</button>
+        ${menuMarkup('file', `<div role="menuitem" data-part="item" data-roving-item tabindex="-1">${icon}New</div>` + itemMarkup('Open'))}
+        ${menuMarkup('edit', itemMarkup('Undo'))}
+      </rafters-menubar>`;
+    await Promise.resolve();
+    await user.click(trigger('file'));
+  };
+  const labelOf = (el: HTMLElement) => el.lastElementChild as HTMLElement;
+
+  it('wraps the slotted icons in aria-hidden wrappers, absent where none is given', async () => {
+    await mountIcons();
+    const wrappers = document.body.querySelectorAll('[data-part="startIcon"]');
+    expect(wrappers).toHaveLength(2);
+    for (const wrapper of wrappers) {
+      expect(wrapper.getAttribute('aria-hidden')).toBe('true');
+      expect(wrapper.getAttribute('data-icon')).toBe('inline-start');
+      expect(wrapper.querySelector('[slot]')).toBeNull();
+    }
+    expect(item('Open').querySelector('[data-part="startIcon"]')).toBeNull();
+    expect(trigger('edit').querySelector('[data-part="startIcon"]')).toBeNull();
+    const itemIcon = rect(item('New'), '[data-part="startIcon"]');
+    expect(itemIcon.right).toBeLessThanOrEqual(
+      labelOf(item('New')).getBoundingClientRect().left + 0.5,
+    );
+  });
+
+  it('on a dir="rtl" page the start icon renders on the right of the label; size is kept', async () => {
+    document.documentElement.dir = 'rtl';
+    await mountIcons();
+    const itemIcon = rect(item('New'), '[data-part="startIcon"]');
+    expect(itemIcon.left).toBeGreaterThan(labelOf(item('New')).getBoundingClientRect().left);
+    expect(itemIcon.width).toBe(16);
+  });
+
+  it('no wrapper is made when no icon is given', async () => {
+    await mount();
+    expect(document.body.querySelector('[data-part="startIcon"]')).toBeNull();
   });
 });

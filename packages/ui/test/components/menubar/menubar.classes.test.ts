@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import classy from '../../../src/primitives/classy';
 import { menubar } from '../../../src/components/menubar/menubar.behavior';
 import { menubarClasses } from '../../../src/components/menubar/menubar.classes';
 
@@ -38,6 +39,64 @@ describe('menubar classes', () => {
     expect(classes.separator).toContain('bg-muted');
     expect(classes.label).toContain('ts-label-medium');
     expect(classes.shortcut).toContain('ts-shortcut');
+  });
+
+  describe('icons and grid layout (#2471)', () => {
+    const tokens = (value: string) => value.split(/\s+/).filter(Boolean);
+
+    it('the content is a grid on the menu-row track list and every row is a subgrid', () => {
+      expect(tokens(classes.content)).toEqual(
+        expect.arrayContaining(['grid', 'grid-cols-menu-row']),
+      );
+      for (const key of ['item', 'checkboxItem', 'radioItem', 'group'] as const) {
+        expect(tokens(classes[key])).toEqual(
+          expect.arrayContaining(['grid', 'grid-cols-subgrid', 'col-span-full']),
+        );
+      }
+    });
+
+    it('no class in the set names a physical direction', () => {
+      for (const value of Object.values(classes)) {
+        expect(value).not.toMatch(/(^|[\s:])-?(p[lr]|m[lr]|left|right|float)-/);
+      }
+    });
+
+    it('the icon wrappers place and hide, never size', () => {
+      for (const value of [classes.triggerStartIcon, classes.itemStartIcon]) {
+        expect(tokens(value)).toEqual(
+          expect.arrayContaining(['inline-grid', 'place-items-center']),
+        );
+        expect(value).not.toMatch(/(^|\s)(size|w|h)-/);
+      }
+    });
+
+    it('the trigger tightens its start padding only when an icon is present', () => {
+      expect(classes.trigger).toContain('has-data-[icon=inline-start]:ps-2');
+    });
+
+    it('classy keeps every layout literal', () => {
+      const layout = /grid|col-|row-start|place-items|has-data|(^|:)p[se]-|(^|:)m[se]-/;
+      for (const key of [
+        'trigger',
+        'content',
+        'item',
+        'checkboxItem',
+        'radioItem',
+        'group',
+        'itemIndicator',
+        'triggerStartIcon',
+        'itemStartIcon',
+        'itemText',
+        'shortcut',
+        'label',
+        'inset',
+      ] as const) {
+        const kept = classy(classes[key]).split(' ');
+        for (const literal of tokens(classes[key]).filter((c) => layout.test(c))) {
+          expect(kept, `classy dropped ${literal} from ${key}`).toContain(literal);
+        }
+      }
+    });
   });
 
   describe('motion: the generics each matrix row assigns (#2292)', () => {
