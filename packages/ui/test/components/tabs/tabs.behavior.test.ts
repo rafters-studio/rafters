@@ -14,6 +14,7 @@ import {
   tabs,
   tabsIds,
   tabsInstanceAria,
+  wrapTabsIcons,
   type TabsConfig,
   type TabsState,
 } from '../../../src/components/tabs/tabs.behavior';
@@ -196,5 +197,57 @@ describe('tabs keymap', () => {
     expect(tabs.keymap({ key: 'Enter' }, state, 'list', base)).toBeNull();
     expect(tabs.keymap({ key: 'Enter' }, state, 'panel', base)).toBeNull();
     expect(tabs.keymap({ key: 'Enter' }, state, 'root', base)).toBeNull();
+  });
+});
+
+describe('tabs icon parts', () => {
+  it('declares startIcon and endIcon as optional many parts', () => {
+    expect(tabs.parts.startIcon).toEqual({ many: true, optional: true });
+    expect(tabs.parts.endIcon).toEqual({ many: true, optional: true });
+  });
+
+  it('projects aria-hidden="true" on each icon wrapper', () => {
+    for (const part of ['startIcon', 'endIcon'] as const) {
+      expect(tabsInstanceAria(part, 'a', { value: 'a' }, base, {})).toEqual({
+        'aria-hidden': 'true',
+      });
+    }
+  });
+});
+
+describe('wrapTabsIcons', () => {
+  function mountRoot(children: string): HTMLElement {
+    document.body.innerHTML = `<div data-part="root"><div data-part="list" role="tablist"><button data-part="trigger" data-value="a">${children}</button></div></div>`;
+    return document.querySelector('[data-part="root"]') as HTMLElement;
+  }
+
+  it('wraps slotted children in hidden wrappers, start first and end last', () => {
+    const root = mountRoot('<svg slot="end-icon"></svg>Label<svg slot="start-icon"></svg>');
+    wrapTabsIcons(root);
+    const trigger = root.querySelector('[data-part="trigger"]') as HTMLElement;
+    expect([...trigger.children].map((el) => el.getAttribute('data-part'))).toEqual([
+      'startIcon',
+      'endIcon',
+    ]);
+    expect(trigger.firstChild).toBe(trigger.querySelector('[data-part="startIcon"]'));
+    expect(trigger.lastChild).toBe(trigger.querySelector('[data-part="endIcon"]'));
+    const start = trigger.querySelector('[data-part="startIcon"]');
+    expect(start?.getAttribute('aria-hidden')).toBe('true');
+    expect(start?.getAttribute('data-icon')).toBe('inline-start');
+    expect(trigger.querySelector('[data-part="endIcon"]')?.getAttribute('data-icon')).toBe(
+      'inline-end',
+    );
+    expect(start?.querySelector('svg')?.hasAttribute('slot')).toBe(false);
+  });
+
+  it('adds no wrapper without a slotted child, and is idempotent', () => {
+    const bare = mountRoot('Label');
+    wrapTabsIcons(bare);
+    expect(bare.querySelector('[data-part="startIcon"]')).toBeNull();
+    expect(bare.querySelector('[data-part="endIcon"]')).toBeNull();
+    const root = mountRoot('<svg slot="start-icon"></svg>Label');
+    wrapTabsIcons(root);
+    wrapTabsIcons(root);
+    expect(root.querySelectorAll('[data-part="startIcon"]').length).toBe(1);
   });
 });

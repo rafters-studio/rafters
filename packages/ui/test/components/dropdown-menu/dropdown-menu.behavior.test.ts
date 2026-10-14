@@ -8,7 +8,13 @@ import {
   type DropdownMenuState,
 } from '../../../src/components/dropdown-menu/dropdown-menu.behavior';
 
-const ids: PartIds<DropdownMenuPart> = { root: 'r', trigger: 't', content: 'c', item: '' };
+const ids: PartIds<DropdownMenuPart> = {
+  root: 'r',
+  trigger: 't',
+  content: 'c',
+  item: '',
+  startIcon: '',
+};
 
 const closed: DropdownMenuConfig = {};
 const openSeed: DropdownMenuConfig = { defaultOpen: true };
@@ -21,8 +27,14 @@ function ariaAt(
 }
 
 describe('dropdown-menu parts', () => {
-  it('declares root, trigger, the menu content, and the many-instance item', () => {
-    expect(Object.keys(dropdownMenu.parts).sort()).toEqual(['content', 'item', 'root', 'trigger']);
+  it('declares root, trigger, the menu content, the many-instance item, and the optional icon', () => {
+    expect(Object.keys(dropdownMenu.parts).sort()).toEqual([
+      'content',
+      'item',
+      'root',
+      'startIcon',
+      'trigger',
+    ]);
     expect(dropdownMenu.parts.item.many).toBe(true);
     expect(dropdownMenu.parts.content.optional).toBe(true);
     expect(dropdownMenu.parts.trigger.optional).toBeUndefined();
@@ -153,3 +165,11 @@ describe('dropdown-menu keymap', () => {
 // dropdown-menu.astro.spec.ts / dropdown-menu.element.spec.ts): arrows rove the
 // items, a keystroke jumps focus to the matching item, activating an item
 // closes, and a pointerdown outside dismisses.
+
+describe('dropdown-menu icon part', () => {
+  it('declares startIcon as an optional part that projects aria-hidden', () => {
+    expect(dropdownMenu.parts.startIcon).toEqual({ optional: true, many: true });
+    expect(ariaAt(closed).startIcon).toEqual({ 'aria-hidden': 'true' });
+    expect(ariaAt(openSeed).startIcon).toEqual({ 'aria-hidden': 'true' });
+  });
+});

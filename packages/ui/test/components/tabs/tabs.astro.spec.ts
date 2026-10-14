@@ -118,3 +118,37 @@ describe('tabs [astro]', () => {
     expect(trigger('history').getAttribute('aria-selected')).toBe('true');
   });
 });
+
+describe('tabs icons [astro]', () => {
+  async function render(slots: Record<string, string>): Promise<string> {
+    const container = await AstroContainer.create();
+    return container.renderToString(Tabs, {
+      props: { id: 'demo', tabs: items, value: 'overview' },
+      slots,
+    });
+  }
+
+  it('the server markup already hides each wrapper, before any script runs', async () => {
+    document.body.innerHTML = await render({
+      'start-icon-overview': '<svg><title>Mail</title></svg>',
+      'end-icon-overview': '<svg></svg>',
+    }); // no bindTabs: the SSR render alone
+    const start = document.querySelector('[data-part="startIcon"]');
+    const end = document.querySelector('[data-part="endIcon"]');
+    expect(start?.getAttribute('aria-hidden')).toBe('true');
+    expect(start?.getAttribute('data-icon')).toBe('inline-start');
+    expect(end?.getAttribute('aria-hidden')).toBe('true');
+    expect(end?.getAttribute('data-icon')).toBe('inline-end');
+    const parts = [...trigger('overview').children].map((el) => el.getAttribute('data-part'));
+    expect(parts).toEqual(['startIcon', 'endIcon']);
+    expect(trigger('overview').firstElementChild).toBe(start);
+    expect(trigger('overview').lastElementChild).toBe(end);
+  });
+
+  it('no wrapper when no icon slot is given, and other tabs stay bare', async () => {
+    document.body.innerHTML = await render({ 'start-icon-overview': '<svg></svg>' });
+    expect(trigger('details').querySelector('[data-part="startIcon"]')).toBeNull();
+    expect(trigger('details').querySelector('[data-part="endIcon"]')).toBeNull();
+    expect(trigger('overview').querySelector('[data-part="endIcon"]')).toBeNull();
+  });
+});

@@ -13,13 +13,21 @@ import {
   DropdownMenuTrigger,
 } from '../../../src/components/dropdown-menu/dropdown-menu';
 
+const mark = (
+  <svg width="16" height="16" viewBox="0 0 24 24">
+    <title>Item mark</title>
+    <rect width="24" height="24" fill="currentColor" />
+  </svg>
+);
+
 interface SceneProps {
   defaultOpen?: boolean;
+  icons?: boolean;
   /** Label, checkbox item, and radio group instead of the plain action items. */
   selectable?: boolean;
 }
 
-function Scene({ selectable = false, ...props }: SceneProps) {
+function Scene({ selectable = false, icons = false, ...props }: SceneProps) {
   return (
     <DropdownMenu {...props}>
       <DropdownMenuTrigger aria-label="Options">Options</DropdownMenuTrigger>
@@ -27,7 +35,9 @@ function Scene({ selectable = false, ...props }: SceneProps) {
         {selectable ? (
           <>
             <DropdownMenuLabel>Formatting</DropdownMenuLabel>
-            <DropdownMenuCheckboxItem checked>Bold</DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem checked startIcon={icons ? mark : undefined}>
+              Bold
+            </DropdownMenuCheckboxItem>
             <DropdownMenuCheckboxItem>Italic</DropdownMenuCheckboxItem>
             <DropdownMenuSeparator />
             <DropdownMenuRadioGroup value="a">
@@ -37,7 +47,7 @@ function Scene({ selectable = false, ...props }: SceneProps) {
           </>
         ) : (
           <>
-            <DropdownMenuItem>Edit</DropdownMenuItem>
+            <DropdownMenuItem startIcon={icons ? mark : undefined}>Edit</DropdownMenuItem>
             <DropdownMenuItem>Duplicate</DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem disabled>Archive</DropdownMenuItem>
@@ -56,6 +66,8 @@ const scenes: ReadonlyArray<[string, SceneProps]> = [
   ['open', { defaultOpen: true }],
   ['closed with checkbox and radio items', { selectable: true }],
   ['open with checkbox and radio items', { defaultOpen: true, selectable: true }],
+  ['open with start icons', { defaultOpen: true, icons: true }],
+  ['open with start icons on checkbox items', { defaultOpen: true, selectable: true, icons: true }],
 ];
 
 for (const [name, props] of scenes) {
