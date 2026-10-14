@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import classy from '../../../src/primitives/classy';
 import { command } from '../../../src/components/command/command.behavior';
 import { commandClasses } from '../../../src/components/command/command.classes';
 
@@ -88,6 +89,62 @@ describe('command classes', () => {
       expect(value).not.toMatch(/\b(duration|delay)-\[?\d/);
       expect(value).not.toContain('ease-[');
       expect(value).not.toContain('animate-in');
+    }
+  });
+});
+
+describe('command classes: icons and layout', () => {
+  const tokens = (value: string) => value.split(/\s+/);
+
+  it('the list is a grid on the menu-row track list and each item and group a subgrid row', () => {
+    expect(tokens(classes.list)).toEqual(expect.arrayContaining(['grid', 'grid-cols-menu-row']));
+    for (const key of ['item', 'group'] as const) {
+      expect(tokens(classes[key])).toEqual(
+        expect.arrayContaining(['grid', 'grid-cols-subgrid', 'col-span-full']),
+      );
+    }
+  });
+
+  it('the shortcut is the end column, with no auto margin', () => {
+    expect(tokens(classes.shortcut)).toContain('col-start-4');
+    expect(classes.shortcut).not.toMatch(/(^|\s)-?m[lrse]-auto/);
+  });
+
+  it('no class in the set names a physical direction', () => {
+    for (const value of Object.values(classes)) {
+      expect(value).not.toMatch(/(^|[\s:])-?(p[lr]|m[lr]|left|right|float)-/);
+    }
+  });
+
+  it('the icon wrapper places and hides, never sizes', () => {
+    expect(tokens(classes.startIcon)).toEqual(
+      expect.arrayContaining(['col-start-2', 'inline-grid', 'place-items-center']),
+    );
+    expect(classes.startIcon).not.toMatch(/(^|\s)(size|w|h)-/);
+  });
+
+  it('the item tightens its start padding only when an icon is present', () => {
+    expect(classes.item).toContain('has-data-[icon=inline-start]:ps-1.5');
+  });
+
+  it('classy keeps every layout literal', () => {
+    const layout = /grid|col-|place-items|has-data|(^|:)p[se]-|(^|:)m[se]-|inset-x|mx-auto/;
+    for (const key of [
+      'list',
+      'item',
+      'group',
+      'groupHeading',
+      'empty',
+      'separator',
+      'shortcut',
+      'startIcon',
+      'label',
+      'dialogContent',
+    ] as const) {
+      const kept = classy(classes[key]).split(' ');
+      for (const literal of classes[key].split(/\s+/).filter((c) => layout.test(c))) {
+        expect(kept, `classy dropped ${literal} from ${key}`).toContain(literal);
+      }
     }
   });
 });
