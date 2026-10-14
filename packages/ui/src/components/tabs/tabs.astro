@@ -87,6 +87,21 @@ const rootAria = tabs.aria(state, config, ids);
 
 // The roving tabindex before JS: the active trigger is the single tab stop, so
 // keyboard order is already correct on the server-rendered page.
+// Astro slot names are static per component, so a per-tab icon is a slot named
+// for the tab: `start-icon-<value>` and `end-icon-<value>`.
+const icons = await Promise.all(
+  items.map(async (item) => {
+    const start = `start-icon-${item.value}`;
+    const end = `end-icon-${item.value}`;
+    return {
+      value: item.value,
+      start: Astro.slots.has(start) ? await Astro.slots.render(start) : null,
+      end: Astro.slots.has(end) ? await Astro.slots.render(end) : null,
+    };
+  }),
+);
+const iconsOf = (value: string) => icons.find((entry) => entry.value === value);
+
 const firstEnabled = items.find((item) => !item.disabled)?.value;
 const tabStop = items.some((item) => item.value === state.value) ? state.value : firstEnabled;
 ---
@@ -111,7 +126,25 @@ const tabStop = items.some((item) => item.value === state.value) ? state.value :
               panel: panelId,
             })}
           >
+            {iconsOf(item.value)?.start != null && (
+              <span
+                data-part="startIcon"
+                data-icon="inline-start"
+                class={classes.startIcon}
+                {...tabsInstanceAria('startIcon', item.value, state, config, {})}
+                set:html={iconsOf(item.value)?.start}
+              />
+            )}
             {item.label}
+            {iconsOf(item.value)?.end != null && (
+              <span
+                data-part="endIcon"
+                data-icon="inline-end"
+                class={classes.endIcon}
+                {...tabsInstanceAria('endIcon', item.value, state, config, {})}
+                set:html={iconsOf(item.value)?.end}
+              />
+            )}
           </button>
         );
       })

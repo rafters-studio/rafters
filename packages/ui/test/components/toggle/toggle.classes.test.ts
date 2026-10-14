@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import classy from '../../../src/primitives/classy';
 import { toggle, type ToggleConfig } from '../../../src/components/toggle/toggle.behavior';
 import { toggleClasses, toggleVariants } from '../../../src/components/toggle/toggle.classes';
 
@@ -59,5 +60,45 @@ describe('toggle classes', () => {
       classesFor({ ...base, variant: 'destructive', size: 'lg' }).root,
     );
     expect(toggleVariants()).toBe(classesFor(base).root);
+  });
+
+  it('the root is a grid whose columns follow reading order, with no physical direction', () => {
+    const { root } = classesFor(base);
+    const tokens = root.split(' ');
+    for (const literal of ['inline-grid', 'grid-flow-col', 'items-center', 'gap-2']) {
+      expect(tokens).toContain(literal);
+    }
+    expect(tokens).not.toContain('inline-flex');
+    expect(root).not.toMatch(/(^|\s)(p[lr]|m[lr]|left|right|float)-/);
+  });
+
+  it('the icon wrapper only places and hides, never sizes', () => {
+    const { startIcon, endIcon } = classesFor(base);
+    expect(startIcon).toBe('inline-grid place-items-center');
+    expect(endIcon).toBe('inline-grid place-items-center');
+  });
+
+  it('padding tightens per side with logical classes on every size', () => {
+    for (const size of ['default', 'sm', 'lg'] as const) {
+      const { root } = classesFor({ ...base, size });
+      expect(root).toMatch(/has-data-\[icon=inline-start\]:ps-/);
+      expect(root).toMatch(/has-data-\[icon=inline-end\]:pe-/);
+    }
+  });
+
+  it('classy keeps every new literal', () => {
+    for (const size of ['default', 'sm', 'lg'] as const) {
+      const set = classesFor({ ...base, size });
+      const kept = classy(set.root).split(' ');
+      const added = set.root
+        .split(' ')
+        .filter((c) => c.includes('has-data-') || c === 'inline-grid' || c === 'grid-flow-col');
+      expect(added.length).toBeGreaterThan(2);
+      for (const literal of added) {
+        expect(kept, `classy dropped ${literal}`).toContain(literal);
+      }
+      expect(classy(set.startIcon)).toBe(set.startIcon);
+      expect(classy(set.endIcon)).toBe(set.endIcon);
+    }
   });
 });

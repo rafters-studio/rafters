@@ -6,8 +6,9 @@
  * controller the React binding composes.
  */
 import userEvent from '@testing-library/user-event';
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { toggle, type ToggleConfig } from '../../../src/components/toggle/toggle.behavior';
+import { installIconLayout, ICON_SVG_16, rectsOf } from '../button/icon-layout';
 import { toggleClasses } from '../../../src/components/toggle/toggle.classes';
 import { RaftersToggle } from '../../../src/components/toggle/toggle.element';
 
@@ -61,7 +62,7 @@ function applyAria(
 async function mount(props: ScenarioProps, label: string): Promise<HTMLElement> {
   const config = configFor(props);
   const state = toggle.initialState(config);
-  const ids = { root: 'wc-root', label: 'wc-label' };
+  const ids = { root: 'wc-root', label: 'wc-label', startIcon: 'wc-start', endIcon: 'wc-end' };
   const aria = toggle.aria(state, config, ids);
   const classes = toggleClasses(config, state);
 
@@ -103,7 +104,12 @@ describe('toggle [wc]', () => {
 
       expect(label, 'declared part "label" must be rendered').not.toBeNull();
 
-      const ids = { root: rootEl.id, label: label?.id ?? '' };
+      const ids = {
+        root: rootEl.id,
+        label: label?.id ?? '',
+        startIcon: '',
+        endIcon: '',
+      };
       const projection = toggle.aria(state, config, ids);
       // Only root/label: `spinner` is pressable's optional part (parts.ts:27,
       // 'spinner': { optional: true }) and Toggle's React/WC/Astro decorators
@@ -148,5 +154,48 @@ describe('toggle [wc]', () => {
     const user = userEvent.setup();
     await user.click(rootEl);
     expect(rootEl.getAttribute('aria-pressed')).toBe('false');
+  });
+});
+
+describe('toggle icons [wc]', () => {
+  let uninstall: () => void;
+  beforeEach(() => {
+    uninstall = installIconLayout();
+  });
+  afterEach(() => {
+    for (const el of document.querySelectorAll('rafters-toggle')) el.remove();
+    uninstall();
+  });
+
+  async function mountIcons(children = ''): Promise<HTMLElement> {
+    document.body.innerHTML = `<rafters-toggle><button type="button" data-part="root" id="r"><span data-part="label" id="r-label">Bold</span></button>${children}</rafters-toggle>`;
+    await Promise.resolve();
+    await Promise.resolve();
+    return document.querySelector('[data-part="root"]') as HTMLElement;
+  }
+
+  it('slot="start-icon" and slot="end-icon" children become hidden wrappers beside the label', async () => {
+    const root = await mountIcons(
+      `<span slot="start-icon">${ICON_SVG_16}</span><span slot="end-icon">${ICON_SVG_16}</span>`,
+    );
+    expect(root.querySelector('[data-part="startIcon"]')?.getAttribute('aria-hidden')).toBe('true');
+    expect(root.querySelector('[data-part="endIcon"]')?.getAttribute('aria-hidden')).toBe('true');
+    const r = rectsOf(root);
+    expect((r.start as DOMRect).right).toBeLessThanOrEqual(r.label.left + 0.5);
+    expect((r.end as DOMRect).left).toBeGreaterThanOrEqual(r.label.right - 0.5);
+    expect(r.start?.width).toBe(16);
+  });
+
+  it('on a dir="rtl" page the start icon renders on the right of the label', async () => {
+    document.documentElement.dir = 'rtl';
+    const root = await mountIcons(`<span slot="start-icon">${ICON_SVG_16}</span>`);
+    const r = rectsOf(root);
+    expect((r.start as DOMRect).left).toBeGreaterThan(r.label.left);
+  });
+
+  it('no wrapper without an icon child', async () => {
+    const root = await mountIcons();
+    expect(root.querySelector('[data-part="startIcon"]')).toBeNull();
+    expect(root.querySelector('[data-part="endIcon"]')).toBeNull();
   });
 });

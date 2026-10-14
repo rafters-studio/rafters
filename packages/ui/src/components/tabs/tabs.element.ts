@@ -45,7 +45,7 @@
  * because connectedCallback can fire before the light-DOM children are parsed
  * (upgrade order).
  */
-import { bindTabs } from './tabs.behavior';
+import { bindTabs, wrapTabsIcons } from './tabs.behavior';
 
 export class RaftersTabs extends HTMLElement {
   private teardown: (() => void) | null = null;
@@ -54,7 +54,9 @@ export class RaftersTabs extends HTMLElement {
     queueMicrotask(() => {
       if (!this.isConnected || this.teardown) return;
       const root = this.querySelector<HTMLElement>('[data-part="root"]');
-      if (root) this.teardown = bindTabs(root);
+      if (!root) return;
+      wrapTabsIcons(root);
+      this.teardown = bindTabs(root);
     });
   }
 

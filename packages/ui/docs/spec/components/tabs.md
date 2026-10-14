@@ -88,6 +88,32 @@ Ids are shared across the three performances through `tabsIds(baseId, value)`
 `useId`, Astro from the author's `id` prop, and the DOM-native bind reads the
 resulting ids back off the markup rather than minting its own.
 
+## Icons beside a label
+
+Two optional props place decorative icons around a trigger's label, in reading order (MUI's names): `startIcon` and `endIcon`.
+
+| Target | Start icon | End icon |
+| --- | --- | --- |
+| React | `startIcon: ReactNode` on `Tabs.Trigger` | `endIcon: ReactNode` on `Tabs.Trigger` |
+| Astro | `<slot name="start-icon-{value}" />` | `<slot name="end-icon-{value}" />` |
+| Web Component | child of the trigger with `slot="start-icon"` | child of the trigger with `slot="end-icon"` |
+
+Astro renders one trigger per `tabs` item, and a slot name is static per component, so the Astro slot is named for the tab's `value`.
+
+```html
+<button role="tab" data-part="trigger" class="inline-grid grid-flow-col items-center gap-2 ...">
+  <span data-part="startIcon" data-icon="inline-start" aria-hidden="true">...</span>
+  Overview
+  <span data-part="endIcon" data-icon="inline-end" aria-hidden="true">...</span>
+</button>
+```
+
+- `startIcon` and `endIcon` are optional `many` parts, present only on a trigger that is given an icon. The behavior projects `aria-hidden="true"` on each through `instanceAria`, so the markup is hidden from assistive technology before any script runs; the label is the accessible name.
+- The trigger is a grid (`inline-grid grid-flow-col items-center gap-2`). The icon wrappers and the label are its columns in reading order, so the start icon is on the right on a `dir="rtl"` page. No physical direction class.
+- Inline padding tightens on the icon's side only, with `has-data-[icon=inline-start]:ps-2` and `has-data-[icon=inline-end]:pe-2`.
+- Rafters does not size icons. The wrapper (`inline-grid place-items-center`) only places and hides.
+- A count is text, not decoration: it stays readable and is not wrapped in `aria-hidden`. Only icons go in `startIcon`/`endIcon`.
+
 ## Keyboard
 
 - `keymap`: Enter/Space on a `trigger` -> `activate`. Declared for the pure

@@ -216,10 +216,16 @@ TabsList.displayName = 'TabsList';
 export interface TabsTriggerProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   /** Value that identifies this tab. */
   value: string;
+  /** Decorative icon before the label (after it on a right-to-left page). Hidden from assistive technology. */
+  startIcon?: React.ReactNode;
+  /** Decorative icon after the label (before it on a right-to-left page). Hidden from assistive technology. */
+  endIcon?: React.ReactNode;
 }
 
 export function TabsTrigger({
   value,
+  startIcon,
+  endIcon,
   className,
   children,
   disabled,
@@ -250,7 +256,27 @@ export function TabsTrigger({
       }}
       {...props}
     >
+      {startIcon != null && startIcon !== false ? (
+        <span
+          data-part="startIcon"
+          data-icon="inline-start"
+          className={classes.startIcon}
+          {...tabsInstanceAria('startIcon', value, state, config, {})}
+        >
+          {startIcon}
+        </span>
+      ) : null}
       {children}
+      {endIcon != null && endIcon !== false ? (
+        <span
+          data-part="endIcon"
+          data-icon="inline-end"
+          className={classes.endIcon}
+          {...tabsInstanceAria('endIcon', value, state, config, {})}
+        >
+          {endIcon}
+        </span>
+      ) : null}
     </button>
   );
 }
