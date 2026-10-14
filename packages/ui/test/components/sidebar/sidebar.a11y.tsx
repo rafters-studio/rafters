@@ -78,3 +78,35 @@ for (const [name, { props, viewport, openMobile }] of scenes) {
     expect(results.violations).toEqual([]);
   });
 }
+
+test('sidebar menu buttons with icons, svg title does not leak into the name', async ({ task }) => {
+  await page.viewport(...DESKTOP);
+  const icon = (
+    <svg viewBox="0 0 24 24" width="16" height="16">
+      <title>Home</title>
+      <path d="M2 4h20v16H2z" stroke="currentColor" />
+    </svg>
+  );
+  const { container } = await render(
+    <SidebarProvider>
+      <Sidebar>
+        <SidebarContent>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton startIcon={icon} endIcon={icon}>
+                Dashboard
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarContent>
+      </Sidebar>
+    </SidebarProvider>,
+  );
+  const results = await runAxe(container);
+  task.meta.axe = results;
+  expect(results.violations).toEqual([]);
+  expect(container.querySelectorAll('[data-icon][aria-hidden="true"]').length).toBe(2);
+  await expect
+    .element(page.getByRole('button', { name: 'Dashboard', exact: true }))
+    .toBeInTheDocument();
+});

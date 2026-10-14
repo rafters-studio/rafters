@@ -80,6 +80,7 @@ export function injectAsChildAttrs(
   slotHtml: string,
   attrs: Record<string, unknown>,
   decoration: Record<string, string>,
+  wrapChildren?: (innerHtml: string) => string,
 ): string | null {
   const doc: unknown = parse(slotHtml);
   const children = (doc as { children: Node[] }).children;
@@ -98,5 +99,12 @@ export function injectAsChildAttrs(
     ...childAttrs,
     ...toStringAttrs(decoration),
   };
+  // A part that places decorative markup around the child's own content (the
+  // sidebar buttons' icons) receives the child's inner html and returns the
+  // replacement. Parsed back, so the result is one tree like the rest.
+  if (wrapChildren) {
+    const inner = first.children.map((child) => renderSync(child)).join('');
+    first.children = (parse(wrapChildren(inner)) as { children: Node[] }).children;
+  }
   return renderSync(doc as Node);
 }

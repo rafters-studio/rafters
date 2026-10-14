@@ -90,6 +90,7 @@ mobile prop, so `openMobile` is always intrinsic and has no change callback.
 | rail | optional | `aria-label="Toggle Sidebar"`, `data-state` |
 | panel | always | `data-state` (expanded/collapsed), `data-collapsible` (mode, only while collapsed and not `none`), `data-mobile` (open/closed) |
 | dialog | optional (WC/Astro only) | `role="dialog"` + `aria-modal` + `aria-label` while the mobile overlay is open, bind-managed (#2324, Decision 6, 2026-09-09) |
+| startIcon, endIcon | optional, one per menu button or sub button given an icon | `aria-hidden="true"`, in the server markup (#2475) |
 
 `role="dialog"` + `aria-modal` + `aria-label="Sidebar"` are NOT in the score's
 projection -- they are bind-managed while the mobile overlay is open (they
@@ -122,6 +123,36 @@ a `dialog` wrapper and is `hidden` when the overlay is closed -- the bind puts
 the dialog identity on the WRAPPER (never the `<nav>`) and composes the sheet
 modal trio's focus-trap on the wrapper too, so a click on the nav's own links
 is INSIDE the trap boundary, never a dismiss.
+
+## Icons beside a label
+
+`SidebarMenuButton` and `SidebarMenuSubButton` take two optional props that place decorative icons around the label, in reading order (the same two as Button): `startIcon` and `endIcon`.
+
+| Target | Start icon | End icon |
+| --- | --- | --- |
+| React | `startIcon: ReactNode` | `endIcon: ReactNode` |
+| Astro | `<slot name="start-icon" />` | `<slot name="end-icon" />` |
+| Web Component | child of the button with `slot="start-icon"` | child of the button with `slot="end-icon"` |
+
+```html
+<button data-sidebar="menu-button" class="inline-grid w-full grid-flow-col items-center gap-2 ...">
+  <span data-part="startIcon" data-icon="inline-start" aria-hidden="true">...</span>
+  <span data-part="label">Dashboard</span>
+  <span data-part="endIcon" data-icon="inline-end" aria-hidden="true">...</span>
+</button>
+```
+
+- `startIcon` and `endIcon` are optional parts, present only when an icon is given. The behavior projects `aria-hidden="true"` on each, so the markup is hidden from assistive technology before any script runs; the label is the accessible name. The part repeats, once per button, so it carries no id.
+- With an icon the content of the button is wrapped in a `label` part. A button with no icon renders exactly as before.
+- The row is a grid (`inline-grid grid-flow-col items-center`), so the icons and the label are columns in reading order and the start icon is on the right on a `dir="rtl"` page. No physical direction class.
+- Inline padding tightens on the icon's side only, with `has-data-[icon=inline-start]:ps-*` and `has-data-[icon=inline-end]:pe-*`.
+- Collapsed to icons, the start icon is all that shows: the label is `sr-only` and stays the accessible name, and the end icon hides.
+- Rafters does not size icons. The wrapper (`inline-grid place-items-center`) only places and hides.
+- Astro `asChild`: the icons are placed around the child element's own content, so `<SidebarMenuButton asChild><a href="/x">Home</a></SidebarMenuButton>` keeps the anchor.
+
+## Logical edges
+
+The action and badge sit at `end-*`, the sub-menu indents with `ms-*`, `ps-*` and `border-s`, and the buttons align with `text-start`, so the sidebar's contents mirror on a right-to-left page. The `side="left" | "right"` classes (`left-0 border-r`, `right-0 border-l`, and the rail's two `group-data-[side=...]` positions) stay physical, each commented in `sidebar.classes.ts`: `side` names the screen edge the panel is pinned to.
 
 ## Keyboard and dismissal
 

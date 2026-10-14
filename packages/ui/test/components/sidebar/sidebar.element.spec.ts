@@ -18,6 +18,7 @@ import { cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { RaftersSidebar } from '../../../src/components/sidebar/sidebar.element';
+import { installIconLayout, ICON_SVG_16, rectsOf } from './icon-layout';
 
 function setViewport(isMobile: boolean): void {
   window.matchMedia = ((query: string) => ({
@@ -134,5 +135,62 @@ describe('sidebar [wc]', () => {
     expect(panel().getAttribute('data-state')).toBe('expanded');
     await user.keyboard('{Control>}b{/Control}');
     expect(panel().getAttribute('data-state')).toBe('collapsed');
+  });
+});
+
+describe('sidebar icons [wc]', () => {
+  let uninstall: () => void;
+  beforeEach(() => {
+    uninstall = installIconLayout();
+  });
+  afterEach(() => uninstall());
+
+  async function mountIcons(buttonHtml: string): Promise<HTMLElement> {
+    document.body.innerHTML = `
+      <rafters-sidebar data-part="root" data-default-open="true" data-side="left" data-collapsible="offcanvas">
+        <nav data-part="panel" id="sb-panel" data-state="expanded" data-mobile="closed" tabindex="-1">
+          ${buttonHtml}
+        </nav>
+      </rafters-sidebar>`;
+    await Promise.resolve();
+    await Promise.resolve();
+    return document.body.querySelector('[data-sidebar]') as HTMLElement;
+  }
+
+  it('slot="start-icon" and slot="end-icon" children become hidden wrappers beside the label', async () => {
+    const button = await mountIcons(
+      `<button type="button" data-sidebar="menu-button">Dashboard<span slot="start-icon">${ICON_SVG_16}</span><span slot="end-icon">${ICON_SVG_16}</span></button>`,
+    );
+    const start = button.querySelector('[data-part="startIcon"]');
+    const end = button.querySelector('[data-part="endIcon"]');
+    expect(start?.getAttribute('aria-hidden')).toBe('true');
+    expect(start?.getAttribute('data-icon')).toBe('inline-start');
+    expect(end?.getAttribute('aria-hidden')).toBe('true');
+    expect(end?.getAttribute('data-icon')).toBe('inline-end');
+    expect(button.querySelector('[data-part="label"]')?.textContent).toBe('Dashboard');
+    const r = rectsOf(button);
+    expect((r.start as DOMRect).right).toBeLessThanOrEqual(r.label.left + 0.5);
+    expect((r.end as DOMRect).left).toBeGreaterThanOrEqual(r.label.right - 0.5);
+    expect(r.start?.width).toBe(16);
+  });
+
+  it('on a dir="rtl" page the start icon renders on the right of the label', async () => {
+    document.documentElement.dir = 'rtl';
+    const button = await mountIcons(
+      `<button type="button" data-sidebar="menu-button">Dashboard<span slot="start-icon">${ICON_SVG_16}</span></button>`,
+    );
+    const r = rectsOf(button);
+    expect((r.start as DOMRect).left).toBeGreaterThan(r.label.left);
+  });
+
+  it('works on a sub button, and a button without an icon child is left alone', async () => {
+    const button = await mountIcons(
+      `<a data-sidebar="menu-sub-button">Settings<span slot="end-icon">${ICON_SVG_16}</span></a>
+       <button type="button" data-sidebar="menu-button" id="plain">Plain</button>`,
+    );
+    expect(button.querySelector('[data-part="endIcon"]')?.getAttribute('aria-hidden')).toBe('true');
+    const plain = document.getElementById('plain') as HTMLElement;
+    expect(plain.querySelector('[data-part]')).toBeNull();
+    expect(plain.textContent).toBe('Plain');
   });
 });
