@@ -6,9 +6,11 @@
 import * as React from 'react';
 import { cleanup, render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { page } from 'vitest/browser';
 import { Toggle, type ToggleProps } from '../../../src/components/toggle/toggle';
 import { toggle, type ToggleConfig } from '../../../src/components/toggle/toggle.behavior';
+import { installIconLayout, ICON_SVG_16, ICON_SVG_20, rectsOf } from '../button/icon-layout';
 
 interface Scenario {
   name: string;
@@ -61,7 +63,12 @@ describe('toggle [react]', () => {
 
       // aria: the rendered DOM equals the score's projection, including
       // absence -- a projected undefined means the attribute is not rendered.
-      const ids = { root: rootEl.id, label: label?.id ?? '' };
+      const ids = {
+        root: rootEl.id,
+        label: label?.id ?? '',
+        startIcon: '',
+        endIcon: '',
+      };
       const projection = toggle.aria(state, config, ids);
       // Only root/label: `spinner` is pressable's optional part (parts.ts:27,
       // 'spinner': { optional: true }) and Toggle's React/WC/Astro decorators
@@ -108,5 +115,100 @@ describe('toggle [react]', () => {
     const user = userEvent.setup();
     await user.click(rootEl);
     expect(rootEl.getAttribute('aria-pressed')).toBe('false');
+  });
+});
+
+describe('toggle icons [react]', () => {
+  let uninstall: () => void;
+  beforeEach(() => {
+    uninstall = installIconLayout();
+  });
+  afterEach(() => uninstall());
+
+  const svg = (markup: string) => <span dangerouslySetInnerHTML={{ __html: markup }} />;
+
+  it('start, end and both render beside the label on one line', () => {
+    for (const [name, node] of [
+      ['start', <Toggle startIcon={svg(ICON_SVG_16)}>Bold</Toggle>],
+      ['end', <Toggle endIcon={svg(ICON_SVG_16)}>Bold</Toggle>],
+      [
+        'both',
+        <Toggle startIcon={svg(ICON_SVG_16)} endIcon={svg(ICON_SVG_16)}>
+          Bold
+        </Toggle>,
+      ],
+    ] as const) {
+      const { unmount } = render(node);
+      const r = rectsOf(root());
+      if (name !== 'end') {
+        expect(r.start, name).not.toBeNull();
+        expect(r.start?.right as number).toBeLessThanOrEqual(r.label.left + 0.5);
+        expect(Math.abs((r.start?.top as number) - r.label.top)).toBeLessThan(r.label.height);
+      }
+      if (name !== 'start') {
+        expect(r.end, name).not.toBeNull();
+        expect(r.end?.left as number).toBeGreaterThanOrEqual(r.label.right - 0.5);
+        expect(Math.abs((r.end?.top as number) - r.label.top)).toBeLessThan(r.label.height);
+      }
+      unmount();
+    }
+  });
+
+  it('on a dir="rtl" page the start icon renders on the right of the label', () => {
+    document.documentElement.dir = 'rtl';
+    render(<Toggle startIcon={svg(ICON_SVG_16)}>Bold</Toggle>);
+    const r = rectsOf(root());
+    expect((r.start as DOMRect).left).toBeGreaterThan(r.label.left);
+  });
+
+  it('an icon keeps its own size', () => {
+    render(
+      <Toggle startIcon={svg(ICON_SVG_16)} endIcon={svg(ICON_SVG_20)}>
+        Bold
+      </Toggle>,
+    );
+    const r = rectsOf(root());
+    expect(r.start?.width).toBe(16);
+    expect(r.end?.width).toBe(20);
+  });
+
+  it('each wrapper is aria-hidden and absent when no icon is given', () => {
+    const { container } = render(
+      <Toggle startIcon={svg(ICON_SVG_16)} endIcon={svg(ICON_SVG_16)}>
+        Bold
+      </Toggle>,
+    );
+    for (const part of ['startIcon', 'endIcon']) {
+      expect(container.querySelector(`[data-part="${part}"]`)?.getAttribute('aria-hidden')).toBe(
+        'true',
+      );
+    }
+    expect(container.querySelector('[data-part="startIcon"]')?.getAttribute('data-icon')).toBe(
+      'inline-start',
+    );
+    expect(container.querySelector('[data-part="endIcon"]')?.getAttribute('data-icon')).toBe(
+      'inline-end',
+    );
+    cleanup();
+    const bare = render(<Toggle>Bold</Toggle>);
+    expect(bare.container.querySelector('[data-part="startIcon"]')).toBeNull();
+    expect(bare.container.querySelector('[data-part="endIcon"]')).toBeNull();
+  });
+
+  it('the accessible name is the label alone even when the svg has a title', async () => {
+    render(
+      <Toggle
+        startIcon={
+          <svg viewBox="0 0 24 24" width="16" height="16">
+            <title>Bold icon</title>
+          </svg>
+        }
+      >
+        Bold
+      </Toggle>,
+    );
+    await expect
+      .element(page.getByRole('button', { name: 'Bold', exact: true }))
+      .toBeInTheDocument();
   });
 });

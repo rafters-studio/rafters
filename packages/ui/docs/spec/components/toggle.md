@@ -75,7 +75,8 @@ type ToggleActions = { press: undefined };
 
 ```
 root   (native button semantics; carries aria-pressed + data-state)
-label  (always present; wraps the toggle's children -- typically an icon)
+label  (always present; wraps the toggle's children)
+startIcon, endIcon  (optional; decorative wrappers, aria-hidden)
 ```
 
 `pressable` also declares an optional `spinner` part; toggle never renders it.
@@ -93,6 +94,30 @@ idle/loading/soft-disabled, but a toggle's meaningful state IS its pressed axis,
 so the glue projects `on`/`off` from `state.pressed`. A second non-glue
 contributor to `data-state` would trip compose's collision guard; the glue is
 the sanctioned override seam.
+
+## Icons beside a label
+
+Two optional props place decorative icons around the label, in reading order, the same as Button: `startIcon` and `endIcon`.
+
+| Target | Start icon | End icon |
+| --- | --- | --- |
+| React | `startIcon: ReactNode` | `endIcon: ReactNode` |
+| Astro | `<slot name="start-icon" />` | `<slot name="end-icon" />` |
+| Web Component | child with `slot="start-icon"` | child with `slot="end-icon"` |
+
+```html
+<button class="inline-grid grid-flow-col items-center gap-2 ..." aria-pressed="false">
+  <span data-part="startIcon" data-icon="inline-start" aria-hidden="true">...</span>
+  <span data-part="label">Bold</span>
+  <span data-part="endIcon" data-icon="inline-end" aria-hidden="true">...</span>
+</button>
+```
+
+- `startIcon` and `endIcon` are optional parts, present only when an icon is given. The behavior projects `aria-hidden="true"` on each, so the markup is hidden from assistive technology before any script runs; the label is the accessible name.
+- The root is a grid (`inline-grid grid-flow-col items-center`), so the start icon is on the right on a `dir="rtl"` page. No physical direction class.
+- Inline padding tightens on the icon's side only, with `has-data-[icon=inline-start]:ps-*` and `has-data-[icon=inline-end]:pe-*`.
+- Rafters does not size icons. The wrapper (`inline-grid place-items-center`) only places and hides.
+- Icon-only toggles keep their required `aria-label`; the icons here are for a toggle with a text label.
 
 ## Keyboard
 
