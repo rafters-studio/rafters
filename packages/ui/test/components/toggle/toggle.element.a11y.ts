@@ -45,3 +45,23 @@ for (const [name, scene] of scenes) {
     expect(results.violations).toEqual([]);
   });
 }
+
+test('rafters-toggle with start and end icon slots, svg title does not leak into the name', async ({
+  task,
+}) => {
+  document.body.innerHTML = `
+    <main>
+      <rafters-toggle>
+        <button type="button" data-part="root" id="wc-root" aria-pressed="false" data-state="off"><span data-part="label" id="wc-label">Bold</span></button>
+        <svg slot="start-icon" viewBox="0 0 24 24"><title>Mail</title></svg>
+        <svg slot="end-icon" viewBox="0 0 24 24"><title>Arrow</title></svg>
+      </rafters-toggle>
+    </main>`;
+  await Promise.resolve();
+  await Promise.resolve();
+  const host = document.body.querySelector('main') as HTMLElement;
+  const results = await runAxe(host);
+  task.meta.axe = results;
+  expect(results.violations).toEqual([]);
+  expect(host.querySelectorAll('[data-icon][aria-hidden="true"]').length).toBe(2);
+});

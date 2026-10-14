@@ -6,6 +6,8 @@ export interface NavigationMenuClassSet {
   item: string;
   trigger: string;
   triggerChevron: string;
+  startIcon: string;
+  endIcon: string;
   content: string;
   link: string;
   viewportWrapper: string;
@@ -38,8 +40,9 @@ const itemClasses = 'relative group/navigation-item';
 // #2293: if the open-state tint should have its own timing, motion.jsonl needs
 // the row.
 const triggerClasses =
-  'group inline-flex h-11 @md:h-10 w-max items-center justify-center rounded-md ' +
+  'group inline-grid grid-flow-col h-11 @md:h-10 w-max items-center justify-center gap-1 rounded-md ' +
   'bg-background px-4 py-2 text-label-medium ts-label-medium cursor-pointer ' +
+  'has-data-[icon=inline-start]:ps-3 has-data-[icon=inline-end]:pe-3 ' +
   'transition-colors duration-fast ease-standard ' +
   'hover:bg-accent hover:text-accent-foreground ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ' +
@@ -53,7 +56,7 @@ const triggerClasses =
 // assignment nobody made, on top of a retired token. A moment with no row does
 // not move (docs/MOTION.md:150). Reported on #2293: if the chevron should turn,
 // motion.jsonl needs the row.
-const triggerChevronClasses = 'ml-1 h-3 w-3 group-data-[state=open]:rotate-180';
+const triggerChevronClasses = 'h-3 w-3 group-data-[state=open]:rotate-180';
 
 // MOTION IS CSS AND TOKENS ONLY (#2148). The hover-intent delay that used to be
 // a JavaScript timer reading the `hover-intent` delay token through the DOM is
@@ -118,7 +121,7 @@ const triggerChevronClasses = 'ml-1 h-3 w-3 group-data-[state=open]:rotate-180';
 // responsibility (the exporter's REDUCED_MOTION_ZEROED set), never a
 // component-level media query.
 const contentClasses =
-  'absolute left-0 top-full w-max rounded-md border bg-popover p-2 text-popover-foreground shadow-lg ' +
+  'absolute start-0 top-full w-max rounded-md border bg-popover p-2 text-popover-foreground shadow-lg ' +
   'opacity-0 pointer-events-none transition-[opacity,pointer-events] transition-discrete ' +
   'duration-fast ease-exit ' +
   'group-hover/navigation-item:opacity-100 group-hover/navigation-item:pointer-events-auto ' +
@@ -143,6 +146,9 @@ const contentClasses =
 // matrix has no separate `link` row; reported on #2293.
 const linkClasses =
   'block select-none space-y-1 rounded-md p-3 no-underline outline-none ' +
+  'has-data-[icon]:grid has-data-[icon]:grid-flow-col has-data-[icon]:items-center ' +
+  'has-data-[icon]:justify-start has-data-[icon]:gap-2 has-data-[icon]:space-y-0 ' +
+  'has-data-[icon=inline-start]:ps-2 has-data-[icon=inline-end]:pe-2 ' +
   'transition-colors duration-fast ease-standard ' +
   'hover:bg-accent hover:text-accent-foreground ' +
   'active:bg-muted active:text-foreground ' +
@@ -150,7 +156,10 @@ const linkClasses =
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ' +
   'data-[active]:bg-accent-subtle';
 
-const viewportWrapperClasses = 'absolute left-0 top-full';
+// The wrapper only places and hides: the brand brings its icons, sizing included.
+const iconClasses = 'inline-grid place-items-center';
+
+const viewportWrapperClasses = 'absolute start-0 top-full';
 
 // NO DISTINCT MOMENT for motion.jsonl `navigation-menu / panel / open -> open
 // (item change)` (crossfade + size morph, moderate*, standard*, extent
@@ -193,6 +202,8 @@ export function navigationMenuClasses(
     item: itemClasses,
     trigger: triggerClasses,
     triggerChevron: triggerChevronClasses,
+    startIcon: iconClasses,
+    endIcon: iconClasses,
     content: contentClasses,
     link: linkClasses,
     viewportWrapper: viewportWrapperClasses,

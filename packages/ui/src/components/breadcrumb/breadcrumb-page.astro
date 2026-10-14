@@ -1,0 +1,55 @@
+---
+/**
+ * BreadcrumbPage -- the current page: a non-clickable `role="link"
+ * aria-disabled="true" aria-current="page"` marker, with optional decorative
+ * icons beside its label.
+ *
+ * Icons: the `start-icon` and `end-icon` slots render inside wrapper parts
+ * (`startIcon` / `endIcon`) the behavior projects `aria-hidden="true"` onto, in
+ * the server markup with no script run, so the label alone is the accessible
+ * name. A wrapper renders only when its slot is given. The page is a grid, so
+ * the start icon sits on the right on a `dir="rtl"` page.
+ *
+ * `class` is NOT a prop; design travels through token props only.
+ *
+ * @parent breadcrumb
+ */
+import type { HTMLAttributes } from 'astro/types';
+import classy from '../../primitives/classy';
+import { breadcrumb } from './breadcrumb.behavior';
+import { breadcrumbIconClasses, breadcrumbPageClasses } from './breadcrumb.classes';
+
+type Props = Omit<HTMLAttributes<'span'>, 'class'>;
+
+const { class: _discardedClass, ...attrs } = Astro.props as Props & { class?: string };
+const aria = breadcrumb.aria({}, {}, { root: '', startIcon: '', endIcon: '' });
+---
+
+<span
+  role="link"
+  aria-disabled="true"
+  aria-current="page"
+  class={classy(breadcrumbPageClasses)}
+  {...attrs}>{
+  Astro.slots.has('start-icon') && (
+    <span
+      data-part="startIcon"
+      data-icon="inline-start"
+      class={breadcrumbIconClasses}
+      {...aria.startIcon}
+    >
+      <slot name="start-icon" />
+    </span>
+  )
+}<slot />{
+  Astro.slots.has('end-icon') && (
+    <span
+      data-part="endIcon"
+      data-icon="inline-end"
+      class={breadcrumbIconClasses}
+      {...aria.endIcon}
+    >
+      <slot name="end-icon" />
+    </span>
+  )
+}</span>

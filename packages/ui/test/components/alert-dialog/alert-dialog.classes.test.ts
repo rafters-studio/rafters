@@ -29,7 +29,7 @@ describe('alert-dialog classes', () => {
   });
 
   it('header and footer respond to the container, not the viewport', () => {
-    expect(classes.header).toContain('@md:text-left');
+    expect(classes.header).toContain('@md:text-start');
     expect(classes.footer).toContain('@md:flex-row');
     expect(classes.header).not.toContain('sm:');
     expect(classes.footer).not.toContain('sm:');

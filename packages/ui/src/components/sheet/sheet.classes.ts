@@ -63,7 +63,7 @@ const sheetSideClasses: Record<SheetSide, string> = {
   right: 'inset-y-0 right-0 h-full w-3/4 @sm:max-w-sm border-l border-card-border',
 };
 
-const headerClasses = 'flex flex-col space-y-2 text-center @md:text-left';
+const headerClasses = 'flex flex-col space-y-2 text-center @md:text-start';
 
 const footerClasses = 'flex flex-col-reverse @md:flex-row @md:justify-end @md:space-x-2';
 

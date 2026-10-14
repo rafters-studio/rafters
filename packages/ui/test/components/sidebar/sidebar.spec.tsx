@@ -7,7 +7,9 @@
 import * as React from 'react';
 import { cleanup, render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { page } from 'vitest/browser';
+import { installIconLayout, ICON_SVG_16, ICON_SVG_20, rectsOf } from './icon-layout';
 import {
   Sidebar,
   SidebarContent,
@@ -15,6 +17,9 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
   SidebarProvider,
   SidebarRail,
   SidebarTrigger,
@@ -207,5 +212,135 @@ describe('sidebar [react]', () => {
     expect(panel.getAttribute('data-state')).toBe('expanded');
     await user.keyboard('{Meta>}b{/Meta}');
     expect(panel.getAttribute('data-state')).toBe('collapsed');
+  });
+});
+
+describe('sidebar icons [react]', () => {
+  let uninstall: () => void;
+  beforeEach(() => {
+    setViewport(false);
+    uninstall = installIconLayout();
+  });
+  afterEach(() => uninstall());
+
+  const svg = (markup: string) => <span dangerouslySetInnerHTML={{ __html: markup }} />;
+
+  interface SceneProps {
+    startIcon?: React.ReactNode;
+    endIcon?: React.ReactNode;
+    sub?: boolean;
+  }
+  function Scene({ sub, ...icons }: SceneProps) {
+    return (
+      <SidebarProvider>
+        <Sidebar>
+          <SidebarContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                {sub ? (
+                  <SidebarMenuSub>
+                    <SidebarMenuSubItem>
+                      <SidebarMenuSubButton {...icons}>Settings</SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                  </SidebarMenuSub>
+                ) : (
+                  <SidebarMenuButton {...icons}>Dashboard</SidebarMenuButton>
+                )}
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarContent>
+        </Sidebar>
+      </SidebarProvider>
+    );
+  }
+
+  const buttonOf = (container: HTMLElement) =>
+    container.querySelector<HTMLElement>(
+      '[data-sidebar="menu-button"], [data-sidebar="menu-sub-button"]',
+    ) as HTMLElement;
+
+  it.each([false, true])('start, end and both sit beside the label (sub: %s)', (sub) => {
+    for (const [name, icons] of [
+      ['start', { startIcon: svg(ICON_SVG_16) }],
+      ['end', { endIcon: svg(ICON_SVG_16) }],
+      ['both', { startIcon: svg(ICON_SVG_16), endIcon: svg(ICON_SVG_16) }],
+    ] as const) {
+      const { container, unmount } = render(<Scene sub={sub} {...icons} />);
+      const r = rectsOf(buttonOf(container));
+      if (name !== 'end') {
+        expect(r.start?.right as number, name).toBeLessThanOrEqual(r.label.left + 0.5);
+      }
+      if (name !== 'start') {
+        expect(r.end?.left as number, name).toBeGreaterThanOrEqual(r.label.right - 0.5);
+      }
+      unmount();
+    }
+  });
+
+  it('on a dir="rtl" page the start icon renders on the right of the label', () => {
+    document.documentElement.dir = 'rtl';
+    const { container } = render(<Scene startIcon={svg(ICON_SVG_16)} />);
+    const r = rectsOf(buttonOf(container));
+    expect((r.start as DOMRect).left).toBeGreaterThan(r.label.left);
+  });
+
+  it('an icon keeps its own size', () => {
+    const { container } = render(<Scene startIcon={svg(ICON_SVG_16)} endIcon={svg(ICON_SVG_20)} />);
+    const r = rectsOf(buttonOf(container));
+    expect(r.start?.width).toBe(16);
+    expect(r.end?.width).toBe(20);
+  });
+
+  it('each wrapper is aria-hidden and absent when no icon is given', () => {
+    const { container } = render(<Scene startIcon={svg(ICON_SVG_16)} endIcon={svg(ICON_SVG_16)} />);
+    const button = buttonOf(container);
+    const start = button.querySelector('[data-part="startIcon"]');
+    const end = button.querySelector('[data-part="endIcon"]');
+    expect(start?.getAttribute('aria-hidden')).toBe('true');
+    expect(start?.getAttribute('data-icon')).toBe('inline-start');
+    expect(end?.getAttribute('aria-hidden')).toBe('true');
+    expect(end?.getAttribute('data-icon')).toBe('inline-end');
+    cleanup();
+    const bare = render(<Scene />);
+    expect(bare.container.querySelector('[data-part="startIcon"]')).toBeNull();
+    expect(bare.container.querySelector('[data-part="endIcon"]')).toBeNull();
+    expect(bare.container.querySelector('[data-part="label"]')).toBeNull();
+  });
+
+  it('asChild puts the icons around the child content', () => {
+    const { container } = render(
+      <SidebarProvider>
+        <Sidebar>
+          <SidebarContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild startIcon={svg(ICON_SVG_16)}>
+                  <a href="/x">Home</a>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarContent>
+        </Sidebar>
+      </SidebarProvider>,
+    );
+    const a = container.querySelector('a') as HTMLElement;
+    const order = [...a.querySelectorAll('[data-part]')].map((el) => el.getAttribute('data-part'));
+    expect(order).toEqual(['startIcon', 'label']);
+    expect(a.querySelector('[data-part="label"]')?.textContent).toBe('Home');
+  });
+
+  it('the accessible name is the label alone even when the svg has a title', async () => {
+    render(
+      <Scene
+        startIcon={
+          <svg viewBox="0 0 24 24" width="16" height="16">
+            <title>Dash icon</title>
+          </svg>
+        }
+      />,
+    );
+    await expect
+      .element(page.getByRole('button', { name: 'Dashboard', exact: true }))
+      .toBeInTheDocument();
   });
 });

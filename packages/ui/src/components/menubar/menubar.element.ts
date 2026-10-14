@@ -62,14 +62,16 @@
  * lifecycle -- deferring the bind one microtask because connectedCallback can
  * fire before the light-DOM parts are parsed.
  */
-import { bindMenubar } from './menubar.behavior';
+import { bindMenubar, wrapMenubarIcons } from './menubar.behavior';
 
 export class RaftersMenubar extends HTMLElement {
   private teardown: (() => void) | null = null;
 
   connectedCallback(): void {
     queueMicrotask(() => {
-      if (this.isConnected && !this.teardown) this.teardown = bindMenubar(this);
+      if (!this.isConnected || this.teardown) return;
+      wrapMenubarIcons(this);
+      this.teardown = bindMenubar(this);
     });
   }
 

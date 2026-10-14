@@ -1,9 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import { createBehavior } from '../../../src/lib/contract';
-import { toggle, type ToggleConfig } from '../../../src/components/toggle/toggle.behavior';
+import {
+  toggle,
+  wrapToggleIcons,
+  type ToggleConfig,
+} from '../../../src/components/toggle/toggle.behavior';
 
 const base: ToggleConfig = { variant: 'default', size: 'default', toggle: true };
-const ids = { root: 'r', label: 'r-label', spinner: 'r-spinner' };
+const ids = {
+  root: 'r',
+  label: 'r-label',
+  spinner: 'r-spinner',
+  startIcon: 'r-start',
+  endIcon: 'r-end',
+};
 
 function ariaFor(config: Partial<ToggleConfig>) {
   const full = { ...base, ...config };
@@ -97,3 +107,46 @@ describe('toggle keymap', () => {
 // primitive at either boundary. The WC/Astro bind and the React controller both
 // wire click -> press only; there is no runner and nothing to drive. So there is
 // no effects data to assert here.
+
+describe('toggle icon parts', () => {
+  it('declares startIcon and endIcon as optional parts that project aria-hidden', () => {
+    expect(toggle.parts.startIcon).toEqual({ optional: true });
+    expect(toggle.parts.endIcon).toEqual({ optional: true });
+    const aria = ariaFor({});
+    expect(aria.startIcon).toEqual({ 'aria-hidden': 'true' });
+    expect(aria.endIcon).toEqual({ 'aria-hidden': 'true' });
+  });
+});
+
+describe('wrapToggleIcons', () => {
+  function host(children: string): { host: HTMLElement; root: HTMLElement } {
+    document.body.innerHTML = `<rafters-toggle><button data-part="root"><span data-part="label">Bold</span></button>${children}</rafters-toggle>`;
+    const h = document.querySelector('rafters-toggle') as HTMLElement;
+    return { host: h, root: h.querySelector('[data-part="root"]') as HTMLElement };
+  }
+
+  it('wraps slotted children in hidden wrappers in reading order', () => {
+    const { host: h, root } = host('<svg slot="end-icon"></svg><svg slot="start-icon"></svg>');
+    wrapToggleIcons(h, root);
+    const order = [...root.children].map((el) => el.getAttribute('data-part'));
+    expect(order).toEqual(['startIcon', 'label', 'endIcon']);
+    const start = root.querySelector('[data-part="startIcon"]');
+    expect(start?.getAttribute('aria-hidden')).toBe('true');
+    expect(start?.getAttribute('data-icon')).toBe('inline-start');
+    expect(root.querySelector('[data-part="endIcon"]')?.getAttribute('data-icon')).toBe(
+      'inline-end',
+    );
+    expect(start?.querySelector('svg')?.hasAttribute('slot')).toBe(false);
+  });
+
+  it('adds no wrapper without a slotted child, and is idempotent', () => {
+    const { host: h, root } = host('');
+    wrapToggleIcons(h, root);
+    expect(root.querySelector('[data-part="startIcon"]')).toBeNull();
+    expect(root.querySelector('[data-part="endIcon"]')).toBeNull();
+    const again = host('<svg slot="start-icon"></svg>');
+    wrapToggleIcons(again.host, again.root);
+    wrapToggleIcons(again.host, again.root);
+    expect(again.root.querySelectorAll('[data-part="startIcon"]').length).toBe(1);
+  });
+});

@@ -6,7 +6,8 @@
  */
 import { cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { ICON_SVG_16, installIconLayout, rect } from './icon-layout';
 import { RaftersCommand } from '../../../src/components/command/command.element';
 import { COMMAND_SELECT_EVENT } from '../../../src/components/command/command.behavior';
 
@@ -99,5 +100,66 @@ describe('command [wc]', () => {
     await user.click(input());
     await user.keyboard('zzz');
     expect(emptyEl().hidden).toBe(false);
+  });
+});
+
+describe('command icons [wc]', () => {
+  let uninstall: () => void;
+  beforeEach(() => {
+    uninstall = installIconLayout();
+  });
+  afterEach(() => uninstall());
+
+  const mountIcons = async (): Promise<void> => {
+    document.body.innerHTML = `
+      <rafters-command data-part="root" id="c-root" data-label="Actions">
+        <div data-part="input-wrapper">
+          <input data-part="input" id="c-input" type="text" value="" aria-label="Command" />
+        </div>
+        <div data-part="list" id="c-list">
+          <div role="option" data-part="item" data-value="calendar" id="c-item-calendar">${ICON_SVG_16.replace('<svg', '<svg slot="start-icon"')}Calendar<kbd data-part="shortcut">Cmd+K</kbd></div>
+          ${optionMarkup('search', 'Search')}
+        </div>
+      </rafters-command>`;
+    await Promise.resolve();
+  };
+
+  it('wraps the slotted icon in an aria-hidden wrapper before the label', async () => {
+    await mountIcons();
+    const wrappers = document.body.querySelectorAll('[data-part="startIcon"]');
+    expect(wrappers).toHaveLength(1);
+    expect(wrappers[0]?.getAttribute('aria-hidden')).toBe('true');
+    expect(wrappers[0]?.getAttribute('data-icon')).toBe('inline-start');
+    expect(wrappers[0]?.querySelector('[slot]')).toBeNull();
+    expect(option('search').querySelector('[data-part="startIcon"]')).toBeNull();
+    const item = option('calendar');
+    expect([...item.children].map((el) => el.getAttribute('data-part'))).toEqual([
+      'startIcon',
+      'label',
+      'shortcut',
+    ]);
+    expect(item.querySelector('[data-part="label"]')?.textContent).toBe('Calendar');
+    expect(rect(item, '[data-part="startIcon"]').right).toBeLessThanOrEqual(
+      rect(item, '[data-part="label"]').left + 0.5,
+    );
+  });
+
+  it('on a dir="rtl" page the start icon renders on the right of the label; size is kept', async () => {
+    document.documentElement.dir = 'rtl';
+    await mountIcons();
+    const item = option('calendar');
+    expect(rect(item, '[data-part="startIcon"]').left).toBeGreaterThan(
+      rect(item, '[data-part="label"]').left,
+    );
+    expect(rect(item, '[data-part="startIcon"]').width).toBe(16);
+  });
+
+  it('typing still filters by the option value with the label wrapped', async () => {
+    const user = userEvent.setup();
+    await mountIcons();
+    await user.click(input());
+    await user.keyboard('sea');
+    expect(option('search').hidden).toBe(false);
+    expect(option('calendar').hidden).toBe(true);
   });
 });

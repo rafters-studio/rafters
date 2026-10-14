@@ -7,6 +7,7 @@
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it } from 'vitest';
+import { ICON_SVG_16 } from './icon-layout';
 import DropdownMenu from '../../../src/components/dropdown-menu/dropdown-menu.astro';
 import { bindDropdownMenu } from '../../../src/components/dropdown-menu/dropdown-menu.behavior';
 
@@ -76,5 +77,44 @@ describe('dropdown-menu [astro]', () => {
     await user.keyboard('{Escape}');
     expect(content().hidden).toBe(true);
     expect(document.activeElement).toBe(trigger());
+  });
+});
+
+describe('dropdown-menu icons [astro]', () => {
+  const withIcon = async (): Promise<string> => {
+    const container = await AstroContainer.create();
+    return container.renderToString(DropdownMenu, {
+      props: { id: 'dm', label: 'Options', items },
+      slots: { 'start-icon-0': ICON_SVG_16 },
+    });
+  };
+
+  it('SSR, no script run: the icon wrapper already has aria-hidden="true"', async () => {
+    const doc = new DOMParser().parseFromString(await withIcon(), 'text/html');
+    const wrappers = doc.querySelectorAll('[data-part="startIcon"]');
+    expect(wrappers).toHaveLength(1);
+    expect(wrappers[0]!.getAttribute('aria-hidden')).toBe('true');
+    expect(wrappers[0]!.getAttribute('data-icon')).toBe('inline-start');
+    expect(
+      doc.querySelectorAll('[data-part="item"]')[1]!.querySelector('[data-part="startIcon"]'),
+    ).toBeNull();
+  });
+
+  it('renders no wrapper when no icon slot is given', async () => {
+    await mount();
+    expect(document.body.querySelector('[data-part="startIcon"]')).toBeNull();
+  });
+
+  it('the icon precedes the label in reading order', async () => {
+    document.body.innerHTML = await withIcon();
+    const root = document.body.querySelector('rafters-dropdown-menu') as HTMLElement;
+    bindDropdownMenu(root);
+    trigger().click();
+    const edit = item('Edit');
+    expect([...edit.children].map((el) => el.getAttribute('data-part'))).toEqual([
+      'startIcon',
+      null,
+    ]);
+    expect(edit.lastElementChild?.textContent).toBe('Edit');
   });
 });

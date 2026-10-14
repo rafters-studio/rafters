@@ -7,6 +7,8 @@ export interface DropdownMenuClassSet {
   checkboxItem: string;
   radioItem: string;
   itemIndicator: string;
+  startIcon: string;
+  itemLabel: string;
   checkIcon: string;
   radioDot: string;
   separator: string;
@@ -38,8 +40,13 @@ const triggerClasses =
 // animation-duration under the media query instead, which keeps the keyframe's
 // end state. animate-none here would win destructively: `animation: none`
 // resets the shorthand and discards the zeroed duration with it.
+//
+// THE ROW (#2459): the content is a grid on grid-cols-menu-row (indicator,
+// icon, label, end) and each item a subgrid row, so the columns line up across
+// items and the icon sits on the right on a dir="rtl" page with no direction
+// class.
 const contentClasses =
-  'z-depth-dropdown min-w-32 overflow-hidden rounded-md border bg-popover p-1 ' +
+  'grid grid-cols-menu-row z-depth-dropdown min-w-32 overflow-hidden rounded-md border bg-popover p-1 ' +
   'text-popover-foreground shadow-lg ' +
   'data-[state=open]:animate-scale-in-moderate-enter ' +
   'data-[state=closed]:animate-scale-out-fast-exit ' +
@@ -78,30 +85,40 @@ const contentClasses =
 // question (the two rows share one element and the vocabulary has no
 // per-property delay), not something this file can resolve.
 const itemBase =
-  'relative flex cursor-default select-none items-center rounded-sm text-body-small ts-body-small outline-none ' +
+  'grid grid-cols-subgrid col-span-full cursor-default select-none items-center rounded-sm px-2 py-1.5 ' +
+  'has-data-[icon=inline-start]:ps-1.5 text-body-small ts-body-small outline-none ' +
   'transition-colors duration-micro ease-standard delay-stagger-step ' +
   'focus:bg-accent focus:text-accent-foreground ' +
   'data-[disabled]:pointer-events-none data-[disabled]:opacity-50';
 
-const itemClasses = `${itemBase} gap-2 px-2 py-1.5`;
+const itemClasses = itemBase;
 
-const checkboxItemClasses = `${itemBase} py-1.5 pl-8 pr-2`;
+const checkboxItemClasses = itemBase;
 
-const radioItemClasses = `${itemBase} py-1.5 pl-8 pr-2`;
+const radioItemClasses = itemBase;
 
-const itemIndicatorClasses = 'absolute left-2 flex h-3.5 w-3.5 items-center justify-center';
+const itemIndicatorClasses =
+  'col-start-1 row-start-1 me-2 flex h-3.5 w-3.5 items-center justify-center';
+
+// The wrapper only places and hides: the brand brings its icons, sizing
+// included. The margin spaces the icon from the label.
+const startIconClasses = 'col-start-2 row-start-1 me-2 inline-grid place-items-center';
+
+// The label cell takes the label column and the end column, so a shortcut
+// pushed to the end with ms-auto sits at the row's end.
+const itemLabelClasses = 'col-start-3 col-span-2 row-start-1 flex min-w-0 items-center gap-2';
 
 const checkIconClasses = 'h-4 w-4';
 
 const radioDotClasses = 'h-2 w-2 rounded-full bg-current';
 
-const separatorClasses = '-mx-1 my-1 h-px border-0 bg-muted';
+const separatorClasses = 'col-span-full -mx-1 my-1 h-px border-0 bg-muted';
 
-const shortcutClasses = 'ml-auto text-shortcut ts-shortcut opacity-60';
+const shortcutClasses = 'ms-auto text-shortcut ts-shortcut opacity-60';
 
-const labelClasses = 'px-2 py-1.5 text-label-medium ts-label-medium';
+const labelClasses = 'col-span-full px-2 py-1.5 text-label-medium ts-label-medium';
 
-const groupClasses = '';
+const groupClasses = 'grid grid-cols-subgrid col-span-full';
 
 export function dropdownMenuClasses(
   _config: DropdownMenuConfig,
@@ -114,6 +131,8 @@ export function dropdownMenuClasses(
     checkboxItem: checkboxItemClasses,
     radioItem: radioItemClasses,
     itemIndicator: itemIndicatorClasses,
+    startIcon: startIconClasses,
+    itemLabel: itemLabelClasses,
     checkIcon: checkIconClasses,
     radioDot: radioDotClasses,
     separator: separatorClasses,

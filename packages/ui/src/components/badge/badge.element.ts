@@ -54,12 +54,17 @@
  *            | info | muted | accent | outline | ghost | link
  *   size     sm | default | lg
  *
+ * Icons: a child with `slot="start-icon"` or `slot="end-icon"` renders inside a
+ * wrapper part (`startIcon` / `endIcon`) the behavior projects `aria-hidden`
+ * onto; the wrapper exists only while such a child does. The root is a grid, so
+ * the start icon sits on the right on a `dir="rtl"` page.
+ *
  * An unrecognised value narrows to `undefined`, and `badgeClasses` applies the
  * single `default` fallback -- this element never names the default itself.
  */
 
 import { RaftersElement } from '../../primitives/rafters-element';
-import { isBadgeSize, isBadgeVariant } from './badge.behavior';
+import { badge, isBadgeSize, isBadgeVariant } from './badge.behavior';
 import { badgeClasses } from './badge.classes';
 
 export class RaftersBadge extends RaftersElement {
@@ -67,6 +72,41 @@ export class RaftersBadge extends RaftersElement {
   static override styles = ':host { display: inline-flex; }';
 
   static readonly observedAttributes: ReadonlyArray<string> = ['variant', 'size'];
+
+  private watcher: MutationObserver | null = null;
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    // An icon child can arrive after the first render (upgrade order, or a
+    // later insert); the wrapper follows the child.
+    this.watcher = new MutationObserver(() => this.update());
+    this.watcher.observe(this, { childList: true });
+  }
+
+  override disconnectedCallback(): void {
+    this.watcher?.disconnect();
+    this.watcher = null;
+    super.disconnectedCallback();
+  }
+
+  private iconWrapper(
+    part: 'startIcon' | 'endIcon',
+    slot: string,
+    icon: string,
+    className: string,
+  ): HTMLElement | null {
+    if (!this.querySelector(`:scope > [slot="${slot}"]`)) return null;
+    const wrapper = document.createElement('span');
+    wrapper.setAttribute('data-part', part);
+    wrapper.setAttribute('data-icon', icon);
+    wrapper.className = className;
+    const aria = badge.aria({}, {}, { root: '', startIcon: '', endIcon: '' })[part] ?? {};
+    for (const [name, value] of Object.entries(aria)) wrapper.setAttribute(name, String(value));
+    const named = document.createElement('slot');
+    named.name = slot;
+    wrapper.appendChild(named);
+    return wrapper;
+  }
 
   /** DOM APIs only -- never innerHTML. */
   override render(): Node {
@@ -76,14 +116,19 @@ export class RaftersBadge extends RaftersElement {
     const root = document.createElement('span');
     root.setAttribute('data-part', 'root');
     root.setAttribute('data-slot', 'badge');
-    root.className = badgeClasses(
+    const classes = badgeClasses(
       {
         variant: isBadgeVariant(variant) ? variant : undefined,
         size: isBadgeSize(size) ? size : undefined,
       },
       {},
-    ).root;
+    );
+    root.className = classes.root;
+    const start = this.iconWrapper('startIcon', 'start-icon', 'inline-start', classes.startIcon);
+    if (start) root.appendChild(start);
     root.appendChild(document.createElement('slot'));
+    const end = this.iconWrapper('endIcon', 'end-icon', 'inline-end', classes.endIcon);
+    if (end) root.appendChild(end);
     return root;
   }
 }

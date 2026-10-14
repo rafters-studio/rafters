@@ -5,12 +5,16 @@ import { runAxe } from '../../a11y/run-axe';
 import Toggle from '../../../src/components/toggle/toggle.astro';
 import { bindToggle } from '../../../src/components/toggle/toggle.behavior';
 
-async function mount(props: Record<string, unknown>): Promise<Document> {
+async function mount(
+  props: Record<string, unknown>,
+  slots: Record<string, string> = {},
+): Promise<Document> {
   const container = await AstroContainer.create();
   // Every scene carries an accessible name: the `label` prop the astro
   // spec supplies, or aria-label for the icon-only scene.
   const html = await container.renderToString(Toggle, {
     props: { id: 't', label: 'Bold', ...props },
+    slots,
   });
   const window = new Window();
   const document = window.document as unknown as Document;
@@ -37,3 +41,19 @@ for (const [name, props] of scenes) {
     expect(results.violations).toEqual([]);
   });
 }
+
+test('toggle.astro with start and end icons, svg title does not leak into the name', async ({
+  task,
+}) => {
+  const document = await mount(
+    {},
+    {
+      'start-icon': '<svg viewBox="0 0 24 24"><title>Mail</title></svg>',
+      'end-icon': '<svg viewBox="0 0 24 24"><title>Arrow</title></svg>',
+    },
+  );
+  const results = await runAxe(document.body);
+  task.meta.axe = results;
+  expect(results.violations).toEqual([]);
+  expect(document.querySelectorAll('[data-icon][aria-hidden="true"]').length).toBe(2);
+});

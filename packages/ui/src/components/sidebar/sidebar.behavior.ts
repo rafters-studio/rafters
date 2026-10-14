@@ -7,6 +7,7 @@ import {
 } from '../../lib/contract';
 import { updateAriaAttribute } from '../../primitives/aria-manager';
 import { startSheetModalEffects } from '../sheet/sheet.behavior';
+import { sidebarClasses } from './sidebar.classes';
 
 /** The edge the rail is anchored to. Purely positional: it selects the view's
  *  side variant and the collapse/slide direction. It never enters a reducer and
@@ -62,7 +63,8 @@ export type SidebarActions = {
   closeMobile: undefined;
 };
 
-export type SidebarPart = 'root' | 'trigger' | 'rail' | 'panel' | 'dialog';
+export type SidebarIconPart = 'startIcon' | 'endIcon';
+export type SidebarPart = 'root' | 'trigger' | 'rail' | 'panel' | 'dialog' | SidebarIconPart;
 
 /** The effective desktop-expand value: a controlled `open` shadows intrinsic. */
 export function isOpen(state: SidebarState, config: SidebarConfig): boolean {
@@ -103,6 +105,10 @@ const sidebarSlice: Slice<SidebarConfig, SidebarState, SidebarActions, SidebarPa
     rail: { optional: true },
     panel: {},
     dialog: { optional: true },
+    // The decorative icon wrappers of the menu buttons. Optional and repeated:
+    // every menu button and sub button that is given an icon renders its own.
+    startIcon: { optional: true },
+    endIcon: { optional: true },
   },
   initialState: (config) => ({
     // A fresh app opens expanded (oracle default true); a controlled value seeds
@@ -156,6 +162,11 @@ const sidebarSlice: Slice<SidebarConfig, SidebarState, SidebarActions, SidebarPa
         // which the score does not hold) -- see bindSidebar.
         'data-mobile': mobileOpen ? 'open' : 'closed',
       },
+      // The icon wrappers are decorative: the label alone is the accessible
+      // name, so the wrapper carries the hiding on every target, with or
+      // without JavaScript. The author's icon child cannot be trusted to.
+      startIcon: { 'aria-hidden': 'true' },
+      endIcon: { 'aria-hidden': 'true' },
     };
   },
   // Escape dismisses the MOBILE overlay only, scoped to the panel. On desktop
@@ -167,6 +178,100 @@ const sidebarSlice: Slice<SidebarConfig, SidebarState, SidebarActions, SidebarPa
 
 export const sidebar: BehaviorSpec<SidebarConfig, SidebarState, SidebarActions, SidebarPart> =
   compose('sidebar', sidebarSlice);
+
+/**
+ * The projection for the two icon wrappers. It holds no state, so a menu button
+ * rendered on its own (an Astro tree with no provider) reads the same
+ * attributes the score projects.
+ */
+export function sidebarIconAria(): Record<SidebarIconPart, AriaAttrs> {
+  const ids: PartIds<SidebarPart> = {
+    root: '',
+    trigger: '',
+    rail: '',
+    panel: '',
+    dialog: '',
+    startIcon: '',
+    endIcon: '',
+  };
+  const projection = sidebar.aria(sidebar.initialState({}), {}, ids);
+  return { startIcon: projection.startIcon ?? {}, endIcon: projection.endIcon ?? {} };
+}
+
+/**
+ * The server markup for a menu button's content with decorative icons: the
+ * start icon wrapper, the label part holding `content`, the end icon wrapper,
+ * in reading order. A wrapper is present only when its html is given. The
+ * Astro performances call this so the `aria-hidden` the behavior projects is
+ * in the markup with no script run.
+ */
+export function sidebarIconsMarkup(content: string, startHtml: string, endHtml: string): string {
+  if (!startHtml && !endHtml) return content;
+  const classes = sidebarClasses();
+  const aria = sidebarIconAria();
+  const attrs = (part: SidebarIconPart): string =>
+    Object.entries(aria[part])
+      .map(([name, value]) => ` ${name}="${String(value)}"`)
+      .join('');
+  const wrapper = (part: SidebarIconPart, icon: string, className: string, html: string) =>
+    html
+      ? `<span data-part="${part}" data-icon="${icon}" class="${className}"${attrs(part)}>${html}</span>`
+      : '';
+  return (
+    wrapper('startIcon', 'inline-start', classes.menuButtonStartIcon, startHtml) +
+    `<span data-part="label" class="${classes.menuButtonLabel}">${content}</span>` +
+    wrapper('endIcon', 'inline-end', classes.menuButtonEndIcon, endHtml)
+  );
+}
+
+/**
+ * Wrap each `slot="start-icon"` / `slot="end-icon"` child of a menu button or
+ * sub button in the decorative wrapper the behavior projects aria-hidden onto,
+ * and the remaining children in the label part, so the collapsed rail can hide
+ * the label visually while it stays the accessible name. The light DOM has no
+ * slot assignment, so the slot attribute is only the author's marker.
+ */
+export function wrapSidebarIcons(host: HTMLElement): void {
+  const classes = sidebarClasses();
+  const buttons = host.querySelectorAll<HTMLElement>(
+    '[data-sidebar="menu-button"], [data-sidebar="menu-sub-button"]',
+  );
+  for (const button of buttons) {
+    const start = button.querySelector(':scope > [slot="start-icon"]');
+    const end = button.querySelector(':scope > [slot="end-icon"]');
+    if (!start && !end) continue;
+    const label = document.createElement('span');
+    label.dataset['part'] = 'label';
+    label.className = classes.menuButtonLabel;
+    for (const node of Array.from(button.childNodes)) {
+      if (node !== start && node !== end) label.appendChild(node);
+    }
+    const kinds = [
+      {
+        child: start,
+        part: 'startIcon',
+        icon: 'inline-start',
+        className: classes.menuButtonStartIcon,
+      },
+      { child: end, part: 'endIcon', icon: 'inline-end', className: classes.menuButtonEndIcon },
+    ] as const;
+    const wrappers = kinds.map((kind) => {
+      if (!kind.child) return null;
+      const wrapper = document.createElement('span');
+      wrapper.dataset['part'] = kind.part;
+      wrapper.dataset['icon'] = kind.icon;
+      wrapper.setAttribute('aria-hidden', 'true');
+      wrapper.className = kind.className;
+      kind.child.removeAttribute('slot');
+      wrapper.appendChild(kind.child);
+      return wrapper;
+    });
+    button.append(...wrappers.filter((w): w is HTMLSpanElement => w !== null));
+    // Reading order: start icon, label, end icon.
+    if (wrappers[0]) button.insertBefore(label, wrappers[0].nextSibling);
+    else button.insertBefore(label, button.firstChild);
+  }
+}
 
 /** The keyboard shortcut that toggles the sidebar, matching the oracle. */
 const TOGGLE_KEY = 'b';
@@ -245,8 +350,13 @@ export function bindSidebar(root: HTMLElement): () => void {
     const projection = sidebar.aria(state, config, ids);
     for (const part of Object.keys(projection) as SidebarPart[]) {
       const attrs = projection[part];
-      const el = getPart(part);
-      if (el && attrs) applyProjection(el, attrs);
+      if (!attrs) continue;
+      // The icon wrappers repeat, one per menu button; every other part is unique.
+      const els =
+        part === 'startIcon' || part === 'endIcon'
+          ? Array.from(root.querySelectorAll<HTMLElement>(`[data-part="${part}"]`))
+          : [getPart(part)];
+      for (const el of els) if (el) applyProjection(el, attrs);
     }
 
     const panel = getPart('panel');

@@ -9,6 +9,10 @@ export interface TabsClassSet {
   trigger: string;
   /** Each [role="tabpanel"]: focusable, so it carries a focus ring. */
   panel: string;
+  /** The decorative start icon wrapper inside a trigger. */
+  startIcon: string;
+  /** The decorative end icon wrapper inside a trigger. */
+  endIcon: string;
 }
 
 const rootHorizontalClasses = 'flex flex-col gap-2';
@@ -20,7 +24,11 @@ const listHorizontalClasses = 'h-10';
 const listVerticalClasses = 'h-auto flex-col';
 
 const triggerBaseClasses = [
-  'inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5',
+  // A grid, so the icons and the label are columns in reading order and the
+  // start icon sits on the right on a dir="rtl" page. Inline padding tightens
+  // on the icon's own side only, in logical edges.
+  'inline-grid grid-flow-col items-center justify-center gap-2 whitespace-nowrap rounded-sm px-3 py-1.5',
+  'has-data-[icon=inline-start]:ps-2 has-data-[icon=inline-end]:pe-2',
   'text-label-medium ts-label-medium ring-offset-background cursor-pointer',
   // motion.jsonl `tabs / trigger / hover` -- color (background, text, border),
   // fast, standard. This is the trigger's ONLY row; the comment that used to sit
@@ -71,6 +79,9 @@ const panelClasses = [
 // giving tabs a real travelling indicator is a component change, not a class
 // change.
 
+// The wrapper only places and hides: the brand brings its icons, sizing included.
+const iconClasses = 'inline-grid place-items-center';
+
 /** The view: class strings keyed by config/state. No logic. */
 export function tabsClasses(config: TabsConfig, _state: TabsState): TabsClassSet {
   const vertical = config.orientation === 'vertical';
@@ -79,5 +90,7 @@ export function tabsClasses(config: TabsConfig, _state: TabsState): TabsClassSet
     list: `${listBaseClasses} ${vertical ? listVerticalClasses : listHorizontalClasses}`,
     trigger: `${triggerBaseClasses} ${triggerStateClasses}`,
     panel: panelClasses,
+    startIcon: iconClasses,
+    endIcon: iconClasses,
   };
 }
