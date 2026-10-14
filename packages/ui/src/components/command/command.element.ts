@@ -39,14 +39,16 @@
  * lifecycle -- deferring the bind one microtask because connectedCallback can
  * fire before the light-DOM parts are parsed.
  */
-import { bindCommand } from './command.behavior';
+import { bindCommand, wrapCommandIcons } from './command.behavior';
 
 export class RaftersCommand extends HTMLElement {
   private teardown: (() => void) | null = null;
 
   connectedCallback(): void {
     queueMicrotask(() => {
-      if (this.isConnected && !this.teardown) this.teardown = bindCommand(this);
+      if (!this.isConnected || this.teardown) return;
+      wrapCommandIcons(this);
+      this.teardown = bindCommand(this);
     });
   }
 
