@@ -279,7 +279,7 @@ export function Menubar({
   };
 
   const classes = menubarClasses(config, state);
-  const aria = menubar.aria(state, config, { root: '', trigger: '', content: '', item: '' });
+  const aria = menubar.aria(state, config, NO_IDS);
 
   const contextValue: MenubarContextValue = {
     state,
@@ -332,14 +332,24 @@ export function MenubarMenu({ value, children }: MenubarMenuProps) {
   return <MenubarMenuContext.Provider value={contextValue}>{children}</MenubarMenuContext.Provider>;
 }
 
+/** The ids a part carries when it has no instance of its own. */
+const NO_IDS = { root: '', trigger: '', content: '', item: '', startIcon: '' };
+
+function hasIcon(icon: React.ReactNode): boolean {
+  return icon != null && icon !== false;
+}
+
 export interface MenubarTriggerProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   asChild?: boolean;
+  /** Decorative icon before the label (after it on a right-to-left page). Hidden from assistive technology. */
+  startIcon?: React.ReactNode;
 }
 
 export function MenubarTrigger({
   className,
   children,
   asChild,
+  startIcon,
   onClick,
   ...props
 }: MenubarTriggerProps) {
@@ -372,8 +382,20 @@ export function MenubarTrigger({
     return React.cloneElement(children, mergeProps(partProps, childProps) as React.Attributes);
   }
 
+  const iconAria = menubar.aria(state, config, NO_IDS).startIcon;
+
   return (
     <button type="button" className={classy(classes.trigger, className)} {...partProps} {...props}>
+      {hasIcon(startIcon) ? (
+        <span
+          data-part="startIcon"
+          data-icon="inline-start"
+          className={classes.triggerStartIcon}
+          {...iconAria}
+        >
+          {startIcon}
+        </span>
+      ) : null}
       {children}
     </button>
   );
@@ -481,6 +503,8 @@ export interface MenubarItemProps extends Omit<React.HTMLAttributes<HTMLDivEleme
   inset?: boolean;
   disabled?: boolean;
   asChild?: boolean;
+  /** Decorative icon before the label (after it on a right-to-left page). Hidden from assistive technology. */
+  startIcon?: React.ReactNode;
   onSelect?: (event: Event) => void;
 }
 
@@ -488,13 +512,14 @@ export function MenubarItem({
   className,
   children,
   inset,
+  startIcon,
   disabled = false,
   asChild,
   onSelect,
   onClick,
   ...props
 }: MenubarItemProps) {
-  const { classes } = useMenubarContext('MenubarItem');
+  const { classes, state, config } = useMenubarContext('MenubarItem');
   const select = useItemSelect(disabled, onSelect);
 
   const handleClick = (event: React.MouseEvent<HTMLDivElement>) => {
@@ -525,7 +550,17 @@ export function MenubarItem({
       {...partProps}
       {...props}
     >
-      {children}
+      {hasIcon(startIcon) ? (
+        <span
+          data-part="startIcon"
+          data-icon="inline-start"
+          className={classes.itemStartIcon}
+          {...menubar.aria(state, config, NO_IDS).startIcon}
+        >
+          {startIcon}
+        </span>
+      ) : null}
+      <span className={classes.itemText}>{children}</span>
     </div>
   );
 }
@@ -595,7 +630,7 @@ export function MenubarCheckboxItem({
         { className: classes.itemIndicator, 'aria-hidden': 'true' },
         checked ? <CheckIcon className={classes.checkIcon} /> : null,
       )}
-      {children}
+      <span className={classes.itemText}>{children}</span>
     </div>
   );
 }
@@ -682,7 +717,7 @@ export function MenubarRadioItem({
           ? React.createElement('span', { className: classes.radioDot, 'aria-hidden': 'true' })
           : null,
       )}
-      {children}
+      <span className={classes.itemText}>{children}</span>
     </div>
   );
 }
