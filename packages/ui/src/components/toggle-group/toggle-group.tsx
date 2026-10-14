@@ -232,10 +232,16 @@ export interface ToggleGroupItemProps extends Omit<
 > {
   /** Value that identifies this toggle item. */
   value: string;
+  /** Decorative icon before the label (after it on a right-to-left page). Hidden from assistive technology. */
+  startIcon?: React.ReactNode;
+  /** Decorative icon after the label (before it on a right-to-left page). Hidden from assistive technology. */
+  endIcon?: React.ReactNode;
 }
 
 export function ToggleGroupItem({
   value,
+  startIcon,
+  endIcon,
   className,
   children,
   disabled: itemDisabled,
@@ -246,6 +252,12 @@ export function ToggleGroupItem({
     useToggleGroupContext('ToggleGroupItem');
   const isDisabled = groupDisabled || itemDisabled;
   const aria = toggleItemAria(value, state, config);
+  const iconAria = toggleGroup.aria(state, config, {
+    root: '',
+    item: '',
+    startIcon: '',
+    endIcon: '',
+  });
 
   return (
     <button
@@ -263,7 +275,27 @@ export function ToggleGroupItem({
       }}
       {...props}
     >
+      {startIcon != null && startIcon !== false ? (
+        <span
+          data-part="startIcon"
+          data-icon="inline-start"
+          className={classes.startIcon}
+          {...iconAria.startIcon}
+        >
+          {startIcon}
+        </span>
+      ) : null}
       {children}
+      {endIcon != null && endIcon !== false ? (
+        <span
+          data-part="endIcon"
+          data-icon="inline-end"
+          className={classes.endIcon}
+          {...iconAria.endIcon}
+        >
+          {endIcon}
+        </span>
+      ) : null}
     </button>
   );
 }

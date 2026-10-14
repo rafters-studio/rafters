@@ -102,6 +102,32 @@ The item projection carries the resolved string `aria-pressed: 'false'` in the
 common unpressed case; the DOM binds apply it with `{ validate: false }` so
 aria-manager does not coerce the string `'false'` truthy (Gotcha #2).
 
+## Icons beside a label
+
+Each `item` takes two optional decorative icons around its label, in reading order (the same props as Button): `startIcon` and `endIcon`.
+
+| Target | Start icon | End icon |
+| --- | --- | --- |
+| React | `startIcon: ReactNode` on `ToggleGroup.Item` | `endIcon: ReactNode` on `ToggleGroup.Item` |
+| Astro | `<slot name="start-icon-{value}" />` | `<slot name="end-icon-{value}" />` |
+| Web Component | child of the item button with `slot="start-icon"` | child of the item button with `slot="end-icon"` |
+
+Astro renders its items from the `items` array, so a slot is named for the item it belongs to: the item with `value="bold"` takes `start-icon-bold` and `end-icon-bold`.
+
+```html
+<button data-part="item" class="inline-grid grid-flow-col items-center gap-2 ...">
+  <span data-part="startIcon" data-icon="inline-start" aria-hidden="true">...</span>
+  Bold
+  <span data-part="endIcon" data-icon="inline-end" aria-hidden="true">...</span>
+</button>
+```
+
+- `startIcon` and `endIcon` are optional many parts (one pair per item), present only when an icon is given. The behavior projects `aria-hidden="true"` on each, so the markup is hidden from assistive technology before any script runs; the label is the accessible name.
+- The item is a grid (`inline-grid grid-flow-col items-center gap-2`). The label and the icon wrappers are its columns in reading order, so the start icon is on the right on a `dir="rtl"` page. No physical direction class.
+- Inline padding tightens on the icon's side only, with `has-data-[icon=inline-start]:ps-*` and `has-data-[icon=inline-end]:pe-*`.
+- Rafters does not size icons. The wrapper (`inline-grid place-items-center`) only places and hides.
+- An icon-only item keeps its required accessible name (`aria-label`).
+
 ## Keyboard and effects
 
 - `keymap`: Space/Enter on an `item` -> `toggle`. Declared for the pure keymap

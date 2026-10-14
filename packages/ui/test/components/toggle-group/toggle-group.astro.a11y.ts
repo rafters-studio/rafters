@@ -11,10 +11,14 @@ const items = [
   { value: 'c', label: 'Gamma' },
 ];
 
-async function mount(props: Record<string, unknown>): Promise<Document> {
+async function mount(
+  props: Record<string, unknown>,
+  slots: Record<string, string> = {},
+): Promise<Document> {
   const container = await AstroContainer.create();
   const html = await container.renderToString(ToggleGroup, {
     props: { id: 'tg', items, ...props },
+    slots,
   });
   const window = new Window();
   const document = window.document as unknown as Document;
@@ -43,3 +47,19 @@ for (const [name, props] of scenes) {
     expect(results.violations).toEqual([]);
   });
 }
+
+test('toggle-group.astro with start and end icon slots, svg title does not leak into the name', async ({
+  task,
+}) => {
+  const document = await mount(
+    {},
+    {
+      'start-icon-a': '<svg viewBox="0 0 24 24"><title>Mail</title></svg>',
+      'end-icon-a': '<svg viewBox="0 0 24 24"><title>Arrow</title></svg>',
+    },
+  );
+  const results = await runAxe(document.body);
+  task.meta.axe = results;
+  expect(results.violations).toEqual([]);
+  expect(document.querySelectorAll('[data-icon][aria-hidden="true"]').length).toBe(2);
+});
