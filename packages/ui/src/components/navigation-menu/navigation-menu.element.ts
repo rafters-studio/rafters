@@ -60,7 +60,7 @@
  * with the Astro performance. This file only adapts that binding to the
  * custom-element lifecycle.
  */
-import { bindNavigationMenu } from './navigation-menu.behavior';
+import { bindNavigationMenu, wrapNavigationMenuIcons } from './navigation-menu.behavior';
 
 export class RaftersNavigationMenu extends HTMLElement {
   private teardown: (() => void) | null = null;
@@ -78,7 +78,9 @@ export class RaftersNavigationMenu extends HTMLElement {
     // connectedCallback can fire before the light-DOM children are parsed
     // (upgrade order), so bind on the next microtask when the parts exist.
     queueMicrotask(() => {
-      if (this.isConnected && !this.teardown) this.teardown = bindNavigationMenu(this);
+      if (!this.isConnected || this.teardown) return;
+      wrapNavigationMenuIcons(this);
+      this.teardown = bindNavigationMenu(this);
     });
   }
 
