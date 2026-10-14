@@ -7,7 +7,8 @@
 import * as React from 'react';
 import { cleanup, render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { installIconLayout, ICON_SVG_16, ICON_SVG_20, rectsOf } from './icon-layout';
 import { ToggleGroup, ToggleGroupItem } from '../../../src/components/toggle-group/toggle-group';
 import {
   toggleGroup,
@@ -86,7 +87,12 @@ describe('toggle-group [react]', () => {
     // absence -- a projected undefined means the attribute is not rendered).
     expect(root, 'declared part "root" must be rendered').not.toBeNull();
     expect(root.getAttribute('role'), 'part "root" role').toBe(toggleGroup.parts.root.role);
-    const rootProjection = toggleGroup.aria(state, config, { root: root.id, item: '' });
+    const rootProjection = toggleGroup.aria(state, config, {
+      root: root.id,
+      item: '',
+      startIcon: '',
+      endIcon: '',
+    });
     for (const [attr, value] of Object.entries(rootProjection.root ?? {})) {
       if (value === undefined) {
         expect(root.hasAttribute(attr), `part "root" must NOT render ${attr}`).toBe(false);
@@ -228,5 +234,87 @@ describe('toggle-group [react]', () => {
     await user.keyboard('{ArrowRight}');
     // b is disabled, so focus jumps to c.
     expect(document.activeElement).toBe(itemFor('c'));
+  });
+});
+
+describe('toggle-group icons [react]', () => {
+  let uninstall: () => void;
+  beforeEach(() => {
+    uninstall = installIconLayout();
+  });
+  afterEach(() => uninstall());
+
+  const svg = (markup: string) => <span dangerouslySetInnerHTML={{ __html: markup }} />;
+
+  function renderItem(props: { startIcon?: React.ReactNode; endIcon?: React.ReactNode }) {
+    render(
+      <ToggleGroup aria-label="Text formatting">
+        <ToggleGroupItem value="a" {...props}>
+          Alpha
+        </ToggleGroupItem>
+      </ToggleGroup>,
+    );
+    return itemFor('a');
+  }
+
+  it('start, end and both render beside the label on one line', () => {
+    for (const [name, props] of [
+      ['start', { startIcon: svg(ICON_SVG_16) }],
+      ['end', { endIcon: svg(ICON_SVG_16) }],
+      ['both', { startIcon: svg(ICON_SVG_16), endIcon: svg(ICON_SVG_16) }],
+    ] as const) {
+      const r = rectsOf(renderItem(props));
+      if (name !== 'end') {
+        expect(r.start, name).not.toBeNull();
+        expect(r.start?.right as number).toBeLessThanOrEqual(r.label.left + 0.5);
+        expect(Math.abs((r.start?.top as number) - r.label.top)).toBeLessThan(r.label.height);
+      }
+      if (name !== 'start') {
+        expect(r.end, name).not.toBeNull();
+        expect(r.end?.left as number).toBeGreaterThanOrEqual(r.label.right - 0.5);
+        expect(Math.abs((r.end?.top as number) - r.label.top)).toBeLessThan(r.label.height);
+      }
+      cleanup();
+    }
+  });
+
+  it('on a dir="rtl" page the start icon renders on the right of the label', () => {
+    document.documentElement.dir = 'rtl';
+    const r = rectsOf(renderItem({ startIcon: svg(ICON_SVG_16) }));
+    expect((r.start as DOMRect).left).toBeGreaterThan(r.label.left);
+  });
+
+  it('an icon keeps its own size', () => {
+    const r = rectsOf(renderItem({ startIcon: svg(ICON_SVG_16), endIcon: svg(ICON_SVG_20) }));
+    expect(r.start?.width).toBe(16);
+    expect(r.end?.width).toBe(20);
+  });
+
+  it('each wrapper is aria-hidden and absent when no icon is given', () => {
+    const el = renderItem({ startIcon: svg(ICON_SVG_16), endIcon: svg(ICON_SVG_16) });
+    for (const part of ['startIcon', 'endIcon']) {
+      expect(el.querySelector(`[data-part="${part}"]`)?.getAttribute('aria-hidden')).toBe('true');
+    }
+    expect(el.querySelector('[data-part="startIcon"]')?.getAttribute('data-icon')).toBe(
+      'inline-start',
+    );
+    expect(el.querySelector('[data-part="endIcon"]')?.getAttribute('data-icon')).toBe('inline-end');
+    cleanup();
+    const bare = renderItem({});
+    expect(bare.querySelector('[data-part="startIcon"]')).toBeNull();
+    expect(bare.querySelector('[data-part="endIcon"]')).toBeNull();
+  });
+
+  it('the accessible name is the label alone even when the svg has a title', () => {
+    const el = renderItem({
+      startIcon: (
+        <svg viewBox="0 0 24 24" width="16" height="16">
+          <title>Mail icon</title>
+        </svg>
+      ),
+    });
+    const clone = el.cloneNode(true) as HTMLElement;
+    for (const hidden of clone.querySelectorAll('[aria-hidden="true"]')) hidden.remove();
+    expect(clone.textContent?.trim()).toBe('Alpha');
   });
 });

@@ -43,7 +43,7 @@
  * deferred one microtask because connectedCallback can fire before the
  * light-DOM children are parsed (upgrade order).
  */
-import { bindToggleGroup } from './toggle-group.behavior';
+import { bindToggleGroup, wrapToggleGroupIcons } from './toggle-group.behavior';
 
 export class RaftersToggleGroup extends HTMLElement {
   private teardown: (() => void) | null = null;
@@ -52,7 +52,9 @@ export class RaftersToggleGroup extends HTMLElement {
     queueMicrotask(() => {
       if (!this.isConnected || this.teardown) return;
       const root = this.querySelector<HTMLElement>('[data-part="root"]');
-      if (root) this.teardown = bindToggleGroup(root);
+      if (!root) return;
+      wrapToggleGroupIcons(root);
+      this.teardown = bindToggleGroup(root);
     });
   }
 

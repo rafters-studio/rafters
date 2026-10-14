@@ -10,6 +10,9 @@ export interface ToggleGroupClassSet {
   root: string;
   /** Each toggle item button: base + size + variant, pressed driven by data-state. */
   item: string;
+  /** Decorative icon wrappers beside an item's label. */
+  startIcon: string;
+  endIcon: string;
 }
 
 const rootBaseClasses = 'inline-flex items-center justify-center gap-1 rounded-lg';
@@ -31,7 +34,7 @@ const rootVerticalClasses = 'flex-col';
 // to time it by accident; naming the properties makes the shadow snap, which is
 // what a moment with no row is supposed to do. Reported rather than faked.
 const itemBaseClasses =
-  'inline-flex items-center justify-center ' +
+  'inline-grid grid-flow-col items-center justify-center gap-2 ' +
   'rounded-md ' +
   'text-label-large ts-label-large ' +
   'transition-[color,background-color,border-color,scale] duration-moderate ease-standard ' +
@@ -42,10 +45,13 @@ const itemBaseClasses =
   'hover:bg-muted hover:text-muted-foreground';
 
 const itemSizeClasses: Record<ToggleGroupSize, string> = {
-  default: 'h-9 px-3',
-  sm: 'h-8 px-2',
-  lg: 'h-10 px-4',
+  default: 'h-9 px-3 has-data-[icon=inline-start]:ps-2 has-data-[icon=inline-end]:pe-2',
+  sm: 'h-8 px-2 has-data-[icon=inline-start]:ps-1.5 has-data-[icon=inline-end]:pe-1.5',
+  lg: 'h-10 px-4 has-data-[icon=inline-start]:ps-3 has-data-[icon=inline-end]:pe-3',
 };
+
+// The wrapper only places and hides: the brand brings its icons, sizing included.
+const iconClasses = 'inline-grid place-items-center';
 
 // Pressed styling is data-state driven: the score projects data-state=on|off on
 // each item, so the same class string works for all three performances with no
@@ -80,5 +86,7 @@ export function toggleGroupClasses(
   return {
     root: rootClasses(variant, orientation),
     item: itemClasses(variant, size),
+    startIcon: iconClasses,
+    endIcon: iconClasses,
   };
 }
