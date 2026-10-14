@@ -132,10 +132,36 @@ input, and `parseSelection` reads it back.
 | content | present, `inert` when closed | `role="dialog"`, `aria-labelledby` (the trigger), `data-state`, `tabindex="-1"` |
 | anchor | not rendered | popover's part; the trigger is the positioning reference (empty-id sentinel) |
 | close | not rendered | popover's part; no in-panel close (empty-id sentinel) |
+| startIcon | when an icon is given (inside trigger, before value) | `aria-hidden="true"`, `data-icon="inline-start"` |
+| endIcon | when an icon is given (inside trigger, after value) | `aria-hidden="true"`, `data-icon="inline-end"` |
 | hidden-input | when `name` is set | `type="hidden"`, `name`, `value` (form-value); not a score part |
 
 The dialog's accessible name is its trigger, which reads the committed date or
 the placeholder. No label copy is invented, and the dialog is never unnamed.
+
+## Icons beside a label
+
+Two optional props place decorative icons around the trigger's label, in reading order (the same as Button): `startIcon` and `endIcon`.
+
+| Target | Start icon | End icon |
+| --- | --- | --- |
+| React | `startIcon: ReactNode` | `endIcon: ReactNode` |
+| Astro | `<slot name="start-icon" />` | `<slot name="end-icon" />` |
+| Web Component | child with `slot="start-icon"` | child with `slot="end-icon"` |
+
+```html
+<button data-part="trigger" class="grid grid-flow-col items-center gap-2 ...">
+  <span data-part="startIcon" data-icon="inline-start" aria-hidden="true">...</span>
+  <span data-part="value">Pick a date</span>
+  <span data-part="endIcon" data-icon="inline-end" aria-hidden="true">...</span>
+</button>
+```
+
+- `startIcon` and `endIcon` are optional parts, present only when an icon is given. The behavior projects `aria-hidden="true"` on each, so the markup is hidden from assistive technology before any script runs; the label alone is the accessible name.
+- The trigger is a grid (`grid grid-flow-col items-center gap-2`). The icon wrappers and the value are its columns in reading order, so the start icon is on the right on a `dir="rtl"` page. No physical direction class.
+- A given `endIcon` takes the place of the built-in calendar glyph, which stays when no `endIcon` is given.
+- Inline padding tightens on the icon's side only, with `has-data-[icon=inline-start]:ps-2` and `has-data-[icon=inline-end]:pe-2`.
+- Rafters does not size the icons you bring. The wrapper (`inline-grid place-items-center`) only places and hides.
 
 ## Keyboard
 

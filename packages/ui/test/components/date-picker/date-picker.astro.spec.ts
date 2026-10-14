@@ -18,10 +18,15 @@ afterEach(() => {
   document.body.innerHTML = '';
 });
 
-async function render(props: Record<string, unknown> = {}, wrap = 'main'): Promise<HTMLElement> {
+async function render(
+  props: Record<string, unknown> = {},
+  wrap = 'main',
+  slots: Record<string, string> = {},
+): Promise<HTMLElement> {
   const container = await AstroContainer.create();
   const html = await container.renderToString(DatePicker, {
     props: { id: 'dp', today: '2026-07-20', defaultMonth: '2026-07-01', ...props },
+    slots,
   });
   document.body.innerHTML = `<${wrap}>${html}</${wrap}>`;
   return document.body.querySelector('[data-part="root"][data-date-picker]') as HTMLElement;
@@ -160,5 +165,29 @@ describe('date-picker [astro]', () => {
     expect(root.dataset['disabled']).toBe('true');
     part('trigger').dispatchEvent(new MouseEvent('click', { bubbles: true }));
     expect(part('content').inert).toBe(true);
+  });
+
+  it('icons: the server markup already hides each wrapper, before any script runs', async () => {
+    await render({}, 'main', {
+      'start-icon': '<svg><title>Mail</title></svg>',
+      'end-icon': '<svg></svg>',
+    }); // no bindDatePicker: the SSR render alone
+    const trigger = part('trigger');
+    const start = trigger.querySelector('[data-part="startIcon"]');
+    const end = trigger.querySelector('[data-part="endIcon"]');
+    expect(start?.getAttribute('aria-hidden')).toBe('true');
+    expect(start?.getAttribute('data-icon')).toBe('inline-start');
+    expect(end?.getAttribute('aria-hidden')).toBe('true');
+    expect(end?.getAttribute('data-icon')).toBe('inline-end');
+    const order = [...trigger.children].map((el) => el.getAttribute('data-part'));
+    expect(order).toEqual(['startIcon', 'value', 'endIcon']);
+  });
+
+  it('icons: no wrapper when no icon slot is given, and the calendar glyph stays', async () => {
+    await render();
+    const trigger = part('trigger');
+    expect(trigger.querySelector('[data-part="startIcon"]')).toBeNull();
+    expect(trigger.querySelector('[data-part="endIcon"]')).toBeNull();
+    expect(trigger.querySelector('svg')).not.toBeNull();
   });
 });

@@ -7,7 +7,7 @@
 import * as React from 'react';
 import { cleanup, render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Button } from '../../../src/components/button/button';
 import { Calendar } from '../../../src/components/calendar/calendar';
 import { DatePicker, type DatePickerProps } from '../../../src/components/date-picker/date-picker';
@@ -17,6 +17,7 @@ import {
   type DatePickerPart,
   type DatePickerState,
 } from '../../../src/components/date-picker/date-picker.behavior';
+import { installIconLayout, ICON_SVG_16, ICON_SVG_20, rectsOf } from './icon-layout';
 import { Popover, PopoverContent, PopoverTrigger } from '../../../src/components/popover/popover';
 
 const TODAY = new Date(2026, 6, 20);
@@ -39,7 +40,15 @@ const dayCell = (iso: string): HTMLElement => {
  *  including absence: a projected `undefined` must not render. */
 function assertContract(state: DatePickerState, config: DatePickerConfig): void {
   const rendered: DatePickerPart[] = ['trigger', 'content', 'value'];
-  const ids = { trigger: '', content: '', value: '', anchor: '', close: '' };
+  const ids = {
+    trigger: '',
+    content: '',
+    value: '',
+    anchor: '',
+    close: '',
+    startIcon: '',
+    endIcon: '',
+  };
   for (const name of rendered) ids[name] = part(name).id;
   const projection = datePicker.aria(state, config, ids);
   for (const name of rendered) {
@@ -292,5 +301,84 @@ describe('date-picker [shadcn composition parity]', () => {
     await user.click(dayCell('2026-07-08'));
     expect(trigger.textContent).toBe(new Date(2026, 6, 8).toDateString());
     expect(trigger.getAttribute('data-empty')).toBe('false');
+  });
+});
+
+describe('date-picker icons [react]', () => {
+  let uninstall: () => void;
+  beforeEach(() => {
+    uninstall = installIconLayout();
+  });
+  afterEach(() => uninstall());
+
+  const svg = (markup: string) => <span dangerouslySetInnerHTML={{ __html: markup }} />;
+  const triggerOf = (container: HTMLElement) =>
+    container.querySelector<HTMLElement>('[data-part="trigger"]') as HTMLElement;
+
+  it('start, end and both render beside the label', () => {
+    for (const [name, props] of [
+      ['start', { startIcon: svg(ICON_SVG_16) }],
+      ['end', { endIcon: svg(ICON_SVG_16) }],
+      ['both', { startIcon: svg(ICON_SVG_16), endIcon: svg(ICON_SVG_16) }],
+    ] as const) {
+      const { container, unmount } = render(
+        <DatePicker calendarProps={calendarProps} {...props} />,
+      );
+      const r = rectsOf(triggerOf(container));
+      if (name !== 'end') {
+        expect(r.start, name).not.toBeNull();
+        expect(r.start?.right as number).toBeLessThanOrEqual(r.value.left + 0.5);
+      }
+      if (name !== 'start') {
+        expect(r.end, name).not.toBeNull();
+        expect(r.end?.left as number).toBeGreaterThanOrEqual(r.value.right - 0.5);
+      }
+      unmount();
+    }
+  });
+
+  it('on a dir="rtl" page the start icon renders on the right of the label', () => {
+    document.documentElement.dir = 'rtl';
+    const { container } = render(
+      <DatePicker calendarProps={calendarProps} startIcon={svg(ICON_SVG_16)} />,
+    );
+    const r = rectsOf(triggerOf(container));
+    expect((r.start as DOMRect).left).toBeGreaterThan(r.value.left);
+  });
+
+  it('an icon keeps its own size', () => {
+    const { container } = render(
+      <DatePicker
+        calendarProps={calendarProps}
+        startIcon={svg(ICON_SVG_16)}
+        endIcon={svg(ICON_SVG_20)}
+      />,
+    );
+    const r = rectsOf(triggerOf(container));
+    expect(r.start?.width).toBe(16);
+    expect(r.end?.width).toBe(20);
+  });
+
+  it('each wrapper is aria-hidden and absent when no icon is given', () => {
+    const { container } = render(
+      <DatePicker
+        calendarProps={calendarProps}
+        startIcon={svg(ICON_SVG_16)}
+        endIcon={svg(ICON_SVG_16)}
+      />,
+    );
+    const trigger = triggerOf(container);
+    for (const [name, side] of [
+      ['startIcon', 'inline-start'],
+      ['endIcon', 'inline-end'],
+    ] as const) {
+      const wrapper = trigger.querySelector(`[data-part="${name}"]`);
+      expect(wrapper?.getAttribute('aria-hidden')).toBe('true');
+      expect(wrapper?.getAttribute('data-icon')).toBe(side);
+    }
+    cleanup();
+    const bare = render(<DatePicker calendarProps={calendarProps} />);
+    expect(bare.container.querySelector('[data-part="startIcon"]')).toBeNull();
+    expect(bare.container.querySelector('[data-part="endIcon"]')).toBeNull();
   });
 });
