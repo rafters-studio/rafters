@@ -207,6 +207,25 @@ convention: a projection referencing an empty id emits `undefined`, so
 - A pointerdown outside the open menu closes it, unless it lands on a trigger
   (the click path handles that). The bar's blank space counts as outside.
 
+## Icons beside a label
+
+One optional prop places a decorative icon at the start of a trigger's label and at the start of each item's label: `startIcon`. The sides named for Menubar are start only; there is no end icon (an item's end column is left to the shortcut).
+
+| Target | Trigger | Item |
+| --- | --- | --- |
+| React | `<Menubar.Trigger startIcon={node} />` | `<Menubar.Item startIcon={node} />` |
+| Astro | `<slot name="start-icon-{menu}" />` | `<slot name="start-icon-{menu}-{index}" />` |
+| Web Component | child of the trigger with `slot="start-icon"` | child of the item with `slot="start-icon"` |
+
+```html
+<span data-part="startIcon" data-icon="inline-start" aria-hidden="true">...</span>
+```
+
+- `startIcon` is an optional part, present only when an icon is given. The behavior projects `aria-hidden="true"` on every one, so the markup is hidden from assistive technology before any script runs; the label is the accessible name.
+- Each menu is a grid on `grid-cols-menu-row` (indicator, icon, label, end) and each item, checkbox item and radio item a subgrid row (`grid-cols-subgrid col-span-full`) with the check in column 1, the icon in column 2 and the label (with its shortcut) from column 3. The icon and label follow reading order and mirror on a `dir="rtl"` page. The trigger is a one-row `grid-flow-col`. No physical direction class remains in `menubar.classes.ts`.
+- The trigger tightens its inline-start padding only when an icon is present (`has-data-[icon=inline-start]:ps-2`).
+- Rafters does not size icons. The wrapper (`inline-grid place-items-center`) only places and hides.
+
 ## Motion
 
 #2292 consumes the five motion.jsonl rows in `menubar.classes.ts` as

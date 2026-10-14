@@ -67,6 +67,8 @@ logic in the binding.
 | trigger | many | native button; data-value, data-roving-item; per-instance aria via `navTriggerAria` |
 | content | many | ALWAYS in the DOM, `hidden` when closed — navigation links must be crawlable and SSR-stable |
 
+| startIcon, endIcon | many, optional | decorative wrappers, one pair per trigger and per link; `aria-hidden="true"` |
+
 Item/Link/chevron are presentation (no behavior state). Viewport and
 Indicator: deferred, needs ruling (decorative chrome; no consumers exist).
 
@@ -78,6 +80,34 @@ projections for `many` parts.
 
 **Second amendment (applied):** `keymap` now takes `config` — ArrowDown
 opens only when the roving axis is horizontal, which is a config fact.
+
+## Icons beside a label
+
+Two optional props place decorative icons around the label of each trigger and each link, in reading order, the same as Button: `startIcon` and `endIcon`.
+
+| Target | Start icon | End icon |
+| --- | --- | --- |
+| React | `startIcon: ReactNode` on `NavigationMenuTrigger` and `NavigationMenuLink` | `endIcon: ReactNode` |
+| Astro | slot `<value>:start-icon` for a trigger, `<value>:<link index>:start-icon` for a link | `:end-icon` in place of `:start-icon` |
+| Web Component | child of the trigger or link with `slot="start-icon"` | child with `slot="end-icon"` |
+
+The Astro component is data-driven (`items`), so its slot names carry the item value, and the link index for a link, to say which row the icon belongs to.
+
+```html
+<button data-part="trigger" class="inline-grid grid-flow-col items-center gap-1 ...">
+  <span data-part="startIcon" data-icon="inline-start" aria-hidden="true">...</span>
+  Products
+  <span data-part="endIcon" data-icon="inline-end" aria-hidden="true">...</span>
+  <svg aria-hidden="true">...</svg> <!-- the chevron, last -->
+</button>
+```
+
+- `startIcon` and `endIcon` are optional parts, present only when an icon is given. The behavior projects `aria-hidden="true"` on each, so the markup is hidden from assistive technology before any script runs; the label is the accessible name.
+- The trigger is `inline-grid grid-flow-col` and the link is `grid grid-flow-col`, so the start icon is on the right on a `dir="rtl"` page. The gap replaces the chevron's `ml-1`, and the viewport, indicator and panel anchor with `start-0`. The file has no physical direction class.
+- A link without an icon keeps its stacked layout (`block space-y-1`), so a title over a description still stacks. A link that holds an icon wrapper becomes a grid row (`has-data-[icon]:grid has-data-[icon]:grid-flow-col`, with `space-y-0`).
+- Inline padding tightens on the icon's side only, with `has-data-[icon=inline-start]:ps-*` and `has-data-[icon=inline-end]:pe-*`.
+- Rafters does not size icons. The wrapper (`inline-grid place-items-center`) only places and hides.
+- Icons that carry meaning on their own need an accessible name, not `aria-hidden`; they do not belong in these props.
 
 ## Keyboard
 

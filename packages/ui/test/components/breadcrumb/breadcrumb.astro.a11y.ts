@@ -3,6 +3,7 @@ import { Window } from 'happy-dom';
 import { expect, test } from 'vitest';
 import { runAxe } from '../../a11y/run-axe';
 import Breadcrumb from '../../../src/components/breadcrumb/breadcrumb.astro';
+import BreadcrumbLink from '../../../src/components/breadcrumb/breadcrumb-link.astro';
 
 const SIMPLE_TRAIL = `
   <ol class="flex flex-wrap items-center gap-1.5">
@@ -65,3 +66,27 @@ for (const [name, slot] of scenes) {
     expect(results.violations).toEqual([]);
   });
 }
+
+test('breadcrumb-link.astro with start and end icons, svg title does not leak into the name', async ({
+  task,
+}) => {
+  const container = await AstroContainer.create();
+  const link = await container.renderToString(BreadcrumbLink, {
+    props: { href: '/' },
+    slots: {
+      default: 'Home',
+      'start-icon': '<svg viewBox="0 0 24 24"><title>Home icon</title></svg>',
+      'end-icon': '<svg viewBox="0 0 24 24"><title>Arrow</title></svg>',
+    },
+  });
+  const html = await container.renderToString(Breadcrumb, {
+    slots: { default: `<ol><li>${link}</li></ol>` },
+  });
+  const window = new Window();
+  window.document.body.innerHTML = `<main>${html}</main>`;
+  const document = window.document as unknown as Document;
+  const results = await runAxe(document.body);
+  task.meta.axe = results;
+  expect(results.violations).toEqual([]);
+  expect(document.querySelectorAll('[data-icon][aria-hidden="true"]').length).toBe(2);
+});

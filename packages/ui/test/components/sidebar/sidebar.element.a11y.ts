@@ -60,3 +60,25 @@ for (const [name, scene] of scenes) {
     expect(results.violations).toEqual([]);
   });
 }
+
+test('rafters-sidebar with icon slots, svg title does not leak into the name', async ({ task }) => {
+  await page.viewport(...DESKTOP);
+  document.body.innerHTML = `
+    <main>
+      <rafters-sidebar data-part="root" data-default-open="true" data-side="left" data-collapsible="offcanvas">
+        <nav data-part="panel" id="sb-panel" data-state="expanded" data-mobile="closed" tabindex="-1" aria-label="Main">
+          <button type="button" data-sidebar="menu-button">Dashboard<svg slot="start-icon" viewBox="0 0 24 24"><title>Home</title></svg><svg slot="end-icon" viewBox="0 0 24 24"><title>Arrow</title></svg></button>
+        </nav>
+      </rafters-sidebar>
+    </main>`;
+  await Promise.resolve();
+  await Promise.resolve();
+  const host = document.body.querySelector('main') as HTMLElement;
+  const results = await runAxe(host);
+  task.meta.axe = results;
+  expect(results.violations).toEqual([]);
+  expect(host.querySelectorAll('[data-icon][aria-hidden="true"]').length).toBe(2);
+  await expect
+    .element(page.getByRole('button', { name: 'Dashboard', exact: true }))
+    .toBeInTheDocument();
+});

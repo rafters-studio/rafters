@@ -6,6 +6,7 @@ interface Scene {
   label?: string;
   disabledItem?: string;
   shortcut?: boolean;
+  icon?: boolean;
 }
 
 const ITEMS: ReadonlyArray<[string, string]> = [
@@ -14,19 +15,26 @@ const ITEMS: ReadonlyArray<[string, string]> = [
   ['settings', 'Settings'],
 ];
 
-function option(value: string, label: string, disabled: boolean, shortcut: boolean): string {
+function option(
+  value: string,
+  label: string,
+  disabled: boolean,
+  shortcut: boolean,
+  icon: boolean,
+): string {
   const disabledAttrs = disabled ? ' data-disabled="" aria-disabled="true"' : '';
   const kbd = shortcut ? '<kbd data-part="shortcut">Cmd+S</kbd>' : '';
-  return `<div role="option" data-part="item" data-value="${value}" id="c-item-${value}"${disabledAttrs}><span>${label}</span>${kbd}</div>`;
+  return `<div role="option" data-part="item" data-value="${value}" id="c-item-${value}"${disabledAttrs}>${icon ? '<svg slot="start-icon" width="16" height="16" viewBox="0 0 24 24"><title>Mark</title><rect width="24" height="24"/></svg>' : ''}<span>${label}</span>${kbd}</div>`;
 }
 
 async function mount({
   label = 'Actions',
   disabledItem,
   shortcut = false,
+  icon = false,
 }: Scene): Promise<HTMLElement> {
   const items = ITEMS.map(([value, text], index) =>
-    option(value, text, disabledItem === value, shortcut && index === ITEMS.length - 1),
+    option(value, text, disabledItem === value, shortcut && index === ITEMS.length - 1, icon),
   ).join('');
   document.body.innerHTML = `
     <main>
@@ -49,6 +57,7 @@ const scenes: ReadonlyArray<[string, Scene]> = [
   ['custom listbox label', { label: 'Commands' }],
   ['with a disabled option', { disabledItem: 'search' }],
   ['with a keyboard shortcut', { shortcut: true }],
+  ['with a start icon', { icon: true, shortcut: true }],
 ];
 
 for (const [name, scene] of scenes) {

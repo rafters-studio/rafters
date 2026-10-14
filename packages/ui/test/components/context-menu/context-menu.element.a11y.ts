@@ -4,15 +4,20 @@ import '../../../src/components/context-menu/context-menu.element';
 
 interface Scene {
   open?: boolean;
+  /** Slot a titled svg icon into the first item. */
+  icons?: boolean;
 }
 
-async function mount({ open = false }: Scene): Promise<HTMLElement> {
+const mark =
+  '<svg slot="start-icon" width="16" height="16" viewBox="0 0 24 24"><title>Action mark</title><rect width="24" height="24"/></svg>';
+
+async function mount({ open = false, icons = false }: Scene): Promise<HTMLElement> {
   document.body.innerHTML = `
     <main>
       <rafters-context-menu>
         <span data-part="trigger" tabindex="-1" id="cm-trigger">Right-click here</span>
         <div data-part="content" role="menu" aria-label="Actions" id="cm-content" data-state="closed" style="position: fixed; left: 0; top: 0;">
-          <div role="menuitem">Cut</div>
+          <div role="menuitem">${icons ? mark : ''}Cut</div>
           <div role="menuitem">Copy</div>
           <div role="menuitem" data-disabled aria-disabled="true">Paste</div>
           <div role="menuitem">Delete</div>
@@ -48,6 +53,7 @@ async function mount({ open = false }: Scene): Promise<HTMLElement> {
 const scenes: ReadonlyArray<[string, Scene]> = [
   ['closed', {}],
   ['open', { open: true }],
+  ['open with start icons', { open: true, icons: true }],
 ];
 
 /**

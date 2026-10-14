@@ -5,7 +5,8 @@
  */
 import { cleanup, render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ICON_SVG_16, installIconLayout, rect } from './icon-layout';
 import {
   Menubar,
   MenubarContent,
@@ -347,5 +348,74 @@ describe('menubar [react]', () => {
     );
     expect(menu.querySelector('[role="menuitemradio"]')?.getAttribute('aria-checked')).toBe('true');
     expect(MenubarShortcut).toBe(Menubar.Shortcut);
+  });
+});
+
+describe('menubar icons [react]', () => {
+  let uninstall: () => void;
+  beforeEach(() => {
+    uninstall = installIconLayout();
+  });
+  afterEach(() => uninstall());
+
+  const svg = (markup: string) => <span dangerouslySetInnerHTML={{ __html: markup }} />;
+  const iconScene = (
+    <Menubar defaultValue="file">
+      <MenubarMenu value="file">
+        <MenubarTrigger startIcon={svg(ICON_SVG_16)}>File</MenubarTrigger>
+        <MenubarContent>
+          <MenubarItem startIcon={svg(ICON_SVG_16)}>New</MenubarItem>
+          <MenubarItem>Open</MenubarItem>
+        </MenubarContent>
+      </MenubarMenu>
+      <MenubarMenu value="edit">
+        <MenubarTrigger>Edit</MenubarTrigger>
+        <MenubarContent>
+          <MenubarItem>Undo</MenubarItem>
+        </MenubarContent>
+      </MenubarMenu>
+    </Menubar>
+  );
+  const labelOf = (el: HTMLElement) => el.lastElementChild as HTMLElement;
+
+  it('the icon sits before the label in the trigger and in the item', () => {
+    render(iconScene);
+    const range = document.createRange();
+    range.selectNodeContents(trigger('file').lastChild as Node);
+    expect(rect(trigger('file'), '[data-part="startIcon"]').right).toBeLessThanOrEqual(
+      range.getBoundingClientRect().left + 0.5,
+    );
+    const itemIcon = rect(item('New'), '[data-part="startIcon"]');
+    expect(itemIcon.right).toBeLessThanOrEqual(
+      labelOf(item('New')).getBoundingClientRect().left + 0.5,
+    );
+  });
+
+  it('on a dir="rtl" page the start icon renders on the right of the label', () => {
+    document.documentElement.dir = 'rtl';
+    render(iconScene);
+    const itemIcon = rect(item('New'), '[data-part="startIcon"]');
+    expect(itemIcon.left).toBeGreaterThan(labelOf(item('New')).getBoundingClientRect().left);
+  });
+
+  it('an icon keeps its own size', () => {
+    render(iconScene);
+    expect(rect(item('New'), '[data-part="startIcon"]').width).toBe(16);
+    expect(rect(trigger('file'), '[data-part="startIcon"]').width).toBe(16);
+  });
+
+  it('each wrapper is aria-hidden per the contract and absent when no icon is given', () => {
+    render(iconScene);
+    const wrappers = body().querySelectorAll('[data-part="startIcon"]');
+    expect(wrappers).toHaveLength(2);
+    for (const wrapper of wrappers) {
+      expect(wrapper.getAttribute('aria-hidden')).toBe('true');
+      expect(wrapper.getAttribute('data-icon')).toBe('inline-start');
+    }
+    expect(item('Open').querySelector('[data-part="startIcon"]')).toBeNull();
+    expect(trigger('edit').querySelector('[data-part="startIcon"]')).toBeNull();
+    cleanup();
+    render(<TestMenubar />);
+    expect(body().querySelector('[data-part="startIcon"]')).toBeNull();
   });
 });

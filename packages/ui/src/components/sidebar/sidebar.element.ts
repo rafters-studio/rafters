@@ -55,14 +55,16 @@
  * fire before the light-DOM parts (trigger, panel, overlay, nav content) are
  * parsed.
  */
-import { bindSidebar } from './sidebar.behavior';
+import { bindSidebar, wrapSidebarIcons } from './sidebar.behavior';
 
 export class RaftersSidebar extends HTMLElement {
   private teardown: (() => void) | null = null;
 
   connectedCallback(): void {
     queueMicrotask(() => {
-      if (this.isConnected && !this.teardown) this.teardown = bindSidebar(this);
+      if (!this.isConnected || this.teardown) return;
+      wrapSidebarIcons(this);
+      this.teardown = bindSidebar(this);
     });
   }
 

@@ -51,6 +51,9 @@ export interface SidebarClassSet {
   menuSkeletonText: string;
   menuSub: string;
   menuSubItem: string;
+  menuButtonStartIcon: string;
+  menuButtonEndIcon: string;
+  menuButtonLabel: string;
   separator: string;
 }
 
@@ -93,8 +96,13 @@ const panelBaseClasses =
   'md:data-[state=collapsed]:data-[collapsible=offcanvas]:w-0 ' +
   'md:data-[state=collapsed]:data-[collapsible=offcanvas]:overflow-hidden';
 
+// PHYSICAL ON PURPOSE. `side` names the screen edge the panel is anchored to
+// ("left" or "right"), like Sheet's side classes, so it does not mirror with the
+// page direction: a left sidebar is on the left of an rtl page too.
 const panelSideClasses: Record<SidebarSide, string> = {
+  // physical: the panel is pinned to the left edge
   left: 'left-0 border-r border-sidebar-border',
+  // physical: the panel is pinned to the right edge
   right: 'right-0 border-l border-sidebar-border',
 };
 
@@ -142,9 +150,15 @@ const mobilePanelClasses = 'flex h-full w-full flex-col bg-sidebar text-sidebar-
 // -- the matrix's sidebar rows cover `item`, `root` and the mobile overlay, and
 // a drag rail is none of the three -- so the color swap on `hover:after:` is
 // instant. Reported on #2302.
+//
+// The hairline centers itself in the hit target with auto inline margins, so it
+// has no direction. The two `group-data-[side=...]` classes are PHYSICAL ON
+// PURPOSE: the rail sits on the screen edge the panel is anchored to (see
+// panelSideClasses), which does not mirror.
 const railClasses =
   'absolute inset-y-0 z-depth-navigation hidden w-4 -translate-x-1/2 cursor-ew-resize md:flex ' +
-  'after:absolute after:inset-y-0 after:left-1/2 after:w-0.5 hover:after:bg-sidebar-border ' +
+  'after:absolute after:inset-y-0 after:inset-x-0 after:mx-auto after:w-0.5 hover:after:bg-sidebar-border ' +
+  // physical: the rail hangs off the right edge of a left sidebar, and the reverse
   'group-data-[side=left]:-right-4 group-data-[side=right]:left-0';
 
 const insetClasses = 'relative flex min-h-svh w-full flex-1 flex-col bg-background';
@@ -171,7 +185,7 @@ const groupLabelClasses =
 // transforms; what changes on hover is `background` and `text`, exactly the
 // properties the row names.
 const groupActionClasses =
-  'absolute right-3 top-3.5 flex aspect-square w-5 items-center justify-center rounded-md p-0 ' +
+  'absolute end-3 top-3.5 flex aspect-square w-5 items-center justify-center rounded-md p-0 ' +
   'text-sidebar-foreground outline-none ring-sidebar-ring transition-colors duration-fast ' +
   'ease-standard hover:bg-sidebar-accent hover:text-sidebar-accent-foreground ' +
   'focus-visible:ring-2 after:absolute after:-inset-2 md:after:hidden ' +
@@ -190,7 +204,12 @@ const menuItemClasses = 'group/menu-item relative';
 // transition times whichever fires. Reported on #2302 -- the active-change row
 // is marked `proposed` and unreviewed.
 const menuButtonBaseClasses =
-  'peer/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left ' +
+  'peer/menu-button inline-grid w-full grid-flow-col items-center gap-2 overflow-hidden rounded-md p-2 text-start ' +
+  // Padding tightens on the icon's own side only, in logical edges, so the start
+  // icon sits on the right of the label on a dir="rtl" page. The collapsed rail
+  // keeps its square, centered icon.
+  'has-data-[icon=inline-start]:ps-1.5 has-data-[icon=inline-end]:pe-1.5 ' +
+  'group-data-[collapsible=icon]:has-data-[icon=inline-start]:ps-2 ' +
   'text-label-medium ts-label-medium outline-none ring-sidebar-ring transition-colors duration-fast ' +
   'ease-standard hover:bg-sidebar-accent hover:text-sidebar-accent-foreground ' +
   'focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground ' +
@@ -229,7 +248,7 @@ export function sidebarMenuButtonClasses(
 // `sidebar / item / hover` -- color, fast, standard. Same `transition-transform`
 // mis-naming groupAction carried, corrected the same way.
 const menuActionClasses =
-  'absolute right-1 top-1.5 flex aspect-square w-5 items-center justify-center rounded-md p-0 ' +
+  'absolute end-1 top-1.5 flex aspect-square w-5 items-center justify-center rounded-md p-0 ' +
   'text-sidebar-foreground outline-none ring-sidebar-ring transition-colors duration-fast ' +
   'ease-standard hover:bg-sidebar-accent hover:text-sidebar-accent-foreground ' +
   'focus-visible:ring-2 peer-hover/menu-button:text-sidebar-accent-foreground ' +
@@ -244,7 +263,7 @@ const menuActionShowOnHoverClasses =
   'md:opacity-0';
 
 const menuBadgeClasses =
-  'pointer-events-none absolute right-1 flex h-5 min-w-5 select-none items-center justify-center ' +
+  'pointer-events-none absolute end-1 flex h-5 min-w-5 select-none items-center justify-center ' +
   'rounded-md px-1 text-label-small ts-label-small tabular-nums text-sidebar-foreground ' +
   'peer-hover/menu-button:text-sidebar-accent-foreground ' +
   'peer-data-[active=true]/menu-button:text-sidebar-accent-foreground ' +
@@ -269,7 +288,7 @@ const menuSkeletonTextClasses =
   'h-4 max-w-[--skeleton-width] flex-1 animate-pulse-shimmer rounded-md bg-sidebar-accent';
 
 const menuSubClasses =
-  'ml-3.5 flex min-w-0 translate-x-px flex-col gap-1 border-l border-sidebar-border py-0.5 pl-2.5 ' +
+  'ms-3.5 flex min-w-0 translate-x-px flex-col gap-1 border-s border-sidebar-border py-0.5 ps-2.5 ' +
   'group-data-[collapsible=icon]:hidden';
 
 const menuSubItemClasses = 'relative';
@@ -277,7 +296,8 @@ const menuSubItemClasses = 'relative';
 // `sidebar / item / hover` and `sidebar / item / active change` again -- a
 // submenu entry is an item. Same one declaration for both rows.
 const menuSubButtonBaseClasses =
-  'flex h-7 min-w-0 -translate-x-px items-center gap-2 overflow-hidden rounded-md px-2 ' +
+  'inline-grid h-7 w-full min-w-0 -translate-x-px grid-flow-col items-center gap-2 overflow-hidden rounded-md px-2 ' +
+  'has-data-[icon=inline-start]:ps-1.5 has-data-[icon=inline-end]:pe-1.5 ' +
   'text-sidebar-foreground outline-none ring-sidebar-ring transition-colors duration-fast ' +
   'ease-standard hover:bg-sidebar-accent hover:text-sidebar-accent-foreground ' +
   'focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground ' +
@@ -294,6 +314,14 @@ const menuSubButtonSizeClasses: Record<'sm' | 'md', string> = {
 export function sidebarMenuSubButtonClasses(size: 'sm' | 'md' = 'md'): string {
   return `${menuSubButtonBaseClasses} ${menuSubButtonSizeClasses[size]}`;
 }
+
+// The wrappers only place and hide: the brand brings its icons, sizing included.
+// The label is visually hidden on the collapsed icon rail, so the start icon is
+// all that shows while the label stays the accessible name; the end icon hides.
+const menuButtonStartIconClasses = 'inline-grid place-items-center';
+const menuButtonEndIconClasses =
+  'inline-grid place-items-center group-data-[collapsible=icon]:hidden';
+const menuButtonLabelClasses = 'group-data-[collapsible=icon]:sr-only';
 
 const separatorClasses = 'mx-2 h-px w-auto bg-sidebar-border';
 
@@ -325,6 +353,9 @@ export function sidebarClasses(): SidebarClassSet {
     menuSkeletonText: menuSkeletonTextClasses,
     menuSub: menuSubClasses,
     menuSubItem: menuSubItemClasses,
+    menuButtonStartIcon: menuButtonStartIconClasses,
+    menuButtonEndIcon: menuButtonEndIconClasses,
+    menuButtonLabel: menuButtonLabelClasses,
     separator: separatorClasses,
   };
 }

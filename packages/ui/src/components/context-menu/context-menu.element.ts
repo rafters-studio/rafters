@@ -37,7 +37,7 @@
  * custom-element lifecycle. The host is a light-DOM enhancer: the bind reads
  * real document DOM (trigger, content, items) for the primitives it composes.
  */
-import { bindContextMenu } from './context-menu.behavior';
+import { bindContextMenu, wrapContextMenuItems } from './context-menu.behavior';
 
 export class RaftersContextMenu extends HTMLElement {
   private teardown: (() => void) | null = null;
@@ -46,7 +46,9 @@ export class RaftersContextMenu extends HTMLElement {
     // connectedCallback can fire before the light-DOM children are parsed
     // (upgrade order), so bind on the next microtask when the parts exist.
     queueMicrotask(() => {
-      if (this.isConnected && !this.teardown) this.teardown = bindContextMenu(this);
+      if (!this.isConnected || this.teardown) return;
+      wrapContextMenuItems(this);
+      this.teardown = bindContextMenu(this);
     });
   }
 

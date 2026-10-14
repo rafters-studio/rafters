@@ -89,6 +89,7 @@
  *                children retain their own semantic roles in the light tree.
  */
 import { RaftersElement } from '../../primitives/rafters-element';
+import { wrapBreadcrumbIcons } from './breadcrumb.behavior';
 
 export class RaftersBreadcrumb extends RaftersElement {
   static readonly observedAttributes: ReadonlyArray<string> = [];
@@ -96,6 +97,17 @@ export class RaftersBreadcrumb extends RaftersElement {
   // display:contents so the semantic nav landmark inside the shadow is the
   // box, not the host -- the landmark stays the root, as in React/Astro.
   static override styles = ':host { display: contents; }';
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    // The trail is light DOM the author composes: a link or current page child
+    // marked `slot="start-icon"` / `slot="end-icon"` is wrapped in the
+    // decorative wrapper that carries aria-hidden. Deferred, because
+    // connectedCallback can fire before the light-DOM children are parsed.
+    queueMicrotask(() => {
+      if (this.isConnected) wrapBreadcrumbIcons(this);
+    });
+  }
 
   /**
    * Render the semantic `<nav aria-label="Breadcrumb" data-part="root">`

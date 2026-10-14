@@ -22,6 +22,7 @@
  */
 import type { HTMLAttributes } from 'astro/types';
 import { injectAsChildAttrs } from '../../primitives/astro-as-child';
+import { sidebarIconsMarkup } from './sidebar.behavior';
 import { sidebarMenuSubButtonClasses } from './sidebar.classes';
 
 type Props = Omit<HTMLAttributes<'a'>, 'class'> & {
@@ -45,11 +46,26 @@ const decoration = {
   'data-active': isActive ? 'true' : 'false',
 };
 
+// Decorative icons arrive as the named slots `start-icon` and `end-icon`. Each
+// wrapper is present only when its slot is given and carries the behavior's
+// `aria-hidden`, so the label alone is the accessible name with no script run.
+const startHtml = Astro.slots.has('start-icon') ? await Astro.slots.render('start-icon') : '';
+const endHtml = Astro.slots.has('end-icon') ? await Astro.slots.render('end-icon') : '';
+
 let injected: string | null = null;
 if (asChild) {
   const slotHtml = await Astro.slots.render('default');
-  injected = injectAsChildAttrs(slotHtml, attrs, decoration);
+  injected = injectAsChildAttrs(
+    slotHtml,
+    attrs,
+    decoration,
+    startHtml || endHtml ? (inner) => sidebarIconsMarkup(inner, startHtml, endHtml) : undefined,
+  );
 }
+const content =
+  injected === null
+    ? sidebarIconsMarkup(await Astro.slots.render('default'), startHtml, endHtml)
+    : '';
 ---
 
 {
@@ -57,7 +73,7 @@ if (asChild) {
     <Fragment set:html={injected} />
   ) : (
     <a {...decoration} {...attrs}>
-      <slot />
+      <Fragment set:html={content} />
     </a>
   )
 }

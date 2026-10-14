@@ -75,6 +75,28 @@ const scenes: ReadonlyArray<[string, Scene]> = [
   ['mobile open', { mobile: true, openMobile: true }],
 ];
 
+test('sidebar menu button with icon slots, svg title does not leak into the name', async ({
+  task,
+}) => {
+  const container = await AstroContainer.create();
+  const menuButton = await container.renderToString(SidebarMenuButton, {
+    slots: {
+      default: 'Dashboard',
+      'start-icon': '<svg viewBox="0 0 24 24"><title>Home</title></svg>',
+      'end-icon': '<svg viewBox="0 0 24 24"><title>Arrow</title></svg>',
+    },
+  });
+  const window = new Window();
+  const document = window.document as unknown as Document;
+  document.body.innerHTML = `<main>${menuButton}</main>`;
+  const results = await runAxe(document.body);
+  task.meta.axe = results;
+  expect(results.violations).toEqual([]);
+  expect(document.querySelectorAll('[data-icon][aria-hidden="true"]').length).toBe(2);
+  const button = document.querySelector('[data-sidebar="menu-button"]') as HTMLElement;
+  expect(button.querySelector('[data-part="label"]')?.textContent).toBe('Dashboard');
+});
+
 /**
  * The scenes above pass the sidebar's own default slot a single anchor. The
  * part files are the parity surface (#2324), and a tree built from them is a

@@ -17,6 +17,8 @@ const ids: PartIds<SidebarPart> = {
   rail: 'rl',
   panel: 'p',
   dialog: 'd',
+  startIcon: '',
+  endIcon: '',
 };
 
 function ariaAt(config: SidebarConfig, state: SidebarState = sidebar.initialState(config)) {
@@ -27,9 +29,11 @@ describe('sidebar parts', () => {
   it('declares the full behavior surface', () => {
     expect(Object.keys(sidebar.parts).sort()).toEqual([
       'dialog',
+      'endIcon',
       'panel',
       'rail',
       'root',
+      'startIcon',
       'trigger',
     ]);
     // The panel is the only always-present interactive part besides root; the
@@ -44,6 +48,18 @@ describe('sidebar parts', () => {
     expect(sidebar.parts.trigger.optional).toBe(true);
     expect(sidebar.parts.rail.optional).toBe(true);
     expect(sidebar.parts.dialog.optional).toBe(true);
+  });
+});
+
+describe('sidebar icon wrappers', () => {
+  it('declares both wrappers optional and projects aria-hidden on each, whatever the state', () => {
+    expect(sidebar.parts.startIcon.optional).toBe(true);
+    expect(sidebar.parts.endIcon.optional).toBe(true);
+    for (const config of [{}, { defaultOpen: false, collapsible: 'icon' as const }]) {
+      const aria = ariaAt(config);
+      expect(aria.startIcon).toEqual({ 'aria-hidden': 'true' });
+      expect(aria.endIcon).toEqual({ 'aria-hidden': 'true' });
+    }
   });
 });
 
