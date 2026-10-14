@@ -27,9 +27,14 @@ const itemsWithSub = [
   },
 ];
 
+const mark =
+  '<svg width="16" height="16" viewBox="0 0 24 24"><title>Action mark</title><rect width="24" height="24"/></svg>';
+
 interface Scene {
   items?: typeof items | typeof itemsWithSub;
   open?: boolean;
+  /** Give the first item, the sub-trigger and a sub item a start icon. */
+  icons?: boolean;
   /** Open the first submenu with ArrowRight from its focused sub-trigger. */
   subOpen?: boolean;
 }
@@ -38,10 +43,14 @@ async function mount({
   items: menuItems = items,
   open = false,
   subOpen = false,
+  icons = false,
 }: Scene): Promise<Document> {
   const container = await AstroContainer.create();
   const html = await container.renderToString(ContextMenu, {
     props: { id: 'cm', triggerLabel: 'Right-click here', items: menuItems },
+    ...(icons
+      ? { slots: { 'start-icon-0': mark, 'start-icon-1': mark, 'start-icon-1-0': mark } }
+      : {}),
   });
   const window = new Window();
   const document = window.document as unknown as Document;
@@ -75,6 +84,7 @@ const scenes: ReadonlyArray<[string, Scene]> = [
   ['open', { open: true }],
   ['open with submenu collapsed', { items: itemsWithSub, open: true }],
   ['open with submenu expanded', { items: itemsWithSub, open: true, subOpen: true }],
+  ['open with start icons', { items: itemsWithSub, open: true, subOpen: true, icons: true }],
 ];
 
 for (const [name, scene] of scenes) {
