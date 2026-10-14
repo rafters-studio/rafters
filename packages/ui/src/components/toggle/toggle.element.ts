@@ -40,7 +40,7 @@
  * light-DOM control, so form participation -- where needed -- comes from that
  * native element, not from ElementInternals on the host.
  */
-import { bindToggle } from './toggle.behavior';
+import { bindToggle, wrapToggleIcons } from './toggle.behavior';
 
 export class RaftersToggle extends HTMLElement {
   private teardown: (() => void) | null = null;
@@ -49,7 +49,9 @@ export class RaftersToggle extends HTMLElement {
     queueMicrotask(() => {
       if (!this.isConnected || this.teardown) return;
       const root = this.querySelector<HTMLElement>('[data-part="root"]');
-      if (root) this.teardown = bindToggle(root);
+      if (!root) return;
+      wrapToggleIcons(this, root);
+      this.teardown = bindToggle(root);
     });
   }
 

@@ -92,9 +92,35 @@ const aria = toggle.aria(state, config, ids);
   aria-label={ariaLabel}
   {...aria.root}
 >
+  {
+    Astro.slots.has('start-icon') && (
+      <span
+        data-part="startIcon"
+        data-icon="inline-start"
+        id={ids.startIcon}
+        class={classes.startIcon}
+        {...aria.startIcon}
+      >
+        <slot name="start-icon" />
+      </span>
+    )
+  }
   <span data-part="label" id={ids.label}>
     {label}<slot />
   </span>
+  {
+    Astro.slots.has('end-icon') && (
+      <span
+        data-part="endIcon"
+        data-icon="inline-end"
+        id={ids.endIcon}
+        class={classes.endIcon}
+        {...aria.endIcon}
+      >
+        <slot name="end-icon" />
+      </span>
+    )
+  }
 </button>
 
 <script>

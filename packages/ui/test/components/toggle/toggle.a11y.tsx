@@ -35,3 +35,21 @@ test('toggle icon-only with accessible name', async ({ task }) => {
   task.meta.axe = results;
   expect(results.violations).toEqual([]);
 });
+
+test('toggle with start and end icons, svg title does not leak into the name', async ({ task }) => {
+  const icon = (
+    <svg viewBox="0 0 24 24" width="16" height="16">
+      <title>Mail</title>
+      <path d="M2 4h20v16H2z" stroke="currentColor" />
+    </svg>
+  );
+  const { container } = await render(
+    <Toggle startIcon={icon} endIcon={icon}>
+      Bold
+    </Toggle>,
+  );
+  const results = await runAxe(container);
+  task.meta.axe = results;
+  expect(results.violations).toEqual([]);
+  expect(container.querySelectorAll('[data-icon][aria-hidden="true"]').length).toBe(2);
+});
