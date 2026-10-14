@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import classy from '../../../src/primitives/classy';
 import {
   panelSideClasses,
   panelVariantClasses,
@@ -167,5 +168,85 @@ describe('sidebar motion vocabulary', () => {
         expect(roles).toContain(curve.slice('ease-'.length));
       }
     }
+  });
+});
+
+const physical = /(^|\s)(p[lr]|m[lr]|left|right|text-left|text-right|border-[lr])(-|\s|$)/;
+
+describe('sidebar menu buttons: icons and logical edges', () => {
+  it('menu buttons are grid rows whose columns follow reading order', () => {
+    for (const set of [
+      sidebarMenuButtonClasses('default', 'default'),
+      sidebarMenuSubButtonClasses('md'),
+    ]) {
+      const tokens = set.split(' ');
+      for (const literal of ['inline-grid', 'grid-flow-col', 'items-center', 'gap-2']) {
+        expect(tokens).toContain(literal);
+      }
+      expect(tokens).not.toContain('flex');
+      expect(set).toMatch(/has-data-\[icon=inline-start\]:ps-/);
+      expect(set).toMatch(/has-data-\[icon=inline-end\]:pe-/);
+      expect(set).not.toMatch(physical);
+    }
+    expect(sidebarMenuButtonClasses()).toContain('text-start');
+  });
+
+  it('the icon wrappers only place and hide, never size; the end icon hides on the icon rail', () => {
+    expect(classes.menuButtonStartIcon).toBe('inline-grid place-items-center');
+    expect(classes.menuButtonEndIcon).toBe(
+      'inline-grid place-items-center group-data-[collapsible=icon]:hidden',
+    );
+    expect(classes.menuButtonLabel).toBe('group-data-[collapsible=icon]:sr-only');
+  });
+
+  it('classy keeps every new literal', () => {
+    for (const set of [
+      sidebarMenuButtonClasses('default', 'default'),
+      sidebarMenuSubButtonClasses('md'),
+    ]) {
+      const kept = classy(set).split(' ');
+      const added = set
+        .split(' ')
+        .filter((c) => c.includes('has-data-') || c === 'inline-grid' || c === 'grid-flow-col');
+      expect(added.length).toBeGreaterThan(2);
+      for (const literal of added) expect(kept, `classy dropped ${literal}`).toContain(literal);
+    }
+    for (const set of [
+      classes.menuButtonStartIcon,
+      classes.menuButtonEndIcon,
+      classes.menuButtonLabel,
+    ]) {
+      expect(classy(set)).toBe(set);
+    }
+  });
+});
+
+describe('sidebar has no physical direction class but the side classes', () => {
+  it('every other class is logical', () => {
+    // The rail's two group-data-[side=...] classes are physical on purpose, like
+    // the panel side classes: they follow the screen edge the panel is pinned to.
+    const sideScoped = /group-data-\[side=[a-z]+\]:\S+/g;
+    const sets = [
+      ...Object.values(classes).map((set) => set.replace(sideScoped, '')),
+      sidebarPanelClasses('left', 'sidebar').replace(panelSideClasses.left, ''),
+      sidebarPanelClasses('right', 'floating')
+        .replace(panelSideClasses.right, '')
+        .replace(panelVariantClasses.floating, ''),
+    ];
+    for (const set of sets) expect(set).not.toMatch(physical);
+  });
+
+  it('the side classes stay physical: the panel is pinned to a screen edge', () => {
+    expect(panelSideClasses.left).toContain('left-0');
+    expect(panelSideClasses.right).toContain('right-0');
+  });
+
+  it('the action and badge sit at the end edge, the sub-menu indents from the start', () => {
+    expect(classes.groupAction).toContain('end-3');
+    expect(classes.menuAction).toContain('end-1');
+    expect(classes.menuBadge).toContain('end-1');
+    expect(classes.menuSub).toContain('ms-3.5');
+    expect(classes.menuSub).toContain('ps-2.5');
+    expect(classes.menuSub).toContain('border-s');
   });
 });
