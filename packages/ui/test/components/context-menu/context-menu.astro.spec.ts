@@ -329,7 +329,9 @@ describe('context-menu icons [astro]', () => {
       el?.querySelector('[data-part="startIcon"] title')?.textContent;
     const items = Array.from(doc.querySelectorAll('[role="menuitem"]'));
     const byLabel = (label: string) =>
-      items.find((el) => el.querySelector(':scope > [data-part="label"]')?.textContent === label);
+      items.find(
+        (el) => el.querySelector(':scope > [data-part="label"]')?.textContent?.trim() === label,
+      );
     expect(titleIn(byLabel('Cut'))).toBe('cut');
     expect(titleIn(byLabel('More'))).toBe('more');
     expect(titleIn(byLabel('Deep'))).toBe('deep');
