@@ -5,10 +5,15 @@ import { runAxe } from '../../a11y/run-axe';
 import DatePicker from '../../../src/components/date-picker/date-picker.astro';
 import { bindDatePicker } from '../../../src/components/date-picker/date-picker.behavior';
 
-async function mount(props: Record<string, unknown>, open: boolean): Promise<Document> {
+async function mount(
+  props: Record<string, unknown>,
+  open: boolean,
+  slots: Record<string, string> = {},
+): Promise<Document> {
   const container = await AstroContainer.create();
   const html = await container.renderToString(DatePicker, {
     props: { id: 'dp', today: '2026-07-20', defaultMonth: '2026-07-01', ...props },
+    slots,
   });
   const window = new Window();
   const document = window.document as unknown as Document;
@@ -38,3 +43,16 @@ for (const [name, props, open] of scenes) {
     expect(results.violations).toEqual([]);
   });
 }
+
+test('date-picker.astro with start and end icons, svg title does not leak into the name', async ({
+  task,
+}) => {
+  const document = await mount({}, false, {
+    'start-icon': '<svg viewBox="0 0 24 24"><title>Mail</title></svg>',
+    'end-icon': '<svg viewBox="0 0 24 24"><title>Arrow</title></svg>',
+  });
+  const results = await runAxe(document.body);
+  task.meta.axe = results;
+  expect(results.violations).toEqual([]);
+  expect(document.querySelectorAll('[data-icon][aria-hidden="true"]').length).toBe(2);
+});
