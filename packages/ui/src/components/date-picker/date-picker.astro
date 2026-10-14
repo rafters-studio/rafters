@@ -145,7 +145,32 @@ const calendarProps = Object.fromEntries(
     disabled={disabled}
     {...aria.trigger}
   >
+    {
+      Astro.slots.has('start-icon') && (
+        <span
+          data-part="startIcon"
+          data-icon="inline-start"
+          id={ids.startIcon}
+          class={classes.startIcon}
+          {...aria.startIcon}
+        >
+          <slot name="start-icon" />
+        </span>
+      )
+    }
     <span id={ids.value} data-part="value" class={classes.value} {...aria.value}>{label}</span>
+    {
+      Astro.slots.has('end-icon') ? (
+        <span
+          data-part="endIcon"
+          data-icon="inline-end"
+          id={ids.endIcon}
+          class={classes.endIcon}
+          {...aria.endIcon}
+        >
+          <slot name="end-icon" />
+        </span>
+      ) : (
     <svg
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 24 24"
@@ -162,6 +187,8 @@ const calendarProps = Object.fromEntries(
       <path d="M3 10h18"></path>
       <rect width="18" height="18" x="3" y="4" rx="2"></rect>
     </svg>
+      )
+    }
   </button>
   <div id={ids.content} data-part="content" tabindex="-1" class={classes.content} {...aria.content} inert>
     <Calendar id={`${id}-calendar`} mode={mode} {...calendarProps} />
