@@ -39,3 +39,21 @@ test('badge muted text on a muted ground is contrast-checked against real layout
   // decide color-contrast and files it under `incomplete`. In chromium it runs.
   expect(results.passes.map((rule) => rule.id)).toContain('color-contrast');
 });
+
+test('badge with start and end icons, svg title does not leak into the name', async ({ task }) => {
+  const icon = (
+    <svg viewBox="0 0 24 24" width="16" height="16">
+      <title>Mail</title>
+      <path d="M2 4h20v16H2z" stroke="currentColor" />
+    </svg>
+  );
+  const { container } = await render(
+    <Badge startIcon={icon} endIcon={icon}>
+      Sent
+    </Badge>,
+  );
+  const results = await runAxe(container);
+  task.meta.axe = results;
+  expect(results.violations).toEqual([]);
+  expect(container.querySelectorAll('[data-icon][aria-hidden="true"]').length).toBe(2);
+});
