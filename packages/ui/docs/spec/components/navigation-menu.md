@@ -104,7 +104,7 @@ The Astro component is data-driven (`items`), so its slot names carry the item v
 
 - `startIcon` and `endIcon` are optional parts, present only when an icon is given. The behavior projects `aria-hidden="true"` on each, so the markup is hidden from assistive technology before any script runs; the label is the accessible name.
 - The trigger is `inline-grid grid-flow-col` and the link is `grid grid-flow-col`, so the start icon is on the right on a `dir="rtl"` page. The gap replaces the chevron's `ml-1`, and the viewport, indicator and panel anchor with `start-0`. The file has no physical direction class.
-- A link's children are columns now, where they used to stack under `space-y-1`. A link that stacks a title over a description wraps both in one element.
+- A link without an icon keeps its stacked layout (`block space-y-1`), so a title over a description still stacks. A link that holds an icon wrapper becomes a grid row (`has-data-[icon]:grid has-data-[icon]:grid-flow-col`, with `space-y-0`).
 - Inline padding tightens on the icon's side only, with `has-data-[icon=inline-start]:ps-*` and `has-data-[icon=inline-end]:pe-*`.
 - Rafters does not size icons. The wrapper (`inline-grid place-items-center`) only places and hides.
 - Icons that carry meaning on their own need an accessible name, not `aria-hidden`; they do not belong in these props.

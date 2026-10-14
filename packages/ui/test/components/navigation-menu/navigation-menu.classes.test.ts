@@ -147,16 +147,29 @@ describe('navigation-menu classes', () => {
 });
 
 describe('navigation-menu icon classes', () => {
-  it('the trigger and the link are grids whose columns follow reading order', () => {
-    for (const row of [classes.trigger, classes.link]) {
-      const tokens = row.split(' ');
-      expect(tokens).toContain('grid-flow-col');
-      expect(tokens).toContain('items-center');
-      expect(tokens.some((t) => t.startsWith('gap-'))).toBe(true);
-    }
+  it('the trigger is a grid whose columns follow reading order', () => {
+    const tokens = classes.trigger.split(' ');
+    expect(tokens).toContain('grid-flow-col');
+    expect(tokens).toContain('items-center');
+    expect(tokens.some((t) => t.startsWith('gap-'))).toBe(true);
     expect(classes.trigger.split(' ')).toContain('inline-grid');
     expect(classes.trigger.split(' ')).not.toContain('inline-flex');
     expect(classes.triggerChevron).not.toMatch(/(^|\s)ml-/);
+  });
+
+  it('a link without an icon keeps its stacked layout', () => {
+    const tokens = classes.link.split(' ');
+    expect(tokens).toContain('block');
+    expect(tokens).toContain('space-y-1');
+    expect(tokens).not.toContain('grid');
+    expect(tokens).not.toContain('grid-flow-col');
+  });
+
+  it('a link that holds an icon wrapper becomes a grid row', () => {
+    const tokens = classes.link.split(' ');
+    for (const literal of ['grid', 'grid-flow-col', 'items-center', 'gap-2', 'space-y-0']) {
+      expect(tokens).toContain(`has-data-[icon]:${literal}`);
+    }
   });
 
   it('the file has no physical direction class', () => {
@@ -184,7 +197,7 @@ describe('navigation-menu icon classes', () => {
       const kept = classy(row).split(' ');
       const added = row
         .split(' ')
-        .filter((t) => t.includes('has-data-') || t === 'grid-flow-col' || t.endsWith('grid'));
+        .filter((t) => t.includes('has-data-') || t === 'grid-flow-col' || t === 'inline-grid');
       expect(added.length).toBeGreaterThan(2);
       for (const literal of added) expect(kept, `classy dropped ${literal}`).toContain(literal);
     }

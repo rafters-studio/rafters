@@ -145,7 +145,9 @@ const contentClasses =
 // row assigns -- so it carries that row rather than a value invented for it. The
 // matrix has no separate `link` row; reported on #2293.
 const linkClasses =
-  'grid grid-flow-col select-none items-center justify-start gap-2 rounded-md p-3 no-underline outline-none ' +
+  'block select-none space-y-1 rounded-md p-3 no-underline outline-none ' +
+  'has-data-[icon]:grid has-data-[icon]:grid-flow-col has-data-[icon]:items-center ' +
+  'has-data-[icon]:justify-start has-data-[icon]:gap-2 has-data-[icon]:space-y-0 ' +
   'has-data-[icon=inline-start]:ps-2 has-data-[icon=inline-end]:pe-2 ' +
   'transition-colors duration-fast ease-standard ' +
   'hover:bg-accent hover:text-accent-foreground ' +
