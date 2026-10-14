@@ -56,7 +56,7 @@ const groupClasses = 'flex items-center';
 // as consuming either row.
 const slotClasses =
   'relative flex h-9 w-9 items-center justify-center ' +
-  'border-y border-r border-input text-body-small ts-body-small shadow-sm ' +
+  'border-y border-e border-input text-body-small ts-body-small shadow-sm ' +
   'transition-[box-shadow,border-color,color] duration-micro ease-linear ' +
   'data-[active=true]:ease-standard ' +
   'first:rounded-s-md first:border-s last:rounded-e-md ' +

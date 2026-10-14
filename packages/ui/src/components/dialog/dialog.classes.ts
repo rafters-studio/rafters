@@ -61,7 +61,7 @@ const contentClasses =
   'data-[state=open]:animate-scale-in-normal-enter data-[state=closed]:animate-scale-out-moderate-exit ' +
   'data-[state=closed]:pointer-events-none';
 
-const headerClasses = 'flex flex-col space-y-1.5 text-center @md:text-left';
+const headerClasses = 'flex flex-col space-y-1.5 text-center @md:text-start';
 
 const footerClasses = 'flex flex-col-reverse @md:flex-row @md:justify-end @md:space-x-2';
 

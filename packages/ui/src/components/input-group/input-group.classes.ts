@@ -79,8 +79,8 @@ const addonBaseClasses = 'flex items-center justify-center shrink-0 text-muted-f
 /** The divider sits on the side facing the control, so the affix reads as
  *  attached to it rather than floating in the box. */
 const addonPositionClasses: Record<InputGroupAddonPosition, string> = {
-  start: 'border-r border-input',
-  end: 'border-l border-input',
+  start: 'border-e border-input',
+  end: 'border-s border-input',
 };
 
 const addonVariantClasses: Record<InputGroupAddonVariant, string> = {

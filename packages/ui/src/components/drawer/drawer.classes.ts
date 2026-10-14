@@ -89,7 +89,7 @@ const sideClasses: Record<DrawerSide, string> = {
 // behavior and stays out of the accessibility tree.
 const handleClasses = 'mx-auto h-1.5 w-24 shrink-0 rounded-full bg-muted';
 
-const headerClasses = 'flex flex-col gap-1.5 text-center @md:text-left';
+const headerClasses = 'flex flex-col gap-1.5 text-center @md:text-start';
 
 const footerClasses = 'mt-auto flex flex-col gap-2 pt-4';
 
