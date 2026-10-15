@@ -1,12 +1,9 @@
 /**
  * Browser-project performance of the Button score for the Web Component
- * target: real chromium through @vitest/browser-playwright. The element is a
- * light-DOM enhancer (it binds the author-provided <button data-part="root">
- * rather than rendering a shadow tree), so the markup carries the inner
- * button the element expects -- exactly what Astro emits, with the score's
- * initial projection already applied. Because the WC is light DOM, the
- * icon-only accessible-name pattern is expressible via aria-label on the
- * inner button.
+ * target: real chromium through @vitest/browser-playwright. Every test mounts
+ * `<rafters-button ...>` exactly as an author writes it in plain HTML; the
+ * element renders its own parts, classes and projection, as the React and
+ * Astro performances do.
  */
 import { afterEach, beforeAll, beforeEach, describe, expect, it, test } from 'vitest';
 import { page } from 'vitest/browser';
@@ -26,8 +23,7 @@ beforeAll(() => {
 });
 
 test('custom element upgrades in a real browser', async () => {
-  document.body.innerHTML =
-    '<rafters-button><button data-part="root" id="b1">Go</button></rafters-button>';
+  document.body.innerHTML = '<rafters-button>Go</rafters-button>';
   await expect.element(page.getByRole('button', { name: 'Go' })).toBeVisible();
   expect(document.querySelector('rafters-button')).toBeInstanceOf(RaftersButton);
 });
@@ -84,61 +80,26 @@ function configFor(props: ScenarioProps): ButtonConfig {
   };
 }
 
-/** Apply a resolved aria projection to an element (undefined = absent). */
-function applyAria(
-  element: HTMLElement,
-  attrs: Record<string, string | boolean | undefined>,
-): void {
-  for (const [name, value] of Object.entries(attrs)) {
-    if (value === undefined) continue;
-    element.setAttribute(name, String(value));
-  }
+/** The attributes an author writes for these props, as plain HTML. */
+function attributesFor(props: ScenarioProps): string {
+  const attrs: string[] = [];
+  if (props.variant) attrs.push(`variant="${props.variant}"`);
+  if (props.size) attrs.push(`size="${props.size}"`);
+  if (props.disabled) attrs.push('disabled');
+  if (props.softDisabled) attrs.push('soft-disabled');
+  if (props.loading) attrs.push('loading');
+  if (props.toggle) attrs.push('toggle');
+  if (props.pressed) attrs.push('pressed');
+  if (props.ariaLabel !== undefined) attrs.push(`aria-label="${props.ariaLabel}"`);
+  return attrs.join(' ');
 }
 
-async function mountButton(props: ScenarioProps, label: string): Promise<HTMLElement> {
-  const config = configFor(props);
-  const state = button.initialState(config);
-  const ids = {
-    root: 'wc-root',
-    label: 'wc-label',
-    spinner: 'wc-spinner',
-    startIcon: 'wc-start',
-    endIcon: 'wc-end',
-  };
-  const aria = button.aria(state, config, ids);
-  const classes = buttonClasses(config, state);
-
-  const hostEl = document.createElement('rafters-button');
-
-  const root = document.createElement('button');
-  root.type = 'button';
-  root.dataset['part'] = 'root';
-  root.id = ids.root;
-  root.className = classes.root;
-  if (props.disabled) root.disabled = true;
-  if (props.ariaLabel !== undefined) root.setAttribute('aria-label', props.ariaLabel);
-  if (aria.root) applyAria(root, aria.root);
-
-  if (props.loading) {
-    const spinner = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    spinner.dataset['part'] = 'spinner';
-    spinner.id = ids.spinner;
-    spinner.setAttribute('class', classes.spinner);
-    if (aria.spinner) applyAria(spinner, aria.spinner);
-    root.appendChild(spinner);
-  }
-
-  const labelEl = document.createElement('span');
-  labelEl.dataset['part'] = 'label';
-  labelEl.id = ids.label;
-  labelEl.textContent = label;
-  root.appendChild(labelEl);
-
-  hostEl.appendChild(root);
-  document.body.appendChild(hostEl);
-  // connectedCallback defers the bind one microtask (upgrade order); wait for it.
+/** Mount `<rafters-button ...>label</rafters-button>` exactly as an author writes it. */
+async function mountButton(props: ScenarioProps, label: string): Promise<HTMLButtonElement> {
+  document.body.innerHTML = `<rafters-button ${attributesFor(props)}>${label}</rafters-button>`;
+  // connectedCallback builds the parts one microtask later (05-authoring gotcha 3).
   await Promise.resolve();
-  return root;
+  return document.querySelector('rafters-button [data-part="root"]') as HTMLButtonElement;
 }
 
 /** Every declared part present, and the rendered ARIA equal to the score's
@@ -181,18 +142,74 @@ function assertContract(
 
 describe('button [wc]', () => {
   afterEach(() => {
-    for (const el of document.querySelectorAll('rafters-button')) el.remove();
+    document.body.innerHTML = '';
     clearAllAnnouncers();
   });
 
   for (const scenario of SCENARIOS) {
-    it(`${scenario.name}: parts and aria match the behavior projection`, async () => {
+    it(`${scenario.name}: parts, classes and aria match the behavior and classes`, async () => {
       const root = await mountButton(scenario.props, 'Save changes');
       const config = configFor(scenario.props);
       const state = button.initialState(config);
       assertContract(root, state, config, scenario.expectedParts);
+      expect(root.className).toBe(buttonClasses(config, state).root);
+      expect(root.tagName).toBe('BUTTON');
     });
   }
+
+  it("the author's children become the label", async () => {
+    const root = await mountButton({}, '<em>Save</em> changes');
+    const label = root.querySelector('[data-part="label"]');
+    expect(label?.querySelector('em')?.textContent).toBe('Save');
+    expect(label?.textContent).toBe('Save changes');
+  });
+
+  it('icon-only: aria-label names the inner button', async () => {
+    await mountButton({ size: 'icon', ariaLabel: 'Close' }, '');
+    await expect.element(page.getByRole('button', { name: 'Close' })).toBeVisible();
+  });
+
+  it('changing variant re-renders the classes', async () => {
+    const root = await mountButton({}, 'Delete');
+    const host = document.querySelector('rafters-button') as HTMLElement;
+    host.setAttribute('variant', 'destructive');
+    const config = configFor({ variant: 'destructive' });
+    expect(root.className).toBe(buttonClasses(config, button.initialState(config)).root);
+  });
+
+  it('setting disabled disables the inner button and suppresses activation', async () => {
+    const root = await mountButton({ toggle: true }, 'Mute');
+    const host = document.querySelector('rafters-button') as HTMLElement;
+    host.setAttribute('disabled', '');
+    expect(root.disabled).toBe(true);
+  });
+
+  it('loading set after mount shows the spinner, projects aria-busy and announces once', async () => {
+    const root = await mountButton({}, 'Save');
+    const host = document.querySelector('rafters-button') as HTMLElement;
+    expect(getAnnouncerCount()).toBe(0);
+    host.setAttribute('loading', '');
+    expect(root.querySelector('[data-part="spinner"]')).not.toBeNull();
+    expect(root.getAttribute('aria-busy')).toBe('true');
+    expect(getAnnouncerCount()).toBe(1);
+    host.removeAttribute('loading');
+    expect(root.querySelector('[data-part="spinner"]')).toBeNull();
+    expect(root.hasAttribute('aria-busy')).toBe(false);
+  });
+
+  it('type="submit" submits its form natively', async () => {
+    document.body.innerHTML = '<form><rafters-button type="submit">Send</rafters-button></form>';
+    await Promise.resolve();
+    const form = document.querySelector('form') as HTMLFormElement;
+    let submitted = false;
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      submitted = true;
+    });
+    const user = userEvent.setup();
+    await user.click(document.querySelector('rafters-button [data-part="root"]') as HTMLElement);
+    expect(submitted).toBe(true);
+  });
 
   it('toggle: Enter and Space flip aria-pressed through the keymap', async () => {
     const root = await mountButton({ toggle: true }, 'Mute');
@@ -206,9 +223,6 @@ describe('button [wc]', () => {
   });
 
   it('loading at mount: aria-busy projected, announce suppressed (edge, not level)', async () => {
-    // Markup that renders already-loading is the baseline for bindButton's
-    // one-shot announce: aria-busy is projected but no live-region
-    // announcement fires.
     expect(getAnnouncerCount()).toBe(0);
     const root = await mountButton({ loading: true }, 'Saving');
     expect(root.getAttribute('aria-busy')).toBe('true');
@@ -252,8 +266,7 @@ describe('button icons [wc]', () => {
   });
 
   async function mountIcons(children = ''): Promise<HTMLElement> {
-    document.body.innerHTML = `<rafters-button><button type="button" data-part="root" id="r"><span data-part="label" id="r-label">Send</span></button>${children}</rafters-button>`;
-    await Promise.resolve();
+    document.body.innerHTML = `<rafters-button>${children}Send</rafters-button>`;
     await Promise.resolve();
     return document.querySelector('[data-part="root"]') as HTMLElement;
   }
