@@ -10,6 +10,7 @@ Every primitive under `packages/ui/src/primitives/`. Behavior files COMPOSE thes
 | `dialog-aria` | a11y | pure | Pure aria-prop builders for dialog/overlay/trigger. | `getDialogAriaProps`, `getOverlayAriaProps`, `getTriggerAriaProps` |
 | `sr-announcer` | a11y | dom | Live-region screen-reader announcements (executor behind the announce effect). | `createAnnouncer`, `announceToScreenReader`, `createPoliteAnnouncer` |
 | `classy` | classes | pure | Tailwind-aware class-string builder with token resolution and arbitrary-value blocking. | `token`, `parseTailwindClass`, `hasArbitraryValue` |
+| `classy-wc` | classes | pure | The classy companion that composes CSS property declarations for WC shadow DOM. | `composeDeclarations`, `styleRule`, `stylesheet` |
 | `slot` | composition | dom | asChild prop merging: merges parent props onto a child element. | `mergeSlotProps`, `extractSlotProps`, `shouldUseSlot` |
 | `dismissable-layer` | dismissal | dom | Unifies outside-click, escape, and focus-out with a layer stack. | `createDismissableLayer`, `createDismissableLayerStack`, `getDismissableLayerStack` |
 | `escape-keydown` | dismissal | dom | Fires on Escape; returns cleanup. | `onEscapeKeyDown` |
@@ -27,7 +28,10 @@ Every primitive under `packages/ui/src/primitives/`. Behavior files COMPOSE thes
 | `memory` | state | pure | Light reactive state cell over a nanostores atom: get/set/patch/subscribe/select. | `createMemory` |
 | `selection-group` | state | pure | Active-item / expanded-set state behind tabs, accordion, navigation-menu, menubar. | `createSelectionGroup` |
 | `fill-resolver` | tokens | pure | Resolves a fill signature to namespaced classes + Tailwind utilities. | `resolveFillName` |
+| `resolve-tokens` | tokens | pure | DTCG token resolver: token names to CSS property values (WC shadow styling). | `MAX_REFERENCE_DEPTH`, `TokenResolver`, `createResolver` |
+| `token-sheet` | tokens | pure | Build-time extractor reducing compiled CSS to the custom-property subset WC needs. | `extractTokenSheet`, `loadTokenSheet` |
 | `types` | types | pure | Shared primitive types (CleanupFunction, Orientation, handlers). |  |
+| `rafters-element` | wc | pure | Base class for Rafters Web Components: token-aware scoped shadow DOM. | `RaftersElement` |
 
 ## Color subsystem (Studio)
 
