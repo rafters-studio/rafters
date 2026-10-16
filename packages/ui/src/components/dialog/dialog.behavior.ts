@@ -196,23 +196,19 @@ export function bindDialog(root: HTMLElement): () => void {
     // Compose the modal overlay trio directly, level-triggered: start it once
     // on the open+modal transition (content is now un-hidden above so the trap
     // can read its focusables), tear it down when it should no longer be present.
-    // A non-modal dialog has no trap and no scroll lock, but an outside
-    // pointerdown still dismisses it (sparing the trigger).
-    if (open && !modalCleanup) {
+    const wantModal = open && isModal(config);
+    if (wantModal && !modalCleanup) {
       const content = getPart('content');
       if (content) {
-        const onDismiss = () => {
-          request('close');
-        };
-        const getTrigger = () => getPart('trigger');
-        modalCleanup = isModal(config)
-          ? startDialogModalEffects({ content, getTrigger, onDismiss })
-          : onPointerDownOutside(content, (event) => {
-              if (getTrigger()?.contains(event.target as Node)) return;
-              onDismiss();
-            });
+        modalCleanup = startDialogModalEffects({
+          content,
+          getTrigger: () => getPart('trigger'),
+          onDismiss: () => {
+            request('close');
+          },
+        });
       }
-    } else if (!open && modalCleanup) {
+    } else if (!wantModal && modalCleanup) {
       modalCleanup();
       modalCleanup = null;
     }

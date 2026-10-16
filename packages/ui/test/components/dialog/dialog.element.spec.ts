@@ -117,12 +117,10 @@ it('modal: outside pointerdown closes, trigger pointerdown does not', async () =
   expect(el('d-content').hidden).toBe(true);
 });
 
-it('modal="false": no aria-modal, no scroll lock, outside pointerdown closes', async () => {
+it('modal="false": no aria-modal, no scroll lock', async () => {
   await mount('modal="false" default-open="true"');
   expect(el('d-content').hasAttribute('aria-modal')).toBe(false);
   expect(document.body.style.overflow).not.toBe('hidden');
-  el('outside').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
-  expect(el('d-content').hidden).toBe(true);
 });
 
 it('default-open="true" mounts open', async () => {
