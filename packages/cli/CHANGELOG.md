@@ -4,6 +4,8 @@
 
 ### Features
 
+- feat(ui): **`<rafters-empty>` is rebuilt, and `rafters add empty` works again for Web Component projects.** It is a pure-static `RaftersElement` with one `div[data-part="root"]` carrying the shared empty classes and no ARIA, holding four fixed named-slot regions (`icon`, `title`, `description`, `action`) and a default slot. Unfilled regions stay rendered as empty space; the consumer slots in a real heading, an `aria-hidden` icon and a real control. #2499 had deleted `empty.element.ts`, which left Web Component projects with no empty state.
+
 - feat(ui): **`<rafters-spinner>` is rebuilt, and `rafters add spinner` works again for Web Component projects.** The element is a pure-static `RaftersElement` shadow root holding one native `<output data-part="root">` with the spinner classes and the projected `aria-label="Loading"`; `size` and `variant` are observed attributes, and a value outside the enum renders as `default`. #2499 had deleted `spinner.element.ts`, so `rafters add spinner` errored for WC projects until now.
 
 - feat(ui): **`<rafters-separator>` is rebuilt, and `rafters add separator` works again for Web Component projects.** It is a pure-static `RaftersElement` with one `div[data-part="root"]` and no slot, carrying the same classes and role/`aria-orientation` projection as the React and Astro Separator. `orientation` is `horizontal | vertical` (anything else renders horizontal); `decorative` absent or `"false"` is decorative (`role="none"`), any other present value is semantic (`role="separator"`). Attribute changes re-render. The old-element cleanup had deleted `separator.element.ts`, which left `rafters add separator` erroring for Web Component projects.
