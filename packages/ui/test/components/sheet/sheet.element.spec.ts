@@ -11,7 +11,7 @@ interface MountOptions {
   description?: boolean;
 }
 
-async function mount(options: MountOptions = {}): Promise<void> {
+async function mountWith(options: MountOptions = {}): Promise<void> {
   const {
     attrs = '',
     side = 'right',
@@ -33,7 +33,7 @@ async function mount(options: MountOptions = {}): Promise<void> {
   await Promise.resolve();
 }
 
-const ids = {
+const partIds = {
   trigger: 's-trigger',
   overlay: 's-overlay',
   content: 's-content',
@@ -56,9 +56,9 @@ afterEach(() => {
 });
 
 it('applies the closed-state projection after connect', async () => {
-  await mount();
+  await mountWith();
   const state = sheet.initialState(modalConfig);
-  const aria = sheet.aria(state, modalConfig, ids);
+  const aria = sheet.aria(state, modalConfig, partIds);
   const trigger = el('s-trigger');
   expect(trigger.getAttribute('aria-expanded')).toBe(aria.trigger?.['aria-expanded']);
   expect(trigger.getAttribute('data-state')).toBe('closed');
@@ -67,7 +67,7 @@ it('applies the closed-state projection after connect', async () => {
 });
 
 it('applies the open-state projection after a trigger click', async () => {
-  await mount();
+  await mountWith();
   el('s-trigger').click();
   const content = el('s-content');
   expect(el('s-trigger').getAttribute('aria-controls')).toBe('s-content');
@@ -77,7 +77,7 @@ it('applies the open-state projection after a trigger click', async () => {
 });
 
 it('applies the class set to overlay, title, description and close', async () => {
-  await mount({ description: true });
+  await mountWith({ description: true });
   const classes = sheetClasses(modalConfig, { open: false });
   expect(el('s-overlay').className).toBe(classes.overlay);
   expect(el('s-title').className).toBe(classes.title);
@@ -87,7 +87,7 @@ it('applies the class set to overlay, title, description and close', async () =>
 
 for (const side of ['top', 'right', 'bottom', 'left'] as const) {
   it(`leaves the authored ${side} side class and data-side alone`, async () => {
-    await mount({ side });
+    await mountWith({ side });
     const content = el('s-content');
     const check = () => {
       expect(content.className).toBe(sheetContentClasses(side));
@@ -102,7 +102,7 @@ for (const side of ['top', 'right', 'bottom', 'left'] as const) {
 }
 
 it('references the title and projects no description reference when absent', async () => {
-  await mount();
+  await mountWith();
   el('s-trigger').click();
   const content = el('s-content');
   expect(content.getAttribute('aria-labelledby')).toBe('s-title');
@@ -110,7 +110,7 @@ it('references the title and projects no description reference when absent', asy
 });
 
 it('Escape closes when the trap lands focus on the close button', async () => {
-  await mount({ body: '' });
+  await mountWith({ body: '' });
   el('s-trigger').click();
   const close = el('s-close');
   expect(document.activeElement).toBe(close);
@@ -120,14 +120,14 @@ it('Escape closes when the trap lands focus on the close button', async () => {
 });
 
 it('the close button closes the sheet', async () => {
-  await mount();
+  await mountWith();
   el('s-trigger').click();
   el('s-close').click();
   expect(el('s-content').hidden).toBe(true);
 });
 
 it('modal: Tab wraps inside the content, scroll is locked, outside pointerdown closes', async () => {
-  await mount();
+  await mountWith();
   el('s-trigger').click();
   const close = el('s-close');
   close.focus();
@@ -142,7 +142,7 @@ it('modal: Tab wraps inside the content, scroll is locked, outside pointerdown c
 });
 
 it('clicking the trigger while open closes and stays closed', async () => {
-  await mount();
+  await mountWith();
   el('s-trigger').click();
   el('s-trigger').dispatchEvent(new Event('pointerdown', { bubbles: true }));
   el('s-trigger').click();
@@ -150,7 +150,7 @@ it('clicking the trigger while open closes and stays closed', async () => {
 });
 
 it('modal="false" has no aria-modal, no scroll lock, and Escape still closes', async () => {
-  await mount({ attrs: 'modal="false"' });
+  await mountWith({ attrs: 'modal="false"' });
   el('s-trigger').click();
   const content = el('s-content');
   expect(content.hasAttribute('aria-modal')).toBe(false);
@@ -161,13 +161,13 @@ it('modal="false" has no aria-modal, no scroll lock, and Escape still closes', a
 });
 
 it('default-open="true" mounts open', async () => {
-  await mount({ attrs: 'default-open="true"' });
+  await mountWith({ attrs: 'default-open="true"' });
   expect(el('s-content').hidden).toBe(false);
   expect(el('s-trigger').getAttribute('aria-expanded')).toBe('true');
 });
 
 it('removal runs the teardown', async () => {
-  await mount({ attrs: 'default-open="true"' });
+  await mountWith({ attrs: 'default-open="true"' });
   const content = el('s-content');
   const sheetEl = document.querySelector('rafters-sheet');
   expect(document.body.style.overflow).toBe('hidden');
@@ -179,6 +179,6 @@ it('removal runs the teardown', async () => {
 });
 
 it('has no shadow root', async () => {
-  await mount();
+  await mountWith();
   expect(document.querySelector('rafters-sheet')?.shadowRoot).toBeNull();
 });
