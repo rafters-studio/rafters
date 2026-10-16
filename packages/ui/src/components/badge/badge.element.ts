@@ -67,6 +67,23 @@ import { RaftersElement } from '../../primitives/rafters-element';
 import { badge, isBadgeSize, isBadgeVariant } from './badge.behavior';
 import { badgeClasses } from './badge.classes';
 
+/**
+ * Small label chip. Displays a short status/count label inline.
+ *
+ * @cognitive-load 2/10 - decision 0, information 1, interaction 0,
+ * disruption 0, learning 1. Display only: one label to read, no decision,
+ * no interaction, no context disruption. Color-coding conventions
+ * (destructive=red, success=green) are the sole learning cost.
+ * @attention-economics Secondary/tertiary support: at most one
+ * high-attention badge (destructive/warning) per section; subtle variants
+ * (muted/outline/ghost) are unlimited.
+ * @trust-building Low-trust informational display. Never a primary action
+ * surface -- a badge announces state, it does not gate it.
+ * @accessibility The label text is the entire accessible payload; no role
+ * is projected. Multi-sensory communication (color + text, never color
+ * alone) is a designer-vocabulary property of the variant classes, not a
+ * behavior of this component.
+ */
 export class RaftersBadge extends RaftersElement {
   /** Custom elements default to display:inline; the chip wants a flex box. */
   static override styles = ':host { display: inline-flex; }';
