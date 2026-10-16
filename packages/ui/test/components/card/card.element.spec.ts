@@ -10,7 +10,11 @@
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { RaftersCard } from '../../../src/components/card/card.element';
 import {
+  cardActionClasses,
   cardClasses,
+  cardContentClasses,
+  cardDescriptionClasses,
+  cardFooterClasses,
   cardHeaderClasses,
   cardTitleClasses,
 } from '../../../src/components/card/card.classes';
@@ -40,9 +44,7 @@ describe('card [wc]', () => {
     const host = mount();
     const root = shadowRoot(host);
     expect(root).not.toBeNull();
-    expect(root.className).toContain('bg-card');
-    expect(root.className).toContain('rounded-xl');
-    expect(root.className).toContain('border border-card-border');
+    expect(root.className).toBe(cardClasses({}, {}).root);
   });
 
   it('root carries the data-slot swap contract alongside its data-part', () => {
@@ -98,21 +100,21 @@ describe('card [wc]', () => {
     const host = mount('', '<h3 slot="title">Report</h3><div slot="content">Body</div>');
     const titleSlot = host.shadowRoot?.querySelector<HTMLSlotElement>('slot[name="title"]');
     const assigned = titleSlot?.assignedNodes({ flatten: true }) ?? [];
-    expect(assigned.map((n) => n.textContent).join('')).toContain('Report');
+    expect(assigned.map((n) => n.textContent)).toEqual(['Report']);
   });
 
   it('fill attribute mirrors the React prop through the same projection', () => {
     const host = mount('fill="primary"');
     const root = shadowRoot(host);
-    expect(root.className).toContain('bg-primary');
-    expect(root.className).not.toContain('bg-card');
+    expect(root.className).toBe(cardClasses({ fill: 'primary' }, {}).root);
   });
 
   it('re-renders the surface when fill changes after connect', () => {
     const host = mount();
-    expect(shadowRoot(host).className).toContain('bg-card');
+    expect(shadowRoot(host).className).toBe(cardClasses({}, {}).root);
     host.setAttribute('fill', 'primary');
-    expect(shadowRoot(host).className).toContain('bg-primary');
+    expect(shadowRoot(host).className).toBe(cardClasses({ fill: 'primary' }, {}).root);
+    expect(shadowRoot(host).getAttribute('data-fill')).toBe('primary');
   });
 
   it('fill sets data-fill and the exact cardClasses root string', () => {
@@ -140,5 +142,54 @@ describe('card [wc]', () => {
     expect(titleRegion.className).toBe(cardTitleClasses);
     const titleSlot = titleRegion.querySelector('slot[name="title"]') as HTMLSlotElement;
     expect(titleSlot.assignedElements()[0]?.textContent).toBe('Plan');
+  });
+
+  it('functional composition: fill, slots and parts as the issue states', () => {
+    document.body.innerHTML =
+      '<rafters-card fill="primary"><h3 slot="title">Plan</h3><p slot="content">Body</p></rafters-card>';
+    const host = document.querySelector('rafters-card') as RaftersCard;
+    const root = host.shadowRoot?.querySelector('[data-part="root"]') as HTMLElement;
+    expect(root.className).toBe(cardClasses({ fill: 'primary' }, {}).root);
+    expect(root.getAttribute('data-slot')).toBe('card');
+    expect(root.getAttribute('data-fill')).toBe('primary');
+    expect(root.getAttribute('role')).toBeNull();
+    expect(card.aria({}, {}, { root: '' }).root).toEqual({});
+    expect(host.shadowRoot?.querySelectorAll('[data-part]')).toHaveLength(1);
+
+    const names = Array.from(host.shadowRoot?.querySelectorAll('slot') ?? []).map((s) =>
+      s.getAttribute('name'),
+    );
+    expect(names).toEqual(
+      expect.arrayContaining([
+        'header',
+        'title',
+        'description',
+        'action',
+        'content',
+        'footer',
+        null,
+      ]),
+    );
+
+    const header = host.shadowRoot?.querySelector('[data-slot="card-header"]') as HTMLElement;
+    expect(header.className).toBe(cardHeaderClasses);
+    const titleRegion = header.querySelector('[data-slot="card-title"]') as HTMLElement;
+    expect(titleRegion.className).toBe(cardTitleClasses);
+    const titleSlot = titleRegion.querySelector('slot[name="title"]') as HTMLSlotElement;
+    expect(titleSlot.assignedElements()[0]?.textContent).toBe('Plan');
+  });
+
+  it('every region carries its exact shared class string', () => {
+    const host = mount();
+    const expected: Record<string, string> = {
+      'card-description': cardDescriptionClasses,
+      'card-action': cardActionClasses,
+      'card-content': cardContentClasses,
+      'card-footer': cardFooterClasses,
+    };
+    for (const [slot, classes] of Object.entries(expected)) {
+      const region = host.shadowRoot?.querySelector(`[data-slot="${slot}"]`) as HTMLElement;
+      expect(region.className, slot).toBe(classes);
+    }
   });
 });
