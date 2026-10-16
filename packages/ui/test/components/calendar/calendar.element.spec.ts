@@ -80,6 +80,40 @@ afterEach(() => {
 });
 
 describe('calendar [wc]', () => {
+  it('functional test from the issue', async () => {
+    document.body.innerHTML =
+      '<form><rafters-calendar today="2026-07-15" default-month="2026-07-01"></rafters-calendar></form>';
+    await Promise.resolve();
+    const host = document.querySelector('rafters-calendar') as HTMLElement;
+    const config: CalendarConfig = {
+      mode: 'single',
+      defaultMonth: '2026-07-01',
+      showOutsideDays: true,
+      fixedWeeks: false,
+      weekStartsOn: 0,
+      today: '2026-07-15',
+    };
+    const state = calendarBehavior.initialState(config);
+    for (const td of host.querySelectorAll<HTMLElement>('td[data-value]')) {
+      expect(td.className).toBe(calendarClasses(config, state).day);
+      for (const [k, v] of Object.entries(dayAria(td.dataset['value'] as string, state, config))) {
+        expect(td.getAttribute(k)).toBe(v === undefined ? null : String(v));
+      }
+    }
+    const seen: string[] = [];
+    host.addEventListener('calendarselect', (e) =>
+      seen.push((e as CustomEvent<{ date: string }>).detail.date),
+    );
+    await userEvent.click(host.querySelector('td[data-value="2026-07-10"]') as HTMLElement);
+    expect(seen).toEqual(['2026-07-10']);
+    expect(
+      (host.querySelector('td[data-value="2026-07-10"]') as HTMLElement).getAttribute(
+        'aria-selected',
+      ),
+    ).toBe('true');
+    expect([...new FormData(document.querySelector('form') as HTMLFormElement).keys()]).toEqual([]);
+  });
+
   it('upgrades in light DOM and renders the parts', async () => {
     const host = await mount();
     expect(host).toBeInstanceOf(RaftersCalendar);
