@@ -1,10 +1,14 @@
 # rafters
 
-## 0.4.4
+## Unreleased
 
 ### Features
 
 - feat(ui): **`<rafters-label>` is restored.** The pure-static Web Component renders the inner `<label data-part="root">` with the shared `labelClasses` for its `variant` around a default slot, and forwards the host `for` onto that inner label. It performs no binding and projects no ARIA. The `for` IDREF resolves inside the shadow root, so it does not associate across the shadow boundary to a light-DOM control. It had been deleted with the other element files.
+
+## 0.4.4
+
+### Features
 
 - feat(ui): **`<rafters-button>` renders its own parts.** Written in plain HTML (`<rafters-button variant="destructive">Delete</rafters-button>`), it now builds the same native `<button>`, classes, aria, spinner and icon wrappers the React and Astro Button render, from its own attributes (`variant`, `size`, `type`, `disabled`, `soft-disabled`, `loading`, `toggle`, `pressed`, `loading-announcement`, `aria-label`) and children; attribute changes re-render. Before this the element rendered nothing and needed a hand-written inner `<button>`, and `variant` and `size` did nothing. `bindButton(root, readConfig?)` now reads config fresh and returns `{ refresh, teardown }`; `wrapButtonIcons` is removed.
 
