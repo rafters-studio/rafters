@@ -1,7 +1,11 @@
 import userEvent from '@testing-library/user-event';
 import { afterEach, expect, it } from 'vitest';
 import '../../../src/components/command/command.element';
-import { command, commandItemAria } from '../../../src/components/command/command.behavior';
+import {
+  command,
+  commandItemAria,
+  type CommandState,
+} from '../../../src/components/command/command.behavior';
 import { commandClasses } from '../../../src/components/command/command.classes';
 
 function item(v: string, label: string, extra = ''): string {
@@ -29,6 +33,17 @@ const empty = () => document.getElementById('c-empty') as HTMLElement;
 const option = (v: string) => document.getElementById(`c-item-${v}`) as HTMLElement;
 const root = () => document.querySelector('rafters-command') as HTMLElement;
 const config = { label: 'Actions' };
+
+function expectProjection(values: string[], state: CommandState): void {
+  for (const v of values) {
+    const expected = commandItemAria(v, state, config);
+    const el = option(v);
+    expect(el.getAttribute('aria-selected')).toBe(expected['aria-selected']);
+    expect(el.hasAttribute('data-selected')).toBe(expected['data-selected'] !== undefined);
+    expect(el.hasAttribute('data-highlighted')).toBe(expected['data-highlighted'] !== undefined);
+    expect(el.hidden).toBe(expected['hidden'] === true);
+  }
+}
 
 function collect(): string[] {
   const seen: string[] = [];
@@ -82,8 +97,10 @@ it('typing filters by fuzzy match and shows the empty part only on no match', as
   await user.type(input(), 'set');
   expect(option('settings').hidden).toBe(false);
   expect(option('calendar').hidden).toBe(true);
+  expectProjection(['calendar', 'settings'], { query: 'set', highlighted: undefined });
   expect(empty().hidden).toBe(true);
   await user.type(input(), 'zzz');
+  expectProjection(['calendar', 'settings'], { query: 'setzzz', highlighted: undefined });
   expect(empty().hidden).toBe(false);
 });
 
@@ -103,12 +120,16 @@ it('arrow, Home and End keys move the highlight and clamp', async () => {
   const user = userEvent.setup();
   await mount(`${item('a', 'Alpha')}${item('b', 'Beta')}${item('c', 'Gamma')}`);
   await user.click(input());
+  const all = ['a', 'b', 'c'];
   await user.keyboard('{ArrowDown}{ArrowDown}');
   expect(input().getAttribute('aria-activedescendant')).toBe('c-item-b');
+  expectProjection(all, { query: '', highlighted: 'b' });
   await user.keyboard('{End}{ArrowDown}');
   expect(input().getAttribute('aria-activedescendant')).toBe('c-item-c');
+  expectProjection(all, { query: '', highlighted: 'c' });
   await user.keyboard('{Home}{ArrowUp}');
   expect(input().getAttribute('aria-activedescendant')).toBe('c-item-a');
+  expectProjection(all, { query: '', highlighted: 'a' });
   await user.keyboard('{ArrowDown}');
   expect(input().getAttribute('aria-activedescendant')).toBe('c-item-b');
   expect(document.activeElement).toBe(input());
