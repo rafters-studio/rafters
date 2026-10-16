@@ -189,22 +189,30 @@ export function bindDialog(root: HTMLElement): () => void {
       const el = getPart(part);
       if (el) el.hidden = !open;
     }
+    // The content's container is a fixed full-screen layer rendered hidden
+    // while closed; it follows the open axis with the overlay and content.
+    const container = getPart('content')?.parentElement;
+    if (container && container !== root) container.hidden = !open;
     // Compose the modal overlay trio directly, level-triggered: start it once
     // on the open+modal transition (content is now un-hidden above so the trap
     // can read its focusables), tear it down when it should no longer be present.
-    const wantModal = open && isModal(config);
-    if (wantModal && !modalCleanup) {
+    // A non-modal dialog has no trap and no scroll lock, but an outside
+    // pointerdown still dismisses it (sparing the trigger).
+    if (open && !modalCleanup) {
       const content = getPart('content');
       if (content) {
-        modalCleanup = startDialogModalEffects({
-          content,
-          getTrigger: () => getPart('trigger'),
-          onDismiss: () => {
-            request('close');
-          },
-        });
+        const onDismiss = () => {
+          request('close');
+        };
+        const getTrigger = () => getPart('trigger');
+        modalCleanup = isModal(config)
+          ? startDialogModalEffects({ content, getTrigger, onDismiss })
+          : onPointerDownOutside(content, (event) => {
+              if (getTrigger()?.contains(event.target as Node)) return;
+              onDismiss();
+            });
       }
-    } else if (!wantModal && modalCleanup) {
+    } else if (!open && modalCleanup) {
       modalCleanup();
       modalCleanup = null;
     }
@@ -224,7 +232,12 @@ export function bindDialog(root: HTMLElement): () => void {
   root.addEventListener('click', onClick);
 
   const onKeydown = (event: KeyboardEvent) => {
-    const partEl = (event.target as HTMLElement).closest<HTMLElement>('[data-part]');
+    // A key event from anywhere inside the content reaches the keymap as
+    // `content`, so Escape closes from any focus within it.
+    const target = event.target as HTMLElement;
+    const partEl =
+      target.closest<HTMLElement>('[data-part="content"]') ??
+      target.closest<HTMLElement>('[data-part]');
     const part = partEl?.dataset['part'] as DialogPart | undefined;
     if (!part) return;
     const action = dialog.keymap(
