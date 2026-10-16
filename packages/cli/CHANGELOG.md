@@ -16,6 +16,8 @@
 
 - feat(ui): **`<rafters-label>` is restored.** The pure-static Web Component renders the inner `<label data-part="root">` with the shared `labelClasses` for its `variant` around a default slot, and forwards the host `for` onto that inner label. It performs no binding and projects no ARIA. The `for` IDREF resolves inside the shadow root, so it does not associate across the shadow boundary to a light-DOM control. It had been deleted with the other element files.
 
+- fix(ui): **`<rafters-skeleton>` is rebuilt, and `rafters add skeleton` works again for Web Component projects.** The element was deleted with the old Web Component decorators, so adding the skeleton to a WC project errored on the missing `skeleton.element.ts`. It is back as a pure-static `RaftersElement`: one decorative `root` part in the shadow root with the shared skeleton classes and the constant `aria-hidden="true"`, no slot, no attributes and no events.
+
 ## 0.4.4
 
 ### Features
