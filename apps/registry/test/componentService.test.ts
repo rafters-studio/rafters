@@ -55,7 +55,6 @@ describe('registry serves behavior-layer components from src/components', () => 
     const paths = button.files.map((f) => f.path);
     expect(paths).toContain('components/ui/button.tsx');
     expect(paths).toContain('components/ui/button.astro');
-    expect(paths).toContain('components/ui/button.element.ts');
   });
 
   it('a served component carries container-query classes (the scanner has something to find)', () => {
@@ -567,7 +566,7 @@ describe('every component file is installable', () => {
       'components/ui/chart.tsx',
       'components/ui/line-chart.tsx',
       'components/ui/line.tsx',
-      'components/ui/area-chart.element.ts',
+      'components/ui/area-chart.behavior.ts',
       'components/ui/bar-chart.astro',
       'components/ui/x-axis.behavior.ts',
       'components/ui/cartesian-grid.tsx',
@@ -584,7 +583,6 @@ describe('every component file is installable', () => {
       expect(loadComponent(name)?.files.map((f) => f.path)).toEqual([
         `components/ui/${name}.tsx`,
         `components/ui/${name}.astro`,
-        `components/ui/${name}.element.ts`,
         `components/ui/${name}.behavior.ts`,
         `components/ui/${name}.classes.ts`,
         'components/ui/chart.behavior.ts',
@@ -595,7 +593,7 @@ describe('every component file is installable', () => {
     }
   });
 
-  it('serves all 39 chart-family mark and axis files in the chart item', () => {
+  it('serves all 30 chart-family mark and axis files in the chart item', () => {
     const family = [
       'line-chart',
       'line',
@@ -611,7 +609,7 @@ describe('every component file is installable', () => {
       .filter((f) => SERVED_EXTS.some((ext) => f.endsWith(ext)))
       .filter((f) => family.includes(f.slice(0, f.indexOf('.'))))
       .map((f) => `components/ui/${f}`);
-    expect(expected).toHaveLength(39);
+    expect(expected).toHaveLength(30);
     const paths = (loadComponent('chart')?.files ?? []).map((f) => f.path);
     for (const p of expected) expect(paths).toContain(p);
   });

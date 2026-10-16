@@ -20,7 +20,7 @@ Per component, three kinds of file and nothing else:
 - **`x.tsx` / `x.element.ts` / `x.astro` = decorators over the behavior.**
   Each is a thin wrapper that adds exactly two things around the invariant
   behavior core, and nothing else: the **view** (`x.classes.ts`) and the
-  framework **wiring** (the runtime adapter). React reads the projections
+  framework **wiring**. React reads the projections
   declaratively via `useMemory`; the WC decorates with the custom-element
   lifecycle, Astro with SSR markup -- both call the *same* `bindX`. One
   behavior, three decorators, zero drift, because there is only one behavior
@@ -132,7 +132,7 @@ bind and the React `useEffect`):
 
 | archetype | reference | shape |
 |---|---|---|
-| pure static | `container`, `card` | no `bindX`, no `useBehavior`/`useMemory`; the decorators are markup + classes + slots only. WC = `RaftersElement` shadow + `<slot>`. |
+| pure static | `container`, `card` | no `bindX`, no `useBehavior`/`useMemory`; the decorators are markup + classes + slots only. WC = `RaftersElement` shadow + `<slot>`, styled by setting its CSS (`setUtilityCSS`), as any shadow-DOM WC sets its CSS. |
 | simple-interactive | `button` | `bindButton`; native `<button>` fulfils Enter/Space, so wire `click` only. Composes `sr-announcer` on the loading edge (one-shot). |
 | static + composed | `grid` | static except it composes `roving-focus` (2D, `{ columns }`) when `role=grid`. |
 | text-input | `input` | primary state is a **value**; `setValue` gated by disabled/readonly; native input owns caret/IME/selection -- do not re-implement. |
@@ -250,8 +250,8 @@ rest, and the split is recorded in the data:
 - **Portaled overlays need presence tracking** -- but only for the *unguarded*
   cross-ref sources (`aria-labelledby`/`describedby`, which lack the `open`
   guard `aria-controls` has). Everything else keeps a stable id.
-- **Two WC shapes.** Behavior-carrying components are **light-DOM enhancers**
-  (the bind reads real document DOM for the primitives it composes). Pure statics are **shadow +
+- **Two WC shapes.** Behavior-carrying components implement the behavior as
+  elegantly and simply as possible. Pure statics are **shadow +
   slots** (`RaftersElement`) -- simpler, but they render every region, so
   unfilled slots become empty padded space. Accepted cost of a no-bind static.
 - `card`/`alert` render raw heading/`<p>` via `createElement` because Typography
