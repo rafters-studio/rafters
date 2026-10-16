@@ -8,6 +8,12 @@
 
 - feat(ui): **`<rafters-separator>` is rebuilt, and `rafters add separator` works again for Web Component projects.** It is a pure-static `RaftersElement` with one `div[data-part="root"]` and no slot, carrying the same classes and role/`aria-orientation` projection as the React and Astro Separator. `orientation` is `horizontal | vertical` (anything else renders horizontal); `decorative` absent or `"false"` is decorative (`role="none"`), any other present value is semantic (`role="separator"`). Attribute changes re-render. The old-element cleanup had deleted `separator.element.ts`, which left `rafters add separator` erroring for Web Component projects.
 
+### Fixes
+
+- fix(ui): **`<rafters-pagination>` is rebuilt, and `rafters add pagination` works again for Web Component projects.** The element was deleted with the old Web Component set, so adding pagination errored for WC projects. It is back as a pure-static `RaftersElement`: a shadow root holding the labelled `nav` landmark (`aria-label="Pagination"`, the shared pagination classes) with one default slot for the controls you compose, and a `display: contents` host. No binding, no attributes, no events.
+
+- fix(ui): **`<rafters-kbd>` is restored.** The element was deleted with the other Web Component decorators though the Kbd spec still lists it. It renders the `<kbd data-part="root">` cap with the shared `kbdClasses` string around a default slot, takes no attributes, binds nothing, and its host is `display: inline-flex`.
+
 - feat(ui): **`<rafters-label>` is restored.** The pure-static Web Component renders the inner `<label data-part="root">` with the shared `labelClasses` for its `variant` around a default slot, and forwards the host `for` onto that inner label. It performs no binding and projects no ARIA. The `for` IDREF resolves inside the shadow root, so it does not associate across the shadow boundary to a light-DOM control. It had been deleted with the other element files.
 
 ## 0.4.4
