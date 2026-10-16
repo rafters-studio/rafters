@@ -110,6 +110,24 @@ it('vertical: ArrowDown moves', async () => {
   instance(el, 'trigger', 'overview').focus();
   await userEvent.keyboard('{ArrowDown}');
   expect(document.activeElement).toBe(instance(el, 'trigger', 'details'));
+  expectPerforms(el, { defaultValue: 'overview', orientation: 'vertical' }, { value: 'details' });
+});
+
+it('controlled: ArrowRight moves focus but leaves overview shown', async () => {
+  const el = await mount({ defaultValue: 'overview' }, 'overview');
+  instance(el, 'trigger', 'overview').focus();
+  await userEvent.keyboard('{ArrowRight}');
+  expect(document.activeElement).toBe(instance(el, 'trigger', 'details'));
+  expect(instance(el, 'panel', 'overview').hasAttribute('hidden')).toBe(false);
+  expect(instance(el, 'panel', 'details').hasAttribute('hidden')).toBe(true);
+});
+
+it('controlled: Enter on another trigger leaves overview shown', async () => {
+  const el = await mount({ defaultValue: 'overview' }, 'overview');
+  instance(el, 'trigger', 'details').focus();
+  await userEvent.keyboard('{Enter}');
+  expect(instance(el, 'panel', 'overview').hasAttribute('hidden')).toBe(false);
+  expect(instance(el, 'panel', 'details').hasAttribute('hidden')).toBe(true);
 });
 
 it('arrows inside a panel leave the active tab unchanged', async () => {
@@ -130,6 +148,7 @@ it('wraps a slotted start icon first in the trigger', async () => {
   const wrapper = trigger.firstElementChild;
   expect(wrapper?.getAttribute('data-part')).toBe('startIcon');
   expect(wrapper?.getAttribute('aria-hidden')).toBe('true');
+  expect(wrapper?.getAttribute('class')).toBe(tabsClasses({}, tabs.initialState({})).startIcon);
 });
 
 it('removing the element tears the bind down', async () => {
