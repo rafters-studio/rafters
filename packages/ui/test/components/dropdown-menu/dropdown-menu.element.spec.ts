@@ -11,6 +11,67 @@ async function mount(attrs = ''): Promise<HTMLElement> {
         <div role="menuitem" data-part="item" data-roving-item="" tabindex="-1"><svg slot="start-icon" viewBox="0 0 16 16"></svg>Edit</div>
         <div role="menuitem" data-part="item" data-roving-item="" data-disabled="" aria-disabled="true">Archive</div>
         <div role="menuitem" data-part="item" data-roving-item="" tabindex="-1">Delete</div>
+      </div>
+    </rafters-dropdown-menu>`;
+  await Promise.resolve();
+  return document.querySelector('rafters-dropdown-menu') as HTMLElement;
+}
+
+const ids = {
+  root: 'dm-root',
+  trigger: 'dm-trigger',
+  content: 'dm-content',
+  item: '',
+  startIcon: '',
+};
+
+afterEach(() => {
+  document.body.innerHTML = '';
+});
+
+it('applies the closed projection, then the open projection on trigger click', async () => {
+  await mount();
+  const config = { defaultOpen: false };
+  const trigger = document.getElementById('dm-trigger')!;
+  const content = document.getElementById('dm-content')!;
+  const closed = dropdownMenu.aria(dropdownMenu.initialState(config), config, ids);
+  expect(trigger.getAttribute('aria-expanded')).toBe(closed.trigger?.['aria-expanded']);
+  expect(content.getAttribute('aria-labelledby')).toBe('dm-trigger');
+  expect(content.hidden).toBe(true);
+  trigger.click();
+  expect(trigger.getAttribute('aria-controls')).toBe('dm-content');
+  expect(content.hidden).toBe(false);
+  expect(content.className).toBe(dropdownMenuClasses(config, { open: true }).content);
+  expect(document.activeElement?.textContent).toBe('Edit');
+});
+
+it('wraps the start icon in an aria-hidden part', async () => {
+  await mount();
+  const icon = document.querySelector<HTMLElement>('[data-part="startIcon"]')!;
+  expect(icon.getAttribute('aria-hidden')).toBe('true');
+  expect(icon.getAttribute('data-icon')).toBe('inline-start');
+  expect(icon.querySelector('svg')).not.toBeNull();
+});
+
+it('Escape closes and returns focus to the trigger', async () => {
+  await mount('default-open="true"');
+  const content = document.getElementById('dm-content')!;
+  (document.activeElement as HTMLElement).dispatchEvent(
+    new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
+  );
+  expect(content.hidden).toBe(true);
+  expect(document.activeElement).toBe(document.getElementById('dm-trigger'));
+});
+
+// Additional coverage of the acceptance criteria.
+async function mountFull(attrs = ''): Promise<HTMLElement> {
+  document.body.innerHTML = `
+    <rafters-dropdown-menu id="dm-root" ${attrs}>
+      <button type="button" data-part="trigger" id="dm-trigger">Actions</button>
+      <div data-part="content" id="dm-content" hidden>
+        <div role="menuitem" data-part="item" data-roving-item="" tabindex="-1"><svg slot="start-icon" viewBox="0 0 16 16"></svg>Edit</div>
+        <div role="menuitem" data-part="item" data-roving-item="" data-disabled="" aria-disabled="true">Archive</div>
+        <div role="menuitem" data-part="item" data-roving-item="" tabindex="-1">Delete</div>
         <div role="menuitemcheckbox" aria-checked="false" data-part="item" data-roving-item="" tabindex="-1">Pin</div>
         <div role="menuitemradio" aria-checked="false" data-part="item" data-roving-item="" tabindex="-1">Sort</div>
       </div>
@@ -35,21 +96,10 @@ function key(target: Element, k: string): void {
   target.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }));
 }
 
-const ids = {
-  root: 'dm-root',
-  trigger: 'dm-trigger',
-  content: 'dm-content',
-  item: '',
-  startIcon: '',
-};
 const config = { defaultOpen: false };
 
-afterEach(() => {
-  document.body.innerHTML = '';
-});
-
-it('applies the closed projection, then the open projection on trigger click', async () => {
-  await mount();
+it('projects closed ARIA, then open ARIA with controls and focus', async () => {
+  await mountFull();
   const trigger = part('dm-trigger');
   const content = part('dm-content');
   const closed = dropdownMenu.aria(dropdownMenu.initialState(config), config, ids);
@@ -71,7 +121,7 @@ it('applies the closed projection, then the open projection on trigger click', a
 });
 
 it('applies classes by part and item role', async () => {
-  await mount();
+  await mountFull();
   const classes = dropdownMenuClasses(config, { open: false });
   expect(part('dm-trigger').className).toBe(classes.trigger);
   expect(part('dm-content').className).toBe(classes.content);
@@ -81,8 +131,8 @@ it('applies classes by part and item role', async () => {
   expect(all[4]?.className).toBe(classes.radioItem);
 });
 
-it('wraps the start icon in an aria-hidden part and the label in a cell', async () => {
-  await mount();
+it('wraps the start icon and lays the label in its cell', async () => {
+  await mountFull();
   const classes = dropdownMenuClasses(config, { open: false });
   const all = items();
   const icon = all[0]?.querySelector<HTMLElement>(
@@ -99,7 +149,7 @@ it('wraps the start icon in an aria-hidden part and the label in a cell', async 
 });
 
 it('opens from the trigger with ArrowDown, Enter and Space', async () => {
-  await mount();
+  await mountFull();
   const trigger = part('dm-trigger');
   const content = part('dm-content');
   for (const k of ['ArrowDown', 'Enter', ' ']) {
@@ -112,7 +162,7 @@ it('opens from the trigger with ArrowDown, Enter and Space', async () => {
 });
 
 it('roves focus, loops, skips disabled, and jumps with Home and End', async () => {
-  await mount();
+  await mountFull();
   part('dm-trigger').click();
   const all = items();
   const enabled = all.filter((i) => !i.hasAttribute('data-disabled'));
@@ -129,14 +179,14 @@ it('roves focus, loops, skips disabled, and jumps with Home and End', async () =
 });
 
 it('typeahead matches the label without the icon', async () => {
-  await mount();
+  await mountFull();
   part('dm-trigger').click();
   key(document.activeElement as Element, 'd');
   expect(document.activeElement?.textContent).toBe('Delete');
 });
 
-it('Escape on an item closes and returns focus to the trigger', async () => {
-  await mount();
+it('Escape on a focused item closes and refocuses the trigger', async () => {
+  await mountFull();
   part('dm-trigger').click();
   key(document.activeElement as Element, 'Escape');
   expect(part('dm-content').hidden).toBe(true);
@@ -144,7 +194,7 @@ it('Escape on an item closes and returns focus to the trigger', async () => {
 });
 
 it('Enter and click on an item close; a disabled item does neither', async () => {
-  await mount();
+  await mountFull();
   const trigger = part('dm-trigger');
   const content = part('dm-content');
   const all = items();
@@ -164,7 +214,7 @@ it('Enter and click on an item close; a disabled item does neither', async () =>
 });
 
 it('closes on pointerdown outside, not on the trigger', async () => {
-  await mount();
+  await mountFull();
   const content = part('dm-content');
   part('dm-trigger').click();
   part('dm-trigger').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
@@ -174,13 +224,13 @@ it('closes on pointerdown outside, not on the trigger', async () => {
 });
 
 it('default-open mounts open', async () => {
-  await mount('default-open="true"');
+  await mountFull('default-open="true"');
   expect(part('dm-content').hidden).toBe(false);
   expect(part('dm-trigger').getAttribute('aria-expanded')).toBe('true');
 });
 
 it('removing the element runs the teardown', async () => {
-  const el = await mount();
+  const el = await mountFull();
   const trigger = part('dm-trigger');
   const content = part('dm-content');
   el.remove();
@@ -193,7 +243,7 @@ it('removing the element runs the teardown', async () => {
 });
 
 it('stays light DOM with the content inside the element', async () => {
-  const el = await mount();
+  const el = await mountFull();
   part('dm-trigger').click();
   expect(el.shadowRoot).toBeNull();
   expect(el.contains(part('dm-content'))).toBe(true);
