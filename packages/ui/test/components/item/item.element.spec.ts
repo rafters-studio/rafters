@@ -140,6 +140,34 @@ describe('item [wc]', () => {
     expect(seen).toEqual(['keydown']);
   });
 
+  it('functional: selected sm row with description, then disabled', () => {
+    document.body.innerHTML =
+      '<div role="listbox" aria-label="Menu"><rafters-item selected size="sm">Dashboard<span slot="description">Home</span></rafters-item></div>';
+    const host = document.querySelector('rafters-item') as RaftersItem;
+    const shadow = host.shadowRoot as ShadowRoot;
+    const row = shadow.querySelector('[data-part="root"]') as HTMLElement;
+    const config: ItemConfig = { size: 'sm', selected: true, disabled: false };
+    expect(row.className).toBe(itemClasses(config, {}).root);
+    expect(getComputedStyle(row).borderTopLeftRadius).toBe('6px');
+    for (const [name, value] of Object.entries(item.aria({}, config, { root: '' }).root ?? {})) {
+      expect(row.getAttribute(name)).toBe(value ?? null);
+    }
+    expect((row.firstElementChild as HTMLElement).className).toBe(itemIconClasses);
+    expect(shadow.querySelector('slot[name="icon"]')).not.toBeNull();
+    const desc = shadow.querySelector('slot[name="description"]') as HTMLSlotElement;
+    expect(
+      desc
+        .assignedNodes()
+        .map((n) => n.textContent)
+        .join(''),
+    ).toBe('Home');
+
+    host.setAttribute('disabled', '');
+    const after = shadow.querySelector('[data-part="root"]') as HTMLElement;
+    expect(after.getAttribute('aria-disabled')).toBe('true');
+    expect(after.getAttribute('tabindex')).toBe('-1');
+  });
+
   it('the shared utility sheet applies inside the shadow root', () => {
     expect(getComputedStyle(rowOf(mount())).borderTopLeftRadius).toBe('6px');
   });
