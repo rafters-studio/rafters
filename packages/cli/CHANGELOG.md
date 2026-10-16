@@ -1,10 +1,14 @@
 # rafters
 
-## 0.4.4
+## Unreleased
 
 ### Features
 
 - feat(ui): **`<rafters-separator>` is rebuilt, and `rafters add separator` works again for Web Component projects.** It is a pure-static `RaftersElement` with one `div[data-part="root"]` and no slot, carrying the same classes and role/`aria-orientation` projection as the React and Astro Separator. `orientation` is `horizontal | vertical` (anything else renders horizontal); `decorative` absent or `"false"` is decorative (`role="none"`), any other present value is semantic (`role="separator"`). Attribute changes re-render. The old-element cleanup had deleted `separator.element.ts`, which left `rafters add separator` erroring for Web Component projects.
+
+## 0.4.4
+
+### Features
 
 - feat(ui): **`<rafters-button>` renders its own parts.** Written in plain HTML (`<rafters-button variant="destructive">Delete</rafters-button>`), it now builds the same native `<button>`, classes, aria, spinner and icon wrappers the React and Astro Button render, from its own attributes (`variant`, `size`, `type`, `disabled`, `soft-disabled`, `loading`, `toggle`, `pressed`, `loading-announcement`, `aria-label`) and children; attribute changes re-render. Before this the element rendered nothing and needed a hand-written inner `<button>`, and `variant` and `size` did nothing. `bindButton(root, readConfig?)` now reads config fresh and returns `{ refresh, teardown }`; `wrapButtonIcons` is removed.
 
