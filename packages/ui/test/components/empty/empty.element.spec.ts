@@ -1,77 +1,78 @@
 /**
- * Spec for Empty, Web Component target. Runs in the browser
- * project (real chromium). Empty is a pure static, so there is no controller
- * to drive: the WC renders the placeholder markup with the shared classes and
- * named slots once, and that is the whole performance.
+ * Spec for Empty, Web Component target. Runs in the browser project (real
+ * chromium). Empty is a pure static: the element renders the placeholder
+ * column, its four fixed named-slot regions and a default slot, and nothing
+ * else.
  */
-import { afterEach, beforeAll, expect, test } from 'vitest';
+import { afterEach, expect, test } from 'vitest';
+import {
+  emptyActionClasses,
+  emptyClasses,
+  emptyDescriptionClasses,
+  emptyIconClasses,
+  emptyTitleClasses,
+} from '../../../src/components/empty/empty.classes';
 import { RaftersEmpty } from '../../../src/components/empty/empty.element';
 
-beforeAll(() => {
-  if (!customElements.get('rafters-empty')) {
-    customElements.define('rafters-empty', RaftersEmpty);
-  }
-});
-
-function mount(attrs = '', slots = ''): HTMLElement {
-  document.body.innerHTML = `<rafters-empty ${attrs}>${slots}</rafters-empty>`;
-  return document.body.querySelector('rafters-empty') as HTMLElement;
+function mount(slots = ''): RaftersEmpty {
+  document.body.innerHTML = `<rafters-empty>${slots}</rafters-empty>`;
+  return document.querySelector('rafters-empty') as RaftersEmpty;
 }
 
-function shadowRoot(host: HTMLElement): HTMLElement {
-  return host.shadowRoot?.querySelector<HTMLElement>('[data-part="root"]') as HTMLElement;
+function rootOf(host: RaftersEmpty): HTMLElement {
+  return host.shadowRoot?.querySelector('[data-part="root"]') as HTMLElement;
 }
 
 afterEach(() => {
   document.body.innerHTML = '';
 });
 
-test('renders a root part carrying the shared centered-column classes', () => {
-  const host = mount();
-  const root = shadowRoot(host);
-  expect(root).not.toBeNull();
-  expect(root.className).toContain('flex flex-col');
-  expect(root.className).toContain('items-center');
-  expect(root.className).toContain('py-12');
-});
-
-test('fulfills the contract: root projects no aria (empty, like React)', () => {
-  const host = mount();
-  const root = shadowRoot(host);
-  expect(root, 'declared part "root" must be rendered').not.toBeNull();
-  expect(root.getAttribute('role')).toBeNull();
-});
-
-test('only root is a declared part -- sub-wrappers carry classes, no data-part', () => {
-  const host = mount();
-  const parts = host.shadowRoot?.querySelectorAll('[data-part]') ?? [];
-  expect(parts).toHaveLength(1);
-});
-
-test('exposes the icon/title/description/action named slots plus a default slot', () => {
-  const host = mount();
-  const names = Array.from(host.shadowRoot?.querySelectorAll('slot') ?? []).map((s) =>
-    s.getAttribute('name'),
+test('the root carries the shared classes, no ARIA, and is the only part', () => {
+  const host = mount(
+    '<h3 slot="title">No results</h3><button slot="action" type="button">Clear</button>',
   );
-  expect(names).toEqual(expect.arrayContaining(['icon', 'title', 'description', 'action', null]));
+  const root = rootOf(host);
+  expect(root.className).toBe(emptyClasses({}, {}).root);
+  expect(root.getAttribute('role')).toBeNull();
+  expect(host.shadowRoot?.querySelectorAll('[data-part]')).toHaveLength(1);
 });
 
-test('sub-wrappers carry data-slot markers matching React/Astro', () => {
-  const host = mount();
-  const root = host.shadowRoot;
-  expect(root?.querySelector('[data-slot="empty-icon"]')).not.toBeNull();
-  expect(root?.querySelector('[data-slot="empty-title"]')).not.toBeNull();
-  expect(root?.querySelector('[data-slot="empty-description"]')).not.toBeNull();
-  expect(root?.querySelector('[data-slot="empty-action"]')).not.toBeNull();
+test('the root holds the four regions then a default slot, each with its class', () => {
+  const root = rootOf(mount());
+  const children = Array.from(root.children) as HTMLElement[];
+  expect(children.map((c) => c.getAttribute('data-slot') ?? c.tagName.toLowerCase())).toEqual([
+    'empty-icon',
+    'empty-title',
+    'empty-description',
+    'empty-action',
+    'slot',
+  ]);
+  expect(children[0]?.className).toBe(emptyIconClasses);
+  expect(children[1]?.className).toBe(emptyTitleClasses);
+  expect(children[2]?.className).toBe(emptyDescriptionClasses);
+  expect(emptyActionClasses).toBe('');
+  expect(children[3]?.hasAttribute('class')).toBe(false);
+  expect(children[4]?.getAttribute('name')).toBeNull();
 });
 
-test('slotted light-DOM content passes through', () => {
-  const host = mount('', '<h3 slot="title">All caught up</h3>');
-  const titleSlot = host.shadowRoot?.querySelector<HTMLSlotElement>('slot[name="title"]');
-  const assigned = titleSlot?.assignedNodes({ flatten: true }) ?? [];
-  expect(assigned.map((n) => n.textContent).join('')).toContain('All caught up');
+test('slotted children are assigned to their named slots and the default slot', () => {
+  const host = mount(
+    '<h3 slot="title">No results</h3><button slot="action" type="button">Clear</button><p>Loose</p>',
+  );
+  const root = rootOf(host);
+  const title = root.querySelector('slot[name="title"]') as HTMLSlotElement;
+  expect(title.assignedElements()[0]?.textContent).toBe('No results');
+  const action = root.querySelector('slot[name="action"]') as HTMLSlotElement;
+  expect(action.assignedElements()[0]?.tagName.toLowerCase()).toBe('button');
+  const fallback = root.querySelector('slot:not([name])') as HTMLSlotElement;
+  expect(fallback.assignedElements()[0]?.textContent).toBe('Loose');
 });
 
-test('observedAttributes is an empty array -- nothing to observe', () => {
+test('an empty element still renders all four regions', () => {
+  const root = rootOf(mount());
+  expect(root.querySelectorAll('[data-slot^="empty-"]')).toHaveLength(4);
+});
+
+test('observedAttributes is empty', () => {
   expect(Array.from(RaftersEmpty.observedAttributes)).toEqual([]);
 });
