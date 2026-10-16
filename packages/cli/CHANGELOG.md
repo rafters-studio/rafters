@@ -1,10 +1,14 @@
 # rafters
 
-## 0.4.4
+## Unreleased
 
 ### Features
 
 - feat(ui): **`<rafters-spinner>` is rebuilt, and `rafters add spinner` works again for Web Component projects.** The element is a pure-static `RaftersElement` shadow root holding one native `<output data-part="root">` with the spinner classes and the projected `aria-label="Loading"`; `size` and `variant` are observed attributes, and a value outside the enum renders as `default`. #2499 had deleted `spinner.element.ts`, so `rafters add spinner` errored for WC projects until now.
+
+## 0.4.4
+
+### Features
 
 - feat(ui): **`<rafters-button>` renders its own parts.** Written in plain HTML (`<rafters-button variant="destructive">Delete</rafters-button>`), it now builds the same native `<button>`, classes, aria, spinner and icon wrappers the React and Astro Button render, from its own attributes (`variant`, `size`, `type`, `disabled`, `soft-disabled`, `loading`, `toggle`, `pressed`, `loading-announcement`, `aria-label`) and children; attribute changes re-render. Before this the element rendered nothing and needed a hand-written inner `<button>`, and `variant` and `size` did nothing. `bindButton(root, readConfig?)` now reads config fresh and returns `{ refresh, teardown }`; `wrapButtonIcons` is removed.
 
