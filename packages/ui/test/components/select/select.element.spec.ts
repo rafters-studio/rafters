@@ -173,8 +173,8 @@ describe('select.element', () => {
     expect(document.activeElement).toBe(trigger(host));
     await Promise.resolve();
     const [apple, banana] = items(host);
-    expect(banana?.querySelector('svg')).not.toBeNull();
-    expect(apple?.querySelector('svg')).toBeNull();
+    expect(banana?.getAttribute('data-state')).toBe('checked');
+    expect(apple?.getAttribute('data-state')).toBe('unchecked');
     expect(banana?.getAttribute('aria-selected')).toBe('true');
 
     await userEvent.click(trigger(host));

@@ -138,9 +138,7 @@ function wrapIcons(
 
 export class RaftersSelect extends HTMLElement {
   private teardown: (() => void) | null = null;
-  private observer: MutationObserver | null = null;
   private connection = 0;
-  private indicatorClass = '';
 
   connectedCallback(): void {
     // connectedCallback can fire before the light-DOM children parse: bind on
@@ -151,13 +149,6 @@ export class RaftersSelect extends HTMLElement {
       this.release();
       this.decorate();
       this.teardown = bindSelect(this);
-      this.syncIndicators();
-      this.observer = new MutationObserver(() => this.syncIndicators());
-      this.observer.observe(this, {
-        attributes: true,
-        attributeFilter: ['data-state'],
-        subtree: true,
-      });
     });
   }
 
@@ -167,8 +158,6 @@ export class RaftersSelect extends HTMLElement {
   }
 
   private release(): void {
-    this.observer?.disconnect();
-    this.observer = null;
     this.teardown?.();
     this.teardown = null;
   }
@@ -183,7 +172,6 @@ export class RaftersSelect extends HTMLElement {
     const value = this.getAttribute('value') ?? '';
     const config: SelectConfig = { defaultValue: value, disabled, name };
     const classes = selectClasses(config, select.initialState(config));
-    this.indicatorClass = classes.itemIndicator;
 
     this.dataset['part'] = 'root';
     if (!this.id) this.id = `rafters-select-${++instanceCount}`;
@@ -278,6 +266,8 @@ export class RaftersSelect extends HTMLElement {
     const text = document.createElement('span');
     text.className = classes.itemText;
     text.append(...Array.from(item.childNodes).filter((node) => node !== start && node !== end));
+    // The check is always present; CSS shows it from the item data-state.
+    indicator.append(checkIcon());
     item.replaceChildren(indicator);
     if (start) item.append(start);
     item.append(text);
@@ -299,20 +289,6 @@ export class RaftersSelect extends HTMLElement {
     this.decorateSimple(part, classes.scrollButton, { 'aria-hidden': 'true' });
     for (const el of this.querySelectorAll<HTMLElement>(`[data-part="${part}"]`)) {
       if (el.childNodes.length === 0) el.append(pathIcon(classes.scrollIcon, path));
-    }
-  }
-
-  /** The check shows in the indicator of the selected item only. */
-  private syncIndicators(): void {
-    for (const item of this.querySelectorAll<HTMLElement>('[data-part="item"]')) {
-      const indicator = Array.from(item.children).find(
-        (child) => child.getAttribute('class') === this.indicatorClass,
-      );
-      if (!indicator) continue;
-      const checked = item.dataset['state'] === 'checked';
-      const hasCheck = indicator.childElementCount > 0;
-      if (checked && !hasCheck) indicator.append(checkIcon());
-      else if (!checked && hasCheck) indicator.replaceChildren();
     }
   }
 }
