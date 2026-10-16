@@ -300,3 +300,67 @@ describe('menubar icons, classes and shortcut [wc]', () => {
     }
   });
 });
+
+describe('menubar [wc] functional tests', () => {
+  function trigger(v: string, label: string): string {
+    return `<button type="button" data-part="trigger" data-value="${v}" id="mb-trigger-${v}">${label}</button>`;
+  }
+  function menu(v: string, labels: string[]): string {
+    const items = labels
+      .map((l) => `<div role="menuitem" data-part="item" data-roving-item tabindex="-1">${l}</div>`)
+      .join('');
+    return `<div data-part="content" data-value="${v}" id="mb-content-${v}">${items}</div>`;
+  }
+
+  async function mount(): Promise<HTMLElement> {
+    document.body.innerHTML = `
+    <main>
+      <rafters-menubar data-part="root" id="mb-root">
+        ${trigger('file', 'File')}${trigger('edit', 'Edit')}
+        ${menu('file', ['New', 'Open'])}${menu('edit', ['Undo'])}
+      </rafters-menubar>
+    </main>`;
+    await Promise.resolve();
+    return document.querySelector('rafters-menubar') as HTMLElement;
+  }
+
+  const content = (v: string) => document.getElementById(`mb-content-${v}`)!;
+  const ids = (v: string) => ({ trigger: `mb-trigger-${v}`, content: `mb-content-${v}` });
+
+  afterEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  it('moves the menus after the bar and applies the closed projection and classes', async () => {
+    const root = await mount();
+    const state = menubar.initialState({});
+    expect(root.querySelector('[role="menu"]')).toBeNull();
+    expect(root.nextElementSibling).toBe(content('file'));
+    expect(root.getAttribute('role')).toBe('menubar');
+    expect(content('file').inert).toBe(true);
+    expect(content('file').hidden).toBe(false);
+    expect(document.getElementById('mb-trigger-file')!.getAttribute('aria-expanded')).toBe(
+      menubarInstanceAria('trigger', 'file', state, {}, ids('file'))['aria-expanded'],
+    );
+    expect(root.className).toBe(menubarClasses({}, state).root);
+  });
+
+  it('ArrowRight inside an open menu switches to the next menu', async () => {
+    const user = userEvent.setup();
+    await mount();
+    await user.click(document.getElementById('mb-trigger-file')!);
+    expect(content('file').getAttribute('data-state')).toBe('open');
+    await user.keyboard('{ArrowRight}');
+    expect(content('edit').getAttribute('data-state')).toBe('open');
+    expect(content('edit').contains(document.activeElement)).toBe(true);
+  });
+
+  it('teardown returns each menu to its authored place', async () => {
+    const root = await mount();
+    const file = content('file');
+    expect(root.contains(file)).toBe(false);
+    root.remove();
+    expect(root.contains(file)).toBe(true);
+    expect(file.previousElementSibling?.getAttribute('data-value')).toBe('edit');
+  });
+});

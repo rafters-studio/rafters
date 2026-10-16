@@ -35,15 +35,23 @@
  * NEVER: Primary site navigation (use NavigationMenu), a single menu (use DropdownMenu), mobile-first layouts
  *
  * @example
- * ```html
- * <rafters-menubar data-part="root" id="mb">
- *   <button type="button" data-part="trigger" data-value="file" id="mb-trigger-file">File</button>
- *   <div data-part="content" data-value="file" id="mb-content-file">
- *     <div role="menuitem" data-part="item" data-roving-item tabindex="-1">
- *       New<span>Ctrl+N</span>
- *     </div>
- *   </div>
- * </rafters-menubar>
+ * ```tsx
+ * <Menubar>
+ *   <Menubar.Menu value="file">
+ *     <Menubar.Trigger>File</Menubar.Trigger>
+ *     <Menubar.Content>
+ *       <Menubar.Item>New Tab <Menubar.Shortcut>Cmd+T</Menubar.Shortcut></Menubar.Item>
+ *       <Menubar.Separator />
+ *       <Menubar.Item>Print</Menubar.Item>
+ *     </Menubar.Content>
+ *   </Menubar.Menu>
+ *   <Menubar.Menu value="edit">
+ *     <Menubar.Trigger>Edit</Menubar.Trigger>
+ *     <Menubar.Content>
+ *       <Menubar.Item>Undo <Menubar.Shortcut>Cmd+Z</Menubar.Shortcut></Menubar.Item>
+ *     </Menubar.Content>
+ *   </Menubar.Menu>
+ * </Menubar>
  * ```
  */
 
