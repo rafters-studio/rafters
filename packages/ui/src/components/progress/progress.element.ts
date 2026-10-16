@@ -93,13 +93,8 @@ export class RaftersProgress extends HTMLElement {
     const config = readProgressConfig(this);
     const classes = progressClasses(config, {});
     this.className = classes.root;
-    let indicator = this.querySelector<HTMLElement>(':scope > [data-part="indicator"]');
-    if (!indicator) {
-      indicator = document.createElement('div');
-      indicator.setAttribute('data-part', 'indicator');
-      this.appendChild(indicator);
-    }
-    indicator.className = classes.indicator;
+    const indicator = this.querySelector<HTMLElement>(':scope > [data-part="indicator"]');
+    if (indicator) indicator.className = classes.indicator;
     this.#teardown = bindProgress(this);
   }
 }
