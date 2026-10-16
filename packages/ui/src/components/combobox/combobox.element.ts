@@ -298,11 +298,6 @@ export class RaftersComboboxEmpty extends HTMLElement implements Assemblable {
     const root = rootOf(this, 'rafters-combobox-empty');
     this.assembled = true;
     this.dataset['part'] = 'empty';
-    // A listbox must own an option or a group (aria-required-children). When the
-    // filter hides every option the message is all it holds, and axe accepts
-    // only an option there (#2337), so it is a disabled one.
-    this.setAttribute('role', 'option');
-    this.setAttribute('aria-disabled', 'true');
     this.className = sceneOf(root).classes.empty;
     this.hidden = true;
   }
