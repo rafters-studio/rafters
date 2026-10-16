@@ -15,6 +15,7 @@ import {
   tabsIds,
   tabsInstanceAria,
   wrapTabsIcons,
+  bindTabs,
   type TabsConfig,
   type TabsState,
 } from '../../../src/components/tabs/tabs.behavior';
@@ -249,5 +250,44 @@ describe('wrapTabsIcons', () => {
     wrapTabsIcons(root);
     wrapTabsIcons(root);
     expect(root.querySelectorAll('[data-part="startIcon"]').length).toBe(1);
+  });
+});
+
+describe('bindTabs controlled value (root value attribute)', () => {
+  function mountBound(valueAttr: string): { root: HTMLElement; stop: () => void } {
+    const trig = (v: string, state: string) =>
+      `<button type="button" data-part="trigger" data-value="${v}" id="t-tab-${v}" data-state="${state}">${v}</button>`;
+    const panel = (v: string) =>
+      `<div data-part="panel" data-value="${v}" id="t-panel-${v}">${v}</div>`;
+    document.body.innerHTML = `<div data-part="root" ${valueAttr}><div data-part="list" role="tablist">${trig('overview', 'active')}${trig('details', 'inactive')}</div>${panel('overview')}${panel('details')}</div>`;
+    const root = document.querySelector('[data-part="root"]') as HTMLElement;
+    return { root, stop: bindTabs(root) };
+  }
+  const click = (root: HTMLElement, v: string) =>
+    (root.querySelector(`[data-part="trigger"][data-value="${v}"]`) as HTMLElement).click();
+  const hidden = (root: HTMLElement, v: string) =>
+    root.querySelector(`[data-part="panel"][data-value="${v}"]`)?.hasAttribute('hidden');
+
+  it('a click leaves the attribute value active', () => {
+    const { root, stop } = mountBound('value="overview"');
+    click(root, 'details');
+    expect(hidden(root, 'overview')).toBe(false);
+    expect(hidden(root, 'details')).toBe(true);
+    stop();
+  });
+
+  it('without value, a click activates', () => {
+    const { root, stop } = mountBound('');
+    click(root, 'details');
+    expect(hidden(root, 'details')).toBe(false);
+    expect(hidden(root, 'overview')).toBe(true);
+    stop();
+  });
+
+  it('an empty value shows no panel', () => {
+    const { root, stop } = mountBound('value=""');
+    expect(hidden(root, 'overview')).toBe(true);
+    expect(hidden(root, 'details')).toBe(true);
+    stop();
   });
 });
