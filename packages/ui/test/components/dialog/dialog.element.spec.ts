@@ -103,10 +103,9 @@ it('the close button closes', async () => {
 it('modal: Tab from the last focusable stays inside the content', async () => {
   await mount('default-open="true"');
   el('d-close').focus();
-  el('d-close').dispatchEvent(
-    new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }),
-  );
-  expect(el('d-content').contains(document.activeElement)).toBe(true);
+  const event = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true });
+  el('d-close').dispatchEvent(event);
+  expect(event.defaultPrevented).toBe(true);
 });
 
 it('modal: outside pointerdown closes, trigger pointerdown does not', async () => {
