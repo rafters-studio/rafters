@@ -11,6 +11,11 @@ import {
 import { toggleGroupClasses } from '../../../src/components/toggle-group/toggle-group.classes';
 import { ICON_SVG_16, installIconLayout } from './icon-layout';
 
+function need<T>(value: T | null | undefined): T {
+  if (value === null || value === undefined) throw new Error('expected a value');
+  return value;
+}
+
 afterEach(() => {
   document.body.innerHTML = '';
   document.documentElement.removeAttribute('dir');
@@ -24,7 +29,7 @@ async function mount(attrs: string, items = ITEMS, wrap = (html: string) => html
   document.body.innerHTML = wrap(`<rafters-toggle-group ${attrs}>${items}</rafters-toggle-group>`);
   await Promise.resolve();
   const host = document.body.querySelector('rafters-toggle-group') as HTMLElement;
-  const root = host.querySelector<HTMLElement>('[data-part="root"]')!;
+  const root = need(host.querySelector<HTMLElement>('[data-part="root"]'));
   const buttons = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-part="item"]'));
   return { host, root, buttons };
 }
@@ -119,7 +124,7 @@ describe('toggle-group [element]', () => {
         if (v !== undefined) expectedRoot[k] = String(v);
       expect(attrsOf(root, Object.keys(rootAria))).toEqual(expectedRoot);
       for (const button of buttons) {
-        const value = button.dataset['value']!;
+        const value = need(button.dataset['value']);
         expect(button.className).toBe(classes.item);
         const itemAria = toggleItemAria(value, state, config);
         const expected: Record<string, string> = {};
@@ -190,7 +195,7 @@ describe('toggle-group [element]', () => {
 
   it('a disabled group does not change on click, Space or Enter', async () => {
     const { buttons } = await mount('disabled');
-    const bold = buttons[0]!;
+    const bold = need(buttons[0]);
     expect(bold.disabled).toBe(true);
     await userEvent.click(bold);
     bold.focus();
@@ -204,8 +209,8 @@ describe('toggle-group [element]', () => {
       '',
       '<rafters-toggle-group-item value="a" disabled>A</rafters-toggle-group-item>',
     );
-    await userEvent.click(buttons[0]!);
-    expect(buttons[0]!.getAttribute('aria-pressed')).toBe('false');
+    await userEvent.click(need(buttons[0]));
+    expect(need(buttons[0]).getAttribute('aria-pressed')).toBe('false');
   });
 
   it('wraps start and end icons, none when absent, and honors rtl', async () => {
@@ -216,8 +221,8 @@ describe('toggle-group [element]', () => {
       '<rafters-toggle-group-item value="b">Beta</rafters-toggle-group-item>';
     const { buttons } = await mount('', items);
     const [a, b] = buttons as [HTMLButtonElement, HTMLButtonElement];
-    const start = a.querySelector<HTMLElement>('span[data-part="startIcon"]')!;
-    const end = a.querySelector<HTMLElement>('span[data-part="endIcon"]')!;
+    const start = need(a.querySelector<HTMLElement>('span[data-part="startIcon"]'));
+    const end = need(a.querySelector<HTMLElement>('span[data-part="endIcon"]'));
     expect(start.getAttribute('aria-hidden')).toBe('true');
     expect(end.getAttribute('aria-hidden')).toBe('true');
     expect(a.firstElementChild).toBe(start);
@@ -239,10 +244,10 @@ describe('toggle-group [element]', () => {
       ITEMS,
       (html) => `<form>${html}</form>`,
     );
-    const form = document.querySelector('form')!;
+    const form = need(document.querySelector('form'));
     expect(new FormData(form).getAll('fmt')).toEqual([]);
-    await userEvent.click(buttons[0]!);
-    expect(buttons[0]!.getAttribute('aria-pressed')).toBe('true');
+    await userEvent.click(need(buttons[0]));
+    expect(need(buttons[0]).getAttribute('aria-pressed')).toBe('true');
     expect(new FormData(form).getAll('fmt')).toEqual([]);
   });
 
@@ -255,7 +260,7 @@ describe('toggle-group [element]', () => {
     expect(host.querySelectorAll('[data-part="root"]')).toHaveLength(1);
     expect(host.querySelectorAll('[data-part="item"]')).toHaveLength(1);
     expect(host.querySelectorAll('[data-part="startIcon"]')).toHaveLength(1);
-    const button = host.querySelector<HTMLButtonElement>('[data-part="item"]')!;
+    const button = need(host.querySelector<HTMLButtonElement>('[data-part="item"]'));
     await userEvent.click(button);
     expect(button.getAttribute('aria-pressed')).toBe('true');
     await userEvent.click(button);
