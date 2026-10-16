@@ -1,5 +1,11 @@
 # rafters
 
+## Unreleased
+
+### Fixes
+
+- fix(ui): **`<rafters-kbd>` is restored.** The element was deleted with the other Web Component decorators though the Kbd spec still lists it. It renders the `<kbd data-part="root">` cap with the shared `kbdClasses` string around a default slot, takes no attributes, binds nothing, and its host is `display: inline-flex`.
+
 ## 0.4.4
 
 ### Features
