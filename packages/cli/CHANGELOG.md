@@ -28,6 +28,8 @@
 
 ### Fixes
 
+- fix(ui): **`<rafters-item>` is restored.** The element was deleted with the other Web Component decorators though the Item spec still lists it. It is a `RaftersElement` shadow root holding the `role="option"` row (`data-part="root"`, shared `itemClasses`) with the icon, content, label and description wrappers and the fixed `icon`, `description` and default slots. `size`, `selected` and `disabled` are observed attributes; each change re-renders the classes and the `item.aria` projection (`aria-selected`, `aria-disabled`, `tabindex`, `data-selected`, `data-disabled`). It binds nothing and dispatches no event.
+
 - fix(ui): **`<rafters-pagination>` is rebuilt, and `rafters add pagination` works again for Web Component projects.** The element was deleted with the old Web Component set, so adding pagination errored for WC projects. It is back as a pure-static `RaftersElement`: a shadow root holding the labelled `nav` landmark (`aria-label="Pagination"`, the shared pagination classes) with one default slot for the controls you compose, and a `display: contents` host. No binding, no attributes, no events.
 
 - fix(ui): **`<rafters-kbd>` is restored.** The element was deleted with the other Web Component decorators though the Kbd spec still lists it. It renders the `<kbd data-part="root">` cap with the shared `kbdClasses` string around a default slot, takes no attributes, binds nothing, and its host is `display: inline-flex`.
