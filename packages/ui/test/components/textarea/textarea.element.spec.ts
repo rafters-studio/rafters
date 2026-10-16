@@ -7,10 +7,18 @@ import {
 } from '../../../src/components/textarea/textarea.behavior';
 import { textareaClassSet } from '../../../src/components/textarea/textarea.classes';
 
+function must<T>(value: T | null | undefined, what: string): T {
+  if (value === null || value === undefined) throw new Error(`missing ${what}`);
+  return value;
+}
+
 async function mount(attrs = '', inner = ''): Promise<HTMLTextAreaElement> {
   document.body.innerHTML = `<form><rafters-textarea name="msg" aria-label="Message" ${attrs}>${inner}</rafters-textarea></form>`;
   await Promise.resolve();
-  return document.querySelector<HTMLTextAreaElement>('rafters-textarea [data-part="textarea"]')!;
+  return must(
+    document.querySelector<HTMLTextAreaElement>('rafters-textarea [data-part="textarea"]'),
+    'textarea field',
+  );
 }
 
 afterEach(() => {
@@ -30,7 +38,7 @@ describe('textarea [wc]', () => {
   it('upgrades and renders one textarea part', async () => {
     document.body.innerHTML = '<rafters-textarea aria-label="Message"></rafters-textarea>';
     await Promise.resolve();
-    const host = document.querySelector('rafters-textarea')!;
+    const host = must(document.querySelector('rafters-textarea'), 'host');
     expect(host).toBeInstanceOf(RaftersTextarea);
     expect(host.querySelectorAll('textarea[data-part="textarea"]')).toHaveLength(1);
   });
@@ -74,7 +82,7 @@ describe('textarea [wc]', () => {
   it('typing changes the value and Enter inserts a newline without submitting', async () => {
     const field = await mount();
     let submitted = false;
-    document.querySelector('form')!.addEventListener('submit', (e) => {
+    must(document.querySelector('form'), 'form').addEventListener('submit', (e) => {
       e.preventDefault();
       submitted = true;
     });
@@ -86,28 +94,28 @@ describe('textarea [wc]', () => {
   it('a disabled field does not change and submits nothing', async () => {
     const field = await mount('disabled value="a"');
     expect(field.value).toBe('a');
-    expect(new FormData(document.querySelector('form')!).getAll('msg')).toEqual([]);
+    expect(new FormData(must(document.querySelector('form'), 'form')).getAll('msg')).toEqual([]);
   });
 
   it('a readonly field does not change but still submits', async () => {
     const field = await mount('readonly value="a"');
     await userEvent.type(field, 'zz');
     expect(field.value).toBe('a');
-    expect(new FormData(document.querySelector('form')!).getAll('msg')).toEqual(['a']);
+    expect(new FormData(must(document.querySelector('form'), 'form')).getAll('msg')).toEqual(['a']);
   });
 
   it('FormData holds exactly the typed value and no hidden input exists', async () => {
     await mount();
     await userEvent.type(page.getByRole('textbox', { name: 'Message' }), 'hi');
-    const form = document.querySelector('form')!;
+    const form = must(document.querySelector('form'), 'form');
     expect(new FormData(form).getAll('msg')).toEqual(['hi']);
     expect(form.querySelector('input')).toBeNull();
   });
 
   it('remove and re-add leaves one field and typing still works', async () => {
     const field = await mount();
-    const host = field.closest('rafters-textarea')!;
-    const parent = host.parentElement!;
+    const host = must(field.closest('rafters-textarea'), 'host');
+    const parent = must(host.parentElement, 'parent');
     host.remove();
     parent.appendChild(host);
     await Promise.resolve();
