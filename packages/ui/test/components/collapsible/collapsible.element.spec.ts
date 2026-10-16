@@ -79,6 +79,16 @@ it('disabled markup refuses the toggle', async () => {
   expectPerforms(el, { disabled: true }, { open: false });
 });
 
+it('teardown: a click on the detached trigger changes nothing', async () => {
+  const el = await mount({ defaultOpen: false, disabled: false });
+  const trigger = part(el, 'trigger');
+  const content = part(el, 'content');
+  el.remove();
+  await userEvent.click(trigger);
+  expect(trigger.getAttribute('data-state')).toBe('closed');
+  expect(content.hidden).toBe(true);
+});
+
 it('Enter and Space toggle through the native button', async () => {
   const el = await mount({ defaultOpen: false, disabled: false });
   part(el, 'trigger').focus();
