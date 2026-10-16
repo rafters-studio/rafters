@@ -14,6 +14,8 @@
 
 - fix(ui): **`<rafters-kbd>` is restored.** The element was deleted with the other Web Component decorators though the Kbd spec still lists it. It renders the `<kbd data-part="root">` cap with the shared `kbdClasses` string around a default slot, takes no attributes, binds nothing, and its host is `display: inline-flex`.
 
+- feat(ui): **`<rafters-label>` is restored.** The pure-static Web Component renders the inner `<label data-part="root">` with the shared `labelClasses` for its `variant` around a default slot, and forwards the host `for` onto that inner label. It performs no binding and projects no ARIA. The `for` IDREF resolves inside the shadow root, so it does not associate across the shadow boundary to a light-DOM control. It had been deleted with the other element files.
+
 ## 0.4.4
 
 ### Features
