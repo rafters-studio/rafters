@@ -26,6 +26,8 @@
 
 ### Fixes
 
+- fix(ui): **Calendar day cells render as a seven-column grid again (#2637).** The day class started with `inline-flex` and was applied to the `<td role="gridcell">`, which took each cell out of table layout and stacked the days in one column, in Calendar and in DatePicker, which embeds it. The cell class now carries no `display` utility and centres the day with `text-center align-middle`; React, Astro and the Web Component share the one class string, so all three pick it up.
+
 - fix(ui): **`<rafters-pagination>` is rebuilt, and `rafters add pagination` works again for Web Component projects.** The element was deleted with the old Web Component set, so adding pagination errored for WC projects. It is back as a pure-static `RaftersElement`: a shadow root holding the labelled `nav` landmark (`aria-label="Pagination"`, the shared pagination classes) with one default slot for the controls you compose, and a `display: contents` host. No binding, no attributes, no events.
 
 - fix(ui): **`<rafters-kbd>` is restored.** The element was deleted with the other Web Component decorators though the Kbd spec still lists it. It renders the `<kbd data-part="root">` cap with the shared `kbdClasses` string around a default slot, takes no attributes, binds nothing, and its host is `display: inline-flex`.
