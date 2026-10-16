@@ -97,6 +97,11 @@ test('disallowed host renders the fallback root, message and recovery link', () 
   expect(link.textContent).toBe(FALLBACK_LINK_TEXT);
 });
 
+test('a javascript: url renders no link', () => {
+  const host = mount('url="javascript:alert(1)"');
+  expect(rootOf(host).querySelector('a')).toBeNull();
+});
+
 test('missing url renders the missing-url message and no link', () => {
   const host = mount('');
   const root = rootOf(host);
