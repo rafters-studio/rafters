@@ -20,6 +20,7 @@ import { generateBaseSystem } from '../src/generators/index.js';
 import {
   contrastPlugin,
   invertPlugin,
+  mirrorPlugin,
   scalePlugin,
   statePlugin,
   TokenRegistry,
@@ -57,6 +58,7 @@ function baseRegistry(): TokenRegistry {
     contrastPlugin,
     statePlugin,
     invertPlugin,
+    mirrorPlugin,
   ]);
 }
 

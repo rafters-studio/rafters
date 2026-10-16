@@ -3,6 +3,7 @@ import { generateBaseSystem } from '@rafters/design-tokens/generators/index';
 import {
   contrastPlugin,
   invertPlugin,
+  mirrorPlugin,
   registryToCompiled,
   scalePlugin,
   statePlugin,
@@ -147,6 +148,7 @@ const sheet = (): Promise<string> => {
       contrastPlugin,
       statePlugin,
       invertPlugin,
+      mirrorPlugin,
     ]);
     return registryToCompiled(registry, {
       contentSources: [resolve(import.meta.dirname, '../../../src/components/color-picker')],

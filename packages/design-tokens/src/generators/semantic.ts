@@ -19,15 +19,25 @@
  * recomputes via contrast against yellow's accessibility ladder; primary-hover
  * itself anchors because the override is recorded as userOverride.
  *
+ * Each {name}--dark token derives from its light token: top-of-tree roles via
+ * mirror (light position mirrored, plus the designed elevation offset),
+ * foregrounds and states via the --dark parent.
+ *
  * dependsOn[1] is the {name}--dark token. The Tailwind exporter resolves it
  * to get the current dark ColorReference (cascade-derived, not static).
  */
 
-import { POSITION_TO_INDEX, STATE_USES, type StateUse } from '@rafters/color-utils';
+import {
+  POSITION_TO_INDEX,
+  SCALE_POSITIONS,
+  STATE_USES,
+  type StateUse,
+} from '@rafters/color-utils';
 import type { Binding, ColorReference, Token } from '@rafters/shared';
 import { DEFAULT_SEMANTIC_COLOR_MAPPINGS, type SemanticColorMapping } from './defaults.js';
 import type { GeneratorResult, ResolvedSystemConfig } from './types.js';
 
+const SCALE_LAST_INDEX = SCALE_POSITIONS.length - 1;
 const FOREGROUND_SUFFIXES = ['-foreground', '-text', '-contrast'] as const;
 const STATE_SUFFIXES = STATE_USES.map((s) => `-${s}` as const);
 
@@ -127,24 +137,27 @@ function derivationParent(derivation: Derivation, suffix = ''): string {
 function deriveDarkBinding(
   derivation: Derivation,
   parentName: string,
+  lightRef: ColorReference,
   darkRef: ColorReference,
 ): Binding {
   switch (derivation.kind) {
     case 'scale': {
-      // Top-of-tree roles use the mapping's DESIGNED dark pair (elevation is
-      // a design decision, #1638) -- bound via scale so family reassignment
-      // still cascades (resolveFamily follows the role's ColorReference).
-      // Mode-invariant roles (overlay) pin simply by declaring dark == light.
-      // Derived tokens (foregrounds, states) keep computed derivation.
-      const scalePosition = POSITION_TO_INDEX[darkRef.position];
-      if (scalePosition === undefined) {
+      // Top-of-tree roles derive dark FROM their light token: mirror the
+      // light position, then shift by the designed elevation offset (#1638).
+      // The offset is fixed at generation from the mapping's designed pair,
+      // so defaults land exactly on the designed dark, and moving the light
+      // token moves its dark counterpart. Mode-invariant roles (overlay)
+      // carry the offset that maps light back onto itself.
+      const lightIndex = POSITION_TO_INDEX[lightRef.position];
+      const darkIndex = POSITION_TO_INDEX[darkRef.position];
+      if (lightIndex === undefined || darkIndex === undefined) {
         throw new Error(
-          `semantic generator: invalid designed dark position "${darkRef.position}" for ${parentName}`,
+          `semantic generator: invalid designed position "${lightRef.position}"/"${darkRef.position}" for ${parentName}`,
         );
       }
       return {
-        plugin: 'scale',
-        input: { familyName: darkRef.family, scalePosition },
+        plugin: 'mirror',
+        input: { fromToken: parentName, offset: darkIndex - (SCALE_LAST_INDEX - lightIndex) },
       };
     }
     case 'state':
@@ -174,8 +187,8 @@ export function generateSemanticTokens(_config: ResolvedSystemConfig): Generator
     const parent = derivationParent(derivation);
 
     const darkName = `${name}--dark`;
-    const darkBinding = deriveDarkBinding(derivation, name, darkRef);
-    const darkParent = derivationParent(derivation, '--dark');
+    const darkBinding = deriveDarkBinding(derivation, name, lightRef, darkRef);
+    const darkParent = derivation.kind === 'scale' ? name : derivationParent(derivation, '--dark');
 
     const dependsOn: string[] = [parent, darkName];
 

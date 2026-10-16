@@ -6,6 +6,7 @@ import {
   contrastPlugin,
   generateBaseSystem,
   invertPlugin,
+  mirrorPlugin,
   registryToCompiled,
   scalePlugin,
   statePlugin,
@@ -87,6 +88,7 @@ describe('skeleton classes', () => {
         contrastPlugin,
         statePlugin,
         invertPlugin,
+        mirrorPlugin,
       ]);
       css = await registryToCompiled(registry, { contentSources: [fixtureDir] });
     } finally {

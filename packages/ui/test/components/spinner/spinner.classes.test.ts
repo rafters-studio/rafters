@@ -5,6 +5,7 @@ import {
   contrastPlugin,
   generateBaseSystem,
   invertPlugin,
+  mirrorPlugin,
   registryToCompiled,
   scalePlugin,
   statePlugin,
@@ -95,6 +96,7 @@ describe('spinner classes compile (#2155)', () => {
         contrastPlugin,
         statePlugin,
         invertPlugin,
+        mirrorPlugin,
       ]);
       css = await registryToCompiled(registry, { contentSources: [fixtureDir] });
     } finally {

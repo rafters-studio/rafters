@@ -4,6 +4,7 @@ import {
   CircularDependencyError,
   contrastPlugin,
   invertPlugin,
+  mirrorPlugin,
   scalePlugin,
   statePlugin,
   TokenRegistry,
@@ -95,7 +96,7 @@ function setupSemanticChain(): TokenRegistry {
       semanticToken('primary-active'),
       semanticToken('primary-dark'),
     ],
-    [scalePlugin, contrastPlugin, statePlugin, invertPlugin],
+    [scalePlugin, contrastPlugin, statePlugin, invertPlugin, mirrorPlugin],
   );
   // accent family → semantic primary (position 5) → primary-foreground, primary-hover, primary-hover-foreground
   // and dark counterparts via invert
@@ -257,7 +258,7 @@ describe('cascade integration', () => {
           semanticToken('foreground'),
           semanticToken('background--dark'),
         ],
-        [scalePlugin, invertPlugin],
+        [scalePlugin, invertPlugin, mirrorPlugin],
       );
       r.bind('neutral', 'scale', { familyName: 'zinc', scalePosition: 5 });
       r.bind('background', 'scale', { familyName: 'neutral', scalePosition: 0 });
@@ -309,7 +310,7 @@ describe('cascade integration', () => {
           semanticToken('surface-subtle'),
           semanticToken('surface-hover'),
         ],
-        [scalePlugin, contrastPlugin, statePlugin, invertPlugin],
+        [scalePlugin, contrastPlugin, statePlugin, invertPlugin, mirrorPlugin],
       );
       r.bind('surface', 'scale', { familyName: 'accent', scalePosition: 1 });
       r.bind('surface-border', 'state', { from: 'surface', stateType: 'border' });

@@ -21,6 +21,7 @@ import { generateBaseSystem } from '../../src/generators/index.js';
 import {
   contrastPlugin,
   invertPlugin,
+  mirrorPlugin,
   registryToCompiled,
   registryToTailwind,
   registryToTailwindStatic,
@@ -84,6 +85,7 @@ function baseRegistry(): TokenRegistry {
     contrastPlugin,
     statePlugin,
     invertPlugin,
+    mirrorPlugin,
   ]);
 }
 

@@ -11,6 +11,7 @@ import { basename, dirname, join } from 'node:path';
 import {
   contrastPlugin,
   invertPlugin,
+  mirrorPlugin,
   loadRegistryFromDir,
   regenerateOutputs,
   resolveContentSources,
@@ -45,7 +46,7 @@ export interface AddOptions {
   agent?: boolean;
 }
 
-const REGISTRY_PLUGINS = [scalePlugin, contrastPlugin, statePlugin, invertPlugin];
+const REGISTRY_PLUGINS = [scalePlugin, contrastPlugin, statePlugin, invertPlugin, mirrorPlugin];
 
 /**
  * Regenerate the output artifacts after an install/update changes the installed

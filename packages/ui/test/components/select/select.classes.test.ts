@@ -3,6 +3,7 @@ import { generateBaseSystem } from '@rafters/design-tokens/generators/index';
 import {
   contrastPlugin,
   invertPlugin,
+  mirrorPlugin,
   registryToCompiled,
   scalePlugin,
   statePlugin,
@@ -204,6 +205,7 @@ describe('select grid and icon candidates compile', () => {
       contrastPlugin,
       statePlugin,
       invertPlugin,
+      mirrorPlugin,
     ]);
     const css = await registryToCompiled(registry, {
       contentSources: [resolve(import.meta.dirname, '../../../src/components/select')],
