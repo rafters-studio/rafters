@@ -23,21 +23,6 @@ function expectRoot(el: HTMLElement, config: GridConfig): void {
   expect(el.shadowRoot).toBeNull();
 }
 
-const cell = (text: string): string =>
-  `<div data-part="cell" role="gridcell" data-roving-item tabindex="-1">${text}</div>`;
-const row = (a: string, b: string): string =>
-  `<div data-part="row" role="row" class="contents">${cell(a)}${cell(b)}</div>`;
-
-async function mountGridMode(): Promise<{ el: HTMLElement; cells: HTMLElement[] }> {
-  const config: GridConfig = { preset: 'linear', columns: 2, role: 'grid', ariaLabel: 'Metrics' };
-  const el = await mount(
-    `<rafters-grid data-part="root" data-grid id="m" grid-role="grid" data-preset="linear" data-columns="2" aria-label="Metrics" class="${gridClasses(config, {}).root}">` +
-      `${row('1', '2')}${row('3', '4')}</rafters-grid>`,
-  );
-  expectRoot(el, config);
-  return { el, cells: Array.from(el.querySelectorAll<HTMLElement>('[data-roving-item]')) };
-}
-
 it('binds a layout grid', async () => {
   const config: GridConfig = { preset: 'linear', columns: 3, gap: '4' };
   const el = await mount(
@@ -45,7 +30,25 @@ it('binds a layout grid', async () => {
       '<div>A</div><div>B</div><div>C</div></rafters-grid>',
   );
   expectRoot(el, config);
-  expect(el.hasAttribute('role')).toBe(false);
+});
+
+it('grid-role projects role=grid and roves in 2D', async () => {
+  const config: GridConfig = { preset: 'linear', columns: 2, role: 'grid', ariaLabel: 'Metrics' };
+  const cell = (text: string): string =>
+    `<div data-part="cell" role="gridcell" data-roving-item tabindex="-1">${text}</div>`;
+  const row = (a: string, b: string): string =>
+    `<div data-part="row" role="row" class="contents">${cell(a)}${cell(b)}</div>`;
+  const el = await mount(
+    `<rafters-grid data-part="root" data-grid id="m" grid-role="grid" data-preset="linear" data-columns="2" aria-label="Metrics" class="${gridClasses(config, {}).root}">` +
+      `${row('1', '2')}${row('3', '4')}</rafters-grid>`,
+  );
+  expectRoot(el, config);
+  const cells = el.querySelectorAll<HTMLElement>('[data-roving-item]');
+  cells[0]?.focus();
+  await userEvent.keyboard('{ArrowRight}');
+  expect(document.activeElement).toBe(cells[1]);
+  await userEvent.keyboard('{ArrowDown}');
+  expect(document.activeElement).toBe(cells[3]);
 });
 
 it('keeps data-priority on a golden grid', async () => {
@@ -54,20 +57,18 @@ it('keeps data-priority on a golden grid', async () => {
       '<div>A</div><div data-priority="primary">B</div></rafters-grid>',
   );
   expectRoot(el, { preset: 'golden' });
+  expect(el.hasAttribute('role')).toBe(false);
   expect(el.lastElementChild?.getAttribute('data-priority')).toBe('primary');
 });
 
-it('grid-role projects role=grid and roves in 2D', async () => {
-  const { cells } = await mountGridMode();
-  cells[0]?.focus();
-  await userEvent.keyboard('{ArrowRight}');
-  expect(document.activeElement).toBe(cells[1]);
-  await userEvent.keyboard('{ArrowDown}');
-  expect(document.activeElement).toBe(cells[3]);
-});
-
 it('removing the host runs the teardown', async () => {
-  const { el, cells } = await mountGridMode();
+  const cell = (text: string): string =>
+    `<div data-part="cell" role="gridcell" data-roving-item tabindex="-1">${text}</div>`;
+  const el = await mount(
+    '<rafters-grid data-part="root" data-grid id="t" grid-role="grid" data-preset="linear" data-columns="2" aria-label="T">' +
+      `<div data-part="row" role="row" class="contents">${cell('1')}${cell('2')}</div></rafters-grid>`,
+  );
+  const cells = Array.from(el.querySelectorAll<HTMLElement>('[data-roving-item]'));
   el.remove();
   cells[0]?.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
   // A live roving binding would move the tab stop to the second cell.
