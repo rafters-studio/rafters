@@ -169,6 +169,25 @@ describe('toggle [wc]', () => {
     expect(root.querySelectorAll('[data-part="endIcon"]')).toHaveLength(1);
   });
 
+  it('issue functional test: icon wrapper, label order, click flips state', async () => {
+    const config: ToggleConfig = { variant: 'default', size: 'default', toggle: true };
+    const classes = toggleClasses(config, toggle.initialState(config));
+    document.body.innerHTML = `<rafters-toggle>
+  <button type="button" data-part="root" id="t-root" class="${classes.root}" aria-label="Bold"
+    aria-pressed="false" data-state="off"><span data-part="label" id="t-label">B</span></button>
+  <svg slot="start-icon"></svg></rafters-toggle>`;
+    await Promise.resolve();
+    const root = document.querySelector<HTMLButtonElement>(
+      'rafters-toggle [data-part="root"]',
+    ) as HTMLButtonElement;
+    const start = root.querySelector<HTMLElement>('[data-part="startIcon"]') as HTMLElement;
+    expect(start.nextElementSibling?.getAttribute('data-part')).toBe('label');
+    expect(start.className).toBe(classes.startIcon);
+    await userEvent.click(page.getByRole('button', { name: 'Bold' }));
+    expect(root.getAttribute('aria-pressed')).toBe('true');
+    expect(root.getAttribute('data-state')).toBe('on');
+  });
+
   it('binds nothing and throws nothing without a root', async () => {
     document.body.innerHTML = '<rafters-toggle></rafters-toggle>';
     await Promise.resolve();
