@@ -150,4 +150,31 @@ describe('field [wc]', () => {
     const host = await mount(markup(basic));
     expect(() => host.remove()).not.toThrow();
   });
+
+  it('wires author markup inside a form (the issue functional test, as written)', async () => {
+    document.body.innerHTML = `<form>
+  <rafters-field data-required>
+    <label data-part="label">Email</label>
+    <input id="email" name="email" type="email" value="a@b.c">
+    <div data-part="description" id="email-description">We never share it</div>
+    <div data-part="error" id="email-error" role="alert">Email is required</div>
+  </rafters-field>
+</form>`;
+    await Promise.resolve();
+    const control = document.querySelector<HTMLInputElement>('[data-part="control"]')!;
+    const ids = {
+      label: '',
+      control: 'email',
+      description: 'email-description',
+      error: 'email-error',
+    };
+    for (const [k, v] of Object.entries(
+      fieldBehavior.aria({}, { required: true }, ids).control ?? {},
+    )) {
+      expect(control.getAttribute(k)).toBe(v === undefined ? null : String(v));
+    }
+    expect(control.getAttribute('aria-describedby')).toBe('email-error email-description');
+    expect(document.querySelector('[data-part="label"]')!.getAttribute('for')).toBe('email');
+    expect(new FormData(document.querySelector('form')!).getAll('email')).toEqual(['a@b.c']);
+  });
 });
