@@ -220,16 +220,27 @@ export function bindTabs(root: HTMLElement): () => void {
   const list = getPart('list');
   const config: TabsConfig = {
     orientation: list?.getAttribute('aria-orientation') === 'vertical' ? 'vertical' : 'horizontal',
-    // Seed the intrinsic value from the server-rendered active trigger. WC and
-    // Astro are uncontrolled (no reactive prop), so config.value stays undefined.
+    // Seed the intrinsic value from the server-rendered active trigger. A root
+    // with no `value` attribute (Astro, an uncontrolled WC) leaves config.value
+    // undefined; a root that carries one is controlled (see readControlled).
     defaultValue:
       root.querySelector<HTMLElement>('[data-part="trigger"][data-state="active"]')?.dataset[
         'value'
       ] ?? '',
   };
 
+  // The controlled value is the root's `value` attribute, read fresh on every
+  // projection and dispatch and never written into memory. Absent = uncontrolled.
+  const readControlled = () => {
+    config.value = root.getAttribute('value') ?? undefined;
+  };
+  readControlled();
+
   const { memory, dispatch } = createBehavior(tabs, config);
-  const request = (value: string): boolean => dispatch('activate', config, value);
+  const request = (value: string): boolean => {
+    readControlled();
+    return dispatch('activate', config, value);
+  };
 
   // ids are READ from the markup (server- or author-minted), never generated.
   const ids = {} as PartIds<TabsPart>;
@@ -267,6 +278,7 @@ export function bindTabs(root: HTMLElement): () => void {
   };
 
   const render = () => {
+    readControlled();
     const state = memory.get();
     const projection = tabs.aria(state, config, ids);
     for (const part of Object.keys(projection) as TabsPart[]) {
