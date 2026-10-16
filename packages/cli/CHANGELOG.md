@@ -44,7 +44,7 @@
 
 ### Bug Fixes
 
-- fix(design-tokens): **Dark color tokens follow their light tokens again.** Every top-of-tree role's `--dark` token (primary, background, card, panel and the rest) was bound to a fixed scale position, so changing a light token left its dark counterpart, and every foreground and state derived from it, where it was. Dark now derives from the light token through the new `mirror` plugin: the light position mirrored across the scale (50 to 950), shifted by the role's designed elevation offset, in the light token's family. Defaults land on the same designed darks as before. Existing projects re-derive via `rafters init --rebuild`.
+- fix(design-tokens): **Dark color tokens follow their light tokens again.** Every top-of-tree role's `--dark` token (primary, background, card, panel and the rest) was bound to a fixed scale position, so changing a light token left its dark counterpart, and every foreground and state derived from it, where it was. Dark now derives from the light token through the new `mirror` plugin: the light position mirrored across the scale (50 to 950), shifted by the role's designed elevation offset, in the light token's family. Defaults land on the same designed darks as before. Existing projects keep their stored dark bindings until re-initialised with `rafters init --reset`, which regenerates the tokens from defaults and backs up designer overrides; `--rebuild` does not rebind them.
 
 ## 0.4.3
 
