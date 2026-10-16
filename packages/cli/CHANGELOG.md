@@ -32,6 +32,8 @@
 
 ### Fixes
 
+- fix(ui): **Arrow-key roving in menus reaches checkbox and radio items.** `getFocusableItems` in the roving-focus primitive selected only `menuitem`, `option`, `radio` and `tab`, so ArrowUp, ArrowDown, Home and End skipped `menuitemcheckbox` and `menuitemradio` items in every menu that composes it (context-menu, dropdown-menu, menubar). Both roles are now in the query; disabled items are still skipped.
+
 - fix(ui): **The Embed fallback never renders a script-executing link.** `resolveEmbed` offered the recovery link for any URL outside the allowed domains, so `url="javascript:alert(1)"` rendered `<a href="javascript:alert(1)">` in the Web Component and the Astro component. The link is now offered only when the URL parses with an `http:` or `https:` protocol; any other protocol or a malformed URL yields a fallback with no link and an empty `url`.
 
 - fix(ui): **`<rafters-item>` is restored.** The element was deleted with the other Web Component decorators though the Item spec still lists it. It is a `RaftersElement` shadow root holding the `role="option"` row (`data-part="root"`, shared `itemClasses`) with the icon, content, label and description wrappers and the fixed `icon`, `description` and default slots. `size`, `selected` and `disabled` are observed attributes; each change re-renders the classes and the `item.aria` projection (`aria-selected`, `aria-disabled`, `tabindex`, `data-selected`, `data-disabled`). It binds nothing and dispatches no event.
