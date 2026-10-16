@@ -189,6 +189,10 @@ export function bindDialog(root: HTMLElement): () => void {
       const el = getPart(part);
       if (el) el.hidden = !open;
     }
+    // The content's container is a fixed full-screen layer rendered hidden
+    // while closed; it follows the open axis with the overlay and content.
+    const container = getPart('content')?.parentElement;
+    if (container && container !== root) container.hidden = !open;
     // Compose the modal overlay trio directly, level-triggered: start it once
     // on the open+modal transition (content is now un-hidden above so the trap
     // can read its focusables), tear it down when it should no longer be present.
@@ -224,7 +228,12 @@ export function bindDialog(root: HTMLElement): () => void {
   root.addEventListener('click', onClick);
 
   const onKeydown = (event: KeyboardEvent) => {
-    const partEl = (event.target as HTMLElement).closest<HTMLElement>('[data-part]');
+    // A key event from anywhere inside the content reaches the keymap as
+    // `content`, so Escape closes from any focus within it.
+    const target = event.target as HTMLElement;
+    const partEl =
+      target.closest<HTMLElement>('[data-part="content"]') ??
+      target.closest<HTMLElement>('[data-part]');
     const part = partEl?.dataset['part'] as DialogPart | undefined;
     if (!part) return;
     const action = dialog.keymap(
