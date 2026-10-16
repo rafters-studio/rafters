@@ -194,6 +194,26 @@ describe('select.element', () => {
     expect(valueEl.textContent).toBe('Banana');
   });
 
+  it('shows the check on the selected item only, and moves it', async () => {
+    // The browser project loads no Tailwind sheet, so the two utilities the
+    // indicator class names are written out here against the same selectors.
+    const sheet = document.createElement('style');
+    sheet.textContent = `.opacity-0{opacity:0}
+      .group\\/item[data-state="checked"] .group-data-\\[state\\=checked\\]\\/item\\:opacity-100{opacity:1}`;
+    document.head.append(sheet);
+    const host = await mount();
+    const opacities = () =>
+      items(host).map((item) => getComputedStyle(item.firstElementChild as Element).opacity);
+    expect(opacities()).toEqual(['0', '0', '0']);
+    await userEvent.click(trigger(host));
+    await userEvent.click(items(host)[0] as HTMLElement);
+    expect(opacities()).toEqual(['1', '0', '0']);
+    await userEvent.click(trigger(host));
+    await userEvent.click(items(host)[1] as HTMLElement);
+    expect(opacities()).toEqual(['0', '1', '0']);
+    sheet.remove();
+  });
+
   it('dismisses on a pointerdown outside but spares the trigger', async () => {
     const host = await mount();
     await userEvent.click(trigger(host));
