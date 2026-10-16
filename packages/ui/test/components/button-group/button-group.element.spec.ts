@@ -11,6 +11,7 @@
  * tier, not here.
  */
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { page } from 'vitest/browser';
 import { buttonGroup } from '../../../src/components/button-group/button-group.behavior';
 import { RaftersButtonGroup } from '../../../src/components/button-group/button-group.element';
 
@@ -60,5 +61,43 @@ describe('button-group [wc]', () => {
     const assigned = slot?.assignedElements() ?? [];
     expect(assigned.map((n) => n.textContent).join('')).toContain('Bold');
     expect(assigned.length).toBe(2);
+  });
+
+  it('performs the issue functional contract with exact strings', async () => {
+    document.body.innerHTML =
+      '<rafters-button-group aria-label="Document actions"><button>Cancel</button><button>Save</button></rafters-button-group>';
+    const host = document.querySelector('rafters-button-group') as RaftersButtonGroup;
+    expect(host.getAttribute('data-part')).toBe('root');
+    expect(host.getAttribute('role')).toBe(
+      buttonGroup.aria({}, { orientation: 'horizontal' }, { root: '' }).root?.role,
+    );
+    expect(host.getAttribute('data-orientation')).toBe('horizontal');
+    const slot = host.shadowRoot?.querySelector('slot') as HTMLSlotElement;
+    expect(slot.assignedElements().map((el) => el.textContent)).toEqual(['Cancel', 'Save']);
+    await expect.element(page.getByRole('group', { name: 'Document actions' })).toBeVisible();
+
+    host.orientation = 'vertical';
+    expect(host.getAttribute('data-orientation')).toBe('vertical');
+    host.setAttribute('orientation', 'diagonal');
+    expect(host.getAttribute('data-orientation')).toBe('horizontal');
+
+    expect(RaftersButtonGroup.styles).toContain('::slotted(*:focus-visible) { z-index: 10; }');
+    expect(RaftersButtonGroup.styles).toContain(
+      ':host([data-orientation="vertical"]) ::slotted(*:not(:first-child)) { margin-top: -1px; }',
+    );
+  });
+
+  it('carries the connected-border rules for both orientations', () => {
+    const styles = RaftersButtonGroup.styles;
+    for (const o of ['horizontal', 'vertical']) {
+      for (const sel of [
+        '::slotted(*:first-child)',
+        '::slotted(*:last-child)',
+        '::slotted(*:not(:first-child):not(:last-child))',
+        '::slotted(*:not(:first-child))',
+      ]) {
+        expect(styles).toContain(`:host([data-orientation="${o}"]) ${sel}`);
+      }
+    }
   });
 });
