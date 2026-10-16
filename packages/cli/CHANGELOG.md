@@ -4,6 +4,8 @@
 
 ### Features
 
+- feat(ui): **`<rafters-breadcrumb>` is rebuilt, and `rafters add breadcrumb` works again for Web Component projects.** It is a pure-static `RaftersElement` whose shadow root holds the `nav[aria-label="Breadcrumb"]` landmark with one default slot, on a `display: contents` host. You compose the trail as plain light-DOM children; a child of a link or the current page with `slot="start-icon"` or `slot="end-icon"` is wrapped in the decorative `aria-hidden` wrapper. No attributes, no binding, no events. #2499 had deleted `breadcrumb.element.ts`.
+
 - feat(ui): **`<rafters-spinner>` is rebuilt, and `rafters add spinner` works again for Web Component projects.** The element is a pure-static `RaftersElement` shadow root holding one native `<output data-part="root">` with the spinner classes and the projected `aria-label="Loading"`; `size` and `variant` are observed attributes, and a value outside the enum renders as `default`. #2499 had deleted `spinner.element.ts`, so `rafters add spinner` errored for WC projects until now.
 
 - feat(ui): **`<rafters-separator>` is rebuilt, and `rafters add separator` works again for Web Component projects.** It is a pure-static `RaftersElement` with one `div[data-part="root"]` and no slot, carrying the same classes and role/`aria-orientation` projection as the React and Astro Separator. `orientation` is `horizontal | vertical` (anything else renders horizontal); `decorative` absent or `"false"` is decorative (`role="none"`), any other present value is semantic (`role="separator"`). Attribute changes re-render. The old-element cleanup had deleted `separator.element.ts`, which left `rafters add separator` erroring for Web Component projects.
