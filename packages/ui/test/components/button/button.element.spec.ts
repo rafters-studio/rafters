@@ -148,3 +148,36 @@ describe('button [wc]', () => {
     expect(inner.getAttribute('aria-pressed')).toBe('false');
   });
 });
+
+describe('button [wc] functional tests as written in the issue', () => {
+  it('binds a toggle and presses it', async () => {
+    document.body.innerHTML =
+      '<rafters-button><button data-part="root" aria-pressed="false"><span data-part="label">Bold</span></button></rafters-button>';
+    await Promise.resolve();
+    await Promise.resolve();
+    const inner = document.querySelector(
+      'rafters-button button[data-part="root"]',
+    ) as HTMLButtonElement;
+    const config = buttonConfigFromMarkup(inner);
+    expect(config.toggle).toBe(true);
+    expect(inner.getAttribute('data-state')).toBe('idle');
+    inner.click();
+    expect(inner.getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('gate: a loading submit button does not submit', async () => {
+    document.body.innerHTML =
+      '<form><rafters-button><button type="submit" data-part="root" aria-busy="true"><span data-part="label">Save</span></button></rafters-button></form>';
+    await Promise.resolve();
+    await Promise.resolve();
+    const form = document.querySelector('form') as HTMLFormElement;
+    let submits = 0;
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      submits += 1;
+    });
+    (form.querySelector('button') as HTMLButtonElement).click();
+    expect(submits).toBe(0);
+    expect(form.querySelector('button')?.getAttribute('data-state')).toBe('loading');
+  });
+});
