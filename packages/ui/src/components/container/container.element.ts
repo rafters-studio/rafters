@@ -55,6 +55,7 @@
  */
 import { RaftersElement } from '../../primitives/rafters-element';
 import { containerClasses } from './container.classes';
+import type { ColumnsValue } from '../grid/grid.behavior';
 import type {
   ContainerConfig,
   ContainerDepth,
@@ -122,23 +123,24 @@ const DEPTHS: readonly ContainerDepth[] = [
   'max',
 ];
 
-type ColSpan = NonNullable<ContainerConfig['colSpan']>;
-type RowSpan = NonNullable<ContainerConfig['rowSpan']>;
-type Columns = Extract<NonNullable<ContainerConfig['columns']>, number | 'auto'>;
+const COL_SPANS: readonly NonNullable<ContainerConfig['colSpan']>[] = [
+  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
+];
+const ROW_SPANS: readonly NonNullable<ContainerConfig['rowSpan']>[] = [1, 2, 3];
 
 function oneOf<T extends string>(list: readonly T[], value: string | null): T | undefined {
   return list.find((item) => item === value);
 }
 
-function intInRange(value: string | null, max: number): number | undefined {
+function oneOfNumber<T extends number>(list: readonly T[], value: string | null): T | undefined {
   if (value === null || !/^\d+$/.test(value)) return undefined;
   const n = Number(value);
-  return n >= 1 && n <= max ? n : undefined;
+  return list.find((item) => item === n);
 }
 
-function readColumns(value: string | null): Columns | undefined {
+function readColumns(value: string | null): ColumnsValue | undefined {
   if (value === 'auto') return 'auto';
-  return intInRange(value, 12) as Columns | undefined;
+  return oneOfNumber(COL_SPANS, value);
 }
 
 export class RaftersContainer extends RaftersElement {
@@ -177,8 +179,8 @@ export class RaftersContainer extends RaftersElement {
       columns: readColumns(this.getAttribute('columns')),
       query: this.getAttribute('query') !== 'false',
       queryName: this.getAttribute('query-name') ?? undefined,
-      colSpan: intInRange(this.getAttribute('col-span'), 12) as ColSpan | undefined,
-      rowSpan: intInRange(this.getAttribute('row-span'), 3) as RowSpan | undefined,
+      colSpan: oneOfNumber(COL_SPANS, this.getAttribute('col-span')),
+      rowSpan: oneOfNumber(ROW_SPANS, this.getAttribute('row-span')),
       position: oneOf(POSITIONS, this.getAttribute('position')),
       depth: oneOf(DEPTHS, this.getAttribute('depth')),
       fill: this.getAttribute('fill') ?? undefined,
