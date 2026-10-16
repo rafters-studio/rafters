@@ -1,7 +1,8 @@
 /**
  * The elevation ladder (#1638): top-of-tree surface roles carry DESIGNED
- * dark positions from their mappings (bound via scale, so family
- * reassignment still cascades), instead of blind inversion. Found on the
+ * dark positions from their mappings (bound via mirror from the light
+ * token plus a designed offset, so light changes and family reassignment
+ * still cascade), instead of blind inversion. Found on the
  * huttspawn real-palette verification: every surface computed to the same
  * near-black because inversion mapped identical light positions to
  * identical darks and ignored the mappings' designed pairs entirely.
@@ -18,6 +19,7 @@ import { generateSemanticTokens } from '../src/generators/semantic.js';
 import {
   contrastPlugin,
   invertPlugin,
+  mirrorPlugin,
   scalePlugin,
   statePlugin,
   TokenRegistry,
@@ -57,7 +59,7 @@ function buildDefaultRegistry(): TokenRegistry {
     }));
   return new TokenRegistry(
     [...familyTokens, ...semantic.tokens],
-    [scalePlugin, invertPlugin, contrastPlugin, statePlugin],
+    [scalePlugin, invertPlugin, mirrorPlugin, contrastPlugin, statePlugin],
   );
 }
 
@@ -108,6 +110,16 @@ describe('elevation ladder -- designed dark positions (#1638)', () => {
     // Position stays designed; family follows the reassignment chain.
     expect(dark.position).toBe('800');
     expect(['mud', 'neutral']).toContain(dark.family);
+  });
+
+  it('dark follows its light token -- moving light moves dark', () => {
+    const fresh = buildDefaultRegistry();
+    // card: light 50 / dark 700 by default. Light 200 mirrors to 800, then
+    // the designed elevation offset (-3) lands it at 500.
+    fresh.set('card', { family: 'neutral', position: '200' }, { reason: 'designer' });
+    expect((fresh.get('card--dark')?.value as ColorReference).position).toBe('500');
+    fresh.set('primary', { family: 'zinc', position: '300' }, { reason: 'designer' });
+    expect((fresh.get('primary--dark')?.value as ColorReference).position).toBe('600');
   });
 
   it('snapshot: the defaults elevation table (REVIEW WITH SEAN BEFORE LOCKING)', () => {

@@ -42,6 +42,10 @@
 
 - feat(ui): **Date picker takes decorative `startIcon` and `endIcon`.** In React they are props (`startIcon: ReactNode`, `endIcon: ReactNode`), in Astro the `start-icon` and `end-icon` slots, and in the Web Component a child with `slot="start-icon"` or `slot="end-icon"`. Each icon sits in a wrapper the behavior renders with `aria-hidden="true"` in the server markup, so the trigger's label alone is the accessible name; the wrapper is absent when no icon is given. A given `endIcon` replaces the built-in calendar glyph. The trigger is now a `grid grid-flow-col` instead of `flex`, so the start icon sits on the right on a `dir="rtl"` page, and inline padding tightens on the icon's own side only with logical `ps-*`/`pe-*` classes. The brand brings its icons, sizing included: the wrapper only places and hides.
 
+### Bug Fixes
+
+- fix(design-tokens): **Dark color tokens follow their light tokens again.** Every top-of-tree role's `--dark` token (primary, background, card, panel and the rest) was bound to a fixed scale position, so changing a light token left its dark counterpart, and every foreground and state derived from it, where it was. Dark now derives from the light token through the new `mirror` plugin: the light position mirrored across the scale (50 to 950), shifted by the role's designed elevation offset, in the light token's family. Defaults land on the same designed darks as before. Existing projects re-derive via `rafters init --rebuild`.
+
 ## 0.4.3
 
 ### Breaking Changes

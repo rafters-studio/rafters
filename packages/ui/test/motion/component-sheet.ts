@@ -19,6 +19,7 @@ import { generateBaseSystem } from '@rafters/design-tokens/generators/index';
 import {
   contrastPlugin,
   invertPlugin,
+  mirrorPlugin,
   registryToCompiled,
   scalePlugin,
   statePlugin,
@@ -51,6 +52,7 @@ export function componentSheet(component: string): Promise<string> {
       contrastPlugin,
       statePlugin,
       invertPlugin,
+      mirrorPlugin,
     ]);
     return registryToCompiled(registry, { contentSources: [componentDir(component)] });
   })();

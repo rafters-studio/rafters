@@ -63,6 +63,7 @@ export {
   calcPlugin,
   contrastPlugin,
   invertPlugin,
+  mirrorPlugin,
   scalePlugin,
   statePlugin,
 } from './plugins/index.js';

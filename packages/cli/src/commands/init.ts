@@ -24,6 +24,7 @@ import {
   getAdapter,
   importColorFamily,
   invertPlugin,
+  mirrorPlugin,
   loadRegistryFromDir,
   regenerateOutputs,
   resolveContentSources,
@@ -35,7 +36,7 @@ import {
 } from '@rafters/design-tokens';
 import type { OKLCH } from '@rafters/shared';
 
-const REGISTRY_PLUGINS = [scalePlugin, contrastPlugin, statePlugin, invertPlugin];
+const REGISTRY_PLUGINS = [scalePlugin, contrastPlugin, statePlugin, invertPlugin, mirrorPlugin];
 
 import {
   type ComponentTarget,
