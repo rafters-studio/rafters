@@ -111,3 +111,18 @@ it('rebinds after disconnect and reconnect', async () => {
   expect(again).not.toBeNull();
   expect(again?.querySelector('[data-part="img"]')?.getAttribute('aria-busy')).toBe('true');
 });
+
+it('matches the issue functional test block', async () => {
+  const figure = await mount(`src="${SRC}" alt="Loading" data-status="loading" data-radius="xl"`);
+  const config = { status: 'loading', radius: 'xl' } as const;
+  expect(figure.className).toBe(imageClasses(config, {}).root);
+  const img = figure.querySelector('[data-part="img"]') as HTMLImageElement;
+  expect(img.getAttribute('aria-busy')).toBe('true');
+  const status = figure.querySelector('[data-part="status"]') as HTMLElement;
+  expect(status.getAttribute('role')).toBe('status');
+  expect(status.textContent).toBe('Loading image');
+
+  const plain = await mount(`src="${SRC}"`);
+  expect((plain.querySelector('img') as HTMLImageElement).getAttribute('alt')).toBe('');
+  expect(plain.querySelector('[data-part="status"]')).toBeNull();
+});
