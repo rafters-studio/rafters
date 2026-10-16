@@ -131,10 +131,10 @@ it('modal: Tab wraps inside the content, scroll is locked, outside pointerdown c
   el('s-trigger').click();
   const close = el('s-close');
   close.focus();
-  close.dispatchEvent(
-    new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }),
-  );
-  expect(el('s-content').contains(document.activeElement)).toBe(true);
+  const tab = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true });
+  close.dispatchEvent(tab);
+  expect(tab.defaultPrevented).toBe(true);
+  expect(document.activeElement).toBe(el('s-content').querySelector('button'));
   expect(document.body.style.overflow).toBe('hidden');
   document.body.dispatchEvent(new Event('pointerdown', { bubbles: true }));
   expect(el('s-content').hidden).toBe(true);
@@ -175,6 +175,8 @@ it('removal runs the teardown', async () => {
   expect(document.body.style.overflow).not.toBe('hidden');
   document.body.append(content);
   document.body.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+  expect(content.hidden).toBe(false);
+  content.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
   expect(content.hidden).toBe(false);
 });
 
