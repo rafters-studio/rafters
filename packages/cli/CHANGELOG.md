@@ -4,6 +4,14 @@
 
 ### Features
 
+- feat(ui): **`<rafters-alert>` is rebuilt, and `rafters add alert` works again for Web Component projects.** It is a pure-static `RaftersElement` shadow root holding a `div[data-part="root"]` with the alert classes and the projected `role="alert"`, three fixed named-slot regions (`slot="title"`, `slot="description"`, `slot="action"`, each a `div` with its sub-part classes, all rendered even when unfilled) and a default slot. `variant` is an observed attribute, and a value outside the nine variants renders as `default`. #2499 had deleted `alert.element.ts`, so `rafters add alert` errored for WC projects until now.
+
+- feat(ui): **`<rafters-aspect-ratio>` is rebuilt, and `rafters add aspect-ratio` works again for Web Component projects.** It is a pure-static `RaftersElement` shadow root holding one `div[data-part="root"]` and a default slot. The string `ratio` attribute (`"16/9"`, `"1.778"`, `"1"`) is parsed by `parseRatio` and set as the wrapper's inline `aspect-ratio`; a missing, empty, non-numeric, non-positive or zero-denominator value renders `1`. The slotted child fills the box through a `::slotted(*)` rule; `object-fit` stays with the consumer. #2499 had deleted `aspect-ratio.element.ts`.
+
+- feat(ui): **`<rafters-avatar>` is rebuilt, and `rafters add avatar` works again for Web Component projects.** It is a pure-static `RaftersElement` that renders its surface once from `size`, `src`, `alt` and `status`: a `span[data-part="root"]`, an `img[data-part="image"]` when there is a `src` and the status is not `error`, and a `span[data-part="fallback"]` holding the default slot when the status is not `loaded`. The caller declares the load outcome with `status` (`loading | loaded | error`), which defaults from `src` (present is `loaded`, absent is `error`); an unknown `size` renders `md`. No part carries a role or `aria-*`, and the element listens for no load event. #2499 had deleted `avatar.element.ts`, so `rafters add avatar` errored for Web Component projects until now.
+
+- feat(ui): **`<rafters-empty>` is rebuilt, and `rafters add empty` works again for Web Component projects.** It is a pure-static `RaftersElement` with one `div[data-part="root"]` carrying the shared empty classes and no ARIA, holding four fixed named-slot regions (`icon`, `title`, `description`, `action`) and a default slot. Unfilled regions stay rendered as empty space; the consumer slots in a real heading, an `aria-hidden` icon and a real control. #2499 had deleted `empty.element.ts`, which left Web Component projects with no empty state.
+
 - feat(ui): **`<rafters-badge>` is rebuilt, and `rafters add badge` works again for Web Component projects.** The element is a pure-static `RaftersElement` shadow root holding one `span[data-part="root"][data-slot="badge"]` with the badge classes and a default slot for the label. `variant` (all 12 values) and `size` (`sm | default | lg`) are observed attributes, and a value outside the vocabulary renders the default. A child with `slot="start-icon"` or `slot="end-icon"` renders inside an `aria-hidden` wrapper, present only when that icon is given. #2499 had deleted `badge.element.ts`, so `rafters add badge` errored for WC projects until now.
 
 - feat(ui): **`<rafters-spinner>` is rebuilt, and `rafters add spinner` works again for Web Component projects.** The element is a pure-static `RaftersElement` shadow root holding one native `<output data-part="root">` with the spinner classes and the projected `aria-label="Loading"`; `size` and `variant` are observed attributes, and a value outside the enum renders as `default`. #2499 had deleted `spinner.element.ts`, so `rafters add spinner` errored for WC projects until now.
@@ -13,6 +21,12 @@
 ### Fixes
 
 - fix(ui): **`<rafters-pagination>` is rebuilt, and `rafters add pagination` works again for Web Component projects.** The element was deleted with the old Web Component set, so adding pagination errored for WC projects. It is back as a pure-static `RaftersElement`: a shadow root holding the labelled `nav` landmark (`aria-label="Pagination"`, the shared pagination classes) with one default slot for the controls you compose, and a `display: contents` host. No binding, no attributes, no events.
+
+- fix(ui): **`<rafters-kbd>` is restored.** The element was deleted with the other Web Component decorators though the Kbd spec still lists it. It renders the `<kbd data-part="root">` cap with the shared `kbdClasses` string around a default slot, takes no attributes, binds nothing, and its host is `display: inline-flex`.
+
+- feat(ui): **`<rafters-label>` is restored.** The pure-static Web Component renders the inner `<label data-part="root">` with the shared `labelClasses` for its `variant` around a default slot, and forwards the host `for` onto that inner label. It performs no binding and projects no ARIA. The `for` IDREF resolves inside the shadow root, so it does not associate across the shadow boundary to a light-DOM control. It had been deleted with the other element files.
+
+- fix(ui): **`<rafters-skeleton>` is rebuilt, and `rafters add skeleton` works again for Web Component projects.** The element was deleted with the old Web Component decorators, so adding the skeleton to a WC project errored on the missing `skeleton.element.ts`. It is back as a pure-static `RaftersElement`: one decorative `root` part in the shadow root with the shared skeleton classes and the constant `aria-hidden="true"`, no slot, no attributes and no events.
 
 ## 0.4.4
 
