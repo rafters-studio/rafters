@@ -4,6 +4,8 @@
 
 ### Features
 
+- feat(ui): **`<rafters-card>` is restored.** Written in plain HTML (`<rafters-card fill="primary"><h3 slot="title">Plan</h3><p slot="content">Body</p></rafters-card>`), it renders the card surface with the shared card classes inside a shadow root, with fixed named slots for `header`, `title`, `description`, `action`, `content` and `footer` plus a default slot. `fill` sets the resolved surface and `data-fill`, and a change re-renders. A host `class` never reaches the surface.
+
 - feat(ui): **`<rafters-spinner>` is rebuilt, and `rafters add spinner` works again for Web Component projects.** The element is a pure-static `RaftersElement` shadow root holding one native `<output data-part="root">` with the spinner classes and the projected `aria-label="Loading"`; `size` and `variant` are observed attributes, and a value outside the enum renders as `default`. #2499 had deleted `spinner.element.ts`, so `rafters add spinner` errored for WC projects until now.
 
 - feat(ui): **`<rafters-separator>` is rebuilt, and `rafters add separator` works again for Web Component projects.** It is a pure-static `RaftersElement` with one `div[data-part="root"]` and no slot, carrying the same classes and role/`aria-orientation` projection as the React and Astro Separator. `orientation` is `horizontal | vertical` (anything else renders horizontal); `decorative` absent or `"false"` is decorative (`role="none"`), any other present value is semantic (`role="separator"`). Attribute changes re-render. The old-element cleanup had deleted `separator.element.ts`, which left `rafters add separator` erroring for Web Component projects.
