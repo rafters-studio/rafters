@@ -10,7 +10,7 @@ import { drawer, type DrawerConfig } from '../../../src/components/drawer/drawer
 import { drawerClasses } from '../../../src/components/drawer/drawer.classes';
 import { RaftersDrawer } from '../../../src/components/drawer/drawer.element';
 
-const ids = {
+const partIds = {
   root: '',
   trigger: 'dr-trigger',
   overlay: 'dr-overlay',
@@ -20,7 +20,7 @@ const ids = {
   close: 'dr-close',
 };
 
-async function mount(
+async function mountDrawer(
   attrs = '',
   body = '<button type="button">Checkout</button>',
   extra = '',
@@ -53,15 +53,15 @@ afterEach(() => {
 
 describe('drawer [wc]', () => {
   it('is a registered RaftersDrawer with no shadow root', async () => {
-    const host = await mount();
+    const host = await mountDrawer();
     expect(host).toBeInstanceOf(RaftersDrawer);
     expect(host.shadowRoot).toBeNull();
   });
 
   it('closed: parts carry the closed projection, present and inert, never hidden', async () => {
-    await mount();
+    await mountDrawer();
     const config: DrawerConfig = { modal: true, defaultOpen: false };
-    const aria = drawer.aria(drawer.initialState(config), config, ids);
+    const aria = drawer.aria(drawer.initialState(config), config, partIds);
     const trigger = el('dr-trigger');
     expect(trigger.getAttribute('aria-expanded')).toBe('false');
     expect(trigger.getAttribute('data-state')).toBe('closed');
@@ -77,11 +77,11 @@ describe('drawer [wc]', () => {
   });
 
   it('trigger click opens: open projection, inert removed', async () => {
-    await mount();
+    await mountDrawer();
     el('dr-trigger').click();
     const config: DrawerConfig = { modal: true, defaultOpen: false };
     const open = { open: true };
-    const aria = drawer.aria(open, config, ids);
+    const aria = drawer.aria(open, config, partIds);
     expect(el('dr-trigger').getAttribute('aria-expanded')).toBe('true');
     expect(el('dr-trigger').getAttribute('aria-controls')).toBe('dr-content');
     expect(el('dr-content').getAttribute('role')).toBe('dialog');
@@ -93,7 +93,7 @@ describe('drawer [wc]', () => {
 
   for (const side of sides) {
     it(`content class follows data-side="${side}"`, async () => {
-      await mount(`data-side="${side}"`);
+      await mountDrawer(`data-side="${side}"`);
       const config: DrawerConfig = { modal: true, defaultOpen: false, side };
       const classes = drawerClasses(config, drawer.initialState(config));
       expect(el('dr-content').className).toBe(classes.content);
@@ -103,14 +103,14 @@ describe('drawer [wc]', () => {
   it('content class defaults to bottom for a missing or unknown side', async () => {
     const config: DrawerConfig = { modal: true, defaultOpen: false, side: 'bottom' };
     const bottom = drawerClasses(config, drawer.initialState(config)).content;
-    await mount();
+    await mountDrawer();
     expect(el('dr-content').className).toBe(bottom);
-    await mount('data-side="sideways"');
+    await mountDrawer('data-side="sideways"');
     expect(el('dr-content').className).toBe(bottom);
   });
 
   it('overlay, handle, title, description and close carry their classes', async () => {
-    await mount('', '', '<p data-part="description" id="dr-desc">Items</p>');
+    await mountDrawer('', '', '<p data-part="description" id="dr-desc">Items</p>');
     const config: DrawerConfig = { modal: true, defaultOpen: false };
     const classes = drawerClasses(config, drawer.initialState(config));
     expect(el('dr-overlay').className).toBe(classes.overlay);
@@ -121,14 +121,14 @@ describe('drawer [wc]', () => {
   });
 
   it('title without description: labelledby the title, no describedby', async () => {
-    await mount();
+    await mountDrawer();
     el('dr-trigger').click();
     expect(el('dr-content').getAttribute('aria-labelledby')).toBe('dr-title');
     expect(el('dr-content').hasAttribute('aria-describedby')).toBe(false);
   });
 
   it('Escape closes and focus returns to the trigger', async () => {
-    await mount();
+    await mountDrawer();
     el('dr-trigger').click();
     await userEvent.keyboard('{Escape}');
     expect(el('dr-content').inert).toBe(true);
@@ -136,7 +136,7 @@ describe('drawer [wc]', () => {
   });
 
   it('Escape closes when the trap lands focus on the close button', async () => {
-    await mount('', '');
+    await mountDrawer('', '');
     el('dr-trigger').click();
     const close = el('dr-close');
     expect(document.activeElement).toBe(close);
@@ -146,7 +146,7 @@ describe('drawer [wc]', () => {
   });
 
   it('the close button closes the drawer', async () => {
-    await mount();
+    await mountDrawer();
     el('dr-trigger').click();
     el('dr-close').click();
     expect(el('dr-content').inert).toBe(true);
@@ -154,7 +154,7 @@ describe('drawer [wc]', () => {
   });
 
   it('open and modal: Tab from the last focusable stays inside the content', async () => {
-    await mount();
+    await mountDrawer();
     el('dr-trigger').click();
     el('dr-close').focus();
     await userEvent.tab();
@@ -162,7 +162,7 @@ describe('drawer [wc]', () => {
   });
 
   it('open and modal: body scroll is locked', async () => {
-    await mount();
+    await mountDrawer();
     el('dr-trigger').click();
     expect(document.body.style.overflow).toBe('hidden');
     el('dr-close').click();
@@ -170,14 +170,14 @@ describe('drawer [wc]', () => {
   });
 
   it('open and modal: a pointerdown outside closes the drawer', async () => {
-    await mount();
+    await mountDrawer();
     el('dr-trigger').click();
     el('outside').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
     expect(el('dr-content').inert).toBe(true);
   });
 
   it('clicking the trigger while open closes and leaves it closed', async () => {
-    await mount();
+    await mountDrawer();
     el('dr-trigger').click();
     el('dr-trigger').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
     el('dr-trigger').click();
@@ -186,7 +186,7 @@ describe('drawer [wc]', () => {
   });
 
   it('data-modal="false": no aria-modal, no scroll lock, Escape still closes', async () => {
-    await mount('data-modal="false"');
+    await mountDrawer('data-modal="false"');
     el('dr-trigger').click();
     expect(el('dr-content').hasAttribute('aria-modal')).toBe(false);
     expect(document.body.style.overflow).not.toBe('hidden');
@@ -195,13 +195,13 @@ describe('drawer [wc]', () => {
   });
 
   it('data-default-open="true" mounts the drawer open', async () => {
-    await mount('data-default-open="true"');
+    await mountDrawer('data-default-open="true"');
     expect(el('dr-content').inert).toBe(false);
     expect(el('dr-trigger').getAttribute('aria-expanded')).toBe('true');
   });
 
   it('removing the element runs the teardown', async () => {
-    const host = await mount();
+    const host = await mountDrawer();
     el('dr-trigger').click();
     expect(document.body.style.overflow).toBe('hidden');
     const content = el('dr-content');
@@ -211,5 +211,60 @@ describe('drawer [wc]', () => {
     content.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     expect(content.getAttribute('data-state')).toBe('open');
     expect(document.body.style.overflow).not.toBe('hidden');
+  });
+});
+
+describe('drawer [wc] functional tests', () => {
+  async function mount(
+    attrs = '',
+    body = '<button type="button">Checkout</button>',
+  ): Promise<void> {
+    document.body.innerHTML = `
+    <rafters-drawer ${attrs}>
+      <button type="button" data-part="trigger" id="dr-trigger">Open</button>
+      <div data-part="overlay" id="dr-overlay"></div>
+      <div data-part="content" id="dr-content" tabindex="-1">
+        <div aria-hidden="true"></div>
+        <h2 data-part="title" id="dr-title">Cart</h2>
+        ${body}
+        <button type="button" data-part="close" id="dr-close">Close</button>
+      </div>
+    </rafters-drawer>`;
+    await Promise.resolve();
+  }
+
+  const ids = {
+    root: '',
+    trigger: 'dr-trigger',
+    overlay: 'dr-overlay',
+    content: 'dr-content',
+    title: 'dr-title',
+    description: '',
+    close: 'dr-close',
+  };
+
+  it('closed: parts present and inert; projection and side class applied', async () => {
+    await mount('data-side="left"');
+    const config = { modal: true, defaultOpen: false, side: 'left' as const };
+    const content = document.getElementById('dr-content') as HTMLElement;
+    expect(content.inert).toBe(true);
+    expect(content.hidden).toBe(false);
+    expect(content.getAttribute('data-state')).toBe(
+      drawer.aria(drawer.initialState(config), config, ids).content?.['data-state'],
+    );
+    expect(content.className).toBe(drawerClasses(config, drawer.initialState(config)).content);
+    (document.getElementById('dr-trigger') as HTMLElement).click();
+    expect(content.inert).toBe(false);
+    expect(content.getAttribute('aria-labelledby')).toBe('dr-title');
+  });
+
+  it('Escape closes when the trap lands focus on the close button', async () => {
+    await mount('', '');
+    (document.getElementById('dr-trigger') as HTMLElement).click();
+    const close = document.getElementById('dr-close') as HTMLElement;
+    expect(document.activeElement).toBe(close);
+    close.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect((document.getElementById('dr-content') as HTMLElement).inert).toBe(true);
+    expect(document.activeElement).toBe(document.getElementById('dr-trigger'));
   });
 });
