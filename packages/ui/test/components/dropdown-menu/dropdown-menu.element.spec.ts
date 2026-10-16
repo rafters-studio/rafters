@@ -233,12 +233,14 @@ it('removing the element runs the teardown', async () => {
   const el = await mountFull();
   const trigger = part('dm-trigger');
   const content = part('dm-content');
-  el.remove();
-  document.body.append(trigger, content);
   trigger.click();
-  expect(content.hidden).toBe(true);
-  content.hidden = false;
+  expect(content.hidden).toBe(false);
+  el.remove();
   document.body.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+  expect(content.hidden).toBe(false);
+  const expanded = trigger.getAttribute('aria-expanded');
+  trigger.click();
+  expect(trigger.getAttribute('aria-expanded')).toBe(expanded);
   expect(content.hidden).toBe(false);
 });
 
