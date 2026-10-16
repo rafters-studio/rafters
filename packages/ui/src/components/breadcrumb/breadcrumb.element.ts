@@ -1,32 +1,42 @@
 /**
- * Hierarchical navigation component for wayfinding
+ * Breadcrumb -- a hierarchical location trail for wayfinding. Compose
+ * Breadcrumb with BreadcrumbList, BreadcrumbItem, BreadcrumbLink,
+ * BreadcrumbPage, BreadcrumbSeparator, and BreadcrumbEllipsis; the nav
+ * landmark is the contract, the family is the composition. A pure static
+ * score has nothing to subscribe to: the performance is pure decoration
+ * application. No useBehavior, no memory, no bind -- markup in, classes out,
+ * slots through.
  *
- * @cognitive-load 2/10 - Optimized for peripheral navigation aid with minimal cognitive overhead
- * @attention-economics Tertiary support: Never competes with primary content, provides spatial context only
- * @trust-building Low trust routine navigation with predictable, reliable wayfinding patterns
- * @accessibility Complete ARIA support with aria-current="page", aria-hidden separators, and keyboard navigation
- * @semantic-meaning Wayfinding system with spatial context and navigation hierarchy indication
+ * @cognitive-load 2/10 - decision 0, info 1, interaction 0, disruption 0, learning 1
+ * @attention-economics Tertiary support: a breadcrumb provides spatial context
+ * only and must never compete with primary content. It sits above the fold as
+ * a peripheral wayfinding aid; reserve its low-chroma muted text so the current
+ * page reads as the sole emphasis and the trail recedes.
+ * @trust-building Predictable, reliable wayfinding: the trail always mirrors the
+ * site hierarchy, the current page is never a dead link, and separators never
+ * imply interactivity -- routine navigation the user can trust without reading.
+ * @accessibility Complete ARIA: the root is a `nav[aria-label="Breadcrumb"]`
+ * landmark, the current page is `aria-current="page"` (and non-clickable via
+ * `role="link" aria-disabled="true"`), and separators/ellipses are
+ * `aria-hidden="true" role="presentation"` so assistive tech skips the
+ * decoration. The ellipsis pairs its icon with an sr-only "More" label.
+ * @semantic-meaning Wayfinding system: an ordered list of ancestor links
+ * expressing navigation hierarchy and the reader's current location within it.
  *
  * @usage-patterns
  * DO: Provide spatial context and navigation hierarchy
- * DO: Use clear current page indication with aria-current="page"
- * DO: Implement truncation strategies for long paths (Miller's Law: 7+/-2 items)
- * DO: Configure separators with proper accessibility attributes
+ * DO: Mark the current page with aria-current="page" (BreadcrumbPage)
+ * DO: Truncate long paths with BreadcrumbEllipsis (Miller's Law: 7+/-2 items)
  * NEVER: Use for primary actions or main navigation
- * NEVER: Show breadcrumbs on homepage (nothing to navigate back to)
- * NEVER: Make current page clickable
+ * NEVER: Show breadcrumbs on the homepage (nothing to navigate back to)
+ * NEVER: Make the current page clickable
  *
  * @example
  * ```tsx
- * // Basic breadcrumb
  * <Breadcrumb>
  *   <BreadcrumbList>
  *     <BreadcrumbItem>
  *       <BreadcrumbLink href="/">Home</BreadcrumbLink>
- *     </BreadcrumbItem>
- *     <BreadcrumbSeparator />
- *     <BreadcrumbItem>
- *       <BreadcrumbLink href="/products">Products</BreadcrumbLink>
  *     </BreadcrumbItem>
  *     <BreadcrumbSeparator />
  *     <BreadcrumbItem>
@@ -34,28 +44,6 @@
  *     </BreadcrumbItem>
  *   </BreadcrumbList>
  * </Breadcrumb>
- *
- * // With truncation for deep paths
- * <Breadcrumb>
- *   <BreadcrumbList>
- *     <BreadcrumbItem>
- *       <BreadcrumbLink href="/">Home</BreadcrumbLink>
- *     </BreadcrumbItem>
- *     <BreadcrumbSeparator />
- *     <BreadcrumbItem>
- *       <BreadcrumbEllipsis />
- *     </BreadcrumbItem>
- *     <BreadcrumbSeparator />
- *     <BreadcrumbItem>
- *       <BreadcrumbPage>Current Page</BreadcrumbPage>
- *     </BreadcrumbItem>
- *   </BreadcrumbList>
- * </Breadcrumb>
- *
- * // With router Link (asChild)
- * <BreadcrumbLink asChild>
- *   <Link to="/products">Products</Link>
- * </BreadcrumbLink>
  * ```
  */
 
