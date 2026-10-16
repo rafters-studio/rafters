@@ -88,6 +88,33 @@ describe('input-group [wc]', () => {
     expect(new FormData(disabledForm).getAll('amount')).toEqual([]);
   });
 
+  it('matches the issue functional test as written', async () => {
+    document.body.innerHTML = `<form>
+  <rafters-input-group data-invalid>
+    <div data-part="addonStart">$</div>
+    <input id="amount" name="amount" value="5" aria-label="Amount">
+    <div data-part="addonEnd">USD</div>
+  </rafters-input-group>
+</form>`;
+    await Promise.resolve();
+    const root = document.querySelector<HTMLElement>('rafters-input-group') as HTMLElement;
+    const control = root.querySelector<HTMLInputElement>('[data-part="control"]') as HTMLElement;
+    const ids = {
+      root: root.id,
+      control: control.id,
+      addonStart: (root.querySelector('[data-part="addonStart"]') as HTMLElement).id,
+      addonEnd: (root.querySelector('[data-part="addonEnd"]') as HTMLElement).id,
+    };
+    const projection = inputGroupBehavior.aria({}, { invalid: true }, ids);
+    for (const [k, v] of Object.entries(projection.control ?? {})) {
+      expect(control.getAttribute(k)).toBe(v === undefined ? null : String(v));
+    }
+    expect(root.getAttribute('data-state')).toBe('invalid');
+    expect(
+      new FormData(document.querySelector('form') as HTMLFormElement).getAll('amount'),
+    ).toEqual(['5']);
+  });
+
   it('upgrades a host with no control without throwing', async () => {
     const root = await mount('', '<span>none</span>');
     expect(root).toBeInstanceOf(RaftersInputGroup);
