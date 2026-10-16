@@ -128,7 +128,8 @@ export function readGridConfig(root: HTMLElement): GridConfig {
     columns: parseColumns(data['columns']),
     gap: data['gap'] as SpacingValue | undefined,
     padding: data['padding'] as SpacingValue | undefined,
-    role: data['gridRole'] === 'grid' ? 'grid' : undefined,
+    role:
+      data['gridRole'] === 'grid' || root.getAttribute('grid-role') === 'grid' ? 'grid' : undefined,
     ariaLabel: root.getAttribute('aria-label') ?? undefined,
   };
 }
@@ -153,7 +154,8 @@ export function readGridConfig(root: HTMLElement): GridConfig {
  * The role disposition (carried from the WC port): a bare `role="grid"` on a
  * light-DOM host BEFORE the row/gridcell children exist is a 4.1.2 axe
  * violation and collides with the platform `role`. So the opt-in attribute is
- * `data-grid-role`; the binding reads it and PROJECTS the real `role="grid"` onto
+ * `data-grid-role` (Astro) or `grid-role` (the WC host); the binding reads
+ * either and PROJECTS the real `role="grid"` onto
  * the root part, which by then owns authored row/gridcell descendants.
  */
 export function bindGrid(root: HTMLElement): () => void {
