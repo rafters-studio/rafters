@@ -4,6 +4,10 @@
 
 ### Features
 
+- feat(ui): **`<rafters-spinner>` is rebuilt, and `rafters add spinner` works again for Web Component projects.** The element is a pure-static `RaftersElement` shadow root holding one native `<output data-part="root">` with the spinner classes and the projected `aria-label="Loading"`; `size` and `variant` are observed attributes, and a value outside the enum renders as `default`. #2499 had deleted `spinner.element.ts`, so `rafters add spinner` errored for WC projects until now.
+
+- feat(ui): **`<rafters-separator>` is rebuilt, and `rafters add separator` works again for Web Component projects.** It is a pure-static `RaftersElement` with one `div[data-part="root"]` and no slot, carrying the same classes and role/`aria-orientation` projection as the React and Astro Separator. `orientation` is `horizontal | vertical` (anything else renders horizontal); `decorative` absent or `"false"` is decorative (`role="none"`), any other present value is semantic (`role="separator"`). Attribute changes re-render. The old-element cleanup had deleted `separator.element.ts`, which left `rafters add separator` erroring for Web Component projects.
+
 - feat(ui): **`<rafters-label>` is restored.** The pure-static Web Component renders the inner `<label data-part="root">` with the shared `labelClasses` for its `variant` around a default slot, and forwards the host `for` onto that inner label. It performs no binding and projects no ARIA. The `for` IDREF resolves inside the shadow root, so it does not associate across the shadow boundary to a light-DOM control. It had been deleted with the other element files.
 
 ## 0.4.4
