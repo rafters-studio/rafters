@@ -197,6 +197,9 @@ export function bindAlertDialog(root: HTMLElement): () => void {
       const el = getPart(part);
       if (el) el.hidden = !open;
     }
+    // The content's container is a fixed full-screen layer; it follows the same axis.
+    const container = getPart('content')?.parentElement;
+    if (container && container !== root) container.hidden = !open;
     // Compose the modal overlay pair directly, level-triggered: start it once
     // on the open transition (content is now un-hidden above so the trap can
     // read its focusables), tear it down when it should no longer be present.
