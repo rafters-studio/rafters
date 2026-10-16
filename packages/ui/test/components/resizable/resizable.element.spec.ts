@@ -115,10 +115,27 @@ it('a disabled group does not resize and fires no input event', async () => {
 it('tears the bind down when the element is removed', async () => {
   const root = await mount(HALVES);
   const handle = root.querySelector<HTMLElement>('[data-part="handle"]');
-  handle?.focus();
+  if (!handle) throw new Error('no handle');
+  let inputs = 0;
+  document.addEventListener('input', () => inputs++);
+  const press = (): void => {
+    handle.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+  };
+  // Positive control: the same dispatch resizes while bound (the bind
+  // resolves the focused handle, so focus it first).
+  handle.focus();
+  press();
+  expect(handle.getAttribute('aria-valuenow')).toBe('51');
+  expect(inputs).toBe(1);
   document.querySelector('rafters-resizable')?.remove();
-  await userEvent.keyboard('{ArrowRight}');
-  expect(handle?.getAttribute('aria-valuenow')).toBe('50');
+  // Re-home the group outside the element so the handle can take focus again:
+  // only a surviving listener on the root could still resize it.
+  document.body.append(root);
+  handle.focus();
+  expect(document.activeElement).toBe(handle);
+  press();
+  expect(handle.getAttribute('aria-valuenow')).toBe('51');
+  expect(inputs).toBe(1);
 });
 
 it('drags a handle and carries data-dragging only while dragging', async () => {
