@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Features
+
+- feat(ui): **`<rafters-spinner>` is rebuilt, and `rafters add spinner` works again for Web Component projects.** The element is a pure-static `RaftersElement` shadow root holding one native `<output data-part="root">` with the spinner classes and the projected `aria-label="Loading"`; `size` and `variant` are observed attributes, and a value outside the enum renders as `default`. #2499 had deleted `spinner.element.ts`, so `rafters add spinner` errored for WC projects until now.
+
+- feat(ui): **`<rafters-separator>` is rebuilt, and `rafters add separator` works again for Web Component projects.** It is a pure-static `RaftersElement` with one `div[data-part="root"]` and no slot, carrying the same classes and role/`aria-orientation` projection as the React and Astro Separator. `orientation` is `horizontal | vertical` (anything else renders horizontal); `decorative` absent or `"false"` is decorative (`role="none"`), any other present value is semantic (`role="separator"`). Attribute changes re-render. The old-element cleanup had deleted `separator.element.ts`, which left `rafters add separator` erroring for Web Component projects.
+
 ### Fixes
 
 - fix(ui): **`<rafters-kbd>` is restored.** The element was deleted with the other Web Component decorators though the Kbd spec still lists it. It renders the `<kbd data-part="root">` cap with the shared `kbdClasses` string around a default slot, takes no attributes, binds nothing, and its host is `display: inline-flex`.
