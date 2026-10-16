@@ -1,5 +1,11 @@
 # rafters
 
+## Unreleased
+
+### Fixes
+
+- fix(ui): **`<rafters-pagination>` is rebuilt, and `rafters add pagination` works again for Web Component projects.** The element was deleted with the old Web Component set, so adding pagination errored for WC projects. It is back as a pure-static `RaftersElement`: a shadow root holding the labelled `nav` landmark (`aria-label="Pagination"`, the shared pagination classes) with one default slot for the controls you compose, and a `display: contents` host. No binding, no attributes, no events.
+
 ## 0.4.4
 
 ### Features
