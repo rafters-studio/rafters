@@ -71,7 +71,7 @@ const weekClasses = '';
 // describes does not exist here. The colour half of that paint rides the hover
 // transition above; nothing animates an inline-size, because nothing changes one.
 const dayClasses =
-  'relative inline-flex items-center justify-center size-8 rounded-md text-sm select-none ' +
+  'relative size-8 rounded-md text-center align-middle text-sm select-none ' +
   'transition-colors duration-fast ease-standard data-[selected=true]:duration-micro ' +
   'cursor-pointer text-foreground ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ' +
