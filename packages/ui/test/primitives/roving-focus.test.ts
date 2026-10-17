@@ -77,6 +77,37 @@ describe('createRovingFocus', () => {
     cleanup();
   });
 
+  it('roves through menuitem, menuitemcheckbox and menuitemradio, skipping the disabled one', () => {
+    const roles = ['menuitem', 'menuitemcheckbox', 'menuitemradio', 'menuitemcheckbox', 'menuitem'];
+    const items = roles.map((role, i) => {
+      const item = document.createElement('div');
+      item.setAttribute('role', role);
+      item.textContent = `Item ${i + 1}`;
+      container.appendChild(item);
+      return item;
+    });
+    items[3]?.setAttribute('aria-disabled', 'true');
+    const cleanup = createRovingFocus(container, { orientation: 'vertical' });
+    const press = (key: string) =>
+      container.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+
+    items[0]?.focus();
+    press('ArrowDown');
+    expect(document.activeElement).toBe(items[1]);
+    press('ArrowDown');
+    expect(document.activeElement).toBe(items[2]);
+    press('ArrowDown');
+    expect(document.activeElement).toBe(items[4]);
+    press('ArrowUp');
+    expect(document.activeElement).toBe(items[2]);
+    press('Home');
+    expect(document.activeElement).toBe(items[0]);
+    press('End');
+    expect(document.activeElement).toBe(items[4]);
+
+    cleanup();
+  });
+
   it('wraps navigation when loop is enabled', () => {
     const items = createItems(3);
     const cleanup = createRovingFocus(container, {
