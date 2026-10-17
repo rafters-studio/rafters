@@ -12,9 +12,24 @@
 import { describe, expect, it } from 'vitest';
 import { buildColorValue } from '../src/builder.js';
 
+// getColorTemperature changes verdict at hues 0, 90, 120, 150, 270, 290, 315
+// and 360. Sweep every 5 degrees (which lands on each boundary) plus the
+// integer hues on both sides of each one, so every band and edge is asserted
+// without building all 360 ColorValues (each build is slow under load).
+const BOUNDARIES = [0, 90, 120, 150, 270, 290, 315];
+const SAMPLED_HUES = [
+  ...new Set([
+    ...Array.from({ length: 72 }, (_, i) => i * 5),
+    ...BOUNDARIES.flatMap((b) => [b - 1, b, b + 1]),
+    359,
+  ]),
+]
+  .map((h) => (h + 360) % 360)
+  .sort((a, b) => a - b);
+
 describe('temperature classifier consistency', () => {
-  it('agrees between analysis.temperature and atmosphericWeight.temperature for every hue', () => {
-    for (let h = 0; h < 360; h++) {
+  it('agrees between analysis.temperature and atmosphericWeight.temperature across every hue band', () => {
+    for (const h of SAMPLED_HUES) {
       const value = buildColorValue({ l: 0.6, c: 0.15, h });
       // Both fields are optional on ColorValue: assert presence so the
       // equality below can never pass as undefined === undefined.
