@@ -59,6 +59,11 @@ test('a disallowed URL renders the recovery fallback -- never an iframe', async 
   expect(container.textContent).toContain('This URL is not from a supported embed provider');
 });
 
+test('a javascript: URL renders no link', async () => {
+  const { container } = await render(<Embed url="javascript:alert(1)" />);
+  expect(container.querySelector('a')).toBeNull();
+});
+
 test('a Twitter URL falls through to the fallback (widget flow out of scope)', async () => {
   const { container } = await render(<Embed url="https://twitter.com/user/status/123" />);
   expect(container.querySelector('iframe')).toBeNull();

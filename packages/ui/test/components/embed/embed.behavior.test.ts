@@ -197,6 +197,27 @@ describe('resolveEmbed -- the render descriptor', () => {
     });
   });
 
+  it.each([
+    'javascript:alert(1)',
+    'JAVASCRIPT:alert(1)',
+    'data:text/html,<script>alert(1)</script>',
+    'vbscript:x',
+    'not a url',
+  ])('a non-http URL (%s) resolves to a fallback with no link and an empty url', (url) => {
+    expect(resolveEmbed({ url })).toEqual({
+      kind: 'fallback',
+      url: '',
+      message: 'This URL is not from a supported embed provider',
+      includeLink: false,
+    });
+  });
+
+  it('a disallowed http URL keeps its recovery link', () => {
+    for (const url of ['https://example.com/video', 'http://example.com/video']) {
+      expect(resolveEmbed({ url })).toMatchObject({ kind: 'fallback', url, includeLink: true });
+    }
+  });
+
   it('a Twitter URL resolves to the fallback -- the widget flow is out of scope', () => {
     const descriptor = resolveEmbed({ url: 'https://twitter.com/user/status/123' });
     expect(descriptor.kind).toBe('fallback');
