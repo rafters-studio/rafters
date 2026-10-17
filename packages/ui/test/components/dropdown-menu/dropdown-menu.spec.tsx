@@ -183,6 +183,24 @@ describe('dropdown-menu [react]', () => {
     expect(document.activeElement).toBe(item('Delete'));
   });
 
+  it('ArrowDown from a plain item lands on the following checkbox item', async () => {
+    const user = userEvent.setup();
+    render(
+      <DropdownMenu defaultOpen>
+        <DropdownMenuTrigger aria-label="Options">Options</DropdownMenuTrigger>
+        <DropdownMenuContent aria-label="Options">
+          <DropdownMenuItem>Edit</DropdownMenuItem>
+          <DropdownMenuCheckboxItem checked={false}>Bold</DropdownMenuCheckboxItem>
+        </DropdownMenuContent>
+      </DropdownMenu>,
+    );
+    item('Edit').focus();
+    await user.keyboard('{ArrowDown}');
+    expect(document.activeElement).toBe(
+      body().querySelector<HTMLElement>('[role="menuitemcheckbox"]'),
+    );
+  });
+
   it('ArrowDown on the closed trigger opens the menu', async () => {
     const user = userEvent.setup();
     render(<TestMenu />);

@@ -323,6 +323,28 @@ export type EmbedDescriptor =
   | { kind: 'fallback'; url: string; message: string; includeLink: boolean };
 
 /**
+ * The fallback descriptor for a URL that cannot be embedded. The recovery link
+ * is offered only when the URL parses with an `http:` or `https:` protocol;
+ * anything else (javascript:, data:, vbscript:, malformed) yields no link and
+ * an empty `url`, so no decorator can render the raw value as an href.
+ */
+function fallbackWithLink(url: string): EmbedDescriptor {
+  let safe = false;
+  try {
+    const { protocol } = new URL(url);
+    safe = protocol === 'http:' || protocol === 'https:';
+  } catch {
+    safe = false;
+  }
+  return {
+    kind: 'fallback',
+    url: safe ? url : '',
+    message: FALLBACK_MESSAGE_DISALLOWED_DOMAIN,
+    includeLink: safe,
+  };
+}
+
+/**
  * Resolve a config to its render descriptor. Mirrors the oracle WC's render
  * branch exactly: missing URL -> fallback (no link); disallowed domain or
  * undetectable URL -> fallback (with recovery link); Twitter -> fallback (the
@@ -337,32 +359,17 @@ export function resolveEmbed(config: EmbedConfig): EmbedDescriptor {
   }
 
   if (!isAllowedEmbedDomain(url)) {
-    return {
-      kind: 'fallback',
-      url,
-      message: FALLBACK_MESSAGE_DISALLOWED_DOMAIN,
-      includeLink: true,
-    };
+    return fallbackWithLink(url);
   }
 
   const detected = detectEmbedProvider(url);
   if (!detected) {
-    return {
-      kind: 'fallback',
-      url,
-      message: FALLBACK_MESSAGE_DISALLOWED_DOMAIN,
-      includeLink: true,
-    };
+    return fallbackWithLink(url);
   }
 
   // Twitter falls through to the fallback: the widget flow is out of scope.
   if (detected.provider === 'twitter') {
-    return {
-      kind: 'fallback',
-      url,
-      message: FALLBACK_MESSAGE_DISALLOWED_DOMAIN,
-      includeLink: true,
-    };
+    return fallbackWithLink(url);
   }
 
   const provider = config.provider ?? detected.provider;
