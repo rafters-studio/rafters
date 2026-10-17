@@ -232,8 +232,16 @@ export function bindSheet(root: HTMLElement): () => void {
   root.addEventListener('click', onClick);
 
   const onKeydown = (event: KeyboardEvent) => {
-    const partEl = (event.target as HTMLElement).closest<HTMLElement>('[data-part]');
-    const part = partEl?.dataset['part'] as SheetPart | undefined;
+    const target = event.target as HTMLElement;
+    // A keydown anywhere inside the content is content-scoped: the focus trap
+    // can land focus on the close button, whose own part would otherwise
+    // resolve and make the content-only Escape keymap return nothing.
+    const content = getPart('content');
+    const partEl = target.closest<HTMLElement>('[data-part]');
+    const part: SheetPart | undefined =
+      content && content.contains(target)
+        ? 'content'
+        : (partEl?.dataset['part'] as SheetPart | undefined);
     if (!part) return;
     const action = sheet.keymap(
       {
