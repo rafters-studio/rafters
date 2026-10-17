@@ -68,6 +68,11 @@ test('a disallowed host renders the fallback with a recovery link -- never an if
   expect(body.textContent).toContain('This URL is not from a supported embed provider');
 });
 
+test('a javascript: url renders no link', async () => {
+  const body = await render({ url: 'javascript:alert(1)' });
+  expect(body.querySelector('a')).toBeNull();
+});
+
 test('a Twitter url falls through to the fallback (widget flow out of scope)', async () => {
   const body = await render({ url: 'https://twitter.com/user/status/123' });
   expect(body.querySelector('iframe')).toBeNull();

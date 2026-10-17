@@ -67,6 +67,17 @@ describe('calendar classes', () => {
     expect(day).toContain('data-[disabled=true]:cursor-not-allowed');
   });
 
+  it('the day cell is a table cell: no display utility, centred with table properties', () => {
+    // #2637: a display utility on the <td> pulls it out of table layout and the
+    // days stack in one column.
+    const tokens = classesFor().day.split(/\s+/);
+    for (const display of ['flex', 'inline-flex', 'grid', 'inline-grid', 'block', 'inline-block']) {
+      expect(tokens).not.toContain(display);
+    }
+    expect(tokens).toContain('text-center');
+    expect(tokens).toContain('align-middle');
+  });
+
   it('the grid consumes the month-change cell as a keyframe', () => {
     // calendar/grid/month change: fade-or-slide crossfade at moderate/standard.
     // The token layer picked the shape -- the `calendar-grid-month-change` cell
