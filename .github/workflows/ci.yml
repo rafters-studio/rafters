@@ -83,5 +83,22 @@ jobs:
           node-version: 24.12
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
+      # The Astro layout specs render in node, then measure the markup in a
+      # real Chromium, so this job needs that one engine. Same retry as the
+      # test job's install, for the same apt index mismatch (#2342).
+      - name: Install Playwright Chromium and system dependencies
+        run: |
+          for attempt in 1 2 3; do
+            if pnpm exec playwright install --with-deps chromium; then
+              exit 0
+            fi
+            if [ "$attempt" -lt 3 ]; then
+              echo "playwright install failed (attempt $attempt of 3); clearing the apt index and retrying"
+              sudo rm -rf /var/lib/apt/lists/*
+              sleep 15
+            fi
+          done
+          echo "playwright install failed after 3 attempts"
+          exit 1
       - run: pnpm --filter @rafters/ui ${{ matrix.test }}
       - run: pnpm --filter @rafters/ui ${{ matrix.check }}
