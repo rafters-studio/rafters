@@ -38,6 +38,8 @@
 
 ### Fixes
 
+- fix(ui): **Arrow-key roving in menus reaches checkbox and radio items.** `getFocusableItems` in the roving-focus primitive selected only `menuitem`, `option`, `radio` and `tab`, so ArrowUp, ArrowDown, Home and End skipped `menuitemcheckbox` and `menuitemradio` items in every menu that composes it (context-menu, dropdown-menu, menubar). Both roles are now in the query; disabled items are still skipped.
+
 - fix(ui): **The Embed fallback never renders a script-executing link.** `resolveEmbed` offered the recovery link for any URL outside the allowed domains, so `url="javascript:alert(1)"` rendered `<a href="javascript:alert(1)">` in the Web Component and the Astro component. The link is now offered only when the URL parses with an `http:` or `https:` protocol; any other protocol or a malformed URL yields a fallback with no link and an empty `url`.
 
 - fix(ui): **Calendar day cells render as a seven-column grid again (#2637).** The day class started with `inline-flex` and was applied to the `<td role="gridcell">`, which took each cell out of table layout and stacked the days in one column, in Calendar and in DatePicker, which embeds it. The cell class now carries no `display` utility and centres the day with `text-center align-middle`; React, Astro and the Web Component share the one class string, so all three pick it up.
