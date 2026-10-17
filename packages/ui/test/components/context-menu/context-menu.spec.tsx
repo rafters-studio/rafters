@@ -241,6 +241,30 @@ describe('context-menu [react]', () => {
     expect(document.activeElement).toBe(itemByText('Delete'));
   });
 
+  it('ArrowDown from a plain item lands on the following checkbox item', async () => {
+    const user = userEvent.setup();
+    region = document.createElement('main');
+    document.body.appendChild(region);
+    render(
+      <ContextMenu>
+        <ContextMenuTrigger>
+          <span>Surface</span>
+        </ContextMenuTrigger>
+        <ContextMenuContent aria-label="Options" container={region}>
+          <ContextMenuItem>Edit</ContextMenuItem>
+          <ContextMenuCheckboxItem checked={false}>Bold</ContextMenuCheckboxItem>
+        </ContextMenuContent>
+      </ContextMenu>,
+      { container: region },
+    );
+    openMenu();
+    expect(document.activeElement).toBe(itemByText('Edit'));
+    await user.keyboard('{ArrowDown}');
+    expect(document.activeElement).toBe(
+      body().querySelector<HTMLElement>('[role="menuitemcheckbox"]'),
+    );
+  });
+
   it('typeahead focuses the item whose label starts with the typed key', async () => {
     const user = userEvent.setup();
     setup();
