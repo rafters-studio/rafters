@@ -20,8 +20,8 @@ for (const [name, attrs, itemA] of SCENES) {
     document.body.innerHTML =
       '<main>' +
       `<rafters-radio-group name="plan" aria-label="Plan" ${attrs}>` +
-      `<rafters-radio-item value="a" ${itemA}>A</rafters-radio-item>` +
-      '<rafters-radio-item value="b">B</rafters-radio-item>' +
+      `<div data-part="item" value="a" ${itemA}>A</div>` +
+      '<div data-part="item" value="b">B</div>' +
       '</rafters-radio-group></main>';
     await Promise.resolve();
     const results = await runAxe(document.body);

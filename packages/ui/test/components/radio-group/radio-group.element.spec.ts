@@ -46,9 +46,9 @@ function markup(attrs: string, itemA: string): string {
   return (
     '<main><form>' +
     `<rafters-radio-group name="plan" aria-label="Plan" ${attrs}>` +
-    `<rafters-radio-item value="a" ${itemA}>A</rafters-radio-item>` +
-    '<rafters-radio-item value="b">B</rafters-radio-item>' +
-    '<rafters-radio-item value="c">C</rafters-radio-item>' +
+    `<div data-part="item" value="a" ${itemA}>A</div>` +
+    '<div data-part="item" value="b">B</div>' +
+    '<div data-part="item" value="c">C</div>' +
     '</rafters-radio-group></form></main>'
   );
 }
@@ -194,4 +194,11 @@ it('re-adding the element leaves one set of parts and one step per arrow', async
   await userEvent.click(page.getByRole('radio', { name: 'A' }));
   await userEvent.keyboard('{ArrowDown}');
   expect(checked(root)).toBe('b');
+});
+
+it('moves the host aria-label onto the radiogroup root', async () => {
+  const root = await mount();
+  const host = document.querySelector('rafters-radio-group');
+  expect(root.getAttribute('aria-label')).toBe('Plan');
+  expect(host?.hasAttribute('aria-label')).toBe(false);
 });

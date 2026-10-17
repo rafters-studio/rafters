@@ -32,8 +32,9 @@
 /**
  * WC performance for radio-group: a light-DOM element. It reads its config from
  * the host's attributes (value, orientation, disabled, required, name,
- * aria-label, aria-labelledby) and its items from child `<rafters-radio-item
- * value disabled>` markup, renders the tree radio-group.tsx renders with the
+ * aria-label, aria-labelledby) and its items from `data-part="item"` markup
+ * inside the host (`value`, `disabled`; the element defines no child tags),
+ * renders the tree radio-group.tsx renders with the
  * initial projection applied, then hands the root to bindRadioGroup -- the same
  * DOM-native client the Astro performance calls. `value` is the seed only; the
  * element has no controlled value, no events and no form association.
@@ -111,7 +112,7 @@ export class RaftersRadioGroup extends HTMLElement {
     this.removeAttribute('aria-label');
     this.removeAttribute('aria-labelledby');
 
-    const items = Array.from(this.children).filter((el) => el.localName === 'rafters-radio-item');
+    const items = Array.from(this.querySelectorAll(':scope > [data-part="item"]'));
     for (const item of items) {
       const value = item.getAttribute('value') ?? '';
       const button = document.createElement('button');
