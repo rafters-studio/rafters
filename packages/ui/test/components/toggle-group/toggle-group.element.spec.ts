@@ -22,8 +22,8 @@ afterEach(() => {
 });
 
 const ITEMS =
-  '<rafters-toggle-group-item value="bold">Bold</rafters-toggle-group-item>' +
-  '<rafters-toggle-group-item value="italic">Italic</rafters-toggle-group-item>';
+  '<span data-part="item" value="bold">Bold</span>' +
+  '<span data-part="item" value="italic">Italic</span>';
 
 async function mount(attrs: string, items = ITEMS, wrap = (html: string) => html) {
   document.body.innerHTML = wrap(`<rafters-toggle-group ${attrs}>${items}</rafters-toggle-group>`);
@@ -88,8 +88,8 @@ const scenarios: Scenario[] = [
     name: 'disabled item',
     attrs: '',
     items:
-      '<rafters-toggle-group-item value="bold" disabled>Bold</rafters-toggle-group-item>' +
-      '<rafters-toggle-group-item value="italic">Italic</rafters-toggle-group-item>',
+      '<span data-part="item" value="bold" disabled>Bold</span>' +
+      '<span data-part="item" value="italic">Italic</span>',
     config: {},
     selected: [],
   },
@@ -169,9 +169,9 @@ describe('toggle-group [element]', () => {
 
   it('arrows, Home and End move focus only and skip disabled items', async () => {
     const items =
-      '<rafters-toggle-group-item value="a">A</rafters-toggle-group-item>' +
-      '<rafters-toggle-group-item value="b" disabled>B</rafters-toggle-group-item>' +
-      '<rafters-toggle-group-item value="c">C</rafters-toggle-group-item>';
+      '<span data-part="item" value="a">A</span>' +
+      '<span data-part="item" value="b" disabled>B</span>' +
+      '<span data-part="item" value="c">C</span>';
     const { buttons } = await mount('', items);
     const [a, , c] = buttons as [HTMLButtonElement, HTMLButtonElement, HTMLButtonElement];
     a.focus();
@@ -205,10 +205,7 @@ describe('toggle-group [element]', () => {
   });
 
   it('a disabled item cannot be toggled', async () => {
-    const { buttons } = await mount(
-      '',
-      '<rafters-toggle-group-item value="a" disabled>A</rafters-toggle-group-item>',
-    );
+    const { buttons } = await mount('', '<span data-part="item" value="a" disabled>A</span>');
     await userEvent.click(need(buttons[0]));
     expect(need(buttons[0]).getAttribute('aria-pressed')).toBe('false');
   });
@@ -216,9 +213,9 @@ describe('toggle-group [element]', () => {
   it('wraps start and end icons, none when absent, and honors rtl', async () => {
     const restore = installIconLayout();
     const items =
-      `<rafters-toggle-group-item value="a"><span slot="start-icon">${ICON_SVG_16}</span>Alpha` +
-      `<span slot="end-icon">${ICON_SVG_16}</span></rafters-toggle-group-item>` +
-      '<rafters-toggle-group-item value="b">Beta</rafters-toggle-group-item>';
+      `<span data-part="item" value="a"><span slot="start-icon">${ICON_SVG_16}</span>Alpha` +
+      `<span slot="end-icon">${ICON_SVG_16}</span></span>` +
+      '<span data-part="item" value="b">Beta</span>';
     const { buttons } = await mount('', items);
     const [a, b] = buttons as [HTMLButtonElement, HTMLButtonElement];
     const start = need(a.querySelector<HTMLElement>('span[data-part="startIcon"]'));
@@ -252,7 +249,7 @@ describe('toggle-group [element]', () => {
   });
 
   it('re-adding leaves one set of parts and toggling still works', async () => {
-    const items = `<rafters-toggle-group-item value="a"><span slot="start-icon">${ICON_SVG_16}</span>A</rafters-toggle-group-item>`;
+    const items = `<span data-part="item" value="a"><span slot="start-icon">${ICON_SVG_16}</span>A</span>`;
     const { host } = await mount('', items);
     host.remove();
     document.body.appendChild(host);

@@ -7,12 +7,12 @@ afterEach(() => {
 });
 
 const ITEMS =
-  '<rafters-toggle-group-item value="bold">Bold</rafters-toggle-group-item>' +
-  '<rafters-toggle-group-item value="italic">Italic</rafters-toggle-group-item>';
+  '<span data-part="item" value="bold">Bold</span>' +
+  '<span data-part="item" value="italic">Italic</span>';
 
 const DISABLED_ITEM =
-  '<rafters-toggle-group-item value="bold" disabled>Bold</rafters-toggle-group-item>' +
-  '<rafters-toggle-group-item value="italic">Italic</rafters-toggle-group-item>';
+  '<span data-part="item" value="bold" disabled>Bold</span>' +
+  '<span data-part="item" value="italic">Italic</span>';
 
 const scenarios: Array<[string, string, string]> = [
   ['none pressed', '', ITEMS],

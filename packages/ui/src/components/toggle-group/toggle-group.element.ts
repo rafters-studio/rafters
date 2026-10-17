@@ -33,8 +33,8 @@
 /**
  * WC performance for toggle-group, in light DOM. The host's attributes are the
  * config (type, value as the seed, orientation, disabled, required, name,
- * variant, size, aria-label, aria-labelledby); its `<rafters-toggle-group-item
- * value disabled>` children are the items, and a child marked slot="start-icon"
+ * variant, size, aria-label, aria-labelledby); its `data-part="item"` children
+ * (each with `value` and optional `disabled`) are the items, and a child marked slot="start-icon"
  * or slot="end-icon" is the item's decorative icon. The element renders the tree
  * toggle-group.tsx renders, with the initial projection applied, then hands the
  * root to bindToggleGroup (roving focus, projections, delegated click). The bind
@@ -133,8 +133,7 @@ export class RaftersToggleGroup extends HTMLElement {
       this.removeAttribute(name);
     }
 
-    for (const source of Array.from(this.children)) {
-      if (source.localName !== 'rafters-toggle-group-item') continue;
+    for (const source of Array.from(this.querySelectorAll(':scope > [data-part="item"]'))) {
       const value = source.getAttribute('value');
       if (value === null) continue;
       const button = document.createElement('button');
