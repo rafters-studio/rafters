@@ -7,12 +7,12 @@ async function mount(attrs = ''): Promise<HTMLElement> {
   document.body.innerHTML = `
     <main>
       <rafters-combobox ${attrs}>
-        <rafters-combobox-input aria-label="Framework" placeholder="Search framework"></rafters-combobox-input>
-        <rafters-combobox-content>
-          <rafters-combobox-empty>None</rafters-combobox-empty>
-          <rafters-combobox-item value="react">React</rafters-combobox-item>
-          <rafters-combobox-item value="vue">Vue</rafters-combobox-item>
-        </rafters-combobox-content>
+        <input data-part="input" aria-label="Framework" placeholder="Search framework">
+        <div data-part="content">
+          <div data-part="empty">None</div>
+          <div data-part="item" data-value="react">React</div>
+          <div data-part="item" data-value="vue">Vue</div>
+        </div>
       </rafters-combobox>
     </main>`;
   await Promise.resolve();

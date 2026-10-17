@@ -40,13 +40,13 @@ function markup({
   return `
     <rafters-combobox ${attrs}>
       ${hostIcon ? SLOTTED_ICON : ''}
-      <rafters-combobox-input aria-label="Framework" name="fw" placeholder="Search"></rafters-combobox-input>
-      <rafters-combobox-content ${contentAttrs}>
-        <rafters-combobox-empty>None</rafters-combobox-empty>
-        <rafters-combobox-item value="react">${itemIcon ? SLOTTED_ICON : ''}React</rafters-combobox-item>
-        <rafters-combobox-item value="vue">Vue</rafters-combobox-item>
-        <rafters-combobox-item value="angular"${disabledItem ? ' disabled' : ''}>Angular</rafters-combobox-item>
-      </rafters-combobox-content>
+      <input data-part="input" aria-label="Framework" name="fw" placeholder="Search">
+      <div data-part="content" ${contentAttrs}>
+        <div data-part="empty">None</div>
+        <div data-part="item" data-value="react">${itemIcon ? SLOTTED_ICON : ''}React</div>
+        <div data-part="item" data-value="vue">Vue</div>
+        <div data-part="item" data-value="angular"${disabledItem ? ' data-disabled' : ''}>Angular</div>
+      </div>
     </rafters-combobox>`;
 }
 
@@ -101,16 +101,16 @@ describe('combobox [wc] parts', () => {
   it('renders a group heading named by aria-labelledby, and a separator', async () => {
     document.body.innerHTML = `
       <rafters-combobox>
-        <rafters-combobox-input aria-label="Framework"></rafters-combobox-input>
-        <rafters-combobox-content>
-          <rafters-combobox-group heading="Frameworks">
-            <rafters-combobox-item value="react">React</rafters-combobox-item>
-          </rafters-combobox-group>
-          <rafters-combobox-separator></rafters-combobox-separator>
-        </rafters-combobox-content>
+        <input data-part="input" aria-label="Framework">
+        <div data-part="content">
+          <div data-part="group" heading="Frameworks">
+            <div data-part="item" data-value="react">React</div>
+          </div>
+          <div data-part="separator"></div>
+        </div>
       </rafters-combobox>`;
     await Promise.resolve();
-    const group = q('rafters-combobox-group');
+    const group = q('[data-part="group"]');
     const label = group.firstElementChild as HTMLElement;
     expect(group.getAttribute('role')).toBe('group');
     expect(label.textContent).toBe('Frameworks');
@@ -118,8 +118,22 @@ describe('combobox [wc] parts', () => {
     const classes = comboboxClasses({}, combobox.initialState({}));
     expect(group.className).toBe(classes.group);
     expect(label.className).toBe(classes.groupLabel);
-    expect(q('rafters-combobox-separator').className).toBe(classes.separator);
-    expect(q('rafters-combobox-separator').getAttribute('aria-hidden')).toBe('true');
+    expect(q('[data-part="separator"]').className).toBe(classes.separator);
+    expect(q('[data-part="separator"]').getAttribute('aria-hidden')).toBe('true');
+  });
+});
+
+describe('combobox [wc] naming', () => {
+  it('moves a host aria-label to the input and defines no child tags', async () => {
+    document.body.innerHTML = `
+      <rafters-combobox aria-label="Framework">
+        <input data-part="input">
+        <div data-part="content"><div data-part="item" data-value="react">React</div></div>
+      </rafters-combobox>`;
+    await Promise.resolve();
+    expect(q('rafters-combobox').hasAttribute('aria-label')).toBe(false);
+    expect(input().getAttribute('aria-label')).toBe('Framework');
+    expect(customElements.get('rafters-combobox-item')).toBeUndefined();
   });
 });
 
